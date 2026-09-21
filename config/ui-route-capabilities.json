@@ -2106,7 +2106,7 @@
           "primaryTask": true,
           "evidenceLevel": "E3",
           "evidence": [
-            "frontend/e2e/12-notification.spec.ts",
+            "frontend/e2e/journeys/notifications.spec.ts",
             "frontend/src/app/admin/notifications/NotificationsClient.tsx",
             "frontend/src/app/admin/notifications/page.tsx",
             "frontend/src/app/components/ui/smart-notification-hub.tsx",
@@ -6952,7 +6952,7 @@
           "primaryTask": true,
           "evidenceLevel": "E3",
           "evidence": [
-            "frontend/e2e/11-enterprise-workflow.spec.ts",
+            "frontend/e2e/journeys/approvals.spec.ts",
             "frontend/src/app/approvals/ApprovalDraftDialog.tsx",
             "frontend/src/app/approvals/ApprovalHubClient.tsx",
             "frontend/src/app/approvals/page.tsx",

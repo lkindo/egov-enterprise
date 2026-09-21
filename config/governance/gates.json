@@ -1333,8 +1333,15 @@
               "testMatch": "/.*\\.setup\\.ts/"
             },
             {
+              "name": "api-contract",
+              "testMatch": "/contracts\\/.*\\.spec\\.ts/",
+              "dependencies": [
+                "setup"
+              ]
+            },
+            {
               "name": "full-suite",
-              "testMatch": "/.*\\.spec\\.ts/",
+              "testMatch": "/(?:journeys|quality)\\/.*\\.spec\\.ts/",
               "dependencies": [
                 "setup"
               ]
@@ -1344,7 +1351,7 @@
         "skipWaivers": [
           {
             "id": "PW-SKIP-LINUX-VISUAL-REGRESSION",
-            "source": "frontend/e2e/04-quality-resilience.spec.ts",
+            "source": "frontend/e2e/quality/visual-baselines.spec.ts",
             "stableToken": "process.platform !== 'linux'",
             "owner": "quality-engineering",
             "reason": "Pixel baselines are generated and enforced on the Linux CI rendering platform only.",
@@ -1355,7 +1362,7 @@
         "commandBindings": [
           {
             "source": "scripts/verify.mjs",
-            "fragment": "run('pnpm -C frontend run test:e2e');",
+            "fragment": "run('node scripts/run-isolated-e2e.mjs');",
             "tiers": [
               "local-e2e"
             ]
@@ -1370,7 +1377,7 @@
           },
           {
             "source": ".github/workflows/ci.yml",
-            "fragment": "npx playwright test --project=full-suite \"${E2E_SPECS[@]}\" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log",
+            "fragment": "node ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=api-contract --project=full-suite \"${E2E_SPECS[@]}\" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log",
             "tiers": [
               "ci"
             ],
@@ -1378,7 +1385,7 @@
           },
           {
             "source": ".github/workflows/ci.yml",
-            "fragment": "node ../scripts/playwright-result-contract.mjs --report \"$PLAYWRIGHT_JSON_OUTPUT_FILE\" \"${E2E_SPECS[@]}\"",
+            "fragment": "node ../scripts/playwright-result-contract.mjs --report \"$PLAYWRIGHT_JSON_OUTPUT_FILE\" --inventory /tmp/e2e-inventory.json \"${E2E_SPECS[@]}\"",
             "tiers": [
               "ci"
             ],
@@ -1391,10 +1398,10 @@
         "ci"
       ],
       "task": [
-        "pnpm -C frontend run test:e2e",
+        "node scripts/run-isolated-e2e.mjs",
         "node ../scripts/e2e-shard-plan.mjs --shard \"${{ matrix.shard }}\"",
-        "npx playwright test --project=full-suite \"${E2E_SPECS[@]}\" --reporter=blob,line,json",
-        "node ../scripts/playwright-result-contract.mjs --report \"$PLAYWRIGHT_JSON_OUTPUT_FILE\" \"${E2E_SPECS[@]}\""
+        "node ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=api-contract --project=full-suite \"${E2E_SPECS[@]}\" --reporter=blob,line,json",
+        "node ../scripts/playwright-result-contract.mjs --report \"$PLAYWRIGHT_JSON_OUTPUT_FILE\" --inventory /tmp/e2e-inventory.json \"${E2E_SPECS[@]}\""
       ],
       "category": "end-to-end",
       "owner": "quality-engineering",
@@ -1405,7 +1412,10 @@
         "frontend/playwright.config.ts",
         "scripts/e2e-shard-plan.mjs",
         "scripts/playwright-result-contract.mjs",
-        "scripts/playwright-result-contract.test.mjs"
+        "scripts/playwright-result-contract.test.mjs",
+        "scripts/e2e-isolation.mjs",
+        "scripts/run-isolated-e2e.mjs",
+        "scripts/e2e-compose-preflight.mjs"
       ],
       "evidence": [
         "frontend/blob-report",

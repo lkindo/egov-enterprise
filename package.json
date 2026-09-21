@@ -57,7 +57,8 @@
     "review:migration": "node scripts/governance-review.mjs --product migration-tool --mode report",
     "review:adoption:migration": "node scripts/governance-review.mjs --product migration-tool --mode adoption",
     "adoption:check": "node scripts/adoption-execute.mjs",
-    "//verify:ops": ".github/required-checks.json ↔ ci.yml 잡·매트릭스 ↔ GitHub 실제 브랜치 보호 설정 대조. required status check 가 빠지면 하네스가 강제력 없는 권고로 강등되므로 병합·릴리스 전에 명시 실행한다. ruleset 조회에 admin 읽기 권한이 필요해 `verify all` 에는 넣지 않았다(AGENTS H5: 조용한 skip 금지 → 별도 스코프)."
+    "//verify:ops": ".github/required-checks.json ↔ ci.yml 잡·매트릭스 ↔ GitHub 실제 브랜치 보호 설정 대조. required status check 가 빠지면 하네스가 강제력 없는 권고로 강등되므로 병합·릴리스 전에 명시 실행한다. ruleset 조회에 admin 읽기 권한이 필요해 `verify all` 에는 넣지 않았다(AGENTS H5: 조용한 skip 금지 → 별도 스코프).",
+    "test:e2e:isolated": "node scripts/run-isolated-e2e.mjs"
   },
   "dependencies": {
     "cross-env": "^7.0.3",

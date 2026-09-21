@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { createRequire } from 'node:module';
 import { test } from 'node:test';
+import { authenticate } from '../frontend/e2e/fixtures/auth-state.mjs';
 
 const OPERATIONAL_RUNNER = 'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js"';
 const CONTRACT_ASSET = 'scripts/playwright-auth-artifact-contract.test.mjs';
@@ -10,7 +13,7 @@ const ts = requireFromFrontend('typescript');
 
 function readAuthSetupSource() {
   return readFileSync(
-    new URL('../frontend/e2e/auth.setup.ts', import.meta.url),
+    new URL('../frontend/e2e/fixtures/auth-state.mjs', import.meta.url),
     'utf8',
   ).replace(/\r\n/gu, '\n');
 }
@@ -101,7 +104,7 @@ function unwrapExpression(expression) {
 function fixtureCookiePolicyAstErrors(source) {
   const errors = [];
   const sourceFile = ts.createSourceFile(
-    'auth.setup.ts',
+    'auth-state.mjs',
     source,
     ts.ScriptTarget.Latest,
     true,
@@ -223,6 +226,7 @@ function fixtureCookiePolicyAstErrors(source) {
 function authArtifactContractErrors(source) {
   const errors = [];
   const requiredSnippets = [
+    ['mandatory target verification', 'const target = await verifyTarget();'],
     ['private directory mode', 'const PRIVATE_DIRECTORY_MODE = 0o700;'],
     ['private file mode', 'const PRIVATE_FILE_MODE = 0o600;'],
     ['explicit POSIX branch', "const IS_POSIX = process.platform !== 'win32';"],
@@ -240,6 +244,9 @@ function authArtifactContractErrors(source) {
 
   for (const [label, snippet] of requiredSnippets) {
     if (!source.includes(snippet)) errors.push(`missing ${label}`);
+  }
+  if (!(source.indexOf('const target = await verifyTarget();') < source.indexOf('await request.post('))) {
+    errors.push('stack verification must precede authentication HTTP requests');
   }
 
   if (source.includes('fs.writeFileSync(authFilePath')) {
@@ -274,6 +281,57 @@ function authArtifactContractErrors(source) {
 
   return errors;
 }
+
+function e2eAuthenticationBindingErrors(source) {
+  const sourceFile = ts.createSourceFile('auth.setup.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const imported = (name, modulePath) => sourceFile.statements.some(statement =>
+    ts.isImportDeclaration(statement) && ts.isStringLiteral(statement.moduleSpecifier)
+    && statement.moduleSpecifier.text === modulePath
+    && statement.importClause?.namedBindings && ts.isNamedImports(statement.importClause.namedBindings)
+    && statement.importClause.namedBindings.elements.some(element => !element.propertyName && element.name.text === name));
+  const calls = callExpressions(sourceFile, 'authenticate');
+  if (!imported('authenticate', './fixtures/auth-state.mjs')
+    || !imported('assertIsolatedTarget', '../../scripts/e2e-isolation.mjs')
+    || hasConflictingBindingOrWrite(sourceFile, 'authenticate')
+    || hasConflictingBindingOrWrite(sourceFile, 'assertIsolatedTarget')
+    || calls.length !== 2
+    || calls.some(call => call.arguments.length !== 5 || !ts.isIdentifier(call.arguments[4])
+      || call.arguments[4].text !== 'assertIsolatedTarget')) {
+    return ['both E2E accounts must use the shared private writer and actual isolation verifier'];
+  }
+  return [];
+}
+
+test('both ordinary E2E accounts remain bound to actual isolation verification', () => {
+  const source = readFileSync(new URL('../frontend/e2e/auth.setup.ts', import.meta.url), 'utf8');
+  assert.deepEqual(e2eAuthenticationBindingErrors(source), []);
+  const bypass = source.replace(', adminFile, assertIsolatedTarget)', ', adminFile, () => ({}))');
+  assert.notEqual(bypass, source);
+  assert.notDeepEqual(e2eAuthenticationBindingErrors(bypass), []);
+  assert.notDeepEqual(e2eAuthenticationBindingErrors(source.replace("'./fixtures/auth-state.mjs'", "'./unsafe-writer.mjs'")), []);
+});
+
+test('failed target verification performs no HTTP request and creates no authentication artifact', async () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'auth-target-negative-'));
+  const statePath = path.join(directory, 'private', 'admin.json');
+  let requests = 0;
+  try {
+    await assert.rejects(authenticate({ post: async () => { requests += 1; } },
+      'synthetic-account', 'synthetic-secret', statePath,
+      async () => { throw new Error('unverified target'); }), /unverified target/);
+    assert.equal(requests, 0);
+    assert.equal(existsSync(statePath), false);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('removing or moving target verification after the request turns the shared contract red', () => {
+  const source = readAuthSetupSource();
+  const removed = source.replace('const target = await verifyTarget();', 'const target = {};');
+  assert.ok(authArtifactContractErrors(removed).includes('missing mandatory target verification'));
+  const moved = source.replace('const target = await verifyTarget();', 'const target = {};')
+    .replace('    writePrivateStorageState(authFilePath, {', '    { const target = await verifyTarget(); }\n    writePrivateStorageState(authFilePath, {');
+  assert.ok(authArtifactContractErrors(moved).includes('stack verification must precede authentication HTTP requests'));
+});
 
 function operationalRunnerErrors(packageJson) {
   return packageJson.scripts?.['test:operational-contracts'] === OPERATIONAL_RUNNER

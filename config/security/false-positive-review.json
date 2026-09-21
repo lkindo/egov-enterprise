@@ -118,7 +118,7 @@
       "file": "scripts/ui-quality-baseline-launch.mjs",
       "line": 490,
       "fingerprint": "e32fd5e9f6d93cdf:1",
-      "sourceSha256": "78f19e46033eb239dae35dd3c2d4d947c048b6196e65ed765e4d25d2c9c181d4",
+      "sourceSha256": "ee234695f949363cb450566f629b72a7ef574e14cbed6c23d74668e91617a904",
       "expiresOn": "2026-12-08",
       "reason": "Opens an existing file O_RDONLY, with POSIX O_NOFOLLOW and O_NONBLOCK; no creation; verifies descriptor identity and bounded content.",
       "id": "SAST-FP-006",

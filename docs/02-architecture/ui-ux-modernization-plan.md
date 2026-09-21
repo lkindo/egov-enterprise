@@ -673,7 +673,7 @@ pnpm -C frontend run build
 
 ```powershell
 node --test scripts/ui-quality-scenarios-contract.test.mjs
-pnpm -C frontend exec playwright test e2e/01-core-base.spec.ts e2e/04-quality-resilience.spec.ts
+node scripts/run-isolated-e2e.mjs -- --project=api-contract --project=full-suite contracts/request-denial.spec.ts journeys/application-shell.spec.ts journeys/authentication.spec.ts journeys/board-articles.spec.ts journeys/audit-log.spec.ts quality/
 ```
 
 ### Task 1.1 — IA·URL·개인정보 결정
@@ -820,7 +820,7 @@ pnpm -C frontend run bundle:check
 
 ```powershell
 pnpm -C frontend exec vitest run <table-and-shell-test-paths>
-pnpm -C frontend exec playwright test e2e/01-core-base.spec.ts e2e/04-quality-resilience.spec.ts
+node scripts/run-isolated-e2e.mjs -- --project=api-contract --project=full-suite contracts/request-denial.spec.ts journeys/application-shell.spec.ts journeys/authentication.spec.ts journeys/board-articles.spec.ts journeys/audit-log.spec.ts quality/
 pnpm -C frontend run type-check
 pnpm -C frontend run build
 ```
@@ -1280,8 +1280,8 @@ pnpm -C frontend run bundle:check
 ### 16.4 접근성·반응형·E2E
 
 ```powershell
-pnpm -C frontend exec playwright test e2e/01-core-base.spec.ts
-pnpm -C frontend exec playwright test e2e/04-quality-resilience.spec.ts --grep "Responsive Layout"
+node scripts/run-isolated-e2e.mjs -- --project=full-suite journeys/application-shell.spec.ts journeys/authentication.spec.ts quality/login-accessibility.spec.ts quality/admin-accessibility.spec.ts
+node scripts/run-isolated-e2e.mjs -- --project=full-suite quality/responsive-shell.spec.ts
 npm run verify:e2e
 ```
 

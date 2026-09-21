@@ -139,7 +139,7 @@
 | `npm run verify:fast` | docs + Java compile + FE/E2E type-check·lint·codegen + 빠른 Vitest |
 | `npm run verify:push` | fast + governance harness. 수동 사전 검증용이며 실제 pre-push 훅의 변경분 최적화와 동일하다고 가정하지 않음 |
 | `npm run verify` / `verify:full` | backend test·harness·JaCoCo·실 PostgreSQL schema-validation + frontend build·bundle·coverage. 브라우저 E2E와 원격 정책은 포함하지 않음 |
-| `npm run verify:e2e` | 실행 중인 격리 서비스에 대한 E2E type-check·Playwright. 운영 대상을 향해 실행하지 않음 |
+| `npm run verify:e2e` | 운영 계약·E2E type-check 후 격리 runner가 새 일회용 DB·API·FE를 생성해 Playwright 실행. 운영 대상을 향해 실행하지 않음 |
 | `npm run verify:ops` | `.github/required-checks.json`과 현재 GitHub ruleset exact-match. 네트워크와 admin read 권한 필요 |
 
 > **게이트 계층**: pre-commit은 빠른 경고, pre-push는 변경 범위별 로컬 차단, `localGate`는 Docker를 포함한 넓은 Gradle 검증, required CI는 병합 권위다. 하네스 목록·실행 소비자는 [governance gates manifest](../../config/governance/gates.json), 훅의 정확한 포함 task와 우회 경계는 [.githooks/README.md](../../.githooks/README.md), required check·review 정책은 [.github/required-checks.json](../../.github/required-checks.json)을 따른다.

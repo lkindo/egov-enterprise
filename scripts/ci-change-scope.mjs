@@ -55,11 +55,18 @@ const BACKEND_PRODUCTION = [
   /^(?:foundation|business-core|business-app|api-server|migration-tool)\/src\/main\/java\//,
 ];
 
+const MUTATION_SHARED_INPUTS = [
+  /^(?:build|settings)\.gradle$/,
+  /^gradle\//,
+  /^gradle\.properties$/,
+];
+
 const MUTATION_RELEVANT = [
   ...BACKEND_PRODUCTION,
   /^(?:foundation|business-core|business-app|api-server|migration-tool)\/src\/test\/java\//,
-  /^(?:foundation|business-core|business-app|api-server|migration-tool)\/src\/test\/resources\//,
-  /^(?:build|settings)\.gradle$/,
+  /^(?:foundation|business-core|business-app|api-server|migration-tool)\/src\/(?:main|test)\/resources\//,
+  /^(?:foundation|business-core|business-app|api-server|migration-tool)\/src\/testFixtures\//,
+  ...MUTATION_SHARED_INPUTS,
   /^(?:foundation|business-core|business-app|api-server|migration-tool)\/build\.gradle$/,
 ];
 
@@ -71,11 +78,9 @@ const MUTATION_RELEVANT = [
 //      자체가 건너뛰어져 이관 도구 뮤테이션이 통째로 사라진다.
 //   ② 이 플래그는 반드시 mutation 의 부분집합이어야 한다 — 잡이 안 도는데 "범위 안" 이라고 말하면
 //      플래그와 실행이 어긋난다. 그래서 MUTATION_RELEVANT 에 걸린 파일만 대상으로 본다.
-const MUTATION_MIGRATION_TOOL_SHARED = [/^(?:build|settings)\.gradle$/];
-
 function isMigrationToolMutation(file) {
   return matchesAny(file, MUTATION_RELEVANT)
-    && (file.startsWith('migration-tool/') || matchesAny(file, MUTATION_MIGRATION_TOOL_SHARED));
+    && (file.startsWith('migration-tool/') || matchesAny(file, MUTATION_SHARED_INPUTS));
 }
 
 const SCHEMA_RELEVANT = [
@@ -166,10 +171,10 @@ function isE2eRelevant(file) {
  * Unknown or empty input deliberately selects the full pipeline. A false
  * positive costs runner time; a false negative silently removes evidence.
  */
-export function classifyChangedFiles(changedFiles) {
+export function classifyChangedFiles(changedFiles, { forceFull = false } = {}) {
   const files = [...new Set(changedFiles.map(normalizeFile).filter(Boolean))].sort();
   const unknownFiles = files.filter(file => !isKnown(file));
-  const full = files.length === 0 || unknownFiles.length > 0;
+  const full = forceFull || files.length === 0 || unknownFiles.length > 0;
   const docsOnly = !full && files.every(isDocumentationOnly);
   const atlas = files.some(file => file === 'frontend/public/governance_harness_atlas.html'
     || file.startsWith('frontend/atlas/')
@@ -232,7 +237,7 @@ export function githubOutputs(result) {
 }
 
 function parseArgs(argv) {
-  const options = { files: [], base: '', head: 'HEAD', githubOutput: '', stdin: false, field: '' };
+  const options = { files: [], base: '', head: 'HEAD', githubOutput: '', stdin: false, field: '', forceFull: false };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (value === '--file') options.files.push(argv[++index] ?? '');
@@ -240,6 +245,7 @@ function parseArgs(argv) {
     else if (value === '--head') options.head = argv[++index] ?? 'HEAD';
     else if (value === '--github-output') options.githubOutput = argv[++index] ?? '';
     else if (value === '--stdin') options.stdin = true;
+    else if (value === '--full') options.forceFull = true;
     else if (value === '--field') options.field = argv[++index] ?? '';
     else throw new Error(`unknown argument: ${value}`);
   }
@@ -253,7 +259,7 @@ async function main() {
     : options.stdin
       ? (await import('node:fs')).readFileSync(0, 'utf8').split(/\r?\n/).filter(Boolean)
       : changedFilesFromGit(options.base, options.head);
-  const result = classifyChangedFiles(files);
+  const result = classifyChangedFiles(files, { forceFull: options.forceFull });
   const outputs = githubOutputs(result);
 
   if (options.field) {

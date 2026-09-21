@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { AxiosResponse } from 'axios';
+import { assertIsolatedTarget } from '../../../scripts/e2e-isolation.mjs';
 
 interface ApiEnvelope<T> {
   data: T;
@@ -148,11 +149,14 @@ export function assertCleanupSucceeded(failures: CleanupFailure[]): void {
   );
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 const ADMIN_ID = 'webmaster';
 const ADMIN_PW = '1';
 
 export async function cleanup() {
+  // Verify before authentication or mutation; loopback alone does not prove DB isolation.
+  const target = await assertIsolatedTarget();
+  const API_BASE = target.apiUrl;
+  const client = axios.create({ maxRedirects: 0, proxy: false, timeout: 10000 });
   const failures: CleanupFailure[] = [];
   let activeContext: CleanupOperationContext = {
     stage: 'bootstrap',
@@ -165,7 +169,7 @@ export async function cleanup() {
     // 1. Authenticate to get token and CSRF
     console.log('>>> Authenticating as admin...');
     activeContext = { stage: 'auth', method: 'POST', pathCategory: 'auth-login' };
-    const loginRes = await axios.post<ApiEnvelope<{ accessToken: string }>>(
+    const loginRes = await client.post<ApiEnvelope<{ accessToken: string }>>(
       `${API_BASE}/auth/login`,
       { userId: ADMIN_ID, password: ADMIN_PW },
     );
@@ -173,7 +177,7 @@ export async function cleanup() {
     
     // Fetch endpoint to trigger CSRF token generation
     activeContext = { stage: 'bootstrap', method: 'GET', pathCategory: 'users-me' };
-    const meRes = await axios.get(`${API_BASE}/users/me`, { 
+    const meRes = await client.get(`${API_BASE}/users/me`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     
@@ -208,7 +212,7 @@ export async function cleanup() {
     // 2. Cleanup Users (Prefix: user_)
     console.log('>>> Cleaning up test users...');
     activeContext = { stage: 'users', method: 'GET', pathCategory: 'admin-users-collection' };
-    const usersRes = await axios.get<ApiEnvelope<PagePayload<CleanupUser>>>(`${API_BASE}/admin/system/users`, {
+    const usersRes = await client.get<ApiEnvelope<PagePayload<CleanupUser>>>(`${API_BASE}/admin/system/users`, {
       headers,
       params: { searchCondition: '0', searchKeyword: 'user_', page: 0, size: 100 } 
     });
@@ -222,14 +226,14 @@ export async function cleanup() {
     for (const user of testUsers) {
       process.stdout.write('  - Deleting test user... ');
       activeContext = { stage: 'users', method: 'DELETE', pathCategory: 'admin-user-item' };
-      await axios.delete(`${API_BASE}/admin/system/users/${user.userId}`, { headers });
+      await client.delete(`${API_BASE}/admin/system/users/${user.userId}`, { headers });
       console.log('DONE');
     }
 
     // 3. Cleanup Boards (Prefix: E2E Test Board)
     console.log('>>> Cleaning up test boards...');
     activeContext = { stage: 'boards', method: 'GET', pathCategory: 'admin-board-masters-collection' };
-    const boardsRes = await axios.get<ApiEnvelope<PagePayload<CleanupBoard>>>(`${API_BASE}/admin/system/board-masters`, {
+    const boardsRes = await client.get<ApiEnvelope<PagePayload<CleanupBoard>>>(`${API_BASE}/admin/system/board-masters`, {
       headers,
       params: { searchWrd: 'E2E Test Board', size: 100 } 
     });
@@ -244,7 +248,7 @@ export async function cleanup() {
     for (const board of testBoards) {
       process.stdout.write('  - Deleting test board... ');
       activeContext = { stage: 'boards', method: 'DELETE', pathCategory: 'admin-board-master-item' };
-      await axios.delete(`${API_BASE}/admin/system/board-masters/${board.bbsId}`, { 
+      await client.delete(`${API_BASE}/admin/system/board-masters/${board.bbsId}`, {
         headers,
         params: { userId: ADMIN_ID }
       });
@@ -255,7 +259,7 @@ export async function cleanup() {
     console.log('>>> Cleaning up test polls (surveys)...');
     try {
       activeContext = { stage: 'cleanup', method: 'GET', pathCategory: 'polls-collection' };
-      const pollsRes = await axios.get<ApiEnvelope<PagePayload<CleanupPoll>>>(`${API_BASE}/polls`, {
+      const pollsRes = await client.get<ApiEnvelope<PagePayload<CleanupPoll>>>(`${API_BASE}/polls`, {
         headers,
         params: { keyword: 'E2E', size: 100 } 
       });
@@ -268,7 +272,7 @@ export async function cleanup() {
       for (const poll of testPolls) {
         process.stdout.write('  - Deleting test poll... ');
         activeContext = { stage: 'cleanup', method: 'DELETE', pathCategory: 'poll-item' };
-        await axios.delete(`${API_BASE}/polls/${poll.pollSn}`, { headers });
+        await client.delete(`${API_BASE}/polls/${poll.pollSn}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testPolls.length} poll(s) cleaned.`);
@@ -280,7 +284,7 @@ export async function cleanup() {
     console.log('>>> Cleaning up test popups...');
     try {
       activeContext = { stage: 'cleanup', method: 'GET', pathCategory: 'popups-collection' };
-      const popupsRes = await axios.get<ApiEnvelope<PagePayload<CleanupPopup>>>(`${API_BASE}/admin/system/popups`, {
+      const popupsRes = await client.get<ApiEnvelope<PagePayload<CleanupPopup>>>(`${API_BASE}/admin/system/popups`, {
         headers,
         params: { searchWrd: 'E2E', size: 100 } 
       });
@@ -289,7 +293,7 @@ export async function cleanup() {
       for (const popup of testPopups) {
         process.stdout.write('  - Deleting test popup... ');
         activeContext = { stage: 'cleanup', method: 'DELETE', pathCategory: 'popup-item' };
-        await axios.delete(`${API_BASE}/admin/system/popups/${popup.popupSn}`, { headers });
+        await client.delete(`${API_BASE}/admin/system/popups/${popup.popupSn}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testPopups.length} popup(s) cleaned.`);
@@ -301,7 +305,7 @@ export async function cleanup() {
     console.log('>>> Cleaning up test banners...');
     try {
       activeContext = { stage: 'cleanup', method: 'GET', pathCategory: 'banners-collection' };
-      const bannersRes = await axios.get<ApiEnvelope<PagePayload<CleanupBanner>>>(`${API_BASE}/admin/system/banners`, {
+      const bannersRes = await client.get<ApiEnvelope<PagePayload<CleanupBanner>>>(`${API_BASE}/admin/system/banners`, {
         headers,
         params: { keyword: 'E2E', size: 100 } 
       });
@@ -315,7 +319,7 @@ export async function cleanup() {
       for (const banner of testBanners) {
         process.stdout.write('  - Deleting test banner... ');
         activeContext = { stage: 'cleanup', method: 'DELETE', pathCategory: 'banner-item' };
-        await axios.delete(`${API_BASE}/admin/system/banners/${banner.bnrSn}`, { headers });
+        await client.delete(`${API_BASE}/admin/system/banners/${banner.bnrSn}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testBanners.length} banner(s) cleaned.`);
@@ -329,7 +333,7 @@ export async function cleanup() {
     for (const bbsId of targetBbsIds) {
       try {
         activeContext = { stage: 'cleanup', method: 'GET', pathCategory: 'board-posts-collection' };
-        const postsRes = await axios.get<ApiEnvelope<PagePayload<CleanupPost>>>(`${API_BASE}/boards/${bbsId}`, {
+        const postsRes = await client.get<ApiEnvelope<PagePayload<CleanupPost>>>(`${API_BASE}/boards/${bbsId}`, {
           headers,
           params: { searchCnd: '0', searchWrd: 'E2E', size: 100 }
         });
@@ -349,7 +353,7 @@ export async function cleanup() {
           }
           process.stdout.write('  - Deleting test board post... ');
           activeContext = { stage: 'cleanup', method: 'DELETE', pathCategory: 'board-post-item' };
-          await axios.delete(`${API_BASE}/boards/${bbsId}/posts/${postId}`, { headers });
+          await client.delete(`${API_BASE}/boards/${bbsId}/posts/${postId}`, { headers });
           console.log('DONE');
         }
         if (testPosts.length > 0) console.log(`  => ${testPosts.length} post(s) cleaned from configured board.`);
@@ -362,7 +366,7 @@ export async function cleanup() {
     console.log('>>> Cleaning up test menus...');
     try {
       activeContext = { stage: 'cleanup', method: 'GET', pathCategory: 'menus-collection' };
-      const menusRes = await axios.get<ApiEnvelope<CleanupMenu[]>>(`${API_BASE}/admin/system/menus/all`, { headers });
+      const menusRes = await client.get<ApiEnvelope<CleanupMenu[]>>(`${API_BASE}/admin/system/menus/all`, { headers });
       const menus = menusRes.data.data || [];
       const testMenus = menus.filter((m) =>
         m.menuNm.startsWith('Root_') || 
@@ -375,7 +379,7 @@ export async function cleanup() {
       for (const menu of testMenus) {
         process.stdout.write('  - Deleting test menu... ');
         activeContext = { stage: 'cleanup', method: 'DELETE', pathCategory: 'menu-item' };
-        await axios.delete(`${API_BASE}/admin/system/menus/${menu.menuNo}`, { headers });
+        await client.delete(`${API_BASE}/admin/system/menus/${menu.menuNo}`, { headers });
         console.log('DONE');
       }
     } catch (error: unknown) {
@@ -386,7 +390,7 @@ export async function cleanup() {
     console.log('>>> Cleaning up test address books...');
     try {
       activeContext = { stage: 'cleanup', method: 'GET', pathCategory: 'address-books-collection' };
-      const addressRes = await axios.get<ApiEnvelope<PagePayload<CleanupAddress>>>(`${API_BASE}/address-books`, {
+      const addressRes = await client.get<ApiEnvelope<PagePayload<CleanupAddress>>>(`${API_BASE}/address-books`, {
         headers,
         params: { searchWrd: 'Identity_', size: 100 } 
       });
@@ -395,7 +399,7 @@ export async function cleanup() {
       for (const address of testAddresses) {
         process.stdout.write('  - Deleting test address book entry... ');
         activeContext = { stage: 'cleanup', method: 'DELETE', pathCategory: 'address-book-item' };
-        await axios.delete(`${API_BASE}/address-books/${address.adbkSn}`, { headers });
+        await client.delete(`${API_BASE}/address-books/${address.adbkSn}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testAddresses.length} address book entry(ies) cleaned.`);
@@ -407,7 +411,7 @@ export async function cleanup() {
     console.log('>>> Cleaning up test online manuals...');
     try {
       activeContext = { stage: 'cleanup', method: 'GET', pathCategory: 'manuals-collection' };
-      const manualRes = await axios.get<ApiEnvelope<PagePayload<CleanupManual>>>(`${API_BASE}/help/manuals`, {
+      const manualRes = await client.get<ApiEnvelope<PagePayload<CleanupManual>>>(`${API_BASE}/help/manuals`, {
         headers,
         params: { keyword: 'E2E Manual', size: 100 } 
       });
@@ -416,7 +420,7 @@ export async function cleanup() {
       for (const manual of testManuals) {
         process.stdout.write('  - Deleting test manual... ');
         activeContext = { stage: 'cleanup', method: 'DELETE', pathCategory: 'manual-item' };
-        await axios.delete(`${API_BASE}/help/manuals/${manual.onlnMnlSn}`, { headers });
+        await client.delete(`${API_BASE}/help/manuals/${manual.onlnMnlSn}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testManuals.length} manual(s) cleaned.`);
@@ -430,7 +434,7 @@ export async function cleanup() {
     console.log('>>> Cleaning up test security artifacts (classification groups/authorization groups)...');
     try {
       activeContext = { stage: 'cleanup', method: 'GET', pathCategory: 'groups-collection' };
-      const groupsRes = await axios.get<ApiEnvelope<PagePayload<CleanupGroup>>>(`${API_BASE}/admin/system/groups`, {
+      const groupsRes = await client.get<ApiEnvelope<PagePayload<CleanupGroup>>>(`${API_BASE}/admin/system/groups`, {
         headers,
         params: { searchKeyword: 'E2E' }
       });
@@ -441,7 +445,7 @@ export async function cleanup() {
       for (const group of testGroups) {
         process.stdout.write('  - Deleting test group... ');
         activeContext = { stage: 'cleanup', method: 'DELETE', pathCategory: 'group-item' };
-        await axios.delete(`${API_BASE}/admin/system/groups/${group.groupId}`, { headers });
+        await client.delete(`${API_BASE}/admin/system/groups/${group.groupId}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testGroups.length} group(s) cleaned.`);
@@ -450,14 +454,14 @@ export async function cleanup() {
     }
     try {
       activeContext = { stage: 'cleanup', method: 'GET', pathCategory: 'authorities-collection' };
-      const authRes = await axios.get<ApiEnvelope<CleanupAuthority[]>>(`${API_BASE}/admin/authorization/groups`, { headers });
+      const authRes = await client.get<ApiEnvelope<CleanupAuthority[]>>(`${API_BASE}/admin/authorization/groups`, { headers });
       const authorities = authRes.data.data;
       if (!Array.isArray(authorities) || authorities.some((entry) => !entry.code || !entry.version)) throw new Error('Incomplete authorization group response');
       const testAuths = authorities.filter((a) => a.code.startsWith('ROLE_E2E_'));
       for (const auth of testAuths) {
         process.stdout.write('  - Deleting test authority... ');
         activeContext = { stage: 'cleanup', method: 'DELETE', pathCategory: 'authority-item' };
-        await axios.delete(`${API_BASE}/admin/authorization/groups/${encodeURIComponent(auth.code)}`, { headers, params: { version: auth.version } });
+        await client.delete(`${API_BASE}/admin/authorization/groups/${encodeURIComponent(auth.code)}`, { headers, params: { version: auth.version } });
         console.log('DONE');
       }
       console.log(`  => ${testAuths.length} authority(ies) cleaned.`);

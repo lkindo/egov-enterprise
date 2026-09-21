@@ -1,146 +1,76 @@
-const { spawn, execSync } = require('child_process');
-const http = require('http');
-const path = require('path');
-const fs = require('fs');
+const { execFileSync } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
+const { removeGeneratedDirectory } = require('./build-instrumented.js');
 
-const E2E_PORT = 3001;
-const serverUrl = `http://localhost:${E2E_PORT}`;
-const frontendDirectory = path.join(__dirname, '..');
+const frontendDirectory = path.resolve(__dirname, '..');
 
-function loadE2eEnvironment(logger = console) {
-  const envE2ePath = path.join(frontendDirectory, '.env.e2e');
-  if (!fs.existsSync(envE2ePath)) return;
-
-  logger.log('📝 Loading environment overrides from .env.e2e...');
-  const envContent = fs.readFileSync(envE2ePath, 'utf8');
-  envContent.split('\n').forEach((line) => {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#') || !trimmed.includes('=')) return;
-    const [key, ...valueParts] = trimmed.split('=');
-    process.env[key.trim()] = valueParts.join('=').trim();
-  });
-}
-
-function waitForServer(timeoutMs = 60000, url = serverUrl) {
-  return new Promise((resolve, reject) => {
-    const startTime = Date.now();
-    const interval = setInterval(() => {
-      if (Date.now() - startTime > timeoutMs) {
-        clearInterval(interval);
-        reject(new Error('Timeout waiting for Next.js server to start.'));
-        return;
-      }
-
-      http.get(url, (res) => {
-        if ([200, 302, 307].includes(res.statusCode)) {
-          clearInterval(interval);
-          resolve();
-        }
-        res.resume();
-      }).on('error', () => {
-        // 아직 뜨지 않은 동안만 재시도한다.
-      });
-    }, 1000);
-  });
-}
-
-function stopServer(serverProcess, execute, platform) {
-  if (serverProcess.exitCode !== null) return;
-  if (platform === 'win32') {
-    execute(`taskkill /pid ${serverProcess.pid} /T /F`, { stdio: 'ignore' });
-  } else {
-    serverProcess.kill('SIGTERM');
-  }
-}
-
-/**
- * 의존성을 주입할 수 있게 둔 것은 실제 Next 서버를 띄우지 않고도 자식 실패 전파 계약을 검증하기 위해서다.
- */
-async function runCoverageWorkflow(dependencies = {}) {
-  const execute = dependencies.execute || execSync;
-  const spawnProcess = dependencies.spawnProcess || spawn;
-  const waitUntilReady = dependencies.waitUntilReady || waitForServer;
-  const loadEnvironment = dependencies.loadEnvironment || loadE2eEnvironment;
-  const logger = dependencies.logger || console;
-  const platform = dependencies.platform || process.platform;
-
-  loadEnvironment(logger);
-
-  logger.log('🧹 Cleaning up old coverage data...');
-  execute('npm run coverage:clean', { cwd: frontendDirectory, stdio: 'inherit' });
-
-  logger.log('⚙️ Compiling Next.js with Istanbul Instrumentation...');
-  execute('node scripts/build-instrumented.js', { cwd: frontendDirectory, stdio: 'inherit' });
-
-  logger.log(`📡 Starting Next.js Production Server on port ${E2E_PORT}...`);
-  const serverProcess = spawnProcess('npx', ['next', 'start', '-p', E2E_PORT.toString()], {
-    cwd: frontendDirectory,
-    stdio: 'pipe',
-    shell: true,
-    env: {
-      ...process.env,
-      NODE_ENV: 'production',
-      NODE_OPTIONS: '--max-old-space-size=8192',
-    },
-  });
-
-  serverProcess.stdout?.on('data', (data) => {
-    logger.log(`[Next.js Server]: ${data.toString().trim()}`);
-  });
-  serverProcess.stderr?.on('data', (data) => {
-    logger.error(`[Next.js Server Error]: ${data.toString().trim()}`);
-  });
-
-  let primaryFailure = null;
-  let shutdownFailure = null;
-  let reportFailure = null;
-
+function assertCollectedCoverage(directory) {
+  const failure = () => new Error('E2E coverage results are missing or invalid.');
+  const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+  const isCounter = value => Number.isSafeInteger(value) && value >= 0;
+  let collected = false;
   try {
-    await waitUntilReady();
-    logger.log('🚀 Server is ready. Starting Playwright E2E Tests...');
-    execute('cross-env NODE_OPTIONS=--max-old-space-size=8192 npx playwright test --project=full-suite', {
-      cwd: frontendDirectory,
-      stdio: 'inherit',
-      shell: true,
-    });
-    logger.log('✅ Playwright E2E tests finished successfully.');
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith('.json')) continue;
+      const coverage = JSON.parse(fs.readFileSync(path.join(directory, entry.name), 'utf8'));
+      if (!isObject(coverage)) throw failure();
+      for (const file of Object.values(coverage)) {
+        if (!isObject(file) || typeof file.path !== 'string' || !file.path
+            || !['statementMap', 'fnMap', 'branchMap', 's', 'f', 'b'].every(key => isObject(file[key]))
+            || !Object.values(file.s).every(isCounter) || !Object.values(file.f).every(isCounter)
+            || !Object.values(file.b).every(branch => Array.isArray(branch) && branch.every(isCounter))) throw failure();
+        collected = true;
+      }
+    }
+  } catch { throw failure(); }
+  if (!collected) throw failure();
+}
+
+/** The isolation runner owns application startup, environment and child cleanup. */
+async function runCoverageWorkflow(dependencies = {}, arguments_ = process.argv.slice(2)) {
+  const runner = dependencies.runner || await import('../../scripts/run-isolated-e2e.mjs');
+  const execute = dependencies.execute || execFileSync;
+  const clean = dependencies.clean || removeGeneratedDirectory;
+  const assertCoverage = dependencies.assertCoverage || assertCollectedCoverage;
+  const coverageDirectory = dependencies.coverageDirectory || path.join(frontendDirectory, '.nyc_output');
+  const logger = dependencies.logger || console;
+
+  logger.log('Cleaning previous E2E coverage results.');
+  clean(frontendDirectory, '.nyc_output');
+  clean(frontendDirectory, 'coverage');
+
+  let primaryFailure;
+  let reportFailure;
+  try {
+    // With no project arguments the complete configured suite remains selected.
+    await runner.main(['--coverage', '--', ...arguments_]);
+    assertCoverage(coverageDirectory);
   } catch (error) {
     primaryFailure = error;
-    logger.error('❌ E2E run failed:', error instanceof Error ? error.message : String(error));
+    logger.error('Isolated E2E coverage run failed.');
   } finally {
-    logger.log('🛑 Shutting down Next.js Server...');
+    logger.log('Generating the E2E coverage report.');
     try {
-      stopServer(serverProcess, execute, platform);
-    } catch (error) {
-      shutdownFailure = error;
-      logger.error('❌ Next.js server shutdown failed:', error instanceof Error ? error.message : String(error));
-    }
-
-    logger.log('📊 Merging E2E coverage results...');
-    try {
-      execute('npm run coverage:report', { cwd: frontendDirectory, stdio: 'inherit' });
+      execute(process.execPath, [require.resolve('nyc/bin/nyc.js'), 'report', '--reporter=html', '--reporter=text'], {
+        cwd: frontendDirectory, stdio: 'inherit', windowsHide: true, env: runner.closedEnvironment(),
+      });
     } catch (error) {
       reportFailure = error;
-      logger.error('❌ NYC report generation failed:', error instanceof Error ? error.message : String(error));
+      logger.error('E2E coverage report generation failed.');
     }
   }
 
-  const failures = [primaryFailure, shutdownFailure, reportFailure].filter(Boolean);
+  const failures = [primaryFailure, reportFailure].filter(Boolean);
   if (failures.length === 1) throw failures[0];
-  if (failures.length > 1) {
-    throw new AggregateError(failures, 'E2E coverage workflow failed in multiple stages.');
-  }
+  if (failures.length > 1) throw new AggregateError(failures, 'E2E coverage workflow failed in multiple stages.');
 }
 
 if (require.main === module) {
-  void runCoverageWorkflow().catch((error) => {
-    console.error(error instanceof Error ? error.message : String(error));
+  void runCoverageWorkflow().catch(() => {
+    console.error('E2E coverage workflow failed; inspect the isolated run and report results.');
     process.exitCode = 1;
   });
 }
 
-module.exports = {
-  loadE2eEnvironment,
-  runCoverageWorkflow,
-  waitForServer,
-};
+module.exports = { runCoverageWorkflow, assertCollectedCoverage };

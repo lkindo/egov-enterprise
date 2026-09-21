@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { assertIsolatedTarget } from '../../../scripts/e2e-isolation.mjs';
 import {
   CLEANUP_STAGES,
   assertCleanupSucceeded,
@@ -7,6 +8,8 @@ import {
   recordCleanupFailure,
   type CleanupFailure,
 } from './cleanup-db';
+
+vi.mock('../../../scripts/e2e-isolation.mjs', () => ({ assertIsolatedTarget: vi.fn() }));
 
 const safeFailure = (overrides: Partial<CleanupFailure> = {}): CleanupFailure => ({
   stage: 'cleanup',
@@ -18,12 +21,24 @@ const safeFailure = (overrides: Partial<CleanupFailure> = {}): CleanupFailure =>
 });
 
 describe('cleanup-db exit contract', () => {
+  beforeEach(() => {
+    vi.mocked(assertIsolatedTarget).mockResolvedValue({ apiUrl: 'http://127.0.0.1:8080/api/v1' });
+    vi.spyOn(axios, 'create').mockReturnValue(axios);
+  });
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
   it('실패가 없으면 정상 종료한다', () => {
     expect(() => assertCleanupSucceeded([])).not.toThrow();
+  });
+
+  it('unknown/remote/reused target rejection stops before creating an HTTP client or authenticating', async () => {
+    vi.mocked(assertIsolatedTarget).mockRejectedValue(new Error('E2E isolation verification failed'));
+    const login = vi.spyOn(axios, 'post');
+    await expect(cleanup()).rejects.toThrow('E2E isolation verification failed');
+    expect(axios.create).not.toHaveBeenCalled();
+    expect(login).not.toHaveBeenCalled();
   });
 
   it('failure stage는 bootstrap/auth/users/boards/cleanup의 닫힌 enum이다', () => {
@@ -169,6 +184,8 @@ describe('cleanup-db exit contract', () => {
     const deleteSpy = vi.spyOn(axios, 'delete').mockResolvedValue({ data: { data: null } });
 
     await cleanup();
+
+    expect(axios.create).toHaveBeenCalledWith({ maxRedirects: 0, proxy: false, timeout: 10000 });
 
     expect(logSpy).toHaveBeenCalled();
     expect(postSpy).toHaveBeenCalledTimes(1);
