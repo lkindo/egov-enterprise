@@ -13,6 +13,7 @@ export const MIGRATION_PRODUCT_INPUTS = Object.freeze([
   'scripts/verify.mjs', 'scripts/migration-verification-contract.test.mjs', 'scripts/required-checks-contract.mjs',
   'scripts/adoption-review.mjs', 'scripts/adoption-execute.mjs', 'scripts/adoption-execute.test.mjs',
   'scripts/verify-reusable-artifact.mjs', 'scripts/reusable-layout.mjs', 'scripts/governance-review.mjs', 'scripts/e2e-shard-plan.mjs',
+  'scripts/ci-change-scope.mjs',
   '.github/workflows/migration-tool.yml',
 ]);
 
@@ -53,7 +54,13 @@ export function generateMigrationProduct({ sourceRoot, outputRoot } = {}) {
   write('config/governance/migration-adoption-review.json', `${JSON.stringify(createPendingAdoptionReview({ product: 'migration-tool', profile: null }), null, 2)}\n`);
   // Reuse the same module CI and contract. The exported product adds its execution-boundary tests.
   const workflowPath = '.github/workflows/migration-tool.yml';
-  write(workflowPath, readFileSync(join(outputRoot, workflowPath), 'utf8').replace(
+  const sourceWorkflow = readFileSync(join(outputRoot, workflowPath), 'utf8');
+  const producerCachePolicy = '          cache-read-only: true';
+  if (sourceWorkflow.split(producerCachePolicy).length !== 2) {
+    throw new Error('producer migration workflow must declare its sole Gradle cache reader');
+  }
+  // This exported repository has one verification job and no producer CI writer.
+  write(workflowPath, sourceWorkflow.replace(producerCachePolicy, '          cache-read-only: false').replace(
     'on:\n', 'on:\n  push:\n    branches: [main, master]\n  pull_request:\n').replace(
     '      - name: Verify the independent migration module',
     '      - name: Verify institution execution boundary\n        run: node --test scripts/adoption-execute.test.mjs\n\n      - name: Verify the independent migration module'));

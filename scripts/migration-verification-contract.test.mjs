@@ -218,6 +218,15 @@ function validateWorkflow(source) {
   ];
   if (JSON.stringify(actions.map((action) => action.split('@')[0])) !== JSON.stringify(expectedActionNames)
       || actions.some((action) => !/@[a-f0-9]{40}$/.test(action))) errors.push('workflow actions must be the pinned verification-only action set');
+  const gradleSetup = steps.find(step => step.includes('uses: gradle/actions/setup-gradle@')) ?? '';
+  const cacheInputs = [...gradleSetup.matchAll(/^ {10}([a-z-]+): ([^\n]+)$/gm)]
+    .map(([, key, value]) => [key, value.trim()]);
+  if (!gradleSetup.includes('uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb')
+      || JSON.stringify(cacheInputs) !== JSON.stringify([
+        ['cache-provider', 'basic'], ['cache-read-only', standaloneProduct ? 'false' : 'true'],
+      ]) || /^\s*(?:-\s*)?(?:if|continue-on-error):/m.test(gradleSetup)) {
+    errors.push('migration cache must preserve the pinned basic provider and its producer reader or standalone writer');
+  }
   if (!/^          node-version: '22'\s*$/m.test(job)
       || !/^          java-version: '21'\s*$/m.test(job)
       || !/^          distribution: temurin\s*$/m.test(job)) errors.push('migration verification requires Node 22 and Temurin JDK 21');
@@ -323,6 +332,22 @@ test('migration scope propagates contract and Gradle failure before claiming com
 
 test('migration CI binds the real runner without online dependencies or operational publication', () => {
   assert.deepEqual(validateWorkflow(workflow), []);
+});
+
+test('migration cache rejects missing, inverted, disabled or overridden reader/writer roles', () => {
+  const expectedReadOnly = standaloneProduct ? 'false' : 'true';
+  for (const mutate of [
+    source => source.replace(`          cache-read-only: ${expectedReadOnly}\n`, ''),
+    source => source.replace(`cache-read-only: ${expectedReadOnly}`, `cache-read-only: ${standaloneProduct ? 'true' : 'false'}`),
+    source => source.replace('cache-provider: basic', 'cache-provider: enhanced'),
+    source => source.replace('cache-provider: basic', 'cache-provider: basic\n          cache-write-only: true'),
+    source => source.replace('cache-provider: basic', 'cache-provider: basic\n          cache-disabled: true'),
+    source => source.replace('      - uses: gradle/actions/setup-gradle@', '      - if: false\n        uses: gradle/actions/setup-gradle@'),
+  ]) {
+    const changed = mutate(workflow);
+    assert.notEqual(changed, workflow);
+    assert.ok(validateWorkflow(changed).some(error => error.includes('migration cache')));
+  }
 });
 
 test('missing or conditional execution, broad dependencies, write permissions, and missing artifacts turn red', () => {

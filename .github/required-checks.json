@@ -195,7 +195,7 @@
           "completeCoordinates": true
         },
         "sourceStepName": "Run E2E Tests (Sharded)",
-        "sourceRun": "set -o pipefail\nmapfile -t E2E_SPECS < <(node ../scripts/e2e-shard-plan.mjs --shard \"${{ matrix.shard }}\")\nif [ \"${#E2E_SPECS[@]}\" -eq 0 ]; then\n  echo \"::error::Duration-balanced E2E plan returned no specs for shard ${{ matrix.shard }}\"\n  exit 1\nfi\nprintf 'E2E shard %s specs:\\n' \"${{ matrix.shard }}\"\nprintf '  %s\\n' \"${E2E_SPECS[@]}\"\nnode ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=api-contract --project=full-suite \"${E2E_SPECS[@]}\" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log\nnode ../scripts/playwright-result-contract.mjs --report \"$PLAYWRIGHT_JSON_OUTPUT_FILE\" --inventory /tmp/e2e-inventory.json \"${E2E_SPECS[@]}\"",
+        "sourceRun": "set -euo pipefail\nnode ../scripts/e2e-shard-plan.mjs --shard \"${{ matrix.shard }}\" --ci --plan-output /tmp/e2e-impact-plan.json > /tmp/e2e-specs.txt\nmapfile -t E2E_SPECS < /tmp/e2e-specs.txt\nif [ \"${#E2E_SPECS[@]}\" -eq 0 ]; then\n  echo \"::error::Duration-balanced E2E plan returned no specs for shard ${{ matrix.shard }}\"\n  exit 1\nfi\nprintf 'E2E shard %s specs:\\n' \"${{ matrix.shard }}\"\nprintf '  %s\\n' \"${E2E_SPECS[@]}\"\nnode ../scripts/run-isolated-e2e.mjs --ci-compose --full-inventory -- --project=api-contract --project=full-suite \"${E2E_SPECS[@]}\" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log\nnode ../scripts/playwright-result-contract.mjs --report \"$PLAYWRIGHT_JSON_OUTPUT_FILE\" --inventory /tmp/e2e-inventory.json \"${E2E_SPECS[@]}\" --ci-shard \"${{ matrix.shard }}\"",
         "sourceWorkingDirectory": "frontend",
         "sourceEnv": {
           "CI": "true",

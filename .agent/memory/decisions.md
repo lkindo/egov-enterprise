@@ -65,6 +65,7 @@ refresh_triggers:
 | ADR-0020 | accepted | 원본 모듈 구조를 유지하며 생성 백엔드의 멀티모듈·단일모듈 출력을 선택한다. 단일 출력도 논리 소스 그룹·검증 경계와 오프라인 이관 책임을 보존한다. | 사용자가 두 내보내기 형태를 명시 요청했다. 현재 누적 프로필·PostgreSQL 범위는 유지한다. | [ADR-0020](../../docs/02-architecture/decisions/ADR-0020-selectable-reusable-backend-layouts.md) | 2026-09-19 | - (ADR-0001 출력 형태 보완) |
 | ADR-0021 | accepted | 테스트를 API 계약·사용자 과업·횡단 품질로 재편하고 로컬·CI의 격리 소유권을 검증한다. 전체 E2E와 영향 shadow를 병행한다. | 중복 비용과 실행 누락을 줄이며 공유 DB를 보호한다. | [ADR-0021](../../docs/02-architecture/decisions/ADR-0021-isolated-layered-testing-process.md) | 2026-09-21 | - |
 | ADR-0022 | accepted | PR·통합 push의 영향 분류를 통일하고 온라인·이관 build/PIT와 커버리지를 분리한다. Gradle 캐시 provider를 명시한다. | 독립 모듈의 불필요한 실행·중복과 직렬 대기를 줄인다. | [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md) | 2026-09-21 | ADR-0021 결정 4의 main 전수 강제·DEC-OPS-104의 PIT 부분집합 조건 |
+| ADR-0023 | accepted | PR의 검토된 화면만 E2E spec 선별, main 전수·전체 discovery 대조와 Gradle 단일 writer를 유지한다. | 매핑 누락과 캐시 저장 경합을 보완한다. | [ADR-0023](../../docs/02-architecture/decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md) | 2026-09-21 | ADR-0021의 E2E shadow·ADR-0022 결정 8 |
 
 ## 운영 결정 index
 

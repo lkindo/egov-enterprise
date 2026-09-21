@@ -83,6 +83,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb
         with:
           cache-provider: basic
+          cache-read-only: false
       - name: Scan working tree and incremental secrets
         run: |
 ${secretScanRun.split('\n').map(line => `          ${line}`).join('\n')}

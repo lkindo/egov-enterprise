@@ -62,7 +62,7 @@ test('producer fixtures and the actual generated product preserve a distinct non
     assert.match(job, /gitleaks detect --source \. --no-banner/);
     assert.match(job, /github\.event\.pull_request\.base\.sha/);
     assert.match(job, /github\.event\.before/);
-    assert.match(job, /uses: gradle\/actions\/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb\n        with:\n          cache-provider: basic/);
+    assert.match(job, /uses: gradle\/actions\/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb\n        with:\n          cache-provider: basic\n          cache-read-only: false/);
     assert.equal(json(root, '.github/required-checks.json').profile, profile);
     assert.equal(json(root, '.github/required-checks.json').remoteApplied, false);
     assert.ok(json(root, `${VERIFICATION_HISTORY}/index.json`).files.some(entry => entry.source === '.github/workflows/release.yml'));
@@ -129,6 +129,9 @@ test('product CI rejects disabled execution, altered scope, recursive generation
     value => value.replace('setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb', 'setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70'),
     value => value.replace('          cache-provider: basic\n', ''),
     value => value.replace('cache-provider: basic', 'cache-provider: enhanced'),
+    value => value.replace('          cache-read-only: false\n', ''),
+    value => value.replace('cache-read-only: false', 'cache-read-only: true'),
+    value => value.replace('cache-read-only: false', 'cache-read-only: false\n          cache-disabled: true'),
   ]) {
     const changed = mutate(source);
     assert.notEqual(changed, source);

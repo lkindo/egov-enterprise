@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
 import { validatePlaywrightResult } from './playwright-result-contract.mjs';
+import { discoverSpecs, loadDurationProfile } from './e2e-shard-plan.mjs';
 
 const cwd = path.resolve('frontend');
 
@@ -231,6 +232,168 @@ test('inventory detects one missing test within a present file, missing setup, a
   duplicate.suites[1].specs.push(structuredClone(duplicate.suites[1].specs[0]));
   duplicate.stats.expected += 1;
   assert.match(validatePlaywrightResult(duplicate, planned, { cwd, inventory: report() }).errors.join('\n'), /duplicate test coordinate/);
+});
+
+test('removing setup from both inventory and execution cannot hide missing authentication', () => {
+  const noSetup = report();
+  noSetup.suites.shift();
+  noSetup.stats.expected -= 1;
+  assert.match(validatePlaywrightResult(noSetup, planned, { cwd, inventory: structuredClone(noSetup) }).errors.join('\n'),
+    /inventory must contain registered setup tests/);
+  for (const inventory of [null, false, [], undefined]) {
+    assert.match(validatePlaywrightResult(report(), planned, { cwd, inventory }).errors.join('\n'), /inventory must be an object/);
+  }
+});
+
+test('a complete inventory projects exactly the selected specs and shared setup coordinates', () => {
+  const browser = jsonSpec('journeys/authentication.spec.ts');
+  const api = jsonSpec('contracts/authorization.spec.ts', 'expected', 'api-contract');
+  const inventory = report([browser, api]);
+  inventory.config.projects.push({ name: 'api-contract' });
+  const fullInventorySpecs = [browser, api].map(spec => `e2e/${spec.file}`);
+  const selected = [`e2e/${browser.file}`];
+  const execution = report([browser]);
+  assert.deepEqual(validatePlaywrightResult(execution, selected, { cwd, inventory, fullInventorySpecs }).errors, []);
+
+  const missingUnselected = report([browser]);
+  assert.match(validatePlaywrightResult(execution, selected, { cwd, inventory: missingUnselected, fullInventorySpecs }).errors.join('\n'),
+    /missing full inventory spec: e2e\/contracts\/authorization.spec.ts/);
+
+  const extraInventory = report([browser, jsonSpec('journeys/unregistered.spec.ts')]);
+  assert.match(validatePlaywrightResult(execution, selected, { cwd, inventory: extraInventory, fullInventorySpecs }).errors.join('\n'),
+    /unplanned full inventory spec: e2e\/journeys\/unregistered.spec.ts/);
+
+  const wrongProject = structuredClone(inventory);
+  wrongProject.suites[1].suites[0].specs[0].tests[0].projectName = 'full-suite';
+  assert.match(validatePlaywrightResult(execution, selected, { cwd, inventory: wrongProject, fullInventorySpecs }).errors.join('\n'),
+    /inventory:.*must belong to api-contract/);
+
+  const duplicateUnselected = structuredClone(inventory);
+  duplicateUnselected.suites[1].suites[0].specs.push(structuredClone(api));
+  assert.match(validatePlaywrightResult(execution, selected, { cwd, inventory: duplicateUnselected, fullInventorySpecs }).errors.join('\n'),
+    /inventory: duplicate test coordinate/);
+});
+
+test('full discovery detects a missing test inside a selected file and missing files in full execution', () => {
+  const browser = jsonSpec('journeys/authentication.spec.ts');
+  const api = jsonSpec('contracts/authorization.spec.ts', 'expected', 'api-contract');
+  const inventory = report([browser, api]);
+  inventory.config.projects.push({ name: 'api-contract' });
+  const fullInventorySpecs = [browser, api].map(spec => `e2e/${spec.file}`);
+  const second = structuredClone(browser);
+  second.id += '-second';
+  inventory.suites[1].specs.push(second);
+  assert.match(validatePlaywrightResult(report([browser]), [fullInventorySpecs[0]], { cwd, inventory, fullInventorySpecs }).errors.join('\n'),
+    /missing planned test coordinate/);
+
+  const omittedFromBoth = report([browser]);
+  assert.match(validatePlaywrightResult(omittedFromBoth, fullInventorySpecs, {
+    cwd, inventory: structuredClone(omittedFromBoth), fullInventorySpecs,
+  }).errors.join('\n'), /missing full inventory spec|missing planned spec result/);
+  assert.match(validatePlaywrightResult(report([browser]), [fullInventorySpecs[0]], {
+    cwd, inventory, fullInventorySpecs: [],
+  }).errors.join('\n'), /nonempty authoritative spec population/);
+});
+
+test('CI CLI independently binds event selection, full discovery, and both complete shard populations', t => {
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-result-ci-'));
+  const frontend = path.join(temporary, 'frontend');
+  const write = (file, content) => {
+    const target = path.join(temporary, file);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, content);
+  };
+  const git = (...args) => execFileSync('git', args, {
+    cwd: temporary, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true,
+  }).trim();
+  t.after(() => {
+    assert.ok(path.resolve(temporary).startsWith(`${path.resolve(os.tmpdir())}${path.sep}e2e-result-ci-`));
+    fs.rmSync(temporary, { recursive: true, force: true });
+  });
+  git('init', '-b', 'main');
+  git('config', 'user.name', 'E2E Result Fixture');
+  git('config', 'user.email', 'fixture@example.invalid');
+  write('frontend/tsconfig.json', JSON.stringify({ compilerOptions: { paths: { '@/*': ['./src/*'] } } }));
+  const route = 'frontend/src/app/admin/operation/rewards/page.tsx';
+  write(route, 'export const value = 1;\n');
+  git('add', '.'); git('commit', '-m', 'base fixture'); const base = git('rev-parse', 'HEAD');
+  git('checkout', '-b', 'feature');
+  write(route, 'export const value = 2;\n');
+  git('add', '.'); git('commit', '-m', 'route fixture'); const head = git('rev-parse', 'HEAD');
+  git('checkout', 'main'); git('merge', '--no-ff', 'feature', '-m', 'merge fixture');
+  const merge = git('rev-parse', 'HEAD');
+  const specs = discoverSpecs();
+  for (const spec of specs) write(`frontend/e2e/${spec}`, '// Discovery fixture; no browser or DB execution.\n');
+  write('frontend/e2e/shard-duration-profile.json', JSON.stringify(loadDurationProfile()));
+  for (const script of ['playwright-result-contract.mjs', 'e2e-shard-plan.mjs', 'ci-change-scope.mjs', 'read-regular-file.mjs']) {
+    write(`scripts/${script}`, fs.readFileSync(path.resolve('scripts', script), 'utf8'));
+  }
+  write('event.json', JSON.stringify({ pull_request: { base: { sha: base }, head: { sha: head }, merge_commit_sha: merge } }));
+  const environment = { ...process.env, GITHUB_EVENT_NAME: 'pull_request', GITHUB_EVENT_PATH: path.join(temporary, 'event.json'),
+    GITHUB_SHA: merge, NODE_PATH: path.resolve('frontend/node_modules') };
+  const planner = path.join(temporary, 'scripts/e2e-shard-plan.mjs');
+  const verifier = path.join(temporary, 'scripts/playwright-result-contract.mjs');
+  const inventoryPath = path.join(temporary, 'inventory.json');
+  const resultPath = path.join(temporary, 'results.json');
+  const fixtureReport = files => {
+    const value = report(files.map(file => jsonSpec(file.replace(/^e2e\//, ''), 'expected', file.startsWith('e2e/contracts/') ? 'api-contract' : 'full-suite')));
+    value.config.rootDir = path.join(frontend, 'e2e');
+    value.config.projects = ['setup', 'api-contract', 'full-suite'].map(name => ({ name }));
+    return value;
+  };
+  const fullInventory = fixtureReport(specs.map(spec => `e2e/${spec}`));
+  fs.writeFileSync(inventoryPath, JSON.stringify(fullInventory));
+  const shardSpecs = (shard, env = environment) => {
+    const result = spawnSync(process.execPath, [planner, '--ci', '--shard', shard], { cwd: frontend, env, encoding: 'utf8', windowsHide: true });
+    assert.equal(result.status, 0, result.stderr);
+    return result.stdout.trim().split(/\r?\n/);
+  };
+  const verify = (files, shard = '1/2', env = environment) => {
+    fs.writeFileSync(resultPath, JSON.stringify(fixtureReport(files)));
+    return spawnSync(process.execPath, [verifier, '--report', resultPath, '--inventory', inventoryPath, '--ci-shard', shard, ...files],
+      { cwd: frontend, env, encoding: 'utf8', windowsHide: true });
+  };
+  const first = shardSpecs('1/2');
+  const second = shardSpecs('2/2');
+  assert.ok(first.length > 1 && second.length > 0);
+  assert.ok(first.length + second.length < specs.length, 'the real PR event must select a proper subset');
+  assert.ok([...first, ...second].includes('e2e/journeys/rewards.spec.ts'));
+  for (const [files, shard] of [[first, '1/2'], [second, '2/2']]) {
+    const green = verify(files, shard);
+    assert.equal(green.status, 0, green.stderr);
+  }
+
+  const omitted = verify(first.slice(1));
+  assert.equal(omitted.status, 1);
+  assert.match(omitted.stderr, /independently recomputed CI shard/);
+  const wrongShard = verify(second, '1/2');
+  assert.equal(wrongShard.status, 1);
+  assert.match(wrongShard.stderr, /independently recomputed CI shard/);
+  const duplicate = verify([...first, first[0]]);
+  assert.equal(duplicate.status, 1);
+  assert.match(duplicate.stderr, /independently recomputed CI shard/);
+
+  fs.writeFileSync(inventoryPath, JSON.stringify(fixtureReport(first)));
+  const filteredDiscovery = verify(first);
+  assert.equal(filteredDiscovery.status, 1);
+  assert.match(filteredDiscovery.stderr, /missing full inventory spec/);
+  fs.writeFileSync(inventoryPath, 'null');
+  const emptyDiscovery = verify(first);
+  assert.equal(emptyDiscovery.status, 1);
+  assert.match(emptyDiscovery.stderr, /inventory must be an object/);
+  fs.writeFileSync(inventoryPath, JSON.stringify(fullInventory));
+
+  const mainEnvironment = { ...environment, GITHUB_EVENT_NAME: 'push' };
+  const narrowedMain = verify(first, '1/2', mainEnvironment);
+  assert.equal(narrowedMain.status, 1);
+  assert.match(narrowedMain.stderr, /independently recomputed CI shard/);
+  const mainFirst = shardSpecs('1/2', mainEnvironment);
+  const mainSecond = shardSpecs('2/2', mainEnvironment);
+  assert.deepEqual([...mainFirst, ...mainSecond].sort(), specs.map(spec => `e2e/${spec}`).sort());
+  for (const [files, shard] of [[mainFirst, '1/2'], [mainSecond, '2/2']]) {
+    const green = verify(files, shard, mainEnvironment);
+    assert.equal(green.status, 0, green.stderr);
+  }
 });
 
 test('global setup and teardown errors cannot pass the result contract', () => {

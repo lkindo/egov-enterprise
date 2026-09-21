@@ -237,8 +237,8 @@ strategy:
 1. Buildx가 해당 checkout의 `api-server/Dockerfile`을 빌드해 `API_IMAGE_REF` 태그로 로컬 Docker에 적재한다. GitHub Actions layer cache를 사용하고 registry에 push하지 않는다. Compose는 `up --no-build -d db api`로 그 이미지를 사용한다.
 2. run ID·attempt·shard별 Compose namespace로 DB/API를 기동하고 API health와 보호된 metrics 응답을 확인한다. 프론트엔드는 같은 회차의 임시 JWT 설정으로 production build한다.
 3. 격리 runner의 `--ci-compose` 경로가 DB 연결·Compose 자원 소유권·Next 연결을 검증하고 자체 Next 프로세스를 관리한다. 기존 개발 DB나 이미 실행 중인 서버를 재사용하지 않는다.
-4. planner가 배정한 spec을 `api-contract`와 `full-suite` 프로젝트에서 실행한다. 실행 전 목록 JSON과 결과 JSON을 `playwright-result-contract.mjs --inventory ... --report ...`로 대조한다. 실제 테스트 ID·project 누락, 예상 밖 skip, flaky를 성공으로 처리하지 않는다.
-5. 영향 shadow 계획은 전수 결과와 비교할 후보 보고서만 만든다. 공통·미지·신규·삭제 입력은 전수 fallback으로 보고하며 실행 모집단을 줄이지 않는다. 실패 시 trace·screenshot·브라우저 로그·API/JVM 로그를 대조하고 생성 자원은 해당 실행의 소유권 범위에서 회수한다.
+4. planner가 배정한 spec을 `api-contract`와 `full-suite` 프로젝트에서 실행한다. 실행 전 두 프로젝트 전체 목록 JSON을 수집하고 `playwright-result-contract.mjs --inventory ... --report ... --ci-shard ...`가 이벤트 기반 선택을 다시 계산해 해당 테스트 좌표와 결과를 대조한다. 실제 테스트 ID·project 누락, 예상 밖 skip, flaky를 성공으로 처리하지 않는다.
+5. PR의 검토된 화면 수정은 [spec 소유 매핑](../02-architecture/testing-process-redesign.md#54-pr의-검증된-화면-변경만-spec-단위로-선별한다)에 따라 실행한다. main과 공통·미지·신규·삭제 입력은 전수 fallback이다. `/tmp/e2e-impact-plan.json`은 선택 사유와 목록의 진단 자료이며 결과 검증의 권위로 읽지 않는다. 실패 시 trace·screenshot·브라우저 로그·API/JVM 로그를 대조하고 생성 자원은 해당 실행의 소유권 범위에서 회수한다.
 
 정확한 shell 명령과 artifact 경로는 [ci.yml](../../.github/workflows/ci.yml)의 E2E job이 정본이다. 로컬 검증은 `npm run verify:e2e`로 같은 격리 경계를 통과한다. 목록 확인과 타입 검사는 서비스 없이 실행할 수 있다.
 
@@ -347,6 +347,7 @@ dependencyCheck {
 
 - **위치**: GitHub Actions 캐시 + 로컬 `.gradle`
 - **구성**: `setup-gradle` v6.3.0의 commit `9c971963bec38e04b3d30dcc455b5382be2fdbfb`와 `cache-provider: basic`을 명시한다. 캐시 제공 방식 변경은 테스트 생략 승인이 아니며 Gradle task 입력과 필수 실패 판정은 유지한다.
+- **저장 책임**: upstream CI는 backend 하나만 저장하고, backend가 명시적으로 false인 이관 전용 실행에서만 migration이 저장한다. 재사용·PIT·별도 이관 점검·의존성 감사·릴리스는 읽기 전용이다. 생성된 독립 제품은 자체 단일 writer를 유지한다. 캐시 miss에 따른 다운로드는 정상 동작이며 실패 경고를 숨기지 않는다.
 - **키·입력**: `setup-gradle` action의 캐시 구성과 Gradle task 입력 계약을 따른다. wrapper·build 파일 두 개만으로 전체 캐시 키를 설명하지 않는다.
 - **효과 확인**: 캐시 hit 여부와 실행 시간은 대상 workflow run에서 확인한다. 과거 측정치를 현재 성능 보장으로 사용하지 않는다.
 
