@@ -390,7 +390,6 @@ export default function LoginPolicyAdminClient() {
         keyField="userId"
         emptyMessage={searchKeyword ? `'${searchKeyword}' 검색 결과가 없습니다.` : '조회된 사용자가 없습니다.'}
         // 업무형 화면은 표 진입 애니메이션을 두지 않는다(카탈로그 §3 금지 목록).
-        isPremium={false}
         // ⚠ 총 건수는 셸의 결과 툴바가 단독으로 소유한다 — 여기 totalCount 를 다시 넘기면
         //   같은 수치가 표 위아래로 두 번 나온다(work-list-adoption-census 가 red 로 막는다).
         pagination={{

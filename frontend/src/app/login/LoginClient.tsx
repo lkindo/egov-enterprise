@@ -229,7 +229,7 @@ function LoginContent() {
                                     <p className="text-xl font-bold text-surface-inverse-foreground">
                                         {authStep === 1 ? "로그인 인증 중" : "인증 완료"}
                                     </p>
-                                    <p className="text-muted-foreground text-sm">
+                                    <p className="text-surface-inverse-muted text-sm">
                                         {authStep === 1 ? "로그인 정보를 확인하는 중..." : "업무 화면으로 이동하는 중..."}
                                     </p>
                                 </div>
@@ -292,7 +292,7 @@ function LoginContent() {
                                     아이디
                                 </Label>
                                 <div className="relative group">
-                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
+                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="id"
                                         maxLength={20}
@@ -325,7 +325,7 @@ function LoginContent() {
                                     비밀번호
                                 </Label>
                                 <div className="relative group">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="password"
                                         aria-required="true"
@@ -347,7 +347,7 @@ function LoginContent() {
                                         size="icon"
                                         aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 표시'}
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 text-slate-300 hover:text-foreground rounded-lg"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 text-muted-foreground hover:text-foreground rounded-lg"
                                     >
                                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </Button>
@@ -391,7 +391,7 @@ function LoginContent() {
                                 className="w-full"
                             >
                                 <Button
-                                    className="w-full h-11 rounded-[var(--radius-hub-item)] bg-surface-inverse hover:bg-primary text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 group"
+                                    className="w-full h-11 rounded-[var(--radius-hub-item)] bg-surface-inverse hover:bg-primary text-surface-inverse-foreground hover:text-primary-foreground font-bold text-xs tracking-tight shadow-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 group"
                                     type="submit"
                                     disabled={isSubmitting}
                                 >

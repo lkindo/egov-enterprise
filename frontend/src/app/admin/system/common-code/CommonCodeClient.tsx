@@ -1025,7 +1025,6 @@ export default function CommonCodeClient({
  keyField="dtlCd"
  emptyMessage="데이터가 존재하지 않습니다."
  className="border-none shadow-none bg-transparent"
- isPremium={false}
  />
  </div>
  ) : selectedNode?.type === 'cluster' ? (
