@@ -105,7 +105,7 @@ async function renderList() {
     masterInfo: { bbsTtl: '테스트 게시판', tmpltId: 'TMPLT_LIST' },
     fetchError: null,
   };
-  const dataPromise = Promise.resolve(initialData);
+  const dataPromise = Promise.resolve(initialData as any);
   let result!: ReturnType<typeof render>;
   await act(async () => {
     result = render(

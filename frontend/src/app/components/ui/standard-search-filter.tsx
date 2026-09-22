@@ -9,8 +9,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import type { DateRange } from 'react-day-picker';
 
-interface FilterField {
+export interface FilterField {
   name: string;
   label: string;
   type: 'text' | 'select' | 'date' | 'daterange';
@@ -18,19 +19,33 @@ interface FilterField {
   options?: { label: string; value: string }[];
 }
 
+export type FilterValue = string | number | DateRange | undefined;
+export type FilterValues = Record<string, FilterValue>;
+
 interface StandardSearchFilterProps {
   fields: FilterField[];
-  onSearch: (values: Record<string, any>) => void;
+  onSearch: (values: FilterValues) => void;
   onReset?: () => void;
   className?: string;
   isPremium?: boolean;
 }
 
+function asString(val: FilterValue): string {
+  return typeof val === 'string' ? val : typeof val === 'number' ? String(val) : '';
+}
+
+function asDateRange(val: FilterValue): DateRange | undefined {
+  if (typeof val === 'object' && val !== null && ('from' in val || 'to' in val)) {
+    return val as DateRange;
+  }
+  return undefined;
+}
+
 function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = true }: StandardSearchFilterProps) {
-  const [values, setValues] = useState<Record<string, any>>({});
+  const [values, setValues] = useState<FilterValues>({});
   const [isExpanded, setIsExpanded] = useState(true);
 
-  const handleValueChange = (name: string, value: any) => {
+  const handleValueChange = (name: string, value: FilterValue) => {
     setValues(prev => ({ ...prev, [name]: value }));
   };
 
@@ -83,7 +98,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
 
                 {field.type === 'select' ? (
                   <Select
-                    value={values[field.name] === '' ? '__ALL__' : (values[field.name] || '')}
+                    value={asString(values[field.name]) === '' ? '__ALL__' : asString(values[field.name])}
                     onValueChange={(v) => handleValueChange(field.name, v === '__ALL__' ? '' : v)}
                   >
                     <SelectTrigger className="h-[var(--filter-control-h)] rounded-lg border border-input bg-background focus:ring-4 focus:ring-primary/10 hover:border-primary/50 transition-all font-bold text-sm ring-offset-background shadow-sm">
@@ -101,48 +116,51 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
                       ))}
                     </SelectContent>
                   </Select>
-                ) : field.type === 'daterange' ? (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full h-[var(--filter-control-h)] justify-start text-left font-bold text-sm rounded-lg border border-input bg-background transition-all hover:border-primary/50 shadow-sm",
-                          !values[field.name] && "text-muted-foreground/50"
-                        )}
-                      >
-                        <CalendarIcon className="mr-3 h-4 w-4 opacity-50 text-primary" />
-                        {values[field.name]?.from ? (
-                          values[field.name].to ? (
-                            <span className="tracking-tight">
-                              {format(values[field.name].from, "LLL dd", { locale: ko })} -{" "}
-                              {format(values[field.name].to, "LLL dd", { locale: ko })}
-                            </span>
+                ) : field.type === 'daterange' ? (() => {
+                  const range = asDateRange(values[field.name]);
+                  return (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full h-[var(--filter-control-h)] justify-start text-left font-bold text-sm rounded-lg border border-input bg-background transition-all hover:border-primary/50 shadow-sm",
+                            !range && "text-muted-foreground/50"
+                          )}
+                        >
+                          <CalendarIcon className="mr-3 h-4 w-4 opacity-50 text-primary" />
+                          {range?.from ? (
+                            range.to ? (
+                              <span className="tracking-tight">
+                                {format(range.from, "LLL dd", { locale: ko })} -{" "}
+                                {format(range.to, "LLL dd", { locale: ko })}
+                              </span>
+                            ) : (
+                              <span className="tracking-tight">{format(range.from, "LLL dd", { locale: ko })}</span>
+                            )
                           ) : (
-                            <span className="tracking-tight">{format(values[field.name].from, "LLL dd", { locale: ko })}</span>
-                          )
-                        ) : (
-                          <span className="tracking-tight uppercase text-xs font-bold tracking-widest">날짜 범위 선택</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-2 rounded-lg border-2 border-border shadow-2xl overflow-hidden bg-background" align="start">
-                      <Calendar
-                        autoFocus
-                        mode="range"
-                        defaultMonth={values[field.name]?.from}
-                        selected={values[field.name]}
-                        onSelect={(v) => handleValueChange(field.name, v)}
-                        numberOfMonths={2}
-                        locale={ko}
-                        className="p-3"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                ) : field.type === 'date' ? (
+                            <span className="tracking-tight uppercase text-xs font-bold tracking-widest">날짜 범위 선택</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2 rounded-lg border-2 border-border shadow-2xl overflow-hidden bg-background" align="start">
+                        <Calendar
+                          autoFocus
+                          mode="range"
+                          defaultMonth={range?.from}
+                          selected={range}
+                          onSelect={(v) => handleValueChange(field.name, v)}
+                          numberOfMonths={2}
+                          locale={ko}
+                          className="p-3"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  );
+                })() : field.type === 'date' ? (
                   <Input
                     type="date"
-                    value={values[field.name] || ''}
+                    value={asString(values[field.name])}
                     onChange={(e) => handleValueChange(field.name, e.target.value)}
                     className="h-[var(--filter-control-h)] rounded-lg border border-input bg-background font-bold text-sm ring-offset-background transition-all hover:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/10 shadow-sm"
                   />
@@ -151,7 +169,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
                     <Input
                       placeholder={field.placeholder?.toUpperCase()}
-                      value={values[field.name] || ''}
+                      value={asString(values[field.name])}
                       onChange={(e) => handleValueChange(field.name, e.target.value)}
                       className="h-[var(--filter-control-h)] pl-11 rounded-lg border border-input bg-background font-bold text-sm ring-offset-background transition-all hover:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/10 shadow-sm placeholder:font-bold placeholder:text-xs placeholder:tracking-widest"
                     />

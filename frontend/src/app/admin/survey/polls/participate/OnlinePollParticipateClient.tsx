@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { pollUserService } from '@/services/business/user/poll/PollUserService';
 import { OnlinePollManageVO, OnlinePollItemVO } from '@/types/business/poll';
@@ -14,7 +14,8 @@ import { Vote,
 import { Button } from '@/components/ui/button';
 ;
 import { cn } from '@/lib/utils';
-import { toDisplayYmd, todayStorageYmd } from '@/lib/format-date';
+import { toDisplayYmd } from '@/lib/format-date';
+import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
 import { getPollStatus, POLL_STATUS_LABEL, isPollActive } from '@/lib/poll-status';
 import { toast } from 'sonner';
 
@@ -25,19 +26,14 @@ export default function OnlinePollParticipateClient() {
  const [selectedPoll, setSelectedPoll] = useState<OnlinePollManageVO | null>(null);
  const [pollItems, setPollItems] = useState<OnlinePollItemVO[]>([]);
  const [selectedItemSn, setSelectedItemSn] = useState<number | null>(null);
- const [loading, setLoading] = useState(true);
- const [isVoting, setIsVoting] = useState(false);
- const [viewMode, setViewMode] = useState<'list' | 'vote' | 'result'>('list');
- const [todayStr, setTodayStr] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [isVoting, setIsVoting] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'vote' | 'result'>('list');
+  // 저장 포맷과 같은 'yyyyMMdd' 8자 기준일.
+  const todayStr = useTodayStorageYmd();
 
- useEffect(() => {
- // 저장 포맷과 같은 'yyyyMMdd' 8자 기준일. 10자로 두면 8자 저장값과의 비교가 무너진다.
- setTodayStr(todayStorageYmd());
- fetchPolls();
- }, []);
-
- const fetchPolls = async () => {
- setLoading(true);
+ const fetchPolls = useCallback(async () => {
+   setLoading(true);
  // [2026-08-29] 조회 실패를 '없음'으로 그리지 않는다.
  //   종전 catch 는 토스트만 띄우고 polls 를 [] 로 둔 채 로딩을 내렸다. 실패 상태를 남기는
  //   state 도 재시도 경로도 없어, 토스트가 사라지면 화면에는 '활성 설문이 없습니다' 라는
@@ -47,13 +43,17 @@ export default function OnlinePollParticipateClient() {
  const res = await pollUserService.getPollList({ page: 0, size: 100 });
  // Support both Spring Data JPA Page (content) and legacy list format
  setPolls(res.list || []);
- } catch {
- setLoadError('설문 목록을 불러오지 못했습니다.');
- toast.error('설문 목록을 불러오지 못했습니다.');
- } finally {
- setLoading(false);
- }
- };
+  } catch {
+  setLoadError('설문 목록을 불러오지 못했습니다.');
+  toast.error('설문 목록을 불러오지 못했습니다.');
+  } finally {
+  setLoading(false);
+  }
+  }, []);
+
+  useEffect(() => {
+    void fetchPolls();
+  }, [fetchPolls]);
 
  const handleSelectPoll = async (poll: OnlinePollManageVO) => {
  setLoading(true);
@@ -90,13 +90,15 @@ export default function OnlinePollParticipateClient() {
  const updatedItems = await pollUserService.getPollItemList(selectedPoll.pollSn!);
  setPollItems(updatedItems);
  setViewMode('result');
- } catch (error: any) {
- const msg = error.response?.data?.message || '투표 처리 중 오류가 발생했습니다.';
- toast.error(msg);
- if (msg.includes('이미 참여')) {
- setViewMode('result');
- }
- } finally {
+  } catch (error: unknown) {
+    const msg = (error && typeof error === 'object' && 'response' in error)
+      ? (error as { response?: { data?: { message?: string } } }).response?.data?.message || '투표 처리 중 오류가 발생했습니다.'
+      : '투표 처리 중 오류가 발생했습니다.';
+    toast.error(msg);
+    if (msg.includes('이미 참여')) {
+      setViewMode('result');
+    }
+  } finally {
  setIsVoting(false);
  }
  };
@@ -290,7 +292,18 @@ function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, toda
   );
 }
 
-function PollItem({ item, totalVotes, countsHidden, isSelected, onSelect, mode, index, testId }: any) {
+interface PollItemProps {
+  item: OnlinePollItemVO;
+  totalVotes: number;
+  countsHidden: boolean;
+  isSelected: boolean;
+  onSelect: () => void;
+  mode: 'vote' | 'result';
+  index: number;
+  testId?: string;
+}
+
+function PollItem({ item, totalVotes, countsHidden, isSelected, onSelect, mode, index, testId }: PollItemProps) {
   const percentage = !countsHidden && totalVotes > 0 ? Math.round(((item.pollIemCo || 0) / totalVotes) * 100) : 0;
   return (
     <div

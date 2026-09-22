@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   KeyboardSensor,
@@ -101,11 +101,20 @@ export function useDeptTree({
 
   // 평탄화는 탭과 무관하게 수행한다. 종전에는 DEPTS 탭 조건이 걸려 있어 USERS 탭의
   // '부서 이동' 모달이 렌더하는 flattenedDepts 가 언제나 빈 배열이었다.
-  useEffect(() => {
-    // Build tree and flatten it for D&D
+  //
+  // ⚠ [2026-09-22] 렌더 중 파생 패턴은 **변화만** 처리한다. 초기값을 `useState(departments)` 로
+  //   두면 첫 렌더 값과 같아 조건이 한 번도 성립하지 않는데, 이 훅은 `initialDepts`(서버
+  //   프리페치 시드)를 initialData 로 쓰므로 **첫 렌더에 이미 데이터가 있다.** 그래서
+  //   부서 트리가 빈 채로 렌더됐다(계약 4건 red 로 실측). useEffect 는 마운트 후 무조건
+  //   한 번 돌아 이 차이가 없었다.
+  //   sentinel(null)로 두면 첫 렌더에서도 반드시 한 번 동기화하면서 cascading render 는
+  //   그대로 피한다 — 이 자리에서 setState 는 커밋 전에 즉시 재렌더된다.
+  const [prevDepartments, setPrevDepartments] = useState<Department[] | null>(null);
+  if (departments !== prevDepartments) {
+    setPrevDepartments(departments);
     const tree = listToDeptTree(departments);
     setFlattenedDepts(flattenDeptTree(tree));
-  }, [departments]);
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),

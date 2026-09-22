@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, use, useRef } from 'react';
+import { useState, useMemo, use, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
@@ -252,34 +252,37 @@ export default function MenuAdminClient({
   const { toast } = useToast();
   const confirm = useConfirm();
   
+  const initialFlat = useMemo(() => flattenTree(listToTree(initialMenus)), [initialMenus]);
+
   const [isSaving, setIsSaving] = useState(false);
   const hierarchySavePendingRef = useRef(false);
   const deletePendingRef = useRef(false);
   const [deletingMenuId, setDeletingMenuId] = useState<number | null>(null);
-  const [flattenedMenus, setFlattenedMenus] = useState<FlattenedItem[]>([]);
+  const [flattenedMenus, setFlattenedMenus] = useState<FlattenedItem[]>(() => initialFlat);
   const [hasChanges, setHasChanges] = useState(false);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [overId, setOverId] = useState<number | null>(null);
   const [offsetLeft, setOffsetLeft] = useState(0);
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(() => {
+    const idsWithChildren = initialFlat
+        .filter(m => initialFlat.some(child => child.parentId === m.menuNo))
+        .map(m => m.menuNo);
+    return new Set(idsWithChildren);
+  });
   const [selectedMenuId, setSelectedMenuId] = useState<number | null>(null);
   const [menuKeyword, setMenuKeyword] = useState('');
 
-  // 데이터 초기화
-  useEffect(() => {
-    // 1. 서버에서 온 평면 데이터를 트리 구조로 변환
-    const tree = listToTree(initialMenus);
-    // 2. 트리 구조를 다시 DnD용 평면 데이터로 변환 (depth 계산 포함)
-    const flat = flattenTree(tree);
-    
-    setFlattenedMenus(flat);
-
-    const idsWithChildren = flat
-        .filter(m => flat.some(child => child.parentId === m.menuNo))
+  // 데이터 초기화: initialMenus 변경 시 렌더 도중 즉시 동기화
+  const [prevInitialMenus, setPrevInitialMenus] = useState(initialMenus);
+  if (initialMenus !== prevInitialMenus) {
+    setPrevInitialMenus(initialMenus);
+    setFlattenedMenus(initialFlat);
+    const idsWithChildren = initialFlat
+        .filter(m => initialFlat.some(child => child.parentId === m.menuNo))
         .map(m => m.menuNo);
     setExpandedIds(new Set(idsWithChildren));
-    setSelectedMenuId((current) => current && flat.some((menu) => menu.menuNo === current) ? current : null);
-  }, [initialMenus]);
+    setSelectedMenuId((current) => current && initialFlat.some((menu) => menu.menuNo === current) ? current : null);
+  }
 
   // 투영(Projection) 정보 계산
   const projected = useMemo(() => {
@@ -437,7 +440,12 @@ export default function MenuAdminClient({
     modalSavePendingRef.current = true;
     setIsModalSaving(true);
     try {
-      const res = await saveMenuAction(null, { mode, data: { ...values, upMenuSn: values.upperMenuId } as any });
+      const { children: _children, ...restValues } = values;
+      const menuData: Partial<MenuInfo> = {
+        ...restValues,
+        upMenuSn: values.upperMenuId,
+      };
+      const res = await saveMenuAction(null, { mode, data: menuData });
       if (res.success) {
         toast(res.message, 'success');
         setIsOpen(false);
@@ -480,10 +488,19 @@ export default function MenuAdminClient({
     hierarchySavePendingRef.current = true;
     try {
       setIsSaving(true);
-      const submitData = flattenedMenus.map((item, idx) => ({
-        menuNo: item.menuNo, menuOrdr: idx + 1, upMenuSn: item.parentId === 0 ? null : item.parentId, menuNm: item.menuNm, prgrmFileNm: item.prgrmFileNm || '', modernRoute: item.modernRoute || '', menuExpln: item.menuExpln ?? item.menuDc ?? '', id: item.menuNo, useYn: item.useYn || 'Y'
+      const submitData: MenuInfo[] = flattenedMenus.map((item, idx) => ({
+        menuNo: item.menuNo,
+        menuOrdr: idx + 1,
+        upperMenuId: item.parentId ?? 0,
+        upMenuSn: item.parentId ?? 0,
+        menuNm: item.menuNm,
+        prgrmFileNm: item.prgrmFileNm || '',
+        modernRoute: item.modernRoute || '',
+        menuExpln: item.menuExpln ?? item.menuDc ?? '',
+        menuDc: item.menuExpln ?? item.menuDc ?? '',
+        useYn: item.useYn === 'N' ? 'N' : 'Y',
       }));
-      const res = await updateMenuOrdersAction(submitData as any);
+      const res = await updateMenuOrdersAction(submitData);
       if (res.success) { toast(res.message, 'success'); setHasChanges(false); router.refresh(); }
       else { toast(res.message, 'error'); }
     } catch { toast('저장 중 오류 발생', 'error'); }

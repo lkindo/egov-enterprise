@@ -120,7 +120,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
     staleTime: 5 * 60 * 1000,
     queryFn: () => eventService.getEvents({ page: 0, size: 200 }),
   });
-  const eventOptions = eventPage?.list ?? [];
+  const eventOptions = useMemo(() => eventPage?.list ?? [], [eventPage?.list]);
 
   /**
    * 행사 번호 → 행사명 사전.

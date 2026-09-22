@@ -47,8 +47,8 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
                 expect(body.totalPage, '3건을 2건씩 나누면 2페이지가 되어야 한다').toBe(2);
                 // 2페이지는 1페이지와 겹치지 않아야 한다(페이지 이동이 실제로 작동하는가).
                 const p2Res = await request.get(`${REPORT_API}?searchKeyword=${tag}&pageIndex=2&pageUnit=2`, { headers: auth });
-                const p2 = (await p2Res.json()).data.list as any[];
-                const p1Ids = (body.list as any[]).map((r) => r.rptpSn);
+                const p2 = (await p2Res.json()).data.list as Array<{ rptpSn: number }>;
+                const p1Ids = (body.list as Array<{ rptpSn: number }>).map((r) => r.rptpSn);
                 expect(p2.length, '2페이지에는 나머지 1건이 있어야 한다').toBe(1);
                 expect(p2.some((r) => p1Ids.includes(r.rptpSn)), '2페이지는 1페이지와 겹치지 않아야 한다').toBeFalsy();
             }

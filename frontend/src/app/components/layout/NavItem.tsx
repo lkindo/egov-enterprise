@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, createContext, useContext } from 'react';
+import { useState, useMemo, createContext, useContext } from 'react';
 import type { ComponentProps, ElementType, ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -98,11 +98,13 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
   const isActive = isCurrentPage || !!match?.ancestorMenuNos.includes(item.menuNo);
   const [isOpen, setIsOpen] = useState(isActive && hasChildren);
 
-  useEffect(() => {
+  const [prevIsActive, setPrevIsActive] = useState(isActive);
+  if (isActive !== prevIsActive) {
+    setPrevIsActive(isActive);
     if (isActive && hasChildren) {
       setIsOpen(true);
     }
-  }, [isActive, hasChildren]);
+  }
 
   
   const isRestricted = !href && !hasChildren;

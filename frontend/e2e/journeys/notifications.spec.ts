@@ -18,7 +18,7 @@ test.describe('Notification & Communication Intelligence', () => {
         console.log(`>>> Loading auth from: ${authPath}`);
         if (fs.existsSync(authPath)) {
             const authData = JSON.parse(fs.readFileSync(authPath, 'utf-8'));
-            adminToken = authData.cookies.find((c: any) => c.name === 'accessToken')?.value;
+            adminToken = authData.cookies.find((c: { name: string; value?: string }) => c.name === 'accessToken')?.value;
             console.log(`>>> Admin token loaded: ${adminToken ? 'SUCCESS' : 'FAILED'}`);
         }
     });

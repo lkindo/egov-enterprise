@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTheme } from 'next-themes';
 
 /**
@@ -98,12 +98,13 @@ function readChartColors(): ChartColors {
  */
 export function useChartColors(): ChartColors {
     const { resolvedTheme } = useTheme();
-    // 클라이언트 첫 렌더에서 이미 DOM 이 존재하므로 lazy initializer 로 즉시 실측한다.
     const [colors, setColors] = useState<ChartColors>(readChartColors);
+    const [prevTheme, setPrevTheme] = useState(resolvedTheme);
 
-    useEffect(() => {
+    if (resolvedTheme !== prevTheme) {
+        setPrevTheme(resolvedTheme);
         setColors(readChartColors());
-    }, [resolvedTheme]);
+    }
 
     return colors;
 }

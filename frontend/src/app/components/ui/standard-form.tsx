@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 interface StandardFormProps {
   children: React.ReactNode;
   onSubmit?: (e: React.FormEvent) => void;
-  action?: any;
+  action?: React.FormHTMLAttributes<HTMLFormElement>['action'];
   className?: string;
   title?: string;
   description?: string;

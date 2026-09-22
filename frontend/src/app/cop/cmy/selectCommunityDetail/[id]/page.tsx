@@ -16,17 +16,18 @@ export default async function CommunityDetailPage({
     return notFound();
   }
   
+  let community;
   try {
     // Fetch initial data on server
-    const community = await communityService.getCommunity(cmntySn);
-    
-    if (!community) {
-      return notFound();
-    }
-
-    return <CommunityDetailHubClient cmntySn={cmntySn} initialData={community} />;
+    community = await communityService.getCommunity(cmntySn);
   } catch (error) {
     console.error('Failed to fetch community detail', error);
     return notFound();
   }
+
+  if (!community) {
+    return notFound();
+  }
+
+  return <CommunityDetailHubClient cmntySn={cmntySn} initialData={community} />;
 }

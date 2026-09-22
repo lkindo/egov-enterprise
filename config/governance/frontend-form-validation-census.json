@@ -2395,7 +2395,7 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "stateInvariant": "Each menu node persists one parent and its visible stable one-based hierarchy order.",
       "structuredPayloads": [
-        "submitData as any"
+        "submitData"
       ],
       "testEvidence": [
         "frontend/src/app/admin/system/menus/__tests__/MenuAdminClient.test.tsx"

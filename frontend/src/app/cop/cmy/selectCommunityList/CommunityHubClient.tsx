@@ -14,11 +14,12 @@ import { communityService } from '@/services/business/community/communityService
 import { CommunityVO } from '@/types/business/community';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { PageResponse } from '@/types/foundation/system';
 
 export default function CommunityHubClient({ 
   initialData 
 }: { 
-  initialData: any 
+  initialData: PageResponse<CommunityVO>;
 }) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -86,7 +87,7 @@ export default function CommunityHubClient({
       header: '소개',
       accessor: (item) => (
         <p className="text-sm text-muted-foreground font-bold line-clamp-1 max-w-md">
-          "{item.cmntyIntroCn || '등록된 소개 정보가 없습니다.'}"
+          &quot;{item.cmntyIntroCn || '등록된 소개 정보가 없습니다.'}&quot;
         </p>
       )
     },

@@ -31,10 +31,15 @@ test.describe('조직 ↔ 일정 통합 사슬', () => {
         //    ⚠ yearMonth 는 하이픈 없는 6자여야 한다. 'yyyy-MM' 을 보내면 예외 없이 0건이 된다.
         const monthRes = await request.get(`${SCHEDULE_API}/monthly?yearMonth=${yearMonth}`, { headers: auth });
         expect(monthRes.ok()).toBeTruthy();
-        const list = (await monthRes.json()).data as any[];
+        interface ScheduleItem {
+            schdlSn: number;
+            schdlPicId?: string;
+            schdlNm?: string;
+        }
+        const list = (await monthRes.json()).data as ScheduleItem[];
         const mine = list.find((s) => s.schdlSn === schdlSn);
         expect(mine, '등록한 일정이 월별 조회에 나와야 한다').toBeTruthy();
-        expect(mine.schdlPicId, '담당자는 서버가 인증 주체로 채워야 한다').toBeTruthy();
+        expect(mine?.schdlPicId, '담당자는 서버가 인증 주체로 채워야 한다').toBeTruthy();
         // 3) 수정 — 담당자는 재지정되지 않아야 한다(매스어사인먼트 차단).
         const updRes = await request.put(`${SCHEDULE_API}/${schdlSn}`, {
             headers: auth,
@@ -55,7 +60,7 @@ test.describe('조직 ↔ 일정 통합 사슬', () => {
         // 4) 삭제
         expect((await request.delete(`${SCHEDULE_API}/${schdlSn}`, { headers: auth })).ok()).toBeTruthy();
         const goneRes = await request.get(`${SCHEDULE_API}/monthly?yearMonth=${yearMonth}`, { headers: auth });
-        const goneList = (await goneRes.json()).data as any[];
+        const goneList = (await goneRes.json()).data as ScheduleItem[];
         expect(goneList.find((s) => s.schdlSn === schdlSn), '삭제한 일정은 조회되지 않아야 한다').toBeFalsy();
     });
 });

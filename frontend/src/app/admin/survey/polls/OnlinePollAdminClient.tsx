@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
@@ -32,12 +32,12 @@ import {
 // sonner 직접 호출 대신 useToast 로 수렴(문자열 정규화 페일세이프 — '[object Object]' 방지, P2)
 import { useToast } from '@/app/components/ui/toast';
 import {
- fromDateInputValue,
- toDateInputValue,
- toDisplayYmd,
- toStorageYmd,
- todayStorageYmd,
+  fromDateInputValue,
+  toDateInputValue,
+  toDisplayYmd,
+  toStorageYmd,
 } from '@/lib/format-date';
+import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
 import { getPollStatus, POLL_STATUS_LABEL, type PollStatus } from '@/lib/poll-status';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { FormErrorSummary } from '@/components/ui/form';
@@ -80,10 +80,7 @@ export default function OnlinePollAdminClient() {
  const [isSaving, setIsSaving] = useState(false);
 
  // 기간 기준일. 저장 포맷과 동일한 'yyyyMMdd' 문자열로 비교해야 상태 판정이 맞는다.
- const [todayYmd, setTodayYmd] = useState<string>('');
- useEffect(() => {
- setTodayYmd(todayStorageYmd());
- }, []);
+ const todayYmd = useTodayStorageYmd();
 
  const { data, isLoading, isError, error, refetch } = useQuery({
  queryKey: ['admin-online-polls', page, debouncedKeyword, pageSize],

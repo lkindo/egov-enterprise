@@ -3,9 +3,18 @@ import { redirect } from 'next/navigation';
 import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
 import { NOTICE_BOARD_ID } from '@/config/board-ids';
 import { fetchAllPages } from '@/lib/api/fetch-all-pages';
-import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
+import { boardAdminService, type BoardMasterDetail } from '@/services/foundation/system/BoardAdminService';
 import { getPostsOperation } from '@/types/generated-operations';
 import { logErrorSafely } from '@/lib/safe-error-log';
+import type { BoardPost } from '@/types/business/board';
+
+export interface InitialBoardData {
+  list: BoardPost[];
+  total: number;
+  totalPage: number;
+  masterInfo: BoardMasterDetail | null;
+  fetchError: string | null;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -47,7 +56,7 @@ export const getInitialBoardData = async (params: {
   orderBy: string;
   startDate?: string;
   endDate?: string;
-}) => {
+}): Promise<InitialBoardData> => {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;
 
@@ -84,7 +93,7 @@ export const getInitialBoardData = async (params: {
 
     // PageResponse 구조에 맞춰 데이터 추출 (list, total, totalPage)
     return {
-      list: listResponse.list || [],
+      list: (listResponse.list || []) as BoardPost[],
       total: listResponse.total || 0,
       totalPage: listResponse.totalPage || 0,
       masterInfo: masterResponse || null,

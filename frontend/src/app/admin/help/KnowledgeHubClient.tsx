@@ -9,7 +9,7 @@ import { Search, Plus,
  User, Eye, Settings2, AlertTriangle, RefreshCcw, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { knowledgeService, type KnowledgeDto } from '@/services/business/knowledge/knowledgeService';
+import { knowledgeService, type KnowledgeDto, type KnowledgeActivityItem } from '@/services/business/knowledge/knowledgeService';
 import {
  COMMUNITY_BOARD_ID,
  HELP_FAQ_BOARD_ID,
@@ -333,7 +333,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <p className="py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">표시할 활동이 없습니다.</p>
  ) : (
  <ul className="divide-y divide-border">
- {(activityData || []).slice(0, 5).map((activity: { id: string; title: string; user: string; time: string }) => (
+ {(activityData || []).slice(0, 5).map((activity: KnowledgeActivityItem) => (
  <li key={activity.id} className="px-1 py-1.5">
  <p className="truncate text-[length:var(--font-size-body)] text-foreground">{activity.title}</p>
  <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">

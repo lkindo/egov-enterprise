@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useSyncExternalStore } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -112,11 +112,15 @@ interface BannerAdminClientProps {
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
 const DEFAULT_PAGE_SIZE = 20;
 
+const noopSubscribe = () => () => {};
+let cachedClientNow: Date | null = null;
+function getClientNow(): Date | null {
+  if (!cachedClientNow) cachedClientNow = new Date();
+  return cachedClientNow;
+}
+
 export default function BannerAdminClient({ initialBanners, initialPopups }: BannerAdminClientProps) {
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => {
-    setNow(new Date());
-  }, []);
+  const now = useSyncExternalStore(noopSubscribe, getClientNow, () => null);
 
   const { toast } = useToast();
  const confirm = useConfirm();

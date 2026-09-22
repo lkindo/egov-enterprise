@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -33,8 +33,9 @@ import { HubMetricSkeleton, HubListSkeleton } from '@/components/ui/hub/HubSkele
 import { SafeResponsiveContainer } from '@/app/components/ui/observability-charts';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { useChartColors } from '@/lib/hooks/useChartColors';
+import { toDisplayYmd } from '@/lib/format-date';
 import { getPollStatus, POLL_STATUS_LABEL } from '@/lib/poll-status';
-import { todayStorageYmd, toDisplayYmd } from '@/lib/format-date';
+import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
 
 // --- Types ---
 const STATS_TABS = [
@@ -105,11 +106,8 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
   const tabParam = searchParams.get('tab');
   const activeTab: StatsTab = isStatsTab(tabParam) ? tabParam : defaultTab;
 
-  // 날짜 판정 기준일(yyyyMMdd). SSR 과 클라이언트의 타임존이 다를 수 있어 마운트 후 고정한다.
-  const [today, setToday] = useState<string>('');
-  useEffect(() => {
-    setToday(todayStorageYmd());
-  }, []);
+  // 날짜 판정 기준일(yyyyMMdd). SSR 과 클라이언트의 타임존이 다를 수 있어 useTodayStorageYmd 로 안전하게 읽는다.
+  const today = useTodayStorageYmd();
 
   const handleSelectTab = (tab: StatsTab) => {
     if (tab === activeTab) return;

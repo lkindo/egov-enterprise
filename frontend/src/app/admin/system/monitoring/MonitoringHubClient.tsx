@@ -43,8 +43,15 @@ import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdm
 import { monitoringKeys, monitoringQueryOptions } from '@/queries/monitoring-query-options';
 /* reusable-base:collaboration:start */
 import { commentMutationOptions, commentQueryOptions } from '@/queries/comment-query-options';
+// ⚠ [2026-09-22] 이 타입 전용 참조는 반드시 collaboration 블록 안에 둔다. 생성기의 연쇄 제거는 타입 전용
+//   참조도 의존으로 세므로, 블록 밖에 두면 core 투영에서 댓글 서비스와 함께 이 파일 전체가 사라진다 →
+//   모니터링 허브 소실 → 그곳을 목적지로 둔 관측성 리다이렉트 페이지까지 삭제(#707 CI 실측).
+//   (가이드 §3.7-1·4: 타입 참조도 같은 구역이며, 주석에 제거 모듈의 참조 문장·경로를 인용하지 않는다)
+import type { CommentDetail } from '@/services/foundation/system/CommentAdminService';
 /* reusable-base:collaboration:end */
 import { attachmentIntegrityService } from '@/services/foundation/system/AttachmentIntegrityService';
+import type { SysLog, LoginLog } from '@/types/foundation/system';
+import type { AuditLog } from '@/services/foundation/system/AuditAdminService';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
@@ -103,7 +110,7 @@ const DEFAULT_PAGE_SIZE = 50;
  * ⚠ 실측 계측이 아니라 저장소의 `.agent/skills/` 목록을 옮겨둔 **정적 카탈로그**다.
  * 과거 이 배열이 렌더 함수와 상세 조회에 각각 중복 정의되어 있어 한쪽만 수정되는 사고가 있었다.
  */
-const HARNESS_SKILLS = [
+export const HARNESS_SKILLS = [
   { id: "SKILL_ENG_01", name: "Deep Context Mapper", desc: "1M+ 대용량 메모리 기반 다중 모듈 및 DB 위상 맵 로드", status: "ACTIVE", type: "SKILL" as const },
   { id: "SKILL_ENG_02", name: "API Contract Guardian", desc: "DB 제약조건 ➔ BE DTO ➔ FE Zod 스키마 연쇄 거울 동기화", status: "ACTIVE", type: "SKILL" as const },
   { id: "SKILL_ENG_03", name: "OWASP Security Auditor", desc: "Spring Security, Next.js 미들웨어, JWT Red Team 검증", status: "ACTIVE", type: "SKILL" as const },
@@ -113,17 +120,19 @@ const HARNESS_SKILLS = [
   { id: "SKILL_ENG_07", name: "Visual Auditor", desc: "브라우저 subagent 네이티브 픽셀 비교 regression 오디팅", status: "ACTIVE", type: "SKILL" as const },
   { id: "SKILL_ENG_08", name: "Docs-as-Code Sync", desc: "로직 변경에 따른 Markdown 가이드 및 Mermaid 다이어그램 동적 갱신", status: "ACTIVE", type: "SKILL" as const }
 ];
+export type HarnessSkill = (typeof HARNESS_SKILLS)[number];
 
 /**
  * JPA 가드레일 계측 예시 로그.
  * ⚠ 실측 소스가 없는 **샘플 데이터**다. 화면에서도 '샘플' 배지로 명시한다.
  */
-const HARNESS_SAMPLE_TESTS = [
+export const HARNESS_SAMPLE_TESTS = [
   { id: "TEST_01", testName: "QueryCountGuardrailIntegrationTest.queryCountGuardrail_successWithinLimit", queries: 12, max: 15, status: "SAFE", time: "방금 전", type: "TEST" as const },
   { id: "TEST_02", testName: "ScheduleServiceTest.deleteSchedule_fail_notCreator", queries: 2, max: 10, status: "SAFE", time: "3분 전", type: "TEST" as const },
   { id: "TEST_03", testName: "NoteServiceImplTest.getReceivedNotes", queries: 4, max: 10, status: "SAFE", time: "8분 전", type: "TEST" as const },
   { id: "TEST_04", testName: "InstitutionCodeServiceTest.verifyCodeRetrievalWithCaching", queries: 1, max: 5, status: "SAFE", time: "15분 전", type: "TEST" as const }
 ];
+export type HarnessTest = (typeof HARNESS_SAMPLE_TESTS)[number];
 
 /** CSV 반출 컬럼 매핑 — 백엔드 DTO(SysLogDto / LoginLog / CommentDetail)의 실제 필드명을 따른다. */
 const SYS_LOG_EXPORT_HEADERS = [
@@ -152,17 +161,16 @@ const COMMENT_EXPORT_HEADERS = [
 
 /**
  * 목록 탭의 조회 상태 묶음.
- * 탭마다 행 타입이 달라(SysLogDto / LoginLog / CommentDetail) 단일 제네릭으로 좁힐 수 없으므로,
- * 파일 내 기존 `Column<any>` 규약과 동일하게 느슨한 행 타입을 유지한다.
+ * 탭마다 행 타입(SysLog / LoginLog / CommentDetail / AuditLog)을 제네릭으로 보존한다.
  */
-interface ListTabConfig {
-  columns: Column<any>[];
-  data: any[];
+interface BaseListTabConfig<T> {
+  columns: Column<T>[];
+  data: T[];
   loading: boolean;
   error: Error | null;
   refetch: () => void;
-  keyField: string;
-  rowId: (item: any) => string | number;
+  keyField: keyof T & string;
+  rowId: (item: T) => string | number;
   totalPage: number;
   totalCount?: number;
   searchable: boolean;
@@ -170,6 +178,22 @@ interface ListTabConfig {
   exportName: string;
   exportHeaders: { label: string; key: string }[];
   label: string;
+}
+
+type ListTabConfig =
+  | (BaseListTabConfig<SysLog> & { kind: 'SYSTEM' })
+  | (BaseListTabConfig<LoginLog> & { kind: 'LOGIN' })
+  /* reusable-base:collaboration:start */
+  | (BaseListTabConfig<CommentDetail> & { kind: 'COMMENTS' })
+  /* reusable-base:collaboration:end */
+  | (BaseListTabConfig<AuditLog> & { kind: 'SECURITY' });
+
+function isSkillItem(item: unknown): item is HarnessSkill {
+  return typeof item === 'object' && item !== null && 'type' in item && (item as { type: string }).type === 'SKILL';
+}
+
+function isTestItem(item: unknown): item is HarnessTest {
+  return typeof item === 'object' && item !== null && 'type' in item && (item as { type: string }).type === 'TEST';
 }
 
 /** 실측 소스가 없는 위젯에 붙이는 공용 '샘플 데이터' 배지 */
@@ -406,7 +430,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     /* reusable-base:collaboration:end */
   ]);
 
-  const auditColumns: Column<any>[] = [
+  const auditColumns: Column<AuditLog>[] = [
     {
       header: '보안 감사 로그',
       accessor: (log) => (
@@ -429,7 +453,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     }
   ];
 
-  const systemLogColumns: Column<any>[] = [
+  const systemLogColumns: Column<SysLog>[] = [
     {
       header: '시스템 로그',
       accessor: (log) => (
@@ -452,7 +476,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     }
   ];
 
-  const loginLogColumns: Column<any>[] = [
+  const loginLogColumns: Column<LoginLog>[] = [
     {
       header: '접속 이력',
       accessor: (log) => (
@@ -476,7 +500,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   ];
 
 /* reusable-base:collaboration:start */
-  const commentColumns: Column<any>[] = [
+  const commentColumns: Column<CommentDetail>[] = [
     {
       header: '댓글 및 피드백',
       accessor: (c) => (
@@ -839,13 +863,14 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         switch (activeTab) {
           case 'SYSTEM':
             return {
+              kind: 'SYSTEM',
               columns: systemLogColumns,
               data: systemLogs,
               loading: isSystemLoading,
               error: systemLogError,
               refetch: () => { void refetchSystemLogs(); },
               keyField: 'sysLogSn',
-              rowId: (item: any) => item.sysLogSn,
+              rowId: (item: SysLog) => item.sysLogSn ?? 0,
               totalPage: systemLogData?.totalPage || 1,
               totalCount: systemLogData?.total,
               searchable: true,
@@ -856,13 +881,14 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             };
           case 'LOGIN':
             return {
+              kind: 'LOGIN',
               columns: loginLogColumns,
               data: loginLogs,
               loading: isLoginLoading,
               error: loginLogError,
               refetch: () => { void refetchLoginLogs(); },
               keyField: 'lgnSn',
-              rowId: (item: any) => item.lgnSn,
+              rowId: (item: LoginLog) => item.lgnSn ?? 0,
               totalPage: loginLogData?.totalPage || 1,
               totalCount: loginLogData?.total,
               searchable: true,
@@ -874,13 +900,14 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 /* reusable-base:collaboration:start */
           case 'COMMENTS':
             return {
+              kind: 'COMMENTS',
               columns: commentColumns,
               data: comments,
               loading: isCommentLoading,
               error: commentError,
               refetch: () => { void refetchComments(); },
               keyField: 'ansSn',
-              rowId: (item: any) => item.ansSn,
+              rowId: (item: CommentDetail) => item.ansSn,
               totalPage: commentData?.totalPage || 1,
               totalCount: commentData?.total,
               // 백엔드가 댓글 키워드 검색을 지원하지 않아 검색 입력을 노출하지 않는다.
@@ -894,13 +921,14 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           case 'SECURITY':
           default:
             return {
+              kind: 'SECURITY',
               columns: auditColumns,
               data: auditLogs,
               loading: isAuditLoading,
               error: auditError,
               refetch: () => { void refetchAudit(); },
               keyField: 'sysLogSn',
-              rowId: (item: any) => item.sysLogSn,
+              rowId: (item: AuditLog) => item.sysLogSn ?? 0,
               totalPage: auditData?.totalPage || 1,
               totalCount: auditData?.total,
               searchable: true,
@@ -952,9 +980,9 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   ];
 
   /** 선택 항목의 상세. 종전에는 우측 3열 패널이었고, 미선택 시 '인텔리전스 대기 중' 장식이 자리를 채웠다. */
-  const detailKind = selectedItem && (selectedItem as any).type === 'SKILL'
+  const detailKind = isSkillItem(selectedItem)
     ? 'SKILL'
-    : selectedItem && (selectedItem as any).type === 'TEST' ? 'TEST' : 'RECORD';
+    : isTestItem(selectedItem) ? 'TEST' : 'RECORD';
 
   return (
     <>
@@ -1037,28 +1065,95 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           : activeTab === 'TOPOLOGY' ? <TopologyMap />
           : activeTab === 'HARNESS' ? renderHarness()
           : listConfig ? (
-            <StandardDataTable
-              columns={listConfig.columns}
-              data={listConfig.data}
-              loading={listConfig.loading || isPending}
-              /* [P1-1] 조회 실패를 '데이터가 없습니다'로 위장하지 않는다 — 오류 + 재시도 노출 */
-              error={listConfig.error}
-              onRetry={listConfig.refetch}
-              onRowClick={(item) => setSelectedItemId(listConfig.rowId(item))}
-              rowActionLabel={(item) => `${listConfig.label} ${String(listConfig.rowId(item))} 상세 열기`}
-              keyField={listConfig.keyField}
-              emptyMessage={listConfig.searchable
-                ? emptyResultMessage(searchKeyword, listConfig.emptyMessage)
-                : listConfig.emptyMessage}
-              pagination={{
-                currentPage: page,
-                totalPages: listConfig.totalPage,
-                // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
-                pageSize,
-                onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
-                onPageChange: (p) => setPage(p)
-              }}
-            />
+            listConfig.kind === 'SYSTEM' ? (
+              <StandardDataTable
+                columns={listConfig.columns}
+                data={listConfig.data}
+                loading={listConfig.loading || isPending}
+                error={listConfig.error}
+                onRetry={listConfig.refetch}
+                onRowClick={(item) => setSelectedItemId(listConfig.rowId(item))}
+                rowActionLabel={(item) => `${listConfig.label} ${String(listConfig.rowId(item))} 상세 열기`}
+                keyField={listConfig.keyField}
+                emptyMessage={listConfig.searchable
+                  ? emptyResultMessage(searchKeyword, listConfig.emptyMessage)
+                  : listConfig.emptyMessage}
+                pagination={{
+                  currentPage: page,
+                  totalPages: listConfig.totalPage,
+                  pageSize,
+                  onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
+                  onPageChange: (p) => setPage(p)
+                }}
+              />
+            ) : listConfig.kind === 'LOGIN' ? (
+              <StandardDataTable
+                columns={listConfig.columns}
+                data={listConfig.data}
+                loading={listConfig.loading || isPending}
+                error={listConfig.error}
+                onRetry={listConfig.refetch}
+                onRowClick={(item) => setSelectedItemId(listConfig.rowId(item))}
+                rowActionLabel={(item) => `${listConfig.label} ${String(listConfig.rowId(item))} 상세 열기`}
+                keyField={listConfig.keyField}
+                emptyMessage={listConfig.searchable
+                  ? emptyResultMessage(searchKeyword, listConfig.emptyMessage)
+                  : listConfig.emptyMessage}
+                pagination={{
+                  currentPage: page,
+                  totalPages: listConfig.totalPage,
+                  pageSize,
+                  onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
+                  onPageChange: (p) => setPage(p)
+                }}
+              />
+/* ⚠ [2026-09-22] 이 분기는 collaboration 소유 행 타입으로 좁혀지는 유일한 JSX 라 블록 안에 둔다 —
+   유니온 멤버가 블록과 함께 빠지는 축소 프로필에서는 이 비교 자체가 타입 오류다(#707 core 투영 tsc 실측). */
+/* reusable-base:collaboration:start */
+            ) : listConfig.kind === 'COMMENTS' ? (
+              <StandardDataTable
+                columns={listConfig.columns}
+                data={listConfig.data}
+                loading={listConfig.loading || isPending}
+                error={listConfig.error}
+                onRetry={listConfig.refetch}
+                onRowClick={(item) => setSelectedItemId(listConfig.rowId(item))}
+                rowActionLabel={(item) => `${listConfig.label} ${String(listConfig.rowId(item))} 상세 열기`}
+                keyField={listConfig.keyField}
+                emptyMessage={listConfig.searchable
+                  ? emptyResultMessage(searchKeyword, listConfig.emptyMessage)
+                  : listConfig.emptyMessage}
+                pagination={{
+                  currentPage: page,
+                  totalPages: listConfig.totalPage,
+                  pageSize,
+                  onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
+                  onPageChange: (p) => setPage(p)
+                }}
+              />
+/* reusable-base:collaboration:end */
+            ) : (
+              <StandardDataTable
+                columns={listConfig.columns}
+                data={listConfig.data}
+                loading={listConfig.loading || isPending}
+                error={listConfig.error}
+                onRetry={listConfig.refetch}
+                onRowClick={(item) => setSelectedItemId(listConfig.rowId(item))}
+                rowActionLabel={(item) => `${listConfig.label} ${String(listConfig.rowId(item))} 상세 열기`}
+                keyField={listConfig.keyField}
+                emptyMessage={listConfig.searchable
+                  ? emptyResultMessage(searchKeyword, listConfig.emptyMessage)
+                  : listConfig.emptyMessage}
+                pagination={{
+                  currentPage: page,
+                  totalPages: listConfig.totalPage,
+                  pageSize,
+                  onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
+                  onPageChange: (p) => setPage(p)
+                }}
+              />
+            )
           ) : null}
 
         {/* 하네스 탭은 선택 전에도 자체 요약을 갖는다(빈 자리를 채우는 장식이 아니라 그 탭의 내용이다). */}
@@ -1085,10 +1180,10 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               <Button variant="outline" size="sm" onClick={() => setSelectedItemId(null)}>닫기</Button>
             </header>
             <div className="p-[var(--filter-pad)]">
-              {detailKind === 'SKILL' ? (
-                <SkillDetailView skill={selectedItem as any} />
-              ) : detailKind === 'TEST' ? (
-                <TestDetailView test={selectedItem as any} />
+              {detailKind === 'SKILL' && isSkillItem(selectedItem) ? (
+                <SkillDetailView skill={selectedItem} />
+              ) : detailKind === 'TEST' && isTestItem(selectedItem) ? (
+                <TestDetailView test={selectedItem} />
               ) : (
                 <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded border border-border bg-muted p-3 text-xs text-foreground">
                   {JSON.stringify(selectedItem, null, 2)}
@@ -1124,11 +1219,11 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
             {listConfig && listConfig.data.length > 0 ? (
                <DataExportExcel
-            scope="page"
-                  data={listConfig.data}
-                  headers={listConfig.exportHeaders}
-                  filename={listConfig.exportName}
-                  className="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all"
+                 scope="page"
+                 data={listConfig.data as unknown as Record<string, unknown>[]}
+                 headers={listConfig.exportHeaders}
+                 filename={listConfig.exportName}
+                 className="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all"
                />
             ) : (
                <div className="p-6 rounded-lg border-2 border-dashed border-border bg-muted/40 text-xs font-bold text-muted-foreground text-center">

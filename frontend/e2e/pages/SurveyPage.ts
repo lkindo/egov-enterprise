@@ -114,7 +114,7 @@ export class SurveyPage {
             const res = await fetch(`/api/v1/polls?keyword=${encodeURIComponent(t)}&size=10&page=0`);
             const json = await res.json();
             const list = json.data?.list || json.data?.content || [];
-            const found = list.find((p: any) => p.pollNm === t);
+            const found = list.find((p: { pollNm?: string; pollSn?: number }) => p.pollNm === t);
             return found?.pollSn || null;
         }, { title });
 

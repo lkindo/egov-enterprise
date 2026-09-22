@@ -34,6 +34,33 @@ interface DraftData {
   expiresAt: number;
 }
 
+function readDraftFromStorage(fullKey: string | null, epochValue: number): DraftData | null {
+  if (!fullKey || epochValue !== getBoardDraftEpoch()) return null;
+  try {
+    const raw = boardDraftMemoryStorage.getItem(fullKey);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as Partial<DraftData>;
+    const valid = data.version === 2
+      && typeof data.title === 'string'
+      && typeof data.content === 'string'
+      && typeof data.savedAt === 'string'
+      && typeof data.expiresAt === 'number'
+      && Number.isFinite(data.expiresAt);
+    if (!valid || data.expiresAt! <= Date.now()) {
+      boardDraftMemoryStorage.removeItem(fullKey);
+      return null;
+    }
+    return data as DraftData;
+  } catch {
+    try {
+      boardDraftMemoryStorage.removeItem(fullKey);
+    } catch {
+      // 읽기뿐 아니라 삭제도 거부될 수 있다. 편집 화면은 계속 사용할 수 있어야 한다.
+    }
+    return null;
+  }
+}
+
 /**
  * 현재 탭의 메모리에만 게시글을 임시 보관한다. 새로고침·문서 종료 후에는 복원되지 않는다.
  */
@@ -50,8 +77,11 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
   const epoch = useMemo(() => ({ key: fullKey, value: getBoardDraftEpoch() }), [fullKey]);
   const clearedDataRef = useRef<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
-  const [hasDraft, setHasDraft] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(() => {
+    purgePersistedBoardDraftStorage();
+    return readDraftFromStorage(fullKey, epoch.value)?.savedAt ?? null;
+  });
+  const [hasDraft, setHasDraft] = useState<boolean>(() => Boolean(readDraftFromStorage(fullKey, epoch.value)));
 
   // Use refs for callbacks to prevent infinite loops when inline functions are passed
   const onRestoreRef = useRef(onRestore);
@@ -89,30 +119,7 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
   }, [fullKey, minLength, ttlMs, epoch]);
 
   const readDraft = useCallback((): DraftData | null => {
-    if (!fullKey || epoch.value !== getBoardDraftEpoch()) return null;
-    try {
-      const raw = boardDraftMemoryStorage.getItem(fullKey);
-      if (!raw) return null;
-      const data = JSON.parse(raw) as Partial<DraftData>;
-      const valid = data.version === 2
-        && typeof data.title === 'string'
-        && typeof data.content === 'string'
-        && typeof data.savedAt === 'string'
-        && typeof data.expiresAt === 'number'
-        && Number.isFinite(data.expiresAt);
-      if (!valid || data.expiresAt! <= Date.now()) {
-        boardDraftMemoryStorage.removeItem(fullKey);
-        return null;
-      }
-      return data as DraftData;
-    } catch {
-      try {
-        boardDraftMemoryStorage.removeItem(fullKey);
-      } catch {
-        // 읽기뿐 아니라 삭제도 거부될 수 있다. 편집 화면은 계속 사용할 수 있어야 한다.
-      }
-      return null;
-    }
+    return readDraftFromStorage(fullKey, epoch.value);
   }, [fullKey, epoch]);
 
   // 복원
@@ -132,8 +139,10 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
     setLastSavedAt(null);
   }, [fullKey]);
 
-  // 초기 진입 시 기존 임시저장 확인
-  useEffect(() => {
+  // fullKey 변경 시 임시저장 상태 동기화
+  const [prevFullKey, setPrevFullKey] = useState(fullKey);
+  if (fullKey !== prevFullKey) {
+    setPrevFullKey(fullKey);
     purgePersistedBoardDraftStorage();
     const existing = readDraft();
     if (existing) {
@@ -143,7 +152,7 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
       setHasDraft(false);
       setLastSavedAt(null);
     }
-  }, [readDraft]);
+  }
 
   // 주기적 자동 저장
   useEffect(() => {

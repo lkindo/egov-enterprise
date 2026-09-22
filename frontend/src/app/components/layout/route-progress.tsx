@@ -8,20 +8,22 @@ export function RouteProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const currentKey = `${pathname}?${searchParams.toString()}`;
+  const [prevKey, setPrevKey] = useState(currentKey);
+
+  if (currentKey !== prevKey) {
+    setPrevKey(currentKey);
+    setLoading(true);
+  }
 
   useEffect(() => {
-    // Start loading on path/params change
-    setLoading(true);
-    
-    // Simulate end of transition (since Next.js 13+ doesn't have route change events easily accessible)
-    // In a real scenario, we'd use a more robust way to detect transition completion,
-    // but for instant feedback, a short pulse or timeout is effective for UX perceived performance.
+    if (!loading) return;
     const timer = setTimeout(() => {
       setLoading(false);
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [pathname, searchParams]);
+  }, [loading]);
 
   return (
     <AnimatePresence>

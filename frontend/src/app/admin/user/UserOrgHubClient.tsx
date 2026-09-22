@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, use, useEffect, useRef } from 'react';
+import React, { useState, useMemo, use, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -190,9 +190,11 @@ export default function UserOrgHubClient({
 
 
   /** 라우트(=탭) 이동 시 서버가 내려준 defaultTab 으로 동기화한다. */
-  useEffect(() => {
+  const [prevDefaultTab, setPrevDefaultTab] = useState(defaultTab);
+  if (defaultTab !== prevDefaultTab) {
+    setPrevDefaultTab(defaultTab);
     setActiveTab(defaultTab);
-  }, [defaultTab]);
+  }
 
   const goToPage = React.useCallback((page: number) => {
     setUserPage(page);

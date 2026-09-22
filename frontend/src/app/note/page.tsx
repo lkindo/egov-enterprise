@@ -638,7 +638,15 @@ export default function NotePage() {
   );
 }
 
-function TabButton({ active, onClick, icon, label, count }: any) {
+interface NoteTabButtonProps {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  count?: number;
+}
+
+function TabButton({ active, onClick, icon, label, count }: NoteTabButtonProps) {
   return (
     <button
       type="button"
