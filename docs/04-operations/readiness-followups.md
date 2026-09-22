@@ -697,3 +697,40 @@ Blob/Clob 스트리밍, GB/TB 규모, 운영 승인·cutover 전체 절차를 �
   Next는 edge만 도달한다는 네트워크 가정에 의존한다. 스크레이퍼 등 부가 컨테이너를 같은 네트워크에 둘 때 이 가정이 약해진다.
 - 기존 배포에 `ip_range`를 더하면 compose가 네트워크를 다시 만들어야 하므로 점검 창에서 `down` 뒤 `up`으로 반영한다.
 - 운영 호스트의 실제 LB·TLS 종단·Linux iptables 경로와 IPv6는 이 리허설 범위 밖이다.
+
+## Spring Boot 4 호환 실측
+
+2026-09-23 GAP-DEP-002(Boot 3.5 라인 OSS 지원 종료·미수정 CVE 16건)의 라인 결정에 앞서, `main`(c58bb9e89) 기준
+별도 워크트리에서 **Spring Boot 4.0.8**(Framework 7.0.9·Security 7.0.7·Integration 7.0.6·Jackson 3.1.5·Hibernate 7.2.24·
+Tomcat 11.0.24)로 올렸을 때 컴파일이 어디서 막히는지를 반복 실측했다. 목적은 이행이 아니라 **표면 측정**이며,
+프로브 보정은 원본에 반영하지 않았다(로컬 브랜치 `probe/boot4-compat`, 워크트리 `D:/project/egov-boot4-probe`).
+`./gradlew compileJava compileTestJava --continue`를 8회 반복하며 한 층씩 막힌 원인을 걷어냈다.
+
+### 결과 — 본체·testFixtures 컴파일 통과까지 필요한 변경
+
+| 축 | 변경 | 근거 |
+|---|---|---|
+| 빌드 — BOM·플러그인 | Boot 플러그인·`spring-boot-dependencies` 3.5.16 → 4.0.8, springdoc 2.8.5 → 3.1.1, spring-boot-admin 3.4.1 → 4.1.2 | Boot 4 BOM 실측 |
+| 빌드 — 오버라이드 | `jackson-bom.version` 2.21.5 오버라이드 제거(Boot 4 는 Jackson 3 BOM 좌표, Jackson 2 는 `jackson-2-bom` 2.21.5 로 별도 관리) · `tomcat.version` 10.1.59 오버라이드 제거(Boot 4 는 Tomcat 11 이라 다운그레이드가 됨) | 1차 해석 실패 |
+| 빌드 — 관리 이탈 | `spring-retry` 가 BOM 관리에서 빠져 버전 명시 필요(2.0.13) · `spring-boot-starter-aop` → `spring-boot-starter-aspectj` 개명 · Flyway autoconfig 가 `spring-boot-flyway` 모듈로 분리돼 의존 추가 필요 | 2·3·8차 |
+| 빌드 — 테스트 | Boot 4 테스트 모듈 분할: `DataJpaTest`·`AutoConfigureMockMvc`·`AutoConfigureTestDatabase` 는 `spring-boot-starter-data-jpa-test`·`spring-boot-starter-webmvc-test`·`spring-boot-starter-jdbc-test` 계열 · Testcontainers 2.0.5 좌표 개명(`testcontainers-postgresql`·`-mariadb`·`-mysql`·`-mssqlserver`·`-oracle-free`·`-junit-jupiter`) · testFixtures 의 Jackson 2 모듈(`jackson-datatype-jsr310`·`jackson-module-parameter-names`) 명시 | 6~8차 |
+| 본체 코드 | `-Werror` 아래 Framework 7 deprecation: `org.springframework.lang.NonNull/Nullable` → JSpecify(foundation 42건, 온라인 모듈 전체 51파일 사용) · `@EntityScan` → `org.springframework.boot.persistence.autoconfigure` · `DataSourceAutoConfiguration` → `org.springframework.boot.jdbc.autoconfigure` · `MultipartProperties` → `org.springframework.boot.servlet.autoconfigure` · Security 7 `AuthorizationManager.check` → `authorize(Supplier<? extends Authentication>, T)`(`OperationAuthorizationManager`) · `FlywayMigrationStrategy`(위 모듈 추가 후 재배치) | 2~8차, 6파일 |
+| 테스트 코드 | `HibernatePropertiesCustomizer` → `org.springframework.boot.hibernate.autoconfigure` 외 위 테스트 모듈 재배치 | 7~8차 |
+
+8차 시점 `compileJava` 는 foundation·business-core·business-app·api-server·migration-tool 전부 통과(api-server 는 Flyway 모듈
+추가 전 1건만 남음), `compileTestFixturesJava` 통과, `compileTestJava` 는 테스트 모듈·Testcontainers 좌표 보정 전이라 미통과다.
+
+### 측정하지 않은 것
+
+- **eGovFrame 5.0.0 의 런타임 호환** — Spring 6 기준으로 컴파일된 jar 를 Framework 7 위에서 실행하는 이진 호환은 컴파일로 알 수 없다.
+  온라인 모듈의 eGovFrame Java import 파일은 6개다.
+- Jackson 3 전환이 응답 직렬화·`api-docs.json`·생성 zod 계약에 주는 차이, springdoc 3 의 문서 출력 차이.
+- Security 7 설정 DSL·Hibernate 7.2(JPA 3.2)·Tomcat 11 의 동작 차이, 하네스·PIT·E2E·재사용 생성기 통과 여부.
+- Testcontainers 2.x API 변경(좌표 개명 외).
+
+### 판정
+
+컴파일 수준의 이행 표면은 **작다**(빌드 보정 약 10건, 본체 6파일, 테스트 모듈 재배치). 비용의 무게는 위 미측정 항목,
+특히 eGovFrame 런타임 호환과 Jackson 3 직렬화 차이에 있다. 다음 단계는 사용자 결정(ⓐ 전환 ADR 초안 → 프로브 브랜치에서
+`bootRun`·하네스·E2E 실측 / ⓑ 상용 지원 / ⓒ accepted-risk)이며 GAP-DEP-002 가 추적한다.
+
