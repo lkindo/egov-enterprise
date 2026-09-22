@@ -121,7 +121,10 @@ public class LoginPolicyManageService {
         LoginPolicy entity = LoginPolicy.builder()
                 .userId(dto.getUserId())
                 .ipAddr(canonicalIpAddr)
-                .dpcnPrmYn(dto.getDpcnPrmYn())
+                // 중복 허용 여부는 화면 폼이 보내지 않는다(loginPolicySchema 의 .pick). 요청에 없으면 'N' 으로 시작한다 —
+                // 종전에는 새 행이 NULL 로 시작했고 CHECK (dpcn_prm_yn IN ('Y','N'))(V2_24)는 NULL 을 통과시켰다.
+                // 온라인 투표 등록(pollAtmcDsuseYn)과 같은 형태다. 수정 경로는 기존 값을 유지한다(아래 참조).
+                .dpcnPrmYn(dto.getDpcnPrmYn() != null ? dto.getDpcnPrmYn() : "N")
                 .lmtYn(dto.getLmtYn())
                 .bgngTm(dto.getBgngTm())
                 .endTm(dto.getEndTm())
@@ -144,9 +147,11 @@ public class LoginPolicyManageService {
           CHECK (dpcn_prm_yn IN ('Y','N'))(V2_24)는 PostgreSQL 규칙상 NULL 을 통과시켜 아무것도
           실패하지 않았다.
 
-          ⚠ insert 처럼 null→'N' 보정을 하면 안 된다 — 화면이 이 값을 보내지 않으므로 저장마다
+          ⚠ 수정 경로에는 null→'N' 보정을 두지 않는다 — 화면이 이 값을 보내지 않으므로 저장마다
             'Y'(중복 허용)를 'N' 으로 뒤집게 된다. 소실을 더 나쁜 결함으로 바꾸는 셈이다.
             DEC-OPS-082(온라인 투표 pollAtmcDsuseYn)가 같은 형태에서 같은 해법을 택했다.
+            등록 경로(insertLoginPolicy)는 2026-09-22 부터 값이 없으면 'N' 을 저장하므로 새 행은 NULL 로
+            시작하지 않는다 — 종전 주석은 등록에 보정이 있다고 전제했으나 실제로는 없었다.
 
           비대칭은 의도다 — 다섯 필드는 컨트롤이 있고 이 하나는 없다. 컨트롤이 생기면 이 분기를 걷는다.
         */

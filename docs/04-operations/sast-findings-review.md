@@ -1,5 +1,19 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-09-22 mariadb BOM 관리 좌표 상향에 따른 H2 테스트 경계 재검토
+
+SAST-FP-007의 보완 소스인 `build.gradle`에 `ext['mariadb.version'] = '3.5.10'` 한 줄을 추가했다. Spring Boot
+3.5.16 BOM이 관리하는 3.5.8 좌표가 Dependabot 경고 4건(#251~#254, 수정 3.5.9)의 대상이었고, 실제 해석은
+`migration-tool`의 testRuntimeOnly 직접 선언 3.5.10이라 런타임 노출은 없다. 이 변경은 의존성 좌표 하나를 올릴 뿐
+H2를 운영 classpath에 추가하지 않으며 테스트 프로필·테스트 의존성 경계는 그대로다. 탐지 원문인
+`api-server/src/main/resources/application-test.yml`과 다른 보완 소스의 해시는 기존 승인값과 일치한다.
+
+변경된 root build 보완 소스 하나와 승인 목록의 registry 해시만 재결속한다. 예외 6건의 범위·규칙·행·
+fingerprint·승인일·만료일과 보안 임계값은 유지한다. 재결속 전 해시 불일치가 SAST 예외 계약 3건을 실제로
+실패시켰고, 재결속 뒤 같은 계약(sast-exceptions 7·sast-policy 6)이 통과했다. 이번 근거는 의존성 선언의
+재검토이며 새 runtime classpath나 CodeQL 실행의 증거가 아니다. 현재 CodeQL·required CI 결과는 병합할 커밋에서
+별도로 확인한다.
+
 ## 2026-09-21 CI 독립 모듈 검증 분리에 따른 H2 테스트 경계 재검토
 
 SAST-FP-007의 보완 소스인 `build.gradle`에 온라인 모듈과 migration CLI의 빌드·커버리지 검증 task를

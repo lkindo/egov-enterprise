@@ -224,6 +224,13 @@ subprojects { subproject ->
     ext['log4j2.version'] = '2.25.5'
     ext['opentelemetry.version'] = '1.62.0'
 
+    //   [2026-09-22] mariadb-java-client — 3.5.16 BOM 은 3.5.8 을 관리한다(`:migration-tool:dependencyManagement` 실측).
+    //     Dependabot 경고 4건(#251~#254 — CVE-2026-55856/55857/55858/61700, 범위 >=3.5.0 <3.5.9, 수정 3.5.9)은
+    //     manifest settings.gradle 의 그 BOM 좌표를 본다. 실제 해석은 migration-tool 의 testRuntimeOnly 직접 선언
+    //     3.5.10 이라 런타임 노출은 없지만, dependency graph 제출은 BOM 관리 좌표를 함께 싣는다.
+    //     제거 조건: BOM 관리 좌표가 3.5.9+ 로 오르면(undici override 와 같은 형태, DEC-OPS-086).
+    ext['mariadb.version'] = '3.5.10'
+
     dependencyManagement {
         imports {
             mavenBom "org.springframework.boot:spring-boot-dependencies:3.5.16"
