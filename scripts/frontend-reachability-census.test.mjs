@@ -137,9 +137,16 @@ const COLLABORATION_SURVIVORS = [
 */
 const CORE_SURVIVORS = [
   'frontend/src/services/business/user/__tests__/CoreUserServices.test.ts',
+  // [2026-09-22 #707] 모니터링 허브는 core 화면인데 댓글(collaboration) 행 타입을 마커 밖에서 타입 전용으로 참조하는
+  //   회귀가 들어와, core 투영에서 허브가 연쇄 제거되고 그곳을 목적지로 둔 관측성 리다이렉트 페이지까지 사라졌다.
+  //   투영 tsc 는 CI 20분 뒤에야 잡았다 — 이 목록은 같은 회귀를 운영 계약(몇 초)에서 잡는다.
+  'frontend/src/app/admin/system/monitoring/hub/page.tsx',
+  'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx',
+  'frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx',
+  'frontend/src/app/admin/observability/page.tsx',
 ];
 
-test('pack 별로 가른 사용자 서비스 테스트는 core 프로필에서도 제외 pack 을 참조하지 않는다', () => {
+test('core 프로필에서 살아남아야 하는 파일은 제외 pack 을 참조하지 않는다(주석·타입 전용 참조 포함)', () => {
   const manifest = JSON.parse(readFileSync(join(repoRoot, 'config/reusable-base-profiles.json'), 'utf8'));
   const exclusion = profileExclusion(manifest, 'core');
   const frontendRoot = join(repoRoot, 'frontend');

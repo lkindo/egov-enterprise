@@ -43,11 +43,15 @@ import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdm
 import { monitoringKeys, monitoringQueryOptions } from '@/queries/monitoring-query-options';
 /* reusable-base:collaboration:start */
 import { commentMutationOptions, commentQueryOptions } from '@/queries/comment-query-options';
+// ⚠ [2026-09-22] 이 타입 전용 참조는 반드시 collaboration 블록 안에 둔다. 생성기의 연쇄 제거는 타입 전용
+//   참조도 의존으로 세므로, 블록 밖에 두면 core 투영에서 댓글 서비스와 함께 이 파일 전체가 사라진다 →
+//   모니터링 허브 소실 → 그곳을 목적지로 둔 관측성 리다이렉트 페이지까지 삭제(#707 CI 실측).
+//   (가이드 §3.7-1·4: 타입 참조도 같은 구역이며, 주석에 제거 모듈의 참조 문장·경로를 인용하지 않는다)
+import type { CommentDetail } from '@/services/foundation/system/CommentAdminService';
 /* reusable-base:collaboration:end */
 import { attachmentIntegrityService } from '@/services/foundation/system/AttachmentIntegrityService';
 import type { SysLog, LoginLog } from '@/types/foundation/system';
 import type { AuditLog } from '@/services/foundation/system/AuditAdminService';
-import type { CommentDetail } from '@/services/foundation/system/CommentAdminService';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
@@ -179,7 +183,9 @@ interface BaseListTabConfig<T> {
 type ListTabConfig =
   | (BaseListTabConfig<SysLog> & { kind: 'SYSTEM' })
   | (BaseListTabConfig<LoginLog> & { kind: 'LOGIN' })
+  /* reusable-base:collaboration:start */
   | (BaseListTabConfig<CommentDetail> & { kind: 'COMMENTS' })
+  /* reusable-base:collaboration:end */
   | (BaseListTabConfig<AuditLog> & { kind: 'SECURITY' });
 
 function isSkillItem(item: unknown): item is HarnessSkill {
@@ -1101,6 +1107,9 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                   onPageChange: (p) => setPage(p)
                 }}
               />
+/* ⚠ [2026-09-22] 이 분기는 collaboration 소유 행 타입으로 좁혀지는 유일한 JSX 라 블록 안에 둔다 —
+   유니온 멤버가 블록과 함께 빠지는 축소 프로필에서는 이 비교 자체가 타입 오류다(#707 core 투영 tsc 실측). */
+/* reusable-base:collaboration:start */
             ) : listConfig.kind === 'COMMENTS' ? (
               <StandardDataTable
                 columns={listConfig.columns}
@@ -1122,6 +1131,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                   onPageChange: (p) => setPage(p)
                 }}
               />
+/* reusable-base:collaboration:end */
             ) : (
               <StandardDataTable
                 columns={listConfig.columns}
