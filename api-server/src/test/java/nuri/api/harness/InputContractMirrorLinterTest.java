@@ -111,12 +111,16 @@ class InputContractMirrorLinterTest {
     // ADR-0012: BoardMasterDto.blogYn 제거로 길이/enum 표적을 각각 1개 줄인다.
     // [2026-09-14 DEC-OPS-090] 표적이 원장으로 옮겨졌다. 하한은 원장 전체에 적용한다 — 축소 프로필에서
     //   검사하는 부분집합은 작아지지만, 원장을 비워 게이트를 줄이는 경로는 여전히 red 다.
-    private static final int MIN_LENGTH_FIELDS = 127;
+    // [2026-09-22 GAP-CONTRACT-001] +49 — 저장 경로가 확인된 DTO 12쌍 편입(만족도·댓글·로그인 정책·쪽지·부재·행정구역·
+    //   메뉴·설문 문항/항목/템플릿·도움말·온라인 매뉴얼). 편입 즉시 만족도·댓글 본문 4000, 부재 여부 1 의 @Size 부재가
+    //   red 로 드러나 함께 닫았다.
+    private static final int MIN_LENGTH_FIELDS = 176;
     private static final int MIN_ENUM_FIELDS = 14;
     private static final int MIN_NESTED_VALIDATION_FIELDS = 2;
     // [2026-09-06 병합] CommunityDto.cmntyNm·DeptJobBoxDto.deptTaskBoxNm 필수화(+2), SmsRecptnDto.rcptnTelno 해제(-1) → 37.
     // [2026-09-07] +2 (ISG itntSvcNm/itntSvcExpln).
-    private static final int MIN_REQUIRED_FIELDS = 42;
+    // [2026-09-22 GAP-CONTRACT-001] +16 (위 12쌍 중 필수 제약을 가진 7개 DTO 의 NotBlank/NotNull 전체).
+    private static final int MIN_REQUIRED_FIELDS = 58;
     // [2026-09-07] +3 (ISG itntSrvcSn/lastMdfrId/mdfcnDt).
     private static final int MIN_READ_ONLY_FIELDS = 45;
     private static final int MIN_CALENDAR_DATE_FIELDS = 12;

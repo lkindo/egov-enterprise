@@ -49,6 +49,8 @@ public class CommentDto {
     // [보안] 익명 댓글 비밀번호는 요청(write)으로만 수용, 응답(read)에 직렬화 금지.
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String pswd;
+    // [2026-09-22 GAP-CONTRACT-001] 물리 컬럼 4000 을 입력에서 보호한다(만족도 본문과 같은 규칙).
+    @Size(max = 4000)
     private String ansCn;
     @Schema(nullable = true, types = {"string", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)

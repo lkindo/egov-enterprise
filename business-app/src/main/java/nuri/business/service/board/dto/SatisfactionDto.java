@@ -15,6 +15,8 @@ public class SatisfactionDto {
     @Size(max = 20)
     private String bbsId;
     private Long pstSn;
+    // [2026-09-22 GAP-CONTRACT-001] 물리 컬럼 4000 을 입력에서 보호한다 — 없으면 4001자 입력이 검증을 지나 DB 오류(500)로 죽는다.
+    @Size(max = 4000)
     private String dgstfnCn;
     private Integer dgstfnScr;
     private String userId;
