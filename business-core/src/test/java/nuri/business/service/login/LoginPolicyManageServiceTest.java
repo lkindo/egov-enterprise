@@ -259,6 +259,36 @@ class LoginPolicyManageServiceTest {
     }
 
     @Test
+    @DisplayName("등록: 중복 허용 여부가 요청에 없으면 'N' 으로 저장한다(GAP-POLICY-001 종료)")
+    void insertDefaultsDuplicateLoginToN() {
+        // 화면 폼(loginPolicySchema 의 .pick)은 dpcnPrmYn 을 보내지 않는다 — 종전에는 새 행이 NULL 로 시작했고
+        // CHECK (dpcn_prm_yn IN ('Y','N'))(V2_24)는 PostgreSQL 규칙상 NULL 을 통과시켜 아무것도 실패하지 않았다.
+        User user = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").pswd("pass").build();
+        given(userRepository.findByUserId("USER1")).willReturn(Optional.of(user));
+        LoginPolicyDto dto = new LoginPolicyDto();
+        dto.setUserId("USER1");
+
+        loginPolicyManageService.insertLoginPolicy(dto);
+
+        verify(loginPolicyRepository).save(argThat((LoginPolicy saved) -> "N".equals(saved.getDpcnPrmYn())));
+    }
+
+    @Test
+    @DisplayName("등록: 중복 허용 여부를 명시하면 그대로 저장한다")
+    void insertKeepsExplicitDuplicateLogin() {
+        // "항상 'N'" 과잉 교정을 막는 대조군이다.
+        User user = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").pswd("pass").build();
+        given(userRepository.findByUserId("USER1")).willReturn(Optional.of(user));
+        LoginPolicyDto dto = new LoginPolicyDto();
+        dto.setUserId("USER1");
+        dto.setDpcnPrmYn("Y");
+
+        loginPolicyManageService.insertLoginPolicy(dto);
+
+        verify(loginPolicyRepository).save(argThat((LoginPolicy saved) -> "Y".equals(saved.getDpcnPrmYn())));
+    }
+
+    @Test
     @DisplayName("로그인 정책 등록 실패 - 존재하지 않는 사용자 (유령 loginId 차단, V2_13 결속)")
     void insertLoginPolicyUserNotFoundTest() {
         given(userRepository.findByUserId("ghost")).willReturn(Optional.empty());
