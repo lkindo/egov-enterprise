@@ -1,4 +1,9 @@
 package nuri.business.service.user;
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+
 import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.domain.user.exception.UserErrorCode;
 
@@ -38,6 +43,24 @@ import java.util.stream.Collectors;
 @Service
 @Transactional(readOnly = true)
 public class UserService extends BaseAbstractService {
+
+        /**
+         * 가입일자(yyyyMMdd) 판정의 기준 시계. 운영에서는 항상 Asia/Seoul 시스템 시계다.
+         *
+         * <p>[2026-09-23] 종전에는 등록·가입이 가입일자를 채우지 않아 NULL 로만 저장됐고, 컬럼의 DB 기본값은
+         * varchar(8) 에 담기지 않는 CURRENT_TIMESTAMP 라 생략 INSERT 가 죽었다(V2_103 이 기본값을 고쳤다).
+         * 앱 경로는 기본값에 기대지 않고 여기서 명시적으로 채운다. 시계 교체 지점은 LoginPolicyManageService 와 같은 형태다.
+         */
+        private Clock signupClock = Clock.system(ZoneId.of("Asia/Seoul"));
+
+        /** 테스트 전용 — 가입일자 판정의 기준 시각을 고정한다. */
+        void useSignupClock(Clock clock) {
+                this.signupClock = java.util.Objects.requireNonNull(clock, "clock");
+        }
+
+        private String todaySignupYmd() {
+                return LocalDate.now(signupClock).format(DateTimeFormatter.BASIC_ISO_DATE);
+        }
 
 
         private final UserRepository userRepository;
@@ -227,6 +250,7 @@ public class UserService extends BaseAbstractService {
                                 .pswd(encodedPassword)
                                 .userNm(userNm)
                                 .esntlId(esntlId)
+                                .sbscrbYmd(todaySignupYmd())
                                 .pswdHint(pswdHint)
                                 .pswdCrans(pswdCrans)
                                 .role(role)
@@ -465,6 +489,7 @@ public class UserService extends BaseAbstractService {
                                 .pswd(encodedPassword)
                                 .userNm(request.getUserNm())
                                 .esntlId(esntlId)
+                                .sbscrbYmd(todaySignupYmd())
                                 .pswdHint(request.getPswdHint())
                                 .pswdCrans(request.getPswdCrans())
                                 // [보안] 공개 엔드포인트이므로 권한을 요청에서 받지 않고 USER 로 고정한다.

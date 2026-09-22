@@ -325,6 +325,41 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("등록: 가입일자를 Asia/Seoul 오늘(yyyyMMdd)로 기록한다")
+    void registerUserStampsSignupDate() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+            given(userRepository.findByUserId("dated")).willReturn(Optional.empty());
+            given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
+            // 고정 시계는 CI 실행 시각과 무관하게 같은 값을 준다(e2e 날짜 폭탄과 같은 함정 방지).
+            userService.useSignupClock(java.time.Clock.fixed(java.time.Instant.parse("2026-09-23T00:30:00Z"), java.time.ZoneId.of("Asia/Seoul")));
+
+            userService.registerUser(UserDto.builder().userId("dated").pswd("password").userNm("홍길동").role("USER").build());
+
+            var saved = org.mockito.ArgumentCaptor.forClass(User.class);
+            verify(userRepository).saveAndFlush(saved.capture());
+            assertEquals("20260923", saved.getValue().getSbscrbYmd());
+        }
+    }
+
+    @Test
+    @DisplayName("가입: 가입일자는 시계의 시간대(Asia/Seoul) 기준 날짜다 — UTC 로 세면 하루 어긋나는 경계")
+    void signupStampsSignupDateInSeoul() {
+        UserSignupRequest request = UserSignupRequest.builder().userId("dated2").pswd("password").userNm("신규유저").build();
+        given(userRepository.findByUserId("dated2")).willReturn(Optional.empty());
+        given(passwordEncoder.encode(anyString())).willReturn("encoded");
+        // UTC 2026-09-22 20:00 = KST 2026-09-23 05:00 — 시간대를 무시하면 22일로 기록된다.
+        userService.useSignupClock(java.time.Clock.fixed(java.time.Instant.parse("2026-09-22T20:00:00Z"), java.time.ZoneId.of("Asia/Seoul")));
+
+        userService.signup(request);
+
+        var saved = org.mockito.ArgumentCaptor.forClass(User.class);
+        verify(userRepository).saveAndFlush(saved.capture());
+        assertEquals("20260923", saved.getValue().getSbscrbYmd());
+    }
+
+    @Test
     @DisplayName("회원가입 테스트")
     void signupTest() {
         UserSignupRequest request = UserSignupRequest.builder()

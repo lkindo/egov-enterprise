@@ -879,6 +879,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/ReferenceIntegrityFkMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-USER-SIGNUP-DATE-DEFAULT",
+          "source": "api-server/src/test/java/nuri/api/schema/UserSignupDateDefaultIntegrationTest.java"
+        },
+        {
           "id": "DB-AUTH-REFRESH-TOKEN-ROTATION-CONCURRENCY",
           "source": "api-server/src/test/java/nuri/api/schema/RefreshTokenRotationConcurrencyIntegrationTest.java"
         },
