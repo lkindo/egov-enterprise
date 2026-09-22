@@ -170,6 +170,107 @@ test('core 프로필에서 살아남아야 하는 파일은 제외 pack 을 참�
   }
 });
 
+/*
+  [2026-09-22 GAP-PACK-001 · #707] route census(config/ui-route-capabilities.json)의 directProjectionProfiles 는
+  선언 removePaths 만 본 관찰이라 "그 프로필에 남는다" 는 뜻이 아니다(그 계약의 note 가 명시). 실제 생존은 import
+  cascade 를 따르는 이 도달성 census 가 안다. #707 에서 core 화면(모니터링 허브)이 collaboration 행 타입을 마커
+  밖에서 참조해 core 투영에서 통째로 사라졌는데 원장 투영은 red 가 아니었고 20분짜리 투영 tsc 만 잡았다.
+
+  아래는 "선언상 생존인데 cascade 로 사라지는 라우트" 의 exact 승인 집합이다(DEC-OPS-090 의 edge exact 패턴).
+  늘어나면 새 소실이라 red, 줄어들면 낡은 승인이라 red. 현재 14건은 전부 화면이 collaboration 서비스를 정당하게
+  쓰는 경우이며 route census 쪽 관찰 한계일 뿐이다. 새 항목을 넣기 전에 잘못된 import(가이드 §3.7-7)가 아닌지
+  먼저 본다 — 승인 집합은 서랍이 아니다(H2). 위 CORE_SURVIVORS 는 주석 인용까지 보는 원문 축이라 별개로 둔다.
+*/
+const APPROVED_TRANSITIVE_ROUTE_LOSSES = [
+  { profile: 'core', route: '/admin/collaboration', configuredPath: 'src/services/business/user/NoteService.ts', reason: '협업 허브가 쪽지 서비스(collaboration)를 쓴다' },
+  { profile: 'core', route: '/admin/collaboration/mail-history', configuredPath: 'src/services/business/mail/MailService.ts', reason: '메일 이력은 메일 서비스(collaboration) 소비자다' },
+  { profile: 'core', route: '/admin/collaboration/mail-send', configuredPath: 'src/services/business/mail/MailService.ts', reason: '메일 발송은 메일 서비스(collaboration) 소비자다' },
+  { profile: 'core', route: '/admin/collaboration/scraps', configuredPath: 'src/services/business/user/NoteService.ts', reason: '협업 허브 클라이언트를 공유한다' },
+  { profile: 'core', route: '/admin/collaboration/scraps/selectScrapList', configuredPath: 'src/services/business/user/ScrapService.ts', reason: '스크랩 목록은 스크랩 서비스(collaboration) 소비자다' },
+  { profile: 'core', route: '/admin/community/boards/detail', configuredPath: 'src/services/business/knowledge/knowledgeService.ts', reason: '게시글 상세는 지식 서비스(collaboration) 소비자다' },
+  { profile: 'core', route: '/admin/community/boards/insert-board-article', configuredPath: 'src/app/actions/boardActions.ts', reason: '게시글 작성은 게시판 서버 액션(collaboration) 소비자다' },
+  { profile: 'core', route: '/admin/community/boards/maker', configuredPath: 'src/services/foundation/system/BoardAdminService.ts', reason: '게시판 마법사는 게시판 관리 서비스(collaboration) 소비자다' },
+  { profile: 'core', route: '/admin/community/boards/master', configuredPath: 'src/services/foundation/system/BoardAdminService.ts', reason: '게시판 마스터 목록은 게시판 관리 서비스(collaboration) 소비자다' },
+  { profile: 'core', route: '/admin/community/boards/select-board-list', configuredPath: 'src/services/foundation/system/BoardAdminService.ts', reason: '게시판 목록은 게시판 관리 서비스(collaboration) 소비자다' },
+  { profile: 'core', route: '/admin/notifications', configuredPath: 'src/services/foundation/system/NotificationAdminService.ts', reason: '알림 센터의 관리자 발송 다이얼로그(DEC-OPS-042)가 알림 관리 서비스(collaboration)를 쓴다' },
+  { profile: 'core', route: '/admin/uss/ion/sms', configuredPath: 'src/services/foundation/operation/SmsAdminService.ts', reason: '문자 관리는 문자 서비스(collaboration) 소비자다' },
+  { profile: 'core', route: '/cop/sms/selectSmsList', configuredPath: 'src/services/foundation/operation/SmsAdminService.ts', reason: '문자 별칭 페이지는 같은 문자 서비스(collaboration) 소비자다' },
+  { profile: 'core', route: '/note', configuredPath: 'src/services/business/user/NoteService.ts', reason: '쪽지함은 쪽지 서비스(collaboration) 소비자다' },
+];
+
+/** route census 가 생존이라 선언한 라우트 중 도달성 census 가 cascade 로 지우는 것을 모은다. */
+function transitiveRouteLosses(routeCensus, census) {
+  const losses = [];
+  for (const route of routeCensus.routes) {
+    const row = census.files.find((candidate) => candidate.file === route.source);
+    if (!row) throw new Error(`${route.route}: ${route.source} has no reachability census row`);
+    for (const profile of route.directProjectionProfiles ?? []) {
+      const constraint = row.profileRemovalConstraints.find((candidate) => candidate.profile === profile);
+      if (!constraint) continue;
+      if (constraint.removal !== 'transitive') {
+        throw new Error(`${route.route}@${profile}: ${constraint.removal} removal contradicts directProjectionProfiles`);
+      }
+      losses.push({ profile, route: route.route, configuredPath: constraint.configuredPath, evidencePath: constraint.evidencePath });
+    }
+  }
+  return losses;
+}
+
+const lossKey = (entry) => `${entry.profile}\u0000${entry.route}\u0000${entry.configuredPath}`;
+
+/** exact 대조 — 승인 밖 소실, 낡은 승인, 사유 없는 승인을 모두 위반으로 낸다. */
+function transitiveRouteLossViolations(losses, approved) {
+  const violations = [];
+  for (const entry of approved) {
+    if (!entry.reason?.trim()) violations.push(`승인 사유 없음: ${entry.profile} ${entry.route}`);
+  }
+  const approvedKeys = new Set(approved.map(lossKey));
+  for (const entry of losses) {
+    if (!approvedKeys.has(lossKey(entry))) {
+      violations.push(`승인되지 않은 라우트 소실: ${entry.profile} ${entry.route} via ${entry.evidencePath.join(' → ')} — 잘못된 import 인지(가이드 §3.7-7) 먼저 확인한다`);
+    }
+  }
+  const actualKeys = new Set(losses.map(lossKey));
+  for (const entry of approved) {
+    if (!actualKeys.has(lossKey(entry))) {
+      violations.push(`낡은 승인: ${entry.profile} ${entry.route} 는 더 이상 cascade 로 사라지지 않는다 — 승인에서 뺀다`);
+    }
+  }
+  return violations;
+}
+
+test('routes the route census declares surviving are lost only where an approved cascade says so', () => {
+  const routeCensus = JSON.parse(readFileSync(join(repoRoot, 'config/ui-route-capabilities.json'), 'utf8'));
+  const census = buildFrontendReachabilityCensus({ repoRoot });
+  const losses = transitiveRouteLosses(routeCensus, census);
+  assert.deepEqual(transitiveRouteLossViolations(losses, APPROVED_TRANSITIVE_ROUTE_LOSSES), []);
+  assert.equal(losses.length, APPROVED_TRANSITIVE_ROUTE_LOSSES.length);
+});
+
+test('the route-loss gate is red for an unapproved loss, a stale approval, a moved cascade, and a reasonless approval', () => {
+  const approved = [{ profile: 'core', route: '/kept', configuredPath: 'src/services/x.ts', reason: '정당한 cascade' }];
+  const losses = [{ profile: 'core', route: '/kept', configuredPath: 'src/services/x.ts', evidencePath: ['a', 'b'] }];
+  assert.deepEqual(transitiveRouteLossViolations(losses, approved), []);
+  const hub = { profile: 'core', route: '/hub', configuredPath: 'src/services/y.ts', evidencePath: ['hub/page.tsx', 'HubClient.tsx', 'y.ts'] };
+  assert.match(transitiveRouteLossViolations([...losses, hub], approved).join('\n'),
+    /승인되지 않은 라우트 소실: core \/hub via hub\/page\.tsx → HubClient\.tsx → y\.ts/u);
+  assert.match(transitiveRouteLossViolations([], approved).join('\n'), /낡은 승인: core \/kept/u);
+  assert.match(transitiveRouteLossViolations(losses, [{ ...approved[0], reason: ' ' }]).join('\n'), /승인 사유 없음/u);
+  // 같은 라우트라도 다른 경로로 사라지면 별개 소실이다 — 바뀐 cascade 를 옛 승인이 가리지 않는다.
+  const moved = transitiveRouteLossViolations([{ ...losses[0], configuredPath: 'src/services/z.ts' }], approved);
+  assert.equal(moved.length, 2);
+  assert.ok(moved.some((line) => line.startsWith('승인되지 않은 라우트 소실')) && moved.some((line) => line.startsWith('낡은 승인')));
+});
+
+test('a direct removal of a route the route census declares surviving is a contradiction, and a missing census row is red', () => {
+  const contradiction = {
+    routes: [{ route: '/x', source: 'frontend/src/app/x/page.tsx', directProjectionProfiles: ['core'] }],
+  };
+  const census = { files: [{ file: 'frontend/src/app/x/page.tsx', profileRemovalConstraints: [{ profile: 'core', removal: 'direct', configuredPath: 'src/app/x', evidencePath: [] }] }] };
+  assert.throws(() => transitiveRouteLosses(contradiction, census), /direct removal contradicts/u);
+  assert.throws(() => transitiveRouteLosses({ routes: [{ route: '/y', source: 'frontend/src/app/y/page.tsx', directProjectionProfiles: ['core'] }] }, { files: [] }), /no reachability census row/u);
+});
+
 test('recipient picker and its collaboration consumers survive the collaboration projection', () => {
   const census = buildFrontendReachabilityCensus({ repoRoot });
   for (const file of COLLABORATION_SURVIVORS) {
