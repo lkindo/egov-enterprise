@@ -75,9 +75,9 @@ class ReferenceIntegrityFkIntegrationTest extends SharedPostgresMigrationTestSup
             // 화면이 보내는 "소속 없음"·"최상위" 는 서비스가 NULL 로 정규화해 여기까지 온다.
             statement.executeUpdate(
                     "INSERT INTO tb_ognz_info (ognz_id, ognz_nm) VALUES ('T_ROOT_DEPT', '최상위 부서')");
-            // ⚠ sbscrb_ymd 를 명시하는 이유: 그 컬럼의 DEFAULT 는 varchar(8) 에 담기지 않는
-            //   CURRENT_TIMESTAMP 라, 생략하면 FK 와 무관하게 "value too long" 으로 죽는다.
-            //   앱은 Hibernate 가 항상 값을 실어 보내 이 결함을 만나지 않는다(이 변경의 범위 밖).
+            // sbscrb_ymd 는 V2_103 부터 DB 기본값(Asia/Seoul 오늘, yyyyMMdd)이 채운다 — 종전 기본값은 varchar(8) 에
+            //   담기지 않는 CURRENT_TIMESTAMP 라 생략 INSERT 가 FK 와 무관하게 "value too long" 으로 죽었다.
+            //   여기서는 FK 의도만 보므로 값을 명시해 둔다. 생략 경로는 UserSignupDateDefaultIntegrationTest 가 본다.
             statement.executeUpdate(
                     "INSERT INTO tb_user_info (esntl_id, user_id, pswd, user_nm, sbscrb_ymd)"
                             + " VALUES ('T_NO_DEPT', 't_no_dept', 'x', '무소속 사용자', '20260917')");
