@@ -108,10 +108,17 @@ export function SessionExpiryWarning() {
     window.location.href = '/login?expired=true';
   }, [logout]);
 
-  const [prevUser, setPrevUser] = useState(user);
-  if (user !== prevUser) {
-    setPrevUser(user);
-    if (!user) {
+  // ⚠ [2026-09-22] 객체 참조가 아니라 **안정 키**로 비교한다. 렌더 중 파생 패턴은 조건이
+  //   매 렌더 성립하면 무한 렌더로 죽는데(`Too many re-renders`), `user` 를 참조로 비교하면
+  //   provider 가 값을 메모하지 않는 순간 그 경로가 열린다 — 계약 6건이 실제로 그렇게 죽었다.
+  //   종전 useEffect 는 새 객체여도 한 번 더 돌 뿐이라 치명적이지 않았고, 이 취약성은
+  //   리팩토링이 새로 만든 것이다. 이 블록의 관심사는 "사용자가 사라졌는가" 하나뿐이므로
+  //   식별자만 보면 충분하고 참조 안정성에 의존하지 않는다.
+  const userKey = user?.id ?? null;
+  const [prevUserKey, setPrevUserKey] = useState(userKey);
+  if (userKey !== prevUserKey) {
+    setPrevUserKey(userKey);
+    if (!userKey) {
       setShowWarning(false);
     }
   }

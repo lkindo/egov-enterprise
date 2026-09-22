@@ -94,10 +94,7 @@ export default function PolicyAdminClient() {
   }, [toast]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      void fetchPolicies();
-    }, 0);
-    return () => clearTimeout(timer);
+    void fetchPolicies();
   }, [fetchPolicies]);
 
  const handleEdit = (policy: SystemPolicy) => {

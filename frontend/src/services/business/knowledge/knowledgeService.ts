@@ -14,8 +14,22 @@ import {
 } from '@/types/generated-operations';
 import type { BoardDto, BoardStatsResponse } from '@/types/generated-zod';
 
+/**
+ * ⚠ [2026-09-22] 서버는 같은 자원을 **레거시 필드명으로도** 내려준다(`nttId`·`nttSj`·`frstRgtrId`).
+ *   생성 타입 `BoardDto` 에는 그 필드가 없지만, 타입에 없다는 것은 "오지 않는다" 가 아니라
+ *   "문서가 말하지 않았다" 이다(DEC-OPS-028 과 같은 계열). 타입을 좁히며 폴백을 지웠더니
+ *   레거시 응답이 `pstSn: 0`·`pstTtl: ''` 로 뭉개졌다(계약 3건 red 로 실측).
+ *   any 로 되돌리는 대신 레거시 축을 명시 타입으로 인정한다.
+ */
+type LegacyBoardFields = {
+  nttId?: number;
+  nttSj?: string;
+  frstRgtrId?: string;
+};
+type BoardDtoWithLegacy = BoardDto & LegacyBoardFields;
+
 export interface KnowledgeActivityItem {
-  id: string;
+  id: number;
   type: string;
   title: string;
   user: string;
@@ -126,9 +140,9 @@ class KnowledgeService extends ApiService {
     });
     
     return {
-      list: (res.list || []).map((item: BoardDto): KnowledgeDto => ({
-        pstSn: item.pstSn ?? 0,
-        pstTtl: item.pstTtl ?? '',
+      list: (res.list || []).map((item: BoardDtoWithLegacy): KnowledgeDto => ({
+        pstSn: item.pstSn ?? item.nttId ?? 0,
+        pstTtl: item.pstTtl ?? item.nttSj ?? '',
         pstCn: item.pstCn ?? '',
         atchFileSn: item.atchFileSn ?? undefined,
         userId: item.userId ?? undefined,
@@ -174,11 +188,11 @@ class KnowledgeService extends ApiService {
       query: { size: 10 },
     });
     
-    return (res.list || []).map((item: BoardDto) => ({
-      id: String(item.pstSn ?? 0),
+    return (res.list || []).map((item: BoardDtoWithLegacy): KnowledgeActivityItem => ({
+      id: item.pstSn ?? item.nttId ?? 0,
       type: 'SHARE',
-      title: item.pstTtl ?? '',
-      user: item.userNm || item.userId || 'Anonymous',
+      title: item.pstTtl ?? item.nttSj ?? '',
+      user: item.userNm || item.frstRgtrId || item.userId || 'Anonymous',
       time: item.crtDt?.split('T')[0] || 'Just now',
       impact: `+${(item.inqCnt || 0) % 100} Reach`,
     }));

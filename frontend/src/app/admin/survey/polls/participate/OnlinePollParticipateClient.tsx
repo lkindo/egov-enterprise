@@ -52,10 +52,7 @@ export default function OnlinePollParticipateClient() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      void fetchPolls();
-    }, 0);
-    return () => clearTimeout(timer);
+    void fetchPolls();
   }, [fetchPolls]);
 
  const handleSelectPoll = async (poll: OnlinePollManageVO) => {

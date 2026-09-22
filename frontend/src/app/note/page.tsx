@@ -81,7 +81,6 @@ export default function NotePage() {
   const loadNotes = useCallback(async (requestedTab: NoteTab = tabRef.current) => {
     if (requestedTab !== tabRef.current) return;
     const requestId = ++listRequestRef.current;
-    await Promise.resolve();
     setLoading(true);
     setListError(null);
     setNotes([]);
@@ -107,11 +106,8 @@ export default function NotePage() {
   }, [toast, page, pageSize, searchKeyword]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      void loadNotes(tab);
-    }, 0);
+    void loadNotes(tab);
     return () => {
-      clearTimeout(timer);
       listRequestRef.current += 1;
     };
   }, [loadNotes, tab]);
