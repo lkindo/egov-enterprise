@@ -311,7 +311,7 @@ export const CommentDtoSchema = z.object({
   wrterNm: z.string().optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   pswd: z.string().optional(),
-  ansCn: z.string().optional(),
+  ansCn: z.string().min(0).max(4000).optional(),
   crtDt: z.string().optional().nullable(),
 });
 export type CommentDto = z.infer<typeof CommentDtoSchema>;
@@ -342,7 +342,7 @@ export const SatisfactionDtoSchema = z.object({
   dgstfnSn: z.number().int().optional(),
   bbsId: z.string().min(0).max(20).optional(),
   pstSn: z.number().int().optional(),
-  dgstfnCn: z.string().optional(),
+  dgstfnCn: z.string().min(0).max(4000).optional(),
   dgstfnScr: z.number().int().optional(),
   userId: z.string().optional(),
   userNm: z.string().optional(),
@@ -389,7 +389,7 @@ export type UserProfileUpdateRequest = z.infer<typeof UserProfileUpdateRequestSc
 // ==========================================================================
 export const UserAbsenceDtoSchema = z.object({
   userId: z.string().min(0).max(20),
-  userAbsnYn: z.string().optional(),
+  userAbsnYn: z.string().min(0).max(1).optional(),
 });
 export type UserAbsenceDto = z.infer<typeof UserAbsenceDtoSchema>;
 
@@ -5170,7 +5170,7 @@ export const CommentDtoRequestSchema = z.object({
   pstSn: z.number().int().optional(),
   bbsId: z.string().min(0).max(20).optional(),
   pswd: z.string().optional(),
-  ansCn: z.string().optional(),
+  ansCn: z.string().min(0).max(4000).optional(),
 });
 
 export const CommentDtoResponseSchema = z.object({
@@ -5180,7 +5180,7 @@ export const CommentDtoResponseSchema = z.object({
   wrterId: z.string().optional().nullable(),
   wrterNm: z.string().optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
-  ansCn: z.string().optional().nullable(),
+  ansCn: z.string().min(0).max(4000).optional().nullable(),
   crtDt: z.string().optional().nullable(),
 });
 
@@ -5218,7 +5218,7 @@ export const SatisfactionDtoRequestSchema = z.object({
   dgstfnSn: z.number().int().optional(),
   bbsId: z.string().min(0).max(20).optional(),
   pstSn: z.number().int().optional(),
-  dgstfnCn: z.string().optional(),
+  dgstfnCn: z.string().min(0).max(4000).optional(),
   dgstfnScr: z.number().int().optional(),
   userId: z.string().optional(),
   userNm: z.string().optional(),
@@ -5230,7 +5230,7 @@ export const SatisfactionDtoResponseSchema = z.object({
   dgstfnSn: z.number().int().optional().nullable(),
   bbsId: z.string().min(0).max(20).optional().nullable(),
   pstSn: z.number().int().optional().nullable(),
-  dgstfnCn: z.string().optional().nullable(),
+  dgstfnCn: z.string().min(0).max(4000).optional().nullable(),
   dgstfnScr: z.number().int().optional().nullable(),
   userId: z.string().optional().nullable(),
   userNm: z.string().optional().nullable(),
@@ -5290,12 +5290,12 @@ export const UserProfileUpdateRequestResponseSchema = z.object({
 
 export const UserAbsenceDtoRequestSchema = z.object({
   userId: z.string().min(0).max(20),
-  userAbsnYn: z.string().optional(),
+  userAbsnYn: z.string().min(0).max(1).optional(),
 });
 
 export const UserAbsenceDtoResponseSchema = z.object({
   userId: z.string().min(0).max(20),
-  userAbsnYn: z.string().optional().nullable(),
+  userAbsnYn: z.string().min(0).max(1).optional().nullable(),
 });
 
 export const TemplateDtoRequestSchema = z.object({

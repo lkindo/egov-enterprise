@@ -363,6 +363,136 @@
         "reason": "rjctRsnCn"
       },
       "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.board.Satisfaction",
+      "dto": "nuri.business.service.board.dto.SatisfactionDto",
+      "fields": [
+        "bbsId",
+        "dgstfnCn",
+        "useYn"
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "entity": "nuri.business.domain.comment.Comment",
+      "dto": "nuri.business.service.comment.dto.CommentDto",
+      "fields": [
+        "bbsId",
+        "ansCn"
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "entity": "nuri.business.domain.login.LoginPolicy",
+      "dto": "nuri.business.service.login.dto.LoginPolicyDto",
+      "fields": [
+        "userId",
+        "ipAddr",
+        "dpcnPrmYn",
+        "lmtYn",
+        "bgngTm",
+        "endTm",
+        "otpUseYn"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.note.Note",
+      "dto": "nuri.business.service.note.dto.NoteDto",
+      "fields": [
+        "noteSj",
+        "noteCn"
+      ],
+      "entityFields": {
+        "noteSj": "noteTtl"
+      },
+      "pack": "collaboration"
+    },
+    {
+      "entity": "nuri.business.domain.user.entity.UserAbsence",
+      "dto": "nuri.business.domain.user.dto.UserAbsenceDto",
+      "fields": [
+        "userId",
+        "userAbsnYn"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.code.AdministCode",
+      "dto": "nuri.business.service.code.dto.AdministCodeDto",
+      "fields": [
+        "admdstCd",
+        "admdstSeCd",
+        "admdstZoneNm",
+        "upAdmdstCd",
+        "useYn",
+        "crtYmd",
+        "ablYmd"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.menu.Menu",
+      "dto": "nuri.business.service.menu.dto.MenuDto",
+      "fields": [
+        "menuNm",
+        "prgrmFileNm",
+        "menuExpln",
+        "relImgPath",
+        "relImgNm",
+        "modernRoute"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.survey.SurveyQuestion",
+      "dto": "nuri.business.service.survey.dto.SurveyQuestionDto",
+      "fields": [
+        "qstnTypeCd",
+        "qstnCn"
+      ],
+      "pack": "survey"
+    },
+    {
+      "entity": "nuri.business.domain.survey.SurveyArticle",
+      "dto": "nuri.business.service.survey.dto.SurveyArticleDto",
+      "fields": [
+        "artclCn",
+        "etcAnsYn"
+      ],
+      "pack": "survey"
+    },
+    {
+      "entity": "nuri.business.domain.survey.SurveyTemplate",
+      "dto": "nuri.business.service.survey.dto.SurveyTemplateDto",
+      "fields": [
+        "srvyTmpltTypeCd",
+        "srvyTmpltPathNm",
+        "srvyTmpltExpln"
+      ],
+      "pack": "survey"
+    },
+    {
+      "entity": "nuri.business.domain.help.Hpcm",
+      "dto": "nuri.business.service.help.dto.HpcmDto",
+      "fields": [
+        "hlpSeCd",
+        "hlpDfn",
+        "hlpExpln"
+      ],
+      "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.help.OnlineManual",
+      "dto": "nuri.business.service.help.dto.OnlineManualDto",
+      "fields": [
+        "onlnMnlNm",
+        "onlnMnlSeCd",
+        "onlnMnlDfn",
+        "onlnMnlExpln"
+      ],
+      "pack": "demo"
     }
   ],
   "enumBindings": [
@@ -944,6 +1074,128 @@
         }
       ],
       "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.board.dto.SatisfactionDto",
+      "fields": [
+        {
+          "field": "useYn",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.login.dto.LoginPolicyDto",
+      "fields": [
+        {
+          "field": "userId",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.domain.user.dto.UserAbsenceDto",
+      "fields": [
+        {
+          "field": "userId",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.code.dto.AdministCodeDto",
+      "fields": [
+        {
+          "field": "useYn",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.menu.dto.MenuDto",
+      "fields": [
+        {
+          "field": "menuNm",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "menuOrdr",
+          "constraint": "NotNull",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.help.dto.HpcmDto",
+      "fields": [
+        {
+          "field": "hlpDfn",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "hlpExpln",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "hlpSeCd",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.help.dto.OnlineManualDto",
+      "fields": [
+        {
+          "field": "onlnMnlNm",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "onlnMnlSeCd",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.comment.dto.CommentDto",
+      "fields": [],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.note.dto.NoteDto",
+      "fields": [],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.survey.dto.SurveyQuestionDto",
+      "fields": [],
+      "pack": "survey"
+    },
+    {
+      "dto": "nuri.business.service.survey.dto.SurveyArticleDto",
+      "fields": [],
+      "pack": "survey"
+    },
+    {
+      "dto": "nuri.business.service.survey.dto.SurveyTemplateDto",
+      "fields": [],
+      "pack": "survey"
     }
   ],
   "requiredResponseFields": [
