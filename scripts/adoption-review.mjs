@@ -9,10 +9,15 @@ import { basename, extname, isAbsolute, relative, resolve, sep } from 'node:path
   census 를 증명할 대상 자체가 없다 — 그 의무의 수신자는 원본이 아니라 **채택 기관**이다.
   활성 gap 으로 두면 영원히 닫히지 않고, 지우면 채택자가 확인된 것으로 오인한다. 그래서 여기로 옮겨
   기관 승인이 근거를 요구하게 한다(DEC-OPS-020 이 연구·live census 4축에 쓴 것과 같은 패턴).
+
+  2026-09-23 에 같은 이유로 두 통제를 더 옮겼다(DEC-OPS-111): `attachment-operations`(GAP-SEC-003 의 운영 환경
+  첨부 provenance census 와 GAP-STORAGE-001 의 정기 첨부 점검 운영 실행·영속 볼륨·경보·파기 전후 결속),
+  `operational-assurance`(GAP-OPS-001 의 운영 규모 부하, NVD 전량 의존성 검사의 triage·SLA, 인증된 admin ZAP).
+  직접 DB 쓰기·import 경로에 첨부 provenance 강제를 둘지는 여전히 원본의 설계 결정이며 이 통제가 대신하지 않는다.
 */
 export const ADOPTION_CONTROLS = Object.freeze({
   online: ['data-classification', 'authorization', 'request-logging', 'accessibility',
-    'backup-recovery', 'crypto-lifecycle', 'execution-artifacts'],
+    'backup-recovery', 'crypto-lifecycle', 'attachment-operations', 'operational-assurance', 'execution-artifacts'],
   'migration-tool': ['source-target-identity', 'mapping-schema-driver', 'recovery-cutover', 'execution-artifacts'],
 });
 const PROFILES = new Set(['core', 'collaboration', 'demo', 'custom']);

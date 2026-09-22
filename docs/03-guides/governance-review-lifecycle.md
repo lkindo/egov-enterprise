@@ -58,6 +58,8 @@ npm run review:migration
 | `accessibility` | 기관 화면·사용자·지원 환경의 접근성 및 필요한 수동 평가 |
 | `backup-recovery` | 실제 백업 세트의 존재와 접속 토폴로지, 목표 RTO/RPO, 운영 규모 restore drill과 복원 후 앱 smoke 결과 |
 | `crypto-lifecycle` | 이 환경의 암호 자재 상태 — 노출 가능했던 자격의 회전·폐기 완료, 그리고 레거시 password hash·이전 키 암호문의 read-only census와 호환 adapter 처분 판단 |
+| `attachment-operations` | 이 환경의 첨부 운영 증거 — 도메인 참조 생성 actor 와 파일 마스터 원 업로더를 대조하는 read-only aggregate provenance census(원시 값·식별자 비노출) 결과, 정기 첨부 점검(03:15 Asia/Seoul)의 실제 실행·영속 볼륨·INCOMPLETE/FAILED 경보·파기 전후 결속 |
+| `operational-assurance` | 운영 규모 부하 시험 결과, NVD 전량 의존성 검사의 triage·SLA 운영 증거, 인증된 admin 컨텍스트의 ZAP 결과와 판정 |
 | `execution-artifacts` | 실제 실행 descriptor의 경로와 SHA-256; 배포할 API·프런트 이미지 digest를 명시 |
 
 ⚠ `backup-recovery`·`crypto-lifecycle` 두 통제는 2026-09-21 에 공용 gap 인덱스에서 이전했다(DEC-OPS-107). 원본 저장소에는 운영 환경이 없어 그 증거를 만들 대상 자체가 없다 — 의무의 수신자가 원본이 아니라 채택 기관이기 때문이다. 원본에서 닫히지 않았다는 사실이 채택 환경에서 면제된다는 뜻은 아니다.

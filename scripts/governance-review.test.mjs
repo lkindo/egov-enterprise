@@ -103,6 +103,7 @@ test('institution approval requires target environment, source binding, and comp
 
 /*
   DEC-OPS-107 — 공용 gap 인덱스에서 이전한 두 통제가 실제로 요구되는지 고정한다.
+  DEC-OPS-111 — 2026-09-23 같은 패턴으로 옮긴 두 통제(attachment-operations·operational-assurance)도 함께 본다.
 
   이전의 요지는 "원본에서 닫을 수 없으니 지운다" 가 아니라 "의무의 수신자를 채택 기관으로 옮긴다"
   이므로, 옮긴 자리에서 집행되지 않으면 그냥 삭제한 것과 같아진다. 이전 5통제 집합을 대조군으로
@@ -130,7 +131,7 @@ test('institution approval requires the controls transferred from the gap index'
   // 현재 통제 전부를 갖추면 통과한다 — 이전이 승인 자체를 막아 버리지 않는다는 대조군.
   assert.deepEqual(validateOnline(forControls([...ADOPTION_CONTROLS.online])), []);
 
-  for (const transferred of ['backup-recovery', 'crypto-lifecycle']) {
+  for (const transferred of ['backup-recovery', 'crypto-lifecycle', 'attachment-operations', 'operational-assurance']) {
     assert.ok(ADOPTION_CONTROLS.online.includes(transferred), `${transferred} 통제가 선언돼 있어야 한다`);
     const without = ADOPTION_CONTROLS.online.filter((control) => control !== transferred);
     assert.ok(
@@ -142,6 +143,9 @@ test('institution approval requires the controls transferred from the gap index'
   // 이전 전의 5통제 집합. 이 줄이 통과하면 gap 을 옮긴 것이 아니라 지운 것이다.
   const beforeTransfer = ['data-classification', 'authorization', 'request-logging', 'accessibility', 'execution-artifacts'];
   assert.ok(validateOnline(forControls(beforeTransfer)).length > 0, '이전 전 통제 집합은 더 이상 승인되지 않는다');
+  // [2026-09-23 DEC-OPS-111] 두 번째 이전 전의 7통제 집합도 같은 대조군이다.
+  const beforeSecondTransfer = [...beforeTransfer, 'backup-recovery', 'crypto-lifecycle'];
+  assert.ok(validateOnline(forControls(beforeSecondTransfer)).length > 0, '두 번째 이전 전 통제 집합은 더 이상 승인되지 않는다');
 });
 
 test('source changes invalidate environment approval while unrelated online files cannot block migration artifacts', async (t) => {
