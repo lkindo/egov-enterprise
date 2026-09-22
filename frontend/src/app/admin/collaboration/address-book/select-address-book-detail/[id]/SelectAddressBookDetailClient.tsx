@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
@@ -56,9 +56,11 @@ const SelectAddressBookDetailClient = () => {
     });
 
     const [adbkNm, setAdbkNm] = useState('');
-    useEffect(() => {
-        if (data?.adbkNm !== undefined) setAdbkNm(data.adbkNm);
-    }, [data?.adbkNm]);
+    const [prevAdbkNm, setPrevAdbkNm] = useState(data?.adbkNm);
+    if (data?.adbkNm !== undefined && data.adbkNm !== prevAdbkNm) {
+        setPrevAdbkNm(data.adbkNm);
+        setAdbkNm(data.adbkNm);
+    }
 
     const updateMutation = useMutation({
         mutationFn: (payload: { adbkNm: string; rlsScopeCd: string }) =>

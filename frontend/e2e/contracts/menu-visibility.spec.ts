@@ -14,11 +14,18 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
         // [E2E 감사 B] 200 응답 + 비어있지 않은 트리를 요구한 뒤 재귀 검증한다.
         // (과거: 엔드포인트 실패나 빈 배열도 조용히 통과해 필터링을 한 번도 검증하지 못했음)
         expect(response.ok(), `menus/head 엔드포인트 응답 실패: ${response.status()}`).toBeTruthy();
+        interface MenuNode {
+            id?: number | string;
+            menuNm?: string;
+            useYn?: string;
+            modernRoute?: string;
+            children?: MenuNode[];
+        }
         // ApiResponse 래퍼 구조: { ..., data: { list: List<MenuDto> } } — 각 노드는 .useYn / .children 을 가진다.
         const body = await response.json();
-        const rootNodes: any[] = body?.data?.list ?? [];
+        const rootNodes: MenuNode[] = body?.data?.list ?? [];
         expect(Array.isArray(rootNodes) && rootNodes.length > 0, 'LNB 계층 트리가 비어 있어 useYn 필터링을 검증할 수 없음').toBeTruthy();
-        const checkNoInactiveMenus = (nodes: any[]) => {
+        const checkNoInactiveMenus = (nodes: MenuNode[]) => {
             for (const node of nodes) {
                 expect(node.useYn, `메뉴 '${node.menuNm}'(id=${node.id})가 useYn='N'인데 LNB 트리에 노출됨`).not.toBe('N');
                 if (Array.isArray(node.children) && node.children.length > 0) {
@@ -28,8 +35,8 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
         };
         checkNoInactiveMenus(rootNodes);
         expect(rootNodes.map(node => node.menuNm)).toEqual(['나의 업무', '소통·지식', '참여', '관리 센터']);
-        const visible: any[] = [];
-        const collect = (nodes: any[], depth: number) => {
+        const visible: MenuNode[] = [];
+        const collect = (nodes: MenuNode[], depth: number) => {
             expect(depth).toBeLessThanOrEqual(3);
             for (const node of nodes) {
                 visible.push(node);

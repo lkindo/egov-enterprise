@@ -37,17 +37,23 @@ export function AttachmentImage({
 }) {
   const [src, setSrc] = useState<string | null>(null);
   const [state, setState] = useState<LoadState>(atchFileSn ? 'loading' : 'empty');
-
-  useEffect(() => {
+  const [prevAtchFileSn, setPrevAtchFileSn] = useState(atchFileSn);
+  if (atchFileSn !== prevAtchFileSn) {
+    setPrevAtchFileSn(atchFileSn);
     if (!atchFileSn) {
       setSrc(null);
       setState('empty');
-      return;
+    } else {
+      setSrc(null);
+      setState('loading');
     }
+  }
+
+  useEffect(() => {
+    if (!atchFileSn) return;
 
     let objectUrl: string | null = null;
     let cancelled = false;
-    setState('loading');
 
     (async () => {
       try {

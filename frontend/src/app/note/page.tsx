@@ -81,6 +81,7 @@ export default function NotePage() {
   const loadNotes = useCallback(async (requestedTab: NoteTab = tabRef.current) => {
     if (requestedTab !== tabRef.current) return;
     const requestId = ++listRequestRef.current;
+    await Promise.resolve();
     setLoading(true);
     setListError(null);
     setNotes([]);
@@ -106,8 +107,11 @@ export default function NotePage() {
   }, [toast, page, pageSize, searchKeyword]);
 
   useEffect(() => {
-    void loadNotes(tab);
+    const timer = setTimeout(() => {
+      void loadNotes(tab);
+    }, 0);
     return () => {
+      clearTimeout(timer);
       listRequestRef.current += 1;
     };
   }, [loadNotes, tab]);
@@ -638,7 +642,15 @@ export default function NotePage() {
   );
 }
 
-function TabButton({ active, onClick, icon, label, count }: any) {
+interface NoteTabButtonProps {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  count?: number;
+}
+
+function TabButton({ active, onClick, icon, label, count }: NoteTabButtonProps) {
   return (
     <button
       type="button"

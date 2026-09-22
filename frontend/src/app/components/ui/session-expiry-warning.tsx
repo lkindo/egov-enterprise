@@ -108,9 +108,16 @@ export function SessionExpiryWarning() {
     window.location.href = '/login?expired=true';
   }, [logout]);
 
-  useEffect(() => {
+  const [prevUser, setPrevUser] = useState(user);
+  if (user !== prevUser) {
+    setPrevUser(user);
     if (!user) {
       setShowWarning(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!user) {
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;

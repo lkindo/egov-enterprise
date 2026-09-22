@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,8 @@ import { StandardDataTable, Column } from '@/app/components/ui/standard-data-tab
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
-import { toDisplayYmd, todayStorageYmd } from '@/lib/format-date';
+import { toDisplayYmd } from '@/lib/format-date';
+import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
 import { getPollStatus, POLL_STATUS_LABEL } from '@/lib/poll-status';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
@@ -22,12 +23,8 @@ const DEFAULT_PAGE_SIZE = 10;
 export default function SurveyManageClient({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   // 기준일은 저장 포맷과 동일한 'yyyyMMdd' 문자열로 고정한다.
-  // (SSR 시점 시각을 쓰면 하이드레이션 불일치가 나므로 마운트 후 세팅)
   const [createOpen, setCreateOpen] = useState(false);
-  const [todayYmd, setTodayYmd] = useState<string>('');
-  useEffect(() => {
-    setTodayYmd(todayStorageYmd());
-  }, []);
+  const todayYmd = useTodayStorageYmd();
 
   // 검색어는 입력 컨트롤에 그대로 바인딩하고, 서버 요청에는 디바운스 값만 쓴다(P1-8).
   // 종전에는 params 객체에 검색어가 직접 들어 있어 **타이핑 한 글자마다 서버 요청**이 나갔다.

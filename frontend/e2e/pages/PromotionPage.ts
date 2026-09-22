@@ -1,5 +1,7 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { Page, expect } from '@playwright/test';
-import path from 'path';
 
 export class PromotionPage {
     constructor(private page: Page) {}
@@ -76,8 +78,6 @@ export class PromotionPage {
 
     private async uploadImage() {
         console.log('>>> [Promotion] Uploading 1x1 PNG asset...');
-        const fs = require('fs');
-        const os = require('os');
         const dummyPath = path.join(os.tmpdir(), 'e2e-dummy.png');
         
         // Create a valid 1x1 transparent PNG if it doesn't exist

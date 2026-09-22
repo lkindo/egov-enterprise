@@ -362,7 +362,7 @@ export function BoardMakerWizard() {
  <div className="space-y-2">
  <h1 className="text-xl font-bold text-foreground">게시판 생성 완료</h1>
  <p className="mx-auto max-w-md text-[length:var(--font-size-body)] leading-relaxed text-muted-foreground">
- 게시판이 생성되었으며 <span className="text-primary">'{watch('menuNm')}'</span> 메뉴가 비활성 상태로 만들어졌습니다. 메뉴 관리에서 활성화해 주세요.
+ 게시판이 생성되었으며 <span className="text-primary">&apos;{watch('menuNm')}&apos;</span> 메뉴가 비활성 상태로 만들어졌습니다. 메뉴 관리에서 활성화해 주세요.
  </p>
  </div>
  <div className="flex w-full max-w-sm flex-col gap-2">
@@ -785,9 +785,8 @@ export function BoardMakerWizard() {
  </Card>
 
  <p className="text-center text-xs text-muted-foreground">
- "마지막 클릭이 새로운 소통의 시작입니다" - Board Master Maker v1.0
+ &ldquo;마지막 클릭이 새로운 소통의 시작입니다&rdquo; - Board Master Maker v1.0
  </p>
  </div>
  );
 }
-

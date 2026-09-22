@@ -179,7 +179,7 @@ export default function CommunityDetailHubClient({
                         <BookOpen size={120} />
                       </div>
                       <p className="text-2xl font-bold tracking-tighter text-foreground leading-relaxed relative z-10">
-                        "{community.cmntyIntroCn || '등록된 소개 정보가 정의되지 않았습니다.'}"
+                        &ldquo;{community.cmntyIntroCn || '등록된 소개 정보가 정의되지 않았습니다.'}&rdquo;
                       </p>
                    </div>
                 </div>

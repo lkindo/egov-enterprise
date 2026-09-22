@@ -99,6 +99,7 @@ export default function ScheduleDeptClient() {
     });
 
     const fetchList = useCallback(async () => {
+        await Promise.resolve();
         setLoading(true);
         setFetchError(null);
         try {
@@ -114,7 +115,10 @@ export default function ScheduleDeptClient() {
     }, [params]);
 
     useEffect(() => {
-        fetchList();
+        const timer = setTimeout(() => {
+            fetchList();
+        }, 0);
+        return () => clearTimeout(timer);
     }, [fetchList]);
 
     const handleSearch = (e: React.FormEvent) => {

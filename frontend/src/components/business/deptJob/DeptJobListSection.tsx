@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { DeptJobBoxManageDialog } from '@/components/business/deptJob/DeptJobBoxManageDialog';
 import { useDeptJobSectionSlot } from '@/components/business/deptJob/dept-job-section-slot';
+import { type DeptJobVO } from '@/types/business/deptJob';
 
 /**
  * A1 — 부서 업무 목록 섹션(조회·등록·삭제).
@@ -204,7 +205,7 @@ export function DeptJobListSection({
     }
   };
 
-  const jobColumns: Column<any>[] = [
+  const jobColumns: Column<DeptJobVO>[] = [
     {
       header: '번호',
       accessor: (_, index) => <span className="font-mono text-xs font-bold text-muted-foreground">{(index! + 1).toString().padStart(2, '0')}</span>,

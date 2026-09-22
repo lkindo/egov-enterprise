@@ -94,7 +94,9 @@ describe('CommunityHubClient', () => {
       }
     ],
     total: 2,
-    totalPage: 1
+    totalPage: 1,
+    page: 0,
+    size: 10
   };
 
   beforeEach(() => {

@@ -206,13 +206,16 @@ export default function LayoutManagerClient() {
   // 초기 로드 시 저장된 설정을 폼 상태로만 복원한다.
   // (전역 복원은 앱 전역 테마 프로바이더의 책임이며 현재 미구현 — 이 화면 진입만으로 전역 토큰을 바꾸지 않는다.)
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return;
-    try {
-      setThemeConfig(normalizeConfig(JSON.parse(saved)));
-    } catch (e) {
-      console.error('Failed to load theme config', e);
-    }
+    const timer = setTimeout(() => {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
+      try {
+        setThemeConfig(normalizeConfig(JSON.parse(saved)));
+      } catch (e) {
+        console.error('Failed to load theme config', e);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // --- 핸들러 ---

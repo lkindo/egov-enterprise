@@ -113,15 +113,20 @@ export const SearchResultsContent = ({
     //   같은 값을 주므로 그 전제가 무너진다(둘이 항상 같아져 **조회가 아예 돌지 않는다**).
     //   객체 동일성(`results === initialResults`)에 기대는 것도 부모가 리터럴을 새로 만들면
     //   깨진다. 조건을 검색어 하나로 좁히고, 늦게 도착한 응답이 최신 결과를 덮지 않도록 취소 표식을 둔다.
-    useEffect(() => {
+    const [prevQuery, setPrevQuery] = useState(query);
+    if (query !== prevQuery) {
+        setPrevQuery(query);
         if (!query) {
             setLoading(false);
             setResults(EMPTY_RESULTS);
             setUserSearchError(null);
             setArticleSearchError(null);
             setMenuSearchError(null);
-            return;
         }
+    }
+
+    useEffect(() => {
+        if (!query) return;
 
         let cancelled = false;
 

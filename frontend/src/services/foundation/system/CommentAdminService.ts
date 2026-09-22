@@ -4,7 +4,7 @@ import { AxiosRequestConfig } from 'axios';
 import type { components } from '@/types/generated-api';
 import { deleteComment_1Operation, getComments_1Operation } from '@/types/generated-operations';
 
-interface CommentDetail {
+export interface CommentDetail {
   ansSn: number;
   pstSn: number;
   bbsId: string;

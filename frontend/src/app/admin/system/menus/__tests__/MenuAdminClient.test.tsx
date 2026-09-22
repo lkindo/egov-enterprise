@@ -19,9 +19,8 @@ vi.mock('next/config', () => ({
 
 // 2. Mock Lucide Icons - EXPLICITLY AND MANUALLY FOR EVERY ICON IN THIS FILE
 vi.mock('lucide-react', () => {
-    const R = require('react');
     const Icon = (name: string) => {
-        const C = (props: any) => R.createElement('span', { ...props, 'data-testid': `icon-${name.toLowerCase()}` }, name);
+        const C = (props: any) => <span {...props} data-testid={`icon-${name.toLowerCase()}`}>{name}</span>;
         C.displayName = name;
         return C;
     };

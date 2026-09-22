@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { policyAdminService, SystemPolicy } from '@/services/foundation/system/PolicyAdminService';
@@ -78,24 +78,27 @@ export default function PolicyAdminClient() {
  }
  });
 
- const fetchPolicies = async () => {
- setLoading(true);
- setError(null);
- try {
- const data = await policyAdminService.getPolicies();
- setPolicies(data);
- } catch (err) {
- setError(toError(err));
- setPolicies([]);
- toast('정책 목록을 불러오는 데 실패했습니다.', 'error');
- } finally {
- setLoading(false);
- }
- };
+  const fetchPolicies = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await policyAdminService.getPolicies();
+      setPolicies(data);
+    } catch (err) {
+      setError(toError(err));
+      setPolicies([]);
+      toast('정책 목록을 불러오는 데 실패했습니다.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
 
- useEffect(() => {
- fetchPolicies();
- }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void fetchPolicies();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchPolicies]);
 
  const handleEdit = (policy: SystemPolicy) => {
  setSelectedPolicy(policy);

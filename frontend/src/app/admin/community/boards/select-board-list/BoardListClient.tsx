@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, use } from 'react';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { likeBoardArticle } from '@/app/actions/boardActions';
 import Link from 'next/link';
@@ -14,6 +14,7 @@ import { canPermission } from '@/lib/auth/permissions';
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 import { BoardPost } from '@/types/business/board';
 import { useToast } from '@/app/components/ui/toast';
+import { NOTICE_BOARD_ID } from '@/config/board-ids';
 
 // Import refactored components
 import { BoardListFilters } from './components/BoardListFilters';
@@ -80,7 +81,14 @@ export const fromQueryDate = (raw: string | null | undefined): Date | undefined 
   return Number.isFinite(parsed.getTime()) && toQueryDate(parsed) === raw ? parsed : undefined;
 };
 
-export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPromise: Promise<any>; params: any }) => {
+import { InitialBoardData } from './BoardListServer';
+
+export interface BoardListClientProps {
+  dataPromise: Promise<InitialBoardData>;
+  params: { bbsId?: string; [key: string]: unknown };
+}
+
+export const BoardListClient = ({ dataPromise, params: initialParams }: BoardListClientProps) => {
  const initialData = use(dataPromise);
  const searchParams = useSearchParams();
  const pathname = usePathname();
@@ -89,7 +97,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  // [2026-08-28] 판정 SSOT 사용. 리터럴 비교는 SYSTEM 관리자에게 '게시판 관리' 진입점을
  //   지워 버린다(DEC-OPS-023 ②가 e2e 로 잡았던 것과 같은 결함).
  const canReadBoardMasters = canPermission(user, 'BBS_MST_READ');
- const bbsId = searchParams.get('bbsId') || initialParams.bbsId;
+ const bbsId = searchParams.get('bbsId') || (typeof initialParams.bbsId === 'string' ? initialParams.bbsId : undefined) || NOTICE_BOARD_ID;
  const router = useRouter();
 
  /**
@@ -110,14 +118,17 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const [startDate, setStartDate] = useState<Date | undefined>(fromQueryDate(searchParams.get('startDate')));
  const [endDate, setEndDate] = useState<Date | undefined>(fromQueryDate(searchParams.get('endDate')));
 
- // URL 파라미터 변경 시 로컬 상태 동기화
- useEffect(() => {
-   setSearchWrd(searchParams.get('searchWrd') || "");
-   setSearchCnd(searchParams.get('searchCnd') || "0");
-   setOrderBy(searchParams.get('orderBy') || "date");
-   setStartDate(fromQueryDate(searchParams.get('startDate')));
-   setEndDate(fromQueryDate(searchParams.get('endDate')));
- }, [searchParams]);
+  // URL 파라미터 변경 시 렌더 도중 로컬 상태 동기화
+  const searchParamsString = searchParams.toString();
+  const [prevParamsString, setPrevParamsString] = useState(searchParamsString);
+  if (searchParamsString !== prevParamsString) {
+    setPrevParamsString(searchParamsString);
+    setSearchWrd(searchParams.get('searchWrd') || "");
+    setSearchCnd(searchParams.get('searchCnd') || "0");
+    setOrderBy(searchParams.get('orderBy') || "date");
+    setStartDate(fromQueryDate(searchParams.get('startDate')));
+    setEndDate(fromQueryDate(searchParams.get('endDate')));
+  }
 
  /*
    [2026-09-04] 목록 URL 조립을 이 헬퍼 하나로 모았다(DEC-OPS-029 Q2, ADR-0009).
@@ -249,15 +260,15 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
   const previousData = queryClient.getQueryData(queryKey);
   
   // 캐시 데이터 즉시 업데이트
-  queryClient.setQueryData(queryKey, (old: any) => {
-  if (!old || !old.list) return old;
-  return {
-  ...old,
-  list: old.list.map((item: any) => 
-  item.pstSn === pstSn ? { ...item, likeCnt: (item.likeCnt || 0) + 1 } : item
-  )
-  };
-  });
+    queryClient.setQueryData(queryKey, (old: InitialBoardData | undefined) => {
+      if (!old || !old.list) return old;
+      return {
+        ...old,
+        list: old.list.map((item: BoardPost) => 
+          item.pstSn === pstSn ? { ...item, likeCnt: (item.likeCnt || 0) + 1 } : item
+        )
+      };
+    });
   
   return { previousData };
   },

@@ -7,6 +7,7 @@ import { getQustnrRespondInfoDetail } from '@/lib/api/survey';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, User, Calendar, MessageSquare } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsSn: number }) {
     const router = useRouter();
@@ -112,12 +113,10 @@ export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsS
     );
 }
 
-function Label({ children, className }: any) {
+function Label({ children, className }: { children: React.ReactNode; className?: string }) {
     return (
         <span className={cn("block mb-2 font-semibold", className)}>
             {children}
         </span>
     );
 }
-
-const cn = (...inputs: any) => inputs.filter(Boolean).join(' ');

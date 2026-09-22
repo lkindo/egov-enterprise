@@ -51,7 +51,7 @@ export class StandardErrorBoundary extends Component<Props, State> {
             </button>
           </div>
           {process.env.NODE_ENV === 'development' && (
-            <pre className="mt-8 p-4 bg-black text-red-400 text-sm text-left overflow-auto max-w-full rounded-lg">
+            <pre className="mt-8 p-4 bg-black text-destructive text-sm text-left overflow-auto max-w-full rounded-lg">
               {this.state.error?.stack}
             </pre>
           )}

@@ -203,7 +203,9 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   success/warning/destructive 로는 바꾸지 않았다(없는 의미를 주장하게 된다).
 // [하향 래칫 2026-09-22(4)] 로그인 로그 오류 배지의 rose 리터럴 4건 — 여기는 실제 오류 의미라
 //   destructive 토큰 매핑이 정확하다(저장소 선례: border-destructive/40 bg-destructive/10).
-const BASELINE = 175;
+// [하향 래칫 2026-09-22(3)] 175 -> 172. HighlightText(bg-yellow-200), BoardListFilters(hover:text-red-500),
+//   standard-error-boundary(text-red-400)에서 시맨틱 토큰(bg-warning/25, hover:text-destructive, text-destructive)으로 이행하여 3건 감소.
+const BASELINE = 172;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

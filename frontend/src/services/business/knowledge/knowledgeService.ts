@@ -12,6 +12,16 @@ import {
   getPostsOperation,
   getStats_1Operation,
 } from '@/types/generated-operations';
+import type { BoardDto, BoardStatsResponse } from '@/types/generated-zod';
+
+export interface KnowledgeActivityItem {
+  id: string;
+  type: string;
+  title: string;
+  user: string;
+  time: string;
+  impact: string;
+}
 
 /**
  * 지식 기반 서비스 DTO (Enterprise v5 Standard)
@@ -116,10 +126,21 @@ class KnowledgeService extends ApiService {
     });
     
     return {
-      list: (res.list || []).map((item: any) => ({
-        ...item,
-        pstSn: item.pstSn || item.nttId,
-        pstTtl: item.pstTtl || item.nttSj,
+      list: (res.list || []).map((item: BoardDto): KnowledgeDto => ({
+        pstSn: item.pstSn ?? 0,
+        pstTtl: item.pstTtl ?? '',
+        pstCn: item.pstCn ?? '',
+        atchFileSn: item.atchFileSn ?? undefined,
+        userId: item.userId ?? undefined,
+        crtDt: item.crtDt ?? undefined,
+        inqCnt: item.inqCnt ?? undefined,
+        frstRegisterNm: item.frstRegisterNm ?? undefined,
+        bbsId: item.bbsId,
+        qnaSttsCd: item.qnaSttsCd ?? undefined,
+        qnaCatCd: item.qnaCatCd ?? undefined,
+        evntDt: item.evntDt ?? undefined,
+        likeCnt: item.likeCnt ?? undefined,
+        commentCnt: item.commentCnt ?? undefined,
       })),
     };
   }
@@ -136,7 +157,7 @@ class KnowledgeService extends ApiService {
   /**
    * 게시판 통계 조회
    */
-  public async getStats(bbsId?: string): Promise<any> {
+  public async getStats(bbsId?: string): Promise<BoardStatsResponse | null | undefined> {
     const targetBbsId = bbsId || this.BBS_IDS.NOTICE;
     return this.executeGenerated(getStats_1Operation, {
       path: { bbsId: targetBbsId },
@@ -146,18 +167,18 @@ class KnowledgeService extends ApiService {
   /**
    * 최근 활동 피드 조회
    */
-  public async getActivities(bbsId?: string): Promise<any[]> {
+  public async getActivities(bbsId?: string): Promise<KnowledgeActivityItem[]> {
     const targetBbsId = bbsId || this.BBS_IDS.NOTICE;
     const res = await this.executeGenerated(getPostsOperation, {
       path: { bbsId: targetBbsId },
       query: { size: 10 },
     });
     
-    return (res.list || []).map((item: any) => ({
-      id: item.pstSn || item.nttId,
+    return (res.list || []).map((item: BoardDto) => ({
+      id: String(item.pstSn ?? 0),
       type: 'SHARE',
-      title: item.pstTtl || item.nttSj,
-      user: item.userNm || item.frstRgtrId,
+      title: item.pstTtl ?? '',
+      user: item.userNm || item.userId || 'Anonymous',
       time: item.crtDt?.split('T')[0] || 'Just now',
       impact: `+${(item.inqCnt || 0) % 100} Reach`,
     }));

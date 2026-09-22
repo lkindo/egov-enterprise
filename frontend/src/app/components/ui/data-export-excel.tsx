@@ -11,12 +11,12 @@ import { Download } from 'lucide-react';
  */
 export type ExportScope = 'page' | 'loaded';
 
-interface DataExportExcelProps {
- data: any[];
- headers: { label: string; key: string }[];
- scope: ExportScope;
- filename?: string;
- className?: string;
+interface DataExportExcelProps<T extends object = object> {
+  data: ReadonlyArray<T>;
+  headers: { label: string; key: string }[];
+  scope: ExportScope;
+  filename?: string;
+  className?: string;
 }
 
 /**
@@ -26,20 +26,26 @@ interface DataExportExcelProps {
  * 호출부뿐이고, 라벨은 그 선언을 따른다(2026-08-26: 종전에는 현재 페이지만 내보내면서
  * `엑셀 내보내기` 라고만 적어 사용자가 조회 결과 전체로 오해할 수 있었다).
  */
-export function DataExportExcel({ data, headers, scope, filename = "export_data", className }: DataExportExcelProps) {
- const downloadExcel = () => {
- // 1. Create CSV header
- const csvRows = [];
- csvRows.push(headers.map(h => `"${h.label}"`).join(','));
+export function DataExportExcel<T extends object = object>({
+  data,
+  headers,
+  scope,
+  filename = "export_data",
+  className,
+}: DataExportExcelProps<T>) {
+  const downloadExcel = () => {
+    // 1. Create CSV header
+    const csvRows = [];
+    csvRows.push(headers.map(h => `"${h.label}"`).join(','));
 
- // 2. Add data rows
- for (const row of data) {
- const values = headers.map(h => {
- const val = row[h.key] ?? ''; // [2026-09-15 DEC-OPS-100] 측정값 0 을 빈 칸으로 바꾸지 않는다 — 값이 없을 때(null·undefined)만 비운다
- return `"${val.toString().replace(/"/g, '""')}"`;
- });
- csvRows.push(values.join(','));
- }
+    // 2. Add data rows
+    for (const row of data) {
+      const values = headers.map(h => {
+        const val = (row as Record<string, unknown>)[h.key] ?? ''; // [2026-09-15 DEC-OPS-100] 측정값 0 을 빈 칸으로 바꾸지 않는다 — 값이 없을 때(null·undefined)만 비운다
+        return `"${String(val).replace(/"/g, '""')}"`;
+      });
+      csvRows.push(values.join(','));
+    }
 
  // 3. Create blob and download (with BOM for Excel Korean support)
  const csvContent = "\uFEFF" + csvRows.join('\n');

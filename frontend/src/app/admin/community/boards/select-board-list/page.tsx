@@ -18,23 +18,29 @@ export const metadata: Metadata = {
   description: '전자정부 소프트웨어 프레임워크 프로젝트의 전체 게시글 목록입니다.',
 };
 
+function toSingleString(val: string | string[] | undefined): string | undefined {
+  if (Array.isArray(val)) return val[0];
+  return val;
+}
+
 /**
  * 서버 컴포넌트: 페이지 진입점
  */
-export default async function BoardListPage({ searchParams }: { searchParams: Promise<any> }) {
+export default async function BoardListPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const resolvedSearchParams = await searchParams;
   /*
    * 종전 기본값 LEGACY_DEFAULT_BOARD_ID('BBSMSTR_000000000001')는 **어떤 시드에도 없다**
    * (Flyway·sql/ 전량 grep 실측 — 등장처가 테스트 목뿐이다). bbsId 없이 들어오면 존재하지 않는
    * 게시판을 조회해 늘 빈 화면이 됐다. 실재하는 게시판 중 첫 번째를 기본값으로 삼는다.
    */
-  const bbsId = resolvedSearchParams.bbsId || await resolveDefaultBoardId();
-  const page = Number(resolvedSearchParams.page) || 1;
-  const searchWrd = resolvedSearchParams.searchWrd || '';
-  const searchCnd = resolvedSearchParams.searchCnd || '0';
-  const orderBy = resolvedSearchParams.orderBy || 'date';
-  const startDate = resolvedSearchParams.startDate;
-  const endDate = resolvedSearchParams.endDate;
+  const rawBbsId = toSingleString(resolvedSearchParams.bbsId);
+  const bbsId = rawBbsId || await resolveDefaultBoardId();
+  const page = Number(toSingleString(resolvedSearchParams.page)) || 1;
+  const searchWrd = toSingleString(resolvedSearchParams.searchWrd) || '';
+  const searchCnd = toSingleString(resolvedSearchParams.searchCnd) || '0';
+  const orderBy = toSingleString(resolvedSearchParams.orderBy) || 'date';
+  const startDate = toSingleString(resolvedSearchParams.startDate);
+  const endDate = toSingleString(resolvedSearchParams.endDate);
 
   const dataPromise = getInitialBoardData({
     bbsId,

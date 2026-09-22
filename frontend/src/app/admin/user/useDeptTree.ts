@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   KeyboardSensor,
@@ -99,13 +99,14 @@ export function useDeptTree({
     return (Array.isArray(list) ? list.filter(Boolean) : []) as Department[];
   }, [deptsData]);
 
-  // 평탄화는 탭과 무관하게 수행한다. 종전에는 DEPTS 탭 조건이 걸려 있어 USERS 탭의
-  // '부서 이동' 모달이 렌더하는 flattenedDepts 가 언제나 빈 배열이었다.
-  useEffect(() => {
-    // Build tree and flatten it for D&D
+  // 평탄화는 탭과 무관하게 수행한다. 렌더 도중 departments 변경을 감지하여
+  // 불필요한 useEffect cascading render 없이 즉시 동기화한다.
+  const [prevDepartments, setPrevDepartments] = useState(departments);
+  if (departments !== prevDepartments) {
+    setPrevDepartments(departments);
     const tree = listToDeptTree(departments);
     setFlattenedDepts(flattenDeptTree(tree));
-  }, [departments]);
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),

@@ -55,7 +55,7 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
             });
             expect(createRes.ok()).toBeTruthy();
             const listRes = await request.get(`${REPORT_API}?searchKeyword=${encodeURIComponent(title)}&pageIndex=1&pageUnit=10`, { headers: auth });
-            const rptpSn = ((await listRes.json()).data.list as any[])[0]?.rptpSn as number;
+            const rptpSn = ((await listRes.json()).data.list as Array<{ rptpSn?: number }>)[0]?.rptpSn;
             expect(rptpSn, '등록한 보고를 검색으로 되찾을 수 있어야 한다').toBeTruthy();
             let deleted = false;
             const deptJobPage = new DeptJobPage(page);

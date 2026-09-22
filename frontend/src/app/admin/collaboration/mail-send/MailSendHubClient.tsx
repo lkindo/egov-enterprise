@@ -88,6 +88,17 @@ function toRequestRecipient(recipient: RecipientSelection): z.infer<typeof MailR
   return recipient.kind === 'user' ? { esntlId: recipient.esntlId } : { emlAddr: recipient.email };
 }
 
+function subscribeClock(callback: () => void) {
+  const timer = setInterval(callback, 1000);
+  return () => clearInterval(timer);
+}
+function getClockSnapshot(): string {
+  return new Date().toLocaleTimeString();
+}
+function getServerClockSnapshot(): string {
+  return '';
+}
+
 export default function MailSendHubClient() {
   const router = useRouter();
   const { toast } = useToast();
@@ -98,15 +109,7 @@ export default function MailSendHubClient() {
   const [selectedRecipients, setSelectedRecipients] = useState<RecipientSelection[]>([]);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
-  const [currentTime, setCurrentTime] = useState<string>('');
-
-  React.useEffect(() => {
-    setCurrentTime(new Date().toLocaleTimeString());
-    const timer = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const currentTime = React.useSyncExternalStore(subscribeClock, getClockSnapshot, getServerClockSnapshot);
 
   const [form, setForm] = useState({
     sj: '',

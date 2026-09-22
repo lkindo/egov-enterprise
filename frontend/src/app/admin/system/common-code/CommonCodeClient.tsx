@@ -581,6 +581,7 @@ export default function CommonCodeClient({
 
  // Synchronize initial state from props
  useEffect(() => {
+ const timer = setTimeout(() => {
  const nextSelectedGroupId = selectedGroupId ?? null;
  const previousSelectedGroupId = previousSelectedGroupIdRef.current;
  const seedChanged = previousSelectedGroupId !== nextSelectedGroupId;
@@ -653,6 +654,8 @@ export default function CommonCodeClient({
  }
  setSelectedClusterId(null);
  setSelectedGroup(null);
+ }, 0);
+ return () => clearTimeout(timer);
  }, [
  hierarchySignature,
  initialClusters,

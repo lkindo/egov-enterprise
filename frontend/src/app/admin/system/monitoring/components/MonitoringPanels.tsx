@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { AlertCircle, CheckCircle2, Cpu, ShieldCheck } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Cpu, ShieldCheck, type LucideIcon } from 'lucide-react';
 
 /**
  * 모니터링 허브의 표시 전용 패널 모음.
@@ -13,7 +13,7 @@ import { AlertCircle, CheckCircle2, Cpu, ShieldCheck } from 'lucide-react';
  *
  * <p>타입 {@code MonitoringTab} 은 본체가 소유하므로 여기서 재선언하지 않고 import 한다.
  */
-import type { MonitoringTab } from '../MonitoringHubClient';
+import type { MonitoringTab, HarnessSkill, HarnessTest } from '../MonitoringHubClient';
 
 export function SampleDataBadge({ className }: { className?: string }) {
   return (
@@ -52,7 +52,7 @@ export function NavButton({ tab, icon, label, active, onClick }: { tab: Monitori
   );
 }
 
-export function StatusIndicator({ label, status, icon: Icon }: { label: string, status: string, icon: any }) {
+export function StatusIndicator({ label, status, icon: Icon }: { label: string, status: string, icon: LucideIcon }) {
   // 상태 표시등 분기 — 시스템 상태 표시등(healthData.status === 'UP')과 같은 규약.
   // 정상('UP'/'안정')만 초록, 미상('UNKNOWN'/빈값)은 주황, 그 외(DOWN/OUT_OF_SERVICE 등)는 적색으로 장애를 드러낸다.
   const isUp = status === 'UP' || status === '안정';
@@ -165,7 +165,7 @@ export function HarnessDashboardOverview() {
   );
 }
 
-export function SkillDetailView({ skill }: { skill: any }) {
+export function SkillDetailView({ skill }: { skill: HarnessSkill }) {
   const meta: Record<string, { impact: "HIGH" | "MEDIUM", constitution: string, constDesc: string, flow: string[] }> = {
     "SKILL_ENG_01": {
       impact: "HIGH",
@@ -287,7 +287,7 @@ export function SkillDetailView({ skill }: { skill: any }) {
   );
 }
 
-export function TestDetailView({ test }: { test: any }) {
+export function TestDetailView({ test }: { test: HarnessTest }) {
   const testStacks: Record<string, { summary: string, stacks: { sql: string, table: string, type: "SELECT" | "INSERT" | "DELETE" }[] }> = {
     "TEST_01": {
       summary: "조회 성능 최적화: Batch Fetch 및 Lazy Loading 가동을 통한 성능 확보 합격",

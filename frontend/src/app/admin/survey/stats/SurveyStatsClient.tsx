@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ReportPage } from '@/app/components/patterns/report-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
@@ -8,7 +8,8 @@ import { emptyResultMessage } from '@/app/components/patterns/empty-result-messa
 import { pollUserService } from '@/services/business/user/poll/PollUserService';
 import type { OnlinePollDto } from '@/types/business/poll';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { toDisplayYmd, todayStorageYmd } from '@/lib/format-date';
+import { toDisplayYmd } from '@/lib/format-date';
+import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
 import { getPollStatus, POLL_STATUS_LABEL } from '@/lib/poll-status';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
@@ -24,11 +25,8 @@ export default function SurveyStatsClient({ embedded = false }: { embedded?: boo
   const [keyword, setKeyword] = useState('');
   const debouncedKeyword = useDebouncedValue(keyword, 300);
 
-  // 상태 판정 기준일은 저장 포맷과 같은 'yyyyMMdd' 8자. SSR 시각을 쓰면 하이드레이션이 어긋나므로 마운트 후 세팅.
-  const [todayYmd, setTodayYmd] = useState<string>('');
-  useEffect(() => {
-    setTodayYmd(todayStorageYmd());
-  }, []);
+  // 상태 판정 기준일은 저장 포맷과 같은 'yyyyMMdd' 8자.
+  const todayYmd = useTodayStorageYmd();
 
   // 응답 수는 관리자 목록 API 만 내려준다(pollArticles.pollIemCo).
   // 종전 화면은 사용자 API 를 호출하고 '응답 수' 칸에 리터럴 0 을 찍고 있었다 — 거짓 지표(P1-5).

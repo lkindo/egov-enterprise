@@ -127,15 +127,15 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
   const handleReportEditState = React.useCallback((s: { dirty: boolean }) => setReportDirty(s.dirty), []);
 
   // URL 의 tab 쿼리와 탭 상태를 동기화한다.
-  // activeTab 은 useState(initialTab) 이라 '최초 마운트' 때만 쿼리를 읽는다. 그래서 이미 이 화면에
-  // 있는 상태에서 사이드바의 '일정 관리'(?tab=calendar) 같은 링크를 누르면, 클라이언트 내비게이션이
-  // 컴포넌트를 언마운트하지 않으므로 URL 만 바뀌고 화면은 이전 탭에 머물렀다.
-  React.useEffect(() => {
-    const q = searchParams.get('tab');
-    if (q === 'job' || q === 'report' || q === 'calendar') {
-      setTabState((prev) => (prev === q ? prev : q));
+  // 렌더 도중 searchParams 의 tab 변경을 감지하여 즉시 동기화한다.
+  const queryTabValue = searchParams.get('tab');
+  const [prevQueryTab, setPrevQueryTab] = useState(queryTabValue);
+  if (queryTabValue !== prevQueryTab) {
+    setPrevQueryTab(queryTabValue);
+    if (queryTabValue === 'job' || queryTabValue === 'report' || queryTabValue === 'calendar') {
+      setTabState(queryTabValue);
     }
-  }, [searchParams]);
+  }
 
   const {
     data: reportData,
@@ -168,7 +168,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     enabled: activeTab === 'calendar',
   });
   // /monthly 는 PageResponse 가 아니라 배열을 그대로 반환한다.
-  const schedules: DeptSchedule[] = scheduleData || [];
+  const schedules: DeptSchedule[] = useMemo(() => scheduleData || [], [scheduleData]);
 
   /** 일정이 하나라도 있는 날짜들 — 캘린더 셀에 마커를 찍는 데 쓴다. */
   const scheduleDates = useMemo(

@@ -39,10 +39,10 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
             //    종전에는 조건이 붙지 않아 키워드를 받고도 전체를 돌려줬다.
             const hitRes = await request.get(`${JOB_API}?searchWrd=${encodeURIComponent(name)}&pageIndex=1&pageUnit=10`, { headers: auth });
             expect(hitRes.ok()).toBeTruthy();
-            const hitList = (await hitRes.json()).data.list as any[];
+            const hitList = (await hitRes.json()).data.list as Array<{ deptTaskSn: number }>;
             expect(hitList.some((j) => j.deptTaskSn === deptTaskSn), '등록한 업무가 제목 검색에 잡혀야 한다').toBeTruthy();
             const missRes = await request.get(`${JOB_API}?searchWrd=${PREFIX}NO_SUCH_JOB_ZZZ&pageIndex=1&pageUnit=10`, { headers: auth });
-            const missList = (await missRes.json()).data.list as any[];
+            const missList = (await missRes.json()).data.list as unknown[];
             expect(missList.length, '일치하지 않는 키워드는 0건이어야 한다 (검색 무력화 회귀)').toBe(0);
             // 4) 수정 — 업무함·담당자를 보내지 않으면 update 가 null 로 덮어쓴다는 점은
             //    폼이 값을 왕복시켜 방어한다. 여기서는 계약(수정이 반영되는가)만 본다.
