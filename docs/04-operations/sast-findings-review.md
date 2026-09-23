@@ -77,6 +77,22 @@ SAST-FP-001의 보완 소스인 `frontend/src/app/api/auth/login/route.ts`와 `f
 
 따라서 위 보완 소스 2개의 해시만 재결속한다. 승인 예외의 규칙·파일·행·fingerprint·만료일과 보안 임계값은 유지하며 새로운 탐지를 예외로 추가하지 않는다. 현재 CodeQL 결과와의 일치는 해당 커밋의 required `secure-coding` CI에서 다시 검사한다.
 
+## 2026-09-23 ZAP 경고 분류에 따른 보완 방어 재검토
+
+ZAP 주간 스캔 경고 분류(DEC-OPS-113)로 보완 소스 두 개가 바뀌었다 —
+`api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java` 에 `Cross-Origin-Resource-Policy`
+헤더 writer 를, `frontend/src/proxy.ts` 에 `Cross-Origin-Opener-Policy` 와 `Reporting-Endpoints`
+헤더 부여를 추가했다.
+
+두 변경 모두 **응답 헤더를 더하기만 하고 인증·인가 판정에는 닿지 않는다.** SAST-FP-001·002 가
+근거로 드는 stateless Bearer 인증, `OriginValidationFilter` 의 Origin 검사, HttpOnly·SameSite 쿠키
+정책은 문장 하나도 바뀌지 않았고, SAST-FP-008 이 드는 401 종료·서명 검증·계정 상태 확인 순서도
+그대로다. 추가된 두 헤더는 교차 출처 격리를 **좁히는** 방향이라 근거를 약화하지 않는다.
+
+따라서 위 두 보완 소스의 해시만 재결속한다(SAST-FP-001 의 두 자리, SAST-FP-002·008 의 각 한 자리로
+총 4건). 기존 예외 6건의 탐지 소스·규칙·행·fingerprint·만료일과 승인 범위는 그대로다. 현재 CodeQL
+탐지와의 exact-match 는 이 변경의 required `secure-coding` CI 에서 다시 확인한다.
+
 ## 2026-09-14 의존성 업데이트에 따른 H2 테스트 경계 재검토
 
 SAST-FP-007의 보완 소스 4개(`build.gradle`, `foundation/build.gradle`, `business-core/build.gradle`, `business-app/build.gradle`)에 Querydsl Jakarta 의존성, Swagger·HTTP client·SLF4J 버전과 Dependency-Check 13의 출력·캐시 연결 변경이 반영됐다. H2는 테스트 의존성으로 유지되고, 탐지 대상인 `application-test.yml`의 메모리 DB 설정은 동일하다. 실제 Gradle 의존성 해석으로 5개 모듈 모두의 `runtimeClasspath`에 H2가 없고 `testRuntimeClasspath`에만 존재함을 확인했다. API 모듈의 테스트 H2는 2.5.250, 나머지 모듈은 Boot BOM의 2.3.232다.

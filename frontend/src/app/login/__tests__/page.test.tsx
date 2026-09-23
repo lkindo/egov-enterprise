@@ -3,6 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import LoginPage from '../page';
 import { resolveInternalRedirect } from '../LoginClient';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const LOGIN_ERROR_COPY = '로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.';
 
@@ -343,4 +346,25 @@ describe('세션 만료 안내', () => {
     await waitFor(() => { expect(screen.getByTestId('login-error')).toBeInTheDocument(); });
     expect(screen.queryByTestId('login-session-expired')).toBeNull();
   });
+
+  /*
+   * [2026-09-23 ZAP 10024] method 를 빼면 HTML 기본값이 GET 이라, 하이드레이션 전에 제출되면
+   * 아이디·비밀번호가 주소창과 접근 로그에 실린다. 주간 스캔이 실제로 그 URL 을 만들어 냈다.
+   * 소스 단언인 이유: jsdom 은 method 기본값을 'get' 으로 채워 주므로 렌더 결과만 보면
+   * "명시했는데 지워진 것" 과 "원래 없던 것" 이 구분되지 않는다.
+   */
+  it('로그인 폼이 POST 로 제출된다', () => {
+    const source = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), '..', 'LoginClient.tsx'),
+      'utf8',
+    );
+    const formTag = source.match(/<form[\s\S]*?>/)?.[0] ?? '';
+    expect(formTag, '로그인 폼 여는 태그를 찾지 못했습니다 — 추출이 깨지면 이 계약은 vacuous 합니다')
+      .toContain('onSubmit');
+    expect(
+      formTag,
+      'method 가 없으면 HTML 기본값 GET 이라 하이드레이션 전 제출이 자격증명을 URL 에 싣습니다',
+    ).toContain('method="post"');
+  });
+
 });

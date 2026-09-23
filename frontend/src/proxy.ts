@@ -271,6 +271,33 @@ const ATLAS_CSP =
   `connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; ` +
   `frame-ancestors 'none'; report-uri /api/security/csp; report-to csp-endpoint;`;
 
+/**
+ * CSP 위반 리포트 수집 지점과 Reporting API 그룹 정의.
+ *
+ * ⚠ 경로는 위 두 CSP 의 report-uri 와 같아야 한다 — 다르면 브라우저가 서로 다른 두 곳으로
+ *   리포트를 보낸다. csp-policy 계약이 세 자리의 일치를 검사한다.
+ *
+ * [2026-09-23 ZAP 주간 스캔 분류] 두 CSP 는 report-to 그룹 csp-endpoint 를 선언하는데 그 그룹을
+ *   정의하는 Reporting-Endpoints 헤더가 저장소 어디에도 없었다. 즉 최신 Reporting API 경로는
+ *   선언만 있고 배선이 없어 동작하지 않았다 — 수집기 route.ts 는 이미 reports+json 형식을
+ *   파싱하고 있었으므로 빠진 것은 그룹 정의 하나였다.
+ */
+const CSP_REPORT_PATH = '/api/security/csp';
+const REPORTING_ENDPOINTS = `csp-endpoint="${CSP_REPORT_PATH}"`;
+
+/**
+ * 문서 응답에 공통으로 다는 교차 출처 격리·리포팅 헤더.
+ *
+ * COOP same-origin 은 이 문서가 연 팝업과 browsing context group 을 분리한다. 저장소의
+ * 새 창 링크 3곳은 이미 noopener noreferrer 라 동작 변화가 없고, 헤더는 그 규율을 개별
+ * 링크가 아니라 문서 단위로 못박아 새 링크가 빠뜨려도 opener 가 열리지 않게 한다.
+ */
+function applyDocumentSecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+  response.headers.set('Reporting-Endpoints', REPORTING_ENDPOINTS);
+  return response;
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -326,6 +353,7 @@ export async function proxy(request: NextRequest) {
   if (pathname === '/governance_harness_atlas.html') {
     const atlasResponse = NextResponse.next();
     atlasResponse.headers.set('Content-Security-Policy', ATLAS_CSP);
+    applyDocumentSecurityHeaders(atlasResponse);
     return atlasResponse;
   }
 
@@ -340,6 +368,7 @@ export async function proxy(request: NextRequest) {
   const csp = buildAppCsp(nonce);
   const withNonce = (response: NextResponse): NextResponse => {
     response.headers.set('Content-Security-Policy', csp);
+    applyDocumentSecurityHeaders(response);
     return response;
   };
   const nextWithCsp = (): NextResponse => {

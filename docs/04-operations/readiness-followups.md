@@ -780,3 +780,58 @@ eGovFrame 의 배치·엑셀·ID 생성 등 다른 모듈의 런타임 증거는
 두 축 모두 이 저장소의 게이트(생성 계약·하네스·PIT·재사용 산출물)가 직접 보는 영역이라, 이행은 "버전만 올리는 일" 이 아니다.
 다음 단계는 사용자 결정(ⓐ 전환 ADR → 두 축의 이행 계획과 게이트 영향 산정 / ⓑ 상용 지원 / ⓒ accepted-risk)이며 GAP-DEP-002 가 추적한다.
 
+## ZAP 주간 스캔 경고 분류
+
+주간 실행 `35489408892`(2026-09-20, 리포트 아티팩트 `zap_baseline_frontend`·`zap_fullscan_api`)의
+WARN-NEW 11건을 인스턴스 근거까지 열어 전수 분류했다. 이 워크플로는 2026-08-02 이후 매주 성공했지만
+경고를 사람이 읽은 기록이 없었다 — WARN 은 빌드를 막지 않으므로 신호가 쌓이기만 했다.
+
+### 수리한 것
+
+| 규칙 | 실측 근거 | 조치 |
+|---|---|---|
+| `10024` 민감정보 URL 노출 | 스캐너가 `/login?password=…&userId=…` 를 실제로 만들어 냈다. 로그인 `<form>` 에 `method` 가 없어 HTML 기본값이 GET 이었다. | 폼에 `method="post"`. `handleSubmit` 이 `preventDefault` 하므로 하이드레이션 뒤 동작은 불변이고, 그 전 제출만 URL 에 값을 남기지 않게 된다. |
+| `90004` COOP 부재(프런트 3건) | 문서 응답에 `Cross-Origin-Opener-Policy` 가 없었다. | `same-origin` 을 문서 응답 공통으로 부여한다. 새 창 링크 3곳은 이미 `rel="noopener noreferrer"` 라 동작 변화가 없고, 규율이 개별 링크에서 문서 단위로 올라간다. |
+| `90004` CORP 부재(API 1건) | `/v3/api-docs` 에 `Cross-Origin-Resource-Policy` 가 없었다. | `same-origin`. 브라우저가 이 서버 바이트를 직접 `<img src>` 로 읽는 경로가 없다(첨부는 전부 인증 axios → object URL) 하고 CORS fetch 는 이 헤더의 대상이 아니라 안전하다. |
+
+분류 중 ZAP 이 지목하지 않은 결함 하나가 함께 드러났다 — 두 CSP 가 `report-to csp-endpoint` 를
+선언하는데 그 그룹을 정의하는 `Reporting-Endpoints` 헤더가 저장소 어디에도 없어 **최신 리포팅
+경로가 선언만 있고 동작하지 않았다.** 수집기는 이미 `application/reports+json` 을 파싱하고 있었으므로
+빠진 것은 그룹 정의 하나였다. 선언·그룹 정의·수집기 세 자리가 같은 경로를 가리키는지는
+`csp-policy` 계약이 묶는다.
+
+### URL-state census 가 같은 자리를 다르게 판정하고 있었다
+
+`method="post"` 를 넣고 census 를 재생성하자 기록 하나가 사라졌다(form-producer 55 → 54).
+지워진 `URL-B5F403F23CA8B7` 은 이 로그인 폼을 `form-producer`·`intercepted-submit` 으로 분류하고
+`currentBehavior` 에 이렇게 적고 있었다 — *"Form submission is intercepted before native navigation
+(named-handler-prevent-default); no URL state is emitted."*
+
+그 문장은 **하이드레이션 뒤에만 참이다.** census 는 소스의 `preventDefault` 를 보고 "URL 상태가
+나오지 않는다" 고 판정했고, 스캐너는 그 판정이 성립하지 않는 창에서 실제로 그 URL 을 만들어 냈다.
+정적 분석이 런타임 가정을 사실로 승격한 형태이며, 같은 축의 다른 `intercepted-submit` 기록도
+같은 가정 위에 있다 — 이 절은 그 사실을 남기고 일괄 점검은 하지 않는다.
+
+### 기록하고 유지하는 것
+
+| 규칙 | 판정 근거 |
+|---|---|
+| `10055` style-src unsafe-inline (10) | [GAP-FE-001](../../.agent/memory/known-gaps.md) 의 accepted-risk. 재개 조건은 sonner 의 nonce 지원 또는 교체이며 `csp-policy` 계약이 세분화 시도를 red 로 잡는다. |
+| `10049` Non-Storable Content (8) | nonce CSP 가 전 페이지를 동적 렌더로 돌린 결과의 `no-store`([DEC-OPS-011](../../.agent/memory/decisions.md)). 의도한 동작이다. |
+| `10094` Base64 Disclosure (5) | 근거가 CSS module 해시 클래스명과 생성 operation 이름이다. 오탐이지만 우리 응답 내용을 보는 규칙이라 끄지 않는다 — 진짜 base64 노출이 생기면 같은 규칙이 말해야 한다. |
+| `10019` Content-Type 부재 (2) | `/help` 는 307 리다이렉트, `/sitemap.xml` 은 라우트가 없어 404 다. 둘 다 본문 없는 응답이다. |
+| `10031` 사용자 제어 HTML 속성 (2) | `redirect` 파라미터다. `resolveInternalRedirect` 가 내부 절대경로만 통과시킨다. |
+| `10111` 인증 요청 식별 (1) | 로그인 폼을 찾았다는 정보성 보고다. |
+| `40042` Spring Actuator 정보 노출 (1) | `/actuator/health` 의 `{"status":"UP"}`. health probe 를 이 경로로 두는 것은 [DEC-OPS-069](../../.agent/memory/decisions.md) ④ 의 결정이고, 운영 오버레이는 actuator 를 앱 포트에 노출하지 않는다. |
+| `10104` User Agent Fuzzer (5) | 스캐너가 User-Agent 를 바꿔 응답 차이를 보는 정보성 규칙이다. |
+
+`90005`(Sec-Fetch-* 부재, 12건)만 [.zap/rules.tsv](../../.zap/rules.tsv) 에 `IGNORE` 로 등재했다 —
+그 헤더는 브라우저가 요청에 붙이는 것이고 ZAP 의 클라이언트는 붙이지 않으므로 응답 쪽에서
+고칠 대상 자체가 없다. 나머지는 WARN 으로 남겨 다음 실행에서도 보이게 한다.
+
+### 이 분류가 증명하지 않는 것
+
+이 스캔은 **미인증 공개 표면**만 본다(baseline 40 URL · full 8 URL). 로그인 뒤 관리자 화면은
+대상이 아니며, 인증 ZAP 증거는 [DEC-OPS-111](../../.agent/memory/decisions.md) 로 기관 채택 수명의
+`operational-assurance` 통제로 이전했다. WARN 이 0 이 되는 것도 목표가 아니다 — 유지 판정한
+8건은 다음 실행에서도 그대로 보고된다.
