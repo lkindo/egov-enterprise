@@ -79,11 +79,9 @@ const KNOWN_ROUTE_CAPABILITIES = {
       unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: '98.2% / ACTIVE', primaryTask: false,
       evidenceLevel: 'E1', evidence: ['frontend/src/app/components/ui/smart-notification-hub.tsx'],
     },
-    {
-      id: 'notifications.dispatch-preview', status: 'demo', dataSource: 'local-state+hardcoded-target', actions: ['edit-local-message', 'local-preview', 'select-local-channel'],
-      unsupportedVisibleActions: ['send', 'schedule', 'ai-options'], actorScope: 'ADMIN|SYSTEM', visibleLabel: 'AI 디스패치 미리보기', primaryTask: true,
-      evidenceLevel: 'E1', evidence: ['frontend/src/app/components/ui/notification-sender.tsx', 'frontend/src/app/components/ui/global-command-center.tsx'],
-    },
+    // [2026-09-23] notifications.dispatch-preview 는 DEC-OPS-038(2026-09-06)이 데모 발송 뷰와 함께
+    //   걷었고 원장에서도 사라졌는데 이 동결 목록에만 남아 있었다. 종전에는 동결과 커밋본을
+    //   대조하지 않아 그 드리프트가 보이지 않았다 — 아래 프런트 라우트 검증이 이제 양방향으로 본다.
   ],
   '/admin/system/network': [
     {
@@ -129,9 +127,12 @@ const KNOWN_ROUTE_CAPABILITIES = {
   ],
   '/admin/user/absences': [
     {
-      id: 'absence-management', status: 'unavailable', dataSource: 'none', actions: [],
-      unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: '부재 정보 미연동', primaryTask: true,
-      evidenceLevel: 'E1', evidence: ['frontend/src/app/admin/user/absences/page.tsx', 'frontend/src/app/admin/user/UserOrgHubClient.tsx'],
+      // [2026-09-23] DEC-OPS-049 가 이 기능을 배선했는데 원장은 2026-08-21 판정(미연동)에 머물러 있었다.
+      //   live 는 E4(UI→서버 왕복 산출물)가 있어야 하므로 알림 발송과 같게 partial + candidateStatus live 로 둔다.
+      id: 'absence-management', status: 'partial', candidateStatus: 'live', dataSource: 'admin-user-absences-api',
+      actions: ['mark-absent', 'mark-returned'],
+      unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: '부재 상태 관리', primaryTask: true,
+      evidenceLevel: 'E3', evidence: ['business-core/src/main/java/nuri/business/service/system/user/impl/UserAbsenceServiceImpl.java', 'frontend/src/app/admin/user/UserOrgHubClient.tsx', 'frontend/src/app/admin/user/__tests__/UserOrgHubClient.absence.test.tsx', 'frontend/src/services/foundation/system/UserAbsenceAdminService.ts'],
     },
     {
       id: 'absence.user-list-proxy', status: 'partial', dataSource: 'admin-users-api', actions: ['view-users', 'search-users'],
@@ -842,6 +843,39 @@ export function validateRouteCapabilities(manifest, repository) {
         }
         if (capability?.decisionSafe === true && capability?.evidenceLevel !== 'E5') {
           errors.push(`${capabilityLabel}: decisionSafe requires E5 deployed provenance and owner confirmation`);
+        }
+      }
+      /*
+       * [2026-09-23] 동결 목록과 커밋된 원장을 양방향으로 대조한다.
+       *
+       * 종전에 KNOWN_ROUTE_CAPABILITIES 는 baseline 을 '생성' 하기만 했고 커밋본과 비교되지 않았다.
+       * 그래서 기능을 배선하며 원장만 고치면 동결은 낡은 값을 그대로 들고 있었고, 반대로 동결만
+       * 고치면 아무 신호도 나지 않았다 — 다음 baseline 재생성이 고친 행을 되돌리는 경로다.
+       * 실제로 부재 관리 행이 배선(2026-09-07) 뒤에도 미연동으로 남아 있었다.
+       *
+       * 날짜는 비교하지 않는다. 생성기는 행마다 census 의 asOf 를 넣는데, 특정 행만 다시 확인한
+       * 날짜(lastVerifiedAt)는 그보다 뒤일 수 있고 그것은 드리프트가 아니라 더 정확한 사실이다.
+       */
+      const frozen = KNOWN_ROUTE_CAPABILITIES[entry.route];
+      if (frozen) {
+        const byId = new Map(entry.capabilities.map((capability) => [capability.id, capability]));
+        const frozenIds = frozen.map(({ id }) => id).sort();
+        if (!exactArray([...byId.keys()].sort(), frozenIds)) {
+          errors.push(`${label}: capability ids must match the frozen capability expectation`);
+        }
+        for (const definition of frozen) {
+          const capability = byId.get(definition.id);
+          if (!capability) continue;
+          for (const field of ['status', 'candidateStatus', 'dataSource', 'visibleLabel', 'evidenceLevel', 'primaryTask', 'actorScope']) {
+            if ((capability[field] ?? null) !== (definition[field] ?? null)) {
+              errors.push(`${label}/${definition.id}: ${field} drifted from the frozen expectation`);
+            }
+          }
+          for (const field of ['actions', 'unsupportedVisibleActions']) {
+            if (!exactArray(capability[field] ?? [], uniqueSorted(definition[field] ?? []))) {
+              errors.push(`${label}/${definition.id}: ${field} drifted from the frozen expectation`);
+            }
+          }
         }
       }
       if (entry.status !== aggregateCapabilityStatus(entry.capabilities)) {

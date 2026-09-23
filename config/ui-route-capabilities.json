@@ -6217,6 +6217,8 @@
       "status": "partial",
       "dataSource": "mixed",
       "supportedActions": [
+        "mark-absent",
+        "mark-returned",
         "search-users",
         "view-users"
       ],
@@ -6240,21 +6242,27 @@
       "capabilities": [
         {
           "id": "absence-management",
-          "status": "unavailable",
-          "dataSource": "none",
-          "actions": [],
+          "status": "partial",
+          "dataSource": "admin-user-absences-api",
+          "actions": [
+            "mark-absent",
+            "mark-returned"
+          ],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "부재 정보 미연동",
+          "visibleLabel": "부재 상태 관리",
           "primaryTask": true,
-          "evidenceLevel": "E1",
+          "evidenceLevel": "E3",
           "evidence": [
+            "business-core/src/main/java/nuri/business/service/system/user/impl/UserAbsenceServiceImpl.java",
             "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-            "frontend/src/app/admin/user/absences/page.tsx"
+            "frontend/src/app/admin/user/__tests__/UserOrgHubClient.absence.test.tsx",
+            "frontend/src/services/foundation/system/UserAbsenceAdminService.ts"
           ],
           "decisionSafe": false,
-          "lastVerifiedAt": "2026-08-21",
-          "owner": "product/UX + domain owner"
+          "lastVerifiedAt": "2026-09-23",
+          "owner": "product/UX + domain owner",
+          "candidateStatus": "live"
         },
         {
           "id": "absence.user-list-proxy",
