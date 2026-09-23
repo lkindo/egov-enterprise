@@ -13583,26 +13583,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -13849,26 +13852,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -14177,26 +14183,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -14358,26 +14367,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -14531,26 +14543,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -14704,26 +14719,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -14877,26 +14895,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -15050,26 +15071,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -16013,26 +16037,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -16878,26 +16905,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -17920,26 +17950,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -18091,26 +18124,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -18446,26 +18482,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -18617,26 +18656,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -19334,26 +19376,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -20156,26 +20201,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 20,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -20626,26 +20674,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -22188,26 +22239,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -22957,26 +23011,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -23130,29 +23187,35 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
+              "default": [
+                "crtDt,DESC"
+              ],
               "items": {
                 "type": "string"
               }
@@ -23303,29 +23366,35 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
+              "default": [
+                "crtDt,DESC"
+              ],
               "items": {
                 "type": "string"
               }
@@ -23486,26 +23555,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -23749,26 +23821,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -24066,26 +24141,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -26160,26 +26238,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -26263,26 +26344,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -26499,26 +26583,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -26602,26 +26689,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -28046,26 +28136,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -28461,26 +28554,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -28750,26 +28846,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 20,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -28854,26 +28953,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -29392,29 +29494,35 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
+              "default": [
+                "ifmlAtrzSn,DESC"
+              ],
               "items": {
                 "type": "string"
               }
@@ -29487,29 +29595,35 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
+              "default": [
+                "ifmlAtrzSn,DESC"
+              ],
               "items": {
                 "type": "string"
               }
@@ -29582,29 +29696,35 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
+              "default": [
+                "ifmlAtrzSn,DESC"
+              ],
               "items": {
                 "type": "string"
               }
@@ -29746,26 +29866,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -33973,26 +34096,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 20,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -34164,26 +34290,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -34602,26 +34731,29 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 0,
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
+            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "default": 10,
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -35227,9 +35359,7 @@
           "message": {
             "type": "string"
           },
-          "data": {
-            "type": "object"
-          },
+          "data": {},
           "timestamp": {
             "type": "string",
             "format": "date-time"
@@ -35258,6 +35388,7 @@
         "properties": {
           "userNm": {
             "type": "string",
+            "minLength": 1,
             "pattern": "^[a-zA-Z0-9가-힣\\s]{2,50}$"
           },
           "emplNo": {
@@ -35332,7 +35463,8 @@
         "properties": {
           "oldPassword": {
             "type": "string",
-            "description": "기존 비밀번호"
+            "description": "기존 비밀번호",
+            "minLength": 1
           },
           "newPassword": {
             "type": "string",
@@ -36421,6 +36553,7 @@
         "properties": {
           "userNm": {
             "type": "string",
+            "minLength": 1,
             "pattern": "^[a-zA-Z0-9가-힣\\s]{2,50}$"
           },
           "emplNo": {
@@ -36855,7 +36988,7 @@
           "roleSort": {
             "type": "string",
             "description": "롤정렬순서",
-            "example": 1
+            "example": "1"
           },
           "crtDt": {
             "type": "string",
@@ -37950,7 +38083,8 @@
         "properties": {
           "evntSn": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "exclusiveMinimum": 0
           },
           "otsdHrId": {
             "type": "string",
@@ -38090,7 +38224,7 @@
           "bizYr": {
             "type": "string",
             "description": "행사 연도",
-            "example": 2026,
+            "example": "2026",
             "maxLength": 4,
             "minLength": 0
           },
@@ -38104,7 +38238,7 @@
           "evntBgngYmd": {
             "type": "string",
             "description": "행사 시작일",
-            "example": 20260525,
+            "example": "20260525",
             "maxLength": 8,
             "minLength": 0,
             "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
@@ -38112,7 +38246,7 @@
           "evntEndYmd": {
             "type": "string",
             "description": "행사 종료일",
-            "example": 20260526,
+            "example": "20260526",
             "maxLength": 8,
             "minLength": 0,
             "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
@@ -38121,7 +38255,8 @@
             "type": "integer",
             "format": "int64",
             "description": "참여 정원 (Capacity)",
-            "example": 150
+            "example": 150,
+            "minimum": 0
           },
           "picNm": {
             "type": "string",
@@ -38154,7 +38289,7 @@
           "evntAprvYmd": {
             "type": "string",
             "description": "승인 일자",
-            "example": 20260525,
+            "example": "20260525",
             "maxLength": 8,
             "minLength": 0,
             "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
@@ -38366,6 +38501,7 @@
           },
           "action": {
             "type": "string",
+            "minLength": 1,
             "pattern": "ADD|REMOVE"
           },
           "version": {
@@ -38648,6 +38784,7 @@
             "type": "string",
             "description": "사용자 이름",
             "example": "홍길동",
+            "minLength": 1,
             "pattern": "^[a-zA-Z0-9가-힣\\s]{2,50}$"
           },
           "pswdHint": {
@@ -38762,7 +38899,8 @@
             "description": "문항별 답변 목록",
             "items": {
               "$ref": "#/components/schemas/Answer"
-            }
+            },
+            "minItems": 1
           }
         },
         "required": [
@@ -39026,6 +39164,7 @@
           },
           "emlAddr": {
             "type": "string",
+            "format": "email",
             "description": "이메일 주소(직접 입력·주소록). esntlId 와 함께 쓰지 않는다",
             "maxLength": 320,
             "minLength": 0
@@ -39063,9 +39202,9 @@
           },
           "recipients": {
             "type": "array",
+            "description": "수신자 목록 — 사용자(esntlId) 또는 주소(emlAddr). 발송 요청 전용(응답에는 실리지 않는다)",
             "items": {
-              "$ref": "#/components/schemas/MailRecipientDto",
-              "maxItems": 100
+              "$ref": "#/components/schemas/MailRecipientDto"
             },
             "maxItems": 100,
             "minItems": 0,
@@ -39344,6 +39483,7 @@
           },
           "userNm": {
             "type": "string",
+            "minLength": 1,
             "pattern": "^[a-zA-Z0-9가-힣\\s]{2,50}$"
           },
           "esntlId": {
@@ -39737,7 +39877,7 @@
           "chgTm": {
             "type": "string",
             "description": "변경시각 (HHmmss, 변경일자는 chgYmd)",
-            "example": 143025,
+            "example": "143025",
             "maxLength": 6,
             "minLength": 0,
             "pattern": "^([01][0-9]|2[0-3])[0-5][0-9][0-5][0-9]$"
@@ -39772,10 +39912,9 @@
         "properties": {
           "bbsIds": {
             "type": "array",
+            "description": "대상 게시판 ID 목록",
             "items": {
-              "type": "string",
-              "maxItems": 100,
-              "minItems": 1
+              "type": "string"
             },
             "maxItems": 100,
             "minItems": 1
@@ -39800,10 +39939,9 @@
         "properties": {
           "bbsIds": {
             "type": "array",
+            "description": "대상 게시판 ID 목록",
             "items": {
-              "type": "string",
-              "maxItems": 100,
-              "minItems": 1
+              "type": "string"
             },
             "maxItems": 100,
             "minItems": 1
@@ -39851,10 +39989,9 @@
           },
           "recipients": {
             "type": "array",
+            "description": "수신자 목록",
             "items": {
-              "$ref": "#/components/schemas/SmsRecptnDto",
-              "maxItems": 100,
-              "minItems": 1
+              "$ref": "#/components/schemas/SmsRecptnDto"
             },
             "maxItems": 100,
             "minItems": 1
@@ -40055,7 +40192,8 @@
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "minItems": 1
           },
           "status": {
             "type": "string"
@@ -40073,7 +40211,8 @@
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "minItems": 1
           },
           "role": {
             "type": "string",
@@ -40095,7 +40234,8 @@
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "minItems": 1
           },
           "ognzId": {
             "type": "string"
@@ -42327,7 +42467,10 @@
             ]
           },
           "joinYmd": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "가입(신청)일자 yyyyMMdd — 행이 없으면 null"
           }
         }
@@ -42375,15 +42518,24 @@
             "description": "게시판 ID"
           },
           "bbsTtl": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "게시판 제목"
           },
           "bbsExpln": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "게시판 설명"
           },
           "bbsTypeCd": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "게시판 유형 코드"
           }
         }
@@ -42660,7 +42812,10 @@
         "type": "object",
         "properties": {
           "average": {
-            "type": "number",
+            "type": [
+              "number",
+              "null"
+            ],
             "format": "double",
             "description": "만족도 평균(1~5). 평가가 하나도 없으면 null 이며 0 과 구분해야 한다.",
             "example": 4.5
@@ -45632,7 +45787,7 @@
           "chgTm": {
             "type": "string",
             "description": "변경시각 (HHmmss, 변경일자는 chgYmd)",
-            "example": 143025,
+            "example": "143025",
             "maxLength": 6,
             "minLength": 0,
             "pattern": "^([01][0-9]|2[0-3])[0-5][0-9][0-5][0-9]$"
@@ -46944,7 +47099,7 @@
           "bizYr": {
             "type": "string",
             "description": "행사 연도",
-            "example": 2026,
+            "example": "2026",
             "maxLength": 4,
             "minLength": 0
           },
@@ -46958,7 +47113,7 @@
           "evntBgngYmd": {
             "type": "string",
             "description": "행사 시작일",
-            "example": 20260525,
+            "example": "20260525",
             "maxLength": 8,
             "minLength": 0,
             "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
@@ -46966,7 +47121,7 @@
           "evntEndYmd": {
             "type": "string",
             "description": "행사 종료일",
-            "example": 20260526,
+            "example": "20260526",
             "maxLength": 8,
             "minLength": 0,
             "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
@@ -46975,7 +47130,8 @@
             "type": "integer",
             "format": "int64",
             "description": "참여 정원 (Capacity)",
-            "example": 150
+            "example": 150,
+            "minimum": 0
           },
           "picNm": {
             "type": "string",
@@ -47008,7 +47164,7 @@
           "evntAprvYmd": {
             "type": "string",
             "description": "승인 일자",
-            "example": 20260525,
+            "example": "20260525",
             "maxLength": 8,
             "minLength": 0,
             "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
@@ -47222,11 +47378,17 @@
             "description": "사용자 식별자(esntlId)"
           },
           "userNm": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "사용자 이름 — 사용자를 찾지 못하면 null"
           },
           "status": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "멤버십 상태 — REQUESTED(가입 신청)·APPROVED(회원). 어휘 밖 코드는 null",
             "enum": [
               "REQUESTED",
@@ -47242,7 +47404,10 @@
             "description": "관리자 여부(Y/N)"
           },
           "joinYmd": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "가입(신청)일자 yyyyMMdd"
           },
           "useYn": {

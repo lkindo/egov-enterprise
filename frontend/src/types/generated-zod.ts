@@ -30,7 +30,7 @@ export const ApiResponseVoidSchema = z.object({
   status: z.number().int().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.record(z.string(), z.any()).optional(),
+  data: z.any().optional(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
@@ -49,7 +49,7 @@ export type FieldErrorItem = z.infer<typeof FieldErrorItemSchema>;
 // UserSelfProfileUpdateRequest Schema
 // ==========================================================================
 export const UserSelfProfileUpdateRequestSchema = z.object({
-  userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
+  userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   emplNo: z.string().min(0).max(20).optional(),
   areaNo: z.string().min(0).max(4).optional(),
   middleTelno: z.string().min(0).max(4).optional(),
@@ -69,7 +69,7 @@ export type UserSelfProfileUpdateRequest = z.infer<typeof UserSelfProfileUpdateR
 // PasswordChangeRequest Schema
 // ==========================================================================
 export const PasswordChangeRequestSchema = z.object({
-  oldPassword: z.string(),
+  oldPassword: z.string().min(1),
   newPassword: z.string().min(8).max(20),
 });
 export type PasswordChangeRequest = z.infer<typeof PasswordChangeRequestSchema>;
@@ -365,7 +365,7 @@ export type ApprovalConfirmRequest = z.infer<typeof ApprovalConfirmRequestSchema
 // UserProfileUpdateRequest Schema
 // ==========================================================================
 export const UserProfileUpdateRequestSchema = z.object({
-  userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
+  userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   emplNo: z.string().min(0).max(20).optional(),
   areaNo: z.string().min(0).max(4).optional(),
   middleTelno: z.string().min(0).max(4).optional(),
@@ -852,7 +852,7 @@ export const EventInfoRequestSchema = z.object({
   evntCn: z.string().min(0).max(4000).optional(),
   evntBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   evntEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
-  evntUseCnt: z.number().int().optional(),
+  evntUseCnt: z.number().int().min(0).optional(),
   picNm: z.string().min(0).max(100).optional(),
   prepMttr: z.string().min(0).max(2500).optional(),
   evntTypeCd: z.string().min(0).max(12).optional(),
@@ -928,7 +928,7 @@ export type ReplaceGrants = z.infer<typeof ReplaceGrantsSchema>;
 export const ChangeDepartmentGroupsSchema = z.object({
   userIds: z.array(z.string().min(0).max(20)).min(0).max(2000),
   groupCode: z.string().min(0).max(20),
-  action: z.string().regex(new RegExp("ADD|REMOVE")),
+  action: z.string().min(1).regex(new RegExp("ADD|REMOVE")),
   version: z.string().min(0).max(64),
   complete: z.boolean().optional(),
 });
@@ -1012,7 +1012,7 @@ export type AddressBookUserDto = z.infer<typeof AddressBookUserDtoSchema>;
 export const UserSignupRequestSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9]+$")),
   pswd: z.string().min(8).max(20).regex(new RegExp("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")),
-  userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
+  userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   pswdHint: z.string().optional(),
   pswdCrans: z.string().optional(),
 });
@@ -1058,7 +1058,7 @@ export type Answer = z.infer<typeof AnswerSchema>;
 // ==========================================================================
 export const SurveyResponseSubmitDtoSchema = z.object({
   rspnsNm: z.string().min(0).max(100).optional(),
-  answers: z.array(z.lazy(() => AnswerSchema)),
+  answers: z.array(z.lazy(() => AnswerSchema)).min(1),
 });
 export type SurveyResponseSubmitDto = z.infer<typeof SurveyResponseSubmitDtoSchema>;
 
@@ -1255,7 +1255,7 @@ export type ApprovalResubmissionRequest = z.infer<typeof ApprovalResubmissionReq
 // ==========================================================================
 export const UserDtoSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9_]+$")),
-  userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
+  userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   esntlId: z.string().optional(),
   pswd: z.string().min(8).max(100).regex(new RegExp("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")),
   pswdHint: z.string().min(0).max(300).optional(),
@@ -1456,7 +1456,7 @@ export type AdminPasswordChangeRequest = z.infer<typeof AdminPasswordChangeReque
 // BulkStatusRequest Schema
 // ==========================================================================
 export const BulkStatusRequestSchema = z.object({
-  userIds: z.array(z.string()),
+  userIds: z.array(z.string()).min(1),
   status: z.string(),
 });
 export type BulkStatusRequest = z.infer<typeof BulkStatusRequestSchema>;
@@ -1465,7 +1465,7 @@ export type BulkStatusRequest = z.infer<typeof BulkStatusRequestSchema>;
 // BulkRoleRequest Schema
 // ==========================================================================
 export const BulkRoleRequestSchema = z.object({
-  userIds: z.array(z.string()),
+  userIds: z.array(z.string()).min(1),
   role: z.enum(["USER","ADMIN"]),
 });
 export type BulkRoleRequest = z.infer<typeof BulkRoleRequestSchema>;
@@ -1474,7 +1474,7 @@ export type BulkRoleRequest = z.infer<typeof BulkRoleRequestSchema>;
 // BulkDeptMoveRequest Schema
 // ==========================================================================
 export const BulkDeptMoveRequestSchema = z.object({
-  userIds: z.array(z.string()),
+  userIds: z.array(z.string()).min(1),
   ognzId: z.string(),
 });
 export type BulkDeptMoveRequest = z.infer<typeof BulkDeptMoveRequestSchema>;
@@ -2375,7 +2375,7 @@ export type ApiResponseCommunityMembershipDto = z.infer<typeof ApiResponseCommun
 export const CommunityMembershipDtoSchema = z.object({
   cmntySn: z.number().int().optional(),
   status: z.enum(["NONE","REQUESTED","MEMBER","UNKNOWN"]).optional(),
-  joinYmd: z.string().optional(),
+  joinYmd: z.string().optional().nullable(),
 });
 export type CommunityMembershipDto = z.infer<typeof CommunityMembershipDtoSchema>;
 
@@ -2398,9 +2398,9 @@ export type ApiResponseListCommunityBoardDto = z.infer<typeof ApiResponseListCom
 // ==========================================================================
 export const CommunityBoardDtoSchema = z.object({
   bbsId: z.string().optional(),
-  bbsTtl: z.string().optional(),
-  bbsExpln: z.string().optional(),
-  bbsTypeCd: z.string().optional(),
+  bbsTtl: z.string().optional().nullable(),
+  bbsExpln: z.string().optional().nullable(),
+  bbsTypeCd: z.string().optional().nullable(),
 });
 export type CommunityBoardDto = z.infer<typeof CommunityBoardDtoSchema>;
 
@@ -2527,7 +2527,7 @@ export type ApiResponseSatisfactionAverageResponse = z.infer<typeof ApiResponseS
 // SatisfactionAverageResponse Schema
 // ==========================================================================
 export const SatisfactionAverageResponseSchema = z.object({
-  average: z.number().optional(),
+  average: z.number().optional().nullable(),
 });
 export type SatisfactionAverageResponse = z.infer<typeof SatisfactionAverageResponseSchema>;
 
@@ -4337,7 +4337,7 @@ export const EventInfoDtoSchema = z.object({
   evntCn: z.string().min(0).max(4000).optional(),
   evntBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   evntEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
-  evntUseCnt: z.number().int().optional(),
+  evntUseCnt: z.number().int().min(0).optional(),
   picNm: z.string().min(0).max(100).optional(),
   prepMttr: z.string().min(0).max(2500).optional(),
   evntTypeCd: z.string().min(0).max(12).optional(),
@@ -4426,11 +4426,11 @@ export type ApiResponsePageResponseCommunityMemberDto = z.infer<typeof ApiRespon
 export const CommunityMemberDtoSchema = z.object({
   cmntySn: z.number().int().optional(),
   userId: z.string().optional(),
-  userNm: z.string().optional(),
-  status: z.enum(["REQUESTED","APPROVED"]).optional(),
+  userNm: z.string().optional().nullable(),
+  status: z.enum(["REQUESTED","APPROVED"]).optional().nullable(),
   mbrSttsCd: z.string().optional(),
   mngrYn: z.string().optional(),
-  joinYmd: z.string().optional(),
+  joinYmd: z.string().optional().nullable(),
   useYn: z.string().optional(),
 });
 export type CommunityMemberDto = z.infer<typeof CommunityMemberDtoSchema>;
@@ -4782,7 +4782,7 @@ export const ApiResponseVoidRequestSchema = z.object({
   status: z.number().int().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.record(z.string(), z.any()).optional(),
+  data: z.any().optional(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
   errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
 });
@@ -4792,7 +4792,7 @@ export const ApiResponseVoidResponseSchema = z.object({
   status: z.number().int().optional().nullable(),
   code: z.string().optional().nullable(),
   message: z.string().optional().nullable(),
-  data: z.record(z.string(), z.any()).optional().nullable(),
+  data: z.any().optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
@@ -4808,7 +4808,7 @@ export const FieldErrorItemResponseSchema = z.object({
 });
 
 export const UserSelfProfileUpdateRequestRequestSchema = z.object({
-  userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
+  userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   emplNo: z.string().min(0).max(20).optional(),
   areaNo: z.string().min(0).max(4).optional(),
   middleTelno: z.string().min(0).max(4).optional(),
@@ -4824,7 +4824,7 @@ export const UserSelfProfileUpdateRequestRequestSchema = z.object({
 });
 
 export const UserSelfProfileUpdateRequestResponseSchema = z.object({
-  userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
+  userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   emplNo: z.string().min(0).max(20).optional().nullable(),
   areaNo: z.string().min(0).max(4).optional().nullable(),
   middleTelno: z.string().min(0).max(4).optional().nullable(),
@@ -4840,12 +4840,12 @@ export const UserSelfProfileUpdateRequestResponseSchema = z.object({
 });
 
 export const PasswordChangeRequestRequestSchema = z.object({
-  oldPassword: z.string(),
+  oldPassword: z.string().min(1),
   newPassword: z.string().min(8).max(20),
 });
 
 export const PasswordChangeRequestResponseSchema = z.object({
-  oldPassword: z.string(),
+  oldPassword: z.string().min(1),
   newPassword: z.string().min(8).max(20),
 });
 
@@ -5251,7 +5251,7 @@ export const ApprovalConfirmRequestResponseSchema = z.object({
 });
 
 export const UserProfileUpdateRequestRequestSchema = z.object({
-  userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
+  userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   emplNo: z.string().min(0).max(20).optional(),
   areaNo: z.string().min(0).max(4).optional(),
   middleTelno: z.string().min(0).max(4).optional(),
@@ -5270,7 +5270,7 @@ export const UserProfileUpdateRequestRequestSchema = z.object({
 });
 
 export const UserProfileUpdateRequestResponseSchema = z.object({
-  userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
+  userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   emplNo: z.string().min(0).max(20).optional().nullable(),
   areaNo: z.string().min(0).max(4).optional().nullable(),
   middleTelno: z.string().min(0).max(4).optional().nullable(),
@@ -5964,7 +5964,7 @@ export const EventInfoRequestRequestSchema = z.object({
   evntCn: z.string().min(0).max(4000).optional(),
   evntBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   evntEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
-  evntUseCnt: z.number().int().optional(),
+  evntUseCnt: z.number().int().min(0).optional(),
   picNm: z.string().min(0).max(100).optional(),
   prepMttr: z.string().min(0).max(2500).optional(),
   evntTypeCd: z.string().min(0).max(12).optional(),
@@ -5983,7 +5983,7 @@ export const EventInfoRequestResponseSchema = z.object({
   evntCn: z.string().min(0).max(4000).optional().nullable(),
   evntBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
   evntEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
-  evntUseCnt: z.number().int().optional().nullable(),
+  evntUseCnt: z.number().int().min(0).optional().nullable(),
   picNm: z.string().min(0).max(100).optional().nullable(),
   prepMttr: z.string().min(0).max(2500).optional().nullable(),
   evntTypeCd: z.string().min(0).max(12).optional().nullable(),
@@ -6072,7 +6072,7 @@ export const ReplaceGrantsResponseSchema = z.object({
 export const ChangeDepartmentGroupsRequestSchema = z.object({
   userIds: z.array(z.string().min(0).max(20)).min(0).max(2000),
   groupCode: z.string().min(0).max(20),
-  action: z.string().regex(new RegExp("ADD|REMOVE")),
+  action: z.string().min(1).regex(new RegExp("ADD|REMOVE")),
   version: z.string().min(0).max(64),
   complete: z.boolean().optional(),
 });
@@ -6080,7 +6080,7 @@ export const ChangeDepartmentGroupsRequestSchema = z.object({
 export const ChangeDepartmentGroupsResponseSchema = z.object({
   userIds: z.array(z.string().min(0).max(20).optional().nullable()).min(0).max(2000),
   groupCode: z.string().min(0).max(20),
-  action: z.string().regex(new RegExp("ADD|REMOVE")),
+  action: z.string().min(1).regex(new RegExp("ADD|REMOVE")),
   version: z.string().min(0).max(64),
   complete: z.boolean().optional().nullable(),
 });
@@ -6192,7 +6192,7 @@ export const AddressBookUserDtoResponseSchema = z.object({
 export const UserSignupRequestRequestSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9]+$")),
   pswd: z.string().min(8).max(20).regex(new RegExp("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")),
-  userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
+  userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   pswdHint: z.string().optional(),
   pswdCrans: z.string().optional(),
 });
@@ -6200,7 +6200,7 @@ export const UserSignupRequestRequestSchema = z.object({
 export const UserSignupRequestResponseSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9]+$")),
   pswd: z.string().min(8).max(20).regex(new RegExp("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")),
-  userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
+  userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   pswdHint: z.string().optional().nullable(),
   pswdCrans: z.string().optional().nullable(),
 });
@@ -6253,12 +6253,12 @@ export const AnswerResponseSchema = z.object({
 
 export const SurveyResponseSubmitDtoRequestSchema = z.object({
   rspnsNm: z.string().min(0).max(100).optional(),
-  answers: z.array(z.lazy(() => AnswerRequestSchema.strict())),
+  answers: z.array(z.lazy(() => AnswerRequestSchema.strict())).min(1),
 });
 
 export const SurveyResponseSubmitDtoResponseSchema = z.object({
   rspnsNm: z.string().min(0).max(100).optional().nullable(),
-  answers: z.array(z.lazy(() => AnswerResponseSchema)),
+  answers: z.array(z.lazy(() => AnswerResponseSchema)).min(1),
 });
 
 export const ApiResponseIntegerRequestSchema = z.object({
@@ -6520,7 +6520,7 @@ export const ApprovalResubmissionRequestResponseSchema = z.object({
 
 export const UserDtoRequestSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9_]+$")),
-  userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
+  userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   esntlId: z.string().optional(),
   pswd: z.string().min(8).max(100).regex(new RegExp("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")),
   pswdHint: z.string().min(0).max(300).optional(),
@@ -6553,7 +6553,7 @@ export const UserDtoRequestSchema = z.object({
 
 export const UserDtoResponseSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9_]+$")),
-  userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
+  userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   esntlId: z.string().optional().nullable(),
   role: z.string().min(0).max(50).optional().nullable(),
   emplNo: z.string().min(0).max(20).optional().nullable(),
@@ -6805,32 +6805,32 @@ export const AdminPasswordChangeRequestResponseSchema = z.object({
 });
 
 export const BulkStatusRequestRequestSchema = z.object({
-  userIds: z.array(z.string()),
+  userIds: z.array(z.string()).min(1),
   status: z.string(),
 });
 
 export const BulkStatusRequestResponseSchema = z.object({
-  userIds: z.array(z.string().optional().nullable()),
+  userIds: z.array(z.string().optional().nullable()).min(1),
   status: z.string(),
 });
 
 export const BulkRoleRequestRequestSchema = z.object({
-  userIds: z.array(z.string()),
+  userIds: z.array(z.string()).min(1),
   role: z.enum(["USER","ADMIN"]),
 });
 
 export const BulkRoleRequestResponseSchema = z.object({
-  userIds: z.array(z.string().optional().nullable()),
+  userIds: z.array(z.string().optional().nullable()).min(1),
   role: z.enum(["USER","ADMIN"]),
 });
 
 export const BulkDeptMoveRequestRequestSchema = z.object({
-  userIds: z.array(z.string()),
+  userIds: z.array(z.string()).min(1),
   ognzId: z.string(),
 });
 
 export const BulkDeptMoveRequestResponseSchema = z.object({
-  userIds: z.array(z.string().optional().nullable()),
+  userIds: z.array(z.string().optional().nullable()).min(1),
   ognzId: z.string(),
 });
 
@@ -8104,7 +8104,7 @@ export const ApiResponseCommunityMembershipDtoResponseSchema = z.object({
 export const CommunityMembershipDtoRequestSchema = z.object({
   cmntySn: z.number().int().optional(),
   status: z.enum(["NONE","REQUESTED","MEMBER","UNKNOWN"]).optional(),
-  joinYmd: z.string().optional(),
+  joinYmd: z.string().optional().nullable(),
 });
 
 export const CommunityMembershipDtoResponseSchema = z.object({
@@ -8135,9 +8135,9 @@ export const ApiResponseListCommunityBoardDtoResponseSchema = z.object({
 
 export const CommunityBoardDtoRequestSchema = z.object({
   bbsId: z.string().optional(),
-  bbsTtl: z.string().optional(),
-  bbsExpln: z.string().optional(),
-  bbsTypeCd: z.string().optional(),
+  bbsTtl: z.string().optional().nullable(),
+  bbsExpln: z.string().optional().nullable(),
+  bbsTypeCd: z.string().optional().nullable(),
 });
 
 export const CommunityBoardDtoResponseSchema = z.object({
@@ -8314,7 +8314,7 @@ export const ApiResponseSatisfactionAverageResponseResponseSchema = z.object({
 });
 
 export const SatisfactionAverageResponseRequestSchema = z.object({
-  average: z.number().optional(),
+  average: z.number().optional().nullable(),
 });
 
 export const SatisfactionAverageResponseResponseSchema = z.object({
@@ -10872,7 +10872,7 @@ export const EventInfoDtoRequestSchema = z.object({
   evntCn: z.string().min(0).max(4000).optional(),
   evntBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   evntEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
-  evntUseCnt: z.number().int().optional(),
+  evntUseCnt: z.number().int().min(0).optional(),
   picNm: z.string().min(0).max(100).optional(),
   prepMttr: z.string().min(0).max(2500).optional(),
   evntTypeCd: z.string().min(0).max(12).optional(),
@@ -10891,7 +10891,7 @@ export const EventInfoDtoResponseSchema = z.object({
   evntCn: z.string().min(0).max(4000).optional().nullable(),
   evntBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
   evntEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
-  evntUseCnt: z.number().int().optional().nullable(),
+  evntUseCnt: z.number().int().min(0).optional().nullable(),
   picNm: z.string().min(0).max(100).optional().nullable(),
   prepMttr: z.string().min(0).max(2500).optional().nullable(),
   evntTypeCd: z.string().min(0).max(12).optional().nullable(),
@@ -11006,11 +11006,11 @@ export const ApiResponsePageResponseCommunityMemberDtoResponseSchema = z.object(
 export const CommunityMemberDtoRequestSchema = z.object({
   cmntySn: z.number().int().optional(),
   userId: z.string().optional(),
-  userNm: z.string().optional(),
-  status: z.enum(["REQUESTED","APPROVED"]).optional(),
+  userNm: z.string().optional().nullable(),
+  status: z.enum(["REQUESTED","APPROVED"]).optional().nullable(),
   mbrSttsCd: z.string().optional(),
   mngrYn: z.string().optional(),
-  joinYmd: z.string().optional(),
+  joinYmd: z.string().optional().nullable(),
   useYn: z.string().optional(),
 });
 
