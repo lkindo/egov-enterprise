@@ -37,6 +37,10 @@ test('every way an alert can go silently dark is red', () => {
     ['for removed', mutate(PATHS.rules, 'for: 10m', 'for: now'), /for 가 없거나/],
     ['severity dropped', mutate(PATHS.rules, 'severity: warning', 'severity: page'), /severity/],
     ['required alert removed', mutate(PATHS.rules, '- alert: EgovLoginFailureSpike', '- alert: EgovLoginFailures'), /EgovLoginFailureSpike 가 없습니다/],
+    ['attachment metric typo', mutate(PATHS.rules, 'nuri_attachment_integrity_runs_total', 'nuri_attachment_integrity_run_total'), /METRIC_BINDINGS 에 없습니다/],
+    ['attachment outcome value typo', mutate(PATHS.rules, 'outcome="PASS"', 'outcome="PASSED"'), /테스트가 확인한 값이 아닙니다/],
+    ['attachment scrape proof removed', mutate(PATHS.attachmentSchedulerTest, 'nuri_attachment_integrity_runs_total{outcome=\\"PASS\\"} 1.0', 'UNPROVEN'), /nuri_attachment_integrity_runs_total/],
+    ['attachment alert removed', mutate(PATHS.rules, '- alert: EgovAttachmentIntegrityNoHealthyRun', '- alert: EgovAttachmentIntegrity'), /EgovAttachmentIntegrityNoHealthyRun 가 없/],
     ['rules file missing', { ...repository, [PATHS.rules]: undefined }, /경보 규칙 파일이 없습니다/],
   ];
   for (const [name, files, expected] of cases) {

@@ -11,7 +11,7 @@
 | 요청 제한(429) 카운터 | `security_ratelimit_rejected_total{bucket="login"\|"all"}` | [RateLimitFilter](../../business-core/src/main/java/nuri/business/security/filter/RateLimitFilter.java) |
 | 로그인 실패 | 표준 요청 메트릭 `http_server_requests_seconds_count{uri="/api/v1/auth/login",status="401"}` | [로그인 통합 테스트](../../api-server/src/test/java/nuri/auth/AuthenticationControllerIntegrationTest.java) |
 | 콘솔 로그 | 기본은 텍스트. `json-logs` 프로파일로 ECS JSON 전환 | [logback-spring.xml](../../api-server/src/main/resources/logback-spring.xml) |
-| 경보 규칙 예시 | 429 지속·로그인 실패 급증 2건 | [prometheus-alert-rules.yml](../../config/observability/prometheus-alert-rules.yml) |
+| 경보 규칙 예시 | 429 지속·로그인 실패 급증·첨부 점검 미완료 3건 | [prometheus-alert-rules.yml](../../config/observability/prometheus-alert-rules.yml) |
 
 ⚠ 요청 제한 필터는 HTTP 관측 필터보다 먼저 응답을 끝낸다. 그래서 **429 는 `http_server_requests` 에 나타나지 않는다.**
 429 추세는 반드시 전용 카운터로 본다.
@@ -43,12 +43,13 @@ docker run --rm --entrypoint /bin/promtool -v "$PWD/config/observability:/rules:
   prom/prometheus:v2.55.1 check rules /rules/prometheus-alert-rules.yml
 ```
 
-2026-09-14 실측 결과는 `SUCCESS: 2 rules found` 였다. Alertmanager 라우팅(수신자·채널·억제 규칙)은 인수처가 정한다.
+2026-09-14 실측은 `SUCCESS: 2 rules found`, 첨부 점검 경보를 더한 2026-09-23 재실측은 `SUCCESS: 3 rules found` 였다. Alertmanager 라우팅(수신자·채널·억제 규칙)은 인수처가 정한다.
 
 | 경보 | 조건(시작점) | 먼저 볼 것 |
 |---|---|---|
 | `EgovRateLimitRejectionsSustained` | bucket별 분당 429가 30건을 넘는 상태가 10분 지속 | api 로그의 `[RATE-LIMIT]` 줄(ip·uri). 한도를 방금 낮췄다면 한도 부족을 먼저 의심한다 |
 | `EgovLoginFailureSpike` | 분당 로그인 401이 20건을 넘는 상태가 5분 지속 | 같은 시각의 `bucket=login` 429 여부, 특정 계정 집중 여부 |
+| `EgovAttachmentIntegrityNoHealthyRun` | 정기 첨부 점검이 26시간 안에 `outcome="PASS"` 를 한 번도 기록하지 못함 | 결과 JSON(`last-complete.json`·`latest.json`)의 `outcome` — DRIFT(실제 불일치)·INCOMPLETE(상한 초과)·FAILED(예외)·REPORT_FAILED(기록 실패)를 구분한다. ⚠ 기능이 꺼져 있거나 한 번도 돌지 않으면 시계열이 없어 이 규칙은 침묵한다 |
 
 ## 4. 드리프트 방지
 
