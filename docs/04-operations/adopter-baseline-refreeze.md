@@ -20,7 +20,7 @@ base 저장소의 게이트 다수는 "현재 실측값과 정확히 같아야 �
 
 ## 2. 재동결 대상 목록 (현존 게이트 실측)
 
-아래 6개 축은 이 런북이 다루는 기준선 재동결 범위다. 기관 운영 검토와 승인은
+아래 7개 축은 이 런북이 다루는 기준선 재동결 범위다. 기관 운영 검토와 승인은
 [ADR-0018 검토 수명 가이드](../03-guides/governance-review-lifecycle.md)에 따라 별도로 수행한다.
 
 | # | 축 | 동결 위치 | 재동결 방법 |
@@ -31,6 +31,7 @@ base 저장소의 게이트 다수는 "현재 실측값과 정확히 같아야 �
 | 4 | 거버넌스 게이트 exact census | [config/governance/gates.json](../../config/governance/gates.json) | manifest 를 실제 게이트 소스와 함께 갱신 (§5) |
 | 5 | 브랜드 프로필 키 패리티 | [theme-token-contract.test.ts](../../frontend/src/__tests__/theme-token-contract.test.ts) | 프로필 CSS·allowlist 3방향 패리티 충족 (§6) |
 | 6 | e2e shard 시간 프로필 | [frontend/e2e/shard-duration-profile.json](../../frontend/e2e/shard-duration-profile.json) | 자기 CI 성공 run 실측으로 재작성 (§7) |
+| 7 | 컨트롤 고정 높이 덮어쓰기 | [work-screen-grammar-contract.test.ts](../../frontend/src/__tests__/work-screen-grammar-contract.test.ts) 의 `CONTROL_HEIGHT_OVERRIDES` 파일별 수 | red 실측 → 파일별 수 갱신 (§3) |
 
 마지막으로 required checks 결속(§8)을 adopter 자신의 원격 저장소에 다시 건다.
 
@@ -52,6 +53,12 @@ base 저장소의 게이트 다수는 "현재 실측값과 정확히 같아야 �
 2. red 실패 메시지가 실측 총계와 방향(증가/감소)을 출력한다. **이 출력값이 유일한 재동결 근거다.** 추정·수기 집계로 상수를 바꾸지 않는다.
 3. 감소(개선)면 `BASELINE` 을 실측값으로 내린다. 증가(악화)면 먼저 토큰 치환으로 줄이는 것이 원칙이고, 불가피하게 올릴 때는 사유를 코드 리뷰에 명시한다(테스트 파일 상단 주석에 규정된 운영 규칙).
 4. 재실행해 green 을 확인하고, baseline 변경을 diff 리뷰로 승인받는다.
+
+컨트롤 고정 높이 덮어쓰기 동결도 같은 절차다. 차이는 총계가 아니라 **파일별 수**라는 점이다 — pack 을 빼면 사라진 파일의 항목이 "줄었다" 로 red 가 되므로 그 항목을 지운다. 수가 늘면 올리지 말고 해당 컨트롤을 `--control-h` 로 되돌린다.
+
+```powershell
+pnpm -C frontend exec vitest run src/__tests__/work-screen-grammar-contract.test.ts
+```
 
 ## 4. URL 상태 census 재생성
 
@@ -113,7 +120,7 @@ adopter 절차:
 
 ## 9. 실행 순서 요약과 완료 기준
 
-1. §3 색 guard 2종 → §4 URL census → §5 gates.json → §6 프로필 패리티 → §7 shard 프로필 순으로 로컬 재동결.
+1. §3 색 guard 2종·컨트롤 높이 동결 → §4 URL census → §5 gates.json → §6 프로필 패리티 → §7 shard 프로필 순으로 로컬 재동결.
 2. 각 항목은 "red 실측 → 재생성/갱신 → green 재실행" 을 개별 커밋으로 남긴다.
 3. 생성물 통합 검증은 `npm run verify` 또는 `verify:push`·`verify:fast`·`verify:full`로 실행하며 이 별칭은 모두 보수적으로 `full`에 연결된다. `verify:docs`는 `contracts`, `verify:be`는 `backend`, `verify:fe`는 `frontend`다. 공통 활성 계약은 각 범위에서 먼저 실행한다. `base:*`·`verify:e2e`·`verify:ops` 별칭은 생성물에서 제거되므로, 마지막 원격 검증은 §8에서 기관이 연결한 절차를 따른다.
 4. **완료 기준**: 전 게이트 green + 재동결 diff 가 항목별 사유와 함께 PR 리뷰로 승인됨. 게이트 비활성화·예외 목록 확대로 green 을 만든 항목이 0건이어야 한다.
