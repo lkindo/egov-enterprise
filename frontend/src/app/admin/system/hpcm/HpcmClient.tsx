@@ -376,13 +376,13 @@ export default function HpcmClient({
         maxWidth="xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" type="button" disabled={savePending} onClick={closeModal} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2">취소</Button>
+            <Button variant="outline" type="button" disabled={savePending} onClick={closeModal} className="flex-1 rounded-lg font-bold text-xs tracking-widest uppercase border-2">취소</Button>
             <Button
               type="submit"
               form="hpcm-create-form"
               disabled={savePending}
               aria-busy={savePending || undefined}
-              className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
+              className="flex-[2] bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
             >
               <ShieldCheck size={18} strokeWidth={3} aria-hidden="true" className="text-primary group-hover:rotate-12 transition-transform" />
               {savePending

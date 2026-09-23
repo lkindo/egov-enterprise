@@ -202,7 +202,7 @@ export function SmartNotificationHub() {
                 aria-label="알림 제목 또는 내용 검색"
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
-                className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
+                className="bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
                 placeholder="알림 제목 또는 내용 검색"
               />
             </div>

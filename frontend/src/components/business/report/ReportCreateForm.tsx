@@ -110,7 +110,7 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
                                     {...field}
                                     value={field.value ?? ''}
                                     maxLength={100}
-                                    className={cn('h-11 rounded-lg text-sm font-bold tracking-tight', fieldState.error && 'border-rose-500')}
+                                    className={cn('rounded-lg text-sm font-bold tracking-tight', fieldState.error && 'border-rose-500')}
                                     placeholder="예: 7월 3주차 업무 보고"
                                 />
                             </FormControl>
@@ -129,7 +129,7 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
                             <FormControl>
                                 <Input
                                     type="date"
-                                    className={cn('h-11 rounded-lg', fieldState.error && 'border-rose-500')}
+                                    className={cn('rounded-lg', fieldState.error && 'border-rose-500')}
                                     value={ymdToInput(field.value)}
                                     onChange={(e) => field.onChange(inputToYmd(e.target.value))}
                                 />
@@ -160,10 +160,10 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
                 />
 
                 <div className="flex gap-3 pt-2">
-                    <Button type="button" variant="outline" onClick={onCancel} disabled={isSavePending} className="flex-1 h-11 rounded-lg font-bold">
+                    <Button type="button" variant="outline" onClick={onCancel} disabled={isSavePending} className="flex-1 rounded-lg font-bold">
                         취소
                     </Button>
-                    <Button type="submit" disabled={isSavePending} aria-busy={isSavePending || undefined} className="flex-[2] h-11 rounded-lg font-bold shadow-lg">
+                    <Button type="submit" disabled={isSavePending} aria-busy={isSavePending || undefined} className="flex-[2] rounded-lg font-bold shadow-lg">
                         {isSavePending ? '저장 중…' : isEdit ? '수정 저장' : '보고 등록'}
                     </Button>
                 </div>

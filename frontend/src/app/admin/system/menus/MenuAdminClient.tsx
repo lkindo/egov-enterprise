@@ -767,7 +767,7 @@ export default function MenuAdminClient({
               variant="outline"
               disabled={isModalSaving || form.formState.isSubmitting}
               onClick={handleCloseModal}
-              className="flex-1 h-11 rounded-lg font-bold"
+              className="flex-1 rounded-lg font-bold"
             >
               취소
             </Button>
@@ -776,7 +776,7 @@ export default function MenuAdminClient({
               form={MENU_EDITOR_FORM_ID}
               disabled={isModalSaving || form.formState.isSubmitting}
               aria-busy={(isModalSaving || form.formState.isSubmitting) || undefined}
-              className="flex-[2] h-11 rounded-lg bg-primary text-white font-bold shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 gap-2"
+              className="flex-[2] rounded-lg bg-primary text-white font-bold shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 gap-2"
             >
               {isModalSaving || form.formState.isSubmitting ? <Loader2 className="h-4 w-4" /> : <Save size={18} />}
               {isModalSaving || form.formState.isSubmitting
@@ -802,7 +802,7 @@ export default function MenuAdminClient({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-foreground ml-1">메뉴 명칭 *</FormLabel>
-                  <FormControl><Input {...field} maxLength={100} className="h-11 rounded-lg font-bold px-5" placeholder="메뉴 이름 입력" /></FormControl>
+                  <FormControl><Input {...field} maxLength={100} className="rounded-lg font-bold px-5" placeholder="메뉴 이름 입력" /></FormControl>
                   <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
                 </FormItem>
               )}
@@ -821,7 +821,7 @@ export default function MenuAdminClient({
                       {...field}
                       value={field.value ?? ''}
                       maxLength={500}
-                      className="h-11 rounded-lg font-bold px-5"
+                      className="rounded-lg font-bold px-5"
                       placeholder="/admin/system/menus 형식으로 입력 (비우면 하위 메뉴를 묶는 분류 메뉴)"
                     />
                   </FormControl>
@@ -837,7 +837,7 @@ export default function MenuAdminClient({
                   <FormLabel className="text-xs font-bold text-foreground ml-1">연결 프로그램</FormLabel>
                   <FormControl>
                     <select {...field} value={field.value ?? ''}
-                      className="h-11 w-full rounded-lg border border-input bg-background px-5 font-bold">
+                      className="h-[var(--control-h)] w-full rounded-lg border border-input bg-background px-5 font-bold">
                       <option value="">연결 없음</option>
                       {programs.filter((p) => !!p.prgrmFileNm).map((p) => (
                         <option key={p.prgrmFileNm} value={p.prgrmFileNm}>
@@ -891,7 +891,7 @@ export default function MenuAdminClient({
                           min={-2147483648}
                           max={2147483647}
                           onChange={e => field.onChange(Number(e.target.value))}
-                          className="h-11 rounded-lg font-bold px-5"
+                          className="rounded-lg font-bold px-5"
                         />
                       </FormControl>
                       <FormMessage className="text-xs font-bold text-rose-600 ml-1" />

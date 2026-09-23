@@ -376,7 +376,7 @@ export default function TemplateAdminClient({
  setNewTemplate(prev => ({ ...prev, tmpltSeCd: v }));
  }}
  >
- <SelectTrigger id="tmplt-se-cd" {...validation.fieldProps('tmpltSeCd')} aria-required="true" className="h-11 rounded-lg border-2 border-border bg-muted/50 font-bold text-xs tracking-tight focus:bg-card">
+ <SelectTrigger id="tmplt-se-cd" {...validation.fieldProps('tmpltSeCd')} aria-required="true" className="rounded-lg border-2 border-border bg-muted/50 font-bold text-xs tracking-tight focus:bg-card">
  <SelectValue placeholder="카테고리 선택" />
  </SelectTrigger>
  <SelectContent className="rounded-lg border-none shadow-2xl">
@@ -396,7 +396,7 @@ export default function TemplateAdminClient({
  setNewTemplate(prev => ({ ...prev, useYn: v }));
  }}
  >
- <SelectTrigger id="tmplt-use-yn" {...validation.fieldProps('useYn')} aria-required="true" className="h-11 rounded-lg border-2 border-border bg-muted/50 font-bold text-xs tracking-tight focus:bg-card">
+ <SelectTrigger id="tmplt-use-yn" {...validation.fieldProps('useYn')} aria-required="true" className="rounded-lg border-2 border-border bg-muted/50 font-bold text-xs tracking-tight focus:bg-card">
  <SelectValue placeholder="상태 선택" />
  </SelectTrigger>
  <SelectContent className="rounded-lg border-none shadow-2xl">
@@ -423,7 +423,7 @@ export default function TemplateAdminClient({
  }}
  required
  maxLength={1000}
- className="h-11 pl-16 pr-8 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+ className="pl-16 pr-8 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
  />
  </div>
  {validation.errors.tmpltPath ? <p {...validation.messageProps('tmpltPath')} className="text-xs font-bold text-destructive-emphasis ml-2" /> : null}
@@ -436,7 +436,7 @@ export default function TemplateAdminClient({
  variant="outline"
  disabled={isAdding}
  onClick={() => handleAddOpenChange(false)}
- className="h-11 px-10 rounded-lg border-2 border-border font-bold text-sm tracking-tight hover:bg-muted transition-all"
+ className="px-10 rounded-lg border-2 border-border font-bold text-sm tracking-tight hover:bg-muted transition-all"
  >
  취소
  </Button>
@@ -446,7 +446,7 @@ export default function TemplateAdminClient({
  disabled={loading || isAdding}
  aria-busy={isAdding || undefined}
  aria-label={isAdding ? (editingId ? '템플릿 수정 중' : '템플릿 등록 중') : (editingId ? '수정 승인' : '등록 승인')}
- className="h-11 px-14 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
+ className="px-14 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
  >
  {isAdding ? <RefreshCcw size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
  {isAdding ? (editingId ? '수정 중...' : '등록 중...') : (editingId ? '수정 승인' : '등록 승인')}

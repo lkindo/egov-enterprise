@@ -187,7 +187,7 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
                                     {...field}
                                     value={field.value ?? ''}
                                     maxLength={100}
-                                    className={cn('h-11 rounded-lg text-sm font-bold tracking-tight', fieldState.error && 'border-rose-500')}
+                                    className={cn('rounded-lg text-sm font-bold tracking-tight', fieldState.error && 'border-rose-500')}
                                     placeholder="예: 3분기 예산 집행 점검"
                                 />
                             </FormControl>
@@ -204,7 +204,7 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
                             <FormLabel className="text-xs font-bold text-foreground uppercase tracking-tight ml-1">우선 순위</FormLabel>
                             <Select value={field.value ?? '2'} onValueChange={field.onChange}>
                                 <FormControl>
-                                    <SelectTrigger className="h-11 rounded-lg font-bold">
+                                    <SelectTrigger className="rounded-lg font-bold">
                                         <SelectValue placeholder="순위 선택" />
                                     </SelectTrigger>
                                 </FormControl>
@@ -232,7 +232,7 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
                                 onValueChange={(v) => field.onChange(v === NO_BOX ? undefined : Number(v))}
                             >
                                 <FormControl>
-                                    <SelectTrigger className="h-11 rounded-lg font-bold">
+                                    <SelectTrigger className="rounded-lg font-bold">
                                         <SelectValue placeholder="업무함 선택" />
                                     </SelectTrigger>
                                 </FormControl>
@@ -292,7 +292,7 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
                                         <Input
                                             value={picQuery}
                                             onChange={(e) => setPicQuery(e.target.value)}
-                                            className="h-11 rounded-lg text-sm font-bold tracking-tight"
+                                            className="rounded-lg text-sm font-bold tracking-tight"
                                             placeholder={`담당자 이름을 ${PIC_SEARCH_MIN_KEYWORD}자 이상 입력하세요`}
                                             autoComplete="off"
                                         />
@@ -364,10 +364,10 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
                 />
 
                 <div className="flex gap-3 pt-2">
-                    <Button type="button" variant="outline" onClick={onCancel} disabled={isSavePending} className="flex-1 h-11 rounded-lg font-bold">
+                    <Button type="button" variant="outline" onClick={onCancel} disabled={isSavePending} className="flex-1 rounded-lg font-bold">
                         취소
                     </Button>
-                    <Button type="submit" disabled={isSavePending} aria-busy={isSavePending || undefined} className="flex-[2] h-11 rounded-lg font-bold shadow-lg">
+                    <Button type="submit" disabled={isSavePending} aria-busy={isSavePending || undefined} className="flex-[2] rounded-lg font-bold shadow-lg">
                         {isSavePending ? '저장 중…' : isEdit ? '수정 저장' : '업무 등록'}
                     </Button>
                 </div>

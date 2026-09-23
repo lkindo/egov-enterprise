@@ -286,7 +286,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
           />
           <Button
             onClick={handleForceRefresh}
-            className="h-11 px-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-tight shadow-xl hover:-translate-y-1 transition-all gap-2"
+            className="px-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-tight shadow-xl hover:-translate-y-1 transition-all gap-2"
           >
             <RefreshCcw size={20} className={cn(chartQuery.isFetching && 'animate-spin')} /> 통계 새로고침
           </Button>

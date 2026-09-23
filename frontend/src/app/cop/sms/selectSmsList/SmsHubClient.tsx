@@ -304,7 +304,7 @@ export default function SmsHubClient({
                                 variant="ghost" 
                                 disabled={isSending || sendMutation.isPending}
                                 onClick={() => handleDialogOpenChange(false)}
-                                className="h-11 px-10 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-tight hover:bg-muted"
+                                className="px-10 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-tight hover:bg-muted"
                             >
                                 ABORT_OPERATION
                             </Button>
@@ -312,7 +312,7 @@ export default function SmsHubClient({
                                 type="submit"
                                 disabled={isSending || sendMutation.isPending}
                                 aria-busy={(isSending || sendMutation.isPending) || undefined}
-                                className="flex-1 h-11 rounded-[var(--radius-hub-item)] bg-slate-900 text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all gap-4 group"
+                                className="flex-1 rounded-[var(--radius-hub-item)] bg-slate-900 text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all gap-4 group"
                             >
                                 {isSending || sendMutation.isPending ? 'PROCESSING...' : (
                                     <>
@@ -372,7 +372,7 @@ export default function SmsHubClient({
                   <div className="relative w-full sm:w-96 group/search">
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-60 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                     <Input
-                      className="pl-16 h-11 bg-muted/50 border-none rounded-[var(--radius-hub-item)] text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
+                      className="pl-16 bg-muted/50 border-none rounded-[var(--radius-hub-item)] text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
                       placeholder="Search packets..."
                       value={searchKeyword}
                       onChange={(e) => setSearchKeyword(e.target.value)}

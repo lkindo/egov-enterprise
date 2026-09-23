@@ -382,7 +382,7 @@ export default function SecurityGroupClient() {
  disabled={!!editingGroup}
  required
  maxLength={20}
- className="h-11 pl-16 rounded-lg border-2 text-md font-bold tracking-widest uppercase shadow-inner"
+ className="pl-16 rounded-lg border-2 text-md font-bold tracking-widest uppercase shadow-inner"
  placeholder="그룹 식별자"
  />
  </div>
@@ -400,7 +400,7 @@ export default function SecurityGroupClient() {
  }}
  required
  maxLength={100}
- className="h-11 pl-16 rounded-lg border-2 text-md font-bold tracking-tight shadow-inner"
+ className="pl-16 rounded-lg border-2 text-md font-bold tracking-tight shadow-inner"
  placeholder="그룹 명칭 입력"
  />
  </div>
@@ -430,11 +430,11 @@ export default function SecurityGroupClient() {
     type="button"
     onClick={handleCloseDialog}
     disabled={isSubmitPending || isDeletePending}
-    className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
+    className="flex-1 h-[var(--control-h)] rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
   >
     취소
   </button>
- <Button onClick={handleSubmit} aria-busy={isSubmitPending || undefined} disabled={isSubmitPending || isDeletePending} className="flex-[2] h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
+ <Button onClick={handleSubmit} aria-busy={isSubmitPending || undefined} disabled={isSubmitPending || isDeletePending} className="flex-[2] rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
  {isSubmitPending ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
  <span className="ml-2">{editingGroup ? '그룹 수정' : '신규 그룹 배포'}</span>
  </Button>

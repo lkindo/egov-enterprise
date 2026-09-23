@@ -259,7 +259,7 @@ export default function LayoutManagerClient() {
           <Button
             variant="outline"
             onClick={handleThemeReset}
-            className="h-11 px-6 rounded-lg font-bold gap-2"
+            className="px-6 rounded-lg font-bold gap-2"
           >
             <RotateCcw size={18} />
             기본값 복원
@@ -330,7 +330,7 @@ export default function LayoutManagerClient() {
                       aria-label={`브랜드 색상 ${color} 선택`}
                       aria-pressed={themeConfig.primaryColor === color}
                       onClick={() => setThemeConfig({ ...themeConfig, primaryColor: color })}
-                      className={`h-11 rounded-lg transition-all border-4 ${themeConfig.primaryColor === color ? 'border-primary ring-8 ring-primary/10 scale-105' : 'border-transparent'}`}
+                      className={`h-[var(--control-h)] rounded-lg transition-all border-4 ${themeConfig.primaryColor === color ? 'border-primary ring-8 ring-primary/10 scale-105' : 'border-transparent'}`}
                       style={{ backgroundColor: color }}
                     />
                   ))}
