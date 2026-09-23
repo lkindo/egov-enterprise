@@ -128,20 +128,52 @@
     },
     {
       "route": "/admin/collaboration/address-book",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "consolidate-to-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/src/app/admin/collaboration/address-book/page.tsx:4 — redirect('/admin/collaboration/address-book/select-address-book-list')",
+            "config/ui-route-capabilities.json routes[/admin/collaboration/address-book] — routing.kind=page-redirect, target=/admin/collaboration/address-book/select-address-book-list",
+            "허브 진입이 목록 정본으로 흡수됐다. 등록은 목록 위 모달이 소유한다(DEC-OPS-079)."
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/src/app/admin/collaboration/address-book/page.tsx:4 — redirect('/admin/collaboration/address-book/select-address-book-list')",
+            "config/ui-route-capabilities.json routes[/admin/collaboration/address-book] — routing.kind=page-redirect, target=/admin/collaboration/address-book/select-address-book-list",
+            "허브 진입이 목록 정본으로 흡수됐다. 등록은 목록 위 모달이 소유한다(DEC-OPS-079)."
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/src/app/admin/collaboration/address-book/page.tsx:4 — redirect('/admin/collaboration/address-book/select-address-book-list')",
+            "config/ui-route-capabilities.json routes[/admin/collaboration/address-book] — routing.kind=page-redirect, target=/admin/collaboration/address-book/select-address-book-list",
+            "허브 진입이 목록 정본으로 흡수됐다. 등록은 목록 위 모달이 소유한다(DEC-OPS-079)."
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/src/app/admin/collaboration/address-book/page.tsx:4 — redirect('/admin/collaboration/address-book/select-address-book-list')",
+            "config/ui-route-capabilities.json routes[/admin/collaboration/address-book] — routing.kind=page-redirect, target=/admin/collaboration/address-book/select-address-book-list",
+            "허브 진입이 목록 정본으로 흡수됐다. 등록은 목록 위 모달이 소유한다(DEC-OPS-079)."
+          ]
+        }
       }
     },
     {
@@ -1162,20 +1194,52 @@
     },
     {
       "route": "/admin/security/role",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "consolidate-to-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/src/app/admin/security/role/page.tsx:4 — redirect('/admin/security/authority')",
+            "config/ui-route-capabilities.json routes[/admin/security/role] — routing.kind=page-redirect, target=/admin/security/authority",
+            "권한·롤·그룹 관리가 보안 허브 한 화면으로 통합됐다."
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/src/app/admin/security/role/page.tsx:4 — redirect('/admin/security/authority')",
+            "config/ui-route-capabilities.json routes[/admin/security/role] — routing.kind=page-redirect, target=/admin/security/authority",
+            "권한·롤·그룹 관리가 보안 허브 한 화면으로 통합됐다."
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/src/app/admin/security/role/page.tsx:4 — redirect('/admin/security/authority')",
+            "config/ui-route-capabilities.json routes[/admin/security/role] — routing.kind=page-redirect, target=/admin/security/authority",
+            "권한·롤·그룹 관리가 보안 허브 한 화면으로 통합됐다."
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/src/app/admin/security/role/page.tsx:4 — redirect('/admin/security/authority')",
+            "config/ui-route-capabilities.json routes[/admin/security/role] — routing.kind=page-redirect, target=/admin/security/authority",
+            "권한·롤·그룹 관리가 보안 허브 한 화면으로 통합됐다."
+          ]
+        }
       }
     },
     {
@@ -1288,20 +1352,52 @@
     },
     {
       "route": "/admin/survey",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "consolidate-to-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/src/app/admin/survey/page.tsx:18 — redirect('/admin/survey/hub')",
+            "config/ui-route-capabilities.json routes[/admin/survey] — routing.kind=page-redirect, target=/admin/survey/hub",
+            "설문 진입이 허브로 통합됐다(DEC-OPS-079 의 등록 모달 이행과 같은 축)."
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/src/app/admin/survey/page.tsx:18 — redirect('/admin/survey/hub')",
+            "config/ui-route-capabilities.json routes[/admin/survey] — routing.kind=page-redirect, target=/admin/survey/hub",
+            "설문 진입이 허브로 통합됐다(DEC-OPS-079 의 등록 모달 이행과 같은 축)."
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/src/app/admin/survey/page.tsx:18 — redirect('/admin/survey/hub')",
+            "config/ui-route-capabilities.json routes[/admin/survey] — routing.kind=page-redirect, target=/admin/survey/hub",
+            "설문 진입이 허브로 통합됐다(DEC-OPS-079 의 등록 모달 이행과 같은 축)."
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/src/app/admin/survey/page.tsx:18 — redirect('/admin/survey/hub')",
+            "config/ui-route-capabilities.json routes[/admin/survey] — routing.kind=page-redirect, target=/admin/survey/hub",
+            "설문 진입이 허브로 통합됐다(DEC-OPS-079 의 등록 모달 이행과 같은 축)."
+          ]
+        }
       }
     },
     {
@@ -1324,38 +1420,102 @@
     },
     {
       "route": "/admin/survey/items",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "consolidate-to-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:147 — { source: '/admin/survey/items', destination: '/admin/survey/hub?tab=questions' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/items] — routing.kind=config-redirect, target=/admin/survey/hub?tab=questions",
+            "문항 별칭이 허브의 questions 탭으로 흡수됐다."
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:147 — { source: '/admin/survey/items', destination: '/admin/survey/hub?tab=questions' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/items] — routing.kind=config-redirect, target=/admin/survey/hub?tab=questions",
+            "문항 별칭이 허브의 questions 탭으로 흡수됐다."
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:147 — { source: '/admin/survey/items', destination: '/admin/survey/hub?tab=questions' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/items] — routing.kind=config-redirect, target=/admin/survey/hub?tab=questions",
+            "문항 별칭이 허브의 questions 탭으로 흡수됐다."
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:147 — { source: '/admin/survey/items', destination: '/admin/survey/hub?tab=questions' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/items] — routing.kind=config-redirect, target=/admin/survey/hub?tab=questions",
+            "문항 별칭이 허브의 questions 탭으로 흡수됐다."
+          ]
+        }
       }
     },
     {
       "route": "/admin/survey/manage",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "consolidate-to-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:144 — { source: '/admin/survey/manage', destination: '/admin/survey/hub?tab=manage' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/manage] — routing.kind=config-redirect, target=/admin/survey/hub?tab=manage",
+            "설문 관리 별칭이 허브의 manage 탭으로 흡수됐다."
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:144 — { source: '/admin/survey/manage', destination: '/admin/survey/hub?tab=manage' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/manage] — routing.kind=config-redirect, target=/admin/survey/hub?tab=manage",
+            "설문 관리 별칭이 허브의 manage 탭으로 흡수됐다."
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:144 — { source: '/admin/survey/manage', destination: '/admin/survey/hub?tab=manage' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/manage] — routing.kind=config-redirect, target=/admin/survey/hub?tab=manage",
+            "설문 관리 별칭이 허브의 manage 탭으로 흡수됐다."
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:144 — { source: '/admin/survey/manage', destination: '/admin/survey/hub?tab=manage' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/manage] — routing.kind=config-redirect, target=/admin/survey/hub?tab=manage",
+            "설문 관리 별칭이 허브의 manage 탭으로 흡수됐다."
+          ]
+        }
       }
     },
     {
@@ -1510,56 +1670,152 @@
     },
     {
       "route": "/admin/survey/questions",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "consolidate-to-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:145 — { source: '/admin/survey/questions', destination: '/admin/survey/hub?tab=questions' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/questions] — routing.kind=config-redirect, target=/admin/survey/hub?tab=questions",
+            "문항 별칭이 허브의 questions 탭으로 흡수됐다."
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:145 — { source: '/admin/survey/questions', destination: '/admin/survey/hub?tab=questions' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/questions] — routing.kind=config-redirect, target=/admin/survey/hub?tab=questions",
+            "문항 별칭이 허브의 questions 탭으로 흡수됐다."
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:145 — { source: '/admin/survey/questions', destination: '/admin/survey/hub?tab=questions' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/questions] — routing.kind=config-redirect, target=/admin/survey/hub?tab=questions",
+            "문항 별칭이 허브의 questions 탭으로 흡수됐다."
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:145 — { source: '/admin/survey/questions', destination: '/admin/survey/hub?tab=questions' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/questions] — routing.kind=config-redirect, target=/admin/survey/hub?tab=questions",
+            "문항 별칭이 허브의 questions 탭으로 흡수됐다."
+          ]
+        }
       }
     },
     {
       "route": "/admin/survey/stats",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "consolidate-to-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:146 — { source: '/admin/survey/stats', destination: '/admin/survey/hub?tab=stats' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/stats] — routing.kind=config-redirect, target=/admin/survey/hub?tab=stats",
+            "통계 별칭이 허브의 stats 탭으로 흡수됐다."
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:146 — { source: '/admin/survey/stats', destination: '/admin/survey/hub?tab=stats' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/stats] — routing.kind=config-redirect, target=/admin/survey/hub?tab=stats",
+            "통계 별칭이 허브의 stats 탭으로 흡수됐다."
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:146 — { source: '/admin/survey/stats', destination: '/admin/survey/hub?tab=stats' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/stats] — routing.kind=config-redirect, target=/admin/survey/hub?tab=stats",
+            "통계 별칭이 허브의 stats 탭으로 흡수됐다."
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:146 — { source: '/admin/survey/stats', destination: '/admin/survey/hub?tab=stats' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/stats] — routing.kind=config-redirect, target=/admin/survey/hub?tab=stats",
+            "통계 별칭이 허브의 stats 탭으로 흡수됐다."
+          ]
+        }
       }
     },
     {
       "route": "/admin/survey/templates",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "consolidate-to-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:148 — { source: '/admin/survey/templates', destination: '/admin/survey/hub?tab=templates' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/templates] — routing.kind=config-redirect, target=/admin/survey/hub?tab=templates",
+            "템플릿 별칭이 허브의 templates 탭으로 흡수됐다."
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:148 — { source: '/admin/survey/templates', destination: '/admin/survey/hub?tab=templates' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/templates] — routing.kind=config-redirect, target=/admin/survey/hub?tab=templates",
+            "템플릿 별칭이 허브의 templates 탭으로 흡수됐다."
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:148 — { source: '/admin/survey/templates', destination: '/admin/survey/hub?tab=templates' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/templates] — routing.kind=config-redirect, target=/admin/survey/hub?tab=templates",
+            "템플릿 별칭이 허브의 templates 탭으로 흡수됐다."
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)",
+          "reviewedAt": "2026-09-23",
+          "evidence": [
+            "frontend/next.config.ts:148 — { source: '/admin/survey/templates', destination: '/admin/survey/hub?tab=templates' }",
+            "config/ui-route-capabilities.json routes[/admin/survey/templates] — routing.kind=config-redirect, target=/admin/survey/hub?tab=templates",
+            "템플릿 별칭이 허브의 templates 탭으로 흡수됐다."
+          ]
+        }
       }
     },
     {

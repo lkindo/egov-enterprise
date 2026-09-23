@@ -133,10 +133,41 @@ function isWave3Approval(approval) {
     && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
 }
 
+/*
+  [2026-09-23 웨이브 4] 이미 리다이렉트로 구현된 통합만 승인 레코드로 남긴다.
+
+  승인 대상은 "통합하자" 는 제안이 아니라 **이미 통합된 사실** 이다 — 각 라우트의 리다이렉트 실물과
+  route census 의 routing.kind 가 근거다. 아직 page 인 3건(/admin/collaboration/scraps·/admin/help/faq·
+  /admin/help/qna)은 통합이 일어나지 않았으므로 proposed 로 남는다. 그 셋은 메뉴 시드가 정본으로
+  선언하는지부터 판정해야 하며(DEC-OPS-024 의 login-policy 선례), 그 판정은 별도 변경이다.
+*/
+const WAVE4_APPROVED_ROUTES = [
+  '/admin/collaboration/address-book',
+  '/admin/security/role',
+  '/admin/survey',
+  '/admin/survey/items',
+  '/admin/survey/manage',
+  '/admin/survey/questions',
+  '/admin/survey/stats',
+  '/admin/survey/templates',
+];
+const WAVE4_REVIEWER = 'lkindo (사용자 위임 2026-08-23 · DEC-OPS-040 승인 배치, 2026-09-23 웨이브 4)';
+const WAVE4_REVIEWED_AT = '2026-09-23';
+
+function isWave4Approval(approval) {
+  return approval !== null
+    && approval.reviewer === WAVE4_REVIEWER
+    && approval.reviewedAt === WAVE4_REVIEWED_AT
+    && Array.isArray(approval.evidence)
+    && approval.evidence.length > 0
+    && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
+}
+
 const APPROVED_ROUTES = [
   ...WAVE1_APPROVED_ROUTES,
   ...WAVE2_APPROVED_ROUTES,
   ...WAVE3_APPROVED_ROUTES,
+  ...WAVE4_APPROVED_ROUTES,
 ].sort();
 
 test('the recommended hybrid is selected only as a bounded provisional direction', () => {
@@ -224,6 +255,16 @@ test('the proposed overlay drafts dispositions over the discovered pages and ext
         && record.capabilityReview === 'verified'
         && record.profileOwnershipReview === 'verified'
         && Object.values(record.approvals).every(isWave3Approval);
+    }
+    if (WAVE4_APPROVED_ROUTES.includes(record.route)) {
+      return shared
+        && record.reviewState === 'approved'
+        && record.authorizationReview === 'verified'
+        && record.privacyReview === 'verified'
+        && ['verified', 'not-applicable'].includes(record.effectiveMenuExposureReview)
+        && record.capabilityReview === 'verified'
+        && record.profileOwnershipReview === 'verified'
+        && Object.values(record.approvals).every(isWave4Approval);
     }
     return shared
       && record.reviewState === 'proposed'
