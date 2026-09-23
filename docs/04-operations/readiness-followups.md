@@ -704,7 +704,8 @@ Blob/Clob 스트리밍, GB/TB 규모, 운영 승인·cutover 전체 절차를 �
 별도 워크트리에서 **Spring Boot 4.0.8**(Framework 7.0.9·Security 7.0.7·Integration 7.0.6·Jackson 3.1.5·Hibernate 7.2.24·
 Tomcat 11.0.24)로 올렸을 때 컴파일이 어디서 막히는지를 반복 실측했다. 목적은 이행이 아니라 **표면 측정**이며,
 프로브 보정은 원본에 반영하지 않았다(로컬 브랜치 `probe/boot4-compat`, 워크트리 `D:/project/egov-boot4-probe`).
-`./gradlew compileJava compileTestJava --continue`를 8회 반복하며 한 층씩 막힌 원인을 걷어냈다.
+`./gradlew compileJava compileTestJava --continue`를 13회 반복하며 한 층씩 막힌 원인을 걷어낸 뒤, 전체 Spring
+컨텍스트 기동과 eGovFrame 암호 실행까지 측정했다.
 
 ### 결과 — 본체·testFixtures 컴파일 통과까지 필요한 변경
 
@@ -717,20 +718,65 @@ Tomcat 11.0.24)로 올렸을 때 컴파일이 어디서 막히는지를 반복 �
 | 본체 코드 | `-Werror` 아래 Framework 7 deprecation: `org.springframework.lang.NonNull/Nullable` → JSpecify(foundation 42건, 온라인 모듈 전체 51파일 사용) · `@EntityScan` → `org.springframework.boot.persistence.autoconfigure` · `DataSourceAutoConfiguration` → `org.springframework.boot.jdbc.autoconfigure` · `MultipartProperties` → `org.springframework.boot.servlet.autoconfigure` · Security 7 `AuthorizationManager.check` → `authorize(Supplier<? extends Authentication>, T)`(`OperationAuthorizationManager`) · `FlywayMigrationStrategy`(위 모듈 추가 후 재배치) | 2~8차, 6파일 |
 | 테스트 코드 | `HibernatePropertiesCustomizer` → `org.springframework.boot.hibernate.autoconfigure` 외 위 테스트 모듈 재배치 | 7~8차 |
 
-8차 시점 `compileJava` 는 foundation·business-core·business-app·api-server·migration-tool 전부 통과(api-server 는 Flyway 모듈
-추가 전 1건만 남음), `compileTestFixturesJava` 통과, `compileTestJava` 는 테스트 모듈·Testcontainers 좌표 보정 전이라 미통과다.
+13차에 **`compileJava`·`compileTestFixturesJava`·`compileTestJava` 가 5개 모듈 전부 통과**했다(BUILD SUCCESSFUL).
+위 표의 빌드·코드 보정 외에 추가로 필요했던 것은 `spring-boot-starter-test` → `spring-boot-starter-test-classic`(테스트
+slice 모듈 분할을 다시 모으는 starter), `WebMvcTest`·`AutoConfigureMockMvc` 등의 패키지 재배치(25+4 파일), Spring Messaging 7
+에서 모호해진 `convertAndSend(String, Map)` 오버로드 1건이다.
 
+### 결과 — 런타임(컨텍스트 기동·eGovFrame)
+
+컴파일이 끝난 뒤 전체 Spring 컨텍스트를 올려 봤다(`@SpringBootTest(classes = ApiServerApplication.class)`). 두 층이 더 막혔고
+둘 다 **메이저 축 전환**이라 이행 비용의 실제 무게는 여기에 있다.
+
+| 막힌 층 | 증상 | 뜻 |
+|---|---|---|
+| JUnit | `NoSuchMethodError: ExtensionContext$Store.computeIfAbsent(...)` (SpringExtension) | Boot 4 BOM 은 **JUnit Jupiter 6.0.3** 을 관리한다. 저장소는 `junit-bom:5.12.2` + `resolutionStrategy` 로 platform 1.11.4·jupiter 5.11.4 를 강제하는데, Spring 7 의 `SpringExtension` 은 JUnit 6 API 를 요구한다. 고정을 풀자 해소됐다(JUnit 5 → 6 메이저 이행이 전제) |
+| Jackson | `NoSuchBeanDefinitionException: com.fasterxml.jackson.databind.ObjectMapper` | Boot 4 는 **Jackson 3**(`tools.jackson`)가 기본이라 자동 설정이 Jackson 2 `ObjectMapper` 빈을 더 이상 만들지 않는다. 그 타입을 주입받는 빈이 컨텍스트 로드 단계에서 실패한다(실측: `AttachmentIntegrityReportStore`) |
+
+⚠ **애노테이션은 영향이 없다.** Jackson 3 도 `com.fasterxml.jackson.annotation` 패키지를 유지하므로 DTO 의 `@JsonProperty`·
+`@JsonInclude` 38파일은 그대로다. 이행 대상은 `databind`·`core` 를 쓰는 **main 11파일**(migration-tool 6 · 온라인 5)이다.
+
+Jackson 2 `ObjectMapper` 를 임시 빈으로 공급하자 **컨텍스트가 올라왔다** — `SecurityHardeningRegressionTest` 3/3 통과.
+그 컨텍스트에는 `ProjectCryptoConfig` 의 eGovFrame 빈(`EgovARIACryptoServiceImpl`·`EgovPasswordEncoder`)이 포함된다.
+이어서 eGovFrame 암호를 실제로 호출하는 테스트도 통과했다 — `CryptoUtilTest`(ARIA 암·복호, 약한 키 경고, 레거시 래퍼) **18/18**,
+`RrnoEncryptionConverterTest`(주민번호 암호화 컨버터) **9/9**.
+
+⚠ 즉 **가장 큰 미지수였던 eGovFrame 5.0.0 의 Spring Framework 7 런타임 호환은 이 범위에서 확인됐다.** Spring 6 기준으로
+컴파일된 eGovFrame jar 가 Framework 7 위에서 빈 생성·암호 연산을 수행했다. 다만 이것은 컨텍스트 기동과 암호 경로의 증거이며,
+eGovFrame 의 배치·엑셀·ID 생성 등 다른 모듈의 런타임 증거는 아니다.
 ### 측정하지 않은 것
 
-- **eGovFrame 5.0.0 의 런타임 호환** — Spring 6 기준으로 컴파일된 jar 를 Framework 7 위에서 실행하는 이진 호환은 컴파일로 알 수 없다.
-  온라인 모듈의 eGovFrame Java import 파일은 6개다.
-- Jackson 3 전환이 응답 직렬화·`api-docs.json`·생성 zod 계약에 주는 차이, springdoc 3 의 문서 출력 차이.
-- Security 7 설정 DSL·Hibernate 7.2(JPA 3.2)·Tomcat 11 의 동작 차이, 하네스·PIT·E2E·재사용 생성기 통과 여부.
-- Testcontainers 2.x API 변경(좌표 개명 외).
+- eGovFrame 의 **암호 외 모듈**(배치·엑셀·ID 생성·access) 런타임 동작. 위 실측은 컨텍스트 기동과 ARIA 암호 경로까지다.
+- Jackson 2 → 3 이행이 응답 직렬화·`api-docs.json`·생성 zod 계약에 주는 차이(위 실측은 Jackson 2 shim 으로 **우회**했다).
+- JUnit 5 → 6 이행이 기존 테스트 코드에 요구하는 변경량(고정만 풀었고 전체 테스트를 돌리지 않았다).
+- Security 7 설정 DSL·Hibernate 7.2(JPA 3.2)·Tomcat 11 의 동작 차이, 전체 하네스·PIT·E2E·재사용 생성기 통과 여부.
+- Testcontainers 2.x API 변경(좌표 개명 외 — `PostgreSQLContainer` deprecation 경고는 관찰했다).
+
+### 지원 라인 선택지
+
+지원 종료일은 2026-09-23 [endoflife.date](https://endoflife.date/spring-boot) 조회다. 상용 지원은 Broadcom 의
+유료 구독(Tanzu Spring)을 뜻하며, 패치가 Maven Central 이 아니라 **구독자 전용 비공개 저장소**로만 배포된다.
+
+| 라인 | OSS 지원 종료 | 상용 지원 종료 |
+|---|---|---|
+| Boot 3.5 · Framework 6.2 (현행) | 2026-06-30 | 2032-06-30 |
+| Boot 4.0 · Framework 7.0 | 2026-12-31 · 2027-07-31 | 2027-12-31 · 2028-07-31 |
+
+⚠ **상용 지원(ⓑ)은 이 저장소가 내릴 수 있는 결정이 아니다.** 여기는 재사용 템플릿이고 구독 자격증명은 저장소·CI·
+생성 산출물 어디에도 넣을 수 없으므로, 도입 기관이 각자의 구독으로 선택하는 축이다(이미 구독이 있는 기관에는 코드
+변경 0 인 선택지다). eGovFrame 센터가 Spring 패치를 백포트하지 않으므로 그 경로도 ⓑ 의 대안이 아니다.
+
+⚠ ⓐ 를 택할 때 목표는 4.0 이 아니라 **다음 minor** 다. 4.0 의 OSS 지원은 2026-12-31 에 끝나므로 지금 4.0 으로 올리면
+연내에 다시 올려야 한다. OSS 라인을 따라가는 선택은 minor 상향이 정례 작업이 된다는 뜻이다.
 
 ### 판정
 
-컴파일 수준의 이행 표면은 **작다**(빌드 보정 약 10건, 본체 6파일, 테스트 모듈 재배치). 비용의 무게는 위 미측정 항목,
-특히 eGovFrame 런타임 호환과 Jackson 3 직렬화 차이에 있다. 다음 단계는 사용자 결정(ⓐ 전환 ADR 초안 → 프로브 브랜치에서
-`bootRun`·하네스·E2E 실측 / ⓑ 상용 지원 / ⓒ accepted-risk)이며 GAP-DEP-002 가 추적한다.
+컴파일 수준의 이행 표면은 **작다**(빌드 보정 약 14건, 본체 7파일, 테스트 import 재배치 30여 파일). 가장 컸던 미지수인
+**eGovFrame 런타임 호환은 확인됐다.** 대신 실측이 드러낸 진짜 비용은 **두 개의 메이저 축 전환**이다.
+
+1. **JUnit 5 → 6** — Boot 4 가 Jupiter 6.0.3 을 관리하고 Spring 7 의 `SpringExtension` 이 그 API 를 요구한다. 선택이 아니라 전제다.
+2. **Jackson 2 → 3** — 자동 설정이 Jackson 2 `ObjectMapper` 를 주지 않는다. main 11파일이 대상이고, 응답 직렬화 계약(`api-docs.json`·생성 zod)에 주는 차이는 아직 측정하지 않았다.
+
+두 축 모두 이 저장소의 게이트(생성 계약·하네스·PIT·재사용 산출물)가 직접 보는 영역이라, 이행은 "버전만 올리는 일" 이 아니다.
+다음 단계는 사용자 결정(ⓐ 전환 ADR → 두 축의 이행 계획과 게이트 영향 산정 / ⓑ 상용 지원 / ⓒ accepted-risk)이며 GAP-DEP-002 가 추적한다.
 
