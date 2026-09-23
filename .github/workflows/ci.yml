@@ -469,11 +469,7 @@ jobs:
           emit "Build and Test 마지막 출력" /tmp/build-and-test.log
           emit "Schema Validation 마지막 출력" /tmp/schema-validation.log
           # 실패한 JUnit 테스트의 클래스·메시지를 최대 5건 노출
-          grep -rl '<failure\|<error message' --include='*.xml' */build/test-results 2>/dev/null | head -5 | while read f; do
-            CLS=$(basename "$f" .xml)
-            DETAIL=$(grep -o 'message="[^"]\{0,300\}"' "$f" | head -2 | tr -d '\r' | sed ':a;N;$!ba;s/\n/%0A/g')
-            echo "::error title=테스트 실패: $CLS::$DETAIL"
-          done
+          node scripts/ci-annotate-test-failures.mjs
           # 계약 드리프트 게이트가 붉을 때 무엇이 달라졌는지도 노출
           if ! git diff --quiet api-docs.json 2>/dev/null; then
             echo "::error title=api-docs.json 드리프트::$(git diff --stat api-docs.json)"
