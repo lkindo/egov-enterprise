@@ -266,7 +266,7 @@ export default function LayoutManagerClient() {
           </Button>
           <Button
             onClick={handleThemeSave}
-            className="h-11 px-10 rounded-lg font-bold gap-3 shadow-2xl shadow-primary/30 text-lg bg-primary hover:scale-105 transition-transform"
+            className="px-10 rounded-lg font-bold gap-3 shadow-2xl shadow-primary/30 bg-primary hover:scale-105 transition-transform"
           >
             <CheckCircle2 size={22} />
             이 브라우저에 적용

@@ -171,7 +171,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  aria-label={isFullscreen ? '매트릭스 전체화면 종료 (ESC)' : '매트릭스 전체화면 보기'}
  aria-pressed={isFullscreen}
  onClick={() => setIsFullscreen(!isFullscreen)}
- className="h-11 w-14 rounded-lg bg-white/10 text-surface-inverse-foreground border border-white/10 hover:bg-card hover:text-foreground transition-all shadow-xl"
+ className="rounded-lg bg-white/10 text-surface-inverse-foreground border border-white/10 hover:bg-card hover:text-foreground transition-all shadow-xl"
  >
  {isFullscreen ? <Minimize2 size={24} aria-hidden="true" /> : <Maximize2 size={24} aria-hidden="true" />}
  </Button>

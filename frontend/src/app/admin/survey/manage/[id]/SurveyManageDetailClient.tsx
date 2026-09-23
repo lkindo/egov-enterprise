@@ -245,7 +245,7 @@ export default function SurveyManageDetailClient() {
                                     onClick={() => { void handleDelete(); }}
                                     disabled={isDeleting || isEditing}
                                     aria-busy={isDeleting || undefined}
-                                    className="h-11 rounded-lg border-2 border-destructive/30 font-bold text-destructive-emphasis hover:bg-destructive hover:text-destructive-foreground sm:w-48"
+                                    className="rounded-lg border-2 border-destructive/30 font-bold text-destructive-emphasis hover:bg-destructive hover:text-destructive-foreground sm:w-48"
                                 >
                                     <Trash2 className="w-5 h-5" aria-hidden="true" /> {isDeleting ? '삭제 중…' : '설문 삭제'}
                                 </Button>

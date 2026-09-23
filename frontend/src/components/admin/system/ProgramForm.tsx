@@ -196,7 +196,7 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
                     {...field} 
                     readOnly={isEdit} 
                     maxLength={300}
-                    className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-lg font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                    className="px-8 rounded-lg border-2 border-border bg-muted/50 font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                   />
                 </FormControl>
                 <FormMessage />
@@ -319,7 +319,8 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
                 aria-label={isDeleting ? '프로그램 삭제 중…' : '프로그램 삭제'}
                 aria-busy={isDeleting || undefined}
                 disabled={isWritePending}
-                className="h-11 w-12 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all flex items-center justify-center p-0"
+                size="icon"
+                className="rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all flex items-center justify-center"
               >
                 {isDeleting
                   ? <Loader2 size={20} className="animate-spin" aria-hidden="true" />

@@ -101,7 +101,7 @@ function CommunityBoardContent() {
  // 감사 P1-8: 3페이지에서 검색하면 빈 화면이 되던 결함 — 검색어 변경 시 첫 페이지로 되돌린다.
  setPage(0);
  }}
- className="h-11 pl-14 bg-card border-2 border-border rounded-lg text-lg font-bold placeholder:text-muted-foreground focus:border-primary/20 focus:ring-0 transition-all shadow-inner"
+ className="pl-14 bg-card border-2 border-border rounded-lg font-bold placeholder:text-muted-foreground focus:border-primary/20 focus:ring-0 transition-all shadow-inner"
  placeholder="제목으로 게시글 검색..."
  aria-label="게시글 검색"
  />
@@ -131,7 +131,8 @@ function CommunityBoardContent() {
  variant="outline"
  onClick={() => void refetch()}
  disabled={isFetching}
- className="h-11 w-14 rounded-lg border-2 border-border p-0 shadow-sm"
+ size="icon"
+ className="rounded-lg border-2 border-border shadow-sm"
  aria-label="목록 새로고침"
  title="목록 새로고침"
  >

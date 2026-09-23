@@ -186,7 +186,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
             variant="ghost"
             size="sm"
             onClick={handleReset}
-            className="rounded-lg h-11 px-5 font-bold gap-2 text-xs tracking-widest text-muted-foreground/60 hover:bg-muted hover:text-foreground transition-all uppercase"
+            className="rounded-lg px-5 font-bold gap-2 text-xs tracking-widest text-muted-foreground/60 hover:bg-muted hover:text-foreground transition-all uppercase h-[var(--filter-control-h)]"
           >
             <RotateCcw size={16} />
             초기화
@@ -194,7 +194,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
           <Button
             type="submit"
             size="sm"
-            className="rounded-lg h-11 px-8 font-bold gap-2 shadow-lg shadow-primary/20 transition-all hover:-translate-y-1 text-xs tracking-widest uppercase"
+            className="rounded-lg px-8 font-bold gap-2 shadow-lg shadow-primary/20 transition-all hover:-translate-y-1 text-xs tracking-widest uppercase h-[var(--filter-control-h)]"
           >
             <Search size={16} />
             조회

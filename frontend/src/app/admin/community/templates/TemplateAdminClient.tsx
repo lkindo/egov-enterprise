@@ -343,7 +343,7 @@ export default function TemplateAdminClient({
  required
  maxLength={20}
  disabled={editingId !== null}
- className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-lg font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner disabled:opacity-60"
+ className="px-8 rounded-lg border-2 border-border bg-muted/50 font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner disabled:opacity-60"
  />
  {validation.errors.tmpltId ? <p {...validation.messageProps('tmpltId')} className="text-xs font-bold text-destructive-emphasis ml-2" /> : null}
  </div>
@@ -361,7 +361,7 @@ export default function TemplateAdminClient({
  }}
  required
  maxLength={100}
- className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-lg font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+ className="px-8 rounded-lg border-2 border-border bg-muted/50 font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
  />
  {validation.errors.tmpltNm ? <p {...validation.messageProps('tmpltNm')} className="text-xs font-bold text-destructive-emphasis ml-2" /> : null}
  </div>
