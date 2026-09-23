@@ -17,6 +17,8 @@ import {
 
 type UserListQuery = NonNullable<operations['getUsers']['parameters']['query']>;
 type UserProfileUpdate = components['schemas']['UserProfileUpdateRequest'];
+/** 일괄 상태 변경이 받는 계정 상태 코드(P 정상 · A 승인 대기 · D 비활성). 서버가 이 어휘 밖을 400 으로 거부한다. */
+export type UserStatusCode = components['schemas']['BulkStatusRequest']['status'];
 type UserResponse = Omit<
   components['schemas']['UserDto'],
   'pswd' | 'pswdHint' | 'pswdCrans'
@@ -203,7 +205,7 @@ class UserAdminService extends AdminService {
   }
 
   /** 사용자 상태 일괄 변경 */
-  async updateUsersStatus(userIds: string[], status: string, config?: AxiosRequestConfig): Promise<void> {
+  async updateUsersStatus(userIds: string[], status: UserStatusCode, config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(updateUsersStatusOperation, { body: { userIds, status }, config });
   }
 

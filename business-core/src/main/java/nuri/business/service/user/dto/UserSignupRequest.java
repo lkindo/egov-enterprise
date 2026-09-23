@@ -34,9 +34,11 @@ public class UserSignupRequest {
 
 
     @Schema(description = "비밀번호 힌트")
+    @Size(max = 300)
     private String pswdHint;
 
     @Schema(description = "비밀번호 정답")
+    @Size(max = 300)
     private String pswdCrans;
 
     // [보안] role 필드를 두지 않는다. 이 DTO 는 미인증 공개 엔드포인트(POST /api/v1/users/signup)의

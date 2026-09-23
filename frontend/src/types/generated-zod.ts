@@ -1013,8 +1013,8 @@ export const UserSignupRequestSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9]+$")),
   pswd: z.string().min(8).max(20).regex(new RegExp("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")),
   userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
-  pswdHint: z.string().optional(),
-  pswdCrans: z.string().optional(),
+  pswdHint: z.string().min(0).max(300).optional(),
+  pswdCrans: z.string().min(0).max(300).optional(),
 });
 export type UserSignupRequest = z.infer<typeof UserSignupRequestSchema>;
 
@@ -1154,7 +1154,7 @@ export type MailRecipientDto = z.infer<typeof MailRecipientDtoSchema>;
 export const SentMailDtoSchema = z.object({
   emlDsptchSn: z.number().int().optional(),
   sj: z.string().min(0).max(256).optional(),
-  emailCn: z.string().optional(),
+  emailCn: z.string().min(0).max(4000).optional(),
   dsptchPerson: z.string().optional(),
   recptnPerson: z.string().min(0).max(100).optional(),
   recipients: z.array(z.lazy(() => MailRecipientDtoSchema)).min(0).max(100).optional(),
@@ -1457,7 +1457,7 @@ export type AdminPasswordChangeRequest = z.infer<typeof AdminPasswordChangeReque
 // ==========================================================================
 export const BulkStatusRequestSchema = z.object({
   userIds: z.array(z.string()).min(1),
-  status: z.string(),
+  status: z.enum(["P","A","D"]),
 });
 export type BulkStatusRequest = z.infer<typeof BulkStatusRequestSchema>;
 
@@ -6192,16 +6192,16 @@ export const UserSignupRequestRequestSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9]+$")),
   pswd: z.string().min(8).max(20).regex(new RegExp("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")),
   userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
-  pswdHint: z.string().optional(),
-  pswdCrans: z.string().optional(),
+  pswdHint: z.string().min(0).max(300).optional(),
+  pswdCrans: z.string().min(0).max(300).optional(),
 });
 
 export const UserSignupRequestResponseSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9]+$")),
   pswd: z.string().min(8).max(20).regex(new RegExp("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")),
   userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
-  pswdHint: z.string().optional().nullable(),
-  pswdCrans: z.string().optional().nullable(),
+  pswdHint: z.string().min(0).max(300).optional().nullable(),
+  pswdCrans: z.string().min(0).max(300).optional().nullable(),
 });
 
 export const ApiResponseUserResponseRequestSchema = z.object({
@@ -6381,7 +6381,7 @@ export const MailRecipientDtoResponseSchema = z.object({
 export const SentMailDtoRequestSchema = z.object({
   emlDsptchSn: z.number().int().optional(),
   sj: z.string().min(0).max(256).optional(),
-  emailCn: z.string().optional(),
+  emailCn: z.string().min(0).max(4000).optional(),
   dsptchPerson: z.string().optional(),
   recptnPerson: z.string().min(0).max(100).optional(),
   recipients: z.array(z.lazy(() => MailRecipientDtoRequestSchema.strict())).min(0).max(100).optional(),
@@ -6393,7 +6393,7 @@ export const SentMailDtoRequestSchema = z.object({
 export const SentMailDtoResponseSchema = z.object({
   emlDsptchSn: z.number().int().optional().nullable(),
   sj: z.string().min(0).max(256).optional().nullable(),
-  emailCn: z.string().optional().nullable(),
+  emailCn: z.string().min(0).max(4000).optional().nullable(),
   dsptchPerson: z.string().optional().nullable(),
   recptnPerson: z.string().min(0).max(100).optional().nullable(),
   sndngResultCode: z.string().optional().nullable(),
@@ -6805,12 +6805,12 @@ export const AdminPasswordChangeRequestResponseSchema = z.object({
 
 export const BulkStatusRequestRequestSchema = z.object({
   userIds: z.array(z.string()).min(1),
-  status: z.string(),
+  status: z.enum(["P","A","D"]),
 });
 
 export const BulkStatusRequestResponseSchema = z.object({
   userIds: z.array(z.string().optional().nullable()).min(1),
-  status: z.string(),
+  status: z.enum(["P","A","D"]),
 });
 
 export const BulkRoleRequestRequestSchema = z.object({

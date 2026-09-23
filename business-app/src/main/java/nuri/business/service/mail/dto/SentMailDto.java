@@ -24,6 +24,7 @@ public class SentMailDto {
     private String sj;
 
     @Schema(description = "Description")
+    @Size(max = 4000)
     private String emailCn;
 
     @Schema(description = "Description")
@@ -47,7 +48,7 @@ public class SentMailDto {
     @jakarta.validation.Valid
     @Size(max = 100)
     @Builder.Default
-    private java.util.List<MailRecipientDto> recipients = new java.util.ArrayList<>();
+    private java.util.List<@NotNull MailRecipientDto> recipients = new java.util.ArrayList<>();
 
     @Schema(description = "Description")
     private String sndngResultCode;

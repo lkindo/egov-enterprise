@@ -47,6 +47,7 @@ import {
   bulkMoveUserDeptAction,
   bulkDeleteUsersAction
 } from '@/app/actions/userActions';
+import type { UserStatusCode } from '@/services/foundation/system/UserAdminService';
 
 import { StandardModal } from '@/app/components/ui/standard-modal';
 
@@ -235,7 +236,7 @@ export default function UserOrgHubClient({
   const [selectedBulkItems, setSelectedBulkItems] = useState<UserManage[]>([]);
   const [isBulkStatusModalOpen, setIsBulkStatusModalOpen] = useState(false);
   const [isBulkMoveModalOpen, setIsBulkMoveModalOpen] = useState(false);
-  const [targetStatus, setTargetStatus] = useState('P');
+  const [targetStatus, setTargetStatus] = useState<UserStatusCode>('P');
   const [targetDeptId, setTargetDeptId] = useState('');
 
 
@@ -1317,11 +1318,11 @@ export default function UserOrgHubClient({
             {/* 폼 컨트롤이 아니라 버튼 그룹이므로 <label> 이 아니라 radiogroup 으로 이름을 붙인다(감사 P2). */}
             <p id="bulk-status-label" className="text-[length:var(--font-size-body)] font-semibold text-foreground">변경할 상태 선택</p>
             <div role="radiogroup" aria-labelledby="bulk-status-label" className="grid grid-cols-1 gap-1.5">
-              {[
+              {([
                 { code: 'P', label: '정상', dot: 'bg-success' },
                 { code: 'A', label: '승인 대기', dot: 'bg-warning' },
                 { code: 'D', label: '비활성', dot: 'bg-muted-foreground' }
-              ].map(s => (
+              ] satisfies { code: UserStatusCode; label: string; dot: string }[]).map(s => (
                 <button
                   key={s.code}
                   type="button"

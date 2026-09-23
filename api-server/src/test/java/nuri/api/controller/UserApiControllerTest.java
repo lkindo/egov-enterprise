@@ -160,6 +160,27 @@ public class UserApiControllerTest extends BaseControllerTest {
     }
 
     @Test
+    @DisplayName("회원가입: 비밀번호 힌트·정답이 컬럼(300자)을 넘으면 저장 전에 400 으로 거부한다")
+    void signupRejectsHintLongerThanColumn() throws Exception {
+        // 공개 API 다. 종전에는 제한이 없어 301자 힌트가 DB 오류(500)로 끝났다.
+        for (String field : List.of("pswdHint", "pswdCrans")) {
+            UserSignupRequest request = UserSignupRequest.builder()
+                    .userId("newUser")
+                    .pswd("ValidPass123!")
+                    .userNm("Name")
+                    .pswdHint("pswdHint".equals(field) ? "가".repeat(301) : "hint")
+                    .pswdCrans("pswdCrans".equals(field) ? "가".repeat(301) : "answer")
+                    .build();
+
+            mockMvc.perform(post("/api/v1/users/signup")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+        verify(userService, never()).signup(any(UserSignupRequest.class));
+    }
+
+    @Test
     @DisplayName("아이디 중복 확인 성공")
     void checkIdDplct() throws Exception {
         when(userService.checkIdDplct("testuser")).thenReturn(false);
@@ -384,6 +405,23 @@ public class UserApiControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("관리자: 상태 일괄 변경은 화면 어휘(P·A·D) 밖 코드를 400 으로 거부한다")
+    void updateUsersStatusRejectsUnknownCode() throws Exception {
+        // 로그인은 P 만 통과시키므로 어휘 밖 코드도 계정을 막지만, 화면은 그 코드를 배지로 그리지 못한다.
+        for (String status : List.of("X", "p", "PA", "")) {
+            BulkStatusRequest req = new BulkStatusRequest();
+            req.setUserIds(List.of("user1"));
+            req.setStatus(status);
+
+            mockMvc.perform(patch("/api/v1/admin/system/users/status")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+        }
+        verify(userService, never()).updateUsersStatus(any(), any());
     }
 
     @Test

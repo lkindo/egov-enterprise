@@ -38789,11 +38789,15 @@
           },
           "pswdHint": {
             "type": "string",
-            "description": "비밀번호 힌트"
+            "description": "비밀번호 힌트",
+            "maxLength": 300,
+            "minLength": 0
           },
           "pswdCrans": {
             "type": "string",
-            "description": "비밀번호 정답"
+            "description": "비밀번호 정답",
+            "maxLength": 300,
+            "minLength": 0
           }
         },
         "required": [
@@ -39188,7 +39192,9 @@
           },
           "emailCn": {
             "type": "string",
-            "description": "Description"
+            "description": "Description",
+            "maxLength": 4000,
+            "minLength": 0
           },
           "dsptchPerson": {
             "type": "string",
@@ -40196,7 +40202,14 @@
             "minItems": 1
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "description": "계정 상태 코드(P 정상 · A 승인 대기 · D 비활성)",
+            "enum": [
+              "P",
+              "A",
+              "D"
+            ],
+            "pattern": "^(?:P|A|D)$"
           }
         },
         "required": [

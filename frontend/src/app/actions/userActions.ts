@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { userAdminService } from '@/services/foundation/system/UserAdminService';
+import { userAdminService, type UserStatusCode } from '@/services/foundation/system/UserAdminService';
 import { extractErrorMessage } from './actionUtils';
 
 interface ActionResponse {
@@ -10,7 +10,7 @@ interface ActionResponse {
   message: string;
 }
 
-export async function bulkUpdateUserStatusAction(userIds: string[], status: string): Promise<ActionResponse> {
+export async function bulkUpdateUserStatusAction(userIds: string[], status: UserStatusCode): Promise<ActionResponse> {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;

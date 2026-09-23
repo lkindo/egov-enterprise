@@ -16,6 +16,8 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -66,6 +68,30 @@ class MailApiControllerTest extends ControllerTestSupport {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value(123));
+    }
+
+    /**
+     * 본문 컬럼({@code tb_eml_dsptch.eml_cn})은 4000자다. 종전에는 DTO 에 상한이 없어 4001자 본문이
+     * DB 오류(500)로 끝났다. 수신자 목록의 null 항목은 서비스가 {@code recipient.getEsntlId()} 에서 NPE 로 죽었다.
+     */
+    @Test
+    @WithMockCustomUser(username = "testuser", esntlId = "testuser")
+    @DisplayName("메일 발송: 컬럼보다 긴 본문과 null 수신자 항목은 서비스에 닿기 전에 400 이다")
+    void sendMailRejectsOverlongBodyAndNullRecipient() throws Exception {
+        SentMailDto overlong = SentMailDto.builder().sj("Subject").emailCn("가".repeat(4001)).build();
+        mockMvc.perform(post("/api/v1/mails")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(overlong)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post("/api/v1/mails")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"sj\":\"Subject\",\"emailCn\":\"Content\",\"recipients\":[null]}"))
+                .andExpect(status().isBadRequest());
+
+        verify(mailService, never()).sendMail(anyString(), any());
     }
 
     @Test

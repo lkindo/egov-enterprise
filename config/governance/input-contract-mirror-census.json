@@ -493,6 +493,177 @@
         "onlnMnlExpln"
       ],
       "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.notification.Notification",
+      "dto": "nuri.business.service.notification.dto.NotificationDispatchRequest",
+      "fields": [
+        "notiTtlNm",
+        "notiCn",
+        "linkUrl"
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "entity": "nuri.business.domain.informalsanction.InformalSanction",
+      "dto": "nuri.business.service.informalsanction.dto.InformalSanctionDto",
+      "fields": [
+        "taskSeCd",
+        "docTtl",
+        "docCn",
+        "aprvrId"
+      ],
+      "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.memoreport.MemoReport",
+      "dto": "nuri.business.service.memoreport.dto.MemoInstructionRequest",
+      "fields": [
+        "drctnMttr"
+      ],
+      "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.board.Board",
+      "dto": "nuri.business.service.board.dto.BoardSaveRequest",
+      "fields": [
+        "bbsId",
+        "pstTtl",
+        "pstCn",
+        "qnaSttsCd",
+        "qnaCatCd",
+        "pswd"
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "entity": "nuri.business.domain.system.policy.SystemPolicy",
+      "dto": "nuri.api.controller.foundation.controller.system.policy.PolicyUpdateRequest",
+      "fields": [
+        "plcyTtl",
+        "plcyCn"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.user.entity.User",
+      "dto": "nuri.api.controller.UserProfileUpdateRequest",
+      "fields": [
+        "emplNo",
+        "areaNo",
+        "middleTelno",
+        "endTelno",
+        "faxNo",
+        "homeAddr",
+        "daddr",
+        "zip",
+        "officeTelno",
+        "mblTelno",
+        "emlAddr",
+        "ofcpsNm",
+        "groupId",
+        "ognzId",
+        "pstinstCd"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.user.entity.User",
+      "dto": "nuri.api.controller.UserSelfProfileUpdateRequest",
+      "fields": [
+        "emplNo",
+        "areaNo",
+        "middleTelno",
+        "endTelno",
+        "faxNo",
+        "homeAddr",
+        "daddr",
+        "zip",
+        "officeTelno",
+        "mblTelno",
+        "emlAddr",
+        "ofcpsNm"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.user.entity.User",
+      "dto": "nuri.business.service.user.dto.UserSignupRequest",
+      "fields": [
+        "userId",
+        "pswdHint",
+        "pswdCrans"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.survey.SurveyResult",
+      "dto": "nuri.business.service.survey.dto.SurveyResponseSubmitDto",
+      "fields": [
+        "rspnsNm"
+      ],
+      "pack": "survey"
+    },
+    {
+      "entity": "nuri.business.domain.survey.SurveyResult",
+      "dto": "nuri.business.service.survey.dto.SurveyResponseSubmitDto$Answer",
+      "fields": [
+        "rspdntAnsCn",
+        "etcAnsCn"
+      ],
+      "pack": "survey"
+    },
+    {
+      "entity": "nuri.business.domain.mail.SentMail",
+      "dto": "nuri.business.service.mail.dto.SentMailDto",
+      "fields": [
+        "sj",
+        "emailCn"
+      ],
+      "entityFields": {
+        "sj": "emlTtl",
+        "emailCn": "emlCn"
+      },
+      "pack": "collaboration"
+    },
+    {
+      "entity": "nuri.business.domain.operation.RewardManage",
+      "dto": "nuri.business.service.operation.dto.RewardManageDto",
+      "fields": [
+        "rwardwnrId",
+        "rwardCode",
+        "rwardDe",
+        "rwardNm",
+        "pblenCn",
+        "sanctnerId",
+        "confmAt",
+        "returnResn"
+      ],
+      "entityFields": {
+        "rwardwnrId": "rwrdUserId",
+        "rwardCode": "rwrdCd",
+        "rwardDe": "rwrdYmd",
+        "rwardNm": "rwrdNm",
+        "pblenCn": "cntrbCn",
+        "sanctnerId": "atrzrId",
+        "confmAt": "confmYn",
+        "returnResn": "rtnRsnCn"
+      },
+      "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.operation.EventInfo",
+      "dto": "nuri.business.service.operation.dto.EventInfoDto",
+      "fields": [
+        "evntNm",
+        "bizYr",
+        "evntCn",
+        "picNm",
+        "prepMttr",
+        "evntTypeCd",
+        "evntAprvYn"
+      ],
+      "pack": "demo"
     }
   ],
   "enumBindings": [
@@ -630,6 +801,16 @@
         "N"
       ],
       "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.user.dto.BulkStatusRequest",
+      "field": "status",
+      "allowedValues": [
+        "P",
+        "A",
+        "D"
+      ],
+      "pack": "core"
     }
   ],
   "nestedValidationBindings": [
@@ -656,6 +837,24 @@
       "field": "stages",
       "item": "nuri.business.service.informalsanction.dto.ApprovalStageRequest",
       "pack": "demo"
+    },
+    {
+      "parent": "nuri.business.service.notification.dto.NotificationDispatchRequest",
+      "field": "recipients",
+      "item": "nuri.business.service.notification.dto.NotificationDispatchRequest$Recipient",
+      "pack": "collaboration"
+    },
+    {
+      "parent": "nuri.business.service.survey.dto.SurveyResponseSubmitDto",
+      "field": "answers",
+      "item": "nuri.business.service.survey.dto.SurveyResponseSubmitDto$Answer",
+      "pack": "survey"
+    },
+    {
+      "parent": "nuri.business.service.mail.dto.SentMailDto",
+      "field": "recipients",
+      "item": "nuri.business.service.mail.dto.MailRecipientDto",
+      "pack": "collaboration"
     }
   ],
   "requiredBindings": [
@@ -1196,6 +1395,176 @@
       "dto": "nuri.business.service.survey.dto.SurveyTemplateDto",
       "fields": [],
       "pack": "survey"
+    },
+    {
+      "dto": "nuri.business.service.notification.dto.NotificationDispatchRequest",
+      "fields": [
+        {
+          "field": "recipients",
+          "constraint": "NotEmpty",
+          "groups": []
+        },
+        {
+          "field": "notiTtlNm",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "notiCn",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.informalsanction.dto.InformalSanctionDto",
+      "fields": [
+        {
+          "field": "taskSeCd",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "aplcntId",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.memoreport.dto.MemoInstructionRequest",
+      "fields": [
+        {
+          "field": "drctnMttr",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.board.dto.BoardSaveRequest",
+      "fields": [
+        {
+          "field": "bbsId",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "pstTtl",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "pstCn",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.api.controller.foundation.controller.system.policy.PolicyUpdateRequest",
+      "fields": [
+        {
+          "field": "plcyTtl",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "plcyCn",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.api.controller.UserProfileUpdateRequest",
+      "fields": [
+        {
+          "field": "userNm",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.api.controller.UserSelfProfileUpdateRequest",
+      "fields": [
+        {
+          "field": "userNm",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.user.dto.UserSignupRequest",
+      "fields": [
+        {
+          "field": "userId",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "pswd",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "userNm",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.survey.dto.SurveyResponseSubmitDto",
+      "fields": [
+        {
+          "field": "answers",
+          "constraint": "NotEmpty",
+          "groups": []
+        }
+      ],
+      "pack": "survey"
+    },
+    {
+      "dto": "nuri.business.service.survey.dto.SurveyResponseSubmitDto$Answer",
+      "fields": [
+        {
+          "field": "srvyQstnSn",
+          "constraint": "NotNull",
+          "groups": []
+        },
+        {
+          "field": "srvyArtclSn",
+          "constraint": "NotNull",
+          "groups": []
+        }
+      ],
+      "pack": "survey"
+    },
+    {
+      "dto": "nuri.business.service.mail.dto.SentMailDto",
+      "fields": [],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.operation.dto.RewardManageDto",
+      "fields": [],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.operation.dto.EventInfoDto",
+      "fields": [],
+      "pack": "demo"
     }
   ],
   "requiredResponseFields": [
