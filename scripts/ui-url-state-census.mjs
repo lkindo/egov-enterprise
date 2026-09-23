@@ -605,6 +605,27 @@ export function scanUrlStateSource(source, options = {}) {
   const { issues, tokens } = tokenizeUrlStateSource(source, context.file);
   const records = [];
   const urlParamVariables = new Set(['searchParams']);
+  /*
+   * [2026-09-23] allowlist 재조립(pickAllowedParams(searchParams, KEYS))을 이름으로 읽는다.
+   *
+   * 이 분기가 없으면 두 가지를 동시에 잃는다 — 빌더 record 가 키를 모르는 <computed> 가 되고,
+   * 그 변수의 뒤따르는 .set('tab', ...) 이 URLSearchParams 로 인식되지 않아 이름 있는
+   * query-producer record 가 통째로 사라진다. 즉 copy-all 을 걷어내면 수치는 줄지만 census 는
+   * 눈을 잃는다. 여기서 상수를 해석해 이름을 되살린다 — 해석 실패는 통과가 아니라 ambiguous 다.
+   */
+  const allowlistConstants = new Map();
+  for (let scan = 0; scan < tokens.length - 4; scan += 1) {
+    if (tokens[scan].value !== 'const' || tokens[scan + 1]?.type !== 'identifier') continue;
+    if (tokens[scan + 2]?.value !== '=' || tokens[scan + 3]?.value !== '[') continue;
+    const keys = [];
+    let clean = true;
+    for (let cursor = scan + 4; cursor < tokens.length && tokens[cursor].value !== ']'; cursor += 1) {
+      if (tokens[cursor].value === ',') continue;
+      if (tokens[cursor].type === 'string') keys.push(tokens[cursor].value);
+      else { clean = false; break; }
+    }
+    if (clean && keys.length) allowlistConstants.set(tokens[scan + 1].value, keys);
+  }
   const serverObjectVariables = new Set();
   const urlVariables = new Set();
 
@@ -616,6 +637,8 @@ export function scanUrlStateSource(source, options = {}) {
     if (tokens[cursor]?.value === 'new' && tokens[cursor + 1]?.value === 'URLSearchParams') {
       urlParamVariables.add(name.value);
     } else if (tokens[cursor]?.value === 'useSearchParams' && tokens[cursor + 1]?.value === '(') {
+      urlParamVariables.add(name.value);
+    } else if (tokens[cursor]?.value === 'pickAllowedParams' && tokens[cursor + 1]?.value === '(') {
       urlParamVariables.add(name.value);
     } else if (tokens[cursor]?.value === 'searchParams') {
       serverObjectVariables.add(name.value);
@@ -682,6 +705,28 @@ export function scanUrlStateSource(source, options = {}) {
           ? ['encoded-query-passthrough', 'repeated-query-passthrough', 'unknown-query-passthrough']
           : [],
         stateNames: copiesExisting ? ['<unknown-source-query>'] : [],
+        surface: 'navigation',
+      }));
+    }
+
+    // Allowlist rebuild — the key population is declared, so nothing unknown survives.
+    if (token.value === 'pickAllowedParams' && tokens[index + 1]?.value === '('
+      && tokens[index - 1]?.value !== '.' && tokens[index - 1]?.value !== 'function') {
+      const allowlistArgs = callArguments(tokens, index + 1).arguments;
+      const listToken = allowlistArgs[1]?.length === 1 ? allowlistArgs[1][0] : null;
+      const resolvedKeys = listToken && listToken.type === 'identifier'
+        ? allowlistConstants.get(listToken.value)
+        : null;
+      records.push(makeRecord(context, {
+        ambiguityReasons: resolvedKeys ? [] : ['unresolved-allowlist-constant'],
+        currentBehavior: resolvedKeys
+          ? 'URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.'
+          : 'An allowlist rebuild was found but its key list could not be resolved from this file.',
+        detector: 'url-search-params-allowlist-rebuild',
+        kind: 'query-builder',
+        operation: 'allowlist-rebuild',
+        riskSignals: [],
+        stateNames: resolvedKeys ?? ['<computed>'],
         surface: 'navigation',
       }));
     }
@@ -1387,6 +1432,15 @@ export function validateUrlStateCensus(census, options = {}) {
       if (state?.dataClass !== 'unverified' || state?.approvalStatus !== 'unverified') errors.push(`${label}/${state?.name}: state classification must remain unverified`);
       if (!['candidate-allow', 'deny', 'deny-until-reviewed'].includes(state?.recommendation)) errors.push(`${label}/${state?.name}: invalid recommendation`);
       if (state?.exception !== 'none-proposed') errors.push(`${label}/${state?.name}: exception cannot be fabricated`);
+    }
+    if (record?.operation === 'allowlist-rebuild') {
+      for (const signal of ['unknown-query-passthrough', 'repeated-query-passthrough', 'encoded-query-passthrough']) {
+        if (record.riskSignals.includes(signal)) errors.push(`${label}: allowlist rebuild cannot claim ${signal}`);
+      }
+      const unresolved = record.stateItems.some((item) => item.name === '<computed>');
+      if (unresolved && !record.ambiguityReasons.includes('unresolved-allowlist-constant')) {
+        errors.push(`${label}: unresolved allowlist must record why`);
+      }
     }
     if (record?.operation === 'copy-existing-query') {
       for (const signal of ['unknown-query-passthrough', 'repeated-query-passthrough', 'encoded-query-passthrough']) {

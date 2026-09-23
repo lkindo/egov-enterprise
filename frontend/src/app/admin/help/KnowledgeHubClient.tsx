@@ -27,6 +27,16 @@ import { CommunityManageDialog } from '@/components/business/community/Community
 import { userFacingErrorMessage } from '@/lib/safe-error-log';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable, type Column } from '@/app/components/ui/standard-data-table';
+import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+
+/**
+ * 이 라우트가 URL 에 싣는 쿼리 키 전수. `bbsId` 는 진입 전용이라 카테고리를 바꾸면 버린다(종전 delete 와 같은 결과).
+ *
+ * 종전에는 들어온 쿼리를 통째로 복사해 재발행했다 — 모르는 이름이 한 번 들어오면 이동마다
+ * 다시 붙는 캐리어였다(DEC-OPS-029 Q2). 새 파라미터를 도입하면 이 목록에 함께 넣어야 하고,
+ * 빠뜨리면 이동 시 조용히 사라진다.
+ */
+const HUB_PARAM_KEYS = ['tab'] as const;
 
 // --- Types ---
 type KnowledgeCategory = 'WIKI' | 'FAQ' | 'QNA' | 'COMMUNITY';
@@ -82,10 +92,10 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  const page = pagination.context === pageContext ? pagination.page : 1;
 
  const selectCategory = (next: KnowledgeCategory) => {
- const params = new URLSearchParams(searchParams.toString());
+ const params = pickAllowedParams(searchParams, HUB_PARAM_KEYS);
  params.set('tab', next);
- // bbsId 로 진입한 경우 tab 과 충돌하므로 정리한다(tab 이 우선 해석되지만 링크가 혼란스러워진다).
- params.delete('bbsId');
+ // bbsId 로 진입했어도 카테고리를 바꾸면 버린다 — tab 이 우선 해석되지만 둘이 함께 남으면 링크가 혼란스럽다.
+ //   allowlist 에 bbsId 가 없으므로 재조립 단계에서 이미 빠진다(종전 delete 와 같은 결과).
  router.replace(`${pathname}?${params.toString()}`, { scroll: false });
  };
 
