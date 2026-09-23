@@ -230,9 +230,6 @@ public class BoardService extends BaseAbstractService {
                 bindCurrentViewerVisibility(condition);
                 BoardStatsResult stats = boardRepository.aggregateVisibleStats(condition);
 
-                // Logic derived from frontend: (count * 2) + 70, capped at 100
-                int intelligenceScore = (int) Math.min(100, (stats.totalArticles() * 2) + 70);
-
                 return BoardStatsResponse.builder()
                                 .totalArticles(stats.totalArticles())
                                 .totalViews(stats.totalViews())
@@ -242,7 +239,6 @@ public class BoardService extends BaseAbstractService {
                                 //   내세운 것이라, 관리자는 그런 사용자가 있다고 믿는다.
                                 //   null 을 그대로 내리면 화면이 '-' 로 렌더한다(없음과 있음을 구분).
                                 .topContributor(stats.topContributor())
-                                .intelligenceScore(intelligenceScore)
                                 .build();
         }
 

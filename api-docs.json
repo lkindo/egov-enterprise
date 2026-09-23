@@ -42704,11 +42704,6 @@
           "topContributor": {
             "type": "string",
             "description": "주요 기여자 (최다 작성자)"
-          },
-          "intelligenceScore": {
-            "type": "integer",
-            "format": "int32",
-            "description": "지식화 점수 (0-100)"
           }
         }
       },

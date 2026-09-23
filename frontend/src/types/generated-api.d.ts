@@ -7833,11 +7833,6 @@ export interface components {
             totalViews?: number;
             /** @description 주요 기여자 (최다 작성자) */
             topContributor?: string;
-            /**
-             * Format: int32
-             * @description 지식화 점수 (0-100)
-             */
-            intelligenceScore?: number;
         };
         ApiResponseBoardDto: {
             success?: boolean;

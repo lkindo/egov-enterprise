@@ -751,6 +751,10 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
       service,
       '기여자가 없을 때 이름을 지어내는 폴백이 되살아났다 — 화면이 없는 사용자를 최다 기여자로 보여 준다.',
     ).not.toContain('"System"');
+    expect(
+      service,
+      '지어낸 지식화 점수가 응답 계약으로 되살아났다 — 글 수에 상수를 더한 값은 측정값이 아니다',
+    ).not.toContain('intelligenceScore');
   });
 
   /*
