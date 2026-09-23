@@ -4961,7 +4961,7 @@ export interface components {
             status?: number;
             code?: string;
             message?: string;
-            data?: Record<string, never>;
+            data?: unknown;
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
@@ -6506,7 +6506,10 @@ export interface components {
         MailRecipientDto: {
             /** @description 사용자 고유 ID(esntlId). 지정하면 서버가 등록된 이메일 주소를 해석한다 */
             esntlId?: string;
-            /** @description 이메일 주소(직접 입력·주소록). esntlId 와 함께 쓰지 않는다 */
+            /**
+             * Format: email
+             * @description 이메일 주소(직접 입력·주소록). esntlId 와 함께 쓰지 않는다
+             */
             emlAddr?: string;
         };
         /** @description Description */
@@ -6524,6 +6527,7 @@ export interface components {
             dsptchPerson?: string;
             /** @description 수신자 주소 문자열(종전 계약). recipients 를 쓰면 비워도 된다 */
             recptnPerson?: string;
+            /** @description 수신자 목록 — 사용자(esntlId) 또는 주소(emlAddr). 발송 요청 전용(응답에는 실리지 않는다) */
             recipients?: components["schemas"]["MailRecipientDto"][];
             /** @description Description */
             sndngResultCode?: string;
@@ -6786,6 +6790,7 @@ export interface components {
         };
         /** @description 게시판 마스터 사용여부 일괄 변경 요청 */
         BoardMasterBatchStatusRequest: {
+            /** @description 대상 게시판 ID 목록 */
             bbsIds: string[];
             /**
              * @description 사용여부(Y: 활성, N: 비활성)
@@ -6795,6 +6800,7 @@ export interface components {
         };
         /** @description 게시판 마스터 일괄 영구 삭제 요청 */
         BoardMasterBatchDeleteRequest: {
+            /** @description 대상 게시판 ID 목록 */
             bbsIds: string[];
         };
         /** @description SMS 데이터 전송 객체 */
@@ -6820,6 +6826,7 @@ export interface components {
              * @description 최초 등록 일시
              */
             crtDt?: string;
+            /** @description 수신자 목록 */
             recipients: components["schemas"]["SmsRecptnDto"][];
             /** @description 검색 조건 */
             searchCondition?: string;
@@ -7733,7 +7740,7 @@ export interface components {
              */
             status?: "NONE" | "REQUESTED" | "MEMBER" | "UNKNOWN";
             /** @description 가입(신청)일자 yyyyMMdd — 행이 없으면 null */
-            joinYmd?: string;
+            joinYmd?: string | null;
         };
         ApiResponseListCommunityBoardDto: {
             success?: boolean;
@@ -7751,11 +7758,11 @@ export interface components {
             /** @description 게시판 ID */
             bbsId?: string;
             /** @description 게시판 제목 */
-            bbsTtl?: string;
+            bbsTtl?: string | null;
             /** @description 게시판 설명 */
-            bbsExpln?: string;
+            bbsExpln?: string | null;
             /** @description 게시판 유형 코드 */
-            bbsTypeCd?: string;
+            bbsTypeCd?: string | null;
         };
         ApiResponsePageResponseCommentDto: {
             success?: boolean;
@@ -7871,7 +7878,7 @@ export interface components {
              * @description 만족도 평균(1~5). 평가가 하나도 없으면 null 이며 0 과 구분해야 한다.
              * @example 4.5
              */
-            average?: number;
+            average?: number | null;
         };
         ApiResponseListBoardSearchItemResponse: {
             success?: boolean;
@@ -9614,18 +9621,18 @@ export interface components {
             /** @description 사용자 식별자(esntlId) */
             userId?: string;
             /** @description 사용자 이름 — 사용자를 찾지 못하면 null */
-            userNm?: string;
+            userNm?: string | null;
             /**
              * @description 멤버십 상태 — REQUESTED(가입 신청)·APPROVED(회원). 어휘 밖 코드는 null
-             * @enum {string}
+             * @enum {string|null}
              */
-            status?: "REQUESTED" | "APPROVED";
+            status?: "REQUESTED" | "APPROVED" | null;
             /** @description 원본 상태 코드(mbr_stts_cd) */
             mbrSttsCd?: string;
             /** @description 관리자 여부(Y/N) */
             mngrYn?: string;
             /** @description 가입(신청)일자 yyyyMMdd */
-            joinYmd?: string;
+            joinYmd?: string | null;
             /** @description 사용 여부(Y/N) */
             useYn?: string;
         };
@@ -20472,8 +20479,11 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -20662,8 +20672,11 @@ export interface operations {
             query?: {
                 /** @description 검색어 */
                 searchWrd?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -20910,8 +20923,11 @@ export interface operations {
         parameters: {
             query?: {
                 searchKeyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -21032,8 +21048,11 @@ export interface operations {
             query?: {
                 searchCondition?: string;
                 searchKeyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -21153,8 +21172,11 @@ export interface operations {
         parameters: {
             query?: {
                 type?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -21274,8 +21296,11 @@ export interface operations {
         parameters: {
             query?: {
                 type?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -21395,8 +21420,11 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -21516,8 +21544,11 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -22198,8 +22229,11 @@ export interface operations {
             query: {
                 pstSn: number;
                 bbsId: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -22866,8 +22900,11 @@ export interface operations {
         parameters: {
             query?: {
                 searchKeyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -23628,8 +23665,11 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -23749,8 +23789,11 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -24012,8 +24055,11 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -24133,8 +24179,11 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -24570,8 +24619,11 @@ export interface operations {
         parameters: {
             query?: {
                 searchWrd?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -25085,8 +25137,11 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -25445,8 +25500,11 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -26386,8 +26444,11 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -26846,8 +26907,11 @@ export interface operations {
             query?: {
                 searchCondition?: string;
                 searchKeyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -26967,8 +27031,11 @@ export interface operations {
         parameters: {
             query?: {
                 name?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -27088,8 +27155,11 @@ export interface operations {
         parameters: {
             query?: {
                 name?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -27218,8 +27288,11 @@ export interface operations {
         parameters: {
             query?: {
                 searchWrd?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -27409,8 +27482,11 @@ export interface operations {
             query?: {
                 searchCnd?: string;
                 searchWrd?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -27648,8 +27724,11 @@ export interface operations {
                 trgetOgnzId?: string;
                 searchCnd?: string;
                 searchWrd?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -29273,8 +29352,11 @@ export interface operations {
         parameters: {
             query?: {
                 searchWrd?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -29334,8 +29416,11 @@ export interface operations {
         parameters: {
             query?: {
                 searchWrd?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -29509,8 +29594,11 @@ export interface operations {
         parameters: {
             query?: {
                 searchKeyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -29570,8 +29658,11 @@ export interface operations {
         parameters: {
             query?: {
                 searchKeyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -30673,8 +30764,11 @@ export interface operations {
             query?: {
                 searchCnd?: string;
                 searchWrd?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -30944,8 +31038,11 @@ export interface operations {
                 endDate?: string;
                 qnaStatus?: string;
                 qnaCategory?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -31160,8 +31257,11 @@ export interface operations {
             query?: {
                 /** @description 제목 검색어(2자 이상) */
                 keyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -31221,8 +31321,11 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -31656,8 +31759,11 @@ export interface operations {
     getProcessed: {
         parameters: {
             query?: {
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -31716,8 +31822,11 @@ export interface operations {
     getPending: {
         parameters: {
             query?: {
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -31776,8 +31885,11 @@ export interface operations {
     getMyHistory: {
         parameters: {
             query?: {
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -31893,8 +32005,11 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -34281,8 +34396,11 @@ export interface operations {
             query?: {
                 /** @description 멤버십 상태 필터(REQUESTED·APPROVED). 생략하면 전체 */
                 status?: "REQUESTED" | "APPROVED";
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -34412,8 +34530,11 @@ export interface operations {
                 searchKeyword?: string;
                 bbsId?: string;
                 pstSn?: number;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -34709,8 +34830,11 @@ export interface operations {
         parameters: {
             query: {
                 searchWrd: string;
+                /** @description Zero-based page index (0..N) */
                 page?: number;
+                /** @description The size of the page to be returned */
                 size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;

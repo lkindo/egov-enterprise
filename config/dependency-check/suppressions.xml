@@ -86,17 +86,4 @@
         <packageUrl regex="true">^pkg:maven/io\.opentelemetry/opentelemetry-.*@1\.62\.0$</packageUrl>
         <cve>CVE-2026-54285</cve>
     </suppress>
-
-    <!-- swagger-ui 5.18.3 (springdoc 2.8.5) 번들의 DOMPurify 3.1.6 — 개발 전용 노출 -->
-    <suppress until="2026-12-21Z">
-        <notes><![CDATA[
-        springdoc-openapi-starter-webmvc-ui 2.8.5 가 번들한 swagger-ui-bundle.js 안의 DOMPurify 3.1.6 이다
-        (CVE-2026-65898 등 다수, 수정 3.4.11). 운영 프로파일은 springdoc.api-docs.enabled=false·
-        springdoc.swagger-ui.enabled=false 로 그 정적 자원을 서빙하지 않으므로 노출은 개발 환경뿐이다.
-        해소 경로는 억제 연장이 아니라 springdoc 2.8 라인 상향(최신 swagger-ui 번들)이며, 기한 안에 상향하지
-        못하면 재검토한다. 이 억제는 번들된 JS 패키지 하나에만 걸린다.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:javascript/DOMPurify@3\.1\.6$</packageUrl>
-        <vulnerabilityName>.*</vulnerabilityName>
-    </suppress>
 </suppressions>
