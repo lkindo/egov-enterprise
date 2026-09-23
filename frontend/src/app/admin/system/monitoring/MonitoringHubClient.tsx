@@ -559,7 +559,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               variant="outline"
               size="sm"
               onClick={() => { void refetchHealth(); }}
-              className="h-9 rounded-lg text-xs font-bold"
+              className="rounded-lg text-xs font-bold h-[var(--control-h)]"
             >
               다시 시도
             </Button>
@@ -589,7 +589,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             size="sm"
             onClick={() => { void runIntegrityScan(); }}
             disabled={isIntegrityRunning}
-            className="h-9 rounded-lg text-xs font-bold shrink-0"
+            className="rounded-lg text-xs font-bold shrink-0 h-[var(--control-h)]"
           >
             {isIntegrityRunning ? '점검 중…' : '점검 실행'}
           </Button>

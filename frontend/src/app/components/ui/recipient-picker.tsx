@@ -219,7 +219,7 @@ export function RecipientPicker({
               aria-selected={tab === item.value}
               aria-controls={`recipient-panel-${item.value}`}
               onClick={() => handleTabChange(item.value)}
-              className={`h-9 px-4 rounded-md text-sm font-bold flex items-center gap-2 transition-colors ${
+              className={`h-[var(--control-h)] px-4 rounded-md text-sm font-bold flex items-center gap-2 transition-colors ${
                 tab === item.value ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >

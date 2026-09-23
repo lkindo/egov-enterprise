@@ -422,7 +422,7 @@ export function StandardDataTable<T extends object>({
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" aria-hidden="true" />
           <Input
             placeholder={search.placeholder || "검색어 입력..."}
-            className="h-12 pl-12 pr-28 rounded-lg border-2 bg-card ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm"
+            className="pl-12 pr-28 rounded-lg border-2 bg-card ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm h-[var(--filter-control-h)]"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             aria-label="데이터 검색"
@@ -432,15 +432,15 @@ export function StandardDataTable<T extends object>({
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
-                className="w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground"
+                size="icon-sm"
+                className="rounded-lg text-muted-foreground hover:text-foreground"
                 onClick={handleSearchClear}
                 aria-label="검색어 지우기"
               >
                 <X className="w-4 h-4" aria-hidden="true" />
               </Button>
             )}
-            <Button type="submit" size="sm" className="h-8 px-3 rounded-lg text-xs font-bold tracking-wider">
+            <Button type="submit" size="sm" className="px-3 rounded-lg text-xs font-bold tracking-wider">
               검색
             </Button>
           </div>
@@ -474,7 +474,7 @@ export function StandardDataTable<T extends object>({
                     key={`bulk-action-${idx}`}
                     variant={action.variant ?? 'default'}
                     size="sm"
-                    className="h-8 px-3 rounded-md text-xs font-medium gap-1.5 whitespace-nowrap"
+                    className="px-3 rounded-md text-xs font-medium gap-1.5 whitespace-nowrap"
                     onClick={() => action.onClick(selectedItems)}
                     disabled={action.disabled}
                     aria-busy={action.ariaBusy || undefined}
@@ -492,7 +492,7 @@ export function StandardDataTable<T extends object>({
                 size="sm"
                 onClick={() => setSelectedIds(new Set())}
                 aria-label={`선택한 ${selectedIds.size}개 항목 전체 해제`}
-                className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                className="px-2.5 text-xs text-muted-foreground hover:text-foreground"
               >
                 전체 해제
               </Button>

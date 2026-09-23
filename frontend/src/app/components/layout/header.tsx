@@ -283,7 +283,7 @@ export function Header({
                       <Button
                         variant="ghost"
                         aria-label="내 정보 수정"
-                        className="w-full justify-start text-sm h-9 gap-2 font-medium"
+                        className="w-full justify-start text-sm gap-2 font-medium"
                         onClick={openProfile}
                         disabled={isProfileLoading}
                       >
@@ -292,7 +292,7 @@ export function Header({
                       <Button
                         variant="ghost"
                         aria-label="비밀번호 변경"
-                        className="w-full justify-start text-sm h-9 gap-2 font-medium"
+                        className="w-full justify-start text-sm gap-2 font-medium"
                         onClick={() => setPasswordOpen(true)}
                       >
                         <KeyRound size={14} /> 비밀번호 변경
@@ -300,7 +300,7 @@ export function Header({
                       <Button
                         variant="ghost"
                         aria-label="로그아웃"
-                        className="w-full justify-start text-sm h-9 gap-2 text-destructive-emphasis hover:text-destructive-emphasis hover:bg-destructive/10 font-medium"
+                        className="w-full justify-start text-sm gap-2 text-destructive-emphasis hover:text-destructive-emphasis hover:bg-destructive/10 font-medium"
                         onClick={handleLogout}
                       >
                         <LogOut size={14} /> 로그아웃

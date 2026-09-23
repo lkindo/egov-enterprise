@@ -225,7 +225,7 @@ const ScrapListClient = () => {
                 <div className="flex items-center justify-center gap-1">
                     <Button
                         variant="ghost"
-                        size="icon"
+                        size="icon-sm"
                         aria-label={`${item.scrapNm ?? '스크랩'} 수정`}
                         disabled={deletingScrapSn !== null}
                         onClick={() => {
@@ -239,18 +239,18 @@ const ScrapListClient = () => {
                             });
                             setFormMode('edit');
                         }}
-                        className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+                        className="text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
                     >
                         <Pencil className="w-4 h-4" />
                     </Button>
                     <Button
                         variant="ghost"
-                        size="icon"
+                        size="icon-sm"
                         aria-label={`${item.scrapNm ?? '스크랩'} ${deletingScrapSn === item.scrapSn ? '삭제 중' : '삭제'}`}
                         aria-busy={deletingScrapSn === item.scrapSn || undefined}
                         disabled={deletingScrapSn !== null}
                         onClick={() => { void handleDelete(item); }}
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive-emphasis hover:bg-destructive/10 transition-all"
+                        className="text-muted-foreground hover:text-destructive-emphasis hover:bg-destructive/10 transition-all"
                     >
                         <Trash2 className="w-4 h-4" />
                     </Button>

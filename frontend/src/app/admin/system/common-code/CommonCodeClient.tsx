@@ -829,10 +829,10 @@ export default function CommonCodeClient({
  <Button
  type="button"
  variant="ghost"
- size="icon"
+ size="icon-sm"
  aria-label={`${item.dtlCdNm} 코드 수정`}
  disabled={isDetailWritePending || isModalOpen}
- className="h-8 w-8 hover:bg-muted rounded-lg transition-colors"
+ className="hover:bg-muted rounded-lg transition-colors"
  onClick={(e) => { e.preventDefault(); handleEditDetail(item); }}
  >
  <Settings size={14} className="text-muted-foreground" aria-hidden="true" />
@@ -840,11 +840,11 @@ export default function CommonCodeClient({
  <Button
  type="button"
  variant="ghost"
- size="icon"
+ size="icon-sm"
  aria-label={`${item.dtlCdNm} 코드 ${isDeleting ? '삭제 중…' : '삭제'}`}
  aria-busy={isDeleting || undefined}
  disabled={isDetailWritePending || isModalOpen}
- className="h-8 w-8 text-destructive-emphasis hover:bg-destructive/10 rounded-lg transition-colors"
+ className="text-destructive-emphasis hover:bg-destructive/10 rounded-lg transition-colors"
  onClick={(e) => { e.preventDefault(); handleDeleteDetail(item); }}
  >
  {isDeleting

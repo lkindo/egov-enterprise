@@ -242,13 +242,13 @@ export default function SurveyTemplatesPanel() {
               </Button>
               <Button
                 variant="ghost"
-                size="icon"
+                size="icon-sm"
                 aria-label={deletingTemplate === t.srvyTmpltSn
                   ? `${t.srvyTmpltExpln || t.srvyTmpltSn} 템플릿 삭제 중`
                   : `${t.srvyTmpltExpln || t.srvyTmpltSn} 템플릿 삭제`}
                 aria-busy={deletingTemplate === t.srvyTmpltSn}
                 disabled={deletingTemplate !== null || loadingTemplate !== null || create.isPending || editing?.srvyTmpltSn === t.srvyTmpltSn}
-                className="h-8 w-8 text-destructive-emphasis hover:bg-destructive/10 shrink-0"
+                className="text-destructive-emphasis hover:bg-destructive/10 shrink-0"
                 onClick={() => t.srvyTmpltSn && beginDelete(t.srvyTmpltSn)}
               >
                 {deletingTemplate === t.srvyTmpltSn

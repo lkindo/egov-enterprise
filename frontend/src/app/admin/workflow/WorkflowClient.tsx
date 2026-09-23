@@ -93,7 +93,7 @@ export default function WorkflowClient() {
                                     <span className="text-xs text-muted-foreground">현재 프로세스</span>
                                     <span className="text-sm font-bold text-foreground">연차/휴가 결재 v1.2</span>
                                 </div>
-                                <Button disabled title="정적 데모에는 새로 불러올 데이터가 없습니다." variant="ghost" size="icon" aria-label="프로세스 캔버스 새로고침 (미지원)" className="h-8 w-8 rounded-lg">
+                                <Button disabled title="정적 데모에는 새로 불러올 데이터가 없습니다." variant="ghost" size="icon-sm" aria-label="프로세스 캔버스 새로고침 (미지원)" className="rounded-lg">
                                     <RefreshCcw size={14} className="text-muted-foreground" />
                                 </Button>
                             </div>

@@ -382,7 +382,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
             data-testid="schedule-edit"
             aria-label={`${item.schdlNm || '제목 없음'} 일정 수정`}
             disabled={scheduleAction !== null}
-            className="h-8 px-3 text-[10px] font-black uppercase"
+            className="px-3 text-[10px] font-black uppercase"
             onClick={() => { setEditingSchedule(item); setScheduleModalOpen(true); }}
           >
             수정
@@ -394,7 +394,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
             aria-label={`${item.schdlNm || '제목 없음'} 일정 ${scheduleAction?.type === 'delete' && scheduleAction.id === item.schdlSn ? '삭제 중' : '삭제'}`}
             aria-busy={scheduleAction?.type === 'delete' && scheduleAction.id === item.schdlSn || undefined}
             disabled={scheduleAction !== null}
-            className="h-8 px-3 text-[10px] font-black uppercase text-rose-500 hover:bg-rose-500 hover:text-white"
+            className="px-3 text-[10px] font-black uppercase text-rose-500 hover:bg-rose-500 hover:text-white"
             onClick={() => handleDeleteSchedule(item)}
           >
             삭제
@@ -444,7 +444,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
           <Button
             variant="ghost"
             size="sm"
-            className="h-9 font-bold text-[11px]"
+            className="font-bold text-[11px] h-[var(--control-h)]"
             aria-label={`${item.rptTtl || '제목 없음'} 보고 수정`}
             disabled={reportAction !== null}
             onClick={() => { setEditingReport(item); setReportModalOpen(true); }}
@@ -454,7 +454,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
           <Button
             variant="ghost"
             size="sm"
-            className="h-9 font-bold text-[11px] text-rose-600 hover:text-rose-700"
+            className="font-bold text-[11px] text-rose-600 hover:text-rose-700 h-[var(--control-h)]"
             aria-label={`${item.rptTtl || '제목 없음'} 보고 ${reportAction?.type === 'delete' && reportAction.id === item.rptpSn ? '삭제 중' : '삭제'}`}
             aria-busy={reportAction?.type === 'delete' && reportAction.id === item.rptpSn || undefined}
             disabled={reportAction !== null}

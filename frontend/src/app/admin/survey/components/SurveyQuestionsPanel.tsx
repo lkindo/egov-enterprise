@@ -669,10 +669,10 @@ export default function SurveyQuestionsPanel() {
                         </span>
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="icon-sm"
                           aria-label={`${q.qstnCn} 문항 수정`}
                           disabled={deletingTarget !== null || editingTarget !== null || addQuestion.isPending || addItem.isPending}
-                          className="h-8 w-8 shrink-0"
+                          className="shrink-0"
                           onClick={() => beginEdit(`question-${q.srvyQstnSn}`, q.qstnCn ?? '')}
                         >
                           <Pencil className="h-4 w-4" aria-hidden="true" />
@@ -681,13 +681,13 @@ export default function SurveyQuestionsPanel() {
                     )}
                     <Button
                       variant="ghost"
-                      size="icon"
+                      size="icon-sm"
                       aria-label={deletingTarget === `question-${q.srvyQstnSn}`
                         ? `${q.qstnCn} 문항 삭제 중`
                         : `${q.qstnCn} 문항 삭제`}
                       aria-busy={deletingTarget === `question-${q.srvyQstnSn}`}
                       disabled={deletingTarget !== null || addQuestion.isPending || addItem.isPending}
-                      className="h-8 w-8 text-destructive-emphasis hover:bg-destructive/10 shrink-0"
+                      className="text-destructive-emphasis hover:bg-destructive/10 shrink-0"
                       onClick={() => beginDelete(
                         `question-${q.srvyQstnSn}`,
                         () => removeQuestion.mutate(q.srvyQstnSn),
@@ -822,7 +822,7 @@ export default function SurveyQuestionsPanel() {
                             }}
                             placeholder="항목 내용"
                             aria-label="새 항목 내용"
-                            className="h-8 text-sm"
+                            className="text-sm h-[var(--control-h-sm)]"
                             maxLength={4000}
                             required
                           />

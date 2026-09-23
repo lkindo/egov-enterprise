@@ -161,7 +161,7 @@ export function SmartNotificationHub() {
                    aria-label={`${tab.label} 필터`}
                    aria-pressed={activeTab === tab.id}
                    className={cn(
-                     "h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all",
+                     "rounded-lg px-4 text-[10px] font-black uppercase transition-all",
                      activeTab === tab.id ? "bg-card shadow-sm text-primary" : "text-muted-foreground"
                    )}
                    onClick={() => setActiveTab(tab.id)}
