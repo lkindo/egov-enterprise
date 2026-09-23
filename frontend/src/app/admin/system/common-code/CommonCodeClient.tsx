@@ -1066,7 +1066,7 @@ export default function CommonCodeClient({
  variant="outline"
  onClick={closeStructureModal}
  disabled={isStructureFormPending}
- className="h-11 flex-1 rounded-lg border-2 border-border text-xs font-bold shadow-sm"
+ className="flex-1 rounded-lg border-2 border-border text-xs font-bold shadow-sm"
  >
  취소
  </Button>
@@ -1075,7 +1075,7 @@ export default function CommonCodeClient({
  onClick={() => submitStructureForm()}
  disabled={isStructureFormPending}
  aria-busy={isStructureFormPending || undefined}
- className="h-11 flex-[2] rounded-lg border-none bg-primary text-xs font-bold text-primary-foreground shadow-sm"
+ className="flex-[2] rounded-lg border-none bg-primary text-xs font-bold text-primary-foreground shadow-sm"
  >
  <Save size={18} aria-hidden="true" />
  {isStructureFormPending ? '저장 중…' : '저장'}
@@ -1119,7 +1119,7 @@ export default function CommonCodeClient({
  variant="outline"
  onClick={closeDetailModal}
  disabled={isDetailWritePending}
- className="h-11 flex-1 rounded-lg border-2 border-border text-xs font-bold shadow-sm"
+ className="flex-1 rounded-lg border-2 border-border text-xs font-bold shadow-sm"
  >
  취소
  </Button>
@@ -1128,7 +1128,7 @@ export default function CommonCodeClient({
  onClick={() => submitDetailForm()}
  disabled={isDetailWritePending}
  aria-busy={isDetailFormPending || undefined}
- className="h-11 flex-[2] rounded-lg border-none bg-primary text-xs font-bold text-primary-foreground shadow-sm"
+ className="flex-[2] rounded-lg border-none bg-primary text-xs font-bold text-primary-foreground shadow-sm"
  >
  <Plus size={18} aria-hidden="true" className="group-hover:rotate-90 transition-transform" />
  {isDetailFormPending ? '저장 중…' : '저장'}

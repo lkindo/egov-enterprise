@@ -255,7 +255,7 @@ export function Header({
             {user ? (
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2.5 pl-2 pr-1.5 h-11 hover:bg-muted rounded-[var(--radius-hub-item)] border border-transparent hover:border-border transition-all" aria-label="사용자 계정 메뉴">
+                    <Button variant="ghost" className="flex items-center gap-2.5 pl-2 pr-1.5 hover:bg-muted rounded-[var(--radius-hub-item)] border border-transparent hover:border-border transition-all" aria-label="사용자 계정 메뉴">
                       <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
                         <User size={16} />
                       </div>

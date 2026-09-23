@@ -41,7 +41,7 @@ export function CodeClusterFields({
  {...field}
  readOnly={mode === 'edit'}
  maxLength={12}
- className="h-11 rounded-lg border-none bg-muted font-mono text-xs font-bold shadow-inner"
+ className="rounded-lg border-none bg-muted font-mono text-xs font-bold shadow-inner"
  placeholder="예: SYS (최대 12자)"
  />
  </FormControl>
@@ -57,7 +57,7 @@ export function CodeClusterFields({
  <FormItem className="space-y-1.5">
  <FormLabel className="text-xs font-bold text-foreground">분류명</FormLabel>
  <FormControl>
- <Input {...field} maxLength={100} className="h-11 rounded-lg border-none bg-muted text-sm font-bold shadow-inner" placeholder="분류명 입력 (최대 100자)" />
+ <Input {...field} maxLength={100} className="rounded-lg border-none bg-muted text-sm font-bold shadow-inner" placeholder="분류명 입력 (최대 100자)" />
  </FormControl>
  <FormMessage className="text-xs font-bold text-destructive-emphasis" />
  </FormItem>
@@ -127,7 +127,7 @@ export function CodeGroupFields({
  {...field}
  readOnly={mode === 'edit'}
  maxLength={20}
- className="h-11 rounded-lg border-none bg-muted font-mono text-xs font-bold shadow-inner"
+ className="rounded-lg border-none bg-muted font-mono text-xs font-bold shadow-inner"
  placeholder="예: COM001 (최대 20자)"
  />
  </FormControl>
@@ -143,7 +143,7 @@ export function CodeGroupFields({
  <FormItem className="space-y-1.5">
  <FormLabel className="text-xs font-bold text-foreground">그룹명</FormLabel>
  <FormControl>
- <Input {...field} maxLength={100} className="h-11 rounded-lg border-none bg-muted text-sm font-bold shadow-inner" placeholder="그룹명 입력 (최대 100자)" />
+ <Input {...field} maxLength={100} className="rounded-lg border-none bg-muted text-sm font-bold shadow-inner" placeholder="그룹명 입력 (최대 100자)" />
  </FormControl>
  <FormMessage className="text-xs font-bold text-destructive-emphasis" />
  </FormItem>
@@ -267,7 +267,7 @@ export function CodeDetailFields({
  {...field}
  readOnly={isEditing}
  maxLength={12}
- className="h-11 rounded-lg font-mono text-xs font-bold shadow-inner border-none bg-muted focus:bg-card transition-all text-left"
+ className="rounded-lg font-mono text-xs font-bold shadow-inner border-none bg-muted focus:bg-card transition-all text-left"
  placeholder="Unique code indicator (최대 12자)"
  />
  </FormControl>
@@ -289,7 +289,7 @@ export function CodeDetailFields({
  <Input
  {...field}
  maxLength={100}
- className="h-11 rounded-lg text-sm font-bold tracking-tight shadow-inner border-none bg-muted focus:bg-card transition-all text-left"
+ className="rounded-lg text-sm font-bold tracking-tight shadow-inner border-none bg-muted focus:bg-card transition-all text-left"
  placeholder="레이블 명칭 입력 (최대 100자)"
  />
  </FormControl>

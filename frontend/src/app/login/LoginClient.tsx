@@ -311,7 +311,7 @@ function LoginContent() {
                                             setError('');
                                             validation.clearError('userId');
                                         }}
-                                        className="h-11 pl-12 rounded-[var(--radius-hub-item)] border-border bg-muted/50 focus:bg-card transition-all shadow-inner font-mono text-sm"
+                                        className="pl-12 rounded-[var(--radius-hub-item)] border-border bg-muted/50 focus:bg-card transition-all shadow-inner font-mono text-sm"
                                         autoComplete="username"
                                     />
                                 </div>
@@ -343,7 +343,7 @@ function LoginContent() {
                                             setError('');
                                             validation.clearError('password');
                                         }}
-                                        className="h-11 pl-12 pr-12 rounded-[var(--radius-hub-item)] border-border bg-muted/50 focus:bg-card transition-all shadow-inner font-mono"
+                                        className="pl-12 pr-12 rounded-[var(--radius-hub-item)] border-border bg-muted/50 focus:bg-card transition-all shadow-inner font-mono"
                                         autoComplete="current-password"
                                     />
                                     <Button
@@ -396,7 +396,7 @@ function LoginContent() {
                                 className="w-full"
                             >
                                 <Button
-                                    className="w-full h-11 rounded-[var(--radius-hub-item)] bg-surface-inverse hover:bg-primary text-surface-inverse-foreground hover:text-primary-foreground font-bold text-xs tracking-tight shadow-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 group"
+                                    className="w-full rounded-[var(--radius-hub-item)] bg-surface-inverse hover:bg-primary text-surface-inverse-foreground hover:text-primary-foreground font-bold text-xs tracking-tight shadow-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 group"
                                     type="submit"
                                     disabled={isSubmitting}
                                 >
