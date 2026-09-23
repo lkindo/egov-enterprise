@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -209,4 +209,48 @@ describe('CSP nonce 계약', () => {
       ].join('\n'),
     ).toEqual([]);
   });
+
+  /*
+   * [2026-09-23 ZAP 주간 스캔 분류] 두 CSP 가 report-to 그룹을 선언하는데 그 그룹을 정의하는
+   * Reporting-Endpoints 헤더가 없어 최신 리포팅 경로가 선언만 있고 동작하지 않았다.
+   * 아래 세 단언이 "선언 · 그룹 정의 · 수집기" 가 같은 한 경로를 가리키는지 묶는다 —
+   * 하나라도 어긋나면 리포트가 사라지는데 브라우저는 아무 오류도 내지 않는다.
+   */
+  it('CSP 의 report-uri·Reporting-Endpoints·수집기 라우트가 같은 경로를 가리킨다', () => {
+    const declared = [...proxySource.matchAll(/report-uri\s+(\S+?);/g)].map((m) => m[1]);
+    expect(declared.length, 'report-uri 선언을 찾지 못했습니다 — 추출이 깨지면 이 계약은 vacuous 합니다')
+      .toBeGreaterThanOrEqual(2);
+    expect(new Set(declared).size, `report-uri 가 서로 다른 경로를 가리킵니다: ${[...new Set(declared)].join(', ')}`)
+      .toBe(1);
+    const reportPath = declared[0];
+
+    const group = proxySource.match(/const REPORTING_ENDPOINTS = `csp-endpoint="\$\{CSP_REPORT_PATH\}"`;/);
+    expect(group, 'Reporting-Endpoints 그룹 정의를 찾지 못했습니다 — report-to 선언이 다시 배선 없는 약속이 됩니다')
+      .not.toBeNull();
+    const constPath = proxySource.match(/const CSP_REPORT_PATH = '([^']+)';/)?.[1];
+    expect(constPath, `CSP_REPORT_PATH(${constPath}) 가 report-uri(${reportPath}) 와 다릅니다`).toBe(reportPath);
+
+    expect(
+      proxySource,
+      'report-to 그룹 이름이 Reporting-Endpoints 의 키와 달라 그룹이 해석되지 않습니다',
+    ).toContain('report-to csp-endpoint;');
+
+    const collector = join(FRONTEND_DIR, 'src', 'app', reportPath.replace(/^\//, ''), 'route.ts');
+    expect(existsSync(collector), `수집기 라우트가 없습니다: ${collector}`).toBe(true);
+    const collectorSource = readFileSync(collector, 'utf8');
+    expect(
+      collectorSource,
+      'Reporting-Endpoints 를 선언하면 브라우저가 reports+json 으로 보냅니다 — 수집기가 그 형식을 받아야 합니다',
+    ).toContain('application/reports+json');
+  });
+
+  it('문서 응답에 COOP 를 단다', () => {
+    expect(
+      proxySource,
+      'Cross-Origin-Opener-Policy 가 사라지면 새 창 링크가 noopener 를 빠뜨렸을 때 opener 가 다시 열립니다',
+    ).toContain("response.headers.set('Cross-Origin-Opener-Policy', 'same-origin')");
+    const applied = [...proxySource.matchAll(/applyDocumentSecurityHeaders\(/g)].length;
+    expect(applied, 'Atlas·앱 문서 두 경로와 정의 자신까지 3곳에서 쓰여야 합니다').toBeGreaterThanOrEqual(3);
+  });
+
 });

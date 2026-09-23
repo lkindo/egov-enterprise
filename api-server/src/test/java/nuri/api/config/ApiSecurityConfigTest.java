@@ -180,6 +180,9 @@ public class ApiSecurityConfigTest extends ControllerTestSupport {
                 .andExpect(header().string("X-XSS-Protection", "1; mode=block"))
                 // 기본 no-referrer 를 바꾼 설정값
                 .andExpect(header().string("Referrer-Policy", "strict-origin-when-cross-origin"))
+                // [2026-09-23 ZAP 90004] CORP 는 Spring Security 기본값이 아니다 — 설정을 지우면 헤더가
+                //   사라지므로 이 단언은 위 두 줄과 달리 실제 회귀 감지력이 있다.
+                .andExpect(header().string("Cross-Origin-Resource-Policy", "same-origin"))
                 // 아래는 프레임워크 기본값 재진술 — 회귀 감지력이 없음을 알고 둔다(위 javadoc 참조)
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"))
                 // HSTS 는 HTTPS 요청에만 실린다(아래 테스트 참조). 평문 요청에 실리면 오히려 설정 오류다.

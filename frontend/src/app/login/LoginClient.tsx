@@ -255,8 +255,13 @@ function LoginContent() {
                             ⚠ 제거한 문구를 이 주석에 인용하지 않는다 — 원장 검증기는 주석을 거르지 않고 부재를 검사한다. */}
                     </CardHeader>
 
+                    {/* [2026-09-23 ZAP 10024] method 를 생략하면 HTML 기본값이 GET 이라, 하이드레이션 전에
+                        제출되면 아이디·비밀번호가 주소창·history·Referer·접근 로그에 그대로 실린다
+                        (주간 스캔이 그 URL 을 실제로 만들어 냈다). handleSubmit 이 preventDefault 하므로
+                        하이드레이션 뒤 동작은 변하지 않고, 그 전 제출은 URL 에 값을 남기지 않는다. */}
                     <form
                         noValidate
+                        method="post"
                         onSubmit={handleSubmit}
                         inert={isSubmitting ? true : undefined}
                         aria-hidden={isSubmitting ? 'true' : undefined}

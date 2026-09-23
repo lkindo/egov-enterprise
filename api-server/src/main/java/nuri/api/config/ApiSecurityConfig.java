@@ -186,7 +186,12 @@ public class ApiSecurityConfig {
                                                                  .includeSubDomains(true)
                                                                  .preload(true))
                                                 .referrerPolicy(referrer -> referrer.policy(
-                                                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
+                                                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                                                                // [2026-09-23 ZAP 90004] 교차 출처 no-cors 하위 리소스 로드를 막는다. 브라우저가 이 서버의
+                                                                //   바이트를 직접 <img src> 로 읽는 경로는 없다 — 첨부는 전부 인증 axios 로 받아 object URL
+                                                                //   로 바꾸고(FileService.fetchBlob), CORS fetch 는 이 헤더의 대상이 아니다.
+                                                                .crossOriginResourcePolicy(corp -> corp.policy(
+                                                                                org.springframework.security.web.header.writers.CrossOriginResourcePolicyHeaderWriter.CrossOriginResourcePolicy.SAME_ORIGIN)))
                                 .authenticationProvider(egovAuthenticationProvider)
                                 .addFilterBefore(new CredentialRequestTargetFilter(),
                                                 org.springframework.web.filter.CorsFilter.class)

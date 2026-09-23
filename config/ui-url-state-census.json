@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "ac1e370f85ba930bbb3abadfb356840973ad444b41a9209e959e0936dfa2d4ee"
+    "inventoryHash": "a46ac4fb2fdb3965108aa4d1e17e0556a0132cf0cd9447fb89c827ce14c4cab6"
   },
   "summary": {
     "sourceFileCount": 551,
-    "records": 390,
-    "syntaxOccurrences": 459,
-    "ambiguousRecords": 359,
-    "unverifiedRecords": 390,
+    "records": 389,
+    "syntaxOccurrences": 458,
+    "ambiguousRecords": 358,
+    "unverifiedRecords": 389,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 11,
@@ -44,7 +44,7 @@
     "byKind": {
       "config-redirect": 13,
       "dynamic-segment": 11,
-      "form-producer": 55,
+      "form-producer": 54,
       "navigation-producer": 168,
       "page-redirect": 16,
       "query-builder": 21,
@@ -54,7 +54,7 @@
       "url-observer": 8
     },
     "bySurface": {
-      "navigation": 380,
+      "navigation": 379,
       "request-telemetry": 10
     }
   },
@@ -13833,44 +13833,6 @@
       "evidence": {
         "source": "frontend/src/app/help/policies/[type]/page.tsx",
         "detector": "filesystem-route-parser",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-B5F403F23CA8B7",
-      "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "intercepted-submit",
-      "source": "frontend/src/app/login/LoginClient.tsx",
-      "producerFile": "frontend/src/app/login/LoginClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/login",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "public",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/login/LoginClient.tsx",
-        "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },
