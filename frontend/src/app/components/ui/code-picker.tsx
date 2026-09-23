@@ -254,7 +254,7 @@ export function CodePicker({
                 type="button"
                 onClick={backToGroups}
                 aria-label="그룹 목록으로 돌아가기"
-                className="w-8 h-8 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+                className="rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0 size-[var(--control-h-sm)]"
               >
                 <ChevronLeft size={16} aria-hidden="true" />
               </button>

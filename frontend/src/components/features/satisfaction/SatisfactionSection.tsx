@@ -318,9 +318,9 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
                   </div>
                   <Button
                     variant="ghost"
-                    size="icon"
+                    size="icon-sm"
                     aria-label={`${item.userNm || '익명'}의 만족도 수정`}
-                    className="h-8 w-8 shrink-0"
+                    className="shrink-0"
                     disabled={deletingSatisfactionId !== null || editingId !== null}
                     onClick={() => startEdit(item)}
                   >
@@ -328,10 +328,10 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
                   </Button>
                   <Button
                     variant="ghost"
-                    size="icon"
+                    size="icon-sm"
                     aria-label={`${item.userNm || '익명'}의 만족도 ${deletingSatisfactionId === item.dgstfnSn ? '삭제 중…' : '삭제'}`}
                     aria-busy={deletingSatisfactionId === item.dgstfnSn || undefined}
-                    className="h-8 w-8 text-destructive-emphasis hover:bg-destructive/10 shrink-0"
+                    className="text-destructive-emphasis hover:bg-destructive/10 shrink-0"
                     disabled={deletingSatisfactionId !== null || editingId !== null}
                     onClick={() => item.dgstfnSn && handleDelete(item.dgstfnSn, item.userNm || '익명')}
                   >

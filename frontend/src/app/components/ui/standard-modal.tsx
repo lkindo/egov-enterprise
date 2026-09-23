@@ -101,7 +101,7 @@ export function StandardModal({
               size="icon"
               aria-label="닫기"
               disabled={closeDisabled}
-              className="rounded-lg h-9 w-9 text-muted-foreground hover:text-foreground"
+              className="rounded-lg text-muted-foreground hover:text-foreground"
             >
               <X size={18} />
             </Button>

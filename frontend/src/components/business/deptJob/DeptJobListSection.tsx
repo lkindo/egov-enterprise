@@ -242,7 +242,7 @@ export function DeptJobListSection({
           <Button
             variant="ghost"
             size="sm"
-            className="h-9 font-bold text-[11px]"
+            className="font-bold text-[11px] h-[var(--control-h)]"
             aria-label={`${item.deptTaskNm || '업무'} 상세 보기`}
             disabled={jobAction !== null}
             onClick={() => router.push(`/smart-toolkit/dept-job/${item.deptTaskSn}`)}
@@ -258,7 +258,7 @@ export function DeptJobListSection({
             disabled={jobAction !== null}
             /* 상태색은 하드코딩 팔레트(rose)가 아니라 시맨틱 토큰을 쓴다 — design-tokens.md 의
                치환 지침 `red·rose → destructive(강조는 -emphasis)`. */
-            className="h-9 px-3 font-bold text-[11px] text-destructive-emphasis hover:bg-destructive hover:text-destructive-foreground"
+            className="px-3 font-bold text-[11px] text-destructive-emphasis hover:bg-destructive hover:text-destructive-foreground h-[var(--control-h)]"
             onClick={() => handleDeleteJob(item)}
           >
             삭제

@@ -107,7 +107,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                   variant="ghost" 
                   size="sm" 
                   onClick={onMarkAllRead}
-                  className="h-8 px-2 text-xs hover:text-primary"
+                  className="px-2 text-xs hover:text-primary"
                 >
                   {/*
                     [2026-08-29] '모두 읽음' → '불러온 알림 읽음'.

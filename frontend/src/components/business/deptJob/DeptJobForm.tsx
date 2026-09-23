@@ -273,7 +273,7 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
                                     <Button
                                         type="button"
                                         variant="ghost"
-                                        className="h-8 px-3 rounded-md text-xs font-bold shrink-0"
+                                        className="px-3 rounded-md text-xs font-bold shrink-0 h-[var(--control-h-sm)]"
                                         onClick={() => {
                                             // 빈 문자열이 아니라 undefined 로 되돌린다. 등록 경로에서는 둘 다
                                             // '미지정'으로 처리되지만 수정 경로는 빈 문자열을 그대로 저장한다.
