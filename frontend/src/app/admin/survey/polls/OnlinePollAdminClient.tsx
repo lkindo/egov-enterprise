@@ -44,6 +44,16 @@ import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { adminPollFormSchema } from '../manage/poll-form-validation';
+import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+
+/**
+ * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
+ *
+ * 종전에는 들어온 쿼리를 통째로 복사해 재발행했다 — 모르는 이름이 한 번 들어오면 이동마다
+ * 다시 붙는 캐리어였다(DEC-OPS-029 Q2). 새 파라미터를 도입하면 이 목록에 함께 넣어야 하고,
+ * 빠뜨리면 이동 시 조용히 사라진다.
+ */
+const LIST_PARAM_KEYS = ['page'] as const;
 
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
 const DEFAULT_PAGE_SIZE = 10;
@@ -66,7 +76,7 @@ export default function OnlinePollAdminClient() {
  const page = Number.isFinite(pageParam) && pageParam > 0 ? Math.floor(pageParam) : 0;
 
  const setPage = (next: number) => {
- const params = new URLSearchParams(searchParams);
+ const params = pickAllowedParams(searchParams, LIST_PARAM_KEYS);
  if (next <= 0) params.delete('page');
  else params.set('page', String(next));
  const query = params.toString();

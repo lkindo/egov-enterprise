@@ -36,6 +36,16 @@ import { useChartColors } from '@/lib/hooks/useChartColors';
 import { toDisplayYmd } from '@/lib/format-date';
 import { getPollStatus, POLL_STATUS_LABEL } from '@/lib/poll-status';
 import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
+import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+
+/**
+ * 이 라우트가 URL 에 싣는 쿼리 키 전수. 탭 하나만 읽는다.
+ *
+ * 종전에는 들어온 쿼리를 통째로 복사해 재발행했다 — 모르는 이름이 한 번 들어오면 이동마다
+ * 다시 붙는 캐리어였다(DEC-OPS-029 Q2). 새 파라미터를 도입하면 이 목록에 함께 넣어야 하고,
+ * 빠뜨리면 이동 시 조용히 사라진다.
+ */
+const HUB_PARAM_KEYS = ['tab'] as const;
 
 // --- Types ---
 const STATS_TABS = [
@@ -116,7 +126,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
       router.push(route, { scroll: false });
       return;
     }
-    const params = new URLSearchParams(searchParams.toString());
+    const params = pickAllowedParams(searchParams, HUB_PARAM_KEYS);
     params.set('tab', tab);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };

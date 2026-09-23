@@ -20,6 +20,16 @@ import SurveyManageClient from '../manage/SurveyManageClient';
 import SurveyStatsClient from '../stats/SurveyStatsClient';
 import SurveyQuestionsPanel from '../components/SurveyQuestionsPanel';
 import SurveyTemplatesPanel from '../components/SurveyTemplatesPanel';
+import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+
+/**
+ * 이 라우트가 URL 에 싣는 쿼리 키 전수. 탭 하나만 읽는다.
+ *
+ * 종전에는 들어온 쿼리를 통째로 복사해 재발행했다 — 모르는 이름이 한 번 들어오면 이동마다
+ * 다시 붙는 캐리어였다(DEC-OPS-029 Q2). 새 파라미터를 도입하면 이 목록에 함께 넣어야 하고,
+ * 빠뜨리면 이동 시 조용히 사라진다.
+ */
+const HUB_PARAM_KEYS = ['tab'] as const;
 
 // 허브 탭 정의 — 아래 TabsList/TabsContent 와 1:1 로 유지한다.
 //
@@ -108,7 +118,7 @@ export function SurveyHubClient() {
  // 탭은 URL 파생값이다(P1-7). replace 를 쓰는 이유: 탭 전환마다 히스토리가 쌓이면
  // 뒤로가기가 탭 왕복에 갇힌다. 공유·새로고침 복원은 replace 로도 그대로 동작한다.
  const onTabChange = (value: string) => {
- const params = new URLSearchParams(searchParams);
+ const params = pickAllowedParams(searchParams, HUB_PARAM_KEYS);
  params.set('tab', value);
  router.replace(`/admin/survey/hub?${params.toString()}`, { scroll: false });
  };

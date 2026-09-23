@@ -52,6 +52,16 @@ import {
 } from '@/components/ui/form';
 
 import { BannerDtoSchema, PopupDtoSchema } from '@/types/generated-zod';
+import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+
+/**
+ * 이 라우트가 URL 에 싣는 쿼리 키 전수. 탭과 페이지를 함께 읽는다.
+ *
+ * 종전에는 들어온 쿼리를 통째로 복사해 재발행했다 — 모르는 이름이 한 번 들어오면 이동마다
+ * 다시 붙는 캐리어였다(DEC-OPS-029 Q2). 새 파라미터를 도입하면 이 목록에 함께 넣어야 하고,
+ * 빠뜨리면 이동 시 조용히 사라진다.
+ */
+const LIST_PARAM_KEYS = ['page', 'tab'] as const;
 
 export const bannerSchema = BannerDtoSchema.extend({
  bnrNm: BannerDtoSchema.shape.bnrNm.min(1),
@@ -138,7 +148,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  const page = Math.max(1, Number(searchParams.get('page')) || 1);
 
  const syncUrl = useCallback((tab: 'banner' | 'popup', nextPage: number) => {
- const params = new URLSearchParams(searchParams.toString());
+ const params = pickAllowedParams(searchParams, LIST_PARAM_KEYS);
  params.set('tab', tab);
  params.set('page', String(nextPage));
  router.replace(`${pathname}?${params.toString()}`, { scroll: false });

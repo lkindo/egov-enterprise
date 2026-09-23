@@ -86,6 +86,16 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { SampleDataBadge, NavButton, StatusIndicator, HarnessDashboardOverview, SkillDetailView, TestDetailView } from './components/MonitoringPanels';
 import { toDisplayDateTime } from '@/lib/format-date';
 import { LOGIN_LOG_EXPORT_HEADERS } from './log-export-headers';
+import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+
+/**
+ * 이 라우트가 URL 에 싣는 쿼리 키 전수. `updateQuery` 호출부가 쓰는 키는 `tab`·`page` 둘뿐이다.
+ *
+ * 종전에는 들어온 쿼리를 통째로 복사해 재발행했다 — 모르는 이름이 한 번 들어오면 이동마다
+ * 다시 붙는 캐리어였다(DEC-OPS-029 Q2). 새 파라미터를 도입하면 이 목록에 함께 넣어야 하고,
+ * 빠뜨리면 이동 시 조용히 사라진다.
+ */
+const HUB_PARAM_KEYS = ['tab', 'page'] as const;
 
 export type MonitoringTab = 'SECURITY' | 'SYSTEM' | 'LOGIN' | 'OBSERVABILITY' | 'COMMENTS' | 'TOPOLOGY' | 'HARNESS';
 
@@ -244,7 +254,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
    * 진입 시 사이드바 활성 메뉴가 풀리고 중복 라우트로 이탈했다(감사 mr-04 / sys-mon-18).
    */
   const updateQuery = (updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = pickAllowedParams(searchParams, HUB_PARAM_KEYS);
     Object.entries(updates).forEach(([key, value]) => {
       if (value === null) params.delete(key);
       else params.set(key, value);

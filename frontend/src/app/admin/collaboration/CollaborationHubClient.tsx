@@ -18,6 +18,16 @@ import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import Link from 'next/link';
+import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+
+/**
+ * 이 라우트가 URL 에 싣는 쿼리 키 전수. 탭 하나만 읽는다.
+ *
+ * 종전에는 들어온 쿼리를 통째로 복사해 재발행했다 — 모르는 이름이 한 번 들어오면 이동마다
+ * 다시 붙는 캐리어였다(DEC-OPS-029 Q2). 새 파라미터를 도입하면 이 목록에 함께 넣어야 하고,
+ * 빠뜨리면 이동 시 조용히 사라진다.
+ */
+const HUB_PARAM_KEYS = ['tab'] as const;
 
 const COLLABORATION_TABS = ['MESSAGES', 'SCRAPS'] as const;
 type CollaborationTab = (typeof COLLABORATION_TABS)[number];
@@ -55,7 +65,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
 
  const handleTabChange = useCallback((tab: CollaborationTab) => {
    setSearchKeyword('');
-   const params = new URLSearchParams(searchParams.toString());
+   const params = pickAllowedParams(searchParams, HUB_PARAM_KEYS);
    params.set('tab', tab);
    // ADR-0009는 URL 사용을 의무화하지 않는다. 이 화면은 검색어를 로컬 상태로 유지한다.
    router.replace(`${pathname}?${params.toString()}`, { scroll: false });

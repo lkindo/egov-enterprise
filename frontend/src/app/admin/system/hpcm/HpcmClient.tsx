@@ -29,6 +29,16 @@ import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
 import { HpcmDtoSchema } from '@/types/generated-zod';
+import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+
+/**
+ * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
+ *
+ * 종전에는 들어온 쿼리를 통째로 복사해 재발행했다 — 모르는 이름이 한 번 들어오면 이동마다
+ * 다시 붙는 캐리어였다(DEC-OPS-029 Q2). 새 파라미터를 도입하면 이 목록에 함께 넣어야 하고,
+ * 빠뜨리면 이동 시 조용히 사라진다.
+ */
+const LIST_PARAM_KEYS = ['page'] as const;
 
 /** 물리 컬럼 상한(tb_hlp_info.hlp_expln varchar(4000), V2_19). 생성 계약의 65535 가 아니다. */
 const HLP_EXPLN_MAX = 4000;
@@ -114,7 +124,7 @@ export default function HpcmClient({
   /** 페이지는 URL 에 반영한다 — 새로고침·뒤로가기로 보던 페이지가 복원된다. */
   const goToPage = useCallback((next: number) => {
     setPage(next);
-    const params = new URLSearchParams(searchParams.toString());
+    const params = pickAllowedParams(searchParams, LIST_PARAM_KEYS);
     if (next <= 1) params.delete('page');
     else params.set('page', String(next));
     const query = params.toString();

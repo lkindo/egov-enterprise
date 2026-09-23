@@ -35,6 +35,16 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 });
 
 import { ExternalHrDtoRequestSchema } from '@/types/generated-zod';
+import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+
+/**
+ * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
+ *
+ * 종전에는 들어온 쿼리를 통째로 복사해 재발행했다 — 모르는 이름이 한 번 들어오면 이동마다
+ * 다시 붙는 캐리어였다(DEC-OPS-029 Q2). 새 파라미터를 도입하면 이 목록에 함께 넣어야 하고,
+ * 빠뜨리면 이동 시 조용히 사라진다.
+ */
+const LIST_PARAM_KEYS = ['page'] as const;
 
 /** 식별자 축 — 등록·수정 공통. 복합키라 수정 모드에서는 입력이 잠긴다. */
 const identityShape = {
@@ -145,7 +155,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
   // ADR-0009는 URL 사용을 의무화하지 않는다. 이 화면은 검색어를 로컬 상태로 유지한다.
   const page = Math.max(1, Number(searchParams.get('page')) || 1);
   const setPage = useCallback((next: number) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = pickAllowedParams(searchParams, LIST_PARAM_KEYS);
     if (next <= 1) params.delete('page');
     else params.set('page', String(next));
     const qs = params.toString();

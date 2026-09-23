@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "a46ac4fb2fdb3965108aa4d1e17e0556a0132cf0cd9447fb89c827ce14c4cab6"
+    "inventoryHash": "3fed081af6002999412105bcaac04a51a78ec48dc4852b0304c6f4ab11bc104e"
   },
   "summary": {
-    "sourceFileCount": 551,
-    "records": 389,
-    "syntaxOccurrences": 458,
-    "ambiguousRecords": 358,
-    "unverifiedRecords": 389,
+    "sourceFileCount": 552,
+    "records": 390,
+    "syntaxOccurrences": 459,
+    "ambiguousRecords": 344,
+    "unverifiedRecords": 390,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 11,
@@ -47,14 +47,14 @@
       "form-producer": 54,
       "navigation-producer": 168,
       "page-redirect": 16,
-      "query-builder": 21,
+      "query-builder": 22,
       "query-consumer": 56,
       "query-producer": 40,
       "request-query-producer": 2,
       "url-observer": 8
     },
     "bySurface": {
-      "navigation": 379,
+      "navigation": 380,
       "request-telemetry": 10
     }
   },
@@ -1844,10 +1844,10 @@
       }
     },
     {
-      "id": "URL-0305B21485E872",
+      "id": "URL-B0EA93E4216CE1",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "allowlist-rebuild",
       "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
       "producerFile": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
       "consumerFile": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
@@ -1855,26 +1855,18 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<unknown-source-query>",
+          "name": "tab",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "currentBehavior": "URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -1892,7 +1884,7 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
-        "detector": "url-search-params-constructor",
+        "detector": "url-search-params-allowlist-rebuild",
         "occurrenceCount": 1
       }
     },
@@ -5470,10 +5462,10 @@
       }
     },
     {
-      "id": "URL-8D985BC7DB856A",
+      "id": "URL-52817F7C45B683",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "allowlist-rebuild",
       "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
       "producerFile": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
       "consumerFile": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
@@ -5481,26 +5473,18 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<unknown-source-query>",
+          "name": "tab",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "currentBehavior": "URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -5518,7 +5502,7 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
-        "detector": "url-search-params-constructor",
+        "detector": "url-search-params-allowlist-rebuild",
         "occurrenceCount": 1
       }
     },
@@ -5592,55 +5576,6 @@
         }
       ],
       "currentBehavior": "URL search parameter is consumed with get().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-51FDE831D1CF88",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "delete",
-      "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/help",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "bbsId",
-          "dataClass": "unverified",
-          "recommendation": "deny",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "record-locator-name-signal"
-          ]
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with delete().",
       "riskSignals": [],
       "ambiguityReasons": [
         "producer-consumer-join-unresolved"
@@ -5830,10 +5765,10 @@
       }
     },
     {
-      "id": "URL-FAA94BC92D4BA9",
+      "id": "URL-3CE038F93A91C6",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "allowlist-rebuild",
       "source": "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
       "producerFile": "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
       "consumerFile": "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
@@ -5841,26 +5776,18 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<unknown-source-query>",
+          "name": "page",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "currentBehavior": "URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -5878,7 +5805,7 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
-        "detector": "url-search-params-constructor",
+        "detector": "url-search-params-allowlist-rebuild",
         "occurrenceCount": 1
       }
     },
@@ -6101,10 +6028,10 @@
       }
     },
     {
-      "id": "URL-FAA79FD1F68409",
+      "id": "URL-8742496FE842B5",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "allowlist-rebuild",
       "source": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
       "producerFile": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
       "consumerFile": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
@@ -6112,26 +6039,18 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<unknown-source-query>",
+          "name": "page",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "currentBehavior": "URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -6149,7 +6068,7 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
-        "detector": "url-search-params-constructor",
+        "detector": "url-search-params-allowlist-rebuild",
         "occurrenceCount": 1
       }
     },
@@ -6373,10 +6292,10 @@
       }
     },
     {
-      "id": "URL-B090CC2A6B4017",
+      "id": "URL-36ED522F3C7EBD",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "allowlist-rebuild",
       "source": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
       "producerFile": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
       "consumerFile": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
@@ -6384,26 +6303,26 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<unknown-source-query>",
+          "name": "page",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
+        },
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "currentBehavior": "URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -6421,7 +6340,7 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
-        "detector": "url-search-params-constructor",
+        "detector": "url-search-params-allowlist-rebuild",
         "occurrenceCount": 1
       }
     },
@@ -7227,10 +7146,10 @@
       }
     },
     {
-      "id": "URL-729B7BCCFD2FE5",
+      "id": "URL-BCA7AAB0C48C34",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "allowlist-rebuild",
       "source": "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
       "producerFile": "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
       "consumerFile": "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
@@ -7238,26 +7157,18 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<unknown-source-query>",
+          "name": "tab",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "currentBehavior": "URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -7275,7 +7186,7 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-        "detector": "url-search-params-constructor",
+        "detector": "url-search-params-allowlist-rebuild",
         "occurrenceCount": 1
       }
     },
@@ -7757,10 +7668,10 @@
       }
     },
     {
-      "id": "URL-173E9E037B9165",
+      "id": "URL-6A9384A902AF2D",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "allowlist-rebuild",
       "source": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
       "producerFile": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
       "consumerFile": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
@@ -7768,26 +7679,18 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<unknown-source-query>",
+          "name": "tab",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "currentBehavior": "URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -7805,7 +7708,7 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
-        "detector": "url-search-params-constructor",
+        "detector": "url-search-params-allowlist-rebuild",
         "occurrenceCount": 1
       }
     },
@@ -8348,10 +8251,10 @@
       }
     },
     {
-      "id": "URL-39C8302F15DD2C",
+      "id": "URL-EE520615DC1BA9",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "allowlist-rebuild",
       "source": "frontend/src/app/admin/survey/polls/OnlinePollAdminClient.tsx",
       "producerFile": "frontend/src/app/admin/survey/polls/OnlinePollAdminClient.tsx",
       "consumerFile": "frontend/src/app/admin/survey/polls/OnlinePollAdminClient.tsx",
@@ -8359,26 +8262,18 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<unknown-source-query>",
+          "name": "page",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "currentBehavior": "URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -8396,7 +8291,7 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/polls/OnlinePollAdminClient.tsx",
-        "detector": "url-search-params-constructor",
+        "detector": "url-search-params-allowlist-rebuild",
         "occurrenceCount": 1
       }
     },
@@ -8726,10 +8621,10 @@
       }
     },
     {
-      "id": "URL-86DD33556C1B10",
+      "id": "URL-2CD5757301D831",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "allowlist-rebuild",
       "source": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
       "producerFile": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
       "consumerFile": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
@@ -8737,26 +8632,26 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<unknown-source-query>",
+          "name": "page",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
+        },
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "currentBehavior": "URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -8774,7 +8669,7 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
-        "detector": "url-search-params-constructor",
+        "detector": "url-search-params-allowlist-rebuild",
         "occurrenceCount": 1
       }
     },
@@ -9304,10 +9199,10 @@
       }
     },
     {
-      "id": "URL-C5E7D05FEFCF7E",
+      "id": "URL-9DE9AAC149D918",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "allowlist-rebuild",
       "source": "frontend/src/app/admin/system/common-code/CommonCodeHubClient.tsx",
       "producerFile": "frontend/src/app/admin/system/common-code/CommonCodeHubClient.tsx",
       "consumerFile": "frontend/src/app/admin/system/common-code/CommonCodeHubClient.tsx",
@@ -9315,26 +9210,18 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<unknown-source-query>",
+          "name": "tab",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "currentBehavior": "URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -9352,7 +9239,7 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/common-code/CommonCodeHubClient.tsx",
-        "detector": "url-search-params-constructor",
+        "detector": "url-search-params-allowlist-rebuild",
         "occurrenceCount": 1
       }
     },
@@ -9624,10 +9511,10 @@
       }
     },
     {
-      "id": "URL-8D5C8E1694B5AA",
+      "id": "URL-3731EFB75E120A",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "allowlist-rebuild",
       "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
       "producerFile": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
       "consumerFile": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
@@ -9635,26 +9522,18 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<unknown-source-query>",
+          "name": "page",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "currentBehavior": "URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -9672,7 +9551,7 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
-        "detector": "url-search-params-constructor",
+        "detector": "url-search-params-allowlist-rebuild",
         "occurrenceCount": 1
       }
     },
@@ -10310,10 +10189,10 @@
       }
     },
     {
-      "id": "URL-BA1069ECDC3019",
+      "id": "URL-B13EFF20DF9737",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "allowlist-rebuild",
       "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
       "producerFile": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
       "consumerFile": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
@@ -10321,26 +10200,26 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<unknown-source-query>",
+          "name": "page",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
+        },
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "currentBehavior": "URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -10358,7 +10237,7 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
-        "detector": "url-search-params-constructor",
+        "detector": "url-search-params-allowlist-rebuild",
         "occurrenceCount": 1
       }
     },
@@ -11074,10 +10953,10 @@
       }
     },
     {
-      "id": "URL-218B024BF27369",
+      "id": "URL-1F4408E8370231",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "allowlist-rebuild",
       "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
       "producerFile": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
       "consumerFile": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
@@ -11085,26 +10964,18 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<unknown-source-query>",
+          "name": "page",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "currentBehavior": "URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -11122,7 +10993,7 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-        "detector": "url-search-params-constructor",
+        "detector": "url-search-params-allowlist-rebuild",
         "occurrenceCount": 1
       }
     },
@@ -11498,10 +11369,10 @@
       }
     },
     {
-      "id": "URL-3F16448F69951F",
+      "id": "URL-F14F631E8246BC",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "allowlist-rebuild",
       "source": "frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx",
       "producerFile": "frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx",
       "consumerFile": "frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx",
@@ -11509,26 +11380,18 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<unknown-source-query>",
+          "name": "page",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "currentBehavior": "URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -11546,7 +11409,7 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx",
-        "detector": "url-search-params-constructor",
+        "detector": "url-search-params-allowlist-rebuild",
         "occurrenceCount": 1
       }
     },
@@ -11769,10 +11632,10 @@
       }
     },
     {
-      "id": "URL-AB560219C0644A",
+      "id": "URL-6573C18444381C",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "allowlist-rebuild",
       "source": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
       "producerFile": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
       "consumerFile": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
@@ -11780,26 +11643,18 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<unknown-source-query>",
+          "name": "page",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "currentBehavior": "URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -11817,7 +11672,7 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
-        "detector": "url-search-params-constructor",
+        "detector": "url-search-params-allowlist-rebuild",
         "occurrenceCount": 1
       }
     },
@@ -16932,6 +16787,95 @@
         "source": "frontend/src/lib/navigation/active-menu.ts",
         "detector": "url-search-param-method",
         "occurrenceCount": 2
+      }
+    },
+    {
+      "id": "URL-2C54E7CE9FBE79",
+      "surface": "navigation",
+      "kind": "query-builder",
+      "operation": "construct-query",
+      "source": "frontend/src/lib/navigation/allowlist-params.ts",
+      "producerFile": "frontend/src/lib/navigation/allowlist-params.ts",
+      "consumerFile": "frontend/src/lib/navigation/allowlist-params.ts",
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "A URLSearchParams builder is created; its complete key population needs review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/lib/navigation/allowlist-params.ts",
+        "detector": "url-search-params-constructor",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-B29CEFE3ECDC94",
+      "surface": "navigation",
+      "kind": "query-producer",
+      "operation": "set",
+      "source": "frontend/src/lib/navigation/allowlist-params.ts",
+      "producerFile": "frontend/src/lib/navigation/allowlist-params.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "<computed>",
+          "dataClass": "unverified",
+          "recommendation": "deny-until-reviewed",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": [
+            "computed-or-aggregate-state"
+          ]
+        }
+      ],
+      "currentBehavior": "URL search parameter is mutated with set().",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-query-key",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/lib/navigation/allowlist-params.ts",
+        "detector": "url-search-param-method",
+        "occurrenceCount": 1
       }
     },
     {

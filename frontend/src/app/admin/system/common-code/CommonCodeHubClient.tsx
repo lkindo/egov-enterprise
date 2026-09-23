@@ -13,6 +13,22 @@ import { CmmnClCode, CmmnCode, CmmnDetailCode } from '@/types/foundation/system'
 import CommonCodeClient from './CommonCodeClient';
 import AdministCodeClient from '../codes/administ/AdministCodeClient';
 import InstitutionCodeClient from '../codes/institution/InstitutionCodeClient';
+import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+
+/**
+ * 이 라우트가 URL 에 싣는 쿼리 키 전수. 탭 하나만 실어 보낸다.
+ *
+ * ⚠ 진입 딥링크의 groupId 는 **일부러 목록에 두지 않는다.** 그 값은 서버 컴포넌트 page.tsx 가
+ *   읽어 STANDARD 탭의 그룹을 고르는 데만 쓰이므로, ADMINIST·INSTITUTION 으로 옮긴 뒤에도
+ *   들고 다니면 의미 없는 상태가 URL 에 남는다. 종전 copy-all 은 그것을 우연히 보존했을 뿐이고,
+ *   master-detail 채택 census 가 이 화면에 그 키의 리터럴 자체를 금지한다(DEC-OPS-022).
+ *   진입 경로는 그대로다 — page.tsx 의 소비는 건드리지 않는다.
+ *
+ * 종전에는 들어온 쿼리를 통째로 복사해 재발행했다 — 모르는 이름이 한 번 들어오면 이동마다
+ * 다시 붙는 캐리어였다(DEC-OPS-029 Q2). 새 파라미터를 도입하면 이 목록에 함께 넣어야 하고,
+ * 빠뜨리면 이동 시 조용히 사라진다.
+ */
+const HUB_PARAM_KEYS = ['tab'] as const;
 
 // --- Types ---
 type CodeHubTab = 'STANDARD' | 'ADMINIST' | 'INSTITUTION';
@@ -51,7 +67,7 @@ export default function CommonCodeHubClient({
   const setActiveTab = useCallback((tab: CodeHubTab) => {
     if (tab === activeTab) return;
     restoreTabFocusRef.current = true;
-    const params = new URLSearchParams(searchParams.toString());
+    const params = pickAllowedParams(searchParams, HUB_PARAM_KEYS);
     params.set('tab', tab);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }, [activeTab, router, pathname, searchParams]);
