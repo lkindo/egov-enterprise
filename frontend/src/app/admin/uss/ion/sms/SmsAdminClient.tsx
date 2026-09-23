@@ -557,7 +557,7 @@ export default function SmsAdminClient({
                             />
                           </FormControl>
                         </div>
-                        <Button type="button" variant="outline" onClick={handleAddNumber} className="h-11 px-4 rounded-lg shrink-0" aria-label="수신 번호 추가">
+                        <Button type="button" variant="outline" onClick={handleAddNumber} className="px-4 rounded-lg shrink-0" aria-label="수신 번호 추가">
                           <Plus size={16} aria-hidden="true" /> 추가
                         </Button>
                         <Button
@@ -565,7 +565,7 @@ export default function SmsAdminClient({
                           variant="outline"
                           data-testid="sms-recipient-picker-btn"
                           onClick={() => setIsPickerOpen(true)}
-                          className="h-11 px-4 rounded-lg shrink-0 gap-2"
+                          className="px-4 rounded-lg shrink-0 gap-2"
                         >
                           <Users size={16} aria-hidden="true" /> 수신자 찾기
                         </Button>
@@ -610,7 +610,7 @@ export default function SmsAdminClient({
                   variant="outline"
                   onClick={() => handleSendOpenChange(false)}
                   disabled={isSending || form.formState.isSubmitting}
-                  className="h-11 px-10 rounded-lg border-2 border-border font-bold text-xs tracking-widest hover:bg-muted transition-all hover:border-border"
+                  className="px-10 rounded-lg border-2 border-border font-bold text-xs tracking-widest hover:bg-muted transition-all hover:border-border"
                 >
                   취소
                 </Button>
@@ -618,7 +618,7 @@ export default function SmsAdminClient({
                   type="submit"
                   disabled={isSending || form.formState.isSubmitting}
                   aria-busy={isSending || form.formState.isSubmitting}
-                  className="h-11 px-16 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-[0.3em] shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
+                  className="px-16 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-[0.3em] shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
                 >
                   {isSending ? <RefreshCcw size={18} className="animate-spin" aria-hidden="true" /> : <Send size={18} aria-hidden="true" />}
                   {isSending ? '발송 중…' : '발송'}

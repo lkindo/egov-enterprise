@@ -128,7 +128,7 @@ export function UserManageForm({
                       readOnly={mode === 'edit'}
                       maxLength={20}
                       className={cn(
-                        "h-11 rounded-lg text-xs font-mono font-bold shadow-inner transition-all",
+                        "rounded-lg text-xs font-mono font-bold shadow-inner transition-all",
                         mode === 'edit' ? "bg-muted/50 border-none" : "focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
@@ -158,7 +158,7 @@ export function UserManageForm({
                       {...field}
                       maxLength={50}
                       className={cn(
-                        "h-11 rounded-lg text-sm font-bold tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
+                        "rounded-lg text-sm font-bold tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
                       placeholder="예: 홍길동"
@@ -189,7 +189,7 @@ export function UserManageForm({
                       {...field}
                       maxLength={50}
                       className={cn(
-                        "h-11 rounded-lg text-xs font-medium border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
+                        "rounded-lg text-xs font-medium border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
                       placeholder="example@nuri.com"
@@ -218,7 +218,7 @@ export function UserManageForm({
                       maxLength={11}
                       inputMode="tel"
                       className={cn(
-                        "h-11 rounded-lg text-xs font-medium border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
+                        "rounded-lg text-xs font-medium border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
                       placeholder="010-0000-0000"
@@ -251,7 +251,7 @@ export function UserManageForm({
                       type="password"
                       maxLength={100}
                       className={cn(
-                        "h-11 rounded-lg text-xs border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
+                        "rounded-lg text-xs border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
                       placeholder="영문·숫자·특수문자 포함 8자 이상"
@@ -280,7 +280,7 @@ export function UserManageForm({
                   <select
                     {...field}
                     className={cn(
-                        "w-full h-11 px-6 rounded-lg border-2 border-border bg-muted text-xs font-bold outline-none shadow-inner transition-all",
+                        "w-full h-[var(--control-h)] px-6 rounded-lg border-2 border-border bg-muted text-xs font-bold outline-none shadow-inner transition-all",
                         fieldState.error ? "border-destructive ring-destructive/10 ring-4" : "focus:border-primary/50 focus:ring-4 focus:ring-primary/10"
                     )}
                   >
@@ -305,7 +305,7 @@ export function UserManageForm({
             onClick={() => {
               if (!areActionsDisabled) onCancel();
             }}
-            className="flex-1 h-11 rounded-lg font-bold text-xs border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
+            className="flex-1 h-[var(--control-h)] rounded-lg font-bold text-xs border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
           >
             취소
           </button>
@@ -313,7 +313,7 @@ export function UserManageForm({
             type="submit"
             disabled={areActionsDisabled}
             aria-busy={isWritePending || undefined}
-            className="flex-[2] h-11 rounded-lg font-bold text-xs tracking-widest shadow-xl bg-surface-inverse text-surface-inverse-foreground hover:bg-primary transition-all group"
+            className="flex-[2] rounded-lg font-bold text-xs tracking-widest shadow-xl bg-surface-inverse text-surface-inverse-foreground hover:bg-primary transition-all group"
           >
             <Zap size={18} className="group-hover:animate-pulse mr-2" />
             {isWritePending ? '처리 중…' : mode === 'create' ? '신규 등록' : '정보 수정'}

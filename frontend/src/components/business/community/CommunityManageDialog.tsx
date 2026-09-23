@@ -200,7 +200,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
         onClose={handleDialogClose}
         title="커뮤니티 관리"
         footer={
-          <Button type="button" variant="outline" className="h-11 w-full" onClick={() => setMembersOf(null)}>
+          <Button type="button" variant="outline" className="w-full" onClick={() => setMembersOf(null)}>
             커뮤니티 목록으로
           </Button>
         }
@@ -220,11 +220,11 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
       footer={
         <div className="flex w-full items-center gap-2">
           {editing && (
-            <Button type="button" variant="outline" className="h-11 flex-1" onClick={startCreate} disabled={saving}>
+            <Button type="button" variant="outline" className="flex-1" onClick={startCreate} disabled={saving}>
               수정 취소
             </Button>
           )}
-          {(editing ? canUpdate : canCreate) && <Button type="submit" form="community-manage-form" className="h-11 flex-[2]" disabled={saving || form.formState.isSubmitting}>
+          {(editing ? canUpdate : canCreate) && <Button type="submit" form="community-manage-form" className="flex-[2]" disabled={saving || form.formState.isSubmitting}>
             {saving ? '저장 중…' : editing ? '수정 저장' : '커뮤니티 등록'}
           </Button>}
         </div>
@@ -324,7 +324,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                 <FormItem>
                   <FormLabel>커뮤니티 이름</FormLabel>
                   <FormControl>
-                    <Input {...field} maxLength={300} placeholder="예: 신입사원 모임" className="h-11 rounded-lg" />
+                    <Input {...field} maxLength={300} placeholder="예: 신입사원 모임" className="rounded-lg" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -354,7 +354,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                     onValueChange={(value) => field.onChange(value === NO_TEMPLATE ? undefined : value)}
                   >
                     <FormControl>
-                      <SelectTrigger className="h-11 rounded-lg" aria-label="템플릿">
+                      <SelectTrigger className="rounded-lg" aria-label="템플릿">
                         <SelectValue placeholder="템플릿 선택" />
                       </SelectTrigger>
                     </FormControl>
@@ -382,7 +382,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                     <FormLabel>사용 여부</FormLabel>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
-                        <SelectTrigger className="h-11 rounded-lg" aria-label="사용 여부">
+                        <SelectTrigger className="rounded-lg" aria-label="사용 여부">
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>

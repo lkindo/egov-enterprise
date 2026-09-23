@@ -78,7 +78,7 @@ function CommunityBoardContent() {
  <div className="flex items-center gap-4">
  <button
  onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}`)}
- className="h-11 px-10 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center gap-3 group"
+ className="h-[var(--control-h)] px-10 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center gap-3 group"
  >
  <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" aria-hidden="true" /> 새 게시글
  </button>
@@ -113,7 +113,7 @@ function CommunityBoardContent() {
  setBbsId(e.target.value);
  setPage(0);
  }}
- className="h-11 px-8 bg-card border-2 border-border rounded-lg font-bold text-xs tracking-widest outline-none focus:border-primary/20 transition-all shadow-sm"
+ className="h-[var(--control-h)] px-8 bg-card border-2 border-border rounded-lg font-bold text-xs tracking-widest outline-none focus:border-primary/20 transition-all shadow-sm"
  aria-label="게시판 선택"
  >
  {/* 훅이 비관리자·조회 실패에도 시드 목록으로 내려가므로 비는 경우는 없다.

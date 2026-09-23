@@ -107,7 +107,7 @@ export function DepartmentForm({
                     {...field}
                     maxLength={200}
                     className={cn(
-                        "h-11 rounded-lg text-sm font-bold tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
+                        "rounded-lg text-sm font-bold tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-destructive ring-destructive/10 ring-4"
                     )}
                     placeholder="예: 기획부"
@@ -155,7 +155,7 @@ export function DepartmentForm({
             onClick={() => {
               if (!areActionsDisabled) onCancel();
             }}
-            className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
+            className="flex-1 h-[var(--control-h)] rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
           >
             취소
           </button>
@@ -163,7 +163,7 @@ export function DepartmentForm({
             type="submit"
             disabled={areActionsDisabled}
             aria-busy={isWritePending || undefined}
-            className="flex-[2] h-11 rounded-lg font-bold text-xs tracking-widest shadow-xl bg-surface-inverse text-surface-inverse-foreground hover:bg-primary transition-all group"
+            className="flex-[2] rounded-lg font-bold text-xs tracking-widest shadow-xl bg-surface-inverse text-surface-inverse-foreground hover:bg-primary transition-all group"
           >
             <Zap size={18} className="group-hover:animate-pulse mr-2" />
             {isWritePending ? '처리 중…' : mode === 'create' ? '부서 등록' : '정보 수정'}

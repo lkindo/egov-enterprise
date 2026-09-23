@@ -208,11 +208,11 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
       footer={
         <div className="flex w-full items-center gap-2">
           {editing && (
-            <Button type="button" variant="outline" className="h-11 flex-1" onClick={startCreate} disabled={saving}>
+            <Button type="button" variant="outline" className="flex-1" onClick={startCreate} disabled={saving}>
               수정 취소
             </Button>
           )}
-          {(editing ? canUpdate : canCreate) && <Button type="submit" form="dept-job-box-form" className="h-11 flex-[2]" disabled={saving || form.formState.isSubmitting || departmentsUnavailable}>
+          {(editing ? canUpdate : canCreate) && <Button type="submit" form="dept-job-box-form" className="flex-[2]" disabled={saving || form.formState.isSubmitting || departmentsUnavailable}>
             {saving ? '저장 중…' : editing ? '수정 저장' : '업무함 등록'}
           </Button>}
         </div>
@@ -302,7 +302,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
                 <FormItem>
                   <FormLabel>업무함 이름</FormLabel>
                   <FormControl>
-                    <Input {...field} maxLength={100} placeholder="예: 기획 · 인사 · 대외협력" className="h-11 rounded-lg" />
+                    <Input {...field} maxLength={100} placeholder="예: 기획 · 인사 · 대외협력" className="rounded-lg" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -320,7 +320,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
                     disabled={!canReadDepartments || departmentsUnavailable || saving}
                   >
                     <FormControl>
-                      <SelectTrigger className="h-11 rounded-lg" aria-label="담당 부서">
+                      <SelectTrigger className="rounded-lg" aria-label="담당 부서">
                         <SelectValue placeholder="부서 선택" />
                       </SelectTrigger>
                     </FormControl>
@@ -371,7 +371,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
                       inputMode="numeric"
                       maxLength={6}
                       placeholder="비우면 순서 없음"
-                      className="h-11 rounded-lg"
+                      className="rounded-lg"
                     />
                   </FormControl>
                   <FormMessage />

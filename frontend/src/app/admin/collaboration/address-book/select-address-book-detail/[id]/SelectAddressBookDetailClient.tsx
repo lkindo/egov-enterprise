@@ -173,7 +173,7 @@ const SelectAddressBookDetailClient = () => {
                                 aria-busy={isDeletePending}
                                 onClick={() => { void handleDelete(); }}
                                 disabled={isDeletePending || updateMutation.isPending}
-                                className="rounded-lg h-11 gap-2 shrink-0"
+                                className="rounded-lg gap-2 shrink-0"
                             >
                                 {isDeletePending
                                     ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
@@ -199,7 +199,7 @@ const SelectAddressBookDetailClient = () => {
                                         id="adbkNm"
                                         {...validation.fieldProps('adbkNm')}
                                         placeholder="주소록 명칭을 입력하세요"
-                                        className="h-11 text-base border-2 border-border focus:border-primary/20 bg-muted/50 rounded-lg transition-all"
+                                        className="text-base border-2 border-border focus:border-primary/20 bg-muted/50 rounded-lg transition-all"
                                         value={adbkNm}
                                         onChange={(e) => {
                                             validation.clearError('adbkNm');
@@ -219,7 +219,7 @@ const SelectAddressBookDetailClient = () => {
                                     <Input
                                         id="rlsScopeCd"
                                         {...validation.fieldProps('rlsScopeCd')}
-                                        className="h-11 text-base border-2 border-border bg-muted rounded-lg"
+                                        className="text-base border-2 border-border bg-muted rounded-lg"
                                         value={data?.rlsScopeCd ?? ''}
                                         readOnly
                                         aria-required="true"
@@ -292,13 +292,13 @@ const SelectAddressBookDetailClient = () => {
 
                         <CardFooter className="flex flex-col md:flex-row justify-center gap-6 py-12 border-t bg-muted/30 mt-10">
                             <Link href={LIST_PATH}>
-                                <Button type="button" variant="ghost" className="h-11 px-10 gap-2 font-bold text-muted-foreground hover:bg-card transition-all rounded-lg">
+                                <Button type="button" variant="ghost" className="px-10 gap-2 font-bold text-muted-foreground hover:bg-card transition-all rounded-lg">
                                     <ArrowLeft className="w-5 h-5" /> 목록으로
                                 </Button>
                             </Link>
                             <Button
                                 type="submit"
-                                className="h-11 px-16 gap-3 font-bold bg-surface-inverse text-surface-inverse-foreground shadow-2xl hover:bg-primary transition-all active:scale-95 rounded-lg"
+                                className="px-16 gap-3 font-bold bg-surface-inverse text-surface-inverse-foreground shadow-2xl hover:bg-primary transition-all active:scale-95 rounded-lg"
                                 disabled={updateMutation.isPending || isDeletePending}
                                 aria-busy={updateMutation.isPending || undefined}
                             >

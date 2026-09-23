@@ -219,7 +219,7 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
                       placeholder="프로그램명" 
                       {...field} 
                       maxLength={100}
-                      className="h-11 px-6 rounded-lg border-2 border-border bg-muted/50 font-bold text-sm focus:bg-card transition-all shadow-inner"
+                      className="px-6 rounded-lg border-2 border-border bg-muted/50 font-bold text-sm focus:bg-card transition-all shadow-inner"
                     />
                   </FormControl>
                   <FormMessage />
@@ -240,7 +240,7 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
                       placeholder="URL" 
                       {...field} 
                       maxLength={1000}
-                      className="h-11 px-6 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-card transition-all shadow-inner"
+                      className="px-6 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-card transition-all shadow-inner"
                     />
                   </FormControl>
                   <FormMessage />
@@ -263,7 +263,7 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
                     placeholder="저장경로"
                     {...field}
                     maxLength={1000}
-                    className="h-11 px-6 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-card transition-all shadow-inner"
+                    className="px-6 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-card transition-all shadow-inner"
                   />
                 </FormControl>
                 <FormMessage />
@@ -284,7 +284,7 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
                     placeholder="프로그램이 제공할 기능의 기술적 명세.."
                     {...field}
                     maxLength={4000}
-                    className="h-11 px-6 rounded-lg border-2 border-border bg-muted/50 font-bold text-sm focus:bg-card transition-all shadow-inner"
+                    className="px-6 rounded-lg border-2 border-border bg-muted/50 font-bold text-sm focus:bg-card transition-all shadow-inner"
                   />
                 </FormControl>
                 <FormMessage />
@@ -298,7 +298,7 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
               variant="outline"
               onClick={requestClose}
               disabled={isWritePending}
-              className="h-11 px-10 rounded-lg border border-border text-muted-foreground font-bold text-sm tracking-tight hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all flex-1"
+              className="px-10 rounded-lg border border-border text-muted-foreground font-bold text-sm tracking-tight hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all flex-1"
             >
               취소
             </Button>
@@ -306,7 +306,7 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
               type="submit"
               disabled={isWritePending}
               aria-busy={isSaving || isSubmitting || undefined}
-              className="h-11 px-14 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
+              className="px-14 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
             >
               <Save size={18} />
               {isSaving || isSubmitting ? '동기화 중…' : '시스템 동기화'}

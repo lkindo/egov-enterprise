@@ -100,6 +100,8 @@
 
 `comfortable`(기본 배포)은 오버라이드가 없어 프로필 선언값 그대로다. **위 합격선은 `compact` 배포에만 적용한다.** 대민 프로필에 업무 밀도를 주입하지 않는다.
 
+**컨트롤은 높이를 고정하지 않는다.** 버튼·입력·선택의 기본 높이는 기본 컴포넌트가 `--control-h`(작은 크기는 `--control-h-sm`)로 선언한다. 화면이 `h-11` 같은 고정 높이를 덧붙이면 tailwind-merge 가 토큰을 지워 `compact` 밀도가 그 컨트롤에 닿지 않는다. 조회조건 바는 전용 토큰 `--filter-control-h`를 쓴다. 남은 고정 높이 덮어쓰기는 같은 계약 파일이 파일별로 동결해 줄어들기만 한다(DEC-OPS-117).
+
 셸의 헤더 높이와 사이드바 폭은 밀도 축 밖의 `--app-header-height`(3.5rem)·`--app-sidebar-width`(16rem)를 공유한다. [구현 안내](../03-guides/ui-ux-task-flow-optimization.md#1-화면의-기본-구성)를 참고한다.
 
 ## 5. Archetype 8종

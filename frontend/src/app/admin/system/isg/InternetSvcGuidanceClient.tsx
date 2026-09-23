@@ -331,7 +331,7 @@ export default function InternetSvcGuidanceClient({
               variant="outline"
               onClick={closeModal}
               disabled={submitLoading || form.formState.isSubmitting}
-              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2"
+              className="flex-1 rounded-lg font-bold text-xs tracking-widest uppercase border-2"
             >
               취소
             </Button>
@@ -339,7 +339,7 @@ export default function InternetSvcGuidanceClient({
               type="submit"
               form="internet-svc-guidance-form"
               disabled={submitLoading || form.formState.isSubmitting}
-              className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
+              className="flex-[2] bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
             >
               <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" aria-hidden="true" />
               {submitLoading ? (editing ? '저장 중…' : '등록 중…') : (editing ? '수정 저장' : '등록')}
@@ -370,7 +370,7 @@ export default function InternetSvcGuidanceClient({
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">서비스 명칭</FormLabel>
                   <FormControl>
-                    <Input {...field} maxLength={100} placeholder="민원 전자 접수" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={100} placeholder="민원 전자 접수" className="rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -405,7 +405,7 @@ export default function InternetSvcGuidanceClient({
                   <FormControl>
                     <select
                       {...field}
-                      className="w-full h-11 px-3 rounded-lg border bg-muted border-border focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                      className="w-full h-[var(--control-h)] px-3 rounded-lg border bg-muted border-border focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                     >
                       <option value="Y">반영</option>
                       <option value="N">미반영</option>

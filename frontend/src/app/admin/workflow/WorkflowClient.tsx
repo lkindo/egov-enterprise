@@ -47,10 +47,10 @@ export default function WorkflowClient() {
                 breadcrumbs={[{ label: '워크플로우' }, { label: '스튜디오' }]}
         actions={
                     <div className="flex gap-4">
-                        <Button disabled title="정적 데모에서는 히스토리를 제공하지 않습니다." variant="outline" className="h-11 px-8 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
+                        <Button disabled title="정적 데모에서는 히스토리를 제공하지 않습니다." variant="outline" className="px-8 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
                             <History size={18} /> 히스토리
                         </Button>
-                        <Button disabled title="정적 데모에서는 설계를 저장할 수 없습니다." className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-semibold text-xs hover:bg-primary transition-all shadow-2xl">
+                        <Button disabled title="정적 데모에서는 설계를 저장할 수 없습니다." className="px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-semibold text-xs hover:bg-primary transition-all shadow-2xl">
                             <Plus size={20} /> 설계 등록
                         </Button>
                     </div>

@@ -1242,7 +1242,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             )}
 
             <div className="flex gap-4">
-               <Button variant="outline" onClick={() => setIsReportModalOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight">
+               <Button variant="outline" onClick={() => setIsReportModalOpen(false)} className="flex-1 rounded-lg font-bold text-xs tracking-tight">
                   닫기
                </Button>
             </div>

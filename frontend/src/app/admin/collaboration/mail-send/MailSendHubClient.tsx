@@ -323,7 +323,7 @@ export default function MailSendHubClient() {
                     type="button"
                     data-testid="mail-recipient-add-btn"
                     onClick={handleAddRecipient}
-                    className="h-11 px-6 rounded-lg shrink-0"
+                    className="px-6 rounded-lg shrink-0"
                   >
                     <Plus size={16} className="mr-2" /> 추가
                   </Button>
@@ -429,7 +429,7 @@ export default function MailSendHubClient() {
               type="button"
               variant="outline"
               onClick={() => router.back()}
-              className="h-11 flex-1 sm:flex-none px-10 rounded-lg border-2 font-bold tracking-tight text-xs hover:bg-muted transition-all bg-card"
+              className="flex-1 sm:flex-none px-10 rounded-lg border-2 font-bold tracking-tight text-xs hover:bg-muted transition-all bg-card"
             >
               취소
             </Button>
@@ -437,7 +437,7 @@ export default function MailSendHubClient() {
               type="submit"
               data-testid="mail-send-btn"
               disabled={isSubmitting}
-              className="h-11 flex-1 sm:flex-none px-12 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-tight text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
+              className="flex-1 sm:flex-none px-12 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-tight text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
             >
               {isSubmitting ? (
                 <span className="animate-pulse">발송 중...</span>

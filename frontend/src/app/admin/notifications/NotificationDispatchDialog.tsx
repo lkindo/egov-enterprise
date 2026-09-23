@@ -137,13 +137,13 @@ export function NotificationDispatchDialog({ isOpen, onClose }: NotificationDisp
       title="알림 보내기"
       footer={
         <div className="flex w-full items-center gap-2">
-          <Button type="button" variant="outline" className="h-11 flex-1" onClick={handleClose} disabled={submitting}>
+          <Button type="button" variant="outline" className="flex-1" onClick={handleClose} disabled={submitting}>
             취소
           </Button>
           <Button
             type="submit"
             form="notification-dispatch-form"
-            className="h-11 flex-[2] gap-2"
+            className="flex-[2] gap-2"
             disabled={submitting || form.formState.isSubmitting}
             aria-busy={submitting}
           >
@@ -216,7 +216,7 @@ export function NotificationDispatchDialog({ isOpen, onClose }: NotificationDisp
                 <FormItem>
                   <FormLabel>제목</FormLabel>
                   <FormControl>
-                    <Input {...field} maxLength={100} placeholder="예: 9월 7일 시스템 점검 안내" className="h-11 rounded-lg" />
+                    <Input {...field} maxLength={100} placeholder="예: 9월 7일 시스템 점검 안내" className="rounded-lg" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -243,7 +243,7 @@ export function NotificationDispatchDialog({ isOpen, onClose }: NotificationDisp
                 <FormItem>
                   <FormLabel>링크 (선택)</FormLabel>
                   <FormControl>
-                    <Input {...field} value={field.value ?? ''} maxLength={2000} placeholder="/admin/... 형태의 앱 내 경로" className="h-11 rounded-lg" />
+                    <Input {...field} value={field.value ?? ''} maxLength={2000} placeholder="/admin/... 형태의 앱 내 경로" className="rounded-lg" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -178,7 +178,7 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
                 <Input
                   {...field}
                   value={field.value ?? ''}
-                  className={cn('h-11 rounded-lg text-sm font-bold tracking-tight', fieldState.error && 'border-rose-500')}
+                  className={cn('rounded-lg text-sm font-bold tracking-tight', fieldState.error && 'border-rose-500')}
                   placeholder="예: 주간 팀 회의"
                   maxLength={300}
                 />
@@ -199,7 +199,7 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
                 <FormControl>
                   <Input
                     type="date"
-                    className={cn('h-11 rounded-lg', fieldState.error && 'border-rose-500')}
+                    className={cn('rounded-lg', fieldState.error && 'border-rose-500')}
                     value={ymdToInput(field.value)}
                     onChange={(e) => field.onChange(inputToYmd(e.target.value))}
                   />
@@ -218,7 +218,7 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
                 <FormControl>
                   <Input
                     type="date"
-                    className={cn('h-11 rounded-lg', fieldState.error && 'border-rose-500')}
+                    className={cn('rounded-lg', fieldState.error && 'border-rose-500')}
                     value={ymdToInput(field.value)}
                     onChange={(e) => field.onChange(inputToYmd(e.target.value))}
                   />
@@ -239,7 +239,7 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
                 <Input
                   {...field}
                   value={field.value ?? ''}
-                  className="h-11 rounded-lg"
+                  className="rounded-lg"
                   placeholder="예: 대회의실"
                   maxLength={100}
                 />
@@ -298,10 +298,10 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
         />
 
         <div className="flex gap-3 pt-2">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSavePending} className="flex-1 h-11 rounded-lg font-bold">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSavePending} className="flex-1 rounded-lg font-bold">
             취소
           </Button>
-          <Button type="submit" disabled={isSavePending} aria-busy={isSavePending || undefined} className="flex-[2] h-11 rounded-lg font-bold shadow-lg">
+          <Button type="submit" disabled={isSavePending} aria-busy={isSavePending || undefined} className="flex-[2] rounded-lg font-bold shadow-lg">
             {isSavePending ? '저장 중…' : isEdit ? '일정 수정' : '일정 등록'}
           </Button>
         </div>

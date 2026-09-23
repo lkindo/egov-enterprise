@@ -400,7 +400,7 @@ export default function ManualAdminClient({
                           {...field}
                           maxLength={1000}
                           placeholder="/src/docs/manuals/..."
-                          className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                          className="px-8 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                         />
                       </FormControl>
                       <FormMessage className="text-xs font-bold" />
@@ -434,7 +434,7 @@ export default function ManualAdminClient({
                   variant="outline"
                   disabled={isWritePending}
                   onClick={() => handleFormOpenChange(false)}
-                  className="h-11 px-10 rounded-lg border-2 border-border font-bold text-xs tracking-[0.2em] hover:bg-muted transition-all flex-1"
+                  className="px-10 rounded-lg border-2 border-border font-bold text-xs tracking-[0.2em] hover:bg-muted transition-all flex-1"
                 >
                   취소
                 </Button>
@@ -442,7 +442,7 @@ export default function ManualAdminClient({
                   type="submit"
                   disabled={isWritePending || form.formState.isSubmitting}
                   aria-busy={isSaving || undefined}
-                  className="h-11 px-16 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-[0.3em] shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex-1"
+                  className="px-16 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-[0.3em] shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex-1"
                 >
                   {isSaving ? '처리 중...' : mode === 'edit' ? '수정 완료' : '등록 완료'}
                 </Button>

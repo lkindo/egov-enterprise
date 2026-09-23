@@ -738,7 +738,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">배너 명칭 (Internal Label)</FormLabel>
  <FormControl>
- <Input {...field} maxLength={100} className="h-11 rounded-lg text-md font-bold tracking-tight shadow-inner" placeholder="배너 이름 입력" />
+ <Input {...field} maxLength={100} className="rounded-lg text-md font-bold tracking-tight shadow-inner" placeholder="배너 이름 입력" />
  </FormControl>
  <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">관리용 명칭입니다</p>
  <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
@@ -754,7 +754,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <div className="relative group/link">
  <LinkIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
  <FormControl>
- <Input {...field} maxLength={512} className="h-11 pl-16 rounded-lg font-mono text-xs font-bold shadow-inner" placeholder="/pages/..." />
+ <Input {...field} maxLength={512} className="pl-16 rounded-lg font-mono text-xs font-bold shadow-inner" placeholder="/pages/..." />
  </FormControl>
  </div>
  <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">클릭 시 이동할 프론트엔드 라우트 또는 외부 경로</p>
@@ -777,7 +777,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  type="number"
  min={0}
  onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
- className="h-11 rounded-lg font-bold shadow-inner"
+ className="rounded-lg font-bold shadow-inner"
  />
  </FormControl>
  <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
@@ -875,7 +875,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">팝업 타이틀 (Header)</FormLabel>
  <FormControl>
- <Input {...field} maxLength={100} className="h-11 rounded-lg text-md font-bold tracking-tight shadow-inner" placeholder="팝업 제목 입력" />
+ <Input {...field} maxLength={100} className="rounded-lg text-md font-bold tracking-tight shadow-inner" placeholder="팝업 제목 입력" />
  </FormControl>
  <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
@@ -908,7 +908,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  field.onChange(formatted);
  }
  }}
- className="h-11 rounded-lg text-xs font-bold shadow-sm" 
+ className="rounded-lg text-xs font-bold shadow-sm" 
  />
  </FormControl>
  <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
@@ -941,7 +941,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  field.onChange(formatted);
  }
  }}
- className="h-11 rounded-lg text-xs font-bold shadow-sm" 
+ className="rounded-lg text-xs font-bold shadow-sm" 
  />
  </FormControl>
  <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
@@ -965,7 +965,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  min={0}
  max={999999999999}
  onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
- className="h-11 rounded-lg font-bold shadow-inner"
+ className="rounded-lg font-bold shadow-inner"
  />
  </FormControl>
  <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
@@ -987,7 +987,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  min={0}
  max={999999999999}
  onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
- className="h-11 rounded-lg font-bold shadow-inner"
+ className="rounded-lg font-bold shadow-inner"
  />
  </FormControl>
  <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
@@ -1011,7 +1011,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  min={100}
  max={999999999999}
  onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
- className="h-11 rounded-lg font-bold shadow-inner"
+ className="rounded-lg font-bold shadow-inner"
  />
  </FormControl>
  <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
@@ -1033,7 +1033,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  min={100}
  max={999999999999}
  onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
- className="h-11 rounded-lg font-bold shadow-inner"
+ className="rounded-lg font-bold shadow-inner"
  />
  </FormControl>
  <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />

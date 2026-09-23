@@ -147,7 +147,7 @@ export function AuditTimelineClient() {
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={20} aria-hidden="true" />
                 <Input
                   id="audit-timeline-search"
-                  className="pl-16 h-11 bg-muted border-none rounded-lg text-xs font-bold tracking-widest shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
+                  className="pl-16 bg-muted border-none rounded-lg text-xs font-bold tracking-widest shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
                   placeholder="행위, 시스템명 또는 행동 상세 필터링.."
                   value={searchKeyword}
                   onChange={(e) => {

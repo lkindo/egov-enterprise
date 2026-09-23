@@ -71,7 +71,7 @@ export function CodeClusterFields({
  <FormLabel className="text-xs font-bold text-foreground">사용 여부</FormLabel>
  <Select onValueChange={field.onChange} value={field.value}>
  <FormControl>
- <SelectTrigger className="h-11 rounded-lg border-none bg-muted text-xs font-bold shadow-inner">
+ <SelectTrigger className="rounded-lg border-none bg-muted text-xs font-bold shadow-inner">
  <SelectValue />
  </SelectTrigger>
  </FormControl>
@@ -159,7 +159,7 @@ export function CodeGroupFields({
  <FormLabel className="text-xs font-bold text-foreground">소속 분류</FormLabel>
  <Select onValueChange={field.onChange} value={field.value}>
  <FormControl>
- <SelectTrigger className="h-11 rounded-lg border-none bg-muted text-xs font-bold shadow-inner">
+ <SelectTrigger className="rounded-lg border-none bg-muted text-xs font-bold shadow-inner">
  <SelectValue placeholder="분류 선택" />
  </SelectTrigger>
  </FormControl>
@@ -198,7 +198,7 @@ export function CodeGroupFields({
  <FormLabel className="text-xs font-bold text-foreground">사용 여부</FormLabel>
  <Select onValueChange={field.onChange} value={field.value}>
  <FormControl>
- <SelectTrigger className="h-11 rounded-lg border-none bg-muted text-xs font-bold shadow-inner">
+ <SelectTrigger className="rounded-lg border-none bg-muted text-xs font-bold shadow-inner">
  <SelectValue />
  </SelectTrigger>
  </FormControl>
@@ -314,7 +314,7 @@ export function CodeDetailFields({
  value={field.value}
  >
  <FormControl>
- <SelectTrigger className="h-11 rounded-lg border-none bg-muted text-xs font-bold shadow-inner">
+ <SelectTrigger className="rounded-lg border-none bg-muted text-xs font-bold shadow-inner">
  <SelectValue />
  </SelectTrigger>
  </FormControl>

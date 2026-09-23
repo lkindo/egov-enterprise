@@ -180,7 +180,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  aria-busy={isSaving || undefined}
  disabled={isSaving || isDisabled || changedCount === 0}
  title={changedCount === 0 ? '변경된 셀이 없습니다' : `${changedCount}개 셀 변경을 저장합니다 (Ctrl+S)`}
- className="h-11 px-10 rounded-lg bg-primary text-white font-bold text-xs tracking-widest uppercase shadow-2xl shadow-primary/30 hover:bg-primary/90 transition-all hover:-translate-y-1 gap-3 group"
+ className="px-10 rounded-lg bg-primary text-white font-bold text-xs tracking-widest uppercase shadow-2xl shadow-primary/30 hover:bg-primary/90 transition-all hover:-translate-y-1 gap-3 group"
  >
  <Save size={18} aria-hidden="true" className={cn(isSaving && "animate-spin")} /> {isSaving ? '저장 중…' : changedCount === 0 ? '변경사항 저장' : `변경사항 저장 (${changedCount}건)`}
  </Button>
@@ -194,7 +194,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={20} />
  <Input
  aria-label="메뉴 노드 검색(명칭, ID)"
- className="h-11 pl-16 rounded-lg border-none shadow-xl text-md font-bold tracking-tight focus:ring-8 focus:ring-primary/5"
+ className="pl-16 rounded-lg border-none shadow-xl text-md font-bold tracking-tight focus:ring-8 focus:ring-primary/5"
  placeholder="메뉴 노드 검색(명칭, ID)..."
  value={searchMenu}
  onChange={(e) => setSearchMenu(e.target.value)}

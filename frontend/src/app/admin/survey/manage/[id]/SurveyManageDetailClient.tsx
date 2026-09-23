@@ -235,7 +235,7 @@ export default function SurveyManageDetailClient() {
                                     onClick={() => setIsEditing(true)}
                                     disabled={isDeleting}
                                     data-testid="poll-edit-button"
-                                    className="h-11 flex-1 rounded-lg font-bold gap-3"
+                                    className="flex-1 rounded-lg font-bold gap-3"
                                 >
                                     <Pencil className="w-5 h-5" aria-hidden="true" /> 수정
                                 </Button>

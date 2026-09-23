@@ -33,7 +33,7 @@ export default function NotFound() {
                 <div className="grid grid-cols-2 gap-4 pt-4">
                     <button
                         onClick={() => typeof window !== 'undefined' && window.history.back()}
-                        className={cn(buttonVariants({ variant: "outline", size: "lg" }), "rounded-lg h-11 font-bold border-2 gap-2")}
+                        className={cn(buttonVariants({ variant: "outline", size: "lg" }), "rounded-lg h-[var(--control-h)] font-bold border-2 gap-2")}
                     >
                         <ArrowLeft size={18} /> 이전으로
                     </button>
