@@ -21,6 +21,6 @@ class EgovMessageConfigTest {
         // Then
         assertNotNull(messageSource);
         assertTrue(messageSource instanceof ReloadableResourceBundleMessageSource);
-        assertEquals("UTF-8", org.springframework.test.util.ReflectionTestUtils.getField(messageSource, "defaultEncoding"));
+        assertEquals("UTF-8", org.springframework.test.util.ReflectionTestUtils.invokeGetterMethod(messageSource, "defaultEncoding"));
     }
 }

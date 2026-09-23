@@ -744,13 +744,55 @@ Jackson 2 `ObjectMapper` 를 임시 빈으로 공급하자 **컨텍스트가 올
 ⚠ 즉 **가장 큰 미지수였던 eGovFrame 5.0.0 의 Spring Framework 7 런타임 호환은 이 범위에서 확인됐다.** Spring 6 기준으로
 컴파일된 eGovFrame jar 가 Framework 7 위에서 빈 생성·암호 연산을 수행했다. 다만 이것은 컨텍스트 기동과 암호 경로의 증거이며,
 eGovFrame 의 배치·엑셀·ID 생성 등 다른 모듈의 런타임 증거는 아니다.
+### 4.1.1 재실측 — 전체 검증 (2026-09-24)
+
+전환 목표가 다음 minor 이므로 같은 프로브에 `main`(2071e5984)을 병합하고 **Boot 4.1.1**(현재 최신 GA, 4.2 는 M1)로 올려
+위에서 측정하지 않은 항목을 전부 돌렸다. 4.0.8 → 4.1.1 에서 새로 막히는 컴파일은 없었다.
+
+첫 전체 테스트는 3,778건 중 **206건이 실패**했고(하네스 98건은 통과) 그중 205건이 Jackson 2 `ObjectMapper` 빈 부재였다(테스트 64파일이 필드로
+주입받고, 본체 `AttachmentIntegrityReportStore` 가 주입받아 business-core·app 통합 컨텍스트가 연쇄로 뜨지 못했다). 그래서
+Boot 4 의 **Jackson 2 호환 모듈** `spring-boot-jackson2`(deprecated)를 붙이고 HTTP 변환기를
+`spring.http.converters.preferred-json-mapper: jackson2` 로 두었다. 이 모듈은 테스트 슬라이스(`AutoConfigureJson`)에도 등록된다.
+
+| 검증 | Boot 4.1.1 + Jackson 2 호환 결과 | 비교 |
+|---|---|---|
+| 전 모듈 컴파일 | 통과 | — |
+| 전체 테스트(JUnit 6) | 3,778건 중 실패 2 | 둘 다 아래 ② 의 standalone MockMvc — 원인 확정 |
+| 하네스 | 98/98 | — |
+| 실제 PostgreSQL 스키마 검증 | 74/74 | Hibernate 7.2 매핑·Flyway 새 모듈·Testcontainers 2.x |
+| PIT(foundation-jwt) | 63 중 59 사멸(94%), 테스트 강도 97% | main 과 같다(DEC-OPS-094) |
+| `api-docs.json` | 줄 끝을 맞추면 **바이트까지 동일** | 생성 zod·타입 무변경 |
+| 격리 E2E | 136건 기대대로, 재시도 통과 0 | main 도 같다 |
+
+**JUnit 6 는 코드 비용이 거의 없다** — 전체 테스트와 PIT(JUnit 5 플러그인 1.2.1)가 그대로 돌았다. eGovFrame 은 본체가 쓰는
+것이 암호 계열(ARIA·비밀번호 인코더·환경 암호 서비스)뿐이라, 위 "암호 외 모듈" 은 측정할 런타임 사용처가 없다.
+
+**전환에서 챙길 것** — ①·⑤·⑥은 테스트와 E2E 가 **모두 통과하는 채로** 조용히 바뀌므로 점검 목록으로 둔다.
+
+1. **Jackson 설정 키** — Boot 4 에서 `spring.jackson.*` 은 Jackson 3 에만 적용된다. 앱의 `fail-on-unknown-properties: true`
+   등을 `spring.jackson2.*` 로도 주지 않으면 **모르는 필드가 든 요청의 거부가 풀린다.**
+2. **Jackson 2 타입을 쓰는 DTO** — `MemoInstructionRequest` 의 `JsonNode` 필드는 Jackson 3 변환기에서 500 이다. 호환 모듈
+   단계에서는 문제가 없고 Jackson 3 단계의 이행 대상이다. 남은 테스트 실패 2건은 standalone MockMvc 가 Boot 설정 밖에서
+   Spring 7 기본값(Jackson 3)을 써서 이 DTO 를 읽지 못한 것이다.
+3. **Spring 7 내부 필드 변경** — `EgovMessageConfigTest` 가 리플렉션으로 읽던 `defaultEncoding` 이 `defaultCharset` 으로
+   바뀌었다. 게터로 읽으면 Spring 6·7 양쪽에서 통해 먼저 반영할 수 있다(반영함).
+4. **Hibernate 7 로그** — SQL 오류가 `SqlExceptionHelper` ERROR 대신 `org.hibernate.orm.jdbc.error` WARN 으로 남는다.
+   로그 등급·이름으로 경보를 거는 곳이 있으면 바뀐다. Hibernate Validator 9 는 `List` 에 붙인 `@Valid` 를 deprecated 로
+   경고한다(E2E 로그 11건 — 원소 타입에 옮긴다).
+5. **추적이 꺼진다** — Boot 4 는 추적 자동 설정을 actuator 에서 `spring-boot-micrometer-tracing*` 모듈로 뺐다.
+   `micrometer-tracing-bridge-otel`·OTLP 라이브러리만 있으면 Tracer 가 생기지 않아 로그의 `[traceId-spanId]` 와 OTLP
+   내보내기가 사라진다. `spring-boot-starter-opentelemetry` 를 붙이자 되살아났다. 메트릭(Prometheus)은 영향이 없다.
+6. **스케줄 작업 스레드** — `@Scheduled` 작업이 main 에서는 `scheduling-*` 스레드에서, Boot 4 에서는 WebSocket 브로커 스케줄러
+   (`MessageBroker-*`)에서 돈다. 하트비트용 풀을 나눠 쓰게 되므로 전용 스케줄러를 명시한다.
+
+E2E 백엔드 로그의 "사용자 활동 로그 누적 실패"·`tb_user_log` 외래 키 위반 약 40건은 main(Boot 3.5.16)에도 같은 수가 있어
+**Boot 4 와 무관**하다.
+
 ### 측정하지 않은 것
 
-- eGovFrame 의 **암호 외 모듈**(배치·엑셀·ID 생성·access) 런타임 동작. 위 실측은 컨텍스트 기동과 ARIA 암호 경로까지다.
-- Jackson 2 → 3 이행이 응답 직렬화·`api-docs.json`·생성 zod 계약에 주는 차이(위 실측은 Jackson 2 shim 으로 **우회**했다).
-- JUnit 5 → 6 이행이 기존 테스트 코드에 요구하는 변경량(고정만 풀었고 전체 테스트를 돌리지 않았다).
-- Security 7 설정 DSL·Hibernate 7.2(JPA 3.2)·Tomcat 11 의 동작 차이, 전체 하네스·PIT·E2E·재사용 생성기 통과 여부.
-- Testcontainers 2.x API 변경(좌표 개명 외 — `PostgreSQLContainer` deprecation 경고는 관찰했다).
+- Jackson 3 로 옮긴 뒤의 응답 직렬화 차이 — 위 결과는 호환 모듈로 Jackson 2 를 유지한 상태다.
+- 재사용 생성기(`base:verify`) 세 프로필과 PIT 나머지 스코프, CodeQL·릴리스 이미지 빌드 — CI 에서만 도는 경로다.
+- 호환 모듈 `spring-boot-jackson2` 의 제거 시점 — deprecated 로 표시돼 있고 제거 버전은 확인하지 않았다.
 
 ### 지원 라인 선택지
 
@@ -761,6 +803,7 @@ eGovFrame 의 배치·엑셀·ID 생성 등 다른 모듈의 런타임 증거는
 |---|---|---|
 | Boot 3.5 · Framework 6.2 (현행) | 2026-06-30 | 2032-06-30 |
 | Boot 4.0 · Framework 7.0 | 2026-12-31 · 2027-07-31 | 2027-12-31 · 2028-07-31 |
+| Boot 4.1 | 2027-07-31 | 2028-07-31 |
 
 ⚠ **상용 지원(ⓑ)은 이 저장소가 내릴 수 있는 결정이 아니다.** 여기는 재사용 템플릿이고 구독 자격증명은 저장소·CI·
 생성 산출물 어디에도 넣을 수 없으므로, 도입 기관이 각자의 구독으로 선택하는 축이다(이미 구독이 있는 기관에는 코드
@@ -779,6 +822,14 @@ eGovFrame 의 배치·엑셀·ID 생성 등 다른 모듈의 런타임 증거는
 
 두 축 모두 이 저장소의 게이트(생성 계약·하네스·PIT·재사용 산출물)가 직접 보는 영역이라, 이행은 "버전만 올리는 일" 이 아니다.
 다음 단계는 사용자 결정(ⓐ 전환 ADR → 두 축의 이행 계획과 게이트 영향 산정 / ⓑ 상용 지원 / ⓒ accepted-risk)이며 GAP-DEP-002 가 추적한다.
+
+**2026-09-24 재실측으로 판정을 고친다.** JUnit 6 는 전제이지만 코드 비용이 거의 없고, Jackson 3 는 호환 모듈로 뒤로 미룰
+수 있다. 그래서 ⓐ 는 두 단계로 나뉜다.
+
+1. **Boot 4.1 + Jackson 2 호환** — 빌드 보정과 위 "전환에서 챙길 것" ①·③~⑥. 테스트·하네스·스키마·PIT·E2E·API 계약이
+   이 단계에서 유지됨을 확인했다. 4.1 의 OSS 지원은 2027-07-31 까지다.
+2. **Jackson 3 이행** — 본체 11파일·테스트 64파일, Jackson 2 타입 DTO, standalone MockMvc 테스트, `spring.jackson2.*` →
+   `spring.jackson.*` 되돌림. 호환 모듈이 deprecated 이므로 그 제거 전에 마쳐야 한다.
 
 ## ZAP 주간 스캔 경고 분류
 
