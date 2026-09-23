@@ -3,7 +3,7 @@
 ## 의존성
 
 애플리케이션 의존성과 Gradle 플러그인 classpath는 별도로 검사한다. 루트 `buildscript`
-constraints는 Dependency-Check/Boot 플러그인이 사용하는 HttpClient/cache 5.6.3,
+constraints는 Dependency-Check/Boot 플러그인이 사용하는 HttpClient/cache 5.6.4,
 HttpCore/h2 5.4.3을 하한으로 둔다. 애플리케이션 BOM만 바꾸면 이 경로는 보호되지 않는다.
 프론트엔드의 Hono 4.13.5, qs 6.16.0, postcss-selector-parser 7.1.3은 기존 의존 경로의 패치다.
 상위 패키지가 패치 버전을 직접 공급하면 override 제거 후 실제 해석 결과와 감사를 재검증한다.
@@ -17,7 +17,7 @@ Launcher를 명시하고 `addJUnitPlatformLauncher=false`로 중복 탐색을 �
 GitHub 경고는 선언·전이 그래프와 실제 Gradle 해석 결과를 대조한다. 로컬 패치만으로 원격 경고가
 닫혔다고 판정하지 않는다. 재현 절차는 [Dependabot 런북](dependabot-alert-census.md)을 따른다.
 
-기존 SAST 예외 7건의 규칙·위치·만료일은 유지한다. FP-001/002의 JWT 필터는 DB 장애에
+기존 SAST 예외 6건의 규칙·위치·만료일은 유지한다. FP-001/002의 JWT 필터는 DB 장애에
 503으로 체인을 중단하도록 바뀌었으며 stateless Bearer·Origin 검사의 근거를 다시 확인한다.
 FP-007의 두 Gradle 지원 파일은 플러그인 패치·Launcher 선언·테스트 자식 JVM classpath만 바뀌고 H2의
 테스트 전용 범위를 유지한다. 해당 지원 파일 해시만 갱신한다. 하네스 동결 manifest는 새

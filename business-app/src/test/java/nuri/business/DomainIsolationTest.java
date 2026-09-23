@@ -56,9 +56,10 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyP
  *       단독 삭제가 필요해지면 연관을 포트/식별자 참조로 분리해야 하는 <b>명시적 기술부채</b>다.</li>
  * </ul>
  *
- * <p><b>참고(범위 밖 결합):</b> {@code RealTimeDashboardService}(서비스 계층, {@code service.stats})가
- * {@code domain.notification}/게시글 이벤트에 의존하는 결합은 도메인 엔티티 결합이 아니라 서비스
- * 오케스트레이션이므로 본 도메인 슬라이스 규칙의 판정 대상이 아니다(레이어 규칙이 별도 관리).
+ * <p><b>참고(범위 밖 결합):</b> 서비스 계층의 오케스트레이션 결합은 도메인 엔티티 결합이 아니라 본 도메인
+ * 슬라이스 규칙의 판정 대상이 아니다(레이어 규칙이 별도 관리). 종전 이 자리는 {@code RealTimeDashboardService}
+ * 가 {@code domain.notification} 에 의존한다고 적었으나, 2026-09-15 에 그 결합은 foundation 포트·이벤트로
+ * 역전됐고 클래스도 {@code service.dashboard} 로 옮겼다(GAP-ARCH-001 의 app→app 0).
  */
 @AnalyzeClasses(
         packages = "nuri.business.domain",

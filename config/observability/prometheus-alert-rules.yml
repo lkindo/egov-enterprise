@@ -35,3 +35,17 @@ groups:
         annotations:
           summary: "로그인 실패(401)가 5분째 분당 20건을 넘습니다"
           description: "요청 제한 로그인 버킷 거절(EgovRateLimitRejectionsSustained, bucket=login)과 함께 오르는지 확인합니다."
+
+      # 정기 첨부 점검(03:15 Asia/Seoul)이 24시간 안에 정상 완료(PASS)를 한 번도 기록하지 못한 상태다.
+      #   outcome 은 PASS·DRIFT·INCOMPLETE·FAILED·REPORT_FAILED 다(AttachmentIntegrityScheduler). 정규식 매처는
+      #   계약이 거부하므로 "PASS 가 없다" 로 나머지 넷을 한 규칙에 담는다 — DRIFT(실제 불일치 발견)도 확인 대상이다.
+      #   ⚠ 한계: 기능이 꺼져 있거나 한 번도 돌지 않으면 시계열 자체가 없어 이 규칙은 침묵한다. 기능을 켠 환경에서는
+      #   시계열 부재를 별도 absent() 규칙으로 감시할지 인수처가 정한다(PD-OPS-001 수신처 결정과 함께).
+      - alert: EgovAttachmentIntegrityNoHealthyRun
+        expr: sum by (application) (increase(nuri_attachment_integrity_runs_total{outcome="PASS"}[26h])) == 0
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "첨부 무결성 점검이 24시간째 정상 완료를 기록하지 못했습니다"
+          description: "최근 결과 JSON(last-complete.json·latest.json)의 outcome 으로 DRIFT·INCOMPLETE·FAILED 중 무엇인지 확인합니다."
