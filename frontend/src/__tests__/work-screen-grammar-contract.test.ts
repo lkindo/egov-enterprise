@@ -122,9 +122,8 @@ const NON_TEXT_INPUT_TYPES = new Set(['checkbox', 'radio', 'hidden', 'range', 'c
 const FIXED_HEIGHT = /^h-(\d+(\.\d+)?|px|\[[\d.]+(px|rem)\])$/;
 
 /**
- * 2026-09-23 동결. 남은 `h-11` 은 VRT 기준선 화면·공통 레이아웃(바꾸면 Linux 기준선을 다시 만든다)과
- * 도달할 수 없는 화면(DEC-OPS-023 ①)뿐이다(GAP-UIDENSITY-001). 나머지는 `h-10`·`h-8` 등 다른 고정
- * 높이다. 파일의 수가 줄면 여기서도 내리고, 0 이 되면 항목을 지운다.
+ * 2026-09-23 동결. 남은 `h-11` 은 도달할 수 없는 화면(DEC-OPS-023 ①)뿐이다. 나머지는 `h-10`·`h-8`
+ * 등 다른 고정 높이다. 파일의 수가 줄면 여기서도 내리고, 0 이 되면 항목을 지운다.
  */
 const CONTROL_HEIGHT_OVERRIDES: Readonly<Record<string, number>> = {
   'app/admin/collaboration/mail-send/MailSendHubClient.tsx': 2,
@@ -141,8 +140,7 @@ const CONTROL_HEIGHT_OVERRIDES: Readonly<Record<string, number>> = {
   'app/admin/survey/components/SurveyTemplatesPanel.tsx': 1,
   'app/admin/survey/hub/SurveyHubClient.tsx': 1,
   'app/admin/system/audit/AuditTimelineClient.tsx': 1,
-  'app/admin/system/common-code/CodeFormFields.tsx': 6,
-  'app/admin/system/common-code/CommonCodeClient.tsx': 6,
+  'app/admin/system/common-code/CommonCodeClient.tsx': 2,
   'app/admin/system/hpcm/HpcmClient.tsx': 2,
   'app/admin/system/isg/InternetSvcGuidanceClient.tsx': 2,
   'app/admin/system/menus/MenuAdminClient.tsx': 3,
@@ -154,20 +152,20 @@ const CONTROL_HEIGHT_OVERRIDES: Readonly<Record<string, number>> = {
   'app/admin/work-hub/WorkHubClient.tsx': 4,
   'app/admin/workflow/WorkflowClient.tsx': 2,
   'app/components/dashboard/BannerSlider.tsx': 1,
-  'app/components/layout/header.tsx': 4,
+  'app/components/layout/header.tsx': 3,
   'app/components/layout/sidebar.tsx': 2,
   'app/components/ui/app-notification-drawer.tsx': 1,
   'app/components/ui/code-picker.tsx': 1,
   'app/components/ui/recipient-picker.tsx': 3,
   'app/components/ui/smart-notification-hub.tsx': 3,
-  'app/components/ui/smart-onboarding-hub.tsx': 3,
+  'app/components/ui/smart-onboarding-hub.tsx': 1,
   'app/components/ui/standard-data-table.tsx': 10,
   'app/components/ui/standard-modal.tsx': 1,
   'app/components/ui/standard-search-filter.tsx': 1,
   'app/cop/cmy/selectCommunityList/CommunityHubClient.tsx': 1,
   'app/cop/sms/selectSmsList/SmsHubClient.tsx': 3,
   'app/global-error.tsx': 1,
-  'app/login/LoginClient.tsx': 4,
+  'app/login/LoginClient.tsx': 1,
   'app/smart-toolkit/schedule/dept/ScheduleDeptClient.tsx': 6,
   'app/survey/response/SurveyResponseClient.tsx': 2,
   'components/admin/system/NetworkForm.tsx': 2,

@@ -191,11 +191,11 @@ export function SmartOnboardingHub() {
 
             <div className="flex gap-3">
               {currentStep < steps.length - 1 ? (
-                <Button onClick={nextStep} className="rounded-lg font-bold h-11 px-10 bg-primary text-primary-foreground shadow-[0_15px_30px_-5px_rgba(59,130,246,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
+                <Button onClick={nextStep} className="rounded-lg font-bold px-10 bg-primary text-primary-foreground shadow-[0_15px_30px_-5px_rgba(59,130,246,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
                   {currentStep === 0 ? "플랫폼 둘러보기" : "다음 기능"} <ArrowRight size={18} />
                 </Button>
               ) : (
-                <Button onClick={handleComplete} className="rounded-lg font-bold h-11 px-12 bg-success text-success-foreground shadow-[0_15px_30px_-5px_rgba(16,185,129,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
+                <Button onClick={handleComplete} className="rounded-lg font-bold px-12 bg-success text-success-foreground shadow-[0_15px_30px_-5px_rgba(16,185,129,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
                   시작하기 <CheckCircle2 size={18} />
                 </Button>
               )}
