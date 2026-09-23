@@ -114,13 +114,17 @@ class InputContractMirrorLinterTest {
     // [2026-09-22 GAP-CONTRACT-001] +49 — 저장 경로가 확인된 DTO 12쌍 편입(만족도·댓글·로그인 정책·쪽지·부재·행정구역·
     //   메뉴·설문 문항/항목/템플릿·도움말·온라인 매뉴얼). 편입 즉시 만족도·댓글 본문 4000, 부재 여부 1 의 @Size 부재가
     //   red 로 드러나 함께 닫았다.
-    private static final int MIN_LENGTH_FIELDS = 176;
-    private static final int MIN_ENUM_FIELDS = 14;
-    private static final int MIN_NESTED_VALIDATION_FIELDS = 2;
+    // [2026-09-24 GAP-CONTRACT-001] +66 — 컨트롤러 요청 DTO 13개 편입(알림 발송·결재·메모 지시·게시글·정책·
+    //   사용자 프로필 둘·가입·설문 응답과 답변·메일·포상·행사). 가입 힌트·정답 300, 메일 본문 4000 의 @Size 부재를 함께 닫았다.
+    //   enum +1(일괄 상태 코드 P·A·D), 중첩 +3(알림 수신자·설문 답변·메일 수신자 — null 항목이 500 이던 두 곳 포함).
+    private static final int MIN_LENGTH_FIELDS = 242;
+    private static final int MIN_ENUM_FIELDS = 16;
+    private static final int MIN_NESTED_VALIDATION_FIELDS = 7;
     // [2026-09-06 병합] CommunityDto.cmntyNm·DeptJobBoxDto.deptTaskBoxNm 필수화(+2), SmsRecptnDto.rcptnTelno 해제(-1) → 37.
     // [2026-09-07] +2 (ISG itntSvcNm/itntSvcExpln).
     // [2026-09-22 GAP-CONTRACT-001] +16 (위 12쌍 중 필수 제약을 가진 7개 DTO 의 NotBlank/NotNull 전체).
-    private static final int MIN_REQUIRED_FIELDS = 58;
+    // [2026-09-24 GAP-CONTRACT-001] +19 (위 요청 DTO 13개 중 필수 제약을 가진 10개의 NotBlank/NotNull/NotEmpty 전체).
+    private static final int MIN_REQUIRED_FIELDS = 77;
     // [2026-09-07] +3 (ISG itntSrvcSn/lastMdfrId/mdfcnDt).
     private static final int MIN_READ_ONLY_FIELDS = 45;
     private static final int MIN_CALENDAR_DATE_FIELDS = 12;

@@ -1,7 +1,7 @@
 package nuri.api.controller.business.memoreport;
 
 import jakarta.validation.Valid;
-import nuri.api.controller.business.memoreport.dto.MemoInstructionRequest;
+import nuri.business.service.memoreport.dto.MemoInstructionRequest;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.memoreport.MemoReportService;

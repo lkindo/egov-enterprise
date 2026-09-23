@@ -6893,7 +6893,11 @@ export interface components {
         };
         BulkStatusRequest: {
             userIds: string[];
-            status: string;
+            /**
+             * @description 계정 상태 코드(P 정상 · A 승인 대기 · D 비활성)
+             * @enum {string}
+             */
+            status: "P" | "A" | "D";
         };
         BulkRoleRequest: {
             userIds: string[];

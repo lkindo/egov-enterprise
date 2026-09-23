@@ -47,10 +47,10 @@ describe('사용자·조직 관리자 서버 액션', () => {
   afterAll(() => consoleError.mockRestore());
 
   it('상태 일괄 변경은 대상·상태·인증을 전달하고 목록을 재검증한다', async () => {
-    const result = await bulkUpdateUserStatusAction(['U1', 'U2'], 'ACTIVE');
+    const result = await bulkUpdateUserStatusAction(['U1', 'U2'], 'D');
 
     expect(userAdminService.updateUsersStatus)
-      .toHaveBeenCalledWith(['U1', 'U2'], 'ACTIVE', AUTH);
+      .toHaveBeenCalledWith(['U1', 'U2'], 'D', AUTH);
     expect(revalidatePath).toHaveBeenCalledWith('/admin/user/manage');
     expect(result).toEqual({ success: true, message: '2명의 사용자 상태가 변경되었습니다.' });
   });

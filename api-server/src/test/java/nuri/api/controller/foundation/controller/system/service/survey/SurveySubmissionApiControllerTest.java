@@ -91,6 +91,20 @@ class SurveySubmissionApiControllerTest extends ControllerTestSupport {
         verify(surveyResultService, never()).submitResponse(anyLong(), any());
     }
 
+    /** null 답변 항목은 서비스가 {@code a.srvyQstnSn()} 에서 NPE(500)로 죽었다. */
+    @Test
+    @WithMockCustomUser(username = "user01", esntlId = "user01")
+    @DisplayName("null 답변 항목은 서비스에 도달하지 않는다")
+    void submit_rejectsNullAnswerItem() throws Exception {
+        mockMvc.perform(post("/api/v1/surveys/7/responses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"answers\":[null]}")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        verify(surveyResultService, never()).submitResponse(anyLong(), any());
+    }
+
     /**
      * 중복 제출 거부는 서비스가 판정한다(fast-path + 유니크 제약 위반 변환). 컨트롤러가 그
      * 실패를 삼켜 200 으로 바꾸면 사용자는 두 번째 제출이 반영됐다고 믿는다.
