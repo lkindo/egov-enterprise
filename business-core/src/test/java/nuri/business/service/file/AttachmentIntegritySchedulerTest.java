@@ -3,6 +3,7 @@ package nuri.business.service.file;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import nuri.business.service.file.dto.AttachmentIntegrityReport;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Files;
@@ -17,6 +18,32 @@ import static org.mockito.Mockito.*;
 
 class AttachmentIntegritySchedulerTest {
     @TempDir Path directory;
+
+    /**
+     * 경보 규칙은 Prometheus 노출 이름에 결속한다. 점 표기 → 밑줄 + {@code _total} 변환을 추론하지 않고 실제
+     * 레지스트리의 scrape 출력으로 고정한다 — observability-alert-rules 계약이 이 문자열을 참조한다
+     * (RateLimitFilterTest 의 같은 형태).
+     */
+    @Test
+    @DisplayName("[2026-09-23] Prometheus 로는 nuri_attachment_integrity_runs_total{outcome=...} 로 노출된다")
+    void exportsPrometheusCounterName() throws Exception {
+        var files = mock(AttachmentIntegrityService.class);
+        var references = mock(AttachmentReferenceIntegrityService.class);
+        var store = new AttachmentIntegrityReportStore(new ObjectMapper(), directory.toString());
+        var prometheus = new io.micrometer.prometheusmetrics.PrometheusMeterRegistry(
+                io.micrometer.prometheusmetrics.PrometheusConfig.DEFAULT);
+        var scheduler = new AttachmentIntegrityScheduler(files, references, store, prometheus, 20);
+        // 누락 0 · 미결정 0 · dangling 0 · 완주 → outcome 은 PASS 다(스케줄러의 판정식).
+        when(files.scanBounded(eq(20), any(Duration.class))).thenReturn(new AttachmentIntegrityReport(
+                3, 0, List.of(), "private-root", 3, 0, 0, List.of()));
+        when(references.scan(20)).thenReturn(new AttachmentReferenceIntegrityService.Result(5, 0, 2, true));
+
+        scheduler.scan();
+
+        org.junit.jupiter.api.Assertions.assertTrue(
+                prometheus.scrape().contains("nuri_attachment_integrity_runs_total{outcome=\"PASS\"} 1.0"),
+                prometheus.scrape());
+    }
 
     @Test
     void savesAggregateResultsAndKeepsLastCompleteResultAcrossFailureAndRestart() throws Exception {
