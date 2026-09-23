@@ -208,7 +208,6 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .totalArticles(3L)
                 .totalViews(305L)
                 .topContributor("Visible contributor")
-                .intelligenceScore(76)
                 .build());
 
         mockMvc.perform(get("/api/v1/boards/BBS_001/stats")
@@ -216,8 +215,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.totalArticles").value(3))
                 .andExpect(jsonPath("$.data.totalViews").value(305))
-                .andExpect(jsonPath("$.data.topContributor").value("Visible contributor"))
-                .andExpect(jsonPath("$.data.intelligenceScore").value(76));
+                .andExpect(jsonPath("$.data.topContributor").value("Visible contributor"));
 
         verify(boardService).getBoardStats("BBS_001");
     }

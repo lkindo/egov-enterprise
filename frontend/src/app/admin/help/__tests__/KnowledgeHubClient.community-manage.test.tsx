@@ -34,7 +34,7 @@ vi.mock('@tanstack/react-query', () => ({
       case 'hot-articles':
         return { ...common, data: { list: [] } };
       case 'knowledge-stats':
-        return { ...common, data: { intelligenceScore: 0, totalViews: 0, topContributor: '-' } };
+        return { ...common, data: { totalViews: 0, topContributor: '-' } };
       case 'knowledge-activities':
         return { ...common, data: [] };
       default:

@@ -20,7 +20,4 @@ public class BoardStatsResponse {
 
     @Schema(description = "주요 기여자 (최다 작성자)")
     private String topContributor;
-
-    @Schema(description = "지식화 점수 (0-100)")
-    private int intelligenceScore;
 }

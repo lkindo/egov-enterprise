@@ -56,7 +56,7 @@ vi.mock('@tanstack/react-query', () => ({
         if (harness.statsLoading) return { ...common, isLoading: true, data: undefined };
         return {
           ...common,
-          data: { intelligenceScore: 80, totalViews: 3, topContributor: '합성 작성자' },
+          data: { totalViews: 3, topContributor: '합성 작성자' },
         };
       case 'knowledge-activities':
         return {

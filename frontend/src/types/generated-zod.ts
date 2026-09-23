@@ -2477,7 +2477,6 @@ export const BoardStatsResponseSchema = z.object({
   totalArticles: z.number().int().optional(),
   totalViews: z.number().int().optional(),
   topContributor: z.string().optional(),
-  intelligenceScore: z.number().int().optional(),
 });
 export type BoardStatsResponse = z.infer<typeof BoardStatsResponseSchema>;
 
@@ -8243,14 +8242,12 @@ export const BoardStatsResponseRequestSchema = z.object({
   totalArticles: z.number().int().optional(),
   totalViews: z.number().int().optional(),
   topContributor: z.string().optional(),
-  intelligenceScore: z.number().int().optional(),
 });
 
 export const BoardStatsResponseResponseSchema = z.object({
   totalArticles: z.number().int().optional().nullable(),
   totalViews: z.number().int().optional().nullable(),
   topContributor: z.string().optional().nullable(),
-  intelligenceScore: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseBoardDtoRequestSchema = z.object({

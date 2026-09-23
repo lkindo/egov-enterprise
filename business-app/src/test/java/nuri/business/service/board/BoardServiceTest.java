@@ -317,8 +317,6 @@ class BoardServiceTest {
         assertThat(result.getTotalArticles()).isEqualTo(10L);
         assertThat(result.getTotalViews()).isEqualTo(100L);
         assertThat(result.getTopContributor()).isEqualTo("user1");
-        // (10 * 2) + 70 = 90
-        assertThat(result.getIntelligenceScore()).isEqualTo(90);
     }
 
     @Test
