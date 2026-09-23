@@ -185,7 +185,7 @@ export function SmartOnboardingHub() {
           </div>
 
           <div className="flex items-center justify-between gap-4 pt-10 border-t border-surface-inverse-border">
-            <Button variant="ghost" onClick={prevStep} className={cn("rounded-lg font-bold h-12 px-6 text-surface-inverse-muted hover:text-surface-inverse-foreground transition-all", currentStep === 0 && "invisible")}>
+            <Button variant="ghost" onClick={prevStep} className={cn("rounded-lg font-bold px-6 text-surface-inverse-muted hover:text-surface-inverse-foreground transition-all", currentStep === 0 && "invisible")}>
               <ChevronLeft size={20} /> 이전
             </Button>
 

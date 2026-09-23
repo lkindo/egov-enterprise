@@ -289,22 +289,22 @@ export default function HpcmClient({
           {/* 아이콘 전용 버튼은 스크린리더에서 전부 '버튼'으로 읽힌다 → 대상명을 접근명에 넣는다. */}
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             aria-label={`${item.hlpDfn} 수정`}
             disabled={isWritePending}
             onClick={() => openEdit(item)}
-            className="h-10 w-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
+            className="rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
           >
             <Edit2 size={16} aria-hidden="true" />
           </Button>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             aria-label={`${item.hlpDfn} ${deletingSn === item.hlpSn ? '삭제 중…' : '삭제'}`}
             aria-busy={deletingSn === item.hlpSn || undefined}
             disabled={isWritePending}
             onClick={() => { void handleDelete(item); }}
-            className="h-10 w-10 rounded-lg text-destructive hover:bg-destructive/10 transition-all"
+            className="rounded-lg text-destructive hover:bg-destructive/10 transition-all"
           >
             {deletingSn === item.hlpSn
               ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />

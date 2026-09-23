@@ -255,22 +255,22 @@ export default function ManualAdminClient({
           {/* 아이콘 전용 버튼은 스크린리더에서 전부 '버튼'으로 읽혀 오조작을 부른다 → 대상명 포함 접근명(감사 P1-10). */}
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             aria-label={`${item.onlnMnlNm} 수정`}
             disabled={isWritePending}
             onClick={() => handleOpenEdit(item)}
-            className="h-10 w-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
+            className="rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
           >
             <Edit2 size={16} aria-hidden="true" />
           </Button>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             aria-label={`${item.onlnMnlNm} ${deletingManualId === item.onlnMnlSn ? '삭제 중…' : '삭제'}`}
             aria-busy={deletingManualId === item.onlnMnlSn || undefined}
             disabled={isWritePending}
             onClick={() => handleDelete(item)}
-            className="h-10 w-10 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-500/10 transition-all"
+            className="rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-500/10 transition-all"
           >
             {deletingManualId === item.onlnMnlSn
               ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />

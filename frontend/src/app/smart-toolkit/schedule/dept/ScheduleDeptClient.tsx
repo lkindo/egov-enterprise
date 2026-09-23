@@ -368,7 +368,7 @@ export default function ScheduleDeptClient() {
                                 maxLength={300}
                                 aria-required="true"
                                 {...validation.fieldProps('schdlNm')}
-                                className="rounded-lg h-12"
+                                className="rounded-lg"
                                 value={formData.schdlNm ?? ''}
                                 onChange={(e) => {
                                     setFormData(prev => ({ ...prev, schdlNm: e.target.value }));
@@ -404,7 +404,7 @@ export default function ScheduleDeptClient() {
                                     type="date"
                                     aria-required="true"
                                     {...validation.fieldProps('schdlBgngYmd')}
-                                    className="rounded-lg h-12"
+                                    className="rounded-lg"
                                     value={ymdToInput(formData.schdlBgngYmd)}
                                     onChange={(e) => {
                                         setFormData(prev => ({ ...prev, schdlBgngYmd: inputToYmd(e.target.value) }));
@@ -422,7 +422,7 @@ export default function ScheduleDeptClient() {
                                     type="date"
                                     aria-required="true"
                                     {...validation.fieldProps('schdlEndYmd')}
-                                    className="rounded-lg h-12"
+                                    className="rounded-lg"
                                     value={ymdToInput(formData.schdlEndYmd)}
                                     onChange={(e) => {
                                         setFormData(prev => ({ ...prev, schdlEndYmd: inputToYmd(e.target.value) }));
@@ -438,7 +438,7 @@ export default function ScheduleDeptClient() {
                                 id="schdlPlcNm"
                                 maxLength={100}
                                 {...validation.fieldProps('schdlPlcNm')}
-                                className="rounded-lg h-12"
+                                className="rounded-lg"
                                 value={formData.schdlPlcNm || ''}
                                 onChange={(e) => {
                                     setFormData(prev => ({ ...prev, schdlPlcNm: e.target.value }));
@@ -449,8 +449,8 @@ export default function ScheduleDeptClient() {
                         </div>
                     </div>
                     <DialogFooter className="gap-2">
-                        <Button variant="outline" disabled={isSaving || deletingScheduleSn !== null} onClick={() => handleDialogOpenChange(false)} className="rounded-lg px-10 h-12 font-bold shadow-sm">취소</Button>
-                        <Button disabled={isSaving || deletingScheduleSn !== null} aria-busy={isSaving || undefined} onClick={handleSubmit} className="rounded-lg px-10 h-12 font-bold shadow-lg shadow-primary/20">
+                        <Button variant="outline" disabled={isSaving || deletingScheduleSn !== null} onClick={() => handleDialogOpenChange(false)} className="rounded-lg px-10 font-bold shadow-sm">취소</Button>
+                        <Button disabled={isSaving || deletingScheduleSn !== null} aria-busy={isSaving || undefined} onClick={handleSubmit} className="rounded-lg px-10 font-bold shadow-lg shadow-primary/20">
                             {isSaving ? '저장 중…' : '저장'}
                         </Button>
                     </DialogFooter>

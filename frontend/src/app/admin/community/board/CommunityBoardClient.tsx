@@ -249,7 +249,7 @@ function CommunityBoardContent() {
  type="button"
  onClick={() => setPage(i)}
  className={cn(
- "w-10 h-10 rounded-lg font-bold text-xs font-mono transition-all",
+ "rounded-lg font-bold text-xs font-mono transition-all size-[var(--control-h)]",
  page === i
  ? "bg-surface-inverse text-surface-inverse-foreground shadow-lg scale-110"
  : "bg-card text-muted-foreground border border-border hover:border-primary/20 hover:text-primary"

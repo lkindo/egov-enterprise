@@ -113,7 +113,7 @@ export default function CommunityHubClient({
       header: '이동',
       accessor: (item) => (
         <Link href={`/cop/cmy/selectCommunityDetail/${item.cmntySn}`}>
-          <Button size="sm" aria-label={`${item.cmntyNm || '커뮤니티'} 상세 보기`} className="h-10 w-10 rounded-[var(--radius-hub-item)] bg-muted border border-border/60 text-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all group">
+          <Button size="icon" aria-label={`${item.cmntyNm || '커뮤니티'} 상세 보기`} className="rounded-[var(--radius-hub-item)] bg-muted border border-border/60 text-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all group">
             <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </Button>
         </Link>

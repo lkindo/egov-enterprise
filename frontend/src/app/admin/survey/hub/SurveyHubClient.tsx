@@ -218,7 +218,7 @@ export function SurveyHubClient() {
          </p>
        </div>
      </div>
-     <Button variant="outline" onClick={retryFailed} className="h-10 px-6 rounded-lg font-bold text-xs gap-2 shrink-0">
+     <Button variant="outline" onClick={retryFailed} className="px-6 rounded-lg font-bold text-xs gap-2 shrink-0">
        <RefreshCcw size={14} /> 다시 시도
      </Button>
    </motion.div>

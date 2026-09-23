@@ -196,8 +196,8 @@ export function RecipientPicker({
             {selected.size > 0 ? `${selected.size}명 선택` : '선택된 수신자가 없습니다.'}
           </span>
           <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" onClick={onClose} className="h-10 px-5 rounded-lg">취소</Button>
-            <Button type="button" onClick={handleConfirm} disabled={selected.size === 0} className="h-10 px-6 rounded-lg">
+            <Button type="button" variant="outline" onClick={onClose} className="px-5 rounded-lg">취소</Button>
+            <Button type="button" onClick={handleConfirm} disabled={selected.size === 0} className="px-6 rounded-lg">
               선택 추가{selected.size > 0 ? ` (${selected.size})` : ''}
             </Button>
           </div>

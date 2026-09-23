@@ -247,7 +247,7 @@ export default function MailSendHubClient() {
                   variant="outline"
                   data-testid="mail-recipient-picker-btn"
                   onClick={() => setIsPickerOpen(true)}
-                  className="h-10 px-4 rounded-lg gap-2"
+                  className="px-4 rounded-lg gap-2"
                 >
                   <User size={16} aria-hidden="true" /> 수신자 찾기
                 </Button>

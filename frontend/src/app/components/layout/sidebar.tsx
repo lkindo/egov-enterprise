@@ -139,7 +139,7 @@ export function Sidebar({
               size="icon"
               onClick={() => setSidebarOpen(false)}
               aria-label="사이드바 닫기"
-              className="h-10 w-10 rounded-lg focus-visible:ring-2 focus-visible:ring-primary"
+              className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary"
             >
               <X size={20} className="text-muted-foreground" />
             </Button>
@@ -164,7 +164,7 @@ export function Sidebar({
                     aria-pressed={isActive}
                     onClick={() => setActiveMenuNo(domain.menuNo)}
                     className={cn(
-                      'h-10 w-full justify-start rounded-[var(--radius-hub-item)] px-3 text-xs font-bold',
+                      'w-full justify-start rounded-[var(--radius-hub-item)] px-3 text-xs font-bold',
                       isActive
                         ? 'bg-surface-inverse text-surface-inverse-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground'
                         : 'text-muted-foreground',

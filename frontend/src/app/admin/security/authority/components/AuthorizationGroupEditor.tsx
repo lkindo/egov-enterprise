@@ -124,7 +124,7 @@ export function AuthorizationGroupEditor({ snapshot, catalog, refreshing, onRefr
         <h3 className="font-semibold">기능권한</h3>
         <p className="text-sm text-muted-foreground">API와 화면 동작에 적용됩니다. 본인 자료·공개 범위 등 자료별 조건은 함께 적용됩니다.</p>
         {baseline.code === 'ROLE_ANONYMOUS' && <p role="status" className="text-sm text-muted-foreground">공개 메뉴 그룹은 메뉴 표시만 설정하며 로그인 사용자에게 배정하지 않습니다.</p>}
-        <label className="block space-y-1 text-sm">기능 영역<select aria-label="기능 영역" className="block h-10 rounded-md border border-input bg-background px-3" value={domain} onChange={(event) => setDomain(event.target.value)}><option value="">전체 영역</option>{[...new Set(catalog.operations.map((operation) => operation.domain))].sort().map((value) => <option key={value} value={value}>{permissionDomainLabel(value)}</option>)}</select></label>
+        <label className="block space-y-1 text-sm">기능 영역<select aria-label="기능 영역" className="block rounded-md border border-input bg-background px-3 h-[var(--control-h)]" value={domain} onChange={(event) => setDomain(event.target.value)}><option value="">전체 영역</option>{[...new Set(catalog.operations.map((operation) => operation.domain))].sort().map((value) => <option key={value} value={value}>{permissionDomainLabel(value)}</option>)}</select></label>
         <label className="block space-y-1 text-sm">기능 검색<Input value={filter} onChange={(event) => setFilter(event.target.value)} placeholder="기능명·도메인·코드 검색" /></label>
         <p className="text-sm text-muted-foreground">표시 {visible.length} / 전체 {catalog.operations.length}개 · 검색 결과 밖의 선택도 유지됩니다.</p>
         <div className="max-h-96 overflow-auto rounded-md border border-border">

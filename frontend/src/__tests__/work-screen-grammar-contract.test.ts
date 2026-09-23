@@ -122,45 +122,18 @@ const NON_TEXT_INPUT_TYPES = new Set(['checkbox', 'radio', 'hidden', 'range', 'c
 const FIXED_HEIGHT = /^h-(\d+(\.\d+)?|px|\[[\d.]+(px|rem)\])$/;
 
 /**
- * 2026-09-23 동결. 남은 `h-11` 은 도달할 수 없는 화면(DEC-OPS-023 ①)뿐이다. 나머지는 `h-10`·`h-12` 처럼
- * 기본 밀도에서 같은 값의 토큰이 없는 고정 높이다. 파일의 수가 줄면 여기서도 내리고, 0 이 되면 항목을 지운다.
+ * 2026-09-23 동결. 남은 11건은 옮기지 않기로 판단한 것이다 — 도달할 수 없는 화면 4(DEC-OPS-023 ①),
+ * 테마 CSS 없이 뜨는 전역 오류 화면 1(토큰이 정의되지 않는다), 목록 안 소형 아이콘 버튼·수신자 칩 삭제·
+ * 배너 점 같은 의도적 소형 6. 새 항목은 넣지 않는다. 파일의 수가 줄면 여기서도 내리고, 0 이 되면 지운다.
  */
 const CONTROL_HEIGHT_OVERRIDES: Readonly<Record<string, number>> = {
-  'app/admin/collaboration/mail-send/MailSendHubClient.tsx': 2,
-  'app/admin/community/board/CommunityBoardClient.tsx': 1,
-  'app/admin/community/boards/select-board-list/components/BoardPagination.tsx': 2,
-  'app/admin/community/templates/TemplateAdminClient.tsx': 2,
-  'app/admin/operation/external-hr/ExternalHrClient.tsx': 2,
-  'app/admin/security/authority/components/AuthorizationGroupEditor.tsx': 1,
-  'app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx': 2,
-  'app/admin/security/group/SecurityGroupClient.tsx': 2,
-  'app/admin/stats/IntelligenceHubClient.tsx': 1,
+  'app/admin/collaboration/mail-send/MailSendHubClient.tsx': 1,
   'app/admin/survey/components/SurveyQuestionsPanel.tsx': 3,
-  'app/admin/survey/hub/SurveyHubClient.tsx': 1,
   'app/admin/system/audit/AuditTimelineClient.tsx': 1,
-  'app/admin/system/hpcm/HpcmClient.tsx': 2,
-  'app/admin/system/isg/InternetSvcGuidanceClient.tsx': 2,
-  'app/admin/system/menus/MenuAdminClient.tsx': 3,
-  'app/admin/system/network/NetworkAdminClient.tsx': 2,
-  'app/admin/system/programs/ProgramAdminClient.tsx': 2,
   'app/admin/uss/ion/sms/SmsAdminClient.tsx': 1,
-  'app/admin/uss/olh/online-manual/ManualAdminClient.tsx': 2,
-  'app/admin/workflow/WorkflowClient.tsx': 1,
   'app/components/dashboard/BannerSlider.tsx': 1,
-  'app/components/layout/sidebar.tsx': 2,
-  'app/components/ui/recipient-picker.tsx': 2,
-  'app/components/ui/smart-notification-hub.tsx': 2,
-  'app/components/ui/smart-onboarding-hub.tsx': 1,
-  'app/components/ui/standard-data-table.tsx': 5,
-  'app/components/ui/standard-search-filter.tsx': 1,
-  'app/cop/cmy/selectCommunityList/CommunityHubClient.tsx': 1,
   'app/cop/sms/selectSmsList/SmsHubClient.tsx': 3,
   'app/global-error.tsx': 1,
-  'app/login/LoginClient.tsx': 1,
-  'app/smart-toolkit/schedule/dept/ScheduleDeptClient.tsx': 6,
-  'components/admin/system/NetworkForm.tsx': 2,
-  'components/ui/RichTextEditor.tsx': 1,
-  'components/ui/hub/HubChartCard.tsx': 3,
 };
 
 interface ControlHeightOverride {

@@ -349,10 +349,10 @@ function LoginContent() {
                                     <Button
                                         type="button"
                                         variant="ghost"
-                                        size="icon"
+                                        size="icon-sm"
                                         aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 표시'}
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 text-muted-foreground hover:text-foreground rounded-lg"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground rounded-lg"
                                     >
                                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </Button>

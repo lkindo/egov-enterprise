@@ -717,7 +717,7 @@ export function StandardDataTable<T extends object>({
                   <Button
                     variant="outline"
                     size="icon"
-                    className="w-10 h-10 rounded-lg border-2"
+                    className="rounded-lg border-2"
                     disabled={pagination.currentPage <= 1}
                     onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
                     aria-label="이전 페이지"
@@ -732,7 +732,7 @@ export function StandardDataTable<T extends object>({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="w-10 h-10 rounded-lg font-bold"
+                        className="rounded-lg font-bold"
                         onClick={() => pagination.onPageChange(1)}
                         aria-label="1 페이지"
                       >
@@ -751,7 +751,7 @@ export function StandardDataTable<T extends object>({
                       variant={pageNo === pagination.currentPage ? "outline" : "ghost"}
                       size="icon"
                       className={cn(
-                        "w-10 h-10 rounded-lg font-bold",
+                        "rounded-lg font-bold",
                         pageNo === pagination.currentPage && "border-2 border-primary text-primary"
                       )}
                       onClick={() => pagination.onPageChange(pageNo)}
@@ -772,7 +772,7 @@ export function StandardDataTable<T extends object>({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="w-10 h-10 rounded-lg font-bold"
+                        className="rounded-lg font-bold"
                         onClick={() => pagination.onPageChange(totalPages)}
                         aria-label={`${totalPages} 페이지`}
                       >
@@ -786,7 +786,7 @@ export function StandardDataTable<T extends object>({
                   <Button
                     variant="outline"
                     size="icon"
-                    className="w-10 h-10 rounded-lg border-2"
+                    className="rounded-lg border-2"
                     disabled={pagination.currentPage >= pagination.totalPages}
                     onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
                     aria-label="다음 페이지"

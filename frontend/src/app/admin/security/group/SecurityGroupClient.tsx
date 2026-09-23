@@ -267,7 +267,7 @@ export default function SecurityGroupClient() {
  className: 'text-right w-32',
  accessor: (item: GroupManage) => (
  <div className="flex justify-end gap-2 pr-4">
- <Button variant="ghost" size="icon" disabled={isDeletePending || isSubmitPending} onClick={() => handleEdit(item)} aria-label={`${item.groupNm || item.groupId} 그룹 수정`} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold shadow-sm group">
+ <Button variant="ghost" size="icon" disabled={isDeletePending || isSubmitPending} onClick={() => handleEdit(item)} aria-label={`${item.groupNm || item.groupId} 그룹 수정`} className="bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold shadow-sm group">
  <Settings size={16} aria-hidden="true" className="group-hover:rotate-45 transition-transform" />
  </Button>
  <Button
@@ -277,7 +277,7 @@ export default function SecurityGroupClient() {
   aria-busy={deletingGroupId === item.groupId || undefined}
   onClick={() => { void handleDelete(item); }}
   aria-label={`${item.groupNm || item.groupId} 그룹 ${deletingGroupId === item.groupId ? '삭제 중' : '삭제'}`}
-  className="h-10 w-10 text-destructive-emphasis bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground border border-destructive/20 rounded-lg transition-all shadow-sm"
+  className="text-destructive-emphasis bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground border border-destructive/20 rounded-lg transition-all shadow-sm"
  >
  {deletingGroupId === item.groupId
   ? <Loader2 size={16} aria-hidden="true" className="animate-spin" />

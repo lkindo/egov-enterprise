@@ -153,7 +153,7 @@ export default function NetworkAdminClient({ initialNetworks, fetchError = null 
                         disabled={WRITE_NOT_IMPLEMENTED}
                         title={WRITE_NOT_IMPLEMENTED ? writeDisabledReason : undefined}
                         aria-label={`${item.manageIem || item.ntwrkId} 노드 수정${WRITE_NOT_IMPLEMENTED ? ' (미구현)' : ''}`}
-                        className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold"
+                        className="bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold"
                         onClick={() => handleEdit(item)}
                     >
                         <Settings size={16} aria-hidden="true" />
@@ -164,7 +164,7 @@ export default function NetworkAdminClient({ initialNetworks, fetchError = null 
                         disabled={WRITE_NOT_IMPLEMENTED}
                         title={WRITE_NOT_IMPLEMENTED ? writeDisabledReason : undefined}
                         aria-label={`${item.manageIem || item.ntwrkId} 노드 삭제${WRITE_NOT_IMPLEMENTED ? ' (미구현)' : ''}`}
-                        className="h-10 w-10 text-destructive-emphasis bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground border border-destructive/20 rounded-lg transition-all"
+                        className="text-destructive-emphasis bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground border border-destructive/20 rounded-lg transition-all"
                         onClick={() => handleDelete(item)}
                     >
                         <Trash2 size={16} aria-hidden="true" />

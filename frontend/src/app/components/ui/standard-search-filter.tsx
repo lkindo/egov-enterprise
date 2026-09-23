@@ -81,7 +81,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
             variant="ghost"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="rounded-lg font-bold h-10 px-4 gap-2 hover:bg-muted transition-all text-muted-foreground"
+            className="rounded-lg font-bold px-4 gap-2 hover:bg-muted transition-all text-muted-foreground h-[var(--control-h)]"
           >
             {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             <span className="text-xs tracking-widest font-bold uppercase">필터 {isExpanded ? '접기' : '펼치기'}</span>
