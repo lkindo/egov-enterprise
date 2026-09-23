@@ -245,7 +245,7 @@ export default function InternetSvcGuidanceClient({
               disabled={deletingSn !== null || submitLoading}
               aria-label={`${item.itntSvcNm} 수정`}
               onClick={() => openEdit(item)}
-              className="w-10 h-10 rounded-lg hover:bg-muted transition-colors"
+              className="rounded-lg hover:bg-muted transition-colors"
             >
               <Pencil size={16} aria-hidden="true" />
             </Button>
@@ -256,7 +256,7 @@ export default function InternetSvcGuidanceClient({
               aria-busy={isDeleting}
               aria-label={isDeleting ? `${item.itntSvcNm} 삭제 중` : `${item.itntSvcNm} 삭제`}
               onClick={() => { void handleDelete(item); }}
-              className="w-10 h-10 rounded-lg hover:bg-destructive/10 hover:text-destructive-emphasis transition-colors"
+              className="rounded-lg hover:bg-destructive/10 hover:text-destructive-emphasis transition-colors"
             >
               {isDeleting
                 ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />

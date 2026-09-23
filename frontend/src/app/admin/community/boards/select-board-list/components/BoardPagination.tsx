@@ -17,7 +17,7 @@ export const BoardPagination = ({ currentPage, totalPages, onPageChange }: Board
         variant="outline"
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className="h-12 px-8 font-bold rounded-lg border-2 hover:bg-muted"
+        className="px-8 font-bold rounded-lg border-2 hover:bg-muted"
         aria-label="이전 페이지"
       >
         이전
@@ -31,7 +31,7 @@ export const BoardPagination = ({ currentPage, totalPages, onPageChange }: Board
         variant="outline"
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
-        className="h-12 px-8 font-bold rounded-lg border-2 hover:bg-muted"
+        className="px-8 font-bold rounded-lg border-2 hover:bg-muted"
         aria-label="다음 페이지"
       >
         다음

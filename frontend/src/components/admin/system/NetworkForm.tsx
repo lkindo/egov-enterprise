@@ -157,7 +157,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
                             <FormControl>
                                 <select
                                     {...field}
-                                    className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
+                                    className="w-full px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20 h-[var(--control-h)]"
                                 >
                                     <option value="Y">사용 중</option>
                                     <option value="N">미사용</option>
@@ -172,7 +172,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
                     <button 
                       type="button" 
                       onClick={onCancel} 
-                      className="px-6 h-10 rounded-lg border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center text-sm font-medium"
+                      className="px-6 rounded-lg border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center text-sm font-medium h-[var(--control-h)]"
                     >
                       취소
                     </button>

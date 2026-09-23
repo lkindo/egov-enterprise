@@ -222,7 +222,7 @@ export default function ProgramAdminClient({
  <div className="flex justify-end gap-2 pr-4">
  <Tooltip>
  <TooltipTrigger asChild>
- <Button size="icon" aria-label={`${item.prgrmKornNm} 프로그램 수정`} disabled={deletingProgramFileName !== null || isModalOpen} className="h-10 w-10 rounded-lg bg-muted border border-border text-muted-foreground hover:bg-primary hover:border-primary hover:text-white transition-all" onClick={() => handleOpenEdit(item)}>
+ <Button size="icon" aria-label={`${item.prgrmKornNm} 프로그램 수정`} disabled={deletingProgramFileName !== null || isModalOpen} className="rounded-lg bg-muted border border-border text-muted-foreground hover:bg-primary hover:border-primary hover:text-white transition-all" onClick={() => handleOpenEdit(item)}>
  <Settings size={16} aria-hidden="true" />
  </Button>
  </TooltipTrigger>
@@ -238,7 +238,7 @@ export default function ProgramAdminClient({
  aria-label={`${item.prgrmKornNm} 프로그램 ${isDeleting ? '삭제 중…' : '삭제'}`}
  aria-busy={isDeleting || undefined}
  disabled={deletingProgramFileName !== null || isModalOpen}
- className="h-10 w-10 text-destructive-emphasis bg-destructive/10 border border-destructive/20 hover:bg-destructive hover:text-destructive-foreground transition-all rounded-lg"
+ className="text-destructive-emphasis bg-destructive/10 border border-destructive/20 hover:bg-destructive hover:text-destructive-foreground transition-all rounded-lg"
  onClick={() => handleDelete(item)}
  >
  {isDeleting

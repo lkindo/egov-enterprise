@@ -156,7 +156,7 @@ export default function WorkflowClient() {
                                     </div>
                                 </div>
 
-                                <Button disabled title="정적 데모에서는 작업을 실행할 수 없습니다." className="w-full h-12 bg-surface-inverse hover:bg-primary text-surface-inverse-foreground rounded-md font-semibold text-xs transition-colors">
+                                <Button disabled title="정적 데모에서는 작업을 실행할 수 없습니다." className="w-full bg-surface-inverse hover:bg-primary text-surface-inverse-foreground rounded-md font-semibold text-xs transition-colors">
                                     작업 실행 (미지원)
                                 </Button>
                             </div>

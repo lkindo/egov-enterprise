@@ -557,7 +557,7 @@ function HubErrorState({ message, onRetry }: { message: string, onRetry: () => v
         <p className="text-sm font-bold tracking-tight text-foreground">{message}</p>
         <p className="text-xs font-bold tracking-tight text-muted-foreground">잠시 후 다시 시도하거나 관리자에게 문의해 주세요.</p>
       </div>
-      <Button variant="outline" onClick={onRetry} className="h-10 px-6 rounded-lg border-2 text-xs font-bold tracking-tight gap-2">
+      <Button variant="outline" onClick={onRetry} className="px-6 rounded-lg border-2 text-xs font-bold tracking-tight gap-2">
         <RefreshCcw size={16} /> 다시 시도
       </Button>
     </div>

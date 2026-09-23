@@ -277,8 +277,9 @@ function ToolbarButton({ label, onClick, active, disabled = false, icon, classNa
       aria-label={label}
       aria-pressed={active === undefined ? undefined : active}
       title={label}
+      size="icon"
       className={cn(
-        "w-10 h-10 p-0 rounded-lg transition-all duration-300",
+        "rounded-lg transition-all duration-300",
         active 
           ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-110"
           : "hover:bg-primary/10 hover:text-primary text-muted-foreground",

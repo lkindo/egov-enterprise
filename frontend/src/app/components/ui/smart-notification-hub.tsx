@@ -132,7 +132,7 @@ export function SmartNotificationHub() {
             size="icon"
             aria-label="알림 옵션 (미지원)"
             title="개별 알림 옵션은 아직 연결되지 않았습니다."
-            className="w-10 h-10 rounded-lg"
+            className="rounded-lg"
             disabled
           >
             <MoreVertical size={16} className="text-muted-foreground" />
@@ -174,7 +174,7 @@ export function SmartNotificationHub() {
                variant="outline"
                size="icon"
                aria-label="알림 목록 새로고침"
-               className="h-10 w-10 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm"
+               className="rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm"
                onClick={refresh}
              >
                 <RefreshCw size={18} />

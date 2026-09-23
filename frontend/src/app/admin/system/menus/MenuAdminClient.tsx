@@ -552,7 +552,7 @@ export default function MenuAdminClient({
         description="메뉴 계층을 선택해 연결 경로와 사용 상태를 확인하고 편집합니다."
         breadcrumbItems={[{ label: '시스템 관리' }, { label: '메뉴 관리' }]}
         actions={
-          <Button onClick={() => handleOpenCreate(0)} className="h-10 gap-2 font-semibold">
+          <Button onClick={() => handleOpenCreate(0)} className="gap-2 font-semibold">
             <Plus size={16} aria-hidden="true" /> 신규 메뉴 등록
           </Button>
         }
@@ -568,7 +568,7 @@ export default function MenuAdminClient({
                 </p>
               </div>
             </div>
-            <Button variant="outline" onClick={() => router.refresh()} className="h-10 shrink-0 gap-2 font-semibold">
+            <Button variant="outline" onClick={() => router.refresh()} className="shrink-0 gap-2 font-semibold">
               <RefreshCcw size={16} aria-hidden="true" /> 다시 시도
             </Button>
           </div>
@@ -613,7 +613,7 @@ export default function MenuAdminClient({
                   setSelectedMenuId(null);
                 }}
                 placeholder="메뉴 이름·ID·라우트 검색"
-                className="h-10 pl-9"
+                className="pl-9"
               />
             </div>
             {menuKeyword.trim() && (
