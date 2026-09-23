@@ -381,7 +381,7 @@ export default function ManualAdminClient({
                           {...field}
                           maxLength={100}
                           placeholder="매뉴얼 명을 입력하세요..."
-                          className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-lg font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                          className="px-8 rounded-lg border-2 border-border bg-muted/50 font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                         />
                       </FormControl>
                       <FormMessage className="text-xs font-bold" />

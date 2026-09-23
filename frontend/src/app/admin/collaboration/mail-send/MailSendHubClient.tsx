@@ -198,7 +198,8 @@ export default function MailSendHubClient() {
           variant="outline"
           aria-label="이전 화면으로 이동"
           onClick={() => router.back()}
-          className="w-16 h-11 rounded-lg border-2 group hover:bg-surface-inverse transition-all duration-500 shadow-xl active:scale-95 bg-card"
+          size="icon"
+          className="rounded-lg border-2 group hover:bg-surface-inverse transition-all duration-500 shadow-xl active:scale-95 bg-card"
         >
           <ArrowLeft className="group-hover:text-surface-inverse-foreground group-hover:-translate-x-1 transition-all" />
         </Button>
@@ -304,7 +305,7 @@ export default function MailSendHubClient() {
                     {...validation.fieldProps('recipients')}
                     data-testid="mail-recipient-input"
                     placeholder={`이메일 주소를 직접 입력하거나 ‘수신자 찾기’로 ${PICKER_SOURCE_LABEL}에서 고르세요`}
-                    className="h-11 text-xl font-bold tracking-tight bg-muted border-none rounded-lg focus-visible:ring-2 focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground"
+                    className="font-bold tracking-tight bg-muted border-none rounded-lg focus-visible:ring-2 focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground"
                     value={recipientSearch}
                     onChange={(e) => {
                       validation.clearError('recipients');
@@ -374,7 +375,7 @@ export default function MailSendHubClient() {
                 validation.clearError('sj');
                 setForm({ ...form, sj: e.target.value });
               }}
-              className="h-11 bg-transparent border-none text-foreground text-3xl font-bold placeholder:text-foreground/10 focus-visible:ring-0 p-0 tracking-tight"
+              className="text-foreground font-bold tracking-tight"
               placeholder="제목을 입력하세요."
               maxLength={256}
               required

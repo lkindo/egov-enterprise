@@ -40,13 +40,13 @@ export default function Error({
                     <Button
                         onClick={handleReset}
                         size="lg"
-                        className="rounded-lg h-11 font-bold bg-destructive hover:bg-destructive/90 text-white shadow-xl shadow-destructive/20 gap-2"
+                        className="rounded-lg font-bold bg-destructive hover:bg-destructive/90 text-white shadow-xl shadow-destructive/20 gap-2"
                     >
                         <RotateCcw size={20} /> 다시 시도하기
                     </Button>
                     <Link
                         href="/"
-                        className={cn(buttonVariants({ variant: "outline", size: "lg" }), "rounded-lg h-11 font-bold border-2 border-primary/10 gap-2")}
+                        className={cn(buttonVariants({ variant: "outline", size: "lg" }), "rounded-lg font-bold border-2 border-primary/10 gap-2")}
                     >
                         <Home size={20} /> 홈으로 돌아가기
                     </Link>

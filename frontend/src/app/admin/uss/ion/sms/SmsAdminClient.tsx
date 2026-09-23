@@ -553,7 +553,7 @@ export default function SmsAdminClient({
                                   handleAddNumber();
                                 }
                               }}
-                              className="h-11 pl-16 pr-8 rounded-lg border-none bg-muted text-xl font-bold tabular-nums focus:bg-card focus:ring-8 focus:ring-primary/5 transition-all shadow-inner tracking-wider"
+                              className="pl-16 pr-8 rounded-lg border-none bg-muted font-bold tabular-nums focus:bg-card focus:ring-8 focus:ring-primary/5 transition-all shadow-inner tracking-wider"
                             />
                           </FormControl>
                         </div>
