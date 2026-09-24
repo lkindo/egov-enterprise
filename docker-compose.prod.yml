@@ -76,10 +76,11 @@ services:
       # [2026-09-06 DEC-OPS-045] 읽은 알림 보존·정리(PD-NOTE-003). 스케줄러·삭제 술어·하한 가드는 이미
       #   있는데 이 두 줄이 없어 **호스트 환경에 값을 넣어도 컨테이너에 닿지 않았다** — compose 는 여기
       #   나열된 변수만 전달한다. 즉 인수처가 보존 개월을 정해도 이미지를 고치지 않고는 켤 수 없었다.
-      #   기본은 그대로 꺼짐이며, 켤 때는 둘을 함께 준다. read-months 가 1 미만이면 켜져 있어도
-      #   삭제하지 않는다(미설정 상태의 전량 파기 방지). 읽지 않은 알림은 대상이 아니다.
+      #   기본은 그대로 꺼짐이다. [2026-09-24 DEC-OPS-128] 보존 기간은 앱 기본값 6개월이라 켤 때는
+      #   ENABLED 하나면 된다 — 개월 수는 값 없이 전달해 호스트에 없으면 앱 기본값을 쓴다(종전 `:-0` 은
+      #   기본값을 0 으로 덮어 켜도 하한 가드에 걸렸다). 읽지 않은 알림은 대상이 아니다.
       NOTIFICATION_RETENTION_ENABLED: ${NOTIFICATION_RETENTION_ENABLED:-false}
-      NOTIFICATION_RETENTION_READ_MONTHS: ${NOTIFICATION_RETENTION_READ_MONTHS:-0}
+      NOTIFICATION_RETENTION_READ_MONTHS:
       # 로그 파기는 base 기본값이 켜짐(true)이라 전달이 없어도 동작한다. 인수처가 개월 수를 바꾸려면
       #   application-prod.yml 또는 SPRING_APPLICATION_JSON 으로 nuri.log.retention.* 을 준다.
       LOG_RETENTION_ENABLED: ${LOG_RETENTION_ENABLED:-true}
