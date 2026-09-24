@@ -99,9 +99,9 @@ class DashboardApiControllerTest extends ControllerTestSupport {
     void dashboardExtensions_areFlattenedAtTheWireBoundary() {
         DashboardResponse response = DashboardResponse.from(Map.of("customWidget", "value"));
 
-        com.fasterxml.jackson.databind.JsonNode json = objectMapper.valueToTree(response);
+        tools.jackson.databind.JsonNode json = objectMapper.valueToTree(response);
 
         assertThat(json.has("extensions")).isFalse();
-        assertThat(json.path("customWidget").asText()).isEqualTo("value");
+        assertThat(json.path("customWidget").asString()).isEqualTo("value");
     }
 }

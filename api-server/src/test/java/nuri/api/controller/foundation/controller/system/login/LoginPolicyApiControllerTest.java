@@ -3,7 +3,8 @@ package nuri.api.controller.foundation.controller.system.login;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.service.login.LoginPolicyManageService;
 import nuri.business.service.login.dto.LoginPolicyDto;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ class LoginPolicyApiControllerTest {
     @InjectMocks
     private LoginPolicyApiController loginPolicyApiController;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private ObjectMapper objectMapper = JsonMapper.builder().configureForJackson2().build();
 
     @BeforeEach
     void setUp() {

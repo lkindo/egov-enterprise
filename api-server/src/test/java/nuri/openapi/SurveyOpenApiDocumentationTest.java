@@ -23,7 +23,7 @@ import static nuri.openapi.OpenApiDocumentationTest.isNullableSchema;
 })
 class SurveyOpenApiDocumentationTest {
   @Autowired private MockMvc mockMvc;
-  @Autowired private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+  @Autowired private tools.jackson.databind.ObjectMapper objectMapper;
 
   @Test
   @DisplayName("Survey의 실제 JSON null 생산 방식과 OpenAPI nullable 계약이 일치한다")
@@ -32,7 +32,7 @@ class SurveyOpenApiDocumentationTest {
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    com.fasterxml.jackson.databind.JsonNode schemas = objectMapper.readTree(content)
+    tools.jackson.databind.JsonNode schemas = objectMapper.readTree(content)
         .path("components").path("schemas");
 
     nuri.business.service.survey.dto.SurveyResultDto survey =
@@ -43,7 +43,7 @@ class SurveyOpenApiDocumentationTest {
             .srvyQstnSn(4L)
             .srvyArtclSn(5L)
             .build();
-    com.fasterxml.jackson.databind.JsonNode surveyJson = objectMapper.valueToTree(survey);
+    tools.jackson.databind.JsonNode surveyJson = objectMapper.valueToTree(survey);
     assertThat(surveyJson.path("rspdntAnsCn").isNull()).isTrue();
     assertThat(surveyJson.path("rspnsNm").isNull()).isTrue();
     assertThat(surveyJson.path("etcAnsCn").isNull()).isTrue();

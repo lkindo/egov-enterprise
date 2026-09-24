@@ -1,7 +1,8 @@
 package nuri.api.harness;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -109,14 +110,14 @@ class ApiDocsPathCoverageLinterTest {
 
     private Set<String> loadApiDocsPaths() throws IOException {
         Path apiDocs = resolveApiDocs();
-        JsonNode root = new ObjectMapper().readTree(HarnessSourceIndex.read(apiDocs));
+        JsonNode root = JsonMapper.builder().configureForJackson2().build().readTree(HarnessSourceIndex.read(apiDocs));
         JsonNode paths = root.get("paths");
         if (paths == null || !paths.isObject()) {
             fail("게이트 무결성 파손: api-docs.json 에 paths 객체가 없습니다 (" + apiDocs + ").");
             return Set.of();
         }
         Set<String> result = new TreeSet<>();
-        for (Iterator<String> it = paths.fieldNames(); it.hasNext(); ) {
+        for (Iterator<String> it = paths.propertyNames().iterator(); it.hasNext(); ) {
             result.add(normalize(it.next()));
         }
         return result;

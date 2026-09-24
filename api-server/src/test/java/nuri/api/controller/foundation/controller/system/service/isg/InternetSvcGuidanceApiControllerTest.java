@@ -3,8 +3,8 @@ package nuri.api.controller.foundation.controller.system.service.isg;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.service.isg.InternetSvcGuidanceService;
 import nuri.business.service.isg.dto.InternetSvcGuidanceDto;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,12 +37,11 @@ class InternetSvcGuidanceApiControllerTest {
     @InjectMocks
     private InternetSvcGuidanceApiController internetSvcGuidanceApiController;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private ObjectMapper objectMapper = JsonMapper.builder().configureForJackson2().build();
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        objectMapper.registerModule(new JavaTimeModule());
         mockMvc = MockMvcBuilders.standaloneSetup(internetSvcGuidanceApiController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())

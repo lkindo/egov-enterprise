@@ -862,6 +862,34 @@ api-server 689·migration-tool 958), 하네스 99/99, SAST 예외 계약 17/17. 
 ⚠ **2단계에 쓸 사실 하나.** 프로브의 전체 통합 테스트는 모르는 사이 HTTP 본문을 Jackson 3로 검증했고,
 `JsonNode` DTO 하나 말고는 통과했다. Jackson 3 변환기 쪽 HTTP 계층의 위험은 그만큼 작다는 증거다.
 
+### 2단계 적용 결과 (2026-09-24)
+
+온라인 앱의 HTTP·WebSocket 변환기와 Boot 매퍼를 Jackson 3로 옮기고 호환 모듈 `spring-boot-jackson2`를 걷었다.
+본체 5개·테스트 57개 파일이 `tools.jackson`으로 옮겨졌다.
+
+**wire 규칙은 설정 두 줄로 유지한다.** Jackson 3는 기본값이 바뀌었다(날짜 타임스탬프, primitive의 null, 뒤따르는 토큰,
+속성 알파벳 정렬, 파라미터 이름 감지 등). `spring.jackson.use-jackson2-defaults: true`는 Boot가 Jackson 3의
+`MapperBuilder.configureForJackson2()`를 부르게 해 대부분을 되돌린다. 다만 그 메서드는 순수 Jackson 2 기본값이라
+파라미터 이름 감지를 끈다 — Boot 3.5는 파라미터 이름 모듈을 등록해 켜 두었으므로
+`spring.jackson.mapper.detect-parameter-names: true`로 되돌렸다.
+[동등성 테스트](../../api-server/src/test/java/nuri/api/config/JsonConverterParityIntegrationTest.java)가 Boot 매퍼의 기능값 8개를 고정한다.
+
+| 발견 | 증상 | 조치 |
+|---|---|---|
+| 알 수 없는 필드 메시지 | 예외 처리기가 원인을 Jackson 2 예외 타입으로 판별해, Jackson 3 변환기에서는 조용히 빗나가 필드 이름이 없는 일반 메시지가 된다. 기존 단위 테스트는 원인 예외를 직접 만들어 넣어 이것을 보지 못한다. | Jackson 3 타입으로 판별하고, 실제 변환기를 거치는 테스트를 추가 |
+| `api-docs.json` 포맷터 | 빈 컨테이너를 `[]`로 쓰던 PrettyPrinter 서브클래스가 Jackson 3 API와 맞지 않았다. | Jackson 3 `Separators`의 빈 컨테이너 구분자로 대체. 재생성본이 main과 바이트까지 같다 |
+| 기계적 이름 바꾸기 | JsonNode의 `fields()` → `properties()` 치환이 같은 이름의 record 접근자 17곳까지 건드렸다(H4). | 컴파일 오류로 드러나 그 파일만 되돌림 |
+| SAST 예외의 행 결속 | FP-008 탐지 파일에 주석 한 줄을 더하면 탐지 행(69)이 밀려 CodeQL 예외가 빗나간다. | 줄 수를 유지하고 보완 소스를 재검토 |
+
+**migration-tool은 Jackson 2에 둔다.** 온라인 앱과 분리된 CLI라 Boot의 HTTP 변환기를 쓰지 않고, 승인 산출물이
+정규화 JSON의 digest에 결속돼 직렬화가 조금만 달라져도 기존 승인이 무효가 된다. deprecated인 것은 Boot 호환
+모듈이지 Jackson 2 자체가 아니다(DEC-OPS-124).
+
+로컬 검증: 전체 테스트 3,790건(foundation 339·business-core 962·business-app 841·api-server 690·migration-tool 958).
+migration-tool 종료·재개 시험 1건은 1단계와 같은 부하 조건에서 90초를 넘었고 단독 재실행에서 통과했다.
+하네스 99/99, SAST 예외 계약 17/17, `api-docs.json` 바이트 동일, red 증명 3종(예외 타입 오판·Jackson 2 기본값
+제거·파라미터 이름 끄기가 각각 해당 테스트만 실패).
+
 ## ZAP 주간 스캔 경고 분류
 
 주간 실행 `35489408892`(2026-09-20, 리포트 아티팩트 `zap_baseline_frontend`·`zap_fullscan_api`)의

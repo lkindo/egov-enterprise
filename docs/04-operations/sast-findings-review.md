@@ -1,5 +1,16 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-09-24 Jackson 3 이행(ADR-0024 2단계)에 따른 재검토
+
+- `WebSocketCookieAuthenticationFilter`(FP-008 탐지 파일, FP-001 보완 소스): 거절 응답 본문을 쓰는 매퍼를
+  Jackson 2 `ObjectMapper`에서 Jackson 2 기본값을 입힌 Jackson 3 `JsonMapper`로 바꿨다. 임포트 한 줄과 필드 한 줄이
+  같은 줄 수로 바뀌어 탐지 행(69)과 그 내용은 그대로다. 자격 확인 → 401 종료 흐름은 바뀌지 않았다.
+- 빌드 파일 3개(FP-007): 호환 모듈 `spring-boot-jackson2`와 Jackson 2 직접 의존을 걷고 Jackson 3 좌표를 선언했다.
+  H2는 여전히 테스트 구성에만 있다.
+
+예외 6건의 범위·규칙·행·fingerprint·승인일·만료일과 보안 임계값은 유지한다. 재결속 전 해시 불일치가 SAST 계약을
+실패시켰고, 재결속 뒤 같은 계약 17건이 통과했다. CodeQL 결과는 병합할 커밋의 required CI로 확인한다.
+
 ## 2026-09-24 Spring Boot 4.1.1 전환(1단계)에 따른 보완 소스 재검토
 
 ADR-0024 1단계로 보완 소스 8개가 바뀌어 예외 4건(SAST-FP-001·002·007·008)의 해시를 재결속한다.

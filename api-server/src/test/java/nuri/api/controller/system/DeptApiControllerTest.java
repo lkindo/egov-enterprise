@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class DeptApiControllerTest extends BaseControllerTest {
 
     private DeptManageService deptManageService;
-    private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+    private tools.jackson.databind.ObjectMapper objectMapper = tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build();
 
     @Override
     protected Object getController() {

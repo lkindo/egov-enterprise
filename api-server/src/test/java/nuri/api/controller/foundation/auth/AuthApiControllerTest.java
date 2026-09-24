@@ -10,7 +10,8 @@ import nuri.business.service.user.UserService;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.service.user.dto.UserDto;
 import nuri.business.domain.user.entity.Role;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -63,7 +64,7 @@ class AuthApiControllerTest {
     @InjectMocks
     private AuthApiController authApiController;
  
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder().configureForJackson2().build();
  
     @BeforeEach
     void setUp() {

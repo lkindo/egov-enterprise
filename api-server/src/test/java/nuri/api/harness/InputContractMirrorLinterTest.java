@@ -1,10 +1,11 @@
 package nuri.api.harness;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.StreamReadFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.validation.Valid;
@@ -161,7 +162,7 @@ class InputContractMirrorLinterTest {
     @Test
     @DisplayName("달력 날짜 입력 제약이 OpenAPI와 생성 Zod의 원본까지 전파된다")
     void calendarDatePatternsReachCommittedOpenApi() throws Exception {
-        JsonNode schemas = new ObjectMapper().readTree(HarnessSourceIndex.read(resolveApiDocs()))
+        JsonNode schemas = JsonMapper.builder().configureForJackson2().build().readTree(HarnessSourceIndex.read(resolveApiDocs()))
                 .path("components").path("schemas");
         List<String> violations = new ArrayList<>();
         for (FieldsBinding binding : census().calendarDateBindings()) {
@@ -176,7 +177,7 @@ class InputContractMirrorLinterTest {
                     violations.add(binding.dtoType().getSimpleName() + "." + name + " — calendar constraint missing");
                 }
                 JsonNode property = openApiProperty(schemas, binding.dtoType(), name, violations);
-                if (property != null && !nuri.foundation.core.validation.Ymd.OPTIONAL_PATTERN.equals(property.path("pattern").asText())) {
+                if (property != null && !nuri.foundation.core.validation.Ymd.OPTIONAL_PATTERN.equals(property.path("pattern").asString())) {
                     violations.add(binding.dtoType().getSimpleName() + "." + name + " — OpenAPI calendar pattern drift");
                 }
             }
@@ -251,7 +252,7 @@ class InputContractMirrorLinterTest {
     @DisplayName("입력 DTO 길이와 enum 제약이 api-docs.json까지 전파된다")
     void targetedDtoConstraintsReachCommittedOpenApi() throws IOException {
         Census census = census();
-        JsonNode schemas = new ObjectMapper().readTree(HarnessSourceIndex.read(resolveApiDocs()))
+        JsonNode schemas = JsonMapper.builder().configureForJackson2().build().readTree(HarnessSourceIndex.read(resolveApiDocs()))
                 .path("components").path("schemas");
         if (!schemas.isObject()) {
             fail("게이트 무결성 파손: api-docs.json components.schemas가 없습니다");
@@ -271,7 +272,7 @@ class InputContractMirrorLinterTest {
                 JsonNode property = openApiProperty(schemas, binding.dtoType(), fieldName, violations);
                 if (property != null && property.path("maxLength").asInt(-1) != size.max()) {
                     violations.add(binding.dtoType().getSimpleName() + "." + fieldName
-                            + " — OpenAPI maxLength=" + property.path("maxLength").asText("<missing>")
+                            + " — OpenAPI maxLength=" + property.path("maxLength").asString("<missing>")
                             + " (DTO @Size max=" + size.max() + ")");
                 }
             }
@@ -283,16 +284,16 @@ class InputContractMirrorLinterTest {
                 continue;
             }
             Set<String> actualEnum = new LinkedHashSet<>();
-            property.path("enum").forEach(node -> actualEnum.add(node.asText()));
+            property.path("enum").forEach(node -> actualEnum.add(node.asString()));
             Set<String> expectedEnum = new LinkedHashSet<>(binding.allowedValues());
             if (!actualEnum.equals(expectedEnum)) {
                 violations.add(binding.dtoType().getSimpleName() + "." + binding.field()
                         + " — OpenAPI enum=" + actualEnum + " (expected=" + expectedEnum + ")");
             }
             String expectedPattern = canonicalPattern(binding.allowedValues());
-            if (!expectedPattern.equals(property.path("pattern").asText())) {
+            if (!expectedPattern.equals(property.path("pattern").asString())) {
                 violations.add(binding.dtoType().getSimpleName() + "." + binding.field()
-                        + " — OpenAPI pattern=" + property.path("pattern").asText("<missing>")
+                        + " — OpenAPI pattern=" + property.path("pattern").asString("<missing>")
                         + " (expected=" + expectedPattern + ")");
             }
         }
@@ -306,7 +307,7 @@ class InputContractMirrorLinterTest {
     @DisplayName("중첩 입력 DTO 검증과 OpenAPI item schema가 함께 연결된다")
     void nestedInputValidationIsCascadedAndDocumented() throws IOException {
         Census census = census();
-        JsonNode schemas = new ObjectMapper().readTree(HarnessSourceIndex.read(resolveApiDocs()))
+        JsonNode schemas = JsonMapper.builder().configureForJackson2().build().readTree(HarnessSourceIndex.read(resolveApiDocs()))
                 .path("components").path("schemas");
         List<String> violations = new ArrayList<>();
         for (NestedValidationBinding binding : census.nestedValidationBindings()) {
@@ -321,8 +322,8 @@ class InputContractMirrorLinterTest {
                 continue;
             }
             String expectedRef = "#/components/schemas/" + binding.itemType().getSimpleName();
-            if (!"array".equals(property.path("type").asText())
-                    || !expectedRef.equals(property.path("items").path("$ref").asText())) {
+            if (!"array".equals(property.path("type").asString())
+                    || !expectedRef.equals(property.path("items").path("$ref").asString())) {
                 violations.add(binding.parentType().getSimpleName() + "." + binding.field()
                         + " — OpenAPI array item $ref가 " + expectedRef + "이 아닙니다");
             }
@@ -346,7 +347,7 @@ class InputContractMirrorLinterTest {
                     + " (길이 binding DTO 집합=" + simpleNames(lengthTypes) + ")");
         }
 
-        JsonNode schemas = new ObjectMapper().readTree(HarnessSourceIndex.read(resolveApiDocs()))
+        JsonNode schemas = JsonMapper.builder().configureForJackson2().build().readTree(HarnessSourceIndex.read(resolveApiDocs()))
                 .path("components").path("schemas");
         if (!schemas.isObject()) {
             fail("게이트 무결성 파손: api-docs.json components.schemas가 없습니다");
@@ -398,14 +399,14 @@ class InputContractMirrorLinterTest {
 
     private static boolean schemaRequiredFieldsMatch(JsonNode schema, Set<String> expected) {
         Set<String> actual = new TreeSet<>();
-        schema.path("required").forEach(node -> actual.add(node.asText()));
+        schema.path("required").forEach(node -> actual.add(node.asString()));
         return actual.equals(expected);
     }
 
     @Test
     @DisplayName("인가 응답 필수 필드는 요청으로 주입할 수 없고 입력 필수 계약도 줄어들지 않는다")
     void authorizationResponseFieldsCannotBecomeRequestPermissions() throws IOException {
-        var mapper = new ObjectMapper();
+        var mapper = JsonMapper.builder().configureForJackson2().build();
         UserDto request = mapper.readValue("""
                 {"userId":"member01","userNm":"회원","groups":["ROLE_ADMIN"],
                  "permissions":["AUTHRT_GRANT"],"authorizationVersion":"forged"}
@@ -420,8 +421,8 @@ class InputContractMirrorLinterTest {
         for (String removed : List.of("userId", "authorizationVersion")) {
             var changed = actual.deepCopy();
             var required = mapper.createArrayNode();
-            actual.path("required").forEach(field -> { if (!removed.equals(field.asText())) required.add(field.asText()); });
-            ((com.fasterxml.jackson.databind.node.ObjectNode) changed).set("required", required);
+            actual.path("required").forEach(field -> { if (!removed.equals(field.asString())) required.add(field.asString()); });
+            ((tools.jackson.databind.node.ObjectNode) changed).set("required", required);
             org.junit.jupiter.api.Assertions.assertFalse(schemaRequiredFieldsMatch(changed, expected), removed);
         }
     }
@@ -430,7 +431,7 @@ class InputContractMirrorLinterTest {
     @DisplayName("서버 소유 필드는 요청 역직렬화와 OpenAPI에서 함께 read-only다")
     void serverOwnedFieldsRemainReadOnlyAtRuntimeAndInOpenApi() throws IOException {
         Census census = census();
-        JsonNode schemas = new ObjectMapper().readTree(HarnessSourceIndex.read(resolveApiDocs()))
+        JsonNode schemas = JsonMapper.builder().configureForJackson2().build().readTree(HarnessSourceIndex.read(resolveApiDocs()))
                 .path("components").path("schemas");
         List<String> violations = new ArrayList<>();
         for (FieldsBinding binding : census.readOnlyBindings()) {
@@ -716,7 +717,7 @@ class InputContractMirrorLinterTest {
             throw new AssertionError(PACK_MANIFEST + " 의 packs 가 비어 있거나 객체가 아닙니다.");
         }
         Set<String> present = new TreeSet<>();
-        for (Iterator<String> names = packs.fieldNames(); names.hasNext(); ) {
+        for (Iterator<String> names = packs.propertyNames().iterator(); names.hasNext(); ) {
             String name = names.next();
             if (!registry.packs().contains(name)) {
                 throw new AssertionError("pack manifest 의 '" + name + "' 가 " + CENSUS_REGISTRY
@@ -857,12 +858,12 @@ class InputContractMirrorLinterTest {
             return true;
         }
         JsonNode type = schema.path("type");
-        if (type.isTextual() && "null".equals(type.asText())) {
+        if (type.isString() && "null".equals(type.asString())) {
             return true;
         }
         if (type.isArray()) {
             for (JsonNode candidate : type) {
-                if ("null".equals(candidate.asText())) {
+                if ("null".equals(candidate.asString())) {
                     return true;
                 }
             }
@@ -901,7 +902,7 @@ class InputContractMirrorLinterTest {
                     .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
                     .build()
                     .readTree(json);
-        } catch (IOException ex) {
+        } catch (JacksonException ex) {
             throw new AssertionError(source + " 를 JSON 으로 읽지 못했습니다: " + ex.getMessage(), ex);
         }
     }
@@ -1034,7 +1035,7 @@ class InputContractMirrorLinterTest {
                 throw new AssertionError(CENSUS_REGISTRY + " packs 는 비어 있지 않은 배열이어야 합니다.");
             }
             for (JsonNode pack : packNodes) {
-                if (!pack.isTextual() || pack.asText().isBlank() || !packs.add(pack.asText())) {
+                if (!pack.isString() || pack.asString().isBlank() || !packs.add(pack.asString())) {
                     throw new AssertionError(CENSUS_REGISTRY + " packs 에 빈 값·중복·비문자열이 있습니다: " + pack);
                 }
             }
@@ -1052,7 +1053,7 @@ class InputContractMirrorLinterTest {
                         throw new AssertionError("lengthBindings.entityFields 는 객체여야 합니다: " + node);
                     }
                     for (Map.Entry<String, JsonNode> entry : mapping.properties()) {
-                        entityFields.put(fieldName(entry.getKey()), fieldName(entry.getValue().asText()));
+                        entityFields.put(fieldName(entry.getKey()), fieldName(entry.getValue().asString()));
                     }
                 }
                 LengthSpec spec = new LengthSpec(typeName(node, "entity"), dto, fieldList(node, "fields", false),
@@ -1102,7 +1103,7 @@ class InputContractMirrorLinterTest {
                     }
                     List<String> groups = new ArrayList<>();
                     for (JsonNode group : array(fieldNode, "groups")) {
-                        groups.add(typeNameValue(group.asText(), "requiredBindings.groups"));
+                        groups.add(typeNameValue(group.asString(), "requiredBindings.groups"));
                     }
                     if (!new ArrayList<>(new TreeSet<>(groups)).equals(groups)) {
                         throw new AssertionError("requiredBindings.groups 는 중복 없이 정렬돼야 합니다: " + dto + "." + field + " " + groups);
@@ -1166,10 +1167,10 @@ class InputContractMirrorLinterTest {
 
         private static String text(JsonNode node, String field) {
             JsonNode value = node.get(field);
-            if (value == null || !value.isTextual() || value.asText().isBlank()) {
+            if (value == null || !value.isString() || value.asString().isBlank()) {
                 throw new AssertionError(field + " 는 비어 있지 않은 문자열이어야 합니다: " + node);
             }
-            return value.asText();
+            return value.asString();
         }
 
         private static String typeName(JsonNode node, String field) {
@@ -1193,10 +1194,10 @@ class InputContractMirrorLinterTest {
         private static List<String> stringList(JsonNode node, String field) {
             List<String> values = new ArrayList<>();
             for (JsonNode value : array(node, field)) {
-                if (!value.isTextual() || value.asText().isEmpty()) {
+                if (!value.isString() || value.asString().isEmpty()) {
                     throw new AssertionError(field + " 에 빈 값·비문자열이 있습니다: " + node);
                 }
-                values.add(value.asText());
+                values.add(value.asString());
             }
             if (values.isEmpty() || new LinkedHashSet<>(values).size() != values.size()) {
                 throw new AssertionError(field + " 는 비어 있지 않고 중복이 없어야 합니다: " + node);
@@ -1207,7 +1208,7 @@ class InputContractMirrorLinterTest {
         private static List<String> fieldList(JsonNode node, String field, boolean allowEmpty) {
             List<String> values = new ArrayList<>();
             for (JsonNode value : array(node, field)) {
-                values.add(fieldName(value.asText()));
+                values.add(fieldName(value.asString()));
             }
             if ((!allowEmpty && values.isEmpty()) || new LinkedHashSet<>(values).size() != values.size()) {
                 throw new AssertionError(field + " 는 비어 있지 않고 중복이 없어야 합니다: " + node);
@@ -1216,7 +1217,7 @@ class InputContractMirrorLinterTest {
         }
 
         private static String pack(JsonNode node, Set<String> packs) {
-            String value = node.path("pack").isTextual() ? node.get("pack").asText() : "";
+            String value = node.path("pack").isString() ? node.get("pack").asString() : "";
             if (!packs.contains(value)) {
                 throw new AssertionError("원장 항목의 pack '" + value + "' 가 packs 어휘 " + packs + " 에 없습니다: " + node);
             }
@@ -1227,7 +1228,7 @@ class InputContractMirrorLinterTest {
             if (node == null || !node.isObject()) {
                 throw new AssertionError(section + " 항목은 객체여야 합니다: " + node);
             }
-            for (Iterator<String> names = node.fieldNames(); names.hasNext(); ) {
+            for (Iterator<String> names = node.propertyNames().iterator(); names.hasNext(); ) {
                 String name = names.next();
                 if (!allowed.contains(name)) {
                     throw new AssertionError(section + " 에 모르는 필드 '" + name + "' 가 있습니다: " + node);

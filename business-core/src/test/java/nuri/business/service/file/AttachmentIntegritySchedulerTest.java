@@ -1,6 +1,7 @@
 package nuri.business.service.file;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import nuri.business.service.file.dto.AttachmentIntegrityReport;
 import org.junit.jupiter.api.DisplayName;
@@ -29,7 +30,7 @@ class AttachmentIntegritySchedulerTest {
     void exportsPrometheusCounterName() throws Exception {
         var files = mock(AttachmentIntegrityService.class);
         var references = mock(AttachmentReferenceIntegrityService.class);
-        var store = new AttachmentIntegrityReportStore(new ObjectMapper(), directory.toString());
+        var store = new AttachmentIntegrityReportStore(JsonMapper.builder().configureForJackson2().build(), directory.toString());
         var prometheus = new io.micrometer.prometheusmetrics.PrometheusMeterRegistry(
                 io.micrometer.prometheusmetrics.PrometheusConfig.DEFAULT);
         var scheduler = new AttachmentIntegrityScheduler(files, references, store, prometheus, 20);
@@ -49,7 +50,7 @@ class AttachmentIntegritySchedulerTest {
     void savesAggregateResultsAndKeepsLastCompleteResultAcrossFailureAndRestart() throws Exception {
         var files = mock(AttachmentIntegrityService.class);
         var references = mock(AttachmentReferenceIntegrityService.class);
-        var mapper = new ObjectMapper();
+        var mapper = JsonMapper.builder().configureForJackson2().build();
         var store = new AttachmentIntegrityReportStore(mapper, directory.toString());
         var metrics = new SimpleMeterRegistry();
         var scheduler = new AttachmentIntegrityScheduler(files, references, store, metrics, 20);
@@ -73,7 +74,7 @@ class AttachmentIntegritySchedulerTest {
     void incompleteReferenceCensusDoesNotBecomeACompletedSnapshot() throws Exception {
         var files = mock(AttachmentIntegrityService.class);
         var references = mock(AttachmentReferenceIntegrityService.class);
-        var store = new AttachmentIntegrityReportStore(new ObjectMapper(), directory.toString());
+        var store = new AttachmentIntegrityReportStore(JsonMapper.builder().configureForJackson2().build(), directory.toString());
         when(files.scanBounded(eq(5), any(Duration.class))).thenReturn(new AttachmentIntegrityReport(0, 0, List.of(), "root", 0, 0, 0, List.of()));
         when(references.scan(5)).thenReturn(new AttachmentReferenceIntegrityService.Result(5, 0, 1, false));
         new AttachmentIntegrityScheduler(files, references, store, new SimpleMeterRegistry(), 5).scan();
@@ -113,7 +114,7 @@ class AttachmentIntegritySchedulerTest {
                     "nuri.attachment.integrity.enabled", "true", "nuri.attachment.integrity.cron", "*/1 * * * * *", "nuri.attachment.integrity.max-items", "5")));
             context.registerBean(AttachmentIntegrityService.class, () -> files);
             context.registerBean(AttachmentReferenceIntegrityService.class, () -> references);
-            context.registerBean(AttachmentIntegrityReportStore.class, () -> new AttachmentIntegrityReportStore(new ObjectMapper(), directory.toString()));
+            context.registerBean(AttachmentIntegrityReportStore.class, () -> new AttachmentIntegrityReportStore(JsonMapper.builder().configureForJackson2().build(), directory.toString()));
             context.registerBean(io.micrometer.core.instrument.MeterRegistry.class, SimpleMeterRegistry::new);
             context.register(SchedulingEnabled.class, AttachmentIntegrityConfig.class, AttachmentIntegrityScheduler.class);
             context.refresh();

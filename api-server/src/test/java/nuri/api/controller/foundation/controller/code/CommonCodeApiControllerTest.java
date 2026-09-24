@@ -8,7 +8,7 @@ import nuri.business.service.code.dto.CmmnDetailCodeDto;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.common.BaseSearchDto;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,12 +27,12 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 @DisplayName("CommonCodeApiController 단위 테스트")
 class CommonCodeApiControllerTest {
@@ -45,19 +45,18 @@ class CommonCodeApiControllerTest {
     @InjectMocks
     private CommonCodeApiController commonCodeApiController;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder().configureForJackson2().build();
 
-    // BaseControllerTest 와 같은 이유 — 1단계(ADR-0024)는 운영 변환기가 Jackson 2 라 여기도 Jackson 2 로 검증한다.
-    @SuppressWarnings("removal")
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        ObjectMapper mapper = Jackson2ObjectMapperBuilder.json()
-                .modules(new JavaTimeModule(), new ParameterNamesModule())
-                .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .failOnUnknownProperties(true)
+        JsonMapper mapper = JsonMapper.builder()
+                .configureForJackson2()
+                .enable(MapperFeature.DETECT_PARAMETER_NAMES)
+                .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 .build();
-        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(mapper);
+        JacksonJsonHttpMessageConverter converter = new JacksonJsonHttpMessageConverter(mapper);
         mockMvc = MockMvcBuilders.standaloneSetup(commonCodeApiController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setMessageConverters(converter)

@@ -1,6 +1,7 @@
 package nuri.business.security.annotation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -46,13 +47,13 @@ public class WithMockCustomUserSecurityContextFactory implements WithSecurityCon
     /** Test identities mirror reviewed initial grants; group names never become operation authorities. */
     private static Map<String, List<String>> loadDefaultPermissions() {
         try (var stream = new ClassPathResource("authorization/permission-catalog.json").getInputStream()) {
-            var catalog = new ObjectMapper().readTree(stream);
+            var catalog = JsonMapper.builder().configureForJackson2().build().readTree(stream);
             Map<String, List<String>> byGroup = new TreeMap<>();
             for (var permission : catalog.path("permissions")) {
-                String code = permission.path("code").asText();
+                String code = permission.path("code").asString();
                 if (!PermissionCodes.ALL.contains(code)) throw new IllegalStateException("Unknown fixture permission");
                 for (var group : permission.path("defaultGroups")) {
-                    byGroup.computeIfAbsent(group.asText(), ignored -> new ArrayList<>()).add(code);
+                    byGroup.computeIfAbsent(group.asString(), ignored -> new ArrayList<>()).add(code);
                 }
             }
             if (byGroup.isEmpty()) throw new IllegalStateException("Test permission catalog is empty");

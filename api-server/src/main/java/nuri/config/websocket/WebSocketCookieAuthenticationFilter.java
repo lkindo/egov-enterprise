@@ -1,6 +1,6 @@
 package nuri.config.websocket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -25,7 +25,7 @@ import org.springframework.web.util.pattern.PathPatternParser;
 /** Browser SockJS authentication reads HttpOnly cookies only on the explicitly supported transport paths. */
 public final class WebSocketCookieAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
+    private static final JsonMapper JSON = JsonMapper.builder().configureForJackson2().build(); // 거절 본문 형식 유지(ADR-0024)
     private static final List<PathPattern> GET_PATHS = patterns(List.of(
             "/ws", "/ws/info", "/ws/websocket", "/ws/{server}/{session}/websocket"));
     private static final List<PathPattern> POST_PATHS = patterns(List.of(

@@ -26,7 +26,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -93,7 +94,7 @@ class TemplateApiControllerTest extends ControllerTestSupport {
         mockMvc.perform(post("/api/v1/admin/system/templates")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(new ObjectMapper().writeValueAsString(payload)))
+                        .content(JsonMapper.builder().configureForJackson2().build().writeValueAsString(payload)))
                 .andExpect(status().isBadRequest());
     }
 

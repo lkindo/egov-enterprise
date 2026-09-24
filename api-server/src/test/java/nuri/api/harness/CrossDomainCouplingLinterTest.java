@@ -1,8 +1,9 @@
 package nuri.api.harness;
 
-import com.fasterxml.jackson.core.StreamReadFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -430,7 +431,7 @@ class CrossDomainCouplingLinterTest {
             throw new AssertionError(PACK_MANIFEST + " 의 packs 가 비어 있거나 객체가 아닙니다.");
         }
         Set<String> present = new TreeSet<>();
-        for (Iterator<String> names = packs.fieldNames(); names.hasNext(); ) {
+        for (Iterator<String> names = packs.propertyNames().iterator(); names.hasNext(); ) {
             String name = names.next();
             if (!registry.packs().contains(name)) {
                 throw new AssertionError("pack manifest 의 '" + name + "' 가 " + CENSUS_REGISTRY
@@ -455,7 +456,7 @@ class CrossDomainCouplingLinterTest {
                     .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
                     .build()
                     .readTree(json);
-        } catch (IOException ex) {
+        } catch (JacksonException ex) {
             throw new AssertionError(source + " 를 JSON 으로 읽지 못했습니다: " + ex.getMessage(), ex);
         }
     }
@@ -514,7 +515,7 @@ class CrossDomainCouplingLinterTest {
                 throw new AssertionError(CENSUS_REGISTRY + " packs 는 비어 있지 않은 배열이어야 합니다.");
             }
             for (JsonNode pack : packNodes) {
-                if (!pack.isTextual() || pack.asText().isBlank() || !packs.add(pack.asText())) {
+                if (!pack.isString() || pack.asString().isBlank() || !packs.add(pack.asString())) {
                     throw new AssertionError(CENSUS_REGISTRY + " packs 에 빈 값·중복·비문자열이 있습니다: " + pack);
                 }
             }
@@ -553,7 +554,7 @@ class CrossDomainCouplingLinterTest {
                 }
                 List<String> typeList = new ArrayList<>();
                 for (JsonNode typeNode : typeNodes) {
-                    String type = typeNode.isTextual() ? typeNode.asText() : "";
+                    String type = typeNode.isString() ? typeNode.asString() : "";
                     Matcher business = BUSINESS_TYPE.matcher(type);
                     if (!business.find() || !business.group(1).equals(target) || type.contains("$")) {
                         throw new AssertionError("edges.types '" + type + "' 가 target 도메인 '" + target
@@ -576,17 +577,17 @@ class CrossDomainCouplingLinterTest {
 
         private static String text(JsonNode node, String field) {
             JsonNode value = node.get(field);
-            if (value == null || !value.isTextual() || value.asText().isBlank()) {
+            if (value == null || !value.isString() || value.asString().isBlank()) {
                 throw new AssertionError("edges." + field + " 는 비어 있지 않은 문자열이어야 합니다: " + node);
             }
-            return value.asText();
+            return value.asString();
         }
 
         private static void requireFields(JsonNode node, String section, Set<String> allowed, Set<String> required) {
             if (node == null || !node.isObject()) {
                 throw new AssertionError(section + " 항목은 객체여야 합니다: " + node);
             }
-            for (Iterator<String> names = node.fieldNames(); names.hasNext(); ) {
+            for (Iterator<String> names = node.propertyNames().iterator(); names.hasNext(); ) {
                 String name = names.next();
                 if (!allowed.contains(name)) {
                     throw new AssertionError(section + " 에 모르는 필드 '" + name + "' 가 있습니다: " + node);

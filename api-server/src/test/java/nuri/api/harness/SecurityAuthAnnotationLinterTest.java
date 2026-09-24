@@ -1,6 +1,7 @@
 package nuri.api.harness;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import nuri.business.security.authorization.PermissionPolicy;
 import nuri.business.security.authorization.PermissionCodes;
 import org.junit.jupiter.api.DisplayName;
@@ -149,11 +150,11 @@ class SecurityAuthAnnotationLinterTest {
         permissionPolicy.bindings().forEach(row -> runtime.add(new OperationBinding(row.method(), row.path(),
                 row.handler(), row.access(), row.permission(), row.excludedGroups()).signature()));
         compareExact("source/runtime operation bindings", source, runtime, violations);
-        var catalog = new ObjectMapper().readTree(resolveFromRepoRoot(registry.permissionCatalog()).toFile());
+        var catalog = JsonMapper.builder().configureForJackson2().build().readTree(resolveFromRepoRoot(registry.permissionCatalog()).toFile());
         Set<String> catalogCodes = new TreeSet<>();
         for (var entry : catalog.path("permissions")) {
-            if (!catalogCodes.add(entry.path("code").asText())) {
-                violations.add("permission catalog 중복 코드: " + entry.path("code").asText());
+            if (!catalogCodes.add(entry.path("code").asString())) {
+                violations.add("permission catalog 중복 코드: " + entry.path("code").asString());
             }
         }
         compareExact("generated/source permission codes", catalogCodes, PermissionCodes.ALL, violations);
@@ -1042,7 +1043,7 @@ class SecurityAuthAnnotationLinterTest {
         if (!Files.isRegularFile(file)) {
             fail("인가 정책 registry 부재: " + file.toAbsolutePath());
         }
-        PolicyRegistry registry = new ObjectMapper().readValue(file.toFile(), PolicyRegistry.class);
+        PolicyRegistry registry = JsonMapper.builder().configureForJackson2().build().readValue(file.toFile(), PolicyRegistry.class);
         ReusableHarnessProfile profile = ReusableHarnessProfile.current();
         if (!activeScope || !profile.projected()) return registry;
         return new PolicyRegistry(registry.schemaVersion(), registry.authority(), registry.description(),

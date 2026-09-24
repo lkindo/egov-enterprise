@@ -23,7 +23,7 @@ import static nuri.openapi.OpenApiDocumentationTest.isNullableSchema;
 })
 class CommentOpenApiDocumentationTest {
   @Autowired private MockMvc mockMvc;
-  @Autowired private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+  @Autowired private tools.jackson.databind.ObjectMapper objectMapper;
 
   @Test
   @DisplayName("댓글 DTO는 응답 nullable 필드와 요청 비밀번호 방향을 정확히 문서화한다")
@@ -33,8 +33,8 @@ class CommentOpenApiDocumentationTest {
         .andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
 
-    com.fasterxml.jackson.databind.JsonNode properties =
-        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content)
+    tools.jackson.databind.JsonNode properties =
+        tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build().readTree(content)
             .path("components").path("schemas").path("CommentDto").path("properties");
     java.util.Set<String> nullableProperties = new java.util.HashSet<>();
     java.util.Set<String> readOnlyProperties = new java.util.HashSet<>();

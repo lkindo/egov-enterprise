@@ -48,7 +48,7 @@ class HarnessSourceAccessContractTest {
     }
 
     private static Path projectedFixture(Path root, boolean missing, boolean wrongProfile, String profile) throws Exception {
-        var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        var mapper = tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build();
         java.nio.file.Files.createDirectories(root.resolve("config/governance"));
         for (String module : List.of("foundation", "business-core", "business-app", "api-server")) {
             java.nio.file.Files.createDirectories(root.resolve(module + "/src/main/java"));

@@ -56,10 +56,6 @@ dependencies {
     testFixturesApi 'org.springframework.boot:spring-boot-starter-test-classic'
     testFixturesApi 'org.springframework.security:spring-security-test'
     testFixturesApi 'com.h2database:h2'
-    // [ADR-0024 1단계] standalone MockMvc 가 쓰는 Jackson 2 모듈. Boot 4 starter 는 Jackson 3 모듈만 끌어오므로
-    //   명시한다(버전은 jackson-2-bom 관리). 2단계에서 tools.jackson 좌표로 바꾼다.
-    testFixturesApi 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-    testFixturesApi 'com.fasterxml.jackson.module:jackson-module-parameter-names'
     testFixturesApi 'org.flywaydb:flyway-core'
     testFixturesApi libs.testcontainers.postgresql
     testFixturesApi libs.testcontainers.jdbc

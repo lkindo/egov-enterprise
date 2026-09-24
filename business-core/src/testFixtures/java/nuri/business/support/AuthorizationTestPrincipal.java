@@ -1,6 +1,7 @@
 package nuri.business.support;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,8 +20,8 @@ public final class AuthorizationTestPrincipal {
         var groupList=Arrays.stream(groups).map(g -> g.startsWith("ROLE_")?g:"ROLE_"+g).toList();
         List<String> permissions=new ArrayList<>();
         try(var stream=AuthorizationTestPrincipal.class.getResourceAsStream("/authorization/permission-catalog.json")) {
-            for(var row:new ObjectMapper().readTree(stream).path("permissions")) {
-                for(var group:row.path("defaultGroups")) if(groupList.contains(group.asText())) { permissions.add(row.path("code").asText());break; }
+            for(var row:JsonMapper.builder().configureForJackson2().build().readTree(stream).path("permissions")) {
+                for(var group:row.path("defaultGroups")) if(groupList.contains(group.asString())) { permissions.add(row.path("code").asString());break; }
             }
         } catch(java.io.IOException ex) { throw new IllegalStateException(ex); }
         var principal=CustomUserDetails.builder().userId(loginId).esntlId(esntlId).userNm(loginId)

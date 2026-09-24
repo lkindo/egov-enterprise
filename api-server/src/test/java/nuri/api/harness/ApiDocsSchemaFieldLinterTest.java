@@ -3,8 +3,9 @@ package nuri.api.harness;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -163,21 +164,21 @@ class ApiDocsSchemaFieldLinterTest {
 
     private Map<String, Set<String>> loadSchemaProperties() throws IOException {
         Path apiDocs = resolveApiDocs();
-        JsonNode root = new ObjectMapper().readTree(HarnessSourceIndex.read(apiDocs));
+        JsonNode root = JsonMapper.builder().configureForJackson2().build().readTree(HarnessSourceIndex.read(apiDocs));
         JsonNode schemas = root.path("components").path("schemas");
         if (!schemas.isObject()) {
             fail("게이트 무결성 파손: api-docs.json 에 components.schemas 가 없습니다 (" + apiDocs + ").");
             return Map.of();
         }
         Map<String, Set<String>> result = new HashMap<>();
-        for (Iterator<String> it = schemas.fieldNames(); it.hasNext(); ) {
+        for (Iterator<String> it = schemas.propertyNames().iterator(); it.hasNext(); ) {
             String name = it.next();
             JsonNode props = schemas.get(name).path("properties");
             if (!props.isObject()) {
                 continue; // enum·배열 등 property 없는 스키마 — 검사 대상 아님
             }
             Set<String> set = new TreeSet<>();
-            props.fieldNames().forEachRemaining(set::add);
+            props.propertyNames().iterator().forEachRemaining(set::add);
             if (!set.isEmpty()) {
                 result.put(name, set);
             }

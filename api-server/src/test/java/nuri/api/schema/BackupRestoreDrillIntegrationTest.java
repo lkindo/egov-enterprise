@@ -1,6 +1,7 @@
 package nuri.api.schema;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import nuri.foundation.core.config.ProjectCryptoConfig;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Tag;
@@ -111,7 +112,7 @@ class BackupRestoreDrillIntegrationTest {
             long restoreMillis = (System.nanoTime() - restoreStart) / 1_000_000;
             Path report = Path.of("build/reports/restore-drill/result.json");
             Files.createDirectories(report.getParent());
-            new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(report.toFile(), Map.of(
+            JsonMapper.builder().configureForJackson2().build().writerWithDefaultPrettyPrinter().writeValue(report.toFile(), Map.of(
                     "schemaVersion", 1, "checkedAt", Instant.now().toString(), "status", "PASS",
                     "scope", "isolated PostgreSQL 17; full Flyway schema; synthetic attachment and ARIA key",
                     "backupMillis", backupMillis, "restoreAndVerificationMillis", restoreMillis,

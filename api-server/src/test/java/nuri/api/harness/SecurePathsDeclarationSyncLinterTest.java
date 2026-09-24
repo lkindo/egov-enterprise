@@ -1,7 +1,8 @@
 package nuri.api.harness;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import nuri.config.websocket.WebSocketCookieAuthenticationFilter;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
@@ -37,7 +38,7 @@ class SecurePathsDeclarationSyncLinterTest {
     private static final String RUNTIME_BINDINGS = "business-core/src/main/resources/authorization/operation-bindings.json";
     private static final String RUNTIME_CATALOG = "business-core/src/main/resources/authorization/permission-catalog.json";
     private static final String API_CONFIG = "api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java";
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = JsonMapper.builder().configureForJackson2().build();
 
     @Test
     @DisplayName("인가 선언 원본·런타임 생성물·실제 HTTP/SockJS 배선 동기화")
@@ -58,13 +59,13 @@ class SecurePathsDeclarationSyncLinterTest {
         var filter = new WebSocketCookieAuthenticationFilter(mock(JwtTokenProvider.class), List.of("https://app.example.test"));
         int sockJs = 0;
         for (JsonNode row : source) {
-            if (!row.path("handler").asText().startsWith("EXTERNAL#") || !row.path("path").asText().startsWith("/ws")) continue;
+            if (!row.path("handler").asString().startsWith("EXTERNAL#") || !row.path("path").asString().startsWith("/ws")) continue;
             sockJs++;
-            String path = row.path("path").asText().replaceAll("\\{[^}]+}", "segment");
-            var request = new MockHttpServletRequest(row.path("method").asText(), path);
+            String path = row.path("path").asString().replaceAll("\\{[^}]+}", "segment");
+            var request = new MockHttpServletRequest(row.path("method").asString(), path);
             Boolean skipped = ReflectionTestUtils.invokeMethod(filter, "shouldNotFilter", request);
-            if (!Boolean.FALSE.equals(skipped) || !"AUTHENTICATED".equals(row.path("access").asText())) {
-                problems.add("SockJS cookie 범위/인가 binding drift: " + row.path("method").asText() + " " + path);
+            if (!Boolean.FALSE.equals(skipped) || !"AUTHENTICATED".equals(row.path("access").asString())) {
+                problems.add("SockJS cookie 범위/인가 binding drift: " + row.path("method").asString() + " " + path);
             }
         }
         if (sockJs < 7) problems.add("명시적 SockJS transport coverage 하한 미달");
@@ -80,10 +81,10 @@ class SecurePathsDeclarationSyncLinterTest {
     void injectedBindingDriftIsRejected() throws IOException {
         JsonNode source = read(resolveRepoRoot().resolve(POLICY)).path("operationBindings");
         assertTrue(bindingProblems(source, source.deepCopy()).isEmpty());
-        var missing = (com.fasterxml.jackson.databind.node.ArrayNode) source.deepCopy();
+        var missing = (tools.jackson.databind.node.ArrayNode) source.deepCopy();
         missing.remove(0);
         assertFalse(bindingProblems(source, missing).isEmpty());
-        var duplicate = (com.fasterxml.jackson.databind.node.ArrayNode) source.deepCopy();
+        var duplicate = (tools.jackson.databind.node.ArrayNode) source.deepCopy();
         duplicate.add(source.get(0));
         assertFalse(bindingProblems(duplicate, duplicate).isEmpty());
         var empty = mapper.createArrayNode();
@@ -96,9 +97,9 @@ class SecurePathsDeclarationSyncLinterTest {
         if (!source.equals(runtime)) problems.add("operation runtime 생성물 drift");
         Set<String> keys = new HashSet<>();
         for (JsonNode row : source) {
-            String key = row.path("method").asText() + " " + row.path("path").asText();
-            if (!keys.add(key) || row.path("handler").asText().isBlank()) problems.add("중복/누락 operation: " + key);
-            if (!Set.of("PUBLIC", "AUTHENTICATED", "PERMISSION", "DENY").contains(row.path("access").asText())) {
+            String key = row.path("method").asString() + " " + row.path("path").asString();
+            if (!keys.add(key) || row.path("handler").asString().isBlank()) problems.add("중복/누락 operation: " + key);
+            if (!Set.of("PUBLIC", "AUTHENTICATED", "PERMISSION", "DENY").contains(row.path("access").asString())) {
                 problems.add("미등록 access: " + key);
             }
         }

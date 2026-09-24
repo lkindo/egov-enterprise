@@ -1,8 +1,9 @@
 package nuri.api.harness;
 
-import com.fasterxml.jackson.core.StreamReadFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import nuri.foundation.core.annotation.PrivacyAccess;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -318,7 +319,7 @@ class PrivacyAccessCensusLinterTest {
             throw new AssertionError(PACK_MANIFEST + " 의 packs 가 비어 있거나 객체가 아닙니다.");
         }
         Set<String> present = new TreeSet<>();
-        for (Iterator<String> names = packs.fieldNames(); names.hasNext(); ) {
+        for (Iterator<String> names = packs.propertyNames().iterator(); names.hasNext(); ) {
             String name = names.next();
             if (!registry.packs().contains(name)) {
                 throw new AssertionError("pack manifest 의 '" + name + "' 가 " + CENSUS_REGISTRY
@@ -436,7 +437,7 @@ class PrivacyAccessCensusLinterTest {
                 throw new AssertionError(CENSUS_REGISTRY + " packs 는 비어 있지 않은 배열이어야 합니다.");
             }
             for (JsonNode pack : packNodes) {
-                if (!pack.isTextual() || pack.asText().isBlank() || !packs.add(pack.asText())) {
+                if (!pack.isString() || pack.asString().isBlank() || !packs.add(pack.asString())) {
                     throw new AssertionError(CENSUS_REGISTRY + " packs 에 빈 값·중복·비문자열이 있습니다: " + pack);
                 }
             }
@@ -478,13 +479,13 @@ class PrivacyAccessCensusLinterTest {
             for (JsonNode node : array(nodes, section)) {
                 requireFields(node, section, allowed, required);
                 String controller = typeName(node.get("controller"), section);
-                String method = node.get("method").asText();
-                if (!node.get("method").isTextual() || !METHOD_NAME.matcher(method).matches()) {
+                String method = node.get("method").asString();
+                if (!node.get("method").isString() || !METHOD_NAME.matcher(method).matches()) {
                     throw new AssertionError(section + " 의 method 형식 오류: " + node.get("method"));
                 }
                 String reason = null;
                 if (requireReason) {
-                    reason = node.get("reason").isTextual() ? node.get("reason").asText() : "";
+                    reason = node.get("reason").isString() ? node.get("reason").asString() : "";
                     if (reason.isBlank()) {
                         throw new AssertionError(section + " " + controller + "#" + method
                                 + " 에 검토 가능한 사유가 없습니다.");
@@ -507,7 +508,7 @@ class PrivacyAccessCensusLinterTest {
         }
 
         private static String typeName(JsonNode node, String section) {
-            String value = node.isTextual() ? node.asText() : "";
+            String value = node.isString() ? node.asString() : "";
             if (!TYPE_NAME.matcher(value).matches()) {
                 throw new AssertionError(section + " 의 타입 이름은 중첩 없는 FQN 이어야 합니다: " + node);
             }
@@ -515,7 +516,7 @@ class PrivacyAccessCensusLinterTest {
         }
 
         private static String pack(JsonNode node, Set<String> packs) {
-            String value = node.isTextual() ? node.asText() : "";
+            String value = node.isString() ? node.asString() : "";
             if (!packs.contains(value)) {
                 throw new AssertionError("원장 항목의 pack '" + value + "' 가 packs 어휘 " + packs + " 에 없습니다.");
             }
@@ -526,7 +527,7 @@ class PrivacyAccessCensusLinterTest {
             if (node == null || !node.isObject()) {
                 throw new AssertionError(section + " 항목은 객체여야 합니다: " + node);
             }
-            for (Iterator<String> names = node.fieldNames(); names.hasNext(); ) {
+            for (Iterator<String> names = node.propertyNames().iterator(); names.hasNext(); ) {
                 String name = names.next();
                 if (!allowed.contains(name)) {
                     throw new AssertionError(section + " 에 모르는 필드 '" + name + "' 가 있습니다: " + node);
@@ -546,7 +547,7 @@ class PrivacyAccessCensusLinterTest {
                     .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
                     .build()
                     .readTree(json);
-        } catch (IOException ex) {
+        } catch (JacksonException ex) {
             throw new AssertionError(source + " 를 JSON 으로 읽지 못했습니다: " + ex.getMessage(), ex);
         }
     }

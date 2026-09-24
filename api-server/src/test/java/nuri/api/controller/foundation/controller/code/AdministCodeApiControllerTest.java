@@ -4,7 +4,8 @@ import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.service.code.AdministCodeService;
 import nuri.business.service.code.dto.AdministCodeDto;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ class AdministCodeApiControllerTest {
     @InjectMocks
     private AdministCodeApiController administCodeApiController;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder().configureForJackson2().build();
 
     @BeforeEach
     void setUp() {

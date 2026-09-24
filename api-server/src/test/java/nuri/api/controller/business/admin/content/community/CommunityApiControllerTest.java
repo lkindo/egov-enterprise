@@ -1,6 +1,7 @@
 package nuri.api.controller.business.admin.content.community;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import nuri.business.service.system.content.community.CommunityService;
 import nuri.business.service.system.content.community.dto.CommunityDto;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +49,7 @@ class CommunityApiControllerTest {
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
+        objectMapper = JsonMapper.builder().configureForJackson2().build();
         
         org.springframework.web.method.support.HandlerMethodArgumentResolver principalResolver = new org.springframework.web.method.support.HandlerMethodArgumentResolver() {
             @Override

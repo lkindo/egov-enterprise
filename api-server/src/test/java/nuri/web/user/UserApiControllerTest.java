@@ -34,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class UserApiControllerTest extends BaseControllerTest {
 
     private UserService userService;
-    private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+    private tools.jackson.databind.ObjectMapper objectMapper = tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build();
     private static final String TEST_USER_ID = "testUser";
 
     @Override
@@ -78,7 +78,7 @@ class UserApiControllerTest extends BaseControllerTest {
      * 직렬화 시 제거되므로, 요청(write) 테스트에서는 명시적으로 다시 실어준다.
      */
     private String toUserRequestJson(UserDto dto) throws Exception {
-        com.fasterxml.jackson.databind.node.ObjectNode node = objectMapper.valueToTree(dto);
+        tools.jackson.databind.node.ObjectNode node = objectMapper.valueToTree(dto);
         if (dto.pswd() != null) node.put("pswd", dto.pswd());
         return objectMapper.writeValueAsString(node);
     }
