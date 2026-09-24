@@ -40,8 +40,7 @@ dependencies {
     // API Docs
     api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.55'
 
-    // Testing
-    testImplementation 'org.springframework.boot:spring-boot-starter-test-classic'
+    // Testing — slice·보안·관측성 test starter 는 아래 testFixturesApi 로 이 모듈의 test 에도 전달된다.
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2'
     testImplementation libs.archunit.junit5
@@ -53,7 +52,18 @@ dependencies {
     // 규칙은 여기 한 벌만 두고, 각 모듈의 test 가 @AnalyzeClasses + ArchTests.in(...) 으로 실행한다.
     testFixturesApi libs.archunit.junit5
     testFixturesApi libs.archunit
-    testFixturesApi 'org.springframework.boot:spring-boot-starter-test-classic'
+    // 기술별 test starter(2026-09-24, 이행용 classic 대체). testFixtures 를 쓰는 모든 모듈이 함께 받는다.
+    //   · webmvc-test — IntegrationTest 의 @AutoConfigureMockMvc
+    //   · data-jpa-test — PersistenceTestSupport 의 @DataJpaTest·@AutoConfigureTestDatabase
+    //   · security-test — import 가 없어도 MockMvc 에 보안 필터·testSecurityContext 를 붙인다. 빠지면 보안 slice 가
+    //     조용히 빠져 200 만 기대하는 테스트가 보안을 거치지 않은 채 통과한다.
+    //   · opentelemetry-test — 전체 컨텍스트 테스트에서 메트릭·추적 export 를 끈다. 빠지면 OTLP registry 가
+    //     조용히 켜진다(TestObservabilityIsolationIntegrationTest 가 고정).
+    testFixturesApi 'org.springframework.boot:spring-boot-starter-test'
+    testFixturesApi 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testFixturesApi 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+    testFixturesApi 'org.springframework.boot:spring-boot-starter-security-test'
+    testFixturesApi 'org.springframework.boot:spring-boot-starter-opentelemetry-test'
     testFixturesApi 'org.springframework.security:spring-security-test'
     testFixturesApi 'com.h2database:h2'
     testFixturesApi 'org.flywaydb:flyway-core'
