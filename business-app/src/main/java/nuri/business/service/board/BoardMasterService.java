@@ -18,7 +18,9 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.lang.NonNull;
+import nuri.foundation.core.community.CommunityBoardAccessPort;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
@@ -39,12 +41,12 @@ public class BoardMasterService extends BaseAbstractService {
      * 커뮤니티 귀속 판정 포트. 커뮤니티 도메인이 base projection 에서 빠지면 {@code null} 이고,
      * 그때 커뮤니티 귀속 게시판 목록은 관리자 외에게 닫힌다(fail-closed — {@link BoardService} 와 같은 규칙).
      */
-    private final nuri.foundation.core.community.CommunityBoardAccessPort communityBoardAccess;
+    private final CommunityBoardAccessPort communityBoardAccess;
 
     public BoardMasterService(BoardMasterRepository boardMasterRepository,
             BoardRepository boardRepository,
             BoardMasterMapper boardMasterMapper,
-            @org.springframework.lang.Nullable nuri.foundation.core.community.CommunityBoardAccessPort communityBoardAccess) {
+            @Nullable CommunityBoardAccessPort communityBoardAccess) {
         this.boardMasterRepository = boardMasterRepository;
         this.boardRepository = boardRepository;
         this.boardMasterMapper = boardMasterMapper;

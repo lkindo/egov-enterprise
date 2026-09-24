@@ -51,7 +51,7 @@ public class UserAuthorityApiController {
     @PostMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.UserAuthorityApiController#saveUserAuthorities')")
     public ResponseEntity<ApiResponse<Void>> saveUserAuthorities(
-            @Valid @RequestBody List<UserAuthorityDto> userAuthorities) {
+            @RequestBody List<@Valid UserAuthorityDto> userAuthorities) {
 
         userAuthorityManageService.saveUserAuthorities(userAuthorities);
         return ResponseEntity.ok(ApiResponse.success(null));

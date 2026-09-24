@@ -63,16 +63,19 @@
 
     <!-- [2026-09-22 주간 NVD 판정] 아래 세 건은 CVE·패키지 단위로 좁혀 억제하고 재검토 기한(until)을 둔다.
          Spring Framework 6.2.19 · Security 6.5.11 · Integration 6.5.10 의 CVSS>=7 16건은 억제하지 않는다 —
-         OSS 지원이 끝난 라인의 실제 미수정 CVE 이며 GAP-DEP-002 가 라인 결정과 함께 추적한다. -->
+         OSS 지원이 끝난 라인의 실제 미수정 CVE 이며 GAP-DEP-002 가 라인 결정과 함께 추적한다.
+         [2026-09-24 Boot 4.1.1 전환, ADR-0024] 런타임이 Framework 7.0.9 · Security 7.1.1 · Integration 7.1.1 로 옮겨
+         그 16건의 대상 아티팩트가 해석 결과에서 사라졌다. 다음 주간 NVD 실행 결과로 확인한다. -->
 
-    <!-- kotlin-stdlib 1.9.25 (okhttp ← opentelemetry-exporter-otlp 경유, BOM 규칙으로 선택) -->
+    <!-- kotlin-stdlib 2.3.21 (okhttp 5.3.2 ← opentelemetry-exporter-otlp 경유).
+         2026-09-22 판정 때는 1.9.25 였고, Boot 4.1.1 전환으로 okhttp 5 가 들어오며 2.3.21 로 바뀌었다. -->
     <suppress until="2026-12-21Z">
         <notes><![CDATA[
         CVE-2026-53914 는 Kotlin Build Cache(kotlin-gradle-plugin, 수정 2.4.20)의 역직렬화 결함이고
-        CVE-2020-29582 는 1.4.21 미만 createTempDir 결함이다. 둘 다 런타임 stdlib 1.9.25 에는 해당하지 않으며
+        CVE-2020-29582 는 1.4.21 미만 createTempDir 결함이다. 둘 다 런타임 stdlib 2.3.21 에는 해당하지 않으며
         cpe:2.3:a:jetbrains:kotlin 으로 뭉뚱그려 매칭된 오탐이다. 빌드 플러그인은 buildEnvironment 경로에서 따로 본다.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib@1\.9\.25$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib@2\.3\.21$</packageUrl>
         <cve>CVE-2026-53914</cve>
         <cve>CVE-2020-29582</cve>
     </suppress>

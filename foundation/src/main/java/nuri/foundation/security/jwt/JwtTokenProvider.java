@@ -191,7 +191,7 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public String createRefreshToken(@org.springframework.lang.NonNull String userId) {
+    public String createRefreshToken(@org.jspecify.annotations.NonNull String userId) {
         return createRefreshToken(userId, new Date(System.currentTimeMillis() + refreshTokenValidityInMilliseconds));
     }
 
@@ -202,7 +202,7 @@ public class JwtTokenProvider {
      * 탈취된 토큰이 무기한 연장되어(슬라이딩 세션) 회전의 목적이 사라진다.
      * 최초 로그인 시점에 정해진 만료를 그대로 물려준다.
      */
-    public String createRefreshToken(@org.springframework.lang.NonNull String userId, Date expiresAt) {
+    public String createRefreshToken(@org.jspecify.annotations.NonNull String userId, Date expiresAt) {
         return Jwts.builder()
                 .subject(userId)
                 .claim(CLAIM_TOKEN_TYPE, TYPE_REFRESH)

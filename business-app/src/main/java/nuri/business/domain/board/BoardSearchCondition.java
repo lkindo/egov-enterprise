@@ -1,7 +1,7 @@
 package nuri.business.domain.board;
 
 import lombok.Data;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 @Data
 public class BoardSearchCondition {

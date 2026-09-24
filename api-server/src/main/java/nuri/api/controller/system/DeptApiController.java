@@ -82,7 +82,7 @@ public class DeptApiController {
     @PutMapping("/batch-hierarchy")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.system.DeptApiController#updateDeptHierarchy')")
     public ResponseEntity<ApiResponse<Void>> updateDeptHierarchy(
-            @Valid @RequestBody java.util.List<@Valid DeptHierarchyItemRequest> items) {
+            @RequestBody java.util.List<@Valid DeptHierarchyItemRequest> items) {
         java.util.List<DeptManageDto> hierarchy = items.stream()
                 .map(item -> DeptManageDto.builder()
                         .ognzId(item.ognzId())

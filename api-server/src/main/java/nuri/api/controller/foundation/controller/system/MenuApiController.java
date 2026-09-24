@@ -75,7 +75,7 @@ public class MenuApiController {
             description = "여러 메뉴의 상위메뉴·순서만 일괄 반영합니다. 명칭·설명·아이콘 등 다른 컬럼은 변경하지 않습니다.")
     @PutMapping("/batch-order")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.MenuApiController#updateMenuOrder')")
-    public ResponseEntity<ApiResponse<Void>> updateMenuOrder(@Valid @RequestBody List<MenuDto> menuList) throws Exception {
+    public ResponseEntity<ApiResponse<Void>> updateMenuOrder(@RequestBody List<@Valid MenuDto> menuList) throws Exception {
         // 종전에는 노드마다 updateMenuManage 를 호출해, 페이로드에 없는 컬럼(menu_expln/rel_img_*)이
         // 정렬 저장 1회로 전 노드에서 소실됐다. 순서 전용 경로(단일 트랜잭션)로 위임한다.
         menuService.updateMenuOrders(menuList);

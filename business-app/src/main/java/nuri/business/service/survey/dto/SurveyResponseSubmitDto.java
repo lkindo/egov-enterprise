@@ -27,8 +27,7 @@ public record SurveyResponseSubmitDto(
 
         @Schema(description = "문항별 답변 목록")
         @NotEmpty(message = "답변이 최소 1건 필요합니다.")
-        @Valid
-        List<@NotNull Answer> answers
+        List<@NotNull @Valid Answer> answers
 ) {
 
     /** 문항 1개에 대한 답변. */

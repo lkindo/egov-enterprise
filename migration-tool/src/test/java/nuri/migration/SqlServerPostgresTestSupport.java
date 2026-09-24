@@ -5,8 +5,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.containers.MSSQLServerContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.mssqlserver.MSSQLServerContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -19,14 +19,14 @@ import java.util.UUID;
 abstract class SqlServerPostgresTestSupport {
     protected static final String SOURCE_DATABASE = "migration_fixture";
     @Container
-    protected static final MSSQLServerContainer<?> SQLSERVER = new MSSQLServerContainer<>(
+    protected static final MSSQLServerContainer SQLSERVER = new MSSQLServerContainer(
             "mcr.microsoft.com/mssql/server@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090")
             .acceptLicense()
             .withPassword("SqlServer1!" + UUID.randomUUID())
             .withUrlParam("encrypt", "true")
             .withUrlParam("trustServerCertificate", "true");
     @Container
-    protected static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine")
+    protected static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine")
             .withPassword(UUID.randomUUID().toString());
 
     @BeforeAll

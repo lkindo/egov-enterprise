@@ -30,7 +30,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.lang.NonNull;
+import nuri.foundation.core.community.CommunityBoardAccessPort;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -71,7 +73,7 @@ public class BoardService extends BaseAbstractService {
          * 호출부는 <b>거부</b>로 해석한다(fail-closed). 판정할 수 없는데 통과시키면 회원 전용
          * 게시판이 전원 공개로 뒤집히기 때문이다(H3).
          */
-        private final nuri.foundation.core.community.CommunityBoardAccessPort communityBoardAccess;
+        private final CommunityBoardAccessPort communityBoardAccess;
 
         public BoardService(BoardRepository boardRepository,
                         BoardMasterRepository boardMasterRepository,
@@ -83,7 +85,7 @@ public class BoardService extends BaseAbstractService {
                         BoardViewCountService viewCountService,
                         BoardMapper boardMapper,
                         BoardIdProperties boardIdProperties,
-                        @org.springframework.lang.Nullable nuri.foundation.core.community.CommunityBoardAccessPort communityBoardAccess) {
+                        @Nullable CommunityBoardAccessPort communityBoardAccess) {
                 this.boardRepository = required(boardRepository, "boardRepository 는 null 일 수 없습니다");
                 this.boardMasterRepository = required(boardMasterRepository, "boardMasterRepository 는 null 일 수 없습니다");
                 this.userService = required(userService, "userService 는 null 일 수 없습니다");

@@ -32,10 +32,9 @@ public class NotificationDispatchRequest {
 
     @NotEmpty
     @Size(max = MAX_RECIPIENTS)
-    @Valid
     @Schema(description = "수신자 목록(사용자 고유 ID). 하나라도 존재하지 않으면 전체를 거부한다.")
     @Builder.Default
-    private List<@NotNull Recipient> recipients = new ArrayList<>();
+    private List<@NotNull @Valid Recipient> recipients = new ArrayList<>();
 
     @NotBlank
     @Size(max = 100)

@@ -756,7 +756,7 @@
         <span>Obsidian Vault</span>
       </div>
       <span class="vault-name">egov-enterprise</span>
-      <span class="tag-badge">Spring Boot 3.5 + Next.js 16</span>
+      <span class="tag-badge">Spring Boot 4.1 + Next.js 16</span>
     </div>
 
     <div class="titlebar-center">
@@ -921,7 +921,7 @@
           <span>NODE INSPECTOR</span>
         </div>
         <div id="inspector-name" style="font-size: 16px; font-weight: 700; color: #fff;">egov-enterprise</div>
-        <div id="inspector-desc" class="inspector-content">전자정부 표준프레임워크 5.0 기반 Next.js 16 + Spring Boot 3.5 멀티모듈 엔터프라이즈 아키텍처</div>
+        <div id="inspector-desc" class="inspector-content">전자정부 표준프레임워크 5.0 기반 Next.js 16 + Spring Boot 4.1 멀티모듈 엔터프라이즈 아키텍처</div>
       </div>
 
       <div class="inspector-section">
@@ -974,7 +974,7 @@
     const projectData = {
       nodes: [
         // Root
-        { id: "root", name: "egov-enterprise", type: "root", color: "#e4e4e7", size: 26, category: "Project Root", path: "/", desc: "전자정부 표준프레임워크 5.0 기반 Next.js 16 + Spring Boot 3.5 멀티 모듈 모더니제이션 프로젝트", details: "Java 21, Spring Boot 3.5.16, Next.js 16.x App Router 기반 엔터프라이즈 참조 아키텍처." },
+        { id: "root", name: "egov-enterprise", type: "root", color: "#e4e4e7", size: 26, category: "Project Root", path: "/", desc: "전자정부 표준프레임워크 5.0 기반 Next.js 16 + Spring Boot 4.1 멀티 모듈 모더니제이션 프로젝트", details: "Java 21, Spring Boot 4.1.1, Next.js 16.x App Router 기반 엔터프라이즈 참조 아키텍처." },
 
         // Backend Core Modules
         { id: "mod-foundation", name: "foundation", type: "module", color: "#8b5cf6", size: 20, category: "Core Module", path: "/foundation", desc: "최하위 코어: 공통 응답, ErrorCode, BaseEntity, 보안 백본(JWT/IAM)", details: "다른 프로젝트 모듈에 의존하지 않는 순수 라이브러리. ApiResponse, PageResponse, JwtTokenProvider, SecurityConfig 등 공통 계약 집합." },
@@ -1540,7 +1540,7 @@ package nuri.${node.id.replace('mod-', '').replace('dom-', '')};
               <span style="width:10px;height:10px;border-radius:50%;background:#10b981;"></span>
               <span>1. Presentation Layer (Frontend & API Server)</span>
             </div>
-            <span class="tag-badge" style="background:rgba(16,185,129,0.15);color:#6ee7b7;">Next.js 16 + Spring Boot 3.5</span>
+            <span class="tag-badge" style="background:rgba(16,185,129,0.15);color:#6ee7b7;">Next.js 16 + Spring Boot 4.1</span>
           </div>
           <div class="canvas-grid">
             <div class="canvas-card" onclick="switchTab('note'); selectNode('mod-frontend');">
@@ -1549,7 +1549,7 @@ package nuri.${node.id.replace('mod-', '').replace('dom-', '')};
             </div>
             <div class="canvas-card" onclick="switchTab('note'); selectNode('mod-api-server');">
               <div class="canvas-card-header"><i data-lucide="server" style="width:14px;height:14px;color:#8b5cf6;"></i> api-server (REST API)</div>
-              <div class="canvas-card-desc">Spring Boot 3.5.16, OpenAPI 3.0, Spring Security 6, JWT Filter</div>
+              <div class="canvas-card-desc">Spring Boot 4.1.1, OpenAPI 3.0, Spring Security 7, JWT Filter</div>
             </div>
           </div>
         </div>

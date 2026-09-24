@@ -22,8 +22,7 @@ public final class OperationAuthorizationManager implements AuthorizationManager
     }
 
     @Override
-    @SuppressWarnings("deprecation")
-    public AuthorizationDecision check(Supplier<Authentication> authentication,RequestAuthorizationContext context) {
+    public AuthorizationDecision authorize(Supplier<? extends Authentication> authentication, RequestAuthorizationContext context) {
         var request=context.getRequest();
         String uri=request.getRequestURI().substring(request.getContextPath().length());
         String method="HEAD".equals(request.getMethod())?"GET":request.getMethod();

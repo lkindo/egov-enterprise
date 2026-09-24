@@ -1,5 +1,22 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-09-24 Spring Boot 4.1.1 전환(1단계)에 따른 보완 소스 재검토
+
+ADR-0024 1단계로 보완 소스 8개가 바뀌어 예외 4건(SAST-FP-001·002·007·008)의 해시를 재결속한다.
+
+- `JwtTokenProvider`·`JwtAuthenticationFilter`(FP-001·002·008): Spring 7이 deprecated로 둔
+  `org.springframework.lang.NonNull`을 JSpecify `org.jspecify.annotations.NonNull`로 바꾼 임포트·애노테이션 이동뿐이다.
+  서명·만료·자격 변경 시각 검증 로직은 같다.
+- `OperationAuthorizationManager`(FP-008): Spring Security 7이 `AuthorizationManager.check`를 없애 같은 본문을
+  `authorize(Supplier<? extends Authentication>, …)`로 옮겼다. 정확한 메서드·가장 구체적인 경로 매칭과 미등록 거부는
+  같고, 필요 없어진 deprecation 억제만 걷었다.
+- 빌드 파일 5개(FP-007): Boot 4.1.1 BOM·starter 이동·BOM과 같아진 버전 고정 제거다. H2는 여전히 테스트 구성에만
+  있고 `:api-server:dependencies --configuration runtimeClasspath`에 0건이다.
+
+예외 6건의 범위·규칙·행·fingerprint·승인일·만료일과 보안 임계값은 유지한다. 재결속 전 해시 불일치가 SAST 계약
+2건을 실제로 실패시켰고, 재결속 뒤 같은 계약(sast-exceptions·sast-contract·sast-policy 17건)이 통과했다. 이번 근거는
+소스·의존성 선언의 재검토이며 CodeQL 실행의 증거가 아니다. CodeQL 결과는 병합할 커밋의 required CI로 확인한다.
+
 ## 2026-09-22 mariadb BOM 관리 좌표 상향에 따른 H2 테스트 경계 재검토
 
 SAST-FP-007의 보완 소스인 `build.gradle`에 `ext['mariadb.version'] = '3.5.10'` 한 줄을 추가했다. Spring Boot

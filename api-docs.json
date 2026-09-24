@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "eGov Enterprise API",
-    "description": "### 전자정부 프레임워크 모더니제이션 API 문서\n\n본 API 는 Next.js 15 + Spring Boot 3.4 기반의 전자정부 표준프레임워크 공통 컴포넌트를 제공합니다.\n\n#### 주요 기능\n- 시스템 관리 (공통코드, 메뉴, 권한)\n- 협업 (게시판, 동호회, 주소록)\n- 운영 지원 (일정, 보고서, 설문)\n- 통계 및 분석\n\n#### 인증\n- JWT 토큰 기반 인증\n- Bearer 토큰을 Authorization 헤더에 추가\n",
+    "description": "### 전자정부 프레임워크 모더니제이션 API 문서\n\n본 API 는 Next.js 16 + Spring Boot 4.1 기반의 전자정부 표준프레임워크 공통 컴포넌트를 제공합니다.\n\n#### 주요 기능\n- 시스템 관리 (공통코드, 메뉴, 권한)\n- 협업 (게시판, 동호회, 주소록)\n- 운영 지원 (일정, 보고서, 설문)\n- 통계 및 분석\n\n#### 인증\n- JWT 토큰 기반 인증\n- Bearer 토큰을 Authorization 헤더에 추가\n",
     "contact": {
       "name": "eGov Enterprise Team",
       "url": "https://www.egovframe.go.kr",

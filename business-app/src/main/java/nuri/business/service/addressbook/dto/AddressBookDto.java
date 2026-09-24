@@ -43,9 +43,8 @@ public class AddressBookDto {
     private String wrterId;
 
     @Builder.Default
-    @Valid
     @Schema(description = "주소록 내 연락처 목록")
-    private List<@NotNull AddressBookUserDto> adbkMan = new java.util.ArrayList<>();
+    private List<@NotNull @Valid AddressBookUserDto> adbkMan = new java.util.ArrayList<>();
 
     @Schema(description = "최초 등록자 ID")
     private String frstRgtrId;

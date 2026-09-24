@@ -801,9 +801,9 @@ E2E 백엔드 로그의 "사용자 활동 로그 누적 실패"·`tb_user_log` �
 
 | 라인 | OSS 지원 종료 | 상용 지원 종료 |
 |---|---|---|
-| Boot 3.5 · Framework 6.2 (현행) | 2026-06-30 | 2032-06-30 |
+| Boot 3.5 · Framework 6.2 (전환 전) | 2026-06-30 | 2032-06-30 |
 | Boot 4.0 · Framework 7.0 | 2026-12-31 · 2027-07-31 | 2027-12-31 · 2028-07-31 |
-| Boot 4.1 | 2027-07-31 | 2028-07-31 |
+| Boot 4.1 (현행, [ADR-0024](../02-architecture/decisions/ADR-0024-spring-boot-4-two-phase-migration.md)) | 2027-07-31 | 2028-07-31 |
 
 ⚠ **상용 지원(ⓑ)은 이 저장소가 내릴 수 있는 결정이 아니다.** 여기는 재사용 템플릿이고 구독 자격증명은 저장소·CI·
 생성 산출물 어디에도 넣을 수 없으므로, 도입 기관이 각자의 구독으로 선택하는 축이다(이미 구독이 있는 기관에는 코드
@@ -830,6 +830,33 @@ E2E 백엔드 로그의 "사용자 활동 로그 누적 실패"·`tb_user_log` �
    이 단계에서 유지됨을 확인했다. 4.1 의 OSS 지원은 2027-07-31 까지다.
 2. **Jackson 3 이행** — 본체 11파일·테스트 64파일, Jackson 2 타입 DTO, standalone MockMvc 테스트, `spring.jackson2.*` →
    `spring.jackson.*` 되돌림. 호환 모듈이 deprecated 이므로 그 제거 전에 마쳐야 한다.
+
+### 1단계 적용 결과 (2026-09-24)
+
+[ADR-0024](../02-architecture/decisions/ADR-0024-spring-boot-4-two-phase-migration.md) 1단계를 `main`(04db2b3c5) 위에 정식
+변경으로 옮겼다. 프로브와 달리 `-Werror -Xlint:deprecation`을 끄지 않았고, 프로브 보정 표식을 모두 걷었다. 적용하면서
+프로브가 보지 못한 것이 다섯 드러났다. 모두 테스트가 통과한 채로 지나갈 수 있던 것이다.
+
+| 발견 | 증상 | 조치 |
+|---|---|---|
+| 테스트와 운영의 JSON 변환기 불일치 | api-server 테스트 `application.yml`이 main의 같은 이름 파일을 가려, 테스트 컨텍스트에만 매퍼 선택이 없었다. 테스트는 Jackson 3, 운영·E2E는 Jackson 2로 HTTP 본문을 읽었다. 프로브의 "전체 테스트 실패 2"는 이 차이를 가리고 있었다. | 테스트 설정에 같은 선택을 두고 [동등성 테스트](../../api-server/src/test/java/nuri/api/config/JsonConverterParityIntegrationTest.java)로 고정. 두 매퍼에서 해석이 갈리던 `MemoInstructionRequest`는 `Object` 위임 생성자로 바꿨다. WebSocket 메시지 변환도 같은 매퍼에 둔다. |
+| `@Scheduled` 스레드 | Boot는 `TaskScheduler` 빈이 하나라도 있으면 기본 스케줄러를 만들지 않는다. WebSocket 브로커의 스케줄러 때문에 로그 누적 작업이 `MessageBroker-*`에서 돌았다. | Boot 빌더로 `taskScheduler` 명시, [스케줄러 테스트](../../foundation/src/test/java/nuri/foundation/core/config/SchedulingTaskSchedulerTest.java) |
+| HV000271 | 컨테이너에 붙인 `@Valid`가 Hibernate Validator 9에서 deprecated다(E2E 로그 11건). | DTO 8곳·컨트롤러 파라미터 4곳을 원소 타입으로. 입력 계약 게이트가 원소 타입 `@Valid`를 요구하고 컨테이너 쪽을 거부한다. |
+| JSpecify와 springdoc | JSpecify `@NonNull`은 TYPE_USE 전용이라 springdoc이 필드 선언에서 읽지 못해 `UserAuthorityDto.scrtyDcsnTrgtId`의 required가 빠졌다. Lombok null 검사는 이름으로 인식해 종전과 같다(null 검사 클래스 10개 동일). | `@Schema(requiredMode = REQUIRED)`로 보존. `api-docs.json` 차이는 설명 문구 한 줄뿐이다. |
+| JSpecify와 결합 스캐너 | `pkg.@NonNull Type` 형태가 한정 이름을 쪼개 결합 원장의 edge 하나를 가렸다. | import와 단순 이름으로 되돌림 |
+
+그 밖에 okhttp 5 경유 `kotlin-stdlib`가 1.9.25에서 2.3.21로 바뀌어 NVD 오탐 억제의 버전을 옮겼고, SAST 예외 4건의 보완
+소스를 재검토해 해시를 재결속했다. Testcontainers 2의 컨테이너 클래스가 제네릭이 아니어서 CI 이미지 사전 pull 계약의
+정규식을 두 형태 모두 읽게 고쳤다.
+
+로컬 검증: 5개 모듈 컴파일(`-Werror`), 전체 테스트 3,788건(foundation 338·business-core 962·business-app 841·
+api-server 689·migration-tool 958), 하네스 99/99, SAST 예외 계약 17/17. migration-tool의 자식 JVM 종료·재개 시험
+1건은 Docker 재기동 직후 다른 컨테이너와 겹친 부하에서 90초 제한을 넘었고, 단독 재실행에서 82초(재개 단계 21초)로
+통과했다. `api-docs.json`은 설명 문구 한 줄만 달라 생성 계약은 그대로다. 실제 PostgreSQL 스키마 검증·PIT·격리 E2E·
+재사용 산출물 세 프로필은 PR의 required CI로 확인한다.
+
+⚠ **2단계에 쓸 사실 하나.** 프로브의 전체 통합 테스트는 모르는 사이 HTTP 본문을 Jackson 3로 검증했고,
+`JsonNode` DTO 하나 말고는 통과했다. Jackson 3 변환기 쪽 HTTP 계층의 위험은 그만큼 작다는 증거다.
 
 ## ZAP 주간 스캔 경고 분류
 

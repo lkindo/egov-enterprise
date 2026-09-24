@@ -7,7 +7,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -40,7 +40,7 @@ public abstract class SharedPostgresMigrationTestSupport {
 
     @BeforeAll
     final void createIsolatedDatabase() throws SQLException {
-        PostgreSQLContainer<?> server = ServerHolder.INSTANCE;
+        PostgreSQLContainer server = ServerHolder.INSTANCE;
         if (SERVER_START_COUNT.get() != 1 || !server.isRunning()) {
             throw new IllegalStateException("공용 PostgreSQL 서버는 테스트 JVM에서 정확히 한 번 실행돼야 합니다");
         }
@@ -161,8 +161,8 @@ public abstract class SharedPostgresMigrationTestSupport {
         return '"' + identifier + '"';
     }
 
-    private static PostgreSQLContainer<?> startSharedServer() {
-        PostgreSQLContainer<?> server = new PostgreSQLContainer<>("postgres:17-alpine")
+    private static PostgreSQLContainer startSharedServer() {
+        PostgreSQLContainer server = new PostgreSQLContainer("postgres:17-alpine")
                 .withDatabaseName("postgres")
                 .withUsername("schema_test")
                 .withPassword(UUID.randomUUID().toString());
@@ -177,7 +177,7 @@ public abstract class SharedPostgresMigrationTestSupport {
     }
 
     private static final class ServerHolder {
-        private static final PostgreSQLContainer<?> INSTANCE = startSharedServer();
+        private static final PostgreSQLContainer INSTANCE = startSharedServer();
 
         private ServerHolder() {
         }

@@ -9,7 +9,7 @@ import nuri.business.service.template.dto.TemplateDto;
 import nuri.business.service.template.dto.TemplateMapper;
 import nuri.foundation.core.template.TemplateReferenceContributor;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;

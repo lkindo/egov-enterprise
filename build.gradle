@@ -14,7 +14,7 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.5.16' apply false
+    id 'org.springframework.boot' version '4.1.1' apply false
     id 'io.spring.dependency-management' version '1.1.7'
     id 'io.freefair.lombok' version '8.12.2' apply false
     id 'jacoco'
@@ -205,7 +205,8 @@ subprojects { subproject ->
     // [2026-09-09] 현재 runtime 10.1.57에 Dependabot Critical 3건이 남았다.
     // Apache security-10 공지: 수정된 10.1.58은 릴리스 투표 실패, 배포된 수정본은 10.1.59다.
     // https://tomcat.apache.org/security-10.html#Fixed_in_Apache_Tomcat_10.1.59
-    ext['tomcat.version'] = '10.1.59'
+    // [2026-09-24 Boot 4.1.1 전환, ADR-0024] 줄 제거. Boot 4 는 Tomcat 11 라인이라 10.1.x 고정은 오히려
+    //   라인을 끌어내린다. 4.1.1 BOM 이 주는 11.0.24 가 security-11 공지의 알려진 수정선을 충족한다.
 
     //   [2026-08-07 CVE 상환 2차] 열린 Dependabot 알림 84건을 **실제 해석 버전**으로 재판정한 결과
     //   조치가 필요한 maven 항목은 12건이었다(나머지는 §아래 census 참조). BOM 이 관리하는 3종을
@@ -220,21 +221,26 @@ subprojects { subproject ->
     //     · opentelemetry — BOM 1.49.0. Unbounded Memory Allocation 2건이 >=1.62.0 을 요구한다.
     //                  1.49→1.62 는 minor 도약이라 micrometer-tracing-bridge-otel 과의 호환을
     //                  컴파일·테스트로 검증한 뒤에만 유지한다.
-    ext['jackson-bom.version'] = '2.21.5'
-    ext['log4j2.version'] = '2.25.5'
-    ext['opentelemetry.version'] = '1.62.0'
+    //
+    //   [2026-09-24 Boot 4.1.1 전환, ADR-0024] 세 줄(jackson-bom·log4j2·opentelemetry) 모두 제거.
+    //     · jackson-bom — Boot 4 에서 이 속성은 Jackson 3(tools.jackson) BOM 을 가리킨다. Jackson 2 호환
+    //       모듈이 쓰는 com.fasterxml 좌표는 jackson-2-bom 이 관리하며 4.1.1 BOM 값이 2.21.5 로 같다.
+    //     · log4j2 2.25.5 · opentelemetry 1.62.0 — 4.1.1 BOM 값과 같아 해석 결과를 바꾸지 못한다.
+    //       남겨 두면 2026-08-05 jackson 사례처럼 다음 BOM 상향 때 끌어내리는 하한이 된다.
+    //     실측: `:api-server:dependencyManagement` 로 BOM 관리 값을, 제거 전후 `dependencies` 로 해석 값을 대조.
 
     //   [2026-09-22] mariadb-java-client — 3.5.16 BOM 은 3.5.8 을 관리한다(`:migration-tool:dependencyManagement` 실측).
     //     Dependabot 경고 4건(#251~#254 — CVE-2026-55856/55857/55858/61700, 범위 >=3.5.0 <3.5.9, 수정 3.5.9)은
     //     manifest settings.gradle 의 그 BOM 좌표를 본다. 실제 해석은 migration-tool 의 testRuntimeOnly 직접 선언
     //     3.5.10 이라 런타임 노출은 없지만, dependency graph 제출은 BOM 관리 좌표를 함께 싣는다.
     //     제거 조건: BOM 관리 좌표가 3.5.9+ 로 오르면(undici override 와 같은 형태, DEC-OPS-086).
-    ext['mariadb.version'] = '3.5.10'
+    //   [2026-09-24 Boot 4.1.1 전환, ADR-0024] 제거 조건 충족 — 4.1.1 BOM 이 3.5.10 을 관리한다.
 
     dependencyManagement {
         imports {
-            mavenBom "org.springframework.boot:spring-boot-dependencies:3.5.16"
-            mavenBom "org.junit:junit-bom:5.12.2"
+            mavenBom "org.springframework.boot:spring-boot-dependencies:4.1.1"
+            // [2026-09-24 ADR-0024] junit-bom 5.12.2 import 제거. Boot 4 BOM 이 JUnit 6.0.3 을 관리하고
+            //   Spring 7 의 SpringExtension 은 JUnit 6 API 를 요구한다 — 5.x 로 고정하면 컨텍스트 테스트가 기동하지 않는다.
         }
     }
 
@@ -258,14 +264,8 @@ subprojects { subproject ->
     configurations.all {
         exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j2-impl'
 
-        resolutionStrategy.eachDependency { details ->
-            if (details.requested.group == 'org.junit.platform') {
-                details.useVersion '1.11.4'
-            }
-            if (details.requested.group.startsWith('org.junit.jupiter')) {
-                details.useVersion '5.11.4'
-            }
-        }
+        // [2026-09-24 ADR-0024] JUnit platform 1.11.4·jupiter 5.11.4 강제 고정(useVersion)을 제거했다.
+        //   같은 이유로 JUnit 판정은 Boot 4 BOM 에 맡긴다.
     }
 
     dependencies {
@@ -277,7 +277,9 @@ subprojects { subproject ->
         testCompileOnly 'org.projectlombok:lombok'
         testAnnotationProcessor 'org.projectlombok:lombok'
         implementation 'com.google.code.findbugs:jsr305:3.0.2'
-        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        // Boot 4 는 테스트 자동 설정을 기술별 모듈로 나눴다. classic 은 종전 starter-test 의 전체 묶음을
+        //   한 번에 들여오는 이행용 starter 다 — 모듈별 선언으로 좁히는 것은 2단계(Jackson 3) 이후 과제다.
+        testImplementation 'org.springframework.boot:spring-boot-starter-test-classic'
         testImplementation 'org.springframework.security:spring-security-test'
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     }

@@ -1177,7 +1177,8 @@ test('CI pre-pulls the exact PostgreSQL image used by the shared Java schema har
     'SharedPostgresMigrationTestSupport.java',
   ), 'utf8');
 
-  const javaImage = /new PostgreSQLContainer<>\(\"([^\"]+)\"\)/.exec(javaHarness)?.[1];
+  // Testcontainers 2 의 컨테이너 클래스는 제네릭이 아니다(ADR-0024). 1.x 의 다이아몬드 형태도 함께 읽는다.
+  const javaImage = /new PostgreSQLContainer(?:<>)?\(\"([^\"]+)\"\)/.exec(javaHarness)?.[1];
   const pullImages = content => [...content.matchAll(/docker pull --quiet ([^\s)]+)/g)]
     .map(match => match[1]);
   assert.equal(javaImage, 'postgres:17-alpine');

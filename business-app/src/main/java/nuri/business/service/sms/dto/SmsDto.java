@@ -59,8 +59,7 @@ public class SmsDto {
     @Builder.Default
     @NotEmpty
     @Size(min = 1, max = MAX_RECIPIENTS_PER_REQUEST)
-    @Valid
-    private List<@NotNull SmsRecptnDto> recipients = new java.util.ArrayList<>();
+    private List<@NotNull @Valid SmsRecptnDto> recipients = new java.util.ArrayList<>();
 
     @Schema(description = "검색 조건")
     private String searchCondition;

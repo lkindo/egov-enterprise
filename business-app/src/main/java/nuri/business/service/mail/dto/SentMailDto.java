@@ -45,10 +45,9 @@ public class SentMailDto {
             maxItems = 100)
     // 요청 전용 — 읽기 매퍼가 채우지 않으며 직렬화에서도 제외한다(개인정보 응답 census 의 명시 예외 근거).
     @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
-    @jakarta.validation.Valid
     @Size(max = 100)
     @Builder.Default
-    private java.util.List<@NotNull MailRecipientDto> recipients = new java.util.ArrayList<>();
+    private java.util.List<@NotNull @jakarta.validation.Valid MailRecipientDto> recipients = new java.util.ArrayList<>();
 
     @Schema(description = "Description")
     private String sndngResultCode;

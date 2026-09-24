@@ -8,7 +8,7 @@ egovframe = "5.0.0"
 #   여기 남겨 두면 "카탈로그가 Boot 버전의 SSOT" 로 읽혀, 이 값만 고치고 실제로는 아무것도
 #   바뀌지 않는 상황이 생긴다(선언 범위 ≠ 실제 범위). 실제 출처가 아닌 선언은 지운다.
 #   ⚠ 위 두 곳은 반드시 함께 바꿔야 한다.
-spring-doc = "2.9.1"
+spring-doc = "3.1.1" # Boot 4(Spring 7) 대응 라인은 springdoc 3.x 다
 # [2026-08-07 제거] spring-ai = "1.0.0-M5"
 #   정식 이전 마일스톤(M5)이 foundation 의 `api` 스코프로 전 모듈·배포 아티팩트에 실려 있었으나
 #   **프로덕션 사용처가 0건**이었다. 존재 이유가 전부 "억제"였다 —
@@ -19,7 +19,7 @@ spring-doc = "2.9.1"
 #   전이로 spring-webflux 를 끌어와 Dependabot 알림 12건의 유입원이기도 했다(WebFlux 는
 #   이 저장소가 쓰지 않는다 — Mono/Flux/WebClient 전수 grep 0건).
 #   ⚠ AI 기능을 도입하기로 하면 정식 릴리스(1.0.0 GA 이상)로 되살릴 것. M5 를 그대로 되돌리지 말 것.
-spring-boot-admin = "3.4.1"
+spring-boot-admin = "4.1.2"
 postgresql = "42.7.13"
 commons-io = "2.22.0"
 commons-lang3 = "3.20.0"
@@ -36,7 +36,7 @@ dbcp2 = "2.14.0"
 jjwt = "0.13.0"
 h2 = "2.5.250"
 caffeine = "3.2.4"
-testcontainers = "1.21.4"
+testcontainers = "2.0.5" # Boot 4.1.1 BOM 관리 값과 같다
 mapstruct = "1.6.3"
 # [2026-08-07 신설] querydsl — 원본 `com.querydsl` 에서 유지보수 포크로 이관한다.
 #   원본은 5.1.0 이 마지막 릴리스이고 CVE-2024-49203(HQL injection via orderBy, CVSS 8.2)의
@@ -102,11 +102,11 @@ caffeine = { group = "com.github.ben-manes.caffeine", name = "caffeine", version
 
 # Testcontainers for integration testing
 testcontainers-bom = { group = "org.testcontainers", name = "testcontainers-bom", version.ref = "testcontainers" }
-testcontainers-postgresql = { group = "org.testcontainers", name = "postgresql", version.ref = "testcontainers" }
-testcontainers-jdbc = { group = "org.testcontainers", name = "jdbc", version.ref = "testcontainers" }
-testcontainers-junit-jupiter = { group = "org.testcontainers", name = "junit-jupiter", version.ref = "testcontainers" }
+testcontainers-postgresql = { group = "org.testcontainers", name = "testcontainers-postgresql", version.ref = "testcontainers" }
+testcontainers-jdbc = { group = "org.testcontainers", name = "testcontainers-jdbc", version.ref = "testcontainers" }
+testcontainers-junit-jupiter = { group = "org.testcontainers", name = "testcontainers-junit-jupiter", version.ref = "testcontainers" }
 
-spring-retry = { group = "org.springframework.retry", name = "spring-retry" }
+spring-retry = { group = "org.springframework.retry", name = "spring-retry", version = "2.0.13" } # Boot 4 BOM 은 spring-retry 를 관리하지 않아 명시한다
 # QueryDSL — 유지보수 포크(io.github.openfeign.querydsl). 사유는 [versions].querydsl 주석 참조.
 #   `jakarta` classifier 는 Jakarta EE 변형이다(실측: 5.6.1-jakarta.jar 의 jakarta/persistence 참조 382회).
 querydsl-jpa = { group = "io.github.openfeign.querydsl", name = "querydsl-jpa", version.ref = "querydsl" }
@@ -117,5 +117,5 @@ querydsl-apt = { group = "io.github.openfeign.querydsl", name = "querydsl-apt", 
 #   실사용처는 business-app 의 NotificationService 와 business-core testFixtures 의 TestMessagingConfig 다.
 #   버전은 Spring Boot BOM 관리(spring-framework 계열과 동일 라인).
 spring-messaging = { group = "org.springframework", name = "spring-messaging" }
-spring-boot-starter-aop = { group = "org.springframework.boot", name = "spring-boot-starter-aop" }
+spring-boot-starter-aop = { group = "org.springframework.boot", name = "spring-boot-starter-aspectj" } # Boot 4 에서 starter-aop 가 starter-aspectj 로 개명됐다
 

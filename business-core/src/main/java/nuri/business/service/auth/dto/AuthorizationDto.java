@@ -51,7 +51,7 @@ public final class AuthorizationDto {
                               @Size(max=4000) @Schema(nullable=true, types={"string","null"}) String description) {}
     public record UpdateGroup(@NotBlank @Size(max=100) String name, @Size(max=4000) @Schema(nullable=true, types={"string","null"}) String description,
                               @NotBlank @Size(max=64) String version) {}
-    public record ReplaceGrants(@NotNull @Valid @Size(max=2000) List<@NotNull @Valid Grant> grants,
+    public record ReplaceGrants(@NotNull @Size(max=2000) List<@NotNull @Valid Grant> grants,
                                 @NotBlank @Size(max=64) String version, @AssertTrue boolean complete) {}
     public record ReplaceGroups(@NotNull @Size(max=100) List<@NotBlank @Size(max=20) String> groups,
                                 @NotBlank @Size(max=64) String version, @AssertTrue boolean complete) {}

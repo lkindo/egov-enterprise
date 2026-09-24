@@ -105,7 +105,7 @@ public class CommonCodeApiController {
     @PutMapping("/cmmn/batch-hierarchy")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.code.CommonCodeApiController#updateCmmnCodeHierarchy')")
     public ResponseEntity<ApiResponse<Void>> updateCmmnCodeHierarchy(
-            @Valid @RequestBody List<CmmnCodeHierarchyDto> items) {
+            @RequestBody List<@Valid CmmnCodeHierarchyDto> items) {
         commonCodeService.updateCmmnCodeHierarchy(items);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

@@ -47,6 +47,8 @@ class CommonCodeApiControllerTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    // BaseControllerTest 와 같은 이유 — 1단계(ADR-0024)는 운영 변환기가 Jackson 2 라 여기도 Jackson 2 로 검증한다.
+    @SuppressWarnings("removal")
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);

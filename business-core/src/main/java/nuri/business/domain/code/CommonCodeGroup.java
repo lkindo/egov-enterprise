@@ -6,7 +6,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Builder;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 import java.io.Serializable;
 import java.util.Objects;
 

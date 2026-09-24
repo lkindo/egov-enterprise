@@ -33,7 +33,9 @@ public class DashboardStatsEventListener {
             stats.put("newPosts", event.newPosts());
             stats.put("alerts", event.alerts());
 
-            messagingTemplate.convertAndSend("/topic/dashboard/stats", stats);
+            // Spring Messaging 7 에 기본 목적지용 convertAndSend(Object payload, Map headers) 가 생겨 (String, Map) 인자가
+            //   두 오버로드에 모두 맞는다. payload 를 Object 로 올려 목적지 오버로드를 고른다.
+            messagingTemplate.convertAndSend("/topic/dashboard/stats", (Object) stats);
             log.debug("Successfully broadcasted stats via WebSocket: {}", stats);
         } catch (Exception e) {
             log.error("Failed to broadcast stats via WebSocket", e);

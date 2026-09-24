@@ -3,7 +3,7 @@ package nuri.business.domain.user.entity;
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;

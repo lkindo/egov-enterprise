@@ -11,8 +11,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.mysql.MySQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 abstract class MySqlPostgresTestSupport {
     @Container
-    protected static final MySQLContainer<?> MYSQL = new MySQLContainer<>(DockerImageName.parse(
+    protected static final MySQLContainer MYSQL = new MySQLContainer(DockerImageName.parse(
             "mysql@sha256:85b9bf2e29cf836ecb8c2a15a935d4ba0c606631dff1dd79531a11983c638f2a")
             .asCompatibleSubstituteFor("mysql"))
             .withDatabaseName("migration_fixture")
@@ -39,7 +39,7 @@ abstract class MySqlPostgresTestSupport {
             .withUrlParam("useCursorFetch", "true")
             .withUrlParam("defaultFetchSize", "1");
     @Container
-    protected static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine")
+    protected static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine")
             .withPassword(UUID.randomUUID().toString());
 
     @BeforeAll
