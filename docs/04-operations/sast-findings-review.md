@@ -10,7 +10,7 @@ ADR-0024 1단계로 보완 소스 8개가 바뀌어 예외 4건(SAST-FP-001·002
 - `OperationAuthorizationManager`(FP-008): Spring Security 7이 `AuthorizationManager.check`를 없애 같은 본문을
   `authorize(Supplier<? extends Authentication>, …)`로 옮겼다. 정확한 메서드·가장 구체적인 경로 매칭과 미등록 거부는
   같고, 필요 없어진 deprecation 억제만 걷었다.
-- 빌드 파일 5개(FP-007): Boot 4.1.1 BOM·starter 이동·BOM과 같아진 버전 고정 제거다. H2는 여전히 테스트 구성에만
+- 빌드 파일 5개(FP-007): Boot 4.1.1 BOM·starter 이동·BOM과 같아진 버전 고정 제거와 Tomcat 11.0.26 고정이다. H2는 여전히 테스트 구성에만
   있고 `:api-server:dependencies --configuration runtimeClasspath`에 0건이다.
 
 예외 6건의 범위·규칙·행·fingerprint·승인일·만료일과 보안 임계값은 유지한다. 재결속 전 해시 불일치가 SAST 계약

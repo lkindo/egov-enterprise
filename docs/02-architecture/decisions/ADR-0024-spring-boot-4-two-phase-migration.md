@@ -42,8 +42,9 @@ Jackson 3은 본체 11파일·테스트 64파일에 걸치지만 Boot 4의 Jacks
    - Null 애노테이션: Spring 7이 deprecated로 둔 `org.springframework.lang`을 JSpecify로 옮긴다. JSpecify는 TYPE_USE
      전용이라 springdoc이 필드 선언에서 읽지 못하는 곳은 `@Schema(requiredMode)`로 문서 계약을 보존한다. 한정 이름
      중간에 애노테이션을 끼우는 형태(`pkg.@Nullable Type`)는 import 기반 스캐너가 의존을 놓치므로 쓰지 않는다.
-5. **버전 고정 정리.** 4.1.1 BOM 값과 같아진 log4j2·opentelemetry·mariadb 고정, 라인이 달라진 tomcat·jackson-bom 고정,
-   JUnit 5 강제 고정을 걷는다. `-Werror -Xlint:deprecation`은 유지한다.
+5. **버전 고정 정리.** 4.1.1 BOM 값과 같아진 log4j2·opentelemetry·mariadb 고정, Jackson 3 좌표를 가리키게 된 jackson-bom
+   고정, JUnit 5 강제 고정을 걷는다. Tomcat 고정은 11.0.26으로 옮긴다 — BOM의 11.0.24에 10.1.x에서 막았던 Critical
+   3건이 그대로 걸린다. `-Werror -Xlint:deprecation`은 유지한다.
 6. **바꾸지 않는 것.** API·DB 스키마, 인가 의미, 테스트·커버리지 임계값, required context 6개와 CodeQL 차단 기준은
    그대로다. SAST 오탐 예외는 보완 소스 해시만 재검토 후 재결속한다.
 

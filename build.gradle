@@ -205,8 +205,13 @@ subprojects { subproject ->
     // [2026-09-09] 현재 runtime 10.1.57에 Dependabot Critical 3건이 남았다.
     // Apache security-10 공지: 수정된 10.1.58은 릴리스 투표 실패, 배포된 수정본은 10.1.59다.
     // https://tomcat.apache.org/security-10.html#Fixed_in_Apache_Tomcat_10.1.59
-    // [2026-09-24 Boot 4.1.1 전환, ADR-0024] 줄 제거. Boot 4 는 Tomcat 11 라인이라 10.1.x 고정은 오히려
-    //   라인을 끌어내린다. 4.1.1 BOM 이 주는 11.0.24 가 security-11 공지의 알려진 수정선을 충족한다.
+    // [2026-09-24 Boot 4.1.1 전환, ADR-0024] Boot 4 는 Tomcat 11 라인이라 10.1.x 고정을 11.0.x 로 옮긴다.
+    //   4.1.1 BOM 은 11.0.24 를 주는데, 10.1.x 에서 막았던 같은 Critical 3건(GHSA-gcx9-497g-6cp6·
+    //   GHSA-9xv2-5v5q-p794·GHSA-h3x4-894j-xpx5)이 11.0.x <11.0.25 에도 걸린다 — PR 의 dependency review 가 잡았다.
+    //   11.0.26(2026-09-15)은 WebSocket 보안 제약 우회·요청 헤더 혼선 등 Important 수정을 더 담아 그 값으로 둔다.
+    //   https://tomcat.apache.org/security-11.html#Fixed_in_Apache_Tomcat_11.0.26
+    //   제거 조건: Boot BOM 이 11.0.26 이상을 관리하면.
+    ext['tomcat.version'] = '11.0.26'
 
     //   [2026-08-07 CVE 상환 2차] 열린 Dependabot 알림 84건을 **실제 해석 버전**으로 재판정한 결과
     //   조치가 필요한 maven 항목은 12건이었다(나머지는 §아래 census 참조). BOM 이 관리하는 3종을

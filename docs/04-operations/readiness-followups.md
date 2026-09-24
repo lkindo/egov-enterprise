@@ -845,6 +845,10 @@ E2E 백엔드 로그의 "사용자 활동 로그 누적 실패"·`tb_user_log` �
 | JSpecify와 springdoc | JSpecify `@NonNull`은 TYPE_USE 전용이라 springdoc이 필드 선언에서 읽지 못해 `UserAuthorityDto.scrtyDcsnTrgtId`의 required가 빠졌다. Lombok null 검사는 이름으로 인식해 종전과 같다(null 검사 클래스 10개 동일). | `@Schema(requiredMode = REQUIRED)`로 보존. `api-docs.json` 차이는 설명 문구 한 줄뿐이다. |
 | JSpecify와 결합 스캐너 | `pkg.@NonNull Type` 형태가 한정 이름을 쪼개 결합 원장의 edge 하나를 가렸다. | import와 단순 이름으로 되돌림 |
 
+PR의 dependency review가 하나를 더 잡았다. 4.1.1 BOM의 Tomcat 11.0.24에는 10.1.x에서 막았던 Critical 3건
+(GHSA-gcx9-497g-6cp6·GHSA-9xv2-5v5q-p794·GHSA-h3x4-894j-xpx5, 수정 11.0.25)이 그대로 걸려, 첫 적용본이 "BOM이
+수정선을 충족한다"고 적은 주석은 틀렸다. WebSocket 보안 제약 우회 등 Important 수정을 더 담은 11.0.26으로 고정했다.
+
 그 밖에 okhttp 5 경유 `kotlin-stdlib`가 1.9.25에서 2.3.21로 바뀌어 NVD 오탐 억제의 버전을 옮겼고, SAST 예외 4건의 보완
 소스를 재검토해 해시를 재결속했다. Testcontainers 2의 컨테이너 클래스가 제네릭이 아니어서 CI 이미지 사전 pull 계약의
 정규식을 두 형태 모두 읽게 고쳤다.
