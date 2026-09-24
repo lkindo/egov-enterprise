@@ -1,5 +1,14 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-09-24 레거시 보안 체인 CORP 추가에 따른 재검토
+
+- `ApiSecurityConfig`(FP-001 탐지 파일, FP-002·FP-008 보완 소스): 두 번째(레거시) 필터 체인에 `Cross-Origin-Resource-Policy: same-origin`
+  헤더 설정만 더했다. 첫 번째 체인의 탐지 행(139, CSRF 비활성)과 그 내용은 그대로이고, 인증·인가 매처와 CSRF 설정은
+  어느 체인에서도 바뀌지 않았다. 응답 헤더 하나가 늘었을 뿐 보완 근거(무상태 JWT·Origin 검증)는 완화되지 않았다.
+
+예외 6건의 범위·규칙·행·fingerprint·승인일·만료일과 보안 임계값은 유지한다. 재결속 전 해시 불일치가 SAST 계약을
+실패시켰고, 재결속 뒤 같은 계약 17건이 통과했다. CodeQL 결과는 병합할 커밋의 required CI로 확인한다.
+
 ## 2026-09-24 테스트 starter 축소에 따른 H2 테스트 경계 재검토
 
 SAST-FP-007의 보완 소스인 빌드 파일 3개(루트·business-core·api-server)에서 이행용 `spring-boot-starter-test-classic`을

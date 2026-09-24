@@ -217,6 +217,10 @@ public class ApiSecurityConfig {
                                 .httpBasic(httpBasic -> httpBasic.disable())
                                 .formLogin(formLogin -> formLogin.disable())
                                 .logout(logout -> logout.disable())
+                                // [2026-09-24 ZAP 90004] CORP 를 API 체인에만 붙여 정작 지적된 /v3/api-docs(이 체인)에는
+                                //   닿지 않았다. 문서·정적 경로도 교차 출처 no-cors 로드를 막는다.
+                                .headers(headers -> headers.crossOriginResourcePolicy(corp -> corp.policy(
+                                                org.springframework.security.web.header.writers.CrossOriginResourcePolicyHeaderWriter.CrossOriginResourcePolicy.SAME_ORIGIN)))
                                 .authorizeHttpRequests(auth -> {
                                                 auth.requestMatchers(
                                                                 pathMatcher("/css/**"),

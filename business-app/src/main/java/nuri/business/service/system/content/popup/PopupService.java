@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -65,8 +66,8 @@ public class PopupService {
                 .popupVrtcPstn(dto.getPopupVrtcPstn())
                 .popupVrtcSz(dto.getPopupVrtcSz())
                 .popupWdthSz(dto.getPopupWdthSz())
-                .ntceBgnde(dto.getNtceBgnde() != null ? LocalDate.parse(dto.getNtceBgnde()) : null)
-                .ntceEndde(dto.getNtceEndde() != null ? LocalDate.parse(dto.getNtceEndde()) : null)
+                .ntceBgnde(noticeDate(dto.getNtceBgnde()))
+                .ntceEndde(noticeDate(dto.getNtceEndde()))
                 .stopvewSetupYn(dto.getStopvewSetupYn())
                 .ntceYn(dto.getNtceYn())
                 .build();
@@ -89,8 +90,8 @@ public class PopupService {
         popup.update(dto.getPopupTtlNm(), dto.getFileUrl(), dto.getPopupWdthPstn(),
                 dto.getPopupVrtcPstn(),
                 dto.getPopupVrtcSz(), dto.getPopupWdthSz(),
-                dto.getNtceBgnde() != null ? LocalDate.parse(dto.getNtceBgnde()) : null,
-                dto.getNtceEndde() != null ? LocalDate.parse(dto.getNtceEndde()) : null,
+                noticeDate(dto.getNtceBgnde()),
+                noticeDate(dto.getNtceEndde()),
                 dto.getStopvewSetupYn(), dto.getNtceYn());
         popup.setLastMdfrId(userId);
     }
@@ -101,6 +102,21 @@ public class PopupService {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         }
         popupRepository.deleteById(Objects.requireNonNull(popupSn));
+    }
+
+    /**
+     * 게시 일자(YYYY-MM-DD). 형식이 아니거나 없는 날짜면 400 이다 — 종전에는 파싱 예외가 그대로 500 이 됐다
+     * (2026-09-24 ZAP API 스캔). 화면은 같은 규칙을 미리 검사하므로 이 경로는 API 를 직접 부를 때 닿는다.
+     */
+    private static LocalDate noticeDate(String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(value);
+        } catch (DateTimeParseException e) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "유효한 게시 일자(YYYY-MM-DD)를 입력하세요.");
+        }
     }
 
     public List<String> getPopupWhiteList() {

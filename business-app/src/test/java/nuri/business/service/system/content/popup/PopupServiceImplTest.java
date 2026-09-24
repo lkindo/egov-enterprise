@@ -223,6 +223,37 @@ class PopupServiceImplTest {
     }
 
     @Test
+    @DisplayName("팝업 등록·수정 - 게시 일자가 YYYY-MM-DD 날짜가 아니면 400 이고 저장·변경하지 않는다")
+    void noticeDateMustBeCalendarDate() {
+        Popup popup = Popup.builder().popupSn(1L).popupTtlNm("OLD").build();
+        given(popupRepository.findById(1L)).willReturn(Optional.of(popup));
+
+        // 2026-09-24 ZAP API 스캔: 날짜가 아닌 값이 LocalDate.parse 예외로 500 이 됐다.
+        for (String date : List.of("John Doe", "", "20260201", "2026-02-30", "2026-2-1")) {
+            for (boolean start : new boolean[] {true, false}) {
+                PopupDto dto = PopupDto.builder().popupTtlNm("NEW")
+                        .ntceBgnde(start ? date : "2026-02-01")
+                        .ntceEndde(start ? "2026-02-28" : date)
+                        .build();
+                assertThatThrownBy(() -> popupService.createPopup("admin", dto))
+                        .as("create %s %s", start ? "start" : "end", date)
+                        .isInstanceOf(BusinessException.class)
+                        .extracting(error -> ((BusinessException) error).getErrorCode())
+                        .isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+                assertThatThrownBy(() -> popupService.updatePopup(1L, "updater", dto))
+                        .as("update %s %s", start ? "start" : "end", date)
+                        .isInstanceOf(BusinessException.class)
+                        .extracting(error -> ((BusinessException) error).getErrorCode())
+                        .isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+        }
+
+        verify(popupRepository, never()).save(any());
+        assertThat(popup.getPopupTtlNm()).isEqualTo("OLD");
+        assertThat(popup.getLastMdfrId()).isNull();
+    }
+
+    @Test
     @DisplayName("팝업 등록 - 첨부 할당 거부 시 저장하지 않는다")
     void createPopup_deniedAttachmentDoesNotSave() {
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))

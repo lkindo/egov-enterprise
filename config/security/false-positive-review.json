@@ -9,7 +9,7 @@
       "file": "api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java",
       "line": 139,
       "fingerprint": "dec982be271ed34f:1",
-      "sourceSha256": "317cd312f9c3acb16b0b9cc26c07d8f8f3b7f80cc6c7078ebf745a0a25354fb3",
+      "sourceSha256": "907be49f1f3d1327f0e1ecc20d176f3d6e7b923aeccea5c032ab755a987d1487",
       "expiresOn": "2026-12-08",
       "reason": "Stateless Bearer API; Strict HttpOnly session cookies and Origin checks; cookie-authenticated SockJS transports separately require exact trusted Origin; legacy CSRF remains enabled.",
       "id": "SAST-FP-001",
@@ -90,7 +90,7 @@
         },
         {
           "file": "api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java",
-          "sha256": "317cd312f9c3acb16b0b9cc26c07d8f8f3b7f80cc6c7078ebf745a0a25354fb3"
+          "sha256": "907be49f1f3d1327f0e1ecc20d176f3d6e7b923aeccea5c032ab755a987d1487"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/constants/SecurityConstants.java",
@@ -188,7 +188,7 @@
         },
         {
           "file": "api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java",
-          "sha256": "317cd312f9c3acb16b0b9cc26c07d8f8f3b7f80cc6c7078ebf745a0a25354fb3"
+          "sha256": "907be49f1f3d1327f0e1ecc20d176f3d6e7b923aeccea5c032ab755a987d1487"
         },
         {
           "file": "business-core/src/main/java/nuri/business/security/authorization/OperationAuthorizationManager.java",
