@@ -883,6 +883,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/UserSignupDateDefaultIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-NETWORK-GRANT-RETIREMENT",
+          "source": "api-server/src/test/java/nuri/api/schema/NetworkGrantRetirementMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-AUTH-REFRESH-TOKEN-ROTATION-CONCURRENCY",
           "source": "api-server/src/test/java/nuri/api/schema/RefreshTokenRotationConcurrencyIntegrationTest.java"
         },

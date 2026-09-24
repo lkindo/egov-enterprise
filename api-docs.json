@@ -111,10 +111,6 @@
       "description": "시스템 사용자 그룹 관리 API (Admin)"
     },
     {
-      "name": "NetworkMonitoring",
-      "description": "네트워크 서비스 모니터링 API (Admin)"
-    },
-    {
       "name": "Statistics User",
       "description": "통계 사용자 API"
     },
@@ -4800,16 +4796,6 @@
               }
             }
           },
-          "409": {
-            "description": "게시판이 이 템플릿을 참조 중이라 삭제할 수 없음 (code: C014)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
           "400": {
             "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
             "content": {
@@ -4842,6 +4828,16 @@
           },
           "404": {
             "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "게시판이 이 템플릿을 참조 중이라 삭제할 수 없음 (code: C014)",
             "content": {
               "application/json": {
                 "schema": {
@@ -7461,178 +7457,6 @@
           },
           "required": true
         },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "대상을 찾을 수 없음 (code: C003/C007)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "서버 내부 오류 (code: C004/S001)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/system/ntwrksvc-monitoring/{id}": {
-      "put": {
-        "tags": [
-          "NetworkMonitoring"
-        ],
-        "summary": "네트워크 정보 수정",
-        "description": "미구현 — 501 을 반환한다.",
-        "operationId": "updateNetwork",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NetworkDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "대상을 찾을 수 없음 (code: C003/C007)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "서버 내부 오류 (code: C004/S001)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "NetworkMonitoring"
-        ],
-        "summary": "네트워크 정보 삭제",
-        "description": "미구현 — 501 을 반환한다.",
-        "operationId": "deleteNetwork",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -19532,243 +19356,6 @@
         }
       }
     },
-    "/api/v1/admin/system/ntwrksvc-monitoring": {
-      "get": {
-        "tags": [
-          "NetworkMonitoring"
-        ],
-        "summary": "네트워크 서비스 상태 목록 조회",
-        "description": "계측 소스가 연결되기 전까지 항상 빈 목록을 반환한다. 하드코딩된 가짜 헬스 상태를 내리지 않는다.",
-        "operationId": "getStatus",
-        "parameters": [
-          {
-            "name": "searchCondition",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "maxLength": 255,
-              "minLength": 0
-            }
-          },
-          {
-            "name": "searchKeyword",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "maxLength": 255,
-              "minLength": 0
-            }
-          },
-          {
-            "name": "searchUseYn",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "maxLength": 1,
-              "minLength": 0
-            }
-          },
-          {
-            "name": "pageIndex",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "minimum": 1
-            }
-          },
-          {
-            "name": "pageUnit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "maximum": 100,
-              "minimum": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "firstIndex",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "lastIndex",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "recordCountPerPage",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "searchKeywordFrom",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "searchKeywordTo",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponsePageResponseNetworkStatusDetailedDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "서버 내부 오류 (code: C004/S001)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "NetworkMonitoring"
-        ],
-        "summary": "네트워크 기초 정보 등록",
-        "description": "미구현 — 501 을 반환한다(저장 없이 200 을 주지 않는다).",
-        "operationId": "createNetwork",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NetworkDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "서버 내부 오류 (code: C004/S001)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/admin/system/menus": {
       "get": {
         "tags": [
@@ -23482,16 +23069,6 @@
               }
             }
           },
-          "409": {
-            "description": "동일 복합키 중복 또는 유효하지 않은 행사 참조로 데이터 제약과 충돌 (code: C008)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
           "400": {
             "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
             "content": {
@@ -23514,6 +23091,16 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "동일 복합키 중복 또는 유효하지 않은 행사 참조로 데이터 제약과 충돌 (code: C008)",
             "content": {
               "application/json": {
                 "schema": {
@@ -23740,16 +23327,6 @@
               }
             }
           },
-          "404": {
-            "description": "수신자로 지정한 사용자가 존재하지 않음 — 부분 발송 없이 전체 거부 (code: C002)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
           "400": {
             "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
             "content": {
@@ -23772,6 +23349,16 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "수신자로 지정한 사용자가 존재하지 않음 — 부분 발송 없이 전체 거부 (code: C002)",
             "content": {
               "application/json": {
                 "schema": {
@@ -37151,35 +36738,6 @@
           "plcyTtl"
         ]
       },
-      "NetworkDto": {
-        "type": "object",
-        "properties": {
-          "ntwrkId": {
-            "type": "string"
-          },
-          "manageIem": {
-            "type": "string"
-          },
-          "ntwrkIp": {
-            "type": "string"
-          },
-          "gtwy": {
-            "type": "string"
-          },
-          "subnet": {
-            "type": "string"
-          },
-          "domnServer": {
-            "type": "string"
-          },
-          "userNm": {
-            "type": "string"
-          },
-          "useYn": {
-            "type": "string"
-          }
-        }
-      },
       "MenuDto": {
         "type": "object",
         "description": "메뉴 정보 DTO",
@@ -44281,84 +43839,6 @@
             "items": {
               "$ref": "#/components/schemas/FieldErrorItem"
             }
-          }
-        }
-      },
-      "ApiResponsePageResponseNetworkStatusDetailedDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "$ref": "#/components/schemas/PageResponseNetworkStatusDetailedDto"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
-          }
-        }
-      },
-      "NetworkStatusDetailedDto": {
-        "type": "object",
-        "properties": {
-          "sysNm": {
-            "type": "string"
-          },
-          "sysIp": {
-            "type": "string"
-          },
-          "sysPort": {
-            "type": "string"
-          },
-          "svcSttus": {
-            "type": "string"
-          },
-          "logDt": {
-            "type": "string"
-          }
-        }
-      },
-      "PageResponseNetworkStatusDetailedDto": {
-        "type": "object",
-        "properties": {
-          "list": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/NetworkStatusDetailedDto"
-            }
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "page": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "size": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "totalPage": {
-            "type": "integer",
-            "format": "int32"
           }
         }
       },

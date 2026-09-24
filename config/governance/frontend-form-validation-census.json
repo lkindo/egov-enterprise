@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 65,
-    "nativeFormFiles": 55,
+    "nativeFormOccurrences": 64,
+    "nativeFormFiles": 54,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
-    "formlessWriteBoundaries": 20,
-    "secondaryActionBoundaries": 67,
-    "candidateCount": 153
+    "formlessWriteBoundaries": 19,
+    "secondaryActionBoundaries": 66,
+    "candidateCount": 150
   },
   "entries": [
     {
@@ -186,34 +186,6 @@
       "testEvidence": [
         "frontend/src/app/admin/survey/polls/__tests__/OnlinePollAdminClient.validation.test.tsx",
         "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
-      ]
-    },
-    {
-      "key": "formless-write:frontend/src/app/admin/system/network/NetworkAdminClient.tsx#NetworkAdminClient",
-      "kind": "formless-write",
-      "file": "frontend/src/app/admin/system/network/NetworkAdminClient.tsx",
-      "owner": "NetworkAdminClient",
-      "composedChildContracts": [
-        {
-          "actionHandlers": [
-            "handleDelete"
-          ],
-          "component": "NetworkForm",
-          "handler": "inline-action",
-          "writeSinks": [
-            "saveNetworkNodeAction"
-          ]
-        }
-      ],
-      "classification": "mutation",
-      "status": "exception",
-      "validationMode": "not-applicable-disabled-write",
-      "schemaSource": "not-applicable:backend-write-501",
-      "errorNavigation": "not-applicable-disabled-write",
-      "serverErrors": "not-applicable-disabled-write",
-      "pendingGuard": "compile-time-disabled-write",
-      "testEvidence": [
-        "frontend/src/app/admin/system/network/NetworkAdminClient.tsx"
       ]
     },
     {
@@ -1395,24 +1367,6 @@
       ]
     },
     {
-      "key": "native-form:frontend/src/components/admin/system/NetworkForm.tsx#NetworkForm[1]",
-      "kind": "native-form",
-      "file": "frontend/src/components/admin/system/NetworkForm.tsx",
-      "owner": "NetworkForm",
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "useAppForm-zod",
-      "schemaSource": "generated-or-derived:networkSchema",
-      "errorNavigation": "summary-inline-focus-first-invalid",
-      "serverErrors": "field-errors-mapped-with-value-retention",
-      "pendingGuard": "synchronous-submit-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx",
-        "frontend/src/app/admin/system/network/NetworkAdminClient.validation.test.tsx",
-        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
-      ]
-    },
-    {
       "key": "native-form:frontend/src/components/admin/system/ProgramForm.tsx#ProgramForm[1]",
       "kind": "native-form",
       "file": "frontend/src/components/admin/system/ProgramForm.tsx",
@@ -2422,26 +2376,6 @@
       ]
     },
     {
-      "key": "secondary-action:frontend/src/app/admin/system/network/NetworkAdminClient.tsx#NetworkAdminClient.handleDelete[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/system/network/NetworkAdminClient.tsx",
-      "owner": "NetworkAdminClient",
-      "handler": "handleDelete",
-      "writeSinks": [
-        "deleteNetworkNodeAction"
-      ],
-      "classification": "destructive",
-      "status": "exception",
-      "validationMode": "not-applicable-disabled-write",
-      "schemaSource": "not-applicable:backend-write-501",
-      "errorNavigation": "not-applicable-disabled-write",
-      "serverErrors": "not-applicable-disabled-write",
-      "pendingGuard": "compile-time-disabled-write",
-      "testEvidence": [
-        "frontend/src/app/admin/system/network/NetworkAdminClient.tsx"
-      ]
-    },
-    {
       "key": "secondary-action:frontend/src/app/admin/system/programs/ProgramAdminClient.tsx#ProgramAdminClient.handleDelete[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
@@ -3011,22 +2945,5 @@
       ]
     }
   ],
-  "exceptions": [
-    {
-      "id": "FORM-DISABLED-NETWORK-COMPOSITION",
-      "candidateKey": "formless-write:frontend/src/app/admin/system/network/NetworkAdminClient.tsx#NetworkAdminClient",
-      "reason": "Backend network create/update is explicitly 501 Not Implemented and every entry control is compile-time disabled.",
-      "owner": "backend-foundation",
-      "expiresAt": "2026-12-31",
-      "disabledBy": "WRITE_NOT_IMPLEMENTED"
-    },
-    {
-      "id": "FORM-DISABLED-NETWORK-DELETE",
-      "candidateKey": "secondary-action:frontend/src/app/admin/system/network/NetworkAdminClient.tsx#NetworkAdminClient.handleDelete[1]",
-      "reason": "Backend network delete is explicitly 501 Not Implemented and the exact action control is compile-time disabled.",
-      "owner": "backend-foundation",
-      "expiresAt": "2026-12-31",
-      "disabledBy": "WRITE_NOT_IMPLEMENTED"
-    }
-  ]
+  "exceptions": []
 }

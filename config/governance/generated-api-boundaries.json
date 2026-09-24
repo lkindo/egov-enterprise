@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 387,
-    "generatedDescriptorCount": 387
+    "openApiOperationCount": 383,
+    "generatedDescriptorCount": 383
   },
   "target": {
     "generatedPercent": 100,
@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 339,
-    "eligible": 325,
+    "total": 334,
+    "eligible": 320,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 325,
+      "generated": 320,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "7a9053d0336b8af0d51f400ce07411afb5f33d1f89b3fed726c2348b4a846944",
+  "inventoryHash": "a10ee4e918a710c6f025bfbaa25d368f9fe7ccf05fab72ededcec66755185dc2",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -4604,91 +4604,6 @@
       "mappingStatus": "explicit-special-case",
       "specialCase": "actuator",
       "id": "f320b0b2ac311c136168"
-    },
-    {
-      "file": "frontend/src/services/foundation/system/NetworkAdminService.ts",
-      "owner": "NetworkAdminService.getNetworks",
-      "ordinal": 1,
-      "line": 45,
-      "column": 9,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "get",
-      "target": "/api/v1/admin/system/ntwrksvc-monitoring",
-      "operationId": "getStatus",
-      "descriptorName": "getStatusOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "77920134980b2a612905"
-    },
-    {
-      "file": "frontend/src/services/foundation/system/NetworkAdminService.ts",
-      "owner": "NetworkAdminService.createNetwork",
-      "ordinal": 1,
-      "line": 60,
-      "column": 9,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "post",
-      "target": "/api/v1/admin/system/ntwrksvc-monitoring",
-      "operationId": "createNetwork",
-      "descriptorName": "createNetworkOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "2d1f8fe9031a0694c4d0"
-    },
-    {
-      "file": "frontend/src/services/foundation/system/NetworkAdminService.ts",
-      "owner": "NetworkAdminService.updateNetwork",
-      "ordinal": 1,
-      "line": 68,
-      "column": 9,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "put",
-      "target": "/api/v1/admin/system/ntwrksvc-monitoring/{id}",
-      "operationId": "updateNetwork",
-      "descriptorName": "updateNetworkOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "b413a1202a777435988a"
-    },
-    {
-      "file": "frontend/src/services/foundation/system/NetworkAdminService.ts",
-      "owner": "NetworkAdminService.deleteNetwork",
-      "ordinal": 1,
-      "line": 77,
-      "column": 9,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "delete",
-      "target": "/api/v1/admin/system/ntwrksvc-monitoring/{id}",
-      "operationId": "deleteNetwork",
-      "descriptorName": "deleteNetworkOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "57464dcf18bcaa2b428a"
-    },
-    {
-      "file": "frontend/src/services/foundation/system/networkService.ts",
-      "owner": "getStatus",
-      "ordinal": 1,
-      "line": 143,
-      "column": 28,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "executeGeneratedOperation",
-      "method": "get",
-      "target": "/api/v1/admin/system/ntwrksvc-monitoring",
-      "operationId": "getStatus",
-      "descriptorName": "getStatusOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "48f7ac6c6e3981e9bee0"
     },
     {
       "file": "frontend/src/services/foundation/system/NotificationAdminService.ts",

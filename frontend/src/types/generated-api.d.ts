@@ -761,30 +761,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/ntwrksvc-monitoring/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * 네트워크 정보 수정
-         * @description 미구현 — 501 을 반환한다.
-         */
-        put: operations["updateNetwork"];
-        post?: never;
-        /**
-         * 네트워크 정보 삭제
-         * @description 미구현 — 501 을 반환한다.
-         */
-        delete: operations["deleteNetwork"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/system/menus/{menuNo}": {
         parameters: {
             query?: never;
@@ -2272,30 +2248,6 @@ export interface paths {
          * @description 새로운 팝업을 등록합니다.
          */
         post: operations["createPopup"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/system/ntwrksvc-monitoring": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 네트워크 서비스 상태 목록 조회
-         * @description 계측 소스가 연결되기 전까지 항상 빈 목록을 반환한다. 하드코딩된 가짜 헬스 상태를 내리지 않는다.
-         */
-        get: operations["getStatus"];
-        put?: never;
-        /**
-         * 네트워크 기초 정보 등록
-         * @description 미구현 — 501 을 반환한다(저장 없이 200 을 주지 않는다).
-         */
-        post: operations["createNetwork"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5649,16 +5601,6 @@ export interface components {
             /** @description 정책 내용 */
             plcyCn: string;
         };
-        NetworkDto: {
-            ntwrkId?: string;
-            manageIem?: string;
-            ntwrkIp?: string;
-            gtwy?: string;
-            subnet?: string;
-            domnServer?: string;
-            userNm?: string;
-            useYn?: string;
-        };
         /** @description 메뉴 정보 DTO */
         MenuDto: {
             /**
@@ -8431,35 +8373,6 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
-        };
-        ApiResponsePageResponseNetworkStatusDetailedDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["PageResponseNetworkStatusDetailedDto"];
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
-        };
-        NetworkStatusDetailedDto: {
-            sysNm?: string;
-            sysIp?: string;
-            sysPort?: string;
-            svcSttus?: string;
-            logDt?: string;
-        };
-        PageResponseNetworkStatusDetailedDto: {
-            list?: components["schemas"]["NetworkStatusDetailedDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
         };
         ApiResponsePageResponseMenuDto: {
             success?: boolean;
@@ -15625,144 +15538,6 @@ export interface operations {
                 "application/json": components["schemas"]["PolicyUpdateRequest"];
             };
         };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 서버 내부 오류 (code: C004/S001) */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    updateNetwork: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NetworkDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 서버 내부 오류 (code: C004/S001) */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    deleteNetwork: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
         responses: {
             /** @description OK */
             200: {
@@ -24698,134 +24473,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseLong"];
-                };
-            };
-            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 서버 내부 오류 (code: C004/S001) */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    getStatus: {
-        parameters: {
-            query?: {
-                searchCondition?: string;
-                searchKeyword?: string;
-                searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
-                searchKeywordFrom?: string;
-                searchKeywordTo?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponsePageResponseNetworkStatusDetailedDto"];
-                };
-            };
-            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 서버 내부 오류 (code: C004/S001) */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    createNetwork: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NetworkDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

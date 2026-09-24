@@ -683,30 +683,6 @@
       "guardRef": "MenuService#updateMenuManage"
     },
     {
-      "method": "POST",
-      "path": "/api/v1/admin/system/ntwrksvc-monitoring",
-      "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#createNetwork",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#createNetwork')",
-      "routeGate": "OPERATION_PERMISSION"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/ntwrksvc-monitoring/{id}",
-      "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#deleteNetwork",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#deleteNetwork')",
-      "routeGate": "OPERATION_PERMISSION"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/admin/system/ntwrksvc-monitoring/{id}",
-      "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#updateNetwork",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#updateNetwork')",
-      "routeGate": "OPERATION_PERMISSION"
-    },
-    {
       "method": "PUT",
       "path": "/api/v1/admin/system/policies/{type}",
       "handler": "nuri.api.controller.foundation.controller.system.policy.PolicyApiController#updatePolicy",
@@ -4412,34 +4388,6 @@
       "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#updateMenu",
       "access": "PERMISSION",
       "permission": "MENU_UPDATE"
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/admin/system/ntwrksvc-monitoring",
-      "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#getStatus",
-      "access": "PERMISSION",
-      "permission": "NETWORK_READ"
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/admin/system/ntwrksvc-monitoring",
-      "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#createNetwork",
-      "access": "PERMISSION",
-      "permission": "NETWORK_CREATE"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/ntwrksvc-monitoring/{id}",
-      "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#deleteNetwork",
-      "access": "PERMISSION",
-      "permission": "NETWORK_DELETE"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/admin/system/ntwrksvc-monitoring/{id}",
-      "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#updateNetwork",
-      "access": "PERMISSION",
-      "permission": "NETWORK_UPDATE"
     },
     {
       "method": "GET",

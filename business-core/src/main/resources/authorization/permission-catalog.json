@@ -1506,46 +1506,6 @@
       ]
     },
     {
-      "code": "NETWORK_CREATE",
-      "domain": "NETWORK",
-      "action": "CREATE",
-      "name": "네트워크 정보 · 등록",
-      "defaultGroups": [
-        "ROLE_ADMIN",
-        "ROLE_SYSTEM"
-      ]
-    },
-    {
-      "code": "NETWORK_DELETE",
-      "domain": "NETWORK",
-      "action": "DELETE",
-      "name": "네트워크 정보 · 삭제",
-      "defaultGroups": [
-        "ROLE_ADMIN",
-        "ROLE_SYSTEM"
-      ]
-    },
-    {
-      "code": "NETWORK_READ",
-      "domain": "NETWORK",
-      "action": "READ",
-      "name": "네트워크 정보 · 조회",
-      "defaultGroups": [
-        "ROLE_ADMIN",
-        "ROLE_SYSTEM"
-      ]
-    },
-    {
-      "code": "NETWORK_UPDATE",
-      "domain": "NETWORK",
-      "action": "UPDATE",
-      "name": "네트워크 정보 · 수정",
-      "defaultGroups": [
-        "ROLE_ADMIN",
-        "ROLE_SYSTEM"
-      ]
-    },
-    {
       "code": "NOTE_DELETE",
       "domain": "NOTE",
       "action": "DELETE",
@@ -2777,9 +2737,6 @@
       "SYS_LOG_READ",
       "WEB_LOG_READ",
       "LOGIN_LOG_READ"
-    ],
-    "/admin/system/network": [
-      "NETWORK_READ"
     ],
     "/admin/system/policies": [
       "POLICY_READ"

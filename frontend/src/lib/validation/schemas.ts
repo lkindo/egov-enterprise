@@ -10,8 +10,7 @@ import {
   UserDtoSchema,
   CmmnCodeDtoSchema,
   CmmnDetailCodeDtoSchema,
-  PageResponseUserDtoSchema,
-  NetworkDtoSchema
+  PageResponseUserDtoSchema
 } from '@/types/generated-zod';
 
 /**
@@ -144,15 +143,6 @@ export const userManageSchema = UserDtoSchema.extend({
 });
 
 export const userListResponseSchema = PageResponseUserDtoSchema;
-
-export const networkSchema = NetworkDtoSchema.extend({
-  manageIem: z.string().min(1),
-  userNm: z.string().min(1),
-  ntwrkIp: z.string().regex(/^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}$/, "올바른 IPv4 주소를 입력하세요."),
-  subnet: z.string().min(1),
-  gtwy: z.string().min(1),
-  useYn: commonRules.yn,
-});
 
 export const codeSchema = CmmnCodeDtoSchema.extend({});
 

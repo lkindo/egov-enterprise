@@ -62,7 +62,7 @@ const WAVE1_APPROVED_ROUTES = [
   '/admin/sanctn/forms',
   '/admin/sanctn/workflow',
   '/admin/survey/polls/manage',
-  '/admin/system/network',
+  // '/admin/system/network' 은 DEC-OPS-129 로 퇴역했다(2026-09-25, 경로·API·권한 삭제).
   '/admin/workflow',
   '/approvals/draft',
 ];

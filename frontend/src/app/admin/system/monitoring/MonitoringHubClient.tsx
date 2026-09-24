@@ -28,8 +28,7 @@ import {
   Database,
   Network,
   CheckCircle2,
-  AlertCircle,
-  Share2 } from 'lucide-react';
+  AlertCircle } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 /* reusable-base:collaboration:start */
@@ -72,15 +71,6 @@ const SystemStatusRadar = dynamic(() => import('@/app/components/ui/observabilit
   loading: () => <Skeleton className="h-[420px] w-full rounded-lg" />
 });
 
-const TopologyMap = dynamic(() => import('@/app/components/ui/topology-map').then(mod => mod.TopologyMap), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-[700px] flex flex-col items-center justify-center bg-surface-inverse rounded-lg space-y-6">
-      <div className="w-16 h-11 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-      <p className="text-[length:var(--font-size-body)] text-surface-inverse-foreground/70">구성도를 불러오는 중입니다…</p>
-    </div>
-  )
-});
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { SampleDataBadge, NavButton, StatusIndicator, HarnessDashboardOverview, SkillDetailView, TestDetailView } from './components/MonitoringPanels';
@@ -97,13 +87,13 @@ import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
  */
 const HUB_PARAM_KEYS = ['tab', 'page'] as const;
 
-export type MonitoringTab = 'SECURITY' | 'SYSTEM' | 'LOGIN' | 'OBSERVABILITY' | 'COMMENTS' | 'TOPOLOGY' | 'HARNESS';
+export type MonitoringTab = 'SECURITY' | 'SYSTEM' | 'LOGIN' | 'OBSERVABILITY' | 'COMMENTS' | 'HARNESS';
 
 const MONITORING_TABS: MonitoringTab[] = ['SECURITY', 'SYSTEM', 'LOGIN', 'OBSERVABILITY',
   /* reusable-base:collaboration:start */
   'COMMENTS',
   /* reusable-base:collaboration:end */
-  'TOPOLOGY', 'HARNESS'];
+  'HARNESS'];
 
 /** 목록 탭(서버 데이터 조회 + 페이저를 쓰는 탭) 여부 */
 const LIST_TABS: MonitoringTab[] = ['SECURITY', 'SYSTEM', 'LOGIN',
@@ -973,7 +963,6 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     LOGIN: '사용자 접속 이력을 조회합니다. 한 건을 선택하면 아래에 상세가 표시됩니다.',
     COMMENTS: '서비스에 등록된 사용자 의견을 조회하고 관리합니다.',
     OBSERVABILITY: '애플리케이션 가동 상태와 자원 사용량을 조회합니다.',
-    TOPOLOGY: '연동된 계측 소스가 있을 때 인프라 구성도를 표시합니다.',
     HARNESS: '에이전트 하네스의 스킬·검증 자산을 조회합니다.',
   };
 
@@ -982,7 +971,6 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     { tab: 'SYSTEM', icon: <Terminal size={14} />, label: '시스템 로그' },
     { tab: 'LOGIN', icon: <LogIn size={14} />, label: '접속 이력' },
     { tab: 'OBSERVABILITY', icon: <MonitorCheck size={14} />, label: '가동 상태' },
-    { tab: 'TOPOLOGY', icon: <Share2 size={14} />, label: '인프라 구성도' },
     { tab: 'HARNESS', icon: <Zap size={14} />, label: '하네스 아틀라스' },
 /* reusable-base:collaboration:start */
     { tab: 'COMMENTS', icon: <MessageSquare size={14} />, label: '사용자 의견 관리' },
@@ -1072,7 +1060,6 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         className="space-y-4"
       >
         {activeTab === 'OBSERVABILITY' ? renderObservability()
-          : activeTab === 'TOPOLOGY' ? <TopologyMap />
           : activeTab === 'HARNESS' ? renderHarness()
           : listConfig ? (
             listConfig.kind === 'SYSTEM' ? (

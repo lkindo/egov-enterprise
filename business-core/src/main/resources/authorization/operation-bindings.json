@@ -1064,34 +1064,6 @@
   },
   {
     "method": "GET",
-    "path": "/api/v1/admin/system/ntwrksvc-monitoring",
-    "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#getStatus",
-    "access": "PERMISSION",
-    "permission": "NETWORK_READ"
-  },
-  {
-    "method": "POST",
-    "path": "/api/v1/admin/system/ntwrksvc-monitoring",
-    "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#createNetwork",
-    "access": "PERMISSION",
-    "permission": "NETWORK_CREATE"
-  },
-  {
-    "method": "DELETE",
-    "path": "/api/v1/admin/system/ntwrksvc-monitoring/{id}",
-    "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#deleteNetwork",
-    "access": "PERMISSION",
-    "permission": "NETWORK_DELETE"
-  },
-  {
-    "method": "PUT",
-    "path": "/api/v1/admin/system/ntwrksvc-monitoring/{id}",
-    "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#updateNetwork",
-    "access": "PERMISSION",
-    "permission": "NETWORK_UPDATE"
-  },
-  {
-    "method": "GET",
     "path": "/api/v1/admin/system/policies",
     "handler": "nuri.api.controller.foundation.controller.system.policy.PolicyApiController#getPolicies",
     "access": "PERMISSION",

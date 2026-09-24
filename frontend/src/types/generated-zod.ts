@@ -540,21 +540,6 @@ export const PolicyUpdateRequestSchema = z.object({
 export type PolicyUpdateRequest = z.infer<typeof PolicyUpdateRequestSchema>;
 
 // ==========================================================================
-// NetworkDto Schema
-// ==========================================================================
-export const NetworkDtoSchema = z.object({
-  ntwrkId: z.string().optional(),
-  manageIem: z.string().optional(),
-  ntwrkIp: z.string().optional(),
-  gtwy: z.string().optional(),
-  subnet: z.string().optional(),
-  domnServer: z.string().optional(),
-  userNm: z.string().optional(),
-  useYn: z.string().optional(),
-});
-export type NetworkDto = z.infer<typeof NetworkDtoSchema>;
-
-// ==========================================================================
 // MenuDto Schema
 // ==========================================================================
 export const MenuDtoSchema = z.object({
@@ -3125,44 +3110,6 @@ export const ApiResponsePolicySchema = z.object({
 export type ApiResponsePolicy = z.infer<typeof ApiResponsePolicySchema>;
 
 // ==========================================================================
-// ApiResponsePageResponseNetworkStatusDetailedDto Schema
-// ==========================================================================
-export const ApiResponsePageResponseNetworkStatusDetailedDtoSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseNetworkStatusDetailedDtoSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-});
-export type ApiResponsePageResponseNetworkStatusDetailedDto = z.infer<typeof ApiResponsePageResponseNetworkStatusDetailedDtoSchema>;
-
-// ==========================================================================
-// NetworkStatusDetailedDto Schema
-// ==========================================================================
-export const NetworkStatusDetailedDtoSchema = z.object({
-  sysNm: z.string().optional(),
-  sysIp: z.string().optional(),
-  sysPort: z.string().optional(),
-  svcSttus: z.string().optional(),
-  logDt: z.string().optional(),
-});
-export type NetworkStatusDetailedDto = z.infer<typeof NetworkStatusDetailedDtoSchema>;
-
-// ==========================================================================
-// PageResponseNetworkStatusDetailedDto Schema
-// ==========================================================================
-export const PageResponseNetworkStatusDetailedDtoSchema = z.object({
-  list: z.array(z.lazy(() => NetworkStatusDetailedDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
-});
-export type PageResponseNetworkStatusDetailedDto = z.infer<typeof PageResponseNetworkStatusDetailedDtoSchema>;
-
-// ==========================================================================
 // ApiResponsePageResponseMenuDto Schema
 // ==========================================================================
 export const ApiResponsePageResponseMenuDtoSchema = z.object({
@@ -5507,28 +5454,6 @@ export const PolicyUpdateRequestRequestSchema = z.object({
 export const PolicyUpdateRequestResponseSchema = z.object({
   plcyTtl: z.string().min(0).max(100),
   plcyCn: z.string().min(0).max(4000),
-});
-
-export const NetworkDtoRequestSchema = z.object({
-  ntwrkId: z.string().optional(),
-  manageIem: z.string().optional(),
-  ntwrkIp: z.string().optional(),
-  gtwy: z.string().optional(),
-  subnet: z.string().optional(),
-  domnServer: z.string().optional(),
-  userNm: z.string().optional(),
-  useYn: z.string().optional(),
-});
-
-export const NetworkDtoResponseSchema = z.object({
-  ntwrkId: z.string().optional().nullable(),
-  manageIem: z.string().optional().nullable(),
-  ntwrkIp: z.string().optional().nullable(),
-  gtwy: z.string().optional().nullable(),
-  subnet: z.string().optional().nullable(),
-  domnServer: z.string().optional().nullable(),
-  userNm: z.string().optional().nullable(),
-  useYn: z.string().optional().nullable(),
 });
 
 export const MenuDtoRequestSchema = z.object({
@@ -9152,58 +9077,6 @@ export const ApiResponsePolicyResponseSchema = z.object({
   data: z.lazy(() => PolicyResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
-});
-
-export const ApiResponsePageResponseNetworkStatusDetailedDtoRequestSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseNetworkStatusDetailedDtoRequestSchema.strict()).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
-});
-
-export const ApiResponsePageResponseNetworkStatusDetailedDtoResponseSchema = z.object({
-  success: z.boolean().optional().nullable(),
-  status: z.number().int().optional().nullable(),
-  code: z.string().optional().nullable(),
-  message: z.string().optional().nullable(),
-  data: z.lazy(() => PageResponseNetworkStatusDetailedDtoResponseSchema).optional().nullable(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
-});
-
-export const NetworkStatusDetailedDtoRequestSchema = z.object({
-  sysNm: z.string().optional(),
-  sysIp: z.string().optional(),
-  sysPort: z.string().optional(),
-  svcSttus: z.string().optional(),
-  logDt: z.string().optional(),
-});
-
-export const NetworkStatusDetailedDtoResponseSchema = z.object({
-  sysNm: z.string().optional().nullable(),
-  sysIp: z.string().optional().nullable(),
-  sysPort: z.string().optional().nullable(),
-  svcSttus: z.string().optional().nullable(),
-  logDt: z.string().optional().nullable(),
-});
-
-export const PageResponseNetworkStatusDetailedDtoRequestSchema = z.object({
-  list: z.array(z.lazy(() => NetworkStatusDetailedDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
-});
-
-export const PageResponseNetworkStatusDetailedDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => NetworkStatusDetailedDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseMenuDtoRequestSchema = z.object({

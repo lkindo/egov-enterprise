@@ -10,7 +10,6 @@ vi.mock('@/lib/api/client', () => ({ default: client }));
 import { boardAdminService, type BoardMaster } from '../BoardAdminService';
 import { hpcmAdminService } from '../HpcmAdminService';
 import { loginPolicyAdminService } from '../LoginPolicyAdminService';
-import { networkAdminService } from '../NetworkAdminService';
 import { popupAdminService } from '../PopupAdminService';
 import { programAdminService } from '../ProgramAdminService';
 
@@ -58,7 +57,7 @@ describe('generated admin boundary wave 4', () => {
     });
   });
 
-  it('OpenAPI 충돌 3개를 제외한 34개 경계를 generated transport로 실행한다', async () => {
+  it('OpenAPI 충돌 3개를 제외한 26개 경계를 generated transport로 실행한다', async () => {
     await programAdminService.getProgramList({ page: 1, size: 20, searchWrd: '메뉴' });
     await programAdminService.getProgram('menu.do');
     await programAdminService.createProgram({ prgrmFileNm: 'menu.do' });
@@ -77,11 +76,6 @@ describe('generated admin boundary wave 4', () => {
     await hpcmAdminService.updateHpcm(3, hpcm);
     await hpcmAdminService.deleteHpcm(3);
 
-    await networkAdminService.getNetworks({ page: 0, size: 100 });
-    await networkAdminService.createNetwork({ manageIem: '라우터' });
-    await networkAdminService.updateNetwork('N1', { manageIem: '코어 라우터' });
-    await networkAdminService.deleteNetwork('N1');
-
     await loginPolicyAdminService.getLoginPolicyList({ page: 0, size: 20, searchWrd: '홍길동' });
     await loginPolicyAdminService.getLoginPolicy('USER01');
     await loginPolicyAdminService.saveLoginPolicy('USER01', { lmtYn: 'Y' });
@@ -97,13 +91,11 @@ describe('generated admin boundary wave 4', () => {
 
     // [2026-09-06 DEC-OPS-041] 12/22 → 10/20: 중복 관리 컨트롤러(/admin/system/polls)와 OnlinePollAdminService 가 제거됐다
     //   (목록·상세 GET 2, 등록·투표 POST 2). 투표 관리 화면은 /api/v1/polls(PollUserService, business 경계 테스트)를 쓴다.
-    expect(client.getRaw).toHaveBeenCalledTimes(10);
-    expect(client.requestRaw).toHaveBeenCalledTimes(20);
+    // [DEC-OPS-129] 10/20 → 9/17: 네트워크 모니터링 퇴역(목록 GET 1, 등록·수정·삭제 3).
+    expect(client.getRaw).toHaveBeenCalledTimes(9);
+    expect(client.requestRaw).toHaveBeenCalledTimes(17);
     expect(client.getRaw).toHaveBeenCalledWith('admin/system/programs', {
       params: { pageIndex: 2, pageUnit: 20, searchKeyword: '메뉴' },
-    });
-    expect(client.getRaw).toHaveBeenCalledWith('admin/system/ntwrksvc-monitoring', {
-      params: { pageIndex: 1, pageUnit: 100 },
     });
     expect(client.getRaw).toHaveBeenCalledWith('admin/system/login-policies', {
       params: { pageIndex: 1, pageUnit: 20, searchKeyword: '홍길동' },

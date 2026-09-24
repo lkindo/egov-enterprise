@@ -66,7 +66,9 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 //   이었다. 댓글 카드의 반투명 흰색 표면도 함께 회수했다.
 // [하향 래칫 2026-09-20(8)] 25 -> 21. 쪽지함 4건. 상세 모달의 작성 시각이 중립 리터럴로
 //   라이트에서 약 1.5:1 이었고, 본문 패널의 흰색 링이 다크에서 밝은 테두리로 남았다.
-const BASELINE = 18;
+// [하향 래칫 2026-09-25] 18 -> 10. DEC-OPS-129 로 네트워크 관리 화면·폼과 인프라 구성도 지도를 걷으며 8건이 함께 사라졌다.
+//   토큰 치환이 아니라 표면 제거이며 새 리터럴은 0건이다.
+const BASELINE = 10;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];
