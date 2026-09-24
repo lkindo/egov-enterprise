@@ -71,6 +71,32 @@ class OpenApiDocumentationTest {
   }
 
   @Test
+  @DisplayName("서버 URL 과 경로를 이어 붙여도 API 기본 경로가 한 번만 나온다")
+  void serverUrls_doNotRepeatThePathPrefix() throws Exception {
+    tools.jackson.databind.JsonNode spec = objectMapper.readTree(mockMvc.perform(get("/v3/api-docs"))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
+    assertThat(spec.path("servers").isArray() && !spec.path("servers").isEmpty())
+        .as("서버 목록이 없으면 이 검사가 무의미해진다").isTrue();
+    java.util.List<String> paths = new java.util.ArrayList<>(spec.path("paths").propertyNames());
+    assertThat(paths).as("문서화된 경로가 없다").isNotEmpty();
+
+    java.util.List<String> doubled = new java.util.ArrayList<>();
+    for (tools.jackson.databind.JsonNode server : spec.path("servers")) {
+      String url = server.path("url").asString();
+      String basePath = java.net.URI.create(url).getPath().replaceAll("/+$", "");
+      if (basePath.isEmpty()) {
+        continue;
+      }
+      paths.stream().filter(path -> path.startsWith(basePath + "/")).findFirst()
+          .ifPresent(path -> doubled.add(url + " + " + path));
+    }
+    assertThat(doubled)
+        .as("OpenAPI 는 서버 URL 뒤에 경로를 붙여 호출한다 — 경로에 이미 있는 기본 경로를 서버 URL 에 두면 두 번 붙는다")
+        .isEmpty();
+  }
+
+  @Test
   @DisplayName("사용자 권한 LEFT JOIN projection은 실제 null 생산 필드를 nullable로 문서화한다")
   void generatedResponseNullabilityContract_isDocumented() throws Exception {
     String content = mockMvc.perform(get("/v3/api-docs")

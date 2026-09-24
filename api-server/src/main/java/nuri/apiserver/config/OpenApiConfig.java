@@ -293,11 +293,13 @@ public class OpenApiConfig {
                         .license(new License()
                                 .name("Apache 2.0")
                                 .url("https://www.apache.org/licenses/LICENSE-2.0")))
+                // 경로가 이미 /api/v1 로 시작하므로 서버 URL 에 기본 경로를 다시 붙이지 않는다.
+                // OpenAPI 는 "서버 URL + 경로" 를 호출 주소로 삼아, 붙이면 Swagger UI·API 스캐너가 /api/v1/api/v1 을 부른다.
                 .addServersItem(new Server()
-                        .url("/api/v1")
+                        .url("/")
                         .description("Current environment"))
                 .addServersItem(new Server()
-                        .url("http://localhost:8080/api/v1")
+                        .url("http://localhost:8080")
                         .description("Local Development"))
                 .addSecurityItem(new SecurityRequirement()
                         .addList("bearerAuth"))

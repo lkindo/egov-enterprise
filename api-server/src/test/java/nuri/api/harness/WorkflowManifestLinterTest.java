@@ -578,6 +578,113 @@ class WorkflowManifestLinterTest {
         return index;
     }
 
+    /**
+     * 주간 ZAP 이 API 를 실제로 스캔하는지 정적으로 본다.
+     *
+     * <p>[2026-09-24] 종전 full-scan 은 {@code /v3/api-docs} 를 웹 페이지로 크롤링해 JSON 안의 API 경로를 찾지
+     * 못했다. 리포트의 대상 URL 은 문서·health·robots·sitemap·{@code /} 다섯 개뿐이었고 워크플로는 매주
+     * 성공했다. 스캔이 "돌았다" 는 것과 "API 를 두드렸다" 는 것은 다르므로 형태를 고정한다:
+     * OpenAPI 를 읽는 API 스캔, 그 앞의 스캐너 로그인과 토큰 확인, 토큰 유효시간 안의 능동 스캔 상한,
+     * 그 뒤의 세션 유지 확인.
+     */
+    @Test
+    @DisplayName("🛡️ 주간 ZAP 은 OpenAPI 로 API 를 로그인한 상태로 스캔하고 세션이 끝까지 살아 있었는지 확인한다")
+    void auditZapScanReachesDocumentedApiWhileAuthenticated() throws IOException {
+        Path repoRoot = resolveRepoRoot();
+        if (ReusableHarnessProfile.current().projected()) {
+            // 생성 산출물의 활성 워크플로는 ci.yml 뿐이다(위 릴리스 검사와 같은 경계).
+            return;
+        }
+        Path zapPath = repoRoot.resolve(WORKFLOW_DIR).resolve("zap-scan.yml");
+        if (!Files.isRegularFile(zapPath)) {
+            fail("게이트 무결성 파손: zap-scan.yml 을 찾을 수 없습니다 — " + zapPath.toAbsolutePath());
+        }
+        List<String> violations = zapScanViolations(HarnessSourceIndex.read(zapPath));
+        if (!violations.isEmpty()) {
+            fail("zap-scan.yml 이 API 를 인증 상태로 스캔하지 않습니다:\n  - " + String.join("\n  - ", violations));
+        }
+
+        String compliant = """
+                jobs:
+                  zap_scan:
+                    steps:
+                      - name: Authenticate API scanner
+                        run: |
+                          code=$(curl -H "Authorization: Bearer $token" http://localhost:8080/api/v1/auth/me)
+                          echo "ZAP_AUTH_HEADER_VALUE=Bearer $token" >> "$GITHUB_ENV"
+                      - name: ZAP API Scan
+                        uses: zaproxy/action-api-scan@5158fe4d9d8fcc75ea204db81317cce7f9e5453d  # v0.10.0
+                        with:
+                          target: 'http://localhost:8080/v3/api-docs'
+                          format: openapi
+                          cmd_options: '-z "-config scanner.maxScanDurationInMins=40"'
+                      - name: Verify scanner session survived
+                        run: |
+                          code=$(curl -H "Authorization: Bearer $SCANNER_TOKEN" http://localhost:8080/api/v1/auth/me)
+                          exit 1
+                """;
+        assertThat(zapScanViolations(compliant)).as("적합한 형태는 통과한다").isEmpty();
+        Map<String, String> mutations = new java.util.LinkedHashMap<>();
+        mutations.put("문서 URL 크롤링으로 되돌림", compliant.replace("zaproxy/action-api-scan@", "zaproxy/action-full-scan@"));
+        mutations.put("OpenAPI 형식 누락", compliant.replace("format: openapi", "format: soap"));
+        mutations.put("로그인 단계 제거", compliant.replace("ZAP_AUTH_HEADER_VALUE", "NOT_AUTH"));
+        mutations.put("능동 스캔 상한 제거", compliant.replace("scanner.maxScanDurationInMins=40", "scanner.threadPerHost=2"));
+        mutations.put("상한이 토큰 유효시간 이상", compliant.replace("maxScanDurationInMins=40", "maxScanDurationInMins=60"));
+        mutations.put("세션 확인 제거", compliant.replace("$SCANNER_TOKEN", "$OTHER"));
+        mutations.put("세션 확인이 실패하지 않음", compliant.replace("          exit 1\n", ""));
+        mutations.forEach((label, source) -> assertThat(zapScanViolations(source)).as(label).isNotEmpty());
+        log.info("✅ ZAP API 스캔: OpenAPI·로그인·상한·세션 확인 결속, 변형 {}종 red.", mutations.size());
+    }
+
+    private List<String> zapScanViolations(String source) {
+        Object parsed = new Yaml().load(source);
+        List<?> steps = asList(asMap(asMap(asMap(parsed).get("jobs")).get("zap_scan")).get("steps"));
+        List<String> violations = new ArrayList<>();
+        int scan = -1;
+        int auth = -1;
+        int session = -1;
+        for (int i = 0; i < steps.size(); i++) {
+            Map<?, ?> step = asMap(steps.get(i));
+            String uses = Objects.toString(step.get("uses"), "");
+            String run = Objects.toString(step.get("run"), "");
+            if (uses.startsWith("zaproxy/action-full-scan@")
+                    && Objects.toString(asMap(step.get("with")).get("target"), "").contains("api-docs")) {
+                violations.add("full-scan 이 API 문서 URL 을 웹 페이지로 크롤링한다 — API 경로를 찾지 못한다");
+            }
+            if (uses.startsWith("zaproxy/action-api-scan@")) {
+                scan = i;
+                Map<?, ?> with = asMap(step.get("with"));
+                if (!"openapi".equals(Objects.toString(with.get("format"), ""))
+                        || !Objects.toString(with.get("target"), "").endsWith("/v3/api-docs")) {
+                    violations.add("API 스캔이 OpenAPI 정의(/v3/api-docs)를 읽지 않는다");
+                }
+                java.util.regex.Matcher cap = java.util.regex.Pattern
+                        .compile("scanner\\.maxScanDurationInMins=(\\d+)")
+                        .matcher(Objects.toString(with.get("cmd_options"), ""));
+                if (!cap.find() || Integer.parseInt(cap.group(1)) >= 60) {
+                    violations.add("능동 스캔 상한이 없거나 액세스 토큰 유효시간(60분) 이상이다 — 중간부터 로그인 없이 스캔한다");
+                }
+            }
+            if (run.contains("ZAP_AUTH_HEADER_VALUE") && run.contains("GITHUB_ENV") && run.contains("/auth/me")) {
+                auth = i;
+            }
+            if (run.contains("$SCANNER_TOKEN") && run.contains("/auth/me") && run.contains("exit 1")) {
+                session = i;
+            }
+        }
+        if (scan < 0) {
+            violations.add("OpenAPI 를 읽는 API 스캔(zaproxy/action-api-scan) 단계가 없다");
+            return violations;
+        }
+        if (auth < 0 || auth > scan) {
+            violations.add("API 스캔 앞에 스캐너 로그인·토큰 확인 단계가 없다");
+        }
+        if (session < scan) {
+            violations.add("API 스캔 뒤에 스캐너 세션 유지를 확인하고 실패시키는 단계가 없다");
+        }
+        return violations;
+    }
+
     private Map<?, ?> findStep(List<?> steps, String name) {
         int index = indexOfStep(steps, name);
         return index < 0 ? Map.of() : asMap(steps.get(index));
