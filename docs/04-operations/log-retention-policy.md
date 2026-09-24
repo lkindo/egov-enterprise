@@ -52,17 +52,18 @@
 
 | 데이터 | 현재 처리 | 설정·제약 | 운영 확인 사항 |
 |---|---|---|---|
-| `tb_user_noti` (`read_yn='Y'`) | 만료 배치 파기(선택) | `nuri.notification.retention.enabled` 기본 `false`, `read-months` 기본 `0` — 1 미만이면 켜져 있어도 삭제하지 않는다 | 보존 개월 수치는 인수처 결정(PD-NOTE-003). 읽지 않은 알림은 대상이 아니다 |
+| `tb_user_noti` (`read_yn='Y'`) | 만료 배치 파기(선택) | `nuri.notification.retention.enabled` 기본 `false`, `read-months` 기본 `6` — 1 미만이면 켜져 있어도 삭제하지 않는다 | 보존 기간 6개월은 DEC-OPS-128 로 정했다. 켜기는 운영자 판단이며 읽지 않은 알림은 대상이 아니다 |
 
 정본 구현: [`NotificationRetentionScheduler`](../../business-app/src/main/java/nuri/business/service/notification/NotificationRetentionScheduler.java),
 [`NotificationRepository#deleteReadBefore`](../../business-app/src/main/java/nuri/business/domain/notification/NotificationRepository.java),
 [`application.yml`](../../api-server/src/main/resources/application.yml)의 `nuri.notification.retention.*`.
 기본 cron 은 매일 04:30 Asia/Seoul(로그 파기 04:00 뒤)이고 `nuri.notification.retention.cron` 으로 바꿀 수 있다.
 
-켜는 방법(2026-09-06 DEC-OPS-045): 운영 배포는 `docker-compose.prod.yml` 이 `NOTIFICATION_RETENTION_ENABLED` 와
-`NOTIFICATION_RETENTION_READ_MONTHS` 를 컨테이너에 전달하므로 호스트 환경이나 `.env` 에 둘을 함께 준다.
-종전에는 이 전달 경로가 없어 값을 넣어도 컨테이너에 닿지 않았다 — 즉 보존 개월을 정해도 켤 수 없었다.
-`read-months` 가 1 미만이면 켜져 있어도 삭제하지 않으므로 두 값을 함께 주어야 실제로 동작한다.
+켜는 방법(2026-09-06 DEC-OPS-045, 2026-09-24 DEC-OPS-128): 운영 배포는 `docker-compose.prod.yml` 이
+`NOTIFICATION_RETENTION_ENABLED` 와 `NOTIFICATION_RETENTION_READ_MONTHS` 를 컨테이너에 전달한다. 보존 기간은
+앱 기본값 6개월이므로 `NOTIFICATION_RETENTION_ENABLED=true` 하나로 켜진다. 기간을 바꿀 때만
+`NOTIFICATION_RETENTION_READ_MONTHS` 를 준다(1 미만이면 켜져 있어도 삭제하지 않는다). 종전 운영 compose 는
+개월 수를 `:-0` 으로 넘겨 앱 기본값을 0 으로 덮었다.
 
 ⚠ 규모가 커지면 파기 술어(`read_yn='Y' AND crt_dt < :cutoff`)가 full scan 이 된다 — `tb_user_noti` 에는
 현재 `ix_tb_user_noti_rcvr_id` 하나뿐이고 이 술어용 인덱스가 없다. 인덱스 신설은 DB 스키마 변경이라
