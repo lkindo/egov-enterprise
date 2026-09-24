@@ -320,4 +320,72 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
         assertEquals("C008", response.getBody().code());
     }
+
+    @Test
+    @DisplayName("[2026-09-24 ZAP] 필수 요청 값 누락은 500 이 아니라 400 이고, 빠진 이름을 알려 준다")
+    void testMissingRequestInputIsBadRequest() {
+        ResponseEntity<ApiResponse<Void>> parameter = handler.handleMissingRequestInput(
+                new org.springframework.web.bind.MissingServletRequestParameterException("pstSn", "Long"));
+        assertEquals(HttpStatus.BAD_REQUEST, parameter.getStatusCode());
+        assertEquals("C001", parameter.getBody().code());
+        assertTrue(parameter.getBody().message().contains("pstSn"), parameter.getBody().message());
+
+        ResponseEntity<ApiResponse<Void>> part = handler.handleMissingRequestInput(
+                new org.springframework.web.multipart.support.MissingServletRequestPartException("files"));
+        assertEquals(HttpStatus.BAD_REQUEST, part.getStatusCode());
+        assertTrue(part.getBody().message().contains("files"), part.getBody().message());
+    }
+
+    @Test
+    @DisplayName("[2026-09-24 ZAP] 없는 필드로 정렬하면 400 이고, 입력값을 응답에 되비추지 않는다")
+    void testUnknownSortPropertyIsBadRequest() {
+        var ex = mock(org.springframework.data.core.PropertyReferenceException.class);
+        when(ex.getMessage()).thenReturn("No property '<script>' found for type 'Popup'");
+
+        ResponseEntity<ApiResponse<Void>> response = handler.handleUnknownSortProperty(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("C001", response.getBody().code());
+        assertFalse(response.getBody().message().contains("<script>"));
+    }
+
+    @Test
+    @DisplayName("[2026-09-24 ZAP] Spring Data 정렬 검사가 거부한 식만 400 이고, 같은 예외의 다른 원인은 500 을 유지한다")
+    void testRejectedSortExpressionIsBadRequestOnlyFromSortCheck() {
+        var rejected = new org.springframework.dao.InvalidDataAccessApiUsageException("Sort expression '[crtDt: ASC' must only contain property references");
+        rejected.setStackTrace(new StackTraceElement[] {
+                new StackTraceElement("org.springframework.data.jpa.repository.query.QueryUtils", "checkSortExpression", "QueryUtils.java", 804),
+                new StackTraceElement("org.springframework.data.jpa.repository.query.JpaQueryCreator", "buildQuery", "JpaQueryCreator.java", 242)});
+        var request = new org.springframework.mock.web.MockHttpServletRequest();
+        ResponseEntity<ApiResponse<Void>> sort = handler.handleInvalidDataAccessApiUsage(rejected, request);
+        assertEquals(HttpStatus.BAD_REQUEST, sort.getStatusCode());
+        assertEquals("C001", sort.getBody().code());
+
+        var misuse = new org.springframework.dao.InvalidDataAccessApiUsageException("Executing an update/delete query");
+        misuse.setStackTrace(new StackTraceElement[] {
+                new StackTraceElement("org.springframework.data.jpa.repository.query.JpaQueryExecution", "doExecute", "JpaQueryExecution.java", 300)});
+        ResponseEntity<ApiResponse<Void>> other = handler.handleInvalidDataAccessApiUsage(misuse, request);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, other.getStatusCode());
+        assertEquals("C004", other.getBody().code());
+    }
+
+    @Test
+    @DisplayName("[2026-09-24 ZAP] @Query 정렬에서 해석하지 못한 속성은 요청의 sort 값일 때만 400 이다 — JPQL 오타는 500 을 유지한다")
+    void testUnknownSortPathIsBadRequestOnlyWhenRequested() {
+        var unknown = new org.springframework.dao.InvalidDataAccessApiUsageException("wrapped",
+                new org.hibernate.query.sqm.UnknownPathException("Could not resolve attribute 'nope' of 'nuri.Note'"));
+
+        var sortedByIt = new org.springframework.mock.web.MockHttpServletRequest();
+        sortedByIt.addParameter("sort", "nope,DESC");
+        assertEquals(HttpStatus.BAD_REQUEST, handler.handleInvalidDataAccessApiUsage(unknown, sortedByIt).getStatusCode());
+
+        var sortedByOther = new org.springframework.mock.web.MockHttpServletRequest();
+        sortedByOther.addParameter("sort", "noteSn,DESC");
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR,
+                handler.handleInvalidDataAccessApiUsage(unknown, sortedByOther).getStatusCode());
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR,
+                handler.handleInvalidDataAccessApiUsage(unknown, new org.springframework.mock.web.MockHttpServletRequest())
+                        .getStatusCode());
+    }
 }

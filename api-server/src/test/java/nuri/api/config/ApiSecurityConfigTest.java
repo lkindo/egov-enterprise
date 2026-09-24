@@ -190,6 +190,15 @@ public class ApiSecurityConfigTest extends ControllerTestSupport {
     }
 
     @Test
+    @DisplayName("운영 보안 응답 헤더 - API 체인 밖의 문서 경로에도 CORP 가 실린다")
+    void corpHeaderOnLegacyChainTest() throws Exception {
+        // [2026-09-24 ZAP 90004] /v3/api-docs 는 두 번째(레거시) 체인이 처리한다. CORP 를 API 체인에만 붙였을 때
+        //   이 경로에는 헤더가 없었다. 헤더는 보안 필터가 쓰므로 문서 엔드포인트가 꺼진 테스트 컨텍스트에서도 본다.
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(header().string("Cross-Origin-Resource-Policy", "same-origin"));
+    }
+
+    @Test
     @DisplayName("운영 보안 응답 헤더 - HSTS 는 HTTPS 요청에만 실린다")
     void hstsHeaderOnSecureRequestTest() throws Exception {
         // Spring Security 의 HstsHeaderWriter 는 기본 RequestMatcher 가 `secure == true` 라

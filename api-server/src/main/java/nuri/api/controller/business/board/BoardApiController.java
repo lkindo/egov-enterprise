@@ -143,7 +143,7 @@ public class BoardApiController {
     public ResponseEntity<ApiResponse<Long>> createPostWithFiles(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
-            @RequestPart("board") BoardSaveRequest request,
+            @Valid @RequestPart("board") BoardSaveRequest request,
             @RequestPart(value = "file", required = false) List<MultipartFile> files) throws IOException {
         String userId = userDetails.getUsername();
         Long pstSn = (files != null && !files.isEmpty())
@@ -179,7 +179,7 @@ public class BoardApiController {
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
             @Parameter(description = "게시글 ID", example = "1") @PathVariable Long pstSn,
-            @RequestPart("board") BoardSaveRequest request,
+            @Valid @RequestPart("board") BoardSaveRequest request,
             @RequestPart(value = "file", required = false) List<MultipartFile> files) throws IOException {
         if (files != null && !files.isEmpty()) {
             boardService.updatePostWithFiles(bbsId, pstSn, request, files);

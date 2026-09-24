@@ -255,6 +255,105 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 필수 요청 값 누락 — 500 이 아닌 400(Bad Request).
+     *
+     * <p>[2026-09-24 ZAP API 스캔] 이 클래스는 {@code ResponseEntityExceptionHandler} 를 상속하지 않아, Spring 이
+     * 기본으로 400 을 주는 누락 예외까지 최상위 {@code Exception} 처리로 떨어져 500 이 됐다 — 예)
+     * {@code GET /api/v1/comments}(pstSn 없음), {@code GET /api/v1/menus/left?menuNo=}(빈 값). 요청이 잘못된 것이다.
+     * 파라미터 이름은 서버 코드가 정한 값이라 안내에 싣는다.
+     */
+    @ExceptionHandler({
+            org.springframework.web.bind.MissingServletRequestParameterException.class,
+            org.springframework.web.multipart.support.MissingServletRequestPartException.class,
+            org.springframework.web.bind.UnsatisfiedServletRequestParameterException.class })
+    protected ResponseEntity<ApiResponse<Void>> handleMissingRequestInput(Exception e) {
+        log.warn(">>> Missing request input: {}", e.getMessage());
+        String name = e instanceof org.springframework.web.bind.MissingServletRequestParameterException missing
+                ? missing.getParameterName()
+                : e instanceof org.springframework.web.multipart.support.MissingServletRequestPartException part
+                        ? part.getRequestPartName()
+                        : null;
+        String message = name == null
+                ? resolve(CommonErrorCode.INVALID_INPUT_VALUE)
+                : resolve("handler.missing_parameter", new Object[]{name},
+                        String.format("필수 요청 값 '%s'이(가) 없습니다.", name));
+        return ResponseEntity.badRequest().body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE, message));
+    }
+
+    /**
+     * 없는 필드로 정렬을 요청했다 — 500 이 아닌 400. 예) {@code ?sort=foo} 는 Spring Data 가
+     * {@code PropertyReferenceException} 으로 거부한다. 입력값은 응답에 되비추지 않는다.
+     */
+    @ExceptionHandler(org.springframework.data.core.PropertyReferenceException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleUnknownSortProperty(
+            org.springframework.data.core.PropertyReferenceException e) {
+        log.warn(">>> Unknown sort property: {}", e.getMessage());
+        return invalidSort();
+    }
+
+    /**
+     * 요청의 정렬 값 때문에 난 경우만 400 이다. 두 갈래가 있다.
+     * <ul>
+     *   <li>{@code ?sort=[crtDt,DESC]} — 파생 쿼리에서 {@code QueryUtils.checkSortExpression} 이 거부한다.</li>
+     *   <li>{@code ?sort=nope} — {@code @Query} 에 정렬을 붙이는 저장소에서 Hibernate 가
+     *       {@code UnknownPathException}("Could not resolve attribute 'nope'")으로 거부한다.</li>
+     * </ul>
+     * 같은 예외 타입은 코드 결함(잘못된 저장소 사용·JPQL 오타)에서도 나오므로, 정렬 검사 프레임이거나 해석하지
+     * 못한 속성이 요청의 {@code sort} 값에 실제로 있을 때만 좁히고 나머지는 종전대로 500 이다.
+     */
+    @ExceptionHandler(org.springframework.dao.InvalidDataAccessApiUsageException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleInvalidDataAccessApiUsage(
+            org.springframework.dao.InvalidDataAccessApiUsageException e, jakarta.servlet.http.HttpServletRequest request) {
+        if (rejectedBySortCheck(e) || unknownSortProperty(e, request.getParameterValues("sort"))) {
+            log.warn(">>> Rejected sort: {}", e.getMessage());
+            return invalidSort();
+        }
+        return handleException(e);
+    }
+
+    private static final java.util.regex.Pattern UNRESOLVED_ATTRIBUTE =
+            java.util.regex.Pattern.compile("attribute '([^']+)'");
+
+    static boolean unknownSortProperty(Throwable e, String[] sortParameters) {
+        if (sortParameters == null || sortParameters.length == 0) {
+            return false;
+        }
+        for (Throwable cause = e; cause != null; cause = cause.getCause()) {
+            if (!"org.hibernate.query.sqm.UnknownPathException".equals(cause.getClass().getName())) {
+                continue;
+            }
+            java.util.regex.Matcher attribute = UNRESOLVED_ATTRIBUTE.matcher(String.valueOf(cause.getMessage()));
+            if (!attribute.find()) {
+                return false;
+            }
+            for (String sort : sortParameters) {
+                for (String token : sort.split(",")) {
+                    if (token.trim().equals(attribute.group(1))) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        return false;
+    }
+
+    static boolean rejectedBySortCheck(Throwable e) {
+        for (StackTraceElement frame : e.getStackTrace()) {
+            if ("org.springframework.data.jpa.repository.query.QueryUtils".equals(frame.getClassName())
+                    && "checkSortExpression".equals(frame.getMethodName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private ResponseEntity<ApiResponse<Void>> invalidSort() {
+        return ResponseEntity.badRequest().body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE,
+                resolve("handler.invalid_sort", null, "정렬 기준이 올바르지 않습니다.")));
+    }
+
+    /**
      * 미매핑 경로(존재하지 않는 엔드포인트/정적 리소스) 예외 처리 — 500 이 아닌 404(Not Found).
      * Spring Boot 3.2+ DispatcherServlet 은 미매핑 요청에서 NoResourceFoundException 을 던진다.
      */

@@ -780,6 +780,182 @@ class InputContractMirrorLinterTest {
         }
     }
 
+    /**
+     * 제약이 있는 요청 DTO 를 받는 컨트롤러 파라미터는 {@code @Valid} 나 {@code @Validated} 를 단다.
+     *
+     * <p>[2026-09-24 ZAP API 스캔] 이 게이트는 DTO 에 제약이 있는지만 보았다. 게시글 첨부 등록·수정은 JSON 경로와
+     * 같은 {@code BoardSaveRequest} 를 {@code @RequestPart} 로 받으면서 {@code @Valid} 가 없어, 제목 필수·본문 4000자·
+     * 비밀글 Y/N 검사를 통째로 건너뛰었다. 화면은 첨부가 있으면 그 경로를 쓴다. DTO 의 제약과 경계의 검사는
+     * 같은 입력 계약이라 새 게이트가 아니라 여기서 함께 본다.
+     */
+    @Test
+    @DisplayName("제약이 있는 요청 DTO 는 컨트롤러 경계에서 @Valid 나 @Validated 로 받는다")
+    void constrainedRequestBodiesAreValidatedAtTheBoundary() throws ClassNotFoundException {
+        List<Class<?>> controllers = mainControllers();
+        List<String> checked = new ArrayList<>();
+        List<String> violations = unvalidatedRequestBodies(controllers, checked);
+        if (checked.size() < MIN_VALIDATED_REQUEST_BODIES) {
+            fail("게이트 무결성 파손: 제약 있는 요청 DTO 파라미터가 " + checked.size() + "개로 하한 "
+                    + MIN_VALIDATED_REQUEST_BODIES + " 보다 적습니다 — 컨트롤러 탐색이 비었을 수 있습니다.");
+        }
+        failIfAny("[INPUT CONTRACT] 제약 있는 요청 DTO 를 검사 없이 받는 컨트롤러", violations);
+
+        List<String> fixture = unvalidatedRequestBodies(List.of(BoundaryFixture.class), new ArrayList<>());
+        assertThat(fixture).containsExactlyInAnyOrder(
+                "BoundaryFixture#json — Constrained",
+                "BoundaryFixture#part — Constrained",
+                "BoundaryFixture#getterOnly — GetterConstrained",
+                "BoundaryFixture#listContainerValid — Constrained",
+                "BoundaryFixture#listPlain — Constrained");
+        log.info("✅ 요청 DTO 경계 검사: 컨트롤러 {}개, 제약 있는 요청 DTO 파라미터 {}개.", controllers.size(), checked.size());
+    }
+
+    /** 제약 있는 요청 DTO 를 받는 파라미터가 이보다 적으면 탐색이 빈 것으로 본다(축소 프로필도 넘는 작은 값). */
+    private static final int MIN_VALIDATED_REQUEST_BODIES = 5;
+
+    private static List<Class<?>> mainControllers() throws ClassNotFoundException {
+        var scanner = new org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider(false);
+        scanner.addIncludeFilter(new org.springframework.core.type.filter.AnnotationTypeFilter(
+                org.springframework.stereotype.Controller.class));
+        List<Class<?>> controllers = new ArrayList<>();
+        for (var candidate : scanner.findCandidateComponents("nuri")) {
+            Class<?> type = Class.forName(candidate.getBeanClassName());
+            var source = type.getProtectionDomain().getCodeSource();
+            String location = source == null ? "" : source.getLocation().toString();
+            // 테스트 클래스패스에 올라온 테스트용 컨트롤러는 제품 경계가 아니다.
+            if (location.contains("/test/") || location.contains("testFixtures") || location.contains("test-fixtures")) {
+                continue;
+            }
+            controllers.add(type);
+        }
+        return controllers;
+    }
+
+    static List<String> unvalidatedRequestBodies(List<Class<?>> controllers, List<String> checked) {
+        List<String> violations = new ArrayList<>();
+        for (Class<?> controller : controllers) {
+            for (Method method : controller.getDeclaredMethods()) {
+                for (java.lang.reflect.Parameter parameter : method.getParameters()) {
+                    if (!parameter.isAnnotationPresent(org.springframework.web.bind.annotation.RequestBody.class)
+                            && !parameter.isAnnotationPresent(org.springframework.web.bind.annotation.RequestPart.class)) {
+                        continue;
+                    }
+                    Class<?> bodyType = bodyType(parameter);
+                    if (!hasConstraints(bodyType)) {
+                        continue;
+                    }
+                    String label = controller.getSimpleName() + "#" + method.getName() + " — " + bodyType.getSimpleName();
+                    checked.add(label);
+                    // 목록 본문은 원소 타입의 @Valid(List<@Valid T>)만 원소를 검사한다 — 파라미터에 단 @Valid 는
+                    //   List 객체를 검사할 뿐이다(중첩 DTO 의 HV000271 규칙과 같은 기준).
+                    boolean validated = parameter.getAnnotatedType() instanceof AnnotatedParameterizedType generic
+                            && generic.getAnnotatedActualTypeArguments().length == 1
+                            ? generic.getAnnotatedActualTypeArguments()[0].isAnnotationPresent(Valid.class)
+                            : parameter.isAnnotationPresent(Valid.class)
+                                    || parameter.isAnnotationPresent(org.springframework.validation.annotation.Validated.class);
+                    if (!validated) {
+                        violations.add(label);
+                    }
+                }
+            }
+        }
+        return violations;
+    }
+
+    private static Class<?> bodyType(java.lang.reflect.Parameter parameter) {
+        if (parameter.getParameterizedType() instanceof ParameterizedType generic
+                && generic.getActualTypeArguments().length == 1
+                && generic.getActualTypeArguments()[0] instanceof Class<?> element) {
+            return element;
+        }
+        return parameter.getType();
+    }
+
+    /** 필드·getter·클래스 어디든 Bean Validation 제약(또는 @Valid 캐스케이드)이 있으면 검사 대상이다. */
+    private static boolean hasConstraints(Class<?> type) {
+        if (type.isPrimitive() || type.getName().startsWith("java.")) {
+            return false;
+        }
+        for (Class<?> current = type; current != null && current != Object.class; current = current.getSuperclass()) {
+            if (anyConstraint(current.getAnnotations())) {
+                return true;
+            }
+            for (Field field : current.getDeclaredFields()) {
+                if (anyConstraint(field.getAnnotations()) || anyConstraint(field.getAnnotatedType().getAnnotations())) {
+                    return true;
+                }
+            }
+            for (Method method : current.getDeclaredMethods()) {
+                if (getterProperty(method) != null && anyConstraint(method.getAnnotations())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean anyConstraint(Annotation[] annotations) {
+        for (Annotation annotation : annotations) {
+            if (annotation instanceof Valid
+                    || annotation.annotationType().isAnnotationPresent(jakarta.validation.Constraint.class)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @SuppressWarnings("unused")
+    private static final class BoundaryFixture {
+        public void json(@org.springframework.web.bind.annotation.RequestBody Constrained body) {
+        }
+
+        public void part(@org.springframework.web.bind.annotation.RequestPart("x") Constrained body) {
+        }
+
+        public void valid(@Valid @org.springframework.web.bind.annotation.RequestBody Constrained body) {
+        }
+
+        public void validated(@org.springframework.validation.annotation.Validated
+                @org.springframework.web.bind.annotation.RequestBody Constrained body) {
+        }
+
+        public void plain(@org.springframework.web.bind.annotation.RequestBody Plain body) {
+        }
+
+        public void getterOnly(@org.springframework.web.bind.annotation.RequestBody GetterConstrained body) {
+        }
+
+        public void listElementValid(@org.springframework.web.bind.annotation.RequestBody List<@Valid Constrained> items) {
+        }
+
+        public void listContainerValid(@Valid @org.springframework.web.bind.annotation.RequestBody List<Constrained> items) {
+        }
+
+        public void listPlain(@org.springframework.web.bind.annotation.RequestBody List<Constrained> items) {
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static final class Constrained {
+        @NotBlank
+        private String name;
+    }
+
+    @SuppressWarnings("unused")
+    private static final class Plain {
+        private String name;
+    }
+
+    @SuppressWarnings("unused")
+    private static final class GetterConstrained {
+        private String name;
+
+        @NotBlank
+        public String getName() {
+            return name;
+        }
+    }
+
     private static final class NestedItem {
     }
 
