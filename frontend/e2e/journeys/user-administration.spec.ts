@@ -1,4 +1,5 @@
 import { expect,test } from '../fixtures/browser-test';
+import { getAdminBearerToken } from '../utils/admin-token';
 test.describe('사용자와 권한 관리', () => {
     test.describe('Admin System (Core Management)', () => {
         test.use({ storageState: 'playwright/.auth/admin.json' });
@@ -6,10 +7,29 @@ test.describe('사용자와 권한 관리', () => {
             const suffix = Math.random().toString(36).substring(7);
             const testId = `e2e_${suffix}`;
             const testName = `E2E User ${suffix.toUpperCase()}`;
+            // [2026-09-25] 소속 부서는 이 테스트가 직접 만들어 고른다. 종전에는 목록의 첫 부서(index 1)를 골랐는데,
+            //   CI 의 새 DB 에는 부서가 없어 그 자리를 동시에 도는 다른 스펙의 임시 부서가 차지했다. 사용자 등록은
+            //   부서 존재를 확인하므로(DEC-OPS-105) 그 스펙이 먼저 부서를 지우면 등록 POST 가 404 로 끝났다
+            //   (PR #740 CI 에서 재시도 통과 1건). 사용자를 지운 뒤 부서도 지운다.
+            const auth = () => ({ Authorization: `Bearer ${getAdminBearerToken()}` });
+            let ownedDeptId: string | undefined;
+            test.afterEach(async ({ request }) => {
+                if (ownedDeptId) {
+                    await request.delete(`/api/v1/admin/system/departments/${ownedDeptId}`, { headers: auth() });
+                    ownedDeptId = undefined;
+                }
+            });
             // 이름이 약속하는 4단계를 실제로 모두 수행한다. (2026-08-10 감사에서 Update 가 한 번도
             // 존재한 적 없음이 드러났고, 채워 넣자 백엔드 결함이 확인돼 2026-08-11 에 함께 고쳤다.)
-            test('Create-Search-Update-Delete Flow', async ({ page }) => {
+            test('Create-Search-Update-Delete Flow', async ({ page, request }) => {
                 console.log(`\n>>> Starting User Lifecycle: id=${testId}, name=${testName}`);
+                const createdDept = await request.post('/api/v1/admin/system/departments', {
+                    headers: auth(),
+                    data: { ognzNm: `E2E User Dept ${suffix.toUpperCase()}` },
+                });
+                expect(createdDept.ok(), '사용자 등록용 부서 생성이 성공해야 한다').toBeTruthy();
+                const deptId = (await createdDept.json()).data as string;
+                ownedDeptId = deptId;
                 // --- Step 1: Navigate ---
                 console.log('>>> Step 1: Navigating to User Management');
                 await page.goto('/admin/user/manage');
@@ -30,16 +50,8 @@ test.describe('사용자와 권한 관리', () => {
                 console.log('>>> Step 3: Selecting department via native select');
                 const deptSelect = page.locator('select[name="ognzId"]');
                 await expect(deptSelect).toBeVisible({ timeout: 5000 });
-                // index 0 은 "소속 없음 / GLOBAL"(value=''), 그 뒤가 실제 부서다. 부서가 0건인 신규 DB
-                // (CI 기본값)에서는 index 1 이 존재하지 않아 selectOption 이 깨졌다. ognzId 는 스키마상
-                // optional 이므로 부서가 없으면 '소속 없음' 을 그대로 둔다.
-                const deptOptionCount = await deptSelect.locator('option').count();
-                if (deptOptionCount > 1) {
-                    await deptSelect.selectOption({ index: 1 });
-                }
-                else {
-                    console.log('>>> Step 3: 등록된 부서가 없어 소속 없음(GLOBAL)으로 진행');
-                }
+                // 위에서 만든 이 테스트 소유의 부서를 값으로 고른다(다른 스펙의 부서에 기대지 않는다).
+                await deptSelect.selectOption(deptId);
                 // --- Step 4: Submit ---
                 console.log('>>> Step 4: Clicking submit button');
                 // Submit button is form button[type="submit"] with text "신규 등록"
