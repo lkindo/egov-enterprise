@@ -35,4 +35,16 @@ class ClientInputErrorIntegrationTest {
                 .andExpect(jsonPath("$.code").value("C001"))
                 .andExpect(jsonPath("$.message", containsString("menuNo")));
     }
+
+    @Test
+    @DisplayName("형식이 아닌 정렬 값은 저장소에 닿기 전에 400 이고, 올바른 정렬은 그대로 통과한다")
+    void malformedSortIsRejectedAtTheBoundary() throws Exception {
+        for (String sort : new String[] {"[userId,DESC]", "A".repeat(2100)}) {
+            mvc.perform(get("/api/v1/admin/system/users").param("page", "0").param("size", "10").param("sort", sort))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("C001"));
+        }
+        mvc.perform(get("/api/v1/admin/system/users").param("page", "0").param("size", "10").param("sort", "userId,DESC"))
+                .andExpect(status().isOk());
+    }
 }

@@ -281,6 +281,56 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 업로드가 서블릿 크기 한도({@code spring.servlet.multipart.max-file-size}·{@code max-request-size})를 넘었다 — 413.
+     *
+     * <p>[2026-09-24 ZAP API 스캔 후속] 처리기가 없어 한도를 넘는 파일을 올린 사용자가 "서버 내부 오류" 를 받았다
+     * (11MB 파일로 재현). edge nginx 가 본문 한도를 넘긴 요청에 주는 상태와 같은 413 이다. 한도는 환경 변수로
+     * 바뀌므로 문구에 숫자를 싣지 않는다.
+     */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleMaxUploadSizeExceeded(
+            org.springframework.web.multipart.MaxUploadSizeExceededException e) {
+        log.warn(">>> Upload size exceeded: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(ApiResponse.error(HttpStatus.CONTENT_TOO_LARGE,
+                CommonErrorCode.INVALID_INPUT_VALUE,
+                resolve("handler.upload_too_large", null, "업로드한 파일이 허용 크기를 넘었습니다.")));
+    }
+
+    /**
+     * multipart 본문을 해석하지 못했다. 본문 형식이 잘못된 경우만 400 이다 — 잘리거나 경계가 맞지 않는 본문,
+     * 경계가 없는 Content-Type, form-data 가 아닌 multipart 유형.
+     *
+     * <p>같은 예외가 임시 파일을 쓰지 못한 서버 쪽 IO 실패에서도 나오므로, 원인 사슬의 가장 안쪽 예외가 형식 거부일
+     * 때만 좁히고 나머지는 종전대로 500 이다. 컨테이너 클래스를 로드하지 않도록 이름으로 판별한다.
+     */
+    @ExceptionHandler(org.springframework.web.multipart.MultipartException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleMultipart(org.springframework.web.multipart.MultipartException e) {
+        if (malformedMultipartBody(e)) {
+            log.warn(">>> Malformed multipart request: {}", rootCause(e).getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE,
+                    resolve("handler.malformed_multipart", null, "파일 업로드 요청의 형식이 올바르지 않습니다.")));
+        }
+        return handleException(e);
+    }
+
+    private static final java.util.Set<String> MALFORMED_MULTIPART_ROOT_CAUSES = java.util.Set.of(
+            "org.apache.tomcat.util.http.fileupload.MultipartStream$MalformedStreamException",
+            "org.apache.tomcat.util.http.fileupload.FileUploadException",
+            "org.apache.tomcat.util.http.fileupload.impl.InvalidContentTypeException");
+
+    static boolean malformedMultipartBody(Throwable e) {
+        return MALFORMED_MULTIPART_ROOT_CAUSES.contains(rootCause(e).getClass().getName());
+    }
+
+    private static Throwable rootCause(Throwable e) {
+        Throwable root = e;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        return root;
+    }
+
+    /**
      * 없는 필드로 정렬을 요청했다 — 500 이 아닌 400. 예) {@code ?sort=foo} 는 Spring Data 가
      * {@code PropertyReferenceException} 으로 거부한다. 입력값은 응답에 되비추지 않는다.
      */
@@ -326,10 +376,13 @@ public class GlobalExceptionHandler {
             if (!attribute.find()) {
                 return false;
             }
+            // 점 경로는 처음 해석하지 못한 조각만 보고된다(sort=www.google.com → attribute 'www').
             for (String sort : sortParameters) {
                 for (String token : sort.split(",")) {
-                    if (token.trim().equals(attribute.group(1))) {
-                        return true;
+                    for (String segment : token.trim().split("\\.")) {
+                        if (segment.equals(attribute.group(1))) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -346,6 +399,12 @@ public class GlobalExceptionHandler {
             }
         }
         return false;
+    }
+
+    @ExceptionHandler(InvalidSortParameterException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleInvalidSortParameter(InvalidSortParameterException e) {
+        log.warn(">>> Rejected sort parameter format");
+        return invalidSort();
     }
 
     private ResponseEntity<ApiResponse<Void>> invalidSort() {
@@ -422,6 +481,14 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
+        // [2026-09-24 ZAP API 스캔] 이름 없는 쿼리 파라미터(`?=`)는 Tomcat 이 파라미터를 읽을 때
+        //   InvalidParameterException(IllegalStateException 계열)으로 거부한다. 요청이 잘못된 것이라 400 이다.
+        //   컨테이너를 바꿔도 이 클래스가 로드되지 않도록 이름으로만 판별한다.
+        if ("org.apache.tomcat.util.http.InvalidParameterException".equals(e.getClass().getName())) {
+            log.warn(">>> Invalid request parameter: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE,
+                    resolve(CommonErrorCode.INVALID_INPUT_VALUE)));
+        }
         log.error(">>> Internal Server Error: {} - ExceptionType: {}", e.getMessage(), e.getClass().getName(), e);
         return new ResponseEntity<>(
                 ApiResponse.error(CommonErrorCode.INTERNAL_SERVER_ERROR,

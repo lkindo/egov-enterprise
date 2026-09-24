@@ -387,5 +387,65 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR,
                 handler.handleInvalidDataAccessApiUsage(unknown, new org.springframework.mock.web.MockHttpServletRequest())
                         .getStatusCode());
+
+        // 점 경로는 처음 해석하지 못한 조각만 보고된다.
+        var dotted = new org.springframework.dao.InvalidDataAccessApiUsageException("wrapped",
+                new org.hibernate.query.sqm.UnknownPathException("Could not resolve attribute 'www' of 'nuri.Note'"));
+        var sortedByDotted = new org.springframework.mock.web.MockHttpServletRequest();
+        sortedByDotted.addParameter("sort", "www.google.com");
+        assertEquals(HttpStatus.BAD_REQUEST, handler.handleInvalidDataAccessApiUsage(dotted, sortedByDotted).getStatusCode());
+    }
+
+    @Test
+    @DisplayName("[2026-09-24 ZAP] 형식이 아닌 sort 값과 이름 없는 쿼리 파라미터는 400 이다")
+    void testMalformedSortAndInvalidParameterAreBadRequest() {
+        ResponseEntity<ApiResponse<Void>> sort = handler.handleInvalidSortParameter(new InvalidSortParameterException());
+        assertEquals(HttpStatus.BAD_REQUEST, sort.getStatusCode());
+        assertEquals("C001", sort.getBody().code());
+
+        ResponseEntity<ApiResponse<Void>> parameter = handler.handleException(
+                new org.apache.tomcat.util.http.InvalidParameterException("Invalid chunk ... with a value of [=] ignored"));
+        assertEquals(HttpStatus.BAD_REQUEST, parameter.getStatusCode());
+        assertEquals("C001", parameter.getBody().code());
+
+        // 같은 IllegalStateException 계열이라도 다른 원인은 500 을 유지한다.
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR,
+                handler.handleException(new IllegalStateException("unexpected")).getStatusCode());
+    }
+
+    @Test
+    @DisplayName("[2026-09-24 ZAP] multipart 는 가장 안쪽 원인으로 가른다 — 형식 오류 400, 크기 초과 413, 서버 IO 실패 500")
+    void testMultipartFailuresAreClassifiedByRootCause() {
+        String parseFailure = "Failed to parse multipart servlet request";
+        var truncated = new org.springframework.web.multipart.MultipartException(parseFailure,
+                new org.apache.tomcat.util.http.fileupload.impl.IOFileUploadException("Stream ended unexpectedly",
+                        new org.apache.tomcat.util.http.fileupload.MultipartStream.MalformedStreamException(
+                                "Stream ended unexpectedly")));
+        var noBoundary = new org.springframework.web.multipart.MultipartException(parseFailure,
+                new org.apache.tomcat.util.http.fileupload.FileUploadException(
+                        "the request was rejected because no multipart boundary was found"));
+        var notFormData = new org.springframework.web.multipart.MultipartException(parseFailure,
+                new org.apache.tomcat.util.http.fileupload.impl.InvalidContentTypeException("multipart/related"));
+        for (var malformed : java.util.List.of(truncated, noBoundary, notFormData)) {
+            ResponseEntity<ApiResponse<Void>> response = handler.handleMultipart(malformed);
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode(), malformed.getCause().getMessage());
+            assertEquals("C001", response.getBody().code());
+        }
+
+        // 임시 파일을 쓰지 못한 서버 쪽 실패는 같은 예외 타입이어도 500 이다.
+        var diskFull = new org.springframework.web.multipart.MultipartException(parseFailure,
+                new org.apache.tomcat.util.http.fileupload.impl.IOFileUploadException("write failed",
+                        new java.io.IOException("No space left on device")));
+        var wrappedIo = new org.springframework.web.multipart.MultipartException(parseFailure,
+                new org.apache.tomcat.util.http.fileupload.FileUploadException("write failed",
+                        new java.io.IOException("No space left on device")));
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, handler.handleMultipart(diskFull).getStatusCode());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, handler.handleMultipart(wrappedIo).getStatusCode());
+
+        ResponseEntity<ApiResponse<Void>> tooLarge = handler.handleMaxUploadSizeExceeded(
+                new org.springframework.web.multipart.MaxUploadSizeExceededException(-1));
+        assertEquals(HttpStatus.CONTENT_TOO_LARGE, tooLarge.getStatusCode());
+        assertEquals(413, tooLarge.getBody().status());
+        assertEquals("C001", tooLarge.getBody().code());
     }
 }

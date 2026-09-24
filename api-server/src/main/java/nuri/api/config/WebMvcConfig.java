@@ -53,6 +53,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     public void addInterceptors(InterceptorRegistry registry) {
 
+        // 형식이 아닌 sort 값을 저장소에 닿기 전에 400 으로 끝낸다(2026-09-24 ZAP API 스캔).
+        registry.addInterceptor(new nuri.api.interceptor.SortParameterGuard())
+
+                .addPathPatterns("/api/**");
+
         registry.addInterceptor(operationalAuditInterceptor)
 
                 .addPathPatterns("/api/**");
