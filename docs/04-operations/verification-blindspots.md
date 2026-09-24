@@ -78,7 +78,7 @@ node scripts/run-isolated-e2e.mjs -- e2e/journeys/department-work.spec.ts --proj
 |---|---|---|---|
 | OWASP Dependency-Check | [dependency-check.yml](../../.github/workflows/dependency-check.yml), 주간·수동 advisory | 애플리케이션 모듈 XML 리포트가 모두 생성되고 판정 대상이 실제 runtime dependency를 포함 | NVD API·네트워크에 의존하며 취약점 결과 자체는 required merge gate가 아니다 |
 | k6 | [load-test.yml](../../.github/workflows/load-test.yml), 주간·수동 | 선택한 단일 시나리오가 threshold를 통과하고 JSON·HTML·백엔드 로그가 생성 | 대상 환경·계정이 필요하고 데이터 쓰기 시나리오가 있다. PR required check가 아니다 |
-| ZAP | [zap-scan.yml](../../.github/workflows/zap-scan.yml), 주간·수동 | compose health 후 baseline/API scan 산출물이 생성 | 기본 흐름은 미인증 공개 표면 중심이며 로그인 뒤 관리자 화면 전체를 대신하지 않는다 |
+| ZAP | [zap-scan.yml](../../.github/workflows/zap-scan.yml), 주간·수동 | 화면 baseline(로그인 전)과, OpenAPI 로 문서화된 API 를 개발 시드 관리자로 로그인해 스캔한 결과. 스캔 앞 토큰 확인·스캔 뒤 세션 확인이 실패하면 잡이 실패한다 | 화면 스캔은 로그인 뒤 화면을 보지 않는다. 능동 스캔은 40분에서 끊기고, 버리는 격리 DB 라 운영 데이터 분포의 경로는 보지 않는다 |
 | Lighthouse | [lighthouse.yml](../../.github/workflows/lighthouse.yml), 주간·수동 | `/login`을 production build로 측정하고 JSON report가 생성 | performance는 CI 러너 편차 때문에 warn이고, 실제 사용자·지역 RUM을 대신하지 않는다 |
 | 외부 자격 회전 | 저장소 밖 provider·서버에서 수행 | 새 자격의 동작, 구 자격의 폐기, dangling credential 부재를 secure channel에서 확인 | 저장소 diff나 secret scan만으로 외부 폐기를 증명할 수 없다 |
 | 레거시 암호 데이터 census | 권한 있는 운영 DB read-only 조회 | 레거시 password hash와 이전 ARIA key 암호문의 잔존 건수·전환 결과를 값 노출 없이 집계 | 코드의 호환 adapter와 단위 테스트만으로 실제 데이터 0건을 증명할 수 없다 |

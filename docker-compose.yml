@@ -92,6 +92,10 @@ services:
       #   1시간을 넘길 수 있는 환경에서만 바깥에서 늘린다(CI 의 e2e 잡이 주입). 늘리지 않으면
       #   토큰이 중간에 만료돼 이후 테스트가 전부 /login 리다이렉트로 죽는다(실측: CI shard 2, 66분).
       JWT_ACCESS_TOKEN_VALIDITY_MS: ${JWT_ACCESS_TOKEN_VALIDITY_MS:-3600000}
+      # [2026-09-24] 요청 제한 한도. 값 없이 전달하므로 호스트에 없으면 앱 기본값(분당 10000·로그인 2000)이다.
+      #   주간 ZAP 은 스캐너 요청이 429 로 막혀 공격이 핸들러에 닿지 않는 것을 막으려고 이 값을 올린다.
+      RATE_LIMIT_REQUESTS_PER_MINUTE:
+      RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:
     # [2026-09-02] 첨부 저장소를 named volume 으로 보존한다.
     #
     #   종전에는 api 서비스에 volumes 가 **하나도 없었다**. 첨부는 application.yml 의

@@ -10,6 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       COMPOSE_FILE: docker-compose.yml:docker-compose.authz-e2e.yml
+      # [2026-09-24] 2026-09-24 첫 API 스캔에서 응답 535건이 429 였다 — 그만큼의 공격이 핸들러에 닿지 못했고,
+      #   응답 차이로 판정하는 규칙(SQL 인젝션 등)은 429 와 200 의 차이를 신호로 읽을 수 있다.
+      #   스캔 환경에서만 한도를 올린다. 요청 제한 자체는 RateLimitFilter 테스트가 따로 검증한다.
+      RATE_LIMIT_REQUESTS_PER_MINUTE: '1000000'
+      RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE: '1000000'
     name: Scan the application
     steps:
       - name: Checkout
@@ -48,7 +53,7 @@ jobs:
           target: 'http://localhost:3000'
           rules_file_name: '.zap/rules.tsv'
           cmd_options: '-a'
-          # full scan 쪽은 false 인데 여기만 기본값(true)이라 **실패 시 GitHub 이슈가 자동 생성**된다.
+          # API 스캔 쪽은 false 인데 여기만 기본값(true)이라 **실패 시 GitHub 이슈가 자동 생성**된다.
           # 스캔이 한 번도 성공한 적이 없어 드러나지 않았을 뿐이다. 리포트는 아티팩트로 남으므로
           # 이슈 자동 생성은 끄고 두 스텝의 거동을 맞춘다.
           allow_issue_writing: false
@@ -58,13 +63,60 @@ jobs:
           #   이름을 분리한다.
           artifact_name: zap_baseline_frontend
           
-      - name: ZAP Full Scan for API
-        uses: zaproxy/action-full-scan@3c58388149901b9a03b7718852c5ba889646c27c  # v0.13.0
+      # [2026-09-24] API 는 OpenAPI 정의를 읽어 문서화된 연산 전체를, 로그인한 상태로 스캔한다.
+      #   종전에는 full-scan 이 `/v3/api-docs` 를 **웹 페이지로** 크롤링했다. 링크를 따라가는 방식이라
+      #   JSON 안의 API 경로를 찾지 못했고, 2026-09-20 리포트의 대상 URL 은 문서·health·robots·sitemap·`/`
+      #   다섯 개뿐이었다 — API 엔드포인트는 한 번도 스캔되지 않았다. 인증도 없어 대부분 401 에서 멈췄을 것이다.
+      #
+      #   스캐너 계정은 E2E 가 쓰는 개발 시드 관리자다(격리 compose 의 버리는 DB — authz-e2e 오버레이).
+      #   계정 값은 E2E 와 같은 모듈에서 읽고 토큰은 로그에서 가린다. 이 단계는 frontend baseline 뒤에 둔다 —
+      #   GITHUB_ENV 는 이후 단계에만 적용되므로 화면 스캔은 종전처럼 로그인 전 상태로 남는다.
+      - name: Authenticate API scanner
+        run: |
+          set -euo pipefail
+          body=$(node --input-type=module -e "import { TEST_CREDENTIALS } from './frontend/e2e/synthetic-test-credentials.mjs'; process.stdout.write(JSON.stringify({ userId: TEST_CREDENTIALS.admin.id, password: TEST_CREDENTIALS.admin.password }))")
+          token=$(curl -fsS -X POST http://localhost:8080/api/v1/auth/login -H 'Content-Type: application/json' -d "$body" \
+            | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const t=JSON.parse(s)?.data?.accessToken;if(!t)process.exit(1);process.stdout.write(t)})")
+          echo "::add-mask::$token"
+          code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $token" http://localhost:8080/api/v1/auth/me)
+          if [ "$code" != "200" ]; then
+            echo "::error::스캐너 토큰으로 /api/v1/auth/me 가 HTTP $code 를 돌려줬다 — 이대로면 인증 없이 스캔한다."
+            exit 1
+          fi
+          {
+            echo "ZAP_AUTH_HEADER=Authorization"
+            echo "ZAP_AUTH_HEADER_VALUE=Bearer $token"
+            echo "ZAP_AUTH_HEADER_SITE=localhost"
+            echo "SCANNER_TOKEN=$token"
+          } >> "$GITHUB_ENV"
+
+      # 능동 스캔은 40분에서 끊는다. 액세스 토큰 유효시간이 60분(jwt.access-token-validity-ms 기본값)이라
+      #   그보다 길면 중간부터 조용히 로그인 없이 스캔하게 된다. 끊긴 범위는 리포트와 아래 요약에 남는다.
+      - name: ZAP API Scan
+        uses: zaproxy/action-api-scan@5158fe4d9d8fcc75ea204db81317cce7f9e5453d  # v0.10.0
         with:
           target: 'http://localhost:8080/v3/api-docs'
+          format: openapi
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-z "-config scanner.maxScanDurationInMins=40"'
           allow_issue_writing: false
-          artifact_name: zap_fullscan_api
-          
+          artifact_name: zap_api_scan
+
+      # 스캔이 스캐너 계정을 바꾸거나(비밀번호·상태·삭제) 토큰이 만료되면 그 뒤 요청은 인증 없이 나갔다.
+      #   그런 결과를 인증 스캔으로 읽지 않도록 세션이 끝까지 살아 있었는지 확인한다.
+      - name: Verify scanner session survived
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $SCANNER_TOKEN" http://localhost:8080/api/v1/auth/me)
+          {
+            echo "### ZAP API 스캔"
+            echo "- 능동 스캔 상한: 40분(액세스 토큰 유효 60분 안)"
+            echo "- 스캔 뒤 스캐너 세션: HTTP $code"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$code" != "200" ]; then
+            echo "::error::스캔 도중 스캐너 세션이 끊겼다(HTTP $code). 이후 요청은 인증 없이 나갔으므로 이 결과를 인증 스캔으로 읽으면 안 된다."
+            exit 1
+          fi
+
       - name: Stop Docker Infrastructure
         if: always()
         run: docker compose down
