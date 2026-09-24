@@ -653,7 +653,7 @@
     },
     {
       "entity": "nuri.business.domain.operation.EventInfo",
-      "dto": "nuri.business.service.operation.dto.EventInfoDto",
+      "dto": "nuri.business.service.operation.dto.EventInfoRequest",
       "fields": [
         "evntNm",
         "bizYr",
@@ -1562,8 +1562,14 @@
       "pack": "demo"
     },
     {
-      "dto": "nuri.business.service.operation.dto.EventInfoDto",
-      "fields": [],
+      "dto": "nuri.business.service.operation.dto.EventInfoRequest",
+      "fields": [
+        {
+          "field": "evntNm",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
       "pack": "demo"
     }
   ],
@@ -1686,7 +1692,7 @@
       "pack": "demo"
     },
     {
-      "dto": "nuri.business.service.operation.dto.EventInfoDto",
+      "dto": "nuri.business.service.operation.dto.EventInfoRequest",
       "fields": [
         "evntBgngYmd",
         "evntEndYmd",

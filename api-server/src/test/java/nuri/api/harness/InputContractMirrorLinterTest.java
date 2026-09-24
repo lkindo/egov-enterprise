@@ -22,10 +22,14 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.beans.Introspector;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -167,13 +171,9 @@ class InputContractMirrorLinterTest {
         List<String> violations = new ArrayList<>();
         for (FieldsBinding binding : census().calendarDateBindings()) {
             for (String name : binding.fields()) {
-                Pattern pattern;
-                try {
-                    pattern = binding.dtoType().getDeclaredField(name).getAnnotation(Pattern.class);
-                } catch (NoSuchFieldException inherited) {
-                    pattern = binding.dtoType().getMethod("get" + Character.toUpperCase(name.charAt(0)) + name.substring(1)).getAnnotation(Pattern.class);
-                }
-                if (pattern == null || !nuri.foundation.core.validation.Ymd.OPTIONAL_PATTERN.equals(pattern.regexp())) {
+                boolean calendar = propertyConstraints(binding.dtoType(), name, Pattern.class).stream()
+                        .anyMatch(pattern -> nuri.foundation.core.validation.Ymd.OPTIONAL_PATTERN.equals(pattern.regexp()));
+                if (!calendar) {
                     violations.add(binding.dtoType().getSimpleName() + "." + name + " — calendar constraint missing");
                 }
                 JsonNode property = openApiProperty(schemas, binding.dtoType(), name, violations);
@@ -741,6 +741,45 @@ class InputContractMirrorLinterTest {
                 .anySatisfy(v -> assertThat(v).contains("type-use @NotNull"));
     }
 
+    @Test
+    @DisplayName("필수 계약 판정: 상위 클래스 필드와 하위 클래스가 재정의한 getter 의 제약을 함께 읽는다")
+    void requiredContractsFollowBeanValidationPropertyRules() {
+        assertThat(describeRequired(requiredContracts(RequiredChild.class)))
+                .containsExactlyInAnyOrder("code:@NotNull groups=[]", "name:@NotBlank groups=[]", "active:@NotNull groups=[]");
+        assertThat(describeRequired(requiredContracts(RequiredParent.class)))
+                .containsExactly("code:@NotNull groups=[]");
+    }
+
+    @SuppressWarnings("unused")
+    private static class RequiredParent {
+        @NotNull
+        private String code;
+        private String name;
+        private boolean active;
+
+        public String getName() {
+            return name;
+        }
+
+        public boolean isActive() {
+            return active;
+        }
+    }
+
+    private static final class RequiredChild extends RequiredParent {
+        @Override
+        @NotBlank
+        public String getName() {
+            return super.getName();
+        }
+
+        @Override
+        @NotNull
+        public boolean isActive() {
+            return super.isActive();
+        }
+    }
+
     private static final class NestedItem {
     }
 
@@ -785,12 +824,23 @@ class InputContractMirrorLinterTest {
     }
 
     private static Field declaredField(Class<?> type, String name, List<String> violations, String layer) {
-        try {
-            return type.getDeclaredField(name);
-        } catch (NoSuchFieldException e) {
+        Field field = hierarchyField(type, name);
+        if (field == null) {
             violations.add(layer + " 필드 부재: " + type.getSimpleName() + "." + name);
-            return null;
         }
+        return field;
+    }
+
+    /** 요청 DTO 가 다른 DTO 를 상속해 제약만 더하는 경우 필드는 상위 클래스에 있다. */
+    private static Field hierarchyField(Class<?> type, String name) {
+        for (Class<?> current = type; current != null && current != Object.class; current = current.getSuperclass()) {
+            try {
+                return current.getDeclaredField(name);
+            } catch (NoSuchFieldException notHere) {
+                // 상위 클래스를 본다.
+            }
+        }
+        return null;
     }
 
     private static JsonNode openApiProperty(JsonNode schemas, Class<?> dtoType, String field,
@@ -812,19 +862,71 @@ class InputContractMirrorLinterTest {
         return "^(?:" + String.join("|", allowedValues) + ")$";
     }
 
+    /**
+     * Bean Validation 은 속성 제약을 필드와 getter 에서, 그 타입과 상위 클래스 모두에서 모은다. 요청 DTO 가 응답 DTO 를
+     * 상속하고 getter 를 재정의해 필수 제약만 더하는 형태(행사 등록 요청)를 필드만 읽으면 그 제약을 지워도 게이트가 모른다.
+     */
     private static Set<RequiredField> requiredContracts(Class<?> dtoType) {
         Set<RequiredField> contracts = new LinkedHashSet<>();
-        for (Field field : dtoType.getDeclaredFields()) {
-            for (Class<? extends Annotation> constraint : List.of(NotNull.class, NotBlank.class, NotEmpty.class)) {
-                Annotation annotation = field.getAnnotation(constraint);
-                if (annotation != null) {
-                    Set<String> groupNames = new TreeSet<>();
-                    Arrays.stream(validationGroups(annotation)).map(Class::getName).forEach(groupNames::add);
-                    contracts.add(new RequiredField(field.getName(), constraint, Set.copyOf(groupNames)));
+        for (Class<?> type = dtoType; type != null && type != Object.class; type = type.getSuperclass()) {
+            for (Field field : type.getDeclaredFields()) {
+                addRequiredContracts(contracts, field.getName(), field);
+            }
+            for (Method method : type.getDeclaredMethods()) {
+                String property = getterProperty(method);
+                if (property != null) {
+                    addRequiredContracts(contracts, property, method);
                 }
             }
         }
         return contracts;
+    }
+
+    private static void addRequiredContracts(Set<RequiredField> contracts, String property, AnnotatedElement element) {
+        for (Class<? extends Annotation> constraint : List.of(NotNull.class, NotBlank.class, NotEmpty.class)) {
+            Annotation annotation = element.getAnnotation(constraint);
+            if (annotation != null) {
+                Set<String> groupNames = new TreeSet<>();
+                Arrays.stream(validationGroups(annotation)).map(Class::getName).forEach(groupNames::add);
+                contracts.add(new RequiredField(property, constraint, Set.copyOf(groupNames)));
+            }
+        }
+    }
+
+    /** 한 속성에 걸린 제약을 필드와 getter 양쪽에서, 상속 계층 전체에서 모은다(Bean Validation 과 같은 범위). */
+    private static <A extends Annotation> List<A> propertyConstraints(Class<?> dtoType, String property, Class<A> constraint) {
+        List<A> found = new ArrayList<>();
+        for (Class<?> type = dtoType; type != null && type != Object.class; type = type.getSuperclass()) {
+            for (Field field : type.getDeclaredFields()) {
+                if (field.getName().equals(property) && field.getAnnotation(constraint) != null) {
+                    found.add(field.getAnnotation(constraint));
+                }
+            }
+            for (Method method : type.getDeclaredMethods()) {
+                if (property.equals(getterProperty(method)) && method.getAnnotation(constraint) != null) {
+                    found.add(method.getAnnotation(constraint));
+                }
+            }
+        }
+        return found;
+    }
+
+    /** Hibernate Validator 의 기본 getter 판정과 같다 — get 은 반환값이 있을 때, is·has 는 boolean 을 돌려줄 때. */
+    private static String getterProperty(Method method) {
+        if (Modifier.isStatic(method.getModifiers()) || method.isSynthetic() || method.isBridge()
+                || method.getParameterCount() != 0) {
+            return null;
+        }
+        String name = method.getName();
+        if (name.startsWith("get") && name.length() > 3 && method.getReturnType() != void.class) {
+            return Introspector.decapitalize(name.substring(3));
+        }
+        for (String prefix : List.of("is", "has")) {
+            if (name.startsWith(prefix) && name.length() > prefix.length() && method.getReturnType() == boolean.class) {
+                return Introspector.decapitalize(name.substring(prefix.length()));
+            }
+        }
+        return null;
     }
 
     private static Class<?>[] validationGroups(Annotation annotation) {
