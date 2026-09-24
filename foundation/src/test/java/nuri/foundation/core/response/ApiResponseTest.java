@@ -1,5 +1,6 @@
 package nuri.foundation.core.response;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.ErrorCode;
@@ -46,10 +47,10 @@ class ApiResponseTest {
     @Test
     @DisplayName("timestamp는 OpenAPI date-time과 같은 ISO-8601 형식으로 직렬화한다")
     void timestampUsesIso8601WireFormat() throws Exception {
-        ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+        ObjectMapper objectMapper = JsonMapper.builder().configureForJackson2().build();
 
         String json = objectMapper.writeValueAsString(ApiResponse.success("data"));
-        String timestamp = objectMapper.readTree(json).path("timestamp").asText();
+        String timestamp = objectMapper.readTree(json).path("timestamp").asString();
 
         assertTrue(timestamp.contains("T"), timestamp);
         assertFalse(timestamp.contains(" "), timestamp);

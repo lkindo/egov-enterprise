@@ -1,6 +1,7 @@
 package nuri.api.contract;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import jakarta.validation.Validation;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -71,7 +72,7 @@ class StandardTextInputValidationTest {
 
     @Test
     void normalizesLegacyJsonBeforeValidationAndRejectsInvalidDigits() throws Exception {
-        var mapper=new ObjectMapper();
+        var mapper=JsonMapper.builder().configureForJackson2().build();
         var type=nuri.business.service.sms.dto.SmsRecptnDto.class;
         try (var factory=Validation.buildDefaultValidatorFactory()) {
             var valid=mapper.readValue("{\"rcptnTelno\":\"010-1234-5678\"}",type);

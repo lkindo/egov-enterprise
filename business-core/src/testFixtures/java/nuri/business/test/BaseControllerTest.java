@@ -1,13 +1,12 @@
 package nuri.business.test;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -19,18 +18,18 @@ public abstract class BaseControllerTest {
 
     protected MockMvc mockMvc;
 
-    // Boot 4 전환 1단계(ADR-0024)는 HTTP 변환기를 Jackson 2 호환 모듈에 둔다 — 운영과 같은 변환기로 검증하려면
-    // 이 standalone 설정도 Jackson 2 를 써야 한다. 두 클래스는 Spring 7 에서 제거 예정이며 2단계(Jackson 3)에서 함께 걷는다.
-    @SuppressWarnings("removal")
+    // 운영 매퍼와 같은 규칙(ADR-0024 2단계): Jackson 3 에 종전 Jackson 2 기본값을 입히고, 종전 설정이 등록하던
+    //   파라미터 이름 모듈·날짜 문자열·알 수 없는 필드 거부를 같은 뜻의 기능으로 켠다.
     @BeforeEach
     void setupInternal() {
-        ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json()
-                .modules(new JavaTimeModule(), new ParameterNamesModule())
-                .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .failOnUnknownProperties(true)
+        JsonMapper objectMapper = JsonMapper.builder()
+                .configureForJackson2()
+                .enable(MapperFeature.DETECT_PARAMETER_NAMES)
+                .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 .build();
-        
-        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
+
+        JacksonJsonHttpMessageConverter converter = new JacksonJsonHttpMessageConverter(objectMapper);
         
         java.util.List<org.springframework.web.method.support.HandlerMethodArgumentResolver> resolvers = new java.util.ArrayList<>();
         resolvers.add(new org.springframework.data.web.PageableHandlerMethodArgumentResolver());

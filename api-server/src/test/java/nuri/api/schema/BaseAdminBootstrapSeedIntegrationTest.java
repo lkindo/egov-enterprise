@@ -1,7 +1,8 @@
 package nuri.api.schema;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -132,19 +133,19 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
     private void assertRoutesSurviveEveryProfile(JsonNode compositionExpectation) throws IOException {
         Path repoRoot = resolveRepoRoot();
         Path manifest = repoRoot.resolve("config").resolve("reusable-base-profiles.json");
-        JsonNode packs = new ObjectMapper().readTree(manifest.toFile()).path("packs");
+        JsonNode packs = JsonMapper.builder().configureForJackson2().build().readTree(manifest.toFile()).path("packs");
 
         List<String> removePaths = new ArrayList<>();
         Set<String> expectedRoutes = new TreeSet<>();
         if (compositionExpectation == null) {
             expectedRoutes.addAll(EXPECTED_LEAF_ROUTES);
             packs.forEach(pack -> pack.path("frontend").path("removePaths")
-                    .forEach(path -> removePaths.add(path.asText())));
+                    .forEach(path -> removePaths.add(path.asString())));
         } else {
             compositionExpectation.path("menus").forEach(menu -> {
-                if (!menu.path("modern_route").isNull()) expectedRoutes.add(menu.path("modern_route").asText());
+                if (!menu.path("modern_route").isNull()) expectedRoutes.add(menu.path("modern_route").asString());
             });
-            compositionExpectation.path("removePaths").forEach(path -> removePaths.add(path.asText()));
+            compositionExpectation.path("removePaths").forEach(path -> removePaths.add(path.asString()));
         }
 
         List<String> violations = new ArrayList<>();
@@ -170,7 +171,7 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
     private JsonNode readCompositionExpectation(Path root) throws Exception {
         Path lockPath = root.resolve("reusable-base-lock.json");
         if (!Files.isRegularFile(lockPath)
-                || !new ObjectMapper().readTree(lockPath.toFile()).has("composition")) {
+                || !JsonMapper.builder().configureForJackson2().build().readTree(lockPath.toFile()).has("composition")) {
             assertThat(Files.exists(root.resolve("config/governance/upstream-review/project-composer-selection.json")))
                     .as("unbound composition cannot replace the legacy bootstrap contract").isFalse();
             return null;
@@ -212,7 +213,7 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
                     fail("Composer bootstrap provenance verification timed out");
                 }
                 assertThat(process.exitValue()).as("Composer bootstrap provenance verification failed").isZero();
-                JsonNode expected = new ObjectMapper().readTree(output.toFile());
+                JsonNode expected = JsonMapper.builder().configureForJackson2().build().readTree(output.toFile());
                 for (String key : List.of("menus", "programs", "operationGrants", "navigationGrants", "removePaths")) {
                     assertThat(expected.path(key).isArray()).as("Missing composer bootstrap expectation: %s", key).isTrue();
                 }
@@ -262,7 +263,7 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
         try (ResultSet result = statement.executeQuery("SELECT COALESCE(json_agg(row_to_json(expected_rows)),'[]'::json)::text FROM ("
                 + query + ") expected_rows")) {
             assertThat(result.next()).isTrue();
-            JsonNode actual = new ObjectMapper().readTree(result.getString(1));
+            JsonNode actual = JsonMapper.builder().configureForJackson2().build().readTree(result.getString(1));
             List<JsonNode> actualRows = new ArrayList<>(), expectedRows = new ArrayList<>();
             actual.forEach(actualRows::add);
             expected.forEach(expectedRows::add);

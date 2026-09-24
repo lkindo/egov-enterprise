@@ -2,19 +2,14 @@ spring:
   main:
     allow-bean-definition-overriding: true
   jackson:
+    # [ADR-0024] 이 파일은 main application.yml 을 가린다. 운영과 같은 Jackson 기본값을 쓰도록 같은 선택을 둔다 —
+    #   빠지면 테스트만 Jackson 3 기본값(날짜·primitive null·정렬 등)으로 검증한다.
+    use-jackson2-defaults: true
+    # Boot 3.5 는 파라미터 이름 모듈을 등록했다. Jackson 2 기본값은 이것을 끄므로 명시로 되돌린다(생성자 바인딩 유지).
+    mapper:
+      detect-parameter-names: true
     serialization:
       fail-on-empty-beans: false
-  # [ADR-0024 1단계] 이 파일은 main application.yml 을 가린다. 운영과 같은 JSON 변환기(Jackson 2 호환)를 쓰도록
-  #   같은 선택을 둔다 — 빠지면 테스트는 Jackson 3, 운영은 Jackson 2 로 서로 다른 변환기를 검증한다.
-  jackson2:
-    serialization:
-      fail-on-empty-beans: false
-  http:
-    converters:
-      preferred-json-mapper: jackson2
-  websocket:
-    messaging:
-      preferred-json-mapper: jackson2
 
 file:
   upload:

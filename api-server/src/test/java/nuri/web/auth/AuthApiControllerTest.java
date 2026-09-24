@@ -6,7 +6,8 @@ import nuri.business.service.auth.AuthService;
 import nuri.business.service.auth.dto.LoginRequest;
 import nuri.business.service.auth.dto.TokenResponse;
 import nuri.foundation.security.jwt.JwtTokenProvider;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ class AuthApiControllerTest {
     private AuthService authService;
     private JwtTokenProvider jwtTokenProvider;
     private nuri.business.service.user.UserService userService;
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private ObjectMapper objectMapper = JsonMapper.builder().configureForJackson2().build();
 
     @BeforeEach
     void setUp() {

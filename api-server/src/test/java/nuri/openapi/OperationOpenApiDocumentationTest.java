@@ -23,7 +23,7 @@ import static nuri.openapi.OpenApiDocumentationTest.isNullableSchema;
 })
 class OperationOpenApiDocumentationTest {
   @Autowired private MockMvc mockMvc;
-  @Autowired private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+  @Autowired private tools.jackson.databind.ObjectMapper objectMapper;
 
   @Test
   @DisplayName("외부인사 중복 등록의 409 오류 봉투를 OpenAPI에 문서화한다")
@@ -32,22 +32,22 @@ class OperationOpenApiDocumentationTest {
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    com.fasterxml.jackson.databind.JsonNode document = objectMapper.readTree(content);
-    com.fasterxml.jackson.databind.JsonNode responses = document
+    tools.jackson.databind.JsonNode document = objectMapper.readTree(content);
+    tools.jackson.databind.JsonNode responses = document
         .path("paths").path("/api/v1/admin/operation/external-hr").path("post")
         .path("responses");
-    com.fasterxml.jackson.databind.JsonNode success = responses.path("200");
-    com.fasterxml.jackson.databind.JsonNode conflict = responses.path("409");
+    tools.jackson.databind.JsonNode success = responses.path("200");
+    tools.jackson.databind.JsonNode conflict = responses.path("409");
 
     assertThat(success.path("content").path("application/json")
-        .path("schema").path("$ref").asText())
+        .path("schema").path("$ref").asString())
         .isEqualTo("#/components/schemas/ApiResponseExternalHrDto");
     assertThat(document.path("components").path("schemas")
         .path("ApiResponseExternalHrDto").isObject()).isTrue();
     assertThat(conflict.isObject()).isTrue();
-    assertThat(conflict.path("description").asText()).contains("중복");
+    assertThat(conflict.path("description").asString()).contains("중복");
     assertThat(conflict.path("content").path("application/json")
-        .path("schema").path("$ref").asText())
+        .path("schema").path("$ref").asString())
         .isEqualTo("#/components/schemas/ApiResponseVoid");
   }
 

@@ -1,7 +1,8 @@
 package nuri.business.service.auth;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -128,10 +129,10 @@ public class AuthorizationAdministrationService {
         SecurityUtil.assertPermission("AUTHRT_READ");
         List<Operation> operations = new ArrayList<>();
         try (var input = new ClassPathResource("authorization/permission-catalog.json").getInputStream()) {
-            for (JsonNode item : new ObjectMapper().readTree(input).path("permissions")) {
-                operations.add(new Operation(item.path("code").asText(),item.path("domain").asText(),item.path("action").asText(),item.path("name").asText()));
+            for (JsonNode item : JsonMapper.builder().configureForJackson2().build().readTree(input).path("permissions")) {
+                operations.add(new Operation(item.path("code").asString(),item.path("domain").asString(),item.path("action").asString(),item.path("name").asString()));
             }
-        } catch (IOException ex) { throw new IllegalStateException("Permission catalog unavailable",ex); }
+        } catch (IOException | JacksonException ex) { throw new IllegalStateException("Permission catalog unavailable",ex); }
         var navigation = jdbc.query("SELECT menu_sn::text,menu_nm,CASE WHEN up_menu_sn IS NULL OR up_menu_sn=0 THEN NULL ELSE up_menu_sn::text END FROM tb_menu_info ORDER BY menu_ordr NULLS LAST,menu_sn",
                 (rs,n) -> new Navigation(rs.getString(1),rs.getString(2),rs.getString(3)));
         return new Catalog(List.copyOf(operations),navigation,PermissionCodes.CATALOG_VERSION);

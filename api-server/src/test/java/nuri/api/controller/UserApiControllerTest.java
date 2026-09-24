@@ -1,7 +1,7 @@
 package nuri.api.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.*;
@@ -34,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class UserApiControllerTest extends BaseControllerTest {
     
     private UserService userService;
-    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private final ObjectMapper objectMapper = JsonMapper.builder().configureForJackson2().build();
     
     // LoginUser 어노테이션 리졸버 모킹을 위해 CustomUserDetails 생성
     private final CustomUserDetails mockUserDetails = nuri.business.support.AuthorizationTestPrincipal.principal("testuser", "testuser", "USER");
@@ -67,7 +67,7 @@ public class UserApiControllerTest extends BaseControllerTest {
      * 직렬화 시 제거되므로, 요청(write) 검증 테스트에서는 명시적으로 다시 실어준다.
      */
     private String toUserRequestJson(UserDto dto) throws Exception {
-        com.fasterxml.jackson.databind.node.ObjectNode node = objectMapper.valueToTree(dto);
+        tools.jackson.databind.node.ObjectNode node = objectMapper.valueToTree(dto);
         if (dto.pswd() != null) node.put("pswd", dto.pswd());
         if (dto.pswdHint() != null) node.put("pswdHint", dto.pswdHint());
         if (dto.pswdCrans() != null) node.put("pswdCrans", dto.pswdCrans());

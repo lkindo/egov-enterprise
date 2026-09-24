@@ -52,7 +52,7 @@
         },
         {
           "file": "api-server/src/main/java/nuri/config/websocket/WebSocketCookieAuthenticationFilter.java",
-          "sha256": "9c0f4dea466d6be146e4fd31528d0cb1bba5e0af04561445d74dce18d298f7d3"
+          "sha256": "884972eb7ed63f7e0cb1eec832a0ec3a1aea7686d8d3b5b5412460a438ef7698"
         },
         {
           "file": "api-server/src/main/java/nuri/config/websocket/WebSocketConfig.java",
@@ -142,15 +142,15 @@
         },
         {
           "file": "api-server/build.gradle",
-          "sha256": "693d759829cf2470c8eda070838455aa0cd5f57f42d9594ad0b702b33b743e1b"
+          "sha256": "7ecf3475d800366a91567b4ecf45bde21cc8d39715d7cb8788697412e57c8411"
         },
         {
           "file": "foundation/build.gradle",
-          "sha256": "31e34dadc1695f85119b32ccb2b05ed35799ecb018054aa8dd51dc015a099f1e"
+          "sha256": "fd15c5256839fed66be5bc1b408bb81f46c8a455e8a6bad12888be667259dab3"
         },
         {
           "file": "business-core/build.gradle",
-          "sha256": "cd0f195fbdeb40bcc30984a1daca0741c83c6a5c4489fb915654b4001cef6891"
+          "sha256": "20c057d65b712637d621e9dc31162c6a7f244206022eb4c218bda78baeeeb871"
         },
         {
           "file": "business-app/build.gradle",
@@ -169,7 +169,7 @@
       "file": "api-server/src/main/java/nuri/config/websocket/WebSocketCookieAuthenticationFilter.java",
       "line": 69,
       "fingerprint": "3bdaa522982a3650:1",
-      "sourceSha256": "9c0f4dea466d6be146e4fd31528d0cb1bba5e0af04561445d74dce18d298f7d3",
+      "sourceSha256": "884972eb7ed63f7e0cb1eec832a0ec3a1aea7686d8d3b5b5412460a438ef7698",
       "expiresOn": "2026-12-08",
       "reason": "Missing or invalid credentials clear the security context, return HTTP 401 and terminate before the transport chain. Only signature-validated JWTs with fresh enabled account details and a nonblank current authorization version reach the chain; conditional authentication-state inspection does not bypass access control.",
       "id": "SAST-FP-008",

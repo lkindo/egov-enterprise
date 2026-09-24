@@ -1,7 +1,8 @@
 package nuri.api.harness;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class ZeroDowntimeMigrationLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(ZeroDowntimeMigrationLinterTest.class);
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = JsonMapper.builder().configureForJackson2().build();
 
     private static final String WAIVER_REGISTRY_PATH = "config/governance/zdm-waivers.json";
     private static final String LEGACY_STATUS = "legacy-debt-unapproved";
@@ -325,9 +326,9 @@ class ZeroDowntimeMigrationLinterTest {
                         + " | 합성 픽스처 |"));
     }
 
-    private static com.fasterxml.jackson.databind.node.ObjectNode release(
+    private static tools.jackson.databind.node.ObjectNode release(
             String tag, LocalDate deployedAt, String evidence) {
-        com.fasterxml.jackson.databind.node.ObjectNode node = JSON.createObjectNode();
+        tools.jackson.databind.node.ObjectNode node = JSON.createObjectNode();
         node.put("tag", tag);
         node.put("deployedAt", deployedAt.toString());
         node.put("environment", "institution-production");
@@ -343,8 +344,8 @@ class ZeroDowntimeMigrationLinterTest {
 
     private static List<String> expandViolations(
             Path repoRoot, Path migrationDir, String waivedPath, String expandPath,
-            com.fasterxml.jackson.databind.node.ObjectNode release, LocalDate today) {
-        com.fasterxml.jackson.databind.node.ObjectNode entry = JSON.createObjectNode();
+            tools.jackson.databind.node.ObjectNode release, LocalDate today) {
+        tools.jackson.databind.node.ObjectNode entry = JSON.createObjectNode();
         entry.put("id", "ZDM-2099-0001");
         if (expandPath != null) {
             entry.put("expandMigration", expandPath);
@@ -359,7 +360,7 @@ class ZeroDowntimeMigrationLinterTest {
     }
 
     /** 기본 합성 릴리스 — 관측 기간을 지난 유효한 배포다. */
-    private static com.fasterxml.jackson.databind.node.ObjectNode validRelease(LocalDate deployedAt) {
+    private static tools.jackson.databind.node.ObjectNode validRelease(LocalDate deployedAt) {
         return release("v0.2.0", deployedAt, "docs/release-log.md");
     }
     private static void validateWaiverRegistry(
@@ -387,17 +388,17 @@ class ZeroDowntimeMigrationLinterTest {
         if (root.path("schemaVersion").asInt(-1) != 1) {
             violations.add("waiver registry schemaVersion은 1이어야 합니다.");
         }
-        if (!"zero-downtime-migration-waiver-registry".equals(root.path("authority").asText())) {
+        if (!"zero-downtime-migration-waiver-registry".equals(root.path("authority").asString())) {
             violations.add("waiver registry authority가 올바르지 않습니다.");
         }
-        if (!"-- linter:ignore ZDM-YYYY-NNNN <reason>".equals(root.path("markerFormat").asText())) {
+        if (!"-- linter:ignore ZDM-YYYY-NNNN <reason>".equals(root.path("markerFormat").asString())) {
             violations.add("waiver registry markerFormat이 구현 계약과 다릅니다.");
         }
-        if (!root.path("legacyDebtPolicy").asText().toLowerCase()
+        if (!root.path("legacyDebtPolicy").asString().toLowerCase()
                 .contains("not retroactive approval")) {
             violations.add("legacyDebtPolicy에 기존 marker가 소급 승인이 아님을 명시해야 합니다.");
         }
-        String contractReleasePolicy = root.path("contractReleasePolicy").asText().toLowerCase();
+        String contractReleasePolicy = root.path("contractReleasePolicy").asString().toLowerCase();
         if (!contractReleasePolicy.contains("observation window")
                 || !contractReleasePolicy.contains("not retroactive approval")) {
             violations.add("contractReleasePolicy에 관측 기간 규칙과 기존 waiver가 소급 승인이"
@@ -720,12 +721,12 @@ class ZeroDowntimeMigrationLinterTest {
         }
 
         JsonNode declared = entry.path("expandMigration");
-        if (!declared.isTextual() || declared.asText().isBlank()) {
+        if (!declared.isString() || declared.asString().isBlank()) {
             violations.add(label + ": Contract(DROP/RENAME) waiver에는 선행 Expand 마이그레이션을"
                     + " expandMigration 으로 지목해야 합니다 — " + waivedPath);
             return;
         }
-        String expandPath = declared.asText();
+        String expandPath = declared.asString();
         if (expandPath.equals(waivedPath)) {
             violations.add(label + ": expandMigration이 waiver 대상과 같습니다 — 같은 마이그레이션에서"
                     + " Expand 와 Contract 를 함께 하면 무중단이 깨집니다.");
@@ -765,7 +766,7 @@ class ZeroDowntimeMigrationLinterTest {
     private static void validateExpandReleaseObservation(
             Path repoRoot, JsonNode entry, String waivedPath, String expandPath,
             String label, LocalDate today, List<String> violations) {
-        String id = entry.path("id").asText("");
+        String id = entry.path("id").asString("");
         if (PRE_POLICY_CONTRACT_WAIVERS.contains(id + "|" + waivedPath + "|" + expandPath)) {
             return; // 정책 시행 전 동결분 — 소급 승인이 아니다.
         }
@@ -776,9 +777,9 @@ class ZeroDowntimeMigrationLinterTest {
                     + " expandRelease{tag,deployedAt,environment,evidence} 로 남겨야 합니다 — " + waivedPath);
             return;
         }
-        String tag = release.path("tag").asText("");
-        String environment = release.path("environment").asText("");
-        String evidence = release.path("evidence").asText("");
+        String tag = release.path("tag").asString("");
+        String environment = release.path("environment").asString("");
+        String evidence = release.path("evidence").asString("");
         if (!RELEASE_TAG.matcher(tag).matches()) {
             violations.add(label + ".expandRelease: tag는 vX.Y.Z 릴리스 태그여야 합니다 — " + tag);
         }
@@ -786,7 +787,7 @@ class ZeroDowntimeMigrationLinterTest {
             violations.add(label + ".expandRelease: 배포 환경을 적어야 합니다.");
         }
         LocalDate deployedAt = parseDate(
-                release.path("deployedAt").asText(""), label + ".expandRelease.deployedAt", violations);
+                release.path("deployedAt").asString(""), label + ".expandRelease.deployedAt", violations);
         if (deployedAt == null) {
             violations.add(label + ".expandRelease: deployedAt이 없습니다 — " + waivedPath);
         } else if (deployedAt.isAfter(today)) {
@@ -908,11 +909,11 @@ class ZeroDowntimeMigrationLinterTest {
 
     private static String requiredText(JsonNode entry, String field, String label, List<String> violations) {
         JsonNode value = entry.path(field);
-        if (!value.isTextual() || value.asText().isBlank()) {
+        if (!value.isString() || value.asString().isBlank()) {
             violations.add(label + ": 필수 문자열 필드 누락/공백 — " + field);
             return "";
         }
-        return value.asText();
+        return value.asString();
     }
 
     private static LocalDate parseDate(String value, String label, List<String> violations) {

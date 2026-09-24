@@ -1,7 +1,8 @@
 package nuri.business.security.authorization;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 import java.io.IOException;
 import java.util.List;
 import nuri.foundation.security.service.CustomUserDetails;
@@ -19,8 +20,9 @@ public class PermissionPolicy {
 
     public PermissionPolicy() {
         try (var stream = new ClassPathResource("authorization/operation-bindings.json").getInputStream()) {
-            bindings = List.copyOf(new ObjectMapper().readValue(stream, new TypeReference<List<Binding>>() {}));
-        } catch (IOException e) {
+            bindings = List.copyOf(JsonMapper.builder().configureForJackson2().build()
+                    .readValue(stream, new TypeReference<List<Binding>>() {}));
+        } catch (IOException | JacksonException e) {
             throw new IllegalStateException("Operation policy cannot be loaded", e);
         }
     }

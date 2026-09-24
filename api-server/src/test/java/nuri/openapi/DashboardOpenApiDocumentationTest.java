@@ -23,7 +23,7 @@ import static nuri.openapi.OpenApiDocumentationTest.isNullableSchema;
 })
 class DashboardOpenApiDocumentationTest {
   @Autowired private MockMvc mockMvc;
-  @Autowired private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+  @Autowired private tools.jackson.databind.ObjectMapper objectMapper;
 
   @Test
   @DisplayName("대시보드는 Map이 아닌 필수 필드가 있는 응답 DTO를 문서화한다")
@@ -32,12 +32,12 @@ class DashboardOpenApiDocumentationTest {
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    com.fasterxml.jackson.databind.JsonNode document =
-        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content);
-    com.fasterxml.jackson.databind.JsonNode schema = document.path("components")
+    tools.jackson.databind.JsonNode document =
+        tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build().readTree(content);
+    tools.jackson.databind.JsonNode schema = document.path("components")
         .path("schemas").path("DashboardResponse");
     java.util.List<String> required = schema.path("required").valueStream()
-        .map(com.fasterxml.jackson.databind.JsonNode::asText).toList();
+        .map(tools.jackson.databind.JsonNode::asString).toList();
 
     assertThat(schema.isMissingNode()).isFalse();
     assertThat(schema.path("properties").has("taskList")).isTrue();
@@ -46,7 +46,7 @@ class DashboardOpenApiDocumentationTest {
     assertThat(schema.path("properties").has("extensions")).isFalse();
     assertThat(required).contains("taskList", "notiList", "pendingApprovalCount");
     // [2026-09-15 DEC-OPS-100] 결재 대기 건수는 셀 수 없으면 null 이다. 문서가 그 사실을 말해야 생성 계약이 null 을 받는다.
-    com.fasterxml.jackson.databind.JsonNode pending = schema.path("properties").path("pendingApprovalCount");
+    tools.jackson.databind.JsonNode pending = schema.path("properties").path("pendingApprovalCount");
     assertThat(pending.path("nullable").asBoolean(false)
         || (pending.path("type").isArray() && pending.path("type").toString().contains("null"))).isTrue();
   }

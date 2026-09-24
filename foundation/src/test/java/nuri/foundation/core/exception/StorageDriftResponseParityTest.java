@@ -1,7 +1,8 @@
 package nuri.foundation.core.exception;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import nuri.foundation.core.storage.StorageObjectMissingException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -71,7 +72,7 @@ class StorageDriftResponseParityTest {
          * 같아 통과하지만 Linux 에서는 항상 다르다(2026-08-26 CI 실측 — 로컬 green, CI red).
          * 지키려는 것은 "타임스탬프까지 같다" 가 아니라 "타임스탬프 말고는 다른 게 없다" 다.
          */
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonMapper.builder().configureForJackson2().build();
         TypeReference<Map<String, Object>> asMap = new TypeReference<>() {};
         Map<String, Object> plainFields = mapper.readValue(plainBody, asMap);
         Map<String, Object> driftFields = mapper.readValue(driftBody, asMap);

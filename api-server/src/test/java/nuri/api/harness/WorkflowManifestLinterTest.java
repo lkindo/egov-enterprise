@@ -1,7 +1,8 @@
 package nuri.api.harness;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -149,7 +150,7 @@ class WorkflowManifestLinterTest {
             fail("게이트 무결성 파손: required check SSOT 를 찾을 수 없습니다 — "
                     + requiredChecksPath.toAbsolutePath());
         }
-        JsonNode requiredChecks = new ObjectMapper()
+        JsonNode requiredChecks = JsonMapper.builder().configureForJackson2().build()
                 .readTree(HarnessSourceIndex.read(requiredChecksPath))
                 .path("requiredChecks");
         if (!requiredChecks.isArray() || requiredChecks.isEmpty()) {
@@ -471,7 +472,7 @@ class WorkflowManifestLinterTest {
                 }
                 String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
                 assertThat(process.exitValue()).as("생성물 CI 계약 검사 실행 실패: %s", output).isZero();
-                artifactContract = new ObjectMapper().readTree(output);
+                artifactContract = JsonMapper.builder().configureForJackson2().build().readTree(output);
             } catch (InterruptedException interrupted) {
                 process.destroyForcibly();
                 Thread.currentThread().interrupt();
@@ -490,7 +491,7 @@ class WorkflowManifestLinterTest {
     }
 
     private static List<String> artifactGraphViolations(JsonNode scopes) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonMapper.builder().configureForJackson2().build();
         JsonNode common = mapper.readTree("""
                 [["node", ["scripts/verify-reusable-governance.mjs"]],
                  ["node", ["--test", "scripts/reusable-ui-governance-contract.test.mjs"]],
@@ -508,10 +509,10 @@ class WorkflowManifestLinterTest {
                 """);
         List<String> violations = new ArrayList<>();
         for (String scope : List.of("contracts", "backend", "frontend", "full")) {
-            var expected = mapper.createArrayNode().addAll((com.fasterxml.jackson.databind.node.ArrayNode) common);
+            var expected = mapper.createArrayNode().addAll((tools.jackson.databind.node.ArrayNode) common);
             if (scope.equals("backend") || scope.equals("full")) expected.add(backend);
             if (scope.equals("frontend") || scope.equals("full")) {
-                expected.addAll((com.fasterxml.jackson.databind.node.ArrayNode) frontend);
+                expected.addAll((tools.jackson.databind.node.ArrayNode) frontend);
             }
             if (!expected.equals(scopes.path(scope))) violations.add("Unexpected product command graph: " + scope);
         }
@@ -523,19 +524,19 @@ class WorkflowManifestLinterTest {
         // 잃어도 통과하는 회귀는 이 부정 대조군 자체가 red를 낸다.
         for (int index = 0; index < actual.path("full").size(); index++) {
             JsonNode missingStage = actual.deepCopy();
-            ((com.fasterxml.jackson.databind.node.ArrayNode) missingStage.path("full")).remove(index);
+            ((tools.jackson.databind.node.ArrayNode) missingStage.path("full")).remove(index);
             assertThat(artifactGraphViolations(missingStage)).contains("Unexpected product command graph: full");
         }
         for (String task : List.of("compileJava", "compileTestJava", ":api-server:harnessTest",
                 ":api-server:schemaValidationTest")) {
             JsonNode missingTask = actual.deepCopy();
-            var arguments = (com.fasterxml.jackson.databind.node.ArrayNode) missingTask.path("full").get(3).get(1);
+            var arguments = (tools.jackson.databind.node.ArrayNode) missingTask.path("full").get(3).get(1);
             for (int index = arguments.size() - 1; index >= 0; index--) {
-                if (arguments.get(index).asText().equals(task)) arguments.remove(index);
+                if (arguments.get(index).asString().equals(task)) arguments.remove(index);
             }
             assertThat(artifactGraphViolations(missingTask)).contains("Unexpected product command graph: full");
         }
-        var changedScope = (com.fasterxml.jackson.databind.node.ObjectNode) actual.deepCopy();
+        var changedScope = (tools.jackson.databind.node.ObjectNode) actual.deepCopy();
         changedScope.set("full", actual.path("contracts"));
         assertThat(artifactGraphViolations(changedScope)).contains("Unexpected product command graph: full");
     }

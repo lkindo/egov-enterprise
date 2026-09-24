@@ -26,7 +26,7 @@ import static org.hamcrest.Matchers.nullValue;
 public class DeptAuthorityApiControllerTest extends BaseControllerTest {
 
     private UserAuthorityManageService userAuthorityManageService;
-    private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+    private tools.jackson.databind.ObjectMapper objectMapper = tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build();
 
     @Override
     protected Object getController() {

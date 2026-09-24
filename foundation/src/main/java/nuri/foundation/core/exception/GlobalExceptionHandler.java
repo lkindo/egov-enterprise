@@ -217,9 +217,9 @@ public class GlobalExceptionHandler {
         log.warn(">>> JSON Deserialization Failed: {}", e.getMessage());
         String detailMessage = resolve("handler.message_not_readable", null,
                 "잘못된 데이터 형식이거나 정의되지 않은 필드가 포함되어 있습니다.");
-        if (e.getCause() instanceof com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException) {
-            com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException cause =
-                (com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException) e.getCause();
+        // [ADR-0024 2단계] HTTP 변환기가 Jackson 3 이므로 원인 예외도 tools.jackson 타입이다. 종전 Jackson 2 타입으로
+        //   판별하면 조용히 빗나가 필드 이름이 없는 일반 메시지로 떨어진다.
+        if (e.getCause() instanceof tools.jackson.databind.exc.UnrecognizedPropertyException cause) {
             detailMessage = resolve("handler.unrecognized_field", new Object[]{cause.getPropertyName()},
                     String.format("정의되지 않은 필드 '%s'가 포함되어 있습니다.", cause.getPropertyName()));
         }

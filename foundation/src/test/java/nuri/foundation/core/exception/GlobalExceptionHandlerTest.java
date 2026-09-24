@@ -15,7 +15,7 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import tools.jackson.databind.exc.UnrecognizedPropertyException;
 
 import java.util.List;
 
@@ -197,6 +197,43 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertFalse(response.getBody().success());
         assertTrue(response.getBody().message().contains("unknownField"));
+    }
+
+    /**
+     * 위 테스트는 원인 예외를 직접 만들어 넣으므로 실제 변환기가 어떤 타입을 던지는지는 보지 못한다.
+     * Jackson 3 변환기의 원인 예외는 tools.jackson 타입이며, 핸들러가 다른 버전 타입으로 판별하면 필드 이름이 없는
+     * 일반 메시지로 조용히 떨어진다(ADR-0024 2단계). 실제 변환기를 거쳐 확인한다.
+     */
+    @Test
+    @DisplayName("실제 Jackson 3 변환기의 알 수 없는 필드 오류도 필드 이름을 알린다")
+    void unknownFieldThroughRealConverterNamesTheField() throws Exception {
+        tools.jackson.databind.json.JsonMapper mapper = tools.jackson.databind.json.JsonMapper.builder()
+                .configureForJackson2()
+                .enable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
+        org.springframework.test.web.servlet.MockMvc mockMvc = org.springframework.test.web.servlet.setup.MockMvcBuilders
+                .standaloneSetup(new ProbeController())
+                .setControllerAdvice(handler)
+                .setMessageConverters(new org.springframework.http.converter.json.JacksonJsonHttpMessageConverter(mapper))
+                .build();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/probe")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"a\",\"strayField\":1}"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.message")
+                        .value(org.hamcrest.Matchers.containsString("strayField")));
+    }
+
+    @org.springframework.web.bind.annotation.RestController
+    static class ProbeController {
+        record Probe(String name) {
+        }
+
+        @org.springframework.web.bind.annotation.PostMapping("/probe")
+        String accept(@org.springframework.web.bind.annotation.RequestBody Probe probe) {
+            return probe.name();
+        }
     }
 
     @Test

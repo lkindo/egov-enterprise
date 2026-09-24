@@ -1,7 +1,8 @@
 package nuri.api.harness;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -34,7 +35,7 @@ public final class ReusableHarnessProfile {
 
     public static ReusableHarnessProfile current() { return CURRENT; }
     public boolean projected() { return projection != null; }
-    boolean customDomains() { return projected() && "custom".equals(projection.path("profile").asText()); }
+    boolean customDomains() { return projected() && "custom".equals(projection.path("profile").asString()); }
 
     public int count(String key, int canonical) {
         if (!projected()) return canonical;
@@ -65,22 +66,22 @@ public final class ReusableHarnessProfile {
         List<JsonNode> matches = new ArrayList<>();
         for (String collection : List.of("retained", "removed")) {
             for (JsonNode row : projection.path(collection)) {
-                String fqcn = row.path("type").asText();
+                String fqcn = row.path("type").asString();
                 if (fqcn.equals(name) || fqcn.substring(fqcn.lastIndexOf('.') + 1).equals(name)) matches.add(row);
             }
         }
         if (matches.size() != 1) throw new IllegalStateException("Ambiguous/unregistered projected type: " + name);
-        return retainsSource(matches.getFirst().path("path").asText());
+        return retainsSource(matches.getFirst().path("path").asString());
     }
 
     private boolean contains(String collection, String field, String value) {
-        for (JsonNode row : projection.path(collection)) if (value.equals(row.path(field).asText())) return true;
+        for (JsonNode row : projection.path(collection)) if (value.equals(row.path(field).asString())) return true;
         return false;
     }
 
     static ReusableHarnessProfile load(Path root) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonMapper.builder().configureForJackson2().build();
             JsonNode profiles = mapper.readTree(root.resolve("config/reusable-base-profiles.json").toFile());
             Path lockPath = root.resolve("reusable-base-lock.json");
             boolean marked = !profiles.path("sourcePolicy").path("generatedProfile").isMissingNode();
@@ -89,10 +90,10 @@ public final class ReusableHarnessProfile {
             }
             JsonNode manifest = mapper.readTree(root.resolve(MANIFEST).toFile());
             JsonNode lock = mapper.readTree(lockPath.toFile());
-            String profile = manifest.path("profile").asText();
+            String profile = manifest.path("profile").asString();
             if (manifest.path("schemaVersion").asInt() != 1 || profile.isBlank()
-                    || !profile.equals(profiles.path("sourcePolicy").path("generatedProfile").asText())
-                    || !profile.equals(lock.path("profile").asText())
+                    || !profile.equals(profiles.path("sourcePolicy").path("generatedProfile").asString())
+                    || !profile.equals(lock.path("profile").asString())
                     || !manifest.path("packs").equals(lock.path("packs"))
                     || !manifest.path("packs").equals(profiles.path("profiles").path(profile).path("packs"))
                     || !manifest.path("excludedDomains").equals(lock.path("java").path("excludedDomains"))
@@ -102,12 +103,12 @@ public final class ReusableHarnessProfile {
             String digest = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
                     .digest(HarnessSourceIndex.read(root.resolve("config/reusable-base-profiles.json"))
                             .getBytes(java.nio.charset.StandardCharsets.UTF_8)));
-            if (!digest.equals(manifest.path("profileManifestSha256").asText())) {
+            if (!digest.equals(manifest.path("profileManifestSha256").asString())) {
                 throw new IllegalStateException("Reusable harness profile manifest hash mismatch");
             }
             Set<String> expected = new TreeSet<>();
             for (JsonNode row : manifest.path("retained")) {
-                String path = row.path("path").asText();
+                String path = row.path("path").asString();
                 Path resolved = root.resolve(path).normalize();
                 if (path.isBlank() || !resolved.startsWith(root.normalize()) || !expected.add(path)) {
                     throw new IllegalStateException("Invalid/duplicate projected source path: " + path);

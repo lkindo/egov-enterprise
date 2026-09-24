@@ -5,7 +5,8 @@ import nuri.business.service.operation.ExternalHrService;
 import nuri.business.service.operation.RewardManageService;
 import nuri.business.service.operation.dto.EventInfoDto;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ class OperationApiControllerTest {
     private ExternalHrService hrService;
     private RewardManageService rewardService;
     
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private ObjectMapper objectMapper = JsonMapper.builder().configureForJackson2().build();
 
     @BeforeEach
     void setUp() {

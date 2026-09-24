@@ -1,6 +1,7 @@
 package nuri.business.service.user.dto;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.entity.Role;
@@ -98,7 +99,7 @@ class UserDtoTest {
                 .pswdCrans("바둑이")
                 .build();
 
-        String json = new ObjectMapper().writeValueAsString(dto);
+        String json = JsonMapper.builder().configureForJackson2().build().writeValueAsString(dto);
 
         // 키 자체가 응답에 존재하지 않아야 한다
         assertFalse(json.contains("\"pswd\""), "응답 JSON 에 pswd 키가 노출됨: " + json);

@@ -1,6 +1,7 @@
 package nuri.api.controller.business.report;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import nuri.business.service.report.WorkReportService;
 import nuri.business.service.report.dto.WorkReportDto;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
@@ -51,7 +52,7 @@ class WorkReportApiControllerTest {
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
+        objectMapper = JsonMapper.builder().configureForJackson2().build();
         mockMvc = MockMvcBuilders.standaloneSetup(workReportApiController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())

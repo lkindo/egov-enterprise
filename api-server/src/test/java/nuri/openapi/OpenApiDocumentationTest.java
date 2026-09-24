@@ -37,7 +37,7 @@ class OpenApiDocumentationTest {
   private MockMvc mockMvc;
 
   @Autowired
-  private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+  private tools.jackson.databind.ObjectMapper objectMapper;
 
   @Test
   @DisplayName("Swagger UI 엔드포인트 접근성 확인")
@@ -78,8 +78,8 @@ class OpenApiDocumentationTest {
         .andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
 
-    com.fasterxml.jackson.databind.JsonNode schemas =
-        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content)
+    tools.jackson.databind.JsonNode schemas =
+        tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build().readTree(content)
             .path("components").path("schemas");
     assertNullableProperties(schemas.path("AuthorGroupProjection"),
         "groupId", "mberTyNm", "authrtId");
@@ -93,7 +93,7 @@ class OpenApiDocumentationTest {
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    com.fasterxml.jackson.databind.JsonNode schemas = objectMapper.readTree(content)
+    tools.jackson.databind.JsonNode schemas = objectMapper.readTree(content)
         .path("components").path("schemas");
 
     nuri.business.service.user.dto.UserDto user =
@@ -101,7 +101,7 @@ class OpenApiDocumentationTest {
             .userId("user01")
             .userNm("홍길동")
             .build();
-    com.fasterxml.jackson.databind.JsonNode userJson = objectMapper.valueToTree(user);
+    tools.jackson.databind.JsonNode userJson = objectMapper.valueToTree(user);
     assertThat(userJson.has("esntlId"))
         .as("UserDto optional non-null schema requires null-valued response fields to be absent")
         .isFalse();
@@ -112,7 +112,7 @@ class OpenApiDocumentationTest {
     nuri.api.controller.foundation.auth.dto.CurrentUserResponse currentUser =
         new nuri.api.controller.foundation.auth.dto.CurrentUserResponse(
             "user01", null, "홍길동", null, null, null);
-    com.fasterxml.jackson.databind.JsonNode currentUserJson = objectMapper.valueToTree(currentUser);
+    tools.jackson.databind.JsonNode currentUserJson = objectMapper.valueToTree(currentUser);
     assertThat(currentUserJson.has("esntlId"))
         .as("CurrentUserResponse optional non-null schema requires null-valued fields to be absent")
         .isFalse();
@@ -128,21 +128,21 @@ class OpenApiDocumentationTest {
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    com.fasterxml.jackson.databind.JsonNode document =
-        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content);
-    com.fasterxml.jackson.databind.JsonNode itemSchema = document.path("paths")
+    tools.jackson.databind.JsonNode document =
+        tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build().readTree(content);
+    tools.jackson.databind.JsonNode itemSchema = document.path("paths")
         .path("/api/v1/admin/system/departments/batch-hierarchy")
         .path("put").path("requestBody").path("content").path("application/json")
         .path("schema").path("items");
-    String reference = itemSchema.path("$ref").asText();
+    String reference = itemSchema.path("$ref").asString();
     String schemaName = reference.substring(reference.lastIndexOf('/') + 1);
-    com.fasterxml.jackson.databind.JsonNode schema =
+    tools.jackson.databind.JsonNode schema =
         document.path("components").path("schemas").path(schemaName);
 
     assertThat(schema.path("properties").propertyStream().map(java.util.Map.Entry::getKey).toList())
         .containsExactlyInAnyOrder("ognzId", "upOgnzId", "sortOrdr");
     assertThat(schema.path("required").valueStream()
-        .map(com.fasterxml.jackson.databind.JsonNode::asText).toList())
+        .map(tools.jackson.databind.JsonNode::asString).toList())
         .contains("ognzId");
     assertThat(schema.path("properties").has("ognzNm")).isFalse();
   }
@@ -156,16 +156,16 @@ class OpenApiDocumentationTest {
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    com.fasterxml.jackson.databind.JsonNode document =
-        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content);
-    com.fasterxml.jackson.databind.JsonNode request = document.path("paths")
+    tools.jackson.databind.JsonNode document =
+        tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build().readTree(content);
+    tools.jackson.databind.JsonNode request = document.path("paths")
         .path("/api/v1/users/me").path("put")
         .path("requestBody").path("content").path("application/json").path("schema");
-    String schemaName = request.path("$ref").asText()
-        .substring(request.path("$ref").asText().lastIndexOf('/') + 1);
-    com.fasterxml.jackson.databind.JsonNode schema = document.path("components").path("schemas").path(schemaName);
+    String schemaName = request.path("$ref").asString()
+        .substring(request.path("$ref").asString().lastIndexOf('/') + 1);
+    tools.jackson.databind.JsonNode schema = document.path("components").path("schemas").path(schemaName);
     java.util.List<String> required = schema.path("required").valueStream()
-        .map(com.fasterxml.jackson.databind.JsonNode::asText).toList();
+        .map(tools.jackson.databind.JsonNode::asString).toList();
 
     assertThat(required).contains("userNm");
     assertThat(schema.path("properties").has("userId")).isFalse();
@@ -174,12 +174,12 @@ class OpenApiDocumentationTest {
     assertThat(schema.path("properties").has("ognzId")).isFalse();
     assertThat(schema.path("properties").has("pstinstCd")).isFalse();
 
-    com.fasterxml.jackson.databind.JsonNode adminRequest = document.path("paths")
+    tools.jackson.databind.JsonNode adminRequest = document.path("paths")
         .path("/api/v1/admin/system/users/{userId}").path("put")
         .path("requestBody").path("content").path("application/json").path("schema");
-    String adminSchemaName = adminRequest.path("$ref").asText()
-        .substring(adminRequest.path("$ref").asText().lastIndexOf('/') + 1);
-    com.fasterxml.jackson.databind.JsonNode adminSchema =
+    String adminSchemaName = adminRequest.path("$ref").asString()
+        .substring(adminRequest.path("$ref").asString().lastIndexOf('/') + 1);
+    tools.jackson.databind.JsonNode adminSchema =
         document.path("components").path("schemas").path(adminSchemaName);
     assertThat(adminSchema.path("properties").has("groupId")).isTrue();
     assertThat(adminSchema.path("properties").has("ognzId")).isTrue();
@@ -195,7 +195,7 @@ class OpenApiDocumentationTest {
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    com.fasterxml.jackson.databind.JsonNode document = objectMapper.readTree(content);
+    tools.jackson.databind.JsonNode document = objectMapper.readTree(content);
 
     CredentialRequestTargetScan scan = scanCredentialRequestTargets(document);
 
@@ -220,11 +220,11 @@ class OpenApiDocumentationTest {
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    com.fasterxml.jackson.databind.JsonNode document = objectMapper.readTree(content);
+    tools.jackson.databind.JsonNode document = objectMapper.readTree(content);
 
-    com.fasterxml.jackson.databind.JsonNode schema =
+    tools.jackson.databind.JsonNode schema =
         document.path("components").path("schemas").path("SatisfactionDto");
-    com.fasterxml.jackson.databind.JsonNode delete = document.path("paths")
+    tools.jackson.databind.JsonNode delete = document.path("paths")
         .path("/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}")
         .path("delete");
 
@@ -233,15 +233,15 @@ class OpenApiDocumentationTest {
     assertThat(delete.isObject()).isTrue();
     assertThat(delete.path("parameters").valueStream()
         .map(parameter -> resolveLocalReference(document, parameter))
-        .filter(parameter -> "query".equals(parameter.path("in").asText()))
-        .map(parameter -> parameter.path("name").asText())
+        .filter(parameter -> "query".equals(parameter.path("in").asString()))
+        .map(parameter -> parameter.path("name").asString())
         .toList()).isEmpty();
   }
 
   @Test
   @DisplayName("자격증명 request-target 게이트는 합성 pswd/token 위반을 red로 분류한다")
   void credentialRequestTargetGate_rejectsSyntheticViolations() throws Exception {
-    com.fasterxml.jackson.databind.JsonNode synthetic = objectMapper.readTree("""
+    tools.jackson.databind.JsonNode synthetic = objectMapper.readTree("""
         {
           "openapi": "3.0.1",
           "paths": {
@@ -287,7 +287,7 @@ class OpenApiDocumentationTest {
   @Test
   @DisplayName("자격증명 request-target 게이트는 해석할 수 없는 parameter ref를 fail-closed 한다")
   void credentialRequestTargetGate_rejectsUnresolvedReferences() throws Exception {
-    com.fasterxml.jackson.databind.JsonNode synthetic = objectMapper.readTree("""
+    tools.jackson.databind.JsonNode synthetic = objectMapper.readTree("""
         {
           "openapi": "3.0.1",
           "paths": {
@@ -306,18 +306,18 @@ class OpenApiDocumentationTest {
   }
 
   private static CredentialRequestTargetScan scanCredentialRequestTargets(
-      com.fasterxml.jackson.databind.JsonNode document) {
+      tools.jackson.databind.JsonNode document) {
     java.util.List<String> violations = new java.util.ArrayList<>();
     int[] requestTargetCounts = new int[3];
     int operationCount = 0;
-    java.util.Iterator<java.util.Map.Entry<String, com.fasterxml.jackson.databind.JsonNode>> paths =
+    java.util.Iterator<java.util.Map.Entry<String, tools.jackson.databind.JsonNode>> paths =
         document.path("paths").properties().iterator();
     while (paths.hasNext()) {
-      java.util.Map.Entry<String, com.fasterxml.jackson.databind.JsonNode> pathEntry = paths.next();
+      java.util.Map.Entry<String, tools.jackson.databind.JsonNode> pathEntry = paths.next();
       String path = pathEntry.getKey();
-      com.fasterxml.jackson.databind.JsonNode pathItem = pathEntry.getValue();
+      tools.jackson.databind.JsonNode pathItem = pathEntry.getValue();
       for (String method : HTTP_METHODS) {
-        com.fasterxml.jackson.databind.JsonNode operation = pathItem.path(method);
+        tools.jackson.databind.JsonNode operation = pathItem.path(method);
         if (!operation.isObject()) {
           continue;
         }
@@ -338,19 +338,19 @@ class OpenApiDocumentationTest {
   }
 
   private static void collectCredentialParameters(
-      com.fasterxml.jackson.databind.JsonNode document,
+      tools.jackson.databind.JsonNode document,
       String path,
       String method,
-      com.fasterxml.jackson.databind.JsonNode parameters,
+      tools.jackson.databind.JsonNode parameters,
       java.util.List<String> violations,
       int[] requestTargetCounts) {
     if (!parameters.isArray()) {
       return;
     }
-    for (com.fasterxml.jackson.databind.JsonNode unresolved : parameters) {
-      com.fasterxml.jackson.databind.JsonNode parameter = resolveLocalReference(document, unresolved);
-      String location = parameter.path("in").asText();
-      String name = parameter.path("name").asText();
+    for (tools.jackson.databind.JsonNode unresolved : parameters) {
+      tools.jackson.databind.JsonNode parameter = resolveLocalReference(document, unresolved);
+      String location = parameter.path("in").asString();
+      String name = parameter.path("name").asString();
       if ("query".equals(location) || "path".equals(location)) {
         requestTargetCounts[0]++;
         requestTargetCounts["query".equals(location) ? 1 : 2]++;
@@ -362,13 +362,13 @@ class OpenApiDocumentationTest {
     }
   }
 
-  private static com.fasterxml.jackson.databind.JsonNode resolveLocalReference(
-      com.fasterxml.jackson.databind.JsonNode document,
-      com.fasterxml.jackson.databind.JsonNode candidate) {
+  private static tools.jackson.databind.JsonNode resolveLocalReference(
+      tools.jackson.databind.JsonNode document,
+      tools.jackson.databind.JsonNode candidate) {
     java.util.Set<String> visited = new java.util.HashSet<>();
-    com.fasterxml.jackson.databind.JsonNode resolved = candidate;
+    tools.jackson.databind.JsonNode resolved = candidate;
     while (resolved.has("$ref")) {
-      String reference = resolved.path("$ref").asText();
+      String reference = resolved.path("$ref").asString();
       if (!reference.startsWith("#/") || !visited.add(reference)) {
         throw new IllegalArgumentException("OpenAPI parameter ref is external or cyclic: " + reference);
       }
@@ -388,14 +388,14 @@ class OpenApiDocumentationTest {
       java.util.List<String> violations) {
   }
 
-  static boolean isNullableSchema(com.fasterxml.jackson.databind.JsonNode schema) {
+  static boolean isNullableSchema(tools.jackson.databind.JsonNode schema) {
     if (schema.path("nullable").asBoolean(false)) {
       return true;
     }
-    com.fasterxml.jackson.databind.JsonNode type = schema.path("type");
+    tools.jackson.databind.JsonNode type = schema.path("type");
     if (type.isArray()) {
-      for (com.fasterxml.jackson.databind.JsonNode candidate : type) {
-        if ("null".equals(candidate.asText())) {
+      for (tools.jackson.databind.JsonNode candidate : type) {
+        if ("null".equals(candidate.asString())) {
           return true;
         }
       }
@@ -404,22 +404,22 @@ class OpenApiDocumentationTest {
   }
 
   static void assertNullableProperties(
-      com.fasterxml.jackson.databind.JsonNode schema, String... propertyNames) {
+      tools.jackson.databind.JsonNode schema, String... propertyNames) {
     assertThat(schema.isMissingNode()).isFalse();
-    com.fasterxml.jackson.databind.JsonNode properties = schema.path("properties");
+    tools.jackson.databind.JsonNode properties = schema.path("properties");
     for (String propertyName : propertyNames) {
       assertThat(isNullableSchema(properties.path(propertyName)))
-          .as("%s.%s must accept explicit JSON null", schema.path("name").asText("schema"), propertyName)
+          .as("%s.%s must accept explicit JSON null", schema.path("name").asString("schema"), propertyName)
           .isTrue();
     }
   }
 
-  private static boolean containsNullType(com.fasterxml.jackson.databind.JsonNode alternatives) {
+  private static boolean containsNullType(tools.jackson.databind.JsonNode alternatives) {
     if (!alternatives.isArray()) {
       return false;
     }
-    for (com.fasterxml.jackson.databind.JsonNode alternative : alternatives) {
-      if ("null".equals(alternative.path("type").asText())) {
+    for (tools.jackson.databind.JsonNode alternative : alternatives) {
+      if ("null".equals(alternative.path("type").asString())) {
         return true;
       }
     }
@@ -447,75 +447,23 @@ class OpenApiDocumentationTest {
    * 선언 순서까지 흔들려 계약 게이트 3종이 동시에 재생성을 요구한다. 순서 안정성은 별건이다.
    */
   private static String normalizeForCommit(String rawJson) throws Exception {
-    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+    tools.jackson.databind.ObjectMapper mapper = tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build();
     Object tree = mapper.readValue(rawJson, Object.class);
 
-    com.fasterxml.jackson.core.util.DefaultIndenter indenter =
-        new com.fasterxml.jackson.core.util.DefaultIndenter("  ", "\n");
-    // ⚠ 순서 주의: `withArrayIndenter`/`withSeparators` 는 내부에서 `new DefaultPrettyPrinter(this)` 를
-    //   반환하므로 **서브클래스가 유실된다**. 그래서 설정을 먼저 얹은 뒤 마지막에 감싼다.
-    //   (반대로 하면 빈 배열이 다시 `[ ]` 가 되고 재생성본이 커밋본과 어긋난다 — 실측으로 확인했다.)
-    com.fasterxml.jackson.core.util.DefaultPrettyPrinter configured =
-        new com.fasterxml.jackson.core.util.DefaultPrettyPrinter()
+    tools.jackson.core.util.DefaultIndenter indenter =
+        new tools.jackson.core.util.DefaultIndenter("  ", "\n");
+    // JSON.stringify 는 `"key": value` 이고 빈 컨테이너가 `[]`·`{}` 다. Jackson 기본은 콜론 **앞**에도 공백을
+    //   넣고 빈 컨테이너 안에 공백을 둔다(`[ ]`). 한 글자만 어긋나도 재생성본과 커밋본이 매번 달라져
+    //   api-docs 게이트가 영구 red 가 된다. Jackson 2 에서는 빈 컨테이너를 서브클래스로 고쳤지만(_nesting 까지
+    //   되돌려야 했다), Jackson 3 는 빈 컨테이너 구분자를 Separators 로 받는다(ADR-0024 2단계).
+    tools.jackson.core.util.DefaultPrettyPrinter printer =
+        new tools.jackson.core.util.DefaultPrettyPrinter(tools.jackson.core.util.Separators.createDefaultInstance()
+                .withObjectNameValueSpacing(tools.jackson.core.util.Separators.Spacing.AFTER)
+                .withArrayEmptySeparator("")
+                .withObjectEmptySeparator(""))
             .withObjectIndenter(indenter)
-            .withArrayIndenter(indenter)
-            // JSON.stringify 는 `"key": value` 다. Jackson 기본은 콜론 **앞**에도 공백을 넣는다.
-            .withSeparators(com.fasterxml.jackson.core.util.Separators.createDefaultInstance()
-                .withObjectFieldValueSpacing(com.fasterxml.jackson.core.util.Separators.Spacing.AFTER));
+            .withArrayIndenter(indenter);
 
-    return mapper.writer(new JsonStringifyPrinter(configured)).writeValueAsString(tree) + "\n";
-  }
-
-  /**
-   * 빈 컨테이너를 {@code []} / <code>{}</code> 로 쓴다.
-   *
-   * <p>Jackson 의 {@code DefaultPrettyPrinter} 는 값이 0개여도 구분 공백을 넣어 {@code [ ]} 를 만든다.
-   * {@code JSON.stringify} 는 {@code []} 다. 이 한 글자가 어긋나면 재생성본과 커밋본이 매번 달라져
-   * {@code api-docs-gate}(ci.yml:183)가 영구 red 가 된다 — 실측으로 이 차이 하나만 남았었다.
-   */
-  private static final class JsonStringifyPrinter extends com.fasterxml.jackson.core.util.DefaultPrettyPrinter {
-    private static final long serialVersionUID = 1L;
-
-    JsonStringifyPrinter() {
-      super();
-    }
-
-    JsonStringifyPrinter(com.fasterxml.jackson.core.util.DefaultPrettyPrinter base) {
-      super(base);
-    }
-
-    @Override
-    public com.fasterxml.jackson.core.util.DefaultPrettyPrinter createInstance() {
-      return new JsonStringifyPrinter(this);
-    }
-
-    // ⚠ 들여쓰기 상태(_nesting)는 반드시 함께 되돌린다. 이걸 빠뜨리면 빈 컨테이너 **이후의 모든 줄**이
-    //   한 단계씩 밀려 파일 전체가 어긋난다(실측으로 한 번 겪었다). 상위 구현이 하는 일을 그대로 하되
-    //   값이 0개일 때 공백만 쓰지 않는다.
-    @Override
-    public void writeEndArray(com.fasterxml.jackson.core.JsonGenerator g, int nrOfValues)
-        throws java.io.IOException {
-      if (nrOfValues == 0) {
-        if (!_arrayIndenter.isInline()) {
-          --_nesting;
-        }
-        g.writeRaw(']');
-        return;
-      }
-      super.writeEndArray(g, nrOfValues);
-    }
-
-    @Override
-    public void writeEndObject(com.fasterxml.jackson.core.JsonGenerator g, int nrOfEntries)
-        throws java.io.IOException {
-      if (nrOfEntries == 0) {
-        if (!_objectIndenter.isInline()) {
-          --_nesting;
-        }
-        g.writeRaw('}');
-        return;
-      }
-      super.writeEndObject(g, nrOfEntries);
-    }
+    return mapper.writer().with(printer).writeValueAsString(tree) + "\n";
   }
 }

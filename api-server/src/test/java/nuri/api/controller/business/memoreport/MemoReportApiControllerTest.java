@@ -3,7 +3,8 @@ package nuri.api.controller.business.memoreport;
 import nuri.business.service.memoreport.MemoReportService;
 import nuri.business.service.memoreport.dto.MemoReportDto;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ class MemoReportApiControllerTest {
 
     private MockMvc mockMvc;
     private MemoReportService memoReportService;
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private ObjectMapper objectMapper = JsonMapper.builder().configureForJackson2().build();
 
     @BeforeEach
     void setUp() {

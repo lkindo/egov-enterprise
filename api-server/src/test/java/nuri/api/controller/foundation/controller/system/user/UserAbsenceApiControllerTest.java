@@ -4,7 +4,7 @@ import nuri.business.domain.user.dto.UserAbsenceDto;
 import nuri.business.service.system.user.UserAbsenceService;
 import nuri.api.support.ApiHttpIntegrationTest;
 import nuri.business.security.annotation.WithMockCustomUser;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -23,7 +23,7 @@ import static nuri.openapi.OpenApiDocumentationTest.isNullableSchema;
 })
 class BoardOpenApiDocumentationTest {
   @Autowired private MockMvc mockMvc;
-  @Autowired private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+  @Autowired private tools.jackson.databind.ObjectMapper objectMapper;
 
   @Test
   @DisplayName("공개 FAQ 전용 경로와 closed response schema가 OpenAPI에 노출된다")
@@ -47,8 +47,8 @@ class BoardOpenApiDocumentationTest {
             .value(hasItem("scrtYn")))
         .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
 
-    com.fasterxml.jackson.databind.JsonNode schemas =
-        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content)
+    tools.jackson.databind.JsonNode schemas =
+        tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build().readTree(content)
             .path("components").path("schemas");
     assertNullableProperties(schemas.path("BoardDto"),
         "ansSn", "pstTtl", "pstCn", "upPstSn", "sortOrdr", "ttlBoldYn", "inqCnt",
@@ -68,10 +68,10 @@ class BoardOpenApiDocumentationTest {
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    com.fasterxml.jackson.databind.JsonNode operation =
-        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content)
+    tools.jackson.databind.JsonNode operation =
+        tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build().readTree(content)
             .path("paths").path("/api/v1/boards/{bbsId}/posts/with-files").path("post");
-    com.fasterxml.jackson.databind.JsonNode mediaTypes = operation.path("requestBody").path("content");
+    tools.jackson.databind.JsonNode mediaTypes = operation.path("requestBody").path("content");
 
     assertThat(mediaTypes.has("multipart/form-data")).isTrue();
     assertThat(mediaTypes.has("application/json")).isFalse();
@@ -86,17 +86,17 @@ class BoardOpenApiDocumentationTest {
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    com.fasterxml.jackson.databind.JsonNode schemas =
-        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content)
+    tools.jackson.databind.JsonNode schemas =
+        tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build().readTree(content)
             .path("components").path("schemas");
-    com.fasterxml.jackson.databind.JsonNode summary = schemas.path("BoardMasterSummaryResponse");
-    com.fasterxml.jackson.databind.JsonNode detail = schemas.path("BoardMasterDetailResponse");
+    tools.jackson.databind.JsonNode summary = schemas.path("BoardMasterSummaryResponse");
+    tools.jackson.databind.JsonNode detail = schemas.path("BoardMasterDetailResponse");
 
     assertThat(summary.path("properties").has("bbsId")).isTrue();
     assertThat(summary.path("properties").has("atchPsbltyFileSz")).isFalse();
     assertThat(detail.path("properties").has("atchPsbltyFileSz")).isTrue();
     assertThat(detail.path("required").valueStream()
-        .map(com.fasterxml.jackson.databind.JsonNode::asText).toList())
+        .map(tools.jackson.databind.JsonNode::asString).toList())
         .doesNotContain("atchPsbltyFileSz");
   }
 
