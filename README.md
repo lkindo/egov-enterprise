@@ -1,7 +1,7 @@
 # eGov Enterprise Modernization (전자정부 프레임워크 모더니제이션)
 
 > **전자정부 표준프레임워크 5.0 기반 엔터프라이즈 모더니제이션 프로젝트**  
-> 레거시 JSP/Spring 기반의 공통 컴포넌트를 **Next.js 16 (App Router)**와 **Spring Boot 3.5 + JPA** 기반의 현대적인 Full-stack 아키텍처로 전환한 프로젝트입니다.
+> 레거시 JSP/Spring 기반의 공통 컴포넌트를 **Next.js 16 (App Router)**와 **Spring Boot 4.1 + JPA** 기반의 현대적인 Full-stack 아키텍처로 전환한 프로젝트입니다.
 
 ---
 
@@ -12,7 +12,7 @@
 본 프로젝트는 전자정부 표준프레임워크의 방대한 공통 컴포넌트를 최신 기술 스택으로 재구축하여, 엔터프라이즈 환경에서의 확장성, 유연성, 그리고 사용자 경험(UX)을 극대화하는 것을 목표로 합니다.
 
 - **Frontend**: 차세대 React 프레임워크인 Next.js 16을 활용한 고성능 UI/UX 구현.
-- **Backend**: Spring Boot 3.5 및 JPA를 통한 비즈니스 로직의 현대화 및 도메인 중심 설계.
+- **Backend**: Spring Boot 4.1 및 JPA를 통한 비즈니스 로직의 현대화 및 도메인 중심 설계.
 - **Visual Analytics**: 데이터 시각화 라이브러리를 활용한 통계 대시보드 제공.
 - **재사용 베이스 프레임워크**: 이 저장소는 **신규 SI 구축·레거시 재개발을 위한 참조 구현과 재사용 베이스**다. 프로필 기반 추출과 레거시 이관 경계는 구현되어 있으나, 운영 투입 전에는 [활성 gap](./.agent/memory/known-gaps.md)과 환경별 검증을 확인한다. 시작은 [온보딩 런북](./docs/03-guides/getting-started.md)을 참조한다.
 
@@ -30,12 +30,12 @@
 - **Icons**: Lucide React
 
 ### Backend
-- **Core**: Spring Boot 3.5.16, Java 21 (LTS)
+- **Core**: Spring Boot 4.1.1(Spring Framework 7), Java 21 (LTS)
 - **Database**: PostgreSQL (JPA/Hibernate)
 - **Architecture**: 멀티 모듈 (`foundation` / `business-core` / `business-app` / `api-server`) + 레거시 이관 도구 `migration-tool`. 단방향 의존·도메인 격리(ArchUnit)
 - **Mapping**: MapStruct (엔티티↔DTO 컴파일타임 매핑 표준)
 - **DB Migration**: Flyway (`V2_0` Postgres 표준 베이스라인 — 빈 DB 부팅 가능)
-- **Security**: Spring Security 6.x, JWT (Json Web Token)
+- **Security**: Spring Security 7.x, JWT (Json Web Token)
 - **API**: RESTful API with OpenAPI 3.0
 - **Build**: Gradle 9.7.1 (Version Catalog)
 

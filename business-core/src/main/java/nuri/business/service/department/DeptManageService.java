@@ -29,7 +29,7 @@ public class DeptManageService {
     /** 부서 삭제 시 소속 사용자 잔존 여부 확인용. */
     private final UserRepository userRepository;
 
-    public Page<DeptManageDto> getDeptManageList(String keyword, @org.springframework.lang.NonNull Pageable pageable) {
+    public Page<DeptManageDto> getDeptManageList(String keyword, @org.jspecify.annotations.NonNull Pageable pageable) {
         return deptManageRepository.searchDeptManages(keyword, pageable).map(deptManageMapper::toDto);
     }
 

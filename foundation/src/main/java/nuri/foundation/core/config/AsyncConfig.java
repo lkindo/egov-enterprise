@@ -10,6 +10,13 @@ import org.springframework.retry.annotation.EnableRetry;
 import java.util.concurrent.Executor;
 
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnThreading;
+import org.springframework.boot.task.SimpleAsyncTaskSchedulerBuilder;
+import org.springframework.boot.task.ThreadPoolTaskSchedulerBuilder;
+import org.springframework.boot.thread.Threading;
+import org.springframework.scheduling.concurrent.SimpleAsyncTaskScheduler;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -167,6 +174,41 @@ public class AsyncConfig implements AsyncConfigurer {
         executor.initialize();
         return executor;
     }
+
+    /**
+     * {@code @Scheduled} 전용 스케줄러(가상 스레드). [2026-09-24 Boot 4 전환, ADR-0024]
+     *
+     * <p>Boot 는 {@code TaskScheduler} 빈이 하나라도 있으면 기본 스케줄러({@code taskScheduler})를 만들지 않는다.
+     * api-server 의 WebSocket 메시지 브로커가 하트비트용 {@code messageBrokerTaskScheduler} 를 등록하므로, Boot 4 에서는
+     * {@code @Scheduled} 작업(로그 누적·보존 파기 등)이 그 풀({@code MessageBroker-*})에서 STOMP 하트비트와 스레드를
+     * 나눠 쓰게 됐다(E2E 로그 실측). Boot 3.5 에서는 {@code scheduling-*} 에서 돌았다.
+     *
+     * <p>Boot 의 {@code DefaultTaskSchedulerConfiguration} 을 import 하지 않는 이유: 그 빈은 {@code @ConditionalOnBean(빌더)}
+     * 로 걸려 있어 사용자 설정 단계에서는 빌더가 아직 등록되지 않아 <b>조용히 만들어지지 않는다</b>. 같은 빌더를 주입받아
+     * 같은 이름으로 만들면 {@code spring.task.scheduling.*} 속성과 가상 스레드 설정이 Boot 기본값과 똑같이 적용된다.
+     * 스케줄 처리기는 {@code TaskScheduler} 가 여럿이면 이 이름({@code taskScheduler})의 빈을 고른다.
+     *
+     * <p>Boot 자동 설정이 없는 컨텍스트(단위 테스트의 순수 Spring 컨텍스트)에는 빌더가 없으므로 Boot 기본값과 같은
+     * 스레드 접두로 만든 빌더를 쓴다.
+     */
+    @Bean(name = "taskScheduler")
+    @ConditionalOnThreading(Threading.VIRTUAL)
+    public SimpleAsyncTaskScheduler taskSchedulerVirtualThreads(ObjectProvider<SimpleAsyncTaskSchedulerBuilder> builder) {
+        return builder.getIfAvailable(() -> new SimpleAsyncTaskSchedulerBuilder()
+                .virtualThreads(true)
+                .threadNamePrefix(SCHEDULING_THREAD_PREFIX)).build();
+    }
+
+    /** {@code @Scheduled} 전용 스케줄러(플랫폼 스레드). 이유는 {@link #taskSchedulerVirtualThreads} 와 같다. */
+    @Bean(name = "taskScheduler")
+    @ConditionalOnThreading(Threading.PLATFORM)
+    public ThreadPoolTaskScheduler taskScheduler(ObjectProvider<ThreadPoolTaskSchedulerBuilder> builder) {
+        return builder.getIfAvailable(() -> new ThreadPoolTaskSchedulerBuilder()
+                .threadNamePrefix(SCHEDULING_THREAD_PREFIX)).build();
+    }
+
+    /** Boot 기본값({@code spring.task.scheduling.thread-name-prefix})과 같은 스케줄 스레드 접두. */
+    private static final String SCHEDULING_THREAD_PREFIX = "scheduling-";
 
     /**
      * [회복탄력성] void 반환 @Async(감사 로그·알림 발송 등)에서 던져진 예외는 기본 핸들러가 단순 로깅만 하고

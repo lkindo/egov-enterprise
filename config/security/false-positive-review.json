@@ -16,11 +16,11 @@
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "4dab5fff4171e94f270f5878a46bc414dc7598818911127fa12d3f2459e16f89"
+          "sha256": "f011ac0d51ff4f8792a573f27d93e95722f69f8130edb398d5e9ee23b1103544"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java",
-          "sha256": "629e3acb0820a16e72eb40f929320b053744a44979f469eb33c2c287d0c2b780"
+          "sha256": "24283596433ef8c4d1acbf78c7f74afbd2215c237770a9f22828f8f890e71542"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/filter/OriginValidationFilter.java",
@@ -74,11 +74,11 @@
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "4dab5fff4171e94f270f5878a46bc414dc7598818911127fa12d3f2459e16f89"
+          "sha256": "f011ac0d51ff4f8792a573f27d93e95722f69f8130edb398d5e9ee23b1103544"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java",
-          "sha256": "629e3acb0820a16e72eb40f929320b053744a44979f469eb33c2c287d0c2b780"
+          "sha256": "24283596433ef8c4d1acbf78c7f74afbd2215c237770a9f22828f8f890e71542"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/filter/OriginValidationFilter.java",
@@ -138,19 +138,19 @@
       "supportingSources": [
         {
           "file": "build.gradle",
-          "sha256": "26818a5557a45678d12ff2a7aa921dc46ea8a10d9e07fb5166819d87e5ef55ac"
+          "sha256": "71e2aa99ed4bc1ce5c714175167676fdbffca1c00f3953532c8c4e9fbf6e2b92"
         },
         {
           "file": "api-server/build.gradle",
-          "sha256": "339f0925439334738ca38b28743d1c997a311d6e34c3a448fdcbd8f6a53f364d"
+          "sha256": "693d759829cf2470c8eda070838455aa0cd5f57f42d9594ad0b702b33b743e1b"
         },
         {
           "file": "foundation/build.gradle",
-          "sha256": "b9901fa1cb44636daf9272c2ca858c6150860a2846c825f60980fde79e654068"
+          "sha256": "31e34dadc1695f85119b32ccb2b05ed35799ecb018054aa8dd51dc015a099f1e"
         },
         {
           "file": "business-core/build.gradle",
-          "sha256": "a8b7f18cc222c41f19517b1305997bcec0576af80ce96dcabcc4a983fb7efed2"
+          "sha256": "cd0f195fbdeb40bcc30984a1daca0741c83c6a5c4489fb915654b4001cef6891"
         },
         {
           "file": "business-app/build.gradle",
@@ -158,7 +158,7 @@
         },
         {
           "file": "migration-tool/build.gradle",
-          "sha256": "5a22ab49de562fc598afe425fdf6aedb5bbe377218c859f2ee5244698eb539fd"
+          "sha256": "8633cd6208ed096406e2c408a8e6a5fa3625036f46f5d102478ad5381351bbbb"
         }
       ]
     },
@@ -176,7 +176,7 @@
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "4dab5fff4171e94f270f5878a46bc414dc7598818911127fa12d3f2459e16f89"
+          "sha256": "f011ac0d51ff4f8792a573f27d93e95722f69f8130edb398d5e9ee23b1103544"
         },
         {
           "file": "business-core/src/main/java/nuri/business/security/iam/JpaUserAuthAdapter.java",
@@ -192,7 +192,7 @@
         },
         {
           "file": "business-core/src/main/java/nuri/business/security/authorization/OperationAuthorizationManager.java",
-          "sha256": "414bee304a8497bea9b0311700be0f84bd1efc88152474b392a376134814ce19"
+          "sha256": "ef02dd9085928e9f5a58fedcd9a5e54a16d222b1fa91c053b5712652876c2697"
         },
         {
           "file": "api-server/src/test/java/nuri/config/websocket/WebSocketCookieAuthenticationFilterTest.java",

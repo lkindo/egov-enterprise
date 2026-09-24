@@ -273,7 +273,7 @@ public class OpenApiConfig {
                         .description("""
                                 ### 전자정부 프레임워크 모더니제이션 API 문서
                                 
-                                본 API 는 Next.js 15 + Spring Boot 3.4 기반의 전자정부 표준프레임워크 공통 컴포넌트를 제공합니다.
+                                본 API 는 Next.js 16 + Spring Boot 4.1 기반의 전자정부 표준프레임워크 공통 컴포넌트를 제공합니다.
                                 
                                 #### 주요 기능
                                 - 시스템 관리 (공통코드, 메뉴, 권한)

@@ -33,7 +33,7 @@ test('single root preserves upstream security conventions and isolated source/te
   assert.deepEqual(inspectSingleModuleLayout(root).errors, []);
   assert.doesNotMatch(groovyCode(readFileSync(join(root, 'settings.gradle'), 'utf8')), /\binclude\b/);
   const build = readFileSync(join(root, 'build.gradle'), 'utf8');
-  for (const token of ["ext['tomcat.version']", "ext['jackson-bom.version']", "key != 'user.dir'", '"-Werror"',
+  for (const token of ['mavenBom "org.springframework.boot:spring-boot-dependencies:', "ext['tomcat.version']", "version { require '", "key != 'user.dir'", '"-Werror"',
     'minimum = 0.85', 'minimum = 0.70', 'minimum = 0.80', 'minimum = 0.55', "archiveFileName = 'app.jar'",
     "migration.drill.classpath", "migration.drill.jar", 'ignoreFailures = false',
     "tasks.named('bootRun') { workingDir file('api-server') }", "tasks.named('assemble') { dependsOn 'bootJar', 'migrationBootJar' }"]) assert.ok(build.includes(token), token);

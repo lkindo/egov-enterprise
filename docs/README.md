@@ -97,6 +97,7 @@
 | [ADR-0021](02-architecture/decisions/ADR-0021-isolated-layered-testing-process.md) | 책임별 테스트 재편·격리 실행·전체 회귀와 영향 shadow |
 | [ADR-0022](02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md) | PR·통합 push의 독립 모듈 영향 분류, 커버리지·required 보존과 Gradle 캐시 |
 | [ADR-0023](02-architecture/decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md) | PR의 검증된 E2E spec 선별, main 전수와 Gradle 단일 캐시 writer |
+| [ADR-0024](02-architecture/decisions/ADR-0024-spring-boot-4-two-phase-migration.md) | Spring Boot 4.1 두 단계 전환과 조용히 바뀌는 동작의 고정 |
 
 ## 03-guides — 개발 지침
 

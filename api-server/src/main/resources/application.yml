@@ -27,6 +27,20 @@ spring:
       fail-on-empty-beans: false
     deserialization:
       fail-on-unknown-properties: true
+  # [ADR-0024 1단계] Boot 4 에서 spring.jackson.* 은 Jackson 3 매퍼에만 적용된다. HTTP 변환기는 Jackson 2 호환
+  #   모듈에 두므로 같은 값을 spring.jackson2.* 로 따로 준다 — 빠뜨리면 알 수 없는 필드 거부가 조용히 풀린다.
+  jackson2:
+    serialization:
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: true
+  http:
+    converters:
+      preferred-json-mapper: jackson2
+  # WebSocket(STOMP) 메시지 변환도 같은 이유로 Jackson 2 에 둔다 — HTTP 와 실시간 알림이 같은 직렬화를 쓴다.
+  websocket:
+    messaging:
+      preferred-json-mapper: jackson2
   sql:
     init:
       mode: never

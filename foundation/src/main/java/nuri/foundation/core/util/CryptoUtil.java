@@ -6,7 +6,7 @@ import org.egovframe.rte.fdl.crypto.EgovPasswordEncoder;
 import org.egovframe.rte.fdl.crypto.impl.EgovARIACryptoServiceImpl;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;

@@ -1,6 +1,8 @@
 package nuri.business.service.file;
 
 import lombok.extern.slf4j.Slf4j;
+import nuri.foundation.core.community.CommunityBoardAccessPort;
+import org.jspecify.annotations.Nullable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -31,7 +33,7 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
 
     private final JdbcTemplate jdbcTemplate;
     private final List<AttachmentSource> sources;
-    private final nuri.foundation.core.community.CommunityBoardAccessPort communityAccess;
+    private final CommunityBoardAccessPort communityAccess;
 
     public JdbcAttachmentReferenceResolver(
             JdbcTemplate jdbcTemplate,
@@ -42,7 +44,7 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
     @org.springframework.beans.factory.annotation.Autowired
     public JdbcAttachmentReferenceResolver(JdbcTemplate jdbcTemplate,
             List<AttachmentSourceContributor> contributors,
-            @org.springframework.lang.Nullable nuri.foundation.core.community.CommunityBoardAccessPort communityAccess) {
+            @Nullable CommunityBoardAccessPort communityAccess) {
         this.jdbcTemplate = jdbcTemplate;
         this.communityAccess = communityAccess;
         this.sources = contributors.stream()

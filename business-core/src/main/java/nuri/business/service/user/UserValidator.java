@@ -2,7 +2,7 @@ package nuri.business.service.user;
 
 import nuri.business.domain.user.entity.User;
 import nuri.business.service.user.dto.UserSignupRequest;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.springframework.util.StringUtils;
 import java.util.regex.Pattern;
 

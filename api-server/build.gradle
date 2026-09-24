@@ -10,6 +10,11 @@ dependencies {
     implementation project(':business-app')
 
     implementation 'org.flywaydb:flyway-database-postgresql'
+    // Boot 4 는 Flyway 자동 설정을 이 starter 로 옮겼다. flyway-core 만 두면 마이그레이션이 조용히 실행되지 않는다.
+    implementation 'org.springframework.boot:spring-boot-starter-flyway'
+    // [ADR-0024 1단계] 본체가 쓰는 Jackson 2 API 를 명시한다(jackson-2-bom 관리). 2단계에서 tools.jackson 으로 바꾼다.
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation libs.springdoc.openapi
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
@@ -42,7 +47,7 @@ dependencies {
     implementation libs.scribejava.apis
     implementation libs.scribejava.core
 
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test-classic'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation libs.h2
     testImplementation testFixtures(project(':business-core'))

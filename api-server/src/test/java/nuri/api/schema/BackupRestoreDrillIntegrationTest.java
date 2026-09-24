@@ -6,7 +6,7 @@ import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.images.builder.Transferable;
@@ -28,8 +28,8 @@ import static org.assertj.core.api.Assertions.*;
 @Tag("schema-validation")
 @Testcontainers
 class BackupRestoreDrillIntegrationTest {
-    @Container static final PostgreSQLContainer<?> SOURCE = new PostgreSQLContainer<>("postgres:17-alpine");
-    @Container static final PostgreSQLContainer<?> RESTORED = new PostgreSQLContainer<>("postgres:17-alpine");
+    @Container static final PostgreSQLContainer SOURCE = new PostgreSQLContainer("postgres:17-alpine");
+    @Container static final PostgreSQLContainer RESTORED = new PostgreSQLContainer("postgres:17-alpine");
 
     @Test
     void restoresFullMigratedDatabaseAttachmentsAndMatchingEncryptionKey() throws Exception {
@@ -124,10 +124,10 @@ class BackupRestoreDrillIntegrationTest {
         }
     }
 
-    private static Connection open(PostgreSQLContainer<?> container) throws Exception {
+    private static Connection open(PostgreSQLContainer container) throws Exception {
         return DriverManager.getConnection(container.getJdbcUrl(), container.getUsername(), container.getPassword());
     }
-    private static void checked(PostgreSQLContainer<?> container, String... command) throws Exception {
+    private static void checked(PostgreSQLContainer container, String... command) throws Exception {
         assertThat(container.execInContainer(command).getExitCode()).as("isolated backup/restore command").isZero();
     }
     private static Map<String, Long> tableCounts(Connection connection) throws Exception {

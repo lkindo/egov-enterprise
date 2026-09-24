@@ -9,7 +9,7 @@ import nuri.migration.verify.MigrationVerifier;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
 class EtlPartialLoadRecoveryPostgresIntegrationTest {
-    @Container static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine");
+    @Container static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
 
     @Test
     void committedFirstChunkSurvivesFailureAndResumeReconcilesWithoutDuplicatingRows() {

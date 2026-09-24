@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *   <li>Entity {@code @Column(length)}보다 DTO {@code @Size(max)}가 크거나 빠지지 않았는가</li>
  *   <li>문자열 상태 코드가 런타임 {@code @Pattern}과 OpenAPI {@code allowableValues}로 제한되는가</li>
  *   <li>명시적으로 동결한 필수 필드가 런타임 제약과 OpenAPI required 양쪽에 남아 있는가</li>
- *   <li>중첩 입력 DTO에 {@code @Valid}와 OpenAPI item schema가 함께 연결되는가</li>
+ *   <li>중첩 입력 DTO의 원소 타입에 {@code @Valid}와 OpenAPI item schema가 함께 연결되는가</li>
  *   <li>서버 소유·응답 전용 필드가 Jackson과 OpenAPI에서 함께 read-only인가</li>
  *   <li>같은 maxLength·enum·required가 커밋된 {@code api-docs.json}까지 전파됐는가</li>
  * </ol>
@@ -314,22 +314,7 @@ class InputContractMirrorLinterTest {
             if (parentField == null) {
                 continue;
             }
-            if (!parentField.isAnnotationPresent(Valid.class)) {
-                violations.add(binding.parentType().getSimpleName() + "." + binding.field()
-                        + " — @Valid가 없어 중첩 DTO 제약이 요청 검증에 전파되지 않습니다");
-            }
-            if (!(parentField.getGenericType() instanceof ParameterizedType parameterized)
-                    || parameterized.getActualTypeArguments().length != 1
-                    || !binding.itemType().equals(parameterized.getActualTypeArguments()[0])) {
-                violations.add(binding.parentType().getSimpleName() + "." + binding.field()
-                        + " — 중첩 item 타입이 " + binding.itemType().getSimpleName() + "이 아닙니다");
-            }
-            if (!(parentField.getAnnotatedType() instanceof AnnotatedParameterizedType annotated)
-                    || annotated.getAnnotatedActualTypeArguments().length != 1
-                    || !annotated.getAnnotatedActualTypeArguments()[0].isAnnotationPresent(NotNull.class)) {
-                violations.add(binding.parentType().getSimpleName() + "." + binding.field()
-                        + " — null item을 400으로 거절하는 type-use @NotNull이 필요합니다");
-            }
+            violations.addAll(nestedValidationViolations(parentField, binding.itemType()));
 
             JsonNode property = openApiProperty(schemas, binding.parentType(), binding.field(), violations);
             if (property == null) {
@@ -740,6 +725,62 @@ class InputContractMirrorLinterTest {
             present.add(name);
         }
         return present;
+    }
+
+    @Test
+    @DisplayName("중첩 검증 판정: 원소 타입 @Valid만 통과하고 컨테이너 @Valid·누락은 거부한다")
+    void nestedValidationJudgementRequiresElementValid() throws NoSuchFieldException {
+        assertThat(nestedValidationViolations(NestedFixture.class.getDeclaredField("elementValid"), NestedItem.class))
+                .isEmpty();
+        assertThat(nestedValidationViolations(NestedFixture.class.getDeclaredField("containerValid"), NestedItem.class))
+                .anySatisfy(v -> assertThat(v).contains("HV000271"));
+        assertThat(nestedValidationViolations(NestedFixture.class.getDeclaredField("missingValid"), NestedItem.class))
+                .anySatisfy(v -> assertThat(v).contains("원소 타입에 @Valid가 없어"));
+        assertThat(nestedValidationViolations(NestedFixture.class.getDeclaredField("missingNotNull"), NestedItem.class))
+                .anySatisfy(v -> assertThat(v).contains("type-use @NotNull"));
+    }
+
+    private static final class NestedItem {
+    }
+
+    @SuppressWarnings("unused")
+    private static final class NestedFixture {
+        private List<@NotNull @Valid NestedItem> elementValid;
+        @Valid
+        private List<@NotNull NestedItem> containerValid;
+        private List<@NotNull NestedItem> missingValid;
+        private List<@Valid NestedItem> missingNotNull;
+    }
+
+    /**
+     * 중첩 DTO 의 캐스케이드 검증 경계. Hibernate Validator 9 는 컨테이너에 붙인 {@code @Valid} 를 deprecated 로
+     * 경고한다(HV000271) — 원소 타입({@code List<@NotNull @Valid T>})에 두고, 컨테이너 쪽은 거부해 되돌아가지 않게 한다.
+     */
+    static List<String> nestedValidationViolations(Field parentField, Class<?> itemType) {
+        String label = parentField.getDeclaringClass().getSimpleName() + "." + parentField.getName();
+        List<String> violations = new ArrayList<>();
+        if (parentField.isAnnotationPresent(Valid.class)) {
+            violations.add(label + " — 컨테이너에 붙인 @Valid는 Hibernate Validator 9에서 deprecated입니다(HV000271)."
+                    + " 원소 타입(List<@Valid T>)에 두십시오");
+        }
+        if (!(parentField.getGenericType() instanceof ParameterizedType parameterized)
+                || parameterized.getActualTypeArguments().length != 1
+                || !itemType.equals(parameterized.getActualTypeArguments()[0])) {
+            violations.add(label + " — 중첩 item 타입이 " + itemType.getSimpleName() + "이 아닙니다");
+        }
+        if (!(parentField.getAnnotatedType() instanceof AnnotatedParameterizedType annotated)
+                || annotated.getAnnotatedActualTypeArguments().length != 1) {
+            violations.add(label + " — 원소 타입 애노테이션을 읽을 수 없습니다");
+            return violations;
+        }
+        var element = annotated.getAnnotatedActualTypeArguments()[0];
+        if (!element.isAnnotationPresent(Valid.class)) {
+            violations.add(label + " — 원소 타입에 @Valid가 없어 중첩 DTO 제약이 요청 검증에 전파되지 않습니다");
+        }
+        if (!element.isAnnotationPresent(NotNull.class)) {
+            violations.add(label + " — null item을 400으로 거절하는 type-use @NotNull이 필요합니다");
+        }
+        return violations;
     }
 
     private static Field declaredField(Class<?> type, String name, List<String> violations, String layer) {

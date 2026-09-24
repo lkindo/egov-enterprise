@@ -14,10 +14,11 @@ dependencies {
     testImplementation 'com.h2database:h2'
     testImplementation libs.testcontainers.postgresql
     testImplementation libs.testcontainers.junit.jupiter
-    testImplementation 'org.testcontainers:oracle-free'
-    testImplementation 'org.testcontainers:mysql'
-    testImplementation 'org.testcontainers:mariadb'
-    testImplementation 'org.testcontainers:mssqlserver'
+    // Testcontainers 2 는 모듈 좌표에 testcontainers- 접두를 붙였다(버전은 Boot 4 BOM 관리).
+    testImplementation 'org.testcontainers:testcontainers-oracle-free'
+    testImplementation 'org.testcontainers:testcontainers-mysql'
+    testImplementation 'org.testcontainers:testcontainers-mariadb'
+    testImplementation 'org.testcontainers:testcontainers-mssqlserver'
     testRuntimeOnly 'com.oracle.database.jdbc:ojdbc11:23.26.3.0.0'
     testRuntimeOnly 'com.mysql:mysql-connector-j:26.7.0'
     testRuntimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.10'

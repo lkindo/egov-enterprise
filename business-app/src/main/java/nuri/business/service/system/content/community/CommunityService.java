@@ -51,7 +51,7 @@ public class CommunityService {
      * 중지된 커뮤니티를 되살리거나 정리하려면 관리자가 볼 수 있어야 한다.
      */
     public Page<CommunityDto> getCommunityList(String searchCnd, String searchWrd,
-            @org.springframework.lang.NonNull Pageable pageable) {
+            @org.jspecify.annotations.NonNull Pageable pageable) {
         return searchCommunities(searchCnd, searchWrd, pageable, false);
     }
 
@@ -66,7 +66,7 @@ public class CommunityService {
      * 하나의 메서드에 필터를 넣지 않은 것은 관리자 목록의 의미(전체)를 보존하기 위해서다(H3).
      */
     public Page<CommunityDto> getActiveCommunityList(String searchCnd, String searchWrd,
-            @org.springframework.lang.NonNull Pageable pageable) {
+            @org.jspecify.annotations.NonNull Pageable pageable) {
         return searchCommunities(searchCnd, searchWrd, pageable, true);
     }
 
@@ -226,7 +226,7 @@ public class CommunityService {
      * <p>관리자는 폐쇄된 커뮤니티의 회원도 볼 수 있어야 하므로(정리·복구) 무필터 {@code findById} 로 존재만 확인한다.
      */
     public Page<CommunityMemberDto> getMembers(Long cmntySn, CommunityMemberStatus status,
-            @org.springframework.lang.NonNull Pageable pageable) {
+            @org.jspecify.annotations.NonNull Pageable pageable) {
         SecurityUtil.assertPermission("COMMUNITY_READ_ALL");
         requireCommunity(cmntySn);
         Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),

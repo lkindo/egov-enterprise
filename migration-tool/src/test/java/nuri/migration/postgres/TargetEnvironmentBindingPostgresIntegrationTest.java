@@ -3,7 +3,7 @@ package nuri.migration.postgres;
 import nuri.migration.artifact.TargetEndpointBinding;
 import nuri.migration.model.MappingSpec;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -17,8 +17,8 @@ import static org.assertj.core.api.Assertions.*;
 
 @Testcontainers
 class TargetEnvironmentBindingPostgresIntegrationTest {
-    @Container static final PostgreSQLContainer<?> FIRST = new PostgreSQLContainer<>("postgres:17-alpine");
-    @Container static final PostgreSQLContainer<?> SECOND = new PostgreSQLContainer<>("postgres:17-alpine");
+    @Container static final PostgreSQLContainer FIRST = new PostgreSQLContainer("postgres:17-alpine");
+    @Container static final PostgreSQLContainer SECOND = new PostgreSQLContainer("postgres:17-alpine");
     private final PostgresTargetSchemaFingerprinter fingerprints = new PostgresTargetSchemaFingerprinter();
 
     @Test
@@ -74,10 +74,10 @@ class TargetEnvironmentBindingPostgresIntegrationTest {
         }
     }
 
-    private static Connection open(PostgreSQLContainer<?> container) throws Exception {
+    private static Connection open(PostgreSQLContainer container) throws Exception {
         return DriverManager.getConnection(container.getJdbcUrl(), container.getUsername(), container.getPassword());
     }
-    private static MappingSpec.DbConfig config(PostgreSQLContainer<?> container) {
+    private static MappingSpec.DbConfig config(PostgreSQLContainer container) {
         return new MappingSpec.DbConfig(container.getJdbcUrl(), container.getUsername(), container.getPassword(),
                 "org.postgresql.Driver", "same-reviewed-label");
     }

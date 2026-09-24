@@ -56,7 +56,8 @@ class OperationAuthorizationManagerTest {
         Authentication reader = principal(List.of(), List.of("BOARD_READ"), true, "N");
         MockHttpServletRequest request = new MockHttpServletRequest("HEAD", "/tenant/api/v1/probe");
         request.setContextPath("/tenant");
-        var decision = manager.check(() -> reader, new RequestAuthorizationContext(request));
+        var decision = manager.authorize(
+                () -> reader, new RequestAuthorizationContext(request));
         assertThat(decision).isNotNull();
         assertThat(decision.isGranted()).isTrue();
         assertThat(granted(manager, principal(List.of(), List.of(), true, "N"), "HEAD", "/api/v1/probe")).isFalse();
@@ -94,7 +95,8 @@ class OperationAuthorizationManagerTest {
     }
 
     private static boolean granted(OperationAuthorizationManager manager, Authentication auth, String method, String path) {
-        var decision = manager.check(() -> auth, new RequestAuthorizationContext(new MockHttpServletRequest(method, path)));
+        var decision = manager.authorize(
+                () -> auth, new RequestAuthorizationContext(new MockHttpServletRequest(method, path)));
         assertThat(decision).isNotNull();
         return decision.isGranted();
     }

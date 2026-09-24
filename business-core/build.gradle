@@ -41,7 +41,7 @@ dependencies {
     api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.55'
 
     // Testing
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test-classic'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2'
     testImplementation libs.archunit.junit5
@@ -53,9 +53,13 @@ dependencies {
     // 규칙은 여기 한 벌만 두고, 각 모듈의 test 가 @AnalyzeClasses + ArchTests.in(...) 으로 실행한다.
     testFixturesApi libs.archunit.junit5
     testFixturesApi libs.archunit
-    testFixturesApi 'org.springframework.boot:spring-boot-starter-test'
+    testFixturesApi 'org.springframework.boot:spring-boot-starter-test-classic'
     testFixturesApi 'org.springframework.security:spring-security-test'
     testFixturesApi 'com.h2database:h2'
+    // [ADR-0024 1단계] standalone MockMvc 가 쓰는 Jackson 2 모듈. Boot 4 starter 는 Jackson 3 모듈만 끌어오므로
+    //   명시한다(버전은 jackson-2-bom 관리). 2단계에서 tools.jackson 좌표로 바꾼다.
+    testFixturesApi 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    testFixturesApi 'com.fasterxml.jackson.module:jackson-module-parameter-names'
     testFixturesApi 'org.flywaydb:flyway-core'
     testFixturesApi libs.testcontainers.postgresql
     testFixturesApi libs.testcontainers.jdbc

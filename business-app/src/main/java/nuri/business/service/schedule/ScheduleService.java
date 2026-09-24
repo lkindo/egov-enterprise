@@ -1,6 +1,7 @@
 package nuri.business.service.schedule;
 import nuri.foundation.core.exception.CommonErrorCode;
 
+import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.domain.schedule.Schedule;
 import nuri.business.domain.schedule.ScheduleRepository;
 import nuri.business.domain.user.repository.UserRepository;
@@ -13,7 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Objects;
@@ -158,7 +159,7 @@ public class ScheduleService {
         scheduleRepository.delete(entity);
     }
 
-    public List<java.util.Map<String, Object>> selectEmpLyrPopup(@NonNull nuri.business.domain.common.BaseSearchDto searchVO) {
+    public List<java.util.Map<String, Object>> selectEmpLyrPopup(@NonNull BaseSearchDto searchVO) {
         return java.util.Collections.emptyList();
     }
 

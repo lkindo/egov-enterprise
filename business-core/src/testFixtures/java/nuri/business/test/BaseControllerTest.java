@@ -19,6 +19,9 @@ public abstract class BaseControllerTest {
 
     protected MockMvc mockMvc;
 
+    // Boot 4 전환 1단계(ADR-0024)는 HTTP 변환기를 Jackson 2 호환 모듈에 둔다 — 운영과 같은 변환기로 검증하려면
+    // 이 standalone 설정도 Jackson 2 를 써야 한다. 두 클래스는 Spring 7 에서 제거 예정이며 2단계(Jackson 3)에서 함께 걷는다.
+    @SuppressWarnings("removal")
     @BeforeEach
     void setupInternal() {
         ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json()

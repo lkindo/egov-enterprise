@@ -37,9 +37,8 @@ public class ApprovalDraftRequest {
     private String docCn;
 
     @Schema(description = "진행 순서대로 나열한 결재 단계. 생략하면 aprvrId의 단일 결재로 처리합니다.")
-    @Valid
     @Size(min = 1, max = 10)
-    private List<@jakarta.validation.constraints.NotNull ApprovalStageRequest> stages;
+    private List<@jakarta.validation.constraints.NotNull @Valid ApprovalStageRequest> stages;
 
     @Schema(description = "신청 일자(yyyyMMdd). 비우면 서버가 오늘(Asia/Seoul)로 채운다", pattern = "^\\d{8}$")
     @Pattern(regexp = "^\\d{8}$")

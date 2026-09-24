@@ -12,7 +12,7 @@ import org.junit.jupiter.api.io.CleanupMode;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import java.nio.charset.StandardCharsets;
@@ -28,7 +28,7 @@ import static org.awaitility.Awaitility.await;
 /** A killed JVM, independent restart, binary/text payloads, and committed checkpoint reconciliation. */
 @Testcontainers
 class EtlCrashRecoveryPostgresIntegrationTest {
-    @Container static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine");
+    @Container static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
     @TempDir(cleanup = CleanupMode.ON_SUCCESS) Path directory;
     private static final int ROWS = 1501;
 

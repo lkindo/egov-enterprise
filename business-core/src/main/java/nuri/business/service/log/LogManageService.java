@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 import nuri.business.domain.common.BaseSearchDto;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 @Service
 @Transactional(readOnly = true) // 조회 기본 read-only; 쓰기(logInsertSysLog)는 메서드 @Transactional 이 오버라이드

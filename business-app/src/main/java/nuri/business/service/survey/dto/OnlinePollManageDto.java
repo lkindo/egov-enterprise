@@ -58,8 +58,9 @@ public class OnlinePollManageDto {
     private LocalDateTime crtDt;
 
     @Schema(description = "설문 항목 목록")
-    @jakarta.validation.Valid  // 중첩 원소(@NotBlank pollArtclNm)를 컨트롤러 @Valid 로 캐스케이드 검증 → null 항목명 NPE(500) 대신 400
-    private List<OnlinePollArticleDto> pollArticles;
+    // 중첩 원소(@NotBlank pollArtclNm)를 컨트롤러 @Valid 로 캐스케이드 검증 → null 항목명 NPE(500) 대신 400.
+    //   Hibernate Validator 9 는 컨테이너에 붙인 @Valid 를 deprecated 로 보므로 원소 타입에 둔다(HV000271).
+    private List<@jakarta.validation.Valid OnlinePollArticleDto> pollArticles;
 
     @Schema(description = "현재 사용자의 투표 참여 여부")
     private Boolean hasVoted;
