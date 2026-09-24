@@ -890,6 +890,40 @@ migration-tool 종료·재개 시험 1건은 1단계와 같은 부하 조건에�
 하네스 99/99, SAST 예외 계약 17/17, `api-docs.json` 바이트 동일, red 증명 3종(예외 타입 오판·Jackson 2 기본값
 제거·파라미터 이름 끄기가 각각 해당 테스트만 실패).
 
+### 후속 정리 (2026-09-24)
+
+**NVD 확인.** #734 병합 뒤 main(f93c19d7c)에서 주간 스캔을 수동 실행했다(run 35968660686). 억제되지 않은 CVSS 7 이상
+탐지가 기준선(2026-09-20 주간 실행) **198건 → 0건**이다. 모듈별 전체 탐지도 약 300건에서 6건(모두 7 미만)으로 줄었고,
+Spring Framework 6.2.19(12종)·Security 6.5.11(2종)·Integration 6.5.10(3종)의 CVE가 모두 사라졌다. 리포트는 루트와 5개
+모듈(migration-tool 포함) 6개다. kotlin-stdlib 2.3.21·OpenTelemetry 오탐은 기한부 억제가 적용됐다.
+
+**테스트 starter 축소.** 이행용 `spring-boot-starter-test-classic`을 기술별 test starter로 좁혔다. 공통은
+`spring-boot-starter-test`이고, business-core 테스트 픽스처가 webmvc·data-jpa·security·opentelemetry test starter를,
+api-server가 직접 쓰는 webmvc·security·opentelemetry test starter를 선언한다. 5개 모듈의 테스트 실행 클래스패스를
+main과 비교했을 때 빠진 것은 쓰지 않는 test 모듈(cache·data-cassandra 등 20여 개)뿐이고 공통 라이브러리의 버전
+변화는 0건이다. 조심할 곳은 import 없이 클래스패스만으로 동작하는 두 모듈이다.
+
+| 모듈 | 빠뜨리면 | 고정 |
+|---|---|---|
+| security-test | `@WebMvcTest`가 앱의 보안 필터를 빼고 MockMvc가 테스트 보안 컨텍스트를 잃는다 | 두 선언처에서 빼면 `ApiSecurityConfigTest` 2건 red(실측) |
+| opentelemetry-test | 전체 컨텍스트 테스트에서 메트릭·추적 export가 켜지고 OTLP가 기본 주소로 전송을 시도한다 — 어떤 테스트도 실패하지 않는다 | [관측성 차단 테스트](../../api-server/src/test/java/nuri/api/config/TestObservabilityIsolationIntegrationTest.java) 신설, 빼면 red(실측) |
+
+**spring-retry는 유지한다.** Spring Framework 7 core retry(`@EnableResilientMethods`·`org.springframework.resilience`의
+`@Retryable`)로 옮기는 안을 조사 1건과 반박 검증 3건으로 검토했고, 옮기지 않기로 했다. 근거는 넷이다.
+
+1. **동작이 바뀐다.** Spring 7에는 `@Recover`가 없어 대체 처리를 호출부 catch로 옮겨야 한다. 그러면 (가) SMS 발송
+   루프에서 `NoClassDefFoundError` 같은 `Error`가 루프를 멈춰 남은 수신자가 `P`로 남고(지금은 `ExhaustedRetryException`
+   으로 감싸져 다음 수신자로 넘어간다), (나) 백오프 중 인터럽트가 지금과 달리 `F` 기록을 시도하며, (다) 지연값
+   placeholder 해석 실패가 발송 없이 모든 메일·SMS를 `F`로 기록하는 경로가 생긴다. 시도 횟수 표기도 다르다
+   (`maxAttempts=3`은 `maxRetries=2`).
+2. **공급망 이득이 없다.** spring-retry 2.0.13은 사용처 0건인 Spring Batch(spring-batch-infrastructure 6.0.5, compile)
+   경유로 api-server bootJar에 그대로 남는다.
+3. **헌법 문구가 바뀐다.** 백엔드 헌법 제10조 1항이 'Spring Retry'와 '@Recover'를 명시한다 — 사용자의 명시적 요청이 필요하다.
+4. **지금 동작한다.** Framework 7.0.9에서 재시도 경계 테스트(발송 3회 시도·커밋 재시도·소진 후 기록)가 모두 통과한다.
+
+재검토 조건: Framework 7 minor에서 spring-retry 호환이 깨지거나, Spring Batch·egovframe-rte-bat-core 의존을 걷어
+spring-retry가 bootJar에서도 빠질 때. 그때는 위 세 가지 의미 차이를 테스트로 먼저 고정한 뒤 옮긴다.
+
 ## ZAP 주간 스캔 경고 분류
 
 주간 실행 `35489408892`(2026-09-20, 리포트 아티팩트 `zap_baseline_frontend`·`zap_fullscan_api`)의

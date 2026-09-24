@@ -1,5 +1,12 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-09-24 테스트 starter 축소에 따른 H2 테스트 경계 재검토
+
+SAST-FP-007의 보완 소스인 빌드 파일 3개(루트·business-core·api-server)에서 이행용 `spring-boot-starter-test-classic`을
+기술별 test starter로 바꿨다. 모두 테스트 구성(`testImplementation`·`testFixturesApi`) 변경이고 H2 선언 줄은 하나도
+바뀌지 않았다. H2는 여전히 테스트 구성에만 있으므로 예외 근거는 유지된다. 세 파일의 해시만 재결속하며, 예외 6건의
+범위·규칙·행·fingerprint·승인일·만료일은 그대로다. 재결속 뒤 SAST 계약 17건이 통과했다.
+
 ## 2026-09-24 Jackson 3 이행(ADR-0024 2단계)에 따른 재검토
 
 - `WebSocketCookieAuthenticationFilter`(FP-008 탐지 파일, FP-001 보완 소스): 거절 응답 본문을 쓰는 매퍼를

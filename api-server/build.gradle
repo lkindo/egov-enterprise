@@ -44,7 +44,10 @@ dependencies {
     implementation libs.scribejava.apis
     implementation libs.scribejava.core
 
-    testImplementation 'org.springframework.boot:spring-boot-starter-test-classic'
+    // 이 모듈의 테스트가 직접 쓰는 기술별 test starter(@WebMvcTest·보안 slice·전체 컨텍스트).
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-opentelemetry-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation libs.h2
     testImplementation testFixtures(project(':business-core'))

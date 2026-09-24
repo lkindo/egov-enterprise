@@ -282,9 +282,9 @@ subprojects { subproject ->
         testCompileOnly 'org.projectlombok:lombok'
         testAnnotationProcessor 'org.projectlombok:lombok'
         implementation 'com.google.code.findbugs:jsr305:3.0.2'
-        // Boot 4 는 테스트 자동 설정을 기술별 모듈로 나눴다. classic 은 종전 starter-test 의 전체 묶음을
-        //   한 번에 들여오는 이행용 starter 다 — 모듈별 선언으로 좁히는 것은 2단계(Jackson 3) 이후 과제다.
-        testImplementation 'org.springframework.boot:spring-boot-starter-test-classic'
+        // 공통 기준선은 starter-test 다. Boot 4 는 테스트 자동 설정을 기술별 모듈로 나눴으므로 slice·보안·관측성
+        //   test 모듈은 쓰는 모듈이 기술별 test starter 로 선언한다(2026-09-24, 이행용 classic 대체).
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
         testImplementation 'org.springframework.security:spring-security-test'
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     }
