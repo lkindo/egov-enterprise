@@ -10,6 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       COMPOSE_FILE: docker-compose.yml:docker-compose.authz-e2e.yml
+      # [2026-09-24] 2026-09-24 첫 API 스캔에서 응답 535건이 429 였다 — 그만큼의 공격이 핸들러에 닿지 못했고,
+      #   응답 차이로 판정하는 규칙(SQL 인젝션 등)은 429 와 200 의 차이를 신호로 읽을 수 있다.
+      #   스캔 환경에서만 한도를 올린다. 요청 제한 자체는 RateLimitFilter 테스트가 따로 검증한다.
+      RATE_LIMIT_REQUESTS_PER_MINUTE: '1000000'
+      RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE: '1000000'
     name: Scan the application
     steps:
       - name: Checkout

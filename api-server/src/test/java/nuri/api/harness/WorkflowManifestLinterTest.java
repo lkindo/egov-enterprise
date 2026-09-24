@@ -585,7 +585,7 @@ class WorkflowManifestLinterTest {
      * 못했다. 리포트의 대상 URL 은 문서·health·robots·sitemap·{@code /} 다섯 개뿐이었고 워크플로는 매주
      * 성공했다. 스캔이 "돌았다" 는 것과 "API 를 두드렸다" 는 것은 다르므로 형태를 고정한다:
      * OpenAPI 를 읽는 API 스캔, 그 앞의 스캐너 로그인과 토큰 확인, 토큰 유효시간 안의 능동 스캔 상한,
-     * 그 뒤의 세션 유지 확인.
+     * 그 뒤의 세션 유지 확인, 그리고 스캐너 요청이 429 로 막히지 않도록 잡에서 올린 요청 제한 한도.
      */
     @Test
     @DisplayName("🛡️ 주간 ZAP 은 OpenAPI 로 API 를 로그인한 상태로 스캔하고 세션이 끝까지 살아 있었는지 확인한다")
@@ -607,6 +607,8 @@ class WorkflowManifestLinterTest {
         String compliant = """
                 jobs:
                   zap_scan:
+                    env:
+                      RATE_LIMIT_REQUESTS_PER_MINUTE: '1000000'
                     steps:
                       - name: Authenticate API scanner
                         run: |
@@ -632,14 +634,20 @@ class WorkflowManifestLinterTest {
         mutations.put("상한이 토큰 유효시간 이상", compliant.replace("maxScanDurationInMins=40", "maxScanDurationInMins=60"));
         mutations.put("세션 확인 제거", compliant.replace("$SCANNER_TOKEN", "$OTHER"));
         mutations.put("세션 확인이 실패하지 않음", compliant.replace("          exit 1\n", ""));
+        mutations.put("요청 제한 한도를 올리지 않음", compliant.replace("RATE_LIMIT_REQUESTS_PER_MINUTE: '1000000'", "OTHER: '1'"));
         mutations.forEach((label, source) -> assertThat(zapScanViolations(source)).as(label).isNotEmpty());
         log.info("✅ ZAP API 스캔: OpenAPI·로그인·상한·세션 확인 결속, 변형 {}종 red.", mutations.size());
     }
 
     private List<String> zapScanViolations(String source) {
         Object parsed = new Yaml().load(source);
-        List<?> steps = asList(asMap(asMap(asMap(parsed).get("jobs")).get("zap_scan")).get("steps"));
+        Map<?, ?> job = asMap(asMap(asMap(parsed).get("jobs")).get("zap_scan"));
+        List<?> steps = asList(job.get("steps"));
         List<String> violations = new ArrayList<>();
+        String limit = Objects.toString(asMap(job.get("env")).get("RATE_LIMIT_REQUESTS_PER_MINUTE"), "");
+        if (!limit.matches("\\d+") || Long.parseLong(limit) < 100_000) {
+            violations.add("스캔 잡이 요청 제한 한도를 올리지 않는다 — 스캐너 요청이 429 로 막혀 공격이 핸들러에 닿지 않는다");
+        }
         int scan = -1;
         int auth = -1;
         int session = -1;
