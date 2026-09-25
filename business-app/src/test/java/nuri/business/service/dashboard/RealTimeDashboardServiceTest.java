@@ -11,7 +11,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 
-import java.util.List;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -56,8 +55,7 @@ class RealTimeDashboardServiceTest {
     @DisplayName("서비스 재시작 후에도 DB에 남아 있는 오늘 게시글 수가 같다")
     void restartingServicePreservesPersistedTodayCount() {
         when(postStatistics.getIfAvailable()).thenReturn(postStatisticsContributor);
-        when(postStatisticsContributor.countPostsByDate(anyString(), anyString()))
-                .thenReturn(List.<Object[]>of(new Object[] { "2026-09-25", 7L }));
+        when(postStatisticsContributor.countPostsBetween(anyString(), anyString())).thenReturn(7L);
 
         realTimeDashboardService.broadcastRealTimeStats();
         var restarted = new RealTimeDashboardService(pendingAlertCounts, postStatistics, eventPublisher);
@@ -129,8 +127,7 @@ class RealTimeDashboardServiceTest {
     @DisplayName("게시글 이벤트를 받기 전에도 저장된 오늘 게시글 수를 방송한다")
     void readsPersistedPostsBeforeAnyLocalEvent() {
         when(postStatistics.getIfAvailable()).thenReturn(postStatisticsContributor);
-        when(postStatisticsContributor.countPostsByDate(anyString(), anyString()))
-                .thenReturn(List.<Object[]>of(new Object[] { "2026-09-25", 7L }));
+        when(postStatisticsContributor.countPostsBetween(anyString(), anyString())).thenReturn(7L);
 
         realTimeDashboardService.broadcastRealTimeStats();
 
@@ -156,10 +153,8 @@ class RealTimeDashboardServiceTest {
     @DisplayName("한국 시간 월말 자정을 지나면 다음 날의 반개방 범위로 다시 집계한다")
     void recountsCurrentKoreanDayAcrossMidnightAndMonthBoundary() {
         when(postStatistics.getIfAvailable()).thenReturn(postStatisticsContributor);
-        when(postStatisticsContributor.countPostsByDate("2026-09-30 00:00:00", "2026-10-01 00:00:00"))
-                .thenReturn(List.<Object[]>of(new Object[] { "2026-09-30", 7L }));
-        when(postStatisticsContributor.countPostsByDate("2026-10-01 00:00:00", "2026-10-02 00:00:00"))
-                .thenReturn(List.<Object[]>of(new Object[] { "2026-10-01", 2L }));
+        when(postStatisticsContributor.countPostsBetween("2026-09-30 00:00:00", "2026-10-01 00:00:00")).thenReturn(7L);
+        when(postStatisticsContributor.countPostsBetween("2026-10-01 00:00:00", "2026-10-02 00:00:00")).thenReturn(2L);
 
         realTimeDashboardService.useClock(Clock.fixed(Instant.parse("2026-09-30T14:59:59Z"), ZoneId.of("Asia/Seoul")));
         realTimeDashboardService.broadcastRealTimeStats();
@@ -176,7 +171,7 @@ class RealTimeDashboardServiceTest {
     @DisplayName("게시글 집계 실패는 알림의 정상 집계를 가리지 않는다")
     void postCountFailureDoesNotHideAvailableAlertCount() {
         when(postStatistics.getIfAvailable()).thenReturn(postStatisticsContributor);
-        when(postStatisticsContributor.countPostsByDate(anyString(), anyString()))
+        when(postStatisticsContributor.countPostsBetween(anyString(), anyString()))
                 .thenThrow(new IllegalStateException("count unavailable"));
         when(pendingAlertCounts.getIfAvailable()).thenReturn(pendingAlertCountContributor);
         when(pendingAlertCountContributor.countPendingAlerts()).thenReturn(4L);
@@ -185,6 +180,63 @@ class RealTimeDashboardServiceTest {
 
         verify(eventPublisher).publishEvent(argThat((DashboardStatsUpdatedEvent e) ->
                 !e.newPostsAvailable() && e.alerts() == 4 && e.alertsAvailable()));
+    }
+
+    /**
+     * [2026-09-25] 방송은 5초마다지만 게시글 수는 {@link RealTimeDashboardService#TODAY_POSTS_TTL} 동안 재사용한다.
+     * 종전에는 매 방송마다 날짜별 GROUP BY 를 돌려 인스턴스마다 분당 12번 게시글 테이블을 훑었다.
+     */
+    @Test
+    @DisplayName("같은 날 TTL 안의 방송은 게시글 수를 다시 세지 않고, TTL 이 지나면 다시 센다")
+    void todayPostCountIsReusedWithinTtlAndRecountedAfter() {
+        when(postStatistics.getIfAvailable()).thenReturn(postStatisticsContributor);
+        when(postStatisticsContributor.countPostsBetween("2026-09-25 00:00:00", "2026-09-26 00:00:00"))
+                .thenReturn(3L, 5L);
+        Instant start = Instant.parse("2026-09-25T01:00:00Z");
+
+        realTimeDashboardService.useClock(Clock.fixed(start, ZoneId.of("Asia/Seoul")));
+        realTimeDashboardService.broadcastRealTimeStats();
+        realTimeDashboardService.useClock(Clock.fixed(start.plus(RealTimeDashboardService.TODAY_POSTS_TTL).minusMillis(1), ZoneId.of("Asia/Seoul")));
+        realTimeDashboardService.broadcastRealTimeStats();
+        realTimeDashboardService.useClock(Clock.fixed(start.plus(RealTimeDashboardService.TODAY_POSTS_TTL), ZoneId.of("Asia/Seoul")));
+        realTimeDashboardService.broadcastRealTimeStats();
+
+        verify(postStatisticsContributor, times(2)).countPostsBetween("2026-09-25 00:00:00", "2026-09-26 00:00:00");
+        var event = org.mockito.ArgumentCaptor.forClass(DashboardStatsUpdatedEvent.class);
+        verify(eventPublisher, times(3)).publishEvent(event.capture());
+        assertThat(event.getAllValues()).extracting(DashboardStatsUpdatedEvent::newPosts).containsExactly(3, 3, 5);
+    }
+
+    @Test
+    @DisplayName("게시글 집계 실패는 재사용하지 않아 다음 방송이 곧바로 다시 센다")
+    void failedPostCountIsNotCached() {
+        when(postStatistics.getIfAvailable()).thenReturn(postStatisticsContributor);
+        when(postStatisticsContributor.countPostsBetween(anyString(), anyString()))
+                .thenThrow(new IllegalStateException("count unavailable"))
+                .thenReturn(4L);
+
+        realTimeDashboardService.broadcastRealTimeStats();
+        realTimeDashboardService.broadcastRealTimeStats();
+
+        var event = org.mockito.ArgumentCaptor.forClass(DashboardStatsUpdatedEvent.class);
+        verify(eventPublisher, times(2)).publishEvent(event.capture());
+        assertThat(event.getAllValues()).extracting(DashboardStatsUpdatedEvent::newPostsAvailable).containsExactly(false, true);
+        assertThat(event.getAllValues().get(1).newPosts()).isEqualTo(4);
+    }
+
+    @Test
+    @DisplayName("시계가 뒤로 가면 재사용하지 않고 다시 센다")
+    void clockMovingBackwardsRecounts() {
+        when(postStatistics.getIfAvailable()).thenReturn(postStatisticsContributor);
+        when(postStatisticsContributor.countPostsBetween(anyString(), anyString())).thenReturn(1L, 2L);
+        Instant start = Instant.parse("2026-09-25T01:00:00Z");
+
+        realTimeDashboardService.useClock(Clock.fixed(start, ZoneId.of("Asia/Seoul")));
+        realTimeDashboardService.broadcastRealTimeStats();
+        realTimeDashboardService.useClock(Clock.fixed(start.minusSeconds(1), ZoneId.of("Asia/Seoul")));
+        realTimeDashboardService.broadcastRealTimeStats();
+
+        verify(postStatisticsContributor, times(2)).countPostsBetween(anyString(), anyString());
     }
 
     @Test

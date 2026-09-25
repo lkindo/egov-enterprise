@@ -91,7 +91,7 @@ public class CommunityApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.community.CommunityApiController#getMembers')")
     public ResponseEntity<ApiResponse<PageResponse<CommunityMemberDto>>> getMembers(
             @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn,
-            @Parameter(description = "멤버십 상태 필터(REQUESTED·APPROVED). 생략하면 전체")
+            @Parameter(description = "멤버십 상태 필터(REQUESTED·APPROVED·WITHDRAWN). 생략하면 전체")
             @RequestParam(required = false) CommunityMemberStatus status,
             @PageableDefault(size = 20) Pageable pageable) {
         Page<CommunityMemberDto> page = communityService.getMembers(cmntySn, status, pageable);
@@ -105,6 +105,16 @@ public class CommunityApiController {
             @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn,
             @Parameter(description = "사용자 식별자(esntlId)") @PathVariable String userId) {
         communityService.approveMember(cmntySn, userId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "커뮤니티 회원 탈퇴 처리", description = "승인된 회원(APPROVED)을 탈퇴 상태(WITHDRAWN)로 옮깁니다. 행은 남아 가입·탈퇴 일자를 보존하고, 회원 전용 게시판 접근이 즉시 끊깁니다. 회원이 아니면 400 입니다. 탈퇴한 사용자는 다시 가입을 신청할 수 있습니다.")
+    @PatchMapping("/{cmntySn}/members/{userId}/withdraw")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.community.CommunityApiController#withdrawMember')")
+    public ResponseEntity<ApiResponse<Void>> withdrawMember(
+            @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn,
+            @Parameter(description = "사용자 식별자(esntlId)") @PathVariable String userId) {
+        communityService.withdrawMember(cmntySn, userId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

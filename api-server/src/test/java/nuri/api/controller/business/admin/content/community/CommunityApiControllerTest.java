@@ -198,19 +198,29 @@ class CommunityApiControllerTest {
         verify(communityService).rejectMember(101L, "esntl-1");
     }
 
+    @Test
+    @DisplayName("강제 탈퇴 — PATCH …/members/{userId}/withdraw 는 경로의 사용자를 탈퇴시킨다")
+    void withdrawMember() throws Exception {
+        mockMvc.perform(patch("/api/v1/admin/content/community/101/members/esntl-1/withdraw"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+        verify(communityService).withdrawMember(101L, "esntl-1");
+    }
+
     /**
      * 🔒 멤버십 전이 3본은 URL 게이트 외에 메서드의 정확한 기능 인가를 직접 든다. standalone MockMvc 는
      * 메서드 보안을 집행하지 않으므로 애노테이션의 존재를 리플렉션으로 고정한다 — 제거되면 인가 완화다.
      */
     @Test
-    @DisplayName("멤버십 조회·승인·거절은 각각의 기능 권한을 확인한다")
+    @DisplayName("멤버십 조회·승인·거절·강제 탈퇴는 각각의 기능 권한을 확인한다")
     void membershipHandlersCarryMethodSecurity() throws Exception {
-        for (String name : List.of("getMembers", "approveMember", "rejectMember")) {
+        for (String name : List.of("getMembers", "approveMember", "rejectMember", "withdrawMember")) {
             java.lang.reflect.Method handler = java.util.Arrays.stream(CommunityApiController.class.getDeclaredMethods())
                     .filter(m -> m.getName().equals(name)).findFirst().orElseThrow();
             String permission = switch (name) {
                 case "getMembers" -> "COMMUNITY_READ_ALL";
                 case "approveMember" -> "COMMUNITY_APPROVE";
+                case "withdrawMember" -> "COMMUNITY_UPDATE_ALL";
                 default -> "COMMUNITY_REJECT";
             };
             nuri.security.support.MethodPermissionContract.assertOperation(handler, permission, false);

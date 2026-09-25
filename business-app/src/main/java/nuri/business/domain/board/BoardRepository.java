@@ -68,6 +68,21 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
                         @Param("fromDate") String fromDate,
                         @Param("toDate") String toDate);
 
+        /**
+         * 반개방 구간 [fromDate, toDate) 안의 게시글 수. {@link #countPostsByDate} 와 같은 조건이되 날짜별로
+         * 묶지 않는다 — 실시간 대시보드가 오늘 건수 하나만 필요해서다. {@code use_yn = 'Y'} 를 명시하는
+         * 이유도 같다(네이티브 질의에는 {@code @Filter} 가 걸리지 않는다).
+         */
+        @Query(value = """
+                        SELECT COUNT(*)
+                        FROM tb_bbs_item b
+                        WHERE b.use_yn = 'Y'
+                          AND b.crt_dt >= CAST(:fromDate AS TIMESTAMP) AND b.crt_dt < CAST(:toDate AS TIMESTAMP)
+                        """, nativeQuery = true)
+        long countPostsBetween(
+                        @Param("fromDate") String fromDate,
+                        @Param("toDate") String toDate);
+
         @Query("SELECT COUNT(b) FROM Board b WHERE b.bbsId = :bbsId")
         long countAllByBbsId(@Param("bbsId") String bbsId);
 

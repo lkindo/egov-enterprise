@@ -382,7 +382,7 @@
         "board",
         "notification"
       ],
-      "reason": "DB 통계 도메인과 무관한 인메모리 RealTimeDashboardService가 게시판 및 알림 이벤트를 집계한다."
+      "reason": "RealTimeDashboardService가 게시판 포트로 오늘 게시글 수(30초 재사용)를, 알림 포트로 전체 미읽음 알림 수를 DB에서 읽어 방송한다. 접속자·분당 방문은 인스턴스 메모리 카운터다."
     }
   ],
   "sharedTableContracts": [

@@ -30,4 +30,9 @@ public class BoardPostStatisticsContributor implements PostStatisticsContributor
     public List<Object[]> countPostsByDate(String from, String to) {
         return boardRepository.countPostsByDate(from, to);
     }
+
+    @Override
+    public long countPostsBetween(String from, String to) {
+        return boardRepository.countPostsBetween(from, to);
+    }
 }

@@ -28,4 +28,15 @@ public interface PostStatisticsContributor {
      * @return {@code [날짜, 건수]} 행 목록. 논리 삭제된 글은 제외한다
      */
     List<Object[]> countPostsByDate(String from, String to);
+
+    /**
+     * 반개방 구간 [from, to) 안의 게시글 수. 논리 삭제된 글은 제외한다.
+     *
+     * <p>날짜별로 묶을 필요가 없는 소비자(실시간 대시보드의 오늘 건수)가 쓴다. {@link #countPostsByDate} 로 센 뒤
+     * 합치면 같은 숫자를 얻으려고 {@code TO_CHAR ... GROUP BY} 를 돌리게 된다.
+     *
+     * @param from 포함하는 시작 시각 문자열({@code yyyy-MM-dd HH:mm:ss})
+     * @param to   제외하는 종료 시각 문자열({@code yyyy-MM-dd HH:mm:ss})
+     */
+    long countPostsBetween(String from, String to);
 }

@@ -65,7 +65,7 @@ public class CommunityUserApiController {
      * [2026-09-06 DEC-OPS-043] 상세 화면이 가입 버튼의 상태(신청 가능·승인 대기·회원)를 정하는 근거.
      * 자기 자신의 행만 돌려주며(principal = esntlId), 다른 사용자의 멤버십은 조회할 수 없다.
      */
-    @Operation(summary = "내 커뮤니티 멤버십 상태", description = "현재 사용자의 특정 커뮤니티 멤버십 상태(NONE·REQUESTED·MEMBER)를 조회합니다.")
+    @Operation(summary = "내 커뮤니티 멤버십 상태", description = "현재 사용자의 특정 커뮤니티 멤버십 상태(NONE·REQUESTED·MEMBER·WITHDRAWN)를 조회합니다.")
     @GetMapping("/{cmntySn}/membership")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.community.CommunityUserApiController#getMyMembership')")
     public ResponseEntity<ApiResponse<CommunityMembershipDto>> getMyMembership(
@@ -97,6 +97,20 @@ public class CommunityUserApiController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long cmntySn) {
         communityService.joinCommunity(cmntySn, userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /**
+     * 본인 탈퇴 — 대상은 언제나 현재 사용자(principal = esntlId)다. 다른 사용자를 지정할 수 없다.
+     * 관리자의 강제 탈퇴는 관리자 컨트롤러가 명시 operation 권한으로 따로 연다.
+     */
+    @Operation(summary = "커뮤니티 탈퇴", description = "현재 사용자가 회원인 커뮤니티에서 탈퇴합니다. 회원 전용 게시판 접근이 즉시 끊기며, 다시 가입하려면 새로 신청해 승인을 받아야 합니다. 회원이 아니면 400 입니다.")
+    @DeleteMapping("/{cmntySn}/membership")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.community.CommunityUserApiController#leaveCommunity')")
+    public ResponseEntity<ApiResponse<Void>> leaveCommunity(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long cmntySn) {
+        communityService.withdrawMember(cmntySn, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

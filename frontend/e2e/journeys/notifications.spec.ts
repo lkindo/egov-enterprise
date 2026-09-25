@@ -66,12 +66,10 @@ test.describe('Notification & Communication Intelligence', () => {
         const testTitle = `E2E_Notif_${Date.now()}`;
         const testMessage = 'System integrity check required for the communication node.';
         console.log('>>> Waiting for WebSocket connection...');
-        // [2026-08-22 정정] 연결 상태 문구가 '실시간 연결됨' 단일 값에서
-        //   `!isConnected ? '연결 끊김' : stats ? '통계 수신 중' : '통계 수신 대기 중'`
-        //   (RealTimeDashboard.tsx:137)로 바뀌었다 — 연결됨이 두 하위 상태로 갈라졌다.
-        //   둘 다 "연결됨"이므로 모두 수용해야 한다. 하나만 단언하면 stats 도착 타이밍에 flaky 가 된다.
-        //   ('연결 끊김' 은 여전히 매칭되지 않으므로 미연결을 통과시키지 않는다.)
-        await expect(page.getByText(/통계 수신 (중|대기 중)/)).toBeVisible({ timeout: 15000 });
+        // [2026-09-25] 연결 상태 문구는 연결만 말한다('실시간 연결됨' | '연결 끊김'). 종전 문구는 집계
+        //   가용 여부까지 섞어('통계 수신 중'·'통계 수신 대기 중'·'일부 통계 확인 불가') 게시글·알림 집계가
+        //   실패하면 연결이 멀쩡해도 이 대기가 실패했다. 집계 상태는 이 여정이 보는 대상이 아니다.
+        await expect(page.getByRole('status').filter({ hasText: /^실시간 연결됨$/ })).toBeVisible({ timeout: 15000 });
         console.log('>>> Step 1: Creating notification via API');
         // Create notification for the current user (webmaster)
         const response = await request.post(`${API_BASE}/notifications`, {

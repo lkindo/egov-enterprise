@@ -177,26 +177,14 @@ export default function HpcmClient({
 
   const openEdit = (item: Hpcm) => {
     if (isWritePending || item.hlpSn === undefined) return;
-    const targetSn = item.hlpSn;
     setMode('edit');
-    setEditingSn(targetSn);
+    setEditingSn(item.hlpSn);
     form.reset({
       hlpSeCd: item.hlpSeCd ?? '',
       hlpDfn: item.hlpDfn ?? '',
       hlpExpln: item.hlpExpln ?? '',
     });
     setIsModalOpen(true);
-    void hpcmAdminService.getHpcm(targetSn).then((detail) => {
-      if (detail) {
-        form.reset({
-          hlpSeCd: detail.hlpSeCd ?? item.hlpSeCd ?? '',
-          hlpDfn: detail.hlpDfn ?? item.hlpDfn ?? '',
-          hlpExpln: detail.hlpExpln ?? item.hlpExpln ?? '',
-        });
-      }
-    }).catch(() => {
-      // 목록 캐시 데이터 유지
-    });
   };
 
   const onSubmit = async (values: HpcmFormValues) => {

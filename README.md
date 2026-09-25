@@ -143,7 +143,7 @@ pnpm dev
 본 프로젝트는 단순한 계층형 구조를 넘어, 모듈 간 결합도를 낮추기 위해 다음 원칙을 준수합니다.
 
 1. **의존 방향 유지**: 상위 모듈이 하위 모듈을 호출하고, 재사용 경계는 port/interface 또는 event를 우선한다. 현재 일부 구체 서비스·타 도메인 repository 결합은 예외로 남아 있으므로 “전부 인터페이스”라고 간주하지 않으며, [활성 gap](./.agent/memory/known-gaps.md)과 격리 테스트로 축소한다.
-2. **이벤트 기반 동기화**: 게시글 등록(`PostCreatedEvent`)처럼 비동기 후속 효과가 적합한 경로는 event를 사용해 결합을 줄인다. 모든 도메인 호출이 event 기반이라는 의미는 아니다.
+2. **이벤트 기반 동기화**: 사용자 삭제(`UserDeletionEvent`) 뒤 각 도메인의 정리, 메일·문자·알림 발송 요청처럼 후속 효과가 적합한 경로는 event를 사용해 결합을 줄인다. 모든 도메인 호출이 event 기반이라는 의미는 아니다.
 3. **독립적 빌드 구성**: 라이브러리 성격의 모듈(`foundation`·`business-core`·`business-app`)은 `bootJar`를 생성하지 않으며, 실행 파일은 진입점 모듈(`api-server`)과 이관 CLI(`migration-tool`)만 생성합니다.
 
 ---

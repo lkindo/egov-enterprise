@@ -2537,7 +2537,8 @@
         "search",
         "sort",
         "view-list",
-        "view-stats"
+        "view-stats",
+        "withdraw"
       ],
       "profileOwners": [
         "UNVERIFIED"
@@ -2621,7 +2622,8 @@
             "create",
             "edit",
             "reject",
-            "view-list"
+            "view-list",
+            "withdraw"
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
@@ -9909,6 +9911,7 @@
       "dataSource": "mixed",
       "supportedActions": [
         "join",
+        "leave",
         "navigate",
         "view-detail",
         "view-list"
@@ -9960,11 +9963,12 @@
           "candidateStatus": "live",
           "dataSource": "communities-api",
           "actions": [
-            "join"
+            "join",
+            "leave"
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "AUTHENTICATED",
-          "visibleLabel": "커뮤니티 가입 신청",
+          "visibleLabel": "커뮤니티 가입 신청 · 탈퇴",
           "primaryTask": false,
           "decisionSafe": false,
           "evidenceLevel": "E3",

@@ -7,8 +7,8 @@ import { CommunityMembersPanel } from '../CommunityMembersPanel';
 /**
  * 🏘 커뮤니티 회원 관리 패널 계약 (DEC-OPS-043, GAP-CMTY-001).
  *
- * 가입 신청(REQUESTED)만 승인·반려 버튼을 갖고, 회원(APPROVED)에는 어떤 전이 버튼도 없다(강제 탈퇴 절차가 없으므로
- * 어포던스도 없다 — G10). 승인은 확인 없이 한 번, 반려는 destructive 확인 뒤 한 번 부르며, 처리 중에는 모든 행의 버튼이
+ * 가입 신청(REQUESTED)만 승인·반려 버튼을 갖고, 회원(APPROVED)에는 탈퇴 처리만 있다(2026-09-25 — 수정 대행 권한이
+ * 있을 때만). 승인은 확인 없이 한 번, 반려·탈퇴 처리는 destructive 확인 뒤 한 번 부르며, 처리 중에는 모든 행의 버튼이
  * disabled 이고 처리 중인 버튼만 aria-busy 다. 실패는 토스트로 드러나고 목록은 남는다. 이름이 없으면 esntlId 를 보여 준다.
  */
 const mocks = vi.hoisted(() => ({
@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   getMembers: vi.fn(),
   approveMember: vi.fn(),
   rejectMember: vi.fn(),
+  withdrawMember: vi.fn(),
   confirm: vi.fn(),
   toast: vi.fn(),
 }));
@@ -29,6 +30,7 @@ vi.mock('@/services/foundation/system/CommunityAdminService', () => ({
     getMembers: mocks.getMembers,
     approveMember: mocks.approveMember,
     rejectMember: mocks.rejectMember,
+    withdrawMember: mocks.withdrawMember,
   },
 }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
@@ -39,6 +41,7 @@ const community = { cmntySn: 11, cmntyNm: '독서 모임', cmntyIntrcn: '책', u
 const requested = { cmntySn: 11, userId: 'esntl-1', userNm: '홍길동', status: 'REQUESTED' as const, mbrSttsCd: 'A', mngrYn: 'N', joinYmd: '20260906', useYn: 'Y' };
 const orphan = { cmntySn: 11, userId: 'esntl-gone', userNm: null, status: 'REQUESTED' as const, mbrSttsCd: 'A', mngrYn: 'N', joinYmd: null, useYn: 'Y' };
 const member = { cmntySn: 11, userId: 'esntl-2', userNm: '김회원', status: 'APPROVED' as const, mbrSttsCd: 'P', mngrYn: 'N', joinYmd: '20260801', useYn: 'Y' };
+const withdrawn = { cmntySn: 11, userId: 'esntl-3', userNm: '이탈퇴', status: 'WITHDRAWN' as const, mbrSttsCd: 'W', mngrYn: 'N', joinYmd: '20260701', useYn: 'N' };
 
 function page(list: unknown[]) {
   return { list, total: list.length, page: 0, size: 20, totalPage: 1 };
@@ -61,10 +64,12 @@ describe('CommunityMembersPanel', () => {
     mocks.getMembers.mockImplementation((_sn: number, params: { status?: string }) => {
       if (params.status === 'REQUESTED') return Promise.resolve(page([requested, orphan]));
       if (params.status === 'APPROVED') return Promise.resolve(page([member]));
-      return Promise.resolve(page([requested, orphan, member]));
+      if (params.status === 'WITHDRAWN') return Promise.resolve(page([withdrawn]));
+      return Promise.resolve(page([requested, orphan, member, withdrawn]));
     });
     mocks.approveMember.mockResolvedValue(undefined);
     mocks.rejectMember.mockResolvedValue(undefined);
+    mocks.withdrawMember.mockResolvedValue(undefined);
     mocks.confirm.mockResolvedValue(true);
   });
 
@@ -74,11 +79,12 @@ describe('CommunityMembersPanel', () => {
     await screen.findByRole('list', { name: '회원 목록' });
     expect(screen.queryByRole('button', { name: /가입 승인/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /가입 반려/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /탈퇴 처리/ })).not.toBeInTheDocument();
     expect(mocks.approveMember).not.toHaveBeenCalled();
     expect(mocks.rejectMember).not.toHaveBeenCalled();
   });
 
-  it('기본 필터는 가입 신청이고, 이름 없는 신청자는 esntlId 로 보여 주며, 회원 행에는 전이 버튼이 없다', async () => {
+  it('기본 필터는 가입 신청이고, 이름 없는 신청자는 esntlId 로 보여 주며, 수정 대행 권한이 없으면 회원 행에 전이 버튼이 없다', async () => {
     const user = userEvent.setup();
     renderPanel();
     const list = await screen.findByRole('list', { name: '회원 목록' });
@@ -94,6 +100,7 @@ describe('CommunityMembersPanel', () => {
     await within(memberList).findByText('김회원');
     expect(within(memberList).queryByRole('button', { name: /가입 승인/ })).not.toBeInTheDocument();
     expect(within(memberList).queryByRole('button', { name: /가입 반려/ })).not.toBeInTheDocument();
+    expect(within(memberList).queryByRole('button', { name: /탈퇴 처리/ })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '전체' }));
     await waitFor(() => expect(mocks.getMembers).toHaveBeenCalledWith(11, { page: 0, size: 20 }));
@@ -169,6 +176,71 @@ describe('CommunityMembersPanel', () => {
 
     fireEvent.click(within(list).getByRole('button', { name: 'esntl-gone 가입 반려' }));
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('esntl-gone 님의 가입 신청을 반려했습니다.', 'success'));
+  });
+
+  it('탈퇴 처리는 회원 행에만 있고 destructive 확인 뒤 한 번만 부르며, pending 동안 disabled·aria-busy 이고 실패는 토스트로 드러낸다', async () => {
+    mocks.permissions = ['COMMUNITY_APPROVE', 'COMMUNITY_REJECT', 'COMMUNITY_UPDATE_ALL'];
+    let rejectWithdraw: (reason?: unknown) => void = () => undefined;
+    mocks.withdrawMember.mockImplementation(() => new Promise<void>((_resolve, reject) => { rejectWithdraw = reject; }));
+    const user = userEvent.setup();
+    renderPanel();
+    const requestList = await screen.findByRole('list', { name: '회원 목록' });
+    // 신청 행에는 탈퇴 처리가 없다 — 신청은 반려로 끝낸다.
+    expect(within(requestList).queryByRole('button', { name: /탈퇴 처리/ })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '회원' }));
+    const memberList = await screen.findByRole('list', { name: '회원 목록' });
+    const withdrawButton = await within(memberList).findByRole('button', { name: '김회원 탈퇴 처리' });
+    fireEvent.dblClick(withdrawButton);
+    fireEvent.click(withdrawButton);
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    expect(mocks.confirm.mock.calls[0][0]).toMatchObject({ variant: 'destructive', confirmText: '탈퇴 처리' });
+    expect(String(mocks.confirm.mock.calls[0][0].message)).toMatch(/회원 전용 게시판을 더 이상 볼 수 없/);
+    await waitFor(() => expect(mocks.withdrawMember).toHaveBeenCalledTimes(1));
+    expect(mocks.withdrawMember).toHaveBeenCalledWith(11, 'esntl-2');
+    expect(withdrawButton).toBeDisabled();
+    expect(withdrawButton).toHaveAttribute('aria-busy', 'true');
+
+    rejectWithdraw(new Error('승인된 회원만 탈퇴할 수 있습니다.'));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('승인된 회원만 탈퇴할 수 있습니다.', 'error'));
+    expect(within(memberList).getByText('김회원')).toBeInTheDocument();
+    await waitFor(() => expect(withdrawButton).not.toBeDisabled());
+    expect(withdrawButton).not.toHaveAttribute('aria-busy', 'true');
+  });
+
+  it('탈퇴 처리 확인을 취소하면 서버를 부르지 않고, 성공하면 안내하고 목록을 다시 읽는다', async () => {
+    mocks.permissions = ['COMMUNITY_UPDATE_ALL'];
+    mocks.confirm.mockResolvedValueOnce(false);
+    const user = userEvent.setup();
+    renderPanel();
+    await screen.findByRole('list', { name: '회원 목록' });
+    await user.click(screen.getByRole('button', { name: '회원' }));
+    const memberList = await screen.findByRole('list', { name: '회원 목록' });
+    const withdrawButton = await within(memberList).findByRole('button', { name: '김회원 탈퇴 처리' });
+
+    fireEvent.click(withdrawButton);
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(withdrawButton).not.toBeDisabled());
+    expect(mocks.withdrawMember).not.toHaveBeenCalled();
+
+    const callsBefore = mocks.getMembers.mock.calls.length;
+    fireEvent.click(withdrawButton);
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('김회원 님을 탈퇴 처리했습니다.', 'success'));
+    await waitFor(() => expect(mocks.getMembers.mock.calls.length).toBeGreaterThan(callsBefore));
+  });
+
+  it('탈퇴 필터는 탈퇴 행을 탈퇴로 표시하고 어떤 전이 버튼도 두지 않는다', async () => {
+    mocks.permissions = ['COMMUNITY_APPROVE', 'COMMUNITY_REJECT', 'COMMUNITY_UPDATE_ALL'];
+    const user = userEvent.setup();
+    renderPanel();
+    await screen.findByRole('list', { name: '회원 목록' });
+    await user.click(screen.getByRole('button', { name: '탈퇴' }));
+    await waitFor(() => expect(mocks.getMembers).toHaveBeenCalledWith(11, { status: 'WITHDRAWN', page: 0, size: 20 }));
+    const list = await screen.findByRole('list', { name: '회원 목록' });
+    await within(list).findByText('이탈퇴');
+    expect(within(list).getByText('탈퇴')).toBeInTheDocument();
+    expect(within(list).queryByRole('button')).not.toBeInTheDocument();
   });
 
   it('처리할 신청이 없으면 빈 상태를 말하고, 돌아가기는 상위에 맡긴다', async () => {

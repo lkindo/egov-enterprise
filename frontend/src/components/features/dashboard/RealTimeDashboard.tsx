@@ -159,7 +159,10 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
 
   return (
     <div className="space-y-4">
-      {/* 실시간 연결 상태 */}
+      {/* 실시간 연결 상태.
+          [2026-09-25] 종전에는 한 문구가 연결 상태와 집계 가용 여부를 함께 말해, 연결이 멀쩡한데(초록 점)
+          '일부 통계 확인 불가' 가 보였고 그 전환이 알림 영역(live region)으로 읽혔다. 연결은 이 문구가,
+          집계 실패는 해당 카드가 말한다. 대기 문구는 연결됐는데 첫 통계가 아직 없을 때만 덧붙인다. */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={cn(
@@ -167,9 +170,11 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
             isConnected ? "bg-green-500 animate-pulse" : "bg-gray-300"
           )} />
           <span className="text-sm font-bold text-muted-foreground" role="status" aria-live="polite">
-            {!isConnected ? '연결 끊김' : !stats ? '통계 수신 대기 중'
-              : stats.newPostsAvailable && stats.alertsAvailable ? '통계 수신 중' : '일부 통계 확인 불가'}
+            {isConnected ? '실시간 연결됨' : '연결 끊김'}
           </span>
+          {isConnected && !stats && (
+            <span className="text-sm text-muted-foreground">· 통계 수신 대기 중</span>
+          )}
         </div>
 
         {/* 알림 버튼 */}
@@ -265,12 +270,15 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
           unavailableMessage={stats && !stats.newPostsAvailable ? '게시글 수 확인 불가' : undefined}
           color="purple"
         />
+        {/* [2026-09-25] 서버는 모든 사용자의 읽지 않은 알림 합계(read_yn='N')를 방송한다. 종전 '알림' 제목과
+            빨간 강조는 내 알림처럼 읽혀, 벨의 내 미읽음 수와 다른 숫자가 급한 일처럼 보였다. 범위를 이름에 싣고
+            강조는 걷는다 — 보는 사람이 처리할 수 있는 숫자가 아니다. */}
         <RealTimeStatCard
-          title="알림"
+          title="전체 미읽음 알림"
           value={stats?.alertsAvailable ? stats.alerts : null}
           unavailableMessage={stats && !stats.alertsAvailable ? '알림 수 확인 불가' : undefined}
           icon={<AlertCircle size={20} />}
-          isAlert
+          trend="전체 사용자"
           color="red"
         />
       </div>
@@ -291,17 +299,13 @@ interface RealTimeStatCardProps {
   icon: ReactNode;
   trend?: string;
   unavailableMessage?: string;
-  isAlert?: boolean;
   color?: keyof typeof statColorClasses;
 }
 
-function RealTimeStatCard({ title, value, icon, trend, unavailableMessage, isAlert = false, color = 'blue' }: RealTimeStatCardProps) {
+function RealTimeStatCard({ title, value, icon, trend, unavailableMessage, color = 'blue' }: RealTimeStatCardProps) {
 
   return (
-    <Card className={cn(
-      "transition-all hover:shadow-md",
-      isAlert && value !== null && value > 0 && "border-destructive/20 bg-destructive/5"
-    )}>
+    <Card className="transition-all hover:shadow-md">
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
           <div className={cn("p-3 rounded-lg", statColorClasses[color])}>

@@ -8,9 +8,13 @@ import {
     getCommunityBoardsOperation,
     getMyMembershipOperation,
     joinCommunityOperation,
+    leaveCommunityOperation,
 } from '@/types/generated-operations';
 
-/** 현재 사용자의 커뮤니티 멤버십. NONE=신청 가능, REQUESTED=승인 대기, MEMBER=회원, UNKNOWN=어휘 밖 상태(신청 불가). */
+/**
+ * 현재 사용자의 커뮤니티 멤버십. NONE=신청 가능, REQUESTED=승인 대기, MEMBER=회원,
+ * WITHDRAWN=탈퇴(다시 신청 가능), UNKNOWN=어휘 밖 상태(신청 불가).
+ */
 export type CommunityMembership = {
     cmntySn: number;
     status: NonNullable<components['schemas']['CommunityMembershipDto']['status']>;
@@ -135,6 +139,16 @@ class CommunityUserService extends UserService {
      */
     async joinCommunity(cmntySn: number): Promise<void> {
         return this.executeGenerated(joinCommunityOperation, {
+            path: { cmntySn },
+        });
+    }
+
+    /**
+     * 커뮤니티 탈퇴 (2026-09-25) — 대상은 언제나 현재 사용자다(서버가 principal 로 고정한다).
+     * 회원 전용 게시판 접근이 즉시 끊기고, 다시 가입하려면 새로 신청해 승인을 받아야 한다.
+     */
+    async leaveCommunity(cmntySn: number): Promise<void> {
+        return this.executeGenerated(leaveCommunityOperation, {
             path: { cmntySn },
         });
     }

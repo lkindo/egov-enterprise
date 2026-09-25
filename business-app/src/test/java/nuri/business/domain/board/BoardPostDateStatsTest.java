@@ -120,4 +120,21 @@ class BoardPostDateStatsTest extends PersistenceTestSupport {
         assertThat(String.valueOf(rows.get(0)[0])).isEqualTo("2026-08-20");
         assertThat(((Number) rows.get(0)[1]).longValue()).isEqualTo(1L);
     }
+
+    /**
+     * 실시간 대시보드가 쓰는 기간 건수. 날짜별 집계와 같은 조건(논리 삭제 제외·반개방 구간)을 따라야
+     * 대시보드의 오늘 게시글 수와 게시물 통계의 오늘 행이 같은 숫자를 말한다.
+     */
+    @Test
+    @DisplayName("기간 건수는 날짜별 집계의 합과 같다 — 논리 삭제·기간 밖·종료 경계를 세지 않는다")
+    void betweenCountMatchesDateRowsTotal() {
+        savePost("시작 경계", "Y", "2026-08-01 00:00:00");
+        savePost("기간 안", "Y", "2026-08-15 10:00:00");
+        savePost("지운 글", "N", "2026-08-15 11:00:00");
+        savePost("기간 전", "Y", "2026-07-31 23:59:59");
+        savePost("종료 경계", "Y", "2026-09-01 00:00:00");
+
+        assertThat(boardRepository.countPostsBetween(FROM, TO)).isEqualTo(2L);
+        assertThat(boardRepository.countPostsBetween(FROM, TO)).isEqualTo(totalOf(boardRepository.countPostsByDate(FROM, TO)));
+    }
 }

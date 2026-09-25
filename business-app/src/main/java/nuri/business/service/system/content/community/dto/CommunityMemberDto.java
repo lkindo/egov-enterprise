@@ -17,7 +17,7 @@ public record CommunityMemberDto(
         @Schema(description = "커뮤니티 일련번호") Long cmntySn,
         @Schema(description = "사용자 식별자(esntlId)") String userId,
         @Schema(description = "사용자 이름 — 사용자를 찾지 못하면 null", nullable = true) String userNm,
-        @Schema(description = "멤버십 상태 — REQUESTED(가입 신청)·APPROVED(회원). 어휘 밖 코드는 null", nullable = true)
+        @Schema(description = "멤버십 상태 — REQUESTED(가입 신청)·APPROVED(회원)·WITHDRAWN(탈퇴). 어휘 밖 코드는 null", nullable = true)
         CommunityMemberStatus status,
         @Schema(description = "원본 상태 코드(mbr_stts_cd)") String mbrSttsCd,
         @Schema(description = "관리자 여부(Y/N)") String mngrYn,

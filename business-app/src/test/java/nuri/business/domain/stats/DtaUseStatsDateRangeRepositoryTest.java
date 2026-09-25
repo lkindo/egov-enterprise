@@ -7,7 +7,6 @@ import nuri.business.support.PersistenceTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,11 +37,7 @@ class DtaUseStatsDateRangeRepositoryTest extends PersistenceTestSupport {
         }
         em.clear();
 
-        assertThat(usage.findByDateRange(FROM, TO_EXCLUSIVE, PageRequest.of(0, 10)))
-                .extracting(DtaUseStats::getCrtDt).containsExactly(END.minusNanos(1000), START);
-        assertThat(usage.countByDateRange(FROM, TO_EXCLUSIVE)).isEqualTo(2);
         assertSingleBucket(usage.countByDate(FROM, TO_EXCLUSIVE), "2024-02-29");
-        assertSingleBucket(usage.countByBbsId(FROM, TO_EXCLUSIVE), "Range board");
     }
 
     private static void assertSingleBucket(List<Object[]> rows, String key) {

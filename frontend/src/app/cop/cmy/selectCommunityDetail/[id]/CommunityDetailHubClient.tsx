@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck,  
+import { ShieldCheck, UserMinus,  
   Calendar, 
   ChevronLeft, 
   MessageSquare, 
@@ -19,6 +19,7 @@ import { ShieldCheck,
 import { communityService } from '@/services/business/community/communityService';
 import { communityUserService } from '@/services/business/user/community/CommunityUserService';
 import { useToast } from '@/app/components/ui/toast';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { CommunityVO } from '@/types/business/community';
 import Link from 'next/link';
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -33,8 +34,11 @@ export default function CommunityDetailHubClient({
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const joinPendingRef = React.useRef(false);
   const [isJoining, setJoining] = React.useState(false);
+  const leavePendingRef = React.useRef(false);
+  const [isLeaving, setLeaving] = React.useState(false);
 
   const { data: community } = useQuery({
     queryKey: ['community', cmntySn],
@@ -44,7 +48,8 @@ export default function CommunityDetailHubClient({
 
   /**
    * [2026-09-06 DEC-OPS-043] 내 멤버십 상태. 승인 절차가 생겼으므로(관리자 '커뮤니티 관리 → 회원 관리') 화면이
-   * 신청 뒤 상태를 말할 수 있다 — NONE 이면 신청 버튼, REQUESTED 면 '승인 대기', MEMBER 면 '회원'.
+   * 신청 뒤 상태를 말할 수 있다 — NONE 이면 신청 버튼, REQUESTED 면 '승인 대기', MEMBER 면 '회원' 과 탈퇴 버튼,
+   * WITHDRAWN 이면 다시 신청 버튼(2026-09-25 — 탈퇴한 사용자는 새 신청으로 돌아온다).
    * 아직 모르는 동안(로딩·조회 실패)은 버튼을 연다: 서버가 중복·비활성을 409 로 막으므로 열어 두는 쪽이 안전하고,
    * 조회 실패 하나로 가입 경로를 닫지 않기 위해서다.
    */
@@ -114,6 +119,36 @@ export default function CommunityDetailHubClient({
     }
   };
 
+  /**
+   * [2026-09-25] 본인 탈퇴. 종전에는 가입만 있고 나갈 길이 없었다(서버에 전이 메서드는 있었지만 경로가 없었다).
+   * 회원 전용 게시판 접근이 끊기므로 destructive 확인을 거친다. 실패는 서버 메시지를 그대로 보여 준다.
+   */
+  const handleLeave = async () => {
+    if (leavePendingRef.current) return;
+    leavePendingRef.current = true;
+    setLeaving(true);
+    try {
+      const ok = await confirm({
+        title: '커뮤니티 탈퇴',
+        message: '이 커뮤니티에서 탈퇴합니다. 회원 전용 게시판을 더 이상 볼 수 없고, 다시 이용하려면 새로 가입을 신청해 승인을 받아야 합니다.',
+        confirmText: '탈퇴',
+        variant: 'destructive',
+      });
+      if (!ok) return;
+      await communityUserService.leaveCommunity(cmntySn);
+      toast('커뮤니티에서 탈퇴했습니다.', 'success');
+      void queryClient.invalidateQueries({ queryKey: ['community-membership', cmntySn] });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      toast(message || '커뮤니티 탈퇴 중 오류가 발생했습니다.', 'error');
+    } finally {
+      leavePendingRef.current = false;
+      setLeaving(false);
+    }
+  };
+
+  const joinLabel = membershipStatus === 'WITHDRAWN' ? '다시 가입 신청' : '커뮤니티 가입 신청';
+
   if (!community) return null;
 
   return (
@@ -134,9 +169,23 @@ export default function CommunityDetailHubClient({
                   <UserPlus size={16} aria-hidden="true" /> 가입 승인 대기 중
                 </span>
               ) : membershipStatus === 'MEMBER' ? (
-                <span role="status" className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-success/10 px-3 text-xs font-bold text-success-emphasis">
-                  <ShieldCheck size={16} aria-hidden="true" /> 회원
-                </span>
+                <>
+                  <span role="status" className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-success/10 px-3 text-xs font-bold text-success-emphasis">
+                    <ShieldCheck size={16} aria-hidden="true" /> 회원
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => { void handleLeave(); }}
+                    disabled={isLeaving}
+                    aria-busy={isLeaving || undefined}
+                    aria-label={isLeaving ? '커뮤니티 탈퇴 중' : '커뮤니티 탈퇴'}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <UserMinus size={16} aria-hidden="true" />
+                    {isLeaving ? '탈퇴 중…' : '탈퇴'}
+                  </Button>
+                </>
               ) : membershipStatus === 'UNKNOWN' ? (
                 <span role="status" className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-muted px-3 text-xs font-bold text-muted-foreground">
                   멤버십 상태 확인 필요
@@ -147,10 +196,10 @@ export default function CommunityDetailHubClient({
                   onClick={() => { void handleJoin(); }}
                   disabled={isJoining}
                   aria-busy={isJoining || undefined}
-                  aria-label={isJoining ? '커뮤니티 가입 신청 중' : '커뮤니티 가입 신청'}
+                  aria-label={isJoining ? `${joinLabel} 중` : joinLabel}
                 >
                   <UserPlus size={16} aria-hidden="true" />
-                  {isJoining ? '신청 중…' : '커뮤니티 가입 신청'}
+                  {isJoining ? '신청 중…' : joinLabel}
                 </Button>
               )}
             </div>
@@ -223,7 +272,9 @@ export default function CommunityDetailHubClient({
                   <p className="text-sm font-bold text-muted-foreground">
                     {membershipStatus === 'REQUESTED'
                       ? '가입 승인을 기다리는 중입니다. 승인되면 이 커뮤니티의 게시판이 보입니다.'
-                      : '이 커뮤니티의 게시판은 승인된 회원만 볼 수 있습니다.'}
+                      : membershipStatus === 'WITHDRAWN'
+                        ? '탈퇴한 커뮤니티입니다. 다시 가입을 신청해 승인되면 게시판이 보입니다.'
+                        : '이 커뮤니티의 게시판은 승인된 회원만 볼 수 있습니다.'}
                   </p>
                 </div>
               ) : isBoardsLoading ? (
@@ -286,7 +337,9 @@ export default function CommunityDetailHubClient({
                       ? '이 커뮤니티의 회원입니다.'
                       : membershipStatus === 'REQUESTED'
                         ? '가입 신청이 접수되었습니다. 관리자가 승인하면 회원이 됩니다.'
-                        : '신청하면 관리자가 검토해 승인하거나 반려합니다.'}
+                        : membershipStatus === 'WITHDRAWN'
+                          ? '탈퇴한 커뮤니티입니다. 다시 신청하면 관리자가 검토해 승인하거나 반려합니다.'
+                          : '신청하면 관리자가 검토해 승인하거나 반려합니다.'}
                     <br />
                     {/* [2026-09-08 PD-CMTY-001] 회원 전용 게시판이 생겼으므로 미제공 고지를 걷는다. */}
                     회원이 되면 이 커뮤니티에 귀속된 게시판을 이용할 수 있습니다.

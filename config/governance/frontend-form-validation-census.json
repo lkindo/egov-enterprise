@@ -8,8 +8,8 @@
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 19,
-    "secondaryActionBoundaries": 66,
-    "candidateCount": 150
+    "secondaryActionBoundaries": 68,
+    "candidateCount": 152
   },
   "entries": [
     {
@@ -2652,6 +2652,26 @@
       ]
     },
     {
+      "key": "secondary-action:frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx#CommunityDetailHubClient.handleLeave[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx",
+      "owner": "CommunityDetailHubClient",
+      "handler": "handleLeave",
+      "writeSinks": [
+        "communityUserService.leaveCommunity"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.pending.test.tsx"
+      ]
+    },
+    {
       "key": "secondary-action:frontend/src/app/note/page.tsx#NotePage.handleDelete[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/note/page.tsx",
@@ -2826,6 +2846,26 @@
       "handler": "handleReject",
       "writeSinks": [
         "communityAdminService.rejectMember"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/business/community/__tests__/CommunityMembersPanel.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/components/business/community/CommunityMembersPanel.tsx#CommunityMembersPanel.handleWithdraw[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/components/business/community/CommunityMembersPanel.tsx",
+      "owner": "CommunityMembersPanel",
+      "handler": "handleWithdraw",
+      "writeSinks": [
+        "communityAdminService.withdrawMember"
       ],
       "classification": "destructive",
       "status": "compliant",

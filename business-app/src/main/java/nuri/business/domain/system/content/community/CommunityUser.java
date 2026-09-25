@@ -63,18 +63,23 @@ public class CommunityUser extends BaseEntity implements Serializable {
         return CommunityMemberStatus.WITHDRAWN.matches(this.mbrSttsCd);
     }
 
-    public void withdraw() {
+    /** 회원 → 탈퇴. 행은 남겨 가입·탈퇴 일자를 보존하며, 게시판 접근 판정은 회원({@code P})만 통과시킨다. */
+    public void withdraw(String withdrawalYmd) {
         this.mbrSttsCd = CommunityMemberStatus.WITHDRAWN.code();
         this.useYn = "N";
-        this.whdwlYmd = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        this.whdwlYmd = withdrawalYmd;
         this.mngrYn = "N";
     }
 
-    public void grantAdmin() {
-        this.mngrYn = "Y";
-    }
-
-    public void revokeAdmin() {
+    /**
+     * 탈퇴 → 가입 신청. 탈퇴한 사용자가 다시 가입하면 새 신청으로 시작한다 — 승인 없이 회원으로 되돌리지 않는다.
+     * 복합 PK 라 새 행을 만들 수 없으므로 같은 행을 신청 상태로 되돌린다.
+     */
+    public void requestAgain(String joinYmd) {
+        this.mbrSttsCd = CommunityMemberStatus.REQUESTED.code();
+        this.useYn = "Y";
+        this.joinYmd = joinYmd;
+        this.whdwlYmd = null;
         this.mngrYn = "N";
     }
 }

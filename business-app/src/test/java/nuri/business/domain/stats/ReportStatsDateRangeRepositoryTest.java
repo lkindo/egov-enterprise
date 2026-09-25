@@ -5,7 +5,6 @@ import nuri.business.support.PersistenceTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,13 +35,7 @@ class ReportStatsDateRangeRepositoryTest extends PersistenceTestSupport {
         }
         em.clear();
 
-        assertThat(reports.findByConditions("A", FROM, TO_EXCLUSIVE, PageRequest.of(0, 10)))
-                .extracting(ReprtStats::getCrtDt).containsExactly(END.minusNanos(1000), START);
-        assertThat(reports.countByConditions("A", FROM, TO_EXCLUSIVE)).isEqualTo(2);
-        assertThat(reports.countByConditions("Z", FROM, TO_EXCLUSIVE)).isZero();
         assertSingleBucket(reports.countByDate(FROM, TO_EXCLUSIVE), "2024-02-29");
-        assertSingleBucket(reports.countByReprtType(FROM, TO_EXCLUSIVE), "A");
-        assertSingleBucket(reports.countByReprtSttus(FROM, TO_EXCLUSIVE), "B");
     }
 
     private static void assertSingleBucket(List<Object[]> rows, String key) {

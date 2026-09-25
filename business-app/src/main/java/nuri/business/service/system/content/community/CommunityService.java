@@ -6,7 +6,6 @@ import nuri.business.domain.system.content.community.QCommunity;
 import nuri.business.domain.system.content.community.CommunityMemberStatus;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
-import nuri.business.security.authorization.PermissionCodes;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.system.content.community.dto.CommunityDto;
 import nuri.business.service.system.content.community.dto.CommunityMemberDto;
@@ -26,6 +25,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,6 +37,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CommunityService {
+
+    private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
 
     private final CommunityRepository communityRepository;
     private final CommunityUserRepository communityUserRepository;
@@ -196,30 +200,33 @@ public class CommunityService {
         }
 
         CommunityUserId id = new CommunityUserId(cmntySn, userId);
-        if (communityUserRepository.existsById(id)) {
-            // [2026-08-28] '처리 중입니다' 를 걷어냈다 — 아무도 처리하지 않는다.
-            //   아래 mbrSttsCd='A'(Requested) 는 저장소 어디에서도 읽히거나 다른 상태로
-            //   옮겨지지 않는다(승인 엔드포인트·화면 부재). 진행 중인 절차가 있는 것처럼
-            //   말하면 사용자는 기다리다 다시 눌러 같은 409 를 받는다.
-            throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, "이미 가입했거나 가입을 신청한 상태입니다.");
+        java.util.Optional<CommunityUser> existing = communityUserRepository.findByIdForUpdate(id);
+        if (existing.isPresent()) {
+            // [2026-09-25] 탈퇴한 사용자는 다시 신청할 수 있다. 복합 PK 라 새 행을 만들 수 없으므로 같은 행을
+            //   신청 상태로 되돌린다 — 승인 없이 회원으로 되살리지 않는다. 신청·회원·어휘 밖 상태는 종전대로 409 다.
+            CommunityUser member = existing.get();
+            if (!member.isWithdrawn()) {
+                throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, "이미 가입했거나 가입을 신청한 상태입니다.");
+            }
+            member.requestAgain(today());
+            return;
         }
 
         CommunityUser communityUser = CommunityUser.builder()
                 .id(id)
-                // A: Requested. ⚠ 이 값을 읽거나 전이시키는 코드가 아직 없다 — 승인 절차 미구현.
-                .mbrSttsCd("A")
+                .mbrSttsCd(CommunityMemberStatus.REQUESTED.code())
                 .mngrYn("N")
-                .joinYmd(java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")))
+                .joinYmd(today())
                 .useYn("Y")
                 .build();
 
         communityUserRepository.save(communityUser);
     }
 
-    // ─── 멤버십 전이 (2026-09-06 DEC-OPS-043, GAP-CMTY-001) ───────────────────────────────────────
-    //   종전에는 가입이 만드는 mbrSttsCd='A' 를 읽거나 옮기는 코드가 저장소 전체에 없었다(dead write).
-    //   승인·반려는 시스템 관리자(ADMIN/SYSTEM) 전용이다 — mngrYn='Y' 를 부여하는 경로가 아직 없어
-    //   커뮤니티 운영자 위임은 이번 범위 밖이며, 회원 탈퇴·강제 탈퇴도 만들지 않는다(화면이 약속하지 않는다).
+    // ─── 멤버십 전이 (2026-09-06 DEC-OPS-043, 2026-09-25 DEC-OPS-131, GAP-CMTY-001) ─────────────────────
+    //   신청(A) → 승인(P) 또는 반려(행 삭제), 회원(P) → 탈퇴(W), 탈퇴(W) → 재신청(A).
+    //   승인·반려·강제 탈퇴는 명시 operation 권한 보유자만 한다. mngrYn 은 어떤 인가 판정도 읽지 않으므로
+    //   부여 경로를 두지 않는다 — 켜도 아무 권한이 생기지 않는 운영자 위임은 거짓 기능이다.
 
     /**
      * 관리자용 회원·가입 신청 목록. {@code status} 가 null 이면 전체.
@@ -260,14 +267,15 @@ public class CommunityService {
         CommunityUser member = requireMembership(cmntySn, userId);
         if (!member.isRequested()) {
             throw new BusinessException(CommonErrorCode.INVALID_STATE,
-                    "가입 신청 상태가 아니어서 반려할 수 없습니다. 회원 탈퇴 처리는 지원하지 않습니다.");
+                    "가입 신청 상태가 아니어서 반려할 수 없습니다. 회원은 탈퇴 처리를 사용하세요.");
         }
         communityUserRepository.delete(member);
     }
 
     /**
      * 커뮤니티 회원 탈퇴 — 승인된 회원(P)을 탈퇴 상태(W, useYn='N')로 전이한다.
-     * 본인 탈퇴(esntlId 일치) 또는 관리자 권한(COMMUNITY_WITHDRAW)이 필요하다.
+     * 본인(esntlId 일치) 또는 {@code COMMUNITY_UPDATE_ALL} 보유자만 한다. 본인 경로는 컨트롤러가 대상을 현재
+     * 사용자로 고정하고, 관리자 경로(강제 탈퇴)는 URL 권한이 같은 코드를 요구한다.
      */
     @Transactional
     public void withdrawMember(Long cmntySn, String userId) {
@@ -279,24 +287,11 @@ public class CommunityService {
         if (!member.isApproved()) {
             throw new BusinessException(CommonErrorCode.INVALID_STATE, "승인된 회원만 탈퇴할 수 있습니다.");
         }
-        member.withdraw();
+        member.withdraw(today());
     }
 
-    /**
-     * 커뮤니티 운영자 위임/해제 — 관리자 권한(COMMUNITY_UPDATE_ALL)이 필요하며 승인된 회원만 가능하다.
-     */
-    @Transactional
-    public void delegateManager(Long cmntySn, String userId, boolean isManager) {
-        SecurityUtil.assertPermission("COMMUNITY_UPDATE_ALL");
-        CommunityUser member = requireMembership(cmntySn, userId);
-        if (!member.isApproved()) {
-            throw new BusinessException(CommonErrorCode.INVALID_STATE, "승인된 회원에게만 운영자 권한을 변경할 수 있습니다.");
-        }
-        if (isManager) {
-            member.grantAdmin();
-        } else {
-            member.revokeAdmin();
-        }
+    private static String today() {
+        return LocalDate.now(SEOUL).format(DateTimeFormatter.BASIC_ISO_DATE);
     }
 
     /** 현재 사용자({@code userId} = esntlId)의 멤버십 상태. 행이 없으면 NONE. */
@@ -313,7 +308,7 @@ public class CommunityService {
     }
 
     private CommunityUser requireMembership(Long cmntySn, String userId) {
-        // Approval and rejection must observe the state after any competing decision commits.
+        // 승인·반려·탈퇴가 동시에 오면 먼저 커밋된 결정 뒤의 상태를 보고 판정한다(비관적 잠금).
         return communityUserRepository.findByIdForUpdate(new CommunityUserId(Objects.requireNonNull(cmntySn), userId))
                 .orElseThrow(() -> new BusinessException(
                         CommonErrorCode.RESOURCE_NOT_FOUND, "가입 신청 내역을 찾을 수 없습니다."));

@@ -259,13 +259,16 @@ class CommunityServiceImplTest {
                 .useYn("Y")
                 .build();
         given(communityRepository.findById(cmntySn)).willReturn(Optional.of(community));
-        given(communityUserRepository.existsById(any())).willReturn(false);
+        given(communityUserRepository.findByIdForUpdate(any())).willReturn(Optional.empty());
 
         // when
         communityService.joinCommunity(cmntySn, userId);
 
         // then
-        verify(communityUserRepository, times(1)).save(any());
+        var saved = org.mockito.ArgumentCaptor.forClass(nuri.business.domain.system.content.community.CommunityUser.class);
+        verify(communityUserRepository, times(1)).save(saved.capture());
+        assertThat(saved.getValue().isRequested()).isTrue();
+        assertThat(saved.getValue().getJoinYmd()).matches("\\d{8}");
     }
 
     /**
@@ -285,17 +288,47 @@ class CommunityServiceImplTest {
                 .useYn("Y")
                 .build();
         given(communityRepository.findById(cmntySn)).willReturn(Optional.of(community));
-        given(communityUserRepository.existsById(any())).willReturn(true);
 
-        nuri.foundation.core.exception.BusinessException thrown =
-                org.junit.jupiter.api.Assertions.assertThrows(
-                        nuri.foundation.core.exception.BusinessException.class,
-                        () -> communityService.joinCommunity(cmntySn, "user1"));
+        // 신청·회원·어휘 밖 상태는 모두 중복이다. 탈퇴(W)만 다시 신청할 수 있다(아래 별도 테스트).
+        for (String status : List.of("A", "P", "Z")) {
+            var existing = membership(cmntySn, "user1", status);
+            given(communityUserRepository.findByIdForUpdate(any())).willReturn(Optional.of(existing));
 
-        org.junit.jupiter.api.Assertions.assertEquals(
-                nuri.foundation.core.exception.CommonErrorCode.DUPLICATE_RESOURCE, thrown.getErrorCode());
-        org.junit.jupiter.api.Assertions.assertFalse(thrown.getMessage().contains("처리 중"),
-                "아무도 처리하지 않는 상태를 '처리 중'이라고 부르면 안 된다");
+            nuri.foundation.core.exception.BusinessException thrown =
+                    org.junit.jupiter.api.Assertions.assertThrows(
+                            nuri.foundation.core.exception.BusinessException.class,
+                            () -> communityService.joinCommunity(cmntySn, "user1"));
+
+            org.junit.jupiter.api.Assertions.assertEquals(nuri.foundation.core.exception.CommonErrorCode.DUPLICATE_RESOURCE, thrown.getErrorCode());
+            org.junit.jupiter.api.Assertions.assertFalse(thrown.getMessage().contains("처리 중"),
+                    "아무도 처리하지 않는 상태를 '처리 중'이라고 부르면 안 된다");
+            assertThat(existing.getMbrSttsCd()).isEqualTo(status);
+        }
+        verify(communityUserRepository, org.mockito.Mockito.never()).save(any());
+    }
+
+    /**
+     * [2026-09-25] 탈퇴한 사용자가 다시 가입하면 종전에는 행이 남아 있다는 이유로 409 였다 — 탈퇴는 되는데
+     * 돌아올 길이 없었다. 복합 PK 라 새 행을 만들 수 없으므로 같은 행을 신청 상태로 되돌리며, 승인 없이
+     * 회원으로 되살리지 않는다.
+     */
+    @Test
+    @DisplayName("탈퇴한 사용자의 재가입은 같은 행을 새 신청(A)으로 되돌린다 — 회원으로 바로 되살리지 않는다")
+    void joinCommunityAfterWithdrawalStartsNewRequest() {
+        Long cmntySn = 101L;
+        given(communityRepository.findById(cmntySn)).willReturn(Optional.of(Community.builder().cmntySn(cmntySn).useYn("Y").build()));
+        var withdrawn = nuri.business.domain.system.content.community.CommunityUser.builder()
+                .id(new nuri.business.domain.system.content.community.CommunityUserId(cmntySn, "user1"))
+                .mbrSttsCd("W").mngrYn("N").joinYmd("20260101").whdwlYmd("20260301").useYn("N")
+                .build();
+        given(communityUserRepository.findByIdForUpdate(any())).willReturn(Optional.of(withdrawn));
+
+        communityService.joinCommunity(cmntySn, "user1");
+
+        assertThat(withdrawn.isRequested()).isTrue();
+        assertThat(withdrawn.getUseYn()).isEqualTo("Y");
+        assertThat(withdrawn.getWhdwlYmd()).isNull();
+        assertThat(withdrawn.getJoinYmd()).matches("\\d{8}").isNotEqualTo("20260101");
         verify(communityUserRepository, org.mockito.Mockito.never()).save(any());
     }
 
@@ -464,8 +497,9 @@ class CommunityServiceImplTest {
     void membershipTransitions_requireAdmin() {
         authenticateWithRole("ROLE_USER");
         var member = membership(101L, "user1", "A");
-        given(communityUserRepository.findById(any())).willReturn(Optional.of(member));
-        given(communityRepository.findById(101L)).willReturn(Optional.of(Community.builder().cmntySn(101L).useYn("Y").build()));
+        org.mockito.Mockito.lenient().when(communityUserRepository.findByIdForUpdate(any())).thenReturn(Optional.of(member));
+        org.mockito.Mockito.lenient().when(communityRepository.findById(101L))
+                .thenReturn(Optional.of(Community.builder().cmntySn(101L).useYn("Y").build()));
 
         for (Runnable call : List.<Runnable>of(
                 () -> communityService.approveMember(101L, "user1"),
@@ -534,62 +568,69 @@ class CommunityServiceImplTest {
     }
 
     @Test
-    @DisplayName("회원 탈퇴 — 승인된 회원(P)을 탈퇴 상태(W)로 전이하고 useYn='N'으로 설정한다")
+    @DisplayName("강제 탈퇴 — 승인된 회원(P)을 탈퇴(W)로 옮기고 사용 여부·운영자 표시를 끄며 탈퇴일을 남긴다")
     void withdrawMember_movesApprovedToWithdrawn() {
         authenticateWithRole("ROLE_ADMIN");
         var member = membership(101L, "user1", "P");
-        given(communityUserRepository.findById(any())).willReturn(Optional.of(member));
+        given(communityUserRepository.findByIdForUpdate(any())).willReturn(Optional.of(member));
 
         communityService.withdrawMember(101L, "user1");
 
         assertThat(member.getMbrSttsCd()).isEqualTo("W");
         assertThat(member.isWithdrawn()).isTrue();
         assertThat(member.getUseYn()).isEqualTo("N");
-        assertThat(member.getWhdwlYmd()).isNotNull();
+        assertThat(member.getMngrYn()).isEqualTo("N");
+        assertThat(member.getWhdwlYmd()).matches("\\d{8}");
+        verify(communityUserRepository, never()).findById(any());
     }
 
     @Test
-    @DisplayName("회원 탈퇴 — 승인된 회원이 아니거나 이미 탈퇴한 상태면 400(INVALID_STATE) 예외가 발생한다")
+    @DisplayName("탈퇴 — 신청(A)·이미 탈퇴(W) 상태면 400(INVALID_STATE) 이고 상태를 바꾸지 않는다")
     void withdrawMember_rejectsInvalidState() {
         authenticateWithRole("ROLE_ADMIN");
-        var requestedMember = membership(101L, "user1", "A");
-        given(communityUserRepository.findById(any())).willReturn(Optional.of(requestedMember));
+        for (String status : List.of("A", "W")) {
+            var member = membership(101L, "user1", status);
+            given(communityUserRepository.findByIdForUpdate(any())).willReturn(Optional.of(member));
 
-        org.junit.jupiter.api.Assertions.assertThrows(
-                nuri.foundation.core.exception.BusinessException.class,
-                () -> communityService.withdrawMember(101L, "user1"));
+            nuri.foundation.core.exception.BusinessException thrown = org.junit.jupiter.api.Assertions.assertThrows(
+                    nuri.foundation.core.exception.BusinessException.class,
+                    () -> communityService.withdrawMember(101L, "user1"));
 
-        var withdrawnMember = membership(101L, "user2", "W");
-        given(communityUserRepository.findById(any())).willReturn(Optional.of(withdrawnMember));
-
-        org.junit.jupiter.api.Assertions.assertThrows(
-                nuri.foundation.core.exception.BusinessException.class,
-                () -> communityService.withdrawMember(101L, "user2"));
+            org.junit.jupiter.api.Assertions.assertEquals(nuri.foundation.core.exception.CommonErrorCode.INVALID_STATE, thrown.getErrorCode());
+            assertThat(member.getMbrSttsCd()).isEqualTo(status);
+        }
     }
 
     @Test
-    @DisplayName("운영자 위임 — 승인된 회원(P)의 mngrYn을 'Y' 또는 'N'으로 변경한다")
-    void delegateManager_grantsAndRevokesAdmin() {
-        authenticateWithRole("ROLE_ADMIN");
-        var member = membership(101L, "user1", "P");
-        given(communityUserRepository.findById(any())).willReturn(Optional.of(member));
+    @DisplayName("본인 탈퇴 — 일반 사용자는 자기 멤버십을 끝낼 수 있다")
+    void withdrawMember_allowsSelf() {
+        authenticateWithRole("ROLE_USER");
+        var member = membership(101L, "ESNTL_principal", "P");
+        given(communityUserRepository.findByIdForUpdate(any())).willReturn(Optional.of(member));
 
-        communityService.delegateManager(101L, "user1", true);
-        assertThat(member.getMngrYn()).isEqualTo("Y");
+        communityService.withdrawMember(101L, "ESNTL_principal");
 
-        communityService.delegateManager(101L, "user1", false);
-        assertThat(member.getMngrYn()).isEqualTo("N");
+        assertThat(member.isWithdrawn()).isTrue();
     }
 
     @Test
-    @DisplayName("운영자 위임 — 승인된 회원이 아니면 400(INVALID_STATE) 예외가 발생한다")
-    void delegateManager_rejectsNonApprovedMember() {
-        authenticateWithRole("ROLE_ADMIN");
-        var member = membership(101L, "user1", "A");
-        given(communityUserRepository.findById(any())).willReturn(Optional.of(member));
+    @DisplayName("🔒 일반 사용자는 다른 사람을 탈퇴시킬 수 없다 — 조회 전에 거부하고 상태를 건드리지 않는다")
+    void withdrawMember_deniesOtherUserWithoutOverridePermission() {
+        authenticateWithRole("ROLE_USER");
 
-        org.junit.jupiter.api.Assertions.assertThrows(
+        nuri.foundation.core.exception.BusinessException thrown = org.junit.jupiter.api.Assertions.assertThrows(
                 nuri.foundation.core.exception.BusinessException.class,
-                () -> communityService.delegateManager(101L, "user1", true));
+                () -> communityService.withdrawMember(101L, "someone-else"));
+
+        org.junit.jupiter.api.Assertions.assertEquals(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED, thrown.getErrorCode());
+        verify(communityUserRepository, never()).findByIdForUpdate(any());
+    }
+
+    @Test
+    @DisplayName("내 멤버십 — 탈퇴 행은 WITHDRAWN 이다(재가입 가능 상태)")
+    void getMembership_mapsWithdrawnRow() {
+        given(communityUserRepository.findById(any())).willReturn(Optional.of(membership(101L, "user1", "W")));
+
+        assertThat(communityService.getMembership(101L, "user1").status()).isEqualTo(nuri.business.service.system.content.community.dto.CommunityMembershipDto.Status.WITHDRAWN);
     }
 }

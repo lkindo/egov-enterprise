@@ -102,6 +102,15 @@
       "guardRef": "CommunityService#approveMember"
     },
     {
+      "method": "PATCH",
+      "path": "/api/v1/admin/content/community/{cmntySn}/members/{userId}/withdraw",
+      "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#withdrawMember",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.community.CommunityApiController#withdrawMember')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CommunityService#withdrawMember"
+    },
+    {
       "method": "POST",
       "path": "/api/v1/admin/content/files",
       "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
@@ -1156,6 +1165,18 @@
       "routeGate": "OPERATION_PERMISSION"
     },
     {
+      "method": "DELETE",
+      "path": "/api/v1/communities/{cmntySn}/membership",
+      "handler": "nuri.api.controller.business.community.CommunityUserApiController#leaveCommunity",
+      "policy": "STRICT_SELF",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.community.CommunityUserApiController#leaveCommunity')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CommunityService#withdrawMember",
+      "handlerRequiredTokens": [
+        "communityService.withdrawMember(cmntySn, userDetails.getUsername())"
+      ]
+    },
+    {
       "method": "POST",
       "path": "/api/v1/dept-jobs",
       "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#createDeptJob",
@@ -2029,18 +2050,6 @@
           "count": 1,
           "identityAxis": "PERMISSION",
           "permission": "COMMUNITY_APPROVE"
-        }
-      ]
-    },
-    {
-      "target": "CommunityService#delegateManager",
-      "policy": "ADMIN_OR_SYSTEM",
-      "mechanisms": [
-        {
-          "helper": "assertPermission",
-          "count": 1,
-          "identityAxis": "PERMISSION",
-          "permission": "COMMUNITY_UPDATE_ALL"
         }
       ]
     },
@@ -3468,6 +3477,13 @@
       "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#approveMember",
       "access": "PERMISSION",
       "permission": "COMMUNITY_APPROVE"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/content/community/{cmntySn}/members/{userId}/withdraw",
+      "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#withdrawMember",
+      "access": "PERMISSION",
+      "permission": "COMMUNITY_UPDATE_ALL"
     },
     {
       "method": "POST",
@@ -5138,6 +5154,13 @@
       "method": "POST",
       "path": "/api/v1/communities/{cmntySn}/join",
       "handler": "nuri.api.controller.business.community.CommunityUserApiController#joinCommunity",
+      "access": "PERMISSION",
+      "permission": "COMMUNITY_JOIN"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/communities/{cmntySn}/membership",
+      "handler": "nuri.api.controller.business.community.CommunityUserApiController#leaveCommunity",
       "access": "PERMISSION",
       "permission": "COMMUNITY_JOIN"
     },

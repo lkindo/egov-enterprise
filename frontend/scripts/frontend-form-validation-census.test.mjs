@@ -97,14 +97,17 @@ test('action-only write controls are discovered without a form or editable owner
           <button onClick={handleDelete}>delete</button>
           <button onClick={() => joinCommunity(communityId)}>join</button>
           <button onClick={() => boardService.likePost(postId)}>recommend</button>
+          <button onClick={() => adminService.withdrawMember(communityId, userId)}>withdraw</button>
         </>;
       }
     `,
   });
   try {
     const actions = subject.discovery.candidates.filter(({ kind }) => kind === 'secondary-action');
-    assert.equal(actions.length, 3);
-    assert.deepEqual(actions.flatMap(({ writeSinks }) => writeSinks).sort(), ['boardService.likePost', 'deleteComment', 'joinCommunity']);
+    // [2026-09-25] 'withdraw' 는 'leave' 와 같은 탈퇴 동사다. 어휘에 없으면 관리자 강제 탈퇴가 census 밖에 남는다.
+    assert.equal(actions.length, 4);
+    assert.deepEqual(actions.flatMap(({ writeSinks }) => writeSinks).sort(),
+      ['adminService.withdrawMember', 'boardService.likePost', 'deleteComment', 'joinCommunity']);
     assert.equal(subject.discovery.summary.formlessWriteBoundaries, 0);
   } finally {
     subject.cleanup();

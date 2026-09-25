@@ -1108,7 +1108,7 @@ L2 범위로 보강했다. 기존 도메인 권한과 제품 범위를 유지하
 | 첨부 | 단건·전체 삭제 모두 삭제 인가 후 DB를 변경하고, 커밋 뒤 실물을 지운다. DB 실패·바깥 트랜잭션 롤백이면 원본 파일이 남는다. | [실물 파일·트랜잭션 완료](../../business-core/src/test/java/nuri/business/service/file/FileDeletionTransactionTest.java) |
 | 커뮤니티 | 승인과 반려가 같은 회원 행의 쓰기 잠금을 얻은 뒤 상태를 판정한다. 후행 요청이 이미 승인된 회원을 반려로 지우지 않는다. | [양방향 실제 DB 경합](../../api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java) |
 | 메모 보고 | editable은 수정, deletable은 삭제 가능 여부다. 각각 기본 기능 권한과 owner 또는 해당 ALL 권한을 함께 평가한다. 두 필드는 응답 전용이며 실제 쓰기 인가는 서비스가 계속 집행한다. | [권한 조합](../../business-app/src/test/java/nuri/business/service/memoreport/MemoReportServiceTest.java), [생성 계약·요청 위조 차단](../../frontend/src/services/business/memoreport/__tests__/memoReportService.generated-contract.test.ts) |
-| 통계 | 날짜 단위 조회는 시작일 0시 이상·종료일 다음날 0시 미만이다. ISO와 yyyyMMdd를 정규화하며 마지막 마이크로초를 포함하고 다음날 행은 제외한다. 자료 이용의 게시판명 조인은 실존 bbs_ttl을 사용한다. | [보고 통계 경계](../../business-app/src/test/java/nuri/business/domain/stats/ReportStatsDateRangeRepositoryTest.java), [자료 이용 경계](../../business-app/src/test/java/nuri/business/domain/stats/DtaUseStatsDateRangeRepositoryTest.java), [게시글 경계](../../business-app/src/test/java/nuri/business/domain/board/BoardRepositoryTest.java) |
+| 통계 | 날짜 단위 조회는 시작일 0시 이상·종료일 다음날 0시 미만이다. ISO와 yyyyMMdd를 정규화하며 마지막 마이크로초를 포함하고 다음날 행은 제외한다. 형식이 틀리거나 시작일이 늦은 기간은 400이다(통합 검토 후속). | [보고 통계 경계](../../business-app/src/test/java/nuri/business/domain/stats/ReportStatsDateRangeRepositoryTest.java), [자료 이용 경계](../../business-app/src/test/java/nuri/business/domain/stats/DtaUseStatsDateRangeRepositoryTest.java), [게시글 경계](../../business-app/src/test/java/nuri/business/domain/board/BoardRepositoryTest.java) |
 | 대시보드 | 오늘 게시글은 한국 시간 하루의 활성 게시글을 기존 통계 포트로 읽는다. 재시작·자정에도 프로세스의 이벤트 누적에 의존하지 않는다. 집계 실패는 가용 여부를 전송해 화면에서 실제 0건과 구분한다. | [시계·집계 실패](../../business-app/src/test/java/nuri/business/service/dashboard/RealTimeDashboardServiceTest.java), [표시·복구](../../frontend/src/components/features/dashboard/__tests__/RealTimeDashboard.test.tsx) |
 | 로그인 E2E | SSR 제목·폰트가 먼저 보이더라도 익명 세션 확인의 GET 401을 관찰한 뒤 검사를 끝낸다. 기대 오류의 최소 발생 횟수와 flaky 차단은 유지한다. | [로그인 품질 spec](../../frontend/e2e/quality/login-accessibility.spec.ts) |
 
@@ -1155,3 +1155,23 @@ OpenAPI와 TypeScript·Zod·operation 계약 생성물을 함께 갱신했다. �
 2건을 합쳐 11건 모두 통과했고, retry·flaky·skip은 0이었다. 폰트 trace 3개 모두 실제 401을 받았다.
 지연 주입은 검증 뒤 제거했고 기대 오류의 발생 횟수·유효기간은 바꾸지 않았다. 생성·원장·독립 모듈 계약 108건도
 통과했다. 공유 DB 쓰기는 수행하지 않았으며 격리 runner가 생성한 프로세스·DB만 정리했다.
+
+## 통합 검토 후속 (2026-09-25)
+
+Gemini·Codex 작업 브랜치(도메인 정합성·코어 개선)를 main에 통합하며 검토한 결과, 아래 결함을 근본에서 고쳤다.
+결정은 [DEC-OPS-131](../../.agent/memory/decisions.md)이다.
+
+| 대상 | 발견 | 수정 | 회귀 검증 |
+|---|---|---|---|
+| 통계 | 날짜를 호출부마다 바로 해석해 형식 오류가 500이었다. 컨트롤러가 부르지 않는 조회 7개가 남아 있었고, 그중 목록 쿼리는 없는 컬럼을 가리켰다. | 기간 해석을 한 곳에 모아 형식 오류·역순 기간을 400으로 거부하고, 호출처 없는 조회와 전용 쿼리를 걷었다. | [서비스](../../business-app/src/test/java/nuri/business/service/stats/ReportStatsServiceTest.java) |
+| 대시보드 | 오늘 게시글 수를 5초 방송마다 날짜별 GROUP BY로 세어 합쳤다. 연결 상태 문구가 집계 가용 여부를 섞어 말했고, 모든 사용자의 미읽음 합계를 '알림'이라는 이름과 빨간 강조로 보였다. | 기간 COUNT 포트를 두고 같은 한국 날짜에서 30초 재사용한다(실패는 재사용하지 않는다). 연결 상태는 연결만 말하고, 카드는 '전체 미읽음 알림'으로 부른다. | [서비스](../../business-app/src/test/java/nuri/business/service/dashboard/RealTimeDashboardServiceTest.java), [COUNT 경계](../../business-app/src/test/java/nuri/business/domain/board/BoardPostDateStatsTest.java), [화면](../../frontend/src/components/features/dashboard/__tests__/RealTimeDashboard.test.tsx) |
+| 커뮤니티 | 탈퇴 전이가 서비스에만 있어 도달할 수 없었고, 탈퇴한 사용자가 다시 가입하면 409였다. 운영자 위임은 `mngrYn`을 읽는 인가 판정이 없어 켜도 아무 권한이 생기지 않았다. | 본인 탈퇴와 관리자 강제 탈퇴 경로를 잇고, 재가입은 같은 행을 새 신청으로 되돌린다. 운영자 위임은 걷었다. | [서비스](../../business-app/src/test/java/nuri/business/service/system/content/community/CommunityServiceImplTest.java), [관리 화면](../../frontend/src/components/business/community/__tests__/CommunityMembersPanel.test.tsx), [상세 화면](../../frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.pending.test.tsx) |
+| HPCM | 목록과 같은 값을 주는 단건 조회를 화면 고아 래칫을 내리려고 배선했다(DEC-OPS-062 위반). | 배선과 래칫 변경을 되돌렸다. | [operation census](../../config/governance/operation-consumer-census.json) |
+| 폼 검증 census | 쓰기 동사 어휘에 `withdraw`가 없어 강제 탈퇴 버튼이 탐지되지 않았다(`leave`는 있었다). | 쓰기·파괴 동사에 `withdraw`를 더하고 탐지 계약에 사례를 추가했다. | [census 계약](../../frontend/scripts/frontend-form-validation-census.test.mjs) |
+
+게시글 생성 이벤트(`PostCreatedEvent`)는 마지막 구독자였던 대시보드가 DB 집계로 바뀌어 저장소 안 구독자가 없다.
+파생 제품의 확장 지점으로 남기고 클래스 주석과 README 예시를 사실에 맞췄다. 대시보드 게시글 COUNT는 `crt_dt`
+범위 조건을 쓰며, 인덱스 추가는 DB 스키마 변경이라 이번 범위에 넣지 않았다.
+
+red 증명은 수정마다 되돌려 새 테스트만 실패하는 것으로 확인했다: 통계 5건, 대시보드 TTL 1건, 커뮤니티 재가입·타인
+탈퇴 차단 2건, 화면 6건, census 어휘 1건.
