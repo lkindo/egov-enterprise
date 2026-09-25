@@ -495,7 +495,7 @@ class BoardServiceTest {
         given(boardRepository.findActiveArticleDetail(bbsId, pstSn)).willReturn(Optional.of(detail));
 
         // when
-        BoardDto result = boardService.getPostDetail(bbsId, pstSn);
+        BoardDto result = boardService.getPostDetail(bbsId, pstSn, true);
 
         // then
         assertThat(result.pstSn()).isEqualTo(pstSn);
@@ -590,7 +590,7 @@ class BoardServiceTest {
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("ESNTL_owner"));
 
-        BoardDto result = boardService.getPostDetail("BBS_01", pstSn);
+        BoardDto result = boardService.getPostDetail("BBS_01", pstSn, true);
 
         assertThat(result.pstCn()).isEqualTo("private content");
         verify(viewCountService).increaseViewCount(pstSn);
@@ -611,7 +611,7 @@ class BoardServiceTest {
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("ESNTL_other"));
 
-        assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", pstSn))
+        assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", pstSn, true))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
         verify(viewCountService, never()).increaseViewCount(pstSn);
@@ -631,7 +631,7 @@ class BoardServiceTest {
         securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL"))
                 .thenReturn(true);
 
-        assertThat(boardService.getPostDetail("BBS_01", pstSn).pstSn()).isEqualTo(pstSn);
+        assertThat(boardService.getPostDetail("BBS_01", pstSn, true).pstSn()).isEqualTo(pstSn);
         verify(viewCountService).increaseViewCount(pstSn);
     }
 
@@ -642,7 +642,7 @@ class BoardServiceTest {
         given(boardRepository.findActiveArticleDetail("BBS_REQUESTED", pstSn))
                 .willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> boardService.getPostDetail("BBS_REQUESTED", pstSn))
+        assertThatThrownBy(() -> boardService.getPostDetail("BBS_REQUESTED", pstSn, true))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
 
@@ -668,7 +668,7 @@ class BoardServiceTest {
         securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL"))
                 .thenReturn(true);
 
-        assertThat(boardService.getPostDetail("BBS_01", pstSn).pstCn()).isEqualTo("deleted content");
+        assertThat(boardService.getPostDetail("BBS_01", pstSn, true).pstCn()).isEqualTo("deleted content");
     }
 
     @Test
@@ -679,7 +679,7 @@ class BoardServiceTest {
         securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL"))
                 .thenReturn(false);
 
-        assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", pstSn))
+        assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", pstSn, true))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
 
@@ -1050,6 +1050,7 @@ class BoardServiceTest {
                 .singletonList(file);
 
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(fileService.uploadFiles(files)).willReturn(101L);
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
@@ -1318,6 +1319,114 @@ class BoardServiceTest {
     }
 
     @Test
+    @DisplayName("🚨 요청이 첨부 번호를 싣지 않아도 글의 기존 첨부 묶음에 더한다 — 기존 첨부가 떨어져 나가지 않는다 (DIP I1)")
+    void updatePostWithFiles_appendsToExistingGroupWhenRequestOmitsIt() throws IOException {
+        String bbsId = "BBS_01";
+        Long pstSn = 1L;
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, null, null, null,
+                null, null);
+        org.springframework.web.multipart.MultipartFile file = mock(
+                org.springframework.web.multipart.MultipartFile.class);
+        java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
+                .singletonList(file);
+        Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).userId("user1").atchFileSn(77L).build();
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
+
+        boardService.updatePostWithFiles(bbsId, pstSn, request, files);
+
+        verify(fileService).updateFiles(77L, files);
+        verify(fileService, never()).uploadFiles(any());
+        assertThat(board.getAtchFileSn()).isEqualTo(77L);
+    }
+
+    @Test
+    @DisplayName("🚨 없는 게시판이면 파일을 저장하기 전에 거부한다 — 거부된 요청이 디스크에 파일을 남기지 않는다 (DIP I2)")
+    void createPostWithFiles_rejectsMissingBoardBeforeUpload() throws IOException {
+        BoardSaveRequest request = new BoardSaveRequest("MISSING", "Subj", "Cont", null, null, null, null, null, null, null, null, null);
+        java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
+                .singletonList(mock(org.springframework.web.multipart.MultipartFile.class));
+        given(boardMasterRepository.findById("MISSING")).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> boardService.createPostWithFiles("user1", request, files))
+                .isInstanceOf(BusinessException.class);
+
+        verify(fileService, never()).uploadFiles(any());
+        verify(boardRepository, never()).save(any(Board.class));
+    }
+
+    @Test
+    @DisplayName("🚨 회원 전용 게시판의 비회원은 파일을 저장하기 전에 거부된다 (DIP I2)")
+    void createPostWithFiles_rejectsNonMemberBeforeUpload() throws IOException {
+        BoardSaveRequest request = new BoardSaveRequest("CMNTY_BBS", "Subj", "Cont", null, null, null, null, null, null, null, null, null);
+        java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
+                .singletonList(mock(org.springframework.web.multipart.MultipartFile.class));
+        given(boardMasterRepository.findById("CMNTY_BBS"))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId("CMNTY_BBS").cmntySn(7L).build()));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("outsider"));
+        given(communityBoardAccess.isApprovedMember(7L, "outsider")).willReturn(false);
+
+        assertThatThrownBy(() -> boardService.createPostWithFiles("outsider", request, files))
+                .isInstanceOf(BusinessException.class);
+
+        verify(fileService, never()).uploadFiles(any());
+    }
+
+    @Test
+    @DisplayName("수정 화면용 상세 조회는 조회수를 올리지 않는다 — 열람 가드는 같다 (DIP I8)")
+    void getPostDetail_withoutViewCount() {
+        BoardDetailResult detail = BoardDetailResult.builder()
+                .pstSn(5L).bbsId("BBS_01").userId("ESNTL_owner").scrtYn("N").build();
+        given(boardRepository.findActiveArticleDetail("BBS_01", 5L)).willReturn(Optional.of(detail));
+
+        assertThat(boardService.getPostDetail("BBS_01", 5L, false).pstSn()).isEqualTo(5L);
+        verify(viewCountService, never()).increaseViewCount(anyLong());
+
+        boardService.getPostDetail("BBS_01", 5L, true);
+        verify(viewCountService).increaseViewCount(5L);
+    }
+
+    @Test
+    @DisplayName("Q&A 질문은 작성자가 해결됨으로 표시할 수 있다 (DIP I3)")
+    void markQuestionSolved_byAuthor() {
+        given(boardMasterRepository.findById("QNA")).willReturn(Optional.of(
+                BoardMaster.builder().bbsId("QNA").tmpltId("TMPLT_QNA").build()));
+        Board board = Board.builder().bbsId("QNA").pstSn(9L).userId("author").qnaSttsCd("QA01").build();
+        given(boardRepository.findById(9L)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("author"));
+
+        boardService.markQuestionSolved("QNA", 9L);
+
+        assertThat(board.getQnaSttsCd()).isEqualTo("SOLVED");
+        assertThat(board.getPstTtl()).as("다른 필드는 건드리지 않는다").isNull();
+    }
+
+    @Test
+    @DisplayName("🔐 작성자가 아니고 전체 수정 권한도 없으면 해결 표시를 거부한다 (DIP I3)")
+    void markQuestionSolved_rejectsOthers() {
+        given(boardMasterRepository.findById("QNA")).willReturn(Optional.of(
+                BoardMaster.builder().bbsId("QNA").tmpltId("TMPLT_QNA").build()));
+        Board board = Board.builder().bbsId("QNA").pstSn(9L).userId("author").qnaSttsCd("QA01").build();
+        given(boardRepository.findById(9L)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("stranger"));
+
+        assertThatThrownBy(() -> boardService.markQuestionSolved("QNA", 9L)).isInstanceOf(BusinessException.class);
+        assertThat(board.getQnaSttsCd()).isEqualTo("QA01");
+    }
+
+    @Test
+    @DisplayName("Q&A 템플릿이 아닌 게시판의 글은 해결 상태가 없으므로 400 이다 (DIP I3)")
+    void markQuestionSolved_rejectsNonQnaBoard() {
+        given(boardMasterRepository.findById("NOTICE")).willReturn(Optional.of(
+                BoardMaster.builder().bbsId("NOTICE").tmpltId("TMPLT_LIST").build()));
+
+        assertThatThrownBy(() -> boardService.markQuestionSolved("NOTICE", 9L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        verify(boardRepository, never()).findById(anyLong());
+    }
+
+    @Test
     @DisplayName("기존 파일을 갱신하며 게시글 수정 (첨부파일 ID 존재)")
     void updatePostWithFiles_ExistingFiles() throws IOException {
         // given
@@ -1426,7 +1535,7 @@ class BoardServiceTest {
         given(boardRepository.findActiveArticleDetail(anyString(), any(Long.class))).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", 999L))
+        assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", 999L, true))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -1466,6 +1575,7 @@ class BoardServiceTest {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         
         // create
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
         

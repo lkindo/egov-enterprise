@@ -77,6 +77,12 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
   const useYn = formData.get('useYn') as string || 'Y';
   const pstBgngYmd = formData.get('pstBgngYmd') as string;
   const pstEndYmd = formData.get('pstEndYmd') as string;
+  // [2026-09-25 DIP I1] 기존 첨부 번호를 싣는다. 종전에는 폼이 보내는 atchFileSn 을 여기서 버려,
+  //   수정 중 파일을 더하면 서버가 새 첨부 묶음을 만들고 글을 그쪽으로 옮겨 기존 첨부가 글에서 떨어져 나갔다.
+  const atchFileSnRaw = formData.get('atchFileSn');
+  const atchFileSn = typeof atchFileSnRaw === 'string' && /^\d+$/.test(atchFileSnRaw)
+    ? Number(atchFileSnRaw)
+    : undefined;
 
   try {
     const cookieStore = await cookies();
@@ -90,8 +96,12 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       pstBgngYmd: pstBgngYmd || undefined,
       pstEndYmd: pstEndYmd || undefined,
       evntDt: evntDt || undefined, 
-      qnaSttsCd: qnaSttsCd || (bbsId === QNA_BOARD_ID ? 'QA01' : undefined),
-      qnaCatCd: qnaCatCd || (bbsId === QNA_BOARD_ID ? 'CAT01' : undefined),
+      atchFileSn,
+      // [2026-09-25 DIP I3] Q&A 기본 상태·분류는 **등록할 때만** 채운다. 수정 폼은 이 두 값을 보내지 않으므로
+      //   종전처럼 기본값을 채우면 해결된 질문이 제목 오타 하나 고친 뒤 '접수(QA01)' 로 되돌아갔다.
+      //   서버는 값이 없으면 기존 값을 유지한다(BoardService.updateOwnedPost).
+      qnaSttsCd: qnaSttsCd || (!isEdit && bbsId === QNA_BOARD_ID ? 'QA01' : undefined),
+      qnaCatCd: qnaCatCd || (!isEdit && bbsId === QNA_BOARD_ID ? 'CAT01' : undefined),
       pswd: pswd || '1',
       scrtYn: scrtYn === 'Y' ? 'Y' : 'N',
       useYn: useYn === 'N' ? 'N' : 'Y'

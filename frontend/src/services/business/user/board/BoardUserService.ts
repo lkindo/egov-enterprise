@@ -5,6 +5,7 @@ import { BoardPost } from '@/types/business/board';
 import {
   getPostsOperation,
   likePostOperation,
+  markQuestionSolvedOperation,
   searchPostsOperation,
 } from '@/types/generated-operations';
 
@@ -72,6 +73,15 @@ class BoardUserService extends UserService {
       · 삭제: boardActions.deleteBoardArticle.
     남긴 셋(searchPosts·getPosts·likePost)은 화면이 실제로 부른다.
   */
+  /**
+   * Q&A 질문을 해결됨으로 표시한다(2026-09-25 DIP I3). 작성자·전체 수정 권한자만 할 수 있고 서버가 판정한다.
+   */
+  async markQuestionSolved(bbsId: string, pstSn: number): Promise<void> {
+    await this.executeGenerated(markQuestionSolvedOperation, {
+      path: { bbsId, pstSn },
+    });
+  }
+
   async likePost(bbsId: string, pstSn: number): Promise<number> {
     // ApiService.patch가 이미 ApiResponse.data(=새 추천수)를 추출해 반환하므로 추가 .data 접근 금지(과거 undefined 반환 버그).
     return this.executeGenerated(likePostOperation, {

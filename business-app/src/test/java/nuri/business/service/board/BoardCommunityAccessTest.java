@@ -195,7 +195,7 @@ class BoardCommunityAccessTest {
             given(communityBoardAccess.isApprovedMember(CMNTY_SN, VIEWER)).willReturn(false);
             BoardService service = boardService(communityBoardAccess);
 
-            assertThatThrownBy(() -> service.getPostDetail(COMMUNITY_BBS, 1L))
+            assertThatThrownBy(() -> service.getPostDetail(COMMUNITY_BBS, 1L, true))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
             verify(boardRepository, never()).findActiveArticleDetail(anyString(), any());

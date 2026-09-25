@@ -127,7 +127,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
     @DisplayName("게시글 상세 조회 성공")
     void getPost_Success() throws Exception {
         // Given
-        given(boardService.getPostDetail(anyString(), any(Long.class))).willReturn(BoardDto.builder().pstSn(1L).build());
+        given(boardService.getPostDetail(anyString(), any(Long.class), eq(true))).willReturn(BoardDto.builder().pstSn(1L).build());
 
         // When & Then
         mockMvc.perform(get("/api/v1/boards/BBS_001/posts/1")
@@ -135,6 +135,30 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.pstSn").value(1));
+    }
+
+    @Test
+    @DisplayName("수정 화면용 상세 조회는 countView=false 를 서비스에 그대로 넘긴다 (DIP I8)")
+    void getPost_withoutViewCount() throws Exception {
+        given(boardService.getPostDetail("BBS_001", 1L, false)).willReturn(BoardDto.builder().pstSn(1L).build());
+
+        mockMvc.perform(get("/api/v1/boards/BBS_001/posts/1").param("countView", "false")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.pstSn").value(1));
+
+        verify(boardService).getPostDetail("BBS_001", 1L, false);
+    }
+
+    @Test
+    @DisplayName("질문 해결 표시는 서비스에 게시판·게시글을 넘긴다 (DIP I3)")
+    void markQuestionSolved() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .patch("/api/v1/boards/QNA/posts/9/solved").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        verify(boardService).markQuestionSolved("QNA", 9L);
     }
 
     @Test
