@@ -59,7 +59,9 @@ test.describe('Public Engagement & Experience', () => {
             const submitBtn = userPage.getByRole('button', { name: /투표|제출|Vote/i }).first();
             await expect(message.or(submitBtn)).toBeVisible({ timeout: 10000 });
             const messageVisible = await message.isVisible().catch(() => false);
-            const btnDisabled = await submitBtn.isDisabled().catch(() => false);
+            // [2026-09-26 DIP V7] 이미 참여한 투표는 결과 화면으로 열려 제출 버튼이 없다. isDisabled() 는 없는 버튼을
+            // 테스트 제한 시간까지 기다리므로, 버튼이 있을 때만 비활성 여부를 본다.
+            const btnDisabled = (await submitBtn.count()) > 0 && await submitBtn.isDisabled().catch(() => false);
             console.log(`>>> Duplicate vote check: message=${messageVisible}, disabled=${btnDisabled}`);
             expect(messageVisible || btnDisabled, '2차 투표가 차단(이미 참여 메시지 또는 제출 버튼 비활성)되어야 함').toBeTruthy();
             console.log(`>>> Successfully verified duplicate vote protection`);
