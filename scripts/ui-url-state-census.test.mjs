@@ -54,7 +54,9 @@ test('current URL-state census exactly covers critical route and URL producer po
     // [2026-09-12 §A3-1 · DEC-OPS-079] 12 → 16. 주소록 등록·스크랩 등록/수정·설문 등록 4개가 각 정본 목록으로의
     //   page-redirect 가 됐다 — 입력 폼을 목록 위 모달로 옮겼다. URL 상태는 **늘지 않는다**:
     //   모달은 주소에 아무것도 싣지 않고, 오히려 목록의 navigation-producer 한 건이 사라졌다.
-    pageRedirects: 16,
+    // [2026-09-25 DEC-OPS-130] 16 → 17. /admin/community/[id] 가 id 를 보존해 정본 커뮤니티 상세로 보내는
+    //   page-redirect 가 됐다. 그 화면이 검색어를 URL 에 싣던 유일한 곳이었으므로 URL 상태 표면은 **줄어든다**.
+    pageRedirects: 17,
   });
   assert.equal(actual.summary.records, actual.records.length);
   assert.equal(actual.summary.unverifiedRecords, actual.records.length);

@@ -163,11 +163,30 @@ function isWave4Approval(approval) {
     && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
 }
 
+/*
+  웨이브 5(2026-09-25, DEC-OPS-130): /admin/community/[id] 는 이름이 '커뮤니티 상세' 인데 경로의 id 를
+  읽지 않고 선택한 게시판 글 목록을 보여 줬다. id 를 보존해 정본 커뮤니티 상세로 보내는 page-redirect 로
+  통합했다. 근거는 route census 의 routing.kind 다.
+*/
+const WAVE5_APPROVED_ROUTES = ['/admin/community/[id]'];
+const WAVE5_REVIEWER = 'lkindo (사용자 위임 2026-08-23 · DEC-OPS-130)';
+const WAVE5_REVIEWED_AT = '2026-09-25';
+
+function isWave5Approval(approval) {
+  return approval !== null
+    && approval.reviewer === WAVE5_REVIEWER
+    && approval.reviewedAt === WAVE5_REVIEWED_AT
+    && Array.isArray(approval.evidence)
+    && approval.evidence.length > 0
+    && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
+}
+
 const APPROVED_ROUTES = [
   ...WAVE1_APPROVED_ROUTES,
   ...WAVE2_APPROVED_ROUTES,
   ...WAVE3_APPROVED_ROUTES,
   ...WAVE4_APPROVED_ROUTES,
+  ...WAVE5_APPROVED_ROUTES,
 ].sort();
 
 test('the recommended hybrid is selected only as a bounded provisional direction', () => {
@@ -265,6 +284,17 @@ test('the proposed overlay drafts dispositions over the discovered pages and ext
         && record.capabilityReview === 'verified'
         && record.profileOwnershipReview === 'verified'
         && Object.values(record.approvals).every(isWave4Approval);
+    }
+    if (WAVE5_APPROVED_ROUTES.includes(record.route)) {
+      return shared
+        && record.reviewState === 'approved'
+        && record.disposition === 'consolidate-to-canonical'
+        && record.authorizationReview === 'verified'
+        && record.privacyReview === 'verified'
+        && ['verified', 'not-applicable'].includes(record.effectiveMenuExposureReview)
+        && record.capabilityReview === 'verified'
+        && record.profileOwnershipReview === 'verified'
+        && Object.values(record.approvals).every(isWave5Approval);
     }
     return shared
       && record.reviewState === 'proposed'

@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-url-state-approval.schema.json",
   "manifestRef": {
     "path": "config/ui-url-state-census.json",
-    "sha256": "479dfd1b06cac6508d46a2f6c8c66169fdfa9cd3d536037bc1f5f6a62b084f6a"
+    "sha256": "3e48a5d0da2e817c19aba26cacc5ecf73c9a15bc635284d91a7848cca8b298fe"
   },
   "classes": [
     {
@@ -124,17 +124,6 @@
               "frontend/src/app/components/ui/global-command-center.tsx",
               "frontend/src/app/search/SearchClient.tsx",
               "frontend/src/app/search/SearchResultsSlot.tsx"
-            ]
-          },
-          {
-            "routePattern": "/admin/community/[id]",
-            "stateItemNames": [
-              "searchCnd",
-              "searchWrd"
-            ],
-            "sources": [
-              "frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx",
-              "frontend/src/lib/hooks/use-search-state.ts"
             ]
           },
           {

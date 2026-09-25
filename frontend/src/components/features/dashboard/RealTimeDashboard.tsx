@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, type ReactNode } from 'react';
 import type { StompSubscription } from '@stomp/stompjs';
 import { useWebSocket } from '@/contexts/websocket-context';
+import { normalizeNotification, type Notification as ServerNotification } from '@/lib/hooks/use-notifications';
 import { Bell, TrendingUp, Users, Activity, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button';
 
 export interface RealTimeNotification {
   id: string;
-  type: 'USER' | 'POST' | 'COMMENT' | 'SYSTEM' | 'ALERT';
+  type: NonNullable<ServerNotification['type']>;
   title: string;
   message: string;
   timestamp: string;
@@ -30,8 +31,6 @@ export interface RealTimeStats {
 interface RealTimeDashboardProps {
   onNotification?: (notification: RealTimeNotification) => void;
 }
-
-const NOTIFICATION_TYPES = new Set<RealTimeNotification['type']>(['USER', 'POST', 'COMMENT', 'SYSTEM', 'ALERT']);
 
 /**
  * 알림 시각 표기. 시스템 표준은 'yyyy-MM-dd HH:mm:ss' 다.
@@ -75,17 +74,25 @@ function parseStats(body: string): RealTimeStats | null {
   }
 }
 
+/**
+ * 개인 큐의 알림 프레임을 해석한다.
+ *
+ * <p>[2026-09-25] 종전에는 서버가 보내지 않는 형태(`id`·`title`·`message`·`read`·`type: USER|POST…`)를
+ * 요구해, 서버가 보내는 NotificationDto(`notiSn`·`notiTtlNm`·`notiCn`·`notiDt`·`readYn`)를 전부 버렸다.
+ * 패널은 늘 '새로운 알림이 없습니다' 였다. 같은 큐를 읽는 헤더 알림함의 정규화를 그대로 쓴다.
+ */
 function parseNotification(body: string): RealTimeNotification | null {
   try {
-    const value: unknown = JSON.parse(body);
-    if (!isRecord(value)) return null;
-    if (typeof value.id !== 'string' || typeof value.title !== 'string'
-      || typeof value.message !== 'string' || typeof value.timestamp !== 'string'
-      || typeof value.read !== 'boolean' || typeof value.type !== 'string'
-      || !NOTIFICATION_TYPES.has(value.type as RealTimeNotification['type'])) {
-      return null;
-    }
-    return value as unknown as RealTimeNotification;
+    const notification = normalizeNotification(JSON.parse(body));
+    if (!notification) return null;
+    return {
+      id: String(notification.notiSn),
+      type: notification.type ?? 'ACTIVITY',
+      title: notification.notiTtlNm,
+      message: notification.notiCn,
+      timestamp: notification.notiDt,
+      read: notification.readYn === 'Y',
+    };
   } catch {
     return null;
   }
@@ -317,12 +324,11 @@ function RealTimeStatCard({ title, value, icon, trend, unavailableMessage, isAle
 }
 
 function NotificationIcon({ type }: { type: RealTimeNotification['type'] }) {
-  const icons = {
-    USER: <Users size={14} className="text-hub-blue" />,
-    POST: <Activity size={14} className="text-success-emphasis" />,
-    COMMENT: <TrendingUp size={14} className="text-hub-purple" />,
+  const icons: Record<RealTimeNotification['type'], ReactNode> = {
+    SECURITY: <AlertCircle size={14} className="text-destructive-emphasis" />,
     SYSTEM: <Bell size={14} className="text-muted-foreground" />,
-    ALERT: <AlertCircle size={14} className="text-destructive-emphasis" />
+    ACTIVITY: <Activity size={14} className="text-success-emphasis" />,
+    INFO: <Bell size={14} className="text-hub-blue" />,
   };
 
   return icons[type] || icons.SYSTEM;

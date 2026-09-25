@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -61,14 +61,6 @@ const SEARCH_ROUTE_KEY_BINDINGS = [
       'frontend/src/app/components/ui/global-command-center.tsx',
       'frontend/src/app/search/SearchClient.tsx',
       'frontend/src/app/search/SearchResultsSlot.tsx',
-    ],
-  },
-  {
-    routePattern: '/admin/community/[id]',
-    stateItemNames: ['searchCnd', 'searchWrd'],
-    sources: [
-      'frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx',
-      'frontend/src/lib/hooks/use-search-state.ts',
     ],
   },
   {
@@ -349,25 +341,22 @@ test('/search?q producer는 명시된 두 구현으로 고정되고 값은 인�
   assert.match(searchForm, /<form\s+action="\/search"\s+method="get"[\s\S]{0,800}?name="q"/u);
 });
 
-test('/admin/community/[id]는 호출 화면의 key만 재조립하고 same-view replace를 쓴다', () => {
+/*
+  [2026-09-25 DEC-OPS-130] /admin/community/[id] 는 정본 커뮤니티 상세로 보내는 page-redirect 가 됐고, 그 화면이
+  검색어를 URL 에 싣던 유일한 same-view 훅(useSearchState)의 유일한 소비자였다. 소비자가 사라진 훅은 함께 걷었다.
+  검색어를 URL 에 싣는 새 훅·새 소비자는 ADR-0009 allowlist 검토 없이 들어올 수 없다.
+*/
+test('검색어를 URL 에 싣는 same-view 훅은 소비자와 함께 걷었다 — 재유입은 ADR-0009 검토 대상이다', () => {
+  assert.equal(existsSync(join(ROOT, 'frontend/src/lib/hooks/use-search-state.ts')), false);
   const hookUsers = sourceFiles(join(ROOT, 'frontend', 'src'))
-    .filter((path) => !path.replaceAll('\\', '/').includes('/__tests__/'))
-    .filter((path) => readFileSync(path, 'utf8').includes('useSearchState({'))
-    .map((path) => path.slice(ROOT.length + 1).replaceAll('\\', '/'))
-    .sort();
-  assert.deepEqual(hookUsers, ['frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx']);
-
-  const hook = readFileSync(join(ROOT, 'frontend/src/lib/hooks/use-search-state.ts'), 'utf8');
-  assert.match(hook, /const params = new URLSearchParams\(\)/u);
-  assert.doesNotMatch(hook, /new URLSearchParams\(searchParams\.toString\(\)\)/u);
-  assert.match(hook, /Object\.keys\(initialValues\)/u);
-  assert.match(hook, /router\.replace/u);
-
-  const owner = readFileSync(join(ROOT, hookUsers[0]), 'utf8');
-  const declaration = owner.match(/useSearchState\(\{([\s\S]*?)\}\)/u);
-  assert.ok(declaration, 'useSearchState 호출부의 key 계약을 읽을 수 없습니다.');
-  const names = [...declaration[1].matchAll(/^\s*([A-Za-z][A-Za-z0-9]*):/gmu)].map((match) => match[1]).sort();
-  assert.deepEqual(names, ['bbsId', 'page', 'searchCnd', 'searchWrd']);
+    .filter((path) => readFileSync(path, 'utf8').includes('useSearchState('))
+    .map((path) => path.slice(ROOT.length + 1).replaceAll('\\', '/'));
+  assert.deepEqual(hookUsers, []);
+  assert.equal(
+    SEARCH_ROUTE_KEY_BINDINGS.some(({ routePattern }) => routePattern === '/admin/community/[id]'),
+    false,
+    '퇴역한 화면이 검색어 허용 surface 에 남아 있다',
+  );
 });
 
 test('검토일 경과 후에도 자격증명 key나 새 free-text search surface로 승인이 넓어지지 않는다', (t) => {

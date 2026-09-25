@@ -10,8 +10,9 @@ import { redirect } from 'next/navigation';
  * 갖고 있던 게시 기간·행사 일자 입력을 옮겨 상위집합으로 만든 뒤 두 라우트를 리다이렉트한다.
  *
  * 라우트를 지우지 않고 보내는 이유는 `/admin/survey`·`/admin/security/audit` 와 같다 — 문자열 URL
- * 참조는 정적 분석으로 잡히지 않아 물리 삭제에 오삭제 전례가 있다(V2_30). 인바운드 링크 2건
- * (`CommunityBoardClient`·`CommunityDetailClient`)은 게시판 식별자를 실어 정본으로 직접 보낸다.
+ * 참조는 정적 분석으로 잡히지 않아 물리 삭제에 오삭제 전례가 있다(V2_30). 인바운드 링크
+ * (`CommunityBoardClient`, 2026-09-25 퇴역 전까지는 `CommunityDetailClient` 도)는 게시판 식별자를 실어
+ * 정본으로 직접 보낸다.
  */
 export default function CommunityBoardsWriteRedirectPage() {
   redirect('/admin/community/boards/insert-board-article');
