@@ -27,6 +27,14 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /** 검증 오류 응답의 순서 — 필드, 제약 코드, 문구 순. 값이 없으면 뒤로 보낸다. */
+    private static final java.util.Comparator<org.springframework.validation.FieldError> FIELD_ERROR_ORDER =
+            java.util.Comparator.comparing(org.springframework.validation.FieldError::getField)
+                    .thenComparing(org.springframework.validation.FieldError::getCode,
+                            java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))
+                    .thenComparing(org.springframework.validation.FieldError::getDefaultMessage,
+                            java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+
     private final MessageSource messageSource;
 
     /**
@@ -88,15 +96,23 @@ public class GlobalExceptionHandler {
         // [W1-14] 종전에는 필드 오류들을 ", " 로 이어 붙인 문장 하나만 내려보내, 클라이언트가
         //   **어떤 입력이 틀렸는지** 알 수 없었다. 사용자는 폼 전체를 훑으며 스스로 찾아야 했다.
         //   message 는 그대로 두어 그것을 읽던 클라이언트를 깨지 않고, 필드 정보를 덧붙이기만 한다.
-        String message = e.getBindingResult().getFieldErrors().stream()
+        // [2026-09-25] Bean Validation 은 위반 순서를 보장하지 않아, 같은 요청에도 errors 배열과 합친 message
+        //   순서가 매번 달랐다. 프런트는 필드마다 첫 오류만 보여 주므로 한 필드에 위반이 둘이면 보이는 문구가
+        //   요청마다 바뀌었고, ZAP 의 응답 비교도 이 차이를 조건 차이로 오인했다. 필드 → 제약 코드 → 문구 순으로
+        //   고정한다. 제약 코드(NotBlank·Size 등)는 언어와 무관해 ko/en 응답이 같은 제약의 문구를 고른다.
+        java.util.List<org.springframework.validation.FieldError> sorted =
+                e.getBindingResult().getFieldErrors().stream()
+                        .sorted(FIELD_ERROR_ORDER)
+                        .toList();
+
+        String message = sorted.stream()
                 .map(error -> error.getDefaultMessage())
                 .collect(Collectors.joining(", "));
 
-        java.util.List<nuri.foundation.core.response.FieldErrorItem> fieldErrors =
-                e.getBindingResult().getFieldErrors().stream()
-                        .map(error -> new nuri.foundation.core.response.FieldErrorItem(
-                                error.getField(), error.getDefaultMessage()))
-                        .toList();
+        java.util.List<nuri.foundation.core.response.FieldErrorItem> fieldErrors = sorted.stream()
+                .map(error -> new nuri.foundation.core.response.FieldErrorItem(
+                        error.getField(), error.getDefaultMessage()))
+                .toList();
 
         return ResponseEntity.badRequest()
                 .body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE, message, fieldErrors));

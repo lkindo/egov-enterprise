@@ -101,6 +101,43 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("[2026-09-25] 검증 오류는 위반 순서와 무관하게 필드 → 제약 코드 → 문구 순으로 내려간다")
+    void validationErrorsAreOrderedIndependentlyOfViolationOrder() {
+        // 제약 코드 순서(NotBlank < Size)와 문구의 사전 순서('길…' < '제…')를 반대로 두어,
+        // 코드가 문구보다 먼저 비교된다는 것까지 고정한다. 코드는 언어와 무관하다.
+        FieldError titleBlank = constraint("title", "NotBlank", "제목을 입력하세요");
+        FieldError titleSize = constraint("title", "Size", "길이는 100자 이하입니다");
+        FieldError content = constraint("content", "NotBlank", "내용을 입력하세요");
+
+        ApiResponse<Object> first = validationBody(List.of(titleSize, content, titleBlank));
+        ApiResponse<Object> second = validationBody(List.of(titleBlank, titleSize, content));
+
+        List<nuri.foundation.core.response.FieldErrorItem> expected = List.of(
+                new nuri.foundation.core.response.FieldErrorItem("content", "내용을 입력하세요"),
+                new nuri.foundation.core.response.FieldErrorItem("title", "제목을 입력하세요"),
+                new nuri.foundation.core.response.FieldErrorItem("title", "길이는 100자 이하입니다"));
+        assertEquals(expected, first.errors());
+        assertEquals(expected, second.errors());
+        assertEquals("내용을 입력하세요, 제목을 입력하세요, 길이는 100자 이하입니다", first.message());
+        assertEquals(first.message(), second.message());
+    }
+
+    private ApiResponse<Object> validationBody(List<FieldError> fieldErrors) {
+        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
+        BindingResult bindingResult = mock(BindingResult.class);
+        when(ex.getBindingResult()).thenReturn(bindingResult);
+        when(bindingResult.getObjectName()).thenReturn("request");
+        when(bindingResult.getFieldErrors()).thenReturn(fieldErrors);
+        return handler.handleMethodArgumentNotValidException(ex).getBody();
+    }
+
+    private static FieldError constraint(String field, String code, String message) {
+        // Bean Validation 은 codes 끝에 제약 이름을 둔다 — FieldError#getCode 는 그 마지막 값을 돌려준다.
+        return new FieldError("request", field, null, false,
+                new String[] {code + ".request." + field, code + "." + field, code}, null, message);
+    }
+
+    @Test
     @DisplayName("HandlerMethodValidationException 처리 테스트")
     void testHandleHandlerMethodValidationException() {
         HandlerMethodValidationException ex = mock(HandlerMethodValidationException.class);
