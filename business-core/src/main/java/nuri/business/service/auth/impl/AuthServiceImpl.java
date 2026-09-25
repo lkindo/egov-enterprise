@@ -192,6 +192,7 @@ public class AuthServiceImpl implements AuthService {
         //   정책 재검사까지 곧게 이어지게 한다 — 분기 뒤에 놓인 정책 검사는 정적 분석(CodeQL
         //   java/user-controlled-bypass)이 "요청이 검사를 건너뛸 수 있다" 로 읽는다(2026-09-25 PR #748).
         nuri.business.domain.auth.RefreshToken storedToken = requireLiveStoredToken(refreshToken);
+        String presentedDigest = RefreshTokenDigest.of(refreshToken);
         String userId = storedToken.getUserId();
         
         CustomUserDetails principal = requireCurrentPrincipal(
