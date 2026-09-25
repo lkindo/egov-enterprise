@@ -23,7 +23,6 @@ export interface BoardPost {
   commentCnt?: number;
   fileCnt?: number;
   crtDt?: string;
-  frstRegisterNm?: string;
   ansLv?: number;
 }
 

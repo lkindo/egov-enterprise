@@ -54,7 +54,7 @@ class BoardOpenApiDocumentationTest {
         "ansSn", "pstTtl", "pstCn", "upPstSn", "sortOrdr", "ttlBoldYn", "inqCnt",
         "useYn", "pstBgngYmd", "pstEndYmd", "userId", "userNm", "atchFileSn", "scrtYn",
         "evntDt", "qnaSttsCd", "qnaCatCd", "likeCnt", "commentCnt", "fileCnt",
-        "crtDt", "frstRegisterNm", "ansLv");
+        "crtDt", "ansLv");
     assertNullableProperties(schemas.path("PublicFaqListItemResponse"),
         "pstTtl", "inqCnt", "crtDt");
     assertNullableProperties(schemas.path("PublicFaqDetailResponse"),

@@ -37,6 +37,8 @@ interface UnifiedDashboardClientProps {
   dataPromise: Promise<{
     initialNotiList: DashboardTask[];
     initialTaskList: DashboardTask[];
+    notiListTotal: number | null;
+    taskListTotal: number | null;
     pendingApprovalCount: number | null;
   }>;
 }
@@ -66,12 +68,14 @@ interface UnifiedDashboardClientProps {
 interface HomeListSectionProps {
   title: string;
   items: DashboardTask[];
+  /** 게시판 전체 글 수. null 은 조회 실패 — 빈 목록을 "글이 없다" 로 말하지 않는다(DIP V1). */
+  total: number | null;
   moreHref: string;
   moreLabel: string;
   emptyMessage: string;
 }
 
-function HomeListSection({ title, items, moreHref, moreLabel, emptyMessage }: HomeListSectionProps) {
+function HomeListSection({ title, items, total, moreHref, moreLabel, emptyMessage }: HomeListSectionProps) {
   const headingId = `home-section-${moreLabel}`;
 
   return (
@@ -105,7 +109,7 @@ function HomeListSection({ title, items, moreHref, moreLabel, emptyMessage }: Ho
         </ul>
       ) : (
         <p className="px-4 py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">
-          {emptyMessage}
+          {total === null ? '목록을 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.' : emptyMessage}
         </p>
       )}
     </section>
@@ -211,13 +215,17 @@ export default function UnifiedDashboardClient(
           '신규' 는 언제나 0 이다 — dashboard-data.ts:17 이 읽는 `isNew` 를 서버가 만들지 않아
           `Boolean(undefined || false)` 로 떨어진다(전 저장소 grep: 백엔드에 isNew 0건).
         */}
+        {/*
+          [2026-09-26 DIP V1] 종전 카드는 목록 길이(최근 5건)를 세어 늘 5 이하였다. 게시판의 전체 글 수를
+          싣고, 조회에 실패하면 0 이 아니라 '조회 실패' 라고 말한다(결재 대기와 같은 규칙).
+        */}
         <li className="rounded-md border border-border bg-card px-4 py-3">
-          <span className="text-[length:var(--font-size-body)] text-muted-foreground">업무게시판 최근 글</span>
-          <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{taskList.length}건</span>
+          <span className="text-[length:var(--font-size-body)] text-muted-foreground">업무게시판 글</span>
+          <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{data.taskListTotal === null ? '조회 실패' : `${data.taskListTotal}건`}</span>
         </li>
         <li className="rounded-md border border-border bg-card px-4 py-3">
-          <span className="text-[length:var(--font-size-body)] text-muted-foreground">최근 공지</span>
-          <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{notiList.length}건</span>
+          <span className="text-[length:var(--font-size-body)] text-muted-foreground">공지사항</span>
+          <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{data.notiListTotal === null ? '조회 실패' : `${data.notiListTotal}건`}</span>
         </li>
       </ul>
 
@@ -225,6 +233,7 @@ export default function UnifiedDashboardClient(
         <HomeListSection
           title="업무게시판 최근 글"
           items={taskList}
+          total={data.taskListTotal}
           moreHref={`/admin/community/boards/select-board-list?bbsId=${TASK_BOARD_ID}`}
           moreLabel="업무게시판 전체 보기"
           emptyMessage="업무게시판에 등록된 글이 없습니다."
@@ -232,6 +241,7 @@ export default function UnifiedDashboardClient(
         <HomeListSection
           title="최근 공지사항"
           items={notiList}
+          total={data.notiListTotal}
           moreHref={`/admin/community/boards/select-board-list?bbsId=${NOTICE_BOARD_ID}`}
           moreLabel="공지 전체 보기"
           emptyMessage="새 공지사항이 없습니다."
