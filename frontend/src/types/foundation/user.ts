@@ -33,6 +33,8 @@ export interface UserManage {
   officeTelno?: string;
   /** 등록 일시(ISO). 목록 projection 에 포함되며 표기는 `toDisplayDateTime`/`toDisplayYmd` 가 소유한다. */
   crtDt?: string;
+  /** 권한 그룹 코드(응답 전용, 관리자 상세에서만 채운다 — UserDto.groups). */
+  groups?: string[];
 }
 
 export interface UserSearchParams {

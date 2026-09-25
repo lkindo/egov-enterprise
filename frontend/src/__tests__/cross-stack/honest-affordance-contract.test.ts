@@ -356,8 +356,13 @@ describe('커뮤니티 상세: 지어낸 지표와 죽은 버튼을 두지 않�
     ]) {
       expect(client).not.toContain(pseudo);
     }
-    expect(client).toContain('등록자');
+    // [2026-09-26 DIP V9] '등록자' 칸은 개설자 로그인 ID 를 보여 걷었다(DEC-OPS-144) — 계정 식별자는 이름이
+    //   아니다. 의사코드 대신 한국어 라벨을 쓴다는 대조군은 같은 블록에 남은 '등록일' 이 맡고, 로그인 ID
+    //   칸이 되살아나는 것은 따로 막는다.
+    expect(client).toContain('등록일');
     expect(client).toContain('사용 여부');
+    expect(client).not.toMatch(/label="등록자"/);
+    expect(client).not.toContain('community.frstRgtrId');
   });
 
   /*

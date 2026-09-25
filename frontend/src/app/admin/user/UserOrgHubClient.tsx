@@ -155,6 +155,14 @@ const USER_PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 export type UserOrgPrefetch<T> = PageResponse<T> | null;
 
 
+
+/** 소속 부서 표시 — 이름이 있으면 이름(ID), 목록에 없으면 ID 원문, 없으면 '미지정'. */
+function departmentLabel(ognzId: string | null | undefined, departments: ReadonlyArray<{ ognzId?: string | null; ognzNm?: string | null }> | null | undefined): string {
+  if (!ognzId) return '미지정';
+  const name = departments?.find((dept) => dept?.ognzId === ognzId)?.ognzNm;
+  return name ? `${name} (${ognzId})` : ognzId;
+}
+
 export default function UserOrgHubClient({
   defaultTab = 'USERS',
   usersPromise,
@@ -439,7 +447,9 @@ export default function UserOrgHubClient({
   } = useDeptTree({
     deptKeyword,
     initialDepts,
-    enabled: activeTab === 'DEPTS' || isBulkMoveModalOpen || isUserModalOpen,
+    // [2026-09-26 DIP V9] 사용자를 고르면 상세의 소속을 이름으로 보이도록 부서 목록도 읽는다(캐시 공유).
+    enabled: activeTab === 'DEPTS' || isBulkMoveModalOpen || isUserModalOpen
+      || (activeTab === 'USERS' && selectedItemId !== null),
     onDragSelect: setSelectedItemId,
   });
 
@@ -1221,8 +1231,10 @@ export default function UserOrgHubClient({
                     <DetailFieldList>
                       <DetailField label="사번" value={displayedUser?.emplNo || '미지정'} />
                       <DetailField label="직함" value={displayedUser?.ofcpsNm || '미지정'} />
-                      {/* 소속은 목록 projection 에 없다 — 상세 API(displayedUser)에서만 나온다. */}
-                      <DetailField label="소속 부서" value={displayedUser?.ognzId || '미지정'} />
+                      {/* 소속은 목록 projection 에 없다 — 상세 API(displayedUser)에서만 나온다.
+                          [2026-09-26 DIP V9] 부서 ID 대신 이름을 보인다. 목록에 없는 ID 는 원문으로 남겨 잘못된 소속을 찾게 한다. */}
+                      <DetailField label="소속 부서" value={departmentLabel(displayedUser?.ognzId, departments)} />
+                      <DetailField label="권한 그룹" value={displayedUser?.groups?.length ? displayedUser.groups.join(', ') : '없음'} />
                       <DetailField label="이메일 주소" value={displayedUser?.emlAddr || '미지정'} />
                       <DetailField label="휴대전화" value={displayedUser?.mblTelno || '미등록'} />
                       <DetailField label="사무실 전화" value={displayedUser?.officeTelno || '미등록'} />
