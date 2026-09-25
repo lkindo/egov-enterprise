@@ -123,11 +123,11 @@ describe('ApiService', () => {
    data: null,
   });
 
-  await service.testGeneratedWrite('old-password', 'new-password');
+  await service.testGeneratedWrite('old-password', 'New-password1!');
   expect(client.requestRaw).toHaveBeenCalledWith({
    url: 'users/me/password',
    method: 'put',
-   data: { oldPassword: 'old-password', newPassword: 'new-password' },
+   data: { oldPassword: 'old-password', newPassword: 'New-password1!' },
   });
  });
 
