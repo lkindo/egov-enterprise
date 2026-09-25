@@ -6,6 +6,39 @@ import { Popup } from '@/types/foundation/banner';
 import Image from 'next/image';
 import { AttachmentImage, extractAtchFileSn } from '@/app/components/ui/attachment-image';
 
+/*
+  [2026-09-26 DIP V9] 브라우저 저장소는 사생활 모드·저장소 차단에서 예외를 던진다. 종전에는 그 예외가
+  팝업 조회 전체를 실패로 만들어, 저장소를 못 쓰는 사용자는 공지 팝업을 아예 보지 못했다.
+  '오늘 하루' 숨김은 편의 기능이므로 저장소가 안 되면 숨김만 잃는다.
+*/
+function readHiddenUntil(popupSn: number): number | null {
+    try {
+        const raw = localStorage.getItem(`popup_hide_${popupSn}`);
+        return raw ? parseInt(raw, 10) : null;
+    } catch {
+        return null;
+    }
+}
+
+function clearHidden(popupSn: number) {
+    try {
+        localStorage.removeItem(`popup_hide_${popupSn}`);
+    } catch {
+        // 저장소를 쓸 수 없으면 지울 것도 없다.
+    }
+}
+
+/** '오늘 하루' 는 24시간이 아니라 오늘 자정(사용자 시각)까지다 — 밤 11시에 닫으면 다음 날 아침에 다시 보인다. */
+function hideUntilMidnight(popupSn: number) {
+    const midnight = new Date();
+    midnight.setHours(24, 0, 0, 0);
+    try {
+        localStorage.setItem(`popup_hide_${popupSn}`, midnight.getTime().toString());
+    } catch {
+        // 저장하지 못하면 이번 화면에서만 닫힌다.
+    }
+}
+
 export function PopupManager() {
     const [activePopups, setActivePopups] = useState<Popup[]>([]);
     const [visiblePopupSns, setVisiblePopupSns] = useState<number[]>([]);
@@ -16,13 +49,12 @@ export function PopupManager() {
                 const popups = await popupService.getActivePopups();
                 // 필터링 "오늘 하루 보지 않기" 체크된 팝업 제외
                 const filteredPopups = (popups || []).filter(popup => {
-                    const expireDate = localStorage.getItem(`popup_hide_${popup.popupSn}`);
-                    if (expireDate) {
-                        const now = new Date().getTime();
-                        if (now < parseInt(expireDate)) {
+                    const hiddenUntil = readHiddenUntil(popup.popupSn);
+                    if (hiddenUntil !== null) {
+                        if (Date.now() < hiddenUntil) {
                             return false;
                         }
-                        localStorage.removeItem(`popup_hide_${popup.popupSn}`);
+                        clearHidden(popup.popupSn);
                     }
                     return true;
                 });
@@ -44,8 +76,7 @@ export function PopupManager() {
     };
 
     const closePopupForDay = (id: number) => {
-        const expireTime = new Date().getTime() + 24 * 60 * 60 * 1000;
-        localStorage.setItem(`popup_hide_${id}`, expireTime.toString());
+        hideUntilMidnight(id);
         closePopup(id);
     };
 

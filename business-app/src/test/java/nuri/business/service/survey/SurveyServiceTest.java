@@ -203,6 +203,23 @@ class SurveyServiceTest {
     }
 
     @Test
+    @DisplayName("🚨 설문 상세는 현재 사용자의 응답 여부를 싣는다 — 로그인 ID 축 (DIP V8)")
+    void getSurvey_carriesRespondedForViewer() {
+        given(infoRepository.findById(201L)).willReturn(Optional.of(SurveyInfo.builder().srvySn(201L).build()));
+        given(rsltRepository.existsBySrvySnAndFrstRgtrId(201L, "user1")).willReturn(true);
+
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                    .thenReturn(Optional.of("user1"));
+            assertThat(surveyService.getSurvey(201L).getResponded()).isTrue();
+
+            // 인증 주체가 없으면 판정하지 않는다(null) — false 로 '응답하지 않았다' 고 말하지 않는다.
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId).thenReturn(Optional.empty());
+            assertThat(surveyService.getSurvey(201L).getResponded()).isNull();
+        }
+    }
+
+    @Test
     @DisplayName("설문 정보 상세 조회 - 자원 없음 예외")
     void getSurvey_NotFound_ShouldThrowBusinessException() {
         given(infoRepository.findById(201L)).willReturn(Optional.empty());

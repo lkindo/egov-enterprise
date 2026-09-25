@@ -63,6 +63,29 @@ async function renderDetail(data: ReturnType<typeof detail>) {
   });
 }
 
+describe('BoardDetailClient 권한으로 막힌 글 (DIP V9)', () => {
+  it('🚨 403 은 재시도를 권하지 않고 권한 안내와 돌아갈 길만 준다', async () => {
+    mocks.searchParams.set('bbsId', 'BBS-4');
+    await renderDetail({
+      article: null,
+      masterInfo: null,
+      initialComments: [],
+      fetchError: '이 게시글을 볼 권한이 없습니다. 회원 전용 게시판이거나 작성자와 관리자만 볼 수 있는 글입니다.',
+      forbidden: true,
+    } as never);
+
+    expect(screen.getByRole('heading', { name: '볼 수 없는 게시글입니다' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '다시 시도' })).toBeNull();
+    expect(screen.getByRole('button', { name: '목록으로 돌아가기' })).toBeInTheDocument();
+  });
+
+  it('대조군: 일반 조회 실패는 다시 시도를 준다', async () => {
+    await renderDetail({ article: null, masterInfo: null, initialComments: [], fetchError: '게시글을 불러오지 못했습니다.' } as never);
+
+    expect(screen.getByRole('button', { name: '다시 시도' })).toBeInTheDocument();
+  });
+});
+
 describe('BoardDetailClient Q&A 해결 표시', () => {
   beforeEach(() => {
     vi.clearAllMocks();

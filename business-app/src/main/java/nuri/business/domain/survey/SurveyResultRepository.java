@@ -41,6 +41,24 @@ public interface SurveyResultRepository extends JpaRepository<SurveyResult, Long
             """)
     List<ArticleCount> countGroupedByArticle(@Param("srvySn") Long srvySn);
 
+    /**
+     * 문항별 응답자 수(한 사람이 여러 항목을 골라도 1명). 복수선택 문항의 비율 분모다(2026-09-26 DIP V8).
+     */
+    @Query("""
+            SELECT r.srvyQstnSn AS srvyQstnSn, COUNT(DISTINCT r.frstRgtrId) AS cnt
+            FROM SurveyResult r
+            WHERE r.srvySn = :srvySn
+            GROUP BY r.srvyQstnSn
+            """)
+    List<QuestionRespondentCount> countRespondentsGroupedByQuestion(@Param("srvySn") Long srvySn);
+
+    /** {@link #countRespondentsGroupedByQuestion} 전용 투영. */
+    interface QuestionRespondentCount {
+        Long getSrvyQstnSn();
+
+        long getCnt();
+    }
+
     /** {@link #countGroupedByArticle} 전용 투영. */
     interface ArticleCount {
         Long getSrvyArtclSn();

@@ -159,6 +159,21 @@ describe('SurveyResponseClient destructive boundary', () => {
     expect(screen.getByRole('button', { name: '다시 불러오기' })).toBeEnabled();
   });
 
+  it("🚨 '기타' 답과 이름 없는 이전 응답을 빈 칸으로 두지 않는다 (DIP V8)", async () => {
+    mocks.getResponses.mockResolvedValue({
+      list: [
+        { srvyRspnsSn: 9, rspnsNm: '김기타', etcAnsCn: '재택 근무 확대', crtDt: '2026-09-26' },
+        { srvyRspnsSn: 10, rspnsNm: '', rspdntAnsCn: '만족합니다.', crtDt: '2026-09-01' },
+      ],
+      total: 2,
+      totalPage: 1,
+    });
+    renderSubject();
+
+    expect(await screen.findByText('기타: 재택 근무 확대')).toBeInTheDocument();
+    expect(screen.getByText('이름 없음(이전 응답)')).toBeInTheDocument();
+  });
+
   it('검색어 없이 비어 있으면 검색 결과 없음이 아니라 등록된 응답이 없다고 말한다', async () => {
     mocks.getResponses.mockResolvedValue({ list: [], total: 0, totalPage: 1 });
     renderSubject();

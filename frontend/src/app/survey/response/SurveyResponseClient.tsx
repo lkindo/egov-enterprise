@@ -196,9 +196,13 @@ export default function SurveyResponseClient() {
                 ) : (
                   responses.map((item) => (
                     <TableRow key={item.srvyRspnsSn} className="transition-colors hover:bg-muted/30">
-                      <TableCell className="font-medium">{item.rspnsNm}</TableCell>
+                      {/* [2026-09-26 DIP V8] 이름은 이제 서버가 제출 시 채운다. 그 전에 쌓인 응답은 이름이 비어 있다. */}
+                      <TableCell className="font-medium">{item.rspnsNm || '이름 없음(이전 응답)'}</TableCell>
                       <TableCell className="text-muted-foreground">
-                        <span className="line-clamp-1">{item.rspdntAnsCn}</span>
+                        {/* '기타' 를 고르고 적은 답은 etcAnsCn 에만 있다 — 종전에는 이 열에 나오지 않았다. */}
+                        <span className="line-clamp-1">
+                          {item.rspdntAnsCn || (item.etcAnsCn ? `기타: ${item.etcAnsCn}` : '-')}
+                        </span>
                       </TableCell>
                       <TableCell className="text-sm font-mono text-muted-foreground">
                         {item.crtDt}

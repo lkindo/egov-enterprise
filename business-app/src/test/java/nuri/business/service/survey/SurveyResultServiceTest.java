@@ -59,6 +59,13 @@ class SurveyResultServiceTest {
                 .srvyBgngYmd(bgng).srvyEndYmd(end).build();
     }
 
+    private static SurveyResultRepository.QuestionRespondentCount respondents(Long qstnSn, long cnt) {
+        return new SurveyResultRepository.QuestionRespondentCount() {
+            @Override public Long getSrvyQstnSn() { return qstnSn; }
+            @Override public long getCnt() { return cnt; }
+        };
+    }
+
     private static SurveyResultRepository.ArticleCount count(Long artclSn, long cnt) {
         return new SurveyResultRepository.ArticleCount() {
             @Override public Long getSrvyArtclSn() { return artclSn; }
@@ -84,10 +91,13 @@ class SurveyResultServiceTest {
         // Q1 은 3+1=4건, Q2 는 1건. 설문 전체(5)로 나누면 A1 은 60% 가 되고 Q1 합계가 100% 가 안 된다.
         given(resultRepository.countGroupedByArticle(201L))
                 .willReturn(List.of(count(401L, 3), count(402L, 1), count(403L, 1)));
+        given(resultRepository.countRespondentsGroupedByQuestion(201L))
+                .willReturn(List.of(respondents(301L, 4), respondents(302L, 1)));
 
         List<SurveyStatsDto> stats = service.getStats(201L);
 
         assertThat(stats).hasSize(3);
+        assertThat(stats.get(0).respondentCount()).isEqualTo(4);
         assertThat(stats.get(0).percentage()).as("A1: 3/4 = 75%").isEqualTo(75.0);
         assertThat(stats.get(1).percentage()).as("A2: 1/4 = 25%").isEqualTo(25.0);
         assertThat(stats.get(2).percentage()).as("A3: 1/1 = 100%").isEqualTo(100.0);
@@ -104,6 +114,7 @@ class SurveyResultServiceTest {
         given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "예"), article(402L, 301L, "아니오")));
         given(resultRepository.countGroupedByArticle(201L)).willReturn(List.of(count(401L, 2)));
+        given(resultRepository.countRespondentsGroupedByQuestion(201L)).willReturn(List.of(respondents(301L, 2)));
 
         List<SurveyStatsDto> stats = service.getStats(201L);
 
@@ -127,6 +138,27 @@ class SurveyResultServiceTest {
 
         assertThat(stats).hasSize(1);
         assertThat(stats.get(0).percentage()).isZero();
+    }
+
+    /**
+     * 🚨 [DIP V8] 복수선택 문항은 선택 합계가 아니라 <b>응답자 수</b>로 나눈다. 10명이 두 개씩 고르면
+     * 합계는 20 이라, 종전 계산은 10명 모두 고른 항목을 50% 로 보였다.
+     */
+    @Test
+    @DisplayName("🚨 통계 - 복수선택 문항의 비율 분모는 응답자 수다 (DIP V8)")
+    void statsMultiChoiceUsesRespondents() {
+        given(infoRepository.existsById(201L)).willReturn(true);
+        given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "관심 분야(복수)", "1")));
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+                .willReturn(List.of(article(401L, 301L, "교육"), article(402L, 301L, "복지"), article(403L, 301L, "문화")));
+        given(resultRepository.countGroupedByArticle(201L))
+                .willReturn(List.of(count(401L, 10), count(402L, 6), count(403L, 4)));
+        given(resultRepository.countRespondentsGroupedByQuestion(201L)).willReturn(List.of(respondents(301L, 10)));
+
+        List<SurveyStatsDto> stats = service.getStats(201L);
+
+        assertThat(stats).extracting(SurveyStatsDto::percentage).containsExactly(100.0, 60.0, 40.0);
+        assertThat(stats).allSatisfy(stat -> assertThat(stat.respondentCount()).isEqualTo(10));
     }
 
     @Test
@@ -258,6 +290,35 @@ class SurveyResultServiceTest {
         assertThat(captor.getValue()).hasSize(2);
         // 템플릿 ID 는 요청이 아니라 문항에서 가져온다 — 클라이언트가 임의 값을 심지 못하게 한다.
         assertThat(captor.getValue()).allSatisfy(r -> assertThat(r.getSrvyTmpltSn()).isEqualTo(101L));
+        // 인증 주체의 이름이 없으면 요청의 이름('홍길동')이 아니라 로그인 ID 를 남긴다.
+        assertThat(captor.getValue()).allSatisfy(r -> assertThat(r.getRspnsNm()).isEqualTo("user1"));
+    }
+
+    @Test
+    @DisplayName("🚨 제출 - 응답자 이름은 인증 주체에서 온다, 요청 본문의 이름이 아니다 (DIP V8)")
+    void submitRecordsPrincipalName() {
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));
+        given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
+        given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "질문", "1")));
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+                .willReturn(List.of(article(401L, 301L, "예")));
+        SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("사칭한 이름",
+                List.of(new SurveyResponseSubmitDto.Answer(301L, 401L, null, null)));
+
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                    .thenReturn(java.util.Optional.of("user1"));
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentUserNm)
+                    .thenReturn(java.util.Optional.of("김응답"));
+
+            service.submitResponse(201L, dto);
+        }
+
+        @SuppressWarnings("unchecked")
+        org.mockito.ArgumentCaptor<List<SurveyResult>> captor =
+                org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(resultRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).extracting(SurveyResult::getRspnsNm).containsExactly("김응답");
     }
 
     @Test

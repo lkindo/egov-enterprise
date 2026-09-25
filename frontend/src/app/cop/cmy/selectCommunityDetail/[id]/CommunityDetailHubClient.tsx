@@ -241,8 +241,12 @@ export default function CommunityDetailHubClient({
                     같은 from() 을 쓴다). 그래서 모든 커뮤니티가 'System_Admin' 으로 보였다 —
                     바로 옆에서 지운 '42_Active_Entities' 와 정확히 같은 부류의 지어낸 값이다.
                     서버가 실제로 채우는 등록자 ID(BaseEntity 규약상 loginId)를 그대로 보여 준다.
+
+                    [2026-09-26 DIP V9] 그 '등록자' 칸도 걷었다. 로그인 ID 는 사람에게 보여 줄 이름이 아니라
+                    계정 식별자이고, 모든 회원에게 개설자의 로그인 ID 를 알리는 것은 계정 열거 표면이다
+                    (DEC-OPS-071 이 메모보고 응답에 식별자를 싣지 않은 것과 같은 이유). 이름이 필요하면
+                    서버가 이름을 싣도록 계약을 넓히는 것이 먼저다.
                   */}
-                  <DetailBlock icon={<ShieldCheck size={18} />} label="등록자" value={community.frstRgtrId || '알 수 없음'} />
                   <DetailBlock icon={<Calendar size={18} />} label="등록일" value={community.crtDt?.substring(0, 10) || '알 수 없음'} />
                   {/*
                     [2026-08-28] 'Member Count 42_Active_Entities' 제거.

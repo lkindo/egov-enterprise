@@ -398,6 +398,30 @@ describe('MenuAdminClient Component', () => {
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('저장 중 오류 발생', 'error'));
   });
 
+  it('🚨 하위 메뉴가 있으면 삭제를 묻지 않고 서버가 거부할 이유를 먼저 알린다 (DIP V9)', async () => {
+    const menus = [
+      { menuNo: 1, menuNm: 'Main Menu', upperMenuNo: 0, upperMenuId: 0, menuOrdr: 1, progrmFileNm: 'prog1' },
+      { menuNo: 2, menuNm: 'Child Menu', upperMenuNo: 1, upperMenuId: 1, menuOrdr: 1, progrmFileNm: 'prog1' },
+    ] as any;
+    await act(async () => {
+      render(
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <MenuAdminClient
+            menusPromise={Promise.resolve({ data: menus, error: null })}
+            programsPromise={Promise.resolve({ data: mockPrograms, error: null })}
+          />
+        </React.Suspense>,
+      );
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Main Menu.*ID: 1/i }));
+    fireEvent.click(screen.getByRole('button', { name: '메뉴 삭제' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      expect.stringContaining('하위 메뉴 1건이 있어 삭제할 수 없습니다'), 'error'));
+    expect(mocks.confirm).not.toHaveBeenCalled();
+    expect(mocks.deleteMenu).not.toHaveBeenCalled();
+  });
+
   it('메뉴 삭제는 같은 tick 중복 실행을 막고 rejected 오류를 안내한다', async () => {
     const pending = deferred<{ success: boolean; message: string }>();
     mocks.deleteMenu.mockReturnValueOnce(pending.promise);

@@ -94,6 +94,21 @@ public class SecurityUtil {
         return Optional.empty();
     }
 
+    /**
+     * 현재 인증 주체의 <b>이름</b>. 이름이 비어 있거나 인증 주체가 없으면 {@code Optional.empty()}.
+     * 요청 본문이 주장하는 이름 대신 서버가 기록할 표시 이름이 필요할 때 쓴다(2026-09-26 DIP V8).
+     */
+    public static Optional<String> getCurrentUserNm() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
+            String name = userDetails.getUserNm();
+            return name == null || name.isBlank() ? Optional.empty() : Optional.of(name.trim());
+        }
+        return Optional.empty();
+    }
+
 
 
 

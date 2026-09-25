@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { ReportPage } from '@/app/components/patterns/report-page';
 import { StandardChartWrapper } from '@/app/components/ui/standard-chart-wrapper';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
@@ -25,7 +25,9 @@ export default function AdminStatsClient({
   loadError?: string | null;
 }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  // [2026-09-26 DIP V9] 새로고침 표시는 실제 서버 재조회가 끝날 때까지다. 종전에는 800ms 뒤 무조건 꺼져
+  //   재조회가 끝나기 전에 '완료' 처럼 보이거나, 이미 끝났는데도 돌고 있었다.
+  const [loading, startRefresh] = useTransition();
   const [page, setPage] = useState(1);
 
   const connectData = initialConnectData || [];
@@ -41,10 +43,8 @@ export default function AdminStatsClient({
     currentPage * CONNECT_PAGE_SIZE
   );
 
-  const handleRefresh = async () => {
-    setLoading(true);
-    router.refresh();
-    setTimeout(() => setLoading(false), 800);
+  const handleRefresh = () => {
+    startRefresh(() => router.refresh());
   };
 
   const connectColumns = [
@@ -112,6 +112,7 @@ export default function AdminStatsClient({
             size="sm"
             aria-label="새로고침"
             onClick={handleRefresh}
+            aria-busy={loading || undefined}
             className="gap-2"
           >
             <RefreshCcw size={16} className={cn(loading && "animate-spin")} aria-hidden="true" />

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { pollUserService } from '@/services/business/user/poll/PollUserService';
-import { OnlinePollManageVO, OnlinePollItemVO } from '@/types/business/poll';
+import { OnlinePollManageDetailVO, OnlinePollItemVO } from '@/types/business/poll';
 import { Vote,  
  Calendar,  
  ChevronRight,  
@@ -20,10 +20,10 @@ import { getPollStatus, POLL_STATUS_LABEL, isPollActive } from '@/lib/poll-statu
 import { toast } from 'sonner';
 
 export default function OnlinePollParticipateClient() {
- const [polls, setPolls] = useState<OnlinePollManageVO[]>([]);
+ const [polls, setPolls] = useState<OnlinePollManageDetailVO[]>([]);
  /** 조회 실패 사유. null 이면 정상 — 실패와 '없음' 을 같은 화면으로 그리지 않는다. */
  const [loadError, setLoadError] = useState<string | null>(null);
- const [selectedPoll, setSelectedPoll] = useState<OnlinePollManageVO | null>(null);
+ const [selectedPoll, setSelectedPoll] = useState<OnlinePollManageDetailVO | null>(null);
  const [pollItems, setPollItems] = useState<OnlinePollItemVO[]>([]);
  const [selectedItemSn, setSelectedItemSn] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,8 +44,8 @@ export default function OnlinePollParticipateClient() {
  // Support both Spring Data JPA Page (content) and legacy list format
  setPolls(res.list || []);
   } catch {
-  setLoadError('설문 목록을 불러오지 못했습니다.');
-  toast.error('설문 목록을 불러오지 못했습니다.');
+  setLoadError('투표 목록을 불러오지 못했습니다.');
+  toast.error('투표 목록을 불러오지 못했습니다.');
   } finally {
   setLoading(false);
   }
@@ -55,7 +55,7 @@ export default function OnlinePollParticipateClient() {
     void fetchPolls();
   }, [fetchPolls]);
 
- const handleSelectPoll = async (poll: OnlinePollManageVO) => {
+ const handleSelectPoll = async (poll: OnlinePollManageDetailVO) => {
  setLoading(true);
  try {
  const items = await pollUserService.getPollItemList(poll.pollSn!);
@@ -64,16 +64,23 @@ export default function OnlinePollParticipateClient() {
  setSelectedItemSn(null);
 
  // 기간 밖이거나 판정 불가(손상 값)면 투표를 열지 않고 결과만 보여준다.
- if (isPollActive(poll.pollBgngYmd, poll.pollEndYmd, todayStr, poll.pollDsuseYn)) {
+ // [2026-09-26 DIP V7] 이미 참여했으면 결과로 연다 — 종전에는 다시 투표 화면을 열었다가 제출 때 거부됐다.
+ if (!poll.hasVoted && isPollActive(poll.pollBgngYmd, poll.pollEndYmd, todayStr, poll.pollDsuseYn)) {
  setViewMode('vote');
  } else {
  setViewMode('result');
  }
  } catch {
- toast.error('설문 상세 정보를 불러오지 못했습니다.');
+ toast.error('투표 상세 정보를 불러오지 못했습니다.');
  } finally {
  setLoading(false);
  }
+ };
+
+ /** 목록 카드와 열린 투표에 참여 완료를 반영한다. 다시 목록으로 돌아가도 같은 투표를 또 열지 않게 한다. */
+ const markVoted = (pollSn: number | undefined) => {
+ setPolls((current) => current.map((poll) => (poll.pollSn === pollSn ? { ...poll, hasVoted: true } : poll)));
+ setSelectedPoll((current) => (current && current.pollSn === pollSn ? { ...current, hasVoted: true } : current));
  };
 
  const handleVote = async () => {
@@ -86,6 +93,7 @@ export default function OnlinePollParticipateClient() {
  pollArtclSn: selectedItemSn
  });
  toast.success('투표가 성공적으로 반영되었습니다.');
+ markVoted(selectedPoll.pollSn);
  // Refresh items to show new counts
  const updatedItems = await pollUserService.getPollItemList(selectedPoll.pollSn!);
  setPollItems(updatedItems);
@@ -96,6 +104,7 @@ export default function OnlinePollParticipateClient() {
       : '투표 처리 중 오류가 발생했습니다.';
     toast.error(msg);
     if (msg.includes('이미 참여')) {
+      markVoted(selectedPoll.pollSn);
       setViewMode('result');
     }
   } finally {
@@ -108,7 +117,7 @@ export default function OnlinePollParticipateClient() {
  <div className="flex flex-col items-center justify-center min-h-[200px] gap-3">
  <h1 className="sr-only">여론조사 목록을 불러오는 중</h1>
  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
- <p className="text-muted-foreground text-[length:var(--font-size-body)]">설문을 불러오는 중입니다…</p>
+ <p className="text-muted-foreground text-[length:var(--font-size-body)]">투표를 불러오는 중입니다…</p>
  </div>
  );
  }
@@ -130,7 +139,7 @@ export default function OnlinePollParticipateClient() {
  <div className="space-y-2">
  <h3 className="text-xl font-bold tracking-tight text-foreground">{loadError}</h3>
  <p className="text-muted-foreground font-medium">
- 설문이 없는 것이 아니라 <strong>조회에 실패</strong>했습니다. 진행 중인 설문이 있을 수 있습니다.
+ 투표가 없는 것이 아니라 <strong>조회에 실패</strong>했습니다. 진행 중인 투표가 있을 수 있습니다.
  </p>
  </div>
  <button
@@ -147,8 +156,8 @@ export default function OnlinePollParticipateClient() {
  <Target size={18} />
  </div>
  <div className="space-y-2">
- <h3 className="text-xl font-bold tracking-tight text-foreground">활성 설문이 없습니다</h3>
- <p className="text-muted-foreground font-medium">새로운 설문이 등록되면 여기에 표시됩니다.</p>
+ <h3 className="text-xl font-bold tracking-tight text-foreground">진행 중인 투표가 없습니다</h3>
+ <p className="text-muted-foreground font-medium">새 투표가 등록되면 여기에 표시됩니다.</p>
  </div>
  </div>
  ) : (
@@ -168,6 +177,11 @@ export default function OnlinePollParticipateClient() {
  <div className="px-2 py-0.5 rounded-lg border border-surface-inverse-border flex items-center">
  <span className="text-xs font-semibold">{POLL_STATUS_LABEL[getPollStatus(selectedPoll, todayStr)]}</span>
  </div>
+ {selectedPoll.hasVoted && (
+ <div className="px-2 py-0.5 rounded-lg border border-surface-inverse-border flex items-center">
+ <span className="text-xs font-semibold">참여 완료</span>
+ </div>
+ )}
  <div className="px-2 py-0.5 rounded-lg border border-surface-inverse-border flex items-center gap-1.5">
  <Calendar size={14} className="text-surface-inverse-muted" />
  <span className="text-xs font-semibold tabular-nums">{toDisplayYmd(selectedPoll.pollBgngYmd)} - {toDisplayYmd(selectedPoll.pollEndYmd)}</span>
@@ -232,7 +246,7 @@ export default function OnlinePollParticipateClient() {
  );
 }
 
-function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, todayStr: string, onSelect: () => void }) {
+function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageDetailVO, todayStr: string, onSelect: () => void }) {
   const status = getPollStatus(poll, todayStr);
   const isLive = status === 'active';
   /*
@@ -269,6 +283,9 @@ function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, toda
           {label}
         </div>
       </div>
+      {poll.hasVoted && (
+        <p className="mb-1 text-xs font-semibold text-muted-foreground">참여 완료 · 결과 보기</p>
+      )}
 
       <div className="space-y-1">
         <h3 className="text-[length:var(--font-size-body)] font-semibold leading-snug group-hover:text-primary transition-colors">{poll.pollNm}</h3>

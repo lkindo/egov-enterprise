@@ -82,9 +82,15 @@ public class SurveyService {
     }
 
     public SurveyInfoDto getSurvey(Long srvySn) {
-        return infoRepository.findById(Objects.requireNonNull(srvySn))
+        SurveyInfoDto dto = infoRepository.findById(Objects.requireNonNull(srvySn))
                 .map(surveyInfoMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [2026-09-26 DIP V8] 화면을 열 때 이미 응답했는지 알린다 — 종전에는 다 고르고 제출해야 비로소
+        //   '이미 응답한 설문입니다' 로 거부됐다. 판정 축은 제출 중복 검사와 같은 로그인 ID 다.
+        dto.setResponded(nuri.business.security.util.SecurityUtil.getCurrentLoginId()
+                .map(loginId -> rsltRepository.existsBySrvySnAndFrstRgtrId(srvySn, loginId))
+                .orElse(null));
+        return dto;
     }
 
     @Transactional

@@ -38,6 +38,8 @@ interface BoardDetailClientProps {
     initialComments: CommentVO[];
     /** 감사 P1-1: 서버 조회 실패 사유. null 이면 정상(또는 404 = 실제로 없는 글). */
     fetchError: string | null;
+    /** 서버가 권한으로 막았다(403). 재시도를 권하지 않는다(DIP V9). */
+    forbidden?: boolean;
   }>;
 }
 
@@ -212,6 +214,20 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       setActiveAction(null);
     }
   };
+
+  // 권한으로 막힌 글은 장애가 아니다 — '다시 시도' 대신 이유와 돌아갈 길만 준다(DIP V9).
+  if (!article && initialData.forbidden) {
+    return (
+      <div role="alert" className="flex flex-col items-center justify-center min-h-[600px] space-y-6 text-center px-6">
+        <AlertTriangle size={48} className="text-muted-foreground" aria-hidden="true" />
+        <div className="space-y-2">
+          <h1 className="text-xl font-bold text-foreground">볼 수 없는 게시글입니다</h1>
+          <p className="text-sm font-medium text-muted-foreground max-w-md">{initialData.fetchError}</p>
+        </div>
+        <Button variant="outline" onClick={() => router.back()}>목록으로 돌아가기</Button>
+      </div>
+    );
+  }
 
   // 감사 P1-1: 조회 장애(fetchError)와 '실제로 없는 글'(404)을 구분해 표시한다.
   if (!article && initialData.fetchError) {

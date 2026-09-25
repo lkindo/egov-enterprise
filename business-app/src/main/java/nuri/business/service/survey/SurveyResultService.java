@@ -135,6 +135,14 @@ public class SurveyResultService {
             }
         }
 
+        // [2026-09-26 DIP V8] 응답자 이름은 인증 주체에서 온다. 화면은 이 값을 보내지 않아 응답 관리 화면의
+        //   이름 열과 이름 검색이 늘 비어 있었고, 보냈다 해도 요청 본문의 이름은 위조할 수 있다.
+        //   이름이 없는 계정만 로그인 ID 를 남긴다. 컬럼은 100자다.
+        String respondentName = SecurityUtil.getCurrentUserNm().orElse(submitter);
+        if (respondentName.length() > 100) {
+            respondentName = respondentName.substring(0, 100);
+        }
+
         List<SurveyResult> rows = new ArrayList<>();
         for (SurveyResponseSubmitDto.Answer a : dto.answers()) {
             SurveyQuestion q = questions.get(a.srvyQstnSn());
@@ -153,7 +161,7 @@ public class SurveyResultService {
                     .srvyQstnSn(a.srvyQstnSn())
                     .srvyArtclSn(a.srvyArtclSn())
                     .rspdntAnsCn(a.rspdntAnsCn())
-                    .rspnsNm(dto.rspnsNm())
+                    .rspnsNm(respondentName)
                     .etcAnsCn(a.etcAnsCn())
                     .build());
         }
@@ -207,8 +215,11 @@ public class SurveyResultService {
      * 문항별 항목 응답 분포.
      *
      * <p>응답이 0건인 항목도 0% 행으로 내보낸다 — 화면이 "아무도 고르지 않은 선택지" 를
-     * 보여줘야 분포를 읽을 수 있기 때문이다. 집계는 group by 1회로 끝내고(N+1 회피),
-     * 비율은 <b>문항 단위 합계</b>로 나눈다(설문 전체가 아니다 — 문항마다 응답 수가 다르다).
+     * 보여줘야 분포를 읽을 수 있기 때문이다. 집계는 group by 로 끝내고(N+1 회피),
+     * 비율은 <b>그 문항에 응답한 사람 수</b>로 나눈다(설문 전체가 아니다 — 문항마다 응답 수가 다르다).
+     *
+     * <p>[2026-09-26 DIP V8] 종전 분모는 문항의 선택 합계였다. 복수선택 문항에서 응답자 10명이 두 개씩
+     * 고르면 합계가 20 이라, 10명 모두 고른 항목도 50% 로 보였다. 단일선택이면 두 분모는 같다.
      */
     public List<SurveyStatsDto> getStats(Long srvySn) {
         Objects.requireNonNull(srvySn);
@@ -224,6 +235,10 @@ public class SurveyResultService {
                 .collect(Collectors.toMap(SurveyResultRepository.ArticleCount::getSrvyArtclSn,
                         SurveyResultRepository.ArticleCount::getCnt));
 
+        Map<Long, Long> respondentsByQuestion = resultRepository.countRespondentsGroupedByQuestion(srvySn).stream()
+                .collect(Collectors.toMap(SurveyResultRepository.QuestionRespondentCount::getSrvyQstnSn,
+                        SurveyResultRepository.QuestionRespondentCount::getCnt));
+
         Map<Long, List<SurveyArticle>> articlesByQuestion = articleRepository
                 .findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(
                         questions.stream().map(SurveyQuestion::getSrvyQstnSn).toList())
@@ -233,9 +248,7 @@ public class SurveyResultService {
         List<SurveyStatsDto> stats = new ArrayList<>();
         for (SurveyQuestion q : questions) {
             List<SurveyArticle> articles = articlesByQuestion.getOrDefault(q.getSrvyQstnSn(), List.of());
-            long questionTotal = articles.stream()
-                    .mapToLong(a -> countByArticle.getOrDefault(a.getSrvyArtclSn(), 0L))
-                    .sum();
+            long respondents = respondentsByQuestion.getOrDefault(q.getSrvyQstnSn(), 0L);
             for (SurveyArticle a : articles) {
                 long count = countByArticle.getOrDefault(a.getSrvyArtclSn(), 0L);
                 stats.add(SurveyStatsDto.builder()
@@ -245,8 +258,9 @@ public class SurveyResultService {
                         .srvyArtclSn(a.getSrvyArtclSn())
                         .artclCn(a.getArtclCn())
                         .count(count)
-                        .percentage(questionTotal == 0 ? 0.0
-                                : Math.round(count * 1000.0 / questionTotal) / 10.0)
+                        .percentage(respondents == 0 ? 0.0
+                                : Math.round(count * 1000.0 / respondents) / 10.0)
+                        .respondentCount(respondents)
                         .build());
             }
         }

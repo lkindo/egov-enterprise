@@ -84,6 +84,16 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
     expect(screen.queryByText('자유 게시판')).toBeNull();
   });
 
+  it('🚨 1글자 검색은 게시글·임직원을 부르지 않고 2자 이상이 필요하다고 안내한다 (DIP V9)', async () => {
+    mocks.getHeadMenus.mockResolvedValue([{ menuNo: 1, menuNm: '홍보 관리', modernRoute: '/admin/promotion' }]);
+    render(<SearchResultsContent initialResults={emptyResults} query="홍" />);
+
+    expect(await screen.findByRole('status')).toHaveTextContent('2자 이상 입력해야 찾습니다');
+    expect(await screen.findByText('홍보 관리')).toBeInTheDocument();
+    expect(mocks.searchAssignableUsers).not.toHaveBeenCalled();
+    expect(mocks.searchPosts).not.toHaveBeenCalled();
+  });
+
   it('일반 인증 사용자용 최소정보 검색 API로 조회한다', async () => {
     render(<SearchResultsContent initialResults={emptyResults} query="홍길" />);
 

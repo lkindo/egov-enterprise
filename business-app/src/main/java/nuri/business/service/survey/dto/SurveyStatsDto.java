@@ -26,7 +26,9 @@ public record SurveyStatsDto(
         String artclCn,
         /** 해당 항목 응답 수 */
         long count,
-        /** 문항 내 응답 비율(%). 문항 응답이 0건이면 0 */
-        double percentage
+        /** 응답자 중 이 항목을 고른 비율(%). 응답자가 0명이면 0. 복수선택이면 문항 합계가 100 을 넘을 수 있다. */
+        double percentage,
+        /** 이 문항에 응답한 사람 수(복수선택이어도 1명은 1). 비율의 분모다(DIP V8). */
+        long respondentCount
 ) {
 }

@@ -552,7 +552,7 @@ class OnlinePollServiceTest {
 
         assertThatThrownBy(() -> onlinePollService.vote(1L, 22L, "user1"))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("설문 항목을 찾을 수 없습니다");
+                .hasMessageContaining("투표 항목을 찾을 수 없습니다");
         verify(pollResultRepository, times(0)).saveAndFlush(any(OnlinePollResult.class));
     }
 
@@ -583,7 +583,10 @@ class OnlinePollServiceTest {
     void vote_Fail_Disabled() {
         OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).pollDsuseYn("Y").build();
         given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
-        assertThrows(BusinessException.class, () -> onlinePollService.vote(1L, 11L, "user1"));
+        // [DIP V7] 참여 화면의 오류는 '투표' 로 말한다 — '설문' 은 문항형 설문조사의 이름이다.
+        assertThatThrownBy(() -> onlinePollService.vote(1L, 11L, "user1"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("종료되었거나 폐기된 투표입니다.");
     }
 
     @Test
@@ -597,7 +600,9 @@ class OnlinePollServiceTest {
                 .pollEndYmd(tomorrow)
                 .build();
         given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
-        assertThrows(BusinessException.class, () -> onlinePollService.vote(1L, 11L, "user1"));
+        assertThatThrownBy(() -> onlinePollService.vote(1L, 11L, "user1"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("투표 시작 전입니다.");
     }
 
     @Test
@@ -611,7 +616,9 @@ class OnlinePollServiceTest {
                 .pollEndYmd(yesterday)
                 .build();
         given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
-        assertThrows(BusinessException.class, () -> onlinePollService.vote(1L, 11L, "user1"));
+        assertThatThrownBy(() -> onlinePollService.vote(1L, 11L, "user1"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("이미 종료된 투표입니다.");
     }
 
     @Test
@@ -629,7 +636,7 @@ class OnlinePollServiceTest {
 
         assertThatThrownBy(() -> onlinePollService.vote(1L, 11L, "user1"))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("이미 참여");
+                .hasMessage("이미 참여한 투표입니다.");
     }
 
     @Test

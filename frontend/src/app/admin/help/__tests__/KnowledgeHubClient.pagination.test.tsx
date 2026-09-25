@@ -30,4 +30,14 @@ describe('knowledge list server pagination', () => {
     fireEvent.change(screen.getByRole('textbox', { name: '지식 검색어' }), { target: { value: '검색어' } });
     await waitFor(() => expect(mocks.getArticles).toHaveBeenLastCalledWith(expect.objectContaining({ page: 0, searchWrd: '검색어', orderBy: 'views' })));
   });
+
+  it('🚨 검색 안내가 실제 범위(제목)를 말한다 — 서버는 제목만 찾는다 (DIP V9)', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={client}><KnowledgeHubClient defaultTab="FAQ" /></QueryClientProvider>);
+    const input = await screen.findByRole('textbox', { name: '지식 검색어' });
+
+    expect(input).toHaveAttribute('placeholder', '제목 검색...');
+    fireEvent.change(input, { target: { value: '연차' } });
+    await waitFor(() => expect(mocks.getArticles).toHaveBeenLastCalledWith(expect.objectContaining({ searchCnd: '0', searchWrd: '연차' })));
+  });
 });

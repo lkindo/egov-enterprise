@@ -36954,6 +36954,14 @@
             "type": "string",
             "format": "date-time",
             "description": "등록 일시"
+          },
+          "responded": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "현재 사용자의 응답 여부(상세 조회에서만 채운다)",
+            "readOnly": true
           }
         },
         "required": [
@@ -40555,6 +40563,10 @@
           "percentage": {
             "type": "number",
             "format": "double"
+          },
+          "respondentCount": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },

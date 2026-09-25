@@ -274,6 +274,7 @@ const detailRecord = {
   ognzId: 'D-100',
   userSttsCd: 'P',
   emplNo: 'EMP-7',
+  groups: ['ROLE_USER', 'ROLE_REPORTER'],
 };
 
 const listPage = { list: [listRow], total: 1, page: 1, size: 10, totalPage: 3 };
@@ -551,8 +552,10 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     await waitFor(() => {
       expect(userAdminService.getUser).toHaveBeenCalledWith('user1');
     });
-    await screen.findByText('D-100');
+    // [DIP V9] 소속은 부서 ID 가 아니라 이름(ID)으로, 권한 그룹도 함께 보인다.
+    await screen.findByText('기획부 (D-100)');
     await screen.findByText('정상');
+    expect(screen.getByText('ROLE_USER, ROLE_REPORTER')).toBeInTheDocument();
   });
 
   it('수정 폼은 상세 API 전체 레코드를 시드로 받아 소속 부서를 보존한 채 updateUser 를 호출한다', async () => {
@@ -560,7 +563,7 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     await selectFirstRow();
 
     // 상세가 도착한 뒤 수정 모달을 연다(실사용 순서와 동일).
-    await screen.findByText('D-100');
+    await screen.findByText('기획부 (D-100)');
     fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]);
     await screen.findByText('사용자 정보 수정');
     expect(screen.getByTestId('user-form-mode').textContent).toBe('edit');
@@ -580,7 +583,7 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     vi.mocked(userAdminService.updateUser).mockRejectedValue(new Error('접근 권한이 없습니다.'));
     await selectFirstRow();
 
-    await screen.findByText('D-100');
+    await screen.findByText('기획부 (D-100)');
     fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]);
     await screen.findByText('사용자 정보 수정');
     fireEvent.click(screen.getByText('form-submit'));
@@ -595,7 +598,7 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     mockConfirm.mockResolvedValue(true);
     vi.mocked(userAdminService.deleteUser).mockReturnValueOnce(pending.promise as any);
     await selectFirstRow();
-    await screen.findByText('D-100');
+    await screen.findByText('기획부 (D-100)');
     fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]);
     const dialog = await screen.findByRole('dialog');
     const formSubmit = within(dialog).getByRole('button', { name: 'form-submit' });

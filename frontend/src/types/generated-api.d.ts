@@ -5565,6 +5565,8 @@ export interface components {
              * @description 등록 일시
              */
             crtDt?: string;
+            /** @description 현재 사용자의 응답 여부(상세 조회에서만 채운다) */
+            readonly responded?: boolean | null;
         };
         /** @description 설문템플릿 DTO (표준화) */
         SurveyTemplateDto: {
@@ -7031,6 +7033,8 @@ export interface components {
             count?: number;
             /** Format: double */
             percentage?: number;
+            /** Format: int64 */
+            respondentCount?: number;
         };
         ApiResponseListStatsDto: {
             success?: boolean;

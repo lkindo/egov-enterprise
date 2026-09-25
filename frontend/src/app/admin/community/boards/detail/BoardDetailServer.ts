@@ -6,6 +6,11 @@ import { boardUserService } from '@/services/business/user/board/BoardUserServic
 import { commentService } from '@/services/business/comment/commentService';
 
 const BOARD_DETAIL_ERROR = '게시글을 불러오지 못했습니다.';
+/**
+ * [2026-09-26 DIP V9] 403 은 장애가 아니라 권한이다. 종전에는 일반 조회 실패와 같이 '다시 시도' 를
+ * 권했는데, 몇 번을 눌러도 결과가 같다. 회원 전용 게시판·비밀글처럼 서버가 막은 경우를 따로 말한다.
+ */
+export const BOARD_DETAIL_FORBIDDEN = '이 게시글을 볼 권한이 없습니다. 회원 전용 게시판이거나 작성자와 관리자만 볼 수 있는 글입니다.';
 
 function getHttpStatus(error: unknown): number | undefined {
   if (typeof error !== 'object' || error === null || !('response' in error)) return undefined;
@@ -38,6 +43,9 @@ export const getInitialBoardDetailData = cache(async (bbsId: string, pstSn: numb
     if (status === 401) redirect('/login');
     if (status === 404) {
       return { article: null, masterInfo: null, initialComments: [], fetchError: null as string | null };
+    }
+    if (status === 403) {
+      return { article: null, masterInfo: null, initialComments: [], fetchError: BOARD_DETAIL_FORBIDDEN, forbidden: true };
     }
     return { article: null, masterInfo: null, initialComments: [], fetchError: BOARD_DETAIL_ERROR };
   }

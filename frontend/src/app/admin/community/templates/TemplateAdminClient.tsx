@@ -81,6 +81,9 @@ const templateValidationLabels = {
  useYn: '상태',
 };
 
+
+/** 템플릿 분류 코드의 표시 이름. 목록 밖 코드는 원문 그대로 보인다(DIP V9). */
+const TEMPLATE_CATEGORY_LABEL: Record<string, string> = { TMPT01: '게시판', TMPT02: '커뮤니티', TMPT03: '일반' };
 export default function TemplateAdminClient({
  templatesPromise
 }: {
@@ -214,7 +217,8 @@ export default function TemplateAdminClient({
  header: '구분',
  accessor: (item: TmplatInfo) => (
  <span className="text-xs font-bold text-muted-foreground tracking-tight bg-muted px-2 py-1 rounded-md ">
- {item.tmpltSeCd === 'TMPT01' ? '게시판' : item.tmpltSeCd === 'TMPT02' ? '커뮤니티' : '일반'}
+ {/* [2026-09-26 DIP V9] 모르는 코드를 '일반' 으로 부르지 않는다 — 원문을 보여야 관리자가 잘못 들어간 값을 찾는다. */}
+ {TEMPLATE_CATEGORY_LABEL[item.tmpltSeCd ?? ''] ?? (item.tmpltSeCd || '-')}
  </span>
  )
  },

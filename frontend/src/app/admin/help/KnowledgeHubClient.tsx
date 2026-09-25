@@ -256,7 +256,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <label htmlFor="knowledge-search" className="text-[length:var(--font-size-body)] font-medium">지식 검색어</label>
  <div className="relative mt-1.5">
  <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
- <Input id="knowledge-search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="h-[var(--filter-control-h)] pl-9 placeholder:text-muted-foreground" placeholder="제목·내용 검색..." />
+ <Input id="knowledge-search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="h-[var(--filter-control-h)] pl-9 placeholder:text-muted-foreground" placeholder="제목 검색..." />
  </div>
  </div>
  <div className="flex flex-wrap items-center gap-2" aria-label="문서 정렬">
