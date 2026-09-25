@@ -67,6 +67,8 @@ class JdbcAttachmentReferenceResolverTest {
                         when(rs.getString("user_id")).thenReturn(counts.ownerCnt()>0?ESNTL_ID:"other-id");
                         when(rs.getString("scrt_yn")).thenReturn(counts.sharedCnt()>0?"N":"Y");
                         when(rs.getString("master_id")).thenReturn("BOARD");
+                        when(rs.getString("post_use_yn")).thenReturn("Y");
+                        when(rs.getString("master_use_yn")).thenReturn("Y");
                         RowMapper<?> mapper=invocation.getArgument(1);
                         return List.of(mapper.mapRow(rs,0));
                     });

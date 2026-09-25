@@ -571,7 +571,7 @@ export default function SmsAdminClient({
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground ml-2">
-                        사용자를 고르면 등록된 휴대전화 번호로 보냅니다(번호는 화면에 표시되지 않습니다). 여러 명이면 수신자별 결과가 따로 남습니다.
+                        사용자를 고르면 등록된 휴대전화 번호로 보냅니다. 번호는 이 작성 화면에 표시되지 않지만 발송 뒤 ‘수신자 결과’에는 수신 번호가 표시됩니다. 여러 명이면 수신자별 결과가 따로 남습니다.
                       </p>
                       <FormMessage className="text-xs font-bold" />
                     </FormItem>

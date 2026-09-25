@@ -1538,13 +1538,13 @@ export interface paths {
         };
         /**
          * 발신 메일 목록 조회
-         * @description 발송된 메일 목록을 페이징하여 조회합니다.
+         * @description 발송된 메일 목록을 페이징하여 조회합니다. 본문은 발신자 본인에게만 싣고, 사용자 수신자는 주소 대신 이름으로 표시합니다.
          */
         get: operations["getSentMails"];
         put?: never;
         /**
          * 메일 발송
-         * @description 새로운 메일을 작성하여 발송합니다.
+         * @description 새로운 메일을 작성하여 평문으로 발송합니다. 첨부 발송은 지원하지 않으며 atchFileSn 을 지정하면 400 으로 거부합니다.
          */
         post: operations["sendMail"];
         delete?: never;
@@ -3401,7 +3401,7 @@ export interface paths {
         };
         /**
          * 발신 메일 상세 조회
-         * @description 특정 메일의 발송 상세 정보를 조회합니다.
+         * @description 특정 메일의 발송 상세 정보를 조회합니다. 본문은 발신자 본인에게만 싣습니다.
          */
         get: operations["getSentMail"];
         put?: never;
@@ -6489,11 +6489,11 @@ export interface components {
             emlDsptchSn?: number;
             /** @description Description */
             sj?: string;
-            /** @description Description */
+            /** @description 메일 본문(평문). 조회 응답에는 발신자 본인에게만 실리고 그 외에는 비어 있다 */
             emailCn?: string;
             /** @description Description */
             dsptchPerson?: string;
-            /** @description 수신자 주소 문자열(종전 계약). recipients 를 쓰면 비워도 된다 */
+            /** @description 요청: 수신자 주소 문자열(종전 계약, recipients 를 쓰면 비워도 된다). 응답: 발송 이력의 수신자 표시값 — 사용자 수신자는 이름, 직접 입력한 주소는 그 주소 */
             recptnPerson?: string;
             /** @description 수신자 목록 — 사용자(esntlId) 또는 주소(emlAddr). 발송 요청 전용(응답에는 실리지 않는다) */
             recipients?: components["schemas"]["MailRecipientDto"][];
@@ -6503,7 +6503,7 @@ export interface components {
             sndngDe?: string;
             /**
              * Format: int64
-             * @description Description
+             * @description 첨부 파일 번호. 메일 첨부 발송은 지원하지 않으므로 요청에 값을 넣으면 400 으로 거부한다. 응답에는 과거 이력에 남은 번호만 실린다
              */
             atchFileSn?: number;
         };

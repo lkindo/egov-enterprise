@@ -21,9 +21,9 @@ class BoardAttachmentReachabilityTest {
     void createDatabase() {
         source=new SingleConnectionDataSource("jdbc:h2:mem:board-file-"+java.util.UUID.randomUUID(),"sa","",true);
         jdbc=new JdbcTemplate(source);
-        jdbc.execute("CREATE TABLE tb_bbs_master(bbs_id VARCHAR(20) PRIMARY KEY,cmnty_sn BIGINT)");
-        jdbc.execute("CREATE TABLE tb_bbs_item(bbs_id VARCHAR(20),atch_file_sn BIGINT,frst_rgtr_id VARCHAR(20),user_id VARCHAR(20),scrt_yn CHAR(1))");
-        jdbc.update("INSERT INTO tb_bbs_master VALUES('COMMUNITY',7),('PUBLIC',NULL)");
+        jdbc.execute("CREATE TABLE tb_bbs_master(bbs_id VARCHAR(20) PRIMARY KEY,cmnty_sn BIGINT,use_yn CHAR(1) DEFAULT 'Y' NOT NULL)");
+        jdbc.execute("CREATE TABLE tb_bbs_item(bbs_id VARCHAR(20),atch_file_sn BIGINT,frst_rgtr_id VARCHAR(20),user_id VARCHAR(20),scrt_yn CHAR(1),use_yn CHAR(1) DEFAULT 'Y')");
+        jdbc.update("INSERT INTO tb_bbs_master(bbs_id,cmnty_sn) VALUES('COMMUNITY',7),('PUBLIC',NULL)");
         membership=mock(CommunityBoardAccessPort.class);
         resolver=new JdbcAttachmentReferenceResolver(jdbc,List.of(() -> List.of(AttachmentSource.BOARD)),membership);
     }
@@ -32,7 +32,7 @@ class BoardAttachmentReachabilityTest {
     void closeDatabase() { source.destroy(); org.springframework.security.core.context.SecurityContextHolder.clearContext(); }
 
     private void post(String board,String secret) {
-        jdbc.update("INSERT INTO tb_bbs_item VALUES(?,101,'writer-login','writer-esntl',?)",board,secret);
+        jdbc.update("INSERT INTO tb_bbs_item(bbs_id,atch_file_sn,frst_rgtr_id,user_id,scrt_yn) VALUES(?,101,'writer-login','writer-esntl',?)",board,secret);
     }
 
     @Test
@@ -91,5 +91,25 @@ class BoardAttachmentReachabilityTest {
     void ordinaryPublicPostStillCreatesSharedReachability() {
         post("PUBLIC","N");
         assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
+    }
+
+    /** [DIP S7, GAP-DOMAIN-001 ②] 논리 삭제된 공개 글의 첨부는 번호를 알아도 공유 근거가 되지 않는다. */
+    @Test
+    void logicallyDeletedPostOrBoardNoLongerSharesItsAttachment() {
+        post("PUBLIC","N");
+        jdbc.update("UPDATE tb_bbs_item SET use_yn='N'");
+        var deletedPost=resolver.resolve(101L,"reader-login","reader-esntl");
+        assertThat(deletedPost.sharedGrant()).isFalse();
+        assertThat(deletedPost.resolutionFailed()).isFalse();
+        // 작성자는 자기 첨부를 계속 받는다 — 소유 근거는 사용 여부와 무관하다.
+        assertThat(resolver.resolve(101L,"writer-login","writer-esntl").ownerGrant()).isTrue();
+
+        jdbc.update("UPDATE tb_bbs_item SET use_yn='Y'");
+        jdbc.update("UPDATE tb_bbs_master SET use_yn='N' WHERE bbs_id='PUBLIC'");
+        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isFalse();
+
+        jdbc.update("UPDATE tb_bbs_master SET use_yn='Y' WHERE bbs_id='PUBLIC'");
+        jdbc.update("UPDATE tb_bbs_item SET use_yn=NULL");
+        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isFalse();
     }
 }

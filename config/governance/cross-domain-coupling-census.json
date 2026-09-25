@@ -108,16 +108,6 @@
     {
       "file": "mail/MailService.java",
       "owner": "mail",
-      "target": "file",
-      "module": "business-core",
-      "types": [
-        "nuri.business.service.file.AttachmentAssignmentPolicy"
-      ],
-      "pack": "collaboration"
-    },
-    {
-      "file": "mail/MailService.java",
-      "owner": "mail",
       "target": "user",
       "module": "business-core",
       "types": [

@@ -55,6 +55,7 @@ public class CommentApiController {
     public ResponseEntity<ApiResponse<Void>> updateComment(
             @PathVariable Long commentNo,
             @Valid @RequestBody CommentDto commentDto) {
+        assertPostAccess(commentNo);
         commentService.updateComment(commentNo, commentDto.getAnsCn());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -62,7 +63,19 @@ public class CommentApiController {
     @DeleteMapping("/{commentNo}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.comment.CommentApiController#deleteComment')")
     public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable Long commentNo) {
+        assertPostAccess(commentNo);
         commentService.deleteComment(commentNo);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /**
+     * 수정·삭제도 등록·조회와 같은 게시글 경계를 지난다(2026-09-25 DIP S8).
+     *
+     * <p>종전에는 작성자 확인만 했다. 회원 전용 게시판에서 탈퇴·강제 탈퇴한 사람(DEC-OPS-131)은 글을 읽을 수
+     * 없는데도 자기가 남긴 댓글은 고치고 지울 수 있었다 — 읽지 못하는 대화에 계속 쓰는 경로다.
+     */
+    private void assertPostAccess(Long commentNo) {
+        CommentService.CommentLocation location = commentService.getCommentLocation(commentNo);
+        boardService.assertCommentAccess(location.bbsId(), location.pstSn());
     }
 }

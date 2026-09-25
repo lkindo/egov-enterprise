@@ -29,16 +29,18 @@ class MailRequestListenerTest {
     private MailRequestListener listener;
 
     @Test
-    @DisplayName("요청된 제목·본문·수신 주소를 그대로 발송에 싣고 요청자를 보존한다")
+    @DisplayName("요청된 제목·본문·수신 주소·이름을 그대로 발송에 싣고 요청자를 보존한다")
     void sendsRequestedMail() {
         listener.onMailRequested(new MailRequestedEvent(
-                "SANCTIONER_001", "hong@egov.com", "[eGov] 결재 상태 변경 알림", "결재(번호 1)가 승인되었습니다."));
+                "SANCTIONER_001", "hong@egov.com", "홍길동", "[eGov] 결재 상태 변경 알림", "결재(번호 1)가 승인되었습니다."));
 
         ArgumentCaptor<SentMailDto> captor = ArgumentCaptor.forClass(SentMailDto.class);
-        verify(mailService).sendMail(eq("SANCTIONER_001"), captor.capture());
+        verify(mailService).sendToResolvedAddress(eq("SANCTIONER_001"), captor.capture(),
+                eq("hong@egov.com"), eq("홍길동"));
         assertThat(captor.getValue().getSj()).isEqualTo("[eGov] 결재 상태 변경 알림");
         assertThat(captor.getValue().getEmailCn()).isEqualTo("결재(번호 1)가 승인되었습니다.");
-        assertThat(captor.getValue().getRecptnPerson()).isEqualTo("hong@egov.com");
+        // 주소는 발송 인자로만 넘긴다 — 이력 필드(recptnPerson)에 싣지 않는다(DIP D8).
+        assertThat(captor.getValue().getRecptnPerson()).isNull();
         // SMTP From 은 MailService 가 설정(nuri.mail.from)에서 정한다 — 리스너가 주소를 지어내지 않는다.
         assertThat(captor.getValue().getDsptchPerson()).isNull();
     }
@@ -46,9 +48,10 @@ class MailRequestListenerTest {
     @Test
     @DisplayName("수신 주소가 없으면 발송하지 않는다")
     void skipsWhenRecipientIsMissing() {
-        listener.onMailRequested(new MailRequestedEvent("SANCTIONER_001", "  ", "제목", "본문"));
-        listener.onMailRequested(new MailRequestedEvent("SANCTIONER_001", null, "제목", "본문"));
+        listener.onMailRequested(new MailRequestedEvent("SANCTIONER_001", "  ", "홍길동", "제목", "본문"));
+        listener.onMailRequested(new MailRequestedEvent("SANCTIONER_001", null, "홍길동", "제목", "본문"));
 
+        verify(mailService, never()).sendToResolvedAddress(anyString(), any(), any(), any());
         verify(mailService, never()).sendMail(anyString(), any());
     }
 
@@ -56,11 +59,11 @@ class MailRequestListenerTest {
     @DisplayName("발송 실패가 발행 측으로 전파되지 않는다")
     void absorbsSendFailure() {
         doThrow(new IllegalStateException("smtp down"))
-                .when(mailService).sendMail(anyString(), any(SentMailDto.class));
+                .when(mailService).sendToResolvedAddress(anyString(), any(SentMailDto.class), anyString(), anyString());
 
         // 원 업무(결재 승인)는 이미 커밋됐다. 메일 실패로 그것을 되돌릴 수 없고 되돌려서도 안 된다.
         assertThatCode(() -> listener.onMailRequested(
-                new MailRequestedEvent("SANCTIONER_001", "hong@egov.com", "제목", "본문")))
+                new MailRequestedEvent("SANCTIONER_001", "hong@egov.com", "홍길동", "제목", "본문")))
                 .doesNotThrowAnyException();
     }
 }

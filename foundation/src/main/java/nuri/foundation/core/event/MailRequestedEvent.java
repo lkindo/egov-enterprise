@@ -17,13 +17,16 @@ package nuri.foundation.core.event;
  * 커밋 전에 발행하면 롤백된 업무에 대한 메일이 나간다 — 메일은 되돌릴 수 없다.
  *
  * @param requesterId      발송 요청자 loginId. 발송 이력·로그 귀속에만 쓰이며 인가 판정에 쓰이지 않는다
- * @param recipientAddress 수신자 이메일 주소. 발행 측이 이미 해석한 값이다
+ * @param recipientAddress 수신자 이메일 주소. 발행 측이 이미 해석한 값이며 발송에만 쓴다
+ * @param recipientName    수신자 이름. 발송 이력의 수신자 칸에 남는다 — 주소는 이력에 저장하지 않는다
+ *                         (2026-09-25 DIP D8). 비어 있으면 mail 도메인이 이름 미등록으로 적는다
  * @param subject          메일 제목
  * @param content          메일 본문
  */
 public record MailRequestedEvent(
         String requesterId,
         String recipientAddress,
+        String recipientName,
         String subject,
         String content
 ) implements DomainEvent {

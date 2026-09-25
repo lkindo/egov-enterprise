@@ -136,14 +136,23 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
                 rs.getLong("owner_cnt") > 0), params.toArray());
     }
 
-    /** The referenced board's community gate applies before either owner or public-post reachability. */
+    /**
+     * The referenced board's community gate applies before either owner or public-post reachability.
+     *
+     * <p>[2026-09-25 DIP S7, GAP-DOMAIN-001 ②] 공유 근거는 <b>게시글과 게시판이 모두 사용 중일 때만</b> 생긴다.
+     * 게시글·게시판 삭제는 {@code use_yn='N'} 논리 삭제라 참조 행이 남는다 — 종전에는 이 행이 계속 공유 근거가
+     * 되어, 화면에서 사라진 공개 글의 첨부를 번호만 알면 인증 사용자 누구나 내려받을 수 있었다. 소유 근거는
+     * 그대로 둔다(작성자는 자기 첨부를 계속 받는다). 판정할 수 없는 값({@code NULL})은 사용 중으로 보지 않는다.
+     */
     private SourceHit queryBoard(Long fileId, String loginId, String esntlId) {
         var references = jdbcTemplate.query("""
-                SELECT b.frst_rgtr_id,b.user_id,b.scrt_yn,m.bbs_id AS master_id,m.cmnty_sn
+                SELECT b.frst_rgtr_id,b.user_id,b.scrt_yn,b.use_yn AS post_use_yn,
+                       m.bbs_id AS master_id,m.cmnty_sn,m.use_yn AS master_use_yn
                   FROM tb_bbs_item b LEFT JOIN tb_bbs_master m ON m.bbs_id=b.bbs_id
                  WHERE b.atch_file_sn=?
                 """, (rs,n) -> new BoardReference(rs.getString("frst_rgtr_id"),rs.getString("user_id"),
-                    rs.getString("scrt_yn"),rs.getString("master_id"),rs.getObject("cmnty_sn",Long.class)),fileId);
+                    rs.getString("scrt_yn"),rs.getString("master_id"),rs.getObject("cmnty_sn",Long.class),
+                    "Y".equals(rs.getString("post_use_yn")) && "Y".equals(rs.getString("master_use_yn"))),fileId);
         boolean shared=false, owner=false;
         for (var reference: references) {
             if (reference.masterId()==null) throw new org.springframework.dao.DataRetrievalFailureException("Referenced board master missing");
@@ -151,14 +160,15 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
                     || nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")
                     || (communityAccess!=null && esntlId!=null && communityAccess.isApprovedMember(reference.communityId(),esntlId));
             if (communityAllowed) {
-                shared |= !"Y".equals(reference.secret());
+                shared |= reference.active() && !"Y".equals(reference.secret());
                 owner |= (loginId!=null && loginId.equals(reference.registrar())) || (esntlId!=null && esntlId.equals(reference.userId()));
             }
         }
         return new SourceHit(!references.isEmpty(),shared,owner);
     }
 
-    private record BoardReference(String registrar,String userId,String secret,String masterId,Long communityId) {}
+    private record BoardReference(String registrar,String userId,String secret,String masterId,Long communityId,
+            boolean active) {}
 
     /**
      * 술어에 들어 있는 <b>바인드 자리표시자</b> 개수를 센다.
