@@ -1,5 +1,7 @@
 'use client';
 
+import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
+import { popupPostingState, POPUP_POSTING_LABEL } from '@/lib/popup-status';
 import React, { useState, useCallback, useRef, useSyncExternalStore } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -159,6 +161,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  const setPage = useCallback((nextPage: number) => syncUrl(activeTab, nextPage), [syncUrl, activeTab]);
 
  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+ const todayYmd = useTodayStorageYmd();
  const [isModalOpen, setIsOpen] = useState(false);
  const [editingItem, setEditingItem] = useState<Banner | Popup | null>(null);
  const [formFiles, setFormFiles] = useState<File[]>([]);
@@ -564,7 +567,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  },
  {
  header: '게시 여부',
- accessor: (item: Popup) => <HubStatusBadge status={item.ntceYn === 'Y' ? '게시 중' : '대기 중'} variant={item.ntceYn === 'Y' ? 'success' : 'secondary'} />,
+ // [2026-09-26 DIP V9] 게시 여부만이 아니라 게시 기간까지 본다 — 사용자 화면의 활성 팝업 조회와 같은 판정.
+ accessor: (item: Popup) => {
+ const state = popupPostingState(item, todayYmd);
+ return <HubStatusBadge status={POPUP_POSTING_LABEL[state]} variant={state === 'live' ? 'success' : 'secondary'} />;
+ },
  className: 'w-32'
  },
  {

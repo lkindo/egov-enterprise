@@ -516,9 +516,16 @@ export default function MenuAdminClient({
     setDeletingMenuId(target.menuNo);
     const childCount = flattenedMenus.filter(m => m.parentId === target.menuNo).length;
     try {
+      // [2026-09-26 DIP V9] 서버는 하위 메뉴가 있는 메뉴를 삭제하지 않는다(MenuService). 종전 확인 문구는
+      //   "하위 메뉴가 함께 삭제될 수 있다" 고 말해 누르면 거부되는 일을 약속했다. 거부될 삭제는 묻지 않고
+      //   이유와 할 일을 먼저 알린다.
+      if (childCount > 0) {
+        toast(`[${target.menuNm}] 메뉴에 하위 메뉴 ${childCount}건이 있어 삭제할 수 없습니다. 하위 메뉴를 먼저 삭제하거나 옮기세요.`, 'error');
+        return;
+      }
       const isConfirmed = await confirm({
         title: '메뉴 삭제',
-        message: `[${target.menuNm}] 메뉴를 삭제하시겠습니까?${childCount > 0 ? ` 하위 메뉴 ${childCount}건이 함께 삭제될 수 있습니다.` : ''} 이 작업은 되돌릴 수 없습니다.`,
+        message: `[${target.menuNm}] 메뉴를 삭제합니다. 이 작업은 되돌릴 수 없습니다.`,
         confirmText: '삭제 실행',
         variant: 'destructive'
       });
