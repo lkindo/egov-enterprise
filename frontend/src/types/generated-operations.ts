@@ -2587,7 +2587,7 @@ export const updateRewardOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: RewardManageDtoRequestSchema.strict(),
   responseSchema: z.lazy(() => RewardManageDtoResponseSchema),
   envelopeSchema: ApiResponseRewardManageDtoResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["sanctnerId"],["confmAt"],["sanctnDt"],["returnResn"],["ifmlAtrzSn"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -4842,7 +4842,7 @@ export const createRewardOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: RewardManageDtoRequestSchema.strict(),
   responseSchema: z.lazy(() => RewardManageDtoResponseSchema),
   envelopeSchema: ApiResponseRewardManageDtoResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["sanctnerId"],["confmAt"],["sanctnDt"],["returnResn"],["ifmlAtrzSn"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
 });
 

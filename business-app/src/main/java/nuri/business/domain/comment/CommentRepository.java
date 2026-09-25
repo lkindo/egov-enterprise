@@ -26,6 +26,16 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     Page<Comment> findByAnsCnContaining(String ansCn, Pageable pageable);
 
+    // [2026-09-25 DIP I6 ⑥] 관리자 댓글 관리 목록. 게시판·글을 고르지 않은 전체 목록을 위해
+    //   필터 조합마다 파생 쿼리를 둔다 — 위 findByBbsIdAndPstSn 에 null 을 넘기면 `bbs_id = NULL`
+    //   이 되어 늘 0건이었다. `:p IS NULL OR ...` JPQL 대신 조합별 쿼리를 쓰는 것은 PostgreSQL 이
+    //   타입 없는 null 파라미터를 거부하는 경로를 만들지 않기 위해서다.
+    Page<Comment> findByUseYn(String useYn, Pageable pageable);
+
+    Page<Comment> findByBbsIdAndUseYn(String bbsId, String useYn, Pageable pageable);
+
+    Page<Comment> findByPstSnAndUseYn(Long pstSn, String useYn, Pageable pageable);
+
     // [W1-25 P3② 삭제] findMaxId() 제거 — 저장소 전역 호출부 0(선언 1건뿐).
     //   WHERE 절이 전혀 없는 **전역** MAX(ans_sn) 채번이라, 살아 있었다면 게시글 경계를 넘어
     //   댓글 순번이 뒤엉키는 구조였다. 실제 댓글 PK 는 JpaRepository<Comment, Long> 표준 경로를 쓴다.

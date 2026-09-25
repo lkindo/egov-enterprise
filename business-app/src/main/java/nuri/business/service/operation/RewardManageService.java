@@ -34,6 +34,14 @@ public class RewardManageService {
         return rewardManageRepository.findByRwrdNmContaining(name, page).map(this::convertToDto);
     }
 
+    /**
+     * 포상 등록.
+     *
+     * <p>승인 필드(승인자·승인 여부·승인 일시·반려 사유·연결 결재)와 감사 필드는 <b>서버가 소유한다</b>.
+     * 종전에는 요청 값을 그대로 저장해, 등록 권한만 있으면 승인 절차 없이 '승인 완료·승인자 X' 인
+     * 포상을 만들 수 있었다(2026-09-25 DIP I6 ③, GAP-DOMAIN-001 ③). 승인 절차가 제품에 없으므로
+     * 새 포상은 언제나 대기('N')로 시작하고 승인 필드는 비워 둔다.</p>
+     */
     @Transactional
     public RewardManageDto createReward(RewardManageDto dto) {
         Long atchFileSn = dto.getAtchFileSn();
@@ -46,18 +54,14 @@ public class RewardManageService {
                 .rwrdYmd(dto.getRwardDe())
                 .rwrdNm(dto.getRwardNm())
                 .cntrbCn(dto.getPblenCn())
-                .atrzrId(dto.getSanctnerId())
-                .confmYn(dto.getConfmAt())
-                .aprvDt(dto.getSanctnDt())
-                .rtnRsnCn(dto.getReturnResn())
+                .confmYn(PENDING_APPROVAL)
                 .atchFileSn(atchFileSn)
-                .ifmlAtrzSn(dto.getIfmlAtrzSn())
                 .build();
-        // 감사 필드는 빌더 대신 세터로 이월(insert 시 auditing 이 덮으며, merge 시 값 보존)
-        reward.setFrstRgtrId(dto.getFrstRgtrId());
-        reward.setLastMdfrId(dto.getLastMdfrId());
         return convertToDto(rewardManageRepository.save(reward));
     }
+
+    /** 새 포상의 승인 상태. 승인 절차가 생기기 전까지 모든 포상은 대기로 시작한다. */
+    private static final String PENDING_APPROVAL = "N";
 
     /** 포상 수정 — 화면이 편집하는 다섯 필드만 갱신한다(2026-09-05 DEC-OPS-036). 승인 필드는 승인 절차가 생길 때 다룬다. */
     @Transactional

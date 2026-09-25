@@ -10,7 +10,9 @@ import nuri.foundation.core.util.TransactionUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,29 @@ public class CommentService {
     public Page<CommentDto> getComments(Long pstSn, String bbsId, Pageable pageable) {
         return commentRepository.findByBbsIdAndPstSn(bbsId, pstSn, pageable)
                 .map(this::toDto);
+    }
+
+    /**
+     * 관리자 댓글 관리 목록. 게시판·글 번호는 선택 조건이며, 둘 다 없으면 살아 있는 전체 댓글을 최신순으로 준다.
+     *
+     * <p>종전 관리자 API 는 {@link #getComments} 를 그대로 불러, 조건 없이 부르는 유일한 화면(모니터링 허브의
+     * 댓글 탭)이 언제나 빈 목록을 받았다(2026-09-25 DIP I6 ⑥, GAP-DOMAIN-001 ⑥).</p>
+     */
+    public Page<CommentDto> getCommentsForModeration(String bbsId, Long pstSn, Pageable pageable) {
+        Pageable page = pageable.getSort().isSorted() ? pageable
+                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "ansSn"));
+        boolean hasBoard = bbsId != null && !bbsId.isBlank();
+        Page<Comment> comments;
+        if (hasBoard && pstSn != null) {
+            comments = commentRepository.findByBbsIdAndPstSn(bbsId, pstSn, page);
+        } else if (hasBoard) {
+            comments = commentRepository.findByBbsIdAndUseYn(bbsId, "Y", page);
+        } else if (pstSn != null) {
+            comments = commentRepository.findByPstSnAndUseYn(pstSn, "Y", page);
+        } else {
+            comments = commentRepository.findByUseYn("Y", page);
+        }
+        return comments.map(this::toDto);
     }
 
     /**

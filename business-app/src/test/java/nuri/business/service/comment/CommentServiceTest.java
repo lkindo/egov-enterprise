@@ -47,6 +47,52 @@ class CommentServiceTest {
     private ApplicationEventPublisher eventPublisher;
 
     @Test
+    @DisplayName("🚨 관리자 목록은 조건이 없으면 살아 있는 전체 댓글을 최신순으로 준다 — bbs_id = NULL 로 늘 0건이 되지 않는다 (DIP I6 ⑥)")
+    void getCommentsForModeration_withoutFilters() {
+        Comment comment = Comment.builder().ansSn(7L).pstSn(3L).bbsId("BBS_01").ansCn("전체").useYn("Y").build();
+        comment.setCrtDt(LocalDateTime.now());
+        org.mockito.ArgumentCaptor<Pageable> used = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        given(commentRepository.findByUseYn(org.mockito.ArgumentMatchers.eq("Y"), used.capture()))
+                .willReturn(new PageImpl<>(Collections.singletonList(comment)));
+
+        Page<CommentDto> result = commentService.getCommentsForModeration(null, null, PageRequest.of(1, 20));
+
+        assertThat(result.getContent()).extracting(CommentDto::getAnsCn).containsExactly("전체");
+        assertThat(used.getValue().getPageNumber()).isEqualTo(1);
+        assertThat(used.getValue().getPageSize()).isEqualTo(20);
+        assertThat(used.getValue().getSort().getOrderFor("ansSn").getDirection())
+                .isEqualTo(org.springframework.data.domain.Sort.Direction.DESC);
+        org.mockito.Mockito.verify(commentRepository, org.mockito.Mockito.never())
+                .findByBbsIdAndPstSn(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                        org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @DisplayName("관리자 목록은 게시판만, 글만, 둘 다 준 조건을 각각 그 범위로 좁힌다 (DIP I6 ⑥)")
+    void getCommentsForModeration_filters() {
+        Page<Comment> empty = new PageImpl<>(Collections.emptyList());
+        given(commentRepository.findByBbsIdAndUseYn(org.mockito.ArgumentMatchers.eq("BBS_01"),
+                org.mockito.ArgumentMatchers.eq("Y"), org.mockito.ArgumentMatchers.any())).willReturn(empty);
+        given(commentRepository.findByPstSnAndUseYn(org.mockito.ArgumentMatchers.eq(3L),
+                org.mockito.ArgumentMatchers.eq("Y"), org.mockito.ArgumentMatchers.any())).willReturn(empty);
+        given(commentRepository.findByBbsIdAndPstSn(org.mockito.ArgumentMatchers.eq("BBS_01"),
+                org.mockito.ArgumentMatchers.eq(3L), org.mockito.ArgumentMatchers.any())).willReturn(empty);
+
+        commentService.getCommentsForModeration("BBS_01", null, PageRequest.of(0, 10));
+        commentService.getCommentsForModeration(" ", 3L, PageRequest.of(0, 10));
+        commentService.getCommentsForModeration("BBS_01", 3L, PageRequest.of(0, 10));
+
+        org.mockito.Mockito.verify(commentRepository).findByBbsIdAndUseYn(org.mockito.ArgumentMatchers.eq("BBS_01"),
+                org.mockito.ArgumentMatchers.eq("Y"), org.mockito.ArgumentMatchers.any());
+        org.mockito.Mockito.verify(commentRepository).findByPstSnAndUseYn(org.mockito.ArgumentMatchers.eq(3L),
+                org.mockito.ArgumentMatchers.eq("Y"), org.mockito.ArgumentMatchers.any());
+        org.mockito.Mockito.verify(commentRepository).findByBbsIdAndPstSn(org.mockito.ArgumentMatchers.eq("BBS_01"),
+                org.mockito.ArgumentMatchers.eq(3L), org.mockito.ArgumentMatchers.any());
+        org.mockito.Mockito.verify(commentRepository, org.mockito.Mockito.never())
+                .findByUseYn(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
     @DisplayName("Get comments list")
     void getComments() {
         // given

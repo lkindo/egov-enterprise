@@ -32,7 +32,7 @@ const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   toast: vi.fn(),
   replace: vi.fn(),
-  user: { role: 'ROLE_ADMIN', permissions: ['MEMO_RPT_READ_ALL'], authorizationVersion: 'v1' } as { role: string; permissions?: string[]; authorizationVersion?: string } | null,
+  user: { role: 'ROLE_ADMIN', permissions: ['MEMO_RPT_READ_ALL'], authorizationVersion: 'v1' } as { role: string; esntlId?: string; permissions?: string[]; authorizationVersion?: string } | null,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -96,7 +96,8 @@ afterEach(() => {
 describe('메모보고 열람', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.user = { role: 'ROLE_ADMIN', permissions: ['MEMO_RPT_READ_ALL'], authorizationVersion: 'v1' };
+    // 수신자(ROW.rptrId) 본인으로 연다 — 지시사항은 수신자·전체 수정 권한자만 남긴다(DIP I7).
+    mocks.user = { role: 'ROLE_ADMIN', esntlId: 'USR_B', permissions: ['MEMO_RPT_READ_ALL'], authorizationVersion: 'v1' };
     const page = { list: [ROW], total: 1 };
     mocks.getReceivedReports.mockResolvedValue(page);
     mocks.getMyReports.mockResolvedValue(page);
@@ -151,6 +152,28 @@ describe('메모보고 열람', () => {
 
     await waitFor(() => expect(mocks.updateDrctMatter)
       .toHaveBeenCalledWith(5, '9월까지 검토 바랍니다.'));
+  });
+
+  it('작성자에게는 지시사항 입력을 보이지 않는다 — 지시는 받은 사람이 남긴다 (DIP I7)', async () => {
+    mocks.user = { role: 'ROLE_USER', esntlId: 'USR_A', permissions: ['MEMO_RPT_READ'], authorizationVersion: 'v1' };
+    mocks.getMemoReport.mockResolvedValue({ ...ROW, drctnMttr: undefined });
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
+
+    expect(await screen.findByText('등록된 지시사항이 없습니다.')).toBeVisible();
+    expect(screen.queryByLabelText('지시사항 남기기', { exact: false })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '지시사항 등록' })).not.toBeInTheDocument();
+  });
+
+  it('수신자가 아니어도 전체 수정 권한자는 지시사항을 남길 수 있다 (DIP I7)', async () => {
+    mocks.user = { role: 'ROLE_ADMIN', esntlId: 'USR_ADMIN', permissions: ['MEMO_RPT_READ_ALL', 'MEMO_RPT_UPDATE_ALL'], authorizationVersion: 'v1' };
+    mocks.getMemoReport.mockResolvedValue({ ...ROW, drctnMttr: undefined });
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
+
+    expect(await screen.findByLabelText('지시사항 남기기', { exact: false })).toBeInTheDocument();
   });
 
   it('빈 지시사항은 보내지 않고 그 사실을 말한다', async () => {

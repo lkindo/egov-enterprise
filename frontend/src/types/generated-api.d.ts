@@ -291,7 +291,7 @@ export interface paths {
         };
         /**
          * 부서 업무 상세 조회
-         * @description 특정 부서 업무의 상세 정보를 조회합니다.
+         * @description 특정 부서 업무의 상세 정보를 조회합니다. 담당자·같은 부서 구성원·전체 수정 권한자만 조회할 수 있습니다.
          */
         get: operations["getDeptJob"];
         /**
@@ -1738,7 +1738,7 @@ export interface paths {
         };
         /**
          * 부서 업무 목록 조회
-         * @description 부서 업무 목록을 페이징하여 조회합니다. 기본값은 '내가 담당자인 업무'이며, scope=dept 로 부서 전체를 조회할 수 있습니다.
+         * @description 부서 업무 목록을 페이징하여 조회합니다. 기본값은 '내가 담당자인 업무'이며, scope=dept 는 내 소속 부서 업무함의 업무와 내 업무를 조회합니다(전체 수정 권한자는 모든 부서).
          */
         get: operations["getDeptJobList"];
         put?: never;
@@ -5988,21 +5988,21 @@ export interface components {
             rwardDe?: string;
             rwardNm?: string;
             pblenCn?: string;
-            sanctnerId?: string;
-            confmAt?: string;
+            readonly sanctnerId?: string;
+            readonly confmAt?: string;
             /** Format: date-time */
-            sanctnDt?: string;
-            returnResn?: string;
+            readonly sanctnDt?: string;
+            readonly returnResn?: string;
             /** Format: int64 */
             atchFileSn?: number;
             /** Format: int64 */
-            ifmlAtrzSn?: number;
-            frstRgtrId?: string;
+            readonly ifmlAtrzSn?: number;
+            readonly frstRgtrId?: string;
             /** Format: date-time */
-            crtDt?: string;
-            lastMdfrId?: string;
+            readonly crtDt?: string;
+            readonly lastMdfrId?: string;
             /** Format: date-time */
-            mdfcnDt?: string;
+            readonly mdfcnDt?: string;
         };
         ApiResponseRewardManageDto: {
             success?: boolean;
