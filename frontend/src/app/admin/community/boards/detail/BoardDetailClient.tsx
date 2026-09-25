@@ -363,7 +363,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       {/* 감사 P1-5: 'Integrity: Verified Node' 는 어떤 검증도 수행하지 않는 고정 문구라 카드 자체를 삭제하고,
           실제 응답 필드로 계산 가능한 3개만 남긴다. */}
       <dl className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border border-border bg-card px-3 py-2">
-        <MetaItem icon={<User size={14} />} label="작성자" value={article.frstRegisterNm || article.frstRgtrId || '-'} />
+        <MetaItem icon={<User size={14} />} label="작성자" value={article.userNm || '-'} />
         <MetaItem icon={<Calendar size={14} />} label="등록일" value={article.crtDt || '-'} />
         <MetaItem icon={<Eye size={14} />} label="조회수" value={`${(article.inqCnt || 0).toLocaleString()}회`} />
       </dl>

@@ -44,11 +44,11 @@ describe('RealTimeDashboard', () => {
     const statsHandler = handlers.get('/topic/dashboard/stats')!;
 
     act(() => statsHandler({ body: JSON.stringify({ activeUsers: -1 }) }));
-    expect(screen.getByText('현재 접속자').previousElementSibling).toHaveTextContent('—');
+    expect(screen.getByText('실시간 연결 세션(이 서버)').previousElementSibling).toHaveTextContent('—');
 
     act(() => statsHandler({ body: JSON.stringify({ activeUsers: 7, visitsPerMinute: 3, newPosts: 2, alerts: 1 }) }));
     expect(screen.getByText('7')).toBeInTheDocument();
-    expect(screen.getByText('3명/분')).toBeInTheDocument();
+    expect(screen.getByText('누적 연결(이 서버, 재기동 이후)').previousElementSibling).toHaveTextContent('3');
   });
 
   it('유효한 통계를 한 번도 수신하지 않은 상태를 실제 0으로 표시하지 않는다', () => {
@@ -79,7 +79,7 @@ describe('RealTimeDashboard', () => {
 
     expect(screen.getByText('전체 미읽음 알림').previousElementSibling).toHaveTextContent('—');
     expect(screen.getByText('알림 수 확인 불가')).toBeInTheDocument();
-    expect(screen.getByText('현재 접속자').previousElementSibling).toHaveTextContent('7');
+    expect(screen.getByText('실시간 연결 세션(이 서버)').previousElementSibling).toHaveTextContent('7');
     // 집계 실패는 해당 카드가 말한다. 연결 상태 문구(live region)는 연결만 말한다.
     expect(screen.getByRole('status')).toHaveTextContent(/^실시간 연결됨$/);
     expect(screen.queryByText('· 통계 수신 대기 중')).not.toBeInTheDocument();

@@ -81,6 +81,8 @@ describe('DashboardPage Server Component', () => {
     vi.mocked(client.getRaw).mockResolvedValue(success({
       notiList: [{ pstSn: 1, pstTtl: '공지사항 테스트', useYn: 'Y', userId: 'admin' }],
       taskList: [{ pstSn: 2, pstTtl: '할일 테스트', useYn: 'Y', userId: 'admin' }],
+      taskListTotal: 1,
+      notiListTotal: 1,
       pendingApprovalCount: 10,
     }));
 
@@ -112,7 +114,8 @@ describe('DashboardPage Server Component', () => {
     vi.mocked(cookies).mockResolvedValue({ get: vi.fn().mockReturnValue({ value: 'mock-token' }) } as unknown as Awaited<ReturnType<typeof cookies>>);
     vi.mocked(client.getRaw).mockResolvedValue(success({
       notiList: [{ bbsId: 'BBSMSTR_AAAAAAAAAAAA', pstSn: 41, pstTtl: '바로 열 공지' }],
-      taskList: [{ pstSn: 42, pstTtl: '게시판 정보가 없는 자료' }], pendingApprovalCount: 0,
+      taskList: [{ pstSn: 42, pstTtl: '게시판 정보가 없는 자료' }], taskListTotal: 1, notiListTotal: 1,
+      pendingApprovalCount: 0,
     }));
     const result = await loadDashboardData();
     expect(result.initialNotiList[0]).toMatchObject({ bbsId: 'BBSMSTR_AAAAAAAAAAAA', pstSn: 41 });
@@ -138,6 +141,8 @@ describe('DashboardPage Server Component', () => {
     vi.mocked(client.getRaw).mockResolvedValue(success({
       taskList: [{ pstSn: 1, useYn: 'Y', userId: 'admin', pswd: 'secret' }],
       notiList: [],
+      taskListTotal: 1,
+      notiListTotal: 0,
       pendingApprovalCount: 0,
     }));
 
@@ -151,9 +156,31 @@ describe('DashboardPage Server Component', () => {
     vi.mocked(cookies).mockResolvedValue({
       get: vi.fn().mockReturnValue({ value: 'mock-token' }),
     } as any);
-    vi.mocked(client.getRaw).mockResolvedValue(success({ taskList: [], notiList: [], pendingApprovalCount: null }));
+    vi.mocked(client.getRaw).mockResolvedValue(success({
+      taskList: [], notiList: [], taskListTotal: 0, notiListTotal: 0, pendingApprovalCount: null,
+    }));
 
     const result = await loadDashboardData();
     expect(result.pendingApprovalCount).toBeNull();
+  });
+
+  // [2026-09-26 DIP V1] 목록 날짜는 서버가 실제로 싣는 crtDt 에서 온다. 종전에는 서버가 한 번도 싣지 않는
+  //   레거시 필드를 읽어 늘 '-' 였다. 게시판 전체 글 수는 null(조회 실패)을 0 으로 바꾸지 않는다.
+  it('🚨 목록 날짜는 crtDt 의 날짜 부분이고, 전체 글 수 null 을 0 으로 바꾸지 않는다', async () => {
+    vi.mocked(cookies).mockResolvedValue({
+      get: vi.fn().mockReturnValue({ value: 'mock-token' }),
+    } as any);
+    vi.mocked(client.getRaw).mockResolvedValue(success({
+      notiList: [{ pstSn: 7, pstTtl: '공지', crtDt: '2026-09-25T10:30:00' }],
+      taskList: [],
+      taskListTotal: null,
+      notiListTotal: 12,
+      pendingApprovalCount: 0,
+    }));
+
+    const result = await loadDashboardData();
+    expect(result.initialNotiList[0].date).toBe('2026-09-25');
+    expect(result.taskListTotal).toBeNull();
+    expect(result.notiListTotal).toBe(12);
   });
 });

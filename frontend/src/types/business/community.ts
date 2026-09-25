@@ -10,7 +10,6 @@ export interface CommunityVO {
   tmpltId?: string;
   tmpltNm?: string;
   frstRgtrId?: string;
-  frstRegisterNm?: string;
   crtDt?: string;
 }
 

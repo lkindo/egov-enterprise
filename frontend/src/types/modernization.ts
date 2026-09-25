@@ -36,7 +36,6 @@ export interface BoardMasterDto {
   // UI related fields (often joined in backend)
   bbsTypeCdNm?: string;
   bbsAtrbCdNm?: string;
-  frstRegisterNm?: string;
 }
 
 

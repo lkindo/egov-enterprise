@@ -26,8 +26,10 @@ const article = {
   bbsId: 'BBSMSTR_AAAAAAAAAAAA',
   pstTtl: '합성 FAQ 문서',
   inqCnt: 3,
-  frstRegisterNm: '합성 작성자',
-  frstRegisterPnttmStr: '2026-08-21',
+  // [2026-09-26 DIP V2] 서버가 싣는 필드로 만든다 — 종전 픽스처는 서버가 보내지 않는 frstRegisterNm·
+  //   frstRegisterPnttmStr 을 넣어 화면이 그 필드를 읽는다는 사실이 스펙에서 보이지 않았다.
+  userNm: '합성 작성자',
+  crtDt: '2026-08-21T09:00:00',
   // [2026-08-29] statusCd 를 걷고 실재하는 Q&A 상태 컬럼을 쓴다. statusCd 는 백엔드에 없는
   //   필드였고(main 소스·Flyway 전체 grep 0건), 픽스처가 그 값을 넣고 있어 "화면이 없는
   //   필드를 읽는다" 는 사실이 이 스펙에서 보이지 않았다.
