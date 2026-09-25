@@ -79,7 +79,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
         org.assertj.core.api.Assertions.assertThat(keyword.getValue()).isEqualTo("연차");
         // "/search" 가 bbsId 로 잡혔다면 이쪽이 불렸을 것이다.
         verify(boardService, org.mockito.Mockito.never()).getBoardPosts(
-                anyString(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class));
+                anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class));
     }
 
     @Test
@@ -103,10 +103,10 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .bbsId("BBS_001")
                 .pstTtl("Subject")
                 .build()));
-        given(boardService.getBoardPosts(anyString(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class))).willReturn(page);
+        given(boardService.getBoardPosts(anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class))).willReturn(page);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/boards/BBS_001")
+        mockMvc.perform(get("/api/v1/boards/BBS_001").param("dateBasis", "EVENT")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -119,8 +119,9 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data.list[0].fileCnt").value(nullValue()))
                 .andExpect(jsonPath("$.data.list[0].frstRegisterNm").value(nullValue()));
 
+        // 기간 기준(DIP V6)이 서비스까지 그대로 간다.
         verify(boardService).getBoardPosts(
-                eq("BBS_001"), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class));
+                eq("BBS_001"), any(), any(), any(), any(), any(), any(), any(), eq("EVENT"), any(Pageable.class));
     }
 
     @Test
@@ -242,6 +243,24 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data.topContributor").value("Visible contributor"));
 
         verify(boardService).getBoardStats("BBS_001");
+    }
+
+    @Test
+    @DisplayName("게시판 메타는 제목·템플릿·설정만 싣고 운영 필드는 싣지 않는다 (DIP V5)")
+    void getBoardMeta_ReturnsReadOnlyMeta() throws Exception {
+        given(boardService.getBoardMeta("BBS_001")).willReturn(new nuri.business.service.board.dto.BoardMetaDto(
+                "BBS_001", "자유게시판", "설명", "BBST01", "TMPLT_FAQ", "Y", "Y", 3, 1048576L, "N"));
+
+        mockMvc.perform(get("/api/v1/boards/BBS_001/meta")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.bbsTtl").value("자유게시판"))
+                .andExpect(jsonPath("$.data.tmpltId").value("TMPLT_FAQ"))
+                .andExpect(jsonPath("$.data.atchPsbltyFileQty").value(3))
+                .andExpect(jsonPath("$.data.frstRgtrId").doesNotExist())
+                .andExpect(jsonPath("$.data.useYn").doesNotExist());
+
+        verify(boardService).getBoardMeta("BBS_001");
     }
 
     @Test

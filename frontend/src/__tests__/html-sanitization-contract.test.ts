@@ -2,8 +2,9 @@
  * `DOMPurify.sanitize` 의 통과·차단 기준선 계약.
  *
  * ── 왜 필요한가 ──────────────────────────────────────────────────────────────
- * 이 살균기는 `dangerouslySetInnerHTML` 두 곳의 **유일한 방어선**이다 —
- * 게시글 본문(`BoardDetailClient`)과 정책 문서(`help/policies/[type]`). 그런데 2026-09-13 실측에서
+ * 이 살균기는 `dangerouslySetInnerHTML` 세 곳의 **유일한 방어선**이다 —
+ * 게시글 본문(`BoardDetailClient`), FAQ 템플릿의 펼친 답(`BoardTemplates`, 2026-09-26 DIP V6),
+ * 정책 문서(`help/policies/[type]`). 그런데 2026-09-13 실측에서
  * 그 동작을 고정하는 테스트가 **저장소 전체에 하나도 없었다.**
  *
  * 게다가 `standard-editor` 는 자기가 만들 태그를 "DOMPurify **기본 정책**이 통과시키는 것" 으로

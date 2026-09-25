@@ -9,6 +9,9 @@ const boardAdminService = vi.hoisted(() => ({
   getBoardMasterList: vi.fn(),
   getBoardMaster: vi.fn(),
 }));
+const boardUserService = vi.hoisted(() => ({
+  getBoardMeta: vi.fn(),
+}));
 
 vi.mock('next/headers', () => ({
   cookies: vi.fn(async () => ({
@@ -20,6 +23,7 @@ vi.mock('next/headers', () => ({
 vi.mock('next/navigation', () => ({ redirect: vi.fn() }));
 vi.mock('@/lib/api/client', () => ({ default: client }));
 vi.mock('@/services/foundation/system/BoardAdminService', () => ({ boardAdminService }));
+vi.mock('@/services/business/user/board/BoardUserService', () => ({ boardUserService }));
 
 import { getInitialBoardData, resolveDefaultBoardId } from '../BoardListServer';
 
@@ -64,11 +68,11 @@ describe('BoardListServer generated 경계', () => {
     );
   });
 
-  it('게시글 목록은 exact getPosts operation을 쓰고 마스터는 generated service로 조회한다', async () => {
+  it('게시글 목록은 exact getPosts operation을 쓰고 게시판 메타는 사용자용 API로 조회한다 (DIP V5)', async () => {
     const page = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
-    const master = { bbsId: 'BBS_1', bbsNm: '게시판' };
+    const master = { bbsId: 'BBS_1', bbsTtl: '게시판', tmpltId: 'TMPLT_FAQ' };
     client.getRaw.mockResolvedValueOnce(success(page));
-    boardAdminService.getBoardMaster.mockResolvedValueOnce(master);
+    boardUserService.getBoardMeta.mockResolvedValueOnce(master);
 
     await expect(getInitialBoardData({
       bbsId: 'BBS_1',
@@ -94,10 +98,12 @@ describe('BoardListServer generated 경계', () => {
         orderBy: 'latest',
       },
     });
-    expect(boardAdminService.getBoardMaster).toHaveBeenCalledWith(
+    expect(boardUserService.getBoardMeta).toHaveBeenCalledWith(
       'BBS_1',
       { headers: { Authorization: 'Bearer token' } },
     );
+    // 관리자 API(BBS_MST_READ)는 일반 사용자에게 403 이라 제목·템플릿이 늘 비었다.
+    expect(boardAdminService.getBoardMaster).not.toHaveBeenCalled();
   });
 
   it('토큰이 없으면 어떤 HTTP 경계도 실행하지 않는다', async () => {
@@ -117,6 +123,6 @@ describe('BoardListServer generated 경계', () => {
       fetchError: null,
     });
     expect(client.getRaw).not.toHaveBeenCalled();
-    expect(boardAdminService.getBoardMaster).not.toHaveBeenCalled();
+    expect(boardUserService.getBoardMeta).not.toHaveBeenCalled();
   });
 });

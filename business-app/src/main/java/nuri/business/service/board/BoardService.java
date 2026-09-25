@@ -127,6 +127,19 @@ public class BoardService extends BaseAbstractService {
         public Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
                         String orderBy, String startDate, String endDate, String qnaStatus, String qnaCategory,
                         @NonNull Pageable pageable) {
+                return getBoardPosts(bbsId, searchCnd, searchWrd, orderBy, startDate, endDate, qnaStatus,
+                                qnaCategory, null, pageable);
+        }
+
+        /**
+         * @param dateBasis 기간 조건을 어느 날짜로 볼지. 비어 있거나 {@code CREATED} 면 작성일, {@code EVENT} 면
+         *                  행사일(없으면 작성일)이다. [2026-09-26 DIP V6] 캘린더 템플릿은 칸을 행사일로 배치하는데
+         *                  조회는 작성일로 걸러, 지난달에 등록한 이달 행사가 달력에서 사라졌다.
+         */
+        @Transactional(readOnly = true)
+        public Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
+                        String orderBy, String startDate, String endDate, String qnaStatus, String qnaCategory,
+                        String dateBasis, @NonNull Pageable pageable) {
                 log.info("Fetching board posts - bbsId: {}, searchApplied: {}, orderBy: {}",
                                 nuri.foundation.security.util.SafeLog.text(bbsId), StringUtils.hasText(searchWrd), nuri.foundation.security.util.SafeLog.text(orderBy));
                 assertActiveBoardMaster(bbsId);
@@ -139,6 +152,7 @@ public class BoardService extends BaseAbstractService {
                 condition.setOrderBy(orderBy);
                 condition.setQnaSttsCd(qnaStatus);
                 condition.setQnaCatCd(qnaCategory);
+                condition.setEventDateBasis(parseDateBasis(dateBasis));
                 bindCurrentViewerVisibility(condition);
 
                 /*
@@ -233,6 +247,20 @@ public class BoardService extends BaseAbstractService {
                                 .map(boardMapper::toDto);
         }
 
+        /**
+         * 게시글 목록·상세 화면용 게시판 메타. [2026-09-26 DIP V5]
+         *
+         * <p>상세·댓글과 같이 활성 여부는 보지 않는다 — 비활성 게시판의 기존 글도 제목·템플릿을 알아야 한다.
+         * 커뮤니티 귀속 게시판은 목록·상세와 같은 회원 가드를 지난다(비회원에게 제목도 알리지 않는다).
+         */
+        @Transactional(readOnly = true)
+        public nuri.business.service.board.dto.BoardMetaDto getBoardMeta(@NonNull String bbsId) {
+                BoardMaster master = boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
+                                .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+                assertCommunityAccess(master);
+                return nuri.business.service.board.dto.BoardMetaDto.from(master);
+        }
+
         @Transactional(readOnly = true)
         public BoardStatsResponse getBoardStats(@NonNull String bbsId) {
                 assertActiveBoardMaster(bbsId);
@@ -251,6 +279,18 @@ public class BoardService extends BaseAbstractService {
                                 //   null 을 그대로 내리면 화면이 '-' 로 렌더한다(없음과 있음을 구분).
                                 .topContributor(stats.topContributor())
                                 .build();
+        }
+
+        /** 기간 기준 어휘 밖의 값은 조용히 작성일로 넓히지 않고 거절한다(기간 조건 파싱 실패와 같은 규칙). */
+        private static boolean parseDateBasis(String dateBasis) {
+                if (!StringUtils.hasText(dateBasis) || "CREATED".equals(dateBasis)) {
+                        return false;
+                }
+                if ("EVENT".equals(dateBasis)) {
+                        return true;
+                }
+                throw new BusinessException(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE,
+                                "dateBasis 는 CREATED 또는 EVENT 여야 합니다.");
         }
 
         private void assertActiveBoardMaster(String bbsId) {

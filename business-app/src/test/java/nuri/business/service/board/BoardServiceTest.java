@@ -149,6 +149,28 @@ class BoardServiceTest {
         // 종료일은 그날 자정이 아니라 하루 끝까지 포함해야 당일 글이 누락되지 않는다.
         assertThat(cond.getStartDate()).isEqualTo(java.time.LocalDate.of(2026, 1, 1).atStartOfDay());
         assertThat(cond.getEndDate()).isEqualTo(java.time.LocalDate.of(2026, 12, 31).atTime(java.time.LocalTime.MAX));
+        assertThat(cond.isEventDateBasis()).isFalse(); // 기간 기준 기본값은 작성일이다.
+    }
+
+    @Test
+    @DisplayName("기간 기준 EVENT 는 행사일로 거르게 하고, 어휘 밖의 값은 400 이다 (DIP V6)")
+    void getBoardPosts_dateBasis() {
+        String bbsId = "BBS_01";
+        Pageable pageable = PageRequest.of(0, 10);
+        given(boardMasterRepository.findById(bbsId))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
+        org.mockito.ArgumentCaptor<BoardSearchCondition> captor =
+                org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
+        given(boardRepository.searchArticles(captor.capture(), eq(pageable)))
+                .willReturn(new PageImpl<BoardSearchResult>(Collections.emptyList()));
+
+        boardService.getBoardPosts(bbsId, "0", "", null, "2026-09-01", "2026-09-30", null, null, "EVENT", pageable);
+        assertThat(captor.getValue().isEventDateBasis()).isTrue();
+
+        assertThatThrownBy(() -> boardService.getBoardPosts(bbsId, "0", "", null, null, null, null, null,
+                "evnt_dt", pageable))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
     }
 
     @Test

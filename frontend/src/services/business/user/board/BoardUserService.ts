@@ -1,8 +1,11 @@
+import type { AxiosRequestConfig } from 'axios';
 import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { BoardPost } from '@/types/business/board';
+import type { components } from '@/types/generated-api';
 
 import {
+  getBoardMetaOperation,
   getPostsOperation,
   likePostOperation,
   markQuestionSolvedOperation,
@@ -15,6 +18,9 @@ import {
  * 본문({@code pstCn})과 게시글 비밀번호는 담기지 않는다 — 서버가 목록 표면을 의도적으로
  * 좁힌 것이니, 화면에서 필요해 보이더라도 필드를 늘리기 전에 노출면부터 따져야 한다.
  */
+/** 게시판 제목·설명·템플릿·설정(읽기 전용). 백엔드 `BoardMetaDto` 와 1:1 대응한다. */
+export type BoardMeta = components['schemas']['BoardMetaDto'];
+
 export interface BoardSearchResultItem {
   bbsId: string;
   pstSn: number;
@@ -57,11 +63,24 @@ class BoardUserService extends UserService {
     endDate?: string;
     qnaStatus?: string;
     qnaCategory?: string;
+    /** 기간 기준. 비우면 작성일, 'EVENT' 면 행사일(없으면 작성일) — 캘린더 템플릿용(DIP V6). */
+    dateBasis?: 'CREATED' | 'EVENT';
   }): Promise<PageResponse<BoardPost>> {
     return this.executeGenerated(getPostsOperation, {
       path: { bbsId },
       query: params,
     }) as Promise<PageResponse<BoardPost>>;
+  }
+
+  /**
+   * 게시글 목록·상세 화면용 게시판 메타(2026-09-26 DIP V5). 인증 사용자용이며 커뮤니티 귀속 게시판은
+   * 회원만 받는다. 종전 화면은 관리자 API(BBS_MST_READ)로 읽어 일반 사용자에게 제목·템플릿이 비었다.
+   */
+  async getBoardMeta(bbsId: string, config?: AxiosRequestConfig): Promise<BoardMeta> {
+    return this.executeGenerated(getBoardMetaOperation, {
+      path: { bbsId },
+      config,
+    });
   }
 
   /*

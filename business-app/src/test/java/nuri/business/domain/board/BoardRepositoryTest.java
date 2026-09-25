@@ -369,6 +369,45 @@ class BoardRepositoryTest {
     }
 
     @Test
+    @DisplayName("🚨 행사일 기준 기간은 행사일(없으면 작성일)로 거른다 — 지난달 등록한 이달 행사가 달력에 남는다 (DIP V6)")
+    void searchArticlesFiltersByEventDateWhenRequested() {
+        LocalDateTime septemberFirst = LocalDateTime.of(2026, 9, 1, 0, 0);
+        Board registeredEarly = boardRepository.saveAndFlush(Board.builder().bbsId(testMaster.getBbsId())
+                .pstTtl("9월 행사, 8월 등록").pstCn("body").useYn("Y")
+                .evntDt(LocalDateTime.of(2026, 9, 15, 10, 0)).build());
+        Board eventElsewhere = boardRepository.saveAndFlush(Board.builder().bbsId(testMaster.getBbsId())
+                .pstTtl("10월 행사, 9월 등록").pstCn("body").useYn("Y")
+                .evntDt(LocalDateTime.of(2026, 10, 3, 10, 0)).build());
+        Board noEvent = boardRepository.saveAndFlush(Board.builder().bbsId(testMaster.getBbsId())
+                .pstTtl("행사일 없음, 9월 등록").pstCn("body").useYn("Y").build());
+        setCreatedAt(registeredEarly, LocalDateTime.of(2026, 8, 20, 9, 0));
+        setCreatedAt(eventElsewhere, LocalDateTime.of(2026, 9, 10, 9, 0));
+        setCreatedAt(noEvent, LocalDateTime.of(2026, 9, 12, 9, 0));
+        em.clear();
+
+        BoardSearchCondition condition = new BoardSearchCondition();
+        condition.setBbsId(testMaster.getBbsId());
+        condition.setStartDate(septemberFirst);
+        condition.setEndDate(LocalDateTime.of(2026, 9, 30, 23, 59, 59));
+
+        condition.setEventDateBasis(true);
+        assertThat(boardRepository.searchArticles(condition, PageRequest.of(0, 10)).getContent())
+                .extracting(BoardSearchResult::getPstTtl)
+                .containsExactlyInAnyOrder("9월 행사, 8월 등록", "행사일 없음, 9월 등록");
+
+        // 대조군: 기본(작성일) 기준은 종전 그대로다.
+        condition.setEventDateBasis(false);
+        assertThat(boardRepository.searchArticles(condition, PageRequest.of(0, 10)).getContent())
+                .extracting(BoardSearchResult::getPstTtl)
+                .containsExactlyInAnyOrder("10월 행사, 9월 등록", "행사일 없음, 9월 등록");
+    }
+
+    private void setCreatedAt(Board row, LocalDateTime time) {
+        em.createNativeQuery("UPDATE tb_bbs_item SET crt_dt = :time WHERE pst_sn = :id")
+                .setParameter("time", time).setParameter("id", row.getPstSn()).executeUpdate();
+    }
+
+    @Test
     @DisplayName("게시글 검색 테스트 (QueryDSL)")
     void searchArticlesTest() {
         // Given

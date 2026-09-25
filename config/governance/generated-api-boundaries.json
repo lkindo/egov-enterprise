@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 387,
-    "generatedDescriptorCount": 387
+    "openApiOperationCount": 388,
+    "generatedDescriptorCount": 388
   },
   "target": {
     "generatedPercent": 100,
@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 338,
-    "eligible": 324,
+    "total": 339,
+    "eligible": 325,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 324,
+      "generated": 325,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "ba62b57adfb3b2066b58b4f34294829d5a7fb8bfe67acb0b8194a0836dfe0f08",
+  "inventoryHash": "e61fdb2dc0676be00f132ec923cbcd411ed40bb5c9151c5a8ac6eb6885062d3b",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -155,7 +155,7 @@
       "file": "frontend/src/app/admin/community/boards/select-board-list/BoardListServer.ts",
       "owner": "getInitialBoardData",
       "ordinal": 1,
-      "line": 83,
+      "line": 84,
       "column": 7,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1396,7 +1396,7 @@
       "file": "frontend/src/services/business/user/board/BoardUserService.ts",
       "owner": "BoardUserService.searchPosts",
       "ordinal": 1,
-      "line": 40,
+      "line": 46,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1413,7 +1413,7 @@
       "file": "frontend/src/services/business/user/board/BoardUserService.ts",
       "owner": "BoardUserService.getPosts",
       "ordinal": 1,
-      "line": 61,
+      "line": 69,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1428,9 +1428,26 @@
     },
     {
       "file": "frontend/src/services/business/user/board/BoardUserService.ts",
-      "owner": "BoardUserService.markQuestionSolved",
+      "owner": "BoardUserService.getBoardMeta",
       "ordinal": 1,
       "line": 80,
+      "column": 12,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "get",
+      "target": "/api/v1/boards/{bbsId}/meta",
+      "operationId": "getBoardMeta",
+      "descriptorName": "getBoardMetaOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "83789062f1aedafa5477"
+    },
+    {
+      "file": "frontend/src/services/business/user/board/BoardUserService.ts",
+      "owner": "BoardUserService.markQuestionSolved",
+      "ordinal": 1,
+      "line": 99,
       "column": 11,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1447,7 +1464,7 @@
       "file": "frontend/src/services/business/user/board/BoardUserService.ts",
       "owner": "BoardUserService.likePost",
       "ordinal": 1,
-      "line": 87,
+      "line": 106,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
