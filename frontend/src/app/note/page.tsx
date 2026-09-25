@@ -28,6 +28,16 @@ const NOTE_FORM_LABELS = {
   noteCn: '내용',
 };
 
+/** 이름을 찾지 못한 사용자(탈퇴 등). 내부 식별자를 이름 자리에 두지 않는다(DIP V3). */
+const UNKNOWN_USER = '알 수 없는 사용자';
+
+/** 보낸 쪽지의 수신자 요약 — 첫 사람 이름과 나머지 인원수. */
+function recipientSummary(recipients: Note['recipients']): string {
+  if (!recipients?.length) return '-';
+  const first = recipients[0].rcverNm || UNKNOWN_USER;
+  return recipients.length === 1 ? first : `${first} 외 ${recipients.length - 1}명`;
+}
+
 type NoteTab = 'received' | 'sent';
 
 interface NoteDetailTarget {
@@ -56,6 +66,15 @@ export default function NotePage() {
   // [2026-09-06 감사 D09-01 후속] 서버는 제목·내용 부분일치(searchWrd)를 받는데 페이징만 붙어 있었다. 로컬 상태다(URL 미승인).
   const [searchKeyword, setSearchKeyword] = useState('');
   const [total, setTotal] = useState(0);
+  // [2026-09-26 DIP V3] 받은 쪽지함의 미읽음 수. null 은 조회 실패이며 0 으로 말하지 않는다.
+  const [unreadCount, setUnreadCount] = useState<number | null>(null);
+  const refreshUnreadCount = useCallback(async () => {
+    try {
+      setUnreadCount(await noteService.getUnreadReceivedCount());
+    } catch {
+      setUnreadCount(null);
+    }
+  }, []);
 
   const [isWriteModalOpen, setWriteOpen] = useState(false);
   const [isPickerOpen, setPickerOpen] = useState(false);
@@ -93,6 +112,7 @@ export default function NotePage() {
         : noteService.getSentNotes(query));
 
       if (requestId !== listRequestRef.current || requestedTab !== tabRef.current) return;
+      if (requestedTab === 'received') void refreshUnreadCount();
       setNotes(res.list || []);
       setTotal(typeof res.total === 'number' ? res.total : (res.list?.length ?? 0));
     } catch {
@@ -103,7 +123,7 @@ export default function NotePage() {
     } finally {
       if (requestId === listRequestRef.current && requestedTab === tabRef.current) setLoading(false);
     }
-  }, [toast, page, pageSize, searchKeyword]);
+  }, [toast, page, pageSize, searchKeyword, refreshUnreadCount]);
 
   useEffect(() => {
     void loadNotes(tab);
@@ -235,6 +255,7 @@ export default function NotePage() {
       setSelectedNote(resolvedDetail);
 
       if (target.type === 'received') {
+        void refreshUnreadCount();
         setNotes((current) => current.map((item) => (
           item.noteRcptnSn === target.relationSn
             ? { ...item, ...detail, noteRcptnSn: target.relationSn, openYn: 'Y' }
@@ -247,7 +268,7 @@ export default function NotePage() {
     } finally {
       if (requestId === detailRequestRef.current) setDetailLoading(false);
     }
-  }, []);
+  }, [refreshUnreadCount]);
 
   const handleDetail = (note: Note) => {
     const relationSn = tab === 'received' ? note.noteRcptnSn : note.noteSndngSn;
@@ -335,9 +356,10 @@ export default function NotePage() {
               조회로 recipients 를 채운다(행마다 조회하면 N+1).
             */}
             <span className="text-[length:var(--font-size-body)] text-muted-foreground">
+              {/* [2026-09-26 DIP V3] 서버가 이름을 싣는다. 이름을 찾지 못한 사용자(탈퇴 등)는 내부 식별자 대신 그 사실을 말한다. */}
               {tab === 'received'
-                ? (item.trnsmiterNm || item.dsptchUserId)
-                : (item.recipients?.length ? `${item.recipients.length}명` : '-')}
+                ? (item.trnsmiterNm || UNKNOWN_USER)
+                : recipientSummary(item.recipients)}
             </span>
         </div>
       )
@@ -403,6 +425,12 @@ export default function NotePage() {
               count={tab === 'sent' ? total : undefined}
             />
           </div>
+          {/* [2026-09-26 DIP V3] 받은 쪽지 미읽음 수. tablist 에는 탭만 두므로 바깥에 둔다. 조회 실패(null)는 0 으로 말하지 않는다. */}
+          {unreadCount !== null && unreadCount > 0 && (
+            <span className="self-center text-xs font-semibold text-primary" aria-live="polite">
+              읽지 않음 {unreadCount}건
+            </span>
+          )}
           <Button
             size="sm"
             onClick={() => {
@@ -587,13 +615,12 @@ export default function NotePage() {
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
               <div className="space-y-1.5">
-                    <span className="block text-xs text-muted-foreground">쪽지 상세 데이터</span>
                     <h3 className="text-base font-semibold leading-snug text-foreground">{selectedNote.noteSj}</h3>
                     <div className="flex flex-wrap items-center gap-2">
                          <div className="inline-flex items-center rounded border border-border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
                              {tab === 'received'
-                               ? `발신: ${selectedNote.trnsmiterNm || selectedNote.dsptchUserId || '-'}`
-                               : `수신: ${selectedNote.rcverNm || selectedNote.rcverId || '-'}`}
+                               ? `발신: ${selectedNote.trnsmiterNm || UNKNOWN_USER}`
+                               : `수신: ${recipientSummary(selectedNote.recipients)}`}
                          </div>
                          <div className="text-xs tabular-nums text-muted-foreground">{selectedNote.crtDt}</div>
                     </div>
@@ -608,26 +635,38 @@ export default function NotePage() {
             <div className="min-h-[160px] whitespace-pre-wrap rounded-md border border-border bg-muted/40 p-3 text-[length:var(--font-size-body)] leading-relaxed text-foreground">
               {selectedNote.noteCn}
             </div>
+            {/* [2026-09-26 DIP V3] 보낸 쪽지는 수신자별 읽음을 보여 준다 — 한 쪽지에 수신자가 여럿일 수 있다. */}
+            {tab === 'sent' && (selectedNote.recipients?.length ?? 0) > 0 && (
+              <section aria-label="수신자별 읽음" className="space-y-1">
+                <h4 className="text-xs font-semibold text-muted-foreground">수신자</h4>
+                <ul className="divide-y divide-border rounded-md border border-border">
+                  {selectedNote.recipients!.map((recipient) => (
+                    <li key={recipient.noteRcptnSn} className="flex items-center justify-between px-3 py-1.5 text-[length:var(--font-size-body)]">
+                      <span className="text-foreground">{recipient.rcverNm || UNKNOWN_USER}</span>
+                      <span className="text-xs text-muted-foreground">{recipient.openYn === 'Y' ? '읽음' : '읽지 않음'}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
             <div className="flex justify-end gap-2 pt-1">
-              <Button variant="ghost" onClick={closeDetailModal}>데이터 닫기</Button>
+              <Button variant="ghost" onClick={closeDetailModal}>닫기</Button>
               {tab === 'received' && (
                 <Button
-                  aria-label="실시간 답장 전송"
                   onClick={() => {
                     const recipientId = selectedNote.dsptchUserId?.trim() ?? '';
-                    const recipientName = selectedNote.trnsmiterNm?.trim() ?? '';
+                    const recipientName = selectedNote.trnsmiterNm?.trim() || UNKNOWN_USER;
+                    const subject = `Re: ${selectedNote.noteSj ?? ''}`;
                     closeDetailModal();
-                    setFormData({
-                      rcverId: recipientId,
-                      rcverNm: recipientName,
-                      noteSj: `Re: ${selectedNote.noteSj ?? ''}`,
-                      noteCn: '',
-                    });
+                    // [2026-09-26 DIP V3] 원 발신자를 수신자 칩으로 넣는다. 종전에는 제출 값(formData)에만 넣어
+                    //   칩이 비어 보였고, 수신자를 추가하면 칩 목록으로 다시 계산돼 원 발신자가 빠졌다.
+                    applyRecipients(recipientId ? [{ esntlId: recipientId, name: recipientName }] : []);
+                    setFormData((current) => ({ ...current, noteSj: subject, noteCn: '' }));
                     validation.setFormErrors({}, false);
                     setWriteOpen(true);
                   }}
                 >
-                  <SendHorizonal size={14} aria-hidden="true" /> 실시간 답장 전송
+                  <SendHorizonal size={14} aria-hidden="true" /> 답장
                 </Button>
               )}
             </div>

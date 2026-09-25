@@ -255,7 +255,7 @@ class MailServiceTest {
     }
 
     @Test
-    @DisplayName("발신자 이력 - 인증 주체를 기록한다 (종전에는 전건 공백)")
+    @DisplayName("발신자 이력 - 이름을 찾지 못하면 인증 주체 식별자를 기록한다 (종전에는 전건 공백)")
     void sendMail_recordsAuthenticatedSenderInHistory() {
         SentMailDto dto = SentMailDto.builder()
                 .sj("Subject").emailCn("Content")
@@ -269,6 +269,26 @@ class MailServiceTest {
         org.mockito.ArgumentCaptor<SentMail> saved = org.mockito.ArgumentCaptor.forClass(SentMail.class);
         verify(sentMailRepository).save(saved.capture());
         assertThat(saved.getValue().getSndptyNm()).isEqualTo("user1");
+    }
+
+    @Test
+    @DisplayName("🚨 발신자 이력 - 인증 주체의 이름을 기록한다, 내부 식별자가 아니다 (DIP V4)")
+    void sendMail_recordsSenderNameInHistory() {
+        // 인증 주체는 esntlId 다. 종전에는 그 식별자가 발신자 칸에 남아 이력의 발신자 검색이 이름으로 찾지 못했다.
+        SentMailDto dto = SentMailDto.builder()
+                .sj("Subject").emailCn("Content")
+                .recptnPerson("receiver@test.com")
+                .build();
+        given(userContactService.resolve(List.of("USR_SENDER"))).willReturn(List.of(
+                new UserContactService.UserContact("USR_SENDER", "홍발신", "hong@example.com", null)));
+        given(sentMailRepository.save(any(SentMail.class)))
+                .willReturn(SentMail.builder().emlDsptchSn(11L).build());
+
+        mailService.sendMail("USR_SENDER", dto);
+
+        org.mockito.ArgumentCaptor<SentMail> saved = org.mockito.ArgumentCaptor.forClass(SentMail.class);
+        verify(sentMailRepository).save(saved.capture());
+        assertThat(saved.getValue().getSndptyNm()).isEqualTo("홍발신");
     }
 
     @Test

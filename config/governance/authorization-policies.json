@@ -5561,6 +5561,13 @@
     },
     {
       "method": "GET",
+      "path": "/api/v1/notes/received/unread-count",
+      "handler": "nuri.api.controller.business.note.NoteApiController#getUnreadReceivedCount",
+      "access": "PERMISSION",
+      "permission": "NOTE_READ"
+    },
+    {
+      "method": "GET",
       "path": "/api/v1/notes/sent",
       "handler": "nuri.api.controller.business.note.NoteApiController#getSentNotes",
       "access": "PERMISSION",

@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   getReceivedNotes: vi.fn(),
   getSentNotes: vi.fn(),
   getNote: vi.fn(),
+  getUnreadReceivedCount: vi.fn(),
   sendNote: vi.fn(),
   deleteNote: vi.fn(),
 }));
@@ -91,6 +92,7 @@ vi.mock('@/services/business/user/NoteService', () => ({
     getReceivedNotes: mocks.getReceivedNotes,
     getSentNotes: mocks.getSentNotes,
     getNote: mocks.getNote,
+    getUnreadReceivedCount: mocks.getUnreadReceivedCount,
     sendNote: mocks.sendNote,
     deleteNote: mocks.deleteNote,
   },
@@ -122,6 +124,7 @@ describe('NotePage validation contract', () => {
     mocks.sendNote.mockResolvedValue(undefined);
     mocks.deleteNote.mockResolvedValue(undefined);
     mocks.confirm.mockResolvedValue(true);
+    mocks.getUnreadReceivedCount.mockResolvedValue(0);
   });
 
   function openComposer() {
@@ -332,8 +335,50 @@ describe('NotePage validation contract', () => {
     expect(screen.getAllByText('읽음').length).toBeGreaterThan(0);
     expect(screen.queryByText('읽지 않음')).not.toBeInTheDocument();
 
-    fireEvent.click(within(detail).getByRole('button', { name: '실시간 답장 전송' }));
+    fireEvent.click(within(detail).getByRole('button', { name: '답장' }));
     expect(screen.getByRole('textbox', { name: '수신 대상자' })).toHaveValue('발신자 이름 (sender-7)');
+    // [2026-09-26 DIP V3] 원 발신자가 수신자 칩으로 들어간다 — 제출 값에만 있으면 칩이 비어 보였다.
+    expect(screen.getByText('총 1명 선택됨')).toBeInTheDocument();
+  });
+
+  it('🚨 받은 쪽지 목록은 발신자 이름을 보이고, 이름을 모르면 내부 식별자 대신 그 사실을 말한다 (DIP V3)', async () => {
+    mocks.getReceivedNotes.mockResolvedValueOnce({ list: [
+      { noteSn: 1, noteRcptnSn: 11, noteSj: '이름 있는 쪽지', dsptchUserId: 'ESNTL_A', trnsmiterNm: '김발신', openYn: 'N', crtDt: '2026-09-26' },
+      { noteSn: 2, noteRcptnSn: 12, noteSj: '이름 없는 쪽지', dsptchUserId: 'ESNTL_B', openYn: 'Y', crtDt: '2026-09-26' },
+    ] });
+    render(<NotePage />);
+
+    expect(await screen.findByText('김발신')).toBeInTheDocument();
+    expect(screen.getByText('알 수 없는 사용자')).toBeInTheDocument();
+    expect(screen.queryByText('ESNTL_B')).not.toBeInTheDocument();
+  });
+
+  it('받은 쪽지함은 읽지 않은 쪽지 수를 알린다 (DIP V3)', async () => {
+    mocks.getUnreadReceivedCount.mockResolvedValue(3);
+    render(<NotePage />);
+
+    expect(await screen.findByText('읽지 않음 3건')).toBeInTheDocument();
+  });
+
+  it('보낸 쪽지 상세는 수신자별 읽음을 보여 준다 (DIP V3)', async () => {
+    const sent = {
+      noteSn: 9, noteSndngSn: 91, noteSj: '보낸 쪽지', crtDt: '2026-09-26',
+      recipients: [
+        { noteRcptnSn: 1, rcverId: 'R1', rcverNm: '김수신', recptnSe: '1', openYn: 'Y' },
+        { noteRcptnSn: 2, rcverId: 'R2', rcverNm: '이수신', recptnSe: '1', openYn: 'N' },
+      ],
+    };
+    mocks.getSentNotes.mockResolvedValue({ list: [sent] });
+    mocks.getNote.mockResolvedValueOnce({ ...sent, noteCn: '본문' });
+    render(<NotePage />);
+
+    fireEvent.click(await screen.findByRole('tab', { name: /보낸 쪽지함/ }));
+    expect(await screen.findByText('김수신 외 1명')).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: '보낸 쪽지 쪽지 열기' }));
+
+    const readState = await screen.findByRole('region', { name: '수신자별 읽음' });
+    expect(within(readState).getByText('김수신').parentElement).toHaveTextContent('읽음');
+    expect(within(readState).getByText('이수신').parentElement).toHaveTextContent('읽지 않음');
   });
 
   it('상세 조회가 실패하면 이전 행 본문을 상세처럼 보이지 않고 재시도할 수 있다', async () => {

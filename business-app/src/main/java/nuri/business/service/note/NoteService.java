@@ -9,6 +9,8 @@ import nuri.business.domain.note.NoteTrnsmit;
 import nuri.business.domain.note.NoteTrnsmitDomainRepository;
 import nuri.business.service.note.dto.NoteDto;
 import nuri.business.service.note.dto.NoteRecipientDto;
+import nuri.business.domain.user.entity.User;
+import nuri.business.domain.user.repository.UserRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,10 +41,29 @@ public class NoteService {
      */
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
+    /**
+     * 발신자·수신자 이름 해석. [2026-09-26 DIP V3] 종전 DTO 는 이름 필드(trnsmiterNm·rcverNm)를 선언만 하고
+     * 채우지 않아, 화면이 이름 대신 내부 식별자(esntlId)를 그대로 보여 주거나 빈 칸으로 두었다.
+     * 페이지 단위로 한 번에 조회해 행마다 조회하는 N+1 을 만들지 않는다. 이름만 싣고 연락처는 내보내지 않는다.
+     */
+    private final UserRepository userRepository;
+
     public Page<NoteDto> getReceivedNotes(String userId, String searchWrd, Pageable pageable) {
-        return noteRecptnRepository
-                .searchNoteRecptns(null, searchWrd, userId, Objects.requireNonNull(pageable))
-                .map(this::convertToDto);
+        Page<NoteRecptn> page = noteRecptnRepository
+                .searchNoteRecptns(null, searchWrd, userId, Objects.requireNonNull(pageable));
+        Map<String, String> names = userNames(page.getContent().stream()
+                .map(r -> r.getNoteDsptch() != null ? r.getNoteDsptch().getSndrId() : null)
+                .toList());
+        return page.map(recptn -> {
+            NoteDto dto = convertToDto(recptn);
+            dto.setTrnsmiterNm(names.get(dto.getDsptchUserId()));
+            return dto;
+        });
+    }
+
+    /** 받고 아직 열지 않은 쪽지 수(삭제한 쪽지 제외). 받은 쪽지함 머리에 쓴다. */
+    public long countUnreadReceived(String userId) {
+        return noteRecptnRepository.countUnreadByRcvrId(Objects.requireNonNull(userId));
     }
 
     /**
@@ -67,16 +88,13 @@ public class NoteService {
                 .map(NoteTrnsmit::getNoteSndngSn)
                 .filter(Objects::nonNull)
                 .toList();
-        Map<Long, List<NoteRecipientDto>> bySndngSn = noteRecptnRepository
-                .findByNoteDsptchNoteSndngSnInAndDelYn(sndngSns, "N").stream()
+        List<NoteRecptn> recptns = noteRecptnRepository.findByNoteDsptchNoteSndngSnInAndDelYn(sndngSns, "N");
+        Map<String, String> names = userNames(recptns.stream().map(NoteRecptn::getRcvrId).toList());
+        Map<Long, List<NoteRecipientDto>> bySndngSn = recptns.stream()
                 .filter(r -> r.getNoteDsptch() != null && r.getNoteDsptch().getNoteSndngSn() != null)
                 .collect(Collectors.groupingBy(
                         r -> r.getNoteDsptch().getNoteSndngSn(),
-                        Collectors.mapping(r -> NoteRecipientDto.builder()
-                                .noteRcptnSn(r.getNoteRcptnSn())
-                                .rcverId(r.getRcvrId())
-                                .recptnSe(r.getRcptnSeCd())
-                                .build(), Collectors.toList())));
+                        Collectors.mapping(r -> toRecipient(r, names), Collectors.toList())));
 
         return page.map(entity -> {
             NoteDto dto = convertToDto(entity);
@@ -110,7 +128,13 @@ public class NoteService {
             if ("Y".equals(trnsmit.getDelYn())) {
                 throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
             }
-            return convertToDto(trnsmit);
+            // [2026-09-26 DIP V3] 보낸 쪽지 상세는 수신자와 수신자별 읽음을 싣는다 — 목록과 같은 기준(삭제하지 않은 사본).
+            NoteDto dto = convertToDto(trnsmit);
+            List<NoteRecptn> recptns = noteRecptnRepository
+                    .findByNoteDsptchNoteSndngSnInAndDelYn(List.of(trnsmit.getNoteSndngSn()), "N");
+            Map<String, String> names = userNames(recptns.stream().map(NoteRecptn::getRcvrId).toList());
+            dto.setRecipients(recptns.stream().map(r -> toRecipient(r, names)).toList());
+            return dto;
         } else {
             NoteRecptn recptn = noteRecptnRepository.findById(relationSn)
                     .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
@@ -125,7 +149,10 @@ public class NoteService {
             }
             // 소유자 검증을 통과한 뒤에만 읽음 처리한다 — 남의 쪽지를 '읽음' 으로 만들 수 없다.
             recptn.markOpened();
-            return convertToDto(recptn);
+            NoteDto dto = convertToDto(recptn);
+            dto.setTrnsmiterNm(userNames(java.util.Collections.singletonList(dto.getDsptchUserId()))
+                    .get(dto.getDsptchUserId()));
+            return dto;
         }
     }
 
@@ -295,6 +322,28 @@ public class NoteService {
                 .recptnSe(entity.getRcptnSeCd())
                 .crtDt(entity.getCrtDt())
                 .build();
+    }
+
+    private NoteRecipientDto toRecipient(NoteRecptn recptn, Map<String, String> names) {
+        return NoteRecipientDto.builder()
+                .noteRcptnSn(recptn.getNoteRcptnSn())
+                .rcverId(recptn.getRcvrId())
+                .rcverNm(names.get(recptn.getRcvrId()))
+                .recptnSe(recptn.getRcptnSeCd())
+                .openYn("Y".equals(recptn.getOpenYn()) ? "Y" : "N")
+                .build();
+    }
+
+    /** esntlId → 이름. 찾지 못한 사용자(탈퇴 등)는 빠지며, 화면은 그 사실을 이름 대신 말한다. */
+    private Map<String, String> userNames(List<String> esntlIds) {
+        List<String> ids = esntlIds.stream().filter(Objects::nonNull).distinct().toList();
+        if (ids.isEmpty()) {
+            // Map.of() 는 null 키 조회에서 예외를 던진다 — 발신자가 비어 있는 레거시 행도 조회할 수 있어야 한다.
+            return java.util.Collections.emptyMap();
+        }
+        return userRepository.findByEsntlIdIn(ids).stream()
+                .filter(user -> user.getEsntlId() != null && user.getUserNm() != null)
+                .collect(Collectors.toMap(User::getEsntlId, User::getUserNm, (first, second) -> first));
     }
 
     private void assertNoteRelation(Long noteSn, Note note) {

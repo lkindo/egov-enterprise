@@ -1122,6 +1122,7 @@ export const NoteRecipientDtoSchema = z.object({
   rcverId: z.string().min(0).max(20),
   rcverNm: z.string().min(0).max(50).optional(),
   recptnSe: z.string().min(0).max(12),
+  openYn: z.string().optional(),
 });
 export type NoteRecipientDto = z.infer<typeof NoteRecipientDtoSchema>;
 
@@ -6284,6 +6285,7 @@ export const NoteRecipientDtoResponseSchema = z.object({
   rcverId: z.string().min(0).max(20),
   rcverNm: z.string().min(0).max(50).optional().nullable(),
   recptnSe: z.string().min(0).max(12),
+  openYn: z.string().optional().nullable(),
 });
 
 export const MailRecipientDtoRequestSchema = z.object({

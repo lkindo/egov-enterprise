@@ -3182,7 +3182,7 @@ export const sendNoteOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: NoteDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["recipients","*","openYn"]],
   responseForbiddenPaths: [],
 });
 
@@ -5505,6 +5505,23 @@ export const getReceivedNotesOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseNoteDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseNoteDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const getUnreadReceivedCountOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "getUnreadReceivedCount",
+  method: "get",
+  path: "/api/v1/notes/received/unread-count",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });

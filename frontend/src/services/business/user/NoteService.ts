@@ -6,6 +6,7 @@ import {
  getNoteOperation,
  getReceivedNotesOperation,
  getSentNotesOperation,
+ getUnreadReceivedCountOperation,
  sendNoteOperation,
 } from '@/types/generated-operations';
 
@@ -30,6 +31,13 @@ class NoteService extends ApiService {
  /**
  * 보냄 쪽지 목록 조회
  */
+ /**
+ * 받고 아직 열지 않은 쪽지 수(삭제한 쪽지 제외). [2026-09-26 DIP V3]
+ */
+ async getUnreadReceivedCount(): Promise<number> {
+ return this.executeGenerated(getUnreadReceivedCountOperation, {});
+ }
+
  async getSentNotes(params: { page?: number; size?: number; searchWrd?: string }): Promise<PageResponse<Note>> {
  const response = await this.executeGenerated(getSentNotesOperation, { query: params });
  return response as PageResponse<Note>;
