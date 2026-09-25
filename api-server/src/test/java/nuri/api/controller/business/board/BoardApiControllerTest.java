@@ -117,7 +117,8 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data.list[0].useYn").value(nullValue()))
                 .andExpect(jsonPath("$.data.list[0].userId").value(nullValue()))
                 .andExpect(jsonPath("$.data.list[0].fileCnt").value(nullValue()))
-                .andExpect(jsonPath("$.data.list[0].frstRegisterNm").value(nullValue()));
+                // [2026-09-26 DIP V2] 늘 null 이던 등록자명은 계약에서 걷었다 — 작성자 이름은 userNm 이다.
+                .andExpect(jsonPath("$.data.list[0].frstRegisterNm").doesNotExist());
 
         verify(boardService).getBoardPosts(
                 eq("BBS_001"), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class));

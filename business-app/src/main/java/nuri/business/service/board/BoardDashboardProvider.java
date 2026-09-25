@@ -29,21 +29,28 @@ public class BoardDashboardProvider implements DashboardItemProvider {
     /** 게시판 인스턴스 ID 설정({@code nuri.boards.*}) — 리터럴 하드코딩을 설정 소비로 역전(기본값=종전 리터럴). */
     private final BoardIdProperties boardIdProperties;
 
+    /**
+     * 업무게시판·공지의 최근 5건과 게시판 전체 글 수를 싣는다.
+     *
+     * <p>[2026-09-26 DIP V1] 조회가 실패하면 목록은 비우되 전체 글 수는 {@code null} 로 둔다. 종전에는 실패를
+     * 빈 목록으로만 삼켜 화면이 "등록된 글이 없습니다·0건" 이라는 사실 주장을 했다 — 조회 실패와 글 없음이
+     * 같은 모양이었다. 전체 글 수는 목록 길이(늘 5 이하)가 아니라 게시판의 실제 글 수다.</p>
+     */
     @Override
     public void provideDashboardData(String userId, Map<String, Object> result) {
+        putRecentPosts(result, "taskList", "taskListTotal", boardIdProperties.getTaskId());
+        putRecentPosts(result, "notiList", "notiListTotal", boardIdProperties.getNoticeId());
+    }
+
+    private void putRecentPosts(Map<String, Object> result, String listKey, String totalKey, String bbsId) {
         try {
-            Page<BoardDto> taskList = boardService.getBoardPosts(boardIdProperties.getTaskId(), PageRequest.of(0, 5));
-            result.put("taskList", taskList.getContent());
+            Page<BoardDto> page = boardService.getBoardPosts(bbsId, PageRequest.of(0, 5));
+            result.put(listKey, page.getContent());
+            result.put(totalKey, page.getTotalElements());
         } catch (Exception e) {
-            log.error("Failed to fetch task list", e);
-            result.put("taskList", List.of());
-        }
-        try {
-            Page<BoardDto> notiList = boardService.getBoardPosts(boardIdProperties.getNoticeId(), PageRequest.of(0, 5));
-            result.put("notiList", notiList.getContent());
-        } catch (Exception e) {
-            log.error("Failed to fetch notice list", e);
-            result.put("notiList", List.of());
+            log.error("Failed to fetch dashboard {}", listKey, e);
+            result.put(listKey, List.of());
+            result.put(totalKey, null);
         }
     }
 }

@@ -22,19 +22,27 @@ public final class DashboardResponse {
     private static final String TASK_LIST = "taskList";
     private static final String NOTICE_LIST = "notiList";
     private static final String PENDING_APPROVAL_COUNT = "pendingApprovalCount";
+    private static final String TASK_LIST_TOTAL = "taskListTotal";
+    private static final String NOTICE_LIST_TOTAL = "notiListTotal";
 
     private final List<BoardDto> taskList;
     private final List<BoardDto> notiList;
+    private final Long taskListTotal;
+    private final Long notiListTotal;
     private final Long pendingApprovalCount;
     private final Map<String, Object> extensions;
 
     private DashboardResponse(
             List<BoardDto> taskList,
             List<BoardDto> notiList,
+            Long taskListTotal,
+            Long notiListTotal,
             Long pendingApprovalCount,
             Map<String, Object> extensions) {
         this.taskList = taskList;
         this.notiList = notiList;
+        this.taskListTotal = taskListTotal;
+        this.notiListTotal = notiListTotal;
         this.pendingApprovalCount = pendingApprovalCount;
         this.extensions = extensions;
     }
@@ -43,11 +51,15 @@ public final class DashboardResponse {
         Map<String, Object> extensions = new LinkedHashMap<>(values);
         List<BoardDto> taskList = boardItems(extensions.remove(TASK_LIST), TASK_LIST);
         List<BoardDto> notiList = boardItems(extensions.remove(NOTICE_LIST), NOTICE_LIST);
+        Long taskListTotal = nonNegativeCount(extensions.remove(TASK_LIST_TOTAL), TASK_LIST_TOTAL);
+        Long notiListTotal = nonNegativeCount(extensions.remove(NOTICE_LIST_TOTAL), NOTICE_LIST_TOTAL);
         Long pendingApprovalCount = nonNegativeCount(
                 extensions.remove(PENDING_APPROVAL_COUNT), PENDING_APPROVAL_COUNT);
         return new DashboardResponse(
                 taskList,
                 notiList,
+                taskListTotal,
+                notiListTotal,
                 pendingApprovalCount,
                 Map.copyOf(extensions));
     }
@@ -60,6 +72,23 @@ public final class DashboardResponse {
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     public List<BoardDto> getNotiList() {
         return notiList;
+    }
+
+    /**
+     * 업무게시판의 전체 글 수(목록은 최근 5건).
+     *
+     * <p>[2026-09-26 DIP V1] 조회에 실패했거나 게시판 공급자가 없으면 {@code null} 이다 — 0 은 "글이 없다" 는
+     * 사실 주장이다. 목록이 비어 있고 이 값이 {@code null} 이면 화면은 "불러오지 못했습니다" 라고 말한다.</p>
+     */
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED, minimum = "0", nullable = true, types = {"integer", "null"})
+    public Long getTaskListTotal() {
+        return taskListTotal;
+    }
+
+    /** 공지 게시판의 전체 글 수. 의미는 {@link #getTaskListTotal()} 와 같다. */
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED, minimum = "0", nullable = true, types = {"integer", "null"})
+    public Long getNotiListTotal() {
+        return notiListTotal;
     }
 
     /**

@@ -64,6 +64,8 @@ class DashboardApiControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.taskList").isArray())
+                .andExpect(jsonPath("$.data.taskListTotal").value(0))
+                .andExpect(jsonPath("$.data.notiListTotal").value(0))
                 .andExpect(jsonPath("$.data.pendingApprovalCount").value(0));
     }
 
@@ -84,6 +86,9 @@ class DashboardApiControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.taskList").isEmpty())
+                // [2026-09-26 DIP V1] 목록 조회 실패는 "글 없음(0)" 이 아니다 — 전체 글 수는 null 로 싣는다.
+                .andExpect(jsonPath("$.data.taskListTotal").value(nullValue()))
+                .andExpect(jsonPath("$.data.notiListTotal").value(0))
                 // [2026-09-15 DEC-OPS-100] 조회 실패는 0건이 아니다. 키는 싣되 값은 null(셀 수 없음)이다.
                 .andExpect(jsonPath("$.data.pendingApprovalCount").value(nullValue()));
         
@@ -92,6 +97,20 @@ class DashboardApiControllerTest extends ControllerTestSupport {
         // 대기 건수는 상태 조건 없는 수신 전체 질의(getReceivedInformalSanctionList)로 세지 않는다 —
         // 그 경로는 처리 완료 건까지 세어 결재자가 승인해도 대시보드 숫자가 줄지 않았다(2026-09-02 수정).
         verify(approvalService, never()).getReceivedInformalSanctionList(anyString(), any());
+    }
+
+    @Test
+    @WithMockCustomUser(username = "testUser", esntlId = "testUser")
+    @DisplayName("🚨 최근 글 카드는 목록 길이(5 이하)가 아니라 게시판 전체 글 수를 싣는다 (DIP V1)")
+    void getDashboardData_totalsAreBoardTotalsNotListLength() throws Exception {
+        when(boardService.getBoardPosts(anyString(), any())).thenReturn(new PageImpl<>(
+                Collections.emptyList(), org.springframework.data.domain.PageRequest.of(0, 5), 37));
+        when(approvalService.getPendingApprovalCount(anyString())).thenReturn(0L);
+
+        mockMvc.perform(get("/api/v1/dashboard"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.taskListTotal").value(37))
+                .andExpect(jsonPath("$.data.notiListTotal").value(37));
     }
 
     @Test

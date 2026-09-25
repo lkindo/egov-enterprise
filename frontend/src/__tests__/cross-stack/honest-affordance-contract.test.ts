@@ -271,6 +271,50 @@ describe('커뮤니티 상세: 지어낸 지표와 죽은 버튼을 두지 않�
    *
    * 그래서 검사를 **서버가 채우지 않는 필드를 읽지 않는다**는 축으로 넓힌다.
    */
+  /**
+   * [2026-09-26 DIP V10] 화면 하나·DTO 하나에 묶인 검사를 **생산 소스 전체**로 넓힌다.
+   *
+   * 같은 결함이 커뮤니티 화면에서 닫힌 뒤에도 업무 홈·지식 허브·게시글 상세가 서버가 한 번도 싣지 않는
+   * 레거시 필드(`frstRegisterNm`·`frstRegisterPnttmStr`·`nttSj`)를 읽어 작성자·날짜를 '-' 로 그리고 있었다
+   * (DIP V1·V2). 테스트 픽스처가 그 필드를 넣어 주니 단위 테스트도 모두 초록이었다.
+   *
+   * 판정의 기준은 생성 API 타입이다 — 이름이 `generated-api.d.ts` 의 어떤 스키마에도 없으면 생산 코드가
+   * 그 이름을 쓸 수 없다. 서버가 그 필드를 다시 계약에 올리면 이 검사도 그 이름을 허용한다.
+   */
+  it('🚨 생산 코드는 생성 API 타입에 없는 레거시 응답 필드 이름을 읽지 않는다', () => {
+    const LEGACY_RESPONSE_FIELDS = ['frstRegisterNm', 'frstRegisterPnttmStr', 'nttSj'];
+    const generated = readSrc('types/generated-api.d.ts');
+    const undeclared = LEGACY_RESPONSE_FIELDS.filter(
+      (name) => !new RegExp(`\\b${name}\\??:`).test(generated),
+    );
+    expect(undeclared, '생성 타입이 이 이름을 선언하면 목록에서 빼고 계약을 다시 본다').toEqual(LEGACY_RESPONSE_FIELDS);
+
+    const productionFiles: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          if (entry.name === '__tests__' || entry.name === 'node_modules') continue;
+          walk(full);
+        } else if (/\.(ts|tsx)$/.test(entry.name) && !/\.test\.(ts|tsx)$/.test(entry.name)
+          && !entry.name.startsWith('generated-')) {
+          productionFiles.push(full);
+        }
+      }
+    };
+    walk(SRC);
+    expect(productionFiles.length, '생산 소스를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(300);
+
+    const offenders: string[] = [];
+    for (const file of productionFiles) {
+      const code = stripComments(fs.readFileSync(file, 'utf8'));
+      for (const name of undeclared) {
+        if (new RegExp(`\\b${name}\\b`).test(code)) offenders.push(`${path.relative(SRC, file)} → ${name}`);
+      }
+    }
+    expect(offenders, `서버가 싣지 않는 필드를 읽는 생산 코드:\n${offenders.join('\n')}`).toEqual([]);
+  });
+
   it('서버가 채우지 않는 필드를 읽고 기본값을 지어내지 않는다', () => {
     const dto = readRepo(
       'business-app/src/main/java/nuri/business/service/system/content/community/dto/CommunityDto.java',

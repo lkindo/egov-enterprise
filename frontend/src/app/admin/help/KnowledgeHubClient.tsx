@@ -209,14 +209,15 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  accessor: (item: KnowledgeDto) => (
  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
  <User size={12} aria-hidden="true" />
- <span className="max-w-[10rem] truncate">{item.frstRegisterNm || item.frstRgtrId || '-'}</span>
+ <span className="max-w-[10rem] truncate">{item.userNm || '-'}</span>
  </span>
  ),
  },
  {
  header: '등록일',
  className: 'whitespace-nowrap tabular-nums text-muted-foreground',
- accessor: (item: KnowledgeDto) => item.frstRegisterPnttmStr || '-',
+ // [2026-09-26 DIP V2] 서버가 싣는 작성 일시(crtDt)의 날짜 부분이다. 종전에는 보내지 않는 필드를 읽어 늘 '-' 였다.
+ accessor: (item: KnowledgeDto) => item.crtDt?.slice(0, 10) || '-',
  },
  {
  header: '조회수',
