@@ -160,9 +160,11 @@ public class AuthServiceImpl implements AuthService {
         logService.logLogin(recorded, clientIp, "WEB", "Y", reason.code());
     }
 
-    @Override
-    @Transactional
-    public TokenResponse reissue(String refreshToken, String clientIp) {
+    /**
+     * 제시된 리프레시 토큰이 형식상 유효하고, 저장돼 있으며, 저장된 절대 만료가 지나지 않았는지 확인한다.
+     * 어느 하나라도 아니면 {@code INVALID_TOKEN} 이다. 만료된 행은 별도 트랜잭션으로 지운다.
+     */
+    private nuri.business.domain.auth.RefreshToken requireLiveStoredToken(String refreshToken) {
         // [W1-06] 리프레시 자리에는 리프레시 토큰만. 액세스 토큰을 제시하면 거부한다.
         if (refreshToken == null || !jwtTokenProvider.validateRefreshToken(refreshToken)) {
             throw new BusinessException(CommonErrorCode.INVALID_TOKEN);
@@ -180,6 +182,16 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(CommonErrorCode.INVALID_TOKEN);
         }
 
+        return storedToken;
+    }
+
+    @Override
+    @Transactional
+    public TokenResponse reissue(String refreshToken, String clientIp) {
+        // 제시된 토큰의 검증(형식·저장 여부·만료)은 헬퍼에 둔다. 이 메서드 본문에는 요청 값에 좌우되는 분기 없이
+        //   정책 재검사까지 곧게 이어지게 한다 — 분기 뒤에 놓인 정책 검사는 정적 분석(CodeQL
+        //   java/user-controlled-bypass)이 "요청이 검사를 건너뛸 수 있다" 로 읽는다(2026-09-25 PR #748).
+        nuri.business.domain.auth.RefreshToken storedToken = requireLiveStoredToken(refreshToken);
         String userId = storedToken.getUserId();
         
         CustomUserDetails principal = requireCurrentPrincipal(
