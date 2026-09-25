@@ -67,8 +67,7 @@ const QUESTIONS = [
   },
 ];
 
-function renderClient() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function renderClient(client = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
   return render(
     <QueryClientProvider client={client}>
       <SurveyDetailClient srvySn={1} />
@@ -185,6 +184,35 @@ describe('설문 응답 제출', () => {
    *   ③ 서버 거절을 실제로 주입한다
    *   ④ 거절 사유가 화면에 보이고 다시 시도할 수 있다
    */
+  it('🚨 제출하면 통계 캐시를 무효화해 방금 낸 응답이 아래 통계에 반영된다 (DIP V8)', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    renderClient(client);
+
+    fireEvent.click(await screen.findByRole('radio', { name: '만족' }));
+    fireEvent.click(screen.getByRole('button', { name: '응답 제출' }));
+
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ['survey-stats', 1] }));
+  });
+
+  it('🚨 이미 응답한 설문은 열 때 알리고 입력과 제출을 잠근다 (DIP V8)', async () => {
+    mocks.getSurvey.mockResolvedValue({ ...OPEN_SURVEY, responded: true });
+    renderClient();
+
+    expect(await screen.findByText(/이미 응답한 설문입니다/)).toBeInTheDocument();
+    expect(await screen.findByRole('radio', { name: '만족' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '응답 완료' })).toBeDisabled();
+    expect(mocks.submitAnswers).not.toHaveBeenCalled();
+  });
+
+  it('대조군: 응답 여부를 모르면(null) 잠그지 않는다', async () => {
+    mocks.getSurvey.mockResolvedValue({ ...OPEN_SURVEY, responded: null });
+    renderClient();
+
+    expect(await screen.findByRole('radio', { name: '만족' })).toBeEnabled();
+    expect(screen.queryByText(/이미 응답한 설문입니다/)).toBeNull();
+  });
+
   it('제출 중에는 한 번만 보내고 상태를 드러내며, 거절 사유를 그대로 보여 준다', async () => {
     let rejectSubmit!: (reason?: unknown) => void;
     mocks.submitAnswers.mockReturnValueOnce(new Promise((_resolve, reject) => { rejectSubmit = reject; }));

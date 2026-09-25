@@ -78,7 +78,9 @@ export function SurveyStatsPanel({ srvySn }: { srvySn: number | null }) {
               <div className="flex justify-between text-sm mb-1">
                 <span className="font-medium">{stat.artclCn || '주관식 답변'}</span>
                 <span className="text-muted-foreground">
+                  {/* [2026-09-26 DIP V8] 비율의 분모는 이 문항에 응답한 사람 수다. 복수선택이면 항목 합계가 100% 를 넘을 수 있다. */}
                   {stat.count || 0} 명 ({stat.percentage || 0}%)
+                  {typeof stat.respondentCount === 'number' ? ` · 응답자 ${stat.respondentCount}명 기준` : ''}
                 </span>
               </div>
               <div className="w-full bg-muted rounded-lg h-2.5 overflow-hidden">

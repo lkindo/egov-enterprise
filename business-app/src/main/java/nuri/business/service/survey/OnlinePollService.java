@@ -353,18 +353,19 @@ public class OnlinePollService {
     @Transactional
     public void vote(Long pollSn, Long pollArtclSn, String userId) {
         OnlinePollManage poll = pollManageRepository.findById(pollSn)
-                .orElseThrow(() -> new BusinessException("설문을 찾을 수 없습니다.", CommonErrorCode.RESOURCE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException("투표를 찾을 수 없습니다.", CommonErrorCode.RESOURCE_NOT_FOUND));
 
+        // [2026-09-26 DIP V7] 참여 화면은 '투표' 인데 오류만 '설문' 이라 말해 문항형 설문조사와 헷갈렸다.
         if ("Y".equals(poll.getPollDsuseYn())) {
-            throw new BusinessException("종료되었거나 폐기된 설문입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
+            throw new BusinessException("종료되었거나 폐기된 투표입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
         }
 
         String today = today();
         if (poll.getPollBgngYmd() != null && poll.getPollBgngYmd().compareTo(today) > 0) {
-            throw new BusinessException("설문 시작 전입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
+            throw new BusinessException("투표 시작 전입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
         }
         if (poll.getPollEndYmd() != null && poll.getPollEndYmd().compareTo(today) < 0) {
-            throw new BusinessException("이미 종료된 설문입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
+            throw new BusinessException("이미 종료된 투표입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
         }
 
         // 빠른 경로(fast-path): 이미 참여한 사용자면 굳이 INSERT 를 시도하지 않는다.
@@ -373,11 +374,11 @@ public class OnlinePollService {
         // LoginUserAuditorAware 가 감사 컬럼(frstRgtrId)에 기록하는 값도 loginId 이므로,
         // 이 중복 검사와 DB 유니크 제약(V2_4)이 동일한 식별자를 기준으로 동작한다.
         if (!pollItemRepository.existsByPollArtclSnAndPollManagePollSn(pollArtclSn, pollSn)) {
-            throw new BusinessException("설문 항목을 찾을 수 없습니다.", CommonErrorCode.RESOURCE_NOT_FOUND);
+            throw new BusinessException("투표 항목을 찾을 수 없습니다.", CommonErrorCode.RESOURCE_NOT_FOUND);
         }
 
         if (pollResultRepository.countByPollSnAndFrstRegisterId(pollSn, userId) > 0) {
-            throw new BusinessException("이미 참여하신 설문입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
+            throw new BusinessException("이미 참여한 투표입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
         }
 
         OnlinePollResult result = OnlinePollResult.builder()
@@ -398,7 +399,7 @@ public class OnlinePollService {
             pollResultRepository.saveAndFlush(Objects.requireNonNull(result));
         } catch (DataIntegrityViolationException e) {
             if (isDuplicateVoteViolation(e)) {
-                throw new BusinessException("이미 참여하신 설문입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
+                throw new BusinessException("이미 참여한 투표입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
             }
             throw e;
         }
@@ -418,7 +419,8 @@ public class OnlinePollService {
     private void validatePollDates(String beginDe, String endDe) {
         if (beginDe != null && endDe != null) {
             if (beginDe.compareTo(endDe) > 0) {
-                throw new BusinessException("설문 시작일은 종료일보다 빨라야 합니다.", CommonErrorCode.INVALID_INPUT_VALUE);
+                // 만족도 조사 관리 화면도 이 검증을 지나므로 '투표'·'설문' 어느 쪽도 붙이지 않는다.
+                throw new BusinessException("시작일은 종료일보다 빨라야 합니다.", CommonErrorCode.INVALID_INPUT_VALUE);
             }
         }
     }

@@ -101,6 +101,16 @@ export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsS
                             </div>
                         </div>
 
+                        {/* [2026-09-26 DIP V8] '기타' 를 고르고 적은 답은 etcAnsCn 에만 있다 — 종전에는 어디에도 나오지 않았다. */}
+                        {response?.etcAnsCn ? (
+                            <div className="space-y-3">
+                                <Label className="text-xs font-bold text-muted-foreground leading-none">기타 답변</Label>
+                                <div className="p-6 rounded-lg bg-muted border-2 border-border leading-relaxed font-medium text-foreground whitespace-pre-wrap">
+                                    {response.etcAnsCn}
+                                </div>
+                            </div>
+                        ) : null}
+
                         <div className="flex justify-end gap-3 pt-6 border-t border-dashed">
                             <Button variant="outline" className="rounded-lg px-8" onClick={() => router.back()}>
                                 목록으로

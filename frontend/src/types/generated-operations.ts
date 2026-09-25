@@ -1467,7 +1467,7 @@ export const updateSurveyOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: SurveyInfoDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["responded"]],
   responseForbiddenPaths: [],
 });
 
@@ -1518,7 +1518,7 @@ export const updateSurvey_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: SurveyInfoDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["responded"]],
   responseForbiddenPaths: [],
 });
 
@@ -4079,7 +4079,7 @@ export const insertSurveyOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: SurveyInfoDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["responded"]],
   responseForbiddenPaths: [],
 });
 
@@ -4113,7 +4113,7 @@ export const insertSurvey_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: SurveyInfoDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["responded"]],
   responseForbiddenPaths: [],
 });
 

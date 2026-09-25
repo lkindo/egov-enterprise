@@ -1702,6 +1702,13 @@
         "mdfcnDt"
       ],
       "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.survey.dto.SurveyInfoDto",
+      "fields": [
+        "responded"
+      ],
+      "pack": "survey"
     }
   ],
   "calendarDateBindings": [

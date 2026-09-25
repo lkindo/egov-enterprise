@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -85,10 +85,14 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
   const surveyStatus = survey ? getSurveyStatus(survey, today) : null;
   const availability = survey ? describeSurveyAvailability(survey, today) : null;
   const isOpen = surveyStatus === 'active';
+  // [2026-09-26 DIP V8] 화면을 열 때 이미 응답했는지 안다 — 다 고르고 제출해야 비로소 거부되지 않게.
+  const alreadyResponded = survey?.responded === true;
+  const answered = isSubmitted || alreadyResponded;
+  const queryClient = useQueryClient();
 
   const questionList = useMemo(() => questions ?? [], [questions]);
   const answeredCount = Object.values(selected).filter((items) => items.length > 0).length;
-  const canSubmit = isOpen && answeredCount > 0 && !isSubmitting && !isSubmitted;
+  const canSubmit = isOpen && answeredCount > 0 && !isSubmitting && !answered;
 
   const handleSelectOption = (question: SurveyQuestion, articleSn: number) => {
     const maxChoice = question.maxChcCnt ?? 1;
@@ -145,6 +149,9 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
 
       await surveyAdminService.submitAnswers(srvySn, payload);
       setIsSubmitted(true);
+      // 제출한 응답이 바로 아래 통계에 반영되게 한다 — 종전에는 캐시된 통계가 제출 전 값으로 남았다.
+      void queryClient.invalidateQueries({ queryKey: ['survey-stats', srvySn] });
+      void queryClient.invalidateQueries({ queryKey: ['survey', srvySn] });
       toast('설문 응답을 제출했습니다.', 'success');
     } catch (submitException) {
       /*
@@ -204,6 +211,11 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
             {availability}
           </p>
         ) : null}
+        {alreadyResponded && !isSubmitted ? (
+          <p role="status" className="rounded-lg border border-border bg-muted/40 p-4 text-sm font-medium text-foreground">
+            이미 응답한 설문입니다. 설문에는 한 번만 응답할 수 있으며, 결과 통계는 아래에서 볼 수 있습니다.
+          </p>
+        ) : null}
 
         {isLoading ? (
           <p className="text-sm text-muted-foreground">문항을 불러오는 중입니다…</p>
@@ -233,7 +245,7 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
               return (
                 <li key={question.srvyQstnSn} className="rounded-lg border border-border p-6">
                   {/* 기간 밖·판정 불가면 입력을 잠근다 — 골라 놓고 제출에서 거부당하는 경험을 만들지 않는다. */}
-                  <fieldset disabled={isSubmitted || !isOpen}>
+                  <fieldset disabled={answered || !isOpen}>
                     <legend className="mb-4 text-sm font-bold text-foreground flex flex-wrap items-center gap-2">
                       <span>
                         {index + 1}. {question.qstnCn}
@@ -318,10 +330,10 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
               disabled={!canSubmit}
               aria-busy={isSubmitting || undefined}
             >
-              {isSubmitted ? '제출 완료' : isSubmitting ? '제출 중…' : '응답 제출'}
+              {isSubmitted ? '제출 완료' : alreadyResponded ? '응답 완료' : isSubmitting ? '제출 중…' : '응답 제출'}
             </Button>
             <span className="text-xs text-muted-foreground">
-              {isSubmitted
+              {answered
                 ? '이 설문에는 한 번만 응답할 수 있습니다.'
                 : `${questionList.length}개 문항 중 ${answeredCount}개 선택`}
             </span>

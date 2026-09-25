@@ -46,6 +46,19 @@ class SecurityUtilTest {
         SecurityContextHolder.getContext().setAuthentication(UsernamePasswordAuthenticationToken.unauthenticated(user, null));
         assertThat(SecurityUtil.getCurrentLoginId()).isEmpty();
     }
+    @Test void currentUserNameComesFromPrincipalAndBlankIsEmpty() {
+        // [DIP V8] 설문 응답자 이름의 출처. 이름이 비면 호출부가 로그인 ID 로 물러난다.
+        var named = CustomUserDetails.builder().userId("loginA").esntlId("ESNTL_loginA").userNm("  김응답 ").enabled(true).build();
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(named, null, named.getAuthorities()));
+        assertThat(SecurityUtil.getCurrentUserNm()).contains("김응답");
+
+        var blank = CustomUserDetails.builder().userId("loginB").esntlId("ESNTL_loginB").userNm(" ").enabled(true).build();
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(blank, null, blank.getAuthorities()));
+        assertThat(SecurityUtil.getCurrentUserNm()).isEmpty();
+
+        SecurityContextHolder.clearContext();
+        assertThat(SecurityUtil.getCurrentUserNm()).isEmpty();
+    }
     @Test void exactPermissionIsAllowed() { authenticate("loginA", "BOARD_READ"); assertThat(SecurityUtil.hasPermission("BOARD_READ")).isTrue(); }
     @Test void otherPermissionIsDenied() { authenticate("loginA", "BOARD_READ"); assertThat(SecurityUtil.hasPermission("BOARD_DELETE")).isFalse(); }
     @Test void noAuthenticationHasNoPermission() { assertThat(SecurityUtil.hasPermission("BOARD_READ")).isFalse(); }

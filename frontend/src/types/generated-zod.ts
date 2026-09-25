@@ -469,6 +469,7 @@ export const SurveyInfoDtoSchema = z.object({
   srvyTmpltSn: z.number().int(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  responded: z.boolean().optional().nullable(),
 });
 export type SurveyInfoDto = z.infer<typeof SurveyInfoDtoSchema>;
 
@@ -1583,6 +1584,7 @@ export const SurveyStatsDtoSchema = z.object({
   artclCn: z.string().optional(),
   count: z.number().int().optional(),
   percentage: z.number().optional(),
+  respondentCount: z.number().int().optional(),
 });
 export type SurveyStatsDto = z.infer<typeof SurveyStatsDtoSchema>;
 
@@ -5392,6 +5394,7 @@ export const SurveyInfoDtoResponseSchema = z.object({
   srvyTmpltSn: z.number().int(),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  responded: z.boolean().optional().nullable(),
 });
 
 export const SurveyTemplateDtoRequestSchema = z.object({
@@ -6940,6 +6943,7 @@ export const SurveyStatsDtoRequestSchema = z.object({
   artclCn: z.string().optional(),
   count: z.number().int().optional(),
   percentage: z.number().optional(),
+  respondentCount: z.number().int().optional(),
 });
 
 export const SurveyStatsDtoResponseSchema = z.object({
@@ -6950,6 +6954,7 @@ export const SurveyStatsDtoResponseSchema = z.object({
   artclCn: z.string().optional().nullable(),
   count: z.number().int().optional().nullable(),
   percentage: z.number().optional().nullable(),
+  respondentCount: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseListStatsDtoRequestSchema = z.object({

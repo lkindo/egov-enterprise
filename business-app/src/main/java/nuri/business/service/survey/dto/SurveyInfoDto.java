@@ -59,4 +59,9 @@ public class SurveyInfoDto {
 
     @Schema(description = "등록 일시")
     private LocalDateTime crtDt;
+
+    // [2026-09-26 DIP V8] 현재 사용자가 이미 응답했는지. 상세 조회에서만 채우고(목록은 null) 요청으로는 받지 않는다.
+    @Schema(description = "현재 사용자의 응답 여부(상세 조회에서만 채운다)", accessMode = Schema.AccessMode.READ_ONLY, nullable = true)
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
+    private Boolean responded;
 }

@@ -25,6 +25,8 @@ export interface OnlinePollManageVO {
  */
 export interface OnlinePollManageDetailVO extends OnlinePollManageVO {
   pollArticles?: OnlinePollItemVO[];
+  /** 현재 사용자가 이미 참여했는지(응답 전용, DEC-OPS-046). 참여 화면이 결과 모드로 연다(DIP V7). */
+  hasVoted?: boolean;
 }
 
 export interface OnlinePollItemVO {

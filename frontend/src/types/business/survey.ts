@@ -9,6 +9,8 @@ export interface Survey {
   srvyTmpltSn: number;
   frstRgtrId?: string;
   crtDt: string;
+  /** 현재 사용자가 이미 응답했는지(응답 전용, 상세 조회에서만 채운다). null 은 판정하지 않음(DIP V8). */
+  responded?: boolean | null;
 }
 
 export interface SurveyQuestion {
@@ -73,8 +75,10 @@ export interface SurveyResultStats {
   artclCn?: string;
   /** 해당 항목 응답 수 */
   count: number;
-  /** 문항 내 응답 비율(%) */
+  /** 응답자 중 이 항목을 고른 비율(%). 복수선택이면 문항 합계가 100 을 넘을 수 있다 */
   percentage: number;
+  /** 이 문항에 응답한 사람 수 — 비율의 분모(DIP V8) */
+  respondentCount?: number;
 }
 
 /**
