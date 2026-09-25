@@ -210,7 +210,10 @@ test('temporary fixtures prove malformed or unbounded unknown evidence turns red
   }).join('\n');
   assert.match(predatesReview, /reviewBy predates its evidence review/);
 
+  // 기한 상한은 미검토(unverified) truth 에만 걸린다. 첫 단계의 라우트가 검토돼 partial 이 되어도
+  // 이 검사가 발화하도록 상태를 fixture 안에서 명시한다.
   const unbounded = validateTemporaryFixture((fixture) => {
+    fixture.scenarios[0].journeySteps[0].truth.status = 'unverified';
     fixture.scenarios[0].journeySteps[0].truth.reviewBy = '2027-08-21';
   }).join('\n');
   assert.match(unbounded, /reviewBy is unbounded beyond 90 days/);
@@ -223,6 +226,7 @@ test('temporary fixtures prove malformed or unbounded unknown evidence turns red
     assert.match(validateTemporaryFixture(mutate).join('\n'), /reviewBy is not a real calendar date/);
   }
   const missingOwner = validateTemporaryFixture((fixture) => {
+    fixture.scenarios[0].journeySteps[0].truth.status = 'unverified';
     delete fixture.scenarios[0].journeySteps[0].truth.owner;
   }).join('\n');
   assert.match(missingOwner, /owner must be bounded and non-empty/);
