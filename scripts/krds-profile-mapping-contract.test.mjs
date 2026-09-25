@@ -51,8 +51,14 @@ test('KRDS review records preserve real dates, owners, review order and the 120-
   invalidCheck.checkedAt = '2026-02-30';
   assert.match(validate(invalidCheck).join('\n'), /upstream review requires real dates/);
 
+  // checkedAt 기준으로 계산한다 — 절대 날짜는 정기 검토로 checkedAt 이 옮겨 가면 120일 안으로 들어와 red 를 잃는다.
+  const daysAfterCheck = (days) => new Date(Date.parse(`${contract.checkedAt}T00:00:00Z`) + days * 86_400_000)
+    .toISOString().slice(0, 10);
+  const boundaryInterval = structuredClone(contract);
+  boundaryInterval.checkBy = daysAfterCheck(120);
+  assert.doesNotMatch(validate(boundaryInterval).join('\n'), /upstream review interval exceeds 120 days/);
   const widenedInterval = structuredClone(contract);
-  widenedInterval.checkBy = '2027-01-01';
+  widenedInterval.checkBy = daysAfterCheck(121);
   assert.match(validate(widenedInterval).join('\n'), /upstream review interval exceeds 120 days/);
 });
 

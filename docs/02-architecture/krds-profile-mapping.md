@@ -2,8 +2,8 @@
 
 - **Status:** Draft internal contract — 구현·기관 자격·release evidence 미완료
 - **Owner:** design-system + accessibility — 담당자 미지정
-- **Checked at:** 2026-08-21
-- **Refresh by:** 2026-11-21
+- **Checked at:** 2026-09-25
+- **Refresh by:** 2027-01-21
 - **Pinned guideline:** 디지털 정부서비스 UI/UX 가이드라인 2025.08
 - **Pinned component kit:** KRDS HTML Component Kit 1.1.0
 - **Machine-readable SSOT:** [`config/krds-profile-mapping.json`](../../config/krds-profile-mapping.json)
@@ -27,10 +27,10 @@
 | Source | Pin | 확인한 사실 | 사용 경계 |
 |---|---|---|---|
 | [KRDS 리소스 다운로드](https://www.krds.go.kr/html/site/outline/outline_05.html) | 가이드라인 `2025.08` | 변경 이력은 컴포넌트와 서비스 패턴 사용성 가이드라인이 수정됐다고 밝힌다. | PDF 직접 URL이 바뀌어도 공식 resource page와 버전을 기준점으로 유지한다. |
-| [KRDS 소개](https://www.krds.go.kr/html/site/utility/utility_01.html) | live page, 2026-08-21 확인 | 원칙·스타일·컴포넌트·기본 패턴·서비스 패턴·token/kit의 관계 | live 문서는 pinned PDF와 독립적으로 변할 수 있어 `checkedAt` 증거로만 사용한다. |
+| [KRDS 소개](https://www.krds.go.kr/html/site/utility/utility_01.html) | live page, 2026-09-25 확인 | 원칙·스타일·컴포넌트·기본 패턴·서비스 패턴·token/kit의 관계 | live 문서는 pinned PDF와 독립적으로 변할 수 있어 `checkedAt` 증거로만 사용한다. |
 | [KRDS HTML Component Kit](https://github.com/KRDS-uiux/krds-uiux/releases/tag/v1.1.0) | `1.1.0` | 공식 developer page가 안내하는 HTML kit release | package를 설치하거나 markup을 복사하기 전 release·asset·license diff를 다시 검토한다. |
 | [KRDS 저작권](https://www.krds.go.kr/html/eng/utility/utility_05.html) | 공공누리 제1유형 | 상업/비상업 이용과 수정 가능, 출처 표시 필요 | 파생 CSS·token·asset에도 attribution을 보존한다. |
-| [KRDS 디지털 포용](https://www.krds.go.kr/html/site/utility/utility_04.html) | live page, 2026-08-21 확인 | KWCAG 2.2, 전자정부 웹 품질관리, WCAG 2.1 매핑과 컴포넌트별 지침 | KRDS 스스로 적용만으로 완전한 접근성 충족을 판단할 수 없다고 경고한다. |
+| [KRDS 디지털 포용](https://www.krds.go.kr/html/site/utility/utility_04.html) | live page, 2026-09-25 확인 | KWCAG 2.2, 전자정부 웹 품질관리, WCAG 2.1 매핑과 컴포넌트별 지침 | KRDS 스스로 적용만으로 완전한 접근성 충족을 판단할 수 없다고 경고한다. |
 | [WCAG 2.2](https://www.w3.org/TR/WCAG22/) | W3C Recommendation | 프로젝트의 A·AA 목표 | KRDS live page의 WCAG 2.1 mapping에 더해 프로젝트가 독립적으로 검증한다. |
 
 공식 페이지, pinned guideline, component kit은 같은 버전 축이 아니다. 예를 들어 live component page는 kit release 이후 수정될 수 있다. 따라서 “KRDS 최신”이라는 단일 숫자를 만들지 않고 `guideline.version`, `documentation.checkedAt`, `componentKit.version`을 별도로 기록한다.
@@ -199,7 +199,7 @@ checkedAt: <date>
 
 다음 중 하나가 발생하면 `config/krds-profile-mapping.json`이 stale 상태가 되며 mapping을 다시 검토한다.
 
-1. 2026-11-21이 지나 scheduled review가 만료됨.
+1. `checkBy`(2027-01-21)가 지나 scheduled review가 만료됨. 항목별 `reviewBy`는 소유자별로 따로 만료된다.
 2. 공식 resource page가 2025.08보다 새 guideline을 게시함.
 3. HTML Component Kit latest release가 1.1.0에서 바뀜.
 4. profile 목적, identity 자격, 정부/기관 표기가 바뀜.
@@ -207,6 +207,14 @@ checkedAt: <date>
 6. adopted/adapted local evidence path가 삭제되거나 semantic contract가 바뀜.
 
 업데이트는 version 숫자만 바꾸지 않는다. 원칙·style·component·pattern·identity diff, 영향을 받는 local evidence, migration/rollback, license 변경을 함께 검토한다. stale `checkBy`는 governance-review가 보고하고(ADR-0018), contract test는 비공식 source, category 누락, owner 없는 deferred, 설명 없는 adaptation, premium identity 누출을 red로 만든다.
+
+### 10.1 검토 기록
+
+| 검토일 | 확인한 범위 | 결과 |
+|---|---|---|
+| 2026-09-25 | 상위 원문: 리소스 페이지의 가이드라인 목록, GitHub 컴포넌트 킷 릴리스, 소개·디지털 포용 live page | 최신 가이드라인은 2025.08, 킷 최신 릴리스는 1.1.0(2026-01-12)으로 그대로다. 디지털 포용 페이지의 KWCAG 2.2·WCAG 2.1·전자정부 웹 품질관리 매핑과 "KRDS 적용만으로 충족을 판단하기 어렵다"는 경고도 그대로다. 갱신 조건 2~5는 발생하지 않았다. |
+| 2026-09-25 | 로컬 근거: 29개 항목의 `localEvidence` 경로, 디자인 시스템 소유 deferred 3건의 사유 | 경로는 모두 존재한다. 타이포그래피 사유는 낡아 고쳤다 — 글꼴 변수는 2026-09-16부터 `<html>`에 선언되어 Pretendard가 적용되고, 남은 것은 OS·브라우저별 렌더링 검토(GAP-UIF-001)와 Pretendard GOV·프로필별 위계 평가다. 형태(두 프로필의 radius 토큰 동일)와 선명한 화면 모드(전용 모드 없음, forced-colors 안전 블록만 있고 수동 증거 없음)는 사실이 그대로다. 이 세 항목의 `reviewBy`와 `checkBy`를 2027-01-21로 옮겼다. |
+| 2026-09-25 | 옮기지 않은 항목 | 기관 자격·개인정보·제품 여정·콘텐츠 소유·자체 검증 실행을 기다리는 deferred 6건과 프로필 3건의 `reviewBy`(2026-11-21)는 그대로 두었다. 이 검토는 그 소유자 결정을 대신하지 않으며, 기한이 지나면 governance-review가 보고한다. disposition(adopted 4·adapted 15·deferred 9·notApplicable 1)과 claim 단계(target)는 바뀌지 않았다. |
 
 ## 11. 구현 순서
 

@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0",
   "status": "draft-internal-contract",
-  "checkedAt": "2026-08-21",
-  "checkBy": "2026-11-21",
+  "checkedAt": "2026-09-25",
+  "checkBy": "2027-01-21",
   "owner": "design-system-accessibility",
   "ownerAssignment": "unassigned",
   "sourcePolicy": {
@@ -18,7 +18,7 @@
       "changeSummary": "컴포넌트와 서비스 패턴 사용성 가이드라인 수정"
     },
     "documentation": {
-      "version": "live-unversioned-pages-checked-2026-08-21",
+      "version": "live-unversioned-pages-checked-2026-09-25",
       "url": "https://www.krds.go.kr/",
       "versionBoundary": "Live pages can change independently of the pinned 2025.08 PDF and are evidence only as checkedAt."
     },
@@ -168,9 +168,9 @@
       "disposition": "deferred",
       "applicableProfiles": ["krds-standard", "krds-aligned"],
       "upstream": "https://www.krds.go.kr/html/site/style/style_03.html",
-      "reason": "layout.tsx loads Pretendard Variable, Inter and Outfit through next/font on body, but the --font-sans alias is computed at the root, so browsers fall back to system fonts (GAP-UIF-001); Pretendard GOV and profile-specific hierarchy have not been evaluated.",
+      "reason": "layout.tsx loads Pretendard Variable, Inter and Outfit through next/font and, since 2026-09-16, declares their variables on <html> so the root --font-sans alias resolves to Pretendard; rendering differences across OS and browsers are still unreviewed (GAP-UIF-001). Pretendard GOV and profile-specific hierarchy have not been evaluated.",
       "owner": "design-system-accessibility",
-      "reviewBy": "2026-11-21"
+      "reviewBy": "2027-01-21"
     },
     {
       "id": "STYLE-SHAPE",
@@ -181,7 +181,7 @@
       "upstream": "https://www.krds.go.kr/html/site/style/style_04.html",
       "reason": "Radius tokens are identical in premium.css and krds-aligned.css, and the KRDS standard and extended (표준형·확장형) shape scales have not been separated by profile.",
       "owner": "design-system",
-      "reviewBy": "2026-11-21"
+      "reviewBy": "2027-01-21"
     },
     {
       "id": "STYLE-LAYOUT-REFLOW",
@@ -228,7 +228,7 @@
       "upstream": "https://www.krds.go.kr/html/site/style/style_09.html",
       "reason": "No color mode equivalent to the KRDS high-contrast mode exists; dark mode is not a substitute. OS forced-colors is a separate axis: globals.css has a safety block for shared surfaces, but manual forced-colors evidence is missing.",
       "owner": "design-system-accessibility",
-      "reviewBy": "2026-11-21"
+      "reviewBy": "2027-01-21"
     },
     {
       "id": "STYLE-TOKENS",
