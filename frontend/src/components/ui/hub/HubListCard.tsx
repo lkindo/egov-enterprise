@@ -11,7 +11,6 @@ interface HubListItem {
   title?: string;
   pstTtl?: string;
   date?: string;
-  frstRegisterPnttmStr?: string;
   isNew?: boolean;
 }
 
@@ -94,7 +93,7 @@ export function HubListCard({
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-muted-foreground/40 tracking-tight tabular-nums">
-                  {item.date || item.frstRegisterPnttmStr?.split(' ')[0] || '-'}
+                  {item.date || '-'}
                 </span>
                 <div className="w-1.5 h-1.5 rounded-full bg-border group-hover/item:bg-primary transition-colors" />
               </div>

@@ -6188,7 +6188,6 @@ export interface components {
              */
             useYn: "Y" | "N";
             frstRgtrId?: string;
-            frstRegisterNm?: string;
             crtDt?: string;
         };
         ReplaceGroups: {
@@ -7718,8 +7717,6 @@ export interface components {
              * @description 등록일시
              */
             crtDt?: string | null;
-            /** @description 등록자명 */
-            frstRegisterNm?: string | null;
             /**
              * Format: int32
              * @description 답글 단계
@@ -7729,6 +7726,10 @@ export interface components {
         DashboardResponse: {
             taskList: components["schemas"]["BoardDto"][];
             notiList: components["schemas"]["BoardDto"][];
+            /** Format: int64 */
+            taskListTotal: number | null;
+            /** Format: int64 */
+            notiListTotal: number | null;
             /** Format: int64 */
             pendingApprovalCount: number | null;
         };

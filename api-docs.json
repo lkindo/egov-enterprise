@@ -38407,9 +38407,6 @@
           "frstRgtrId": {
             "type": "string"
           },
-          "frstRegisterNm": {
-            "type": "string"
-          },
           "crtDt": {
             "type": "string"
           }
@@ -42375,13 +42372,6 @@
             "format": "date-time",
             "description": "등록일시"
           },
-          "frstRegisterNm": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "등록자명"
-          },
           "ansLv": {
             "type": [
               "integer",
@@ -42407,6 +42397,22 @@
               "$ref": "#/components/schemas/BoardDto"
             }
           },
+          "taskListTotal": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "notiListTotal": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
           "pendingApprovalCount": {
             "type": [
               "integer",
@@ -42418,8 +42424,10 @@
         },
         "required": [
           "notiList",
+          "notiListTotal",
           "pendingApprovalCount",
-          "taskList"
+          "taskList",
+          "taskListTotal"
         ]
       },
       "ApiResponsePageResponseCommunityDto": {

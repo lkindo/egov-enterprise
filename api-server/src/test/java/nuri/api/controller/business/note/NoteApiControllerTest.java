@@ -33,10 +33,11 @@ class NoteApiControllerTest extends ControllerTestSupport {
     @DisplayName("보안: 쪽지 API 전체는 인증된 사용자만 접근한다")
     void controllerRequiresAuthentication() {
         var permissions = java.util.Map.of("sendNote", "NOTE_SEND", "getReceivedNotes", "NOTE_READ",
-                "getSentNotes", "NOTE_READ", "getNote", "NOTE_READ", "deleteNote", "NOTE_DELETE");
+                "getSentNotes", "NOTE_READ", "getNote", "NOTE_READ", "deleteNote", "NOTE_DELETE",
+                "getUnreadReceivedCount", "NOTE_READ");
         var mapped = java.util.Arrays.stream(NoteApiController.class.getDeclaredMethods())
                 .filter(m -> java.util.Arrays.stream(m.getAnnotations()).anyMatch(a -> a.annotationType().getName().startsWith("org.springframework.web.bind"))).toList();
-        assertThat(mapped).hasSize(5);
+        assertThat(mapped).hasSize(6);
         for (var method : mapped) nuri.security.support.MethodPermissionContract.assertOperation(method, permissions.get(method.getName()), false);
     }
 
@@ -51,6 +52,17 @@ class NoteApiControllerTest extends ControllerTestSupport {
                         .param("searchWrd", "word"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.list[0].noteSn").value(1));
+    }
+
+    @Test
+    @WithMockCustomUser(username = "testuser", esntlId = "testuser")
+    @DisplayName("받은 쪽지 미읽음 수는 인증 주체 기준으로 센다 (DIP V3)")
+    void getUnreadReceivedCountTest() throws Exception {
+        given(noteService.countUnreadReceived("testuser")).willReturn(3L);
+
+        mockMvc.perform(get("/api/v1/notes/received/unread-count"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(3));
     }
 
     @Test

@@ -17,8 +17,8 @@
  *     허용한다. BaseSearchDto용 별칭이 섞이면 서로 다른 페이징 규약이 조용히 결합된다.
  *  4. 경로 변수 치환 — 상세(`/{bbsId}/posts/{pstSn}`)·통계(`/{bbsId}/stats`)는 식별자가 잘못
  *     끼워지면 **다른 자원을 읽거나 건드린다**.
- *  5. 응답 정규화 — getHotArticles/getActivities 는 레거시 필드(`nttId`/`nttSj`)를 신규
- *     필드(`pstSn`/`pstTtl`)로 접어 넣는다. 이 폴백이 사라지면 카드 제목이 전부 빈 문자열이 된다.
+ *  5. 응답 매핑 — getHotArticles/getActivities 는 서버 BoardDto 가 싣는 필드(`pstSn`·`pstTtl`·`userNm`·`crtDt`)만
+ *     읽는다. 모르는 값은 '-' 로 두고 지어내지 않는다(2026-09-26 DIP V2 — 레거시 폴백은 서버가 보내지 않는 필드였다).
  *
  * [검증 방식] HTTP 클라이언트(`@/lib/api/client`)를 모킹해 **실제로 나가는 URL 과 파라미터**를
  * 단언한다. 프로덕션 코드는 일절 수정하지 않는다.
@@ -265,25 +265,20 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
       );
     });
 
-    it('레거시 nttId·nttSj 를 pstSn·pstTtl 로 정규화하고 나머지 필드는 보존한다', async () => {
+    // [2026-09-26 DIP V2] 서버 BoardDto 가 싣는 필드만으로 만든다. 종전 표본은 서버가 보내지 않는 레거시
+    //   필드(nttId·nttSj)로 "레거시 정규화" 를 증명해, 화면이 없는 필드를 읽는 폴백이 필요한 것처럼 보였다.
+    it('인기글은 서버 필드(pstSn·pstTtl·userNm·crtDt)를 그대로 옮긴다', async () => {
       client.getRaw.mockResolvedValueOnce(successEnvelope({
         list: [
-          { nttId: 11, nttSj: '레거시 제목', inqCnt: 300, useYn: 'Y', userId: 'writer01' },
-          {
-            pstSn: 22,
-            pstTtl: '신규 제목',
-            nttId: 99,
-            nttSj: '무시되어야 함',
-            useYn: 'Y',
-            userId: 'writer02',
-          },
+          { pstSn: 22, pstTtl: '신규 제목', inqCnt: 300, userNm: '홍길동', crtDt: '2026-08-15T10:20:30', useYn: 'Y', userId: 'writer02' },
         ],
       }));
 
       const result = await knowledgeService.getHotArticles();
 
-      expect(result.list[0]).toMatchObject({ pstSn: 11, pstTtl: '레거시 제목', inqCnt: 300 });
-      expect(result.list[1]).toMatchObject({ pstSn: 22, pstTtl: '신규 제목' });
+      expect(result.list[0]).toMatchObject({
+        pstSn: 22, pstTtl: '신규 제목', inqCnt: 300, userNm: '홍길동', crtDt: '2026-08-15T10:20:30',
+      });
     });
 
     it('응답에 list 가 없으면 예외 대신 빈 배열을 돌려준다', async () => {
@@ -311,7 +306,7 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
       );
     });
 
-    it('피드 항목을 id·type·title·user·time·impact 규칙대로 변환한다', async () => {
+    it('피드 항목을 id·type·title·user·time 규칙대로 변환한다', async () => {
       client.getRaw.mockResolvedValueOnce(successEnvelope({
         list: [
           {
@@ -335,35 +330,28 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
         title: '표준 프레임워크 5.0 공지',
         user: '홍길동',
         time: '2026-08-15',
-        impact: '+50 Reach',
       });
     });
 
-    it('레거시 필드만 있는 항목도 nttId·nttSj·frstRgtrId 로 채워진다', async () => {
+    it('🚨 작성자 이름이 없으면 로그인 ID 로 채우지 않고 \'-\' 로 둔다 (DIP V2)', async () => {
       client.getRaw.mockResolvedValueOnce(successEnvelope({
-        list: [{
-          nttId: 77,
-          nttSj: '레거시 활동',
-          frstRgtrId: 'USER0002',
-          crtDt: '2026-01-02T00:00:00',
-          useYn: 'Y',
-          userId: 'writer02',
-        }],
+        list: [{ pstSn: 77, pstTtl: '작성자 이름 없는 글', crtDt: '2026-01-02T00:00:00', useYn: 'Y', userId: 'writer02' }],
       }));
 
       const [activity] = await knowledgeService.getActivities();
 
-      expect(activity).toMatchObject({ id: 77, title: '레거시 활동', user: 'USER0002', time: '2026-01-02' });
+      expect(activity).toMatchObject({ id: 77, title: '작성자 이름 없는 글', user: '-', time: '2026-01-02' });
     });
 
-    it('작성일이 없으면 "Just now", 조회수가 없으면 "+0 Reach" 로 채운다', async () => {
+    it('🚨 작성일이 없으면 \'방금\' 으로 지어내지 않고 \'-\' 로 둔다 (DIP V2)', async () => {
       client.getRaw.mockResolvedValueOnce(successEnvelope({
         list: [{ pstSn: 9, pstTtl: '방금 등록', useYn: 'Y', userId: 'writer03' }],
       }));
 
       const [activity] = await knowledgeService.getActivities();
 
-      expect(activity).toMatchObject({ time: 'Just now', impact: '+0 Reach' });
+      expect(activity).toMatchObject({ time: '-' });
+      expect(activity).not.toHaveProperty('impact');
     });
 
     it('응답에 list 가 없으면 예외 대신 빈 배열을 돌려준다', async () => {
