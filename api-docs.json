@@ -16460,16 +16460,6 @@
           "auth-api-controller"
         ],
         "operationId": "logout",
-        "parameters": [
-          {
-            "name": "refreshToken",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "OK",

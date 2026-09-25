@@ -22490,9 +22490,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                refreshToken?: string;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
