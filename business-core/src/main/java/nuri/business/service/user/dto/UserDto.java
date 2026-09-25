@@ -43,8 +43,10 @@ public record UserDto(
     //   상세 근거와 새 등록 엔드포인트 추가 시 주의사항은 UserValidationGroups 참조.
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotBlank(message = "비밀번호는 필수입니다", groups = UserValidationGroups.OnCreate.class)
-    @Size(min = 8, max = 100, message = "비밀번호는 8-100 자입니다", groups = UserValidationGroups.OnCreate.class)
-    @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다", groups = UserValidationGroups.OnCreate.class)
+    // [2026-09-25 DIP S5] 공용 규칙(PasswordPolicy). 종전 등록 규칙은 8~100자에 특수문자 7종만 받아
+    //   화면이 허용한 '#' 포함 비밀번호를 거부했다.
+    @Size(min = nuri.business.service.user.PasswordPolicy.MIN_LENGTH, max = nuri.business.service.user.PasswordPolicy.MAX_LENGTH, message = nuri.business.service.user.PasswordPolicy.LENGTH_MESSAGE, groups = UserValidationGroups.OnCreate.class)
+    @Pattern(regexp = nuri.business.service.user.PasswordPolicy.PATTERN, message = nuri.business.service.user.PasswordPolicy.PATTERN_MESSAGE, groups = UserValidationGroups.OnCreate.class)
     String pswd,
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)

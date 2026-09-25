@@ -22,8 +22,9 @@ public class UserSignupRequest {
     private String userId;
 
     @NotBlank(message = "비밀번호는 필수입니다")
-    @Size(min = 8, max = 20, message = "비밀번호는 8~20자여야 합니다")
-    @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다")
+    // [2026-09-25 DIP S5] 공용 규칙(PasswordPolicy) — 네 경로가 같은 길이·조합·특수문자 집합을 쓴다.
+    @Size(min = nuri.business.service.user.PasswordPolicy.MIN_LENGTH, max = nuri.business.service.user.PasswordPolicy.MAX_LENGTH, message = nuri.business.service.user.PasswordPolicy.LENGTH_MESSAGE)
+    @Pattern(regexp = nuri.business.service.user.PasswordPolicy.PATTERN, message = nuri.business.service.user.PasswordPolicy.PATTERN_MESSAGE)
     @Schema(description = "비밀번호", example = "password123!")
     private String pswd;
  

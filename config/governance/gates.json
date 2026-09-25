@@ -899,6 +899,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/RefreshTokenRotationConcurrencyIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-REFRESH-TOKEN-DIGEST",
+          "source": "api-server/src/test/java/nuri/api/schema/RefreshTokenDigestMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-REPRT-STATS-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/ReprtStatsBigintMigrationIntegrationTest.java"
         },

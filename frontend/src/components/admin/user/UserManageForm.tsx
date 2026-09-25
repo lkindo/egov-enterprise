@@ -254,7 +254,7 @@ export function UserManageForm({
                         "rounded-lg text-xs border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
-                      placeholder="영문·숫자·특수문자 포함 8자 이상"
+                      placeholder="영문·숫자·특수문자 포함 8~64자"
                     />
                   </FormControl>
                   <FormMessage className="text-xs font-bold text-destructive-emphasis mt-2 ml-2" />

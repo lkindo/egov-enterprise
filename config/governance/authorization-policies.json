@@ -1033,9 +1033,9 @@
       "method": "POST",
       "path": "/api/v1/auth/logout",
       "handler": "nuri.api.controller.foundation.auth.AuthApiController#logout",
-      "policy": "AUTHENTICATED",
+      "policy": "PUBLIC",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.auth.AuthApiController#logout')",
-      "routeGate": "EXPLICIT_AUTHENTICATED"
+      "routeGate": "PUBLIC_FILTER"
     },
     {
       "method": "POST",
@@ -4951,7 +4951,7 @@
       "method": "POST",
       "path": "/api/v1/auth/logout",
       "handler": "nuri.api.controller.foundation.auth.AuthApiController#logout",
-      "access": "AUTHENTICATED",
+      "access": "PUBLIC",
       "permission": null
     },
     {

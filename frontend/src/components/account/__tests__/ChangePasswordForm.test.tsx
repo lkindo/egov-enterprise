@@ -68,12 +68,21 @@ describe('ChangePasswordForm', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it('서버 계약 길이(8~20자)를 화면이 먼저 막는다', async () => {
+  it('서버 공용 규칙(8~64자)을 화면이 먼저 막는다', async () => {
     const { onSubmit } = renderForm();
     fill({ old: 'Current1!', next: 'short', confirm: 'short' });
     submit();
 
-    expect(await screen.findByText('새 비밀번호는 8~20자여야 합니다.')).toBeInTheDocument();
+    expect(await screen.findByText('비밀번호는 8~64자여야 합니다.')).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('길이만 맞고 영문·숫자·특수문자 조합이 없으면 막는다 — 종전에는 통과시켰다 (DIP S5)', async () => {
+    const { onSubmit } = renderForm();
+    fill({ old: 'Current1!', next: 'abcdefgh', confirm: 'abcdefgh' });
+    submit();
+
+    expect((await screen.findAllByText('비밀번호는 영문·숫자·특수문자를 각각 1자 이상 포함해야 하며 공백은 쓸 수 없습니다.')).length).toBeGreaterThan(0);
     expect(onSubmit).not.toHaveBeenCalled();
   });
 

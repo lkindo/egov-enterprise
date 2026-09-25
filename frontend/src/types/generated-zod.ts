@@ -70,7 +70,7 @@ export type UserSelfProfileUpdateRequest = z.infer<typeof UserSelfProfileUpdateR
 // ==========================================================================
 export const PasswordChangeRequestSchema = z.object({
   oldPassword: z.string().min(1),
-  newPassword: z.string().min(8).max(20),
+  newPassword: z.string().min(8).max(64).regex(new RegExp("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!-/:-@\\[-`{-~])[!-~]{8,64}$")),
 });
 export type PasswordChangeRequest = z.infer<typeof PasswordChangeRequestSchema>;
 
@@ -997,7 +997,7 @@ export type AddressBookUserDto = z.infer<typeof AddressBookUserDtoSchema>;
 // ==========================================================================
 export const UserSignupRequestSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9]+$")),
-  pswd: z.string().min(8).max(20).regex(new RegExp("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")),
+  pswd: z.string().min(8).max(64).regex(new RegExp("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!-/:-@\\[-`{-~])[!-~]{8,64}$")),
   userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   pswdHint: z.string().min(0).max(300).optional(),
   pswdCrans: z.string().min(0).max(300).optional(),
@@ -1243,7 +1243,7 @@ export const UserDtoSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9_]+$")),
   userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   esntlId: z.string().optional(),
-  pswd: z.string().min(8).max(100).regex(new RegExp("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")),
+  pswd: z.string().min(8).max(64).regex(new RegExp("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!-/:-@\\[-`{-~])[!-~]{8,64}$")),
   pswdHint: z.string().min(0).max(300).optional(),
   pswdCrans: z.string().min(0).max(100).optional(),
   role: z.string().min(0).max(50).optional(),
@@ -1434,7 +1434,7 @@ export type MemoInstructionRequest = z.infer<typeof MemoInstructionRequestSchema
 // AdminPasswordChangeRequest Schema
 // ==========================================================================
 export const AdminPasswordChangeRequestSchema = z.object({
-  newPassword: z.string().min(8).max(20),
+  newPassword: z.string().min(8).max(64).regex(new RegExp("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!-/:-@\\[-`{-~])[!-~]{8,64}$")),
 });
 export type AdminPasswordChangeRequest = z.infer<typeof AdminPasswordChangeRequestSchema>;
 
@@ -4788,12 +4788,12 @@ export const UserSelfProfileUpdateRequestResponseSchema = z.object({
 
 export const PasswordChangeRequestRequestSchema = z.object({
   oldPassword: z.string().min(1),
-  newPassword: z.string().min(8).max(20),
+  newPassword: z.string().min(8).max(64).regex(new RegExp("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!-/:-@\\[-`{-~])[!-~]{8,64}$")),
 });
 
 export const PasswordChangeRequestResponseSchema = z.object({
   oldPassword: z.string().min(1),
-  newPassword: z.string().min(8).max(20),
+  newPassword: z.string().min(8).max(64).regex(new RegExp("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!-/:-@\\[-`{-~])[!-~]{8,64}$")),
 });
 
 export const ScrapDtoRequestSchema = z.object({
@@ -6117,7 +6117,7 @@ export const AddressBookUserDtoResponseSchema = z.object({
 
 export const UserSignupRequestRequestSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9]+$")),
-  pswd: z.string().min(8).max(20).regex(new RegExp("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")),
+  pswd: z.string().min(8).max(64).regex(new RegExp("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!-/:-@\\[-`{-~])[!-~]{8,64}$")),
   userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   pswdHint: z.string().min(0).max(300).optional(),
   pswdCrans: z.string().min(0).max(300).optional(),
@@ -6125,7 +6125,7 @@ export const UserSignupRequestRequestSchema = z.object({
 
 export const UserSignupRequestResponseSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9]+$")),
-  pswd: z.string().min(8).max(20).regex(new RegExp("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")),
+  pswd: z.string().min(8).max(64).regex(new RegExp("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!-/:-@\\[-`{-~])[!-~]{8,64}$")),
   userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   pswdHint: z.string().min(0).max(300).optional().nullable(),
   pswdCrans: z.string().min(0).max(300).optional().nullable(),
@@ -6448,7 +6448,7 @@ export const UserDtoRequestSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9_]+$")),
   userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   esntlId: z.string().optional(),
-  pswd: z.string().min(8).max(100).regex(new RegExp("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")),
+  pswd: z.string().min(8).max(64).regex(new RegExp("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!-/:-@\\[-`{-~])[!-~]{8,64}$")),
   pswdHint: z.string().min(0).max(300).optional(),
   pswdCrans: z.string().min(0).max(100).optional(),
   role: z.string().min(0).max(50).optional(),
@@ -6723,11 +6723,11 @@ export const MemoInstructionRequestResponseSchema = z.object({
 });
 
 export const AdminPasswordChangeRequestRequestSchema = z.object({
-  newPassword: z.string().min(8).max(20),
+  newPassword: z.string().min(8).max(64).regex(new RegExp("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!-/:-@\\[-`{-~])[!-~]{8,64}$")),
 });
 
 export const AdminPasswordChangeRequestResponseSchema = z.object({
-  newPassword: z.string().min(8).max(20),
+  newPassword: z.string().min(8).max(64).regex(new RegExp("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!-/:-@\\[-`{-~])[!-~]{8,64}$")),
 });
 
 export const BulkStatusRequestRequestSchema = z.object({

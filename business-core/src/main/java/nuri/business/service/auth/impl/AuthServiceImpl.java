@@ -6,6 +6,7 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.foundation.security.service.CustomUserDetails;
+import nuri.business.domain.auth.RefreshTokenDigest;
 import nuri.business.service.auth.AuthService;
 import nuri.business.service.auth.LoginFailureReason;
 import nuri.business.service.auth.LoginRejectedException;
@@ -109,15 +110,18 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtTokenProvider.createAccessToken(esntlId, principal.getAuthorCode());
         String refreshToken = jwtTokenProvider.createRefreshToken(esntlId);
 
-        // Refresh Token 저장/갱신 (esntlId 로 키잉 — 기존 거동 유지)
+        // Refresh Token 저장/갱신 (esntlId 로 키잉 — 기존 거동 유지).
+        // [2026-09-25 DIP D7] 원문이 아니라 SHA-256 해시를 저장한다 — DB 를 읽을 수 있는 사람이 저장된 값으로
+        //   재발급할 수 없게 한다. 클라이언트에게는 원문을 쿠키로 준다.
+        String storedDigest = RefreshTokenDigest.of(refreshToken);
         nuri.business.domain.auth.RefreshToken rt = refreshTokenRepository.findById(esntlId)
                 .map(token -> {
-                    token.updateToken(refreshToken, java.time.Instant.now().plus(java.time.Duration.ofDays(7)));
+                    token.updateToken(storedDigest, java.time.Instant.now().plus(java.time.Duration.ofDays(7)));
                     return token;
                 })
                 .orElseGet(() -> nuri.business.domain.auth.RefreshToken.builder()
                         .userId(esntlId)
-                        .rfshTkn(refreshToken)
+                        .rfshTkn(storedDigest)
                         .exprtnDt(java.time.Instant.now().plus(java.time.Duration.ofDays(7)))
                         .build());
         refreshTokenRepository.save(rt);
@@ -166,14 +170,15 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(CommonErrorCode.INVALID_TOKEN);
         }
         
-        // DB에 저장된 토큰과 일치하는지 검증
-        nuri.business.domain.auth.RefreshToken storedToken = refreshTokenRepository.findByRfshTkn(refreshToken)
+        // DB에 저장된 토큰과 일치하는지 검증 — 저장값은 해시다(DIP D7).
+        String presentedDigest = RefreshTokenDigest.of(refreshToken);
+        nuri.business.domain.auth.RefreshToken storedToken = refreshTokenRepository.findByRfshTkn(presentedDigest)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.INVALID_TOKEN));
 
         if (storedToken.getExprtnDt().isBefore(java.time.Instant.now())) {
             // [2026-09-16] 별도 트랜잭션으로 지운다. 아래 예외가 RuntimeException 이라 같은 트랜잭션에서
             //   지우면 롤백이 삭제까지 되돌려, 종전에는 이 정리가 한 번도 커밋되지 않았다.
-            refreshTokenRepository.deleteIfCurrent(storedToken.getUserId(), refreshToken);
+            refreshTokenRepository.deleteIfCurrent(storedToken.getUserId(), presentedDigest);
             throw new BusinessException(CommonErrorCode.INVALID_TOKEN);
         }
 
@@ -187,6 +192,7 @@ public class AuthServiceImpl implements AuthService {
         //   정책 재검사까지 곧게 이어지게 한다 — 분기 뒤에 놓인 정책 검사는 정적 분석(CodeQL
         //   java/user-controlled-bypass)이 "요청이 검사를 건너뛸 수 있다" 로 읽는다(2026-09-25 PR #748).
         nuri.business.domain.auth.RefreshToken storedToken = requireLiveStoredToken(refreshToken);
+        String presentedDigest = RefreshTokenDigest.of(refreshToken);
         String userId = storedToken.getUserId();
         
         CustomUserDetails principal = requireCurrentPrincipal(
@@ -202,7 +208,7 @@ public class AuthServiceImpl implements AuthService {
                 throw policyError;
             }
             log.warn(">>> [Reissue] Rejected by login policy: {}", policyError.getErrorCode().getCode());
-            refreshTokenRepository.deleteIfCurrent(userId, refreshToken);
+            refreshTokenRepository.deleteIfCurrent(userId, presentedDigest);
             throw new BusinessException(CommonErrorCode.INVALID_TOKEN);
         }
 
@@ -223,8 +229,8 @@ public class AuthServiceImpl implements AuthService {
         //   종전처럼 읽어 온 엔티티를 덮어쓰면, 같은 토큰으로 동시에 재발급한 두 요청이 **둘 다 성공**하고
         //   마지막 저장만 남는다. 진 쪽은 서버가 이미 무효화한 리프레시 토큰을 받아 들고 있다가
         //   다음 재발급에서 이유 없이 로그아웃된다 — 실패가 최대 1시간 뒤에 드러나는 조용한 결함이다.
-        if (refreshTokenRepository.rotateIfCurrent(
-                userId, refreshToken, rotatedRefreshToken, java.time.LocalDateTime.now()) != 1) {
+        if (refreshTokenRepository.rotateIfCurrent(userId, presentedDigest,
+                RefreshTokenDigest.of(rotatedRefreshToken), java.time.LocalDateTime.now()) != 1) {
             throw new BusinessException(CommonErrorCode.INVALID_TOKEN);
         }
 
@@ -242,15 +248,26 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public void logout(String userId) {
+    public void logout(String userId, String refreshToken) {
         try {
-            log.info(">>> [Logout] Deleting refresh token for user: {}", userId);
-            refreshTokenRepository.findById(userId).ifPresent(token -> {
-                refreshTokenRepository.delete(token);
-                refreshTokenRepository.flush();
-            });
+            if (userId != null) {
+                log.info(">>> [Logout] Deleting refresh token for user: {}", userId);
+                refreshTokenRepository.findById(userId).ifPresent(this::deleteNow);
+                return;
+            }
+            // [2026-09-25 DIP D7] 액세스 토큰이 만료돼 신원이 없어도, 쿠키로 제시된 리프레시 토큰의 행은 지운다.
+            //   종전에는 인증된 요청만 받아서, 만료 뒤 누른 로그아웃은 브라우저 쿠키만 지우고 서버 세션은 남겼다 —
+            //   그 토큰을 가진 다른 사람은 최대 7일 동안 계속 재발급할 수 있었다. 원문을 가진 것이 곧 증명이다.
+            if (refreshToken != null && !refreshToken.isBlank()) {
+                refreshTokenRepository.findByRfshTkn(RefreshTokenDigest.of(refreshToken)).ifPresent(this::deleteNow);
+            }
         } catch (Exception e) {
-            log.warn(">>> [Logout] RefreshToken already deleted or error occurred for user: {}. Message: {}", userId, e.getMessage());
+            log.warn(">>> [Logout] RefreshToken already deleted or error occurred. Type: {}", e.getClass().getSimpleName());
         }
+    }
+
+    private void deleteNow(nuri.business.domain.auth.RefreshToken token) {
+        refreshTokenRepository.delete(token);
+        refreshTokenRepository.flush();
     }
 }

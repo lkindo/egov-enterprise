@@ -98,10 +98,14 @@ class RefreshTokenRotationConcurrencyIntegrationTest {
 
         String stored = jdbc.queryForObject(
                 "SELECT rfsh_tkn FROM tb_auth_rfsh_tk WHERE user_id=?", String.class, ESNTL_ID);
-        // 핵심 불변식 — 클라이언트가 받아 간 토큰은 **저장돼 있는 바로 그 값**이어야 한다.
+        // 핵심 불변식 — 클라이언트가 받아 간 토큰은 **저장돼 있는 바로 그 값**이어야 한다(저장은 해시다, DIP D7).
         // 종전 구현에서는 두 요청이 각각 rotated-first·rotated-second 를 받아 갔고 DB 에는 하나만 남았다.
-        assertThat(outcomes).containsExactlyInAnyOrder(stored, "rejected");
-        assertThat(stored).isIn("rotated-first", "rotated-second");
+        assertThat(outcomes).contains("rejected").hasSize(2);
+        String issued = outcomes.stream().filter(outcome -> !"rejected".equals(outcome)).findFirst().orElseThrow();
+        assertThat(issued).isIn("rotated-first", "rotated-second");
+        assertThat(stored).isEqualTo(nuri.business.domain.auth.RefreshTokenDigest.of(issued));
+        // DB 에는 원문이 남지 않는다.
+        assertThat(stored).isNotIn("rotated-first", "rotated-second").matches("[0-9a-f]{64}");
         // 회전이 절대 만료를 연장하지 않는다(슬라이딩 세션 금지). 회전 질의의 SET 절에 만료가 없음을 실 DB 로 본다.
         assertThat(jdbc.queryForObject(
                         "SELECT exprtn_dt FROM tb_auth_rfsh_tk WHERE user_id=?", Timestamp.class, ESNTL_ID)
@@ -191,6 +195,6 @@ class RefreshTokenRotationConcurrencyIntegrationTest {
     private void store(String token, Instant expiry) {
         new TransactionTemplate(transactionManager).executeWithoutResult(status ->
                 refreshTokenRepository.save(RefreshToken.builder()
-                        .userId(ESNTL_ID).rfshTkn(token).exprtnDt(expiry).build()));
+                        .userId(ESNTL_ID).rfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of(token)).exprtnDt(expiry).build()));
     }
 }
