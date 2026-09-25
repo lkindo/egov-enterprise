@@ -6,6 +6,7 @@ import nuri.business.domain.system.content.community.QCommunity;
 import nuri.business.domain.system.content.community.CommunityMemberStatus;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
+import nuri.business.security.authorization.PermissionCodes;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.system.content.community.dto.CommunityDto;
 import nuri.business.service.system.content.community.dto.CommunityMemberDto;
@@ -262,6 +263,40 @@ public class CommunityService {
                     "가입 신청 상태가 아니어서 반려할 수 없습니다. 회원 탈퇴 처리는 지원하지 않습니다.");
         }
         communityUserRepository.delete(member);
+    }
+
+    /**
+     * 커뮤니티 회원 탈퇴 — 승인된 회원(P)을 탈퇴 상태(W, useYn='N')로 전이한다.
+     * 본인 탈퇴(esntlId 일치) 또는 관리자 권한(COMMUNITY_WITHDRAW)이 필요하다.
+     */
+    @Transactional
+    public void withdrawMember(Long cmntySn, String userId) {
+        SecurityUtil.assertOwnerOrPermissionByEsntlId(userId, "COMMUNITY_UPDATE_ALL");
+        CommunityUser member = requireMembership(cmntySn, userId);
+        if (member.isWithdrawn()) {
+            throw new BusinessException(CommonErrorCode.INVALID_STATE, "이미 탈퇴 처리된 회원입니다.");
+        }
+        if (!member.isApproved()) {
+            throw new BusinessException(CommonErrorCode.INVALID_STATE, "승인된 회원만 탈퇴할 수 있습니다.");
+        }
+        member.withdraw();
+    }
+
+    /**
+     * 커뮤니티 운영자 위임/해제 — 관리자 권한(COMMUNITY_UPDATE_ALL)이 필요하며 승인된 회원만 가능하다.
+     */
+    @Transactional
+    public void delegateManager(Long cmntySn, String userId, boolean isManager) {
+        SecurityUtil.assertPermission("COMMUNITY_UPDATE_ALL");
+        CommunityUser member = requireMembership(cmntySn, userId);
+        if (!member.isApproved()) {
+            throw new BusinessException(CommonErrorCode.INVALID_STATE, "승인된 회원에게만 운영자 권한을 변경할 수 있습니다.");
+        }
+        if (isManager) {
+            member.grantAdmin();
+        } else {
+            member.revokeAdmin();
+        }
     }
 
     /** 현재 사용자({@code userId} = esntlId)의 멤버십 상태. 행이 없으면 NONE. */

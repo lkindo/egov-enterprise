@@ -6,6 +6,7 @@ import HpcmClient from '../HpcmClient';
 
 const mocks = vi.hoisted(() => ({
   list: vi.fn(),
+  get: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
   remove: vi.fn(),
@@ -32,6 +33,7 @@ vi.mock('next/dynamic', () => ({
 vi.mock('@/services/foundation/system/HpcmAdminService', () => ({
   hpcmAdminService: {
     getHpcmList: (...args: unknown[]) => mocks.list(...args),
+    getHpcm: (...args: unknown[]) => mocks.get(...args),
     createHpcm: (...args: unknown[]) => mocks.create(...args),
     updateHpcm: (...args: unknown[]) => mocks.update(...args),
     deleteHpcm: (...args: unknown[]) => mocks.remove(...args),
@@ -112,6 +114,7 @@ describe('HpcmClient validation behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.list.mockResolvedValue({ list: [], total: 0, totalPage: 1 });
+    mocks.get.mockResolvedValue(ROW);
     mocks.create.mockResolvedValue(1);
     mocks.confirm.mockResolvedValue(true);
   });

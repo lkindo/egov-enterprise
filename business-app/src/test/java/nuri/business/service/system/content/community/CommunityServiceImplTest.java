@@ -529,4 +529,64 @@ class CommunityServiceImplTest {
         // 폐쇄된(useYn='N') 커뮤니티의 회원도 관리자는 본다 — 정리·복구 경로 보존.
         verify(communityUserRepository, never()).findByIdCmntySn(any(), any());
     }
+
+    @Test
+    @DisplayName("회원 탈퇴 — 승인된 회원(P)을 탈퇴 상태(W)로 전이하고 useYn='N'으로 설정한다")
+    void withdrawMember_movesApprovedToWithdrawn() {
+        authenticateWithRole("ROLE_ADMIN");
+        var member = membership(101L, "user1", "P");
+        given(communityUserRepository.findById(any())).willReturn(Optional.of(member));
+
+        communityService.withdrawMember(101L, "user1");
+
+        assertThat(member.getMbrSttsCd()).isEqualTo("W");
+        assertThat(member.isWithdrawn()).isTrue();
+        assertThat(member.getUseYn()).isEqualTo("N");
+        assertThat(member.getWhdwlYmd()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴 — 승인된 회원이 아니거나 이미 탈퇴한 상태면 400(INVALID_STATE) 예외가 발생한다")
+    void withdrawMember_rejectsInvalidState() {
+        authenticateWithRole("ROLE_ADMIN");
+        var requestedMember = membership(101L, "user1", "A");
+        given(communityUserRepository.findById(any())).willReturn(Optional.of(requestedMember));
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                nuri.foundation.core.exception.BusinessException.class,
+                () -> communityService.withdrawMember(101L, "user1"));
+
+        var withdrawnMember = membership(101L, "user2", "W");
+        given(communityUserRepository.findById(any())).willReturn(Optional.of(withdrawnMember));
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                nuri.foundation.core.exception.BusinessException.class,
+                () -> communityService.withdrawMember(101L, "user2"));
+    }
+
+    @Test
+    @DisplayName("운영자 위임 — 승인된 회원(P)의 mngrYn을 'Y' 또는 'N'으로 변경한다")
+    void delegateManager_grantsAndRevokesAdmin() {
+        authenticateWithRole("ROLE_ADMIN");
+        var member = membership(101L, "user1", "P");
+        given(communityUserRepository.findById(any())).willReturn(Optional.of(member));
+
+        communityService.delegateManager(101L, "user1", true);
+        assertThat(member.getMngrYn()).isEqualTo("Y");
+
+        communityService.delegateManager(101L, "user1", false);
+        assertThat(member.getMngrYn()).isEqualTo("N");
+    }
+
+    @Test
+    @DisplayName("운영자 위임 — 승인된 회원이 아니면 400(INVALID_STATE) 예외가 발생한다")
+    void delegateManager_rejectsNonApprovedMember() {
+        authenticateWithRole("ROLE_ADMIN");
+        var member = membership(101L, "user1", "A");
+        given(communityUserRepository.findById(any())).willReturn(Optional.of(member));
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                nuri.foundation.core.exception.BusinessException.class,
+                () -> communityService.delegateManager(101L, "user1", true));
+    }
 }

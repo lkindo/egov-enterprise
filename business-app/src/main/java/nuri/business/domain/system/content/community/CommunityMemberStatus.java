@@ -15,7 +15,9 @@ public enum CommunityMemberStatus {
     /** 가입 신청 — 관리자 승인 대기. */
     REQUESTED("A"),
     /** 승인된 회원. */
-    APPROVED("P");
+    APPROVED("P"),
+    /** 탈퇴한 회원. */
+    WITHDRAWN("W");
 
     private final String code;
 

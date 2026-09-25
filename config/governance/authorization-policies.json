@@ -2033,6 +2033,18 @@
       ]
     },
     {
+      "target": "CommunityService#delegateManager",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "COMMUNITY_UPDATE_ALL"
+        }
+      ]
+    },
+    {
       "target": "CommunityService#getMembers",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -2053,6 +2065,18 @@
           "count": 1,
           "identityAxis": "PERMISSION",
           "permission": "COMMUNITY_REJECT"
+        }
+      ]
+    },
+    {
+      "target": "CommunityService#withdrawMember",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrPermissionByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID",
+          "permission": "COMMUNITY_UPDATE_ALL"
         }
       ]
     },
