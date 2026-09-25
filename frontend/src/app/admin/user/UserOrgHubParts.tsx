@@ -12,7 +12,7 @@
  *     두지 않는다. 그래야 data-density 축(DEC-OPS-015)이 이 화면을 그대로 관통한다.
  *   - 색은 시맨틱 토큰만 쓴다. ⚠ `--warning-emphasis` 는 이 저장소에 **정의돼 있지 않다** —
  *     `text-warning-emphasis` 를 쓰면 Tailwind 가 클래스를 만들지 않아 색이 조용히 사라진다
- *     (NetworkAdminClient.tsx 가 같은 함정을 주석으로 기록해 두었다). 경고 상태는 배경 틴트로 말한다.
+ *     (퇴역한 네트워크 관리 화면이 처음 기록한 함정이다). 경고 상태는 배경 틴트로 말한다.
  *   - 반복 모션·회전·워터마크를 두지 않는다(카탈로그 §3 금지 목록).
  */
 import React, { useId } from 'react';
@@ -173,7 +173,7 @@ export function UserOrgMasterSection({
  *
  * ⚠ 세 상태 모두 **배경 틴트가 상태를 말하고 글자는 전경 토큰으로 읽는다.** 이유가 둘이다.
  *   - `--warning-emphasis` 는 이 저장소에 정의돼 있지 않아 `text-warning-emphasis` 는 Tailwind 가
- *     클래스를 만들지 않고 색이 조용히 사라진다(NetworkAdminClient 가 기록한 함정).
+ *     클래스를 만들지 않고 색이 조용히 사라진다(퇴역한 네트워크 관리 화면이 기록한 함정).
  *   - `text-success-emphasis` 는 정의돼 있지만 premium 라이트에서 `--success` 와 **같은 값**이라
  *     (premium.css:54,57) 자기 색 10% 틴트 위에서 대비가 4.04:1 로 AA(4.5:1) 미만이 된다.
  *     불투명 카드 위 4.62:1 만 보는 `status-token-contrast` 계약이 그 축을 보지 못한다.

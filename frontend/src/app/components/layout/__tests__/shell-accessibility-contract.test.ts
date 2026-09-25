@@ -312,7 +312,6 @@ describe('app shell accessibility source contract', () => {
       ['admin', 'system', 'logs', 'web', 'page.tsx'],
       ['admin', 'system', 'menus', 'by-authority', 'page.tsx'],
       ['admin', 'system', 'menus', 'page.tsx'],
-      ['admin', 'system', 'network', 'page.tsx'],
       ['admin', 'system', 'programs', 'page.tsx'],
       ['admin', 'user', 'absences', 'page.tsx'],
       ['admin', 'user', 'departments', 'page.tsx'],

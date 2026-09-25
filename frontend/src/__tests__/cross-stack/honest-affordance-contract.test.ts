@@ -721,7 +721,6 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
   it('없는 시스템 이름과 의사코드 라벨을 화면에 쓰지 않는다', () => {
     const cases: Array<[string, string[]]> = [
       ['app/admin/security/authority/page.tsx', ['Security Fabric']],
-      ['app/components/ui/topology-map.tsx', ['Sentinel Topology Stream']],
       ['app/admin/system/monitoring/MonitoringHubClient.tsx', ['Initializing Topology Stream']],
       ['app/admin/security/login-policy/LoginPolicyAdminClient.tsx', ['ENFORCE_MFA_AUTHENTICATION']],
       ['app/approvals/draft/ApprovalDraftHubClient.tsx', [

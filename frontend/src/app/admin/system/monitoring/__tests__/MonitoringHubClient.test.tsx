@@ -384,16 +384,20 @@ describe('MonitoringHubClient', () => {
     expect(await screen.findByText(/점검을 실행하지 못했습니다/)).toBeInTheDocument();
   });
 
-  it('selects both harness catalog item types and renders topology', async () => {
-    const first = renderHub('tab=harness');
+  it('selects both harness catalog item types', async () => {
+    renderHub('tab=harness');
     fireEvent.click(screen.getByRole('button', { name: /Deep Context Mapper 엔진 상세 보기/ }));
     expect(screen.getByText('스킬 상세 Deep Context Mapper')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /QueryCountGuardrailIntegrationTest.*계측 상세 보기/ }));
     expect(screen.getByText(/테스트 상세 QueryCountGuardrailIntegrationTest/)).toBeInTheDocument();
-    first.unmount();
+  });
 
+  // [DEC-OPS-129] 인프라 구성도 탭은 계측 소스 없이 늘 빈 화면이라 네트워크 모니터링과 함께 걷었다.
+  //   예전 주소는 없는 탭을 그리지 않고 기본 탭으로 떨어진다.
+  it('퇴역한 인프라 구성도 탭 주소는 기본 탭으로 떨어지고 탭 목록에 없다', () => {
     renderHub('tab=topology');
-    expect(screen.getByTestId('dynamic-panel')).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: /인프라 구성도/ })).toBeNull();
+    expect(screen.getByRole('tab', { name: /보안 감사 로그/ })).toHaveAttribute('aria-selected', 'true');
   });
 
   /*

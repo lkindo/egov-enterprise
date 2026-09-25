@@ -146,10 +146,6 @@ export const PERMISSION_CODES = [
   "MENU_DELETE",
   "MENU_READ",
   "MENU_UPDATE",
-  "NETWORK_CREATE",
-  "NETWORK_DELETE",
-  "NETWORK_READ",
-  "NETWORK_UPDATE",
   "NOTE_DELETE",
   "NOTE_READ",
   "NOTE_SEND",
@@ -250,7 +246,7 @@ export const PERMISSION_CODES = [
   "WORK_RPT_UPDATE_ALL"
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
-export const PERMISSION_CATALOG_VERSION = "88d085a55ecf54e1319117b57301dc69dd8611131b3033de5fc554fc9f29af3c";
+export const PERMISSION_CATALOG_VERSION = "2018e2ac0b35aff500980778235a9f04da0b0ab77b40a882f18d7d54fa94153f";
 export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]>> = {
   "/": [],
   "/admin": [
@@ -475,9 +471,6 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
     "SYS_LOG_READ",
     "WEB_LOG_READ",
     "LOGIN_LOG_READ"
-  ],
-  "/admin/system/network": [
-    "NETWORK_READ"
   ],
   "/admin/system/policies": [
     "POLICY_READ"

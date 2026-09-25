@@ -102,7 +102,8 @@ class PageableConstructionLinterTest {
             "@Valid\\s+@ModelAttribute(?:\\s*\\([^)]*\\))?\\s+"
                     + "(?:nuri\\.business\\.domain\\.common\\.)?BaseSearchDto\\b");
 
-    private static final int EXPECTED_BASE_SEARCH_MODEL_ATTRIBUTES = 28;
+    // 2026-09-25 DEC-OPS-129: 28 -> 27. 퇴역한 네트워크 모니터링 조회(getStatus)가 쓰던 바인딩이 함께 사라졌다.
+    private static final int EXPECTED_BASE_SEARCH_MODEL_ATTRIBUTES = 27;
 
     @Test
     @DisplayName("red proof: import/FQN/static-import PageRequest 우회와 직접 getter 를 모두 탐지한다")

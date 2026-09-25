@@ -114,7 +114,8 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   //   GET /api/v1/communities/{cmntySn}/boards. findByCmntySnAndUseYn 의 첫 소비자이며
   //   승인된 회원·관리자만 목록을 받는다(BoardMasterService#assertCommunityMember).
   // Approval detail and revision submission add two operations to the documented surface.
-  assert.equal(operations.length, 387);
+  // 2026-09-25 DEC-OPS-129: 387 -> 383. 네트워크 모니터링 API 4개(조회 1·501 쓰기 3)를 걷었다.
+  assert.equal(operations.length, 383);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

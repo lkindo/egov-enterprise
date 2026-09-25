@@ -197,7 +197,7 @@ source가 여럿이라는 사실은 live 메뉴 중복의 증거가 아니다. �
 | 사용자 관리자 | 사용자를 찾고 상태·조직·권한을 안전하게 변경 | `/admin/user/manage`, `/admin/user/departments`, `/admin/user/absences`, `/admin/security/*` | admin-system | 사람 관리와 RBAC가 여러 group에 분산됐다. 고위험 mutation은 대상·결과·rollback task로 시험한다. |
 | 콘텐츠/참여 관리자 | 게시판·템플릿·설문을 만들고 공개 범위 확인 | `/admin/community/boards/master`, `/admin/community/boards/maker`, `/admin/community/templates`, `/admin/survey/hub`, `/admin/survey/manage/*` | admin-system | hub alias와 child route의 label·현재 위치·back contract를 검증한다. |
 | 감사·개인정보 담당 | synthetic 사건을 최소 조건으로 찾아 근거 확인 | `/admin/system/logs`, `/admin/system/logs/{system,login,user,web,privacy}` | admin-system | 현재 주소창에는 page와 category만 동기화하고 검색어는 memory에 둔다. binary GET 다운로드의 `searchKeyword` 전달과 외부 로그 보존은 별도 경계로 검토한다. |
-| 운영 담당 | 시스템 상태·정책·네트워크 신호의 출처와 미가용 상태 판단 | `/admin/system/monitoring/hub`, `/admin/system/network`, `/admin/system/policies`, `/admin/stats/*` | admin-system | network route는 unavailable이며 운영 계측 source가 없다. 가짜 정상 수치를 IA 우선순위에 쓰지 않는다. |
+| 운영 담당 | 시스템 상태·정책의 출처와 미가용 상태 판단 | `/admin/system/monitoring/hub`, `/admin/system/policies`, `/admin/stats/*` | admin-system | 계측 source가 없던 네트워크 관리 화면과 인프라 구성도 탭은 DEC-OPS-129로 퇴역했다. 가짜 정상 수치를 IA 우선순위에 쓰지 않는다. |
 | 업무 설계 관리자 | 승인/워크플로 정의와 실행 상태 관리 | `/admin/workflow`, `/admin/sanctn/forms` | admin-system | 현재 demo/partial capability가 섞여 있다. `관리 센터` 정식 메뉴가 아니라 demo 격리 후보로 연구한다. |
 | framework adopter | profile 선택·생성·검증·운영 인수 | 제품 UI route 없음; 문서·CLI·manifest | 해당 없음 | end-user sitemap에 억지로 넣지 않는다. adopter IA는 docs/CLI 여정으로 별도 연구한다. |
 

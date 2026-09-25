@@ -48,7 +48,9 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
 //   한 행에 두 번 찍었다(64px 타일 + 눈 아이콘). 카테고리 탭은 navigation 슬롯, 검색·정렬은
 //   조회조건, 총계는 결과 툴바가 소유한다.
 //   ⚠ DIRECT_ONLY 는 불변이다 — 이 화면은 종전에 표를 쓰지 않아 직접 조립으로 세지 않았다.
-const ADOPTERS = 43;
+// [2026-09-25 DEC-OPS-129] 43 -> 42: /admin/system/network 를 걷었다. 저장 테이블·계측 소스가 없어 조회는
+//   **항상 빈 목록**, 쓰기는 501 이었고 메뉴·링크 어디에도 없었다. 되돌리기가 아니라 표면 제거이며 사용자 결정에 따른다.
+const ADOPTERS = 42;
 // [하향 2026-09-20] 3 -> 2: 로그인 정책 관리가 StandardDataTable 직접 조립에서 A1 셸 경유로 옮겨갔다.
 const DIRECT_ONLY = 2;
 

@@ -181,12 +181,15 @@ test('proxy shell access is measured separately from unresolved capability roles
   // [2026-09-08 PD-MYPG-001] 70 -> 69. /admin/workspace/my-page 를 걷었다 — tb_indv_pg_conts 는 시드도
   //   생성 경로도 없고 무엇보다 **그 값을 읽는 화면이 없다**(대시보드 위젯 SPI 구현 2개가 이 값을
   //   쓰지 않는다). 켜고 꺼도 어디에도 나타나지 않아 소비처를 먼저 정하기로 했다(사용자 결정).
-  assert.equal(sourceShellCounts['admin-system']?.length, 68);
+  // [2026-09-25 DEC-OPS-129] 68 -> 67. /admin/system/network 를 걷었다 — 저장 테이블·계측 소스가 없어 조회는
+  //   **항상 빈 목록**, 쓰기는 501 이었고 메뉴·링크 어디에도 없었다. 라우트·API 4본·권한 코드 4개를 함께 제거했다.
+  assert.equal(sourceShellCounts['admin-system']?.length, 67);
   assert.equal(effectiveShellCounts.public?.length, 1);
   // [2026-09-06 DEC-OPS-040] 48/71 → 49/70. /admin/system/ism 이 /approvals(인증 사용자 영역)로의 page-redirect 별칭이 되면서
   //   실효 접근이 admin-system 에서 authenticated 로 옮겨 갔다(source 는 그대로 admin-system). 인가 완화가 아니라 정본의 게이트를 따른 결과다.
   assert.equal(effectiveShellCounts.authenticated?.length, 49);
-  assert.equal(effectiveShellCounts['admin-system']?.length, 69);
+  // [2026-09-25 DEC-OPS-129] 69 -> 68. 걷은 /admin/system/network 는 실효 접근도 admin-system 이었다.
+  assert.equal(effectiveShellCounts['admin-system']?.length, 68);
   // [2026-08-27] 18 → 17. /admin/security/login-policy 의 config redirect 를 제거해 그 route 가
   //   별칭이 아니라 정본 page 가 됐다(메뉴 9020120 의 modern_route 가 이 경로를 선언한다).
   //   별칭이 **줄어드는** 방향이라 은폐가 아니다 — 리다이렉트가 삼키던 화면을 되살린 결과다.
@@ -282,19 +285,6 @@ test('menu census scope cannot be promoted to role-aware exposure without eviden
 
   const errors = validateRouteCapabilities(manifest, repository).errors.join('\n');
   assert.match(errors, /tb_menu_info-only structural scope/);
-});
-
-test('unavailable network monitoring never presents canonical-empty data as stored inventory', () => {
-  const source = fs.readFileSync(
-    path.join(ROOT, 'frontend', 'src', 'app', 'admin', 'system', 'network', 'NetworkAdminClient.tsx'),
-    'utf8',
-  );
-
-  assert.match(source, /계측·저장 원천이 연결되지 않아 현재 조회 결과는 항상 비어 있습니다/);
-  assert.doesNotMatch(source, /아래 목록은 실제 저장된 데이터/);
-  assert.doesNotMatch(source, /정상 운영|운영 중지/);
-  assert.match(source, /사용 설정|사용 안 함/);
-  assert.doesNotMatch(source, /<HubMetric(?:Grid|Card)/);
 });
 
 test('global command shortcuts do not advertise demo or misleading operational capabilities', () => {

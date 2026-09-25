@@ -27,16 +27,16 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "3fed081af6002999412105bcaac04a51a78ec48dc4852b0304c6f4ab11bc104e"
+    "inventoryHash": "304b2226509d5546928f8d00f9f68546af1294f8156e80a0855fe5580b844e36"
   },
   "summary": {
-    "sourceFileCount": 552,
-    "records": 390,
-    "syntaxOccurrences": 459,
-    "ambiguousRecords": 344,
-    "unverifiedRecords": 390,
+    "sourceFileCount": 544,
+    "records": 389,
+    "syntaxOccurrences": 458,
+    "ambiguousRecords": 343,
+    "unverifiedRecords": 389,
     "exactPopulations": {
-      "filesystemRoutes": 119,
+      "filesystemRoutes": 118,
       "dynamicRoutePatterns": 11,
       "configRedirects": 13,
       "pageRedirects": 16
@@ -44,7 +44,7 @@
     "byKind": {
       "config-redirect": 13,
       "dynamic-segment": 11,
-      "form-producer": 54,
+      "form-producer": 53,
       "navigation-producer": 168,
       "page-redirect": 16,
       "query-builder": 22,
@@ -54,7 +54,7 @@
       "url-observer": 8
     },
     "bySurface": {
-      "navigation": 380,
+      "navigation": 379,
       "request-telemetry": 10
     }
   },
@@ -15377,45 +15377,6 @@
       },
       "evidence": {
         "source": "frontend/src/components/account/ProfileEditForm.tsx",
-        "detector": "jsx-form",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-1CB73363CF614B",
-      "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "intercepted-submit",
-      "source": "frontend/src/components/admin/system/NetworkForm.tsx",
-      "producerFile": "frontend/src/components/admin/system/NetworkForm.tsx",
-      "consumerFile": null,
-      "routePattern": "unresolved",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/components/admin/system/NetworkForm.tsx",
         "detector": "jsx-form",
         "occurrenceCount": 1
       }

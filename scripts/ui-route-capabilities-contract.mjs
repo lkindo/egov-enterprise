@@ -83,13 +83,6 @@ const KNOWN_ROUTE_CAPABILITIES = {
     //   걷었고 원장에서도 사라졌는데 이 동결 목록에만 남아 있었다. 종전에는 동결과 커밋본을
     //   대조하지 않아 그 드리프트가 보이지 않았다 — 아래 프런트 라우트 검증이 이제 양방향으로 본다.
   ],
-  '/admin/system/network': [
-    {
-      id: 'network.monitoring', status: 'unavailable', dataSource: 'canonical-empty-api', actions: [],
-      unsupportedVisibleActions: ['create', 'update', 'delete'], actorScope: 'ADMIN|SYSTEM', visibleLabel: '네트워크 서비스 모니터링', primaryTask: true,
-      evidenceLevel: 'E2', evidence: ['frontend/src/app/admin/system/network/NetworkAdminClient.tsx', 'api-server/src/main/java/nuri/api/controller/foundation/controller/system/log/NetworkMonitoringApiController.java'],
-    },
-  ],
   '/approvals': [
     {
       // [2026-09-05] 기안 다이얼로그(POST /approvals)·처리한 결재 탭(GET /approvals/processed)·새로고침이

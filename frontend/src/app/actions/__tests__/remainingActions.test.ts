@@ -1,5 +1,5 @@
 /**
- * 남은 서버 액션(댓글·메뉴·네트워크) 테스트.
+ * 남은 서버 액션(댓글·메뉴) 테스트.
  *
  * [2026-08-09 신설] 세 파일 모두 커버리지가 거의 0% 였다(합계 109줄).
  *
@@ -20,10 +20,8 @@ vi.mock('next/config', () => ({
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createComment, deleteComment, updateComment } from '../commentActions';
 import { saveMenuAction, updateMenuOrdersAction, deleteMenuAction } from '../menuActions';
-import { saveNetworkAction, deleteNetworkAction } from '../networkActions';
 import { commentService } from '@/services/business/comment/commentService';
 import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
-import { networkAdminService } from '@/services/foundation/system/NetworkAdminService';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
@@ -38,9 +36,6 @@ vi.mock('@/services/foundation/system/MenuAdminService', () => ({
   menuAdminService: {
     createMenu: vi.fn(), updateMenu: vi.fn(), updateMenuOrder: vi.fn(), deleteMenu: vi.fn(),
   },
-}));
-vi.mock('@/services/foundation/system/NetworkAdminService', () => ({
-  networkAdminService: { createNetwork: vi.fn(), updateNetwork: vi.fn(), deleteNetwork: vi.fn() },
 }));
 
 const AUTH = { headers: { Authorization: 'Bearer TOKEN-123' } };
@@ -238,77 +233,6 @@ describe('남은 서버 액션', () => {
         success: false,
         message: '입력값을 확인해 주세요.',
         fieldErrors: { menuNm: '이미 사용 중인 메뉴 명칭입니다.' },
-      });
-      expect(revalidatePath).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('네트워크', () => {
-    const FIELDS = {
-      manageIem: '본관 스위치', ntwrkIp: '10.0.0.1', gtwy: '10.0.0.254',
-      subnet: '255.255.255.0', domnServer: 'dns.local', userNm: '관리자', useYn: 'Y',
-    };
-
-    it('ntwrkId 가 없으면 생성한다', async () => {
-      const result = await saveNetworkAction(null, form(FIELDS));
-
-      expect(networkAdminService.createNetwork).toHaveBeenCalledWith(FIELDS, AUTH);
-      expect(networkAdminService.updateNetwork).not.toHaveBeenCalled();
-      expect(result.success).toBe(true);
-    });
-
-    it('ntwrkId 가 있으면 그 id 로 수정한다', async () => {
-      await saveNetworkAction(null, form({ ...FIELDS, ntwrkId: 'N7' }));
-
-      // 분기가 뒤집히면 수정이 신규 등록이 되어 같은 장비가 두 줄로 남는다.
-      expect(networkAdminService.updateNetwork).toHaveBeenCalledWith('N7', FIELDS, AUTH);
-      expect(networkAdminService.createNetwork).not.toHaveBeenCalled();
-    });
-
-    it('ntwrkId 는 전송 본문에 섞이지 않는다', async () => {
-      await saveNetworkAction(null, form({ ...FIELDS, ntwrkId: 'N7' }));
-
-      const [, payload] = vi.mocked(networkAdminService.updateNetwork).mock.calls[0];
-      expect(payload).not.toHaveProperty('ntwrkId');
-    });
-
-    it('저장·삭제 모두 목록을 재검증한다', async () => {
-      await saveNetworkAction(null, form(FIELDS));
-      expect(revalidatePath).toHaveBeenCalledWith('/admin/system/network');
-
-      vi.clearAllMocks();
-      withToken('TOKEN-123');
-
-      const result = await deleteNetworkAction('N7');
-      expect(networkAdminService.deleteNetwork).toHaveBeenCalledWith('N7', AUTH);
-      expect(revalidatePath).toHaveBeenCalledWith('/admin/system/network');
-      expect(result.success).toBe(true);
-    });
-
-    it('실패는 메시지로 돌려준다', async () => {
-      vi.mocked(networkAdminService.deleteNetwork).mockRejectedValueOnce({});
-
-      const result = await deleteNetworkAction('N7');
-
-      expect(result).toEqual({ success: false, message: '삭제 중 오류 발생' });
-    });
-
-    it('저장 검증 실패의 구조화된 필드 오류를 폼까지 보존한다', async () => {
-      vi.mocked(networkAdminService.createNetwork).mockRejectedValueOnce({
-        response: {
-          data: {
-            message: '입력값을 확인해 주세요.',
-            errors: [{ field: 'ntwrkIp', message: '이미 등록된 IP 주소입니다.' }],
-          },
-        },
-      });
-
-      const result = await saveNetworkAction(null, form(FIELDS));
-
-      expect(result).toEqual({
-        success: false,
-        message: '입력값을 확인해 주세요.',
-        fieldErrors: { ntwrkIp: '이미 등록된 IP 주소입니다.' },
       });
       expect(revalidatePath).not.toHaveBeenCalled();
     });
