@@ -188,6 +188,11 @@ public class Board extends BaseEntity implements Serializable {
         this.scrtYn = scrtYn;
     }
 
+    /** Q&A 해결 상태만 바꾼다 — 본문·작성자 등 다른 필드는 건드리지 않는다(DIP I3). */
+    public void markQnaStatus(String qnaSttsCd) {
+        this.qnaSttsCd = qnaSttsCd;
+    }
+
     public void delete() {
         this.useYn = "N";
     }

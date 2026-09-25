@@ -115,8 +115,10 @@ public class BoardApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#getPost')")
     public ResponseEntity<ApiResponse<BoardDto>> getPost(
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
-            @Parameter(description = "게시글 ID", example = "1") @PathVariable Long pstSn) {
-        return ResponseEntity.ok(ApiResponse.success(boardService.getPostDetail(bbsId, pstSn)));
+            @Parameter(description = "게시글 ID", example = "1") @PathVariable Long pstSn,
+            @Parameter(description = "조회수를 올릴지. 수정 화면처럼 읽기가 아닌 진입은 false 로 부른다", example = "true")
+            @RequestParam(defaultValue = "true") boolean countView) {
+        return ResponseEntity.ok(ApiResponse.success(boardService.getPostDetail(bbsId, pstSn, countView)));
     }
 
     @Operation(summary = "게시글 등록", description = "새로운 게시글을 등록합니다. 첨부를 함께 올리려면 /{bbsId}/posts/with-files 를 사용합니다.")
@@ -197,6 +199,17 @@ public class BoardApiController {
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
             @Parameter(description = "게시글 ID", example = "1") @PathVariable Long pstSn) {
         boardService.deletePost(bbsId, pstSn, userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "질문 해결 표시", description = "Q&A 게시판의 질문을 해결됨으로 표시합니다. "
+            + "작성자 또는 게시글 전체 수정 권한이 있어야 하며, Q&A 게시판이 아니면 400 입니다.")
+    @PatchMapping("/{bbsId}/posts/{pstSn}/solved")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#markQuestionSolved')")
+    public ResponseEntity<ApiResponse<Void>> markQuestionSolved(
+            @Parameter(description = "게시판 ID", example = "BBSMSTR_DDDDDDDDDDDD") @PathVariable String bbsId,
+            @Parameter(description = "게시글 ID", example = "1") @PathVariable Long pstSn) {
+        boardService.markQuestionSolved(bbsId, pstSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

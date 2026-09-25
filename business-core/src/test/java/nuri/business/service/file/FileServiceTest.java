@@ -63,6 +63,32 @@ class FileServiceTest {
     private FileAccessPolicy accessPolicy;
 
     @Test
+    @DisplayName("🚨 업로드 뒤 트랜잭션이 롤백되면 이번에 저장한 파일을 지운다 — 커밋되면 남긴다 (DIP I2)")
+    void uploadFiles_compensatesStoredFilesOnRollback() throws IOException {
+        List<MultipartFile> files = Collections.singletonList(validJpeg("a.jpg"));
+        given(fileMasterRepository.save(any(FileMaster.class))).willReturn(new FileMaster(123L));
+        given(storageService.store(any(MultipartFile.class), anyString())).willReturn("stored_a.jpg");
+
+        org.springframework.transaction.support.TransactionSynchronizationManager.initSynchronization();
+        try {
+            fileService.uploadFiles(files);
+            verify(storageService, never()).delete(anyString(), anyString());
+
+            for (var sync : org.springframework.transaction.support.TransactionSynchronizationManager.getSynchronizations()) {
+                sync.afterCompletion(org.springframework.transaction.support.TransactionSynchronization.STATUS_COMMITTED);
+            }
+            verify(storageService, never()).delete(anyString(), anyString());
+
+            for (var sync : org.springframework.transaction.support.TransactionSynchronizationManager.getSynchronizations()) {
+                sync.afterCompletion(org.springframework.transaction.support.TransactionSynchronization.STATUS_ROLLED_BACK);
+            }
+            verify(storageService).delete("stored_a.jpg", "general/123");
+        } finally {
+            org.springframework.transaction.support.TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
     @DisplayName("파일 업로드 성공")
     void uploadFiles_Success() throws IOException {
         // given

@@ -128,6 +128,53 @@ class TransactionUtilsTest {
                 .isInstanceOf(IllegalStateException.class);
     }
 
+    @Test
+    @DisplayName("롤백 보상은 롤백될 때만 실행한다 — 커밋되면 실행하지 않는다 (DIP I2)")
+    void rollbackCompensationRunsOnlyOnRollback() {
+        TransactionSynchronizationManager.initSynchronization();
+        AtomicInteger ran = new AtomicInteger();
+        TransactionUtils.runAfterRollback(ran::incrementAndGet);
+
+        complete(TransactionSynchronization.STATUS_COMMITTED);
+        assertThat(ran.get()).isZero();
+
+        complete(TransactionSynchronization.STATUS_UNKNOWN);
+        assertThat(ran.get()).isZero();
+
+        complete(TransactionSynchronization.STATUS_ROLLED_BACK);
+        assertThat(ran.get()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("트랜잭션이 없으면 롤백 보상을 실행하지 않는다 — 방금 한 일을 스스로 지우지 않는다")
+    void rollbackCompensationIsNoOpWithoutTransaction() {
+        AtomicInteger ran = new AtomicInteger();
+
+        TransactionUtils.runAfterRollback(ran::incrementAndGet);
+
+        assertThat(ran.get()).isZero();
+    }
+
+    @Test
+    @DisplayName("롤백 보상의 실패는 삼키고 뒤 보상을 막지 않는다")
+    void rollbackCompensationFailureIsIsolated() {
+        TransactionSynchronizationManager.initSynchronization();
+        AtomicInteger ran = new AtomicInteger();
+        TransactionUtils.runAfterRollback(() -> {
+            throw new IllegalStateException("cleanup failed");
+        });
+        TransactionUtils.runAfterRollback(ran::incrementAndGet);
+
+        assertThatCode(() -> complete(TransactionSynchronization.STATUS_ROLLED_BACK)).doesNotThrowAnyException();
+        assertThat(ran.get()).isEqualTo(1);
+    }
+
+    private static void complete(int status) {
+        for (TransactionSynchronization s : TransactionSynchronizationManager.getSynchronizations()) {
+            s.afterCompletion(status);
+        }
+    }
+
     /** 등록된 동기화들의 afterCommit 을 순서대로 발화시킨다(스프링이 커밋 시 하는 일). */
     private static void commit() {
         for (TransactionSynchronization s : TransactionSynchronizationManager.getSynchronizations()) {

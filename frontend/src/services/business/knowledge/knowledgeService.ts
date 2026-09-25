@@ -166,9 +166,14 @@ class KnowledgeService extends ApiService {
   /**
    * 게시물 상세 조회
    */
-  public async getArticle(bbsId: string, pstSn: number): Promise<KnowledgeDto> {
+  /**
+   * 게시글 상세. `countView: false` 는 조회수를 올리지 않는다 — 수정 화면처럼 글을 "읽는" 것이 아닌
+   * 진입에 쓴다(2026-09-25 DIP I8). 기본은 서버 기본값(올림)을 따른다.
+   */
+  public async getArticle(bbsId: string, pstSn: number, options: { countView?: boolean } = {}): Promise<KnowledgeDto> {
     return this.executeGenerated(getPostOperation, {
       path: { bbsId, pstSn },
+      ...(options.countView === false ? { query: { countView: false } } : {}),
     }) as Promise<KnowledgeDto>;
   }
 

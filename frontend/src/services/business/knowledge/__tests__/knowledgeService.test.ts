@@ -203,14 +203,26 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
 
       await knowledgeService.getArticle(BBS.QNA, 42);
 
-      expect(client.getRaw).toHaveBeenCalledWith(`boards/${BBS.QNA}/posts/42`, undefined);
+      // 상세 조회에 조회수 옵션(countView)이 생겨 실행기가 빈 params 를 싣는다 — 값은 싣지 않는다.
+      expect(client.getRaw).toHaveBeenCalledWith(`boards/${BBS.QNA}/posts/42`, { params: {} });
     });
 
     it('상세 조회는 쿼리 파라미터를 붙이지 않는다(페이징 변환이 개입하지 않는다)', async () => {
       await knowledgeService.getArticle(BBS.NOTICE, 7);
 
       const [, config] = client.getRaw.mock.calls[0];
-      expect(config).toBeUndefined();
+      // 기본 상세 조회는 쿼리 값을 싣지 않는다(서버 기본값 countView=true).
+      expect(config).toEqual({ params: {} });
+    });
+
+    it('수정 화면용 상세 조회는 countView=false 를 실어 조회수를 올리지 않는다 (DIP I8)', async () => {
+      client.getRaw.mockResolvedValueOnce(successEnvelope({ pstSn: 7, pstTtl: '제목', pstCn: '본문', useYn: 'Y' }));
+
+      await knowledgeService.getArticle(BBS.NOTICE, 7, { countView: false });
+
+      const [url, config] = client.getRaw.mock.calls[0];
+      expect(url).toBe(`boards/${BBS.NOTICE}/posts/7`);
+      expect(config).toEqual(expect.objectContaining({ params: { countView: false } }));
     });
 
     it('통계 조회는 boards/{bbsId}/stats 경로로 나가고 bbsId 생략 시 공지 게시판을 본다', async () => {

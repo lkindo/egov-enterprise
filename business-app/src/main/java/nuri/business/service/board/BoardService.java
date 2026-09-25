@@ -388,6 +388,12 @@ public class BoardService extends BaseAbstractService {
         public Long createPostWithFiles(@NonNull String userId, @NonNull BoardSaveRequest request,
                         List<MultipartFile> files)
                         throws IOException {
+                // [2026-09-25 DIP I2] 게시판·커뮤니티 검증을 업로드보다 먼저 한다. 종전에는 파일을 먼저 저장한 뒤
+                //   createPost 가 없는 게시판·비회원을 거부해, 거부된 요청마다 접근할 수 없는 파일이 디스크에 남았다.
+                //   (그 뒤 단계의 실패는 FileService 가 트랜잭션 롤백 때 이번 호출로 저장한 파일을 지운다.)
+                BoardMaster master = boardMasterRepository.findById(required(request.bbsId(), "bbsId 는 null 일 수 없습니다"))
+                                .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+                assertCommunityAccess(master);
                 Long atchFileSn = request.atchFileSn();
                 if (files != null && !files.isEmpty()) {
                         atchFileSn = fileService.uploadFiles(files);
@@ -487,8 +493,13 @@ public class BoardService extends BaseAbstractService {
                 return replyPost(userId, parentSn, newRequest);
         }
 
+        /**
+         * 게시글 상세. {@code countView=false} 는 조회수를 올리지 않는다 — 수정 화면처럼 글을 "읽는" 것이 아닌
+         * 진입에 쓴다(2026-09-25 DIP I8). 종전에는 작성자가 수정 화면을 열거나 새로고침할 때마다 조회수가 올랐다.
+         * 열람 가드(커뮤니티·비밀글·논리 삭제)는 조회수 여부와 무관하게 같다.
+         */
         @Transactional(readOnly = true)
-        public BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long pstSn) {
+        public BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long pstSn, boolean countView) {
                 // [2026-09-08 PD-CMTY-001] 커뮤니티 귀속 게시판이면 승인된 회원만 본다.
                 assertCommunityAccess(bbsId);
                 // [2026-08-22 제품 결정] 논리 삭제(useYn='N') 게시글은 일반 사용자에게 404 지만
@@ -512,9 +523,37 @@ public class BoardService extends BaseAbstractService {
                 }
 
                 // Redis 기반 쓰기 지연 처리
-                viewCountService.increaseViewCount(pstSn);
+                if (countView) {
+                        viewCountService.increaseViewCount(pstSn);
+                }
 
                 return boardMapper.toDto(detail);
+        }
+
+        /** Q&A 템플릿 게시판 — 해결 상태를 가진 게시판은 이것뿐이다(화면 BoardTemplates 와 같은 판정). */
+        private static final String QNA_TEMPLATE_ID = "TMPLT_QNA";
+
+        /** Q&A 해결 상태 값(화면 isQnaSolved 와 같은 값). */
+        private static final String QNA_SOLVED = "SOLVED";
+
+        /**
+         * 질문을 해결됨으로 표시한다(2026-09-25 DIP I3). 작성자 또는 게시글 전체 수정 권한자만 한다.
+         *
+         * <p>종전에는 해결 상태 컬럼과 화면 배지는 있는데 그 값을 SOLVED 로 바꾸는 경로가 없어, 답을 받은 질문도
+         * 영원히 "접수" 로 남았다. Q&A 템플릿이 아닌 게시판의 글은 해결 상태가 없으므로 거부한다.
+         * 이미 해결된 질문을 다시 표시해도 오류가 아니다(같은 결과).
+         */
+        @Transactional
+        public void markQuestionSolved(@NonNull String bbsId, @NonNull Long pstSn) {
+                BoardMaster master = boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
+                                .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+                assertCommunityAccess(master);
+                if (!QNA_TEMPLATE_ID.equals(master.getTmpltId())) {
+                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                                        "Q&A 게시판의 질문만 해결됨으로 표시할 수 있습니다.");
+                }
+                Board board = findOwnedPost(bbsId, pstSn);
+                board.markQnaStatus(QNA_SOLVED);
         }
 
         /**
@@ -646,7 +685,9 @@ public class BoardService extends BaseAbstractService {
                 // [2026-09-14 DEC-OPS-092] JSON 수정(updatePost)과 같은 커뮤니티 가드. 이 경로에만 빠져 있었다.
                 assertCommunityAccess(bbsId);
                 Board board = findOwnedPost(bbsId, pstSn);
-                Long atchFileSn = request.atchFileSn();
+                // [2026-09-25 DIP I1] 요청이 첨부 번호를 싣지 않으면 글의 기존 첨부 묶음에 더한다. 종전에는 새 묶음을
+                //   만들어 글을 그쪽으로 옮겨, 수정 중 파일 하나를 더하면 기존 첨부가 글에서 조용히 떨어져 나갔다.
+                Long atchFileSn = request.atchFileSn() != null ? request.atchFileSn() : board.getAtchFileSn();
                 boolean attachmentAlreadyValidated = false;
 
                 // 클라이언트가 기존 첨부 식별자를 골랐다면 물리 파일 변경보다 먼저 원 업로더인지 확인한다.

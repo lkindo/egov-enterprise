@@ -28,6 +28,8 @@ const BOARD_OPERATIONS = [
   ['GET', '/api/v1/boards/{bbsId}/posts/{pstSn}', 'getPost', 'BOARD_READ'],
   ['PUT', '/api/v1/boards/{bbsId}/posts/{pstSn}', 'updatePost', 'BOARD_UPDATE'],
   ['PATCH', '/api/v1/boards/{bbsId}/posts/{pstSn}/like', 'likePost', 'BOARD_LIKE'],
+  // [2026-09-25 DIP I3] Q&A 해결 표시 — 게시글 수정과 같은 권한·같은 소유자 가드(findOwnedPost).
+  ['PATCH', '/api/v1/boards/{bbsId}/posts/{pstSn}/solved', 'markQuestionSolved', 'BOARD_UPDATE'],
   ['PUT', '/api/v1/boards/{bbsId}/posts/{pstSn}/with-files', 'updatePostWithFiles', 'BOARD_UPDATE'],
   ['GET', '/api/v1/boards/{bbsId}/stats', 'getStats', 'BOARD_READ'],
 ] as const;

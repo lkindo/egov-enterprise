@@ -15,7 +15,8 @@ export default async function InsertBoardArticlePage({ searchParams }: PageProps
   let initialData = null;
   if (pstSn) {
     // 수정 대상 조회 실패를 빈 신규 작성 폼으로 위장하지 않고 상위 error boundary에 맡긴다.
-    initialData = await knowledgeService.getArticle(bbsId, pstSn);
+    // 수정 화면 진입은 글을 읽는 것이 아니다 — 조회수를 올리지 않는다(DIP I8).
+    initialData = await knowledgeService.getArticle(bbsId, pstSn, { countView: false });
   }
 
   return (

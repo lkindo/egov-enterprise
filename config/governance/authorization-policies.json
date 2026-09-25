@@ -1090,6 +1090,15 @@
     },
     {
       "method": "PATCH",
+      "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/solved",
+      "handler": "nuri.api.controller.business.board.BoardApiController#markQuestionSolved",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#markQuestionSolved')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "BoardService#findOwnedPost"
+    },
+    {
+      "method": "PATCH",
       "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/like",
       "handler": "nuri.api.controller.business.board.BoardApiController#likePost",
       "policy": "AUTHENTICATED",
@@ -5035,6 +5044,13 @@
       "method": "PUT",
       "path": "/api/v1/boards/{bbsId}/posts/{pstSn}",
       "handler": "nuri.api.controller.business.board.BoardApiController#updatePost",
+      "access": "PERMISSION",
+      "permission": "BOARD_UPDATE"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/solved",
+      "handler": "nuri.api.controller.business.board.BoardApiController#markQuestionSolved",
       "access": "PERMISSION",
       "permission": "BOARD_UPDATE"
     },

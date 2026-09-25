@@ -185,6 +185,50 @@ describe('boardActions', () => {
       expect(result.redirect).toContain('pstSn=100');
     });
 
+    it('수정은 폼의 기존 첨부 번호를 싣는다 — 파일을 더해도 기존 첨부가 떨어져 나가지 않는다 (DIP I1)', async () => {
+      const formData = new FormData();
+      formData.append('pstSn', '100');
+      formData.append('pstTtl', 'title edited');
+      formData.append('pstCn', 'content edited');
+      formData.append('bbsId', 'BBS_001');
+      formData.append('atchFileSn', '77');
+      vi.mocked(cookies).mockResolvedValue({ get: vi.fn() } as unknown as Awaited<ReturnType<typeof cookies>>);
+
+      await saveBoardArticle({}, formData);
+
+      const request = vi.mocked(client.requestRaw).mock.calls[0][0] as { data: Record<string, unknown> };
+      expect(request.data.atchFileSn).toBe(77);
+    });
+
+    it('Q&A 수정은 상태·분류 기본값을 채우지 않는다 — 해결된 질문이 접수로 되돌아가지 않는다 (DIP I3)', async () => {
+      const formData = new FormData();
+      formData.append('pstSn', '100');
+      formData.append('pstTtl', 'title edited');
+      formData.append('pstCn', 'content edited');
+      formData.append('bbsId', 'BBSMSTR_DDDDDDDDDDDD');
+      vi.mocked(cookies).mockResolvedValue({ get: vi.fn() } as unknown as Awaited<ReturnType<typeof cookies>>);
+
+      await saveBoardArticle({}, formData);
+
+      const request = vi.mocked(client.requestRaw).mock.calls[0][0] as { data: Record<string, unknown> };
+      expect(request.data.qnaSttsCd).toBeUndefined();
+      expect(request.data.qnaCatCd).toBeUndefined();
+    });
+
+    it('Q&A 등록은 접수 상태·기본 분류로 시작한다', async () => {
+      const formData = new FormData();
+      formData.append('pstTtl', 'question');
+      formData.append('pstCn', 'body');
+      formData.append('bbsId', 'BBSMSTR_DDDDDDDDDDDD');
+      vi.mocked(cookies).mockResolvedValue({ get: vi.fn() } as unknown as Awaited<ReturnType<typeof cookies>>);
+
+      await saveBoardArticle({}, formData);
+
+      const request = vi.mocked(client.requestRaw).mock.calls[0][0] as { data: Record<string, unknown> };
+      expect(request.data.qnaSttsCd).toBe('QA01');
+      expect(request.data.qnaCatCd).toBe('CAT01');
+    });
+
     it('파일이 있는 수정도 첨부 동반 수정(/with-files) 경로를 쓰고 Content-Type을 수동 지정하지 않는다', async () => {
       const formData = new FormData();
       formData.append('pstSn', '100');

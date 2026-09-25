@@ -250,6 +250,11 @@ public class FileService extends BaseAbstractService {
             compensateStoredFiles(targetPath, storedFilenames, failure);
             throw failure;
         }
+        // [2026-09-25 DIP I2] 저장은 끝났지만 이 트랜잭션이 뒤에서 롤백되면(예: 게시글 저장 실패) 파일 행은
+        //   사라지고 실물만 남는다. 롤백될 때 이번 호출로 저장한 파일을 지운다 — 커밋되면 아무것도 하지 않는다.
+        List<String> storedInThisCall = List.copyOf(storedFilenames);
+        TransactionUtils.runAfterRollback(() -> compensateStoredFiles(targetPath, storedInThisCall,
+                new IllegalStateException("upload rolled back")));
     }
 
     private void compensateStoredFiles(String targetPath, List<String> storedFilenames, RuntimeException failure) {
