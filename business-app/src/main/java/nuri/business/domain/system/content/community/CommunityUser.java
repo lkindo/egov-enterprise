@@ -55,7 +55,16 @@ public class CommunityUser extends BaseEntity implements Serializable {
         return CommunityMemberStatus.REQUESTED.matches(this.mbrSttsCd);
     }
 
+    public boolean isApproved() {
+        return CommunityMemberStatus.APPROVED.matches(this.mbrSttsCd);
+    }
+
+    public boolean isWithdrawn() {
+        return CommunityMemberStatus.WITHDRAWN.matches(this.mbrSttsCd);
+    }
+
     public void withdraw() {
+        this.mbrSttsCd = CommunityMemberStatus.WITHDRAWN.code();
         this.useYn = "N";
         this.whdwlYmd = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         this.mngrYn = "N";

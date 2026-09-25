@@ -26,7 +26,7 @@ public class DeptManageRepositoryImpl implements DeptManageRepositoryCustom {
         JPAQuery<DeptManage> query = queryFactory
                 .selectFrom(deptManage)
                 .where(keywordContains(keyword))
-                .orderBy(deptManage.ognzNm.asc());
+                .orderBy(deptManage.sortOrdr.asc().nullsLast(), deptManage.ognzNm.asc());
 
         if (pageable.isPaged()) {
             query.offset(pageable.getOffset()).limit(pageable.getPageSize());

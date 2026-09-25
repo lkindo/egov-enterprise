@@ -18,7 +18,7 @@ public record CommunityMembershipDto(
         @Schema(description = "가입(신청)일자 yyyyMMdd — 행이 없으면 null", nullable = true) String joinYmd) {
 
     public enum Status {
-        NONE, REQUESTED, MEMBER, UNKNOWN
+        NONE, REQUESTED, MEMBER, WITHDRAWN, UNKNOWN
     }
 
     public static CommunityMembershipDto none(Long cmntySn) {
@@ -27,7 +27,11 @@ public record CommunityMembershipDto(
 
     public static CommunityMembershipDto from(CommunityUser member) {
         Status status = CommunityMemberStatus.fromCode(member.getMbrSttsCd())
-                .map(code -> code == CommunityMemberStatus.APPROVED ? Status.MEMBER : Status.REQUESTED)
+                .map(code -> switch (code) {
+                    case APPROVED -> Status.MEMBER;
+                    case REQUESTED -> Status.REQUESTED;
+                    case WITHDRAWN -> Status.WITHDRAWN;
+                })
                 .orElse(Status.UNKNOWN);
         return new CommunityMembershipDto(member.getId().getCmntySn(), status, member.getJoinYmd());
     }

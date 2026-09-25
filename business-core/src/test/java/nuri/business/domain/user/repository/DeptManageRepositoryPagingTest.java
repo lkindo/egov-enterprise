@@ -66,4 +66,17 @@ class DeptManageRepositoryPagingTest extends PersistenceTestSupport {
         assertThat(result.getTotalElements()).isEqualTo(12);
         assertThat(result.getTotalPages()).isEqualTo(3);
     }
+
+    @Test
+    void searchOrdersBySortOrdrFirstWithNullsLast() {
+        repository.deleteAll();
+        repository.save(DeptManage.builder().ognzId("D1").ognzNm("Z Dept").sortOrdr(1).build());
+        repository.save(DeptManage.builder().ognzId("D2").ognzNm("A Dept").sortOrdr(2).build());
+        repository.save(DeptManage.builder().ognzId("D3").ognzNm("M Dept").sortOrdr(null).build());
+
+        var result = repository.searchDeptManages(null, Pageable.unpaged());
+
+        assertThat(result.getContent()).extracting(DeptManage::getOgnzNm)
+                .containsExactly("Z Dept", "A Dept", "M Dept");
+    }
 }
