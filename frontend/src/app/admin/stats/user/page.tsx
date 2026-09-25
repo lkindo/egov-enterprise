@@ -4,7 +4,7 @@ import { StatsHubFallback } from '../StatsHubFallback';
 
 export const metadata = {
   title: '사용자 통계 | 전자정부 프레임워크',
-  description: '사용자 활동 집계 추이를 분석합니다',
+  description: '인증 사용자의 등록 요청 수 추이를 분석합니다',
 };
 
 export default function UserStatsPage() {
