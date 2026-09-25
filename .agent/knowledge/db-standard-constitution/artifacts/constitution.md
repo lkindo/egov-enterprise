@@ -49,7 +49,7 @@
 ### 제6조 (제약 조건 명명)
 제약 조건은 가독성을 위해 다음의 규칙을 따른다.
 1. **기본키(PK)**: `pk_[테이블명]`
-2. **외래키(FK)**: `fk_[기준테이블]_[참조테이블]`
+2. **외래키(FK)**: `fk_[기준테이블]_[참조테이블]`. 자기참조 FK는 `fk_[기준테이블]_[참조컬럼명]`(예: `fk_tb_ognz_info_up_ognz_id`), 같은 테이블을 둘 이상 참조하면 역할 접미사(예: `_higher`)를 붙인다.
 3. **유니크키(UK)**: `uk_[테이블명]_[컬럼명]`
 4. **인덱스(IX)**: `ix_[테이블명]_[컬럼명]`
 5. **체크 제약(CK)**: `ck_[테이블명]_[컬럼명]` (예: `ck_tb_bbs_item_use_yn` — 여부(`_yn`) 컬럼의 `CHECK (col IN ('Y','N'))` 값 무결성 제약)
@@ -73,6 +73,7 @@
    - **전수 스캔**: 검사 대상은 baseline(`V2_0`)을 포함한 마이그레이션 디렉토리 전체 `.sql`이며, 신규 델타에 한정하지 않는다. 소스 열거는 `HarnessSourceIndex`를 사용한다.
    - **신규 예외의 승인 결속**: 해당 위반 라인의 `-- linter:ignore ZDM-YYYY-NNNN <reason>` 또는 파일 전체의 `-- linter:disable-file ZDM-YYYY-NNNN <reason>`를 [zdm-waivers.json](../../../../config/governance/zdm-waivers.json)의 `id`·`path`·`directive`·`reason`·`owner`·`approvedAt`·`expiresAt`·`evidence`와 1:1로 결속한다. 마커만으로는 통과하지 않으며, 자유형 신규 마커·미등록·중복·사유 누락·만료·경로 불일치를 차단한다.
    - **선행 Expand 검증**: Contract 성격의 `DROP TABLE`·`DROP SEQUENCE`·`DROP COLUMN`·테이블/컬럼 `RENAME` waiver에는 실제 선행 파일을 가리키는 `expandMigration`이 필요하다. 자기참조·후행 버전·해석 불가능한 Flyway 버전은 실패한다. 버전 선후 확인은 Sync·Redirect 완료나 실제 구버전 소비 종료의 자동 증명이 아니다.
+   - **선행 Expand 배포·관측 기록**: 2026-09-16 이후 Contract waiver는 `expandRelease{tag,deployedAt,environment,evidence}`를 남기고, 린터가 릴리스 태그 형식·배포일·배포 후 7일 관측 기간과 [릴리스 기록](../../../../docs/04-operations/migration-release-log.md)의 해당 태그 행(선행 Expand 포함·Contract 미포함)을 대조한다([DEC-OPS-101](../../../memory/decisions.md)). 이전 승인분 13건은 동결분이며 소급 승인이 아니다. 이 대조는 기록 검증일 뿐 실제 배포·관측의 증명이 아니다.
    - **기존 부채 보존**: 레지스트리 도입 전 자유형 마커는 `legacy-debt-unapproved`로 별도 동결한다. 파일 fingerprint·마커 수·owner·reviewBy를 검증하며, 이 동결을 소급 승인으로 해석하거나 적용 완료 Flyway의 checksum을 바꾸지 않는다. 실제 잠금·동기화·배포 순서의 증거는 [이행 가이드](../../../../docs/02-architecture/zero-downtime-migration.md)에 따라 별도 확보한다.
 
 
@@ -85,7 +86,7 @@
 2. **[논리 삭제 의무 제외]** 데이터 복원력과 이력관리를 위한 모든 비즈니스 테이블의 논리 삭제(`del_yn` 등) 컬럼 의무 탑재 규정은 본 헌법의 필수 요건에서 공식 제외한다. 각 비즈니스 업무 도메인의 특성과 데이터 수명 주기 정책에 맞춰 물리 삭제(`Hard Delete`)를 기본 설계로 채택할 수 있다.
 3. 데이터의 복원이나 이력이 비즈니스 요구사항으로 인해 필수적인 경우에 한하여 선택적으로 논리 삭제 방식을 채택하며, 이 경우 애플리케이션 레벨(백엔드 헌법 제14조)에서의 JPA 영속성 필터링 조항과 연계하여 삭제 데이터 조회를 제어할 수 있다.
 4. **[메타 테이블 감사 제외]** 3대 메타 테이블(`meta_standard_words`, `meta_standard_terms`, `meta_standard_domains`)은 데이터 표준의 기준이 되는 특수 테이블이므로, 공통 Audit 4대 컬럼 탑재 여부 및 도메인 정합성 검사 등 모든 헌법적 감사 대상에서 원천적으로 제외한다.
-5. **[감사컬럼 표준의 기계 강제 및 그 한계]** 신규 테이블의 감사컬럼 표준은 스키마 명명 린터 `api-server/src/test/java/nuri/api/harness/SchemaNamingLinterTest.java`(`checkAuditColumns`)가 델타 SQL 정적 분석으로 배포 전에 강제한다. 다만 정적 분석으로는 테이블의 Insert-Only 여부(본 조 1항)를 판별할 수 없으므로, 게이트가 강제하는 범위는 ① 신규 `tb_` 테이블의 **최소 감사컬럼 2종(`frst_rgtr_id`, `crt_dt`) 탑재**와 ② 수정 감사 짝의 **대칭성**(`mdfcn_dt` 와 `last_mdfr_id` 는 둘 다 탑재하거나 둘 다 생략)에 한정한다. 따라서 가변(수정 발생) 비즈니스 테이블의 감사컬럼 **4종 완비 여부는 게이트가 아니라 설계 리뷰로 보증**하며(게이트가 4종을 자동 강제한다는 뜻이 아니다), 3대 메타 테이블은 본 검사에서 면제된다(본 조 4항). 동일 하네스는 본 헌법 제1조(소문자 snake_case)·제3조(`tb_`/`sq_` 접두)·제5조 4항(고정 문자형 `char` 금지)·제6조(제약 명명 `pk_`/`fk_`/`uk_`/`ck_` 접두)도 함께 기계 강제한다.
+5. **[감사컬럼 표준의 기계 강제 및 그 한계]** 신규 테이블의 감사컬럼 표준은 스키마 명명 린터 `api-server/src/test/java/nuri/api/harness/SchemaNamingLinterTest.java`(`checkAuditColumns`)가 델타 SQL 정적 분석으로 배포 전에 강제한다. 다만 정적 분석으로는 테이블의 Insert-Only 여부(본 조 1항)를 판별할 수 없으므로, 게이트가 강제하는 범위는 ① 신규 `tb_` 테이블의 **최소 감사컬럼 2종(`frst_rgtr_id`, `crt_dt`) 탑재**와 ② 수정 감사 짝의 **대칭성**(`mdfcn_dt` 와 `last_mdfr_id` 는 둘 다 탑재하거나 둘 다 생략)에 한정한다. 따라서 가변(수정 발생) 비즈니스 테이블의 감사컬럼 **4종 완비 여부는 게이트가 아니라 설계 리뷰로 보증**하며(게이트가 4종을 자동 강제한다는 뜻이 아니다), 3대 메타 테이블은 본 검사에서 면제된다(본 조 4항). 동일 하네스는 본 헌법 제1조(소문자 snake_case)·제3조(`tb_`/`sq_` 접두)·제5조 4항(고정 문자형 `char` 금지)·제6조(제약 `pk_`/`fk_`/`uk_`/`ck_` 접두 및 인덱스 `ix_` 접두 — 유니크 인덱스는 레거시 `uk_` 허용)도 함께 기계 강제한다. 검사 대상은 baseline(`V2_0`)·메타 시드(`V2_1`)를 제외한 델타와 `R__` 파일이며, 예외는 [명명 예외 대장](../../../../docs/02-architecture/db-naming-exceptions.md)과 동기화된 화이트리스트 및 사유를 병기한 `-- naming-linter:ignore`로만 허용한다. 게이트는 접두만 판정하며 `[테이블명]_[컬럼명]` 구조는 설계 리뷰로 보증한다.
 
 ---
 

@@ -6,7 +6,7 @@
 > **URL 검색 상태 결정**: 개인정보성 업무 검색어의 제한적 URL 허용은 [ADR-0009](./decisions/ADR-0009-controlled-url-search-state.md)를 따른다.
 
 ## 🚀 Overview
-본 프로젝트의 프론트엔드는 **Next.js 16.3.4 계열(App Router)**과 **React 19.3 계열**을 사용한다. 정확한 설치 버전은 `frontend/package.json`과 lockfile을 기준으로 판단한다.
+본 프로젝트의 프론트엔드는 **Next.js 16.3.x 계열(App Router)**과 **React 19.3 계열**을 사용한다. 정확한 설치 버전은 `frontend/package.json`과 lockfile을 기준으로 판단한다.
 
 ## 🗺️ Data Flow Architecture
 
@@ -48,7 +48,7 @@ flowchart LR
 
 ### 4. Middleware Security & RBAC
 `src/proxy.ts`를 통해 라우팅 레벨에서 보안 및 접근 제어를 수행합니다.
-- **Session Check & RBAC**: 미들웨어가 HttpOnly `accessToken` JWT를 Web Crypto(`crypto.subtle.verify`)로 서명·만료(exp) 검증하고(단순 존재 확인 아님, `alg` 화이트리스트로 none·비대칭 혼동 공격 차단) 검증된 `payload.role`로 `/admin` 등 민감 경로를 게이팅 — 위조된 `userRole` 쿠키는 불신.
+- **Session Check & RBAC**: 미들웨어가 HttpOnly `accessToken` JWT를 Web Crypto(`crypto.subtle.verify`)로 서명·만료(exp) 검증하고(단순 존재 확인 아님, `alg` 화이트리스트로 none·비대칭 혼동 공격 차단) 검증된 subject로 서버의 현재 권한 스냅샷(`GET /api/v1/auth/me`)을 읽어, 생성된 `PAGE_PERMISSIONS`에 등록된 `/admin` 화면만 필요한 기능 권한이 있을 때 연다(`canEnterRegisteredPage`, ADR-0016). 토큰의 role claim과 브라우저 쿠키는 권한 근거로 쓰지 않으며, 이 화면 진입 판정은 API 인가를 대체하지 않는다.
 
 ## 🎨 Design System & UI Consistency
 - **Styling**: **Tailwind CSS 4**와 **디자인 토큰**을 기반으로 한 유틸리티 퍼스트 디자인.
@@ -60,13 +60,17 @@ flowchart LR
 ```text
 src/
  ├── app/             # App Router (Pages, Layouts)
- │   └── **/_components/ # App shell/segment 전용 UI
- ├── components/      # ui primitives + cross-feature shared composites
- ├── features/        # Domain UI + query options + service adapters (점진 도입)
- ├── services/        # ApiService & Business Logic
- ├── hooks/           # Custom Hooks (useAppForm 등)
- ├── store/           # 실제 공유 필요가 검증된 client UI state
- └── types/           # TypeScript Definitions (Generated API)
+ │   └── components/  # 앱 셸·layout·archetype 셸(patterns)·공용 ui
+ ├── components/      # ui primitives(ui)·공용 composite(common)·도메인 UI(features·business·admin·account)
+ ├── services/        # ApiService & 도메인 서비스
+ ├── queries/         # TanStack Query 옵션
+ ├── lib/             # auth·API client·navigation 등 공용 로직
+ ├── hooks/           # Custom Hooks
+ ├── contexts/        # React Context(인증·레이아웃·미저장 변경·WebSocket)
+ ├── config/          # 사이트·모듈·게시판 설정
+ ├── styles/          # 테마 CSS(brand profile)
+ ├── types/           # TypeScript Definitions (Generated API)
+ └── proxy.ts         # Next 16 proxy(구 미들웨어): CSP·인증·화면 권한
 ```
 
 ---

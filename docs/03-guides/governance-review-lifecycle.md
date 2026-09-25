@@ -37,7 +37,7 @@ npm run review:migration
 
 ## 3. 온라인 제품의 기관 도입
 
-기본 원장은 [adoption-review.json](../../config/governance/adoption-review.json)이며 `status: pending`으로 제공한다. 제품은 `online`, 프로필은 `core`·`collaboration`·`demo` 중 실제 산출물과 같아야 한다. 원본 제품의 승인 이력이 도입 기관 환경의 승인까지 대신하지 않는다.
+기본 원장은 [adoption-review.json](../../config/governance/adoption-review.json)이며 `status: pending`으로 제공한다. 제품은 `online`, 프로필은 `core`·`collaboration`·`demo`·`custom` 중 실제 산출물과 같아야 한다. 원본 제품의 승인 이력이 도입 기관 환경의 승인까지 대신하지 않는다.
 
 | 필드 | 기록할 내용 |
 |---|---|
@@ -48,7 +48,7 @@ npm run review:migration
 | `scopeDigest` | `review:status`의 `sourceScope.digest`; 현재 제품·프로필의 소스·정책 범위 |
 | `evidence` | 통제마다 `{control, path, sha256}` 하나씩; 경로는 저장소 내부의 실제 근거 파일 |
 
-온라인 통제는 다음 일곱 가지다.
+온라인 통제는 다음 아홉 가지다.
 
 | control | 검토 내용 |
 |---|---|

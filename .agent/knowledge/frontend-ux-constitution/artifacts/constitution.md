@@ -14,7 +14,7 @@
 
 ### 제2조 (브랜드 중립성과 시각 효과의 절제)
 1. 재사용 core는 특정 기관, 브랜드색 또는 단일 미학을 기본 진실로 가정하지 않는다. 컴포넌트는 브랜드 중립적 시맨틱 토큰을 소비하고, 배포 시 명시적으로 선택한 프로필이 같은 상태·상호작용·접근성 계약을 구현한다.
-2. 브랜드 프로필과 라이트·다크·고대비 같은 색상 모드는 독립된 축으로 관리한다. 정부 공식 식별 요소는 적용 자격과 기관 구성이 확인된 경우에만 활성화한다.
+2. 브랜드 프로필, 라이트·다크·고대비 같은 색상 모드, 정보 밀도(comfortable·compact)는 서로 독립된 축으로 관리한다. 밀도는 배포 단위로 전역 한 곳(`<html data-density>`, `UI_DENSITY`)에서만 정하며 라우트별로 배정하지 않는다. 정부 공식 식별 요소는 적용 자격과 기관 구성이 확인된 경우에만 활성화한다.
 3. 글래스모피즘, 그라데이션, 그림자와 모션은 정보 이해, 계층 또는 과업 피드백에 기여하고 대비·인지 접근성·성능을 해치지 않을 때만 사용한다. 장식적 효과와 애니메이션은 의무가 아니다.
 4. KRDS 정렬 또는 준수 주장은 채택 버전, 적용 범위, 항목별 매핑, 예외와 검증 증거를 명시한 경우에만 허용한다.
 
@@ -35,7 +35,7 @@
 6. **인증 세션 보안 모델 (Authentication Session Security)**: 프론트엔드가 소유하는 `accessToken`의 저장·전송·검증은 다음 규범을 준수하여 URL·클라이언트 저장소로의 자격증명 누출을 차단한다. 속성 예외는 아래 ①에 명시한 명시적 평문 local loopback 개발·검증의 `Secure` 미설정뿐이며 다른 환경으로 확대하지 않는다.
    - **① 토큰 저장소 격리**: `accessToken`은 모든 환경에서 `HttpOnly` + `SameSite=Strict`인 쿠키에만 저장한다. `Secure`는 기본값이자 운영·preview·staging·공유 개발 등 배포 환경의 필수 속성이다. `development`·`test` 실행이 서버 전용 opt-in을 명시하고 내부 URL, 원 요청 `Host`, forwarding protocol·host·접속자 주소가 모두 단일 평문 local loopback(`localhost`, `127.0.0.1`, `[::1]`)으로 일치할 때만 생략할 수 있으며, 증거가 누락·모호하면 `Secure`를 유지한다. `localStorage`·`sessionStorage` 등 JavaScript로 접근 가능한 저장소에 토큰을 보관하는 것을 엄격히 금지한다(XSS를 통한 토큰 탈취 차단).
    - **② Same-Origin 프록시 경유**: 브라우저에서 백엔드로의 모든 API 호출은 동일 출처(same-origin) 프록시(클라이언트 `baseURL='/api/v1'` + `next.config.ts`의 `rewrites`)를 경유하며, 토큰은 미들웨어(`frontend/src/proxy.ts`)가 `Authorization: Bearer` 헤더로 주입한다. 브라우저 코드가 토큰 문자열을 직접 읽어 헤더에 싣지 않는다.
-   - **③ 미들웨어 서명 검증(심층 방어)**: 페이지 접근 게이트인 미들웨어(`frontend/src/proxy.ts`)는 `accessToken` JWT의 HMAC 서명과 만료(`exp`)를 Web Crypto(`crypto.subtle.verify`)로 실제 검증하되, `alg`는 화이트리스트(`HS256`/`HS384`/`HS512`)로만 매핑하여 `alg=none` 및 대칭·비대칭 혼동(confusion) 공격을 차단한다. 미들웨어 검증은 위조 토큰의 관리자 UI 셸 열람을 막는 심층 방어 계층이며, 토큰의 authoritative(최종 권위) 재검증은 백엔드가 수행한다.
+   - **③ 미들웨어 서명 검증(심층 방어)**: 페이지 접근 게이트인 미들웨어(`frontend/src/proxy.ts`)는 `accessToken` JWT의 HMAC 서명과 만료(`exp`)를 Web Crypto(`crypto.subtle.verify`)로 실제 검증하되, `alg`는 화이트리스트(`HS256`/`HS384`/`HS512`)로만 매핑하여 `alg=none` 및 대칭·비대칭 혼동(confusion) 공격을 차단한다. 미들웨어 검증은 위조 토큰의 관리자 UI 셸 열람을 막는 심층 방어 계층이며, 토큰의 authoritative(최종 권위) 재검증은 백엔드가 수행한다. 또한 프록시(`frontend/src/proxy.ts`, Next 16의 구 미들웨어)는 서버가 돌려준 현재 권한 스냅샷으로 등록된 페이지의 명시 기능 권한을 확인하고 등록되지 않은 경로는 열지 않는다. 이 화면 진입 게이트는 API 인가를 대체하지 않는다([ADR-0016](../../../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md)).
 
 ---
 
@@ -73,10 +73,12 @@
 
 ### 제10조 (보안 헤더 및 외부 리소스)
 1. 외부 리소스(폰트·이미지·스크립트 출처 등)를 추가·변경할 때는 `src/proxy.ts`의 CSP(및 `next.config.ts`의 정적 보안 헤더)와 충돌 여부를 상시 확인한다. CSP가 차단하는 리소스는 오류 없이 조용히 fallback될 수 있으므로 "적용된 것처럼 보임"을 증거로 삼지 않는다.
-2. **[최소 보안 헤더 베이스라인]** 보안 헤더는 두 소스로 나뉘며, 이 베이스라인의 약화(헤더 삭제·완화)는 헌법 위반으로 간주한다. **CSP는 `src/proxy.ts`(미들웨어)가 단일 소스**다 — nonce는 요청마다 달라야 하므로 정적 `headers()`로는 만들 수 없고, `next.config.ts`에 CSP가 재유입되면 이중 소스가 된다(`csp-policy` 계약이 차단). 요청 무관 정적 헤더만 `next.config.ts`의 `headers()`가 전역 경로(`/:path*`)에 부여한다.
+2. **[최소 보안 헤더 베이스라인]** 보안 헤더는 두 소스로 나뉘며, 이 베이스라인의 약화(헤더 삭제·완화)는 헌법 위반으로 간주한다. **CSP는 `src/proxy.ts`(미들웨어)가 단일 소스**다 — nonce는 요청마다 달라야 하므로 정적 `headers()`로는 만들 수 없고, `next.config.ts`에 CSP가 재유입되면 이중 소스가 된다(`csp-policy` 계약이 차단). 문서 응답 격리 헤더(COOP)도 `src/proxy.ts`가 부여하고, 요청 무관 정적 헤더만 `next.config.ts`의 `headers()`가 전역 경로(`/:path*`)에 부여한다.
    - **Content-Security-Policy** (proxy.ts): prod `script-src`는 `'self' 'nonce-…'`뿐이다 — `'unsafe-inline'`·`'unsafe-eval'` 없음. `script-src-attr 'none'`으로 inline 이벤트 핸들러를 차단하고, `connect-src`는 `'self'`로 한정한다. prod/dev 공통으로 `object-src 'none'`·`base-uri 'self'`·`frame-ancestors 'none'`·`form-action 'self'`를 선언하며, 위반은 `report-uri /api/security/csp`(+ `Reporting-Endpoints`)로 수집한다. (dev는 HMR을 위해 `'unsafe-eval'`·`ws:`/`wss:`를 한시 허용한다. 정적 문서 `public/governance_harness_atlas.html` 1건만 nonce를 심을 수 없어 Phase 2 정책 예외이며, 예외 확산은 `csp-policy` 계약이 차단한다.)
    - **Strict-Transport-Security**: `max-age=63072000; includeSubDomains; preload`.
    - **X-Frame-Options**: `DENY` · **X-Content-Type-Options**: `nosniff` · **Referrer-Policy**: `strict-origin-when-cross-origin` · **X-XSS-Protection**: `0`(deprecated·XS-Leaks 벡터라 비활성 — 방어는 CSP로 대체).
+   - **Cross-Origin-Resource-Policy**: `same-origin` · **Cross-Origin-Embedder-Policy**: `credentialless` · **Permissions-Policy**: 쓰지 않는 강력 기능 `()` 차단 · **Reporting-Endpoints**: CSP `report-to` 그룹 정의(`next.config.ts`).
+   - **Cross-Origin-Opener-Policy**: `same-origin`(`proxy.ts`가 문서 응답에 부여, [DEC-OPS-113](../../../memory/decisions.md)).
 3. **[nonce CSP의 전제와 한계의 정직한 기록]** `script-src`의 `'unsafe-inline'`은 2026-08-20 요청별 nonce로 제거됐다(PPR 포기 제품 결정). 이 승격은 두 가지 실측 제약 위에 서 있으며, 본 조는 이를 은폐하지 않고 기록·추적할 것을 의무화한다.
    - **전 페이지 동적 렌더가 전제다**: 정적 프리렌더 HTML의 inline script에는 요청 nonce가 없어 통째로 차단된다(2026-08-20 CI e2e 실측). `cacheComponents`(PPR) 비활성과 루트 layout의 `force-dynamic`을 `csp-policy` 계약이 고정하며, 되돌리려면 nonce CSP 철회가 선행돼야 한다.
    - **`'strict-dynamic'`은 채택하지 않는다**: Next.js가 스트리밍 중 삽입하는 lazy chunk `<script src>`에 nonce가 없어 host 허용(`'self'`)이 꺼지면 앱이 전면 파손된다(2026-08-20 CI 실측). 방어는 `'self'`+nonce 조합으로 달성한다.

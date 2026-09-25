@@ -151,12 +151,11 @@ ADR-0009는 성명·사번·계정명 등 일반 개인정보를 포함할 수 �
 - `URL-E28F88902ADC75`
 - `URL-E910532B42785F`
 
-route-key binding도 다음 **3건**으로 제한한다.
+route-key binding도 다음 **2건**으로 제한한다(2026-09-25 현행화).
 
 | route | 키 | 구현 근거 |
 |---|---|---|
 | `/search` | `q` | server/client 검색 결과 복원 |
-| `/admin/community/[id]` | `searchCnd`, `searchWrd` | `useSearchState` exact allowlist + `replace` |
 | `/admin/community/boards/select-board-list` | `searchCnd`, `searchWrd` | `LIST_PARAM_KEYS` exact allowlist + `replace` |
 
 같은 키를 쓰는 새 route는 자동 승인되지 않는다. 로그 목록이 검색어를 주소창에 동기화하지 않는

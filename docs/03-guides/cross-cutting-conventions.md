@@ -83,17 +83,18 @@
 | **관례(지향 — 현재 미확립)** | ① 캐노니컬 CacheManager는 `foundation/.../config/CacheConfig.java`(Caffeine, `@Profile("!test")`, expireAfterWrite 10분·maxSize 500) 단일. ② **캐시명은 중앙 상수(SSOT)에서만 참조** — 현재 미확립(아래 갭). ③ 무효화는 `allEntries=true`(coarse, 안전측) 기본. ④ 교차서비스 무효화는 소유 서비스가 공개한 상수를 통해서만. |
 | **근거** | `foundation/.../config/CacheConfig.java`와 현재 서비스의 `@Cacheable`/`@CacheEvict` 선언. |
 | **집행 게이트** | `CachingInvalidationMatrixLinterTest`(pre-push `harnessTest`)가 `NO_EVICT`(채우지만 지우지 않음)와 `DEAD_EVICT`(지우지만 채우지 않음)를 양방향으로 검사한다. TTL만으로 충분한 캐시는 테스트 소스의 `TTL_ONLY_CACHES`에 사유를 명시한다. |
-| **잔여 갭(상수화)** | ① 캐시명 **문자열 리터럴 산발**(`UserService "users"`, `CommonCodeService "commonCodes"`, `MenuService "menuHierarchy"/"allMenuDtos"/"rootMenuIdByUrl"`). ② **교차서비스 evict 결합**: `ProgramService`가 Menu 소유 캐시를 문자열로 중복 evict — 한쪽 rename 시 무음 미스. ③ `CaffeineCacheManager` 동적 생성 → 오타 시 조용히 새 캐시 생성. <br>위 매트릭스 게이트가 한쪽에만 나타난 이름을 차단하더라도 상수화는 가독성·응집도 개선에 유효하다. 변경 대상별 캐시 의미와 소유자를 확인해 단계적으로 적용한다. |
+| **잔여 갭(상수화)** | ① 캐시명 **문자열 리터럴 산발**(`CommonCodeService "commonCodes"`, `MenuService "allMenus"/"menuParentMap"/"allMenuDtos"/"rootMenuIdByUrl"`). `PolicyService`만 `CACHE_SYSTEM_POLICIES`·`CACHE_SYSTEM_POLICIES_ALL` 상수를 쓴다. ② **교차서비스 evict 결합**: `ProgramService`가 Menu 소유 캐시를 문자열로 중복 evict — 한쪽 rename 시 무음 미스. ③ `CaffeineCacheManager` 동적 생성 → 오타 시 조용히 새 캐시 생성. <br>위 매트릭스 게이트가 한쪽에만 나타난 이름을 차단하더라도 상수화는 가독성·응집도 개선에 유효하다. 변경 대상별 캐시 의미와 소유자를 확인해 단계적으로 적용한다. |
 
 ### 6.1 캐시명 SSOT / 무효화 매트릭스 (권장 도입)
 
 | 캐시명 상수(권장) | 소유 서비스 | 무효화 트리거 | 교차 evict |
 |---|---|---|---|
-| `USERS_CACHE="users"` | UserService | user CUD | — |
 | `COMMON_CODES="commonCodes"` | CommonCodeService | code CUD | — |
-| `MENU_HIERARCHY="menuHierarchy"` | MenuService | menu CUD | ProgramService(program CUD) |
-| `ROOT_MENU_ID_BY_URL="rootMenuIdByUrl"` | MenuService | menu CUD | ProgramService |
+| `ALL_MENUS="allMenus"` | MenuService | menu CUD | — |
+| `MENU_PARENT_MAP="menuParentMap"` | MenuService | menu CUD | — |
+| `ROOT_MENU_ID_BY_URL="rootMenuIdByUrl"` | MenuService | menu CUD | ProgramService(program CUD) |
 | `ALL_MENU_DTOS="allMenuDtos"` | MenuService | menu CUD | ProgramService |
+| `CACHE_SYSTEM_POLICIES`·`CACHE_SYSTEM_POLICIES_ALL`(상수 존재) | PolicyService | policy 변경 | — |
 
 > **실행 지침**: 위 상수를 단일 `CacheNames` 클래스로 승격하고 모든 `@Cacheable/@CacheEvict(value=...)`를 상수 참조로 치환한다.
 > 이후 `ProgramService`의 Menu 캐시 evict는 MenuService가 노출한 상수만 인용해 rename-무음미스를 제거한다.

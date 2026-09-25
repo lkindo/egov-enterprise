@@ -36,7 +36,7 @@
 - **Mapping**: MapStruct (엔티티↔DTO 컴파일타임 매핑 표준)
 - **DB Migration**: Flyway (`V2_0` Postgres 표준 베이스라인 — 빈 DB 부팅 가능)
 - **Security**: Spring Security 7.x, JWT (Json Web Token)
-- **API**: RESTful API with OpenAPI 3.0
+- **API**: RESTful API with OpenAPI 3.1 (springdoc 3.x)
 - **Build**: Gradle 9.7.1 (Version Catalog)
 
 ---
@@ -78,7 +78,7 @@ egov-enterprise/
 1. **Dashboard First**: 대시보드 중심의 UI로 최근 공지, 설문 현황, 주요 통계를 한눈에 확인 가능.
 2. **Glassmorphism Design**: 로그인 페이지 등 주요 진입점에 현대적인 디자인 트렌드 반영.
 3. **Advanced Filtering**: Shadcn/UI 기반의 고성능 데이터 테이블과 필터링 시스템.
-4. **Standalone Admin Pages**: 파일 및 댓글을 전역적으로 관리할 수 있는 독립 관리자 인터페이스 추가.
+4. **Standalone Admin Pages**: 댓글 전역 관리 화면과 모니터링 허브의 첨부 무결성 점검.
 
 ---
 

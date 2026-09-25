@@ -32,8 +32,8 @@ graph TD
 | 모듈명 | 패키지 루트 | 핵심 책임 (Responsibility) | 허용 의존 모듈 |
 |:---|:---|:---|:---|
 | **api-server** | `nuri.api` | REST Controller, OpenAPI 명세 생성, 요청 검증, 예외 핸들링 | `business-app`, `business-core`, `foundation` |
-| **business-app** | `nuri.business` | 프로젝트 고유 도메인 서비스(board·schedule·notification·informalsanction·memoreport·operation 등) | `business-core` |
-| **business-core** | `nuri.business` | 재사용 admin 코어 도메인(user·auth·menu·code·organization·system·survey 등), 보안 유틸(`SecurityUtil`), 테스트 하네스 | `foundation` |
+| **business-app** | `nuri.business` | 프로젝트 고유 도메인 서비스(board·schedule·notification·informalsanction·memoreport·operation·survey 등) | `business-core` |
+| **business-core** | `nuri.business` | 재사용 admin 코어 도메인(user·auth·menu·code·organization·system 등), 보안 유틸(`SecurityUtil`), 테스트 하네스 | `foundation` |
 | **foundation** | `nuri.foundation` | 공통 계약(`ApiResponse`·`PageResponse`·`ErrorCode`·`GlobalExceptionHandler`), 글로벌 공통 Entity(`BaseEntity`/`BaseTimeEntity`), 보안 백본(JWT/IAM/filter), `DashboardItemProvider` 포트, auto-configuration | 없음 (독립 모듈) |
 | **migration-tool** | `nuri.migration` | 레거시→표준 스키마 이관 ETL CLI(mapping.yml DSL·SourceIntrospector·EtlExecutor·MigrationVerifier) | 없음 (foundation 미의존 독립) |
 
@@ -56,16 +56,16 @@ sequenceDiagram
     participant Repo as JPA Repository
     participant DB as PostgreSQL 17
 
-    Client->>Ctrl: GET /admin/community/boards
-    Ctrl->>Svc: getBoardList(pageable)
-    Svc->>Repo: findAll(pageable)
-    Repo->>DB: SELECT * FROM tb_bbs_master...
+    Client->>Ctrl: GET /api/v1/boards/{bbsId}
+    Ctrl->>Svc: getBoardPosts(bbsId, 검색 조건, pageable)
+    Svc->>Repo: searchArticles(condition, pageable)
+    Repo->>DB: SELECT ... FROM tb_bbs_item ...
     DB-->>Repo: Return Result
     Note over Svc,Repo: [JPA Entity 범위]<br>nuri.business.domain.board.Board
     Repo-->>Svc: Return Entity List
-    Note over Svc: [DTO 변환 집행 · MapStruct]<br>Board ➔ BoardResponseDto
-    Svc-->>Ctrl: Return DTO List (BoardResponseDto)
-    Ctrl-->>Client: Return REST Response (JSON)
+    Note over Svc: [DTO 변환 집행 · MapStruct]<br>Board ➔ BoardDto (BoardMapper)
+    Svc-->>Ctrl: Return Page<BoardDto>
+    Ctrl-->>Client: ApiResponse<PageResponse<BoardDto>> (JSON)
 ```
 
 ### 2.1 레이어 간 격리 규칙

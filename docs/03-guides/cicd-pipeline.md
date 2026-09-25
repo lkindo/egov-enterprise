@@ -306,7 +306,8 @@ dependencyCheck {
         'annotationProcessor',
         'testAnnotationProcessor'
     ]
-    formats = ['HTML', 'JUNIT']
+    formats = ['HTML', 'JUNIT', 'XML']
+    outputDirectory = layout.buildDirectory.dir('reports').get().asFile
     suppressionFile = file('config/dependency-check/suppressions.xml').absolutePath
 }
 ```
@@ -486,7 +487,7 @@ export NVD_API_KEY=your-key
 [`sast-policy.json`](../../config/security/sast-policy.json)이 CodeQL 버전·보안 점수 임계값·언어를 정의한다. Java는 5개 모듈의 production `compileJava`를 캐시 없이 추적하여 Lombok 생성 코드까지 분석한다. JavaScript/TypeScript는 [`codeql.yml`](../../config/security/codeql.yml)의 프론트엔드와 운영 스크립트 경로를 분석한다. `security-extended`는 기본 보안 쿼리와 추가 보안 쿼리를 포함한다([GitHub 공식 설명](https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options)).
 
 - PR과 main/master push의 코드·설정 변경에서는 두 언어의 전체 대상 소스를 분석하며, 명시적인 문서 전용 변경만 생략한다. 이관만 바뀌어도 양언어 분석을 유지한다. 분류 실패·언어 누락·분석 실패는 통과로 처리하지 않는다.
-- 보안 점수 7.0 이상(High/Critical)은 기존·신규 여부와 관계없이 실패시킨다. [승인된 오탐 7건](../04-operations/sast-findings-review.md)만 정확한 위치·fingerprint·소스/방어 해시·만료일에 묶어 예외로 처리한다. 그 미만의 탐지도 리포트에 남긴다. 리포트 누락·잘못된 버전·빈 쿼리 집합·실행 오류·예외 건수 불일치는 별도 오류로 실패한다.
+- 보안 점수 7.0 이상(High/Critical)은 기존·신규 여부와 관계없이 실패시킨다. [승인된 오탐 6건](../04-operations/sast-findings-review.md)만 정확한 위치·fingerprint·소스/방어 해시·만료일에 묶어 예외로 처리한다. 그 미만의 탐지도 리포트에 남긴다. 리포트 누락·잘못된 버전·빈 쿼리 집합·실행 오류·예외 건수 불일치는 별도 오류로 실패한다.
 - 두 언어의 실제 취약/안전 fixture를 CodeQL로 분석하고, 취약 fixture가 동일 정책 CLI에서 종료 코드 1을 내는지 매 CI에서 확인한다. fixture의 취약 동작은 실행하지 않는다.
 - `secure-coding`은 여섯 번째 required context다. 기존 release workflow가 같은 manifest를 읽으므로 대상 SHA에 이 체크가 성공하지 않으면 이미지·릴리스 발행을 차단한다. 원격 ruleset 적용 여부는 `npm run verify:ops`로 별도 확인한다.
 - 코드 snippet·전체 파일 내용·소스에서 유래한 메시지를 제거한 SARIF를 사용한다. 14일 보존 감사 artifact에는 예외 ID·사유·만료일과 전체 탐지를 남기고, GitHub Security 게시본에서는 승인된 개별 탐지만 제외한다. 원본 CodeQL DB는 업로드하지 않는다. 분석에 앱·OCI 자격증명은 필요하지 않다.

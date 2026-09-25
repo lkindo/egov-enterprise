@@ -191,7 +191,7 @@ LOOP:
 경미하고 가역적인 선택은 현재 코드 스타일과 계획의 기본 권고로 결정하고 진행하라. 다음은 임의로 확정하지 마라.
 
 - 목표 sitemap과 역할별 메뉴 tree.
-- ADR-0009의 승인 범위 밖 새 검색 route/query key와 파생 제품의 범위 확대. 현재 주소창 검색 승인은 `/search?q`, `/admin/community/boards/select-board-list` 및 `/admin/community/[id]`의 `searchCnd`·`searchWrd`다.
+- ADR-0009의 승인 범위 밖 새 검색 route/query key와 파생 제품의 범위 확대. 현재 주소창 검색 승인은 `/search?q`와 `/admin/community/boards/select-board-list`의 `searchCnd`·`searchWrd`다(`/admin/community/[id]`는 2026-09-25 page-redirect가 되어 빠졌다, DEC-OPS-130).
 - 정부 공식 identity를 활성화할 기관 자격과 콘텐츠.
 - 실제 사용자 모집 결과와 사용자 대표성.
 - analytics/RUM 외부 서비스와 개인정보 수집.

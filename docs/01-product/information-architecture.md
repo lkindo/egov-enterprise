@@ -63,7 +63,7 @@
 
 | 판단 대상 | 정본 | 이 문서의 사용법 |
 |---|---|---|
-| 구현 route 모집단·route kind·effective target | [ui-route-capabilities.json](../../config/ui-route-capabilities.json) | 119행을 이 문서에 복제하지 않고 exact population으로 참조한다. |
+| 구현 route 모집단·route kind·effective target | [ui-route-capabilities.json](../../config/ui-route-capabilities.json) | route 행(2026-09-25 118행)을 이 문서에 복제하지 않고 exact population으로 참조한다. |
 | route census 생성·검증 의미 | [route contract](../../scripts/ui-route-capabilities-contract.mjs), [contract test](../../scripts/ui-route-capabilities-contract.test.mjs) | filesystem, proxy, redirect, profile 관측이 무너지면 manifest를 신뢰하지 않는다. |
 | UI shell 입장 경계 | [proxy.ts](../../frontend/src/proxy.ts) | `sourceShellAccess`와 `shellAccess`를 계산한다. 도메인 권한의 증거로 승격하지 않는다. |
 | config redirect | [next.config.ts](../../frontend/next.config.ts) | source, target, permanent와 query target을 확인한다. |
@@ -92,64 +92,63 @@
 
 ## 3. 2026-08-21 현재 route·alias census
 
+이 절의 원본 수치는 2026-08-21 측정이다. 2026-09-25 에 [route manifest](../../config/ui-route-capabilities.json)에서 다시 세어 3.1·3.2 표에 열을 더하고, 3.3·3.4는 현재 구조로 고쳤다. 이후 수치의 정본은 manifest 이며 이 문서는 해석을 남긴다.
+
 ### 3.1 exact population
 
-| 항목 | 현재 수 | 해석 |
-|---|---:|---|
-| filesystem implementation route entry | 119 | 승인 시 disposition이 정확히 한 번씩 있어야 하는 모집단 |
-| 직접 렌더 `page` | 101 | canonical 후보이지만 capability와 메뉴는 별도 검토 |
-| `page-redirect` | 5 | page 구현 자체가 다른 주소로 이동 |
-| filesystem route를 가리는 `config-redirect` | 13 | page entry는 census에 있지만 effective 동작은 redirect |
-| page가 없는 redirect-only external alias | 2 | 119 모집단 밖 호환 source; 별도로 존속·sunset 검토 |
-| source shell access | public 1 / authenticated 49 / admin-system 69 | source 주소 기준 |
-| effective shell access | public 1 / authenticated 48 / admin-system 70 | `/cop/sms/selectSmsList`가 admin target으로 이동해 1건 변경 |
-| route 상태 | partial 9 / unavailable 2 / unverified 108 | `live`로 확정된 route는 0 |
-| role·menu exposure·decision safety | 119/119 roles `UNVERIFIED`; 119/119 menu `unverified`; 119/119 `decisionSafe=false` | IA 승인 입력이 아직 완결되지 않음 |
+| 항목 | 2026-08-21 | 2026-09-25 | 해석 |
+|---|---:|---:|---|
+| filesystem implementation route entry | 119 | 118 | 승인 시 disposition이 정확히 한 번씩 있어야 하는 모집단 |
+| 직접 렌더 `page` | 101 | 90 | canonical 후보이지만 capability와 메뉴는 별도 검토 |
+| `page-redirect` | 5 | 17 | page 구현 자체가 다른 주소로 이동 |
+| filesystem route를 가리는 `config-redirect` | 13 | 11 | page entry는 census에 있지만 effective 동작은 redirect |
+| page가 없는 redirect-only external alias | 2 | 2 | 구현 route 모집단 밖 호환 source; 별도로 존속·sunset 검토 |
+| source shell access | public 1 / authenticated 49 / admin-system 69 | public 1 / authenticated 50 / admin-system 67 | source 주소 기준 |
+| effective shell access | public 1 / authenticated 48 / admin-system 70 | public 1 / authenticated 49 / admin-system 68 | `/cop/sms/selectSmsList`가 admin target으로 이동해 1건 변경 |
+| route 상태 | partial 9 / unavailable 2 / unverified 108 | partial 84 / demo 3 / unavailable 2 / unverified 29 | `live`로 확정된 route는 0 |
+| role·menu exposure·decision safety | 119/119 roles `UNVERIFIED`; 119/119 menu `unverified`; 119/119 `decisionSafe=false` | 118/118 roles `UNVERIFIED`; menu visible 54 / hidden 3 / not-menued 61(구조 관측, §3.5); 118/118 `decisionSafe=false` | IA 승인 입력이 아직 완결되지 않음 |
 
-따라서 `119 routes`를 `119 screens`, `119 menu items` 또는 `119 supported features`라고 부르면 안 된다. 사용자가 입력할 수 있는 source 주소는 구현 route 119개에 page-less alias 2개가 더 있지만, redirect source는 독립 화면이 아니다.
+따라서 route 수(2026-09-25 118)를 화면 수, 메뉴 항목 수 또는 지원 기능 수라고 부르면 안 된다. 사용자가 입력할 수 있는 source 주소는 구현 route에 page-less alias 2개가 더 있지만, redirect source는 독립 화면이 아니다.
 
 ### 3.2 namespace 분포는 제품 구조가 아니라 현재 코드의 위치다
 
-| 현재 namespace | route 수 | 관찰 |
-|---|---:|---|
-| `/admin` 전체 | 94 | 그중 effective authenticated shell이 25개라 경로 이름과 사용자 역할 의미가 충돌할 수 있다. |
-| `/admin/system` | 23 | 로그·메뉴·코드·모니터링·정책 등 서로 다른 top task가 한 기술 namespace에 모여 있다. |
-| `/admin/survey` | 13 | hub와 query-tab alias, 별도 manage child, poll 기능이 혼재한다. |
-| `/admin/community` | 12 | 일반 사용자 게시·조회와 관리자 master/maker/template가 같은 prefix를 공유한다. |
-| `/admin/collaboration` | 11 | 일반 인증 사용자에게 열린 주소록·메일·스크랩 흐름이다. |
-| 기타 `/admin/*` | 35 | 운영·보안·통계·사용자·워크플로·도움말 등이 분산돼 있다. |
-| 비-`/admin` route | 25 | login, approvals, note, search, survey, smart-toolkit, legacy `/cop` 등을 포함한다. |
+| namespace | 2026-08-21 | 2026-09-25 | 관찰 |
+|---|---:|---:|---|
+| `/admin` 전체 | 94 | 93 | 그중 effective authenticated shell이 25개(2026-09-25 26개)라 경로 이름과 사용자 역할 의미가 충돌할 수 있다. |
+| `/admin/system` | 23 | 23 | 로그·메뉴·코드·모니터링·정책 등 서로 다른 top task가 한 기술 namespace에 모여 있다. |
+| `/admin/survey` | 13 | 12 | hub와 query-tab alias, 별도 manage child, poll 기능이 혼재한다. |
+| `/admin/community` | 12 | 12 | 일반 사용자 게시·조회와 관리자 master/maker/template가 같은 prefix를 공유한다. |
+| `/admin/collaboration` | 11 | 11 | 일반 인증 사용자에게 열린 주소록·메일·스크랩 흐름이다. |
+| 기타 `/admin/*` | 35 | 35 | 운영·보안·통계·사용자·워크플로·도움말 등이 분산돼 있다. |
+| 비-`/admin` route | 25 | 25 | login, approvals, note, search, survey, smart-toolkit, legacy `/cop` 등을 포함한다. |
 
-이 숫자는 메뉴 priority나 사용 빈도를 말하지 않는다. 특히 `/admin` prefix 아래 일반 사용자 과업이 있다는 사실은 현재 proxy 정책의 관측이며, 그 기능이 관리자 전용이어야 한다거나 일반 사용자에게 안전하다는 결론이 아니다.
+이 숫자는 메뉴 priority나 사용 빈도를 말하지 않는다. 특히 `/admin` prefix 아래 일반 사용자 과업이 있다는 사실은 현재 화면 권한 등록의 관측이며, 그 기능이 관리자 전용이어야 한다거나 일반 사용자에게 안전하다는 결론이 아니다.
 
 ### 3.3 effective authenticated인 `/admin` 경로의 위험
 
-현재 proxy는 다음 5개 prefix를 일반 인증 사용자에게 열고, community의 3개 관리자 하위 경로만 다시 차단한다.
-
-- `/admin/work-hub`
-- `/admin/collaboration`
-- `/admin/help`
-- `/admin/community` — `boards/master`, `boards/maker`, `templates`는 admin-only 예외
-- `/admin/survey/polls/participate`
-
-manifest 기준으로 이 규칙에 걸리는 effective route entry는 25개다. 위험은 두 방향이다.
+2026-08-21 에는 proxy가 5개 prefix(`/admin/work-hub`, `/admin/collaboration`, `/admin/help`, `/admin/community`, `/admin/survey/polls/participate`)를 일반 인증 사용자에게 열고 community의 관리자 하위 경로 3개만 다시 막았다. 2026-09-25 현재 proxy는 prefix로 열지 않는다. 모든 `/admin` 화면을 생성된 `PAGE_PERMISSIONS`의 정확한 등록(정적 경로가 형제 동적 경로를 이긴다)과 서버가 돌려준 현재 기능 권한으로 판단하고, 등록되지 않은 경로는 열지 않는다([page-authorization](../../frontend/src/lib/auth/page-authorization.ts), [ADR-0016](../02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md)). 권한 목록이 빈 등록 화면이 인증 사용자에게 열리며, manifest 기준 effective authenticated `/admin` route는 26개다. 이 화면 진입 판정은 API 인가를 대체하지 않는다. 위험은 두 방향이다.
 
 1. **과소 노출 위험:** 사용자는 `/admin`이라는 내부 명명 때문에 자기 업무 기능을 관리자 기능으로 오해하거나 메뉴에서 찾지 못할 수 있다.
-2. **과다 노출 위험:** prefix가 넓어 새 child route가 추가되면 명시적 검토 없이 USER shell에 들어올 수 있다. backend가 막더라도 403 화면·민감 label·dead action이 노출될 수 있다.
+2. **과다 노출 위험:** 새 child route는 등록 없이는 열리지 않지만, 등록할 때 권한 목록을 비워 두면 명시적 검토 없이 USER shell에 들어올 수 있다. backend가 막더라도 403 화면·민감 label·dead action이 노출될 수 있다.
 
-따라서 IA 연구에서는 URL 문자열을 카드 label로 보여 주지 않고 과업·결과 용어를 사용한다. 구현 검토에서는 25개를 capability와 API 단위로 전수 확인하고, 단순히 `/admin`을 제거하거나 proxy allowlist를 넓히지 않는다.
+따라서 IA 연구에서는 URL 문자열을 카드 label로 보여 주지 않고 과업·결과 용어를 사용한다. 구현 검토에서는 26개를 capability와 API 단위로 전수 확인하고, 단순히 `/admin`을 제거하거나 빈 권한 등록을 늘리지 않는다.
 
 ### 3.4 alias 수렴 구조
 
-| alias 군 | 현재 source 수 | canonical/effective target | 주의점 |
+| alias 군 | source 수(2026-09-25) | canonical/effective target | 주의점 |
 |---|---:|---|---|
-| survey hub | 7 | `/admin/survey/hub` + route별 `tab` | `items`와 `questions`가 같은 tab으로 수렴한다. alias를 메뉴 node로 중복 노출하지 않는다. |
-| monitoring hub | 5 | `/admin/system/monitoring/hub` + `tab` | observability, security/system audit, login policy label이 한 hub로 수렴한다. tab 권한·용어를 따로 검증한다. |
+| survey hub | 6 | `/admin/survey/hub` + route별 `tab` | `items`와 `questions`가 같은 tab으로 수렴한다. alias를 메뉴 node로 중복 노출하지 않는다. |
+| monitoring hub | 4 | `/admin/system/monitoring/hub` + `tab` | observability, security/system audit이 한 hub로 수렴한다. 로그인 정책은 DEC-OPS-024로 정본 화면에 복원됐다. tab 권한·용어를 따로 검증한다. |
 | workflow | 1 | `/admin/workflow` | source와 target 모두 현재 `decisionSafe=false`; alias가 기능 완성을 뜻하지 않는다. |
 | SMS | 1 | `/admin/uss/ion/sms` | source는 authenticated, effective target은 admin-system이다. source 기준 메뉴 노출은 권한 혼동을 만든다. |
-| address book | 1 | `/admin/collaboration/address-book/select-address-book-list` | index alias이며 canonical label은 사용자 용어로 별도 결정한다. |
+| address book | 2 | `/admin/collaboration/address-book/select-address-book-list` | index alias와 등록 화면(DEC-OPS-079 모달 이행)이다. canonical label은 사용자 용어로 별도 결정한다. |
+| scrap | 2 | `/admin/collaboration/scraps/selectScrapList` | 등록·상세가 목록 모달로 이행했다(DEC-OPS-079). |
+| knowledge hub community | 2 | `/admin/help?tab=COMMUNITY` | `/admin/community`와 `boards`가 같은 탭으로 수렴한다(DEC-OPS-040). |
+| board write | 2 | `/admin/community/boards/insert-board-article` | 작성 화면 3종을 정본 하나로 수렴했다(DEC-OPS-034). |
+| community detail | 1 | `/cop/cmy/selectCommunityDetail/{id}` | id를 보존해 정본 상세로 보낸다(DEC-OPS-130). |
+| 단일 통합 | 4 | `/approvals`, `/admin/security/authority`, `/admin/survey/manage`, `/admin/user/indvdl-info-policy` | ISM·롤·설문 등록·사용자 로그인 정책 별칭이다. |
 | smart-toolkit legacy verbs | 3 | 목록·생성·상세 canonical route | 동적 `[id]` 보존과 안전한 encoding을 실행 검증해야 한다. |
-| board camelCase external alias | 2 | kebab-case board route | page-less permanent 호환 alias다. 119 route disposition과 별도 항목으로 검토한다. |
+| board camelCase external alias | 2 | kebab-case board route | page-less permanent 호환 alias다. 구현 route disposition과 별도 항목으로 검토한다. |
 
 source가 여럿이라는 사실은 live 메뉴 중복의 증거가 아니다. 메뉴 중복·부모/자식 동일 경로·broken menu·고아 route·숨김 menu는 live census가 성공한 뒤에만 수치화한다.
 
@@ -160,7 +159,7 @@ source가 여럿이라는 사실은 live 메뉴 중복의 증거가 아니다. �
 도구가 성공하더라도 곧바로 G1 증거가 되지 않는다.
 
 - 기본 `menu-census.mjs` 자체는 `tb_menu_crt_dtl`을 읽지 않는다. 이번 별도 read-only aggregate는 authority별 활성 메뉴·배정 사용자 수만 측정했으며 exact assignment와 effective menu artifact를 보존하지 않았다.
-- 자체 route collector는 `page.ts/tsx` 중심이며 119-route 계약의 모든 확장자·config redirect·effective target·충돌 방어를 소유하지 않는다.
+- 자체 route collector는 `page.ts/tsx` 중심이며 route manifest 계약의 모든 확장자·config redirect·effective target·충돌 방어를 소유하지 않는다.
 - JSON의 `measuredAt`은 현재 `null`이라 실행 시각·release provenance를 자체 증명하지 않는다.
 - manifest의 `menuSnapshot.source` 문구는 실행 증거가 아니라 metadata다. 실제 script가 읽는 source와 다르면 계약이 red여야 하며, 구조 census 문구를 authority/role evidence로 승격하지 않는다.
 
@@ -192,7 +191,7 @@ source가 여럿이라는 사실은 live 메뉴 중복의 증거가 아니다. �
 | 익명 사용자 | 로그인 후 안전한 원래 시작점 도달 | `/login` → `/` 또는 허용된 내부 목적지 | public → authenticated/admin-system | `redirect`가 안전한 canonical 목적지만 담는지, 오류·재인증 후 입력과 초점이 복원되는지 검증한다. |
 | 일반 인증 사용자 | 오늘의 업무·보고·일정을 확인하고 다음 action 수행 | `/`, `/admin/work-hub`, `/smart-toolkit/dept-job`, `/smart-toolkit/schedule`, `/smart-toolkit/work-report` | authenticated | route role과 live action은 대부분 미검증이다. 실제 첫 과업과 “업무” 용어를 조사한다. |
 | 일반 인증 사용자 | 쪽지·주소록·메일·스크랩으로 협업 결과 전달 | `/note`, `/admin/collaboration/*` | authenticated | `/admin` 명명과 기능 label의 발견 가능성, owner-only action과 privacy를 검증한다. |
-| 일반 인증 사용자/관리자 | 역할에 맞는 메뉴·게시글·사용자를 통합 검색 | `/search`와 role-filtered command search | authenticated | route는 partial이다. USER 사용자 검색은 admin API 403로 unavailable, menu shortcut은 demo, article search는 unavailable이며 `q`가 URL에 있다. 실패≠0건, role별 source와 label/count 비노출을 검증한다. |
+| 일반 인증 사용자/관리자 | 역할에 맞는 메뉴·게시글·사용자를 통합 검색 | `/search`와 role-filtered command search | authenticated | route는 partial이다. 사용자 검색은 인증 사용자용 최소 사용자 검색 API로 partial, menu shortcut은 demo, article search는 unavailable이며 `q`가 URL에 있다. 실패≠0건, role별 source와 label/count 비노출을 검증한다. |
 | 콘텐츠 작성자/독자 | 게시글 게시·조회·댓글 또는 커뮤니티 이동 | `/admin/community/*`, `/cop/cmy/*` | 대부분 authenticated | board 운영 기능과 사용자 게시 흐름이 같은 prefix에 있다. 역할별 tree를 분리해 시험한다. |
 | 설문 응답자 | 참여 가능한 설문을 찾아 응답·제출 결과 확인 | `/admin/survey/polls/participate`, `/survey`, `/survey/[id]`, `/survey/response/*` | authenticated | 응답·record ID URL 노출, 제출 후 back/refresh 중복, 결과 공개 범위를 확인한다. |
 | 업무 사용자/승인자 | 요청 작성→승인/반려→상태 확인 | `/approvals`, `/approvals/draft` | authenticated | 두 route 모두 현재 route 상태가 partial이다. 지원 action과 역할별 다음 단계를 먼저 확인한다. |
@@ -223,13 +222,13 @@ survey와 monitoring은 여러 legacy source가 하나의 hub+tab으로 수렴�
 
 ### 5.3 menu census 부재를 과거 수치로 메우면 잘못된 삭제가 가능하다
 
-현재 메뉴 노출은 119/119 `unverified`다. 이 상태에서 orphan을 정하면 “메뉴에 없음 = 가치 없음”이라는 오류가 된다. 상세·작성 route는 상위 메뉴가 있는 정상 sub-route일 수 있고, cross-role handoff 링크만으로 진입할 수도 있다.
+2026-08-21 에는 메뉴 노출이 119/119 `unverified`였다. 2026-09-25 현재 manifest는 메뉴 구조 관측(visible 54·hidden 3·not-menued 61)만 기록하며 그룹별 노출은 측정하지 않았다. 이 상태에서 orphan을 정하면 “메뉴에 없음 = 가치 없음”이라는 오류가 된다. 상세·작성 route는 상위 메뉴가 있는 정상 sub-route일 수 있고, cross-role handoff 링크만으로 진입할 수도 있다.
 
 **보완:** live census와 static/deep-link 소비를 함께 보고 `orphan`, `expected child`, `alias`, `hidden by role`, `external entry`를 구분한다.
 
 ### 5.4 route 존재와 capability 완성을 합치면 dead action을 정식 IA에 올린다
 
-현재 route별 `live`는 0이고 모든 route가 decision-safe가 아니다. workflow, sanction form, notification dispatch, network monitoring처럼 demo·partial·unavailable action이 섞인 화면을 메뉴 이름만 정리해 정식 운영 capability처럼 보이게 하면 신뢰가 악화된다.
+현재 route별 `live`는 0이고 모든 route가 decision-safe가 아니다. workflow canvas·지표, 알림 health metrics, 통합 검색의 게시글 검색처럼 demo·partial·unavailable action이 섞인 화면을 메뉴 이름만 정리해 정식 운영 capability처럼 보이게 하면 신뢰가 악화된다.
 
 **보완:** 메뉴 eligibility는 route 파일 존재가 아니라 역할별 primary capability의 evidence 수준과 상태를 사용한다. demo는 demo profile 또는 명시된 sandbox에 격리한다.
 
@@ -542,7 +541,7 @@ evidence: []
 5. overlay state가 `proposed`일 때 menu/generator 소비를 fail-closed로 게이트하는 binding test — 2026-08-24 D5 2단계부터 무조건 차단이 아니라 ADR-0007 §Decision 4 게이트다: acceptanceEvidence 4축 전부가 측정 hash 또는 ADR-0007 deferral로 기록되고, owner PR 리뷰로 개별 `approved`된 record가 최소 1건 존재하며, 실행 소비자가 entrypoints에 등록된 경우에만 소비를 열 수 있다(미등록 실행 소비·무approved 소비·미기록 증거는 red)
 6. 기관별 approval metadata와 ADR-0007의 참조-기본 승인과 구분되는 adoption acceptance record가 없으면 해당 기관 범위를 `accepted`로 전이하지 못하는 fail-closed test
 
-현재 실행 증거는 [disposition proposal](../../config/ui-navigation-disposition-proposal.json), [JSON schema](../../config/ui-navigation-disposition.schema.json), [contract](../../scripts/ui-navigation-disposition-contract.mjs), [contract test](../../scripts/ui-navigation-disposition-contract.test.mjs)에 있다. overlay는 CRLF/LF만 LF로 정규화한 manifest UTF-8 SHA-256과 route/alias key만 참조하고 shell·role·menu·target metadata를 복제하지 않는다. external alias의 target/permanent 같은 관측 metadata는 review view에서 hash가 고정된 manifest와 join하며 overlay에 재기록하지 않는다. 119개 route와 2개 external alias의 record는 전건 disposition 초안이 기입된 `proposed`에서 출발했고, 2026-08-23 웨이브 1에서 저위험 8건(demo-isolated 4·unavailable-hidden 2·retain-alias-permanent 2)만 owner PR 리뷰(ADR-0007 §Decision 4, DEC-OPS-013 채널)로 `approved`가 됐다. 잔여 113건의 review 축은 `unverified`, approval은 `null`이다. route owner/reviewBy는 manifest의 bounded review 역할과 2026-10-31을, alias는 `product/IA + domain owner`와 같은 reviewBy를 갖지만 담당자 지정이나 승인을 뜻하지 않는다. menu/generator binding은 현재 disabled이며, D5 2단계(2026-08-24)부터 위 5항의 ADR-0007 게이트를 통과하는 별도 PR로만 enable할 수 있다. 같은 단계에서 `acceptanceEvidence` 4축(research·liveMenu·authorityAssignment·effectiveMenu)은 ADR-0007 §Decision 3에 따라 기관 채택 시점의 재검증 의무로 이전됐음을 ADR-0007 본문 hash에 결속된 deferral 레코드로 기록했다 — 이는 측정 완료 주장도 면제도 아니며, accepted-risk(사용자 연구 없는 승인)를 그대로 승계한다. 이는 참조-기본 승인과 개별 record 승인의 진행을 뜻할 뿐 overlay 전체의 accepted 전이나 채택 기관 G1을 승인했다는 뜻이 아니다.
+현재 실행 증거는 [disposition proposal](../../config/ui-navigation-disposition-proposal.json), [JSON schema](../../config/ui-navigation-disposition.schema.json), [contract](../../scripts/ui-navigation-disposition-contract.mjs), [contract test](../../scripts/ui-navigation-disposition-contract.test.mjs)에 있다. overlay는 CRLF/LF만 LF로 정규화한 manifest UTF-8 SHA-256과 route/alias key만 참조하고 shell·role·menu·target metadata를 복제하지 않는다. external alias의 target/permanent 같은 관측 metadata는 review view에서 hash가 고정된 manifest와 join하며 overlay에 재기록하지 않는다. 119개 route와 2개 external alias의 record는 전건 disposition 초안이 기입된 `proposed`에서 출발했고, 2026-08-23 웨이브 1에서 저위험 8건(demo-isolated 4·unavailable-hidden 2·retain-alias-permanent 2)만 owner PR 리뷰(ADR-0007 §Decision 4, DEC-OPS-013 채널)로 `approved`가 됐다. 그 뒤 웨이브별 개별 승인(DEC-OPS-040·079·130 등)으로 2026-09-25 현재 route 118건 중 approved 29·proposed 89, external alias 2건 approved이며, proposed 행의 review 축은 `unverified`, approval은 `null`이다. route owner/reviewBy는 manifest의 bounded review 역할과 2026-10-31을, alias는 `product/IA + domain owner`와 같은 reviewBy를 갖지만 담당자 지정이나 승인을 뜻하지 않는다. menu/generator binding은 현재 disabled이며, D5 2단계(2026-08-24)부터 위 5항의 ADR-0007 게이트를 통과하는 별도 PR로만 enable할 수 있다. 같은 단계에서 `acceptanceEvidence` 4축(research·liveMenu·authorityAssignment·effectiveMenu)은 ADR-0007 §Decision 3에 따라 기관 채택 시점의 재검증 의무로 이전됐음을 ADR-0007 본문 hash에 결속된 deferral 레코드로 기록했다 — 이는 측정 완료 주장도 면제도 아니며, accepted-risk(사용자 연구 없는 승인)를 그대로 승계한다. 이는 참조-기본 승인과 개별 record 승인의 진행을 뜻할 뿐 overlay 전체의 accepted 전이나 채택 기관 G1을 승인했다는 뜻이 아니다.
 
 기관별 acceptance record는 manifest hash, proposed overlay hash, research evidence hash와 contract 결과를 참조한다. ADR-0007은 참조-기본 구조와 사용자 연구 없는 accepted risk를 소유한다. 기관별 승인 뒤 Wave IA-0은 이 증거를 “새로 만드는” 단계가 아니라 해당 기관의 accepted state와 실제 consumer binding을 추가하는 단계다.
 
@@ -565,7 +564,7 @@ evidence: []
 
 ### 8.6 exact completeness 불변식
 
-- `manifest routes = 119`이며 review key set이 route key set과 정확히 같다.
+- `manifest routes` 수가 filesystem에서 파생한 route 수(2026-09-25 118)와 같고 review key set이 route key set과 정확히 같다.
 - redirect source도 빠지지 않고 source disposition을 가진다.
 - canonical target이 같은 여러 alias는 하나의 nav node만 참조한다.
 - page-less external alias 2개는 implementation route count에 더하지 않되 별도 review set에서 누락되지 않는다.
@@ -643,7 +642,7 @@ evidence: []
 
 ## 10. ADR-0009 검색 정책과 URL-state remainder
 
-> **현재 결정 (2026-09-05):** [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)이 `/search?q`, `/admin/community/boards/select-board-list` 및 `/admin/community/[id]`의 `searchCnd`·`searchWrd`를 exact binding으로 승인했다. class-governed 비규범 registry에서 `search-input`만 ADR-0009에 결속되며 이 3개 route binding·5개 census record에만 적용된다. 로그 화면이 검색어를 주소창에 동기화하지 않는 선택과 same-origin binary GET의 `searchKeyword` 전달도 함께 유지한다. 이 허용은 client log·analytics 복제나 서버 인가 생략을 뜻하지 않으며, 외부 URL 기록 위험은 accepted risk다.
+> **현재 결정 (2026-09-05):** [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)이 `/search?q`, `/admin/community/boards/select-board-list` 및 `/admin/community/[id]`의 `searchCnd`·`searchWrd`를 exact binding으로 승인했다. class-governed 비규범 registry에서 `search-input`만 ADR-0009에 결속되며 이 3개 route binding·5개 census record에만 적용된다. 2026-09-25 `/admin/community/[id]`가 page-redirect가 되어 binding은 2개다(DEC-OPS-130). 로그 화면이 검색어를 주소창에 동기화하지 않는 선택과 same-origin binary GET의 `searchKeyword` 전달도 함께 유지한다. 이 허용은 client log·analytics 복제나 서버 인가 생략을 뜻하지 않으며, 외부 URL 기록 위험은 accepted risk다.
 >
 > **역사 기록:** 아래에서 “2026-08-23 당시 제안”으로 표시한 3조건 기본안, 로그 Phase 1과 denylist는 ADR-0009 이전 승인 입력물이다. 결정 이력을 보존하기 위해 당시 문구를 소급 재작성하지 않으며 현재 검색 정책 판단에는 ADR-0009와 class registry의 `search-input` 기록을 사용한다.
 
@@ -685,7 +684,7 @@ URL에 둘 상태 `s`는 다음 세 질문이 모두 `yes`일 때만 허용한�
 |---|---|---|
 | `presentation-state` | 승인 | `page`·`tab`·`view`·`orderBy`·`startDate`·`endDate`; 값 검증과 기본값 정규화는 화면 계약을 따른다. |
 | `resource-identifier` | 승인 | `[id]`·`bbsId`·`groupId`·`nttId`·`pstSn`·`srvySn`; URL은 인가 증거가 아니며 서버 객체 가드를 유지한다. |
-| `search-input` | 승인 | `/search?q`, 두 community route의 `searchCnd`·`searchWrd`; 3개 route binding·5개 census record에 한정하고 client log·analytics에 복제하지 않는다. |
+| `search-input` | 승인 | `/search?q`, 게시판 목록 route의 `searchCnd`·`searchWrd`; 2개 route binding·5개 census record에 한정하고(`/admin/community/[id]`는 2026-09-25 page-redirect가 되어 binding에서 빠졌다, DEC-OPS-130) client log·analytics에 복제하지 않는다. |
 | `control-flag` | 승인 | `auth_error`·`expired`; 정확한 의미와 소비자는 registry 근거를 따른다. |
 | `opaque` | 미해결 | 계산/폼/raw URL/source-query 등 정적으로 닫히지 않은 값. 검색 허용으로 승격하지 않는다. |
 | `path-intent` | 미해결 | `redirect`; login 복귀와 권한·loop·raw query 전달을 별도 판정한다. |
@@ -934,7 +933,7 @@ UX, domain, security/privacy, accessibility reviewer가 독립적으로 cognitiv
 | IA-OI-08 | [generated URL-state census](../../config/ui-url-state-census.json)의 privacy·canonical·role/object authorization 분류와 외부 telemetry 검증 | `class-governed` — 4개 부류가 각각 승인되고 `search-input`만 ADR-0009 결속, 3개 부류 미해결; 승인 검색어의 외부 URL 잔존은 accepted risk이나 배포자별 재검토 필요 | Security/privacy + FE/domain | remainder 승인 전 | `opaque`·`path-intent`·`hand-assembled-segment` |
 | IA-OI-09 | external alias 소비자·지원 기간 | `blocked-input` | Product/domain owner | disposition 승인 전 | permanent/sunset 결정 |
 | IA-OI-10 | 지원 browser/device/AT와 accommodation | `blocked-input` | Accessibility owner | 모집 전 | accessible findability gate |
-| IA-OI-11 | 비규범 119+2 disposition overlay schema와 exact/red/binding test | hybrid 잠정 방향은 hash-bound, overlay는 `proposed` — final 승인은 `blocked-input`. 웨이브 1(2026-08-23): 저위험 8건(demo-isolated 4·unavailable-hidden 2·retain-alias-permanent 2)을 owner PR 리뷰로 개별 `approved` 전이, 잔여 113건 `proposed`(ADR-0007 §Decision 4 채널) | FE architecture + product/IA | decision workshop 전 | 승인 completeness evidence |
+| IA-OI-11 | 비규범 119+2 disposition overlay schema와 exact/red/binding test | hybrid 잠정 방향은 hash-bound, overlay는 `proposed` — final 승인은 `blocked-input`. 웨이브 1(2026-08-23): 저위험 8건(demo-isolated 4·unavailable-hidden 2·retain-alias-permanent 2)을 owner PR 리뷰로 개별 `approved` 전이, 잔여 113건 `proposed`(ADR-0007 §Decision 4 채널). 2026-09-25 재측정: route 118건 중 approved 29·proposed 89, external alias 2건 approved | FE architecture + product/IA | decision workshop 전 | 승인 completeness evidence |
 
 owner나 reviewBy가 비어 있으면 완료로 닫지 않는다. 2026-10-31은 manifest의 현재 bounded review 기한이며 제품 승인 날짜가 아니다.
 
@@ -1059,7 +1058,7 @@ reviewBy: 분류 초안 완성 시
 
 ### 15.2 ADR-0009 검색 상태 acceptance
 
-- `/search?q`, `/admin/community/boards/select-board-list`와 `/admin/community/[id]`의 `searchCnd`·`searchWrd`만 exact route/key binding으로 승인한다. 승인 registry의 `search-input` selector는 이 3개 route binding·5개 census record와 정확히 일치한다.
+- `/search?q`와 `/admin/community/boards/select-board-list`의 `searchCnd`·`searchWrd`만 exact route/key binding으로 승인한다. 승인 registry의 `search-input` selector는 이 2개 route binding·5개 census record와 정확히 일치한다. `/admin/community/[id]`는 2026-09-25 id를 보존해 커뮤니티 상세로 보내는 page-redirect가 되어 binding에서 빠졌다(DEC-OPS-130).
 - 검색·페이지·정렬 변경은 해당 화면의 allowlist로 재조립하고 unknown query를 전파하지 않으며, 같은 화면에서는 `replace`를 우선한다.
 - 로그 검색어를 주소창에 넣지 않는 현행과 same-origin binary GET `searchKeyword` 전달의 의도된 비대칭을 보존한다.
 - 허용 검색어가 client log·analytics·오류 로그 payload에 복제되지 않고, 프런트엔드 내비게이션의 자격증명형 전용 URL key나 새 search surface fixture가 즉시 red임을 계약으로 증명한다. 자유 입력 값의 의미를 완전 판별하는 DLP나 저장소 전체 API query 검사로 과장하지 않는다. 만족도 삭제 API의 별도 `pswd` query와 익명 비밀번호 소유 증명은 2026-09-05 [ADR-0011](../02-architecture/decisions/ADR-0011-retire-anonymous-satisfaction-password-proof.md)이 퇴역을 결정했으며, 백엔드 request-target의 자격증명 재유입은 별도 계약이 차단한다.
@@ -1089,7 +1088,7 @@ reviewBy: 분류 초안 완성 시
 | URL-state class registry | `class-governed` (4/7 classes individually approved) | 비규범 컨테이너이며 `search-input`만 ADR-0009에 결속된다. |
 | 전역 URL/privacy remainder | `blocked-input` | `opaque`·`path-intent`·`hand-assembled-segment`와 배포 환경의 외부 telemetry/보존 경계 미해결 |
 | reference-default G1 | `accepted` | ADR-0007이 참조 구현 범위에서 승인했다. |
-| institution-adoption G1 | 미수행 | manifest 119/119 decision-safe false와 menu exposure unverified를 해당 기관의 실증으로 재검증해야 한다. |
+| institution-adoption G1 | 미수행 | manifest 전건 decision-safe false(2026-09-25 118/118)와 그룹별 menu exposure 미측정을 해당 기관의 실증으로 재검증해야 한다. |
 | menu/generator migration | 금지 | IA와 URL 결정 및 ADR 전에는 실행하지 않음 |
 
 ## 16. 구현 wave와 rollback
@@ -1165,4 +1164,4 @@ URL migration, menu data migration, visual component migration은 rollback 경�
 
 ---
 
-*현재 상태: ADR-0007로 hybrid를 참조-기본 IA로 승인하되 기관 채택 시 재검증 · navigation disposition overlay는 계속 `proposed`, `acceptedDecision=null`이며 119+2 review는 별도 진행 · URL-state registry는 비규범 `class-governed` 컨테이너이고 4개 부류가 각각 승인/3개 부류 미해결, `search-input`만 ADR-0009 결속 · menu/generator consumer 변경 없음*
+*현재 상태: ADR-0007로 hybrid를 참조-기본 IA로 승인하되 기관 채택 시 재검증 · navigation disposition overlay는 계속 `proposed`, `acceptedDecision=null`이며 route+alias review(2026-09-25 118+2)는 별도 진행 · URL-state registry는 비규범 `class-governed` 컨테이너이고 4개 부류가 각각 승인/3개 부류 미해결, `search-input`만 ADR-0009 결속 · menu/generator consumer 변경 없음*
