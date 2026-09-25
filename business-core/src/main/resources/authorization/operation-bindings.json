@@ -1680,6 +1680,13 @@
   },
   {
     "method": "PATCH",
+    "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/solved",
+    "handler": "nuri.api.controller.business.board.BoardApiController#markQuestionSolved",
+    "access": "PERMISSION",
+    "permission": "BOARD_UPDATE"
+  },
+  {
+    "method": "PATCH",
     "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/like",
     "handler": "nuri.api.controller.business.board.BoardApiController#likePost",
     "access": "PERMISSION",

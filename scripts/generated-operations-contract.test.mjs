@@ -116,7 +116,8 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   // Approval detail and revision submission add two operations to the documented surface.
   // 2026-09-25 DEC-OPS-129: 387 -> 383. 네트워크 모니터링 API 4개(조회 1·501 쓰기 3)를 걷었다.
   // 2026-09-25 DEC-OPS-131: 383 -> 385. 커뮤니티 본인 탈퇴·강제 탈퇴 2개를 더했다.
-  assert.equal(operations.length, 385);
+  // 2026-09-25 DIP I3: 385 -> 386. Q&A 질문 해결 표시(PATCH …/solved)를 더했다.
+  assert.equal(operations.length, 386);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

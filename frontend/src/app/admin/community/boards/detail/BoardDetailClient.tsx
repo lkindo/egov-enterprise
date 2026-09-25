@@ -111,7 +111,28 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   const [likeDelta, setLikeDelta] = useState(0);
   // React state 반영 전 같은 tick의 추천/삭제/스크랩 재진입까지 막기 위해 ref를 먼저 선점한다.
   const actionPendingRef = React.useRef(false);
-  const [activeAction, setActiveAction] = useState<'like' | 'delete' | 'scrap' | null>(null);
+  const [activeAction, setActiveAction] = useState<'like' | 'delete' | 'scrap' | 'solve' | null>(null);
+
+  /*
+    [2026-09-25 DIP I3] Q&A 해결 표시. 해결 상태 컬럼과 목록의 배지는 있었지만 SOLVED 로 바꾸는 경로가 없어
+    답을 받은 질문도 계속 '접수' 로 남았다. 작성자·전체 수정 권한자에게만 보이며 서버가 다시 판정한다.
+  */
+  const canMarkSolved = tmpltId === 'TMPLT_QNA' && article?.qnaSttsCd !== 'SOLVED' && canUpdateArticle;
+  const handleMarkSolved = async () => {
+    if (actionPendingRef.current || !bbsId || !hasValidPstSn) return;
+    actionPendingRef.current = true;
+    setActiveAction('solve');
+    try {
+      await boardUserService.markQuestionSolved(bbsId, pstSn);
+      await queryClient.invalidateQueries({ queryKey: ['article-detail', bbsId, pstSn] });
+      toast('질문을 해결됨으로 표시했습니다.', 'success');
+    } catch (solveError) {
+      toast(extractErrorMessage(solveError, '해결 표시 중 오류가 발생했습니다.'), 'error');
+    } finally {
+      actionPendingRef.current = false;
+      setActiveAction(null);
+    }
+  };
   const handleLike = async () => {
     if (actionPendingRef.current || !bbsId || !hasValidPstSn) return;
     actionPendingRef.current = true;
@@ -245,6 +266,18 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {canMarkSolved && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleMarkSolved}
+              disabled={activeAction !== null}
+              aria-busy={activeAction === 'solve'}
+              className="gap-1.5"
+            >
+              {activeAction === 'solve' ? '표시하는 중…' : '해결됨으로 표시'}
+            </Button>
+          )}
           {canUpdateArticle && (
             <Button
               variant="outline"

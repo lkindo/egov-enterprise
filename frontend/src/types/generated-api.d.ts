@@ -2852,6 +2852,26 @@ export interface paths {
         patch: operations["confirmInformalSanction_1"];
         trace?: never;
     };
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/solved": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 질문 해결 표시
+         * @description Q&A 게시판의 질문을 해결됨으로 표시합니다. 작성자 또는 게시글 전체 수정 권한이 있어야 하며, Q&A 게시판이 아니면 400 입니다.
+         */
+        patch: operations["markQuestionSolved"];
+        trace?: never;
+    };
     "/api/v1/boards/{bbsId}/posts/{pstSn}/like": {
         parameters: {
             query?: never;
@@ -12404,7 +12424,13 @@ export interface operations {
     };
     getPost: {
         parameters: {
-            query?: never;
+            query?: {
+                /**
+                 * @description 조회수를 올릴지. 수정 화면처럼 읽기가 아닌 진입은 false 로 부른다
+                 * @example true
+                 */
+                countView?: boolean;
+            };
             header?: never;
             path: {
                 /**
@@ -27686,6 +27712,82 @@ export interface operations {
             path: {
                 /** @description 결재 일련번호 */
                 informalSanctionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    markQuestionSolved: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description 게시판 ID
+                 * @example BBSMSTR_DDDDDDDDDDDD
+                 */
+                bbsId: string;
+                /**
+                 * @description 게시글 ID
+                 * @example 1
+                 */
+                pstSn: number;
             };
             cookie?: never;
         };

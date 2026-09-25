@@ -39,4 +39,29 @@ public final class TransactionUtils {
             action.run();
         }
     }
+
+    /**
+     * 활성 트랜잭션이 <b>롤백되면</b> 실행한다. 커밋되거나 트랜잭션이 없으면 아무것도 하지 않는다.
+     *
+     * <p>DB 밖의 부수효과(파일 저장 등)를 트랜잭션 결과에 맞춰 되돌리는 보상용이다. 트랜잭션이 없으면
+     * 되돌릴 대상도 없으므로 실행하지 않는다 — 보상을 즉시 실행하면 방금 한 일을 스스로 지우게 된다.
+     */
+    public static void runAfterRollback(Runnable action) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status != STATUS_ROLLED_BACK) {
+                    return;
+                }
+                try {
+                    action.run();
+                } catch (RuntimeException e) {
+                    log.error("롤백 후 보상 실행 실패 — 예외유형={}", e.getClass().getSimpleName());
+                }
+            }
+        });
+    }
 }
