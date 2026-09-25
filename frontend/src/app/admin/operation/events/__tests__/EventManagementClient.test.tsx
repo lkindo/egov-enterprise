@@ -257,10 +257,25 @@ describe('EventManagementClient create validation', () => {
     expect(remove).toHaveAttribute('aria-busy', 'true');
     expect(remove).toHaveAccessibleName('보존할 행사 삭제 중');
 
-    rejectDelete(new Error('삭제 서버 오류'));
+    rejectDelete({ isAxiosError: true, message: 'Request failed with status code 500', response: { status: 500 } });
 
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('행사 삭제에 실패했습니다.', 'error'));
     expect(screen.getByText('보존할 행사')).toBeInTheDocument();
     expect(remove).not.toBeDisabled();
+  });
+
+  it('외부인사가 남은 행사의 삭제 거부는 서버가 준 사유와 건수를 그대로 보인다', async () => {
+    mocks.getEvents.mockResolvedValue({
+      list: [{ evntSn: 8, evntNm: '외부인사 행사', evntCn: '본문', evntBgngYmd: '20260901', evntEndYmd: '20260902', evntUseCnt: 5 }],
+      total: 1,
+    });
+    const reason = '외부인사 2명이 등록된 행사는 삭제할 수 없습니다. 외부인사를 먼저 삭제하세요.';
+    mocks.deleteEvent.mockRejectedValue({ isAxiosError: true, response: { status: 409, data: { message: reason } } });
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '외부인사 행사 삭제' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(reason, 'error'));
+    expect(mocks.toast).not.toHaveBeenCalledWith('행사 삭제에 실패했습니다.', 'error');
   });
 });

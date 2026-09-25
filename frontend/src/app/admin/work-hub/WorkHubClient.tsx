@@ -26,6 +26,7 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useDirtyCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import type { DeptSchedule } from '@/types/business/schedule';
 import { format } from 'date-fns';
+import { toDisplayYmd } from '@/lib/format-date';
 import { ko } from 'date-fns/locale';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -150,6 +151,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
   });
   const reports = reportData?.list || [];
   const reportTotalPages = reportData?.totalPage ?? 1;
+  const reportTotal = reportData?.total ?? 0;
 
   // ⚠ yearMonth 는 반드시 하이픈 없는 'yyyyMM'(6자)여야 한다.
   //   ScheduleRepository.findMonthlySchedules 가 CONCAT(:yearMonth,'01') / CONCAT(:yearMonth,'31') 로
@@ -407,8 +409,12 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
 
   const reportColumns: Column<WorkReport>[] = [
     {
+      /*
+        [2026-09-26 DIP V9] 번호가 페이지 안 순번(01·02…)이라 페이지마다 다시 01 이 됐다. 서버가 최신순으로 주므로
+        다른 목록과 같이 전체 건수에서 거꾸로 센다.
+      */
       header: '번호',
-      accessor: (_, index) => <span className="font-mono text-xs font-bold text-muted-foreground">{(index! + 1).toString().padStart(2, '0')}</span>,
+      accessor: (_, index) => <span className="font-mono text-xs font-bold text-muted-foreground">{reportTotal - (reportPage - 1) * pageUnit - (index ?? 0)}</span>,
       className: 'w-20 text-center'
     },
     {
@@ -416,7 +422,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       accessor: (item) => (
         <div className="flex flex-col gap-1 py-1">
           <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{item.rptTtl}</span>
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">작성일: {item.rptYmd}</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">보고 일자: {toDisplayYmd(item.rptYmd)}</span>
         </div>
       )
     },

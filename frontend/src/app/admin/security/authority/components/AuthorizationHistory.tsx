@@ -11,6 +11,14 @@ import { Input } from '@/components/ui/input';
 import { PagePagination } from '@/components/common/PagePagination';
 
 const PAGE_SIZE = 20;
+
+/**
+ * [2026-09-26 DIP V9] 이력은 사람을 사용자 고유 ID 로만 보였다. 서버가 싣는 이름을 앞에 두고 식별자는 괄호로 남긴다 —
+ * 사용자가 삭제돼 이름이 없으면 식별자만 보인다.
+ */
+function personLabel(name: string | null, id: string) {
+  return name ? `${name} (${id})` : id;
+}
 export function AuthorizationHistory() {
   const { user } = useAuth();
   const canAudit = canPermission(user, 'AUTHRT_AUDIT');
@@ -38,7 +46,7 @@ export function AuthorizationHistory() {
           {historyFilterError && <p role="alert" className="text-sm text-destructive">{historyFilterError}</p>}
         </form>
         {history.isPending && <p role="status">변경 이력을 불러오는 중입니다…</p>}
-        <div className="overflow-auto rounded-lg border border-border"><table className="w-full text-left text-sm"><caption className="sr-only">권한 변경 이력</caption><thead className="bg-muted"><tr>{['시각', '대상', '변경', '그룹·사용자', '권한·필드', '변경 전 → 후', '처리자'].map((title) => <th key={title} className="p-3">{title}</th>)}</tr></thead><tbody>{(history.data?.list ?? []).map((change) => <tr key={change.id} className="border-t border-border"><td className="p-3">{change.createdAt}</td><td className="p-3">{change.targetType}</td><td className="p-3">{change.changeType}</td><td className="p-3">{change.group ?? change.userId ?? '—'}</td><td className="p-3">{change.grantType ? `${change.grantType}:` : ''}{change.grantCode ?? change.field ?? '—'}</td><td className="max-w-sm whitespace-pre-wrap break-words p-3">{change.before ?? '—'} → {change.after ?? '—'}</td><td className="p-3">{change.actorId ?? '—'}</td></tr>)}</tbody></table></div>
+        <div className="overflow-auto rounded-lg border border-border"><table className="w-full text-left text-sm"><caption className="sr-only">권한 변경 이력</caption><thead className="bg-muted"><tr>{['시각', '대상', '변경', '그룹·사용자', '권한·필드', '변경 전 → 후', '처리자'].map((title) => <th key={title} className="p-3">{title}</th>)}</tr></thead><tbody>{(history.data?.list ?? []).map((change) => <tr key={change.id} className="border-t border-border"><td className="p-3">{change.createdAt}</td><td className="p-3">{change.targetType}</td><td className="p-3">{change.changeType}</td><td className="p-3">{change.group || change.userId ? <>{change.group && <div>{change.group}</div>}{change.userId && <div>{personLabel(change.userNm, change.userId)}</div>}</> : '—'}</td><td className="p-3">{change.grantType ? `${change.grantType}:` : ''}{change.grantCode ?? change.field ?? '—'}</td><td className="max-w-sm whitespace-pre-wrap break-words p-3">{change.before ?? '—'} → {change.after ?? '—'}</td><td className="p-3">{change.actorId ? personLabel(change.actorNm, change.actorId) : '—'}</td></tr>)}</tbody></table></div>
         {history.isSuccess && history.data.list.length === 0 && <p role="status">변경 이력이 없습니다.</p>}
         <PagePagination total={history.data?.total ?? 0} page={historyPage} size={PAGE_SIZE} onPageChange={setHistoryPage} />
       </section>

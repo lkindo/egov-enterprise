@@ -47,6 +47,7 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   scheduleRows: [] as Array<Record<string, unknown>>,
   reportRows: [] as Array<Record<string, unknown>>,
+  reportTotal: null as number | null,
 }));
 
 // tab 쿼리는 비워 둔다(위 주석 참조). 탭 선택은 defaultTab prop 과 탭 버튼이 소유한다.
@@ -71,7 +72,7 @@ vi.mock('@tanstack/react-query', () => ({
     data: queryKey[0] === 'work-schedules'
       ? mocks.scheduleRows
       : queryKey[0] === 'work-reports'
-        ? { list: mocks.reportRows, totalPage: 1, total: mocks.reportRows.length }
+        ? { list: mocks.reportRows, totalPage: 1, total: mocks.reportTotal ?? mocks.reportRows.length }
         : { list: [], totalPage: 1, total: 0 },
     isLoading: false,
     isError: false,
@@ -190,6 +191,7 @@ describe('WorkHubClient 모달 기본 일자와 미저장 이탈 보호', () => 
     mocks.deleteReport.mockResolvedValue(undefined);
     mocks.scheduleRows = [];
     mocks.reportRows = [];
+    mocks.reportTotal = null;
   });
 
   it('캘린더 월을 옮겨도 보고 기본 일자는 오늘이고, 일정 기본 일자만 옮긴 달을 따른다', async () => {
@@ -317,5 +319,22 @@ describe('WorkHubClient 모달 기본 일자와 미저장 이탈 보호', () => 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '업무 보고 등록' })).not.toBeInTheDocument());
     expect(mocks.createReport).not.toHaveBeenCalled();
+  });
+
+  it('보고 번호는 페이지 안 순번이 아니라 전체 건수에서 거꾸로 세고, 보고 일자를 날짜 형식으로 보인다', () => {
+    // [2026-09-26 DIP V9] 번호가 페이지마다 01 부터 다시 시작했고, 날짜는 저장 형식(yyyyMMdd) 그대로였다.
+    mocks.reportTotal = 23;
+    mocks.reportRows = [
+      { rptpSn: 30, rptTtl: '셋째 보고', rptYmd: '20260915', userId: 'u1', userNm: '홍길동' },
+      { rptpSn: 29, rptTtl: '둘째 보고', rptYmd: '20260914', userId: 'u1', userNm: '홍길동' },
+    ];
+    render(<WorkHubClient defaultTab="report" initialYmd={TODAY_YMD} />);
+
+    const table = screen.getByTestId('data-table');
+    expect(within(table).getByText('23')).toBeInTheDocument();
+    expect(within(table).getByText('22')).toBeInTheDocument();
+    expect(within(table).queryByText('01')).not.toBeInTheDocument();
+    expect(within(table).getByText('보고 일자: 2026-09-15')).toBeInTheDocument();
+    expect(within(table).queryByText(/20260915/)).not.toBeInTheDocument();
   });
 });
