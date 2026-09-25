@@ -43,8 +43,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** REST/WS 외부 입력을 화면 상태에 넣기 전에 최소 계약으로 정규화한다. */
-function normalizeNotification(value: unknown): Notification | null {
+/**
+ * REST/WS 외부 입력을 화면 상태에 넣기 전에 최소 계약으로 정규화한다.
+ * 같은 개인 큐를 구독하는 업무 홈 실시간 패널도 이 정규화를 쓴다 — 서버 DTO 해석을 한 곳에 둔다.
+ */
+export function normalizeNotification(value: unknown): Notification | null {
   if (!isRecord(value)) return null;
   const notiSn = typeof value.notiSn === 'number'
     && Number.isSafeInteger(value.notiSn)

@@ -69,6 +69,35 @@ describe('RealTimeDashboard', () => {
     expect(screen.getByRole('region', { name: '실시간 알림 목록' })).toBeInTheDocument();
   });
 
+  // [2026-09-25] 종전 테스트는 깨진 프레임만 보내 "버린다" 만 확인했고, 서버가 실제로 보내는 알림이
+  //   표시되는지는 한 번도 보지 않았다 — 그래서 모든 알림을 버리는 결함이 통과했다. NotificationService 가
+  //   /user/queue/notifications 로 보내는 NotificationDto 형태 그대로 넣는다.
+  it('서버가 보내는 NotificationDto 프레임을 목록과 미읽음 수에 반영한다', () => {
+    render(<RealTimeDashboard />);
+    const notificationHandler = handlers.get('/user/queue/notifications')!;
+
+    act(() => notificationHandler({
+      body: JSON.stringify({
+        notiSn: 42,
+        notiTtlNm: '결재 요청',
+        notiCn: '새 결재 문서가 도착했습니다.',
+        notiDt: '2026-09-25T10:15:30',
+        notiIvlVal: null,
+        rcvrId: 'USRCNFRM_00000000001',
+        readYn: 'N',
+        linkUrl: '/approvals',
+        crtDt: '2026-09-25T10:15:30',
+      }),
+    }));
+    fireEvent.click(screen.getByRole('button', { name: '알림 열기, 읽지 않음 1개' }));
+
+    const region = screen.getByRole('region', { name: '실시간 알림 목록' });
+    expect(region).toHaveTextContent('결재 요청');
+    expect(region).toHaveTextContent('새 결재 문서가 도착했습니다.');
+    expect(region).toHaveTextContent('2026-09-25 10:15:30');
+    expect(screen.queryByText('새로운 알림이 없습니다.')).not.toBeInTheDocument();
+  });
+
   it('형식이 깨진 개인 알림은 목록과 미읽음 수를 오염시키지 않는다', () => {
     render(<RealTimeDashboard />);
     const notificationHandler = handlers.get('/user/queue/notifications')!;
