@@ -241,6 +241,16 @@ describe('dedicated system log clients generated-DTO contracts', () => {
     expect(currentTableProps().keyField).toBe('lgnSn');
   });
 
+  it('LGN 실패 사유 코드는 관리자가 읽을 말로 보이고, 원문은 title 로 남는다 (DIP S6 ⑤)', () => {
+    clientHarness.queryData = pageOf({ ...LOGIN_ROW, errorCode: 'POLICY_IP' });
+    render(<SystemLogsLoginClient />);
+
+    const table = within(screen.getByTestId('data-table'));
+    const label = table.getByText('정책: 허용되지 않은 IP');
+    expect(label).toHaveAttribute('title', 'POLICY_IP');
+    expect(table.queryByText('POLICY_IP')).toBeNull();
+  });
+
   it('builds a stable USR composite row identifier and renders all aggregate counters', () => {
     clientHarness.queryData = pageOf(USER_ROW);
     render(<SystemLogsUserClient />);

@@ -206,11 +206,14 @@ export default function LoginPolicyAdminClient() {
   const onFormSubmit = async (values: LoginPolicyFormValues) => {
     if (!selectedPolicy) return;
     const isNew = selectedPolicy.regYn !== 'Y';
+    // [2026-09-25 DIP D6] 2단계 인증은 켤 수 없다 — 비밀키 발급·번호 입력 경로가 없어 켜면 그 사용자는
+    //   로그인할 수 없다. 서버도 'Y' 를 400 으로 거부한다. 이미 켜져 있던 계정은 저장하면서 끈다.
+    const payload = { ...values, otpUseYn: 'N' as const };
     try {
       if (isNew) {
-        await loginPolicyAdminService.createLoginPolicy(selectedPolicy.userId, values as Partial<LoginPolicy>);
+        await loginPolicyAdminService.createLoginPolicy(selectedPolicy.userId, payload as Partial<LoginPolicy>);
       } else {
-        await loginPolicyAdminService.saveLoginPolicy(selectedPolicy.userId, values as Partial<LoginPolicy>);
+        await loginPolicyAdminService.saveLoginPolicy(selectedPolicy.userId, payload as Partial<LoginPolicy>);
       }
       toast(isNew ? '로그인 정책을 등록했습니다.' : '로그인 정책이 성공적으로 업데이트되었습니다.', 'success');
       setIsEditModalOpen(false);
@@ -326,7 +329,7 @@ export default function LoginPolicyAdminClient() {
   return (
     <WorkListPage
       title="로그인 보안 정책 관리"
-      description="사용자별 접속 IP·허용 시간대·2단계 인증(OTP)을 설정합니다. 목록은 전체 사용자이며 정책이 설정된 계정만 해제할 수 있습니다."
+      description="사용자별 접속 IP·허용 시간대·접속 제한을 설정합니다. 2단계 인증(OTP)은 아직 제공하지 않습니다. 목록은 전체 사용자이며 정책이 설정된 계정만 해제할 수 있습니다."
       breadcrumbItems={[{ label: '권한 보안' }, { label: '로그인 정책 관리' }]}
       totalCount={error ? undefined : total}
       filter={(
@@ -508,29 +511,22 @@ export default function LoginPolicyAdminClient() {
 
                   <div className="h-px bg-border w-full" />
 
-                  <FormField
-                    control={form.control}
-                    name="otpUseYn"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between space-y-0">
-                        <div className="space-y-1">
-                          <FormLabel className="text-sm font-bold tracking-tight">2단계 인증 (OTP) 필수 적용</FormLabel>
-                          {/*
-                            [2026-08-29] 라벨 밑의 'ENFORCE_MFA_AUTHENTICATION' 을 걷었다.
-                            제품 어디에도 없는 식별자를 초록색으로 붙여 두어 이미 적용된 설정
-                            이름처럼 읽혔다(바로 위 한국어 라벨과 중복되기도 한다).
-                          */}
-                        </div>
-                        <FormControl>
-                          <Switch 
-                            checked={field.value === 'Y'} 
-                            onCheckedChange={(checked) => field.onChange(checked ? 'Y' : 'N')} 
-                            className="data-[state=checked]:bg-success"
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                  {/*
+                    [2026-09-25 DIP D6] 2단계 인증 스위치를 걷었다. 로그인은 켜진 사용자에게 OTP 번호를 요구하지만
+                    비밀키를 발급하거나 번호를 입력하는 화면이 제품에 없어, 켜는 순간 그 사용자는 로그인할 수 없었다.
+                    보안 강화처럼 보이는 스위치가 실제로는 계정 잠금을 만들고 있었다.
+                  */}
+                  <div className="space-y-1" data-testid="login-policy-otp-notice">
+                    <p className="text-sm font-bold tracking-tight">2단계 인증(OTP)</p>
+                    <p className="text-xs text-muted-foreground">
+                      2단계 인증은 아직 제공하지 않습니다. 비밀키 발급과 번호 입력 경로가 없어 켜면 이 사용자는 로그인할 수 없습니다.
+                    </p>
+                    {selectedPolicy?.otpUseYn === 'Y' ? (
+                      <p className="text-xs font-bold text-destructive-emphasis">
+                        이 계정은 2단계 인증이 켜져 있어 지금 로그인할 수 없습니다. 저장하면 2단계 인증이 꺼집니다.
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
               </div>
 

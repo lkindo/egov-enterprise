@@ -131,7 +131,7 @@ class AuthApiControllerTest {
                 .refreshToken("new-refresh")
                 .role("ROLE_USER")
                 .build();
-        when(authService.reissue(any())).thenReturn(tokenResponse);
+        when(authService.reissue(any(), any())).thenReturn(tokenResponse);
  
         mockMvc.perform(post("/api/v1/auth/reissue")
                 .cookie(new jakarta.servlet.http.Cookie("refreshToken", "old-refresh")))

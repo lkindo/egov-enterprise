@@ -118,7 +118,7 @@ class AuthServiceTest {
         when(jwtTokenProvider.createAccessToken(eq("user"), anyString())).thenReturn("new_access_token");
 
         // When
-        TokenResponse response = authService.reissue(refreshToken);
+        TokenResponse response = authService.reissue(refreshToken, "127.0.0.1");
 
         // Then
         assertNotNull(response);
@@ -149,7 +149,7 @@ class AuthServiceTest {
         when(refreshTokenRepository.rotateIfCurrent(any(), any(), any(), any())).thenReturn(1);
 
         // When
-        TokenResponse response = authService.reissue(refreshToken);
+        TokenResponse response = authService.reissue(refreshToken, "127.0.0.1");
 
         // Then
         assertNotNull(response);
@@ -181,7 +181,7 @@ class AuthServiceTest {
         when(refreshTokenRepository.rotateIfCurrent(any(), any(), any(), any())).thenReturn(1);
 
         // When
-        TokenResponse response = authService.reissue(refreshToken);
+        TokenResponse response = authService.reissue(refreshToken, "127.0.0.1");
 
         // Then
         assertNotNull(response);
@@ -226,7 +226,7 @@ class AuthServiceTest {
         when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(false);
 
         // When & Then
-        BusinessException exception = assertThrows(BusinessException.class, () -> authService.reissue(refreshToken));
+        BusinessException exception = assertThrows(BusinessException.class, () -> authService.reissue(refreshToken, "127.0.0.1"));
         assertEquals(CommonErrorCode.INVALID_TOKEN, exception.getErrorCode());
     }
 
@@ -245,8 +245,8 @@ class AuthServiceTest {
         when(loginPolicyRepository.findById("otpUser")).thenReturn(java.util.Optional.of(policy));
 
         // When & Then
-        BusinessException ex = assertThrows(BusinessException.class, () -> authService.login(request, "127.0.0.1"));
-        assertTrue(ex.getMessage().contains("OTP"));
+        nuri.business.service.auth.LoginRejectedException ex = assertThrows(nuri.business.service.auth.LoginRejectedException.class, () -> authService.login(request, "127.0.0.1"));
+        assertEquals(nuri.business.service.auth.LoginFailureReason.OTP_MISSING, ex.reason());
     }
 
     @Test
@@ -269,8 +269,8 @@ class AuthServiceTest {
         when(otpService.verifyCode("SECRET", 123456)).thenReturn(false);
 
         // When & Then
-        BusinessException ex = assertThrows(BusinessException.class, () -> authService.login(request, "127.0.0.1"));
-        assertTrue(ex.getMessage().contains("일치하지 않습니다"));
+        nuri.business.service.auth.LoginRejectedException ex = assertThrows(nuri.business.service.auth.LoginRejectedException.class, () -> authService.login(request, "127.0.0.1"));
+        assertEquals(nuri.business.service.auth.LoginFailureReason.OTP_INVALID, ex.reason());
     }
 
     @Test
@@ -291,8 +291,8 @@ class AuthServiceTest {
         when(loginPolicyRepository.findById(loginId)).thenReturn(java.util.Optional.of(policy));
 
         // When & Then: OTP 코드가 없으므로 반드시 OTP 요구 예외가 발생해야 한다(버그 시엔 통과되어 토큰 발급됨).
-        BusinessException ex = assertThrows(BusinessException.class, () -> authService.login(request, "127.0.0.1"));
-        assertTrue(ex.getMessage().contains("OTP"), "OTP 정책이 무시되어 로그인이 통과됨(정체성 조회 버그)");
+        nuri.business.service.auth.LoginRejectedException ex = assertThrows(nuri.business.service.auth.LoginRejectedException.class, () -> authService.login(request, "127.0.0.1"));
+        assertEquals(nuri.business.service.auth.LoginFailureReason.OTP_MISSING, ex.reason(), "OTP 정책이 무시되어 로그인이 통과됨(정체성 조회 버그)");
     }
 
     @Test
@@ -317,8 +317,8 @@ class AuthServiceTest {
         when(otpService.verifyCode("SECRET", 123456)).thenReturn(false);
 
         // When & Then
-        BusinessException ex = assertThrows(BusinessException.class, () -> authService.login(request, "127.0.0.1"));
-        assertTrue(ex.getMessage().contains("일치하지 않습니다"));
+        nuri.business.service.auth.LoginRejectedException ex = assertThrows(nuri.business.service.auth.LoginRejectedException.class, () -> authService.login(request, "127.0.0.1"));
+        assertEquals(nuri.business.service.auth.LoginFailureReason.OTP_INVALID, ex.reason());
     }
 
     @Test
@@ -334,7 +334,7 @@ class AuthServiceTest {
         when(refreshTokenRepository.findByRfshTkn(refreshToken)).thenReturn(java.util.Optional.of(rt));
 
         // When & Then
-        BusinessException ex = assertThrows(BusinessException.class, () -> authService.reissue(refreshToken));
+        BusinessException ex = assertThrows(BusinessException.class, () -> authService.reissue(refreshToken, "127.0.0.1"));
         assertEquals(CommonErrorCode.INVALID_TOKEN, ex.getErrorCode());
         verify(refreshTokenRepository).deleteIfCurrent("user", refreshToken);
     }

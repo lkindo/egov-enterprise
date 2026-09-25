@@ -170,6 +170,21 @@ describe('LoginPolicyAdminClient validation behavior', () => {
     expect(mocks.create).not.toHaveBeenCalled();
   });
 
+  it('2단계 인증 스위치는 없고, 켜져 있던 계정은 사유를 알린 뒤 저장하면서 끈다 (DIP D6)', async () => {
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '테스트 사용자 로그인 정책 수정' }));
+    // 스위치가 사라졌다 — 켜는 순간 로그인할 수 없게 되는 설정을 화면이 제공하지 않는다.
+    expect(screen.queryByText(/2단계 인증 \(OTP\) 필수 적용/)).toBeNull();
+    expect(screen.getByTestId('login-policy-otp-notice')).toHaveTextContent('아직 제공하지 않습니다');
+    expect(screen.getByText(/저장하면 2단계 인증이 꺼집니다/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '정책 동기화 적용' }));
+
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledTimes(1));
+    expect(mocks.save.mock.calls[0][1]).toMatchObject({ otpUseYn: 'N' });
+  });
+
   it('invalid 값을 write하지 않고 summary와 첫 오류 필드로 연결한다', async () => {
     renderClient();
     fireEvent.click(await screen.findByRole('button', { name: '테스트 사용자 로그인 정책 수정' }));

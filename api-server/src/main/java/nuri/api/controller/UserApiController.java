@@ -72,7 +72,11 @@ public class UserApiController {
     }
 
 
-    @Operation(summary = "회원가입", description = "새로운 사용자 계정을 생성합니다.")
+    // [2026-09-25 DIP D1] 공개 가입을 두지 않는다(DEC-OPS-069 — 관리자 프로비저닝만). 이 경로는 미인증 요청을
+    //   받아 즉시 활성 계정을 만들고 있었다. 제거 대신 사용자 등록 권한(USER_CREATE)에 결속한다 — 역할을 USER 로
+    //   고정하는 계약(SignupContractLinterTest)은 그대로 유효하다.
+    @Operation(summary = "일반 사용자 계정 생성(관리자)", description = "일반 사용자(USER) 계정을 생성합니다. "
+            + "공개 가입은 제공하지 않으며 사용자 등록 권한(USER_CREATE)이 필요합니다.")
     @PostMapping("/users/signup")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#signup')")
     public ResponseEntity<ApiResponse<UserResponse>> signup(@RequestBody @Valid UserSignupRequest request) {
@@ -80,7 +84,9 @@ public class UserApiController {
         return ResponseEntity.ok(ApiResponse.success(userService.signup(request)));
     }
 
-    @Operation(summary = "아이디 중복 확인", description = "사용자 아이디가 시스템에 이미 존재하는지 확인합니다.")
+    // [2026-09-25 DIP D1] 미인증 요청이 로그인 ID 의 존재를 확인할 수 있는 계정 열거 경로였다.
+    @Operation(summary = "아이디 중복 확인", description = "사용자 아이디가 시스템에 이미 존재하는지 확인합니다. "
+            + "사용자 등록 권한(USER_CREATE)이 필요합니다.")
     @GetMapping("/users/check-id")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#checkIdDplct')")
     public ResponseEntity<ApiResponse<Boolean>> checkIdDplct(@RequestParam String userId) {

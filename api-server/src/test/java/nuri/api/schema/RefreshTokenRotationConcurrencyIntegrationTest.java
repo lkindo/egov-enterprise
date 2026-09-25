@@ -115,9 +115,9 @@ class RefreshTokenRotationConcurrencyIntegrationTest {
         //   seed 토큰과 글자까지 같은 JWT 를 만들어(iat 초 단위) 재사용과 원본이 구분되지 않는다.
         //   실제로 회전이 값을 바꾼 경우만 재사용이 성립하므로 그 경우를 고정한다.
         doReturn("rotated-once").when(jwtTokenProvider).createRefreshToken(eq(ESNTL_ID), any(Date.class));
-        authService.reissue(issuedToken);
+        authService.reissue(issuedToken, "127.0.0.1");
 
-        assertThatThrownBy(() -> authService.reissue(issuedToken)).isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> authService.reissue(issuedToken, "127.0.0.1")).isInstanceOf(BusinessException.class);
     }
 
     @Test
@@ -133,7 +133,7 @@ class RefreshTokenRotationConcurrencyIntegrationTest {
 
         // 정리를 같은 트랜잭션에 두면 아래 예외(RuntimeException)의 롤백이 삭제까지 되돌린다 —
         // 종전에는 "삭제하고 거부한다" 고 적혀 있었으나 행은 한 번도 지워지지 않았다.
-        assertThatThrownBy(() -> authService.reissue(staleToken)).isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> authService.reissue(staleToken, "127.0.0.1")).isInstanceOf(BusinessException.class);
 
         assertThat(jdbc.queryForObject(
                 "SELECT count(*) FROM tb_auth_rfsh_tk WHERE user_id=?", Integer.class, ESNTL_ID)).isZero();
@@ -181,7 +181,7 @@ class RefreshTokenRotationConcurrencyIntegrationTest {
             return new TransactionTemplate(transactionManager).execute(status -> {
                 jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, name);
                 ready.countDown();
-                return authService.reissue(issuedToken).getRefreshToken();
+                return authService.reissue(issuedToken, "127.0.0.1").getRefreshToken();
             });
         } catch (BusinessException rejected) {
             return "rejected";
