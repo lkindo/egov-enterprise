@@ -59,9 +59,9 @@ Lighthouse workflow의 performance threshold는 runner 변동 때문에 관측 �
 - fetch join·projection·batch fetch 중 하나를 workload cardinality에 맞게 선택한다.
 - cache는 권한·tenant·사용자별 key 의미와 write invalidation을 검증한다. 잘못된 공유 cache는 빠른 정보 노출이다.
 
-현재 메뉴·사용자·공통코드 등에 cache와 단일 조회 경로가 있지만, 존재만으로 효과를 단정하지 않는다.
+현재 메뉴·공통코드·시스템 정책에 cache와 단일 조회 경로가 있지만, 존재만으로 효과를 단정하지 않는다.
 구현 정본은 [`MenuService`](../../business-core/src/main/java/nuri/business/service/menu/MenuService.java),
-[`UserService`](../../business-core/src/main/java/nuri/business/service/user/UserService.java)와 관련 harness다.
+[`CommonCodeService`](../../business-core/src/main/java/nuri/business/service/code/CommonCodeService.java)와 관련 harness다.
 
 ### DB·connection
 

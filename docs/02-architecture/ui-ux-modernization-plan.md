@@ -179,7 +179,7 @@
 
 | 영역 | 현재 로컬 상태 | 검증/한계 |
 |---|---|---|
-| route truth | filesystem route 119개와 redirect-only alias 2개를 manifest로 고정했다. route status는 `live` 0, `partial` 9, `unavailable` 2, `unverified` 108이다. | 구조 exactness와 일부 실행 계약만 확인했다. 역할·메뉴·제품 소유권은 승인 전이며 `decisionSafe=false`다. |
+| route truth | 2026-08-21 시점: filesystem route 119개와 redirect-only alias 2개를 manifest로 고정했다. route status는 `live` 0, `partial` 9, `unavailable` 2, `unverified` 108이다. 2026-09-25 재측정: route 118개·alias 2개, `live` 0, `partial` 84, `demo` 3, `unavailable` 2, `unverified` 29. | 구조 exactness와 일부 실행 계약만 확인했다. 역할·메뉴·제품 소유권은 승인 전이며 `decisionSafe=false`다. |
 | IA direction | [ADR-0007](decisions/ADR-0007-reference-default-ia-approval.md)이 ADR-0004의 과업 중심 기본 내비게이션+명시적 관리 센터를 reference-default IA로 승인했다. 사용자 연구 없는 승인은 accepted risk이며 공통 base에서 잠정 지위는 끝났다. | disposition overlay는 `proposed`, `acceptedDecision=null`이고 route별 처분은 일괄 승인되지 않았다. 승인된 route만 menu/generator가 소비할 수 있으며, 기관 채택 시 live menu/role과 실제 사용자 증거로 원 G1을 재수행한다. |
 | reachability | 2026-08-21 15:45 KST 현재 [census 생성기](../../scripts/frontend-reachability-census.mjs) 재실측은 620개 source를 `runtime=452`, `test-only=164`, `ambiguous=1`, `safe-candidate=3`으로 분류했다. | 소스 변경에 따라 변하는 시점값이며 삭제 승인이 아니다. 현재값은 `node scripts/frontend-reachability-census.mjs --check`로 다시 확인한다. 실제 사용 중인 virtual list와 orphan client의 차이는 계약으로 고정했다. |
 | 색상 guard | 두 기존 래칫을 101 + 774로 낮췄다. | 의미가 같은 색상만 토큰으로 이식한 결과이며 baseline 완화가 아니다. 전체 시각 품질이나 대비 준수를 뜻하지 않는다. |
@@ -694,7 +694,7 @@ node scripts/run-isolated-e2e.mjs -- --project=api-contract --project=full-suite
 1. reference-default에서는 route별 disposition과 정적 menu 근거를 검토하고, 기관 채택 시 role×task×route matrix와 live menu census를 다시 작성한다.
 2. 기관 채택 시 open card sort로 사용자 용어, closed card sort/tree test로 목표 구조를 검증한다.
 3. URL 유지와 navigation label/group/order 변경을 별도 결정한다.
-4. URL parameter는 화면별 route/query key allowlist로 관리한다. 현재 주소창 검색 승인은 `/search?q`, `/admin/community/boards/select-board-list` 및 `/admin/community/[id]`의 `searchCnd`·`searchWrd`다.
+4. URL parameter는 화면별 route/query key allowlist로 관리한다. 현재 주소창 검색 승인은 `/search?q`와 `/admin/community/boards/select-board-list`의 `searchCnd`·`searchWrd`다(`/admin/community/[id]`는 2026-09-25 page-redirect가 되어 빠졌다, DEC-OPS-130).
 5. 허용된 일반 업무 검색어는 caller가 선언한 key만 재조립하고 unknown query를 버리며 same-view 변경에 `replace`를 사용한다. client log·analytics에는 복제하지 않는다. 앱은 자격증명·token·고유식별정보·고위험 개인정보·응답 본문 용도의 전용 URL field/state를 설계하거나 일반 검색창에서 입력을 요구·유도하지 않는다. 자유 입력값의 예상 밖 붙여넣기는 accepted residual risk이며 고위험 용도 승인이 아니다. credential-name gate는 key 차단이지 DLP가 아니다. 허용은 다른 화면의 URL 동기화를 의무화하지 않는다.
 6. 119 route와 2 alias의 disposition 및 redirect/deep-link/back contract를 owner PR review로 route별 개별 승인한다.
 
@@ -765,7 +765,7 @@ npm run verify:docs
 **Files:**
 
 - Modify: `frontend/src/app/globals.css`
-- Create: `frontend/src/styles/themes/krds.css`
+- Create: `frontend/src/styles/themes/krds.css` (실제 파일은 `krds-aligned.css`)
 - Create: `frontend/src/styles/themes/premium.css`
 - Modify: `frontend/src/app/layout.tsx`
 - Create/Modify: theme token contract tests
@@ -864,7 +864,7 @@ pnpm -C frontend run bundle:check
 
 **Owner:** selected domain owner
 
-**Candidate:** `/admin/system/logs/user` 또는 operation/events/network/programs 중 실제 단순 route를 census 후 선택.
+**Candidate:** `/admin/system/logs/user` 또는 operation/events/programs 중 실제 단순 route를 census 후 선택.
 
 **목표:** list/search/filter/pagination, URL privacy, loading/filtered-zero/error/403/mobile representation을 검증한다.
 

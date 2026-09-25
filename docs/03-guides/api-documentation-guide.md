@@ -128,7 +128,7 @@ pnpm -C frontend codegen:ts
 
 ```bash
 # CI: 테스트 단계에서 OpenApiDocumentationTest 가 system property 로 정적 추출 (별도 gradle 플러그인 아님)
-./gradlew build jacocoRootCoverageVerification check \
+./gradlew onlineBuild jacocoOnlineCoverageVerification \
   -Dopenapi.export.path=api-docs.json --warning-mode fail
 # 추출된 파일 위치: <repo-root>/api-docs.json  (CI 아티팩트: openapi-spec / openapi-spec-changed)
 ```

@@ -32,7 +32,7 @@ CustomUserDetails.getLoginId()  →  loginId  (getUserId의 가독성 별칭)
 | 상황 | 이유 | 코드 참조 |
 |------|------|----------|
 | **감사 컬럼** (`frstRgtrId` / `lastMdfrId`) | `LoginUserAuditorAware`가 `getUserId()`(=loginId)를 반환 | `LoginUserAuditorAware.getCurrentAuditor()` |
-| **소유권(IDOR) 비교** | `frstRgtrId`에 저장된 값이 loginId이므로 동일 축으로 비교해야 함 | `SecurityUtil.assertOwnerOrAdmin()` |
+| **소유권(IDOR) 비교** | `frstRgtrId`에 저장된 값이 loginId이므로 동일 축으로 비교해야 함 | `SecurityUtil.assertOwnerOrPermission()` |
 | **투표/설문 중복 참여 검증** | `frstRgtrId` 기반 유니크 제약과 정합해야 함 | `OnlinePollService.vote()` |
 | **UI 표시용 사용자 식별** | 사람이 읽을 수 있는 값 | DTO 내 `userId` 필드 |
 
@@ -43,10 +43,10 @@ CustomUserDetails.getLoginId()  →  loginId  (getUserId의 가독성 별칭)
 | **Spring Security 내부** | `Authentication.getName()` 등 프레임워크 내부 계약 | `SecurityContextHolder` |
 | **User 엔티티 PK 조회** | DB에서 User를 PK로 조회할 때 | `UserRepository.findByEsntlId()` |
 | **JWT 토큰 subject** | 토큰의 `sub` claim에 불투명 식별자 사용 | JWT 발급/검증 로직 |
-| **esntlId 소유권 도메인의 소유자 비교** | 해당 도메인이 소유자 식별자 컬럼을 **esntlId로 저장**하므로 동일 축(esntlId)으로 비교해야 함 | `InformalSanctionServiceImpl`(aplcntId/aprvrId), `BoardService`(userId), `BoardMasterApiController` |
+| **esntlId 소유권 도메인의 소유자 비교** | 해당 도메인이 소유자 식별자 컬럼을 **esntlId로 저장**하므로 동일 축(esntlId)으로 비교해야 함 | `InformalSanctionService`(aplcntId/aprvrId), `BoardService`(userId), `BoardMasterApiController` |
 
 > **⚠ 소유권 축은 도메인마다 다르다 (§6 체크리스트 적용 전 반드시 확인):**
-> - **loginId 축**(감사컬럼 `frstRgtrId` 기반, 표준): AddressBook·Comment·MemoReport·WorkReport·Schedule·Scrap 등 → `assertOwnerOrAdmin(entity.getFrstRgtrId())`.
+> - **loginId 축**(감사컬럼 `frstRgtrId` 기반, 표준): AddressBook·Comment·MemoReport·WorkReport·Schedule·Scrap 등 → `assertOwnerOrPermission(entity.getFrstRgtrId(), "<대리 권한>")`(예: `ADBK_UPDATE_ALL`). 관리자 역할이 아니라 명시한 기능 권한이 있을 때만 타인 자원을 다룬다(ADR-0016).
 > - **esntlId 축**(도메인 고유 소유자 컬럼): `InformalSanction`(aplcntId=esntlId), `Board`(userId=esntlId, 컨트롤러가 `getUsername()`=esntlId를 저자로 고정) 등 → `getCurrentEsntlId()`로 비교. 이 도메인에 `frstRgtrId`(loginId) 기반 비교를 강제하면 **소유자 판정이 깨진다.**
 > - 신규 소유권 로직 추가 시, 비교 대상 컬럼이 loginId를 담는지 esntlId를 담는지를 **채움 지점(create)에서 먼저 확인**하고 동일 축의 `getCurrentLoginId()`/`getCurrentEsntlId()`를 선택한다.
 
@@ -59,7 +59,7 @@ CustomUserDetails.getLoginId()  →  loginId  (getUserId의 가독성 별칭)
 | `getCurrentEsntlId()` | `Optional<String>` — esntlId | Spring Security 내부, User PK 조회, **esntlId-축 도메인 소유권 비교**(§2.4) | **감사 컬럼·표준(frstRgtrId) 소유권에 사용 금지** |
 | `getCurrentLoginId()` | `Optional<String>` — loginId | 감사 컬럼 비교, 소유권 검증, 투표 식별 | **비즈니스 로직 기본값** |
 | ~~`getCurrentUserId()`~~ | ~~esntlId~~ | ~~사용 금지~~ | `@Deprecated` — 하위 호환 시그니처일 뿐이며 신규 호출은 `IdentityAxisLinterTest`가 차단한다. 의도를 드러내는 두 메서드 중 하나를 선택한다. |
-| `assertOwnerOrAdmin(ownerLoginId)` | void (예외 발생) | IDOR 방어 가드 | `getCurrentLoginId()` 기반 비교 |
+| `assertOwnerOrPermission(ownerLoginId, overridePermission)` | void (예외 발생) | IDOR 방어 가드 | 대리 권한이 없으면 `getCurrentLoginId()` 기반 비교. esntlId 축은 `assertOwnerOrPermissionByEsntlId` |
 
 ---
 
@@ -105,7 +105,7 @@ if (!esntlId.equals(entity.getFrstRgtrId())) {
 
 ```java
 // ✅ 올바른 방법
-SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
+SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "ADBK_UPDATE_ALL");
 // 또는
 String loginId = SecurityUtil.getCurrentLoginId().orElseThrow();
 if (!loginId.equals(entity.getFrstRgtrId())) { ... }
@@ -139,7 +139,7 @@ entity.setSomeOwnerId(name); // esntlId가 저장됨
 새로운 비즈니스 도메인을 추가할 때 아래 항목을 확인한다:
 
 - [ ] 소유자 컬럼의 채움 지점을 확인해 해당 값이 loginId인지 esntlId인지 판정했는가?
-- [ ] 감사컬럼(`frstRgtrId`/`lastMdfrId`) 기반 소유권은 `SecurityUtil.assertOwnerOrAdmin(...)` 또는 `getCurrentLoginId()`로 비교하는가?
+- [ ] 감사컬럼(`frstRgtrId`/`lastMdfrId`) 기반 소유권은 `SecurityUtil.assertOwnerOrPermission(...)` 또는 `getCurrentLoginId()`로 비교하는가?
 - [ ] esntlId를 저장하는 도메인 고유 소유자 컬럼은 `getCurrentEsntlId()`로 같은 축을 비교하는가?
 - [ ] DTO에 노출하는 사용자 식별자가 제품 요구와 개인정보 경계에 맞는가?
 - [ ] `getCurrentUserId()`(Deprecated)를 호출하고 있지는 않은가?

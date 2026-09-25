@@ -128,7 +128,7 @@
 |:---|:---|
 | **UI/Frontend** | `pnpm -C frontend exec tsc --noEmit`(정적 타입) — [AGENTS.md의 범위별 검증](../../AGENTS.md#verification-by-change-scope) + 계약 드리프트 게이트 `codegen:verify`/`codegen:verify:zod`(api-docs.json ↔ generated-api.d.ts/generated-zod.ts). RSC 경계는 `pnpm -C frontend build`, 런타임 거동은 관련 Playwright spec으로 검증한다. pre-push는 E2E를 실행하지 않으므로 최종 병합 판단에는 현재 required CI 결과를 직접 확인한다. |
 | **Backend/API** | `./gradlew compileJava compileTestJava`(컴파일 무결성) — [AGENTS 범위별 검증](../../AGENTS.md#verification-by-change-scope). 헌법·표준 린터는 `./gradlew :api-server:harnessTest`, 기능은 관련 JUnit/ArchUnit과 API 응답으로 검증한다. |
-| **Database** | `db-bridge` 쿼리 실행 결과·행(Row) 수, `flyway_schema_history` 확인, `EXPLAIN ANALYZE` 결과, 스키마 변경 확인 로그. **엔티티·DDL 변경 시 `./gradlew :api-server:schemaValidationTest`**(빈 PostgreSQL 17 + Flyway 전량 적용 + Hibernate `ddl-auto:validate`, Docker 필요). ⚠ 단위 테스트 프로파일은 **H2 + `create-drop`** 이라 물리 스키마 불일치를 **원리적으로 검출하지 못한다** — 그 그린을 스키마 증거로 제시하지 말 것. |
+| **Database** | `db-bridge` 쿼리 실행 결과·행(Row) 수, `flyway_schema_history` 확인, `EXPLAIN ANALYZE` 결과, 스키마 변경 확인 로그. **엔티티·DDL 변경 시 `./gradlew :api-server:schemaValidationTest`**(빈 PostgreSQL 17 + Flyway 전량 적용 + Hibernate `ddl-auto:validate`, Docker 필요). ⚠ 단위 테스트 프로파일은 **H2 + `create`/`create-drop`** 이라 물리 스키마 불일치를 **원리적으로 검출하지 못한다** — 그 그린을 스키마 증거로 제시하지 말 것. |
 | **아키텍처/규칙** | 신설·수정한 ArchUnit/린트 게이트가 그린임을 대상 테스트 직접 실행(`--tests`)으로 증명. **게이트를 신설·수정했다면 그린 확인만으로 부족하다 — 의도적으로 위반을 주입해 red 가 되는 것까지 증명한다**(그린만 확인하면 vacuous 통과·UP-TO-DATE 스킵과 구분되지 않는다. [AGENTS.md Evidence guardrails H5](../../AGENTS.md#evidence-guardrails)). |
 
 공통 검증 진입점은 비용과 범위가 `verify:docs` ⊂ `verify:fast` ⊂ `verify:push` ⊂ `verify:full`이 되도록 구성한다.

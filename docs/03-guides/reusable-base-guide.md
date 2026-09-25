@@ -183,9 +183,9 @@ npm run base:generate-source -- \
 `backend-build`에 집계한다. 승인 목록 **자체**의 건전성(형식·중복·대상 실재)은
 `npm run test:base-profile`(CI의 `test:operational-contracts`에 포함)이 별도로 지킨다.
 
-현재 core·collaboration 프로필은 각각 파일 게이트 2건(`acknowledgedRemovedGates`)과 역사 검증 규칙
+현재 core·collaboration 프로필은 각각 파일 게이트 6건(`acknowledgedRemovedGates`)과 역사 검증 규칙
 45건을 제외한다. 역사 규칙은 V2 migration 파일 검증 42건과 구 인가 전환 검증 3건이며, 새 V1 baseline의 현재
-PostgreSQL 스키마 검증은 계속 실행한다. 남은 둘(`SurveySubmissionConcurrencyIntegrationTest`·`RbacDemoSurfaceAuthorizationMatrixTest`)은 빠진
+PostgreSQL 스키마 검증은 계속 실행한다. 여섯(`SurveySubmissionConcurrencyIntegrationTest`·`RbacDemoSurfaceAuthorizationMatrixTest`·`ApprovalWorkflowIntegrationTest`·`CommunityDecisionConcurrencyIntegrationTest`·`TemplateCreationIntegrityIntegrationTest`·`ReferenceIntegrityCommunityFkIntegrationTest`)은 빠진
 pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **남는 코드도 검사하던 횡단 게이트는 모두 되살렸다** —
 `QueryCountGuardrailIntegrationTest`(DEC-OPS-084)와 `RbacAuthorizationMatrixTest`(DEC-OPS-085)는 pack 경계로 옮겼고,
 `PrivacyAccessCensusLinterTest`(DEC-OPS-089)·`InputContractMirrorLinterTest`·`CrossDomainCouplingLinterTest`(DEC-OPS-090)는

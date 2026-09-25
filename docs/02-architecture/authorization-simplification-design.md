@@ -312,7 +312,7 @@ flowchart LR
 | 행사·포상 | Event, RewardManage | 조회·등록·변경·삭제 및 운영자 동작 분리 |
 | 설문·투표 | Survey, SurveySubmission, SurveyResponseAdmin, Poll, Template | 참여·제출·설계·개설·응답 조회·결과 내보내기·템플릿 편집을 분리 |
 | 배너·팝업·안내 | Banner, Banner User, Popup, Popup User, Internet Service Guidance | 공개 열람과 관리 CRUD 분리 |
-| 정책·모니터링 | Policy Management, LoginPolicy, NetworkMonitoring | 설정 조회/변경·로그인 정책·진단 실행; Actuator와 관리 포트 별도 연결 |
+| 정책·모니터링 | Policy Management, LoginPolicy | 설정 조회/변경·로그인 정책; Actuator와 관리 포트 별도 연결. NetworkMonitoring 은 2026-09-25 퇴역(DEC-OPS-129) |
 | 운영 로그 | LoginLog, SystemLog, WebLog, UserLog | 로그 종류별 조회·내보내기 구분 |
 | 개인정보 로그 | PrivacyLog | `PRIVACY_READ`와 내보내기, SYSTEM 제외를 함께 검사 |
 | 통계·대시보드 | Statistics, Statistics User, Dashboard | 조회·집계/내보내기, 포함 데이터의 원래 접근 조건 보존 |

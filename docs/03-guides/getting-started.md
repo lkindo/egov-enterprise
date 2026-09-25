@@ -283,7 +283,7 @@ npm run review:migration
 | Backend 구조·보안 하네스 | `./gradlew :api-server:harnessTest` | 구조·계약·인가 린터 집합 |
 | 실 DB 부트스트랩·스키마 | `./gradlew :api-server:schemaValidationTest` | Docker PostgreSQL 17 + Flyway + Hibernate validate + 쓰기 smoke |
 | Backend 전체 로컬 게이트 | `./gradlew localGate` | 하네스·실 DB·전 모듈 테스트·JaCoCo·프런트 unit coverage |
-| Full-stack 통합 게이트 | `npm run verify` / `make verify` | Backend·Frontend 핵심 게이트 단일 진입점(실 DB/E2E는 별도) |
+| Full-stack 통합 게이트 | `npm run verify` / `make verify` | Backend·Frontend 핵심 게이트 단일 진입점(실제 PostgreSQL 스키마 검증 포함·Docker 필요, 브라우저 E2E와 원격 ruleset은 별도) |
 | Frontend 타입 | `pnpm -C frontend exec tsc --noEmit` | AGENTS 범위별 검증 |
 | 재사용 프로필 전체 기술 검증 | `npm run base:verify -- --profile core` | 새 격리 DB·소스 생성과 산출물 계약·Java·스키마·tsc·lint·build; 세 프로필 각각 실행 |
 | 독립 이관 기술 검증 | `npm run verify:migration` | migration-tool 테스트·bootJar; 실제 기관 적재 승인과 구분 |

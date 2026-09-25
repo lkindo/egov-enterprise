@@ -290,7 +290,7 @@ UI 프레임워크나 테마 변경 시 발생하는 미세한 레이아웃 시�
 - **실행**: `node scripts/run-isolated-e2e.mjs -- --project=full-suite e2e/quality/visual-baselines.spec.ts`
 
 ### 4. 하이드레이션 오류 조기 경보 및 E2E 연동
-Next.js의 서버/클라이언트 불일치 문제를 신속히 잡기 위해, 클라이언트 컴포넌트의 `StandardErrorBoundary`가 수집한 불일치 정보를 콘솔에 `🌊 [HYDRATION MISMATCH DETECTED]` 플래그로 출력하며, `ConsoleErrorGuard`가 이를 수집해 해당 Playwright 테스트를 실패시킵니다. 이 가드는 실제로 방문한 경로의 브라우저 로그만 관측하므로 미실행 화면까지 증명하지 않습니다.
+Next.js의 서버/클라이언트 불일치 문제를 신속히 잡기 위해, [`ConsoleErrorGuard`](../../frontend/e2e/fixtures/error-detector.ts)가 브라우저 콘솔에서 React의 hydration 오류 문구(`Hydration failed`, `Text content did not match` 등)와 `🌊 [HYDRATION MISMATCH DETECTED]` 표지를 수집해 해당 Playwright 테스트를 실패시킵니다. 앱 컴포넌트가 별도로 이 표지를 출력하지는 않습니다. 이 가드는 실제로 방문한 경로의 브라우저 로그만 관측하므로 미실행 화면까지 증명하지 않습니다.
 
 ---
 

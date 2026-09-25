@@ -45,7 +45,6 @@
 | [ui-ux-modernization-plan.md](02-architecture/ui-ux-modernization-plan.md) | Claude 원안의 적대적 재검토와 사용자 과업 중심 UI/UX 전면 현대화 실행 계획 |
 | [erp-transformation-master-plan.html](02-architecture/erp-transformation-master-plan.html) | 공통 프레임워크 × ERP·공공 업무시스템 전환 6단계 마스터플랜(2026-08-23, 결정 D1~D10 포함) |
 | [work-screen-grammar-catalog.md](02-architecture/work-screen-grammar-catalog.md) | 포털형→업무형 전환의 화면 문법 SSOT — 공통 규칙 G1~G15·archetype 8종·밀도 계약(globals.css 결속) |
-| [ui-ux-task-flow-optimization.md](03-guides/ui-ux-task-flow-optimization.md) | 로그인·공통 셸·편집 이동 보호·지식 탐색·게시판 부분 성공·설문 결과 선택의 현재 구현과 검증 경계 |
 | [url-state-approval-overlay-design.md](02-architecture/url-state-approval-overlay-design.md) | 비규범 `class-governed` URL-state 부류 컨테이너의 설계·운영 계약 — 4개 부류의 독립 승인 기록을 관리하며 `search-input`만 ADR-0009에 결속 |
 | [authorization-simplification-design.md](02-architecture/authorization-simplification-design.md) | 인가 핵심 3개·감사 1개, 복수 그룹·명시 기능·API·전환 전 소스 및 OCI 조사 범위 |
 | [authorization-source-inventory.json](02-architecture/authorization-source-inventory.json) | 전환 전 권한 관련 소스 검색·참조 확장 스냅샷 887개; 현재 변경 파일 수가 아님 |
@@ -120,6 +119,7 @@
 | [design-tokens.md](03-guides/design-tokens.md) | 디자인 토큰 & 브랜딩 규약 (+ 색 하드코딩 게이트) |
 | [frontend-content-style.md](03-guides/frontend-content-style.md) | 한국어 우선 UI 문구·오류·복구·도메인 용어 계약 |
 | [frontend-form-validation-loop.md](03-guides/frontend-form-validation-loop.md) | 입력·수정 화면의 제약 보존, 오류 위치 이동, 서버 field error, 중복 제출 잠금과 exact census 운영 루프 |
+| [ui-ux-task-flow-optimization.md](03-guides/ui-ux-task-flow-optimization.md) | 로그인·공통 셸·편집 이동 보호·지식 탐색·게시판 부분 성공·설문 결과 선택의 현재 구현과 검증 경계 |
 | [ui-ux-modernization-execution-loop-prompt.md](03-guides/ui-ux-modernization-execution-loop-prompt.md) | UI/UX 현대화 계획을 승인 경계·검증·재개 루프로 끝까지 실행하는 복사형 프롬프트 |
 | [reusable-base-guide.md](03-guides/reusable-base-guide.md) | 릴리스 생성과 세 프로필 DB·소스 기술 검증, 근거 투영·기관 도입 경계 |
 | [project-composer-guide.md](03-guides/project-composer-guide.md) | 로컬 UI·recipe로 도메인과 출력 구조를 선택하여 독립 PostgreSQL 프로젝트 생성 |

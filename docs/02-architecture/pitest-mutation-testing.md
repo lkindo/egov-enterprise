@@ -10,7 +10,7 @@
 |---|---|
 | 플러그인 | 루트 PIT Gradle 플러그인 `1.19.0`, JUnit 5 플러그인 `1.2.1`; 하위 Java 모듈에 공통 적용 |
 | 대상 | `PIT_TARGET_CLASSES`·`PIT_TARGET_TESTS`의 쉼표 구분 클래스명 glob. 미설정 시 각각 `nuri.*` |
-| CI | `mutation-scope`의 10개 스코프를 병렬 실행하고 안정 required context `mutation-test`로 집계 |
+| CI | 제품 8개 스코프(`mutation-scope`)와 이관 도구 2개 스코프(`mutation-scope-migration`, DEC-OPS-104)를 병렬 실행하고 안정 required context `mutation-test`가 두 잡을 집계 |
 | 하한 | `STRICT_MUTATION=true`일 때 75%, 미설정 로컬 실행은 threshold 0의 리포트 모드. `CI=true`만으로 활성화되지 않음 |
 | 빈 모집단 | `failWhenNoMutations = true`이므로 대상 오타·과도한 제외로 mutation이 0건이면 로컬도 실패 |
 | 결과 | 모듈별 `build/reports/pitest`의 HTML/XML; 정확한 하위 경로는 해당 실행 출력 확인 |
@@ -37,6 +37,6 @@ $env:STRICT_MUTATION = 'true'
 ./gradlew :foundation:pitest --warning-mode fail --console=plain
 ```
 
-환경변수는 같은 PowerShell 세션의 다음 실행에도 남는다. 이후 다른 스코프를 실행할 때는 값을 명시적으로 다시 설정하거나 별도 셸을 사용한다. 모듈/클래스가 존재하는지 먼저 확인하고, 실행 대상·mutation 수·점수·survivor와 실제 종료 코드를 함께 기록한다. 로컬의 선택 스코프 green을 CI 10개 전체 통과로 보고하지 않는다.
+환경변수는 같은 PowerShell 세션의 다음 실행에도 남는다. 이후 다른 스코프를 실행할 때는 값을 명시적으로 다시 설정하거나 별도 셸을 사용한다. 모듈/클래스가 존재하는지 먼저 확인하고, 실행 대상·mutation 수·점수·survivor와 실제 종료 코드를 함께 기록한다. 로컬의 선택 스코프 green을 CI 10개(제품 8 + 이관 2) 전체 통과로 보고하지 않는다.
 
 *Verified against current Gradle configuration, CI and gate registry: 2026-09-10.*

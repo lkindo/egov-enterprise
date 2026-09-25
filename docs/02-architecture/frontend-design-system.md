@@ -61,9 +61,9 @@ Token set equality와 정적 ratio test는 저비용 preflight다. 실제 대비
 | 경계 | 허용 책임 | 금지 책임 |
 |---|---|---|
 | `components/ui` | service/router/context를 모르는 primitive | domain fetch, auth rule, route navigation |
-| `components/shared` | 여러 feature가 쓰는 composite | 특정 domain mutation/validation |
-| `features/<domain>` | domain UI, query options, service adapter | 다른 domain의 내부 구현 소유 |
-| `app/**/_components` | app shell·segment 전용 UI | 근거 없는 전역 public API 승격 |
+| `components/common` | 여러 feature가 쓰는 composite | 특정 domain mutation/validation |
+| `components/features`·`components/business` | domain UI(query options는 `src/queries`, service adapter는 `src/services`) | 다른 domain의 내부 구현 소유 |
+| `app/components` | app shell·layout·archetype 셸(patterns) | 근거 없는 전역 public API 승격 |
 
 물리적 폴더 하나로 모든 component를 모으는 것은 목표가 아니다. 의존 방향, profile 제거 가능성, server/client boundary와 public API의 명확성이 목표다.
 

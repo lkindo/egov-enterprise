@@ -70,16 +70,17 @@ ADR-0009는 성명·사번·계정명처럼 일반 개인정보를 포함할 수
 - `URL-E28F88902ADC75`
 - `URL-E910532B42785F`
 
-### 4.2 route-key binding 3건
+### 4.2 route-key binding 2건
 
 | route | 허용 키 |
 |---|---|
 | `/search` | `q` |
-| `/admin/community/[id]` | `searchCnd`, `searchWrd` |
 | `/admin/community/boards/select-board-list` | `searchCnd`, `searchWrd` |
 
+`/admin/community/[id]`는 2026-09-25 id를 보존해 정본 커뮤니티 상세로 보내는 page-redirect가 되어 binding에서 빠졌다(DEC-OPS-130).
+
 같은 키 이름을 쓰더라도 위 route와 producer/consumer 근거에 포함되지 않은 새 경로는 별도 검토 대상이다.
-위 세 검색 route의 serializer에서는 unknown query를 일괄 전달하지 않는다. 다른 route에 남은
+위 두 검색 route의 serializer에서는 unknown query를 일괄 전달하지 않는다. 다른 route에 남은
 `copy-existing-query`는 이 승인에 포함되지 않으며 `opaque` remainder로 추적한다.
 
 ### 4.3 허용되지 않는 확장과 자유 입력의 한계
