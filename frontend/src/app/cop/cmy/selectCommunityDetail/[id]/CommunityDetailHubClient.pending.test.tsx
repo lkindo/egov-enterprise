@@ -80,6 +80,19 @@ describe('CommunityDetailHubClient join pending contract', () => {
     mocks.getCommunityBoards.mockResolvedValue([]);
   });
 
+  it('🚨 개설자의 로그인 ID 를 화면에 싣지 않는다 — 계정 식별자는 이름이 아니다 (DIP V9)', () => {
+    render(
+      <CommunityDetailHubClient
+        cmntySn={9}
+        initialData={{ cmntySn: 9, cmntyNm: '보존할 커뮤니티', cmntyIntroCn: '소개', useYn: 'Y', frstRgtrId: 'founder-login-id', crtDt: '2026-09-01T10:00:00' } as any}
+      />,
+    );
+
+    expect(screen.queryByText('founder-login-id')).toBeNull();
+    expect(screen.queryByText('등록자')).toBeNull();
+    expect(screen.getByText('2026-09-01')).toBeInTheDocument();
+  });
+
   it('가입 신청을 같은 tick에 한 번만 보내고 실패를 안내한 뒤 상세 화면에서 재시도할 수 있다', async () => {
     let rejectJoin!: (reason?: unknown) => void;
     mocks.joinCommunity.mockReturnValueOnce(new Promise<void>((_, reject) => {

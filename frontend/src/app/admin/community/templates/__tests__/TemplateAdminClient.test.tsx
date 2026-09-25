@@ -203,6 +203,15 @@ describe('TemplateAdminClient 수정·삭제', () => {
     mocks.confirm.mockResolvedValue(true);
   });
 
+  it("🚨 목록 밖 분류 코드는 '일반' 이 아니라 원문 그대로 보인다 (DIP V9)", async () => {
+    const rows = [ROW, { ...ROW, tmpltId: 'TMPLT_2', tmpltNm: '레거시', tmpltSeCd: 'LEGACY9' }];
+    mocks.getTemplateList.mockResolvedValue(rows);
+    renderClient(rows);
+
+    expect(await screen.findByText('LEGACY9')).toBeInTheDocument();
+    expect(screen.getByText('게시판')).toBeInTheDocument();
+  });
+
   it('수정을 누르면 값이 채워진 다이얼로그가 열리고 템플릿 ID 는 잠기며, 승인은 update 를 경로 ID 로 부른다', async () => {
     const user = userEvent.setup();
     renderClient([ROW]);

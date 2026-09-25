@@ -162,6 +162,37 @@ describe('boardActions', () => {
       expect(consoleError).not.toHaveBeenCalled();
     });
 
+    it.each([
+      [403, { message: 'Forbidden' }, '이 게시판에 글을 쓰거나 이 글을 고칠 권한이 없습니다.'],
+      [413, {}, '첨부 파일이 허용 크기를 넘습니다. 파일 크기를 줄여 다시 시도해 주세요.'],
+      [415, {}, '보낼 수 없는 형식의 요청입니다. 첨부 파일 형식을 확인해 주세요.'],
+      [409, { message: '커뮤니티 회원만 이용할 수 있는 게시판입니다.' }, '커뮤니티 회원만 이용할 수 있는 게시판입니다.'],
+    ])('🚨 저장 실패 %i 는 사유를 말한다 — 한 문장으로 뭉개지 않는다 (DIP V9)', async (status, data, expected) => {
+      const formData = new FormData();
+      formData.append('pstTtl', 'title');
+      formData.append('pstCn', 'content');
+      formData.append('bbsId', 'BBS_001');
+      (vi.mocked(client.requestRaw)).mockRejectedValue({ response: { status, data } });
+
+      const result = await saveBoardArticle({}, formData);
+
+      expect(result).toMatchObject({ success: false, message: expected });
+    });
+
+    it('🚨 400 필드 오류는 어느 입력인지 함께 돌려준다 (DIP V9)', async () => {
+      const formData = new FormData();
+      formData.append('pstTtl', 'title');
+      formData.append('pstCn', 'content');
+      formData.append('bbsId', 'BBS_001');
+      (vi.mocked(client.requestRaw)).mockRejectedValue({
+        response: { status: 400, data: { message: '입력값 오류', errors: [{ field: 'pstTtl', message: '제목은 300자 이하입니다.' }] } },
+      });
+
+      const result = await saveBoardArticle({}, formData);
+
+      expect(result).toMatchObject({ success: false, field: 'pstTtl', message: '제목은 300자 이하입니다.' });
+    });
+
     it('파일이 있으면 첨부 동반 등록(/with-files) 계약의 경로와 part를 사용한다', async () => {
       const formData = new FormData();
       formData.append('pstTtl', 'title');

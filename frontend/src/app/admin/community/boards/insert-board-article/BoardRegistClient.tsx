@@ -280,8 +280,11 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
         toast(pstSn ? '게시글을 수정했습니다.' : '게시글을 등록했습니다.', 'success');
         router.push(result.redirect || `/admin/community/boards/select-board-list?bbsId=${bbsId}`);
       } else {
+        // [2026-09-26 DIP V9] 액션이 돌려준 사유(권한·파일 크기·형식·서버 안내)를 버리지 않는다.
         if (!form.applyServerErrors(result)) {
-          toast('게시글을 저장하지 못했습니다. 입력 내용은 유지됩니다. 잠시 후 다시 시도해 주세요.', 'error');
+          toast(result.message
+            ? `${result.message} 입력 내용은 유지됩니다.`
+            : '게시글을 저장하지 못했습니다. 입력 내용은 유지됩니다. 잠시 후 다시 시도해 주세요.', 'error');
         }
       }
     } catch (error) {

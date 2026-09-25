@@ -29,6 +29,12 @@ interface CommandItem {
   description?: string;
 }
 
+
+/** 결과 항목의 DOM id — combobox 의 aria-activedescendant 가 가리킨다. */
+function commandOptionId(item: { id: string }): string {
+  return `command-option-${item.id.replace(/[^A-Za-z0-9_-]/g, '_')}`;
+}
+
 export function GlobalCommandCenter() {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -164,15 +170,18 @@ export function GlobalCommandCenter() {
       )
       : combined;
 
-    // 만약 일치하는 게 없다면 광역 검색 제안 추가
-    if (search && results.length === 0 && !searchQueryError) {
-      results = [{
+    // [2026-09-26 DIP V9] 통합 검색 제안은 검색어가 있으면 **항상** 마지막에 둔다. 종전에는 일치하는 메뉴가
+    //   하나도 없을 때만 나와, 메뉴 이름에 걸리는 검색어로는 게시글·임직원을 찾으러 갈 길이 없었다.
+    //   이름도 실제 범위로 말한다 — 통합 검색은 게시글 제목·임직원 성명·메뉴만 찾고 본문은 찾지 않는다.
+    if (search && !searchQueryError) {
+      const globalSearch: CommandItem = {
         id: 'global-search',
-        name: `"${search}" 검색어로 사이트 전체 검색`,
+        name: `"${search}" 통합 검색 — 게시글 제목·임직원·메뉴`,
         url: `/search?q=${serializeSearchQuery({ q: search })}`,
         category: '검색',
         icon: <Search size={16} />
-      }];
+      };
+      return [...results.slice(0, 9), globalSearch];
     }
 
     return results.slice(0, 10);
@@ -293,7 +302,9 @@ export function GlobalCommandCenter() {
 
       const focusableElements = Array.from(dialog.querySelectorAll<HTMLElement>(
         'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      )).filter(element => element.getAttribute('aria-hidden') !== 'true');
+      )).filter(element => element.getAttribute('aria-hidden') !== 'true'
+        // 결과 항목(option)은 tabindex=-1 이다 — 방향키로 고르는 항목을 Tab 순서에 다시 넣지 않는다.
+        && element.getAttribute('tabindex') !== '-1');
 
       if (focusableElements.length === 0) {
         e.preventDefault();
@@ -352,8 +363,15 @@ export function GlobalCommandCenter() {
           <div className="p-3 bg-primary/10 rounded-lg text-primary animate-pulse">
             <Search size={28} />
           </div>
+          {/* [2026-09-26 DIP V9] 입력은 결과 목록을 조종하는 combobox 다. 방향키로 옮긴 항목을
+              aria-activedescendant 로 보조기술에 알린다 — 종전에는 강조만 바뀌고 무엇이 골라졌는지 말하지 않았다. */}
           <input
             ref={inputRef}
+            role="combobox"
+            aria-expanded={filteredItems.length > 0}
+            aria-controls="command-center-results"
+            aria-autocomplete="list"
+            aria-activedescendant={filteredItems[selectedIndex] ? commandOptionId(filteredItems[selectedIndex]) : undefined}
             aria-label="글로벌 커맨드 센터 검색어 입력"
             maxLength={SEARCH_URL_STATE.maxLength}
             aria-invalid={Boolean(searchQueryError) || undefined}
@@ -375,13 +393,13 @@ export function GlobalCommandCenter() {
         <div className="max-h-[500px] overflow-y-auto p-6 scrollbar-hide">
           {searchQueryError ? <p id="command-search-query-error" role="alert" className="text-sm text-destructive-emphasis">{searchQueryError}</p> : null}
           {filteredItems.length > 0 ? (
-            <div className="space-y-6">
+            <div id="command-center-results" role="listbox" aria-label="커맨드 센터 결과" className="space-y-6">
               {['메뉴', '액션', '시스템', '검색'].map(cat => {
                 const catItems = filteredItems.filter(item => item.category === cat);
                 if (catItems.length === 0) return null;
 
                 return (
-                  <div key={cat} className="space-y-2">
+                  <div key={cat} role="group" aria-label={cat} className="space-y-2">
                     <p className="text-xs font-bold text-muted-foreground tracking-[0.3em] px-4 mb-3 flex items-center gap-3">
                       <span className="w-4 h-px bg-muted-foreground/30" />
                       {cat}
@@ -394,6 +412,10 @@ export function GlobalCommandCenter() {
                         return (
                           <button
                             key={item.id}
+                            id={commandOptionId(item)}
+                            role="option"
+                            aria-selected={isFocused}
+                            tabIndex={-1}
                             aria-label={item.name}
                             className={cn(
                               "w-full flex items-center justify-between p-5 rounded-lg transition-all duration-300 group text-left",

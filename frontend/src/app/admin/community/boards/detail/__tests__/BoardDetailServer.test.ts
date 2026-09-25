@@ -63,6 +63,17 @@ describe('BoardDetailServer', () => {
     });
   });
 
+  it('🚨 게시글 403 은 장애가 아니라 권한으로 돌려준다 — 재시도를 권하지 않도록 표시한다 (DIP V9)', async () => {
+    vi.mocked(knowledgeService.getArticle).mockRejectedValue({ response: { status: 403 } });
+    vi.mocked(boardUserService.getBoardMeta).mockResolvedValue({} as never);
+    vi.mocked(commentService.getComments).mockResolvedValue({ list: [] } as never);
+
+    const result = await getInitialBoardDetailData('BBS-4', 10);
+
+    expect(result).toMatchObject({ article: null, forbidden: true });
+    expect(result.fetchError).toContain('볼 권한이 없습니다');
+  });
+
   it('주요 게시글 조회 실패의 원문과 오류 객체를 사용자 응답이나 서버 콘솔에 노출하지 않습니다.', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.mocked(knowledgeService.getArticle).mockRejectedValue(

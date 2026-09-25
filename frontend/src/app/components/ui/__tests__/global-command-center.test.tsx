@@ -67,20 +67,52 @@ describe('GlobalCommandCenter accessibility contract', () => {
     renderCommandCenter();
     await openFromTrigger(user);
     const query = '홍 길동 + & #';
-    const input = screen.getByRole('textbox', { name: '글로벌 커맨드 센터 검색어 입력' });
+    const input = screen.getByRole('combobox', { name: '글로벌 커맨드 센터 검색어 입력' });
     fireEvent.change(input, { target: { value: query } });
     expect(input).toHaveAttribute('maxlength', '200');
-    await user.click(await screen.findByRole('button', { name: `"${query}" 검색어로 사이트 전체 검색` }));
+    await user.click(await screen.findByRole('option', { name: `"${query}" 통합 검색 — 게시글 제목·임직원·메뉴` }));
     expect(mocks.push).toHaveBeenCalledWith('/search' + '?q=' + encodeURIComponent(query));
+  });
+
+  it('🚨 일치하는 항목이 있어도 통합 검색 제안을 마지막에 둔다 (DIP V9)', async () => {
+    const user = userEvent.setup();
+    renderCommandCenter();
+    await openFromTrigger(user);
+
+    fireEvent.change(screen.getByRole('combobox', { name: '글로벌 커맨드 센터 검색어 입력' }), { target: { value: '로그' } });
+
+    const options = await screen.findAllByRole('option');
+    expect(options.map((option) => option.getAttribute('aria-label'))).toEqual([
+      '로그아웃',
+      '"로그" 통합 검색 — 게시글 제목·임직원·메뉴',
+    ]);
+  });
+
+  it('🚨 방향키로 고른 항목을 aria-activedescendant 와 aria-selected 로 알린다 (DIP V9)', async () => {
+    const user = userEvent.setup();
+    renderCommandCenter();
+    await openFromTrigger(user);
+    const input = screen.getByRole('combobox', { name: '글로벌 커맨드 센터 검색어 입력' });
+    const options = await screen.findAllByRole('option');
+
+    expect(input).toHaveAttribute('aria-controls', 'command-center-results');
+    expect(input).toHaveAttribute('aria-activedescendant', options[0].id);
+    expect(options[0]).toHaveAttribute('aria-selected', 'true');
+
+    await user.keyboard('{ArrowDown}');
+
+    expect(input).toHaveAttribute('aria-activedescendant', options[1].id);
+    expect(options[1]).toHaveAttribute('aria-selected', 'true');
+    expect(options[0]).toHaveAttribute('aria-selected', 'false');
   });
 
   it('프로그램으로 주입된 길이 초과 검색어도 이동 제안으로 만들지 않는다', async () => {
     const user = userEvent.setup();
     renderCommandCenter();
     await openFromTrigger(user);
-    fireEvent.change(screen.getByRole('textbox', { name: '글로벌 커맨드 센터 검색어 입력' }), { target: { value: '한'.repeat(201) } });
+    fireEvent.change(screen.getByRole('combobox', { name: '글로벌 커맨드 센터 검색어 입력' }), { target: { value: '한'.repeat(201) } });
     expect(screen.getByRole('alert')).toHaveTextContent('200자 이내');
-    expect(screen.queryByRole('button', { name: /검색어로 사이트 전체 검색/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /통합 검색/ })).not.toBeInTheDocument();
     expect(mocks.push).not.toHaveBeenCalled();
   });
 
@@ -89,7 +121,7 @@ describe('GlobalCommandCenter accessibility contract', () => {
     renderCommandCenter();
     const trigger = await openFromTrigger(user);
 
-    const input = screen.getByRole('textbox', { name: '글로벌 커맨드 센터 검색어 입력' });
+    const input = screen.getByRole('combobox', { name: '글로벌 커맨드 센터 검색어 입력' });
     expect(input).toHaveFocus();
 
     const backdrop = screen.getByTestId('global-command-backdrop');
@@ -110,12 +142,14 @@ describe('GlobalCommandCenter accessibility contract', () => {
     renderCommandCenter();
     const trigger = await openFromTrigger(user);
 
-    const input = screen.getByRole('textbox', { name: '글로벌 커맨드 센터 검색어 입력' });
-    const lastButton = screen.getByRole('button', { name: /로그아웃/ });
+    const input = screen.getByRole('combobox', { name: '글로벌 커맨드 센터 검색어 입력' });
+    // [DIP V9] combobox 패턴 — 결과 항목은 Tab 순서가 아니라 방향키와 aria-activedescendant 로 고른다.
+    //   그래서 대화상자 안의 Tab 순환은 입력칸 하나에 머문다(밖으로 새지 않는 것이 이 테스트의 요지다).
+    expect(screen.getByRole('option', { name: /로그아웃/ })).toHaveAttribute('tabindex', '-1');
     expect(input).toHaveFocus();
 
     await user.tab({ shift: true });
-    expect(lastButton).toHaveFocus();
+    expect(input).toHaveFocus();
 
     await user.tab();
     expect(input).toHaveFocus();
@@ -138,7 +172,7 @@ describe('GlobalCommandCenter accessibility contract', () => {
     preconfiguredBackground.setAttribute('inert', 'preserve-this-value');
 
     await openFromTrigger(user);
-    const input = screen.getByRole('textbox', { name: '글로벌 커맨드 센터 검색어 입력' });
+    const input = screen.getByRole('combobox', { name: '글로벌 커맨드 센터 검색어 입력' });
 
     expect(trigger).toHaveAttribute('aria-hidden', 'true');
     expect(trigger).toHaveAttribute('inert', '');
@@ -247,9 +281,9 @@ describe('GlobalCommandCenter accessibility contract', () => {
 
     await openFromTrigger(user);
 
-    const safeModern = await screen.findByRole('button', { name: '안전 modern 메뉴' });
-    expect(screen.getByRole('button', { name: '레거시 메뉴' })).toBeInTheDocument();
-    expect(await screen.findByRole('button', { name: '안전 modern 메뉴 > 안전 하위' })).toBeInTheDocument();
+    const safeModern = await screen.findByRole('option', { name: '안전 modern 메뉴' });
+    expect(screen.getByRole('option', { name: '레거시 메뉴' })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: '안전 modern 메뉴 > 안전 하위' })).toBeInTheDocument();
     await waitFor(() => expect(mocks.getLeftMenus).toHaveBeenCalledTimes(3));
     expect(screen.queryByRole('button', { name: '위험 modern 메뉴' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /인코딩 우회 메뉴/ })).not.toBeInTheDocument();
@@ -266,7 +300,7 @@ describe('GlobalCommandCenter accessibility contract', () => {
     renderCommandCenter();
 
     await openFromTrigger(user);
-    await user.click(screen.getByRole('button', { name: /로그아웃/ }));
+    await user.click(screen.getByRole('option', { name: /로그아웃/ }));
 
     await waitFor(() => expect(mocks.logout).toHaveBeenCalledOnce());
     expect(mocks.replace).toHaveBeenCalledWith('/login');
@@ -279,7 +313,7 @@ describe('GlobalCommandCenter accessibility contract', () => {
     renderCommandCenter();
 
     await openFromTrigger(user);
-    await user.click(screen.getByRole('button', { name: /로그아웃/ }));
+    await user.click(screen.getByRole('option', { name: /로그아웃/ }));
 
     await waitFor(() => expect(mocks.logout).toHaveBeenCalledOnce());
     expect(mocks.replace).toHaveBeenCalledWith('/login');

@@ -78,6 +78,13 @@ const articleSearchProviders: Array<(query: string) => Promise<SearchArticle[]>>
 ];
 const hasArticleSearch = articleSearchProviders.length > 0;
 
+/**
+ * 게시글·임직원 검색이 받아들이는 최소 글자 수. 서버가 이보다 짧으면 빈 목록을 준다
+ * (BoardService.GLOBAL_SEARCH_MIN_KEYWORD_LENGTH·UserService.PIC_SEARCH_MIN_KEYWORD_LENGTH).
+ * [2026-09-26 DIP V9] 종전 화면은 1글자도 그대로 보내 빈 목록을 '결과 없음' 으로 보였다.
+ */
+const MIN_REMOTE_QUERY_LENGTH = 2;
+
 export const SearchResultsContent = ({
     initialResults = EMPTY_RESULTS,
     query = '',
@@ -102,6 +109,9 @@ export const SearchResultsContent = ({
     //    읽으면 red 가 된다.)
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState(initialResults);
+    // 검색어(prop)에서 파생한다 — 렌더 경로에 클라이언트 전용 소스를 두지 않는 규칙을 지킨다.
+    const trimmedQuery = (query || '').trim();
+    const shortQuery = trimmedQuery.length > 0 && trimmedQuery.length < MIN_REMOTE_QUERY_LENGTH;
     const [userSearchError, setUserSearchError] = useState<string | null>(null);
     const [articleSearchError, setArticleSearchError] = useState<string | null>(null);
     const [menuSearchError, setMenuSearchError] = useState<string | null>(null);
@@ -152,10 +162,14 @@ export const SearchResultsContent = ({
                 });
             };
 
+            // 게시글·임직원은 최소 길이 미만이면 부르지 않는다 — 서버가 빈 목록을 줄 것이 확실하다.
+            const remoteSearchable = String(query || '').trim().length >= MIN_REMOTE_QUERY_LENGTH;
             const [userResult, articleResult, menuResult] = await Promise.allSettled([
                 // 모든 인증 사용자가 접근하므로 연락처·주소가 없는 최소정보 API만 사용한다.
-                userSearchService.searchAssignableUsers(query),
-                Promise.all(articleSearchProviders.map(search => search(query))).then(groups => groups.flat()),
+                remoteSearchable ? userSearchService.searchAssignableUsers(query) : Promise.resolve([]),
+                remoteSearchable
+                    ? Promise.all(articleSearchProviders.map(search => search(query))).then(groups => groups.flat())
+                    : Promise.resolve([]),
                 menuSearch(),
             ]);
             if (cancelled) return;
@@ -281,6 +295,11 @@ export const SearchResultsContent = ({
                     </form>
 
             {queryError ? <p id="search-query-error" role="alert" className="text-[length:var(--font-size-body)] text-destructive-emphasis">{queryError}</p> : null}
+            {shortQuery && !queryError ? (
+                <p role="status" className="rounded-md border border-border bg-muted/40 px-3 py-2 text-[length:var(--font-size-body)] text-foreground">
+                    {hasArticleSearch ? '게시글과 임직원' : '임직원'}은 {MIN_REMOTE_QUERY_LENGTH}자 이상 입력해야 찾습니다. 지금은 메뉴 이름만 찾았습니다.
+                </p>
+            ) : null}
 
             <div className="flex flex-col gap-4 md:flex-row">
                 {/* 검색 범위 안내 */}

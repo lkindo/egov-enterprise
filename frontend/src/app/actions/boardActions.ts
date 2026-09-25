@@ -1,5 +1,6 @@
 'use server';
 
+import { extractFieldErrors } from './actionUtils';
 import { cookies } from 'next/headers';
 import {
   executeGeneratedMultipartOperation,
@@ -17,6 +18,39 @@ import {
 } from '@/types/generated-operations';
 
 const BOARD_SAVE_ERROR = '게시글 저장 중 오류가 발생했습니다.';
+
+/**
+ * 저장 실패의 사유를 사용자가 다음 행동을 고를 수 있는 말로 옮긴다. [2026-09-26 DIP V9]
+ *
+ * 종전 catch 는 모든 실패를 '게시글 저장 중 오류가 발생했습니다.' 한 문장으로 뭉갰다 — 권한이 없는지(403),
+ * 파일이 너무 큰지(413), 형식이 틀렸는지(415), 어느 입력이 잘못됐는지(400) 사용자가 알 수 없었다.
+ * 상태 코드가 없는 transport 실패는 원문(`Network Error` 등)을 싣지 않고 종전 문구로 둔다.
+ */
+function describeSaveFailure(error: unknown): ActionResponse {
+  const response = (error as { response?: { status?: number; data?: { message?: unknown } } } | null)?.response;
+  const status = response?.status;
+  if (status === 403) {
+    return { success: false, message: '이 게시판에 글을 쓰거나 이 글을 고칠 권한이 없습니다.' };
+  }
+  if (status === 413) {
+    return { success: false, message: '첨부 파일이 허용 크기를 넘습니다. 파일 크기를 줄여 다시 시도해 주세요.' };
+  }
+  if (status === 415) {
+    return { success: false, message: '보낼 수 없는 형식의 요청입니다. 첨부 파일 형식을 확인해 주세요.' };
+  }
+  if (status === 400) {
+    const fieldErrors = extractFieldErrors(error);
+    const first = fieldErrors ? Object.entries(fieldErrors)[0] : undefined;
+    if (first) {
+      return { success: false, field: first[0], message: first[1] };
+    }
+  }
+  const serverMessage = typeof response?.data?.message === 'string' ? response.data.message.trim() : '';
+  if (status !== undefined && status >= 400 && status < 500 && serverMessage) {
+    return { success: false, message: serverMessage };
+  }
+  return { success: false, message: BOARD_SAVE_ERROR };
+}
 const BOARD_DELETE_ERROR = '게시글 삭제 중 오류가 발생했습니다.';
 
 interface ActionResponse {
@@ -158,10 +192,10 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       redirect: `/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${targetId}`
     };
   } catch (error) {
-    const message = error instanceof Error && error.message === '저장에 실패했습니다.'
-      ? error.message
-      : BOARD_SAVE_ERROR;
-    return { success: false, message };
+    if (error instanceof Error && error.message === '저장에 실패했습니다.') {
+      return { success: false, message: error.message };
+    }
+    return describeSaveFailure(error);
   }
 }
 
