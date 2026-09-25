@@ -30,7 +30,8 @@ class SharedPostgresMigrationHarnessContractTest {
     // V2_101: 기존 단일 결재의 차수/참여자 백필 검증도 같은 공용 support를 사용한다.
     // V2_102: 빈 문자열 부모를 NULL 로 정규화한 뒤 참조 FK 를 검증하는 이력 검증을 추가한다.
     // V2_104: 퇴역한 네트워크 권한 배정의 삭제와 변경 이력 검증을 추가한다.
-    private static final int EXPECTED_MIGRATION_TEST_COUNT = 45;
+    // V2_105: 게시글 작성일 인덱스의 잠금 경합 롤백과 기간 질의 실행 계획 검증을 추가한다.
+    private static final int EXPECTED_MIGRATION_TEST_COUNT = 46;
 
     @Test
     @DisplayName("격리 database 이름은 병렬 클래스마다 고유하고 PostgreSQL 식별자 한도 안에서 안전하다")
@@ -51,7 +52,7 @@ class SharedPostgresMigrationHarnessContractTest {
     }
 
     @Test
-    @DisplayName("45개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")
+    @DisplayName("46개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")
     void migrationTestsUseSharedPostgresSupport() throws IOException {
         List<Path> migrationTests = HarnessSourceIndex.javaSources(schemaSourceRoot()).stream()
                 .filter(SharedPostgresMigrationHarnessContractTest::isMigrationTest)
@@ -78,7 +79,7 @@ class SharedPostgresMigrationHarnessContractTest {
         }
 
         assertThat(violations)
-                .as("migration 클래스마다 PostgreSQLContainer를 다시 띄우면 45회 부팅으로 회귀한다")
+                .as("migration 클래스마다 PostgreSQLContainer를 다시 띄우면 46회 부팅으로 회귀한다")
                 .isEmpty();
     }
 
