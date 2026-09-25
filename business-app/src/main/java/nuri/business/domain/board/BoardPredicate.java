@@ -43,12 +43,17 @@ public class BoardPredicate {
             }
         }
 
+        // [2026-09-26 DIP V6] 캘린더는 행사일(없으면 작성일)로 칸을 배치하므로 기간도 같은 날짜로 거른다.
+        com.querydsl.core.types.dsl.DateTimeExpression<java.time.LocalDateTime> periodDate = condition.isEventDateBasis()
+                ? QBoard.board.evntDt.coalesce(QBoard.board.crtDt)
+                : QBoard.board.crtDt;
+
         if (condition.getStartDate() != null) {
-            builder.and(QBoard.board.crtDt.goe(condition.getStartDate()));
+            builder.and(periodDate.goe(condition.getStartDate()));
         }
 
         if (condition.getEndDate() != null) {
-            builder.and(QBoard.board.crtDt.loe(condition.getEndDate()));
+            builder.and(periodDate.loe(condition.getEndDate()));
         }
 
         if (StringUtils.hasText(condition.getQnaSttsCd())) {

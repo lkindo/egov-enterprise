@@ -23,7 +23,7 @@ import { boardUserService } from '@/services/business/user/board/BoardUserServic
 import { fileService } from '@/services/foundation/file/FileService';
 import { deleteBoardArticle } from '@/app/actions/boardActions';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
-import type { BoardMasterDetail } from '@/services/foundation/system/BoardAdminService';
+import type { BoardMeta } from '@/services/business/user/board/BoardUserService';
 import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
 import { scrapMutationOptions } from '@/queries/scrap-query-options';
 import CommentSection from '@/components/features/comment/CommentSection';
@@ -34,7 +34,7 @@ import { CommentVO } from '@/types/business/comment';
 interface BoardDetailClientProps {
   dataPromise: Promise<{
     article: KnowledgeDto | null;
-    masterInfo: BoardMasterDetail | null;
+    masterInfo: BoardMeta | null;
     initialComments: CommentVO[];
     /** 감사 P1-1: 서버 조회 실패 사유. null 이면 정상(또는 404 = 실제로 없는 글). */
     fetchError: string | null;
@@ -76,7 +76,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
 
   // React Query for revalidation/stale handling, seeded with initialData
   const { data: masterInfo } = useQuery({
-    ...boardMasterQueryOptions.detail(bbsId ?? ''),
+    ...boardMasterQueryOptions.meta(bbsId ?? ''),
     initialData: initialData.masterInfo ?? undefined,
     enabled: Boolean(initialData.masterInfo && bbsId),
   });

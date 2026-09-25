@@ -12,6 +12,8 @@ export interface BoardListParams {
   orderBy: string;
   startDate?: string;
   endDate?: string;
+  /** 기간 기준(DIP V6). 캘린더 템플릿은 'EVENT' 로 행사일 기준 월 범위를 조회한다. */
+  dateBasis?: 'CREATED' | 'EVENT';
 }
 
 export const useBoardList = (params: BoardListParams, initialData?: { list: BoardPost[]; total: number; totalPage: number }) => {
@@ -20,7 +22,7 @@ export const useBoardList = (params: BoardListParams, initialData?: { list: Boar
     queryKey: ['boardList', bbsId, params],
     initialData,
     queryFn: async () => {
-      const { page, pageUnit, searchWrd, searchCnd, orderBy, startDate, endDate } = params;
+      const { page, pageUnit, searchWrd, searchCnd, orderBy, startDate, endDate, dateBasis } = params;
 
       const data = await boardUserService.getPosts(bbsId, {
         // BoardListClient 는 URL 의 1-based page 를 그대로 넘긴다. 백엔드 BoardApiController 는 Spring
@@ -34,7 +36,8 @@ export const useBoardList = (params: BoardListParams, initialData?: { list: Boar
         // 정렬·기간 필터는 BoardApiController 가 지원하는 파라미터다. 과거 구조분해에서 누락되어 무동작이었다.
         orderBy,
         startDate,
-        endDate
+        endDate,
+        ...(dateBasis ? { dateBasis } : {}),
       });
 
       return {

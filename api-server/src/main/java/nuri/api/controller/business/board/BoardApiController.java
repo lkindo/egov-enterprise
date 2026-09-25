@@ -47,10 +47,12 @@ public class BoardApiController {
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) String qnaStatus,
             @RequestParam(required = false) String qnaCategory,
+            @Parameter(description = "기간 기준. 비우거나 CREATED 면 작성일, EVENT 면 행사일(없으면 작성일)", example = "EVENT")
+            @RequestParam(required = false) String dateBasis,
             @PageableDefault(size = 10) Pageable pageable) {
         Page<BoardDto> result = boardService.getBoardPosts(
                 bbsId, searchCnd, searchWrd, orderBy, startDate, endDate,
-                qnaStatus, qnaCategory, pageable);
+                qnaStatus, qnaCategory, dateBasis, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
@@ -100,6 +102,15 @@ public class BoardApiController {
             @Parameter(description = "FAQ 게시글 ID", example = "1") @PathVariable Long pstSn) {
         return ResponseEntity.ok(ApiResponse.success(
                 PublicFaqDetailResponse.from(boardService.getPublicFaqDetail(pstSn))));
+    }
+
+    @Operation(summary = "게시판 메타 조회",
+            description = "게시글 목록·상세 화면이 쓰는 게시판 제목·설명·템플릿·설정입니다. 커뮤니티 귀속 게시판은 회원만 조회합니다.")
+    @GetMapping("/{bbsId}/meta")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#getBoardMeta')")
+    public ResponseEntity<ApiResponse<nuri.business.service.board.dto.BoardMetaDto>> getBoardMeta(
+            @Parameter(description = "게시판 ID", example = "BBSMSTR_AAAAAAAAAAAA") @PathVariable String bbsId) {
+        return ResponseEntity.ok(ApiResponse.success(boardService.getBoardMeta(bbsId)));
     }
 
     @Operation(summary = "게시판 통계 조회", description = "특정 게시판의 전체 게시글 수, 조회수 총합 등의 통계 정보를 조회합니다.")

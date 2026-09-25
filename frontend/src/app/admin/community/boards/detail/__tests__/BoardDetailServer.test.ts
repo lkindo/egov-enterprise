@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { cookies } from 'next/headers';
 import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
-import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
+import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { commentService } from '@/services/business/comment/commentService';
 import { getInitialBoardDetailData } from '../BoardDetailServer';
 
@@ -11,8 +11,8 @@ vi.mock('@/services/business/knowledge/knowledgeService', () => ({
   knowledgeService: { getArticle: vi.fn() },
 }));
 
-vi.mock('@/services/foundation/system/BoardAdminService', () => ({
-  boardAdminService: { getBoardMaster: vi.fn() },
+vi.mock('@/services/business/user/board/BoardUserService', () => ({
+  boardUserService: { getBoardMeta: vi.fn() },
 }));
 
 vi.mock('@/services/business/comment/commentService', () => ({
@@ -27,12 +27,12 @@ describe('BoardDetailServer', () => {
     } as unknown as Awaited<ReturnType<typeof cookies>>);
   });
 
-  it('관리자 전용 게시판 메타 조회가 거부되어도 인증 사용자의 게시글과 댓글을 유지합니다.', async () => {
+  it('게시판 메타 조회가 거부되어도 인증 사용자의 게시글과 댓글을 유지합니다.', async () => {
     const article = { pstSn: 7, pstTtl: '사용자 게시글', pstCn: '본문' };
     const comment = { commentNo: 11, commentCn: '댓글' };
 
     vi.mocked(knowledgeService.getArticle).mockResolvedValue(article);
-    vi.mocked(boardAdminService.getBoardMaster).mockRejectedValue({ response: { status: 403 } });
+    vi.mocked(boardUserService.getBoardMeta).mockRejectedValue({ response: { status: 403 } });
     vi.mocked(commentService.getComments).mockResolvedValue({
       list: [comment],
       total: 1,
@@ -49,6 +49,20 @@ describe('BoardDetailServer', () => {
     });
   });
 
+  it('🚨 게시판 메타는 사용자용 API 로 읽어 일반 사용자도 제목·템플릿을 받는다 (DIP V5)', async () => {
+    const meta = { bbsId: 'BBS-3', bbsTtl: '자유게시판', tmpltId: 'TMPLT_FAQ' };
+    vi.mocked(knowledgeService.getArticle).mockResolvedValue({ pstSn: 9 } as never);
+    vi.mocked(boardUserService.getBoardMeta).mockResolvedValue(meta as never);
+    vi.mocked(commentService.getComments).mockResolvedValue({ list: [] } as never);
+
+    const result = await getInitialBoardDetailData('BBS-3', 9);
+
+    expect(result.masterInfo).toEqual(meta);
+    expect(boardUserService.getBoardMeta).toHaveBeenCalledWith('BBS-3', {
+      headers: { Authorization: 'Bearer test-token' },
+    });
+  });
+
   it('주요 게시글 조회 실패의 원문과 오류 객체를 사용자 응답이나 서버 콘솔에 노출하지 않습니다.', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.mocked(knowledgeService.getArticle).mockRejectedValue(
@@ -56,7 +70,7 @@ describe('BoardDetailServer', () => {
         response: { status: 500, data: { message: 'PRIVATE_RESPONSE_DETAIL' } },
       }),
     );
-    vi.mocked(boardAdminService.getBoardMaster).mockResolvedValue({} as never);
+    vi.mocked(boardUserService.getBoardMeta).mockResolvedValue({} as never);
     vi.mocked(commentService.getComments).mockResolvedValue({ list: [] } as never);
 
     const result = await getInitialBoardDetailData('BBS-2', 8);

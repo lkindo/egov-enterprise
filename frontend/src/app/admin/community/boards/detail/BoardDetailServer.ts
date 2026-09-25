@@ -2,7 +2,7 @@ import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
-import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
+import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { commentService } from '@/services/business/comment/commentService';
 
 const BOARD_DETAIL_ERROR = '게시글을 불러오지 못했습니다.';
@@ -24,12 +24,12 @@ export const getInitialBoardDetailData = cache(async (bbsId: string, pstSn: numb
 
   const axiosConfig = { headers: { Authorization: `Bearer ${accessToken}` } };
 
-  // 게시글/댓글은 인증 사용자용 API지만 게시판 메타는 관리자 API다. 세 요청을 동시에
-  // 시작하되, 관리자 메타 거부가 사용자용 게시글 상세 전체를 실패시키지 않도록 결과를
-  // 독립 판정한다.
+  // 세 요청을 동시에 시작하되, 게시판 메타 실패가 게시글 상세 전체를 실패시키지 않도록 결과를
+  // 독립 판정한다. [2026-09-26 DIP V5] 메타는 사용자용 API 로 읽는다 — 종전 관리자 API 는
+  // 일반 사용자에게 403 이라 제목·템플릿이 늘 비었다.
   const [articleResult, masterResult, commentResult] = await Promise.allSettled([
     knowledgeService.getArticle(bbsId, pstSn),
-    boardAdminService.getBoardMaster(bbsId, axiosConfig),
+    boardUserService.getBoardMeta(bbsId, axiosConfig),
     commentService.getComments({ pstSn, bbsId, size: 100 }, axiosConfig),
   ]);
 

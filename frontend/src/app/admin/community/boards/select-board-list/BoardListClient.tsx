@@ -5,7 +5,7 @@ import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { likeBoardArticle } from '@/app/actions/boardActions';
 import Link from 'next/link';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
-import { useBoardList } from '@/hooks/api/use-board-list';
+import { useBoardList, type BoardListParams } from '@/hooks/api/use-board-list';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Plus, Settings2, X, AlertTriangle } from "lucide-react";
@@ -105,6 +105,9 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: BoardLis
   * 클라이언트와 서버 컴포넌트(`page.tsx`)가 읽는 집합이 정확히 일치한다.
   * `buildListParams` 가 이 목록만 다시 조립하므로, 여기 없는 파라미터는 조회·이동 시 버려진다.
   */
+ /** 캘린더가 한 달에 한 번에 받는 일정 수 상한(DIP V6). 넘으면 화면이 일부만 보인다고 말한다. */
+ const CALENDAR_MONTH_LIMIT = 100;
+
  const LIST_PARAM_KEYS = ['bbsId', 'searchWrd', 'searchCnd', 'orderBy', 'startDate', 'endDate', 'page'] as const;
  const { toast } = useToast();
  const likePendingRef = React.useRef(false);
@@ -223,30 +226,46 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: BoardLis
  // 필터가 적용된 상태인지 확인 (SSR 캐시 무효화 판단용)
  const hasFilter = !!querySearchWrd || querySearchCnd !== '0' || queryOrderBy !== 'date' || !!queryStartDate || !!queryEndDate;
   
- const currentParams = {
-  bbsId,
-  page: queryPage,
-  pageUnit: 10,
-  searchWrd: querySearchWrd,
-  searchCnd: querySearchCnd,
-  orderBy: queryOrderBy,
-  startDate: queryStartDate || undefined,
-  endDate: queryEndDate || undefined
- };
- const queryKey = ['boardList', bbsId, currentParams];
+ /*
+   [2026-09-26 DIP V6] 캘린더 템플릿은 보이는 달을 **행사일 기준**으로 조회한다.
+
+   종전에는 달 이동이 시작일만 URL 에 실어 "작성일이 그 뒤인 글" 을 10건씩 받았고 칸 배치만 행사일로
+   했다 — 지난달에 등록한 이달 행사는 달력에서 사라지고 11번째 일정부터는 보이지 않았다. 달의 첫날~
+   마지막 날을 행사일(없으면 작성일)로 걸러 한 번에 CALENDAR_MONTH_LIMIT 건까지 받는다.
+   SSR 첫 목록은 달 단위 조회가 아니므로 캘린더에는 쓰지 않는다.
+ */
+ const isCalendar = tmpltId === 'TMPLT_CALENDAR';
+ const calendarMonth = queryStartDateValue ?? new Date();
+ const listParams: BoardListParams = isCalendar
+  ? {
+    bbsId,
+    page: 1,
+    pageUnit: CALENDAR_MONTH_LIMIT,
+    searchWrd: querySearchWrd,
+    searchCnd: querySearchCnd,
+    orderBy: queryOrderBy,
+    startDate: toQueryDate(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1)),
+    endDate: toQueryDate(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0)),
+    dateBasis: 'EVENT',
+  }
+  : {
+    bbsId,
+    page: queryPage,
+    pageUnit: 10,
+    searchWrd: querySearchWrd,
+    searchCnd: querySearchCnd,
+    orderBy: queryOrderBy,
+    startDate: queryStartDate || undefined,
+    endDate: queryEndDate || undefined,
+  };
+ const queryKey = ['boardList', bbsId, listParams];
 
  // useQuery는 URL 파라미터가 변경될 때만 실행됨 (조회 버튼 클릭 시 router.replace 로 트리거)
  // 감사 P1-1: isError/error/refetch 를 구조분해해 조회 실패를 "게시글 0건"으로 위장하지 않는다.
- const { data, isLoading: loading, isError, error, refetch } = useBoardList({
-  bbsId,
-  page: queryPage,
-  pageUnit: 10,
-  searchWrd: querySearchWrd,
-  searchCnd: querySearchCnd,
-  orderBy: queryOrderBy,
-  startDate: queryStartDate || undefined,
-  endDate: queryEndDate || undefined
- }, hasFilter ? undefined : initialData);
+ const { data, isLoading: loading, isError, error, refetch } = useBoardList(
+  listParams,
+  hasFilter || isCalendar ? undefined : initialData,
+ );
 
  // 낙관적 업데이트를 적용한 좋아요 뮤테이션
  const likeMutation = useMutation({
@@ -306,7 +325,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: BoardLis
  // URL 파라미터로 캘린더 상태 관리
  // 검증을 통과한 값만 쓴다 — 종전에는 여기서도 원문을 new Date 에 넣어, 잘못된 값이면
  // getFullYear()/getMonth() 가 NaN 이 되어 이전달·다음달 이동이 `NaN-NaN-NaN` 을 URL 에 실었다.
- const currentViewDate = queryStartDateValue ?? new Date();
+ const currentViewDate = calendarMonth;
  const handlePrevMonth = () => {
    const d = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() - 1, 1);
    const params = buildListParams({ startDate: toQueryDate(d) });
@@ -399,6 +418,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: BoardLis
          <CalendarTemplate
            list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn}
            currentViewDate={currentViewDate} onPrevMonth={handlePrevMonth} onNextMonth={handleNextMonth}
+           totalCount={totalCount}
          />
        ) : tmpltId === 'TMPLT_FAQ' ? (
          <FaqTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />

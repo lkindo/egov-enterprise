@@ -2518,6 +2518,37 @@ export const SatisfactionAverageResponseSchema = z.object({
 export type SatisfactionAverageResponse = z.infer<typeof SatisfactionAverageResponseSchema>;
 
 // ==========================================================================
+// ApiResponseBoardMetaDto Schema
+// ==========================================================================
+export const ApiResponseBoardMetaDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => BoardMetaDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseBoardMetaDto = z.infer<typeof ApiResponseBoardMetaDtoSchema>;
+
+// ==========================================================================
+// BoardMetaDto Schema
+// ==========================================================================
+export const BoardMetaDtoSchema = z.object({
+  bbsId: z.string().optional(),
+  bbsTtl: z.string().optional().nullable(),
+  bbsExpln: z.string().optional().nullable(),
+  bbsTypeCd: z.string().optional().nullable(),
+  tmpltId: z.string().optional().nullable(),
+  ansPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
+  fileAtchPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
+  atchPsbltyFileQty: z.number().int().optional().nullable(),
+  atchPsbltyFileSz: z.number().int().optional().nullable(),
+  stsfdgYn: z.enum(["Y","N"]).optional().nullable(),
+});
+export type BoardMetaDto = z.infer<typeof BoardMetaDtoSchema>;
+
+// ==========================================================================
 // ApiResponseListBoardSearchItemResponse Schema
 // ==========================================================================
 export const ApiResponseListBoardSearchItemResponseSchema = z.object({
@@ -8236,6 +8267,52 @@ export const SatisfactionAverageResponseRequestSchema = z.object({
 
 export const SatisfactionAverageResponseResponseSchema = z.object({
   average: z.number().optional().nullable(),
+});
+
+export const ApiResponseBoardMetaDtoRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => BoardMetaDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseBoardMetaDtoResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => BoardMetaDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const BoardMetaDtoRequestSchema = z.object({
+  bbsId: z.string().optional(),
+  bbsTtl: z.string().optional().nullable(),
+  bbsExpln: z.string().optional().nullable(),
+  bbsTypeCd: z.string().optional().nullable(),
+  tmpltId: z.string().optional().nullable(),
+  ansPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
+  fileAtchPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
+  atchPsbltyFileQty: z.number().int().optional().nullable(),
+  atchPsbltyFileSz: z.number().int().optional().nullable(),
+  stsfdgYn: z.enum(["Y","N"]).optional().nullable(),
+});
+
+export const BoardMetaDtoResponseSchema = z.object({
+  bbsId: z.string().optional().nullable(),
+  bbsTtl: z.string().optional().nullable(),
+  bbsExpln: z.string().optional().nullable(),
+  bbsTypeCd: z.string().optional().nullable(),
+  tmpltId: z.string().optional().nullable(),
+  ansPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
+  fileAtchPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
+  atchPsbltyFileQty: z.number().int().optional().nullable(),
+  atchPsbltyFileSz: z.number().int().optional().nullable(),
+  stsfdgYn: z.enum(["Y","N"]).optional().nullable(),
 });
 
 export const ApiResponseListBoardSearchItemResponseRequestSchema = z.object({

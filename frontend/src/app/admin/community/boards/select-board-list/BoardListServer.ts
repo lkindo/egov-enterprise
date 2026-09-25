@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation';
 import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
 import { NOTICE_BOARD_ID } from '@/config/board-ids';
 import { fetchAllPages } from '@/lib/api/fetch-all-pages';
-import { boardAdminService, type BoardMasterDetail } from '@/services/foundation/system/BoardAdminService';
+import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
+import { boardUserService, type BoardMeta } from '@/services/business/user/board/BoardUserService';
 import { getPostsOperation } from '@/types/generated-operations';
 import { logErrorSafely } from '@/lib/safe-error-log';
 import type { BoardPost } from '@/types/business/board';
@@ -12,7 +13,7 @@ export interface InitialBoardData {
   list: BoardPost[];
   total: number;
   totalPage: number;
-  masterInfo: BoardMasterDetail | null;
+  masterInfo: BoardMeta | null;
   fetchError: string | null;
 }
 
@@ -85,7 +86,9 @@ export const getInitialBoardData = async (params: {
         query: queryParams,
         config: axiosConfig,
       }),
-      boardAdminService.getBoardMaster(bbsId, axiosConfig).catch((err: unknown) => {
+      // [2026-09-26 DIP V5] 사용자용 메타 API 로 읽는다 — 관리자 API 는 일반 사용자에게 403 이라
+      //   제목·설명·템플릿이 늘 비었다.
+      boardUserService.getBoardMeta(bbsId, axiosConfig).catch((err: unknown) => {
         logErrorSafely('BoardListServer: Failed to fetch board master info', err);
         return null;
       }),

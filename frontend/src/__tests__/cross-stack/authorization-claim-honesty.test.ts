@@ -23,6 +23,8 @@ const BOARD_OPERATIONS = [
   ['GET', '/api/v1/boards/public-faqs/{pstSn}', 'getPublicFaqDetail', 'BOARD_READ'],
   ['GET', '/api/v1/boards/search', 'searchPosts', 'BOARD_READ'],
   ['GET', '/api/v1/boards/{bbsId}', 'getPosts', 'BOARD_READ'],
+  // [2026-09-26 DIP V5] 인증 사용자용 게시판 메타 — 목록과 같은 권한. 커뮤니티 회원 가드는 서비스가 집행한다.
+  ['GET', '/api/v1/boards/{bbsId}/meta', 'getBoardMeta', 'BOARD_READ'],
   ['POST', '/api/v1/boards/{bbsId}/posts/with-files', 'createPostWithFiles', 'BOARD_CREATE'],
   ['DELETE', '/api/v1/boards/{bbsId}/posts/{pstSn}', 'deletePost', 'BOARD_DELETE'],
   ['GET', '/api/v1/boards/{bbsId}/posts/{pstSn}', 'getPost', 'BOARD_READ'],

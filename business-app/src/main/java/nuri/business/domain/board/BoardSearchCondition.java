@@ -16,6 +16,8 @@ public class BoardSearchCondition {
     private String orderBy; // "date", "views", "comments"
     private String qnaSttsCd;
     private String qnaCatCd;
+    /** 기간 조건을 행사일(없으면 작성일)로 본다. 캘린더 템플릿용(DIP V6). */
+    private boolean eventDateBasis;
     private String viewerEsntlId;
     private boolean secretPostAdminOverride;
     /**

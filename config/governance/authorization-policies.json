@@ -5148,6 +5148,13 @@
     },
     {
       "method": "GET",
+      "path": "/api/v1/boards/{bbsId}/meta",
+      "handler": "nuri.api.controller.business.board.BoardApiController#getBoardMeta",
+      "access": "PERMISSION",
+      "permission": "BOARD_READ"
+    },
+    {
+      "method": "GET",
       "path": "/api/v1/boards/{bbsId}/stats",
       "handler": "nuri.api.controller.business.board.BoardApiController#getStats",
       "access": "PERMISSION",

@@ -203,6 +203,41 @@ class BoardCommunityAccessTest {
         }
 
         @Test
+        @DisplayName("🚨 게시판 메타는 인증 사용자에게 제목·템플릿을 준다 — 관리자 권한을 요구하지 않는다 (DIP V5)")
+        void metaForPlainBoard() {
+            given(boardMasterRepository.findById(PLAIN_BBS)).willReturn(Optional.of(BoardMaster.builder()
+                    .bbsId(PLAIN_BBS).bbsTtl("자유게시판").bbsExpln("설명").tmpltId("TMPLT_FAQ").build()));
+
+            nuri.business.service.board.dto.BoardMetaDto meta = boardService(communityBoardAccess).getBoardMeta(PLAIN_BBS);
+
+            assertThat(meta.bbsTtl()).isEqualTo("자유게시판");
+            assertThat(meta.tmpltId()).isEqualTo("TMPLT_FAQ");
+            verify(communityBoardAccess, never()).isApprovedMember(any(), anyString());
+        }
+
+        @Test
+        @DisplayName("🚨 커뮤니티 게시판의 메타는 회원만 본다 — 비회원에게 제목도 알리지 않는다 (DIP V5)")
+        void metaDeniedForNonMember() {
+            given(communityBoardAccess.isApprovedMember(CMNTY_SN, VIEWER)).willReturn(false);
+            BoardService service = boardService(communityBoardAccess);
+
+            assertThatThrownBy(() -> service.getBoardMeta(COMMUNITY_BBS))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        }
+
+        @Test
+        @DisplayName("없는 게시판의 메타는 404 다")
+        void metaMissingBoard() {
+            given(boardMasterRepository.findById("BBS_NONE")).willReturn(Optional.empty());
+            BoardService service = boardService(communityBoardAccess);
+
+            assertThatThrownBy(() -> service.getBoardMeta("BBS_NONE"))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", nuri.business.domain.board.exception.BoardErrorCode.BOARD_NOT_FOUND);
+        }
+
+        @Test
         @DisplayName("댓글 접근도 같은 경계다")
         void commentDenied() {
             given(communityBoardAccess.isApprovedMember(CMNTY_SN, VIEWER)).willReturn(false);

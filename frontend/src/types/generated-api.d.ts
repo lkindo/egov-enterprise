@@ -3816,6 +3816,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/boards/{bbsId}/meta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 게시판 메타 조회
+         * @description 게시글 목록·상세 화면이 쓰는 게시판 제목·설명·템플릿·설정입니다. 커뮤니티 귀속 게시판은 회원만 조회합니다.
+         */
+        get: operations["getBoardMeta"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/boards/search": {
         parameters: {
             query?: never;
@@ -7889,6 +7909,55 @@ export interface components {
              * @example 4.5
              */
             average?: number | null;
+        };
+        ApiResponseBoardMetaDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["BoardMetaDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 게시판 메타(읽기 전용) */
+        BoardMetaDto: {
+            /** @description 게시판 ID */
+            bbsId?: string;
+            /** @description 게시판 제목 */
+            bbsTtl?: string | null;
+            /** @description 게시판 설명 */
+            bbsExpln?: string | null;
+            /** @description 게시판 유형 코드 */
+            bbsTypeCd?: string | null;
+            /** @description 화면 템플릿 ID */
+            tmpltId?: string | null;
+            /**
+             * @description 답글 가능 여부
+             * @enum {string|null}
+             */
+            ansPsbltyYn?: "Y" | "N" | null;
+            /**
+             * @description 파일 첨부 가능 여부
+             * @enum {string|null}
+             */
+            fileAtchPsbltyYn?: "Y" | "N" | null;
+            /**
+             * Format: int32
+             * @description 첨부 가능 파일 수
+             */
+            atchPsbltyFileQty?: number | null;
+            /**
+             * Format: int64
+             * @description 첨부 가능 파일 크기(바이트)
+             */
+            atchPsbltyFileSz?: number | null;
+            /**
+             * @description 만족도 조사 사용 여부
+             * @enum {string|null}
+             */
+            stsfdgYn?: "Y" | "N" | null;
         };
         ApiResponseListBoardSearchItemResponse: {
             success?: boolean;
@@ -31046,6 +31115,11 @@ export interface operations {
                 endDate?: string;
                 qnaStatus?: string;
                 qnaCategory?: string;
+                /**
+                 * @description 기간 기준. 비우거나 CREATED 면 작성일, EVENT 면 행사일(없으면 작성일)
+                 * @example EVENT
+                 */
+                dateBasis?: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */
@@ -31211,6 +31285,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseSatisfactionAverageResponse"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getBoardMeta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description 게시판 ID
+                 * @example BBSMSTR_AAAAAAAAAAAA
+                 */
+                bbsId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseBoardMetaDto"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

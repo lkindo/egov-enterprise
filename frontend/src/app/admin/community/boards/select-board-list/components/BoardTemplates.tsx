@@ -27,6 +27,9 @@
  */
 import React, { useState } from 'react';
 import Link from 'next/link';
+import DOMPurify from 'isomorphic-dompurify';
+import { useQuery } from '@tanstack/react-query';
+import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
 import { BoardPost } from '@/types/business/board';
 import { HighlightText } from './HighlightText';
 import { format } from 'date-fns';
@@ -245,7 +248,7 @@ interface CalendarTemplateProps extends TemplateProps {
   onNextMonth: () => void;
 }
 
-export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, onNextMonth }: CalendarTemplateProps) => {
+export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, onNextMonth, totalCount = 0 }: CalendarTemplateProps) => {
   const year = currentViewDate.getFullYear();
   const month = currentViewDate.getMonth();
 
@@ -282,6 +285,13 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
           </Button>
         </div>
       </div>
+
+      {/* [2026-09-26 DIP V6] 한 달 조회에 상한이 있다. 넘으면 일부만 보인다는 사실을 말한다 — 빈 칸이 '일정 없음' 으로 읽히지 않게. */}
+      {totalCount > list.length && (
+        <p role="status" className="rounded-md border border-border bg-muted/40 px-[var(--filter-pad)] py-2 text-xs text-muted-foreground">
+          이 달의 일정 {totalCount.toLocaleString()}건 중 {list.length.toLocaleString()}건만 표시합니다. 나머지는 목록 검색으로 확인하세요.
+        </p>
+      )}
 
       <div className="grid grid-cols-7 gap-px rounded-md border border-border bg-border">
         {['일', '월', '화', '수', '목', '금', '토'].map((d) => (
@@ -342,9 +352,18 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
  *
  * 펼침은 조건부 렌더로 충분하다 — 종전의 height 애니메이션(0.4초)은 답을 읽기까지 그만큼
  * 늦추기만 했다.
+ *
+ * [2026-09-26 DIP V6] 답은 **펼칠 때 상세 API 로 받는다.** 목록 응답에는 본문(pstCn)이 없어 종전에는
+ * 모든 답이 빈 칸이었다. 본문은 에디터 HTML 이라 게시글 상세와 같은 살균기를 거쳐 그린다.
  */
-const FAQItem = ({ item }: { item: BoardPost }) => {
+const FAQItem = ({ item, bbsId }: { item: BoardPost; bbsId: string }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const answer = useQuery({
+    queryKey: ['boardArticle', bbsId, item.pstSn],
+    queryFn: () => knowledgeService.getArticle(bbsId, item.pstSn),
+    enabled: isOpen && !!bbsId,
+  });
+  const answerHtml = answer.data ? (answer.data.pstCn || answer.data.knoCn || '') : '';
 
   return (
     <li className="bg-card">
@@ -370,9 +389,21 @@ const FAQItem = ({ item }: { item: BoardPost }) => {
           <div className="flex gap-2">
             <span className="h-fit shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs font-semibold text-muted-foreground">A</span>
             <div className="min-w-0 space-y-2">
-              <p className="whitespace-pre-wrap text-[length:var(--font-size-body)] leading-relaxed text-foreground">
-                {item.pstCn}
-              </p>
+              {answer.isPending ? (
+                <p className="text-[length:var(--font-size-body)] text-muted-foreground" role="status">답변을 불러오는 중입니다.</p>
+              ) : answer.isError ? (
+                <div className="flex flex-wrap items-center gap-2" role="alert">
+                  <p className="text-[length:var(--font-size-body)] text-destructive">답변을 불러오지 못했습니다.</p>
+                  <Button type="button" variant="outline" size="sm" onClick={() => void answer.refetch()}>다시 시도</Button>
+                </div>
+              ) : answerHtml ? (
+                <div
+                  className="prose prose-sm max-w-none text-[length:var(--font-size-body)] leading-relaxed text-foreground"
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(answerHtml) }}
+                />
+              ) : (
+                <p className="text-[length:var(--font-size-body)] text-muted-foreground">등록된 답변이 없습니다.</p>
+              )}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
                   <Clock size={12} aria-hidden="true" />
@@ -391,12 +422,12 @@ const FAQItem = ({ item }: { item: BoardPost }) => {
   );
 };
 
-export const FaqTemplate = ({ list }: TemplateProps) => {
+export const FaqTemplate = ({ list, bbsId }: TemplateProps) => {
   if (list.length === 0) return null;
   return (
     <ul className="divide-y divide-border rounded-md border border-border">
       {list.map((item) => (
-        <FAQItem key={item.pstSn} item={item} />
+        <FAQItem key={item.pstSn} item={item} bbsId={bbsId} />
       ))}
     </ul>
   );
@@ -418,7 +449,7 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
                 </Link>
               </h4>
             </div>
-            <p className="line-clamp-2 text-[length:var(--font-size-body)] text-muted-foreground">{item.pstCn}</p>
+            {/* [2026-09-26 DIP V6] 본문 미리보기 줄을 걷었다 — 목록 응답에 본문이 없어 늘 빈 줄이었다. 문서는 제목 링크로 연다. */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
               <span>
                 작성자 <HighlightText text={item.userNm} highlight={querySearchWrd} />
