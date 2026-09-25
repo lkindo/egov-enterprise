@@ -98,6 +98,11 @@ export default function MemoReportManagementClient() {
   //   **권한 있는 SYSTEM 관리자에게 '전체' 탭이 사라졌다** — 라우트는 열어 주는데 화면만
   //   막히는 비대칭이고, 조용히 죽는 결함이다(DEC-OPS-023).
   const isAdmin = canPermission(user, 'MEMO_RPT_READ_ALL');
+  // [2026-09-25 DIP I7] 지시는 보고를 받은 사람(rptrId, esntlId 축)이나 전체 수정 권한자만 남긴다.
+  //   서버(MemoReportService.assertRecipientOrAdmin)와 같은 규칙이며 서버가 다시 판정한다.
+  const canInstruct = (report: { rptrId?: string } | null | undefined) =>
+    canPermission(user, 'MEMO_RPT_UPDATE_ALL')
+    || (!!user?.esntlId && !!report?.rptrId && user.esntlId === report.rptrId);
   const { toast } = useToast();
   const confirm = useConfirm();
 
@@ -432,10 +437,10 @@ export default function MemoReportManagementClient() {
           report.rptrInqDt ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" : "bg-muted text-muted-foreground border border-border"
         )}>
           {/*
-            [2026-08-28] '수신확인' → '열람됨'. 서버는 **열람 주체를 구분하지 않는다** —
-            GET /{memoRptSn} 이 readMemoReport 를 호출하고, 그것은 작성자·수신자·관리자 중
-            누구가 열어도 rptrInqDt 를 갱신한다(MemoReportService.readMemoReport). 즉 작성자가
-            자기 보고를 다시 열기만 해도 '수신확인'으로 보였다.
+            [2026-08-28] '수신확인' → '열람됨'. 당시 서버는 열람 주체를 구분하지 않아 작성자가
+            자기 보고를 다시 열기만 해도 열람됨이 됐다.
+            [2026-09-25 DIP I7] 서버가 수신자의 첫 열람만 rptrInqDt 로 남기므로 이제 열람됨은
+            "받은 사람이 열어 봤다" 를 뜻한다(MemoReportService.readMemoReport).
           */}
           {report.rptrInqDt ? '열람됨' : '미열람'}
         </div>
@@ -696,8 +701,10 @@ export default function MemoReportManagementClient() {
                   [2026-08-28] 지시사항 등록 배선. 서버는 PATCH /{sn}/instr-cn 을 갖췄고
                   프런트 서비스에도 updateDrctMatter 가 있었는데 호출부가 0건이었다 — 화면은
                   '남기는 기능은 아직 제공되지 않습니다' 라고 고지만 했다.
-                  서버가 참여자(작성자·수신자)·관리자만 허용하므로 화면에서 따로 숨기지 않는다.
+                  [2026-09-25 DIP I7] 지시는 수신자·관리자만 남긴다. 작성자에게는 입력을 보이지 않는다 —
+                  보여 주면 누를 때마다 403 이 나는 죽은 어포던스가 된다.
                 */}
+                {canInstruct(detail ?? detailTarget) && (
                 <Form {...instructionForm}>
                   <form onSubmit={submitInstruction} noValidate className="space-y-2">
                     <FormErrorSummary labels={INSTRUCTION_LABELS} onNavigate={instructionForm.focusError} />
@@ -734,6 +741,7 @@ export default function MemoReportManagementClient() {
                     </div>
                   </form>
                 </Form>
+                )}
               </section>
             </div>
           )}

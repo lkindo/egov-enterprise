@@ -1682,6 +1682,21 @@
         "crtDt"
       ],
       "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.operation.dto.RewardManageDto",
+      "fields": [
+        "sanctnerId",
+        "confmAt",
+        "sanctnDt",
+        "returnResn",
+        "ifmlAtrzSn",
+        "frstRgtrId",
+        "crtDt",
+        "lastMdfrId",
+        "mdfcnDt"
+      ],
+      "pack": "demo"
     }
   ],
   "calendarDateBindings": [

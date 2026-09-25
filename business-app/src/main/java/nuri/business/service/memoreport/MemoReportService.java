@@ -176,11 +176,20 @@ public class MemoReportService {
         memoReportRepository.delete(entity);
     }
 
+    /**
+     * 열람 표시. 열람일시는 <b>수신자가 처음 연 시각</b>이다(2026-09-25 DIP I7, D9).
+     *
+     * <p>종전에는 작성자·관리자가 열어도, 수신자가 다시 열어도 매번 덮어써서 목록의 '열람됨' 이 "수신자가
+     * 읽었다" 를 뜻하지 않았다 — 작성자가 자기 보고를 다시 열기만 해도 열람됨이 됐다.</p>
+     */
     @Transactional
     public void readMemoReport(@NonNull Long memoRptSn) {
         memoReportRepository.findById(memoRptSn).ifPresent(entity -> {
             assertParticipantOrAdmin(entity); // 열람 표시도 권한자만 — 미인가 요청이 조회일시를 갱신하지 못하게 한다
-            entity.updateInqireDt(java.time.LocalDateTime.now());
+            boolean recipient = currentEsntlIdOrDeny().equals(entity.getRptrId());
+            if (recipient && entity.getRptrInqDt() == null) {
+                entity.updateInqireDt(java.time.LocalDateTime.now());
+            }
         });
     }
 
@@ -188,7 +197,23 @@ public class MemoReportService {
     public void updateDrctMatter(Long memoRptSn, String instrCn) {
         MemoReport entity = memoReportRepository.findById(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        assertParticipantOrAdmin(entity); // [IDOR] 타인의 보고에 지시사항을 남길 수 없다
+        assertRecipientOrAdmin(entity); // [IDOR] 지시는 보고를 받은 사람·관리자만 남긴다
         entity.updateDrctMatter(instrCn, java.time.LocalDateTime.now());
+    }
+
+    /**
+     * 지시사항 작성 권한. 보고의 <b>수신자</b>({@code rptrId}, esntlId 축) 또는 전체 수정 권한자만 통과한다.
+     *
+     * <p>지시는 보고를 받은 사람이 작성자에게 내리는 것이다. 종전에는 열람 가드(작성자·수신자·관리자)를
+     * 그대로 써서 <b>작성자가 수신자의 지시를 덮어쓸 수 있었다</b>(2026-09-25 DIP I7, D9).</p>
+     */
+    private void assertRecipientOrAdmin(MemoReport entity) {
+        if (nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE_ALL")) {
+            return;
+        }
+        String esntlId = currentEsntlIdOrDeny();
+        if (!esntlId.equals(entity.getRptrId())) {
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+        }
     }
 }

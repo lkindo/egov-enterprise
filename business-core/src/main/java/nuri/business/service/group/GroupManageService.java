@@ -66,6 +66,10 @@ public class GroupManageService {
 
     /**
      * 그룹 등록
+     *
+     * <p>등록은 신규 전용이다. 식별자를 직접 지정할 수 있는데 {@code save()} 는 같은 식별자의 행이 있으면
+     * 병합(merge)하므로, 이미 있는 그룹 ID 로 등록하면 그 그룹의 이름·설명을 조용히 덮어썼다
+     * (2026-09-25 DIP I4). 이미 있으면 409 로 거부하고 수정은 수정 경로로만 한다.</p>
      */
     @Transactional
     public String insertGroup(GroupManageDto dto) {
@@ -73,6 +77,9 @@ public class GroupManageService {
         String groupId = dto.getGroupId();
         if (groupId == null || groupId.isEmpty()) {
             groupId = nuri.foundation.core.util.IdGenerationUtil.generateId("GROUP_", 10);
+        }
+        if (groupManageRepository.existsById(groupId)) {
+            throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, "이미 등록된 그룹 ID 입니다: " + groupId);
         }
 
         GroupManage entity = GroupManage.builder()

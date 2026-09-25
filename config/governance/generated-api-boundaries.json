@@ -172,7 +172,7 @@
       "file": "frontend/src/app/admin/system/logs/login/SystemLogsLoginClient.tsx",
       "owner": "handleFullExport",
       "ordinal": 1,
-      "line": 65,
+      "line": 90,
       "column": 9,
       "classification": "special",
       "transport": "browser-navigation",

@@ -160,6 +160,19 @@ class GroupManageServiceTest {
     }
 
     @Test
+    @DisplayName("🚨 이미 있는 그룹 ID 로 등록하면 409 이고 기존 그룹을 덮어쓰지 않는다 (DIP I4)")
+    void insertGroup_rejectsExistingId() {
+        given(groupManageRepository.existsById("EXISTING")).willReturn(true);
+        GroupManageDto dto = GroupManageDto.builder().groupId("EXISTING").groupNm("덮어쓸 이름").build();
+
+        nuri.foundation.core.exception.BusinessException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                nuri.foundation.core.exception.BusinessException.class, () -> groupManageService.insertGroup(dto));
+
+        assertThat(ex.getErrorCode()).isEqualTo(nuri.foundation.core.exception.CommonErrorCode.DUPLICATE_RESOURCE);
+        org.mockito.Mockito.verify(groupManageRepository, org.mockito.Mockito.never()).save(any(GroupManage.class));
+    }
+
+    @Test
     @DisplayName("그룹 등록 성공 - ID 직접 지정")
     void insertGroup_WithId() {
         // Given

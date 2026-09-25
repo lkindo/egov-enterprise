@@ -5780,16 +5780,7 @@ export const RewardManageDtoRequestSchema = z.object({
   rwardDe: z.string().min(0).max(8).optional(),
   rwardNm: z.string().min(0).max(300).optional(),
   pblenCn: z.string().min(0).max(4000).optional(),
-  sanctnerId: z.string().min(0).max(20).optional(),
-  confmAt: z.string().min(0).max(1).optional(),
-  sanctnDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  returnResn: z.string().min(0).max(4000).optional(),
   atchFileSn: z.number().int().optional(),
-  ifmlAtrzSn: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
 
 export const RewardManageDtoResponseSchema = z.object({

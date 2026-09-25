@@ -75,16 +75,7 @@ public class DeptJobService extends BaseAbstractService {
         BooleanBuilder builder = new BooleanBuilder();
 
         if (mineOnly) {
-            String myEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
-            String myLoginId = nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse(null);
-
-            BooleanBuilder mine = new BooleanBuilder();
-            if (myEsntlId != null) {
-                mine.or(deptJob.picId.eq(myEsntlId));
-            }
-            if (myLoginId != null) {
-                mine.or(deptJob.picId.isNull().and(deptJob.frstRgtrId.eq(myLoginId)));
-            }
+            BooleanBuilder mine = mineCondition(deptJob);
 
             // 신원을 확정할 수 없으면 fail-closed. 조건을 붙이지 않으면 "내 업무만" 요청이
             // 전체 목록으로 조용히 승격되어 스코프가 무력화된다(이 엔드포인트는 인증 필수라
@@ -93,6 +84,24 @@ public class DeptJobService extends BaseAbstractService {
                 return Page.empty(required(pageable, "pageable 는 null 일 수 없습니다"));
             }
             builder.and(mine);
+        } else if (!isDeptJobAdmin()) {
+            // [2026-09-25 DIP I5, D3] '부서 전체' 는 **내 소속 부서**의 업무함에 든 업무다(관리자는 전체).
+            //   종전에는 부서를 묻지 않아 모든 부서의 업무가 보였다 — 화면은 '부서 전체' 라고 말했지만
+            //   실제로는 '조직 전체' 였다. 내가 담당인 업무는 다른 부서 업무함에 있어도 함께 보인다
+            //   ('내 업무' 가 '부서 전체' 의 부분집합으로 남도록).
+            BooleanBuilder visible = mineCondition(deptJob);
+            List<Long> myBoxSns = currentDeptId()
+                    .map(myDept -> deptJobBoxRepository.findByDeptId(myDept).stream()
+                            .map(box -> box.getDeptTaskBoxSn())
+                            .collect(Collectors.toList()))
+                    .orElse(List.of());
+            if (!myBoxSns.isEmpty()) {
+                visible.or(deptJob.deptTaskBoxSn.in(myBoxSns));
+            }
+            if (!visible.hasValue()) {
+                return Page.empty(required(pageable, "pageable 는 null 일 수 없습니다"));
+            }
+            builder.and(visible);
         }
 
         if (deptTaskBoxSn != null) {
@@ -123,7 +132,66 @@ public class DeptJobService extends BaseAbstractService {
     public DeptJobDto getDeptJob(Long deptTaskSn) {
         DeptJob deptJob = deptJobRepository.findById(required(deptTaskSn, "deptTaskSn 은 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        assertCanViewDeptJob(deptJob);
         return toDto(deptJob);
+    }
+
+    /**
+     * 부서 업무 상세 열람 권한 — 담당자(공석이면 등록자)·같은 부서 구성원·관리자만 통과한다(2026-09-25 DIP I5, D3).
+     *
+     * <p>종전에는 로그인한 누구나 번호만 바꿔 다른 부서의 업무를 열 수 있었다(IDOR). 같은 부서는 업무가 든
+     * 업무함의 부서({@code dept_task_box.dept_id})와 내 소속 부서({@code tb_user_info.ognz_id})로 판정한다.
+     * 업무함이 없는 업무는 부서를 알 수 없으므로 담당자·관리자만 연다.</p>
+     */
+    private void assertCanViewDeptJob(DeptJob deptJob) {
+        if (isDeptJobAdmin() || isAssignee(deptJob)) {
+            return;
+        }
+        String myDept = currentDeptId().orElse(null);
+        Long boxSn = deptJob.getDeptTaskBoxSn();
+        boolean sameDept = myDept != null && boxSn != null && deptJobBoxRepository.findById(boxSn)
+                .map(box -> myDept.equals(box.getDeptId()))
+                .orElse(false);
+        if (!sameDept) {
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+        }
+    }
+
+    /** 담당자 판정 — 목록의 '내 업무' 와 같은 규칙(담당자 esntlId, 공석이면 등록자 loginId). */
+    private boolean isAssignee(DeptJob deptJob) {
+        String picId = deptJob.getPicId();
+        if (picId == null || picId.isBlank()) {
+            String myLoginId = SecurityUtil.getCurrentLoginId().orElse(null);
+            return myLoginId != null && myLoginId.equals(deptJob.getFrstRgtrId());
+        }
+        return SecurityUtil.getCurrentEsntlId().map(picId::equals).orElse(false);
+    }
+
+    /** '내 업무' 조건 — 담당자가 나이거나, 담당자가 공석이고 등록자가 나. 신원이 없으면 빈 조건이다. */
+    private BooleanBuilder mineCondition(QDeptJob deptJob) {
+        String myEsntlId = SecurityUtil.getCurrentEsntlId().orElse(null);
+        String myLoginId = SecurityUtil.getCurrentLoginId().orElse(null);
+        BooleanBuilder mine = new BooleanBuilder();
+        if (myEsntlId != null) {
+            mine.or(deptJob.picId.eq(myEsntlId));
+        }
+        if (myLoginId != null) {
+            mine.or(deptJob.picId.isNull().and(deptJob.frstRgtrId.eq(myLoginId)));
+        }
+        return mine;
+    }
+
+    /** 전체 부서의 업무를 보는 관리자 — 전체 수정 권한자를 관리자로 본다(쓰기 가드의 override 와 같은 권한). */
+    private static boolean isDeptJobAdmin() {
+        return SecurityUtil.hasPermission("DEPT_JOB_UPDATE_ALL");
+    }
+
+    /** 현재 사용자의 소속 부서. 신원이나 소속이 없으면 비어 있다. */
+    private java.util.Optional<String> currentDeptId() {
+        return SecurityUtil.getCurrentEsntlId()
+                .flatMap(userRepository::findByEsntlId)
+                .map(user -> user.getOgnzId())
+                .filter(ognzId -> !ognzId.isBlank());
     }
 
     @Transactional

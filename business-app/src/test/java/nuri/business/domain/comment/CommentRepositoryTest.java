@@ -82,6 +82,25 @@ class CommentRepositoryTest {
     }
 
     @Test
+    @DisplayName("관리자 전체 목록도 논리 삭제된 댓글을 제외하고 게시판을 가리지 않는다 (DIP I6 ⑥)")
+    void moderationListIncludesAllBoardsButExcludesDeleted() {
+        save("이 게시판");
+        commentRepository.save(Comment.builder().bbsId("BBSMSTR_OTHER0000001").pstSn(2L)
+                .wrterId("tester").wrterNm("Tester").ansCn("다른 게시판").useYn("Y").build());
+        Comment removed = save("삭제된 댓글");
+        removed.delete();
+        commentRepository.saveAndFlush(removed);
+
+        Page<Comment> all = commentRepository.findByUseYn("Y", PageRequest.of(0, 10));
+        Page<Comment> oneBoard = commentRepository.findByBbsIdAndUseYn(BBS_ID, "Y", PageRequest.of(0, 10));
+        Page<Comment> onePost = commentRepository.findByPstSnAndUseYn(2L, "Y", PageRequest.of(0, 10));
+
+        assertThat(all.getContent()).extracting(Comment::getAnsCn).containsExactlyInAnyOrder("이 게시판", "다른 게시판");
+        assertThat(oneBoard.getContent()).extracting(Comment::getAnsCn).containsExactly("이 게시판");
+        assertThat(onePost.getContent()).extracting(Comment::getAnsCn).containsExactly("다른 게시판");
+    }
+
+    @Test
     @DisplayName("살아 있는 댓글은 그대로 조회된다 — 필터가 과해져 전부 감추면 그것대로 결함이다")
     void keepsLiveComments() {
         save("첫 번째");

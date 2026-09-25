@@ -226,6 +226,18 @@ class ProgramServiceTest {
         }
 
         @Test
+        @DisplayName("🚨 이미 있는 프로그램 파일명으로 등록하면 409 이고 기존 행을 덮어쓰지 않는다 (DIP I4)")
+        void testInsertProgrm_rejectsExistingName() {
+            when(programRepository.existsById("Prog001")).thenReturn(true);
+            ProgramDto dto = ProgramDto.builder().prgrmFileNm("Prog001").url("/overwritten").build();
+
+            var error = assertThrows(BusinessException.class, () -> programService.insertProgrm(dto));
+
+            assertEquals(nuri.foundation.core.exception.CommonErrorCode.DUPLICATE_RESOURCE, error.getErrorCode());
+            verify(programRepository, never()).save(any(Program.class));
+        }
+
+        @Test
         @DisplayName("프로그램 수정 성공")
         void testUpdateProgrm() {
             // Given

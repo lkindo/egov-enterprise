@@ -113,7 +113,7 @@ public class DeptJobApiController {
 
     @Operation(summary = "부서 업무 목록 조회",
             description = "부서 업무 목록을 페이징하여 조회합니다. 기본값은 '내가 담당자인 업무'이며, "
-                    + "scope=dept 로 부서 전체를 조회할 수 있습니다.")
+                    + "scope=dept 는 내 소속 부서 업무함의 업무와 내 업무를 조회합니다(전체 수정 권한자는 모든 부서).")
     @GetMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#getDeptJobList')")
     public ResponseEntity<ApiResponse<PageResponse<DeptJobDto>>> getDeptJobList(
@@ -123,7 +123,7 @@ public class DeptJobApiController {
             // 파라미터명은 형제 엔드포인트(/boxes)와 동일하게 searchWrd 로 맞춘다.
             // 프론트 ApiService 가 만들어 보내는 이름과 어긋나면 검색이 조용히 무력화된다.
             @RequestParam(required = false) String searchWrd,
-            // [소유 스코프] 'mine'(기본) = 내가 담당자인 업무만, 'dept' = 부서 전체.
+            // [소유 스코프] 'mine'(기본) = 내가 담당자인 업무만, 'dept' = 내 소속 부서(관리자는 전체, DIP I5).
             //   기본값을 mine 으로 두는 것이 이 파라미터의 핵심이다. 미지정 시 전체가 나오면
             //   토글을 달아도 실제 기본 노출은 전체라 스코프가 이름만 남는다.
             @RequestParam(defaultValue = "mine") String scope,
@@ -145,7 +145,8 @@ public class DeptJobApiController {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
     }
 
-    @Operation(summary = "부서 업무 상세 조회", description = "특정 부서 업무의 상세 정보를 조회합니다.")
+    @Operation(summary = "부서 업무 상세 조회",
+            description = "특정 부서 업무의 상세 정보를 조회합니다. 담당자·같은 부서 구성원·전체 수정 권한자만 조회할 수 있습니다.")
     @GetMapping("/{deptTaskSn}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#getDeptJob')")
     public ResponseEntity<ApiResponse<DeptJobDto>> getDeptJob(@PathVariable Long deptTaskSn) {

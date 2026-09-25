@@ -1373,10 +1373,10 @@
       "method": "PATCH",
       "path": "/api/v1/memo-reports/{memoRptSn}/instr-cn",
       "handler": "nuri.api.controller.business.memoreport.MemoReportApiController#updateDrctMatter",
-      "policy": "PARTICIPANT_OR_ADMIN",
+      "policy": "OWNER_OR_ADMIN",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.memoreport.MemoReportApiController#updateDrctMatter')",
       "routeGate": "OPERATION_PERMISSION",
-      "guardRef": "MemoReportService#assertParticipantOrAdmin"
+      "guardRef": "MemoReportService#assertRecipientOrAdmin"
     },
     {
       "method": "POST",
@@ -3355,6 +3355,30 @@
         "SecurityUtil.isAdmin()",
         "SecurityUtil.isAdminOrSystem()"
       ]
+    },
+    {
+      "target": "MemoReportService#assertRecipientOrAdmin",
+      "source": "business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java",
+      "policy": "OWNER_OR_ADMIN",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.hasPermission(\"MEMO_RPT_UPDATE_ALL\")",
+        "!esntlId.equals(entity.getRptrId())",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "DeptJobService#assertCanViewDeptJob",
+      "source": "business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "isDeptJobAdmin() || isAssignee(deptJob)",
+        "myDept.equals(box.getDeptId())",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": []
     }
   ],
   "permissionCatalog": "config/governance/permission-catalog.json",
