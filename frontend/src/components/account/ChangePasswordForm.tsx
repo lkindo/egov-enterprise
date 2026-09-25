@@ -8,6 +8,7 @@ import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
+import { PASSWORD_RULE_HELP, passwordRuleSchema } from '@/lib/validations/password-policy';
 import { PasswordChangeRequestSchema } from '@/types/generated-zod';
 
 const LABELS = {
@@ -17,14 +18,13 @@ const LABELS = {
 };
 
 /**
- * 본인 비밀번호 변경 스키마 — 백엔드 SSOT(`PasswordChangeRequest`: newPassword 8~20자)를 확장한다.
+ * 본인 비밀번호 변경 스키마 — 백엔드 SSOT(`PasswordChangeRequest` = 공용 PasswordPolicy)를 확장한다.
+ * [2026-09-25 DIP S5] 종전에는 길이(8~20자)만 봤다.
  * 비밀번호는 공백도 문자이므로 trim 하지 않는다.
  */
 export const changePasswordSchema = PasswordChangeRequestSchema.extend({
   oldPassword: z.string().min(1, '현재 비밀번호를 입력해 주세요.'),
-  newPassword: z.string()
-    .min(8, '새 비밀번호는 8~20자여야 합니다.')
-    .max(20, '새 비밀번호는 8~20자여야 합니다.'),
+  newPassword: passwordRuleSchema(),
   confirmPassword: z.string().min(1, '새 비밀번호를 한 번 더 입력해 주세요.'),
 })
   .refine((values) => values.newPassword === values.confirmPassword, {
@@ -159,7 +159,7 @@ export function ChangePasswordForm({ onSubmit, onCancel, isPending = false }: Ch
           disabled={isBusy}
           required
         />
-        <p className="text-xs text-muted-foreground">8~20자로 입력하세요.</p>
+        <p className="text-xs text-muted-foreground">{PASSWORD_RULE_HELP}</p>
         {validation.errors.newPassword ? (
           <p {...validation.messageProps('newPassword')} className="text-xs font-bold text-destructive-emphasis" />
         ) : null}

@@ -40,7 +40,7 @@ function fill(newPassword: string, confirmPassword: string) {
 describe('AdminPasswordResetForm', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('대상을 보여 주고 8~20자·확인 일치를 요약과 인라인 오류로 연결한다', async () => {
+  it('대상을 보여 주고 8~64자·확인 일치를 요약과 인라인 오류로 연결한다', async () => {
     const { onSubmit } = renderForm();
 
     expect(screen.getByText('대상: 홍길동(user1)')).toBeInTheDocument();
@@ -49,7 +49,7 @@ describe('AdminPasswordResetForm', () => {
     fireEvent.submit(screen.getByRole('form', { name: '비밀번호 초기화 폼' }));
 
     const summary = await screen.findByRole('alert');
-    expect(summary).toHaveTextContent('새 비밀번호는 8~20자여야 합니다.');
+    expect(summary).toHaveTextContent('비밀번호는 8~64자여야 합니다.');
     expect(screen.getByLabelText('새 비밀번호')).toHaveAttribute('aria-invalid', 'true');
     await waitFor(() => expect(screen.getByLabelText('새 비밀번호')).toHaveFocus());
     expect(onSubmit).not.toHaveBeenCalled();

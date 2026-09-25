@@ -281,7 +281,8 @@ class AuthServiceImplTest {
             // L87 `replaced return value with null` 뮤턴트는 여기서 NPE 로 죽는다.
             assertThat(rt).isNotNull();
             assertThat(rt.getUserId()).isEqualTo(ESNTL_ID);
-            assertThat(rt.getRfshTkn()).isEqualTo("refresh-token");
+            // 원문이 아니라 해시를 저장한다(DIP D7) — DB 를 읽은 사람이 저장값으로 재발급할 수 없다.
+            assertThat(rt.getRfshTkn()).isEqualTo(nuri.business.domain.auth.RefreshTokenDigest.of("refresh-token")).isNotEqualTo("refresh-token");
             assertThat(rt.getExprtnDt())
                     .isAfter(before.plus(Duration.ofDays(7)).minusSeconds(60))
                     .isBefore(before.plus(Duration.ofDays(7)).plusSeconds(60));
@@ -301,7 +302,7 @@ class AuthServiceImplTest {
             verify(refreshTokenRepository).save(saved.capture());
             // L84 `removed call to updateToken` 뮤턴트가 여기서 죽는다 — 값이 갱신돼야 한다.
             assertThat(saved.getValue()).isSameAs(existing);
-            assertThat(existing.getRfshTkn()).isEqualTo("refresh-token");
+            assertThat(existing.getRfshTkn()).isEqualTo(nuri.business.domain.auth.RefreshTokenDigest.of("refresh-token"));
         }
 
         @Test
@@ -382,12 +383,12 @@ class AuthServiceImplTest {
                     .userId(ESNTL_ID).rfshTkn("expired")
                     .exprtnDt(Instant.now().minus(Duration.ofMinutes(1))).build();
             given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
-            given(refreshTokenRepository.findByRfshTkn("expired")).willReturn(Optional.of(expired));
+            given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("expired"))).willReturn(Optional.of(expired));
 
             assertThatThrownBy(() -> authService.reissue("expired", CLIENT_IP)).isInstanceOf(BusinessException.class);
 
             // 삭제는 바깥 트랜잭션과 분리돼야 한다 — 같은 트랜잭션이면 위 예외의 롤백이 삭제를 되돌린다.
-            verify(refreshTokenRepository).deleteIfCurrent(ESNTL_ID, "expired");
+            verify(refreshTokenRepository).deleteIfCurrent(ESNTL_ID, nuri.business.domain.auth.RefreshTokenDigest.of("expired"));
             verify(refreshTokenRepository, never()).rotateIfCurrent(any(), any(), any(), any());
         }
 
@@ -396,10 +397,10 @@ class AuthServiceImplTest {
         void rotatesRefreshTokenOnReissue() {
             RefreshToken stored = storedToken();
             given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
-            given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(stored));
+            given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("old"))).willReturn(Optional.of(stored));
             given(userRepository.findById(ESNTL_ID)).willReturn(Optional.empty());
             given(jwtTokenProvider.createRefreshToken(anyString(), any(Date.class))).willReturn("rotated");
-            given(refreshTokenRepository.rotateIfCurrent(eq(ESNTL_ID), eq("old"), eq("rotated"), any()))
+            given(refreshTokenRepository.rotateIfCurrent(eq(ESNTL_ID), eq(nuri.business.domain.auth.RefreshTokenDigest.of("old")), eq(nuri.business.domain.auth.RefreshTokenDigest.of("rotated")), any()))
                     .willReturn(1);
 
             TokenResponse res = authService.reissue("old", CLIENT_IP);
@@ -407,7 +408,7 @@ class AuthServiceImplTest {
             // 회전이 사라지면 같은 토큰이 계속 유효해 W1-06 이전 상태로 회귀한다.
             // 회전은 **제시된 토큰이 아직 저장값일 때만** 일어나야 하므로 그 조건까지 함께 고정한다
             // — 조건 없이 덮어쓰면 동시 재발급이 둘 다 성공하고 진 쪽은 무효한 토큰을 받는다(2026-09-16).
-            verify(refreshTokenRepository).rotateIfCurrent(eq(ESNTL_ID), eq("old"), eq("rotated"), any());
+            verify(refreshTokenRepository).rotateIfCurrent(eq(ESNTL_ID), eq(nuri.business.domain.auth.RefreshTokenDigest.of("old")), eq(nuri.business.domain.auth.RefreshTokenDigest.of("rotated")), any());
             assertThat(res.getRefreshToken()).isEqualTo("rotated");
             // 재발급도 로그인 정책을 로그인 ID·요청 IP 로 다시 본다(DIP S6 ②).
             verify(loginPolicyManageService).validateLoginPolicy(LOGIN_ID, CLIENT_IP);
@@ -418,7 +419,7 @@ class AuthServiceImplTest {
         void loginPolicyBlocksReissueAndEndsSession() {
             RefreshToken stored = storedToken();
             given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
-            given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(stored));
+            given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("old"))).willReturn(Optional.of(stored));
             org.mockito.BDDMockito.willThrow(new BusinessException("허용되지 않은 IP에서의 접속입니다.",
                             nuri.foundation.core.exception.CommonErrorCode.LOGIN_POLICY_IP_MISMATCH))
                     .given(loginPolicyManageService).validateLoginPolicy(LOGIN_ID, "10.9.9.9");
@@ -428,7 +429,7 @@ class AuthServiceImplTest {
                     .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
                             .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_TOKEN));
 
-            verify(refreshTokenRepository).deleteIfCurrent(ESNTL_ID, "old");
+            verify(refreshTokenRepository).deleteIfCurrent(ESNTL_ID, nuri.business.domain.auth.RefreshTokenDigest.of("old"));
             verify(refreshTokenRepository, never()).rotateIfCurrent(any(), any(), any(), any());
             verify(jwtTokenProvider, never()).createAccessToken(anyString(), nullable(String.class));
         }
@@ -438,7 +439,7 @@ class AuthServiceImplTest {
         void nonPolicyErrorDuringReissueIsNotConvertedToSessionEnd() {
             RefreshToken stored = storedToken();
             given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
-            given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(stored));
+            given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("old"))).willReturn(Optional.of(stored));
             BusinessException invalid = new BusinessException(
                     nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
             org.mockito.BDDMockito.willThrow(invalid)
@@ -452,7 +453,7 @@ class AuthServiceImplTest {
         @DisplayName("다른 요청이 먼저 회전을 마쳤으면 거부한다 — 무효한 토큰을 발급하지 않는다")
         void rejectsWhenAnotherRequestAlreadyRotated() {
             given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
-            given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(storedToken()));
+            given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("old"))).willReturn(Optional.of(storedToken()));
             given(jwtTokenProvider.createRefreshToken(anyString(), any(Date.class))).willReturn("rotated");
             // 0 행 = 조회와 갱신 사이에 다른 재발급이 회전을 마쳤다.
             given(refreshTokenRepository.rotateIfCurrent(anyString(), anyString(), anyString(), any()))
@@ -468,7 +469,7 @@ class AuthServiceImplTest {
             RefreshToken stored = storedToken();
             Instant originalExpiry = stored.getExprtnDt();
             given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
-            given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(stored));
+            given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("old"))).willReturn(Optional.of(stored));
             given(userRepository.findById(ESNTL_ID)).willReturn(Optional.empty());
             given(jwtTokenProvider.createRefreshToken(anyString(), any(Date.class))).willReturn("rotated");
             given(refreshTokenRepository.rotateIfCurrent(anyString(), anyString(), anyString(), any()))
@@ -491,7 +492,7 @@ class AuthServiceImplTest {
             TokenResponse login = authService.login(loginRequest(null), CLIENT_IP);
             given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
             given(jwtTokenProvider.createRefreshToken(anyString(), any(Date.class))).willReturn("rotated");
-            given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(storedToken()));
+            given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("old"))).willReturn(Optional.of(storedToken()));
             given(refreshTokenRepository.rotateIfCurrent(anyString(), anyString(), anyString(), any()))
                     .willReturn(1);
             TokenResponse first = authService.reissue("old", CLIENT_IP);
@@ -512,7 +513,7 @@ class AuthServiceImplTest {
         void disabledLockedOrDeletedAccountCannotRefreshOrRotate() {
             given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
             RefreshToken stored = storedToken();
-            given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(stored));
+            given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("old"))).willReturn(Optional.of(stored));
             given(userDetailsService.loadUserByUsername(ESNTL_ID))
                     .willReturn(principal(List.of("ROLE_ADMIN"), List.of("CONTENT_EDIT"), "v2", false, "N"));
             assertThatThrownBy(() -> authService.reissue("old", CLIENT_IP)).isInstanceOf(DisabledException.class);
@@ -538,7 +539,7 @@ class AuthServiceImplTest {
             RefreshToken stored = storedToken();
             given(refreshTokenRepository.findById(ESNTL_ID)).willReturn(Optional.of(stored));
 
-            authService.logout(ESNTL_ID);
+            authService.logout(ESNTL_ID, null);
 
             verify(refreshTokenRepository).delete(stored);
             // L154 `removed call to flush` 뮤턴트가 여기서 죽는다.
@@ -551,7 +552,7 @@ class AuthServiceImplTest {
         void isNoOpWhenTokenAbsent() {
             given(refreshTokenRepository.findById(ESNTL_ID)).willReturn(Optional.empty());
 
-            authService.logout(ESNTL_ID);
+            authService.logout(ESNTL_ID, null);
 
             verify(refreshTokenRepository, never()).delete(any());
             verify(refreshTokenRepository, never()).flush();
@@ -564,7 +565,33 @@ class AuthServiceImplTest {
                     .willThrow(new IllegalStateException("detached"));
 
             // 로그아웃이 예외로 실패하면 사용자는 세션을 끊을 방법이 없어진다.
-            authService.logout(ESNTL_ID);
+            authService.logout(ESNTL_ID, null);
+        }
+
+        @Test
+        @DisplayName("🔐 신원이 없어도 쿠키로 제시된 리프레시 토큰의 행은 해시로 찾아 지운다 (DIP D7)")
+        void revokesPresentedRefreshTokenWithoutIdentity() {
+            var stored = RefreshToken.builder().userId(ESNTL_ID).rfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("cookie-token"))
+                    .exprtnDt(Instant.now().plus(Duration.ofDays(3))).build();
+            given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("cookie-token"))).willReturn(Optional.of(stored));
+
+            authService.logout(null, "cookie-token");
+
+            verify(refreshTokenRepository).delete(stored);
+            verify(refreshTokenRepository).flush();
+            // 원문으로는 찾지 않는다 — 저장값은 해시다.
+            verify(refreshTokenRepository, never()).findByRfshTkn("cookie-token");
+            verify(refreshTokenRepository, never()).findById(anyString());
+        }
+
+        @Test
+        @DisplayName("신원도 쿠키도 없으면 아무것도 지우지 않는다")
+        void isNoOpWithoutIdentityOrCookie() {
+            authService.logout(null, null);
+            authService.logout(null, "  ");
+
+            verify(refreshTokenRepository, never()).findByRfshTkn(any());
+            verify(refreshTokenRepository, never()).delete(any());
         }
     }
 

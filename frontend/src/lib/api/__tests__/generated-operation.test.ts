@@ -52,8 +52,8 @@ describe('generated operation contract', () => {
   it('generated request Zod로 쓰기 요청을 fail-closed 검증한다', () => {
     expect(parseGeneratedOperationRequest(changePasswordOperation, {
       oldPassword: 'old-password',
-      newPassword: 'new-password',
-    })).toEqual({ oldPassword: 'old-password', newPassword: 'new-password' });
+      newPassword: 'New-password1!',
+    })).toEqual({ oldPassword: 'old-password', newPassword: 'New-password1!' });
 
     expect(() => parseGeneratedOperationRequest(changePasswordOperation, {
       oldPassword: 'old-password',

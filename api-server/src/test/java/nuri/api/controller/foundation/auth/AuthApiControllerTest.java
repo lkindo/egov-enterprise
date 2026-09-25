@@ -141,11 +141,14 @@ class AuthApiControllerTest {
     }
  
     @Test
-    @DisplayName("로그아웃")
+    @DisplayName("로그아웃 — 액세스 토큰이 없어도 쿠키의 리프레시 토큰으로 서버 세션을 끝낸다 (DIP D7)")
     void testLogout() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/logout"))
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .cookie(new jakarta.servlet.http.Cookie("refreshToken", "cookie-token")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("Logged out successfully"));
+
+        org.mockito.Mockito.verify(authService).logout(null, "cookie-token");
     }
  
     @Test
@@ -280,16 +283,32 @@ class AuthApiControllerTest {
     }
 
     @Test
-    @DisplayName("로그아웃 - 인증된 상태")
+    @DisplayName("로그아웃 - 인증된 상태는 사용자 주체의 esntlId 로 세션을 끝낸다")
     void testLogoutAuthenticated() throws Exception {
+        CustomUserDetails principal = CustomUserDetails.builder().userId("user01")
+                .esntlId("ESNTL_000000000001").enabled(true).build();
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                "user01", null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
+                principal, null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         mockMvc.perform(post("/api/v1/auth/logout"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("Logged out successfully"));
 
+        org.mockito.Mockito.verify(authService).logout("ESNTL_000000000001", null);
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    @DisplayName("익명 인증 토큰은 사용자 신원으로 쓰지 않는다 — 쿠키만으로 판단한다")
+    void testLogoutAnonymousTokenIsNotAnIdentity() throws Exception {
+        SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.AnonymousAuthenticationToken(
+                        "key", "anonymousUser", Collections.singletonList(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))));
+
+        mockMvc.perform(post("/api/v1/auth/logout")).andExpect(status().isOk());
+
+        org.mockito.Mockito.verify(authService).logout(null, null);
         SecurityContextHolder.clearContext();
     }
 }

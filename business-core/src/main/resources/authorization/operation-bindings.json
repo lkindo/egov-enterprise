@@ -1591,7 +1591,7 @@
     "method": "POST",
     "path": "/api/v1/auth/logout",
     "handler": "nuri.api.controller.foundation.auth.AuthApiController#logout",
-    "access": "AUTHENTICATED",
+    "access": "PUBLIC",
     "permission": null
   },
   {
