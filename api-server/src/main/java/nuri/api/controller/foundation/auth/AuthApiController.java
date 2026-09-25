@@ -47,8 +47,10 @@ public class AuthApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.auth.AuthApiController#reissue')")
     public ApiResponse<TokenResponse> reissue(
             @CookieValue(name = "refreshToken", required = false) String refreshToken,
+            HttpServletRequest request,
             HttpServletResponse response) {
-        TokenResponse tokenResponse = authService.reissue(refreshToken);
+        // 재발급도 로그인 정책(IP·시간대)을 다시 본다 — 입력 IP 는 로그인과 같은 해석기에서 온다.
+        TokenResponse tokenResponse = authService.reissue(refreshToken, clientIpResolver.resolve(request));
         // 회전된 refreshToken은 로그인과 동일하게 HttpOnly 쿠키로만 전달한다.
         jwtTokenProvider.addRefreshTokenCookie(response, tokenResponse.getRefreshToken());
         return ApiResponse.success(tokenResponse);

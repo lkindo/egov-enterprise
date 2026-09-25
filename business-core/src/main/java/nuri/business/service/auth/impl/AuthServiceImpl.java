@@ -7,6 +7,8 @@ import nuri.business.domain.user.repository.UserRepository;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.service.auth.AuthService;
+import nuri.business.service.auth.LoginFailureReason;
+import nuri.business.service.auth.LoginRejectedException;
 import nuri.business.service.auth.dto.LoginRequest;
 import nuri.business.service.auth.dto.TokenResponse;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,7 @@ import org.springframework.security.authentication.AccountStatusUserDetailsCheck
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,8 +62,20 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional(noRollbackFor = org.springframework.security.authentication.BadCredentialsException.class)
     public TokenResponse login(LoginRequest request, String clientIp) {
-        // 1. 로그인 정책 검증 (인증 전 수행)
-        loginPolicyManageService.validateLoginPolicy(request.getUserId(), clientIp);
+        try {
+            return authenticateAndIssue(request, clientIp);
+        } catch (AuthenticationException rejected) {
+            // [2026-09-25 DIP S6 ⑤] 실패도 감사 기록에 남긴다. 종전에는 성공만 기록해 로그인 로그 화면의
+            //   '오류' 열이 언제나 비어 있었다. 사유는 응답이 아니라 이 기록에만 남는다(DIP D2).
+            //   같은 예외 객체를 다시 던진다 — 비밀번호 불일치의 noRollbackFor(잠금 카운터 보존)가 그대로 적용된다.
+            recordLoginFailure(request.getUserId(), clientIp, LoginFailureReason.of(rejected));
+            throw rejected;
+        }
+    }
+
+    private TokenResponse authenticateAndIssue(LoginRequest request, String clientIp) {
+        // 1. 로그인 정책 검증 (인증 전 수행) — 비밀번호를 평가하기 전에 막아 정답 여부를 알려 주지 않는다.
+        assertLoginPolicy(request.getUserId(), clientIp);
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUserId(), request.getPassword()));
@@ -77,7 +92,7 @@ public class AuthServiceImpl implements AuthService {
             if ("Y".equals(policy.getOtpUseYn())) {
                 if (request.getOtpCode() == null) {
                     log.warn(">>> [Login] OTP required");
-                    throw new BusinessException("OTP 번호가 필요합니다.", CommonErrorCode.AUTH_ERROR);
+                    throw new LoginRejectedException(LoginFailureReason.OTP_MISSING);
                 }
 
                 nuri.business.domain.user.entity.User user = userRepository.findById(esntlId)
@@ -85,7 +100,7 @@ public class AuthServiceImpl implements AuthService {
 
                 if (!otpService.verifyCode(user.getOtpSecret(), request.getOtpCode())) {
                     log.warn(">>> [Login] Invalid OTP");
-                    throw new BusinessException("OTP 번호가 일치하지 않습니다.", CommonErrorCode.AUTH_ERROR);
+                    throw new LoginRejectedException(LoginFailureReason.OTP_INVALID);
                 }
                 log.info(">>> [Login] OTP verification succeeded");
             }
@@ -116,9 +131,36 @@ public class AuthServiceImpl implements AuthService {
         return TokenResponse.from(accessToken, refreshToken, principal);
     }
 
-    @Override
-    @Transactional
-    public TokenResponse reissue(String refreshToken) {
+    /**
+     * 로그인 정책 거부를 인증 실패로 옮긴다(2026-09-25 DIP D2).
+     *
+     * <p>종전에는 정책 거부가 403 과 사유 문구("허용되지 않은 IP에서의 접속입니다")로 나갔다. 이 검사는
+     * 비밀번호보다 먼저 돌기 때문에, 비밀번호를 모르는 사람도 로그인 ID 만 넣어 보면 계정 존재와 걸린 정책을
+     * 알 수 있었다. 정책 검증기 자체의 오류 코드(A006~A008)는 그대로 두고 경계에서만 바꾼다.
+     */
+    private void assertLoginPolicy(String loginId, String clientIp) {
+        try {
+            loginPolicyManageService.validateLoginPolicy(loginId, clientIp);
+        } catch (BusinessException policyError) {
+            LoginFailureReason reason = LoginFailureReason.ofPolicy(policyError);
+            if (reason == null) {
+                throw policyError;
+            }
+            throw new LoginRejectedException(reason);
+        }
+    }
+
+    /** {@code tb_login_log.user_id} 는 20자다 — 입력된 로그인 ID 가 더 길면 잘라 기록한다. */
+    private void recordLoginFailure(String loginId, String clientIp, LoginFailureReason reason) {
+        String recorded = loginId != null && loginId.length() > 20 ? loginId.substring(0, 20) : loginId;
+        logService.logLogin(recorded, clientIp, "WEB", "Y", reason.code());
+    }
+
+    /**
+     * 제시된 리프레시 토큰이 형식상 유효하고, 저장돼 있으며, 저장된 절대 만료가 지나지 않았는지 확인한다.
+     * 어느 하나라도 아니면 {@code INVALID_TOKEN} 이다. 만료된 행은 별도 트랜잭션으로 지운다.
+     */
+    private nuri.business.domain.auth.RefreshToken requireLiveStoredToken(String refreshToken) {
         // [W1-06] 리프레시 자리에는 리프레시 토큰만. 액세스 토큰을 제시하면 거부한다.
         if (refreshToken == null || !jwtTokenProvider.validateRefreshToken(refreshToken)) {
             throw new BusinessException(CommonErrorCode.INVALID_TOKEN);
@@ -135,10 +177,35 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(CommonErrorCode.INVALID_TOKEN);
         }
 
+        return storedToken;
+    }
+
+    @Override
+    @Transactional
+    public TokenResponse reissue(String refreshToken, String clientIp) {
+        // 제시된 토큰의 검증(형식·저장 여부·만료)은 헬퍼에 둔다. 이 메서드 본문에는 요청 값에 좌우되는 분기 없이
+        //   정책 재검사까지 곧게 이어지게 한다 — 분기 뒤에 놓인 정책 검사는 정적 분석(CodeQL
+        //   java/user-controlled-bypass)이 "요청이 검사를 건너뛸 수 있다" 로 읽는다(2026-09-25 PR #748).
+        nuri.business.domain.auth.RefreshToken storedToken = requireLiveStoredToken(refreshToken);
         String userId = storedToken.getUserId();
         
         CustomUserDetails principal = requireCurrentPrincipal(
                 userDetailsService.loadUserByUsername(userId), userId);
+
+        // [2026-09-25 DIP S6 ②] 재발급도 로그인 정책을 다시 본다. 종전에는 로그인 때 한 번만 봐서, 관리자가
+        //   IP·시간대·접속 제한을 새로 걸어도 리프레시 토큰 수명(최대 7일) 동안 세션이 계속 연장됐다.
+        //   잠금·비활성은 위 requireCurrentPrincipal 이 이미 본다. 거부되면 저장된 토큰을 지워 세션을 끝낸다.
+        try {
+            loginPolicyManageService.validateLoginPolicy(principal.getUserId(), clientIp);
+        } catch (BusinessException policyError) {
+            if (LoginFailureReason.ofPolicy(policyError) == null) {
+                throw policyError;
+            }
+            log.warn(">>> [Reissue] Rejected by login policy: {}", policyError.getErrorCode().getCode());
+            refreshTokenRepository.deleteIfCurrent(userId, refreshToken);
+            throw new BusinessException(CommonErrorCode.INVALID_TOKEN);
+        }
+
         String newAccessToken = jwtTokenProvider.createAccessToken(userId, principal.getAuthorCode());
 
         // [W1-06] 리프레시 토큰 회전.

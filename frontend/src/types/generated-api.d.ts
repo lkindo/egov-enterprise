@@ -1325,8 +1325,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * 회원가입
-         * @description 새로운 사용자 계정을 생성합니다.
+         * 일반 사용자 계정 생성(관리자)
+         * @description 일반 사용자(USER) 계정을 생성합니다. 공개 가입은 제공하지 않으며 사용자 등록 권한(USER_CREATE)이 필요합니다.
          */
         post: operations["signup"];
         delete?: never;
@@ -3023,7 +3023,7 @@ export interface paths {
         };
         /**
          * 아이디 중복 확인
-         * @description 사용자 아이디가 시스템에 이미 존재하는지 확인합니다.
+         * @description 사용자 아이디가 시스템에 이미 존재하는지 확인합니다. 사용자 등록 권한(USER_CREATE)이 필요합니다.
          */
         get: operations["checkIdDplct"];
         put?: never;
@@ -19954,6 +19954,24 @@ export interface operations {
                     "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
             /** @description 서버 내부 오류 (code: C004/S001) */
             500: {
                 headers: {
@@ -28277,6 +28295,24 @@ export interface operations {
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

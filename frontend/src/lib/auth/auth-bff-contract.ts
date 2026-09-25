@@ -23,7 +23,6 @@ const authLoginFailureResponseSchema = z.strictObject({
   code: z.enum([
     'LOGIN_INVALID_REQUEST',
     'LOGIN_INVALID_CREDENTIALS',
-    'LOGIN_NOT_ALLOWED',
     'LOGIN_RATE_LIMITED',
     'LOGIN_PROXY_ERROR',
   ]),

@@ -166,6 +166,24 @@ describe('LoginPage Component', () => {
     });
   });
 
+  it.each([
+    ['로그인 요청이 많습니다. 잠시 후 다시 시도해주세요.'],
+    ['로그인 서비스에 일시적으로 연결할 수 없습니다. 잠시 후 다시 시도해주세요.'],
+  ])('요청 제한·서비스 장애는 비밀번호 탓으로 말하지 않는다 (DIP D2): %s', async (message) => {
+    mockLogin.mockRejectedValueOnce(new Error(message));
+    render(<LoginPage />);
+
+    fireEvent.change(screen.getByPlaceholderText(/아이디를 입력하세요.../i), { target: { value: 'user01' } });
+    fireEvent.change(screen.getByPlaceholderText(/비밀번호를 입력하세요/i), { target: { value: 'pass1234' } });
+    fireEvent.click(screen.getByRole('button', { name: /로그인/i }));
+
+    await waitFor(() => {
+      const alert = screen.getByTestId('login-error');
+      expect(alert).toHaveTextContent(message);
+      expect(alert).not.toHaveTextContent(LOGIN_ERROR_COPY);
+    });
+  });
+
   it('restores focus only after the failed-login form is no longer inert', async () => {
     let rejectLogin: ((reason?: unknown) => void) | undefined;
     mockLogin.mockImplementationOnce(() => new Promise<void>((_, reject) => {

@@ -568,7 +568,7 @@ class LoginPolicyManageServiceTest {
         LoginPolicyDto dto = LoginPolicyDto.builder()
                 .userId("tester").ipAddr("2001:0DB8:0000:0000:0000:0000:0000:0001")
                 .dpcnPrmYn("Y").lmtYn("N")
-                .bgngTm("0900").endTm("1800").otpUseYn("Y").build();
+                .bgngTm("0900").endTm("1800").otpUseYn("N").build();
 
         loginPolicyManageService.insertLoginPolicy(dto);
 
@@ -579,7 +579,22 @@ class LoginPolicyManageServiceTest {
         assertEquals("SYSTEM", saved.getValue().getFrstRgtrId());
         assertEquals("tester", saved.getValue().getUserId());
         assertEquals("2001:db8::1", saved.getValue().getIpAddr());
-        assertEquals("Y", saved.getValue().getOtpUseYn());
+        assertEquals("N", saved.getValue().getOtpUseYn());
+    }
+
+    @Test
+    @DisplayName("🔐 등록·수정은 2단계 인증(OTP) 켜기를 400 으로 거부한다 — 입력 경로가 없어 켜면 로그인 불가 (DIP D6)")
+    void rejectsEnablingOtpBecauseNoEnrollmentPathExists() {
+        LoginPolicyDto enable = LoginPolicyDto.builder().userId("tester").otpUseYn("Y").build();
+
+        BusinessException onInsert = assertThrows(BusinessException.class,
+                () -> loginPolicyManageService.insertLoginPolicy(enable));
+        BusinessException onUpdate = assertThrows(BusinessException.class,
+                () -> loginPolicyManageService.updateLoginPolicy(enable));
+
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, onInsert.getErrorCode());
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, onUpdate.getErrorCode());
+        verifyNoInteractions(userRepository, loginPolicyRepository);
     }
 
     @Test

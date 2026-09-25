@@ -11,6 +11,8 @@ import nuri.business.domain.login.LoginPolicy;
 import nuri.business.domain.login.LoginPolicyRepository;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
+import nuri.business.service.auth.LoginFailureReason;
+import nuri.business.service.auth.LoginRejectedException;
 import nuri.business.service.auth.OtpService;
 import nuri.business.service.auth.dto.LoginRequest;
 import nuri.business.service.auth.dto.TokenResponse;
@@ -125,18 +127,64 @@ class AuthServiceImplTest {
             verify(loginPolicyManageService).validateLoginPolicy(LOGIN_ID, CLIENT_IP);
         }
 
-        @Test
-        @DisplayName("정책 검증이 거부하면 인증 자체를 시도하지 않는다")
-        void abortsBeforeAuthenticationWhenPolicyRejects() {
-            org.mockito.BDDMockito.willThrow(new BusinessException("제한된 접속 시간입니다.",
-                            nuri.foundation.core.exception.CommonErrorCode.AUTH_ERROR))
+        @org.junit.jupiter.params.ParameterizedTest
+        @org.junit.jupiter.params.provider.CsvSource({
+                "LOGIN_POLICY_LIMITED, POLICY_BLOCKED, POLICY_BLOCK",
+                "LOGIN_POLICY_IP_MISMATCH, POLICY_IP, POLICY_IP",
+                "LOGIN_POLICY_TIME_RESTRICTED, POLICY_TIME, POLICY_TIME"})
+        @DisplayName("🔐 정책 거부는 인증 실패(401)로 바뀌고, 사유는 감사 기록에만 남으며 인증을 시도하지 않는다 (DIP D2)")
+        void policyRejectionBecomesGenericAuthenticationFailure(
+                nuri.foundation.core.exception.CommonErrorCode policyCode, LoginFailureReason reason, String auditCode) {
+            org.mockito.BDDMockito.willThrow(new BusinessException("허용되지 않은 IP에서의 접속입니다.", policyCode))
                     .given(loginPolicyManageService).validateLoginPolicy(anyString(), anyString());
 
             assertThatThrownBy(() -> authService.login(loginRequest(null), CLIENT_IP))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOf(LoginRejectedException.class)
+                    .isNotInstanceOf(BusinessException.class)
+                    .satisfies(e -> assertThat(((LoginRejectedException) e).reason()).isEqualTo(reason))
+                    // 응답으로 나가는 문구에 정책 사유가 섞이지 않는다 — 처리기는 예외 타입만 보고 같은 문구를 쓴다.
+                    .hasMessageNotContaining("IP에서");
 
             verify(authenticationManager, never()).authenticate(any());
             verify(refreshTokenRepository, never()).save(any());
+            verify(logService).logLogin(LOGIN_ID, CLIENT_IP, "WEB", "Y", auditCode);
+        }
+
+        @Test
+        @DisplayName("정책 거부가 아닌 검증 오류는 인증 실패로 바꾸지 않고 그대로 던진다")
+        void nonPolicyValidationErrorIsNotDisguised() {
+            BusinessException invalid = new BusinessException(
+                    nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+            org.mockito.BDDMockito.willThrow(invalid)
+                    .given(loginPolicyManageService).validateLoginPolicy(anyString(), anyString());
+
+            assertThatThrownBy(() -> authService.login(loginRequest(null), CLIENT_IP)).isSameAs(invalid);
+            verify(logService, never()).logLogin(anyString(), anyString(), anyString(), anyString(), any());
+        }
+
+        @Test
+        @DisplayName("비밀번호 불일치는 같은 예외 객체로 다시 던지고 BAD_CRED 로 실패를 기록한다 (DIP S6 ⑤)")
+        void badCredentialsAreRecordedAndRethrownAsIs() {
+            var bad = new org.springframework.security.authentication.BadCredentialsException("x");
+            given(authenticationManager.authenticate(any())).willThrow(bad);
+
+            // 같은 객체여야 noRollbackFor(BadCredentialsException) 가 잠금 카운터를 보존한다.
+            assertThatThrownBy(() -> authService.login(loginRequest(null), CLIENT_IP)).isSameAs(bad);
+            verify(logService).logLogin(LOGIN_ID, CLIENT_IP, "WEB", "Y", "BAD_CRED");
+            verify(logService, never()).logLogin(anyString(), anyString(), anyString(), eq("N"), any());
+        }
+
+        @Test
+        @DisplayName("감사 기록의 로그인 ID 는 컬럼 폭(20자)으로 자른다")
+        void recordsTruncatedLoginIdOnFailure() {
+            given(authenticationManager.authenticate(any()))
+                    .willThrow(new org.springframework.security.authentication.BadCredentialsException("x"));
+            String longId = "a".repeat(25);
+
+            assertThatThrownBy(() -> authService.login(
+                    LoginRequest.builder().userId(longId).password("pw").build(), CLIENT_IP))
+                    .isInstanceOf(org.springframework.security.authentication.BadCredentialsException.class);
+            verify(logService).logLogin("a".repeat(20), CLIENT_IP, "WEB", "Y", "BAD_CRED");
         }
 
         @Test
@@ -157,10 +205,12 @@ class AuthServiceImplTest {
             given(loginPolicyRepository.findById(LOGIN_ID)).willReturn(Optional.of(otpEnabledPolicy()));
 
             assertThatThrownBy(() -> authService.login(loginRequest(null), CLIENT_IP))
-                    .isInstanceOf(BusinessException.class)
-                    .hasMessageContaining("OTP");
+                    .isInstanceOf(LoginRejectedException.class)
+                    .satisfies(e -> assertThat(((LoginRejectedException) e).reason())
+                            .isEqualTo(LoginFailureReason.OTP_MISSING));
 
             verify(refreshTokenRepository, never()).save(any());
+            verify(logService).logLogin(LOGIN_ID, CLIENT_IP, "WEB", "Y", "OTP_MISSING");
         }
 
         @Test
@@ -174,10 +224,12 @@ class AuthServiceImplTest {
             given(otpService.verifyCode(anyString(), org.mockito.ArgumentMatchers.anyInt())).willReturn(false);
 
             assertThatThrownBy(() -> authService.login(loginRequest(111111), CLIENT_IP))
-                    .isInstanceOf(BusinessException.class)
-                    .hasMessageContaining("일치하지 않습니다");
+                    .isInstanceOf(LoginRejectedException.class)
+                    .satisfies(e -> assertThat(((LoginRejectedException) e).reason())
+                            .isEqualTo(LoginFailureReason.OTP_INVALID));
 
             verify(refreshTokenRepository, never()).save(any());
+            verify(logService).logLogin(LOGIN_ID, CLIENT_IP, "WEB", "Y", "OTP_INVALID");
         }
 
         @Test
@@ -303,10 +355,10 @@ class AuthServiceImplTest {
         @Test
         @DisplayName("null 이거나 리프레시가 아닌 토큰은 거부한다 (액세스 토큰 제시 차단)")
         void rejectsNullOrNonRefreshToken() {
-            assertThatThrownBy(() -> authService.reissue(null)).isInstanceOf(BusinessException.class);
+            assertThatThrownBy(() -> authService.reissue(null, CLIENT_IP)).isInstanceOf(BusinessException.class);
 
             given(jwtTokenProvider.validateRefreshToken("access-token")).willReturn(false);
-            assertThatThrownBy(() -> authService.reissue("access-token"))
+            assertThatThrownBy(() -> authService.reissue("access-token", CLIENT_IP))
                     .isInstanceOf(BusinessException.class);
 
             verify(refreshTokenRepository, never()).findByRfshTkn(anyString());
@@ -319,7 +371,7 @@ class AuthServiceImplTest {
             given(refreshTokenRepository.findByRfshTkn(anyString())).willReturn(Optional.empty());
 
             // L113 `replaced return value with null` — orElseThrow 람다가 검증된 적이 없었다.
-            assertThatThrownBy(() -> authService.reissue("unknown"))
+            assertThatThrownBy(() -> authService.reissue("unknown", CLIENT_IP))
                     .isInstanceOf(BusinessException.class);
         }
 
@@ -332,7 +384,7 @@ class AuthServiceImplTest {
             given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
             given(refreshTokenRepository.findByRfshTkn("expired")).willReturn(Optional.of(expired));
 
-            assertThatThrownBy(() -> authService.reissue("expired")).isInstanceOf(BusinessException.class);
+            assertThatThrownBy(() -> authService.reissue("expired", CLIENT_IP)).isInstanceOf(BusinessException.class);
 
             // 삭제는 바깥 트랜잭션과 분리돼야 한다 — 같은 트랜잭션이면 위 예외의 롤백이 삭제를 되돌린다.
             verify(refreshTokenRepository).deleteIfCurrent(ESNTL_ID, "expired");
@@ -350,13 +402,50 @@ class AuthServiceImplTest {
             given(refreshTokenRepository.rotateIfCurrent(eq(ESNTL_ID), eq("old"), eq("rotated"), any()))
                     .willReturn(1);
 
-            TokenResponse res = authService.reissue("old");
+            TokenResponse res = authService.reissue("old", CLIENT_IP);
 
             // 회전이 사라지면 같은 토큰이 계속 유효해 W1-06 이전 상태로 회귀한다.
             // 회전은 **제시된 토큰이 아직 저장값일 때만** 일어나야 하므로 그 조건까지 함께 고정한다
             // — 조건 없이 덮어쓰면 동시 재발급이 둘 다 성공하고 진 쪽은 무효한 토큰을 받는다(2026-09-16).
             verify(refreshTokenRepository).rotateIfCurrent(eq(ESNTL_ID), eq("old"), eq("rotated"), any());
             assertThat(res.getRefreshToken()).isEqualTo("rotated");
+            // 재발급도 로그인 정책을 로그인 ID·요청 IP 로 다시 본다(DIP S6 ②).
+            verify(loginPolicyManageService).validateLoginPolicy(LOGIN_ID, CLIENT_IP);
+        }
+
+        @Test
+        @DisplayName("🔐 새로 건 로그인 정책이 재발급을 막고 저장된 토큰을 지운다 — 회전하지 않는다 (DIP S6 ②)")
+        void loginPolicyBlocksReissueAndEndsSession() {
+            RefreshToken stored = storedToken();
+            given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
+            given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(stored));
+            org.mockito.BDDMockito.willThrow(new BusinessException("허용되지 않은 IP에서의 접속입니다.",
+                            nuri.foundation.core.exception.CommonErrorCode.LOGIN_POLICY_IP_MISMATCH))
+                    .given(loginPolicyManageService).validateLoginPolicy(LOGIN_ID, "10.9.9.9");
+
+            assertThatThrownBy(() -> authService.reissue("old", "10.9.9.9"))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
+                            .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_TOKEN));
+
+            verify(refreshTokenRepository).deleteIfCurrent(ESNTL_ID, "old");
+            verify(refreshTokenRepository, never()).rotateIfCurrent(any(), any(), any(), any());
+            verify(jwtTokenProvider, never()).createAccessToken(anyString(), nullable(String.class));
+        }
+
+        @Test
+        @DisplayName("재발급에서 정책 거부가 아닌 오류는 그대로 던지고 토큰을 지우지 않는다")
+        void nonPolicyErrorDuringReissueIsNotConvertedToSessionEnd() {
+            RefreshToken stored = storedToken();
+            given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
+            given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(stored));
+            BusinessException invalid = new BusinessException(
+                    nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+            org.mockito.BDDMockito.willThrow(invalid)
+                    .given(loginPolicyManageService).validateLoginPolicy(anyString(), any());
+
+            assertThatThrownBy(() -> authService.reissue("old", CLIENT_IP)).isSameAs(invalid);
+            verify(refreshTokenRepository, never()).deleteIfCurrent(any(), any());
         }
 
         @Test
@@ -370,7 +459,7 @@ class AuthServiceImplTest {
                     .willReturn(0);
 
             // 여기서 성공을 돌려주면 서버가 **저장하지 않은** 리프레시 토큰을 클라이언트에 준다.
-            assertThatThrownBy(() -> authService.reissue("old")).isInstanceOf(BusinessException.class);
+            assertThatThrownBy(() -> authService.reissue("old", CLIENT_IP)).isInstanceOf(BusinessException.class);
         }
 
         @Test
@@ -385,7 +474,7 @@ class AuthServiceImplTest {
             given(refreshTokenRepository.rotateIfCurrent(anyString(), anyString(), anyString(), any()))
                     .willReturn(1);
 
-            authService.reissue("old");
+            authService.reissue("old", CLIENT_IP);
 
             // 회전마다 7일을 새로 주면 탈취 토큰이 무기한 연장된다 — 회전의 목적이 사라진다.
             // 만료는 회전 질의가 건드리지 않는다(SET 절에 exprtnDt 가 없다). 실제 저장값의 불변은
@@ -405,14 +494,14 @@ class AuthServiceImplTest {
             given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(storedToken()));
             given(refreshTokenRepository.rotateIfCurrent(anyString(), anyString(), anyString(), any()))
                     .willReturn(1);
-            TokenResponse first = authService.reissue("old");
+            TokenResponse first = authService.reissue("old", CLIENT_IP);
             assertThat(first.getGroups()).isEqualTo(login.getGroups());
             assertThat(first.getPermissions()).isEqualTo(login.getPermissions());
             assertThat(first.getAuthorizationVersion()).isEqualTo(login.getAuthorizationVersion());
 
             given(userDetailsService.loadUserByUsername(ESNTL_ID))
                     .willReturn(principal(List.of(), List.of(), "v2", true, "N"));
-            TokenResponse revoked = authService.reissue("old");
+            TokenResponse revoked = authService.reissue("old", CLIENT_IP);
             assertThat(revoked.getGroups()).isEmpty();
             assertThat(revoked.getPermissions()).isEmpty();
             assertThat(revoked.getAuthorizationVersion()).isEqualTo("v2");
@@ -426,13 +515,13 @@ class AuthServiceImplTest {
             given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(stored));
             given(userDetailsService.loadUserByUsername(ESNTL_ID))
                     .willReturn(principal(List.of("ROLE_ADMIN"), List.of("CONTENT_EDIT"), "v2", false, "N"));
-            assertThatThrownBy(() -> authService.reissue("old")).isInstanceOf(DisabledException.class);
+            assertThatThrownBy(() -> authService.reissue("old", CLIENT_IP)).isInstanceOf(DisabledException.class);
             given(userDetailsService.loadUserByUsername(ESNTL_ID))
                     .willReturn(principal(List.of("ROLE_ADMIN"), List.of("CONTENT_EDIT"), "v3", true, "Y"));
-            assertThatThrownBy(() -> authService.reissue("old")).isInstanceOf(LockedException.class);
+            assertThatThrownBy(() -> authService.reissue("old", CLIENT_IP)).isInstanceOf(LockedException.class);
             given(userDetailsService.loadUserByUsername(ESNTL_ID))
                     .willThrow(new UsernameNotFoundException("Account unavailable"));
-            assertThatThrownBy(() -> authService.reissue("old")).isInstanceOf(UsernameNotFoundException.class);
+            assertThatThrownBy(() -> authService.reissue("old", CLIENT_IP)).isInstanceOf(UsernameNotFoundException.class);
             assertThat(stored.getRfshTkn()).isEqualTo("old");
             verify(jwtTokenProvider, never()).createAccessToken(anyString(), nullable(String.class));
             verify(refreshTokenRepository, never()).rotateIfCurrent(any(), any(), any(), any());

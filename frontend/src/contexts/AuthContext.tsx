@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { useQueryClient } from '@tanstack/react-query';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
 import { advanceAuthorizationRequestEpoch, AUTHORIZATION_CHANGED_EVENT } from '@/lib/auth/authorization-state';
-import { LOGIN_FAILURE_MESSAGE } from '@/lib/auth/login-error';
+import { loginErrorMessage } from '@/lib/auth/login-error';
 import {
   purgeBoardDraftStorage,
   purgePersistedBoardDraftStorage,
@@ -94,8 +94,9 @@ export function AuthProvider({
       // 전역 상태 업데이트
       const userData = await authService.getCurrentUser();
       if (epoch === requestEpoch.current) commitUser(userData);
-    } catch {
-      throw new Error(LOGIN_FAILURE_MESSAGE);
+    } catch (error) {
+      // 요청 제한·서비스 장애만 따로 말하고 나머지는 같은 문구다(DIP D2).
+      throw new Error(loginErrorMessage(error));
     } finally {
       if (epoch === requestEpoch.current) setLoading(false);
     }

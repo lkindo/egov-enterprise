@@ -11,6 +11,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -89,6 +90,39 @@ class SignupInputValidationContractTest extends BaseSecurityTest {
                 """.formatted(userId, pswd, userNm, pswdHint);
     }
 
+    /**
+     * [2026-09-25 DIP D1] 가입은 공개하지 않는다(DEC-OPS-069) — 사용자 등록 권한(USER_CREATE)이 필요하다.
+     * 입력 검증 계약은 권한이 있는 호출자에 대해 그대로 유효하므로, 아래 검증은 관리자 주체로 부른다.
+     */
+    private static org.springframework.test.web.servlet.request.RequestPostProcessor asUserAdministrator() {
+        return authentication(nuri.business.support.AuthorizationTestPrincipal.authentication(
+                "admin", "USRCNFRM_00000000001", "ADMIN"));
+    }
+
+    @Test
+    @DisplayName("🔐 미인증 요청은 가입을 부를 수 없다 — 401 이고 서비스에 도달하지 않는다 (DIP D1)")
+    void anonymousSignup_isRejected() throws Exception {
+        mockMvc.perform(post("/api/v1/users/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(signupBody(VALID_USER_ID, VALID_PSWD, VALID_USER_NM, VALID_HINT)))
+                .andExpect(status().isUnauthorized());
+
+        verify(userService, never()).signup(any(UserSignupRequest.class));
+    }
+
+    @Test
+    @DisplayName("🔐 사용자 등록 권한이 없는 일반 사용자도 가입을 부를 수 없다 — 403 (DIP D1)")
+    void ordinaryUserSignup_isForbidden() throws Exception {
+        mockMvc.perform(post("/api/v1/users/signup")
+                        .with(authentication(nuri.business.support.AuthorizationTestPrincipal.authentication(
+                                "user01", "USRCNFRM_00000000099", "USER")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(signupBody(VALID_USER_ID, VALID_PSWD, VALID_USER_NM, VALID_HINT)))
+                .andExpect(status().isForbidden());
+
+        verify(userService, never()).signup(any(UserSignupRequest.class));
+    }
+
     @Test
     @DisplayName("[대조군] 메타문자 없는 정상 요청은 200 이고 서비스까지 도달한다")
     void validBaseline_reachesService_andReturns200() throws Exception {
@@ -96,6 +130,7 @@ class SignupInputValidationContractTest extends BaseSecurityTest {
                 .thenReturn(new UserResponse(VALID_USER_ID, VALID_USER_NM, "USER"));
 
         mockMvc.perform(post("/api/v1/users/signup")
+                        .with(asUserAdministrator())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(signupBody(VALID_USER_ID, VALID_PSWD, VALID_USER_NM, VALID_HINT)))
                 .andExpect(status().isOk())
@@ -109,6 +144,7 @@ class SignupInputValidationContractTest extends BaseSecurityTest {
     @DisplayName("userId 의 SQL 주석 메타문자(admin'--)는 userId 필드 오류로 400 이고 서비스에 도달하지 않는다")
     void sqlCommentInUserId_isRejectedAsUserIdFieldError() throws Exception {
         mockMvc.perform(post("/api/v1/users/signup")
+                        .with(asUserAdministrator())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(signupBody(SQLI_COMMENT, VALID_PSWD, VALID_USER_NM, VALID_HINT)))
                 .andExpect(status().isBadRequest())
@@ -123,6 +159,7 @@ class SignupInputValidationContractTest extends BaseSecurityTest {
     @DisplayName("userId 의 항진식 주입(a' OR '1'='1)은 userId 필드 오류로 400 이고 서비스에 도달하지 않는다")
     void sqlTautologyInUserId_isRejectedAsUserIdFieldError() throws Exception {
         mockMvc.perform(post("/api/v1/users/signup")
+                        .with(asUserAdministrator())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(signupBody(SQLI_TAUTOLOGY, VALID_PSWD, VALID_USER_NM, VALID_HINT)))
                 .andExpect(status().isBadRequest())
@@ -136,6 +173,7 @@ class SignupInputValidationContractTest extends BaseSecurityTest {
     @DisplayName("userNm 의 <script> 태그는 userNm 필드 오류로 400 이고 서비스에 도달하지 않는다")
     void scriptTagInUserNm_isRejectedAsUserNmFieldError() throws Exception {
         mockMvc.perform(post("/api/v1/users/signup")
+                        .with(asUserAdministrator())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(signupBody(VALID_USER_ID, VALID_PSWD, XSS_SCRIPT_TAG, VALID_HINT)))
                 .andExpect(status().isBadRequest())

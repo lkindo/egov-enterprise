@@ -114,6 +114,7 @@ public class LoginPolicyManageService {
 
     @Transactional
     public void insertLoginPolicy(LoginPolicyDto dto) {
+        rejectUnsupportedOtp(dto);
         String canonicalIpAddr = canonicalizeConfiguredIp(dto.getIpAddr());
         // [V2_13 결속] fk_tb_login_policy_tb_user_info(user_id UNIQUE 대상) — 유령 loginId 등록 차단
         userRepository.findByUserId(dto.getUserId())
@@ -136,6 +137,7 @@ public class LoginPolicyManageService {
 
     @Transactional
     public void updateLoginPolicy(LoginPolicyDto dto) {
+        rejectUnsupportedOtp(dto);
         String canonicalIpAddr = canonicalizeConfiguredIp(dto.getIpAddr());
         LoginPolicy entity = loginPolicyRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
@@ -218,6 +220,20 @@ public class LoginPolicyManageService {
                 }
             }
         });
+    }
+
+    /**
+     * 2단계 인증(OTP) 설정을 켜지 못하게 한다(2026-09-25 DIP D6).
+     *
+     * <p>로그인은 OTP 가 켜진 사용자에게 번호를 요구하지만, 비밀키를 발급하거나 사용자가 번호를 입력하는
+     * 화면이 제품에 없다. 켜는 순간 그 사용자는 어떤 방법으로도 로그인할 수 없다 — 잠금과 같은 결과를
+     * "보안 강화" 처럼 보이는 스위치가 만든다. 등록 흐름을 만들기 전까지 서버가 거부한다. 끄는 것은 허용한다.
+     */
+    private static void rejectUnsupportedOtp(LoginPolicyDto dto) {
+        if ("Y".equals(dto.getOtpUseYn())) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "2단계 인증(OTP)은 아직 제공하지 않습니다. 비밀키 발급·입력 경로가 없어 켜면 그 사용자는 로그인할 수 없습니다.");
+        }
     }
 
     /** 빈 값은 IP 제한 없음이며, 비어 있지 않은 값은 DNS 없는 IP 리터럴만 허용한다. */

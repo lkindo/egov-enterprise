@@ -1640,9 +1640,9 @@
       "method": "POST",
       "path": "/api/v1/users/signup",
       "handler": "nuri.api.controller.UserApiController#signup",
-      "policy": "PUBLIC",
+      "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#signup')",
-      "routeGate": "PUBLIC_FILTER"
+      "routeGate": "OPERATION_PERMISSION"
     },
     {
       "method": "POST",
@@ -5875,8 +5875,8 @@
       "method": "GET",
       "path": "/api/v1/users/check-id",
       "handler": "nuri.api.controller.UserApiController#checkIdDplct",
-      "access": "PUBLIC",
-      "permission": null
+      "access": "PERMISSION",
+      "permission": "USER_CREATE"
     },
     {
       "method": "GET",
@@ -5910,8 +5910,8 @@
       "method": "POST",
       "path": "/api/v1/users/signup",
       "handler": "nuri.api.controller.UserApiController#signup",
-      "access": "PUBLIC",
-      "permission": null
+      "access": "PERMISSION",
+      "permission": "USER_CREATE"
     },
     {
       "method": "GET",

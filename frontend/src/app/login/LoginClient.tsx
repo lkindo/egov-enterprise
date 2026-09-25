@@ -10,7 +10,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { User, Lock, Eye, EyeOff, LogIn, Loader2, ShieldCheck, Zap } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
-import { LOGIN_FAILURE_MESSAGE } from '@/lib/auth/login-error';
+import { loginErrorMessage } from '@/lib/auth/login-error';
 import { SITE_IDENTITY } from '@/config/site-identity';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
@@ -163,11 +163,11 @@ function LoginContent() {
             // 과거 이 갱신은 router.refresh() 가 대신했으나, 두 번째 replace 와 동시 발사되어 진행 중이던
             // 전환을 무효화시키는 무한 "인증중" 고착의 원인이었다. 하드 전환은 그 부작용 없이 목적을 이룬다.
             window.location.replace(redirectUrl);
-        } catch {
+        } catch (loginError) {
             submittingRef.current = false;
             justLoggedIn.current = false;
             restoreIdFocusAfterFailureRef.current = true;
-            setError(LOGIN_FAILURE_MESSAGE);
+            setError(loginErrorMessage(loginError));
             setIsSubmitting(false);
             setAuthStep(0);
             // 포커스는 위 effect에서 form의 inert 제거가 DOM에 커밋된 뒤 복원한다.

@@ -30,6 +30,31 @@ const EXPORT_HEADERS = [
     { label: '오류코드', key: 'errorCode' },
 ];
 
+/**
+ * 로그인 실패 사유(서버 LoginFailureReason 의 감사 코드)를 관리자가 읽을 말로 옮긴다(2026-09-25 DIP S6 ⑤).
+ * 로그인 API 는 사유와 무관하게 같은 401 을 돌려주고, 사유는 이 감사 기록에만 남는다.
+ * 모르는 코드는 원문을 그대로 보인다 — 없는 뜻을 지어내지 않는다.
+ */
+const LOGIN_FAILURE_LABELS: Readonly<Record<string, string>> = {
+    BAD_CRED: '아이디·비밀번호 불일치',
+    LOCKED: '계정 잠김',
+    DISABLED: '비활성 계정',
+    ACCT_EXPIRED: '계정 만료',
+    PW_EXPIRED: '비밀번호 만료',
+    POLICY_BLOCK: '정책: 접속 제한',
+    POLICY_IP: '정책: 허용되지 않은 IP',
+    POLICY_TIME: '정책: 허용 시간 밖',
+    OTP_MISSING: '2단계 인증 번호 없음',
+    OTP_INVALID: '2단계 인증 번호 불일치',
+    AUTH_SERVICE: '인증 서비스 오류',
+    AUTH_FAILED: '인증 실패',
+};
+
+function loginFailureLabel(code: string | null | undefined): string {
+    if (!code) return '오류';
+    return LOGIN_FAILURE_LABELS[code] ?? code;
+}
+
 const SystemLogsLoginClient = () => {
     const [page, setPage] = usePageParam();
     const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -129,8 +154,11 @@ const SystemLogsLoginClient = () => {
             accessor: (item: LoginLog) => (
                 <div className="flex items-center justify-center">
                     {item.errOccrrAt === 'Y' ? (
-                        <span className="px-2 py-0.5 rounded-md text-xs font-bold border bg-destructive/10 text-destructive-emphasis border-destructive/40">
-                            {item.errorCode || '오류'}
+                        <span
+                            className="px-2 py-0.5 rounded-md text-xs font-bold border bg-destructive/10 text-destructive-emphasis border-destructive/40"
+                            title={item.errorCode || undefined}
+                        >
+                            {loginFailureLabel(item.errorCode)}
                         </span>
                     ) : (
                         <span className="text-xs font-bold text-muted-foreground/50">-</span>
@@ -144,7 +172,7 @@ const SystemLogsLoginClient = () => {
     return (
         <WorkListPage
             title="로그인 로그"
-            description="시스템 접속·로그인/로그아웃 이력을 접속일시 최신순으로 조회합니다."
+            description="시스템 로그인 성공·실패 이력을 접속일시 최신순으로 조회합니다."
             breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '로그인 로그' }]}
             filterStateKey="system-logs-login"
             // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.
