@@ -7,7 +7,8 @@ import nuri.business.domain.system.content.community.CommunityUser;
 /**
  * 현재 사용자의 특정 커뮤니티 멤버십 상태 — 상세 화면이 가입 버튼의 상태를 정하는 근거.
  *
- * <p>행이 없으면 {@link Status#NONE}, 가입 신청 행이면 {@link Status#REQUESTED}, 승인된 행이면 {@link Status#MEMBER} 다.
+ * <p>행이 없으면 {@link Status#NONE}, 가입 신청 행이면 {@link Status#REQUESTED}, 승인된 행이면 {@link Status#MEMBER},
+ * 탈퇴한 행이면 {@link Status#WITHDRAWN}(다시 신청할 수 있다) 다.
  * 어휘 밖의 상태 코드는 {@link Status#UNKNOWN} 으로 돌려주며 화면은 그 경우 가입 버튼을 열지 않는다
  * (존재하는 행 위에 다시 신청하면 409 라 열어 봤자 실패한다).
  */
@@ -18,7 +19,7 @@ public record CommunityMembershipDto(
         @Schema(description = "가입(신청)일자 yyyyMMdd — 행이 없으면 null", nullable = true) String joinYmd) {
 
     public enum Status {
-        NONE, REQUESTED, MEMBER, UNKNOWN
+        NONE, REQUESTED, MEMBER, WITHDRAWN, UNKNOWN
     }
 
     public static CommunityMembershipDto none(Long cmntySn) {
@@ -27,7 +28,11 @@ public record CommunityMembershipDto(
 
     public static CommunityMembershipDto from(CommunityUser member) {
         Status status = CommunityMemberStatus.fromCode(member.getMbrSttsCd())
-                .map(code -> code == CommunityMemberStatus.APPROVED ? Status.MEMBER : Status.REQUESTED)
+                .map(code -> switch (code) {
+                    case APPROVED -> Status.MEMBER;
+                    case REQUESTED -> Status.REQUESTED;
+                    case WITHDRAWN -> Status.WITHDRAWN;
+                })
                 .orElse(Status.UNKNOWN);
         return new CommunityMembershipDto(member.getId().getCmntySn(), status, member.getJoinYmd());
     }

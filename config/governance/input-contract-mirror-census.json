@@ -1604,7 +1604,9 @@
         "drctnMttr",
         "drctnMttrRegDt",
         "rptrInqDt",
-        "crtDt"
+        "crtDt",
+        "editable",
+        "deletable"
       ],
       "pack": "demo"
     },

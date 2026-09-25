@@ -83,10 +83,10 @@ public class MemoReportDto {
     private LocalDateTime crtDt;
 
     /**
-     * 현재 인증 주체가 이 보고를 수정·삭제할 수 있는지 — <b>서버가 판정한 결과</b>다.
+     * 현재 인증 주체가 이 보고를 수정할 수 있는지 — <b>서버가 판정한 결과</b>다.
      *
      * <p>[2026-09-08 PD-RPT-001] 화면이 인가를 흉내내지 않게 하려고 판정 결과만 내려준다.
-     * 그 인가는 서비스의 {@code assertOwnerOrAdmin(frstRgtrId)} 즉 <b>loginId 축</b>인데,
+     * 그 인가는 기본 수정 권한과 서비스의 소유자/수정 대행 권한을 결합한다. 소유자는 <b>loginId 축</b>인데,
      * 같은 도메인의 열람 인가는 {@code userId}·{@code rptrId} 즉 <b>esntlId 축</b>이다.
      * 두 축이 다르므로 화면이 응답만 보고 "내가 고칠 수 있는가" 를 계산할 방법이 없었다.
      *
@@ -97,10 +97,16 @@ public class MemoReportDto {
      * 실제 인가는 여전히 서비스가 집행하며, 이 필드는 화면 표시용 힌트다(백엔드 헌법 제8조의
      * 이중 검증은 그대로다).
      */
-    @Schema(description = "현재 사용자가 수정·삭제할 수 있는지(서버 판정)",
+    @Schema(description = "현재 사용자가 수정할 수 있는지(서버 판정)",
             accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Boolean editable;
+
+    /** 삭제는 수정과 별도의 기능·대행 권한으로 판정하며 요청에서 받지 않는다. */
+    @Schema(description = "현재 사용자가 삭제할 수 있는지(서버 판정)",
+            accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Boolean deletable;
 
     // 수기 from(MemoReport) 은 MemoReportMapper(MapStruct, 프레임워크 표준)로 대체됨.
 }

@@ -29,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 조회하지 않아 app→app 결합은 되살아나지 않는다.
  *
  * <p>{@code PostCreatedEvent} 구독을 걷어낸 것은 그 핸들러가 하던 일이 "새 글에 0 을 쓰는 것"
- * 뿐이었기 때문이다. 같은 이벤트의 다른 소비자({@code RealTimeDashboardService})는 그대로다.
+ * 뿐이었기 때문이다. 실시간 대시보드의 오늘 게시글 수도 현재는 이벤트 누적 대신 DB 집계로 읽는다.
  */
 @Slf4j
 @Component

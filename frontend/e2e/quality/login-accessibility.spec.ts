@@ -1,6 +1,19 @@
 import AxeBuilder from '@axe-core/playwright';
 import { Page } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
+
+async function openAnonymousLogin(page: Page, url: string) {
+    // SSR heading/font checks can finish before hydration sends the session request.
+    // Observe the expected 401 before teardown checks that its ledger was consumed.
+    await Promise.all([
+        page.waitForResponse(response =>
+            new URL(response.url()).pathname === '/api/v1/auth/me'
+            && response.request().method() === 'GET'
+            && response.status() === 401),
+        page.goto(url),
+    ]);
+}
+
 test.describe('공통 셸과 인증', () => {
     async function stabilizeAccessibilityAudit(page: Page) {
         await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -36,7 +49,7 @@ test.describe('공통 셸과 인증', () => {
                 }]);
             // Axe 감사에만 reduced-motion을 적용한다. 일반 UI 회귀는 실제 motion 경로를 계속 검증한다.
             await page.emulateMedia({ reducedMotion: 'reduce' });
-            await page.goto('/login?e2e=true');
+            await openAnonymousLogin(page, '/login?e2e=true');
             await expect(page.getByRole('heading', { level: 1, name: '엔터프라이즈' })).toBeVisible({ timeout: 30000 });
             await expect(page.getByRole('main')).toHaveCount(1);
             await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -65,7 +78,7 @@ test.describe('공통 셸과 인증', () => {
                     reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
                     expiresAt: '2026-12-31',
                 }]);
-            await page.goto('/login?e2e=true');
+            await openAnonymousLogin(page, '/login?e2e=true');
             await expect(page.getByRole('heading', { level: 1, name: '엔터프라이즈' })).toBeVisible({ timeout: 30000 });
             const fontFamily = await page.evaluate(() => getComputedStyle(document.body).fontFamily);
             expect(fontFamily.toLowerCase()).toContain('pretendard');
@@ -88,7 +101,7 @@ test.describe('인증 경계', () => {
                     reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
                     expiresAt: '2026-12-31',
                 }]);
-            await page.goto('/login');
+            await openAnonymousLogin(page, '/login');
             // 04-quality의 a11y는 color-contrast/heading-order를 비활성했으나, 공개 진입점 /login은 엄격히 검사한다.
             // 단, 감사 범위를 로그인 본문(<main id="main-content">)으로 스코프한다. 루트 레이아웃(AppShell)이 모든
             // 페이지를 전역 chrome(헤더 EG 로고/사이드바)으로 감싸므로, 그 chrome에서 발생하는 color-contrast 위반은

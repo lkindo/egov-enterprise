@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, type ReactNode } from 'react';
 import type { StompSubscription } from '@stomp/stompjs';
 import { useWebSocket } from '@/contexts/websocket-context';
+import { normalizeNotification, type Notification as ServerNotification } from '@/lib/hooks/use-notifications';
 import { Bell, TrendingUp, Users, Activity, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button';
 
 export interface RealTimeNotification {
   id: string;
-  type: 'USER' | 'POST' | 'COMMENT' | 'SYSTEM' | 'ALERT';
+  type: NonNullable<ServerNotification['type']>;
   title: string;
   message: string;
   timestamp: string;
@@ -23,13 +24,13 @@ export interface RealTimeStats {
   visitsPerMinute: number;
   newPosts: number;
   alerts: number;
+  newPostsAvailable: boolean;
+  alertsAvailable: boolean;
 }
 
 interface RealTimeDashboardProps {
   onNotification?: (notification: RealTimeNotification) => void;
 }
-
-const NOTIFICATION_TYPES = new Set<RealTimeNotification['type']>(['USER', 'POST', 'COMMENT', 'SYSTEM', 'ALERT']);
 
 /**
  * 알림 시각 표기. 시스템 표준은 'yyyy-MM-dd HH:mm:ss' 다.
@@ -54,27 +55,44 @@ function parseStats(body: string): RealTimeStats | null {
   try {
     const value: unknown = JSON.parse(body);
     if (!isRecord(value)) return null;
-    const keys: Array<keyof RealTimeStats> = ['activeUsers', 'visitsPerMinute', 'newPosts', 'alerts'];
+    const keys = ['activeUsers', 'visitsPerMinute', 'newPosts', 'alerts'] as const;
     if (!keys.every((key) => typeof value[key] === 'number' && Number.isFinite(value[key]) && value[key] >= 0)) {
       return null;
     }
-    return Object.fromEntries(keys.map((key) => [key, value[key]])) as unknown as RealTimeStats;
+    const availabilityKeys = ['newPostsAvailable', 'alertsAvailable'] as const;
+    if (availabilityKeys.some((key) => value[key] !== undefined && typeof value[key] !== 'boolean')) {
+      return null;
+    }
+    // 기존 서버의 네 숫자 프레임도 읽는다. 새 서버는 조회 실패를 명시적으로 false로 보낸다.
+    return {
+      ...Object.fromEntries(keys.map((key) => [key, value[key]])),
+      newPostsAvailable: value.newPostsAvailable !== false,
+      alertsAvailable: value.alertsAvailable !== false,
+    } as RealTimeStats;
   } catch {
     return null;
   }
 }
 
+/**
+ * 개인 큐의 알림 프레임을 해석한다.
+ *
+ * <p>[2026-09-25] 종전에는 서버가 보내지 않는 형태(`id`·`title`·`message`·`read`·`type: USER|POST…`)를
+ * 요구해, 서버가 보내는 NotificationDto(`notiSn`·`notiTtlNm`·`notiCn`·`notiDt`·`readYn`)를 전부 버렸다.
+ * 패널은 늘 '새로운 알림이 없습니다' 였다. 같은 큐를 읽는 헤더 알림함의 정규화를 그대로 쓴다.
+ */
 function parseNotification(body: string): RealTimeNotification | null {
   try {
-    const value: unknown = JSON.parse(body);
-    if (!isRecord(value)) return null;
-    if (typeof value.id !== 'string' || typeof value.title !== 'string'
-      || typeof value.message !== 'string' || typeof value.timestamp !== 'string'
-      || typeof value.read !== 'boolean' || typeof value.type !== 'string'
-      || !NOTIFICATION_TYPES.has(value.type as RealTimeNotification['type'])) {
-      return null;
-    }
-    return value as unknown as RealTimeNotification;
+    const notification = normalizeNotification(JSON.parse(body));
+    if (!notification) return null;
+    return {
+      id: String(notification.notiSn),
+      type: notification.type ?? 'ACTIVITY',
+      title: notification.notiTtlNm,
+      message: notification.notiCn,
+      timestamp: notification.notiDt,
+      read: notification.readYn === 'Y',
+    };
   } catch {
     return null;
   }
@@ -141,7 +159,10 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
 
   return (
     <div className="space-y-4">
-      {/* 실시간 연결 상태 */}
+      {/* 실시간 연결 상태.
+          [2026-09-25] 종전에는 한 문구가 연결 상태와 집계 가용 여부를 함께 말해, 연결이 멀쩡한데(초록 점)
+          '일부 통계 확인 불가' 가 보였고 그 전환이 알림 영역(live region)으로 읽혔다. 연결은 이 문구가,
+          집계 실패는 해당 카드가 말한다. 대기 문구는 연결됐는데 첫 통계가 아직 없을 때만 덧붙인다. */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={cn(
@@ -149,8 +170,11 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
             isConnected ? "bg-green-500 animate-pulse" : "bg-gray-300"
           )} />
           <span className="text-sm font-bold text-muted-foreground" role="status" aria-live="polite">
-            {!isConnected ? '연결 끊김' : stats ? '통계 수신 중' : '통계 수신 대기 중'}
+            {isConnected ? '실시간 연결됨' : '연결 끊김'}
           </span>
+          {isConnected && !stats && (
+            <span className="text-sm text-muted-foreground">· 통계 수신 대기 중</span>
+          )}
         </div>
 
         {/* 알림 버튼 */}
@@ -240,16 +264,21 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
         />
         <RealTimeStatCard
           title="신규 게시글"
-          value={stats?.newPosts ?? null}
+          value={stats?.newPostsAvailable ? stats.newPosts : null}
           icon={<Activity size={20} />}
           trend="오늘"
+          unavailableMessage={stats && !stats.newPostsAvailable ? '게시글 수 확인 불가' : undefined}
           color="purple"
         />
+        {/* [2026-09-25] 서버는 모든 사용자의 읽지 않은 알림 합계(read_yn='N')를 방송한다. 종전 '알림' 제목과
+            빨간 강조는 내 알림처럼 읽혀, 벨의 내 미읽음 수와 다른 숫자가 급한 일처럼 보였다. 범위를 이름에 싣고
+            강조는 걷는다 — 보는 사람이 처리할 수 있는 숫자가 아니다. */}
         <RealTimeStatCard
-          title="알림"
-          value={stats?.alerts ?? null}
+          title="전체 미읽음 알림"
+          value={stats?.alertsAvailable ? stats.alerts : null}
+          unavailableMessage={stats && !stats.alertsAvailable ? '알림 수 확인 불가' : undefined}
           icon={<AlertCircle size={20} />}
-          isAlert
+          trend="전체 사용자"
           color="red"
         />
       </div>
@@ -269,17 +298,14 @@ interface RealTimeStatCardProps {
   value: number | null;
   icon: ReactNode;
   trend?: string;
-  isAlert?: boolean;
+  unavailableMessage?: string;
   color?: keyof typeof statColorClasses;
 }
 
-function RealTimeStatCard({ title, value, icon, trend, isAlert = false, color = 'blue' }: RealTimeStatCardProps) {
+function RealTimeStatCard({ title, value, icon, trend, unavailableMessage, color = 'blue' }: RealTimeStatCardProps) {
 
   return (
-    <Card className={cn(
-      "transition-all hover:shadow-md",
-      isAlert && value !== null && value > 0 && "border-destructive/20 bg-destructive/5"
-    )}>
+    <Card className="transition-all hover:shadow-md">
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
           <div className={cn("p-3 rounded-lg", statColorClasses[color])}>
@@ -295,18 +321,18 @@ function RealTimeStatCard({ title, value, icon, trend, isAlert = false, color = 
         <p className="text-xs font-bold text-muted-foreground tracking-tight mt-1">
           {title}
         </p>
+        {unavailableMessage && <p className="text-xs text-destructive-emphasis mt-1">{unavailableMessage}</p>}
       </CardContent>
     </Card>
   );
 }
 
 function NotificationIcon({ type }: { type: RealTimeNotification['type'] }) {
-  const icons = {
-    USER: <Users size={14} className="text-hub-blue" />,
-    POST: <Activity size={14} className="text-success-emphasis" />,
-    COMMENT: <TrendingUp size={14} className="text-hub-purple" />,
+  const icons: Record<RealTimeNotification['type'], ReactNode> = {
+    SECURITY: <AlertCircle size={14} className="text-destructive-emphasis" />,
     SYSTEM: <Bell size={14} className="text-muted-foreground" />,
-    ALERT: <AlertCircle size={14} className="text-destructive-emphasis" />
+    ACTIVITY: <Activity size={14} className="text-success-emphasis" />,
+    INFO: <Bell size={14} className="text-hub-blue" />,
   };
 
   return icons[type] || icons.SYSTEM;

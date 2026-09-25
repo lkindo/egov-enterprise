@@ -119,6 +119,13 @@
     "permission": "COMMUNITY_APPROVE"
   },
   {
+    "method": "PATCH",
+    "path": "/api/v1/admin/content/community/{cmntySn}/members/{userId}/withdraw",
+    "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#withdrawMember",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_UPDATE_ALL"
+  },
+  {
     "method": "POST",
     "path": "/api/v1/admin/content/files",
     "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
@@ -1787,6 +1794,13 @@
     "method": "POST",
     "path": "/api/v1/communities/{cmntySn}/join",
     "handler": "nuri.api.controller.business.community.CommunityUserApiController#joinCommunity",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_JOIN"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/communities/{cmntySn}/membership",
+    "handler": "nuri.api.controller.business.community.CommunityUserApiController#leaveCommunity",
     "access": "PERMISSION",
     "permission": "COMMUNITY_JOIN"
   },

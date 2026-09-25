@@ -3,14 +3,13 @@ package nuri.business.service.stats;
 import nuri.business.domain.stats.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,28 +78,6 @@ class ReportStatsServiceTest {
     }
 
     @Test
-    @DisplayName("보고서 통계 목록 조회")
-    void getReprtStatsList() {
-        given(reprtStatsRepository.findByConditions(anyString(), anyString(), anyString(), any()))
-                .willReturn(new PageImpl<>(new ArrayList<>()));
-
-        Page<ReprtStats> result = reportStatsService.getReprtStatsList("TYPE_A", "2024-01-01", "2024-01-31", 0, 10);
-
-        assertThat(result).isNotNull();
-        verify(reprtStatsRepository).findByConditions(eq("TYPE_A"), eq("2024-01-01 00:00:00"), eq("2024-01-31 23:59:59"), any(PageRequest.class));
-    }
-
-    @Test
-    @DisplayName("보고서 통계 총 개수 조회")
-    void getReprtStatsCount() {
-        given(reprtStatsRepository.countByConditions(anyString(), anyString(), anyString())).willReturn(5L);
-
-        long count = reportStatsService.getReprtStatsCount("TYPE_A", "2024-01-01", "2024-01-31");
-
-        assertThat(count).isEqualTo(5L);
-    }
-
-    @Test
     @DisplayName("일자별 보고서 통계 조회")
     void getReprtStatsByDate() {
         given(reprtStatsRepository.countByDate(anyString(), anyString())).willReturn(new ArrayList<>());
@@ -108,22 +85,6 @@ class ReportStatsServiceTest {
         List<Object[]> result = reportStatsService.getReprtStatsByDate("2024-01-01", "2024-01-31");
 
         assertThat(result).isEmpty();
-    }
-
-    @Test
-    @DisplayName("유형별 보고서 통계 조회")
-    void getReprtStatsByType() {
-        given(reprtStatsRepository.countByReprtType(anyString(), anyString())).willReturn(new ArrayList<>());
-        reportStatsService.getReprtStatsByType("2024-01-01", "2024-01-31");
-        verify(reprtStatsRepository).countByReprtType(anyString(), anyString());
-    }
-
-    @Test
-    @DisplayName("상태별 보고서 통계 조회")
-    void getReprtStatsByStatus() {
-        given(reprtStatsRepository.countByReprtSttus(anyString(), anyString())).willReturn(new ArrayList<>());
-        reportStatsService.getReprtStatsByStatus("2024-01-01", "2024-01-31");
-        verify(reprtStatsRepository).countByReprtSttus(anyString(), anyString());
     }
 
     @Test
@@ -136,25 +97,6 @@ class ReportStatsServiceTest {
         verify(reprtStatsRepository).save(captor.capture());
         assertThat(captor.getValue().getRptpSn()).isNull();
         assertThat(captor.getValue().getReprtNm()).isEqualTo("Test");
-    }
-    
-    @Test
-    @DisplayName("데이터 이용 현황 목록 조회")
-    void getDtaUseStatsList() {
-        given(dtaUseStatsRepository.findByDateRange(anyString(), anyString(), any()))
-                .willReturn(new PageImpl<>(new ArrayList<>()));
-        
-        Page<DtaUseStats> result = reportStatsService.getDtaUseStatsList("2024-01-01", "2024-01-31", 0, 10);
-        
-        assertThat(result).isNotNull();
-    }
-
-    @Test
-    @DisplayName("데이터 이용 현황 총 개수 조회")
-    void getDtaUseStatsCount() {
-        given(dtaUseStatsRepository.countByDateRange(anyString(), anyString())).willReturn(10L);
-        long count = reportStatsService.getDtaUseStatsCount("2024-01-01", "2024-01-31");
-        assertThat(count).isEqualTo(10L);
     }
     
     @Test
@@ -184,7 +126,7 @@ class ReportStatsServiceTest {
 
         reportStatsService.getBbsStatsByDate("2024-01-01", "2024-01-31");
 
-        verify(postStatisticsContributor).countPostsByDate("2024-01-01 00:00:00", "2024-01-31 23:59:59");
+        verify(postStatisticsContributor).countPostsByDate("2024-01-01 00:00:00", "2024-02-01 00:00:00");
         verify(dtaUseStatsRepository, never()).countByDate(anyString(), anyString());
     }
 
@@ -203,11 +145,61 @@ class ReportStatsServiceTest {
         assertThat(reportStatsService.getBbsStatsByDate("2024-01-01", "2024-01-31")).isEmpty();
     }
 
+    /**
+     * [2026-09-25] 날짜 형식이 틀리면 종전에는 DateTimeParseException 이 500 으로 끝났다(주간 API 스캔이
+     * 퍼징하는 파라미터다). 모든 기간 조회가 같은 해석기를 지나므로 대표 경로마다 400 을 확인한다.
+     */
+    @ParameterizedTest
+    @CsvSource({"abc", "2026-13-01", "2026-09-25T00:00:00", "2026925"})
+    @DisplayName("날짜 형식이 틀리면 400(INVALID_INPUT_VALUE)이고 저장소를 부르지 않는다")
+    void malformedDatesAreRejectedAsInvalidInput(String malformed) {
+        for (org.junit.jupiter.api.function.Executable call : List.<org.junit.jupiter.api.function.Executable>of(
+                () -> reportStatsService.getReprtStatsByDate(malformed, "2026-09-25"),
+                () -> reportStatsService.getDtaUseStatsByDate("2026-09-01", malformed),
+                () -> reportStatsService.getBbsStatsByDate(malformed, malformed),
+                () -> reportStatsService.getUserStatsByDate(malformed, "20260925"),
+                () -> reportStatsService.getConnectStatsByDate("20260901", malformed))) {
+            nuri.foundation.core.exception.BusinessException error = org.junit.jupiter.api.Assertions.assertThrows(
+                    nuri.foundation.core.exception.BusinessException.class, call);
+            assertThat(error.getErrorCode()).isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        verify(reprtStatsRepository, never()).countByDate(anyString(), anyString());
+        verify(dtaUseStatsRepository, never()).countByDate(anyString(), anyString());
+        verify(userLogRepository, never()).countByDate(anyString(), anyString());
+        verify(loginLogRepository, never()).countLoginsByDate(anyString(), anyString());
+    }
+
     @Test
-    @DisplayName("게시판별 데이터 이용 현황 조회")
-    void getDtaUseStatsByBbs() {
-        given(dtaUseStatsRepository.countByBbsId(anyString(), anyString())).willReturn(new ArrayList<>());
-        reportStatsService.getDtaUseStatsByBbs("2024-01-01", "2024-01-31");
-        verify(dtaUseStatsRepository).countByBbsId(anyString(), anyString());
+    @DisplayName("시작일이 종료일보다 늦으면 400(INVALID_INPUT_VALUE)이다 — 같은 날은 허용한다")
+    void reversedRangeIsRejectedButSingleDayIsAllowed() {
+        nuri.foundation.core.exception.BusinessException error = org.junit.jupiter.api.Assertions.assertThrows(
+                nuri.foundation.core.exception.BusinessException.class,
+                () -> reportStatsService.getReprtStatsByDate("2026-09-26", "2026-09-25"));
+        assertThat(error.getErrorCode()).isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+
+        reportStatsService.getReprtStatsByDate("2026-09-25", "20260925");
+        verify(reprtStatsRepository).countByDate("2026-09-25 00:00:00", "2026-09-26 00:00:00");
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "2024-02-29, 2024-02-29, 2024-03-01",
+            "2026-12-31, 2026-12-31, 2027-01-01",
+            "20240229, 2024-02-29, 2024-03-01",
+            "20261231, 2026-12-31, 2027-01-01"
+    })
+    @DisplayName("날짜 단위 통계의 모든 조회는 종료일 다음날 0시를 배타적 상한으로 전달한다")
+    void dateQueriesUseNextDayExclusiveEnd(String day, String normalizedDay, String nextDay) {
+        String start = normalizedDay + " 00:00:00";
+        String endExclusive = nextDay + " 00:00:00";
+        given(postStatistics.getIfAvailable()).willReturn(postStatisticsContributor);
+
+        reportStatsService.getReprtStatsByDate(day, day);
+        reportStatsService.getDtaUseStatsByDate(day, day);
+        reportStatsService.getBbsStatsByDate(day, day);
+
+        verify(reprtStatsRepository).countByDate(start, endExclusive);
+        verify(dtaUseStatsRepository).countByDate(start, endExclusive);
+        verify(postStatisticsContributor).countPostsByDate(start, endExclusive);
     }
 }

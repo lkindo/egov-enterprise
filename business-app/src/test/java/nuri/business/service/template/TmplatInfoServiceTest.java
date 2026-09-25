@@ -96,7 +96,27 @@ class TmplatInfoServiceTest {
         tmplatInfoService.insertTmplatInfo(tmplatDto);
 
         // then
-        verify(templateRepository, times(1)).save(any(Template.class));
+        verify(templateRepository).insert(argThat(template -> "TMPLT_NEW".equals(template.getTmpltId())
+                && "New Template".equals(template.getTmpltNm())
+                && "TMPT01".equals(template.getTmpltSeCd())
+                && "/src/templates/new.html".equals(template.getTmpltPath())
+                && "Y".equals(template.getUseYn())));
+        verify(templateRepository, never()).save(any(Template.class));
+    }
+
+    @Test
+    @DisplayName("기존 ID 등록은 수정으로 바뀌지 않고 중복으로 거절한다")
+    void insertTmplatInfoRejectsExistingId() {
+        when(templateRepository.existsById("TMPLT_EXISTS")).thenReturn(true);
+        TemplateDto request = TemplateDto.builder().tmpltId("TMPLT_EXISTS")
+                .tmpltNm("변경 시도").tmpltSeCd("TMPT01").tmpltPath("/changed").useYn("N").build();
+
+        assertThatThrownBy(() -> tmplatInfoService.insertTmplatInfo(request))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.DUPLICATE_RESOURCE);
+
+        verify(templateRepository, never()).save(any(Template.class));
+        verify(templateRepository, never()).insert(any(Template.class));
     }
 
     @Test

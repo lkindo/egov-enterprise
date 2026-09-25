@@ -113,9 +113,10 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
      * 읽는 테이블에 쓰는 쪽이 없어 어떤 기간에도 값이 없다 — 사용자는 조건만 계속 바꾸게 된다.
      *
      * [2026-08-28] CONTENT_STATS 는 이 목록에서 빠졌다 — 아래 별도 케이스가 그 근거를 고정한다.
+     * [2026-09-25] USER_STATS 도 빠졌다 — writer 가 생겼다. 역시 아래 별도 케이스가 근거를 고정한다.
      */
     expect(client).toContain('UNINSTRUMENTED_TABS');
-    for (const tab of ['USER_STATS', 'DATA_USAGE', 'REPORTS']) {
+    for (const tab of ['DATA_USAGE', 'REPORTS']) {
       expect(client, `${tab} 이 미수집 목록에서 빠졌다`).toMatch(
         new RegExp(`UNINSTRUMENTED_TABS[\\s\\S]{0,200}${tab}`),
       );
@@ -157,6 +158,36 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
     expect(contributor, '게시글 집계 포트 구현이 게시판을 세지 않는다')
       .toContain('boardRepository.countPostsByDate');
     expect(contributor).not.toContain('dtaUseStatsRepository');
+  });
+
+  /**
+   * USER_STATS 를 미수집 목록에서 뺀 근거를 **서버 배선에 결속**한다.
+   *
+   * 2026-08-28 판정 당시 tb_user_log 에는 쓰는 코드가 없었다. 2026-09-03 에 UserActivityLogAggregator 가
+   * 생겨 인증 사용자의 API 요청을 일자별로 적재하는데, 화면은 그 뒤에도 "수집되지 않는다" 고 말했다.
+   * writer 가 다시 사라지면 화면이 거짓말하게 되므로(값 0 을 측정값처럼 보인다) writer 와 판독 경로를
+   * 함께 검사한다. 카드 이름도 판독 값(SUM(crt_cnt) = 등록 요청 수)에 묶는다.
+   */
+  it('USER_STATS 가 미수집이 아닌 이유는 사용자 활동 writer 가 실제로 적재하기 때문이다', () => {
+    expect(client).not.toMatch(/UNINSTRUMENTED_TABS[^;]*USER_STATS/);
+
+    const aggregator = stripComments(readRepo(
+      'business-core/src/main/java/nuri/business/service/log/UserActivityLogAggregator.java',
+    ));
+    expect(aggregator, '사용자 활동 writer 가 컴포넌트로 등록되지 않는다').toContain('@Component');
+    expect(aggregator, '사용자 활동 writer 가 tb_user_log 에 적재하지 않는다')
+      .toContain('userLogRepository.upsertActivityCounts');
+
+    const service = readRepo('business-app/src/main/java/nuri/business/service/stats/ReportStatsService.java');
+    const method = service.slice(service.indexOf('public List<Object[]> getUserStatsByDate'));
+    expect(method.slice(0, method.indexOf('}'))).toContain('userLogRepository.countByDate');
+
+    const repository = readRepo('business-core/src/main/java/nuri/business/domain/log/UserLogRepository.java');
+    const query = repository.slice(repository.indexOf('List<Object[]> countByDate') - 600,
+      repository.indexOf('List<Object[]> countByDate'));
+    expect(query, '사용자 통계의 첫 수치 열이 등록 건수가 아니다 — 카드 이름을 함께 바꿔라')
+      .toMatch(/SUM\(crt_cnt\)\s+as\s+creatCo/);
+    expect(client).toContain('label="사용자 등록 요청 수"');
   });
 
   it('SYSTEM_STATS 는 미수집 목록에 넣지 않는다 — 이 축만 실제 writer 가 있다', () => {
@@ -474,12 +505,13 @@ describe('미수집 축을 0으로 보여 주지 않는다', () => {
   it('미수집으로 고지한 축의 요약 카드가 합계를 숫자로 찍지 않는다', () => {
     // 고지 목록이 계약의 입력이다 — 여기서 축이 빠지면(writer 신설) 이 검사도 함께 판정한다.
     expect(statsHub, '미수집 목록을 찾지 못했다 — 계약이 vacuous 하다')
-      .toContain("UNINSTRUMENTED_TABS: readonly StatsTab[] = ['USER_STATS', 'DATA_USAGE', 'REPORTS']");
+      .toContain("UNINSTRUMENTED_TABS: readonly StatsTab[] = ['DATA_USAGE', 'REPORTS']");
 
-    expect(statsHub).not.toContain('sumStatsCo(userStats)');
     expect(statsHub).not.toContain('sumStatsCo(dataUsage)');
-    // 계측 원천이 있는 접속 통계는 그대로 값을 보여 준다 — 금지만 하는 계약이 되지 않게.
+    // 계측 원천이 있는 축은 그대로 값을 보여 준다 — 금지만 하는 계약이 되지 않게.
+    // [2026-09-25] 사용자 축은 writer 가 생겨 값을 되살렸다(위 USER_STATS 결속 케이스).
     expect(statsHub).toContain('sumStatsCo(connectStats)');
+    expect(statsHub).toContain('sumStatsCo(userStats)');
   });
 });
 

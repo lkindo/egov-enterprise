@@ -2952,6 +2952,26 @@ export interface paths {
         patch: operations["moveUsersToDept"];
         trace?: never;
     };
+    "/api/v1/admin/content/community/{cmntySn}/members/{userId}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 커뮤니티 회원 탈퇴 처리
+         * @description 승인된 회원(APPROVED)을 탈퇴 상태(WITHDRAWN)로 옮깁니다. 행은 남아 가입·탈퇴 일자를 보존하고, 회원 전용 게시판 접근이 즉시 끊깁니다. 회원이 아니면 400 입니다. 탈퇴한 사용자는 다시 가입을 신청할 수 있습니다.
+         */
+        patch: operations["withdrawMember"];
+        trace?: never;
+    };
     "/api/v1/admin/content/community/{cmntySn}/members/{userId}/approve": {
         parameters: {
             query?: never;
@@ -3661,12 +3681,16 @@ export interface paths {
         };
         /**
          * 내 커뮤니티 멤버십 상태
-         * @description 현재 사용자의 특정 커뮤니티 멤버십 상태(NONE·REQUESTED·MEMBER)를 조회합니다.
+         * @description 현재 사용자의 특정 커뮤니티 멤버십 상태(NONE·REQUESTED·MEMBER·WITHDRAWN)를 조회합니다.
          */
         get: operations["getMyMembership"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * 커뮤니티 탈퇴
+         * @description 현재 사용자가 회원인 커뮤니티에서 탈퇴합니다. 회원 전용 게시판 접근이 즉시 끊기며, 다시 가입하려면 새로 신청해 승인을 받아야 합니다. 회원이 아니면 400 입니다.
+         */
+        delete: operations["leaveCommunity"];
         options?: never;
         head?: never;
         patch?: never;
@@ -5085,8 +5109,10 @@ export interface components {
              * @description 생성일시
              */
             readonly crtDt?: string | null;
-            /** @description 현재 사용자가 수정·삭제할 수 있는지(서버 판정) */
+            /** @description 현재 사용자가 수정할 수 있는지(서버 판정) */
             readonly editable?: boolean;
+            /** @description 현재 사용자가 삭제할 수 있는지(서버 판정) */
+            readonly deletable?: boolean;
         };
         ApprovalApproverDto: {
             userId?: string;
@@ -7684,7 +7710,7 @@ export interface components {
              * @description 멤버십 상태
              * @enum {string}
              */
-            status?: "NONE" | "REQUESTED" | "MEMBER" | "UNKNOWN";
+            status?: "NONE" | "REQUESTED" | "MEMBER" | "WITHDRAWN" | "UNKNOWN";
             /** @description 가입(신청)일자 yyyyMMdd — 행이 없으면 null */
             joinYmd?: string | null;
         };
@@ -9535,10 +9561,10 @@ export interface components {
             /** @description 사용자 이름 — 사용자를 찾지 못하면 null */
             userNm?: string | null;
             /**
-             * @description 멤버십 상태 — REQUESTED(가입 신청)·APPROVED(회원). 어휘 밖 코드는 null
+             * @description 멤버십 상태 — REQUESTED(가입 신청)·APPROVED(회원)·WITHDRAWN(탈퇴). 어휘 밖 코드는 null
              * @enum {string|null}
              */
-            status?: "REQUESTED" | "APPROVED" | null;
+            status?: "REQUESTED" | "APPROVED" | "WITHDRAWN" | null;
             /** @description 원본 상태 코드(mbr_stts_cd) */
             mbrSttsCd?: string;
             /** @description 관리자 여부(Y/N) */
@@ -28030,6 +28056,76 @@ export interface operations {
             };
         };
     };
+    withdrawMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 커뮤니티 일련번호 */
+                cmntySn: number;
+                /** @description 사용자 식별자(esntlId) */
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     approveMember: {
         parameters: {
             query?: never;
@@ -30557,6 +30653,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseCommunityMembershipDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    leaveCommunity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cmntySn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -34040,8 +34203,8 @@ export interface operations {
     getMembers: {
         parameters: {
             query?: {
-                /** @description 멤버십 상태 필터(REQUESTED·APPROVED). 생략하면 전체 */
-                status?: "REQUESTED" | "APPROVED";
+                /** @description 멤버십 상태 필터(REQUESTED·APPROVED·WITHDRAWN). 생략하면 전체 */
+                status?: "REQUESTED" | "APPROVED" | "WITHDRAWN";
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */

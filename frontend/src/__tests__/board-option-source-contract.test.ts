@@ -36,7 +36,6 @@ const UNSEEDED_CONSTANTS = [
 /** 사용자가 게시판을 고르거나, 게시판 없이 진입하면 기본값이 필요한 화면들. */
 const BOARD_CHOICE_SCREENS = [
   'app/admin/community/board/CommunityBoardClient.tsx',
-  'app/admin/community/[id]/CommunityDetailClient.tsx',
   'app/admin/community/boards/select-board-list/page.tsx',
   'app/admin/help/KnowledgeHubClient.tsx',
 ] as const;
@@ -62,10 +61,11 @@ describe('게시판 선택지는 서버 목록에서 온다', () => {
     expect(violations).toEqual([]);
   });
 
-  it('게시판을 고르게 하는 두 화면은 useBoardOptions 로 목록을 받는다', () => {
+  it('게시판을 고르게 하는 화면은 useBoardOptions 로 목록을 받는다', () => {
     // [2026-09-05 DEC-OPS-034] 종전 세 화면 중 boards/[id] 작성 폼은 정본 작성 화면으로 수렴돼 삭제됐다.
-    //   BOARD_CHOICE_SCREENS 의 앞 두 항목만 select 화면이다(select-board-list/page.tsx 는 서버 기본값 화면).
-    const selectScreens = BOARD_CHOICE_SCREENS.slice(0, 2);
+    // [2026-09-25 DEC-OPS-130] /admin/community/[id] 도 정본 커뮤니티 상세로의 redirect 가 되어 선택 화면이
+    //   하나 남는다. 목록 위치로 자르지 않고 이름으로 적는다 — 앞 항목이 빠지면 서버 기본값 화면이 끌려온다.
+    const selectScreens = ['app/admin/community/board/CommunityBoardClient.tsx'] as const;
     for (const screen of selectScreens) {
       const code = stripComments(read(screen));
       expect(code, `${screen} 가 게시판 목록을 서버에서 받지 않는다`).toContain('useBoardOptions');

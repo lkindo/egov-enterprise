@@ -71,23 +71,26 @@ public class MemoReportService {
 
     /**
      * 현재 주체가 이 보고를 수정·삭제할 수 있는지 — {@code updateMemoReport}·{@code deleteMemoReport}
-     * 가 쓰는 {@code assertOwnerOrAdmin(frstRgtrId)} 와 <b>같은 규칙을 예외 대신 boolean 으로</b>
-     * 계산한다.
+     * 의 기능 권한과 {@code assertOwnerOrPermission} 소유·전체 권한 규칙을
+     * 예외 대신 boolean 으로 계산한다.
      *
      * <p>[2026-09-08 PD-RPT-001] 화면이 인가를 흉내내지 않게 하려고 판정을 서버에 둔다. 그 인가는
      * loginId 축(감사 컬럼 {@code frstRgtrId})인데 같은 도메인의 열람 인가는 esntlId 축
      * ({@code userId}·{@code rptrId})이라, 화면은 응답만 보고 판정할 수 없었다.
      *
      * <p>⚠ 이 값은 <b>표시용 힌트</b>이고 인가 자체가 아니다. 실제 차단은 쓰기 경로의
-     * {@code assertOwnerOrAdmin} 이 그대로 집행한다(백엔드 헌법 제8조 — 이중 검증).
+     * {@code assertOwnerOrPermission} 과 컨트롤러 기능 권한이 그대로 집행한다(백엔드 헌법 제8조 — 이중 검증).
      */
-    private boolean canModify(MemoReport entity) {
-        if (nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_READ_ALL")) {
+    private boolean canModify(MemoReport entity, String operationPermission, String overridePermission) {
+        if (!nuri.business.security.util.SecurityUtil.hasPermission(operationPermission)) {
+            return false;
+        }
+        if (nuri.business.security.util.SecurityUtil.hasPermission(overridePermission)) {
             return true;
         }
         String owner = entity.getFrstRgtrId();
         if (!org.springframework.util.StringUtils.hasText(owner)) {
-            // 작성자 정보가 없으면 소유 판정이 불가능하다 — assertOwnerOrAdmin 도 같은 입력에서
+            // 작성자 정보가 없으면 소유 판정이 불가능하다 — assertOwnerOrPermission 도 같은 입력에서
             // 거부하므로(현재 loginId 와 null 은 같을 수 없다) 화면에도 열어 주지 않는다.
             return false;
         }
@@ -96,10 +99,11 @@ public class MemoReportService {
                 .isPresent();
     }
 
-    /** 매핑 결과에 서버 판정({@code editable})을 실어 준다. 매퍼는 요청 컨텍스트를 모른다. */
+    /** 매퍼는 요청 컨텍스트를 모르므로 수정·삭제의 독립적인 서버 판정을 덧붙인다. */
     private MemoReportDto toDtoWithPermission(MemoReport entity) {
         MemoReportDto dto = memoReportMapper.toDto(entity);
-        dto.setEditable(canModify(entity));
+        dto.setEditable(canModify(entity, "MEMO_RPT_UPDATE", "MEMO_RPT_UPDATE_ALL"));
+        dto.setDeletable(canModify(entity, "MEMO_RPT_DELETE", "MEMO_RPT_DELETE_ALL"));
         return dto;
     }
 

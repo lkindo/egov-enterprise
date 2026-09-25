@@ -4796,6 +4796,16 @@
               }
             }
           },
+          "409": {
+            "description": "게시판이 이 템플릿을 참조 중이라 삭제할 수 없음 (code: C014)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
           "400": {
             "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
             "content": {
@@ -4828,16 +4838,6 @@
           },
           "404": {
             "description": "대상을 찾을 수 없음 (code: C003/C007)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "게시판이 이 템플릿을 참조 중이라 삭제할 수 없음 (code: C014)",
             "content": {
               "application/json": {
                 "schema": {
@@ -23069,6 +23069,16 @@
               }
             }
           },
+          "409": {
+            "description": "동일 복합키 중복 또는 유효하지 않은 행사 참조로 데이터 제약과 충돌 (code: C008)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
           "400": {
             "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
             "content": {
@@ -23091,16 +23101,6 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "동일 복합키 중복 또는 유효하지 않은 행사 참조로 데이터 제약과 충돌 (code: C008)",
             "content": {
               "application/json": {
                 "schema": {
@@ -23327,6 +23327,16 @@
               }
             }
           },
+          "404": {
+            "description": "수신자로 지정한 사용자가 존재하지 않음 — 부분 발송 없이 전체 거부 (code: C002)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
           "400": {
             "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
             "content": {
@@ -23349,16 +23359,6 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "수신자로 지정한 사용자가 존재하지 않음 — 부분 발송 없이 전체 거부 (code: C002)",
             "content": {
               "application/json": {
                 "schema": {
@@ -24559,6 +24559,99 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/content/community/{cmntySn}/members/{userId}/withdraw": {
+      "patch": {
+        "tags": [
+          "Community"
+        ],
+        "summary": "커뮤니티 회원 탈퇴 처리",
+        "description": "승인된 회원(APPROVED)을 탈퇴 상태(WITHDRAWN)로 옮깁니다. 행은 남아 가입·탈퇴 일자를 보존하고, 회원 전용 게시판 접근이 즉시 끊깁니다. 회원이 아니면 400 입니다. 탈퇴한 사용자는 다시 가입을 신청할 수 있습니다.",
+        "operationId": "withdrawMember",
+        "parameters": [
+          {
+            "name": "cmntySn",
+            "in": "path",
+            "description": "커뮤니티 일련번호",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "description": "사용자 식별자(esntlId)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27899,7 +27992,7 @@
           "Community User"
         ],
         "summary": "내 커뮤니티 멤버십 상태",
-        "description": "현재 사용자의 특정 커뮤니티 멤버십 상태(NONE·REQUESTED·MEMBER)를 조회합니다.",
+        "description": "현재 사용자의 특정 커뮤니티 멤버십 상태(NONE·REQUESTED·MEMBER·WITHDRAWN)를 조회합니다.",
         "operationId": "getMyMembership",
         "parameters": [
           {
@@ -27920,6 +28013,87 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseCommunityMembershipDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Community User"
+        ],
+        "summary": "커뮤니티 탈퇴",
+        "description": "현재 사용자가 회원인 커뮤니티에서 탈퇴합니다. 회원 전용 게시판 접근이 즉시 끊기며, 다시 가입하려면 새로 신청해 승인을 받아야 합니다. 회원이 아니면 400 입니다.",
+        "operationId": "leaveCommunity",
+        "parameters": [
+          {
+            "name": "cmntySn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
                 }
               }
             }
@@ -33670,13 +33844,14 @@
           {
             "name": "status",
             "in": "query",
-            "description": "멤버십 상태 필터(REQUESTED·APPROVED). 생략하면 전체",
+            "description": "멤버십 상태 필터(REQUESTED·APPROVED·WITHDRAWN). 생략하면 전체",
             "required": false,
             "schema": {
               "type": "string",
               "enum": [
                 "REQUESTED",
-                "APPROVED"
+                "APPROVED",
+                "WITHDRAWN"
               ]
             }
           },
@@ -35440,7 +35615,12 @@
           },
           "editable": {
             "type": "boolean",
-            "description": "현재 사용자가 수정·삭제할 수 있는지(서버 판정)",
+            "description": "현재 사용자가 수정할 수 있는지(서버 판정)",
+            "readOnly": true
+          },
+          "deletable": {
+            "type": "boolean",
+            "description": "현재 사용자가 삭제할 수 있는지(서버 판정)",
             "readOnly": true
           }
         },
@@ -42034,6 +42214,7 @@
               "NONE",
               "REQUESTED",
               "MEMBER",
+              "WITHDRAWN",
               "UNKNOWN"
             ]
           },
@@ -46877,10 +47058,11 @@
               "string",
               "null"
             ],
-            "description": "멤버십 상태 — REQUESTED(가입 신청)·APPROVED(회원). 어휘 밖 코드는 null",
+            "description": "멤버십 상태 — REQUESTED(가입 신청)·APPROVED(회원)·WITHDRAWN(탈퇴). 어휘 밖 코드는 null",
             "enum": [
               "REQUESTED",
-              "APPROVED"
+              "APPROVED",
+              "WITHDRAWN"
             ]
           },
           "mbrSttsCd": {

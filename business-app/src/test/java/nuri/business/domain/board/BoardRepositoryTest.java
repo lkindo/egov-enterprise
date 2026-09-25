@@ -62,6 +62,32 @@ class BoardRepositoryTest {
     }
 
     @Test
+    @DisplayName("일별 게시글 집계는 마지막 마이크로초를 포함하고 다음날 0시·비활성 글은 제외한다")
+    void countPostsByDateUsesHalfOpenRange() {
+        LocalDateTime start = LocalDateTime.of(2024, 2, 29, 0, 0);
+        LocalDateTime end = start.plusDays(1);
+        for (LocalDateTime time : List.of(start.minusNanos(1000), start,
+                end.minusNanos(1000), end, end.plusNanos(1000))) {
+            persistPostAt(time, "Y");
+        }
+        persistPostAt(end.minusNanos(1000), "N");
+        em.clear();
+
+        List<Object[]> rows = boardRepository.countPostsByDate("2024-02-29 00:00:00", "2024-03-01 00:00:00");
+
+        assertThat(rows).hasSize(1);
+        assertThat(rows.get(0)[0]).isEqualTo("2024-02-29");
+        assertThat(((Number) rows.get(0)[1]).longValue()).isEqualTo(2);
+    }
+
+    private void persistPostAt(LocalDateTime time, String useYn) {
+        Board row = boardRepository.saveAndFlush(Board.builder().bbsId(testMaster.getBbsId())
+                .pstTtl("Boundary post").pstCn("body").useYn(useYn).build());
+        em.createNativeQuery("UPDATE tb_bbs_item SET crt_dt = :time WHERE pst_sn = :id")
+                .setParameter("time", time).setParameter("id", row.getPstSn()).executeUpdate();
+    }
+
+    @Test
     @DisplayName("게시글 상세 조회 테스트 (Custom)")
     void findArticleDetailTest() {
         // Given

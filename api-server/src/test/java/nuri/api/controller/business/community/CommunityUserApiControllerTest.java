@@ -19,6 +19,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -99,6 +100,20 @@ class CommunityUserApiControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("REQUESTED"))
                 .andExpect(jsonPath("$.data.joinYmd").value("20260906"));
+    }
+
+    /**
+     * 본인 탈퇴는 대상 사용자를 경로로 받지 않는다 — 언제나 principal(esntlId)이다. 로그인 ID 와 esntlId 를
+     * 다르게 두어, 컨트롤러가 로그인 ID 를 넘기면(소유자 판정이 esntlId 축이라 본인도 거부된다) red 가 되게 한다.
+     */
+    @Test
+    @WithMockCustomUser(username = "login01", esntlId = "ESNTL_01")
+    @DisplayName("커뮤니티 탈퇴 — DELETE …/membership 은 현재 사용자(esntlId)만 탈퇴시킨다")
+    void leaveCommunity_bindsPrincipal() throws Exception {
+        mockMvc.perform(delete("/api/v1/communities/101/membership").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+        org.mockito.Mockito.verify(communityService).withdrawMember(101L, "ESNTL_01");
     }
 
     @Test

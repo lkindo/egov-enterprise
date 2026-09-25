@@ -22,8 +22,10 @@ const RBAC = 'api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizatio
 const RBAC_DOMAINS = ['survey', 'stats', 'system', 'informalsanction'];
 const GATE_OWNERS = {
   'api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java': ['informalsanction'],
+  'api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java': ['system'],
   'api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java': ['board', 'system'],
   'api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java': ['survey'],
+  'api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java': ['template'],
 };
 
 export function composerProfile(manifest, composition) {

@@ -172,7 +172,8 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
     enabled: activeTab === 'SURVEYS'
   });
 
-  // 미수집 축이라 요약 카드는 값을 쓰지 않는다 — 조회는 차트/표가 계속 소비한다.
+  // 자료 이용은 미수집 축이라 요약 카드가 값을 쓰지 않는다 — 조회는 차트/표가 계속 소비한다.
+  const userStats = userQuery.data;
   const connectStats = connectQuery.data;
 
   const surveys = surveyQuery.data;
@@ -191,12 +192,15 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
    *
    * 저장소 실측(2026-08-28): 이 탭들이 읽는 저장소에 save 호출이 저장소 전체에 0건이고
    * Flyway 시드에도 INSERT 가 없다.
-   *   - USER_STATS   → userLogRepository.countByDate      (UserLog.create 호출자 0, save 0)
    *   - DATA_USAGE   → dtaUseStatsRepository.countByDate  (writer 0)
    *   - REPORTS      → reprtStatsRepository.countByDate   (writer 0)
    *
-   * 값이 있는 탭은 둘이다.
+   * 값이 있는 탭은 셋이다.
    *   - SYSTEM_STATS → loginLog. LogService 가 실제로 기록한다.
+   *   - USER_STATS   → **[2026-09-25] 미수집 목록에서 뺐다.** 2026-09-03 부터
+   *     UserActivityLogAggregator 가 인증 사용자의 API 요청을 tb_user_log 에 일자별로 적재한다
+   *     (OCI 실측 326행). 종전 문구는 값이 있어도 "수집되지 않는다" 고 말했다. 이 탭이 세는 것은
+   *     countByDate 의 SUM(crt_cnt), 즉 **등록 요청 수**다 — 조회 요청은 세지 않는다.
    *   - CONTENT_STATS→ **[2026-08-28] 미수집 목록에서 뺐다.** 종전에는 이 탭도
    *     `dtaUseStatsRepository.countByDate` 를 불러 DATA_USAGE 와 **완전히 같은 질의**였다.
    *     이제 `boardRepository.countPostsByDate` 로 게시글을 실제로 센다 — 게시글은 제품이
@@ -209,7 +213,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
    * 되어, 사용자가 기간만 계속 바꾸게 만든다. 수집 자체가 없다는 사실을 그대로 말한다.
    * (같은 규율의 선례: SearchClient '아직 제공되지 않습니다', observability '아직 연동되지 않았습니다')
    */
-  const UNINSTRUMENTED_TABS: readonly StatsTab[] = ['USER_STATS', 'DATA_USAGE', 'REPORTS'];
+  const UNINSTRUMENTED_TABS: readonly StatsTab[] = ['DATA_USAGE', 'REPORTS'];
   const isUninstrumentedTab = UNINSTRUMENTED_TABS.includes(activeTab);
   const emptyChartMessage = isUninstrumentedTab
     ? '이 지표는 아직 수집되지 않습니다. 기간을 바꿔도 결과는 달라지지 않습니다.'
@@ -344,11 +348,14 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                 요약 카드만 합계 0을 숫자로 찍어 자기모순이었다. 사용자는 "활동이 0건" 으로
                 읽는다 — 실제로는 그 표에 쓰는 코드가 저장소에 없어 **아무도 기록하지 않는다**.
                 계측 원천(writer)이 생기면 그때 UNINSTRUMENTED_TABS 에서 빼고 값을 되살린다.
+
+                [2026-09-25] 사용자 축은 writer(UserActivityLogAggregator)가 생겨 값을 되살렸다. 이름은
+                세는 것 그대로 '등록 요청 수' 다 — '활동 집계' 는 조회까지 포함하는 것처럼 읽힌다.
               */}
               <StatSummaryCard
                 icon={<Activity size={24} />}
-                label="사용자 활동 집계"
-                value="미수집"
+                label="사용자 등록 요청 수"
+                value={userQuery.isError ? '—' : sumStatsCo(userStats).toLocaleString()}
               />
               <StatSummaryCard
                 icon={<Monitor size={24} />}

@@ -374,7 +374,7 @@ public class BoardService extends BaseAbstractService {
                                         "boardRepository.save() 결과는 null 일 수 없습니다")
                                         .getPstSn();
 
-                        // 이벤트 발행 (통계 동기화 등)
+                        // 커밋 뒤 생성 이벤트 발행 — 저장소 안 구독자는 없고 파생 제품의 확장 지점이다(PostCreatedEvent 참조)
                         nuri.foundation.core.util.TransactionUtils.runAfterCommit(
                                 () -> eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), pstSn, userId)));
 

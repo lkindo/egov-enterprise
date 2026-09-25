@@ -4,11 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   joinCommunity: vi.fn(),
+  leaveCommunity: vi.fn(),
+  confirm: vi.fn(),
   getMyMembership: vi.fn(),
   toast: vi.fn(),
   invalidateQueries: vi.fn(),
   // [2026-09-06 DEC-OPS-043] useQuery 목은 queryKey 로 갈라 답한다 — 상세는 initialData, 내 멤버십은 여기 값.
-  membership: undefined as undefined | { cmntySn: number; status: 'NONE' | 'REQUESTED' | 'MEMBER' | 'UNKNOWN'; joinYmd: string | null },
+  membership: undefined as undefined | { cmntySn: number; status: 'NONE' | 'REQUESTED' | 'MEMBER' | 'WITHDRAWN' | 'UNKNOWN'; joinYmd: string | null },
   // [2026-09-08 PD-CMTY-001] 커뮤니티 귀속 게시판.
   getCommunityBoards: vi.fn(),
   boards: undefined as undefined | Array<{ bbsId: string; bbsTtl: string | null; bbsExpln: string | null }>,
@@ -29,11 +31,13 @@ vi.mock('@/services/business/community/communityService', () => ({ communityServ
 vi.mock('@/services/business/user/community/CommunityUserService', () => ({
   communityUserService: {
     joinCommunity: mocks.joinCommunity,
+    leaveCommunity: mocks.leaveCommunity,
     getMyMembership: mocks.getMyMembership,
     getCommunityBoards: mocks.getCommunityBoards,
   },
 }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
+vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
   useQuery: ({ initialData, queryKey, enabled }: { initialData?: unknown; queryKey: unknown[]; enabled?: boolean }) => {
@@ -245,5 +249,91 @@ describe('커뮤니티 가입 — 화면은 실제 승인 절차만 말한다', 
       expect(screen.getByText('이 커뮤니티에 등록된 게시판이 없습니다.')).toBeVisible();
       expect(screen.queryByText('이 커뮤니티의 게시판은 승인된 회원만 볼 수 있습니다.')).toBeNull();
     });
+  });
+});
+
+/**
+ * [2026-09-25] 본인 탈퇴와 재가입. 종전에는 가입만 있고 나갈 길이 없었으며(서버에 전이 메서드만 있었다),
+ * 탈퇴한 사람이 다시 신청하면 행이 남아 있다는 이유로 409 였다. 회원은 탈퇴하고, 탈퇴한 사람은 새로 신청한다.
+ */
+describe('커뮤니티 탈퇴와 재가입', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.boards = [];
+    mocks.boardsEnabled = undefined;
+    mocks.joinCommunity.mockResolvedValue(undefined);
+    mocks.leaveCommunity.mockResolvedValue(undefined);
+    mocks.confirm.mockResolvedValue(true);
+  });
+
+  const renderDetail = () => render(
+    <CommunityDetailHubClient
+      cmntySn={9}
+      initialData={{ cmntySn: 9, cmntyNm: '커뮤니티', cmntyIntroCn: '소개', useYn: 'Y' } as any}
+    />,
+  );
+
+  it('회원의 탈퇴는 destructive 확인 뒤 한 번만 보내고, 처리 중에는 잠기며 실패는 서버 메시지로 안내한다', async () => {
+    mocks.membership = { cmntySn: 9, status: 'MEMBER', joinYmd: '20260801' };
+    let rejectLeave!: (reason?: unknown) => void;
+    mocks.leaveCommunity.mockReturnValueOnce(new Promise<void>((_, reject) => { rejectLeave = reject; }));
+    renderDetail();
+    const leave = screen.getByRole('button', { name: '커뮤니티 탈퇴' });
+
+    act(() => {
+      fireEvent.click(leave);
+      fireEvent.click(leave);
+    });
+
+    await waitFor(() => expect(mocks.leaveCommunity).toHaveBeenCalledTimes(1));
+    expect(mocks.confirm).toHaveBeenCalledTimes(1);
+    expect(mocks.confirm.mock.calls[0][0]).toMatchObject({ variant: 'destructive', confirmText: '탈퇴' });
+    expect(String(mocks.confirm.mock.calls[0][0].message)).toMatch(/회원 전용 게시판을 더 이상 볼 수 없/);
+    expect(mocks.leaveCommunity).toHaveBeenCalledWith(9);
+    expect(leave).toBeDisabled();
+    expect(leave).toHaveAttribute('aria-busy', 'true');
+    expect(leave).toHaveAccessibleName('커뮤니티 탈퇴 중');
+
+    rejectLeave(new Error('승인된 회원만 탈퇴할 수 있습니다.'));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('승인된 회원만 탈퇴할 수 있습니다.', 'error'));
+    await waitFor(() => expect(leave).not.toBeDisabled());
+    expect(mocks.invalidateQueries).not.toHaveBeenCalled();
+  });
+
+  it('탈퇴 확인을 취소하면 보내지 않고, 성공하면 안내하고 멤버십을 다시 읽는다', async () => {
+    mocks.membership = { cmntySn: 9, status: 'MEMBER', joinYmd: '20260801' };
+    mocks.confirm.mockResolvedValueOnce(false);
+    renderDetail();
+    const leave = screen.getByRole('button', { name: '커뮤니티 탈퇴' });
+
+    fireEvent.click(leave);
+    await waitFor(() => expect(leave).not.toBeDisabled());
+    expect(mocks.leaveCommunity).not.toHaveBeenCalled();
+
+    fireEvent.click(leave);
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('커뮤니티에서 탈퇴했습니다.', 'success'));
+    expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['community-membership', 9] });
+  });
+
+  it('회원이 아니면 탈퇴 버튼이 없다', () => {
+    for (const status of ['NONE', 'REQUESTED', 'WITHDRAWN', 'UNKNOWN'] as const) {
+      mocks.membership = { cmntySn: 9, status, joinYmd: null };
+      const view = renderDetail();
+      expect(screen.queryByRole('button', { name: /커뮤니티 탈퇴/ })).not.toBeInTheDocument();
+      view.unmount();
+    }
+  });
+
+  it('탈퇴한 사람은 다시 신청할 수 있고, 게시판은 조회하지 않은 채 사유를 말한다', async () => {
+    mocks.membership = { cmntySn: 9, status: 'WITHDRAWN', joinYmd: '20260801' };
+    renderDetail();
+
+    expect(screen.getByText('탈퇴한 커뮤니티입니다. 다시 가입을 신청해 승인되면 게시판이 보입니다.')).toBeVisible();
+    expect(screen.getByText(/탈퇴한 커뮤니티입니다\. 다시 신청하면 관리자가 검토해 승인하거나 반려합니다\./)).toBeInTheDocument();
+    expect(mocks.boardsEnabled).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: '다시 가입 신청' }));
+    await waitFor(() => expect(mocks.joinCommunity).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('가입을 신청했습니다. 관리자가 승인하면 회원이 됩니다.', 'success'));
   });
 });

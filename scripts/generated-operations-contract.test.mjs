@@ -115,7 +115,8 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   //   승인된 회원·관리자만 목록을 받는다(BoardMasterService#assertCommunityMember).
   // Approval detail and revision submission add two operations to the documented surface.
   // 2026-09-25 DEC-OPS-129: 387 -> 383. 네트워크 모니터링 API 4개(조회 1·501 쓰기 3)를 걷었다.
-  assert.equal(operations.length, 383);
+  // 2026-09-25 DEC-OPS-131: 383 -> 385. 커뮤니티 본인 탈퇴·강제 탈퇴 2개를 더했다.
+  assert.equal(operations.length, 385);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Loader2, UserCheck, UserX } from 'lucide-react';
+import { ArrowLeft, Loader2, UserCheck, UserMinus, UserX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
@@ -22,15 +22,24 @@ const PAGE_SIZE = 20;
 const FILTERS: ReadonlyArray<{ value: CommunityMemberStatusFilter; label: string }> = [
   { value: 'REQUESTED', label: '가입 신청' },
   { value: 'APPROVED', label: '회원' },
+  { value: 'WITHDRAWN', label: '탈퇴' },
   { value: 'ALL', label: '전체' },
 ];
 
 const STATUS_LABEL: Record<string, string> = {
   REQUESTED: '승인 대기',
   APPROVED: '회원',
+  WITHDRAWN: '탈퇴',
 };
 
-type PendingAction = { userId: string; kind: 'approve' | 'reject' };
+const EMPTY_MESSAGE: Record<CommunityMemberStatusFilter, string> = {
+  REQUESTED: '처리할 가입 신청이 없습니다.',
+  APPROVED: '회원이 없습니다.',
+  WITHDRAWN: '탈퇴한 회원이 없습니다.',
+  ALL: '회원도 가입 신청도 없습니다.',
+};
+
+type PendingAction = { userId: string; kind: 'approve' | 'reject' | 'withdraw' };
 
 interface CommunityMembersPanelProps {
   community: Community;
@@ -43,16 +52,17 @@ interface CommunityMembersPanelProps {
  * [2026-09-06 DEC-OPS-043] 종전에는 가입 신청이 `mbrSttsCd='A'` 행을 만들어도 그것을 읽거나 옮기는 화면·API 가
  * 없었다(GAP-CMTY-001 — dead write). 여기서 신청을 승인·반려한다. 기본 필터는 처리할 일이 있는 '가입 신청' 이다.
  *
- * - 승인은 되돌릴 수 있는 전이가 아니지만(탈퇴 절차가 없다) 파괴가 아니므로 확인 없이 한 번 누르면 실행한다.
+ * - 승인은 파괴가 아니므로 확인 없이 한 번 누르면 실행한다.
  * - 반려는 신청 행을 지우므로(사용자는 다시 신청할 수 있다) destructive 확인을 거친다.
- * - 이미 회원인 행에는 반려 버튼을 두지 않는다 — 서버도 400 으로 막지만, 화면이 없는 절차(강제 탈퇴)를 어포던스로
- *   보이지 않기 위해서다(G10).
+ * - 회원 행에는 반려 대신 탈퇴 처리를 둔다(2026-09-25). 회원 전용 게시판 접근이 끊기므로 destructive 확인을 거친다.
+ *   행은 탈퇴 상태로 남고 사용자는 다시 신청할 수 있다.
  * - 이름은 서버가 esntlId 를 해석한 값이고 찾지 못하면 null 이라 식별자를 그대로 보여 준다.
  */
 export function CommunityMembersPanel({ community, onBack }: CommunityMembersPanelProps) {
   const { user } = useAuth();
   const canApprove = canPermission(user, 'COMMUNITY_APPROVE');
   const canReject = canPermission(user, 'COMMUNITY_REJECT');
+  const canWithdraw = canPermission(user, 'COMMUNITY_UPDATE_ALL');
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const confirm = useConfirm();
@@ -127,6 +137,30 @@ export function CommunityMembersPanel({ community, onBack }: CommunityMembersPan
     }
   };
 
+  const handleWithdraw = async (member: CommunityMember) => {
+    if (!canWithdraw) return;
+    if (actionLockRef.current) return;
+    actionLockRef.current = true;
+    setPendingAction({ userId: member.userId, kind: 'withdraw' });
+    try {
+      const ok = await confirm({
+        title: '회원 탈퇴 처리',
+        message: `${displayName(member)} 님을 탈퇴 처리합니다. 회원 전용 게시판을 더 이상 볼 수 없고, 다시 이용하려면 새로 가입을 신청해 승인을 받아야 합니다.`,
+        confirmText: '탈퇴 처리',
+        variant: 'destructive',
+      });
+      if (!ok) return;
+      await communityAdminService.withdrawMember(community.cmntySn, member.userId);
+      toast(`${displayName(member)} 님을 탈퇴 처리했습니다.`, 'success');
+      invalidate();
+    } catch (error) {
+      toast(extractErrorMessage(error, '회원 탈퇴 처리에 실패했습니다.'), 'error');
+    } finally {
+      actionLockRef.current = false;
+      setPendingAction(null);
+    }
+  };
+
   return (
     <section aria-labelledby="community-members-heading" className="space-y-4 pt-2 text-left">
       <div className="flex items-center justify-between gap-2">
@@ -135,7 +169,7 @@ export function CommunityMembersPanel({ community, onBack }: CommunityMembersPan
             {community.cmntyNm} 회원 관리
           </h3>
           <p className="text-xs text-muted-foreground">
-            가입 신청을 승인하면 회원이 됩니다. 반려하면 신청 기록이 삭제되고 사용자는 다시 신청할 수 있습니다. 회원 탈퇴 처리는 아직 제공되지 않습니다.
+            가입 신청을 승인하면 회원이 됩니다. 반려하면 신청 기록이 삭제되고 사용자는 다시 신청할 수 있습니다. 탈퇴 처리한 회원은 회원 전용 게시판을 볼 수 없고, 다시 신청해 승인을 받아야 합니다.
           </p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={onBack} disabled={pendingAction !== null}>
@@ -168,7 +202,7 @@ export function CommunityMembersPanel({ community, onBack }: CommunityMembersPan
         <p className="text-xs text-muted-foreground">불러오는 중…</p>
       ) : members.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
-          {filter === 'REQUESTED' ? '처리할 가입 신청이 없습니다.' : filter === 'APPROVED' ? '회원이 없습니다.' : '회원도 가입 신청도 없습니다.'}
+          {EMPTY_MESSAGE[filter]}
         </p>
       ) : (
         <ul className="divide-y divide-border rounded-lg border border-border" aria-label="회원 목록">
@@ -222,6 +256,23 @@ export function CommunityMembersPanel({ community, onBack }: CommunityMembersPan
                       반려
                     </Button>}
                   </>
+                )}
+                {member.status === 'APPROVED' && canWithdraw && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    aria-label={`${displayName(member)} 탈퇴 처리`}
+                    aria-busy={isPending && pendingAction?.kind === 'withdraw'}
+                    disabled={pendingAction !== null}
+                    onClick={() => { void handleWithdraw(member); }}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    {isPending && pendingAction?.kind === 'withdraw'
+                      ? <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                      : <UserMinus size={14} aria-hidden="true" />}
+                    탈퇴 처리
+                  </Button>
                 )}
               </li>
             );

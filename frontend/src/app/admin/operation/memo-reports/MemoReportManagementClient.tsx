@@ -201,7 +201,7 @@ export default function MemoReportManagementClient() {
     판정할 정보를 받지 못했다** — 그 인가는 loginId 축인데 응답 DTO 에 그 필드가 없고, 같은
     도메인의 열람 인가는 esntlId 축(userId·rptrId)이라 두 축이 다르다.
 
-    사용자 결정으로 서버가 판정 결과만 내려준다(`editable`). 식별자는 싣지 않는다 — loginId 가
+    사용자 결정으로 서버가 수정·삭제 판정 결과만 내려준다(`editable`·`deletable`). 식별자는 싣지 않는다 — loginId 가
     목록 응답에 실리면 계정 열거 표면이 넓어진다. 화면은 그 값으로 액션 노출만 정하고, 실제
     차단은 여전히 서버가 집행한다(백엔드 헌법 제8조 — 이중 검증).
 
@@ -538,31 +538,31 @@ export default function MemoReportManagementClient() {
           footer={
             <div className="flex w-full gap-2">
               {/*
-                editable 은 서버 판정이다(assertOwnerOrAdmin 과 같은 규칙). 화면이 인가를
-                흉내내지 않고 그 결과만 쓴다 — 판정 불가(작성자 정보 없음)도 false 로 온다.
+                서버는 기본 기능 권한과 작성자/대행 권한을 함께 판정한다.
+                수정·삭제는 서로 다른 권한이므로 각각의 capability만 사용한다.
               */}
               {detail?.editable ? (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={openEdit}
-                    disabled={isEditing || isDeletePending}
-                    className="flex-1"
-                  >
-                    수정
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => { void handleDeleteReport(); }}
-                    disabled={isEditing || isDeletePending}
-                    aria-busy={isDeletePending || undefined}
-                    className="flex-1 text-destructive-emphasis hover:bg-destructive/10"
-                  >
-                    {isDeletePending ? '삭제 중…' : '삭제'}
-                  </Button>
-                </>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={openEdit}
+                  disabled={isEditing || isDeletePending}
+                  className="flex-1"
+                >
+                  수정
+                </Button>
+              ) : null}
+              {detail?.deletable ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => { void handleDeleteReport(); }}
+                  disabled={isEditing || isDeletePending}
+                  aria-busy={isDeletePending || undefined}
+                  className="flex-1 text-destructive-emphasis hover:bg-destructive/10"
+                >
+                  {isDeletePending ? '삭제 중…' : '삭제'}
+                </Button>
               ) : null}
               <Button type="button" variant="outline" onClick={closeDetail} className="flex-1">
                 닫기

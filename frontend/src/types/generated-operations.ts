@@ -748,7 +748,7 @@ export const updateMemoReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: MemoReportDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"],["editable"]],
+  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"],["editable"],["deletable"]],
   responseForbiddenPaths: [],
 });
 
@@ -3216,7 +3216,7 @@ export const createMemoReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: MemoReportDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"],["editable"]],
+  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"],["editable"],["deletable"]],
   responseForbiddenPaths: [],
 });
 
@@ -5169,6 +5169,23 @@ export const moveUsersToDeptOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const withdrawMemberOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "withdrawMember",
+  method: "patch",
+  path: "/api/v1/admin/content/community/{cmntySn}/members/{userId}/withdraw",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "cmntySn": z.number().int(), "userId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const approveMemberOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "approveMember",
   method: "patch",
@@ -5862,6 +5879,23 @@ export const getMyMembershipOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: z.lazy(() => CommunityMembershipDtoResponseSchema),
   envelopeSchema: ApiResponseCommunityMembershipDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const leaveCommunityOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "leaveCommunity",
+  method: "delete",
+  path: "/api/v1/communities/{cmntySn}/membership",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "cmntySn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
@@ -6776,7 +6810,7 @@ export const getMembersOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "cmntySn": z.number().int() }).strict(),
-  querySchema: z.object({ "status": z.enum(["REQUESTED","APPROVED"]).optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "status": z.enum(["REQUESTED","APPROVED","WITHDRAWN"]).optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseCommunityMemberDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseCommunityMemberDtoResponseSchema,

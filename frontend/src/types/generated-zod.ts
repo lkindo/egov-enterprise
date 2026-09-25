@@ -165,6 +165,7 @@ export const MemoReportDtoSchema = z.object({
   rptrInqDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   editable: z.boolean().optional(),
+  deletable: z.boolean().optional(),
 });
 export type MemoReportDto = z.infer<typeof MemoReportDtoSchema>;
 
@@ -2359,7 +2360,7 @@ export type ApiResponseCommunityMembershipDto = z.infer<typeof ApiResponseCommun
 // ==========================================================================
 export const CommunityMembershipDtoSchema = z.object({
   cmntySn: z.number().int().optional(),
-  status: z.enum(["NONE","REQUESTED","MEMBER","UNKNOWN"]).optional(),
+  status: z.enum(["NONE","REQUESTED","MEMBER","WITHDRAWN","UNKNOWN"]).optional(),
   joinYmd: z.string().optional().nullable(),
 });
 export type CommunityMembershipDto = z.infer<typeof CommunityMembershipDtoSchema>;
@@ -4373,7 +4374,7 @@ export const CommunityMemberDtoSchema = z.object({
   cmntySn: z.number().int().optional(),
   userId: z.string().optional(),
   userNm: z.string().optional().nullable(),
-  status: z.enum(["REQUESTED","APPROVED"]).optional().nullable(),
+  status: z.enum(["REQUESTED","APPROVED","WITHDRAWN"]).optional().nullable(),
   mbrSttsCd: z.string().optional(),
   mngrYn: z.string().optional(),
   joinYmd: z.string().optional().nullable(),
@@ -4924,6 +4925,7 @@ export const MemoReportDtoResponseSchema = z.object({
   rptrInqDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   editable: z.boolean().optional().nullable(),
+  deletable: z.boolean().optional().nullable(),
 });
 
 export const ApprovalApproverDtoRequestSchema = z.object({
@@ -8027,13 +8029,13 @@ export const ApiResponseCommunityMembershipDtoResponseSchema = z.object({
 
 export const CommunityMembershipDtoRequestSchema = z.object({
   cmntySn: z.number().int().optional(),
-  status: z.enum(["NONE","REQUESTED","MEMBER","UNKNOWN"]).optional(),
+  status: z.enum(["NONE","REQUESTED","MEMBER","WITHDRAWN","UNKNOWN"]).optional(),
   joinYmd: z.string().optional().nullable(),
 });
 
 export const CommunityMembershipDtoResponseSchema = z.object({
   cmntySn: z.number().int().optional().nullable(),
-  status: z.enum(["NONE","REQUESTED","MEMBER","UNKNOWN"]).optional().nullable(),
+  status: z.enum(["NONE","REQUESTED","MEMBER","WITHDRAWN","UNKNOWN"]).optional().nullable(),
   joinYmd: z.string().optional().nullable(),
 });
 
@@ -10877,7 +10879,7 @@ export const CommunityMemberDtoRequestSchema = z.object({
   cmntySn: z.number().int().optional(),
   userId: z.string().optional(),
   userNm: z.string().optional().nullable(),
-  status: z.enum(["REQUESTED","APPROVED"]).optional().nullable(),
+  status: z.enum(["REQUESTED","APPROVED","WITHDRAWN"]).optional().nullable(),
   mbrSttsCd: z.string().optional(),
   mngrYn: z.string().optional(),
   joinYmd: z.string().optional().nullable(),
@@ -10888,7 +10890,7 @@ export const CommunityMemberDtoResponseSchema = z.object({
   cmntySn: z.number().int().optional().nullable(),
   userId: z.string().optional().nullable(),
   userNm: z.string().optional().nullable(),
-  status: z.enum(["REQUESTED","APPROVED"]).optional().nullable(),
+  status: z.enum(["REQUESTED","APPROVED","WITHDRAWN"]).optional().nullable(),
   mbrSttsCd: z.string().optional().nullable(),
   mngrYn: z.string().optional().nullable(),
   joinYmd: z.string().optional().nullable(),

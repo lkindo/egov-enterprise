@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>── 날짜를 직접 넣는 이유 ──────────────────────────────────────────────────
  * {@code crt_dt} 는 {@code @CreatedDate} 인데 {@code @DataJpaTest} 슬라이스에는
  * {@code JpaConfig}(@EnableJpaAuditing)가 없어 채워지지 않는다(실측 — 저장만 하면 NULL 이라
- * BETWEEN 이 전부 탈락한다). 감사 설정을 이 테스트에서 켜는 대신 값을 명시해, 기간 안·밖을
+ * 기간 비교에서 전부 탈락한다). 감사 설정을 이 테스트에서 켜는 대신 값을 명시해, 기간 안·밖을
  * 실제로 가르는 검사가 되게 한다.
  */
 @DisplayName("게시물 날짜별 집계 통합 테스트")
@@ -42,7 +42,7 @@ class BoardPostDateStatsTest extends PersistenceTestSupport {
     private EntityManager em;
 
     private static final String FROM = "2026-08-01 00:00:00";
-    private static final String TO = "2026-08-31 23:59:59";
+    private static final String TO = "2026-09-01 00:00:00";
 
     /** 글 하나를 만들고 등록일시를 명시한다. */
     private Board savePost(String title, String useYn, String crtDt) {
@@ -119,5 +119,22 @@ class BoardPostDateStatsTest extends PersistenceTestSupport {
         assertThat(rows.get(0)).hasSize(2);
         assertThat(String.valueOf(rows.get(0)[0])).isEqualTo("2026-08-20");
         assertThat(((Number) rows.get(0)[1]).longValue()).isEqualTo(1L);
+    }
+
+    /**
+     * 실시간 대시보드가 쓰는 기간 건수. 날짜별 집계와 같은 조건(논리 삭제 제외·반개방 구간)을 따라야
+     * 대시보드의 오늘 게시글 수와 게시물 통계의 오늘 행이 같은 숫자를 말한다.
+     */
+    @Test
+    @DisplayName("기간 건수는 날짜별 집계의 합과 같다 — 논리 삭제·기간 밖·종료 경계를 세지 않는다")
+    void betweenCountMatchesDateRowsTotal() {
+        savePost("시작 경계", "Y", "2026-08-01 00:00:00");
+        savePost("기간 안", "Y", "2026-08-15 10:00:00");
+        savePost("지운 글", "N", "2026-08-15 11:00:00");
+        savePost("기간 전", "Y", "2026-07-31 23:59:59");
+        savePost("종료 경계", "Y", "2026-09-01 00:00:00");
+
+        assertThat(boardRepository.countPostsBetween(FROM, TO)).isEqualTo(2L);
+        assertThat(boardRepository.countPostsBetween(FROM, TO)).isEqualTo(totalOf(boardRepository.countPostsByDate(FROM, TO)));
     }
 }

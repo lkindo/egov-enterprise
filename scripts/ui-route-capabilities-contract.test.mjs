@@ -207,7 +207,10 @@ test('proxy shell access is measured separately from unresolved capability roles
   //   페이지가 §A3-1 의 정당화 조건을 하나도 충족하지 않았다), 별칭이 **늘어나는** 방향이지만 은폐가
   //   아니다 — 같은 입력을 맥락 손실 없이 받는 그릇으로 옮긴 결과이고 disposition 은 overlay 에서
   //   consolidate-to-canonical 로 승인 기록됐다.
-  assert.equal(analysis.result.summary.effectiveAliases, 27);
+  // [2026-09-25 DEC-OPS-130] 27 → 28. /admin/community/[id] 가 id 를 보존해 정본 커뮤니티 상세
+  //   (/cop/cmy/selectCommunityDetail/[id])로 보내는 page-redirect 별칭이 됐다. 종전 화면은 id 를 읽지 않고
+  //   선택한 게시판 글 목록을 보여 줘 어떤 커뮤니티를 열어도 같았다. disposition 은 웨이브 5 로 승인 기록됐다.
+  assert.equal(analysis.result.summary.effectiveAliases, 28);
   assert.equal(analysis.result.summary.externalAliases, 2);
   const legacySms = analysis.manifest.routes.find(({ route }) => route === '/cop/sms/selectSmsList');
   assert.deepEqual(

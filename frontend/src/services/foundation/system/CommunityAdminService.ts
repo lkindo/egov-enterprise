@@ -13,6 +13,7 @@ import {
   type GeneratedOperationRequest,
   rejectMemberOperation,
   updateCommunityOperation,
+  withdrawMemberOperation,
 } from '@/types/generated-operations';
 
 export interface Community {
@@ -212,7 +213,6 @@ class CommunityAdminService extends AdminService {
     return this.executeGenerated(deleteCommunityOperation, { path: { cmntySn }, config });
   }
 
-  /** ы由우슜 목록 조회 */
   // ─── 멤버십 (2026-09-06 DEC-OPS-043) ────────────────────────────────────────────────────────
 
   /** 회원·가입 신청 목록. status 를 생략하면 전체. */
@@ -238,6 +238,11 @@ class CommunityAdminService extends AdminService {
   /** 가입 신청 반려 — 신청 행을 지운다(사용자는 다시 신청할 수 있다). 회원 행은 대상이 아니다. */
   async rejectMember(cmntySn: number, userId: string, config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(rejectMemberOperation, { path: { cmntySn, userId }, config });
+  }
+
+  /** 강제 탈퇴 — 회원(APPROVED) 행만 탈퇴(WITHDRAWN)가 된다. 행은 남고 사용자는 다시 신청할 수 있다. */
+  async withdrawMember(cmntySn: number, userId: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.executeGenerated(withdrawMemberOperation, { path: { cmntySn, userId }, config });
   }
 
   async getCommunityPortlet(config?: AxiosRequestConfig): Promise<Community[]> {
