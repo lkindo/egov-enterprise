@@ -1278,6 +1278,11 @@
       "dto": "nuri.business.service.board.dto.SatisfactionDto",
       "fields": [
         {
+          "field": "dgstfnScr",
+          "constraint": "NotNull",
+          "groups": []
+        },
+        {
           "field": "useYn",
           "constraint": "NotBlank",
           "groups": []

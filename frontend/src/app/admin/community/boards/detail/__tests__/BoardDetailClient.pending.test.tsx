@@ -171,11 +171,23 @@ describe('BoardDetailClient action pending contract', () => {
     expect(like).toHaveTextContent('추천 3');
     expect(screen.getByRole('button', { name: '게시글 삭제' })).toBeDisabled();
 
-    rejectLike(new Error('like failed'));
+    // 서버 사유가 없는 전송 오류는 일반 문구로 알린다.
+    rejectLike(new Error('Request failed with status code 500'));
 
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('추천 처리 중 오류가 발생했습니다.', 'error'));
     expect(like).not.toBeDisabled();
     expect(like).toHaveAccessibleName('게시글 추천');
+    expect(like).toHaveTextContent('추천 2');
+  });
+
+  it('이미 추천한 글이면 서버 사유(409)를 그대로 알리고 추천수를 되돌린다 (DIP I6 ④)', async () => {
+    mocks.likePost.mockRejectedValueOnce({ response: { status: 409, data: { message: '이미 추천한 게시글입니다.' } } });
+    await renderDetail();
+    const like = await screen.findByRole('button', { name: '게시글 추천' });
+
+    fireEvent.click(like);
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('이미 추천한 게시글입니다.', 'error'));
     expect(like).toHaveTextContent('추천 2');
   });
 

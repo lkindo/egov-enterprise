@@ -3364,6 +3364,18 @@
         "SecurityUtil.isAdmin()",
         "SecurityUtil.isAdminOrSystem()"
       ]
+    },
+    {
+      "target": "BoardService#incrementLike",
+      "source": "business-app/src/main/java/nuri/business/service/board/BoardService.java",
+      "policy": "AUTHENTICATED",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "assertCommentAccess(bbsId, id);",
+        "SecurityUtil.getCurrentEsntlId()",
+        ".orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))"
+      ],
+      "forbiddenTokens": []
     }
   ],
   "permissionCatalog": "config/governance/permission-catalog.json",

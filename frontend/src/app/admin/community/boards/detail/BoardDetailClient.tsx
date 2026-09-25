@@ -140,9 +140,10 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     setLikeDelta((d) => d + 1);
     try {
       await boardUserService.likePost(bbsId, pstSn);
-    } catch {
+    } catch (likeError) {
       setLikeDelta((d) => d - 1);
-      toast('추천 처리 중 오류가 발생했습니다.', 'error');
+      // 이미 추천했거나(409) 읽을 수 없는 글이면(403·404) 서버가 사유를 말한다(DIP I6 ④).
+      toast(extractErrorMessage(likeError, '추천 처리 중 오류가 발생했습니다.'), 'error');
     } finally {
       actionPendingRef.current = false;
       setActiveAction(null);
