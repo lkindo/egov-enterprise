@@ -236,6 +236,15 @@ public class MailService {
         return value != null && !value.isBlank();
     }
 
+    /** 발신자의 이름. 인증된 발신자는 존재하므로 이름이 비어 있을 때만 식별자를 쓴다. */
+    private String senderDisplayName(String esntlId) {
+        return userContactService.resolve(java.util.List.of(esntlId)).stream()
+                .map(UserContactService.UserContact::userNm)
+                .filter(MailService::hasText)
+                .findFirst()
+                .orElse(esntlId);
+    }
+
     /**
      * 수신 주소 1건 = 발송 이력 1건. 수신자 칸({@code tb_eml_dsptch.rcvr_nm}, 100자)에 표시값을 남기고
      * 커밋 후 비동기 발송을 기동한다. SMTP 수신 주소는 이력이 아니라 비동기 발송에만 넘긴다.
@@ -286,9 +295,13 @@ public class MailService {
      * 어느 경우에도 이력의 발신자 칸이 비지 않게 한다(종전에는 화면 발송이 전부 null 이었다).
      *
      * <p>{@code tb_eml_dsptch.sndpty_nm} 은 100자다. 초과 입력이 저장 시점에 터지지 않도록 자른다.
+     *
+     * <p>[2026-09-26 DIP V4] 인증 주체는 esntlId 라 종전에는 발신자 칸에 내부 식별자가 저장됐다. 그래서 이력의
+     * 발신자 검색(검색 조건 3)이 이름으로는 한 건도 찾지 못했다. 사용자 이름으로 해석해 저장한다 —
+     * 이름이 없는 계정만 식별자를 남긴다. 이미 쌓인 이력은 소급해 바꾸지 않는다.
      */
     private String resolveSenderName(String userId, SentMailDto dto) {
-        String resolved = userId;
+        String resolved = hasText(userId) ? senderDisplayName(userId.trim()) : null;
         if (resolved == null || resolved.isBlank()) {
             resolved = dto.getDsptchPerson();
         }

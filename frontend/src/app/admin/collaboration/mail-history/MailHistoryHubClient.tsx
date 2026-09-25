@@ -65,6 +65,7 @@ export default function MailHistoryHubClient() {
   const mailButtonRefs = useRef(new Map<number, HTMLButtonElement>());
   const deleteRequestRef = useRef(false);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchField, setSearchField] = useState<'1' | '3'>('1');
   const [page, setPage] = useState(1);
   const [selectedMailId, setSelectedMailId] = useState<number | null>(null);
   const debouncedKeyword = useDebouncedValue(searchKeyword, 300);
@@ -76,13 +77,13 @@ export default function MailHistoryHubClient() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ['mail-history', debouncedKeyword, page],
+    queryKey: ['mail-history', searchField, debouncedKeyword, page],
     queryFn: () => mailService.getSentMails({
       page: page - 1,
       size: PAGE_SIZE,
       searchKeyword: debouncedKeyword,
-      // 백엔드 SentMailRepositoryImpl 계약상 '1'은 제목 검색이다.
-      searchCondition: '1',
+      // 백엔드 SentMailRepositoryImpl 계약상 '1'은 제목, '3'은 발신자 검색이다.
+      searchCondition: searchField,
     }),
   });
 
@@ -129,6 +130,12 @@ export default function MailHistoryHubClient() {
 
   const handleSearchChange = (value: string) => {
     setSearchKeyword(value);
+    setPage(1);
+    setSelectedMailId(null);
+  };
+
+  const handleSearchFieldChange = (value: '1' | '3') => {
+    setSearchField(value);
     setPage(1);
     setSelectedMailId(null);
   };
@@ -194,8 +201,19 @@ export default function MailHistoryHubClient() {
             value={searchKeyword}
             onChange={(event) => handleSearchChange(event.target.value)}
             className="pl-9"
-            placeholder="메일 제목 검색"
+            placeholder={searchField === '3' ? '발신자 이름 검색' : '메일 제목 검색'}
           />
+          {/* [2026-09-26 DIP V4] 발신자 칸에 이름이 저장되므로 발신자로도 찾는다. 이전 이력은 식별자가 남아 있어
+              이름으로 찾아지지 않는다. */}
+          <select
+            aria-label="검색 대상"
+            value={searchField}
+            onChange={(event) => handleSearchFieldChange(event.target.value === '3' ? '3' : '1')}
+            className="mt-2 h-[var(--control-h-sm)] rounded-md border border-input bg-background px-2 text-xs"
+          >
+            <option value="1">제목</option>
+            <option value="3">발신자</option>
+          </select>
         </div>
       )}
       master={(
@@ -256,7 +274,7 @@ export default function MailHistoryHubClient() {
                         <SendResultBadge code={mail.sndngResultCode} />
                       </span>
                       <span className="mt-2 block text-xs tabular-nums text-muted-foreground">
-                        {mail.sndngDe}
+                        {mail.dsptchPerson ? `${mail.dsptchPerson} · ` : ''}{mail.sndngDe}
                       </span>
                     </button>
                   </li>
@@ -304,6 +322,12 @@ export default function MailHistoryHubClient() {
             {selectedMail.sj}
           </h3>
           <dl className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-md border border-border bg-muted/20 p-4">
+              <dt className="text-xs font-medium text-muted-foreground">발신자</dt>
+              <dd className="mt-1 break-all text-sm font-semibold text-foreground">
+                {selectedMail.dsptchPerson || '-'}
+              </dd>
+            </div>
             <div className="rounded-md border border-border bg-muted/20 p-4">
               <dt className="text-xs font-medium text-muted-foreground">수신자</dt>
               <dd className="mt-1 break-all text-sm font-semibold text-foreground">

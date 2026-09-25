@@ -196,6 +196,31 @@ describe('MailHistoryHubClient A2 master-detail 계약', () => {
     }));
   });
 
+  it('🚨 발신자를 목록과 상세에 보이고 발신자로도 검색한다 (DIP V4)', async () => {
+    mocks.getSentMails.mockResolvedValue({
+      list: [{ ...sentMails[0], dsptchPerson: '홍발신' }],
+      total: 1,
+      totalPage: 1,
+    });
+    renderClient();
+
+    const mail = await screen.findByRole('button', { name: '월간 운영 보고 발신 이력 상세 열기' });
+    expect(mail).toHaveTextContent('홍발신');
+    fireEvent.click(mail);
+    const detail = screen.getByTestId('master-detail-detail');
+    expect(within(detail).getByText('발신자').nextElementSibling).toHaveTextContent('홍발신');
+
+    fireEvent.change(screen.getByRole('combobox', { name: '검색 대상' }), { target: { value: '3' } });
+    fireEvent.change(screen.getByRole('textbox', { name: '메일 검색' }), { target: { value: '홍' } });
+    await waitFor(() => expect(mocks.getSentMails).toHaveBeenLastCalledWith({
+      page: 0,
+      size: 20,
+      searchKeyword: '홍',
+      searchCondition: '3',
+    }));
+    expect(screen.getByRole('textbox', { name: '메일 검색' })).toHaveAttribute('placeholder', '발신자 이름 검색');
+  });
+
   it('삭제 확인을 취소하면 보존하고 승인하면 선택한 이력만 삭제한다', async () => {
     renderClient();
 

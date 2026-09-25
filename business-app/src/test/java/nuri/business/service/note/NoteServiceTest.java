@@ -31,6 +31,9 @@ class NoteServiceTest {
     @Mock
     private NoteDomainRepository noteRepository;
 
+    @Mock
+    private nuri.business.domain.user.repository.UserRepository userRepository;
+
     @InjectMocks
     private NoteService noteService;
 

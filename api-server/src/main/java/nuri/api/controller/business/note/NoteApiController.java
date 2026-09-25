@@ -40,6 +40,14 @@ public class NoteApiController {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
+    @Operation(summary = "받은 쪽지 미읽음 수",
+            description = "로그인한 사용자가 받고 아직 열지 않은 쪽지 수입니다. 삭제한 쪽지는 세지 않습니다.")
+    @GetMapping("/received/unread-count")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.note.NoteApiController#getUnreadReceivedCount')")
+    public ResponseEntity<ApiResponse<Long>> getUnreadReceivedCount(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(ApiResponse.success(noteService.countUnreadReceived(userDetails.getUsername())));
+    }
+
     @Operation(summary = "발신 쪽지 목록 조회", description = "로그인한 사용자의 발신 쪽지 목록을 조회합니다.")
     @GetMapping("/sent")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.note.NoteApiController#getSentNotes')")

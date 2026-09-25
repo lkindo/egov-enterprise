@@ -148,6 +148,17 @@
       "pack": "demo"
     },
     {
+      "file": "note/NoteService.java",
+      "owner": "note",
+      "target": "user",
+      "module": "business-core",
+      "types": [
+        "nuri.business.domain.user.entity.User",
+        "nuri.business.domain.user.repository.UserRepository"
+      ],
+      "pack": "collaboration"
+    },
+    {
       "file": "note/attachment/NoteAttachmentSourceContributor.java",
       "owner": "note",
       "target": "file",

@@ -28,6 +28,10 @@ public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, Lo
     /** 특정 발신 건에 딸린 수신 사본 중 지정 삭제상태(del_yn) 개수. 양측 삭제 판정용. */
     long countByNoteDsptchNoteSndngSnAndDelYn(Long noteSndngSn, String delYn);
 
+    /** 받고 아직 열지 않은 쪽지 수. 읽음 표시가 없는(NULL) 레거시 행도 열지 않은 것으로 센다. */
+    @Query("SELECT count(r) FROM NoteRecptn r WHERE r.rcvrId = :rcvrId AND r.delYn = 'N' AND (r.openYn IS NULL OR r.openYn <> 'Y')")
+    long countUnreadByRcvrId(@Param("rcvrId") String rcvrId);
+
     /** 특정 발신 건에 딸린 전체 수신 사본(수거 시 일괄 삭제 대상). */
     java.util.List<NoteRecptn> findByNoteDsptchNoteSndngSn(Long noteSndngSn);
 

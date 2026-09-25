@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 386,
-    "generatedDescriptorCount": 386
+    "openApiOperationCount": 387,
+    "generatedDescriptorCount": 387
   },
   "target": {
     "generatedPercent": 100,
@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 337,
-    "eligible": 323,
+    "total": 338,
+    "eligible": 324,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 323,
+      "generated": 324,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "0ddaa70f023fbdbaf9ac19ea73144bed856dc92101f876c65ad51ad533922166",
+  "inventoryHash": "ba62b57adfb3b2066b58b4f34294829d5a7fb8bfe67acb0b8194a0836dfe0f08",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -1838,7 +1838,7 @@
       "file": "frontend/src/services/business/user/NoteService.ts",
       "owner": "NoteService.getReceivedNotes",
       "ordinal": 1,
-      "line": 26,
+      "line": 27,
       "column": 25,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1853,9 +1853,26 @@
     },
     {
       "file": "frontend/src/services/business/user/NoteService.ts",
+      "owner": "NoteService.getUnreadReceivedCount",
+      "ordinal": 1,
+      "line": 38,
+      "column": 9,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "get",
+      "target": "/api/v1/notes/received/unread-count",
+      "operationId": "getUnreadReceivedCount",
+      "descriptorName": "getUnreadReceivedCountOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "2c1c6bd4e3cc77ca9c05"
+    },
+    {
+      "file": "frontend/src/services/business/user/NoteService.ts",
       "owner": "NoteService.getSentNotes",
       "ordinal": 1,
-      "line": 34,
+      "line": 42,
       "column": 25,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1872,7 +1889,7 @@
       "file": "frontend/src/services/business/user/NoteService.ts",
       "owner": "NoteService.sendNote",
       "ordinal": 1,
-      "line": 42,
+      "line": 50,
       "column": 9,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1889,7 +1906,7 @@
       "file": "frontend/src/services/business/user/NoteService.ts",
       "owner": "NoteService.getNote",
       "ordinal": 1,
-      "line": 53,
+      "line": 61,
       "column": 9,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1906,7 +1923,7 @@
       "file": "frontend/src/services/business/user/NoteService.ts",
       "owner": "NoteService.deleteNote",
       "ordinal": 1,
-      "line": 63,
+      "line": 71,
       "column": 10,
       "classification": "generated",
       "transport": "generated-executor",

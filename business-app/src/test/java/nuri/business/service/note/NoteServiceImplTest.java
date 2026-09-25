@@ -48,6 +48,14 @@ class NoteServiceImplTest {
     @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private nuri.business.domain.user.repository.UserRepository userRepository;
+
+    private static nuri.business.domain.user.entity.User user(String esntlId, String name) {
+        return nuri.business.domain.user.entity.User.builder()
+                .userId(esntlId.toLowerCase()).pswd("x").esntlId(esntlId).userNm(name).build();
+    }
+
     @InjectMocks
     private NoteService noteService;
 
@@ -94,6 +102,63 @@ class NoteServiceImplTest {
                 .containsExactlyInAnyOrder("rcv1", "rcv2");
         // 행 단위 조회로 되돌아가면(N+1) 이 단언이 잡는다.
         verify(noteRecptnRepository, never()).findByNoteDsptchNoteSndngSn(any());
+    }
+
+    @Test
+    @DisplayName("🚨 받은 쪽지 목록은 발신자 이름을 싣는다 — 내부 식별자를 이름 자리에 두지 않는다 (DIP V3)")
+    void getReceivedNotes_fillsSenderName() {
+        NoteTrnsmit dsptch = NoteTrnsmit.builder().noteSndngSn(5L).sndrId("ESNTL_SENDER").build();
+        NoteRecptn recptn = NoteRecptn.builder().noteRcptnSn(1L).noteDsptch(dsptch).rcvrId("me").openYn("N").build();
+        given(noteRecptnRepository.searchNoteRecptns(any(), any(), eq("me"), any())).willReturn(new PageImpl<>(List.of(recptn)));
+        given(userRepository.findByEsntlIdIn(List.of("ESNTL_SENDER"))).willReturn(List.of(user("ESNTL_SENDER", "홍발신")));
+
+        Page<NoteDto> result = noteService.getReceivedNotes("me", null, PageRequest.of(0, 10));
+
+        assertThat(result.getContent().get(0).getTrnsmiterNm()).isEqualTo("홍발신");
+        verify(userRepository).findByEsntlIdIn(List.of("ESNTL_SENDER"));
+    }
+
+    @Test
+    @DisplayName("🚨 보낸 쪽지 목록·상세는 수신자 이름과 수신자별 읽음을 싣는다 (DIP V3)")
+    void sentNotes_carryRecipientNamesAndReadState() {
+        NoteTrnsmit dsptch = NoteTrnsmit.builder().noteSndngSn(1L).sndrId("me")
+                .note(Note.builder().noteSn(9L).noteTtl("t").build()).build();
+        given(noteTrnsmitRepository.searchNoteTrnsmits(any(), any(), eq("me"), any())).willReturn(new PageImpl<>(List.of(dsptch)));
+        given(noteTrnsmitRepository.findById(1L)).willReturn(Optional.of(dsptch));
+        List<NoteRecptn> recptns = List.of(
+                NoteRecptn.builder().noteRcptnSn(11L).noteDsptch(dsptch).rcvrId("R1").openYn("Y").rcptnSeCd("1").build(),
+                NoteRecptn.builder().noteRcptnSn(12L).noteDsptch(dsptch).rcvrId("R2").openYn("N").rcptnSeCd("1").build());
+        given(noteRecptnRepository.findByNoteDsptchNoteSndngSnInAndDelYn(List.of(1L), "N")).willReturn(recptns);
+        given(userRepository.findByEsntlIdIn(List.of("R1", "R2"))).willReturn(List.of(user("R1", "김수신"), user("R2", "이수신")));
+
+        NoteDto listed = noteService.getSentNotes("me", null, PageRequest.of(0, 10)).getContent().get(0);
+        NoteDto detail = noteService.getNoteDetail(9L, "sent", 1L, "me");
+
+        for (NoteDto dto : List.of(listed, detail)) {
+            assertThat(dto.getRecipients())
+                    .extracting(r -> r.getRcverNm() + ":" + r.getOpenYn())
+                    .containsExactly("김수신:Y", "이수신:N");
+        }
+    }
+
+    @Test
+    @DisplayName("받은 쪽지 상세도 발신자 이름을 싣는다 (DIP V3)")
+    void receivedDetail_fillsSenderName() {
+        Note note = Note.builder().noteSn(1L).noteTtl("t").build();
+        NoteTrnsmit dsptch = NoteTrnsmit.builder().noteSndngSn(5L).sndrId("ESNTL_SENDER").build();
+        NoteRecptn recptn = NoteRecptn.builder().noteRcptnSn(2L).note(note).noteDsptch(dsptch).rcvrId("me").openYn("N").build();
+        given(noteRecptnRepository.findById(2L)).willReturn(Optional.of(recptn));
+        given(userRepository.findByEsntlIdIn(List.of("ESNTL_SENDER"))).willReturn(List.of(user("ESNTL_SENDER", "홍발신")));
+
+        assertThat(noteService.getNoteDetail(1L, "recv", 2L, "me").getTrnsmiterNm()).isEqualTo("홍발신");
+    }
+
+    @Test
+    @DisplayName("받은 쪽지 미읽음 수는 본인의 삭제하지 않은 미열람 쪽지를 센다 (DIP V3)")
+    void countUnreadReceived() {
+        given(noteRecptnRepository.countUnreadByRcvrId("me")).willReturn(3L);
+
+        assertThat(noteService.countUnreadReceived("me")).isEqualTo(3L);
     }
 
     @Test
