@@ -58,11 +58,16 @@ public class AuthApiController {
 
     @PostMapping("/logout")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.auth.AuthApiController#logout')")
-    public ApiResponse<String> logout(HttpServletResponse response) {
+    public ApiResponse<String> logout(
+            @CookieValue(name = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse response) {
+        // [2026-09-25 DIP D7] 공개 경로다 — 액세스 토큰이 만료된 뒤에도 쿠키의 리프레시 토큰으로 서버 세션을 끝낸다.
+        //   익명 인증 토큰도 isAuthenticated() 가 참이므로 실제 사용자 주체일 때만 신원으로 쓴다.
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated()) {
-            authService.logout(auth.getName());
-        }
+        String esntlId = auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof CustomUserDetails principal
+                ? principal.getUsername()
+                : null;
+        authService.logout(esntlId, refreshToken);
         jwtTokenProvider.removeRefreshTokenCookie(response);
         return ApiResponse.success("Logged out successfully");
     }

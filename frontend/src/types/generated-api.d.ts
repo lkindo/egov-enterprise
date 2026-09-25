@@ -4965,7 +4965,7 @@ export interface components {
         PasswordChangeRequest: {
             /** @description 기존 비밀번호 */
             oldPassword: string;
-            /** @description 새 비밀번호 */
+            /** @description 새 비밀번호 — 8~64자, 영문·숫자·특수문자 각 1자 이상, 공백 불가 */
             newPassword: string;
         };
         ScrapDto: {
@@ -6856,7 +6856,7 @@ export interface components {
         };
         /** @description 관리자용 비밀번호 변경 요청 */
         AdminPasswordChangeRequest: {
-            /** @description 새 비밀번호 */
+            /** @description 새 비밀번호 — 8~64자, 영문·숫자·특수문자 각 1자 이상, 공백 불가 */
             newPassword: string;
         };
         BulkStatusRequest: {
@@ -22490,7 +22490,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                refreshToken?: string;
+            };
         };
         requestBody?: never;
         responses: {
@@ -22505,24 +22507,6 @@ export interface operations {
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
             400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
-            403: {
                 headers: {
                     [name: string]: unknown;
                 };

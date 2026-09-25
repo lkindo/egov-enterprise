@@ -10,6 +10,7 @@ import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { AdminPasswordChangeRequestSchema } from '@/types/generated-zod';
+import { PASSWORD_RULE_HELP, passwordRuleSchema } from '@/lib/validations/password-policy';
 
 const LABELS = {
   newPassword: '새 비밀번호',
@@ -17,13 +18,12 @@ const LABELS = {
 };
 
 /**
- * 관리자 비밀번호 초기화 폼 스키마 — 백엔드 SSOT(`AdminPasswordChangeRequest`: 8~20자)를 확장한다.
+ * 관리자 비밀번호 초기화 폼 스키마 — 백엔드 SSOT(`AdminPasswordChangeRequest` = 공용 PasswordPolicy)를 확장한다.
+ * [2026-09-25 DIP S5] 종전에는 길이(8~20자)만 봐, 등록 때 막힌 약한 비밀번호가 초기화로는 들어갔다.
  * 비밀번호는 공백도 문자이므로 trim 하지 않는다.
  */
 export const adminPasswordResetSchema = AdminPasswordChangeRequestSchema.extend({
-  newPassword: z.string()
-    .min(8, '새 비밀번호는 8~20자여야 합니다.')
-    .max(20, '새 비밀번호는 8~20자여야 합니다.'),
+  newPassword: passwordRuleSchema(),
   confirmPassword: z.string().min(1, '새 비밀번호를 한 번 더 입력해 주세요.'),
 }).refine((values) => values.newPassword === values.confirmPassword, {
   path: ['confirmPassword'],
@@ -133,7 +133,7 @@ export function AdminPasswordResetForm({
           aria-invalid={newPasswordProps['aria-invalid']}
           aria-describedby={[newPasswordProps['aria-describedby'], 'admin-password-reset-help'].filter(Boolean).join(' ')}
         />
-        <p id="admin-password-reset-help" className="text-xs text-muted-foreground">8~20자</p>
+        <p id="admin-password-reset-help" className="text-xs text-muted-foreground">{PASSWORD_RULE_HELP}</p>
         {validation.errors.newPassword ? (
           <p {...validation.messageProps('newPassword')} className="text-xs font-bold text-destructive-emphasis" />
         ) : null}

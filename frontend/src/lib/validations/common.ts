@@ -1,4 +1,5 @@
 import * as z from 'zod';
+import { passwordRuleSchema } from './password-policy';
 
 /**
  * 공통 검증 스키마 및 규칙
@@ -19,13 +20,8 @@ export const commonSchemas = {
     .max(20, { message: '아이디는 최대 20자까지 가능합니다.' })
     .regex(/^[a-zA-Z0-9]+$/, { message: '아이디는 영문과 숫자만 사용 가능합니다.' }),
 
-  // 비밀번호 (특수문자 포함 8~20자)
-  password: z.string()
-    .min(8, { message: '비밀번호는 최소 8자 이상이어야 합니다.' })
-    .max(20, { message: '비밀번호는 최대 20자까지 가능합니다.' })
-    .regex(/^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-])(?=.*[0-9]).{8,20}$/, {
-      message: '비밀번호는 영문, 숫자, 특수문자를 포함해야 합니다.',
-    }),
+  // 비밀번호 — 서버 공용 규칙과 같은 한 곳(password-policy)을 쓴다(DIP S5).
+  password: passwordRuleSchema(),
 
   // 전화번호 (숫자 및 하이픈)
   phone: z.string()
