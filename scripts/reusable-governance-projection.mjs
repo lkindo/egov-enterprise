@@ -15,11 +15,13 @@ export const PROJECTION_PATH = 'config/governance/reusable-governance-projection
 const URL_PATH = 'config/ui-url-state-census.json';
 const APPROVAL_PATH = 'config/ui-url-state-approval.json';
 const ROUTE_PATH = 'config/ui-route-capabilities.json';
+// [2026-09-25 DEC-OPS-130] 검색어를 URL 에 싣던 same-view 훅(use-search-state.ts)은 유일한 소비자
+//   (/admin/community/[id])가 정본으로의 redirect 가 되며 함께 걷었다. 없는 파일을 통제 소스로 두면
+//   "바뀌었다" 로 판정돼 모든 URL 승인이 파생 제품으로 넘어가지 않는다.
 const CONTROL_SOURCES = [
   'frontend/src/proxy.ts',
   'frontend/next.config.ts',
   'frontend/src/lib/auth/page-authorization.ts',
-  'frontend/src/lib/hooks/use-search-state.ts',
 ];
 
 function normalizedText(root, file) {

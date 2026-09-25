@@ -332,7 +332,6 @@ describe('app shell accessibility source contract', () => {
   it('client-local Suspense fallback도 최종 화면과 교대하는 h1을 제공한다', () => {
     const localFallbackSources = [
       ['admin', 'community', 'board', 'CommunityBoardClient.tsx'],
-      ['admin', 'community', '[id]', 'CommunityDetailClient.tsx'],
       ['login', 'LoginClient.tsx'],
       ['search', 'SearchShell.tsx'],
       ['survey', 'stats', 'SurveyStatsClient.tsx'],
