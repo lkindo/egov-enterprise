@@ -30,10 +30,28 @@ public class SatisfactionService {
     private final SatisfactionRepository satisfactionRepository;
     private final SatisfactionMapper satisfactionMapper;
 
-    /** 만족도 등록. 서비스 경계에서도 인증 주체를 재확인한다. */
+    /**
+     * 만족도 등록. 서비스 경계에서도 인증 주체를 재확인한다.
+     *
+     * <p>한 사람은 한 글에 평가 하나만 남긴다(2026-09-26 DIP I6 ⑤). 이미 남긴 평가가 있으면 409 이고,
+     * 스스로(또는 관리자가) 지운 평가가 있으면 그 행을 새 점수·의견으로 되살린다 —
+     * DB UNIQUE({@code uk_tb_dgstfn_info_pst_rgtr})가 삭제된 행도 세기 때문이다.</p>
+     */
     @Transactional
     public Long createSatisfaction(SatisfactionDto dto) {
-        currentLoginId();
+        String loginId = currentLoginId();
+        java.util.Optional<Satisfaction> existing = satisfactionRepository
+                .findByBbsIdAndPstSnAndFrstRgtrId(dto.getBbsId(), dto.getPstSn(), loginId);
+        if (existing.isPresent()) {
+            Satisfaction previous = existing.get();
+            if ("Y".equals(previous.getUseYn())) {
+                throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE,
+                        "이미 이 게시글에 만족도를 남겼습니다. 남긴 평가를 수정해 주세요.");
+            }
+            previous.revive(dto.getDgstfnScr(), dto.getDgstfnCn());
+            previous.setLastMdfrId(loginId);
+            return previous.getDgstfnSn();
+        }
         Satisfaction entity = Satisfaction.builder()
                 .bbsId(dto.getBbsId())
                 .pstSn(dto.getPstSn())

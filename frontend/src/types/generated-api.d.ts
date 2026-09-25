@@ -2887,7 +2887,7 @@ export interface paths {
         head?: never;
         /**
          * 게시글 좋아요(추천)
-         * @description 게시글의 추천수를 1 증가시킵니다. (낙관적 업데이트 테스트용)
+         * @description 게시글을 추천하고 추천수를 돌려줍니다. 글을 읽을 수 있는 사용자만 한 번 추천할 수 있으며, 이미 추천했으면 409 입니다.
          */
         patch: operations["likePost"];
         trace?: never;
@@ -5349,7 +5349,7 @@ export interface components {
             pstSn?: number;
             dgstfnCn?: string;
             /** Format: int32 */
-            dgstfnScr?: number;
+            dgstfnScr: number;
             userId?: string;
             userNm?: string;
             useYn: string;

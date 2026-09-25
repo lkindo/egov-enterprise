@@ -79,6 +79,7 @@ class BoardCommunityAccessTest {
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private nuri.business.service.board.BoardViewCountService viewCountService;
     @Mock private CommunityBoardAccessPort communityBoardAccess;
+    @Mock private nuri.business.domain.board.BoardRecommendationRepository recommendationRepository;
 
     private MockedStatic<nuri.business.security.util.SecurityUtil> securityUtil;
 
@@ -105,7 +106,7 @@ class BoardCommunityAccessTest {
     private BoardService boardService(CommunityBoardAccessPort port) {
         return new BoardService(boardRepository, boardMasterRepository, userService, fileService,
                 attachmentAssignmentPolicy, eventPublisher, new SimpleMeterRegistry(), viewCountService,
-                new BoardMapperImpl(), new nuri.business.core.config.BoardIdProperties(), port);
+                new BoardMapperImpl(), new nuri.business.core.config.BoardIdProperties(), recommendationRepository, port);
     }
 
     private BoardMasterService boardMasterService(CommunityBoardAccessPort port) {

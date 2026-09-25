@@ -45,6 +45,9 @@ class BoardConcurrencyTest {
     @Autowired
     private BoardMasterRepository boardMasterRepository;
 
+    @Autowired
+    private nuri.business.domain.board.BoardRecommendationRepository recommendationRepository;
+
     private String testBbsId;
     private Long testPstSn;
     private ExecutorService executorService;
@@ -81,6 +84,8 @@ class BoardConcurrencyTest {
     @AfterEach
     void tearDown() {
         // 테스트 데이터 청소
+        recommendationRepository.deleteAll(recommendationRepository.findAll().stream()
+                .filter(recommendation -> testPstSn.equals(recommendation.getPstSn())).toList());
         boardRepository.deleteById(testPstSn);
         boardMasterRepository.deleteById(testBbsId);
         
@@ -102,14 +107,19 @@ class BoardConcurrencyTest {
         CountDownLatch doneLatch = new CountDownLatch(threadCount);
 
         // When: 100개 스레드 동시 기동 및 폭격
+        // [2026-09-26 DIP I6 ④] 추천은 한 사람당 한 번이므로 100명의 서로 다른 사용자가 한 번씩 누른다.
+        //   보안 컨텍스트는 스레드 로컬이라 각 스레드가 자기 사용자로 인증한다.
         for (int i = 0; i < threadCount; i++) {
+            int user = i;
             executorService.submit(() -> {
                 try {
                     startLatch.await(); // 모든 스레드가 신호 대기
+                    authenticateAs("liker" + user, "LIKER_" + user);
                     boardService.incrementLike(testBbsId, testPstSn);
                 } catch (Exception e) {
                     System.err.println("동시성 요청 실패: " + e.getMessage());
                 } finally {
+                    org.springframework.security.core.context.SecurityContextHolder.clearContext();
                     doneLatch.countDown();
                 }
             });
@@ -129,6 +139,37 @@ class BoardConcurrencyTest {
         assertThat(finalBoard.getLikeCnt())
                 .withFailMessage("갱신 분실이 발생했습니다. 예상 추천수: 100, 실제 추천수: %d", finalBoard.getLikeCnt())
                 .isEqualTo(100);
+    }
+
+    @Test
+    @DisplayName("🚨 같은 사람이 동시에 열 번 눌러도 추천은 한 번만 센다 — 이력 PK 가 동시 요청에서도 막는다 (DIP I6 ④)")
+    void incrementLike_samePersonConcurrentlyCountsOnce() throws InterruptedException {
+        int threadCount = 10;
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    startLatch.await();
+                    authenticateAs("same-liker", "SAME_LIKER");
+                    boardService.incrementLike(testBbsId, testPstSn);
+                } catch (Exception expectedDuplicate) {
+                    // 두 번째부터는 409(이미 추천) 이다.
+                } finally {
+                    org.springframework.security.core.context.SecurityContextHolder.clearContext();
+                    doneLatch.countDown();
+                }
+            });
+        }
+        startLatch.countDown();
+        assertThat(doneLatch.await(30, TimeUnit.SECONDS)).isTrue();
+
+        assertThat(boardRepository.findById(testPstSn).orElseThrow().getLikeCnt()).isEqualTo(1);
+    }
+
+    private static void authenticateAs(String loginId, String esntlId) {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication(loginId, esntlId, "USER"));
     }
 
     @Test

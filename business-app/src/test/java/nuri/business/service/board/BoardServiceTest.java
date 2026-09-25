@@ -62,6 +62,8 @@ class BoardServiceTest {
     @Mock
     private nuri.foundation.core.community.CommunityBoardAccessPort communityBoardAccess;
     @Mock
+    private nuri.business.domain.board.BoardRecommendationRepository recommendationRepository;
+    @Mock
     private Timer timer;
     @Mock
     private Timer.Sample sample;
@@ -86,6 +88,7 @@ class BoardServiceTest {
                 // 설정 미주입 기본값 = 종전 PUBLIC_FAQ_BOARD_ID 리터럴(BBSMSTR_AAAAAAAAAAAA).
                 // 아래 FAQ 테스트들의 기존 리터럴 기대값을 그대로 두어 기본값 동작 불변을 검증한다.
                 new nuri.business.core.config.BoardIdProperties(),
+                recommendationRepository,
                 // [2026-09-08 PD-CMTY-001] 커뮤니티 접근 포트. 대부분의 시나리오는 귀속 없는 게시판이라
                 //   호출되지 않으며, 귀속 게시판 테스트만 이 목의 응답을 지정한다.
                 communityBoardAccess);
@@ -887,6 +890,8 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long pstSn = 1L;
         Board updated = Board.builder().pstSn(pstSn).likeCnt(1).build();
+        givenReadablePost(bbsId, pstSn, "writer");
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("liker"));
 
         // 종전에는 비관적 락으로 엔티티를 잡고 필드를 증가시켰다. 유실은 없었지만 저장이 @Version 을
         // 올려, 인기글 편집자가 아무도 고치지 않았는데 409 를 받았다(조회수와 같은 뿌리).
@@ -906,11 +911,57 @@ class BoardServiceTest {
     @Test
     @DisplayName("[W1-17] 존재하지 않는 게시글의 추천은 404 로 거부한다")
     void incrementLike_notFound() {
-        given(boardRepository.incrementLikeCntAtomic(999L)).willReturn(0);
+        given(boardRepository.findActiveArticleDetail("BBS_01", 999L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> boardService.incrementLike("BBS_01", 999L))
                 .isInstanceOf(BusinessException.class);
-        verify(boardRepository, never()).findById(any(Long.class));
+        verify(boardRepository, never()).incrementLikeCntAtomic(any(Long.class));
+        verify(recommendationRepository, never()).saveAndFlush(any());
+    }
+
+    private void givenReadablePost(String bbsId, Long pstSn, String writerEsntlId) {
+        given(boardRepository.findActiveArticleDetail(bbsId, pstSn)).willReturn(Optional.of(
+                BoardDetailResult.builder().pstSn(pstSn).bbsId(bbsId).userId(writerEsntlId).scrtYn("N").build()));
+    }
+
+    @Test
+    @DisplayName("🚨 같은 사람은 같은 글을 두 번 추천할 수 없다 — 409 이고 추천수가 오르지 않는다 (DIP I6 ④)")
+    void incrementLike_rejectsSecondRecommendation() {
+        givenReadablePost("BBS_01", 1L, "writer");
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("liker"));
+        given(recommendationRepository.existsById(new nuri.business.domain.board.BoardRecommendationId(1L, "liker")))
+                .willReturn(true);
+
+        assertThatThrownBy(() -> boardService.incrementLike("BBS_01", 1L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.DUPLICATE_RESOURCE);
+        verify(boardRepository, never()).incrementLikeCntAtomic(any(Long.class));
+    }
+
+    @Test
+    @DisplayName("동시에 두 번 눌러 이력 PK 가 충돌해도 두 번째는 409 이고 추천수를 올리지 않는다 (DIP I6 ④)")
+    void incrementLike_concurrentDuplicateIsConflict() {
+        givenReadablePost("BBS_01", 1L, "writer");
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("liker"));
+        given(recommendationRepository.saveAndFlush(any()))
+                .willThrow(new org.springframework.dao.DataIntegrityViolationException("pk_tb_bbs_rcmdtn_hstry"));
+
+        assertThatThrownBy(() -> boardService.incrementLike("BBS_01", 1L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.DUPLICATE_RESOURCE);
+        verify(boardRepository, never()).incrementLikeCntAtomic(any(Long.class));
+    }
+
+    @Test
+    @DisplayName("🔐 남의 비밀글은 추천할 수 없다 — 읽을 수 없는 글을 번호만 알아 추천하지 못한다 (DIP I6 ④)")
+    void incrementLike_rejectsUnreadableSecretPost() {
+        given(boardRepository.findActiveArticleDetail("BBS_01", 1L)).willReturn(Optional.of(
+                BoardDetailResult.builder().pstSn(1L).bbsId("BBS_01").userId("writer").scrtYn("Y").build()));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("stranger"));
+
+        assertThatThrownBy(() -> boardService.incrementLike("BBS_01", 1L)).isInstanceOf(BusinessException.class);
+        verify(recommendationRepository, never()).saveAndFlush(any());
+        verify(boardRepository, never()).incrementLikeCntAtomic(any(Long.class));
     }
 
     @Test

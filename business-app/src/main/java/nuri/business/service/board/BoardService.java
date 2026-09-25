@@ -10,6 +10,9 @@ import nuri.business.domain.board.Board;
 import nuri.business.domain.board.BoardDetailResult;
 import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.board.BoardMasterRepository;
+import nuri.business.domain.board.BoardRecommendation;
+import nuri.business.domain.board.BoardRecommendationId;
+import nuri.business.domain.board.BoardRecommendationRepository;
 import nuri.business.domain.board.BoardRepository;
 import nuri.business.domain.board.BoardSearchCondition;
 import nuri.business.domain.board.BoardStatsResult;
@@ -75,6 +78,9 @@ public class BoardService extends BaseAbstractService {
          */
         private final CommunityBoardAccessPort communityBoardAccess;
 
+        /** 게시글 추천 이력 — 한 사람이 한 글을 한 번만 추천한다(2026-09-26 DIP I6 ④). */
+        private final BoardRecommendationRepository recommendationRepository;
+
         public BoardService(BoardRepository boardRepository,
                         BoardMasterRepository boardMasterRepository,
                         UserService userService,
@@ -85,6 +91,7 @@ public class BoardService extends BaseAbstractService {
                         BoardViewCountService viewCountService,
                         BoardMapper boardMapper,
                         BoardIdProperties boardIdProperties,
+                        BoardRecommendationRepository recommendationRepository,
                         @Nullable CommunityBoardAccessPort communityBoardAccess) {
                 this.boardRepository = required(boardRepository, "boardRepository 는 null 일 수 없습니다");
                 this.boardMasterRepository = required(boardMasterRepository, "boardMasterRepository 는 null 일 수 없습니다");
@@ -97,6 +104,8 @@ public class BoardService extends BaseAbstractService {
                 this.viewCountService = required(viewCountService, "viewCountService 는 null 일 수 없습니다");
                 this.boardMapper = required(boardMapper, "boardMapper 는 null 일 수 없습니다");
                 this.boardIdProperties = required(boardIdProperties, "boardIdProperties 는 null 일 수 없습니다");
+                this.recommendationRepository = required(recommendationRepository,
+                                "recommendationRepository 는 null 일 수 없습니다");
                 // 포트는 선택 주입이다 — 커뮤니티 도메인이 없는 프로필에서는 null 이고, 그때 커뮤니티
                 // 귀속 게시판은 관리자 외에게 닫힌다(아래 assertCommunityAccess).
                 this.communityBoardAccess = communityBoardAccess;
@@ -747,6 +756,21 @@ public class BoardService extends BaseAbstractService {
         @Transactional
         public Integer incrementLike(@NonNull String bbsId, @NonNull Long pstSn) {
                 Long id = required(pstSn, "pstSn 는 null 일 수 없습니다");
+                // [2026-09-26 DIP I6 ④] 추천은 글을 읽을 수 있는 사람만, 한 번만 한다.
+                //   종전에는 게시판 일치·커뮤니티 회원·비밀글 판정 없이 카운터만 올려, 읽을 수 없는 글도
+                //   번호만 알면 추천할 수 있었고 같은 사람이 몇 번이고 누를 수 있었다.
+                assertCommentAccess(bbsId, id);
+                String esntlId = SecurityUtil.getCurrentEsntlId()
+                                .orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
+                if (recommendationRepository.existsById(new BoardRecommendationId(id, esntlId))) {
+                        throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, "이미 추천한 게시글입니다.");
+                }
+                try {
+                        recommendationRepository.saveAndFlush(BoardRecommendation.of(id, esntlId));
+                } catch (org.springframework.dao.DataIntegrityViolationException concurrentDuplicate) {
+                        // 같은 사람의 동시 요청 — 먼저 들어간 추천만 센다.
+                        throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, "이미 추천한 게시글입니다.");
+                }
                 int affected = boardRepository.incrementLikeCntAtomic(id);
                 if (affected == 0) {
                         throw new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND);

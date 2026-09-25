@@ -200,6 +200,7 @@
           "tb_bbs_item",
           "tb_bbs_master",
           "tb_bbs_master_optn",
+          "tb_bbs_rcmdtn_hstry",
           "tb_bbs_scrap",
           "tb_bbs_use_info",
           "tb_dgstfn_info",
@@ -397,9 +398,9 @@
     }
   ],
   "databaseSnapshot": {
-    "source": "isolated PostgreSQL 17/public; repository migrations through V2_101 and explicit authorization Contract (not OCI deployment state)",
+    "source": "isolated PostgreSQL 17/public; repository migrations through V2_101 and explicit authorization Contract (not OCI deployment state); V2_107 adds tb_bbs_rcmdtn_hstry (+1 table, no sequence) and V2_102-V2_106 create or drop none",
     "checkedAt": "2026-09-16T00:43:23.368Z",
-    "physicalTableCountExcludingFlyway": 80,
+    "physicalTableCountExcludingFlyway": 81,
     "physicalSequenceCount": 49,
     "physicalStandaloneSequenceCount": 3,
     "metaRows": {

@@ -40,8 +40,8 @@ test('generated harness adaptation matches current source selectors and rejects 
   assertProjected(output);
 
   for (const [from, to] of [
-    [`EXPECTED_MIGRATION_TEST_COUNT = ${generatedProfile ? 0 : 47};`, 'EXPECTED_MIGRATION_TEST_COUNT = 48;'],
-    [`@DisplayName("${generatedProfile ? '' : '47개 '}migration 검증은`, '@DisplayName("48개 migration 검증은'],
+    [`EXPECTED_MIGRATION_TEST_COUNT = ${generatedProfile ? 0 : 48};`, 'EXPECTED_MIGRATION_TEST_COUNT = 49;'],
+    [`@DisplayName("${generatedProfile ? '' : '48개 '}migration 검증은`, '@DisplayName("49개 migration 검증은'],
   ]) {
     const drifted = projectedFixture();
     const path = join(drifted, harnessDirectory, migrationHarness);

@@ -213,13 +213,15 @@ public class BoardApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "게시글 좋아요(추천)", description = "게시글의 추천수를 1 증가시킵니다. (낙관적 업데이트 테스트용)")
+    @Operation(summary = "게시글 좋아요(추천)",
+            description = "게시글을 추천하고 추천수를 돌려줍니다. 글을 읽을 수 있는 사용자만 한 번 추천할 수 있으며, "
+                    + "이미 추천했으면 409 입니다.")
     @PatchMapping("/{bbsId}/posts/{pstSn}/like")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#likePost')")
     public ResponseEntity<ApiResponse<Integer>> likePost(
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
             @Parameter(description = "게시글 ID", example = "1") @PathVariable Long pstSn) {
-        // 실제 운영 환경에서는 중복 추천 방지 로직이 필요하나, 여기서는 낙관적 업데이트 시연을 위해 단순 증가 처리
+        // 열람 가드·1인 1회는 서비스가 집행한다(2026-09-26 DIP I6 ④).
         return ResponseEntity.ok(ApiResponse.success(boardService.incrementLike(bbsId, pstSn)));
     }
 }
