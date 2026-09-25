@@ -50,7 +50,7 @@ class CommentApiControllerTest {
     @DisplayName("댓글 목록 조회")
     void getComments() throws Exception {
         Page<CommentDto> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
-        when(commentService.getComments(eq(1L), eq("BBS_001"), any())).thenReturn(page);
+        when(commentService.getCommentsForModeration(eq("BBS_001"), eq(1L), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/comments")
                         .param("pstSn", "1")

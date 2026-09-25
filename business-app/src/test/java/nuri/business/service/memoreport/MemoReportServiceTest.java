@@ -327,22 +327,75 @@ class MemoReportServiceTest {
     }
 
     @Test
-    @DisplayName("메모보고 조회")
-    void readMemoReport() {
-        // given
+    @DisplayName("수신자가 처음 열면 열람일시를 남긴다 (DIP I7)")
+    void readMemoReport_recipientFirstView() {
         Long memoRptSn = 1L;
-        MemoReport entity = mock(MemoReport.class);
+        MemoReport entity = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-writer").rptrId("esntl-me").build();
         when(memoReportRepository.findById(memoRptSn)).thenReturn(Optional.of(entity));
-        // 열람 표시도 참여자만 가능하다 — 작성자 본인으로 세팅
-        when(entity.getUserId()).thenReturn("esntl-me");
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-me"));
 
-        // when
         memoReportService.readMemoReport(memoRptSn);
 
-        // then
-        verify(entity).updateInqireDt(any(java.time.LocalDateTime.class));
+        assertThat(entity.getRptrInqDt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("🚨 작성자가 열어도, 수신자가 다시 열어도 열람일시는 바뀌지 않는다 — 열람됨은 수신자의 첫 열람이다 (DIP I7)")
+    void readMemoReport_onlyRecipientFirstViewCounts() {
+        Long memoRptSn = 1L;
+        MemoReport unread = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-writer").rptrId("esntl-recipient").build();
+        when(memoReportRepository.findById(memoRptSn)).thenReturn(Optional.of(unread));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-writer"));
+
+        memoReportService.readMemoReport(memoRptSn);
+        assertThat(unread.getRptrInqDt()).as("작성자 열람은 수신 확인이 아니다").isNull();
+
+        java.time.LocalDateTime firstView = java.time.LocalDateTime.of(2026, 9, 1, 9, 0);
+        MemoReport read = MemoReport.builder().memoRptSn(2L).userId("esntl-writer").rptrId("esntl-recipient").build();
+        read.updateInqireDt(firstView);
+        when(memoReportRepository.findById(2L)).thenReturn(Optional.of(read));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-recipient"));
+
+        memoReportService.readMemoReport(2L);
+        assertThat(read.getRptrInqDt()).as("다시 열어도 첫 열람 시각을 덮지 않는다").isEqualTo(firstView);
+    }
+
+    @Test
+    @DisplayName("🔐 작성자는 지시사항을 쓸 수 없다 — 지시는 수신자·관리자만 남긴다 (DIP I7)")
+    void updateDrctMatter_rejectsWriter() {
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-writer").rptrId("esntl-recipient").build();
+        when(memoReportRepository.findById(1L)).thenReturn(Optional.of(entity));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-writer"));
+
+        BusinessException ex = org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class,
+                () -> memoReportService.updateDrctMatter(1L, "작성자가 덮어쓴 지시"));
+
+        assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.ACCESS_DENIED);
+        assertThat(entity.getDrctnMttr()).isNull();
+    }
+
+    @Test
+    @DisplayName("수신자와 전체 수정 권한자는 지시사항을 남긴다 (DIP I7)")
+    void updateDrctMatter_allowsRecipientAndAdmin() {
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-writer").rptrId("esntl-recipient").build();
+        when(memoReportRepository.findById(1L)).thenReturn(Optional.of(entity));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-recipient"));
+
+        memoReportService.updateDrctMatter(1L, "수신자 지시");
+        assertThat(entity.getDrctnMttr()).isEqualTo("수신자 지시");
+
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-admin"));
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE_ALL"))
+                .thenReturn(true);
+
+        memoReportService.updateDrctMatter(1L, "관리자 지시");
+        assertThat(entity.getDrctnMttr()).isEqualTo("관리자 지시");
     }
 
     /*

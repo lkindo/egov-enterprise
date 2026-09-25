@@ -79,11 +79,19 @@ public class ProgramService {
 
     /**
      * 프로그램 등록
+     *
+     * <p>등록은 신규 전용이다. 프로그램 파일명이 식별자라 {@code save()} 가 같은 이름의 행을 병합(merge)하므로,
+     * 이미 있는 이름으로 등록하면 메뉴가 참조하는 프로그램의 경로·URL 을 조용히 덮어썼다
+     * (2026-09-25 DIP I4). 이미 있으면 409 로 거부한다.</p>
      */
     @Transactional
     @CacheEvict(value = { "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
     public void insertProgrm(ProgramDto dto) {
         SecurityUtil.assertPermission("PROGRAM_CREATE");
+        if (programRepository.existsById(Objects.requireNonNull(dto.getPrgrmFileNm()))) {
+            throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE,
+                    "이미 등록된 프로그램 파일명입니다: " + dto.getPrgrmFileNm());
+        }
         Program program = Program.builder()
                 .prgrmFileNm(dto.getPrgrmFileNm())
                 .prgrmStrgPath(dto.getPrgrmStrgPath())

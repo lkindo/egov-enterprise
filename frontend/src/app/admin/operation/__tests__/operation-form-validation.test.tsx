@@ -249,6 +249,22 @@ describe('operation useAppForm consumers', () => {
     expect(mocks.toast).not.toHaveBeenCalledWith('포상 기록 등록 중 오류가 발생했습니다.', 'error');
   });
 
+  it('Reward: 등록 본문에 승인 필드를 싣지 않는다 — 승인 상태는 서버가 소유한다 (DIP I6 ③)', async () => {
+    mocks.createReward.mockResolvedValueOnce({});
+    renderWithClient(<RewardManageClient initialPage={EMPTY_PAGE} />);
+    fireEvent.click(screen.getByRole('button', { name: /포상 기록 등록/ }));
+    fillRewardForm();
+
+    fireEvent.click(screen.getByRole('button', { name: /최종 등록/ }));
+
+    await waitFor(() => expect(mocks.createReward).toHaveBeenCalledTimes(1));
+    const body = mocks.createReward.mock.calls[0][0];
+    expect(body).toMatchObject({ rwardNm: '모범 사원상' });
+    for (const serverOwned of ['confmAt', 'sanctnerId', 'sanctnDt', 'returnResn', 'ifmlAtrzSn']) {
+      expect(body).not.toHaveProperty(serverOwned);
+    }
+  });
+
   it('Reward: 같은 tick의 중복 제출을 동기 lock으로 차단한다', async () => {
     const pending = deferred<Record<string, never>>();
     mocks.createReward.mockReturnValueOnce(pending.promise);

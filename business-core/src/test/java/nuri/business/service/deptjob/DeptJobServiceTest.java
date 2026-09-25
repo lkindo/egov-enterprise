@@ -102,6 +102,18 @@ class DeptJobServiceTest {
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
     }
 
+    /** 전체 부서를 보는 관리자(DEPT_JOB_UPDATE_ALL) — 필터 분기 테스트는 부서 범위 제한 없이 조건만 본다. */
+    private static void authenticateAsAdmin() {
+        CustomUserDetails principal = nuri.business.support.AuthorizationTestPrincipal.principal("admin", "ESNTL_ADMIN", "ADMIN");
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+    }
+
+    private void givenMemberOf(String esntlId, String ognzId) {
+        when(userRepository.findByEsntlId(esntlId)).thenReturn(Optional.of(User.builder()
+                .userId(esntlId.toLowerCase()).pswd("x").esntlId(esntlId).userNm(esntlId).ognzId(ognzId).build()));
+    }
+
     private void mockToDtoDependencies() {
         when(deptJobBoxRepository.findById(1L)).thenReturn(Optional.of(deptJobBox));
         
@@ -123,6 +135,7 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("부서업무 목록 조회 - boxId 있음, 조건 0")
     void getDeptJobList_withBoxIdAndCondition0() {
+        authenticateAsAdmin();
         Page<DeptJob> page = new PageImpl<>(Collections.singletonList(deptJob), PageRequest.of(0, 10), 1);
         when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(page);
         mockToDtoDependencies();
@@ -135,6 +148,7 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("부서업무 목록 조회 - deptId 있고 박스 있음, 조건 1")
     void getDeptJobList_withDeptIdWithBoxesAndCondition1() {
+        authenticateAsAdmin();
         when(deptJobBoxRepository.findByDeptId("DEPT1")).thenReturn(Collections.singletonList(deptJobBox));
         Page<DeptJob> page = new PageImpl<>(Collections.singletonList(deptJob), PageRequest.of(0, 10), 1);
         when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(page);
@@ -148,6 +162,7 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("부서업무 목록 조회 - deptId 있지만 박스 없음, 조건 2")
     void getDeptJobList_withDeptIdNoBoxesAndCondition2() {
+        authenticateAsAdmin();
         when(deptJobBoxRepository.findByDeptId("DEPT2")).thenReturn(Collections.emptyList());
         Page<DeptJobDto> result = deptJobService.getDeptJobList("DEPT2", null, "2", "keyword", false, PageRequest.of(0, 10));
 
@@ -172,6 +187,7 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("부서업무 상세 조회")
     void getDeptJob() {
+        authenticateAs("user1", "USER1"); // 담당자 본인
         when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
         mockToDtoDependencies();
 
@@ -181,6 +197,85 @@ class DeptJobServiceTest {
         assertEquals(1L, result.getDeptTaskSn());
         assertEquals("Test Dept", result.getDeptNm());
         assertEquals("Test User", result.getPicNm());
+    }
+
+    @Test
+    @DisplayName("🚨 '부서 전체' 는 내 소속 부서의 업무함과 내 업무로 좁힌다 — 다른 부서 업무가 보이지 않는다 (DIP I5)")
+    void getDeptJobList_deptScopeLimitedToOwnDepartment() {
+        authenticateAs("member", "ESNTL_MEMBER");
+        givenMemberOf("ESNTL_MEMBER", "DEPT1");
+        when(deptJobBoxRepository.findByDeptId("DEPT1")).thenReturn(Collections.singletonList(deptJobBox));
+        when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0));
+
+        deptJobService.getDeptJobList(null, null, null, null, false, PageRequest.of(0, 10));
+
+        ArgumentCaptor<Predicate> captor = ArgumentCaptor.forClass(Predicate.class);
+        verify(deptJobRepository).findAll(captor.capture(), any(PageRequest.class));
+        String p = String.valueOf(captor.getValue());
+        assertTrue(p.contains("deptJob.deptTaskBoxSn = 1"), "내 부서 업무함(1번)으로 좁혀야 한다: " + p);
+        assertTrue(p.contains("picId = ESNTL_MEMBER"), "내가 담당인 업무는 함께 보여야 한다: " + p);
+    }
+
+    @Test
+    @DisplayName("소속 부서가 없으면 '부서 전체' 도 내 업무만 보인다 — 조직 전체로 승격되지 않는다 (DIP I5)")
+    void getDeptJobList_deptScopeWithoutDepartmentShowsOnlyMine() {
+        authenticateAs("member", "ESNTL_MEMBER");
+        givenMemberOf("ESNTL_MEMBER", null);
+        when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0));
+
+        deptJobService.getDeptJobList(null, null, null, null, false, PageRequest.of(0, 10));
+
+        ArgumentCaptor<Predicate> captor = ArgumentCaptor.forClass(Predicate.class);
+        verify(deptJobRepository).findAll(captor.capture(), any(PageRequest.class));
+        String p = String.valueOf(captor.getValue());
+        assertTrue(p.contains("picId = ESNTL_MEMBER"), p);
+        assertFalse(p.contains("deptTaskBoxSn"), "부서가 없으면 업무함 조건이 붙지 않는다: " + p);
+        verify(deptJobBoxRepository, never()).findByDeptId(anyString());
+    }
+
+    @Test
+    @DisplayName("신원이 없으면 '부서 전체' 도 빈 결과다 (DIP I5)")
+    void getDeptJobList_deptScopeFailsClosedWithoutIdentity() {
+        Page<DeptJobDto> result = deptJobService.getDeptJobList(null, null, null, null, false, PageRequest.of(0, 10));
+
+        assertTrue(result.isEmpty());
+        verify(deptJobRepository, never()).findAll(any(Predicate.class), any(PageRequest.class));
+    }
+
+    @Test
+    @DisplayName("같은 부서 구성원은 남이 담당인 업무 상세를 연다 (DIP I5)")
+    void getDeptJob_sameDepartmentMemberAllowed() {
+        authenticateAs("colleague", "ESNTL_COLLEAGUE");
+        givenMemberOf("ESNTL_COLLEAGUE", "DEPT1");
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        mockToDtoDependencies();
+
+        assertEquals(1L, deptJobService.getDeptJob(1L).getDeptTaskSn());
+    }
+
+    @Test
+    @DisplayName("🔐 다른 부서 사용자는 번호만 바꿔 업무 상세를 열 수 없다 (DIP I5)")
+    void getDeptJob_otherDepartmentDenied() {
+        authenticateAs("outsider", "ESNTL_OUTSIDER");
+        givenMemberOf("ESNTL_OUTSIDER", "DEPT9");
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        when(deptJobBoxRepository.findById(1L)).thenReturn(Optional.of(deptJobBox));
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> deptJobService.getDeptJob(1L));
+
+        assertEquals(CommonErrorCode.ACCESS_DENIED, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("관리자는 어느 부서의 업무 상세든 연다 (DIP I5)")
+    void getDeptJob_adminAllowed() {
+        authenticateAsAdmin();
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        mockToDtoDependencies();
+
+        assertEquals(1L, deptJobService.getDeptJob(1L).getDeptTaskSn());
     }
 
     @Test
@@ -507,6 +602,7 @@ class DeptJobServiceTest {
                 .deptTaskNm("업무함 없는 업무")
                 .build();
         when(deptJobRepository.findById(3L)).thenReturn(Optional.of(noBox));
+        authenticateAsAdmin(); // 업무함·담당자가 없는 업무는 부서를 알 수 없어 관리자만 연다(DIP I5)
 
         DeptJobDto dto = assertDoesNotThrow(() -> deptJobService.getDeptJob(3L));
 
@@ -527,6 +623,7 @@ class DeptJobServiceTest {
 
     /** 서비스가 저장소에 넘긴 Predicate 를 문자열로 붙잡는다 — 조건 생성의 유일한 관측 지점이다. */
     private String capturePredicate(String deptId, Long boxSn, String cond, String keyword) {
+        authenticateAsAdmin();
         Page<DeptJob> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
         when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(page);
         deptJobService.getDeptJobList(deptId, boxSn, cond, keyword, false, PageRequest.of(0, 10));
@@ -579,6 +676,7 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("deptId 의 박스가 비면 빈 페이지로 닫는다 — 전체 노출을 막는 안전장치")
     void emptyBoxListReturnsEmptyPage() {
+        authenticateAsAdmin();
         when(deptJobBoxRepository.findByDeptId("DEPT2")).thenReturn(Collections.emptyList());
         Page<DeptJobDto> result = deptJobService.getDeptJobList(
                 "DEPT2", null, null, null, false, PageRequest.of(0, 10));

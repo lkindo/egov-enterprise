@@ -98,6 +98,36 @@ class RewardManageServiceTest {
     }
 
     @Test
+    @DisplayName("🚨 승인·감사 필드는 요청 값을 저장하지 않는다 — 새 포상은 언제나 승인 대기로 시작한다 (DIP I6 ③)")
+    void createReward_ignoresClientApprovalFields() {
+        RewardManageDto dto = RewardManageDto.builder()
+                .rwardNm("포상")
+                .sanctnerId("forged-approver")
+                .confmAt("Y")
+                .sanctnDt(java.time.LocalDateTime.of(2026, 9, 1, 9, 0))
+                .returnResn("forged")
+                .ifmlAtrzSn(9L)
+                .frstRgtrId("forged-writer")
+                .lastMdfrId("forged-writer")
+                .build();
+        given(rewardManageRepository.save(any(RewardManage.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        rewardManageService.createReward(dto);
+
+        org.mockito.ArgumentCaptor<RewardManage> saved = org.mockito.ArgumentCaptor.forClass(RewardManage.class);
+        org.mockito.Mockito.verify(rewardManageRepository).save(saved.capture());
+        RewardManage entity = saved.getValue();
+        assertThat(entity.getConfmYn()).isEqualTo("N");
+        assertThat(entity.getAtrzrId()).isNull();
+        assertThat(entity.getAprvDt()).isNull();
+        assertThat(entity.getRtnRsnCn()).isNull();
+        assertThat(entity.getIfmlAtrzSn()).isNull();
+        assertThat(entity.getFrstRgtrId()).isNull();
+        assertThat(entity.getLastMdfrId()).isNull();
+        assertThat(entity.getRwrdNm()).isEqualTo("포상");
+    }
+
+    @Test
     @DisplayName("포상 등록 - 첨부 할당 거부 시 저장하지 않는다")
     void createReward_deniedAttachmentDoesNotSave() {
         RewardManageDto dto = RewardManageDto.builder()
