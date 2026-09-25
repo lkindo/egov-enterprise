@@ -1,14 +1,18 @@
 package nuri.business.service.dashboard;
 
 import nuri.foundation.core.dashboard.PendingAlertCountContributor;
-import nuri.foundation.core.event.PostCreatedEvent;
+import nuri.foundation.core.stats.PostStatisticsContributor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -30,20 +34,19 @@ public class RealTimeDashboardService {
      * "셀 알림이 없다" 는 사실이다.
      */
     private final ObjectProvider<PendingAlertCountContributor> pendingAlertCounts;
+    private final ObjectProvider<PostStatisticsContributor> postStatistics;
     private final ApplicationEventPublisher eventPublisher;
+
+    private static final DateTimeFormatter STATS_TIMESTAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private Clock clock = Clock.system(ZoneId.of("Asia/Seoul"));
 
     // 실시간 통계 데이터 관리(로컬 메모리 활용)
     private final AtomicInteger activeUsers = new AtomicInteger(0);
     private final AtomicInteger visitsPerMinute = new AtomicInteger(0);
-    private final AtomicInteger todayNewPosts = new AtomicInteger(0);
 
-    /**
-     * 게시글 작성 이벤트 핸들러
-     */
-    @EventListener
-    public void handlePostCreated(PostCreatedEvent event) {
-        todayNewPosts.incrementAndGet();
-        log.debug("Real-time stats updated for new post in BBS: {}", event.getBbsId());
+    /** 날짜 경계 회귀 테스트에서 운영과 같은 시간대의 시계를 고정한다. */
+    void useClock(Clock clock) {
+        this.clock = Objects.requireNonNull(clock, "clock");
     }
 
     /**
@@ -55,14 +58,16 @@ public class RealTimeDashboardService {
         try {
             int currentActiveUsers = activeUsers.get();
             int currentVisits = visitsPerMinute.get();
-            int currentPosts = todayNewPosts.get();
-            int pendingAlerts = getPendingAlertsCount();
+            CountSnapshot currentPosts = getTodayPostsCount();
+            CountSnapshot pendingAlerts = getPendingAlertsCount();
 
             DashboardStatsUpdatedEvent event = new DashboardStatsUpdatedEvent(
                 currentActiveUsers,
                 currentVisits,
-                currentPosts,
-                pendingAlerts
+                currentPosts.value(),
+                pendingAlerts.value(),
+                currentPosts.available(),
+                pendingAlerts.available()
             );
 
             eventPublisher.publishEvent(event);
@@ -92,19 +97,52 @@ public class RealTimeDashboardService {
      * 처리 대기 중인 알림 수 조회.
      *
      * <p>구현이 없으면(알림 도메인이 빠진 프로필) 셀 알림 자체가 없으므로 0 이다. 조회가 실패해서 0 이 되는
-     * 경우와 구분되도록 실패는 종전처럼 error 로 남긴다 — 둘을 같은 로그로 뭉개면 "알림이 없다" 와
-     * "알림을 못 셌다" 를 사후에 구분할 수 없다.
+     * 경우와 구분되도록 실패는 error 로그와 available=false 를 함께 방송한다.
      */
-    private int getPendingAlertsCount() {
-        PendingAlertCountContributor contributor = pendingAlertCounts.getIfAvailable();
-        if (contributor == null) {
-            return 0;
-        }
+    private CountSnapshot getPendingAlertsCount() {
         try {
-            return (int) contributor.countPendingAlerts();
+            PendingAlertCountContributor contributor = pendingAlertCounts.getIfAvailable();
+            return CountSnapshot.known(contributor == null ? 0 : contributor.countPendingAlerts());
         } catch (Exception e) {
             log.error("Failed to count pending alerts", e);
-            return 0;
+            return CountSnapshot.unavailable();
+        }
+    }
+
+    /**
+     * 한국 시간 오늘 생성된 활성 게시글을 DB에서 읽는다. 재시작·다중 인스턴스·자정에도
+     * 프로세스가 받은 이벤트 수에 의존하지 않으며, 기존 게시판 통계의 use_yn='Y' 의미를 따른다.
+     */
+    private CountSnapshot getTodayPostsCount() {
+        try {
+            PostStatisticsContributor contributor = postStatistics.getIfAvailable();
+            if (contributor == null) {
+                return CountSnapshot.known(0);
+            }
+            LocalDate today = LocalDate.now(clock);
+            String from = today.atStartOfDay().format(STATS_TIMESTAMP);
+            String to = today.plusDays(1).atStartOfDay().format(STATS_TIMESTAMP);
+            long total = contributor.countPostsByDate(from, to).stream()
+                    .mapToLong(row -> ((Number) row[1]).longValue())
+                    .reduce(0L, Math::addExact);
+            return CountSnapshot.known(total);
+        } catch (Exception e) {
+            log.error("Failed to count today's posts", e);
+            return CountSnapshot.unavailable();
+        }
+    }
+
+    private record CountSnapshot(int value, boolean available) {
+        static CountSnapshot known(long value) {
+            if (value < 0) {
+                throw new IllegalArgumentException("dashboard count must be nonnegative");
+            }
+            return new CountSnapshot(Math.toIntExact(value), true);
+        }
+
+        static CountSnapshot unavailable() {
+            // 숫자 필드는 기존 wire 형태를 유지한다. 소비자는 available=false일 때 숫자를 표시하지 않는다.
+            return new CountSnapshot(0, false);
         }
     }
 

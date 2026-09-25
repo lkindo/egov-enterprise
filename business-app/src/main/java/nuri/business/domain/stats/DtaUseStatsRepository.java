@@ -54,12 +54,12 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, Long> 
       Pageable pageable);
 
   /**
-   * 데이터 사용 통계 목록 조회
+   * 데이터 사용 통계 목록 조회. 아래 String 날짜 범위 조회는 [fromDate, toDate)인 반개방 구간이다.
    */
   @Query("""
       SELECT d FROM DtaUseStats d
-      WHERE d.crtDt BETWEEN CAST(:fromDate AS java.time.LocalDateTime)
-          AND CAST(:toDate AS java.time.LocalDateTime)
+      WHERE d.crtDt >= CAST(:fromDate AS java.time.LocalDateTime)
+          AND d.crtDt < CAST(:toDate AS java.time.LocalDateTime)
       ORDER BY d.crtDt DESC
       """)
   Page<DtaUseStats> findByDateRange(
@@ -72,8 +72,8 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, Long> 
    */
   @Query("""
       SELECT COUNT(d) FROM DtaUseStats d
-      WHERE d.crtDt BETWEEN CAST(:fromDate AS java.time.LocalDateTime)
-          AND CAST(:toDate AS java.time.LocalDateTime)
+      WHERE d.crtDt >= CAST(:fromDate AS java.time.LocalDateTime)
+          AND d.crtDt < CAST(:toDate AS java.time.LocalDateTime)
       """)
   long countByDateRange(
       @Param("fromDate") String fromDate,
@@ -85,7 +85,7 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, Long> 
   @Query(value = """
       SELECT TO_CHAR(d.crt_dt, 'YYYY-MM-DD') as statsDate, COUNT(*) as cnt
       FROM tb_dta_use_stats d
-      WHERE d.crt_dt BETWEEN CAST(:fromDate AS TIMESTAMP) AND CAST(:toDate AS TIMESTAMP)
+      WHERE d.crt_dt >= CAST(:fromDate AS TIMESTAMP) AND d.crt_dt < CAST(:toDate AS TIMESTAMP)
       GROUP BY TO_CHAR(d.crt_dt, 'YYYY-MM-DD')
       ORDER BY statsDate DESC
       """, nativeQuery = true)
@@ -97,11 +97,11 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, Long> 
    * 게시판별 데이터 사용 통계
    */
   @Query(value = """
-      SELECT b.bbs_nm as bbsNm, COUNT(*) as cnt
+      SELECT b.bbs_ttl as bbsNm, COUNT(*) as cnt
       FROM tb_dta_use_stats d
       JOIN tb_bbs_master b ON d.bbs_id = b.bbs_id
-      WHERE d.crt_dt BETWEEN CAST(:fromDate AS TIMESTAMP) AND CAST(:toDate AS TIMESTAMP)
-      GROUP BY b.bbs_nm
+      WHERE d.crt_dt >= CAST(:fromDate AS TIMESTAMP) AND d.crt_dt < CAST(:toDate AS TIMESTAMP)
+      GROUP BY b.bbs_ttl
       ORDER BY cnt DESC
       """, nativeQuery = true)
   List<Object[]> countByBbsId(

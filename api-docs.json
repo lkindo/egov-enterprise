@@ -35440,7 +35440,12 @@
           },
           "editable": {
             "type": "boolean",
-            "description": "현재 사용자가 수정·삭제할 수 있는지(서버 판정)",
+            "description": "현재 사용자가 수정할 수 있는지(서버 판정)",
+            "readOnly": true
+          },
+          "deletable": {
+            "type": "boolean",
+            "description": "현재 사용자가 삭제할 수 있는지(서버 판정)",
             "readOnly": true
           }
         },

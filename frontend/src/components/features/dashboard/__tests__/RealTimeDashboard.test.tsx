@@ -55,6 +55,49 @@ describe('RealTimeDashboard', () => {
     expect(screen.getAllByText('—')).toHaveLength(4);
   });
 
+  it('알림 조회 실패는 0건 대신 확인 불가로 표시하고 나머지 통계는 유지한다', () => {
+    render(<RealTimeDashboard />);
+    const statsHandler = handlers.get('/topic/dashboard/stats')!;
+
+    act(() => statsHandler({ body: JSON.stringify({
+      activeUsers: 7, visitsPerMinute: 3, newPosts: 2, alerts: 0,
+      newPostsAvailable: true, alertsAvailable: false,
+    }) }));
+
+    expect(screen.getByText('알림').previousElementSibling).toHaveTextContent('—');
+    expect(screen.getByText('알림 수 확인 불가')).toBeInTheDocument();
+    expect(screen.getByText('현재 접속자').previousElementSibling).toHaveTextContent('7');
+    expect(screen.getByRole('status')).toHaveTextContent('일부 통계 확인 불가');
+  });
+
+  it('게시글 집계 실패를 다른 정상 집계와 구분하고 복구된 실제 0건을 표시한다', () => {
+    render(<RealTimeDashboard />);
+    const statsHandler = handlers.get('/topic/dashboard/stats')!;
+    const counts = { activeUsers: 7, visitsPerMinute: 3, newPosts: 0, alerts: 4, alertsAvailable: true };
+
+    act(() => statsHandler({ body: JSON.stringify({ ...counts, newPostsAvailable: false }) }));
+    expect(screen.getByText('신규 게시글').previousElementSibling).toHaveTextContent('—');
+    expect(screen.getByText('게시글 수 확인 불가')).toBeInTheDocument();
+    expect(screen.getByText('알림').previousElementSibling).toHaveTextContent('4');
+
+    act(() => statsHandler({ body: JSON.stringify({ ...counts, newPostsAvailable: true }) }));
+    expect(screen.getByText('신규 게시글').previousElementSibling).toHaveTextContent('0');
+    expect(screen.queryByText('게시글 수 확인 불가')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('통계 수신 중');
+  });
+
+  it('집계 가용 상태가 boolean이 아닌 프레임은 마지막 정상 통계를 덮어쓰지 않는다', () => {
+    render(<RealTimeDashboard />);
+    const statsHandler = handlers.get('/topic/dashboard/stats')!;
+    const counts = { activeUsers: 7, visitsPerMinute: 3, newPosts: 2, alerts: 4 };
+
+    act(() => statsHandler({ body: JSON.stringify(counts) }));
+    act(() => statsHandler({ body: JSON.stringify({ ...counts, alerts: 0, alertsAvailable: 'false' }) }));
+
+    expect(screen.getByText('알림').previousElementSibling).toHaveTextContent('4');
+    expect(screen.getByRole('status')).toHaveTextContent('통계 수신 중');
+  });
+
   it('브라우저 알림 권한은 진입 즉시가 아니라 사용자가 알림을 열 때만 요청한다', () => {
     render(<RealTimeDashboard />);
     expect(requestPermission).not.toHaveBeenCalled();

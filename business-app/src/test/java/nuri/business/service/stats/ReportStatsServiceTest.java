@@ -3,6 +3,8 @@ package nuri.business.service.stats;
 import nuri.business.domain.stats.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -87,7 +89,7 @@ class ReportStatsServiceTest {
         Page<ReprtStats> result = reportStatsService.getReprtStatsList("TYPE_A", "2024-01-01", "2024-01-31", 0, 10);
 
         assertThat(result).isNotNull();
-        verify(reprtStatsRepository).findByConditions(eq("TYPE_A"), eq("2024-01-01 00:00:00"), eq("2024-01-31 23:59:59"), any(PageRequest.class));
+        verify(reprtStatsRepository).findByConditions(eq("TYPE_A"), eq("2024-01-01 00:00:00"), eq("2024-02-01 00:00:00"), any(PageRequest.class));
     }
 
     @Test
@@ -184,7 +186,7 @@ class ReportStatsServiceTest {
 
         reportStatsService.getBbsStatsByDate("2024-01-01", "2024-01-31");
 
-        verify(postStatisticsContributor).countPostsByDate("2024-01-01 00:00:00", "2024-01-31 23:59:59");
+        verify(postStatisticsContributor).countPostsByDate("2024-01-01 00:00:00", "2024-02-01 00:00:00");
         verify(dtaUseStatsRepository, never()).countByDate(anyString(), anyString());
     }
 
@@ -209,5 +211,41 @@ class ReportStatsServiceTest {
         given(dtaUseStatsRepository.countByBbsId(anyString(), anyString())).willReturn(new ArrayList<>());
         reportStatsService.getDtaUseStatsByBbs("2024-01-01", "2024-01-31");
         verify(dtaUseStatsRepository).countByBbsId(anyString(), anyString());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "2024-02-29, 2024-02-29, 2024-03-01",
+            "2026-12-31, 2026-12-31, 2027-01-01",
+            "20240229, 2024-02-29, 2024-03-01",
+            "20261231, 2026-12-31, 2027-01-01"
+    })
+    @DisplayName("날짜 단위 통계의 모든 조회는 종료일 다음날 0시를 배타적 상한으로 전달한다")
+    void dateQueriesUseNextDayExclusiveEnd(String day, String normalizedDay, String nextDay) {
+        String start = normalizedDay + " 00:00:00";
+        String endExclusive = nextDay + " 00:00:00";
+        given(postStatistics.getIfAvailable()).willReturn(postStatisticsContributor);
+
+        reportStatsService.getReprtStatsList("A", day, day, 0, 10);
+        reportStatsService.getReprtStatsCount("A", day, day);
+        reportStatsService.getReprtStatsByDate(day, day);
+        reportStatsService.getReprtStatsByType(day, day);
+        reportStatsService.getReprtStatsByStatus(day, day);
+        reportStatsService.getDtaUseStatsList(day, day, 0, 10);
+        reportStatsService.getDtaUseStatsCount(day, day);
+        reportStatsService.getDtaUseStatsByDate(day, day);
+        reportStatsService.getDtaUseStatsByBbs(day, day);
+        reportStatsService.getBbsStatsByDate(day, day);
+
+        verify(reprtStatsRepository).findByConditions(eq("A"), eq(start), eq(endExclusive), any());
+        verify(reprtStatsRepository).countByConditions("A", start, endExclusive);
+        verify(reprtStatsRepository).countByDate(start, endExclusive);
+        verify(reprtStatsRepository).countByReprtType(start, endExclusive);
+        verify(reprtStatsRepository).countByReprtSttus(start, endExclusive);
+        verify(dtaUseStatsRepository).findByDateRange(eq(start), eq(endExclusive), any());
+        verify(dtaUseStatsRepository).countByDateRange(start, endExclusive);
+        verify(dtaUseStatsRepository).countByDate(start, endExclusive);
+        verify(dtaUseStatsRepository).countByBbsId(start, endExclusive);
+        verify(postStatisticsContributor).countPostsByDate(start, endExclusive);
     }
 }

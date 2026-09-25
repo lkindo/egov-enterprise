@@ -324,6 +324,23 @@ class FileServiceTest {
         // then
         verify(storageService, times(1)).delete("stored.jpg", "path");
         verify(fileMasterRepository, times(1)).delete(master);
+        verify(accessPolicy).assertDeletable(master);
+    }
+
+    @Test
+    @DisplayName("전체 삭제도 삭제 권한이 없으면 상세 조회와 저장소 변경을 하지 않는다")
+    void deleteFilesDeniedBeforeLoadingDetails() {
+        FileMaster master = new FileMaster(123L);
+        given(fileMasterRepository.findById(123L)).willReturn(Optional.of(master));
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(accessPolicy).assertDeletable(master);
+
+        assertThatThrownBy(() -> fileService.deleteFiles(123L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+
+        verifyNoInteractions(fileDetailRepository, storageService);
+        verify(fileMasterRepository, never()).delete(any());
     }
 
     @Test

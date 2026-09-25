@@ -60,7 +60,7 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
                         SELECT TO_CHAR(b.crt_dt, 'YYYY-MM-DD') AS statsDate, COUNT(*) AS cnt
                         FROM tb_bbs_item b
                         WHERE b.use_yn = 'Y'
-                          AND b.crt_dt BETWEEN CAST(:fromDate AS TIMESTAMP) AND CAST(:toDate AS TIMESTAMP)
+                          AND b.crt_dt >= CAST(:fromDate AS TIMESTAMP) AND b.crt_dt < CAST(:toDate AS TIMESTAMP)
                         GROUP BY TO_CHAR(b.crt_dt, 'YYYY-MM-DD')
                         ORDER BY statsDate DESC
                         """, nativeQuery = true)

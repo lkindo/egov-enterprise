@@ -1073,3 +1073,62 @@ main 수동 실행 `36062669102`(URL 1981개)의 서버 오류 6건은 모두 �
 제약 코드는 언어와 무관하므로 한국어·영어 응답이 같은 제약의 문구를 고른다. 화면의 첫 오류 포커스는 원래
 DOM 순서로 정하므로 바뀌지 않는다. 경로 조작의 대조값은 공격값과 같은 길이로
 맞추고 먼저 한 번 저장해 두어, 코드 길이 제한(12자)과 중복 코드 거부가 비교를 가리지 않게 했다.
+
+## 도메인 정합성 보강 (2026-09-25)
+
+템플릿 생성, 첨부 삭제, 회원 승인 경쟁, 메모 보고 권한 표시, 통계 날짜 경계와 대시보드의 집계 의미를
+L2 범위로 보강했다. 기존 도메인 권한과 제품 범위를 유지하며 Entity·DDL·공유 DB 데이터는 바꾸지 않는다.
+
+| 대상 | 동작 | 회귀 검증 경로 |
+|---|---|---|
+| 템플릿 | 등록은 INSERT 전용이다. 기존 ID와 경합 중복은 409로 거부하고 내용·감사 필드를 덮어쓰지 않는다. 사전 존재 확인이 오래됐어도 PK와 persist가 생성 경계를 지킨다. | [실제 JPA·PK 경합](../../api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java), [HTTP 생성·수정 권한](../../api-server/src/test/java/nuri/api/controller/foundation/controller/system/template/TemplateApiControllerTest.java) |
+| 첨부 | 단건·전체 삭제 모두 삭제 인가 후 DB를 변경하고, 커밋 뒤 실물을 지운다. DB 실패·바깥 트랜잭션 롤백이면 원본 파일이 남는다. | [실물 파일·트랜잭션 완료](../../business-core/src/test/java/nuri/business/service/file/FileDeletionTransactionTest.java) |
+| 커뮤니티 | 승인과 반려가 같은 회원 행의 쓰기 잠금을 얻은 뒤 상태를 판정한다. 후행 요청이 이미 승인된 회원을 반려로 지우지 않는다. | [양방향 실제 DB 경합](../../api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java) |
+| 메모 보고 | editable은 수정, deletable은 삭제 가능 여부다. 각각 기본 기능 권한과 owner 또는 해당 ALL 권한을 함께 평가한다. 두 필드는 응답 전용이며 실제 쓰기 인가는 서비스가 계속 집행한다. | [권한 조합](../../business-app/src/test/java/nuri/business/service/memoreport/MemoReportServiceTest.java), [생성 계약·요청 위조 차단](../../frontend/src/services/business/memoreport/__tests__/memoReportService.generated-contract.test.ts) |
+| 통계 | 날짜 단위 조회는 시작일 0시 이상·종료일 다음날 0시 미만이다. ISO와 yyyyMMdd를 정규화하며 마지막 마이크로초를 포함하고 다음날 행은 제외한다. 자료 이용의 게시판명 조인은 실존 bbs_ttl을 사용한다. | [보고 통계 경계](../../business-app/src/test/java/nuri/business/domain/stats/ReportStatsDateRangeRepositoryTest.java), [자료 이용 경계](../../business-app/src/test/java/nuri/business/domain/stats/DtaUseStatsDateRangeRepositoryTest.java), [게시글 경계](../../business-app/src/test/java/nuri/business/domain/board/BoardRepositoryTest.java) |
+| 대시보드 | 오늘 게시글은 한국 시간 하루의 활성 게시글을 기존 통계 포트로 읽는다. 재시작·자정에도 프로세스의 이벤트 누적에 의존하지 않는다. 집계 실패는 가용 여부를 전송해 화면에서 실제 0건과 구분한다. | [시계·집계 실패](../../business-app/src/test/java/nuri/business/service/dashboard/RealTimeDashboardServiceTest.java), [표시·복구](../../frontend/src/components/features/dashboard/__tests__/RealTimeDashboard.test.tsx) |
+| 로그인 E2E | SSR 제목·폰트가 먼저 보이더라도 익명 세션 확인의 GET 401을 관찰한 뒤 검사를 끝낸다. 기대 오류의 최소 발생 횟수와 flaky 차단은 유지한다. | [로그인 품질 spec](../../frontend/e2e/quality/login-accessibility.spec.ts) |
+
+### 감사와 증거의 범위
+
+백엔드 헌법의 의존 방향·DTO 경계·권한 재검증·커밋 후 부수효과 규범을 유지한다. 대시보드는 이미 있는
+foundation 통계 포트를 쓰며 형제 업무 서비스에 직접 의존하지 않는다. 메모 보고의 loginId 소유 판정과
+esntlId 열람 관계를 바꾸지 않는다. 서버는 요청에 섞인 권한 표시값을 역직렬화에서 무시하고 응답 전용으로
+선언하며, 생성 Zod·transport는 해당 필드를 요청에 넣으면 거부한다. 실제 쓰기 인가는 별도로 집행한다.
+
+DB 변경 전 읽기 전용 information_schema·표준 메타 조회로 통계 crt_dt가 timestamp(6)이고 게시판명 컬럼은
+bbs_ttl임을 확인했다. 날짜 경계 repository 검증은 H2에서 실제 쿼리를 실행하는 증거이며 운영 DB 정합성 증거와
+구분한다. 템플릿·회원 경합은 Flyway를 적용한 일회용 PostgreSQL에서 JPA와 실제 Lock 대기를 확인한다.
+첨부 검증의 저장소는 실제 임시 파일이지만 repository는 mock이고 커밋 실패를 Spring 트랜잭션 관리자에 주입한다.
+
+새 경합 테스트는 기존 schemaValidationTest에 연결한다. 도메인을 제외한 생성물에는 해당 테스트도 빠지도록
+기존 [게이트 원장](../../config/governance/gates.json), [프로필 제거 승인](../../config/reusable-base-profiles.json),
+[custom 도메인 소유 선언](../../scripts/project-composer-source.mjs)을 함께 결속한다. 보고서 날짜 검증은 게시판
+의존 테스트와 분리해 board가 빠져도 남는다. 전역 MockitoSpyBean 없이 기존 TC 컨텍스트를 공유한다.
+
+첨부 삭제는 DB와 파일시스템의 완전한 원자성을 보장하지 않는다. 커밋 뒤 저장소 장애나 프로세스 종료가 발생하면
+DB에서 접근할 수 없는 실물이 남을 수 있고, 기존 첨부 무결성 점검에서 고아 **후보**로 조사한다. 자동 복구나
+반드시 경보가 발생한다는 의미는 아니다. 대시보드의 날짜 기준은 공식 Docker의 Asia/Seoul 설정과 일치하며,
+다른 시간대의 직접 JVM 실행은 감사 시각 저장 기준도 함께 확인해야 한다. 장애 표시 개선은 양쪽 배포가 필요하다.
+
+### 수정 전후 검증 (2026-09-25)
+
+템플릿의 기존 ID 등록, 첨부의 롤백, 메모 권한 조합과 통계 경계는 수정 전 실패를 확인했다. 커뮤니티는
+잠금 호출만 원래 조회로 돌린 대조 실행에서 승인 후 반려가 승인 행을 삭제하고, 반대 순서에서는 도메인 오류
+대신 DB 오류가 발생함을 확인했다. 수정본에서는 PostgreSQL의 실제 잠금 대기를 관찰한 경합 5건이 모두 통과했다.
+
+Java 전체 모듈의 compileJava·compileTestJava, 파일 영향 검증 52건, 업무 영역 선별 검증과 HTTP 생성·수정 권한
+검증을 실행했다. 업무 검증 132건 중 H2 CHAR 반환형의 테스트 비교 1건을 바로잡아 해당 검증을 재실행했다.
+하네스 102건은 새 테스트·원장 변경에 따른 동결 manifest 차이만 있었으며, 예상 변경만 반영한 뒤 무결성 검사를
+다시 통과했다. 기존 예외나 제외 범위는 늘리지 않았다.
+
+프론트엔드 영향 검증 49건, 앱·E2E TypeScript 검사와 대상 ESLint가 통과했다(기존 hooks/refs 경고 3건).
+OpenAPI와 TypeScript·Zod·operation 계약 생성물을 함께 갱신했다. 이 결과는 로컬 영향 검증이며, 전체 CI나
+운영 부하 검증을 대신하지 않는다.
+
+로그인 E2E는 전용 워크트리에서 소유권을 검증하는 격리 runner로 일회용 PostgreSQL·API·운영 프론트 빌드를
+띄워 실행했다. 익명 세션 요청을 3초 지연한 대조 실행에서 기존 코드는 폰트 검사를 먼저 끝내 기대 401 미발생으로
+실패했다. trace의 미완료 요청, 화면과 서버 ERROR 0건을 대조했다. 수정본은 접근성 2종·폰트 각 3회와 인증 준비
+2건을 합쳐 11건 모두 통과했고, retry·flaky·skip은 0이었다. 폰트 trace 3개 모두 실제 401을 받았다.
+지연 주입은 검증 뒤 제거했고 기대 오류의 발생 횟수·유효기간은 바꾸지 않았다. 생성·원장·독립 모듈 계약 108건도
+통과했다. 공유 DB 쓰기는 수행하지 않았으며 격리 runner가 생성한 프로세스·DB만 정리했다.

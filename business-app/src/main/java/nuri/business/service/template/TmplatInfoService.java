@@ -56,7 +56,12 @@ public class TmplatInfoService extends BaseAbstractService {
     @Transactional
     public void insertTmplatInfo(TemplateDto templateDto) {
         required(templateDto, "템플릿 정보는 null 일 수 없습니다");
-        templateRepository.save(templateDto.toEntity());
+        String tmpltId = required(templateDto.getTmpltId(), "템플릿 ID 는 null 일 수 없습니다");
+        if (templateRepository.existsById(tmpltId)) {
+            throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, "이미 등록된 템플릿 ID입니다.");
+        }
+        // The pre-check gives an immediate conflict; INSERT also protects against concurrent creation.
+        templateRepository.insert(templateDto.toEntity());
     }
 
     /** 템플릿 수정 — ID 는 바꾸지 않는다(2026-09-05 DEC-OPS-036 — 종전에는 등록·조회만 가능했다, 감사 D11-02). */

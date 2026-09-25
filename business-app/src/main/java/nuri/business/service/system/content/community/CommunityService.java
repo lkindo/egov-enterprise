@@ -278,7 +278,8 @@ public class CommunityService {
     }
 
     private CommunityUser requireMembership(Long cmntySn, String userId) {
-        return communityUserRepository.findById(new CommunityUserId(Objects.requireNonNull(cmntySn), userId))
+        // Approval and rejection must observe the state after any competing decision commits.
+        return communityUserRepository.findByIdForUpdate(new CommunityUserId(Objects.requireNonNull(cmntySn), userId))
                 .orElseThrow(() -> new BusinessException(
                         CommonErrorCode.RESOURCE_NOT_FOUND, "가입 신청 내역을 찾을 수 없습니다."));
     }

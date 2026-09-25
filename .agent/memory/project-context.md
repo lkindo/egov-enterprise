@@ -5,8 +5,8 @@ status: active
 authority: derived-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-09-22
-verified_against: ca584f6d9684023ef611418a5dcb361bd890bc43
+verified_at: 2026-09-25
+verified_against: a283eff2779dbdf080bd2581a8075839d398ace7
 canonical_sources:
   - ../../docs/02-architecture/decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md
   - ../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md
@@ -83,6 +83,7 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 | CTX-019 | `npm run project:ui`는 별도 loopback 3100 생성기를 실행한다. Foundation/Core에 20개 업무 도메인을 선택하고 PostgreSQL·멀티모듈/단일모듈 독립 소스를 구성한다. UI/CLI는 같은 엔진을 쓰며 각 산출물은 전체 기술 검증 후 완료된다. | [생성기 가이드](../../docs/03-guides/project-composer-guide.md), [공통 엔진](../../scripts/project-composer.mjs) | 2026-09-20 |
 | CTX-020 | 로컬 E2E의 공식 진입점은 `npm run test:e2e:isolated`다. 새 일회용 DB와 소유한 앱 프로세스를 만들고 인증·fixture·cleanup 전에 owner attestation을 검사한다. 개발 `.env`나 공유 DB를 재사용하지 않는다. | [runner](../../scripts/run-isolated-e2e.mjs), [격리 검사](../../scripts/e2e-isolation.mjs), [실행 가이드](../../docs/03-guides/e2e-test-guide.md) | 2026-09-21 |
 | CTX-021 | PR·main push는 같은 영향 분류로 온라인 4모듈과 독립 이관의 build/PIT를 선택한다. 공용 Gradle·ID 계약은 양쪽, 미지·빈 비교는 전수다. 각 커버리지 85/70·required 6개·CodeQL 양언어를 유지한다. E2E 선택과 단일 캐시 writer는 ADR-0023을 따른다. Gradle action은 v6.3.0 SHA와 basic provider를 명시하며 성능 효과는 실행별 증거로 판단한다. | [ADR-0023](../../docs/02-architecture/decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md), [분류기](../../scripts/ci-change-scope.mjs), [선별·캐시 검증](../../docs/02-architecture/testing-process-redesign.md#95-pr-spec-선별과-단일-cache-writer-검증) | 2026-09-22 |
+| CTX-022 | 템플릿 생성은 INSERT 전용, 회원 승인·반려는 행 잠금 후 상태를 판정한다. 첨부 실물 삭제는 DB 커밋 뒤 수행하며 잔여 고아 후보는 무결성 점검 대상이다. 메모 수정·삭제 힌트와 통계 날짜 경계·대시보드 집계 의미는 도메인 회귀로 검증한다. | [정합성·검증 경계](../../docs/04-operations/readiness-followups.md#도메인-정합성-보강-2026-09-25) | 2026-09-25 |
 
 ## 개발·검증·배포 흐름
 

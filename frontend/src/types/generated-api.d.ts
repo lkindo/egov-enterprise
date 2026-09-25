@@ -5085,8 +5085,10 @@ export interface components {
              * @description 생성일시
              */
             readonly crtDt?: string | null;
-            /** @description 현재 사용자가 수정·삭제할 수 있는지(서버 판정) */
+            /** @description 현재 사용자가 수정할 수 있는지(서버 판정) */
             readonly editable?: boolean;
+            /** @description 현재 사용자가 삭제할 수 있는지(서버 판정) */
+            readonly deletable?: boolean;
         };
         ApprovalApproverDto: {
             userId?: string;

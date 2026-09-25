@@ -10,7 +10,9 @@ public record DashboardStatsUpdatedEvent(
     int activeUsers,
     int visitsPerMinute,
     int newPosts,
-    int alerts
+    int alerts,
+    boolean newPostsAvailable,
+    boolean alertsAvailable
 ) {
     /**
      * 프론트엔드 전송에 필요한 맵 구조로 쉽게 변환할 수 있는 유틸리티 메서드
@@ -20,7 +22,9 @@ public record DashboardStatsUpdatedEvent(
             "activeUsers", activeUsers,
             "visitsPerMinute", visitsPerMinute,
             "newPosts", newPosts,
-            "alerts", alerts
+            "alerts", alerts,
+            "newPostsAvailable", newPostsAvailable,
+            "alertsAvailable", alertsAvailable
         );
     }
 }

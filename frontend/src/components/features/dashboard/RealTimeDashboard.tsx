@@ -23,6 +23,8 @@ export interface RealTimeStats {
   visitsPerMinute: number;
   newPosts: number;
   alerts: number;
+  newPostsAvailable: boolean;
+  alertsAvailable: boolean;
 }
 
 interface RealTimeDashboardProps {
@@ -54,11 +56,20 @@ function parseStats(body: string): RealTimeStats | null {
   try {
     const value: unknown = JSON.parse(body);
     if (!isRecord(value)) return null;
-    const keys: Array<keyof RealTimeStats> = ['activeUsers', 'visitsPerMinute', 'newPosts', 'alerts'];
+    const keys = ['activeUsers', 'visitsPerMinute', 'newPosts', 'alerts'] as const;
     if (!keys.every((key) => typeof value[key] === 'number' && Number.isFinite(value[key]) && value[key] >= 0)) {
       return null;
     }
-    return Object.fromEntries(keys.map((key) => [key, value[key]])) as unknown as RealTimeStats;
+    const availabilityKeys = ['newPostsAvailable', 'alertsAvailable'] as const;
+    if (availabilityKeys.some((key) => value[key] !== undefined && typeof value[key] !== 'boolean')) {
+      return null;
+    }
+    // 기존 서버의 네 숫자 프레임도 읽는다. 새 서버는 조회 실패를 명시적으로 false로 보낸다.
+    return {
+      ...Object.fromEntries(keys.map((key) => [key, value[key]])),
+      newPostsAvailable: value.newPostsAvailable !== false,
+      alertsAvailable: value.alertsAvailable !== false,
+    } as RealTimeStats;
   } catch {
     return null;
   }
@@ -149,7 +160,8 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
             isConnected ? "bg-green-500 animate-pulse" : "bg-gray-300"
           )} />
           <span className="text-sm font-bold text-muted-foreground" role="status" aria-live="polite">
-            {!isConnected ? '연결 끊김' : stats ? '통계 수신 중' : '통계 수신 대기 중'}
+            {!isConnected ? '연결 끊김' : !stats ? '통계 수신 대기 중'
+              : stats.newPostsAvailable && stats.alertsAvailable ? '통계 수신 중' : '일부 통계 확인 불가'}
           </span>
         </div>
 
@@ -240,14 +252,16 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
         />
         <RealTimeStatCard
           title="신규 게시글"
-          value={stats?.newPosts ?? null}
+          value={stats?.newPostsAvailable ? stats.newPosts : null}
           icon={<Activity size={20} />}
           trend="오늘"
+          unavailableMessage={stats && !stats.newPostsAvailable ? '게시글 수 확인 불가' : undefined}
           color="purple"
         />
         <RealTimeStatCard
           title="알림"
-          value={stats?.alerts ?? null}
+          value={stats?.alertsAvailable ? stats.alerts : null}
+          unavailableMessage={stats && !stats.alertsAvailable ? '알림 수 확인 불가' : undefined}
           icon={<AlertCircle size={20} />}
           isAlert
           color="red"
@@ -269,11 +283,12 @@ interface RealTimeStatCardProps {
   value: number | null;
   icon: ReactNode;
   trend?: string;
+  unavailableMessage?: string;
   isAlert?: boolean;
   color?: keyof typeof statColorClasses;
 }
 
-function RealTimeStatCard({ title, value, icon, trend, isAlert = false, color = 'blue' }: RealTimeStatCardProps) {
+function RealTimeStatCard({ title, value, icon, trend, unavailableMessage, isAlert = false, color = 'blue' }: RealTimeStatCardProps) {
 
   return (
     <Card className={cn(
@@ -295,6 +310,7 @@ function RealTimeStatCard({ title, value, icon, trend, isAlert = false, color = 
         <p className="text-xs font-bold text-muted-foreground tracking-tight mt-1">
           {title}
         </p>
+        {unavailableMessage && <p className="text-xs text-destructive-emphasis mt-1">{unavailableMessage}</p>}
       </CardContent>
     </Card>
   );
