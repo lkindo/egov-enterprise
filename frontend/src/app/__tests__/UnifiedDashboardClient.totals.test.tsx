@@ -1,6 +1,9 @@
 import { act, Suspense } from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+// 로더(collaboration pack)를 타입으로 참조한다 — core 투영에서 로더가 걷히면 이 테스트도 함께 빠진다.
+// 업무 홈의 dataPromise 속성은 collaboration 블록 안에 있어 core 에는 없다.
+import type { loadDashboardData } from '../dashboard-data';
 
 /**
  * [2026-09-26 DIP V1] 업무 홈의 게시판 카드·목록이 사실을 말하는지.
@@ -22,7 +25,7 @@ vi.mock('@/app/components/dashboard/DashboardSkeleton', () => ({ DashboardSkelet
 
 const { default: UnifiedDashboardClient } = await import('../UnifiedDashboardClient');
 
-type DashboardData = Parameters<typeof UnifiedDashboardClient>[0]['dataPromise'] extends Promise<infer T> ? T : never;
+type DashboardData = Awaited<ReturnType<typeof loadDashboardData>>;
 
 async function renderHome(data: Partial<DashboardData>) {
   const dataPromise = Promise.resolve({
