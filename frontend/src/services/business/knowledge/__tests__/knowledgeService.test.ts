@@ -85,34 +85,31 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
     ])('카테고리 %s 는 게시판 %s 경로로 정확히 매핑된다', async (category, expectedBbsId) => {
       await knowledgeService.getArticles({ category });
 
-      expect(client.getRaw).toHaveBeenCalledWith(
-        `boards/${expectedBbsId}`,
-        expect.objectContaining({
-          params: expect.objectContaining({ qnaCategory: category }),
-        }),
-      );
+      expect(client.getRaw).toHaveBeenCalledWith(`boards/${expectedBbsId}`, expect.any(Object));
     });
 
-    it('매핑 표에 없는 카테고리는 공지사항 게시판으로 폴백하되 qnaCategory 는 원문을 유지한다', async () => {
+    // [2026-09-25] 탭 이름을 qnaCategory 로 보내면 서버가 qna_cat_cd 등치 필터를 걸어, 그 값을 쓰는 경로가
+    //   없는 네 탭의 주 목록이 늘 빈다. 카테고리는 게시판 선택에만 쓰고 분류 필터로 보내지 않는다.
+    it.each(['FAQ', 'QNA', 'WIKI', 'COMMUNITY', 'NOTICE'])(
+      '카테고리 %s 를 Q&A 분류 필터(qnaCategory)로 보내지 않는다',
+      async (category) => {
+        await knowledgeService.getArticles({ category });
+
+        const [, config] = vi.mocked(client.getRaw).mock.calls.at(-1)!;
+        expect(config?.params).not.toHaveProperty('qnaCategory');
+      },
+    );
+
+    it('매핑 표에 없는 카테고리는 공지사항 게시판으로 폴백한다', async () => {
       await knowledgeService.getArticles({ category: 'NOTICE' });
 
-      expect(client.getRaw).toHaveBeenCalledWith(
-        `boards/${BBS.NOTICE}`,
-        expect.objectContaining({
-          params: expect.objectContaining({ qnaCategory: 'NOTICE' }),
-        }),
-      );
+      expect(client.getRaw).toHaveBeenCalledWith(`boards/${BBS.NOTICE}`, expect.any(Object));
     });
 
     it('bbsId 를 명시하면 카테고리 매핑보다 우선해 그 게시판을 조회한다', async () => {
       await knowledgeService.getArticles({ bbsId: 'BBSMSTR_CUSTOM000001', category: 'FAQ' });
 
-      expect(client.getRaw).toHaveBeenCalledWith(
-        'boards/BBSMSTR_CUSTOM000001',
-        expect.objectContaining({
-          params: expect.objectContaining({ qnaCategory: 'FAQ' }),
-        }),
-      );
+      expect(client.getRaw).toHaveBeenCalledWith('boards/BBSMSTR_CUSTOM000001', expect.any(Object));
     });
 
     it('기본 페이징은 generated getPosts의 0-based page 0 · size 20으로 보낸다', async () => {
@@ -120,7 +117,6 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
 
       expect(client.getRaw).toHaveBeenCalledWith(`boards/${BBS.NOTICE}`, {
         params: {
-          qnaCategory: undefined,
           searchWrd: undefined,
           searchCnd: '0',
           page: 0,
@@ -134,7 +130,6 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
 
       expect(client.getRaw).toHaveBeenCalledWith(`boards/${BBS.NOTICE}`, {
         params: {
-          qnaCategory: undefined,
           searchWrd: undefined,
           searchCnd: '0',
           page: 2,

@@ -107,8 +107,12 @@ class KnowledgeService extends ApiService {
       else targetBbsId = this.BBS_IDS.NOTICE;
     }
 
+    // [2026-09-25] category 는 게시판을 고르는 키일 뿐이다. 종전에는 이 값을 qnaCategory 로도 보내
+    //   서버가 qna_cat_cd = 'FAQ'·'QNA'·'WIKI'·'COMMUNITY' 로 등치 필터를 걸었는데, 그 값을 쓰는 경로가
+    //   저장소 어디에도 없다(등록은 빈 값이나 Q&A 분류 CAT01 을 저장한다). 그래서 네 탭의 주 목록이 늘
+    //   비고, 필터가 없는 인기·최근 목록에만 글이 보였다(OCI 실측: 해당 값 0행). qnaCategory 는 Q&A 분류
+    //   필터로 서버에 남는다 — 탭 이름을 그 자리에 넣지 않는다.
     const boardParams = {
-      qnaCategory: params.category,
       searchWrd: params.searchWrd,
       searchCnd: params.searchCnd || '0',
       page: params.page || 0,
