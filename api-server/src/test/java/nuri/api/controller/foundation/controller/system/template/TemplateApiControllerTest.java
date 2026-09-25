@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.BDDMockito.willThrow;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.security.service.CustomUserDetails;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 
@@ -16,12 +17,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import nuri.business.security.annotation.WithMockCustomUser;
 
 import java.util.List;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -33,10 +36,21 @@ import java.util.Map;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import nuri.business.support.ControllerTestSupport;
+import nuri.business.security.authorization.PermissionPolicy;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
 @WebMvcTest(TemplateApiController.class)
+@Import({PermissionPolicy.class, TemplateApiControllerTest.MethodSecurityConfiguration.class})
 @DisplayName("TemplateApiController 단위 테스트")
 class TemplateApiControllerTest extends ControllerTestSupport {
+
+    /** This slice excludes ApiSecurityConfig, so exercise the real method policy explicitly. */
+    @TestConfiguration(proxyBeanMethods = false)
+    @EnableMethodSecurity
+    static class MethodSecurityConfiguration {
+    }
 
     @MockitoBean
     private TmplatInfoService tmplatInfoService;
@@ -67,6 +81,33 @@ class TemplateApiControllerTest extends ControllerTestSupport {
                         .content("{\"tmpltId\":\"T1\", \"tmpltNm\":\"Test Template\","
                                 + " \"tmpltSeCd\":\"TMPT01\", \"tmpltPath\":\"/t.html\", \"useYn\":\"Y\"}"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("CREATE만 가진 사용자는 생성만 가능하고 중복은 409, 수정은 403이다")
+    void createPermissionNeverAuthorizesUpdate() throws Exception {
+        var principal = CustomUserDetails.builder().userId("template-creator").esntlId("TEMPLATE_CREATOR")
+                .enabled(true).permissions(List.of("TEMPLATE_CREATE")).build();
+        var auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+        String body = """
+                {"tmpltId":"T_CREATE", "tmpltNm":"Template", "tmpltSeCd":"TMPT01",
+                 "tmpltPath":"/template.html", "useYn":"Y"}
+                """;
+
+        mockMvc.perform(post("/api/v1/admin/system/templates").with(authentication(auth)).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk());
+
+        willThrow(new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE))
+                .given(tmplatInfoService).insertTmplatInfo(any());
+        mockMvc.perform(post("/api/v1/admin/system/templates").with(authentication(auth)).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isConflict());
+
+        mockMvc.perform(put("/api/v1/admin/system/templates/T_CREATE").with(authentication(auth)).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isForbidden());
+        verify(tmplatInfoService, org.mockito.Mockito.never()).updateTmplatInfo(any(), any());
     }
 
     /**

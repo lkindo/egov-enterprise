@@ -21,10 +21,10 @@ public interface PostStatisticsContributor {
     long countPosts();
 
     /**
-     * 기간 내 날짜별 게시글 수.
+     * 반개방 구간 [from, to) 내 날짜별 게시글 수.
      *
-     * @param from 시작 시각 문자열({@code yyyy-MM-dd HH:mm:ss})
-     * @param to   종료 시각 문자열({@code yyyy-MM-dd HH:mm:ss})
+     * @param from 포함하는 시작 시각 문자열({@code yyyy-MM-dd HH:mm:ss})
+     * @param to   제외하는 종료 시각 문자열({@code yyyy-MM-dd HH:mm:ss})
      * @return {@code [날짜, 건수]} 행 목록. 논리 삭제된 글은 제외한다
      */
     List<Object[]> countPostsByDate(String from, String to);

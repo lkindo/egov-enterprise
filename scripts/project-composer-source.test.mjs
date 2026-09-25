@@ -22,6 +22,18 @@ const frontendSources = new Map(frontendFiles.filter(file => ['.ts', '.tsx', '.j
   .map(file => [file, readFileSync(join(root, file), 'utf8')]));
 const frontendKnownFiles = new Set([...frontendSources.keys()].map(file => join(root, file)));
 const covers = (prefix, path) => path === prefix || path.startsWith(`${prefix}/`);
+const integrityGates = [
+  ['api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java', 'system'],
+  ['api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java', 'template'],
+];
+
+function assertIntegrityGateAcknowledgements(profile, selected) {
+  for (const [file, owner] of integrityGates) {
+    const acknowledgements = (profile.acknowledgedRemovedGates ?? []).filter(row => row.file === file);
+    assert.equal(acknowledgements.length, selected.includes(owner) ? 0 : 1, `${file}: acknowledged removal must follow its owner`);
+    for (const row of acknowledgements) assert.ok(row.reason.trim().length > 0);
+  }
+}
 
 /** The real generator's pure marker/import functions run against the current source inventory. */
 function inspectFrontendSurvival(domains, currentCatalog = catalog) {
@@ -78,11 +90,38 @@ test('removing a shared UI dependency exposes the selected page loss instead of 
 test('each selectable domain retains its Java production sources after actual dependency pruning', () => {
   for (const domain of catalog.capabilities.map(row => row.id)) {
     const composition = resolveProjectRecipe(recipe([domain]), catalog);
-    const plan = planJavaRemoval(root, manifest, composerProfile(manifest, composition), java);
+    const profile = composerProfile(manifest, composition);
+    const plan = planJavaRemoval(root, manifest, profile, java);
+    assertIntegrityGateAcknowledgements(profile, composition.resolvedDomains);
+    for (const [file, owner] of integrityGates) {
+      assert.equal(plan.removed.has(join(root, file)), !composition.resolvedDomains.includes(owner), `${domain}: ${file}`);
+    }
     for (const selected of composition.resolvedDomains) for (const file of plan.removed) {
       const path = file.replaceAll('\\', '/');
       assert.ok(!['domain', 'service'].some(layer => path.includes(`/business-app/src/main/java/nuri/business/${layer}/${selected}/`)), `${domain}: unexpectedly removed ${file}`);
     }
+  }
+});
+
+test('preset integrity gate acknowledgements match the real removal plan', () => {
+  for (const [name, profile] of Object.entries(manifest.profiles)) {
+    const selected = profile.packs.flatMap(pack => manifest.packs[pack].backend?.appDomains ?? []);
+    assertIntegrityGateAcknowledgements(profile, selected);
+    const plan = planJavaRemoval(root, manifest, profile, java);
+    for (const [file, owner] of integrityGates) {
+      assert.equal(plan.removed.has(join(root, file)), !selected.includes(owner), `${name}: ${file}`);
+    }
+  }
+});
+
+test('missing integrity gate ownership is red for a custom composition', async () => {
+  const source = readFileSync(join(root, 'scripts/project-composer-source.mjs'), 'utf8').replaceAll('\r\n', '\n');
+  const composition = resolveProjectRecipe(recipe([]), catalog);
+  for (const [file, owner] of integrityGates) {
+    const declaration = `  '${file}': ['${owner}'],\n`;
+    assert.ok(source.includes(declaration), `${file}: owner declaration is present before mutation`);
+    const mutant = await import(`data:text/javascript;base64,${Buffer.from(source.replace(declaration, '')).toString('base64')}`);
+    assert.throws(() => assertIntegrityGateAcknowledgements(mutant.composerProfile(manifest, composition), []), /acknowledged removal/);
   }
 });
 

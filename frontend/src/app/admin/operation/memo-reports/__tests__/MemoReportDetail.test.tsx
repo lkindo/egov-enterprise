@@ -101,7 +101,7 @@ describe('메모보고 열람', () => {
     mocks.getReceivedReports.mockResolvedValue(page);
     mocks.getMyReports.mockResolvedValue(page);
     mocks.getMemoReports.mockResolvedValue(page);
-    mocks.getMemoReport.mockResolvedValue({ ...ROW, drctnMttr: '9월까지 검토 바랍니다.', editable: true });
+    mocks.getMemoReport.mockResolvedValue({ ...ROW, drctnMttr: '9월까지 검토 바랍니다.', editable: true, deletable: true });
     mocks.updateMemoReport.mockResolvedValue(undefined);
     mocks.deleteMemoReport.mockResolvedValue(undefined);
     mocks.confirm.mockResolvedValue(true);
@@ -204,11 +204,11 @@ describe('메모보고 열람', () => {
     [2026-09-08 PD-RPT-001] 수정·삭제.
 
     서버는 완비였지만 화면이 "내가 고칠 수 있는가" 를 판정할 정보를 못 받았다 — 쓰기 인가는
-    assertOwnerOrAdmin(frstRgtrId) 즉 loginId 축인데 열람 인가는 esntlId 축(userId·rptrId)이다.
-    이제 서버가 판정 결과(editable)만 내려주고 화면은 그것으로 액션 노출을 정한다.
+    owner 가드는 loginId 축인데 열람 인가는 esntlId 축(userId·rptrId)이다.
+    서버가 수정(editable)·삭제(deletable)를 각각 판정하고 화면은 그 결과로 액션 노출을 정한다.
   */
-  it('editable 이 아니면 수정·삭제를 노출하지 않는다 — 화면이 인가를 흉내내지 않는다', async () => {
-    mocks.getMemoReport.mockResolvedValue({ ...ROW, editable: false });
+  it('수정·삭제 capability가 모두 false이면 두 액션을 노출하지 않는다', async () => {
+    mocks.getMemoReport.mockResolvedValue({ ...ROW, editable: false, deletable: false });
     renderClient();
 
     fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
@@ -218,6 +218,22 @@ describe('메모보고 열람', () => {
     expect(screen.queryByRole('button', { name: '삭제' })).toBeNull();
     // 모달 자체의 X 버튼도 '닫기' 라 이름이 겹친다 — footer 의 것만 센다.
     expect(screen.getAllByRole('button', { name: '닫기' }).length).toBeGreaterThan(0);
+  });
+
+  it.each([
+    { editable: true, deletable: false },
+    { editable: false, deletable: true },
+    { editable: undefined, deletable: undefined },
+  ])('수정($editable)·삭제($deletable) capability를 각각 적용한다', async ({ editable, deletable }) => {
+    mocks.getMemoReport.mockResolvedValue({ ...ROW, editable, deletable });
+    renderClient();
+    fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
+    await screen.findByText('서버 증설이 필요합니다.');
+
+    expect(Boolean(screen.queryByRole('button', { name: '수정' }))).toBe(Boolean(editable));
+    expect(Boolean(screen.queryByRole('button', { name: '삭제' }))).toBe(Boolean(deletable));
+    expect(mocks.updateMemoReport).not.toHaveBeenCalled();
+    expect(mocks.deleteMemoReport).not.toHaveBeenCalled();
   });
 
   it('수정은 바꾸지 않은 필드까지 함께 보낸다 — 서버 update 가 전체 치환이다', async () => {

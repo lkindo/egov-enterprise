@@ -11,10 +11,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
- * 보고서 통계 정보 및 데이터 사용현황 관리를 위한 서비스
+ * 보고서 통계 정보 및 데이터 사용현황 관리를 위한 서비스.
+ * 타임스탬프 조회는 시작일 0시 이상, 종료일 다음날 0시 미만으로 마지막 소수초까지 포함한다.
  */
 @Service
 @RequiredArgsConstructor
@@ -84,8 +87,8 @@ public class ReportStatsService {
      * 보고서 통계 목록 조회
      */
     public Page<ReprtStats> getReprtStatsList(String reprtType, String fromDate, String toDate, int page, int size) {
-        String from = fromDate + " 00:00:00";
-        String to = toDate + " 23:59:59";
+        String from = parseDate(fromDate) + " 00:00:00";
+        String to = parseDate(toDate).plusDays(1) + " 00:00:00";
         return reprtStatsRepository.findByConditions(reprtType, from, to, PageRequest.of(page, size));
     }
 
@@ -93,8 +96,8 @@ public class ReportStatsService {
      * 보고서 통계 전체 건수
      */
     public long getReprtStatsCount(String reprtType, String fromDate, String toDate) {
-        String from = fromDate + " 00:00:00";
-        String to = toDate + " 23:59:59";
+        String from = parseDate(fromDate) + " 00:00:00";
+        String to = parseDate(toDate).plusDays(1) + " 00:00:00";
         return reprtStatsRepository.countByConditions(reprtType, from, to);
     }
 
@@ -102,8 +105,8 @@ public class ReportStatsService {
      * 등록 보고서 날짜별 통계
      */
     public List<Object[]> getReprtStatsByDate(String fromDate, String toDate) {
-        String from = fromDate + " 00:00:00";
-        String to = toDate + " 23:59:59";
+        String from = parseDate(fromDate) + " 00:00:00";
+        String to = parseDate(toDate).plusDays(1) + " 00:00:00";
         return reprtStatsRepository.countByDate(from, to);
     }
 
@@ -111,8 +114,8 @@ public class ReportStatsService {
      * 보고서 유형별 통계
      */
     public List<Object[]> getReprtStatsByType(String fromDate, String toDate) {
-        String from = fromDate + " 00:00:00";
-        String to = toDate + " 23:59:59";
+        String from = parseDate(fromDate) + " 00:00:00";
+        String to = parseDate(toDate).plusDays(1) + " 00:00:00";
         return reprtStatsRepository.countByReprtType(from, to);
     }
 
@@ -120,8 +123,8 @@ public class ReportStatsService {
      * 보고서 상태별 통계
      */
     public List<Object[]> getReprtStatsByStatus(String fromDate, String toDate) {
-        String from = fromDate + " 00:00:00";
-        String to = toDate + " 23:59:59";
+        String from = parseDate(fromDate) + " 00:00:00";
+        String to = parseDate(toDate).plusDays(1) + " 00:00:00";
         return reprtStatsRepository.countByReprtSttus(from, to);
     }
 
@@ -144,8 +147,8 @@ public class ReportStatsService {
      * 데이터 사용현황 목록 조회
      */
     public Page<DtaUseStats> getDtaUseStatsList(String fromDate, String toDate, int page, int size) {
-        String from = fromDate + " 00:00:00";
-        String to = toDate + " 23:59:59";
+        String from = parseDate(fromDate) + " 00:00:00";
+        String to = parseDate(toDate).plusDays(1) + " 00:00:00";
         return dtaUseStatsRepository.findByDateRange(from, to, PageRequest.of(page, size));
     }
 
@@ -153,8 +156,8 @@ public class ReportStatsService {
      * 데이터 사용현황 전체 건수
      */
     public long getDtaUseStatsCount(String fromDate, String toDate) {
-        String from = fromDate + " 00:00:00";
-        String to = toDate + " 23:59:59";
+        String from = parseDate(fromDate) + " 00:00:00";
+        String to = parseDate(toDate).plusDays(1) + " 00:00:00";
         return dtaUseStatsRepository.countByDateRange(from, to);
     }
 
@@ -162,8 +165,8 @@ public class ReportStatsService {
      * 등록 대기 데이터 사용현황
      */
     public List<Object[]> getDtaUseStatsByDate(String fromDate, String toDate) {
-        String from = fromDate + " 00:00:00";
-        String to = toDate + " 23:59:59";
+        String from = parseDate(fromDate) + " 00:00:00";
+        String to = parseDate(toDate).plusDays(1) + " 00:00:00";
         return dtaUseStatsRepository.countByDate(from, to);
     }
 
@@ -171,8 +174,8 @@ public class ReportStatsService {
      * 게시판별 데이터 사용현황
      */
     public List<Object[]> getDtaUseStatsByBbs(String fromDate, String toDate) {
-        String from = fromDate + " 00:00:00";
-        String to = toDate + " 23:59:59";
+        String from = parseDate(fromDate) + " 00:00:00";
+        String to = parseDate(toDate).plusDays(1) + " 00:00:00";
         return dtaUseStatsRepository.countByBbsId(from, to);
     }
 
@@ -187,9 +190,15 @@ public class ReportStatsService {
      * <p>이제 게시글({@code tb_bbs_item})을 실제로 센다. 논리 삭제된 글은 제외한다.
      */
     public List<Object[]> getBbsStatsByDate(String fromDate, String toDate) {
-        String from = fromDate + " 00:00:00";
-        String to = toDate + " 23:59:59";
+        String from = parseDate(fromDate) + " 00:00:00";
+        String to = parseDate(toDate).plusDays(1) + " 00:00:00";
         PostStatisticsContributor posts = postStatistics.getIfAvailable();
         return posts == null ? List.of() : posts.countPostsByDate(from, to);
+    }
+
+    /** 화면의 ISO 날짜와 컨트롤러 기본값인 yyyyMMdd를 같은 날짜 구간으로 정규화한다. */
+    private static LocalDate parseDate(String value) {
+        return LocalDate.parse(value, value.indexOf('-') >= 0
+                ? DateTimeFormatter.ISO_LOCAL_DATE : DateTimeFormatter.BASIC_ISO_DATE);
     }
 }

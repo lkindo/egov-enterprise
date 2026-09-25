@@ -9,6 +9,8 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -346,7 +348,7 @@ class MemoReportServiceTest {
     /*
       [2026-09-08 PD-RPT-001] editable — 화면이 인가를 흉내내지 않게 서버가 판정한다.
 
-      쓰기 인가는 assertOwnerOrAdmin(frstRgtrId) 즉 **loginId 축**인데 같은 도메인의 열람 인가는
+      쓰기 인가는 기본 기능 권한과 assertOwnerOrPermission(frstRgtrId, overridePermission) 즉 **loginId 축**인데 같은 도메인의 열람 인가는
       userId·rptrId 즉 **esntlId 축**이다. 두 축이 달라 화면은 응답만 보고 "내가 고칠 수 있는가" 를
       계산할 수 없었다. 그래서 판정 결과만 싣는다(식별자는 싣지 않는다 — loginId 가 목록 응답에
       실리면 계정 열거 표면이 넓어진다).
@@ -354,6 +356,8 @@ class MemoReportServiceTest {
     @Test
     @DisplayName("editable: 작성자 본인이면 true — 쓰기 인가와 같은 loginId 축으로 판정한다")
     void editableTrueForOwner() {
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE"))
+                .thenReturn(true);
         Pageable pageable = PageRequest.of(0, 10);
         MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-me").build();
         entity.setFrstRgtrId("login-me");
@@ -371,6 +375,8 @@ class MemoReportServiceTest {
     @Test
     @DisplayName("editable: 남의 보고면 false — 열람은 되지만 수정은 안 되는 상태를 화면이 알 수 있다")
     void editableFalseForOthers() {
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE"))
+                .thenReturn(true);
         Pageable pageable = PageRequest.of(0, 10);
         MemoReport entity = MemoReport.builder().memoRptSn(1L).rptrId("esntl-me").build();
         entity.setFrstRgtrId("login-someone-else");
@@ -386,14 +392,18 @@ class MemoReportServiceTest {
     }
 
     @Test
-    @DisplayName("editable: 관리자는 남의 보고도 true — assertOwnerOrAdmin 과 같은 규칙이다")
+    @DisplayName("editable: 전체 열람·수정 권한이 있으면 남의 보고도 수정 가능하다")
     void editableTrueForAdmin() {
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE"))
+                .thenReturn(true);
         Pageable pageable = PageRequest.of(0, 10);
         MemoReport entity = MemoReport.builder().memoRptSn(1L).build();
         entity.setFrstRgtrId("login-someone-else");
         given(memoReportRepository.searchByTitle(eq(""), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(entity)));
         __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_READ_ALL")).thenReturn(true);
+
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE_ALL")).thenReturn(true);
 
         Page<MemoReportDto> result = memoReportService.getMemoReportList(null, pageable);
 
@@ -403,8 +413,10 @@ class MemoReportServiceTest {
     @Test
     @DisplayName("editable: 작성자 정보가 없으면 false — 판정 불가를 '가능' 으로 열지 않는다")
     void editableFalseWhenOwnerMissing() {
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE"))
+                .thenReturn(true);
         Pageable pageable = PageRequest.of(0, 10);
-        // 감사 컬럼이 비어 있으면 assertOwnerOrAdmin 도 통과시키지 않는다(현재 loginId 와 null 은 같을 수 없다).
+        // 감사 컬럼이 비어 있으면 assertOwnerOrPermission 도 통과시키지 않는다(현재 loginId 와 null 은 같을 수 없다).
         MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-me").build();
         given(memoReportRepository.findByUserId(eq("esntl-me"), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(entity)));
@@ -415,5 +427,78 @@ class MemoReportServiceTest {
         Page<MemoReportDto> result = memoReportService.getMyReportList("esntl-me", null, pageable);
 
         assertThat(result.getContent().get(0).getEditable()).isFalse();
+    }
+
+    @ParameterizedTest(name = "readAll={0}, updateAll={1}, deleteAll={2}, owner={3}")
+    @CsvSource({
+            "true, false, false, false, false, false",
+            "false, true, false, false, true, false",
+            "false, false, true, false, false, true",
+            "true, true, true, false, true, true",
+            "false, false, false, true, true, true",
+            "false, false, false, false, false, false"
+    })
+    @DisplayName("수정·삭제 capability는 열람 권한과 독립이며 각각의 쓰기 가드와 일치한다")
+    void modificationCapabilitiesMatchTheirIndependentGuards(
+            boolean readAll, boolean updateAll, boolean deleteAll, boolean owner,
+            boolean editable, boolean deletable) {
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).rptrId("esntl-me").build();
+        entity.setFrstRgtrId(owner ? "login-me" : "login-other");
+        given(memoReportRepository.findById(1L)).willReturn(Optional.of(entity));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-me"));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                .thenReturn(Optional.of("login-me"));
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_READ_ALL"))
+                .thenReturn(readAll);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE_ALL"))
+                .thenReturn(updateAll);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_DELETE_ALL"))
+                .thenReturn(deleteAll);
+
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE"))
+                .thenReturn(true);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_DELETE"))
+                .thenReturn(true);
+
+        MemoReportDto result = memoReportService.getMemoReport(1L);
+
+        assertThat(result.getEditable()).isEqualTo(editable);
+        assertThat(result.getDeletable()).isEqualTo(deletable);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "true, false, false, false",
+            "false, true, false, false",
+            "true, false, true, false",
+            "true, false, false, true",
+            "false, true, true, false",
+            "false, true, false, true"
+    })
+    @DisplayName("기본 수정·삭제 기능 권한은 소유·대행 권한이 있어도 각각 필요하다")
+    void modificationCapabilitiesRequireOperationPermission(
+            boolean owner, boolean override, boolean update, boolean delete) {
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).rptrId("esntl-me").build();
+        entity.setFrstRgtrId(owner ? "login-me" : "login-other");
+        given(memoReportRepository.findById(1L)).willReturn(Optional.of(entity));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-me"));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                .thenReturn(Optional.of("login-me"));
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE_ALL"))
+                .thenReturn(override);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_DELETE_ALL"))
+                .thenReturn(override);
+
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE"))
+                .thenReturn(update);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_DELETE"))
+                .thenReturn(delete);
+
+        MemoReportDto result = memoReportService.getMemoReport(1L);
+
+        assertThat(result.getEditable()).isEqualTo(update);
+        assertThat(result.getDeletable()).isEqualTo(delete);
     }
 }

@@ -94,9 +94,9 @@ describe('memoReportService generated instruction contract', () => {
       'drctnMttrRegDt',
       'rptrInqDt',
       'crtDt',
-      // [2026-09-08 PD-RPT-001] editable 은 서버 판정(수정·삭제 가능 여부)이라 요청에서 받지 않는다.
-      // 클라이언트가 주장할 수 있으면 화면이 자기 권한을 스스로 여는 셈이 된다.
+      // 수정·삭제 capability는 서로 독립적인 서버 판정이며 요청에서 받지 않는다.
       'editable',
+      'deletable',
     ] as const;
     type ServerOwnedField = Extract<keyof MemoReportInput, (typeof serverOwnedFields)[number]>;
     expectTypeOf<ServerOwnedField>().toEqualTypeOf<never>();
@@ -113,12 +113,40 @@ describe('memoReportService generated instruction contract', () => {
     );
 
     for (const field of serverOwnedFields) {
-      const forged = { rptTtl: '보고', rptrId: 'USER', [field]: 'forged-value' };
-      await expect(memoReportService.createMemoReport(forged as never))
-        .rejects.toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
-      await expect(memoReportService.updateMemoReport(17, forged as never))
-        .rejects.toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
+      const values = field === 'editable' || field === 'deletable' ? [true, false] : ['forged-value'];
+      for (const value of values) {
+        const forged = { rptTtl: '보고', rptrId: 'USER', [field]: value };
+        await expect(memoReportService.createMemoReport(forged as never))
+          .rejects.toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
+        await expect(memoReportService.updateMemoReport(17, forged as never))
+          .rejects.toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
+      }
     }
     expect(client.requestRaw).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { editable: true, deletable: false },
+    { editable: false, deletable: true },
+    { editable: true, deletable: true },
+    { editable: false, deletable: false },
+  ])('응답 파싱이 수정($editable)·삭제($deletable) 판정을 독립적으로 보존한다', async (capabilities) => {
+    const report = { memoRptSn: 17, rptTtl: '보고', rptrId: 'USER', ...capabilities };
+    expect(MemoReportDtoResponseSchema.parse(report)).toMatchObject(capabilities);
+    client.getRaw
+      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: report })
+      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { list: [report], total: 1 } });
+
+    expect(await memoReportService.getMemoReport(17)).toMatchObject(capabilities);
+    const received = await memoReportService.getReceivedReports();
+    expect(received.list).toHaveLength(1);
+    expect(received.list[0]).toMatchObject(capabilities);
+  });
+
+  it.each(['editable', 'deletable'])('응답의 %s는 문자열을 boolean으로 간주하지 않는다', (field) => {
+    const result = MemoReportDtoResponseSchema.safeParse({
+      memoRptSn: 17, rptTtl: '보고', rptrId: 'USER', [field]: 'true',
+    });
+    expect(result.success).toBe(false);
   });
 });

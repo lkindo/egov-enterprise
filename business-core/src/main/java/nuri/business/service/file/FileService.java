@@ -4,6 +4,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.foundation.core.storage.FileStorageService;
+import nuri.foundation.core.util.TransactionUtils;
 import nuri.business.domain.file.FileDetail;
 
 import nuri.business.domain.file.FileDetailRepository;
@@ -115,13 +116,10 @@ public class FileService extends BaseAbstractService {
         FileMaster master = fileMasterRepository.findById(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
+        accessPolicy.assertDeletable(master);
         List<FileDetail> details = fileDetailRepository.findByFileMaster(required(master, "master 는 null 일 수 없습니다"));
-        for (FileDetail detail : details) {
-            storageService.delete(required(detail.getStrgFileNm(), "detail.getStrgFileNm() 는 null 일 수 없습니다"),
-                    required(detail.getFileStrgPath(), "detail.getFileStrgPath() 는 null 일 수 없습니다"));
-        }
-
         fileMasterRepository.delete(required(master, "master 는 null 일 수 없습니다"));
+        details.forEach(this::deleteStoredFileAfterCommit);
     }
 
     /**
@@ -137,9 +135,18 @@ public class FileService extends BaseAbstractService {
         //   HTTP 로 처음 노출되는 경로(2026-09-05 DELETE /files/{atchFileSn}/{fileSn})이므로 저장소를 건드리기 전에 판정한다.
         accessPolicy.assertDeletable(detail.getFileMaster());
 
-        storageService.delete(required(detail.getStrgFileNm(), "detail.getStrgFileNm() 는 null 일 수 없습니다"),
-                required(detail.getFileStrgPath(), "detail.getFileStrgPath() 는 null 일 수 없습니다"));
         fileDetailRepository.delete(required(detail, "detail 는 null 일 수 없습니다"));
+        deleteStoredFileAfterCommit(detail);
+    }
+
+    /**
+     * DB 롤백 시 원본 파일을 보존한다. 커밋 후 저장소 장애나 프로세스 종료로 남은 실물은
+     * 첨부 무결성 점검의 고아 후보로 확인한다. DB와 파일시스템의 원자적 삭제를 보장하지는 않는다.
+     */
+    private void deleteStoredFileAfterCommit(FileDetail detail) {
+        String filename = required(detail.getStrgFileNm(), "detail.getStrgFileNm() 는 null 일 수 없습니다");
+        String targetPath = required(detail.getFileStrgPath(), "detail.getFileStrgPath() 는 null 일 수 없습니다");
+        TransactionUtils.runAfterCommit(() -> storageService.delete(filename, targetPath));
     }
 
     /**

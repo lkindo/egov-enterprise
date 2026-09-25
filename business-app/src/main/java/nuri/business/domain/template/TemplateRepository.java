@@ -10,7 +10,7 @@ import java.util.List;
  * 템플릿 정보 리포지토리
  */
 @Repository("commonTemplateRepository")
-public interface TemplateRepository extends JpaRepository<Template, String> {
+public interface TemplateRepository extends JpaRepository<Template, String>, TemplateRepositoryCustom {
 
     Page<Template> findByTmpltNmContaining(String tmpltNm, Pageable pageable);
 

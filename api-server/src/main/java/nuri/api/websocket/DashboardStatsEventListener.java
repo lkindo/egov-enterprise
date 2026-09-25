@@ -7,7 +7,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -27,11 +26,7 @@ public class DashboardStatsEventListener {
     @EventListener
     public void handleDashboardStatsUpdated(DashboardStatsUpdatedEvent event) {
         try {
-            Map<String, Object> stats = new HashMap<>();
-            stats.put("activeUsers", event.activeUsers());
-            stats.put("visitsPerMinute", event.visitsPerMinute());
-            stats.put("newPosts", event.newPosts());
-            stats.put("alerts", event.alerts());
+            Map<String, Object> stats = event.toMap();
 
             // Spring Messaging 7 에 기본 목적지용 convertAndSend(Object payload, Map headers) 가 생겨 (String, Map) 인자가
             //   두 오버로드에 모두 맞는다. payload 를 Object 로 올려 목적지 오버로드를 고른다.

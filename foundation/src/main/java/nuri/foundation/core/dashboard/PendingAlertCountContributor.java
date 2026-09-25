@@ -9,7 +9,7 @@ package nuri.foundation.core.dashboard;
  * 대시보드는 이 포트만 보고 알림 도메인이 base projection 에서 빠져도 존재하지 않는 테이블을 조회하지 않는다.
  *
  * <p><b>구현이 없을 때의 의미</b> — 알림 도메인이 없으면 대기 알림도 <b>실제로</b> 0 이다. 이것은 조회에
- * 실패했는데 0 이라고 말하는 것과 다르다 — 후자는 소비 측이 예외를 잡아 따로 로그를 남긴다.
+ * 실패했는데 0 이라고 말하는 것과 다르다 — 후자는 소비 측이 예외를 잡아 로그와 집계 미확인 상태를 전달한다.
  */
 public interface PendingAlertCountContributor {
 

@@ -775,6 +775,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/CommunityBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-COMMUNITY-DECISION-CONCURRENCY",
+          "source": "api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-DEFERRED-STANDARD-DESIGN",
           "source": "api-server/src/test/java/nuri/api/schema/DeferredStandardDesignMigrationIntegrationTest.java"
         },
@@ -937,6 +941,10 @@
         {
           "id": "DB-MIG-SYS-LOG-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/SysLogBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-TEMPLATE-CREATION-INTEGRITY",
+          "source": "api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java"
         },
         {
           "id": "DB-MIG-USER-ACTIVITY-UPSERT",

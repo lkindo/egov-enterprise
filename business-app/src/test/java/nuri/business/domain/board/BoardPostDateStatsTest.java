@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>── 날짜를 직접 넣는 이유 ──────────────────────────────────────────────────
  * {@code crt_dt} 는 {@code @CreatedDate} 인데 {@code @DataJpaTest} 슬라이스에는
  * {@code JpaConfig}(@EnableJpaAuditing)가 없어 채워지지 않는다(실측 — 저장만 하면 NULL 이라
- * BETWEEN 이 전부 탈락한다). 감사 설정을 이 테스트에서 켜는 대신 값을 명시해, 기간 안·밖을
+ * 기간 비교에서 전부 탈락한다). 감사 설정을 이 테스트에서 켜는 대신 값을 명시해, 기간 안·밖을
  * 실제로 가르는 검사가 되게 한다.
  */
 @DisplayName("게시물 날짜별 집계 통합 테스트")
@@ -42,7 +42,7 @@ class BoardPostDateStatsTest extends PersistenceTestSupport {
     private EntityManager em;
 
     private static final String FROM = "2026-08-01 00:00:00";
-    private static final String TO = "2026-08-31 23:59:59";
+    private static final String TO = "2026-09-01 00:00:00";
 
     /** 글 하나를 만들고 등록일시를 명시한다. */
     private Board savePost(String title, String useYn, String crtDt) {

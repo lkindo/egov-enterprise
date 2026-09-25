@@ -391,12 +391,13 @@ class CommunityServiceImplTest {
     void approveMember_movesRequestedToApproved() {
         authenticateWithRole("ROLE_ADMIN");
         var member = membership(101L, "user1", "A");
-        given(communityUserRepository.findById(any())).willReturn(Optional.of(member));
+        given(communityUserRepository.findByIdForUpdate(any())).willReturn(Optional.of(member));
 
         communityService.approveMember(101L, "user1");
 
         assertThat(member.getMbrSttsCd()).isEqualTo("P");
         assertThat(member.isRequested()).isFalse();
+        verify(communityUserRepository, never()).findById(any());
     }
 
     @Test
@@ -404,7 +405,7 @@ class CommunityServiceImplTest {
     void approveMember_rejectsNonRequested() {
         authenticateWithRole("ROLE_ADMIN");
         var member = membership(101L, "user1", "P");
-        given(communityUserRepository.findById(any())).willReturn(Optional.of(member));
+        given(communityUserRepository.findByIdForUpdate(any())).willReturn(Optional.of(member));
 
         nuri.foundation.core.exception.BusinessException thrown = org.junit.jupiter.api.Assertions.assertThrows(
                 nuri.foundation.core.exception.BusinessException.class,
@@ -420,11 +421,12 @@ class CommunityServiceImplTest {
     void rejectMember_deletesRequestedRow() {
         authenticateWithRole("ROLE_ADMIN");
         var member = membership(101L, "user1", "A");
-        given(communityUserRepository.findById(any())).willReturn(Optional.of(member));
+        given(communityUserRepository.findByIdForUpdate(any())).willReturn(Optional.of(member));
 
         communityService.rejectMember(101L, "user1");
 
         verify(communityUserRepository).delete(member);
+        verify(communityUserRepository, never()).findById(any());
     }
 
     @Test
@@ -432,7 +434,7 @@ class CommunityServiceImplTest {
     void rejectMember_doesNotDeleteApprovedMember() {
         authenticateWithRole("ROLE_ADMIN");
         var member = membership(101L, "user1", "P");
-        given(communityUserRepository.findById(any())).willReturn(Optional.of(member));
+        given(communityUserRepository.findByIdForUpdate(any())).willReturn(Optional.of(member));
 
         nuri.foundation.core.exception.BusinessException thrown = org.junit.jupiter.api.Assertions.assertThrows(
                 nuri.foundation.core.exception.BusinessException.class,
@@ -447,7 +449,7 @@ class CommunityServiceImplTest {
     @DisplayName("멤버십 전이 — 없는 신청은 404")
     void approveMember_notFound() {
         authenticateWithRole("ROLE_ADMIN");
-        given(communityUserRepository.findById(any())).willReturn(Optional.empty());
+        given(communityUserRepository.findByIdForUpdate(any())).willReturn(Optional.empty());
 
         nuri.foundation.core.exception.BusinessException thrown = org.junit.jupiter.api.Assertions.assertThrows(
                 nuri.foundation.core.exception.BusinessException.class,
@@ -476,6 +478,7 @@ class CommunityServiceImplTest {
         }
         assertThat(member.getMbrSttsCd()).isEqualTo("A");
         verify(communityUserRepository, never()).delete(any());
+        verify(communityUserRepository, never()).findByIdForUpdate(any());
         verify(communityUserRepository, never()).findByIdCmntySn(any(), any());
     }
 
