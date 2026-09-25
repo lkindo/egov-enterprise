@@ -248,18 +248,23 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
 
       {/* 실시간 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/*
+          [2026-09-26 DIP V1] 두 값은 사용자 수도 분당 방문도 아니다. 서버(RealTimeDashboardService)는 이 서버
+          인스턴스의 실시간 연결(WebSocket) 수를 세고, visitsPerMinute 는 연결될 때마다 오르기만 하고 1분마다
+          초기화되지 않는 재기동 이후 누적 연결 수다. 서버를 여러 대 두면 다른 서버의 연결은 세지 않는다.
+        */}
         <RealTimeStatCard
-          title="현재 접속자"
+          title="실시간 연결 세션(이 서버)"
           value={stats?.activeUsers ?? null}
           icon={<Users size={20} />}
-          trend={stats ? `${stats.visitsPerMinute}명/분` : undefined}
+          trend="현재"
           color="blue"
         />
         <RealTimeStatCard
-          title="분당 방문"
+          title="누적 연결(이 서버, 재기동 이후)"
           value={stats?.visitsPerMinute ?? null}
           icon={<TrendingUp size={20} />}
-          trend="방문/분"
+          trend="회"
           color="green"
         />
         <RealTimeStatCard

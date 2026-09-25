@@ -34,7 +34,7 @@ public class CommunityDto {
     @Pattern(regexp = "^(?:Y|N)$")
     private String useYn;
     private String frstRgtrId;
-    private String frstRegisterNm;
+    // [2026-09-26 DIP V2] 등록자명(frstRegisterNm)은 from() 이 채우지 않아 늘 null 이라 걷었다.
     private String crtDt;
 
     public static CommunityDto from(Community community) {

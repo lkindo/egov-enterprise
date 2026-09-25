@@ -97,8 +97,8 @@ public record BoardDto(
     @Schema(description = "등록일시", nullable = true, types = {"string", "null"})
     LocalDateTime crtDt,
 
-    @Schema(description = "등록자명", nullable = true, types = {"string", "null"})
-    String frstRegisterNm,
+    // [2026-09-26 DIP V2] 등록자명(frstRegisterNm)을 걷었다 — 매퍼 세 곳이 모두 ignore 해 늘 null 이었고,
+    //   작성자 이름은 userNm 이 싣는다. 비어 있는 필드가 계약에 있으면 화면이 그것을 읽어 작성자를 '-' 로 그린다.
 
     @Schema(description = "답글 단계", nullable = true, types = {"integer", "null"})
     Integer ansLv

@@ -864,7 +864,6 @@ export const CommunityDtoSchema = z.object({
   tmpltNm: z.string().optional(),
   useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional(),
-  frstRegisterNm: z.string().optional(),
   crtDt: z.string().optional(),
 });
 export type CommunityDto = z.infer<typeof CommunityDtoSchema>;
@@ -2301,7 +2300,6 @@ export const BoardDtoSchema = z.object({
   commentCnt: z.number().int().optional().nullable(),
   fileCnt: z.number().int().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  frstRegisterNm: z.string().optional().nullable(),
   ansLv: z.number().int().optional().nullable(),
 });
 export type BoardDto = z.infer<typeof BoardDtoSchema>;
@@ -2312,6 +2310,8 @@ export type BoardDto = z.infer<typeof BoardDtoSchema>;
 export const DashboardResponseSchema = z.object({
   taskList: z.array(z.lazy(() => BoardDtoSchema)),
   notiList: z.array(z.lazy(() => BoardDtoSchema)),
+  taskListTotal: z.number().int().min(0).nullable(),
+  notiListTotal: z.number().int().min(0).nullable(),
   pendingApprovalCount: z.number().int().min(0).nullable(),
 });
 export type DashboardResponse = z.infer<typeof DashboardResponseSchema>;
@@ -5923,7 +5923,6 @@ export const CommunityDtoRequestSchema = z.object({
   tmpltNm: z.string().optional(),
   useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional(),
-  frstRegisterNm: z.string().optional(),
   crtDt: z.string().optional(),
 });
 
@@ -5937,7 +5936,6 @@ export const CommunityDtoResponseSchema = z.object({
   tmpltNm: z.string().optional().nullable(),
   useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional().nullable(),
-  frstRegisterNm: z.string().optional().nullable(),
   crtDt: z.string().optional().nullable(),
 });
 
@@ -7920,7 +7918,6 @@ export const BoardDtoRequestSchema = z.object({
   commentCnt: z.number().int().optional().nullable(),
   fileCnt: z.number().int().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  frstRegisterNm: z.string().optional().nullable(),
   ansLv: z.number().int().optional().nullable(),
 });
 
@@ -7948,19 +7945,22 @@ export const BoardDtoResponseSchema = z.object({
   commentCnt: z.number().int().optional().nullable(),
   fileCnt: z.number().int().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  frstRegisterNm: z.string().optional().nullable(),
   ansLv: z.number().int().optional().nullable(),
 });
 
 export const DashboardResponseRequestSchema = z.object({
   taskList: z.array(z.lazy(() => BoardDtoRequestSchema.strict())),
   notiList: z.array(z.lazy(() => BoardDtoRequestSchema.strict())),
+  taskListTotal: z.number().int().min(0).nullable(),
+  notiListTotal: z.number().int().min(0).nullable(),
   pendingApprovalCount: z.number().int().min(0).nullable(),
 });
 
 export const DashboardResponseResponseSchema = z.object({
   taskList: z.array(z.lazy(() => BoardDtoResponseSchema)),
   notiList: z.array(z.lazy(() => BoardDtoResponseSchema)),
+  taskListTotal: z.number().int().min(0).nullable(),
+  notiListTotal: z.number().int().min(0).nullable(),
   pendingApprovalCount: z.number().int().min(0).nullable(),
 });
 

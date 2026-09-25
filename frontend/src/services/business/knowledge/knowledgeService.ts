@@ -14,19 +14,11 @@ import {
 } from '@/types/generated-operations';
 import type { BoardDto, BoardStatsResponse } from '@/types/generated-zod';
 
-/**
- * ⚠ [2026-09-22] 서버는 같은 자원을 **레거시 필드명으로도** 내려준다(`nttId`·`nttSj`·`frstRgtrId`).
- *   생성 타입 `BoardDto` 에는 그 필드가 없지만, 타입에 없다는 것은 "오지 않는다" 가 아니라
- *   "문서가 말하지 않았다" 이다(DEC-OPS-028 과 같은 계열). 타입을 좁히며 폴백을 지웠더니
- *   레거시 응답이 `pstSn: 0`·`pstTtl: ''` 로 뭉개졌다(계약 3건 red 로 실측).
- *   any 로 되돌리는 대신 레거시 축을 명시 타입으로 인정한다.
+/*
+ * [2026-09-26 DIP V2] 레거시 필드명 폴백(`nttId`·`nttSj`·`frstRgtrId`)을 걷었다. 종전 주석은 "서버가 같은 자원을
+ *   레거시 필드명으로도 내려준다" 고 적었지만 BoardDto 에는 그 필드도 별칭(@JsonAlias)도 없다 — 폴백을 증명하던
+ *   계약은 서버가 보내지 않는 필드로 만든 테스트 픽스처였다. 작성자는 userNm, 작성 일시는 crtDt 다.
  */
-type LegacyBoardFields = {
-  nttId?: number;
-  nttSj?: string;
-  frstRgtrId?: string;
-};
-type BoardDtoWithLegacy = BoardDto & LegacyBoardFields;
 
 export interface KnowledgeActivityItem {
   id: number;
@@ -34,7 +26,6 @@ export interface KnowledgeActivityItem {
   title: string;
   user: string;
   time: string;
-  impact: string;
 }
 
 /**
@@ -45,13 +36,13 @@ export interface KnowledgeDto {
   pstTtl: string;
   pstCn: string;
   atchFileSn?: number;
-  frstRgtrId?: string;
   /** 게시글 owner-or-admin mutation 판정에 사용하는 API 작성자 식별자. */
   userId?: string;
+  /** 작성자 이름(BoardDto.userNm). */
+  userNm?: string;
+  /** 작성 일시(BoardDto.crtDt, ISO). */
   crtDt?: string;
   inqCnt?: number;
-  frstRegisterNm?: string;
-  frstRegisterPnttmStr?: string;
   bbsId?: string;
   statusCd?: string;
   categoryCd?: string;
@@ -144,15 +135,15 @@ class KnowledgeService extends ApiService {
     });
     
     return {
-      list: (res.list || []).map((item: BoardDtoWithLegacy): KnowledgeDto => ({
-        pstSn: item.pstSn ?? item.nttId ?? 0,
-        pstTtl: item.pstTtl ?? item.nttSj ?? '',
+      list: (res.list || []).map((item: BoardDto): KnowledgeDto => ({
+        pstSn: item.pstSn ?? 0,
+        pstTtl: item.pstTtl ?? '',
         pstCn: item.pstCn ?? '',
         atchFileSn: item.atchFileSn ?? undefined,
         userId: item.userId ?? undefined,
+        userNm: item.userNm ?? undefined,
         crtDt: item.crtDt ?? undefined,
         inqCnt: item.inqCnt ?? undefined,
-        frstRegisterNm: item.frstRegisterNm ?? undefined,
         bbsId: item.bbsId,
         qnaSttsCd: item.qnaSttsCd ?? undefined,
         qnaCatCd: item.qnaCatCd ?? undefined,
@@ -197,13 +188,14 @@ class KnowledgeService extends ApiService {
       query: { size: 10 },
     });
     
-    return (res.list || []).map((item: BoardDtoWithLegacy): KnowledgeActivityItem => ({
-      id: item.pstSn ?? item.nttId ?? 0,
+    // [2026-09-26 DIP V2] 모르는 값은 '-' 다. 종전의 'Anonymous'·'Just now' 는 사실이 아니었고(작성일이 없는 글을
+    //   '방금' 으로 말했다), 작성자 폴백의 로그인 ID 는 화면에 싣지 않는다. 쓰이지 않던 지어낸 영향 지표(+N Reach)도 걷었다.
+    return (res.list || []).map((item: BoardDto): KnowledgeActivityItem => ({
+      id: item.pstSn ?? 0,
       type: 'SHARE',
-      title: item.pstTtl ?? item.nttSj ?? '',
-      user: item.userNm || item.frstRgtrId || item.userId || 'Anonymous',
-      time: item.crtDt?.split('T')[0] || 'Just now',
-      impact: `+${(item.inqCnt || 0) % 100} Reach`,
+      title: item.pstTtl ?? '',
+      user: item.userNm || '-',
+      time: item.crtDt?.slice(0, 10) || '-',
     }));
   }
 }
