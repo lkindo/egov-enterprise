@@ -294,7 +294,7 @@
             "network": "online"
           },
           "truth": {
-            "status": "unverified",
+            "status": "partial",
             "owner": "product/UX + auth domain owner",
             "reviewBy": "2026-12-07"
           }
@@ -311,7 +311,7 @@
             "network": "online"
           },
           "truth": {
-            "status": "unverified",
+            "status": "partial",
             "owner": "product/UX + auth domain owner",
             "reviewBy": "2026-12-07"
           }
@@ -356,7 +356,7 @@
             "network": "online"
           },
           "truth": {
-            "status": "unverified",
+            "status": "partial",
             "owner": "product/UX + admin-shell owner",
             "reviewBy": "2026-12-07"
           }
@@ -403,7 +403,7 @@
             "network": "online"
           },
           "truth": {
-            "status": "unverified",
+            "status": "partial",
             "owner": "product/UX + logging domain owner",
             "reviewBy": "2026-12-07"
           }
@@ -419,7 +419,7 @@
             "network": "online"
           },
           "truth": {
-            "status": "unverified",
+            "status": "partial",
             "owner": "product/UX + logging domain owner",
             "reviewBy": "2026-12-07"
           }
@@ -435,7 +435,7 @@
             "network": "injected-5xx"
           },
           "truth": {
-            "status": "unverified",
+            "status": "partial",
             "owner": "product/UX + logging domain owner",
             "reviewBy": "2026-12-07"
           }
@@ -479,7 +479,7 @@
             "network": "online"
           },
           "truth": {
-            "status": "unverified",
+            "status": "partial",
             "owner": "product/UX + user domain owner",
             "reviewBy": "2026-12-07"
           }
@@ -496,7 +496,7 @@
             "network": "injected-5xx"
           },
           "truth": {
-            "status": "unverified",
+            "status": "partial",
             "owner": "product/UX + user domain owner",
             "reviewBy": "2026-12-07"
           }
@@ -543,7 +543,7 @@
             "network": "online"
           },
           "truth": {
-            "status": "unverified",
+            "status": "partial",
             "owner": "product/UX + board domain owner",
             "reviewBy": "2026-12-07"
           }
@@ -560,7 +560,7 @@
             "network": "online"
           },
           "truth": {
-            "status": "unverified",
+            "status": "partial",
             "owner": "product/UX + board domain owner",
             "reviewBy": "2026-12-07"
           }
@@ -607,7 +607,7 @@
             "network": "online"
           },
           "truth": {
-            "status": "unverified",
+            "status": "partial",
             "owner": "product/UX + help/board domain owners",
             "reviewBy": "2026-12-07"
           }
@@ -624,7 +624,7 @@
             "network": "online"
           },
           "truth": {
-            "status": "unverified",
+            "status": "partial",
             "owner": "product/UX + help domain owner",
             "reviewBy": "2026-12-07"
           }
@@ -641,7 +641,7 @@
             "network": "online"
           },
           "truth": {
-            "status": "unverified",
+            "status": "partial",
             "owner": "product/UX + help domain owner",
             "reviewBy": "2026-12-07"
           }
@@ -689,7 +689,7 @@
             "network": "online"
           },
           "truth": {
-            "status": "unverified",
+            "status": "partial",
             "owner": "product/UX + board domain owner",
             "reviewBy": "2026-12-07"
           }
@@ -705,7 +705,7 @@
             "network": "online"
           },
           "truth": {
-            "status": "unverified",
+            "status": "partial",
             "owner": "product/UX + board domain owner",
             "reviewBy": "2026-12-07"
           }
@@ -750,7 +750,7 @@
             "network": "online"
           },
           "truth": {
-            "status": "unverified",
+            "status": "partial",
             "owner": "product/UX + onboarding owner",
             "reviewBy": "2026-12-07"
           }
