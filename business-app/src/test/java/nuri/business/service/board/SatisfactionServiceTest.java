@@ -109,6 +109,41 @@ class SatisfactionServiceTest {
     }
 
     @Test
+    @DisplayName("🚨 이미 남긴 평가가 있으면 두 번째 등록은 409 다 — 한 사람이 평균을 여러 번 움직이지 못한다 (DIP I6 ⑤)")
+    void createRejectsSecondActiveRating() {
+        authenticateAs("user1", "USER");
+        Satisfaction existing = satisfactionOwnedBy("user1");
+        given(satisfactionRepository.findByBbsIdAndPstSnAndFrstRgtrId("BBS_01", 1L, "user1"))
+                .willReturn(java.util.Optional.of(existing));
+
+        assertThatThrownBy(() -> satisfactionService.createSatisfaction(SatisfactionDto.builder()
+                .bbsId("BBS_01").pstSn(1L).dgstfnScr(1).dgstfnCn("또").build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.DUPLICATE_RESOURCE);
+        verify(satisfactionRepository, never()).save(any());
+        assertThat(existing.getDgstfnScr()).isEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("스스로 지운 평가를 다시 남기면 같은 행을 새 점수로 되살린다 — 1인 1건 UNIQUE 아래에서 재평가가 막히지 않는다 (DIP I6 ⑤)")
+    void createRevivesOwnDeletedRating() {
+        authenticateAs("user1", "USER");
+        Satisfaction deleted = satisfactionOwnedBy("user1");
+        deleted.delete();
+        given(satisfactionRepository.findByBbsIdAndPstSnAndFrstRgtrId("BBS_01", 1L, "user1"))
+                .willReturn(java.util.Optional.of(deleted));
+
+        Long sn = satisfactionService.createSatisfaction(SatisfactionDto.builder()
+                .bbsId("BBS_01").pstSn(1L).dgstfnScr(2).dgstfnCn("다시").build());
+
+        assertThat(sn).isEqualTo(10L);
+        assertThat(deleted.getUseYn()).isEqualTo("Y");
+        assertThat(deleted.getDgstfnScr()).isEqualTo(2);
+        assertThat(deleted.getDgstfnCn()).isEqualTo("다시");
+        verify(satisfactionRepository, never()).save(any());
+    }
+
+    @Test
     @DisplayName("등록 - 인증된 요청은 익명 자격증명 없이 저장한다")
     void createAuthenticatedSatisfaction() {
         authenticateAs("user1", "USER");

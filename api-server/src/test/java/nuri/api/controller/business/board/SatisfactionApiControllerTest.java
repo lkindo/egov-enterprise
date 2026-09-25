@@ -76,6 +76,21 @@ class SatisfactionApiControllerTest {
         assertThat(policy.allowed(owner, prefix + "moderate")).isFalse();
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+            "{\"useYn\":\"Y\"}",
+            "{\"dgstfnScr\":0,\"useYn\":\"Y\"}",
+            "{\"dgstfnScr\":6,\"useYn\":\"Y\"}"})
+    @DisplayName("🚨 점수가 없거나 1~5 밖이면 400 이고 서비스에 닿지 않는다 (DIP I6 ⑤)")
+    void createRejectsMissingOrOutOfRangeScore(String body) throws Exception {
+        mockMvc.perform(post("/api/v1/boards/BBS_01/posts/1/satisfactions")
+                        .contentType("application/json")
+                        .content(body))
+                .andExpect(status().isBadRequest());
+
+        verify(satisfactionService, org.mockito.Mockito.never()).createSatisfaction(any());
+    }
+
     /** 경로가 조회 범위를 강제하는지 — 본문이 다른 게시글을 가리켜도 경로가 이겨야 한다. */
     @Test
     @DisplayName("등록 - 경로의 bbsId/pstSn 가 본문 값을 덮어쓴다 (교차 게시글 등록 차단)")

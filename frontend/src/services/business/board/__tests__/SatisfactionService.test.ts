@@ -183,7 +183,7 @@ describe('satisfactionService 경로 조립 계약', () => {
 
     await satisfactionService.list(BBS_ID, PST_SN);
     await satisfactionService.average(BBS_ID, PST_SN);
-    await satisfactionService.create(BBS_ID, PST_SN, { useYn: 'Y' });
+    await satisfactionService.create(BBS_ID, PST_SN, { dgstfnScr: 5, useYn: 'Y' });
     await satisfactionService.remove(BBS_ID, PST_SN, DGSTFN_SN);
 
     const urls = [
@@ -277,7 +277,7 @@ describe('satisfactionService 요청 본문과 응답 전달', () => {
   it('등록은 생성된 만족도 일련번호를 변형 없이 반환한다', async () => {
     client.post.mockResolvedValueOnce(9001);
 
-    await expect(satisfactionService.create(BBS_ID, PST_SN, { useYn: 'Y' })).resolves.toBe(9001);
+    await expect(satisfactionService.create(BBS_ID, PST_SN, { dgstfnScr: 5, useYn: 'Y' })).resolves.toBe(9001);
   });
 
   it('목록 응답 배열을 재가공 없이 그대로 반환한다', async () => {

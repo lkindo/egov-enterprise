@@ -20,7 +20,8 @@ import java.io.Serializable;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "tb_dgstfn_info")
+@Table(name = "tb_dgstfn_info", uniqueConstraints = @UniqueConstraint(
+        name = "uk_tb_dgstfn_info_pst_rgtr", columnNames = {"bbs_id", "pst_sn", "frst_rgtr_id"}))
 public class Satisfaction extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -78,5 +79,12 @@ public class Satisfaction extends BaseEntity implements Serializable {
 
     public void delete() {
         this.useYn = "N";
+    }
+
+    /** 스스로 지운 평가를 다시 남긴다 — 1인 1건 제약 아래에서 새 행 대신 같은 행을 되살린다(DIP I6 ⑤). */
+    public void revive(Integer dgstfnScr, String dgstfnCn) {
+        this.dgstfnScr = dgstfnScr;
+        this.dgstfnCn = dgstfnCn;
+        this.useYn = "Y";
     }
 }

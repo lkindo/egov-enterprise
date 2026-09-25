@@ -56,8 +56,9 @@ class EntityTableOwnershipLinterTest {
     // AuthorityGrant/AuthorizationChange 2종 추가. 74 Entity / distinct table 73종.
     // 운영 전체 물리 표 78종과 Entity census는 다르다. V2_98 + 별도 Contract/ADR 근거.
     // V2_101: 결재 차수 이력과 참여자별 결정 2종. 기존 공유 매핑은 그대로다.
-    private static final int EXPECTED_ENTITY_COUNT = 76;
-    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 75;
+    // V2_107(DIP I6 ④): 게시글 추천 이력 BoardRecommendation → tb_bbs_rcmdtn_hstry. 76 → 77 / 75 → 76.
+    private static final int EXPECTED_ENTITY_COUNT = 77;
+    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 76;
 
     private static final Set<String> AUDIT_COLUMNS = Set.of(
             "frst_rgtr_id", "crt_dt", "last_mdfr_id", "mdfcn_dt");
