@@ -25,7 +25,10 @@ class RealEmailSenderSmtpTest {
             var message = new MimeMessage(Session.getInstance(new Properties()), new ByteArrayInputStream(data));
             assertThat(message.getSubject()).isEqualTo("한글 제목");
             assertThat(message.getAllRecipients()).extracting(Object::toString).containsExactly("recipient@example.invalid");
-            assertThat(message.isMimeType("multipart/*")).isTrue();
+            // 평문 단일 파트로 보낸다(DIP D8) — 태그는 해석되지 않고 글자 그대로 전달된다.
+            assertThat(message.isMimeType("text/plain")).isTrue();
+            assertThat(message.isMimeType("multipart/*")).isFalse();
+            assertThat(message.getContent().toString()).contains("<p>테스트 본문</p>");
             assertThat(data).isNotEmpty();
         }
     }

@@ -2,7 +2,6 @@ package nuri.business.service.mail;
 
 import nuri.business.domain.mail.SentMail;
 import nuri.business.domain.mail.SentMailRepository;
-import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.mail.dto.MailRecipientDto;
 import nuri.business.service.mail.dto.SentMailDto;
 import nuri.business.service.user.UserContactService;
@@ -10,7 +9,7 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,7 +35,9 @@ public class MailService {
     private final MailAsyncProcessor mailAsyncProcessor;
     /** esntlId → 이메일 해석(코어). 결과는 발송에만 쓰고 응답으로 내보내지 않는다. */
     private final UserContactService userContactService;
-    private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
+
+    /** 사용자 수신자의 이름을 모를 때 이력에 남기는 표시값. 주소를 대신 적지 않는다(DIP D8). */
+    static final String UNNAMED_RECIPIENT = "(이름 미등록)";
 
     /**
      * 발송에 쓰는 시스템 메일 주소(SMTP {@code From}).
@@ -66,7 +67,7 @@ public class MailService {
         String senderLoginId = resolveSenderScope();
         return sentMailRepository
                 .searchSentMails(senderLoginId, searchCondition, searchKeyword, Objects.requireNonNull(pageable))
-                .map(SentMailDto::from);
+                .map(this::toResponse);
     }
 
     public SentMailDto getSentMail(Long emlDsptchSn) {
@@ -74,7 +75,30 @@ public class MailService {
         SentMail sentMail = sentMailRepository.findById(Objects.requireNonNull(emlDsptchSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(sentMail.getFrstRgtrId(), "MAIL_READ_ALL"); // [IDOR] 발신자/관리자만 열람
-        return SentMailDto.from(sentMail);
+        return toResponse(sentMail);
+    }
+
+    /**
+     * 응답 투영. <b>본문은 발신자 본인에게만 싣는다</b>(2026-09-25 DIP D8, GAP-DOMAIN-001 ①).
+     *
+     * <p>{@code MAIL_READ_ALL} 관리자는 전 사용자의 발송 이력을 조회하지만, 그 권한은 "누가 누구에게 언제
+     * 보냈는가" 를 보는 권한이지 남의 편지를 읽는 권한이 아니다. 화면은 이미 본문을 보여 주지 않는데
+     * (DEC-OPS-022·046) API 가 본문을 실어 보내면 발신 메일 첨부를 PERSONAL 로 막아 둔 경계
+     * (FileAccessPolicy §5)를 옆으로 돌아가게 된다. 소유 축은 조회 스코프와 같은 {@code frstRgtrId}(loginId)다.
+     */
+    private SentMailDto toResponse(SentMail sentMail) {
+        SentMailDto dto = SentMailDto.from(sentMail);
+        if (dto != null && !isSender(sentMail)) {
+            dto.setEmailCn(null);
+        }
+        return dto;
+    }
+
+    private static boolean isSender(SentMail sentMail) {
+        String owner = sentMail.getFrstRgtrId();
+        return owner != null && nuri.business.security.util.SecurityUtil.getCurrentLoginId()
+                .map(owner::equals)
+                .orElse(false);
     }
 
     /**
@@ -95,18 +119,58 @@ public class MailService {
     @Transactional
     public Long sendMail(String userId, SentMailDto dto) {
         log.info("Mail dispatch requested");
-        List<String> addresses = resolveRecipientAddresses(dto);
+        assertNoAttachment(dto);
+        return dispatchAll(userId, dto, resolveRecipients(dto));
+    }
 
+    /**
+     * 발행 측이 이미 해석한 주소로 1건을 보낸다 — 업무 이벤트({@code MailRequestedEvent}) 경로.
+     *
+     * <p>이력의 수신자 칸에는 {@code recipientName} 을 남긴다. 주소를 넘겨받았다고 그것을 이력에 적으면
+     * 화면 발송(사용자 수신자 → 이름)과 이벤트 발송의 표시가 갈리고, 관리자 이력 조회가 주소록이 된다.
+     */
+    @Transactional
+    public Long sendToResolvedAddress(String requesterId, SentMailDto dto, String address, String recipientName) {
+        assertNoAttachment(dto);
+        if (!hasText(address)) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "수신자를 한 명 이상 지정해 주세요.");
+        }
+        return dispatchAll(requesterId, dto,
+                List.of(new ResolvedRecipient(address.trim(), displayNameOf(recipientName))));
+    }
+
+    private Long dispatchAll(String userId, SentMailDto dto, List<ResolvedRecipient> recipients) {
         Long firstDispatchSn = null;
-        for (String address : addresses) {
-            Long emlDsptchSn = dispatchOne(userId, dto, address);
+        for (ResolvedRecipient recipient : recipients) {
+            Long emlDsptchSn = dispatchOne(userId, dto, recipient);
             if (firstDispatchSn == null) {
                 firstDispatchSn = emlDsptchSn;
             }
         }
         log.info("Mail request registered successfully: {} dispatch(es), first serial number: {}",
-                addresses.size(), firstDispatchSn);
+                recipients.size(), firstDispatchSn);
         return firstDispatchSn;
+    }
+
+    /**
+     * 메일 첨부는 발송되지 않는다 — 지정하면 거부한다(2026-09-25 DIP D8).
+     *
+     * <p>종전에는 {@code atchFileSn} 을 이력에만 저장하고 {@code EmailSender} 는 첨부를 싣지 않았다.
+     * 발신자는 "첨부해서 보냈다" 고 믿고 수신자는 파일을 받지 못하는, 성공처럼 보이는 실패였다.
+     * 첨부 발송을 만들기 전까지 약속하지 않는다. 기존 이력의 첨부 번호는 열람 판정용으로 남는다.
+     */
+    private static void assertNoAttachment(SentMailDto dto) {
+        if (dto.getAtchFileSn() != null) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "메일 첨부 발송은 지원하지 않습니다. 파일은 게시판이나 쪽지로 공유해 주세요.");
+        }
+    }
+
+    /**
+     * 발송 1건의 대상. {@code address} 는 SMTP 수신 주소로만 쓰고, 이력의 수신자 칸에는
+     * {@code displayName} 을 남긴다 — 사용자 수신자는 이름, 직접 입력한 주소는 그 주소다.
+     */
+    private record ResolvedRecipient(String address, String displayName) {
     }
 
     /**
@@ -117,7 +181,7 @@ public class MailService {
      * 일부만 보낸 뒤 "발송 요청되었습니다" 로 끝나는 것이 가장 나쁜 결과다. 종전 계약인
      * {@code recptnPerson}(주소 문자열 1건)은 그대로 받으며 발송 1건이 된다.
      */
-    private List<String> resolveRecipientAddresses(SentMailDto dto) {
+    private List<ResolvedRecipient> resolveRecipients(SentMailDto dto) {
         List<MailRecipientDto> recipients = dto.getRecipients() == null ? List.of() : dto.getRecipients();
         List<String> esntlIds = new ArrayList<>();
         for (MailRecipientDto recipient : recipients) {
@@ -135,7 +199,8 @@ public class MailService {
                 .collect(Collectors.toMap(UserContactService.UserContact::esntlId, Function.identity(),
                         (first, second) -> first));
 
-        LinkedHashSet<String> addresses = new LinkedHashSet<>();
+        // 주소 → 이력 표시값. 같은 주소는 먼저 나온 수신자의 표시값으로 한 번만 보낸다.
+        LinkedHashMap<String, String> byAddress = new LinkedHashMap<>();
         for (MailRecipientDto recipient : recipients) {
             if (hasText(recipient.getEsntlId())) {
                 UserContactService.UserContact contact = contacts.get(recipient.getEsntlId().trim());
@@ -144,18 +209,27 @@ public class MailService {
                     throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                             "'" + name + "' 님은 등록된 이메일 주소가 없어 메일을 보낼 수 없습니다.");
                 }
-                addresses.add(contact.emlAddr());
+                // 사용자 수신자의 이력 표시값은 이름이다 — 해석된 주소는 저장·응답하지 않는다(DIP D8).
+                byAddress.putIfAbsent(contact.emlAddr(), displayNameOf(contact.userNm()));
             } else {
-                addresses.add(recipient.getEmlAddr().trim());
+                String address = recipient.getEmlAddr().trim();
+                byAddress.putIfAbsent(address, address);
             }
         }
         if (hasText(dto.getRecptnPerson())) {
-            addresses.add(dto.getRecptnPerson().trim());
+            String address = dto.getRecptnPerson().trim();
+            byAddress.putIfAbsent(address, address);
         }
-        if (addresses.isEmpty()) {
+        if (byAddress.isEmpty()) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "수신자를 한 명 이상 지정해 주세요.");
         }
-        return new ArrayList<>(addresses);
+        List<ResolvedRecipient> resolved = new ArrayList<>();
+        byAddress.forEach((address, displayName) -> resolved.add(new ResolvedRecipient(address, displayName)));
+        return resolved;
+    }
+
+    private static String displayNameOf(String userNm) {
+        return hasText(userNm) ? userNm.trim() : UNNAMED_RECIPIENT;
     }
 
     private static boolean hasText(String value) {
@@ -163,14 +237,12 @@ public class MailService {
     }
 
     /**
-     * 수신 주소 1건 = 발송 이력 1건. 수신자 칸({@code tb_eml_dsptch.rcvr_nm}, 100자)에 주소를 남기고
-     * 커밋 후 비동기 발송을 기동한다.
+     * 수신 주소 1건 = 발송 이력 1건. 수신자 칸({@code tb_eml_dsptch.rcvr_nm}, 100자)에 표시값을 남기고
+     * 커밋 후 비동기 발송을 기동한다. SMTP 수신 주소는 이력이 아니라 비동기 발송에만 넘긴다.
      */
-    private Long dispatchOne(String userId, SentMailDto dto, String recptnPerson) {
-        Long atchFileSn = dto.getAtchFileSn();
-        if (atchFileSn != null) {
-            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
-        }
+    private Long dispatchOne(String userId, SentMailDto dto, ResolvedRecipient recipient) {
+        final String recptnPerson = recipient.address();
+        String displayName = recipient.displayName();
 
         // 발신자 이력은 **인증 주체**에서 온다. 요청 본문의 dsptchPerson 은 화면이 채우지 않아 늘 null 이었고,
         // 채운다 해도 클라이언트가 스스로를 다른 사람이라 주장할 수 있는 축이다(게시글이 이미 같은 규칙을 쓴다).
@@ -178,9 +250,8 @@ public class MailService {
                 .emlTtl(dto.getSj())
                 .emlCn(dto.getEmailCn())
                 .sndptyNm(resolveSenderName(userId, dto))
-                .rcvrNm(recptnPerson.length() > 100 ? recptnPerson.substring(0, 100) : recptnPerson)
+                .rcvrNm(displayName.length() > 100 ? displayName.substring(0, 100) : displayName)
                 .dsptchRsltCd("P") // Pending
-                .atchFileSn(atchFileSn)
                 .build());
 
         SentMail savedMail = sentMailRepository.save(Objects.requireNonNull(sentMail));

@@ -23,14 +23,15 @@ public class SentMailDto {
     @Size(max = 256)
     private String sj;
 
-    @Schema(description = "Description")
+    @Schema(description = "메일 본문(평문). 조회 응답에는 발신자 본인에게만 실리고 그 외에는 비어 있다")
     @Size(max = 4000)
     private String emailCn;
 
     @Schema(description = "Description")
     private String dsptchPerson;
 
-    @Schema(description = "수신자 주소 문자열(종전 계약). recipients 를 쓰면 비워도 된다")
+    @Schema(description = "요청: 수신자 주소 문자열(종전 계약, recipients 를 쓰면 비워도 된다). "
+            + "응답: 발송 이력의 수신자 표시값 — 사용자 수신자는 이름, 직접 입력한 주소는 그 주소")
     @Size(max = 100)
     private String recptnPerson;
 
@@ -55,7 +56,8 @@ public class SentMailDto {
     @Schema(description = "Description")
     private String sndngDe;
 
-    @Schema(description = "Description")
+    @Schema(description = "첨부 파일 번호. 메일 첨부 발송은 지원하지 않으므로 요청에 값을 넣으면 400 으로 거부한다. "
+            + "응답에는 과거 이력에 남은 번호만 실린다")
     private Long atchFileSn;
 
     public static SentMailDto from(SentMail entity) {

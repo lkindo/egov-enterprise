@@ -92,6 +92,8 @@ class SanctionEventListenerTest {
         // 수신처는 발행 측이 해석해 싣는다 — 소비 도메인이 연락처를 다시 조회하지 않는다.
         assertThat(sms.recipientTelno()).isEqualTo("01011112222");
         assertThat(mail.recipientAddress()).isEqualTo("hong@egov.com");
+        // 발송 이력에는 주소가 아니라 이름이 남는다(DIP D8) — 발행 측이 이름을 함께 싣는다.
+        assertThat(mail.recipientName()).isEqualTo("홍길동");
 
         // [2026-09-05] 사용자에게 가는 본문에 enum 상수명(APPROVED)과 내부 ID 표기가 실리지 않고,
         //   승인에는 사유 절이 붙지 않는다.

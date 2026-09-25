@@ -333,7 +333,7 @@ export default function MailSendHubClient() {
                   <p {...validation.messageProps('recipients')} className="text-xs font-bold text-destructive-emphasis" />
                 ) : null}
                 <p className="text-xs text-muted-foreground font-medium">
-                  사용자를 고르면 등록된 이메일로 발송됩니다(주소는 화면에 표시되지 않습니다). 수신자마다 발송 이력이 따로 남습니다.
+                  사용자를 고르면 등록된 이메일로 발송됩니다. 주소는 화면과 발송 이력에 남지 않고, 이력에는 이름이 표시됩니다. 수신자마다 발송 이력이 따로 남습니다.
                 </p>
               </div>
             </div>
@@ -414,6 +414,9 @@ export default function MailSendHubClient() {
           {validation.errors.emailCn ? (
             <p {...validation.messageProps('emailCn')} className="text-xs font-bold text-destructive-emphasis" />
           ) : null}
+          <p className="text-xs text-muted-foreground font-medium">
+            본문은 서식 없이 입력한 글자 그대로 보냅니다. 파일 첨부는 지원하지 않습니다.
+          </p>
         </div>
 
         {/* 5. Bottom Actions */}

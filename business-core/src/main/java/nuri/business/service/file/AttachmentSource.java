@@ -60,7 +60,7 @@ public enum AttachmentSource {
 
     /** 게시판 글. resolver는 비밀글 조건 앞에 커뮤니티 승인 회원 조건을 함께 적용한다. */
     BOARD("tb_bbs_item", Sensitivity.SHARED,
-            "(scrt_yn IS NULL OR scrt_yn <> 'Y')",
+            "(scrt_yn IS NULL OR scrt_yn <> 'Y') AND use_yn = 'Y'",
             "frst_rgtr_id = ?", "user_id = ?"),
 
 

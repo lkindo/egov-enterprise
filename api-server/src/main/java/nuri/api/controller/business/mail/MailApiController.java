@@ -25,7 +25,8 @@ public class MailApiController {
 
     private final MailService mailService;
 
-    @Operation(summary = "발신 메일 목록 조회", description = "발송된 메일 목록을 페이징하여 조회합니다.")
+    @Operation(summary = "발신 메일 목록 조회", description = "발송된 메일 목록을 페이징하여 조회합니다. "
+            + "본문은 발신자 본인에게만 싣고, 사용자 수신자는 주소 대신 이름으로 표시합니다.")
     @GetMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.mail.MailApiController#getSentMails')")
     public ResponseEntity<ApiResponse<PageResponse<SentMailDto>>> getSentMails(
@@ -36,7 +37,8 @@ public class MailApiController {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
-    @Operation(summary = "발신 메일 상세 조회", description = "특정 메일의 발송 상세 정보를 조회합니다.")
+    @Operation(summary = "발신 메일 상세 조회", description = "특정 메일의 발송 상세 정보를 조회합니다. "
+            + "본문은 발신자 본인에게만 싣습니다.")
     @GetMapping("/{emlDsptchSn}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.mail.MailApiController#getSentMail')")
     public ResponseEntity<ApiResponse<SentMailDto>> getSentMail(
@@ -44,7 +46,8 @@ public class MailApiController {
         return ResponseEntity.ok(ApiResponse.success(mailService.getSentMail(emlDsptchSn)));
     }
 
-    @Operation(summary = "메일 발송", description = "새로운 메일을 작성하여 발송합니다.")
+    @Operation(summary = "메일 발송", description = "새로운 메일을 작성하여 평문으로 발송합니다. "
+            + "첨부 발송은 지원하지 않으며 atchFileSn 을 지정하면 400 으로 거부합니다.")
     @PostMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.mail.MailApiController#sendMail')")
     public ResponseEntity<ApiResponse<Long>> sendMail(

@@ -39,12 +39,11 @@ public class MailRequestListener {
         }
         try {
             // SMTP From 과 발신자 표시명은 MailService 가 설정(nuri.mail.from)과 요청자에서 정한다 —
-            // 여기서 주소를 지어내지 않는다.
-            mailService.sendMail(event.requesterId(), SentMailDto.builder()
+            // 여기서 주소를 지어내지 않는다. 수신 주소는 발송에만 쓰이고 이력에는 이름이 남는다(DIP D8).
+            mailService.sendToResolvedAddress(event.requesterId(), SentMailDto.builder()
                     .sj(event.subject())
                     .emailCn(event.content())
-                    .recptnPerson(event.recipientAddress())
-                    .build());
+                    .build(), event.recipientAddress(), event.recipientName());
             log.info("요청된 메일을 발송했습니다");
         } catch (Exception e) {
             log.error("메일 발송 실패(업무 처리에는 영향 없음) — 예외유형={}", e.getClass().getSimpleName());

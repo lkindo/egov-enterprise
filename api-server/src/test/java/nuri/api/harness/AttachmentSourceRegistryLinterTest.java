@@ -124,9 +124,9 @@ class AttachmentSourceRegistryLinterTest {
             entry("business-app/src/main/java/nuri/business/service/board/BoardService.java#updatePostWithFiles",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)",
                             "fileService.updateFiles(", "updateOwnedPost(")),
-            entry("business-app/src/main/java/nuri/business/service/mail/MailService.java#dispatchOne",
-                    guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)",
-                            "sentMailRepository.save(")),
+            // [2026-09-25 DIP D8] 메일은 첨부를 발송하지 않으므로 할당하지 않는다 — 지정하면 거부만 한다.
+            entry("business-app/src/main/java/nuri/business/service/mail/MailService.java#assertNoAttachment",
+                    readOnly()),
             entry("business-app/src/main/java/nuri/business/service/mail/dto/SentMailDto.java#from",
                     readOnly()),
             entry("business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java#createMemoReport",

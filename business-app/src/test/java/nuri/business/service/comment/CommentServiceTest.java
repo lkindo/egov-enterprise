@@ -275,4 +275,27 @@ class CommentServiceTest {
 
         verify(eventPublisher, org.mockito.Mockito.never()).publishEvent(any(Object.class));
     }
+
+    @Test
+    @DisplayName("댓글 위치(게시판·게시글)를 돌려준다 — 수정·삭제 전 게시글 가드용(DIP S8)")
+    void getCommentLocation_returnsBoardAndPost() {
+        Comment comment = Comment.builder().ansSn(3L).bbsId("BBS_001").pstSn(7L).ansCn("c").useYn("Y").build();
+        given(commentRepository.findById(3L)).willReturn(Optional.of(comment));
+
+        CommentService.CommentLocation location = commentService.getCommentLocation(3L);
+
+        assertThat(location.bbsId()).isEqualTo("BBS_001");
+        assertThat(location.pstSn()).isEqualTo(7L);
+    }
+
+    @Test
+    @DisplayName("없는 댓글의 위치는 댓글 없음으로 거부한다")
+    void getCommentLocation_missingComment() {
+        given(commentRepository.findById(99L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> commentService.getCommentLocation(99L))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
+                        .isEqualTo(CommentErrorCode.COMMENT_NOT_FOUND));
+    }
 }

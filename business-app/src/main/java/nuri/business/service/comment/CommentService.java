@@ -54,6 +54,24 @@ public class CommentService {
         return ansSn;
     }
 
+    /**
+     * 댓글이 달린 게시글의 위치. 수정·삭제 전에 게시글 접근 가드(커뮤니티 회원·비밀글)를
+     * 다시 태우기 위해 쓴다(2026-09-25 DIP S8).
+     *
+     * <p>comment 는 board 를 모른다(GAP-ARCH-001 이 역전시킨 방향) — 그래서 가드는 컨트롤러가
+     * 이 위치로 {@code BoardService.assertCommentAccess} 를 부르는 형태로 둔다. 등록·조회가 이미 그렇게 한다.
+     */
+    @Transactional(readOnly = true)
+    public CommentLocation getCommentLocation(Long commentNo) {
+        Comment comment = commentRepository.findById(commentNo)
+                .orElseThrow(() -> new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND));
+        return new CommentLocation(comment.getBbsId(), comment.getPstSn());
+    }
+
+    /** 댓글이 속한 게시판·게시글. */
+    public record CommentLocation(String bbsId, Long pstSn) {
+    }
+
     @Transactional
     public void updateComment(Long commentNo, String content) {
         Comment comment = commentRepository.findById(commentNo)

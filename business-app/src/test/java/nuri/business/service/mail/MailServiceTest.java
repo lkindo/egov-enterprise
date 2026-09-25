@@ -2,7 +2,6 @@ package nuri.business.service.mail;
 
 import nuri.business.domain.mail.SentMail;
 import nuri.business.domain.mail.SentMailRepository;
-import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.mail.dto.MailRecipientDto;
 import nuri.business.service.mail.dto.SentMailDto;
 import nuri.business.service.user.UserContactService;
@@ -51,9 +50,6 @@ class MailServiceTest {
 
     @Mock
     private UserContactService userContactService;
-
-    @Mock
-    private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     /**
      * 발송메일 조회는 발신자 스코프(IDOR 차단)를 타므로 SecurityContext 가 필요하다.
@@ -131,7 +127,6 @@ class MailServiceTest {
                 .emailCn("Content")
                 .dsptchPerson("sender@test.com")
                 .recptnPerson("receiver@test.com")
-                .atchFileSn(101L)
                 .build();
 
         given(sentMailRepository.save(any(SentMail.class)))
@@ -142,28 +137,81 @@ class MailServiceTest {
         assertThat(emlDsptchSn).isEqualTo(1L);
         org.mockito.ArgumentCaptor<SentMail> saved = org.mockito.ArgumentCaptor.forClass(SentMail.class);
         verify(sentMailRepository).save(saved.capture());
-        assertThat(saved.getValue().getAtchFileSn()).isEqualTo(101L);
-        verify(attachmentAssignmentPolicy).assertAssignable(101L);
+        assertThat(saved.getValue().getAtchFileSn()).isNull();
         verify(mailAsyncProcessor).processSending(anyLong(), anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
-    @DisplayName("메일 발송 - 타인의 첨부 할당이 거부되면 발송 이력을 저장하지 않는다")
-    void sendMail_deniedAttachmentDoesNotPersistOrDispatch() {
+    @DisplayName("🚨 메일 첨부는 발송되지 않으므로 지정하면 저장·발송 없이 400 으로 거부한다 (DIP D8)")
+    void sendMail_attachmentIsRejectedBeforeAnyDispatch() {
+        // 종전에는 첨부 번호를 이력에만 남기고 SMTP 로는 싣지 않았다 — 성공처럼 보이는 실패였다.
         SentMailDto dto = SentMailDto.builder()
                 .sj("Subject")
                 .emailCn("Content")
                 .recptnPerson("receiver@test.com")
                 .atchFileSn(101L)
                 .build();
-        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(attachmentAssignmentPolicy).assertAssignable(101L);
 
         assertThatThrownBy(() -> mailService.sendMail("user1", dto))
-                .isInstanceOf(BusinessException.class);
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
+                        .isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE))
+                .hasMessageContaining("첨부");
 
-        verify(attachmentAssignmentPolicy).assertAssignable(101L);
-        verifyNoInteractions(sentMailRepository, mailAsyncProcessor);
+        verifyNoInteractions(sentMailRepository, mailAsyncProcessor, userContactService);
+    }
+
+    @Test
+    @DisplayName("이벤트 발송도 첨부를 거부하고, 이력에는 주소가 아니라 수신자 이름을 남긴다 (DIP D8)")
+    void sendToResolvedAddress_recordsNameNotAddress() {
+        given(sentMailRepository.save(any(SentMail.class)))
+                .willReturn(SentMail.builder().emlDsptchSn(5L).build());
+
+        Long sn = mailService.sendToResolvedAddress("SANCTIONER_001",
+                SentMailDto.builder().sj("제목").emailCn("본문").build(), " hong@egov.com ", "홍길동");
+
+        assertThat(sn).isEqualTo(5L);
+        org.mockito.ArgumentCaptor<SentMail> saved = org.mockito.ArgumentCaptor.forClass(SentMail.class);
+        verify(sentMailRepository).save(saved.capture());
+        assertThat(saved.getValue().getRcvrNm()).isEqualTo("홍길동");
+        verify(mailAsyncProcessor).processSending(eq(5L), eq("제목"), eq("본문"), eq(SYSTEM_SENDER), eq("hong@egov.com"));
+
+        // 이름을 모르면 주소를 대신 적지 않는다.
+        mailService.sendToResolvedAddress("SANCTIONER_001",
+                SentMailDto.builder().sj("제목").emailCn("본문").build(), "kim@egov.com", "  ");
+        verify(sentMailRepository, times(2)).save(saved.capture());
+        assertThat(saved.getValue().getRcvrNm()).isEqualTo(MailService.UNNAMED_RECIPIENT);
+
+        assertThatThrownBy(() -> mailService.sendToResolvedAddress("SANCTIONER_001",
+                SentMailDto.builder().sj("제목").emailCn("본문").atchFileSn(1L).build(), "kim@egov.com", "김"))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> mailService.sendToResolvedAddress("SANCTIONER_001",
+                SentMailDto.builder().sj("제목").emailCn("본문").build(), " ", "김"))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    @DisplayName("🔐 본문은 발신자 본인에게만 응답한다 — MAIL_READ_ALL 관리자에게도 싣지 않는다 (GAP-DOMAIN-001 ①)")
+    void responseCarriesBodyOnlyForSender() {
+        SentMail othersMail = SentMail.builder().emlDsptchSn(1L).emlTtl("S").emlCn("남의 본문").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(othersMail, "frstRgtrId", "someone");
+        given(sentMailRepository.findById(1L)).willReturn(Optional.of(othersMail));
+        given(sentMailRepository.searchSentMails(isNull(), any(), any(), any()))
+                .willReturn(new PageImpl<>(List.of(othersMail)));
+
+        // 관리자(asAdmin 기본)는 조회는 되지만 본문은 비어 있다.
+        assertThat(mailService.getSentMail(1L).getEmailCn()).isNull();
+        assertThat(mailService.getSentMail(1L).getSj()).isEqualTo("S");
+        assertThat(mailService.getSentMailList("1", null, PageRequest.of(0, 10)).getContent())
+                .extracting(SentMailDto::getEmailCn).containsOnlyNulls();
+
+        // 발신자 본인은 본문을 받는다.
+        asUser("someone");
+        given(sentMailRepository.searchSentMails(eq("someone"), any(), any(), any()))
+                .willReturn(new PageImpl<>(List.of(othersMail)));
+        assertThat(mailService.getSentMail(1L).getEmailCn()).isEqualTo("남의 본문");
+        assertThat(mailService.getSentMailList("1", null, PageRequest.of(0, 10)).getContent())
+                .extracting(SentMailDto::getEmailCn).containsExactly("남의 본문");
     }
 
     @Test
@@ -284,8 +332,12 @@ class MailServiceTest {
         assertThat(first).isEqualTo(11L);
         org.mockito.ArgumentCaptor<SentMail> saved = org.mockito.ArgumentCaptor.forClass(SentMail.class);
         verify(sentMailRepository, times(3)).save(saved.capture());
+        // 사용자 수신자의 이력 표시값은 이름이다 — 해석된 주소는 저장하지 않는다(DIP D8).
+        // 직접 입력한 주소는 발신자가 스스로 친 값이므로 그 주소가 표시값이다.
         assertThat(saved.getAllValues()).extracting(SentMail::getRcvrNm)
-                .containsExactly("gap@example.com", "direct@example.com", "eul@example.com");
+                .containsExactly("갑", "direct@example.com", "을");
+        assertThat(saved.getAllValues()).extracting(SentMail::getRcvrNm)
+                .doesNotContain("gap@example.com", "eul@example.com");
         verify(mailAsyncProcessor).processSending(eq(11L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("gap@example.com"));
         verify(mailAsyncProcessor).processSending(eq(12L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("direct@example.com"));
         verify(mailAsyncProcessor).processSending(eq(13L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("eul@example.com"));

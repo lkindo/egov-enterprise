@@ -177,12 +177,53 @@ class CommentApiControllerTest {
     }
 
     @Test
-    @DisplayName("댓글 삭제 성공")
+    @DisplayName("댓글 삭제 성공 — 삭제 전에 게시글 접근 가드를 지난다")
     void deleteComment_Success() throws Exception {
+        given(commentService.getCommentLocation(1L))
+                .willReturn(new CommentService.CommentLocation("BBS_001", 7L));
+
         // When & Then
         mockMvc.perform(delete("/api/v1/comments/1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+
+        verify(boardService).assertCommentAccess("BBS_001", 7L);
+        verify(commentService).deleteComment(1L);
+    }
+
+    @Test
+    @DisplayName("🔐 회원 전용 게시판에서 접근이 거부되면 자기 댓글도 수정·삭제하지 못한다 (DIP S8)")
+    void updateAndDeleteComment_deniedPostDoesNotMutate() throws Exception {
+        given(commentService.getCommentLocation(1L))
+                .willReturn(new CommentService.CommentLocation("CMNTY_BBS", 7L));
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(boardService).assertCommentAccess("CMNTY_BBS", 7L);
+
+        mockMvc.perform(put("/api/v1/comments/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"ansCn\":\"고친 내용\"}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/v1/comments/1"))
+                .andExpect(status().isForbidden());
+
+        verify(commentService, never()).updateComment(anyLong(), anyString());
+        verify(commentService, never()).deleteComment(anyLong());
+    }
+
+    @Test
+    @DisplayName("접근이 허용되면 수정은 게시글 가드 뒤에 실행된다")
+    void updateComment_passesPostGuardFirst() throws Exception {
+        given(commentService.getCommentLocation(1L))
+                .willReturn(new CommentService.CommentLocation("BBS_001", 7L));
+
+        mockMvc.perform(put("/api/v1/comments/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"ansCn\":\"고친 내용\"}"))
+                .andExpect(status().isOk());
+
+        org.mockito.InOrder order = org.mockito.Mockito.inOrder(boardService, commentService);
+        order.verify(boardService).assertCommentAccess("BBS_001", 7L);
+        order.verify(commentService).updateComment(1L, "고친 내용");
     }
 }

@@ -13,16 +13,17 @@ class MailRequestedEventTest {
 
     private static MailRequestedEvent event(String recipient) {
         return new MailRequestedEvent(
-                "SANCTIONER_001", recipient, "[eGov] 결재 상태 변경 알림", "결재(번호 7)가 승인되었습니다.");
+                "SANCTIONER_001", recipient, "홍길동", "[eGov] 결재 상태 변경 알림", "결재(번호 7)가 승인되었습니다.");
     }
 
     @Test
-    @DisplayName("메일 요청이 요청자·수신 주소·제목·본문을 손실 없이 보존한다")
+    @DisplayName("메일 요청이 요청자·수신 주소·수신자 이름·제목·본문을 손실 없이 보존한다")
     void preservesRequestPayload() {
         MailRequestedEvent request = event("hong@egov.com");
 
         assertThat(request.requesterId()).isEqualTo("SANCTIONER_001");
         assertThat(request.recipientAddress()).isEqualTo("hong@egov.com");
+        assertThat(request.recipientName()).isEqualTo("홍길동");
         assertThat(request.subject()).isEqualTo("[eGov] 결재 상태 변경 알림");
         assertThat(request.content()).isEqualTo("결재(번호 7)가 승인되었습니다.");
     }

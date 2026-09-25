@@ -120,7 +120,7 @@ public class SanctionEventListener {
         }
         try {
             eventPublisher.publishEvent(new nuri.foundation.core.event.MailRequestedEvent(
-                    actorId, user.emlAddr(), "[eGov] 결재 상태 변경 알림", message));
+                    actorId, user.emlAddr(), user.userNm(), "[eGov] 결재 상태 변경 알림", message));
             log.info("Mail notification requested: sanctionSn={}, status={}",
                     event.getInformalSanctionSn(), event.getNewStatus());
         } catch (Exception e) {
