@@ -69,10 +69,35 @@ export interface PeriodFilterProps {
   label: string;
 }
 
+/**
+ * 지금 값이 어느 프리셋과 같은가(2026-09-26 DIP C6).
+ *
+ * 종전에는 '전체' 만 판정해 '최근 1주' 를 눌러도 어떤 버튼도 눌린 상태로 보이지 않았다. 값이 비어 있지 않은
+ * 경우는 사용자가 클라이언트에서 누른 뒤이므로 여기서 현재 시각을 읽어도 서버 렌더와 갈라지지 않는다.
+ */
+export function activePresetOf(value: PeriodValue, today: Date): PeriodPreset | null {
+  if (value.from === '' && value.to === '') return 'all';
+  const match = PRESETS.find((preset) => {
+    if (preset.days === null) return false;
+    const period = presetToPeriod(preset.key, today);
+    return period.from === value.from && period.to === value.to;
+  });
+  return match?.key ?? null;
+}
+
+/** 입력이 기간 조건으로 성립하지 않는 이유. 성립하면 null. */
+export function periodProblem(value: PeriodValue): string | null {
+  if ((value.from === '') !== (value.to === '')) return '시작일과 종료일을 모두 입력해야 기간이 적용됩니다.';
+  if (value.from && value.to && value.from > value.to) return '시작일이 종료일보다 늦습니다. 기간을 다시 입력해 주세요.';
+  return null;
+}
+
 export function PeriodFilter({ value, onChange, label }: PeriodFilterProps) {
   const fromId = useId();
   const toId = useId();
-  const activePreset = value.from === '' && value.to === '' ? 'all' : null;
+  const hintId = useId();
+  const activePreset = activePresetOf(value, new Date());
+  const problem = periodProblem(value);
 
   return (
     <div className="space-y-1">
@@ -103,6 +128,7 @@ export function PeriodFilter({ value, onChange, label }: PeriodFilterProps) {
           value={value.from}
           max={value.to || undefined}
           onChange={(event) => onChange({ ...value, from: event.target.value })}
+          aria-describedby={problem ? hintId : undefined}
         />
         <span aria-hidden="true" className="text-muted-foreground">~</span>
         <label htmlFor={toId} className="sr-only">{`${label} 종료일`}</label>
@@ -113,8 +139,12 @@ export function PeriodFilter({ value, onChange, label }: PeriodFilterProps) {
           value={value.to}
           min={value.from || undefined}
           onChange={(event) => onChange({ ...value, to: event.target.value })}
+          aria-describedby={problem ? hintId : undefined}
         />
       </div>
+      {problem && (
+        <p id={hintId} role="status" className="text-xs text-destructive-emphasis">{problem}</p>
+      )}
     </div>
   );
 }

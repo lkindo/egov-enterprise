@@ -88,6 +88,33 @@ describe('CommentSection Component', () => {
     expect(screen.getByRole('heading', { name: '댓글' })).toBeDefined();
   });
 
+  it('서버가 센 전체 수로 말하고, 불러오지 못한 댓글이 있으면 그 사실을 알린다 (DIP C7)', () => {
+    // 상세는 첫 100개만 받는다 — 종전에는 불러온 행 수를 세어 150개짜리 글도 '댓글 1개' 라 말했다.
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} totalComments={150} />);
+    expect(screen.getByText('댓글 150개')).toBeInTheDocument();
+    expect(screen.getByRole('note')).toHaveTextContent('처음 1개만 보입니다. 나머지 149개는 이 화면에서 볼 수 없습니다.');
+  });
+
+  it('모든 댓글을 불러왔으면 알림을 두지 않는다', () => {
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} totalComments={1} />);
+    expect(screen.getByText('댓글 1개')).toBeInTheDocument();
+    expect(screen.queryByRole('note')).not.toBeInTheDocument();
+  });
+
+  it('새 댓글은 등록순 목록의 맨 뒤에 붙는다 (DIP C7)', async () => {
+    let resolveCreate!: (value: { success: boolean; message: string }) => void;
+    vi.mocked(commentActions.createComment).mockReturnValue(new Promise((resolve) => { resolveCreate = resolve; }));
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
+
+    fireEvent.change(screen.getByPlaceholderText('댓글을 입력하세요.'), { target: { value: '나중 댓글' } });
+    fireEvent.click(screen.getByText(/댓글 등록/));
+
+    const later = await screen.findByText('나중 댓글');
+    const first = screen.getByText('First Comment');
+    expect(first.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await act(async () => resolveCreate({ success: true, message: '성공' }));
+  });
+
   it('handles empty comment list', async () => {
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[]} />);
 

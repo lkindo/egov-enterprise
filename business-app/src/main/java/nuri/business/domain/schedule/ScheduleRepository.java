@@ -29,13 +29,17 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     // [범위] 캘린더는 '내 일정 + 우리 부서 일정'을 함께 보여준다. 내가 담당자인 건과, 부서 구분('1')이며
     //   내 부서인 건을 합집합으로 조회한다.
     @Query("SELECT s FROM Schedule s WHERE (s.schdlPicId = :userId OR (s.schdlSeCd = '1' AND s.schdlDeptId = :deptId)) "
-            + "AND s.schdlBgngYmd <= CONCAT(:yearMonth, '31') AND COALESCE(s.schdlEndYmd, s.schdlBgngYmd) >= CONCAT(:yearMonth, '01')")
+            + "AND s.schdlBgngYmd <= CONCAT(:yearMonth, '31') AND COALESCE(s.schdlEndYmd, s.schdlBgngYmd) >= CONCAT(:yearMonth, '01') "
+            // [2026-09-26 DIP C7] 같은 날 일정의 표시 순서를 DB 에 맡기지 않는다 — 시작일, 등록 순.
+            + "ORDER BY s.schdlBgngYmd ASC, s.schdlSn ASC")
     List<Schedule> findMonthlySchedules(@Param("userId") String userId, @Param("deptId") String deptId,
                                         @Param("yearMonth") String yearMonth);
 
-    @Query("SELECT s FROM Schedule s WHERE s.schdlPicId = :userId AND s.schdlBgngYmd <= :endDate AND COALESCE(s.schdlEndYmd, s.schdlBgngYmd) >= :startDate")
+    @Query("SELECT s FROM Schedule s WHERE s.schdlPicId = :userId AND s.schdlBgngYmd <= :endDate AND COALESCE(s.schdlEndYmd, s.schdlBgngYmd) >= :startDate "
+            + "ORDER BY s.schdlBgngYmd ASC, s.schdlSn ASC")
     List<Schedule> findSchedulesByDateRange(@Param("userId") String userId, @Param("startDate") String startDate, @Param("endDate") String endDate);
 
-    @Query("SELECT s FROM Schedule s WHERE (:schdlSeCd IS NULL OR s.schdlSeCd = :schdlSeCd) AND s.schdlPicId = :ownerId AND s.schdlBgngYmd <= :endDate AND COALESCE(s.schdlEndYmd, s.schdlBgngYmd) >= :startDate")
+    @Query("SELECT s FROM Schedule s WHERE (:schdlSeCd IS NULL OR s.schdlSeCd = :schdlSeCd) AND s.schdlPicId = :ownerId AND s.schdlBgngYmd <= :endDate AND COALESCE(s.schdlEndYmd, s.schdlBgngYmd) >= :startDate "
+            + "ORDER BY s.schdlBgngYmd ASC, s.schdlSn ASC")
     List<Schedule> findSchedulesByDateRange(@Param("schdlSeCd") String schdlSeCd, @Param("ownerId") String ownerId, @Param("startDate") String startDate, @Param("endDate") String endDate);
 }
