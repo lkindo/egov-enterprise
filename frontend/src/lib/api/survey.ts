@@ -4,6 +4,7 @@ import type { PageResponse } from '@/types/foundation/system';
 import type { components } from '@/types/generated-api';
 import {
   deleteResponseOperation,
+  exportStatsOperation,
   getResponseOperation,
   getResponsesOperation,
   getStatsOperation,
@@ -108,6 +109,25 @@ export const getQustnrRespondInfoDetail = async (srvyRspnsSn: number): Promise<Q
 /** 응답 삭제는 백엔드가 `@AdminOnly` 다 — ADMIN 이 아니면 403. */
 export const deleteQustnrRespondInfo = async (srvyRspnsSn: number): Promise<void> => {
   return executeGeneratedOperation(deleteResponseOperation, { path: { srvyRspnsSn } });
+};
+
+/**
+ * 결과 통계를 xlsx 로 내려받는다(2026-09-26 DIP B5 F6). 화면 통계와 같은 행·같은 분모이며 응답자 이름·기타 답은 없다.
+ *
+ * <p>경로 변수가 있는 binary 연산이라 주소 이동 다운로드(`navigateToDownload`)를 쓰지 못한다. 첨부 다운로드와 같이
+ * 인증 axios 로 바이트를 받아 object URL 로 저장한다 — 인증 경로가 하나로 모인다.
+ */
+export const downloadSurveyStatsXlsx = async (srvySn: number): Promise<void> => {
+  const blob = await executeGeneratedOperation(exportStatsOperation, { path: { srvySn } });
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.download = `survey-${srvySn}-stats.xlsx`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  // 클릭 직후 revoke 하면 저장이 시작되기 전에 URL 이 사라질 수 있다.
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
 };
 
 /** 문항별 항목 응답 분포. 화면 2곳(`/survey/stats`·`/survey/[id]`)이 같은 형태를 렌더한다. */

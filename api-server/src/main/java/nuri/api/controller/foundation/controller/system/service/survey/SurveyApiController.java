@@ -100,6 +100,16 @@ public class SurveyApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
+    @Operation(summary = "설문 복제", description = """
+            설문을 문항·선택 항목까지 복제해 새 설문을 만들고 그 일련번호를 돌려줍니다. 응답은 복제하지 않습니다.
+            사본의 제목과 기간은 요청으로 받습니다 — 원본 기간을 복사하면 같은 설문이 둘 열리고, 비우면 무기한 열립니다.""")
+    @PostMapping("/{srvySn}/copy")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#copySurvey')")
+    public ResponseEntity<ApiResponse<Long>> copySurvey(@PathVariable Long srvySn,
+            @Valid @RequestBody nuri.business.service.survey.dto.SurveyCopyRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(surveyService.copySurvey(srvySn, request)));
+    }
+
     @Operation(summary = "설문 정보 수정")
     @PutMapping("/{srvySn}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateSurvey')")

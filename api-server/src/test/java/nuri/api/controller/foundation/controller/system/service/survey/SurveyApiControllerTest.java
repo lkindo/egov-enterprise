@@ -171,6 +171,35 @@ public class SurveyApiControllerTest extends BaseControllerTest {
     }
 
     @Test
+    @org.junit.jupiter.api.DisplayName("[DIP B5 F6] 설문 복제는 새 제목·기간을 서비스로 넘기고 사본 번호를 돌려준다 — 기간이 비면 400")
+    public void copySurvey_passesTitleAndPeriodAndRejectsMissingPeriod() throws Exception {
+        when(surveyService.copySurvey(org.mockito.ArgumentMatchers.eq(201L),
+                any(nuri.business.service.survey.dto.SurveyCopyRequest.class))).thenReturn(305L);
+
+        mockMvc.perform(post("/api/v1/admin/system/surveys/201/copy")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"srvyTtl\":\"2차 조사\",\"srvyBgngYmd\":\"20261001\",\"srvyEndYmd\":\"20261031\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(305));
+
+        org.mockito.ArgumentCaptor<nuri.business.service.survey.dto.SurveyCopyRequest> captor =
+                org.mockito.ArgumentCaptor.forClass(nuri.business.service.survey.dto.SurveyCopyRequest.class);
+        verify(surveyService).copySurvey(org.mockito.ArgumentMatchers.eq(201L), captor.capture());
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().getSrvyTtl()).isEqualTo("2차 조사");
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().getSrvyBgngYmd()).isEqualTo("20261001");
+
+        mockMvc.perform(post("/api/v1/admin/system/surveys/201/copy")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"srvyTtl\":\"2차 조사\"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/v1/admin/system/surveys/201/copy")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"srvyTtl\":\"2차 조사\",\"srvyBgngYmd\":\"20261031\",\"srvyEndYmd\":\"20261001\"}"))
+                .andExpect(status().isBadRequest());
+        verify(surveyService, times(1)).copySurvey(any(), any());
+    }
+
+    @Test
     public void updateSurvey_ShouldSucceed() throws Exception {
         SurveyInfoDto dto = SurveyInfoDto.builder()
                 .srvySn(201L)

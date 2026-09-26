@@ -151,4 +151,33 @@ class SurveySubmissionApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data").isArray())
                 .andExpect(jsonPath("$.data.length()").value(1));
     }
+
+    @Test
+    @WithMockCustomUser(username = "user01", esntlId = "user01")
+    @DisplayName("[DIP B5 F6] 결과 통계를 화면과 같은 행으로 xlsx 첨부 반출한다")
+    void exportStats_streamsXlsxAttachment() throws Exception {
+        given(surveyResultService.getStats(7L)).willReturn(List.of(
+                SurveyStatsDto.builder().srvyQstnSn(1L).qstnCn("만족하십니까").qstnTypeCd("1").srvyArtclSn(2L).artclCn("예")
+                        .count(3).percentage(75.0).respondentCount(4).build()));
+
+        org.springframework.test.web.servlet.MvcResult pending = mockMvc.perform(get("/api/v1/surveys/7/stats/export.xlsx"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.request().asyncStarted())
+                .andReturn();
+        byte[] body = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch(pending))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string("Content-Disposition", org.hamcrest.Matchers.startsWith("attachment; filename=\"survey-7-stats-")))
+                .andReturn().getResponse().getContentAsByteArray();
+
+        try (org.apache.poi.xssf.usermodel.XSSFWorkbook workbook =
+                     new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(body))) {
+            var sheet = workbook.getSheetAt(0);
+            assertThat(sheet.getRow(0).getCell(0).getStringCellValue()).isEqualTo("문항");
+            assertThat(sheet.getRow(1).getCell(0).getStringCellValue()).isEqualTo("만족하십니까");
+            assertThat(sheet.getRow(1).getCell(2).getStringCellValue()).isEqualTo("예");
+            assertThat(sheet.getRow(1).getCell(3).getNumericCellValue()).isEqualTo(3.0);
+            assertThat(sheet.getRow(1).getCell(4).getNumericCellValue()).isEqualTo(75.0);
+            assertThat(sheet.getRow(1).getCell(5).getNumericCellValue()).isEqualTo(4.0);
+        }
+    }
 }

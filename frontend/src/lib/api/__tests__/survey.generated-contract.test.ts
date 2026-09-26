@@ -19,6 +19,7 @@ vi.mock('@/lib/api/client', () => ({
 
 import {
   deleteResponseOperation,
+  exportStatsOperation,
   getResponseOperation,
   getResponsesOperation,
   getStatsOperation,
@@ -26,6 +27,7 @@ import {
 import { SurveyResultDtoResponseSchema } from '@/types/generated-zod';
 import {
   deleteQustnrRespondInfo,
+  downloadSurveyStatsXlsx,
   getQustnrRespondInfoDetail,
   getQustnrRespondInfoList,
   getSurveyStats,
@@ -136,5 +138,39 @@ describe('survey API generated boundary', () => {
       frstRgtrId: '',
       crtDt: '',
     });
+  });
+});
+
+describe('downloadSurveyStatsXlsx (DIP B5 F6)', () => {
+  beforeEach(() => {
+    executeGeneratedOperationMock.mockReset();
+  });
+
+  it('생성 binary 연산으로 바이트를 받아 survey-<번호>-stats.xlsx 로 저장한다', async () => {
+    const blob = new Blob(['xlsx']);
+    executeGeneratedOperationMock.mockResolvedValueOnce(blob);
+    const createObjectURL = vi.fn(() => 'blob:stats');
+    const revokeObjectURL = vi.fn();
+    Object.assign(URL, { createObjectURL, revokeObjectURL });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      expect(this.download).toBe('survey-7-stats.xlsx');
+      expect(this.href).toContain('blob:stats');
+    });
+
+    await downloadSurveyStatsXlsx(7);
+
+    expect(executeGeneratedOperationMock).toHaveBeenCalledWith(exportStatsOperation, { path: { srvySn: 7 } });
+    expect(createObjectURL).toHaveBeenCalledWith(blob);
+    expect(click).toHaveBeenCalledTimes(1);
+    click.mockRestore();
+  });
+
+  it('조회가 실패하면 저장하지 않고 오류를 그대로 전파한다', async () => {
+    executeGeneratedOperationMock.mockRejectedValueOnce(new Error('403'));
+    const createObjectURL = vi.fn();
+    Object.assign(URL, { createObjectURL });
+
+    await expect(downloadSurveyStatsXlsx(7)).rejects.toThrow('403');
+    expect(createObjectURL).not.toHaveBeenCalled();
   });
 });

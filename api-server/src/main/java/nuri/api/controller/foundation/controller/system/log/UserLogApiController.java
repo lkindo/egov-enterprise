@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system.log;
 
+import nuri.api.support.XlsxExport;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -74,9 +75,9 @@ public class UserLogApiController {
                     + "조건 일치 전체 결과를 xlsx 로 스트리밍한다. 행 수가 상한을 초과하면 400 을 반환한다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
             description = "xlsx 바이너리 스트림",
-            content = @Content(mediaType = LogExcelExport.XLSX_MEDIA_TYPE,
+            content = @Content(mediaType = XlsxExport.XLSX_MEDIA_TYPE,
                     schema = @Schema(type = "string", format = "binary")))
-    @GetMapping(value = "/export.xlsx", produces = LogExcelExport.XLSX_MEDIA_TYPE)
+    @GetMapping(value = "/export.xlsx", produces = XlsxExport.XLSX_MEDIA_TYPE)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.UserLogApiController#exportUserLogs')")
     public ResponseEntity<StreamingResponseBody> exportUserLogs(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
@@ -84,7 +85,7 @@ public class UserLogApiController {
         searchDto.setPageIndex(1);
         searchDto.setPageUnit(1);
         int totalCount = (int) userLogManageService.selectUserLogList(searchDto).getTotalElements();
-        LogExcelExport.assertWithinCap(totalCount);
+        XlsxExport.assertWithinCap(totalCount);
 
         searchDto.setPageUnit(Math.max(totalCount, 1));
         List<UserLogDto> rows = userLogManageService.selectUserLogList(searchDto).getContent();
@@ -92,21 +93,21 @@ public class UserLogApiController {
         // [2026-09-15 DEC-OPS-099] 출력 건수는 측정되지 않는다 — ProcessTypeCode 가 채우지 않아 otpt_cnt 는 늘 0 이다.
         //   화면은 미측정으로 고지하는데 엑셀만 숫자를 쓰면 "출력이 한 번도 없었다" 로 읽힌다(화면 용어 원장의
         //   unknownAsZero 금지). 머리글이 미측정을 밝히고 칸은 비운다. 측정이 생기면 둘을 함께 되돌린다.
-        return LogExcelExport.attachment("user-logs.xlsx", "user-logs",
+        return XlsxExport.attachment("user-logs.xlsx", "user-logs",
                 new String[]{"발생일자", "요청자 ID", "성명", "서비스명", "메서드명", "등록", "수정", "조회", "삭제", "출력(미측정)", "오류"},
                 rows,
                 (row, dto) -> {
-                    row.createCell(0).setCellValue(LogExcelExport.nullSafe(dto.ocrnYmd()));
-                    row.createCell(1).setCellValue(LogExcelExport.nullSafe(dto.dmndUserId()));
-                    row.createCell(2).setCellValue(LogExcelExport.nullSafe(dto.userNm()));
-                    row.createCell(3).setCellValue(LogExcelExport.nullSafe(dto.srvcNm()));
-                    row.createCell(4).setCellValue(LogExcelExport.nullSafe(dto.mthdNm()));
-                    row.createCell(5).setCellValue(LogExcelExport.nullSafe(dto.crtCnt()));
-                    row.createCell(6).setCellValue(LogExcelExport.nullSafe(dto.mdfcnCnt()));
-                    row.createCell(7).setCellValue(LogExcelExport.nullSafe(dto.inqCnt()));
-                    row.createCell(8).setCellValue(LogExcelExport.nullSafe(dto.delCnt()));
+                    row.createCell(0).setCellValue(XlsxExport.nullSafe(dto.ocrnYmd()));
+                    row.createCell(1).setCellValue(XlsxExport.nullSafe(dto.dmndUserId()));
+                    row.createCell(2).setCellValue(XlsxExport.nullSafe(dto.userNm()));
+                    row.createCell(3).setCellValue(XlsxExport.nullSafe(dto.srvcNm()));
+                    row.createCell(4).setCellValue(XlsxExport.nullSafe(dto.mthdNm()));
+                    row.createCell(5).setCellValue(XlsxExport.nullSafe(dto.crtCnt()));
+                    row.createCell(6).setCellValue(XlsxExport.nullSafe(dto.mdfcnCnt()));
+                    row.createCell(7).setCellValue(XlsxExport.nullSafe(dto.inqCnt()));
+                    row.createCell(8).setCellValue(XlsxExport.nullSafe(dto.delCnt()));
                     row.createCell(9).setCellValue("");
-                    row.createCell(10).setCellValue(LogExcelExport.nullSafe(dto.errCnt()));
+                    row.createCell(10).setCellValue(XlsxExport.nullSafe(dto.errCnt()));
                 });
     }
 }

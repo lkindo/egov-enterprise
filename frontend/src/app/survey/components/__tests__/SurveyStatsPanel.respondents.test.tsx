@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from 'vitest';
  * 고른 60% 를 '전체 선택의 60%' 로 읽는다.
  */
 const mocks = vi.hoisted(() => ({ getSurveyStats: vi.fn() }));
-vi.mock('@/lib/api/survey', () => ({ getSurveyStats: mocks.getSurveyStats }));
+vi.mock('@/lib/api/survey', () => ({ getSurveyStats: mocks.getSurveyStats, downloadSurveyStatsXlsx: vi.fn() }));
 
 import { SurveyStatsPanel } from '../SurveyStatsPanel';
 

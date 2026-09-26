@@ -1294,6 +1294,16 @@ export const UserAuthorityDtoSchema = z.object({
 export type UserAuthorityDto = z.infer<typeof UserAuthorityDtoSchema>;
 
 // ==========================================================================
+// SurveyCopyRequest Schema
+// ==========================================================================
+export const SurveyCopyRequestSchema = z.object({
+  srvyTtl: z.string().min(0).max(256),
+  srvyBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")),
+  srvyEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")),
+});
+export type SurveyCopyRequest = z.infer<typeof SurveyCopyRequestSchema>;
+
+// ==========================================================================
 // DeptAuthorBatchRequest Schema
 // ==========================================================================
 export const DeptAuthorBatchRequestSchema = z.object({
@@ -6606,6 +6616,18 @@ export const UserAuthorityDtoResponseSchema = z.object({
   authrtId: z.string().min(0).max(20),
   mbrTypeCd: z.string().min(0).max(12).optional().nullable(),
   userNm: z.string().min(0).max(100).optional().nullable(),
+});
+
+export const SurveyCopyRequestRequestSchema = z.object({
+  srvyTtl: z.string().min(0).max(256),
+  srvyBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")),
+  srvyEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")),
+});
+
+export const SurveyCopyRequestResponseSchema = z.object({
+  srvyTtl: z.string().min(0).max(256),
+  srvyBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")),
+  srvyEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")),
 });
 
 export const DeptAuthorBatchRequestRequestSchema = z.object({

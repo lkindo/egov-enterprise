@@ -606,4 +606,71 @@ class SurveyServiceTest {
         surveyService.deleteItem(401L);
         verify(iemRepository, times(1)).deleteById(401L);
     }
+
+    @Test
+    @DisplayName("[DIP B5 F6] 설문 복제는 요청의 제목·기간으로 새 설문을 만들고 문항·선택 항목을 새 번호로 옮긴다 — 응답은 옮기지 않는다")
+    void copySurvey_copiesQuestionsAndItemsWithRequestedTitleAndPeriod() {
+        SurveyInfo source = SurveyInfo.builder().srvySn(10L).srvyTtl("원본").srvyPrps("목적").srvyWrtGdCn("안내")
+                .srvyBgngYmd("20260901").srvyEndYmd("20260930").srvyTrgt("전 직원").srvyTmpltSn(3L).build();
+        given(infoRepository.findById(10L)).willReturn(Optional.of(source));
+        given(infoRepository.save(any(SurveyInfo.class))).willAnswer(inv -> {
+            SurveyInfo saved = inv.getArgument(0);
+            org.springframework.test.util.ReflectionTestUtils.setField(saved, "srvySn", 20L);
+            return saved;
+        });
+        SurveyQuestion q1 = SurveyQuestion.builder().srvyQstnSn(101L).srvySn(10L).qstnSn(1L).qstnTypeCd("1").qstnCn("만족하십니까").maxChcCnt(1).srvyTmpltSn(3L).build();
+        SurveyQuestion q2 = SurveyQuestion.builder().srvyQstnSn(102L).srvySn(10L).qstnSn(2L).qstnTypeCd("2").qstnCn("복수").maxChcCnt(2).srvyTmpltSn(3L).build();
+        given(qesitmRepository.findBySrvySnOrderByQstnSnAsc(10L)).willReturn(List.of(q1, q2));
+        java.util.concurrent.atomic.AtomicLong questionSerial = new java.util.concurrent.atomic.AtomicLong(200L);
+        given(qesitmRepository.save(any(SurveyQuestion.class))).willAnswer(inv -> {
+            SurveyQuestion saved = inv.getArgument(0);
+            org.springframework.test.util.ReflectionTestUtils.setField(saved, "srvyQstnSn", questionSerial.incrementAndGet());
+            return saved;
+        });
+        given(iemRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any())).willReturn(List.of(
+                SurveyArticle.builder().srvyArtclSn(501L).srvyQstnSn(101L).srvySn(10L).artclSn(1L).artclCn("예").etcAnsYn("N").srvyTmpltSn(3L).build(),
+                SurveyArticle.builder().srvyArtclSn(502L).srvyQstnSn(102L).srvySn(10L).artclSn(1L).artclCn("기타").etcAnsYn("Y").srvyTmpltSn(3L).build()));
+
+        Long copySn = surveyService.copySurvey(10L, nuri.business.service.survey.dto.SurveyCopyRequest.builder()
+                .srvyTtl("  2차 조사 ").srvyBgngYmd("20261001").srvyEndYmd("20261031").build());
+
+        assertThat(copySn).isEqualTo(20L);
+        org.mockito.ArgumentCaptor<SurveyInfo> info = org.mockito.ArgumentCaptor.forClass(SurveyInfo.class);
+        verify(infoRepository).save(info.capture());
+        assertThat(info.getValue().getSrvyTtl()).isEqualTo("2차 조사");
+        assertThat(info.getValue().getSrvyBgngYmd()).isEqualTo("20261001");
+        assertThat(info.getValue().getSrvyEndYmd()).isEqualTo("20261031");
+        assertThat(info.getValue().getSrvyPrps()).isEqualTo("목적");
+        assertThat(info.getValue().getSrvyTmpltSn()).isEqualTo(3L);
+
+        org.mockito.ArgumentCaptor<SurveyQuestion> questions = org.mockito.ArgumentCaptor.forClass(SurveyQuestion.class);
+        verify(qesitmRepository, times(2)).save(questions.capture());
+        assertThat(questions.getAllValues()).extracting(SurveyQuestion::getSrvySn).containsOnly(20L);
+        assertThat(questions.getAllValues()).extracting(SurveyQuestion::getQstnCn).containsExactly("만족하십니까", "복수");
+        assertThat(questions.getAllValues()).extracting(SurveyQuestion::getMaxChcCnt).containsExactly(1, 2);
+
+        org.mockito.ArgumentCaptor<SurveyArticle> items = org.mockito.ArgumentCaptor.forClass(SurveyArticle.class);
+        verify(iemRepository, times(2)).save(items.capture());
+        // 선택 항목은 원본 문항이 아니라 사본 문항(201·202)에 붙는다.
+        assertThat(items.getAllValues()).extracting(SurveyArticle::getSrvyQstnSn).containsExactly(201L, 202L);
+        assertThat(items.getAllValues()).extracting(SurveyArticle::getSrvySn).containsOnly(20L);
+        assertThat(items.getAllValues()).extracting(SurveyArticle::getEtcAnsYn).containsExactly("N", "Y");
+        verifyNoInteractions(rsltRepository, rspdntRepository);
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F6] 없는 설문은 404, 시작일이 종료일보다 늦은 사본 기간은 400 이고 아무것도 만들지 않는다")
+    void copySurvey_rejectsMissingSourceOrReversedPeriod() {
+        given(infoRepository.findById(99L)).willReturn(Optional.empty());
+        assertThatThrownBy(() -> surveyService.copySurvey(99L, nuri.business.service.survey.dto.SurveyCopyRequest.builder()
+                .srvyTtl("사본").srvyBgngYmd("20261001").srvyEndYmd("20261031").build()))
+                .isInstanceOf(BusinessException.class);
+
+        given(infoRepository.findById(10L)).willReturn(Optional.of(SurveyInfo.builder().srvySn(10L).srvyTtl("원본").srvyTmpltSn(3L).build()));
+        assertThatThrownBy(() -> surveyService.copySurvey(10L, nuri.business.service.survey.dto.SurveyCopyRequest.builder()
+                .srvyTtl("사본").srvyBgngYmd("20261031").srvyEndYmd("20261001").build()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("시작일");
+        verify(infoRepository, never()).save(any(SurveyInfo.class));
+    }
 }
