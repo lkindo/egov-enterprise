@@ -5087,6 +5087,10 @@ export interface components {
             schdlKndCd?: string;
             schdlPlcNm?: string;
             schdlImprtCd?: string;
+            /** @description 현재 사용자가 수정할 수 있는지(서버 판정) */
+            readonly editable?: boolean;
+            /** @description 현재 사용자가 삭제할 수 있는지(서버 판정) */
+            readonly deletable?: boolean;
         };
         /** @description 온라인 설문 항목 DTO (표준화) */
         OnlinePollArticleDto: {
@@ -5342,6 +5346,10 @@ export interface components {
             readonly lastMdfrId?: string | null;
             /** Format: date-time */
             readonly mdfcnDt?: string | null;
+            /** @description 현재 사용자가 수정할 수 있는지(서버 판정) */
+            readonly editable?: boolean;
+            /** @description 현재 사용자가 삭제할 수 있는지(서버 판정) */
+            readonly deletable?: boolean;
         };
         DeptJobBoxDto: {
             /** Format: int64 */

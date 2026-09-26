@@ -1649,7 +1649,9 @@
         "frstRgtrId",
         "crtDt",
         "lastMdfrId",
-        "mdfcnDt"
+        "mdfcnDt",
+        "editable",
+        "deletable"
       ],
       "pack": "core"
     },
@@ -1672,7 +1674,9 @@
         "crtDt",
         "lastMdfrId",
         "mdfcnDt",
-        "schdlIpAddr"
+        "schdlIpAddr",
+        "editable",
+        "deletable"
       ],
       "pack": "demo"
     },

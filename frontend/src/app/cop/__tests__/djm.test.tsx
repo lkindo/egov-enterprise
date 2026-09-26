@@ -68,6 +68,9 @@ const JOB = {
   picNm: '홍길동',
   deptTaskBoxNm: '기획팀 업무함',
   frstRgtrId: 'webmaster',
+  // [DIP B4 P5] 담당자 시점 — 서버 힌트가 수정·삭제를 연다.
+  editable: true,
+  deletable: true,
 };
 
 describe('DeptJobDetailClient', () => {

@@ -27,16 +27,28 @@ const questionContentSchema = SurveyQuestionDtoSchema.shape.qstnCn
   .min(1, '문항 내용을 입력해 주세요.')
   .max(4000, '문항 내용은 최대 4000자까지 입력할 수 있습니다.');
 
+/**
+ * 최대 선택 수. 1 이면 하나만 고르는 문항이다(응답 판정과 같은 규칙 — NULL·0 도 하나다).
+ * [2026-09-26 DIP B4 P6, D4] 종전 등록 폼은 이 값을 묻지 않아 모든 문항이 하나만 고르는 문항으로 저장됐다.
+ */
+const maxChoiceSchema = SurveyQuestionDtoSchema.shape.maxChcCnt
+  .unwrap()
+  .int('최대 선택 수는 정수여야 합니다.')
+  .min(1, '최대 선택 수는 1 이상이어야 합니다.')
+  .max(20, '최대 선택 수는 20 이하로 정해 주세요.');
+
 export const surveyQuestionCreateSchema = SurveyQuestionDtoSchema.pick({
   srvySn: true,
   qstnSn: true,
   qstnTypeCd: true,
   qstnCn: true,
+  maxChcCnt: true,
 }).extend({
   srvySn: positiveSurveyIdSchema,
   qstnSn: positiveQuestionOrderSchema,
   qstnTypeCd: questionTypeSchema,
   qstnCn: questionContentSchema,
+  maxChcCnt: maxChoiceSchema,
 });
 
 const positiveQuestionIdSchema = SurveyArticleDtoSchema.shape.srvyQstnSn
@@ -140,6 +152,7 @@ export const surveyInfoValidationLabels = {
 
 export const surveyQuestionValidationLabels = {
   qstnCn: '문항 내용',
+  maxChcCnt: '최대 선택 수',
   qstnSn: '문항 순번',
   qstnTypeCd: '문항 유형',
   srvySn: '설문',

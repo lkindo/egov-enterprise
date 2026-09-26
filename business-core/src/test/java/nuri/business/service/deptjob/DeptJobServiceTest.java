@@ -217,6 +217,27 @@ class DeptJobServiceTest {
     }
 
     @Test
+    @DisplayName("[DIP B4 P5] 수정·삭제 힌트는 담당자에게만 열리고 같은 부서의 다른 사람에게는 닫힌다")
+    void detailCarriesEditHintsForPicOnly() {
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        mockToDtoDependencies();
+
+        authenticateAs("user1", "USER1"); // 담당자 본인
+        DeptJobDto mine = deptJobService.getDeptJob(1L);
+        assertEquals(Boolean.TRUE, mine.getEditable());
+        assertEquals(Boolean.TRUE, mine.getDeletable());
+
+        authenticateAs("user2", "USER2"); // 같은 부서 동료 — 볼 수는 있지만 고칠 수는 없다
+        givenMemberOf("USER2", "DEPT1");
+        DeptJobDto colleague = deptJobService.getDeptJob(1L);
+        assertEquals(Boolean.FALSE, colleague.getEditable());
+        assertEquals(Boolean.FALSE, colleague.getDeletable());
+
+        authenticateAsAdmin();
+        assertEquals(Boolean.TRUE, deptJobService.getDeptJob(1L).getEditable());
+    }
+
+    @Test
     @DisplayName("🚨 '부서 전체' 는 내 소속 부서의 업무함과 내 업무로 좁힌다 — 다른 부서 업무가 보이지 않는다 (DIP I5)")
     void getDeptJobList_deptScopeLimitedToOwnDepartment() {
         authenticateAs("member", "ESNTL_MEMBER");

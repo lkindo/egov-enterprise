@@ -164,6 +164,26 @@ public class ScheduleService {
     }
 
     private ScheduleDto convertToDto(Schedule entity) {
-        return scheduleMapper.toDto(entity);
+        ScheduleDto dto = scheduleMapper.toDto(entity);
+        dto.setEditable(canModify(entity, "SCHEDULE_UPDATE", "SCHEDULE_UPDATE_ALL"));
+        dto.setDeletable(canModify(entity, "SCHEDULE_DELETE", "SCHEDULE_DELETE_ALL"));
+        return dto;
+    }
+
+    /**
+     * 수정·삭제 가능 여부 — {@code assertOwnerOrPermission(frstRgtrId, 전체권한)} 과 컨트롤러 기능 권한을 예외 대신 boolean 으로
+     * 계산한다(2026-09-26 DIP B4 P5). 부서 일정은 같은 부서 사람에게 보이지만 고칠 수 있는 사람은 등록자·관리자뿐이라,
+     * 화면이 소유를 모르고 버튼을 그리면 누를 때마다 403 이 났다. 표시용 힌트이고 인가는 쓰기 경로가 집행한다.
+     */
+    private boolean canModify(Schedule entity, String operationPermission, String overridePermission) {
+        if (!nuri.business.security.util.SecurityUtil.hasPermission(operationPermission)) {
+            return false;
+        }
+        if (nuri.business.security.util.SecurityUtil.hasPermission(overridePermission)) {
+            return true;
+        }
+        String owner = entity.getFrstRgtrId();
+        return org.springframework.util.StringUtils.hasText(owner)
+                && nuri.business.security.util.SecurityUtil.getCurrentLoginId().filter(owner::equals).isPresent();
     }
 }

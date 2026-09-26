@@ -87,7 +87,10 @@ public class BoardMasterService extends BaseAbstractService {
     }
 
     private void assertCommunityMember(Long cmntySn) {
-        if (nuri.business.security.util.SecurityUtil.hasPermission("BBS_MST_READ_ALL")) {
+        // [2026-09-26 DIP B4 P5] 게시판 진입 게이트(BoardService#assertCommunityAccess)가 통과시키는 전체 열람 권한자도
+        //   목록을 본다 — 종전에는 목록만 BBS_MST_READ_ALL 로 판정해 들어갈 수 있는 관리자가 목록을 보지 못했다.
+        if (nuri.business.security.util.SecurityUtil.hasPermission("BBS_MST_READ_ALL")
+                || nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")) {
             return;
         }
         String esntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);

@@ -169,9 +169,17 @@ public class SurveyService {
     public void insertQuestion(SurveyQuestionDto dto) {
         SurveyInfo survey = infoRepository.findById(Objects.requireNonNull(dto.getSrvySn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [2026-09-26 DIP B4 P6] 순번은 서버가 매긴다 — 화면이 '문항 수 + 1' 을 보내, 중간 문항을 지운 뒤 추가하면 마지막
+        //   문항과 순번이 겹쳤다. 이 설문의 가장 큰 순번 다음을 쓴다.
+        long nextQstnSn = qesitmRepository.findBySrvySnOrderByQstnSnAsc(survey.getSrvySn()).stream()
+                .map(SurveyQuestion::getQstnSn)
+                .filter(Objects::nonNull)
+                .mapToLong(Long::longValue)
+                .max()
+                .orElse(0L) + 1;
         qesitmRepository.save(Objects.requireNonNull(SurveyQuestion.builder()
                 .srvySn(survey.getSrvySn())
-                .qstnSn(dto.getQstnSn())
+                .qstnSn(nextQstnSn)
                 .qstnTypeCd(dto.getQstnTypeCd())
                 .qstnCn(dto.getQstnCn())
                 .maxChcCnt(dto.getMaxChcCnt())
@@ -183,7 +191,27 @@ public class SurveyService {
     public void updateQuestion(SurveyQuestionDto dto) {
         SurveyQuestion entity = qesitmRepository.findById(Objects.requireNonNull(dto.getSrvyQstnSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [2026-09-26 DIP B4 P6] 응답이 모인 뒤 문구·유형·선택 수를 바꾸면 이미 받은 응답이 다른 질문에 대한 답이 된다.
+        //   순번(배치)만 바꾸는 것은 허용한다.
+        boolean meaningChanged = !Objects.equals(entity.getQstnCn(), dto.getQstnCn())
+                || !Objects.equals(entity.getQstnTypeCd(), dto.getQstnTypeCd())
+                || effectiveMaxChoice(entity.getMaxChcCnt()) != effectiveMaxChoice(dto.getMaxChcCnt());
+        if (meaningChanged) {
+            assertNotAnswered(rsltRepository.countBySrvyQstnSn(entity.getSrvyQstnSn()), "문항");
+        }
         entity.update(dto.getQstnSn(), dto.getQstnTypeCd(), dto.getQstnCn(), dto.getMaxChcCnt());
+    }
+
+    /** 응답 판정과 같은 규칙 — NULL·0·음수는 하나만 고른다(SurveyResultService#submitResponse). */
+    private static int effectiveMaxChoice(Integer maxChcCnt) {
+        return maxChcCnt == null || maxChcCnt <= 0 ? 1 : maxChcCnt;
+    }
+
+    private static void assertNotAnswered(long responseCount, String target) {
+        if (responseCount > 0) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
+                    "응답 " + responseCount + "건이 있는 " + target + "의 문구와 선택 방식은 바꿀 수 없습니다. 새 문항으로 추가해 주세요.");
+        }
     }
 
     @Transactional
@@ -225,6 +253,10 @@ public class SurveyService {
     public void updateItem(SurveyArticleDto dto) {
         SurveyArticle entity = iemRepository.findById(Objects.requireNonNull(dto.getSrvyArtclSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [2026-09-26 DIP B4 P6] 응답이 모인 문항의 선택지 문구를 바꾸면 이미 고른 사람의 답이 다른 뜻이 된다.
+        if (!Objects.equals(entity.getArtclCn(), dto.getArtclCn())) {
+            assertNotAnswered(rsltRepository.countBySrvyQstnSn(entity.getSrvyQstnSn()), "문항");
+        }
         entity.update(dto.getArtclSn(), dto.getArtclCn(), dto.getEtcAnsYn());
     }
 

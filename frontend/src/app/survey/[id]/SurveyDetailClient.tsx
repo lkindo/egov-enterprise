@@ -91,8 +91,12 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
   const queryClient = useQueryClient();
 
   const questionList = useMemo(() => questions ?? [], [questions]);
-  const answeredCount = Object.values(selected).filter((items) => items.length > 0).length;
-  const canSubmit = isOpen && answeredCount > 0 && !isSubmitting && !answered;
+  // [2026-09-26 DIP B4 P6, D4] 전 문항 응답이 필수다 — 고를 선택지가 있는 문항에 모두 답해야 제출할 수 있다(서버도 400).
+  //   종전에는 한 문항만 골라도 제출돼 통계의 문항별 응답 수가 설문 응답 수와 어긋났다.
+  const answerableQuestions = questionList.filter((question) => (question.items ?? []).length > 0);
+  const unansweredCount = answerableQuestions
+    .filter((question) => (selected[question.srvyQstnSn] ?? []).length === 0).length;
+  const canSubmit = isOpen && answerableQuestions.length > 0 && unansweredCount === 0 && !isSubmitting && !answered;
 
   const handleSelectOption = (question: SurveyQuestion, articleSn: number) => {
     const maxChoice = question.maxChcCnt ?? 1;
@@ -335,7 +339,9 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
             <span className="text-xs text-muted-foreground">
               {answered
                 ? '이 설문에는 한 번만 응답할 수 있습니다.'
-                : `${questionList.length}개 문항 중 ${answeredCount}개 선택`}
+                : unansweredCount > 0
+                  ? `${answerableQuestions.length}개 문항 중 ${answerableQuestions.length - unansweredCount}개 답함 — 모든 문항에 답해야 제출할 수 있습니다.`
+                  : `${answerableQuestions.length}개 문항에 모두 답했습니다.`}
             </span>
           </div>
         )}

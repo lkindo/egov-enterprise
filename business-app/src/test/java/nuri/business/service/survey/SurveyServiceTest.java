@@ -407,6 +407,61 @@ class SurveyServiceTest {
     }
 
     @Test
+    @DisplayName("[DIP B4 P6] 문항 순번은 서버가 가장 큰 순번 다음으로 매긴다 — 화면이 보낸 '문항 수 + 1' 은 쓰지 않는다")
+    void insertQuestion_assignsNextOrder() {
+        given(infoRepository.findById(201L)).willReturn(Optional.of(
+                SurveyInfo.builder().srvySn(201L).srvyTmpltSn(101L).build()));
+        given(qesitmRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(
+                SurveyQuestion.builder().srvyQstnSn(1L).srvySn(201L).qstnSn(1L).build(),
+                SurveyQuestion.builder().srvyQstnSn(3L).srvySn(201L).qstnSn(3L).build()));
+
+        surveyService.insertQuestion(SurveyQuestionDto.builder()
+                .srvySn(201L).qstnSn(3L).qstnTypeCd("1").qstnCn("새 문항").maxChcCnt(2).build());
+
+        org.mockito.ArgumentCaptor<SurveyQuestion> saved = org.mockito.ArgumentCaptor.forClass(SurveyQuestion.class);
+        verify(qesitmRepository).save(saved.capture());
+        assertThat(saved.getValue().getQstnSn()).isEqualTo(4L);
+        assertThat(saved.getValue().getMaxChcCnt()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("[DIP B4 P6] 응답이 모인 문항은 문구·선택 수를 바꿀 수 없고(409) 순번만 바꿀 수 있다")
+    void updateQuestion_lockedAfterResponses() {
+        SurveyQuestion question = SurveyQuestion.builder()
+                .srvyQstnSn(301L).qstnSn(1L).qstnTypeCd("1").qstnCn("원래 문항").maxChcCnt(null).build();
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+        given(rsltRepository.countBySrvyQstnSn(301L)).willReturn(3L);
+
+        assertThatThrownBy(() -> surveyService.updateQuestion(SurveyQuestionDto.builder()
+                .srvyQstnSn(301L).qstnSn(1L).qstnTypeCd("1").qstnCn("바꾼 문항").maxChcCnt(1).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_IN_USE);
+        assertThatThrownBy(() -> surveyService.updateQuestion(SurveyQuestionDto.builder()
+                .srvyQstnSn(301L).qstnSn(1L).qstnTypeCd("1").qstnCn("원래 문항").maxChcCnt(3).build()))
+                .isInstanceOf(BusinessException.class);
+        assertThat(question.getQstnCn()).isEqualTo("원래 문항");
+
+        // 순번만 바꾸는 것은 응답의 뜻을 바꾸지 않는다 — NULL 과 1 은 같은 '하나만 고르기' 다.
+        surveyService.updateQuestion(SurveyQuestionDto.builder()
+                .srvyQstnSn(301L).qstnSn(5L).qstnTypeCd("1").qstnCn("원래 문항").maxChcCnt(1).build());
+        assertThat(question.getQstnSn()).isEqualTo(5L);
+    }
+
+    @Test
+    @DisplayName("[DIP B4 P6] 응답이 모인 문항의 선택지 문구는 바꿀 수 없다(409)")
+    void updateItem_lockedAfterResponses() {
+        SurveyArticle item = SurveyArticle.builder().srvyArtclSn(401L).srvyQstnSn(301L).artclCn("예").build();
+        given(iemRepository.findById(401L)).willReturn(Optional.of(item));
+        given(rsltRepository.countBySrvyQstnSn(301L)).willReturn(2L);
+
+        assertThatThrownBy(() -> surveyService.updateItem(SurveyArticleDto.builder()
+                .srvyArtclSn(401L).artclSn(1L).artclCn("아니오").build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_IN_USE);
+        assertThat(item.getArtclCn()).isEqualTo("예");
+    }
+
+    @Test
     @DisplayName("설문 문항 수정 - 자원 없음 예외")
     void updateQuestion_NotFound_ShouldThrowBusinessException() {
         given(qesitmRepository.findById(301L)).willReturn(Optional.empty());

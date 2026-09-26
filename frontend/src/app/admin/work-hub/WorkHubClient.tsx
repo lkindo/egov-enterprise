@@ -379,8 +379,10 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     },
     {
       header: '관리',
+      // [2026-09-26 DIP B4 P5] 부서 일정은 같은 부서 사람에게 보이지만 고칠 수 있는 사람은 등록자·관리자뿐이다 — 서버 힌트로만 그린다.
       accessor: (item) => (
         <div className="flex justify-end gap-1">
+          {item.editable && (
           <Button
             variant="ghost"
             size="sm"
@@ -392,6 +394,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
           >
             수정
           </Button>
+          )}
+          {item.deletable && (
           <Button
             variant="ghost"
             size="sm"
@@ -404,6 +408,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
           >
             삭제
           </Button>
+          )}
         </div>
       ),
       className: 'w-40 text-right',

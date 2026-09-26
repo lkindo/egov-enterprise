@@ -159,6 +159,8 @@ describe('WorkHubClient schedule error ownership', () => {
       schdlBgngYmd: '20260901',
       schdlEndYmd: '20260901',
       schdlSeCd: '2',
+      editable: true,
+      deletable: true,
     }];
     mocks.updateSchedule.mockReturnValueOnce(new Promise<void>((_, reject) => {
       rejectUpdate = reject;
@@ -324,7 +326,7 @@ describe('WorkHubClient schedule error ownership', () => {
 
   it('일정 삭제는 confirm 전에 선점하고 같은 tick 중복 삭제를 막는다', async () => {
     let rejectDelete!: (reason?: unknown) => void;
-    mocks.scheduleRows = [{ schdlSn: 29, schdlNm: '삭제 대상 일정', schdlBgngYmd: '20260901', schdlEndYmd: '20260901' }];
+    mocks.scheduleRows = [{ schdlSn: 29, schdlNm: '삭제 대상 일정', schdlBgngYmd: '20260901', schdlEndYmd: '20260901', editable: true, deletable: true }];
     mocks.deleteSchedule.mockReturnValueOnce(new Promise<void>((_, reject) => {
       rejectDelete = reject;
     }));

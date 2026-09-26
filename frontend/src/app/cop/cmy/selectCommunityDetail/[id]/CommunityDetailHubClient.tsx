@@ -23,6 +23,8 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { CommunityVO } from '@/types/business/community';
 import Link from 'next/link';
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 export default function CommunityDetailHubClient({ 
   cmntySn,
@@ -36,6 +38,7 @@ export default function CommunityDetailHubClient({
   const queryClient = useQueryClient();
   const confirm = useConfirm();
   const joinPendingRef = React.useRef(false);
+  const { user } = useAuth();
   const [isJoining, setJoining] = React.useState(false);
   const leavePendingRef = React.useRef(false);
   const [isLeaving, setLeaving] = React.useState(false);
@@ -69,7 +72,8 @@ export default function CommunityDetailHubClient({
     회원이 아닐 때는 **조회 자체를 하지 않는다** — 서버가 403 을 줄 것이 확실한 요청을 보내
     콘솔에 오류를 남길 이유가 없고, 화면은 어차피 안내를 보여 준다.
   */
-  const canSeeBoards = membershipStatus === 'MEMBER';
+  // [2026-09-26 DIP B4 P5] 게시판 진입 게이트와 같은 판정 — 회원이거나 전체 열람 권한자(관리자)면 목록을 본다.
+  const canSeeBoards = membershipStatus === 'MEMBER' || canPermission(user, 'BOARD_READ_ALL');
   const {
     data: boards,
     isLoading: isBoardsLoading,

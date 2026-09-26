@@ -370,6 +370,18 @@ class BoardCommunityAccessTest {
         }
 
         @Test
+        @DisplayName("[DIP B4 P5] 게시판 진입 게이트가 통과시키는 전체 열람 권한자는 회원이 아니어도 목록을 본다")
+        void boardReadAllSeesBoardsWithoutMembership() {
+            securityUtil.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")).thenReturn(true);
+            given(boardMasterRepository.findByCmntySnAndUseYn(CMNTY_SN, "Y"))
+                    .willReturn(List.of(BoardMaster.builder().bbsId(COMMUNITY_BBS).bbsTtl("회원 게시판")
+                            .cmntySn(CMNTY_SN).build()));
+
+            assertThat(boardMasterService(communityBoardAccess).getCommunityBoards(CMNTY_SN)).hasSize(1);
+            verify(communityBoardAccess, never()).isApprovedMember(any(), anyString());
+        }
+
+        @Test
         @DisplayName("포트가 없으면 거부한다")
         void missingPortFailsClosed() {
             BoardMasterService service = boardMasterService(null);

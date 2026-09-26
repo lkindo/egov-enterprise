@@ -136,6 +136,7 @@ describe('SurveyQuestionsPanel', () => {
       qstnSn: 1,
       qstnTypeCd: '1',
       qstnCn: '가'.repeat(4000),
+      maxChcCnt: 1,
     };
     const item = {
       srvyQstnSn: 301,
@@ -148,6 +149,9 @@ describe('SurveyQuestionsPanel', () => {
     expect(surveyQuestionCreateSchema.safeParse({ ...question, qstnCn: '가'.repeat(4001) }).success).toBe(false);
     expect(surveyQuestionCreateSchema.safeParse({ ...question, srvySn: 1.5 }).success).toBe(false);
     expect(surveyQuestionCreateSchema.safeParse({ ...question, qstnSn: 0 }).success).toBe(false);
+    // [DIP B4 P6] 최대 선택 수는 폼이 늘 싣는다 — 빠지거나 0 이면 거부한다.
+    expect(surveyQuestionCreateSchema.safeParse({ ...question, maxChcCnt: undefined }).success).toBe(false);
+    expect(surveyQuestionCreateSchema.safeParse({ ...question, maxChcCnt: 0 }).success).toBe(false);
     expect(surveyItemCreateSchema.safeParse(item).success).toBe(true);
     expect(surveyItemCreateSchema.safeParse({ ...item, artclCn: '' }).success).toBe(false);
     expect(surveyItemCreateSchema.safeParse({ ...item, artclCn: '가'.repeat(4001) }).success).toBe(false);
@@ -248,6 +252,42 @@ describe('SurveyQuestionsPanel', () => {
     expect(input).toHaveValue('보존할 문항');
     expect(input).toHaveAttribute('aria-invalid', 'true');
     await waitFor(() => expect(input).toHaveFocus());
+  });
+
+  it('[DIP B4 P6] 여러 개 고르기 문항은 최대 선택 수를 싣고, 순번은 가장 큰 순번 다음이다', async () => {
+    mocked.createQuestion.mockResolvedValueOnce(undefined);
+    // 중간 문항(2번)을 지운 뒤라 문항은 두 개지만 가장 큰 순번은 3이다 — '문항 수 + 1'(3)이면 겹친다.
+    mocked.getQuestions.mockResolvedValue([
+      { ...QUESTION_WITHOUT_ITEMS, srvyQstnSn: 1, qstnSn: 1 },
+      { ...QUESTION_WITHOUT_ITEMS, srvyQstnSn: 3, qstnSn: 3 },
+    ]);
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+    await user.type(await screen.findByLabelText('새 문항 내용'), '관심 분야를 모두 고르세요');
+    await user.selectOptions(screen.getByLabelText('선택 방식'), 'multiple');
+    const maxChoice = screen.getByLabelText('최대 선택 수');
+    await user.clear(maxChoice);
+    await user.type(maxChoice, '3');
+    await user.click(screen.getByRole('button', { name: /문항 추가/ }));
+
+    await waitFor(() => expect(mocked.createQuestion).toHaveBeenCalledTimes(1));
+    const [, payload] = mocked.createQuestion.mock.calls[0];
+    expect(payload).toEqual(expect.objectContaining({ qstnCn: '관심 분야를 모두 고르세요', maxChcCnt: 3 }));
+    expect(payload.qstnSn).toBe(4);
+  });
+
+  it('[DIP B4 P6] 하나만 고르기가 기본이며 최대 선택 수 1 로 싣는다', async () => {
+    mocked.createQuestion.mockResolvedValueOnce(undefined);
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+    await user.type(await screen.findByLabelText('새 문항 내용'), '만족하십니까');
+    expect(screen.queryByLabelText('최대 선택 수')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /문항 추가/ }));
+
+    await waitFor(() => expect(mocked.createQuestion).toHaveBeenCalledTimes(1));
+    expect(mocked.createQuestion.mock.calls[0][1]).toEqual(expect.objectContaining({ maxChcCnt: 1 }));
   });
 
   it('문항 pending 시작 전 동기 잠금으로 같은 submit을 한 번만 보낸다', async () => {

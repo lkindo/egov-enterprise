@@ -200,12 +200,17 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
                         </div>
                     </div>
 
-                    {!isEditing && (
+                    {/* [2026-09-26 DIP B4 P5] 같은 부서 사람은 업무를 보지만 고칠 수 있는 사람은 담당자·관리자뿐이다.
+                        서버 힌트(editable·deletable)로만 버튼을 그린다 — 누를 때마다 403 이 나는 버튼을 보이지 않는다. */}
+                    {!isEditing && (job.editable || job.deletable) && (
                         <div className="flex gap-2 shrink-0">
+                            {job.editable && (
                             <Button variant="outline" size="sm" onClick={() => setEditing(true)} disabled={activeAction !== null} className="font-bold gap-1">
                                 <Pencil size={14} />
                                 수정
                             </Button>
+                            )}
+                            {job.deletable && (
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -218,6 +223,7 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
                                 <Trash2 size={14} />
                                 삭제
                             </Button>
+                            )}
                         </div>
                     )}
                 </CardHeader>

@@ -165,6 +165,26 @@ public class SurveyResultService {
                     .etcAnsCn(a.etcAnsCn())
                     .build());
         }
+        // [2026-09-26 DIP B4 P6, D4] 전 문항 응답이 필수다(소속 검증 뒤 — 남의 문항·항목은 먼저 그 사유로 거부한다). 고를 선택지가 있는 문항에 하나도 답하지 않으면 400 이다 —
+        //   종전에는 한 문항만 골라도 제출돼, 통계의 문항별 응답 수가 설문 응답 수와 어긋났다.
+        Set<Long> answeredQuestions = dto.answers().stream()
+                .map(SurveyResponseSubmitDto.Answer::srvyQstnSn)
+                .collect(Collectors.toSet());
+        Set<Long> answerableQuestions = articles.values().stream()
+                .map(SurveyArticle::getSrvyQstnSn)
+                .collect(Collectors.toSet());
+        List<String> unanswered = questions.values().stream()
+                .filter(q -> answerableQuestions.contains(q.getSrvyQstnSn()))
+                .filter(q -> !answeredQuestions.contains(q.getSrvyQstnSn()))
+                .sorted(java.util.Comparator.comparing(SurveyQuestion::getQstnSn,
+                        java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                .map(SurveyQuestion::getQstnCn)
+                .toList();
+        if (!unanswered.isEmpty()) {
+            throw new BusinessException("모든 문항에 답해 주세요. 답하지 않은 문항: " + String.join(", ", unanswered),
+                    CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+
         // frstRgtrId 는 표준 Auditing(@CreatedBy)이 채운다 — 위 중복 검사와 같은 값이어야 한다.
         resultRepository.saveAll(rows);
         return rows.size();

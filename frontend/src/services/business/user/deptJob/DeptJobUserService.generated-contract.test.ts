@@ -150,6 +150,9 @@ describe('DeptJobUserService generated contract', () => {
       'crtDt',
       'lastMdfrId',
       'mdfcnDt',
+      // 서버가 판정하는 수정·삭제 힌트(DIP B4 P5) — 요청에 실으면 경계가 거부한다.
+      'editable',
+      'deletable',
     ] as const;
     type BoxReadOnlyInput = Extract<keyof DeptJobBoxInput, (typeof boxReadOnlyFields)[number]>;
     type JobReadOnlyInput = Extract<keyof DeptJobInput, (typeof jobReadOnlyFields)[number]>;
@@ -176,7 +179,7 @@ describe('DeptJobUserService generated contract', () => {
     expect(Object.keys(DeptJobDtoResponseSchema.shape)).toStrictEqual([
       'deptTaskSn', 'deptTaskBoxSn', 'deptTaskBoxNm', 'deptId', 'deptNm',
       'deptTaskNm', 'deptTaskCn', 'picId', 'picNm', 'prrtyRnk', 'atchFileSn',
-      'frstRgtrId', 'crtDt', 'lastMdfrId', 'mdfcnDt',
+      'frstRgtrId', 'crtDt', 'lastMdfrId', 'mdfcnDt', 'editable', 'deletable',
     ]);
 
     for (const field of boxReadOnlyFields) {

@@ -61,6 +61,9 @@ export default function SurveyQuestionsPanel() {
   const confirm = useConfirm();
   const [srvySn, setSrvySn] = useState<number | null>(null);
   const [newQuestion, setNewQuestion] = useState('');
+  /** [DIP B4 P6] 새 문항의 선택 방식 — 하나만 고르기(1) 또는 여러 개 고르기(2 이상). */
+  const [newQuestionMultiple, setNewQuestionMultiple] = useState(false);
+  const [newQuestionMaxChoice, setNewQuestionMaxChoice] = useState('2');
   const [newItemFor, setNewItemFor] = useState<number | null>(null);
   const [newItemText, setNewItemText] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -256,10 +259,12 @@ export default function SurveyQuestionsPanel() {
   };
 
   const addQuestion = useMutation({
-    mutationFn: (payload: { srvySn: number; qstnCn: string; qstnTypeCd: string; qstnSn: number }) =>
+    mutationFn: (payload: { srvySn: number; qstnCn: string; qstnTypeCd: string; qstnSn: number; maxChcCnt: number }) =>
       surveyAdminService.createQuestion(payload.srvySn, payload),
     onSuccess: () => {
       setNewQuestion('');
+      setNewQuestionMultiple(false);
+      setNewQuestionMaxChoice('2');
       setError(null);
       questionValidation.setFormErrors({}, false);
       invalidate();
@@ -564,11 +569,15 @@ export default function SurveyQuestionsPanel() {
             onSubmit={(e) => {
               e.preventDefault();
               if (questionPendingRef.current || itemPendingRef.current || deletePendingRef.current) return;
+              // [DIP B4 P6] 순번은 '문항 수 + 1' 이 아니라 가장 큰 순번 다음이다 — 중간 문항을 지운 뒤 추가하면
+              //   마지막 문항과 순번이 겹쳤다. 서버도 같은 규칙으로 다시 매긴다.
+              const nextQstnSn = questions.reduce((max, question) => Math.max(max, question.qstnSn ?? 0), 0) + 1;
               const validated = questionValidation.validate({
                 srvySn,
                 qstnCn: newQuestion,
                 qstnTypeCd: MULTIPLE_CHOICE,
-                qstnSn: questions.length + 1,
+                qstnSn: nextQstnSn,
+                maxChcCnt: newQuestionMultiple ? Number(newQuestionMaxChoice) : 1,
               });
               if (!validated) return;
               setError(null);
@@ -606,6 +615,45 @@ export default function SurveyQuestionsPanel() {
             </div>
             {questionValidation.errors.qstnCn ? (
               <p {...questionValidation.messageProps('qstnCn')} className="text-xs font-bold text-destructive-emphasis" />
+            ) : null}
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <label className="flex items-center gap-2">
+                <span className="text-muted-foreground">선택 방식</span>
+                <select
+                  aria-label="선택 방식"
+                  className="h-[var(--control-h)] rounded-md border border-border bg-background px-2 text-sm"
+                  value={newQuestionMultiple ? 'multiple' : 'single'}
+                  onChange={(e) => {
+                    questionValidation.clearError('maxChcCnt');
+                    setNewQuestionMultiple(e.target.value === 'multiple');
+                  }}
+                >
+                  <option value="single">하나만 고르기</option>
+                  <option value="multiple">여러 개 고르기</option>
+                </select>
+              </label>
+              {newQuestionMultiple && (
+                <label className="flex items-center gap-2">
+                  <span className="text-muted-foreground">최대 선택 수</span>
+                  <Input
+                    {...questionValidation.fieldProps('maxChcCnt')}
+                    type="number"
+                    min={2}
+                    max={20}
+                    className="w-20"
+                    value={newQuestionMaxChoice}
+                    onChange={(e) => {
+                      questionValidation.clearError('maxChcCnt');
+                      setNewQuestionMaxChoice(e.target.value);
+                    }}
+                    aria-label="최대 선택 수"
+                  />
+                </label>
+              )}
+              <span className="text-xs text-muted-foreground">응답이 모인 뒤에는 문구와 선택 방식을 바꿀 수 없습니다.</span>
+            </div>
+            {questionValidation.errors.maxChcCnt ? (
+              <p {...questionValidation.messageProps('maxChcCnt')} className="text-xs font-bold text-destructive-emphasis" />
             ) : null}
           </form>
 

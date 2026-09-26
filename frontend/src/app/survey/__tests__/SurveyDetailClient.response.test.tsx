@@ -136,6 +136,30 @@ describe('설문 응답 제출', () => {
     expect(screen.getByRole('button', { name: '응답 제출' })).toBeDisabled();
   });
 
+  it('[DIP B4 P6, D4] 선택지가 있는 모든 문항에 답해야 제출할 수 있다 — 남은 문항 수를 말한다', async () => {
+    mocks.getQuestions.mockResolvedValue([
+      ...QUESTIONS,
+      {
+        ...QUESTIONS[0],
+        srvyQstnSn: 12,
+        qstnSn: 2,
+        qstnCn: '다시 이용하시겠습니까?',
+        items: [
+          { ...QUESTIONS[0].items[0], srvyArtclSn: 201, srvyQstnSn: 12, artclCn: '예' },
+          { ...QUESTIONS[0].items[0], srvyArtclSn: 202, srvyQstnSn: 12, artclSn: 2, artclCn: '아니오' },
+        ],
+      },
+    ]);
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('radio', { name: '만족' }));
+    expect(screen.getByRole('button', { name: '응답 제출' })).toBeDisabled();
+    expect(screen.getByText('2개 문항 중 1개 답함 — 모든 문항에 답해야 제출할 수 있습니다.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('radio', { name: '예' }));
+    expect(screen.getByRole('button', { name: '응답 제출' })).toBeEnabled();
+  });
+
   it('고른 항목을 문항·항목 일련번호로 보낸다 — 서버가 소속을 검증하는 축이다', async () => {
     renderClient();
 

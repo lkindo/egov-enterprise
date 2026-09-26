@@ -54,4 +54,16 @@ public class DeptJobDto {
             accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime mdfcnDt;
+
+    /**
+     * 현재 사용자가 이 업무를 고칠 수 있는가(서버 판정, 2026-09-26 DIP B4 P5). 화면은 이 값으로 버튼을 가린다 —
+     * 인가 자체는 쓰기 경로의 담당자·관리자 가드가 그대로 집행한다.
+     */
+    @Schema(description = "현재 사용자가 수정할 수 있는지(서버 판정)", accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Boolean editable;
+
+    @Schema(description = "현재 사용자가 삭제할 수 있는지(서버 판정)", accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Boolean deletable;
 }
