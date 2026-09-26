@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "1a0d1d8026b605df6bdc93d13e31df17b0d993879ad1637c00f36d41963e925b"
+    "inventoryHash": "3e89efc9008ceb2b4eba6ecb6f2f74b18cd081adcf1b3f5fce1008fcb3b9d0cb"
   },
   "summary": {
-    "sourceFileCount": 548,
-    "records": 383,
-    "syntaxOccurrences": 453,
-    "ambiguousRecords": 336,
-    "unverifiedRecords": 383,
+    "sourceFileCount": 549,
+    "records": 384,
+    "syntaxOccurrences": 455,
+    "ambiguousRecords": 337,
+    "unverifiedRecords": 384,
     "exactPopulations": {
       "filesystemRoutes": 118,
       "dynamicRoutePatterns": 11,
@@ -45,7 +45,7 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 53,
-      "navigation-producer": 166,
+      "navigation-producer": 167,
       "page-redirect": 17,
       "query-builder": 21,
       "query-consumer": 54,
@@ -54,7 +54,7 @@
       "url-observer": 8
     },
     "bySurface": {
-      "navigation": 373,
+      "navigation": 374,
       "request-telemetry": 10
     }
   },
@@ -12688,7 +12688,7 @@
       "evidence": {
         "source": "frontend/src/app/components/ui/app-notification-drawer.tsx",
         "detector": "href-navigation",
-        "occurrenceCount": 1
+        "occurrenceCount": 2
       }
     },
     {
@@ -12896,6 +12896,46 @@
       "evidence": {
         "source": "frontend/src/app/components/ui/session-expiry-warning.tsx",
         "detector": "url-observer",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-1EB732D7F36B2C",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "router.push",
+      "source": "frontend/src/app/components/ui/smart-notification-hub.tsx",
+      "producerFile": "frontend/src/app/components/ui/smart-notification-hub.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/components/ui/smart-notification-hub.tsx",
+        "detector": "router-navigation",
         "occurrenceCount": 1
       }
     },

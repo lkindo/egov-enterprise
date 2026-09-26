@@ -1,226 +1,324 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Bell, Zap, RefreshCw, Layers, Search, MoreVertical } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { CheckCheck, ExternalLink, RefreshCw, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
-import { Input } from '@/components/ui/input';
-import { useNotifications } from '@/lib/hooks/use-notifications';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useToast } from '@/app/components/ui/toast';
+import { extractErrorMessage } from '@/app/actions/actionUtils';
+import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
+import { normalizeNotification, type Notification } from '@/lib/hooks/use-notifications';
+import { announceNotificationsChanged, subscribeNotificationsChanged } from '@/lib/notifications/notification-sync';
+import {
+  deleteNotificationOperation,
+  getNotificationsOperation,
+  getUnreadCountOperation,
+  markAllAsReadOperation,
+  markAsReadOperation,
+} from '@/types/generated-operations';
 
-interface Notification {
-  id: number;
-  title: string;
-  content: string;
-  time: string;
-  /**
-   * 분류. 서버가 저장하는 값이 아니라 **제목 키워드에서 추론**한다
-   * (use-notifications: 제목에 '보안'/'시스템' 포함 여부, 그 밖은 활동).
-   * NotificationDto 에는 분류 필드 자체가 없다.
-   */
-  type: 'security' | 'system' | 'message' | 'alert';
-  status: 'new' | 'read' | 'archived';
-}
+/**
+ * 알림 센터 목록 — 받은 알림을 서버 페이지로 조회하고, 행에서 이동·읽음·삭제를 한다.
+ *
+ * [2026-09-26 DIP B4 P2] 종전에는 헤더 드로어와 같은 실시간 훅(useNotifications)을 한 벌 더 띄워 **드로어가 불러온 첫
+ * 10건만** 보여 주고, 검색·탭도 그 10건 안에서만 걸렀다(11번째 알림은 어떤 경로로도 볼 수 없었다). 같은 개인 큐를
+ * 두 번 구독하고 60초 폴링도 두 벌 돌았다. 이제 실시간 구독은 헤더 한 곳만 갖고, 이 화면은 서버 페이지·검색어·
+ * 읽음 조건으로 조회한다. 양쪽의 읽음·삭제·새 알림은 notification-sync 신호로 서로 다시 읽는다.
+ *
+ * '보안 알림' 탭은 걷었다 — 서버가 분류를 저장하지 않고 제목 키워드로 추론한 값이라 서버 조건으로 거를 수 없고,
+ * 페이지 안에서 거르면 다시 '불러온 범위만' 보는 화면이 된다. 제목에 '보안' 이 든 알림은 검색으로 찾는다.
+ */
+type ReadFilter = 'all' | 'unread';
 
-const NOTIFICATION_TABS = [
+const READ_FILTERS: ReadonlyArray<{ id: ReadFilter; label: string }> = [
   { id: 'all', label: '전체 알림' },
   { id: 'unread', label: '읽지 않은 알림' },
-  // [2026-08-29] '중요 알림' → '보안 알림'. 종전 탭은 priority === 'critical' 로 걸렀는데
-  //   그 값은 분류에서 한 번 더 파생된 것이라 결국 분류가 보안인 알림과 완전히 같았다.
-  //   없는 심각도를 만들지 말고 실제로 거르는 축을 그대로 이름에 쓴다.
-  { id: 'security', label: '보안 알림' },
-] as const;
+];
+
+const QUERY_ROOT = ['notifications', 'center'] as const;
+
+function kindLabel(type: Notification['type']): string {
+  return type === 'SECURITY' ? '보안' : type === 'SYSTEM' ? '시스템' : type === 'INFO' ? '안내' : '활동';
+}
 
 export function SmartNotificationHub() {
-  const [activeTab, setActiveTab] = useState<'all' | 'security' | 'unread'>('all');
-  const [searchKeyword, setSearchKeyword] = useState('');
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const confirm = useConfirm();
+  const { toast } = useToast();
+  const [readFilter, setReadFilter] = useState<ReadFilter>('all');
+  const [keyword, setKeyword] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  /** 한 번에 한 가지 변경만 보낸다 — 같은 틱의 중복 클릭도 막는다(동기 잠금). */
+  const actionLockRef = useRef(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
 
-  // 실제 알림 API(/notifications)를 헤더 드로어와 동일한 useNotifications 훅으로 연결.
-  // (과거엔 SAMPLE_NOTIFICATIONS 하드코딩이라 새로 생성한 알림이 검색/목록에 절대 안 나타났음.)
-  const { notifications: rawNotifications, error, isLoading, refresh } = useNotifications();
-  const notifications = useMemo<Notification[]>(
-    () =>
-      (rawNotifications || []).map((n) => ({
-        id: n.notiSn,
-        title: n.notiTtlNm,
-        content: n.notiCn,
-        time: n.notiDt,
-        type:
-          n.type === 'SECURITY' ? 'security'
-          : n.type === 'SYSTEM' ? 'system'
-          : n.type === 'INFO' ? 'alert'
-          : 'message',
-        // [2026-08-29] priority 를 걷었다. 서버는 우선순위를 저장하지 않는다
-        //   (NotificationDto: notiSn·notiTtlNm·notiCn·notiDt·notiIvlVal·rcvrId·readYn·linkUrl·crtDt).
-        //   종전 값은 제목 키워드 → 분류 → 우선순위로 **두 단계 파생**한 것이라, 제목에 '보안' 이
-        //   없는 긴급 알림은 언제나 'low' 로 보였다. 심각도를 판단해 준 적이 없는데 판단한 것처럼
-        //   보여 주면 관리자가 그 열로 분류(triage)한다.
-        status: n.readYn === 'Y' ? 'read' : 'new',
-      })),
-    [rawNotifications],
-  );
+  const listQuery = useQuery({
+    queryKey: [...QUERY_ROOT, 'list', readFilter, keyword, page, pageSize],
+    queryFn: async () => {
+      const response = await executeGeneratedOperation(getNotificationsOperation, {
+        query: {
+          ...(keyword ? { searchWrd: keyword } : {}),
+          ...(readFilter === 'unread' ? { readYn: 'N' } : {}),
+          page: page - 1,
+          size: pageSize,
+        },
+      });
+      const items: Notification[] = [];
+      for (const candidate of Array.isArray(response.list) ? response.list : []) {
+        const item = normalizeNotification(candidate);
+        if (!item) throw new Error('알림 응답 형식이 올바르지 않습니다.');
+        items.push(item);
+      }
+      return { items, total: typeof response.total === 'number' ? response.total : items.length };
+    },
+  });
 
-  const filteredNotifications = useMemo(() => {
-    return notifications.filter(n => {
-      const matchKeyword = n.title.toLowerCase().includes(searchKeyword.toLowerCase()) || 
-                          n.content.toLowerCase().includes(searchKeyword.toLowerCase());
-      const matchTab = activeTab === 'all' || 
-                       (activeTab === 'security' && n.type === 'security') ||
-                       (activeTab === 'unread' && n.status === 'new');
-      return matchKeyword && matchTab;
+  // 목록 조회 실패는 빈 목록이 아니라 오류다 — 표가 오류와 '다시 시도' 를 보이고, 새로고침은 목록과 미읽음 수를 함께 다시 읽는다.
+  const error = listQuery.isError ? listQuery.error : null;
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: QUERY_ROOT });
+  };
+  const unreadQuery = useQuery({
+    queryKey: [...QUERY_ROOT, 'unread-count'],
+    queryFn: () => executeGeneratedOperation(getUnreadCountOperation, {}),
+  });
+
+  // 헤더에서 읽음·삭제·새 알림이 생기면 다시 읽는다. 이 화면은 스스로 구독·폴링하지 않는다.
+  useEffect(() => subscribeNotificationsChanged('center', () => {
+    void queryClient.invalidateQueries({ queryKey: QUERY_ROOT });
+  }), [queryClient]);
+
+  const items = listQuery.data?.items ?? [];
+  const total = listQuery.data?.total ?? 0;
+  const unreadCount = typeof unreadQuery.data === 'number' ? unreadQuery.data : null;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const runAction = async (key: string, action: () => Promise<void>, failure: string) => {
+    if (actionLockRef.current) return;
+    actionLockRef.current = true;
+    setPendingAction(key);
+    try {
+      await action();
+      announceNotificationsChanged('center');
+      await queryClient.invalidateQueries({ queryKey: QUERY_ROOT });
+    } catch (error) {
+      toast(extractErrorMessage(error, failure), 'error');
+    } finally {
+      actionLockRef.current = false;
+      setPendingAction(null);
+    }
+  };
+
+  const handleMarkRead = (item: Notification) => runAction(`read:${item.notiSn}`, async () => {
+    await executeGeneratedOperation(markAsReadOperation, { path: { notiSn: item.notiSn } });
+  }, '알림을 읽음 처리하지 못했습니다.');
+
+  const handleDelete = async (item: Notification) => {
+    if (actionLockRef.current) return;
+    const confirmed = await confirm({
+      title: '알림 삭제',
+      message: `'${item.notiTtlNm}' 알림을 삭제합니다. 되돌릴 수 없습니다.`,
+      confirmText: '삭제',
+      variant: 'destructive',
     });
-  }, [notifications, searchKeyword, activeTab]);
+    if (!confirmed) return;
+    await runAction(`delete:${item.notiSn}`, async () => {
+      await executeGeneratedOperation(deleteNotificationOperation, { path: { notiSn: item.notiSn } });
+      toast('알림을 삭제했습니다.', 'success');
+    }, '알림을 삭제하지 못했습니다.');
+  };
+
+  const handleMarkAllRead = () => runAction('read-all', async () => {
+    const updated = await executeGeneratedOperation(markAllAsReadOperation, {});
+    toast(typeof updated === 'number' ? `알림 ${updated}건을 읽음 처리했습니다.` : '알림을 모두 읽음 처리했습니다.', 'success');
+  }, '알림을 모두 읽음 처리하지 못했습니다.');
+
+  /** 목적지가 있는 알림은 읽음 처리 뒤 이동한다. 읽음 처리가 실패해도 이동은 막지 않는다. */
+  const openNotification = async (item: Notification) => {
+    if (!item.linkUrl) return;
+    if (item.readYn === 'N') {
+      try {
+        await executeGeneratedOperation(markAsReadOperation, { path: { notiSn: item.notiSn } });
+        announceNotificationsChanged('center');
+      } catch {
+        // 이동이 본래 의도다 — 읽음 표시는 다음 조회에서 되맞춘다.
+      }
+    }
+    router.push(item.linkUrl);
+  };
 
   const columns: Column<Notification>[] = [
     {
       header: '번호',
       accessor: (_, index) => (
-        <span className="font-mono text-xs font-bold text-muted-foreground">
-          {(index !== undefined ? index + 1 : 0).toString().padStart(2, '0')}
+        <span className="font-mono text-xs text-muted-foreground tabular-nums">
+          {total - (page - 1) * pageSize - (index ?? 0)}
         </span>
       ),
-      className: 'w-20 text-center'
+      className: 'w-16 text-center',
     },
     {
-      // 헤더에 판정 근거를 밝힌다 — 서버가 분류를 저장하지 않고 제목에서 추론하므로,
-      // 제목에 키워드가 없는 알림은 '활동' 으로 떨어진다. 그 사실을 모르면 관리자가
-      // 이 열로 거르다 놓친다.
+      // 서버가 분류를 저장하지 않고 제목에서 추론한다 — 머리글이 그 사실을 말한다.
       header: '분류(제목 기준)',
-      accessor: (n) => (
-        <div className={cn(
-          "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-tight",
-          n.type === 'security' ? "bg-rose-500/10 text-rose-600" :
-          n.type === 'system' ? "bg-hub-indigo/10 text-hub-indigo" :
-          n.type === 'message' ? "bg-emerald-500/10 text-emerald-600" :
-          "bg-amber-500/10 text-amber-600"
+      accessor: (item) => (
+        <span className={cn(
+          'inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold',
+          item.type === 'SECURITY' ? 'bg-destructive/10 text-destructive-emphasis' : 'bg-muted text-muted-foreground',
         )}>
-          {n.type === 'security' ? '보안' : n.type === 'system' ? '시스템' : n.type === 'alert' ? '안내' : '활동'}
-        </div>
+          {kindLabel(item.type)}
+        </span>
       ),
-      className: 'w-24'
+      className: 'w-24',
     },
     {
-      header: '알림 제목',
-      accessor: (n) => (
+      header: '알림',
+      accessor: (item) => (
         <div className="flex flex-col gap-1 py-1">
           <div className="flex items-center gap-2">
-            {n.status === 'new' && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
-            <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
-              {n.title}
+            {item.readYn === 'N' && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />}
+            <span className={cn('text-[length:var(--font-size-body)] text-foreground', item.readYn === 'N' && 'font-semibold')}>
+              {item.notiTtlNm}
             </span>
+            {item.readYn === 'N' && <span className="sr-only">(읽지 않음)</span>}
           </div>
-          <p className="text-[11px] font-medium text-muted-foreground truncate max-w-md">{n.content}</p>
+          <p className="max-w-xl truncate text-xs text-muted-foreground">{item.notiCn}</p>
         </div>
-      )
+      ),
     },
     {
       header: '발생 일시',
-      accessor: (n) => (
-        <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">{n.time}</span>
-      ),
-      className: 'w-40'
+      accessor: (item) => <span className="text-xs text-muted-foreground tabular-nums">{item.notiDt}</span>,
+      className: 'w-40',
     },
     {
       header: '관리',
-      accessor: () => (
-        <div className="flex items-center justify-end pr-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="알림 옵션 (미지원)"
-            title="개별 알림 옵션은 아직 연결되지 않았습니다."
-            className="rounded-lg"
-            disabled
-          >
-            <MoreVertical size={16} className="text-muted-foreground" />
-          </Button>
-        </div>
-      ),
-      className: 'w-20 text-right'
-    }
+      accessor: (item) => {
+        const busy = pendingAction !== null;
+        return (
+          <div className="flex items-center justify-end gap-1">
+            {item.linkUrl && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`${item.notiTtlNm} 열기`}
+                onClick={() => void openNotification(item)}
+              >
+                <ExternalLink size={16} aria-hidden="true" />
+              </Button>
+            )}
+            {item.readYn === 'N' && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`${item.notiTtlNm} 읽음 처리`}
+                disabled={busy}
+                aria-busy={pendingAction === `read:${item.notiSn}`}
+                onClick={() => void handleMarkRead(item)}
+              >
+                <CheckCheck size={16} aria-hidden="true" />
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label={`${item.notiTtlNm} 삭제`}
+              disabled={busy}
+              aria-busy={pendingAction === `delete:${item.notiSn}`}
+              onClick={() => void handleDelete(item)}
+            >
+              <Trash2 size={16} aria-hidden="true" />
+            </Button>
+          </div>
+        );
+      },
+      className: 'w-32 text-right',
+    },
   ];
 
+  const changeFilter = (next: ReadFilter) => {
+    setReadFilter(next);
+    setPage(1);
+  };
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      <HubHeader
-        title="알림"
-        highlight="목록"
-        subtitle="현재 계정의 알림 API 응답과 연결 상태를 확인합니다."
-        icon={Bell}
-        actions={
-          <div className="flex gap-3">
-             <div className="flex bg-muted p-1 rounded-xl border border-border/50">
-               {NOTIFICATION_TABS.map((tab) => (
-                 <Button
-                   key={tab.id}
-                   variant="ghost"
-                   size="sm"
-                   aria-label={`${tab.label} 필터`}
-                   aria-pressed={activeTab === tab.id}
-                   className={cn(
-                     "rounded-lg px-4 text-[10px] font-black uppercase transition-all",
-                     activeTab === tab.id ? "bg-card shadow-sm text-primary" : "text-muted-foreground"
-                   )}
-                   onClick={() => setActiveTab(tab.id)}
-                 >
-                   {tab.label}
-                 </Button>
-               ))}
-             </div>
-             <Button
-               variant="outline"
-               size="icon"
-               aria-label="알림 목록 새로고침"
-               className="rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm"
-               onClick={refresh}
-             >
-                <RefreshCw size={18} />
-             </Button>
-          </div>
-        }
+    <section aria-label="받은 알림" className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="읽음 조건">
+          {READ_FILTERS.map((filter) => (
+            <Button
+              key={filter.id}
+              type="button"
+              size="sm"
+              variant={readFilter === filter.id ? 'default' : 'outline'}
+              aria-pressed={readFilter === filter.id}
+              onClick={() => changeFilter(filter.id)}
+            >
+              {filter.label}
+              {filter.id === 'unread' && unreadCount !== null && ` ${unreadCount.toLocaleString()}건`}
+            </Button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-2"
+            disabled={pendingAction !== null || unreadCount === 0}
+            aria-busy={pendingAction === 'read-all'}
+            onClick={() => void handleMarkAllRead()}
+          >
+            <CheckCheck size={16} aria-hidden="true" /> 모두 읽음
+          </Button>
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="outline"
+            aria-label="알림 목록 새로고침"
+            onClick={refresh}
+          >
+            <RefreshCw size={16} aria-hidden="true" />
+          </Button>
+        </div>
+      </div>
+
+      <KeywordFilter
+        label="알림 검색어"
+        placeholder="알림 제목 또는 내용 검색"
+        value={keyword}
+        onSearch={(next) => { setKeyword(next.trim()); setPage(1); }}
       />
 
-      <HubMetricGrid>
-        <HubMetricCard title="전체 알림" value={notifications.length} icon={Layers} color="primary" />
-        <HubMetricCard title="미열람" value={notifications.filter(n => n.status === 'new').length} icon={Zap} color="amber" />
-      </HubMetricGrid>
-
-      <HubSectionCard
-        title="알림 목록"
-        description="알림 API가 반환한 항목입니다. 조회 실패는 빈 목록과 구분해 표시합니다."
-        icon={Bell}
-        className="bg-card/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
-      >
-        <div className="space-y-8">
-          <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
-            <div className="relative group max-w-xl w-full">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
-              <Input 
-                aria-label="알림 제목 또는 내용 검색"
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                className="bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
-                placeholder="알림 제목 또는 내용 검색"
-              />
-            </div>
-          </div>
-
-          <div className="min-h-[400px]">
-            <StandardDataTable
-              columns={columns}
-              data={filteredNotifications}
-              loading={isLoading}
-              emptyMessage="표시할 알림이 없습니다."
-              error={error}
-              onRetry={refresh}
-              className="border-none bg-transparent shadow-none"
-            />
-          </div>
-        </div>
-      </HubSectionCard>
-    </div>
+      <StandardDataTable
+        accessibleLabel="받은 알림 목록"
+        columns={columns}
+        data={items}
+        loading={listQuery.isLoading}
+        error={error}
+        onRetry={refresh}
+        emptyMessage={emptyResultMessage(
+          keyword,
+          readFilter === 'unread' ? '읽지 않은 알림이 없습니다.' : '받은 알림이 없습니다.',
+        )}
+        pagination={{
+          currentPage: page,
+          totalPages,
+          onPageChange: setPage,
+          pageSize,
+          onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
+        }}
+      />
+    </section>
   );
 }

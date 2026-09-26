@@ -11,8 +11,10 @@ import {
   deleteNotificationOperation,
   getNotificationsOperation,
   getUnreadCountOperation,
+  markAllAsReadOperation,
   markAsReadOperation,
 } from '@/types/generated-operations';
+import { announceNotificationsChanged, subscribeNotificationsChanged } from '@/lib/notifications/notification-sync';
 
 export interface Notification {
   notiSn: number;
@@ -355,6 +357,8 @@ export function useNotifications() {
 
     // 실시간 토스트 표시
     toast(newNotif.notiTtlNm || '새로운 알림이 도착했습니다.', 'success');
+    // 알림 센터가 열려 있으면 새 알림을 목록에 반영하게 한다(구독은 헤더 한 곳만 한다).
+    announceNotificationsChanged('header');
   }, [replaceNotifications, replaceUnreadCount, toast]);
 
   // 사용자 경계가 바뀌면 이전 사용자의 화면 상태와 delayed request를 함께 폐기한다.
@@ -444,10 +448,29 @@ export function useNotifications() {
       }
     });
     // 연결 중에도 broker 재연결·일시 유실을 REST 정본으로 주기적으로 되맞춘다.
-    const interval = setInterval(() => { void fetchNotifications(); }, 60000);
+    // [2026-09-26 DIP B4 P2] 탭이 숨어 있으면 되맞추지 않는다 — 보이지 않는 화면이 60초마다 두 요청을 보낼
+    //   이유가 없다. 다시 보이면 곧바로 한 번 되맞춘다.
+    const isHidden = () => typeof document !== 'undefined' && document.visibilityState === 'hidden';
+    const interval = setInterval(() => {
+      if (!isHidden()) void fetchNotifications();
+    }, 60000);
+    const handleVisibility = () => {
+      if (!isHidden() && generation === lifecycleGenerationRef.current && ownerIdRef.current === userId) {
+        void fetchNotifications();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    // 알림 센터에서 읽음·삭제·모두 읽음이 일어나면 배지와 드로어를 다시 읽는다.
+    const unsubscribeCenter = subscribeNotificationsChanged('header', () => {
+      if (generation === lifecycleGenerationRef.current && ownerIdRef.current === userId) {
+        void fetchNotifications();
+      }
+    });
 
     return () => {
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      unsubscribeCenter();
       try {
         userSub?.unsubscribe();
       } catch {
@@ -476,6 +499,7 @@ export function useNotifications() {
         n => n.notiSn === id ? { ...n, readYn: 'Y' } : n,
       ));
       if (decrementUnreadCount) replaceUnreadCount(unreadCountRef.current - 1);
+      announceNotificationsChanged('header');
     } catch {
       if (generation === lifecycleGenerationRef.current && ownerIdRef.current === userId) {
         toast('알림 읽음 처리에 실패했습니다.', 'error');
@@ -509,6 +533,7 @@ export function useNotifications() {
       replaceNotifications(notificationsRef.current.filter(n => n.notiSn !== id));
       // 미읽음이었다면 배지도 함께 줄인다 — 지운 알림이 배지에 남으면 열어도 찾을 수 없다.
       if (wasUnread) replaceUnreadCount(Math.max(0, unreadCountRef.current - 1));
+      announceNotificationsChanged('header');
     } catch {
       if (generation === lifecycleGenerationRef.current && ownerIdRef.current === userId) {
         toast('알림을 삭제하지 못했습니다.', 'error');
@@ -517,57 +542,44 @@ export function useNotifications() {
   };
 
   /**
-   * 화면에 불러온 알림을 읽음 처리한다.
+   * 받은 알림을 모두 읽음 처리한다.
    *
-   * ⚠ [2026-08-29] '모두' 가 아니다. `notifications` 는 `GET /notifications` 첫 응답이고
-   * 페이지 파라미터를 주지 않으므로 서버 기본 페이지 크기만큼만 담긴다. 반면 배지의
-   * `unreadCount` 는 `/notifications/unread-count` 로 받는 **서버 전체** 미읽음 수다.
-   *
-   * 종전에는 그 일부만 처리하고 `setUnreadCount(0)` 으로 배지를 덮은 뒤
-   * '모든 알림을 읽음 처리했습니다.' 를 띄웠다 — **미읽음이 남아 있는데 화면은 0 이라고
-   * 말했다.** 헤더 배지가 사라지므로 사용자는 확인할 방법도 없다.
-   *
-   * 진짜 일괄 읽음은 서버 신설(@Modifying UPDATE ... WHERE rcvrId AND readYn='N')이 필요하다.
-   * 그때까지는 처리한 범위를 그대로 말하고, 배지는 0 으로 덮지 않고 처리한 만큼만 뺀다.
+   * [2026-09-26 DIP B4 P2] 서버 일괄 읽음(`POST /notifications/read-all`)을 부른다. 종전에는 서버 경로가 없어
+   * 드로어에 불러온 10건만 한 건씩 읽음 처리했고, 버튼도 '불러온 알림 읽음' 이라고 범위를 밝혀야 했다(2026-08-29).
+   * 서버가 옮긴 건수를 그대로 말하고, 배지는 서버 수치로 다시 맞춘다 — 요청 도중 새 알림이 오면 0 이 아닐 수 있다.
    */
   const markAllAsRead = async () => {
     if (!userId || ownerIdRef.current !== userId) return;
     const unreadIds = notificationsRef.current.filter(n => n.readYn === 'N').map(n => n.notiSn);
-    if (unreadIds.length === 0) return;
+    // 서버 미읽음도 불러온 미읽음도 없으면 서버를 두드리지 않는다.
+    if (unreadIds.length === 0 && unreadCountRef.current === 0) return;
     const generation = lifecycleGenerationRef.current;
     beginReadMutations(unreadIds, generation);
-    let shouldReconcile = false;
+    let reconcile = false;
 
     try {
-      const results = await Promise.allSettled(unreadIds.map(notiSn => (
-        executeGeneratedOperation(markAsReadOperation, { path: { notiSn } })
-      )));
+      const updated = await executeGeneratedOperation(markAllAsReadOperation, {});
       if (generation !== lifecycleGenerationRef.current || ownerIdRef.current !== userId) return;
-      if (results.some(result => result.status === 'rejected')) {
-        shouldReconcile = true;
-        toast('일부 알림을 읽음 처리하지 못했습니다.', 'error');
-        return;
-      }
-
-      const captured = new Set(unreadIds);
-      const accountedIds = unreadIds.filter(id => accountReadMutation(id, generation));
+      reconcile = true;
       if (unreadIds.length > 0) {
+        const captured = new Set(unreadIds);
         const revision = ++localRevisionRef.current;
         for (const id of unreadIds) readRevisionsRef.current.set(id, revision);
         replaceNotifications(notificationsRef.current.map(
           n => captured.has(n.notiSn) ? { ...n, readYn: 'Y' } : n,
         ));
-        replaceUnreadCount(unreadCountRef.current - accountedIds.length);
       }
-      toast(`불러온 알림 ${unreadIds.length}건을 읽음 처리했습니다.`, 'success');
+      const count = typeof updated === 'number' && Number.isSafeInteger(updated) && updated >= 0 ? updated : null;
+      toast(count === null ? '알림을 모두 읽음 처리했습니다.' : `알림 ${count}건을 읽음 처리했습니다.`, 'success');
+      announceNotificationsChanged('header');
     } catch {
       if (generation === lifecycleGenerationRef.current && ownerIdRef.current === userId) {
-        shouldReconcile = true;
-        toast('일부 알림을 읽음 처리하지 못했습니다.', 'error');
+        reconcile = true;
+        toast('알림을 모두 읽음 처리하지 못했습니다.', 'error');
       }
     } finally {
       finishReadMutations(unreadIds, generation);
-      if (shouldReconcile
+      if (reconcile
           && generation === lifecycleGenerationRef.current
           && ownerIdRef.current === userId) {
         void fetchNotifications();

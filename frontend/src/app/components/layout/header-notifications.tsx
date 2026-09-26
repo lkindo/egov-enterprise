@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNotifications } from '@/lib/hooks/use-notifications';
+import { useAuth } from '@/contexts/AuthContext';
+import { canOpenPage } from '@/lib/auth/page-access';
 import { AppNotificationDrawer } from '../ui/app-notification-drawer';
 
 /**
@@ -26,6 +28,9 @@ import { AppNotificationDrawer } from '../ui/app-notification-drawer';
  */
 export function HeaderNotifications() {
   const [isOpen, setIsOpen] = useState(false);
+  // 알림 센터는 드로어가 불러오지 않은 알림까지 서버 페이지로 보인다. 들어갈 수 있을 때만 길을 보인다(DIP B4 P1·P2).
+  const { user } = useAuth();
+  const canOpenCenter = canOpenPage(user, '/admin/notifications');
   const {
     notifications,
     unreadCount,
@@ -64,6 +69,8 @@ export function HeaderNotifications() {
         onMarkRead={markAsRead}
         onMarkAllRead={markAllAsRead}
         onDelete={removeNotification}
+        unreadCount={unreadCount}
+        centerHref={canOpenCenter ? '/admin/notifications' : undefined}
         // [2026-08-04] 조회 실패를 드로어까지 전달한다. 이 배선이 없으면 훅이 오류를 알아도
         //   화면은 여전히 '활성화된 알림이 없습니다' 를 렌더한다(상태만 만들고 배선하지 않는 것은
         //   고친 것이 아니다 — 12축 감사 클러스터 D).

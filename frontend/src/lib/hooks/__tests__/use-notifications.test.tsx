@@ -25,6 +25,7 @@ vi.mock('next/config', () => ({
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useNotifications } from '../use-notifications';
+import { announceNotificationsChanged, subscribeNotificationsChanged } from '@/lib/notifications/notification-sync';
 import client from '@/lib/api/client';
 
 const toast = vi.fn();
@@ -485,7 +486,7 @@ describe('useNotifications', () => {
       expect(result.current.unreadCount).toBe(1);
     });
 
-    it('모두 읽음: 미읽음이 없으면 아무것도 하지 않는다', async () => {
+    it('모두 읽음: 서버 미읽음도 불러온 미읽음도 없으면 요청하지 않는다', async () => {
       mockFetch([{ ...NOTIF, readYn: 'Y' }], 0);
       const { result } = renderHook(() => useNotifications());
       await waitFor(() => expect(result.current.notifications).toHaveLength(1));
@@ -493,66 +494,52 @@ describe('useNotifications', () => {
 
       await act(async () => { await result.current.markAllAsRead(); });
 
-      // 불필요한 요청을 보내면 미읽음 0 인 화면에서도 서버가 두들겨 맞는다.
       expect(client.requestRaw).not.toHaveBeenCalled();
     });
 
     /**
-     * [2026-08-29] 종전 이름은 '모두 읽음 성공 시 전부 읽음으로 바꾸고 배지를 비운다' 였고
-     * `unreadCount` 가 0 이 되는 것을 **의도된 동작으로 고정**하고 있었다.
-     *
-     * 그런데 이 픽스처가 정확히 결함 시나리오다 — 서버 전체 미읽음은 3건인데(unread-count)
-     * 화면에 불러온 알림은 1건뿐이다. 이 동작은 불러온 1건만 읽음 처리하면서 배지를 0 으로
-     * 덮었다. 즉 **미읽음 2건이 남아 있는데 화면은 0 이라고 말했고**, 배지가 사라지므로
-     * 사용자는 확인할 방법도 없었다.
-     *
-     * 처리한 만큼만 빼는 것이 사실이다. 진짜 일괄 읽음은 서버 신설이 선행된다.
+     * [2026-09-26 DIP B4 P2] 서버 일괄 읽음을 한 번 부른다. 종전에는 드로어에 불러온 알림만 한 건씩 읽음 처리해
+     * 서버 미읽음 3건 중 2건이 남았다(2026-08-29 이 테스트가 그 범위를 고정했다). 이제 서버 전체를 옮기고,
+     * 옮긴 건수를 말하고, 배지는 서버 수치로 되맞춘다.
      */
-    it('불러온 알림만 읽음 처리하고 배지는 처리한 만큼만 뺀다', async () => {
+    it('모두 읽음은 서버 일괄 읽음을 한 번 부르고 옮긴 건수를 말하며 배지를 서버 수치로 되맞춘다', async () => {
       const { result } = renderHook(() => useNotifications());
-      await waitFor(() => expect(result.current.notifications).toHaveLength(1));
       await waitFor(() => expect(result.current.unreadCount).toBe(3));
       vi.mocked(client.requestRaw).mockResolvedValue(
-        { success: true, code: 'S000', message: 'success', data: null } as never,
+        { success: true, code: 'S000', message: 'success', data: 3 } as never,
+      );
+      mockFetch([{ ...NOTIF, readYn: 'Y' }], 0);
+
+      await act(async () => { await result.current.markAllAsRead(); });
+
+      expect(client.requestRaw).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(client.requestRaw).mock.calls[0]?.[0]).toEqual(expect.objectContaining({
+        method: 'post', url: expect.stringContaining('notifications/read-all'),
+      }));
+      expect(result.current.notifications.every(n => n.readYn === 'Y')).toBe(true);
+      expect(toast).toHaveBeenCalledWith('알림 3건을 읽음 처리했습니다.', 'success');
+      await waitFor(() => expect(result.current.unreadCount).toBe(0));
+    });
+
+    it('불러온 미읽음이 없어도 서버 미읽음이 있으면 서버 일괄 읽음을 부른다', async () => {
+      mockFetch([{ ...NOTIF, readYn: 'Y' }], 4);
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.unreadCount).toBe(4));
+      vi.mocked(client.requestRaw).mockResolvedValue(
+        { success: true, code: 'S000', message: 'success', data: 4 } as never,
       );
 
       await act(async () => { await result.current.markAllAsRead(); });
 
-      expect(result.current.notifications.every(n => n.readYn === 'Y')).toBe(true);
-      expect(result.current.unreadCount, '불러오지 않은 미읽음까지 0 으로 덮으면 안 된다').toBe(2);
+      expect(client.requestRaw).toHaveBeenCalledTimes(1);
     });
 
-    it('일괄 읽음 요청 중 섞인 REST count도 완료 후 다시 빼지 않는다', async () => {
-      mockFetch([NOTIF], 2);
-      const { result } = renderHook(() => useNotifications());
-      await waitFor(() => expect(result.current.unreadCount).toBe(2));
-      const readRequest = deferred<never>();
-      vi.mocked(client.requestRaw).mockReturnValue(readRequest.promise);
-      mockFetch([NOTIF], 1);
-
-      let markAll!: Promise<void>;
-      act(() => { markAll = result.current.markAllAsRead(); });
-      await act(async () => { await result.current.refresh(); });
-      expect(result.current.unreadCount).toBe(2);
-
-      await act(async () => {
-        readRequest.resolve({ success: true, code: 'S000', message: 'success', data: null } as never);
-        await markAll;
-      });
-
-      expect(result.current.notifications[0]?.readYn).toBe('Y');
-      expect(result.current.unreadCount).toBe(1);
-    });
-
-    it('U1 재로그인 뒤 옛 일괄 요청 cleanup도 새 일괄 pending barrier를 건드리지 않는다', async () => {
+    it('U1 재로그인 뒤 옛 일괄 요청의 완료는 새 사용자 상태를 건드리지 않는다', async () => {
       mockFetch([NOTIF], 2);
       const { result, rerender } = renderHook(() => useNotifications());
       await waitFor(() => expect(result.current.unreadCount).toBe(2));
       const oldRequest = deferred<never>();
-      const newRequest = deferred<never>();
-      vi.mocked(client.requestRaw)
-        .mockReturnValueOnce(oldRequest.promise)
-        .mockReturnValueOnce(newRequest.promise);
+      vi.mocked(client.requestRaw).mockReturnValueOnce(oldRequest.promise);
 
       let oldMark!: Promise<void>;
       act(() => { oldMark = result.current.markAllAsRead(); });
@@ -563,22 +550,16 @@ describe('useNotifications', () => {
       mockFetch([NOTIF], 2);
       rerender();
       await waitFor(() => expect(result.current.unreadCount).toBe(2));
-      let newMark!: Promise<void>;
-      act(() => { newMark = result.current.markAllAsRead(); });
+      toast.mockClear();
 
       await act(async () => {
-        oldRequest.resolve({ success: true, code: 'S000', message: 'success', data: null } as never);
+        oldRequest.resolve({ success: true, code: 'S000', message: 'success', data: 2 } as never);
         await oldMark;
       });
-      mockFetch([NOTIF], 1);
-      await act(async () => { await result.current.refresh(); });
-      expect(result.current.unreadCount).toBe(2);
 
-      await act(async () => {
-        newRequest.resolve({ success: true, code: 'S000', message: 'success', data: null } as never);
-        await newMark;
-      });
-      expect(result.current.unreadCount).toBe(1);
+      expect(result.current.notifications[0]?.readYn).toBe('N');
+      expect(result.current.unreadCount).toBe(2);
+      expect(toast).not.toHaveBeenCalled();
     });
 
     it('모두 읽음 실패는 알리고 서버 상태로 되맞춘다', async () => {
@@ -589,9 +570,66 @@ describe('useNotifications', () => {
 
       await act(async () => { await result.current.markAllAsRead(); });
 
-      // 조용히 재조회만 하면 사용자는 버튼이 고장 난 것으로 읽는다 — 알리고 되맞춘다.
-      expect(toast).toHaveBeenCalledWith('일부 알림을 읽음 처리하지 못했습니다.', 'error');
+      expect(toast).toHaveBeenCalledWith('알림을 모두 읽음 처리하지 못했습니다.', 'error');
       expect(vi.mocked(client.getRaw).mock.calls.length).toBeGreaterThan(getCallsBefore);
+      expect(result.current.notifications[0]?.readYn).toBe('N');
+    });
+  });
+
+  describe('[DIP B4 P2] 폴링과 알림 센터 연동', () => {
+    afterEach(() => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+    });
+
+    it('탭이 숨어 있으면 60초 되맞춤을 건너뛰고, 다시 보이면 곧바로 되맞춘다', async () => {
+      vi.useFakeTimers();
+      const { unmount } = renderHook(() => useNotifications());
+      await act(async () => { await Promise.resolve(); });
+      const before = vi.mocked(client.getRaw).mock.calls.length;
+      expect(before).toBeGreaterThan(0);
+
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+      await act(async () => { vi.advanceTimersByTime(60000); });
+      expect(vi.mocked(client.getRaw).mock.calls.length, '숨은 탭이 60초마다 요청을 보낸다').toBe(before);
+
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+      await act(async () => { document.dispatchEvent(new Event('visibilitychange')); });
+      expect(vi.mocked(client.getRaw).mock.calls.length).toBeGreaterThan(before);
+      unmount();
+      vi.clearAllTimers();
+    });
+
+    it('알림 센터가 알린 변경은 배지·드로어를 다시 읽고, 자기 신호로는 다시 읽지 않는다', async () => {
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.notifications).toHaveLength(1));
+      const before = vi.mocked(client.getRaw).mock.calls.length;
+
+      await act(async () => { announceNotificationsChanged('header'); });
+      expect(vi.mocked(client.getRaw).mock.calls.length).toBe(before);
+
+      mockFetch([{ ...NOTIF, readYn: 'Y' }], 0);
+      await act(async () => { announceNotificationsChanged('center'); });
+      await waitFor(() => expect(result.current.unreadCount).toBe(0));
+    });
+
+    it('실시간 알림이 오면 알림 센터에 변경을 알린다', async () => {
+      let handler: ((m: { body: string }) => void) | undefined;
+      const subscribe = vi.fn((_dest: string, cb: (m: { body: string }) => void) => {
+        handler = cb;
+        return { unsubscribe: vi.fn() };
+      });
+      wsState = { client: { subscribe }, isConnected: true };
+      const centerListener = vi.fn();
+      const unsubscribe = subscribeNotificationsChanged('center', centerListener);
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.notifications).toHaveLength(1));
+
+      await act(async () => {
+        handler!({ body: JSON.stringify({ ...NOTIF, notiSn: 77, notiTtlNm: '새 알림' }) });
+      });
+
+      expect(centerListener).toHaveBeenCalledTimes(1);
+      unsubscribe();
     });
   });
 
@@ -936,7 +974,7 @@ describe('useNotifications', () => {
       expect(result.current.unreadCount).toBe(2);
     });
 
-    it('불러온 알림 읽음 처리 중 새로 온 알림은 미읽음으로 남긴다', async () => {
+    it('모두 읽음 처리 중 새로 온 알림은 미읽음으로 남긴다', async () => {
       let handler: ((m: { body: string }) => void) | undefined;
       const subscribe = vi.fn((_dest: string, cb: (m: { body: string }) => void) => {
         handler = cb;
@@ -953,14 +991,16 @@ describe('useNotifications', () => {
       await act(async () => {
         handler!({ body: JSON.stringify({ ...NOTIF, notiSn: 99, notiTtlNm: '처리 중 도착' }) });
       });
+      // 서버는 요청 시점의 미읽음만 옮겼고, 처리 중 도착한 알림은 여전히 미읽음이다.
+      mockFetch([{ ...NOTIF, notiSn: 99, notiTtlNm: '처리 중 도착' }, { ...NOTIF, readYn: 'Y' }], 1);
       await act(async () => {
-        readRequest.resolve({ success: true, code: 'S000', message: 'success', data: null } as never);
+        readRequest.resolve({ success: true, code: 'S000', message: 'success', data: 3 } as never);
         await markAll;
       });
 
       expect(result.current.notifications.find(item => item.notiSn === 1)?.readYn).toBe('Y');
       expect(result.current.notifications.find(item => item.notiSn === 99)?.readYn).toBe('N');
-      expect(result.current.unreadCount).toBe(3);
+      await waitFor(() => expect(result.current.unreadCount).toBe(1));
     });
 
     it('겹친 두 refresh가 역순 완료돼도 최신 요청만 반영한다', async () => {

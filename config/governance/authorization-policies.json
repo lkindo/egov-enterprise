@@ -1432,6 +1432,18 @@
     },
     {
       "method": "POST",
+      "path": "/api/v1/notifications/read-all",
+      "handler": "nuri.api.controller.business.notification.NotificationApiController#markAllAsRead",
+      "policy": "STRICT_SELF",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.notification.NotificationApiController#markAllAsRead')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "NotificationService#markAllAsRead",
+      "handlerRequiredTokens": [
+        "notificationService.markAllAsRead(userDetails.getUsername())"
+      ]
+    },
+    {
+      "method": "POST",
       "path": "/api/v1/polls",
       "handler": "nuri.api.controller.business.poll.PollApiController#createPoll",
       "policy": "ADMIN_OR_SYSTEM",
@@ -3210,6 +3222,21 @@
       "denyReferences": 0,
       "requiredTokens": [
         "notificationRepository.findByNotiSnAndRcvrId(Objects.requireNonNull(notiSn), userId)"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin",
+        "SecurityUtil.hasPermission(",
+        "assertOwnerOrPermission"
+      ]
+    },
+    {
+      "target": "NotificationService#markAllAsRead",
+      "source": "business-app/src/main/java/nuri/business/service/notification/NotificationService.java",
+      "policy": "STRICT_SELF",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "notificationRepository.markAllAsReadByReceiver(userId)"
       ],
       "forbiddenTokens": [
         "SecurityUtil.hasRole(",
@@ -5633,6 +5660,13 @@
       "method": "POST",
       "path": "/api/v1/notifications/{notiSn}/read",
       "handler": "nuri.api.controller.business.notification.NotificationApiController#markAsRead",
+      "access": "PERMISSION",
+      "permission": "NOTI_ACK"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/notifications/read-all",
+      "handler": "nuri.api.controller.business.notification.NotificationApiController#markAllAsRead",
       "access": "PERMISSION",
       "permission": "NOTI_ACK"
     },

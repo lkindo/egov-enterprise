@@ -54,13 +54,20 @@ interface AppNotificationDrawerProps {
   onRetry?: () => void;
   /** [2026-09-15 DEC-OPS-100] 첫 조회가 끝나기 전이면 true 다. 이때 빈 목록을 '알림 없음'으로 말하지 않는다. */
   loading?: boolean;
+  /**
+   * [2026-09-26 DIP B4 P2] 서버 전체 미읽음 수. '모두 읽음' 은 서버 일괄 읽음이라, 드로어에 불러온 알림이 모두 읽음이어도
+   * 서버에 미읽음이 남아 있으면 누를 수 있어야 한다.
+   */
+  unreadCount?: number;
+  /** 알림 센터로 가는 길. 들어갈 수 없는 사람에게는 넘기지 않는다(라우트와 같은 판정). */
+  centerHref?: string;
 }
 
 type FilterType = 'ALL' | 'SECURITY' | 'SYSTEM' | 'ACTIVITY';
 
-export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRead, onMarkAllRead, onDelete, error, onRetry, loading = false }: AppNotificationDrawerProps) {
+export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRead, onMarkAllRead, onDelete, error, onRetry, loading = false, unreadCount = 0, centerHref }: AppNotificationDrawerProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
-  const hasUnreadNotifications = notifications.some(n => !n.isRead);
+  const hasUnreadNotifications = unreadCount > 0 || notifications.some(n => !n.isRead);
 
   const filteredNotifications = notifications.filter(n => {
     if (activeFilter === 'ALL') return true;
@@ -110,11 +117,10 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                   className="px-2 text-xs hover:text-primary"
                 >
                   {/*
-                    [2026-08-29] '모두 읽음' → '불러온 알림 읽음'.
-                    이 동작은 드로어에 불러온 페이지의 미읽음만 처리한다(use-notifications
-                    markAllAsRead). 서버 전체를 읽음 처리하는 경로는 아직 없다.
+                    [2026-09-26 DIP B4 P2] '불러온 알림 읽음' → '모두 읽음'. 서버 일괄 읽음이 생겨 이 동작은
+                    드로어에 불러온 범위가 아니라 받은 알림 전체를 읽음 처리한다(use-notifications markAllAsRead).
                   */}
-                  불러온 알림 읽음
+                  모두 읽음
                 </Button>
               )}
               <button 
@@ -295,15 +301,20 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
           </div>
 
           {/* Bottom Sticky Control */}
-          <div className="border-t border-border bg-card p-3">
+          <div className="space-y-2 border-t border-border bg-card p-3">
              <Button
                data-testid="read-all-broadcasts-btn"
                onClick={onMarkAllRead}
                disabled={!hasUnreadNotifications}
                className="w-full"
              >
-                불러온 알림 읽음 처리
+                받은 알림 모두 읽음 처리
              </Button>
+             {centerHref && (
+               <Button asChild variant="outline" className="w-full">
+                 <Link href={centerHref} onClick={onClose}>알림 센터에서 전체 보기</Link>
+               </Button>
+             )}
           </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>

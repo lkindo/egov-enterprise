@@ -2552,7 +2552,7 @@
     "/admin/help/faq": [],
     "/admin/help/qna": [],
     "/admin/notifications": [
-      "NOTI_DISPATCH"
+      "NOTI_READ"
     ],
     "/admin/observability": [
       "OPS_READ",

@@ -33,11 +33,24 @@ public class NotificationService {
     /** 관리자 발송의 수신자 존재 확인 — 코어 사용자 도메인만 esntlId 를 해석할 수 있다(DEC-OPS-035 와 같은 축). */
     private final UserContactService userContactService;
 
-    public Page<NotificationDto> getNotificationList(String userId, String keyword, Pageable pageable) {
+    /**
+     * 받은 알림 목록. {@code readYn} 은 비우면 전체, {@code N} 이면 읽지 않은 알림, {@code Y} 면 읽은 알림이다.
+     * 그 밖의 값은 조건을 조용히 버리지 않고 거부한다 — 버리면 '읽지 않은 알림' 탭이 전체를 보인다.
+     */
+    public Page<NotificationDto> getNotificationList(String userId, String keyword, String readYn, Pageable pageable) {
         requireUserId(userId);
-        log.debug("Fetching notification list (keywordPresent={})", keyword != null && !keyword.isBlank());
-        return notificationRepository.searchNotificationsByReceiver(userId, keyword, pageable)
+        String readFilter = normalizeReadFilter(readYn);
+        String keywordFilter = keyword == null || keyword.isBlank() ? null : keyword.trim();
+        log.debug("Fetching notification list (keywordPresent={}, readFilter={})", keywordFilter != null, readFilter);
+        return notificationRepository.searchNotificationsByReceiver(userId, keywordFilter, readFilter, pageable)
                 .map(notificationMapper::toDto);
+    }
+
+    private static String normalizeReadFilter(String readYn) {
+        if (readYn == null || readYn.isBlank()) return null;
+        String value = readYn.trim();
+        if ("Y".equals(value) || "N".equals(value)) return value;
+        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "읽음 조건은 Y 또는 N 이어야 합니다.");
     }
 
     public NotificationDto getNotification(Long notiSn, String userId) {
@@ -141,6 +154,17 @@ public class NotificationService {
 
     public long getUnreadCount(String userId) {
         return notificationRepository.countByRcvrIdAndReadYn(userId, "N");
+    }
+
+    /**
+     * 받은 알림을 모두 읽음으로 옮기고 옮긴 건수를 돌려준다. 대상은 로그인한 사람의 알림뿐이다(STRICT_SELF).
+     */
+    @Transactional
+    public int markAllAsRead(String userId) {
+        requireUserId(userId);
+        int updated = notificationRepository.markAllAsReadByReceiver(userId);
+        log.info("Marked {} notifications as read", updated);
+        return updated;
     }
 
     @Transactional

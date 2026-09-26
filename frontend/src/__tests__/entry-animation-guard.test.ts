@@ -25,8 +25,6 @@ const ALLOWED: Record<string, string> = {
     '로딩 스켈레톤 자체의 페이드 — 지연시킬 데이터가 아직 없다',
   'src/app/components/ui/global-command-center.tsx':
     '커맨드 팔레트 오버레이 등장 — 열림/닫힘 상태 전환 신호',
-  'src/app/components/ui/smart-notification-hub.tsx':
-    '알림 드롭다운 패널 등장 — 열림/닫힘 상태 전환 신호',
   'src/app/admin/system/monitoring/components/MonitoringPanels.tsx':
     '탭 내부 패널 전환 — 페이지 진입이 아니라 선택 결과 교체 신호',
   // 아래 둘은 next.config 리다이렉트로 도달 불가한 화면이라 사용자에게 보이는 변화가 없다.
