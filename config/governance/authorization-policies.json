@@ -1755,6 +1755,30 @@
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#resubmitApproval')",
       "routeGate": "OPERATION_PERMISSION",
       "guardRef": "InformalSanctionService#resubmitInformalSanction"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/menus/bookmarks/{menuNo}",
+      "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#addBookmark",
+      "policy": "STRICT_SELF",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.menu.MenuUserApiController#addBookmark')",
+      "routeGate": "EXPLICIT_AUTHENTICATED",
+      "guardRef": "MenuBookmarkService#addBookmark",
+      "handlerRequiredTokens": [
+        "menuBookmarkService.addBookmark(userDetails.getUsername(), menuNo)"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/menus/bookmarks/{menuNo}",
+      "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#removeBookmark",
+      "policy": "STRICT_SELF",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.menu.MenuUserApiController#removeBookmark')",
+      "routeGate": "EXPLICIT_AUTHENTICATED",
+      "guardRef": "MenuBookmarkService#removeBookmark",
+      "handlerRequiredTokens": [
+        "menuBookmarkService.removeBookmark(userDetails.getUsername(), menuNo)"
+      ]
     }
   ],
   "serviceGuardPolicies": [
@@ -3447,6 +3471,36 @@
         ".orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))"
       ],
       "forbiddenTokens": []
+    },
+    {
+      "target": "MenuBookmarkService#addBookmark",
+      "source": "business-core/src/main/java/nuri/business/service/menu/MenuBookmarkService.java",
+      "policy": "STRICT_SELF",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "new BkmkMenu.BkmkMenuId(menuNo, Objects.requireNonNull(esntlId))"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin",
+        "SecurityUtil.hasPermission(",
+        "assertOwnerOrPermission"
+      ]
+    },
+    {
+      "target": "MenuBookmarkService#removeBookmark",
+      "source": "business-core/src/main/java/nuri/business/service/menu/MenuBookmarkService.java",
+      "policy": "STRICT_SELF",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "new BkmkMenu.BkmkMenuId(Objects.requireNonNull(menuNo), Objects.requireNonNull(esntlId))"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin",
+        "SecurityUtil.hasPermission(",
+        "assertOwnerOrPermission"
+      ]
     }
   ],
   "permissionCatalog": "config/governance/permission-catalog.json",
@@ -5603,6 +5657,27 @@
       "method": "GET",
       "path": "/api/v1/menus/left",
       "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#getLeftMenu",
+      "access": "AUTHENTICATED",
+      "permission": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/menus/bookmarks",
+      "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#getMyBookmarks",
+      "access": "AUTHENTICATED",
+      "permission": null
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/menus/bookmarks/{menuNo}",
+      "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#addBookmark",
+      "access": "AUTHENTICATED",
+      "permission": null
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/menus/bookmarks/{menuNo}",
+      "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#removeBookmark",
       "access": "AUTHENTICATED",
       "permission": null
     },

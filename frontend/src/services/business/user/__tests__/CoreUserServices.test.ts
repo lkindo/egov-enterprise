@@ -62,4 +62,17 @@ describe('Core user services', () => {
     await menuService.getHeadMenus();
     expect(client.getRaw).toHaveBeenCalledWith('menus/head', undefined);
   });
+
+  it('menuService 즐겨찾기는 본인 목록·추가·빼기 경로를 부른다 (DIP B5 F2)', async () => {
+    const OK = { success: true, code: 'S000', message: '성공', data: null };
+    vi.mocked(client.getRaw).mockResolvedValueOnce({ ...OK, data: [{ menuNo: 10, menuNm: '공지' }] });
+    vi.mocked(client.requestRaw).mockResolvedValue(OK);
+
+    await expect(menuService.getMyBookmarks()).resolves.toEqual([{ menuNo: 10, menuNm: '공지' }]);
+    expect(client.getRaw).toHaveBeenCalledWith('menus/bookmarks', undefined);
+    await menuService.addBookmark(10);
+    expect(client.requestRaw).toHaveBeenCalledWith({ url: 'menus/bookmarks/10', method: 'put' });
+    await menuService.removeBookmark(10);
+    expect(client.requestRaw).toHaveBeenCalledWith({ url: 'menus/bookmarks/10', method: 'delete' });
+  });
 });
