@@ -166,6 +166,11 @@ export function PeriodFilter({ value, onChange, label, presets }: PeriodFilterPr
  * ⚠ 한쪽만 입력된 기간은 **보내지 않는다** — 저장소가 `between` 을 쓰므로 한쪽만 주면 조건이
  *   통째로 무시되어, 화면은 좁혀졌다고 보여 주는데 결과는 전체인 상태가 된다.
  */
+/** 조회에 실제로 실리는 기간인가 — 양쪽을 다 고른 기간만 서버로 간다(periodToParams 와 같은 판정). */
+export function hasAppliedPeriod(period: PeriodValue): boolean {
+  return Object.keys(periodToParams(period)).length > 0;
+}
+
 export function periodToParams(
   period: PeriodValue,
 ): { searchKeywordFrom?: string; searchKeywordTo?: string } {

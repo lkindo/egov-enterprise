@@ -205,7 +205,6 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
       pstTtl: initialData?.pstTtl || '',
       pstCn: initialData?.pstCn || '',
       userNm: initialData?.userNm || '관리자',
-      pswd: initialData?.pswd || '1',
       // 기존 글에 첨부가 없으면 API는 null을 반환한다. 생성 스키마의 optional()은
       // undefined만 허용하므로 수정 폼 경계에서 null을 제거한다.
       atchFileSn: initialData?.atchFileSn ?? undefined,
@@ -218,7 +217,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
   });
 
   // 자동 임시저장 훅 연동
-  const { restoreDraft, clearDraft, hasDraft, lastSavedAt } = useAutoSaveDraft({
+  const { restoreDraft, clearDraft, hasDraft, lastSavedAt, peekDraft } = useAutoSaveDraft({
     scope: draftScope,
     getData: () => ({
       title: form.getValues('pstTtl'),
@@ -233,22 +232,34 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
   // 페이지 진입 시 임시저장 데이터 확인 및 복구 제안
   //   [2026-09-05] native confirm() → useConfirm. 감사 D06-03 이 남긴 네이티브 confirm 4곳 중 하나였고,
   //   첨부 삭제가 같은 화면에 useConfirm 을 들이면서 이름이 겹쳐 함께 이행했다(문구·키보드·보조기술 동작 통일).
+  //   [2026-09-27 DIP B5 F9] 수정 화면도 묻는다. 종전에는 새 글에서만 물어, 글을 고치다 다른 화면에 다녀오면 고친 내용을
+  //   되살릴 길이 없었다. 수정 화면은 저장된 글로 채워져 있으므로 초안이 그 글과 다를 때만 묻는다.
   useEffect(() => {
-    if (draftPromptedRef.current) return;
-    if (hasDraft && !form.getValues('pstTtl') && !form.getValues('pstCn') && !pstSn) {
-      draftPromptedRef.current = true;
-      void confirm({
-        title: '임시저장 데이터 복구',
-        message: '현재 탭에서 작성하던 초안이 있습니다. 복구하시겠습니까?',
-        confirmText: '복구',
-        cancelText: '새로 작성',
-      }).then((restore) => {
-        if (!restore) return;
-        restoreDraft();
-        toast('임시저장 데이터를 복구했습니다.', 'success');
-      });
+    if (draftPromptedRef.current || !hasDraft) return;
+    const editing = Boolean(activeRecordId);
+    if (editing) {
+      const draft = peekDraft();
+      if (!draft || (draft.title === (initialData?.pstTtl ?? '') && draft.content === (initialData?.pstCn ?? ''))) return;
+    } else if (form.getValues('pstTtl') || form.getValues('pstCn')) {
+      return;
     }
-  }, [confirm, hasDraft, restoreDraft, toast, pstSn, form]);
+    draftPromptedRef.current = true;
+    void confirm(editing ? {
+      title: '수정하던 초안 복구',
+      message: '이 글을 수정하던 초안이 현재 탭에 있습니다. 초안으로 바꾸시겠습니까? 바꾸지 않으면 저장된 글을 그대로 수정합니다.',
+      confirmText: '초안으로 바꾸기',
+      cancelText: '저장된 글로 수정',
+    } : {
+      title: '임시저장 데이터 복구',
+      message: '현재 탭에서 작성하던 초안이 있습니다. 복구하시겠습니까?',
+      confirmText: '복구',
+      cancelText: '새로 작성',
+    }).then((restore) => {
+      if (!restore) return;
+      restoreDraft();
+      toast('임시저장 데이터를 복구했습니다.', 'success');
+    });
+  }, [confirm, hasDraft, restoreDraft, peekDraft, toast, activeRecordId, initialData, form]);
 
   const onSubmit = async (values: BoardFormValues) => {
     if (submittingRef.current) return;

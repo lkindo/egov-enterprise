@@ -27,12 +27,12 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "eaed2d931b32b43a6bf717fcd5978c30bec75c501a492c20189f1cd84f629b48"
+    "inventoryHash": "09f88f8d00a113bb35280b7fdcecb344e4857c6c19441c184019daf81e92de2e"
   },
   "summary": {
     "sourceFileCount": 557,
     "records": 386,
-    "syntaxOccurrences": 457,
+    "syntaxOccurrences": 460,
     "ambiguousRecords": 339,
     "unverifiedRecords": 386,
     "exactPopulations": {
@@ -3973,7 +3973,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
         "detector": "router-navigation",
-        "occurrenceCount": 2
+        "occurrenceCount": 3
       }
     },
     {
@@ -4155,7 +4155,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
         "detector": "url-search-param-method",
-        "occurrenceCount": 3
+        "occurrenceCount": 4
       }
     },
     {
@@ -4392,7 +4392,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
         "detector": "url-search-param-method",
-        "occurrenceCount": 3
+        "occurrenceCount": 4
       }
     },
     {

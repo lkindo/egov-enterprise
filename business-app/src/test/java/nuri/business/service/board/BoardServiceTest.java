@@ -418,6 +418,23 @@ class BoardServiceTest {
     }
 
     @Test
+    @DisplayName("[DIP B5 F9] 폐기된 게시글 비밀번호는 요청에 실려도 저장하지 않고, 수정은 기존 값을 바꾸지 않는다")
+    void retiredPasswordIsNeitherStoredNorOverwritten() {
+        givenCreatePostContext(0L);
+        boardService.createPost("user1", new BoardSaveRequest("BBS_01", "Subject", "Content", null, null, null,
+                null, null, null, null, null, "1"));
+        assertThat(captureSavedBoard().getPswd()).isNull();
+
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("user1"));
+        Board existing = Board.builder().bbsId("BBS_01").pstSn(5L).userId("user1").pswd("legacy").build();
+        given(boardRepository.findById(5L)).willReturn(Optional.of(existing));
+        boardService.updatePost("BBS_01", 5L, new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, null,
+                null, null, null, null, null, "new-secret"));
+        assertThat(existing.getPswd()).isEqualTo("legacy");
+        assertThat(existing.getPstTtl()).isEqualTo("Upd");
+    }
+
+    @Test
     @DisplayName("게시글 생성 - 정렬순서는 현재 최대값 다음이고, 미전송 플래그는 기본값을 쓴다")
     void createPost_appliesDefaultsAndNextSortOrder() {
         givenCreatePostContext(7L);

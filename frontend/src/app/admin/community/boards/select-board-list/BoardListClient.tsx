@@ -212,6 +212,8 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: BoardLis
  const querySearchCnd = searchParams.get('searchCnd') || "0";
  const queryOrderBy = searchParams.get('orderBy') || "date";
  const queryPage = Number(searchParams.get('page')) || 1;
+ // [2026-09-27 DIP B5 F9] 기간만 고른 0건도 '조건에 맞는 글 없음' 이다(G15). 목록 조회와 같은 판정으로 읽는다.
+ const queryHasPeriod = Boolean(fromQueryDate(searchParams.get('startDate')) || fromQueryDate(searchParams.get('endDate')));
  /*
    [2026-09-05] 서버로 보내는 값도 **검증을 통과한 것만** 쓴다.
 
@@ -383,12 +385,17 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: BoardLis
        <div className="overflow-hidden rounded-md border border-border bg-card">
          <div className="flex flex-col items-center justify-center gap-3 px-[var(--filter-pad)] py-10 text-muted-foreground">
            <MessageSquare size={24} aria-hidden="true" />
-           {querySearchWrd ? (
+           {/* [2026-09-27 DIP B5 F9] 검색어·기간 어느 쪽이든 조건이 걸린 0건은 '조건에 맞는 글 없음' 이다(G15). 초기화는 하나다. */}
+           {querySearchWrd || queryHasPeriod ? (
              <div className="space-y-1 text-center">
                <p className="text-[length:var(--font-size-body)] font-semibold text-foreground">
-                 &ldquo;<span className="text-primary">{querySearchWrd}</span>&rdquo;에 대한 검색 결과가 없습니다.
+                 {querySearchWrd
+                   ? <>&ldquo;<span className="text-primary">{querySearchWrd}</span>&rdquo;에 대한 검색 결과가 없습니다.</>
+                   : '선택한 기간에 해당하는 게시글이 없습니다.'}
                </p>
-               <p className="text-xs text-muted-foreground">다른 검색어를 시도하거나, 필터 조건을 변경해 보세요.</p>
+               <p className="text-xs text-muted-foreground">
+                 {querySearchWrd ? '다른 검색어를 시도하거나, 필터 조건을 변경해 보세요.' : '기간을 넓히거나 필터를 초기화해 보세요.'}
+               </p>
                <button
                  onClick={() => {
                   router.replace(`${pathname}?bbsId=${bbsId}`);

@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
-import { PeriodFilter, EMPTY_PERIOD, periodToParams } from '@/app/components/patterns/period-filter';
+import { PeriodFilter, EMPTY_PERIOD, periodToParams, hasAppliedPeriod } from '@/app/components/patterns/period-filter';
 import { useRememberedListConditions } from '@/lib/hooks/use-remembered-list-conditions';
 import { requestFullExport } from '@/app/components/patterns/full-result-export';
 import { useToast } from '@/app/components/ui/toast';
@@ -341,7 +341,7 @@ export default function LogDashboardClient({
           onRetry={() => refetch()}
           onRowClick={(item) => setSelectedLog({ category: activeCategory, row: item })}
           rowActionLabel={(item) => `${activeLabel} ${getLogIdentifier(item, activeCategory)} 상세 열기`}
-          emptyMessage={emptyResultMessage(searchKeyword, `조회된 ${activeLabel}가 없습니다.`)}
+          emptyMessage={emptyResultMessage(searchKeyword, `조회된 ${activeLabel}가 없습니다.`, hasAppliedPeriod(period))}
           pagination={{
             currentPage: page,
             totalPages: Math.max(totalPages, 1),
