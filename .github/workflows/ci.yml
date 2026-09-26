@@ -115,7 +115,7 @@ jobs:
 
       - name: Initialize CodeQL security analysis
         id: codeql
-        uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63  # v4
+        uses: github/codeql-action/init@1c5b675653bb5c22dbe9b12b556ec555138e09fd  # v4
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.language == 'java' && 'manual' || 'none' }}
@@ -128,7 +128,7 @@ jobs:
 
       - name: Analyze secure coding
         id: analyze
-        uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63  # v4
+        uses: github/codeql-action/analyze@1c5b675653bb5c22dbe9b12b556ec555138e09fd  # v4
         with:
           output: build/sast/raw
           upload: never
@@ -146,7 +146,7 @@ jobs:
 
       - name: Upload sanitized security results
         if: always() && steps.analyze.outcome == 'success'
-        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63  # v4
+        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd  # v4
         with:
           sarif_file: build/sast/publish/${{ matrix.language }}.sarif
           category: secure-coding/${{ matrix.language }}
