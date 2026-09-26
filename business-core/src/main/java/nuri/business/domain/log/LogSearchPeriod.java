@@ -84,6 +84,21 @@ public final class LogSearchPeriod {
         }
     }
 
+    /**
+     * 시작일이 종료일보다 늦으면 실패시킨다(2026-09-26 DIP C6).
+     *
+     * <p>{@code between} 은 역순 범위에 오류 없이 <b>0건</b>을 돌려준다 — 화면은 "해당 기간에 기록이 없다" 고
+     * 말하게 되고, 조사자는 입력 실수를 사실로 읽는다. 해석 불가 값과 같은 이유로 400 으로 알린다.
+     */
+    public static void requireOrdered(String searchBgnDe, String searchEndDe) {
+        LocalDate from = toLocalDate(searchBgnDe, "searchKeywordFrom");
+        LocalDate to = toLocalDate(searchEndDe, "searchKeywordTo");
+        if (from.isAfter(to)) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "조회 시작일(" + from + ")이 종료일(" + to + ")보다 늦습니다.");
+        }
+    }
+
     private static BusinessException invalid(String parameterName, String value) {
         return new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                 parameterName + " 는 yyyyMMdd 또는 yyyy-MM-dd 형식이어야 합니다: '" + value + "'");

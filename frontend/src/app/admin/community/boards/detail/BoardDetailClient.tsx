@@ -36,6 +36,8 @@ interface BoardDetailClientProps {
     article: KnowledgeDto | null;
     masterInfo: BoardMeta | null;
     initialComments: CommentVO[];
+    /** 서버가 센 전체 댓글 수(상세는 첫 100개만 받는다). */
+    commentTotal?: number;
     /** 감사 P1-1: 서버 조회 실패 사유. null 이면 정상(또는 404 = 실제로 없는 글). */
     fetchError: string | null;
     /** 서버가 권한으로 막았다(403). 재시도를 권하지 않는다(DIP V9). */
@@ -460,6 +462,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           bbsId={bbsId!}
           pstSn={pstSn}
           initialComments={initialData.initialComments}
+          totalComments={initialData.commentTotal}
         />
 
         {/* D-8 만족도 — 백엔드는 #302 에서 배선됐고 이 위젯이 그 짝을 맞춘다 */}
