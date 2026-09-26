@@ -73,6 +73,31 @@ class ScheduleServiceTest {
     }
 
     @Test
+    @DisplayName("[DIP B4 P5] 등록자·전체 수정 권한자에게만 수정·삭제 힌트를 연다 — 같은 부서의 남의 일정은 닫힌다")
+    void listCarriesEditHints() {
+        Schedule mine = Schedule.builder().schdlSn(1L).schdlNm("내 일정").build();
+        mine.setFrstRgtrId("user1");
+        Schedule other = Schedule.builder().schdlSn(2L).schdlNm("남의 일정").build();
+        other.setFrstRgtrId("user2");
+        given(scheduleRepository.findMonthlySchedules(any(), any(), any())).willReturn(List.of(mine, other));
+        given(scheduleMapper.toDto(any())).willAnswer(invocation -> ScheduleDto.builder()
+                .schdlSn(((Schedule) invocation.getArgument(0)).getSchdlSn()).build());
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("SCHEDULE_UPDATE")).thenReturn(true);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("SCHEDULE_DELETE")).thenReturn(true);
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId).thenReturn(Optional.of("user1"));
+
+        List<ScheduleDto> result = scheduleService.getMonthlySchedule("user1", "202609");
+
+        assertThat(result.get(0).getEditable()).isTrue();
+        assertThat(result.get(0).getDeletable()).isTrue();
+        assertThat(result.get(1).getEditable()).isFalse();
+        assertThat(result.get(1).getDeletable()).isFalse();
+
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("SCHEDULE_UPDATE_ALL")).thenReturn(true);
+        assertThat(scheduleService.getMonthlySchedule("user1", "202609").get(1).getEditable()).isTrue();
+    }
+
+    @Test
     @DisplayName("일정 상세 조회")
     void getSchedule() {
         // given

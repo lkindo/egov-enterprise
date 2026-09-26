@@ -40,7 +40,8 @@ vi.mock('@/services/business/user/deptJob/DeptJobUserService', () => ({
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
   useQuery: () => ({
-    data: mocks.jobResponse,
+    // [DIP B4 P5] 수정·삭제 버튼은 서버 힌트로만 그린다 — 이 계약들은 담당자 시점이다.
+    data: { editable: true, deletable: true, ...mocks.jobResponse },
     isLoading: false,
     isError: false,
   }),
@@ -71,6 +72,15 @@ describe('DeptJobDetailClient server validation ownership', () => {
     mocks.confirm.mockResolvedValue(true);
     mocks.deleteDeptJob.mockResolvedValue(undefined);
     mocks.updateDeptJob.mockResolvedValue(undefined);
+  });
+
+  it('[DIP B4 P5] 서버 힌트가 닫혀 있으면 수정·삭제 버튼을 그리지 않는다 — 같은 부서 동료는 볼 수만 있다', () => {
+    mocks.jobResponse = { deptTaskSn: 7, deptTaskNm: '동료의 업무', editable: false, deletable: false };
+    render(<DeptJobDetailClient deptTaskSn={7} />);
+
+    expect(screen.getByText('동료의 업무')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /수정/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /삭제/ })).not.toBeInTheDocument();
   });
 
   it('DeptJobForm 제출은 부모 수정 sink를 한 번만 호출하고 pending·필드 오류 뒤 편집 값을 보존한다', async () => {

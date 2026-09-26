@@ -15,6 +15,12 @@ const mocks = vi.hoisted(() => ({
   getCommunityBoards: vi.fn(),
   boards: undefined as undefined | Array<{ bbsId: string; bbsTtl: string | null; bbsExpln: string | null }>,
   boardsEnabled: undefined as undefined | boolean,
+  // [2026-09-26 DIP B4 P5] 게시판 진입 게이트와 같은 판정 — 전체 열람 권한자는 회원이 아니어도 목록을 본다.
+  permissions: [] as string[],
+}));
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { permissions: mocks.permissions, authorizationVersion: 'v1' } }),
 }));
 
 vi.mock('next/link', () => ({
@@ -234,6 +240,19 @@ describe('커뮤니티 가입 — 화면은 실제 승인 절차만 말한다', 
 
       expect(screen.getByText('이 커뮤니티의 게시판은 승인된 회원만 볼 수 있습니다.')).toBeVisible();
       expect(mocks.boardsEnabled).toBe(false);
+    });
+
+    it('[DIP B4 P5] 전체 열람 권한자는 회원이 아니어도 게시판 목록을 본다', () => {
+      mocks.membership = { cmntySn: 9, status: 'NONE', joinYmd: null };
+      mocks.permissions = ['BOARD_READ_ALL'];
+      mocks.boards = [{ bbsId: 'BBSMSTR_CMNTY01', bbsTtl: '회원 게시판', bbsExpln: null }];
+      try {
+        renderDetail();
+        expect(mocks.boardsEnabled).toBe(true);
+        expect(screen.getByRole('link', { name: /회원 게시판/ })).toBeVisible();
+      } finally {
+        mocks.permissions = [];
+      }
     });
 
     it('승인 대기 중이면 기다리는 중이라고 말한다 — 거절당한 것처럼 읽히지 않게 한다', () => {

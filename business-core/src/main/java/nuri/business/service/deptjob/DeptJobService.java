@@ -312,8 +312,31 @@ public class DeptJobService extends BaseAbstractService {
         attachmentAssignmentPolicy.assertAssignable(atchFileSn);
     }
 
+    /**
+     * 수정·삭제 가능 여부 — {@link #assertPicOrAdmin} 과 컨트롤러 기능 권한을 예외 대신 boolean 으로 계산한다
+     * (2026-09-26 DIP B4 P5). 같은 부서 사람은 업무를 보지만 고칠 수 있는 사람은 담당자(공석이면 등록자)·관리자뿐이다.
+     * 표시용 힌트이고 인가는 쓰기 경로가 집행한다.
+     */
+    private boolean canWrite(DeptJob deptJob, String operationPermission, String overridePermission) {
+        if (!SecurityUtil.hasPermission(operationPermission)) {
+            return false;
+        }
+        if (SecurityUtil.hasPermission(overridePermission)) {
+            return true;
+        }
+        String picId = deptJob.getPicId();
+        if (picId == null || picId.isBlank()) {
+            String owner = deptJob.getFrstRgtrId();
+            return owner != null && !owner.isBlank()
+                    && SecurityUtil.getCurrentLoginId().filter(owner::equals).isPresent();
+        }
+        return SecurityUtil.getCurrentEsntlId().filter(picId::equals).isPresent();
+    }
+
     private DeptJobDto toDto(DeptJob entity) {
         DeptJobDto dto = deptJobMapper.toDto(entity);
+        dto.setEditable(canWrite(entity, "DEPT_JOB_UPDATE", "DEPT_JOB_UPDATE_ALL"));
+        dto.setDeletable(canWrite(entity, "DEPT_JOB_DELETE", "DEPT_JOB_DELETE_ALL"));
 
         // [nullable 데이터에 required() 를 걸지 않는다]
         // dept_task_box_sn·dept_id·pic_id 는 모두 물리 스키마상 nullable 이다. 그런데 종전에는

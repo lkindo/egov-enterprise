@@ -35744,6 +35744,16 @@
             "type": "string",
             "maxLength": 12,
             "minLength": 0
+          },
+          "editable": {
+            "type": "boolean",
+            "description": "현재 사용자가 수정할 수 있는지(서버 판정)",
+            "readOnly": true
+          },
+          "deletable": {
+            "type": "boolean",
+            "description": "현재 사용자가 삭제할 수 있는지(서버 판정)",
+            "readOnly": true
           }
         },
         "required": [
@@ -36386,6 +36396,16 @@
               "null"
             ],
             "format": "date-time",
+            "readOnly": true
+          },
+          "editable": {
+            "type": "boolean",
+            "description": "현재 사용자가 수정할 수 있는지(서버 판정)",
+            "readOnly": true
+          },
+          "deletable": {
+            "type": "boolean",
+            "description": "현재 사용자가 삭제할 수 있는지(서버 판정)",
             "readOnly": true
           }
         }

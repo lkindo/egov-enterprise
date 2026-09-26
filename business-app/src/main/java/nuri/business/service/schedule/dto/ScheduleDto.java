@@ -78,5 +78,16 @@ public class ScheduleDto {
     @Size(max = 12)
     private String schdlImprtCd;
 
+    /** 현재 사용자가 이 일정을 고칠 수 있는가(서버 판정, 2026-09-26 DIP B4 P5). 인가는 쓰기 경로가 그대로 집행한다. */
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
+    @io.swagger.v3.oas.annotations.media.Schema(description = "현재 사용자가 수정할 수 있는지(서버 판정)",
+            accessMode = io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY)
+    private Boolean editable;
+
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
+    @io.swagger.v3.oas.annotations.media.Schema(description = "현재 사용자가 삭제할 수 있는지(서버 판정)",
+            accessMode = io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY)
+    private Boolean deletable;
+
     // 엔티티→DTO 변환은 프레임워크 표준 MapStruct 매퍼 {@link ScheduleMapper} 로 이관되었다.
 }

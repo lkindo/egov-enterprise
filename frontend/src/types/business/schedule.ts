@@ -19,6 +19,9 @@ interface Schedule {
   schdlIpAddr?: string;
   lastMdfrId?: string;
   mdfcnDt?: string;
+  /** 현재 사용자가 수정·삭제할 수 있는가(서버 판정, DIP B4 P5). 버튼 노출에만 쓴다 — 인가는 서버가 집행한다. */
+  editable?: boolean;
+  deletable?: boolean;
 }
 
 

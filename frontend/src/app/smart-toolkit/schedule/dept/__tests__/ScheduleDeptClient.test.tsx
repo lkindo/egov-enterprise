@@ -58,7 +58,7 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
       .mockResolvedValueOnce({
         list: [
           {
-            schdlSn: 1,
+            schdlSn: 1, editable: true, deletable: true,
             schdlNm: '주간 부서 회의',
             schdlBgngYmd: '20260825',
             schdlEndYmd: '20260825',
@@ -121,7 +121,7 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
   it('일정명·내용·장소 길이와 시작일 범위를 검증해 잘못된 update를 차단한다', async () => {
     harness.getDeptScheduleList.mockResolvedValue({
       list: [{
-        schdlSn: 7,
+        schdlSn: 7, editable: true, deletable: true,
         schdlNm: '기존 일정',
         schdlCn: '',
         schdlBgngYmd: '20260825',
@@ -196,7 +196,7 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
   it('삭제 중 같은 tick의 재요청을 막고 실패 후 일정 행을 보존한다', async () => {
     harness.getDeptScheduleList.mockResolvedValue({
       list: [{
-        schdlSn: 7,
+        schdlSn: 7, editable: true, deletable: true,
         schdlNm: '보존할 일정',
         schdlCn: '본문',
         schdlBgngYmd: '20260826',
@@ -236,7 +236,7 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
   it('삭제가 끝나기 전에는 일정 등록·수정으로 같은 레코드 흐름을 바꾸지 않는다', async () => {
     harness.getDeptScheduleList.mockResolvedValue({
       list: [{
-        schdlSn: 7,
+        schdlSn: 7, editable: true, deletable: true,
         schdlNm: '경합 일정',
         schdlCn: '본문',
         schdlBgngYmd: '20260826',
@@ -271,7 +271,7 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
   it('저장 중 취소·삭제를 막고 structured 필드 오류 뒤에도 dialog·값·summary를 보존한다', async () => {
     harness.getDeptScheduleList.mockResolvedValue({
       list: [{
-        schdlSn: 7,
+        schdlSn: 7, editable: true, deletable: true,
         schdlNm: '기존 일정',
         schdlCn: '본문',
         schdlBgngYmd: '20260826',
@@ -337,7 +337,7 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
 */
 /** 서버 `GET /schedules/dept` 가 실제로 내려주는 모양의 행(응답 전용 필드 포함). */
 const SERVER_SHAPED_ROW = {
-  schdlSn: 42,
+  schdlSn: 42, editable: true, deletable: true,
   schdlSeCd: '1',
   schdlNm: '부서 정기 회의',
   schdlCn: '주간 업무 보고',

@@ -113,6 +113,8 @@ export const ScheduleDtoSchema = z.object({
   schdlKndCd: z.string().min(0).max(12).optional(),
   schdlPlcNm: z.string().min(0).max(100).optional(),
   schdlImprtCd: z.string().min(0).max(12).optional(),
+  editable: z.boolean().optional(),
+  deletable: z.boolean().optional(),
 });
 export type ScheduleDto = z.infer<typeof ScheduleDtoSchema>;
 
@@ -282,6 +284,8 @@ export const DeptJobDtoSchema = z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   lastMdfrId: z.string().optional().nullable(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  editable: z.boolean().optional(),
+  deletable: z.boolean().optional(),
 });
 export type DeptJobDto = z.infer<typeof DeptJobDtoSchema>;
 
@@ -4892,6 +4896,8 @@ export const ScheduleDtoResponseSchema = z.object({
   schdlKndCd: z.string().min(0).max(12).optional().nullable(),
   schdlPlcNm: z.string().min(0).max(100).optional().nullable(),
   schdlImprtCd: z.string().min(0).max(12).optional().nullable(),
+  editable: z.boolean().optional().nullable(),
+  deletable: z.boolean().optional().nullable(),
 });
 
 export const OnlinePollArticleDtoRequestSchema = z.object({
@@ -5131,6 +5137,8 @@ export const DeptJobDtoResponseSchema = z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   lastMdfrId: z.string().optional().nullable(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  editable: z.boolean().optional().nullable(),
+  deletable: z.boolean().optional().nullable(),
 });
 
 export const DeptJobBoxDtoRequestSchema = z.object({

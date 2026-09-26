@@ -314,7 +314,9 @@ export default function ScheduleDeptClient() {
                                     </TableCell>
                                     <TableCell className="text-sm text-muted-foreground font-medium">{schedule.schdlPlcNm}</TableCell>
                                     <TableCell className="text-center">
+                                        {/* [2026-09-26 DIP B4 P5] 등록자·관리자에게만 — 서버 힌트(editable·deletable)로 그린다. */}
                                         <div className="flex justify-center gap-1">
+                                            {schedule.editable && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -325,6 +327,8 @@ export default function ScheduleDeptClient() {
                                             >
                                                 <Pencil className="h-4 w-4 text-primary" />
                                             </Button>
+                                            )}
+                                            {schedule.deletable && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -338,6 +342,7 @@ export default function ScheduleDeptClient() {
                                                     ? <Loader2 className="h-4 w-4 animate-spin text-destructive-emphasis" aria-hidden="true" />
                                                     : <Trash2 className="h-4 w-4 text-destructive-emphasis" aria-hidden="true" />}
                                             </Button>
+                                            )}
                                         </div>
                                     </TableCell>
                                 </TableRow>

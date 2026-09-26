@@ -648,7 +648,7 @@ export const updateScheduleOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: ScheduleDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [["schdlSn"],["schdlIpAddr"],["schdlPicId"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["schdlDeptId"]],
+  requestForbiddenPaths: [["schdlSn"],["schdlIpAddr"],["schdlPicId"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["schdlDeptId"],["editable"],["deletable"]],
   responseForbiddenPaths: [],
 });
 
@@ -1005,7 +1005,7 @@ export const updateDeptJobOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: DeptJobDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
+  requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["editable"],["deletable"]],
   responseForbiddenPaths: [],
 });
 
@@ -3065,7 +3065,7 @@ export const createScheduleOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: ScheduleDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [["schdlSn"],["schdlIpAddr"],["schdlPicId"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["schdlDeptId"]],
+  requestForbiddenPaths: [["schdlSn"],["schdlIpAddr"],["schdlPicId"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["schdlDeptId"],["editable"],["deletable"]],
   responseForbiddenPaths: [],
 });
 
@@ -3515,7 +3515,7 @@ export const createDeptJobOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: DeptJobDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
+  requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["editable"],["deletable"]],
   responseForbiddenPaths: [],
 });
 
