@@ -2609,6 +2609,7 @@ export const BoardMetaDtoSchema = z.object({
   atchPsbltyFileQty: z.number().int().optional().nullable(),
   atchPsbltyFileSz: z.number().int().optional().nullable(),
   stsfdgYn: z.enum(["Y","N"]).optional().nullable(),
+  ansYn: z.enum(["Y","N"]).optional().nullable(),
 });
 export type BoardMetaDto = z.infer<typeof BoardMetaDtoSchema>;
 
@@ -8471,6 +8472,7 @@ export const BoardMetaDtoRequestSchema = z.object({
   atchPsbltyFileQty: z.number().int().optional().nullable(),
   atchPsbltyFileSz: z.number().int().optional().nullable(),
   stsfdgYn: z.enum(["Y","N"]).optional().nullable(),
+  ansYn: z.enum(["Y","N"]).optional().nullable(),
 });
 
 export const BoardMetaDtoResponseSchema = z.object({
@@ -8484,6 +8486,7 @@ export const BoardMetaDtoResponseSchema = z.object({
   atchPsbltyFileQty: z.number().int().optional().nullable(),
   atchPsbltyFileSz: z.number().int().optional().nullable(),
   stsfdgYn: z.enum(["Y","N"]).optional().nullable(),
+  ansYn: z.enum(["Y","N"]).optional().nullable(),
 });
 
 export const ApiResponseListBoardSearchItemResponseRequestSchema = z.object({
