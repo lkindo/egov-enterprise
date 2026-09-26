@@ -9,7 +9,9 @@ import nuri.business.service.memoreport.dto.MemoReportMapper;
 import nuri.foundation.core.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.jspecify.annotations.NonNull;
@@ -38,7 +40,7 @@ public class MemoReportService {
         Objects.requireNonNull(pageable);
         nuri.business.security.util.SecurityUtil.assertPermission("MEMO_RPT_READ_ALL");
         // 검색어를 받고도 무시하던 default 구현(findAll)을 실제 제목 검색으로 대체했다.
-        return memoReportRepository.searchByTitle(keyword != null ? keyword : "", pageable)
+        return memoReportRepository.searchByTitle(keyword != null ? keyword : "", newestFirst(pageable))
                 .map(this::toDtoWithPermission);
     }
 
@@ -51,8 +53,8 @@ public class MemoReportService {
     public Page<MemoReportDto> getMyReportList(String writerId, String keyword, @NonNull Pageable pageable) {
         Objects.requireNonNull(pageable);
         Page<MemoReport> page = hasKeyword(keyword)
-                ? memoReportRepository.findByUserIdAndRptTtlContaining(writerId, keyword.trim(), pageable)
-                : memoReportRepository.findByUserId(writerId, pageable);
+                ? memoReportRepository.findByUserIdAndRptTtlContaining(writerId, keyword.trim(), newestFirst(pageable))
+                : memoReportRepository.findByUserId(writerId, newestFirst(pageable));
         return page.map(this::toDtoWithPermission);
     }
 
@@ -60,9 +62,18 @@ public class MemoReportService {
     public Page<MemoReportDto> getReceivedReportList(String rptUserId, String keyword, @NonNull Pageable pageable) {
         Objects.requireNonNull(pageable);
         Page<MemoReport> page = hasKeyword(keyword)
-                ? memoReportRepository.findByRptrIdAndRptTtlContaining(rptUserId, keyword.trim(), pageable)
-                : memoReportRepository.findByRptrId(rptUserId, pageable);
+                ? memoReportRepository.findByRptrIdAndRptTtlContaining(rptUserId, keyword.trim(), newestFirst(pageable))
+                : memoReportRepository.findByRptrId(rptUserId, newestFirst(pageable));
         return page.map(this::toDtoWithPermission);
+    }
+
+    /**
+     * [2026-09-26 DIP C7] 정렬 없는 페이지 조회는 DB 가 순서를 보장하지 않는다 — 페이지를 넘기면 같은 보고가 두 번
+     * 보이거나 빠질 수 있었다. 요청이 정렬을 주지 않으면 최신순(일련번호 역순)으로 둔다.
+     */
+    private static Pageable newestFirst(Pageable pageable) {
+        return pageable.getSort().isSorted() ? pageable
+                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "memoRptSn"));
     }
 
     private static boolean hasKeyword(String keyword) {

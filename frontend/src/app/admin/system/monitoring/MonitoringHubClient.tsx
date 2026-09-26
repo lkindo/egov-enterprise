@@ -1033,6 +1033,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             placeholder={activeTab === 'LOGIN' ? '사용자ID, 접속IP 검색' : '서비스명, 요청ID 검색'}
             value={searchKeyword}
             onSearch={handleSearchKeywordChange}
+            // [2026-09-26 DIP C6] 초기화는 기간도 지운다.
+            onReset={() => { handleSearchKeywordChange(''); setPeriod(EMPTY_PERIOD); setPage(1); }}
           >
             <PeriodFilter
               label="조회 기간(발생일자)"

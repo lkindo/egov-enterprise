@@ -9,13 +9,14 @@ const mocks = vi.hoisted(() => ({
   back: vi.fn(),
   clearDraft: vi.fn(),
   push: vi.fn(),
+  replace: vi.fn(),
   restoreDraft: vi.fn(),
   saveBoardArticle: vi.fn(),
   toast: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ back: mocks.back, push: mocks.push }),
+  useRouter: () => ({ back: mocks.back, push: mocks.push, replace: mocks.replace }),
 }));
 
 vi.mock('next/dynamic', () => ({
@@ -194,5 +195,18 @@ describe('BoardRegistClient validation contract', () => {
     expect(submit).toBeDisabled();
 
     await act(async () => pending.resolve({ success: true, redirect: '/boards' }));
+  });
+
+  it('저장 뒤에는 작성 화면을 방문 기록에서 바꿔 끼워, 뒤로 가기가 목록으로 돌아간다 (DIP C8)', async () => {
+    const user = userEvent.setup();
+    mocks.saveBoardArticle.mockResolvedValueOnce({ success: true, redirect: '/admin/community/boards/detail?bbsId=B&pstSn=1' });
+    renderSubject();
+    await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), '제목');
+    fireEvent.change(screen.getByRole('textbox', { name: /게시글 본문 내용/ }), { target: { value: '<p>본문</p>' } });
+
+    fireEvent.submit(screen.getByRole('button', { name: '게시글 등록' }).closest('form')!);
+
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/admin/community/boards/detail?bbsId=B&pstSn=1'));
+    expect(mocks.push).not.toHaveBeenCalled();
   });
 });

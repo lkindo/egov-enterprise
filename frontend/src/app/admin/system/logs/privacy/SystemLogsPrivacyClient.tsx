@@ -139,6 +139,8 @@ const SystemLogsPrivacyClient = () => {
                     placeholder="조회 대상 정보로 검색"
                     value={searchKeyword}
                     onSearch={(keyword) => { setSearchKeyword(keyword); setPage(1); }}
+                    // [2026-09-26 DIP C6] 초기화는 기간도 지운다 — 종전에는 검색어만 비우고 기간이 남아, 비운 줄 안 조건이 계속 걸렸다.
+                    onReset={() => { setSearchKeyword(''); setPeriod(EMPTY_PERIOD); setPage(1); }}
                 >
                     <PeriodFilter
                         label="조회 기간(조회일시)"
