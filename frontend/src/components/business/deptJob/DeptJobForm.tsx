@@ -25,6 +25,7 @@ import {
 import { DeptJobDtoRequestSchema, DeptJobDtoResponseSchema } from '@/types/generated-zod';
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
+import { AbsenceBadge } from '@/app/components/ui/absence-badge';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 
@@ -318,7 +319,7 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
                                                                 }}
                                                                 className="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
                                                             >
-                                                                <span className="text-sm font-bold tracking-tight truncate">{user.userNm}</span>
+                                                                <span className="flex min-w-0 items-center gap-1.5 text-sm font-bold tracking-tight"><span className="truncate">{user.userNm}</span><AbsenceBadge absent={user.absent} /></span>
                                                                 {user.deptNm && (
                                                                     <span className="text-xs font-bold text-muted-foreground shrink-0">{user.deptNm}</span>
                                                                 )}

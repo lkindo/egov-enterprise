@@ -1527,6 +1527,7 @@ export const UserSearchDtoSchema = z.object({
   esntlId: z.string().optional(),
   userNm: z.string().optional(),
   deptNm: z.string().optional(),
+  absent: z.boolean().optional(),
 });
 export type UserSearchDto = z.infer<typeof UserSearchDtoSchema>;
 
@@ -6868,12 +6869,14 @@ export const UserSearchDtoRequestSchema = z.object({
   esntlId: z.string().optional(),
   userNm: z.string().optional(),
   deptNm: z.string().optional(),
+  absent: z.boolean().optional(),
 });
 
 export const UserSearchDtoResponseSchema = z.object({
   esntlId: z.string().optional().nullable(),
   userNm: z.string().optional().nullable(),
   deptNm: z.string().optional().nullable(),
+  absent: z.boolean().optional().nullable(),
 });
 
 export const ApiResponseUserDtoRequestSchema = z.object({

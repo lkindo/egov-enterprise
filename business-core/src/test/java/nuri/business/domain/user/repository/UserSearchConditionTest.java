@@ -199,6 +199,38 @@ class UserSearchConditionTest extends PersistenceTestSupport {
             assertThat(found).hasSize(1);
             assertThat(found.get(0).deptNm()).isNull();
         }
+
+        @Test
+        @DisplayName("[DIP B4 P4] 사용 중(P)이 아닌 계정은 고를 수 없다 — 승인 대기·사용 중지는 빠진다")
+        void onlyActiveAccountsAreAssignable() {
+            userRepository.save(User.builder()
+                    .esntlId("ESNTL_PENDING").userId("wait01").userNm("김대기").pswd("pw")
+                    .emlAddr("d@example.com").role(Role.USER).userSttsCd("A").build());
+            userRepository.save(User.builder()
+                    .esntlId("ESNTL_STOPPED").userId("stop01").userNm("김중지").pswd("pw")
+                    .emlAddr("e@example.com").role(Role.USER).userSttsCd("D").build());
+            em.flush();
+            em.clear();
+
+            assertThat(userRepository.searchAssignableUsers("김", 10))
+                    .extracting(UserSearchDto::esntlId)
+                    .containsExactly("ESNTL_MATCH");
+        }
+
+        @Test
+        @DisplayName("[DIP B4 P4] 부재 기록이 Y 면 부재로, 기록이 없거나 N 이면 정상으로 싣는다")
+        void marksAbsentUsers() {
+            em.persist(nuri.business.domain.user.entity.UserAbsence.create("ESNTL_MATCH", "Y"));
+            em.persist(nuri.business.domain.user.entity.UserAbsence.create("ESNTL_OTHER", "N"));
+            em.flush();
+            em.clear();
+
+            assertThat(userRepository.searchAssignableUsers("김일치", 10).get(0).absent()).isTrue();
+            assertThat(userRepository.searchAssignableUsers("박기타", 10).get(0).absent()).isFalse();
+
+            em.createQuery("delete from UserAbsence").executeUpdate();
+            assertThat(userRepository.searchAssignableUsers("김일치", 10).get(0).absent()).isFalse();
+        }
     }
 
     // ── 사용자 정보 조회 / 부서 검색 ────────────────────────────────────────────

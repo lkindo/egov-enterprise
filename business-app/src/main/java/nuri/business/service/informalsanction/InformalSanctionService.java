@@ -298,7 +298,20 @@ public class InformalSanctionService {
         }
         if (participants.size() > 50) throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                 "전체 결재자는 50명 이하로 지정해 주세요.");
-        Set<String> active = userRepository.findAllById(participants).stream()
+        List<User> found = userRepository.findAllById(participants);
+        // [2026-09-26 DIP B4 P4] 거부 사유에 대상자 이름을 싣는다 — 여러 결재자 중 누가 문제인지 화면이 말할 수 있어야 한다.
+        //   존재하지 않는 식별자는 이름이 없으므로 종전 문구를 쓴다(식별자를 되돌려 주지 않는다).
+        List<String> inactiveNames = found.stream()
+                .filter(u -> !"P".equals(u.getUserSttsCd()))
+                .map(User::getUserNm)
+                .filter(name -> name != null && !name.isBlank())
+                .sorted()
+                .toList();
+        if (!inactiveNames.isEmpty()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "사용 중이 아닌 계정은 결재자로 지정할 수 없습니다: " + String.join(", ", inactiveNames));
+        }
+        Set<String> active = found.stream()
                 .filter(u -> "P".equals(u.getUserSttsCd())).map(User::getEsntlId).collect(Collectors.toSet());
         if (!active.containsAll(participants)) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "결재자로 지정할 수 없는 사용자입니다.");

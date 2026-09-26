@@ -19,9 +19,12 @@ package nuri.business.service.user.dto;
  * @param userNm  표시용 성명.
  * @param deptNm  소속 부서명. 동명이인을 구분할 수단이 없으면 담당자를 잘못 고르게 되므로 포함한다
  *                (편의가 아니라 오지정 방지 목적). 소속 미지정 사용자는 {@code null}.
+ * @param absent  부재 중인가(2026-09-26 DIP B4 P4). 부재자에게 업무·결재를 맡기면 처리할 사람이 없으므로 고르는 순간
+ *                알린다(대결·위임은 만들지 않는다 — D10). 연락처·일정 같은 부재 사유는 싣지 않는다.
  */
 public record UserSearchDto(
         String esntlId,
         String userNm,
-        String deptNm) {
+        String deptNm,
+        Boolean absent) {
 }
