@@ -134,9 +134,16 @@ public class InformalSanctionService {
         SecurityUtil.assertOwnerByEsntlId(sanction.getAplcntId());
         assertVersion(sanction, expectedVersion);
         InformalSanctionHistory history = currentHistory(sanction);
+        List<InformalSanctionDetail> lines = detailRepository.findRevision(id, sanction.getAtrzCycl());
+        // [2026-09-26 DIP B5 F1] 차례가 와 있던 결재자에게 회수를 알린다 — 대기함에서 사라진 이유를 모르게 두지 않는다.
+        List<String> activeApprovers = lines.stream().filter(d -> d.status() == ApprovalStatus.ACTIVE)
+                .map(d -> d.getId().getUserId()).toList();
         sanction.withdraw();
-        detailRepository.findRevision(id, sanction.getAtrzCycl()).forEach(InformalSanctionDetail::cancel);
+        lines.forEach(InformalSanctionDetail::cancel);
         history.updateResult(sanction);
+        TransactionUtils.runAfterCommit(() -> activeApprovers.forEach(receiver -> eventPublisher.publishEvent(
+                new NotificationRequestedEvent(receiver, "결재가 회수되었습니다",
+                        "결재(번호 " + id + ")를 신청자가 회수했습니다. 처리할 필요가 없습니다.", "/approvals"))));
     }
 
     @Transactional

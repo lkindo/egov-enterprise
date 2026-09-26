@@ -51,6 +51,13 @@ public class CommunityService {
      */
     private final UserRepository userRepository;
 
+    /** [2026-09-26 DIP B5 F1] 가입 신청은 승인 권한자에게, 결과는 신청자에게 알린다(커밋 뒤). */
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+
+    /** 가입 신청을 알릴 승인 권한자 수의 상한 — 권한 그룹이 넓어도 알림이 폭주하지 않게 한다. */
+    private static final int MAX_APPROVER_NOTICES = 20;
+    private static final String COMMUNITY_MANAGE_ROUTE = "/admin/help?tab=COMMUNITY";
+
     /**
      * 관리자용 커뮤니티 목록 — 사용 중지(useYn='N')된 것까지 <b>전부</b> 보여 준다.
      * 중지된 커뮤니티를 되살리거나 정리하려면 관리자가 볼 수 있어야 한다.
@@ -209,6 +216,7 @@ public class CommunityService {
                 throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, "이미 가입했거나 가입을 신청한 상태입니다.");
             }
             member.requestAgain(today());
+            notifyApprovers(community, userId);
             return;
         }
 
@@ -221,6 +229,35 @@ public class CommunityService {
                 .build();
 
         communityUserRepository.save(communityUser);
+        notifyApprovers(community, userId);
+    }
+
+    /** 가입 승인 권한자에게 새 신청을 알린다. 신청자 자신은 빼고, 수신자는 상한까지만 둔다. */
+    private void notifyApprovers(Community community, String applicantEsntlId) {
+        List<String> approvers = userRepository.findActiveEsntlIdsHoldingPermission("COMMUNITY_APPROVE").stream()
+                .filter(id -> !id.equals(applicantEsntlId))
+                .limit(MAX_APPROVER_NOTICES)
+                .toList();
+        String title = "커뮤니티 가입 신청이 들어왔습니다";
+        String content = communityName(community) + " 에 새 가입 신청이 있습니다.";
+        approvers.forEach(receiver -> publishAfterCommit(receiver, title, content, COMMUNITY_MANAGE_ROUTE));
+    }
+
+    private void notifyApplicant(Long cmntySn, String applicantEsntlId, boolean approved) {
+        String name = communityRepository.findById(Objects.requireNonNull(cmntySn)).map(CommunityService::communityName)
+                .orElse("커뮤니티");
+        String title = approved ? "커뮤니티 가입이 승인되었습니다" : "커뮤니티 가입 신청이 반려되었습니다";
+        String content = approved ? name + " 의 회원이 되었습니다." : name + " 가입 신청이 반려되었습니다. 다시 신청할 수 있습니다.";
+        publishAfterCommit(applicantEsntlId, title, content, "/cop/cmy/selectCommunityDetail/" + cmntySn);
+    }
+
+    private static String communityName(Community community) {
+        return community.getCmntyNm() != null && !community.getCmntyNm().isBlank() ? community.getCmntyNm() : "커뮤니티";
+    }
+
+    private void publishAfterCommit(String receiver, String title, String content, String link) {
+        nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> eventPublisher.publishEvent(
+                new nuri.foundation.core.event.NotificationRequestedEvent(receiver, title, content, link)));
     }
 
     // ─── 멤버십 전이 (2026-09-06 DEC-OPS-043, 2026-09-25 DEC-OPS-131, GAP-CMTY-001) ─────────────────────
@@ -255,6 +292,7 @@ public class CommunityService {
             throw new BusinessException(CommonErrorCode.INVALID_STATE, "가입 신청 상태가 아니어서 승인할 수 없습니다.");
         }
         member.approve();
+        notifyApplicant(cmntySn, userId, true);
     }
 
     /**
@@ -270,6 +308,7 @@ public class CommunityService {
                     "가입 신청 상태가 아니어서 반려할 수 없습니다. 회원은 탈퇴 처리를 사용하세요.");
         }
         communityUserRepository.delete(member);
+        notifyApplicant(cmntySn, userId, false);
     }
 
     /**

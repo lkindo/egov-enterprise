@@ -62,6 +62,9 @@ class DeptJobServiceTest {
     @Mock
     private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     // 실제 MapStruct 생성 구현(DeptJobMapperImpl)을 spy 로 주입 — 수기 from() 과 동일 매핑 거동 보장
     @Spy
     private DeptJobMapper deptJobMapper = new DeptJobMapperImpl();
@@ -360,6 +363,54 @@ class DeptJobServiceTest {
         ArgumentCaptor<DeptJob> captor = ArgumentCaptor.forClass(DeptJob.class);
         verify(deptJobRepository).save(captor.capture());
         assertEquals("USR_OTHER", captor.getValue().getPicId());
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F1] 다른 사람을 담당자로 두고 등록하면 그 사람에게 알리고, 스스로 맡으면 알리지 않는다")
+    void createDeptJob_notifiesAssigneeButNotSelf() {
+        when(deptJobRepository.save(any(DeptJob.class))).thenAnswer(inv -> inv.getArgument(0));
+        authenticateAs("tester", "USR_TESTER");
+
+        DeptJobDto other = new DeptJobDto();
+        other.setDeptTaskNm("보고서 작성");
+        other.setPicId("USR_OTHER");
+        deptJobService.createDeptJob(other);
+
+        ArgumentCaptor<Object> events = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, times(1)).publishEvent(events.capture());
+        var event = (nuri.foundation.core.event.NotificationRequestedEvent) events.getValue();
+        assertEquals("USR_OTHER", event.receiverEsntlId());
+        assertEquals("업무가 배정되었습니다", event.title());
+        assertEquals("보고서 작성", event.content());
+
+        DeptJobDto self = new DeptJobDto();
+        self.setDeptTaskNm("내 업무");
+        deptJobService.createDeptJob(self);
+        verify(eventPublisher, times(1)).publishEvent(any(Object.class));
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F1] 수정에서 담당자가 바뀔 때만 새 담당자에게 알린다")
+    void updateDeptJob_notifiesOnlyWhenAssigneeChanges() {
+        authenticateAsAdmin();
+        DeptJob job = DeptJob.builder().deptTaskSn(7L).deptTaskNm("점검").picId("USR_A").build();
+        when(deptJobRepository.findById(7L)).thenReturn(java.util.Optional.of(job));
+
+        DeptJobDto same = new DeptJobDto();
+        same.setDeptTaskNm("점검");
+        same.setPicId("USR_A");
+        deptJobService.updateDeptJob(7L, same);
+        verify(eventPublisher, never()).publishEvent(any(Object.class));
+
+        DeptJobDto moved = new DeptJobDto();
+        moved.setDeptTaskNm("점검");
+        moved.setPicId("USR_B");
+        deptJobService.updateDeptJob(7L, moved);
+        ArgumentCaptor<Object> events = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, times(1)).publishEvent(events.capture());
+        var event = (nuri.foundation.core.event.NotificationRequestedEvent) events.getValue();
+        assertEquals("USR_B", event.receiverEsntlId());
+        assertEquals("/smart-toolkit/dept-job/7", event.linkUrl());
     }
 
     @Test

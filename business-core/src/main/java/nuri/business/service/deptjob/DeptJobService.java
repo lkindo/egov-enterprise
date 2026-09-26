@@ -33,13 +33,16 @@ public class DeptJobService extends BaseAbstractService {
     private final OrganizationManageRepository organizationManageRepository;
     private final DeptJobMapper deptJobMapper;
     private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
+    /** [2026-09-26 DIP B5 F1] 담당자로 지정된 사람에게 알린다(커밋 뒤). */
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     public DeptJobService(DeptJobRepository deptJobRepository,
             DeptJobBoxRepository deptJobBoxRepository,
             UserRepository userRepository,
             OrganizationManageRepository organizationManageRepository,
             DeptJobMapper deptJobMapper,
-            AttachmentAssignmentPolicy attachmentAssignmentPolicy) {
+            AttachmentAssignmentPolicy attachmentAssignmentPolicy,
+            org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.deptJobRepository = required(deptJobRepository, "DeptJobRepository 는 null 일 수 없습니다");
         this.deptJobBoxRepository = required(deptJobBoxRepository, "DeptJobBoxRepository 는 null 일 수 없습니다");
         this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
@@ -48,6 +51,18 @@ public class DeptJobService extends BaseAbstractService {
         this.deptJobMapper = required(deptJobMapper, "DeptJobMapper 는 null 일 수 없습니다");
         this.attachmentAssignmentPolicy = required(attachmentAssignmentPolicy,
                 "AttachmentAssignmentPolicy 는 null 일 수 없습니다");
+        this.eventPublisher = required(eventPublisher, "ApplicationEventPublisher 는 null 일 수 없습니다");
+    }
+
+    /** 새로 담당자가 된 사람에게 알린다. 스스로 맡은 업무는 알리지 않는다. */
+    private void notifyAssignee(String assigneeEsntlId, String actorEsntlId, DeptJob deptJob) {
+        if (assigneeEsntlId == null || assigneeEsntlId.isBlank() || assigneeEsntlId.equals(actorEsntlId)) {
+            return;
+        }
+        String name = deptJob.getDeptTaskNm() != null && !deptJob.getDeptTaskNm().isBlank() ? deptJob.getDeptTaskNm() : "(업무명 없음)";
+        String link = "/smart-toolkit/dept-job/" + deptJob.getDeptTaskSn();
+        nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> eventPublisher.publishEvent(
+                new nuri.foundation.core.event.NotificationRequestedEvent(assigneeEsntlId, "업무가 배정되었습니다", name, link)));
     }
 
     /**
@@ -215,7 +230,9 @@ public class DeptJobService extends BaseAbstractService {
                 .prrtyRnk(dto.getPrrtyRnk())
                 .atchFileSn(dto.getAtchFileSn())
                 .build();
-        return deptJobRepository.save(deptJob).getDeptTaskSn();
+        DeptJob saved = deptJobRepository.save(deptJob);
+        notifyAssignee(picId, creatorEsntlId, saved);
+        return saved.getDeptTaskSn();
     }
 
     @Transactional
@@ -240,6 +257,7 @@ public class DeptJobService extends BaseAbstractService {
         String picId = (dto.getPicId() != null && !dto.getPicId().isBlank())
                 ? dto.getPicId()
                 : deptJob.getPicId();
+        String previousPicId = deptJob.getPicId();
 
         deptJob.update(
                 dto.getDeptTaskBoxSn(),
@@ -248,6 +266,9 @@ public class DeptJobService extends BaseAbstractService {
                 picId,
                 dto.getPrrtyRnk(),
                 dto.getAtchFileSn());
+        if (!Objects.equals(previousPicId, picId)) {
+            notifyAssignee(picId, SecurityUtil.getCurrentEsntlId().orElse(null), deptJob);
+        }
     }
 
     @Transactional
