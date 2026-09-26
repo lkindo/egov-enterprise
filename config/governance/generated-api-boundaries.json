@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 390,
-    "generatedDescriptorCount": 390
+    "openApiOperationCount": 393,
+    "generatedDescriptorCount": 393
   },
   "target": {
     "generatedPercent": 100,
@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 345,
-    "eligible": 331,
+    "total": 348,
+    "eligible": 334,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 331,
+      "generated": 334,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "575a54bd683855cf597d9032359eae695ef87a6e582c24fde50c9253d7932f0e",
+  "inventoryHash": "84fb8ed7c72d896d30c1a8d4ad1483028460772dda0948a5dd72d18956eb4d15",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -1906,7 +1906,7 @@
       "file": "frontend/src/services/business/user/MenuService.ts",
       "owner": "MenuService.getHeadMenus",
       "ordinal": 1,
-      "line": 15,
+      "line": 21,
       "column": 28,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1923,7 +1923,7 @@
       "file": "frontend/src/services/business/user/MenuService.ts",
       "owner": "MenuService.getLeftMenus",
       "ordinal": 1,
-      "line": 23,
+      "line": 29,
       "column": 28,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1935,6 +1935,57 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "63117678a25ddfaf6988"
+    },
+    {
+      "file": "frontend/src/services/business/user/MenuService.ts",
+      "owner": "MenuService.getMyBookmarks",
+      "ordinal": 1,
+      "line": 40,
+      "column": 12,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "get",
+      "target": "/api/v1/menus/bookmarks",
+      "operationId": "getMyBookmarks",
+      "descriptorName": "getMyBookmarksOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "9526752753db5cf4f7ae"
+    },
+    {
+      "file": "frontend/src/services/business/user/MenuService.ts",
+      "owner": "MenuService.addBookmark",
+      "ordinal": 1,
+      "line": 45,
+      "column": 11,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "put",
+      "target": "/api/v1/menus/bookmarks/{menuNo}",
+      "operationId": "addBookmark",
+      "descriptorName": "addBookmarkOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "b1a26f71adca2efe075c"
+    },
+    {
+      "file": "frontend/src/services/business/user/MenuService.ts",
+      "owner": "MenuService.removeBookmark",
+      "ordinal": 1,
+      "line": 50,
+      "column": 11,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "delete",
+      "target": "/api/v1/menus/bookmarks/{menuNo}",
+      "operationId": "removeBookmark",
+      "descriptorName": "removeBookmarkOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "151a68507c6ddc3c2bfb"
     },
     {
       "file": "frontend/src/services/business/user/NoteService.ts",

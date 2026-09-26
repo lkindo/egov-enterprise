@@ -99,6 +99,14 @@ public class MenuService {
         }
     }
 
+    /**
+     * 지금 사용자에게 메뉴 배정(NAVIGATION)이 있는 메뉴 번호(2026-09-26 DIP B5 F2 — 즐겨찾기가 같은 판정을 쓴다).
+     * 사용 여부(useYn)는 호출자가 메뉴 행으로 본다.
+     */
+    public Set<Long> allowedMenuIdsForCurrentUser() {
+        return navigationGrantRepository.findAllowedMenuIds(currentGroups(SecurityContextHolder.getContext().getAuthentication()));
+    }
+
     private static List<String> currentGroups(Authentication auth) {
         if (auth == null || auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken) {
             return List.of("ROLE_ANONYMOUS");

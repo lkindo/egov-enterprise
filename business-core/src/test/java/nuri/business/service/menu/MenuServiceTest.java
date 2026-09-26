@@ -786,4 +786,13 @@ class MenuServiceTest {
         Map<Long, Long> parentMap = menuService.getMenuParentMapCached();
         assertThat(parentMap).containsEntry(2L, 1L);
     }
+
+    @Test
+    @DisplayName("[DIP B5 F2] 즐겨찾기가 쓰는 메뉴 배정 판정은 인증 주체의 그룹으로 조회한다")
+    void allowedMenuIdsForCurrentUserUsesPrincipalGroups() {
+        useGroups("GROUP_STAFF", "GROUP_AUDIT");
+        when(navigationGrantRepository.findAllowedMenuIds(List.of("GROUP_AUDIT", "GROUP_STAFF"))).thenReturn(java.util.Set.of(7L));
+
+        assertThat(menuService.allowedMenuIdsForCurrentUser()).containsExactly(7L);
+    }
 }

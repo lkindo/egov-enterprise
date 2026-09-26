@@ -1932,6 +1932,29 @@ export const MenuListResponseSchema = z.object({
 export type MenuListResponse = z.infer<typeof MenuListResponseSchema>;
 
 // ==========================================================================
+// ApiResponseListMenuBookmarkDto Schema
+// ==========================================================================
+export const ApiResponseListMenuBookmarkDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => MenuBookmarkDtoSchema)).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseListMenuBookmarkDto = z.infer<typeof ApiResponseListMenuBookmarkDtoSchema>;
+
+// ==========================================================================
+// MenuBookmarkDto Schema
+// ==========================================================================
+export const MenuBookmarkDtoSchema = z.object({
+  menuNo: z.number().int(),
+  menuNm: z.string(),
+});
+export type MenuBookmarkDto = z.infer<typeof MenuBookmarkDtoSchema>;
+
+// ==========================================================================
 // ApiResponsePageResponseMemoReportDto Schema
 // ==========================================================================
 export const ApiResponsePageResponseMemoReportDtoSchema = z.object({
@@ -7453,6 +7476,36 @@ export const MenuListResponseRequestSchema = z.object({
 
 export const MenuListResponseResponseSchema = z.object({
   list: z.array(z.lazy(() => MenuDtoResponseSchema)),
+});
+
+export const ApiResponseListMenuBookmarkDtoRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => MenuBookmarkDtoRequestSchema.strict())).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseListMenuBookmarkDtoResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => MenuBookmarkDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const MenuBookmarkDtoRequestSchema = z.object({
+  menuNo: z.number().int(),
+  menuNm: z.string(),
+});
+
+export const MenuBookmarkDtoResponseSchema = z.object({
+  menuNo: z.number().int(),
+  menuNm: z.string(),
 });
 
 export const ApiResponsePageResponseMemoReportDtoRequestSchema = z.object({
