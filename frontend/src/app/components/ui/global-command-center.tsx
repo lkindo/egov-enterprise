@@ -75,8 +75,10 @@ export function GlobalCommandCenter() {
     }
     setSelectedIndex(0);
     setSearch('');
+    // 여는 순간의 최근 방문을 읽는다(effect 안 setState 를 두지 않는다).
+    setRecentNos(readRecentMenuNos(userKey));
     setIsOpen(true);
-  }, []);
+  }, [userKey]);
 
   const closeCommandCenter = useCallback(() => {
     setIsOpen(false);
@@ -147,7 +149,6 @@ export function GlobalCommandCenter() {
   useEffect(() => {
     if (!isOpen) return;
     let active = true;
-    setRecentNos(readRecentMenuNos(userKey));
     (async () => {
       try {
         const bookmarks = await menuService.getMyBookmarks();
@@ -158,7 +159,7 @@ export function GlobalCommandCenter() {
       }
     })();
     return () => { active = false; };
-  }, [isOpen, userKey]);
+  }, [isOpen]);
 
   // 3. 고정 액션 정의
   // 관리자 mutation이나 구현 상태가 섞인 화면을 여기서 추정해 노출하지 않는다.
