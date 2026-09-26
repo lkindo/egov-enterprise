@@ -1532,6 +1532,13 @@
     "permission": "USER_PASSWORD"
   },
   {
+    "method": "PATCH",
+    "path": "/api/v1/admin/system/users/{userId}/unlock",
+    "handler": "nuri.api.controller.UserApiController#unlockUser",
+    "access": "PERMISSION",
+    "permission": "USER_STATUS"
+  },
+  {
     "method": "POST",
     "path": "/api/v1/approvals",
     "handler": "nuri.api.controller.business.approval.ApprovalApiController#createApproval",

@@ -11,6 +11,7 @@ import {
   insertUserOperation,
   moveUsersToDeptOperation,
   updatePasswordByAdminOperation,
+  unlockUserOperation,
   updateUserOperation,
   updateUsersStatusOperation,
 } from '@/types/generated-operations';
@@ -202,6 +203,11 @@ class UserAdminService extends AdminService {
       body: data,
       config,
     });
+  }
+
+  /** 계정 잠금 해제(DIP B4 P7). 비밀번호와 세션은 바꾸지 않는다. */
+  async unlockUser(userId: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.executeGenerated(unlockUserOperation, { path: { userId }, config });
   }
 
   /** 사용자 상태 일괄 변경 */

@@ -563,8 +563,32 @@ class UserServiceTest {
 
             userService.updatePasswordByAdmin("user1", "newpwd");
             verify(user).updatePassword("encoded");
+            // [DIP B4 P7, D5] 초기화는 잠금도 푼다 — 잠긴 채면 새 비밀번호로도 잠금 시간이 지날 때까지 못 들어온다.
+            verify(user).unlockAccount();
             // 관리자 초기화도 이전 자격으로 발급된 refresh token 을 남기지 않는다.
             verify(refreshTokenRepository).deleteAllByEsntlIdIn(List.of("USR_ESNTL_1"));
+        }
+    }
+
+    @Test
+    @DisplayName("[DIP B4 P7] 계정 잠금 해제는 USER_STATUS 권한자만 하고 비밀번호·세션은 건드리지 않는다")
+    void unlockUserTest() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+            User user = User.builder().userId("user1").esntlId("USR_ESNTL_1").userNm("잠긴 사용자").pswd("{bcrypt}x")
+                    .lckYn("Y").lckCnt(5).build();
+            given(userRepository.findByUserId("user1")).willReturn(Optional.of(user));
+
+            userService.unlockUser("user1");
+
+            assertFalse(user.isLocked());
+            assertEquals(0, user.getLckCnt());
+            verify(refreshTokenRepository, never()).deleteAllByEsntlIdIn(any());
+
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));
+            assertThrows(BusinessException.class, () -> userService.unlockUser("user1"));
         }
     }
 

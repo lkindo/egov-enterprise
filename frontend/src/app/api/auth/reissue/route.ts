@@ -12,7 +12,8 @@ import { reissueOperation } from '@/types/generated-operations';
 
 const BACKEND_URL = (process.env.BACKEND_API_URL || 'http://127.0.0.1:8080/api/v1').replace(/\/$/, '');
 
-const SESSION_EXPIRED_MESSAGE = '세션이 만료되었습니다. 다시 로그인해주세요.';
+// [2026-09-26 DIP B4 P7, D5] 단일 세션이다 — 다른 곳에서 로그인하면 이 세션의 재발급 토큰이 폐기된다. 만료만 말하면 이유를 모른다.
+const SESSION_EXPIRED_MESSAGE = '다른 곳에서 로그인했거나 세션이 만료되었습니다. 다시 로그인해 주세요.';
 const REISSUE_UNAVAILABLE_MESSAGE = '세션 연장 서비스에 일시적으로 연결할 수 없습니다.';
 
 function upstreamStatus(error: unknown): number | undefined {

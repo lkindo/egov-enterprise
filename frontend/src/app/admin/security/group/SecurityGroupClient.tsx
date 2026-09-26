@@ -247,7 +247,7 @@ export default function SecurityGroupClient() {
  accessor: (item: GroupManage) => (
  <div className="flex flex-col gap-0.5">
  <span className="font-bold text-foreground tracking-tight text-md uppercase leading-none mb-1">{item.groupNm}</span>
- <span className="text-xs font-bold text-muted-foreground/40 truncate block max-w-[300px] leading-none">{item.groupDc || '규정 설명이 제공되지 않음'}</span>
+ <span className="text-xs font-bold text-muted-foreground/40 truncate block max-w-[300px] leading-none">{item.groupDc || '설명 없음'}</span>
  </div>
  )
  },
@@ -361,7 +361,7 @@ export default function SecurityGroupClient() {
  onNavigate={(name) => { validation.focusError(name); }}
  />
  <div className="grid grid-cols-2 gap-10">
- <FormField htmlFor="groupId" label="도메인 그룹 식별자(Group ID)" required error={validation.errors.groupId} description="보안 레이어 내의 유일한 논리 식별자">
+ <FormField htmlFor="groupId" label="분류 그룹 ID" required error={validation.errors.groupId} description="다른 분류 그룹과 겹치지 않는 식별자입니다. 등록 뒤에는 바꿀 수 없습니다.">
  <div className="relative group/id">
  <Fingerprint size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
  <Input
@@ -380,7 +380,7 @@ export default function SecurityGroupClient() {
  />
  </div>
  </FormField>
- <FormField htmlFor="groupNm" label="그룹 레이블 명칭" required error={validation.errors.groupNm} description="UI 상에 노출될 그룹 리터럴 이름">
+ <FormField htmlFor="groupNm" label="분류 그룹 이름" required error={validation.errors.groupNm} description="목록과 사용자 등록 화면의 선택지에 보이는 이름입니다.">
  <div className="relative group/nm">
  <Users size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
  <Input
@@ -400,7 +400,7 @@ export default function SecurityGroupClient() {
  </FormField>
  </div>
 
- <FormField htmlFor="groupDc" label="그룹 정책 상세 명세" error={validation.errors.groupDc} description="사용자를 분류하는 목적과 기준을 입력하세요. 접근권한은 별도로 설정합니다.">
+ <FormField htmlFor="groupDc" label="분류 기준 설명" error={validation.errors.groupDc} description="사용자를 분류하는 목적과 기준을 입력하세요. 접근권한은 별도로 설정합니다.">
  <div className="relative group/dc">
  <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
  <Textarea

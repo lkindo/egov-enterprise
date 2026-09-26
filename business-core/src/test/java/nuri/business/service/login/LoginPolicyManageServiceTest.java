@@ -181,6 +181,24 @@ class LoginPolicyManageServiceTest {
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("USER1", "127.0.0.1"));
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"0900,", ",1800"})
+    @DisplayName("[DIP B4 P8] 접속 허용 시간은 시작·종료가 짝이다 — 한쪽만 있으면 등록·수정 모두 400 이고 저장하지 않는다")
+    void timeWindowMustBePaired(String start, String end) {
+        LoginPolicyDto dto = new LoginPolicyDto();
+        dto.setUserId("USER1");
+        dto.setBgngTm(start);
+        dto.setEndTm(end);
+
+        BusinessException update = assertThrows(BusinessException.class, () -> loginPolicyManageService.updateLoginPolicy(dto));
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, update.getErrorCode());
+        BusinessException insert = assertThrows(BusinessException.class, () -> loginPolicyManageService.insertLoginPolicy(dto));
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, insert.getErrorCode());
+        // 짝 검사는 저장소를 건드리기 전에 끝난다 — 한쪽만 있는 시간창은 조회도 저장도 하지 않는다.
+        verify(loginPolicyRepository, never()).findById(any());
+        verify(loginPolicyRepository, never()).save(any());
+    }
+
     @Test
     @DisplayName("로그인 정책 수정 테스트 - 성공")
     void updateLoginPolicySuccessTest() {

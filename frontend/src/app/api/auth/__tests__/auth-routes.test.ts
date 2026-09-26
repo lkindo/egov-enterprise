@@ -459,7 +459,7 @@ describe('POST /api/auth/reissue', () => {
     expect(body).toEqual({
       success: false,
       code: 'SESSION_EXPIRED',
-      message: '세션이 만료되었습니다. 다시 로그인해주세요.',
+      message: '다른 곳에서 로그인했거나 세션이 만료되었습니다. 다시 로그인해 주세요.',
     });
     expect(JSON.stringify(body)).not.toContain(privateMessage);
     expect(setCookie(response, 'accessToken')).toBeNull();
