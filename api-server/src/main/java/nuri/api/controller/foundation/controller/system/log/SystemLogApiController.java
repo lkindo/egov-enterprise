@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system.log;
 
+import nuri.api.support.XlsxExport;
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
@@ -59,39 +60,39 @@ public class SystemLogApiController {
                     + "조건 일치 전체 결과를 xlsx 로 스트리밍한다. 행 수가 상한을 초과하면 400 을 반환한다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
             description = "xlsx 바이너리 스트림",
-            content = @Content(mediaType = LogExcelExport.XLSX_MEDIA_TYPE,
+            content = @Content(mediaType = XlsxExport.XLSX_MEDIA_TYPE,
                     schema = @Schema(type = "string", format = "binary")))
-    @GetMapping(value = "/export.xlsx", produces = LogExcelExport.XLSX_MEDIA_TYPE)
+    @GetMapping(value = "/export.xlsx", produces = XlsxExport.XLSX_MEDIA_TYPE)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.SystemLogApiController#exportSystemLogs')")
     public ResponseEntity<StreamingResponseBody> exportSystemLogs(
             @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
 
         int totalCount = logManageService.selectSysLogListTotCnt(searchDto);
-        LogExcelExport.assertWithinCap(totalCount);
+        XlsxExport.assertWithinCap(totalCount);
 
         // 화면 페이징 값이 무엇이든 export 는 전량이다(0건이어도 pageUnit 하한 가드가 기본값으로 수렴).
         searchDto.setPageIndex(1);
         searchDto.setPageUnit(Math.max(totalCount, 1));
         List<SysLogDto> rows = logManageService.selectSysLogList(searchDto);
 
-        return LogExcelExport.attachment("system-logs.xlsx", "system-logs",
+        return XlsxExport.attachment("system-logs.xlsx", "system-logs",
                 new String[]{"로그 일련번호", "요청 ID", "서비스명", "메서드명", "처리구분", "처리시간",
                         "요청자 ID", "요청 IP", "발생일자", "응답코드", "오류구분", "오류코드"},
                 rows,
                 (row, dto) -> {
-                    row.createCell(0).setCellValue(LogExcelExport.nullSafe(dto.getSysLogSn()));
-                    row.createCell(1).setCellValue(LogExcelExport.nullSafe(dto.getDmndId()));
-                    row.createCell(2).setCellValue(LogExcelExport.nullSafe(dto.getSrvcNm()));
-                    row.createCell(3).setCellValue(LogExcelExport.nullSafe(dto.getMethodNm()));
-                    row.createCell(4).setCellValue(LogExcelExport.nullSafe(dto.getPrcsSeCd()));
-                    row.createCell(5).setCellValue(LogExcelExport.nullSafe(dto.getPrcsTm()));
-                    row.createCell(6).setCellValue(LogExcelExport.nullSafe(dto.getDmndUserId()));
-                    row.createCell(7).setCellValue(LogExcelExport.nullSafe(dto.getRqesterIp()));
-                    row.createCell(8).setCellValue(LogExcelExport.nullSafe(dto.getOcrnYmd()));
+                    row.createCell(0).setCellValue(XlsxExport.nullSafe(dto.getSysLogSn()));
+                    row.createCell(1).setCellValue(XlsxExport.nullSafe(dto.getDmndId()));
+                    row.createCell(2).setCellValue(XlsxExport.nullSafe(dto.getSrvcNm()));
+                    row.createCell(3).setCellValue(XlsxExport.nullSafe(dto.getMethodNm()));
+                    row.createCell(4).setCellValue(XlsxExport.nullSafe(dto.getPrcsSeCd()));
+                    row.createCell(5).setCellValue(XlsxExport.nullSafe(dto.getPrcsTm()));
+                    row.createCell(6).setCellValue(XlsxExport.nullSafe(dto.getDmndUserId()));
+                    row.createCell(7).setCellValue(XlsxExport.nullSafe(dto.getRqesterIp()));
+                    row.createCell(8).setCellValue(XlsxExport.nullSafe(dto.getOcrnYmd()));
                     // [2026-09-02] 실패 분류 3종 — 화면과 같은 값을 내보낸다.
-                    row.createCell(9).setCellValue(LogExcelExport.nullSafe(dto.getRspnsCd()));
-                    row.createCell(10).setCellValue(LogExcelExport.nullSafe(dto.getErrSeCd()));
-                    row.createCell(11).setCellValue(LogExcelExport.nullSafe(dto.getErrCd()));
+                    row.createCell(9).setCellValue(XlsxExport.nullSafe(dto.getRspnsCd()));
+                    row.createCell(10).setCellValue(XlsxExport.nullSafe(dto.getErrSeCd()));
+                    row.createCell(11).setCellValue(XlsxExport.nullSafe(dto.getErrCd()));
                 });
     }
 

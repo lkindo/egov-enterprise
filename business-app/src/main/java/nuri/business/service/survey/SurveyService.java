@@ -128,6 +128,59 @@ public class SurveyService {
                 dto.getSrvyBgngYmd(), dto.getSrvyEndYmd(), dto.getSrvyTrgt(), dto.getSrvyTmpltSn());
     }
 
+    /**
+     * 설문을 문항·선택 항목까지 복제한다(2026-09-26 DIP B5 F6). 응답·응답자·결과는 복제하지 않는다 — 사본은 새 조사다.
+     *
+     * <p>제목과 기간은 요청에서 받는다({@link SurveyCopyRequest} — 원본 기간을 복사하면 같은 설문이 둘 열리고, 비우면
+     * 무기한 열린다). 목적·작성 안내·대상·템플릿은 원본을 따른다. 문항 번호·선택 항목 번호·복수 선택 수는 그대로 둔다.
+     *
+     * @return 사본의 설문 일련번호
+     */
+    @Transactional
+    public Long copySurvey(Long srvySn, nuri.business.service.survey.dto.SurveyCopyRequest request) {
+        SurveyInfo source = infoRepository.findById(Objects.requireNonNull(srvySn))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        validateSurveyDates(request.getSrvyBgngYmd(), request.getSrvyEndYmd());
+        SurveyInfo copy = infoRepository.save(Objects.requireNonNull(SurveyInfo.builder()
+                .srvyTtl(request.getSrvyTtl().trim())
+                .srvyPrps(source.getSrvyPrps())
+                .srvyWrtGdCn(source.getSrvyWrtGdCn())
+                .srvyBgngYmd(request.getSrvyBgngYmd())
+                .srvyEndYmd(request.getSrvyEndYmd())
+                .srvyTrgt(source.getSrvyTrgt())
+                .srvyTmpltSn(source.getSrvyTmpltSn())
+                .build()));
+        Long copySn = copy.getSrvySn();
+
+        java.util.Map<Long, Long> copiedQuestionIds = new java.util.LinkedHashMap<>();
+        for (SurveyQuestion question : qesitmRepository.findBySrvySnOrderByQstnSnAsc(srvySn)) {
+            SurveyQuestion copied = qesitmRepository.save(Objects.requireNonNull(SurveyQuestion.builder()
+                    .srvySn(copySn)
+                    .qstnSn(question.getQstnSn())
+                    .qstnTypeCd(question.getQstnTypeCd())
+                    .qstnCn(question.getQstnCn())
+                    .maxChcCnt(question.getMaxChcCnt())
+                    .srvyTmpltSn(question.getSrvyTmpltSn())
+                    .build()));
+            copiedQuestionIds.put(question.getSrvyQstnSn(), copied.getSrvyQstnSn());
+        }
+        if (copiedQuestionIds.isEmpty()) {
+            return copySn;
+        }
+        for (SurveyArticle article : iemRepository
+                .findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(copiedQuestionIds.keySet())) {
+            iemRepository.save(Objects.requireNonNull(SurveyArticle.builder()
+                    .srvyQstnSn(copiedQuestionIds.get(article.getSrvyQstnSn()))
+                    .srvySn(copySn)
+                    .artclSn(article.getArtclSn())
+                    .artclCn(article.getArtclCn())
+                    .etcAnsYn(article.getEtcAnsYn())
+                    .srvyTmpltSn(article.getSrvyTmpltSn())
+                    .build()));
+        }
+        return copySn;
+    }
+
     @Transactional
     public void deleteSurvey(Long srvySn) {
         Objects.requireNonNull(srvySn);

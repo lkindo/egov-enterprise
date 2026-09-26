@@ -34,6 +34,7 @@ vi.mock('@/services/foundation/system/SurveyAdminService', () => ({
     updateSurvey: vi.fn(),
     updateQuestion: vi.fn(),
     updateItem: vi.fn(),
+    copySurvey: vi.fn(),
   },
 }));
 
@@ -155,6 +156,27 @@ describe('SurveyQuestionsPanel', () => {
     expect(surveyItemCreateSchema.safeParse(item).success).toBe(true);
     expect(surveyItemCreateSchema.safeParse({ ...item, artclCn: '' }).success).toBe(false);
     expect(surveyItemCreateSchema.safeParse({ ...item, artclCn: '가'.repeat(4001) }).success).toBe(false);
+  });
+
+  it('[DIP B5 F6] 설문을 고르면 복제할 수 있고, 사본 제목을 채운 대화상자가 원본 번호로 복제한다', async () => {
+    const user = userEvent.setup();
+    mocked.copySurvey.mockResolvedValueOnce(305);
+    renderPanel();
+
+    expect(screen.getByRole('button', { name: '설문지 복제' })).toBeDisabled();
+    await selectSurvey(user);
+    await user.click(screen.getByRole('button', { name: '만족도 조사 복제' }));
+
+    const dialog = await screen.findByRole('dialog', { name: '설문 복제' });
+    expect(dialog).toHaveTextContent('응답은 복제하지 않습니다');
+    fireEvent.change(screen.getByLabelText(/시작일/), { target: { value: '2026-10-01' } });
+    fireEvent.change(screen.getByLabelText(/종료일/), { target: { value: '2026-10-31' } });
+    await user.click(screen.getByRole('button', { name: '복제' }));
+
+    await waitFor(() => expect(mocked.copySurvey).toHaveBeenCalledWith(201, {
+      srvyTtl: '[사본] 만족도 조사', srvyBgngYmd: '20261001', srvyEndYmd: '20261031',
+    }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: '설문 복제' })).not.toBeInTheDocument());
   });
 
   it('설문을 고르면 그 설문의 문항을 조회한다', async () => {

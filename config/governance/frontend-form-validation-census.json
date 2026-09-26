@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 64,
-    "nativeFormFiles": 54,
+    "nativeFormOccurrences": 65,
+    "nativeFormFiles": 55,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 19,
     "secondaryActionBoundaries": 68,
-    "candidateCount": 152
+    "candidateCount": 153
   },
   "entries": [
     {
@@ -827,6 +827,23 @@
       "testEvidence": [
         "frontend/src/app/admin/security/login-policy/__tests__/LoginPolicyAdminClient.behavior.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/survey/components/SurveyCopyDialog.tsx#SurveyCopyDialog[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/survey/components/SurveyCopyDialog.tsx",
+      "owner": "SurveyCopyDialog",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:surveyCopyFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/components/__tests__/SurveyCopyDialog.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
       ]
     },
     {

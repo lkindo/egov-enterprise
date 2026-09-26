@@ -1,9 +1,12 @@
 'use client';
 
+import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getSurveyStats } from '@/lib/api/survey';
+import { downloadSurveyStatsXlsx, getSurveyStats } from '@/lib/api/survey';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { extractErrorMessage } from '@/app/actions/actionUtils';
+import { Loader2, BarChart3, Download } from 'lucide-react';
 
 /**
  * 설문 결과 통계 패널 — `/survey/stats` 와 `/survey/[id]` 가 공유한다.
@@ -24,6 +27,27 @@ export function SurveyStatsPanel({ srvySn }: { srvySn: number | null }) {
     enabled: hasValidSurvey,
     retry: false,
   });
+  /*
+   * [2026-09-26 DIP B5 F6] 결과를 xlsx 로 내려받는다 — 화면과 같은 행·같은 분모. 같은 틱의 두 번째 클릭은 잠금으로 막고
+   * 실패는 사유를 보인다(조용히 아무 일도 안 일어나면 사용자는 다시 누른다).
+   */
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const downloadPendingRef = useRef(false);
+  const handleDownload = async () => {
+    if (!hasValidSurvey || downloadPendingRef.current) return;
+    downloadPendingRef.current = true;
+    setIsDownloading(true);
+    setDownloadError(null);
+    try {
+      await downloadSurveyStatsXlsx(srvySn!);
+    } catch (downloadFailure: unknown) {
+      setDownloadError(extractErrorMessage(downloadFailure, '결과 파일을 내려받지 못했습니다.'));
+    } finally {
+      downloadPendingRef.current = false;
+      setIsDownloading(false);
+    }
+  };
 
   if (!hasValidSurvey) {
     return (
@@ -58,6 +82,21 @@ export function SurveyStatsPanel({ srvySn }: { srvySn: number | null }) {
 
   return (
     <div className="grid grid-cols-1 gap-6">
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {downloadError ? (
+          <p role="alert" className="text-sm text-destructive-emphasis">{downloadError}</p>
+        ) : null}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={isDownloading}
+          aria-busy={isDownloading || undefined}
+          onClick={() => { void handleDownload(); }}
+        >
+          <Download size={14} aria-hidden="true" /> {isDownloading ? '내려받는 중…' : '결과를 엑셀로 내려받기'}
+        </Button>
+      </div>
       {data.map((stat, idx) => (
         <Card key={`${stat.qstnCn}-${stat.artclCn ?? ''}-${idx}`} className="shadow-sm overflow-hidden">
           <CardHeader className="bg-muted/30 border-b">

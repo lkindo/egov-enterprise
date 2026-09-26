@@ -1546,6 +1546,22 @@
       "routeGate": "OPERATION_PERMISSION"
     },
     {
+      "method": "POST",
+      "path": "/api/v1/admin/system/surveys/{srvySn}/copy",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#copySurvey",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#copySurvey')",
+      "routeGate": "OPERATION_PERMISSION"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/surveys/{srvySn}/copy",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#copySurvey",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#copySurvey')",
+      "routeGate": "OPERATION_PERMISSION"
+    },
+    {
       "method": "DELETE",
       "path": "/api/v1/surveys/questions/items/{srvyArtclSn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteItem",
@@ -5955,6 +5971,20 @@
       "permission": "SURVEY_CREATE_ALL"
     },
     {
+      "method": "POST",
+      "path": "/api/v1/admin/system/surveys/{srvySn}/copy",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#copySurvey",
+      "access": "PERMISSION",
+      "permission": "SURVEY_CREATE_ALL"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/surveys/{srvySn}/copy",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#copySurvey",
+      "access": "PERMISSION",
+      "permission": "SURVEY_CREATE_ALL"
+    },
+    {
       "method": "DELETE",
       "path": "/api/v1/surveys/questions/items/{srvyArtclSn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteItem",
@@ -6070,6 +6100,13 @@
       "method": "GET",
       "path": "/api/v1/surveys/{srvySn}/stats",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveySubmissionApiController#getStats",
+      "access": "PERMISSION",
+      "permission": "SURVEY_READ"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/surveys/{srvySn}/stats/export.xlsx",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveySubmissionApiController#exportStats",
       "access": "PERMISSION",
       "permission": "SURVEY_READ"
     },
