@@ -370,7 +370,7 @@
         {
           "kind": "unmeasured-output-exported-as-zero",
           "evidence": "전체 결과 엑셀의 출력 열이 측정되지 않는 출력 건수를 숫자(0)로 썼다. 화면은 미측정으로 고지한다. 머리글이 미측정을 밝히고 칸을 비운다(formatRules.number.unknownAsZero).",
-          "removedSourceEvidence": ["LogExcelExport.nullSafe(dto.otptCnt())", "\"삭제\", \"출력\", \"오류\""],
+          "removedSourceEvidence": ["XlsxExport.nullSafe(dto.otptCnt())", "\"삭제\", \"출력\", \"오류\""],
           "status": "remediated-local",
           "owner": "security-privacy",
           "reviewBy": "2026-12-15"

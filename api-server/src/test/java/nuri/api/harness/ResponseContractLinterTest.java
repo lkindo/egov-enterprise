@@ -100,10 +100,12 @@ class ResponseContractLinterTest {
      *   <li>{@code SystemLogApiController#exportSystemLogs} · {@code UserLogApiController#exportUserLogs}
      *       · {@code WebLogApiController#exportWebLogs} · {@code PrivacyLogApiController#exportPrivacyLogs}
      *       — 나머지 로그 4종의 전체 결과 xlsx export(2026-08-26). 로그인 로그와 같은 규칙을
-     *       {@code LogExcelExport} 로 공유한다: 검색 조건은 목록 API 와 동일 바인딩, 페이지 파라미터만
+     *       {@code XlsxExport}(종전 {@code LogExcelExport}) 로 공유한다: 검색 조건은 목록 API 와 동일 바인딩, 페이지 파라미터만
      *       전량으로 덮어쓰기, 행 상한 초과 시 400, SXSSF 스트리밍.
      *       <p>이 4개가 없던 동안 화면은 <b>현재 페이지만</b> 반출할 수 있었고, A6 의 "서버측 전체
      *       내보내기" 필수 항목이 로그인 로그에서만 충족됐다.</li>
+     *   <li>{@code SurveySubmissionApiController#exportStats} — 설문 결과 통계 xlsx 반출(2026-09-26 DIP B5 F6).
+     *       화면 통계와 같은 문항 × 항목 행이며 응답자 이름·기타 답은 싣지 않는다. 같은 {@code XlsxExport} 규칙.</li>
      * </ul>
      *
      * <p>실제 wrapper 밖 반환 집합과 이 목록은 <b>양방향 exact-match</b> 다 — 목록 밖 신설도,
@@ -118,7 +120,8 @@ class ResponseContractLinterTest {
             LOG_CONTROLLER_DIR + "SystemLogApiController.java#exportSystemLogs",
             LOG_CONTROLLER_DIR + "UserLogApiController.java#exportUserLogs",
             LOG_CONTROLLER_DIR + "WebLogApiController.java#exportWebLogs",
-            LOG_CONTROLLER_DIR + "PrivacyLogApiController.java#exportPrivacyLogs");
+            LOG_CONTROLLER_DIR + "PrivacyLogApiController.java#exportPrivacyLogs",
+            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveySubmissionApiController.java#exportStats");
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 325건 대비 여유). */
     private static final int HANDLER_FLOOR = 250;
@@ -180,6 +183,9 @@ class ResponseContractLinterTest {
             }
         }
         for (String allowed : BINARY_ALLOWED_HANDLERS) {
+            // 재사용 투영에서 pack 과 함께 빠진 소스의 행만 건너뛴다(예: survey pack 이 없는 프로필의 설문 결과 반출).
+            // 투영 계획에 없는 경로는 retainsSource 가 예외로 막으므로 사라진 파일을 임의로 선택 도메인으로 보지 않는다.
+            if (!ReusableHarnessProfile.current().retainsSource(allowed)) continue;
             if (!unwrappedHandlers.contains(allowed)) {
                 violations.add("binary 허용 census 의 stale 행: " + allowed
                         + "\n   해당 핸들러가 사라졌거나 래퍼 반환으로 바뀌었습니다."

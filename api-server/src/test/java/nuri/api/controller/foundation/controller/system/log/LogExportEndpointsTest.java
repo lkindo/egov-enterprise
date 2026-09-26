@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system.log;
 
+import nuri.api.support.XlsxExport;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.log.LogManageService;
@@ -118,7 +119,7 @@ class LogExportEndpointsTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + fileName + "\""))
-                .andExpect(content().contentType(LogExcelExport.XLSX_MEDIA_TYPE))
+                .andExpect(content().contentType(XlsxExport.XLSX_MEDIA_TYPE))
                 .andReturn().getResponse().getContentAsByteArray();
     }
 
@@ -195,7 +196,7 @@ class LogExportEndpointsTest {
     @DisplayName("행 상한을 넘으면 파일을 만들기 전에 400 으로 실패한다")
     void rejectsOverCap() throws Exception {
         when(logManageService.selectSysLogListTotCnt(any()))
-                .thenReturn(LogExcelExport.MAX_EXPORT_ROWS + 1);
+                .thenReturn(XlsxExport.MAX_EXPORT_ROWS + 1);
 
         mvc(systemLogApiController)
                 .perform(get("/api/v1/admin/system/logs/system/export.xlsx"))
@@ -206,7 +207,7 @@ class LogExportEndpointsTest {
     @DisplayName("상한 초과 요청은 전량 조회를 시도하지 않는다 — 힙에 올리기 전에 막는다")
     void doesNotFetchWhenOverCap() throws Exception {
         when(logManageService.selectSysLogListTotCnt(any()))
-                .thenReturn(LogExcelExport.MAX_EXPORT_ROWS + 1);
+                .thenReturn(XlsxExport.MAX_EXPORT_ROWS + 1);
 
         mvc(systemLogApiController)
                 .perform(get("/api/v1/admin/system/logs/system/export.xlsx"))

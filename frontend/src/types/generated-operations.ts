@@ -338,6 +338,7 @@ import {
   StatsDtoResponseSchema,
   SummaryStatsDtoResponseSchema,
   SurveyArticleDtoRequestSchema,
+  SurveyCopyRequestRequestSchema,
   SurveyInfoDtoRequestSchema,
   SurveyInfoDtoResponseSchema,
   SurveyQuestionDtoRequestSchema,
@@ -4021,6 +4022,40 @@ export const insertQuestion_1Operation = /*#__PURE__*/ defineGeneratedOperation(
   responseForbiddenPaths: [],
 });
 
+export const copySurveyOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "copySurvey",
+  method: "post",
+  path: "/api/v1/admin/system/surveys/{srvySn}/copy",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "srvySn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: SurveyCopyRequestRequestSchema.strict(),
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseLongResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const copySurvey_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "copySurvey_1",
+  method: "post",
+  path: "/api/v1/surveys/{srvySn}/copy",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "srvySn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: SurveyCopyRequestRequestSchema.strict(),
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseLongResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const getTemplatesOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "getTemplates",
   method: "get",
@@ -5360,6 +5395,23 @@ export const getStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: z.array(z.lazy(() => SurveyStatsDtoResponseSchema)),
   envelopeSchema: ApiResponseListSurveyStatsDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const exportStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "exportStats",
+  method: "get",
+  path: "/api/v1/surveys/{srvySn}/stats/export.xlsx",
+  requestKind: "none",
+  responseKind: "binary",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "srvySn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: null,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
