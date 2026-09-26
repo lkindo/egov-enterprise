@@ -28,7 +28,7 @@
     ]
   },
   "summary": {
-    "total": 345,
+    "total": 349,
     "eligible": 331,
     "adoptionPercent": 100,
     "complete": true,
@@ -37,17 +37,17 @@
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
-      "special": 14
+      "special": 18
     },
     "bySpecialCase": {
       "auth-bff": 3,
       "auth-route-client": 3,
-      "binary": 5,
+      "binary": 9,
       "multipart": 0,
       "actuator": 3
     }
   },
-  "inventoryHash": "ecd9fee82d1f8d275da999d72b376e88bf3ecbd2e9ccb22b14781b6564bc35e3",
+  "inventoryHash": "8546c1817f7aa9cdfd6e2022f4ddcc8853fbe56fe427fe173ea0532b057ce09d",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -167,6 +167,74 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "07163bd757a05ee7c50a"
+    },
+    {
+      "file": "frontend/src/app/admin/system/logs/LogDashboardClient.tsx",
+      "owner": "handleFullExport",
+      "ordinal": 1,
+      "line": 141,
+      "column": 9,
+      "classification": "special",
+      "transport": "browser-navigation",
+      "callee": "requestFullExport",
+      "method": "get",
+      "target": "/api/v1/admin/system/logs/login/export.xlsx",
+      "operationId": "exportLoginLogs",
+      "descriptorName": "exportLoginLogsOperation",
+      "mappingStatus": "explicit-special-case",
+      "specialCase": "binary",
+      "id": "6253a6e3b26995d31f1d"
+    },
+    {
+      "file": "frontend/src/app/admin/system/logs/LogDashboardClient.tsx",
+      "owner": "handleFullExport",
+      "ordinal": 2,
+      "line": 144,
+      "column": 9,
+      "classification": "special",
+      "transport": "browser-navigation",
+      "callee": "requestFullExport",
+      "method": "get",
+      "target": "/api/v1/admin/system/logs/user/export.xlsx",
+      "operationId": "exportUserLogs",
+      "descriptorName": "exportUserLogsOperation",
+      "mappingStatus": "explicit-special-case",
+      "specialCase": "binary",
+      "id": "c4ffb318c3f3a78427c0"
+    },
+    {
+      "file": "frontend/src/app/admin/system/logs/LogDashboardClient.tsx",
+      "owner": "handleFullExport",
+      "ordinal": 3,
+      "line": 147,
+      "column": 9,
+      "classification": "special",
+      "transport": "browser-navigation",
+      "callee": "requestFullExport",
+      "method": "get",
+      "target": "/api/v1/admin/system/logs/web/export.xlsx",
+      "operationId": "exportWebLogs",
+      "descriptorName": "exportWebLogsOperation",
+      "mappingStatus": "explicit-special-case",
+      "specialCase": "binary",
+      "id": "d304b7f746b36da62297"
+    },
+    {
+      "file": "frontend/src/app/admin/system/logs/LogDashboardClient.tsx",
+      "owner": "handleFullExport",
+      "ordinal": 4,
+      "line": 151,
+      "column": 9,
+      "classification": "special",
+      "transport": "browser-navigation",
+      "callee": "requestFullExport",
+      "method": "get",
+      "target": "/api/v1/admin/system/logs/system/export.xlsx",
+      "operationId": "exportSystemLogs",
+      "descriptorName": "exportSystemLogsOperation",
+      "mappingStatus": "explicit-special-case",
+      "specialCase": "binary",
+      "id": "20d6290ae8e185c26c7e"
     },
     {
       "file": "frontend/src/app/admin/system/logs/login/SystemLogsLoginClient.tsx",

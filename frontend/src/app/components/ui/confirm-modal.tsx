@@ -21,28 +21,41 @@ const ConfirmContext = createContext<ConfirmContextType | undefined>(undefined);
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
  const [isOpen, setIsOpen] = useState(false);
  const [options, setOptions] = useState<ConfirmOptions | null>(null);
- const [resolver, setResolver] = useState<((value: boolean) => void) | null>(null);
+ /*
+ * [2026-09-26 DIP C8] 기다리는 확인은 하나뿐이다. 종전에는 resolver 를 state 로 두어, 확인이 열린 채 다른 확인을
+ * 부르면 앞의 Promise 가 교체되어 영원히 끝나지 않았다 — 그 흐름의 잠금(ref)·버튼이 풀리지 않았다.
+ * 새 확인이 열리면 앞의 확인은 취소(false)로 끝낸다.
+ */
+ const resolverRef = useRef<((value: boolean) => void) | null>(null);
  // 다이얼로그를 연 요소(invoker)를 기억했다가 닫힐 때 포커스를 되돌린다 (DialogTrigger 부재 보완)
  const triggerRef = useRef<HTMLElement | null>(null);
 
  const confirm = useCallback((opts: ConfirmOptions) => {
+ const previous = resolverRef.current;
+ resolverRef.current = null;
+ if (previous) {
+ previous(false);
+ } else {
+ // 중첩된 확인의 activeElement 는 앞 대화상자 안이다 — 처음 연 요소로 포커스를 되돌린다.
  triggerRef.current = (document.activeElement as HTMLElement) ?? null;
+ }
  setOptions(opts);
  setIsOpen(true);
  return new Promise<boolean>((resolve) => {
- setResolver(() => resolve);
+ resolverRef.current = resolve;
  });
  }, []);
 
- const handleConfirm = () => {
+ const settle = (value: boolean) => {
  setIsOpen(false);
- resolver?.(true);
+ const resolve = resolverRef.current;
+ resolverRef.current = null;
+ resolve?.(value);
  };
 
- const handleCancel = () => {
- setIsOpen(false);
- resolver?.(false);
- };
+ const handleConfirm = () => settle(true);
+
+ const handleCancel = () => settle(false);
 
   return (
     <ConfirmContext.Provider value={{ confirm }}>

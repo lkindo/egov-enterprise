@@ -116,3 +116,46 @@ function arrayMove<T>(array: T[], from: number, to: number): T[] {
   newArray.splice(to, 0, newArray.splice(from, 1)[0]);
   return newArray;
 }
+
+/** 계층 저장 요청의 한 행. `upOgnzId` 가 undefined 면 최상위다. */
+export interface DeptHierarchyItem {
+  ognzId: string;
+  upOgnzId: string | undefined;
+  sortOrdr: number;
+}
+
+/**
+ * 화면 순서를 **형제 안 상대 순서**로 바꾼다(2026-09-26 DIP C5).
+ *
+ * 종전에는 평탄화 목록 전체의 순번(1..n)을 `sortOrdr` 로 보냈다. 검색으로 좁힌 화면에서 저장하면 서로 다른 상위의
+ * 부서들이 1, 2, 3 을 나눠 가져 각 형제 집합 안의 실제 순서가 망가졌다. `sort_ordr` 는 같은 상위 아래의 순서다.
+ * 상위를 모르는 노드(`unloadedParentId`)는 순서를 매기지 않는다 — 그 형제 집합 전체를 모르기 때문이다.
+ */
+export function siblingOrderedHierarchy(depts: readonly FlattenedDept[]): Map<string, DeptHierarchyItem> {
+  const nextOrder = new Map<string | null, number>();
+  const result = new Map<string, DeptHierarchyItem>();
+  for (const dept of depts) {
+    if (!dept.ognzId || dept.unloadedParentId) continue;
+    const order = (nextOrder.get(dept.parentId) ?? 0) + 1;
+    nextOrder.set(dept.parentId, order);
+    result.set(dept.ognzId, { ognzId: dept.ognzId, upOgnzId: dept.parentId ?? undefined, sortOrdr: order });
+  }
+  return result;
+}
+
+/**
+ * 기준선(서버에서 읽은 순서)과 달라진 부서만 고른다. 기준선이 없으면 전부다.
+ * 안 만진 부서를 다시 보내면 검색으로 가려진 형제와 순번이 겹칠 수 있다 — 바뀐 것만 보낸다.
+ */
+export function changedDeptHierarchy(
+  current: readonly FlattenedDept[],
+  baseline?: readonly FlattenedDept[],
+): DeptHierarchyItem[] {
+  const next = siblingOrderedHierarchy(current);
+  if (!baseline) return [...next.values()];
+  const before = siblingOrderedHierarchy(baseline);
+  return [...next.values()].filter((item) => {
+    const previous = before.get(item.ognzId);
+    return !previous || previous.upOgnzId !== item.upOgnzId || previous.sortOrdr !== item.sortOrdr;
+  });
+}

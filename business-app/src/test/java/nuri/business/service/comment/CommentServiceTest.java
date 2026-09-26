@@ -98,7 +98,7 @@ class CommentServiceTest {
         // given
         Long pstSn = 1L;
         String bbsId = "BBS_01";
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = PageRequest.of(0, 10, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "ansSn"));
         Comment comment = Comment.builder()
                 .ansSn(1L)
                 .pstSn(pstSn)
@@ -117,6 +117,17 @@ class CommentServiceTest {
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getAnsCn()).isEqualTo("Test Comment");
+    }
+
+    @Test
+    @DisplayName("글의 댓글은 정렬 없는 요청이면 등록순으로 조회한다 (DIP C7)")
+    void getCommentsDefaultsToConversationOrder() {
+        Pageable conversation = PageRequest.of(0, 100, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "ansSn"));
+        given(commentRepository.findByBbsIdAndPstSn("BBS_01", 1L, conversation)).willReturn(Page.empty());
+
+        commentService.getComments(1L, "BBS_01", PageRequest.of(0, 100));
+
+        org.mockito.Mockito.verify(commentRepository).findByBbsIdAndPstSn("BBS_01", 1L, conversation);
     }
 
     @Test

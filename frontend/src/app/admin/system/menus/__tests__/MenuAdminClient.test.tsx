@@ -358,6 +358,32 @@ describe('MenuAdminClient Component', () => {
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('메뉴가 등록되었습니다.', 'success'));
   });
 
+  it('저장하지 않은 순서 변경이 있는 동안 목록이 다시 읽혀도 덮지 않고, 알린 뒤 취소할 수 있다 (DIP C5)', async () => {
+    // 메뉴 등록·삭제 뒤의 새로고침이 트리를 서버 순서로 다시 그려, 드래그가 사라졌는데 '변경됨' 은 남았다.
+    const programsPromise = Promise.resolve({ data: mockPrograms, error: null });
+    const tree = (menusPromise: Promise<{ data: unknown; error: null }>) => (
+      <React.Suspense fallback={<div>Loading...</div>}>
+        <MenuAdminClient menusPromise={menusPromise as never} programsPromise={programsPromise} />
+      </React.Suspense>
+    );
+    let view!: ReturnType<typeof render>;
+    await act(async () => { view = render(tree(Promise.resolve({ data: mockInitialMenus, error: null }))); });
+    fireEvent.click(screen.getByRole('button', { name: '테스트 메뉴 드래그 시작' }));
+    fireEvent.click(screen.getByRole('button', { name: '테스트 메뉴 드래그 완료' }));
+    expect(screen.getByRole('button', { name: '구조 저장' })).toBeEnabled();
+
+    const refreshed = [...mockInitialMenus, { menuNo: 2, menuNm: 'New Menu', upperMenuNo: 0, upperMenuId: 0, menuOrdr: 2 }];
+    await act(async () => { view.rerender(tree(Promise.resolve({ data: refreshed, error: null }))); });
+
+    expect(await screen.findByRole('status')).toHaveTextContent('저장하지 않은 순서 변경이 있는 동안 메뉴 목록이 다시 읽혔습니다');
+    expect(screen.queryByText('New Menu')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '구조 저장' })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole('button', { name: '변경 취소' }));
+    expect(await screen.findByText('New Menu')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '변경 취소' })).not.toBeInTheDocument();
+  });
+
   it('구조 저장은 같은 tick 중복 실행을 막고 pending·실패를 안내한다', async () => {
     const pending = deferred<{ success: boolean; message: string }>();
     mocks.updateOrders.mockReturnValueOnce(pending.promise);

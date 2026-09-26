@@ -70,6 +70,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 import { flattenTree,  FlattenedItem,  getProjection,  listToTree } from './treeUtils';
+import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 
 type MenuFormValues = z.infer<typeof menuSchema>;
 
@@ -274,8 +275,18 @@ export default function MenuAdminClient({
 
   // 데이터 초기화: initialMenus 변경 시 렌더 도중 즉시 동기화
   const [prevInitialMenus, setPrevInitialMenus] = useState(initialMenus);
-  if (initialMenus !== prevInitialMenus) {
+  /** 저장하지 않은 순서 변경이 있는 동안 서버 목록이 다시 읽혔는가(DIP C5). */
+  const [menuListChangedWhileEditing, setMenuListChangedWhileEditing] = useState(false);
+  /*
+    [2026-09-26 DIP C5] 저장하지 않은 드래그가 있으면 새로 읽은 목록이 트리를 덮지 않는다. 종전에는 메뉴 등록·삭제
+    뒤의 새로고침이 트리를 서버 순서로 다시 그려 드래그가 조용히 사라졌는데 '변경됨' 은 남았다.
+  */
+  if (initialMenus !== prevInitialMenus && hasChanges) {
     setPrevInitialMenus(initialMenus);
+    setMenuListChangedWhileEditing(true);
+  } else if (initialMenus !== prevInitialMenus) {
+    setPrevInitialMenus(initialMenus);
+    setMenuListChangedWhileEditing(false);
     setFlattenedMenus(initialFlat);
     const idsWithChildren = initialFlat
         .filter(m => initialFlat.some(child => child.parentId === m.menuNo))
@@ -283,6 +294,16 @@ export default function MenuAdminClient({
     setExpandedIds(new Set(idsWithChildren));
     setSelectedMenuId((current) => current && initialFlat.some((menu) => menu.menuNo === current) ? current : null);
   }
+
+  /** 저장하지 않은 순서 변경을 버리고 최신 목록으로 되돌린다. */
+  const discardMenuChanges = () => {
+    setFlattenedMenus(initialFlat);
+    setHasChanges(false);
+    setMenuListChangedWhileEditing(false);
+  };
+
+  // 저장하지 않은 순서 변경이 있으면 화면을 떠나기 전에 확인한다(DIP C5).
+  useUnsavedChanges({ dirty: hasChanges });
 
   // 투영(Projection) 정보 계산
   const projected = useMemo(() => {
@@ -626,6 +647,12 @@ export default function MenuAdminClient({
               <p aria-live="polite" className="text-xs text-muted-foreground">
                 검색 결과 {visibleFlattenedMenus.length.toLocaleString()}개
               </p>
+            )}
+            {menuListChangedWhileEditing && (
+              <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
+                <span>저장하지 않은 순서 변경이 있는 동안 메뉴 목록이 다시 읽혔습니다. 저장하면 지금 화면의 순서로 반영되고, 취소하면 최신 목록으로 돌아갑니다.</span>
+                <Button type="button" size="sm" variant="outline" onClick={discardMenuChanges} disabled={isSaving}>변경 취소</Button>
+              </div>
             )}
           <DndContext
             sensors={sensors}
