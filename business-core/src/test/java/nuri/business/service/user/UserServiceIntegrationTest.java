@@ -1,5 +1,6 @@
 package nuri.business.service.user;
 
+import nuri.business.domain.user.repository.UserListFilter;
 import nuri.business.support.IntegrationTest;
 import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.user.entity.User;
@@ -72,8 +73,8 @@ class UserServiceIntegrationTest {
 
         // When & Then
         // 1. searchKeyword 없음
-        assertThat(userService.getPagedUserList(null, org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
-        assertThat(userService.getPagedUserList("", org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
+        assertThat(userService.getPagedUserList(null, UserListFilter.NONE, org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
+        assertThat(userService.getPagedUserList("", UserListFilter.NONE, org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
 
     }
 

@@ -147,7 +147,7 @@ public class ApiSecurityConfigTest extends ControllerTestSupport {
         //   진짜 성공을 구분할 수 없다(when(...getPagedUserList) 스텁도 死스텁이 된다).
         //   인터셉터를 통과시키고 본문까지 단언해야 실제로 핸들러가 돌았음이 증명된다.
         when(operationalAuditInterceptor.preHandle(any(), any(), any())).thenReturn(true);
-        when(userService.getPagedUserList(any(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(userService.getPagedUserList(any(), any(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/admin/system/users"))
                 .andExpect(status().isOk())

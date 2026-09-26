@@ -1,5 +1,5 @@
 import React, { act } from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -147,6 +147,46 @@ describe('ApprovalHubClient handleAction pending contract', () => {
    * [2026-09-05] 종전 '결재 처리 이력' 탭은 신청자 기준(getMyHistory)을 불렀다. 탭 세 개가 각각
    * 이름이 약속하는 서비스를 부르고, '새 결재 기안' 은 페이지 이동이 아니라 다이얼로그를 연다.
    */
+  it('🚨 제목은 조회/Enter 로, 요청일 기간·상태는 고르면 바로 서버 조건으로 보낸다 (DIP B5 F4)', async () => {
+    renderClient();
+    await screen.findByText('휴가 신청');
+
+    // 대기 탭에는 상태 조건이 없다(대기함은 늘 대기 문서다).
+    expect(screen.queryByLabelText('문서 상태')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('제목'), { target: { value: '휴가' } });
+    expect(mocks.getPending).not.toHaveBeenCalledWith(expect.objectContaining({ keyword: '휴가' }));
+    fireEvent.submit(screen.getByLabelText('제목').closest('form')!);
+    await waitFor(() => expect(mocks.getPending).toHaveBeenCalledWith(expect.objectContaining({ page: 0, size: 20, keyword: '휴가' })));
+
+    fireEvent.click(screen.getByRole('button', { name: '최근 1주' }));
+    await waitFor(() => expect(mocks.getPending).toHaveBeenCalledWith(expect.objectContaining({
+      keyword: '휴가', fromYmd: expect.stringMatching(/^\d{8}$/), toYmd: expect.stringMatching(/^\d{8}$/),
+    })));
+
+    fireEvent.click(screen.getByRole('tab', { name: '내가 올린 결재' }));
+    fireEvent.change(await screen.findByLabelText('문서 상태'), { target: { value: 'R' } });
+    await waitFor(() => expect(mocks.getMyHistory).toHaveBeenCalledWith(expect.objectContaining({ keyword: '휴가', status: 'R' })));
+  });
+
+  it('🚨 조건에 맞는 문서가 없으면 조건 결과가 없다고 말한다 — 대기함이 비었다고 말하지 않는다 (DIP B5 F4, G15)', async () => {
+    renderClient();
+    await screen.findByText('휴가 신청');
+    mocks.getPending.mockResolvedValue({ list: [], total: 0 });
+
+    fireEvent.click(screen.getByRole('button', { name: '최근 1일' }));
+    expect(await screen.findByText('조건에 맞는 결재가 없습니다.')).toBeInTheDocument();
+    expect(screen.queryByText('대기 중인 결재가 없습니다.')).not.toBeInTheDocument();
+  });
+
+  it('🚨 대기 탭은 조건과 무관한 전체 대기 건수를 배지로 보이고 보조기술에도 알린다 (DIP B5 F4)', async () => {
+    mocks.getPending.mockResolvedValue({ list: [pendingApproval], total: 3 });
+    renderClient();
+
+    const pendingTab = await screen.findByRole('tab', { name: '대기 중인 결재' });
+    await waitFor(() => expect(pendingTab).toHaveAccessibleDescription('대기 중인 결재 3건'));
+    expect(mocks.getPending).toHaveBeenCalledWith({ page: 0, size: 1 });
+  });
+
   it('세 탭이 각각 이름이 약속하는 목록을 부르고 기안 버튼은 다이얼로그를 연다', async () => {
     mocks.getMyHistory.mockResolvedValue({
       list: [{ ...pendingApproval, ifmlAtrzSn: 74, taskSeNm: '내가 올린 건' }], total: 1,
@@ -169,7 +209,8 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     fireEvent.click(screen.getByRole('tab', { name: '내가 처리한 결재' }));
     await screen.findByText('내가 처리한 건');
     expect(mocks.getProcessed).toHaveBeenCalledWith({ page: 0, size: 20 });
-    expect(screen.getByText('승인 완료')).toBeInTheDocument();
+    // 상태 조건의 선택지에도 같은 말이 있어 목록 안에서 찾는다(DIP B5 F4).
+    expect(within(screen.getByRole('list', { name: '내가 처리한 결재 목록' })).getByText('승인 완료')).toBeInTheDocument();
 
     expect(screen.queryByRole('dialog', { name: '새 결재 기안' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '새 결재 기안' }));

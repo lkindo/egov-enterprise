@@ -24,11 +24,20 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<UserDto> getPagedUserList(String searchKeyword, Pageable pageable) {
+    public Page<UserDto> getPagedUserList(String searchKeyword, UserListFilter filter,
+            Pageable pageable) {
         BooleanExpression condition = null;
         if (StringUtils.hasText(searchKeyword)) {
             condition = user.userId.containsIgnoreCase(searchKeyword)
                     .or(user.userNm.containsIgnoreCase(searchKeyword));
+        }
+        // [2026-09-26 DIP B5 F4] 계정 상태·소속 부서·로그인 잠금 조건. 비어 있으면 걸지 않는다.
+        //   잠금 'N' 은 잠기지 않은 계정이며 값이 비어 있는(잠긴 적 없는) 행도 포함한다.
+        if (filter != null) {
+            if (filter.userSttsCd() != null) condition = and(condition, user.userSttsCd.eq(filter.userSttsCd()));
+            if (filter.ognzId() != null) condition = and(condition, user.ognzId.eq(filter.ognzId()));
+            if ("Y".equals(filter.lckYn())) condition = and(condition, user.lckYn.eq("Y"));
+            if ("N".equals(filter.lckYn())) condition = and(condition, user.lckYn.isNull().or(user.lckYn.ne("Y")));
         }
 
         List<UserDto> content = queryFactory
@@ -42,6 +51,9 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
                         user.mblTelno,
                         user.emlAddr,
                         user.ofcpsNm,
+                        user.ognzId,
+                        user.userSttsCd,
+                        user.lckYn,
                         user.crtDt))
                 .from(user)
                 .where(condition)
@@ -151,5 +163,9 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
         }
 
         return null;
+    }
+
+    private static BooleanExpression and(BooleanExpression left, BooleanExpression right) {
+        return left == null ? right : left.and(right);
     }
 }

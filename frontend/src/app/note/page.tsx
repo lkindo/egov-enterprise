@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { noteService, Note } from '@/services/business/user/NoteService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, Search, User, Loader2, X } from 'lucide-react';
+import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, Search, User, Loader2, X, Forward } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { FormErrorSummary } from '@/components/ui/form';
@@ -39,6 +39,29 @@ function recipientSummary(recipients: Note['recipients']): string {
 }
 
 type NoteTab = 'received' | 'sent';
+
+/**
+ * 전달 제목·본문(2026-09-26 DIP B5 F4). 원 쪽지를 본문 아래에 인용하고 받는 사람은 새로 고른다.
+ * 받은 쪽지는 보낸 사람을, 보낸 쪽지는 받은 사람을 싣는다 — 이름을 모르면 식별자 대신 그 사실을 말한다.
+ * 인용 때문에 4000자를 넘으면 잘라 내지 않고 발송 검증이 알린다(말없이 자르면 원문이 바뀐다).
+ */
+function forwardedSubject(note: Note): string {
+  const subject = note.noteSj ?? '';
+  return subject.startsWith('Fwd: ') ? subject : `Fwd: ${subject}`;
+}
+
+function forwardedBody(note: Note, tab: NoteTab): string {
+  const lines = ['', '', '---------- 전달한 쪽지 ----------'];
+  if (tab === 'received') {
+    lines.push(`보낸 사람: ${note.trnsmiterNm || UNKNOWN_USER}`);
+  } else {
+    const names = (note.recipients ?? []).map((recipient) => recipient.rcverNm || UNKNOWN_USER);
+    lines.push(`받는 사람: ${names.length ? names.join(', ') : '-'}`);
+  }
+  if (note.crtDt) lines.push(`날짜: ${note.crtDt}`);
+  lines.push(`제목: ${note.noteSj ?? ''}`, '', note.noteCn ?? '');
+  return lines.join('\n');
+}
 
 interface NoteDetailTarget {
   note: Note;
@@ -651,6 +674,20 @@ export default function NotePage() {
             )}
             <div className="flex justify-end gap-2 pt-1">
               <Button variant="ghost" onClick={closeDetailModal}>닫기</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const subject = forwardedSubject(selectedNote);
+                  const body = forwardedBody(selectedNote, tab);
+                  closeDetailModal();
+                  applyRecipients([]);
+                  setFormData((current) => ({ ...current, noteSj: subject, noteCn: body }));
+                  validation.setFormErrors({}, false);
+                  setWriteOpen(true);
+                }}
+              >
+                <Forward size={14} aria-hidden="true" /> 전달
+              </Button>
               {tab === 'received' && (
                 <Button
                   onClick={() => {

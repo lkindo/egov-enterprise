@@ -219,6 +219,42 @@ class ApprovalWorkflowIntegrationTest {
         }
     }
 
+    @Test
+    void listFiltersApplyTitleDateAndStatusOnPostgres() {
+        long discount = createDocument("할인 100% 요청", "20260910");
+        long other = createDocument("할인 1000 요청", "20260920");
+        authenticate(OWNER);
+
+        // 조건 없음 — null 파라미터가 PostgreSQL 에서 형식 추론 오류 없이 '조건 없음' 으로 해석된다.
+        assertThat(service.getInformalSanctionList(OWNER, nuri.business.service.informalsanction.ApprovalListFilter.NONE,
+                PageRequest.of(0, 50)).getContent()).extracting(InformalSanctionDto::getIfmlAtrzSn).contains(discount, other);
+        // '%' 는 와일드카드가 아니라 글자다.
+        assertThat(service.getInformalSanctionList(OWNER, nuri.business.service.informalsanction.ApprovalListFilter.of(
+                "100%", null, null, null), PageRequest.of(0, 50)).getContent())
+                .extracting(InformalSanctionDto::getIfmlAtrzSn).contains(discount).doesNotContain(other);
+        // 요청일 포함 범위.
+        assertThat(service.getInformalSanctionList(OWNER, nuri.business.service.informalsanction.ApprovalListFilter.of(
+                null, "2026-09-15", "2026-09-30", null), PageRequest.of(0, 50)).getContent())
+                .extracting(InformalSanctionDto::getIfmlAtrzSn).contains(other).doesNotContain(discount);
+        // 문서 상태.
+        assertThat(service.getInformalSanctionList(OWNER, nuri.business.service.informalsanction.ApprovalListFilter.of(
+                null, null, null, "C"), PageRequest.of(0, 50)).getContent())
+                .extracting(InformalSanctionDto::getIfmlAtrzSn).doesNotContain(discount, other);
+
+        authenticate(FIRST);
+        assertThat(service.getPendingApprovalList(FIRST, nuri.business.service.informalsanction.ApprovalListFilter.of(
+                "할인 1000", null, null, null), PageRequest.of(0, 50)).getContent())
+                .extracting(InformalSanctionDto::getIfmlAtrzSn).containsExactly(other);
+    }
+
+    private long createDocument(String title, String requestYmd) {
+        authenticate(OWNER);
+        long id = service.registerInformalSanction(InformalSanctionDto.builder().aplcntId(OWNER).taskSeCd("WF")
+                .reqYmd(requestYmd).docTtl(title).docCn("내용").build(), List.of(stage(ApprovalStageKind.APPROVAL, FIRST)));
+        ownDocuments.add(id);
+        return id;
+    }
+
     private long create(List<ApprovalStageRequest> stages) {
         authenticate(OWNER);
         long id = service.registerInformalSanction(document("검토 요청", "최초 문서 내용"), stages);

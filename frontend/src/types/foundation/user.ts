@@ -47,6 +47,12 @@ export interface UserSearchParams {
   searchKeyword?: string;
   sbscrbSttus?: string;
   size?: number;
+  /** [2026-09-26 DIP B5 F4] 계정 상태(P 정상·A 승인 대기·D 비활성). 어휘 밖 값은 서버가 400 으로 거부한다. */
+  userSttsCd?: string;
+  /** 소속 부서(직속만). */
+  ognzId?: string;
+  /** 로그인 잠금(Y 잠김·N 잠기지 않음). */
+  lckYn?: string;
 }
 
 export interface UserDto {
