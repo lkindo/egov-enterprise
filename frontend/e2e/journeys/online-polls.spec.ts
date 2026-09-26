@@ -55,8 +55,11 @@ test.describe('Public Engagement & Experience', () => {
             await surveyCard.click();
             // [E2E 감사 B] '!submitBtn.isVisible()' 분기 제거 — 깨진/빈 참여 화면(버튼 미렌더)도 통과시키던
             // 항상-참 disjunct였음. 이미-참여 메시지 또는 명시적 disabled 상태만 유효한 차단 증거로 인정한다.
-            const message = userPage.getByText(/이미 참여|already participated|참여.*완료/i).first();
-            const submitBtn = userPage.getByRole('button', { name: /투표|제출|Vote/i }).first();
+            // [2026-09-26 DIP B5 F2] 본문으로 좁힌다 — 사이드바 말단 메뉴의 즐겨찾기 버튼('투표 참여 즐겨찾기')도
+            //   이름에 '투표' 가 있어, 페이지 전체에서 찾으면 본문보다 먼저 렌더되는 그 버튼을 잡았다.
+            const content = userPage.locator('main#main-content');
+            const message = content.getByText(/이미 참여|already participated|참여.*완료/i).first();
+            const submitBtn = content.getByRole('button', { name: /투표|제출|Vote/i }).first();
             await expect(message.or(submitBtn)).toBeVisible({ timeout: 10000 });
             const messageVisible = await message.isVisible().catch(() => false);
             // [2026-09-26 DIP V7] 이미 참여한 투표는 결과 화면으로 열려 제출 버튼이 없다. isDisabled() 는 없는 버튼을

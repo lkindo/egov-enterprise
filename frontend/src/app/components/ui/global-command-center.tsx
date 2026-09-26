@@ -5,6 +5,8 @@ import { Search,
   LogOut, 
   ShieldCheck, 
   LayoutDashboard, 
+  Star,
+  History,
   Zap } from 'lucide-react';
 /* reusable-base:collaboration:start */
 import { Users } from 'lucide-react';
@@ -13,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { useShortcut } from './global-shortcut-provider';
 import { menuService } from '@/services/business/user/MenuService';
 import { useAuth } from '@/contexts/AuthContext';
+import { readRecentMenuNos } from '@/lib/navigation/recent-menus';
 import { SEARCH_URL_STATE, parseSearchUrlState, serializeSearchQuery, searchUrlErrorMessage } from '@/lib/navigation/search-url-state';
 import {
   normalizeInternalRoute,
@@ -24,7 +27,7 @@ interface CommandItem {
   name: string;
   url?: string;
   action?: () => void | Promise<void>;
-  category: '메뉴' | '액션' | '시스템' | '검색';
+  category: '즐겨찾기' | '최근 방문' | '메뉴' | '액션' | '시스템' | '검색';
   icon?: React.ReactNode;
   description?: string;
 }
@@ -42,10 +45,16 @@ export function GlobalCommandCenter() {
   const searchQueryError = parsedSearch.ok ? null : searchUrlErrorMessage(parsedSearch.error);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [menus, setMenus] = useState<CommandItem[]>([]);
+  // [2026-09-26 DIP B5 F2] 검색어가 비었을 때 먼저 보일 즐겨찾기·최근 방문. 메뉴 번호만 들고, 보일 때 지금 볼 수
+  //   있는 메뉴 목록과 맞춰 본다 — 배정이 회수된 메뉴는 기록에 있어도 보이지 않는다.
+  const [menuByNo, setMenuByNo] = useState<ReadonlyMap<number, CommandItem>>(new Map());
+  const [bookmarkNos, setBookmarkNos] = useState<number[]>([]);
+  const [recentNos, setRecentNos] = useState<number[]>([]);
   const [, setIsSearching] = useState(false);
 
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const userKey = user?.id;
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
@@ -66,8 +75,10 @@ export function GlobalCommandCenter() {
     }
     setSelectedIndex(0);
     setSearch('');
+    // 여는 순간의 최근 방문을 읽는다(effect 안 setState 를 두지 않는다).
+    setRecentNos(readRecentMenuNos(userKey));
     setIsOpen(true);
-  }, []);
+  }, [userKey]);
 
   const closeCommandCenter = useCallback(() => {
     setIsOpen(false);
@@ -92,30 +103,38 @@ export function GlobalCommandCenter() {
       try {
         const head = await menuService.getHeadMenus();
         if (head && head.length > 0) {
+          const byNo = new Map<number, CommandItem>();
           const allHead: CommandItem[] = head.flatMap(m => {
             const url = resolveMenuInternalRoute(m);
-            return url ? [{
+            if (!url) return [];
+            const item: CommandItem = {
               id: `cmd-head-${m.menuNo}`,
               name: m.menuNm,
               url,
               category: '메뉴' as const,
               icon: <LayoutDashboard size={16} />
-            }] : [];
+            };
+            byNo.set(m.menuNo, item);
+            return [item];
           });
 
           // [2026-09-26 DIP B5 F10] 하위 메뉴는 상위 메뉴 응답의 children 에 이미 있다. 상위 메뉴마다
           //   따로 요청하면 서버가 매번 메뉴 트리 전체를 다시 조립했다(N+1).
           const subItems: CommandItem[] = head.flatMap(m => (m.children ?? []).flatMap(l => {
             const url = resolveMenuInternalRoute(l);
-            return url ? [{
+            if (!url) return [];
+            const item: CommandItem = {
               id: `cmd-left-${m.menuNo}-${l.menuNo}`,
               name: `${m.menuNm} > ${l.menuNm}`,
               url,
               category: '메뉴' as const,
               icon: <ArrowRight size={14} />
-            }] : [];
+            };
+            byNo.set(l.menuNo, item);
+            return [item];
           }));
           setMenus([...allHead, ...subItems]);
+          setMenuByNo(byNo);
         }
       } catch {
         // 메뉴 조회 실패 시에도 로그아웃 같은 로컬 안전 작업은 계속 제공한다.
@@ -125,6 +144,22 @@ export function GlobalCommandCenter() {
     }
     if (isOpen && menus.length === 0) fetchAllMenus();
   }, [isOpen, menus.length]); 
+
+  // 열 때마다 즐겨찾기와 최근 방문을 다시 읽는다 — 사이드바에서 방금 바꾼 즐겨찾기가 바로 보여야 한다.
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    (async () => {
+      try {
+        const bookmarks = await menuService.getMyBookmarks();
+        if (active) setBookmarkNos(bookmarks.map(bookmark => bookmark.menuNo));
+      } catch {
+        // 즐겨찾기를 못 읽어도 메뉴 검색은 그대로 쓴다.
+        if (active) setBookmarkNos([]);
+      }
+    })();
+    return () => { active = false; };
+  }, [isOpen]);
 
   // 3. 고정 액션 정의
   // 관리자 mutation이나 구현 상태가 섞인 화면을 여기서 추정해 노출하지 않는다.
@@ -173,8 +208,19 @@ export function GlobalCommandCenter() {
       return [...results.slice(0, 9), globalSearch];
     }
 
+    if (!search) {
+      const pick = (nos: readonly number[], category: '즐겨찾기' | '최근 방문', prefix: string, icon: React.ReactNode) =>
+        nos.flatMap(no => {
+          const menu = menuByNo.get(no);
+          return menu ? [{ ...menu, id: `${prefix}-${no}`, category, icon }] : [];
+        }).slice(0, 5);
+      const favorites = pick(bookmarkNos, '즐겨찾기', 'fav', <Star size={16} />);
+      const recents = pick(recentNos.filter(no => !bookmarkNos.includes(no)), '최근 방문', 'recent', <History size={16} />);
+      return [...favorites, ...recents, ...results.slice(0, 10)];
+    }
+
     return results.slice(0, 10);
-  }, [search, searchQueryError, menus, quickActions]);
+  }, [search, searchQueryError, menus, quickActions, menuByNo, bookmarkNos, recentNos]);
 
   // 5. 핸들바 및 포커스 관리
   useEffect(() => {
@@ -383,7 +429,7 @@ export function GlobalCommandCenter() {
           {searchQueryError ? <p id="command-search-query-error" role="alert" className="text-sm text-destructive-emphasis">{searchQueryError}</p> : null}
           {filteredItems.length > 0 ? (
             <div id="command-center-results" role="listbox" aria-label="커맨드 센터 결과" className="space-y-6">
-              {['메뉴', '액션', '시스템', '검색'].map(cat => {
+              {['즐겨찾기', '최근 방문', '메뉴', '액션', '시스템', '검색'].map(cat => {
                 const catItems = filteredItems.filter(item => item.category === cat);
                 if (catItems.length === 0) return null;
 

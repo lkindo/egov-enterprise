@@ -40,7 +40,7 @@ export {
   type SanctionStatusCode,
 } from './informal-sanction-vocabulary';
 
-import type { InformalSanctionDto } from './informal-sanction-vocabulary';
+import type { InformalSanctionDto, SanctionStatusCode } from './informal-sanction-vocabulary';
 import { SANCTION_STATUS } from './informal-sanction-vocabulary';
 
 const ApprovalDecisionRequestSchema = ApprovalConfirmRequestSchema.superRefine((request, context) => {
@@ -68,12 +68,28 @@ function requireApprovalPage(
   return response as PageResponse<InformalSanctionDto>;
 }
 
+/**
+ * 결재 목록 조회 조건(2026-09-26 DIP B5 F4). 비어 있으면 조건이 없다. 기간은 요청일 yyyyMMdd 포함 범위이고,
+ * 역순·형식 오류·어휘 밖 상태는 서버가 400 으로 거부한다. 대기함은 상태 조건을 받지 않는다.
+ */
+export interface ApprovalListQuery {
+  page?: number;
+  size?: number;
+  keyword?: string;
+  fromYmd?: string;
+  toYmd?: string;
+}
+
+export interface ApprovalListQueryWithStatus extends ApprovalListQuery {
+  status?: SanctionStatusCode;
+}
+
 class ApprovalUserService extends UserService {
   constructor() {
     super('/approvals');
   }
 
-  async getPending(params: { page?: number; size?: number }): Promise<PageResponse<InformalSanctionDto>> {
+  async getPending(params: ApprovalListQuery): Promise<PageResponse<InformalSanctionDto>> {
     const response = await this.executeGenerated(getPendingOperation, { query: params });
     return requireApprovalPage(response);
   }
@@ -82,13 +98,13 @@ class ApprovalUserService extends UserService {
    * 내가 <b>올린</b> 결재(신청자 기준). 서버 경로 이름(`/my`)과 종전 메서드명이 'history' 라
    * 결재자로서 처리한 이력으로 읽혔지만, 실제 질의는 `findByAplcntId` 다. 처리한 이력은 {@link getProcessed}.
    */
-  async getMyHistory(params: { page?: number; size?: number }): Promise<PageResponse<InformalSanctionDto>> {
+  async getMyHistory(params: ApprovalListQueryWithStatus): Promise<PageResponse<InformalSanctionDto>> {
     const response = await this.executeGenerated(getMyHistoryOperation, { query: params });
     return requireApprovalPage(response);
   }
 
   /** 결재자 본인이 이미 승인·반려한 결재. 대기 건은 섞이지 않는다. */
-  async getProcessed(params: { page?: number; size?: number }): Promise<PageResponse<InformalSanctionDto>> {
+  async getProcessed(params: ApprovalListQueryWithStatus): Promise<PageResponse<InformalSanctionDto>> {
     const response = await this.executeGenerated(getProcessedOperation, { query: params });
     return requireApprovalPage(response);
   }

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GlobalCommandCenter } from '../global-command-center';
@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   logout: vi.fn(),
   getHeadMenus: vi.fn(),
   getLeftMenus: vi.fn(),
+  getMyBookmarks: vi.fn(),
+  user: undefined as { id: string } | undefined,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -17,13 +19,14 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ logout: mocks.logout }),
+  useAuth: () => ({ logout: mocks.logout, user: mocks.user }),
 }));
 
 vi.mock('@/services/business/user/MenuService', () => ({
   menuService: {
     getHeadMenus: (...args: unknown[]) => mocks.getHeadMenus(...args),
     getLeftMenus: (...args: unknown[]) => mocks.getLeftMenus(...args),
+    getMyBookmarks: (...args: unknown[]) => mocks.getMyBookmarks(...args),
   },
 }));
 
@@ -60,6 +63,43 @@ describe('GlobalCommandCenter accessibility contract', () => {
     vi.clearAllMocks();
     mocks.getHeadMenus.mockResolvedValue([]);
     mocks.getLeftMenus.mockResolvedValue([]);
+    mocks.getMyBookmarks.mockResolvedValue([]);
+    mocks.user = undefined;
+    window.localStorage.clear();
+  });
+
+  it('🚨 검색어가 비면 즐겨찾기와 최근 방문을 먼저 보이고, 지금 볼 수 없는 메뉴는 뺀다 (DIP B5 F2)', async () => {
+    const user = userEvent.setup();
+    mocks.user = { id: 'staff01' };
+    mocks.getHeadMenus.mockResolvedValue([
+      { menuNo: 1, menuNm: '업무', modernRoute: '/admin/work-hub', children: [
+        { menuNo: 11, menuNm: '결재함', modernRoute: '/approvals' },
+        { menuNo: 12, menuNm: '공지', modernRoute: '/admin/help' },
+      ] },
+    ]);
+    mocks.getMyBookmarks.mockResolvedValue([{ menuNo: 11, menuNm: '결재함' }]);
+    // 99 는 배정이 회수된 메뉴다 — 기록에 있어도 보이지 않아야 한다. 11 은 이미 즐겨찾기라 최근 방문에서 뺀다.
+    window.localStorage.setItem('egov.recent-menus.v1:staff01', JSON.stringify([99, 11, 12]));
+
+    renderCommandCenter();
+    await openFromTrigger(user);
+
+    const favorites = await screen.findByRole('group', { name: '즐겨찾기' });
+    expect(within(favorites).getAllByRole('option').map((option) => option.getAttribute('aria-label'))).toEqual(['업무 > 결재함']);
+    const recents = screen.getByRole('group', { name: '최근 방문' });
+    expect(within(recents).getAllByRole('option').map((option) => option.getAttribute('aria-label'))).toEqual(['업무 > 공지']);
+
+    await user.click(within(favorites).getByRole('option', { name: '업무 > 결재함' }));
+    expect(mocks.push).toHaveBeenCalledWith('/approvals');
+  });
+
+  it('즐겨찾기를 못 읽어도 메뉴 검색은 그대로 쓴다 (DIP B5 F2)', async () => {
+    const user = userEvent.setup();
+    mocks.getMyBookmarks.mockRejectedValue(new Error('down'));
+    renderCommandCenter();
+    await openFromTrigger(user);
+    expect(await screen.findByRole('option', { name: '로그아웃' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: '즐겨찾기' })).toBeNull();
   });
 
   it('광역 검색 제안은 선언된 q만 인코딩하여 기존 검색 주소로 이동한다', async () => {

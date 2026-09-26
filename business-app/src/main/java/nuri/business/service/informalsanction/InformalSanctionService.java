@@ -46,9 +46,15 @@ public class InformalSanctionService {
     private static final List<String> PROCESSED_STATUS_CODES = List.of("C", "R");
 
     public Page<InformalSanctionDto> getInformalSanctionList(String aplcntId, Pageable pageable) {
+        return getInformalSanctionList(aplcntId, ApprovalListFilter.NONE, pageable);
+    }
+
+    /** 내가 올린 결재. 조건은 제목·요청일 기간·문서 상태(2026-09-26 DIP B5 F4). */
+    public Page<InformalSanctionDto> getInformalSanctionList(String aplcntId, ApprovalListFilter filter, Pageable pageable) {
         assertCurrentParticipant(aplcntId);
-        return toDtoPage(informalSanctionRepository.findByAplcntId(aplcntId,
-                Objects.requireNonNull(pageable)), aplcntId);
+        ApprovalListFilter f = Objects.requireNonNull(filter);
+        return toDtoPage(informalSanctionRepository.findSubmitted(aplcntId, f.keywordPattern(), f.fromYmd(), f.toYmd(),
+                f.status(), Objects.requireNonNull(pageable)), aplcntId);
     }
 
     /** 현재 또는 이전 차수의 결재선에 참여한 문서. */
@@ -60,9 +66,15 @@ public class InformalSanctionService {
 
     /** 현재 차수에서 활성화된 본인의 미처리 라인만 대기함에 포함한다. */
     public Page<InformalSanctionDto> getPendingApprovalList(String aprvrId, Pageable pageable) {
+        return getPendingApprovalList(aprvrId, ApprovalListFilter.NONE, pageable);
+    }
+
+    /** 대기함은 늘 대기 문서라 상태 조건은 쓰지 않는다. */
+    public Page<InformalSanctionDto> getPendingApprovalList(String aprvrId, ApprovalListFilter filter, Pageable pageable) {
         assertCurrentParticipant(aprvrId);
-        return toDtoPage(informalSanctionRepository.findByAprvrIdAndAprvYn(aprvrId, "A",
-                Objects.requireNonNull(pageable)), aprvrId);
+        ApprovalListFilter f = Objects.requireNonNull(filter).withoutStatus();
+        return toDtoPage(informalSanctionRepository.findPending(aprvrId, f.keywordPattern(), f.fromYmd(), f.toYmd(),
+                null, Objects.requireNonNull(pageable)), aprvrId);
     }
 
     public long getPendingApprovalCount(String aprvrId) {
@@ -72,9 +84,15 @@ public class InformalSanctionService {
 
     /** 문서가 계속 결재 중이거나 재상신됐어도 본인이 결정한 라인은 이력에 남는다. */
     public Page<InformalSanctionDto> getProcessedApprovalList(String aprvrId, Pageable pageable) {
+        return getProcessedApprovalList(aprvrId, ApprovalListFilter.NONE, pageable);
+    }
+
+    /** 상태 조건은 문서의 지금 상태다(내가 결정한 라인의 결과가 아니다). */
+    public Page<InformalSanctionDto> getProcessedApprovalList(String aprvrId, ApprovalListFilter filter, Pageable pageable) {
         assertCurrentParticipant(aprvrId);
-        return toDtoPage(informalSanctionRepository.findByAprvrIdAndAprvYnIn(aprvrId,
-                PROCESSED_STATUS_CODES, Objects.requireNonNull(pageable)), aprvrId);
+        ApprovalListFilter f = Objects.requireNonNull(filter);
+        return toDtoPage(informalSanctionRepository.findProcessed(aprvrId, PROCESSED_STATUS_CODES, f.keywordPattern(),
+                f.fromYmd(), f.toYmd(), f.status(), Objects.requireNonNull(pageable)), aprvrId);
     }
 
     public List<CommonCodeDto> getTaskTypes() {
