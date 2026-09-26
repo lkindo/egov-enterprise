@@ -100,6 +100,11 @@ export class OperationalExtensionPage {
     async sendSms(phone: string, content: string) {
         console.log(`>>> Sending SMS to ${phone}`);
         await this.page.getByRole('button', { name: '새 메시지 구성' }).click();
+        // [2026-09-26 DIP V9] 발신 번호는 배포에 등록된 번호가 기본값이다. 격리 E2E 배포에는 등록 번호가 없어
+        //   칸이 비고, 화면은 예시 번호를 지어내지 않고 입력을 요구한다 — 그 경우에만 채운다.
+        const sender = this.page.getByRole('dialog').getByRole('textbox', { name: /발신 번호/ });
+        await expect(sender).toBeVisible();
+        if ((await sender.inputValue()) === '') await sender.fill('02-0000-0000');
         await this.page.getByPlaceholder('010-0000-0000').fill(phone);
         await this.page.getByPlaceholder('메시지 내용을 입력하세요...').fill(content);
         // [2026-08-24 A1 이행] 영문 버튼 'Execute Send' → '발송'(G14).
