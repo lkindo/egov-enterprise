@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Plus,
+import { Plus,
  Library, BookOpen, MessageCircleQuestion,
  TrendingUp, Users, History,
  User, Eye, Settings2, AlertTriangle, RefreshCcw, ChevronRight } from 'lucide-react';
@@ -17,15 +17,15 @@ import {
  QNA_BOARD_ID,
  WIKI_BOARD_ID,
 } from '@/config/board-ids';
-import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { canPermission } from '@/lib/auth/permissions';
 import { isQnaSolved } from '@/services/business/user/help/HelpUserService';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { PagePagination } from '@/components/common/PagePagination';
 import { CommunityManageDialog } from '@/components/business/community/CommunityManageDialog';
 import { userFacingErrorMessage } from '@/lib/safe-error-log';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, type Column } from '@/app/components/ui/standard-data-table';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 
@@ -63,10 +63,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  const canManageCommunities = canPermission(user, 'COMMUNITY_READ_ALL');
  // [2026-09-06 DEC-OPS-037] 커뮤니티 생성·수정·폐쇄(감사 D07-01). 관리자이고 커뮤니티 탭일 때만 버튼을 그린다.
  const [communityManageOpen, setCommunityManageOpen] = useState(false);
+ // [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했다.
  const [searchQuery, setSearchQuery] = useState('');
- // 타이핑 한 글자마다 서버 요청이 나가던 것을 300ms 디바운스한다.
- // 입력 컨트롤에는 원본 상태를 바인딩해야 입력 지연이 생기지 않는다.
- const debouncedQuery = useDebouncedValue(searchQuery, 300);
  const [sortBy, setSortBy] = useState<'latest' | 'views'>('latest');
  const [pagination, setPagination] = useState({ context: '', page: 1 });
 
@@ -88,7 +86,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
 
  // 카테고리는 URL 파생값이다. 상태를 따로 두면 공유·새로고침·뒤로가기에서 복원되지 않는다.
  const activeCategory: KnowledgeCategory = resolveCategory();
- const pageContext = JSON.stringify([activeCategory, debouncedQuery, sortBy]);
+ const pageContext = JSON.stringify([activeCategory, searchQuery, sortBy]);
  const page = pagination.context === pageContext ? pagination.page : 1;
 
  const selectCategory = (next: KnowledgeCategory) => {
@@ -141,15 +139,15 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  error: articlesError,
  refetch: refetchArticles,
  } = useQuery({
- queryKey: ['knowledge-articles', activeCategory, debouncedQuery, sortBy, page],
+ queryKey: ['knowledge-articles', activeCategory, searchQuery, sortBy, page],
  queryFn: () => knowledgeService.getArticles({
  bbsId: currentBbsId,
  category: activeCategory,
  page: page - 1,
  size: PAGE_SIZE,
  orderBy: sortBy === 'views' ? 'views' : 'date',
- searchCnd: debouncedQuery ? '0' : undefined,
- searchWrd: debouncedQuery || undefined
+ searchCnd: searchQuery ? '0' : undefined,
+ searchWrd: searchQuery || undefined
  }),
  });
 
@@ -171,7 +169,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  const displayItems: KnowledgeDto[] = articlesData?.list || [];
 
  const hotItems: KnowledgeDto[] = hotData?.list || [];
- const isSearching = searchQuery !== debouncedQuery || isFetching;
+ const isSearching = isFetching;
 
  const openArticle = React.useCallback((item: KnowledgeDto) => {
  router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&pstSn=${item.pstSn}`);
@@ -251,20 +249,13 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  </div>
  }
  filter={
- <div className="space-y-3">
- <div>
- <label htmlFor="knowledge-search" className="text-[length:var(--font-size-body)] font-medium">지식 검색어</label>
- <div className="relative mt-1.5">
- <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
- <Input id="knowledge-search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="h-[var(--filter-control-h)] pl-9 placeholder:text-muted-foreground" placeholder="제목 검색..." />
- </div>
- </div>
+ <KeywordFilter label="지식 검색어" placeholder="제목 검색..." value={searchQuery} onSearch={setSearchQuery}>
  <div className="flex flex-wrap items-center gap-2" aria-label="문서 정렬">
  <span className="text-[length:var(--font-size-body)] text-muted-foreground">정렬</span>
  <FilterButton active={sortBy === 'latest'} onClick={() => setSortBy('latest')} label="최신순" />
  <FilterButton active={sortBy === 'views'} onClick={() => setSortBy('views')} label="조회순" />
  </div>
- </div>
+ </KeywordFilter>
  }
  toolbarActions={
  <div className="flex items-center gap-2">
@@ -299,9 +290,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  keyField="pstSn"
  loading={isLoading}
  accessibleLabel={`${CATEGORY_LABEL[activeCategory]} 문서 목록`}
- emptyMessage={debouncedQuery
- ? `'${debouncedQuery}' 에 대한 검색 결과가 없습니다.`
- : '등록된 지식 문서가 없습니다.'}
+ emptyMessage={emptyResultMessage(searchQuery, '등록된 지식 문서가 없습니다.')}
  />
  <PagePagination total={articlesData?.total ?? 0} page={page} size={PAGE_SIZE} onPageChange={(next) => setPagination({ context: pageContext, page: next })} />
  </>

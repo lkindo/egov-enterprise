@@ -23,7 +23,6 @@ vi.mock('@/services/foundation/system/LoginPolicyAdminService', () => ({
     deleteLoginPolicy: (...args: unknown[]) => mocks.remove(...args),
   },
 }));
-vi.mock('@/lib/hooks/use-debounced-value', () => ({ useDebouncedValue: (value: string) => value }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/components/ui/hub/HubHeader', () => ({
   HubHeader: ({ title }: { title: string }) => <h1>{title}</h1>,

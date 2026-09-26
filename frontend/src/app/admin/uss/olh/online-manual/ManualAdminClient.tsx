@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { manualAdminService, ManualDto } from '@/services/foundation/user/ManualAdminService';
@@ -30,7 +31,6 @@ import {
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { manualSchema } from '@/lib/validation/schemas';
 import { useAppForm } from '@/hooks/useAppForm';
 import {
@@ -80,9 +80,8 @@ export default function ManualAdminClient({
   const savePendingRef = useRef(false);
   const deletePendingRef = useRef(false);
   const [deletingManualId, setDeletingManualId] = useState<number | null>(null);
+  /** [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했다. */
   const [searchKeyword, setSearchKeyword] = useState('');
-  /** 타이핑마다 서버를 때리지 않도록 300ms 디바운스(감사 P1-8). */
-  const debouncedKeyword = useDebouncedValue(searchKeyword, 300);
 
   const [page, setPage] = useState(() => {
     const raw = Number(searchParams.get('page'));
@@ -104,14 +103,14 @@ export default function ManualAdminClient({
   }, [pathname, router, searchParams]);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ['admin-manuals', debouncedKeyword, page, pageSize],
+    queryKey: ['admin-manuals', searchKeyword, page, pageSize],
     // 서버는 Spring Pageable(0-base)을 읽는다.
     queryFn: () => manualAdminService.getManualList({
-      keyword: debouncedKeyword || undefined,
+      keyword: searchKeyword || undefined,
       page: page - 1,
       size: pageSize,
     }),
-    initialData: (page === 1 && !debouncedKeyword) ? (initialManuals ?? undefined) : undefined,
+    initialData: (page === 1 && !searchKeyword) ? (initialManuals ?? undefined) : undefined,
   });
 
   const manuals = data?.list ?? [];
@@ -306,22 +305,16 @@ export default function ManualAdminClient({
         </>
       }
       filter={
-        <div className="min-w-60 max-w-xl space-y-1">
-          <label htmlFor="manual-search" className="text-[length:var(--font-size-body)] font-medium">
-            매뉴얼 명
-          </label>
-          <Input
-            id="manual-search"
-            placeholder="매뉴얼 검색"
-            aria-label="매뉴얼 검색"
-            value={searchKeyword}
-            // 검색 시 1페이지로 되돌린다 — 3페이지에서 검색하면 빈 화면이 되던 결함(감사 P1-8).
-            onChange={(e) => {
-              setSearchKeyword(e.target.value);
-              if (page !== 1) goToPage(1);
-            }}
-          />
-        </div>
+        // 검색 시 1페이지로 되돌린다 — 3페이지에서 검색하면 빈 화면이 되던 결함(감사 P1-8).
+        <KeywordFilter
+          label="매뉴얼 명"
+          placeholder="매뉴얼 검색"
+          value={searchKeyword}
+          onSearch={(next) => {
+            setSearchKeyword(next);
+            if (page !== 1) goToPage(1);
+          }}
+        />
       }
     >
       <StandardDataTable<ManualDto>
@@ -332,7 +325,7 @@ export default function ManualAdminClient({
         error={isError ? (error as Error) : null}
         onRetry={() => refetch()}
         keyField="onlnMnlSn"
-        emptyMessage={emptyResultMessage(debouncedKeyword, '등록된 매뉴얼이 없습니다.')}
+        emptyMessage={emptyResultMessage(searchKeyword, '등록된 매뉴얼이 없습니다.')}
         pagination={{
           currentPage: page,
           totalPages: data?.totalPage || 1,

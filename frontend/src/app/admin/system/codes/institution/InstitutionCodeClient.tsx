@@ -8,7 +8,6 @@ import { PageResponse } from '@/types/foundation/system';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
-import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { Clock,
  RefreshCw,
  Plus,
@@ -19,10 +18,10 @@ import { Clock,
  MonitorCheck,
  CheckCircle2 } from 'lucide-react';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 
 type InstitutionTab = 'list' | 'reception';
 
@@ -38,9 +37,8 @@ export default function InstitutionCodeClient({
  embedded?: boolean;
 }) {
  const [activeTab, setActiveTab] = useState<InstitutionTab>('list');
+ /** [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했다. */
  const [keyword, setKeyword] = useState('');
- /** [P1-8] 타이핑마다 서버 요청이 나가지 않도록 공용 훅으로 디바운스한다. */
- const debouncedKeyword = useDebouncedValue(keyword, 300);
  const [page, setPage] = useState(1);
  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
  const { toast } = useToast();
@@ -51,26 +49,26 @@ export default function InstitutionCodeClient({
  const hasSeed = seedList.length > 0;
 
  const listQuery = useQuery({
- queryKey: ['institution-codes', debouncedKeyword, page, pageSize],
+ queryKey: ['institution-codes', keyword, page, pageSize],
  // 서버(BaseSearchDto)가 읽는 키는 searchKeyword·pageIndex·pageUnit 이다.
  // searchWrd·pageNo 는 ApiService.get 의 매핑 대상도 아니라 셋 다 통째로 무시됐다.
  queryFn: () => codeAdminService.getInstitutionCodeList({
- searchKeyword: debouncedKeyword,
+ searchKeyword: keyword,
  pageIndex: page,
  pageUnit: pageSize,
  }),
  enabled: activeTab === 'list',
  placeholderData: (prev) => prev ?? (
- page === 1 && debouncedKeyword === '' && hasSeed
+ page === 1 && keyword === '' && hasSeed
  ? { list: seedList, total: initialData?.total ?? seedList.length, page: 1, size: pageSize, totalPage: 1 }
  : undefined
  ),
  });
 
  const receptionQuery = useQuery({
- queryKey: ['institution-code-receptions', debouncedKeyword, page, pageSize],
+ queryKey: ['institution-code-receptions', keyword, page, pageSize],
  queryFn: () => codeAdminService.getInstitutionCodeRecptnList({
- searchKeyword: debouncedKeyword,
+ searchKeyword: keyword,
  pageIndex: page,
  pageUnit: pageSize,
  }),
@@ -309,18 +307,12 @@ export default function InstitutionCodeClient({
  </div>
  }
  filter={
- <div className="min-w-60 max-w-xl space-y-1">
- <label htmlFor="institution-search" className="text-[length:var(--font-size-body)] font-medium">
- 기관명 · 코드
- </label>
- <Input
- id="institution-search"
+ <KeywordFilter
+ label="기관명 · 코드"
  placeholder="기관명 또는 코드를 입력하세요"
- aria-label="기관코드 검색"
  value={keyword}
- onChange={(e) => handleKeywordChange(e.target.value)}
+ onSearch={handleKeywordChange}
  />
- </div>
  }
  toolbarActions={
  /*

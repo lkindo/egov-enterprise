@@ -22,13 +22,13 @@ export class OpsDetailPage {
         await searchInput.click();
         await searchInput.fill('');
 
-        // onChange-based search: intercept the API response triggered by typing
+        // [DIP C9] 검색어는 조회/Enter 로 적용한다 — 입력만으로는 조회하지 않는다(카탈로그 G2).
         const [response] = await Promise.all([
             this.page.waitForResponse(
                 resp => resp.url().includes('/events') && resp.status() === 200,
                 { timeout: 60000 }
             ),
-            searchInput.pressSequentially(keyword, { delay: 80 })
+            searchInput.fill(keyword).then(() => searchInput.press('Enter'))
         ]);
         
         console.log(`>>> [OpsDetail] Search API responded (status: ${response.status()})`);

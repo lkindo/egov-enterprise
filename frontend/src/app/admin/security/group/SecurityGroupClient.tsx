@@ -16,6 +16,7 @@ import { groupAdminService } from '@/services/foundation/system/GroupAdminServic
 import { GroupManage } from '@/types/foundation/security';
 import { SearchParams } from '@/types/foundation/system';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 ;
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -26,7 +27,6 @@ import { StandardModal } from '@/app/components/ui/standard-modal';
 import { FormField } from '@/app/components/ui/standard-form';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { GroupManageDtoSchema } from '@/types/generated-zod';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
@@ -52,11 +52,10 @@ export default function SecurityGroupClient() {
  const deletePendingRef = useRef(false);
  const [page, setPage] = useState(1);
  /**
-  * 입력 컨트롤에는 원본(searchInput)을, 서버 요청/queryKey 에는 디바운스 값만 쓴다.
-  * 종전에는 searchKeyword 가 queryKey 인 params 에 직접 들어가 타이핑 한 글자마다 요청이 나갔다.
+  * [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했고,
+  * 그 전에는 한 글자마다 요청이 나갔다.
   */
- const [searchInput, setSearchInput] = useState('');
- const searchKeyword = useDebouncedValue(searchInput, 300);
+ const [searchKeyword, setSearchKeyword] = useState('');
  // PagePagination은 1-based, ApiService의 표준 page 입력은 0-based다.
  // pageNo는 변환 대상이 아니어서 서버의 pageIndex 요청 파라미터로 전달되지 않는다.
  /** 페이지당 건수(A1 필수). URL 에는 싣지 않는다. */
@@ -313,18 +312,12 @@ export default function SecurityGroupClient() {
  </>
  }
  filter={
- <div className="min-w-60 max-w-xl space-y-1">
- <label htmlFor="security-group-search" className="text-[length:var(--font-size-body)] font-medium">
- 그룹ID · 그룹명
- </label>
- <Input
- id="security-group-search"
- aria-label="그룹ID 또는 그룹명 검색"
+ <KeywordFilter
+ label="그룹ID · 그룹명"
  placeholder="그룹ID 또는 그룹명으로 검색"
- value={searchInput}
- onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
+ value={searchKeyword}
+ onSearch={(next) => { setSearchKeyword(next); setPage(1); }}
  />
- </div>
  }
  >
  <StandardDataTable

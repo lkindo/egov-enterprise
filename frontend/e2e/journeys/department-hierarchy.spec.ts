@@ -113,9 +113,10 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
                         return false;
                     return new URL(response.url()).searchParams.get('keyword') === prefix;
                 }, { timeout: 20000 }),
-                departmentSearch.fill(prefix),
+                // [DIP C9] 검색어는 조회/Enter 로 적용한다 — 입력만으로는 조회하지 않는다.
+                departmentSearch.fill(prefix).then(() => departmentSearch.press('Enter')),
             ]);
-            // 검색은 디바운스로 트리를 다시 렌더한다. 노드를 잡은 직후 재렌더가 오면
+            // 검색은 트리를 다시 렌더한다. 노드를 잡은 직후 재렌더가 오면
             // scrollIntoViewIfNeeded 단계에서 "Element is not attached to the DOM" 으로 깨진다(실측).
             // 검색 응답 뒤 locator를 새로 해석해 재렌더 중 분리된 이전 노드를 잡지 않는다.
             const nodeA = page.locator('[data-a2-master-item]', { hasText: idA });

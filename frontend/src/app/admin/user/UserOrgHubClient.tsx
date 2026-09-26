@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, use, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
   Users,
@@ -19,7 +18,6 @@ import {
   UserCheck,
   Trash2,
   Activity,
-  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
@@ -34,11 +32,12 @@ import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { MasterDetailLayout } from '@/app/components/patterns/master-detail-page';
 import { ErrorStateDisplay } from '@/app/components/ui/status-displays';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { toDisplayYmd } from '@/lib/format-date';
 import { PageResponse } from '@/types/foundation/system';
 import { saveDeptHierarchyAction } from '@/app/actions/deptActions';
@@ -185,15 +184,12 @@ export default function UserOrgHubClient({
   const [activeWriteOperation, setActiveWriteOperation] = useState<UserOrgWriteOperation | null>(null);
   const actionRequestRef = useRef<UserOrgWriteOperation | null>(null);
   const isSaving = activeWriteOperation !== null;
-  const [searchKeyword, setSearchKeyword] = useState('');
   /**
-   * 타이핑 한 글자마다 서버를 때리지 않도록 300ms 디바운스한다(감사 P1-8).
-   *
-   * ⚠ 별도 `조회` 버튼을 두지 않는다 — 디바운스가 이미 조건을 적용하므로 그 버튼은 대부분
-   *   아무 일도 하지 않는 컨트롤이 된다(카탈로그 G10: 죽은 버튼 금지). 대신 조건을 되돌리는
-   *   `초기화` 와 다시 읽는 `새로고침` 을 각각 실제 동작이 있는 자리에 둔다.
+   * [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 300ms 디바운스해 조회했고,
+   * 그래서 `조회` 버튼이 죽은 컨트롤이 될까 봐 두지 않았다(G10). 이제 조회 버튼이 조건을 적용하는 유일한 경로다.
+   * 부서 탭에서는 입력 중 재조회가 사라져, 저장하지 않은 드래그 중에 트리가 바뀌는 경로도 줄어든다.
    */
-  const debouncedKeyword = useDebouncedValue(searchKeyword, 300);
+  const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
 
   /** 페이지 번호는 URL 에 반영한다 — 새로고침·공유·뒤로가기가 복원된다(감사 P1-7). */
@@ -337,15 +333,15 @@ export default function UserOrgHubClient({
 
 
   const { data: usersData, isLoading: isUsersLoading, isError: isUsersError, error: usersError, refetch: refetchUsers } = useQuery({
-    queryKey: ['admin-users', debouncedKeyword, userPage, userPageSize],
+    queryKey: ['admin-users', searchKeyword, userPage, userPageSize],
     // 서버(GET /admin/system/users)는 searchKeyword + Spring Pageable(page/size, 0-based)만 읽는다.
     // 종전의 {pageNo}는 ApiService 매핑 대상도 Pageable 파라미터도 아니라 그대로 무시됐고,
     // 몇 페이지를 눌러도 항상 첫 페이지가 왔다(死 페이저 — 감사 m-2).
-    queryFn: () => userAdminService.getUserList({ page: userPage - 1, size: userPageSize, searchKeyword: debouncedKeyword }),
+    queryFn: () => userAdminService.getUserList({ page: userPage - 1, size: userPageSize, searchKeyword: searchKeyword }),
     enabled: activeTab === 'USERS' || activeTab === 'ABSENCES',
     // 서버 프리페치가 실패했다면(null) 시드를 쓰지 않는다 — 빈 목록을 시드로 넣으면
     // staleTime 동안 재조회가 막혀 조회 실패가 '0건'으로 위장된다(감사 P1-1).
-    initialData: (userPage === 1 && userPageSize === 10 && !debouncedKeyword) ? (initialUsers ?? undefined) : undefined
+    initialData: (userPage === 1 && userPageSize === 10 && !searchKeyword) ? (initialUsers ?? undefined) : undefined
   });
   const users = useMemo(() => {
     const list = usersData?.list;
@@ -429,7 +425,7 @@ export default function UserOrgHubClient({
    * 검색 입력은 사용자/부서 탭이 공유한다. USERS 탭에서 입력한 사용자 검색어가 부서 조회에 섞이면
    * '부서 이동' 모달의 대상 목록이 그 키워드로 걸러져 비어 버린다 — 부서 탭에서만 키워드를 태운다.
    */
-  const deptKeyword = activeTab === 'DEPTS' ? debouncedKeyword : '';
+  const deptKeyword = activeTab === 'DEPTS' ? searchKeyword : '';
   const {
     isDeptsLoading,
     isDeptsError,
@@ -950,47 +946,21 @@ export default function UserOrgHubClient({
           {/* ⚠ min-width 는 sm 이상에서만 건다 — 320px 뷰포트에서 14rem(224px) 하한이 flex-shrink 를
               무력화해 조회조건 영역이 가로로 넘친다(ui-ux-task-flow-optimization 가이드의 320px 무넘침
               의무). 종전 검색 입력에는 하한이 없었다. */}
+          {/* 보이는 라벨과 접근 이름을 같게 둔다(WCAG 2.5.3). e2e(department-hierarchy·security-administration)는
+              이 접근 이름('부서 검색')으로, user-administration 은 placeholder('검색어를 입력하세요...')로 입력을 찾는다 —
+              문구를 바꾸면 그 스펙도 함께 고친다. 검색어가 바뀌면 페이지를 1로 되돌린다(감사 P1-8). */}
           <div className="min-w-0 flex-1 sm:min-w-[14rem]">
-            {/* 보이는 라벨과 접근 이름을 같게 둔다(WCAG 2.5.3). e2e 19 는 이 접근 이름('부서 검색')으로
-                입력을 찾으므로 라벨 문구를 바꾸면 그 스펙도 함께 고쳐야 한다. */}
-            <label
-              htmlFor="user-org-search"
-              className="mb-1 block text-xs font-medium text-muted-foreground"
-            >
-              {isDeptTab ? '부서 검색' : '사용자 검색'}
-            </label>
-            <Input
-              id="user-org-search"
-              className="h-[var(--filter-control-h)] text-[length:var(--font-size-body)]"
-              // ⚠ e2e 가 이 placeholder 를 셀렉터에 쓴다
-              //    (23-security-auth-supplement: getByPlaceholder('검색어를 입력하세요...'),
-              //     02-admin-system: input[placeholder*="검색"]). 문구 변경 시 e2e 동시 수정 필요.
+            <KeywordFilter
+              label={isDeptTab ? '부서 검색' : '사용자 검색'}
               placeholder="검색어를 입력하세요..."
               value={searchKeyword}
-              // 검색어가 바뀌면 페이지를 1로 되돌린다. 종전에는 3페이지에서 검색하면
-              // 결과가 1페이지뿐이어도 3페이지를 요청해 빈 화면이 됐다(감사 P1-8).
-              onChange={(e) => {
-                setSearchKeyword(e.target.value);
+              onSearch={(next) => {
+                setSearchKeyword(next);
                 if (isDeptTab) setSelectedItemId(null);
                 if (userPage !== 1) goToPage(1);
               }}
-              suppressHydrationWarning
             />
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={!searchKeyword}
-            onClick={() => {
-              setSearchKeyword('');
-              if (isDeptTab) setSelectedItemId(null);
-              if (userPage !== 1) goToPage(1);
-            }}
-            className="gap-1.5"
-          >
-            <X size={14} aria-hidden="true" /> 초기화
-          </Button>
           {/* 안내는 라벨·placeholder 로 알 수 없는 사실이 있을 때만 둔다 — 사용자 탭의
               '사용자명 또는 ID 로 검색합니다' 는 라벨의 반복이라 한 줄을 더 쓸 값이 없었다. */}
           {isDeptTab && (
@@ -1174,7 +1144,7 @@ export default function UserOrgHubClient({
                   rowActionLabel={(item) => `${item.userNm || item.userId || '사용자'} 상세 열기`}
                   keyField="userId"
                   // ⚠ e2e(23-security-auth-supplement E12)가 /검색 결과가 없습니다|데이터가 존재하지 않습니다/ 로 단언한다.
-                  emptyMessage={debouncedKeyword ? `'${debouncedKeyword}' 검색 결과가 없습니다.` : '데이터가 존재하지 않습니다.'}
+                  emptyMessage={emptyResultMessage(searchKeyword, '데이터가 존재하지 않습니다.')}
                   // 업무형 화면은 진입 애니메이션을 두지 않는다(카탈로그 §3 금지 목록).
                   enableSelection={true}
                   bulkActions={userBulkActions}

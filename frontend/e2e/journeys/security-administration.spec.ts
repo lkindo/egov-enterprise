@@ -176,7 +176,10 @@ test.describe('권한 변경과 충돌 제어', () => {
                 expect(await departmentSnapshot(request, auth, departmentId)).toEqual(before);
                 await page.goto('/admin/security/dept-authority');
                 await expect(page).toHaveURL(/\/admin\/security\/dept-authority$/);
-                await page.getByRole('textbox', { name: '부서 검색', exact: true }).fill(departmentName);
+                const departmentSearch = page.getByRole('textbox', { name: '부서 검색', exact: true });
+                await departmentSearch.fill(departmentName);
+                // [DIP C9] 검색어는 조회/Enter 로 적용한다.
+                await departmentSearch.press('Enter');
                 await page.getByRole('region', { name: '부서 목록', exact: true }).getByRole('button', { name: departmentName, exact: true }).click();
                 const editor = page.getByRole('region', { name: '부서 구성원 그룹 배정', exact: true });
                 await expect(editor.getByRole('heading', { name: '전체 구성원 2명', exact: true })).toBeVisible();

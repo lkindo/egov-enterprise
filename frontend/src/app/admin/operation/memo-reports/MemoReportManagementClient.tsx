@@ -4,11 +4,11 @@ import { useCallback, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { memoReportService, MemoReportInfo } from '@/services/business/memoreport/memoReportService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { useAuth } from '@/contexts/AuthContext';
@@ -355,9 +355,8 @@ export default function MemoReportManagementClient() {
   }, [router, pathname, searchParams]);
 
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  // [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했다.
   const [searchKeyword, setSearchKeyword] = useState('');
-  // 타이핑 한 글자마다 서버 요청이 나가지 않도록 디바운스 값만 queryKey 에 넣는다.
-  const debouncedKeyword = useDebouncedValue(searchKeyword, 300);
 
   const handleTabChange = (tab: ReportTab) => updateUrl({ tab, page: 1 });
 
@@ -369,9 +368,9 @@ export default function MemoReportManagementClient() {
 
   // --- Data Fetching ---
   const { data: reportsData, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['memo-reports', activeTab, debouncedKeyword, page, pageSize],
+    queryKey: ['memo-reports', activeTab, searchKeyword, page, pageSize],
     queryFn: () => {
-      const params = { searchKeyword: debouncedKeyword, page: page - 1, size: pageSize };
+      const params = { searchKeyword, page: page - 1, size: pageSize };
       if (activeTab === 'MY') return memoReportService.getMyReports(params);
       if (activeTab === 'RECEIVED') return memoReportService.getReceivedReports(params);
       return memoReportService.getMemoReports(params);
@@ -482,25 +481,19 @@ export default function MemoReportManagementClient() {
         </>
       }
       filter={
-        <div className="min-w-60 max-w-xl space-y-1">
-          {/*
-            [2026-08-29] '작성자' 축을 걷는다. 서버의 검색 술어는 제목뿐이다 —
-            관리자 목록은 `rptTtl LIKE`(MemoReportRepository.searchByTitle), 발신함·수신함은
-            이번에 추가한 `findBy…AndRptTtlContaining` 이다. 게다가 MemoReportMapper 가
-            wrterNm·rptrNm 을 ignore 해 DTO 의 작성자명 자체가 null 이라, 작성자 축은 만들
-            데이터도 없다.
-          */}
-          <label htmlFor="memo-report-search" className="text-[length:var(--font-size-body)] font-medium">
-            보고 제목
-          </label>
-          <Input
-            id="memo-report-search"
-            value={searchKeyword}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            aria-label="보고 제목 검색"
-            placeholder="입력하면 바로 조회됩니다"
-          />
-        </div>
+        /*
+          [2026-08-29] '작성자' 축을 걷는다. 서버의 검색 술어는 제목뿐이다 —
+          관리자 목록은 `rptTtl LIKE`(MemoReportRepository.searchByTitle), 발신함·수신함은
+          이번에 추가한 `findBy…AndRptTtlContaining` 이다. 게다가 MemoReportMapper 가
+          wrterNm·rptrNm 을 ignore 해 DTO 의 작성자명 자체가 null 이라, 작성자 축은 만들
+          데이터도 없다.
+        */
+        <KeywordFilter
+          label="보고 제목"
+          placeholder="보고 제목으로 검색"
+          value={searchKeyword}
+          onSearch={handleSearchChange}
+        />
       }
       toolbarActions={
         <span className="text-[length:var(--font-size-body)] text-muted-foreground">
@@ -517,7 +510,7 @@ export default function MemoReportManagementClient() {
           loading={isLoading}
           error={isError ? (error as Error) : null}
           onRetry={() => refetch()}
-          emptyMessage={emptyResultMessage(debouncedKeyword, '등록된 메모 보고가 없습니다.')}
+          emptyMessage={emptyResultMessage(searchKeyword, '등록된 메모 보고가 없습니다.')}
           onRowClick={openDetail}
           rowActionLabel={(report) => `${report.rptTtl || `${report.memoRptSn}번`} 보고 열기`}
           keyField="memoRptSn"

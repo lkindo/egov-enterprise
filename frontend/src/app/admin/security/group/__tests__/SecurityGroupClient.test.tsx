@@ -13,7 +13,6 @@ const mocks = vi.hoisted(() => ({
   removeMany: vi.fn(),
 }));
 
-vi.mock('@/lib/hooks/use-debounced-value', () => ({ useDebouncedValue: (value: string) => value }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/services/foundation/system/GroupAdminService', () => ({
@@ -138,9 +137,11 @@ describe('SecurityGroupClient', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '그룹 다음 페이지' }));
     await waitFor(() => expect(mocks.list).toHaveBeenCalledWith({ page: 1, size: 10, searchKeyword: '' }));
-    fireEvent.change(screen.getByRole('textbox', { name: '그룹ID 또는 그룹명 검색' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: '그룹ID · 그룹명' }), {
       target: { value: '관리자' },
     });
+    // [DIP C9] 검색어는 조회 버튼으로 적용한다.
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
     await waitFor(() => expect(mocks.list).toHaveBeenCalledWith({ page: 0, size: 10, searchKeyword: '관리자' }));
     fireEvent.click(screen.getByRole('button', { name: '사용자 분류 그룹 목록 새로고침' }));
     fireEvent.click(screen.getByRole('button', { name: '그룹 목록 재시도' }));

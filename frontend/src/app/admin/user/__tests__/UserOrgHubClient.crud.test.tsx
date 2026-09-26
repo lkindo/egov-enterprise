@@ -426,6 +426,20 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     });
   });
 
+  it('사용자 검색어는 입력만으로 조회하지 않고 조회(Enter)로 적용한다 (DIP C9)', async () => {
+    renderHub();
+    await waitFor(() => expect(userAdminService.getUserList).toHaveBeenCalled());
+    const calls = vi.mocked(userAdminService.getUserList).mock.calls.length;
+
+    fireEvent.change(screen.getByRole('textbox', { name: '사용자 검색' }), { target: { value: '홍길동' } });
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    expect(userAdminService.getUserList).toHaveBeenCalledTimes(calls);
+
+    // 이 파일의 Button 대역은 type="button" 이라 조회 버튼 대신 Enter 와 같은 폼 제출로 적용한다.
+    fireEvent.submit(screen.getByRole('textbox', { name: '사용자 검색' }).closest('form')!);
+    await waitFor(() => expect(userAdminService.getUserList).toHaveBeenLastCalledWith({ page: 0, size: 10, searchKeyword: '홍길동' }));
+  });
+
   it('사용자 등록 버튼 → 폼 제출이 createUser 에 배선된다', async () => {
     vi.mocked(userAdminService.createUser).mockResolvedValue(undefined as any);
     renderHub();

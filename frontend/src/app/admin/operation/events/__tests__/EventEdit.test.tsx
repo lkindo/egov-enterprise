@@ -36,7 +36,6 @@ vi.mock('next/navigation', () => ({
 }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
-vi.mock('@/lib/hooks/use-debounced-value', () => ({ useDebouncedValue: (value: string) => value }));
 vi.mock('@/services/foundation/operation/eventService', () => ({
   eventService: {
     getEvents: mocks.getEvents,
@@ -217,7 +216,7 @@ describe('행사 — 조회 조건 문구', () => {
     renderClient();
     await screen.findByText('가을 워크숍');
 
-    expect(screen.getByLabelText('행사 명칭 또는 상세 내용 검색')).toBeInTheDocument();
+    expect(screen.getByLabelText('행사 명칭 · 상세 내용')).toBeInTheDocument();
     expect(screen.queryByLabelText('행사 검색')).not.toBeInTheDocument();
   });
 });
