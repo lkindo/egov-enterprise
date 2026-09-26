@@ -21,7 +21,6 @@ export interface Menu {
   prgrmFileNm: string;
   upMenuSn: number;
   menuOrdr: number;
-  menuDc: string;
   menuExpln?: string;
   relImgPath: string;
   relImgNm: string;
@@ -99,7 +98,6 @@ function toMenuRequest(data: Partial<Menu>): MenuWire {
     upMenuSn?: number | null;
   };
   const {
-    menuDc,
     menuExpln,
     upMenuSn,
     upperMenuId,
@@ -109,7 +107,7 @@ function toMenuRequest(data: Partial<Menu>): MenuWire {
 
   return {
     ...rest,
-    ...(menuExpln !== undefined ? { menuExpln } : menuDc !== undefined ? { menuExpln: menuDc } : {}),
+    ...(menuExpln !== undefined ? { menuExpln } : {}),
     ...(upMenuSn == null ? {} : { upMenuSn }),
     ...(upperMenuId == null ? {} : { upperMenuId }),
     ...(children === undefined ? {} : { children: children.map(toMenuRequest) }),

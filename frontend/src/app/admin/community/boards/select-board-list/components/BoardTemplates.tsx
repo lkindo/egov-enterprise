@@ -363,7 +363,7 @@ const FAQItem = ({ item, bbsId }: { item: BoardPost; bbsId: string }) => {
     queryFn: () => knowledgeService.getArticle(bbsId, item.pstSn),
     enabled: isOpen && !!bbsId,
   });
-  const answerHtml = answer.data ? (answer.data.pstCn || answer.data.knoCn || '') : '';
+  const answerHtml = answer.data ? (answer.data.pstCn || '') : '';
 
   return (
     <li className="bg-card">

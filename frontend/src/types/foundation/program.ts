@@ -6,11 +6,6 @@ export interface Program {
   prgrmKornNm: string;
   url: string;
   prgrmExpln?: string;
-  // Audit Fields (Newly synchronized via Full-Stack Survey)
-  frstRgtrId?: string;
-  crtDt?: string;
-  lastMdfrId?: string;
-  mdfcnDt?: string;
 }
 
 /** client의 ApiResponse.data를 직접 반환하도록 페이지네이션 구조 정의 */

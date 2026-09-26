@@ -12,6 +12,9 @@
  *   node scripts/generated-boundary-census.mjs --write
  *   node scripts/generated-boundary-census.mjs --check
  *   node scripts/generated-boundary-census.mjs --check --require-complete
+ *
+ * --check 는 응답 모양 검사(V10)도 함께 한다 — 생성 응답을 손으로 쓴 타입으로 다룰 때 그 타입이 서버가
+ * 보내지 않는 필드를 선언하면 위반이다(아래 buildResponseShapeCensus).
  */
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
@@ -1152,6 +1155,258 @@ export function validateBoundaryCensus(census) {
   return uniqueSorted(errors);
 }
 
+/*
+ * ── 응답 모양 검사(2026-09-26 DIP V10) ──────────────────────────────────────────────────
+ *
+ * 위 census 는 요청 경계가 생성 실행기를 지나는지만 본다. 응답은 생성 타입으로 오지만, 서비스가 그 결과를
+ * 손으로 쓴 타입으로 캐스팅하거나(`as Promise<T>`) 선택 필드가 섞인 반환 타입에 담으면 TypeScript 는 막지
+ * 않는다 — 선택 필드는 대입 호환이다. 그래서 서버가 한 번도 보내지 않는 필드(`frstRegisterNm`·`knoNm` 등)를
+ * 화면이 읽고, 테스트 표본도 그 필드를 넣어 초록이었다(DEC-OPS-140).
+ *
+ * 이 검사는 타입 검사기로 생성 실행기 호출마다 **코드가 결과를 무엇으로 다루는가**(캐스트 대상·선언된 반환
+ * 타입·타입 주석 변수·함수 인자 타입, 또는 타입 주석 없는 변수의 그런 쓰임)를 찾아, 그 타입의 필드가 생성
+ * 응답 타입에 모두 있는지 본다(배열 원소·중첩 객체까지). 없는 필드는 예외 목록 없이 전부 위반이다 —
+ * 클라이언트가 계산해 붙이는 값은 응답 타입이 아니라 별도 타입으로 둔다.
+ */
+function responseShapeProgram(repoRoot) {
+  const frontendRoot = join(repoRoot, 'frontend');
+  const configPath = join(frontendRoot, 'tsconfig.json');
+  const config = ts.readConfigFile(configPath, ts.sys.readFile);
+  if (config.error) throw new Error(`tsconfig unreadable: ${configPath}`);
+  const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, frontendRoot);
+  return ts.createProgram({ rootNames: parsed.fileNames, options: { ...parsed.options, noEmit: true } });
+}
+
+function buildResponseShapeChecker(checker) {
+  const NULLISH = ts.TypeFlags.Null | ts.TypeFlags.Undefined;
+  const unwrapPromise = (type) => {
+    const symbol = type.getSymbol?.();
+    if (symbol && symbol.getName() === 'Promise') {
+      const args = checker.getTypeArguments(type);
+      if (args?.length) return args[0];
+    }
+    return type;
+  };
+  const stripNullish = (type) => {
+    if (!type.isUnion()) return type;
+    const parts = type.types.filter((part) => !(part.flags & NULLISH));
+    return parts.length === 1 ? parts[0] : type;
+  };
+  const isPlainObject = (type) => Boolean(type.flags & ts.TypeFlags.Object)
+    && !checker.isArrayType(type)
+    && type.getProperties().length > 0
+    && type.getCallSignatures().length === 0;
+  const compare = (target, source, path, out, depth) => {
+    if (depth > 4) return;
+    const t = stripNullish(target);
+    const s = stripNullish(source);
+    if (s.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown)) return;
+    if (checker.isArrayType(t) && checker.isArrayType(s)) {
+      compare(checker.getTypeArguments(t)[0], checker.getTypeArguments(s)[0], `${path}[].`, out, depth + 1);
+      return;
+    }
+    if (!isPlainObject(t) || !isPlainObject(s) || t.isUnion() || s.isUnion()) return;
+    if (s.getStringIndexType()) return;
+    for (const property of t.getProperties()) {
+      const name = property.getName();
+      const sourceProperty = s.getProperty(name);
+      if (!sourceProperty) {
+        out.push(`${path}${name}`);
+        continue;
+      }
+      compare(checker.getTypeOfSymbol(property), checker.getTypeOfSymbol(sourceProperty), `${path}${name}.`, out, depth + 1);
+    }
+  };
+  // 응답 값으로 확인된 타입들. 두 번째 단계(재캐스트)는 원래 식이 이 타입(또는 그 배열·페이지)일 때만 본다.
+  const responseTypes = new Set();
+  const elementOf = (type) => {
+    const t = stripNullish(type);
+    if (checker.isArrayType(t)) return stripNullish(checker.getTypeArguments(t)[0]);
+    const list = isPlainObject(t) ? t.getProperty('list') : null;
+    if (list) {
+      const listType = stripNullish(checker.getTypeOfSymbol(list));
+      if (checker.isArrayType(listType)) return stripNullish(checker.getTypeArguments(listType)[0]);
+    }
+    return null;
+  };
+  const registerResponseType = (type) => {
+    const t = stripNullish(type);
+    responseTypes.add(t);
+    const element = elementOf(t);
+    if (element) responseTypes.add(element);
+  };
+  const isResponseType = (type) => {
+    const t = stripNullish(type);
+    if (responseTypes.has(t)) return true;
+    const element = elementOf(t);
+    return Boolean(element && responseTypes.has(element));
+  };
+  const enclosingFunction = (node) => {
+    let current = node.parent;
+    while (current && !ts.isFunctionLike(current)) current = current.parent;
+    return current;
+  };
+  const targetOf = (expression) => {
+    let node = expression;
+    let cast = null;
+    let castNode = null;
+    for (;;) {
+      const parent = node.parent;
+      if (!parent) break;
+      if (ts.isAwaitExpression(parent) || ts.isParenthesizedExpression(parent)) { node = parent; continue; }
+      if (ts.isAsExpression(parent) || ts.isTypeAssertionExpression(parent)) {
+        cast = checker.getTypeFromTypeNode(parent.type);
+        castNode = parent;
+        node = parent;
+        continue;
+      }
+      break;
+    }
+    if (cast) return { via: 'cast', type: unwrapPromise(cast), castNode };
+    const parent = node.parent;
+    if (parent && ts.isReturnStatement(parent)) {
+      const fn = enclosingFunction(parent);
+      if (fn?.type) return { via: 'return', type: unwrapPromise(checker.getTypeFromTypeNode(fn.type)) };
+    }
+    if (parent && ts.isArrowFunction(parent) && parent.body === node && parent.type) {
+      return { via: 'return', type: unwrapPromise(checker.getTypeFromTypeNode(parent.type)) };
+    }
+    if (parent && ts.isVariableDeclaration(parent) && parent.type) {
+      return { via: 'variable', type: unwrapPromise(checker.getTypeFromTypeNode(parent.type)) };
+    }
+    if (parent && ts.isCallExpression(parent) && parent.arguments.includes(node)) {
+      const parameter = checker.getResolvedSignature(parent)?.getParameters()[parent.arguments.indexOf(node)];
+      if (parameter?.valueDeclaration?.type) {
+        return { via: 'argument', type: unwrapPromise(checker.getTypeOfSymbolAtLocation(parameter, parent)) };
+      }
+    }
+    return null;
+  };
+  const targetsOf = (call) => {
+    const direct = targetOf(call);
+    if (direct) return [direct];
+    let node = call;
+    while (node.parent && (ts.isAwaitExpression(node.parent) || ts.isParenthesizedExpression(node.parent))) node = node.parent;
+    const declaration = node.parent;
+    if (!declaration || !ts.isVariableDeclaration(declaration) || declaration.type || !ts.isIdentifier(declaration.name)) return [];
+    const symbol = checker.getSymbolAtLocation(declaration.name);
+    const scope = enclosingFunction(declaration) ?? declaration.getSourceFile();
+    const targets = [];
+    scope.forEachChild(function visit(child) {
+      if (ts.isIdentifier(child) && child !== declaration.name && checker.getSymbolAtLocation(child) === symbol) {
+        const target = targetOf(child);
+        if (target) targets.push(target);
+      }
+      child.forEachChild(visit);
+    });
+    return targets;
+  };
+  return { unwrapPromise, compare, targetsOf, registerResponseType, isResponseType };
+}
+
+export function buildResponseShapeCensus({ repoRoot = DEFAULT_REPO_ROOT } = {}) {
+  const sourceRoot = join(repoRoot, 'frontend', 'src');
+  const program = responseShapeProgram(repoRoot);
+  const checker = program.getTypeChecker();
+  const shape = buildResponseShapeChecker(checker);
+  const findings = [];
+  let calls = 0;
+  let typedCalls = 0;
+  // 첫 단계에서 이미 본 캐스트는 두 번째 단계가 다시 세지 않는다.
+  const checkedCasts = new Set();
+  for (const sourceFile of program.getSourceFiles()) {
+    const absolutePath = resolve(sourceFile.fileName);
+    if (!normalizePath(absolutePath).startsWith(normalizePath(sourceRoot) + '/')) continue;
+    if (!isProductionSource(absolutePath, sourceRoot, repoRoot)) continue;
+    const file = normalizePath(relative(repoRoot, absolutePath));
+    sourceFile.forEachChild(function visit(node) {
+      if (ts.isCallExpression(node)) {
+        const callee = node.expression;
+        const name = ts.isPropertyAccessExpression(callee) ? callee.name.text : ts.isIdentifier(callee) ? callee.text : null;
+        if (name && GENERATED_EXECUTOR_NAMES.has(name)) {
+          calls += 1;
+          const source = shape.unwrapPromise(checker.getTypeAtLocation(node));
+          if (!(source.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown))) typedCalls += 1;
+          shape.registerResponseType(source);
+          for (const target of shape.targetsOf(node)) {
+            shape.registerResponseType(target.type);
+            if (target.castNode) checkedCasts.add(target.castNode);
+            const extra = [];
+            shape.compare(target.type, source, '', extra, 0);
+            if (extra.length === 0) continue;
+            const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+            findings.push({
+              file,
+              line: line + 1,
+              operation: node.arguments[0]?.getText(sourceFile) ?? '<none>',
+              via: target.via,
+              target: checker.typeToString(target.type),
+              fields: uniqueSorted(extra),
+            });
+          }
+        }
+      }
+      node.forEachChild(visit);
+    });
+  }
+  // 두 번째 단계: 응답으로 받은 값을 다시 다른 타입으로 캐스팅하는 곳(`list as unknown as MenuInfo[]` 등).
+  //   캐스트의 원래 식이 응답 타입(생성 응답이거나 첫 단계에서 받은 타입, 그 배열·페이지)일 때만 본다 —
+  //   DOM 요소나 요청 본문을 좁히는 캐스트는 응답을 읽는 경로가 아니다. 생성 실행기 호출을 바로 감싼 캐스트는
+  //   첫 단계가 이미 봤다.
+  for (const sourceFile of program.getSourceFiles()) {
+    const absolutePath = resolve(sourceFile.fileName);
+    if (!normalizePath(absolutePath).startsWith(normalizePath(sourceRoot) + '/')) continue;
+    if (!isProductionSource(absolutePath, sourceRoot, repoRoot)) continue;
+    const file = normalizePath(relative(repoRoot, absolutePath));
+    sourceFile.forEachChild(function visit(node) {
+      if ((ts.isAsExpression(node) || ts.isTypeAssertionExpression(node))
+        && !ts.isAsExpression(node.parent) && !ts.isTypeAssertionExpression(node.parent)
+        && !checkedCasts.has(node)) {
+        let inner = node.expression;
+        while (ts.isAsExpression(inner) || ts.isTypeAssertionExpression(inner)
+          || ts.isParenthesizedExpression(inner) || ts.isAwaitExpression(inner)) inner = inner.expression;
+        const callee = ts.isCallExpression(inner) ? inner.expression : null;
+        const calleeName = callee && ts.isPropertyAccessExpression(callee) ? callee.name.text
+          : callee && ts.isIdentifier(callee) ? callee.text : null;
+        if (!(calleeName && GENERATED_EXECUTOR_NAMES.has(calleeName))) {
+          const source = shape.unwrapPromise(checker.getTypeAtLocation(inner));
+          if (shape.isResponseType(source)) {
+            const target = shape.unwrapPromise(checker.getTypeFromTypeNode(node.type));
+            const extra = [];
+            shape.compare(target, source, '', extra, 0);
+            if (extra.length > 0) {
+              const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+              findings.push({
+                file,
+                line: line + 1,
+                operation: '<response value>',
+                via: 'recast',
+                target: checker.typeToString(target),
+                fields: uniqueSorted(extra),
+              });
+            }
+          }
+        }
+      }
+      node.forEachChild(visit);
+    });
+  }
+  findings.sort((left, right) => `${left.file}:${left.line}`.localeCompare(`${right.file}:${right.line}`));
+  return { calls, typedCalls, findings };
+}
+
+export function evaluateResponseShape(result) {
+  const errors = [];
+  if (result.calls === 0) errors.push('response-shape: generated executor call population is empty');
+  if (result.typedCalls !== result.calls) {
+    errors.push(`response-shape: ${result.calls - result.typedCalls} generated call(s) return any/unknown and cannot be checked`);
+  }
+  for (const finding of result.findings) {
+    errors.push(`response-shape: ${finding.file}:${finding.line} ${finding.operation} (${finding.via} ${finding.target}) reads fields the server never sends: ${finding.fields.join(', ')}`);
+  }
+  return uniqueSorted(errors);
+}
+
 function boundaryLabel(record) {
   return `${record.file}#${record.owner}[${record.ordinal}] ${record.callee} -> ${record.target ?? '<unresolved>'}`;
 }
@@ -1228,6 +1483,9 @@ function runCli() {
   }
   const expected = JSON.parse(readFileSync(DEFAULT_MANIFEST_PATH, 'utf8'));
   const errors = compareBoundaryCensus(expected, census);
+  const responseShape = buildResponseShapeCensus();
+  errors.push(...evaluateResponseShape(responseShape));
+  console.log(`response-shape: calls=${responseShape.calls} typed=${responseShape.typedCalls} findings=${responseShape.findings.length}`);
   if (process.argv.includes('--require-complete')) {
     errors.push(...evaluateBoundaryCompletion(census).errors);
   }
