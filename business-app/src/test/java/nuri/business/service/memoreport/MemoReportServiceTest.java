@@ -17,6 +17,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -55,11 +56,37 @@ class MemoReportServiceTest {
         MockitoAnnotations.openMocks(this);
     }
 
+    /** 서비스가 정렬 없는 요청에 넣는 기본 정렬. 아래 테스트들은 이미 정렬된 요청을 보내 위임만 본다. */
+    private static final Sort NEWEST_FIRST = Sort.by(Sort.Direction.DESC, "memoRptSn");
+
+    @Test
+    @DisplayName("정렬 없는 목록 요청은 최신순으로 조회하고, 요청한 정렬은 그대로 따른다 (DIP C7)")
+    void listsDefaultToNewestFirst() {
+        // 정렬 없는 페이지 조회는 DB 가 순서를 보장하지 않아 페이지 사이에 같은 보고가 겹치거나 빠졌다.
+        Pageable newest = PageRequest.of(1, 10, NEWEST_FIRST);
+        given(memoReportRepository.searchByTitle(eq(""), eq(newest))).willReturn(new PageImpl<>(List.of()));
+        given(memoReportRepository.findByUserId(eq("u1"), eq(newest))).willReturn(new PageImpl<>(List.of()));
+        given(memoReportRepository.findByRptrId(eq("u1"), eq(newest))).willReturn(new PageImpl<>(List.of()));
+
+        memoReportService.getMemoReportList(null, PageRequest.of(1, 10));
+        memoReportService.getMyReportList("u1", null, PageRequest.of(1, 10));
+        memoReportService.getReceivedReportList("u1", null, PageRequest.of(1, 10));
+
+        org.mockito.Mockito.verify(memoReportRepository).searchByTitle("", newest);
+        org.mockito.Mockito.verify(memoReportRepository).findByUserId("u1", newest);
+        org.mockito.Mockito.verify(memoReportRepository).findByRptrId("u1", newest);
+
+        Pageable byTitle = PageRequest.of(0, 10, Sort.by("rptTtl"));
+        given(memoReportRepository.findByUserId(eq("u1"), eq(byTitle))).willReturn(new PageImpl<>(List.of()));
+        memoReportService.getMyReportList("u1", null, byTitle);
+        org.mockito.Mockito.verify(memoReportRepository).findByUserId("u1", byTitle);
+    }
+
     @Test
     @DisplayName("메모보고 전체 목록 조회 - 관리자 가드 통과 시 제목 검색으로 위임")
     void getMemoReportList() {
         // given
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = PageRequest.of(0, 10, NEWEST_FIRST);
         MemoReport entity = MemoReport.builder().memoRptSn(1L).build();
         // 검색어 null 은 빈 문자열로 정규화되어 전달된다(널이면 LIKE 가 전건 누락된다)
         given(memoReportRepository.searchByTitle(eq(""), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
@@ -78,7 +105,7 @@ class MemoReportServiceTest {
     void getMyReportList() {
         // given
         String writerId = "user1";
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = PageRequest.of(0, 10, NEWEST_FIRST);
         MemoReport entity = MemoReport.builder().memoRptSn(1L).userId(writerId).build();
         given(memoReportRepository.findByUserId(eq(writerId), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
@@ -101,7 +128,7 @@ class MemoReportServiceTest {
          * 소유 스코프(userId/rptrId)가 유지되는지도 함께 본다 — 검색을 붙이며 인가 범위가
          * 넓어지면 안 된다.
          */
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = PageRequest.of(0, 10, NEWEST_FIRST);
         MemoReport mine = MemoReport.builder().memoRptSn(1L).userId("user1").build();
         MemoReport received = MemoReport.builder().memoRptSn(2L).rptrId("user1").build();
 
@@ -124,7 +151,7 @@ class MemoReportServiceTest {
     void getReceivedReportList() {
         // given
         String reportrId = "user1";
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = PageRequest.of(0, 10, NEWEST_FIRST);
         MemoReport entity = MemoReport.builder().memoRptSn(1L).rptrId(reportrId).build();
         given(memoReportRepository.findByRptrId(eq(reportrId), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
@@ -411,7 +438,7 @@ class MemoReportServiceTest {
     void editableTrueForOwner() {
         __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE"))
                 .thenReturn(true);
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = PageRequest.of(0, 10, NEWEST_FIRST);
         MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-me").build();
         entity.setFrstRgtrId("login-me");
         given(memoReportRepository.findByUserId(eq("esntl-me"), eq(pageable)))
@@ -430,7 +457,7 @@ class MemoReportServiceTest {
     void editableFalseForOthers() {
         __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE"))
                 .thenReturn(true);
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = PageRequest.of(0, 10, NEWEST_FIRST);
         MemoReport entity = MemoReport.builder().memoRptSn(1L).rptrId("esntl-me").build();
         entity.setFrstRgtrId("login-someone-else");
         given(memoReportRepository.findByRptrId(eq("esntl-me"), eq(pageable)))
@@ -449,7 +476,7 @@ class MemoReportServiceTest {
     void editableTrueForAdmin() {
         __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE"))
                 .thenReturn(true);
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = PageRequest.of(0, 10, NEWEST_FIRST);
         MemoReport entity = MemoReport.builder().memoRptSn(1L).build();
         entity.setFrstRgtrId("login-someone-else");
         given(memoReportRepository.searchByTitle(eq(""), eq(pageable)))
@@ -468,7 +495,7 @@ class MemoReportServiceTest {
     void editableFalseWhenOwnerMissing() {
         __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE"))
                 .thenReturn(true);
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = PageRequest.of(0, 10, NEWEST_FIRST);
         // 감사 컬럼이 비어 있으면 assertOwnerOrPermission 도 통과시키지 않는다(현재 loginId 와 null 은 같을 수 없다).
         MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-me").build();
         given(memoReportRepository.findByUserId(eq("esntl-me"), eq(pageable)))

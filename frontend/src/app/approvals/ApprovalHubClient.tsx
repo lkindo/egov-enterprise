@@ -21,6 +21,7 @@ import {
 } from '@/services/business/user/approval/ApprovalUserService';
 import { Badge } from '@/components/ui/badge';
 import { PagePagination } from '@/components/common/PagePagination';
+import { usePageClamp } from '@/lib/hooks/use-page-clamp';
 import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
 import { ApprovalStepper } from './ApprovalStepper';
 import { ApprovalDraftDialog } from './ApprovalDraftDialog';
@@ -158,6 +159,17 @@ export default function ApprovalHubClient() {
   */
   const total = approvalData?.total ?? list.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  // [2026-09-26 DIP C4] 마지막 페이지의 마지막 문서를 처리하면 그 페이지가 빈다. 한 페이지로 줄면 페이저도
+  //   사라져 빈 대기함에 갇혔다 — 목록을 다시 읽은 뒤 마지막 페이지로 되돌린다.
+  usePageClamp({
+    page,
+    totalPages,
+    ready: approvalData !== undefined && !isFetching && !approvalsError,
+    onPageChange: (nextPage) => {
+      setPage(nextPage);
+      setSelectedItemId(null);
+    },
+  });
   const selectedListItem = useMemo(() => {
     // 목록의 순서나 처리 상태가 새로고침되어도 작성 중 의견을 다른 문서로 옮기지 않는다.
     if (rejectReason.length && opinionDocument) return list.find(item => sanctionKey(item) === sanctionKey(opinionDocument)) ?? opinionDocument;

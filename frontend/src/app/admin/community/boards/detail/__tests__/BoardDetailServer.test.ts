@@ -45,8 +45,20 @@ describe('BoardDetailServer', () => {
       article,
       masterInfo: null,
       initialComments: [comment],
+      commentTotal: 1,
       fetchError: null,
     });
+  });
+
+  it('댓글 전체 수를 함께 넘겨 첫 100개 밖의 댓글이 있음을 화면이 말하게 한다 (DIP C7)', async () => {
+    vi.mocked(knowledgeService.getArticle).mockResolvedValue({ pstSn: 7, pstTtl: '글', pstCn: '본문' });
+    vi.mocked(boardUserService.getBoardMeta).mockResolvedValue(null as never);
+    vi.mocked(commentService.getComments).mockResolvedValue({ list: [{ ansSn: 1 }], total: 150, page: 1, size: 100, totalPage: 2 } as never);
+
+    const data = await getInitialBoardDetailData('BBS-1', 7);
+
+    expect(data.commentTotal).toBe(150);
+    expect(commentService.getComments).toHaveBeenCalledWith({ pstSn: 7, bbsId: 'BBS-1', size: 100 }, expect.anything());
   });
 
   it('🚨 게시판 메타는 사용자용 API 로 읽어 일반 사용자도 제목·템플릿을 받는다 (DIP V5)', async () => {

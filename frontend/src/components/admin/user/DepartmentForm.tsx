@@ -31,12 +31,21 @@ import { DeptManageDtoSchema } from '@/types/generated-zod';
 export const deptSchema = DeptManageDtoSchema.extend({
   ognzNm: DeptManageDtoSchema.shape.ognzNm.min(1, '부서명을 입력하세요.'),
   ognzExpln: z.string().max(4000).optional().or(z.literal('')),
+  upOgnzId: z.string().max(20).optional().or(z.literal('')),
 });
 
 export type DeptFormValues = z.infer<typeof deptSchema>;
 
+/** 상위 부서 선택지. `label` 은 계층을 들여쓴 이름이다. */
+export interface DeptParentOption {
+  ognzId: string;
+  label: string;
+}
+
 interface DepartmentFormProps {
   initialData?: Partial<Department>;
+  /** 등록 모드에서 고를 수 있는 상위 부서. 비어 있으면 최상위로만 등록된다. */
+  parentOptions?: DeptParentOption[];
   mode: 'create' | 'edit';
   onSubmit: (data: DeptFormValues) => Promise<void>;
   onCancel: () => void;
@@ -46,6 +55,7 @@ interface DepartmentFormProps {
 
 export function DepartmentForm({
   initialData,
+  parentOptions = [],
   mode,
   onSubmit,
   onCancel,
@@ -56,6 +66,7 @@ export function DepartmentForm({
     defaultValues: {
       ognzNm: initialData?.ognzNm || '',
       ognzExpln: initialData?.ognzExpln || '',
+      upOgnzId: '',
     },
   });
 
@@ -86,7 +97,7 @@ export function DepartmentForm({
         className="space-y-8 pt-4 text-left"
       >
         <FormErrorSummary
-          labels={{ ognzNm: '부서 명칭', ognzExpln: '부서 설명명세' }}
+          labels={{ ognzNm: '부서 명칭', upOgnzId: '상위 부서', ognzExpln: '부서 설명명세' }}
           onNavigate={form.focusError}
         />
         <FormField
@@ -118,6 +129,37 @@ export function DepartmentForm({
             </FormItem>
           )}
         />
+
+        {/*
+          [2026-09-26 DIP C5] 등록 폼에서 상위 부서를 고른다. 종전에는 새 부서가 늘 최상위로 만들어져, 하위로
+          옮기려면 드래그로 다시 배치해야 했다. 수정은 계층을 바꾸지 않는다(계층은 조직 구조에서 끌어서 바꾼다).
+        */}
+        {mode === 'create' && (
+          <FormField
+            control={form.control}
+            name="upOgnzId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1">
+                  상위 부서
+                </FormLabel>
+                <FormControl>
+                  <select
+                    {...field}
+                    value={field.value ?? ''}
+                    className="h-[var(--control-h)] w-full rounded-lg border border-border bg-card px-3 text-sm font-bold"
+                  >
+                    <option value="">최상위 (상위 부서 없음)</option>
+                    {parentOptions.map((option) => (
+                      <option key={option.ognzId} value={option.ognzId}>{option.label}</option>
+                    ))}
+                  </select>
+                </FormControl>
+                <FormMessage className="text-xs font-bold text-destructive-emphasis mt-2 ml-2" />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}

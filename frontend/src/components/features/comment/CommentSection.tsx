@@ -25,6 +25,8 @@ interface CommentSectionProps {
   pstSn: number;
   bbsId: string;
   initialComments: CommentVO[];
+  /** 서버가 센 전체 댓글 수. 상세 화면은 첫 100개만 받으므로 불러온 수와 다를 수 있다. */
+  totalComments?: number;
 }
 
 type CommentView = CommentVO & { isOptimistic?: boolean };
@@ -37,7 +39,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 
-export default function CommentSection({ pstSn, bbsId, initialComments }: CommentSectionProps) {
+export default function CommentSection({ pstSn, bbsId, initialComments, totalComments }: CommentSectionProps) {
   const [, startTransition] = useTransition();
   const { toast } = useToast();
   const confirm = useConfirm();
@@ -59,8 +61,9 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
     initialComments,
     (state, action) => {
       switch (action.type) {
+        // [2026-09-26 DIP C7] 서버는 댓글을 등록순으로 준다. 새 댓글을 맨 앞에 두면 새로고침 뒤 맨 뒤로 튄다.
         case 'add':
-          return [action.payload, ...state];
+          return [...state, action.payload];
         case 'delete':
           return state.filter(c => c.ansSn !== action.payload);
         case 'update':
@@ -91,6 +94,10 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
     focusTargets: { editCn: () => editInputRef.current },
   });
   const hasWritePending = createPending || editPendingId !== null || deletePendingId !== null;
+  // 표시 수는 서버가 센 전체 수를 기준으로 하고, 이 화면에서 더하거나 지운 만큼만 반영한다.
+  //   종전에는 불러온 행 수를 세어 100개를 넘는 글도 '댓글 100개' 라 말했다.
+  const hiddenCommentCount = Math.max(0, (totalComments ?? initialComments.length) - initialComments.length);
+  const commentCount = optimisticComments.length + hiddenCommentCount;
 
   const handleCreate = (formData: FormData) => {
     if (createPendingRef.current) return;
@@ -239,10 +246,16 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
           <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
           <div className="flex items-baseline gap-2">
             <h3 className="text-base font-semibold text-foreground">댓글</h3>
-            <p className="text-xs text-muted-foreground">댓글 {optimisticComments.length}개</p>
+            <p className="text-xs text-muted-foreground">댓글 {commentCount}개</p>
           </div>
         </div>
       </div>
+
+      {hiddenCommentCount > 0 && (
+        <p role="note" className="text-xs text-muted-foreground">
+          댓글이 많아 처음 {initialComments.length}개만 보입니다. 나머지 {hiddenCommentCount}개는 이 화면에서 볼 수 없습니다.
+        </p>
+      )}
 
       {/* Comment List */}
       <div className="divide-y divide-border rounded-[var(--radius)] border border-border">
