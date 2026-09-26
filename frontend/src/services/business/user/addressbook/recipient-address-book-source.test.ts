@@ -20,11 +20,47 @@ describe('recipientAddressBookSource', () => {
     mocks.getAddressBook.mockReset();
   });
 
-  it('주소록 목록은 종전 피커와 같은 요청(50건)으로 읽고 id·name 으로 옮긴다', async () => {
-    mocks.getAddressBooks.mockResolvedValue({ list: [{ adbkSn: 7, adbkNm: '협력사' }], totCnt: 1 });
+  it('주소록 목록을 id·name 으로 옮긴다', async () => {
+    mocks.getAddressBooks.mockResolvedValue({ list: [{ adbkSn: 7, adbkNm: '협력사' }], total: 1 });
 
     await expect(recipientAddressBookSource.listBooks()).resolves.toEqual([{ id: 7, name: '협력사' }]);
-    expect(mocks.getAddressBooks).toHaveBeenCalledWith({ page: 0, size: 50 });
+    expect(mocks.getAddressBooks).toHaveBeenCalledTimes(1);
+    expect(mocks.getAddressBooks).toHaveBeenCalledWith({ page: 0, size: 100 });
+  });
+
+  it('[DIP B5 F4] 서버 총 건수까지 페이지를 넘겨 모두 읽는다 — 종전에는 첫 50건 뒤를 조용히 버렸다', async () => {
+    const pageOf = (start: number, count: number) =>
+      Array.from({ length: count }, (_, index) => ({ adbkSn: start + index, adbkNm: `주소록${start + index}` }));
+    mocks.getAddressBooks
+      .mockResolvedValueOnce({ list: pageOf(1, 100), total: 150 })
+      .mockResolvedValueOnce({ list: pageOf(101, 50), total: 150 });
+
+    const books = await recipientAddressBookSource.listBooks();
+
+    expect(books).toHaveLength(150);
+    expect(books[149]).toEqual({ id: 150, name: '주소록150' });
+    expect(mocks.getAddressBooks).toHaveBeenNthCalledWith(1, { page: 0, size: 100 });
+    expect(mocks.getAddressBooks).toHaveBeenNthCalledWith(2, { page: 1, size: 100 });
+    expect(mocks.getAddressBooks).toHaveBeenCalledTimes(2);
+  });
+
+  it('서버가 페이지 크기를 줄여 돌려줘도 총 건수까지 읽는다', async () => {
+    mocks.getAddressBooks
+      .mockResolvedValueOnce({ list: [{ adbkSn: 1, adbkNm: '가' }], total: 2 })
+      .mockResolvedValueOnce({ list: [{ adbkSn: 2, adbkNm: '나' }], total: 2 });
+
+    await expect(recipientAddressBookSource.listBooks()).resolves.toHaveLength(2);
+    expect(mocks.getAddressBooks).toHaveBeenCalledTimes(2);
+  });
+
+  it('총 건수가 없어도 꽉 찬 페이지면 다음을 읽고, 빈 페이지에서 멈춘다', async () => {
+    const full = Array.from({ length: 100 }, (_, index) => ({ adbkSn: index + 1, adbkNm: `주소록${index + 1}` }));
+    mocks.getAddressBooks
+      .mockResolvedValueOnce({ list: full })
+      .mockResolvedValueOnce({ list: [] });
+
+    await expect(recipientAddressBookSource.listBooks()).resolves.toHaveLength(100);
+    expect(mocks.getAddressBooks).toHaveBeenCalledTimes(2);
   });
 
   it('목록이 비어 오면 빈 배열이다', async () => {

@@ -3,8 +3,10 @@ import { PageResponse } from '@/types/foundation/system';
 import type { components } from '@/types/generated-api';
 import {
   deleteMailOperation,
+  getMailDeliveryStatusOperation,
   getSentMailOperation,
   getSentMailsOperation,
+  resendMailOperation,
   sendMailOperation,
 } from '@/types/generated-operations';
 
@@ -15,6 +17,9 @@ import {
  *  발송일시가 전건 공백으로 렌더되는 드리프트를 타입 게이트가 은폐했다. 실제 필드는 `sndngDe` 다.)
  */
 type SentMailDto = components['schemas']['SentMailDto'];
+
+/** 이 배포의 메일 발송 가능 상태(DIP B5 F7). SMTP 가 없으면 접수는 되지만 모든 메일이 실패로 기록된다. */
+export type MailDeliveryStatus = components['schemas']['MailDeliveryStatusDto'];
 
 /** 화면이 항상 기대하는 식별/표시 필드를 필수로 좁힌 발신 메일 타입. */
 export type SentMail = SentMailDto &
@@ -65,6 +70,19 @@ class MailService extends ApiService {
    */
   async sendMail(mailData: Partial<SentMail>): Promise<number> {
     return this.executeGenerated(sendMailOperation, { body: mailData });
+  }
+
+  /** 이 배포에 SMTP 가 연결돼 있는지(DIP B5 F7). */
+  async getDeliveryStatus(): Promise<MailDeliveryStatus> {
+    return this.executeGenerated(getMailDeliveryStatusOperation, {});
+  }
+
+  /**
+   * 실패했거나 대기에 멈춘 본인 메일을 같은 이력으로 다시 보낸다(DIP B5 F7). 가능 여부는 서버가 판정한다 —
+   * 화면은 응답의 resendable 힌트로 버튼을 보이고, 남의 메일·처리 중·이미 발송됨은 서버가 거부한다.
+   */
+  async resendMail(emlDsptchSn: number): Promise<void> {
+    return this.executeGenerated(resendMailOperation, { path: { emlDsptchSn } });
   }
 
   /**

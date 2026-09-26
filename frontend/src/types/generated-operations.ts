@@ -70,6 +70,7 @@ import {
   ApiResponseLoginLogDtoResponseSchema,
   ApiResponseLoginPolicyDtoResponseSchema,
   ApiResponseLongResponseSchema,
+  ApiResponseMailDeliveryStatusDtoResponseSchema,
   ApiResponseMembershipSnapshotResponseSchema,
   ApiResponseMemoReportDtoResponseSchema,
   ApiResponseMenuDtoResponseSchema,
@@ -229,6 +230,7 @@ import {
   LoginPolicyDtoRequestSchema,
   LoginPolicyDtoResponseSchema,
   LoginRequestRequestSchema,
+  MailDeliveryStatusDtoResponseSchema,
   MembershipSnapshotResponseSchema,
   MemoInstructionRequestRequestSchema,
   MemoReportDtoRequestSchema,
@@ -3305,6 +3307,23 @@ export const sendMailOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: SentMailDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
+  requestForbiddenPaths: [["resendable"]],
+  responseForbiddenPaths: [],
+});
+
+export const resendMailOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "resendMail",
+  method: "post",
+  path: "/api/v1/mails/{emlDsptchSn}/resend",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "emlDsptchSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
@@ -5713,6 +5732,23 @@ export const deleteMailOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const getMailDeliveryStatusOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "getMailDeliveryStatus",
+  method: "get",
+  path: "/api/v1/mails/delivery-status",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.lazy(() => MailDeliveryStatusDtoResponseSchema),
+  envelopeSchema: ApiResponseMailDeliveryStatusDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });

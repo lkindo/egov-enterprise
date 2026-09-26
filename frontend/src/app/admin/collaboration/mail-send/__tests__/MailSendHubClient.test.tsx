@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import MailSendHubClient from '../MailSendHubClient';
 /* reusable-base:demo:start */
@@ -11,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   back: vi.fn(),
   push: vi.fn(),
   sendMail: vi.fn(),
+  getDeliveryStatus: vi.fn(),
   toast: vi.fn(),
   /** 피커 stub 이 마지막으로 받은 주소록 출처. 조합 지점이 무엇을 주입했는지 동일성으로 본다. */
   pickerProps: { addressBook: undefined as unknown },
@@ -21,7 +23,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/services/business/mail/MailService', () => ({
-  mailService: { sendMail: mocks.sendMail },
+  mailService: { sendMail: mocks.sendMail, getDeliveryStatus: mocks.getDeliveryStatus },
 }));
 
 vi.mock('@/app/components/ui/toast', () => ({
@@ -57,6 +59,49 @@ vi.mock('@/app/components/ui/recipient-picker', async () => {
   };
 });
 
+/** 발송 가능 상태를 조회하므로 QueryClient 가 필요하다(DIP B5 F7). 기본은 SMTP 가 연결된 배포다. */
+function renderCompose() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={client}>
+      <MailSendHubClient />
+    </QueryClientProvider>,
+  );
+}
+
+beforeEach(() => {
+  mocks.getDeliveryStatus.mockResolvedValue({ deliveryConfigured: true, senderImplementation: 'RealEmailSender' });
+});
+
+describe('MailSendHubClient 발송 가능 상태 (DIP B5 F7)', () => {
+  it('SMTP 가 없는 배포면 보내기 전에 메일이 실제로 발송되지 않는다고 알린다', async () => {
+    mocks.getDeliveryStatus.mockResolvedValue({ deliveryConfigured: false, senderImplementation: 'LoggingEmailSender' });
+    renderCompose();
+
+    expect(await screen.findByText('이 배포에는 메일 발송 설정(SMTP)이 없어 지금은 메일이 실제로 발송되지 않습니다.')).toBeInTheDocument();
+  });
+
+  it('SMTP 가 연결돼 있으면 고지를 띄우지 않는다', async () => {
+    renderCompose();
+
+    await waitFor(() => expect(mocks.getDeliveryStatus).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByText(/메일 발송 설정/)).not.toBeInTheDocument());
+  });
+
+  it('상태를 확인하지 못하면 안심시키지 않고 확인하지 못했다고 말한다', async () => {
+    mocks.getDeliveryStatus.mockRejectedValue(new Error('network'));
+    renderCompose();
+
+    expect(await screen.findByText('메일 발송 설정을 확인하지 못했습니다.')).toBeInTheDocument();
+  });
+
+  it('1초마다 화면 전체를 다시 그리던 현재 시각 장식을 두지 않는다', () => {
+    renderCompose();
+
+    expect(screen.queryByText('현재 시각')).not.toBeInTheDocument();
+  });
+});
+
 async function enterValidMail(user: ReturnType<typeof userEvent.setup>) {
   const recipient = screen.getByRole('textbox', { name: '수신자 선택' });
   await user.type(recipient, 'receiver@example.com');
@@ -76,7 +121,7 @@ async function enterValidMail(user: ReturnType<typeof userEvent.setup>) {
  */
 describe('MailSendHubClient 재사용 base 조합 지점', () => {
   it('입력 안내는 수신자 찾기가 실제로 주는 출처만 말한다', () => {
-    render(<MailSendHubClient />);
+    renderCompose();
     const placeholder = screen.getByRole('textbox', { name: '수신자 선택' }).getAttribute('placeholder') ?? '';
 
     // 기대값도 같은 마커로 조립한다 — demo 가 빠진 프로필에서도 '주소록' 이 없다는 사실을 정확한 문자열로 단언한다.
@@ -93,7 +138,7 @@ describe('MailSendHubClient 재사용 base 조합 지점', () => {
   it('전체 제품에서는 메일 수신자 피커에 주소록 어댑터를 그대로 주입한다', async () => {
     const user = userEvent.setup();
     mocks.pickerProps.addressBook = 'not-rendered';
-    render(<MailSendHubClient />);
+    renderCompose();
 
     await user.click(screen.getByRole('button', { name: '수신자 찾기' }));
     await screen.findByRole('button', { name: '피커 선택 확정' });
@@ -119,7 +164,7 @@ describe('MailSendHubClient validation', () => {
    */
   it('이메일이 아닌 값을 직접 입력하면 추가하지 않고, 이름으로 찾는 경로를 안내한다', async () => {
     const user = userEvent.setup();
-    render(<MailSendHubClient />);
+    renderCompose();
 
     const recipient = screen.getByRole('textbox', { name: '수신자 선택' });
     await user.type(recipient, 'kim01');
@@ -131,7 +176,7 @@ describe('MailSendHubClient validation', () => {
 
   it('직접 입력한 주소는 recipients[].emlAddr 로 싣고, 종전 recptnPerson 은 보내지 않는다', async () => {
     const user = userEvent.setup();
-    render(<MailSendHubClient />);
+    renderCompose();
     await enterValidMail(user);
 
     await user.click(screen.getByRole('button', { name: /메일 발송/ }));
@@ -148,7 +193,7 @@ describe('MailSendHubClient validation', () => {
    */
   it('수신자 찾기로 고른 사용자는 esntlId 만, 명함은 주소만 싣고 중복 주소는 한 번만 담는다', async () => {
     const user = userEvent.setup();
-    render(<MailSendHubClient />);
+    renderCompose();
     await enterValidMail(user);
 
     await user.click(screen.getByRole('button', { name: '수신자 찾기' }));
@@ -173,7 +218,7 @@ describe('MailSendHubClient validation', () => {
 
   it('선택한 사용자를 제외하면 payload 에서도 빠진다', async () => {
     const user = userEvent.setup();
-    render(<MailSendHubClient />);
+    renderCompose();
     await enterValidMail(user);
     await user.click(screen.getByRole('button', { name: '수신자 찾기' }));
     await user.click(await screen.findByRole('button', { name: '피커 선택 확정' }));
@@ -191,7 +236,7 @@ describe('MailSendHubClient validation', () => {
 
   it('제목 max+1을 write sink로 보내지 않고 제목 입력으로 이동한다', async () => {
     const user = userEvent.setup();
-    render(<MailSendHubClient />);
+    renderCompose();
     const fields = await enterValidMail(user);
     fireEvent.change(fields.subject, { target: { value: '가'.repeat(257) } });
 
@@ -204,7 +249,7 @@ describe('MailSendHubClient validation', () => {
 
   it('수신자가 없으면 summary와 inline 오류를 보이고 수신자 입력으로 이동한다', async () => {
     const user = userEvent.setup();
-    render(<MailSendHubClient />);
+    renderCompose();
     await user.type(screen.getByRole('textbox', { name: '메일 제목' }), '제목');
     await user.type(screen.getByRole('textbox', { name: '메일 본문' }), '본문');
 
@@ -221,7 +266,7 @@ describe('MailSendHubClient validation', () => {
       response: { data: { errors: [{ field: 'sj', message: '발송할 수 없는 제목입니다.' }] } },
     });
     const user = userEvent.setup();
-    render(<MailSendHubClient />);
+    renderCompose();
     const fields = await enterValidMail(user);
 
     await user.click(screen.getByRole('button', { name: /메일 발송/ }));
@@ -235,7 +280,7 @@ describe('MailSendHubClient validation', () => {
   it('일반 서버 오류는 토스트로 안내하고 입력값을 보존한다', async () => {
     mocks.sendMail.mockRejectedValueOnce(new Error('메일 서버에 연결할 수 없습니다.'));
     const user = userEvent.setup();
-    render(<MailSendHubClient />);
+    renderCompose();
     const fields = await enterValidMail(user);
 
     await user.click(screen.getByRole('button', { name: /메일 발송/ }));
@@ -252,7 +297,7 @@ describe('MailSendHubClient validation', () => {
       resolveSend = resolve;
     }));
     const user = userEvent.setup();
-    render(<MailSendHubClient />);
+    renderCompose();
     await enterValidMail(user);
     const submit = screen.getByRole('button', { name: /메일 발송/ });
     const form = submit.closest('form');

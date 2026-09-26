@@ -381,6 +381,53 @@ describe('NotePage validation contract', () => {
     expect(within(readState).getByText('이수신').parentElement).toHaveTextContent('읽지 않음');
   });
 
+  it('[DIP B5 F4] 받은 쪽지를 전달하면 받는 사람을 비우고 원문을 보낸 사람과 함께 인용한다', async () => {
+    const received = {
+      noteSn: 5, noteRcptnSn: 51, noteSj: '회의 자료', noteCn: '원문 본문', dsptchUserId: 'sender-5',
+      trnsmiterNm: '김발신', openYn: 'Y', crtDt: '2026-09-25',
+    };
+    mocks.getReceivedNotes.mockResolvedValueOnce({ list: [received] });
+    mocks.getNote.mockResolvedValueOnce(received);
+    render(<NotePage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: '회의 자료 쪽지 열기' }));
+    const detail = screen.getByRole('region', { name: '쪽지 데이터 상세 정보' });
+    fireEvent.click(await within(detail).findByRole('button', { name: '전달' }));
+
+    expect(screen.getByRole('textbox', { name: '시스템 제목' })).toHaveValue('Fwd: 회의 자료');
+    const body = (screen.getByRole('textbox', { name: '데이터 바디 (내용)' }) as HTMLTextAreaElement).value;
+    expect(body).toContain('보낸 사람: 김발신');
+    expect(body).toContain('날짜: 2026-09-25');
+    expect(body).toContain('제목: 회의 자료');
+    expect(body.endsWith('원문 본문')).toBe(true);
+    // 전달은 받는 사람을 새로 고른다 — 원 발신자를 몰래 넣지 않는다.
+    expect(screen.queryByText('총 1명 선택됨')).not.toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: '수신 대상자' })).toHaveValue('');
+  });
+
+  it('[DIP B5 F4] 보낸 쪽지도 전달할 수 있고 받은 사람들을 인용하며 Fwd 를 겹쳐 붙이지 않는다', async () => {
+    const sent = {
+      noteSn: 9, noteSndngSn: 91, noteSj: 'Fwd: 공지', noteCn: '보낸 본문', crtDt: '2026-09-26',
+      recipients: [
+        { noteRcptnSn: 1, rcverId: 'R1', rcverNm: '김수신', recptnSe: '1', openYn: 'Y' },
+        { noteRcptnSn: 2, rcverId: 'R2', recptnSe: '1', openYn: 'N' },
+      ],
+    };
+    mocks.getSentNotes.mockResolvedValue({ list: [sent] });
+    mocks.getNote.mockResolvedValueOnce(sent);
+    render(<NotePage />);
+
+    fireEvent.click(await screen.findByRole('tab', { name: /보낸 쪽지함/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Fwd: 공지 쪽지 열기' }));
+    const detail = screen.getByRole('region', { name: '쪽지 데이터 상세 정보' });
+    fireEvent.click(await within(detail).findByRole('button', { name: '전달' }));
+
+    expect(screen.getByRole('textbox', { name: '시스템 제목' })).toHaveValue('Fwd: 공지');
+    const body = (screen.getByRole('textbox', { name: '데이터 바디 (내용)' }) as HTMLTextAreaElement).value;
+    expect(body).toContain('받는 사람: 김수신, 알 수 없는 사용자');
+    expect(body).not.toContain('R2');
+  });
+
   it('상세 조회가 실패하면 이전 행 본문을 상세처럼 보이지 않고 재시도할 수 있다', async () => {
     const listNote = {
       noteSn: 8,
