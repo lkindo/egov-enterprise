@@ -368,6 +368,49 @@ describe('StandardDataTable', () => {
     expect(within(screen.getByRole('table')).getAllByRole('checkbox')[0]).not.toBeChecked();
   });
 
+  it('데이터가 바뀌면 사라진 행의 선택을 세지 않고, 같은 키의 행이 돌아와도 선택된 채 돌아오지 않는다 (DIP C3)', async () => {
+    // 일괄 삭제 뒤 목록을 다시 읽으면 지워진 행의 키가 선택 집합에 남아 '선택 항목 N개' 라 말했다.
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+    const table = (data: TestRow[]) => (
+      <StandardDataTable columns={columns} data={data} keyField="id" enableSelection bulkActions={[{ label: '삭제', onClick: onDelete }]} />
+    );
+    const { rerender } = render(table(rows));
+    await user.click(within(screen.getByRole('table')).getAllByRole('checkbox')[0]);
+    expect(screen.getByRole('button', { name: '선택한 2개 항목 전체 해제' })).toBeInTheDocument();
+
+    const replacement: TestRow[] = [{ id: 12, name: '김영희', state: '대기' }, { id: 13, name: '이순신', state: '활성' }];
+    rerender(table(replacement));
+    expect(screen.getByRole('button', { name: '선택한 1개 항목 전체 해제' })).toBeInTheDocument();
+    const header = within(screen.getByRole('table')).getAllByRole('checkbox')[0];
+    expect(header).toHaveAttribute('aria-checked', 'mixed');
+    await user.click(screen.getByRole('button', { name: '삭제' }));
+    expect(onDelete).toHaveBeenLastCalledWith([replacement[0]]);
+
+    rerender(table(rows));
+    expect(screen.getByRole('button', { name: '선택한 1개 항목 전체 해제' })).toBeInTheDocument();
+    const [, returned, kept] = within(screen.getByRole('table')).getAllByRole('checkbox');
+    expect(returned).not.toBeChecked();
+    expect(kept).toBeChecked();
+  });
+
+  it('헤더 체크박스는 선택 수가 아니라 현재 행 전체가 선택됐는지로 켜진다 (DIP C3)', async () => {
+    const user = userEvent.setup();
+    const table = (data: TestRow[]) => (
+      <StandardDataTable columns={columns} data={data} keyField="id" enableSelection bulkActions={[{ label: '삭제', onClick: vi.fn() }]} />
+    );
+    const { rerender } = render(table(rows));
+    await user.click(within(screen.getByRole('table')).getAllByRole('checkbox')[1]);
+    expect(within(screen.getByRole('table')).getAllByRole('checkbox')[0]).toHaveAttribute('aria-checked', 'mixed');
+
+    // 선택된 1건이 사라지고 다른 1건만 남으면 선택 수(과거 1)와 행 수(1)가 같아도 헤더는 켜지지 않는다.
+    rerender(table([{ id: 99, name: '새 행', state: '활성' }]));
+    const header = within(screen.getByRole('table')).getAllByRole('checkbox')[0];
+    expect(header).not.toBeChecked();
+    expect(header).toHaveAttribute('aria-checked', 'false');
+    expect(screen.queryByRole('button', { name: '삭제' })).not.toBeInTheDocument();
+  });
+
   it('오류·빈 상태를 구분하고 재시도 콜백을 제공한다', async () => {
     const user = userEvent.setup();
     const onRetry = vi.fn();

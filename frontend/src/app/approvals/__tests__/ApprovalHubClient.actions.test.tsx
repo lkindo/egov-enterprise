@@ -203,6 +203,26 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     expect(screen.getByRole('button', { name: /두 번째 페이지 건 #99 상세 열기/ })).toHaveAttribute('aria-current', 'true');
   });
 
+  it('마지막 페이지가 비면 마지막 페이지로 되돌려 빈 대기함에 갇히지 않는다 (DIP C4)', async () => {
+    const lastPageItem = { ...pendingApproval, ifmlAtrzSn: 98, taskSeNm: '세 번째 페이지 건' };
+    let total = 45;
+    mocks.getPending.mockImplementation(async ({ page }: { page: number }) => {
+      if (page === 2) return { list: total > 40 ? [lastPageItem] : [], total };
+      return { list: [{ ...pendingApproval, ifmlAtrzSn: 70 + page, taskSeNm: `${page + 1}페이지 건` }], total };
+    });
+    renderClient();
+    await screen.findByText('1페이지 건');
+    fireEvent.click(screen.getByRole('link', { name: '3' }));
+    await screen.findByText('세 번째 페이지 건');
+
+    // 마지막 페이지의 유일한 문서가 처리돼 전체가 40건(2페이지)으로 줄었다.
+    total = 40;
+    fireEvent.click(screen.getByRole('button', { name: '결재함 목록 새로고침' }));
+
+    expect(await screen.findByText('2페이지 건')).toBeInTheDocument();
+    expect(mocks.getPending).toHaveBeenLastCalledWith({ page: 1, size: 20 });
+  });
+
   it('공백 반려 사유는 요약과 inline 오류로 연결하고 첫 오류 입력에 초점을 둔다', async () => {
     renderClient();
 
