@@ -34,7 +34,6 @@ vi.mock('next/navigation', () => ({
 }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
-vi.mock('@/lib/hooks/use-debounced-value', () => ({ useDebouncedValue: (value: string) => value }));
 vi.mock('@/services/foundation/operation/eventService', () => ({
   eventService: {
     getEvents: mocks.getEvents,

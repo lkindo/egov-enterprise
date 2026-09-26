@@ -15,7 +15,6 @@ import { emptyResultMessage } from '@/app/components/patterns/empty-result-messa
 import { toDisplayYmd } from '@/lib/format-date';
 import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
 import { getPollStatus, POLL_STATUS_LABEL } from '@/lib/poll-status';
-import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
 const DEFAULT_PAGE_SIZE = 10;
@@ -30,12 +29,13 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
   // 종전에는 params 객체에 검색어가 직접 들어 있어 **타이핑 한 글자마다 서버 요청**이 나갔다.
   const [page, setPage] = useState(0); // 0-base (서버 Pageable 과 동일)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  // [2026-09-26 DIP C9] 검색어는 KeywordFilter 의 `조회`/Enter 로 이미 확정된다. 그 뒤에 디바운스를 한 번 더 두어
+  //   조회가 300ms 늦었다(카탈로그 G2).
   const [keyword, setKeyword] = useState('');
-  const debouncedKeyword = useDebouncedValue(keyword, 300);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['admin-polls', page, debouncedKeyword, pageSize],
-    queryFn: () => getPollList({ page, size: pageSize, searchKeyword: debouncedKeyword }),
+    queryKey: ['admin-polls', page, keyword, pageSize],
+    queryFn: () => getPollList({ page, size: pageSize, searchKeyword: keyword }),
   });
 
   const polls: OnlinePollManageVO[] = data?.list || [];

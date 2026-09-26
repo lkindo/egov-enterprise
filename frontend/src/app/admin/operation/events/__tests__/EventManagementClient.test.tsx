@@ -37,9 +37,6 @@ vi.mock('@/app/components/ui/confirm-modal', () => ({
   useConfirm: () => mocks.confirm,
 }));
 
-vi.mock('@/lib/hooks/use-debounced-value', () => ({
-  useDebouncedValue: (value: string) => value,
-}));
 
 vi.mock('@/app/components/patterns/work-list-page', () => ({
   WorkListPage: ({ actions, filter, children }: { actions?: ReactNode; filter?: ReactNode; children?: ReactNode }) => (
@@ -262,6 +259,19 @@ describe('EventManagementClient create validation', () => {
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('행사 삭제에 실패했습니다.', 'error'));
     expect(screen.getByText('보존할 행사')).toBeInTheDocument();
     expect(remove).not.toBeDisabled();
+  });
+
+  it('검색어는 입력만으로 조회하지 않고 조회 버튼이나 Enter 로 적용한다 (DIP C9)', async () => {
+    renderClient();
+    await waitFor(() => expect(mocks.getEvents).toHaveBeenCalled());
+    const calls = mocks.getEvents.mock.calls.length;
+
+    fireEvent.change(screen.getByLabelText('행사 명칭 · 상세 내용'), { target: { value: '워크숍' } });
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    expect(mocks.getEvents).toHaveBeenCalledTimes(calls);
+
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+    await waitFor(() => expect(mocks.getEvents).toHaveBeenLastCalledWith(expect.objectContaining({ searchWrd: '워크숍', page: 0 })));
   });
 
   it('외부인사가 남은 행사의 삭제 거부는 서버가 준 사유와 건수를 그대로 보인다', async () => {

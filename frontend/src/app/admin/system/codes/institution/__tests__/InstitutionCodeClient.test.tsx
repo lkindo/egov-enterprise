@@ -39,7 +39,6 @@ vi.mock('@/services/foundation/system/CodeAdminService', () => ({
 }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
-vi.mock('@/lib/hooks/use-debounced-value', () => ({ useDebouncedValue: (v: string) => v }));
 vi.mock('@/app/components/patterns/work-list-page', () => ({
   WorkListPage: ({ title, actions, filter, children }: {
     title: string; actions?: ReactNode; filter?: ReactNode; children: ReactNode;

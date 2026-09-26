@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { smsAdminService, SmsDto } from '@/services/foundation/operation/SmsAdminService';
@@ -35,7 +36,6 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
-import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { format } from 'date-fns';
 import { smsSchema, smsRecipientNumberSchema } from '@/lib/validation/schemas';
 import { useAppForm } from '@/hooks/useAppForm';
@@ -147,8 +147,6 @@ export default function SmsAdminClient({
    * (SmsRepositoryImpl.searchExpression) 그 밖의 값은 필터 없음이 되므로 화면도 둘만 제공한다.
    */
   const [searchCondition, setSearchCondition] = useState<'0' | '1'>('1');
-  /** 타이핑마다 서버를 때리지 않도록 300ms 디바운스(감사 P1-8). */
-  const debouncedKeyword = useDebouncedValue(searchKeyword, 300);
 
   const [page, setPage] = useState(() => {
     const raw = Number(searchParams.get('page'));
@@ -167,7 +165,7 @@ export default function SmsAdminClient({
   }, [pathname, router, searchParams]);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ['admin-sms', searchCondition, debouncedKeyword, page, pageSize],
+    queryKey: ['admin-sms', searchCondition, searchKeyword, page, pageSize],
     // 서버는 Spring Pageable(0-base)을 읽는다.
     queryFn: () => smsAdminService.getSmsList({
       // [2026-08-29] searchCondition 을 함께 보낸다.
@@ -175,12 +173,12 @@ export default function SmsAdminClient({
       //   '0'(수신전화번호)·'1'(전송내용) 이 아니면 **null(= 필터 없음)** 을 돌려준다. 즉
       //   무엇을 입력해도 전체 목록이 그대로 나왔고, 화면은 그것을 검색 결과처럼 보여 줬다.
       //   관리자는 "그 번호로 보낸 이력이 이만큼" 이라고 잘못 읽는다.
-      searchCondition: debouncedKeyword ? searchCondition : undefined,
-      searchKeyword: debouncedKeyword || undefined,
+      searchCondition: searchKeyword ? searchCondition : undefined,
+      searchKeyword: searchKeyword || undefined,
       page: page - 1,
       size: pageSize,
     }),
-    initialData: (page === 1 && !debouncedKeyword) ? (initialSmsList ?? undefined) : undefined,
+    initialData: (page === 1 && !searchKeyword) ? (initialSmsList ?? undefined) : undefined,
   });
 
   const smsList = data?.list ?? [];
@@ -414,21 +412,30 @@ export default function SmsAdminClient({
           </>
         }
         filter={
-          <div className="min-w-60 max-w-xl space-y-1">
-            {/*
-              [2026-08-29] 라벨을 '발신번호 · 내용' 에서 실제 검색 축으로 고친다.
-              서버가 번호로 거르는 축은 **수신**전화번호(rcptnTelno)이고 발신번호로 거르는
-              경로는 없다. 한 번에 한 축만 보낼 수 있으므로 축을 고르게 한다 — 두 축을 한
-              키워드로 OR 하려면 서버 술어를 바꿔야 하고, 그건 이 수정의 범위 밖이다.
-            */}
-            <label htmlFor="sms-search-condition" className="text-[length:var(--font-size-body)] font-medium">
-              조회 조건
-            </label>
-            <div className="flex gap-2">
+          /*
+            [2026-08-29] 라벨을 '발신번호 · 내용' 에서 실제 검색 축으로 고친다.
+            서버가 번호로 거르는 축은 **수신**전화번호(rcptnTelno)이고 발신번호로 거르는
+            경로는 없다. 한 번에 한 축만 보낼 수 있으므로 축을 고르게 한다 — 두 축을 한
+            키워드로 OR 하려면 서버 술어를 바꿔야 하고, 그건 이 수정의 범위 밖이다.
+            [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용한다(카탈로그 G2). 검색 시 1페이지로 되돌린다(감사 P1-8).
+          */
+          <KeywordFilter
+            label="문자 발송 이력 검색어"
+            placeholder={searchCondition === '0' ? '수신번호 검색' : '전송 내용 검색'}
+            value={searchKeyword}
+            onSearch={(next) => {
+              setSearchKeyword(next);
+              if (page !== 1) goToPage(1);
+            }}
+          >
+            <div className="space-y-1">
+              <label htmlFor="sms-search-condition" className="text-[length:var(--font-size-body)] font-medium">
+                조회 조건
+              </label>
               <select
                 id="sms-search-condition"
                 aria-label="문자 발송 이력 검색 조건"
-                className="h-[var(--control-h)] rounded-[var(--radius-control)] border border-border bg-card px-2 text-[length:var(--font-size-body)]"
+                className="block h-[var(--control-h)] rounded-[var(--radius-control)] border border-border bg-card px-2 text-[length:var(--font-size-body)]"
                 value={searchCondition}
                 onChange={(e) => {
                   setSearchCondition(e.target.value as '0' | '1');
@@ -438,19 +445,8 @@ export default function SmsAdminClient({
                 <option value="1">내용</option>
                 <option value="0">수신번호</option>
               </select>
-            <Input
-              id="sms-search"
-              placeholder={searchCondition === '0' ? '수신번호 검색' : '전송 내용 검색'}
-              aria-label="문자 발송 이력 검색어"
-              value={searchKeyword}
-              // 검색 시 1페이지로 되돌린다 — 3페이지에서 검색하면 빈 화면이 되던 결함(감사 P1-8).
-              onChange={(e) => {
-                setSearchKeyword(e.target.value);
-                if (page !== 1) goToPage(1);
-              }}
-            />
             </div>
-          </div>
+          </KeywordFilter>
         }
       >
         {/*
@@ -493,7 +489,7 @@ export default function SmsAdminClient({
           error={isError ? (error as Error) : null}
           onRetry={() => refetch()}
           keyField="smsTrsmSn"
-          emptyMessage={emptyResultMessage(debouncedKeyword, '발송된 문자 메시지가 없습니다.')}
+          emptyMessage={emptyResultMessage(searchKeyword, '발송된 문자 메시지가 없습니다.')}
           pagination={{
             currentPage: page,
             totalPages: data?.totalPage || 1,

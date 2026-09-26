@@ -257,7 +257,7 @@
 | `ReportPage`(A7) 소비 | 2 | 별도 exact census 가 고정 |
 | `sortKey`(열 정렬) 채택 | 9 | G5 — 이행 전 7. **현재 구현은 클라이언트 정렬이라 범위가 현재 페이지다** — 여러 페이지 결과에서는 페이저 요약이 그 범위를 고지한다([계약](../../frontend/src/app/components/ui/__tests__/sort-scope-disclosure.test.tsx)). 서버 정렬 파라미터 도입은 별도 과제(GAP-UI-001) |
 | `onPageSizeChange` 채택 | 28 | A1 **필수**. 이행 전 6 → 14 → 28. 2026-08-25 실측에서 서버 페이징이 있는 A1 화면 15개가 컨트롤을 전달하지 않고 있었다(기능은 표가 처음부터 갖고 있었다) — [census 게이트](../../frontend/src/__tests__/page-size-adoption-census.test.ts)가 제공 여부와 queryKey 결속을 함께 고정한다 |
-| `KeywordFilter` 경유 조회 조건 | 17 | G2 — 조회 조건 조립의 단일 경로 |
+| `KeywordFilter` 경유 조회 조건 | 17(2026-09-26 **30**) | G2 — 조회 조건 조립의 단일 경로. 2026-09-26 셸 경유 12화면이 여전히 입력 디바운스로 목록을 조회하던 것을 `조회`/Enter 로 옮겼고, [A1 census](../../frontend/src/__tests__/work-list-adoption-census.test.ts)가 셸 화면의 입력 디바운스 조회를 예외 없이 막는다(DIP C9) |
 | `emptyResultMessage` 경유 빈 상태 | 30 | G15 — 결과 없음/데이터 없음 구분 |
 | `PeriodFilter` 경유 조회 기간 | 6화면 | A6 **필수**. 로그 5화면 + 모니터링 허브 목록 탭. 서버 저장소는 처음부터 기간 조건을 갖고 있었고 화면이 보내지 않았다([계약](../../frontend/src/__tests__/cross-stack/log-period-filter-contract.test.ts)) |
 | `PagePagination` 별도 소비 | 0 | 표가 아닌 페이지 목록도 전부 셸·표 페이저로 수렴했다 |

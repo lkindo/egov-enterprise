@@ -14,7 +14,6 @@ const mocks = vi.hoisted(() => ({
 }));
 const { createGroup, updateGroup, deleteGroup, saveGroupGrants, saveUserGroups } = mocks;
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'operator', role: 'ROLE_ADMIN', permissions: mocks.permissions, authorizationVersion: 'auth-v1' } }) }));
-vi.mock('@/lib/hooks/use-debounced-value', () => ({ useDebouncedValue: (value: string) => value }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/services/foundation/system/AuthorizationAdminService', () => ({ authorizationAdminService: mocks }));
@@ -317,6 +316,9 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
   it('사용자 검색 페이지가 바뀌어도 현재 사용자의 전체 그룹 선택을 지우지 않는다', async () => {
     await openMembership();
     fireEvent.change(screen.getByRole('textbox', { name: '사용자 이름·로그인 ID' }), { target: { value: '다른 사용자' } });
+    // [DIP C9] 검색어는 조회 버튼으로 적용한다 — 입력만으로는 목록이 바뀌지 않는다.
+    await userEvent.click(screen.getByRole('button', { name: '조회' }));
+    await waitFor(() => expect(mocks.getUsers).toHaveBeenLastCalledWith('다른 사용자', 0, expect.any(Number)));
     await userEvent.click(screen.getByRole('checkbox', { name: /설문 담당/ }));
     await userEvent.click(screen.getByRole('button', { name: '사용자 그룹 저장' }));
     expect(saveUserGroups).toHaveBeenCalledWith('ESNTL_A', expect.objectContaining({ groups: ['CONTENT', 'SURVEY'] }));

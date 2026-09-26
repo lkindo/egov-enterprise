@@ -7,9 +7,10 @@ import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { notifyAuthorizationChanged } from '@/lib/auth/authorization-state';
 import { authorizationAdminService } from '@/services/foundation/system/AuthorizationAdminService';
-import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { useToast } from '@/app/components/ui/toast';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,13 +40,13 @@ export default function SecurityHubClient() {
   const [pendingCreate, setPendingCreate] = useState(false);
   const createLock = useRef(false);
   const [groupFilter, setGroupFilter] = useState('');
+  // [2026-09-26 DIP C9] 사용자 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했다.
   const [userSearch, setUserSearch] = useState('');
-  const keyword = useDebouncedValue(userSearch, 300);
   const [userPage, setUserPage] = useState(1);
   const groups = useQuery({ queryKey: [...scope, 'groups'], queryFn: () => authorizationAdminService.getGroups(), enabled: canRead, retry: false });
   const catalog = useQuery({ queryKey: [...scope, 'catalog'], queryFn: () => authorizationAdminService.getCatalog(), enabled: canRead && tab === 'groups', retry: false });
   const group = useQuery({ queryKey: [...scope, 'group', selectedGroup], queryFn: () => authorizationAdminService.getGroup(selectedGroup), enabled: canRead && tab === 'groups' && !!selectedGroup && !creating, retry: false });
-  const users = useQuery({ queryKey: [...scope, 'users', keyword, userPage], queryFn: () => authorizationAdminService.getUsers(keyword, userPage - 1, PAGE_SIZE), enabled: canRead && tab === 'users', retry: false });
+  const users = useQuery({ queryKey: [...scope, 'users', userSearch, userPage], queryFn: () => authorizationAdminService.getUsers(userSearch, userPage - 1, PAGE_SIZE), enabled: canRead && tab === 'users', retry: false });
   const membership = useQuery({ queryKey: [...scope, 'membership', selectedUser?.id], queryFn: () => authorizationAdminService.getMemberships(selectedUser!.id), enabled: canRead && tab === 'users' && !!selectedUser, retry: false });
 
   const refresh = async () => { await queryClient.invalidateQueries({ queryKey: ['authorization'] }); };
@@ -70,7 +71,7 @@ export default function SecurityHubClient() {
           {groups.isPending && <p role="status">그룹을 불러오는 중입니다…</p>}
           <ul className="space-y-2">{shownGroups.map((entry) => <li key={entry.code}><Button type="button" variant={entry.code === selectedGroup ? 'secondary' : 'outline'} className="h-auto w-full justify-start whitespace-normal p-3 text-left" disabled={pendingCreate} aria-pressed={entry.code === selectedGroup}
             onClick={() => { if (entry.code !== selectedGroup) void navigate(() => { setCreating(false); setSelectedGroup(entry.code); }); }}><span>{entry.name}<span className="block text-xs text-muted-foreground">{entry.code}</span></span></Button></li>)}</ul>
-          {groups.isSuccess && shownGroups.length === 0 && <p role="status">검색 결과가 없습니다.</p>}
+          {groups.isSuccess && shownGroups.length === 0 && <p role="status">{emptyResultMessage(groupFilter, '등록된 권한 그룹이 없습니다.')}</p>}
         </section>
         <div>
           {creating && canCreate ? <section className="rounded-lg border border-border bg-card p-5"><h2 className="mb-4 font-semibold">권한 그룹 등록</h2><AuthorizationGroupForm creating initial={{ code: '', name: '', description: '' }} externalBusy={pendingCreate}
@@ -86,10 +87,10 @@ export default function SecurityHubClient() {
         </div>
       </div>}
       {tab === 'users' && canRead && <div className="grid gap-6 lg:grid-cols-2">
-        <section className="space-y-4"><h2 className="font-semibold">사용자 찾기</h2><label className="block space-y-1 text-sm">사용자 이름·로그인 ID<Input value={userSearch} onChange={(event) => { setUserSearch(event.target.value); setUserPage(1); }} /></label>
+        <section className="space-y-4"><h2 className="font-semibold">사용자 찾기</h2><KeywordFilter label="사용자 이름·로그인 ID" value={userSearch} onSearch={(next) => { setUserSearch(next); setUserPage(1); }} />
           {users.isPending && <p role="status">사용자를 불러오는 중입니다…</p>}
           <ul aria-label="사용자 검색 결과" className="space-y-2">{(users.data?.list ?? []).map((entry) => <li key={entry.id}><Button type="button" variant={entry.id === selectedUser?.id ? 'secondary' : 'outline'} className="h-auto w-full justify-start p-3" aria-pressed={entry.id === selectedUser?.id} onClick={() => { if (entry.id !== selectedUser?.id) void navigate(() => setSelectedUser({ id: entry.id, name: entry.userNm })); }}>{entry.userNm} · {entry.userId}</Button></li>)}</ul>
-          {users.isSuccess && users.data.list.length === 0 && <p role="status">검색 결과가 없습니다.</p>}
+          {users.isSuccess && users.data.list.length === 0 && <p role="status">{emptyResultMessage(userSearch, '조회된 사용자가 없습니다.')}</p>}
           <PagePagination total={users.data?.total ?? 0} page={userPage} size={PAGE_SIZE} onPageChange={setUserPage} />
         </section>
         <div className="space-y-3">{selectedUser && <h2 className="font-semibold">{selectedUser.name}</h2>}

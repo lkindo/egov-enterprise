@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 // [2026-09-06 DEC-OPS-041] 관리 화면도 /api/v1/polls 를 쓴다 — 같은 서비스를 감싸던 /admin/system/polls 컨트롤러는 제거됐다.
@@ -39,7 +40,6 @@ import {
 } from '@/lib/format-date';
 import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
 import { getPollStatus, POLL_STATUS_LABEL, type PollStatus } from '@/lib/poll-status';
-import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
@@ -83,8 +83,8 @@ export default function OnlinePollAdminClient() {
  router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
  };
 
+ // [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했다.
  const [keyword, setKeyword] = useState('');
- const debouncedKeyword = useDebouncedValue(keyword, 300);
 
  const [isAddOpen, setIsAddOpen] = useState(false);
  const [isSaving, setIsSaving] = useState(false);
@@ -93,8 +93,8 @@ export default function OnlinePollAdminClient() {
  const todayYmd = useTodayStorageYmd();
 
  const { data, isLoading, isError, error, refetch } = useQuery({
- queryKey: ['admin-online-polls', page, debouncedKeyword, pageSize],
- queryFn: () => pollUserService.getPollList({ searchKeyword: debouncedKeyword, page, size: pageSize }),
+ queryKey: ['admin-online-polls', page, keyword, pageSize],
+ queryFn: () => pollUserService.getPollList({ searchKeyword: keyword, page, size: pageSize }),
  });
 
  const polls: OnlinePollDto[] = data?.list || [];
@@ -268,17 +268,12 @@ export default function OnlinePollAdminClient() {
  </>
  }
  filter={
- <div className="min-w-60 max-w-xl space-y-1">
- <label htmlFor="online-poll-search" className="text-[length:var(--font-size-body)] font-medium">
- 설문명
- </label>
- <Input
- id="online-poll-search"
+ <KeywordFilter
+ label="설문명"
  placeholder="설문명으로 검색"
  value={keyword}
- onChange={(e) => handleKeywordChange(e.target.value)}
+ onSearch={handleKeywordChange}
  />
- </div>
  }
  toolbarActions={
  /* 지표는 서버가 준 값만 남긴다. 카드 2장(180px 배경 아이콘·hover scale)을 한 줄로 수렴한다.

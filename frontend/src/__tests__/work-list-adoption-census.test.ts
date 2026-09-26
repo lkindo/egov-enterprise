@@ -127,6 +127,19 @@ describe('A1 archetype 채택 census', () => {
     ).toBe(DIRECT_ONLY);
   });
 
+  /*
+   * [2026-09-26 DIP C9] 카탈로그 G2 — 조회 조건은 `조회`/Enter 로 적용한다. W3 는 "조회 시점을 타이핑 디바운스에서
+   * `조회`/Enter 로 통일했다" 고 기록했지만 셸 경유 12화면이 여전히 입력 디바운스로 목록을 조회했다(규칙은 있는데 게이트가
+   * 없었다). 셸을 쓰는 화면은 목록 조회에 입력 디바운스 훅을 쓰지 않는다 — 예외 목록은 두지 않는다.
+   */
+  it('셸을 쓰는 화면은 목록을 입력 디바운스로 조회하지 않는다(G2 조회/Enter)', () => {
+    const debouncing = adopters.filter((relativePath) => {
+      const source = readFileSync(join(FRONTEND_DIR, relativePath), 'utf8');
+      return /from ['"]@\/lib\/hooks\/use-debounced-value['"]/.test(source);
+    });
+    expect(debouncing, `조회 시점이 입력 디바운스인 셸 화면: ${debouncing.join(', ')} — KeywordFilter(조회/Enter)로 적용하세요.`).toEqual([]);
+  });
+
   it('셸을 쓰는 화면은 총 건수를 표 하단에 중복 표기하지 않는다', () => {
     const duplicated = adopters.filter((relativePath) => {
       const source = readFileSync(join(FRONTEND_DIR, relativePath), 'utf8');

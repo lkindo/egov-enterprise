@@ -9,7 +9,6 @@ import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
-import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { eventService, EventInfo } from '@/services/foundation/operation/eventService';
 import { Button } from '@/components/ui/button';
 import { FormErrorSummary } from '@/components/ui/form';
@@ -117,6 +116,7 @@ const ymdToDisplay = (value?: string) => {
 };
 import { Input } from '@/components/ui/input';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import {
@@ -158,9 +158,8 @@ export default function EventManagementClient() {
   }, [router, pathname, searchParams]);
 
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  // [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했다.
   const [searchWrd, setSearchWrd] = useState('');
-  // 타이핑 한 글자마다 서버 요청이 나가지 않도록 디바운스 값만 queryKey 에 넣는다.
-  const debouncedSearchWrd = useDebouncedValue(searchWrd, 300);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [form, setForm] = useState<EventCreateFormInput>(EMPTY_EVENT_FORM);
   /**
@@ -185,8 +184,8 @@ export default function EventManagementClient() {
 
   // --- Data Fetching ---
   const { data: eventsData, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['events-list', debouncedSearchWrd, page, pageSize],
-    queryFn: () => eventService.getEvents({ searchWrd: debouncedSearchWrd, page: page - 1, size: pageSize }),
+    queryKey: ['events-list', searchWrd, page, pageSize],
+    queryFn: () => eventService.getEvents({ searchWrd, page: page - 1, size: pageSize }),
   });
 
   const displayItems: EventInfo[] = eventsData?.list ?? [];
@@ -421,24 +420,18 @@ export default function EventManagementClient() {
         </Button>
       }
       filter={
-        <div className="min-w-60 max-w-xl space-y-1">
-          {/*
-            [2026-08-28] 라벨이 '행사 명칭' 이었지만 서버는 명칭과 상세 내용을 함께 찾는다
-            (EventInfoRepository: evntCn LIKE … OR evntNm LIKE …). 제목에 없는 검색어로 행이
-            섞여 나오는 이유를 화면이 말하지 않았고, 라벨은 오히려 '명칭으로 찾는다'고 단정했다.
-            라벨은 **서버가 실제로 검색하는 필드만** 적는다(EventInfoRepository 는 evntNm·evntCn 을 본다).
-          */}
-          <label htmlFor="event-search" className="text-[length:var(--font-size-body)] font-medium">
-            행사 명칭 · 상세 내용
-          </label>
-          <Input
-            id="event-search"
-            value={searchWrd}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            aria-label="행사 명칭 또는 상세 내용 검색"
-            placeholder="행사 명칭 또는 상세 내용으로 검색"
-          />
-        </div>
+        /*
+          [2026-08-28] 라벨이 '행사 명칭' 이었지만 서버는 명칭과 상세 내용을 함께 찾는다
+          (EventInfoRepository: evntCn LIKE … OR evntNm LIKE …). 제목에 없는 검색어로 행이
+          섞여 나오는 이유를 화면이 말하지 않았고, 라벨은 오히려 '명칭으로 찾는다'고 단정했다.
+          라벨은 **서버가 실제로 검색하는 필드만** 적는다(EventInfoRepository 는 evntNm·evntCn 을 본다).
+        */
+        <KeywordFilter
+          label="행사 명칭 · 상세 내용"
+          placeholder="행사 명칭 또는 상세 내용으로 검색"
+          value={searchWrd}
+          onSearch={handleSearchChange}
+        />
       }
     >
       <StandardDataTable
@@ -448,7 +441,7 @@ export default function EventManagementClient() {
         loading={isLoading}
         error={isError ? (error as Error) : null}
         onRetry={() => refetch()}
-        emptyMessage={emptyResultMessage(debouncedSearchWrd, '등록된 행사가 없습니다.')}
+        emptyMessage={emptyResultMessage(searchWrd, '등록된 행사가 없습니다.')}
         keyField="evntSn"
         pagination={{
           currentPage: page,

@@ -3,6 +3,8 @@
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
@@ -12,11 +14,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 ;
 import { Switch } from '@/components/ui/switch';
-import { Clock, Globe, RefreshCcw, Settings2, Timer, Trash2, User, X } from 'lucide-react';
+import { Clock, Globe, RefreshCcw, Settings2, Timer, Trash2, User } from 'lucide-react';
 import { useAppForm } from '@/hooks/useAppForm';
 import { z } from 'zod';
 import { useToast } from '@/app/components/ui/toast';
-import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import {
   Form,
   FormControl,
@@ -107,12 +108,11 @@ export default function LoginPolicyAdminClient() {
   const [selectedPolicy, setSelectedPolicy] = useState<LoginPolicy | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   /**
-   * 입력 컨트롤에는 원본(searchTerm)을, 서버 요청/queryKey 에는 디바운스 값만 쓴다.
-   * 종전에는 수동 fetch + try/catch 라 조회 실패 시 목록이 빈 배열로 남아
+   * [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했다.
+   * 그보다 앞서는 수동 fetch + try/catch 라 조회 실패 시 목록이 빈 배열로 남아
    * '데이터 없음'으로 위장됐다(토스트만 뜨고 화면은 정상처럼 보임).
    */
-  const [searchTerm, setSearchTerm] = useState('');
-  const searchKeyword = useDebouncedValue(searchTerm, 300);
+  const [searchKeyword, setSearchKeyword] = useState('');
   const [page, setPage] = useState(1);
   /** 페이지당 건수(A1 필수). 크기는 반드시 queryKey 에 실어야 컨트롤이 조용히 죽지 않는다. */
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
@@ -333,32 +333,13 @@ export default function LoginPolicyAdminClient() {
       breadcrumbItems={[{ label: '권한 보안' }, { label: '로그인 정책 관리' }]}
       totalCount={error ? undefined : total}
       filter={(
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="min-w-0 flex-1 sm:min-w-[16rem]">
-            {/* ⚠ 이 접근 이름은 e2e(26-security-admin-coverage)가 셀렉터로 쓴다 —
-                보이는 라벨과 같게 두어 WCAG 2.5.3 도 함께 만족시킨다. */}
-            <label htmlFor="login-policy-search" className="mb-1 block text-xs font-medium text-muted-foreground">
-              사용자 ID 또는 성명 검색
-            </label>
-            <Input
-              id="login-policy-search"
-              placeholder="사용자 ID 또는 성명 검색..."
-              value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
-              className="h-[var(--filter-control-h)] text-[length:var(--font-size-body)]"
-            />
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={!searchTerm}
-            onClick={() => { setSearchTerm(''); setPage(1); }}
-            className="gap-1.5"
-          >
-            <X size={14} aria-hidden="true" /> 초기화
-          </Button>
-        </div>
+        // ⚠ 이 접근 이름은 e2e(security-administration)가 셀렉터로 쓴다 — 보이는 라벨과 같게 둔다(WCAG 2.5.3).
+        <KeywordFilter
+          label="사용자 ID 또는 성명 검색"
+          placeholder="사용자 ID 또는 성명 검색..."
+          value={searchKeyword}
+          onSearch={(next) => { setSearchKeyword(next); setPage(1); }}
+        />
       )}
       toolbarActions={(
         <>
@@ -391,7 +372,7 @@ export default function LoginPolicyAdminClient() {
         error={error as Error | null}
         onRetry={() => refetch()}
         keyField="userId"
-        emptyMessage={searchKeyword ? `'${searchKeyword}' 검색 결과가 없습니다.` : '조회된 사용자가 없습니다.'}
+        emptyMessage={emptyResultMessage(searchKeyword, '조회된 사용자가 없습니다.')}
         // 업무형 화면은 표 진입 애니메이션을 두지 않는다(카탈로그 §3 금지 목록).
         // ⚠ 총 건수는 셸의 결과 툴바가 단독으로 소유한다 — 여기 totalCount 를 다시 넘기면
         //   같은 수치가 표 위아래로 두 번 나온다(work-list-adoption-census 가 red 로 막는다).

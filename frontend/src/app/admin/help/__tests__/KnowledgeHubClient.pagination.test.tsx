@@ -6,7 +6,6 @@ import KnowledgeHubClient from '../KnowledgeHubClient';
 const mocks = vi.hoisted(() => ({ getArticles: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => '/admin/help/faq', useSearchParams: () => new URLSearchParams('tab=FAQ') }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: ['BOARD_READ'] } }) }));
-vi.mock('@/lib/hooks/use-debounced-value', () => ({ useDebouncedValue: (value: string) => value }));
 vi.mock('@/services/business/knowledge/knowledgeService', () => ({ knowledgeService: { getArticles: mocks.getArticles, getHotArticles: async () => ({ list: [] }), getStats: async () => ({}), getActivities: async () => [] } }));
 
 describe('knowledge list server pagination', () => {
@@ -28,6 +27,8 @@ describe('knowledge list server pagination', () => {
     fireEvent.click(screen.getByRole('link', { name: '3' }));
     await screen.findByText('views-페이지-3');
     fireEvent.change(screen.getByRole('textbox', { name: '지식 검색어' }), { target: { value: '검색어' } });
+    // [DIP C9] 검색어는 조회 버튼이나 Enter 로 적용한다.
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
     await waitFor(() => expect(mocks.getArticles).toHaveBeenLastCalledWith(expect.objectContaining({ page: 0, searchWrd: '검색어', orderBy: 'views' })));
   });
 
@@ -38,6 +39,20 @@ describe('knowledge list server pagination', () => {
 
     expect(input).toHaveAttribute('placeholder', '제목 검색...');
     fireEvent.change(input, { target: { value: '연차' } });
+    fireEvent.submit(input.closest('form')!);
     await waitFor(() => expect(mocks.getArticles).toHaveBeenLastCalledWith(expect.objectContaining({ searchCnd: '0', searchWrd: '연차' })));
+  });
+
+  it('검색어는 입력만으로 조회하지 않는다 (DIP C9)', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={client}><KnowledgeHubClient defaultTab="FAQ" /></QueryClientProvider>);
+    const input = await screen.findByRole('textbox', { name: '지식 검색어' });
+    await waitFor(() => expect(mocks.getArticles).toHaveBeenCalled());
+    const calls = mocks.getArticles.mock.calls.length;
+
+    fireEvent.change(input, { target: { value: '입력 중' } });
+    await new Promise((resolve) => setTimeout(resolve, 350));
+
+    expect(mocks.getArticles).toHaveBeenCalledTimes(calls);
   });
 });

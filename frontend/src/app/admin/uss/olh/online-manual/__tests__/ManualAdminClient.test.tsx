@@ -42,7 +42,6 @@ vi.mock('@/services/foundation/user/ManualAdminService', () => ({
 
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
-vi.mock('@/lib/hooks/use-debounced-value', () => ({ useDebouncedValue: (value: string) => value }));
 vi.mock('@/app/components/patterns/empty-result-message', () => ({ emptyResultMessage: (_value: string, fallback: string) => fallback }));
 vi.mock('@/app/components/patterns/work-list-page', () => ({
   WorkListPage: ({ actions, filter, children }: React.PropsWithChildren<{ actions?: React.ReactNode; filter?: React.ReactNode }>) => (

@@ -57,7 +57,6 @@ vi.mock('@/services/foundation/operation/SmsAdminService', () => ({
 }));
 
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
-vi.mock('@/lib/hooks/use-debounced-value', () => ({ useDebouncedValue: (value: string) => value }));
 vi.mock('@/app/components/patterns/empty-result-message', () => ({ emptyResultMessage: (_value: string, fallback: string) => fallback }));
 vi.mock('@/app/components/patterns/work-list-page', () => ({
   WorkListPage: ({ actions, filter, children }: React.PropsWithChildren<{ actions?: React.ReactNode; filter?: React.ReactNode }>) => (
@@ -115,7 +114,8 @@ describe('SMS 조회 조건 전달', () => {
     const user = userEvent.setup();
     render(<SmsAdminClient initialSmsList={null} />);
 
-    await user.type(screen.getByRole('textbox', { name: '문자 발송 이력 검색어' }), '안내');
+    // [DIP C9] 검색어는 조회/Enter 로 적용한다.
+    await user.type(screen.getByRole('textbox', { name: '문자 발송 이력 검색어' }), '안내{Enter}');
     await act(async () => { await mocks.queries['admin-sms']?.queryFn?.(); });
 
     expect(mocks.getSmsList).toHaveBeenCalledWith(
@@ -129,7 +129,7 @@ describe('SMS 조회 조건 전달', () => {
 
     await user.selectOptions(
       screen.getByRole('combobox', { name: '문자 발송 이력 검색 조건' }), '0');
-    await user.type(screen.getByRole('textbox', { name: '문자 발송 이력 검색어' }), '010');
+    await user.type(screen.getByRole('textbox', { name: '문자 발송 이력 검색어' }), '010{Enter}');
     await act(async () => { await mocks.queries['admin-sms']?.queryFn?.(); });
 
     expect(mocks.getSmsList).toHaveBeenCalledWith(
