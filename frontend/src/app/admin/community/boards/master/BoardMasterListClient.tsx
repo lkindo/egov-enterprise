@@ -46,7 +46,7 @@ import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUti
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { BoardMasterDtoSchema } from '@/types/generated-zod';
-import { SERVER_MAX_FILE_SIZE_MB, SERVER_MAX_FILES_PER_REQUEST } from '@/lib/upload/server-upload-limits';
+import { SERVER_MAX_FILE_SIZE_MB, SERVER_MAX_FILES_PER_REQUEST } from '@/lib/attachments/server-upload-limits';
 
 export const boardMasterEditSchema = BoardMasterDtoSchema.pick({
   bbsTtl: true,

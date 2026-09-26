@@ -6,7 +6,7 @@ import {
   SERVER_MAX_FILE_SIZE_MB,
   SERVER_MAX_FILES_PER_REQUEST,
   SERVER_UPLOAD_EXTENSIONS,
-} from '@/lib/upload/server-upload-limits';
+} from '@/lib/attachments/server-upload-limits';
 
 const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const REPO_DIR = join(SRC_DIR, '..', '..');

@@ -29,7 +29,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
 import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
-import { boardUploadLimits, formatMegabytes, SERVER_UPLOAD_ACCEPT, SERVER_UPLOAD_EXTENSIONS } from '@/lib/upload/server-upload-limits';
+import { boardUploadLimits, formatMegabytes, SERVER_UPLOAD_ACCEPT, SERVER_UPLOAD_EXTENSIONS } from '@/lib/attachments/server-upload-limits';
 import { fileService } from '@/services/foundation/file/FileService';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { extractErrorMessage } from '@/app/actions/actionUtils';

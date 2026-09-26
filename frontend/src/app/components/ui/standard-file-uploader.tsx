@@ -5,7 +5,7 @@ import { Upload, X, FileIcon, CheckCircle2, AlertCircle, Loader2, Hourglass } fr
 import { cn } from '@/lib/utils';
 // [2026-09-20] framer-motion 을 걷었다 — 드롭존 확대·아이콘 바운스·첨부 행 진입 모션은 첨부 결과 도달만 늦춘다(카탈로그 §3).
 import { toast } from 'sonner';
-import { SERVER_MAX_FILE_SIZE_MB, SERVER_UPLOAD_ACCEPT } from '@/lib/upload/server-upload-limits';
+import { SERVER_MAX_FILE_SIZE_MB, SERVER_UPLOAD_ACCEPT } from '@/lib/attachments/server-upload-limits';
 
 /** FileService와 tb_file_detail.orgnl_file_nm의 원본 파일명 상한. */
 const MAX_FILENAME_LENGTH = 300;
