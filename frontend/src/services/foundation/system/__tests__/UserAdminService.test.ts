@@ -207,6 +207,16 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
     });
   });
 
+  describe('부서 소속 수신자 (getDepartmentRecipients, DIP B5 F5)', () => {
+    it('부서 ID 를 by-department 하위 경로 변수로 붙이고 응답을 그대로 돌려준다', async () => {
+      const payload = { members: [{ esntlId: 'E1', userNm: '김갑', deptNm: '기획팀', absent: false }], truncated: false };
+      client.get.mockResolvedValueOnce(payload);
+
+      await expect(userAdminService.getDepartmentRecipients('ORG_A', { timeout: 1000 })).resolves.toStrictEqual(payload);
+      expect(client.get).toHaveBeenCalledWith(`${BASE}/by-department/ORG_A`, { timeout: 1000 });
+    });
+  });
+
   describe('등록 (createUser)', () => {
     it('컬렉션 경로에 payload 를 그대로 실어 POST 한다', async () => {
       const payload: Partial<UserManage> = {

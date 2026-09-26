@@ -153,6 +153,12 @@ export function AuthProvider({
   );
 }
 
+/**
+ * 공급자 밖에서는 undefined 를 돌려준다 — 권한에 따라 부가 기능만 켜고 끄는 곳(예: 수신자 피커의 부서 탭)이 쓴다.
+ * 인증이 필요한 화면은 여전히 {@link useAuth} 로 공급자 부재를 오류로 드러낸다.
+ */
+export const useOptionalAuth = () => useContext(AuthContext);
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

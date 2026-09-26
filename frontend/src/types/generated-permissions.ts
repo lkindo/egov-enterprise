@@ -246,7 +246,7 @@ export const PERMISSION_CODES = [
   "WORK_RPT_UPDATE_ALL"
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
-export const PERMISSION_CATALOG_VERSION = "fea073b226664236bd0800591e455d7d6ca266515d4a8507ed6ab2d806831b57";
+export const PERMISSION_CATALOG_VERSION = "5b62f77b3d4410bb02d04f3d9c634aceb51e4f44c83869a8878ff60502e46be6";
 export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]>> = {
   "/": [],
   "/admin": [

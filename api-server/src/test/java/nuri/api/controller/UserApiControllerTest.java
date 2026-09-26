@@ -225,6 +225,21 @@ public class UserApiControllerTest extends BaseControllerTest {
     }
 
     @Test
+    @DisplayName("[DIP B5 F5] 관리자: 부서 소속 수신자는 부서 ID 를 서비스로 넘기고 최소 필드와 절단 여부만 싣는다")
+    void getDepartmentRecipients() throws Exception {
+        when(userService.getDepartmentRecipients("ORG_A")).thenReturn(new nuri.business.service.user.dto.DepartmentRecipientsDto(
+                List.of(new nuri.business.service.user.dto.UserSearchDto("E1", "홍길동", "기획팀", false)), true));
+
+        mockMvc.perform(get("/api/v1/admin/system/users/by-department/ORG_A"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.members[0].esntlId").value("E1"))
+                .andExpect(jsonPath("$.data.members[0].userNm").value("홍길동"))
+                .andExpect(jsonPath("$.data.members[0].emlAddr").doesNotExist())
+                .andExpect(jsonPath("$.data.truncated").value(true));
+        verify(userService).getDepartmentRecipients("ORG_A");
+    }
+
+    @Test
     @DisplayName("관리자: 특정 사용자 조회 성공")
     void getUser() throws Exception {
         UserDto mockDto = UserDto.builder()

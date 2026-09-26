@@ -67,6 +67,11 @@ export interface PeriodFilterProps {
   onChange: (next: PeriodValue) => void;
   /** 조회 조건 라벨. 화면마다 기준 컬럼이 다르므로 무엇의 기간인지 적는다(예: `발생일자`). */
   label: string;
+  /**
+   * 보일 프리셋(기본: 전부). '전체'(조건 없음)가 그 화면에서 전체 기간을 뜻하지 않을 때 뺀다 — 예: 통계 API 는 기간이
+   * 없으면 서버 기본값(최근 1개월)을 집계하므로 '전체' 라는 이름이 거짓이 된다(2026-09-26 DIP B5 F6).
+   */
+  presets?: PeriodPreset[];
 }
 
 /**
@@ -92,7 +97,7 @@ export function periodProblem(value: PeriodValue): string | null {
   return null;
 }
 
-export function PeriodFilter({ value, onChange, label }: PeriodFilterProps) {
+export function PeriodFilter({ value, onChange, label, presets }: PeriodFilterProps) {
   const fromId = useId();
   const toId = useId();
   const hintId = useId();
@@ -104,7 +109,7 @@ export function PeriodFilter({ value, onChange, label }: PeriodFilterProps) {
       <span className="block text-[length:var(--font-size-body)] font-medium">{label}</span>
       <div className="flex flex-wrap items-center gap-2">
         <div role="group" aria-label={`${label} 프리셋`} className="flex rounded-md border border-border p-0.5">
-          {PRESETS.map((preset) => (
+          {PRESETS.filter((preset) => !presets || presets.includes(preset.key)).map((preset) => (
             <button
               key={preset.key}
               type="button"

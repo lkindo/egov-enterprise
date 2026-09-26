@@ -19,6 +19,7 @@ import { Send,
   Users,
   X } from 'lucide-react';
 import { RecipientPicker, recipientKey, type RecipientSelection } from '@/app/components/ui/recipient-picker';
+import { useRecipientDepartmentSource } from '@/app/components/ui/recipient-department-source';
 /* reusable-base:demo:start */
 import { recipientAddressBookSource } from '@/services/business/user/addressbook/recipient-address-book-source';
 /* reusable-base:demo:end */
@@ -137,6 +138,8 @@ export default function SmsAdminClient({
 
   const [isSending, setIsSending] = useState(false);
   const sendPendingRef = useRef(false);
+  // [2026-09-27 DIP B5 F5] 부서 단위 일괄 선택 — 조직·사용자 조회 권한이 있을 때만 피커에 부서 탭이 생긴다.
+  const departmentSource = useRecipientDepartmentSource();
   const [isSendOpen, setIsSendOpen] = useState(false);
   /** 수신자 찾기·직접 추가로 모은 수신자. 수신 번호 입력란의 값은 제출 시점에 여기에 합쳐진다. */
   const [recipients, setRecipients] = useState<RecipientSelection[]>([]);
@@ -688,6 +691,7 @@ export default function SmsAdminClient({
         <RecipientPicker
           isOpen={isPickerOpen}
           channel="sms"
+          department={departmentSource}
           /* reusable-base:demo:start */
           addressBook={recipientAddressBookSource}
           /* reusable-base:demo:end */

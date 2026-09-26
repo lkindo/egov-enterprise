@@ -1,4 +1,4 @@
-import { render, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -62,5 +62,37 @@ describe('통계 허브 탭별 조회', () => {
   it('자료 이용 탭을 열면 자료 이용 통계를 부른다', async () => {
     renderHub('DATA_USAGE');
     await waitFor(() => expect(services.getDataUsageStats).toHaveBeenCalledTimes(1));
+  });
+
+  it('[DIP B5 F6] 기간을 고르지 않으면 서버 기본값으로 부르고 그 사실을 말한다 — 전체 프리셋은 없다', async () => {
+    renderHub('SYSTEM_STATS');
+    await waitFor(() => expect(services.getUserStats).toHaveBeenCalledWith(undefined));
+    expect(services.getConnectStats).toHaveBeenCalledWith(undefined);
+    expect(screen.getByText('집계 구간: 최근 1개월(기간을 고르지 않으면 서버 기본값)')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '전체' })).not.toBeInTheDocument();
+  });
+
+  it('[DIP B5 F6] 기간 프리셋을 고르면 그 기간으로 다시 부르고 적용 구간을 보인다', async () => {
+    renderHub('SYSTEM_STATS');
+    await waitFor(() => expect(services.getUserStats).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole('button', { name: '최근 1주' }));
+
+    await waitFor(() => expect(services.getUserStats).toHaveBeenLastCalledWith(
+      { fromDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), toDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) }));
+    const { fromDate, toDate } = services.getUserStats.mock.lastCall![0];
+    expect(fromDate <= toDate).toBe(true);
+    expect(services.getConnectStats).toHaveBeenLastCalledWith({ fromDate, toDate });
+    expect(screen.getByText(`집계 구간: ${fromDate} ~ ${toDate}`)).toBeInTheDocument();
+  });
+
+  it('[DIP B5 F6] 한쪽만 고른 기간은 보내지 않고 서버 기본값을 집계한다', async () => {
+    renderHub('SYSTEM_STATS');
+    await waitFor(() => expect(services.getUserStats).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByLabelText('집계 기간 시작일'), { target: { value: '2026-09-01' } });
+
+    expect(await screen.findByText('시작일과 종료일을 모두 입력해야 기간이 적용됩니다.')).toBeInTheDocument();
+    expect(services.getUserStats).toHaveBeenLastCalledWith(undefined);
   });
 });
