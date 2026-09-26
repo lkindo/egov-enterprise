@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,9 @@ import { Badge } from '@/components/ui/badge';
 import { PagePagination } from '@/components/common/PagePagination';
 import { usePageClamp } from '@/lib/hooks/use-page-clamp';
 import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { PeriodFilter, EMPTY_PERIOD, type PeriodValue } from '@/app/components/patterns/period-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { ApprovalStepper } from './ApprovalStepper';
 import { ApprovalDraftDialog } from './ApprovalDraftDialog';
 import {
@@ -40,6 +43,15 @@ const EMPTY_APPROVALS: InformalSanctionDto[] = [];
  * 화면에서 도달할 수 없었다. 페이지 상태는 URL 에 싣지 않는다(승인된 URL-state 부류가 아니다).
  */
 const PAGE_SIZE = 20;
+
+/** 문서 상태 조건(2026-09-26 DIP B5 F4) — 대기 탭에서는 쓰지 않는다. */
+const STATUS_FILTER_OPTIONS: ReadonlyArray<{ value: '' | SanctionStatusCode; label: string }> = [
+  { value: '', label: '전체 상태' },
+  { value: 'A', label: '대기 중' },
+  { value: 'C', label: '승인 완료' },
+  { value: 'R', label: '반려' },
+  { value: 'W', label: '회수' },
+];
 
 /**
  * 탭 이름은 실제 질의 축을 말한다.
@@ -128,6 +140,12 @@ export default function ApprovalHubClient() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<ApprovalTab>('PENDING');
   const [page, setPage] = useState(1);
+  // [2026-09-26 DIP B5 F4] 제목·요청일 기간·문서 상태로 좁힌다. 조건은 서버가 적용한다.
+  const [keyword, setKeyword] = useState('');
+  const [period, setPeriod] = useState<PeriodValue>(EMPTY_PERIOD);
+  const [statusFilter, setStatusFilter] = useState<'' | SanctionStatusCode>('');
+  const statusFilterId = useId();
+  const pendingCountId = useId();
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isDraftOpen, setDraftOpen] = useState(false);
   const [resubmission, setResubmission] = useState<InformalSanctionDto | undefined>();
@@ -145,9 +163,20 @@ export default function ApprovalHubClient() {
   });
   const navigate = useUnsavedChanges({ dirty: Boolean(rejectReason.trim()), pending: pendingAction !== null });
 
+  const listFilters = {
+    ...(keyword ? { keyword } : {}),
+    ...(period.from && period.to ? { fromYmd: period.from.replace(/-/g, ''), toYmd: period.to.replace(/-/g, '') } : {}),
+    ...(activeTab !== 'PENDING' && statusFilter ? { status: statusFilter } : {}),
+  };
+  const hasListFilter = Object.keys(listFilters).length > 0;
   const { data: approvalData, isLoading, isFetching, error: approvalsError, refetch: refetchApprovals } = useQuery(
-    approvalQueryOptions.list(activeTab, { page: page - 1, size: PAGE_SIZE }),
+    approvalQueryOptions.list(activeTab, { page: page - 1, size: PAGE_SIZE, ...listFilters }),
   );
+  // 대기 탭의 건수 배지 — 조건과 무관한 전체 대기 건수다. 처리하면 목록 무효화와 함께 다시 읽힌다.
+  const { data: pendingTotal } = useQuery({
+    ...approvalQueryOptions.list('PENDING', { page: 0, size: 1 }),
+    select: (response) => response.total ?? 0,
+  });
   const confirmMutation = useMutation(approvalMutationOptions.confirm(queryClient));
   const cancelMutation = useMutation(approvalMutationOptions.cancel(queryClient));
 
@@ -184,6 +213,20 @@ export default function ApprovalHubClient() {
     revision => revision.atrzCycl !== undefined && revision.atrzCycl < (selectedItem?.atrzCycl ?? 1),
   );
   const hasVisibleSelection = list.some(item => sanctionKey(item) === selectedItemId);
+
+  /** 조건이 바뀌면 1페이지로 돌아가고 선택을 푼다 — 작성 중인 반려 사유가 있으면 탭 전환과 같은 확인을 거친다. */
+  const applyListFilter = (apply: () => void) => {
+    if (pendingActionRef.current) return;
+    void navigate(() => {
+      apply();
+      setPage(1);
+      setSelectedItemId(null);
+      setRejectReason('');
+      decisionValidation.setFormErrors({}, false);
+      setActionError('');
+      setNeedsActionReview(false);
+    });
+  };
 
   const handleTabChange = (tab: ApprovalTab) => {
     if (pendingActionRef.current || tab === activeTab) return;
@@ -389,12 +432,19 @@ export default function ApprovalHubClient() {
               size="sm"
               variant={activeTab === tab ? 'default' : 'outline'}
               aria-selected={activeTab === tab}
+              aria-describedby={tab === 'PENDING' && pendingTotal ? pendingCountId : undefined}
               disabled={isActionPending}
               onClick={() => handleTabChange(tab)}
             >
               {TAB_LABELS[tab]}
+              {tab === 'PENDING' && pendingTotal ? (
+                <span aria-hidden="true" className="ml-1 rounded-full bg-primary/15 px-1.5 text-xs font-semibold tabular-nums">
+                  {pendingTotal.toLocaleString()}
+                </span>
+              ) : null}
             </Button>
           ))}
+          {pendingTotal ? <span id={pendingCountId} className="sr-only">대기 중인 결재 {pendingTotal.toLocaleString()}건</span> : null}
           {/*
             종전의 비활성 보관함 버튼은 걷었다. 그것이 가리키던 "처리한 문서를 다시 보는 곳" 은
             이제 세 번째 탭이 실제 API(/approvals/processed)로 제공한다(G10 — 죽은 컨트롤 금지).
@@ -409,6 +459,33 @@ export default function ApprovalHubClient() {
       }
       master={(
         <div className="space-y-3">
+          <KeywordFilter
+            label="제목"
+            placeholder="결재 문서 제목"
+            value={keyword}
+            onSearch={(next) => applyListFilter(() => setKeyword(next))}
+            onReset={() => applyListFilter(() => { setKeyword(''); setPeriod(EMPTY_PERIOD); setStatusFilter(''); })}
+          >
+            <PeriodFilter label="요청일" value={period} onChange={(next) => applyListFilter(() => setPeriod(next))} />
+            {activeTab !== 'PENDING' && (
+              <div className="space-y-1">
+                <label htmlFor={statusFilterId} className="text-[length:var(--font-size-body)] font-medium">문서 상태</label>
+                <select
+                  id={statusFilterId}
+                  value={statusFilter}
+                  onChange={(event) => {
+                    const next = event.target.value as '' | SanctionStatusCode;
+                    applyListFilter(() => setStatusFilter(next));
+                  }}
+                  className="h-[var(--control-h)] rounded-md border border-input bg-background px-2 text-[length:var(--font-size-body)]"
+                >
+                  {STATUS_FILTER_OPTIONS.map((option) => (
+                    <option key={option.value || 'all'} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </KeywordFilter>
           {isLoading ? (
             <div role="status" className="rounded-md border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
               결재함을 불러오는 중입니다.
@@ -423,7 +500,11 @@ export default function ApprovalHubClient() {
             </div>
           ) : list.length === 0 ? (
             <div role="status" className="rounded-md border border-dashed border-border p-6 text-center">
-              <p className="text-sm font-semibold text-foreground">{EMPTY_MESSAGES[activeTab]}</p>
+              <p className="text-sm font-semibold text-foreground">
+                {keyword
+                  ? emptyResultMessage(keyword, EMPTY_MESSAGES[activeTab])
+                  : hasListFilter ? '조건에 맞는 결재가 없습니다.' : EMPTY_MESSAGES[activeTab]}
+              </p>
             </div>
           ) : (
             <ul aria-label={`${TAB_LABELS[activeTab]} 목록`} className="space-y-2">

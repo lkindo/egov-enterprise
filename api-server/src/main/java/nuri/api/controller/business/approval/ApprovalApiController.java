@@ -1,5 +1,6 @@
 package nuri.api.controller.business.approval;
 
+import nuri.business.service.informalsanction.ApprovalListFilter;
 import nuri.api.controller.business.approval.dto.ApprovalConfirmRequest;
 import nuri.api.controller.business.approval.dto.ApprovalDraftRequest;
 import nuri.api.controller.business.approval.dto.ApprovalResubmissionRequest;
@@ -42,13 +43,18 @@ public class ApprovalApiController {
      * 끝난 건임을 알게 됐다. 이름이 약속하는 것(pending)과 실제 질의가 어긋난 자리다.
      */
     @Operation(summary = "Get Pending Approvals (Inbox)",
-            description = "결재자 본인에게 온 결재 중 **대기(신청) 상태**만 조회합니다. 처리 완료 건은 제외됩니다.")
+            description = "결재자 본인에게 온 결재 중 **대기(신청) 상태**만 조회합니다. 처리 완료 건은 제외됩니다. "
+                    + "제목 검색어(keyword)와 요청일 기간(fromYmd·toYmd, yyyyMMdd 또는 yyyy-MM-dd)으로 좁힐 수 있고, 형식이 틀리거나 역순이면 400 입니다.")
     @GetMapping("/pending")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getPending')")
     public ResponseEntity<ApiResponse<PageResponse<InformalSanctionDto>>> getPending(
             @LoginUser CustomUserDetails userDetails,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String keyword,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String fromYmd,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String toYmd,
             @org.springframework.data.web.PageableDefault(sort = "ifmlAtrzSn", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
-        Page<InformalSanctionDto> result = approvalService.getPendingApprovalList(userDetails.getEsntlId(), pageable);
+        Page<InformalSanctionDto> result = approvalService.getPendingApprovalList(userDetails.getEsntlId(),
+                ApprovalListFilter.of(keyword, fromYmd, toYmd, null), pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
@@ -57,24 +63,36 @@ public class ApprovalApiController {
      * 결재자로서 처리한 이력이 아니다 — 그 목록은 {@link #getProcessed} 다.
      */
     @Operation(summary = "Get My Submitted Approvals",
-            description = "내가 신청자인 결재 목록입니다(대기·승인·반려 전부). 결재자로서 처리한 이력은 /processed 입니다.")
+            description = "내가 신청자인 결재 목록입니다(대기·승인·반려 전부). 결재자로서 처리한 이력은 /processed 입니다. "
+                    + "제목 검색어·요청일 기간·문서 상태(status: A 대기·C 승인·R 반려·W 회수)로 좁힐 수 있습니다.")
     @GetMapping("/my")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getMyHistory')")
     public ResponseEntity<ApiResponse<PageResponse<InformalSanctionDto>>> getMyHistory(
             @LoginUser CustomUserDetails userDetails,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String keyword,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String fromYmd,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String toYmd,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String status,
             @org.springframework.data.web.PageableDefault(sort = "ifmlAtrzSn", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
-        Page<InformalSanctionDto> result = approvalService.getInformalSanctionList(userDetails.getEsntlId(), pageable);
+        Page<InformalSanctionDto> result = approvalService.getInformalSanctionList(userDetails.getEsntlId(),
+                ApprovalListFilter.of(keyword, fromYmd, toYmd, status), pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
     @Operation(summary = "Get Approvals I Processed",
-            description = "결재자 본인이 이미 **승인·반려한** 결재만 조회합니다. 대기 건은 /pending 입니다.")
+            description = "결재자 본인이 이미 **승인·반려한** 결재만 조회합니다. 대기 건은 /pending 입니다. "
+                    + "제목 검색어·요청일 기간·문서의 지금 상태(status)로 좁힐 수 있습니다.")
     @GetMapping("/processed")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getProcessed')")
     public ResponseEntity<ApiResponse<PageResponse<InformalSanctionDto>>> getProcessed(
             @LoginUser CustomUserDetails userDetails,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String keyword,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String fromYmd,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String toYmd,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String status,
             @org.springframework.data.web.PageableDefault(sort = "ifmlAtrzSn", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
-        Page<InformalSanctionDto> result = approvalService.getProcessedApprovalList(userDetails.getEsntlId(), pageable);
+        Page<InformalSanctionDto> result = approvalService.getProcessedApprovalList(userDetails.getEsntlId(),
+                ApprovalListFilter.of(keyword, fromYmd, toYmd, status), pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 

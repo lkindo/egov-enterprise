@@ -4071,7 +4071,7 @@ export interface paths {
         };
         /**
          * Get Approvals I Processed
-         * @description 결재자 본인이 이미 **승인·반려한** 결재만 조회합니다. 대기 건은 /pending 입니다.
+         * @description 결재자 본인이 이미 **승인·반려한** 결재만 조회합니다. 대기 건은 /pending 입니다. 제목 검색어·요청일 기간·문서의 지금 상태(status)로 좁힐 수 있습니다.
          */
         get: operations["getProcessed"];
         put?: never;
@@ -4091,7 +4091,7 @@ export interface paths {
         };
         /**
          * Get Pending Approvals (Inbox)
-         * @description 결재자 본인에게 온 결재 중 **대기(신청) 상태**만 조회합니다. 처리 완료 건은 제외됩니다.
+         * @description 결재자 본인에게 온 결재 중 **대기(신청) 상태**만 조회합니다. 처리 완료 건은 제외됩니다. 제목 검색어(keyword)와 요청일 기간(fromYmd·toYmd, yyyyMMdd 또는 yyyy-MM-dd)으로 좁힐 수 있고, 형식이 틀리거나 역순이면 400 입니다.
          */
         get: operations["getPending"];
         put?: never;
@@ -4111,7 +4111,7 @@ export interface paths {
         };
         /**
          * Get My Submitted Approvals
-         * @description 내가 신청자인 결재 목록입니다(대기·승인·반려 전부). 결재자로서 처리한 이력은 /processed 입니다.
+         * @description 내가 신청자인 결재 목록입니다(대기·승인·반려 전부). 결재자로서 처리한 이력은 /processed 입니다. 제목 검색어·요청일 기간·문서 상태(status: A 대기·C 승인·R 반려·W 회수)로 좁힐 수 있습니다.
          */
         get: operations["getMyHistory"];
         put?: never;
@@ -32351,6 +32351,10 @@ export interface operations {
     getProcessed: {
         parameters: {
             query?: {
+                keyword?: string;
+                fromYmd?: string;
+                toYmd?: string;
+                status?: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */
@@ -32414,6 +32418,9 @@ export interface operations {
     getPending: {
         parameters: {
             query?: {
+                keyword?: string;
+                fromYmd?: string;
+                toYmd?: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */
@@ -32477,6 +32484,10 @@ export interface operations {
     getMyHistory: {
         parameters: {
             query?: {
+                keyword?: string;
+                fromYmd?: string;
+                toYmd?: string;
+                status?: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */

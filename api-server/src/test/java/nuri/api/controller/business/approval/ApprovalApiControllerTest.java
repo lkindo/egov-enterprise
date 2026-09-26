@@ -76,16 +76,48 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
     @DisplayName("처리한 결재 목록은 결재자 본인의 esntlId 로 processed 조회를 부른다")
     void listsProcessedApprovalsForCurrentApprover() throws Exception {
         org.mockito.BDDMockito.given(approvalService.getProcessedApprovalList(
-                        org.mockito.ArgumentMatchers.eq("APPROVER_ESNTL"), org.mockito.ArgumentMatchers.any()))
+                        org.mockito.ArgumentMatchers.eq("APPROVER_ESNTL"), org.mockito.ArgumentMatchers.any(),
+                        org.mockito.ArgumentMatchers.any()))
                 .willReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/approvals/processed"))
                 .andExpect(status().isOk());
 
         verify(approvalService).getProcessedApprovalList(
-                org.mockito.ArgumentMatchers.eq("APPROVER_ESNTL"), org.mockito.ArgumentMatchers.any());
+                org.mockito.ArgumentMatchers.eq("APPROVER_ESNTL"),
+                org.mockito.ArgumentMatchers.eq(nuri.business.service.informalsanction.ApprovalListFilter.NONE),
+                org.mockito.ArgumentMatchers.any());
         org.mockito.Mockito.verify(approvalService, org.mockito.Mockito.never())
-                .getInformalSanctionList(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+                .getInformalSanctionList(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                        org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @WithMockCustomUser(username = "approver", esntlId = "APPROVER_ESNTL")
+    @DisplayName("[DIP B5 F4] 목록 조건(제목·요청일 기간·상태)은 해석해 서비스에 넘기고, 해석할 수 없으면 400 이다")
+    void passesListFiltersAndRejectsInvalidOnes() throws Exception {
+        org.mockito.BDDMockito.given(approvalService.getInformalSanctionList(
+                        org.mockito.ArgumentMatchers.eq("APPROVER_ESNTL"), org.mockito.ArgumentMatchers.any(),
+                        org.mockito.ArgumentMatchers.any()))
+                .willReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/approvals/my")
+                        .param("keyword", "검토").param("fromYmd", "2026-09-01").param("toYmd", "2026-09-30").param("status", "C"))
+                .andExpect(status().isOk());
+        verify(approvalService).getInformalSanctionList(
+                org.mockito.ArgumentMatchers.eq("APPROVER_ESNTL"),
+                org.mockito.ArgumentMatchers.eq(nuri.business.service.informalsanction.ApprovalListFilter.of(
+                        "검토", "2026-09-01", "2026-09-30", "C")),
+                org.mockito.ArgumentMatchers.any());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/approvals/my")
+                        .param("status", "X"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/approvals/pending")
+                        .param("fromYmd", "2026-09-30").param("toYmd", "2026-09-01"))
+                .andExpect(status().isBadRequest());
+        org.mockito.Mockito.verify(approvalService, org.mockito.Mockito.never()).getPendingApprovalList(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
     }
 
     @Test
