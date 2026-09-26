@@ -254,7 +254,12 @@ export default function ApprovalHubClient() {
       toast(`성공적으로 ${actionNm}되었습니다.`, 'success');
       setRejectReason('');
       setActionError('');
-      const next = list.find(entry => sanctionKey(entry) !== sanctionKey(item));
+      // [2026-09-26 DIP C8] '다음 건' 은 처리한 문서의 바로 다음이다(마지막이었으면 바로 앞). 종전에는 처리한 문서가
+      //   아닌 첫 문서로 가서, 목록 중간에서 처리하면 매번 맨 위로 되돌아갔다.
+      const processedIndex = list.findIndex(entry => sanctionKey(entry) === sanctionKey(item));
+      const next = processedIndex >= 0
+        ? (list[processedIndex + 1] ?? list[processedIndex - 1])
+        : list.find(entry => sanctionKey(entry) !== sanctionKey(item));
       if (activeTab === 'PENDING' && next) {
         setSelectedItemId(sanctionKey(next));
         requestAnimationFrame(() => itemButtonRefs.current.get(sanctionKey(next))?.focus());

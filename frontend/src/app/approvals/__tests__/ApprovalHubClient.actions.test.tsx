@@ -398,6 +398,24 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     await waitFor(() => expect(mocks.confirmMutation).toHaveBeenCalledWith(73, 'C', '검토한 내용에 동의합니다.', 4));
   });
 
+  it('처리한 문서의 바로 다음 문서로 넘어가고, 마지막이었으면 바로 앞 문서로 간다 (DIP C8)', async () => {
+    // 종전에는 처리한 문서가 아닌 첫 문서로 가서, 목록 중간에서 처리하면 매번 맨 위로 되돌아갔다.
+    const doc = (sn: number, name: string) => ({ ...pendingApproval, ifmlAtrzSn: sn, taskSeNm: name });
+    mocks.getPending.mockResolvedValue({ list: [doc(71, '첫 문서'), doc(72, '둘째 문서'), doc(73, '셋째 문서')], total: 3 });
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '둘째 문서 #72 상세 열기' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: '둘째 문서 #72 상세 열기' })).toHaveAttribute('aria-current', 'true'));
+    fireEvent.click(await screen.findByRole('button', { name: '결재 승인' }));
+
+    await waitFor(() => expect(mocks.confirmMutation).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByRole('button', { name: '셋째 문서 #73 상세 열기' })).toHaveAttribute('aria-current', 'true'));
+
+    fireEvent.click(await screen.findByRole('button', { name: '결재 승인' }));
+    await waitFor(() => expect(mocks.confirmMutation).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByRole('button', { name: '둘째 문서 #72 상세 열기' })).toHaveAttribute('aria-current', 'true'));
+  });
+
   it('작성 중 의견이 있는 문서 선택 변경을 취소하면 의견과 기존 선택을 보존한다', async () => {
     mocks.getPending.mockResolvedValue({ list: [pendingApproval, { ...pendingApproval, ifmlAtrzSn: 99, taskSeNm: '다음 문서' }], total: 2 });
     renderClient(); const reason = await screen.findByRole('textbox', { name: '결재 의견 (반려 시 필수)' });
