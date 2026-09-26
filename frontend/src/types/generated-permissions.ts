@@ -246,7 +246,7 @@ export const PERMISSION_CODES = [
   "WORK_RPT_UPDATE_ALL"
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
-export const PERMISSION_CATALOG_VERSION = "dd3f2d2e61f1c2ea8b8d763fc04e99a6111d021e48937ee6c99e4180fb999245";
+export const PERMISSION_CATALOG_VERSION = "ef82e83c8ec56346d53cfd76412260a028b557ab30ec0ad8e87a36a6fb263640";
 export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]>> = {
   "/": [],
   "/admin": [
@@ -301,7 +301,7 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
     "EXT_HR_READ"
   ],
   "/admin/operation/memo-reports": [
-    "MEMO_RPT_READ_ALL"
+    "MEMO_RPT_READ"
   ],
   "/admin/operation/rewards": [
     "REWARD_READ"

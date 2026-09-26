@@ -681,9 +681,13 @@ export default function MemoReportManagementClient() {
               <section aria-labelledby="memo-report-instruction-heading" className="space-y-2">
                 <h3 id="memo-report-instruction-heading" className="text-sm font-bold text-foreground">지시사항</h3>
                 {detail?.drctnMttr ? (
-                  <p className="whitespace-pre-wrap rounded-md border border-border p-4 text-sm text-foreground">
-                    {detail.drctnMttr}
-                  </p>
+                  <>
+                    <p className="whitespace-pre-wrap rounded-md border border-border p-4 text-sm text-foreground">
+                      {detail.drctnMttr}
+                    </p>
+                    {/* [2026-09-26 DIP B4 P9] 지시는 그때의 본문을 두고 내린 것이라, 달린 뒤에는 서버가 본문 수정을 막는다(409). */}
+                    <p className="text-xs text-muted-foreground">지시가 달린 보고는 고칠 수 없습니다. 내용을 바꾸려면 새 보고로 올려 주세요.</p>
+                  </>
                 ) : (
                   <p className="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
                     등록된 지시사항이 없습니다.

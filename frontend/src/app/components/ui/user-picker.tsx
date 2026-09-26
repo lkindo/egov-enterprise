@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('./standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { VirtualScrollList } from './virtual-scroll-list';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
+import { AbsenceBadge } from '@/app/components/ui/absence-badge';
 import { Search,  User } from 'lucide-react';
 import { logErrorSafely } from '@/lib/safe-error-log';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
@@ -73,7 +74,7 @@ export function UserPicker({
  <User size={16} />
  </div>
  <div>
- <p className="text-sm font-bold text-foreground">{user.userNm}</p>
+ <p className="flex items-center gap-1.5 text-sm font-bold text-foreground">{user.userNm}<AbsenceBadge absent={user.absent} /></p>
  <p className="text-xs text-muted-foreground">{user.deptNm || '소속 부서 없음'}</p>
  </div>
  </div>

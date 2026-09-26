@@ -40508,6 +40508,9 @@
           },
           "deptNm": {
             "type": "string"
+          },
+          "absent": {
+            "type": "boolean"
           }
         }
       },

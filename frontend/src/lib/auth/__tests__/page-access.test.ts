@@ -15,9 +15,10 @@ describe('canOpenPage', () => {
   });
 
   it('목적지 라우트의 권한으로 판정한다 — 다른 화면의 권한은 길을 열지 않는다', () => {
-    expect(PAGE_PERMISSIONS['/admin/operation/memo-reports']).toEqual(['MEMO_RPT_READ_ALL']);
+    // [DIP D9] 메모보고 관리는 일반 사용자의 조회 권한(MEMO_RPT_READ)으로 연다.
+    expect(PAGE_PERMISSIONS['/admin/operation/memo-reports']).toEqual(['MEMO_RPT_READ']);
     expect(canOpenPage(subject(['DEPT_BOX_READ']), '/admin/operation/memo-reports')).toBe(false);
-    expect(canOpenPage(subject(['MEMO_RPT_READ_ALL']), '/admin/operation/memo-reports')).toBe(true);
+    expect(canOpenPage(subject(['MEMO_RPT_READ']), '/admin/operation/memo-reports')).toBe(true);
   });
 
   it('쿼리와 해시는 판정에 쓰지 않는다', () => {
@@ -32,10 +33,10 @@ describe('canOpenPage', () => {
   });
 
   it('권한 버전이 없는 주체와 등록되지 않은 관리 경로는 열지 않는다', () => {
-    expect(canOpenPage({ permissions: ['MEMO_RPT_READ_ALL'] }, '/admin/operation/memo-reports')).toBe(false);
+    expect(canOpenPage({ permissions: ['MEMO_RPT_READ'] }, '/admin/operation/memo-reports')).toBe(false);
     expect(canOpenPage(null, '/admin/operation/memo-reports')).toBe(false);
     expect(registeredPagePermissions('/admin/operation/memo-reports/unregistered')).toBeNull();
-    expect(canOpenPage(subject(['MEMO_RPT_READ_ALL']), '/admin/operation/memo-reports/unregistered')).toBe(false);
+    expect(canOpenPage(subject(['MEMO_RPT_READ']), '/admin/operation/memo-reports/unregistered')).toBe(false);
   });
 
   it('관리 경로 밖은 페이지 게이트가 없다(세그먼트 경계를 지킨다)', () => {

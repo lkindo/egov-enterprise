@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { BookUser, Search, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
+import { AbsenceBadge } from '@/app/components/ui/absence-badge';
 import type {
   RecipientAddressBook,
   RecipientAddressBookContact,
@@ -287,7 +288,7 @@ export function RecipientPicker({
                         aria-label={`${recipient.name} 선택`}
                       />
                       <label htmlFor={checkboxId} className="flex-1 cursor-pointer">
-                        <span className="block text-sm font-bold text-foreground">{recipient.name}</span>
+                        <span className="flex items-center gap-1.5 text-sm font-bold text-foreground">{recipient.name}<AbsenceBadge absent={user.absent} /></span>
                         <span className="block text-xs text-muted-foreground">{user.deptNm || '소속 부서 없음'}</span>
                       </label>
                     </li>

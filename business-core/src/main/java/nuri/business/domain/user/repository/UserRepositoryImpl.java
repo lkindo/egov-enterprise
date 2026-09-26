@@ -15,6 +15,7 @@ import nuri.business.service.user.dto.UserDto;
 import nuri.business.service.user.dto.UserSearchDto;
 
 import static nuri.business.domain.user.entity.QUser.user;
+import static nuri.business.domain.user.entity.QUserAbsence.userAbsence;
 import static nuri.business.domain.organization.QOrganizationManage.organizationManage;
 
 @RequiredArgsConstructor
@@ -99,12 +100,17 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
                 .select(Projections.constructor(UserSearchDto.class,
                         user.esntlId,
                         user.userNm,
-                        organizationManage.ognzNm))
+                        organizationManage.ognzNm,
+                        // [2026-09-26 DIP B4 P4] 부재 표시. 기록이 없으면 정상이다(부재 관리 화면과 같은 판정).
+                        userAbsence.userAbsnYn.coalesce("N").eq("Y")))
                 .from(user)
                 .leftJoin(organizationManage).on(organizationManage.ognzId.eq(user.ognzId))
+                .leftJoin(userAbsence).on(userAbsence.userId.eq(user.esntlId))
                 // 검색 축은 성명 하나다. userId(로그인 ID)로도 매칭하면 "kim01" 로 조회해
                 // 로그인 ID ↔ 실명을 이어 붙이는 계정 열거 창구가 된다.
-                .where(user.userNm.containsIgnoreCase(trimmed))
+                // [2026-09-26 DIP B4 P4] 사용 중(P)인 계정만 고를 수 있다. 승인 대기·사용 중지 계정을 담당자·결재자·수신자로
+                //   고르면 서버가 거부하거나(결재) 아무도 받지 못한다.
+                .where(user.userNm.containsIgnoreCase(trimmed), user.userSttsCd.eq("P"))
                 .orderBy(user.userNm.asc(), user.esntlId.asc())
                 .limit(limit)
                 .fetch();

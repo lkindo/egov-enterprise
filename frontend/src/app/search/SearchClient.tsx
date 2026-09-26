@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StandardTabs } from '@/app/components/ui/standard-tabs';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
+import { AbsenceBadge } from '@/app/components/ui/absence-badge';
 /* reusable-base:collaboration:start */
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 /* reusable-base:collaboration:end */
@@ -483,7 +484,7 @@ function UserResultItem({ item }: { item: SearchUser }) {
                 <UserIcon size={16} aria-hidden="true" />
             </div>
             <div className="min-w-0 flex-1">
-                <h4 className="truncate text-[length:var(--font-size-body)] font-bold tracking-tight">{item.userNm}</h4>
+                <h4 className="flex min-w-0 items-center gap-1.5 text-[length:var(--font-size-body)] font-bold tracking-tight"><span className="truncate">{item.userNm}</span><AbsenceBadge absent={item.absent} /></h4>
                 <p className="truncate text-[length:var(--font-size-body)] text-muted-foreground">{item.deptNm || '부서 정보 없음'}</p>
             </div>
             <Badge variant="secondary" className="shrink-0 rounded-md text-xs font-bold">직원</Badge>
