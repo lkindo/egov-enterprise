@@ -16,7 +16,9 @@ import nuri.business.domain.deptjob.QDeptJob;
 import com.querydsl.core.BooleanBuilder;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -126,7 +128,12 @@ public class DeptJobService extends BaseAbstractService {
                 builder.and(deptJob.picId.contains(keyword));
             }
         }
-        return deptJobRepository.findAll(builder, required(pageable, "pageable 는 null 일 수 없습니다")).map(this::toDto);
+        Pageable requested = required(pageable, "pageable 는 null 일 수 없습니다");
+        // [2026-09-26 DIP C7] 정렬 없는 페이지 조회는 DB 가 순서를 보장하지 않아 페이지 사이에 같은 업무가 겹치거나
+        //   빠질 수 있었다. 요청이 정렬을 주지 않으면 최신순(일련번호 역순)으로 둔다.
+        Pageable ordered = requested.getSort().isSorted() ? requested
+                : PageRequest.of(requested.getPageNumber(), requested.getPageSize(), Sort.by(Sort.Direction.DESC, "deptTaskSn"));
+        return deptJobRepository.findAll(builder, ordered).map(this::toDto);
     }
 
     public DeptJobDto getDeptJob(Long deptTaskSn) {

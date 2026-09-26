@@ -73,6 +73,7 @@ public class LoginLogRepositoryImpl implements LoginLogRepositoryCustom {
          * 화면은 기간을 좁혔다고 표시하는데 실제로는 아니었다는 뜻이라, 감사 조회에서 가장 위험한
          * 실패 형태다. 두 형식을 모두 받아들이고, 해석 불가 값은 조용히 버리지 않고 실패시킨다.
          */
+        LogSearchPeriod.requireOrdered(searchBgnDe, searchEndDe);
         LocalDateTime start = LogSearchPeriod.toLocalDate(searchBgnDe, "searchKeywordFrom").atStartOfDay();
         LocalDateTime end = LogSearchPeriod.toLocalDate(searchEndDe, "searchKeywordTo").atTime(LocalTime.MAX);
         return loginLog.crtDt.between(start, end);

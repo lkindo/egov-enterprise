@@ -5,10 +5,19 @@ import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { PeriodFilter, EMPTY_PERIOD, periodToParams, type PeriodValue } from '@/app/components/patterns/period-filter';
+import { requestFullExport } from '@/app/components/patterns/full-result-export';
+import { useToast } from '@/app/components/ui/toast';
+import {
+  exportLoginLogsOperation,
+  exportSystemLogsOperation,
+  exportUserLogsOperation,
+  exportWebLogsOperation,
+} from '@/types/generated-operations';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { StandardModal } from '@/app/components/ui/standard-modal';
-import { Terminal, Lock, Globe, UserCheck, RefreshCcw } from 'lucide-react';
+import { Terminal, Lock, Globe, UserCheck, RefreshCcw, FileDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type {
@@ -37,6 +46,14 @@ type IntegratedLogRow =
   & { prcsTm?: SysLog['prcsTm'] | WebLog['prcsTm'] };
 
 const CATEGORY_IDS = logCategories.map((c) => c.id);
+
+/** 분류별 전체 결과 export — 개별 로그 화면이 쓰는 것과 같은 서버 operation 이다. */
+const EXPORT_OPERATIONS = {
+  SYS: exportSystemLogsOperation,
+  LGN: exportLoginLogsOperation,
+  USR: exportUserLogsOperation,
+  WEB: exportWebLogsOperation,
+} as const satisfies Record<LogCategoryId, unknown>;
 /** 기본 SYS는 query에서 생략하고, root dashboard의 비기본 category만 page 변경 때 보존한다. */
 const PAGE_PRESERVED_PARAMS = [{
   name: 'cat',
@@ -86,17 +103,20 @@ export default function LogDashboardClient({
   const [page, setPage] = usePageParam('page', PAGE_PRESERVED_PARAMS);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [searchKeyword, setSearchKeyword] = useState('');
+  // [2026-09-26 DIP C6] 통합 조회에도 개별 로그 화면과 같은 기간 조건을 둔다 — 네 분류 모두 서버가 기간을 받는다.
+  const [period, setPeriod] = useState<PeriodValue>(EMPTY_PERIOD);
+  const { toast } = useToast();
   const [selectedLog, setSelectedLog] = useState<{
     category: LogCategoryId;
     row: IntegratedLogRow;
   } | null>(null);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery<PageResponse<IntegratedLogRow>>({
-    queryKey: ['admin-logs-integrated', activeCategory, page, searchKeyword, pageSize],
+    queryKey: ['admin-logs-integrated', activeCategory, page, searchKeyword, pageSize, periodToParams(period)],
     queryFn: async () => {
       // 시스템/로그인 로그 서비스는 `searchWrd`, 나머지는 `searchKeyword` 를 읽는다.
       // 둘 다 실어 보내야 카테고리 전환 후에도 검색어가 유실되지 않는다.
-      const apiParams = { page: page - 1, size: pageSize, searchWrd: searchKeyword, searchKeyword };
+      const apiParams = { page: page - 1, size: pageSize, searchWrd: searchKeyword, searchKeyword, ...periodToParams(period) };
       switch (activeCategory) {
         case 'LGN':
           return systemLogAdminService.getLoginLogs(apiParams);
@@ -110,10 +130,20 @@ export default function LogDashboardClient({
       }
     },
     initialData:
-      activeCategory === 'SYS' && page === 1 && !searchKeyword && initialSystemLogs.ok
+      activeCategory === 'SYS' && page === 1 && !searchKeyword && !period.from && !period.to && initialSystemLogs.ok
         ? initialSystemLogs.data
         : undefined,
   });
+
+  const handleFullExport = () => {
+    requestFullExport({
+      operation: EXPORT_OPERATIONS[activeCategory],
+      totalCount: data?.total,
+      searchKeyword,
+      period,
+      onTooMany: (message) => toast(message, 'error'),
+    });
+  };
 
   const logs = data?.list ?? [];
   const totalCount = Number(data?.total || 0);
@@ -263,6 +293,10 @@ export default function LogDashboardClient({
           >
             <RefreshCcw size={16} className={cn(isFetching && 'animate-spin')} aria-hidden="true" /> 새로고침
           </Button>
+          {/* [2026-09-26 DIP C6] 전체 결과 xlsx — 개별 로그 화면과 같은 서버 export 를 지금 분류·검색어·기간으로 요청한다. */}
+          <Button variant="outline" size="sm" onClick={handleFullExport} className="gap-2">
+            <FileDown size={16} aria-hidden="true" /> 전체 결과 엑셀 다운로드
+          </Button>
         </>
       }
       filter={
@@ -271,7 +305,14 @@ export default function LogDashboardClient({
           placeholder="검색어를 입력하세요"
           value={searchKeyword}
           onSearch={(keyword) => { setSearchKeyword(keyword); setPage(1); }}
-        />
+          onReset={() => { setSearchKeyword(''); setPeriod(EMPTY_PERIOD); setPage(1); }}
+        >
+          <PeriodFilter
+            label="조회 기간(발생일자)"
+            value={period}
+            onChange={(next) => { setPeriod(next); setPage(1); }}
+          />
+        </KeywordFilter>
       }
     >
       <div role="tabpanel" id="log-tabpanel" aria-labelledby={`log-tab-${activeCategory}`}>

@@ -34,7 +34,14 @@ const dashboardHarness = vi.hoisted(() => ({
   getLoginLogs: vi.fn(),
   getUserLogs: vi.fn(),
   getWebLogs: vi.fn(),
+  requestFullExport: vi.fn(),
 }));
+
+vi.mock('@/app/components/patterns/full-result-export', () => ({
+  requestFullExport: dashboardHarness.requestFullExport,
+}));
+
+vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 
 vi.mock('@tanstack/react-query', () => ({
   useQuery: (options: unknown) => {
@@ -121,6 +128,7 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
 }));
 
 import LogDashboardClient from '../LogDashboardClient';
+import { exportLoginLogsOperation, exportSystemLogsOperation } from '@/types/generated-operations';
 
 type SysLogDto = components['schemas']['SysLogDto'];
 type LoginLogDto = components['schemas']['LoginLogDto'];
@@ -230,6 +238,44 @@ describe('integrated log dashboard contracts', () => {
       searchKeyword: '',
       searchWrd: '',
       size: 10,
+    }));
+  });
+
+  it('통합 조회도 기간을 서버로 보내고, 초기화는 검색어와 기간을 함께 비운다 (DIP C6)', async () => {
+    dashboardHarness.getSystemLogs.mockResolvedValue(pageOf(SYSTEM_ROW));
+    await renderDashboard();
+
+    fireEvent.change(screen.getByLabelText('조회 기간(발생일자) 시작일'), { target: { value: '2026-09-01' } });
+    fireEvent.change(screen.getByLabelText('조회 기간(발생일자) 종료일'), { target: { value: '2026-09-10' } });
+    await currentQueryOptions().queryFn();
+    expect(dashboardHarness.getSystemLogs).toHaveBeenLastCalledWith(expect.objectContaining({
+      searchKeywordFrom: '20260901',
+      searchKeywordTo: '20260910',
+    }));
+
+    fireEvent.click(screen.getByRole('button', { name: '초기화' }));
+    expect(screen.getByLabelText('조회 기간(발생일자) 시작일')).toHaveValue('');
+    await currentQueryOptions().queryFn();
+    expect(dashboardHarness.getSystemLogs).toHaveBeenLastCalledWith(expect.not.objectContaining({ searchKeywordFrom: expect.anything() }));
+  });
+
+  it.each([
+    ['SYS', exportSystemLogsOperation],
+    ['LGN', exportLoginLogsOperation],
+  ] as const)('전체 결과 반출은 %s 분류의 서버 export 를 지금 조건으로 요청한다 (DIP C6)', async (category, operation) => {
+    dashboardHarness.activeCategory = category;
+    dashboardHarness.queryData = { ...pageOf(category === 'SYS' ? SYSTEM_ROW : LOGIN_ROW), total: 37 };
+    await renderDashboard();
+
+    fireEvent.change(screen.getByLabelText('조회 기간(발생일자) 시작일'), { target: { value: '2026-09-01' } });
+    fireEvent.change(screen.getByLabelText('조회 기간(발생일자) 종료일'), { target: { value: '2026-09-10' } });
+    fireEvent.click(screen.getByRole('button', { name: /전체 결과 엑셀 다운로드/ }));
+
+    expect(dashboardHarness.requestFullExport).toHaveBeenCalledWith(expect.objectContaining({
+      operation,
+      totalCount: 37,
+      searchKeyword: '',
+      period: { from: '2026-09-01', to: '2026-09-10' },
     }));
   });
 
