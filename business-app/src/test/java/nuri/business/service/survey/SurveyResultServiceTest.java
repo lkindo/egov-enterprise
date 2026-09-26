@@ -262,6 +262,33 @@ class SurveyResultServiceTest {
     }
 
     @Test
+    @DisplayName("[DIP B4 P6, D4] 선택지가 있는 문항에 하나라도 답하지 않으면 400 이고 저장하지 않는다")
+    void submitRequiresEveryAnswerableQuestion() {
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));
+        given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
+        given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(
+                question(301L, "질문1", "1"), question(302L, "질문2", "1"), question(303L, "선택지 없는 문항", "2")));
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+                .willReturn(List.of(article(401L, 301L, "예"), article(402L, 302L, "아니오")));
+
+        SurveyResponseSubmitDto partial = new SurveyResponseSubmitDto("홍길동",
+                List.of(new SurveyResponseSubmitDto.Answer(301L, 401L, "예", null)));
+
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                    .thenReturn(java.util.Optional.of("user1"));
+
+            assertThatThrownBy(() -> service.submitResponse(201L, partial))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("모든 문항에 답해 주세요")
+                    .hasMessageContaining("질문2")
+                    // 고를 선택지가 없는 문항은 답할 수 없으므로 필수가 아니다.
+                    .hasMessageNotContaining("선택지 없는 문항");
+        }
+        verify(resultRepository, never()).saveAll(any());
+    }
+
+    @Test
     @DisplayName("제출 - 답변 N건이 응답 행 N개가 된다")
     void submitCreatesOneRowPerAnswer() {
         given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));
