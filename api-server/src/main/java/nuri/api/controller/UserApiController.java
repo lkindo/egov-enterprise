@@ -140,6 +140,24 @@ public class UserApiController {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
+    /**
+     * 부서 단위 수신자 선택(2026-09-27 DIP B5 F5). 메일·문자·알림 발송 화면의 수신자 피커가 한 부서를 통째로 고를 때 쓴다.
+     *
+     * <p>관리자 사용자 목록({@link #getUsers})과 같은 권한(USER_READ)이다 — 그 목록이 같은 사람을 연락처까지 실어 보여 주므로
+     * 권한을 넓히지 않는다. 응답은 {@link UserSearchDto} 최소 필드라 개인정보 접근이 아니다(연락처는 발송 때 서버가 해석한다).
+     * 일반 사용자에게 여는 {@code /users/search} 에 부서 조회를 붙이지 않은 것은 의도다 — 그 창구는 검색어·건수로 인명부 수집을 막는다.</p>
+     */
+    @Operation(summary = "부서 소속 수신자 조회", description = """
+            한 부서의 사용 중(P) 계정인 직속 소속 인원을 성명 순으로 반환합니다(하위 부서 제외).
+            식별자·성명·부서명·부재만 담고 연락처는 담지 않습니다. 최대 200명이며 넘으면 truncated 가 true 입니다.
+            없는 부서는 404 입니다.""")
+    @GetMapping("/admin/system/users/by-department/{ognzId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#getDepartmentRecipients')")
+    public ResponseEntity<ApiResponse<DepartmentRecipientsDto>> getDepartmentRecipients(
+            @Parameter(description = "부서 ID") @PathVariable String ognzId) {
+        return ResponseEntity.ok(ApiResponse.success(userService.getDepartmentRecipients(ognzId)));
+    }
+
     @Operation(summary = "사용자 상세 조회", description = "특정 사용자 ID에 해당하는 상세 정보를 조회합니다.")
     @PrivacyAccess("사용자 상세(생년월일·휴대전화·이메일·주소)")
     @GetMapping("/admin/system/users/{userId}")

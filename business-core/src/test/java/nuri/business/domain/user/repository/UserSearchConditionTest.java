@@ -233,6 +233,56 @@ class UserSearchConditionTest extends PersistenceTestSupport {
         }
     }
 
+    // ── 부서 단위 수신자 선택 ──────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("[DIP B5 F5] 부서 소속 수신자")
+    class DepartmentMembers {
+
+        @Test
+        @DisplayName("그 부서의 사용 중 계정만 성명 순으로 돌려준다 — 다른 부서·승인 대기·사용 중지는 빠진다")
+        void onlyActiveMembersOfTheDepartment() {
+            userRepository.save(User.builder()
+                    .esntlId("ESNTL_MATCH2").userId("kim02").userNm("가나다").pswd("pw")
+                    .ognzId("ORG_MATCH").role(Role.USER).build());
+            userRepository.save(User.builder()
+                    .esntlId("ESNTL_PENDING").userId("wait01").userNm("김대기").pswd("pw")
+                    .ognzId("ORG_MATCH").role(Role.USER).userSttsCd("A").build());
+            userRepository.save(User.builder()
+                    .esntlId("ESNTL_STOPPED").userId("stop01").userNm("김중지").pswd("pw")
+                    .ognzId("ORG_MATCH").role(Role.USER).userSttsCd("D").build());
+            em.flush();
+            em.clear();
+
+            List<UserSearchDto> found = userRepository.findActiveDepartmentMembers("ORG_MATCH", 10);
+
+            assertThat(found).extracting(UserSearchDto::esntlId).containsExactly("ESNTL_MATCH2", "ESNTL_MATCH");
+            assertThat(found).extracting(UserSearchDto::deptNm).containsOnly("기획재정부");
+        }
+
+        @Test
+        @DisplayName("빈 부서 식별자는 전체가 아니라 빈 목록이다")
+        void blankDepartmentReturnsEmptyNotEverything() {
+            assertThat(userRepository.findActiveDepartmentMembers(null, 10)).isEmpty();
+            assertThat(userRepository.findActiveDepartmentMembers("", 10)).isEmpty();
+            assertThat(userRepository.findActiveDepartmentMembers("  ", 10)).isEmpty();
+        }
+
+        @Test
+        @DisplayName("상한을 지킨다")
+        void respectsLimit() {
+            userRepository.save(User.builder()
+                    .esntlId("ESNTL_MATCH2").userId("kim02").userNm("가나다").pswd("pw")
+                    .ognzId("ORG_MATCH").role(Role.USER).build());
+            em.flush();
+            em.clear();
+
+            assertThat(userRepository.findActiveDepartmentMembers("ORG_MATCH", 1))
+                    .extracting(UserSearchDto::esntlId).containsExactly("ESNTL_MATCH2");
+            assertThat(userRepository.findActiveDepartmentMembers("ORG_MATCH", 0)).isEmpty();
+        }
+    }
+
     // ── 사용자 정보 조회 / 부서 검색 ────────────────────────────────────────────
 
     @Nested

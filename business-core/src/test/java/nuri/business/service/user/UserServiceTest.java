@@ -752,4 +752,33 @@ class UserServiceTest {
             assertEquals("바뀐 이름", existing.getUserNm(), "고아 소속 때문에 이름 수정이 막혔다");
         }
     }
+
+    @Test
+    @DisplayName("[DIP B5 F5] 부서 소속 수신자 — 없는 부서는 404, 상한보다 하나 더 읽어 넘치면 상한만 담고 truncated 를 알린다")
+    void departmentRecipientsRejectUnknownDepartmentAndReportTruncation() {
+        given(deptManageRepository.existsById("GHOST_DEPT")).willReturn(false);
+        BusinessException rejected = assertThrows(BusinessException.class,
+                () -> userService.getDepartmentRecipients("GHOST_DEPT"));
+        assertEquals(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND, rejected.getErrorCode());
+        assertThrows(BusinessException.class, () -> userService.getDepartmentRecipients(" "));
+        verify(userRepository, never()).findActiveDepartmentMembers(anyString(), org.mockito.ArgumentMatchers.anyInt());
+
+        int max = UserService.DEPARTMENT_RECIPIENT_MAX;
+        List<nuri.business.service.user.dto.UserSearchDto> overflow = java.util.stream.IntStream.rangeClosed(1, max + 1)
+                .mapToObj(i -> new nuri.business.service.user.dto.UserSearchDto("E" + i, "사용자" + i, "부서", false))
+                .toList();
+        given(deptManageRepository.existsById("DEPT1")).willReturn(true);
+        given(userRepository.findActiveDepartmentMembers("DEPT1", max + 1)).willReturn(overflow);
+
+        var result = userService.getDepartmentRecipients("DEPT1");
+        assertEquals(max, result.members().size());
+        assertTrue(result.truncated());
+        assertEquals("E" + max, result.members().get(max - 1).esntlId());
+
+        // 대조군 — 딱 상한이면 넘친 것이 아니다.
+        given(userRepository.findActiveDepartmentMembers("DEPT1", max + 1)).willReturn(overflow.subList(0, max));
+        var exact = userService.getDepartmentRecipients("DEPT1");
+        assertEquals(max, exact.members().size());
+        assertFalse(exact.truncated());
+    }
 }

@@ -5006,6 +5006,13 @@
       "permission": "USER_READ"
     },
     {
+      "method": "GET",
+      "path": "/api/v1/admin/system/users/by-department/{ognzId}",
+      "handler": "nuri.api.controller.UserApiController#getDepartmentRecipients",
+      "access": "PERMISSION",
+      "permission": "USER_READ"
+    },
+    {
       "method": "POST",
       "path": "/api/v1/admin/system/users",
       "handler": "nuri.api.controller.UserApiController#insertUser",
