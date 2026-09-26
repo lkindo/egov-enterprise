@@ -70,6 +70,7 @@ public class PrivacyLogRepositoryImpl implements PrivacyLogRepositoryCustom {
                  * 만들었다 — 8자리 값이 오면 필터가 통째로 무시된 채 전체 결과가 나갔다.
                  * 개인정보 조회 이력에서 이 실패는 특히 위험하다(좁혔다고 믿고 전체를 본다).
                  */
+                LogSearchPeriod.requireOrdered(searchBgnDe, searchEndDe);
                 LocalDateTime start = LogSearchPeriod.toLocalDate(searchBgnDe, "searchKeywordFrom").atStartOfDay();
                 LocalDateTime end = LogSearchPeriod.toLocalDate(searchEndDe, "searchKeywordTo").atTime(LocalTime.MAX);
                 return QPrivacyLog.privacyLog.inqDt.between(start, end);

@@ -16,6 +16,7 @@ import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { deptAdminService, Department } from '@/services/foundation/system/DeptAdminService';
 import { PageResponse } from '@/types/foundation/system';
 import { flattenDeptTree, listToDeptTree, getDeptProjection, FlattenedDept } from './departments/treeUtils';
+import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { INDENTATION_WIDTH } from './UserOrgHubParts';
 
 /**
@@ -110,11 +111,45 @@ export function useDeptTree({
   //   sentinel(null)로 두면 첫 렌더에서도 반드시 한 번 동기화하면서 cascading render 는
   //   그대로 피한다 — 이 자리에서 setState 는 커밋 전에 즉시 재렌더된다.
   const [prevDepartments, setPrevDepartments] = useState<Department[] | null>(null);
+  /** 서버에서 읽은 순서. 저장은 이것과 달라진 부서만 보낸다(DIP C5). */
+  const [baselineDepts, setBaselineDepts] = useState<FlattenedDept[]>([]);
+  /** 저장하지 않은 드래그가 있는 동안 서버 목록이 바뀌었는가. */
+  const [deptListChangedWhileEditing, setDeptListChangedWhileEditing] = useState(false);
   if (departments !== prevDepartments) {
     setPrevDepartments(departments);
-    const tree = listToDeptTree(departments);
-    setFlattenedDepts(flattenDeptTree(tree));
+    /*
+      [2026-09-26 DIP C5] 저장하지 않은 드래그가 있으면 재조회가 트리를 덮지 않는다. 종전에는 서버 목록으로
+      다시 그려 드래그가 조용히 사라졌는데 '변경됨' 은 남아, 저장을 눌러도 아무것도 바뀌지 않았다.
+      대신 목록이 바뀌었다는 사실을 알리고, 사용자가 저장하거나 변경을 취소하게 한다.
+    */
+    if (hasDeptChanges) {
+      setDeptListChangedWhileEditing(true);
+    } else {
+      const flattened = flattenDeptTree(listToDeptTree(departments));
+      setFlattenedDepts(flattened);
+      setBaselineDepts(flattened);
+      setDeptListChangedWhileEditing(false);
+    }
   }
+
+  /** 저장하지 않은 드래그를 버리고 서버 목록으로 되돌린다. */
+  const discardDeptChanges = () => {
+    const flattened = flattenDeptTree(listToDeptTree(departments));
+    setFlattenedDepts(flattened);
+    setBaselineDepts(flattened);
+    setHasDeptChanges(false);
+    setDeptListChangedWhileEditing(false);
+  };
+
+  /** 저장에 성공하면 지금 화면이 새 기준선이다. */
+  const markDeptChangesSaved = () => {
+    setBaselineDepts(flattenedDepts);
+    setHasDeptChanges(false);
+    setDeptListChangedWhileEditing(false);
+  };
+
+  // 저장하지 않은 계층 변경이 있으면 화면을 떠나기 전에 확인한다(DIP C5).
+  useUnsavedChanges({ dirty: hasDeptChanges });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -193,6 +228,10 @@ export function useDeptTree({
     activeDeptId,
     hasDeptChanges,
     setHasDeptChanges,
+    baselineDepts,
+    deptListChangedWhileEditing,
+    discardDeptChanges,
+    markDeptChangesSaved,
     previewDepts,
     sensors,
     dragHandlers,

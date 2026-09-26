@@ -93,6 +93,26 @@ class LogSearchPeriodTest {
     }
 
     @Nested
+    @DisplayName("역순 기간은 0건이 아니라 입력 오류다 (DIP C6)")
+    class ReversedPeriod {
+
+        @Test
+        @DisplayName("시작일이 종료일보다 늦으면 두 날짜를 밝혀 실패한다")
+        void rejectsReversedPeriod() {
+            assertThatThrownBy(() -> LogSearchPeriod.requireOrdered("20260910", "2026-09-01"))
+                    .hasMessageContaining("2026-09-10")
+                    .hasMessageContaining("2026-09-01");
+        }
+
+        @Test
+        @DisplayName("같은 날짜와 정순 기간은 통과한다")
+        void acceptsSameDayAndOrdered() {
+            assertThatCode(() -> LogSearchPeriod.requireOrdered("20260901", "20260901")).doesNotThrowAnyException();
+            assertThatCode(() -> LogSearchPeriod.requireOrdered("2026-09-01", "20260910")).doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
     @DisplayName("한쪽만 주어진 기간은 조건으로 삼지 않는다")
     class IncompletePeriod {
 

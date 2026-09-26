@@ -27,10 +27,10 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "c5561988452c27d27d41b5db6151d42f71f9dd1dbe77cfd0d3adeee2bbc440b3"
+    "inventoryHash": "3e89efc9008ceb2b4eba6ecb6f2f74b18cd081adcf1b3f5fce1008fcb3b9d0cb"
   },
   "summary": {
-    "sourceFileCount": 548,
+    "sourceFileCount": 549,
     "records": 384,
     "syntaxOccurrences": 455,
     "ambiguousRecords": 337,
@@ -3278,10 +3278,10 @@
       }
     },
     {
-      "id": "URL-78BC32CBC1D648",
+      "id": "URL-5C575146C9932A",
       "surface": "navigation",
       "kind": "navigation-producer",
-      "operation": "router.push",
+      "operation": "router.replace",
       "source": "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
       "producerFile": "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
       "consumerFile": null,

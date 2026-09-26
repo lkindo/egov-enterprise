@@ -59,6 +59,39 @@ describe('로그 조회 기간 계약', () => {
     }
   });
 
+  it('초기화는 검색어와 함께 기간도 비운다 (DIP C6)', () => {
+    // 종전에는 KeywordFilter 의 초기화가 검색어만 비워, 기간이 남은 채 비운 줄 안 조건이 계속 걸렸다.
+    for (const path of [
+      ...PERIOD_SCREENS.map((item) => item.client),
+      'app/admin/system/monitoring/MonitoringHubClient.tsx',
+      'app/admin/system/logs/LogDashboardClient.tsx',
+    ]) {
+      const source = client(path);
+      expect(source, `${path}: 초기화가 기간을 비우지 않습니다`).toMatch(/onReset=\{\(\) => \{[^}]*setPeriod\(EMPTY_PERIOD\)[^}]*\}\}/);
+    }
+  });
+
+  it('로그 통합 조회도 같은 기간 조건을 서버로 보내고 전체 결과를 반출한다 (DIP C6)', () => {
+    const dashboard = client('app/admin/system/logs/LogDashboardClient.tsx');
+    expect(dashboard, '통합 조회에 조회 기간이 없습니다').toMatch(/<PeriodFilter/);
+    expect(dashboard, '기간이 요청 파라미터에 실리지 않습니다').toContain('...periodToParams(period)');
+    expect(dashboard, '기간이 queryKey 에 결속되지 않았습니다').toMatch(/queryKey: \[[^\]]*periodToParams\(period\)\]/);
+    // 반출은 지금 조건(검색어·기간)을 싣고, 네 분류가 각자의 생성 descriptor 를 직접 넘긴다.
+    expect(dashboard, '전체 결과 반출이 기간을 싣지 않습니다').toMatch(/const request = \{[\s\S]*?searchKeyword,[\s\S]*?period,[\s\S]*?\};/);
+    for (const operation of ['exportSystemLogsOperation', 'exportLoginLogsOperation', 'exportUserLogsOperation', 'exportWebLogsOperation']) {
+      expect(dashboard, `${operation} 반출이 공용 조립기를 거치지 않습니다`).toContain(`requestFullExport({ operation: ${operation}, ...request });`);
+    }
+  });
+
+  it('역순 기간은 0건이 아니라 400 이다 — 다섯 저장소가 같은 판정을 거친다 (DIP C6)', () => {
+    const period = backend('business-core/src/main/java/nuri/business/domain/log/LogSearchPeriod.java');
+    expect(period).toMatch(/public static void requireOrdered\(String searchBgnDe, String searchEndDe\)/);
+    for (const repository of ['LoginLog', 'PrivacyLog', 'SysLog', 'UserLog', 'WebLog']) {
+      const source = backend(`business-core/src/main/java/nuri/business/domain/log/${repository}RepositoryImpl.java`);
+      expect(source, `${repository}: 역순 기간 판정을 거치지 않습니다`).toContain('LogSearchPeriod.requireOrdered(searchBgnDe, searchEndDe);');
+    }
+  });
+
   it('모니터링 허브의 목록 탭도 기간을 제공하고, 감사 검색이 서버 필드명을 쓴다', () => {
     const hub = client('app/admin/system/monitoring/MonitoringHubClient.tsx');
 
