@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, createContext, useContext } from 'react';
+import { useState, useMemo, createContext, useContext, useEffect } from 'react';
 import type { ComponentProps, ElementType, ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -27,6 +27,7 @@ import { useLayout } from '@/contexts/LayoutContext';
 import { MenuInfo } from '@/types/foundation/menu';
 import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
 import { findActiveMenu, type ActiveMenuMatch } from '@/lib/navigation/active-menu';
+import { recordRecentMenu } from '@/lib/navigation/recent-menus';
 
 const ICON_MAP: Record<string, ElementType> = {
   '대시보드': LayoutDashboard,
@@ -65,6 +66,23 @@ function UserCheckIcon(props: ComponentProps<typeof Users>) {
 /** 상단과 같은 판정으로 정본 한 개만 선택하고, 조상은 펼침·강조에만 사용한다. */
 const ActiveMenuContext = createContext<ActiveMenuMatch | null | undefined>(undefined);
 
+/**
+ * 말단 메뉴 옆 즐겨찾기 버튼을 그리는 슬롯(2026-09-26 DIP B5 F2). 사이드바가 채우고, 채우지 않으면(단위 테스트·
+ * 다른 목록) 버튼을 그리지 않는다.
+ */
+const NavBookmarkSlotContext = createContext<((item: MenuInfo) => ReactNode) | null>(null);
+export const NavBookmarkSlot = NavBookmarkSlotContext.Provider;
+
+/** 지금 화면에 해당하는 메뉴를 최근 방문으로 기록한다(이 브라우저·이 사용자에게만). */
+export function RecentMenuRecorder({ userKey }: { userKey: string | null | undefined }) {
+  const match = useContext(ActiveMenuContext);
+  const menuNo = match?.menuNo;
+  useEffect(() => {
+    recordRecentMenu(userKey, menuNo);
+  }, [userKey, menuNo]);
+  return null;
+}
+
 export function NavQueryScope({ menus, children }: { menus: readonly MenuInfo[]; children: ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -85,6 +103,7 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const scopedMatch = useContext(ActiveMenuContext);
+  const renderBookmark = useContext(NavBookmarkSlotContext);
   const { setSidebarOpen } = useLayout();
   const hasChildren = item.children && item.children.length > 0;
   const Icon = ICON_MAP[item.menuNm] || ICON_MAP['기본'];
@@ -166,7 +185,7 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
   );
 
   return (
-    <ActiveMenuContext.Provider value={match}><div className="w-full relative">
+    <ActiveMenuContext.Provider value={match}><div className="w-full relative group/nav">
       {isNonNavigable ? (
         <button
           type="button"
@@ -189,6 +208,7 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
           >
             {innerContent}
           </Link>
+          {!hasChildren && renderBookmark?.(item)}
           {hasChildren && (
           <button
             type="button"

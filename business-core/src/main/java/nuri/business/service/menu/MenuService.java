@@ -54,6 +54,11 @@ public class MenuService {
     private final NavigationGrantRepository navigationGrantRepository;
     private final AuthorizationAdministrationService authorizationAdministrationService;
     private final nuri.business.service.program.dto.ProgramMapper programMapper;
+    /**
+     * [2026-09-26 DIP B5 F10] 같은 빈 안에서 {@link #getAllMenusCached} 를 부르면 프록시를 거치지 않아 캐시가 적용되지 않는다.
+     * 사이드바 트리는 이 공급자로 프록시를 거쳐 캐시를 읽는다. 없으면(단위 테스트) 저장소를 직접 읽는다.
+     */
+    private final org.springframework.beans.factory.ObjectProvider<MenuService> selfProvider;
 
     @PostConstruct
     @Transactional
@@ -94,6 +99,14 @@ public class MenuService {
         }
     }
 
+    /**
+     * 지금 사용자에게 메뉴 배정(NAVIGATION)이 있는 메뉴 번호(2026-09-26 DIP B5 F2 — 즐겨찾기가 같은 판정을 쓴다).
+     * 사용 여부(useYn)는 호출자가 메뉴 행으로 본다.
+     */
+    public Set<Long> allowedMenuIdsForCurrentUser() {
+        return navigationGrantRepository.findAllowedMenuIds(currentGroups(SecurityContextHolder.getContext().getAuthentication()));
+    }
+
     private static List<String> currentGroups(Authentication auth) {
         if (auth == null || auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken) {
             return List.of("ROLE_ANONYMOUS");
@@ -108,7 +121,7 @@ public class MenuService {
 
     private List<MenuDto> buildMenuTree(Long rootMenuNo, List<String> groups) {
         Set<Long> allowedMenuIds = navigationGrantRepository.findAllowedMenuIds(groups);
-        List<Menu> filteredMenus = menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc().stream()
+        List<Menu> filteredMenus = menusInTreeOrder().stream()
                 .filter(m -> allowedMenuIds.contains(m.getMenuSn()) && "Y".equals(m.getUseYn()))
                 .collect(Collectors.toList());
 
@@ -165,6 +178,15 @@ public class MenuService {
             }
         }
         return rootNodes;
+    }
+
+    /**
+     * 메뉴 전체(상위·순서 정렬). 요청마다 모든 메뉴를 다시 읽던 사이드바 트리가 메뉴 쓰기 때 비우는 {@code allMenus} 캐시를 쓴다.
+     * 권한 필터는 캐시하지 않는다 — 그룹 배정이 바뀌면 다음 요청부터 바로 반영돼야 한다.
+     */
+    private List<Menu> menusInTreeOrder() {
+        MenuService proxy = selfProvider == null ? null : selfProvider.getIfAvailable();
+        return proxy != null && proxy != this ? proxy.getAllMenusCached() : menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc();
     }
 
     @Cacheable(value = "allMenus", unless = "#result == null")

@@ -68,17 +68,17 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
    * 전용이라 비관리자는 결과를 눌러도 라우트 게이트에 막혔다.
    */
   it('메뉴 바로가기를 실제 메뉴 API 에서 만든다', async () => {
+    // [DIP B5 F10] 하위 메뉴는 상위 메뉴 응답의 children 으로 온다 — 상위마다 다시 요청하지 않는다.
     mocks.getHeadMenus.mockResolvedValue([
-      { menuNo: 1, menuNm: '시스템관리', modernRoute: '/admin/system' },
-    ]);
-    mocks.getLeftMenus.mockResolvedValue([
-      { menuNo: 2, menuNm: '시스템 메뉴 관리', modernRoute: '/admin/system/menus' },
+      { menuNo: 1, menuNm: '시스템관리', modernRoute: '/admin/system',
+        children: [{ menuNo: 2, menuNm: '시스템 메뉴 관리', modernRoute: '/admin/system/menus' }] },
     ]);
 
     render(<SearchResultsContent initialResults={emptyResults} query="메뉴" />);
 
     expect(await screen.findByText('시스템 메뉴 관리')).toBeInTheDocument();
-    expect(mocks.getHeadMenus).toHaveBeenCalled();
+    expect(mocks.getHeadMenus).toHaveBeenCalledOnce();
+    expect(mocks.getLeftMenus).not.toHaveBeenCalled();
     // 하드코딩 리터럴이 되살아나면 이 단언이 잡는다.
     expect(screen.queryByText('공지사항 관리')).toBeNull();
     expect(screen.queryByText('자유 게시판')).toBeNull();

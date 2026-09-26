@@ -37,7 +37,8 @@ const article = {
 };
 
 vi.mock('@tanstack/react-query', () => ({
-  useQuery: ({ queryKey }: { queryKey: string[] }) => {
+  // [DIP B5 F10] 최근 활동은 기본 목록 조회를 공유하고 select 로 바꾼다 — 모의 구현도 select 를 적용한다.
+  useQuery: ({ queryKey, select }: { queryKey: string[]; select?: (data: unknown) => unknown }) => {
     const common = {
       isError: false,
       error: null,
@@ -51,7 +52,7 @@ vi.mock('@tanstack/react-query', () => ({
         if (harness.articlesError) {
           return { ...common, isError: true, error: harness.articlesError, data: undefined };
         }
-        return { ...common, data: { list: [article], total: 1 } };
+        return { ...common, data: select ? select({ list: [article], total: 1 }) : { list: [article], total: 1 } };
       case 'hot-articles':
         return { ...common, data: { list: [article] } };
       case 'knowledge-stats':
@@ -59,11 +60,6 @@ vi.mock('@tanstack/react-query', () => ({
         return {
           ...common,
           data: { totalViews: 3, topContributor: '합성 작성자' },
-        };
-      case 'knowledge-activities':
-        return {
-          ...common,
-          data: [{ id: 'activity-1', title: '합성 FAQ 문서', user: '합성 작성자', time: '방금 전' }],
         };
       default:
         throw new Error(`unexpected query: ${queryKey[0]}`);
@@ -110,8 +106,9 @@ describe('KnowledgeHubClient accessibility semantics', () => {
      */
     expect(screen.queryByText('공개')).toBeNull();
     expect(screen.queryByText('상태')).toBeNull();
-    expect(screen.getByText('방금 전').parentElement).toHaveClass('text-muted-foreground');
-    expect(screen.getByRole('heading', { name: '최근 활동' }).closest('.bg-card')).not.toHaveClass('hub-card-dark');
+    const activitySection = screen.getByRole('heading', { name: '최근 활동' }).closest('.bg-card') as HTMLElement;
+    expect(within(activitySection).getByText('2026-08-21').parentElement).toHaveClass('text-muted-foreground');
+    expect(activitySection).not.toHaveClass('hub-card-dark');
 
     const search = screen.getByRole('textbox', { name: '지식 검색어' });
     expect(search).toHaveClass('placeholder:text-muted-foreground');

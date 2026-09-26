@@ -2155,6 +2155,27 @@
     "permission": null
   },
   {
+    "method": "GET",
+    "path": "/api/v1/menus/bookmarks",
+    "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#getMyBookmarks",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/menus/bookmarks/{menuNo}",
+    "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#addBookmark",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/menus/bookmarks/{menuNo}",
+    "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#removeBookmark",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
     "method": "POST",
     "path": "/api/v1/notes",
     "handler": "nuri.api.controller.business.note.NoteApiController#sendNote",

@@ -27,6 +27,14 @@ class MenuUserApiControllerTest {
     @Mock
     private MenuService menuService;
 
+    @Mock
+    private nuri.business.service.menu.MenuBookmarkService menuBookmarkService;
+
+    private static final nuri.foundation.security.service.CustomUserDetails PRINCIPAL =
+            nuri.foundation.security.service.CustomUserDetails.builder()
+                    .userId("staff01").esntlId("USR_STAFF_0001").enabled(true)
+                    .groups(java.util.List.of("GROUP_STAFF")).permissions(java.util.List.of()).build();
+
     @InjectMocks
     private MenuUserApiController menuUserApiController;
 
@@ -35,7 +43,51 @@ class MenuUserApiControllerTest {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(menuUserApiController)
                 .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new nuri.business.security.resolver.LoginUserArgumentResolver())
                 .build();
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        PRINCIPAL, null, PRINCIPAL.getAuthorities()));
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void clearSecurityContext() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F2] 즐겨찾기 목록·추가·빼기는 대상을 인증 주체의 esntlId 로 고정한다")
+    void bookmarksAreBoundToPrincipal() throws Exception {
+        given(menuBookmarkService.getMyBookmarks("USR_STAFF_0001"))
+                .willReturn(java.util.List.of(new nuri.business.service.menu.dto.MenuBookmarkDto(10L, "공지")));
+
+        mockMvc.perform(get("/api/v1/menus/bookmarks"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].menuNo").value(10))
+                .andExpect(jsonPath("$.data[0].menuNm").value("공지"));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/menus/bookmarks/10"))
+                .andExpect(status().isOk());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/menus/bookmarks/10"))
+                .andExpect(status().isOk());
+
+        org.mockito.Mockito.verify(menuBookmarkService).addBookmark("USR_STAFF_0001", 10L);
+        org.mockito.Mockito.verify(menuBookmarkService).removeBookmark("USR_STAFF_0001", 10L);
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F2] 볼 수 없는 메뉴 즐겨찾기는 404, 상한 초과는 409 다")
+    void bookmarkErrorsKeepServerStatus() throws Exception {
+        org.mockito.Mockito.doThrow(new nuri.foundation.core.exception.BusinessException(
+                        nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND, "즐겨찾기할 수 있는 메뉴가 아닙니다."))
+                .when(menuBookmarkService).addBookmark("USR_STAFF_0001", 99L);
+        org.mockito.Mockito.doThrow(new nuri.foundation.core.exception.BusinessException(
+                        nuri.foundation.core.exception.CommonErrorCode.RESOURCE_IN_USE, "즐겨찾기는 30개까지 둘 수 있습니다."))
+                .when(menuBookmarkService).addBookmark("USR_STAFF_0001", 31L);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/menus/bookmarks/99"))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/menus/bookmarks/31"))
+                .andExpect(status().isConflict());
     }
 
     @Test

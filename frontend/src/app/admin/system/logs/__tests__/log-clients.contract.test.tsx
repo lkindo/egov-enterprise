@@ -361,7 +361,29 @@ describe('logs cluster modernization (m-1): page-size opt-in and current-page so
     clientHarness.latestQueryOptions = undefined;
     clientHarness.setPage.mockReset();
     vi.restoreAllMocks();
+    // 고른 건수·기간은 이 브라우저에 남는다(DIP B5 F3) — 테스트 사이로 새지 않게 비운다.
+    window.localStorage.clear();
   });
+
+  it.each(CLUSTER_CASES)(
+    '🚨 $name client 는 이 화면에서 마지막으로 고른 건수와 기간 프리셋으로 다시 연다 (DIP B5 F3)',
+    async ({ Component, row, method }) => {
+      clientHarness.queryData = pageOf(row);
+      const first = render(<Component />);
+      act(() => currentTableProps().pagination?.onPageSizeChange?.(50));
+      fireEvent.click(screen.getByRole('button', { name: '최근 1주' }));
+      first.unmount();
+
+      render(<Component />);
+      await act(async () => { await Promise.resolve(); });
+      expect(currentTableProps().pagination?.pageSize).toBe(50);
+      expect(screen.getByRole('button', { name: '최근 1주' })).toHaveAttribute('aria-pressed', 'true');
+
+      const spy = vi.spyOn(systemLogAdminService, method).mockResolvedValue(pageOf(row) as never);
+      await currentQueryFn()();
+      expect(spy).toHaveBeenCalledWith(expect.objectContaining({ size: 50, searchKeywordFrom: expect.any(String), searchKeywordTo: expect.any(String) }));
+    },
+  );
 
   it.each(CLUSTER_CASES)(
     '$name client opts into the page-size selector and forwards the chosen size to the service',

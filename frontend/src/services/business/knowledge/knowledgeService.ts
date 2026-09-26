@@ -172,26 +172,25 @@ class KnowledgeService extends ApiService {
     });
   }
 
-  /**
-   * 최근 활동 피드 조회
-   */
-  public async getActivities(bbsId?: string): Promise<KnowledgeActivityItem[]> {
-    const targetBbsId = bbsId || this.BBS_IDS.NOTICE;
-    const res = await this.executeGenerated(getPostsOperation, {
-      path: { bbsId: targetBbsId },
-      query: { size: 10 },
-    });
-    
-    // [2026-09-26 DIP V2] 모르는 값은 '-' 다. 종전의 'Anonymous'·'Just now' 는 사실이 아니었고(작성일이 없는 글을
-    //   '방금' 으로 말했다), 작성자 폴백의 로그인 ID 는 화면에 싣지 않는다. 쓰이지 않던 지어낸 영향 지표(+N Reach)도 걷었다.
-    return (res.list || []).map((item: BoardDto): KnowledgeActivityItem => ({
-      id: item.pstSn ?? 0,
-      type: 'SHARE',
-      title: item.pstTtl ?? '',
-      user: item.userNm || '-',
-      time: item.crtDt?.slice(0, 10) || '-',
-    }));
-  }
+}
+
+/**
+ * 게시글 목록을 최근 활동 피드로 바꾼다.
+ *
+ * <p>[2026-09-26 DIP B5 F10] 종전에는 피드를 위해 같은 게시판을 한 번 더 조회했다. 지식 허브는 이제 기본 목록
+ * (최신순 1쪽) 조회를 그대로 공유하고 이 변환만 적용한다.
+ *
+ * <p>[2026-09-26 DIP V2] 모르는 값은 '-' 다. 종전의 'Anonymous'·'Just now' 는 사실이 아니었고(작성일이 없는 글을
+ * '방금' 으로 말했다), 작성자 폴백의 로그인 ID 는 화면에 싣지 않는다. 쓰이지 않던 지어낸 영향 지표(+N Reach)도 걷었다.
+ */
+export function toKnowledgeActivities(items: ReadonlyArray<Pick<KnowledgeDto, 'pstSn' | 'pstTtl' | 'userNm' | 'crtDt'>>): KnowledgeActivityItem[] {
+  return items.map((item): KnowledgeActivityItem => ({
+    id: item.pstSn ?? 0,
+    type: 'SHARE',
+    title: item.pstTtl ?? '',
+    user: item.userNm || '-',
+    time: item.crtDt?.slice(0, 10) || '-',
+  }));
 }
 
 export const knowledgeService = new KnowledgeService();

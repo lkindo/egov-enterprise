@@ -12,7 +12,11 @@ import { useMenuAuthorizationScope } from '@/hooks/api/use-menu-authorization-sc
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { MenuInfo } from '@/types/foundation/menu';
-import { NavItem, NavQueryScope } from './NavItem';
+import { NavBookmarkSlot, NavItem, NavQueryScope, RecentMenuRecorder } from './NavItem';
+import { NavBookmarkToggle } from './NavBookmarkToggle';
+import { useAuth } from '@/contexts/AuthContext';
+
+const renderNavBookmark = (item: MenuInfo) => <NavBookmarkToggle menuNo={item.menuNo} menuNm={item.menuNm} />;
 import { SITE_IDENTITY } from '@/config/site-identity';
 
 export function Sidebar({
@@ -24,6 +28,7 @@ export function Sidebar({
 }) {
   const resolvedMenus = menusPromise ? use(menusPromise) : initialMenus;
   const menuAuthorization = useMenuAuthorizationScope();
+  const { user } = useAuth();
   const { isSidebarOpen, setSidebarOpen, activeMenuNo, setActiveMenuNo } = useLayout();
   const sidebarRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -199,9 +204,12 @@ export function Sidebar({
               </div>
             ) : (
               <NavQueryScope menus={menuTree}>
-                {menus.map((item, index) => (
-                  <NavItem key={item.menuNo || `menu-${index}`} item={item} />
-                ))}
+                <RecentMenuRecorder userKey={user?.id} />
+                <NavBookmarkSlot value={renderNavBookmark}>
+                  {menus.map((item, index) => (
+                    <NavItem key={item.menuNo || `menu-${index}`} item={item} />
+                  ))}
+                </NavBookmarkSlot>
               </NavQueryScope>
             )}
           </nav>
