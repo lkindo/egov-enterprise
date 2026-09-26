@@ -14613,6 +14613,90 @@
         }
       }
     },
+    "/api/v1/mails/{emlDsptchSn}/resend": {
+      "post": {
+        "tags": [
+          "Mail"
+        ],
+        "summary": "메일 재발송",
+        "description": "실패했거나 대기에 10분 넘게 멈춘 본인 메일을 같은 이력으로 다시 보냅니다. 사용자 수신자는 지금 등록된 주소로 보냅니다.\n이미 발송된 메일·수신자를 다시 찾을 수 없는 메일은 400, 처리 중인 메일은 409, 남의 메일은 403 입니다.",
+        "operationId": "resendMail",
+        "parameters": [
+          {
+            "name": "emlDsptchSn",
+            "in": "path",
+            "description": "이메일 발신 일련번호",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/informal-sanctions": {
       "get": {
         "tags": [
@@ -27187,6 +27271,68 @@
         }
       }
     },
+    "/api/v1/mails/delivery-status": {
+      "get": {
+        "tags": [
+          "Mail"
+        ],
+        "summary": "메일 발송 가능 상태 조회",
+        "description": "이 배포에 SMTP 가 연결돼 있는지 조회합니다.\n`deliveryConfigured=false` 면 발송 접수는 되지만 모든 메일이 실패로 기록됩니다 (발송 파이프라인의 장애가 아니라 배포 형상입니다).",
+        "operationId": "getMailDeliveryStatus",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMailDeliveryStatusDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/health": {
       "get": {
         "tags": [
@@ -39670,6 +39816,11 @@
             "type": "integer",
             "format": "int64",
             "description": "첨부 파일 번호. 메일 첨부 발송은 지원하지 않으므로 요청에 값을 넣으면 400 으로 거부한다. 응답에는 과거 이력에 남은 번호만 실린다"
+          },
+          "resendable": {
+            "type": "boolean",
+            "description": "현재 사용자가 다시 보낼 수 있는지(서버 판정)",
+            "readOnly": true
           }
         }
       },
@@ -42022,6 +42173,55 @@
             }
           }
         }
+      },
+      "ApiResponseMailDeliveryStatusDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/MailDeliveryStatusDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "MailDeliveryStatusDto": {
+        "type": "object",
+        "description": "메일 발송 가능 상태",
+        "properties": {
+          "deliveryConfigured": {
+            "type": "boolean",
+            "description": "SMTP 연결 여부. false 면 접수는 되지만 모든 메일이 실패로 기록된다."
+          },
+          "senderImplementation": {
+            "type": "string",
+            "description": "현재 발송 구현체의 단순 클래스명. 운영 문의 시 어느 형상인지 식별한다."
+          }
+        },
+        "required": [
+          "deliveryConfigured",
+          "senderImplementation"
+        ]
       },
       "ApiResponseInformalSanctionDto": {
         "type": "object",

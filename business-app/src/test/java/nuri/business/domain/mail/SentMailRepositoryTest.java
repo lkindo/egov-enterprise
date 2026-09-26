@@ -58,6 +58,41 @@ class SentMailRepositoryTest {
         em.clear();
     }
 
+    /** 상태·발송 시각·발신자를 직접 적는다 — 감사 필드는 저장 시 채워지므로 저장 뒤에 덮는다. */
+    private Long saveMail(String owner, String status, java.time.LocalDateTime dsptchDt) {
+        SentMail mail = sentMailRepository.save(SentMail.builder().emlTtl("재발송").emlCn("본문").dsptchRsltCd(status).build());
+        em.flush();
+        em.createNativeQuery("update tb_email_dsptch_manage set frst_rgtr_id = ?1, dsptch_dt = ?2 where eml_dsptch_sn = ?3")
+                .setParameter(1, owner).setParameter(2, dsptchDt).setParameter(3, mail.getEmlDsptchSn())
+                .executeUpdate();
+        em.clear();
+        return mail.getEmlDsptchSn();
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F7] 재발송 차지는 본인의 실패·10분 넘게 멈춘 대기만 대기로 되돌리고 발송 시각을 지금으로 바꾼다")
+    void claimForResend_onlyOwnFailedOrStuck() {
+        java.time.LocalDateTime now = java.time.LocalDateTime.of(2026, 9, 26, 12, 0);
+        java.time.LocalDateTime stuckBefore = now.minusMinutes(10);
+        Long failed = saveMail("owner", "F", now.minusMinutes(1));
+        Long stuck = saveMail("owner", "P", now.minusMinutes(30));
+        Long inFlight = saveMail("owner", "P", now.minusMinutes(2));
+        Long sent = saveMail("owner", "S", now.minusMinutes(30));
+        Long others = saveMail("someone", "F", now.minusMinutes(1));
+
+        assertThat(sentMailRepository.claimForResend(failed, "owner", now, stuckBefore)).isEqualTo(1);
+        assertThat(sentMailRepository.claimForResend(stuck, "owner", now, stuckBefore)).isEqualTo(1);
+        assertThat(sentMailRepository.claimForResend(inFlight, "owner", now, stuckBefore)).isZero();
+        assertThat(sentMailRepository.claimForResend(sent, "owner", now, stuckBefore)).isZero();
+        assertThat(sentMailRepository.claimForResend(others, "owner", now, stuckBefore)).isZero();
+
+        SentMail claimed = sentMailRepository.findById(failed).orElseThrow();
+        assertThat(claimed.getDsptchRsltCd()).isEqualTo("P");
+        assertThat(claimed.getDsptchDt()).isEqualTo(now);
+        // 같은 요청을 두 번 보내면 두 번째는 진다 — 방금 대기로 바뀐 행은 멈춘 대기가 아니다.
+        assertThat(sentMailRepository.claimForResend(failed, "owner", now, stuckBefore)).isZero();
+    }
+
     @Test
     @DisplayName("발송 메일 검색 테스트 - 제목 (1)")
     void searchSentMails_Subject() {

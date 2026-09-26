@@ -358,6 +358,9 @@ class MailServiceTest {
                 .containsExactly("갑", "direct@example.com", "을");
         assertThat(saved.getAllValues()).extracting(SentMail::getRcvrNm)
                 .doesNotContain("gap@example.com", "eul@example.com");
+        // [DIP B5 F7] 재발송이 현재 주소를 다시 찾도록 사용자 수신자는 식별자를 남긴다. 직접 입력한 주소는 없다.
+        assertThat(saved.getAllValues()).extracting(SentMail::getRcvrId)
+                .containsExactly("USR_A", null, "USR_B");
         verify(mailAsyncProcessor).processSending(eq(11L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("gap@example.com"));
         verify(mailAsyncProcessor).processSending(eq(12L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("direct@example.com"));
         verify(mailAsyncProcessor).processSending(eq(13L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("eul@example.com"));

@@ -3,13 +3,14 @@
 import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, RefreshCcw, Search, Trash2, X } from 'lucide-react';
+import { Plus, RefreshCcw, RotateCw, Search, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PagePagination } from '@/components/common/PagePagination';
 import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { mailService, type SentMail, MAIL_SEND_RESULT } from '@/services/business/mail/MailService';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { cn } from '@/lib/utils';
@@ -64,6 +65,7 @@ export default function MailHistoryHubClient() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mailButtonRefs = useRef(new Map<number, HTMLButtonElement>());
   const deleteRequestRef = useRef(false);
+  const resendRequestRef = useRef(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchField, setSearchField] = useState<'1' | '3'>('1');
   const [page, setPage] = useState(1);
@@ -108,8 +110,36 @@ export default function MailHistoryHubClient() {
     },
   });
 
+  /*
+   * [2026-09-26 DIP B5 F7] 실패했거나 대기에 멈춘 본인 메일을 같은 이력으로 다시 보낸다. 가능 여부는 서버가 판정해
+   * resendable 로 알린다. 다시 보내는 동안과 삭제하는 동안은 서로를 잠근다 — 지우는 중인 이력을 다시 보내지 않는다.
+   */
+  const resendMutation = useMutation({
+    mutationFn: (emlDsptchSn: number) => mailService.resendMail(emlDsptchSn),
+    onSuccess: () => {
+      toast('메일을 다시 보냈습니다. 결과는 잠시 뒤 이 목록에 반영됩니다.', 'success');
+      void queryClient.invalidateQueries({ queryKey: ['mail-history'] });
+    },
+    onError: (error) => {
+      toast(extractErrorMessage(error, '메일을 다시 보내지 못했습니다.'), 'error');
+      void queryClient.invalidateQueries({ queryKey: ['mail-history'] });
+    },
+  });
+
+  const handleResend = useCallback(async (mail: SentMail) => {
+    if (resendRequestRef.current || deleteRequestRef.current || resendMutation.isPending) return;
+    resendRequestRef.current = true;
+    try {
+      await resendMutation.mutateAsync(mail.emlDsptchSn);
+    } catch {
+      // useMutation.onError 가 사용자 피드백을 소유한다.
+    } finally {
+      resendRequestRef.current = false;
+    }
+  }, [resendMutation]);
+
   const handleDelete = useCallback(async (mail: SentMail) => {
-    if (deleteRequestRef.current || deleteMutation.isPending) return;
+    if (deleteRequestRef.current || resendRequestRef.current || deleteMutation.isPending) return;
     deleteRequestRef.current = true;
     try {
     const confirmed = await confirm({
@@ -276,6 +306,11 @@ export default function MailHistoryHubClient() {
                       <span className="mt-2 block text-xs tabular-nums text-muted-foreground">
                         {mail.dsptchPerson ? `${mail.dsptchPerson} · ` : ''}{mail.sndngDe}
                       </span>
+                      {/* [2026-09-26 DIP B5 F7] 여러 명에게 보낸 메일은 수신자마다 이력이 한 줄씩 생긴다. 받는 사람을
+                          보이지 않으면 같은 제목·발신자·시각의 줄이 구분되지 않는다. */}
+                      <span className="mt-1 block break-all text-xs text-muted-foreground">
+                        받는 사람 {mail.recptnPerson || '-'}
+                      </span>
                     </button>
                   </li>
                 );
@@ -301,6 +336,20 @@ export default function MailHistoryHubClient() {
             <X aria-hidden="true" />
             닫기
           </Button>
+          {selectedMail.resendable ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              aria-label={`선택한 메일 ${selectedMail.sj} ${resendMutation.isPending ? '다시 보내기 중' : '다시 보내기'}`}
+              aria-busy={resendMutation.isPending || undefined}
+              disabled={resendMutation.isPending || deleteMutation.isPending}
+              onClick={() => { void handleResend(selectedMail); }}
+            >
+              <RotateCw aria-hidden="true" />
+              {resendMutation.isPending ? '다시 보내는 중…' : '다시 보내기'}
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="destructive"
@@ -308,7 +357,7 @@ export default function MailHistoryHubClient() {
             data-testid="mail-detail-delete-btn"
             aria-label={`선택한 메일 ${selectedMail.sj} 발송 이력 ${deleteMutation.isPending ? '삭제 중' : '삭제'}`}
             aria-busy={deleteMutation.isPending || undefined}
-            disabled={deleteMutation.isPending}
+            disabled={deleteMutation.isPending || resendMutation.isPending}
             onClick={() => { void handleDelete(selectedMail); }}
           >
             <Trash2 aria-hidden="true" />
@@ -345,6 +394,11 @@ export default function MailHistoryHubClient() {
               <dd className="mt-2">
                 <SendResultBadge code={selectedMail.sndngResultCode} />
               </dd>
+              {selectedMail.sndngResultCode !== MAIL_SEND_RESULT.SUCCESS && !selectedMail.resendable ? (
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  다시 보내기는 보낸 사람 본인이, 실패했거나 10분 넘게 대기 중인 메일에만 할 수 있습니다.
+                </p>
+              ) : null}
             </div>
             <div className="rounded-md border border-border bg-muted/20 p-4">
               <dt className="text-xs font-medium text-muted-foreground">발신 이력 번호</dt>

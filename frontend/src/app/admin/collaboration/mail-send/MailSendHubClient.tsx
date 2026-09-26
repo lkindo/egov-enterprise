@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import * as z from 'zod';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import {
@@ -9,8 +10,8 @@ import {
   ArrowLeft,
   User,
   Zap,
-  Clock,
   Search,
+  AlertTriangle,
   X,
   Plus,
   Mail,
@@ -88,17 +89,6 @@ function toRequestRecipient(recipient: RecipientSelection): z.infer<typeof MailR
   return recipient.kind === 'user' ? { esntlId: recipient.esntlId } : { emlAddr: recipient.email };
 }
 
-function subscribeClock(callback: () => void) {
-  const timer = setInterval(callback, 1000);
-  return () => clearInterval(timer);
-}
-function getClockSnapshot(): string {
-  return new Date().toLocaleTimeString();
-}
-function getServerClockSnapshot(): string {
-  return '';
-}
-
 export default function MailSendHubClient() {
   const router = useRouter();
   const { toast } = useToast();
@@ -109,7 +99,15 @@ export default function MailSendHubClient() {
   const [selectedRecipients, setSelectedRecipients] = useState<RecipientSelection[]>([]);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
-  const currentTime = React.useSyncExternalStore(subscribeClock, getClockSnapshot, getServerClockSnapshot);
+  /*
+   * [2026-09-26 DIP B5 F7] 이 배포에 SMTP 가 없으면 접수는 되지만 모든 메일이 실패로 기록된다. 보내기 전에 알린다.
+   * 판정할 수 없으면(조회 중·실패) 경고하는 쪽으로 기운다 — 문자 작성 화면과 같은 규칙이다.
+   */
+  const { data: deliveryStatus } = useQuery({
+    queryKey: ['mail-delivery-status'],
+    queryFn: () => mailService.getDeliveryStatus(),
+  });
+  const deliveryConfigured = deliveryStatus?.deliveryConfigured === true;
 
   const [form, setForm] = useState({
     sj: '',
@@ -220,6 +218,21 @@ export default function MailSendHubClient() {
           labels={mailValidationLabels}
           onNavigate={validation.focusError}
         />
+
+        {!deliveryConfigured ? (
+          <div
+            role="status"
+            className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 px-5 py-4"
+          >
+            <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warning-emphasis" aria-hidden="true" />
+            <div className="space-y-1 text-xs font-bold leading-relaxed text-foreground">
+              <p>{deliveryStatus ? '이 배포에는 메일 발송 설정(SMTP)이 없어 지금은 메일이 실제로 발송되지 않습니다.' : '메일 발송 설정을 확인하지 못했습니다.'}</p>
+              <p className="font-normal">
+                발송을 누르면 요청은 이력에 남지만 결과가 ‘실패’로 기록될 수 있습니다. 발신 이력에서 확인할 수 있습니다.
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         {/* 2. Recipient Selection */}
         <div className="hub-card-premium p-10 bg-card border-2 border-border shadow-2xl relative overflow-hidden group rounded-lg">
@@ -420,13 +433,8 @@ export default function MailSendHubClient() {
         </div>
 
         {/* 5. Bottom Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-8 pt-8 border-t border-border">
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none">현재 시각</span>
-            <span className="text-xs font-bold text-foreground mt-1 flex items-center gap-1.5">
-              <Clock size={12} /> {currentTime || '--:--:--'}
-            </span>
-          </div>
+        {/* [2026-09-26 DIP B5 F7] '현재 시각' 장식을 걷었다 — 1초마다 작성 화면 전체를 다시 그렸고 전달하는 정보가 없었다. */}
+        <div className="flex flex-col sm:flex-row items-center justify-end gap-8 pt-8 border-t border-border">
 
           <div className="flex items-center gap-4 w-full sm:w-auto">
             <Button
