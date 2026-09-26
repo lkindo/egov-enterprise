@@ -1,5 +1,14 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-09-26 재발급 실패 안내 문구 변경에 따른 재검토
+
+- `frontend/src/app/api/auth/reissue/route.ts`(FP-001 보완 소스): 재발급 실패 시 화면에 돌려주는 안내 문구 상수와 그 주석만
+  바꿨다(단일 세션이라 "다른 곳에서 로그인했거나 세션이 만료되었습니다" 로 말한다, DEC-OPS-158). 쿠키를 읽고 쓰는 방식,
+  재발급 요청·응답 처리, 상태 코드는 그대로라 보완 근거(Strict HttpOnly 세션 쿠키·Origin 검증)는 완화되지 않았다.
+
+예외 6건의 범위·규칙·행·fingerprint·승인일·만료일과 보안 임계값은 유지한다. 재결속 전 해시 불일치가 SAST 계약 3건을
+실패시켰고, 재결속 뒤 같은 계약이 통과했다. CodeQL 결과는 병합할 커밋의 required CI로 확인한다.
+
 ## 2026-09-24 레거시 보안 체인 CORP 추가에 따른 재검토
 
 - `ApiSecurityConfig`(FP-001 탐지 파일, FP-002·FP-008 보완 소스): 두 번째(레거시) 필터 체인에 `Cross-Origin-Resource-Policy: same-origin`

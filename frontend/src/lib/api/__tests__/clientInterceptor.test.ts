@@ -100,6 +100,23 @@ describe('API 클라이언트 인터셉터', () => {
       expect(instance).not.toHaveBeenCalled();
     });
 
+    it('🚨 로그아웃 뒤 화면에 남은 조회는 네트워크에 보내지 않는다 — 401·재발급으로 번지지 않는다 (DIP B4)', async () => {
+      const { captured, instance } = await loadClient();
+      const { markSignedIn, markSignedOut } = await import('@/lib/auth/authorization-state');
+      markSignedOut();
+      try {
+        await expect(captured.requestOk!({ url: '/admin/system/users', headers: {} }))
+          .rejects.toMatchObject({ name: 'CanceledError' });
+        // 다시 로그인하는 길(인증 경로)은 열려 있다
+        await expect(captured.requestOk!({ url: '/auth/me', headers: {} })).resolves.toMatchObject({ url: '/auth/me' });
+        expect(instance.post).not.toHaveBeenCalled();
+        expect(instance).not.toHaveBeenCalled();
+      } finally {
+        markSignedIn();
+      }
+      await expect(captured.requestOk!({ url: '/admin/system/users', headers: {} })).resolves.toMatchObject({ url: '/admin/system/users' });
+    });
+
     it('generated 경계용 raw 요청은 envelope를 벗기지 않는다', async () => {
       const { client, instance } = await loadClient();
       const envelope = { success: true, code: 'S001', message: 'ok', data: { id: 7 } };

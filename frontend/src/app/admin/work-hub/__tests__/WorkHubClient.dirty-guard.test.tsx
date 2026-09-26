@@ -110,8 +110,11 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
 // 월 이동만 흉내 낸다. react-day-picker v9 는 onMonthChange 에 **그 달의 1일**(startOfMonth)을
 // 넘기므로 대역도 같은 값을 준다 — ① 의 오염이 정확히 이 값으로 새어 나갔다.
 vi.mock('@/components/ui/calendar', () => ({
-  Calendar: ({ onMonthChange }: { onMonthChange?: (month: Date) => void }) => (
+  Calendar: ({ onMonthChange, modifiers }: { onMonthChange?: (month: Date) => void; modifiers?: { hasSchedule?: Date[] } }) => (
     <div data-testid="calendar">
+      <output data-testid="calendar-marked-days">
+        {(modifiers?.hasSchedule ?? []).map((date) => `${date.getMonth() + 1}/${date.getDate()}`).join(',')}
+      </output>
       <button type="button" onClick={() => onMonthChange?.(new Date(2026, 11, 1))}>2026년 12월 보기</button>
     </div>
   ),
@@ -192,6 +195,13 @@ describe('WorkHubClient 모달 기본 일자와 미저장 이탈 보호', () => 
     mocks.scheduleRows = [];
     mocks.reportRows = [];
     mocks.reportTotal = null;
+  });
+
+  it('여러 날에 걸친 일정은 달력의 모든 날짜에 표시된다 (DIP C8)', () => {
+    // 종전에는 시작일에만 표시를 찍어 둘째 날부터는 달력에서 비어 보였다.
+    mocks.scheduleRows = [{ schdlSn: 1, schdlNm: '워크숍', schdlBgngYmd: '20260909', schdlEndYmd: '20260911' }];
+    render(<WorkHubClient defaultTab="calendar" initialYmd={TODAY_YMD} />);
+    expect(screen.getByTestId('calendar-marked-days')).toHaveTextContent('9/9,9/10,9/11');
   });
 
   it('캘린더 월을 옮겨도 보고 기본 일자는 오늘이고, 일정 기본 일자만 옮긴 달을 따른다', async () => {

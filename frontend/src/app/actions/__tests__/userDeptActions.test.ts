@@ -71,15 +71,18 @@ describe('사용자·조직 관리자 서버 액션', () => {
     expect(result).toEqual({ success: true, message: '1명의 사용자가 삭제되었습니다.' });
   });
 
-  it('조직 계층은 화면 순서를 1부터 부여하고 루트의 상위 ID는 비운다', async () => {
+  it('조직 계층은 형제 안 순서를 1부터 부여하고 루트의 상위 ID는 비운다 (DIP C5)', async () => {
+    // 종전에는 평탄화 목록 전체 순번(ROOT 1, CHILD 2)을 보냈다 — sort_ordr 는 같은 상위 아래의 순서다.
     const result = await saveDeptHierarchyAction([
       { ognzId: 'ROOT', ognzNm: '본부', parentId: null, depth: 0, index: 0, unloadedParentId: null },
       { ognzId: 'CHILD', ognzNm: '개발팀', parentId: 'ROOT', depth: 1, index: 0, unloadedParentId: null },
+      { ognzId: 'CHILD2', ognzNm: '운영팀', parentId: 'ROOT', depth: 1, index: 1, unloadedParentId: null },
     ]);
 
     expect(deptAdminService.updateDeptHierarchy).toHaveBeenCalledWith([
       { ognzId: 'ROOT', upOgnzId: undefined, sortOrdr: 1 },
-      { ognzId: 'CHILD', upOgnzId: 'ROOT', sortOrdr: 2 },
+      { ognzId: 'CHILD', upOgnzId: 'ROOT', sortOrdr: 1 },
+      { ognzId: 'CHILD2', upOgnzId: 'ROOT', sortOrdr: 2 },
     ], AUTH);
     expect(revalidatePath).toHaveBeenCalledWith('/admin/user/departments');
     expect(result.success).toBe(true);
@@ -101,8 +104,8 @@ describe('사용자·조직 관리자 서버 액션', () => {
 
     expect(deptAdminService.updateDeptHierarchy).toHaveBeenCalledWith([
       { ognzId: 'ROOT', upOgnzId: undefined, sortOrdr: 1 },
-      // ⚠ sortOrdr 는 제외 전 화면 순서다. 3 이 2 로 당겨지면 보내는 값이 화면과 다른 뜻을 갖는다.
-      { ognzId: 'CHILD', upOgnzId: 'ROOT', sortOrdr: 3 },
+      // 상위를 모르는 부서는 형제 순번도 받지 않는다 — 그 형제 집합 전체를 모르기 때문이다.
+      { ognzId: 'CHILD', upOgnzId: 'ROOT', sortOrdr: 1 },
     ], AUTH);
     expect(result.success).toBe(true);
   });
@@ -116,7 +119,24 @@ describe('사용자·조직 관리자 서버 액션', () => {
 
     expect(deptAdminService.updateDeptHierarchy).toHaveBeenCalledWith([
       { ognzId: 'ROOT', upOgnzId: undefined, sortOrdr: 1 },
-      { ognzId: 'MOVED', upOgnzId: 'ROOT', sortOrdr: 2 },
+      { ognzId: 'MOVED', upOgnzId: 'ROOT', sortOrdr: 1 },
+    ], AUTH);
+  });
+
+  it('기준선을 주면 서버에서 읽은 순서와 달라진 부서만 보낸다 (DIP C5)', async () => {
+    // 검색으로 좁힌 화면에서 안 만진 부서까지 다시 보내면, 가려진 형제와 순번이 겹쳐 순서가 망가진다.
+    const node = (ognzId: string, parentId: string | null, index: number) =>
+      ({ ognzId, ognzNm: ognzId, parentId, depth: parentId ? 1 : 0, index, unloadedParentId: null });
+    const baseline = [node('ROOT', null, 0), node('A', 'ROOT', 0), node('B', 'ROOT', 1), node('C', 'ROOT', 2), node('OTHER', null, 1)];
+    // C 를 맨 앞으로 옮겼다 — A·B 는 형제 순번이 밀리고, ROOT·OTHER 는 그대로다.
+    const current = [node('ROOT', null, 0), node('C', 'ROOT', 0), node('A', 'ROOT', 1), node('B', 'ROOT', 2), node('OTHER', null, 1)];
+
+    await saveDeptHierarchyAction(current, baseline);
+
+    expect(deptAdminService.updateDeptHierarchy).toHaveBeenCalledWith([
+      { ognzId: 'C', upOgnzId: 'ROOT', sortOrdr: 1 },
+      { ognzId: 'A', upOgnzId: 'ROOT', sortOrdr: 2 },
+      { ognzId: 'B', upOgnzId: 'ROOT', sortOrdr: 3 },
     ], AUTH);
   });
 

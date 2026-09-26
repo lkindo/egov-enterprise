@@ -80,6 +80,12 @@ export function SmartNotificationHub() {
       return { items, total: typeof response.total === 'number' ? response.total : items.length };
     },
   });
+
+  // 목록 조회 실패는 빈 목록이 아니라 오류다 — 표가 오류와 '다시 시도' 를 보이고, 새로고침은 목록과 미읽음 수를 함께 다시 읽는다.
+  const error = listQuery.isError ? listQuery.error : null;
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: QUERY_ROOT });
+  };
   const unreadQuery = useQuery({
     queryKey: [...QUERY_ROOT, 'unread-count'],
     queryFn: () => executeGeneratedOperation(getUnreadCountOperation, {}),
@@ -280,7 +286,7 @@ export function SmartNotificationHub() {
             size="icon-sm"
             variant="outline"
             aria-label="알림 목록 새로고침"
-            onClick={() => void queryClient.invalidateQueries({ queryKey: QUERY_ROOT })}
+            onClick={refresh}
           >
             <RefreshCw size={16} aria-hidden="true" />
           </Button>
@@ -299,8 +305,8 @@ export function SmartNotificationHub() {
         columns={columns}
         data={items}
         loading={listQuery.isLoading}
-        error={listQuery.isError ? listQuery.error : null}
-        onRetry={() => void listQuery.refetch()}
+        error={error}
+        onRetry={refresh}
         emptyMessage={emptyResultMessage(
           keyword,
           readFilter === 'unread' ? '읽지 않은 알림이 없습니다.' : '받은 알림이 없습니다.',

@@ -47,15 +47,28 @@ public class DeptManageService {
         String ognzId = IdGenerationUtil.generateUniqueId("ORGNZT_", 13, deptManageRepository::existsById);
         validateParent(ognzId, dto.getUpOgnzId());
 
+        String upOgnzId = blankToNull(dto.getUpOgnzId());
         DeptManage entity = DeptManage.builder()
                 .ognzId(ognzId)
                 .ognzNm(dto.getOgnzNm())
                 .ognzExpln(dto.getOgnzExpln())
-                .upOgnzId(blankToNull(dto.getUpOgnzId()))
-                .sortOrdr(dto.getSortOrdr() != null ? dto.getSortOrdr() : 0)
+                .upOgnzId(upOgnzId)
+                .sortOrdr(sortOrderForNewDept(dto.getSortOrdr(), upOgnzId))
                 .build();
         deptManageRepository.save(entity);
         return ognzId;
+    }
+
+    /**
+     * [2026-09-26 DIP C5] 순서를 정하지 않은 새 부서는 형제의 맨 뒤에 둔다. 종전에는 0 으로 저장돼, 목록이
+     * 정렬 순서로 읽히면서 새 부서가 형제의 맨 앞으로 끼어들었다. 요청이 1 이상의 순서를 주면 그것을 따른다.
+     */
+    private int sortOrderForNewDept(Integer requested, String upOgnzId) {
+        if (requested != null && requested > 0) {
+            return requested;
+        }
+        int max = upOgnzId == null ? deptManageRepository.findMaxSortOrdrOfRoots() : deptManageRepository.findMaxSortOrdrUnder(upOgnzId);
+        return max + 1;
     }
 
     @Transactional
