@@ -5,7 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
-import { PeriodFilter, EMPTY_PERIOD, periodToParams, type PeriodValue } from '@/app/components/patterns/period-filter';
+import { PeriodFilter, EMPTY_PERIOD, periodToParams } from '@/app/components/patterns/period-filter';
+import { useRememberedListConditions } from '@/lib/hooks/use-remembered-list-conditions';
 import { requestFullExport } from '@/app/components/patterns/full-result-export';
 import { useToast } from '@/app/components/ui/toast';
 import {
@@ -57,6 +58,7 @@ const TAB_RESET_PARAMS = ['page'] as const;
 
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
 const DEFAULT_PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 /**
  * 서버 컴포넌트가 넘겨주는 첫 페이지 프리페치 결과.
@@ -94,10 +96,13 @@ export default function LogDashboardClient({
     resetParams: TAB_RESET_PARAMS,
   });
   const [page, setPage] = usePageParam('page', PAGE_PRESERVED_PARAMS);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  // [2026-09-26 DIP B5 F3] 기간 프리셋과 페이지당 건수는 이 화면에서 마지막으로 고른 값을 기억한다(이 브라우저에만).
+  const { pageSize, setPageSize, period, setPeriod } = useRememberedListConditions('logs-integrated', {
+    defaultPageSize: DEFAULT_PAGE_SIZE,
+    pageSizeOptions: PAGE_SIZE_OPTIONS,
+  });
   const [searchKeyword, setSearchKeyword] = useState('');
   // [2026-09-26 DIP C6] 통합 조회에도 개별 로그 화면과 같은 기간 조건을 둔다 — 네 분류 모두 서버가 기간을 받는다.
-  const [period, setPeriod] = useState<PeriodValue>(EMPTY_PERIOD);
   const { toast } = useToast();
   const [selectedLog, setSelectedLog] = useState<{
     category: LogCategoryId;
