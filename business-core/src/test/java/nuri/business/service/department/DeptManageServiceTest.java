@@ -112,6 +112,27 @@ class DeptManageServiceTest {
     }
 
     @Test
+    @DisplayName("순서를 정하지 않은 새 부서는 같은 상위 아래 형제의 맨 뒤에 둔다 (DIP C5)")
+    void insertDeptManage_placesNewDeptLastAmongSiblings() {
+        // 종전에는 0 으로 저장돼 정렬 순서로 읽는 목록에서 형제의 맨 앞으로 끼어들었다.
+        // ID 채번도 existsById 를 부르므로 상위(PARENT)만 있다고 답한다.
+        given(deptManageRepository.existsById(org.mockito.ArgumentMatchers.anyString()))
+                .willAnswer(invocation -> "PARENT".equals(invocation.getArgument(0)));
+        given(deptManageRepository.findMaxSortOrdrUnder("PARENT")).willReturn(4);
+        given(deptManageRepository.findMaxSortOrdrOfRoots()).willReturn(2);
+        org.mockito.ArgumentCaptor<DeptManage> saved = org.mockito.ArgumentCaptor.forClass(DeptManage.class);
+
+        deptManageService.insertDeptManage(DeptManageDto.builder().ognzNm("하위").upOgnzId("PARENT").build());
+        deptManageService.insertDeptManage(DeptManageDto.builder().ognzNm("최상위").sortOrdr(0).build());
+        deptManageService.insertDeptManage(DeptManageDto.builder().ognzNm("지정").upOgnzId("PARENT").sortOrdr(2).build());
+
+        verify(deptManageRepository, org.mockito.Mockito.times(3)).save(saved.capture());
+        org.assertj.core.api.Assertions.assertThat(saved.getAllValues())
+                .extracting(DeptManage::getSortOrdr)
+                .containsExactly(5, 3, 2);
+    }
+
+    @Test
     @DisplayName("부서 수정 테스트")
     void updateDeptManageTest() {
         DeptManageDto dto = DeptManageDto.builder()

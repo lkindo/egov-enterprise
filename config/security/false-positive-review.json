@@ -40,7 +40,7 @@
         },
         {
           "file": "frontend/src/app/api/auth/reissue/route.ts",
-          "sha256": "ddca9c5573f4d691d2ebe0008a79c76b212e93fd8a3cdebf39d4d1552b14bb1c"
+          "sha256": "9b58b2eeebdf81e1037c036da277f48f06a8188b7ac81d0d58c590b08998a50c"
         },
         {
           "file": "frontend/src/lib/auth/session-cookie-policy.ts",

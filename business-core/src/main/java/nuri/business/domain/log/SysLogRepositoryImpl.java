@@ -87,6 +87,7 @@ public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
         if (!StringUtils.hasText(searchBgnDe) || !StringUtils.hasText(searchEndDe)) {
             return null;
         }
+        LogSearchPeriod.requireOrdered(searchBgnDe, searchEndDe);
         return QSysLog.sysLog.ocrnYmd.trim().between(
                 LogSearchPeriod.toCompact(searchBgnDe, "searchKeywordFrom"),
                 LogSearchPeriod.toCompact(searchEndDe, "searchKeywordTo"));

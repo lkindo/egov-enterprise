@@ -399,6 +399,10 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     });
 
     await waitFor(() => expect(saveDeptHierarchyAction).toHaveBeenCalledTimes(1));
+    // [DIP C5] 저장은 서버에서 읽은 기준선을 함께 넘겨 달라진 부서만 보낸다.
+    const [current, baseline] = vi.mocked(saveDeptHierarchyAction).mock.calls[0];
+    expect(baseline).toBeDefined();
+    expect(baseline!.map((dept) => dept.ognzId).sort()).toEqual(current.map((dept) => dept.ognzId).sort());
     const busy = screen.getByRole('button', { name: '조직 계층 저장 중…' });
     expect(busy).toBeDisabled();
     expect(busy).toHaveAttribute('aria-busy', 'true');

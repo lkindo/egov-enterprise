@@ -27,6 +27,7 @@ import { useDirtyCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import type { DeptSchedule } from '@/types/business/schedule';
 import { format } from 'date-fns';
 import { toDisplayYmd } from '@/lib/format-date';
+import { scheduleSpanDates } from '@/lib/date/schedule-span';
 import { ko } from 'date-fns/locale';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -176,7 +177,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
 
   /** 일정이 하나라도 있는 날짜들 — 캘린더 셀에 마커를 찍는 데 쓴다. */
   const scheduleDates = useMemo(
-    () => schedules.map((s) => parseYmd(s.schdlBgngYmd)).filter((d): d is Date => d !== null),
+    () => schedules.flatMap((s) => scheduleSpanDates(s.schdlBgngYmd, s.schdlEndYmd)),
     [schedules]
   );
 
@@ -493,7 +494,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
           ? '월간 일정을 조회합니다. 날짜를 선택하면 그 날짜의 일정만 표시합니다.'
           // [2026-09-26 DIP D9] 업무 보고에는 받는 사람이 없다 — 누구에게 올리는 보고가 아니라 개인 업무 기록이다.
           //   탭 이름은 메뉴 어휘(V2_27)와 맞춰 두고 설명으로 성격을 밝힌다. 받는 사람에게 올리는 것은 메모 보고다.
-          : '받는 사람 없이 남기는 개인 업무 기록입니다. 누군가에게 보고하려면 메모 보고를 쓰세요. 관리자 권한이면 전체 기록이 조회됩니다.'
+          : '받는 사람 없이 남기는 개인 업무 기록입니다. 누군가에게 보고하려면 메모 보고를 쓰세요. 관리자 권한이면 전체 보고가 조회됩니다.'
       }
       breadcrumbItems={[{ label: '나의 업무' }, { label: TAB_LABEL[activeTab] }]}
       filterStateKey="work-hub"

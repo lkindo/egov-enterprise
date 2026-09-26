@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
-import { advanceAuthorizationRequestEpoch, AUTHORIZATION_CHANGED_EVENT } from '@/lib/auth/authorization-state';
+import { advanceAuthorizationRequestEpoch, AUTHORIZATION_CHANGED_EVENT, markSignedIn, markSignedOut } from '@/lib/auth/authorization-state';
 import { loginErrorMessage } from '@/lib/auth/login-error';
 import {
   purgeBoardDraftStorage,
@@ -49,6 +49,7 @@ export function AuthProvider({
       queryClient.clear();
     }
     if (identityChanged || !nextUser) purgeBoardDraftStorage();
+    if (nextUser) markSignedIn();
     currentUser.current = nextUser;
     setUser(nextUser);
   }, [queryClient]);
@@ -103,6 +104,8 @@ export function AuthProvider({
   }, [commitUser]);
 
   const logout = useCallback(async () => {
+    // 캐시를 비우기 전에 막는다 — 비운 순간 다시 렌더되는 화면의 조회가 여기서 취소된다(DIP B4).
+    markSignedOut();
     advanceAuthorizationRequestEpoch();
     ++requestEpoch.current;
     inFlightCheck.current = null;

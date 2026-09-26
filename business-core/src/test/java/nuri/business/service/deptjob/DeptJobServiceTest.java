@@ -162,6 +162,23 @@ class DeptJobServiceTest {
     }
 
     @Test
+    @DisplayName("부서업무 목록은 정렬 없는 요청이면 최신순으로, 요청한 정렬은 그대로 조회한다 (DIP C7)")
+    void getDeptJobList_defaultsToNewestFirst() {
+        authenticateAsAdmin();
+        when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(Page.empty());
+        org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> captor =
+                org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+
+        deptJobService.getDeptJobList(null, 1L, null, null, false, PageRequest.of(2, 10));
+        deptJobService.getDeptJobList(null, 1L, null, null, false, PageRequest.of(0, 10, org.springframework.data.domain.Sort.by("deptTaskNm")));
+
+        verify(deptJobRepository, times(2)).findAll(any(Predicate.class), captor.capture());
+        assertEquals(PageRequest.of(2, 10, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "deptTaskSn")),
+                captor.getAllValues().get(0));
+        assertEquals(PageRequest.of(0, 10, org.springframework.data.domain.Sort.by("deptTaskNm")), captor.getAllValues().get(1));
+    }
+
+    @Test
     @DisplayName("부서업무 목록 조회 - boxId 있음, 조건 0")
     void getDeptJobList_withBoxIdAndCondition0() {
         authenticateAsAdmin();

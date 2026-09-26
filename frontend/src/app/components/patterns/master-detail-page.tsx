@@ -54,6 +54,31 @@ export interface MasterDetailPageProps {
 
 const MASTER_ITEM_SELECTOR = '[data-a2-master-item]:not([disabled])';
 
+/**
+ * [2026-09-26 DIP C8] 좁은 화면에서는 상세가 목록 아래에 쌓인다. 항목을 누르면 상세로 스크롤하고 포커스를 옮긴다 —
+ * 종전에는 선택만 바뀌어 사용자가 상세가 바뀌었는지 모른 채 목록에 머물렀다. 방향키로 넘길 때는 옮기지 않는다
+ * (목록을 훑는 중이다). 항목 안의 다른 조작(삭제·끌기 손잡이 등)은 선택이 아니다.
+ *
+ * 쌓였는지는 너비 질의가 아니라 **실제 배치**로 판정한다 — 상세의 위쪽이 누른 항목의 아래쪽보다 아래에 있으면
+ * 쌓인 것이다. 렌더 결과를 너비로 가르지 않는다는 반응형 규칙(ADR-0006)과 같은 방향이다. 배치 정보가 없으면
+ * (크기 0) 아무것도 하지 않는다.
+ */
+function revealDetailAfterSelect(event: React.MouseEvent<HTMLElement>, detail: () => HTMLElement | null | undefined) {
+  const target = event.target as HTMLElement;
+  const item = target.closest<HTMLElement>(MASTER_ITEM_SELECTOR);
+  if (!item) return;
+  const control = target.closest<HTMLElement>('button, a[href], input, select, textarea, [role="button"]');
+  if (control && control !== item) return;
+  const element = detail();
+  if (!element) return;
+  const itemRect = item.getBoundingClientRect();
+  if (itemRect.height <= 0 || element.getBoundingClientRect().top < itemRect.bottom - 1) return;
+  requestAnimationFrame(() => {
+    element.scrollIntoView?.({ block: 'start' });
+    element.focus({ preventScroll: true });
+  });
+}
+
 export interface MasterDetailLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
   /** false이면 기존 화면의 className만 보존한다. 공유 클라이언트의 route별 점진 이행용이다. */
   active?: boolean;
@@ -72,12 +97,14 @@ export function MasterDetailLayout({
   children,
   className,
   onKeyDown,
+  onClick,
   ...props
 }: MasterDetailLayoutProps) {
   const layoutRef = useRef<HTMLDivElement>(null);
+  const arrowSelectingRef = useRef(false);
 
   if (!active) {
-    const inactiveProps = onKeyDown ? { ...props, onKeyDown } : props;
+    const inactiveProps = { ...props, ...(onKeyDown ? { onKeyDown } : {}), ...(onClick ? { onClick } : {}) };
     return (
       <div className={className} {...inactiveProps}>
         {children}
@@ -144,7 +171,18 @@ export function MasterDetailLayout({
 
     event.preventDefault();
     items[nextIndex].focus();
-    items[nextIndex].click();
+    arrowSelectingRef.current = true;
+    try {
+      items[nextIndex].click();
+    } finally {
+      arrowSelectingRef.current = false;
+    }
+  };
+
+  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    onClick?.(event);
+    if (event.defaultPrevented || arrowSelectingRef.current) return;
+    revealDetailAfterSelect(event, () => layoutRef.current?.querySelector<HTMLElement>('[data-a2-detail]'));
   };
 
   return (
@@ -154,6 +192,7 @@ export function MasterDetailLayout({
       aria-label="마스터 상세 작업 영역"
       data-testid="master-detail-incremental-layout"
       onKeyDown={handleKeyDown}
+      onClick={handleClick}
       className={cn(
         'grid min-h-[32rem] min-w-0 gap-4 lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]',
         className,
@@ -196,6 +235,7 @@ export function MasterDetailPage({
   const masterContentRef = useRef<HTMLDivElement>(null);
   const detailSectionRef = useRef<HTMLElement>(null);
   const detailContentRef = useRef<HTMLDivElement>(null);
+  const arrowSelectingRef = useRef(false);
 
   const handlePageKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (onSaveShortcut) {
@@ -256,7 +296,17 @@ export function MasterDetailPage({
 
     event.preventDefault();
     items[nextIndex].focus();
-    items[nextIndex].click();
+    arrowSelectingRef.current = true;
+    try {
+      items[nextIndex].click();
+    } finally {
+      arrowSelectingRef.current = false;
+    }
+  };
+
+  const handleMasterClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.defaultPrevented || arrowSelectingRef.current) return;
+    revealDetailAfterSelect(event, () => detailContentRef.current);
   };
 
   return (
@@ -315,6 +365,7 @@ export function MasterDetailPage({
             role="group"
             aria-label={`${masterTitle} 항목`}
             onKeyDown={handleMasterKeyDown}
+            onClick={handleMasterClick}
             data-testid="master-detail-master"
             className="max-h-[60vh] min-h-0 flex-1 overflow-auto p-[var(--filter-pad)] lg:max-h-none"
           >

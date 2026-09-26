@@ -55,7 +55,8 @@ test.describe('사용자와 권한 관리', () => {
                 // --- Step 4: Submit ---
                 console.log('>>> Step 4: Clicking submit button');
                 // Submit button is form button[type="submit"] with text "신규 등록"
-                const submitBtn = page.locator('form button[type="submit"]');
+                // [2026-09-26 DIP C9] 목록 검색도 form(조회) 이 되어, 제출 버튼은 등록 대화상자 안으로 한정한다.
+                const submitBtn = page.getByRole('dialog').locator('form button[type="submit"]');
                 await expect(submitBtn).toBeVisible({ timeout: 10000 });
                 await expect(submitBtn).toBeEnabled({ timeout: 5000 });
                 await submitBtn.click();
@@ -113,7 +114,7 @@ test.describe('사용자와 권한 관리', () => {
                 //   **실패 자체가 원인을 말하게** 한다.
                 const [updateResponse] = await Promise.all([
                     page.waitForResponse((r) => r.request().method() === 'PUT' && /\/api\/v1\/admin\/system\/users\//.test(r.url()), { timeout: 30000 }),
-                    page.locator('form button[type="submit"]').click(),
+                    page.getByRole('dialog').locator('form button[type="submit"]').click(),
                 ]);
                 if (!updateResponse.ok()) {
                     // 진단은 실패 경로에서만 수집한다(성공 시 불필요한 본문 읽기를 하지 않는다).

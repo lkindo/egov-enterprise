@@ -278,7 +278,9 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
         queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
         clearDraft();
         toast(pstSn ? '게시글을 수정했습니다.' : '게시글을 등록했습니다.', 'success');
-        router.push(result.redirect || `/admin/community/boards/select-board-list?bbsId=${bbsId}`);
+        // [2026-09-26 DIP C8] 작성 화면을 방문 기록에서 바꿔 끼운다. push 로 가면 뒤로 가기가 저장을 마친 폼으로
+        //   돌아가고, 한 번 더 눌러야 목록(URL 에 실린 페이지·검색 조건)에 닿았다.
+        router.replace(result.redirect || `/admin/community/boards/select-board-list?bbsId=${bbsId}`);
       } else {
         // [2026-09-26 DIP V9] 액션이 돌려준 사유(권한·파일 크기·형식·서버 안내)를 버리지 않는다.
         if (!form.applyServerErrors(result)) {
