@@ -78,6 +78,7 @@ import {
   OrgPolicyPanel,
   SortableDeptNode,
   UserOrgMasterSection,
+  USER_STATUS_LABELS,
   UserStatusBadge,
 } from './UserOrgHubParts';
 import { useDeptTree } from './useDeptTree';
@@ -166,6 +167,18 @@ function departmentLabel(ognzId: string | null | undefined, departments: Readonl
   const name = departments?.find((dept) => dept?.ognzId === ognzId)?.ognzNm;
   return name ? `${name} (${ognzId})` : ognzId;
 }
+
+/** [2026-09-26 DIP B5 F4] 사용자 목록 조건 — 빈 문자열은 조건 없음. 어휘 밖 값은 서버가 400 으로 거부한다. */
+type UserListFilters = { userSttsCd: string; ognzId: string; lckYn: string };
+const EMPTY_USER_FILTERS: UserListFilters = { userSttsCd: '', ognzId: '', lckYn: '' };
+/** 부서 상세의 소속 인원 목록에 이름을 보이는 최대 인원. 나머지는 '외 N명' 으로 말한다. */
+const DEPT_MEMBER_PREVIEW = 20;
+const USER_LOCK_FILTER_OPTIONS = [
+  { value: '', label: '전체' },
+  { value: 'Y', label: '잠김' },
+  { value: 'N', label: '잠기지 않음' },
+] as const;
+const FILTER_SELECT_CLASS = 'h-[var(--control-h)] rounded-md border border-input bg-background px-2 text-[length:var(--font-size-body)]';
 
 export default function UserOrgHubClient({
   defaultTab = 'USERS',
@@ -340,16 +353,31 @@ export default function UserOrgHubClient({
 
 
 
+  // [2026-09-26 DIP B5 F4] 사용자 탭의 계정 상태·소속 부서·로그인 잠금 조건. 부재 탭은 전체 사용자를 그대로 본다.
+  const [userFilters, setUserFilters] = useState<UserListFilters>(EMPTY_USER_FILTERS);
+  const appliedUserFilters = activeTab === 'USERS' ? userFilters : EMPTY_USER_FILTERS;
+  const hasUserFilter = Boolean(appliedUserFilters.userSttsCd || appliedUserFilters.ognzId || appliedUserFilters.lckYn);
+  const userFilterId = React.useId();
+  // 조건이 바뀌면 1페이지로 돌아간다 — 검색어와 같은 규칙(감사 P1-8).
+  const applyUserFilter = (patch: Partial<UserListFilters>) => {
+    setUserFilters((prev) => ({ ...prev, ...patch }));
+    if (userPage !== 1) goToPage(1);
+  };
   const { data: usersData, isLoading: isUsersLoading, isError: isUsersError, error: usersError, refetch: refetchUsers } = useQuery({
-    queryKey: ['admin-users', searchKeyword, userPage, userPageSize],
+    queryKey: ['admin-users', searchKeyword, userPage, userPageSize, appliedUserFilters],
     // 서버(GET /admin/system/users)는 searchKeyword + Spring Pageable(page/size, 0-based)만 읽는다.
     // 종전의 {pageNo}는 ApiService 매핑 대상도 Pageable 파라미터도 아니라 그대로 무시됐고,
     // 몇 페이지를 눌러도 항상 첫 페이지가 왔다(死 페이저 — 감사 m-2).
-    queryFn: () => userAdminService.getUserList({ page: userPage - 1, size: userPageSize, searchKeyword: searchKeyword }),
+    queryFn: () => userAdminService.getUserList({
+      page: userPage - 1, size: userPageSize, searchKeyword: searchKeyword,
+      ...(appliedUserFilters.userSttsCd ? { userSttsCd: appliedUserFilters.userSttsCd } : {}),
+      ...(appliedUserFilters.ognzId ? { ognzId: appliedUserFilters.ognzId } : {}),
+      ...(appliedUserFilters.lckYn ? { lckYn: appliedUserFilters.lckYn } : {}),
+    }),
     enabled: activeTab === 'USERS' || activeTab === 'ABSENCES',
     // 서버 프리페치가 실패했다면(null) 시드를 쓰지 않는다 — 빈 목록을 시드로 넣으면
     // staleTime 동안 재조회가 막혀 조회 실패가 '0건'으로 위장된다(감사 P1-1).
-    initialData: (userPage === 1 && userPageSize === 10 && !searchKeyword) ? (initialUsers ?? undefined) : undefined
+    initialData: (userPage === 1 && userPageSize === 10 && !searchKeyword && !hasUserFilter) ? (initialUsers ?? undefined) : undefined
   });
   const users = useMemo(() => {
     const list = usersData?.list;
@@ -455,8 +483,9 @@ export default function UserOrgHubClient({
     deptKeyword,
     initialDepts,
     // [2026-09-26 DIP V9] 사용자를 고르면 상세의 소속을 이름으로 보이도록 부서 목록도 읽는다(캐시 공유).
-    enabled: activeTab === 'DEPTS' || isBulkMoveModalOpen || isUserModalOpen
-      || (activeTab === 'USERS' && selectedItemId !== null),
+    // [2026-09-26 DIP B5 F4] 사용자 탭은 목록의 부서 열과 '소속 부서' 조건도 이름으로 보이므로 늘 읽는다.
+    //   서버 프리페치(전량)가 있으면 그것이 initialData 라 추가 요청이 없다.
+    enabled: activeTab === 'DEPTS' || activeTab === 'USERS' || isBulkMoveModalOpen || isUserModalOpen,
     onDragSelect: setSelectedItemId,
   });
 
@@ -697,6 +726,21 @@ export default function UserOrgHubClient({
     () => (selectedItemId ? (users || []).find(u => u?.userId === selectedItemId) : undefined),
     [selectedItemId, users]
   );
+  // [2026-09-26 DIP B5 F4] 부서 상세의 소속 인원 — 직속 소속만, 이름은 앞 DEPT_MEMBER_PREVIEW 명까지 보인다.
+  const deptMembersQuery = useQuery({
+    queryKey: ['admin-dept-members', activeTab === 'DEPTS' ? selectedItemId : null],
+    queryFn: () => userAdminService.getUserList({ page: 0, size: DEPT_MEMBER_PREVIEW, ognzId: String(selectedItemId) }),
+    enabled: activeTab === 'DEPTS' && Boolean(selectedItemId),
+  });
+  const deptMembersLabel = deptMembersQuery.isError
+    ? '불러오지 못했습니다'
+    : deptMembersQuery.data === undefined
+      ? '불러오는 중'
+      : deptMembersQuery.data.total === 0
+        ? '없음'
+        : `${deptMembersQuery.data.total.toLocaleString()}명 — ${(deptMembersQuery.data.list ?? []).map((member) => member.userNm).join(', ')}`
+          + (deptMembersQuery.data.total > DEPT_MEMBER_PREVIEW ? ` 외 ${(deptMembersQuery.data.total - DEPT_MEMBER_PREVIEW).toLocaleString()}명` : '');
+
   const selectedDept = useMemo(
     () => (selectedItemId ? (departments || []).find(d => d?.ognzId === selectedItemId) : undefined),
     [selectedItemId, departments]
@@ -818,6 +862,25 @@ export default function UserOrgHubClient({
         },
       },
     ] satisfies Column<UserManage>[]) : ([
+      {
+        header: '상태',
+        className: 'w-24',
+        accessor: (user: UserManage) => <UserStatusBadge code={user.userSttsCd} />,
+      },
+      {
+        header: '부서',
+        className: 'w-32',
+        accessor: (user: UserManage) => (user.ognzId
+          ? departmentLabel(user.ognzId, departments)
+          : <span className="text-muted-foreground">미지정</span>),
+      },
+      {
+        header: '잠금',
+        className: 'w-24',
+        accessor: (user: UserManage) => (user.lckYn === 'Y'
+          ? <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-xs font-semibold text-destructive-emphasis">로그인 잠김</span>
+          : <span className="text-muted-foreground">-</span>),
+      },
       {
         header: '직함',
         className: 'w-32',
@@ -998,7 +1061,61 @@ export default function UserOrgHubClient({
                 if (isDeptTab) setSelectedItemId(null);
                 if (userPage !== 1) goToPage(1);
               }}
-            />
+              onReset={() => {
+                setSearchKeyword('');
+                if (isDeptTab) setSelectedItemId(null);
+                else setUserFilters(EMPTY_USER_FILTERS);
+                if (userPage !== 1) goToPage(1);
+              }}
+            >
+              {/* [2026-09-26 DIP B5 F4] 사용자 탭만 계정 상태·소속 부서·로그인 잠금으로 좁힌다.
+                  부재 탭은 부재를 판정하려고 전체 사용자를 보므로 조건을 두지 않는다. 부서는 직속 소속만 본다. */}
+              {activeTab === 'USERS' && (
+                <>
+                  <div className="space-y-1">
+                    <label htmlFor={`${userFilterId}-status`} className="text-[length:var(--font-size-body)] font-medium">계정 상태</label>
+                    <select
+                      id={`${userFilterId}-status`}
+                      value={userFilters.userSttsCd}
+                      onChange={(event) => applyUserFilter({ userSttsCd: event.target.value })}
+                      className={FILTER_SELECT_CLASS}
+                    >
+                      <option value="">전체</option>
+                      {Object.entries(USER_STATUS_LABELS).map(([code, status]) => (
+                        <option key={code} value={code}>{status.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor={`${userFilterId}-dept`} className="text-[length:var(--font-size-body)] font-medium">소속 부서</label>
+                    <select
+                      id={`${userFilterId}-dept`}
+                      value={userFilters.ognzId}
+                      onChange={(event) => applyUserFilter({ ognzId: event.target.value })}
+                      className={cn(FILTER_SELECT_CLASS, 'max-w-[14rem]')}
+                    >
+                      <option value="">전체</option>
+                      {(departments || []).filter((dept) => dept?.ognzId).map((dept) => (
+                        <option key={dept.ognzId} value={dept.ognzId}>{dept.ognzNm || dept.ognzId}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor={`${userFilterId}-lock`} className="text-[length:var(--font-size-body)] font-medium">로그인 잠금</label>
+                    <select
+                      id={`${userFilterId}-lock`}
+                      value={userFilters.lckYn}
+                      onChange={(event) => applyUserFilter({ lckYn: event.target.value })}
+                      className={FILTER_SELECT_CLASS}
+                    >
+                      {USER_LOCK_FILTER_OPTIONS.map((option) => (
+                        <option key={option.value || 'all'} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+            </KeywordFilter>
           </div>
           {/* 안내는 라벨·placeholder 로 알 수 없는 사실이 있을 때만 둔다 — 사용자 탭의
               '사용자명 또는 ID 로 검색합니다' 는 라벨의 반복이라 한 줄을 더 쓸 값이 없었다. */}
@@ -1183,7 +1300,7 @@ export default function UserOrgHubClient({
                   rowActionLabel={(item) => `${item.userNm || item.userId || '사용자'} 상세 열기`}
                   keyField="userId"
                   // ⚠ e2e(23-security-auth-supplement E12)가 /검색 결과가 없습니다|데이터가 존재하지 않습니다/ 로 단언한다.
-                  emptyMessage={emptyResultMessage(searchKeyword, '데이터가 존재하지 않습니다.')}
+                  emptyMessage={hasUserFilter && !searchKeyword.trim() ? '조건에 맞는 사용자가 없습니다.' : emptyResultMessage(searchKeyword, '데이터가 존재하지 않습니다.')}
                   // 업무형 화면은 진입 애니메이션을 두지 않는다(카탈로그 §3 금지 목록).
                   enableSelection={true}
                   bulkActions={userBulkActions}
@@ -1251,6 +1368,7 @@ export default function UserOrgHubClient({
                         span
                         value={(selectedItem as Department)?.ognzExpln || '미등록'}
                       />
+                      <DetailField label="소속 인원" span value={deptMembersLabel} />
                     </DetailFieldList>
                   ) : (
                     <DetailFieldList>

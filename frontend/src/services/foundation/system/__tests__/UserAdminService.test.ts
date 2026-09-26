@@ -136,6 +136,14 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
       });
     });
 
+    it('계정 상태·소속 부서·로그인 잠금 조건을 OpenAPI 쿼리 이름 그대로 보낸다(DIP B5 F4)', async () => {
+      await userAdminService.getUserList({ userSttsCd: 'A', ognzId: 'ORG_B', lckYn: 'Y' });
+
+      expect(client.get).toHaveBeenCalledWith(BASE, {
+        params: { userSttsCd: 'A', ognzId: 'ORG_B', lckYn: 'Y' },
+      });
+    });
+
     it('OpenAPI에 없는 searchCondition·sbscrbSttus는 묵시하지 않고 fail-closed 된다', async () => {
       await expect(userAdminService.getUserList({
         searchCondition: 'userNm',
@@ -184,6 +192,12 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
       await userAdminService.getUser('USR001', { timeout: 1000 });
 
       expect(client.get).toHaveBeenCalledWith(`${BASE}/USR001`, { timeout: 1000 });
+    });
+
+    it('서버가 싣는 로그인 잠금 여부(lckYn)를 버리지 않는다 — 잠금 해제 버튼이 이 값으로 보인다', async () => {
+      client.get.mockResolvedValueOnce({ ...safeUser, lckYn: 'Y' });
+
+      await expect(userAdminService.getUser('USR001')).resolves.toMatchObject({ lckYn: 'Y' });
     });
 
     it('config 를 주지 않으면 undefined 가 그대로 전달된다(임의의 기본값을 만들지 않는다)', async () => {

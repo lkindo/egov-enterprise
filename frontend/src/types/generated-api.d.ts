@@ -2015,7 +2015,7 @@ export interface paths {
         };
         /**
          * 사용자 목록 조회
-         * @description 전체 사용자 목록을 페이징하여 조회합니다.
+         * @description 전체 사용자 목록을 페이징하여 조회합니다. 계정 상태(userSttsCd: P 정상·A 승인 대기·D 비활성)·소속 부서(ognzId, 직속만)·로그인 잠금(lckYn: Y·N)으로 좁힐 수 있고, 어휘 밖 값은 400 입니다.
          */
         get: operations["getUsers"];
         put?: never;
@@ -23134,6 +23134,9 @@ export interface operations {
         parameters: {
             query?: {
                 searchKeyword?: string;
+                userSttsCd?: string;
+                ognzId?: string;
+                lckYn?: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */

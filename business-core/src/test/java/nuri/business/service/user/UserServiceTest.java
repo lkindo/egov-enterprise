@@ -1,5 +1,6 @@
 package nuri.business.service.user;
 
+import nuri.business.domain.user.repository.UserListFilter;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.auth.UserAuthorityRepository;
@@ -379,9 +380,9 @@ class UserServiceTest {
     @DisplayName("사용자 목록 페이지 조회")
     void getPagedUserListTest() {
         Page<UserDto> page = Page.empty();
-        given(userRepository.getPagedUserList(anyString(), any())).willReturn(page);
+        given(userRepository.getPagedUserList(anyString(), any(), any())).willReturn(page);
         
-        Page<UserDto> result = userService.getPagedUserList("search", org.springframework.data.domain.PageRequest.of(0, 10));
+        Page<UserDto> result = userService.getPagedUserList("search", UserListFilter.NONE, org.springframework.data.domain.PageRequest.of(0, 10));
         assertNotNull(result);
     }
 
@@ -389,7 +390,7 @@ class UserServiceTest {
     @DisplayName("사용자 목록 페이지 조회 (검색어 없음)")
     void getUserPageTest() {
         Page<UserDto> page = Page.empty();
-        given(userRepository.getPagedUserList(isNull(), any())).willReturn(page);
+        given(userRepository.getPagedUserList(isNull(), any(), any())).willReturn(page);
         
         Page<UserDto> result = userService.getUserPage(org.springframework.data.domain.PageRequest.of(0, 10));
         assertNotNull(result);
@@ -399,7 +400,7 @@ class UserServiceTest {
     @DisplayName("사용자 목록 페이지 조회 (기본 페이징 적용)")
     void searchUserPageTest() {
         Page<UserDto> page = Page.empty();
-        given(userRepository.getPagedUserList(eq("search"), any())).willReturn(page);
+        given(userRepository.getPagedUserList(eq("search"), any(), any())).willReturn(page);
         
         Page<UserDto> result = userService.searchUserPage("search");
         assertNotNull(result);

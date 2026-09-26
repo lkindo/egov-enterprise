@@ -165,6 +165,9 @@ public record UserDto(
         String mblTelno,
         String emlAddr,
         String ofcpsNm,
+        String ognzId,
+        String userSttsCd,
+        String lckYn,
         LocalDateTime crtDt
     ) {
         this(
@@ -184,7 +187,7 @@ public record UserDto(
             null, // mbrTypeCd
             null, // faxNo
             null, // pstinstCd
-            null, // ognzId
+            ognzId,
             null, // groupId
             null, // homeAddr
             null, // daddr
@@ -195,8 +198,8 @@ public record UserDto(
             ofcpsNm,
             null, // certDnVl
             null, // userSe
-            null, // userSttsCd
-            null, // lckYn
+            userSttsCd,
+            lckYn,
             crtDt,
             java.util.List.of(), java.util.List.of(), null
         );
