@@ -35,7 +35,7 @@ jdom2 = "2.0.6.1"
 dbcp2 = "2.14.0"
 jjwt = "0.13.0"
 h2 = "2.5.250"
-caffeine = "3.2.4"
+caffeine = "3.3.0"
 testcontainers = "2.0.5" # Boot 4.1.1 BOM 관리 값과 같다
 mapstruct = "1.6.3"
 # [2026-08-07 신설] querydsl — 원본 `com.querydsl` 에서 유지보수 포크로 이관한다.

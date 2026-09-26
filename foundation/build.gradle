@@ -20,7 +20,7 @@ dependencies {
     api 'org.springframework.boot:spring-boot-starter-cache'
     api 'org.springframework.boot:spring-boot-starter-actuator'
     api libs.caffeine
-    api 'com.bucket4j:bucket4j_jdk17-core:8.19.0'
+    api 'com.bucket4j:bucket4j_jdk17-core:8.20.0'
     api 'com.warrenstrange:googleauth:1.5.0'
 
     // JWT
@@ -119,7 +119,7 @@ dependencies {
     testImplementation libs.archunit
 
     // Logging bridge for Egovframe (Commons Logging -> SLF4J)
-    testRuntimeOnly 'org.slf4j:jcl-over-slf4j:2.0.19'
+    testRuntimeOnly 'org.slf4j:jcl-over-slf4j:2.0.20'
 
 }
 
