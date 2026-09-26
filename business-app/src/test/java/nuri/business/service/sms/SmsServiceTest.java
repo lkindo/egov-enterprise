@@ -320,6 +320,19 @@ class SmsServiceTest {
         assertThat(smsService.getDeliveryStatus().deliveryConfigured()).isTrue();
     }
 
+    @Test
+    @DisplayName("발송 가능 상태 - 배포에 등록된 발신 번호를 기본값으로 알리고, 없으면 null 이다")
+    void deliveryStatus_reportsConfiguredSenderNumber() {
+        when(smsSender.isDeliveryConfigured()).thenReturn(false);
+        ReflectionTestUtils.setField(smsService, "defaultSenderTel", " 1588-0000 ");
+        assertThat(smsService.getDeliveryStatus().defaultSenderTelno()).isEqualTo("1588-0000");
+
+        ReflectionTestUtils.setField(smsService, "defaultSenderTel", " ");
+        assertThat(smsService.getDeliveryStatus().defaultSenderTelno()).isNull();
+        ReflectionTestUtils.setField(smsService, "defaultSenderTel", null);
+        assertThat(smsService.getDeliveryStatus().defaultSenderTelno()).isNull();
+    }
+
     private Sms sms(Long smsTrsmSn, String sndngTelno, String sndngCn) {
         Sms sms = Sms.builder().sndngTelno(sndngTelno).sndngCn(sndngCn).build();
         ReflectionTestUtils.setField(sms, "smsTrsmSn", smsTrsmSn);

@@ -44,17 +44,11 @@ export interface KnowledgeDto {
   crtDt?: string;
   inqCnt?: number;
   bbsId?: string;
-  statusCd?: string;
-  categoryCd?: string;
   qnaSttsCd?: string;
   qnaCatCd?: string;
   evntDt?: string;
   likeCnt?: number;
   commentCnt?: number;
-  // Legacy mappings for backward compatibility during transition if needed
-  knoId?: string;
-  knoNm?: string;
-  knoCn?: string;
 }
 
 

@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
   toast: vi.fn(),
   queries: {} as Record<string, { queryFn?: () => unknown }>,
   /** 발송 가능 상태 조회 결과. undefined = 아직 판정 못 함(배너를 띄워야 하는 쪽). */
-  deliveryStatusData: undefined as { deliveryConfigured?: boolean } | undefined,
+  deliveryStatusData: undefined as { deliveryConfigured?: boolean; defaultSenderTelno?: string | null } | undefined,
   /** 피커 stub 이 마지막으로 받은 주소록 출처. 조합 지점이 무엇을 주입했는지 동일성으로 본다. */
   pickerProps: { addressBook: undefined as unknown },
 }));
@@ -167,6 +167,48 @@ describe('SmsAdminClient send validation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.sendSms.mockResolvedValue(1);
+    mocks.deliveryStatusData = { deliveryConfigured: false, defaultSenderTelno: '1588-0000' };
+  });
+
+  it('발신 번호는 배포에 등록된 번호를 기본값으로 보이고 그 번호로 보낸다', async () => {
+    const user = userEvent.setup();
+    const fields = await openSmsForm(user);
+    const sender = within(screen.getByRole('dialog')).getByRole('textbox', { name: /발신 번호/ });
+    expect(sender).toHaveValue('1588-0000');
+    expect(screen.getByText('기본값은 이 배포에 등록된 발신 번호입니다.')).toBeInTheDocument();
+    await user.type(fields.recipient, '010-1234-5678');
+    await user.type(fields.content, '안내 문자');
+
+    fireEvent.submit(fields.form);
+
+    await waitFor(() => expect(mocks.sendSms).toHaveBeenCalledWith(expect.objectContaining({ sndngTelno: '1588-0000' })));
+    expect(mocks.sendSms).not.toHaveBeenCalledWith(expect.objectContaining({ sndngTelno: '02-1234-5678' }));
+  });
+
+  it('등록된 발신 번호가 없으면 예시 번호를 채우지 않고 입력을 요구한다', async () => {
+    mocks.deliveryStatusData = { deliveryConfigured: false, defaultSenderTelno: null };
+    const user = userEvent.setup();
+    const fields = await openSmsForm(user);
+    const sender = within(screen.getByRole('dialog')).getByRole('textbox', { name: /발신 번호/ });
+    expect(sender).toHaveValue('');
+    expect(screen.getByText(/등록된 기본 발신 번호가 없습니다/)).toBeInTheDocument();
+    await user.type(fields.recipient, '010-1234-5678');
+    await user.type(fields.content, '안내 문자');
+
+    fireEvent.submit(fields.form);
+
+    expect(await screen.findAllByText('발신 번호를 입력해 주세요.')).not.toHaveLength(0);
+    expect(mocks.sendSms).not.toHaveBeenCalled();
+  });
+
+  it('메시지 바이트 수를 한글 2바이트 기준으로 세고 단문 한도를 넘으면 알린다', async () => {
+    const user = userEvent.setup();
+    const fields = await openSmsForm(user);
+    expect(screen.getByText('0 / 90바이트')).toBeInTheDocument();
+    fireEvent.change(fields.content, { target: { value: '가나다abc' } });
+    expect(screen.getByText('9 / 90바이트')).toBeInTheDocument();
+    fireEvent.change(fields.content, { target: { value: '가'.repeat(46) } });
+    expect(screen.getByText(/92 \/ 90바이트.*단문 한도를 넘었습니다/)).toBeInTheDocument();
   });
 
   it('라벨을 실제 입력 컨트롤의 접근 가능한 이름으로 연결한다', async () => {

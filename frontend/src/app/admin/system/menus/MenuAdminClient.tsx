@@ -431,7 +431,7 @@ export default function MenuAdminClient({
     if (hierarchySavePendingRef.current || deletePendingRef.current || modalSavePendingRef.current) return;
     setSelectedMenuId(menu.menuNo);
     setMode('edit');
-    form.reset({ menuNo: menu.menuNo, menuNm: menu.menuNm, menuOrdr: menu.menuOrdr || 0, upperMenuId: menu.upMenuSn ?? menu.upperMenuId ?? 0, prgrmFileNm: menu.prgrmFileNm || '', modernRoute: menu.modernRoute || '', menuExpln: menu.menuExpln ?? menu.menuDc ?? '', useYn: (menu.useYn || 'Y') as 'Y' | 'N' });
+    form.reset({ menuNo: menu.menuNo, menuNm: menu.menuNm, menuOrdr: menu.menuOrdr || 0, upperMenuId: menu.upMenuSn ?? menu.upperMenuId ?? 0, prgrmFileNm: menu.prgrmFileNm || '', modernRoute: menu.modernRoute || '', menuExpln: menu.menuExpln ?? '', useYn: (menu.useYn || 'Y') as 'Y' | 'N' });
     setIsOpen(true);
   };
 
@@ -496,8 +496,7 @@ export default function MenuAdminClient({
         menuNm: item.menuNm,
         prgrmFileNm: item.prgrmFileNm || '',
         modernRoute: item.modernRoute || '',
-        menuExpln: item.menuExpln ?? item.menuDc ?? '',
-        menuDc: item.menuExpln ?? item.menuDc ?? '',
+        menuExpln: item.menuExpln ?? '',
         useYn: item.useYn === 'N' ? 'N' : 'Y',
       }));
       const res = await updateMenuOrdersAction(submitData);
@@ -750,7 +749,7 @@ export default function MenuAdminClient({
             <div className="rounded-md border border-border p-4 sm:col-span-2">
               <dt className="text-xs font-semibold text-muted-foreground">설명</dt>
               <dd className="mt-1 whitespace-pre-wrap text-sm text-foreground">
-                {selectedMenu.menuExpln ?? selectedMenu.menuDc ?? '등록된 설명이 없습니다.'}
+                {selectedMenu.menuExpln || '등록된 설명이 없습니다.'}
               </dd>
             </div>
           </dl>

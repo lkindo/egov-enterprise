@@ -465,10 +465,10 @@ class AuthorizationAdministrationServiceTest {
     void historyRejectsReversedDatesAndBindsInclusiveDateFiltersWithPagination() throws Exception {
         error(CommonErrorCode.INVALID_INPUT_VALUE, () -> service.history(0, 20, null, null, null, LocalDate.of(2026, 9, 11), LocalDate.of(2026, 9, 10)));
         var at = LocalDateTime.of(2026, 9, 10, 12, 30);
-        var expected = new Change(7L, "request", "policy", "USER_GROUP", "ADD", "G_A", "U_1", null, null, "membership", null, "G_A", "OPERATOR_ID", at);
+        var expected = new Change(7L, "request", "policy", "USER_GROUP", "ADD", "G_A", "U_1", "대상자", null, null, "membership", null, "G_A", "OPERATOR_ID", "처리자", at);
         Map<String, Object> values = new LinkedHashMap<>();
-        String[] columns = {"authrt_chg_hstry_sn", "dmnd_idntfr", "plcy_ver_no", "chg_trgt_type_cd", "chg_type_cd", "authrt_cd", "scrty_dcsn_trgt_id", "authrt_type_cd", "authrt_grnt_cd", "chg_artcl_nm", "chg_bfr_cn", "chg_aftr_cn", "chg_user_idntfr", "crt_dt"};
-        Object[] data = {7L, "request", "policy", "USER_GROUP", "ADD", "G_A", "U_1", null, null, "membership", null, "G_A", "OPERATOR_ID", Timestamp.valueOf(at)};
+        String[] columns = {"authrt_chg_hstry_sn", "dmnd_idntfr", "plcy_ver_no", "chg_trgt_type_cd", "chg_type_cd", "authrt_cd", "scrty_dcsn_trgt_id", "target_user_nm", "authrt_type_cd", "authrt_grnt_cd", "chg_artcl_nm", "chg_bfr_cn", "chg_aftr_cn", "chg_user_idntfr", "actor_nm", "crt_dt"};
+        Object[] data = {7L, "request", "policy", "USER_GROUP", "ADD", "G_A", "U_1", "대상자", null, null, "membership", null, "G_A", "OPERATOR_ID", "처리자", Timestamp.valueOf(at)};
         for (int i = 0; i < columns.length; i++) values.put(columns[i], data[i]);
         try (var construction = mockConstruction(NamedParameterJdbcTemplate.class, (named, context) -> {
             when(named.query(anyString(), any(SqlParameterSource.class), ArgumentMatchers.<RowMapper<Change>>any()))

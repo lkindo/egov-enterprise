@@ -9464,6 +9464,8 @@ export interface components {
             deliveryConfigured: boolean;
             /** @description 현재 발송 구현체의 단순 클래스명. 운영 문의 시 어느 형상인지 식별한다. */
             senderImplementation: string;
+            /** @description 배포에 등록된 기본 발신 번호(nuri.notification.sender.tel). 설정이 없으면 null. */
+            defaultSenderTelno: string | null;
         };
         ApiResponsePageResponseRewardManageDto: {
             success?: boolean;
@@ -9777,12 +9779,16 @@ export interface components {
             changeType: string;
             group: string | null;
             userId: string | null;
+            /** @description 대상 사용자 이름(사용자가 없으면 null) */
+            userNm: string | null;
             grantType: string | null;
             grantCode: string | null;
             field: string;
             before: string | null;
             after: string | null;
             actorId: string | null;
+            /** @description 처리자 이름(사용자가 없으면 null) */
+            actorNm: string | null;
             /** Format: date-time */
             createdAt: string;
         };
