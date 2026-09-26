@@ -8,6 +8,7 @@ import {
 } from '@/types/business/survey';
 import type { components } from '@/types/generated-api';
 import {
+  copySurveyOperation,
   deleteQuestionOperation,
   deleteItemOperation,
   deleteSurveyOperation,
@@ -111,6 +112,17 @@ class SurveyAdminService extends AdminService {
       body: data as components['schemas']['SurveyInfoDto'],
       config,
     });
+  }
+
+  /**
+   * 설문 복제(2026-09-26 DIP B5 F6) — 문항·선택 항목까지 복제하고 사본 번호를 돌려준다. 제목·기간은 새로 받는다.
+   */
+  async copySurvey(
+    srvySn: number,
+    body: components['schemas']['SurveyCopyRequest'],
+    config?: AxiosRequestConfig,
+  ): Promise<number> {
+    return this.executeGenerated(copySurveyOperation, { path: { srvySn }, body, config });
   }
 
   /** 설문 삭제 */

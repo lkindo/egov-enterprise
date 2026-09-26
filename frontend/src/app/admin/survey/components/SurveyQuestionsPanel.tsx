@@ -24,11 +24,12 @@ type SurveyItemUpdate = { artclSn?: number; artclCn: string; etcAnsYn?: string }
 import { PageResponse } from '@/types/foundation/system';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Check, Loader2, Pencil, Plus, Trash2, X, ListChecks, MessageSquareText } from 'lucide-react';
+import { Check, Copy, Loader2, Pencil, Plus, Trash2, X, ListChecks, MessageSquareText } from 'lucide-react';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { SurveyCopyDialog } from './SurveyCopyDialog';
 import { omitNulls } from '@/lib/api/omit-nulls';
 import {
   surveyInfoCreateSchema,
@@ -60,6 +61,8 @@ export default function SurveyQuestionsPanel() {
   // 파괴적 액션은 native confirm 대신 useConfirm — 본문에 대상과 소실 범위를 노출한다.
   const confirm = useConfirm();
   const [srvySn, setSrvySn] = useState<number | null>(null);
+  /** [2026-09-26 DIP B5 F6] 복제 대화상자를 연 원본 설문. */
+  const [copySource, setCopySource] = useState<{ srvySn: number; srvyTtl?: string | null } | null>(null);
   const [newQuestion, setNewQuestion] = useState('');
   /** [DIP B4 P6] 새 문항의 선택 방식 — 하나만 고르기(1) 또는 여러 개 고르기(2 이상). */
   const [newQuestionMultiple, setNewQuestionMultiple] = useState(false);
@@ -481,6 +484,17 @@ export default function SurveyQuestionsPanel() {
           className="shrink-0"
         >
           <Pencil size={14} aria-hidden="true" /> 제목 수정
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={srvySn === null || removeSurvey.isPending || editingTarget !== null}
+          aria-label={selectedSurvey ? `${selectedSurvey.srvyTtl} 복제` : '설문지 복제'}
+          onClick={() => { if (selectedSurvey?.srvySn != null) setCopySource({ srvySn: selectedSurvey.srvySn, srvyTtl: selectedSurvey.srvyTtl }); }}
+          className="shrink-0"
+        >
+          <Copy size={14} aria-hidden="true" /> 복제
         </Button>
         <Button
           type="button"
@@ -925,6 +939,20 @@ export default function SurveyQuestionsPanel() {
           )}
         </>
       )}
+      {copySource ? (
+        <SurveyCopyDialog
+          source={copySource}
+          onClose={() => setCopySource(null)}
+          onCopied={(copySn) => {
+            // 사본을 목록에 다시 읽고 곧바로 고른다 — 관리자는 이어서 문항을 손본다.
+            void queryClient.invalidateQueries({ queryKey: surveysKey });
+            setSrvySn(copySn);
+            setNewQuestion(''); setNewItemFor(null); setNewItemText('');
+            setEditingTarget(null); setEditingText('');
+            setError(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

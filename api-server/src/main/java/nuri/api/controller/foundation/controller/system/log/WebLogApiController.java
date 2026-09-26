@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system.log;
 
+import nuri.api.support.XlsxExport;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -76,9 +77,9 @@ public class WebLogApiController {
                     + "조건 일치 전체 결과를 xlsx 로 스트리밍한다. 행 수가 상한을 초과하면 400 을 반환한다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
             description = "xlsx 바이너리 스트림",
-            content = @Content(mediaType = LogExcelExport.XLSX_MEDIA_TYPE,
+            content = @Content(mediaType = XlsxExport.XLSX_MEDIA_TYPE,
                     schema = @Schema(type = "string", format = "binary")))
-    @GetMapping(value = "/export.xlsx", produces = LogExcelExport.XLSX_MEDIA_TYPE)
+    @GetMapping(value = "/export.xlsx", produces = XlsxExport.XLSX_MEDIA_TYPE)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.WebLogApiController#exportWebLogs')")
     public ResponseEntity<StreamingResponseBody> exportWebLogs(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
@@ -86,21 +87,21 @@ public class WebLogApiController {
         searchDto.setPageIndex(1);
         searchDto.setPageUnit(1);
         int totalCount = (int) webLogManageService.selectWebLogList(searchDto).getTotalElements();
-        LogExcelExport.assertWithinCap(totalCount);
+        XlsxExport.assertWithinCap(totalCount);
 
         searchDto.setPageUnit(Math.max(totalCount, 1));
         List<WebLogDto> rows = webLogManageService.selectWebLogList(searchDto).getContent();
 
-        return LogExcelExport.attachment("web-logs.xlsx", "web-logs",
+        return XlsxExport.attachment("web-logs.xlsx", "web-logs",
                 new String[]{"웹 로그 일련번호", "URL", "요청자 ID", "요청 IP", "발생일자", "처리시간(ms)"},
                 rows,
                 (row, dto) -> {
-                    row.createCell(0).setCellValue(LogExcelExport.nullSafe(dto.webLogSn()));
-                    row.createCell(1).setCellValue(LogExcelExport.nullSafe(dto.url()));
-                    row.createCell(2).setCellValue(LogExcelExport.nullSafe(dto.dmndUserId()));
-                    row.createCell(3).setCellValue(LogExcelExport.nullSafe(dto.dmndUserIpAddr()));
-                    row.createCell(4).setCellValue(LogExcelExport.nullSafe(dto.occrYmd()));
-                    row.createCell(5).setCellValue(LogExcelExport.nullSafe(dto.prcsTm()));
+                    row.createCell(0).setCellValue(XlsxExport.nullSafe(dto.webLogSn()));
+                    row.createCell(1).setCellValue(XlsxExport.nullSafe(dto.url()));
+                    row.createCell(2).setCellValue(XlsxExport.nullSafe(dto.dmndUserId()));
+                    row.createCell(3).setCellValue(XlsxExport.nullSafe(dto.dmndUserIpAddr()));
+                    row.createCell(4).setCellValue(XlsxExport.nullSafe(dto.occrYmd()));
+                    row.createCell(5).setCellValue(XlsxExport.nullSafe(dto.prcsTm()));
                 });
     }
 }

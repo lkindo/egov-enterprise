@@ -129,6 +129,28 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
     }
 
     @Override
+    public List<UserSearchDto> findActiveDepartmentMembers(String ognzId, int limit) {
+        // 빈 부서 식별자에 조건을 붙이지 않으면 전체가 나온다 — searchAssignableUsers 와 같은 방어.
+        if (!StringUtils.hasText(ognzId) || limit <= 0) {
+            return List.of();
+        }
+        return queryFactory
+                .select(Projections.constructor(UserSearchDto.class,
+                        user.esntlId,
+                        user.userNm,
+                        organizationManage.ognzNm,
+                        userAbsence.userAbsnYn.coalesce("N").eq("Y")))
+                .from(user)
+                .leftJoin(organizationManage).on(organizationManage.ognzId.eq(user.ognzId))
+                .leftJoin(userAbsence).on(userAbsence.userId.eq(user.esntlId))
+                // 사용 중(P) 계정만 — 승인 대기·사용 중지 계정은 받을 사람이 없다(searchAssignableUsers 와 같은 판정).
+                .where(user.ognzId.eq(ognzId), user.userSttsCd.eq("P"))
+                .orderBy(user.userNm.asc(), user.esntlId.asc())
+                .limit(limit)
+                .fetch();
+    }
+
+    @Override
     public int checkIdDplct(String checkId) {
         return (int) queryFactory
                 .select(user.count())

@@ -27,6 +27,9 @@ class SurveyResponseAuthorizationTest {
     void submissionApiIsAuthenticated() {
         nuri.security.support.MethodPermissionContract.assertOperation(handler(SurveySubmissionApiController.class, "getStats"), "SURVEY_READ", false);
         nuri.security.support.MethodPermissionContract.assertOperation(handler(SurveySubmissionApiController.class, "submit"), "SURVEY_SUBMIT", false);
+        // [2026-09-26 DIP B5 F6] 결과 xlsx 반출은 화면 통계와 같은 행을 내보내므로 통계 조회와 같은 권한이다(응답 열람 권한이 아니다 —
+        //   응답자 이름·기타 답은 싣지 않는다).
+        nuri.security.support.MethodPermissionContract.assertOperation(handler(SurveySubmissionApiController.class, "exportStats"), "SURVEY_READ", false);
     }
 
     @Test
@@ -50,7 +53,8 @@ class SurveyResponseAuthorizationTest {
     @Test
     @DisplayName("핸들러 개수 고정 — 신규 엔드포인트 추가 시 인가 검토를 강제한다")
     void handlerCountIsPinned() {
-        assertThat(mappedHandlers(SurveySubmissionApiController.class)).hasSize(2);
+        // [2026-09-26 DIP B5 F6] 2 → 3: 결과 xlsx 반출(exportStats, SURVEY_READ). 인가는 위 submissionApiIsAuthenticated 가 고정한다.
+        assertThat(mappedHandlers(SurveySubmissionApiController.class)).hasSize(3);
         assertThat(mappedHandlers(SurveyResponseAdminApiController.class)).hasSize(3);
     }
 

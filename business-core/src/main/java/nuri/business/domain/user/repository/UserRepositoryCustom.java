@@ -28,6 +28,12 @@ public interface UserRepositoryCustom {
      */
     java.util.List<nuri.business.service.user.dto.UserSearchDto> searchAssignableUsers(String keyword, int limit);
 
+    /**
+     * 한 부서의 사용 중(P) 계정인 직속 소속 인원을 성명 순으로 최대 {@code limit} 건 돌려준다(2026-09-27 DIP B5 F5).
+     * 하위 부서는 포함하지 않는다. 항목은 {@code searchAssignableUsers} 와 같은 최소 필드다.
+     */
+    java.util.List<nuri.business.service.user.dto.UserSearchDto> findActiveDepartmentMembers(String ognzId, int limit);
+
     int checkIdDplct(String checkId);
 }
 

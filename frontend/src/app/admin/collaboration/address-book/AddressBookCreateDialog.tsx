@@ -8,7 +8,6 @@ import { StandardModal } from '@/app/components/ui/standard-modal';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { FormErrorSummary } from '@/components/ui/form';
-import { useAuth } from '@/contexts/AuthContext';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { useDirtyCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
@@ -44,7 +43,6 @@ export function AddressBookCreateDialog({
   onCreated: () => void;
 }) {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitPendingRef = useRef(false);
 
@@ -74,15 +72,14 @@ export function AddressBookCreateDialog({
     const validated = validation.validate({
       ...form,
       rlsScopeCd: DEFAULT_RLS_SCOPE_CD,
-      userId: user?.id ?? '',
     });
     if (!validated) return;
 
     submitPendingRef.current = true;
     setIsSubmitting(true);
     // 주소록·회원 일련번호는 서버가 채번하므로 생성 요청에서 생략한다.
+    // [2026-09-26 DIP B5 F8] 작성자 ID 를 구성원에 넣지 않는다 — 서버가 그 값으로 구성원을 대조해 서로를 덮었다.
     const member: NameCard = {
-      userId: validated.userId,
       // [2026-08-28] 종전에는 주소록 명칭을 성명으로 복제했다 — '영업팀 연락처' 주소록을 만들면
       //   구성원 이름도 '영업팀 연락처' 가 되어, 상세 표의 '성명' 열이 사람 이름이 아니었다.
       nm: validated.nm,
@@ -207,7 +204,7 @@ export function AddressBookCreateDialog({
               }}
               placeholder="name@example.com"
               data-testid="identity-email-input"
-              maxLength={50}
+              maxLength={320}
             />
             {validation.errors.email ? (
               <p {...validation.messageProps('email')} className="text-xs font-bold text-destructive-emphasis" />

@@ -29,6 +29,7 @@ import {
   ApiResponseCommunityMembershipDtoResponseSchema,
   ApiResponseCurrentUserResponseResponseSchema,
   ApiResponseDashboardResponseResponseSchema,
+  ApiResponseDepartmentRecipientsDtoResponseSchema,
   ApiResponseDepartmentSnapshotResponseSchema,
   ApiResponseDeptJobBoxDtoResponseSchema,
   ApiResponseDeptJobDtoResponseSchema,
@@ -199,6 +200,7 @@ import {
   CurrentUserResponseResponseSchema,
   DashboardResponseResponseSchema,
   DepartmentChoiceResponseSchema,
+  DepartmentRecipientsDtoResponseSchema,
   DepartmentSnapshotResponseSchema,
   DeptAuthorBatchRequestRequestSchema,
   DeptHierarchyItemRequestRequestSchema,
@@ -336,6 +338,7 @@ import {
   StatsDtoResponseSchema,
   SummaryStatsDtoResponseSchema,
   SurveyArticleDtoRequestSchema,
+  SurveyCopyRequestRequestSchema,
   SurveyInfoDtoRequestSchema,
   SurveyInfoDtoResponseSchema,
   SurveyQuestionDtoRequestSchema,
@@ -2950,7 +2953,7 @@ export const updateAddressBookOperation = /*#__PURE__*/ defineGeneratedOperation
   requestSchema: AddressBookDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["adbkMan","*","userId"]],
   responseForbiddenPaths: [],
 });
 
@@ -4015,6 +4018,40 @@ export const insertQuestion_1Operation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: SurveyQuestionDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const copySurveyOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "copySurvey",
+  method: "post",
+  path: "/api/v1/admin/system/surveys/{srvySn}/copy",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "srvySn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: SurveyCopyRequestRequestSchema.strict(),
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseLongResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const copySurvey_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "copySurvey_1",
+  method: "post",
+  path: "/api/v1/surveys/{srvySn}/copy",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "srvySn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: SurveyCopyRequestRequestSchema.strict(),
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
@@ -5103,7 +5140,7 @@ export const createAddressBookOperation = /*#__PURE__*/ defineGeneratedOperation
   requestSchema: AddressBookDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["adbkMan","*","userId"]],
   responseForbiddenPaths: [],
 });
 
@@ -5358,6 +5395,23 @@ export const getStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: z.array(z.lazy(() => SurveyStatsDtoResponseSchema)),
   envelopeSchema: ApiResponseListSurveyStatsDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const exportStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "exportStats",
+  method: "get",
+  path: "/api/v1/surveys/{srvySn}/stats/export.xlsx",
+  requestKind: "none",
+  responseKind: "binary",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "srvySn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: null,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
@@ -6327,6 +6381,23 @@ export const getMyHistoryOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseInformalSanctionDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseInformalSanctionDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const getDepartmentRecipientsOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "getDepartmentRecipients",
+  method: "get",
+  path: "/api/v1/admin/system/users/by-department/{ognzId}",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "ognzId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.lazy(() => DepartmentRecipientsDtoResponseSchema),
+  envelopeSchema: ApiResponseDepartmentRecipientsDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });

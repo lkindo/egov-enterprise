@@ -9,8 +9,10 @@ import nuri.business.service.survey.dto.SurveyResponseSubmitDto;
 import nuri.business.service.survey.dto.SurveyStatsDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.security.annotation.Authenticated;
+import nuri.api.support.XlsxExport;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.List;
 
@@ -43,6 +45,34 @@ public class SurveySubmissionApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveySubmissionApiController#getStats')")
     public ResponseEntity<ApiResponse<List<SurveyStatsDto>>> getStats(@PathVariable Long srvySn) {
         return ResponseEntity.ok(ApiResponse.success(surveyResultService.getStats(srvySn)));
+    }
+
+    /** 결과 반출의 열 — 화면 통계와 같은 값·같은 분모(문항 응답자 수)다. */
+    private static final String[] STATS_EXPORT_HEADERS = {"문항", "문항 유형", "선택 항목", "응답 수", "비율(%)", "문항 응답자 수"};
+
+    @Operation(summary = "설문 결과 통계 xlsx 반출",
+            description = "결과 통계와 같은 문항 × 항목 행을 xlsx 로 내려받는다. 응답자 이름·기타 답은 싣지 않는다.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+            description = "xlsx 바이너리 스트림",
+            content = @io.swagger.v3.oas.annotations.media.Content(mediaType = XlsxExport.XLSX_MEDIA_TYPE,
+                    schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary")))
+    @GetMapping(value = "/stats/export.xlsx", produces = XlsxExport.XLSX_MEDIA_TYPE)
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveySubmissionApiController#exportStats')")
+    public ResponseEntity<StreamingResponseBody> exportStats(@PathVariable Long srvySn) {
+        // 조회는 요청 스레드에서 끝낸다 — 스트리밍 람다 안에는 트랜잭션·보안 컨텍스트가 없다(XlsxExport 계약).
+        List<SurveyStatsDto> rows = surveyResultService.getStats(srvySn);
+        XlsxExport.assertWithinCap(rows.size());
+        String fileName = "survey-" + srvySn + "-stats-"
+                + java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))
+                        .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE) + ".xlsx";
+        return XlsxExport.attachment(fileName, "설문 결과", STATS_EXPORT_HEADERS, rows, (row, stat) -> {
+            row.createCell(0).setCellValue(XlsxExport.nullSafe(stat.qstnCn()));
+            row.createCell(1).setCellValue(XlsxExport.nullSafe(stat.qstnTypeCd()));
+            row.createCell(2).setCellValue(XlsxExport.nullSafe(stat.artclCn()));
+            row.createCell(3).setCellValue(stat.count());
+            row.createCell(4).setCellValue(stat.percentage());
+            row.createCell(5).setCellValue(stat.respondentCount());
+        });
     }
 
     @Operation(summary = "설문 응답 제출",
