@@ -165,14 +165,14 @@ class UserServiceCrudTest {
   void getPagedUserList_success() {
     UserDto userDto = UserDto.builder().userId("testUser").userNm("테스트사용자").esntlId("USR_1234567890123456").build();
     Page<UserDto> page = new PageImpl<>(List.of(userDto));
-    when(userRepository.getPagedUserList(any(), any())).thenReturn(page);
+    when(userRepository.getPagedUserList(any(), any(), any())).thenReturn(page);
     when(authorizationSnapshots.loadAll(any())).thenReturn(java.util.Map.of("USR_1234567890123456",new nuri.business.security.authorization.AuthorizationSnapshotService.Snapshot(List.of("ROLE_USER"),List.of(),"version")));
 
     Page<UserDto> result = userService.getUserPage(PageRequest.of(0, 10));
 
     assertThat(result).isNotNull().hasSize(1);
     assertThat(result.getContent().get(0).userId()).isEqualTo("testUser");
-    verify(userRepository).getPagedUserList(any(), any());
+    verify(userRepository).getPagedUserList(any(), any(), any());
   }
 
   @Test

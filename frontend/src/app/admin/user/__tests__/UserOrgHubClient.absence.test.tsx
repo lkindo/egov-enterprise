@@ -313,8 +313,10 @@ describe('UserOrgHubClient 부재 관리 배선', () => {
     );
 
     expect(await screen.findByText('김부재')).toBeInTheDocument();
-    expect(screen.queryByText('부재')).toBeNull();
-    expect(screen.queryByText('정상')).toBeNull();
+    // 표 안만 본다 — 사용자 탭의 '계정 상태' 조건 선택지에도 '정상' 이 있다(DIP B5 F4).
+    const table = screen.getByRole('table');
+    expect(within(table).queryByText('부재')).toBeNull();
+    expect(within(table).queryByText('정상')).toBeNull();
     expect(userAbsenceAdminService.getAbsences).not.toHaveBeenCalled();
   });
 });

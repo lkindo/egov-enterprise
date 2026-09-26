@@ -198,13 +198,30 @@ public class UserApiControllerTest extends BaseControllerTest {
                 .userNm("홍길동")
                 .build();
         Page<UserDto> page = new PageImpl<>(List.of(mockDto));
-        when(userService.getPagedUserList(any(), any(Pageable.class))).thenReturn(page);
+        when(userService.getPagedUserList(any(), any(), any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/system/users"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.list[0].userId").value("targetUser"))
                 .andExpect(jsonPath("$.data.list[0].esntlId").doesNotExist())
                 .andExpect(jsonPath("$.data.list[0].emlAddr").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("관리자: 사용자 목록 조건(상태·부서·잠금)을 서비스로 넘기고, 어휘 밖 값은 400 이다")
+    void getUsersPassesListFilters() throws Exception {
+        when(userService.getPagedUserList(any(), any(), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/v1/admin/system/users")
+                        .param("userSttsCd", "A").param("ognzId", "ORG_B").param("lckYn", "Y"))
+                .andExpect(status().isOk());
+        verify(userService).getPagedUserList(any(),
+                eq(new nuri.business.domain.user.repository.UserListFilter("A", "ORG_B", "Y")), any(Pageable.class));
+
+        mockMvc.perform(get("/api/v1/admin/system/users").param("userSttsCd", "Z"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/admin/system/users").param("lckYn", "maybe"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

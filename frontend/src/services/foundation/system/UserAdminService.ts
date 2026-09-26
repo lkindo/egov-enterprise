@@ -87,6 +87,10 @@ function toUserManage(item: UserResponse): UserManage {
     'ofcpsNm',
     'officeTelno',
     'crtDt',
+    // [2026-09-26 DIP B5 F4] 서버(UserDto)가 목록·상세에 싣는 로그인 잠금 여부. whitelist 에 없어 버려져,
+    //   상세의 '로그인 잠금 해제' 버튼(B4g)이 잠긴 계정에서도 보이지 않았다 — 화면 테스트는 서비스를 목으로
+    //   막아 lckYn 을 직접 넣었으므로 이 손실을 보지 못했다.
+    'lckYn',
   ] as const;
   for (const field of optionalFields) {
     const value = item[field];

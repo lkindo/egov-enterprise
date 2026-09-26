@@ -3769,7 +3769,7 @@ export const getUsersOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "searchKeyword": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "searchKeyword": z.string().optional(), "userSttsCd": z.string().optional(), "ognzId": z.string().optional(), "lckYn": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseUserDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseUserDtoResponseSchema,
