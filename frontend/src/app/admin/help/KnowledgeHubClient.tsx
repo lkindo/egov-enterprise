@@ -18,6 +18,7 @@ import {
  WIKI_BOARD_ID,
 } from '@/config/board-ids';
 import { canPermission } from '@/lib/auth/permissions';
+import { canOpenPage } from '@/lib/auth/page-access';
 import { isQnaSolved } from '@/services/business/user/help/HelpUserService';
 import { Button } from '@/components/ui/button';
 import { PagePagination } from '@/components/common/PagePagination';
@@ -59,7 +60,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  // [2026-08-28] 리터럴 비교는 SYSTEM·ROLE_SYSTEM 을 빠뜨려 **권한 있는 관리자에게 기능이
  //   사라진다**. proxy 의 /admin 게이트는 4종을 전부 통과시키므로, 라우트는 열어 주는데
  //   화면만 막히는 비대칭이 된다 — DEC-OPS-023 ②가 계약으로 막으려던 형태다.
- const canReadBoardMasters = canPermission(user, 'BBS_MST_READ');
+ // [2026-09-26 DIP B4 P1] 다른 화면으로 가는 버튼은 라우트 게이트와 같은 판정(canOpenPage)을 쓴다.
+ const canReadBoardMasters = canOpenPage(user, '/admin/community/boards/master');
  const canManageCommunities = canPermission(user, 'COMMUNITY_READ_ALL');
  // [2026-09-06 DEC-OPS-037] 커뮤니티 생성·수정·폐쇄(감사 D07-01). 관리자이고 커뮤니티 탭일 때만 버튼을 그린다.
  const [communityManageOpen, setCommunityManageOpen] = useState(false);

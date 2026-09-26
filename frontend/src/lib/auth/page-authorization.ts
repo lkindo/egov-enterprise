@@ -1,26 +1,9 @@
-import { PAGE_PERMISSIONS } from '@/types/generated-permissions';
 import { authorizationStateSchema, type AuthorizationState } from '@/lib/auth/authorization-state';
-import { canAnyPermission } from '@/lib/auth/permissions';
 import { executeGeneratedFetchOperation } from '@/lib/api/generated-api-client';
 import { getCurrentUserOperation } from '@/types/generated-operations';
 
-/** Exact page ownership: an authenticated parent shell never opens unregistered children. */
-export function canEnterRegisteredPage(pathname: string, subject: AuthorizationState): boolean {
-  const normalizedPath = pathname.replace(/\/$/, '');
-  const segments = normalizedPath.split('/');
-  const exact = PAGE_PERMISSIONS[normalizedPath];
-  // Next resolves static routes before sibling dynamic routes such as [id].
-  // An authenticated detail route must never shadow a protected management page.
-  const entry = exact ? [normalizedPath, exact] as const : Object.entries(PAGE_PERMISSIONS).find(([route]) => {
-    const routeSegments = route.replace(/\/$/, '').split('/');
-    return routeSegments.length === segments.length && routeSegments.every((segment, index) =>
-      /^\[[^.[\]]+\]$/.test(segment) ? segments[index].length > 0 : segment === segments[index],
-    );
-  });
-  if (!entry) return false;
-  const required = entry[1];
-  return required.length === 0 || canAnyPermission(subject, required);
-}
+// 판정 자체는 순수 모듈에 둔다 — 화면의 링크 노출이 같은 함수를 쓴다(page-access.ts).
+export { canEnterRegisteredPage } from '@/lib/auth/page-access';
 
 /** Read the current server snapshot, never a cached JWT role or browser-provided grants. */
 export async function loadPageAuthorization(accessToken: string, subject: string): Promise<AuthorizationState | null> {

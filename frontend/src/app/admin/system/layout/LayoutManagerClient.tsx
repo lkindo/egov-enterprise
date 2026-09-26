@@ -20,6 +20,8 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 
 import { useToast } from '@/app/components/ui/toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { canOpenPage } from '@/lib/auth/page-access';
 
 const STORAGE_KEY = 'hub-theme-config';
 
@@ -180,6 +182,9 @@ function normalizeConfig(raw: unknown): ThemeConfig {
  * [이 브라우저에 적용] 을 눌렀을 때만 일어난다.
  */
 export default function LayoutManagerClient() {
+  // 배너 관리는 이 화면과 권한이 다르다(BANNER_ADMIN_READ) — 링크는 라우트 게이트와 같은 판정으로만 건다(DIP B4 P1).
+  const { user } = useAuth();
+  const canOpenBanner = canOpenPage(user, '/admin/system/banner');
   const { toast } = useToast();
 
   // --- 디자인 토큰 상태 ---
@@ -359,7 +364,7 @@ export default function LayoutManagerClient() {
             <p className="text-sm font-bold text-muted-foreground leading-relaxed">
               편집 중에는 우측 시뮬레이터에만 반영되며, <b>[이 브라우저에 적용]</b>을 눌러야 화면 전역 토큰에 주입됩니다. <br/>
               <b>설정은 이 브라우저에만 저장됩니다(localStorage).</b> 서버에 저장되지 않으므로 다른 기기·다른 사용자·시크릿 창에는 반영되지 않으며, 브라우저 저장소를 비우면 사라집니다. <br/>
-              <b>프로모션 배너 및 팝업 자산</b> 관리는 <Link href="/admin/system/banner" className="text-primary underline decoration-2">배너 및 팝업 관리</Link> 메뉴를 이용해 주세요.
+              <b>프로모션 배너 및 팝업 자산</b> 관리는 {canOpenBanner ? <Link href="/admin/system/banner" className="text-primary underline decoration-2">배너 및 팝업 관리</Link> : '배너 및 팝업 관리'} 메뉴를 이용해 주세요.
             </p>
           </div>
         </div>

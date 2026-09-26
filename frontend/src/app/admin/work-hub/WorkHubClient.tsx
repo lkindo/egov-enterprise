@@ -30,7 +30,7 @@ import { toDisplayYmd } from '@/lib/format-date';
 import { ko } from 'date-fns/locale';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { useAuth } from '@/contexts/AuthContext';
-import { canPermission } from '@/lib/auth/permissions';
+import { canOpenPage } from '@/lib/auth/page-access';
 
 interface WorkHubClientProps {
   defaultTab?: string;
@@ -105,7 +105,9 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
   const { user } = useAuth();
   // [2026-09-06 DEC-OPS-037] 표시 판정은 라우트 게이트와 같은 역할 집합(DEC-OPS-023 ②)을 쓴다 —
   //   표시일 뿐 인가가 아니며, 관리자가 아니면 버튼 자체를 그리지 않는다(죽은 버튼 금지, G10).
-  const canManageBoxes = canPermission(user, 'DEPT_BOX_READ');
+  // [2026-09-26 DIP B4 P1] 종전에는 `DEPT_BOX_READ` 로 판정했는데 목적지 라우트는 `MEMO_RPT_READ_ALL` 을
+  //   요구해, 업무함 권한만 있는 사람은 버튼을 누르면 홈으로 튕겼다. 라우트 게이트와 같은 판정을 쓴다.
+  const canOpenMemoReports = canOpenPage(user, '/admin/operation/memo-reports');
   const { toast } = useToast();
 
   // 모달 닫기. 성공 저장은 이 함수를 직접 부르고(이미 저장했으므로 물어볼 것이 없다),
@@ -496,11 +498,9 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
           {/* 탭마다 '등록'의 대상이 다르다. 일정·보고는 다이얼로그로 받는다. */}
           {activeTab === 'report' ? (
             <>
-              {/* [게이트] '/admin/operation' 은 USER_ACCESSIBLE_ADMIN_PATHS 에 없어 일반 사용자는
-                  라우트에서 홈으로 튕긴다(`/?auth_error=unauthorized`). 라우트 게이트와 같은 역할
-                  집합으로만 노출한다 — 라우트는 막는데 화면만 보이는 비대칭은 조용히 죽는
-                  결함이다(DEC-OPS-023 ②). */}
-              {canManageBoxes && (
+              {/* [게이트] 라우트 게이트와 같은 판정으로만 노출한다 — 라우트는 막는데 화면만 보이는
+                  비대칭은 조용히 죽는 결함이다(DEC-OPS-023 ②). */}
+              {canOpenMemoReports && (
                 <Button asChild size="sm" variant="outline">
                   <Link href="/admin/operation/memo-reports">
                     <FileText size={16} aria-hidden="true" /> 메모보고 관리

@@ -29,6 +29,7 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useToast } from '@/app/components/ui/toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
+import { canOpenPage } from '@/lib/auth/page-access';
 import { 
   Dialog, 
   DialogContent, 
@@ -480,7 +481,8 @@ export function BoardMasterListClient() {
       filterStateKey="community-board-master"
       totalCount={isError ? undefined : totalCount}
       actions={
-        canPermission(user, 'BBS_MST_CREATE') && (
+        // 생성 기능권한과 마법사 라우트 진입을 함께 본다(DIP B4 P1 — 라우트 게이트와 같은 판정).
+        canPermission(user, 'BBS_MST_CREATE') && canOpenPage(user, '/admin/community/boards/maker') && (
           <Button size="sm" onClick={() => router.push('/admin/community/boards/maker')} className="gap-2">
             <Plus className="w-4 h-4" aria-hidden="true" />
             생성 마법사

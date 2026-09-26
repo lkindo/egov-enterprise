@@ -117,6 +117,8 @@ const TEMPLATES = [
 
 import { BoardMasterDtoSchema, MenuDtoSchema } from '@/types/generated-zod';
 import { boardMasterKeys } from '@/queries/board-master-query-options';
+import { useAuth } from '@/contexts/AuthContext';
+import { canOpenPage } from '@/lib/auth/page-access';
 
 export const boardMakerFormSchema = BoardMasterDtoSchema.extend({
  bbsTtl: BoardMasterDtoSchema.shape.bbsTtl
@@ -180,6 +182,12 @@ const BOARD_MAKER_SERVER_FIELD_ALIASES: Record<string, keyof FormValues> = {
 
 export function BoardMakerWizard() {
  const router = useRouter();
+ // [2026-09-26 DIP B4 P1] 게시판을 만들 수 있다고 메뉴·권한 화면에 들어갈 수 있는 것은 아니다.
+ //   다른 화면으로 가는 길은 라우트 게이트와 같은 판정으로만 보인다.
+ const { user } = useAuth();
+ const canOpenMenus = canOpenPage(user, '/admin/system/menus');
+ const canOpenBoardMasters = canOpenPage(user, '/admin/community/boards/master');
+ const canOpenAuthority = canOpenPage(user, '/admin/security/authority');
  const [currentStep, setCurrentStep] = useState(1);
  const [isSubmitting, setIsSubmitting] = useState(false);
  const [isSuccess, setIsSuccess] = useState(false);
@@ -362,17 +370,19 @@ export function BoardMakerWizard() {
  <div className="space-y-2">
  <h1 className="text-xl font-bold text-foreground">게시판 생성 완료</h1>
  <p className="mx-auto max-w-md text-[length:var(--font-size-body)] leading-relaxed text-muted-foreground">
- 게시판이 생성되었으며 <span className="text-primary">&apos;{watch('menuNm')}&apos;</span> 메뉴가 비활성 상태로 만들어졌습니다. 메뉴 관리에서 활성화해 주세요.
+ 게시판이 생성되었으며 <span className="text-primary">&apos;{watch('menuNm')}&apos;</span> 메뉴가 비활성 상태로 만들어졌습니다. {canOpenMenus ? '메뉴 관리에서 활성화해 주세요.' : '메뉴 관리 권한이 있는 관리자에게 활성화를 요청해 주세요.'}
  </p>
  </div>
  <div className="flex w-full max-w-sm flex-col gap-2">
- <Button onClick={() => router.push('/admin/system/menus')}>생성한 메뉴 설정하기</Button>
+ {canOpenMenus && <Button onClick={() => router.push('/admin/system/menus')}>생성한 메뉴 설정하기</Button>}
+ {canOpenBoardMasters && (
  <Button
  variant="outline"
  onClick={() => router.push('/admin/community/boards/master')}
  >
  게시판 목록 보기
  </Button>
+ )}
  <Button
  variant="ghost"
  onClick={() => window.location.reload()}
@@ -646,6 +656,7 @@ export function BoardMakerWizard() {
  </ul>
  </div>
 
+ {canOpenAuthority && (
  <Link
  href="/admin/security/authority"
  target="_blank"
@@ -655,6 +666,7 @@ export function BoardMakerWizard() {
  권한 정책 관리에서 메뉴 권한 설정하기
  <ArrowUpRight size={16} aria-hidden="true" />
  </Link>
+ )}
  </div>
 
  <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/15 p-4 text-left">

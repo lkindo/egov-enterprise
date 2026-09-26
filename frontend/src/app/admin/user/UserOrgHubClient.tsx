@@ -81,6 +81,8 @@ import {
 } from './UserOrgHubParts';
 import { useDeptTree } from './useDeptTree';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { useAuth } from '@/contexts/AuthContext';
+import { canOpenPage } from '@/lib/auth/page-access';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
@@ -179,6 +181,9 @@ export default function UserOrgHubClient({
   const [isPending, startTransition] = React.useTransition();
   const [activeTab, setActiveTab] = useState<UserOrgTab>(defaultTab);
   const router = useRouter();
+  // 권한 그룹 화면은 이 허브와 권한이 다르다 — 라우트 게이트와 같은 판정으로만 길을 보인다(DIP B4 P1).
+  const { user: currentUser } = useAuth();
+  const canOpenAuthority = canOpenPage(currentUser, '/admin/security/authority');
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [activeWriteOperation, setActiveWriteOperation] = useState<UserOrgWriteOperation | null>(null);
@@ -1212,7 +1217,7 @@ export default function UserOrgHubClient({
                     </DetailFieldList>
                   )}
 
-                  {!isDeptTab && <AccessControlLink onOpen={() => router.push('/admin/security/authority')} />}
+                  {!isDeptTab && canOpenAuthority && <AccessControlLink onOpen={() => router.push('/admin/security/authority')} />}
                 </DetailScrollArea>
               </section>
             ) : isDeptTab ? (

@@ -11,6 +11,8 @@ import { Sparkles,
  Info } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { canOpenPage } from '@/lib/auth/page-access';
 
 export interface InsightMessage {
  id: string;
@@ -40,6 +42,9 @@ interface InsightBannerProps {
 export const InsightBanner: React.FC<InsightBannerProps> = ({ insights = [] }) => {
  const [currentIndex, setCurrentIndex] = useState(0);
  const hasInsights = insights.length > 0;
+ // 감사 이력으로 가는 길은 라우트 게이트와 같은 판정으로만 보인다(DIP B4 P1).
+ const { user } = useAuth();
+ const canOpenAudit = canOpenPage(user, '/admin/system/audit');
 
  useEffect(() => {
  if (insights.length <= 1) return;
@@ -91,6 +96,7 @@ export const InsightBanner: React.FC<InsightBannerProps> = ({ insights = [] }) =
  분석 결과 데이터가 아직 연결되지 않았습니다. 이 영역은 시스템 상태나 보안 이상 유무를
  나타내지 않으므로, <strong className="font-bold">정상 여부의 근거로 사용하지 마십시오.</strong>
  </p>
+ {canOpenAudit && (
  <Link
  href="/admin/system/audit"
  className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline underline-offset-4 uppercase tracking-widest"
@@ -98,6 +104,7 @@ export const InsightBanner: React.FC<InsightBannerProps> = ({ insights = [] }) =
  실제 보안 감사 이력 보기
  <ChevronRight size={14} />
  </Link>
+ )}
  </div>
  </div>
  );

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Plus, Settings2, X, AlertTriangle } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
-import { canPermission } from '@/lib/auth/permissions';
+import { canOpenPage } from '@/lib/auth/page-access';
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 import { BoardPost } from '@/types/business/board';
 import { useToast } from '@/app/components/ui/toast';
@@ -96,7 +96,8 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: BoardLis
  const queryClient = useQueryClient();
  // [2026-08-28] 판정 SSOT 사용. 리터럴 비교는 SYSTEM 관리자에게 '게시판 관리' 진입점을
  //   지워 버린다(DEC-OPS-023 ②가 e2e 로 잡았던 것과 같은 결함).
- const canReadBoardMasters = canPermission(user, 'BBS_MST_READ');
+ // [2026-09-26 DIP B4 P1] 라우트 게이트와 같은 판정(canOpenPage)을 쓴다.
+ const canReadBoardMasters = canOpenPage(user, '/admin/community/boards/master');
  const bbsId = searchParams.get('bbsId') || (typeof initialParams.bbsId === 'string' ? initialParams.bbsId : undefined) || NOTICE_BOARD_ID;
  const router = useRouter();
 

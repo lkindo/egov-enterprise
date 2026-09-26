@@ -28,10 +28,19 @@ import {
 
 import { VisualAuditTimeline, AuditLog as UIAuditLog } from '@/app/components/ui/visual-audit-timeline';
 import { toDisplayYmd } from '@/lib/format-date';
+import { useAuth } from '@/contexts/AuthContext';
+import { canOpenPage } from '@/lib/auth/page-access';
 
 // 발생일자는 'yyyyMMdd'(varchar 8)이고 시각 정보는 없다. 표시는 공용 관문(toDisplayYmd)이 yyyy-MM-dd 로 바꾼다.
 
 export default function AdminDashboardClient() {
+  // [2026-09-26 DIP B4 P1] 링크는 라우트 게이트와 같은 판정으로만 보인다. 대시보드 권한만 가진 사람에게
+  //   사용자·권한·감사 화면으로 가는 길을 보이면 누르는 순간 홈으로 튕긴다.
+  const { user } = useAuth();
+  const canOpenUsers = canOpenPage(user, '/admin/user/manage');
+  const canOpenAuthority = canOpenPage(user, '/admin/security/authority');
+  const canOpenSecurityLog = canOpenPage(user, '/admin/system/monitoring/hub');
+  const canOpenAudit = canOpenPage(user, '/admin/system/audit');
   const {
     data: auditData,
     isLoading: isAuditLoading,
@@ -136,7 +145,7 @@ export default function AdminDashboardClient() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3 text-sm"><Link href="/admin/user/manage" className="text-primary underline">사용자 확인</Link><Link href="/admin/security/authority" className="text-primary underline">권한 그룹 관리</Link><Link href="/admin/system/monitoring/hub?tab=security" className="text-primary underline">보안 감사 로그</Link></div>
+      <div className="flex flex-wrap gap-3 text-sm">{canOpenUsers && <Link href="/admin/user/manage" className="text-primary underline">사용자 확인</Link>}{canOpenAuthority && <Link href="/admin/security/authority" className="text-primary underline">권한 그룹 관리</Link>}{canOpenSecurityLog && <Link href="/admin/system/monitoring/hub?tab=security" className="text-primary underline">보안 감사 로그</Link>}</div>
 
       {/*
         지표 카드는 실제 조회값만 표기한다.
@@ -149,7 +158,7 @@ export default function AdminDashboardClient() {
           value={isUsersError ? '조회 실패' : (usersData?.total?.toLocaleString() ?? '-')}
           icon={<Users className="w-5 h-5" />}
           color="blue"
-          link="/admin/user/manage"
+          link={canOpenUsers ? "/admin/user/manage" : undefined}
           description="등록된 전체 사용자 수"
         />
         <DashboardStatCard
@@ -158,7 +167,7 @@ export default function AdminDashboardClient() {
           value={isAuthorsError ? '조회 실패' : `${authorsData?.total?.toLocaleString() ?? '-'}개 그룹`}
           icon={<ShieldCheck className="w-5 h-5" />}
           color="emerald"
-          link="/admin/security/authority"
+          link={canOpenAuthority ? "/admin/security/authority" : undefined}
           description="등록된 권한 그룹 수"
         />
         <DashboardStatCard
@@ -167,7 +176,7 @@ export default function AdminDashboardClient() {
           value={isAuditError ? '조회 실패' : (auditData?.total?.toLocaleString() ?? '-')}
           icon={<Activity className="w-5 h-5" />}
           color="rose"
-          link="/admin/system/audit"
+          link={canOpenAudit ? "/admin/system/audit" : undefined}
           description="수집된 전체 감사 로그 건수"
         />
       </div>
@@ -183,12 +192,14 @@ export default function AdminDashboardClient() {
               <p className="mt-0.5 text-xs font-medium text-muted-foreground">최근 수집된 시스템 감사 로그 5건</p>
             </div>
           </div>
-          <Link
-            href="/admin/system/audit"
-            className="text-xs font-bold text-primary underline-offset-4 hover:underline"
-          >
-            전체 보기
-          </Link>
+          {canOpenAudit && (
+            <Link
+              href="/admin/system/audit"
+              className="text-xs font-bold text-primary underline-offset-4 hover:underline"
+            >
+              전체 보기
+            </Link>
+          )}
         </div>
 
         <div className="max-h-[520px] overflow-y-auto pr-2 custom-scrollbar">
@@ -227,7 +238,8 @@ function DashboardStatCard({
   value: React.ReactNode;
   icon: React.ReactNode;
   color: 'blue' | 'emerald' | 'amber' | 'rose';
-  link: string;
+  /** 목적지에 들어갈 수 없으면 비운다 — 카드는 값만 보이고 이동을 약속하지 않는다. */
+  link?: string;
   description: string;
 }) {
   // [2026-09-22] blue 만 `hub-*` 토큰을 쓰고 나머지는 raw 리터럴이던 내부 불일치를 통일했다.
@@ -241,6 +253,40 @@ function DashboardStatCard({
     rose: "text-hub-rose bg-hub-rose/10",
   };
 
+  const body = (
+    <>
+      {/* [2026-09-22] 카드 안의 카드(아이콘 상자 border-2·shadow-inner)와 5% 불투명 워터마크
+          아이콘을 걷고 여백을 밀도 계약에 맞췄다 — 실측 약 250px 였다(카탈로그 §A1·§4). */}
+      <div className="flex items-center justify-between mb-4">
+        <div className={cn("p-2 rounded-md", colorMap[color])}>
+          {icon}
+        </div>
+        {link && <ArrowUpRight size={16} className="text-muted-foreground transition-colors group-hover:text-primary" />}
+      </div>
+
+      <div className="space-y-2">
+        {/* 한국어 라벨이라 uppercase 는 무효고 0.3em 자간만 남아 읽기를 방해했다(표 머리글과 같은 정정). */}
+        <p className="text-xs font-semibold text-foreground">
+          {title}
+        </p>
+        {/* a11y(heading-order): stat 값은 문서 섹션 제목이 아니므로 heading(h3) 대신 p로 — h1→h3 레벨 스킵 위반 제거 */}
+        <p className="text-3xl font-bold text-foreground tabular-nums group-hover:text-primary transition-colors leading-none">{value}</p>
+        <p className="text-xs text-muted-foreground leading-tight">
+          {description}
+        </p>
+      </div>
+    </>
+  );
+
+  // 들어갈 수 없는 화면이면 이동을 약속하지 않는다 — 값만 보이는 카드다.
+  if (!link) {
+    return (
+      <div data-e2e-label={e2eLabel} className="p-4 md:p-5 h-full rounded-md bg-card border border-border">
+        {body}
+      </div>
+    );
+  }
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -251,26 +297,7 @@ function DashboardStatCard({
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
             className="p-4 md:p-5 h-full rounded-md bg-card border border-border hover:border-primary/30 transition-colors cursor-pointer group"
           >
-            {/* [2026-09-22] 카드 안의 카드(아이콘 상자 border-2·shadow-inner)와 5% 불투명 워터마크
-                아이콘을 걷고 여백을 밀도 계약에 맞췄다 — 실측 약 250px 였다(카탈로그 §A1·§4). */}
-            <div className="flex items-center justify-between mb-4">
-              <div className={cn("p-2 rounded-md", colorMap[color])}>
-                {icon}
-              </div>
-              <ArrowUpRight size={16} className="text-muted-foreground transition-colors group-hover:text-primary" />
-            </div>
-
-            <div className="space-y-2">
-              {/* 한국어 라벨이라 uppercase 는 무효고 0.3em 자간만 남아 읽기를 방해했다(표 머리글과 같은 정정). */}
-              <p className="text-xs font-semibold text-foreground">
-                {title}
-              </p>
-              {/* a11y(heading-order): stat 값은 문서 섹션 제목이 아니므로 heading(h3) 대신 p로 — h1→h3 레벨 스킵 위반 제거 */}
-              <p className="text-3xl font-bold text-foreground tabular-nums group-hover:text-primary transition-colors leading-none">{value}</p>
-              <p className="text-xs text-muted-foreground leading-tight">
-                {description}
-              </p>
-            </div>
+            {body}
           </motion.div>
         </Link>
       </TooltipTrigger>

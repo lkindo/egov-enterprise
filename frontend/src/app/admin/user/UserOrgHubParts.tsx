@@ -25,6 +25,8 @@ import { useOverflowRegion } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import type { UserManage } from '@/types/foundation/user';
 import type { FlattenedDept } from './departments/treeUtils';
+import { useAuth } from '@/contexts/AuthContext';
+import { canOpenPage } from '@/lib/auth/page-access';
 
 export const INDENTATION_WIDTH = 24;
 
@@ -307,7 +309,8 @@ export function NavButton({ icon, label, active, onClick }: { icon: React.ReactN
  * 실제 편집 화면으로 안내한다 — 없는 기능을 있는 것처럼 그리지 않는다.
  */
 export function OrgPolicyPanel({ onNavigate }: { onNavigate: (href: string) => void }) {
-  const links: { href: string; title: string; description: string }[] = [
+  const { user } = useAuth();
+  const allLinks: { href: string; title: string; description: string }[] = [
     {
       href: '/admin/security/login-policy',
       title: '로그인 정책 관리',
@@ -326,6 +329,8 @@ export function OrgPolicyPanel({ onNavigate }: { onNavigate: (href: string) => v
       description: '그룹별 기능권한과 메뉴 표시를 설정하고 사용자에게 하나 이상의 권한 그룹을 배정합니다.',
     },
   ];
+  // 들어갈 수 없는 화면은 목록에서 뺀다 — 라우트 게이트와 같은 판정이다(DIP B4 P1).
+  const links = allLinks.filter((link) => canOpenPage(user, link.href));
 
   return (
     <div className="space-y-3">
@@ -335,6 +340,11 @@ export function OrgPolicyPanel({ onNavigate }: { onNavigate: (href: string) => v
           조직 정책 편집 기능은 이 허브가 아니라 아래 전용 화면에 있습니다.
         </p>
       </div>
+      {links.length === 0 && (
+        <p role="status" className="text-[length:var(--font-size-body)] text-muted-foreground">
+          열 수 있는 정책 화면이 없습니다. 정책을 바꾸려면 해당 화면 권한이 있는 관리자에게 요청해 주세요.
+        </p>
+      )}
       <ul className="divide-y divide-border rounded-md border border-border bg-card">
         {links.map((link) => (
           <li key={link.href}>

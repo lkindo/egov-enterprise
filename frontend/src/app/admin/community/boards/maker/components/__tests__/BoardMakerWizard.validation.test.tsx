@@ -18,6 +18,8 @@ const { createBoardMaster, createMenu, getAllMenus, communities } = vi.hoisted((
   },
 }));
 
+// 다른 관리 화면으로 가는 길은 라우트와 같은 판정(canOpenPage)으로 보인다 — 목적지 권한을 가진 관리자로 렌더한다.
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: ['MENU_READ', 'BBS_MST_READ', 'AUTHRT_READ'], authorizationVersion: 'v1' } }) }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));

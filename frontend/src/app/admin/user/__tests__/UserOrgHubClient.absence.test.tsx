@@ -26,6 +26,8 @@ const { mockToast, mockConfirm } = vi.hoisted(() => ({
   mockConfirm: vi.fn(),
 }));
 
+// 다른 관리 화면으로 가는 길은 라우트와 같은 판정(canOpenPage)으로 보인다 — 목적지 권한을 가진 관리자로 렌더한다.
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: ['AUTHRT_READ', 'LOGIN_POL_READ', 'POLICY_READ'], authorizationVersion: 'v1' } }) }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
   usePathname: () => '/admin/user/absences',

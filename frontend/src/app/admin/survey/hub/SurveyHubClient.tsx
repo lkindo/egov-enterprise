@@ -21,6 +21,8 @@ import SurveyStatsClient from '../stats/SurveyStatsClient';
 import SurveyQuestionsPanel from '../components/SurveyQuestionsPanel';
 import SurveyTemplatesPanel from '../components/SurveyTemplatesPanel';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { useAuth } from '@/contexts/AuthContext';
+import { canOpenPage } from '@/lib/auth/page-access';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 탭 하나만 읽는다.
@@ -78,6 +80,9 @@ function toCount(value: unknown): number | null {
 }
 
 export function SurveyHubClient() {
+ // 투표 관리는 설문과 권한이 다르다(POLL_READ_ALL) — 라우트 게이트와 같은 판정으로만 길을 보인다(DIP B4 P1).
+ const { user } = useAuth();
+ const canOpenPolls = canOpenPage(user, '/admin/survey/polls');
  const router = useRouter();
  const searchParams = useSearchParams();
  const currentTab = resolveTab(searchParams.get('tab'));
@@ -160,12 +165,14 @@ export function SurveyHubClient() {
  </div>
  {/* [2026-09-06 DEC-OPS-041] 온라인 투표(항목 하나 고르기)는 문항형 설문조사와 다른 제품이라 허브 탭이 아니라
      별도 화면으로 안내한다(감사 D12-02 — 종전에는 허브 어디에도 투표로 가는 길이 없었다). */}
+ {canOpenPolls && (
  <Link
    href="/admin/survey/polls"
    className="inline-flex items-center gap-2 px-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
  >
    <Vote size={16} aria-hidden="true" /> 온라인 투표 관리로 이동
  </Link>
+ )}
 
  <div className="mt-4">
  <AnimatePresence mode="wait">
