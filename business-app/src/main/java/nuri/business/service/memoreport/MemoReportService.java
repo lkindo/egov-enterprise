@@ -24,6 +24,13 @@ public class MemoReportService {
     private final MemoReportRepository memoReportRepository;
     private final MemoReportMapper memoReportMapper;
     private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+
+    /**
+     * 알림의 목적지. 쿼리를 싣지 않는다 — 승인된 URL 키 없이 딥링크를 만들지 않는다(DIP F1). 수신자는 화면의 기본 탭이
+     * '받은 보고' 라 곧바로 보인다.
+     */
+    private static final String MEMO_REPORT_ROUTE = "/admin/operation/memo-reports";
 
     /**
      * 조직 전체 메모보고 목록 — <b>관리자 전용</b>.
@@ -102,7 +109,7 @@ public class MemoReportService {
     /** 매퍼는 요청 컨텍스트를 모르므로 수정·삭제의 독립적인 서버 판정을 덧붙인다. */
     private MemoReportDto toDtoWithPermission(MemoReport entity) {
         MemoReportDto dto = memoReportMapper.toDto(entity);
-        dto.setEditable(canModify(entity, "MEMO_RPT_UPDATE", "MEMO_RPT_UPDATE_ALL"));
+        dto.setEditable(!hasInstruction(entity) && canModify(entity, "MEMO_RPT_UPDATE", "MEMO_RPT_UPDATE_ALL"));
         dto.setDeletable(canModify(entity, "MEMO_RPT_DELETE", "MEMO_RPT_DELETE_ALL"));
         return dto;
     }
@@ -151,7 +158,28 @@ public class MemoReportService {
                 .rptCn(dto.getRptCn())
                 .atchFileSn(atchFileSn)
                 .build();
-        return memoReportRepository.save(entity).getMemoRptSn();
+        Long memoRptSn = memoReportRepository.save(entity).getMemoRptSn();
+        // [2026-09-26 DIP B4 P3] 받은 사람에게 알린다. 자기에게 보낸 보고는 알리지 않는다.
+        String recipient = dto.getRptrId();
+        if (org.springframework.util.StringUtils.hasText(recipient) && !recipient.equals(userId)) {
+            publishAfterCommit(recipient, "메모 보고가 도착했습니다", titleOf(dto.getRptTtl()));
+        }
+        return memoRptSn;
+    }
+
+    private static String titleOf(String rptTtl) {
+        return org.springframework.util.StringUtils.hasText(rptTtl) ? rptTtl : "(제목 없음)";
+    }
+
+    /** 커밋 뒤에만 알린다 — 롤백된 보고에 대한 알림이 남지 않게 한다(NotificationRequestedEvent 규약). */
+    private void publishAfterCommit(String receiverEsntlId, String title, String content) {
+        nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> eventPublisher.publishEvent(
+                new nuri.foundation.core.event.NotificationRequestedEvent(receiverEsntlId, title, content, MEMO_REPORT_ROUTE)));
+    }
+
+    /** 지시가 달렸는가. 지시는 그때의 본문을 두고 내린 것이라, 달린 뒤에는 본문을 바꾸지 않는다(P9). */
+    private static boolean hasInstruction(MemoReport entity) {
+        return org.springframework.util.StringUtils.hasText(entity.getDrctnMttr());
     }
 
     @Transactional
@@ -159,6 +187,10 @@ public class MemoReportService {
         MemoReport entity = memoReportRepository.findById(Objects.requireNonNull(memoRptSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "MEMO_RPT_UPDATE_ALL"); // [IDOR] 작성자/관리자만 수정
+        // [2026-09-26 DIP B4 P9] 지시가 달린 뒤 본문을 바꾸면 지시가 가리키던 내용이 사라진다 — 관리자도 고치지 않는다.
+        if (hasInstruction(entity)) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE, "지시가 달린 보고는 고칠 수 없습니다. 새 보고로 올려 주세요.");
+        }
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
@@ -199,6 +231,13 @@ public class MemoReportService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertRecipientOrAdmin(entity); // [IDOR] 지시는 보고를 받은 사람·관리자만 남긴다
         entity.updateDrctMatter(instrCn, java.time.LocalDateTime.now());
+        // [2026-09-26 DIP B4 P3] 보고한 사람에게 지시가 달렸다고 알린다. 지시를 지운 경우와 자기 보고는 알리지 않는다.
+        String author = entity.getUserId();
+        String actor = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
+        if (org.springframework.util.StringUtils.hasText(instrCn)
+                && org.springframework.util.StringUtils.hasText(author) && !author.equals(actor)) {
+            publishAfterCommit(author, "메모 보고에 지시가 달렸습니다", titleOf(entity.getRptTtl()));
+        }
     }
 
     /**

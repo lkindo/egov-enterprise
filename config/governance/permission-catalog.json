@@ -2567,7 +2567,7 @@
       "EXT_HR_READ"
     ],
     "/admin/operation/memo-reports": [
-      "MEMO_RPT_READ_ALL"
+      "MEMO_RPT_READ"
     ],
     "/admin/operation/rewards": [
       "REWARD_READ"
