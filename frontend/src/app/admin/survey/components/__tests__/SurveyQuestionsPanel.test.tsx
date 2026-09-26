@@ -136,6 +136,7 @@ describe('SurveyQuestionsPanel', () => {
       qstnSn: 1,
       qstnTypeCd: '1',
       qstnCn: '가'.repeat(4000),
+      maxChcCnt: 1,
     };
     const item = {
       srvyQstnSn: 301,
@@ -148,6 +149,9 @@ describe('SurveyQuestionsPanel', () => {
     expect(surveyQuestionCreateSchema.safeParse({ ...question, qstnCn: '가'.repeat(4001) }).success).toBe(false);
     expect(surveyQuestionCreateSchema.safeParse({ ...question, srvySn: 1.5 }).success).toBe(false);
     expect(surveyQuestionCreateSchema.safeParse({ ...question, qstnSn: 0 }).success).toBe(false);
+    // [DIP B4 P6] 최대 선택 수는 폼이 늘 싣는다 — 빠지거나 0 이면 거부한다.
+    expect(surveyQuestionCreateSchema.safeParse({ ...question, maxChcCnt: undefined }).success).toBe(false);
+    expect(surveyQuestionCreateSchema.safeParse({ ...question, maxChcCnt: 0 }).success).toBe(false);
     expect(surveyItemCreateSchema.safeParse(item).success).toBe(true);
     expect(surveyItemCreateSchema.safeParse({ ...item, artclCn: '' }).success).toBe(false);
     expect(surveyItemCreateSchema.safeParse({ ...item, artclCn: '가'.repeat(4001) }).success).toBe(false);

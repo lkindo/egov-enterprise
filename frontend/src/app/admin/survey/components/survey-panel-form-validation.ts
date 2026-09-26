@@ -48,7 +48,7 @@ export const surveyQuestionCreateSchema = SurveyQuestionDtoSchema.pick({
   qstnSn: positiveQuestionOrderSchema,
   qstnTypeCd: questionTypeSchema,
   qstnCn: questionContentSchema,
-  maxChcCnt: maxChoiceSchema.optional(),
+  maxChcCnt: maxChoiceSchema,
 });
 
 const positiveQuestionIdSchema = SurveyArticleDtoSchema.shape.srvyQstnSn
