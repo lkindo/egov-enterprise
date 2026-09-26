@@ -47,13 +47,6 @@ type IntegratedLogRow =
 
 const CATEGORY_IDS = logCategories.map((c) => c.id);
 
-/** 분류별 전체 결과 export — 개별 로그 화면이 쓰는 것과 같은 서버 operation 이다. */
-const EXPORT_OPERATIONS = {
-  SYS: exportSystemLogsOperation,
-  LGN: exportLoginLogsOperation,
-  USR: exportUserLogsOperation,
-  WEB: exportWebLogsOperation,
-} as const satisfies Record<LogCategoryId, unknown>;
 /** 기본 SYS는 query에서 생략하고, root dashboard의 비기본 category만 page 변경 때 보존한다. */
 const PAGE_PRESERVED_PARAMS = [{
   name: 'cat',
@@ -135,14 +128,28 @@ export default function LogDashboardClient({
         : undefined,
   });
 
+  // 분류마다 생성 descriptor 를 직접 넘긴다 — 생성 경계 census 가 호출마다 어떤 operation 인지 정적으로 확인한다.
   const handleFullExport = () => {
-    requestFullExport({
-      operation: EXPORT_OPERATIONS[activeCategory],
+    const request = {
       totalCount: data?.total,
       searchKeyword,
       period,
-      onTooMany: (message) => toast(message, 'error'),
-    });
+      onTooMany: (message: string) => toast(message, 'error'),
+    };
+    switch (activeCategory) {
+      case 'LGN':
+        requestFullExport({ operation: exportLoginLogsOperation, ...request });
+        return;
+      case 'USR':
+        requestFullExport({ operation: exportUserLogsOperation, ...request });
+        return;
+      case 'WEB':
+        requestFullExport({ operation: exportWebLogsOperation, ...request });
+        return;
+      case 'SYS':
+      default:
+        requestFullExport({ operation: exportSystemLogsOperation, ...request });
+    }
   };
 
   const logs = data?.list ?? [];

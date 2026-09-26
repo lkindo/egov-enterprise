@@ -76,7 +76,11 @@ describe('로그 조회 기간 계약', () => {
     expect(dashboard, '통합 조회에 조회 기간이 없습니다').toMatch(/<PeriodFilter/);
     expect(dashboard, '기간이 요청 파라미터에 실리지 않습니다').toContain('...periodToParams(period)');
     expect(dashboard, '기간이 queryKey 에 결속되지 않았습니다').toMatch(/queryKey: \[[^\]]*periodToParams\(period\)\]/);
-    expect(dashboard, '전체 결과 반출이 공용 조립기를 거치지 않습니다').toMatch(/requestFullExport\(\{[\s\S]*period,/);
+    // 반출은 지금 조건(검색어·기간)을 싣고, 네 분류가 각자의 생성 descriptor 를 직접 넘긴다.
+    expect(dashboard, '전체 결과 반출이 기간을 싣지 않습니다').toMatch(/const request = \{[\s\S]*?searchKeyword,[\s\S]*?period,[\s\S]*?\};/);
+    for (const operation of ['exportSystemLogsOperation', 'exportLoginLogsOperation', 'exportUserLogsOperation', 'exportWebLogsOperation']) {
+      expect(dashboard, `${operation} 반출이 공용 조립기를 거치지 않습니다`).toContain(`requestFullExport({ operation: ${operation}, ...request });`);
+    }
   });
 
   it('역순 기간은 0건이 아니라 400 이다 — 다섯 저장소가 같은 판정을 거친다 (DIP C6)', () => {
