@@ -3129,7 +3129,7 @@ export const getNotificationsOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "searchWrd": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "searchWrd": z.string().optional(), "readYn": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseNotificationDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseNotificationDtoResponseSchema,
@@ -3167,6 +3167,23 @@ export const markAsReadOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const markAllAsReadOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "markAllAsRead",
+  method: "post",
+  path: "/api/v1/notifications/read-all",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseIntegerResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });

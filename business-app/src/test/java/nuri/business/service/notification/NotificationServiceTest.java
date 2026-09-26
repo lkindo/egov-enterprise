@@ -66,14 +66,24 @@ class NotificationServiceTest {
     @DisplayName("알림 목록 조회 - 성공")
     void getNotificationList_success() {
         PageRequest pageable = PageRequest.of(0, 10);
-        when(notificationRepository.searchNotificationsByReceiver("user123", "test", pageable))
+        when(notificationRepository.searchNotificationsByReceiver("user123", "test", null, pageable))
                 .thenReturn(new PageImpl<>(List.of(createMockEntity(1L))));
 
-        Page<NotificationDto> result = notificationService.getNotificationList("user123", "test", pageable);
+        Page<NotificationDto> result = notificationService.getNotificationList("user123", " test ", "", pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        verify(notificationRepository).searchNotificationsByReceiver("user123", "test", pageable);
+        verify(notificationRepository).searchNotificationsByReceiver("user123", "test", null, pageable);
+    }
+
+    @Test
+    @DisplayName("[DIP B4 P2] 읽음 조건이 Y·N 이 아니면 조건을 버리지 않고 거부한다")
+    void getNotificationList_rejectsUnknownReadFilter() {
+        PageRequest pageable = PageRequest.of(0, 10);
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> notificationService.getNotificationList("user123", null, "unread", pageable));
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, error.getErrorCode());
+        verify(notificationRepository, never()).searchNotificationsByReceiver(any(), any(), any(), any());
     }
 
     @Test

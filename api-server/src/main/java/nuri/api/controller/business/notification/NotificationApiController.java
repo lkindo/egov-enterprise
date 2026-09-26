@@ -32,9 +32,10 @@ public class NotificationApiController {
     public ResponseEntity<ApiResponse<PageResponse<NotificationDto>>> getNotifications(
             @LoginUser CustomUserDetails userDetails,
             @Parameter(description = "검색어") @RequestParam(required = false) String searchWrd,
+            @Parameter(description = "읽음 조건(비우면 전체, N 읽지 않음, Y 읽음)") @RequestParam(required = false) String readYn,
             @PageableDefault(size = 10) Pageable pageable) {
         Page<NotificationDto> result = notificationService.getNotificationList(
-                userDetails.getUsername(), searchWrd, pageable);
+                userDetails.getUsername(), searchWrd, readYn, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
@@ -64,6 +65,14 @@ public class NotificationApiController {
             @PathVariable Long notiSn) {
         notificationService.markAsRead(notiSn, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "받은 알림 모두 읽음", description = "로그인한 사용자가 받은 읽지 않은 알림을 모두 읽음으로 바꾸고 바꾼 건수를 돌려줍니다.")
+    @PostMapping("/read-all")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.notification.NotificationApiController#markAllAsRead')")
+    public ResponseEntity<ApiResponse<Integer>> markAllAsRead(
+            @LoginUser CustomUserDetails userDetails) {
+        return ResponseEntity.ok(ApiResponse.success(notificationService.markAllAsRead(userDetails.getUsername())));
     }
 
     @Operation(summary = "개인 알림 등록", description = "로그인한 사용자 본인의 알림을 등록합니다.")

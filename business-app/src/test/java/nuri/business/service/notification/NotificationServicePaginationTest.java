@@ -92,12 +92,40 @@ class NotificationServicePaginationTest extends BusinessIntegrationTestSupport {
         entityManager.clear();
 
         List<Long> ids = notificationService
-                .getNotificationList("testUser", null, PageRequest.of(0, 25))
+                .getNotificationList("testUser", null, null, PageRequest.of(0, 25))
                 .getContent().stream()
                 .map(NotificationDto::getNotiSn)
                 .toList();
 
         assertThat(ids).hasSize(25)
                 .isSortedAccordingTo(Comparator.reverseOrder());
+    }
+
+    @Test
+    @DisplayName("[DIP B4 P2] 읽음 조건 N 은 서버에서 읽지 않은 알림만 페이지로 준다")
+    void getNotificationList_filtersUnreadOnServer() {
+        Page<NotificationDto> unread = notificationService.getNotificationList("testUser", null, "N", PageRequest.of(0, 10));
+        assertThat(unread.getTotalElements()).isEqualTo(20);
+        assertThat(unread.getContent()).allMatch(dto -> "N".equals(dto.getReadYn()));
+
+        Page<NotificationDto> read = notificationService.getNotificationList("testUser", null, "Y", PageRequest.of(0, 10));
+        assertThat(read.getTotalElements()).isEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("[DIP B4 P2] 모두 읽음은 받은 사람의 미읽음 전부를 옮기고 다른 사람의 알림은 건드리지 않는다")
+    void markAllAsRead_updatesOnlyReceiversUnread() {
+        notificationRepository.save(Notification.builder()
+                .notiTtlNm("Other").notiCn("Other").rcvrId("otherUser").readYn("N").build());
+        entityManager.flush();
+        entityManager.clear();
+
+        int updated = notificationService.markAllAsRead("testUser");
+
+        assertThat(updated).isEqualTo(20);
+        assertThat(notificationService.getUnreadCount("testUser")).isZero();
+        assertThat(notificationService.getUnreadCount("otherUser")).isEqualTo(1);
+        // 다시 불러도 옮길 것이 없다 — 이미 읽은 알림을 세지 않는다.
+        assertThat(notificationService.markAllAsRead("testUser")).isZero();
     }
 }

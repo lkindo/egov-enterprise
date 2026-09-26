@@ -56,14 +56,26 @@ class NotificationApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("알림 목록 조회 - 성공")
     void getNotifications_success() throws Exception {
-        when(notificationService.getNotificationList(eq("testUser"), eq("test"), any()))
+        when(notificationService.getNotificationList(eq("testUser"), eq("test"), eq("N"), any()))
                 .thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/notifications")
-                .param("searchWrd", "test"))
+                .param("searchWrd", "test")
+                .param("readYn", "N"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
-        verify(notificationService).getNotificationList(eq("testUser"), eq("test"), any());
+        verify(notificationService).getNotificationList(eq("testUser"), eq("test"), eq("N"), any());
+    }
+
+    @Test
+    @DisplayName("[DIP B4 P2] 모두 읽음은 로그인한 사람의 알림만 옮기고 옮긴 건수를 돌려준다")
+    void markAllAsRead_success() throws Exception {
+        when(notificationService.markAllAsRead("testUser")).thenReturn(7);
+
+        mockMvc.perform(post("/api/v1/notifications/read-all"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(7));
+        verify(notificationService).markAllAsRead("testUser");
     }
 
     @Test

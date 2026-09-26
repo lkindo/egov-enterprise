@@ -1,67 +1,10 @@
 import { createEvent, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { SmartNotificationHub } from '../smart-notification-hub';
 import { AppNotificationDrawer } from '../app-notification-drawer';
 
-const notificationsMock = vi.hoisted(() => ({
-  refresh: vi.fn(),
-  isLoading: false,
-  notifications: [
-    {
-      notiSn: 1,
-      notiTtlNm: '보안 알림',
-      notiCn: '확인이 필요합니다.',
-      notiDt: '2026-08-21',
-      type: 'SECURITY',
-      readYn: 'N',
-    },
-  ],
-}));
-
-vi.mock('@/lib/hooks/use-notifications', () => ({
-  useNotifications: () => ({
-    notifications: notificationsMock.notifications,
-    error: null,
-    isLoading: notificationsMock.isLoading,
-    refresh: notificationsMock.refresh,
-  }),
-}));
-
-vi.mock('@/app/components/ui/standard-data-table', () => ({
-  StandardDataTable: ({ data, loading }: { data: unknown[]; loading?: boolean }) => (
-    <div data-testid="notification-table" data-loading={String(Boolean(loading))}>알림 {data.length}건</div>
-  ),
-}));
-
 describe('notification controls accessibility', () => {
-  it('알림 센터 표는 첫 조회 중이면 불러오는 중으로 그린다 — 빈 목록을 알림 없음으로 말하지 않는다', () => {
-    // [2026-09-15 DEC-OPS-100] 종전에는 loading 을 넘기지 않아 조회 중에 "표시할 알림이 없습니다" 가 떴다.
-    notificationsMock.isLoading = true;
-    try {
-      const { unmount } = render(<SmartNotificationHub />);
-      expect(screen.getByTestId('notification-table')).toHaveAttribute('data-loading', 'true');
-      unmount();
-    } finally {
-      notificationsMock.isLoading = false;
-    }
-    render(<SmartNotificationHub />);
-    expect(screen.getByTestId('notification-table')).toHaveAttribute('data-loading', 'false');
-  });
-
-  it('알림 필터가 현재 선택 상태를 보조기술에 전달한다', () => {
-    render(<SmartNotificationHub />);
-
-    const all = screen.getByRole('button', { name: '전체 알림 필터' });
-    const unread = screen.getByRole('button', { name: '읽지 않은 알림 필터' });
-    expect(all).toHaveAttribute('aria-pressed', 'true');
-    expect(unread).toHaveAttribute('aria-pressed', 'false');
-
-    fireEvent.click(unread);
-    expect(all).toHaveAttribute('aria-pressed', 'false');
-    expect(unread).toHaveAttribute('aria-pressed', 'true');
-  });
-
+  // [2026-09-26 DIP B4 P2] 알림 센터 목록의 계약은 smart-notification-hub.test.tsx 로 옮겼다(서버 페이지 조회로 바뀌었다).
   /*
     [2026-09-08] 삭제 버튼은 카드 **바깥**에 둔다.
 
@@ -198,7 +141,7 @@ describe('notification controls accessibility', () => {
     expect(onMarkRead).not.toHaveBeenCalled();
   });
 
-  it('일괄 읽음 버튼은 불러온 범위를 말하고 처리 대상이 없으면 비활성화한다', () => {
+  it('일괄 읽음 버튼은 받은 알림 전체를 말하고 처리 대상이 없으면 비활성화한다', () => {
     const onMarkAllRead = vi.fn();
     const baseProps = {
       isOpen: true,
@@ -222,7 +165,7 @@ describe('notification controls accessibility', () => {
     );
 
     const action = screen.getByTestId('read-all-broadcasts-btn');
-    expect(action).toHaveAccessibleName('불러온 알림 읽음 처리');
+    expect(action).toHaveAccessibleName('받은 알림 모두 읽음 처리');
     expect(action).toBeEnabled();
     expect(screen.queryByRole('button', { name: '모든 알림 읽음 처리' })).not.toBeInTheDocument();
     fireEvent.click(action);
@@ -243,5 +186,38 @@ describe('notification controls accessibility', () => {
     );
 
     expect(screen.getByTestId('read-all-broadcasts-btn')).toBeDisabled();
+
+    // [DIP B4 P2] 불러온 알림이 모두 읽음이어도 서버에 미읽음이 남아 있으면 모두 읽음을 누를 수 있다.
+    rerender(
+      <AppNotificationDrawer
+        {...baseProps}
+        unreadCount={4}
+        notifications={[{
+          id: 11,
+          title: '확인 완료 공지',
+          message: '이미 확인했습니다.',
+          time: '방금 전',
+          isRead: true,
+          type: 'SYSTEM',
+        }]}
+      />,
+    );
+    expect(screen.getByTestId('read-all-broadcasts-btn')).toBeEnabled();
+  });
+
+  it('알림 센터로 가는 길은 넘겨받았을 때만 보인다', () => {
+    const baseProps = {
+      isOpen: true,
+      onClose: vi.fn(),
+      onMarkRead: vi.fn(),
+      onMarkAllRead: vi.fn(),
+      onDelete: vi.fn(),
+      notifications: [],
+    };
+    const { rerender } = render(<AppNotificationDrawer {...baseProps} />);
+    expect(screen.queryByRole('link', { name: '알림 센터에서 전체 보기' })).not.toBeInTheDocument();
+
+    rerender(<AppNotificationDrawer {...baseProps} centerHref="/admin/notifications" />);
+    expect(screen.getByRole('link', { name: '알림 센터에서 전체 보기' })).toHaveAttribute('href', '/admin/notifications');
   });
 });

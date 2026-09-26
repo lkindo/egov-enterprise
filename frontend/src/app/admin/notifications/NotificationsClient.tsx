@@ -20,6 +20,9 @@ import { NotificationDispatchDialog } from './NotificationDispatchDialog';
  * [2026-09-06 DEC-OPS-042] 관리자 발송을 실제 기능으로 승격했다 — '알림 보내기' 는 라우트 게이트와 같은 역할 집합
  * (NOTI_DISPATCH 기능권한)에만 보이고, 다이얼로그는 열릴 때만 마운트한다(DEC-OPS-037 과 같은 방식).
  * 수신자는 공용 피커로 고르고 서버(`/admin/notifications/dispatch`)가 존재를 확인한 뒤 사람마다 알림을 만든다.
+ *
+ * [2026-09-26 DIP B4 P2] 이 화면의 라우트 권한은 알림 조회(NOTI_READ)다 — 종전에는 발송 권한(NOTI_DISPATCH)이라 받은
+ * 알림을 보려는 일반 사용자가 들어올 수 없었다. 발송 버튼만 NOTI_DISPATCH 로 판정한다.
  */
 export default function NotificationsClient() {
   const { user } = useAuth();
