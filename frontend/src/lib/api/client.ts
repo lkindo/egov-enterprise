@@ -4,7 +4,7 @@ import { cache } from 'react';
 
 import { authReissueResponseSchema } from '@/lib/auth/auth-reissue-contract';
 import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
-import { assertCurrentAuthorizationRequest, getAuthorizationRequestEpoch, notifyAuthorizationChanged } from '@/lib/auth/authorization-state';
+import { assertCurrentAuthorizationRequest, assertRequestAllowedWhileSignedOut, getAuthorizationRequestEpoch, notifyAuthorizationChanged } from '@/lib/auth/authorization-state';
 import { isCanceledRequest } from '@/lib/safe-error-log';
 
 /*
@@ -66,6 +66,8 @@ axiosInstance.interceptors.request.use(
   async (config) => {
     // Keep an existing epoch on retries: an old mutation must never run as the next account.
     assertCurrentAuthorizationRequest(config._authorizationEpoch);
+    // 로그아웃 뒤 화면에 남은 조회가 401·재발급으로 번지지 않게 한다(DIP B4).
+    assertRequestAllowedWhileSignedOut(config.url);
     config._authorizationEpoch ??= getAuthorizationRequestEpoch();
     let token = null;
     
