@@ -47033,9 +47033,17 @@
           "senderImplementation": {
             "type": "string",
             "description": "현재 발송 구현체의 단순 클래스명. 운영 문의 시 어느 형상인지 식별한다."
+          },
+          "defaultSenderTelno": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "배포에 등록된 기본 발신 번호(nuri.notification.sender.tel). 설정이 없으면 null."
           }
         },
         "required": [
+          "defaultSenderTelno",
           "deliveryConfigured",
           "senderImplementation"
         ]
@@ -47789,6 +47797,13 @@
               "null"
             ]
           },
+          "userNm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "대상 사용자 이름(사용자가 없으면 null)"
+          },
           "grantType": {
             "type": [
               "string",
@@ -47822,6 +47837,13 @@
               "null"
             ]
           },
+          "actorNm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "처리자 이름(사용자가 없으면 null)"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -47829,6 +47851,7 @@
         },
         "required": [
           "actorId",
+          "actorNm",
           "after",
           "before",
           "changeType",
@@ -47841,7 +47864,8 @@
           "policyVersion",
           "requestId",
           "targetType",
-          "userId"
+          "userId",
+          "userNm"
         ]
       },
       "PageResponseChange": {

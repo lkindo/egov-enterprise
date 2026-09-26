@@ -320,14 +320,15 @@ export default function EventManagementClient() {
     try {
       const ok = await confirm({
         title: '행사 삭제',
-        message: `'${event.evntNm}' 행사를 삭제합니다. 삭제된 행사는 복구할 수 없습니다.`,
+        message: `'${event.evntNm}' 행사를 삭제합니다. 삭제된 행사는 복구할 수 없습니다. 외부인사가 등록된 행사는 외부인사를 먼저 삭제해야 합니다.`,
         confirmText: '삭제',
         variant: 'destructive',
       });
       if (!ok) return;
       await deleteMutation.mutateAsync(event.evntSn);
-    } catch {
-      toast('행사 삭제에 실패했습니다.', 'error');
+    } catch (deleteError) {
+      // [2026-09-26 DIP V9] 서버는 외부인사가 남은 행사를 409 와 건수로 거부한다. 그 사유를 버리지 않는다.
+      toast(extractErrorMessage(deleteError, '행사 삭제에 실패했습니다.'), 'error');
     } finally {
       deletePendingRef.current = false;
       setDeletingEventSn(null);

@@ -74,6 +74,28 @@ const smsComposeSchema = smsSchema.extend({
   rcptnTelno: z.string().trim().pipe(smsRecipientNumberSchema.or(z.literal(''))),
 });
 
+/** 단문 문자(SMS) 한 통의 통상 한도. 게이트웨이에 따라 넘으면 장문으로 보내거나 잘린다. */
+const SMS_SHORT_BYTE_LIMIT = 90;
+
+/** 문자 게이트웨이가 세는 방식(한글 등 2바이트, 영문·숫자 1바이트)으로 센다. */
+function smsByteLength(text: string): number {
+  let bytes = 0;
+  for (const ch of text) bytes += ch.charCodeAt(0) > 0x7f ? 2 : 1;
+  return bytes;
+}
+
+/** [2026-09-26 DIP V9] 글자 수 제한만 있고 문자 요금·분할의 기준인 바이트를 보여 주지 않았다. */
+function SmsByteCounter({ text }: { text: string }) {
+  const bytes = smsByteLength(text);
+  const over = bytes > SMS_SHORT_BYTE_LIMIT;
+  return (
+    <p aria-live="polite" className={over ? 'text-xs text-destructive ml-2' : 'text-xs text-muted-foreground ml-2'}>
+      {bytes} / {SMS_SHORT_BYTE_LIMIT}바이트
+      {over && ' · 단문 한도를 넘었습니다. 게이트웨이에 따라 장문으로 보내거나 잘릴 수 있습니다.'}
+    </p>
+  );
+}
+
 /** 요청당 수신자 상한 — 백엔드 SmsDto.MAX_RECIPIENTS_PER_REQUEST 와 같다. */
 const MAX_SMS_RECIPIENTS = 100;
 
@@ -164,10 +186,33 @@ export default function SmsAdminClient({
   const smsList = data?.list ?? [];
   const totalCount = data?.total ?? 0;
 
+  /**
+   * 이 배포에서 문자가 실제로 전달될 수 있는가.
+   *
+   * [2026-09-02] 종전에는 미연동 배너가 **하드코딩**이었다. 저장소 안의 sender 구현체를 읽는
+   * 계약이 이를 지켰지만, 이 저장소는 재사용 base 라 <b>파생 제품이 자기 게이트웨이를 붙이면</b>
+   * 화면이 반대로 거짓말한다(연결됐는데 "연동되어 있지 않다"). 그래서 사실을 서버에서 받는다.
+   *
+   * ⚠ 판정할 수 없으면 <b>경고하는 쪽</b>으로 기운다 — 조회 실패·로딩 중에 배너를 감추면
+   * 관리자가 전달을 기대하게 된다. 확인되지 않은 안심보다 불필요한 경고가 낫다.
+   */
+  const { data: deliveryStatus } = useQuery({
+    queryKey: ['admin-sms-delivery-status'],
+    queryFn: () => smsAdminService.getDeliveryStatus(),
+  });
+  const deliveryConfigured = deliveryStatus?.deliveryConfigured === true;
+
+  /**
+   * [2026-09-26 DIP V9] 발신 번호 칸이 없어 '02-1234-5678' 이 몰래 실려 갔다 — 보낸 모든 문자가 이 기관의 번호가 아닌
+   * 예시 번호로 기록됐다. 배포에 등록된 발신 번호를 기본값으로 보이고 관리자가 확인·수정하게 한다.
+   */
+  const defaultSenderTelno = deliveryStatus?.defaultSenderTelno ?? '';
+  const composeDefaults = () => ({ sndngTelno: defaultSenderTelno, rcptnTelno: '', sndngCn: '' });
+
   // Send SMS Form
   const form = useAppForm(smsComposeSchema, {
     defaultValues: {
-      sndngTelno: '02-1234-5678', // 발신번호 (기본값)
+      sndngTelno: '',
       rcptnTelno: '',
       sndngCn: ''
     }
@@ -243,7 +288,7 @@ export default function SmsAdminClient({
        */
       toast('발송 요청을 접수했습니다. 전달 결과는 목록의 ‘수신자 결과’에서 확인하세요.', 'info');
       setIsSendOpen(false);
-      form.reset();
+      form.reset(composeDefaults());
       setRecipients([]);
       refetch();
     } catch (err) {
@@ -257,26 +302,10 @@ export default function SmsAdminClient({
   };
 
   const handleOpenSend = () => {
-    form.reset();
+    form.reset(composeDefaults());
     setRecipients([]);
     setIsSendOpen(true);
   };
-
-  /**
-   * 이 배포에서 문자가 실제로 전달될 수 있는가.
-   *
-   * [2026-09-02] 종전에는 미연동 배너가 **하드코딩**이었다. 저장소 안의 sender 구현체를 읽는
-   * 계약이 이를 지켰지만, 이 저장소는 재사용 base 라 <b>파생 제품이 자기 게이트웨이를 붙이면</b>
-   * 화면이 반대로 거짓말한다(연결됐는데 "연동되어 있지 않다"). 그래서 사실을 서버에서 받는다.
-   *
-   * ⚠ 판정할 수 없으면 <b>경고하는 쪽</b>으로 기운다 — 조회 실패·로딩 중에 배너를 감추면
-   * 관리자가 전달을 기대하게 된다. 확인되지 않은 안심보다 불필요한 경고가 낫다.
-   */
-  const { data: deliveryStatus } = useQuery({
-    queryKey: ['admin-sms-delivery-status'],
-    queryFn: () => smsAdminService.getDeliveryStatus(),
-  });
-  const deliveryConfigured = deliveryStatus?.deliveryConfigured === true;
 
   /**
    * 수신자별 전달 결과. 발송 이력 목록에는 rsltCd 가 없어(수신자 테이블에만 있다) 결과를
@@ -502,6 +531,35 @@ export default function SmsAdminClient({
                 <FormErrorSummary labels={smsValidationLabels} onNavigate={form.focusError} />
                 <FormField
                   control={form.control}
+                  name="sndngTelno"
+                  required
+                  render={({ field }) => (
+                    <FormItem className="space-y-4">
+                      <FormLabel className="text-xs font-bold text-muted-foreground tracking-[0.2em] ml-2 flex items-center gap-3">
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full" aria-hidden="true" />
+                        발신 번호
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          inputMode="tel"
+                          maxLength={13}
+                          placeholder="02-000-0000"
+                          className="rounded-lg border-none bg-muted font-bold tabular-nums focus:bg-card focus:ring-8 focus:ring-primary/5 transition-all shadow-inner tracking-wider"
+                        />
+                      </FormControl>
+                      <p className="text-xs text-muted-foreground ml-2">
+                        {defaultSenderTelno
+                          ? '기본값은 이 배포에 등록된 발신 번호입니다.'
+                          : '이 배포에 등록된 기본 발신 번호가 없습니다. 보낼 번호를 입력하세요.'}
+                      </p>
+                      <FormMessage className="text-xs font-bold" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="rcptnTelno"
                   required={recipients.length === 0}
                   render={({ field }) => (
@@ -598,6 +656,7 @@ export default function SmsAdminClient({
                           />
                         </FormControl>
                       </div>
+                      <SmsByteCounter text={field.value ?? ''} />
                       <FormMessage className="text-xs font-bold" />
                     </FormItem>
                   )}

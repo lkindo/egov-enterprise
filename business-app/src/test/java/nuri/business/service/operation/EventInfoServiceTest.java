@@ -38,6 +38,9 @@ class EventInfoServiceTest {
     @Mock
     private EventInfoRepository eventInfoRepository;
 
+    @Mock
+    private nuri.business.domain.operation.ExternalHrRepository externalHrRepository;
+
     @Test
     @DisplayName("이벤트 목록 조회")
     void getEventList() {
@@ -142,5 +145,19 @@ class EventInfoServiceTest {
 
         // then
         verify(eventInfoRepository, times(1)).delete(existingEvent);
+    }
+
+    @Test
+    @DisplayName("🚨 외부인사가 등록된 행사는 건수를 밝혀 409 로 거부하고 지우지 않는다 (DIP V9)")
+    void deleteEvent_rejectsWhenExternalHrExists() {
+        EventInfo existingEvent = EventInfo.builder().evntSn(1L).build();
+        given(eventInfoRepository.findById(1L)).willReturn(Optional.of(existingEvent));
+        given(externalHrRepository.countByEvntSn(1L)).willReturn(3L);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> eventInfoService.deleteEvent(1L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_IN_USE)
+                .hasMessageContaining("외부인사 3명");
+        verify(eventInfoRepository, org.mockito.Mockito.never()).delete(any(EventInfo.class));
     }
 }

@@ -165,9 +165,9 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     setActiveAction('scrap');
     try {
       const currentPath = `/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${pstSn}`;
-      // scrapNm 은 물리 컬럼 varchar(100). 지식 항목명(knoNm)처럼 더 긴 값이 올 수 있어 잘라 보낸다
+      // scrapNm 은 물리 컬럼 varchar(100). 게시글 제목은 더 길 수 있어 잘라 보낸다
       // — 넘기면 서버가 400 을 주는데, 스크랩은 사용자가 길이를 조절할 수 있는 입력이 아니다.
-      const title = (article.pstTtl || article.knoNm || '게시글 스크랩').slice(0, 100);
+      const title = (article.pstTtl || '게시글 스크랩').slice(0, 100);
       await createScrapMutation.mutateAsync({
         scrapNm: title,
         scrapUrl: currentPath,
@@ -280,7 +280,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             <span className="text-xs tabular-nums text-muted-foreground">게시글 번호: {pstSn}</span>
           </div>
           <h1 className="text-xl font-bold leading-snug tracking-tight text-foreground">
-            {article.pstTtl || article.knoNm}
+            {article.pstTtl}
           </h1>
         </div>
 
@@ -401,7 +401,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             "prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:px-4 prose-blockquote:py-2 prose-blockquote:not-italic prose-blockquote:text-foreground",
             "prose-code:bg-muted prose-code:rounded prose-code:px-1 prose-pre:bg-surface-inverse prose-pre:rounded-md"
           )}
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.pstCn || article.knoCn || '') }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.pstCn || '') }}
         />
       </section>
 

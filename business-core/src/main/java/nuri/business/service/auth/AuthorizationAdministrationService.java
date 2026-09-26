@@ -365,18 +365,26 @@ public class AuthorizationAdministrationService {
         if (fromDate!=null && toDate!=null && fromDate.isAfter(toDate)) invalid("조회 시작일은 종료일보다 늦을 수 없습니다.");
         var parameters=new org.springframework.jdbc.core.namedparam.MapSqlParameterSource();
         StringBuilder where=new StringBuilder(" WHERE 1=1");
-        if (groupCode!=null && !groupCode.isBlank()) { where.append(" AND authrt_cd=:groupCode"); parameters.addValue("groupCode",groupCode); }
-        if (userId!=null && !userId.isBlank()) { where.append(" AND scrty_dcsn_trgt_id=:userId"); parameters.addValue("userId",userId); }
-        if (actorId!=null && !actorId.isBlank()) { where.append(" AND chg_user_idntfr=:actorId"); parameters.addValue("actorId",actorId); }
-        if (fromDate!=null) { where.append(" AND crt_dt>=:fromDate"); parameters.addValue("fromDate",java.sql.Timestamp.valueOf(fromDate.atStartOfDay())); }
-        if (toDate!=null) { where.append(" AND crt_dt<:untilDate"); parameters.addValue("untilDate",java.sql.Timestamp.valueOf(toDate.plusDays(1).atStartOfDay())); }
+        if (groupCode!=null && !groupCode.isBlank()) { where.append(" AND h.authrt_cd=:groupCode"); parameters.addValue("groupCode",groupCode); }
+        if (userId!=null && !userId.isBlank()) { where.append(" AND h.scrty_dcsn_trgt_id=:userId"); parameters.addValue("userId",userId); }
+        // [2026-09-26 DIP V9] 변경자는 esntlId(chg_user_idntfr)와 로그인 ID(frst_rgtr_id)로 함께 기록된다. 화면은
+        //   '변경자 로그인 ID' 를 받는데 종전 조건은 esntlId 만 비교해 로그인 ID 로는 한 건도 찾지 못했다.
+        if (actorId!=null && !actorId.isBlank()) { where.append(" AND (h.frst_rgtr_id=:actorId OR h.chg_user_idntfr=:actorId)"); parameters.addValue("actorId",actorId); }
+        if (fromDate!=null) { where.append(" AND h.crt_dt>=:fromDate"); parameters.addValue("fromDate",java.sql.Timestamp.valueOf(fromDate.atStartOfDay())); }
+        if (toDate!=null) { where.append(" AND h.crt_dt<:untilDate"); parameters.addValue("untilDate",java.sql.Timestamp.valueOf(toDate.plusDays(1).atStartOfDay())); }
         var query=new org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate(jdbc);
         parameters.addValue("size",pageable.getPageSize()).addValue("offset",pageable.getOffset());
-        var rows=query.query("SELECT * FROM tb_authrt_chg_hstry"+where+" ORDER BY authrt_chg_hstry_sn DESC LIMIT :size OFFSET :offset",parameters,(rs,n) -> new Change(
+        // 처리자·대상 사용자 이름을 함께 싣는다 — 종전 화면은 내부 식별자(esntlId)만 보여 누가 바꿨는지 읽을 수 없었다.
+        //   탈퇴 등으로 사용자가 없으면 이름은 null 이고 식별자가 남는다.
+        var rows=query.query("SELECT h.*, actor.user_nm AS actor_nm, target.user_nm AS target_user_nm"
+                + " FROM tb_authrt_chg_hstry h"
+                + " LEFT JOIN tb_user_info actor ON actor.esntl_id=h.chg_user_idntfr"
+                + " LEFT JOIN tb_user_info target ON target.esntl_id=h.scrty_dcsn_trgt_id"
+                + where+" ORDER BY h.authrt_chg_hstry_sn DESC LIMIT :size OFFSET :offset",parameters,(rs,n) -> new Change(
                 rs.getLong("authrt_chg_hstry_sn"),rs.getString("dmnd_idntfr"),rs.getString("plcy_ver_no"),rs.getString("chg_trgt_type_cd"),rs.getString("chg_type_cd"),
-                rs.getString("authrt_cd"),rs.getString("scrty_dcsn_trgt_id"),rs.getString("authrt_type_cd"),rs.getString("authrt_grnt_cd"),rs.getString("chg_artcl_nm"),
-                rs.getString("chg_bfr_cn"),rs.getString("chg_aftr_cn"),rs.getString("chg_user_idntfr"),rs.getTimestamp("crt_dt").toLocalDateTime()));
-        return new PageImpl<>(rows,pageable,Objects.requireNonNull(query.queryForObject("SELECT count(*) FROM tb_authrt_chg_hstry"+where,parameters,Long.class)));
+                rs.getString("authrt_cd"),rs.getString("scrty_dcsn_trgt_id"),rs.getString("target_user_nm"),rs.getString("authrt_type_cd"),rs.getString("authrt_grnt_cd"),rs.getString("chg_artcl_nm"),
+                rs.getString("chg_bfr_cn"),rs.getString("chg_aftr_cn"),rs.getString("chg_user_idntfr"),rs.getString("actor_nm"),rs.getTimestamp("crt_dt").toLocalDateTime()));
+        return new PageImpl<>(rows,pageable,Objects.requireNonNull(query.queryForObject("SELECT count(*) FROM tb_authrt_chg_hstry h"+where,parameters,Long.class)));
     }
 
     private void audit(String request, String target, String change, String group, String userId, Grant grant, String field, String before, String after) {

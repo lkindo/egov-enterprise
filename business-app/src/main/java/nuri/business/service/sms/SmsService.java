@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -47,6 +48,10 @@ public class SmsService {
     /** esntlId → 휴대전화 번호 해석(코어). 결과는 발송에만 쓰고 응답으로 내보내지 않는다. */
     private final UserContactService userContactService;
 
+    /** 배포에 등록된 기본 발신 번호. 문자 이벤트 발송({@code SmsRequestListener})과 같은 설정이다. */
+    @Value("${nuri.notification.sender.tel:}")
+    private String defaultSenderTel;
+
     /**
      * 이 배포에서 문자가 실제로 전달될 수 있는지 알린다.
      *
@@ -58,7 +63,8 @@ public class SmsService {
     public SmsDeliveryStatusDto getDeliveryStatus() {
         return new SmsDeliveryStatusDto(
                 smsSender.isDeliveryConfigured(),
-                smsSender.getClass().getSimpleName());
+                smsSender.getClass().getSimpleName(),
+                defaultSenderTel == null || defaultSenderTel.isBlank() ? null : defaultSenderTel.trim());
     }
 
     public Page<SmsDto> getSmsList(String keyword, Pageable pageable) {

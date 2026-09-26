@@ -356,6 +356,19 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     expect(mocks.getUsers).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: '그룹 추가' })).not.toBeInTheDocument();
   });
+  it('변경 이력은 대상과 처리자를 이름으로 보이고, 이름이 없으면 식별자만 보인다', async () => {
+    mocks.permissions = ['AUTHRT_AUDIT'];
+    mocks.getHistory.mockResolvedValue(page([
+      { id: 1, targetType: 'USER_GROUP', changeType: 'ADD', group: 'CONTENT', userId: 'ESNTL_A', userNm: '홍길동', grantType: null, grantCode: null, field: 'membership', before: null, after: 'CONTENT', actorId: 'ESNTL_OP', actorNm: '운영자', createdAt: '2026-09-10T10:00:00' },
+      { id: 2, targetType: 'USER_GROUP', changeType: 'REMOVE', group: 'CONTENT', userId: 'ESNTL_GONE', userNm: null, grantType: null, grantCode: null, field: 'membership', before: 'CONTENT', after: null, actorId: 'ESNTL_OLD', actorNm: null, createdAt: '2026-09-10T11:00:00' },
+    ]));
+    setup();
+    const table = await screen.findByRole('table', { name: '권한 변경 이력' });
+    expect(await within(table).findByText('홍길동 (ESNTL_A)')).toBeInTheDocument();
+    expect(within(table).getByText('운영자 (ESNTL_OP)')).toBeInTheDocument();
+    expect(within(table).getByText('ESNTL_GONE')).toBeInTheDocument();
+    expect(within(table).getByText('ESNTL_OLD')).toBeInTheDocument();
+  });
   it('AuthorizationHistory 검색은 적용한 필터만 보내고 거꾸로 된 기간을 거부한다', async () => {
     mocks.permissions = ['AUTHRT_AUDIT'];
     setup();

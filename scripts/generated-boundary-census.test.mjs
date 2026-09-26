@@ -7,8 +7,10 @@ import { fileURLToPath } from 'node:url';
 
 import {
   buildBoundaryCensus,
+  buildResponseShapeCensus,
   compareBoundaryCensus,
   evaluateBoundaryCompletion,
+  evaluateResponseShape,
   validateBoundaryCensus,
 } from './generated-boundary-census.mjs';
 
@@ -874,4 +876,129 @@ test('tracked repository snapshot is exact and reports current completion honest
   assert.equal(actual.scope.generatedDescriptorCount, actual.scope.openApiOperationCount);
   assert.equal(actual.summary.complete, true);
   assert.equal(actual.summary.complete, evaluateBoundaryCompletion(actual).complete);
+});
+
+/*
+ * 응답 모양 검사(2026-09-26 DIP V10). 생성 실행기 결과를 손으로 쓴 타입으로 다룰 때 그 타입이 서버가
+ * 보내지 않는 필드를 선언하면 위반이다. 픽스처는 타입 검사기가 실제로 읽을 수 있도록 tsconfig 를 둔다.
+ */
+const responseShapeTsconfig = JSON.stringify({
+  compilerOptions: {
+    target: 'ES2022',
+    lib: ['ES2022'],
+    module: 'ESNext',
+    moduleResolution: 'Bundler',
+    strict: true,
+    noEmit: true,
+    skipLibCheck: true,
+  },
+  include: ['src'],
+});
+
+// 생성 실행기와 같은 이름·같은 모양의 대역: 응답 타입은 서버 DTO 의 필드만 갖는다.
+const responseShapeClient = `
+  export interface WidgetWire { id: number; name: string; tags?: string[]; owner?: { id: string } }
+  export interface PageWire<T> { list: T[]; total: number }
+  export function executeGeneratedOperation(_descriptor: 'getWidget'): Promise<WidgetWire>;
+  export function executeGeneratedOperation(_descriptor: 'getWidgets'): Promise<PageWire<WidgetWire>>;
+  export function executeGeneratedOperation(_descriptor: string): Promise<unknown>;
+  export function executeGeneratedOperation(_descriptor: string): Promise<unknown> {
+    return Promise.resolve(undefined);
+  }
+`;
+
+function responseShapeOf(serviceSource) {
+  return withFixture({
+    'frontend/tsconfig.json': responseShapeTsconfig,
+    'frontend/src/lib/api/fake-client.ts': responseShapeClient,
+    'frontend/src/services/widget.ts': serviceSource,
+  }, (root) => buildResponseShapeCensus({ repoRoot: root }));
+}
+
+test('response shape: a cast to a hand-written type that declares a field the server never sends is red', () => {
+  const result = responseShapeOf(`
+    import { executeGeneratedOperation } from '../lib/api/fake-client';
+    interface Widget { id: number; name: string; legacyNm?: string }
+    export function getWidget() {
+      return executeGeneratedOperation('getWidget') as Promise<Widget>;
+    }
+  `);
+  assert.equal(result.calls, 1);
+  assert.equal(result.typedCalls, 1);
+  assert.deepEqual(result.findings.map((finding) => [finding.via, finding.fields]), [['cast', ['legacyNm']]]);
+  assert.match(evaluateResponseShape(result)[0], /reads fields the server never sends: legacyNm/);
+});
+
+test('response shape: an optional extra field on a declared return type is red even without a cast', () => {
+  // 선택 필드는 대입 호환이라 TypeScript 는 막지 않는다 — 이 검사가 존재하는 이유다.
+  const result = responseShapeOf(`
+    import { executeGeneratedOperation } from '../lib/api/fake-client';
+    interface Widget { id: number; name: string; frstRegisterNm?: string }
+    export async function getWidget(): Promise<Widget> {
+      return executeGeneratedOperation('getWidget');
+    }
+  `);
+  assert.deepEqual(result.findings.map((finding) => [finding.via, finding.fields]), [['return', ['frstRegisterNm']]]);
+});
+
+test('response shape: list elements and nested objects are compared, and a variable cast later is followed', () => {
+  const result = responseShapeOf(`
+    import { executeGeneratedOperation } from '../lib/api/fake-client';
+    interface Widget { id: number; owner?: { id: string; name?: string } }
+    interface WidgetPage { list: Widget[]; total: number }
+    export async function getWidgets() {
+      const response = await executeGeneratedOperation('getWidgets');
+      return response as WidgetPage;
+    }
+  `);
+  assert.deepEqual(result.findings.map((finding) => [finding.via, finding.fields]), [['cast', ['list.[].owner.name']]]);
+});
+
+test('response shape: re-casting a received response value to a wider type is red', () => {
+  const result = responseShapeOf(`
+    import { executeGeneratedOperation, type WidgetWire } from '../lib/api/fake-client';
+    interface WidgetView { id: number; name: string; chkURL?: string }
+    async function load(): Promise<WidgetWire> {
+      return executeGeneratedOperation('getWidget');
+    }
+    export async function view() {
+      const widget = await load();
+      return widget as unknown as WidgetView;
+    }
+  `);
+  assert.deepEqual(result.findings.map((finding) => [finding.via, finding.fields]), [['recast', ['chkURL']]]);
+});
+
+test('response shape: a hand-written subset of the server fields is green', () => {
+  const result = responseShapeOf(`
+    import { executeGeneratedOperation } from '../lib/api/fake-client';
+    interface Widget { id: number; name: string; tags?: string[] }
+    export async function getWidget(): Promise<Widget> {
+      return executeGeneratedOperation('getWidget');
+    }
+    export function getWidgetDirect() {
+      return executeGeneratedOperation('getWidget');
+    }
+  `);
+  assert.equal(result.calls, 2);
+  assert.deepEqual(result.findings, []);
+  assert.deepEqual(evaluateResponseShape(result), []);
+});
+
+test('response shape: an untyped generated result cannot be checked and fails closed', () => {
+  const result = responseShapeOf(`
+    import { executeGeneratedOperation } from '../lib/api/fake-client';
+    export function getUnknown() {
+      return executeGeneratedOperation('somethingElse');
+    }
+  `);
+  assert.equal(result.calls, 1);
+  assert.equal(result.typedCalls, 0);
+  assert.match(evaluateResponseShape(result).join('\n'), /return any\/unknown and cannot be checked/);
+});
+
+test('tracked repository reads only fields the server sends (response shape)', () => {
+  const result = buildResponseShapeCensus({ repoRoot });
+  assert.ok(result.calls > 300, `generated call population shrank unexpectedly: ${result.calls}`);
+  assert.deepEqual(evaluateResponseShape(result), []);
 });
