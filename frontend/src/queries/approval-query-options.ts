@@ -26,6 +26,11 @@ export type ApprovalTab = 'PENDING' | 'SUBMITTED' | 'PROCESSED';
 export interface ApprovalListParams {
   page?: number;
   size?: number;
+  keyword?: string;
+  fromYmd?: string;
+  toYmd?: string;
+  /** 대기 탭에서는 쓰지 않는다(대기함은 늘 대기 문서다). */
+  status?: SanctionStatusCode;
 }
 
 export interface ApprovalDecision {
@@ -49,7 +54,10 @@ export const approvalKeys = {
 function listByTab(tab: ApprovalTab, params: ApprovalListParams) {
   switch (tab) {
     case 'PENDING':
-      return approvalUserService.getPending(params);
+      // 대기함은 상태 조건을 받지 않는다 — 넘기지 않는다.
+      return approvalUserService.getPending({
+        page: params.page, size: params.size, keyword: params.keyword, fromYmd: params.fromYmd, toYmd: params.toYmd,
+      });
     case 'SUBMITTED':
       return approvalUserService.getMyHistory(params);
     case 'PROCESSED':
