@@ -25,7 +25,7 @@ import { Info } from 'lucide-react';
 /* reusable-base:demo:end */
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
-import { canPermission } from '@/lib/auth/permissions';
+import { canOpenPage } from '@/lib/auth/page-access';
 import { useLayout } from '@/contexts/LayoutContext';
 /* reusable-base:collaboration:start */
 import { HeaderNotifications } from './header-notifications';
@@ -76,7 +76,8 @@ export function Header({
   const navigate = useUnsavedChanges({ dirty: false });
   const loggingOut = useRef(false);
   const menuAuthorization = useMenuAuthorizationScope();
-  const canReadMenus = canPermission(user, 'MENU_READ');
+  // 라우트 게이트와 같은 판정(DIP B4 P1).
+  const canReadMenus = canOpenPage(user, '/admin/system/menus');
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
   /*
     [2026-09-08] 본인 비밀번호 변경. 서버(PUT /users/me/password)와 userService.changePassword 는

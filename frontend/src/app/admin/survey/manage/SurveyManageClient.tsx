@@ -15,12 +15,24 @@ import { emptyResultMessage } from '@/app/components/patterns/empty-result-messa
 import { toDisplayYmd } from '@/lib/format-date';
 import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
 import { getPollStatus, POLL_STATUS_LABEL } from '@/lib/poll-status';
+import { useAuth } from '@/contexts/AuthContext';
+import { canOpenPage } from '@/lib/auth/page-access';
 
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
 const DEFAULT_PAGE_SIZE = 10;
 
 export default function SurveyManageClient({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
+  // [2026-09-26 DIP B4 P1] 상세 라우트는 목록보다 좁다(SURVEY_READ_ALL). 응답 열람 권한만 있는 사람에게 행 이동을
+  //   걸면 누르는 순간 홈으로 튕기므로, 라우트 게이트와 같은 판정으로만 행 이동을 둔다.
+  const { user } = useAuth();
+  const canOpenDetail = canOpenPage(user, '/admin/survey/manage/[id]');
+  const rowNavigation = canOpenDetail
+    ? {
+        onRowClick: (poll: OnlinePollManageVO) => router.push(`/admin/survey/manage/${poll.pollSn}`),
+        rowActionLabel: (poll: OnlinePollManageVO) => `${poll.pollNm || `${poll.pollSn}번`} 여론조사 관리 열기`,
+      }
+    : { onRowClick: undefined };
   // 기준일은 저장 포맷과 동일한 'yyyyMMdd' 문자열로 고정한다.
   const [createOpen, setCreateOpen] = useState(false);
   const todayYmd = useTodayStorageYmd();
@@ -171,8 +183,7 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
         // 조회 실패를 '데이터가 없습니다'로 위장하지 않는다(P1-1).
         error={isError ? error : null}
         onRetry={() => void refetch()}
-        onRowClick={(poll) => router.push(`/admin/survey/manage/${poll.pollSn}`)}
-        rowActionLabel={(poll) => `${poll.pollNm || `${poll.pollSn}번`} 여론조사 관리 열기`}
+        {...rowNavigation}
         emptyMessage={emptyResultMessage(keyword, '등록된 여론조사가 없습니다.')}
         pagination={{
           currentPage: page + 1,
