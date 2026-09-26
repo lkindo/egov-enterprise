@@ -36,6 +36,12 @@ class LogSearchIndexMigrationIntegrationTest extends SharedPostgresMigrationTest
             s.execute("ANALYZE tb_sys_log");
             s.execute("ANALYZE tb_privacy_log");
             assertPlan(s, "SELECT lgn_sn FROM tb_login_log WHERE crt_dt >= timestamp '2026-01-01' AND crt_dt < timestamp '2026-01-02' ORDER BY crt_dt DESC", "ix_tb_login_log_crt_dt");
+            // [2026-09-26 DIP B5 F10] 일별 로그인 통계도 같은 인덱스를 탄다. 문장은 저장소 애노테이션에서 그대로 읽는다 —
+            //   종전 to_char(CRT_DT) BETWEEN 은 컬럼을 문자열로 바꿔 비교해 인덱스를 쓸 수 없었다.
+            assertPlan(s, nuri.business.domain.log.LoginLogRepository.class
+                    .getMethod("countLoginsByDate", String.class, String.class)
+                    .getAnnotation(org.springframework.data.jpa.repository.Query.class).value()
+                    .replace(":fromDate", "'20260101'").replace(":toDate", "'20260102'"), "ix_tb_login_log_crt_dt");
             assertPlan(s, "SELECT sys_log_sn FROM tb_sys_log WHERE btrim(ocrn_ymd) BETWEEN '20260101' AND '20260102'", "ix_tb_sys_log_ocrn_ymd_trim");
             assertPlan(s, "SELECT sys_log_sn FROM tb_sys_log ORDER BY ocrn_ymd DESC LIMIT 10", "ix_tb_sys_log_ocrn_ymd");
             assertPlan(s, "SELECT prvc_log_sn FROM tb_privacy_log WHERE inq_dt >= timestamp '2026-01-01' AND inq_dt < timestamp '2026-01-02' ORDER BY inq_dt DESC", "ix_tb_privacy_log_inq_dt");

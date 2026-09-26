@@ -9,7 +9,7 @@ import { Plus,
  User, Eye, Settings2, AlertTriangle, RefreshCcw, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { knowledgeService, type KnowledgeDto, type KnowledgeActivityItem } from '@/services/business/knowledge/knowledgeService';
+import { knowledgeService, toKnowledgeActivities, type KnowledgeDto, type KnowledgeActivityItem } from '@/services/business/knowledge/knowledgeService';
 import {
  COMMUNITY_BOARD_ID,
  HELP_FAQ_BOARD_ID,
@@ -163,9 +163,20 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  queryFn: () => knowledgeService.getStats(currentBbsId),
  });
 
+ // [2026-09-26 DIP B5 F10] 최근 활동은 기본 목록(최신순 1쪽)과 같은 조회다 — 같은 키를 써서 한 번만 요청한다.
+ //   종전에는 기본 화면에서 같은 게시판을 두 번 불렀다. 검색·정렬·쪽을 바꿔도 피드는 기본 목록에 머문다.
  const { data: activityData, isError: isActivityError } = useQuery({
- queryKey: ['knowledge-activities', activeCategory],
- queryFn: () => knowledgeService.getActivities(currentBbsId),
+ queryKey: ['knowledge-articles', activeCategory, '', 'latest', 1],
+ queryFn: () => knowledgeService.getArticles({
+ bbsId: currentBbsId,
+ category: activeCategory,
+ page: 0,
+ size: PAGE_SIZE,
+ orderBy: 'date',
+ searchCnd: undefined,
+ searchWrd: undefined,
+ }),
+ select: (res) => toKnowledgeActivities(res.list ?? []),
  });
 
  const displayItems: KnowledgeDto[] = articlesData?.list || [];
@@ -330,7 +341,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
 
  <AsideSection title="최근 활동" description="최근 등록된 문서 흐름" icon={History}>
  {isActivityError ? (
- <p role="alert" className="py-6 text-center text-[length:var(--font-size-body)] text-destructive-emphasis">최근 활동을 불러오지 못했습니다.</p>
+ <p role={isArticlesError ? undefined : 'alert'} className="py-6 text-center text-[length:var(--font-size-body)] text-destructive-emphasis">{/* 최근 활동은 기본 목록과 같은 조회라, 목록이 이미 실패를 알렸으면 같은 실패를 한 번 더 알리지 않는다. */}최근 활동을 불러오지 못했습니다.</p>
  ) : (activityData || []).length === 0 ? (
  <p className="py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">표시할 활동이 없습니다.</p>
  ) : (

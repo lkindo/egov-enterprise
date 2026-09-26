@@ -62,6 +62,9 @@ class DeptJobServiceTest {
     @Mock
     private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     // 실제 MapStruct 생성 구현(DeptJobMapperImpl)을 spy 로 주입 — 수기 from() 과 동일 매핑 거동 보장
     @Spy
     private DeptJobMapper deptJobMapper = new DeptJobMapperImpl();
@@ -115,13 +118,14 @@ class DeptJobServiceTest {
     }
 
     private void mockToDtoDependencies() {
-        when(deptJobBoxRepository.findById(1L)).thenReturn(Optional.of(deptJobBox));
-        
+        // [DIP B5 F10] 이름 해석은 페이지 단위 일괄 조회다 — 행마다 findById 를 부르지 않는다.
+        when(deptJobBoxRepository.findAllById(any())).thenReturn(List.of(deptJobBox));
+
         OrganizationManage org = OrganizationManage.builder()
                 .ognzId("DEPT1")
                 .ognzNm("Test Dept")
                 .build();
-        when(organizationManageRepository.findById("DEPT1")).thenReturn(Optional.of(org));
+        when(organizationManageRepository.findByOgnzIdIn(any())).thenReturn(List.of(org));
 
         User user = User.builder()
                 .userId("TEST")
@@ -129,7 +133,32 @@ class DeptJobServiceTest {
                 .esntlId("USER1")
                 .userNm("Test User")
                 .build();
-        when(userRepository.findByEsntlId("USER1")).thenReturn(Optional.of(user));
+        when(userRepository.findByEsntlIdIn(any())).thenReturn(List.of(user));
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F10] 목록은 업무함·부서·담당자 이름을 페이지 단위로 한 번씩만 읽는다")
+    void getDeptJobList_resolvesNamesOncePerPage() {
+        authenticateAsAdmin();
+        DeptJob second = DeptJob.builder().deptTaskSn(2L).deptTaskBoxSn(1L).deptTaskNm("둘째").picId("USER1").build();
+        DeptJob third = DeptJob.builder().deptTaskSn(3L).deptTaskBoxSn(1L).deptTaskNm("셋째").picId("USER1").build();
+        when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class)))
+                .thenReturn(new PageImpl<>(List.of(deptJob, second, third), PageRequest.of(0, 10), 3));
+        mockToDtoDependencies();
+
+        Page<DeptJobDto> result = deptJobService.getDeptJobList(null, null, null, null, false, PageRequest.of(0, 10));
+
+        assertEquals(3, result.getContent().size());
+        result.getContent().forEach(dto -> {
+            assertEquals("Test Box", dto.getDeptTaskBoxNm());
+            assertEquals("Test Dept", dto.getDeptNm());
+            assertEquals("Test User", dto.getPicNm());
+        });
+        verify(deptJobBoxRepository, times(1)).findAllById(any());
+        verify(organizationManageRepository, times(1)).findByOgnzIdIn(any());
+        verify(userRepository, times(1)).findByEsntlIdIn(any());
+        verify(deptJobBoxRepository, never()).findById(any());
+        verify(userRepository, never()).findByEsntlId(any());
     }
 
     @Test
@@ -229,6 +258,7 @@ class DeptJobServiceTest {
 
         authenticateAs("user2", "USER2"); // 같은 부서 동료 — 볼 수는 있지만 고칠 수는 없다
         givenMemberOf("USER2", "DEPT1");
+        when(deptJobBoxRepository.findById(1L)).thenReturn(Optional.of(deptJobBox)); // 열람 가드의 부서 판정
         DeptJobDto colleague = deptJobService.getDeptJob(1L);
         assertEquals(Boolean.FALSE, colleague.getEditable());
         assertEquals(Boolean.FALSE, colleague.getDeletable());
@@ -288,6 +318,7 @@ class DeptJobServiceTest {
         authenticateAs("colleague", "ESNTL_COLLEAGUE");
         givenMemberOf("ESNTL_COLLEAGUE", "DEPT1");
         when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        when(deptJobBoxRepository.findById(1L)).thenReturn(Optional.of(deptJobBox)); // 열람 가드의 부서 판정
         mockToDtoDependencies();
 
         assertEquals(1L, deptJobService.getDeptJob(1L).getDeptTaskSn());
@@ -377,6 +408,54 @@ class DeptJobServiceTest {
         ArgumentCaptor<DeptJob> captor = ArgumentCaptor.forClass(DeptJob.class);
         verify(deptJobRepository).save(captor.capture());
         assertEquals("USR_OTHER", captor.getValue().getPicId());
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F1] 다른 사람을 담당자로 두고 등록하면 그 사람에게 알리고, 스스로 맡으면 알리지 않는다")
+    void createDeptJob_notifiesAssigneeButNotSelf() {
+        when(deptJobRepository.save(any(DeptJob.class))).thenAnswer(inv -> inv.getArgument(0));
+        authenticateAs("tester", "USR_TESTER");
+
+        DeptJobDto other = new DeptJobDto();
+        other.setDeptTaskNm("보고서 작성");
+        other.setPicId("USR_OTHER");
+        deptJobService.createDeptJob(other);
+
+        ArgumentCaptor<Object> events = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, times(1)).publishEvent(events.capture());
+        var event = (nuri.foundation.core.event.NotificationRequestedEvent) events.getValue();
+        assertEquals("USR_OTHER", event.receiverEsntlId());
+        assertEquals("업무가 배정되었습니다", event.title());
+        assertEquals("보고서 작성", event.content());
+
+        DeptJobDto self = new DeptJobDto();
+        self.setDeptTaskNm("내 업무");
+        deptJobService.createDeptJob(self);
+        verify(eventPublisher, times(1)).publishEvent(any(Object.class));
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F1] 수정에서 담당자가 바뀔 때만 새 담당자에게 알린다")
+    void updateDeptJob_notifiesOnlyWhenAssigneeChanges() {
+        authenticateAsAdmin();
+        DeptJob job = DeptJob.builder().deptTaskSn(7L).deptTaskNm("점검").picId("USR_A").build();
+        when(deptJobRepository.findById(7L)).thenReturn(java.util.Optional.of(job));
+
+        DeptJobDto same = new DeptJobDto();
+        same.setDeptTaskNm("점검");
+        same.setPicId("USR_A");
+        deptJobService.updateDeptJob(7L, same);
+        verify(eventPublisher, never()).publishEvent(any(Object.class));
+
+        DeptJobDto moved = new DeptJobDto();
+        moved.setDeptTaskNm("점검");
+        moved.setPicId("USR_B");
+        deptJobService.updateDeptJob(7L, moved);
+        ArgumentCaptor<Object> events = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, times(1)).publishEvent(events.capture());
+        var event = (nuri.foundation.core.event.NotificationRequestedEvent) events.getValue();
+        assertEquals("USR_B", event.receiverEsntlId());
+        assertEquals("/smart-toolkit/dept-job/7", event.linkUrl());
     }
 
     @Test

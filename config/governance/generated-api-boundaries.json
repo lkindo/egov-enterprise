@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 350,
-    "eligible": 332,
+    "total": 349,
+    "eligible": 331,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 332,
+      "generated": 331,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "93b1e48a89cd38c7dc474b6d215e90343f1986532fdc9df2fbb69092130aace4",
+  "inventoryHash": "5c76e7575f0f895a9b2b529795ca227d21849e517d3fcad5cd1a2dfc4ac0c120",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -949,23 +949,6 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "6a46ff56e6d1c41cdf51"
-    },
-    {
-      "file": "frontend/src/services/business/knowledge/knowledgeService.ts",
-      "owner": "KnowledgeService.getActivities",
-      "ordinal": 1,
-      "line": 180,
-      "column": 23,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "get",
-      "target": "/api/v1/boards/{bbsId}",
-      "operationId": "getPosts",
-      "descriptorName": "getPostsOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "3fcc78f2adb9bec6e7ea"
     },
     {
       "file": "frontend/src/services/business/mail/MailService.ts",

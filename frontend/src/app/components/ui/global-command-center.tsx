@@ -103,30 +103,19 @@ export function GlobalCommandCenter() {
             }] : [];
           });
 
-          setMenus(allHead);
-
-          // 하위 메뉴 로드
-          for (const m of head) {
-            void menuService.getLeftMenus(m.menuNo).then(left => {
-              if (left && left.length > 0) {
-                const subItems: CommandItem[] = left.flatMap((l) => {
-                  const url = resolveMenuInternalRoute(l);
-                  return url ? [{
-                    id: `cmd-left-${m.menuNo}-${l.menuNo}`,
-                    name: `${m.menuNm} > ${l.menuNm}`,
-                    url,
-                    category: '메뉴' as const,
-                    icon: <ArrowRight size={14} />
-                  }] : [];
-                });
-                setMenus(prev => {
-                  const existingIds = new Set(prev.map(i => i.id));
-                  const newItems = subItems.filter(i => !existingIds.has(i.id));
-                  return [...prev, ...newItems];
-                });
-              }
-            }).catch(() => undefined);
-          }
+          // [2026-09-26 DIP B5 F10] 하위 메뉴는 상위 메뉴 응답의 children 에 이미 있다. 상위 메뉴마다
+          //   따로 요청하면 서버가 매번 메뉴 트리 전체를 다시 조립했다(N+1).
+          const subItems: CommandItem[] = head.flatMap(m => (m.children ?? []).flatMap(l => {
+            const url = resolveMenuInternalRoute(l);
+            return url ? [{
+              id: `cmd-left-${m.menuNo}-${l.menuNo}`,
+              name: `${m.menuNm} > ${l.menuNm}`,
+              url,
+              category: '메뉴' as const,
+              icon: <ArrowRight size={14} />
+            }] : [];
+          }));
+          setMenus([...allHead, ...subItems]);
         }
       } catch {
         // 메뉴 조회 실패 시에도 로그아웃 같은 로컬 안전 작업은 계속 제공한다.

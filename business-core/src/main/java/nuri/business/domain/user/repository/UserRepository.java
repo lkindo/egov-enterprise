@@ -62,6 +62,19 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     /** 발송 채널의 수신자 연락처 해석용(UserContactService). esntlId 축 일괄 조회. */
     List<User> findByEsntlIdIn(java.util.Collection<String> esntlIds);
 
+    /**
+     * 기능 권한 하나를 그룹 배정으로 가진 사용 중(P) 사용자의 esntlId(2026-09-26 DIP B5 F1).
+     * 알림 수신자를 고르는 용도다 — 인가 판정은 요청마다 AuthorizationSnapshotService 가 한다.
+     */
+    @Query("""
+            SELECT DISTINCT u.esntlId FROM User u, nuri.business.domain.auth.UserAuthority m,
+                nuri.business.domain.auth.AuthorityGrant g
+            WHERE m.scrtyDcsnTrgtId = u.esntlId AND g.authrtCd = m.authrtId
+              AND g.authrtTypeCd = 'OPERATION' AND g.authrtGrntCd = :permission AND u.userSttsCd = 'P'
+            ORDER BY u.esntlId
+            """)
+    List<String> findActiveEsntlIdsHoldingPermission(@org.springframework.data.repository.query.Param("permission") String permission);
+
     List<User> findByRole(Role role);
 
     List<User> findByOgnzIdAndRole(String ognzId, Role role);
