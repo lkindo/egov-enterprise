@@ -39246,7 +39246,7 @@
           "adbkMbrSn": {
             "type": "integer",
             "format": "int64",
-            "description": "주소록 회원 일련번호",
+            "description": "주소록 회원 일련번호. 수정 요청에서 기존 구성원을 가리킨다(없으면 새 구성원)",
             "example": 1
           },
           "adbkSn": {
@@ -39257,10 +39257,8 @@
           },
           "userId": {
             "type": "string",
-            "description": "사용자 ID",
-            "example": "USRCNFRM_00000000001",
-            "maxLength": 20,
-            "minLength": 0
+            "description": "연결된 사용자 ID(서버 소유, 요청에서 받지 않는다)",
+            "readOnly": true
           },
           "nm": {
             "type": "string",
@@ -39273,7 +39271,7 @@
             "type": "string",
             "description": "이메일 주소",
             "example": "user@example.com",
-            "maxLength": 50,
+            "maxLength": 320,
             "minLength": 0
           },
           "homeTelno": {
@@ -39304,10 +39302,7 @@
             "maxLength": 11,
             "minLength": 0
           }
-        },
-        "required": [
-          "userId"
-        ]
+        }
       },
       "UserSignupRequest": {
         "type": "object",

@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "3e89efc9008ceb2b4eba6ecb6f2f74b18cd081adcf1b3f5fce1008fcb3b9d0cb"
+    "inventoryHash": "9556b92398a70d24d38cb03c49adb9479382927d99cc4148271da9ef04b2eced"
   },
   "summary": {
-    "sourceFileCount": 554,
-    "records": 384,
-    "syntaxOccurrences": 455,
-    "ambiguousRecords": 337,
-    "unverifiedRecords": 384,
+    "sourceFileCount": 555,
+    "records": 385,
+    "syntaxOccurrences": 456,
+    "ambiguousRecords": 338,
+    "unverifiedRecords": 385,
     "exactPopulations": {
       "filesystemRoutes": 118,
       "dynamicRoutePatterns": 11,
@@ -44,7 +44,7 @@
     "byKind": {
       "config-redirect": 13,
       "dynamic-segment": 11,
-      "form-producer": 53,
+      "form-producer": 54,
       "navigation-producer": 167,
       "page-redirect": 17,
       "query-builder": 21,
@@ -54,7 +54,7 @@
       "url-observer": 8
     },
     "bySurface": {
-      "navigation": 374,
+      "navigation": 375,
       "request-telemetry": 10
     }
   },
@@ -1121,6 +1121,44 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/AddressBookCreateDialog.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-AA64BE6FD9A6DF",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/admin/collaboration/address-book/AddressBookMemberDialog.tsx",
+      "producerFile": "frontend/src/app/admin/collaboration/address-book/AddressBookMemberDialog.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/collaboration/address-book",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/collaboration/address-book/AddressBookMemberDialog.tsx",
         "detector": "jsx-form",
         "occurrenceCount": 1
       }

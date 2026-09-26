@@ -2948,7 +2948,7 @@ export const updateAddressBookOperation = /*#__PURE__*/ defineGeneratedOperation
   requestSchema: AddressBookDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["adbkMan","*","userId"]],
   responseForbiddenPaths: [],
 });
 
@@ -5084,7 +5084,7 @@ export const createAddressBookOperation = /*#__PURE__*/ defineGeneratedOperation
   requestSchema: AddressBookDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["adbkMan","*","userId"]],
   responseForbiddenPaths: [],
 });
 
