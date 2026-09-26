@@ -4,6 +4,7 @@ import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.security.annotation.LoginUser;
 import nuri.foundation.security.service.CustomUserDetails;
+import nuri.business.domain.user.repository.UserListFilter;
 import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -122,14 +123,20 @@ public class UserApiController {
 
     // --- [관리자 전용 기능] /api/v1/admin/system/users ---
 
-    @Operation(summary = "사용자 목록 조회", description = "전체 사용자 목록을 페이징하여 조회합니다.")
+    @Operation(summary = "사용자 목록 조회", description = "전체 사용자 목록을 페이징하여 조회합니다. "
+            + "계정 상태(userSttsCd: P 정상·A 승인 대기·D 비활성)·소속 부서(ognzId, 직속만)·로그인 잠금(lckYn: Y·N)으로 좁힐 수 있고, "
+            + "어휘 밖 값은 400 입니다.")
     @PrivacyAccess("사용자 목록(생년월일·휴대전화·이메일·주소)")
     @GetMapping("/admin/system/users")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#getUsers')")
     public ResponseEntity<ApiResponse<PageResponse<UserDto>>> getUsers(
             @RequestParam(required = false) String searchKeyword,
+            @RequestParam(required = false) String userSttsCd,
+            @RequestParam(required = false) String ognzId,
+            @RequestParam(required = false) String lckYn,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<UserDto> result = userService.getPagedUserList(searchKeyword, pageable);
+        Page<UserDto> result = userService.getPagedUserList(searchKeyword,
+                UserListFilter.of(userSttsCd, ognzId, lckYn), pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 

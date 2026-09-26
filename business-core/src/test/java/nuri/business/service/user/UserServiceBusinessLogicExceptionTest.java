@@ -236,7 +236,7 @@ class UserServiceBusinessLogicExceptionTest {
         void getPagedUserList_fail_withDatabaseConnectionError() {
                 // Given
                 PageRequest pageable = PageRequest.of(0, 10);
-                when(userRepository.getPagedUserList(any(), eq(pageable))).thenThrow(new RuntimeException("Database connection error"));
+                when(userRepository.getPagedUserList(any(), any(), eq(pageable))).thenThrow(new RuntimeException("Database connection error"));
 
                 // When & Then
                 assertThatThrownBy(() -> userService.getUserPage(pageable))

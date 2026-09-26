@@ -575,7 +575,8 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     });
     // [DIP V9] 소속은 부서 ID 가 아니라 이름(ID)으로, 권한 그룹도 함께 보인다.
     await screen.findByText('기획부 (D-100)');
-    await screen.findByText('정상');
+    // 배지만 본다 — 사용자 탭의 '계정 상태' 조건 선택지에도 '정상' 이 있다(DIP B5 F4).
+    await screen.findByText('정상', { selector: 'span' });
     expect(screen.getByText('ROLE_USER, ROLE_REPORTER')).toBeInTheDocument();
   });
 

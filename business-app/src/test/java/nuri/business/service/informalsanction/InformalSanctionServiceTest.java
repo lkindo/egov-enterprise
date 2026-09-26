@@ -25,6 +25,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 import nuri.business.domain.informalsanction.SanctionStatus;
@@ -87,7 +88,7 @@ class InformalSanctionServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         InformalSanction sanction = InformalSanction.builder().ifmlAtrzSn(1L)
                 .aplcntId("user1").aprvYn("A").build();
-        given(informalSanctionRepository.findByAplcntId("user1", pageable)).willReturn(new PageImpl<>(List.of(sanction)));
+        given(informalSanctionRepository.findSubmitted("user1", null, null, null, null, pageable)).willReturn(new PageImpl<>(List.of(sanction)));
 
         // When
         Page<InformalSanctionDto> result = informalSanctionService.getInformalSanctionList("user1", pageable);
@@ -350,8 +351,8 @@ class InformalSanctionServiceTest {
                 nuri.business.domain.informalsanction.ApprovalStageKind.APPROVAL, true);
         approvedLine.decide(true, null, java.time.LocalDateTime.of(2026, 9, 16, 10, 0));
         given(detailRepository.findVisibleForDocuments(any(), eq("admin"))).willReturn(List.of(approvedLine));
-        given(informalSanctionRepository.findByAprvrIdAndAprvYnIn(
-                eq("admin"), eq(List.of("C", "R")), eq(pageable)))
+        given(informalSanctionRepository.findProcessed(
+                eq("admin"), eq(List.of("C", "R")), isNull(), isNull(), isNull(), isNull(), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(approved)));
 
         Page<InformalSanctionDto> result = informalSanctionService.getProcessedApprovalList("admin", pageable);
@@ -360,9 +361,9 @@ class InformalSanctionServiceTest {
         assertThat(result.getContent().get(0).getAprvYn()).isEqualTo("A");
         assertThat(result.getContent().get(0).getStages().get(0).approvers().get(0).status())
                 .isEqualTo(nuri.business.domain.informalsanction.ApprovalStatus.APPROVED);
-        verify(informalSanctionRepository).findByAprvrIdAndAprvYnIn(eq("admin"), eq(List.of("C", "R")), eq(pageable));
+        verify(informalSanctionRepository).findProcessed(eq("admin"), eq(List.of("C", "R")), isNull(), isNull(), isNull(), isNull(), eq(pageable));
         verify(informalSanctionRepository, never()).findByAprvrId(any(), any());
-        verify(informalSanctionRepository, never()).findByAplcntId(any(), any());
+        verify(informalSanctionRepository, never()).findSubmitted(any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -384,9 +385,9 @@ class InformalSanctionServiceTest {
                         new nuri.business.domain.informalsanction.InformalSanctionDetailId(
                                 2L, java.math.BigDecimal.ONE, java.math.BigDecimal.ONE, "admin"),
                         nuri.business.domain.informalsanction.ApprovalStageKind.APPROVAL, true)));
-        given(informalSanctionRepository.findByAprvrIdAndAprvYn(eq("admin"), eq("A"), eq(pageable)))
+        given(informalSanctionRepository.findPending(eq("admin"), isNull(), isNull(), isNull(), isNull(), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(pending, unknownCode)));
-        given(informalSanctionRepository.findByAplcntId("user1", pageable))
+        given(informalSanctionRepository.findSubmitted("user1", null, null, null, null, pageable))
                 .willReturn(new PageImpl<>(List.of(pending)));
         given(commonCodeService.getCodesByGroup("COM075")).willReturn(List.of(
                 new nuri.business.service.code.dto.CommonCodeDto("COM075", "E2ETASK", "E2E 업무", null, "Y")));
@@ -406,7 +407,7 @@ class InformalSanctionServiceTest {
     @DisplayName("빈 목록은 코드 그룹을 조회하지 않는다")
     void emptyListSkipsTaskTypeLookup() {
         Pageable pageable = PageRequest.of(0, 10);
-        given(informalSanctionRepository.findByAprvrIdAndAprvYn(eq("admin"), eq("A"), eq(pageable)))
+        given(informalSanctionRepository.findPending(eq("admin"), isNull(), isNull(), isNull(), isNull(), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of()));
 
         assertThat(informalSanctionService.getPendingApprovalList("admin", pageable).getContent()).isEmpty();

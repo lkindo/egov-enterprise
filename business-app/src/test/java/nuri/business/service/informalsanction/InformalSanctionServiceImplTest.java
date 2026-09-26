@@ -30,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -109,7 +110,7 @@ class InformalSanctionServiceImplTest {
     void getInformalSanctionList_withAplcntId() {
         Page<InformalSanction> page = new PageImpl<>(List.of(InformalSanction.builder().ifmlAtrzSn(1L)
                 .aplcntId("user1").aprvYn("A").build()));
-        given(informalSanctionRepository.findByAplcntId(eq("user1"), any())).willReturn(page);
+        given(informalSanctionRepository.findSubmitted(eq("user1"), isNull(), isNull(), isNull(), isNull(), any())).willReturn(page);
 
         Page<InformalSanctionDto> result = informalSanctionService.getInformalSanctionList("user1", PageRequest.of(0, 10));
 
@@ -153,10 +154,8 @@ class InformalSanctionServiceImplTest {
         Page<InformalSanction> page = new PageImpl<>(List.of(InformalSanction.builder().ifmlAtrzSn(1L)
                 .aplcntId("applicant").aprvrId("user1").aprvYn("A").build()));
         receivedLine();
-        given(informalSanctionRepository.findByAprvrIdAndAprvYn(
-                eq("user1"),
-                eq(nuri.business.domain.informalsanction.SanctionStatus.REQUESTED.getCode()),
-                any())).willReturn(page);
+        given(informalSanctionRepository.findPending(
+                eq("user1"), isNull(), isNull(), isNull(), isNull(), any())).willReturn(page);
 
         Page<InformalSanctionDto> result =
                 informalSanctionService.getPendingApprovalList("user1", PageRequest.of(0, 10));
@@ -178,7 +177,7 @@ class InformalSanctionServiceImplTest {
 
         informalSanctionService.getReceivedInformalSanctionList("user1", PageRequest.of(0, 10));
 
-        verify(informalSanctionRepository, never()).findByAprvrIdAndAprvYn(anyString(), anyString(), any());
+        verify(informalSanctionRepository, never()).findPending(anyString(), any(), any(), any(), any(), any());
     }
 
     @Test

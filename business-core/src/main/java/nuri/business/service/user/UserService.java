@@ -1,4 +1,5 @@
 package nuri.business.service.user;
+import nuri.business.domain.user.repository.UserListFilter;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -130,8 +131,9 @@ public class UserService extends BaseAbstractService {
         /**
          * 사용자 목록 페이지 조회 구현
          */
-        public Page<UserDto> getPagedUserList(String searchKeyword, @NonNull Pageable pageable) {
-                var page=userRepository.getPagedUserList(searchKeyword, required(pageable, "Pageable 은 null 일 수 없습니다"));
+        public Page<UserDto> getPagedUserList(String searchKeyword, UserListFilter filter, @NonNull Pageable pageable) {
+                var page=userRepository.getPagedUserList(searchKeyword, filter == null ? UserListFilter.NONE : filter,
+                        required(pageable, "Pageable 은 null 일 수 없습니다"));
                 var snapshots=authorizationSnapshots.loadAll(page.getContent().stream().map(UserDto::esntlId).toList());
                 return page.map(user -> user.withAuthorization(snapshots.get(user.esntlId())));
         }
@@ -183,14 +185,14 @@ public class UserService extends BaseAbstractService {
          * 사용자 목록 페이지 조회 (검색어 없음)
          */
         public Page<UserDto> getUserPage(@NonNull Pageable pageable) {
-                return getPagedUserList(null, pageable);
+                return getPagedUserList(null, UserListFilter.NONE, pageable);
         }
 
         /**
          * 사용자 목록 페이지 조회 (기본 페이징 적용)
          */
         public Page<UserDto> searchUserPage(String searchKeyword) {
-                return getPagedUserList(searchKeyword, org.springframework.data.domain.PageRequest.of(0, 10));
+                return getPagedUserList(searchKeyword, UserListFilter.NONE, org.springframework.data.domain.PageRequest.of(0, 10));
         }
 
         /**

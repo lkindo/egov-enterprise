@@ -7,7 +7,8 @@ import org.springframework.data.domain.Pageable;
 public interface UserRepositoryCustom {
     Page<User> searchUsers(String sbscrbSttus, String searchCondition, String searchKeyword, Pageable pageable);
 
-    Page<nuri.business.service.user.dto.UserDto> getPagedUserList(String searchKeyword, Pageable pageable);
+    Page<nuri.business.service.user.dto.UserDto> getPagedUserList(String searchKeyword,
+            UserListFilter filter, Pageable pageable);
 
     /**
      * 담당자 지정용 사용자 검색. 성명(user_nm) 부분일치만 본다.
