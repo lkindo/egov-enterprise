@@ -16,9 +16,12 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import type { NameCard } from '@/types/business/addressbook';
+import { AddressBookMemberDialog } from '../../AddressBookMemberDialog';
 import {
     addressBookEditFormSchema,
     addressBookEditValidationLabels,
+    toMemberRequest,
 } from '../../address-book-form-validation';
 
 const LIST_PATH = '/admin/collaboration/address-book/select-address-book-list';
@@ -128,6 +131,43 @@ const SelectAddressBookDetailClient = () => {
 
     const members = data?.adbkMan ?? [];
 
+    /*
+     * [2026-09-26 DIP B5 F8] 구성원 추가·수정·삭제. 저장은 주소록 전체의 구성원 목록 PUT 이고 서버가 구성원을 번호로 가린다.
+     * 삭제는 그 구성원만 뺀 목록을 보낸다. 다른 쓰기(이름 저장·주소록 삭제)와 서로를 잠근다.
+     */
+    const [memberDialog, setMemberDialog] = useState<{ member: NameCard | null } | null>(null);
+    const memberRemovePendingRef = useRef(false);
+    const [removePendingMemberSn, setRemovePendingMemberSn] = useState<number | null>(null);
+    const refreshDetail = () => queryClient.invalidateQueries({ queryKey: ['address-book-detail', adbkSn] });
+    const handleRemoveMember = async (member: NameCard) => {
+        if (!data || memberRemovePendingRef.current || updatePendingRef.current || deletePendingRef.current) return;
+        memberRemovePendingRef.current = true;
+        setRemovePendingMemberSn(member.adbkMbrSn ?? null);
+        try {
+            const ok = await confirm({
+                title: '구성원 삭제',
+                message: `'${member.nm || '이름 없는 구성원'}' 구성원을 이 주소록에서 뺍니다.`,
+                confirmText: '삭제',
+                variant: 'destructive',
+            });
+            if (!ok) return;
+            await addressbookUserService.updateAddressBook(adbkSn, {
+                adbkNm: data.adbkNm,
+                rlsScopeCd: data.rlsScopeCd,
+                adbkMan: (data.adbkMan ?? [])
+                    .filter((current) => current.adbkMbrSn !== member.adbkMbrSn)
+                    .map(toMemberRequest),
+            });
+            toast('구성원을 뺐습니다.', 'success');
+            await refreshDetail();
+        } catch (removeError: unknown) {
+            toast(extractErrorMessage(removeError, '구성원을 빼지 못했습니다.'), 'error');
+        } finally {
+            memberRemovePendingRef.current = false;
+            setRemovePendingMemberSn(null);
+        }
+    };
+
     return (
         <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full">
             <PageHeader
@@ -231,7 +271,18 @@ const SelectAddressBookDetailClient = () => {
                             </div>
 
                             <div className="space-y-4">
-                                <h2 className="text-sm font-bold text-muted-foreground">구성원 ({members.length}명)</h2>
+                                <div className="flex items-center justify-between gap-3">
+                                    <h2 className="text-sm font-bold text-muted-foreground">구성원 ({members.length}명)</h2>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={!data || removePendingMemberSn !== null}
+                                        onClick={() => setMemberDialog({ member: null })}
+                                    >
+                                        구성원 추가
+                                    </Button>
+                                </div>
                                 {members.length === 0 ? (
                                     <p className="text-sm text-muted-foreground bg-muted/50 border border-border rounded-lg p-6">
                                         등록된 구성원이 없습니다.
@@ -249,6 +300,7 @@ const SelectAddressBookDetailClient = () => {
                                                         query producer 는 URL-state census 의 승인 경계 밖이다. 메일 작성 화면의
                                                         '수신자 찾기 → 주소록' 탭이 같은 선택을 URL 없이 수행한다. */}
                                                     <th scope="col" className="text-center font-bold px-6 py-3 w-24">전화</th>
+                                                    <th scope="col" className="text-center font-bold px-6 py-3 w-40">관리</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-border">
@@ -270,6 +322,31 @@ const SelectAddressBookDetailClient = () => {
                                                                 ) : null}
                                                             </div>
                                                         </td>
+                                                        <td className="px-6 py-3 text-center">
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    aria-label={`${member.nm || '구성원'} 수정`}
+                                                                    disabled={removePendingMemberSn !== null}
+                                                                    onClick={() => setMemberDialog({ member })}
+                                                                >
+                                                                    수정
+                                                                </Button>
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    aria-label={`${member.nm || '구성원'} ${removePendingMemberSn === member.adbkMbrSn ? '삭제 중' : '삭제'}`}
+                                                                    aria-busy={removePendingMemberSn === member.adbkMbrSn || undefined}
+                                                                    disabled={removePendingMemberSn !== null || isDeletePending || updateMutation.isPending}
+                                                                    onClick={() => { void handleRemoveMember(member); }}
+                                                                >
+                                                                    삭제
+                                                                </Button>
+                                                            </div>
+                                                        </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -285,7 +362,7 @@ const SelectAddressBookDetailClient = () => {
                                   다만 그 편집을 여는 화면은 아직 없으므로, 없는 것은 없다고만 말한다.
                                 */}
                                 <p className="text-xs text-muted-foreground">
-                                    구성원을 이 화면에서 편집하는 기능은 아직 제공되지 않습니다.
+                                    구성원 추가·수정·삭제는 바로 저장됩니다. 주소록 명칭은 아래 저장 버튼으로 저장합니다.
                                 </p>
                             </div>
                         </CardContent>
@@ -314,6 +391,14 @@ const SelectAddressBookDetailClient = () => {
                     </form>
                 </Card>
             )}
+            {memberDialog && data ? (
+                <AddressBookMemberDialog
+                    book={data}
+                    member={memberDialog.member}
+                    onClose={() => setMemberDialog(null)}
+                    onSaved={() => { void refreshDetail(); }}
+                />
+            ) : null}
         </div>
     );
 };

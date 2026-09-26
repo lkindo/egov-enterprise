@@ -91,21 +91,46 @@ class AddressBookApiControllerTest extends ControllerTestSupport {
 
     @Test
     @WithMockCustomUser(username = "testUser", esntlId = "testUser")
-    @DisplayName("주소록 등록은 중첩 구성원의 필수 사용자 ID를 검증한다")
+    @DisplayName("주소록 등록은 중첩 구성원을 검증한다 — 컬럼보다 긴 이메일은 400 (DIP B5 F8)")
     void createAddressBook_RejectsInvalidNestedMember() throws Exception {
+        String tooLong = "a".repeat(316) + "@x.kr"; // 321자 — 컬럼(320)보다 한 자 길다
         mockMvc.perform(post("/api/v1/address-books")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
                           "adbkNm": "My Address Book",
                           "rlsScopeCd": "PUBLIC",
-                          "adbkMan": [{"userId": ""}]
+                          "adbkMan": [{"nm": "홍길동", "emlAddr": "%s"}]
                         }
-                        """)
+                        """.formatted(tooLong))
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(addressBookService);
+    }
+
+    @Test
+    @WithMockCustomUser(username = "testUser", esntlId = "testUser")
+    @DisplayName("[DIP B5 F8] 구성원 userId 는 서버 소유라 요청에 실어도 받지 않는다 — 비워도 400 이 아니다")
+    void createAddressBook_IgnoresMemberUserId() throws Exception {
+        mockMvc.perform(post("/api/v1/address-books")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "adbkNm": "My Address Book",
+                          "rlsScopeCd": "PUBLIC",
+                          "adbkMan": [{"userId": "AUTHOR", "nm": "홍길동"}, {"nm": "김철수"}]
+                        }
+                        """)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        org.mockito.ArgumentCaptor<nuri.business.service.addressbook.dto.AddressBookDto> captor =
+                org.mockito.ArgumentCaptor.forClass(nuri.business.service.addressbook.dto.AddressBookDto.class);
+        org.mockito.Mockito.verify(addressBookService).createAddressBook(org.mockito.ArgumentMatchers.anyString(), captor.capture());
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().getAdbkMan())
+                .extracting(nuri.business.service.addressbook.dto.AddressBookUserDto::getUserId)
+                .containsOnlyNulls();
     }
 
     @Test

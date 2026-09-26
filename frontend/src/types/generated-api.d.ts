@@ -6431,7 +6431,7 @@ export interface components {
         AddressBookUserDto: {
             /**
              * Format: int64
-             * @description 주소록 회원 일련번호
+             * @description 주소록 회원 일련번호. 수정 요청에서 기존 구성원을 가리킨다(없으면 새 구성원)
              * @example 1
              */
             adbkMbrSn?: number;
@@ -6441,11 +6441,8 @@ export interface components {
              * @example 1
              */
             adbkSn?: number;
-            /**
-             * @description 사용자 ID
-             * @example USRCNFRM_00000000001
-             */
-            userId: string;
+            /** @description 연결된 사용자 ID(서버 소유, 요청에서 받지 않는다) */
+            readonly userId?: string;
             /**
              * @description 구성원명
              * @example 홍길동

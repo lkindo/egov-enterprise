@@ -17,6 +17,8 @@ const successEnvelope = (data: unknown) => ({
 });
 
 const member = { userId: 'user01', nm: '홍길동', emlAddr: 'user@example.com' };
+/** [DIP B5 F8] 구성원 userId 는 서버 소유 읽기 전용이라 요청에는 싣지 않는다(응답에는 실린다). */
+const memberRequest = { nm: '홍길동', emlAddr: 'user@example.com' };
 const addressBook = {
   adbkSn: 3,
   adbkNm: '영업팀',
@@ -48,7 +50,7 @@ describe('AddressbookUserService generated contract', () => {
     await expect(addressbookUserService.createAddressBook({
       adbkNm: '영업팀',
       rlsScopeCd: 'PUBLIC',
-      adbkMan: [member],
+      adbkMan: [memberRequest],
     })).resolves.toBeUndefined();
     await expect(addressbookUserService.updateAddressBook(3, {
       adbkNm: '영업1팀',
@@ -71,7 +73,7 @@ describe('AddressbookUserService generated contract', () => {
     expect(client.requestRaw).toHaveBeenNthCalledWith(1, {
       url: 'address-books',
       method: 'post',
-      data: { adbkNm: '영업팀', rlsScopeCd: 'PUBLIC', adbkMan: [member] },
+      data: { adbkNm: '영업팀', rlsScopeCd: 'PUBLIC', adbkMan: [memberRequest] },
     });
     expect(client.requestRaw).toHaveBeenNthCalledWith(2, {
       url: 'address-books/3',
@@ -90,6 +92,15 @@ describe('AddressbookUserService generated contract', () => {
     await expect(addressbookUserService.getAddressBook(3)).rejects.toThrow(
       '생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.',
     );
+  });
+
+  it('[DIP B5 F8] 서버 소유 구성원 userId 를 요청에 실으면 transport 전에 거부한다', async () => {
+    await expect(addressbookUserService.createAddressBook({
+      adbkNm: '영업팀',
+      rlsScopeCd: 'PUBLIC',
+      adbkMan: [member],
+    })).rejects.toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
+    expect(client.requestRaw).not.toHaveBeenCalled();
   });
 
   it('필수 rlsScopeCd가 없는 요청은 transport 전에 거부한다', async () => {

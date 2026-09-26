@@ -122,7 +122,9 @@ class InputContractMirrorLinterTest {
     // [2026-09-24 GAP-CONTRACT-001] +66 — 컨트롤러 요청 DTO 13개 편입(알림 발송·결재·메모 지시·게시글·정책·
     //   사용자 프로필 둘·가입·설문 응답과 답변·메일·포상·행사). 가입 힌트·정답 300, 메일 본문 4000 의 @Size 부재를 함께 닫았다.
     //   enum +1(일괄 상태 코드 P·A·D), 중첩 +3(알림 수신자·설문 답변·메일 수신자 — null 항목이 500 이던 두 곳 포함).
-    private static final int MIN_LENGTH_FIELDS = 242;
+    // [2026-09-26 DIP B5 F8] -1 — AddressBookUserDto.userId 는 서버 소유 읽기 전용이 됐다(작성자 ID 를 구성원 키로 강제하던
+    //   필수·길이 계약을 걷음). 보호는 줄지 않는다: 같은 필드가 읽기 전용 표적으로 옮겨 가 요청에서 받지 않음을 검사한다.
+    private static final int MIN_LENGTH_FIELDS = 241;
     private static final int MIN_ENUM_FIELDS = 16;
     private static final int MIN_NESTED_VALIDATION_FIELDS = 7;
     // [2026-09-06 병합] CommunityDto.cmntyNm·DeptJobBoxDto.deptTaskBoxNm 필수화(+2), SmsRecptnDto.rcptnTelno 해제(-1) → 37.
