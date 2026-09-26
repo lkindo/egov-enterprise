@@ -237,6 +237,21 @@ class SatisfactionApiControllerTest {
     }
 
     @Test
+    @DisplayName("[DIP B5 F9] 만족도 조사를 쓰지 않는 게시판에는 새 평가를 받지 않는다 — 등록 서비스까지 가지 않는다")
+    void createOnBoardWithoutRatingIsRejectedBeforeService() throws Exception {
+        doThrow(new BusinessException(CommonErrorCode.INVALID_STATE, "이 게시판은 만족도 조사를 받지 않습니다."))
+                .when(boardService).assertSatisfactionEnabled("BBS_01");
+
+        mockMvc.perform(post("/api/v1/boards/BBS_01/posts/1/satisfactions")
+                        .contentType("application/json")
+                        .content("{\"dgstfnScr\":5,\"useYn\":\"Y\"}"))
+                .andExpect(status().isBadRequest());
+
+        verify(boardService).assertCommentAccess("BBS_01", 1L);
+        verify(satisfactionService, never()).createSatisfaction(any());
+    }
+
+    @Test
     @DisplayName("볼 수 있는 글은 조회·평균·등록 모두 가드를 지나 정상 처리된다 — 가드가 과잉이면 여기가 red")
     void accessiblePostPassesGuardOnAllThreePaths() throws Exception {
         when(satisfactionService.getSatisfactionList("BBS_01", 1L)).thenReturn(List.of());

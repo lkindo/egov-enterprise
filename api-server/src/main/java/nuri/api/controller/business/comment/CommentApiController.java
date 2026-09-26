@@ -46,6 +46,7 @@ public class CommentApiController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody CommentDto commentDto) {
         boardService.assertCommentAccess(commentDto.getBbsId(), commentDto.getPstSn());
+        boardService.assertCommentsEnabled(commentDto.getBbsId());
         return ResponseEntity.ok(ApiResponse.success(
                 commentService.createComment(userDetails.getEsntlId(), userDetails.getUserNm(), commentDto)));
     }

@@ -27,6 +27,11 @@ interface CommentSectionProps {
   initialComments: CommentVO[];
   /** 서버가 센 전체 댓글 수. 상세 화면은 첫 100개만 받으므로 불러온 수와 다를 수 있다. */
   totalComments?: number;
+  /**
+   * 게시판이 새 댓글을 받는가(2026-09-27 DIP B5 F9 — 게시판 설정 ansYn). 거짓이면 입력란 대신 사유를 보인다.
+   * 이미 달린 댓글은 그대로 보이고 작성자가 고치거나 지울 수 있다(서버도 새 댓글만 막는다).
+   */
+  acceptsNewComments?: boolean;
 }
 
 type CommentView = CommentVO & { isOptimistic?: boolean };
@@ -39,7 +44,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 
-export default function CommentSection({ pstSn, bbsId, initialComments, totalComments }: CommentSectionProps) {
+export default function CommentSection({ pstSn, bbsId, initialComments, totalComments, acceptsNewComments = true }: CommentSectionProps) {
   const [, startTransition] = useTransition();
   const { toast } = useToast();
   const confirm = useConfirm();
@@ -396,6 +401,11 @@ export default function CommentSection({ pstSn, bbsId, initialComments, totalCom
       </div>
 
       {/* Comment Form */}
+      {!acceptsNewComments ? (
+        <p role="note" className="pt-2 text-[length:var(--font-size-body)] text-muted-foreground">
+          이 게시판은 새 댓글을 받지 않습니다.
+        </p>
+      ) : (
       <motion.form
         onSubmit={handleCreateSubmit}
         noValidate
@@ -449,6 +459,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments, totalCom
           </CardContent>
         </Card>
       </motion.form>
+      )}
     </div>
   );
 }

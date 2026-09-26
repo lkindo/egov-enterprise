@@ -22,7 +22,8 @@ public record BoardMetaDto(
         @Schema(description = "파일 첨부 가능 여부", allowableValues = { "Y", "N" }, nullable = true) String fileAtchPsbltyYn,
         @Schema(description = "첨부 가능 파일 수", nullable = true) Integer atchPsbltyFileQty,
         @Schema(description = "첨부 가능 파일 크기(바이트)", nullable = true) Long atchPsbltyFileSz,
-        @Schema(description = "만족도 조사 사용 여부", allowableValues = { "Y", "N" }, nullable = true) String stsfdgYn) {
+        @Schema(description = "만족도 조사 사용 여부", allowableValues = { "Y", "N" }, nullable = true) String stsfdgYn,
+        @Schema(description = "댓글 사용 여부(2026-09-27 DIP B5 F9 — N 이면 새 댓글을 받지 않는다)", allowableValues = { "Y", "N" }, nullable = true) String ansYn) {
 
     public static BoardMetaDto from(BoardMaster master) {
         return new BoardMetaDto(
@@ -35,6 +36,7 @@ public record BoardMetaDto(
                 master.getFileAtchPsbltyYn(),
                 master.getAtchPsbltyFileQty(),
                 master.getAtchPsbltyFileSz(),
-                master.getStsfdgYn());
+                master.getStsfdgYn(),
+                master.getAnsYn());
     }
 }

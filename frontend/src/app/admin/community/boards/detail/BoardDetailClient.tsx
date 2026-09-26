@@ -463,10 +463,12 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           pstSn={pstSn}
           initialComments={initialData.initialComments}
           totalComments={initialData.commentTotal}
+          // [2026-09-27 DIP B5 F9] 게시판 설정을 모르면(조회 전·실패) 입력을 보이고 판정은 서버가 한다.
+          acceptsNewComments={masterInfo?.ansYn !== 'N'}
         />
 
         {/* D-8 만족도 — 백엔드는 #302 에서 배선됐고 이 위젯이 그 짝을 맞춘다 */}
-        <SatisfactionSection bbsId={bbsId!} pstSn={pstSn} />
+        <SatisfactionSection bbsId={bbsId!} pstSn={pstSn} acceptsNewRatings={masterInfo?.stsfdgYn !== 'N'} />
       </div>
     </div>
   );

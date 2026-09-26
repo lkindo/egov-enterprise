@@ -139,6 +139,22 @@ class CommentApiControllerTest {
     }
 
     @Test
+    @DisplayName("[DIP B5 F9] 댓글을 쓰지 않는 게시판에는 새 댓글을 받지 않는다 — 등록 서비스까지 가지 않는다")
+    void createComment_rejectedWhenBoardDisablesComments() throws Exception {
+        doThrow(new BusinessException(CommonErrorCode.INVALID_STATE, "이 게시판은 댓글을 받지 않습니다."))
+                .when(boardService).assertCommentsEnabled("BBS_001");
+
+        mockMvc.perform(post("/api/v1/comments")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"pstSn\":\"1\", \"bbsId\":\"BBS_001\", \"ansCn\":\"Content\"}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        verify(boardService).assertCommentAccess("BBS_001", 1L);
+        verify(commentService, never()).createComment(anyString(), anyString(), any(CommentDto.class));
+    }
+
+    @Test
     @DisplayName("[위조 차단] 요청이 작성자를 주장해도 저장되는 값은 인증 주체의 것이다")
     void createComment_ignoresClaimedAuthor() throws Exception {
         given(commentService.createComment(anyString(), anyString(), any(CommentDto.class))).willReturn(2L);

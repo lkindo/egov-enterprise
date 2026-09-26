@@ -5,6 +5,7 @@ import { Upload, X, FileIcon, CheckCircle2, AlertCircle, Loader2, Hourglass } fr
 import { cn } from '@/lib/utils';
 // [2026-09-20] framer-motion 을 걷었다 — 드롭존 확대·아이콘 바운스·첨부 행 진입 모션은 첨부 결과 도달만 늦춘다(카탈로그 §3).
 import { toast } from 'sonner';
+import { SERVER_MAX_FILE_SIZE_MB, SERVER_UPLOAD_ACCEPT } from '@/lib/upload/server-upload-limits';
 
 /** FileService와 tb_file_detail.orgnl_file_nm의 원본 파일명 상한. */
 const MAX_FILENAME_LENGTH = 300;
@@ -59,8 +60,10 @@ export function StandardFileUploader({
   onUpload,
   isAutoUpload = false,
   maxFiles = 5,
-  maxSizeMB = 10,
-  accept = "*",
+  // [2026-09-27 DIP B5 F9] 기본값을 서버(FileService)가 받는 확장자·파일당 크기로 둔다. 종전 기본값은 모든 형식이라,
+  //   고른 파일이 저장할 때 415 로 거부되는 것을 사용자가 뒤늦게 알았다.
+  maxSizeMB = SERVER_MAX_FILE_SIZE_MB,
+  accept = SERVER_UPLOAD_ACCEPT,
   name = "files",
   className
 }: StandardFileUploaderProps) {

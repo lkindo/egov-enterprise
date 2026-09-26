@@ -8206,6 +8206,11 @@ export interface components {
              * @enum {string|null}
              */
             stsfdgYn?: "Y" | "N" | null;
+            /**
+             * @description 댓글 사용 여부(2026-09-27 DIP B5 F9 — N 이면 새 댓글을 받지 않는다)
+             * @enum {string|null}
+             */
+            ansYn?: "Y" | "N" | null;
         };
         ApiResponseListBoardSearchItemResponse: {
             success?: boolean;

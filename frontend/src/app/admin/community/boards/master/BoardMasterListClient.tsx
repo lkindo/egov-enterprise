@@ -46,6 +46,7 @@ import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUti
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { BoardMasterDtoSchema } from '@/types/generated-zod';
+import { SERVER_MAX_FILE_SIZE_MB, SERVER_MAX_FILES_PER_REQUEST } from '@/lib/upload/server-upload-limits';
 
 export const boardMasterEditSchema = BoardMasterDtoSchema.pick({
   bbsTtl: true,
@@ -56,13 +57,25 @@ export const boardMasterEditSchema = BoardMasterDtoSchema.pick({
     .min(1, '게시판 명칭을 입력해 주세요.'),
   bbsExpln: BoardMasterDtoSchema.shape.bbsExpln.unwrap().trim().optional(),
   useYn: z.string().pipe(BoardMasterDtoSchema.shape.useYn),
+  // [2026-09-27 DIP B5 F9] 첨부 설정은 이제 서버가 집행한다. 0 은 게시판 상한 없음(서버 상한 20개만 적용)이다.
+  atchPsbltyFileQty: z.number({ message: '첨부 파일 수를 숫자로 입력해 주세요.' })
+    .int('첨부 파일 수는 정수여야 합니다.')
+    .min(0, '첨부 파일 수는 0 이상이어야 합니다.')
+    .max(SERVER_MAX_FILES_PER_REQUEST, `서버는 한 번에 ${SERVER_MAX_FILES_PER_REQUEST}개까지 받습니다.`),
+  atchPsbltyFileSzMb: z.number({ message: '파일당 크기를 숫자로 입력해 주세요.' })
+    .min(1, '파일당 크기는 1MB 이상이어야 합니다.')
+    .max(SERVER_MAX_FILE_SIZE_MB, `서버는 파일 하나당 ${SERVER_MAX_FILE_SIZE_MB}MB 까지 받습니다.`),
 });
 
 const boardMasterValidationLabels = {
   bbsTtl: '게시판 명칭',
   bbsExpln: '게시판 소개',
   useYn: '서비스 활성화 상태',
+  atchPsbltyFileQty: '첨부 파일 수',
+  atchPsbltyFileSzMb: '파일당 크기(MB)',
 };
+
+const BYTES_PER_MB = 1024 * 1024;
 
 type BulkPendingAction = 'activate' | 'deactivate' | 'purge';
 
@@ -151,6 +164,8 @@ export function BoardMasterListClient() {
       bbsTtl: merged.bbsTtl ?? '',
       bbsExpln: merged.bbsExpln ?? '',
       useYn: merged.useYn ?? '',
+      atchPsbltyFileQty: Number(merged.atchPsbltyFileQty ?? 0),
+      atchPsbltyFileSzMb: Number(merged.atchPsbltyFileSz ?? DEFAULT_ATCH_PSBLTY_FILE_SZ) / BYTES_PER_MB,
     });
     if (!validated) return;
 
@@ -162,8 +177,8 @@ export function BoardMasterListClient() {
       bbsAtrbCd: merged.bbsAtrbCd,
       ansPsbltyYn: merged.ansPsbltyYn,
       fileAtchPsbltyYn: merged.fileAtchPsbltyYn,
-      atchPsbltyFileQty: merged.atchPsbltyFileQty,
-      atchPsbltyFileSz: merged.atchPsbltyFileSz ?? DEFAULT_ATCH_PSBLTY_FILE_SZ,
+      atchPsbltyFileQty: validated.atchPsbltyFileQty,
+      atchPsbltyFileSz: Math.round(validated.atchPsbltyFileSzMb * BYTES_PER_MB),
       tmpltId: merged.tmpltId,
       useYn: validated.useYn,
       ansYn: merged.ansYn,
@@ -619,6 +634,63 @@ export function BoardMasterListClient() {
               />
               {validation.errors.bbsExpln ? <p {...validation.messageProps('bbsExpln')} className="text-xs font-bold text-destructive-emphasis" /> : null}
             </div>
+
+            {/*
+              [2026-09-27 DIP B5 F9] 게시판 기능 설정. 서버가 새 댓글·새 평가·첨부를 이 값으로 거부하고, 게시글 화면이
+              같은 값으로 입력을 감춘다. 끈 뒤에도 이미 달린 댓글·평가·첨부는 그대로 보인다.
+            */}
+            <fieldset className="space-y-2 rounded-md border border-border p-3">
+              <legend className="px-1 text-[length:var(--font-size-body)] font-medium text-foreground">게시판 기능</legend>
+              {([
+                ['ansYn', '댓글 받기'],
+                ['stsfdgYn', '만족도 평가 받기'],
+                ['fileAtchPsbltyYn', '파일 첨부 허용'],
+              ] as const).map(([field, label]) => (
+                <div key={field} className="flex items-center justify-between gap-3">
+                  <label htmlFor={`modal-bbs-${field}`} className="cursor-pointer text-[length:var(--font-size-body)] text-foreground">{label}</label>
+                  <Switch
+                    id={`modal-bbs-${field}`}
+                    checked={(editData[field] ?? selectedBoard?.[field]) !== 'N'}
+                    onCheckedChange={(checked) => setEditData({ ...editData, [field]: checked ? 'Y' : 'N' })}
+                  />
+                </div>
+              ))}
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div className="space-y-1.5">
+                  <Label htmlFor="modal-bbs-file-qty" className="text-xs font-medium text-foreground">첨부 파일 수(0 은 상한 없음)</Label>
+                  <Input
+                    id="modal-bbs-file-qty"
+                    type="number"
+                    min={0}
+                    max={SERVER_MAX_FILES_PER_REQUEST}
+                    {...validation.fieldProps('atchPsbltyFileQty')}
+                    value={editData.atchPsbltyFileQty ?? selectedBoard?.atchPsbltyFileQty ?? 0}
+                    onChange={(e) => {
+                      validation.clearError('atchPsbltyFileQty');
+                      setEditData({ ...editData, atchPsbltyFileQty: e.target.value === '' ? undefined : Number(e.target.value) });
+                    }}
+                  />
+                  {validation.errors.atchPsbltyFileQty ? <p {...validation.messageProps('atchPsbltyFileQty')} className="text-xs font-bold text-destructive-emphasis" /> : null}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="modal-bbs-file-size" className="text-xs font-medium text-foreground">파일당 크기(MB)</Label>
+                  <Input
+                    id="modal-bbs-file-size"
+                    type="number"
+                    min={1}
+                    max={SERVER_MAX_FILE_SIZE_MB}
+                    step="0.5"
+                    {...validation.fieldProps('atchPsbltyFileSzMb')}
+                    value={(editData.atchPsbltyFileSz ?? selectedBoard?.atchPsbltyFileSz ?? DEFAULT_ATCH_PSBLTY_FILE_SZ) / BYTES_PER_MB}
+                    onChange={(e) => {
+                      validation.clearError('atchPsbltyFileSzMb');
+                      setEditData({ ...editData, atchPsbltyFileSz: e.target.value === '' ? undefined : Math.round(Number(e.target.value) * BYTES_PER_MB) });
+                    }}
+                  />
+                  {validation.errors.atchPsbltyFileSzMb ? <p {...validation.messageProps('atchPsbltyFileSzMb')} className="text-xs font-bold text-destructive-emphasis" /> : null}
+                </div>
+              </div>
+            </fieldset>
 
             <div className="flex items-center justify-between rounded-md border border-border bg-muted p-3 transition-colors">
               <div className="space-y-0.5">

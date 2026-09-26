@@ -28,6 +28,8 @@ import {
 } from '@/components/ui/form';
 import { useAuth } from '@/contexts/AuthContext';
 import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
+import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
+import { boardUploadLimits, formatMegabytes, SERVER_UPLOAD_ACCEPT, SERVER_UPLOAD_EXTENSIONS } from '@/lib/upload/server-upload-limits';
 import { fileService } from '@/services/foundation/file/FileService';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
@@ -167,6 +169,14 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
 
   const attachmentKey = (file: AttachmentItem) => `${file.atchFileSn}-${file.fileSn}`;
 
+  /*
+   * [2026-09-27 DIP B5 F9] 게시판 첨부 설정(허용·파일 수·파일당 크기)을 업로더에 그대로 보인다. 서버
+   * (BoardService.assertNewFilesAllowed)가 같은 규칙으로 저장 전에 거부하므로, 화면이 더 많이 받아 두면 저장할 때에야 실패한다.
+   * 설정을 아직 모르면 서버 상한으로 보이고 판정은 서버가 한다.
+   */
+  const { data: boardMeta } = useQuery(boardMasterQueryOptions.meta(bbsId ?? ''));
+  const uploadLimits = boardUploadLimits(boardMeta, attachments.length);
+
   const handleDeleteAttachment = async (file: AttachmentItem) => {
     if (deletingRef.current) return;
     deletingRef.current = true;
@@ -263,7 +273,8 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
         }
       });
       // 새로 붙인 파일 — 서버 액션이 `files` 키를 읽어 multipart 로 넘긴다(boardActions.saveBoardArticle).
-      newFiles.forEach((file) => formData.append('files', file));
+      // [2026-09-27 DIP B5 F9] 게시판이 첨부를 받지 않아 업로더를 감춘 뒤에는 앞서 고른 파일도 보내지 않는다.
+      if (uploadLimits.allowed) newFiles.forEach((file) => formData.append('files', file));
 
       // Props 또는 initialData의 pstSn가 존재하는 경우 확실하게 폼 데이터에 추가하여 수정(PUT) 분기 작동 보장
       const activePstSn = activeRecordId;
@@ -427,12 +438,30 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
               )
             )}
 
-            <div className="space-y-2">
-              <StandardFileUploader name="files" onFilesChange={setNewFiles} />
-              <p className="text-xs text-muted-foreground">
-                새로 붙인 파일은 게시글을 저장할 때 함께 올라갑니다.{existingAtchFileSn ? ' 기존 첨부에 추가됩니다.' : ''}
+            {!uploadLimits.allowed ? (
+              <p role="note" className="text-[length:var(--font-size-body)] text-muted-foreground">
+                이 게시판은 파일 첨부를 받지 않습니다.
               </p>
-            </div>
+            ) : uploadLimits.remaining === 0 ? (
+              <p role="note" className="text-[length:var(--font-size-body)] text-muted-foreground">
+                이 게시판의 첨부 파일 수({uploadLimits.boardMaxFiles}개)를 모두 채웠습니다. 새 파일을 붙이려면 기존 첨부를 먼저 삭제하세요.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                <StandardFileUploader
+                  name="files"
+                  onFilesChange={setNewFiles}
+                  maxFiles={uploadLimits.remaining}
+                  maxSizeMB={uploadLimits.maxSizeMB}
+                  accept={SERVER_UPLOAD_ACCEPT}
+                />
+                <p className="text-xs text-muted-foreground">
+                  새로 붙인 파일은 게시글을 저장할 때 함께 올라갑니다.{existingAtchFileSn ? ' 기존 첨부에 추가됩니다.' : ''}
+                  {uploadLimits.boardMaxFiles !== null ? ` 이 게시판은 파일을 ${uploadLimits.boardMaxFiles}개까지(기존 첨부 포함) 받습니다.` : ''}
+                  {` 파일 하나당 ${formatMegabytes(uploadLimits.maxSizeMB)}까지, 형식은 ${SERVER_UPLOAD_EXTENSIONS.join(', ')} 입니다.`}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* 게시 기간(기록용) */}

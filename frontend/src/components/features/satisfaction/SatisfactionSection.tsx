@@ -34,7 +34,11 @@ import { SatisfactionEditForm } from './SatisfactionEditForm';
  * (operation-consumer-census 축 1 이 `update` 를 소비 0 으로 지목). 서버가 갱신하는 것은
  * <b>점수와 내용 둘뿐</b>이므로 편집도 그 둘만 다룬다.
  */
-export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; pstSn: number }) {
+/**
+ * @param acceptsNewRatings 게시판이 새 평가를 받는가(2026-09-27 DIP B5 F9 — 게시판 설정 stsfdgYn). 거짓이면 입력 폼 대신
+ *   사유를 보이고, 이미 남은 평가와 평균은 그대로 보인다.
+ */
+export default function SatisfactionSection({ bbsId, pstSn, acceptsNewRatings = true }: { bbsId: string; pstSn: number; acceptsNewRatings?: boolean }) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const confirm = useConfirm();
@@ -200,6 +204,11 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
         </div>
       </div>
 
+      {!acceptsNewRatings ? (
+        <p role="note" className="text-[length:var(--font-size-body)] text-muted-foreground">
+          이 게시판은 새 만족도 평가를 받지 않습니다.
+        </p>
+      ) : (
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -282,6 +291,7 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
           </Button>
         </div>
       </form>
+      )}
 
       {isLoading ? (
         <div className="flex justify-center py-8">
