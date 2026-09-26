@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { RecipientPicker, recipientKey, type RecipientSelection } from '@/app/components/ui/recipient-picker';
+import { useRecipientDepartmentSource } from '@/app/components/ui/recipient-department-source';
 import { notificationAdminService } from '@/services/foundation/system/NotificationAdminService';
 import { NotificationDispatchRequestRequestSchema } from '@/types/generated-zod';
 
@@ -66,6 +67,8 @@ export function NotificationDispatchDialog({ isOpen, onClose }: NotificationDisp
   const [recipients, setRecipients] = useState<RecipientSelection[]>([]);
   const [recipientError, setRecipientError] = useState<string | null>(null);
   const [isPickerOpen, setPickerOpen] = useState(false);
+  // [2026-09-27 DIP B5 F5] 부서 단위 일괄 선택 — 조직·사용자 조회 권한이 있을 때만 피커에 부서 탭이 생긴다.
+  const departmentSource = useRecipientDepartmentSource();
   const [submitting, setSubmitting] = useState(false);
   const submitLock = useRef(false);
 
@@ -257,6 +260,7 @@ export function NotificationDispatchDialog({ isOpen, onClose }: NotificationDisp
         isOpen={isPickerOpen}
         onClose={() => setPickerOpen(false)}
         channel="notification"
+        department={departmentSource}
         onConfirm={mergeRecipients}
         title="알림 수신자 찾기"
       />

@@ -6,6 +6,7 @@ import type { components, operations } from '@/types/generated-api';
 import {
   deleteUserOperation,
   deleteUsersOperation,
+  getDepartmentRecipientsOperation,
   getUserOperation,
   getUsersOperation,
   insertUserOperation,
@@ -165,6 +166,14 @@ class UserAdminService extends AdminService {
       config,
     });
     return requireUserPage(response);
+  }
+
+  /**
+   * 부서 소속 수신자(2026-09-27 DIP B5 F5) — 한 부서의 사용 중 계정인 직속 인원. 식별자·성명·부서명·부재만 온다(연락처 없음).
+   * 최대 200명이며 넘으면 `truncated` 가 참이다.
+   */
+  async getDepartmentRecipients(ognzId: string, config?: AxiosRequestConfig) {
+    return this.executeGenerated(getDepartmentRecipientsOperation, { path: { ognzId }, config });
   }
 
   /** 사용자 상세 조회 */

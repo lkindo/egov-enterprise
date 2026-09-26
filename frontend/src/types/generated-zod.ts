@@ -2805,6 +2805,29 @@ export const PageResponseUserDtoSchema = z.object({
 export type PageResponseUserDto = z.infer<typeof PageResponseUserDtoSchema>;
 
 // ==========================================================================
+// ApiResponseDepartmentRecipientsDto Schema
+// ==========================================================================
+export const ApiResponseDepartmentRecipientsDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => DepartmentRecipientsDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseDepartmentRecipientsDto = z.infer<typeof ApiResponseDepartmentRecipientsDtoSchema>;
+
+// ==========================================================================
+// DepartmentRecipientsDto Schema
+// ==========================================================================
+export const DepartmentRecipientsDtoSchema = z.object({
+  members: z.array(z.lazy(() => UserSearchDtoSchema)).optional(),
+  truncated: z.boolean().optional(),
+});
+export type DepartmentRecipientsDto = z.infer<typeof DepartmentRecipientsDtoSchema>;
+
+// ==========================================================================
 // ApiResponsePageResponseAuthorGroupProjection Schema
 // ==========================================================================
 export const ApiResponsePageResponseAuthorGroupProjectionSchema = z.object({
@@ -8733,6 +8756,36 @@ export const PageResponseUserDtoResponseSchema = z.object({
   page: z.number().int().optional().nullable(),
   size: z.number().int().optional().nullable(),
   totalPage: z.number().int().optional().nullable(),
+});
+
+export const ApiResponseDepartmentRecipientsDtoRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => DepartmentRecipientsDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseDepartmentRecipientsDtoResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => DepartmentRecipientsDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const DepartmentRecipientsDtoRequestSchema = z.object({
+  members: z.array(z.lazy(() => UserSearchDtoRequestSchema.strict())).optional(),
+  truncated: z.boolean().optional(),
+});
+
+export const DepartmentRecipientsDtoResponseSchema = z.object({
+  members: z.array(z.lazy(() => UserSearchDtoResponseSchema)).optional().nullable(),
+  truncated: z.boolean().optional().nullable(),
 });
 
 export const ApiResponsePageResponseAuthorGroupProjectionRequestSchema = z.object({

@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { BookUser, Search, User } from 'lucide-react';
+import { BookUser, Building2, Search, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
 import { AbsenceBadge } from '@/app/components/ui/absence-badge';
@@ -12,6 +12,11 @@ import type {
   RecipientAddressBookSource,
 } from '@/types/recipient-address-book';
 import { logErrorSafely } from '@/lib/safe-error-log';
+import type {
+  RecipientDepartment,
+  RecipientDepartmentMember,
+  RecipientDepartmentSource,
+} from '@/app/components/ui/recipient-department-source';
 
 /**
  * 행 선택은 네이티브 checkbox 다(일정 등록 폼과 같은 패턴). Radix `Checkbox`(components/ui/checkbox)를 쓰지 않는 이유는
@@ -63,7 +68,14 @@ interface RecipientPickerProps {
    *   구현은 조합 지점(메일·문자 화면)이 `reusable-base:demo` 마커 블록 안에서 넘긴다.
    */
   addressBook?: RecipientAddressBookSource;
+  /**
+   * 부서 탭의 데이터 출처(2026-09-27 DIP B5 F5). 주입될 때만 부서 탭이 보인다 — 부서 목록과 소속 인원 조회에는 조직·사용자
+   * 조회 권한이 필요해, 발송 화면이 그 권한을 가진 사람에게만 넘긴다. 소속 인원은 계정이라 알림 채널에서도 고를 수 있다.
+   */
+  department?: RecipientDepartmentSource;
 }
+
+type SourceTab = 'users' | 'addressbook' | 'department';
 
 /** 채널이 요구하는 연락처가 명함에 있는가. 없으면 고를 수 없다 — 서버로 보내 봐야 거부된다. */
 function contactFor(channel: RecipientChannel, card: RecipientAddressBookContact): string | undefined {
@@ -90,8 +102,9 @@ export function RecipientPicker({
   onConfirm,
   title = '수신자 찾기',
   addressBook,
+  department,
 }: RecipientPickerProps) {
-  const [tab, setTab] = useState<'users' | 'addressbook'>('users');
+  const [tab, setTab] = useState<SourceTab>('users');
   const [selected, setSelected] = useState<Map<string, RecipientSelection>>(() => new Map());
 
   // --- 사용자 검색 탭 ---
@@ -105,6 +118,16 @@ export function RecipientPicker({
   const [selectedBookSn, setSelectedBookSn] = useState<string>('');
   const [members, setMembers] = useState<RecipientAddressBookContact[]>([]);
   const [membersState, setMembersState] = useState<'idle' | 'loading' | 'error' | 'done'>('idle');
+
+  // --- 부서 탭 ---
+  const [departments, setDepartments] = useState<RecipientDepartment[]>([]);
+  const [departmentsState, setDepartmentsState] = useState<'idle' | 'loading' | 'error' | 'done'>('idle');
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
+  const [departmentMembers, setDepartmentMembers] = useState<RecipientDepartmentMember[]>([]);
+  const [departmentTruncated, setDepartmentTruncated] = useState(false);
+  const [departmentMembersState, setDepartmentMembersState] = useState<'idle' | 'loading' | 'error' | 'done'>('idle');
+  /** 마지막으로 고른 부서 — 늦게 도착한 앞 부서의 응답이 지금 부서의 인원을 덮지 않게 한다. */
+  const latestDepartmentRef = useRef('');
 
   const toggle = useCallback((recipient: RecipientSelection, checked: boolean) => {
     setSelected((previous) => {
@@ -158,14 +181,78 @@ export function RecipientPicker({
     }
   }, [addressBook]);
 
+  const loadDepartments = useCallback(async () => {
+    if (!department) return;
+    setDepartmentsState('loading');
+    try {
+      setDepartments(await department.listDepartments());
+      setDepartmentsState('done');
+    } catch (error) {
+      logErrorSafely('Recipient department list failed', error);
+      setDepartmentsState('error');
+    }
+  }, [department]);
+
+  const loadDepartmentMembers = useCallback(async (departmentId: string) => {
+    if (!department) return;
+    setDepartmentMembersState('loading');
+    try {
+      const result = await department.listMembers(departmentId);
+      if (latestDepartmentRef.current !== departmentId) return;
+      setDepartmentMembers(result.members);
+      setDepartmentTruncated(result.truncated);
+      setDepartmentMembersState('done');
+    } catch (error) {
+      if (latestDepartmentRef.current !== departmentId) return;
+      logErrorSafely('Recipient department members failed', error);
+      setDepartmentMembersState('error');
+    }
+  }, [department]);
+
   const addressBookTabAvailable = addressBook !== undefined && channel !== 'notification';
+  const departmentTabAvailable = department !== undefined;
 
   const handleTabChange = (value: string) => {
-    const next = value === 'addressbook' && addressBookTabAvailable ? 'addressbook' : 'users';
+    const next: SourceTab = value === 'addressbook' && addressBookTabAvailable
+      ? 'addressbook'
+      : value === 'department' && departmentTabAvailable ? 'department' : 'users';
     setTab(next);
-    // 주소록 목록은 탭을 처음 열 때만 읽는다(효과 대신 이벤트에서 기동).
+    // 주소록·부서 목록은 탭을 처음 열 때만 읽는다(효과 대신 이벤트에서 기동).
     if (next === 'addressbook' && booksState === 'idle') void loadBooks();
+    if (next === 'department' && departmentsState === 'idle') void loadDepartments();
   };
+
+  const handleDepartmentChange = (value: string) => {
+    latestDepartmentRef.current = value;
+    setSelectedDepartmentId(value);
+    setDepartmentMembers([]);
+    setDepartmentTruncated(false);
+    setDepartmentMembersState('idle');
+    if (value) void loadDepartmentMembers(value);
+  };
+
+  const departmentRecipients: RecipientSelection[] = departmentMembers.map((member) => ({
+    kind: 'user',
+    esntlId: member.esntlId,
+    name: member.name,
+    deptNm: member.deptNm,
+  }));
+  const departmentSelectedCount = departmentRecipients.filter((recipient) => selected.has(recipientKey(recipient))).length;
+  const allDepartmentSelected = departmentRecipients.length > 0 && departmentSelectedCount === departmentRecipients.length;
+
+  /** 부서 일괄 선택 — 이 부서에 보이는 인원 전부를 담거나 뺀다. 다른 탭에서 고른 사람은 건드리지 않는다. */
+  const toggleWholeDepartment = (checked: boolean) => {
+    setSelected((previous) => {
+      const next = new Map(previous);
+      for (const recipient of departmentRecipients) {
+        const key = recipientKey(recipient);
+        if (checked) next.set(key, recipient);
+        else next.delete(key);
+      }
+      return next;
+    });
+  };
+  const selectedDepartmentName = departments.find((item) => item.id === selectedDepartmentId)?.name ?? '';
 
   const handleBookChange = (value: string) => {
     setSelectedBookSn(value);
@@ -182,8 +269,11 @@ export function RecipientPicker({
   const channelLabel = channel === 'mail' ? '이메일' : channel === 'sms' ? '휴대전화 번호' : null;
   const sourceTabs = ([
     { value: 'users', label: '사용자 검색', icon: <User size={14} aria-hidden="true" /> },
+    { value: 'department', label: '부서', icon: <Building2 size={14} aria-hidden="true" /> },
     { value: 'addressbook', label: '주소록', icon: <BookUser size={14} aria-hidden="true" /> },
-  ] as const).filter((item) => item.value === 'users' || addressBookTabAvailable);
+  ] as const).filter((item) => item.value === 'users'
+    || (item.value === 'department' && departmentTabAvailable)
+    || (item.value === 'addressbook' && addressBookTabAvailable));
 
   return (
     <StandardModal
@@ -290,6 +380,97 @@ export function RecipientPicker({
                       <label htmlFor={checkboxId} className="flex-1 cursor-pointer">
                         <span className="flex items-center gap-1.5 text-sm font-bold text-foreground">{recipient.name}<AbsenceBadge absent={user.absent} /></span>
                         <span className="block text-xs text-muted-foreground">{user.deptNm || '소속 부서 없음'}</span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+        )}
+
+        {tab === 'department' && departmentTabAvailable && (
+        <div role="tabpanel" id="recipient-panel-department" aria-labelledby="recipient-tab-department" className="space-y-3">
+          <label htmlFor="recipient-department" className="block text-xs font-bold text-muted-foreground">부서 선택</label>
+          {departmentsState === 'loading' ? (
+            <div className="text-sm text-muted-foreground animate-pulse" role="status">부서를 불러오는 중…</div>
+          ) : departmentsState === 'error' ? (
+            <div role="alert" className="flex flex-wrap items-center gap-3 text-sm font-bold text-destructive-emphasis">
+              부서 목록을 불러오지 못했습니다.
+              <Button type="button" variant="outline" size="sm" onClick={() => void loadDepartments()}>다시 시도</Button>
+            </div>
+          ) : (
+            <select
+              id="recipient-department"
+              value={selectedDepartmentId}
+              onChange={(event) => handleDepartmentChange(event.target.value)}
+              className="w-full h-[var(--control-h)] rounded-lg border bg-background px-3 text-sm"
+            >
+              <option value="">부서를 고르세요</option>
+              {departments.map((item) => (
+                <option key={item.id} value={item.id}>{`${'　'.repeat(item.depth)}${item.name}`}</option>
+              ))}
+            </select>
+          )}
+          {departmentsState === 'done' && departments.length === 0 && (
+            <p className="text-xs text-muted-foreground">등록된 부서가 없습니다.</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            사용 중인 계정인 직속 인원만 표시합니다. 하위 부서 인원은 포함하지 않습니다.
+            {channelLabel ? ` 연락처는 화면에 표시되지 않으며, 등록된 ${channelLabel}가 없는 사람이 있으면 발송이 거부됩니다.` : ''}
+          </p>
+          {departmentMembersState === 'done' && departmentRecipients.length > 0 && (
+            <div className="flex items-center gap-3 rounded-lg border bg-muted/40 px-4 py-2">
+              <input
+                type="checkbox"
+                id="recipient-department-all"
+                className={SELECT_CHECKBOX_CLASS}
+                checked={allDepartmentSelected}
+                ref={(element) => {
+                  if (element) element.indeterminate = departmentSelectedCount > 0 && !allDepartmentSelected;
+                }}
+                onChange={(event) => toggleWholeDepartment(event.target.checked)}
+                aria-label={`${selectedDepartmentName} 전체 선택`}
+              />
+              <label htmlFor="recipient-department-all" className="flex-1 cursor-pointer text-sm font-bold text-foreground">
+                부서 전체 선택 ({departmentRecipients.length}명)
+              </label>
+            </div>
+          )}
+          {departmentTruncated && departmentMembersState === 'done' && (
+            <p role="status" className="text-xs font-bold text-warning-emphasis">
+              이 부서는 인원이 많아 앞의 {departmentRecipients.length}명만 표시합니다. 나머지는 사용자 검색으로 찾아 주세요.
+            </p>
+          )}
+          <div className="bg-card border rounded-lg min-h-[200px] max-h-[280px] overflow-y-auto">
+            {departmentMembersState === 'loading' ? (
+              <div className="p-8 text-center text-sm text-muted-foreground animate-pulse font-medium" role="status">소속 인원을 불러오는 중…</div>
+            ) : departmentMembersState === 'error' ? (
+              <div role="alert" className="p-8 text-center text-sm font-bold text-destructive-emphasis">소속 인원을 불러오지 못했습니다.</div>
+            ) : departmentMembersState === 'done' && departmentRecipients.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">이 부서에는 사용 중인 계정이 없습니다.</div>
+            ) : departmentMembersState === 'idle' ? (
+              <div className="p-8 text-center text-xs text-muted-foreground">부서를 고르면 소속 인원이 표시됩니다.</div>
+            ) : (
+              <ul aria-label="부서 소속 인원" className="divide-y">
+                {departmentMembers.map((member, index) => {
+                  const recipient = departmentRecipients[index];
+                  const key = recipientKey(recipient);
+                  const checkboxId = `recipient-dept-user-${member.esntlId}`;
+                  return (
+                    <li key={key} className="flex items-center gap-3 px-4 py-3">
+                      <input
+                        type="checkbox"
+                        id={checkboxId}
+                        className={SELECT_CHECKBOX_CLASS}
+                        checked={selected.has(key)}
+                        onChange={(event) => toggle(recipient, event.target.checked)}
+                        aria-label={`${member.name} 선택`}
+                      />
+                      <label htmlFor={checkboxId} className="flex-1 cursor-pointer">
+                        <span className="flex items-center gap-1.5 text-sm font-bold text-foreground">{member.name}<AbsenceBadge absent={member.absent} /></span>
+                        <span className="block text-xs text-muted-foreground">{member.deptNm || selectedDepartmentName}</span>
                       </label>
                     </li>
                   );

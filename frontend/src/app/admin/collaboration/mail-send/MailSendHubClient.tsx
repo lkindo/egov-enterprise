@@ -30,6 +30,7 @@ import { MailRecipientDtoSchema, SentMailDtoSchema } from '@/types/generated-zod
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { RecipientPicker, recipientKey, type RecipientSelection } from '@/app/components/ui/recipient-picker';
+import { useRecipientDepartmentSource } from '@/app/components/ui/recipient-department-source';
 /* reusable-base:demo:start */
 import { recipientAddressBookSource } from '@/services/business/user/addressbook/recipient-address-book-source';
 /* reusable-base:demo:end */
@@ -98,6 +99,8 @@ export default function MailSendHubClient() {
   const [recipientSearch, setRecipientSearch] = useState('');
   const [selectedRecipients, setSelectedRecipients] = useState<RecipientSelection[]>([]);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  // [2026-09-27 DIP B5 F5] 부서 단위 일괄 선택 — 조직·사용자 조회 권한이 있을 때만 피커에 부서 탭이 생긴다.
+  const departmentSource = useRecipientDepartmentSource();
 
   /*
    * [2026-09-26 DIP B5 F7] 이 배포에 SMTP 가 없으면 접수는 되지만 모든 메일이 실패로 기록된다. 보내기 전에 알린다.
@@ -357,6 +360,7 @@ export default function MailSendHubClient() {
           <RecipientPicker
             isOpen={isPickerOpen}
             channel="mail"
+            department={departmentSource}
             /* reusable-base:demo:start */
             addressBook={recipientAddressBookSource}
             /* reusable-base:demo:end */

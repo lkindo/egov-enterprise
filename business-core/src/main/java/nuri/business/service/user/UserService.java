@@ -18,6 +18,7 @@ import nuri.business.domain.login.LoginPolicyRepository;
 import nuri.business.domain.user.entity.Role;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
+import nuri.business.service.user.dto.DepartmentRecipientsDto;
 import nuri.business.service.user.dto.UserDto;
 import nuri.business.service.user.dto.UserResponse;
 import nuri.business.service.user.dto.UserSearchDto;
@@ -179,6 +180,27 @@ public class UserService extends BaseAbstractService {
                 }
 
                 return userRepository.searchAssignableUsers(trimmed, PIC_SEARCH_MAX_RESULTS);
+        }
+
+        /** 부서 단위 수신자 선택의 1회 상한. 발송 요청 상한(100명)보다 넉넉하되 한 부서를 통째로 덤프하지는 않는다. */
+        public static final int DEPARTMENT_RECIPIENT_MAX = 200;
+
+        /**
+         * 부서 단위 수신자 선택(2026-09-27 DIP B5 F5) — 한 부서의 사용 중 계정인 직속 소속 인원.
+         *
+         * <p>관리자 사용자 목록과 같은 권한(USER_READ)으로 열린다. 그 목록은 같은 사람을 연락처까지 실어 보여 주므로 이 창구가
+         * 권한을 넓히지 않는다(H3). 응답은 {@link UserSearchDto} 최소 필드뿐이다.</p>
+         *
+         * @throws BusinessException 부서가 없으면 404
+         */
+        public DepartmentRecipientsDto getDepartmentRecipients(String ognzId) {
+                if (ognzId == null || ognzId.isBlank() || !deptManageRepository.existsById(ognzId)) {
+                        throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "부서를 찾을 수 없습니다: " + ognzId);
+                }
+                // 상한보다 하나 더 읽어 넘쳤는지 판정한다 — 총 건수를 세지 않는다.
+                List<UserSearchDto> rows = userRepository.findActiveDepartmentMembers(ognzId, DEPARTMENT_RECIPIENT_MAX + 1);
+                boolean truncated = rows.size() > DEPARTMENT_RECIPIENT_MAX;
+                return new DepartmentRecipientsDto(truncated ? List.copyOf(rows.subList(0, DEPARTMENT_RECIPIENT_MAX)) : rows, truncated);
         }
 
         /**
