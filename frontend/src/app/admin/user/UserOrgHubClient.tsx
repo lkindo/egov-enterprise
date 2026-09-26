@@ -440,7 +440,10 @@ export default function UserOrgHubClient({
     flattenedDepts,
     activeDeptId,
     hasDeptChanges,
-    setHasDeptChanges,
+    baselineDepts,
+    deptListChangedWhileEditing,
+    discardDeptChanges,
+    markDeptChangesSaved,
     previewDepts,
     sensors,
     dragHandlers: deptDragHandlers,
@@ -702,10 +705,11 @@ export default function UserOrgHubClient({
     if (!selectedDept || !hasDeptChanges || isDeptModalOpen || !beginNonFormAction(operation)) return;
 
     try {
-      const res = await saveDeptHierarchyAction(flattenedDepts);
+      // [DIP C5] 서버에서 읽은 기준선과 달라진 부서만, 형제 안 상대 순서로 보낸다.
+      const res = await saveDeptHierarchyAction(flattenedDepts, baselineDepts);
       if (res.success) {
         toast(res.message, 'success');
-        setHasDeptChanges(false);
+        markDeptChangesSaved();
         router.refresh();
       } else {
         toast(res.message, 'error');
@@ -1090,6 +1094,12 @@ export default function UserOrgHubClient({
                   </Button>
                 )}
               >
+                {deptListChangedWhileEditing && (
+                  <div role="status" className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
+                    <span>저장하지 않은 순서 변경이 있는 동안 부서 목록이 다시 조회됐습니다. 저장하면 지금 화면의 순서로 반영되고, 취소하면 최신 목록으로 돌아갑니다.</span>
+                    <Button type="button" size="sm" variant="outline" onClick={discardDeptChanges} disabled={isSaving}>변경 취소</Button>
+                  </div>
+                )}
                 {/* ⚠ 이 스크롤 영역은 DEPTS 전용이다 — USERS·ABSENCES 는 표가 자기 스크롤을 소유하므로
                     여기에 탭 분기를 두면 도달할 수 없는 가지가 된다. A2 census 는 이 라벨을
                     부서 마스터 스크롤 영역의 이름으로 고정한다. */}
@@ -1309,6 +1319,9 @@ export default function UserOrgHubClient({
         <DepartmentForm
           mode={formMode}
           initialData={formMode === 'edit' ? (selectedItem as Department) : undefined}
+          parentOptions={flattenedDepts
+            .filter((dept) => dept.ognzId)
+            .map((dept) => ({ ognzId: dept.ognzId as string, label: `${'\u3000'.repeat(dept.depth)}${dept.ognzNm ?? dept.ognzId}` }))}
           onSubmit={onDeptSubmit}
           onCancel={handleCloseDeptModal}
           isPending={activeWriteOperation === 'dept-form'}

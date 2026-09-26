@@ -2522,8 +2522,9 @@
       "errorNavigation": "structured-state-action-feedback",
       "serverErrors": "action-error-feedback-preserves-state",
       "pendingGuard": "action-pending-lock-and-disabled",
-      "stateInvariant": "Each department persists one parent and the stable hierarchy order represented by flattenedDepts.",
+      "stateInvariant": "Only departments whose parent or sibling-relative order differs from baselineDepts are sent, each with one parent and its order within flattenedDepts.",
       "structuredPayloads": [
+        "baselineDepts",
         "flattenedDepts"
       ],
       "testEvidence": [

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { deptAdminService } from '@/services/foundation/system/DeptAdminService';
-import type { FlattenedDept } from '@/app/admin/user/departments/treeUtils';
+import { changedDeptHierarchy, type FlattenedDept } from '@/app/admin/user/departments/treeUtils';
 import { extractErrorMessage } from './actionUtils';
 
 interface ActionResponse {
@@ -21,7 +21,10 @@ interface ActionResponse {
  * 함께 있던 saveDeptAction/deleteDeptAction 은 export 되지 않아 어디서도 호출할 수 없는 死코드였고,
  * 실제 CRUD 는 클라이언트가 deptAdminService 를 직접 호출한다. 혼동을 없애기 위해 제거했다.
  */
-export async function saveDeptHierarchyAction(flattenedDepts: FlattenedDept[]): Promise<ActionResponse> {
+export async function saveDeptHierarchyAction(
+  flattenedDepts: FlattenedDept[],
+  baselineDepts?: FlattenedDept[],
+): Promise<ActionResponse> {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
@@ -38,19 +41,10 @@ export async function saveDeptHierarchyAction(flattenedDepts: FlattenedDept[]): 
       전송에서 빼면 서버는 그 행을 건드리지 않아 기존 소속이 그대로 남는다. 사용자가 직접 끈
       노드는 `useDeptTree` 가 표시를 해제하므로 여기서 걸리지 않는다 — 즉 "안 만진 것은 안 바꾼다".
 
-      `sortOrdr` 는 제외 전 화면 순서로 매긴다. 제외분 때문에 번호가 당겨지면 남은 부서의 순서가
-      실제 화면과 어긋난다. (현재 목록 조회는 `ognzNm` 오름차순이라 이 값을 읽지 않지만,
-      보내는 값이 화면과 다른 뜻을 갖게 두지는 않는다.)
+      [2026-09-26 DIP C5] `sortOrdr` 는 형제 안 상대 순서이고, 서버에서 읽은 기준선과 달라진 부서만 보낸다.
+      종전에는 화면 전체 순번을 매겨 검색으로 좁힌 상태에서 저장하면 여러 형제 집합의 순서가 함께 망가졌다.
     */
-    const submitData = flattenedDepts
-      .map((item, index) => ({
-        ognzId: item.ognzId,
-        upOgnzId: item.parentId ?? undefined, // null(루트)은 미전송 → 서버가 최상위로 처리
-        sortOrdr: index + 1,
-        unloadedParentId: item.unloadedParentId ?? null,
-      }))
-      .filter((item) => !item.unloadedParentId)
-      .map(({ unloadedParentId: _unloadedParentId, ...item }) => item);
+    const submitData = changedDeptHierarchy(flattenedDepts, baselineDepts);
 
     await deptAdminService.updateDeptHierarchy(submitData, config);
 
