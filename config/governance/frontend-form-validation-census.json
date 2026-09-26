@@ -8,8 +8,8 @@
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 19,
-    "secondaryActionBoundaries": 68,
-    "candidateCount": 152
+    "secondaryActionBoundaries": 69,
+    "candidateCount": 153
   },
   "entries": [
     {
@@ -1600,6 +1600,27 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/collaboration/address-book/__tests__/AddressBookListClient.delete.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx#MailHistoryHubClient.handleResend[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx",
+      "owner": "MailHistoryHubClient",
+      "handler": "handleResend",
+      "writeSinks": [
+        "mailService.resendMail",
+        "resendMutation.mutateAsync"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/collaboration/mail-history/__tests__/MailHistoryHubClient.test.tsx"
       ]
     },
     {

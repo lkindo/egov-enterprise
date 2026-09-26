@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   getSentMails: vi.fn(),
   deleteMail: vi.fn(),
+  resendMail: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -38,6 +39,7 @@ vi.mock('@/services/business/mail/MailService', () => ({
   mailService: {
     getSentMails: mocks.getSentMails,
     deleteMail: mocks.deleteMail,
+    resendMail: mocks.resendMail,
   },
 }));
 
@@ -90,6 +92,89 @@ function deferred<T>() {
   });
   return { promise, reject, resolve };
 }
+
+describe('MailHistoryHubClient 수신자 표시·다시 보내기 (DIP B5 F7)', () => {
+  const failedOwn = {
+    emlDsptchSn: 201, sj: '회의 안내', recptnPerson: '김수신', sndngResultCode: 'F', sndngDe: '2026-09-26 09:00',
+    dsptchPerson: '관리자', resendable: true,
+  };
+  const failedLegacy = {
+    emlDsptchSn: 202, sj: '회의 안내', recptnPerson: '이수신', sndngResultCode: 'F', sndngDe: '2026-09-26 09:00',
+    dsptchPerson: '관리자', resendable: false,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.confirm.mockResolvedValue(true);
+    mocks.getSentMails.mockResolvedValue({ list: [failedOwn, failedLegacy], total: 2, totalPage: 1 });
+    mocks.resendMail.mockResolvedValue(undefined);
+  });
+
+  it('여러 명에게 보낸 같은 메일의 이력 줄마다 받는 사람을 보인다', async () => {
+    renderClient();
+
+    expect(await screen.findByText('받는 사람 김수신')).toBeInTheDocument();
+    expect(screen.getByText('받는 사람 이수신')).toBeInTheDocument();
+  });
+
+  it('다시 보내기는 같은 tick 중복 실행을 막고 busy 상태와 실패 피드백을 제공한다', async () => {
+    const pending = deferred<void>();
+    mocks.resendMail.mockReturnValueOnce(pending.promise);
+    renderClient();
+
+    fireEvent.click(await screen.findByText('받는 사람 김수신'));
+    const resend = await screen.findByRole('button', { name: '선택한 메일 회의 안내 다시 보내기' });
+
+    act(() => {
+      resend.click();
+      resend.click();
+    });
+
+    await waitFor(() => expect(mocks.resendMail).toHaveBeenCalledTimes(1));
+    expect(mocks.resendMail).toHaveBeenCalledWith(201);
+    const pendingButton = screen.getByRole('button', { name: '선택한 메일 회의 안내 다시 보내기 중' });
+    expect(pendingButton).toHaveTextContent('다시 보내는 중…');
+    expect(pendingButton).toBeDisabled();
+    expect(pendingButton).toHaveAttribute('aria-busy', 'true');
+    // 다시 보내는 동안 같은 이력을 지우지 못한다.
+    expect(screen.getByTestId('mail-detail-delete-btn')).toBeDisabled();
+
+    await act(async () => pending.reject(new Error('Network Error')));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('메일을 다시 보내지 못했습니다.', 'error'));
+    expect(screen.getByRole('button', { name: '선택한 메일 회의 안내 다시 보내기' })).toBeEnabled();
+  });
+
+  it('서버가 다시 보낼 수 있다고 한 메일에만 다시 보내기를 두고, 성공하면 결과가 곧 반영된다고 알린다', async () => {
+    renderClient();
+
+    fireEvent.click(await screen.findByText('받는 사람 김수신'));
+    fireEvent.click(await screen.findByRole('button', { name: '선택한 메일 회의 안내 다시 보내기' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      '메일을 다시 보냈습니다. 결과는 잠시 뒤 이 목록에 반영됩니다.', 'success'));
+  });
+
+  it('다시 보낼 수 없는 실패 메일은 버튼 대신 조건을 말한다', async () => {
+    renderClient();
+
+    fireEvent.click(await screen.findByText('받는 사람 이수신'));
+    expect(await screen.findByText('다시 보내기는 보낸 사람 본인이, 실패했거나 10분 넘게 대기 중인 메일에만 할 수 있습니다.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /다시 보내기/ })).not.toBeInTheDocument();
+  });
+
+  it('서버가 거부하면 그 사유를 보인다', async () => {
+    mocks.resendMail.mockRejectedValueOnce(Object.assign(new Error('rejected'), {
+      response: { status: 409, data: { success: false, message: '발송을 처리하고 있습니다. 잠시 뒤 결과를 확인한 다음 다시 시도해 주세요.' } },
+    }));
+    renderClient();
+
+    fireEvent.click(await screen.findByText('받는 사람 김수신'));
+    fireEvent.click(await screen.findByRole('button', { name: '선택한 메일 회의 안내 다시 보내기' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      '발송을 처리하고 있습니다. 잠시 뒤 결과를 확인한 다음 다시 시도해 주세요.', 'error'));
+  });
+});
 
 describe('MailHistoryHubClient A2 master-detail 계약', () => {
   beforeEach(() => {

@@ -15,4 +15,12 @@ public interface EmailSender {
      * @throws Exception if sending fails
      */
     void send(String subject, String content, String from, String to) throws Exception;
+
+    /**
+     * 이 구현이 실제로 메일을 전달하는가(2026-09-26 DIP B5 F7). SMTP 가 없는 배포는 접수는 되지만 모든 메일이
+     * 실패로 기록되므로, 작성 화면이 보내기 전에 알린다.
+     */
+    default boolean isDeliveryConfigured() {
+        return true;
+    }
 }

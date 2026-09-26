@@ -25,4 +25,9 @@ public class LoggingEmailSender implements EmailSender {
         log.warn("Email delivery unavailable: SMTP is not configured");
         throw new MailDeliveryUnavailableException();
     }
+
+    @Override
+    public boolean isDeliveryConfigured() {
+        return false;
+    }
 }

@@ -98,6 +98,7 @@ test('action-only write controls are discovered without a form or editable owner
           <button onClick={() => joinCommunity(communityId)}>join</button>
           <button onClick={() => boardService.likePost(postId)}>recommend</button>
           <button onClick={() => adminService.withdrawMember(communityId, userId)}>withdraw</button>
+          <button onClick={() => mailService.resendMail(mailId)}>resend</button>
         </>;
       }
     `,
@@ -105,9 +106,10 @@ test('action-only write controls are discovered without a form or editable owner
   try {
     const actions = subject.discovery.candidates.filter(({ kind }) => kind === 'secondary-action');
     // [2026-09-25] 'withdraw' 는 'leave' 와 같은 탈퇴 동사다. 어휘에 없으면 관리자 강제 탈퇴가 census 밖에 남는다.
-    assert.equal(actions.length, 4);
+    // [2026-09-26] 'resend' 도 쓰기다 — 메일 재발송이 census 밖에 남지 않게 한다(DIP B5 F7).
+    assert.equal(actions.length, 5);
     assert.deepEqual(actions.flatMap(({ writeSinks }) => writeSinks).sort(),
-      ['adminService.withdrawMember', 'boardService.likePost', 'deleteComment', 'joinCommunity']);
+      ['adminService.withdrawMember', 'boardService.likePost', 'deleteComment', 'joinCommunity', 'mailService.resendMail']);
     assert.equal(subject.discovery.summary.formlessWriteBoundaries, 0);
   } finally {
     subject.cleanup();

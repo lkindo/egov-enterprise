@@ -2,6 +2,7 @@ package nuri.business.service.mail;
 
 import nuri.business.domain.mail.SentMail;
 import nuri.business.domain.mail.SentMailRepository;
+import nuri.business.service.mail.dto.MailDeliveryStatusDto;
 import nuri.business.service.mail.dto.MailRecipientDto;
 import nuri.business.service.mail.dto.SentMailDto;
 import nuri.business.service.user.UserContactService;
@@ -35,6 +36,17 @@ public class MailService {
     private final MailAsyncProcessor mailAsyncProcessor;
     /** esntlId → 이메일 해석(코어). 결과는 발송에만 쓰고 응답으로 내보내지 않는다. */
     private final UserContactService userContactService;
+    /** 현재 배포의 발송 구현. 발송 가능 상태를 알리는 데만 쓴다 — 발송은 {@link MailAsyncProcessor} 가 한다. */
+    private final EmailSender emailSender;
+
+    /**
+     * 대기('P')에 이 시간보다 오래 멈춘 메일은 재발송할 수 있다(2026-09-26 DIP B5 F7). 비동기 발송은 재시도를 포함해도
+     * 수십 초 안에 끝나므로, 그보다 넉넉히 두어 진행 중인 발송을 다시 보내 같은 메일이 두 번 나가지 않게 한다.
+     */
+    static final java.time.Duration RESEND_STUCK_AFTER = java.time.Duration.ofMinutes(10);
+
+    /** 이력의 수신자 칸이 직접 입력한 주소인가 — 사용자 수신자는 이름, 직접 입력은 주소다. */
+    private static final java.util.regex.Pattern ADDRESS = java.util.regex.Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     /** 사용자 수신자의 이름을 모를 때 이력에 남기는 표시값. 주소를 대신 적지 않는다(DIP D8). */
     static final String UNNAMED_RECIPIENT = "(이름 미등록)";
@@ -88,10 +100,111 @@ public class MailService {
      */
     private SentMailDto toResponse(SentMail sentMail) {
         SentMailDto dto = SentMailDto.from(sentMail);
-        if (dto != null && !isSender(sentMail)) {
+        if (dto == null) {
+            return null;
+        }
+        boolean sender = isSender(sentMail);
+        if (!sender) {
             dto.setEmailCn(null);
         }
+        dto.setResendable(sender && isResendState(sentMail, java.time.LocalDateTime.now()) && canResolveRecipient(sentMail));
         return dto;
+    }
+
+    /** 실패했거나 대기에 {@link #RESEND_STUCK_AFTER} 넘게 멈춘 메일인가. 저장소 차지 조건과 같다. */
+    private static boolean isResendState(SentMail sentMail, java.time.LocalDateTime now) {
+        String code = sentMail.getDsptchRsltCd();
+        if ("F".equals(code)) {
+            return true;
+        }
+        if (!"P".equals(code)) {
+            return false;
+        }
+        java.time.LocalDateTime attemptedAt = sentMail.getDsptchDt();
+        return attemptedAt == null || attemptedAt.isBefore(now.minus(RESEND_STUCK_AFTER));
+    }
+
+    /** 수신자를 다시 찾을 수 있는가 — 사용자 식별자가 남아 있거나, 수신자 칸이 직접 입력한 주소일 때. */
+    private static boolean canResolveRecipient(SentMail sentMail) {
+        return hasText(sentMail.getRcvrId())
+                || (sentMail.getRcvrNm() != null && ADDRESS.matcher(sentMail.getRcvrNm().trim()).matches());
+    }
+
+    /**
+     * 실패했거나 대기에 멈춘 본인 메일을 다시 보낸다(2026-09-26 DIP B5 F7).
+     *
+     * <p>같은 이력 행을 대기로 되돌려 다시 보낸다 — 새 행을 만들면 멈춘 'P' 행이 영원히 남고 같은 메일이 두 줄이 된다.
+     * 사용자 수신자는 저장된 식별자로 <b>지금</b> 등록된 주소를 다시 해석한다(주소는 이력에 저장하지 않는다 — DEC-OPS-134).
+     * 식별자가 없는 이 변경 전의 사용자 수신자 행은 누구에게 보냈는지 이름만 남아 다시 보낼 수 없다.
+     * 상태 확인과 전환은 한 번의 UPDATE 로 한다 — 두 번 누른 재발송은 하나만 이긴다.
+     */
+    @Transactional
+    public void resendMail(Long emlDsptchSn) {
+        SentMail sentMail = sentMailRepository.findById(Objects.requireNonNull(emlDsptchSn))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        String loginId = assertSender(sentMail);
+        String address = resolveResendAddress(sentMail);
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        int claimed = sentMailRepository.claimForResend(emlDsptchSn, loginId, now, now.minus(RESEND_STUCK_AFTER));
+        if (claimed == 0) {
+            if ("S".equals(sentMail.getDsptchRsltCd())) {
+                throw new BusinessException(CommonErrorCode.INVALID_STATE, "이미 발송된 메일입니다.");
+            }
+            throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
+                    "발송을 처리하고 있습니다. 잠시 뒤 결과를 확인한 다음 다시 시도해 주세요.");
+        }
+        final String subject = sentMail.getEmlTtl();
+        final String emailCn = sentMail.getEmlCn();
+        final String dsptchPerson = systemSenderAddress;
+        nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> {
+            try {
+                mailAsyncProcessor.processSending(emlDsptchSn, subject, emailCn, dsptchPerson, address);
+            } catch (RuntimeException rejected) {
+                log.error("Mail resend queue rejected dispatch serial number: {}, errorType: {}",
+                        emlDsptchSn, rejected.getClass().getSimpleName());
+                mailAsyncProcessor.markResult(emlDsptchSn, "F");
+            }
+        });
+    }
+
+    /**
+     * 재발송은 발신자 본인만 한다. 관리자 전체 조회 권한({@code MAIL_READ_ALL})은 "누가 누구에게 보냈는가" 를 보는
+     * 권한이지 남의 이름으로 다시 보내는 권한이 아니다. 소유 축은 조회 스코프와 같은 {@code frstRgtrId}(loginId)다.
+     */
+    private static String assertSender(SentMail sentMail) {
+        String loginId = nuri.business.security.util.SecurityUtil.getCurrentLoginId()
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
+        if (!loginId.equals(sentMail.getFrstRgtrId())) {
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+        }
+        return loginId;
+    }
+
+    /** 재발송 주소 — 사용자 수신자는 현재 등록 주소, 직접 입력 수신자는 그 주소. */
+    private String resolveResendAddress(SentMail sentMail) {
+        if (hasText(sentMail.getRcvrId())) {
+            String rcvrId = sentMail.getRcvrId().trim();
+            UserContactService.UserContact contact = userContactService.resolve(List.of(rcvrId)).stream()
+                    .findFirst()
+                    .orElseThrow(() -> new BusinessException(CommonErrorCode.INVALID_STATE,
+                            "수신자 계정을 찾을 수 없어 다시 보낼 수 없습니다."));
+            if (!hasText(contact.emlAddr())) {
+                throw new BusinessException(CommonErrorCode.INVALID_STATE,
+                        "'" + displayNameOf(contact.userNm()) + "' 님은 등록된 이메일 주소가 없어 다시 보낼 수 없습니다.");
+            }
+            return contact.emlAddr().trim();
+        }
+        String recorded = sentMail.getRcvrNm() == null ? "" : sentMail.getRcvrNm().trim();
+        if (ADDRESS.matcher(recorded).matches()) {
+            return recorded;
+        }
+        throw new BusinessException(CommonErrorCode.INVALID_STATE,
+                "이 메일은 수신자를 다시 찾을 수 없어 재발송할 수 없습니다. 새로 작성해 주세요.");
+    }
+
+    /** 이 배포에서 메일이 실제로 전달될 수 있는지(2026-09-26 DIP B5 F7). */
+    public MailDeliveryStatusDto getDeliveryStatus() {
+        return new MailDeliveryStatusDto(emailSender.isDeliveryConfigured(), emailSender.getClass().getSimpleName());
     }
 
     private static boolean isSender(SentMail sentMail) {
@@ -136,7 +249,7 @@ public class MailService {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "수신자를 한 명 이상 지정해 주세요.");
         }
         return dispatchAll(requesterId, dto,
-                List.of(new ResolvedRecipient(address.trim(), displayNameOf(recipientName))));
+                List.of(new ResolvedRecipient(address.trim(), displayNameOf(recipientName), null)));
     }
 
     private Long dispatchAll(String userId, SentMailDto dto, List<ResolvedRecipient> recipients) {
@@ -170,7 +283,7 @@ public class MailService {
      * 발송 1건의 대상. {@code address} 는 SMTP 수신 주소로만 쓰고, 이력의 수신자 칸에는
      * {@code displayName} 을 남긴다 — 사용자 수신자는 이름, 직접 입력한 주소는 그 주소다.
      */
-    private record ResolvedRecipient(String address, String displayName) {
+    private record ResolvedRecipient(String address, String displayName, String rcvrId) {
     }
 
     /**
@@ -199,8 +312,8 @@ public class MailService {
                 .collect(Collectors.toMap(UserContactService.UserContact::esntlId, Function.identity(),
                         (first, second) -> first));
 
-        // 주소 → 이력 표시값. 같은 주소는 먼저 나온 수신자의 표시값으로 한 번만 보낸다.
-        LinkedHashMap<String, String> byAddress = new LinkedHashMap<>();
+        // 주소 → 이력 표시값·수신자 식별자. 같은 주소는 먼저 나온 수신자로 한 번만 보낸다.
+        LinkedHashMap<String, ResolvedRecipient> byAddress = new LinkedHashMap<>();
         for (MailRecipientDto recipient : recipients) {
             if (hasText(recipient.getEsntlId())) {
                 UserContactService.UserContact contact = contacts.get(recipient.getEsntlId().trim());
@@ -210,22 +323,22 @@ public class MailService {
                             "'" + name + "' 님은 등록된 이메일 주소가 없어 메일을 보낼 수 없습니다.");
                 }
                 // 사용자 수신자의 이력 표시값은 이름이다 — 해석된 주소는 저장·응답하지 않는다(DIP D8).
-                byAddress.putIfAbsent(contact.emlAddr(), displayNameOf(contact.userNm()));
+                // 재발송이 현재 주소를 다시 찾을 수 있도록 식별자를 남긴다(주소는 남기지 않는다 — DIP B5 F7).
+                byAddress.putIfAbsent(contact.emlAddr(), new ResolvedRecipient(contact.emlAddr(),
+                        displayNameOf(contact.userNm()), contact.esntlId()));
             } else {
                 String address = recipient.getEmlAddr().trim();
-                byAddress.putIfAbsent(address, address);
+                byAddress.putIfAbsent(address, new ResolvedRecipient(address, address, null));
             }
         }
         if (hasText(dto.getRecptnPerson())) {
             String address = dto.getRecptnPerson().trim();
-            byAddress.putIfAbsent(address, address);
+            byAddress.putIfAbsent(address, new ResolvedRecipient(address, address, null));
         }
         if (byAddress.isEmpty()) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "수신자를 한 명 이상 지정해 주세요.");
         }
-        List<ResolvedRecipient> resolved = new ArrayList<>();
-        byAddress.forEach((address, displayName) -> resolved.add(new ResolvedRecipient(address, displayName)));
-        return resolved;
+        return new ArrayList<>(byAddress.values());
     }
 
     private static String displayNameOf(String userNm) {
@@ -260,6 +373,7 @@ public class MailService {
                 .emlCn(dto.getEmailCn())
                 .sndptyNm(resolveSenderName(userId, dto))
                 .rcvrNm(displayName.length() > 100 ? displayName.substring(0, 100) : displayName)
+                .rcvrId(recipient.rcvrId())
                 .dsptchRsltCd("P") // Pending
                 .build());
 

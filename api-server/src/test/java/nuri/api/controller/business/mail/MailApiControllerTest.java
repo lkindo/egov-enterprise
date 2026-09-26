@@ -101,4 +101,32 @@ class MailApiControllerTest extends ControllerTestSupport {
         mockMvc.perform(delete("/api/v1/mails/1").with(csrf()))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("[DIP B5 F7] 발송 가능 상태는 SMTP 연결 여부를 싣는다 — 경로 변수 조회와 겹치지 않는다")
+    void getDeliveryStatus() throws Exception {
+        given(mailService.getDeliveryStatus())
+                .willReturn(new nuri.business.service.mail.dto.MailDeliveryStatusDto(false, "LoggingEmailSender"));
+
+        mockMvc.perform(get("/api/v1/mails/delivery-status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.deliveryConfigured").value(false));
+        verify(mailService, never()).getSentMail(any());
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("[DIP B5 F7] 재발송은 경로의 발신 번호를 서비스로 넘기고, 서비스 판정 오류를 그대로 돌려준다")
+    void resendMail() throws Exception {
+        mockMvc.perform(post("/api/v1/mails/7/resend").with(csrf()))
+                .andExpect(status().isOk());
+        verify(mailService).resendMail(7L);
+
+        org.mockito.Mockito.doThrow(new nuri.foundation.core.exception.BusinessException(
+                        nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION, "처리 중"))
+                .when(mailService).resendMail(8L);
+        mockMvc.perform(post("/api/v1/mails/8/resend").with(csrf()))
+                .andExpect(status().isConflict());
+    }
 }
