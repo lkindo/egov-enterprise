@@ -19,9 +19,6 @@ export interface AddressBook {
   rlsScopeCd: string;
   wrterId: string;
   crtDt: string;
-  telNo?: string;
-  email?: string;
-  adres?: string;
   adbkMan?: NameCard[];
 }
 

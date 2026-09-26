@@ -4,6 +4,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.operation.EventInfo;
 import nuri.business.domain.operation.EventInfoRepository;
+import nuri.business.domain.operation.ExternalHrRepository;
 import nuri.business.service.operation.dto.EventInfoDto;
 import nuri.business.service.operation.dto.EventInfoMapper;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import java.util.Objects;
 public class EventInfoService {
  
     private final EventInfoRepository eventInfoRepository;
+    private final ExternalHrRepository externalHrRepository;
     private final EventInfoMapper eventInfoMapper;
 
     public Page<EventInfoDto> getEventList(String searchWrd, Pageable pageable) {
@@ -100,6 +102,14 @@ public class EventInfoService {
         log.warn("Deleting event serial number: {}", evntSn);
         EventInfo eventInfo = eventInfoRepository.findById(Objects.requireNonNull(evntSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [2026-09-26 DIP V9] 외부인사가 이 행사를 참조한다(fk_tb_extrl_hr_info_tb_event_info, NO ACTION).
+        //   종전에는 삭제가 DB 무결성 오류로 끝나 사용자는 이유를 몰랐다. 건수를 밝혀 거부하고,
+        //   외부인사를 자동으로 지우지 않는다 — 명단 삭제는 사용자가 확인하고 할 일이다.
+        long externalHrCount = externalHrRepository.countByEvntSn(evntSn);
+        if (externalHrCount > 0) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
+                    "외부인사 " + externalHrCount + "명이 등록된 행사는 삭제할 수 없습니다. 외부인사를 먼저 삭제하세요.");
+        }
         eventInfoRepository.delete(Objects.requireNonNull(eventInfo));
         log.info("Event deleted successfully: {}", evntSn);
     }

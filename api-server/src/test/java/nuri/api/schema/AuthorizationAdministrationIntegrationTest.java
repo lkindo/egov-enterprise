@@ -215,6 +215,13 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         assertThat(history.getTotalElements()).isEqualTo(2);
         assertThat(history.getContent()).hasSize(1);
         assertThat(service.history(0,20,"T_MULTI_B","T_DEPT_USER_A","OTHER_ACTOR",today,today).getTotalElements()).isZero();
+        // [2026-09-26 DIP V9] 화면의 처리자 칸에는 사람이 로그인 ID 를 입력한다. 사용자 식별자로만 찾으면 늘 0건이었다.
+        var byLogin=service.history(0,20,"T_MULTI_B","T_DEPT_USER_A","test_operator",today,today);
+        assertThat(byLogin.getTotalElements()).isEqualTo(2);
+        assertThat(byLogin.getContent()).allSatisfy(change -> {
+            assertThat(change.actorNm()).isEqualTo("TEST_OPERATOR");
+            assertThat(change.userNm()).isEqualTo("T_DEPT_USER_A");
+        });
         assertThatThrownBy(() -> service.history(0,20,null,null,null,today.plusDays(1),today))
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode",CommonErrorCode.INVALID_INPUT_VALUE);
     }

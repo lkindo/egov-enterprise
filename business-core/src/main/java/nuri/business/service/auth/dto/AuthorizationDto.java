@@ -84,11 +84,13 @@ public final class AuthorizationDto {
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED) String changeType,
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED, nullable=true, types={"string","null"}) String group,
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED, nullable=true, types={"string","null"}) String userId,
+            @Schema(description="대상 사용자 이름(사용자가 없으면 null)", requiredMode=Schema.RequiredMode.REQUIRED, nullable=true, types={"string","null"}) String userNm,
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED, nullable=true, types={"string","null"}) String grantType,
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED, nullable=true, types={"string","null"}) String grantCode,
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED) String field,
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED, nullable=true, types={"string","null"}) String before,
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED, nullable=true, types={"string","null"}) String after,
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED, nullable=true, types={"string","null"}) String actorId,
+            @Schema(description="처리자 이름(사용자가 없으면 null)", requiredMode=Schema.RequiredMode.REQUIRED, nullable=true, types={"string","null"}) String actorNm,
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED) java.time.LocalDateTime createdAt) {}
 }

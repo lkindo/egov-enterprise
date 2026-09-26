@@ -4239,6 +4239,7 @@ export type ApiResponseSmsDeliveryStatusDto = z.infer<typeof ApiResponseSmsDeliv
 export const SmsDeliveryStatusDtoSchema = z.object({
   deliveryConfigured: z.boolean(),
   senderImplementation: z.string(),
+  defaultSenderTelno: z.string().nullable(),
 });
 export type SmsDeliveryStatusDto = z.infer<typeof SmsDeliveryStatusDtoSchema>;
 
@@ -4529,12 +4530,14 @@ export const ChangeSchema = z.object({
   changeType: z.string(),
   group: z.string().nullable(),
   userId: z.string().nullable(),
+  userNm: z.string().nullable(),
   grantType: z.string().nullable(),
   grantCode: z.string().nullable(),
   field: z.string(),
   before: z.string().nullable(),
   after: z.string().nullable(),
   actorId: z.string().nullable(),
+  actorNm: z.string().nullable(),
   createdAt: z.iso.datetime({ offset: true, local: true }),
 });
 export type Change = z.infer<typeof ChangeSchema>;
@@ -10713,11 +10716,13 @@ export const ApiResponseSmsDeliveryStatusDtoResponseSchema = z.object({
 export const SmsDeliveryStatusDtoRequestSchema = z.object({
   deliveryConfigured: z.boolean(),
   senderImplementation: z.string(),
+  defaultSenderTelno: z.string().nullable(),
 });
 
 export const SmsDeliveryStatusDtoResponseSchema = z.object({
   deliveryConfigured: z.boolean(),
   senderImplementation: z.string(),
+  defaultSenderTelno: z.string().nullable(),
 });
 
 export const ApiResponsePageResponseRewardManageDtoRequestSchema = z.object({
@@ -11120,12 +11125,14 @@ export const ChangeRequestSchema = z.object({
   changeType: z.string(),
   group: z.string().nullable(),
   userId: z.string().nullable(),
+  userNm: z.string().nullable(),
   grantType: z.string().nullable(),
   grantCode: z.string().nullable(),
   field: z.string(),
   before: z.string().nullable(),
   after: z.string().nullable(),
   actorId: z.string().nullable(),
+  actorNm: z.string().nullable(),
   createdAt: z.iso.datetime({ offset: true, local: true }),
 });
 
@@ -11137,12 +11144,14 @@ export const ChangeResponseSchema = z.object({
   changeType: z.string(),
   group: z.string().nullable(),
   userId: z.string().nullable(),
+  userNm: z.string().nullable(),
   grantType: z.string().nullable(),
   grantCode: z.string().nullable(),
   field: z.string(),
   before: z.string().nullable(),
   after: z.string().nullable(),
   actorId: z.string().nullable(),
+  actorNm: z.string().nullable(),
   createdAt: z.iso.datetime({ offset: true, local: true }),
 });
 
