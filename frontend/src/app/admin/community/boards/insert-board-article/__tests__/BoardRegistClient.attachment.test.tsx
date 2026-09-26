@@ -29,7 +29,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ back: mocks.back, push: mocks.push }),
+  useRouter: () => ({ back: mocks.back, push: mocks.push, replace: mocks.push }),
 }));
 
 vi.mock('next/dynamic', () => ({

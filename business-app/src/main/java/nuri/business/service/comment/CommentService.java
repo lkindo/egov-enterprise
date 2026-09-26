@@ -25,7 +25,11 @@ public class CommentService {
 
     @Transactional(readOnly = true)
     public Page<CommentDto> getComments(Long pstSn, String bbsId, Pageable pageable) {
-        return commentRepository.findByBbsIdAndPstSn(bbsId, pstSn, pageable)
+        // [2026-09-26 DIP C7] 글의 댓글은 대화 순서(등록순)로 읽는다. 정렬 없는 조회는 DB 가 순서를 보장하지 않아
+        //   댓글이 화면을 열 때마다 뒤섞일 수 있었다. 요청이 정렬을 주면 그것을 따른다.
+        Pageable ordered = pageable.getSort().isSorted() ? pageable
+                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.ASC, "ansSn"));
+        return commentRepository.findByBbsIdAndPstSn(bbsId, pstSn, ordered)
                 .map(this::toDto);
     }
 
