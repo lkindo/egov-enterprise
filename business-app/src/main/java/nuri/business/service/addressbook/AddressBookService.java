@@ -69,9 +69,9 @@ public class AddressBookService {
 
             if (dto.getAdbkMan() != null) {
                 for (AddressBookUserDto userDto : dto.getAdbkMan()) {
+                    // 연결된 사용자는 요청에서 받지 않는다 — 손으로 적는 연락처다(DIP B5 F8).
                     AddressBookUser userEntity = AddressBookUser.builder()
                             .addressBook(entity)
-                            .userId(userDto.getUserId())
                             .nm(userDto.getNm())
                             .emlAddr(userDto.getEmlAddr())
                             .homeTelno(userDto.getHomeTelno())
@@ -111,35 +111,46 @@ public class AddressBookService {
             return;
         }
 
+        /*
+         * [2026-09-26 DIP B5 F8] 구성원은 adbkMbrSn 으로 가리킨다. 종전에는 userId 로 대조했는데 화면이 작성자 자신의 ID 를
+         * 모든 구성원에 넣어, 구성원이 둘 이상이면 모두 같은 키가 되어 첫 구성원만 갱신되고 나머지는 지워지거나 중복됐다.
+         * 요청의 adbkMbrSn 이 이 주소록의 구성원이 아니거나 두 번 나오면 무엇을 고칠지 정할 수 없어 400 이다 —
+         * 남의 주소록 구성원을 번호로 끌어와 고치는 경로도 이것으로 막힌다.
+         */
         List<AddressBookUser> existingUsers = addressBookUserRepository.findByAdbkSn(dto.getAdbkSn());
+        java.util.Map<Long, AddressBookUser> existingById = new java.util.HashMap<>();
+        for (AddressBookUser existing : existingUsers) {
+            existingById.put(existing.getAdbkMbrSn(), existing);
+        }
+        java.util.Set<Long> kept = new java.util.HashSet<>();
+        for (AddressBookUserDto userDto : dto.getAdbkMan()) {
+            Long adbkMbrSn = userDto.getAdbkMbrSn();
+            if (adbkMbrSn == null) {
+                continue;
+            }
+            if (!existingById.containsKey(adbkMbrSn)) {
+                throw new BusinessException("이 주소록의 구성원이 아닙니다.", CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+            if (!kept.add(adbkMbrSn)) {
+                throw new BusinessException("같은 구성원이 두 번 들어 있습니다.", CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+        }
 
         for (AddressBookUser existing : existingUsers) {
-            boolean remains = dto.getAdbkMan().stream()
-                    .anyMatch(u -> (u.getUserId() != null && u.getUserId().equals(existing.getUserId())));
-            if (!remains) {
+            if (!kept.contains(existing.getAdbkMbrSn())) {
                 addressBookUserRepository.delete(existing);
             }
         }
 
         for (AddressBookUserDto userDto : dto.getAdbkMan()) {
-            /*
-             * [2026-08-28] 기존 구성원의 연락 정보를 실제로 갱신한다.
-             * 종전에는 같은 userId 를 만나면 아무것도 하지 않고 넘어갔다 — 화면이 이메일·연락처를
-             * 바꿔 보내도 200 만 돌아오고 값은 그대로였다. 조용히 성공하는 no-op 이었다.
-             */
-            AddressBookUser existing = existingUsers.stream()
-                    .filter(u -> u.getUserId() != null && u.getUserId().equals(userDto.getUserId()))
-                    .findFirst()
-                    .orElse(null);
-            if (existing != null) {
-                existing.updateContact(userDto.getNm(), userDto.getEmlAddr(), userDto.getHomeTelno(),
-                        userDto.getMblTelno(), userDto.getOfcTelno(), userDto.getFaxNo());
+            if (userDto.getAdbkMbrSn() != null) {
+                existingById.get(userDto.getAdbkMbrSn()).updateContact(userDto.getNm(), userDto.getEmlAddr(),
+                        userDto.getHomeTelno(), userDto.getMblTelno(), userDto.getOfcTelno(), userDto.getFaxNo());
                 continue;
             }
             try {
                     AddressBookUser newUser = AddressBookUser.builder()
                             .addressBook(entity)
-                            .userId(userDto.getUserId())
                             .nm(userDto.getNm())
                             .emlAddr(userDto.getEmlAddr())
                             .homeTelno(userDto.getHomeTelno())

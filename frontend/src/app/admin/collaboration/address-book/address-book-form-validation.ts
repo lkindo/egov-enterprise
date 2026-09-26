@@ -4,6 +4,7 @@ import {
   AddressBookDtoSchema,
   AddressBookUserDtoSchema,
 } from '@/types/generated-zod';
+import type { NameCard } from '@/types/business/addressbook';
 
 const addressBookNameSchema = AddressBookDtoSchema.shape.adbkNm
   .trim()
@@ -13,11 +14,6 @@ const addressBookNameSchema = AddressBookDtoSchema.shape.adbkNm
 const releaseScopeSchema = AddressBookDtoSchema.shape.rlsScopeCd
   .trim()
   .min(1, '공개 범위 설정을 확인해 주세요.');
-
-const memberUserIdSchema = AddressBookUserDtoSchema.shape.userId
-  .trim()
-  .min(1, '로그인 사용자 정보를 확인할 수 없습니다.')
-  .max(20, '사용자 ID는 최대 20자까지 입력할 수 있습니다.');
 
 /**
  * 백엔드 연락처 길이는 구분자를 제외한 11자리다. 입력 단계에서는 하이픈/공백을 허용하되,
@@ -58,7 +54,6 @@ export const addressBookCreateFormSchema = AddressBookDtoSchema.pick({
 }).extend({
   adbkNm: addressBookNameSchema,
   rlsScopeCd: releaseScopeSchema,
-  userId: memberUserIdSchema,
   nm: memberNameSchema,
   telNo: memberPhoneSchema,
   email: memberEmailSchema,
@@ -78,7 +73,6 @@ export const addressBookCreateValidationLabels = {
   email: '이메일',
   rlsScopeCd: '공개 범위',
   telNo: '전화번호',
-  userId: '로그인 사용자',
 };
 
 export const addressBookEditValidationLabels = {
@@ -89,10 +83,8 @@ export const addressBookEditValidationLabels = {
 const createFieldAliases: Record<string, string> = {
   'adbkMan.0.emlAddr': 'email',
   'adbkMan.0.mblTelno': 'telNo',
-  'adbkMan.0.userId': 'userId',
   'adbkMan[0].emlAddr': 'email',
   'adbkMan[0].mblTelno': 'telNo',
-  'adbkMan[0].userId': 'userId',
   emlAddr: 'email',
   mblTelno: 'telNo',
 };
@@ -107,3 +99,45 @@ export function mapAddressBookCreateFieldErrors(errors: Record<string, string>) 
   return mapped;
 }
 
+/**
+ * 구성원 추가·수정 폼(2026-09-26 DIP B5 F8). 등록 폼의 구성원 규칙과 같다 — 성명 필수, 휴대전화는 숫자(하이픈 허용),
+ * 이메일은 형식만 본다.
+ */
+export const addressBookMemberFormSchema = AddressBookUserDtoSchema.pick({ nm: true }).extend({
+  nm: memberNameSchema,
+  telNo: memberPhoneSchema,
+  email: memberEmailSchema,
+});
+
+export const addressBookMemberValidationLabels = {
+  nm: '성명',
+  telNo: '휴대전화',
+  email: '이메일',
+};
+
+/** 서버는 구성원 목록 전체를 검증하므로 오류 경로에 번호가 붙는다(adbkMan[3].emlAddr). 편집 중인 입력으로 모은다. */
+export function mapAddressBookMemberFieldErrors(errors: Record<string, string>) {
+  const mapped: Record<string, string> = {};
+  for (const [field, message] of Object.entries(errors)) {
+    const leaf = field.replace(/^adbkMan(?:\[\d+\]|\.\d+)\./, '');
+    const target = leaf === 'emlAddr' ? 'email' : leaf === 'mblTelno' ? 'telNo' : leaf;
+    if (!(target in mapped)) mapped[target] = message;
+  }
+  return mapped;
+}
+
+/**
+ * 구성원 목록 PUT 에 싣는 한 줄. 서버는 목록에 없는 구성원을 지우고 번호가 있는 구성원을 고치므로, 이 화면이 묻지 않는
+ * 집 전화·사무실 전화·팩스도 조회한 값 그대로 되돌려 보낸다. 연결된 사용자(userId)는 서버 소유라 싣지 않는다.
+ */
+export function toMemberRequest(member: NameCard): NameCard {
+  return {
+    adbkMbrSn: member.adbkMbrSn,
+    nm: member.nm,
+    emlAddr: member.emlAddr,
+    homeTelno: member.homeTelno,
+    mblTelno: member.mblTelno,
+    ofcTelno: member.ofcTelno,
+    faxNo: member.faxNo,
+  };
+}

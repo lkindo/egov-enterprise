@@ -2071,6 +2071,20 @@
     "permission": "MAIL_SEND"
   },
   {
+    "method": "GET",
+    "path": "/api/v1/mails/delivery-status",
+    "handler": "nuri.api.controller.business.mail.MailApiController#getMailDeliveryStatus",
+    "access": "PERMISSION",
+    "permission": "MAIL_SEND"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/mails/{emlDsptchSn}/resend",
+    "handler": "nuri.api.controller.business.mail.MailApiController#resendMail",
+    "access": "PERMISSION",
+    "permission": "MAIL_SEND"
+  },
+  {
     "method": "DELETE",
     "path": "/api/v1/mails/{emlDsptchSn}",
     "handler": "nuri.api.controller.business.mail.MailApiController#deleteMail",

@@ -60,6 +60,15 @@ public class SentMailDto {
             + "응답에는 과거 이력에 남은 번호만 실린다")
     private Long atchFileSn;
 
+    /**
+     * 현재 사용자가 이 메일을 다시 보낼 수 있는지(서버 판정, 2026-09-26 DIP B5 F7). 발신자 본인이고, 실패했거나
+     * 대기에 멈춰 있으며, 수신자를 다시 찾을 수 있을 때 true 다. 화면 표시용 힌트이며 재발송은 서버가 다시 판정한다.
+     */
+    @Schema(description = "현재 사용자가 다시 보낼 수 있는지(서버 판정)",
+            accessMode = Schema.AccessMode.READ_ONLY)
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
+    private Boolean resendable;
+
     public static SentMailDto from(SentMail entity) {
         if (entity == null) return null;
         return SentMailDto.builder()

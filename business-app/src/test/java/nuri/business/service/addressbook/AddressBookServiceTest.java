@@ -4,6 +4,7 @@ import nuri.business.domain.addressbook.AddressBook;
 import nuri.business.domain.addressbook.AddressBookRepository;
 import nuri.business.domain.addressbook.AddressBookUserRepository;
 import nuri.business.service.addressbook.dto.AddressBookDto;
+import nuri.foundation.core.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
@@ -122,7 +124,12 @@ class AddressBookServiceTest {
 
         // Then
         verify(addressBookRepository).save(any(AddressBook.class));
-        verify(addressBookUserRepository).save(any(nuri.business.domain.addressbook.AddressBookUser.class));
+        org.mockito.ArgumentCaptor<nuri.business.domain.addressbook.AddressBookUser> saved =
+                org.mockito.ArgumentCaptor.forClass(nuri.business.domain.addressbook.AddressBookUser.class);
+        verify(addressBookUserRepository).save(saved.capture());
+        // [DIP B5 F8] 연결된 사용자는 요청에서 받지 않는다 — 화면이 넣던 작성자 ID 가 구성원 키가 되지 않는다.
+        assertThat(saved.getValue().getUserId()).isNull();
+        assertThat(saved.getValue().getNm()).isEqualTo("User");
     }
 
     @Test
@@ -134,11 +141,11 @@ class AddressBookServiceTest {
         given(addressBookRepository.findById(adbkSn)).willReturn(Optional.of(entity));
 
         nuri.business.domain.addressbook.AddressBookUser existingUser = 
-            nuri.business.domain.addressbook.AddressBookUser.builder().userId("REMOVE_ME").addressBook(AddressBook.builder().adbkSn(adbkSn).build()).build();
+            nuri.business.domain.addressbook.AddressBookUser.builder().adbkMbrSn(5L).addressBook(AddressBook.builder().adbkSn(adbkSn).build()).build();
         given(addressBookUserRepository.findByAdbkSn(adbkSn)).willReturn(List.of(existingUser));
 
         nuri.business.service.addressbook.dto.AddressBookUserDto newUserDto =
-            nuri.business.service.addressbook.dto.AddressBookUserDto.builder().userId("ADD_ME").nm("New User").build();
+            nuri.business.service.addressbook.dto.AddressBookUserDto.builder().nm("New User").build();
         AddressBookDto dto = AddressBookDto.builder().adbkSn(adbkSn).adbkNm("Updated").adbkMan(List.of(newUserDto)).build();
 
         // When
@@ -206,7 +213,7 @@ class AddressBookServiceTest {
 
         nuri.business.domain.addressbook.AddressBookUser existing =
                 nuri.business.domain.addressbook.AddressBookUser.builder()
-                        .userId("KEEP_ME")
+                        .adbkMbrSn(3L)
                         .nm("옛 이름")
                         .emlAddr("old@example.com")
                         .mblTelno("01011112222")
@@ -216,7 +223,7 @@ class AddressBookServiceTest {
 
         nuri.business.service.addressbook.dto.AddressBookUserDto changed =
                 nuri.business.service.addressbook.dto.AddressBookUserDto.builder()
-                        .userId("KEEP_ME")
+                        .adbkMbrSn(3L)
                         .nm("새 이름")
                         .emlAddr("new@example.com")
                         .mblTelno("01033334444")
@@ -232,6 +239,55 @@ class AddressBookServiceTest {
         // 유지되는 구성원을 지우거나 다시 만들지 않는다 — adbkMbrSn 이 바뀌면 참조가 끊긴다.
         verify(addressBookUserRepository, never()).delete(existing);
         verify(addressBookUserRepository, never()).save(any(nuri.business.domain.addressbook.AddressBookUser.class));
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F8] 작성자 ID 를 함께 가진 두 구성원도 번호로 가려 각자 고친다 — 종전에는 서로를 덮었다")
+    void updateAddressBook_membersSharingLegacyUserIdAreKeptApart() {
+        Long adbkSn = 2L;
+        AddressBook entity = AddressBook.builder().adbkSn(adbkSn).adbkNm("팀").build();
+        given(addressBookRepository.findById(adbkSn)).willReturn(Optional.of(entity));
+        nuri.business.domain.addressbook.AddressBookUser first = nuri.business.domain.addressbook.AddressBookUser.builder()
+                .adbkMbrSn(11L).userId("AUTHOR").nm("갑").addressBook(entity).build();
+        nuri.business.domain.addressbook.AddressBookUser second = nuri.business.domain.addressbook.AddressBookUser.builder()
+                .adbkMbrSn(12L).userId("AUTHOR").nm("을").addressBook(entity).build();
+        given(addressBookUserRepository.findByAdbkSn(adbkSn)).willReturn(List.of(first, second));
+
+        AddressBookDto dto = AddressBookDto.builder().adbkSn(adbkSn).adbkNm("팀").adbkMan(List.of(
+                nuri.business.service.addressbook.dto.AddressBookUserDto.builder().adbkMbrSn(11L).nm("갑2").build(),
+                nuri.business.service.addressbook.dto.AddressBookUserDto.builder().adbkMbrSn(12L).nm("을2").build())).build();
+
+        addressBookService.updateAddressBook("user", dto);
+
+        assertThat(first.getNm()).isEqualTo("갑2");
+        assertThat(second.getNm()).isEqualTo("을2");
+        verify(addressBookUserRepository, never()).delete(any(nuri.business.domain.addressbook.AddressBookUser.class));
+        verify(addressBookUserRepository, never()).save(any(nuri.business.domain.addressbook.AddressBookUser.class));
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F8] 이 주소록의 구성원이 아니거나 두 번 나온 번호는 400 이고 아무것도 지우지 않는다")
+    void updateAddressBook_rejectsForeignOrDuplicateMember() {
+        Long adbkSn = 4L;
+        AddressBook entity = AddressBook.builder().adbkSn(adbkSn).adbkNm("팀").build();
+        given(addressBookRepository.findById(adbkSn)).willReturn(Optional.of(entity));
+        nuri.business.domain.addressbook.AddressBookUser own = nuri.business.domain.addressbook.AddressBookUser.builder()
+                .adbkMbrSn(21L).nm("갑").addressBook(entity).build();
+        given(addressBookUserRepository.findByAdbkSn(adbkSn)).willReturn(List.of(own));
+
+        AddressBookDto foreign = AddressBookDto.builder().adbkSn(adbkSn).adbkNm("팀").adbkMan(List.of(
+                nuri.business.service.addressbook.dto.AddressBookUserDto.builder().adbkMbrSn(999L).nm("남의 구성원").build())).build();
+        assertThatThrownBy(() -> addressBookService.updateAddressBook("user", foreign))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("이 주소록의 구성원이 아닙니다");
+
+        AddressBookDto duplicate = AddressBookDto.builder().adbkSn(adbkSn).adbkNm("팀").adbkMan(List.of(
+                nuri.business.service.addressbook.dto.AddressBookUserDto.builder().adbkMbrSn(21L).nm("갑1").build(),
+                nuri.business.service.addressbook.dto.AddressBookUserDto.builder().adbkMbrSn(21L).nm("갑2").build())).build();
+        assertThatThrownBy(() -> addressBookService.updateAddressBook("user", duplicate))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("두 번");
+
+        verify(addressBookUserRepository, never()).delete(any(nuri.business.domain.addressbook.AddressBookUser.class));
+        assertThat(own.getNm()).isEqualTo("갑");
     }
 
     @Test

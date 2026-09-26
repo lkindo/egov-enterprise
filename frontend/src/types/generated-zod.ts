@@ -986,9 +986,9 @@ export type AddressBookDto = z.infer<typeof AddressBookDtoSchema>;
 export const AddressBookUserDtoSchema = z.object({
   adbkMbrSn: z.number().int().optional(),
   adbkSn: z.number().int().optional(),
-  userId: z.string().min(0).max(20),
+  userId: z.string().optional(),
   nm: z.string().min(0).max(100).optional(),
-  emlAddr: z.string().min(0).max(50).optional(),
+  emlAddr: z.string().min(0).max(320).optional(),
   homeTelno: z.string().min(0).max(11).optional(),
   mblTelno: z.string().min(0).max(11).optional(),
   ofcTelno: z.string().min(0).max(11).optional(),
@@ -1152,6 +1152,7 @@ export const SentMailDtoSchema = z.object({
   sndngResultCode: z.string().optional(),
   sndngDe: z.string().optional(),
   atchFileSn: z.number().int().optional(),
+  resendable: z.boolean().optional(),
 });
 export type SentMailDto = z.infer<typeof SentMailDtoSchema>;
 
@@ -2043,6 +2044,29 @@ export const ApiResponseSentMailDtoSchema = z.object({
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseSentMailDto = z.infer<typeof ApiResponseSentMailDtoSchema>;
+
+// ==========================================================================
+// ApiResponseMailDeliveryStatusDto Schema
+// ==========================================================================
+export const ApiResponseMailDeliveryStatusDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => MailDeliveryStatusDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseMailDeliveryStatusDto = z.infer<typeof ApiResponseMailDeliveryStatusDtoSchema>;
+
+// ==========================================================================
+// MailDeliveryStatusDto Schema
+// ==========================================================================
+export const MailDeliveryStatusDtoSchema = z.object({
+  deliveryConfigured: z.boolean(),
+  senderImplementation: z.string(),
+});
+export type MailDeliveryStatusDto = z.infer<typeof MailDeliveryStatusDtoSchema>;
 
 // ==========================================================================
 // ApiResponseInformalSanctionDto Schema
@@ -6163,9 +6187,8 @@ export const AddressBookDtoResponseSchema = z.object({
 export const AddressBookUserDtoRequestSchema = z.object({
   adbkMbrSn: z.number().int().optional(),
   adbkSn: z.number().int().optional(),
-  userId: z.string().min(0).max(20),
   nm: z.string().min(0).max(100).optional(),
-  emlAddr: z.string().min(0).max(50).optional(),
+  emlAddr: z.string().min(0).max(320).optional(),
   homeTelno: z.string().min(0).max(11).optional(),
   mblTelno: z.string().min(0).max(11).optional(),
   ofcTelno: z.string().min(0).max(11).optional(),
@@ -6175,9 +6198,9 @@ export const AddressBookUserDtoRequestSchema = z.object({
 export const AddressBookUserDtoResponseSchema = z.object({
   adbkMbrSn: z.number().int().optional().nullable(),
   adbkSn: z.number().int().optional().nullable(),
-  userId: z.string().min(0).max(20),
+  userId: z.string().optional().nullable(),
   nm: z.string().min(0).max(100).optional().nullable(),
-  emlAddr: z.string().min(0).max(50).optional().nullable(),
+  emlAddr: z.string().min(0).max(320).optional().nullable(),
   homeTelno: z.string().min(0).max(11).optional().nullable(),
   mblTelno: z.string().min(0).max(11).optional().nullable(),
   ofcTelno: z.string().min(0).max(11).optional().nullable(),
@@ -6396,6 +6419,7 @@ export const SentMailDtoResponseSchema = z.object({
   sndngResultCode: z.string().optional().nullable(),
   sndngDe: z.string().optional().nullable(),
   atchFileSn: z.number().int().optional().nullable(),
+  resendable: z.boolean().optional().nullable(),
 });
 
 export const ApiResponseTokenResponseRequestSchema = z.object({
@@ -7640,6 +7664,36 @@ export const ApiResponseSentMailDtoResponseSchema = z.object({
   data: z.lazy(() => SentMailDtoResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const ApiResponseMailDeliveryStatusDtoRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => MailDeliveryStatusDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseMailDeliveryStatusDtoResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => MailDeliveryStatusDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const MailDeliveryStatusDtoRequestSchema = z.object({
+  deliveryConfigured: z.boolean(),
+  senderImplementation: z.string(),
+});
+
+export const MailDeliveryStatusDtoResponseSchema = z.object({
+  deliveryConfigured: z.boolean(),
+  senderImplementation: z.string(),
 });
 
 export const ApiResponseInformalSanctionDtoRequestSchema = z.object({
