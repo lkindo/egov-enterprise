@@ -322,7 +322,7 @@ describe('세션 만료 안내', () => {
 
     await act(async () => { render(<LoginPage />); });
 
-    expect(screen.getByTestId('login-session-expired')).toHaveTextContent('세션이 만료되어 로그아웃되었습니다');
+    expect(screen.getByTestId('login-session-expired')).toHaveTextContent('다른 곳에서 로그인했거나 세션이 만료되었습니다');
   });
 
   it('만료 파라미터가 없으면 안내하지 않는다 — 평상시 로그인은 사고가 아니다', async () => {

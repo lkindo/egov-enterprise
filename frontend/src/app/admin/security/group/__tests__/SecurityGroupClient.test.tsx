@@ -132,7 +132,7 @@ describe('SecurityGroupClient', () => {
     expect(await screen.findByText('관리자 그룹')).toBeInTheDocument();
     // [2026-08-24 A1 이행] 서버 총계는 지표 카드가 아니라 셸 결과 툴바가 한 곳에서 소유한다(G3).
     expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 12건');
-    expect(screen.getByText('규정 설명이 제공되지 않음')).toBeInTheDocument();
+    expect(screen.getByText('설명 없음')).toBeInTheDocument();
     expect(screen.getByText('N/A')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '그룹 다음 페이지' }));
@@ -200,10 +200,10 @@ describe('SecurityGroupClient', () => {
     renderClient();
     await screen.findByText('관리자 그룹');
     fireEvent.click(screen.getByRole('button', { name: /분류 그룹 등록/ }));
-    fireEvent.change(screen.getByLabelText('도메인 그룹 식별자(Group ID)'), {
+    fireEvent.change(screen.getByLabelText('분류 그룹 ID'), {
       target: { value: 'GROUP_NEW' },
     });
-    const groupName = screen.getByLabelText('그룹 레이블 명칭');
+    const groupName = screen.getByLabelText('분류 그룹 이름');
     fireEvent.change(groupName, { target: { value: '입력한 그룹 명칭' } });
 
     fireEvent.click(screen.getByRole('button', { name: /신규 그룹 배포/ }));
@@ -227,7 +227,7 @@ describe('SecurityGroupClient', () => {
     await screen.findByText('관리자 그룹');
     fireEvent.click(screen.getByRole('button', { name: /분류 그룹 등록/ }));
 
-    const groupId = screen.getByLabelText('도메인 그룹 식별자(Group ID)');
+    const groupId = screen.getByLabelText('분류 그룹 ID');
     fireEvent.click(screen.getByRole('button', { name: /신규 그룹 배포/ }));
 
     expect(mocks.create).not.toHaveBeenCalled();
@@ -237,7 +237,7 @@ describe('SecurityGroupClient', () => {
     await waitFor(() => expect(groupId).toHaveFocus());
 
     fireEvent.change(groupId, { target: { value: 'G'.repeat(21) } });
-    fireEvent.change(screen.getByLabelText('그룹 레이블 명칭'), { target: { value: '정상 그룹' } });
+    fireEvent.change(screen.getByLabelText('분류 그룹 이름'), { target: { value: '정상 그룹' } });
     fireEvent.click(screen.getByRole('button', { name: /신규 그룹 배포/ }));
 
     expect(mocks.create).not.toHaveBeenCalled();

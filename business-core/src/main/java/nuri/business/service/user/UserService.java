@@ -552,7 +552,23 @@ public class UserService extends BaseAbstractService {
                                 .or(() -> userRepository.findById(userId))
                                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
                 user.updatePassword(passwordEncoder.encode(newPassword));
+                // [2026-09-26 DIP B4 P7, D5] 초기화는 계정 잠금도 푼다 — 잠긴 채로 새 비밀번호를 알려 주면 잠금 시간이
+                //   지날 때까지 그 비밀번호로도 들어올 수 없다.
+                user.unlockAccount();
                 revokeRefreshTokens(user);
+        }
+
+        /**
+         * 계정 잠금을 푼다(2026-09-26 DIP B4 P7, D5). 연속 실패로 잠긴 계정은 잠금 시간이 지나면 스스로 풀리지만,
+         * 그 전에 풀어야 할 때 관리자가 쓴다. 비밀번호와 세션은 건드리지 않는다.
+         */
+        @Transactional
+        public void unlockUser(@NonNull String userId) {
+                nuri.business.security.util.SecurityUtil.assertPermission("USER_STATUS");
+                User user = userRepository.findByUserId(userId)
+                                .or(() -> userRepository.findById(userId))
+                                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+                user.unlockAccount();
         }
 
         /**

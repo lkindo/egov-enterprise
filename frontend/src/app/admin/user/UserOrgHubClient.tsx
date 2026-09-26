@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   Save,
   KeyRound,
+  LockOpen,
   Loader2,
   UserCheck,
   Trash2,
@@ -83,6 +84,7 @@ import { useDeptTree } from './useDeptTree';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
+import { canPermission } from '@/lib/auth/permissions';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
@@ -97,6 +99,7 @@ type UserOrgWriteOperation =
   | 'user-form'
   | 'dept-form'
   | 'password-reset'
+  | 'unlock-user'
   | 'delete-user'
   | 'delete-dept'
   | 'bulk-delete'
@@ -503,6 +506,24 @@ export default function UserOrgHubClient({
     }
   };
 
+  /**
+   * [2026-09-26 DIP B4 P7, D5] 계정 잠금 해제. 연속 실패로 잠긴 계정은 잠금 시간이 지나면 스스로 풀리지만, 그 전에 풀어야 할 때
+   * 관리자가 쓴다. 비밀번호 초기화도 잠금을 함께 푼다(서버).
+   */
+  const handleUnlockUser = async () => {
+    const operation = 'unlock-user' as const;
+    if (!selectedItemId || !beginNonFormAction(operation)) return;
+    try {
+      await userAdminService.unlockUser(selectedItemId as string);
+      toast('계정 잠금을 해제했습니다.', 'success');
+      await queryClient.invalidateQueries({ queryKey: ['admin-user-detail', selectedItemId] });
+    } catch (error) {
+      toast(error instanceof Error ? error.message : '계정 잠금을 해제하지 못했습니다.', 'error');
+    } finally {
+      finishNonFormAction(operation);
+    }
+  };
+
   const handleDeleteUser = async () => {
     const operation = 'delete-user' as const;
     if (!selectedItemId || !beginNonFormAction(operation)) return;
@@ -901,6 +922,19 @@ export default function UserOrgHubClient({
       >
         <KeyRound size={14} aria-hidden="true" /> 비밀번호 초기화
       </Button>
+      {displayedUser?.lckYn === 'Y' && canPermission(currentUser, 'USER_STATUS') && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => void handleUnlockUser()}
+          disabled={isSaving}
+          aria-busy={activeWriteOperation === 'unlock-user' || undefined}
+          className="gap-1.5"
+        >
+          <LockOpen size={14} aria-hidden="true" /> 잠금 해제
+        </Button>
+      )}
       <Button
         type="button"
         variant="destructive"
@@ -1191,6 +1225,12 @@ export default function UserOrgHubClient({
                           목록 projection 에는 userSttsCd 가 없다 — 상세 API 데이터로만 그린다. */}
                       {!isDeptTab && displayedUser?.userSttsCd && (
                         <UserStatusBadge code={displayedUser.userSttsCd} />
+                      )}
+                      {/* [DIP B4 P7] 연속 로그인 실패 잠금은 계정 상태와 따로 보인다 — 사용 중인 계정도 잠길 수 있다. */}
+                      {!isDeptTab && displayedUser?.lckYn === 'Y' && (
+                        <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-xs font-semibold text-destructive-emphasis">
+                          로그인 잠김
+                        </span>
                       )}
                     </p>
                   </div>

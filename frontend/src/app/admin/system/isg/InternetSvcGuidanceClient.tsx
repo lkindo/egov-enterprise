@@ -271,7 +271,7 @@ export default function InternetSvcGuidanceClient({
   return (
     <WorkListPage
       title="인터넷 서비스 안내 관리"
-      description="기관이 제공하는 인터넷 서비스의 안내 문구를 조회·등록·수정합니다."
+      description="기관이 제공하는 인터넷 서비스의 안내 문구를 조회·등록·수정합니다. 반영 여부는 저장만 되고 아직 이 값을 읽는 화면이 없습니다."
       breadcrumbItems={[{ label: '시스템 관리' }, { label: '서비스 안내' }, { label: '인터넷 서비스 안내' }]}
       filterStateKey="system-internet-svc-guidance"
       totalCount={isError ? undefined : totalItems}
@@ -411,6 +411,8 @@ export default function InternetSvcGuidanceClient({
                       <option value="N">미반영</option>
                     </select>
                   </FormControl>
+                  {/* [2026-09-26 DIP D10] 이 값을 읽어 안내를 걸러 보이는 화면·기능이 아직 없다 — 기록만 된다는 사실을 말한다. */}
+                  <p className="text-xs text-muted-foreground">반영 여부는 저장만 됩니다. 아직 이 값에 따라 안내를 보이거나 숨기는 화면이 없습니다.</p>
                   <FormMessage />
                 </FormItem>
               )}

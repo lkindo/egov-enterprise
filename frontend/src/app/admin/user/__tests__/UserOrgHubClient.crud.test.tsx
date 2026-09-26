@@ -36,7 +36,7 @@ const { mockToast, mockConfirm, mockUserFormError, mockDeptFormError, mockPasswo
 }));
 
 // 다른 관리 화면으로 가는 길은 라우트와 같은 판정(canOpenPage)으로 보인다 — 목적지 권한을 가진 관리자로 렌더한다.
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: ['AUTHRT_READ', 'LOGIN_POL_READ', 'POLICY_READ'], authorizationVersion: 'v1' } }) }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: ['AUTHRT_READ', 'LOGIN_POL_READ', 'POLICY_READ', 'USER_STATUS'], authorizationVersion: 'v1' } }) }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
   usePathname: () => '/admin/user/manage',
@@ -231,6 +231,7 @@ vi.mock('@/services/foundation/system/UserAdminService', () => ({
     updateUser: vi.fn(),
     deleteUser: vi.fn(),
     updatePassword: vi.fn(),
+    unlockUser: vi.fn(),
   },
 }));
 // 초기화 폼은 자기 테스트(AdminPasswordResetForm.test.tsx)가 있다. 여기서는 허브 배선만 본다.
@@ -891,5 +892,30 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
       expect.stringContaining("'홍길동' 사용자의 비밀번호를 초기화했습니다"), 'success',
     ));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('[DIP B4 P7] 잠긴 계정에만 잠김 표시와 잠금 해제를 보이고, 해제는 한 번만 보낸 뒤 상세를 다시 읽는다', async () => {
+    vi.mocked(userAdminService.getUser).mockResolvedValue({ ...detailRecord, lckYn: 'Y' } as any);
+    let resolveUnlock!: () => void;
+    vi.mocked(userAdminService.unlockUser).mockReturnValueOnce(new Promise<void>((resolve) => { resolveUnlock = resolve; }));
+    await selectFirstRow();
+
+    expect(await screen.findByText('로그인 잠김')).toBeInTheDocument();
+    const unlock = screen.getByRole('button', { name: '잠금 해제' });
+    act(() => { unlock.click(); unlock.click(); });
+
+    await waitFor(() => expect(userAdminService.unlockUser).toHaveBeenCalledTimes(1));
+    expect(userAdminService.unlockUser).toHaveBeenCalledWith('user1');
+    const detailReads = vi.mocked(userAdminService.getUser).mock.calls.length;
+    await act(async () => { resolveUnlock(); });
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('계정 잠금을 해제했습니다.', 'success'));
+    await waitFor(() => expect(vi.mocked(userAdminService.getUser).mock.calls.length).toBeGreaterThan(detailReads));
+  });
+
+  it('[DIP B4 P7] 잠기지 않은 계정에는 잠금 해제를 보이지 않는다', async () => {
+    await selectFirstRow();
+    await screen.findByRole('button', { name: '비밀번호 초기화' });
+    expect(screen.queryByRole('button', { name: '잠금 해제' })).not.toBeInTheDocument();
+    expect(screen.queryByText('로그인 잠김')).not.toBeInTheDocument();
   });
 });

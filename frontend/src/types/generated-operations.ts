@@ -5137,6 +5137,23 @@ export const likePostOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const unlockUserOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "unlockUser",
+  method: "patch",
+  path: "/api/v1/admin/system/users/{userId}/unlock",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "userId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const updatePasswordByAdminOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "updatePasswordByAdmin",
   method: "patch",

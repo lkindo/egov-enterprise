@@ -996,6 +996,14 @@
       "routeGate": "OPERATION_PERMISSION"
     },
     {
+      "method": "PATCH",
+      "path": "/api/v1/admin/system/users/{userId}/unlock",
+      "handler": "nuri.api.controller.UserApiController#unlockUser",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#unlockUser')",
+      "routeGate": "OPERATION_PERMISSION"
+    },
+    {
       "method": "POST",
       "path": "/api/v1/approvals",
       "handler": "nuri.api.controller.business.approval.ApprovalApiController#createApproval",
@@ -2566,6 +2574,18 @@
           "count": 1,
           "identityAxis": "PERMISSION",
           "permission": "USER_PASSWORD"
+        }
+      ]
+    },
+    {
+      "target": "UserService#unlockUser",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "USER_STATUS"
         }
       ]
     },
@@ -4962,6 +4982,13 @@
       "handler": "nuri.api.controller.UserApiController#updatePasswordByAdmin",
       "access": "PERMISSION",
       "permission": "USER_PASSWORD"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/system/users/{userId}/unlock",
+      "handler": "nuri.api.controller.UserApiController#unlockUser",
+      "access": "PERMISSION",
+      "permission": "USER_STATUS"
     },
     {
       "method": "POST",

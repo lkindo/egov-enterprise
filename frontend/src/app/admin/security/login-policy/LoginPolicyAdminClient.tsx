@@ -60,6 +60,15 @@ export const loginPolicySchema = LoginPolicyDtoSchema.extend({
   bgngTm: true,
   endTm: true,
   otpUseYn: true,
+}).superRefine((values, ctx) => {
+  // [2026-09-26 DIP B4 P8] 접속 허용 시간은 시작·종료가 짝이다 — 한쪽만 있으면 서버도 400 으로 거부한다.
+  const hasStart = values.bgngTm !== '';
+  const hasEnd = values.endTm !== '';
+  if (hasStart && !hasEnd) {
+    ctx.addIssue({ code: 'custom', path: ['endTm'], message: '종료 시간도 입력하거나 시작 시간을 비워 주세요.' });
+  } else if (!hasStart && hasEnd) {
+    ctx.addIssue({ code: 'custom', path: ['bgngTm'], message: '시작 시간도 입력하거나 종료 시간을 비워 주세요.' });
+  }
 });
 
 const LOGIN_POLICY_FORM_LABELS = {

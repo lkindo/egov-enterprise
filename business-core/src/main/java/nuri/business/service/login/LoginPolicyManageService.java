@@ -115,6 +115,7 @@ public class LoginPolicyManageService {
     @Transactional
     public void insertLoginPolicy(LoginPolicyDto dto) {
         rejectUnsupportedOtp(dto);
+        requireTimePair(dto);
         String canonicalIpAddr = canonicalizeConfiguredIp(dto.getIpAddr());
         // [V2_13 결속] fk_tb_login_policy_tb_user_info(user_id UNIQUE 대상) — 유령 loginId 등록 차단
         userRepository.findByUserId(dto.getUserId())
@@ -135,9 +136,23 @@ public class LoginPolicyManageService {
         loginPolicyRepository.save(entity);
     }
 
+    /**
+     * 접속 허용 시간은 시작·종료가 짝이다(2026-09-26 DIP B4 P8). 한쪽만 있으면 시간창 판정이 어느 쪽도 뜻하지 않으므로
+     * 둘 다 넣거나 둘 다 비우게 한다.
+     */
+    private static void requireTimePair(LoginPolicyDto dto) {
+        boolean hasStart = dto.getBgngTm() != null && !dto.getBgngTm().isBlank();
+        boolean hasEnd = dto.getEndTm() != null && !dto.getEndTm().isBlank();
+        if (hasStart != hasEnd) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "접속 허용 시간은 시작과 종료를 함께 입력하거나 둘 다 비워 주세요.");
+        }
+    }
+
     @Transactional
     public void updateLoginPolicy(LoginPolicyDto dto) {
         rejectUnsupportedOtp(dto);
+        requireTimePair(dto);
         String canonicalIpAddr = canonicalizeConfiguredIp(dto.getIpAddr());
         LoginPolicy entity = loginPolicyRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));

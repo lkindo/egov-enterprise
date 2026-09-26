@@ -197,6 +197,14 @@ public class UserApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
+    @Operation(summary = "계정 잠금 해제", description = "연속 로그인 실패로 잠긴 계정의 잠금을 풉니다. 비밀번호와 세션은 바꾸지 않습니다. (관리자 권한)")
+    @PatchMapping("/admin/system/users/{userId}/unlock")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#unlockUser')")
+    public ResponseEntity<ApiResponse<Void>> unlockUser(@PathVariable String userId) {
+        userService.unlockUser(userId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
     @Operation(summary = "사용자 상태 일괄 변경", description = "여러 명의 사용자 상태를 한꺼번에 변경합니다. (관리자 권한)")
     @PatchMapping("/admin/system/users/status")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#updateUsersStatus')")

@@ -31,4 +31,14 @@ describe('login policy validation', () => {
       endTm: '',
     }).success).toBe(true);
   });
+
+  it('[DIP B4 P8] 접속 허용 시간은 짝이다 — 한쪽만 있으면 비어 있는 쪽 칸에 오류를 건다', () => {
+    const onlyStart = loginPolicySchema.safeParse({ ...validPolicy, endTm: '' });
+    expect(onlyStart.success).toBe(false);
+    expect(onlyStart.error?.issues[0]?.path).toEqual(['endTm']);
+
+    const onlyEnd = loginPolicySchema.safeParse({ ...validPolicy, bgngTm: '' });
+    expect(onlyEnd.success).toBe(false);
+    expect(onlyEnd.error?.issues[0]?.path).toEqual(['bgngTm']);
+  });
 });
