@@ -55,6 +55,12 @@ describe('PeriodFilter', () => {
     expect(screen.getByRole('button', { name: '전체' })).toHaveAttribute('aria-pressed', 'false');
   });
 
+  it('[DIP B5 F6] presets 로 보일 프리셋을 고를 수 있다 — 비우면 전체가 아닌 화면은 전체를 빼고 쓴다', () => {
+    render(<PeriodFilter label="집계 기간" value={{ from: '', to: '' }} onChange={() => {}} presets={['1d', '1w', '1m']} />);
+    expect(screen.queryByRole('button', { name: '전체' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '최근 1개월' })).toBeInTheDocument();
+  });
+
   it('한쪽만 입력하면 적용되지 않는다고 알리고 입력칸에 연결한다', () => {
     render(<Harness initial={{ from: '2026-09-01', to: '' }} />);
     const hint = screen.getByRole('status');
