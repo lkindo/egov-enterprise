@@ -37,6 +37,7 @@ import { toDisplayYmd } from '@/lib/format-date';
 import { getPollStatus, POLL_STATUS_LABEL } from '@/lib/poll-status';
 import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { EMPTY_PERIOD, PeriodFilter, periodProblem, type PeriodValue } from '@/app/components/patterns/period-filter';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 탭 하나만 읽는다.
@@ -131,41 +132,51 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
+  /*
+   * [2026-09-26 DIP B5 F6] 집계 기간. 서버(ReportStatsService)는 이미 fromDate/toDate 를 받는데 화면이 보내지 않아
+   * 늘 서버 기본값(최근 1개월)만 보였다. 양쪽을 다 고른 올바른 기간만 보낸다 — 한쪽만 고르거나 역순이면 기본값을
+   * 집계하고 PeriodFilter 가 그 이유를 말한다. '전체' 프리셋은 두지 않는다(비우면 전체가 아니라 기본값이다).
+   */
+  const [period, setPeriod] = React.useState<PeriodValue>(EMPTY_PERIOD);
+  const appliedRange = period.from && period.to && !periodProblem(period)
+    ? { fromDate: period.from, toDate: period.to }
+    : undefined;
+
   // --- Data Fetching ---
   // ⚠ 여기서 호출하는 경로는 StatisticsApiController 에 실제로 매핑된 것만 사용한다.
   //    (/report, /data-usage, /bbs, /user, /connect, /summary — 2026-07-22 감사 P0-22)
   // 사용자/접속/자료이용 3종은 모든 탭에서 노출되는 상단 요약 카드의 소스이므로 탭과 무관하게 조회한다.
   // (탭 조건부로 두면 비활성 탭에서 값이 undefined 가 되어 "0" 이라는 거짓 지표가 표시된다.)
   const userQuery = useQuery({
-    queryKey: ['admin-stats-user'],
-    queryFn: () => statsAdminService.getUserStats()
+    queryKey: ['admin-stats-user', appliedRange],
+    queryFn: () => statsAdminService.getUserStats(appliedRange)
   });
 
   const bbsQuery = useQuery({
-    queryKey: ['admin-stats-bbs'],
-    queryFn: () => statsAdminService.getBbsStats(),
+    queryKey: ['admin-stats-bbs', appliedRange],
+    queryFn: () => statsAdminService.getBbsStats(appliedRange),
     enabled: activeTab === 'CONTENT_STATS' || activeTab === 'DASHBOARD'
   });
 
   // 구 `getScreenStats()` 는 존재하지 않는 `/screen` 을 호출해 첫 진입마다 404 를 냈다.
   // 화면 요청 지표의 유일한 실존 소스인 `/connect` 로 재배선한다.
   const connectQuery = useQuery({
-    queryKey: ['admin-stats-connect'],
-    queryFn: () => statsAdminService.getConnectStats()
+    queryKey: ['admin-stats-connect', appliedRange],
+    queryFn: () => statsAdminService.getConnectStats(appliedRange)
   });
 
   // [2026-09-26 DIP B5 F10] 자료 이용은 요약 카드가 쓰지 않는 미수집 축이라 그 탭에서만 조회한다 —
   //   종전에는 어느 탭을 열어도 불렀다.
   const dataUsageQuery = useQuery({
-    queryKey: ['admin-stats-data-usage'],
-    queryFn: () => statsAdminService.getDataUsageStats(),
+    queryKey: ['admin-stats-data-usage', appliedRange],
+    queryFn: () => statsAdminService.getDataUsageStats(appliedRange),
     enabled: activeTab === 'DATA_USAGE'
   });
 
   // REPORTS 탭 전용 쿼리 (없어서 다른 탭의 잔여 차트가 그려지던 문제 — 감사 P0-23)
   const reportQuery = useQuery({
-    queryKey: ['admin-stats-report'],
-    queryFn: () => statsAdminService.getReportStats(),
+    queryKey: ['admin-stats-report', appliedRange],
+    queryFn: () => statsAdminService.getReportStats(appliedRange),
     enabled: activeTab === 'REPORTS'
   });
 
@@ -388,12 +399,17 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                 </CardTitle>
               </div>
               {/*
-                과거 여기에는 핸들러 없는 '최근 30일'·'필터' 버튼이 있었다(감사 P1-6).
-                기간 선택 UI 가 실재하지 않으므로, 실제 집계 구간을 알리는 비인터랙티브 배지로 대체한다.
+                과거 여기에는 핸들러 없는 '최근 30일'·'필터' 버튼이 있었고(감사 P1-6), 그 뒤로는 서버 기본값을 알리는
+                배지만 있었다. [2026-09-26 DIP B5 F6] 실제 기간 선택으로 바꾸고, 적용 중인 구간을 그대로 말한다.
               */}
-              <span className="self-start sm:self-auto rounded-lg border-2 border-border bg-card px-4 py-2 text-xs font-bold tracking-tight text-muted-foreground">
-                집계 구간: 최근 1개월(백엔드 기본값)
-              </span>
+              <div className="flex flex-col gap-1 self-start sm:self-auto">
+                <PeriodFilter label="집계 기간" value={period} onChange={setPeriod} presets={['1d', '1w', '1m']} />
+                <p className="text-xs font-bold tracking-tight text-muted-foreground">
+                  {appliedRange
+                    ? `집계 구간: ${appliedRange.fromDate} ~ ${appliedRange.toDate}`
+                    : '집계 구간: 최근 1개월(기간을 고르지 않으면 서버 기본값)'}
+                </p>
+              </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
               <AnimatePresence mode="wait">
