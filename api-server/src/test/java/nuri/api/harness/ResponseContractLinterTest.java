@@ -183,6 +183,9 @@ class ResponseContractLinterTest {
             }
         }
         for (String allowed : BINARY_ALLOWED_HANDLERS) {
+            // 재사용 투영에서 pack 과 함께 빠진 소스의 행만 건너뛴다(예: survey pack 이 없는 프로필의 설문 결과 반출).
+            // 투영 계획에 없는 경로는 retainsSource 가 예외로 막으므로 사라진 파일을 임의로 선택 도메인으로 보지 않는다.
+            if (!ReusableHarnessProfile.current().retainsSource(allowed)) continue;
             if (!unwrappedHandlers.contains(allowed)) {
                 violations.add("binary 허용 census 의 stale 행: " + allowed
                         + "\n   해당 핸들러가 사라졌거나 래퍼 반환으로 바뀌었습니다."
