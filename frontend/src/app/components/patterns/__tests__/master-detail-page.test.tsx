@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-import { MasterDetailPage } from '../master-detail-page';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MasterDetailLayout, MasterDetailPage } from '../master-detail-page';
 
 vi.mock('@/services/business/user/MenuService', () => ({
   menuService: { getHeadMenus: vi.fn().mockResolvedValue([]) },
@@ -171,6 +171,78 @@ describe('MasterDetailPage — A2 archetype 문법', () => {
     fireEvent.keyDown(selected, { key: 'Tab' });
 
     expect(screen.getByRole('button', { name: '기획부 수정' })).toHaveFocus();
+  });
+
+  describe('좁은 화면에서 항목을 고르면 상세로 옮긴다 (DIP C8)', () => {
+    // 상세가 목록 아래에 쌓이는 배치에서는 선택만 바뀌어 사용자가 상세가 바뀐 줄 모른 채 목록에 머물렀다.
+    // 쌓였는지는 실제 배치로 판정한다 — 상세의 위쪽이 누른 항목의 아래쪽보다 아래이면 쌓인 것이다.
+    const place = (element: HTMLElement, top: number, height: number) => {
+      element.getBoundingClientRect = () => ({ top, bottom: top + height, height, left: 0, right: 100, width: 100, x: 0, y: top, toJSON: () => ({}) }) as DOMRect;
+    };
+    beforeEach(() => {
+      vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { callback(0); return 0; });
+    });
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('상세가 목록 아래에 쌓였으면 누를 때 상세로 스크롤하고 포커스를 옮긴다', () => {
+      renderPage();
+      const item = screen.getByRole('button', { name: '개발부' });
+      const detail = screen.getByTestId('master-detail-detail');
+      place(item, 100, 40);
+      place(detail, 600, 300);
+      const scrollIntoView = vi.fn();
+      detail.scrollIntoView = scrollIntoView;
+
+      fireEvent.click(item);
+
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' });
+      expect(detail).toHaveFocus();
+    });
+
+    it('나란히 놓였으면 포커스를 옮기지 않는다', () => {
+      renderPage();
+      const item = screen.getByRole('button', { name: '개발부' });
+      const detail = screen.getByTestId('master-detail-detail');
+      place(item, 300, 40);
+      place(detail, 120, 500);
+      item.focus();
+
+      fireEvent.click(item);
+
+      expect(item).toHaveFocus();
+    });
+
+    it('점진 이행 레이아웃(MasterDetailLayout)도 같은 규칙을 따른다', () => {
+      render(
+        <MasterDetailLayout>
+          <div><button type="button" data-a2-master-item>개발부</button></div>
+          <div data-a2-detail tabIndex={-1} data-testid="layout-detail">개발부 상세</div>
+        </MasterDetailLayout>,
+      );
+      const item = screen.getByRole('button', { name: '개발부' });
+      const detail = screen.getByTestId('layout-detail');
+      place(item, 100, 40);
+      place(detail, 600, 300);
+      detail.scrollIntoView = vi.fn();
+
+      fireEvent.click(item);
+
+      expect(detail).toHaveFocus();
+    });
+
+    it('방향키로 목록을 훑을 때는 상세로 옮기지 않는다', () => {
+      renderPage();
+      const first = screen.getByRole('button', { name: '기획부' });
+      const second = screen.getByRole('button', { name: '개발부' });
+      place(first, 100, 40);
+      place(second, 140, 40);
+      place(screen.getByTestId('master-detail-detail'), 600, 300);
+      first.focus();
+
+      fireEvent.keyDown(first, { key: 'ArrowDown' });
+
+      expect(second).toHaveFocus();
+    });
   });
 
   it('모바일·데스크톱 표현을 별도 DOM으로 복제하지 않는다', () => {

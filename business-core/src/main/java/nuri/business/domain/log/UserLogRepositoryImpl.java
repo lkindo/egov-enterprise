@@ -39,6 +39,7 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
 
         // 발생일자 범위 조건
         if (searchBgnDe != null && !searchBgnDe.isEmpty() && searchEndDe != null && !searchEndDe.isEmpty()) {
+            LogSearchPeriod.requireOrdered(searchBgnDe, searchEndDe);
             predicates.add(cb.between(root.get("ocrnYmd"),
                     LogSearchPeriod.toCompact(searchBgnDe, "searchKeywordFrom"),
                     LogSearchPeriod.toCompact(searchEndDe, "searchKeywordTo")));

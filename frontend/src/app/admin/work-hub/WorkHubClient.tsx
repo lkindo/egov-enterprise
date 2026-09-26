@@ -27,6 +27,7 @@ import { useDirtyCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import type { DeptSchedule } from '@/types/business/schedule';
 import { format } from 'date-fns';
 import { toDisplayYmd } from '@/lib/format-date';
+import { scheduleSpanDates } from '@/lib/date/schedule-span';
 import { ko } from 'date-fns/locale';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -176,7 +177,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
 
   /** 일정이 하나라도 있는 날짜들 — 캘린더 셀에 마커를 찍는 데 쓴다. */
   const scheduleDates = useMemo(
-    () => schedules.map((s) => parseYmd(s.schdlBgngYmd)).filter((d): d is Date => d !== null),
+    () => schedules.flatMap((s) => scheduleSpanDates(s.schdlBgngYmd, s.schdlEndYmd)),
     [schedules]
   );
 
