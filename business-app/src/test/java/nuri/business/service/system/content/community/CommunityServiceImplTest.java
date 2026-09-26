@@ -44,6 +44,9 @@ class CommunityServiceImplTest {
 
     @Mock
     private JPAQueryFactory queryFactory;
+
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
     
     @Mock
     private JPAQuery<Community> jpaQuery;
@@ -417,6 +420,45 @@ class CommunityServiceImplTest {
                 .joinYmd("20260906")
                 .useYn("Y")
                 .build();
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F1] 가입 신청은 승인 권한자에게 알리고 신청자 자신은 빼며, 결과는 신청자에게 알린다")
+    void joinAndDecisionNotify() {
+        Community community = Community.builder().cmntySn(101L).cmntyNm("사진 동호회").useYn("Y").build();
+        given(communityRepository.findById(101L)).willReturn(Optional.of(community));
+        given(communityUserRepository.findByIdForUpdate(any())).willReturn(Optional.empty());
+        given(userRepository.findActiveEsntlIdsHoldingPermission("COMMUNITY_APPROVE"))
+                .willReturn(List.of("ADMIN_1", "user1", "ADMIN_2"));
+
+        communityService.joinCommunity(101L, "user1");
+
+        var events = org.mockito.ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, times(2)).publishEvent(events.capture());
+        var receivers = events.getAllValues().stream()
+                .map(e -> ((nuri.foundation.core.event.NotificationRequestedEvent) e).receiverEsntlId()).toList();
+        assertThat(receivers).containsExactly("ADMIN_1", "ADMIN_2");
+        var first = (nuri.foundation.core.event.NotificationRequestedEvent) events.getAllValues().get(0);
+        assertThat(first.linkUrl()).isEqualTo("/admin/help?tab=COMMUNITY");
+        assertThat(first.content()).contains("사진 동호회");
+
+        org.mockito.Mockito.clearInvocations(eventPublisher);
+        authenticateWithRole("ROLE_ADMIN");
+        given(communityUserRepository.findByIdForUpdate(any())).willReturn(Optional.of(membership(101L, "user1", "A")));
+        communityService.approveMember(101L, "user1");
+        verify(eventPublisher, times(1)).publishEvent(events.capture());
+        var approved = (nuri.foundation.core.event.NotificationRequestedEvent) events.getValue();
+        assertThat(approved.receiverEsntlId()).isEqualTo("user1");
+        assertThat(approved.title()).isEqualTo("커뮤니티 가입이 승인되었습니다");
+        assertThat(approved.linkUrl()).isEqualTo("/cop/cmy/selectCommunityDetail/101");
+
+        org.mockito.Mockito.clearInvocations(eventPublisher);
+        given(communityUserRepository.findByIdForUpdate(any())).willReturn(Optional.of(membership(101L, "user2", "A")));
+        communityService.rejectMember(101L, "user2");
+        verify(eventPublisher, times(1)).publishEvent(events.capture());
+        var rejected = (nuri.foundation.core.event.NotificationRequestedEvent) events.getValue();
+        assertThat(rejected.receiverEsntlId()).isEqualTo("user2");
+        assertThat(rejected.title()).isEqualTo("커뮤니티 가입 신청이 반려되었습니다");
     }
 
     @Test

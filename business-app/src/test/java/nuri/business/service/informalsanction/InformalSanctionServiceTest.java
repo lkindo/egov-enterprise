@@ -303,6 +303,35 @@ class InformalSanctionServiceTest {
         verify(eventPublisher, times(1)).publishEvent(any(Object.class));
     }
 
+    @Test
+    @DisplayName("[DIP B5 F1] 회수하면 차례가 와 있던 결재자에게만 알린다 — 아직 차례가 오지 않은 결재자는 알 필요가 없다")
+    void withdraw_notifiesActiveApproversOnly() {
+        InformalSanction sanction = InformalSanction.builder().ifmlAtrzSn(1L).aplcntId("user1").aprvrId("boss1")
+                .aprvYn(SanctionStatus.REQUESTED.getCode()).build();
+        given(informalSanctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(sanction));
+        given(detailRepository.findRevision(1L, java.math.BigDecimal.ONE)).willReturn(List.of(
+                nuri.business.domain.informalsanction.InformalSanctionDetail.create(
+                        new nuri.business.domain.informalsanction.InformalSanctionDetailId(
+                                1L, java.math.BigDecimal.ONE, java.math.BigDecimal.ONE, "boss1"),
+                        nuri.business.domain.informalsanction.ApprovalStageKind.APPROVAL, true),
+                nuri.business.domain.informalsanction.InformalSanctionDetail.create(
+                        new nuri.business.domain.informalsanction.InformalSanctionDetailId(
+                                1L, java.math.BigDecimal.ONE, java.math.BigDecimal.valueOf(2), "boss2"),
+                        nuri.business.domain.informalsanction.ApprovalStageKind.APPROVAL, false)));
+        given(historyRepository.findById(new nuri.business.domain.informalsanction.InformalSanctionHistoryId(
+                1L, java.math.BigDecimal.ONE))).willReturn(Optional.of(
+                nuri.business.domain.informalsanction.InformalSanctionHistory.create(sanction)));
+
+        informalSanctionService.deleteInformalSanction(1L);
+
+        var events = org.mockito.ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, times(1)).publishEvent(events.capture());
+        var event = (nuri.foundation.core.event.NotificationRequestedEvent) events.getValue();
+        assertThat(event.receiverEsntlId()).isEqualTo("boss1");
+        assertThat(event.title()).isEqualTo("결재가 회수되었습니다");
+        assertThat(event.linkUrl()).isEqualTo("/approvals");
+    }
+
     /**
      * [2026-09-05] 결재함의 '처리 이력' 탭이 신청자 기준 목록을 부르고 있었다. 결재자가
      * 처리 이력은 결재자 축의 승인·반려 라인으로 좁힌다. 다른 결재자가 아직 처리 중이라 문서가

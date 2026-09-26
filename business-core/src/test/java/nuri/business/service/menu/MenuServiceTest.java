@@ -53,6 +53,10 @@ class MenuServiceTest {
     @Mock
     private nuri.business.service.program.dto.ProgramMapper programMapper;
 
+    /** 기본은 빈 공급자(getIfAvailable = null) — 저장소를 직접 읽는 경로다. */
+    @Mock
+    private org.springframework.beans.factory.ObjectProvider<MenuService> selfProvider;
+
     @InjectMocks
     private MenuService menuService;
 
@@ -131,6 +135,22 @@ class MenuServiceTest {
         assertThat(hierarchy).hasSize(1);
         assertThat(hierarchy.get(0).getMenuNm()).isEqualTo("Menu 1");
         assertThat(hierarchy.get(0).getChildren()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F10] 사이드바 트리는 프록시를 거쳐 메뉴 캐시를 읽고 저장소를 직접 읽지 않는다 — 권한 필터는 매번 새로 본다")
+    void menuTreeReadsCachedMenusThroughProxy() {
+        MenuService proxy = org.mockito.Mockito.mock(MenuService.class);
+        when(selfProvider.getIfAvailable()).thenReturn(proxy);
+        Menu menu = Menu.builder().menuSn(1L).menuNm("Menu").useYn("Y").build();
+        when(proxy.getAllMenusCached()).thenReturn(List.of(menu));
+        when(navigationGrantRepository.findAllowedMenuIds(List.of("ROLE_ADMIN")))
+                .thenReturn(java.util.Set.of(1L)).thenReturn(java.util.Set.of());
+        when(programRepository.findAll()).thenReturn(Collections.emptyList());
+
+        assertThat(menuService.getMenuHierarchy()).hasSize(1);
+        assertThat(menuService.getMenuHierarchy()).isEmpty();
+        verify(menuRepository, never()).findAllByOrderByUpMenuSnAscMenuOrdrAsc();
     }
 
     @Test
@@ -765,5 +785,14 @@ class MenuServiceTest {
 
         Map<Long, Long> parentMap = menuService.getMenuParentMapCached();
         assertThat(parentMap).containsEntry(2L, 1L);
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F2] 즐겨찾기가 쓰는 메뉴 배정 판정은 인증 주체의 그룹으로 조회한다")
+    void allowedMenuIdsForCurrentUserUsesPrincipalGroups() {
+        useGroups("GROUP_STAFF", "GROUP_AUDIT");
+        when(navigationGrantRepository.findAllowedMenuIds(List.of("GROUP_AUDIT", "GROUP_STAFF"))).thenReturn(java.util.Set.of(7L));
+
+        assertThat(menuService.allowedMenuIdsForCurrentUser()).containsExactly(7L);
     }
 }

@@ -150,12 +150,13 @@ export const SearchResultsContent = ({
             // 세 검색 축은 서로 다른 API다. 한 축의 장애가 뒤 API 호출을 막거나 정상 0건으로
             // 번역되지 않도록 동시에 실행하고, 성공 결과와 오류를 축별로 보존한다.
             const menuSearch = async (): Promise<SearchMenu[]> => {
+                // [2026-09-26 DIP B5 F10] 상위 메뉴 응답이 하위 메뉴(children)까지 싣는다. 상위 메뉴마다
+                //   하위 메뉴를 다시 요청하면 서버가 매번 메뉴 트리 전체를 다시 조립했다(N+1).
                 const head = await menuService.getHeadMenus();
-                const subLists = await Promise.all(head.map(m => menuService.getLeftMenus(m.menuNo)));
                 const keyword = String(query || '');
-                return head.flatMap((m, i) => (
+                return head.flatMap(m => (
                     [{ parent: null as MenuInfo | null, node: m },
-                     ...subLists[i].map(l => ({ parent: m as MenuInfo | null, node: l }))]
+                     ...(m.children ?? []).map(l => ({ parent: m as MenuInfo | null, node: l }))]
                 )).flatMap(({ parent, node }) => {
                     const path = resolveMenuInternalRoute(node);
                     if (!path || !node.menuNm?.includes(keyword)) return [];

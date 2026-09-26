@@ -35,13 +35,16 @@ public class DeptJobService extends BaseAbstractService {
     private final OrganizationManageRepository organizationManageRepository;
     private final DeptJobMapper deptJobMapper;
     private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
+    /** [2026-09-26 DIP B5 F1] 담당자로 지정된 사람에게 알린다(커밋 뒤). */
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     public DeptJobService(DeptJobRepository deptJobRepository,
             DeptJobBoxRepository deptJobBoxRepository,
             UserRepository userRepository,
             OrganizationManageRepository organizationManageRepository,
             DeptJobMapper deptJobMapper,
-            AttachmentAssignmentPolicy attachmentAssignmentPolicy) {
+            AttachmentAssignmentPolicy attachmentAssignmentPolicy,
+            org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.deptJobRepository = required(deptJobRepository, "DeptJobRepository 는 null 일 수 없습니다");
         this.deptJobBoxRepository = required(deptJobBoxRepository, "DeptJobBoxRepository 는 null 일 수 없습니다");
         this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
@@ -50,6 +53,18 @@ public class DeptJobService extends BaseAbstractService {
         this.deptJobMapper = required(deptJobMapper, "DeptJobMapper 는 null 일 수 없습니다");
         this.attachmentAssignmentPolicy = required(attachmentAssignmentPolicy,
                 "AttachmentAssignmentPolicy 는 null 일 수 없습니다");
+        this.eventPublisher = required(eventPublisher, "ApplicationEventPublisher 는 null 일 수 없습니다");
+    }
+
+    /** 새로 담당자가 된 사람에게 알린다. 스스로 맡은 업무는 알리지 않는다. */
+    private void notifyAssignee(String assigneeEsntlId, String actorEsntlId, DeptJob deptJob) {
+        if (assigneeEsntlId == null || assigneeEsntlId.isBlank() || assigneeEsntlId.equals(actorEsntlId)) {
+            return;
+        }
+        String name = deptJob.getDeptTaskNm() != null && !deptJob.getDeptTaskNm().isBlank() ? deptJob.getDeptTaskNm() : "(업무명 없음)";
+        String link = "/smart-toolkit/dept-job/" + deptJob.getDeptTaskSn();
+        nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> eventPublisher.publishEvent(
+                new nuri.foundation.core.event.NotificationRequestedEvent(assigneeEsntlId, "업무가 배정되었습니다", name, link)));
     }
 
     /**
@@ -133,7 +148,10 @@ public class DeptJobService extends BaseAbstractService {
         //   빠질 수 있었다. 요청이 정렬을 주지 않으면 최신순(일련번호 역순)으로 둔다.
         Pageable ordered = requested.getSort().isSorted() ? requested
                 : PageRequest.of(requested.getPageNumber(), requested.getPageSize(), Sort.by(Sort.Direction.DESC, "deptTaskSn"));
-        return deptJobRepository.findAll(builder, ordered).map(this::toDto);
+        // [2026-09-26 DIP B5 F10] 업무함·부서·담당자 이름은 페이지 단위로 한 번에 읽는다(행마다 조회하던 N+1).
+        Page<DeptJob> page = deptJobRepository.findAll(builder, ordered);
+        return new org.springframework.data.domain.PageImpl<>(toDtos(page.getContent()), page.getPageable(),
+                page.getTotalElements());
     }
 
     public DeptJobDto getDeptJob(Long deptTaskSn) {
@@ -222,7 +240,9 @@ public class DeptJobService extends BaseAbstractService {
                 .prrtyRnk(dto.getPrrtyRnk())
                 .atchFileSn(dto.getAtchFileSn())
                 .build();
-        return deptJobRepository.save(deptJob).getDeptTaskSn();
+        DeptJob saved = deptJobRepository.save(deptJob);
+        notifyAssignee(picId, creatorEsntlId, saved);
+        return saved.getDeptTaskSn();
     }
 
     @Transactional
@@ -247,6 +267,7 @@ public class DeptJobService extends BaseAbstractService {
         String picId = (dto.getPicId() != null && !dto.getPicId().isBlank())
                 ? dto.getPicId()
                 : deptJob.getPicId();
+        String previousPicId = deptJob.getPicId();
 
         deptJob.update(
                 dto.getDeptTaskBoxSn(),
@@ -255,6 +276,9 @@ public class DeptJobService extends BaseAbstractService {
                 picId,
                 dto.getPrrtyRnk(),
                 dto.getAtchFileSn());
+        if (!Objects.equals(previousPicId, picId)) {
+            notifyAssignee(picId, SecurityUtil.getCurrentEsntlId().orElse(null), deptJob);
+        }
     }
 
     @Transactional
@@ -341,6 +365,37 @@ public class DeptJobService extends BaseAbstractService {
     }
 
     private DeptJobDto toDto(DeptJob entity) {
+        return toDtos(List.of(entity)).getFirst();
+    }
+
+    /**
+     * 업무함·부서·담당자 이름을 페이지 단위로 한 번씩 읽어 붙인다(2026-09-26 DIP B5 F10).
+     * 종전에는 행마다 업무함·부서·사용자를 따로 조회해, 목록 한 페이지(20행)가 최대 60번의 추가 조회를 냈다.
+     */
+    private List<DeptJobDto> toDtos(List<DeptJob> entities) {
+        java.util.Map<Long, nuri.business.domain.deptjob.DeptJobBox> boxes = new java.util.HashMap<>();
+        java.util.Set<Long> boxSns = entities.stream().map(DeptJob::getDeptTaskBoxSn).filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (!boxSns.isEmpty()) {
+            deptJobBoxRepository.findAllById(boxSns).forEach(box -> boxes.put(box.getDeptTaskBoxSn(), box));
+        }
+        java.util.Map<String, String> deptNames = new java.util.HashMap<>();
+        java.util.Set<String> deptIds = boxes.values().stream().map(nuri.business.domain.deptjob.DeptJobBox::getDeptId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        if (!deptIds.isEmpty()) {
+            organizationManageRepository.findByOgnzIdIn(deptIds).forEach(org -> deptNames.put(org.getOgnzId(), org.getOgnzNm()));
+        }
+        java.util.Map<String, String> picNames = new java.util.HashMap<>();
+        java.util.Set<String> picIds = entities.stream().map(DeptJob::getPicId).filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (!picIds.isEmpty()) {
+            userRepository.findByEsntlIdIn(picIds).forEach(user -> picNames.put(user.getEsntlId(), user.getUserNm()));
+        }
+        return entities.stream().map(entity -> toDto(entity, boxes, deptNames, picNames)).toList();
+    }
+
+    private DeptJobDto toDto(DeptJob entity, java.util.Map<Long, nuri.business.domain.deptjob.DeptJobBox> boxes,
+            java.util.Map<String, String> deptNames, java.util.Map<String, String> picNames) {
         DeptJobDto dto = deptJobMapper.toDto(entity);
         dto.setEditable(canWrite(entity, "DEPT_JOB_UPDATE", "DEPT_JOB_UPDATE_ALL"));
         dto.setDeletable(canWrite(entity, "DEPT_JOB_DELETE", "DEPT_JOB_DELETE_ALL"));
@@ -354,21 +409,18 @@ public class DeptJobService extends BaseAbstractService {
         // (종전에는 컨트롤러 매핑이 없어 등록 자체가 불가능했던 탓에 이 모순이 드러나지 않았다.)
         // required() 는 프로그래밍 오류를 잡는 가드이지, 비어 있을 수 있는 도메인 값에 쓸 것이 아니다.
         // 아래 ifPresent 들이 이미 부재를 정상 흐름으로 다루므로 id 가 없으면 조회를 건너뛴다.
-        if (entity.getDeptTaskBoxSn() != null) {
-            deptJobBoxRepository.findById(entity.getDeptTaskBoxSn())
-                    .ifPresent(box -> {
-                        dto.setDeptTaskBoxNm(box.getDeptTaskBoxNm());
-                        dto.setDeptId(box.getDeptId());
-                        if (box.getDeptId() != null) {
-                            organizationManageRepository.findById(box.getDeptId())
-                                    .ifPresent(org -> dto.setDeptNm(org.getOgnzNm()));
-                        }
-                    });
+        nuri.business.domain.deptjob.DeptJobBox box = entity.getDeptTaskBoxSn() == null ? null
+                : boxes.get(entity.getDeptTaskBoxSn());
+        if (box != null) {
+            dto.setDeptTaskBoxNm(box.getDeptTaskBoxNm());
+            dto.setDeptId(box.getDeptId());
+            if (box.getDeptId() != null) {
+                dto.setDeptNm(deptNames.get(box.getDeptId()));
+            }
         }
 
         if (entity.getPicId() != null) {
-            userRepository.findByEsntlId(entity.getPicId())
-                    .ifPresent(user -> dto.setPicNm(user.getUserNm()));
+            dto.setPicNm(picNames.get(entity.getPicId()));
         }
 
         return dto;
