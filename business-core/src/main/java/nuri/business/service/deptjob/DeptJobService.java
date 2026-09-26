@@ -141,7 +141,9 @@ public class DeptJobService extends BaseAbstractService {
                 builder.and(deptJob.picId.contains(keyword));
             }
         }
-        return deptJobRepository.findAll(builder, required(pageable, "pageable 는 null 일 수 없습니다")).map(this::toDto);
+        Page<DeptJob> page = deptJobRepository.findAll(builder, required(pageable, "pageable 는 null 일 수 없습니다"));
+        return new org.springframework.data.domain.PageImpl<>(toDtos(page.getContent()), page.getPageable(),
+                page.getTotalElements());
     }
 
     public DeptJobDto getDeptJob(Long deptTaskSn) {
@@ -355,6 +357,37 @@ public class DeptJobService extends BaseAbstractService {
     }
 
     private DeptJobDto toDto(DeptJob entity) {
+        return toDtos(List.of(entity)).getFirst();
+    }
+
+    /**
+     * 업무함·부서·담당자 이름을 페이지 단위로 한 번씩 읽어 붙인다(2026-09-26 DIP B5 F10).
+     * 종전에는 행마다 업무함·부서·사용자를 따로 조회해, 목록 한 페이지(20행)가 최대 60번의 추가 조회를 냈다.
+     */
+    private List<DeptJobDto> toDtos(List<DeptJob> entities) {
+        java.util.Map<Long, nuri.business.domain.deptjob.DeptJobBox> boxes = new java.util.HashMap<>();
+        java.util.Set<Long> boxSns = entities.stream().map(DeptJob::getDeptTaskBoxSn).filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (!boxSns.isEmpty()) {
+            deptJobBoxRepository.findAllById(boxSns).forEach(box -> boxes.put(box.getDeptTaskBoxSn(), box));
+        }
+        java.util.Map<String, String> deptNames = new java.util.HashMap<>();
+        java.util.Set<String> deptIds = boxes.values().stream().map(nuri.business.domain.deptjob.DeptJobBox::getDeptId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        if (!deptIds.isEmpty()) {
+            organizationManageRepository.findByOgnzIdIn(deptIds).forEach(org -> deptNames.put(org.getOgnzId(), org.getOgnzNm()));
+        }
+        java.util.Map<String, String> picNames = new java.util.HashMap<>();
+        java.util.Set<String> picIds = entities.stream().map(DeptJob::getPicId).filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (!picIds.isEmpty()) {
+            userRepository.findByEsntlIdIn(picIds).forEach(user -> picNames.put(user.getEsntlId(), user.getUserNm()));
+        }
+        return entities.stream().map(entity -> toDto(entity, boxes, deptNames, picNames)).toList();
+    }
+
+    private DeptJobDto toDto(DeptJob entity, java.util.Map<Long, nuri.business.domain.deptjob.DeptJobBox> boxes,
+            java.util.Map<String, String> deptNames, java.util.Map<String, String> picNames) {
         DeptJobDto dto = deptJobMapper.toDto(entity);
         dto.setEditable(canWrite(entity, "DEPT_JOB_UPDATE", "DEPT_JOB_UPDATE_ALL"));
         dto.setDeletable(canWrite(entity, "DEPT_JOB_DELETE", "DEPT_JOB_DELETE_ALL"));
@@ -368,21 +401,18 @@ public class DeptJobService extends BaseAbstractService {
         // (종전에는 컨트롤러 매핑이 없어 등록 자체가 불가능했던 탓에 이 모순이 드러나지 않았다.)
         // required() 는 프로그래밍 오류를 잡는 가드이지, 비어 있을 수 있는 도메인 값에 쓸 것이 아니다.
         // 아래 ifPresent 들이 이미 부재를 정상 흐름으로 다루므로 id 가 없으면 조회를 건너뛴다.
-        if (entity.getDeptTaskBoxSn() != null) {
-            deptJobBoxRepository.findById(entity.getDeptTaskBoxSn())
-                    .ifPresent(box -> {
-                        dto.setDeptTaskBoxNm(box.getDeptTaskBoxNm());
-                        dto.setDeptId(box.getDeptId());
-                        if (box.getDeptId() != null) {
-                            organizationManageRepository.findById(box.getDeptId())
-                                    .ifPresent(org -> dto.setDeptNm(org.getOgnzNm()));
-                        }
-                    });
+        nuri.business.domain.deptjob.DeptJobBox box = entity.getDeptTaskBoxSn() == null ? null
+                : boxes.get(entity.getDeptTaskBoxSn());
+        if (box != null) {
+            dto.setDeptTaskBoxNm(box.getDeptTaskBoxNm());
+            dto.setDeptId(box.getDeptId());
+            if (box.getDeptId() != null) {
+                dto.setDeptNm(deptNames.get(box.getDeptId()));
+            }
         }
 
         if (entity.getPicId() != null) {
-            userRepository.findByEsntlId(entity.getPicId())
-                    .ifPresent(user -> dto.setPicNm(user.getUserNm()));
+            dto.setPicNm(picNames.get(entity.getPicId()));
         }
 
         return dto;

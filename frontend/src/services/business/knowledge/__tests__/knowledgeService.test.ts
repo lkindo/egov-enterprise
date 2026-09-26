@@ -33,7 +33,7 @@ const client = vi.hoisted(() => ({
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
-import { knowledgeService } from '../knowledgeService';
+import { knowledgeService, toKnowledgeActivities } from '../knowledgeService';
 
 const successEnvelope = (data: unknown) => ({
   success: true,
@@ -288,41 +288,11 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
     });
   });
 
-  describe('getActivities — 최근 활동 피드', () => {
-    it('활동 피드는 generated query로 size 10을 요청한다', async () => {
-      await knowledgeService.getActivities();
-
-      expect(client.getRaw).toHaveBeenCalledWith(`boards/${BBS.NOTICE}`, {
-        params: { size: 10 },
-      });
-    });
-
-    it('bbsId 를 주면 해당 게시판의 활동을 조회한다', async () => {
-      await knowledgeService.getActivities(BBS.QNA);
-
-      expect(client.getRaw).toHaveBeenCalledWith(
-        `boards/${BBS.QNA}`,
-        expect.objectContaining({ params: expect.objectContaining({ size: 10 }) }),
-      );
-    });
-
-    it('피드 항목을 id·type·title·user·time 규칙대로 변환한다', async () => {
-      client.getRaw.mockResolvedValueOnce(successEnvelope({
-        list: [
-          {
-            pstSn: 5,
-            pstTtl: '표준 프레임워크 5.0 공지',
-            userNm: '홍길동',
-            frstRgtrId: 'USER0001',
-            crtDt: '2026-08-15T10:20:30',
-            inqCnt: 250,
-            useYn: 'Y',
-            userId: 'writer01',
-          },
-        ],
-      }));
-
-      const [activity] = await knowledgeService.getActivities();
+  describe('toKnowledgeActivities — 최근 활동 피드 변환', () => {
+    it('피드 항목을 id·type·title·user·time 규칙대로 변환한다', () => {
+      const [activity] = toKnowledgeActivities([
+        { pstSn: 5, pstTtl: '표준 프레임워크 5.0 공지', userNm: '홍길동', crtDt: '2026-08-15T10:20:30' },
+      ]);
 
       expect(activity).toEqual({
         id: 5,
@@ -333,31 +303,21 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
       });
     });
 
-    it('🚨 작성자 이름이 없으면 로그인 ID 로 채우지 않고 \'-\' 로 둔다 (DIP V2)', async () => {
-      client.getRaw.mockResolvedValueOnce(successEnvelope({
-        list: [{ pstSn: 77, pstTtl: '작성자 이름 없는 글', crtDt: '2026-01-02T00:00:00', useYn: 'Y', userId: 'writer02' }],
-      }));
-
-      const [activity] = await knowledgeService.getActivities();
+    it('🚨 작성자 이름이 없으면 로그인 ID 로 채우지 않고 \'-\' 로 둔다 (DIP V2)', () => {
+      const [activity] = toKnowledgeActivities([{ pstSn: 77, pstTtl: '작성자 이름 없는 글', crtDt: '2026-01-02T00:00:00' }]);
 
       expect(activity).toMatchObject({ id: 77, title: '작성자 이름 없는 글', user: '-', time: '2026-01-02' });
     });
 
-    it('🚨 작성일이 없으면 \'방금\' 으로 지어내지 않고 \'-\' 로 둔다 (DIP V2)', async () => {
-      client.getRaw.mockResolvedValueOnce(successEnvelope({
-        list: [{ pstSn: 9, pstTtl: '방금 등록', useYn: 'Y', userId: 'writer03' }],
-      }));
+    it('🚨 작성일이 없으면 \'방금\' 으로 지어내지 않고 \'-\' 로 둔다 (DIP V2)', () => {
+      const [activity] = toKnowledgeActivities([{ pstSn: 9, pstTtl: '방금 등록' }]);
 
-      const [activity] = await knowledgeService.getActivities();
-
-      expect(activity).toMatchObject({ time: '-' });
+      expect(activity).toMatchObject({ id: 9, user: '-', time: '-' });
       expect(activity).not.toHaveProperty('impact');
     });
 
-    it('응답에 list 가 없으면 예외 대신 빈 배열을 돌려준다', async () => {
-      client.getRaw.mockResolvedValueOnce(successEnvelope({}));
-
-      await expect(knowledgeService.getActivities()).resolves.toEqual([]);
+    it('빈 목록은 빈 피드다', () => {
+      expect(toKnowledgeActivities([])).toEqual([]);
     });
   });
 });

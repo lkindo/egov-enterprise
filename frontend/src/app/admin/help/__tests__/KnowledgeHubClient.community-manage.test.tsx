@@ -26,17 +26,15 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { role: harness.role, permissions: harness.permissions, authorizationVersion: 'v1' } }),
 }));
 vi.mock('@tanstack/react-query', () => ({
-  useQuery: ({ queryKey }: { queryKey: string[] }) => {
+  useQuery: ({ queryKey, select }: { queryKey: string[]; select?: (data: unknown) => unknown }) => {
     const common = { isError: false, error: null, isLoading: false, isFetching: false, refetch: vi.fn() };
     switch (queryKey[0]) {
       case 'knowledge-articles':
-        return { ...common, data: { list: [], total: 0 } };
+        return { ...common, data: select ? select({ list: [], total: 0 }) : { list: [], total: 0 } };
       case 'hot-articles':
         return { ...common, data: { list: [] } };
       case 'knowledge-stats':
         return { ...common, data: { totalViews: 0, topContributor: '-' } };
-      case 'knowledge-activities':
-        return { ...common, data: [] };
       default:
         throw new Error(`unexpected query: ${queryKey[0]}`);
     }

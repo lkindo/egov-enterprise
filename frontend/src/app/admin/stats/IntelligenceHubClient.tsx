@@ -154,9 +154,12 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
     queryFn: () => statsAdminService.getConnectStats()
   });
 
+  // [2026-09-26 DIP B5 F10] 자료 이용은 요약 카드가 쓰지 않는 미수집 축이라 그 탭에서만 조회한다 —
+  //   종전에는 어느 탭을 열어도 불렀다.
   const dataUsageQuery = useQuery({
     queryKey: ['admin-stats-data-usage'],
-    queryFn: () => statsAdminService.getDataUsageStats()
+    queryFn: () => statsAdminService.getDataUsageStats(),
+    enabled: activeTab === 'DATA_USAGE'
   });
 
   // REPORTS 탭 전용 쿼리 (없어서 다른 탭의 잔여 차트가 그려지던 문제 — 감사 P0-23)

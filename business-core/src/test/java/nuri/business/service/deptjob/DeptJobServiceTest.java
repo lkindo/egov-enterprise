@@ -118,13 +118,14 @@ class DeptJobServiceTest {
     }
 
     private void mockToDtoDependencies() {
-        when(deptJobBoxRepository.findById(1L)).thenReturn(Optional.of(deptJobBox));
-        
+        // [DIP B5 F10] 이름 해석은 페이지 단위 일괄 조회다 — 행마다 findById 를 부르지 않는다.
+        when(deptJobBoxRepository.findAllById(any())).thenReturn(List.of(deptJobBox));
+
         OrganizationManage org = OrganizationManage.builder()
                 .ognzId("DEPT1")
                 .ognzNm("Test Dept")
                 .build();
-        when(organizationManageRepository.findById("DEPT1")).thenReturn(Optional.of(org));
+        when(organizationManageRepository.findByOgnzIdIn(any())).thenReturn(List.of(org));
 
         User user = User.builder()
                 .userId("TEST")
@@ -132,7 +133,32 @@ class DeptJobServiceTest {
                 .esntlId("USER1")
                 .userNm("Test User")
                 .build();
-        when(userRepository.findByEsntlId("USER1")).thenReturn(Optional.of(user));
+        when(userRepository.findByEsntlIdIn(any())).thenReturn(List.of(user));
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F10] 목록은 업무함·부서·담당자 이름을 페이지 단위로 한 번씩만 읽는다")
+    void getDeptJobList_resolvesNamesOncePerPage() {
+        authenticateAsAdmin();
+        DeptJob second = DeptJob.builder().deptTaskSn(2L).deptTaskBoxSn(1L).deptTaskNm("둘째").picId("USER1").build();
+        DeptJob third = DeptJob.builder().deptTaskSn(3L).deptTaskBoxSn(1L).deptTaskNm("셋째").picId("USER1").build();
+        when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class)))
+                .thenReturn(new PageImpl<>(List.of(deptJob, second, third), PageRequest.of(0, 10), 3));
+        mockToDtoDependencies();
+
+        Page<DeptJobDto> result = deptJobService.getDeptJobList(null, null, null, null, false, PageRequest.of(0, 10));
+
+        assertEquals(3, result.getContent().size());
+        result.getContent().forEach(dto -> {
+            assertEquals("Test Box", dto.getDeptTaskBoxNm());
+            assertEquals("Test Dept", dto.getDeptNm());
+            assertEquals("Test User", dto.getPicNm());
+        });
+        verify(deptJobBoxRepository, times(1)).findAllById(any());
+        verify(organizationManageRepository, times(1)).findByOgnzIdIn(any());
+        verify(userRepository, times(1)).findByEsntlIdIn(any());
+        verify(deptJobBoxRepository, never()).findById(any());
+        verify(userRepository, never()).findByEsntlId(any());
     }
 
     @Test
@@ -215,6 +241,7 @@ class DeptJobServiceTest {
 
         authenticateAs("user2", "USER2"); // 같은 부서 동료 — 볼 수는 있지만 고칠 수는 없다
         givenMemberOf("USER2", "DEPT1");
+        when(deptJobBoxRepository.findById(1L)).thenReturn(Optional.of(deptJobBox)); // 열람 가드의 부서 판정
         DeptJobDto colleague = deptJobService.getDeptJob(1L);
         assertEquals(Boolean.FALSE, colleague.getEditable());
         assertEquals(Boolean.FALSE, colleague.getDeletable());
@@ -274,6 +301,7 @@ class DeptJobServiceTest {
         authenticateAs("colleague", "ESNTL_COLLEAGUE");
         givenMemberOf("ESNTL_COLLEAGUE", "DEPT1");
         when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        when(deptJobBoxRepository.findById(1L)).thenReturn(Optional.of(deptJobBox)); // 열람 가드의 부서 판정
         mockToDtoDependencies();
 
         assertEquals(1L, deptJobService.getDeptJob(1L).getDeptTaskSn());

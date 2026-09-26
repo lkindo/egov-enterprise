@@ -250,6 +250,20 @@ describe('GlobalCommandCenter accessibility contract', () => {
         menuNm: '안전 modern 메뉴',
         modernRoute: '/admin/work-hub?tab=job#calendar',
         chkURL: '//ignored.example',
+        // [DIP B5 F10] 하위 메뉴는 상위 메뉴 응답의 children 으로 온다 — 상위마다 다시 요청하지 않는다.
+        children: [
+          {
+            menuNo: 10,
+            menuNm: '인코딩 우회 메뉴',
+            modernRoute: '/%2e%2e//evil.example',
+            chkURL: '/must-not-render',
+          },
+          {
+            menuNo: 11,
+            menuNm: '안전 하위',
+            modernRoute: '/admin/work-hub/child?view=summary#result',
+          },
+        ],
       },
       {
         menuNo: 2,
@@ -264,19 +278,6 @@ describe('GlobalCommandCenter accessibility contract', () => {
         chkURL: 'legacy/selectMenu.do?menuNo=3#result',
       },
     ]);
-    mocks.getLeftMenus.mockImplementation(async (menuNo: number) => menuNo === 1 ? [
-      {
-        menuNo: 10,
-        menuNm: '인코딩 우회 메뉴',
-        modernRoute: '/%2e%2e//evil.example',
-        chkURL: '/must-not-render',
-      },
-      {
-        menuNo: 11,
-        menuNm: '안전 하위',
-        modernRoute: '/admin/work-hub/child?view=summary#result',
-      },
-    ] : []);
     renderCommandCenter();
 
     await openFromTrigger(user);
@@ -284,7 +285,8 @@ describe('GlobalCommandCenter accessibility contract', () => {
     const safeModern = await screen.findByRole('option', { name: '안전 modern 메뉴' });
     expect(screen.getByRole('option', { name: '레거시 메뉴' })).toBeInTheDocument();
     expect(await screen.findByRole('option', { name: '안전 modern 메뉴 > 안전 하위' })).toBeInTheDocument();
-    await waitFor(() => expect(mocks.getLeftMenus).toHaveBeenCalledTimes(3));
+    expect(mocks.getHeadMenus).toHaveBeenCalledOnce();
+    expect(mocks.getLeftMenus).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: '위험 modern 메뉴' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /인코딩 우회 메뉴/ })).not.toBeInTheDocument();
 
