@@ -1597,6 +1597,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/mails/{emlDsptchSn}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 메일 재발송
+         * @description 실패했거나 대기에 10분 넘게 멈춘 본인 메일을 같은 이력으로 다시 보냅니다. 사용자 수신자는 지금 등록된 주소로 보냅니다.
+         *     이미 발송된 메일·수신자를 다시 찾을 수 없는 메일은 400, 처리 중인 메일은 409, 남의 메일은 403 입니다.
+         */
+        post: operations["resendMail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/informal-sanctions": {
         parameters: {
             query?: never;
@@ -3535,6 +3556,27 @@ export interface paths {
          * @description 발송 메일 내역을 삭제합니다.
          */
         delete: operations["deleteMail"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mails/delivery-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 메일 발송 가능 상태 조회
+         * @description 이 배포에 SMTP 가 연결돼 있는지 조회합니다.
+         *     `deliveryConfigured=false` 면 발송 접수는 되지만 모든 메일이 실패로 기록됩니다 (발송 파이프라인의 장애가 아니라 배포 형상입니다).
+         */
+        get: operations["getMailDeliveryStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -6661,6 +6703,8 @@ export interface components {
              * @description 첨부 파일 번호. 메일 첨부 발송은 지원하지 않으므로 요청에 값을 넣으면 400 으로 거부한다. 응답에는 과거 이력에 남은 번호만 실린다
              */
             atchFileSn?: number;
+            /** @description 현재 사용자가 다시 보낼 수 있는지(서버 판정) */
+            readonly resendable?: boolean;
         };
         ApiResponseTokenResponse: {
             success?: boolean;
@@ -7518,6 +7562,24 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        ApiResponseMailDeliveryStatusDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["MailDeliveryStatusDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 메일 발송 가능 상태 */
+        MailDeliveryStatusDto: {
+            /** @description SMTP 연결 여부. false 면 접수는 되지만 모든 메일이 실패로 기록된다. */
+            deliveryConfigured: boolean;
+            /** @description 현재 발송 구현체의 단순 클래스명. 운영 문의 시 어느 형상인지 식별한다. */
+            senderImplementation: string;
         };
         ApiResponseInformalSanctionDto: {
             success?: boolean;
@@ -21420,6 +21482,74 @@ export interface operations {
             };
         };
     };
+    resendMail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 이메일 발신 일련번호 */
+                emlDsptchSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     getInformalSanctionList: {
         parameters: {
             query?: {
@@ -30287,6 +30417,62 @@ export interface operations {
             };
             /** @description 대상을 찾을 수 없음 (code: C003/C007) */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getMailDeliveryStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseMailDeliveryStatusDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

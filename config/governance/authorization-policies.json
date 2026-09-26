@@ -1362,6 +1362,15 @@
     },
     {
       "method": "POST",
+      "path": "/api/v1/mails/{emlDsptchSn}/resend",
+      "handler": "nuri.api.controller.business.mail.MailApiController#resendMail",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.mail.MailApiController#resendMail')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "MailService#assertSender"
+    },
+    {
+      "method": "POST",
       "path": "/api/v1/memo-reports",
       "handler": "nuri.api.controller.business.memoreport.MemoReportApiController#createMemoReport",
       "policy": "AUTHENTICATED",
@@ -3201,6 +3210,21 @@
         ".orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))"
       ],
       "forbiddenTokens": []
+    },
+    {
+      "target": "MailService#assertSender",
+      "source": "business-app/src/main/java/nuri/business/service/mail/MailService.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 2,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentLoginId()",
+        ".orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))",
+        "if (!loginId.equals(sentMail.getFrstRgtrId())) {",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasPermission("
+      ]
     },
     {
       "target": "MemoReportService#assertParticipantOrAdmin",
@@ -5573,6 +5597,20 @@
       "method": "POST",
       "path": "/api/v1/mails",
       "handler": "nuri.api.controller.business.mail.MailApiController#sendMail",
+      "access": "PERMISSION",
+      "permission": "MAIL_SEND"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/mails/delivery-status",
+      "handler": "nuri.api.controller.business.mail.MailApiController#getMailDeliveryStatus",
+      "access": "PERMISSION",
+      "permission": "MAIL_SEND"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/mails/{emlDsptchSn}/resend",
+      "handler": "nuri.api.controller.business.mail.MailApiController#resendMail",
       "access": "PERMISSION",
       "permission": "MAIL_SEND"
     },
