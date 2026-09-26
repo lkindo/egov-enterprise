@@ -7007,6 +7007,7 @@ export interface components {
             esntlId?: string;
             userNm?: string;
             deptNm?: string;
+            absent?: boolean;
         };
         ApiResponseUserDto: {
             success?: boolean;

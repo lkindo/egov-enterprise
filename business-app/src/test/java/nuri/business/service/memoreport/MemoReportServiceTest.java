@@ -45,6 +45,9 @@ class MemoReportServiceTest {
     @Mock
     private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @org.mockito.Spy
     nuri.business.service.memoreport.dto.MemoReportMapper memoReportMapper = new nuri.business.service.memoreport.dto.MemoReportMapperImpl();
 
@@ -403,6 +406,69 @@ class MemoReportServiceTest {
 
         assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.ACCESS_DENIED);
         assertThat(entity.getDrctnMttr()).isNull();
+    }
+
+    @Test
+    @DisplayName("[DIP B4 P3] 보고를 올리면 받은 사람에게 알리고, 자기에게 보낸 보고는 알리지 않는다")
+    void createMemoReport_notifiesRecipient() {
+        given(memoReportRepository.save(any(MemoReport.class)))
+                .willReturn(MemoReport.builder().memoRptSn(3L).build());
+
+        memoReportService.createMemoReport("esntl-writer", MemoReportDto.builder()
+                .rptTtl("주간 보고").rptrId("esntl-recipient").memoRptYmd("20260926").build());
+
+        org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> event =
+                org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+        verify(eventPublisher).publishEvent(event.capture());
+        assertThat(event.getValue().receiverEsntlId()).isEqualTo("esntl-recipient");
+        assertThat(event.getValue().content()).isEqualTo("주간 보고");
+        // 승인된 URL 키 없이 쿼리를 만들지 않는다.
+        assertThat(event.getValue().linkUrl()).isEqualTo("/admin/operation/memo-reports");
+
+        org.mockito.Mockito.clearInvocations(eventPublisher);
+        memoReportService.createMemoReport("esntl-writer", MemoReportDto.builder()
+                .rptTtl("메모").rptrId("esntl-writer").memoRptYmd("20260926").build());
+        org.mockito.Mockito.verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    @DisplayName("[DIP B4 P3] 지시가 달리면 보고한 사람에게 알린다 — 지시를 지우거나 자기 보고면 알리지 않는다")
+    void updateDrctMatter_notifiesAuthor() {
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).rptTtl("주간 보고")
+                .userId("esntl-writer").rptrId("esntl-recipient").build();
+        when(memoReportRepository.findById(1L)).thenReturn(Optional.of(entity));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-recipient"));
+
+        memoReportService.updateDrctMatter(1L, "보완해 주세요");
+
+        org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> event =
+                org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+        verify(eventPublisher).publishEvent(event.capture());
+        assertThat(event.getValue().receiverEsntlId()).isEqualTo("esntl-writer");
+
+        org.mockito.Mockito.clearInvocations(eventPublisher);
+        memoReportService.updateDrctMatter(1L, "");
+        org.mockito.Mockito.verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    @DisplayName("[DIP B4 P9] 지시가 달린 보고는 관리자도 본문을 고칠 수 없다(409) — 수정 힌트도 닫는다")
+    void updateMemoReport_rejectedAfterInstruction() {
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).rptTtl("원래 제목").rptCn("원래 본문")
+                .userId("esntl-writer").rptrId("esntl-recipient").build();
+        entity.updateDrctMatter("보완해 주세요", java.time.LocalDateTime.now());
+        when(memoReportRepository.findById(1L)).thenReturn(Optional.of(entity));
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission(anyString())).thenReturn(true);
+
+        BusinessException ex = org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class,
+                () -> memoReportService.updateMemoReport(1L, "admin", MemoReportDto.builder()
+                        .rptTtl("바꾼 제목").rptCn("바꾼 본문").rptrId("esntl-recipient").memoRptYmd("20260926").build()));
+
+        assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_IN_USE);
+        assertThat(entity.getRptCn()).isEqualTo("원래 본문");
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("esntl-admin"));
+        assertThat(memoReportService.getMemoReport(1L).getEditable()).isFalse();
     }
 
     @Test

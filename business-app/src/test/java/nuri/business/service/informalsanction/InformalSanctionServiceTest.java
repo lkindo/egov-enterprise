@@ -163,18 +163,34 @@ class InformalSanctionServiceTest {
         verify(informalSanctionRepository, never()).save(any(InformalSanction.class));
     }
 
-    @org.junit.jupiter.params.ParameterizedTest
-    @org.junit.jupiter.params.provider.ValueSource(strings = {"missing", "inactive"})
-    @DisplayName("없거나 비활성인 사용자를 결재자로 지정한 상신은 같은 문구로 거부한다")
-    void registerRejectsUnavailableApprover(String kind) {
+    @Test
+    @DisplayName("없는 사용자를 결재자로 지정한 상신은 식별자를 되돌려 주지 않고 거부한다")
+    void registerRejectsMissingApprover() {
         InformalSanctionDto dto = InformalSanctionDto.builder().taskSeCd("C1").aplcntId("user1").aprvrId("boss1").build();
         given(commonCodeService.getCodesByGroup("COM075"))
                 .willReturn(List.of(new nuri.business.service.code.dto.CommonCodeDto("COM075", "C1", "일반", null, "Y")));
-        if ("inactive".equals(kind)) approverStatus("boss1", "D");
-        else given(userRepository.findAllById(any())).willReturn(List.of());
+        given(userRepository.findAllById(any())).willReturn(List.of());
 
         assertThatThrownBy(() -> informalSanctionService.registerInformalSanction(dto))
-                .isInstanceOf(BusinessException.class).hasMessageContaining("결재자로 지정할 수 없는 사용자입니다");
+                .isInstanceOf(BusinessException.class).hasMessageContaining("결재자로 지정할 수 없는 사용자입니다")
+                .hasMessageNotContaining("boss1");
+        verify(informalSanctionRepository, never()).save(any(InformalSanction.class));
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"A", "D"})
+    @DisplayName("[DIP B4 P4] 사용 중이 아닌 계정을 결재자로 지정하면 대상자 이름을 밝혀 거부한다")
+    void registerRejectsInactiveApproverByName(String status) {
+        InformalSanctionDto dto = InformalSanctionDto.builder().taskSeCd("C1").aplcntId("user1").aprvrId("boss1").build();
+        given(commonCodeService.getCodesByGroup("COM075"))
+                .willReturn(List.of(new nuri.business.service.code.dto.CommonCodeDto("COM075", "C1", "일반", null, "Y")));
+        given(userRepository.findAllById(any())).willReturn(List.of(nuri.business.domain.user.entity.User.builder()
+                .esntlId("boss1").userId("boss1").userNm("김부장").pswd("{bcrypt}x").userSttsCd(status).build()));
+
+        assertThatThrownBy(() -> informalSanctionService.registerInformalSanction(dto))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("사용 중이 아닌 계정은 결재자로 지정할 수 없습니다: 김부장")
+                .hasMessageNotContaining("boss1");
         verify(informalSanctionRepository, never()).save(any(InformalSanction.class));
     }
 

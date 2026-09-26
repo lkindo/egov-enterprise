@@ -124,7 +124,7 @@ describe('WorkHubClient 업무함 관리 진입', () => {
 });
 
 /**
- * [2026-09-26 DIP B4 P1] '메모보고 관리' 는 목적지 라우트(`MEMO_RPT_READ_ALL`)와 같은 판정으로만 보인다.
+ * [2026-09-26 DIP B4 P1] '메모보고 관리' 는 목적지 라우트(D9 이후 `MEMO_RPT_READ`)와 같은 판정으로만 보인다.
  * 종전에는 업무함 권한(`DEPT_BOX_READ`)으로 보여, 누르면 라우트 게이트가 홈으로 돌려보냈다.
  */
 describe('WorkHubClient 메모보고 관리 진입', () => {
@@ -141,7 +141,7 @@ describe('WorkHubClient 메모보고 관리 진입', () => {
   });
 
   it('메모보고 관리 화면에 들어갈 수 있으면 길을 보인다', () => {
-    mocks.permissions = ['MEMO_RPT_READ_ALL'];
+    mocks.permissions = ['MEMO_RPT_READ'];
     render(<WorkHubClient defaultTab="report" initialYmd="20260906" />);
     expect(screen.getByRole('link', { name: /메모보고 관리/ })).toHaveAttribute('href', '/admin/operation/memo-reports');
   });

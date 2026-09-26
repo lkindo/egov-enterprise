@@ -53,4 +53,20 @@ describe('UserPicker 검색 상태', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('사용자를 검색하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     expect(screen.queryByText(/검색 결과가 없습니다/)).toBeNull();
   });
+
+  it('[DIP B4 P4] 부재 중인 사용자는 고르기 전에 부재 중이라고 보인다', async () => {
+    search.searchAssignableUsers.mockResolvedValue([
+      { esntlId: 'E1', userNm: '홍길동', deptNm: '기획팀', absent: true },
+      { esntlId: 'E2', userNm: '홍길순', deptNm: '기획팀', absent: false },
+    ]);
+    renderPicker();
+
+    await userEvent.type(screen.getByPlaceholderText('이름으로 검색'), '홍길');
+    await userEvent.click(screen.getByRole('button', { name: '검색' }));
+
+    const absent = await screen.findByRole('button', { name: '사용자 선택: 홍길동' });
+    const present = screen.getByRole('button', { name: '사용자 선택: 홍길순' });
+    expect(absent).toHaveTextContent('부재 중');
+    expect(present).not.toHaveTextContent('부재 중');
+  });
 });

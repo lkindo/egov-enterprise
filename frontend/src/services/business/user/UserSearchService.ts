@@ -47,6 +47,8 @@ export interface UserSearchResult {
   userNm?: string;
   /** 소속 부서명. 동명이인 구분용이며 미소속이면 비어 있다. */
   deptNm?: string;
+  /** 부재 중인가(DIP B4 P4). 부재 사유·기간은 싣지 않는다. 사용 중이 아닌 계정은 서버가 결과에서 뺀다. */
+  absent?: boolean;
 }
 
 export const userSearchService = new UserSearchService();
