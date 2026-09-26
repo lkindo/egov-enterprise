@@ -11,7 +11,7 @@ import { authService } from '@/services/foundation/auth/authService';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AUTHORIZATION_CHANGED_EVENT } from '@/lib/auth/authorization-state';
+import { AUTHORIZATION_CHANGED_EVENT, isSignedOut, markSignedIn } from '@/lib/auth/authorization-state';
 
 // Mock the authService
 vi.mock('@/services/foundation/auth/authService', () => ({
@@ -77,6 +77,27 @@ describe('AuthContext', () => {
     expect(localStorage.getItem('egov-draft-board_insert_BBS-1')).toBeNull();
     expect(localStorage.getItem('autosave_bbs_write')).toBeNull();
     expect(localStorage.getItem('unrelated-preference')).toBe('keep');
+  });
+
+  it('🚨 로그아웃은 캐시를 비우기 전에 요청을 막고, 다시 로그인하면 푼다 (DIP B4)', async () => {
+    markSignedIn();
+    const mockUser = { id: 'test', name: 'Test User', role: 'USER' };
+    (authService.getCurrentUser as any).mockResolvedValue(mockUser);
+    (authService.login as any).mockResolvedValue({});
+    let signedOutWhenCleared: boolean | undefined;
+    const clear = queryClient.clear.bind(queryClient);
+    vi.spyOn(queryClient, 'clear').mockImplementation(() => { signedOutWhenCleared ??= isSignedOut(); clear(); });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.user).toEqual(mockUser));
+    signedOutWhenCleared = undefined;
+
+    await act(async () => { await result.current.logout(); });
+    expect(signedOutWhenCleared).toBe(true);
+    expect(isSignedOut()).toBe(true);
+
+    await act(async () => { await result.current.login({ id: 'test', password: 'password' }); });
+    expect(isSignedOut()).toBe(false);
   });
 
   it('초기화 시 사용자 정보를 조회하여 세션 유지를 확인해야 함', async () => {

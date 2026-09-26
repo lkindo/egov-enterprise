@@ -207,7 +207,9 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   standard-error-boundary(text-red-400)에서 시맨틱 토큰(bg-warning/25, hover:text-destructive, text-destructive)으로 이행하여 3건 감소.
 // [하향 래칫 2026-09-25] 172 -> 155. DEC-OPS-129 로 네트워크 관리 화면과 인프라 구성도 지도(노드 상태색)를 걷으며
 //   17건이 함께 사라졌다. 토큰 치환이 아니라 표면 제거이며 새 리터럴은 0건이다.
-const BASELINE = 155;
+// [하향 래칫 2026-09-26] 155 -> 149. DIP B4 P2(DEC-OPS-153) 로 알림 센터를 서버 목록으로 다시 쓰며
+//   걷은 '보안' 탭과 장식 배지의 리터럴 6건이 사라졌다. 표면 제거이며 새 리터럴은 0건이다.
+const BASELINE = 149;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

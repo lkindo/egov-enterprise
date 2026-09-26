@@ -59,6 +59,8 @@ export const getInitialBoardDetailData = cache(async (bbsId: string, pstSn: numb
     article: articleResult.value,
     masterInfo: masterResult.status === 'fulfilled' ? masterResult.value : null,
     initialComments: commentResult.value.list || [],
+    // 상세는 첫 100개만 받는다(DIP C7). 전체 수를 함께 넘겨 화면이 나머지가 있음을 말하게 한다.
+    commentTotal: commentResult.value.total ?? (commentResult.value.list || []).length,
     fetchError: null as string | null,
   };
 });
