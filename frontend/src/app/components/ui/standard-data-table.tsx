@@ -26,6 +26,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ErrorStateDisplay, EmptyStateDisplay } from './status-displays';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { useOverflowRegion } from '@/components/ui/table';
+import { usePageClamp } from '@/lib/hooks/use-page-clamp';
 
 export interface Column<T> {
   header: string;
@@ -293,7 +294,7 @@ export function StandardDataTable<T extends object>({
   }>(() => ({ currentPage, appliedKeyword, ids: new Set() }));
   const selectionMatchesScope = selectionState.currentPage === currentPage
     && selectionState.appliedKeyword === appliedKeyword;
-  const selectedIds = selectionMatchesScope ? selectionState.ids : EMPTY_SELECTED_IDS;
+  const scopedSelectedIds = selectionMatchesScope ? selectionState.ids : EMPTY_SELECTED_IDS;
   const setSelectedIds = useCallback((action: React.SetStateAction<Set<unknown>>) => {
     setSelectionState(previous => {
       const previousIds = previous.currentPage === currentPage
@@ -321,18 +322,35 @@ export function StandardDataTable<T extends object>({
     }
   }, [keyFieldProp, data, enableSelection]);
 
+  /** 지금 보이는 행 중 선택할 수 있는(키가 있는) 행의 키. */
+  const rowKeys = useMemo(() => new Set<unknown>(
+    (data || []).filter(item => item && item?.[keyField] !== undefined).map(item => item?.[keyField]),
+  ), [data, keyField]);
+
+  /*
+   * [2026-09-26 DIP C3] 선택은 현재 행과의 교집합으로만 읽는다. 종전에는 일괄 삭제 뒤 목록을 다시 읽어도 지워진
+   * 행의 키가 선택 집합에 남아 '선택 항목 3개' 라 말했고, 헤더 체크박스는 선택 수와 행 수가 우연히 같으면 켜졌다.
+   * 사라진 키는 저장된 선택에서도 지운다(렌더 중 조정) — 남겨 두면 같은 키의 행이 다시 나타날 때 선택된 채 돌아온다.
+   */
+  const selectedIds = useMemo(() => {
+    if ([...scopedSelectedIds].every((id) => rowKeys.has(id))) return scopedSelectedIds;
+    return new Set([...scopedSelectedIds].filter((id) => rowKeys.has(id)));
+  }, [scopedSelectedIds, rowKeys]);
+  if (selectionMatchesScope && selectedIds !== scopedSelectedIds) {
+    setSelectionState({ currentPage, appliedKeyword, ids: selectedIds });
+  }
+
   const selectedItems = useMemo(() =>
     (data || []).filter(item => item && selectedIds.has(item?.[keyField])),
     [data, selectedIds, keyField]
   );
 
+  const allRowsSelected = rowKeys.size > 0 && selectedIds.size === rowKeys.size;
+  const headerChecked: boolean | 'indeterminate' = allRowsSelected ? true : selectedIds.size > 0 ? 'indeterminate' : false;
+
   const toggleAll = useCallback(() => {
-    if (selectedIds.size === (data || []).length && (data || []).length > 0) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set((data || []).filter(item => item && item?.[keyField] !== undefined).map(item => item?.[keyField])));
-    }
-  }, [data, selectedIds.size, keyField, setSelectedIds]);
+    setSelectedIds(allRowsSelected ? new Set() : new Set(rowKeys));
+  }, [allRowsSelected, rowKeys, setSelectedIds]);
 
   const toggleOne = useCallback((id: unknown) => {
     setSelectedIds(prev => {
@@ -366,6 +384,15 @@ export function StandardDataTable<T extends object>({
 
   // 페이지 번호 윈도우 (PagePagination 과 동일 규칙: 최대 5개 + 앞뒤 생략부호)
   const totalPages = Math.max(pagination?.totalPages ?? 0, 0);
+
+  // [2026-09-26 DIP C4] 마지막 페이지의 항목을 지워 그 페이지가 비면 마지막 페이지로 되돌린다.
+  //   조회 중·오류일 때의 총 페이지는 초기값이라 되돌리지 않는다.
+  usePageClamp({
+    page: pagination?.currentPage,
+    totalPages,
+    ready: Boolean(pagination) && !loading && !error,
+    onPageChange: pagination?.onPageChange,
+  });
   const pageNumbers = useMemo(() => {
     if (!currentPage || totalPages < 1) return [] as number[];
     const maxVisible = 5;
@@ -529,7 +556,7 @@ export function StandardDataTable<T extends object>({
                 {enableSelection && (
                   <th className="px-[var(--cell-px)] py-[var(--cell-py)] w-16 text-center" scope="col" aria-label="전체 항목 선택">
                     <Checkbox
-                      checked={(data || []).length > 0 && selectedIds.size === (data || []).length}
+                      checked={headerChecked}
                       onCheckedChange={toggleAll}
                       aria-label="전체 항목 선택"
                     />
