@@ -7,7 +7,8 @@ import type { PageResponse, PrivacyLog } from '@/types/foundation/system';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
-import { PeriodFilter, EMPTY_PERIOD, periodToParams, type PeriodValue } from '@/app/components/patterns/period-filter';
+import { PeriodFilter, EMPTY_PERIOD, periodToParams } from '@/app/components/patterns/period-filter';
+import { useRememberedListConditions } from '@/lib/hooks/use-remembered-list-conditions';
 import { requestFullExport } from '@/app/components/patterns/full-result-export';
 import { exportPrivacyLogsOperation } from '@/types/generated-operations';
 import { FileDown } from 'lucide-react';
@@ -21,9 +22,12 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 const SystemLogsPrivacyClient = () => {
     const [page, setPage] = usePageParam();
-    const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+    // [2026-09-26 DIP B5 F3] 기간 프리셋과 페이지당 건수는 이 화면에서 마지막으로 고른 값을 기억한다(이 브라우저에만).
+    const { pageSize, setPageSize, period, setPeriod } = useRememberedListConditions('logs-privacy', {
+      defaultPageSize: DEFAULT_PAGE_SIZE,
+      pageSizeOptions: PAGE_SIZE_OPTIONS,
+    });
     const [searchKeyword, setSearchKeyword] = useState('');
-    const [period, setPeriod] = useState<PeriodValue>(EMPTY_PERIOD);
     const { toast } = useToast();
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<PrivacyLog>>({
