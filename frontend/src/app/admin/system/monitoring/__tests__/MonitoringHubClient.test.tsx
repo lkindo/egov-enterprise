@@ -137,9 +137,6 @@ vi.mock('../components/MonitoringPanels', () => ({
     <button type="button" role="tab" aria-selected={active} onClick={onClick}>{label}</button>
   ),
   StatusIndicator: ({ label, status }: any) => <span>{label}: {status}</span>,
-  HarnessDashboardOverview: () => <div>하네스 개요</div>,
-  SkillDetailView: ({ skill }: any) => <div>스킬 상세 {skill.name}</div>,
-  TestDetailView: ({ test }: any) => <div>테스트 상세 {test.testName}</div>,
 }));
 
 const auditRow = {
@@ -384,12 +381,17 @@ describe('MonitoringHubClient', () => {
     expect(await screen.findByText(/점검을 실행하지 못했습니다/)).toBeInTheDocument();
   });
 
+  // [2026-09-27 DIP B5 F11] 하네스 탭은 demo pack 소유 파일(HarnessAtlasPanels)로 옮겼다 — 목 없이 실제 상세를 본다.
   it('selects both harness catalog item types', async () => {
     renderHub('tab=harness');
     fireEvent.click(screen.getByRole('button', { name: /Deep Context Mapper 엔진 상세 보기/ }));
-    expect(screen.getByText('스킬 상세 Deep Context Mapper')).toBeInTheDocument();
+    let detail = screen.getByRole('region', { name: '선택 항목 상세' });
+    expect(within(detail).getByRole('heading', { name: '스킬 상세' })).toBeInTheDocument();
+    expect(within(detail).getAllByText(/Deep Context Mapper/).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: /QueryCountGuardrailIntegrationTest.*계측 상세 보기/ }));
-    expect(screen.getByText(/테스트 상세 QueryCountGuardrailIntegrationTest/)).toBeInTheDocument();
+    detail = screen.getByRole('region', { name: '선택 항목 상세' });
+    expect(within(detail).getByRole('heading', { name: '테스트 상세' })).toBeInTheDocument();
+    expect(within(detail).getAllByText(/QueryCountGuardrailIntegrationTest/).length).toBeGreaterThan(0);
   });
 
   // [DEC-OPS-129] 인프라 구성도 탭은 계측 소스 없이 늘 빈 화면이라 네트워크 모니터링과 함께 걷었다.

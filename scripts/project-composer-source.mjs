@@ -60,7 +60,8 @@ export function projectComposerFrontend(file, source, composition) {
     else if (normalized === 'src/app/components/layout/header.tsx') owners = pack === 'collaboration' ? ['notification'] : ['help'];
     else if (['src/app/components/layout/footer.tsx', 'src/app/error.tsx'].includes(normalized)) owners = ['help'];
     else if (['src/app/search/SearchClient.tsx', 'src/app/components/ui/global-command-center.tsx'].includes(normalized)) owners = ['board'];
-    else if (normalized === 'src/app/admin/system/monitoring/MonitoringHubClient.tsx') owners = ['comment'];
+    // 댓글 탭은 collaboration 블록, 하네스 아틀라스 샘플 탭은 demo 블록이다 — 샘플 파일은 system 도메인 소유(패턴 갤러리와 같다).
+    else if (normalized === 'src/app/admin/system/monitoring/MonitoringHubClient.tsx') owners = pack === 'demo' ? ['system'] : ['comment'];
     else if (normalized === 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx') owners = ['system'];
     else if (normalized.startsWith('src/app/admin/collaboration/') || normalized.startsWith('src/app/admin/uss/ion/sms/')) owners = ['addressbook'];
     else throw new Error(`Unclassified composer UI block: ${normalized}/${pack}`);

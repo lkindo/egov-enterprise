@@ -307,6 +307,8 @@ test('screens fixed for term decisions do not bring the overclaiming or misnamed
   for (const file of [
     'frontend/src/app/admin/system/menus/by-authority/MenuByAuthorityClient.tsx',
     'frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx',
+    // [2026-09-27 DIP B5 F11] 하네스 아틀라스 개요·상세가 이 파일(demo pack)로 옮겨 왔다 — 같은 감시를 따라간다.
+    'frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx',
     'frontend/src/app/admin/workflow/WorkflowClient.tsx',
     'frontend/src/app/components/ui/workflow-canvas.tsx',
     'frontend/src/app/admin/operation/rough-map/page.tsx',
@@ -318,6 +320,7 @@ test('screens fixed for term decisions do not bring the overclaiming or misnamed
     'frontend/src/app/admin/system/common-code/CommonCodeHubClient.tsx': ['기관 노드'],
     'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx': ['데이터 스트림'],
     'frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx': ['스트림에서'],
+    'frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx': ['스트림에서'],
     'frontend/src/app/admin/system/menus/MenuAdminClient.tsx': ['상위 노드', '그룹 노드'],
     'frontend/src/app/admin/system/menus/by-authority/MenuByAuthorityClient.tsx': ['노드'],
     'frontend/src/app/admin/workflow/WorkflowClient.tsx': ['노드'],

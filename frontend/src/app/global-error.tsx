@@ -2,8 +2,10 @@
 
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RotateCcw } from 'lucide-react';
+import { ErrorReference } from '@/app/components/ui/error-reference';
 
 export default function GlobalError({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
@@ -24,6 +26,7 @@ export default function GlobalError({
           </div>
           <div className="bg-slate-950 p-4 rounded-lg text-left text-xs font-mono text-muted-foreground overflow-x-auto border border-slate-800">
             <p className="font-bold text-muted-foreground">오류 세부 정보는 안전하게 숨겨졌습니다.</p>
+            <ErrorReference digest={error.digest} className="mt-2 text-muted-foreground" />
           </div>
           <Button
             onClick={() => reset()}

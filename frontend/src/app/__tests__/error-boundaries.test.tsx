@@ -90,6 +90,42 @@ describe('application error boundaries', () => {
     expect(screen.queryByText(privateDigest, { exact: false })).not.toBeInTheDocument();
   });
 
+  /*
+    [2026-09-27 DIP B5 F11] 서버 오류의 참조 번호. Next 가 붙이는 숫자 해시일 때만 보인다 — 운영자가 서버 로그의 같은
+    digest 로 원인을 찾는다. 위의 신뢰할 수 없는 digest 계약은 그대로 유지된다(형식이 맞지 않으면 보이지 않는다).
+  */
+  it('[DIP B5 F11] Next 형식의 digest 는 세 오류 화면 모두 참조 번호로 보인다', () => {
+    const digest = '3441716416';
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ErrorBoundary error={Object.assign(new Error('failure'), { digest })} reset={vi.fn()} />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText(digest)).toBeInTheDocument();
+    expect(screen.getByText(/오류 참조 번호를 알려 주세요/)).toBeInTheDocument();
+    cleanup();
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <AdminError error={Object.assign(new Error('failure'), { digest })} reset={vi.fn()} />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText(digest)).toBeInTheDocument();
+    cleanup();
+
+    const view = renderGlobalError(Object.assign(new Error('failure'), { digest }));
+    expect(view.getByText(digest)).toBeInTheDocument();
+  });
+
+  it('[DIP B5 F11] digest 가 없으면 참조 번호 줄을 두지 않는다', () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ErrorBoundary error={new Error('failure')} reset={vi.fn()} />
+      </QueryClientProvider>,
+    );
+    expect(screen.queryByText(/오류 참조 번호/)).not.toBeInTheDocument();
+  });
+
   it('uses a USER-accessible landing route for an admin-scope 403 recovery', () => {
     render(
       <QueryClientProvider client={new QueryClient()}>
