@@ -515,6 +515,50 @@ test('integration pushes and PRs share impact mapping with full fallback for unk
   }
 });
 
+// GAP-CI-001·DEC-OPS-178: main push 의 검사 범위는 직전 main SHA 와의 차이다. main 실행이 취소되거나 대기 중에
+// 교체되면 그 커밋의 코드는 어떤 main 실행에서도 검사되지 않고, 다음 실행은 새 차이만 보고 success 가 된다.
+// 취소를 꺼도 같은 그룹의 대기 실행은 다음 실행으로 교체되므로, main 은 커밋마다 자기 그룹에서 끝까지 돈다.
+const MAIN_CONCURRENCY = [
+  'concurrency:',
+  "  group: ${{ github.ref == 'refs/heads/main' && format('ci-main-{0}', github.sha) || format('ci-{0}', github.ref) }}",
+  "  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}",
+];
+
+function assertMainRunsAreNeverCancelled(content) {
+  const lines = content.replace(/\r\n/g, '\n').split('\n');
+  const start = lines.indexOf('concurrency:');
+  assert.ok(start >= 0, 'the workflow must declare top-level concurrency');
+  let end = start + 1;
+  while (end < lines.length && /^\s/.test(lines[end])) end += 1;
+  assert.deepEqual(lines.slice(start, end), MAIN_CONCURRENCY,
+    'main runs must keep a per-SHA group and never cancel; only non-main refs may cancel in progress');
+  assert.equal(lines.filter(line => /^\s*concurrency:/.test(line)).length, 1,
+    'a job-level concurrency block could still cancel or replace a main run');
+}
+
+test('main CI runs are never cancelled or replaced by a later main push', () => {
+  assertMainRunsAreNeverCancelled(ciContent);
+  const normalized = ciContent.replace(/\r\n/g, '\n');
+  const [, group, cancel] = MAIN_CONCURRENCY;
+  for (const [before, after] of [
+    [cancel, '  cancel-in-progress: true'],
+    [cancel, "  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}"],
+    [group, '  group: ci-${{ github.ref }}'],
+    [group, "  group: ${{ format('ci-{0}', github.ref) }}"],
+  ]) {
+    const weakened = normalized.replace(before, after);
+    assert.notEqual(weakened, normalized, `fixture must change: ${after}`);
+    assert.throws(() => assertMainRunsAreNeverCancelled(weakened), undefined, after);
+  }
+  const jobLevel = mutateWorkflowJob(ciContent, 'change-scope',
+    block => block.replace(/^( {4}runs-on: .*)$/m, '$1\n    concurrency:\n      group: scope\n      cancel-in-progress: true'));
+  assert.notEqual(jobLevel, normalized);
+  assert.throws(() => assertMainRunsAreNeverCancelled(jobLevel));
+  const removed = normalized.replace(/^concurrency:\n(?: {2}.*\n)+/m, '');
+  assert.notEqual(removed, normalized);
+  assert.throws(() => assertMainRunsAreNeverCancelled(removed));
+});
+
 test('backend required context binds independent migration verification fail closed', () => {
   const check = manifest.requiredChecks.find(check => check.context === 'backend-build');
   assert.equal(check.aggregate.length, 2);
