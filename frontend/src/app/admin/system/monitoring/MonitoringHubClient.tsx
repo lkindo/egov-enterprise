@@ -57,7 +57,7 @@ import { StandardDataTable, Column } from '@/app/components/ui/standard-data-tab
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
-import { PeriodFilter, EMPTY_PERIOD, periodToParams, type PeriodValue } from '@/app/components/patterns/period-filter';
+import { PeriodFilter, EMPTY_PERIOD, hasAppliedPeriod, periodToParams, type PeriodValue } from '@/app/components/patterns/period-filter';
 import dynamic from 'next/dynamic';
 // dynamic fallback 은 실제 차트와 동일 높이를 잡아 청크 도착 시 레이아웃 시프트(CLS)를 없앤다.
 const GaugeChart = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.GaugeChart), {
@@ -953,7 +953,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 rowActionLabel={(item) => `${listConfig.label} ${String(listConfig.rowId(item))} 상세 열기`}
                 keyField={listConfig.keyField}
                 emptyMessage={listConfig.searchable
-                  ? emptyResultMessage(searchKeyword, listConfig.emptyMessage)
+                  ? emptyResultMessage(searchKeyword, listConfig.emptyMessage, hasAppliedPeriod(period))
                   : listConfig.emptyMessage}
                 pagination={{
                   currentPage: page,
@@ -974,7 +974,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 rowActionLabel={(item) => `${listConfig.label} ${String(listConfig.rowId(item))} 상세 열기`}
                 keyField={listConfig.keyField}
                 emptyMessage={listConfig.searchable
-                  ? emptyResultMessage(searchKeyword, listConfig.emptyMessage)
+                  ? emptyResultMessage(searchKeyword, listConfig.emptyMessage, hasAppliedPeriod(period))
                   : listConfig.emptyMessage}
                 pagination={{
                   currentPage: page,
@@ -998,7 +998,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 rowActionLabel={(item) => `${listConfig.label} ${String(listConfig.rowId(item))} 상세 열기`}
                 keyField={listConfig.keyField}
                 emptyMessage={listConfig.searchable
-                  ? emptyResultMessage(searchKeyword, listConfig.emptyMessage)
+                  ? emptyResultMessage(searchKeyword, listConfig.emptyMessage, hasAppliedPeriod(period))
                   : listConfig.emptyMessage}
                 pagination={{
                   currentPage: page,
@@ -1020,7 +1020,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 rowActionLabel={(item) => `${listConfig.label} ${String(listConfig.rowId(item))} 상세 열기`}
                 keyField={listConfig.keyField}
                 emptyMessage={listConfig.searchable
-                  ? emptyResultMessage(searchKeyword, listConfig.emptyMessage)
+                  ? emptyResultMessage(searchKeyword, listConfig.emptyMessage, hasAppliedPeriod(period))
                   : listConfig.emptyMessage}
                 pagination={{
                   currentPage: page,

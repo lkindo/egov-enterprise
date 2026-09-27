@@ -106,7 +106,6 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
   const evntDt = formData.get('evntDt') as string;
   const qnaSttsCd = formData.get('qnaSttsCd') as string;
   const qnaCatCd = formData.get('qnaCatCd') as string;
-  const pswd = formData.get('pswd') as string;
   const scrtYn = formData.get('scrtYn') as string || 'N';
   const useYn = formData.get('useYn') as string || 'Y';
   const pstBgngYmd = formData.get('pstBgngYmd') as string;
@@ -136,7 +135,7 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       //   서버는 값이 없으면 기존 값을 유지한다(BoardService.updateOwnedPost).
       qnaSttsCd: qnaSttsCd || (!isEdit && bbsId === QNA_BOARD_ID ? 'QA01' : undefined),
       qnaCatCd: qnaCatCd || (!isEdit && bbsId === QNA_BOARD_ID ? 'CAT01' : undefined),
-      pswd: pswd || '1',
+      // [2026-09-27 DIP B5 F9] 게시글 비밀번호는 폐기 필드다 — 종전에는 '1' 을 채워 보내 평문으로 쌓였다. 보내지 않는다.
       scrtYn: scrtYn === 'Y' ? 'Y' : 'N',
       useYn: useYn === 'N' ? 'N' : 'Y'
     };

@@ -55,6 +55,13 @@ describe('게시글 저장 요청 본문 계약', () => {
     ).toEqual([]);
   });
 
+  it('[DIP B5 F9] 폐기된 게시글 비밀번호를 싣지 않는다 — 종전에는 1 을 채워 평문으로 쌓였다', () => {
+    expect(payloadKeys()).not.toContain('pswd');
+    expect(SOURCE).not.toMatch(/pswd\s*\|\|\s*'1'/);
+    const client = readFileSync(path.resolve(__dirname, '..', '..', 'admin', 'community', 'boards', 'insert-board-article', 'BoardRegistClient.tsx'), 'utf8');
+    expect(client).not.toMatch(/pswd:\s*initialData\?\.pswd\s*\|\|\s*'1'/);
+  });
+
   it('답글 전용 키를 다시 싣지 않는다', () => {
     // 이 두 키는 BoardSaveRequest 에 대응 필드가 없다 — 되살리려면 서버 계약이 먼저다.
     for (const key of ['replyYn', 'parnts']) {

@@ -5596,7 +5596,10 @@ export interface components {
             scrtYn?: string;
             /** @description 사용 여부 (Y/N) */
             useYn?: string;
-            /** @description 게시글 비밀번호 */
+            /**
+             * @deprecated
+             * @description 폐기됨 — 게시글 비밀번호를 확인하는 경로가 없어 서버가 저장하지 않는다(보내도 무시한다).
+             */
             pswd?: string;
         };
         SatisfactionDto: {

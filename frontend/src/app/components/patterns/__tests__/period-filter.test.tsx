@@ -5,10 +5,12 @@ import {
   EMPTY_PERIOD,
   PeriodFilter,
   activePresetOf,
+  hasAppliedPeriod,
   periodProblem,
   presetToPeriod,
   type PeriodValue,
 } from '../period-filter';
+import { emptyResultMessage } from '../empty-result-message';
 
 /**
  * [2026-09-26 DIP C6] 조회 기간 컨트롤.
@@ -66,6 +68,15 @@ describe('PeriodFilter', () => {
     const hint = screen.getByRole('status');
     expect(hint).toHaveTextContent('시작일과 종료일을 모두 입력해야 기간이 적용됩니다.');
     expect(screen.getByLabelText('조회 기간 시작일')).toHaveAttribute('aria-describedby', hint.id);
+  });
+
+  it('[DIP B5 F9] 양쪽을 다 고른 기간만 적용된 기간이고, 기간만 고른 0건은 결과 없음으로 말한다(G15)', () => {
+    expect(hasAppliedPeriod({ from: '2026-09-01', to: '2026-09-10' })).toBe(true);
+    expect(hasAppliedPeriod({ from: '2026-09-01', to: '' })).toBe(false);
+    expect(hasAppliedPeriod(EMPTY_PERIOD)).toBe(false);
+    expect(emptyResultMessage('', '조회된 로그가 없습니다.', true)).toBe('선택한 기간에 해당하는 결과가 없습니다. 기간을 넓히거나 초기화해 보세요.');
+    expect(emptyResultMessage('', '조회된 로그가 없습니다.', false)).toBe('조회된 로그가 없습니다.');
+    expect(emptyResultMessage('admin', '조회된 로그가 없습니다.', true)).toBe('"admin"에 대한 검색 결과가 없습니다.');
   });
 
   it('역순 기간을 알린다', () => {
