@@ -253,3 +253,11 @@ run `ed64190b29de0ebe4c0644d3`는 위 새 image ID 쌍으로 **exit 0·196.465�
 | R0·이미지 최종 자료 | 위 [최종 실행 결과](#최종-실행-결과) 절의 실행 locator와 입력 hash를 따른다. 새 이미지 디렉터리의 `local-scan-execution.json`, `release-scan-evidence.json`, `root-scan-verification.json`, `final-input-delta.json`과 실제 smoke 결과를 함께 읽는다. 임시 checkpoint로 대체하지 않는다. |
 
 최종 문서·메모리·baseline mirror·Atlas의 실행 로그는 `build/review-loop-final-static-contracts.log`, frontend Atlas 계약은 `build/review-loop-final-atlas-contract.log`, diff 검사는 `build/review-loop-final-diff-check.log`에 둔다. 문서 검사가 통과해도 위 승인·외부 증거 대기가 해소되는 것은 아니다.
+
+### 2026-09-28 통합 계약 정합
+
+정상 pre-push에서 드러난 산출물·검사 메타데이터 누락을 보완한다. 독립 이관 산출물에는 `adoption-execute.mjs`가 직접 참조하는 `release-images.mjs`를 포함하고, 정상 import와 의존성 누락 차단을 함께 검사한다. SAST는 기존 방어 조건을 다시 검토해 변경된 소스 해시만 갱신하며, 예외 대상·규칙·유효기간은 늘리지 않는다. 연결된 하네스 매니페스트는 실제 Java 하네스 산출값으로 재생성한다.
+
+메일 본문 검색의 수동 인가 검사는 `getSentMailList`의 3인자 메서드를 선택한다. 본문 검색의 발신자 `loginId` 제한과 나머지 목록 조회 범위를 `REACHABILITY_WITH_PRIVACY`로 기록하며 기존 실행 정책은 바꾸지 않는다. 수동 guard도 기존 인자 수 기반 메서드 선택기를 사용하고, 잘못된 인자 수·같은 인자 수의 중복 선언·guard 삭제·권한 우회가 차단되는 반례를 검사한다. 실제 `SecurityAuthAnnotationLinterTest` 7/7 및 생성 권한 계약 5개 검증이 통과했다. 같은 실행에서 별도 baseline 검사는 예상한 registry·검사 소스 해시 두 줄의 불일치를 차단했고, 실제 산출값 반영 뒤 mirror·문서·공용 메모리 계약 25/25가 통과했다. 로그는 `build/review-loop/delivery-auth-harness.log`, `delivery-final-static.log`다. 실행 경로는 기존 `harnessTest`와 required backend CI를 유지한다.
+
+통계 census와 E2E의 접근 이름은 실제 성공 로그인 집계의 제목과 일치시킨다. 차트·원본 표·집계 근거의 필수 단언은 유지한다. 통계 관련 6/6 및 E2E 타입 검사를 통과했고, 옛 제목 주입 시 지정된 단언 1건이 실패한 후 원본을 복구했다. 증거는 `build/review-loop/stats-contract-green.log`, `stats-contract-title-mutant-red.log`, `stats-pom-types.log`다. 이 정합 보완을 이전 이미지·복원 실행의 입력에 소급해 포함하지 않는다.

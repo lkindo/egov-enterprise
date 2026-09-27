@@ -74,9 +74,9 @@ describe('A7 report adoption census', () => {
     expect(client).toMatch(/basis=\{/);
     expect(client).toMatch(/<StandardChartWrapper\b/);
     expect(client).toMatch(/<StandardDataTable\b/);
-    // e2e(StatsPage)가 붙잡는 접근 이름 — 셸 이행 뒤에도 같은 이름으로 남는다.
+    // e2e(StatsPage)가 붙잡는 접근 이름 — 실제 성공 로그인 집계 의미와 일치해야 한다.
     expect(client).toContain('title="관리자 통계"');
     expect(client).toContain('aria-label="새로고침"');
-    expect(client).toContain('title="일자별 접속 건수 추이"');
+    expect(client).toContain('title="일자별 성공 로그인 건수 추이"');
   });
 });

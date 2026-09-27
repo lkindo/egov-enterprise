@@ -910,10 +910,14 @@ class SecurityAuthAnnotationLinterTest {
             violations.add(guard.target() + " source 부재: " + guard.source());
             return;
         }
-        String methodName = guard.target().substring(guard.target().indexOf('#') + 1);
         String code = HarnessSourceIndex.stripCommentsPreservingStrings(
                 HarnessSourceIndex.read(source));
-        String body = extractMethodBody(code, methodName);
+        validateManualGuardBody(guard, code, violations);
+    }
+
+    private static void validateManualGuardBody(ManualGuardPolicy guard, String code, List<String> violations) {
+        String methodName = guard.target().substring(guard.target().indexOf('#') + 1);
+        String body = extractMethodBody(code, methodName, guard.parameterCount());
         if (body == null) {
             violations.add(guard.target() + " method body 탐지 실패");
             return;
@@ -1032,6 +1036,34 @@ class SecurityAuthAnnotationLinterTest {
         assertEquals(2, declarationParameterCount("@Named(\"a,b\") Map<String, List<Long>> map, String[] names)", 0));
         assertEquals(0, declarationParameterCount(")", 0));
         assertEquals(-1, declarationParameterCount("String unterminated", 0));
+
+        String manualSource = """
+                public String list(String keyword, Object pageable) { return list("1", keyword, pageable); }
+                public String list(String condition, String keyword, Object pageable) {
+                    String login = SecurityUtil.getCurrentLoginId()
+                            .orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
+                    return repository.search(login, keyword, pageable);
+                }
+                """;
+        for (Integer parameterCount : new Integer[]{3, 2, 4, null}) {
+            ManualGuardPolicy guard = new ManualGuardPolicy("Fixture#list", "unused.java", "REACHABILITY_WITH_PRIVACY", 1,
+                    List.of("SecurityUtil.getCurrentLoginId()", "CommonErrorCode.ACCESS_DENIED"),
+                    List.of("SecurityUtil.hasPermission("), parameterCount);
+            List<String> violations = new ArrayList<>();
+            validateManualGuardBody(guard, manualSource, violations);
+            assertEquals(Integer.valueOf(3).equals(parameterCount), violations.isEmpty());
+            if (Integer.valueOf(3).equals(parameterCount)) {
+                for (String changed : List.of(
+                        manualSource + "\npublic String list(Long condition, String keyword, Object pageable) { return null; }",
+                        manualSource.replace("SecurityUtil.getCurrentLoginId()", "SecurityUtil.getCurrentEsntlId()"),
+                        manualSource.replace(".orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))", ".orElse(null)"),
+                        manualSource.replace("String login =", "if (SecurityUtil.hasPermission(\"MAIL_READ_ALL\")) return null; String login ="))) {
+                    violations.clear();
+                    validateManualGuardBody(guard, changed, violations);
+                    assertFalse(violations.isEmpty());
+                }
+            }
+        }
     }
 
     private PolicyRegistry loadRegistry() throws IOException {
@@ -1202,7 +1234,8 @@ class SecurityAuthAnnotationLinterTest {
             String policy,
             int denyReferences,
             List<String> requiredTokens,
-            List<String> forbiddenTokens) {
+            List<String> forbiddenTokens,
+            Integer parameterCount) {
     }
 
     private record ActualEndpoint(
