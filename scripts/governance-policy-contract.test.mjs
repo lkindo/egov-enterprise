@@ -222,6 +222,31 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
     errors.push('one unexpected error must not force an immediate user round-trip');
   }
 
+  // [2026-09-27 DEC-OPS-177] 연속 작업의 시간 예산 — 반복만 줄이고 안전 문장은 지운 채 남지 않게 고정한다.
+  const agentBatchBudget = section(activeAgents, '## 연속 작업의 시간 예산', '## 공유 워킹트리와 Git');
+  const protocolBatchBudget = section(activeProtocol, '## 6. 연속 배치 작업의 시간 예산');
+  if (!agentBatchBudget.includes('H1~H5·red 증명 생략의 근거로 쓰지 않는다')) {
+    errors.push('AGENTS batch time budget must not license hook bypass, skipped verification, or skipped red proofs');
+  }
+  if (!agentBatchBudget.includes('(docs/03-guides/orchestration-protocol.md#6-연속-배치-작업의-시간-예산-batch-time-budget)')) {
+    errors.push('AGENTS batch time budget must delegate its procedure to protocol §6');
+  }
+  if (!protocolBatchBudget.includes('훅을 우회하지 않는다(`--no-verify`, `SKIP_HARNESS=1` 포함)')) {
+    errors.push('protocol §6 must keep local hooks mandatory, including the harness skip switch');
+  }
+  if (!protocolBatchBudget.includes('위임 산출물에 대한 메인 에이전트의 독립 재검증(§2.3)')) {
+    errors.push('protocol §6 must keep delegated-output re-verification outside the duplicate rule');
+  }
+  if (!protocolBatchBudget.includes('required CI가 같은 범위를 돈다는 사실은 생략 사유가 아니다')) {
+    errors.push('protocol §6 must not let required CI coverage justify skipping local checks');
+  }
+  if (!protocolBatchBudget.includes('**push 전에** 끝 PR의 base를 `main`으로 바꾼다')) {
+    errors.push('protocol §6 must retarget a stacked PR to main before pushing the merged head');
+  }
+  if (!protocolBatchBudget.includes('green이든 red든 그 커밋의 증거로 쓰지 않는다')) {
+    errors.push('protocol §6 must reject overlapped heavy runs as evidence either way');
+  }
+
   const atlasL0 = atlasGradeRow(atlas, 'L0');
   const atlasL1 = atlasGradeRow(atlas, 'L1');
   const atlasL2 = atlasGradeRow(atlas, 'L2');
@@ -446,6 +471,16 @@ test('protocol regressions become red without mutating repository files', () => 
       '안전 경계](../../AGENTS.md#공통-작업-원칙)에 해당해도 L0 Fast-Track으로 수행할 수 있다.',
     ) },
     { ...current, protocol: `${current.protocol}\n- 예상치 못한 오류 발생 시 즉시 중단한다.\n` },
+    { ...current, agents: current.agents.replace('H1~H5·red 증명 생략의 근거로 쓰지 않는다', 'H1~H5·red 증명을 생략할 수 있다') },
+    { ...current, agents: current.agents.replace(
+      '(docs/03-guides/orchestration-protocol.md#6-연속-배치-작업의-시간-예산-batch-time-budget)',
+      '(docs/03-guides/orchestration-protocol.md)',
+    ) },
+    { ...current, protocol: current.protocol.replace('훅을 우회하지 않는다(`--no-verify`, `SKIP_HARNESS=1` 포함)', '같은 검사를 돌렸으면 훅은 `SKIP_HARNESS=1` 로 건너뛴다') },
+    { ...current, protocol: current.protocol.replace('위임 산출물에 대한 메인 에이전트의 독립 재검증(§2.3), ', '') },
+    { ...current, protocol: current.protocol.replace(' required CI가 같은 범위를 돈다는 사실은 생략 사유가 아니다.', ' required CI가 같은 범위를 돌면 생략한다.') },
+    { ...current, protocol: current.protocol.replace('**push 전에** 끝 PR의 base를 `main`으로 바꾼다', 'push 한 뒤에 끝 PR의 base를 `main`으로 바꾼다') },
+    { ...current, protocol: current.protocol.replace('green이든 red든 그 커밋의 증거로 쓰지 않는다', 'red일 때만 단독으로 다시 확인한다') },
     { ...current, atlas: current.atlas.replace(
       '별도 승인 없이 실행 가능하되 AGENTS 안전 경계에는 Fast-Track 금지',
       '안전 경계도 별도 승인 없이 Fast-Track 실행',
