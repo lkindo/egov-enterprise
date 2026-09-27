@@ -144,18 +144,18 @@ class BoardMasterTest {
         // registerOption 미호출 → option 은 아직 null
         assertThat(master.getOption()).isNull();
 
-        master.updateAnsYn("Y");
+        master.updateAnsYn("N");
 
         // BoardMaster 컬럼과 Option 이 모두 동기화되어야 한다 (이전에는 option 이 생성되지 않아 값 누락)
-        assertThat(master.getAnsYn()).isEqualTo("Y");
+        assertThat(master.getAnsYn()).isEqualTo("N");
         assertThat(master.getOption()).isNotNull();
-        assertThat(master.getOption().getAnsYn()).isEqualTo("Y");
-        // 미지정 필드는 기본값("N")으로 정규화
-        assertThat(master.getOption().getStsfdgYn()).isEqualTo("N");
-
-        master.updateStsfdgYn("Y");
-        assertThat(master.getStsfdgYn()).isEqualTo("Y");
+        assertThat(master.getOption().getAnsYn()).isEqualTo("N");
+        // 미지정 필드는 기본값으로 정규화한다. [2026-09-27 DIP B5 F9] 기본값은 지금까지의 실제 동작(받음)인 "Y" 다.
         assertThat(master.getOption().getStsfdgYn()).isEqualTo("Y");
+
+        master.updateStsfdgYn("N");
+        assertThat(master.getStsfdgYn()).isEqualTo("N");
+        assertThat(master.getOption().getStsfdgYn()).isEqualTo("N");
     }
 }
 

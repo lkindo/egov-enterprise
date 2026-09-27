@@ -29,18 +29,20 @@
 --   R__ 재실행 시 라이브 행을 건드리지 않는다. (tmplt_id 일부는 라이브에서도 dangling — FK 없어 무해)
 -- ⚠ 한계: 게시글은 시드하지 않는다. 라이브 3종에 371행이 누적돼 있고 대부분 E2E 잔재라 미러링이
 --   무의미하다. 특정 pstId 를 하드코딩한 테스트(예: pstId=1108)는 **자체 생성으로 전환**해야 한다.
+-- [2026-09-27 DIP B5 F9 · DEC-OPS-173] ans_yn(댓글 사용)·stsfdg_yn(만족도 조사 사용)이 이제 집행된다. 시드 게시판도 지금까지의
+--   실제 동작(댓글·만족도를 받음)대로 Y 로 둔다. 기존 행은 ON CONFLICT 로 건드리지 않고 V2_109 가 맞춘다.
 INSERT INTO tb_bbs_master
   (bbs_id, bbs_ttl, bbs_type_cd, bbs_atrb_cd, use_yn, ans_yn, file_atch_psblty_yn,
    atch_psblty_file_qty, tmplt_id, stsfdg_yn, ans_psblty_yn, crt_dt, frst_rgtr_id)
 VALUES
-  ('BBSMSTR_AAAAAAAAAAAA', '공지사항',    'BBST01', 'BBSA01', 'Y', 'N', 'Y', 3, 'TMPLAT_BOARD_DEFAULT', 'N', 'Y', CURRENT_TIMESTAMP, 'SYSTEM'),
-  ('BBSMSTR_DDDDDDDDDDDD', 'Q&A 게시판',  'BBST03', 'BBSA01', 'Y', 'N', 'Y', 3, 'TMPLT_QNA',            'N', 'Y', CURRENT_TIMESTAMP, 'SYSTEM'),
-  ('BBSMSTR_EEEEEEEEEEEE', '일정 게시판', 'BBST04', 'BBSA01', 'Y', 'N', 'Y', 3, 'TMPLT_CALENDAR',       'N', 'N', CURRENT_TIMESTAMP, 'SYSTEM'),
+  ('BBSMSTR_AAAAAAAAAAAA', '공지사항',    'BBST01', 'BBSA01', 'Y', 'Y', 'Y', 3, 'TMPLAT_BOARD_DEFAULT', 'Y', 'Y', CURRENT_TIMESTAMP, 'SYSTEM'),
+  ('BBSMSTR_DDDDDDDDDDDD', 'Q&A 게시판',  'BBST03', 'BBSA01', 'Y', 'Y', 'Y', 3, 'TMPLT_QNA',            'Y', 'Y', CURRENT_TIMESTAMP, 'SYSTEM'),
+  ('BBSMSTR_EEEEEEEEEEEE', '일정 게시판', 'BBST04', 'BBSA01', 'Y', 'Y', 'Y', 3, 'TMPLT_CALENDAR',       'Y', 'N', CURRENT_TIMESTAMP, 'SYSTEM'),
   -- [2026-07-27 추가] BBSMSTR_CCCCCCCCCCCC 는 **앱이 하드코딩**한다(KnowledgeHubClient 의 COMMUNITY 카테고리,
   --   커뮤니티 게시판 선택지 등 6개소). 신규 DB 에 없으면 /admin/community 진입만으로 404 가 6건 난다.
   --   라이브 실측값 미러링. ※ 앱이 참조하는 BBSMSTR_BBBBBBBBBBBB·NNNNNNNNNNNN·000000000001 은
   --   라이브에도 존재하지 않는다 — 선택지에 죽은 게시판이 노출되는 별도 결함으로 기록.
-  ('BBSMSTR_CCCCCCCCCCCC', '업무게시판',  'BBST01', 'BBSA01', 'Y', 'N', 'Y', 3, 'TMPLAT_BOARD_DEFAULT', 'N', 'Y', CURRENT_TIMESTAMP, 'SYSTEM')
+  ('BBSMSTR_CCCCCCCCCCCC', '업무게시판',  'BBST01', 'BBSA01', 'Y', 'Y', 'Y', 3, 'TMPLAT_BOARD_DEFAULT', 'Y', 'Y', CURRENT_TIMESTAMP, 'SYSTEM')
 ON CONFLICT (bbs_id) DO NOTHING;
 
 SELECT 1; -- Placeholder to ensure valid trailing SQL

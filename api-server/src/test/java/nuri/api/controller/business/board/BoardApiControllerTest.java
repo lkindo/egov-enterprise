@@ -250,7 +250,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
     @DisplayName("게시판 메타는 제목·템플릿·설정만 싣고 운영 필드는 싣지 않는다 (DIP V5)")
     void getBoardMeta_ReturnsReadOnlyMeta() throws Exception {
         given(boardService.getBoardMeta("BBS_001")).willReturn(new nuri.business.service.board.dto.BoardMetaDto(
-                "BBS_001", "자유게시판", "설명", "BBST01", "TMPLT_FAQ", "Y", "Y", 3, 1048576L, "N"));
+                "BBS_001", "자유게시판", "설명", "BBST01", "TMPLT_FAQ", "Y", "Y", 3, 1048576L, "N", "Y"));
 
         mockMvc.perform(get("/api/v1/boards/BBS_001/meta")
                         .accept(MediaType.APPLICATION_JSON))
@@ -258,6 +258,8 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data.bbsTtl").value("자유게시판"))
                 .andExpect(jsonPath("$.data.tmpltId").value("TMPLT_FAQ"))
                 .andExpect(jsonPath("$.data.atchPsbltyFileQty").value(3))
+                .andExpect(jsonPath("$.data.stsfdgYn").value("N"))
+                .andExpect(jsonPath("$.data.ansYn").value("Y"))
                 .andExpect(jsonPath("$.data.frstRgtrId").doesNotExist())
                 .andExpect(jsonPath("$.data.useYn").doesNotExist());
 

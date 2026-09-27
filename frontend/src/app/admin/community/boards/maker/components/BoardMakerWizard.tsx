@@ -207,6 +207,10 @@ export function BoardMakerWizard() {
  bbsExpln: '',
  atchPsbltyFileQty: 3,
  atchPsbltyFileSz: 5242880, // 5MB
+ // [2026-09-27 DIP B5 F9] 댓글·만족도·첨부 설정은 이제 서버가 집행한다. 기본값은 지금까지의 실제 동작(받음)이다.
+ ansYn: 'Y',
+ stsfdgYn: 'Y',
+ fileAtchPsbltyYn: 'Y',
  bbsTypeCd: 'BBST01',
  bbsAtrbCd: 'BBSA01',
  tmpltId: 'TMPLT_HUB',
@@ -287,14 +291,13 @@ export function BoardMakerWizard() {
  bbsExpln: data.bbsExpln,
  bbsTypeCd: data.bbsTypeCd,
  bbsAtrbCd: 'BBSA01', // Missing field causing 500 error
- // [2026-08-29] 종전 1단계의 '댓글 사용 여부'·'파일 첨부 여부' 토글을 걷어내고 값을
- //   기본값으로 고정한다. 두 값은 저장될 뿐 **집행자가 저장소 전체에 없다** — 전량 grep 상
- //   조건문에 쓰이는 곳이 0건이고, 게시글 상세는 `<CommentSection>` 을 분기 없이 렌더한다.
- //   즉 관리자가 껐다고 믿은 게시판에도 모든 인증 사용자가 댓글을 쓸 수 있었다.
- //   ('댓글 사용 여부' 라벨은 필드 의미와도 달랐다 — ans_psblty_yn 은 '답변가능여부'다.)
- //   집행을 구현하면 그때 토글을 되살린다. 값은 종전 기본값과 같아 생성 결과는 불변이다.
+ // [2026-08-29] 종전 토글은 저장될 뿐 집행자가 없어 걷어냈다. [2026-09-27 DIP B5 F9] 서버가 댓글(ansYn)·
+ //   만족도(stsfdgYn)·첨부(fileAtchPsbltyYn·파일 수·크기)를 집행하므로 토글을 되살린다.
+ //   답글 가능 여부(ansPsbltyYn)는 여전히 집행자가 없어 기본값으로 둔다.
  ansPsbltyYn: 'N',
- fileAtchPsbltyYn: 'Y',
+ ansYn: data.ansYn ?? 'Y',
+ stsfdgYn: data.stsfdgYn ?? 'Y',
+ fileAtchPsbltyYn: data.fileAtchPsbltyYn ?? 'Y',
  atchPsbltyFileQty: Number(data.atchPsbltyFileQty),
  atchPsbltyFileSz: Number(data.atchPsbltyFileSz),
  tmpltId: data.tmpltId,
@@ -533,13 +536,32 @@ export function BoardMakerWizard() {
 {/* reusable-base:demo:end */}
 
  {/*
-   [2026-08-29] '댓글 사용 여부'·'파일 첨부 여부' 토글을 걷어냈다.
-   두 스위치는 값을 저장할 뿐 어떤 동작도 바꾸지 못했다 — 저장소 전량 grep 에서
-   ansPsbltyYn·fileAtchPsbltyYn 을 조건으로 읽는 코드가 0건이고, 게시글 상세는
-   `<CommentSection>` 을 분기 없이 렌더한다. 관리자는 댓글을 막았다고 믿었지만
-   그 게시판에서도 모든 인증 사용자가 댓글을 쓸 수 있었다.
-   집행 경로(서버 검사 + 화면 게이트)를 만들면 그때 되살린다.
+   [2026-08-29] 저장될 뿐 집행자가 없던 토글을 걷어냈다. [2026-09-27 DIP B5 F9] 서버가 새 댓글·새 평가·첨부를
+   이 값으로 거부하고 게시글 화면이 같은 값으로 입력을 감추므로 되살린다. 첨부 파일 수·크기는 게시판 설정에서 바꾼다.
  */}
+ <fieldset className="space-y-2 rounded-md border border-border p-3">
+ <legend className="px-1 text-[length:var(--font-size-body)] font-medium text-foreground">게시판 기능</legend>
+ {([
+ ['ansYn', '댓글 받기', '끄면 새 댓글을 받지 않습니다. 이미 달린 댓글은 그대로 보입니다.'],
+ ['stsfdgYn', '만족도 평가 받기', '끄면 새 만족도 평가를 받지 않습니다.'],
+ ['fileAtchPsbltyYn', '파일 첨부 허용', `켜면 글마다 파일을 ${watch('atchPsbltyFileQty')}개, 하나당 ${Math.round(Number(watch('atchPsbltyFileSz')) / (1024 * 1024))}MB 까지 받습니다.`],
+ ] as const).map(([field, label, help]) => (
+ <label key={field} className="flex items-start gap-2 text-[length:var(--font-size-body)] text-foreground">
+ <input
+ type="checkbox"
+ className="mt-1 h-4 w-4 accent-primary"
+ aria-label={label}
+ checked={watch(field) !== 'N'}
+ onChange={(event) => setValue(field, event.target.checked ? 'Y' : 'N', { shouldDirty: true })}
+ aria-describedby={`${field}-help`}
+ />
+ <span>
+ <span className="font-medium">{label}</span>
+ <span id={`${field}-help`} className="block text-xs text-muted-foreground">{help}</span>
+ </span>
+ </label>
+ ))}
+ </fieldset>
  </div>
  )}
 

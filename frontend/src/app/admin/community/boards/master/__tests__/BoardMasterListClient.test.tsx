@@ -289,6 +289,38 @@ describe('BoardMasterListClient selection contract', () => {
     await waitFor(() => expect(bulkActivate).not.toBeDisabled());
   });
 
+  it('[DIP B5 F9] 댓글·만족도·첨부 설정과 첨부 파일 수·파일당 크기를 저장 값에 싣는다', async () => {
+    const user = userEvent.setup();
+    const fields = await openSettings(user);
+    const comment = screen.getByRole('switch', { name: '댓글 받기' });
+    expect(comment).toHaveAttribute('aria-checked', 'true');
+    await user.click(comment);
+    await user.click(screen.getByRole('switch', { name: '파일 첨부 허용' }));
+    fireEvent.change(screen.getByLabelText(/첨부 파일 수/), { target: { value: '4' } });
+    fireEvent.change(screen.getByLabelText('파일당 크기(MB)'), { target: { value: '2' } });
+
+    await user.click(fields.submit);
+
+    await waitFor(() => expect(mocks.updateBoardMaster).toHaveBeenCalledTimes(1));
+    expect(mocks.updateBoardMaster.mock.calls[0][1]).toMatchObject({
+      ansYn: 'N',
+      fileAtchPsbltyYn: 'N',
+      atchPsbltyFileQty: 4,
+      atchPsbltyFileSz: 2 * 1024 * 1024,
+    });
+  });
+
+  it('[DIP B5 F9] 서버 상한을 넘는 첨부 파일 수는 보내지 않는다', async () => {
+    const user = userEvent.setup();
+    const fields = await openSettings(user);
+    fireEvent.change(screen.getByLabelText(/첨부 파일 수/), { target: { value: '21' } });
+
+    await user.click(fields.submit);
+
+    expect(mocks.updateBoardMaster).not.toHaveBeenCalled();
+    expect(await screen.findAllByText(/20개까지/)).not.toHaveLength(0);
+  });
+
   it('100자를 넘는 게시판 명칭을 update sink로 보내지 않는다', async () => {
     const user = userEvent.setup();
     const fields = await openSettings(user);
@@ -458,6 +490,8 @@ describe('BoardMasterListClient selection contract', () => {
       bbsTtl: '가'.repeat(100),
       bbsExpln: '나'.repeat(4000),
       useYn: 'Y',
+      atchPsbltyFileQty: 3,
+      atchPsbltyFileSzMb: 5,
     };
 
     expect(boardMasterEditSchema.safeParse(valid).success).toBe(true);
@@ -466,6 +500,12 @@ describe('BoardMasterListClient selection contract', () => {
     expect(boardMasterEditSchema.safeParse({ ...valid, bbsExpln: '나'.repeat(4001) }).success).toBe(false);
     expect(boardMasterEditSchema.safeParse({ ...valid, useYn: 'X' }).success).toBe(false);
     expect(boardMasterEditSchema.safeParse({ ...valid, bbsTtl: 123 }).success).toBe(false);
+    // [DIP B5 F9] 첨부 설정은 서버 상한 안에서만 받는다 — 0 은 게시판 상한 없음이다.
+    expect(boardMasterEditSchema.safeParse({ ...valid, atchPsbltyFileQty: 0 }).success).toBe(true);
+    expect(boardMasterEditSchema.safeParse({ ...valid, atchPsbltyFileQty: 21 }).success).toBe(false);
+    expect(boardMasterEditSchema.safeParse({ ...valid, atchPsbltyFileQty: 1.5 }).success).toBe(false);
+    expect(boardMasterEditSchema.safeParse({ ...valid, atchPsbltyFileSzMb: 11 }).success).toBe(false);
+    expect(boardMasterEditSchema.safeParse({ ...valid, atchPsbltyFileSzMb: 0 }).success).toBe(false);
   });
 
   /*

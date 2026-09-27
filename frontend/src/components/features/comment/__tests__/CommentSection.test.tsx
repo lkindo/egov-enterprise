@@ -88,6 +88,15 @@ describe('CommentSection Component', () => {
     expect(screen.getByRole('heading', { name: '댓글' })).toBeDefined();
   });
 
+  it('[DIP B5 F9] 댓글을 받지 않는 게시판은 입력란 대신 사유를 보이고, 이미 달린 댓글은 그대로 보인다', () => {
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} acceptsNewComments={false} />);
+
+    expect(screen.getByText('First Comment')).toBeDefined();
+    expect(screen.getByRole('note').textContent).toContain('새 댓글을 받지 않습니다');
+    expect(screen.queryByLabelText('새 댓글 작성')).toBeNull();
+    expect(screen.queryByRole('button', { name: /댓글 등록/ })).toBeNull();
+  });
+
   it('서버가 센 전체 수로 말하고, 불러오지 못한 댓글이 있으면 그 사실을 알린다 (DIP C7)', () => {
     // 상세는 첫 100개만 받는다 — 종전에는 불러온 행 수를 세어 150개짜리 글도 '댓글 1개' 라 말했다.
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} totalComments={150} />);
