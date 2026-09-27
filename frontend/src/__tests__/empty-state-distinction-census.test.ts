@@ -57,6 +57,32 @@ describe('빈 상태 구분 census', () => {
     ).toEqual([]);
   });
 
+  /*
+    [2026-09-27 DIP B5 F9] 기간 필터도 조회 조건이다. 기간만 좁혀 0건이 되면 "조회된 로그가 없습니다" 가 떠 기록이
+    아예 없는 것처럼 읽혔다. 기간 필터를 쓰는 화면은 기간 적용 여부를 빈 상태 문구에 넘기거나(hasAppliedPeriod),
+    같은 구분을 자체 조건으로 한다(아래 목록).
+  */
+  it('기간 필터를 쓰는 화면은 기간만 고른 0건도 결과 없음으로 말한다', () => {
+    const PERIOD_CUSTOM_DISTINCTION = [
+      // 결재함은 제목·기간·상태를 함께 hasListFilter 로 보고 '조건에 맞는 결재가 없습니다' 를 쓴다(DIP B5 F4).
+      'src/app/approvals/ApprovalHubClient.tsx',
+      // 통계 허브의 기간은 집계 구간이라 빈 목록을 만들지 않는다(DIP B5 F6).
+      'src/app/admin/stats/IntelligenceHubClient.tsx',
+    ];
+    const missing = screenFiles(APP_DIR)
+      .filter((path) => readFileSync(path, 'utf8').includes('<PeriodFilter'))
+      .map((path) => relative(FRONTEND_DIR, path).split(sep).join('/'))
+      .filter((path) => !PERIOD_CUSTOM_DISTINCTION.includes(path))
+      .filter((path) => !readFileSync(join(FRONTEND_DIR, path), 'utf8').includes('hasAppliedPeriod('))
+      .sort();
+
+    expect(missing, `기간 적용을 빈 상태에 넘기지 않는 화면:\n${missing.join('\n')}\n`
+      + 'emptyResultMessage(검색어, 기본문구, hasAppliedPeriod(period)) 로 넘기세요(G15).').toEqual([]);
+    for (const path of PERIOD_CUSTOM_DISTINCTION) {
+      expect(readFileSync(join(FRONTEND_DIR, path), 'utf8'), `${path}: 기간 필터를 더 이상 쓰지 않으면 목록에서 빼세요`).toContain('<PeriodFilter');
+    }
+  });
+
   it('자체 입력으로 검색하는 화면도 같은 구분을 한다', () => {
     for (const relativePath of CUSTOM_SEARCH_SCREENS) {
       const source = readFileSync(join(FRONTEND_DIR, relativePath), 'utf8');

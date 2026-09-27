@@ -190,6 +190,11 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
     hasDraft,
     /** 임시저장 데이터 복원 */
     restoreDraft,
+    /**
+     * 복원하지 않고 초안 내용만 읽는다(2026-09-27 DIP B5 F9). 수정 화면은 저장된 글로 채워져 있어, 초안이 그 글과
+     * 다를 때만 복구를 물어야 한다 — 같은 내용을 묻는 것은 소음이다.
+     */
+    peekDraft: readDraft,
     /** 임시저장 데이터 삭제 (정상 제출 시 호출) */
     clearDraft,
     /** 수동으로 즉시 저장 */

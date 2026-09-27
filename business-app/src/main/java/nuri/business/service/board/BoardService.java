@@ -419,7 +419,9 @@ public class BoardService extends BaseAbstractService {
                                         .atchFileSn(request.atchFileSn())
                                         .qnaCatCd(request.qnaCatCd())
                                         .scrtYn(request.scrtYn())
-                                        .pswd(request.pswd())
+                                        // [2026-09-27 DIP B5 F9] 게시글 비밀번호는 확인 경로가 없는 폐기 필드다. 화면이 '1' 을
+                                        //   채워 평문으로 쌓이고 있었다 — 요청 값을 저장하지 않는다.
+                                        .pswd(null)
                                         .build();
                         Long pstSn = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
                                         "boardRepository.save() 결과는 null 일 수 없습니다")
@@ -515,7 +517,7 @@ public class BoardService extends BaseAbstractService {
                                 .atchFileSn(request.atchFileSn())
                                 .qnaCatCd(request.qnaCatCd())
                                 .scrtYn(request.scrtYn())
-                                .pswd(request.pswd())
+                                .pswd(null) // [2026-09-27 DIP B5 F9] 폐기 필드 — 등록과 같이 저장하지 않는다.
                                 .build();
                 
                 Long pstSn = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
@@ -791,7 +793,7 @@ public class BoardService extends BaseAbstractService {
                 board.update(request.pstTtl(), request.pstCn(),
                                 board.getUserId(),   // 저자(userId/userNm)는 불변 — request 로 재지정 금지(정체성 위조 방지)
                                 board.getUserNm(),
-                                request.pswd() != null ? request.pswd() : board.getPswd(),
+                                board.getPswd(),     // [2026-09-27 DIP B5 F9] 폐기 필드 — 요청 값으로 바꾸지 않는다(기존 값은 지우지 않는다).
                                 request.pstBgngYmd() != null ? normalizeYmd(request.pstBgngYmd()) : board.getPstBgngYmd(),
                                 request.pstEndYmd() != null ? normalizeYmd(request.pstEndYmd()) : board.getPstEndYmd(),
                                 request.atchFileSn() != null ? request.atchFileSn() : board.getAtchFileSn(),
