@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import { communityService } from '@/services/business/community/communityService';
 import CommunityHubClient from './CommunityHubClient';
+
+export const metadata: Metadata = {
+  title: `커뮤니티 목록 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 
 

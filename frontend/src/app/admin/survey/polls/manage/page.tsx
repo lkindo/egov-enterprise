@@ -1,6 +1,12 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import { PageHeader } from '@/app/components/layout/page-header';
 import Link from 'next/link';
 import { Vote } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: `여론조사 관리 안내 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 export default function SurveyPollsManagePage() {
   return (

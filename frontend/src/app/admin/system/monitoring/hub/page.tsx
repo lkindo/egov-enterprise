@@ -1,6 +1,12 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import { Suspense } from 'react';
 import MonitoringHubClient from '../MonitoringHubClient';
 import { MonitoringHubSkeleton } from '../MonitoringHubSkeleton';
+
+export const metadata: Metadata = {
+  title: `시스템 모니터링 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 export default function MonitoringHubPage() {
   return (

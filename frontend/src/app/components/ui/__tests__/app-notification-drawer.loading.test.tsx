@@ -9,6 +9,18 @@ import { AppNotificationDrawer } from '../app-notification-drawer';
 describe('AppNotificationDrawer 로딩', () => {
   const handlers = { onClose: vi.fn(), onMarkRead: vi.fn(), onMarkAllRead: vi.fn(), onDelete: vi.fn() };
 
+  it('알림 시각은 표준 형식으로 표시하고 누락·손상 시각은 미상으로 남긴다', () => {
+    render(<AppNotificationDrawer isOpen notifications={[
+      { id: 1, title: '정상 시각', message: '', time: '2026-09-27T09:10:11.123456', isRead: false },
+      { id: 2, title: '날짜 없음', message: '', time: '', isRead: false },
+      { id: 3, title: '손상 시각', message: '', time: 'broken', isRead: false },
+    ]} {...handlers} />);
+
+    expect(screen.getByText('2026-09-27 09:10:11')).toBeInTheDocument();
+    expect(screen.getAllByText('-')).toHaveLength(2);
+    expect(screen.queryByText('broken')).not.toBeInTheDocument();
+  });
+
   it('첫 조회 중에는 불러오는 중이라고 말하고 알림이 없다고 말하지 않는다', () => {
     render(<AppNotificationDrawer isOpen loading notifications={[]} {...handlers} />);
 

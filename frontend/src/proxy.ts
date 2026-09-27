@@ -298,6 +298,18 @@ function applyDocumentSecurityHeaders(response: NextResponse): NextResponse {
   return response;
 }
 
+function isEncodedAuthTokenPath(pathname: string): boolean {
+  if (!pathname.includes('%')) return false;
+  try {
+    // Static Next routes match the encoded path, while the upstream can decode a path segment.
+    // Reject only aliases of these token endpoints; encoded business resource identifiers remain valid.
+    return /^\/api\/v1\/auth\/(?:login|reissue)\/?$/.test(decodeURIComponent(pathname));
+  } catch {
+    // Malformed paths are handled by normal routing/upstream validation, not guessed or recursively decoded.
+    return false;
+  }
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -327,6 +339,12 @@ export async function proxy(request: NextRequest) {
         );
       }
     }
+  }
+
+  if (isEncodedAuthTokenPath(pathname)) {
+    return NextResponse.json({
+      success: false, code: 'INVALID_AUTH_PATH', message: '요청 경로가 올바르지 않습니다.',
+    }, { status: 400 });
   }
 
   // 1. 백엔드 API 요청 Proxy Header Injection

@@ -6,12 +6,14 @@ import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -20,13 +22,16 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -119,6 +124,569 @@ class ZeroDowntimeMigrationLinterTest {
     private static final Pattern FORBIDDEN_SEQ_RENAME = Pattern.compile(
             "(?is)\\bALTER\\s+SEQUENCE\\s+\\S+\\s+RENAME\\s+");
 
+    private static final String HISTORY_MIGRATION_DIR = "api-server/src/main/resources/db/migration/";
+
+    @Test
+    void migrationHistoryRejectsModifiedProtectedVersion(@TempDir Path root) throws Exception {
+        HistoryFixture fixture = historyFixture(root);
+        writeHistorySql(root, "V1__original.sql", "SELECT 2;\n");
+        assertThat(migrationHistoryViolations(root, Map.of())).anyMatch(v -> v.contains("V1__original.sql"));
+        fixture.git("add", ".");
+        assertThat(migrationHistoryViolations(root, Map.of())).anyMatch(v -> v.contains("V1__original.sql"));
+        fixture.git("commit", "-qm", "alter protected migration");
+        assertThat(migrationHistoryViolations(root, Map.of())).anyMatch(v -> v.contains("V1__original.sql"));
+    }
+
+    @Test
+    void migrationHistoryObservesWorktreeChangesAfterPreviousCheck(@TempDir Path root) throws Exception {
+        historyFixture(root);
+        assertThat(migrationHistoryViolations(root, Map.of())).isEmpty();
+
+        writeHistorySql(root, "V1__original.sql", "SELECT 9;\n");
+        assertThat(migrationHistoryViolations(root, Map.of())).anyMatch(v -> v.contains("V1__original.sql"));
+
+        writeHistorySql(root, "V1__original.sql", "SELECT 1;\n");
+        assertThat(migrationHistoryViolations(root, Map.of())).isEmpty();
+    }
+
+    @Test
+    void migrationHistoryRejectsDeletedAndRenamedVersions(@TempDir Path root) throws Exception {
+        historyFixture(root);
+        Files.move(root.resolve(HISTORY_MIGRATION_DIR + "V1__original.sql"),
+                root.resolve(HISTORY_MIGRATION_DIR + "V2__renamed.sql"));
+        assertThat(migrationHistoryViolations(root, Map.of())).anyMatch(v -> v.contains("V1__original.sql"));
+        Files.delete(root.resolve(HISTORY_MIGRATION_DIR + "V2__renamed.sql"));
+        assertThat(migrationHistoryViolations(root, Map.of())).anyMatch(v -> v.contains("V1__original.sql"));
+    }
+
+    @Test
+    void migrationHistoryCannotMaskIndexOrCommittedTamperingWithRestoredWorktree(@TempDir Path root) throws Exception {
+        HistoryFixture fixture = historyFixture(root);
+        writeHistorySql(root, "V1__original.sql", "SELECT 9;\n");
+        fixture.git("add", ".");
+        writeHistorySql(root, "V1__original.sql", "SELECT 1;\n");
+        assertThat(migrationHistoryViolations(root, Map.of())).anyMatch(v -> v.contains("V1__original.sql"));
+        fixture.git("commit", "-qm", "protected migration tampering");
+        assertThat(migrationHistoryViolations(root, Map.of())).anyMatch(v -> v.contains("V1__original.sql"));
+    }
+
+    @Test
+    void migrationHistoryAllowsNewVersionRepeatableAndCheckoutNewlines(@TempDir Path root) throws Exception {
+        historyFixture(root);
+        writeHistorySql(root, "V2__new.sql", "SELECT 2;\n");
+        writeHistorySql(root, "R__refresh.sql", "SELECT 3;\n");
+        writeHistorySql(root, "V1__original.sql", "SELECT 1;\r\n");
+        assertThat(migrationHistoryViolations(root, Map.of())).isEmpty();
+    }
+
+    @Test
+    void migrationHistoryRejectsMissingProtectedRef(@TempDir Path root) throws Exception {
+        HistoryFixture fixture = historyFixture(root);
+        fixture.git("update-ref", "-d", "refs/remotes/origin/main");
+        assertThat(migrationHistoryViolations(root, Map.of())).isNotEmpty();
+    }
+
+    @Test
+    void migrationHistoryRejectsShallowHistory(@TempDir Path root) throws Exception {
+        HistoryFixture fixture = historyFixture(root);
+        Files.writeString(root.resolve(".git/shallow"), fixture.base() + "\n");
+        assertThat(migrationHistoryViolations(root, Map.of())).isNotEmpty();
+    }
+
+    @Test
+    void migrationHistoryAcceptsValidPullRequestAndRejectsTampering(@TempDir Path root) throws Exception {
+        HistoryFixture fixture = historyFixture(root);
+        fixture.git("checkout", "-qb", "feature");
+        writeHistorySql(root, "V2__new.sql", "SELECT 2;\n");
+        fixture.git("add", ".");
+        fixture.git("commit", "-qm", "new migration");
+        String head = fixture.git("rev-parse", "HEAD");
+        fixture.git("checkout", "-q", "main");
+        fixture.git("merge", "--no-ff", "-qm", "tested merge", "feature");
+        Map<String, String> env = historyEvent(root, "pull_request", "refs/pull/7/merge",
+                fixture.git("rev-parse", "HEAD"), Map.of("pull_request", Map.of(
+                        "base", Map.of("sha", fixture.base(), "ref", "main"), "head", Map.of("sha", head))));
+        assertThat(migrationHistoryViolations(root, env)).isEmpty();
+        writeHistorySql(root, "V1__original.sql", "SELECT 9;\n");
+        assertThat(migrationHistoryViolations(root, env)).anyMatch(v -> v.contains("V1__original.sql"));
+    }
+
+    @Test
+    void migrationHistoryRejectsForgedPullRequestParentsAndCheckout(@TempDir Path root) throws Exception {
+        HistoryFixture fixture = historyFixture(root);
+        Map<String, String> env = historyEvent(root, "pull_request", "refs/pull/7/merge", fixture.base(),
+                Map.of("pull_request", Map.of("base", Map.of("sha", fixture.base(), "ref", "main"),
+                        "head", Map.of("sha", fixture.base()))));
+        assertThat(migrationHistoryViolations(root, env)).isNotEmpty();
+        env = historyEvent(root, "workflow_dispatch", "refs/heads/main", "a".repeat(40), Map.of());
+        assertThat(migrationHistoryViolations(root, env)).isNotEmpty();
+    }
+
+    @Test
+    void migrationHistoryAcceptsPushBeforeAndRejectsZeroMissingOrUnknownBase(@TempDir Path root) throws Exception {
+        HistoryFixture fixture = historyFixture(root);
+        writeHistorySql(root, "V2__new.sql", "SELECT 2;\n");
+        fixture.git("add", ".");
+        fixture.git("commit", "-qm", "new migration");
+        String head = fixture.git("rev-parse", "HEAD");
+        fixture.git("update-ref", "refs/remotes/origin/main", head);
+        assertThat(migrationHistoryViolations(root,
+                historyEvent(root, "push", "refs/heads/main", head, Map.of("before", fixture.base())))).isEmpty();
+        for (String invalid : List.of("", "0".repeat(40), "a".repeat(40))) {
+            assertThat(migrationHistoryViolations(root,
+                    historyEvent(root, "push", "refs/heads/main", head, Map.of("before", invalid))))
+                    .as("invalid push before: %s", invalid).isNotEmpty();
+        }
+        assertThat(migrationHistoryViolations(root, historyEvent(root, "push", "refs/heads/main", head,
+                Map.of("before", fixture.base(), "forced", true)))).isNotEmpty();
+    }
+
+    @Test
+    void migrationHistoryRejectsNonAncestorPushBefore(@TempDir Path root) throws Exception {
+        HistoryFixture fixture = historyFixture(root);
+        fixture.git("checkout", "-qb", "other");
+        Files.writeString(root.resolve("other.txt"), "other\n");
+        fixture.git("add", ".");
+        fixture.git("commit", "-qm", "other branch");
+        String other = fixture.git("rev-parse", "HEAD");
+        fixture.git("checkout", "-q", "main");
+        assertThat(migrationHistoryViolations(root, historyEvent(root, "push", "refs/heads/main",
+                fixture.base(), Map.of("before", other)))).isNotEmpty();
+    }
+
+    @Test
+    void migrationHistoryRejectsInheritedStackedPullRequestTampering(@TempDir Path root) throws Exception {
+        HistoryFixture fixture = historyFixture(root);
+        fixture.git("checkout", "-qb", "parent");
+        writeHistorySql(root, "V1__original.sql", "SELECT 8;\n");
+        fixture.git("add", ".");
+        fixture.git("commit", "-qm", "parent tampering");
+        String base = fixture.git("rev-parse", "HEAD");
+        fixture.git("checkout", "-qb", "child");
+        writeHistorySql(root, "V2__new.sql", "SELECT 2;\n");
+        fixture.git("add", ".");
+        fixture.git("commit", "-qm", "child addition");
+        String head = fixture.git("rev-parse", "HEAD");
+        fixture.git("checkout", "-q", "parent");
+        fixture.git("merge", "--no-ff", "-qm", "tested stacked merge", "child");
+        assertThat(migrationHistoryViolations(root, historyEvent(root, "pull_request", "refs/pull/8/merge",
+                fixture.git("rev-parse", "HEAD"), Map.of("pull_request", Map.of(
+                        "base", Map.of("sha", base, "ref", "parent"), "head", Map.of("sha", head))))))
+                .anyMatch(v -> v.contains("V1__original.sql"));
+    }
+
+    @Test
+    void migrationHistorySupportsManualAndProtectedTagRuns(@TempDir Path root) throws Exception {
+        HistoryFixture fixture = historyFixture(root);
+        fixture.git("tag", "v1.0.0");
+        assertThat(migrationHistoryViolations(root,
+                historyEvent(root, "workflow_dispatch", "refs/heads/main", fixture.base(), Map.of()))).isEmpty();
+        assertThat(migrationHistoryViolations(root, historyEvent(root, "push", "refs/tags/v1.0.0",
+                fixture.base(), Map.of("before", "0".repeat(40))))).isEmpty();
+        fixture.git("checkout", "-qb", "unmerged");
+        writeHistorySql(root, "V2__new.sql", "SELECT 2;\n");
+        fixture.git("add", ".");
+        fixture.git("commit", "-qm", "unmerged change");
+        fixture.git("tag", "v2.0.0");
+        assertThat(migrationHistoryViolations(root, historyEvent(root, "push", "refs/tags/v2.0.0",
+                fixture.git("rev-parse", "HEAD"), Map.of("before", "0".repeat(40))))).isNotEmpty();
+    }
+
+    @Test
+    void migrationHistoryRejectsMissingEventOrUnsupportedCiEvent(@TempDir Path root) throws Exception {
+        HistoryFixture fixture = historyFixture(root);
+        assertThat(migrationHistoryViolations(root, Map.of("GITHUB_ACTIONS", "true"))).isNotEmpty();
+        assertThat(migrationHistoryViolations(root,
+                historyEvent(root, "schedule", "refs/heads/main", fixture.base(), Map.of()))).isNotEmpty();
+    }
+
+    @Test
+    void migrationHistoryDoesNotUseProducerGitForVerifiedProjection(@TempDir Path root) throws Exception {
+        historyFixture(root);
+        Path artifact = root.resolve("build/artifact");
+        writeProjectedHistoryProfile(artifact);
+        writeHistorySql(artifact, "V1__baseline.sql", "SELECT 9;\n");
+        assertThat(migrationHistoryViolations(artifact, Map.of("GITHUB_ACTIONS", "true"))).isEmpty();
+        Files.delete(artifact.resolve("reusable-base-lock.json"));
+        assertThat(migrationHistoryViolations(artifact, Map.of())).isNotEmpty();
+    }
+
+    @Test
+    void migrationHistoryRejectsUnmarkedSourceBelowProducerGit(@TempDir Path root) throws Exception {
+        historyFixture(root);
+        Path artifact = root.resolve("build/unmarked");
+        Files.createDirectories(artifact.resolve("config"));
+        Files.writeString(artifact.resolve("config/reusable-base-profiles.json"), "{}");
+        writeHistorySql(artifact, "V1__baseline.sql", "SELECT 9;\n");
+        assertThat(migrationHistoryViolations(artifact, Map.of())).isNotEmpty();
+    }
+
+    @Test
+    void migrationHistoryStillChecksAdopterWithItsOwnGit(@TempDir Path root) throws Exception {
+        historyFixture(root);
+        writeProjectedHistoryProfile(root);
+        writeHistorySql(root, "V1__original.sql", "SELECT 9;\n");
+        assertThat(migrationHistoryViolations(root, Map.of())).anyMatch(v -> v.contains("V1__original.sql"));
+    }
+
+    @Test
+    void migrationHistoryAcceptsVerifiedProjectionWithFreshGitInit(@TempDir Path root) throws Exception {
+        historyFixture(root);
+        Path artifact = root.resolve("build/fresh-projection");
+        writeProjectedHistoryProfile(artifact);
+        Files.createDirectories(artifact.resolve(".github"));
+        Files.writeString(artifact.resolve(".github/required-checks.json"), "{\"branch\":\"main\"}");
+        writeHistorySql(artifact, "V1__baseline.sql", "SELECT 9;\n");
+        historyGit(artifact, "init", "--quiet");
+
+        assertThat(ReusableHarnessProfile.load(artifact).projected()).isTrue();
+        assertThat(artifact.resolve(".git")).isDirectory();
+        assertThat(Files.isSameFile(artifact,
+                Path.of(historyGit(artifact, "rev-parse", "--show-toplevel").strip()))).isTrue();
+        assertThat(historyGit(artifact, "for-each-ref", "--format=%(refname)")).isBlank();
+        assertThatThrownBy(() -> historyCommit(artifact, "HEAD")).isInstanceOf(IOException.class);
+        assertThat(migrationHistoryViolations(artifact, Map.of())).isEmpty();
+        assertThat(migrationHistoryViolations(artifact, Map.of("GITHUB_ACTIONS", "true"))).isEmpty();
+    }
+
+    @Test
+    void migrationHistoryRejectsCorruptGitMetadataInFreshProjection(@TempDir Path root) throws Exception {
+        historyFixture(root);
+        for (String metadata : List.of("HEAD", "packed-refs")) {
+            Path artifact = root.resolve("build/broken-" + metadata);
+            writeProjectedHistoryProfile(artifact);
+            historyGit(artifact, "init", "--quiet");
+            Files.writeString(artifact.resolve(".git").resolve(metadata), "invalid Git metadata\n");
+
+            assertThat(migrationHistoryViolations(artifact, Map.of())).isNotEmpty();
+            assertThat(migrationHistoryViolations(artifact, Map.of("GITHUB_ACTIONS", "true"))).isNotEmpty();
+        }
+    }
+
+    @Test
+    void migrationHistoryRejectsShallowFreshProjection(@TempDir Path root) throws Exception {
+        writeProjectedHistoryProfile(root);
+        historyGit(root, "init", "--quiet");
+        Files.writeString(root.resolve(".git/shallow"), "a".repeat(40) + "\n");
+
+        assertThat(migrationHistoryViolations(root, Map.of())).isNotEmpty();
+        assertThat(migrationHistoryViolations(root, Map.of("GITHUB_ACTIONS", "true"))).isNotEmpty();
+    }
+
+    @Test
+    void migrationHistoryRejectsUnmarkedFreshGitInit(@TempDir Path root) throws Exception {
+        historyFixture(root);
+        Path artifact = root.resolve("build/unmarked-fresh-repository");
+        Files.createDirectories(artifact.resolve("config"));
+        Files.createDirectories(artifact.resolve(".github"));
+        Files.writeString(artifact.resolve("config/reusable-base-profiles.json"), "{}");
+        Files.writeString(artifact.resolve(".github/required-checks.json"), "{\"branch\":\"main\"}");
+        writeHistorySql(artifact, "V1__baseline.sql", "SELECT 9;\n");
+        historyGit(artifact, "init", "--quiet");
+
+        assertThat(ReusableHarnessProfile.load(artifact).projected()).isFalse();
+        assertThat(artifact.resolve(".git")).isDirectory();
+        assertThat(historyGit(artifact, "for-each-ref", "--format=%(refname)")).isBlank();
+        assertThatThrownBy(() -> historyCommit(artifact, "HEAD")).isInstanceOf(IOException.class);
+        assertThat(migrationHistoryViolations(artifact, Map.of())).isNotEmpty();
+        assertThat(migrationHistoryViolations(artifact, Map.of("GITHUB_ACTIONS", "true"))).isNotEmpty();
+    }
+
+    @Test
+    void migrationHistoryStillChecksProjectedAdopterWithDetachedHeadAndNoRefs(@TempDir Path root) throws Exception {
+        HistoryFixture fixture = historyFixture(root);
+        writeProjectedHistoryProfile(root);
+        fixture.git("checkout", "--detach", "-q", fixture.base());
+        fixture.git("update-ref", "-d", "refs/heads/main");
+        fixture.git("update-ref", "-d", "refs/remotes/origin/main");
+
+        assertThat(ReusableHarnessProfile.load(root).projected()).isTrue();
+        assertThat(historyCommit(root, "HEAD")).isEqualTo(fixture.base());
+        assertThat(historyGit(root, "for-each-ref", "--format=%(refname)")).isBlank();
+        assertThat(migrationHistoryViolations(root, Map.of())).isNotEmpty();
+        assertThat(migrationHistoryViolations(root, Map.of("GITHUB_ACTIONS", "true"))).isNotEmpty();
+    }
+
+    @Test
+    void migrationHistoryStillChecksProjectedAdopterWithRefsAndUnbornHead(@TempDir Path root) throws Exception {
+        HistoryFixture fixture = historyFixture(root);
+        writeProjectedHistoryProfile(root);
+        fixture.git("symbolic-ref", "HEAD", "refs/heads/unborn");
+
+        assertThat(ReusableHarnessProfile.load(root).projected()).isTrue();
+        assertThatThrownBy(() -> historyCommit(root, "HEAD")).isInstanceOf(IOException.class);
+        assertThat(historyGit(root, "for-each-ref", "--format=%(refname)")).isNotBlank();
+        assertThat(historyCommit(root, "refs/remotes/origin/main")).isEqualTo(fixture.base());
+        assertThat(migrationHistoryViolations(root, Map.of())).isNotEmpty();
+        assertThat(migrationHistoryViolations(root, Map.of("GITHUB_ACTIONS", "true"))).isNotEmpty();
+    }
+
+    private static List<String> migrationHistoryViolations(Path root, Map<String, String> environment) {
+        List<String> violations = new ArrayList<>();
+        try {
+            root = root.toAbsolutePath().normalize();
+            // ADR-0018 projections replace the producer V2 history with a new V1 baseline.
+            // Validate the existing manifest/lock/source contract before recognizing an initial projection.
+            boolean projected = ReusableHarnessProfile.load(root).projected();
+            if (!Files.exists(root.resolve(".git"), LinkOption.NOFOLLOW_LINKS)) {
+                if (projected) {
+                    log.info("Verified generated archive has no own Git history; producer history is not inherited. "
+                            + "DDL, waiver and projection contracts remain active.");
+                    return violations;
+                }
+                throw new IOException("검사 root 자체의 .git이 없습니다. 부모 저장소 또는 현재 HEAD로 기준을 대체하지 않습니다.");
+            }
+            if (!Files.isSameFile(root, Path.of(historyGit(root, "rev-parse", "--show-toplevel").strip()))) {
+                throw new IOException("Git top-level이 검사 root와 다릅니다.");
+            }
+            if (!"false".equals(historyGit(root, "rev-parse", "--is-shallow-repository").strip())) {
+                throw new IOException("얕은 Git 이력입니다. 전체 보호 이력을 fetch한 뒤 다시 검사하십시오.");
+            }
+            if (projected && historyGit(root, "for-each-ref", "--format=%(refname)").isBlank()) {
+                Path ownGit = root.resolve(".git");
+                if (!Files.isDirectory(ownGit, LinkOption.NOFOLLOW_LINKS)
+                        || !Files.isSameFile(ownGit,
+                                Path.of(historyGit(root, "rev-parse", "--absolute-git-dir").strip()))) {
+                    throw new IOException("빈 projection 저장소의 자체 Git 디렉터리를 확인할 수 없습니다.");
+                }
+                // Empty refs plus a valid symbolic branch HEAD prove an unborn repository.
+                // Every Git command must succeed; a detached/corrupt HEAD is not empty history.
+                String unbornHead = historyGit(root, "symbolic-ref", "--quiet", "HEAD").strip();
+                if (!unbornHead.startsWith("refs/heads/")) {
+                    throw new IOException("빈 projection 저장소의 HEAD가 정상 branch를 가리키지 않습니다.");
+                }
+                historyGit(root, "check-ref-format", unbornHead);
+                log.info("Verified generated projection has an unborn own Git repository; "
+                        + "DDL, waiver and projection contracts remain active.");
+                return violations;
+            }
+            String branch = JSON.readTree(root.resolve(".github/required-checks.json").toFile())
+                    .path("branch").asString();
+            if (branch.isBlank()) throw new IOException("required-checks의 보호 branch가 없습니다.");
+            historyGit(root, "check-ref-format", "refs/heads/" + branch);
+            String protectedRef = "refs/remotes/origin/" + branch;
+            String protectedCommit = historyCommit(root, protectedRef);
+            String testedCommit = historyCommit(root, "HEAD");
+            Set<String> baselines = new LinkedHashSet<>();
+
+            if (!"true".equals(environment.get("GITHUB_ACTIONS"))) {
+                baselines.add(historyMergeBase(root, protectedCommit, testedCommit));
+            } else {
+                String eventName = environment.getOrDefault("GITHUB_EVENT_NAME", "");
+                String ref = environment.getOrDefault("GITHUB_REF", "");
+                String sha = requireHistorySha(environment.getOrDefault("GITHUB_SHA", ""));
+                if (!testedCommit.equals(sha)) throw new IOException("tested HEAD와 GITHUB_SHA가 다릅니다.");
+                String eventPath = environment.getOrDefault("GITHUB_EVENT_PATH", "");
+                if (eventPath.isBlank()) throw new IOException("GitHub event payload가 없습니다.");
+                JsonNode event = JSON.readTree(Path.of(eventPath).toFile());
+                if ("pull_request".equals(eventName)) {
+                    JsonNode pullRequest = event.path("pull_request");
+                    String base = requireHistorySha(pullRequest.path("base").path("sha").asString());
+                    String head = requireHistorySha(pullRequest.path("head").path("sha").asString());
+                    String baseBranch = pullRequest.path("base").path("ref").asString();
+                    if (!ref.matches("refs/pull/[0-9]+/merge") || baseBranch.isBlank()) {
+                        throw new IOException("PR merge ref 또는 base branch가 유효하지 않습니다.");
+                    }
+                    historyCommit(root, base);
+                    historyCommit(root, head);
+                    List<String> parents = List.of(historyGit(root, "rev-list", "--parents", "-n", "1", testedCommit)
+                            .strip().split("\\s+"));
+                    if (!parents.equals(List.of(testedCommit, base, head))) {
+                        throw new IOException("tested PR merge의 실제 두 부모가 event base/head와 다릅니다.");
+                    }
+                    if (branch.equals(baseBranch)) requireHistoryAncestor(root, base, protectedCommit);
+                    baselines.add(base);
+                    // Stacked PRs must not inherit a protected migration edit from their parent branch.
+                    baselines.add(historyMergeBase(root, protectedCommit, base));
+                } else if ("push".equals(eventName) && ref.startsWith("refs/heads/")) {
+                    if (!ref.equals("refs/heads/" + branch) && !ref.equals("refs/heads/master")) {
+                        throw new IOException("지원하지 않는 branch push입니다: 보호 branch의 PR 검사를 사용하십시오.");
+                    }
+                    if (event.path("forced").asBoolean(false)) {
+                        throw new IOException("강제 branch push는 보호 이력 기준으로 허용하지 않습니다.");
+                    }
+                    String before = requireHistorySha(event.path("before").asString());
+                    historyCommit(root, before);
+                    requireHistoryAncestor(root, before, testedCommit);
+                    requireHistoryAncestor(root, testedCommit, historyCommit(root, ref));
+                    baselines.add(before);
+                    baselines.add(historyMergeBase(root, protectedCommit, before));
+                } else if ("push".equals(eventName) && ref.startsWith("refs/tags/")) {
+                    // A newly created tag legitimately has an all-zero 'before'. The tagged commit
+                    // must already belong to the protected history; release CI evidence stays separate.
+                    if (!testedCommit.equals(historyCommit(root, ref))) {
+                        throw new IOException("release tag가 tested HEAD를 가리키지 않습니다.");
+                    }
+                    requireHistoryAncestor(root, testedCommit, protectedCommit);
+                    baselines.add(testedCommit);
+                } else if ("workflow_dispatch".equals(eventName)) {
+                    if (!ref.startsWith("refs/heads/") && !ref.startsWith("refs/tags/")) {
+                        throw new IOException("수동 실행 ref가 branch/tag가 아닙니다.");
+                    }
+                    if (!testedCommit.equals(historyCommit(root, ref))) {
+                        throw new IOException("수동 실행 ref와 tested HEAD가 다릅니다.");
+                    }
+                    baselines.add(historyMergeBase(root, protectedCommit, testedCommit));
+                } else {
+                    throw new IOException("지원하지 않는 GitHub event입니다. pull_request, branch/tag push, workflow_dispatch만 지원합니다.");
+                }
+            }
+            for (String baseline : baselines) {
+                Set<String> committedChanges = new HashSet<>(List.of(historyGit(root, "diff", "--no-ext-diff",
+                        "--no-textconv", "--no-renames", "--name-only", "-z", baseline, testedCommit,
+                        "--", HISTORY_MIGRATION_DIR).split("\\x00")));
+                Set<String> stagedChanges = new HashSet<>(List.of(historyGit(root, "diff", "--cached", "--no-ext-diff",
+                        "--no-textconv", "--no-renames", "--name-only", "-z", baseline,
+                        "--", HISTORY_MIGRATION_DIR).split("\\x00")));
+                String paths = historyGit(root, "ls-tree", "-r", "--name-only", "-z", baseline,
+                        "--", HISTORY_MIGRATION_DIR);
+                for (String relative : paths.split("\\x00")) {
+                    if (!Path.of(relative).getFileName().toString().matches("V[^/]+__[^/]+\\.sql")) continue;
+                    String original = normalizeNewlines(historyGit(root, "show", baseline + ":" + relative));
+                    // Local checks protect what will be committed/pushed as well as the visible worktree.
+                    // Restoring only the worktree must not conceal a modified index or committed blob.
+                    for (String revision : List.of(testedCommit, "")) {
+                        if ((revision.isEmpty() ? stagedChanges : committedChanges).contains(relative)) {
+                            try {
+                                if (!original.equals(normalizeNewlines(historyGit(root, "show", revision + ":" + relative)))) {
+                                    violations.add(relative + ": 커밋 또는 index에서 보호 versioned SQL을 변경했습니다.");
+                                }
+                            } catch (IOException missingBlob) {
+                                violations.add(relative + ": 커밋 또는 index의 보호 versioned SQL을 읽을 수 없습니다.");
+                            }
+                        }
+                    }
+                    Path current = root.resolve(relative).normalize();
+                    if (!current.startsWith(root) || !Files.isRegularFile(current, LinkOption.NOFOLLOW_LINKS)
+                            || !current.toRealPath().startsWith(root.toRealPath())) {
+                        violations.add(relative + ": 보호 기준에 있던 versioned SQL이 삭제·개명되었거나 일반 파일이 아닙니다.");
+                    } else if (!original.equals(normalizeNewlines(HarnessSourceIndex.readFresh(current)))) {
+                        violations.add(relative + ": 보호 기준에 있던 versioned SQL의 내용이 변경되었습니다. 새 버전으로 보정하십시오.");
+                    }
+                }
+            }
+        } catch (IOException | RuntimeException failure) {
+            violations.add("Versioned migration Git history 검증 실패: " + failure.getMessage()
+                    + " 보호 origin ref와 전체 이력을 준비하십시오; HEAD 재동결은 허용하지 않습니다.");
+        }
+        return violations;
+    }
+
+    private static String requireHistorySha(String sha) throws IOException {
+        if (!sha.matches("[a-f0-9]{40}") || sha.equals("0".repeat(40))) {
+            throw new IOException("event의 immutable commit SHA가 누락되었거나 유효하지 않습니다.");
+        }
+        return sha;
+    }
+
+    private static String historyCommit(Path root, String ref) throws IOException {
+        return historyGit(root, "rev-parse", "--verify", ref + "^{commit}").strip();
+    }
+
+    private static String historyMergeBase(Path root, String protectedCommit, String candidate) throws IOException {
+        return requireHistorySha(historyGit(root, "merge-base", protectedCommit, candidate).strip());
+    }
+
+    private static void requireHistoryAncestor(Path root, String ancestor, String descendant) throws IOException {
+        historyGit(root, "merge-base", "--is-ancestor", ancestor, descendant);
+    }
+
+    private static String historyGit(Path root, String... arguments) throws IOException {
+        List<String> command = new ArrayList<>(List.of("git", "--no-optional-locks", "-c", "core.pager=cat"));
+        command.addAll(List.of(arguments));
+        // SQL blobs can exceed a pipe buffer. A bounded process writing to a temporary file cannot
+        // deadlock while the caller waits; output is never printed and the file is always removed.
+        Path output = Files.createTempFile("zdm-history-git-", ".tmp");
+        Process process = null;
+        try {
+            ProcessBuilder builder = new ProcessBuilder(command).directory(root.toFile())
+                    .redirectErrorStream(true).redirectOutput(output.toFile());
+            for (String variable : List.of("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR",
+                    "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES")) builder.environment().remove(variable);
+            builder.environment().put("GIT_TERMINAL_PROMPT", "0");
+            process = builder.start();
+            if (!process.waitFor(10, TimeUnit.SECONDS)) throw new IOException("Git history 명령 시간이 초과됐습니다.");
+            if (process.exitValue() != 0) {
+                throw new IOException("Git " + arguments[0] + " 실패: 기준 object/ref와 조상 관계를 확인하십시오.");
+            }
+            return HarnessSourceIndex.readFresh(output);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Git history 검사가 중단됐습니다.", interrupted);
+        } finally {
+            if (process != null && process.isAlive()) process.destroyForcibly();
+            Files.deleteIfExists(output);
+        }
+    }
+
+    private static HistoryFixture historyFixture(Path root) throws Exception {
+        Files.createDirectories(root.resolve("config"));
+        Files.createDirectories(root.resolve(".github"));
+        Files.writeString(root.resolve("config/reusable-base-profiles.json"), "{}");
+        Files.writeString(root.resolve(".github/required-checks.json"), "{\"branch\":\"main\"}");
+        writeHistorySql(root, "V1__original.sql", "SELECT 1;\n");
+        writeHistorySql(root, "R__refresh.sql", "SELECT 1;\n");
+        HistoryFixture fixture = new HistoryFixture(root, "");
+        fixture.git("init", "-q", "-b", "main");
+        fixture.git("config", "user.name", "Migration fixture");
+        fixture.git("config", "user.email", "migration-fixture@example.invalid");
+        fixture.git("config", "commit.gpgsign", "false");
+        fixture.git("config", "core.autocrlf", "false");
+        fixture.git("add", ".");
+        fixture.git("commit", "-qm", "protected baseline");
+        String base = fixture.git("rev-parse", "HEAD");
+        fixture.git("update-ref", "refs/remotes/origin/main", base);
+        return new HistoryFixture(root, base);
+    }
+
+    private static void writeHistorySql(Path root, String name, String sql) throws IOException {
+        Path path = root.resolve(HISTORY_MIGRATION_DIR + name);
+        Files.createDirectories(path.getParent());
+        Files.writeString(path, sql);
+    }
+
+    private static Map<String, String> historyEvent(
+            Path root, String event, String ref, String sha, Map<String, ?> payload) throws IOException {
+        Path path = root.resolve("history-event.json");
+        Files.writeString(path, JSON.writeValueAsString(payload));
+        return Map.of("GITHUB_ACTIONS", "true", "GITHUB_EVENT_NAME", event, "GITHUB_REF", ref,
+                "GITHUB_SHA", sha, "GITHUB_EVENT_PATH", path.toString());
+    }
+
+    private static void writeProjectedHistoryProfile(Path root) throws IOException {
+        Files.createDirectories(root.resolve("config/governance"));
+        String profiles = "{\"sourcePolicy\":{\"generatedProfile\":\"fixture\"},"
+                + "\"profiles\":{\"fixture\":{\"packs\":[]}}}";
+        Files.writeString(root.resolve("config/reusable-base-profiles.json"), profiles);
+        Files.writeString(root.resolve("reusable-base-lock.json"), JSON.writeValueAsString(Map.of(
+                "profile", "fixture", "packs", List.of(), "sourceCommit", "a".repeat(40),
+                "java", Map.of("excludedDomains", List.of()))));
+        String source = "foundation/src/main/java/Fixture.java";
+        for (String module : List.of("foundation", "business-core", "business-app", "api-server")) {
+            Files.createDirectories(root.resolve(module + "/src/main/java"));
+        }
+        Files.writeString(root.resolve(source), "class Fixture {}\n");
+        Files.writeString(root.resolve("config/governance/reusable-harness-profile.json"),
+                JSON.writeValueAsString(Map.of("schemaVersion", 1, "profile", "fixture", "packs", List.of(),
+                        "sourceCommit", "a".repeat(40), "excludedDomains", List.of(),
+                        "profileManifestSha256", sha256(profiles), "retained", List.of(Map.of("path", source)))));
+    }
+
+    private record HistoryFixture(Path root, String base) {
+        private String git(String... arguments) throws Exception {
+            List<String> command = new ArrayList<>(List.of("git", "-c", "core.hooksPath="));
+            command.addAll(List.of(arguments));
+            Process process = new ProcessBuilder(command).directory(root.toFile()).redirectErrorStream(true).start();
+            if (!process.waitFor(10, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                throw new IOException("Isolated migration Git fixture command timed out");
+            }
+            String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
+            if (process.exitValue() != 0) throw new IOException("Isolated migration Git fixture failed: " + output);
+            return output;
+        }
+    }
+
     @Test
     @DisplayName("Flyway 무중단 DDL과 waiver registry를 fail-closed로 감사")
     void auditZeroDowntimeMigrationScripts() throws IOException {
@@ -136,6 +704,7 @@ class ZeroDowntimeMigrationLinterTest {
         }
 
         List<String> violations = new ArrayList<>();
+        violations.addAll(migrationHistoryViolations(repoRoot, System.getenv()));
         validateWaiverRegistry(repoRoot, migrationDir, migrationContents, violations);
         for (Map.Entry<String, String> entry : migrationContents.entrySet()) {
             auditDdl(entry.getKey(), entry.getValue(), violations);

@@ -57,13 +57,13 @@ export default function AdminStatsClient({
           </div>
           <div>
             <span className="font-bold tracking-tighter text-foreground block text-lg tabular-nums leading-none">{toDisplayYmd(item.statsDate)}</span>
-            <span className="text-xs font-bold text-muted-foreground tracking-tight mt-2 block">출처: 접속 로그</span>
+            <span className="text-xs font-bold text-muted-foreground tracking-tight mt-2 block">출처: 성공 로그인 로그</span>
           </div>
         </div>
       )
     },
     {
-      header: '접속 건수',
+      header: '성공 로그인 건수',
       accessor: (item: ConnectPoint) => (
         <div className="flex items-center gap-2">
           <Activity size={14} className="text-primary opacity-100" />
@@ -93,10 +93,10 @@ export default function AdminStatsClient({
   return (
     <ReportPage
       title="관리자 통계"
-      description="사용자·게시물 누적 현황과 일자별 접속 집계를 확인합니다."
+      description="사용자·게시물 누적 현황과 일자별 성공 로그인 집계를 확인합니다."
       breadcrumbItems={[{ label: '시스템관리' }, { label: '분석 대시보드' }]}
       // A7 필수 — 무엇을·언제까지·어디서 센 값인지 없으면 지표는 검증할 수 없는 주장이 된다.
-      basis={`집계 기준: 최근 1개월 일자별 접속 로그 · 수집된 일수 ${loadError ? '조회 실패' : `${connectData.length}일`} · 출처: 시스템 접속 통계 API`}
+      basis={`집계 기준: 최근 1개월 성공 로그인만 집계 · 수집된 일수 ${loadError ? '조회 실패' : `${connectData.length}일`} · 실패·결과 미상 시도 제외 · 출처: 시스템 접속 통계 API`}
       notice={loadError && (
         <div role="alert" className="space-y-2 rounded-md border border-destructive/30 bg-destructive/10 p-4">
           <p className="text-sm font-semibold text-destructive-emphasis">통계 데이터 조회 실패</p>
@@ -123,7 +123,7 @@ export default function AdminStatsClient({
             data={connectData}
             headers={[
               { label: '집계 일자', key: 'statsDate' },
-              { label: '접속 건수', key: 'statsCo' }
+              { label: '성공 로그인 건수', key: 'statsCo' }
             ]}
             filename="system_connect_stats"
           />
@@ -132,14 +132,14 @@ export default function AdminStatsClient({
       summary={
         <div className="grid gap-2 sm:grid-cols-3">
           <SummaryStat title="누적 사용자" value={summaryText(initialSummary?.totalUsers, loadError)} />
-          <SummaryStat title="금일 접속" value={summaryText(initialSummary?.todayConnects, loadError)} />
+          <SummaryStat title="금일 성공 로그인" value={summaryText(initialSummary?.todayConnects, loadError)} />
           <SummaryStat title="누적 게시물" value={summaryText(initialSummary?.totalPosts, loadError)} />
         </div>
       }
-      chartTitle="일자별 접속 추이"
+      chartTitle="일자별 성공 로그인 추이"
       chart={
         <StandardChartWrapper
-          title="일자별 접속 건수 추이"
+          title="일자별 성공 로그인 건수 추이"
           type="area"
           data={connectData}
           dataKeys={['statsCo']}
@@ -147,11 +147,11 @@ export default function AdminStatsClient({
           height={350}
         />
       }
-      tableTitle="일자별 접속 통계"
+      tableTitle="일자별 성공 로그인 통계"
     >
       {/* 조회 실패를 "데이터 없음"으로 위장하지 않는다 — error/onRetry 전달(감사 P1-1) */}
       <StandardDataTable
-        accessibleLabel="일자별 접속 통계"
+        accessibleLabel="일자별 성공 로그인 통계"
         columns={connectColumns}
         data={pagedConnectData}
         loading={loading}
@@ -165,7 +165,7 @@ export default function AdminStatsClient({
           totalCount: loadError ? undefined : connectData.length,
           pageSize: CONNECT_PAGE_SIZE
         }}
-        emptyMessage="조회된 접속 통계가 없습니다."
+        emptyMessage="조회된 성공 로그인 통계가 없습니다."
       />
     </ReportPage>
   );

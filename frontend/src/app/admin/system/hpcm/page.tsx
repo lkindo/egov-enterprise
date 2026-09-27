@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import HpcmClient from './HpcmClient';
 import { hpcmAdminService, Hpcm } from '@/services/foundation/system/HpcmAdminService';
+
+export const metadata: Metadata = {
+  title: `도움말 콘텐츠 관리 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 export default async function HpcmPage() {
     let list: Hpcm[] = [];

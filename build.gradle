@@ -296,18 +296,20 @@ subprojects { subproject ->
         }
     }
 
-    // PITest (점진적 Mutation Testing) 설정
+    // PITest (변경 영향에 따른 스코프 선택) 설정
     pitest {
+        pitestVersion = '1.25.9'
         junit5PluginVersion = '1.2.1'
         // Resolve the launcher through the same managed test classpath as JUnit.
         // PIT's automatic probe copies testImplementation into a detached configuration
         // without our BOM overrides, reporting old transitive versions to Dependabot.
         addJUnitPlatformLauncher = false
-        // 증분식(Incremental) 뮤테이션 분석: PIT_TARGET_CLASSES / PIT_TARGET_TESTS 환경변수로
+        // PIT_TARGET_CLASSES / PIT_TARGET_TESTS 환경변수로
         // 리팩토링 대상 클래스에 한정할 수 있다 (기본값 'nuri.*' = 전체). 백엔드 헌법 제16조 '--targetClasses 한정' 이행.
         targetClasses = (System.getenv('PIT_TARGET_CLASSES') ?: 'nuri.*').split(',').collect { it.trim() }
         targetTests = (System.getenv('PIT_TARGET_TESTS') ?: 'nuri.*').split(',').collect { it.trim() }
         outputFormats = ['HTML', 'XML']
+        timestampedReports = false
         threads = 4
         // 대상 글롭이 잘못되거나 제외 규칙이 전부 삼킨 경우 "분석할 mutation 0건"을 성공으로 보지 않는다.
         failWhenNoMutations = true
@@ -355,9 +357,8 @@ subprojects { subproject ->
             //   린터를 함께 신설.** 그 린터 없이는 하지 말 것.
         ]
 
-        // Incremental Mutation Analysis 활성화 (분석 속도 10배 향상)
-        historyInputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
-        historyOutputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
+        // History 플러그인 없이 선택한 스코프의 변이를 매번 재계산한다.
+        enableDefaultIncrementalAnalysis = false
 
         // 백엔드 헌법 제16조 (핵심 서비스 Mutation Score 75% 이상) — 임계값을 헌법 기준과 75% 로 통일
         //
@@ -371,6 +372,57 @@ subprojects { subproject ->
         //   · 로컬(`./gradlew :module:pitest`) — 환경변수 미설정 → threshold 0, 리포트 전용
         //   · CI(mutation-test 잡)        — STRICT_MUTATION=true → threshold 75, 미달 시 빌드 파손
         mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? 75 : 0
+    }
+
+    // PIT counts RUN_ERROR as detected; a crashed minion is not test detection evidence.
+    tasks.named('pitest') {
+        def generatedDirectory = layout.buildDirectory
+        doFirst { task ->
+            File reportDirectory = task.reportDir.get().asFile.canonicalFile
+            File mutationReport = task.reportDir.file('mutations.xml').get().asFile
+            if (!reportDirectory.toPath().startsWith(generatedDirectory.get().asFile.canonicalFile.toPath())
+                    || mutationReport.canonicalFile.parentFile != reportDirectory
+                    || java.nio.file.Files.isSymbolicLink(mutationReport.toPath())) {
+                throw new GradleException("${task.path}: PIT XML must stay within this project's generated report directory")
+            }
+            if (mutationReport.exists() && (!mutationReport.isFile() || !mutationReport.delete())) {
+                throw new GradleException("${task.path}: cannot remove the previous PIT mutations.xml")
+            }
+        }
+        doLast { task ->
+            File mutationReport = task.reportDir.file('mutations.xml').get().asFile
+            if (!mutationReport.isFile()) throw new GradleException("${task.path}: missing PIT mutations.xml")
+            def factory = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+            factory.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true)
+            factory.setFeature('http://apache.org/xml/features/disallow-doctype-decl', true)
+            factory.setFeature('http://xml.org/sax/features/external-general-entities', false)
+            factory.setFeature('http://xml.org/sax/features/external-parameter-entities', false)
+            factory.setAttribute(javax.xml.XMLConstants.ACCESS_EXTERNAL_DTD, '')
+            factory.setAttribute(javax.xml.XMLConstants.ACCESS_EXTERNAL_SCHEMA, '')
+            factory.setXIncludeAware(false)
+            factory.setExpandEntityReferences(false)
+            def builder = factory.newDocumentBuilder()
+            builder.setErrorHandler(new org.xml.sax.helpers.DefaultHandler() {
+                @Override
+                void error(org.xml.sax.SAXParseException exception) { throw exception }
+                @Override
+                void fatalError(org.xml.sax.SAXParseException exception) { throw exception }
+            })
+            def report
+            try {
+                report = builder.parse(mutationReport)
+            } catch (org.xml.sax.SAXException | IOException exception) {
+                throw new GradleException("${task.path}: malformed PIT mutations.xml")
+            }
+            if (report.documentElement.tagName != 'mutations') throw new GradleException("${task.path}: invalid PIT XML root")
+            def mutations = report.documentElement.getElementsByTagName('mutation')
+            if (mutations.length == 0) throw new GradleException("${task.path}: empty PIT mutations.xml")
+            for (int index = 0; index < mutations.length; index++) {
+                if (mutations.item(index).getAttribute('status') == 'RUN_ERROR') {
+                    throw new GradleException("${task.path}: PIT reported RUN_ERROR; mutation detection is incomplete")
+                }
+            }
+        }
     }
 }
 

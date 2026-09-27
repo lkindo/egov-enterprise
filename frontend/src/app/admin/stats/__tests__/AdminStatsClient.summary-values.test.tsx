@@ -37,7 +37,7 @@ describe('AdminStatsClient 요약 수치', () => {
       />,
     );
 
-    for (const title of ['누적 사용자', '금일 접속', '누적 게시물']) {
+    for (const title of ['누적 사용자', '금일 성공 로그인', '누적 게시물']) {
       expect(within(summaryCard(title)).getByText('조회 실패')).toBeInTheDocument();
       expect(within(summaryCard(title)).queryByText('0')).toBeNull();
     }
@@ -54,7 +54,8 @@ describe('AdminStatsClient 요약 수치', () => {
     );
 
     expect(within(summaryCard('누적 사용자')).getByText('1,234')).toBeInTheDocument();
-    expect(within(summaryCard('금일 접속')).getByText('-')).toBeInTheDocument();
+    expect(within(summaryCard('금일 성공 로그인')).getByText('-')).toBeInTheDocument();
+    expect(screen.getByText(/성공 로그인만 집계/)).toBeInTheDocument();
     expect(within(summaryCard('누적 게시물')).getByText('0')).toBeInTheDocument();
     expect(screen.getByText(/수집된 일수 1일/)).toBeInTheDocument();
     // 양성 대조 — 합계 문구를 실제로 찾을 수 있어야 위 실패 단언이 의미가 있다.

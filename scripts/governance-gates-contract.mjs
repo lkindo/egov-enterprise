@@ -260,6 +260,24 @@ function classGlobMatches(glob, className) {
   return new RegExp(`^${pattern}$`).test(className);
 }
 
+/** Reviewed security boundaries remain in the existing scope even if CI and registry drift together. */
+export function validateCriticalMutationTargets(scopes) {
+  const required = {
+    'business-core-auth': [
+      'nuri.business.service.menu.MenuService',
+      'nuri.business.security.iam.EgovAuthenticationProvider',
+      'nuri.business.security.filter.RateLimitFilter',
+    ],
+    'business-app': ['nuri.business.service.survey.SurveyResultService'],
+  };
+  return Object.entries(required).flatMap(([scope, targets]) => {
+    const entry = scopes.find(candidate => candidate?.scope === scope);
+    const globs = typeof entry?.classes === 'string' ? entry.classes.split(',').map(value => value.trim()) : [];
+    return targets.filter(target => !globs.some(glob => classGlobMatches(glob, target)))
+      .map(target => `PIT ${scope} is missing critical target '${target}'`);
+  });
+}
+
 function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel) {
   const expected = selector.matrixScopes;
   if (!Array.isArray(expected)) {
@@ -269,6 +287,7 @@ function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel) {
   if (expected.length !== 10) {
     errors.push(`${setLabel}: PIT matrix catalog must contain exactly 10 scopes`);
   }
+  errors.push(...validateCriticalMutationTargets(expected).map(error => `${setLabel}: ${error}`));
 
   const expectedByScope = new Map();
   for (const entry of expected) {
@@ -940,6 +959,80 @@ function uniqueNamedBlock(source, mask, pattern, label) {
     : { openIndex, closeIndex };
 }
 
+export function validatePitResultCheck(source) {
+  const code = stripJavaComments(source);
+  const mask = javaCodeMask(code);
+  const settings = uniqueNamedBlock(code, mask, /\bpitest\s*\{/, 'Gradle pitest');
+  if (settings.error) return [settings.error];
+  const version = uniqueCodeMatch(mask, /\bpitestVersion\s*=/, settings.openIndex, settings.closeIndex);
+  if (!version || !/^pitestVersion\s*=\s*(['"])1\.25\.9\1/.test(code.slice(version.index))) {
+    return ['PIT requires the verified 1.25.9 engine pin'];
+  }
+  const incremental = uniqueCodeMatch(mask, /\benableDefaultIncrementalAnalysis\s*=/, settings.openIndex, settings.closeIndex);
+  if (!incremental || !/^enableDefaultIncrementalAnalysis\s*=\s*false\b/.test(code.slice(incremental.index))
+      || /\b(?:historyInputLocation|historyOutputLocation)\b/.test(mask.slice(settings.openIndex, settings.closeIndex))) {
+    return ['PIT must recompute the selected mutations without incremental history'];
+  }
+  const timestamped = uniqueCodeMatch(mask, /\btimestampedReports\s*=\s*false\b/, settings.openIndex, settings.closeIndex);
+  if (!timestamped) return ['PIT result check requires the current non-timestamped XML report'];
+  const hooks = [...code.matchAll(/\btasks\.named\(\s*(['"])pitest\1\s*\)\s*\{/g)]
+    .filter(match => mask.slice(match.index).startsWith('tasks.named'));
+  if (hooks.length !== 1) return ['PIT requires exactly one executable result-check hook'];
+  const open = mask.indexOf('{', hooks[0].index);
+  const close = matchingDelimiter(mask, open, '{', '}');
+  if (close < 0) return ['PIT result-check hook is unterminated'];
+  const hook = code.slice(open + 1, close);
+  const hookMask = javaCodeMask(hook);
+  const first = uniqueNamedBlock(hook, hookMask, /\bdoFirst\s*\{\s*task\s*->/, 'PIT doFirst freshness check');
+  if (first.error) return [first.error];
+  const last = uniqueNamedBlock(hook, hookMask, /\bdoLast\s*\{\s*task\s*->/, 'PIT doLast result check');
+  if (last.error) return [last.error];
+  const body = hook.slice(last.openIndex + 1, last.closeIndex);
+  const freshnessBody = hook.slice(first.openIndex + 1, first.closeIndex);
+  const freshnessRequired = [
+    'File reportDirectory = task.reportDir.get().asFile.canonicalFile',
+    "File mutationReport = task.reportDir.file('mutations.xml').get().asFile",
+    'if (!reportDirectory.toPath().startsWith(generatedDirectory.get().asFile.canonicalFile.toPath())',
+    '|| mutationReport.canonicalFile.parentFile != reportDirectory',
+    '|| java.nio.file.Files.isSymbolicLink(mutationReport.toPath())',
+    'if (mutationReport.exists() && (!mutationReport.isFile() || !mutationReport.delete()))',
+    'throw new GradleException("${task.path}: cannot remove the previous PIT mutations.xml")',
+  ];
+  const required = [
+    "File mutationReport = task.reportDir.file('mutations.xml').get().asFile",
+    'if (!mutationReport.isFile()) throw new GradleException',
+    'factory.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true)',
+    "factory.setFeature('http://apache.org/xml/features/disallow-doctype-decl', true)",
+    "factory.setFeature('http://xml.org/sax/features/external-general-entities', false)",
+    "factory.setFeature('http://xml.org/sax/features/external-parameter-entities', false)",
+    "factory.setAttribute(javax.xml.XMLConstants.ACCESS_EXTERNAL_DTD, '')",
+    "factory.setAttribute(javax.xml.XMLConstants.ACCESS_EXTERNAL_SCHEMA, '')",
+    'factory.setXIncludeAware(false)',
+    'factory.setExpandEntityReferences(false)',
+    'builder.setErrorHandler(new org.xml.sax.helpers.DefaultHandler()',
+    'void error(org.xml.sax.SAXParseException exception) { throw exception }',
+    'void fatalError(org.xml.sax.SAXParseException exception) { throw exception }',
+    'report = builder.parse(mutationReport)',
+    'catch (org.xml.sax.SAXException | IOException exception) { throw new GradleException',
+    "if (report.documentElement.tagName != 'mutations') throw new GradleException",
+    "def mutations = report.documentElement.getElementsByTagName('mutation')",
+    'if (mutations.length == 0) throw new GradleException',
+    'for (int index = 0; index < mutations.length; index++)',
+    "if (mutations.item(index).getAttribute('status') == 'RUN_ERROR')",
+    'throw new GradleException("${task.path}: PIT reported RUN_ERROR; mutation detection is incomplete")',
+  ];
+  const executable = (content, fragment) => {
+    const contentMask = javaCodeMask(content);
+    const pattern = fragment.split(/\s+/).map(token => token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+');
+    return [...content.matchAll(new RegExp(pattern, 'g'))]
+      .some(match => contentMask[match.index] === fragment[0]);
+  };
+  return [...required.filter(fragment => !executable(body, fragment)),
+    ...freshnessRequired.filter(fragment => !executable(freshnessBody, fragment)),
+    ...(!executable(hook, 'def generatedDirectory = layout.buildDirectory') ? ['def generatedDirectory = layout.buildDirectory'] : [])]
+    .map(fragment => `PIT result check is missing executable requirement: ${fragment}`);
+}
+
 export function readPopulationConsumer(source, selector) {
   const mask = javaCodeMask(source);
   if (selector?.type === 'gradle-list-assignment') {
@@ -1406,6 +1499,8 @@ function validateQualityPopulations({ registry, repoRoot, errors, registryIds })
     }
 
     if (population.selector?.type === 'gradle-pitest-population') {
+      errors.push(...validatePitResultCheck(fs.readFileSync(absolute, 'utf8'))
+        .map(error => `${label}: ${error}`));
       if (!hasValidUniqueStrings(population.excludedClasses)
         || !hasValidUniqueStrings(population.baselineExcludedClasses)) {
         errors.push(`${label}: PIT exclusion allowlists must be non-empty unique string arrays`);

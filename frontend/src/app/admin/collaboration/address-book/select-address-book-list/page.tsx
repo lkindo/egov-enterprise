@@ -1,6 +1,12 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { getInitialAddressBookData } from './AddressBookListServer';
+
+export const metadata: Metadata = {
+  title: `주소록 목록 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 /** 목록 1페이지당 건수 — 클라이언트(AddressBookListClient)와 동일해야 한다. */
 const PAGE_UNIT = 10;

@@ -102,6 +102,49 @@ describe('GlobalCommandCenter accessibility contract', () => {
     expect(screen.queryByRole('group', { name: '즐겨찾기' })).toBeNull();
   });
 
+  it('3·4단계 메뉴를 검색하고 즐겨찾기·최근 방문에서 같은 목적지로 이동한다', async () => {
+    const user = userEvent.setup();
+    mocks.user = { id: 'staff01' };
+    mocks.getHeadMenus.mockResolvedValue([
+      { menuNo: 1, menuNm: '업무', modernRoute: '/admin/work-hub', children: [
+        { menuNo: 11, menuNm: '팀 업무', children: [
+          { menuNo: 111, menuNm: '결재함', modernRoute: '/approvals?tab=received#list', children: [
+            { menuNo: 1111, menuNm: '결재 이력', modernRoute: '/approvals?tab=archive#list' },
+          ] },
+        ] },
+        { menuNo: 88, menuNm: '중지 분류', useYn: 'N', children: [
+          { menuNo: 89, menuNm: '중지 결재 이력', modernRoute: '/approvals?tab=archive#list' },
+        ] },
+      ] },
+    ]);
+    mocks.getMyBookmarks.mockResolvedValue([{ menuNo: 111 }, { menuNo: 89 }, { menuNo: 99 }]);
+    window.localStorage.setItem('egov.recent-menus.v1:staff01', JSON.stringify([99, 111, 1111, 89]));
+    renderCommandCenter();
+    await openFromTrigger(user);
+
+    const favorites = await screen.findByRole('group', { name: '즐겨찾기' });
+    expect(within(favorites).getAllByRole('option').map(option => option.getAttribute('aria-label')))
+      .toEqual(['업무 > 팀 업무 > 결재함']);
+    const recents = screen.getByRole('group', { name: '최근 방문' });
+    expect(within(recents).getAllByRole('option').map(option => option.getAttribute('aria-label')))
+      .toEqual(['업무 > 팀 업무 > 결재함 > 결재 이력']);
+    expect(screen.getByRole('option', { name: '업무' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /중지/ })).toBeNull();
+
+    await user.click(within(favorites).getByRole('option', { name: '업무 > 팀 업무 > 결재함' }));
+    expect(mocks.push).toHaveBeenLastCalledWith('/approvals?tab=received#list');
+    await openFromTrigger(user);
+    await user.click(within(await screen.findByRole('group', { name: '최근 방문' }))
+      .getByRole('option', { name: '업무 > 팀 업무 > 결재함 > 결재 이력' }));
+    expect(mocks.push).toHaveBeenLastCalledWith('/approvals?tab=archive#list');
+    await openFromTrigger(user);
+    fireEvent.change(screen.getByRole('combobox', { name: '글로벌 커맨드 센터 검색어 입력' }), { target: { value: '결재 이력' } });
+    await user.click(await screen.findByRole('option', { name: '업무 > 팀 업무 > 결재함 > 결재 이력' }));
+    expect(mocks.push).toHaveBeenLastCalledWith('/approvals?tab=archive#list');
+    expect(mocks.getHeadMenus).toHaveBeenCalledOnce();
+    expect(mocks.getLeftMenus).not.toHaveBeenCalled();
+  });
+
   it('광역 검색 제안은 선언된 q만 인코딩하여 기존 검색 주소로 이동한다', async () => {
     const user = userEvent.setup();
     renderCommandCenter();

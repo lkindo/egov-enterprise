@@ -36,7 +36,7 @@ describe('HelpClient accessibility semantics', () => {
     try {
       render(<HelpClient />);
       await act(async () => { await vi.advanceTimersByTimeAsync(300); });
-      expect(harness.getFaqs).toHaveBeenCalledWith({ keyword: '' });
+      expect(harness.getFaqs).toHaveBeenCalledWith({ page: 0, size: 10, keyword: '' });
     } finally {
       vi.useRealTimers();
     }

@@ -1,7 +1,13 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
 import MenuByAuthorityClient, { type FetchResult } from './MenuByAuthorityClient';
+
+export const metadata: Metadata = {
+  title: `권한 그룹별 메뉴 관리 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 export default async function MenuByAuthorityPage() {
   const cookieStore = await cookies();

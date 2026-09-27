@@ -64,7 +64,7 @@ export function normalizeNotification(value: unknown): Notification | null {
   const suppliedType = typeof value.type === 'string' ? value.type as NotificationKind : null;
   const type = suppliedType && NOTIFICATION_KINDS.has(suppliedType) ? suppliedType : inferredType;
   const createdAt = typeof value.crtDt === 'string' ? value.crtDt : null;
-  const dateCandidate = typeof value.notiDt === 'string'
+  const dateCandidate = typeof value.notiDt === 'string' && value.notiDt.trim()
     ? value.notiDt
     : createdAt;
 
@@ -82,7 +82,7 @@ export function normalizeNotification(value: unknown): Notification | null {
     notiSn,
     notiTtlNm,
     notiCn,
-    notiDt: dateCandidate || new Date().toISOString(),
+    notiDt: dateCandidate || '',
     crtDt: createdAt,
     readYn: value.readYn === 'Y' ? 'Y' : 'N',
     type,

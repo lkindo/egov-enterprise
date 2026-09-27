@@ -91,9 +91,9 @@ test.describe('Login failure (negative auth)', () => {
 //       인터셉터는 200/success 를 신호로만 쓰고 실제 토큰은 HttpOnly 쿠키로만 전달된다.
 //     · 그 쿠키는 **HttpOnly** 여야 한다.
 //   "재발급이 된다" 뿐 아니라 **"어떻게 전달되는가"** 까지 단언하는 이유다.
-test.describe('Token reissue', () => {
+for (const REISSUE of ['/api/auth/reissue', '/api/v1/auth/reissue']) {
+test.describe(`Token reissue ${REISSUE}`, () => {
     // storageState 를 지정하지 않는다 — 쿠키를 명시적으로 실어 '무엇으로 재발급됐는지' 를 분명히 한다.
-    const REISSUE = '/api/auth/reissue';
     test('유효한 refreshToken 으로 재발급되며, 새 토큰은 바디가 아니라 HttpOnly 쿠키로만 전달된다', async ({ request, playwright, baseURL }) => {
         // Refresh는 사용자당 하나이므로 공유 계정의 로그인·로그아웃과 겹치지 않는 주체를 쓴다.
         const fixtureRequest = await playwright.request.newContext({
@@ -112,7 +112,8 @@ test.describe('Token reissue', () => {
             // ① 바디에 토큰이 실리면 안 된다(의도된 하드닝의 회귀 방어).
             const body = await res.json();
             expect(body?.success).toBe(true);
-            expect(body?.data?.accessToken, '재발급 토큰이 응답 바디로 노출됐다 — HttpOnly 쿠키 전용 설계가 되돌아갔다').toBeFalsy();
+            expect(Object.hasOwn(body?.data ?? {}, 'accessToken'), '재발급 토큰이 응답 바디로 노출됐다 — HttpOnly 쿠키 전용 설계가 되돌아갔다').toBe(false);
+            expect(Object.hasOwn(body?.data ?? {}, 'refreshToken'), '재발급 토큰은 응답 본문에 없어야 한다').toBe(false);
             // ② accessToken 이 HttpOnly·SameSite=Strict 쿠키로 재설정돼야 한다.
             //    Playwright 는 다중 Set-Cookie 를 개행으로 합쳐 준다.
             const setCookie = res.headers()['set-cookie'] ?? '';
@@ -159,6 +160,7 @@ test.describe('Token reissue', () => {
         expect(issued, '실패 응답인데 accessToken 쿠키가 심어졌다').toBe(false);
     });
 });
+}
 // ───────────── E5: Zero-Trust Origin 가드 (상태변경 /api 요청) ─────────────
 // middleware.ts 최상단은 POST/PUT/DELETE/PATCH + `/api` 요청의 Origin 헤더를 검사해
 // 신뢰할 수 없는 출처를 403(INVALID_ORIGIN)으로 끊는다. 이 방어에는 E2E 가 하나도 없었다.

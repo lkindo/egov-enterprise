@@ -115,7 +115,7 @@ export default function AdminDashboardClient() {
         headingLevel={1}
         title="관리자"
         highlight="업무 현황"
-        subtitle="사용자, 권한, 보안 감사 현황을 확인하고 관련 관리 화면으로 이동합니다."
+        subtitle="사용자, 권한, 시스템 로그 현황을 확인하고 관련 관리 화면으로 이동합니다."
         icon={LayoutDashboard}
       />
 
@@ -133,7 +133,7 @@ export default function AdminDashboardClient() {
                 {[
                   isUsersError && '사용자 통계',
                   isAuthorsError && '권한 통계',
-                  isAuditError && '보안 감사 이력',
+                  isAuditError && '시스템 로그 이력',
                 ].filter(Boolean).join(' · ')} 조회에 실패했습니다.
                 {auditError instanceof Error ? ` (${auditError.message})` : ''}
               </p>
@@ -145,7 +145,7 @@ export default function AdminDashboardClient() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3 text-sm">{canOpenUsers && <Link href="/admin/user/manage" className="text-primary underline">사용자 확인</Link>}{canOpenAuthority && <Link href="/admin/security/authority" className="text-primary underline">권한 그룹 관리</Link>}{canOpenSecurityLog && <Link href="/admin/system/monitoring/hub?tab=security" className="text-primary underline">보안 감사 로그</Link>}</div>
+      <div className="flex flex-wrap gap-3 text-sm">{canOpenUsers && <Link href="/admin/user/manage" className="text-primary underline">사용자 확인</Link>}{canOpenAuthority && <Link href="/admin/security/authority" className="text-primary underline">권한 그룹 관리</Link>}{canOpenSecurityLog && <Link href="/admin/system/monitoring/hub?tab=security" className="text-primary underline">시스템 로그(감사 보기)</Link>}</div>
 
       {/*
         지표 카드는 실제 조회값만 표기한다.
@@ -171,7 +171,7 @@ export default function AdminDashboardClient() {
           description="등록된 권한 그룹 수"
         />
         <DashboardStatCard
-          title="보안 감사 이력"
+          title="시스템 로그 이력"
           e2eLabel="BUSINESS_INTELLIGENCE"
           value={isAuditError ? '조회 실패' : (auditData?.total?.toLocaleString() ?? '-')}
           icon={<Activity className="w-5 h-5" />}

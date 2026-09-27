@@ -21,6 +21,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.InOrder;
 import org.mockito.Mock;
@@ -115,6 +118,12 @@ class DeptJobServiceTest {
     private void givenMemberOf(String esntlId, String ognzId) {
         when(userRepository.findByEsntlId(esntlId)).thenReturn(Optional.of(User.builder()
                 .userId(esntlId.toLowerCase()).pswd("x").esntlId(esntlId).userNm(esntlId).ognzId(ognzId).build()));
+    }
+
+    private void givenActiveAssignee(String esntlId) {
+        when(userRepository.findByEsntlId(esntlId)).thenReturn(Optional.of(User.builder()
+                .userId(esntlId.toLowerCase()).pswd("x").esntlId(esntlId).userNm("담당자")
+                .userSttsCd("P").build()));
     }
 
     private void mockToDtoDependencies() {
@@ -358,6 +367,7 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("부서업무 생성 - PK 는 DB가 채번하고 클라이언트 값은 무시한다")
     void createDeptJob() {
+        givenActiveAssignee("USR_TESTER");
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskSn(999L); // 위조 시도: 신규 엔티티 생성에는 사용하지 않는다
         dto.setDeptTaskBoxSn(1L);
@@ -380,6 +390,7 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("부서업무 생성 - 담당자 미지정 시 등록자를 담당자로 둔다")
     void createDeptJob_defaultsPicToCreator() {
+        givenActiveAssignee("USR_TESTER");
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("담당자 미지정 업무");
 
@@ -396,6 +407,7 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("부서업무 생성 - 담당자를 지정하면 그 값을 유지한다")
     void createDeptJob_keepsExplicitPic() {
+        givenActiveAssignee("USR_OTHER");
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("담당자 지정 업무");
         dto.setPicId("USR_OTHER");
@@ -410,9 +422,96 @@ class DeptJobServiceTest {
         assertEquals("USR_OTHER", captor.getValue().getPicId());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"missing", "A", "D"})
+    @DisplayName("존재하지 않거나 활성 상태가 아닌 신규 담당자는 저장·알림 전에 거부한다")
+    void createDeptJob_rejectsUnavailableAssigneeBeforeSave(String state) {
+        authenticateAs("creator", "CREATOR");
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("새 업무");
+        dto.setPicId("ASSIGNEE");
+        // 이전 구현은 사용자 조회를 하지 않는다. red에서도 저장 성공 경로가 끝나도록 fixture만 둔다.
+        lenient().when(deptJobRepository.save(any(DeptJob.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(userRepository.findByEsntlId("ASSIGNEE"))
+                .thenReturn("missing".equals(state) ? Optional.empty() : Optional.of(User.builder()
+                        .userId("assignee").pswd("x").esntlId("ASSIGNEE").userNm("담당자")
+                        .userSttsCd(state).build()));
+
+        BusinessException error = assertThrows(BusinessException.class, () -> deptJobService.createDeptJob(dto));
+
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, error.getErrorCode());
+        verify(deptJobRepository, never()).save(any(DeptJob.class));
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    @DisplayName("담당자를 생략해 등록자에게 배정할 때도 현재 DB의 사용 중 상태를 확인한다")
+    void createDeptJob_rechecksDefaultAssigneesCurrentStatus() {
+        authenticateAs("creator", "CREATOR");
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("새 업무");
+        lenient().when(deptJobRepository.save(any(DeptJob.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(userRepository.findByEsntlId("CREATOR"))
+                .thenReturn(Optional.of(User.builder().userId("creator").pswd("x").esntlId("CREATOR")
+                        .userNm("등록자").userSttsCd("D").build()));
+
+        BusinessException error = assertThrows(BusinessException.class, () -> deptJobService.createDeptJob(dto));
+
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, error.getErrorCode());
+        verify(deptJobRepository, never()).save(any(DeptJob.class));
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"missing", "A", "D"})
+    @DisplayName("변경할 담당자가 없거나 비활성이면 업무 내용·담당자·알림이 바뀌지 않는다")
+    void updateDeptJob_rejectsUnavailableNewAssigneeWithoutMutatingJob(String state) {
+        authenticateAsAdmin();
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        lenient().when(userRepository.findByEsntlId("NEW_ASSIGNEE"))
+                .thenReturn("missing".equals(state) ? Optional.empty() : Optional.of(User.builder()
+                        .userId("new-assignee").pswd("x").esntlId("NEW_ASSIGNEE").userNm("새 담당자")
+                        .userSttsCd(state).build()));
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("바뀌면 안 되는 제목");
+        dto.setDeptTaskCn("바뀌면 안 되는 내용");
+        dto.setPicId("NEW_ASSIGNEE");
+
+        BusinessException error = assertThrows(BusinessException.class, () -> deptJobService.updateDeptJob(1L, dto));
+
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, error.getErrorCode());
+        assertEquals("USER1", deptJob.getPicId());
+        assertEquals("Test Job", deptJob.getDeptTaskNm());
+        assertEquals("Content", deptJob.getDeptTaskCn());
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"  ", "USER1"})
+    @DisplayName("기존 비활성 담당자를 그대로 두거나 생략한 본문 수정은 허용한다")
+    void updateDeptJob_keepsInactiveAssigneeWhenUnchanged(String requestedPicId) {
+        authenticateAsAdmin();
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        lenient().when(userRepository.findByEsntlId("USER1"))
+                .thenReturn(Optional.of(User.builder().userId("inactive").pswd("x").esntlId("USER1")
+                        .userNm("기존 담당자").userSttsCd("D").build()));
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("정정된 제목");
+        dto.setPicId(requestedPicId);
+
+        assertDoesNotThrow(() -> deptJobService.updateDeptJob(1L, dto));
+
+        assertEquals("USER1", deptJob.getPicId());
+        assertEquals("정정된 제목", deptJob.getDeptTaskNm());
+        verifyNoInteractions(userRepository, eventPublisher);
+    }
+
     @Test
     @DisplayName("[DIP B5 F1] 다른 사람을 담당자로 두고 등록하면 그 사람에게 알리고, 스스로 맡으면 알리지 않는다")
     void createDeptJob_notifiesAssigneeButNotSelf() {
+        givenActiveAssignee("USR_OTHER");
+        givenActiveAssignee("USR_TESTER");
         when(deptJobRepository.save(any(DeptJob.class))).thenAnswer(inv -> inv.getArgument(0));
         authenticateAs("tester", "USR_TESTER");
 
@@ -437,6 +536,7 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("[DIP B5 F1] 수정에서 담당자가 바뀔 때만 새 담당자에게 알린다")
     void updateDeptJob_notifiesOnlyWhenAssigneeChanges() {
+        givenActiveAssignee("USR_B");
         authenticateAsAdmin();
         DeptJob job = DeptJob.builder().deptTaskSn(7L).deptTaskNm("점검").picId("USR_A").build();
         when(deptJobRepository.findById(7L)).thenReturn(java.util.Optional.of(job));
@@ -505,6 +605,7 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("부서업무 생성 - 첨부는 저장 전에 연결 권한을 검증한다")
     void createDeptJob_checksAttachmentBeforeSave() {
+        givenActiveAssignee("USR_TESTER");
         authenticateAs("tester", "USR_TESTER");
         when(deptJobRepository.save(any(DeptJob.class))).thenAnswer(inv -> inv.getArgument(0));
         DeptJobDto dto = new DeptJobDto();
@@ -630,23 +731,51 @@ class DeptJobServiceTest {
                 .deptTaskSn(2L)
                 .deptTaskNm("담당자 없는 업무")
                 .build();
+        noPic.setFrstRgtrId("creator-login");
         when(deptJobRepository.findById(2L)).thenReturn(Optional.of(noPic));
+        authenticateAs("creator-login", "CREATOR_ESNTL");
 
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("등록자가 수정");
 
-        // 등록자 폴백은 loginId 축 가드(assertOwnerOrAdmin)에 위임된다. 그 가드의 판정 로직 자체는
-        // SecurityUtilTest 가 검증하므로 여기서는 통과로 둔다.
-        // 이 통과 자체가 축(axis) 검증이다 — 서비스가 esntlId 축 가드를 탔다면 getCurrentEsntlId() 가
-        // 비어 있어 ACCESS_DENIED 로 떨어지므로 아래 assertDoesNotThrow 가 실패한다.
-        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mocked.when(() -> nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(any(), org.mockito.ArgumentMatchers.eq("DEPT_JOB_UPDATE_ALL")))
-                    .thenAnswer(invocation -> null);
-
-            assertDoesNotThrow(() -> deptJobService.updateDeptJob(2L, dto));
-        }
+        assertDoesNotThrow(() -> deptJobService.updateDeptJob(2L, dto));
 
         assertEquals("등록자가 수정", noPic.getDeptTaskNm());
+        assertNull(noPic.getPicId());
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {" "})
+    @DisplayName("담당자 공석 업무의 등록자가 아닌 사용자는 내용을 수정할 수 없다")
+    void updateDeptJob_rejectsNonRegistrantWhenPicIsVacant(String vacantPicId) {
+        DeptJob noPic = DeptJob.builder().deptTaskSn(2L).deptTaskBoxSn(1L)
+                .deptTaskNm("원래 업무").deptTaskCn("원래 내용").picId(vacantPicId)
+                .prrtyRnk("1").atchFileSn(101L).build();
+        noPic.setFrstRgtrId("creator-login");
+        when(deptJobRepository.findById(2L)).thenReturn(Optional.of(noPic));
+        // 등록자 감사값과 같은 esntlId도 타인의 loginId를 등록자로 만들지 않는다.
+        authenticateAs("another-login", "creator-login");
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("변경 시도");
+        dto.setDeptTaskCn("변경 내용");
+        dto.setAtchFileSn(202L);
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> deptJobService.updateDeptJob(2L, dto));
+
+        assertEquals(CommonErrorCode.ACCESS_DENIED, error.getErrorCode());
+        assertAll(
+                () -> assertEquals("원래 업무", noPic.getDeptTaskNm()),
+                () -> assertEquals("원래 내용", noPic.getDeptTaskCn()),
+                () -> assertEquals(vacantPicId, noPic.getPicId()),
+                () -> assertEquals(1L, noPic.getDeptTaskBoxSn()),
+                () -> assertEquals("1", noPic.getPrrtyRnk()),
+                () -> assertEquals(101L, noPic.getAtchFileSn()));
+        verify(deptJobRepository, never()).save(any());
+        verify(deptJobRepository, never()).delete(any());
+        verifyNoInteractions(userRepository, attachmentAssignmentPolicy, eventPublisher);
     }
 
     @Test

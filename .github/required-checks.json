@@ -106,7 +106,7 @@
           ],
           "sourceJobIf": "needs.change-scope.outputs.backend == 'true'",
           "sourceStepName": "Build and Test with Gradle",
-          "sourceRun": "set -o pipefail\n./gradlew onlineBuild jacocoOnlineCoverageVerification -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
+          "sourceRun": "set -o pipefail\n./gradlew onlineBuild jacocoOnlineCoverageVerification \"-Dopenapi.export.path=$GITHUB_WORKSPACE/api-docs.json\" --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
           "sourceWorkingDirectory": null,
           "sourceEnv": {},
           "aggregateStepName": "백엔드 범위 결과 집계",
@@ -231,7 +231,7 @@
             "change-scope"
           ],
           "sourceJobIf": "!cancelled() && needs.change-scope.result == 'success' && needs.change-scope.outputs.mutation == 'true'",
-          "sourceStepName": "Incremental Mutation Test (${{ matrix.scope }})",
+          "sourceStepName": "Mutation Test (${{ matrix.scope }})",
           "sourceRun": "./gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain",
           "sourceWorkingDirectory": null,
           "sourceEnv": {
@@ -253,7 +253,7 @@
             "change-scope"
           ],
           "sourceJobIf": "!cancelled() && needs.change-scope.result == 'success' && needs.change-scope.outputs['mutation-migration-tool'] == 'true'",
-          "sourceStepName": "Incremental Mutation Test (${{ matrix.scope }})",
+          "sourceStepName": "Mutation Test (${{ matrix.scope }})",
           "sourceRun": "./gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain",
           "sourceWorkingDirectory": null,
           "sourceEnv": {

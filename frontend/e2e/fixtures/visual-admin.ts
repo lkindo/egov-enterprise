@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { expect, type APIRequestContext } from '@playwright/test';
+import { expect, request as playwrightRequest, type APIRequestContext } from '@playwright/test';
 import { getAdminBearerToken } from '../utils/admin-token';
 import { assertIsolatedTarget } from '../../../scripts/e2e-isolation.mjs';
 
@@ -51,19 +51,28 @@ export async function createVisualAdmin(request: APIRequestContext, baseURL: str
         expect(confirmed.status(), '시각 검증 전용 관리자 배정 재조회').toBe(200);
         expect((await confirmed.json()).data.groups).toEqual(['ROLE_ADMIN']);
 
-        const login = await request.post('/api/v1/auth/login', {
-            data: { userId, password },
-        });
-        expect(login.status(), '시각 검증 전용 관리자 로그인').toBe(200);
-        const body = await login.json();
-        const token: unknown = body?.data?.accessToken;
-        if (typeof token !== 'string' || token.length === 0) {
-            throw new Error('Visual admin authentication did not return an access token.');
+        // BFF cookies must not replace the administrator session used by fixture cleanup.
+        const loginRequest = await playwrightRequest.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+        let loginCookies: string[];
+        try {
+            const login = await loginRequest.post('/api/v1/auth/login', { data: { userId, password } });
+            expect(login.status(), '시각 검증 전용 관리자 로그인').toBe(200);
+            const body = await login.json();
+            expect(Object.hasOwn(body.data ?? {}, 'accessToken'), '브라우저 로그인 응답의 토큰 비공개').toBe(false);
+            expect(Object.hasOwn(body.data ?? {}, 'refreshToken'), '브라우저 로그인 응답의 재발급 토큰 비공개').toBe(false);
+            // Test code may inspect HttpOnly headers; browser JavaScript receives no token body.
+            loginCookies = (login.headers()['set-cookie'] ?? '').split('\n');
+        } finally {
+            await loginRequest.dispose();
+        }
+        const token = loginCookies.map(line => /^accessToken=([^;]+)/.exec(line.trim())?.[1]).find(Boolean);
+        if (!token) {
+            throw new Error('Visual admin authentication did not set an access cookie.');
         }
         // Refresh 계약도 공유 계정의 로그인·로그아웃에 영향을 받지 않는 주체를 사용한다.
-        const refreshCookie = (login.headers()['set-cookie'] ?? '').split('\n')
+        const refreshCookie = loginCookies
             .map(line => /^refreshToken=([^;]+)/.exec(line.trim())?.[1]).find(Boolean);
-        const refreshToken: string = body?.data?.refreshToken || refreshCookie || '';
+        const refreshToken: string = refreshCookie || '';
         return {
             // 결재 완주 테스트가 이 계정을 결재자로 고른다(자기 결재 금지 — DEC-OPS-095).
             esntlId,

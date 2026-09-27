@@ -1,6 +1,12 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import SearchShell from './SearchShell';
 import SearchResultsSlot from './SearchResultsSlot';
 import type { SearchUrlInput } from '@/lib/navigation/search-url-state';
+
+export const metadata: Metadata = {
+  title: `통합 검색 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 /**
  * `/search` — 통합 검색.

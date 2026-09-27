@@ -11,6 +11,7 @@ import { X,
   AlertTriangle,
   Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toDisplayDateTime } from '@/lib/format-date';
 import { Button } from '@/components/ui/button';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 
@@ -231,7 +232,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                     </div>
 
                     <div className="relative z-10 mt-1.5 flex items-center justify-between">
-                      <span className="text-xs tabular-nums text-muted-foreground">{notif.time}</span>
+                      <span className="text-xs tabular-nums text-muted-foreground">{toDisplayDateTime(new Date(notif.time))}</span>
                       {/*
                          [2026-08-29] '상세 보기 →' 버튼을 걷었다. onClick·href·router.push 가
                          전혀 없었고, 갈 곳도 없었다.

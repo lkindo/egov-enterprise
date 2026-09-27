@@ -24,7 +24,7 @@ import { boardUserService } from '@/services/business/user/board/BoardUserServic
 /* reusable-base:collaboration:end */
 import { menuService } from '@/services/business/user/MenuService';
 import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
-import type { MenuInfo } from '@/types/foundation/menu';
+import { walkMenuTree } from '@/lib/navigation/active-menu';
 import { SEARCH_URL_STATE } from '@/lib/navigation/search-url-state';
 
 /**
@@ -154,13 +154,10 @@ export const SearchResultsContent = ({
                 //   하위 메뉴를 다시 요청하면 서버가 매번 메뉴 트리 전체를 다시 조립했다(N+1).
                 const head = await menuService.getHeadMenus();
                 const keyword = String(query || '');
-                return head.flatMap(m => (
-                    [{ parent: null as MenuInfo | null, node: m },
-                     ...(m.children ?? []).map(l => ({ parent: m as MenuInfo | null, node: l }))]
-                )).flatMap(({ parent, node }) => {
+                return [...walkMenuTree(head)].flatMap(({ item: node, ancestors }) => {
                     const path = resolveMenuInternalRoute(node);
                     if (!path || !node.menuNm?.includes(keyword)) return [];
-                    return [{ name: node.menuNm, path, category: parent?.menuNm ?? '메뉴' }];
+                    return [{ name: node.menuNm, path, category: ancestors.map(menu => menu.menuNm).join(' > ') || '메뉴' }];
                 });
             };
 

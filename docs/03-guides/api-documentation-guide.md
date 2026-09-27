@@ -116,7 +116,7 @@ pnpm -C frontend codegen:ts
 드리프트 점검(git diff --exit-code 기반): `pnpm -C frontend codegen:verify` / `codegen:verify:zod`. (자세한 실행 맥락은 [공용 project-context](../../.agent/memory/project-context.md#개발검증배포-흐름) 참조)
 
 ### 2. 생성된 파일 확인
-`frontend/src/types/generated-api.d.ts`(타입 정의)와 `frontend/src/types/generated-zod.ts`(런타임 검증 스키마)가 함께 갱신되었는지 확인합니다. 실제 소비 여부는 프런트 타입 검사와 계약 하네스로 확인하며, 특정 서비스 래퍼가 모든 호출 경로를 소유한다고 가정하지 않습니다.
+`frontend/src/types/generated-api.d.ts`(타입 정의), `frontend/src/types/generated-zod.ts`(런타임 검증 스키마), `frontend/src/types/generated-operations.ts`(operation 계약)가 함께 갱신되었는지 확인합니다. 실제 소비 여부는 프런트 타입 검사와 계약 하네스로 확인하며, 특정 서비스 래퍼가 모든 호출 경로를 소유한다고 가정하지 않습니다.
 
 ---
 
@@ -126,12 +126,24 @@ pnpm -C frontend codegen:ts
 
 서버를 실행하지 않고 빌드 타임에 OpenAPI Spec을 정적으로 추출하여 CI 안정성을 확보합니다.
 
+테스트 단계의 `OpenApiDocumentationTest`가 system property로 내보내며 별도 Gradle 플러그인은 사용하지 않습니다. Test JVM의 작업 디렉터리는 모듈별로 다르므로 출력은 저장소 루트의 **절대경로**로 지정합니다. CI는 `"-Dopenapi.export.path=$GITHUB_WORKSPACE/api-docs.json"`을 사용하고 같은 절대경로의 추적 여부와 diff를 검사합니다.
+
 ```bash
-# CI: 테스트 단계에서 OpenApiDocumentationTest 가 system property 로 정적 추출 (별도 gradle 플러그인 아님)
-./gradlew onlineBuild jacocoOnlineCoverageVerification \
-  -Dopenapi.export.path=api-docs.json --warning-mode fail
-# 추출된 파일 위치: <repo-root>/api-docs.json  (CI 아티팩트: openapi-spec / openapi-spec-changed)
+# Bash: 저장소 루트에서 좁은 OpenAPI 생성·계약 검증
+repo_root="$(git rev-parse --show-toplevel)"
+./gradlew :api-server:test --tests 'nuri.openapi.*OpenApiDocumentationTest' \
+  "-Dopenapi.export.path=$repo_root/api-docs.json" --warning-mode fail
+git diff --exit-code -- "$repo_root/api-docs.json"
 ```
+
+```powershell
+# PowerShell: 저장소 루트에서 같은 생성·계약 검증
+$repoRoot = (git rev-parse --show-toplevel).Trim()
+.\gradlew.bat :api-server:test --tests 'nuri.openapi.*OpenApiDocumentationTest' "-Dopenapi.export.path=$repoRoot/api-docs.json" --warning-mode fail
+git diff --exit-code -- "$repoRoot/api-docs.json"
+```
+
+API/DTO 변경 후 형상이 유지될 것으로 예상해도 현재 서버에서 정규 생성한 결과를 비교한 다음 `codegen:verify`와 `codegen:verify:zod`를 실행합니다. 의도한 명세 변경이라면 diff를 검토하고 세 생성물을 정규 생성기로 갱신합니다. `verify:be`나 기존 명세를 읽는 프런트 codegen만으로 서버 명세의 최신성이 검증됐다고 보지 않습니다. CI의 전체 빌드·커버리지 명령은 [CI/CD 가이드](cicd-pipeline.md#실행-명령어)를 따릅니다.
 
 ### API 변경 감지
 

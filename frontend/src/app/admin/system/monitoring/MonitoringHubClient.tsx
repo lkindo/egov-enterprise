@@ -419,7 +419,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
   const auditColumns: Column<AuditLog>[] = [
     {
-      header: '보안 감사 로그',
+      header: '시스템 로그(감사 보기)',
       accessor: (log) => (
         <div className="flex items-center gap-3 py-1">
           <div className={cn(
@@ -465,7 +465,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
   const loginLogColumns: Column<LoginLog>[] = [
     {
-      header: '접속 이력',
+      header: '로그인 시도 이력',
       accessor: (log) => (
         <div className="flex items-center gap-3 py-1">
           <div className={cn(
@@ -483,6 +483,10 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           </div>
         </div>
       )
+    },
+    {
+      header: '로그인 결과',
+      accessor: (log) => log.errOccrrAt === 'N' ? '성공' : log.errOccrrAt === 'Y' ? '실패' : '결과 미상',
     }
   ];
 
@@ -767,10 +771,10 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               totalPage: loginLogData?.totalPage || 1,
               totalCount: loginLogData?.total,
               searchable: true,
-              emptyMessage: '조회 조건에 해당하는 접속 이력이 없습니다.',
-              exportName: '접속이력',
+              emptyMessage: '조회 조건에 해당하는 로그인 시도 이력이 없습니다.',
+              exportName: '로그인시도이력',
               exportHeaders: LOGIN_LOG_EXPORT_HEADERS,
-              label: '접속 이력'
+              label: '로그인 시도 이력'
             };
 /* reusable-base:collaboration:start */
           case 'COMMENTS':
@@ -808,9 +812,9 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               totalCount: auditData?.total,
               searchable: true,
               emptyMessage: '조회 조건에 해당하는 감사 로그가 없습니다.',
-              exportName: '보안감사로그',
+              exportName: '시스템로그-감사보기',
               exportHeaders: SYS_LOG_EXPORT_HEADERS,
-              label: '보안 감사 로그'
+              label: '시스템 로그(감사 보기)'
             };
         }
       })()
@@ -833,18 +837,18 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   };
 
   const TAB_DESCRIPTION: Record<MonitoringTab, string> = {
-    SECURITY: '보안 감사 로그를 조회합니다. 한 건을 선택하면 아래에 상세가 표시됩니다.',
+    SECURITY: '시스템 로그 탭과 같은 전체 데이터이며 보안 전용 분류를 제공하지 않습니다.',
     SYSTEM: '시스템 로그를 조회합니다. 한 건을 선택하면 아래에 상세가 표시됩니다.',
-    LOGIN: '사용자 접속 이력을 조회합니다. 한 건을 선택하면 아래에 상세가 표시됩니다.',
+    LOGIN: '성공·실패·결과 미상 로그인 시도를 조회합니다. 성공 로그인 통계와 집계 범위가 다릅니다.',
     COMMENTS: '서비스에 등록된 사용자 의견을 조회하고 관리합니다.',
     OBSERVABILITY: '애플리케이션 가동 상태와 자원 사용량을 조회합니다.',
     HARNESS: '에이전트 하네스의 스킬·검증 자산을 조회합니다.',
   };
 
   const NAV_ITEMS: Array<{ tab: MonitoringTab; icon: React.ReactNode; label: string }> = [
-    { tab: 'SECURITY', icon: <ShieldAlert size={14} />, label: '보안 감사 로그' },
+    { tab: 'SECURITY', icon: <ShieldAlert size={14} />, label: '시스템 로그(감사 보기)' },
     { tab: 'SYSTEM', icon: <Terminal size={14} />, label: '시스템 로그' },
-    { tab: 'LOGIN', icon: <LogIn size={14} />, label: '접속 이력' },
+    { tab: 'LOGIN', icon: <LogIn size={14} />, label: '로그인 시도 이력' },
     { tab: 'OBSERVABILITY', icon: <MonitorCheck size={14} />, label: '가동 상태' },
 /* reusable-base:demo:start */
     { tab: 'HARNESS', icon: <Zap size={14} />, label: '하네스 아틀라스' },
@@ -1084,7 +1088,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                <p className="text-xs font-medium text-muted-foreground leading-relaxed">
                   {listConfig
                     ? `‘${listConfig.label}’ 탭에서 현재 조회된 ${listConfig.data.length}건을 엑셀(CSV · UTF-8 BOM)로 내려받습니다. 이 모달은 현재 페이지만 반출하며, 페이지를 이동한 뒤 다시 실행하면 해당 페이지가 반출됩니다.`
-                    : '현재 탭은 목록 데이터가 없어 반출할 수 없습니다. 보안 감사·시스템 로그·접속 이력·서비스 피드백 탭에서 실행해 주세요.'}
+                    : '현재 탭은 목록 데이터가 없어 반출할 수 없습니다. 시스템 로그(감사 보기)·시스템 로그·로그인 시도 이력·서비스 피드백 탭에서 실행해 주세요.'}
                </p>
             </div>
 

@@ -231,6 +231,7 @@ public class DeptJobService extends BaseAbstractService {
         String picId = (dto.getPicId() != null && !dto.getPicId().isBlank())
                 ? dto.getPicId()
                 : creatorEsntlId;
+        assertActiveAssignee(picId);
 
         DeptJob deptJob = DeptJob.builder()
                 .deptTaskBoxSn(dto.getDeptTaskBoxSn())
@@ -268,6 +269,9 @@ public class DeptJobService extends BaseAbstractService {
                 ? dto.getPicId()
                 : deptJob.getPicId();
         String previousPicId = deptJob.getPicId();
+        if (!Objects.equals(previousPicId, picId)) {
+            assertActiveAssignee(picId);
+        }
 
         deptJob.update(
                 dto.getDeptTaskBoxSn(),
@@ -333,6 +337,13 @@ public class DeptJobService extends BaseAbstractService {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         }
         return esntlId;
+    }
+
+    /** 신규 배정만 현재 사용 중 계정인지 확인한다. 기존 비활성 담당자의 업무 정정은 허용한다. */
+    private void assertActiveAssignee(String esntlId) {
+        userRepository.findByEsntlId(esntlId)
+                .filter(user -> "P".equals(user.getUserSttsCd()))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE));
     }
 
     /** 공유 업무에 연결하기 전에 첨부의 존재와 재게시 권한을 확인한다. */

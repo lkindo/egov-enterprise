@@ -11,12 +11,12 @@
       "fingerprint": "dec982be271ed34f:1",
       "sourceSha256": "907be49f1f3d1327f0e1ecc20d176f3d6e7b923aeccea5c032ab755a987d1487",
       "expiresOn": "2026-12-08",
-      "reason": "Stateless Bearer API; Strict HttpOnly session cookies and Origin checks; cookie-authenticated SockJS transports separately require exact trusted Origin; legacy CSRF remains enabled.",
+      "reason": "Stateless Bearer API; Strict HttpOnly session cookies and Origin checks; cookie-authenticated SockJS transports separately require exact trusted Origin; legacy CSRF remains enabled. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged.",
       "id": "SAST-FP-001",
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "f011ac0d51ff4f8792a573f27d93e95722f69f8130edb398d5e9ee23b1103544"
+          "sha256": "48644fef4f7d767c4db29cf25036fe22207f3b58c53e01c0238e16c60a058eed"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java",
@@ -69,12 +69,12 @@
       "fingerprint": "a46799a1753058c0:1",
       "sourceSha256": "abb96530b1ebe5fe31581177fc9afed0201d91e3447f65090a9495c18a4d46ed",
       "expiresOn": "2026-12-08",
-      "reason": "Fallback core chain uses stateless Bearer authentication and Origin validation.",
+      "reason": "Fallback core chain uses stateless Bearer authentication and Origin validation. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged.",
       "id": "SAST-FP-002",
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "f011ac0d51ff4f8792a573f27d93e95722f69f8130edb398d5e9ee23b1103544"
+          "sha256": "48644fef4f7d767c4db29cf25036fe22207f3b58c53e01c0238e16c60a058eed"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java",
@@ -171,12 +171,12 @@
       "fingerprint": "3bdaa522982a3650:1",
       "sourceSha256": "884972eb7ed63f7e0cb1eec832a0ec3a1aea7686d8d3b5b5412460a438ef7698",
       "expiresOn": "2026-12-08",
-      "reason": "Missing or invalid credentials clear the security context, return HTTP 401 and terminate before the transport chain. Only signature-validated JWTs with fresh enabled account details and a nonblank current authorization version reach the chain; conditional authentication-state inspection does not bypass access control.",
+      "reason": "Missing or invalid credentials clear the security context, return HTTP 401 and terminate before the transport chain. Only signature-validated JWTs with fresh enabled account details and a nonblank current authorization version reach the chain; conditional authentication-state inspection does not bypass access control. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged.",
       "id": "SAST-FP-008",
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "f011ac0d51ff4f8792a573f27d93e95722f69f8130edb398d5e9ee23b1103544"
+          "sha256": "48644fef4f7d767c4db29cf25036fe22207f3b58c53e01c0238e16c60a058eed"
         },
         {
           "file": "business-core/src/main/java/nuri/business/security/iam/JpaUserAuthAdapter.java",

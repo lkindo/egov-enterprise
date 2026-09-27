@@ -110,6 +110,8 @@ function convertPropertyToZod(
           zodChain += `.max(${prop.maxLength})`;
         }
         if (prop.pattern !== undefined) {
+          // PURE로 제거되는 미사용 스키마도 잘못된 정규식을 생성 단계에서 거부한다.
+          new RegExp(prop.pattern);
           // 이스케이프 보호를 위해 JSON.stringify를 활용해 new RegExp 문자열 생성
           const safePattern = JSON.stringify(prop.pattern);
           zodChain += `.regex(new RegExp(${safePattern}))`;
@@ -582,6 +584,8 @@ let codeLines = [
   ''
 ];
 
+// 초기화 전체를 순수 단위로 묶어 미사용 스키마의 중첩 Zod/RegExp 생성도 제거할 수 있게 한다.
+// 사용되는 선언은 기존 객체를 즉시 생성한다. 런타임 lazy/strict/parse 의미는 바꾸지 않는다.
 // 각 스키마의 Zod Object를 문자열로 빌드
 for (const schemaName of schemaNames) {
   const schema = schemas[schemaName];
@@ -592,26 +596,26 @@ for (const schemaName of schemaNames) {
   
   if (schema.type === 'object' && schema.properties) {
     const requiredList = schema.required || [];
-    codeLines.push(`export const ${schemaName}Schema = z.object({`);
+    codeLines.push(`export const ${schemaName}Schema = /*#__PURE__*/ (() => z.object({`);
     
     for (const [propName, prop] of Object.entries(schema.properties)) {
       const zodProp = convertPropertyToZod(propName, prop, requiredList, schemaName);
       codeLines.push(`  ${propName}: ${zodProp},`);
     }
     
-    codeLines.push(`});`);
+    codeLines.push(`}))();`);
     codeLines.push(`export type ${schemaName} = z.infer<typeof ${schemaName}Schema>;`);
   } else if (schema.type === 'array' && schema.items) {
     if (schema.items.$ref) {
       const refSchema = getSchemaNameFromRef(schema.items.$ref);
-      codeLines.push(`export const ${schemaName}Schema = z.array(z.lazy(() => ${refSchema}Schema));`);
+      codeLines.push(`export const ${schemaName}Schema = /*#__PURE__*/ (() => z.array(z.lazy(() => ${refSchema}Schema)))();`);
     } else {
-      codeLines.push(`export const ${schemaName}Schema = z.array(z.any());`);
+      codeLines.push(`export const ${schemaName}Schema = /*#__PURE__*/ (() => z.array(z.any()))();`);
     }
     codeLines.push(`export type ${schemaName} = z.infer<typeof ${schemaName}Schema>;`);
   } else {
     // 그 외 단선 타입이거나 맵 형식 등
-    codeLines.push(`export const ${schemaName}Schema = z.any();`);
+    codeLines.push(`export const ${schemaName}Schema = /*#__PURE__*/ (() => z.any())();`);
     codeLines.push(`export type ${schemaName} = any;`);
   }
   codeLines.push('');
@@ -625,7 +629,7 @@ for (const schemaName of schemaNames) {
     const directionalName = directionalSchemaName(schemaName, direction);
     if (schema.type === 'object' && schema.properties) {
       const requiredList = schema.required || [];
-      codeLines.push(`export const ${directionalName} = z.object({`);
+      codeLines.push(`export const ${directionalName} = /*#__PURE__*/ (() => z.object({`);
       for (const [propName, prop] of Object.entries(schema.properties)) {
         if (!propertyAllowedInDirection(prop, direction)) continue;
         const zodProp = convertPropertyToZod(
@@ -637,7 +641,7 @@ for (const schemaName of schemaNames) {
         );
         codeLines.push(`  ${propName}: ${zodProp},`);
       }
-      codeLines.push('});');
+      codeLines.push('}))();');
     } else if (schema.type === 'array' && schema.items) {
       const itemSchema = convertPropertyToZod(
         '',
@@ -646,7 +650,7 @@ for (const schemaName of schemaNames) {
         schemaName,
         direction,
       ).replace(/\.optional\(\)$/, '');
-      codeLines.push(`export const ${directionalName} = z.array(${itemSchema});`);
+      codeLines.push(`export const ${directionalName} = /*#__PURE__*/ (() => z.array(${itemSchema}))();`);
     } else {
       codeLines.push(`export const ${directionalName} = ${schemaName}Schema;`);
     }
@@ -829,7 +833,8 @@ const operationLines = [
 
 for (const definition of operationDefinitions) {
   operationLines.push(
-    `export const ${definition.id}Operation = /*#__PURE__*/ defineGeneratedOperation({`,
+    `export const ${definition.id}Operation = /*#__PURE__*/ (() => {`,
+    '  return defineGeneratedOperation({',
     `  id: ${JSON.stringify(definition.id)},`,
     `  method: ${JSON.stringify(definition.method)},`,
     `  path: ${JSON.stringify(definition.path)},`,
@@ -844,7 +849,8 @@ for (const definition of operationDefinitions) {
     `  envelopeSchema: ${definition.response.envelopeSchema},`,
     `  requestForbiddenPaths: ${JSON.stringify(operationForbiddenPaths(definition.request.sourceSchema, 'readOnly'))},`,
     `  responseForbiddenPaths: ${JSON.stringify(operationForbiddenPaths(definition.response.sourceSchema, 'writeOnly'))},`,
-    '});',
+    '  });',
+    '})();',
     '',
   );
 }

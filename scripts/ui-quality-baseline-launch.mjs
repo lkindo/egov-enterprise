@@ -273,7 +273,7 @@ export function createBaselineComposeSpecification({
         healthcheck: Object.freeze({
           test: Object.freeze([
             'CMD-SHELL',
-            'wget --spider -q http://localhost:3000/ || exit 1',
+            'wget --spider -q http://127.0.0.1:3000/login || exit 1',
           ]),
           interval: '10s',
           timeout: '10s',

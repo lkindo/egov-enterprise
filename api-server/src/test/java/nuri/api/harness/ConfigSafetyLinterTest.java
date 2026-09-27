@@ -21,6 +21,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * 🛡️ 배포 형상 안전성 린터 — "운영 배포가 조용히 개발 기본값으로 굳는 것" 을 차단한다.
@@ -391,6 +393,7 @@ class ConfigSafetyLinterTest {
             return; // 부재 위반은 auditDeployScriptUsesProdOverlay가 이미 보고한다.
         }
         String src = stripComments(HarnessSourceIndex.read(script));
+        auditReleaseManifestConsumption(src, violations);
         List<String> requiredSignals = List.of(
                 "ATTACHMENT_MIGRATION_MARKER=\".egov-attachment-migration-v1\"",
                 "CURRENT_ATTACHMENT_VOLUME=$(docker inspect egov-api",
@@ -413,6 +416,60 @@ class ConfigSafetyLinterTest {
                     + " 재생성을 fail-closed로 중단하고, 검증한 digest release를 --no-build/--wait로"
                     + " 기동해야 합니다. 누락 신호=" + missing);
         }
+    }
+
+    private void auditReleaseManifestConsumption(String source, List<String> violations) {
+        for (String signal : List.of(
+                "[ \"$#\" -ne 1 ]", "command -v jq", "RELEASE_MANIFEST=\"$1\"", "if ! MANIFEST_VALUES=$(jq -ers '",
+                "if length != 1 then error(\"Invalid complete release manifest.\") else .[0] end",
+                "keys == [\"apiImage\", \"frontendImage\", \"revision\", \"schemaVersion\"]",
+                ".schemaVersion == 1", ".apiImage | type == \"string\" and test(",
+                ".frontendImage | type == \"string\" and test(",
+                "then [.apiImage, .frontendImage, .revision] | @tsv",
+                "IFS=$'\\t' read -r MANIFEST_API_IMAGE MANIFEST_FRONTEND_IMAGE MANIFEST_REVISION <<< \"$MANIFEST_VALUES\"",
+                "[ \"$API_IMAGE_REF\" != \"$MANIFEST_API_IMAGE\" ]",
+                "[ \"$FRONTEND_IMAGE_REF\" != \"$MANIFEST_FRONTEND_IMAGE\" ]",
+                "export API_IMAGE_REF=\"$MANIFEST_API_IMAGE\" FRONTEND_IMAGE_REF=\"$MANIFEST_FRONTEND_IMAGE\"",
+                "[ \"$API_RELEASE_REVISION\" != \"$MANIFEST_REVISION\" ]")) {
+            if (!source.contains(signal)) violations.add("완성 release manifest 소비 경계 누락: " + signal);
+        }
+        long reads = Pattern.compile("\\$\\(jq\\b").matcher(source).results().count();
+        int pathReads = source.split(Pattern.quote("\"$RELEASE_MANIFEST\""), -1).length - 1;
+        if (reads != 1 || pathReads != 1) {
+            violations.add("release manifest는 검증/추출을 한 번의 jq 파일 읽기로 수행해야 함");
+        }
+        int manifest = source.indexOf("RELEASE_MANIFEST=\"$1\"");
+        int pull = source.indexOf("docker pull \"$ref\"");
+        int revision = source.indexOf("[ \"$API_RELEASE_REVISION\" != \"$MANIFEST_REVISION\" ]");
+        int deploy = source.indexOf("up --no-build -d --wait");
+        if (manifest < 0 || pull <= manifest || revision <= pull || deploy <= revision) {
+            violations.add("manifest → pull → revision 대조 → 배포 순서 불일치");
+        }
+    }
+
+    @Test
+    @DisplayName("완성 release manifest 없이 배포하는 fixture는 red")
+    void deploymentRejectsMissingManifestConsumptionFixtures() throws IOException {
+        String source = stripComments(HarnessSourceIndex.read(resolveRepoRoot().resolve(DEPLOY_SCRIPT)));
+        List<String> valid = new ArrayList<>();
+        auditReleaseManifestConsumption(source, valid);
+        assertTrue(valid.isEmpty(), valid.toString());
+        for (String signal : List.of("if ! MANIFEST_VALUES=$(jq -ers '", ".schemaVersion == 1",
+                "if length != 1 then error(\"Invalid complete release manifest.\") else .[0] end",
+                "then [.apiImage, .frontendImage, .revision] | @tsv",
+                "IFS=$'\\t' read -r MANIFEST_API_IMAGE MANIFEST_FRONTEND_IMAGE MANIFEST_REVISION <<< \"$MANIFEST_VALUES\"",
+                "[ \"$API_IMAGE_REF\" != \"$MANIFEST_API_IMAGE\" ]",
+                "[ \"$FRONTEND_IMAGE_REF\" != \"$MANIFEST_FRONTEND_IMAGE\" ]",
+                "[ \"$API_RELEASE_REVISION\" != \"$MANIFEST_REVISION\" ]")) {
+            List<String> violations = new ArrayList<>();
+            auditReleaseManifestConsumption(source.replace(signal, "removed-fixture"), violations);
+            assertFalse(violations.isEmpty(), signal);
+        }
+        List<String> repeatedRead = new ArrayList<>();
+        auditReleaseManifestConsumption(source
+                + "\nMANIFEST_API_IMAGE=$(jq -r '.apiImage' -- \"$RELEASE_MANIFEST\")\n", repeatedRead);
+        assertTrue(repeatedRead.stream().anyMatch(message -> message.contains("한 번의 jq 파일 읽기")),
+                repeatedRead.toString());
     }
 
     /** JVM에 SIGTERM을 직접 전달하고 세 executor의 60초 drain 예산을 모두 보장한다. */

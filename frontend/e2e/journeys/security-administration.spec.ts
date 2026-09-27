@@ -311,11 +311,19 @@ test.describe('권한 변경과 충돌 제어', () => {
                 });
                 userCreated = created.ok();
                 expect(created.status(), '전용 사용자 생성').toBe(200);
-                const login = await request.post('/api/v1/auth/login', { data: { userId, password } });
-                expect(login.status(), '전용 사용자 로그인').toBe(200);
-                const token: unknown = (await login.json())?.data?.accessToken;
-                if (typeof token !== 'string' || token.length === 0)
-                    throw new Error('Fixture login did not return an access token.');
+                // Keep the BFF's login cookie out of the context that alternates explicit bearer subjects.
+                const loginRequest = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+                let token: string | undefined;
+                try {
+                    const login = await loginRequest.post('/api/v1/auth/login', { data: { userId, password } });
+                    expect(login.status(), '전용 사용자 로그인').toBe(200);
+                    token = (login.headers()['set-cookie'] ?? '').split('\n')
+                        .map(line => /^accessToken=([^;]+)/.exec(line.trim())?.[1]).find(Boolean);
+                } finally {
+                    await loginRequest.dispose();
+                }
+                if (!token)
+                    throw new Error('Fixture login did not set an access cookie.');
                 const user = { Authorization: `Bearer ${token}` };
                 const current = () => request.get('/api/v1/auth/me', { headers: user }).then(response => data<CurrentUser>(response, '현재 사용자 권한 조회'));
                 const initial = await current();

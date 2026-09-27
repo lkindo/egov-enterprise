@@ -194,6 +194,91 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("인증 서비스·내부 계약 장애는 실제 HTTP 경계에서 401이 아닌 안전한 500이다")
+    void authenticationServiceFailuresAreServerErrorsThroughMvc() throws Exception {
+        for (AuthenticationException failure : List.of(
+                new org.springframework.security.authentication.AuthenticationServiceException("internal-auth-detail"),
+                new org.springframework.security.authentication.InternalAuthenticationServiceException("internal-auth-detail"))) {
+            var response = authenticationFailureThroughMvc(failure);
+
+            assertEquals(500, response.getStatus(), failure.getClass().getSimpleName());
+            var body = tools.jackson.databind.json.JsonMapper.builder().build().readTree(response.getContentAsString());
+            assertEquals(500, body.path("status").asInt());
+            assertEquals("C004", body.path("code").asString());
+            assertFalse(body.path("success").asBoolean());
+            assertEquals(CommonErrorCode.INTERNAL_SERVER_ERROR.getMessage(), body.path("message").asString());
+            assertFalse(response.getContentAsString().contains("internal-auth-detail"));
+        }
+    }
+
+    @Test
+    @DisplayName("인증 제공자가 감싼 DB 연결 장애도 기존 503·Retry-After 분류를 유지한다")
+    void wrappedAuthenticationConnectionFailuresAreUnavailableThroughMvc() throws Exception {
+        for (RuntimeException unavailable : List.of(
+                new org.springframework.transaction.CannotCreateTransactionException("internal-db-detail"),
+                new org.springframework.dao.DataAccessResourceFailureException("internal-db-detail"))) {
+            AuthenticationException failure = new org.springframework.security.authentication.AuthenticationServiceException(
+                    "internal-auth-detail", new IllegalStateException("adapter failure", unavailable));
+            var response = authenticationFailureThroughMvc(failure);
+
+            assertEquals(503, response.getStatus(), unavailable.getClass().getSimpleName());
+            assertEquals("5", response.getHeader(org.springframework.http.HttpHeaders.RETRY_AFTER));
+            var body = tools.jackson.databind.json.JsonMapper.builder().build().readTree(response.getContentAsString());
+            assertEquals(503, body.path("status").asInt());
+            assertEquals("S002", body.path("code").asString());
+            assertFalse(body.path("success").asBoolean());
+            assertFalse(response.getContentAsString().contains("internal-auth-detail"));
+            assertFalse(response.getContentAsString().contains("internal-db-detail"));
+        }
+    }
+
+    @Test
+    @DisplayName("자격 증명·계정 거부는 실제 HTTP 경계에서도 동일한 401 응답을 유지한다")
+    void rejectedCredentialsAndAccountsRemainUniformThroughMvc() throws Exception {
+        for (AuthenticationException failure : List.of(
+                new org.springframework.security.authentication.BadCredentialsException("bad-credentials-detail"),
+                new org.springframework.security.authentication.DisabledException("disabled-account-detail"),
+                new org.springframework.security.authentication.LockedException("locked-account-detail"),
+                new org.springframework.security.authentication.AccountExpiredException("expired-account-detail"),
+                new org.springframework.security.authentication.CredentialsExpiredException("expired-credentials-detail"),
+                new org.springframework.security.core.userdetails.UsernameNotFoundException("unknown-account-detail"))) {
+            var response = authenticationFailureThroughMvc(failure);
+
+            assertEquals(401, response.getStatus(), failure.getClass().getSimpleName());
+            var body = tools.jackson.databind.json.JsonMapper.builder().build().readTree(response.getContentAsString());
+            assertEquals(401, body.path("status").asInt());
+            assertEquals("A001", body.path("code").asString());
+            assertFalse(body.path("success").asBoolean());
+            assertEquals(CommonErrorCode.UNAUTHORIZED.getMessage(), body.path("message").asString());
+            assertFalse(response.getContentAsString().contains("-detail"));
+        }
+    }
+
+    private org.springframework.mock.web.MockHttpServletResponse authenticationFailureThroughMvc(
+            AuthenticationException failure) throws Exception {
+        var mockMvc = org.springframework.test.web.servlet.setup.MockMvcBuilders
+                .standaloneSetup(new AuthenticationFailureProbeController(failure))
+                .setControllerAdvice(handler)
+                .build();
+        return mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/authentication-probe"))
+                .andReturn().getResponse();
+    }
+
+    @org.springframework.web.bind.annotation.RestController
+    static class AuthenticationFailureProbeController {
+        private final AuthenticationException failure;
+
+        AuthenticationFailureProbeController(AuthenticationException failure) {
+            this.failure = failure;
+        }
+
+        @org.springframework.web.bind.annotation.PostMapping("/authentication-probe")
+        void authenticate() {
+            throw failure;
+        }
+    }
+
+    @Test
     @DisplayName("OptimisticLockingFailureException 처리 테스트")
     void testHandleOptimisticLockingFailureException() {
         OptimisticLockingFailureException ex = new OptimisticLockingFailureException("Lock Failed");
@@ -319,6 +404,76 @@ class GlobalExceptionHandlerTest {
     private static org.springframework.dao.DataIntegrityViolationException dive(String sqlState, String msg) {
         return new org.springframework.dao.DataIntegrityViolationException(
                 msg, new java.sql.SQLException(msg, sqlState));
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"22001", "22003", "22007", "22008", "22P02"})
+    @DisplayName("길이·숫자·날짜·형식 SQLState는 중복이 아닌 안전한 입력 오류다")
+    void inputDataSqlStatesAreBadRequestsThroughMvc(String state) throws Exception {
+        assertDatabaseResponse(dive(state, "private-database-detail"), 400, "C001", null);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"22012", "2200H", "XX000"})
+    @DisplayName("SQLState 22 전체를 입력 오류로 간주하지 않고 계산·시퀀스·내부 결함은 500으로 남긴다")
+    void serverDataSqlStatesRemainServerErrorsThroughMvc(String state) throws Exception {
+        assertDatabaseResponse(dive(state, "private-database-detail"), 500, "C004", null);
+    }
+
+    @Test
+    @DisplayName("잠금 경합은 409이며 자동 재시도를 지시하지 않는다")
+    void pessimisticLockFailuresAreConflictsThroughMvc() throws Exception {
+        for (RuntimeException failure : List.of(
+                new org.springframework.dao.CannotAcquireLockException("private-database-detail"),
+                new org.springframework.dao.PessimisticLockingFailureException("private-database-detail"))) {
+            assertDatabaseResponse(failure, 409, "C013", null);
+        }
+    }
+
+    @Test
+    @DisplayName("쿼리 시간초과는 기존 일시 불가 계약으로 분류한다")
+    void queryTimeoutIsUnavailableThroughMvc() throws Exception {
+        assertDatabaseResponse(new org.springframework.dao.QueryTimeoutException("private-database-detail"),
+                503, "S002", "5");
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"55P03,409,C013", "40001,409,C013", "40P01,409,C013", "42601,500,C004"})
+    @DisplayName("미분류 DB 예외도 잠금·직렬화 충돌만 409로 변환하고 잘못된 SQL은 500을 유지한다")
+    void unclassifiedSqlFailurePreservesConflictAndServerErrorMeaning(String state, int status, String code)
+            throws Exception {
+        var failure = new org.springframework.dao.DataAccessException("private-database-detail",
+                new java.sql.SQLException("private-database-detail", state)) { };
+        assertDatabaseResponse(failure, status, code, null);
+    }
+
+    private void assertDatabaseResponse(RuntimeException failure, int status, String code, String retryAfter)
+            throws Exception {
+        var mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders
+                .standaloneSetup(new DatabaseFailureProbeController(failure)).setControllerAdvice(handler).build();
+        var response = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .post("/database-probe")).andReturn().getResponse();
+        assertEquals(status, response.getStatus());
+        var body = tools.jackson.databind.json.JsonMapper.builder().build().readTree(response.getContentAsString());
+        assertEquals(status, body.path("status").asInt());
+        assertEquals(code, body.path("code").asString());
+        assertFalse(body.path("success").asBoolean());
+        assertEquals(retryAfter, response.getHeader(org.springframework.http.HttpHeaders.RETRY_AFTER));
+        assertFalse(response.getContentAsString().contains("private-database-detail"));
+    }
+
+    @org.springframework.web.bind.annotation.RestController
+    static class DatabaseFailureProbeController {
+        private final RuntimeException failure;
+
+        DatabaseFailureProbeController(RuntimeException failure) {
+            this.failure = failure;
+        }
+
+        @org.springframework.web.bind.annotation.PostMapping("/database-probe")
+        void fail() {
+            throw failure;
+        }
     }
 
     @Test

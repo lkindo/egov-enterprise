@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { domainSupportFiles } from './project-composer-source.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST = 'config/reusable-base-profiles.json';
@@ -175,6 +176,10 @@ export function loadProjectComposerCatalog(root = ROOT) {
   const inventory = new Map(domains.map(domain => [domain, { files: [], tables: [], sequences: [], edges: [] }]));
   const sourceFingerprints = UI_DEPENDENCIES.map(({ evidence }) => ({ path: evidence,
     sha256: compositionDigest(readFileSync(join(root, evidence), 'utf8').replace(/\r\n/g, '\n')) }));
+  for (const [domain, files] of domainSupportFiles(root, manifest)) for (const path of files) {
+    inventory.get(domain).files.push(path);
+    sourceFingerprints.push({ path, sha256: compositionDigest(readFileSync(join(root, path), 'utf8').replace(/\r\n/g, '\n')) });
+  }
   for (const absolute of walk(join(root, APP_ROOT)).filter(path => path.endsWith('.java'))) {
     const path = slash(relative(root, absolute));
     const domain = path.slice(APP_ROOT.length + 1).match(/^(?:domain|service)\/([^/]+)\//)?.[1];

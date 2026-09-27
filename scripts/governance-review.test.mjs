@@ -168,7 +168,8 @@ test('online deployment inputs invalidate approvals and text checkout line endin
   write('config/ui-url-state-census.json', '{}\n');
   const online = () => adoptionScope(root, { product: 'online', profile: 'demo' }).digest;
   let previous = online();
-  for (const file of ['frontend/Dockerfile', 'api-server/Dockerfile', 'docker-compose.prod.yml', 'scripts/deploy.sh']) {
+  for (const file of ['frontend/Dockerfile', 'api-server/Dockerfile', 'docker-compose.prod.yml', 'scripts/deploy.sh',
+    'scripts/release-images.mjs', 'frontend/scripts/validate-api-build-urls.mjs']) {
     write(file, 'fixture original\n');
     assert.notEqual(online(), previous, file);
     previous = online();

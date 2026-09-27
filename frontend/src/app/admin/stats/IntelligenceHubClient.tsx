@@ -159,7 +159,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
   });
 
   // 구 `getScreenStats()` 는 존재하지 않는 `/screen` 을 호출해 첫 진입마다 404 를 냈다.
-  // 화면 요청 지표의 유일한 실존 소스인 `/connect` 로 재배선한다.
+  // `/connect` 는 성공 로그인 건수다. 화면 조회 요청이나 실패 시도는 이 집계에 포함되지 않는다.
   const connectQuery = useQuery({
     queryKey: ['admin-stats-connect', appliedRange],
     queryFn: () => statsAdminService.getConnectStats(appliedRange)
@@ -290,7 +290,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
               {TAB_TITLE[activeTab]}
             </h1>
             <p className="text-xs font-bold text-muted-foreground tracking-tight mt-2">
-              최근 1개월 집계 및 항목별 통계
+              기간별 집계 및 항목별 통계
             </p>
           </div>
         </div>
@@ -334,7 +334,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
           <Card className="rounded-lg border bg-surface-inverse text-surface-inverse-foreground p-3 relative overflow-hidden group">
             <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-10 transition-opacity" />
             <div className="relative z-10 flex flex-wrap items-center gap-3">
-              <h3 className="text-xs font-bold text-surface-inverse-muted tracking-tight leading-tight">최근 1개월 총 접속</h3>
+              <h3 className="text-xs font-bold text-surface-inverse-muted tracking-tight leading-tight">성공 로그인</h3>
               <div className="flex items-center gap-4">
                 <span className="text-xl font-bold tabular-nums">
                   {isSummaryLoading ? '…' : isSummaryError ? '—' : totalConnect.toLocaleString()}
@@ -342,7 +342,8 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                 <Zap size={32} className="text-primary fill-primary" />
               </div>
               <p className="text-xs text-surface-inverse-muted font-bold tracking-tight">
-                {isSummaryError ? '접속 통계를 불러오지 못했습니다' : '최근 1개월 접속 통계 합계'}
+                {isSummaryError ? '접속 통계를 불러오지 못했습니다'
+                  : appliedRange ? '선택 기간 성공 로그인 합계' : '최근 1개월 성공 로그인 합계'}
               </p>
             </div>
           </Card>
@@ -373,7 +374,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
               />
               <StatSummaryCard
                 icon={<Monitor size={24} />}
-                label="접속 요청 수"
+                label="성공 로그인 수"
                 value={connectQuery.isError ? '—' : totalConnect.toLocaleString()}
                 color="primary"
               />

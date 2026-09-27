@@ -17,6 +17,9 @@ function fixture(t) {
     mkdirSync(dirname(join(root, path)), { recursive: true }); copyFileSync(join(ROOT, path), join(root, path));
   }
   cpSync(join(ROOT, 'business-app/src/main/java'), join(root, 'business-app/src/main/java'), { recursive: true });
+  for (const file of Object.values(manifest.packs).flatMap(pack => Object.values(pack.backend?.domainSupportFiles ?? {}).flat())) {
+    mkdirSync(dirname(join(root, file)), { recursive: true }); copyFileSync(join(ROOT, file), join(root, file));
+  }
   // Copy only catalog-owned frontend files; producer build/node_modules are irrelevant.
   for (const path of catalog.frontendRules.map(rule => rule.path)) {
     mkdirSync(dirname(join(root, 'frontend', path)), { recursive: true });
@@ -79,4 +82,20 @@ test('stale manifest source references and a removed shared table contract fail 
   writeFileSync(file, JSON.stringify(manifest));
   rmSync(join(root, 'frontend/src/services/business/mail/MailService.ts'));
   assert.throws(() => loadProjectComposerCatalog(root), /frontend ownership path missing/);
+});
+
+test('domain support is owned and fingerprinted with its consumer', t => {
+  const root = fixture(t);
+  const support = manifest.packs.demo.backend.domainSupportFiles.memoreport;
+  assert.equal(support.length, 3);
+  const capability = catalog.capabilities.find(row => row.id === 'memoreport');
+  for (const file of support) assert.ok(capability.backend.sourceFiles.includes(file), file);
+  const file = support.find(path => path.endsWith('/UserDisplayNameLookupService.java'));
+  const source = readFileSync(join(root, file), 'utf8');
+  writeFileSync(join(root, file), `${source}\n// changed support source fixture\n`);
+  const changed = loadProjectComposerCatalog(root);
+  assert.notEqual(changed.provenance.sourceInventoryHash, catalog.provenance.sourceInventoryHash);
+  assert.notEqual(changed.catalogHash, catalog.catalogHash);
+  rmSync(join(root, file));
+  assert.throws(() => loadProjectComposerCatalog(root), /Missing domain support file/);
 });

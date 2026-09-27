@@ -16,6 +16,40 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}=== Starting Deployment for ${APP_NAME} ===${NC}"
 
+# 두 이미지 push가 모두 끝난 GitHub Release 자산만 배포 입력으로 받는다.
+# JSON을 source/eval하지 않으며, 기존 환경 reference가 있으면 같은 쌍인지 대조한다.
+if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
+    echo "ERROR: 사용법: scripts/deploy.sh <release-manifest.json>" >&2
+    exit 1
+fi
+if ! command -v jq >/dev/null 2>&1; then
+    echo "ERROR: release manifest 검증에는 jq가 필요합니다." >&2
+    exit 1
+fi
+RELEASE_MANIFEST="$1"
+if ! MANIFEST_VALUES=$(jq -ers '
+    if length != 1 then error("Invalid complete release manifest.") else .[0] end
+    | if type == "object" and
+    (keys == ["apiImage", "frontendImage", "revision", "schemaVersion"]) and
+    .schemaVersion == 1 and
+    (.revision | type == "string" and test("^([0-9a-f]{40}|[0-9a-f]{64})$") and (test("[[:space:]]") | not)) and
+    (.apiImage | type == "string" and test("^[a-z0-9][a-z0-9._:/-]*@sha256:[0-9a-f]{64}$") and (test("[[:space:]]") | not)) and
+    (.frontendImage | type == "string" and test("^[a-z0-9][a-z0-9._:/-]*@sha256:[0-9a-f]{64}$") and (test("[[:space:]]") | not))
+    then [.apiImage, .frontendImage, .revision] | @tsv
+    else error("Invalid complete release manifest.") end
+' -- "$RELEASE_MANIFEST" 2>/dev/null); then
+    echo "ERROR: 완성된 API/frontend digest release manifest가 필요합니다." >&2
+    exit 1
+fi
+# 검증한 단일 parse 결과만 소비한다. 원본 파일을 필드별로 다시 읽지 않는다.
+IFS=$'\t' read -r MANIFEST_API_IMAGE MANIFEST_FRONTEND_IMAGE MANIFEST_REVISION <<< "$MANIFEST_VALUES"
+if { [ -n "${API_IMAGE_REF:-}" ] && [ "$API_IMAGE_REF" != "$MANIFEST_API_IMAGE" ]; } ||
+   { [ -n "${FRONTEND_IMAGE_REF:-}" ] && [ "$FRONTEND_IMAGE_REF" != "$MANIFEST_FRONTEND_IMAGE" ]; }; then
+    echo "ERROR: 환경의 이미지 reference와 release manifest가 다릅니다." >&2
+    exit 1
+fi
+export API_IMAGE_REF="$MANIFEST_API_IMAGE" FRONTEND_IMAGE_REF="$MANIFEST_FRONTEND_IMAGE"
+
 # 1. 배포 필수 시크릿 검증
 #    [W0-04] 종전에는 JWT_SECRET 미설정 시 **저장소에 커밋된 dev 키를 경고만 남기고 그대로 주입**했다.
 #    공개 저장소의 서명 키로 운영 토큰을 서명하면 임의 esntlId 를 subject 로 하는 토큰을 누구나 위조할 수 있다.
@@ -66,7 +100,8 @@ API_RELEASE_REVISION=$(docker image inspect "$API_IMAGE_REF" \
 FRONTEND_RELEASE_REVISION=$(docker image inspect "$FRONTEND_IMAGE_REF" \
     --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')
 if ! printf '%s\n' "$API_RELEASE_REVISION" | grep -Eq '^([0-9a-f]{40}|[0-9a-f]{64})$' || \
-   [ "$API_RELEASE_REVISION" != "$FRONTEND_RELEASE_REVISION" ]; then
+   [ "$API_RELEASE_REVISION" != "$FRONTEND_RELEASE_REVISION" ] ||
+   [ "$API_RELEASE_REVISION" != "$MANIFEST_REVISION" ]; then
     echo "ERROR: API와 frontend 이미지는 같은 유효한 release revision label을 가져야 합니다." >&2
     exit 1
 fi

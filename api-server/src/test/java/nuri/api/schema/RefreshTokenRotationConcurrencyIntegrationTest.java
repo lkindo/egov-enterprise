@@ -89,6 +89,22 @@ class RefreshTokenRotationConcurrencyIntegrationTest {
     }
 
     @Test
+    @DisplayName("이전 버전이 DB에 더 긴 수명을 저장했어도 실제 토큰 만료를 연장하지 않는다")
+    void rotationCapsLegacyDatabaseExpiryToPresentedJwt() {
+        String shortToken = jwtTokenProvider.createRefreshToken(
+                ESNTL_ID, Date.from(Instant.now().plusSeconds(120)));
+        Instant signedExpiry = jwtTokenProvider.getExpiration(shortToken).toInstant();
+        store(shortToken, Instant.now().plus(Duration.ofDays(7)));
+
+        var rotated = authService.reissue(shortToken, "127.0.0.1");
+
+        assertThat(jwtTokenProvider.getExpiration(rotated.getRefreshToken()).toInstant()).isEqualTo(signedExpiry);
+        assertThat(jdbc.queryForObject(
+                        "SELECT exprtn_dt FROM tb_auth_rfsh_tk WHERE user_id=?", Timestamp.class, ESNTL_ID)
+                .toInstant()).isEqualTo(signedExpiry);
+    }
+
+    @Test
     @DisplayName("동시 재발급은 저장되지 않은 리프레시 토큰을 돌려주지 않는다")
     void concurrentReissueNeverHandsOutATokenThatIsNotStored() throws Exception {
         doReturn("rotated-first", "rotated-second")
@@ -106,7 +122,7 @@ class RefreshTokenRotationConcurrencyIntegrationTest {
         assertThat(stored).isEqualTo(nuri.business.domain.auth.RefreshTokenDigest.of(issued));
         // DB 에는 원문이 남지 않는다.
         assertThat(stored).isNotIn("rotated-first", "rotated-second").matches("[0-9a-f]{64}");
-        // 회전이 절대 만료를 연장하지 않는다(슬라이딩 세션 금지). 회전 질의의 SET 절에 만료가 없음을 실 DB 로 본다.
+        // 회전이 절대 만료를 연장하지 않는다. JWT와 같은 초 정밀도로 저장하는 것을 실 DB로 본다.
         assertThat(jdbc.queryForObject(
                         "SELECT exprtn_dt FROM tb_auth_rfsh_tk WHERE user_id=?", Timestamp.class, ESNTL_ID)
                 .toInstant()).isCloseTo(absoluteExpiry, within(1, ChronoUnit.SECONDS));
@@ -128,8 +144,8 @@ class RefreshTokenRotationConcurrencyIntegrationTest {
     @DisplayName("저장된 만료가 지난 세션은 정리가 실제로 커밋된다")
     void expiredRowIsActuallyDeletedEvenThoughTheRequestFails() {
         // ⚠ 이 분기의 도달 조건: **토큰은 아직 유효한데 저장된 만료만 지난** 상태다.
-        //   로그인은 DB 만료를 7일로 고정해 넣는 반면 토큰 수명은 JWT_REFRESH_TOKEN_VALIDITY_MS 설정값이라,
-        //   토큰 수명을 7일보다 길게 잡은 환경에서 실제로 벌어진다(기본값 604800000 = 7일이면 JWT 검증이 먼저 막는다).
+        //   이전 버전은 DB 만료를 7일로 고정해 토큰 수명이 긴 환경에서 이 상태를 만들었다.
+        //   신규 발급을 정합하게 고친 뒤에도 이미 저장된 세션의 이 만료 경로는 유지한다.
         //   그래서 여기서도 토큰은 미래 만료로 만들고 저장된 만료만 과거로 둔다 — 그 상태를 그대로 재현한다.
         String staleToken = jwtTokenProvider.createRefreshToken(
                 ESNTL_ID, Date.from(Instant.now().plus(Duration.ofDays(30))));

@@ -61,7 +61,8 @@ test('shadow comparison exposes deliberately omitted failures without enabling s
 
 test('audited cross-route consumers are retained in the candidate population', () => {
   const cases = [
-    ['admin/survey/hub/SurveyHubClient.tsx', ['journeys/online-polls.spec.ts']],
+    ['admin/survey/hub/SurveyHubClient.tsx', ['journeys/online-polls.spec.ts', 'journeys/public-navigation.spec.ts']],
+    ['admin/survey/components/SurveyQuestionsPanel.tsx', ['journeys/public-navigation.spec.ts']],
     ['admin/help/KnowledgeHubClient.tsx', ['journeys/help-content.spec.ts', 'journeys/community-navigation.spec.ts']],
     ['admin/community/boards/master/BoardMasterListClient.tsx', ['journeys/help-content.spec.ts', 'journeys/authentication.spec.ts', 'journeys/authorization.spec.ts']],
     ['approvals/ApprovalHubClient.tsx', ['journeys/approvals.spec.ts', 'journeys/public-navigation.spec.ts']],

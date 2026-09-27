@@ -1,12 +1,274 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, rmSync, symlinkSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createServer } from 'node:http';
 import { randomBytes } from 'node:crypto';
 import { validateIsolationManifest, assertOwnedDatabase, assertOwnedComposeRuntime, assertIsolatedTarget, validateComposePlan } from './e2e-isolation.mjs';
 import { closedEnvironment, assertNoDotEnv, assertBuildTarget, discoveryArguments } from './run-isolated-e2e.mjs';
+import { createSmokeContext, createReleaseSmokePlan, validateReleaseSmokePlan,
+  assertOwnedSmokeContainer, captureReleaseSmokeSource, validateSmokeBarrier, validateSmokeImages,
+  waitForSmokeHealth, runSmokeStages, createSmokeFailureDiagnostic } from './run-isolated-release-smoke.mjs';
+import { REQUIRED_PRODUCTION_BUILD_INPUT_FILES } from '../frontend/scripts/ui-quality-baseline-core.mjs';
+
+test('smoke source capture rejects an ancestor junction outside the physical repository root', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'release-source-boundary-'));
+  const root = path.join(directory, 'repository'); const outside = path.join(directory, 'outside');
+  mkdirSync(root); mkdirSync(outside);
+  const listed = [...REQUIRED_PRODUCTION_BUILD_INPUT_FILES];
+  const run = (_command, args) => args[0] === 'ls-files' ? listed.join('\0') : args[0] === 'rev-parse' ? 'a'.repeat(40) : ' M synthetic';
+  const junction = path.join(root, 'frontend', 'src');
+  try {
+    for (const file of listed) { const target = path.join(root, file); mkdirSync(path.dirname(target), { recursive: true }); writeFileSync(target, 'synthetic'); }
+    assert.equal(captureReleaseSmokeSource(root, run).dirty, true);
+    writeFileSync(path.join(outside, 'escaped.ts'), 'synthetic outside file');
+    symlinkSync(outside, junction, process.platform === 'win32' ? 'junction' : 'dir');
+    listed.push('frontend/src/escaped.ts');
+    assert.throws(() => captureReleaseSmokeSource(root, run), /source input|capture failed/u);
+  } finally {
+    try { unlinkSync(junction); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    assert.equal(path.dirname(path.resolve(directory)), path.resolve(tmpdir()));
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+function releaseSmokeFixture() {
+  const source = { revision: 'a'.repeat(40), dirty: true, sourceTreeSha256: 'b'.repeat(64) };
+  const images = Object.fromEntries(['api', 'frontend', 'db', 'edge'].map((role, index) => [role, {
+    Id: `sha256:${String(index + 1).repeat(64)}`, Config: { Labels: { 'org.opencontainers.image.revision': source.revision,
+      'io.egov.ui-quality.build-input-tree-sha256': source.sourceTreeSha256 }, Env: [] },
+  }]));
+  images.api.Config.User = 'spring:spring';
+  images.api.Config.Entrypoint = ['sh', '-c', 'exec java $JAVA_OPTS -jar app.jar'];
+  images.api.Config.Cmd = null;
+  images.frontend.Config.User = 'nextjs'; images.frontend.Config.Cmd = ['node', 'server.js'];
+  images.frontend.Config.Env = ['NODE_ENV=production', 'HOSTNAME=0.0.0.0', 'NEXT_TELEMETRY_DISABLED=1'];
+  const context = createSmokeContext({ runId: 'c'.repeat(24), phase: 'fresh', images,
+    directory: path.resolve('synthetic-release-smoke'), subnet: '10.203.1.0/24' });
+  const credentials = { database: 'fixture-database', jwt: 'fixture-jwt', encryption: 'fixture-key', admin: 'fixture-admin' };
+  const rendered = { services: {
+    db: {}, api: { environment: { SPRING_PROFILES_ACTIVE: 'prod', SPRING_FLYWAY_LOCATIONS: 'classpath:db/migration',
+      MANAGEMENT_PORT: '9090', MANAGEMENT_ADDRESS: '0.0.0.0', SPRING_APPLICATION_JSON: '{"management":{"health":{"mail":{"enabled":false}}}}' } },
+    frontend: { environment: { TRUSTED_EDGE_PROXY: 'true' } }, edge: {},
+  } };
+  const plan = createReleaseSmokePlan(rendered, context, credentials);
+  return { source, images, context, credentials, plan };
+}
+
+test('production smoke has a separate owned plan and requires actual dirty source image labels', () => {
+  const fixture = releaseSmokeFixture();
+  const restored = createSmokeContext({ ...fixture.context, phase: 'restored' });
+  const disposableDatabase = /^authz_e2e(?:_[a-z0-9]{1,40})?$/u;
+  assert.match(fixture.context.database, disposableDatabase);
+  assert.match(restored.database, disposableDatabase);
+  assert.notEqual(fixture.context.database, restored.database);
+  for (const phase of ['fresh', 'restored']) assert.doesNotMatch(`authz_e2e_${fixture.context.runId}_${phase}`, disposableDatabase);
+  for (const service of Object.values(fixture.plan.services)) assert.deepEqual(service.ports, []);
+  assert.equal(fixture.plan.services.api.environment.CORS_ORIGIN_1, 'http://edge:8080');
+  assert.equal(fixture.plan.services.bootstrap.environment.CORS_ORIGIN_1, 'http://edge:8080');
+  validateSmokeImages(fixture.images, fixture.source);
+  validateReleaseSmokePlan(fixture.plan, fixture.context, fixture.credentials);
+  const normalized = structuredClone(fixture.plan);
+  delete normalized.services.db.volumes; delete normalized.services.frontend.volumes;
+  delete normalized.services.db.ports; delete normalized.services.frontend.ports; delete normalized.services.bootstrap.ports;
+  validateReleaseSmokePlan(normalized, fixture.context, fixture.credentials);
+  assert.equal(fixture.plan.services.api.environment.SPRING_PROFILES_ACTIVE, 'prod');
+  assert.equal(fixture.plan.services.bootstrap.environment.SPRING_PROFILES_ACTIVE, 'e2e');
+  assert.equal(fixture.plan.services.api.environment.NURI_AUTHORIZATION_ISOLATED_CUTOVER, undefined);
+  for (const mutate of [
+    value => { value.images.api.Config.Labels['io.egov.ui-quality.build-input-tree-sha256'] = 'd'.repeat(64); },
+    value => { value.images.frontend.Config.Labels['org.opencontainers.image.revision'] = 'e'.repeat(40); },
+    value => { value.images.api.Config.Env.push('SPRING_CONFIG_IMPORT=file:/shared/config.yml'); },
+    value => { value.images.frontend.Config.Cmd = ['sh', '-c', 'next start']; },
+    value => { value.images.api.Config.User = 'root'; },
+  ]) { const changed = releaseSmokeFixture(); mutate(changed); assert.throws(() => validateSmokeImages(changed.images, changed.source)); }
+});
+
+test('production smoke readiness records terminated, unhealthy and timed out services before cleanup', async () => {
+  for (const [reason, state, inspections] of [
+    ['not-running', { Running: false, Status: 'exited', ExitCode: 1, OOMKilled: false, Health: { Status: 'healthy' } }, 1],
+    ['unhealthy', { Running: true, Status: 'running', ExitCode: 0, OOMKilled: false, Health: { Status: 'unhealthy' } }, 1],
+    ['timeout', { Running: true, Status: 'running', ExitCode: 0, OOMKilled: false, Health: { Status: 'starting' } }, 150],
+  ]) {
+    const events = []; let inspected = 0;
+    await assert.rejects(runSmokeStages({
+      prepare: async () => {},
+      bootstrap: () => waitForSmokeHealth('bootstrap', {
+        inspect: (service, running) => {
+          assert.equal(service, 'bootstrap'); inspected += 1;
+          if (running && !state.Running) throw new Error('container ownership mismatch');
+          return { State: state };
+        },
+        diagnose: (service, container, actualReason) => {
+          assert.equal(service, 'bootstrap'); assert.equal(container.State, state); assert.equal(actualReason, reason);
+          events.push('diagnostic');
+        },
+        wait: async milliseconds => { assert.equal(milliseconds, 2000); },
+      }),
+      production: async () => { assert.fail('readiness failure must not continue'); },
+      cleanup: async () => { events.push('cleanup'); },
+      evidence: async () => { assert.fail('failed readiness must not publish success evidence'); },
+    }), /Isolated release smoke: owned service/u);
+    assert.equal(inspected, inspections); assert.deepEqual(events, ['diagnostic', 'cleanup']);
+  }
+  const healthy = { State: { Running: true, Health: { Status: 'healthy' } } };
+  assert.equal(await waitForSmokeHealth('api', { inspect: () => healthy,
+    diagnose: () => assert.fail('healthy service has no failure diagnostic'), wait: () => assert.fail('already healthy') }), healthy);
+  await assert.rejects(waitForSmokeHealth('api', { inspect: () => { throw new Error('ownership rejected'); },
+    diagnose: () => assert.fail('unowned logs must not be read') }), /ownership rejected/u);
+});
+
+test('production smoke failure diagnostics retain only bounded structural signals and redact all known credentials', () => {
+  const credentials = { database: 'nuri.private.DatabaseException', jwt: 'private-jwt', encryption: 'private-encryption', admin: 'private-admin' };
+  const logs = ['java.lang.IllegalStateException: sensitive message private-admin',
+    'org.postgresql.util.PSQLException: private-jwt SQLState: 23505',
+    '\tat nuri.config.IsolatedAuthorizationRehearsalConfig.validateTarget(IsolatedAuthorizationRehearsalConfig.java:88)',
+    ...Object.values(credentials), 'Cookie: accessToken=unlisted-cookie; refreshToken=unlisted-refresh', 'Cookie: nuri.private.CookieException',
+    'password=unlisted-password private-encryption', 'Config.Env DB_PASSWORD=unlisted-db',
+  ].join('\n');
+  const input = { service: 'bootstrap', phase: 'fresh', reason: 'not-running', credentials, logs, logStatus: 'captured',
+    container: { Id: 'a'.repeat(64), Config: { Env: ['private-env'] },
+      State: { Status: 'exited', Running: false, ExitCode: 1, OOMKilled: false, Error: 'private-state-error',
+        Health: { Status: 'unhealthy', Log: [{ Output: 'private-health-output' }] } } } };
+  const diagnostic = createSmokeFailureDiagnostic(input);
+  assert.deepEqual(diagnostic.exceptions, ['java.lang.IllegalStateException', 'org.postgresql.util.PSQLException']);
+  assert.deepEqual(diagnostic.sqlStates, ['23505']);
+  assert.deepEqual(diagnostic.nuriFrames, ['nuri.config.IsolatedAuthorizationRehearsalConfig.validateTarget(IsolatedAuthorizationRehearsalConfig.java:88)']);
+  assert.deepEqual(diagnostic.state, { status: 'exited', running: false, exitCode: 1, oomKilled: false, health: 'unhealthy' });
+  const assertSanitized = value => {
+    const serialized = JSON.stringify(value);
+    for (const secret of [...Object.values(credentials), 'unlisted-cookie', 'unlisted-refresh', 'unlisted-password',
+      'unlisted-db', 'private-env', 'private-state-error', 'private-health-output', 'sensitive message', 'nuri.private.CookieException']) {
+      assert.equal(serialized.includes(secret), false);
+    }
+    assert.deepEqual(Object.keys(value).sort(), ['schemaVersion', 'service', 'phase', 'reason', 'containerId', 'state',
+      'logStatus', 'exceptions', 'sqlStates', 'nuriFrames'].sort());
+  };
+  assertSanitized(diagnostic);
+  assert.throws(() => assertSanitized({ ...diagnostic, rawLogs: logs }));
+  const bounded = createSmokeFailureDiagnostic({ ...input, logs: Array.from({ length: 100 }, (_, index) =>
+    `nuri.sample.Failure${index}Exception SQLState: ${String(23000 + index)}\n\tat nuri.sample.Service.run(Service.java:${index})`).join('\n') });
+  assert.equal(bounded.exceptions.length, 32); assert.equal(bounded.sqlStates.length, 16); assert.equal(bounded.nuriFrames.length, 24);
+});
+
+test('production smoke rejects shared resources, public ports, dev seeds, mixed profiles, and configuration overrides', () => {
+  for (const mutate of [
+    value => { value.plan.services.api.environment.SPRING_PROFILES_ACTIVE = 'prod,e2e'; },
+    value => { value.plan.services.api.environment.SPRING_FLYWAY_LOCATIONS += ',classpath:db/seed-dev'; },
+    value => { value.plan.services.api.environment.NURI_AUTHORIZATION_ISOLATED_CUTOVER = 'true'; },
+    value => { value.plan.services.bootstrap.environment.SPRING_PROFILES_ACTIVE = 'prod'; },
+    value => { value.plan.services.api.environment.DB_URL = 'jdbc:postgresql://remote.invalid/shared'; },
+    value => { value.plan.services.api.environment.SPRING_APPLICATION_JSON = '{"spring":{"datasource":{"url":"jdbc:postgresql://remote.invalid/shared"}}}'; },
+    value => { value.plan.services.api.environment.JAVA_OPTS = '-Dspring.datasource.url=jdbc:postgresql://remote.invalid/shared'; },
+    value => { value.plan.services.api.extra_hosts = ['db:192.0.2.1']; },
+    value => { value.plan.services.api.user = 'root'; },
+    value => { value.plan.services.api.image = 'egov-api:latest'; },
+    value => { value.plan.services.api.environment.TRUSTED_PROXIES = '10.203.1.0/24'; },
+    value => { value.plan.services.frontend.environment.ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE = 'true'; },
+    value => { value.plan.services.edge.ports.push({ target: 8080, published: '8080', host_ip: '0.0.0.0' }); },
+    value => { value.plan.services.api.ports.push({ target: 8080, published: '0', host_ip: '127.0.0.1' }); },
+    value => { value.plan.services.api.environment.CORS_ORIGIN_1 = 'http://untrusted.invalid'; },
+    value => { value.plan.services.bootstrap.environment.CORS_ORIGIN_1 = '*'; },
+    value => { value.plan.services.frontend.ports.push({ target: 3000, published: '3000', host_ip: '127.0.0.1' }); },
+    value => { value.plan.services.db.volumes = [{ type: 'volume', source: 'production' }]; },
+    value => { value.plan.volumes.attachment_storage.external = true; },
+    value => { value.plan.networks['egov-net'].internal = false; },
+    value => { value.plan.services.edge.volumes[0].read_only = false; },
+  ]) { const changed = releaseSmokeFixture(); mutate(changed); assert.throws(() => validateReleaseSmokePlan(changed.plan, changed.context, changed.credentials)); }
+});
+
+test('production smoke verifies container IDs and actual database mounts before accepting ownership', () => {
+  const fixture = releaseSmokeFixture();
+  const { context, plan } = fixture;
+  const container = { Id: 'd'.repeat(64), Image: fixture.images.db.Id, Created: new Date().toISOString(), State: { Running: true },
+    Config: { Labels: { 'egov.release-smoke.run': context.runId, 'com.docker.compose.project': context.project, 'com.docker.compose.service': 'db' },
+      Env: Object.entries(plan.services.db.environment).map(([key, value]) => `${key}=${value}`) },
+    HostConfig: { Tmpfs: { '/var/lib/postgresql/data': '' } }, Mounts: [],
+    NetworkSettings: { Networks: { [context.network]: { NetworkID: 'n'.repeat(64) } }, Ports: {} } };
+  container.HostConfig.Tmpfs['/var/lib/postgresql/data'] = 'rw';
+  assertOwnedSmokeContainer(container, 'db', context, plan, { running: true });
+  const pending = structuredClone(container);
+  pending.State = { Running: false, Status: 'created' }; pending.NetworkSettings.Networks = {};
+  pending.HostConfig.NetworkMode = context.network;
+  assertOwnedSmokeContainer(pending, 'db', context, plan, { beforeStart: true });
+  pending.HostConfig.NetworkMode = 'shared-network';
+  assert.throws(() => assertOwnedSmokeContainer(pending, 'db', context, plan, { beforeStart: true }));
+  for (const mutate of [
+    value => { value.Id = 'f'.repeat(64); },
+    value => { value.Config.Labels['egov.release-smoke.run'] = 'f'.repeat(24); },
+    value => { value.Mounts.push({ Type: 'volume', Name: 'shared', Destination: '/var/lib/postgresql/data' }); },
+    value => { value.Config.Env.push('SPRING_CONFIG_IMPORT=file:/shared/'); },
+    value => { value.NetworkSettings.Ports['5432/tcp'] = [{ HostIp: '0.0.0.0', HostPort: '5432' }]; },
+  ]) { const changed = structuredClone(container); mutate(changed); assert.throws(() => assertOwnedSmokeContainer(changed, 'db', context, plan)); }
+
+  Object.assign(plan.services.bootstrap.environment, { FILE_UPLOAD_MAX_SIZE: null, SPRING_MAIL_PASSWORD: null });
+  const bootstrap = { ...structuredClone(container), Id: 'b'.repeat(64), Image: fixture.images.api.Id,
+    State: { Running: false, Status: 'created' },
+    Config: { ...structuredClone(fixture.images.api.Config), Labels: { ...container.Config.Labels, 'com.docker.compose.service': 'bootstrap' },
+      Env: Object.entries(plan.services.bootstrap.environment).map(([key, value]) => value === null ? key : `${key}=${value}`) },
+    HostConfig: { NetworkMode: context.network },
+    Mounts: [{ Type: 'volume', Name: context.volume, Destination: '/app/storage', RW: true }],
+    NetworkSettings: { Networks: {}, Ports: {} } };
+  assertOwnedSmokeContainer(bootstrap, 'bootstrap', context, plan, { beforeStart: true });
+  const absent = structuredClone(bootstrap);
+  absent.Config.Env = absent.Config.Env.filter(entry => entry.includes('='));
+  assertOwnedSmokeContainer(absent, 'bootstrap', context, plan, { beforeStart: true });
+  for (const key of ['FILE_UPLOAD_MAX_SIZE', 'SPRING_MAIL_PASSWORD']) {
+    for (const value of ['inherited-value', '']) {
+      const changed = structuredClone(absent); changed.Config.Env.push(`${key}=${value}`);
+      assert.throws(() => assertOwnedSmokeContainer(changed, 'bootstrap', context, plan, { beforeStart: true }),
+        /effective container environment mismatch/u, 'null in the plan requires unset, including rejection of assigned empty values');
+    }
+  }
+  for (const entries of [
+    ['FILE_UPLOAD_MAX_SIZE', 'FILE_UPLOAD_MAX_SIZE'], ['FILE_UPLOAD_MAX_SIZE', 'FILE_UPLOAD_MAX_SIZE=1'],
+    ['FILE_UPLOAD_MAX_SIZE=1', 'FILE_UPLOAD_MAX_SIZE'], ['__proto__', '__proto__'],
+    [''], ['=value'], ['BAD KEY=value'], ['BAD\0KEY=value'], [null], [42],
+  ]) {
+    const changed = structuredClone(absent); changed.Config.Env.push(...entries);
+    assert.throws(() => assertOwnedSmokeContainer(changed, 'bootstrap', context, plan, { beforeStart: true }),
+      /ambiguous image environment/u);
+  }
+});
+
+test('production smoke refuses missing cutover evidence, legacy tables, dev seed history and unprovisioned admin', () => {
+  const healthy = { legacy: 0, evidence: 1, failed: 0, devSeeds: 0, provisioned: 1 };
+  validateSmokeBarrier(healthy);
+  for (const field of Object.keys(healthy)) assert.throws(() => validateSmokeBarrier({ ...healthy, [field]: healthy[field] ? 0 : 1 }));
+});
+
+test('production smoke checks effective edge mounts, image launch and absence of published ports before startup', () => {
+  const fixture = releaseSmokeFixture(); const { context, plan, images } = fixture;
+  images.edge.Config.Entrypoint = ['/docker-entrypoint.sh'];
+  images.edge.Config.Cmd = ['nginx', '-g', 'daemon off;'];
+  images.edge.Config.User = ''; images.edge.Config.WorkingDir = '/';
+  const container = { Id: 'e'.repeat(64), Image: images.edge.Id, Created: new Date().toISOString(), State: { Running: true },
+    Config: { ...structuredClone(images.edge.Config), Labels: { 'egov.release-smoke.run': context.runId,
+      'com.docker.compose.project': context.project, 'com.docker.compose.service': 'edge' },
+    Env: Object.entries(plan.services.edge.environment).map(([key, value]) => `${key}=${value}`) },
+    HostConfig: { PortBindings: {} },
+    Mounts: [{ Type: 'bind', Source: plan.services.edge.volumes[0].source, Destination: '/etc/nginx/templates/default.conf.template', RW: false }],
+    NetworkSettings: { Networks: { [context.network]: { NetworkID: 'n'.repeat(64) } },
+      Ports: { '8080/tcp': null, '80/tcp': null } } };
+  assertOwnedSmokeContainer(container, 'edge', context, plan, { running: true });
+  for (const [name, mutate] of [
+    ['different source', value => { value.Mounts[0].Source = path.resolve('shared-edge.conf'); }],
+    ['different destination', value => { value.Mounts[0].Destination = '/etc/nginx/nginx.conf'; }],
+    ['writable bind', value => { value.Mounts[0].RW = true; }],
+    ['additional bind', value => { value.Mounts.push({ ...value.Mounts[0] }); }],
+    ['entrypoint override', value => { value.Config.Entrypoint = ['sh']; }],
+    ['command override', value => { value.Config.Cmd = ['-c', 'sleep 999']; }],
+    ['user override', value => { value.Config.User = 'unexpected'; }],
+    ['working directory override', value => { value.Config.WorkingDir = '/elsewhere'; }],
+    ['unexpected published target', value => { value.NetworkSettings.Ports['9090/tcp'] = [{ HostIp: '127.0.0.1', HostPort: '18080' }]; }],
+    ['unexpected image port publication', value => { value.NetworkSettings.Ports['8080/tcp'] = [{ HostIp: '127.0.0.1', HostPort: '18081' }]; }],
+    ['pending publication', value => { value.HostConfig.PortBindings = { '8080/tcp': [{ HostIp: '127.0.0.1', HostPort: '0' }] }; }],
+    ['pending wrong target', value => { value.State = { Running: false, Status: 'created' }; value.HostConfig.NetworkMode = context.network;
+      value.HostConfig.PortBindings = { '9090/tcp': [{ HostIp: '127.0.0.1', HostPort: '0' }] }; value.NetworkSettings.Networks = {}; value.NetworkSettings.Ports = {}; }],
+  ]) { const changed = structuredClone(container); mutate(changed);
+    assert.throws(() => assertOwnedSmokeContainer(changed, 'edge', context, plan, { beforeStart: true }), name); }
+});
 
 test('CI discovery stays complete even if execution arguments accidentally narrow tests', () => {
   const selection = ['--project=full-suite', 'e2e/journeys/online-polls.spec.ts', '--grep=one-test', '--no-deps'];
@@ -58,10 +320,11 @@ test('unknown identity, reused run/container/storage, remote binding and stopped
   for (const change of changes) { const actual = database(manifest); change(actual); assert.throws(() => assertOwnedDatabase(actual, manifest)); }
 });
 test('closed environment removes inherited datasource, proxy, Java/Node injection and arbitrary app settings', () => {
-  assert.deepEqual(closedEnvironment({ PATH: 'tools', JAVA_HOME: 'jdk', DB_URL: 'remote', SPRING_APPLICATION_JSON: 'remote',
+  assert.deepEqual(closedEnvironment({ PATH: 'tools', JAVA_HOME: 'jdk', ProgramFiles: 'programs', ProgramW6432: 'native-programs',
+    PROGRAMFILES_SECRET: 'remote', DB_URL: 'remote', SPRING_APPLICATION_JSON: 'remote',
     NODE_OPTIONS: '--require=unsafe', JAVA_TOOL_OPTIONS: 'unsafe', HTTPS_PROXY: 'remote', JWT_SECRET: 'remote', BACKEND_API_URL: 'remote',
     NEXT_PUBLIC_API_URL: 'remote', DOCKER_HOST: 'tcp://remote:2375', PLAYWRIGHT_JSON_OUTPUT_FILE: 'report.json' }),
-  { PATH: 'tools', JAVA_HOME: 'jdk', PLAYWRIGHT_JSON_OUTPUT_FILE: 'report.json' });
+  { PATH: 'tools', JAVA_HOME: 'jdk', ProgramFiles: 'programs', ProgramW6432: 'native-programs', PLAYWRIGHT_JSON_OUTPUT_FILE: 'report.json' });
 });
 test('dotenv contents are never read and unexpected production rewrites are refused', () => {
   const directory = mkdtempSync(path.join(tmpdir(), 'e2e-isolation-'));

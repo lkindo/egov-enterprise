@@ -4,6 +4,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.menu.NavigationGrantRepository;
 import nuri.business.service.auth.AuthorizationAdministrationService;
+import nuri.business.security.audit.LoginUserAuditorAware;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.domain.menu.Menu;
 import nuri.business.domain.menu.MenuRepository;
@@ -14,9 +15,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
@@ -28,11 +32,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("MenuService 단위 테스트")
@@ -49,6 +56,9 @@ class MenuServiceTest {
 
     @Mock
     private AuthorizationAdministrationService authorizationAdministrationService;
+
+    @Spy
+    private LoginUserAuditorAware loginUserAuditorAware = new LoginUserAuditorAware();
 
     @Mock
     private nuri.business.service.program.dto.ProgramMapper programMapper;
@@ -81,6 +91,10 @@ class MenuServiceTest {
         CustomUserDetails principal = CustomUserDetails.builder().userId("tester").esntlId("TESTER_001")
                 .groups(List.of(groups)).permissions(List.of("MENU_CREATE", "MENU_UPDATE", "MENU_DELETE", "AUTHRT_GRANT"))
                 .enabled(true).build();
+        usePrincipal(principal);
+    }
+
+    private void usePrincipal(CustomUserDetails principal) {
         lenient().when(authentication.isAuthenticated()).thenReturn(true);
         lenient().when(authentication.getPrincipal()).thenReturn(principal);
         lenient().doReturn(principal.getAuthorities()).when(authentication).getAuthorities();
@@ -110,6 +124,34 @@ class MenuServiceTest {
     @AfterEach
     void clearSecurityContext() {
         SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    @DisplayName("시작 라우트 보강 - null URL 프로그램이 정상 추론을 막지 않고 연결 없는 메뉴는 유지한다")
+    void startupRouteMigrationAllowsNullProgramUrlWithoutBlockingOtherMenus() {
+        Menu legacy = Menu.builder().menuSn(1L).prgrmFileNm("LegacyQuestion").build();
+        Menu byName = Menu.builder().menuSn(2L).prgrmFileNm("BoardManage").build();
+        Menu unknown = Menu.builder().menuSn(3L).prgrmFileNm("UnknownRoute").build();
+        Menu folder = Menu.builder().menuSn(4L).build();
+        when(menuRepository.findAllWithoutModernRoute()).thenReturn(List.of(legacy, byName, unknown, folder));
+        when(programRepository.findAll()).thenReturn(List.of(
+                Program.builder().prgrmFileNm("LegacyQuestion").url("/uss/olh/faq/EgovFaqListInqire.do").build(),
+                Program.builder().prgrmFileNm("BoardManage").url(null).build(),
+                Program.builder().prgrmFileNm("UnknownRoute").url(null).build()));
+
+        assertThatCode(menuService::migrateModernRoutes).doesNotThrowAnyException();
+
+        verify(menuRepository).fillModernRouteIfUnchanged(eq(1L), eq("LegacyQuestion"), eq("/admin/help/faq"),
+                any(java.time.LocalDateTime.class), eq("tester"));
+        verify(menuRepository).fillModernRouteIfUnchanged(eq(2L), eq("BoardManage"), eq("/admin/community/boards"),
+                any(java.time.LocalDateTime.class), eq("tester"));
+        assertThat(legacy.getModernRoute()).as("조회 스냅샷은 직접 변경하지 않는다").isNull();
+        assertThat(byName.getModernRoute()).isNull();
+        assertThat(unknown.getModernRoute()).isNull();
+        assertThat(folder.getModernRoute()).isNull();
+        verify(menuRepository, never()).save(any(Menu.class));
+        verify(menuRepository, never()).fillModernRouteIfUnchanged(eq(3L), any(), any(), any(), any());
+        verify(menuRepository, never()).fillModernRouteIfUnchanged(eq(4L), any(), any(), any(), any());
     }
 
     @Test
@@ -370,6 +412,199 @@ class MenuServiceTest {
         assertThat(rootId).isEqualTo(1L);
     }
 
+    @Test
+    void hierarchyWriteRejectsSelfParentBeforeChangingFields() {
+        Menu node = hierarchyNode(1L, null);
+        givenParentGraph(node);
+
+        assertInvalidHierarchy(() -> menuService.updateMenuManage(MenuDto.builder()
+                .menuNo(1L).upMenuSn(1L).menuNm("must not change").build()));
+
+        assertThat(node.getUpMenuSn()).isNull();
+        assertThat(node.getMenuNm()).isEqualTo("original");
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void hierarchyWriteRejectsTwoNodeCycleInEitherBatchOrder(boolean reverse) {
+        Menu first = hierarchyNode(1L, null);
+        Menu second = hierarchyNode(2L, null);
+        givenParentGraph(first, second);
+        var changes = hierarchyChanges(reverse, order(1L, 2L, 2), order(2L, 1L, 3));
+
+        assertInvalidHierarchy(() -> menuService.updateMenuOrders(changes));
+
+        assertThat(first.getUpMenuSn()).isNull();
+        assertThat(second.getUpMenuSn()).isNull();
+        assertThat(first.getMenuOrdr()).isEqualTo(1);
+        assertThat(second.getMenuOrdr()).isEqualTo(1);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void hierarchyWriteRejectsThreeNodeCycleInEitherBatchOrder(boolean reverse) {
+        Menu first = hierarchyNode(1L, null);
+        Menu second = hierarchyNode(2L, null);
+        Menu third = hierarchyNode(3L, null);
+        givenParentGraph(first, second, third);
+
+        assertInvalidHierarchy(() -> menuService.updateMenuOrders(hierarchyChanges(reverse,
+                order(1L, 2L, 1), order(2L, 3L, 1), order(3L, 1L, 1))));
+
+        assertThat(List.of(first, second, third)).extracting(Menu::getUpMenuSn).containsOnlyNulls();
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void hierarchyWriteValidatesFinalGraphInsteadOfIntermediateBatchState(boolean reverse) {
+        Menu first = hierarchyNode(1L, null);
+        Menu second = hierarchyNode(2L, 1L);
+        givenParentGraph(first, second);
+
+        menuService.updateMenuOrders(hierarchyChanges(reverse, order(1L, 2L, 2), order(2L, 0L, 1)));
+
+        assertThat(first.getUpMenuSn()).isEqualTo(2L);
+        assertThat(second.getUpMenuSn()).isNull();
+    }
+
+    @Test
+    void hierarchyWriteAllowsUnrelatedMoveAndUnchangedLegacyCycleMetadata() {
+        Menu first = hierarchyNode(1L, null);
+        Menu second = hierarchyNode(2L, null);
+        Menu cycleA = hierarchyNode(10L, 11L);
+        Menu cycleB = hierarchyNode(11L, 10L);
+        givenParentGraph(first, second, cycleA, cycleB);
+
+        menuService.updateMenuManage(MenuDto.builder().menuNo(10L).upMenuSn(11L).menuNm("corrected").build());
+        menuService.updateMenuOrders(List.of(order(2L, 1L, 1)));
+
+        assertThat(cycleA.getMenuNm()).isEqualTo("corrected");
+        assertThat(cycleA.getUpMenuSn()).isEqualTo(11L);
+        assertThat(second.getUpMenuSn()).isEqualTo(1L);
+    }
+
+    @Test
+    void hierarchyWriteAllowsRepairingExistingCycle() {
+        Menu first = hierarchyNode(1L, 2L);
+        Menu second = hierarchyNode(2L, 1L);
+        givenParentGraph(first, second);
+
+        menuService.updateMenuOrders(List.of(order(1L, null, 1)));
+
+        assertThat(first.getUpMenuSn()).isNull();
+        assertThat(second.getUpMenuSn()).isEqualTo(1L);
+    }
+
+    @Test
+    void hierarchyWriteRejectsMovingIntoExistingCycle() {
+        Menu node = hierarchyNode(1L, null);
+        givenParentGraph(node, hierarchyNode(10L, 11L), hierarchyNode(11L, 10L));
+
+        assertInvalidHierarchy(() -> menuService.updateMenuManage(order(1L, 10L, 1)));
+
+        assertThat(node.getUpMenuSn()).isNull();
+    }
+
+    @Test
+    void hierarchyWriteRejectsMissingParentBeforeChangingFields() {
+        Menu node = hierarchyNode(1L, null);
+        givenParentGraph(node);
+
+        assertInvalidHierarchy(() -> menuService.updateMenuManage(order(1L, 999L, 1)));
+
+        assertThat(node.getUpMenuSn()).isNull();
+    }
+
+    @Test
+    void hierarchyWriteRejectsMissingParentOnCreateBeforeSaving() {
+        givenParentGraph(hierarchyNode(1L, null));
+        lenient().when(menuRepository.save(any(Menu.class))).thenReturn(hierarchyNode(100L, 999L));
+
+        assertInvalidHierarchy(() -> menuService.insertMenuManage(MenuDto.builder()
+                .menuNm("new").upMenuSn(999L).menuOrdr(1).build()));
+
+        verify(menuRepository, never()).save(any());
+        verifyNoInteractions(authorizationAdministrationService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void hierarchyWriteRejectsConflictingDuplicatesBeforeChangingFields(boolean conflictingParent) {
+        Menu node = hierarchyNode(1L, null);
+        givenParentGraph(node, hierarchyNode(2L, null), hierarchyNode(3L, null));
+        MenuDto other = conflictingParent ? order(1L, 3L, 2) : order(1L, 2L, 3);
+
+        assertInvalidHierarchy(() -> menuService.updateMenuOrders(List.of(order(1L, 2L, 2), other)));
+
+        assertThat(node.getUpMenuSn()).isNull();
+        assertThat(node.getMenuOrdr()).isEqualTo(1);
+    }
+
+    @Test
+    void hierarchyWriteAcceptsIdenticalDuplicates() {
+        Menu node = hierarchyNode(1L, null);
+        givenParentGraph(node, hierarchyNode(2L, null));
+
+        menuService.updateMenuOrders(List.of(order(1L, 2L, 3), order(1L, 2L, 3)));
+
+        assertThat(node.getUpMenuSn()).isEqualTo(2L);
+        assertThat(node.getMenuOrdr()).isEqualTo(3);
+    }
+
+    @Test
+    void hierarchyReadSupportsFourLevels() {
+        Menu leaf = hierarchyNode(4L, 3L);
+        when(menuRepository.findByPrgrmFileNm("deep")).thenReturn(Optional.of(leaf));
+        when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenReturn(List.of(
+                hierarchyNode(1L, null), hierarchyNode(2L, 1L), hierarchyNode(3L, 2L), leaf));
+
+        assertThat(menuService.getRootMenuIdByProgrmFileNm("deep")).isEqualTo(1L);
+    }
+
+    @Test
+    void hierarchyReadCycleTerminatesWithoutInventingARoot() {
+        Menu first = hierarchyNode(1L, 2L);
+        when(menuRepository.findByPrgrmFileNm("cycle")).thenReturn(Optional.of(first));
+        when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenReturn(List.of(first, hierarchyNode(2L, 1L)));
+
+        // 旧 구현의 로컬 while은 interrupt를 확인하지 않는다. red는 이 메서드만 별도 JVM에서 실행한다.
+        assertTimeoutPreemptively(Duration.ofMillis(300),
+                () -> assertThat(menuService.getRootMenuIdByProgrmFileNm("cycle")).isNull());
+    }
+
+    private record ParentLinkFixture(Long menuSn, Long upMenuSn) implements MenuRepository.ParentLink {
+        @Override public Long getMenuSn() { return menuSn; }
+        @Override public Long getUpMenuSn() { return upMenuSn; }
+    }
+
+    private void givenParentGraph(Menu... nodes) {
+        List<MenuRepository.ParentLink> links = java.util.Arrays.stream(nodes)
+                .map(node -> (MenuRepository.ParentLink) new ParentLinkFixture(node.getMenuSn(), node.getUpMenuSn())).toList();
+        lenient().when(menuRepository.findParentLinksForUpdate()).thenReturn(links);
+        for (Menu node : nodes) {
+            lenient().when(menuRepository.findById(node.getMenuSn())).thenReturn(Optional.of(node));
+        }
+    }
+
+    private static Menu hierarchyNode(Long id, Long parent) {
+        return Menu.builder().menuSn(id).upMenuSn(parent).menuNm("original").menuOrdr(1).build();
+    }
+
+    private static MenuDto order(Long id, Long parent, int order) {
+        return MenuDto.builder().menuNo(id).upMenuSn(parent).menuOrdr(order).build();
+    }
+
+    private static List<MenuDto> hierarchyChanges(boolean reverse, MenuDto... changes) {
+        var list = new ArrayList<>(List.of(changes));
+        if (reverse) Collections.reverse(list);
+        return list;
+    }
+
+    private static void assertInvalidHierarchy(org.assertj.core.api.ThrowableAssert.ThrowingCallable action) {
+        assertThatThrownBy(action).isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+    }
+
 
 
     @Test
@@ -510,13 +745,60 @@ class MenuServiceTest {
     void rejectsUnknownProgramOnCreateAndUpdate() {
         MenuDto dto = MenuDto.builder().menuNo(1L).menuNm("메뉴")
                 .prgrmFileNm("missing").modernRoute("/test").build();
-        assertThatThrownBy(() -> menuService.insertMenuManage(dto)).isInstanceOf(BusinessException.class);
-        Menu menu = mock(Menu.class);
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
-        assertThatThrownBy(() -> menuService.updateMenuManage(dto)).isInstanceOf(BusinessException.class);
+        Menu menu = hierarchyNode(1L, null);
+        givenParentGraph(menu);
+
+        assertThatThrownBy(() -> menuService.insertMenuManage(dto)).isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThatThrownBy(() -> menuService.updateMenuManage(dto)).isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+
+        assertThat(menu.getMenuNm()).isEqualTo("original");
+        assertThat(menu.getPrgrmFileNm()).isNull();
+        assertThat(menu.getModernRoute()).isNull();
+        assertThat(menu.getUpMenuSn()).isNull();
+        assertThat(menu.getMenuOrdr()).isEqualTo(1);
         verify(menuRepository, never()).save(any());
-        verifyNoInteractions(menu);
         verify(programRepository, never()).save(any());
+        verifyNoInteractions(authorizationAdministrationService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"update", "order", "delete", "deleteList"})
+    @DisplayName("메뉴 쓰기는 해당 권한이 없으면 전체 요청을 거부하고 메뉴·배정을 바꾸지 않는다")
+    void menuWritesRejectMissingOperationPermissionBeforeAnyChange(String operation) {
+        String requiredPermission = operation.startsWith("delete") ? "MENU_DELETE" : "MENU_UPDATE";
+        usePrincipal(CustomUserDetails.builder().userId("tester").esntlId("TESTER_001")
+                .groups(List.of("ROLE_ADMIN"))
+                .permissions(List.of("MENU_CREATE", "MENU_UPDATE", "MENU_DELETE", "AUTHRT_GRANT").stream()
+                        .filter(permission -> !permission.equals(requiredPermission)).toList())
+                .enabled(true).build());
+        Menu first = hierarchyNode(1L, null);
+        Menu second = hierarchyNode(2L, null);
+        givenParentGraph(first, second);
+        lenient().when(menuRepository.findForUpdateByMenuSnIn(anyList())).thenAnswer(invocation -> {
+            List<Long> ids = invocation.getArgument(0);
+            return List.of(first, second).stream().filter(menu -> ids.contains(menu.getMenuSn())).toList();
+        });
+        Runnable action = switch (operation) {
+            case "update" -> () -> menuService.updateMenuManage(MenuDto.builder().menuNo(1L)
+                    .menuNm("must not change").upMenuSn(2L).menuOrdr(9).build());
+            case "order" -> () -> menuService.updateMenuOrders(List.of(order(1L, 2L, 9), order(2L, null, 8)));
+            case "delete" -> () -> menuService.deleteMenuManage(MenuDto.builder().menuNo(1L).build());
+            case "deleteList" -> () -> menuService.deleteMenuManageList("1,2");
+            default -> throw new IllegalArgumentException(operation);
+        };
+
+        assertThatThrownBy(action::run).isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+
+        for (Menu menu : List.of(first, second)) {
+            assertThat(menu.getMenuNm()).isEqualTo("original");
+            assertThat(menu.getUpMenuSn()).isNull();
+            assertThat(menu.getMenuOrdr()).isEqualTo(1);
+        }
+        verifyNoInteractions(menuRepository, programRepository, authorizationAdministrationService,
+                navigationGrantRepository);
     }
 
     @Test
@@ -535,6 +817,7 @@ class MenuServiceTest {
     void updateMenuManage_Success() {
         MenuDto dto = MenuDto.builder().menuNo(1L).menuNm("Updated").build();
         Menu menu = mock(Menu.class);
+        when(menuRepository.findParentLinksForUpdate()).thenReturn(List.of(new ParentLinkFixture(1L, null)));
         when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
         
         menuService.updateMenuManage(dto);

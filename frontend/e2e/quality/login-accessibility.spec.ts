@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { Page } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
+import { SITE_IDENTITY } from '../../src/config/site-identity';
 
 async function openAnonymousLogin(page: Page, url: string) {
     // SSR heading/font checks can finish before hydration sends the session request.
@@ -12,6 +13,7 @@ async function openAnonymousLogin(page: Page, url: string) {
             && response.status() === 401),
         page.goto(url),
     ]);
+    await expect(page).toHaveTitle(`로그인 | ${SITE_IDENTITY.frameworkName}`);
 }
 
 test.describe('공통 셸과 인증', () => {

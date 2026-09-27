@@ -374,6 +374,8 @@ pnpm -C frontend exec playwright install --with-deps chromium
 
 새 gate는 stable ID, selector tag, 실제 task/required context, owner, 근거와 의도적 red proof를 함께 추가한다. `scripts/*.test.mjs`처럼 catalog로 소유한 저비용 운영 계약은 파일을 추가하면 별도 runner 목록 편집 없이 편입되며, k6 CLI·CI·의존성·문서 계약도 이 경로를 사용한다. 규칙 파일 수를 줄이기 위한 무관한 통합은 실패 위치와 소유권만 흐리므로 하지 않는다. 여러 Java source를 읽는 governance gate는 `HarnessSourceIndex`를 사용해 테스트 JVM당 동일 스냅샷을 공유하고 직접 `Files.walk/readString` 재도입은 계약이 차단한다.
 
+파일의 변경 자체를 검사하거나 일회성 프로세스 출력을 읽을 때는 같은 인덱스의 `readFresh`를 사용한다. 실제 UTF-8 I/O 경계는 하나이며, 이 경로는 기존 텍스트 캐시를 조회·갱신하지 않는다. 일반 소스 순회는 기존 `read`의 불변 스냅샷을 계속 공유한다. 공용 계약은 수정·재수정·삭제 관측과 캐시 보존을, migration 이력 fixture는 같은 보호 SQL의 정상→변조→복구를 검사해 캐시로 현재 변경을 가리는 회귀를 잡는다.
+
 ## 스키마 정합성 전용 게이트
 
 모듈의 일반 `application-test.yml`은 주로 H2 `create`(또는 `create-drop`)를 사용하므로 Entity 정의로 테스트 스키마를 만들며, 운영 PostgreSQL과 Flyway의 물리 정합성을 증명하지 못한다. 스키마 증거는 `api-server`의 `tc` 프로필과 `schemaValidationTest`가 소유한다.

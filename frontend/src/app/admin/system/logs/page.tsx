@@ -1,7 +1,13 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import LogDashboardClient, { type InitialSystemLogs } from './LogDashboardClient';
+
+export const metadata: Metadata = {
+  title: `통합 로그 조회 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 export default async function LogDashboardPage() {
   const cookieStore = await cookies();

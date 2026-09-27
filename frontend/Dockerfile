@@ -1,14 +1,8 @@
 # Stage 1: Dependencies
-# [W1-H2] Node 20(EOL) → 22 LTS. 세 스테이지 모두 같은 태그·같은 다이제스트를 쓴다.
-#   ⚠ 다이제스트 핀의 함정: 태그만 `22-alpine` 으로 바꾸고 다이제스트를 20 짜리로 두면
-#     **다이제스트가 이기므로 실제로는 여전히 Node 20 이 빌드된다**(태그는 표시용이 된다).
-#     아래 값은 2026-08-03 registry-1.docker.io 에서 library/node:22-alpine 의
-#     manifest list 다이제스트를 실조회해 넣은 것이다. 갱신 시 반드시 함께 바꾼다:
-#       T=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/node:pull" | jq -r .token)
-#       curl -sI -H "Authorization: Bearer $T" \
-#         -H "Accept: application/vnd.oci.image.index.v1+json,application/vnd.docker.distribution.manifest.list.v2+json" \
-#         https://registry-1.docker.io/v2/library/node/manifests/22-alpine | grep -i docker-content-digest
-FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS deps
+# Node 22 LTS와 Alpine 3.24를 유지하고 세 스테이지에 같은 태그·다이제스트를 쓴다.
+# 2026-09-28 registry-1.docker.io의 library/node:22-alpine3.24 manifest list를 실조회했다.
+# 실제 이미지 내용은 다이제스트가 결정하므로 갱신할 때 태그와 다이제스트를 함께 확인한다.
+FROM node:22-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 # [W0-11] CI(ci.yml)와 동일한 pnpm --frozen-lockfile 로 통일한다.
@@ -22,7 +16,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # Stage 2: Builder
-FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS builder
+FROM node:22-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS builder
 WORKDIR /app
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
@@ -36,13 +30,14 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ARG BACKEND_API_URL
 ARG NEXT_PUBLIC_API_URL
 # FRONTEND_API_BUILD_URL_VALIDATION
-RUN node -e "const names = ['BACKEND_API_URL', 'NEXT_PUBLIC_API_URL']; const valid = (raw) => { if (typeof raw !== 'string' || raw.length === 0 || raw !== raw.trim() || /[\u0000-\u0020\u007f]/u.test(raw) || raw.includes('?') || raw.includes('#')) return false; const schemeEnd = raw.indexOf('://'); if (schemeEnd < 0) return false; const scheme = raw.slice(0, schemeEnd).toLowerCase(); if (scheme !== 'http' && scheme !== 'https') return false; const authorityStart = schemeEnd + 3; const pathStart = raw.indexOf('/', authorityStart); if (pathStart < 0) return false; const authority = raw.slice(authorityStart, pathStart); const pathname = raw.slice(pathStart); if (authority.length === 0 || authority.includes('@') || (pathname !== '/api/v1' && pathname !== '/api/v1/')) return false; let url; try { url = new URL(raw); } catch { return false; } return url.hostname !== '' && url.username === '' && url.password === '' && url.search === '' && url.hash === '' && url.pathname === pathname; }; if (!names.every((name) => valid(process.env[name]))) { console.error('Invalid frontend API build configuration.'); process.exit(1); }"
+RUN node scripts/validate-api-build-urls.mjs
 ENV BACKEND_API_URL=$BACKEND_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_DOCKER_STANDALONE=true
 RUN pnpm run build
 
 # Stage 3: Runner
-FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS runner
+FROM node:22-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS runner
 ARG BASELINE_BUILD_SHA
 ARG BASELINE_BUILD_INPUT_TREE_SHA256
 LABEL org.opencontainers.image.revision="${BASELINE_BUILD_SHA}" \
@@ -52,36 +47,20 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Standalone starts with node directly; base npm and its launchers are not runtime dependencies.
+RUN rm -rf /usr/local/lib/node_modules/npm && rm -f /usr/local/bin/npm /usr/local/bin/npx
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.ts ./next.config.ts
-
-# Copy the full .next directory (standalone mode is disabled in next.config.ts)
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+# The traced server embeds its build configuration and needs no build tooling at runtime.
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 USER nextjs
 
 EXPOSE 3000
 ENV PORT=3000
-# [2026-08-08 정정] 종전: CMD ["node", "node_modules/.bin/next", "start"]
-#
-#   ⚠ **이 이미지는 4개월간 기동 자체가 불가능했다.**
-#   pnpm 이 만드는 `node_modules/.bin/next` 는 JS 파일이 아니라 **셸 스크립트 shim**(`#!/bin/sh`)이다.
-#   그것을 `node` 로 실행하면 JS 파서가 셸 스크립트를 읽어 즉시 죽는다:
-#       SyntaxError: missing ) after argument list
-#       at wrapSafe (node:internal/modules/cjs/loader)
-#   실측(2026-08-08): 컨테이너 State=exited, ExitCode=1, healthcheck 검사 **0회**.
-#
-#   왜 4개월간 아무도 몰랐나 — **이 이미지를 실제로 띄우는 경로가 하나뿐이었고 그것도 고장나 있었다.**
-#     · ci.yml E2E  : `docker compose up -d db api` 만 — 프론트는 호스트에서 `pnpm run start:3001`
-#     · release.yml : 이미지를 **빌드해서 푸시**만 한다(빌드는 성공하므로 CI 는 초록)
-#     · zap-scan.yml: 유일하게 **띄우는** 곳 — 그런데 한 번도 성공한 적이 없었다
-#   두 고장이 서로를 가리고 있었다. 즉 **레지스트리에 푸시된 이미지는 docker run 하면 즉시 죽는다.**
-#
-#   shim 은 셸로 실행해야 한다. exec 형식을 유지하면서 셸을 명시한다(PID 1 은 sh 가 되며,
-#   `exec` 로 next 프로세스가 PID 1 을 이어받아 SIGTERM 이 그대로 전달된다).
-CMD ["sh", "-c", "exec node_modules/.bin/next start"]
+ENV HOSTNAME=0.0.0.0
+CMD ["node", "server.js"]

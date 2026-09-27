@@ -19,6 +19,10 @@
       ],
       "acknowledgedRemovedGates": [
         {
+          "file": "api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java",
+          "reason": "쪽지·담당자 저장과 실제 알림 소비자의 커밋 후 동작을 함께 검증하는 통합 테스트다. core에는 note/notification 서비스·테이블이 없어 이 통합 과업 자체가 성립하지 않는다. core 담당자 검증의 DeptJobServiceTest는 계속 포함한다."
+        },
+        {
           "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
           "reason": "demo 소유 다단계 결재의 상태 전환·동시성·열람 범위 통합 테스트. demo pack 제외 시 결재 서비스와 테이블이 없어 검사 대상 자체가 없다."
         },
@@ -265,7 +269,14 @@
           "stats",
           "system",
           "template"
-        ]
+        ],
+        "domainSupportFiles": {
+          "memoreport": [
+            "foundation/src/main/java/nuri/foundation/core/user/UserDisplayNameLookup.java",
+            "business-core/src/main/java/nuri/business/service/user/UserDisplayNameLookupService.java",
+            "business-core/src/test/java/nuri/business/service/user/UserDisplayNameLookupServiceTest.java"
+          ]
+        }
       },
       "frontend": {
         "removePaths": [

@@ -111,6 +111,8 @@ public class AuthServiceImpl implements AuthService {
 
         String accessToken = jwtTokenProvider.createAccessToken(esntlId, principal.getAuthorCode());
         String refreshToken = jwtTokenProvider.createRefreshToken(esntlId);
+        // JWT에 기록된 초 단위 절대 만료를 저장해야 설정 수명과 회전 후 exp가 일치한다.
+        java.time.Instant refreshExpiry = jwtTokenProvider.getExpiration(refreshToken).toInstant();
 
         // Refresh Token 저장/갱신 (esntlId 로 키잉 — 기존 거동 유지).
         // [2026-09-25 DIP D7] 원문이 아니라 SHA-256 해시를 저장한다 — DB 를 읽을 수 있는 사람이 저장된 값으로
@@ -118,13 +120,13 @@ public class AuthServiceImpl implements AuthService {
         String storedDigest = RefreshTokenDigest.of(refreshToken);
         nuri.business.domain.auth.RefreshToken rt = refreshTokenRepository.findById(esntlId)
                 .map(token -> {
-                    token.updateToken(storedDigest, java.time.Instant.now().plus(java.time.Duration.ofDays(7)));
+                    token.updateToken(storedDigest, refreshExpiry);
                     return token;
                 })
                 .orElseGet(() -> nuri.business.domain.auth.RefreshToken.builder()
                         .userId(esntlId)
                         .rfshTkn(storedDigest)
-                        .exprtnDt(java.time.Instant.now().plus(java.time.Duration.ofDays(7)))
+                        .exprtnDt(refreshExpiry)
                         .build());
         refreshTokenRepository.save(rt);
 
@@ -224,6 +226,12 @@ public class AuthServiceImpl implements AuthService {
         //   ⚠ **절대 만료를 유지한다** — 최초 로그인 시점에 정해진 exprtnDt 를 그대로 물려준다.
         //   회전할 때마다 7일을 새로 주면(슬라이딩 세션) 탈취된 토큰이 무기한 연장되어 회전의 목적이 사라진다.
         java.time.Instant absoluteExpiry = storedToken.getExprtnDt();
+        // 이전 버전은 DB 만료를 7일로 고정했다. 이미 발급된 JWT가 더 일찍 만료되면 그 상한을 따른다.
+        java.time.Instant presentedExpiry = jwtTokenProvider.getExpiration(refreshToken).toInstant();
+        if (presentedExpiry.isBefore(absoluteExpiry)) {
+            absoluteExpiry = presentedExpiry;
+        }
+        absoluteExpiry = absoluteExpiry.truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
         String rotatedRefreshToken = jwtTokenProvider.createRefreshToken(
                 userId, java.util.Date.from(absoluteExpiry));
 
@@ -232,7 +240,7 @@ public class AuthServiceImpl implements AuthService {
         //   마지막 저장만 남는다. 진 쪽은 서버가 이미 무효화한 리프레시 토큰을 받아 들고 있다가
         //   다음 재발급에서 이유 없이 로그아웃된다 — 실패가 최대 1시간 뒤에 드러나는 조용한 결함이다.
         if (refreshTokenRepository.rotateIfCurrent(userId, presentedDigest,
-                RefreshTokenDigest.of(rotatedRefreshToken), java.time.LocalDateTime.now()) != 1) {
+                RefreshTokenDigest.of(rotatedRefreshToken), java.time.LocalDateTime.now(), absoluteExpiry) != 1) {
             throw new BusinessException(CommonErrorCode.INVALID_TOKEN);
         }
 

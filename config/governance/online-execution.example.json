@@ -6,5 +6,9 @@
   "images": {
     "api": null,
     "frontend": null
+  },
+  "releaseManifest": {
+    "path": null,
+    "sha256": null
   }
 }

@@ -31,13 +31,16 @@ import { installMultiModuleMigrationRuntime, installSingleModuleRuntime } from '
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { verifyProjectComposition } from './project-composer-recipe.mjs';
 import { verifyResolvedDbComposition } from './project-composer-db.mjs';
-import { composerProfile, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
+import { composerProfile, domainSupportFiles, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = resolve(dirname(SCRIPT_PATH), '..');
 const MANIFEST_PATH = join(ROOT, 'config', 'reusable-base-profiles.json');
 const OUTPUT_ROOT = join(ROOT, 'build', 'reusable-base', 'source');
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx'];
+// 알려진 재배포 제한 스킬만 복사에서 제외한다. 나머지 자산의 라이선스 검토를 대신하지 않는다.
+const EXCLUDED_REUSABLE_SKILL_ROOTS = ['docx', 'pdf', 'pptx', 'xlsx']
+  .map((skill) => `.agent/skills/${skill}`);
 
 function fail(message) {
   throw new Error(message);
@@ -120,9 +123,11 @@ export function trackedAndUntrackedFiles() {
     .filter((path) => !normalize(path).split('/').includes('build'));
 }
 
-function copySourceTree(output) {
-  for (const rel of trackedAndUntrackedFiles()) {
-    const source = join(ROOT, rel);
+export function copySourceTree(output, { sourceRoot = ROOT, files = trackedAndUntrackedFiles() } = {}) {
+  for (const rel of files) {
+    const normalized = rel.replaceAll('\\', '/');
+    if (EXCLUDED_REUSABLE_SKILL_ROOTS.some((skill) => normalized === skill || normalized.startsWith(`${skill}/`))) continue;
+    const source = join(sourceRoot, rel);
     if (!existsSync(source) || !statSync(source).isFile()) continue;
     const target = join(output, rel);
     mkdirSync(dirname(target), { recursive: true });
@@ -267,6 +272,7 @@ export function resolveDomainRemovalDirectory(root, sourceSet, layer, domain) {
 }
 
 export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, (path) => path.endsWith('.java'))) {
+  const support = domainSupportFiles(root, manifest);
   const allowedPacks = new Set(profile.packs);
   const excludedDomains = profile.resolvedDomains
     ? Object.values(manifest.packs).flatMap(pack => pack.backend?.appDomains ?? []).filter(domain => !profile.resolvedDomains.includes(domain))
@@ -285,6 +291,11 @@ export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, 
   const directDirectories = [];
 
   for (const domain of excludedDomains) {
+    for (const file of support.get(domain) ?? []) {
+      const path = resolve(root, file);
+      removed.add(path);
+      removalReason.set(path, `제외 domain ${domain} support 직접 제거`);
+    }
     for (const sourceSet of ['main', 'test']) {
       for (const layer of ['domain', 'service']) {
         const directory = resolveDomainRemovalDirectory(root, sourceSet, layer, domain);
@@ -1244,13 +1255,15 @@ function writeHarnessBaseline(output, sourceManifest) {
   );
 }
 
-function writeProjectedManifest(output, manifest, profileName, profile, dbLock, composition) {
+export function writeProjectedManifest(output, manifest, profileName, profile, dbLock, composition) {
   const allowedPacks = new Set(profile.packs);
   const packs = Object.fromEntries(
     Object.entries(manifest.packs).filter(([packName]) => allowedPacks.has(packName)).map(([name, pack]) => [name,
       composition?.profile === 'custom' ? {
         ...pack,
-        backend: { ...pack.backend, appDomains: (pack.backend?.appDomains ?? []).filter(domain => composition.resolvedDomains.includes(domain)) },
+        backend: { ...pack.backend, appDomains: (pack.backend?.appDomains ?? []).filter(domain => composition.resolvedDomains.includes(domain)),
+          ...(pack.backend?.domainSupportFiles ? { domainSupportFiles: Object.fromEntries(Object.entries(pack.backend.domainSupportFiles)
+            .filter(([domain]) => composition.resolvedDomains.includes(domain))) } : {}) },
         database: { ...pack.database, tables: pack.database.tables.filter(table => composition.tables.includes(table)),
           sequences: (pack.database.sequences ?? []).filter(sequence => composition.explicitSequences.includes(sequence)) },
         ...(pack.frontend ? { frontend: { ...pack.frontend, removePaths: composition.frontend.includedPaths.filter(path =>
@@ -1337,7 +1350,7 @@ function main() {
   }
   const packBlocks = stripExcludedFrontendPackBlocks(output, manifest, profile);
   const frontend = { ...pruneFrontend(output, manifest, profile), packBlocks };
-  if (composition) assertComposerSourceSurvives(ROOT, output, composition);
+  if (composition) assertComposerSourceSurvives(ROOT, output, composition, manifest);
   // ⚠ 규칙 기반 제거는 **승인 검사보다 먼저** 해야 한다 — 뒤에 두면 census 가 "0건" 이라고 말한 뒤
   //   게이트 42개가 사라진다(2026-09-12 실측으로 드러난 이 census 자신의 구멍).
   const removedHistoricalMigrationTests = pruneHistoricalMigrationTests(output);

@@ -14,12 +14,19 @@ test.describe('Quality & Resilience', () => {
      */
     test.describe('Scenario Route Accessibility (axe)', () => {
         const LOADING_TEXT = /불러오는 중|준비하는 중|확인하는 중|로딩 중/;
-        async function expectNoAxeViolations(page: Page, route: string) {
-            await page.emulateMedia({ reducedMotion: 'reduce' });
-            await page.goto(route);
+        async function expectContentReady(page: Page) {
             await expect(page.getByRole('heading', { level: 1 }).filter({ hasNotText: LOADING_TEXT }).first())
                 .toBeVisible({ timeout: 30000 });
             await expect(page.locator('[role="status"]').filter({ hasText: LOADING_TEXT })).toHaveCount(0);
+        }
+        async function expectPurposeTitle(page: Page, purpose: string) {
+            await expect(page).toHaveTitle(new RegExp(`^${purpose} \\| `));
+        }
+        async function expectNoAxeViolations(page: Page, route: string, purpose: string) {
+            await page.emulateMedia({ reducedMotion: 'reduce' });
+            await page.goto(route);
+            await expectContentReady(page);
+            await expectPurposeTitle(page, purpose);
             await page.addStyleTag({
                 content: '*, *::before, *::after { animation-duration: 0s !important; animation-delay: 0s !important; transition-duration: 0s !important; transition-delay: 0s !important; }',
             });
@@ -52,22 +59,47 @@ test.describe('Quality & Resilience', () => {
         }
         test.describe('관리자 화면', () => {
             test.use({ storageState: 'playwright/.auth/admin.json' });
-            for (const route of [
-                '/admin/system/logs/user',
-                '/admin/user/manage',
-                '/admin/community/boards/insert-board-article',
-                '/admin/help/faq',
-                '/admin/community/boards/maker',
+            for (const [route, purpose] of [
+                ['/admin/system/logs/user', '사용자 로그'],
+                ['/admin/user/manage', '사용자 관리'],
+                ['/admin/community/boards/insert-board-article', '게시글 작성·수정'],
+                ['/admin/help/faq', '자주 묻는 질문 관리'],
+                ['/admin/community/boards/maker', '게시판 생성'],
             ]) {
                 test(`${route} 에 axe 위반이 없다`, async ({ page }) => {
-                    await expectNoAxeViolations(page, route);
+                    await expectNoAxeViolations(page, route, purpose);
                 });
             }
+            test('문서 제목은 실제 링크 이동·뒤로가기·레거시 redirect 목적지에 맞게 갱신된다', async ({ page }) => {
+                await page.goto('/admin');
+                await expectContentReady(page);
+                await expectPurposeTitle(page, '관리자 대시보드');
+
+                await page.getByRole('link', { name: '사용자 확인', exact: true }).click();
+                await expect(page).toHaveURL(/\/admin\/user\/manage(?:\?|$)/);
+                await expectContentReady(page);
+                await expectPurposeTitle(page, '사용자 관리');
+
+                await page.goBack();
+                await expect(page).toHaveURL(/\/admin(?:\?|$)/);
+                await expectContentReady(page);
+                await expectPurposeTitle(page, '관리자 대시보드');
+
+                await page.goto('/admin/system/audit');
+                await expect(page).toHaveURL(/\/admin\/system\/monitoring\/hub\?tab=system$/);
+                await expectContentReady(page);
+                await expectPurposeTitle(page, '시스템 모니터링');
+            });
         });
         test.describe('일반 사용자 화면', () => {
             test.use({ storageState: 'playwright/.auth/user.json' });
             test('/help 에 axe 위반이 없다', async ({ page }) => {
-                await expectNoAxeViolations(page, '/help');
+                await expectNoAxeViolations(page, '/help', '도움말');
+            });
+            test('클라이언트 쪽지함은 서버 layout의 문서 제목을 사용한다', async ({ page }) => {
+                await page.goto('/note');
+                await expectContentReady(page);
+                await expectPurposeTitle(page, '쪽지함');
             });
         });
     });

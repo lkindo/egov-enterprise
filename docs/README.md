@@ -121,6 +121,7 @@
 | [frontend-form-validation-loop.md](03-guides/frontend-form-validation-loop.md) | 입력·수정 화면의 제약 보존, 오류 위치 이동, 서버 field error, 중복 제출 잠금과 exact census 운영 루프 |
 | [ui-ux-task-flow-optimization.md](03-guides/ui-ux-task-flow-optimization.md) | 로그인·공통 셸·편집 이동 보호·지식 탐색·게시판 부분 성공·설문 결과 선택의 현재 구현과 검증 경계 |
 | [ui-ux-modernization-execution-loop-prompt.md](03-guides/ui-ux-modernization-execution-loop-prompt.md) | UI/UX 현대화 계획을 승인 경계·검증·재개 루프로 끝까지 실행하는 복사형 프롬프트 |
+| [evidence-first-improvement-loop-prompt.md](03-guides/evidence-first-improvement-loop-prompt.md) | 분야·도메인 재평가의 결함을 승인 범위·부정 검증·종료 조건에 따라 개선하는 실행 프롬프트 |
 | [reusable-base-guide.md](03-guides/reusable-base-guide.md) | 릴리스 생성과 세 프로필 DB·소스 기술 검증, 근거 투영·기관 도입 경계 |
 | [project-composer-guide.md](03-guides/project-composer-guide.md) | 로컬 UI·recipe로 도메인과 출력 구조를 선택하여 독립 PostgreSQL 프로젝트 생성 |
 
@@ -131,6 +132,9 @@
 | 문서 | 내용 |
 |---|---|
 | [verification-blindspots.md](04-operations/verification-blindspots.md) | **검증 사각지대** — "빌드 성공"과 "실제 작동"의 차이 |
+| [adversarial-reassessment-2026-09-27.md](04-operations/adversarial-reassessment-2026-09-27.md) | 0ef8af32f 기준 Claude 평가의 수용·반박, 11개 분야·33개 도메인 잠정 평가와 개선 배치 |
+| [evidence-first-improvement-verification-2026-09-27.md](04-operations/evidence-first-improvement-verification-2026-09-27.md) | R0–R9 로컬 검증 결과와 미완료 경계 — 실제 제목·설문 E2E, Lighthouse 비교, 승인·운영 증거 대기 |
+| [evidence-first-policy-decisions-2026-09-27.md](04-operations/evidence-first-policy-decisions-2026-09-27.md) | 개선 루프 R4 권한·공개 범위와 R6 삭제 단위의 미승인 선택지, 기존 승인 이행·소비자·검증 경계 |
 | [pending-decisions.md](04-operations/pending-decisions.md) | 사용자 결정 대기 항목 트래커 |
 | [url-state-class-approval-evidence.md](04-operations/url-state-class-approval-evidence.md) | URL-state 부류별 owner 승인 근거와 현재 판정 — 비규범 컨테이너 안의 4개 독립 승인(`search-input`만 ADR-0009 `accepted-risk`), 3개 미해결 |
 | [ui-ux-baseline-protocol.md](04-operations/ui-ux-baseline-protocol.md) | 긴급 수리 후·파일럿 전 8개 대표 시나리오 reference baseline·접근성·성능·증거 수집 프로토콜 |

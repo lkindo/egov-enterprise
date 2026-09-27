@@ -151,9 +151,10 @@ services:
     #   컨테이너가 Started 된 30초 뒤 스캔이 시작됐는데 Next 서버는 아직 리스닝 전이었다
     #   (2026-08-02 로그: `Job spider failed to access URL http://localhost:3000`).
     #   `Started` 는 "프로세스가 떴다" 이지 "요청을 받을 준비가 됐다" 가 아니다.
-    #   node:22-alpine 의 busybox wget 을 쓴다(curl 미포함).
+    #   node:22-alpine 의 busybox wget 을 쓴다(curl 미포함). standalone은 0.0.0.0에 bind하므로
+    #   localhost의 IPv6 해석에 의존하지 않고 IPv4를 명시한다. 익명 200인 /login으로 리다이렉트를 피한다.
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:3000/ || exit 1"]
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:3000/login || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 12

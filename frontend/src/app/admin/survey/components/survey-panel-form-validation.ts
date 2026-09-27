@@ -1,3 +1,5 @@
+import { z } from 'zod';
+import { isStorageYmd } from '@/lib/format-date';
 import {
   SurveyArticleDtoSchema,
   SurveyInfoDtoSchema,
@@ -117,6 +119,24 @@ const surveyPurposeSchema = SurveyInfoDtoSchema.shape.srvyPrps
   .trim()
   .max(4000, '설문 목적은 최대 4000자까지 입력할 수 있습니다.');
 
+// 일반 등록·수정은 빈 경계를 허용한다(DEC-OPS-031). 복제의 필수 기간과 구분한다.
+const surveyPeriodFields = {
+  srvyBgngYmd: SurveyInfoDtoSchema.shape.srvyBgngYmd.unwrap().trim()
+    .refine((value) => !value || isStorageYmd(value), '올바른 시작일을 선택해 주세요.').optional(),
+  srvyEndYmd: SurveyInfoDtoSchema.shape.srvyEndYmd.unwrap().trim()
+    .refine((value) => !value || isStorageYmd(value), '올바른 종료일을 선택해 주세요.').optional(),
+};
+
+function validateSurveyPeriod(
+  value: { srvyBgngYmd?: string; srvyEndYmd?: string },
+  context: z.RefinementCtx,
+) {
+  if (isStorageYmd(value.srvyBgngYmd) && isStorageYmd(value.srvyEndYmd)
+    && value.srvyBgngYmd > value.srvyEndYmd) {
+    context.addIssue({ code: 'custom', path: ['srvyEndYmd'], message: '종료일은 시작일과 같거나 뒤여야 합니다.' });
+  }
+}
+
 export const surveyInfoCreateSchema = SurveyInfoDtoSchema.pick({
   srvyTtl: true,
   srvyTmpltSn: true,
@@ -125,7 +145,8 @@ export const surveyInfoCreateSchema = SurveyInfoDtoSchema.pick({
   srvyTtl: surveyTitleSchema,
   srvyTmpltSn: surveyTemplateIdSchema,
   srvyPrps: surveyPurposeSchema,
-});
+  ...surveyPeriodFields,
+}).superRefine(validateSurveyPeriod);
 
 
 /**
@@ -136,7 +157,8 @@ export const surveyInfoCreateSchema = SurveyInfoDtoSchema.pick({
  * 실제로 입력하는 필드만 검사한다. 나머지 필드의 정합은 서버 DTO 검증이 담당한다.
  */
 export const surveyTitleEditSchema = SurveyInfoDtoSchema.pick({ srvyTtl: true })
-  .extend({ srvyTtl: surveyTitleSchema });
+  .extend({ srvyTtl: surveyTitleSchema, ...surveyPeriodFields })
+  .superRefine(validateSurveyPeriod);
 
 export const surveyQuestionEditSchema = SurveyQuestionDtoSchema.pick({ qstnCn: true })
   .extend({ qstnCn: questionContentSchema });
@@ -148,6 +170,8 @@ export const surveyInfoValidationLabels = {
   srvyTtl: '설문지 제목',
   srvyTmpltSn: '템플릿',
   srvyPrps: '설문 목적',
+  srvyBgngYmd: '설문 시작일',
+  srvyEndYmd: '설문 종료일',
 };
 
 export const surveyQuestionValidationLabels = {

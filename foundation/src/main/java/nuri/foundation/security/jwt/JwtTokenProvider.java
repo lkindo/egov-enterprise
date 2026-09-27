@@ -329,10 +329,12 @@ public class JwtTokenProvider {
     }
 
     public void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
+        // 회전은 최초 절대 만료를 물려받는다. 쿠키도 남은 시간만 보관해야 수명이 다시 늘어나지 않는다.
+        long remainingSeconds = Math.max(0, (getExpiration(refreshToken).getTime() - System.currentTimeMillis()) / 1000);
         org.springframework.http.ResponseCookie responseCookie = nuri.foundation.security.util.CookieUtil.createRefreshTokenCookie(
                 refreshToken,
                 cookieSecure,
-                refreshTokenValidityInMilliseconds / 1000
+                remainingSeconds
         );
         response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, responseCookie.toString());
     }

@@ -2,6 +2,7 @@ package nuri.business.service.memoreport;
 
 import nuri.business.domain.memoreport.MemoReport;
 import nuri.business.domain.memoreport.MemoReportRepository;
+import nuri.foundation.core.user.UserDisplayNameLookup;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.memoreport.dto.MemoReportDto;
 import nuri.foundation.core.exception.BusinessException;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,6 +45,9 @@ class MemoReportServiceTest {
     private MemoReportRepository memoReportRepository;
 
     @Mock
+    private UserDisplayNameLookup userDisplayNameLookup;
+
+    @Mock
     private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     @Mock
@@ -61,6 +66,76 @@ class MemoReportServiceTest {
 
     /** 서비스가 정렬 없는 요청에 넣는 기본 정렬. 아래 테스트들은 이미 정렬된 요청을 보내 위임만 본다. */
     private static final Sort NEWEST_FIRST = Sort.by(Sort.Direction.DESC, "memoRptSn");
+
+    @ParameterizedTest
+    @CsvSource({"all", "my", "received"})
+    @DisplayName("허용된 메모보고 페이지의 참여자 이름을 중복 없이 한 번에 조회한다")
+    void pageParticipantNamesUseOneScopedLookup(String scope) {
+        Pageable pageable = PageRequest.of(1, 2, NEWEST_FIRST);
+        MemoReport first = MemoReport.builder().memoRptSn(31L).userId("esntl-writer").rptrId("esntl-reader").build();
+        MemoReport second = MemoReport.builder().memoRptSn(30L)
+                .userId(scope.equals("received") ? "esntl-deleted" : "esntl-writer")
+                .rptrId(scope.equals("received") ? "esntl-reader" : "esntl-deleted").build();
+        var page = new PageImpl<>(List.of(first, second), pageable, 7);
+        switch (scope) {
+            case "all" -> given(memoReportRepository.searchByTitle("보고", pageable)).willReturn(page);
+            case "my" -> given(memoReportRepository.findByUserIdAndRptTtlContaining("esntl-writer", "보고", pageable)).willReturn(page);
+            case "received" -> given(memoReportRepository.findByRptrIdAndRptTtlContaining("esntl-reader", "보고", pageable)).willReturn(page);
+            default -> throw new IllegalArgumentException(scope);
+        }
+        given(userDisplayNameLookup.findDisplayNames(anyCollection())).willReturn(Map.of(
+                "esntl-writer", "보고 작성자", "esntl-reader", "보고 수신자"));
+
+        Page<MemoReportDto> result = switch (scope) {
+            case "all" -> memoReportService.getMemoReportList("보고", pageable);
+            case "my" -> memoReportService.getMyReportList("esntl-writer", "보고", pageable);
+            default -> memoReportService.getReceivedReportList("esntl-reader", "보고", pageable);
+        };
+
+        assertThat(result.getTotalElements()).isEqualTo(7);
+        assertThat(result.getNumber()).isEqualTo(1);
+        assertThat(result.getContent()).extracting(MemoReportDto::getWrterNm)
+                .containsExactly("보고 작성자", scope.equals("received") ? null : "보고 작성자");
+        assertThat(result.getContent().getFirst().getRptrNm()).isEqualTo("보고 수신자");
+        assertThat(result.getContent().get(1).getRptrNm()).isEqualTo(scope.equals("received") ? "보고 수신자" : null);
+        assertThat(result.getContent().get(1).getRptrId()).isEqualTo(second.getRptrId());
+        verify(userDisplayNameLookup).findDisplayNames(argThat(ids -> ids.size() == 3
+                && ids.containsAll(List.of("esntl-writer", "esntl-reader", "esntl-deleted"))));
+        org.mockito.Mockito.verifyNoMoreInteractions(userDisplayNameLookup);
+    }
+
+    @Test
+    @DisplayName("메모보고 상세는 참여자 인가 뒤 이름을 보강한다")
+    void detailParticipantNamesPreserveIdentifiersAndPermissionHints() {
+        MemoReport report = MemoReport.builder().memoRptSn(1L).userId("esntl-writer").rptrId("esntl-reader").build();
+        given(memoReportRepository.findById(1L)).willReturn(Optional.of(report));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-reader"));
+        given(userDisplayNameLookup.findDisplayNames(anyCollection())).willReturn(Map.of("esntl-writer", "작성자"));
+
+        MemoReportDto result = memoReportService.getMemoReport(1L);
+
+        assertThat(result.getWrterNm()).isEqualTo("작성자");
+        assertThat(result.getRptrNm()).isNull();
+        assertThat(result.getUserId()).isEqualTo("esntl-writer");
+        assertThat(result.getRptrId()).isEqualTo("esntl-reader");
+        assertThat(result.getEditable()).isFalse();
+        assertThat(result.getDeletable()).isFalse();
+        verify(userDisplayNameLookup).findDisplayNames(argThat(ids -> ids.size() == 2
+                && ids.containsAll(List.of("esntl-writer", "esntl-reader"))));
+    }
+
+    @Test
+    @DisplayName("전체 목록 인가 거부 시 보고와 사용자 이름을 조회하지 않는다")
+    void deniedListDoesNotLookUpParticipantNames() {
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.assertPermission("MEMO_RPT_READ_ALL"))
+                .thenThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.getMemoReportList(null, PageRequest.of(0, 10)))
+                .isInstanceOf(BusinessException.class);
+
+        org.mockito.Mockito.verifyNoInteractions(memoReportRepository, userDisplayNameLookup);
+    }
 
     @Test
     @DisplayName("정렬 없는 목록 요청은 최신순으로 조회하고, 요청한 정렬은 그대로 따른다 (DIP C7)")
@@ -83,6 +158,7 @@ class MemoReportServiceTest {
         given(memoReportRepository.findByUserId(eq("u1"), eq(byTitle))).willReturn(new PageImpl<>(List.of()));
         memoReportService.getMyReportList("u1", null, byTitle);
         org.mockito.Mockito.verify(memoReportRepository).findByUserId("u1", byTitle);
+        org.mockito.Mockito.verifyNoInteractions(userDisplayNameLookup);
     }
 
     @Test
@@ -196,6 +272,7 @@ class MemoReportServiceTest {
         // when / then
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.getMemoReport(memoRptSn))
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
+        org.mockito.Mockito.verifyNoInteractions(userDisplayNameLookup);
     }
 
     @Test

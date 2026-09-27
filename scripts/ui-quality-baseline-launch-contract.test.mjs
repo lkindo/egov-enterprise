@@ -239,6 +239,10 @@ test('compose specification binds immutable images, run-scoped names/network and
     specification.services.db.healthcheck.test[1],
     'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"',
   );
+  assert.deepEqual(specification.services.frontend.healthcheck, {
+    test: ['CMD-SHELL', 'wget --spider -q http://127.0.0.1:3000/login || exit 1'],
+    interval: '10s', timeout: '10s', retries: 24, start_period: '20s',
+  });
   assert.equal(JSON.stringify(specification).includes('private-'), false);
   assert.deepEqual(specification.services.api.environment, [
     'CORS_ALLOWED_ORIGINS',

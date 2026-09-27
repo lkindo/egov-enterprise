@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -169,8 +169,8 @@ describe('SurveyQuestionsPanel', () => {
 
     const dialog = await screen.findByRole('dialog', { name: '설문 복제' });
     expect(dialog).toHaveTextContent('응답은 복제하지 않습니다');
-    fireEvent.change(screen.getByLabelText(/시작일/), { target: { value: '2026-10-01' } });
-    fireEvent.change(screen.getByLabelText(/종료일/), { target: { value: '2026-10-31' } });
+    fireEvent.change(within(screen.getByRole('dialog')).getByLabelText(/시작일/), { target: { value: '2026-10-01' } });
+    fireEvent.change(within(screen.getByRole('dialog')).getByLabelText(/종료일/), { target: { value: '2026-10-31' } });
     await user.click(screen.getByRole('button', { name: '복제' }));
 
     await waitFor(() => expect(mocked.copySurvey).toHaveBeenCalledWith(201, {
@@ -530,6 +530,63 @@ describe('SurveyQuestionsPanel 설문지 등록·삭제', () => {
     expect(mocked.createSurvey.mock.calls[0][0]).toEqual({ srvyTtl: '2026 만족도', srvyTmpltSn: 11 });
   });
 
+  it.each([
+    ['시작 전', '2026-10-01', '2026-10-31', '20261001', '20261031'],
+    ['진행 중', '2026-09-01', '2026-09-30', '20260901', '20260930'],
+    ['종료', '2026-08-01', '2026-08-31', '20260801', '20260831'],
+    ['종료일 없는', '2026-09-01', '', '20260901', undefined],
+    ['시작일 없는', '', '2026-09-30', undefined, '20260930'],
+  ])('설문 기간: %s 기간을 등록하면 API 날짜 형식으로 보낸다', async (_state, begin, end, storedBegin, storedEnd) => {
+    renderPanel();
+    await screen.findByRole('option', { name: '기본 템플릿' });
+    fireEvent.change(screen.getByLabelText('설문지 제목'), { target: { value: '기간을 정한 설문' } });
+    fireEvent.change(screen.getByLabelText('템플릿'), { target: { value: '11' } });
+    fireEvent.change(screen.getByLabelText('설문 시작일'), { target: { value: begin } });
+    fireEvent.change(screen.getByLabelText('설문 종료일'), { target: { value: end } });
+    fireEvent.click(screen.getByRole('button', { name: '설문지 등록' }));
+
+    await waitFor(() => expect(mocked.createSurvey).toHaveBeenCalledTimes(1));
+    const payload = mocked.createSurvey.mock.calls[0][0];
+    expect(payload.srvyBgngYmd).toBe(storedBegin);
+    expect(payload.srvyEndYmd).toBe(storedEnd);
+    expect(screen.getByLabelText('설문 시작일')).toHaveValue('');
+    expect(screen.getByLabelText('설문 종료일')).toHaveValue('');
+  });
+
+  it('설문 기간: 종료일이 시작일보다 이르면 등록을 막고 해당 입력으로 안내한다', async () => {
+    renderPanel();
+    await screen.findByRole('option', { name: '기본 템플릿' });
+    fireEvent.change(screen.getByLabelText('설문지 제목'), { target: { value: '잘못된 기간' } });
+    fireEvent.change(screen.getByLabelText('템플릿'), { target: { value: '11' } });
+    fireEvent.change(screen.getByLabelText('설문 시작일'), { target: { value: '2026-10-31' } });
+    fireEvent.change(screen.getByLabelText('설문 종료일'), { target: { value: '2026-10-01' } });
+    fireEvent.click(screen.getByRole('button', { name: '설문지 등록' }));
+
+    expect(mocked.createSurvey).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('설문 종료일')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getAllByText('종료일은 시작일과 같거나 뒤여야 합니다.').length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('설문 시작일')).toHaveValue('2026-10-31');
+  });
+
+  it('설문 기간: 등록 실패 시 기간을 보존하고 날짜만 입력해도 이탈을 확인한다', async () => {
+    const user = userEvent.setup();
+    mocked.createSurvey.mockRejectedValue(new Error('등록 실패'));
+    renderPanel();
+    await screen.findByRole('option', { name: '기본 템플릿' });
+    fireEvent.change(screen.getByLabelText('설문지 제목'), { target: { value: '새 설문' } });
+    fireEvent.change(screen.getByLabelText('템플릿'), { target: { value: '11' } });
+    fireEvent.change(screen.getByLabelText('설문 시작일'), { target: { value: '2026-10-01' } });
+    fireEvent.click(screen.getByRole('button', { name: '설문지 등록' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('등록 실패');
+    expect(screen.getByLabelText('설문 시작일')).toHaveValue('2026-10-01');
+
+    fireEvent.change(screen.getByLabelText('설문지 제목'), { target: { value: '' } });
+    confirmMock.mockResolvedValue(false);
+    await selectSurvey(user);
+    expect(confirmMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText('설문 선택')).toHaveValue('');
+  });
+
   it('제목이 비면 등록하지 않고 이유를 보여 준다', async () => {
     renderPanel();
 
@@ -637,12 +694,66 @@ describe('SurveyQuestionsPanel 수정 배선', () => {
     mocked.updateItem.mockResolvedValue(undefined as never);
   });
 
+  it('설문 기간: 수정 시 저장 기간을 불러오고 변경한 기간과 나머지 필드를 함께 보낸다', async () => {
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+    await user.click(screen.getByRole('button', { name: '만족도 조사 제목·기간 수정' }));
+    expect(screen.getByLabelText('설문 시작일 수정')).toHaveValue('2026-09-01');
+    expect(screen.getByLabelText('설문 종료일 수정')).toHaveValue('2026-09-30');
+    fireEvent.change(screen.getByLabelText('설문 시작일 수정'), { target: { value: '2026-10-01' } });
+    fireEvent.change(screen.getByLabelText('설문 종료일 수정'), { target: { value: '2026-10-31' } });
+    await user.click(screen.getByRole('button', { name: /저장/ }));
+
+    await waitFor(() => expect(mocked.updateSurvey).toHaveBeenCalledTimes(1));
+    const [, payload] = mocked.updateSurvey.mock.calls[0];
+    expect(payload).toEqual({
+      srvyTtl: SURVEYS.list[0].srvyTtl,
+      srvyTmpltSn: 11,
+      srvyPrps: '서비스 개선',
+      srvyWrtGdCn: '솔직하게 답해 주세요',
+      srvyTrgt: '전 직원',
+      srvyBgngYmd: '20261001',
+      srvyEndYmd: '20261031',
+    });
+    expect(() => parseGeneratedOperationRequest(updateSurveyOperation, payload)).not.toThrow();
+  });
+
+  it('설문 기간: 기존 기간을 명시적으로 비우면 열린 기간을 저장한다', async () => {
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+    await user.click(screen.getByRole('button', { name: '만족도 조사 제목·기간 수정' }));
+    fireEvent.change(screen.getByLabelText('설문 시작일 수정'), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText('설문 종료일 수정'), { target: { value: '' } });
+    await user.click(screen.getByRole('button', { name: /저장/ }));
+    await waitFor(() => expect(mocked.updateSurvey).toHaveBeenCalledTimes(1));
+    expect(mocked.updateSurvey.mock.calls[0][1]).toMatchObject({ srvyBgngYmd: '', srvyEndYmd: '' });
+  });
+
+  it('설문 기간: 수정 순서 오류와 서버 실패에서도 입력을 보존한다', async () => {
+    const user = userEvent.setup();
+    mocked.updateSurvey.mockRejectedValue(new Error('기간 저장 실패'));
+    renderPanel();
+    await selectSurvey(user);
+    await user.click(screen.getByRole('button', { name: '만족도 조사 제목·기간 수정' }));
+    fireEvent.change(screen.getByLabelText('설문 시작일 수정'), { target: { value: '2026-10-01' } });
+    await user.click(screen.getByRole('button', { name: /저장/ }));
+    expect(mocked.updateSurvey).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('설문 종료일 수정')).toHaveAttribute('aria-invalid', 'true');
+    fireEvent.change(screen.getByLabelText('설문 종료일 수정'), { target: { value: '2026-10-31' } });
+    await user.click(screen.getByRole('button', { name: /저장/ }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('기간 저장 실패');
+    expect(screen.getByLabelText('설문 시작일 수정')).toHaveValue('2026-10-01');
+    expect(screen.getByLabelText('설문 종료일 수정')).toHaveValue('2026-10-31');
+  });
+
   it('설문지 제목 수정은 나머지 6필드를 기존 값 그대로 함께 보낸다', async () => {
     const user = userEvent.setup();
     renderPanel();
     await selectSurvey(user);
 
-    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목 수정' }));
+    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목·기간 수정' }));
     const input = await screen.findByLabelText('설문지 제목 수정');
     expect(input).toHaveValue('만족도 조사');
     await user.clear(input);
@@ -688,7 +799,7 @@ describe('SurveyQuestionsPanel 수정 배선', () => {
     renderPanel();
     await selectSurvey(user);
 
-    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목 수정' }));
+    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목·기간 수정' }));
     await user.clear(await screen.findByLabelText('설문지 제목 수정'));
     await user.click(screen.getByRole('button', { name: /저장/ }));
 
@@ -702,7 +813,7 @@ describe('SurveyQuestionsPanel 수정 배선', () => {
     renderPanel();
     await selectSurvey(user);
 
-    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목 수정' }));
+    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목·기간 수정' }));
     await user.click(screen.getByRole('button', { name: /취소/ }));
 
     await waitFor(() => expect(screen.queryByLabelText('설문지 제목 수정')).toBeNull());
@@ -733,7 +844,7 @@ describe('SurveyQuestionsPanel 수정 배선', () => {
     renderPanel();
     await selectSurvey(user);
 
-    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목 수정' }));
+    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목·기간 수정' }));
     const input = await screen.findByLabelText('설문지 제목 수정');
     await user.clear(input);
     await user.type(input, '새 제목');
@@ -818,7 +929,7 @@ describe('SurveyQuestionsPanel 전체 치환 왕복의 null 안전', () => {
     renderPanel();
     await selectSurvey(user);
 
-    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목 수정' }));
+    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목·기간 수정' }));
     const input = await screen.findByLabelText('설문지 제목 수정');
     await user.clear(input);
     await user.type(input, '만족도 조사 2026');
@@ -840,7 +951,7 @@ describe('SurveyQuestionsPanel 전체 치환 왕복의 null 안전', () => {
     renderPanel();
     await selectSurvey(user);
 
-    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목 수정' }));
+    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목·기간 수정' }));
     const input = await screen.findByLabelText('설문지 제목 수정');
     await user.clear(input);
     await user.type(input, '만족도 조사 2026');

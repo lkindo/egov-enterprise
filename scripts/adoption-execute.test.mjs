@@ -177,3 +177,72 @@ test('technical failure or source/evidence change during verification blocks the
     assert.equal(commands, 1);
   }
 });
+
+function onlineFixture(t) {
+  const value = fixture(t, 'multi-module');
+  const { root, path, write } = value;
+  write('frontend/package.json', '{"private":true}');
+  write('config/ui-url-state-census.json', '{}');
+  const manifest = { schemaVersion: 1, revision: 'a'.repeat(40),
+    apiImage: `registry.example.org/institution/api@sha256:${'1'.repeat(64)}`,
+    frontendImage: `registry.example.org/institution/frontend@sha256:${'2'.repeat(64)}` };
+  const manifestPath = 'execution/release-manifest.json';
+  write(manifestPath, JSON.stringify(manifest));
+  const plan = { schemaVersion: 1, product: 'online', profile: 'core', environmentId: 'fixture-env',
+    images: { api: manifest.apiImage, frontend: manifest.frontendImage },
+    releaseManifest: { path: manifestPath, sha256: sha256(readFileSync(join(root, manifestPath))) } };
+  const approve = (next = plan) => {
+    write(path, JSON.stringify(next));
+    const now = Date.now();
+    write('config/governance/adoption-review.json', JSON.stringify({
+      ...createPendingAdoptionReview({ product: 'online', profile: 'core' }),
+      status: 'approved', environmentId: 'fixture-env', owner: 'test fixture reviewer',
+      reviewedAt: new Date(now - 60_000).toISOString(), validUntil: new Date(now + 60_000).toISOString(),
+      scopeDigest: adoptionScope(root, { product: 'online', profile: 'core' }).digest,
+      evidence: ADOPTION_CONTROLS.online.map(control => {
+        const evidencePath = control === 'execution-artifacts' ? path : 'docs/review.md';
+        return { control, path: evidencePath, sha256: sha256(readFileSync(join(root, evidencePath))) };
+      }),
+    }));
+  };
+  approve();
+  return { ...value, manifest, manifestPath, plan, approve };
+}
+
+test('online execution passes the reviewed complete manifest and both matching image references to deploy', (t) => {
+  const { root, path, manifestPath, plan } = onlineFixture(t);
+  const calls = [];
+  const result = executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,
+    run: (command, args, options) => calls.push({ command, args, options }) });
+  assert.equal(result.executed, true);
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[1].args, ['scripts/deploy.sh', join(root, manifestPath)]);
+  assert.equal(calls[1].options.env.API_IMAGE_REF, plan.images.api);
+  assert.equal(calls[1].options.env.FRONTEND_IMAGE_REF, plan.images.frontend);
+});
+
+test('online manifest omission, tampering and image-pair mismatch fail before verification or deploy', (t) => {
+  for (const failure of ['missing', 'tampered', 'pair', 'partial']) {
+    const { root, path, write, manifest, manifestPath, plan, approve } = onlineFixture(t);
+    if (failure === 'missing') { const { releaseManifest, ...legacy } = plan; approve(legacy); }
+    if (failure === 'tampered') write(manifestPath, JSON.stringify({ ...manifest, revision: 'b'.repeat(40) }));
+    if (failure === 'pair') approve({ ...plan, images: { ...plan.images, api: `registry.example.org/other/api@sha256:${'3'.repeat(64)}` } });
+    if (failure === 'partial') {
+      write(manifestPath, JSON.stringify({ ...manifest, frontendImage: null }));
+      approve({ ...plan, releaseManifest: { path: manifestPath, sha256: sha256(readFileSync(join(root, manifestPath))) } });
+    }
+    assert.throws(() => executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,
+      run: () => assert.fail('invalid manifest may not reach a command') }), /fields|manifest/u);
+  }
+});
+
+test('online manifest changes during technical verification block final deploy', (t) => {
+  const { root, path, write, manifest, manifestPath } = onlineFixture(t);
+  let commands = 0;
+  assert.throws(() => executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,
+    run: () => {
+      commands += 1;
+      write(manifestPath, JSON.stringify({ ...manifest, revision: 'b'.repeat(40) }));
+    } }), /manifest hash mismatch/u);
+  assert.equal(commands, 1);
+});

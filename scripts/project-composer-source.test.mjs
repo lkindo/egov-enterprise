@@ -2,12 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { extname, join, relative, resolve, sep } from 'node:path';
+import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { composerProfile, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
-import { frontendImportSpecifiers, planJavaRemoval, resolveFrontendImport, trackedAndUntrackedFiles, projectFrontendPackMarkers } from './generate-reusable-base-source.mjs';
+import { copySourceTree, frontendImportSpecifiers, planJavaRemoval, resolveFrontendImport, trackedAndUntrackedFiles, projectFrontendPackMarkers, writeProjectedManifest } from './generate-reusable-base-source.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const manifest = JSON.parse(readFileSync(join(root, 'config/reusable-base-profiles.json'), 'utf8'));
@@ -23,14 +23,153 @@ const frontendSources = new Map(frontendFiles.filter(file => ['.ts', '.tsx', '.j
 const frontendKnownFiles = new Set([...frontendSources.keys()].map(file => join(root, file)));
 const covers = (prefix, path) => path === prefix || path.startsWith(`${prefix}/`);
 const integrityGates = [
+  ['api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java', ['note', 'notification']],
   ['api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java', 'system'],
   ['api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java', 'template'],
 ];
+const gateDomains = owner => Array.isArray(owner) ? owner : [owner];
+const gateSelected = (selected, owner) => gateDomains(owner).every(domain => selected.includes(domain));
+
+const displayNameSupport = [
+  'foundation/src/main/java/nuri/foundation/core/user/UserDisplayNameLookup.java',
+  'business-core/src/main/java/nuri/business/service/user/UserDisplayNameLookupService.java',
+  'business-core/src/test/java/nuri/business/service/user/UserDisplayNameLookupServiceTest.java',
+];
+
+function supportFixture(t) {
+  const base = realpathSync(tmpdir());
+  const directory = mkdtempSync(join(base, 'composer-support-'));
+  t.after(() => {
+    const child = relative(base, realpathSync(directory));
+    assert.ok(child.startsWith('composer-support-') && !child.includes(sep));
+    rmSync(directory, { recursive: true, force: true });
+  });
+  const sources = new Map([
+    [displayNameSupport[0], 'package nuri.foundation.core.user; public interface UserDisplayNameLookup {}'],
+    [displayNameSupport[1], 'package nuri.business.service.user; import nuri.foundation.core.user.UserDisplayNameLookup; class UserDisplayNameLookupService implements UserDisplayNameLookup {}'],
+    [displayNameSupport[2], 'package nuri.business.service.user; class UserDisplayNameLookupServiceTest { UserDisplayNameLookupService service; }'],
+    ['business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java', 'package nuri.business.service.memoreport; import nuri.foundation.core.user.UserDisplayNameLookup; class MemoReportService { UserDisplayNameLookup lookup; }'],
+  ]);
+  for (const [file, source] of sources) {
+    mkdirSync(dirname(join(directory, file)), { recursive: true });
+    writeFileSync(join(directory, file), source);
+  }
+  const manifest = { packs: { core: { backend: { appDomains: [] } }, demo: { backend: {
+    appDomains: ['memoreport'], domainSupportFiles: { memoreport: displayNameSupport },
+  } } } };
+  return { directory, manifest, java: [...sources.keys()].map(file => join(directory, file)) };
+}
+
+test('domain support follows its selected consumer without weakening mandatory dependency guards', t => {
+  const { directory, manifest, java } = supportFixture(t);
+  for (const profile of [
+    { packs: ['core'] },
+    { packs: ['core', 'demo'], resolvedDomains: [] },
+  ]) {
+    const plan = planJavaRemoval(directory, manifest, profile, java);
+    for (const file of displayNameSupport) assert.ok(plan.removed.has(join(directory, file)), `${file}: excluded consumer must remove its support`);
+  }
+  for (const profile of [
+    { packs: ['core', 'demo'] },
+    { packs: ['core', 'demo'], resolvedDomains: ['memoreport'] },
+  ]) {
+    assert.equal(planJavaRemoval(directory, manifest, profile, java).removed.size, 0);
+  }
+  const required = join(directory, 'business-core/src/main/java/nuri/business/service/user/RequiredService.java');
+  writeFileSync(required, 'package nuri.business.service.user; import nuri.foundation.core.user.UserDisplayNameLookup; class RequiredService { UserDisplayNameLookup lookup; }');
+  assert.throws(() => planJavaRemoval(directory, manifest, { packs: ['core'] }, [...java, required]), /필수 모듈이 제외 domain을 참조한다/);
+});
+
+test('domain support rejects unsafe, missing, duplicate and unowned declarations', t => {
+  const { directory, manifest, java } = supportFixture(t);
+  for (const files of [
+    ['../outside.java'],
+    ['foundation/src/main/java/../../outside.java'],
+    ['foundation/src/main/java/nuri/Missing.java'],
+    [displayNameSupport[0], displayNameSupport[0]],
+  ]) {
+    const changed = structuredClone(manifest);
+    changed.packs.demo.backend.domainSupportFiles.memoreport = files;
+    assert.throws(() => planJavaRemoval(directory, changed, { packs: ['core'] }, java), /support/i);
+  }
+  const changed = structuredClone(manifest);
+  changed.packs.demo.backend.domainSupportFiles.unknown = [displayNameSupport[0]];
+  assert.throws(() => planJavaRemoval(directory, changed, { packs: ['core'] }, java), /support/i);
+  changed.packs.demo.backend.appDomains.push('unknown');
+  assert.throws(() => planJavaRemoval(directory, changed, { packs: ['core'] }, java), /duplicate domain support/i);
+});
+
+test('selected domain support cannot disappear from a custom artifact', t => {
+  const { directory, manifest } = supportFixture(t);
+  const output = join(directory, 'output');
+  mkdirSync(output);
+  const composition = { profile: 'custom', resolvedDomains: ['memoreport'], frontend: { includedPaths: [], removePaths: [] } };
+  const consumer = 'business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java';
+  for (const file of [consumer, ...displayNameSupport]) {
+    mkdirSync(dirname(join(output, file)), { recursive: true });
+    writeFileSync(join(output, file), readFileSync(join(directory, file)));
+  }
+  assert.doesNotThrow(() => assertComposerSourceSurvives(directory, output, composition, manifest));
+  rmSync(join(output, displayNameSupport[1]));
+  assert.throws(() => assertComposerSourceSurvives(directory, output, composition, manifest), /Selected capability source/);
+});
+
+test('custom manifest domain support follows exact selected domains', t => {
+  const { directory, manifest } = supportFixture(t);
+  mkdirSync(join(directory, 'config'));
+  for (const pack of Object.values(manifest.packs)) pack.database = { tables: [], sequences: [] };
+  const lock = { generatedAt: '2026-09-27T00:00:00Z', tables: [], sequences: [] };
+  const profile = { packs: ['core', 'demo'] };
+  for (const resolvedDomains of [[], ['memoreport']]) {
+    writeProjectedManifest(directory, manifest, 'custom', profile, lock, {
+      profile: 'custom', resolvedDomains, tables: [], explicitSequences: [],
+    });
+    const projected = JSON.parse(readFileSync(join(directory, 'config/reusable-base-profiles.json'), 'utf8'));
+    assert.deepEqual(projected.packs.demo.backend.domainSupportFiles, resolvedDomains.length ? { memoreport: displayNameSupport } : {});
+  }
+});
+
+test('source copying excludes restricted skill trees while preserving ordinary source and the producer', t => {
+  const base = realpathSync(tmpdir());
+  const fixture = mkdtempSync(join(base, 'composer-copy-'));
+  t.after(() => {
+    const child = relative(base, realpathSync(fixture));
+    assert.ok(child.startsWith('composer-copy-') && !child.includes(sep));
+    rmSync(fixture, { recursive: true, force: true });
+  });
+  const sourceRoot = join(fixture, 'source');
+  const output = join(fixture, 'output');
+  const excluded = ['docx', 'pdf', 'pptx', 'xlsx'].flatMap(skill => [
+    `.agent/skills/${skill}/SKILL.md`,
+    `.agent/skills/${skill}/scripts/nested/tool.js`,
+    `.agent/skills/${skill}/LICENSE.txt`,
+  ]);
+  const retained = [
+    'frontend/src/new-local-file.ts',
+    '.agent/skills/db-governance/SKILL.md',
+    '.agent/skills/pdf-extra/SKILL.md',
+    '.agent/skills/docx-helper/SKILL.md',
+    'docs/pdf/guide.md',
+    'gradlew',
+  ];
+  const files = [...excluded, ...retained];
+  const content = file => `synthetic source fixture: ${file}\n`;
+  for (const file of files) {
+    mkdirSync(dirname(join(sourceRoot, file)), { recursive: true });
+    writeFileSync(join(sourceRoot, file), content(file));
+  }
+  copySourceTree(output, { sourceRoot, files });
+  for (const file of excluded) {
+    assert.equal(existsSync(join(output, file)), false, `${file} must not be redistributed`);
+  }
+  for (const file of retained) assert.equal(readFileSync(join(output, file), 'utf8'), content(file));
+  for (const file of files) assert.equal(readFileSync(join(sourceRoot, file), 'utf8'), content(file));
+});
 
 function assertIntegrityGateAcknowledgements(profile, selected) {
   for (const [file, owner] of integrityGates) {
     const acknowledgements = (profile.acknowledgedRemovedGates ?? []).filter(row => row.file === file);
-    assert.equal(acknowledgements.length, selected.includes(owner) ? 0 : 1, `${file}: acknowledged removal must follow its owner`);
+    assert.equal(acknowledgements.length, gateSelected(selected, owner) ? 0 : 1, `${file}: acknowledged removal must follow its owner`);
     for (const row of acknowledgements) assert.ok(row.reason.trim().length > 0);
   }
 }
@@ -92,9 +231,10 @@ test('each selectable domain retains its Java production sources after actual de
     const composition = resolveProjectRecipe(recipe([domain]), catalog);
     const profile = composerProfile(manifest, composition);
     const plan = planJavaRemoval(root, manifest, profile, java);
+    for (const file of displayNameSupport) assert.equal(plan.removed.has(join(root, file)), !composition.resolvedDomains.includes('memoreport'), `${domain}: ${file}`);
     assertIntegrityGateAcknowledgements(profile, composition.resolvedDomains);
     for (const [file, owner] of integrityGates) {
-      assert.equal(plan.removed.has(join(root, file)), !composition.resolvedDomains.includes(owner), `${domain}: ${file}`);
+      assert.equal(plan.removed.has(join(root, file)), !gateSelected(composition.resolvedDomains, owner), `${domain}: ${file}`);
     }
     for (const selected of composition.resolvedDomains) for (const file of plan.removed) {
       const path = file.replaceAll('\\', '/');
@@ -108,8 +248,9 @@ test('preset integrity gate acknowledgements match the real removal plan', () =>
     const selected = profile.packs.flatMap(pack => manifest.packs[pack].backend?.appDomains ?? []);
     assertIntegrityGateAcknowledgements(profile, selected);
     const plan = planJavaRemoval(root, manifest, profile, java);
+    for (const file of displayNameSupport) assert.equal(plan.removed.has(join(root, file)), !selected.includes('memoreport'), `${name}: ${file}`);
     for (const [file, owner] of integrityGates) {
-      assert.equal(plan.removed.has(join(root, file)), !selected.includes(owner), `${name}: ${file}`);
+      assert.equal(plan.removed.has(join(root, file)), !gateSelected(selected, owner), `${name}: ${file}`);
     }
   }
 });
@@ -118,7 +259,7 @@ test('missing integrity gate ownership is red for a custom composition', async (
   const source = readFileSync(join(root, 'scripts/project-composer-source.mjs'), 'utf8').replaceAll('\r\n', '\n');
   const composition = resolveProjectRecipe(recipe([]), catalog);
   for (const [file, owner] of integrityGates) {
-    const declaration = `  '${file}': ['${owner}'],\n`;
+    const declaration = `  '${file}': [${gateDomains(owner).map(domain => `'${domain}'`).join(', ')}],\n`;
     assert.ok(source.includes(declaration), `${file}: owner declaration is present before mutation`);
     const mutant = await import(`data:text/javascript;base64,${Buffer.from(source.replace(declaration, '')).toString('base64')}`);
     assert.throws(() => assertIntegrityGateAcknowledgements(mutant.composerProfile(manifest, composition), []), /acknowledged removal/);
@@ -178,9 +319,9 @@ test('selected-source survival rejects collateral deletion and allows explicitly
   }
   writeFileSync(join(upstream, 'frontend/src/board/template/page.tsx'), 'template');
   const composition = { profile: 'custom', resolvedDomains: [], frontend: { includedPaths: ['src/board'], removePaths: ['src/board/template'] } };
-  assert.doesNotThrow(() => assertComposerSourceSurvives(upstream, output, composition));
+  assert.doesNotThrow(() => assertComposerSourceSurvives(upstream, output, composition, { packs: {} }));
   writeFileSync(join(upstream, 'frontend/src/board/required.tsx'), 'required');
-  assert.throws(() => assertComposerSourceSurvives(upstream, output, composition), /Selected capability source/);
+  assert.throws(() => assertComposerSourceSurvives(upstream, output, composition, { packs: {} }), /Selected capability source/);
 });
 
 test('validated DB bundle requires the exact locked SQL population and unchanged raw file bytes', t => {

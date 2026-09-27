@@ -142,6 +142,12 @@ npm run base:generate-source -- \
 그 도메인에 의존하는 소비자, 프런트 라우트와 전이 importer를 제거한다. 원본 마이그레이션 체인은
 검증된 V1 번들로 교체하고 `REUSABLE_BASE.md`와 `reusable-base-lock.json`을 기록한다.
 
+공식·개발용 산출물 모두 재배포 제한이 확인된 `.agent/skills/docx`, `pdf`, `pptx`, `xlsx` 디렉터리의
+파일을 복사하지 않는다. 원본 파일과 Git 이력은 변경하지 않으며, 이 제외가 나머지 자산의 배포 권리를
+보증하지는 않는다. 기존 산출물에는 소급 적용되지 않으므로 재사용·게시 전에 다시 생성해야 한다.
+개발용 `--allow-dirty` 생성은 그 밖의 추적 파일과 gitignore에 걸리지 않는 새 로컬 파일을 계속 포함한다.
+공식 산출물은 기존의 clean working tree·릴리스 태그 요건을 그대로 따른다.
+
 `--layout`은 소스 생성기의 인자이며 DB 생성기에 전달하지 않는다. 기본 소스 출력 경로는
 `build/reusable-base/source/<profile>-<sha>`이고 단일모듈에는 `-single-module` 접미사가 붙는다.
 명시 `--output`도 기존 디렉터리를 덮어쓸 수 없다. 소스 lock의 `layout`이 선택 결과를 기록하며,
@@ -150,6 +156,8 @@ npm run base:generate-source -- \
 생성 완료 시 출력 폴더에 독립 Git 저장소를 초기화한다. 부모 저장소의 `build/` 제외 규칙이
 프런트엔드 파일 탐색에 전파되지 않도록 하는 경계이며, 파일 추가·커밋·원격 연결은 수행하지 않는다.
 인수 시 숨김 `.git` 디렉터리도 유지하거나, 옮긴 프로젝트의 루트에서 `git init` 후 빌드한다.
+ZDM 게이트는 projection 근거를 검증한 뒤 이 초기 unborn 저장소를 수용한다.
+HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-architecture/zero-downtime-migration.md#32-보호-이력에-있던-versioned-sql의-불변성)에 필요한 전체 이력과 보호 remote ref를 준비해야 한다.
 
 ### 3.6 제거되는 거버넌스 게이트와 승인
 

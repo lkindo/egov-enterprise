@@ -57,6 +57,7 @@ describe('통계 허브 탭별 조회', () => {
     await waitFor(() => expect(services.getConnectStats).toHaveBeenCalled());
     expect(services.getUserStats).toHaveBeenCalled();
     expect(services.getDataUsageStats).not.toHaveBeenCalled();
+    expect(screen.getByText('최근 1개월 성공 로그인 합계')).toBeInTheDocument();
   });
 
   it('자료 이용 탭을 열면 자료 이용 통계를 부른다', async () => {
@@ -84,6 +85,8 @@ describe('통계 허브 탭별 조회', () => {
     expect(fromDate <= toDate).toBe(true);
     expect(services.getConnectStats).toHaveBeenLastCalledWith({ fromDate, toDate });
     expect(screen.getByText(`집계 구간: ${fromDate} ~ ${toDate}`)).toBeInTheDocument();
+    expect(screen.getByText('선택 기간 성공 로그인 합계')).toBeInTheDocument();
+    expect(screen.queryByText('최근 1개월 성공 로그인 합계')).not.toBeInTheDocument();
   });
 
   it('[DIP B5 F6] 한쪽만 고른 기간은 보내지 않고 서버 기본값을 집계한다', async () => {

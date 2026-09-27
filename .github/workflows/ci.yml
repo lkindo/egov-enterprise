@@ -339,6 +339,8 @@ jobs:
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6  # v6.0.1
@@ -396,7 +398,7 @@ jobs:
         id: build-and-test
         run: |
           set -o pipefail
-          ./gradlew onlineBuild jacocoOnlineCoverageVerification -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log
+          ./gradlew onlineBuild jacocoOnlineCoverageVerification "-Dopenapi.export.path=$GITHUB_WORKSPACE/api-docs.json" --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log
 
       # 빈 PostgreSQL 17에 Flyway 전량 적용 후 Hibernate validate로 실제 물리 계약을 검사한다.
       # 오프라인 Entity 린터와 상보적이며 Docker가 필요한 이 검증은 스킵하지 않는다.
@@ -416,8 +418,8 @@ jobs:
         id: api-docs-gate
         # api-docs.json이 tracked 상태인지 먼저 확인해 삭제가 diff 검사에서 공집합 통과하지 않게 한다.
         run: |
-          git ls-files --error-unmatch api-docs.json
-          git diff --exit-code api-docs.json
+          git ls-files --error-unmatch -- "$GITHUB_WORKSPACE/api-docs.json"
+          git diff --exit-code -- "$GITHUB_WORKSPACE/api-docs.json"
 
       - name: Check OpenAPI Spec Changes
         id: openapi-changes
@@ -1048,7 +1050,7 @@ jobs:
         include:
           - scope: business-app
             gradle: ":business-app:pitest"
-            classes: "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.informalsanction.*,nuri.business.service.comment.*,nuri.business.service.isg.*,nuri.business.service.operation.*"
+            classes: "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.informalsanction.*,nuri.business.service.comment.*,nuri.business.service.isg.*,nuri.business.service.operation.*,nuri.business.service.survey.SurveyResultService"
             tests: "nuri.business.*"
 
           - scope: business-core-file
@@ -1080,10 +1082,10 @@ jobs:
             classes: "nuri.foundation.security.net.*"
             tests: "nuri.foundation.*"
 
-          # 로그인 IP·시간 정책, refresh 회전, 감사 기록과 OTP 판정의 보안 회귀를 검증한다.
+          # 로그인 IP·시간 정책, refresh 회전, 감사·OTP와 인증 provider·요청 제한·메뉴 순환을 검증한다.
           - scope: business-core-auth
             gradle: ":business-core:pitest"
-            classes: "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*"
+            classes: "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*,nuri.business.service.menu.MenuService,nuri.business.security.iam.EgovAuthenticationProvider,nuri.business.security.filter.RateLimitFilter"
             tests: "nuri.business.*"
 
           # QueryDSL 조건 누락으로 전체 조회·계정 열거가 되는 회귀와 공용 paging 경계를 검증한다.
@@ -1127,17 +1129,7 @@ jobs:
             sleep "$backoff"
           done
 
-      # 스코프마다 대상 클래스가 달라 히스토리도 분리한다 —
-      #   한 키를 공유하면 스코프끼리 서로의 증분 히스토리를 덮어써 매번 전량 재분석이 된다.
-      - name: Cache PIT incremental history
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: "**/build/pitest/pitHistory.txt"
-          key: pit-history-${{ matrix.scope }}-${{ github.sha }}
-          restore-keys: |
-            pit-history-${{ matrix.scope }}-
-
-      - name: Incremental Mutation Test (${{ matrix.scope }})
+      - name: Mutation Test (${{ matrix.scope }})
         run: ./gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain
         env:
           PIT_TARGET_CLASSES: ${{ matrix.classes }}
@@ -1216,17 +1208,7 @@ jobs:
             sleep "$backoff"
           done
 
-      # 스코프마다 대상 클래스가 달라 히스토리도 분리한다 —
-      #   한 키를 공유하면 스코프끼리 서로의 증분 히스토리를 덮어써 매번 전량 재분석이 된다.
-      - name: Cache PIT incremental history
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: "**/build/pitest/pitHistory.txt"
-          key: pit-history-${{ matrix.scope }}-${{ github.sha }}
-          restore-keys: |
-            pit-history-${{ matrix.scope }}-
-
-      - name: Incremental Mutation Test (${{ matrix.scope }})
+      - name: Mutation Test (${{ matrix.scope }})
         run: ./gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain
         env:
           PIT_TARGET_CLASSES: ${{ matrix.classes }}

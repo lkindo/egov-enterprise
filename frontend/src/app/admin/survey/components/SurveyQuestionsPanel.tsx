@@ -31,6 +31,7 @@ import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { SurveyCopyDialog } from './SurveyCopyDialog';
 import { omitNulls } from '@/lib/api/omit-nulls';
+import { fromDateInputValue, toDateInputValue } from '@/lib/format-date';
 import {
   surveyInfoCreateSchema,
   surveyInfoValidationLabels,
@@ -45,6 +46,8 @@ import {
 
 /** '1' = 객관식. 그 외는 주관식으로 취급한다(백엔드 통계 DTO 와 같은 규약). */
 const MULTIPLE_CHOICE = '1';
+const PERIOD_FIELDS = ['srvyBgngYmd', 'srvyEndYmd'] as const;
+const EMPTY_PERIOD = { srvyBgngYmd: '', srvyEndYmd: '' };
 
 /**
  * 문항·항목 관리 패널 — 허브의 `questions` 탭에서 렌더한다.
@@ -85,6 +88,7 @@ export default function SurveyQuestionsPanel() {
    */
   const [newSurveyTitle, setNewSurveyTitle] = useState('');
   const [newSurveyTemplate, setNewSurveyTemplate] = useState('');
+  const [newSurveyPeriod, setNewSurveyPeriod] = useState(EMPTY_PERIOD);
   const surveyPendingRef = useRef(false);
   const surveyDeletePendingRef = useRef(false);
   const surveyValidation = useManualFormValidation(surveyInfoCreateSchema, {
@@ -107,10 +111,11 @@ export default function SurveyQuestionsPanel() {
   });
 
   const addSurvey = useMutation({
-    mutationFn: (payload: { srvyTtl: string; srvyTmpltSn: number }) =>
+    mutationFn: (payload: SurveyInfoUpdate) =>
       surveyAdminService.createSurvey(payload),
     onSuccess: () => {
       setNewSurveyTitle('');
+      setNewSurveyPeriod(EMPTY_PERIOD);
       setError(null);
       surveyValidation.setFormErrors({}, false);
       void queryClient.invalidateQueries({ queryKey: surveysKey });
@@ -151,9 +156,13 @@ export default function SurveyQuestionsPanel() {
   const [editingTarget, setEditingTarget] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
   const [originalEditingText, setOriginalEditingText] = useState('');
+  const [editingPeriod, setEditingPeriod] = useState(EMPTY_PERIOD);
+  const [originalEditingPeriod, setOriginalEditingPeriod] = useState(EMPTY_PERIOD);
   const editPendingRef = useRef(false);
   const navigate = useUnsavedChanges(() => ({
-    dirty: Boolean(newSurveyTitle || newQuestion || newItemText || (editingTarget && editingText !== originalEditingText)),
+    dirty: Boolean(newSurveyTitle || newSurveyPeriod.srvyBgngYmd || newSurveyPeriod.srvyEndYmd
+      || newQuestion || newItemText || (editingTarget && editingText !== originalEditingText)
+      || (editingTarget === 'survey' && PERIOD_FIELDS.some((name) => editingPeriod[name] !== originalEditingPeriod[name]))),
     pending: surveyPendingRef.current || surveyDeletePendingRef.current || questionPendingRef.current || itemPendingRef.current || deletePendingRef.current || editPendingRef.current,
   }));
 
@@ -162,7 +171,7 @@ export default function SurveyQuestionsPanel() {
     동기 잠금이 폼 검증 census 의 native-form 계약이다(임시 trim 검사로는 그 계약을 못 지킨다).
   */
   const titleEditValidation = useManualFormValidation(surveyTitleEditSchema, {
-    labels: { srvyTtl: '설문지 제목' },
+    labels: surveyInfoValidationLabels,
   });
   const questionEditValidation = useManualFormValidation(surveyQuestionEditSchema, {
     labels: { qstnCn: '문항 내용' },
@@ -206,7 +215,7 @@ export default function SurveyQuestionsPanel() {
       editPendingRef.current = false;
       const fieldErrors = extractFieldErrors(mutationError);
       if (fieldErrors) titleEditValidation.setFormErrors(fieldErrors);
-      else setError(extractErrorMessage(mutationError, '설문지 제목 수정에 실패했습니다.'));
+      else setError(extractErrorMessage(mutationError, '설문지 수정에 실패했습니다.'));
     },
   });
 
@@ -361,12 +370,18 @@ export default function SurveyQuestionsPanel() {
       srvyTtl: newSurveyTitle,
       srvyTmpltSn: newSurveyTemplate ? Number(newSurveyTemplate) : 0,
       srvyPrps: '',
+      ...newSurveyPeriod,
     });
     if (!validated) return;
 
     surveyPendingRef.current = true;
     setError(null);
-    addSurvey.mutate({ srvyTtl: validated.srvyTtl, srvyTmpltSn: validated.srvyTmpltSn });
+    addSurvey.mutate({
+      srvyTtl: validated.srvyTtl,
+      srvyTmpltSn: validated.srvyTmpltSn,
+      ...(validated.srvyBgngYmd ? { srvyBgngYmd: validated.srvyBgngYmd } : {}),
+      ...(validated.srvyEndYmd ? { srvyEndYmd: validated.srvyEndYmd } : {}),
+    });
   };
 
   const templateOptions = templates?.list ?? [];
@@ -429,12 +444,30 @@ export default function SurveyQuestionsPanel() {
               <p {...surveyValidation.messageProps('srvyTmpltSn')} className="text-xs text-destructive-emphasis" />
             ) : null}
           </div>
-          <div className="flex items-end">
-            <Button type="submit" disabled={addSurvey.isPending} aria-busy={addSurvey.isPending || undefined} className="gap-2">
-              <Plus size={16} aria-hidden="true" /> {addSurvey.isPending ? '등록 중…' : '설문지 등록'}
-            </Button>
-          </div>
         </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {PERIOD_FIELDS.map((name) => (
+            <div key={name} className="space-y-1.5">
+              <label htmlFor={`new-survey-${name}`} className="text-xs font-bold text-muted-foreground">{surveyInfoValidationLabels[name]}</label>
+              <Input
+                id={`new-survey-${name}`}
+                type="date"
+                {...surveyValidation.fieldProps(name)}
+                value={toDateInputValue(newSurveyPeriod[name])}
+                onChange={(event) => {
+                  surveyValidation.clearError(name);
+                  setNewSurveyPeriod((current) => ({ ...current, [name]: fromDateInputValue(event.target.value) }));
+                }}
+                disabled={addSurvey.isPending}
+              />
+              {surveyValidation.errors[name] ? <p {...surveyValidation.messageProps(name)} className="text-xs text-destructive-emphasis" /> : null}
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">시작일을 비우면 즉시 시작하며, 종료일을 비우면 무기한 진행합니다. 시작일과 종료일 당일에도 응답할 수 있습니다.</p>
+        <Button type="submit" disabled={addSurvey.isPending} aria-busy={addSurvey.isPending || undefined} className="gap-2">
+          <Plus size={16} aria-hidden="true" /> {addSurvey.isPending ? '등록 중…' : '설문지 등록'}
+        </Button>
         {templateOptions.length === 0 ? (
           // 템플릿이 필수인데 없으면 등록이 원리적으로 불가능하다. 그 사실을 먼저 말한다.
           <p className="text-xs text-muted-foreground">
@@ -479,11 +512,17 @@ export default function SurveyQuestionsPanel() {
           variant="outline"
           size="sm"
           disabled={srvySn === null || removeSurvey.isPending || editingTarget !== null}
-          aria-label={selectedSurvey ? `${selectedSurvey.srvyTtl} 제목 수정` : '설문지 제목 수정'}
-          onClick={() => { if (selectedSurvey) beginEdit('survey', selectedSurvey.srvyTtl ?? ''); }}
+          aria-label={selectedSurvey ? `${selectedSurvey.srvyTtl} 제목·기간 수정` : '설문지 제목·기간 수정'}
+          onClick={() => {
+            if (!selectedSurvey) return;
+            const period = { srvyBgngYmd: selectedSurvey.srvyBgngYmd ?? '', srvyEndYmd: selectedSurvey.srvyEndYmd ?? '' };
+            setEditingPeriod(period);
+            setOriginalEditingPeriod(period);
+            beginEdit('survey', selectedSurvey.srvyTtl ?? '');
+          }}
           className="shrink-0"
         >
-          <Pencil size={14} aria-hidden="true" /> 제목 수정
+          <Pencil size={14} aria-hidden="true" /> 제목·기간 수정
         </Button>
         <Button
           type="button"
@@ -511,22 +550,22 @@ export default function SurveyQuestionsPanel() {
 
       {editingTarget === 'survey' && selectedSurvey ? (
         <form
-          className="flex items-center gap-2"
+          className="space-y-3 rounded-lg border border-border p-4"
           noValidate
           onSubmit={(e) => {
             e.preventDefault();
-            submitEdit(titleEditValidation, { srvyTtl: editingText }, (validated) =>
+            submitEdit(titleEditValidation, { srvyTtl: editingText, ...editingPeriod }, (validated) =>
               editSurvey.mutate({
                 srvySn: selectedSurvey.srvySn!,
                 /*
-                  제목 외 6필드는 목록 행의 기존 값을 그대로 되돌려 보낸다 — 전체 치환이라
-                  빠뜨리면 기간·목적·작성안내·대상이 지워진다.
+                  제목·기간은 입력값을 보내고 목적·작성안내·대상·템플릿은 그대로 되돌려 보낸다.
+                  전체 치환이므로 나머지 필드를 빠뜨리면 기존 정보가 지워진다.
 
                   ⚠ 그중 **null 인 값은 떨어뜨려야 한다.** 생성 계약은 이 5필드를 요청에서
                   `.optional()`(null 거부), 응답에서 `.optional().nullable()` 로 선언한다
-                  (DEC-OPS-028 의 방향 비대칭 — omit-nulls.ts). 그런데 이 화면의 **등록** 폼은
-                  제목·템플릿 2개만 보내므로 서버가 나머지 5개를 null 로 저장한다. 그래서 이
-                  화면으로 만든 설문지를 수정하려 하면 null 이 그대로 요청에 실려
+                  (DEC-OPS-028 의 방향 비대칭 — omit-nulls.ts). 선택 입력을 비운 채 **등록**하면
+                  서버는 그 값을 null 로 저장한다. 종전에는 이 화면으로 만든 설문지를
+                  수정하려 하면 null 이 그대로 요청에 실려
                   `parseGeneratedOperationRequest` 가 **HTTP 요청 전에** throw 했다 — 제목 한
                   글자도 고칠 수 없었고, 서버에 닿지 않아 로그에도 단서가 없었다.
 
@@ -538,14 +577,15 @@ export default function SurveyQuestionsPanel() {
                   ...omitNulls({
                     srvyPrps: selectedSurvey.srvyPrps,
                     srvyWrtGdCn: selectedSurvey.srvyWrtGdCn,
-                    srvyBgngYmd: selectedSurvey.srvyBgngYmd,
-                    srvyEndYmd: selectedSurvey.srvyEndYmd,
+                    srvyBgngYmd: editingPeriod.srvyBgngYmd === originalEditingPeriod.srvyBgngYmd ? selectedSurvey.srvyBgngYmd : validated.srvyBgngYmd,
+                    srvyEndYmd: editingPeriod.srvyEndYmd === originalEditingPeriod.srvyEndYmd ? selectedSurvey.srvyEndYmd : validated.srvyEndYmd,
                     srvyTrgt: selectedSurvey.srvyTrgt,
                   }),
                 },
               }));
           }}
         >
+          <FormErrorSummary errors={titleEditValidation.errors} labels={surveyInfoValidationLabels} onNavigate={(name) => { titleEditValidation.focusError(name); }} />
           <Input
             {...titleEditValidation.fieldProps('srvyTtl')}
             value={editingText}
@@ -554,12 +594,34 @@ export default function SurveyQuestionsPanel() {
             maxLength={256}
             autoFocus
           />
-          <Button type="submit" size="sm" disabled={editSurvey.isPending} aria-busy={editSurvey.isPending || undefined} className="shrink-0">
-            {editSurvey.isPending ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Check size={14} aria-hidden="true" />} 저장
-          </Button>
-          <Button type="button" size="sm" variant="ghost" disabled={editSurvey.isPending} onClick={cancelEdit} className="shrink-0">
-            <X size={14} aria-hidden="true" /> 취소
-          </Button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {PERIOD_FIELDS.map((name) => (
+              <div key={name} className="space-y-1.5">
+                <label htmlFor={`edit-survey-${name}`} className="text-xs font-bold text-muted-foreground">{surveyInfoValidationLabels[name]} 수정</label>
+                <Input
+                  id={`edit-survey-${name}`}
+                  type="date"
+                  {...titleEditValidation.fieldProps(name)}
+                  value={toDateInputValue(editingPeriod[name])}
+                  onChange={(event) => {
+                    titleEditValidation.clearError(name);
+                    setEditingPeriod((current) => ({ ...current, [name]: fromDateInputValue(event.target.value) }));
+                  }}
+                  disabled={editSurvey.isPending}
+                />
+                {titleEditValidation.errors[name] ? <p {...titleEditValidation.messageProps(name)} className="text-xs text-destructive-emphasis" /> : null}
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">시작일을 비우면 즉시 시작하며, 종료일을 비우면 무기한 진행합니다.</p>
+          <div className="flex gap-2">
+            <Button type="submit" size="sm" disabled={editSurvey.isPending} aria-busy={editSurvey.isPending || undefined} className="shrink-0">
+              {editSurvey.isPending ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Check size={14} aria-hidden="true" />} 저장
+            </Button>
+            <Button type="button" size="sm" variant="ghost" disabled={editSurvey.isPending} onClick={cancelEdit} className="shrink-0">
+              <X size={14} aria-hidden="true" /> 취소
+            </Button>
+          </div>
         </form>
       ) : null}
       {editingTarget === 'survey' && titleEditValidation.errors.srvyTtl ? (

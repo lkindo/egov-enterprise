@@ -1,0 +1,772 @@
+#!/usr/bin/env node
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { createHash, randomBytes } from 'node:crypto';
+import { request as httpRequest } from 'node:http';
+import { lstatSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { closedEnvironment, assertBuildTarget } from './run-isolated-e2e.mjs';
+import { createProductionBuildInputTreeHash, selectProductionBuildInputPaths } from '../frontend/scripts/ui-quality-baseline-core.mjs';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const ID = /^sha256:[a-f0-9]{64}$/u;
+const HASH = /^[a-f0-9]{64}$/u;
+const RUN = /^[a-f0-9]{24}$/u;
+const OWNER = 'egov.release-smoke.run';
+const TREE_LABEL = 'io.egov.ui-quality.build-input-tree-sha256';
+const API_ENTRYPOINT = ['sh', '-c', 'exec java $JAVA_OPTS -jar app.jar'];
+const SAFE_JAVA_OPTION = /^(?:-Xm[sx][1-9]\d*[kKmMgG]|-Xss[1-9]\d*[kKmMgG]|-XX:\+UseParallelGC)$/u;
+const BOOTSTRAP_ACK = 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE';
+const BACKEND_URL = 'http://api:8080/api/v1';
+const ENCODED_AUTH_PATHS = ['/api/v1/auth/%2572eissue', '/api/v1/%2561uth/login', '/api/v1/auth/%ZZreissue'];
+const failure = category => new Error(`Isolated release smoke: ${category}.`);
+const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+const privateWrite = (file, bytes) => writeFileSync(file, bytes, { mode: 0o600, flag: 'wx' });
+
+// Engine output can contain credentials or cookie values. It is never included in errors.
+export function smokeCommand(command, args, { cwd = ROOT, env = closedEnvironment(), input,
+  binary = false, timeout = 900_000, maxBuffer = 64 * 1024 * 1024, executable = command, prefix = [] } = {}) {
+  const result = spawnSync(executable, [...prefix, ...args], { cwd, env, input,
+    encoding: binary ? undefined : 'utf8', windowsHide: true, timeout, maxBuffer });
+  if (result.error || result.status !== 0) throw failure('command failed; raw output withheld');
+  return binary ? result.stdout : result.stdout.trim();
+}
+
+export function captureReleaseSmokeSource(root = ROOT, run = smokeCommand) {
+  const physicalRoot = realpathSync(root);
+  const outsideRoot = relative => relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative);
+  const paths = run('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: root })
+    .split('\0').filter(Boolean);
+  const read = file => {
+    const target = path.resolve(root, file);
+    const relative = path.relative(root, target);
+    if (outsideRoot(relative) || !lstatSync(target).isFile() || lstatSync(target).isSymbolicLink()) throw failure('unsafe source input');
+    const physicalTarget = realpathSync(target);
+    if (outsideRoot(path.relative(physicalRoot, physicalTarget))) throw failure('unsafe source input');
+    return readFileSync(physicalTarget);
+  };
+  const productionHash = createProductionBuildInputTreeHash({ trackedPaths: paths, readCommittedFile: read });
+  // Docker copies frontend/scripts too; include the URL preflight and every other script.
+  const selected = new Set(selectProductionBuildInputPaths(paths));
+  const extras = paths.filter(file => file.startsWith('frontend/scripts/') && /\.(?:mjs|cjs|js|json)$/u.test(file) && !selected.has(file)).sort();
+  const sourceTreeSha256 = hash([productionHash, ...extras.map(file => `${file}:${hash(read(file))}`)].join('\n'));
+  const revision = run('git', ['rev-parse', 'HEAD'], { cwd: root });
+  const dirty = run('git', ['status', '--porcelain', '--untracked-files=normal'], { cwd: root }).length > 0;
+  if (!/^[a-f0-9]{40}$/u.test(revision)) throw failure('invalid source revision');
+  return { revision, dirty, sourceTreeSha256 };
+}
+
+function environment(entries) {
+  if (entries != null && !Array.isArray(entries)) throw failure('ambiguous image environment');
+  const result = Object.create(null);
+  for (const entry of entries ?? []) {
+    if (typeof entry !== 'string' || entry.includes('\0')) throw failure('ambiguous image environment');
+    const separator = entry.indexOf('=');
+    const name = separator < 0 ? entry : entry.slice(0, separator);
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/u.test(name) || Object.hasOwn(result, name)) throw failure('ambiguous image environment');
+    // Compose may retain optional null entries as bare keys in Docker Config.Env.
+    result[name] = separator < 0 ? null : entry.slice(separator + 1);
+  }
+  return result;
+}
+
+export function validateSmokeImages(images, source) {
+  if (!HASH.test(source?.sourceTreeSha256 ?? '') || typeof source.dirty !== 'boolean') throw failure('missing source evidence');
+  for (const role of ['api', 'frontend']) {
+    const image = images[role];
+    if (!ID.test(image?.Id ?? '') || image.Config?.Labels?.['org.opencontainers.image.revision'] !== source.revision
+      || image.Config.Labels[TREE_LABEL] !== source.sourceTreeSha256) throw failure('image source identity mismatch');
+    const inherited = environment(image.Config.Env);
+    if (Object.entries(inherited).some(([key, value]) => value &&
+      /^(?:SPRING_|DB_|JWT_SECRET$|ALGORITHM_KEY$|ADMIN_INITIAL_PASSWORD$|NODE_OPTIONS$|JAVA_TOOL_OPTIONS$|JDK_JAVA_OPTIONS$|_JAVA_OPTIONS$|LD_)/u.test(key))) {
+      throw failure('image contains startup configuration override');
+    }
+    if (inherited.JAVA_OPTS?.split(/\s+/u).some(option => !SAFE_JAVA_OPTION.test(option))) throw failure('image contains JVM startup override');
+    if (role === 'api' && (JSON.stringify(image.Config.Entrypoint) !== JSON.stringify(API_ENTRYPOINT)
+      || (image.Config.Cmd?.length ?? 0) !== 0 || image.Config.User !== 'spring:spring')) throw failure('unexpected API entrypoint or user');
+    if (role === 'frontend' && (JSON.stringify(image.Config.Cmd) !== '["node","server.js"]'
+      || image.Config.User !== 'nextjs' || inherited.NODE_ENV !== 'production'
+      || inherited.HOSTNAME !== '0.0.0.0' || inherited.NEXT_TELEMETRY_DISABLED !== '1')) throw failure('unexpected frontend runtime');
+  }
+  for (const role of ['db', 'edge']) if (!ID.test(images[role]?.Id ?? '')) throw failure('missing local support image');
+}
+
+export function createSmokeContext({ runId = randomBytes(12).toString('hex'), phase, images, directory, subnet }) {
+  if (!RUN.test(runId) || !['fresh', 'restored'].includes(phase) || !/^10\.203\.[1-9]\d{0,2}\.0\/24$/u.test(subnet)
+    || Number(subnet.split('.')[2]) > 254 || !path.isAbsolute(directory)) throw failure('invalid owned context');
+  const project = `egov-release-smoke-${runId}-${phase}`;
+  return { runId, phase, images, directory, subnet, project, createdAt: Date.now(),
+    database: `authz_e2e_${runId}${phase}`, network: `${project}-network`, volume: `${project}-attachments`,
+    frontendIp: subnet.replace('0/24', '10'), ids: {} };
+}
+
+export function createReleaseSmokePlan(rendered, context, credentials) {
+  if (Object.keys(rendered.services ?? {}).sort().join() !== 'api,db,edge,frontend') throw failure('unexpected production services');
+  const plan = structuredClone(rendered);
+  plan.name = context.project;
+  plan.volumes = { attachment_storage: { name: context.volume, labels: { [OWNER]: context.runId } } };
+  plan.networks = { 'egov-net': { name: context.network, driver: 'bridge', internal: true,
+    labels: { [OWNER]: context.runId }, ipam: { config: [{ subnet: context.subnet,
+      gateway: context.subnet.replace('0/24', '1'), ip_range: context.subnet.replace('0/24', '128/25') }] } } };
+  for (const [name, service] of Object.entries(plan.services)) {
+    service.image = context.images[name].Id;
+    delete service.build;
+    service.container_name = `${context.project}-${name}`;
+    service.pull_policy = 'never'; service.restart = 'no';
+    service.labels = { [OWNER]: context.runId };
+    service.ports = [];
+    service.networks = { 'egov-net': name === 'frontend' ? { ipv4_address: context.frontendIp } : {} };
+    if (name === 'db') {
+      service.environment = { POSTGRES_DB: context.database, POSTGRES_USER: 'smoke', POSTGRES_PASSWORD: credentials.database };
+      service.volumes = []; service.tmpfs = ['/var/lib/postgresql/data'];
+    } else if (name === 'api') {
+      service.environment = { ...service.environment,
+        DB_URL: `jdbc:postgresql://db:5432/${context.database}`, DB_USERNAME: 'smoke', DB_PASSWORD: credentials.database,
+        JWT_SECRET: credentials.jwt, ALGORITHM_KEY: credentials.encryption, ADMIN_INITIAL_PASSWORD: credentials.admin,
+        OLD_ALGORITHM_KEY: '', MAIL_HOST: '127.0.0.1', TRUSTED_PROXIES: `${context.frontendIp}/32`,
+        CORS_ORIGIN_1: 'http://edge:8080' };
+      service.volumes = [{ type: 'volume', source: 'attachment_storage', target: '/app/storage' }];
+    } else if (name === 'frontend') {
+      service.environment = { ...service.environment, JWT_SECRET: credentials.jwt,
+        BACKEND_API_URL: BACKEND_URL, NEXT_PUBLIC_API_URL: BACKEND_URL };
+      service.volumes = [];
+    } else {
+      service.environment = { ...service.environment, EDGE_TRUSTED_UPSTREAM: '127.0.0.1/32' };
+      service.volumes = [{ type: 'bind', source: path.join(context.directory, 'config/edge/default.conf.template'),
+        target: '/etc/nginx/templates/default.conf.template', read_only: true }];
+    }
+  }
+  const bootstrap = structuredClone(plan.services.api);
+  bootstrap.container_name = `${context.project}-bootstrap`;
+  bootstrap.ports = [];
+  bootstrap.environment.SPRING_PROFILES_ACTIVE = 'e2e';
+  bootstrap.environment.NURI_AUTHORIZATION_ISOLATED_CUTOVER = 'true';
+  bootstrap.environment.NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK = BOOTSTRAP_ACK;
+  bootstrap.healthcheck = { test: ['CMD-SHELL', 'wget --spider -q http://127.0.0.1:8080/actuator/health || exit 1'],
+    interval: '2s', timeout: '5s', retries: 120 };
+  plan.services.bootstrap = bootstrap;
+  validateReleaseSmokePlan(plan, context, credentials);
+  return plan;
+}
+
+export function validateReleaseSmokePlan(plan, context, credentials) {
+  if (plan.name !== context.project || Object.keys(plan.services ?? {}).sort().join() !== 'api,bootstrap,db,edge,frontend') throw failure('plan identity mismatch');
+  const network = plan.networks?.['egov-net'];
+  if (Object.keys(plan.networks ?? {}).join() !== 'egov-net' || network.name !== context.network || network.driver !== 'bridge'
+    || network.external || network.internal !== true || network.labels?.[OWNER] !== context.runId
+    || Object.keys(network.driver_opts ?? {}).length || network.ipam?.config?.length !== 1
+    || network.ipam.config[0].subnet !== context.subnet) throw failure('network is not isolated');
+  const volume = plan.volumes?.attachment_storage;
+  if (Object.keys(plan.volumes ?? {}).join() !== 'attachment_storage' || volume.name !== context.volume
+    || volume.external || volume.labels?.[OWNER] !== context.runId || Object.keys(volume.driver_opts ?? {}).length) throw failure('volume is not owned');
+  for (const [name, service] of Object.entries(plan.services)) {
+    if (service.image !== context.images[name === 'bootstrap' ? 'api' : name].Id || service.build
+      || service.container_name !== `${context.project}-${name}` || service.pull_policy !== 'never' || service.restart !== 'no'
+      || service.labels?.[OWNER] !== context.runId || service.entrypoint || service.command || service.network_mode
+      || service.privileged || service.pid || service.ipc || service.user || service.working_dir || Object.keys(service.networks ?? {}).join() !== 'egov-net'
+      || ['env_file', 'extra_hosts', 'dns', 'links', 'external_links', 'configs', 'secrets', 'volumes_from', 'devices', 'cap_add']
+        .some(key => Object.keys(service[key] ?? {}).length)) throw failure('unsafe service launch');
+    const ports = service.ports ?? [];
+    if (ports.length !== 0) throw failure('public or unexpected port');
+    const env = service.environment ?? {};
+    if (Object.entries(env).some(([key, value]) => value && /^(?:SPRING_CONFIG_|SPRING_DATASOURCE_|SPRING_FLYWAY_(?:URL|USER|PASSWORD)$|SPRING_PROFILES_(?:INCLUDE|DEFAULT)$|NODE_OPTIONS$|JAVA_TOOL_OPTIONS$|JDK_JAVA_OPTIONS$|_JAVA_OPTIONS$|LD_)/u.test(key))) throw failure('alternate startup configuration');
+    if (name === 'api' || name === 'bootstrap') {
+      const expectedProfile = name === 'api' ? 'prod' : 'e2e';
+      if (env.SPRING_PROFILES_ACTIVE !== expectedProfile || env.SPRING_FLYWAY_LOCATIONS !== 'classpath:db/migration'
+        || env.DB_URL !== `jdbc:postgresql://db:5432/${context.database}` || env.DB_USERNAME !== 'smoke' || env.DB_PASSWORD !== credentials.database
+        || env.JWT_SECRET !== credentials.jwt || env.ALGORITHM_KEY !== credentials.encryption || env.ADMIN_INITIAL_PASSWORD !== credentials.admin
+        || env.TRUSTED_PROXIES !== `${context.frontendIp}/32` || env.MAIL_HOST !== '127.0.0.1' || env.CORS_ORIGIN_1 !== 'http://edge:8080'
+        || (env.JAVA_OPTS && env.JAVA_OPTS.split(/\s+/u).some(option => !SAFE_JAVA_OPTION.test(option)))
+        || JSON.stringify(JSON.parse(env.SPRING_APPLICATION_JSON)) !== '{"management":{"health":{"mail":{"enabled":false}}}}'
+        || JSON.stringify(service.volumes) !== JSON.stringify([{ type: 'volume', source: 'attachment_storage', target: '/app/storage' }])) throw failure('API datasource or production boundary changed');
+      if (name === 'bootstrap' ? env.NURI_AUTHORIZATION_ISOLATED_CUTOVER !== 'true' || env.NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK !== BOOTSTRAP_ACK
+        : Object.keys(env).some(key => key.startsWith('NURI_AUTHORIZATION_'))) throw failure('cutover opt-in boundary changed');
+      if (name === 'api' && (env.MANAGEMENT_PORT !== '9090' || env.MANAGEMENT_ADDRESS !== '0.0.0.0')) throw failure('management boundary changed');
+    } else if (name === 'db') {
+      if (env.POSTGRES_DB !== context.database || env.POSTGRES_USER !== 'smoke' || env.POSTGRES_PASSWORD !== credentials.database
+        || (service.volumes?.length ?? 0) || JSON.stringify(service.tmpfs) !== '["/var/lib/postgresql/data"]') throw failure('database is not disposable');
+    } else if (name === 'frontend') {
+      if (env.JWT_SECRET !== credentials.jwt || env.BACKEND_API_URL !== BACKEND_URL || env.NEXT_PUBLIC_API_URL !== BACKEND_URL
+        || env.TRUSTED_EDGE_PROXY !== 'true' || env.ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE || (service.volumes?.length ?? 0)
+        || service.networks['egov-net'].ipv4_address !== context.frontendIp) throw failure('frontend trust boundary changed');
+    } else if (JSON.stringify(service.volumes) !== JSON.stringify([{ type: 'bind', source: path.join(context.directory, 'config/edge/default.conf.template'),
+      target: '/etc/nginx/templates/default.conf.template', read_only: true }])) throw failure('unexpected edge mount');
+  }
+  return plan;
+}
+
+export function assertOwnedSmokeContainer(container, service, context, plan, { running = false, beforeStart = false } = {}) {
+  const specification = plan.services[service];
+  const imageConfig = context.images[service === 'bootstrap' ? 'api' : service].Config;
+  const created = Date.parse(container?.Created);
+  if (!/^[a-f0-9]{64}$/u.test(container?.Id ?? '') || (context.ids[service] && context.ids[service] !== container.Id)
+    || container.Config?.Labels?.[OWNER] !== context.runId || container.Config.Labels['com.docker.compose.project'] !== context.project
+    || container.Config.Labels['com.docker.compose.service'] !== service || container.Image !== specification.image
+    || !Number.isFinite(created) || created < context.createdAt - 2000 || (running && !container.State?.Running)
+    || container.HostConfig?.Privileged || container.HostConfig?.NetworkMode === 'host'
+    || Object.keys(container.HostConfig?.ExtraHosts ?? {}).length) throw failure('container ownership mismatch');
+  const connections = Object.entries(container.NetworkSettings?.Networks ?? {});
+  const pendingNetwork = beforeStart && container.State?.Status === 'created'
+    && container.HostConfig?.NetworkMode === context.network;
+  if (!pendingNetwork && (connections.length !== 1 || connections[0][0] !== context.network
+    || (context.networkId && connections[0][1].NetworkID !== context.networkId))) throw failure('container network mismatch');
+  if (pendingNetwork && connections.some(([name]) => name !== context.network)) throw failure('pending network mismatch');
+  for (const key of ['Entrypoint', 'Cmd']) {
+    if (JSON.stringify(container.Config[key] ?? []) !== JSON.stringify(imageConfig[key] ?? [])) throw failure('effective image launch mismatch');
+  }
+  for (const key of ['User', 'WorkingDir']) {
+    if ((container.Config[key] ?? '') !== (imageConfig[key] ?? '')) throw failure('effective image execution context mismatch');
+  }
+  const expectedPorts = (specification.ports ?? []).map(port => `${port.target}/${port.protocol ?? 'tcp'}`).sort();
+  const verifyPorts = (ports, assigned) => {
+    const bound = Object.entries(ports ?? {}).filter(([, bindings]) => bindings?.length);
+    if (JSON.stringify(bound.map(([target]) => target).sort()) !== JSON.stringify(expectedPorts)
+      || bound.some(([, bindings]) => bindings.length !== 1 || bindings[0].HostIp !== '127.0.0.1'
+        || (assigned ? !/^[1-9]\d*$/u.test(bindings[0].HostPort) || Number(bindings[0].HostPort) > 65535
+          : !/^(?:0|)$/u.test(bindings[0].HostPort)))) throw failure('effective port target or count mismatch');
+  };
+  verifyPorts(container.HostConfig?.PortBindings, false);
+  // Exposed-but-unpublished image ports have null bindings. Created/stopped containers may have no assigned ports.
+  if (container.State?.Running) verifyPorts(container.NetworkSettings.Ports, true);
+  else if (Object.values(container.NetworkSettings.Ports ?? {}).some(bindings => bindings?.length)) verifyPorts(container.NetworkSettings.Ports, true);
+  const actualEnvironment = environment(container.Config.Env);
+  if (Object.entries(actualEnvironment).some(([key, value]) => value && /^(?:SPRING_CONFIG_|SPRING_DATASOURCE_|SPRING_FLYWAY_(?:URL|USER|PASSWORD)$|SPRING_PROFILES_(?:INCLUDE|DEFAULT)$|NODE_OPTIONS$|JAVA_TOOL_OPTIONS$|JDK_JAVA_OPTIONS$|_JAVA_OPTIONS$|LD_)/u.test(key))) throw failure('effective alternate startup configuration');
+  if (actualEnvironment.JAVA_OPTS?.split(/\s+/u).some(option => !SAFE_JAVA_OPTION.test(option))) throw failure('effective JVM startup override');
+  for (const [key, value] of Object.entries(specification.environment ?? {})) {
+    const actual = actualEnvironment[key];
+    if (value === null ? actual !== undefined && actual !== null : actual !== String(value)) throw failure('effective container environment mismatch');
+  }
+  if (service === 'db') {
+    if (!Object.hasOwn(container.HostConfig?.Tmpfs ?? {}, '/var/lib/postgresql/data')
+      || (container.Mounts ?? []).some(mount => mount.Type !== 'tmpfs')) throw failure('database mount is not disposable');
+  } else if (['api', 'bootstrap'].includes(service)) {
+    if (container.Mounts?.length !== 1 || container.Mounts[0].Type !== 'volume'
+      || container.Mounts[0].Name !== context.volume || container.Mounts[0].Destination !== '/app/storage' || container.Mounts[0].RW !== true
+      || JSON.stringify(container.Config.Entrypoint) !== JSON.stringify(API_ENTRYPOINT)
+      || (container.Config.Cmd?.length ?? 0) !== 0) throw failure('API runtime mount or entrypoint mismatch');
+  } else if (service === 'frontend' && (container.Mounts?.length ?? 0)) throw failure('unexpected frontend mount');
+  else if (service === 'edge') {
+    const mount = container.Mounts?.[0];
+    if (container.Mounts?.length !== 1 || mount.Type !== 'bind' || mount.RW !== false
+      || mount.Destination !== '/etc/nginx/templates/default.conf.template'
+      || path.normalize(mount.Source) !== path.normalize(specification.volumes[0].source)) throw failure('effective edge mount mismatch');
+  }
+  context.ids[service] = container.Id;
+  return container;
+}
+
+export function createSmokeFailureDiagnostic({ service, phase, reason, container, logs = '', credentials, logStatus }) {
+  if (!['db', 'bootstrap', 'api', 'frontend', 'edge'].includes(service) || !['fresh', 'restored'].includes(phase)
+    || !['not-running', 'unhealthy', 'timeout'].includes(reason)) throw failure('invalid failure diagnostic context');
+  let text = typeof logs === 'string' ? logs : '';
+  for (const secret of Object.values(credentials ?? {})) {
+    if (typeof secret === 'string' && secret.length) text = text.split(secret).join('[REDACTED]');
+  }
+  text = text.slice(-128 * 1024);
+  const extract = (pattern, maximum) => [...new Set([...text.matchAll(pattern)].map(match => match[1]))].slice(0, maximum);
+  const state = container?.State ?? {};
+  // Keep structural signals only: never persist messages, Config.Env, State.Error or health-check output.
+  return { schemaVersion: 1, service, phase, reason,
+    containerId: /^[a-f0-9]{64}$/u.test(container?.Id ?? '') ? container.Id : null,
+    state: {
+      status: ['created', 'running', 'paused', 'restarting', 'removing', 'exited', 'dead'].includes(state.Status) ? state.Status : 'unknown',
+      running: state.Running === true, exitCode: Number.isSafeInteger(state.ExitCode) ? state.ExitCode : null,
+      oomKilled: typeof state.OOMKilled === 'boolean' ? state.OOMKilled : null,
+      health: ['starting', 'healthy', 'unhealthy'].includes(state.Health?.Status) ? state.Health.Status : null,
+    },
+    logStatus: logStatus === 'captured' ? 'captured' : 'unavailable',
+    exceptions: extract(/^\s*(?:(?:Caused by|Suppressed):\s*)?((?:[A-Za-z_$][\w$]*\.)+(?:[A-Za-z_$][\w$]*(?:Exception|Error)|Exception|Error))(?=[:\s]|$)/gmu, 32),
+    sqlStates: extract(/\bSQL\s*STATE\s*[:=]?\s*([A-Z0-9]{5})\b/giu, 16),
+    nuriFrames: extract(/^\s*at\s+(nuri\.[\w.$<>]+\([\w$]+\.java:\d{1,7}\))\s*$/gmu, 24),
+  };
+}
+
+export async function waitForSmokeHealth(service, { inspect, diagnose, wait = pause }) {
+  let container;
+  const reject = async reason => {
+    try { await diagnose(service, container, reason); }
+    catch { throw failure(`owned service ${reason}; failure diagnostic unavailable`); }
+    throw failure(`owned service ${reason}; sanitized failure diagnostic saved`);
+  };
+  for (let attempt = 0; attempt < 150; attempt += 1) {
+    container = inspect(service);
+    if (container.State?.Running !== true) return reject('not-running');
+    if (container.State.Health?.Status === 'healthy') return container;
+    if (container.State.Health?.Status === 'unhealthy') return reject('unhealthy');
+    await wait(2000);
+  }
+  return reject('timeout');
+}
+
+const BARRIER_SQL = `SELECT json_build_object(
+ 'legacy', (SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN
+ ('tb_user_authrt_map','tb_authrt_role_map','tb_menu_crt_dtl','tb_role_prgrm_map','tb_role_hierarchy','tb_role_info')),
+ 'evidence', (SELECT count(*) FROM tb_authrt_chg_hstry WHERE chg_artcl_nm='legacy_authorization_contract' AND chg_type_cd='UPDATE'),
+ 'failed', (SELECT count(*) FROM flyway_schema_history WHERE NOT success),
+ 'devSeeds', (SELECT count(*) FROM flyway_schema_history WHERE script LIKE '%seed_dev%' OR script LIKE '%dev_credentials%'),
+ 'provisioned', (SELECT count(*) FROM tb_user_info WHERE esntl_id='USRCNFRM_00000000001' AND pswd NOT LIKE '{disabled}%'));`;
+const TABLE_COUNTS_SQL = `SELECT jsonb_object_agg(table_name,
+ ((xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text)::bigint)
+ FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';`;
+
+export function validateSmokeBarrier(value) {
+  if (JSON.stringify(value) !== JSON.stringify({ legacy: 0, evidence: 1, failed: 0, devSeeds: 0, provisioned: 1 })) throw failure('schema barrier or bootstrap evidence failed');
+}
+
+export function validateSmokeTableCounts(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || !(value.flyway_schema_history > 0)
+    || Object.values(value).some(count => !Number.isSafeInteger(count) || count < 0)) throw failure('database census is invalid');
+  return Object.fromEntries(Object.entries(value).sort(([left], [right]) => left.localeCompare(right)));
+}
+
+export function validateEncodedSmokeProbe(probe) {
+  // A valid login and refresh immediately precede each probe. Authentication/rate-limit failures are not routing evidence.
+  if (!probe.rawPathPreserved || probe.exposesToken || ![400, 404].includes(probe.status)) throw failure('encoded Spring path was not safely rejected');
+}
+
+export function validateSmokeSessionCookies(cookies) {
+  const invalid = () => failure('session cookie contract failed');
+  if (!Array.isArray(cookies) || cookies.some(cookie => typeof cookie !== 'string')) throw invalid();
+  for (const name of ['accessToken', 'refreshToken']) {
+    const matching = cookies.filter(cookie => cookie.startsWith(`${name}=`));
+    if (matching.length !== 1) throw invalid();
+    const [pair, ...parts] = matching[0].split(';');
+    const value = pair.slice(name.length + 1).trim();
+    const attributes = parts.map(part => part.trim().toLowerCase());
+    if (!value || value === '""' || !attributes.includes('httponly') || !attributes.includes('secure')
+      || !attributes.includes('samesite=strict') || attributes.filter(attribute => attribute.startsWith('samesite=')).length !== 1) throw invalid();
+  }
+}
+
+export function validateSmokeManagementBoundary(status) {
+  // The public health route lives on prod's management port; Next rewrites to the main application port.
+  if (status !== 404) throw failure('management health was not absent from the frontend application port');
+}
+
+function exposesToken(value) {
+  return value !== null && typeof value === 'object' && Object.entries(value).some(([key, child]) =>
+    ['accessToken', 'refreshToken'].includes(key) || exposesToken(child));
+}
+
+export async function probeDirectApiEncodedPaths(request, loginBody) {
+  const readTokens = async (result, stage) => {
+    if (result.response.status !== 200 || result.rawPathPreserved !== true) throw failure(`direct API ${stage} control failed`);
+    let value;
+    try { value = await result.response.json(); } catch { throw failure(`direct API ${stage} control failed`); }
+    const accessToken = value?.data?.accessToken;
+    const cookies = result.response.headers.getSetCookie().filter(cookie => cookie.startsWith('refreshToken='));
+    if (value?.success !== true || typeof accessToken !== 'string' || !accessToken.trim()
+      || Object.hasOwn(value.data, 'refreshToken') || Object.hasOwn(value, 'refreshToken') || cookies.length !== 1) {
+      throw failure(`direct API ${stage} token contract failed`);
+    }
+    const refreshCookie = cookies[0].split(';', 1)[0];
+    if (refreshCookie === 'refreshToken=') throw failure(`direct API ${stage} token contract failed`);
+    return { accessToken, refreshCookie };
+  };
+  const probes = [];
+  for (const rawPath of ENCODED_AUTH_PATHS) {
+    const login = await readTokens(await request('/api/v1/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: loginBody,
+    }), 'login');
+    const refreshed = await readTokens(await request('/api/v1/auth/reissue', {
+      method: 'POST', headers: { Cookie: login.refreshCookie },
+    }), 'refresh');
+    const headers = { Authorization: `Bearer ${refreshed.accessToken}`, Cookie: refreshed.refreshCookie };
+    const session = await request('/api/v1/auth/me', { headers });
+    if (session.response.status !== 200 || session.rawPathPreserved !== true) throw failure('direct API session control failed');
+    const result = await request(rawPath, { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: loginBody });
+    let value; try { value = await result.response.json(); } catch { value = null; }
+    const probe = { status: result.response.status, exposesToken: exposesToken(value), rawPathPreserved: result.rawPathPreserved };
+    validateEncodedSmokeProbe(probe);
+    probes.push({ path: rawPath, controls: { login: 200, refresh: 200, session: session.response.status }, ...probe });
+  }
+  return probes;
+}
+
+export function rawSmokeRequest(origin, rawPath, { headers, body = '' } = {}) {
+  const target = new URL(origin);
+  if (target.protocol !== 'http:' || target.hostname !== '127.0.0.1' || !rawPath.startsWith('/')) throw failure('raw HTTP target is not loopback');
+  return new Promise((resolve, reject) => {
+    const request = httpRequest({ hostname: target.hostname, port: target.port, method: 'POST', path: rawPath, headers }, response => {
+      let bytes = 0; const chunks = [];
+      response.on('data', chunk => { bytes += chunk.length; if (bytes > 1024 * 1024) request.destroy(); else chunks.push(chunk); });
+      response.on('end', () => {
+        const text = Buffer.concat(chunks).toString('utf8');
+        let json; try { json = JSON.parse(text); } catch { json = null; }
+        resolve({ status: response.statusCode, exposesToken: exposesToken(json), rawPathPreserved: request.path === rawPath });
+      });
+      response.on('error', () => reject(failure('raw HTTP probe failed')));
+    });
+    request.setTimeout(15000, () => request.destroy());
+    request.on('error', () => reject(failure('raw HTTP probe failed')));
+    request.end(body);
+  });
+}
+
+// Self-contained: the exact function is sent to the owned frontend's existing Node runtime.
+export async function internalSmokeHttp(input, requestHttp = httpRequest, timers = globalThis) {
+  const fail = () => new Error('Isolated release smoke: internal HTTP probe failed.');
+  const requestLimit = 1024 * 1024; const responseLimit = 4 * 1024 * 1024;
+  if (!input || !['api', 'edge'].includes(input.target) || typeof input.rawPath !== 'string'
+    || !/^\/(?!\/)/u.test(input.rawPath) || /[\x00-\x20\x7f\\#]/u.test(input.rawPath) || input.rawPath.length > 8192
+    || !['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'].includes(input.method)
+    || !Array.isArray(input.headers) || Buffer.byteLength(JSON.stringify(input.headers)) > 65536
+    || typeof input.bodyBase64 !== 'string' || input.bodyBase64.length > Math.ceil(requestLimit / 3) * 4) throw fail();
+  const body = Buffer.from(input.bodyBase64, 'base64');
+  if (body.length > requestLimit || body.toString('base64') !== input.bodyBase64
+    || (['GET', 'HEAD'].includes(input.method) && body.length)) throw fail();
+  const headers = {};
+  for (const pair of input.headers) {
+    if (!Array.isArray(pair) || pair.length !== 2 || typeof pair[0] !== 'string' || typeof pair[1] !== 'string'
+      || !/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/u.test(pair[0]) || /[\r\n\0]/u.test(pair[1])) throw fail();
+    const name = pair[0].toLowerCase();
+    if (['host', 'connection', 'content-length', 'transfer-encoding', 'upgrade', 'proxy-authorization'].includes(name)
+      || Object.hasOwn(headers, name)) throw fail();
+    Object.defineProperty(headers, name, { value: pair[1], enumerable: true });
+  }
+  headers['content-length'] = String(body.length);
+  return new Promise((resolve, reject) => {
+    let request; let timeout; let finished = false;
+    const stop = () => { if (finished) return; finished = true; timers.clearTimeout(timeout); request?.destroy(); reject(fail()); };
+    try {
+      request = requestHttp({ hostname: input.target, port: 8080, path: input.rawPath, method: input.method,
+        headers, maxHeaderSize: 65536 }, response => {
+        let bytes = 0; const chunks = [];
+        response.on('error', stop); response.on('aborted', stop);
+        response.on('data', chunk => { bytes += chunk.length; if (bytes > responseLimit) stop(); else chunks.push(chunk); });
+        response.on('end', () => {
+          if (finished) return;
+          if (!Number.isInteger(response.statusCode) || response.statusCode < 200 || response.statusCode > 599
+            || !Array.isArray(response.rawHeaders) || Buffer.byteLength(JSON.stringify(response.rawHeaders)) > 65536) { stop(); return; }
+          finished = true; timers.clearTimeout(timeout);
+          resolve({ status: response.statusCode, rawHeaders: response.rawHeaders,
+            bodyBase64: Buffer.concat(chunks).toString('base64'), rawPathPreserved: request.path === input.rawPath });
+        });
+      });
+      timeout = timers.setTimeout(stop, 15000);
+      request.on('error', stop); request.end(body);
+    } catch { stop(); }
+  });
+}
+
+export const INTERNAL_SMOKE_HTTP_SCRIPT = `
+const chunks = []; let bytes = 0; let failed = false;
+const fail = () => { if (failed) return; failed = true; process.stderr.write('Internal smoke HTTP failed.'); process.exitCode = 1; process.stdin.destroy(); };
+process.stdin.on('error', fail);
+process.stdin.on('data', chunk => { bytes += chunk.length; if (bytes > 2 * 1024 * 1024) fail(); else chunks.push(chunk); });
+process.stdin.on('end', async () => {
+  if (failed) return;
+  try {
+    const result = await (${internalSmokeHttp.toString()})(JSON.parse(Buffer.concat(chunks).toString('utf8')), require('node:http').request);
+    process.stdout.write(JSON.stringify(result));
+  } catch { fail(); }
+});`;
+
+export async function containerSmokeRequest(runtime, docker, target, rawPath, { method = 'GET', headers, body } = {}) {
+  if (!['api', 'edge'].includes(target)) throw failure('internal HTTP target is not owned');
+  runtime.verifyNetwork();
+  runtime.inspect(target, true);
+  const frontend = runtime.inspect('frontend', true);
+  // Request serializes multipart boundaries; the separately carried raw path never passes through URL normalization.
+  const prepared = new Request(`http://${target}:8080/`, { method, headers, body });
+  const bytes = Buffer.from(await prepared.arrayBuffer());
+  if (bytes.length > 1024 * 1024) throw failure('internal HTTP request is too large');
+  const payload = { target, rawPath, method: prepared.method, headers: [...prepared.headers], bodyBase64: bytes.toString('base64') };
+  let result;
+  try {
+    result = JSON.parse(await docker(['exec', '-i', frontend.Id, 'node', '-e', INTERNAL_SMOKE_HTTP_SCRIPT], {
+      input: JSON.stringify(payload), timeout: 20000, maxBuffer: 8 * 1024 * 1024,
+    }));
+  } catch { throw failure('internal HTTP command failed; raw output withheld'); }
+  if (!result || !Number.isInteger(result.status) || result.status < 200 || result.status > 599 || result.rawPathPreserved !== true
+    || !Array.isArray(result.rawHeaders) || result.rawHeaders.length % 2 || Buffer.byteLength(JSON.stringify(result.rawHeaders)) > 65536
+    || result.rawHeaders.some(value => typeof value !== 'string') || typeof result.bodyBase64 !== 'string'
+    || result.bodyBase64.length > Math.ceil(4 * 1024 * 1024 / 3) * 4) throw failure('invalid internal HTTP response');
+  const responseBody = Buffer.from(result.bodyBase64, 'base64');
+  if (responseBody.length > 4 * 1024 * 1024 || responseBody.toString('base64') !== result.bodyBase64) throw failure('invalid internal HTTP response');
+  const responseHeaders = new Headers();
+  for (let index = 0; index < result.rawHeaders.length; index += 2) responseHeaders.append(result.rawHeaders[index], result.rawHeaders[index + 1]);
+  return { response: new Response([204, 205, 304].includes(result.status) || prepared.method === 'HEAD' ? null : responseBody,
+    { status: result.status, headers: responseHeaders }), rawPathPreserved: true };
+}
+
+export async function runSmokeStages(operations) {
+  let complete = false;
+  try {
+    await operations.prepare();
+    await operations.bootstrap();
+    await operations.production();
+    await operations.http();
+    await operations.backup();
+    await operations.restore();
+    await operations.verifyRestored();
+    complete = true;
+  } finally {
+    await operations.cleanup();
+  }
+  if (complete) await operations.evidence();
+}
+
+export async function main(args = process.argv.slice(2)) {
+  const source = captureReleaseSmokeSource();
+  if (args.length === 1 && args[0] === '--source-info') { console.log(JSON.stringify(source)); return; }
+  if (args.length !== 4 || args[0] !== '--api-image' || args[2] !== '--frontend-image'
+    || !ID.test(args[1]) || !ID.test(args[3])) throw failure('use --api-image sha256:... --frontend-image sha256:...');
+  const clean = closedEnvironment();
+  const docker = (parameters, options = {}) => smokeCommand('docker', parameters, { env: clean, ...options });
+  const currentContext = docker(['context', 'show']);
+  const endpoint = docker(['context', 'inspect', currentContext, '--format', '{{.Endpoints.docker.Host}}']);
+  if (!/^(?:unix:\/\/|npipe:\/\/)/u.test(endpoint)) throw failure('only a local Docker daemon is permitted');
+  const images = { api: JSON.parse(docker(['image', 'inspect', args[1]]))[0], frontend: JSON.parse(docker(['image', 'inspect', args[3]]))[0] };
+  const baseSource = readFileSync(path.join(ROOT, 'docker-compose.yml'), 'utf8');
+  const prodSource = readFileSync(path.join(ROOT, 'docker-compose.prod.yml'), 'utf8');
+  const edgeSource = readFileSync(path.join(ROOT, 'config/edge/default.conf.template'));
+  const supportReference = (text, role) => {
+    const match = text.match(new RegExp(`^  ${role}:\\r?\\n(?:    [^\\n]*\\r?\\n)*?    image: ([^\\r\\n]+)`, 'mu'));
+    if (!match || !/@sha256:[a-f0-9]{64}$/u.test(match[1])) throw failure('support image must have a committed digest');
+    return match[1];
+  };
+  images.db = JSON.parse(docker(['image', 'inspect', supportReference(baseSource, 'db')]))[0];
+  images.edge = JSON.parse(docker(['image', 'inspect', supportReference(prodSource, 'edge')]))[0];
+  validateSmokeImages(images, source);
+  const parent = path.join(ROOT, '.agent/temp'); mkdirSync(parent, { recursive: true });
+  const directory = mkdtempSync(path.join(parent, 'egov-release-smoke-'));
+  if (!realpathSync(directory).startsWith(realpathSync(parent) + path.sep)) throw failure('unsafe temporary directory');
+  const credentials = { database: randomBytes(24).toString('hex'), jwt: randomBytes(64).toString('base64'),
+    encryption: randomBytes(24).toString('hex'), admin: `Aa1!${randomBytes(18).toString('hex')}` };
+  const runId = randomBytes(12).toString('hex');
+  const copySources = folder => {
+    mkdirSync(path.join(folder, 'config/edge'), { recursive: true });
+    privateWrite(path.join(folder, 'base.yml'), baseSource);
+    privateWrite(path.join(folder, 'prod.yml'), prodSource);
+    privateWrite(path.join(folder, 'config/edge/default.conf.template'), edgeSource);
+    privateWrite(path.join(folder, 'owned.env'), Object.entries({ DB_URL: 'jdbc:postgresql://db:5432/unused', DB_USERNAME: 'smoke',
+      DB_PASSWORD: credentials.database, JWT_SECRET: credentials.jwt, ALGORITHM_KEY: credentials.encryption,
+      ADMIN_INITIAL_PASSWORD: credentials.admin, MAIL_HOST: '127.0.0.1', OLD_ALGORITHM_KEY: '' }).map(([key, value]) => `${key}=${value}`).join('\n'));
+  };
+  const networkSubnets = docker(['network', 'ls', '-q']).split(/\s+/u).filter(Boolean)
+    .flatMap(id => JSON.parse(docker(['network', 'inspect', id])))
+    .flatMap(network => (network.IPAM?.Config ?? []).map(config => config.Subnet));
+  const chooseSubnet = () => {
+    for (let octet = 1; octet < 255; octet += 1) {
+      const candidate = `10.203.${octet}.0/24`;
+      if (!networkSubnets.includes(candidate)) { networkSubnets.push(candidate); return candidate; }
+    }
+    throw failure('no unused test subnet');
+  };
+  const contexts = [];
+  const setup = phase => {
+    const folder = path.join(directory, phase); copySources(folder);
+    const context = createSmokeContext({ runId, phase, images, directory: folder, subnet: chooseSubnet() });
+    const rendered = JSON.parse(docker(['compose', '--project-directory', folder, '--env-file', path.join(folder, 'owned.env'),
+      '-f', path.join(folder, 'base.yml'), '-f', path.join(folder, 'prod.yml'), 'config', '--format', 'json']));
+    const plan = createReleaseSmokePlan(rendered, context, credentials);
+    const file = path.join(folder, 'compose.json'); privateWrite(file, JSON.stringify(plan));
+    const compose = parameters => docker(['compose', '--project-directory', folder, '--env-file', path.join(folder, 'owned.env'),
+      '-p', context.project, '-f', file, ...parameters]);
+    const inspectedPlan = JSON.parse(compose(['config', '--format', 'json']));
+    validateReleaseSmokePlan(inspectedPlan, context, credentials);
+    const inspect = (service, running = false, beforeStart = false) => {
+      const container = JSON.parse(docker(['container', 'inspect', context.ids[service] ?? `${context.project}-${service}`]))[0];
+      return assertOwnedSmokeContainer(container, service, context, plan, { running, beforeStart });
+    };
+    const sql = statement => {
+      const database = inspect('db', true);
+      return docker(['exec', '-i', database.Id, 'psql', '-X', '-v', 'ON_ERROR_STOP=1', '-U', 'smoke', '-d', context.database, '-tAc', statement]);
+    };
+    const verifyNetwork = () => {
+      const network = JSON.parse(docker(['network', 'inspect', context.network]))[0];
+      if (network.Labels?.[OWNER] !== runId || network.Labels['com.docker.compose.project'] !== context.project
+        || network.Driver !== 'bridge' || !network.Internal || network.IPAM?.Config?.[0]?.Subnet !== context.subnet
+        || (context.networkId && context.networkId !== network.Id)) throw failure('actual network is not owned');
+      context.networkId = network.Id;
+    };
+    const diagnose = (service, container, reason) => {
+      // The caller has verified this container's ownership. Capture bounded stdout AND stderr only in memory.
+      const result = spawnSync('docker', ['logs', '--tail', '200', container.Id], {
+        env: clean, encoding: 'utf8', windowsHide: true, timeout: 10_000, maxBuffer: 256 * 1024,
+      });
+      const captured = !result.error && result.status === 0;
+      const diagnostic = createSmokeFailureDiagnostic({ service, phase, reason, container, credentials,
+        logs: captured ? `${result.stdout ?? ''}\n${result.stderr ?? ''}` : '', logStatus: captured ? 'captured' : 'unavailable' });
+      privateWrite(path.join(folder, `${service}-readiness-failure.json`), JSON.stringify(diagnostic, null, 2));
+    };
+    const waitHealthy = service => waitForSmokeHealth(service, { inspect, diagnose });
+    const start = async services => {
+      // Inspect the effective container configuration before application startup can write.
+      compose(['create', '--no-build', '--pull', 'never', '--no-recreate', ...services]); verifyNetwork();
+      for (const service of services) {
+        const container = inspect(service, false, true);
+        if (!container.State.Running) docker(['start', container.Id]);
+        await waitHealthy(service);
+      }
+    };
+    const stop = service => { const container = inspect(service); docker(['stop', '--time', '200', container.Id]); };
+    const value = { context, plan, compose, inspect, sql, start, stop, waitHealthy, verifyNetwork };
+    contexts.push(value); return value;
+  };
+  let fresh, restored, fileId, expectedFileHash, backup, attachmentArchive, httpChecks, tableCounts;
+  const pathProbes = [];
+  const check = (condition, category) => { if (!condition) throw failure(category); };
+  const httpSmoke = async (runtime, existingFile) => {
+    const origin = 'http://edge:8080';
+    const rawProbe = async (target, rawPath, options) => {
+      const { response, rawPathPreserved } = await containerSmokeRequest(runtime, docker, target, rawPath, { method: 'POST', ...options });
+      let value; try { value = await response.json(); } catch { value = null; }
+      return { status: response.status, exposesToken: exposesToken(value), rawPathPreserved };
+    };
+    const direct = await probeDirectApiEncodedPaths(
+      (route, options) => containerSmokeRequest(runtime, docker, 'api', route, options),
+      JSON.stringify({ userId: 'webmaster', password: credentials.admin }));
+    pathProbes.push(...direct.map(probe => ({ target: 'api', phase: runtime.context.phase, ...probe })));
+    const request = async (route, options = {}) => (await containerSmokeRequest(runtime, docker, 'edge', route, options)).response;
+    check((await request('/login')).status === 200, 'login page unavailable');
+    const login = await request('/api/v1/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin },
+      body: JSON.stringify({ userId: 'webmaster', password: credentials.admin }) });
+    check(login.status === 200, 'production login failed');
+    const body = await login.json();
+    check(body.success === true && !Object.hasOwn(body, 'accessToken') && !Object.hasOwn(body.data ?? {}, 'accessToken')
+      && !Object.hasOwn(body, 'refreshToken') && !Object.hasOwn(body.data ?? {}, 'refreshToken'), 'browser token response exposed');
+    const cookies = login.headers.getSetCookie();
+    validateSmokeSessionCookies(cookies);
+    // Only this test context replays HttpOnly cookies; product JavaScript never reads them.
+    let cookie = cookies.map(value => value.split(';', 1)[0]).join('; ');
+    check((await request('/api/v1/auth/me', { headers: { Cookie: cookie } })).status === 200, 'session or rewrite failed');
+    check((await request('/api/v1/auth/%72eissue', { method: 'POST', headers: { Cookie: cookie, Origin: origin } })).status === 400, 'encoded token route bypass');
+    check((await request('/api/v1/auth/reissue', { method: 'POST', headers: { Cookie: cookie, Origin: 'https://untrusted.invalid' } })).status === 403, 'cross-origin token route accepted');
+    for (const rawPath of ENCODED_AUTH_PATHS) {
+      const controlLogin = await request('/api/v1/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin },
+        body: JSON.stringify({ userId: 'webmaster', password: credentials.admin }) });
+      check(controlLogin.status === 200, 'encoded probe login control failed');
+      const controlLoginCookies = controlLogin.headers.getSetCookie();
+      validateSmokeSessionCookies(controlLoginCookies);
+      let probeCookie = controlLoginCookies.map(value => value.split(';', 1)[0]).join('; ');
+      const controlRefresh = await request('/api/v1/auth/reissue', { method: 'POST', headers: { Cookie: probeCookie, Origin: origin } });
+      check(controlRefresh.status === 200 && !exposesToken(await controlRefresh.json()), 'encoded probe refresh control failed');
+      const controlRefreshCookies = controlRefresh.headers.getSetCookie();
+      validateSmokeSessionCookies(controlRefreshCookies);
+      const jar = new Map(probeCookie.split('; ').map(value => { const index = value.indexOf('='); return [value.slice(0, index), value.slice(index + 1)]; }));
+      for (const value of controlRefreshCookies) { const pair = value.split(';', 1)[0]; const index = pair.indexOf('='); jar.set(pair.slice(0, index), pair.slice(index + 1)); }
+      probeCookie = [...jar].map(([key, value]) => `${key}=${value}`).join('; ');
+      const probe = await rawProbe('edge', rawPath, { headers: { Cookie: probeCookie, Origin: origin, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: 'webmaster', password: credentials.admin }) });
+      validateEncodedSmokeProbe(probe);
+      cookie = probeCookie;
+      pathProbes.push({ target: 'edge', phase: runtime.context.phase, path: rawPath,
+        controls: { login: controlLogin.status, refresh: controlRefresh.status }, ...probe });
+    }
+    check((await request('/api/v1/auth/me', { headers: { Cookie: cookie } })).status === 200, 'latest probe session is invalid');
+    const actuator = await request('/actuator/health', { headers: { Cookie: cookie } });
+    validateSmokeManagementBoundary(actuator.status);
+    let attachmentId = existingFile;
+    if (!attachmentId) {
+      const bytes = Buffer.from('release-smoke synthetic attachment\n'); expectedFileHash = hash(bytes);
+      const form = new FormData(); form.append('files', new Blob([bytes], { type: 'text/plain' }), 'smoke.txt');
+      const uploaded = await request('/api/v1/files', { method: 'POST', headers: { Cookie: cookie, Origin: origin }, body: form });
+      check(uploaded.status === 200, 'nonroot attachment upload failed');
+      attachmentId = (await uploaded.json()).data;
+      check(Number.isSafeInteger(attachmentId) && attachmentId > 0, 'upload contract changed');
+    }
+    const downloaded = await request(`/api/v1/files/${attachmentId}/1`, { headers: { Cookie: cookie } });
+    check(downloaded.status === 200 && hash(Buffer.from(await downloaded.arrayBuffer())) === expectedFileHash, 'attachment content mismatch');
+    validateSmokeBarrier(JSON.parse(runtime.sql(BARRIER_SQL)));
+    return { attachmentId, checks: ['nonbrowser-login-contract', 'direct-api-encoded-routes', 'login', 'token-body', 'cookie-attributes', 'session', 'encoded-route', 'origin', 'management-boundary', 'attachment', 'schema-barrier'] };
+  };
+  const assertVolume = runtime => {
+    const volume = JSON.parse(docker(['volume', 'inspect', runtime.context.volume]))[0];
+    check(volume.Name === runtime.context.volume && volume.Labels?.[OWNER] === runId
+      && volume.Labels['com.docker.compose.project'] === runtime.context.project && volume.Driver === 'local'
+      && Object.keys(volume.Options ?? {}).length === 0 && Date.parse(volume.CreatedAt) >= runtime.context.createdAt - 2000, 'attachment volume ownership mismatch');
+  };
+  const attachmentTar = (runtime, restoreBytes) => {
+    assertVolume(runtime);
+    return docker(['run', '--rm', '--pull', 'never', '--network', 'none', '--label', `${OWNER}=${runId}`,
+      '--mount', `type=volume,source=${runtime.context.volume},target=/app/storage${restoreBytes ? '' : ',readonly'}`,
+      '--entrypoint', 'tar', ...(restoreBytes ? ['-i'] : []), images.api.Id,
+      '-C', '/app/storage', restoreBytes ? '-xf' : '-cf', '-', ...(restoreBytes ? [] : ['.'])],
+    { binary: true, input: restoreBytes });
+  };
+  const startedAt = Date.now();
+  await runSmokeStages({
+    prepare: async () => {
+      console.log('Release smoke: verifying immutable runtime and owned plans.');
+      const routes = JSON.parse(docker(['run', '--rm', '--pull', 'never', '--network', 'none', '--label', `${OWNER}=${runId}`,
+        '--entrypoint', 'node', images.frontend.Id, '-e', 'process.stdout.write(require("node:fs").readFileSync(".next/routes-manifest.json","utf8"))']));
+      assertBuildTarget(routes, BACKEND_URL);
+      fresh = setup('fresh'); restored = setup('restored');
+    },
+    bootstrap: async () => {
+      console.log('Release smoke: disposable migration and explicit authorization cutover.');
+      await fresh.start(['db']); await fresh.start(['bootstrap']);
+      validateSmokeBarrier(JSON.parse(fresh.sql(BARRIER_SQL)));
+      fresh.stop('bootstrap');
+    },
+    production: async () => {
+      console.log('Release smoke: starting production profile and edge.');
+      await fresh.start(['api', 'frontend', 'edge']); assertVolume(fresh);
+    },
+    http: async () => { const result = await httpSmoke(fresh); fileId = result.attachmentId; httpChecks = result.checks; },
+    backup: async () => {
+      console.log('Release smoke: backing up owned database and attachment storage.');
+      fresh.stop('edge'); fresh.stop('frontend'); fresh.stop('api');
+      const database = fresh.inspect('db', true);
+      tableCounts = validateSmokeTableCounts(JSON.parse(fresh.sql(TABLE_COUNTS_SQL)));
+      backup = docker(['exec', database.Id, 'pg_dump', '-U', 'smoke', '-d', fresh.context.database, '-Fc'], { binary: true });
+      attachmentArchive = attachmentTar(fresh);
+      privateWrite(path.join(directory, 'database.dump'), backup);
+      privateWrite(path.join(directory, 'attachments.tar'), attachmentArchive);
+    },
+    restore: async () => {
+      console.log('Release smoke: restoring into a second fresh owned database and volume.');
+      await restored.start(['db']);
+      docker(['exec', '-i', restored.inspect('db', true).Id, 'pg_restore', '--exit-on-error', '--no-owner', '-U', 'smoke', '-d', restored.context.database], { binary: true, input: backup });
+      restored.compose(['create', '--no-build', '--pull', 'never', '--no-recreate', 'api']); restored.verifyNetwork(); restored.inspect('api', false, true);
+      attachmentTar(restored, attachmentArchive);
+      validateSmokeBarrier(JSON.parse(restored.sql(BARRIER_SQL)));
+      check(JSON.stringify(validateSmokeTableCounts(JSON.parse(restored.sql(TABLE_COUNTS_SQL)))) === JSON.stringify(tableCounts), 'restored database row counts differ');
+      await restored.start(['api', 'frontend', 'edge']);
+    },
+    verifyRestored: async () => { await httpSmoke(restored, fileId); },
+    cleanup: async () => {
+      // Validate every existing resource before any destructive cleanup. Never use down/prune/name wildcards.
+      for (const runtime of contexts) {
+        const ids = docker(['ps', '-aq', '--filter', `label=${OWNER}=${runId}`, '--filter', `label=com.docker.compose.project=${runtime.context.project}`]).split(/\s+/u).filter(Boolean);
+        const containers = ids.map(id => JSON.parse(docker(['container', 'inspect', id]))[0]);
+        for (const container of containers) {
+          const service = container.Config?.Labels?.['com.docker.compose.service'];
+          if (!runtime.plan.services[service]) throw failure('cleanup found an unexpected owned service');
+          assertOwnedSmokeContainer(container, service, runtime.context, runtime.plan, { beforeStart: true });
+        }
+        const volumes = docker(['volume', 'ls', '-q', '--filter', `label=${OWNER}=${runId}`, '--filter', `label=com.docker.compose.project=${runtime.context.project}`]).split(/\s+/u).filter(Boolean);
+        for (const name of volumes) { check(name === runtime.context.volume, 'cleanup found unexpected volume'); assertVolume(runtime); }
+        const networks = docker(['network', 'ls', '-q', '--filter', `label=${OWNER}=${runId}`, '--filter', `label=com.docker.compose.project=${runtime.context.project}`]).split(/\s+/u).filter(Boolean);
+        for (const id of networks) { runtime.verifyNetwork(); check(runtime.context.networkId.startsWith(id), 'cleanup network identity changed'); }
+        for (const container of containers) docker(['rm', '--force', container.Id]);
+        for (const name of volumes) docker(['volume', 'rm', name]);
+        for (const _id of networks) docker(['network', 'rm', runtime.context.networkId]);
+      }
+    },
+    evidence: async () => {
+      assert.deepEqual(captureReleaseSmokeSource(), source, 'Source changed while smoke was running.');
+      const evidence = { schemaVersion: 1, kind: 'local-isolated-release-smoke', publicationApproved: false,
+        source, images: Object.fromEntries(Object.entries(images).map(([key, image]) => [key, { id: image.Id, repoDigests: image.RepoDigests ?? [] }])),
+        runnerSha256: hash(readFileSync(fileURLToPath(import.meta.url))), composeSha256: hash(baseSource + prodSource), edgeTemplateSha256: hash(edgeSource),
+        checks: httpChecks, pathProbes, freshInstall: 'explicit-disposable-cutover-then-prod', recovery: 'same-image-database-and-attachments',
+        historicalUpgrade: 'not-tested', tlsBrowserFlow: 'not-tested', smtpDelivery: 'not-tested',
+        tablesVerified: Object.keys(tableCounts).length, tableCountsSha256: hash(JSON.stringify(tableCounts)),
+        databaseBackupSha256: hash(backup), attachmentBackupSha256: hash(attachmentArchive), elapsedMs: Date.now() - startedAt };
+      privateWrite(path.join(directory, 'result.json'), JSON.stringify(evidence, null, 2));
+      console.log(`Release smoke passed; bounded evidence: ${path.relative(ROOT, path.join(directory, 'result.json'))}`);
+    },
+  });
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  main().catch(error => {
+    console.error(error instanceof Error && error.message.startsWith('Isolated release smoke: ')
+      ? error.message : 'Isolated release smoke failed; no complete evidence was written. Raw diagnostics are withheld.');
+    process.exitCode = 1;
+  });
+}

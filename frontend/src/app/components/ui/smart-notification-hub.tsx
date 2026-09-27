@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCheck, ExternalLink, RefreshCw, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toDisplayDateTime } from '@/lib/format-date';
 import { Button } from '@/components/ui/button';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
@@ -195,7 +196,7 @@ export function SmartNotificationHub() {
     },
     {
       header: '발생 일시',
-      accessor: (item) => <span className="text-xs text-muted-foreground tabular-nums">{item.notiDt}</span>,
+      accessor: (item) => <span className="text-xs text-muted-foreground tabular-nums">{toDisplayDateTime(new Date(item.notiDt))}</span>,
       className: 'w-40',
     },
     {

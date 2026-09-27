@@ -16,6 +16,7 @@ import { useShortcut } from './global-shortcut-provider';
 import { menuService } from '@/services/business/user/MenuService';
 import { useAuth } from '@/contexts/AuthContext';
 import { readRecentMenuNos } from '@/lib/navigation/recent-menus';
+import { walkMenuTree } from '@/lib/navigation/active-menu';
 import { SEARCH_URL_STATE, parseSearchUrlState, serializeSearchQuery, searchUrlErrorMessage } from '@/lib/navigation/search-url-state';
 import {
   normalizeInternalRoute,
@@ -104,35 +105,23 @@ export function GlobalCommandCenter() {
         const head = await menuService.getHeadMenus();
         if (head && head.length > 0) {
           const byNo = new Map<number, CommandItem>();
-          const allHead: CommandItem[] = head.flatMap(m => {
-            const url = resolveMenuInternalRoute(m);
-            if (!url) return [];
+          const allHead: CommandItem[] = [];
+          const subItems: CommandItem[] = [];
+          // children 전체를 한 번 받은 트리에서 읽는다. 분류에 경로가 없어도 말단까지 탐색한다.
+          for (const { item: node, ancestors } of walkMenuTree(head)) {
+            const url = resolveMenuInternalRoute(node);
+            if (!url) continue;
+            const isHead = ancestors.length === 0;
             const item: CommandItem = {
-              id: `cmd-head-${m.menuNo}`,
-              name: m.menuNm,
+              id: isHead ? `cmd-head-${node.menuNo}` : `cmd-left-${[...ancestors, node].map(menu => menu.menuNo).join('-')}`,
+              name: [...ancestors, node].map(menu => menu.menuNm).join(' > '),
               url,
               category: '메뉴' as const,
-              icon: <LayoutDashboard size={16} />
+              icon: isHead ? <LayoutDashboard size={16} /> : <ArrowRight size={14} />
             };
-            byNo.set(m.menuNo, item);
-            return [item];
-          });
-
-          // [2026-09-26 DIP B5 F10] 하위 메뉴는 상위 메뉴 응답의 children 에 이미 있다. 상위 메뉴마다
-          //   따로 요청하면 서버가 매번 메뉴 트리 전체를 다시 조립했다(N+1).
-          const subItems: CommandItem[] = head.flatMap(m => (m.children ?? []).flatMap(l => {
-            const url = resolveMenuInternalRoute(l);
-            if (!url) return [];
-            const item: CommandItem = {
-              id: `cmd-left-${m.menuNo}-${l.menuNo}`,
-              name: `${m.menuNm} > ${l.menuNm}`,
-              url,
-              category: '메뉴' as const,
-              icon: <ArrowRight size={14} />
-            };
-            byNo.set(l.menuNo, item);
-            return [item];
-          }));
+            byNo.set(node.menuNo, item);
+            (isHead ? allHead : subItems).push(item);
+          }
           setMenus([...allHead, ...subItems]);
           setMenuByNo(byNo);
         }

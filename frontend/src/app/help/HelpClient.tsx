@@ -11,6 +11,7 @@ import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PagePagination } from '@/components/common/PagePagination';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EmptyStateDisplay, ErrorStateDisplay } from '@/app/components/ui/status-displays';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
@@ -71,6 +72,9 @@ export default function HelpClient() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<{ tab: 'faq' | 'qna'; message: string } | null>(null);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageInfo, setPageInfo] = useState({ total: 0, size: 10 });
+  const [requestSize, setRequestSize] = useState(10);
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const [faqDetails, setFaqDetails] = useState<Record<string, FaqDetailState>>({});
 
@@ -82,18 +86,24 @@ export default function HelpClient() {
   const askForm = useAppForm(askSchema, { defaultValues: { pstTtl: '', pstCn: '' } });
 
   useEffect(() => {
+    let cancelled = false;
     const timer = setTimeout(async () => {
       try {
         setLoading(true);
         setLoadError(null);
         if (tab === 'faq') {
-          const res = await helpUserService.getFaqs({ keyword: searchKeyword });
+          const res = await helpUserService.getFaqs({ page: page - 1, size: requestSize, keyword: searchKeyword });
+          if (cancelled) return;
           setFaqs(res.list || []);
+          setPageInfo({ total: res.total ?? 0, size: res.size > 0 ? res.size : requestSize });
         } else {
-          const res = await helpUserService.getQnas({ page: 0, size: 10, keyword: searchKeyword });
+          const res = await helpUserService.getQnas({ page: page - 1, size: requestSize, keyword: searchKeyword });
+          if (cancelled) return;
           setQnas(res.list || []);
+          setPageInfo({ total: res.total ?? 0, size: res.size > 0 ? res.size : requestSize });
         }
       } catch {
+        if (cancelled) return;
         // [2026-09-15 DEC-OPS-100] 종전에는 토스트만 띄우고 목록을 빈 채로 둬서, 토스트가 사라지면
         //   "등록된 … 없습니다"(데이터 없음)나 "검색 결과가 없습니다"로 읽혔다. 실패를 화면에 남기고,
         //   직전 검색어의 목록이 새 검색어의 결과처럼 남지 않게 비운다. 서버 문구는 API 공통 토스트가 알린다.
@@ -105,11 +115,20 @@ export default function HelpClient() {
           setLoadError({ tab: 'qna', message: 'Q&A 문의 내역을 불러오지 못했습니다.' });
         }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }, 300); // Debounce
-    return () => clearTimeout(timer);
-  }, [tab, searchKeyword, reloadToken]);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [tab, searchKeyword, reloadToken, page, requestSize]);
+
+  const changeTab = (nextTab: 'faq' | 'qna') => {
+    if (nextTab === tab) return;
+    setTab(nextTab);
+    setPage(1);
+    setRequestSize(10);
+    setExpandedFaq(null);
+    setLoading(true);
+  };
 
   const retryLoad = () => setReloadToken((token) => token + 1);
   // [2026-09-15 DEC-OPS-100] 탭을 바꾼 직후 300ms 지연 조회가 시작되기 전에도 다른 탭의 실패를 보이지 않는다.
@@ -135,6 +154,8 @@ export default function HelpClient() {
       toast('문의를 등록했습니다.', 'success');
       setAskOpen(false);
       // 방금 쓴 글이 목록에 보여야 등록됐다는 것을 사용자가 확인할 수 있다.
+      setPage(1);
+      setLoading(true);
       setReloadToken((token) => token + 1);
     } catch (error: unknown) {
       /*
@@ -207,13 +228,13 @@ export default function HelpClient() {
         <div role="tablist" aria-label="도움말 구분" className="flex rounded-md border border-border p-0.5">
           <TabButton
             active={tab === 'faq'}
-            onClick={() => setTab('faq')}
+            onClick={() => changeTab('faq')}
             icon={<HelpCircle size={16} aria-hidden="true" />}
             label="FAQ 자주 묻는 질문"
           />
           <TabButton
             active={tab === 'qna'}
-            onClick={() => setTab('qna')}
+            onClick={() => changeTab('qna')}
             icon={<MessageCircle size={16} aria-hidden="true" />}
             label="1:1 Q&A 문의"
           />
@@ -230,7 +251,12 @@ export default function HelpClient() {
             aria-label="도움말 키워드 검색"
             placeholder="키워드로 검색"
             value={searchKeyword}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchKeyword(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setSearchKeyword(e.target.value);
+              setPage(1);
+              setExpandedFaq(null);
+              setLoading(true);
+            }}
           />
         </div>
       }
@@ -247,7 +273,7 @@ export default function HelpClient() {
             >
               {currentLoadError ? (
                 <ErrorStateDisplay error={currentLoadError} onRetry={retryLoad} className="bg-card border-2 border-dashed border-border" />
-              ) : faqs.length === 0 && loading ? (
+              ) : loading ? (
                 <p role="status" className="py-12 text-center text-sm text-muted-foreground">자주 묻는 질문을 불러오는 중…</p>
               ) : faqs.length === 0 ? (
                 <EmptyStateDisplay message={emptyResultMessage(searchKeyword, "등록된 자주 묻는 질문이 없습니다.")} className="bg-card border-2 border-dashed border-border" />
@@ -386,6 +412,20 @@ export default function HelpClient() {
             </motion.div>
           )}
         </AnimatePresence>
+        {!loading && !currentLoadError && (
+          <PagePagination
+            total={pageInfo.total}
+            page={page}
+            size={pageInfo.size}
+            onPageChange={(nextPage) => {
+              if (nextPage === page) return;
+              setPage(nextPage);
+              setRequestSize(pageInfo.size);
+              setExpandedFaq(null);
+              setLoading(true);
+            }}
+          />
+        )}
       </div>
     </WorkListPage>
   );
