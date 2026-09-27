@@ -57,13 +57,16 @@ class EntityTableOwnershipLinterTest {
     // 운영 전체 물리 표 78종과 Entity census는 다르다. V2_98 + 별도 Contract/ADR 근거.
     // V2_101: 결재 차수 이력과 참여자별 결정 2종. 기존 공유 매핑은 그대로다.
     // V2_107(DIP I6 ④): 게시글 추천 이력 BoardRecommendation → tb_bbs_rcmdtn_hstry. 76 → 77 / 75 → 76.
-    private static final int EXPECTED_ENTITY_COUNT = 77;
-    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 76;
+    // V2_110(DIP B5 F11): 공통코드 변경 이력 CommonCodeChange → tb_com_cd_chg_hstry. 77 → 78 / 76 → 77.
+    private static final int EXPECTED_ENTITY_COUNT = 78;
+    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 77;
 
     private static final Set<String> AUDIT_COLUMNS = Set.of(
             "frst_rgtr_id", "crt_dt", "last_mdfr_id", "mdfcn_dt");
+    // 추가만 하고 고치지 않는 이력이라 수정자 컬럼이 없다(권한 변경 이력과 같은 형태).
     private static final Map<String,String> INSERT_ONLY_AUDIT_ENTITIES = Map.of(
-            "nuri.business.domain.auth.AuthorizationChange", "tb_authrt_chg_hstry");
+            "nuri.business.domain.auth.AuthorizationChange", "tb_authrt_chg_hstry",
+            "nuri.business.domain.code.CommonCodeChange", "tb_com_cd_chg_hstry");
 
     /** 물리 감사 4컬럼은 있었지만 BaseEntity 상속이 빠졌던 쓰기 모델과 해당 저장소. */
     private static final Map<String, String> CORRECTED_AUDIT_WRITE_ENTITIES = Map.of(
@@ -138,7 +141,7 @@ class EntityTableOwnershipLinterTest {
     }
 
     @Test
-    @DisplayName("감사 컬럼: 쓰기 모델 감사 4개와 불변 권한 이력 insert 감사 2개가 물리 스키마와 일치한다")
+    @DisplayName("감사 컬럼: 쓰기 모델 감사 4개와 불변 이력(권한·공통코드) insert 감사 2개가 물리 스키마와 일치한다")
     void auditColumnMappingsMatchFlywayPhysicalColumns() throws IOException {
         EntityInventory inventory = scanEntities();
         Map<String, Map<String, String>> schema =

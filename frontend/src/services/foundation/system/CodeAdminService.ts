@@ -11,6 +11,7 @@ import {
     deleteDetailCodeOperation,
     getAdministCodeDetailOperation,
     getAdministCodeListOperation,
+    getChangeHistoryOperation,
     getClCodeListOperation,
     getClCodeOperation,
     getCmmnCodeListOperation,
@@ -26,6 +27,12 @@ import {
     updateCmmnCodeOperation,
     updateDetailCodeOperation,
 } from '@/types/generated-operations';
+
+/** 공통코드 변경 이력 한 건(2026-09-27 DIP B5 F11). 서버 응답 타입을 그대로 쓴다. */
+export type CommonCodeChange = components['schemas']['CommonCodeChangeDto'];
+
+/** 변경 이력 조회 대상 — 그룹(그 그룹과 상세 코드) 또는 분류 자신. 둘을 함께 주면 서버가 400 으로 거부한다. */
+export type CommonCodeChangeScope = { cdId: string; clsfCd?: never } | { clsfCd: string; cdId?: never };
 
 export interface AdministCode {
     admdstCd: string;
@@ -298,6 +305,20 @@ class CodeAdminService extends AdminService {
         });
         const page = requireCodePage(response);
         return { ...page, list: page.list.map(requireCmmnCode) };
+    }
+
+    /** 공통코드 변경 이력(최신순). page 는 0부터 센다. */
+    async getCodeChangeHistory(
+        scope: CommonCodeChangeScope,
+        page: number,
+        size: number,
+        config?: AxiosRequestConfig,
+    ): Promise<PageResponse<CommonCodeChange>> {
+        const response = await this.executeGenerated(getChangeHistoryOperation, {
+            query: { ...scope, page, size },
+            config,
+        });
+        return requireCodePage(response);
     }
 
     async getCmmnCode(cdId: string, config?: AxiosRequestConfig): Promise<CmmnCode> {

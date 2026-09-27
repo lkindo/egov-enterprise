@@ -4005,6 +4005,50 @@ export const ApiResponseCmmnClCodeDtoSchema = z.object({
 export type ApiResponseCmmnClCodeDto = z.infer<typeof ApiResponseCmmnClCodeDtoSchema>;
 
 // ==========================================================================
+// ApiResponsePageResponseCommonCodeChangeDto Schema
+// ==========================================================================
+export const ApiResponsePageResponseCommonCodeChangeDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseCommonCodeChangeDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponsePageResponseCommonCodeChangeDto = z.infer<typeof ApiResponsePageResponseCommonCodeChangeDtoSchema>;
+
+// ==========================================================================
+// CommonCodeChangeDto Schema
+// ==========================================================================
+export const CommonCodeChangeDtoSchema = z.object({
+  comCdChgHstrySn: z.number().int().optional(),
+  chgTrgtTypeCd: z.enum(["CLSF","CODE","DTL"]).optional(),
+  chgTypeCd: z.enum(["ADD","UPDATE","REMOVE"]).optional(),
+  clsfCd: z.string().optional().nullable(),
+  cdId: z.string().optional().nullable(),
+  dtlCd: z.string().optional().nullable(),
+  chgArtclNm: z.string().optional(),
+  chgBfrCn: z.string().optional().nullable(),
+  chgAftrCn: z.string().optional().nullable(),
+  chgUserNm: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+});
+export type CommonCodeChangeDto = z.infer<typeof CommonCodeChangeDtoSchema>;
+
+// ==========================================================================
+// PageResponseCommonCodeChangeDto Schema
+// ==========================================================================
+export const PageResponseCommonCodeChangeDtoSchema = z.object({
+  list: z.array(z.lazy(() => CommonCodeChangeDtoSchema)).optional(),
+  total: z.number().int().optional(),
+  page: z.number().int().optional(),
+  size: z.number().int().optional(),
+  totalPage: z.number().int().optional(),
+});
+export type PageResponseCommonCodeChangeDto = z.infer<typeof PageResponseCommonCodeChangeDtoSchema>;
+
+// ==========================================================================
 // ApiResponsePageResponseAdministCodeDto Schema
 // ==========================================================================
 export const ApiResponsePageResponseAdministCodeDtoSchema = z.object({
@@ -10453,6 +10497,70 @@ export const ApiResponseCmmnClCodeDtoResponseSchema = z.object({
   data: z.lazy(() => CmmnClCodeDtoResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const ApiResponsePageResponseCommonCodeChangeDtoRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseCommonCodeChangeDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponsePageResponseCommonCodeChangeDtoResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseCommonCodeChangeDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const CommonCodeChangeDtoRequestSchema = z.object({
+  comCdChgHstrySn: z.number().int().optional(),
+  chgTrgtTypeCd: z.enum(["CLSF","CODE","DTL"]).optional(),
+  chgTypeCd: z.enum(["ADD","UPDATE","REMOVE"]).optional(),
+  clsfCd: z.string().optional().nullable(),
+  cdId: z.string().optional().nullable(),
+  dtlCd: z.string().optional().nullable(),
+  chgArtclNm: z.string().optional(),
+  chgBfrCn: z.string().optional().nullable(),
+  chgAftrCn: z.string().optional().nullable(),
+  chgUserNm: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+});
+
+export const CommonCodeChangeDtoResponseSchema = z.object({
+  comCdChgHstrySn: z.number().int().optional().nullable(),
+  chgTrgtTypeCd: z.enum(["CLSF","CODE","DTL"]).optional().nullable(),
+  chgTypeCd: z.enum(["ADD","UPDATE","REMOVE"]).optional().nullable(),
+  clsfCd: z.string().optional().nullable(),
+  cdId: z.string().optional().nullable(),
+  dtlCd: z.string().optional().nullable(),
+  chgArtclNm: z.string().optional().nullable(),
+  chgBfrCn: z.string().optional().nullable(),
+  chgAftrCn: z.string().optional().nullable(),
+  chgUserNm: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+});
+
+export const PageResponseCommonCodeChangeDtoRequestSchema = z.object({
+  list: z.array(z.lazy(() => CommonCodeChangeDtoRequestSchema.strict())).optional(),
+  total: z.number().int().optional(),
+  page: z.number().int().optional(),
+  size: z.number().int().optional(),
+  totalPage: z.number().int().optional(),
+});
+
+export const PageResponseCommonCodeChangeDtoResponseSchema = z.object({
+  list: z.array(z.lazy(() => CommonCodeChangeDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseAdministCodeDtoRequestSchema = z.object({

@@ -148,6 +148,14 @@ vi.mock('@/app/components/ui/code-picker', () => ({
 vi.mock('@/components/ui/hub/HubStatusBadge', () => ({
   HubStatusBadge: ({ status }: any) => <span>{status}</span>,
 }));
+// [2026-09-27 DIP B5 F11] 변경 이력 대화상자는 자기 테스트가 따로 본다 — 여기서는 어떤 대상으로 열리는지만 본다.
+vi.mock('../CommonCodeChangeHistoryDialog', () => ({
+  CommonCodeChangeHistoryDialog: ({ target, onClose }: any) => (
+    <div role="dialog" aria-label={`${target.name} 변경 이력`} data-kind={target.kind} data-id={target.id}>
+      <button type="button" onClick={onClose}>이력 닫기</button>
+    </div>
+  ),
+}));
 vi.mock('@/app/components/ui/standard-data-table', () => ({
   StandardDataTable: ({ columns, data, onRetry, isPremium }: any) => (
     <div data-testid="common-code-detail-table" data-entry-motion={isPremium ? 'enabled' : 'disabled'}>
@@ -270,6 +278,24 @@ describe('CommonCodeClient', () => {
     expect(screen.getByText('검색 결과가 없습니다')).toBeInTheDocument();
     expect(within(screen.getByTestId('master-detail-detail')).getByRole('status')).toHaveTextContent('선택된 코드 없음');
     expect(screen.queryByRole('button', { name: '신규 상세 코드 등록' })).not.toBeInTheDocument();
+  });
+
+  it('[DIP B5 F11] 그룹은 그 그룹의, 분류는 그 분류 자신의 변경 이력을 연다', async () => {
+    renderClient();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '변경 이력' }));
+    const groupDialog = screen.getByRole('dialog', { name: '사용자 상태 변경 이력' });
+    expect(groupDialog).toHaveAttribute('data-kind', 'group');
+    expect(groupDialog).toHaveAttribute('data-id', 'GRP1');
+    fireEvent.click(within(groupDialog).getByRole('button', { name: '이력 닫기' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '업무 도메인 (DOMAIN) 선택' }));
+    fireEvent.click(await screen.findByRole('button', { name: '변경 이력' }));
+    const clusterDialog = screen.getByRole('dialog', { name: '업무 도메인 변경 이력' });
+    expect(clusterDialog).toHaveAttribute('data-kind', 'cluster');
+    expect(clusterDialog).toHaveAttribute('data-id', 'DOMAIN');
   });
 
   it('renders classifications and groups in stable identifier order regardless of API order', () => {

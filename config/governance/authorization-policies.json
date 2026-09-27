@@ -4113,6 +4113,13 @@
       "permission": "CODE_READ"
     },
     {
+      "method": "GET",
+      "path": "/api/v1/admin/system/codes/change-history",
+      "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#getChangeHistory",
+      "access": "PERMISSION",
+      "permission": "CODE_READ"
+    },
+    {
       "method": "POST",
       "path": "/api/v1/admin/system/codes/cmmn",
       "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#createCmmnCode",

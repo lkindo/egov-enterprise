@@ -129,6 +129,7 @@
           "tb_authrt_user_map",
           "tb_bkmk_menu_mng_rslt",
           "tb_com_cd",
+          "tb_com_cd_chg_hstry",
           "tb_com_clsf_cd",
           "tb_com_dtl_cd",
           "tb_dept_job_bx",
@@ -398,10 +399,10 @@
     }
   ],
   "databaseSnapshot": {
-    "source": "isolated PostgreSQL 17/public; repository migrations through V2_101 and explicit authorization Contract (not OCI deployment state); V2_107 adds tb_bbs_rcmdtn_hstry (+1 table, no sequence) and V2_102-V2_106 create or drop none",
+    "source": "isolated PostgreSQL 17/public; repository migrations through V2_101 and explicit authorization Contract (not OCI deployment state); V2_107 adds tb_bbs_rcmdtn_hstry (+1 table, no sequence), V2_102-V2_106 and V2_108-V2_109 create or drop none, and V2_110 adds tb_com_cd_chg_hstry (+1 table, +1 identity sequence)",
     "checkedAt": "2026-09-16T00:43:23.368Z",
-    "physicalTableCountExcludingFlyway": 81,
-    "physicalSequenceCount": 49,
+    "physicalTableCountExcludingFlyway": 82,
+    "physicalSequenceCount": 50,
     "physicalStandaloneSequenceCount": 3,
     "metaRows": {
       "meta_standard_words": 3386,
