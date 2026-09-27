@@ -94,6 +94,7 @@ const FEATURES = {
     'src/app/actions/promotionActions.ts', 'src/app/components/dashboard/BannerSlider.tsx', 'src/app/components/dashboard/PopupManager.tsx',
     'src/app/admin/community/[id]', 'src/app/admin/community/board', 'src/app/admin/community/page.tsx',
     'src/app/admin/patterns', 'src/app/admin/system/banner', 'src/app/admin/system/layout', 'src/app/cop/cmy',
+    'src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx',
     'src/services/business/community', 'src/services/business/user/BannerService.ts', 'src/services/business/user/PopupService.ts',
     'src/services/foundation/system/BannerAdminService.ts', 'src/services/foundation/system/CommunityAdminService.ts',
     'src/services/foundation/system/PopupAdminService.ts', 'src/types/business/community.ts', 'src/types/foundation/banner.ts'],

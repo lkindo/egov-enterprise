@@ -25,7 +25,8 @@ const ALLOWED: Record<string, string> = {
     '로딩 스켈레톤 자체의 페이드 — 지연시킬 데이터가 아직 없다',
   'src/app/components/ui/global-command-center.tsx':
     '커맨드 팔레트 오버레이 등장 — 열림/닫힘 상태 전환 신호',
-  'src/app/admin/system/monitoring/components/MonitoringPanels.tsx':
+  // [2026-09-27 DIP B5 F11] 하네스 아틀라스 상세 뷰를 MonitoringPanels 에서 떼어 demo 소유 파일로 옮기며 키도 옮겼다.
+  'src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx':
     '탭 내부 패널 전환 — 페이지 진입이 아니라 선택 결과 교체 신호',
   // 아래 둘은 next.config 리다이렉트로 도달 불가한 화면이라 사용자에게 보이는 변화가 없다.
   // 손대지 않는다는 판단을 기록으로 남긴다(DEC-OPS-023).
