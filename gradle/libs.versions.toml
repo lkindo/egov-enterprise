@@ -30,12 +30,12 @@ icu4j = "75.1"
 parsson = "1.1.9"
 archunit = "1.5.0"
 scribejava = "8.3.3"
-xmlbeans = "5.4.0"
+xmlbeans = "5.4.1"
 jdom2 = "2.0.6.1"
 dbcp2 = "2.14.0"
 jjwt = "0.13.0"
 h2 = "2.5.250"
-caffeine = "3.2.4"
+caffeine = "3.3.0"
 testcontainers = "2.0.5" # Boot 4.1.1 BOM 관리 값과 같다
 mapstruct = "1.6.3"
 # [2026-08-07 신설] querydsl — 원본 `com.querydsl` 에서 유지보수 포크로 이관한다.
@@ -44,7 +44,7 @@ mapstruct = "1.6.3"
 #   같은 advisory 가 포크에서는 5.6.1 / 6.10.1 로 패치돼 있다.
 #   최초 이관은 jakarta classifier 가 있는 5.6.1을 선택했다. 7.6은 com.querydsl.* 패키지를
 #   유지하고 JPA 본체에 Jakarta API를 사용하므로 JPA classifier를 제거하며 APT jakarta는 유지한다.
-querydsl = "7.6"
+querydsl = "7.7"
 lombok-mapstruct-binding = "0.2.0"
 
 
