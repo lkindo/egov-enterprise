@@ -21,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 import nuri.business.domain.code.CommonCodeCategory;
+import nuri.business.domain.code.CommonCodeChange;
+import nuri.business.domain.code.CommonCodeChangeRepository;
 import nuri.business.domain.code.CommonCodeCategoryRepository;
 import nuri.business.domain.code.CommonCodeGroup;
 import nuri.business.domain.code.CommonCodeGroupRepository;
@@ -43,17 +45,62 @@ public class CommonCodeService extends BaseAbstractService {
         private final CommonCodeCategoryRepository commonCodeCategoryRepository;
         private final CommonCodeGroupRepository commonCodeGroupRepository;
         private final CommonCodeMapper commonCodeMapper;
+        private final CommonCodeChangeRepository changeRepository;
 
         public CommonCodeService(CommonCodeRepository commonCodeRepository,
                         CommonCodeCategoryRepository commonCodeCategoryRepository,
                         CommonCodeGroupRepository commonCodeGroupRepository,
-                        CommonCodeMapper commonCodeMapper) {
+                        CommonCodeMapper commonCodeMapper,
+                        CommonCodeChangeRepository changeRepository) {
                 this.commonCodeRepository = required(commonCodeRepository, "CommonCodeRepository 는 null 일 수 없습니다");
                 this.commonCodeCategoryRepository = required(commonCodeCategoryRepository,
                                 "CommonCodeCategoryRepository 는 null 일 수 없습니다");
                 this.commonCodeGroupRepository = required(commonCodeGroupRepository,
                                 "CommonCodeGroupRepository 는 null 일 수 없습니다");
                 this.commonCodeMapper = required(commonCodeMapper, "CommonCodeMapper 는 null 일 수 없습니다");
+                this.changeRepository = required(changeRepository, "CommonCodeChangeRepository 는 null 일 수 없습니다");
+        }
+
+        // --- 변경 이력(2026-09-27 DIP B5 F11) ---
+        // 종전에는 코드 행에 최종 수정자·일시만 덮어써져, 누가 언제 명칭을 바꾸거나 쓰지 않게 했는지 남는 곳이 없었다.
+        // 변경과 같은 트랜잭션에서 한 건씩 남긴다 — 변경이 롤백되면 이력도 남지 않는다. 바뀐 값이 없으면 남기지 않는다.
+
+        private static final int CHANGE_TEXT_MAX = 4000;
+
+        private static String codeSummary(String name, String explanation, String useYn) {
+                return "명칭: " + (name == null ? "" : name)
+                                + " / 설명: " + (explanation == null ? "" : explanation)
+                                + " / 사용: " + (useYn == null ? "" : useYn);
+        }
+
+        private static String changedItems(String beforeName, String beforeExpln, String beforeUse,
+                        String afterName, String afterExpln, String afterUse) {
+                List<String> items = new java.util.ArrayList<>();
+                if (!java.util.Objects.equals(beforeName, afterName)) items.add("명칭");
+                if (!java.util.Objects.equals(beforeExpln, afterExpln)) items.add("설명");
+                if (!java.util.Objects.equals(beforeUse, afterUse)) items.add("사용 여부");
+                return String.join("·", items);
+        }
+
+        private static String clip(String value) {
+                return value == null || value.length() <= CHANGE_TEXT_MAX ? value : value.substring(0, CHANGE_TEXT_MAX);
+        }
+
+        private void recordChange(String target, String type, String clsfCd, String cdId, String dtlCd,
+                        String item, String before, String after) {
+                changeRepository.save(CommonCodeChange.builder()
+                                .chgTrgtTypeCd(target)
+                                .chgTypeCd(type)
+                                .clsfCd(clsfCd)
+                                .cdId(cdId)
+                                .dtlCd(dtlCd)
+                                .chgArtclNm(item)
+                                .chgBfrCn(clip(before))
+                                .chgAftrCn(clip(after))
+                                .chgUserIdntfr(SecurityUtil.getCurrentEsntlId().orElse(null))
+                                .frstRgtrId(SecurityUtil.getCurrentLoginId().orElse("SYSTEM"))
+                                .crtDt(java.time.LocalDateTime.now())
+                                .build());
         }
 
         @Transactional(readOnly = true)
@@ -89,7 +136,10 @@ public class CommonCodeService extends BaseAbstractService {
                                 .useYn(request.useYn())
                                 .build();
 
-                return commonCodeMapper.toDto(commonCodeRepository.save(required(code, "code 는 null 일 수 없습니다")));
+                CommonCode saved = commonCodeRepository.save(required(code, "code 는 null 일 수 없습니다"));
+                recordChange("DTL", "ADD", null, saved.getCdId(), saved.getDtlCd(), "상세 코드 등록", null,
+                                codeSummary(saved.getDtlCdNm(), saved.getDtlCdExpln(), saved.getUseYn()));
+                return commonCodeMapper.toDto(saved);
         }
         // --- 공통분류코드 (CmmnClCode) ---
 
@@ -133,6 +183,8 @@ public class CommonCodeService extends BaseAbstractService {
                                 .useYn(dto.getUseYn())
                                 .build();
                 commonCodeCategoryRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
+                recordChange("CLSF", "ADD", entity.getClsfCd(), null, null, "분류 등록", null,
+                                codeSummary(entity.getClsfCdNm(), entity.getClsfCdExpln(), entity.getUseYn()));
         }
 
         @Transactional
@@ -142,10 +194,18 @@ public class CommonCodeService extends BaseAbstractService {
 
                 commonCodeCategoryRepository.findById(required(dto.getClsfCd(), "dto.getClsfCd() 는 null 일 수 없습니다"))
                                 .ifPresent(entity -> {
+                                        String bfrNm = entity.getClsfCdNm(), bfrExpln = entity.getClsfCdExpln(), bfrUse = entity.getUseYn();
                                         entity.update(required(dto.getClsfCdNm(), "dto.getClsfCdNm() 는 null 일 수 없습니다"),
                                                         dto.getClsfCdExpln(),
                                                         dto.getUseYn(),
                                                         dto.getLastMdfrId());
+                                        String items = changedItems(bfrNm, bfrExpln, bfrUse,
+                                                        entity.getClsfCdNm(), entity.getClsfCdExpln(), entity.getUseYn());
+                                        if (!items.isEmpty()) {
+                                                recordChange("CLSF", "UPDATE", entity.getClsfCd(), null, null, items,
+                                                                codeSummary(bfrNm, bfrExpln, bfrUse),
+                                                                codeSummary(entity.getClsfCdNm(), entity.getClsfCdExpln(), entity.getUseYn()));
+                                        }
                                 });
         }
 
@@ -155,7 +215,12 @@ public class CommonCodeService extends BaseAbstractService {
                 SecurityUtil.assertPermission("CODE_DELETE");
 
                 commonCodeCategoryRepository.findById(required(dto.getClsfCd(), "dto.getClsfCd() 는 null 일 수 없습니다"))
-                                .ifPresent(category -> category.delete());
+                                .ifPresent(category -> {
+                                        String bfrUse = category.getUseYn();
+                                        category.delete();
+                                        if (!java.util.Objects.equals(bfrUse, category.getUseYn())) recordChange("CLSF", "REMOVE", category.getClsfCd(), null, null, "분류 삭제(사용 안 함)",
+                                                        "사용: " + bfrUse, "사용: " + category.getUseYn());
+                                });
         }
 
         private CmmnClCodeDto toDto(CommonCodeCategory entity) {
@@ -212,6 +277,8 @@ public class CommonCodeService extends BaseAbstractService {
                                 .useYn(dto.getUseYn())
                                 .build();
                 commonCodeGroupRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
+                recordChange("CODE", "ADD", entity.getClsfCd(), entity.getCdId(), null, "그룹 등록", null,
+                                codeSummary(entity.getCdIdNm(), entity.getCdIdExpln(), entity.getUseYn()));
         }
 
         @Transactional
@@ -221,10 +288,18 @@ public class CommonCodeService extends BaseAbstractService {
 
                 commonCodeGroupRepository.findById(required(dto.getCdId(), "dto.getCdId() 는 null 일 수 없습니다"))
                                 .ifPresent(entity -> {
+                                        String bfrNm = entity.getCdIdNm(), bfrExpln = entity.getCdIdExpln(), bfrUse = entity.getUseYn();
                                         entity.update(required(dto.getCdIdNm(), "dto.getCdIdNm() 는 null 일 수 없습니다"),
                                                         dto.getCdIdExpln(),
                                                         dto.getUseYn(),
                                                         dto.getLastMdfrId());
+                                        String items = changedItems(bfrNm, bfrExpln, bfrUse,
+                                                        entity.getCdIdNm(), entity.getCdIdExpln(), entity.getUseYn());
+                                        if (!items.isEmpty()) {
+                                                recordChange("CODE", "UPDATE", entity.getClsfCd(), entity.getCdId(), null, items,
+                                                                codeSummary(bfrNm, bfrExpln, bfrUse),
+                                                                codeSummary(entity.getCdIdNm(), entity.getCdIdExpln(), entity.getUseYn()));
+                                        }
                                 });
         }
 
@@ -272,7 +347,12 @@ public class CommonCodeService extends BaseAbstractService {
                                         .orElseThrow(() -> new BusinessException(
                                                         "코드그룹이 존재하지 않습니다: " + cdId,
                                                         CodeErrorCode.CODE_NOT_FOUND));
+                        String bfrClsf = entity.getClsfCd();
                         entity.updateClassification(clsfCd);
+                        if (!java.util.Objects.equals(bfrClsf, clsfCd)) {
+                                recordChange("CODE", "UPDATE", clsfCd, cdId, null, "소속 분류",
+                                                "분류: " + bfrClsf, "분류: " + clsfCd);
+                        }
                 }
         }
 
@@ -282,7 +362,12 @@ public class CommonCodeService extends BaseAbstractService {
                 SecurityUtil.assertPermission("CODE_DELETE");
 
                 commonCodeGroupRepository.findById(required(dto.getCdId(), "dto.getCdId() 는 null 일 수 없습니다"))
-                                .ifPresent(group -> group.delete());
+                                .ifPresent(group -> {
+                                        String bfrUse = group.getUseYn();
+                                        group.delete();
+                                        if (!java.util.Objects.equals(bfrUse, group.getUseYn())) recordChange("CODE", "REMOVE", group.getClsfCd(), group.getCdId(), null, "그룹 삭제(사용 안 함)",
+                                                        "사용: " + bfrUse, "사용: " + group.getUseYn());
+                                });
         }
 
         private CmmnCodeDto toDto(nuri.business.domain.code.CommonCodeGroupProjection projection) {
@@ -362,6 +447,8 @@ public class CommonCodeService extends BaseAbstractService {
                                 .useYn(dto.getUseYn())
                                 .build();
                 commonCodeRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
+                recordChange("DTL", "ADD", null, entity.getCdId(), entity.getDtlCd(), "상세 코드 등록", null,
+                                codeSummary(entity.getDtlCdNm(), entity.getDtlCdExpln(), entity.getUseYn()));
         }
 
         @Transactional
@@ -375,10 +462,18 @@ public class CommonCodeService extends BaseAbstractService {
                                                                 dto.getCdId(), dto.getDtlCd()),
                                                 "CommonCodeId 는 null 일 수 없습니다"))
                                 .ifPresent(entity -> {
+                                        String bfrNm = entity.getDtlCdNm(), bfrExpln = entity.getDtlCdExpln(), bfrUse = entity.getUseYn();
                                         entity.update(required(dto.getDtlCdNm(), "dto.getDtlCdNm() 는 null 일 수 없습니다"),
                                                         dto.getDtlCdExpln(),
                                                         dto.getUseYn(),
                                                         dto.getLastMdfrId());
+                                        String items = changedItems(bfrNm, bfrExpln, bfrUse,
+                                                        entity.getDtlCdNm(), entity.getDtlCdExpln(), entity.getUseYn());
+                                        if (!items.isEmpty()) {
+                                                recordChange("DTL", "UPDATE", null, entity.getCdId(), entity.getDtlCd(), items,
+                                                                codeSummary(bfrNm, bfrExpln, bfrUse),
+                                                                codeSummary(entity.getDtlCdNm(), entity.getDtlCdExpln(), entity.getUseYn()));
+                                        }
                                 });
         }
 
@@ -392,7 +487,12 @@ public class CommonCodeService extends BaseAbstractService {
                                                 new nuri.business.domain.code.CommonCodeId(
                                                                 dto.getCdId(), dto.getDtlCd()),
                                                 "CommonCodeId 는 null 일 수 없습니다"))
-                                .ifPresent(code -> code.delete());
+                                .ifPresent(code -> {
+                                        String bfrUse = code.getUseYn();
+                                        code.delete();
+                                        if (!java.util.Objects.equals(bfrUse, code.getUseYn())) recordChange("DTL", "REMOVE", null, code.getCdId(), code.getDtlCd(), "상세 코드 삭제(사용 안 함)",
+                                                        "사용: " + bfrUse, "사용: " + code.getUseYn());
+                                });
         }
 
         private CmmnDetailCodeDto toDto(

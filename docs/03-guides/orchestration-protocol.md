@@ -180,3 +180,56 @@
 - **중단 및 보고**: 예상치 못한 오류는 §2.4와 [AGENTS.md](../../AGENTS.md#공통-작업-원칙)의 원인 가설 → 표적 증거 → 최소 수정 → 재검증 순서로 복구한다. 같은 원인으로 최초 실패 포함 3회 실패하거나 새 권한·사용자 결정이 필요할 때 중단하고 근거와 선택지를 보고한다.
 - **공유 워킹트리 규율**: 다중 오퍼레이터 환경에서 커밋은 `git commit --only -- <경로>` 로 **자기 변경분만** 담아 타 오퍼레이터의 WIP 혼입을 차단한다. 파일 변경 전 항상 디스크의 현재 상태를 직접 조회한다.
 - **정직한 보고**: 실패·스킵·보류는 있는 그대로 보고한다. 인프라 상태·검증 결과를 추정으로 단정하거나, 미검증을 완료로 선언하지 않는다.
+
+---
+
+## 6. 연속 배치 작업의 시간 예산 (Batch Time Budget)
+
+이 절은 [AGENTS.md의 연속 작업 원칙](../../AGENTS.md#연속-작업의-시간-예산)을 실행하는 절차다. PR마다 반복되는 고정 비용만 줄이며, 커밋·푸시·병합의 권한 범위, H1~H5, 훅, required CI의 병합 권위, 위임 산출물 재검증(§2.3)과 red 증명 요구는 바꾸지 않는다. 결정 기록은 [DEC-OPS-177](../../.agent/memory/decisions.md)이다.
+
+### 6.1 PR 묶기
+- 같은 목적의 응집된 배치는 PR 하나로 올린다. 최신 main을 요구하는 브랜치 보호(strict) 때문에 PR마다 main 최신화·재검증·CI가 차례로 반복된다.
+- 순서가 있는 여러 변경은 한 브랜치에 커밋으로 쌓는다. 검토 단위로 PR을 나눠야 하면 스택으로 올리되 병합은 끝 PR 하나로 한다.
+  1. 끝 브랜치에 `origin/main`을 합치고 §6.4대로 생성물을 다시 만든다.
+  2. **push 전에** 끝 PR의 base를 `main`으로 바꾼다(`gh pr edit <N> --base main`). CI는 PR base 기준으로 변경 범위와 E2E 선별을 계산하고 base 변경만으로는 다시 돌지 않으므로, 앞 브랜치를 base로 둔 채 받은 green은 스택 전체의 검증이 아니다.
+  3. required CI가 green이면 병합하고, PR 본문에 포함된 PR과 결정 ID를 적는다.
+  4. 앞 PR이 자동으로 MERGED가 됐는지 확인한다. 남은 PR은 포함된 병합 커밋을 댓글로 남기고 닫는다. 스택이 남아 있는 동안 base 브랜치를 지우지 않는다(지우면 그 위의 열린 PR이 닫힌다).
+- 묶더라도 결정 기록(ADR·DEC)과 red 증명은 변경 단위로 남긴다. 묶는 대상은 병합 비용이지 추적 단위가 아니다. 병합과 PR 닫기는 사용자가 요청한 범위에서만 한다.
+
+### 6.2 검증은 한 커밋에 한 번
+- 작업 중에는 영향 테스트만 실행한다.
+- 다음 재실행은 중복이 아니다: 위임 산출물에 대한 메인 에이전트의 독립 재검증(§2.3), 게이트·계약의 red 증명(green → 위반 주입 → red → 원복 → green), 이번에 바꾼 계약·게이트의 대상 테스트 실행. "미리 돌리지 않는다"는 pre-push가 곧 돌릴 묶음 전체를 같은 커밋에서 한 번 더 돌리는 경우에만 적용한다.
+- 넓은 로컬 검증은 최신 main을 합치고 §6.4대로 다시 만든 뒤, 푸시 직전에 한 번 한다. pre-push가 곧 실행할 묶음(운영 계약, 범위별 compile·tsc·lint·폼 census·codegen 검사, `src/__tests__` Vitest, `harnessTest` — [.githooks/README.md](../../.githooks/README.md))은 같은 커밋에서 미리 돌리지 않는다. 대신 훅이 보지 않는 검사 가운데 변경이 요구하는 것을 고른다: 화면 파일을 지우거나 옮기거나 화면 문자열을 바꾸면 전체 Vitest, `foundation`·`business-*`에 클래스를 더하거나 고치면 그 모듈의 `check`(클래스별 커버리지), 엔티티·DDL을 바꾸면 `schemaValidationTest`, RSC 경계·의존성을 바꾸면 `pnpm -C frontend build`와 `bundle:check`, 컨트롤러·DTO를 바꾸면 `api-docs.json` 추출(§6.4). 해당하는 검사가 하나도 없을 때만 넓은 로컬 검증을 생략한다. required CI가 같은 범위를 돈다는 사실은 생략 사유가 아니다.
+- 생략했거나 CI에만 맡긴 검사는 완료 보고에 그 사실과 대신 확인할 CI 잡을 적고, 그 잡이 끝난 뒤에 완료를 선언한다.
+- CI가 red이면 실패한 잡의 로그로 원인을 판정하고 그 원인에 맞는 표적 검사만 로컬에서 다시 실행한다. 인프라 일시 장애로 판정한 경우에만 실패한 잡을 재실행한다. 같은 원인의 실패 횟수는 §2.4대로 센다.
+- 훅을 우회하지 않는다(`--no-verify`, `SKIP_HARNESS=1` 포함). 같은 검사를 이미 수동으로 돌렸어도 마찬가지다. pre-push에는 E2E가 없으므로 UI 변경의 완료는 required CI 결과로 판단한다(§4.1).
+
+### 6.3 무거운 검증은 하나씩
+- 다음은 한 기계에서 동시에 하나만 실행한다: 전체 Vitest, Gradle 전체 테스트·`harnessTest`·`schemaValidationTest`, `npm run verify`, 재사용 base 생성·검증(`npm run base:verify`, `base:generate-db`·`base:generate-source`, 메뉴 snapshot 갱신), 격리 E2E, 그리고 이들을 실행하는 pre-push. 워크트리가 여러 개여도 CPU·메모리·Docker를 함께 쓰므로 마찬가지다.
+- 워크플로 팬아웃(§2.1)과 서브에이전트의 verify 단계도 이 규칙을 따른다. 병렬 에이전트에는 영향 테스트와 정적 검사만 맡기고, 무거운 검증은 메인 에이전트가 산출물을 통합한 뒤 한 번 순서대로 실행한다(§2.3).
+- 다른 오퍼레이터의 실행은 공용 메모리로 알 수 없다(GAP-AGENT-001). 무거운 검증을 시작하기 전에 같은 기계에서 Gradle·Vitest·Playwright·테스트 컨테이너가 돌고 있는지 프로세스 목록과 `docker ps`로 확인하고, 돌고 있으면 끝난 뒤에 시작한다.
+- 다른 무거운 실행과 겹쳤던 실행은 green이든 red든 그 커밋의 증거로 쓰지 않는다. 부하는 거짓 red뿐 아니라 파일 단위 수집 누락으로 거짓 green도 만든다. 같은 명령 전체를 단독으로 다시 실행해 그 결과를 증거로 삼는다. 단독 실행에서도 재현되는 red는 실패로 다룬다. 겹친 실행에서 실패한 테스트 이름은 보고에 남기고, 같은 테스트가 단독 실행이나 CI에서 다시 흔들리면 불안정한 테스트로 보고 고친다.
+- 기다리는 동안에는 읽기·편집·다음 배치 준비 같은 가벼운 작업을 한다.
+
+### 6.4 main 최신화 뒤 생성물 재생성
+양쪽이 입력(소스·원장·카탈로그)을 바꾼 생성물은 텍스트 충돌이 없어도 다시 만든다. 충돌한 생성물은 한쪽을 고르거나 손으로 섞지 않는다. 입력의 충돌을 먼저 풀고 아래 순서로 다시 만든 뒤, 결과 diff가 두 쪽 변경의 합과 같은지 확인한다. 합을 넘는 변화(래칫 수치 상승, 새 예외, 새 분류·승인이 필요한 항목)는 재생성으로 받아들이지 않고 원인을 본다(H2).
+
+| 생성물 | 다시 만드는 방법 |
+|---|---|
+| 공용 메모리 표(`decisions.md`·`known-gaps.md`) | `decisions.md`는 양쪽 행을 모두 남기고 ID 순서로 합친다. `known-gaps.md` 표는 ID 순서가 아니므로 기존 순서를 유지하고 새 행은 해당 표 끝에 둔다. 같은 ID 행을 양쪽이 고쳤으면 두 변경을 한 행으로 합친다(같은 ID가 두 줄이면 [공용 메모리 계약](../../scripts/shared-memory-contract.test.mjs)이 red다). 두 쪽이 같은 새 ID를 썼으면 나중에 병합하는 쪽이 다음 번호로 바꾸고 참조도 함께 고친다. |
+| `api-docs.json` | 합친 소스에서 `OpenApiDocumentationTest` 정적 추출로 다시 만든다([API 문서 가이드](api-documentation-guide.md)). `-Dopenapi.export.path`는 절대 경로로 준다(상대 경로는 모듈 디렉터리 기준이다). pre-push는 이 파일과 백엔드 코드의 정합을 보지 않고 CI의 `api-docs-gate`만 보므로, 양쪽이 컨트롤러·DTO를 바꿨으면 로컬에서 추출한다. |
+| 생성 계약(`generated-api.d.ts`·`generated-zod.ts`·`generated-operations.ts`) | `pnpm -C frontend run syncContract`(`codegen:file` → `codegen:zod` → api-docs 정규화) |
+| `config/governance/generated-api-boundaries.json` | `node scripts/generated-boundary-census.mjs --write` |
+| operation 수와 GAP-WIRING-001 | `node scripts/operation-consumer-census.mjs --json`의 `operationCount`로 `config/governance/operation-consumer-census.json`의 `expected.operationCount`, `scripts/generated-operations-contract.test.mjs`의 단언, `known-gaps.md` GAP-WIRING-001을 함께 맞춘다. 같은 행의 unwired·화면 고아 수도 합친 결과로 맞추며, 상한을 올려야 하면 사유를 남긴다(H2). |
+| 권한 생성물(`PermissionCodes.java`·`generated-permissions.ts`·`operation-bindings.json` 등) | 원장(`config/governance/permission-catalog.json`·`authorization-policies.json`)을 합친 뒤 `node scripts/generate-permissions.mjs` |
+| `config/ui-url-state-census.json`과 승인 결속 | `node scripts/ui-url-state-census.mjs --write` 뒤 `config/ui-url-state-approval.json`의 해시만 새 census 파일(LF)의 SHA-256으로 다시 결속한다. 승인 항목은 손대지 않는다. |
+| `config/project-composer-menus.json`의 `sourceMigrationHash` | migration·seed·인가 Contract SQL의 해시다. 양쪽이 migration을 더했으면 [프로젝트 생성기 가이드](project-composer-guide.md)의 일회용 PostgreSQL 컨테이너 절차로 `node scripts/generate-reusable-base-db.mjs`를 `--write-menu-snapshot`과 함께 실행한다(§6.3의 무거운 실행). |
+| 하네스 `baseline-manifest.properties` | 서로 다른 키가 바뀌었으면 양쪽 줄을 모두 살린다. 같은 키를 양쪽이 바꿨으면 `./gradlew :api-server:harnessTest`를 한 번 실행하고(§6.3) `api-server/build/harness/baseline-manifest.actual.properties`에서 충돌한 키의 값만 옮긴다. 그 키의 입력 변경이 양쪽 모두 정당한지 확인하고(H2) 다른 키까지 통째로 복사하지 않는다. |
+| 그 밖의 해시 결속·수치(disposition overlay의 `manifestRef.sha256` ← `config/ui-route-capabilities.json`, 재사용 base `databaseSnapshot` 수 등) | 실패한 계약이 가리키는 생성 명령과 기대값을 따른다. 해시는 입력이 정당하게 바뀐 경우에만 다시 결속하고, 수치는 양쪽 변경을 합산하거나 실측으로 다시 구한다. 래칫을 올려야 하면 재생성이 아니라 H2 판단이다. |
+| `frontend/public/governance_harness_atlas.html` | 마지막에 `npm run atlas:build`를 실행한다. 문서·공용 메모리·게이트 원장을 읽으므로 다른 재생성보다 뒤에 한다. |
+
+재생성 결과는 대부분 pre-push의 운영 계약과 codegen 검사가 확인한다. 예외는 위 `api-docs.json` 행이다.
+
+### 6.5 세션 나누기(권장)
+- 긴 연속 작업은 배치(PR) 경계에서 새 세션으로 이어 가기를 권한다. 컨텍스트 압축이 반복되면 이미 확인한 사실을 다시 도출하는 비용이 커진다.
+- 새 세션은 이전 대화의 요약이 아니라 현재 디스크(`git status`·브랜치·PR 상태), PR 설명, 공용 메모리의 정본 링크에서 상태를 복원한다([AGENTS.md 작업 시작 시 필수 읽기](../../AGENTS.md#작업-시작-시-필수-읽기)).

@@ -1,6 +1,8 @@
 package nuri.api.controller.foundation.controller.code;
 
+import nuri.business.service.code.CommonCodeChangeService;
 import nuri.business.service.code.CommonCodeService;
+import nuri.business.service.code.dto.CommonCodeChangeDto;
 import nuri.business.service.code.dto.CmmnClCodeDto;
 import nuri.business.service.code.dto.CmmnCodeDto;
 import nuri.business.service.code.dto.CmmnCodeHierarchyDto;
@@ -16,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 @Tag(name = "Common Code", description = "공통코드 관리 API")
 @RestController
@@ -24,6 +28,22 @@ import java.util.List;
 public class CommonCodeApiController {
 
     private final CommonCodeService commonCodeService;
+    private final CommonCodeChangeService commonCodeChangeService;
+
+    /**
+     * 공통코드 변경 이력(2026-09-27 DIP B5 F11). 분류·그룹·상세의 등록·수정·삭제가 같은 트랜잭션에서 한 건씩 남는다.
+     * 그룹 ID 를 주면 그 그룹과 상세 코드의 이력만, 분류 코드를 주면 그 분류 자신의 이력만 준다(둘을 함께 주면 400).
+     * 코드 조회와 같은 권한(CODE_READ)이다.
+     */
+    @Operation(summary = "공통코드 변경 이력 조회", description = "최신순입니다. cdId 를 주면 그 그룹과 상세 코드의 이력만, clsfCd 를 주면 그 분류 자신의 이력만 돌려줍니다. 둘을 함께 주면 400 입니다.")
+    @GetMapping("/change-history")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.code.CommonCodeApiController#getChangeHistory')")
+    public ResponseEntity<ApiResponse<PageResponse<CommonCodeChangeDto>>> getChangeHistory(
+            @RequestParam(required = false) String cdId,
+            @RequestParam(required = false) String clsfCd,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(commonCodeChangeService.getChanges(cdId, clsfCd, pageable))));
+    }
 
     // --- Classification Code (분류코드) ---
 

@@ -54,6 +54,10 @@ class CommonCodeServiceTest {
     @Mock
     private CommonCodeGroupRepository commonCodeGroupRepository;
 
+    // [2026-09-27 DIP B5 F11] 변경 이력 저장소. 생성자 required() 가드가 있어 목이 없으면 @InjectMocks 가 null 을 넣어 즉사한다.
+    @Mock
+    private CommonCodeChangeRepository changeRepository;
+
     // 실제 MapStruct 생성 구현체를 @InjectMocks 생성자에 공급(from() 대체 매퍼 검증).
     @Spy
     private CommonCodeMapper commonCodeMapper = new CommonCodeMapperImpl();
@@ -209,6 +213,91 @@ class CommonCodeServiceTest {
                 () -> commonCodeService.selectCmmnClCodeDetail(dto));
 
         assertEquals(CodeErrorCode.CODE_NOT_FOUND, error.getErrorCode());
+    }
+
+    // ── [2026-09-27 DIP B5 F11] 변경 이력 ─────────────────────────────────────────────
+
+    private CommonCodeChange savedChange() {
+        ArgumentCaptor<CommonCodeChange> captor = ArgumentCaptor.forClass(CommonCodeChange.class);
+        verify(changeRepository).save(captor.capture());
+        return captor.getValue();
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F11] 분류 수정은 바뀐 항목과 전후 값을 변경자와 함께 남기고, 바뀐 값이 없으면 남기지 않는다")
+    void classificationUpdateRecordsChangedItemsOnly() {
+        CommonCodeCategory entity = CommonCodeCategory.builder().clsfCd("CL1").clsfCdNm("업무").clsfCdExpln("설명").useYn("Y").build();
+        given(commonCodeCategoryRepository.findById("CL1")).willReturn(Optional.of(entity));
+
+        commonCodeService.updateCmmnClCode(CmmnClCodeDto.builder().clsfCd("CL1").clsfCdNm("업무 분류").clsfCdExpln("설명").useYn("Y").build());
+
+        CommonCodeChange change = savedChange();
+        assertEquals("CLSF", change.getChgTrgtTypeCd());
+        assertEquals("UPDATE", change.getChgTypeCd());
+        assertEquals("CL1", change.getClsfCd());
+        assertEquals("명칭", change.getChgArtclNm());
+        assertTrue(change.getChgBfrCn().contains("명칭: 업무 /"));
+        assertTrue(change.getChgAftrCn().contains("명칭: 업무 분류"));
+        assertEquals("admin", change.getFrstRgtrId());
+        assertEquals("ESNTL_admin", change.getChgUserIdntfr());
+
+        org.mockito.Mockito.clearInvocations(changeRepository);
+        commonCodeService.updateCmmnClCode(CmmnClCodeDto.builder().clsfCd("CL1").clsfCdNm("업무 분류").clsfCdExpln("설명").useYn("Y").build());
+        verify(changeRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F11] 그룹 삭제(사용 안 함)는 한 번만 남는다 — 이미 쓰지 않는 그룹을 다시 지우면 남기지 않는다")
+    void groupDeleteRecordsOnlyWhenUseChanges() {
+        CommonCodeGroup group = CommonCodeGroup.builder().cdId("GRP1").cdIdNm("그룹").clsfCd("CL1").useYn("Y").build();
+        given(commonCodeGroupRepository.findById("GRP1")).willReturn(Optional.of(group));
+
+        commonCodeService.deleteCmmnCode(CmmnCodeDto.builder().cdId("GRP1").build());
+        CommonCodeChange change = savedChange();
+        assertEquals("CODE", change.getChgTrgtTypeCd());
+        assertEquals("REMOVE", change.getChgTypeCd());
+        assertEquals("GRP1", change.getCdId());
+        assertEquals("사용: Y", change.getChgBfrCn());
+        assertEquals("사용: N", change.getChgAftrCn());
+
+        org.mockito.Mockito.clearInvocations(changeRepository);
+        commonCodeService.deleteCmmnCode(CmmnCodeDto.builder().cdId("GRP1").build());
+        verify(changeRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F11] 상세 코드 등록은 그룹·상세 코드와 등록 값을 남긴다")
+    void detailInsertRecordsAdd() {
+        given(commonCodeRepository.existsById(any())).willReturn(false);
+
+        commonCodeService.insertCmmnDetailCode(CmmnDetailCodeDto.builder()
+                .cdId("GRP1").dtlCd("D01").dtlCdNm("상세").useYn("Y").build());
+
+        CommonCodeChange change = savedChange();
+        assertEquals("DTL", change.getChgTrgtTypeCd());
+        assertEquals("ADD", change.getChgTypeCd());
+        assertEquals("GRP1", change.getCdId());
+        assertEquals("D01", change.getDtlCd());
+        assertNull(change.getChgBfrCn());
+        assertTrue(change.getChgAftrCn().contains("명칭: 상세"));
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F11] 그룹의 소속 분류 이동은 전후 분류를 남기고, 같은 분류로 두면 남기지 않는다")
+    void hierarchyMoveRecordsClassificationChange() {
+        CommonCodeGroup group = CommonCodeGroup.builder().cdId("GRP1").cdIdNm("그룹").clsfCd("CL1").useYn("Y").build();
+        given(commonCodeGroupRepository.findById("GRP1")).willReturn(Optional.of(group));
+        given(commonCodeCategoryRepository.existsById(anyString())).willReturn(true);
+
+        commonCodeService.updateCmmnCodeHierarchy(List.of(CmmnCodeHierarchyDto.builder().cdId("GRP1").clsfCd("CL2").build()));
+        CommonCodeChange change = savedChange();
+        assertEquals("소속 분류", change.getChgArtclNm());
+        assertEquals("분류: CL1", change.getChgBfrCn());
+        assertEquals("분류: CL2", change.getChgAftrCn());
+
+        org.mockito.Mockito.clearInvocations(changeRepository);
+        commonCodeService.updateCmmnCodeHierarchy(List.of(CmmnCodeHierarchyDto.builder().cdId("GRP1").clsfCd("CL2").build()));
+        verify(changeRepository, never()).save(any());
     }
 
     @Test

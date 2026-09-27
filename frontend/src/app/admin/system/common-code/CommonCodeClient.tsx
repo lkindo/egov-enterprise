@@ -24,6 +24,7 @@ import { Search,
  Trash2, 
  Fingerprint, 
  Save,
+ History,
  Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -73,6 +74,7 @@ import {
  SortableCodeNode,
 } from './CodeTreeNode';
 import { CodeClusterFields, CodeDetailFields, CodeGroupFields } from './CodeFormFields';
+import { CommonCodeChangeHistoryDialog, type CodeChangeHistoryTarget } from './CommonCodeChangeHistoryDialog';
 
 interface CommonCodeClientProps {
  clCodes: CmmnClCode[];
@@ -231,6 +233,8 @@ export default function CommonCodeClient({
 
  const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
  const [selectedGroup, setSelectedGroup] = useState<GroupCode | null>(null);
+ // [2026-09-27 DIP B5 F11] 변경 이력 대화상자 — 열릴 때만 마운트한다.
+ const [historyTarget, setHistoryTarget] = useState<CodeChangeHistoryTarget | null>(null);
  const previousSelectedGroupIdRef = React.useRef<string | null | undefined>(undefined);
  const selectedGroupSeedResolvedRef = React.useRef(false);
  const selectedGroupSeedHierarchyRef = React.useRef<string | undefined>(undefined);
@@ -993,11 +997,29 @@ export default function CommonCodeClient({
  <Button type="button" variant="outline" onClick={openEditGroup} disabled={isStructureFormPending} className="gap-2">
  <Settings size={16} aria-hidden="true" /> 그룹 수정
  </Button>
+ <Button
+ type="button"
+ variant="outline"
+ onClick={() => setHistoryTarget({ kind: 'group', id: selectedGroup.cdId, name: selectedGroup.cdIdNm || selectedGroup.cdId })}
+ className="gap-2"
+ >
+ <History size={16} aria-hidden="true" /> 변경 이력
+ </Button>
  </div>
  ) : selectedNode?.type === 'cluster' ? (
+ <div className="flex flex-wrap items-center gap-2">
  <Button type="button" variant="outline" onClick={openEditCluster} disabled={isStructureFormPending} className="gap-2">
  <Settings size={16} aria-hidden="true" /> 분류 수정
  </Button>
+ <Button
+ type="button"
+ variant="outline"
+ onClick={() => setHistoryTarget({ kind: 'cluster', id: selectedNode.id, name: selectedNode.name || selectedNode.id })}
+ className="gap-2"
+ >
+ <History size={16} aria-hidden="true" /> 변경 이력
+ </Button>
+ </div>
  ) : undefined}
  detail={selectedNode?.type === 'group' ? (
  <div className="space-y-4">
@@ -1099,6 +1121,10 @@ export default function CommonCodeClient({
  </Form>
  ) : null}
  </StandardModal>
+
+ {historyTarget && (
+ <CommonCodeChangeHistoryDialog target={historyTarget} onClose={() => setHistoryTarget(null)} />
+ )}
 
  {/* CodePicker — 그룹→코드 2단 검색 팝업 (1호 소비처) */}
  <CodePicker

@@ -4804,6 +4804,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/codes/change-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 공통코드 변경 이력 조회
+         * @description 최신순입니다. cdId 를 주면 그 그룹과 상세 코드의 이력만, clsfCd 를 주면 그 분류 자신의 이력만 돌려줍니다. 둘을 함께 주면 400 입니다.
+         */
+        get: operations["getChangeHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/board-masters/{bbsId}/deletable": {
         parameters: {
             query?: never;
@@ -9484,6 +9504,65 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        ApiResponsePageResponseCommonCodeChangeDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponseCommonCodeChangeDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 공통코드 변경 이력 */
+        CommonCodeChangeDto: {
+            /**
+             * Format: int64
+             * @description 이력 일련번호
+             */
+            comCdChgHstrySn?: number;
+            /**
+             * @description 변경 대상(CLSF 분류·CODE 그룹·DTL 상세)
+             * @enum {string}
+             */
+            chgTrgtTypeCd?: "CLSF" | "CODE" | "DTL";
+            /**
+             * @description 변경 유형(ADD 등록·UPDATE 수정·REMOVE 삭제)
+             * @enum {string}
+             */
+            chgTypeCd?: "ADD" | "UPDATE" | "REMOVE";
+            /** @description 분류 코드 */
+            clsfCd?: string | null;
+            /** @description 그룹 ID */
+            cdId?: string | null;
+            /** @description 상세 코드 */
+            dtlCd?: string | null;
+            /** @description 바뀐 항목 */
+            chgArtclNm?: string;
+            /** @description 변경 전 값 */
+            chgBfrCn?: string | null;
+            /** @description 변경 후 값 */
+            chgAftrCn?: string | null;
+            /** @description 변경자 이름 */
+            chgUserNm?: string | null;
+            /**
+             * Format: date-time
+             * @description 변경 일시
+             */
+            crtDt?: string;
+        };
+        PageResponseCommonCodeChangeDto: {
+            list?: components["schemas"]["CommonCodeChangeDto"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            totalPage?: number;
         };
         ApiResponsePageResponseAdministCodeDto: {
             success?: boolean;
@@ -35095,6 +35174,71 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponsePageResponseInstitutionCodeRecptnDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getChangeHistory: {
+        parameters: {
+            query?: {
+                cdId?: string;
+                clsfCd?: string;
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponsePageResponseCommonCodeChangeDto"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
