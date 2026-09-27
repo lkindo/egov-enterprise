@@ -7,7 +7,7 @@ import type { PageResponse, PrivacyLog } from '@/types/foundation/system';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
-import { PeriodFilter, EMPTY_PERIOD, periodToParams } from '@/app/components/patterns/period-filter';
+import { PeriodFilter, EMPTY_PERIOD, periodToParams, hasAppliedPeriod } from '@/app/components/patterns/period-filter';
 import { useRememberedListConditions } from '@/lib/hooks/use-remembered-list-conditions';
 import { requestFullExport } from '@/app/components/patterns/full-result-export';
 import { exportPrivacyLogsOperation } from '@/types/generated-operations';
@@ -161,7 +161,7 @@ const SystemLogsPrivacyClient = () => {
                 loading={isLoading}
                 error={error}
                 onRetry={() => refetch()}
-                emptyMessage={emptyResultMessage(searchKeyword, '조회된 개인정보 접근 로그가 없습니다.')}
+                emptyMessage={emptyResultMessage(searchKeyword, '조회된 개인정보 접근 로그가 없습니다.', hasAppliedPeriod(period))}
                 keyField="prvcLogSn"
                 pagination={{
                     currentPage: page,

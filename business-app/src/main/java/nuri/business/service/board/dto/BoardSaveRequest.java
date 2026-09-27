@@ -30,6 +30,7 @@ public record BoardSaveRequest(
 
                 @Schema(description = "사용 여부 (Y/N)") @Pattern(regexp = "^[YN]$") String useYn,
 
-                @Schema(description = "게시글 비밀번호") @Size(max = 200) String pswd) {
+                @Schema(description = "폐기됨 — 게시글 비밀번호를 확인하는 경로가 없어 서버가 저장하지 않는다(보내도 무시한다).", deprecated = true)
+                @Size(max = 200) String pswd) {
 }
 
