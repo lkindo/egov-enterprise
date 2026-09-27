@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -96,6 +97,9 @@ class FlywaySchemaOwnershipLinterTest {
                 || !scope.contains("api-server\\/src\\/main\\/resources\\/db\\/migration"))) {
             violations.add("Entity domain/Flyway 변경을 schema=true로 분류하는 fail-closed 범위 누락");
         }
+        if (!ReusableHarnessProfile.current().projected()) {
+            violations.addAll(migrationHistoryCheckoutViolations(new Yaml().load(ci)));
+        }
         if (!"validate".equals(normalize(tc.get("spring.jpa.hibernate.ddl-auto")))
                 || !"true".equals(normalize(tc.get("spring.flyway.enabled")))
                 || !"classpath:db/migration".equals(normalize(tc.get("spring.flyway.locations")))) {
@@ -106,6 +110,33 @@ class FlywaySchemaOwnershipLinterTest {
                 .as("운영 ddl-auto:none을 보완하는 실 PostgreSQL schema preflight가 실행 경로에서 끊겼습니다.%n%s",
                         String.join(System.lineSeparator(), violations))
                 .isEmpty();
+    }
+
+    @Test
+    void versionedHistoryCheckoutRequiresCompleteHistory() {
+        String workflow = "jobs:\n  backend-scope:\n    steps:\n"
+                + "      - uses: actions/checkout@fixture\n        with:\n          fetch-depth: 0\n";
+        assertThat(migrationHistoryCheckoutViolations(new Yaml().load(workflow))).isEmpty();
+        assertThat(migrationHistoryCheckoutViolations(new Yaml().load(workflow.replace("fetch-depth: 0", "fetch-depth: 1"))))
+                .isNotEmpty();
+        assertThat(migrationHistoryCheckoutViolations(new Yaml().load(workflow.replace("        with:\n          fetch-depth: 0\n", ""))))
+                .isNotEmpty();
+    }
+
+    private static List<String> migrationHistoryCheckoutViolations(Map<?, ?> workflow) {
+        if (workflow.get("jobs") instanceof Map<?, ?> jobs
+                && jobs.get("backend-scope") instanceof Map<?, ?> backend
+                && backend.get("steps") instanceof List<?> steps) {
+            for (Object entry : steps) {
+                if (entry instanceof Map<?, ?> step
+                        && String.valueOf(step.get("uses")).startsWith("actions/checkout@")) {
+                    if (step.get("with") instanceof Map<?, ?> options
+                            && "0".equals(String.valueOf(options.get("fetch-depth")))) return List.of();
+                    break;
+                }
+            }
+        }
+        return List.of("기존 ZDM versioned history 검사를 위해 backend-scope checkout은 fetch-depth: 0이어야 함");
     }
 
     @Test

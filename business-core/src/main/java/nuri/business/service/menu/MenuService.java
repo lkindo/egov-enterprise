@@ -12,6 +12,7 @@ import nuri.business.service.menu.dto.MenuCreateDto;
 import nuri.business.service.menu.dto.MenuDto;
 import nuri.business.service.program.dto.ProgramDto;
 import nuri.business.security.util.SecurityUtil;
+import nuri.business.security.audit.LoginUserAuditorAware;
 import nuri.business.service.auth.AuthorizationAdministrationService;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.security.service.CustomUserDetails;
@@ -53,6 +54,7 @@ public class MenuService {
     private final ProgramRepository programRepository;
     private final NavigationGrantRepository navigationGrantRepository;
     private final AuthorizationAdministrationService authorizationAdministrationService;
+    private final LoginUserAuditorAware loginUserAuditorAware;
     private final nuri.business.service.program.dto.ProgramMapper programMapper;
     /**
      * [2026-09-26 DIP B5 F10] 같은 빈 안에서 {@link #getAllMenusCached} 를 부르면 프록시를 거치지 않아 캐시가 적용되지 않는다.
@@ -69,6 +71,7 @@ public class MenuService {
 
         List<Program> programs = programRepository.findAll();
         Map<String, String> legacyUrlMap = programs.stream()
+            .filter(prog -> prog.getUrl() != null)
             .collect(Collectors.toMap(prog -> prog.getPrgrmFileNm(), prog -> prog.getUrl(), (a, b) -> a));
 
         for (Menu m : menus) {
@@ -77,8 +80,10 @@ public class MenuService {
                 route = inferFromLegacyUrl(legacyUrlMap.get(m.getPrgrmFileNm()));
             }
             if (route != null) {
-                m.updateModernRoute(route);
-                menuRepository.save(m);
+                // @PostConstruct precedes the service transaction proxy; the repository owns this transaction.
+                // Use the same audit identity as JPA, while updating no other values from this old snapshot.
+                menuRepository.fillModernRouteIfUnchanged(m.getMenuSn(), m.getPrgrmFileNm(), route,
+                        java.time.LocalDateTime.now(), loginUserAuditorAware.getCurrentAuditor().orElse("SYSTEM"));
             }
         }
         log.info(">>> [MenuService] modern_route migration completed.");
@@ -309,6 +314,9 @@ public class MenuService {
     @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void insertMenuManage(@NonNull MenuDto vo) {
         SecurityUtil.assertPermission("MENU_CREATE");
+        Map<Long, Long> parents = lockParentGraph();
+        Long parentId = normalizeUpMenuSn(vo.getUpMenuSn());
+        assertAcyclicParentPath(parentId, parents);
         // FE 가 "연결 프로그램 없음"을 빈 문자열로 보내므로 null 로 정규화한다.
         String prgrmFileNm = normalizePrgrmFileNm(vo.getPrgrmFileNm());
 
@@ -317,7 +325,7 @@ public class MenuService {
         Menu menu = Menu.builder()
                 .menuNm(vo.getMenuNm())
                 .prgrmFileNm(prgrmFileNm)
-                .upMenuSn(normalizeUpMenuSn(vo.getUpMenuSn()))
+                .upMenuSn(parentId)
                 .menuOrdr(vo.getMenuOrdr())
                 .menuExpln(vo.getMenuExpln())
                 .relImgPath(vo.getRelImgPath())
@@ -337,13 +345,17 @@ public class MenuService {
     @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void updateMenuManage(@NonNull MenuDto vo) {
         SecurityUtil.assertPermission("MENU_UPDATE");
-        Menu menu = menuRepository.findById(Objects.requireNonNull(vo.getMenuNo()))
+        Map<Long, Long> parents = lockParentGraph();
+        Long menuNo = Objects.requireNonNull(vo.getMenuNo());
+        Menu menu = menuRepository.findById(menuNo)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
         // Menu.update 는 null-safe 병합이다 — 전달되지 않은(null) 값은 기존 값을 유지하고, 빈 문자열이면 비운다.
         String prgrmFileNm = normalizePrgrmFileNm(vo.getPrgrmFileNm());
         assertProgramExists(prgrmFileNm);
+        Long parentId = normalizeUpMenuSn(vo.getUpMenuSn());
+        validateParentChanges(parents, Collections.singletonMap(menuNo, parentId));
         menu.updateWithModernRoute(vo.getMenuNm(), prgrmFileNm,
-                normalizeUpMenuSn(vo.getUpMenuSn()),
+                parentId,
                 vo.getMenuOrdr(),
                 vo.getMenuExpln(),
                 vo.getRelImgPath(), vo.getRelImgNm(), vo.getModernRoute(), vo.getUseYn() != null ? vo.getUseYn() : "Y");
@@ -360,15 +372,72 @@ public class MenuService {
     @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void updateMenuOrders(@NonNull List<MenuDto> menuList) {
         SecurityUtil.assertPermission("MENU_UPDATE");
+        Map<Long, MenuOrderChange> changes = new LinkedHashMap<>();
         for (MenuDto vo : menuList) {
             Long menuNo = vo.getMenuNo() != null ? vo.getMenuNo() : vo.getId();
             if (menuNo == null) {
                 throw new BusinessException("메뉴 번호가 없는 항목은 순서를 저장할 수 없습니다.",
                         CommonErrorCode.INVALID_INPUT_VALUE);
             }
-            Menu menu = menuRepository.findById(menuNo)
-                    .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
-            menu.updateOrder(normalizeUpMenuSn(vo.getUpMenuSn()), vo.getMenuOrdr());
+            MenuOrderChange change = new MenuOrderChange(normalizeUpMenuSn(vo.getUpMenuSn()), vo.getMenuOrdr());
+            MenuOrderChange previous = changes.putIfAbsent(menuNo, change);
+            if (previous != null && !previous.equals(change)) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "같은 메뉴의 상위 메뉴 또는 순서가 서로 다르게 지정됐습니다.");
+            }
+        }
+        if (changes.isEmpty()) {
+            return;
+        }
+
+        Map<Long, Long> parents = lockParentGraph();
+        Map<Long, Long> desiredParents = new LinkedHashMap<>();
+        changes.forEach((id, change) -> desiredParents.put(id, change.parentId()));
+        validateParentChanges(parents, desiredParents);
+
+        Map<Long, Menu> menus = new LinkedHashMap<>();
+        for (Long menuNo : changes.keySet()) {
+            menus.put(menuNo, menuRepository.findById(menuNo)
+                    .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND)));
+        }
+        changes.forEach((id, change) -> menus.get(id).updateOrder(change.parentId(), change.order()));
+    }
+
+    private record MenuOrderChange(Long parentId, Integer order) {}
+
+    /** 권한 관리와 동일한 메뉴→ADMIN 잠금 순서. 영속성 컨텍스트 대신 잠근 DB 부모 값을 사용한다. */
+    private Map<Long, Long> lockParentGraph() {
+        Map<Long, Long> parents = new HashMap<>();
+        menuRepository.findParentLinksForUpdate().forEach(link ->
+                parents.put(link.getMenuSn(), normalizeUpMenuSn(link.getUpMenuSn())));
+        return parents;
+    }
+
+    private void validateParentChanges(Map<Long, Long> parents, Map<Long, Long> desiredParents) {
+        Map<Long, Long> finalParents = new HashMap<>(parents);
+        List<Long> changedIds = new ArrayList<>();
+        desiredParents.forEach((id, parent) -> {
+            if (!parents.containsKey(id)) {
+                throw new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND);
+            }
+            if (!Objects.equals(parents.get(id), parent)) {
+                changedIds.add(id);
+            }
+            finalParents.put(id, parent);
+        });
+        // 최종 그래프에서 실제로 옮긴 노드만 검사한다. 무관한 기존 순환은 정정 작업을 막지 않는다.
+        changedIds.forEach(id -> assertAcyclicParentPath(id, finalParents));
+    }
+
+    private void assertAcyclicParentPath(Long startId, Map<Long, Long> parents) {
+        Set<Long> visited = new java.util.HashSet<>();
+        Long current = startId;
+        while (current != null) {
+            if (!visited.add(current) || !parents.containsKey(current)) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "상위 메뉴 계층이 올바르지 않습니다. 메뉴를 다시 확인해 주세요.");
+            }
+            current = parents.get(current);
         }
     }
 
@@ -486,8 +555,13 @@ public class MenuService {
 
         Long currentId = currentMenu.getMenuSn();
         Long upperId = currentMenu.getUpMenuSn();
+        Set<Long> visited = new java.util.HashSet<>();
+        visited.add(currentId);
 
         while (upperId != null && upperId != 0) {
+            if (!visited.add(upperId)) {
+                return null;
+            }
             if (!parentMap.containsKey(upperId))
                 break;
             Long nextUpperId = parentMap.get(upperId);

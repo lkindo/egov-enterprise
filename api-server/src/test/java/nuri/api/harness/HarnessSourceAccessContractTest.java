@@ -173,6 +173,29 @@ class HarnessSourceAccessContractTest {
                 "같은 파일의 UTF-8 텍스트를 다시 읽었습니다.");
     }
 
+    @Test
+    @DisplayName("변경 관측 읽기는 현재 파일을 다시 읽고 공용 스냅샷은 그대로 유지한다")
+    void sourceIndexFreshReadsObserveChangesWithoutReplacingSnapshots(
+            @org.junit.jupiter.api.io.TempDir Path temporary) throws IOException {
+        Path changing = temporary.resolve("changing.txt");
+        java.nio.file.Files.writeString(changing, "before");
+        String snapshot = HarnessSourceIndex.read(changing);
+        assertEquals("before", HarnessSourceIndex.readFresh(changing));
+
+        java.nio.file.Files.writeString(changing, "after");
+        assertEquals("after", HarnessSourceIndex.readFresh(changing));
+        assertSame(snapshot, HarnessSourceIndex.read(changing));
+
+        java.nio.file.Files.writeString(changing, "latest");
+        assertEquals("latest", HarnessSourceIndex.readFresh(changing));
+        assertSame(snapshot, HarnessSourceIndex.read(changing));
+
+        java.nio.file.Files.delete(changing);
+        org.junit.jupiter.api.Assertions.assertThrows(IOException.class,
+                () -> HarnessSourceIndex.readFresh(changing));
+        assertSame(snapshot, HarnessSourceIndex.read(changing));
+    }
+
     private static int lineOf(String source, int offset) {
         int line = 1;
         for (int i = 0; i < offset; i++) {

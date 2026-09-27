@@ -105,12 +105,52 @@ class AuthServiceImplTest {
         given(authenticationManager.authenticate(any())).willReturn(authentication);
         given(jwtTokenProvider.createAccessToken(anyString(), nullable(String.class))).willReturn("access-token");
         given(jwtTokenProvider.createRefreshToken(anyString())).willReturn("refresh-token");
+        given(jwtTokenProvider.getExpiration(anyString()))
+                .willReturn(Date.from(Instant.now().plus(Duration.ofDays(7)).truncatedTo(java.time.temporal.ChronoUnit.SECONDS)));
         given(refreshTokenRepository.findById(anyString())).willReturn(Optional.empty());
         given(loginPolicyRepository.findById(anyString())).willReturn(Optional.empty());
     }
 
     private LoginRequest loginRequest(Integer otpCode) {
         return LoginRequest.builder().userId(LOGIN_ID).password("pw").otpCode(otpCode).build();
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({
+            "120000, false", "604800000, false", "1209600000, false",
+            "120000, true", "604800000, true", "1209600000, true"})
+    @DisplayName("설정된 실제 JWT 만료를 최초·재로그인 저장과 토큰 회전에서 동일하게 유지한다")
+    void refreshExpiryMatchesSignedTokenAcrossLoginAndRotation(long validityMs, boolean relogin) {
+        JwtTokenProvider realProvider = new JwtTokenProvider();
+        org.springframework.test.util.ReflectionTestUtils.setField(realProvider, "secretKey",
+                "refresh-expiry-test-key-material-only-not-a-deployment-secret-01234567890123456789");
+        org.springframework.test.util.ReflectionTestUtils.setField(realProvider, "refreshTokenValidityInMilliseconds", validityMs);
+        org.springframework.test.util.ReflectionTestUtils.invokeMethod(realProvider, "init");
+        AuthServiceImpl service = new AuthServiceImpl(authenticationManager, realProvider, userRepository,
+                userDetailsService, refreshTokenRepository, loginPolicyManageService, loginPolicyRepository,
+                otpService, logService);
+        if (relogin) {
+            given(refreshTokenRepository.findById(ESNTL_ID)).willReturn(Optional.of(RefreshToken.builder()
+                    .userId(ESNTL_ID).rfshTkn("old-digest")
+                    .exprtnDt(Instant.now().plusSeconds(30)).build()));
+        }
+
+        Instant before = Instant.now();
+        TokenResponse issued = service.login(loginRequest(null), CLIENT_IP);
+        Instant signedExpiry = realProvider.getExpiration(issued.getRefreshToken()).toInstant();
+        assertThat(signedExpiry).isBetween(before.plusMillis(validityMs).minusSeconds(1),
+                Instant.now().plusMillis(validityMs));
+        ArgumentCaptor<RefreshToken> captured = ArgumentCaptor.forClass(RefreshToken.class);
+        verify(refreshTokenRepository).save(captured.capture());
+        assertThat(captured.getValue().getExprtnDt()).isEqualTo(signedExpiry);
+
+        String digest = nuri.business.domain.auth.RefreshTokenDigest.of(issued.getRefreshToken());
+        given(refreshTokenRepository.findByRfshTkn(digest)).willReturn(Optional.of(captured.getValue()));
+        given(refreshTokenRepository.rotateIfCurrent(eq(ESNTL_ID), eq(digest), anyString(), any(), any())).willReturn(1);
+        TokenResponse rotated = service.reissue(issued.getRefreshToken(), CLIENT_IP);
+        // DEC-OPS-102: 같은 초의 회전은 동일 토큰일 수 있다. 이 회귀의 불변식은 절대 만료다.
+        assertThat(realProvider.getExpiration(rotated.getRefreshToken()).toInstant()).isEqualTo(signedExpiry);
+        assertThat(captured.getValue().getExprtnDt()).isEqualTo(signedExpiry);
     }
 
     @Nested
@@ -269,10 +309,8 @@ class AuthServiceImplTest {
         }
 
         @Test
-        @DisplayName("신규 로그인은 RefreshToken 을 생성해 저장한다 (7일 절대만료)")
+        @DisplayName("신규 로그인은 RefreshToken 을 생성하고 발급된 JWT의 절대 만료를 저장한다")
         void createsRefreshTokenOnFirstLogin() {
-            Instant before = Instant.now();
-
             authService.login(loginRequest(null), CLIENT_IP);
 
             ArgumentCaptor<RefreshToken> saved = ArgumentCaptor.forClass(RefreshToken.class);
@@ -283,9 +321,7 @@ class AuthServiceImplTest {
             assertThat(rt.getUserId()).isEqualTo(ESNTL_ID);
             // 원문이 아니라 해시를 저장한다(DIP D7) — DB 를 읽은 사람이 저장값으로 재발급할 수 없다.
             assertThat(rt.getRfshTkn()).isEqualTo(nuri.business.domain.auth.RefreshTokenDigest.of("refresh-token")).isNotEqualTo("refresh-token");
-            assertThat(rt.getExprtnDt())
-                    .isAfter(before.plus(Duration.ofDays(7)).minusSeconds(60))
-                    .isBefore(before.plus(Duration.ofDays(7)).plusSeconds(60));
+            assertThat(rt.getExprtnDt()).isEqualTo(jwtTokenProvider.getExpiration("refresh-token").toInstant());
         }
 
         @Test
@@ -389,7 +425,7 @@ class AuthServiceImplTest {
 
             // 삭제는 바깥 트랜잭션과 분리돼야 한다 — 같은 트랜잭션이면 위 예외의 롤백이 삭제를 되돌린다.
             verify(refreshTokenRepository).deleteIfCurrent(ESNTL_ID, nuri.business.domain.auth.RefreshTokenDigest.of("expired"));
-            verify(refreshTokenRepository, never()).rotateIfCurrent(any(), any(), any(), any());
+            verify(refreshTokenRepository, never()).rotateIfCurrent(any(), any(), any(), any(), any());
         }
 
         @Test
@@ -400,7 +436,7 @@ class AuthServiceImplTest {
             given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("old"))).willReturn(Optional.of(stored));
             given(userRepository.findById(ESNTL_ID)).willReturn(Optional.empty());
             given(jwtTokenProvider.createRefreshToken(anyString(), any(Date.class))).willReturn("rotated");
-            given(refreshTokenRepository.rotateIfCurrent(eq(ESNTL_ID), eq(nuri.business.domain.auth.RefreshTokenDigest.of("old")), eq(nuri.business.domain.auth.RefreshTokenDigest.of("rotated")), any()))
+            given(refreshTokenRepository.rotateIfCurrent(eq(ESNTL_ID), eq(nuri.business.domain.auth.RefreshTokenDigest.of("old")), eq(nuri.business.domain.auth.RefreshTokenDigest.of("rotated")), any(), any()))
                     .willReturn(1);
 
             TokenResponse res = authService.reissue("old", CLIENT_IP);
@@ -408,7 +444,7 @@ class AuthServiceImplTest {
             // 회전이 사라지면 같은 토큰이 계속 유효해 W1-06 이전 상태로 회귀한다.
             // 회전은 **제시된 토큰이 아직 저장값일 때만** 일어나야 하므로 그 조건까지 함께 고정한다
             // — 조건 없이 덮어쓰면 동시 재발급이 둘 다 성공하고 진 쪽은 무효한 토큰을 받는다(2026-09-16).
-            verify(refreshTokenRepository).rotateIfCurrent(eq(ESNTL_ID), eq(nuri.business.domain.auth.RefreshTokenDigest.of("old")), eq(nuri.business.domain.auth.RefreshTokenDigest.of("rotated")), any());
+            verify(refreshTokenRepository).rotateIfCurrent(eq(ESNTL_ID), eq(nuri.business.domain.auth.RefreshTokenDigest.of("old")), eq(nuri.business.domain.auth.RefreshTokenDigest.of("rotated")), any(), any());
             assertThat(res.getRefreshToken()).isEqualTo("rotated");
             // 재발급도 로그인 정책을 로그인 ID·요청 IP 로 다시 본다(DIP S6 ②).
             verify(loginPolicyManageService).validateLoginPolicy(LOGIN_ID, CLIENT_IP);
@@ -430,7 +466,7 @@ class AuthServiceImplTest {
                             .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_TOKEN));
 
             verify(refreshTokenRepository).deleteIfCurrent(ESNTL_ID, nuri.business.domain.auth.RefreshTokenDigest.of("old"));
-            verify(refreshTokenRepository, never()).rotateIfCurrent(any(), any(), any(), any());
+            verify(refreshTokenRepository, never()).rotateIfCurrent(any(), any(), any(), any(), any());
             verify(jwtTokenProvider, never()).createAccessToken(anyString(), nullable(String.class));
         }
 
@@ -456,7 +492,7 @@ class AuthServiceImplTest {
             given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("old"))).willReturn(Optional.of(storedToken()));
             given(jwtTokenProvider.createRefreshToken(anyString(), any(Date.class))).willReturn("rotated");
             // 0 행 = 조회와 갱신 사이에 다른 재발급이 회전을 마쳤다.
-            given(refreshTokenRepository.rotateIfCurrent(anyString(), anyString(), anyString(), any()))
+            given(refreshTokenRepository.rotateIfCurrent(anyString(), anyString(), anyString(), any(), any()))
                     .willReturn(0);
 
             // 여기서 성공을 돌려주면 서버가 **저장하지 않은** 리프레시 토큰을 클라이언트에 준다.
@@ -472,18 +508,18 @@ class AuthServiceImplTest {
             given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("old"))).willReturn(Optional.of(stored));
             given(userRepository.findById(ESNTL_ID)).willReturn(Optional.empty());
             given(jwtTokenProvider.createRefreshToken(anyString(), any(Date.class))).willReturn("rotated");
-            given(refreshTokenRepository.rotateIfCurrent(anyString(), anyString(), anyString(), any()))
+            given(refreshTokenRepository.rotateIfCurrent(anyString(), anyString(), anyString(), any(), any()))
                     .willReturn(1);
 
             authService.reissue("old", CLIENT_IP);
 
             // 회전마다 7일을 새로 주면 탈취 토큰이 무기한 연장된다 — 회전의 목적이 사라진다.
-            // 만료는 회전 질의가 건드리지 않는다(SET 절에 exprtnDt 가 없다). 실제 저장값의 불변은
-            // RefreshTokenRotationConcurrencyIntegrationTest 가 실 DB 로 확인한다.
+            // 조회 엔티티는 직접 수정하지 않는다. CAS에서 JWT 상한까지 단축한 만료를 함께 저장하며
+            // 실제 저장값은 RefreshTokenRotationConcurrencyIntegrationTest가 실 DB로 확인한다.
             assertThat(stored.getExprtnDt()).isEqualTo(originalExpiry);
             ArgumentCaptor<Date> expiry = ArgumentCaptor.forClass(Date.class);
             verify(jwtTokenProvider).createRefreshToken(eq(ESNTL_ID), expiry.capture());
-            assertThat(expiry.getValue()).isEqualTo(Date.from(originalExpiry));
+            assertThat(expiry.getValue()).isEqualTo(Date.from(originalExpiry.truncatedTo(java.time.temporal.ChronoUnit.SECONDS)));
         }
 
         @Test
@@ -493,7 +529,7 @@ class AuthServiceImplTest {
             given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
             given(jwtTokenProvider.createRefreshToken(anyString(), any(Date.class))).willReturn("rotated");
             given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("old"))).willReturn(Optional.of(storedToken()));
-            given(refreshTokenRepository.rotateIfCurrent(anyString(), anyString(), anyString(), any()))
+            given(refreshTokenRepository.rotateIfCurrent(anyString(), anyString(), anyString(), any(), any()))
                     .willReturn(1);
             TokenResponse first = authService.reissue("old", CLIENT_IP);
             assertThat(first.getGroups()).isEqualTo(login.getGroups());
@@ -525,7 +561,7 @@ class AuthServiceImplTest {
             assertThatThrownBy(() -> authService.reissue("old", CLIENT_IP)).isInstanceOf(UsernameNotFoundException.class);
             assertThat(stored.getRfshTkn()).isEqualTo("old");
             verify(jwtTokenProvider, never()).createAccessToken(anyString(), nullable(String.class));
-            verify(refreshTokenRepository, never()).rotateIfCurrent(any(), any(), any(), any());
+            verify(refreshTokenRepository, never()).rotateIfCurrent(any(), any(), any(), any(), any());
         }
     }
 

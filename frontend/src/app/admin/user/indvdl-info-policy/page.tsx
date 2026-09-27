@@ -1,8 +1,14 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
 import { deptAdminService } from '@/services/foundation/system/DeptAdminService';
 import UserOrgHubClient from '../UserOrgHubClient';
+
+export const metadata: Metadata = {
+  title: `개인정보 정책 관리 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 export default async function PrivacyPolicyPage() {
   const cookieStore = await cookies();

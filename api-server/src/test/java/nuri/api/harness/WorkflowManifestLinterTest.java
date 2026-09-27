@@ -128,6 +128,73 @@ class WorkflowManifestLinterTest {
     }
 
     @Test
+    @DisplayName("OpenAPI 생성과 드리프트 검사는 같은 저장소 루트의 절대경로를 사용한다")
+    void auditOpenApiExportMatchesDriftCheckRoot() throws IOException {
+        Path root = resolveRepoRoot();
+        if (ReusableHarnessProfile.current().projected()) {
+            requireArtifactContract(root);
+            return;
+        }
+        assertThat(openApiExportViolations(HarnessSourceIndex.read(root.resolve(WORKFLOW_DIR).resolve("ci.yml"))))
+                .as("Test JVM의 모듈별 workingDir가 OpenAPI 검증 산출물을 바꾸면 안 된다").isEmpty();
+    }
+
+    @Test
+    @DisplayName("OpenAPI 상대경로·다른 파일 검사·생략된 검사 fixture는 red")
+    void openApiExportRejectsDisconnectedOutputFixtures() throws IOException {
+        Path root = resolveRepoRoot();
+        if (ReusableHarnessProfile.current().projected()) {
+            requireArtifactContract(root);
+            return;
+        }
+        String source = HarnessSourceIndex.read(root.resolve(WORKFLOW_DIR).resolve("ci.yml"));
+        String argument = "\"-Dopenapi.export.path=$GITHUB_WORKSPACE/api-docs.json\"";
+        String tracked = "git ls-files --error-unmatch -- \"$GITHUB_WORKSPACE/api-docs.json\"";
+        String drift = "git diff --exit-code -- \"$GITHUB_WORKSPACE/api-docs.json\"";
+        assertThat(openApiExportViolations(source)).isEmpty();
+        for (String[] mutation : List.of(
+                new String[]{argument, "-Dopenapi.export.path=api-docs.json"},
+                new String[]{argument, "\"-Dopenapi.export.path=$GITHUB_WORKSPACE/api-server/api-docs.json\""},
+                new String[]{argument, "-Dopenapi.export.path=$GITHUB_WORKSPACE/api-docs.json"},
+                new String[]{"./gradlew onlineBuild", "# ./gradlew onlineBuild"},
+                new String[]{tracked, "# " + tracked},
+                new String[]{drift, "git diff --exit-code -- \"$GITHUB_WORKSPACE/api-server/api-docs.json\""},
+                new String[]{drift, "# " + drift},
+                new String[]{"id: api-docs-gate", "id: api-docs-gate\n        if: false"})) {
+            assertThat(source).contains(mutation[0]);
+            assertThat(openApiExportViolations(source.replace(mutation[0], mutation[1])))
+                    .as("OpenAPI 경로 부정 대조군: %s", mutation[1]).isNotEmpty();
+        }
+    }
+
+    private List<String> openApiExportViolations(String source) {
+        Map<?, ?> workflow = asMap(new Yaml().load(source));
+        List<?> steps = asList(asMap(asMap(workflow.get("jobs")).get("backend-scope")).get("steps"));
+        String buildName = "Build and Test with Gradle";
+        String gateName = "Verify committed api-docs.json is fresh (contract drift gate)";
+        Map<?, ?> build = findStep(steps, buildName);
+        Map<?, ?> gate = findStep(steps, gateName);
+        List<String> violations = new ArrayList<>();
+        String exportArgument = "\"-Dopenapi.export.path=$GITHUB_WORKSPACE/api-docs.json\"";
+        String run = Objects.toString(build.get("run"), "");
+        if (run.lines().map(String::strip).noneMatch(line -> line.startsWith("./gradlew ")
+                && line.contains(" onlineBuild ") && line.contains(exportArgument))) {
+            violations.add("OpenAPI 생성은 인용된 workspace 절대경로를 사용해야 함");
+        }
+        List<String> checks = Objects.toString(gate.get("run"), "").lines().map(String::strip).toList();
+        if (!checks.contains("git ls-files --error-unmatch -- \"$GITHUB_WORKSPACE/api-docs.json\"")
+                || !checks.contains("git diff --exit-code -- \"$GITHUB_WORKSPACE/api-docs.json\"")) {
+            violations.add("OpenAPI 추적·드리프트 검사가 생성된 루트 파일과 결속되지 않음");
+        }
+        if (indexOfStep(steps, gateName) <= indexOfStep(steps, buildName)
+                || build.containsKey("if") || build.containsKey("continue-on-error")
+                || gate.containsKey("if") || gate.containsKey("continue-on-error")) {
+            violations.add("OpenAPI 생성 후 드리프트 검사를 조건 없이 실행해야 함");
+        }
+        return violations;
+    }
+
+    @Test
     @DisplayName("🚀 릴리스는 main의 필수 CI 증거와 실제 이미지 발행 없이는 생성되지 않는다")
     void auditReleaseRequiresCompleteCiEvidenceAndPublishedImages() throws IOException {
         Path repoRoot = resolveRepoRoot();
@@ -197,39 +264,7 @@ class WorkflowManifestLinterTest {
             }
         }
 
-        Map<?, ?> buildAndPush = asMap(jobs.get("build-and-push"));
-        if (!"verify".equals(Objects.toString(buildAndPush.get("needs"), ""))) {
-            violations.add("build-and-push.needs=verify 누락 — 검증 실패 후에도 발행 가능");
-        }
-
-        List<?> releaseSteps = asList(buildAndPush.get("steps"));
-        // [2026-09-16 DEC-OPS-103] 발행 대상이 Docker Hub 에서 GHCR 로 바뀌었다.
-        //   종전 단언은 "시크릿 두 개가 비어 있으면 일찍 실패한다" 를 요구했다. GHCR 은 GITHUB_TOKEN 으로
-        //   push 하므로 그 실패 모드 자체가 없어졌고, 대신 **선언된 권한과 실제 push 대상**이 어긋나는 것이
-        //   새로운 사각이다 — 권한 없이 push 하면 실행 중 403 이고, ghcr.io 로 로그인한 뒤 다른 레지스트리로
-        //   push 하면 릴리스는 성공하는데 이미지는 엉뚱한 곳에 남는다. 그래서 정적으로 셋을 함께 본다.
-        //   완화가 아니라 같은 불변식(실제 발행 없이는 릴리스 없음)을 더 이른 시점에 검사하는 것이다.
-        if (!"write".equals(Objects.toString(permissions.get("packages"), ""))) {
-            violations.add("permissions.packages=write 누락 — GHCR 에 이미지를 push 할 수 없음");
-        }
-        Map<?, ?> loginWith = asMap(findStep(releaseSteps, "Login to GitHub Container Registry").get("with"));
-        if (!"ghcr.io".equals(Objects.toString(loginWith.get("registry"), ""))) {
-            violations.add("레지스트리 로그인 대상이 ghcr.io 가 아님");
-        }
-        if (!Objects.toString(loginWith.get("password"), "").contains("secrets.GITHUB_TOKEN")) {
-            violations.add("GHCR 로그인이 GITHUB_TOKEN 을 쓰지 않음");
-        }
-        assertGhcrImage(releaseSteps, "Extract metadata (tags, labels) for Backend", violations);
-        assertGhcrImage(releaseSteps, "Extract metadata (tags, labels) for Frontend", violations);
-
-        int backendPush = assertUnconditionalPush(releaseSteps, "Build and push Backend", violations);
-        int frontendPush = assertUnconditionalPush(releaseSteps, "Build and push Frontend", violations);
-        int githubRelease = indexOfStep(releaseSteps, "Create GitHub Release");
-        if (githubRelease < 0) {
-            violations.add("GitHub Release 생성 단계 없음");
-        } else if (githubRelease <= backendPush || githubRelease <= frontendPush) {
-            violations.add("GitHub Release가 두 이미지 push보다 먼저 실행됨");
-        }
+        violations.addAll(releasePublicationViolations(root));
 
         if (!violations.isEmpty()) {
             StringBuilder sb = new StringBuilder();
@@ -560,7 +595,7 @@ class WorkflowManifestLinterTest {
         }
     }
 
-    private int assertUnconditionalPush(List<?> steps, String name, List<String> violations) {
+    private int assertLocalImageBuild(List<?> steps, String name, List<String> violations) {
         int index = indexOfStep(steps, name);
         if (index < 0) {
             violations.add(name + " 단계 없음");
@@ -568,14 +603,149 @@ class WorkflowManifestLinterTest {
         }
         Map<?, ?> step = asMap(steps.get(index));
         Map<?, ?> with = asMap(step.get("with"));
-        Object push = with.get("push");
-        if (!Boolean.TRUE.equals(push) && !"true".equalsIgnoreCase(Objects.toString(push, ""))) {
-            violations.add(name + " 의 push가 true가 아님 — 빌드만 하고 릴리스가 성공할 수 있음");
+        if (!"false".equals(Objects.toString(with.get("push"), ""))
+                || !"true".equals(Objects.toString(with.get("load"), ""))) {
+            violations.add(name + " 는 push=false/load=true 로 로컬 이미지만 만들어야 함");
         }
-        if (step.containsKey("if")) {
-            violations.add(name + " 에 조건부 if가 존재 — 이미지 발행을 건너뛸 수 있음");
+        if (step.containsKey("if") || step.containsKey("continue-on-error")) {
+            violations.add(name + " 에 조건부/오류 무시가 존재");
         }
         return index;
+    }
+
+    private List<String> releasePublicationViolations(Map<?, ?> root) {
+        List<String> violations = new ArrayList<>();
+        String publishCondition = "github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')";
+        Map<?, ?> jobs = asMap(root.get("jobs"));
+        List<?> verifySteps = asList(asMap(jobs.get("verify")).get("steps"));
+        Map<?, ?> build = asMap(jobs.get("build-and-push"));
+        List<?> steps = asList(build.get("steps"));
+        if (!"verify".equals(build.get("needs"))) violations.add("build-and-push.needs=verify 누락");
+        Map<?, ?> permissions = asMap(build.get("permissions"));
+        if (!"write".equals(permissions.get("packages")) || !"write".equals(permissions.get("contents"))) {
+            violations.add("발행 잡의 packages/contents write 권한 누락");
+        }
+        if (!"false".equals(Objects.toString(asMap(root.get("env")).get("DOCKER_BUILD_RECORD_UPLOAD"), ""))) {
+            violations.add("dry-run build record upload 금지 누락");
+        }
+        if (!publishCondition.equals(findStep(verifySteps,
+                "Require tagged commit on main with complete CI evidence").get("if"))) {
+            violations.add("main/필수 체크 검증의 태그 발행 조건 불일치");
+        }
+        int preflight = indexOfStep(verifySteps, "Validate release API build configuration");
+        if (preflight < 0 || preflight >= indexOfStep(verifySteps, "Compilation integrity gate (AGENTS.md Verification)")) {
+            violations.add("API URL preflight가 컴파일보다 먼저 실행되지 않음");
+        }
+        Map<?, ?> preflightStep = findStep(verifySteps, "Validate release API build configuration");
+        if (!"node frontend/scripts/validate-api-build-urls.mjs".equals(preflightStep.get("run"))
+                || preflightStep.containsKey("if") || preflightStep.containsKey("continue-on-error")) {
+            violations.add("공용 URL preflight 실행 경로 불일치");
+        }
+        for (String name : List.of("BACKEND_API_URL", "NEXT_PUBLIC_API_URL")) {
+            if (!("${{ vars." + name + " }}").equals(asMap(preflightStep.get("env")).get(name))) {
+                violations.add("preflight repository variable 바인딩 불일치: " + name);
+            }
+        }
+        for (List<?> stageSteps : List.of(verifySteps, steps)) {
+            for (Object rawStep : stageSteps) {
+                Map<?, ?> step = asMap(rawStep);
+                Map<?, ?> with = asMap(step.get("with"));
+                String uses = Objects.toString(step.get("uses"), "");
+                if (with.containsKey("cache-to") || with.containsKey("cache")
+                        || uses.startsWith("actions/upload-artifact@")) {
+                    violations.add("dry-run 외부 cache/artifact 쓰기 경로");
+                }
+                if (uses.startsWith("docker/setup-buildx-action@")
+                        && !"false".equals(Objects.toString(with.get("cache-binary"), ""))) {
+                    violations.add("dry-run Buildx binary cache 쓰기 금지 누락");
+                }
+            }
+        }
+        assertGhcrImage(steps, "Extract metadata (tags, labels) for Backend", violations);
+        assertGhcrImage(steps, "Extract metadata (tags, labels) for Frontend", violations);
+        int backend = assertLocalImageBuild(steps, "Build Backend locally", violations);
+        int frontend = assertLocalImageBuild(steps, "Build Frontend locally", violations);
+        int verify = indexOfStep(steps, "Verify both local release images");
+        int scan = indexOfStep(steps, "Scan both release images and generate SBOMs");
+        int login = indexOfStep(steps, "Login to GitHub Container Registry");
+        int publish = indexOfStep(steps, "Publish verified images and complete manifest");
+        int release = indexOfStep(steps, "Create GitHub Release");
+        if (backend < 0 || frontend < 0 || verify <= backend || verify <= frontend
+                || scan <= verify || login <= scan || publish <= login || release <= publish) {
+            violations.add("두 빌드 → 동일 이미지 검증 → scan/SBOM → 로그인 → 두 push/manifest → Release 순서 불일치");
+        }
+        Map<?, ?> verifyStep = findStep(steps, "Verify both local release images");
+        if (!"node scripts/release-images.mjs verify".equals(verifyStep.get("run"))
+                || verifyStep.containsKey("if") || verifyStep.containsKey("continue-on-error")) {
+            violations.add("두 이미지 검증 실행 경로 불일치");
+        }
+        Map<?, ?> scanStep = findStep(steps, "Scan both release images and generate SBOMs");
+        if (!"node scripts/release-images.mjs scan".equals(scanStep.get("run"))
+                || scanStep.containsKey("if") || scanStep.containsKey("continue-on-error")) {
+            violations.add("두 이미지 scan/SBOM 실행 경로 불일치");
+        }
+        for (String stage : List.of("Verify both local release images", "Scan both release images and generate SBOMs",
+                "Publish verified images and complete manifest")) {
+            Map<?, ?> environment = asMap(findStep(steps, stage).get("env"));
+            if (!"${{ steps.build-backend.outputs.imageid }}".equals(environment.get("BACKEND_IMAGE_ID"))
+                    || !"${{ steps.build-frontend.outputs.imageid }}".equals(environment.get("FRONTEND_IMAGE_ID"))) {
+                violations.add("검증·스캔·발행 이미지 identity 바인딩 불일치: " + stage);
+            }
+        }
+        for (String name : List.of("Login to GitHub Container Registry",
+                "Publish verified images and complete manifest", "Create GitHub Release")) {
+            Map<?, ?> step = findStep(steps, name);
+            if (!publishCondition.equals(step.get("if")) || step.containsKey("continue-on-error")) {
+                violations.add("발행 단계의 태그 전용/오류 차단 조건 불일치: " + name);
+            }
+        }
+        Map<?, ?> loginWith = asMap(findStep(steps, "Login to GitHub Container Registry").get("with"));
+        if (!"ghcr.io".equals(loginWith.get("registry"))
+                || !"${{ secrets.GITHUB_TOKEN }}".equals(loginWith.get("password"))) {
+            violations.add("GHCR 로그인 대상/자격 바인딩 불일치");
+        }
+        if (!"node scripts/release-images.mjs publish".equals(
+                findStep(steps, "Publish verified images and complete manifest").get("run"))) {
+            violations.add("완성 manifest 발행 실행 경로 누락");
+        }
+        Map<?, ?> releaseWith = asMap(findStep(steps, "Create GitHub Release").get("with"));
+        List<String> releaseAssets = Objects.toString(releaseWith.get("files"), "").lines().map(String::strip)
+                .filter(line -> !line.isEmpty()).toList();
+        if (!List.of("release-manifest.json", "release-scan-evidence.json", "release-scan/output/api.cdx.json",
+                "release-scan/output/frontend.cdx.json", "release-scan/output/api.vuln.json",
+                "release-scan/output/frontend.vuln.json").equals(releaseAssets)
+                || !"true".equals(Objects.toString(releaseWith.get("fail_on_unmatched_files"), ""))) {
+            violations.add("Release 완성 manifest 자산 fail-closed 계약 누락");
+        }
+        return violations;
+    }
+
+    @Test
+    @DisplayName("릴리스 dry-run 외부 쓰기·불완전 manifest·검증 우회 fixture는 red")
+    void releasePublicationBoundaryRejectsUnsafeFixtures() throws IOException {
+        if (ReusableHarnessProfile.current().projected()) return;
+        String source = HarnessSourceIndex.read(resolveRepoRoot().resolve(WORKFLOW_DIR).resolve("release.yml"));
+        assertThat(releasePublicationViolations(asMap(new Yaml().load(source)))).isEmpty();
+        List<String> fixtures = List.of(
+                source.replace("push: false", "push: true"),
+                source.replace("load: true", "load: false"),
+                source.replace("DOCKER_BUILD_RECORD_UPLOAD: 'false'", "DOCKER_BUILD_RECORD_UPLOAD: 'true'"),
+                source.replace("cache-binary: false", "cache-binary: true"),
+                source.replace("cache-from: type=gha", "cache-from: type=gha\n          cache-to: type=gha"),
+                source.replace("node scripts/release-images.mjs verify", "echo skipped"),
+                source.replace("node scripts/release-images.mjs publish", "echo skipped"),
+                source.replace("node scripts/release-images.mjs scan", "echo skipped"),
+                source.replace("name: Scan both release images and generate SBOMs", "name: Skipped image scan"),
+                source.replace("BACKEND_IMAGE_ID: ${{ steps.build-backend.outputs.imageid }}", "BACKEND_IMAGE_ID: wrong-image"),
+                source.replace("            release-manifest.json", "            incomplete.json"),
+                source.replace("            release-scan/output/frontend.cdx.json", "            missing-sbom.json"),
+                source.replace("            release-scan/output/frontend.vuln.json", "            missing-vulnerability-report.json"),
+                source.replace("fail_on_unmatched_files: true", "fail_on_unmatched_files: false"),
+                source.replace("if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')", "if: always()"));
+        for (String fixture : fixtures) {
+            assertThat(fixture).isNotEqualTo(source);
+            assertThat(releasePublicationViolations(asMap(new Yaml().load(fixture)))).isNotEmpty();
+        }
     }
 
     /**

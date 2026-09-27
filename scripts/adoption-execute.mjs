@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { adoptionScope, containedFile, sha256, validateAdoptionReview } from './adoption-review.mjs';
 import { runCommand } from './verify-reusable-artifact.mjs';
+import { validateReleaseManifest } from './release-images.mjs';
 
 const read = (root, file) => JSON.parse(readFileSync(containedFile(root, file), 'utf8'));
 const exactKeys = (value, keys) => {
@@ -15,7 +16,7 @@ const image = value => typeof value === 'string' && /^[a-z0-9][a-z0-9._:/-]*@sha
 
 export function executionPlan(root, path, environmentId) {
   const value = read(root, path);
-  exactKeys(value, ['schemaVersion', 'product', 'profile', 'environmentId', 'images', 'migration']);
+  exactKeys(value, ['schemaVersion', 'product', 'profile', 'environmentId', 'images', 'releaseManifest', 'migration']);
   if (value.schemaVersion !== 1 || typeof environmentId !== 'string' || !environmentId.trim()
     || value.environmentId !== environmentId) throw new Error('execution environment must match explicitly');
   const { product, profile } = value;
@@ -35,13 +36,22 @@ export function executionPlan(root, path, environmentId) {
   if (product === 'online') {
     exactKeys(value.images, ['api', 'frontend']);
     if (value.migration !== undefined || !image(value.images.api) || !image(value.images.frontend)) throw new Error('exact registry image digests are required');
+    exactKeys(value.releaseManifest, ['path', 'sha256']);
+    const manifestPath = containedFile(root, value.releaseManifest.path);
+    const manifestBytes = readFileSync(manifestPath);
+    if (sha256(manifestBytes) !== value.releaseManifest.sha256) throw new Error('release manifest hash mismatch');
+    const manifest = validateReleaseManifest(JSON.parse(manifestBytes.toString('utf8')));
+    if (manifest.apiImage !== value.images.api || manifest.frontendImage !== value.images.frontend) {
+      throw new Error('release manifest must match the reviewed image pair');
+    }
     return { product, profile, environmentId, images: value.images,
-      command: 'bash', args: ['scripts/deploy.sh'],
+      releaseManifest: value.releaseManifest,
+      command: 'bash', args: ['scripts/deploy.sh', manifestPath],
       env: { API_IMAGE_REF: value.images.api, FRONTEND_IMAGE_REF: value.images.frontend } };
   }
   exactKeys(value.migration, ['jar', 'mapping', 'inventory', 'plan', 'mode', 'sourceAdapter', 'schemas', 'ackSourceFreeze']);
   const migration = value.migration;
-  if (value.images !== undefined || !['dry-run', 'commit'].includes(migration.mode)
+  if (value.images !== undefined || value.releaseManifest !== undefined || !['dry-run', 'commit'].includes(migration.mode)
     || migration.sourceAdapter !== 'postgresql-pg-catalog' || migration.ackSourceFreeze !== true
     || !Array.isArray(migration.schemas) || migration.schemas.length === 0
     || migration.schemas.some(schema => typeof schema !== 'string' || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(schema))) {

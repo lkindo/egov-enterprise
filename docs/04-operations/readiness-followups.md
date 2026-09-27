@@ -66,6 +66,22 @@ null/빈 문자열은 보존한다. 일정·행사·설문지·온라인 설문�
 원장은 [operation census](../../config/governance/operation-consumer-census.json)와
 [활성 gap](../../.agent/memory/known-gaps.md)의 GAP-WIRING-001이다.
 
+## 실시간 연결 표시 정정 (2026-09-27)
+
+DEC-OPS-140의 승인 의도는 화면이 서버가 제공하는 값의 의미를 정확히 표시하는 것이다.
+그 결정의 “1분마다 초기화되지 않는 재기동 이후 누적 연결”이라는 구현 전제는 현재 코드와 다르다.
+[RealTimeDashboardService](../../business-app/src/main/java/nuri/business/service/dashboard/RealTimeDashboardService.java)는
+새 WebSocket 연결마다 `visitsPerMinute`를 늘리고, `resetVisitsCounter`의 60,000ms 고정 주기에서 0으로 초기화한다.
+동시에 유지하는 `activeUsers`는 현재 연결 세션 수다. 둘 다 해당 서버 인스턴스의 값이며 고유 사용자 수가 아니다.
+
+[실시간 카드](../../frontend/src/components/features/dashboard/RealTimeDashboard.tsx)는 이를
+“새 연결(이 서버, 1분마다 초기화)”와 “마지막 초기화 이후 연결 횟수”로 표시한다.
+집계 방식·초기화 주기·이벤트 필드는 유지한다. 최근 60초 이동 구간이나 전 서버 합산으로 해석하지 않는다.
+원래 승인 기록은 보존하고 구현 전제와 표시 문구를 이 후속 근거로 정정한다.
+검증 경계는 [서버 초기화 테스트](../../business-app/src/test/java/nuri/business/service/dashboard/RealTimeDashboardServiceTest.java)와
+[초기화 전후 프레임 표시 테스트](../../frontend/src/components/features/dashboard/__tests__/RealTimeDashboard.test.tsx)다.
+이 코드는 스케줄러가 운영에서 지연 없이 실행된다는 실측 증거까지 제공하지는 않는다.
+
 ## 화면 문구 규범 편차
 
 2026-09-15 화면 용어 원장의 계약 수준 규범 검토([DEC-OPS-100](../../.agent/memory/decisions.md))에서 확인했지만 그 변경에서

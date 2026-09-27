@@ -1,7 +1,7 @@
 name: Docker Release
 
 # [W0-11] 공급망 하드닝 (2026-08-01)
-#   ① 모든 서드파티 액션을 커밋 SHA 로 핀했다. 이 워크플로는 contents:write 와 packages:write 를
+#   ① 모든 서드파티 액션을 커밋 SHA 로 핀했다. 발행 잡은 contents:write 와 packages:write 를
 #      쥔 채 실행되므로, 가변 major 태그(@v3 등)는 업스트림이 태그를 옮기는 것만으로 임의 코드가
 #      릴리스·배포 권한과 함께 실행되는 경로가 된다.
 #      SHA 핀은 자동 보안패치를 멈추므로 .github/dependabot.yml 의 github-actions 엔트리와 **세트**로만
@@ -11,6 +11,7 @@ name: Docker Release
 #      success 로 존재하는지를 검증한다. 검증 이력이 없는 SHA, main 밖의 SHA, red SHA 는 릴리스할 수 없다.
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
@@ -20,9 +21,12 @@ permissions:
   #   더는 성립하지 않는다 — Docker Hub 자격이 저장소에 없어 build-and-push 가 항상 실패했고, 릴리스 생성
   #   단계가 같은 잡의 뒤쪽에 있어 **GitHub 릴리스도 한 번도 발행되지 않았다**(v0.1.0 은 워크플로 밖에서 만들었다).
   #   GHCR 은 GITHUB_TOKEN 으로 push 하므로 새 시크릿과 그 회전 부담이 생기지 않는다.
-  contents: write   # softprops/action-gh-release 가 릴리스를 생성한다
+  contents: read
   checks: read      # 태그 대상 SHA 의 required check 결론 검증
-  packages: write   # GHCR 에 backend/frontend 이미지를 push 한다
+
+env:
+  # load-only dry-run도 build record를 외부 artifact로 올리지 않는다.
+  DOCKER_BUILD_RECORD_UPLOAD: 'false'
 
 jobs:
   # [W0-11] 릴리스 전제 조건. 실패하면 배포도 릴리스도 발행되지 않는다.
@@ -35,6 +39,7 @@ jobs:
           fetch-depth: 0
 
       - name: Require tagged commit on main with complete CI evidence
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -79,6 +84,16 @@ jobs:
 
           echo "태그 대상 SHA 의 main 포함 여부와 필수 CI ${#REQUIRED_CHECKS[@]}종을 확인했습니다."
 
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: "22"
+
+      - name: Validate release API build configuration
+        env:
+          BACKEND_API_URL: ${{ vars.BACKEND_API_URL }}
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+        run: node frontend/scripts/validate-api-build-urls.mjs
+
       - name: Set up JDK 21
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6  # v6.0.1
         with:
@@ -101,12 +116,6 @@ jobs:
         with:
           version: 9
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
-        with:
-          node-version: "22"
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
       - name: Frontend type gate
         run: |
           pnpm -C frontend install --frozen-lockfile
@@ -115,16 +124,22 @@ jobs:
   build-and-push:
     needs: verify
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1  # v4.4.0
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
+        with:
+          cache-binary: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: "22"
 
       # 소유자 이름을 소문자로 정규화한다. GHCR 은 대문자가 섞인 경로를 거부하므로, 대문자 조직으로
       #   이 템플릿을 가져간 파생 제품에서 push 가 죽는다.
@@ -140,13 +155,6 @@ jobs:
           }
           printf 'namespace=%s\n' "$(printf '%s' "$OWNER" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Extract metadata (tags, labels) for Backend
         id: meta-backend
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302  # v6.2.0
@@ -157,16 +165,17 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha
 
-      - name: Build and push Backend
+      - name: Build Backend locally
+        id: build-backend
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc  # v7.4.0
         with:
           context: .
           file: api-server/Dockerfile
-          push: true
+          push: false
+          load: true
           tags: ${{ steps.meta-backend.outputs.tags }}
           labels: ${{ steps.meta-backend.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Extract metadata (tags, labels) for Frontend
         id: meta-frontend
@@ -178,23 +187,68 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha
 
-      - name: Build and push Frontend
+      - name: Build Frontend locally
+        id: build-frontend
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc  # v7.4.0
         with:
           context: ./frontend
-          push: true
+          push: false
+          load: true
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
           build-args: |
             BACKEND_API_URL=${{ vars.BACKEND_API_URL }}
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
 
-      # 트리거가 tags/v* 단독이라 종전의 `if: startsWith(github.ref, 'refs/tags/')` 도 항상 참이었다.
+      - name: Verify both local release images
+        env:
+          RELEASE_NAMESPACE: ${{ steps.registry.outputs.namespace }}
+          BACKEND_TAGS: ${{ steps.meta-backend.outputs.tags }}
+          FRONTEND_TAGS: ${{ steps.meta-frontend.outputs.tags }}
+          BACKEND_IMAGE_ID: ${{ steps.build-backend.outputs.imageid }}
+          FRONTEND_IMAGE_ID: ${{ steps.build-frontend.outputs.imageid }}
+        run: node scripts/release-images.mjs verify
+
+      - name: Scan both release images and generate SBOMs
+        env:
+          RELEASE_NAMESPACE: ${{ steps.registry.outputs.namespace }}
+          BACKEND_TAGS: ${{ steps.meta-backend.outputs.tags }}
+          FRONTEND_TAGS: ${{ steps.meta-frontend.outputs.tags }}
+          BACKEND_IMAGE_ID: ${{ steps.build-backend.outputs.imageid }}
+          FRONTEND_IMAGE_ID: ${{ steps.build-frontend.outputs.imageid }}
+        run: node scripts/release-images.mjs scan
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish verified images and complete manifest
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          RELEASE_NAMESPACE: ${{ steps.registry.outputs.namespace }}
+          BACKEND_TAGS: ${{ steps.meta-backend.outputs.tags }}
+          FRONTEND_TAGS: ${{ steps.meta-frontend.outputs.tags }}
+          BACKEND_IMAGE_ID: ${{ steps.build-backend.outputs.imageid }}
+          FRONTEND_IMAGE_ID: ${{ steps.build-frontend.outputs.imageid }}
+        run: node scripts/release-images.mjs publish
+
       - name: Create GitHub Release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
         with:
+          files: |
+            release-manifest.json
+            release-scan-evidence.json
+            release-scan/output/api.cdx.json
+            release-scan/output/frontend.cdx.json
+            release-scan/output/api.vuln.json
+            release-scan/output/frontend.vuln.json
+          fail_on_unmatched_files: true
           generate_release_notes: true
           draft: false
           prerelease: false

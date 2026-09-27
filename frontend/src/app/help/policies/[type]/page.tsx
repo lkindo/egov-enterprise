@@ -1,8 +1,14 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import DOMPurify from 'isomorphic-dompurify';
 import { policyAdminService, SystemPolicy } from '@/services/foundation/system/PolicyAdminService';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Scale } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: `약관 및 정책 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 /**
  * 시스템 정책 및 법률 약관 조회 페이지 (Server Component)

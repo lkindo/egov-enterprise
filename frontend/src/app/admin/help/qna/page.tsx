@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import { Suspense } from 'react';
 import KnowledgeHubClient from '../KnowledgeHubClient';
+
+export const metadata: Metadata = {
+  title: `질문과 답변 관리 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 export default function QNAPage() {
   return (

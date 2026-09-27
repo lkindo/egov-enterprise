@@ -11,6 +11,28 @@ export interface ActiveMenuMatch {
   path: readonly MenuInfo[];
 }
 
+interface MenuTreeEntry {
+  item: MenuInfo;
+  ancestors: readonly MenuInfo[];
+  topMenuNo: number;
+}
+
+/** 서버가 허용한 메뉴 트리를 순서대로 읽는다. 중지 분류와 순환·중복 객체는 다시 방문하지 않는다. */
+export function* walkMenuTree(menus: readonly MenuInfo[]): Generator<MenuTreeEntry> {
+  const pending = menus.map((item) => ({ item, ancestors: [] as MenuInfo[], topMenuNo: item.menuNo })).reverse();
+  const visited = new Set<MenuInfo>();
+  while (pending.length > 0) {
+    const entry = pending.pop()!;
+    const { item, ancestors, topMenuNo } = entry;
+    if (visited.has(item) || item.useYn === 'N') continue;
+    visited.add(item);
+    yield entry;
+    for (let index = (item.children?.length ?? 0) - 1; index >= 0; index--) {
+      pending.push({ item: item.children![index], ancestors: [...ancestors, item], topMenuNo });
+    }
+  }
+}
+
 function routePath(pathname: string): string {
   return pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
 }
@@ -24,14 +46,9 @@ function routePath(pathname: string): string {
 export function findActiveMenu(menus: readonly MenuInfo[], pathname: string, searchParams: QueryParams): ActiveMenuMatch | null {
   const currentPath = routePath(pathname);
   const currentBoard = searchParams.get('bbsId');
-  const pending = menus.map((item) => ({ item, ancestors: [] as MenuInfo[], topMenuNo: item.menuNo })).reverse();
-  const visited = new Set<MenuInfo>();
   let best: { match: ActiveMenuMatch; score: number[] } | null = null;
 
-  while (pending.length > 0) {
-    const { item, ancestors, topMenuNo } = pending.pop()!;
-    if (visited.has(item) || item.useYn === 'N') continue;
-    visited.add(item);
+  for (const { item, ancestors, topMenuNo } of walkMenuTree(menus)) {
     const href = resolveMenuInternalRoute(item);
     if (href) {
       const url = new URL(href, 'https://egov.invalid');
@@ -51,9 +68,6 @@ export function findActiveMenu(menus: readonly MenuInfo[], pathname: string, sea
           best = { match: { menuNo: item.menuNo, topMenuNo, ancestorMenuNos: ancestors.map((ancestor) => ancestor.menuNo), path: [...ancestors, item] }, score };
         }
       }
-    }
-    for (let index = (item.children?.length ?? 0) - 1; index >= 0; index--) {
-      pending.push({ item: item.children![index], ancestors: [...ancestors, item], topMenuNo });
     }
   }
   return best?.match ?? null;

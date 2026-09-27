@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import { Suspense } from 'react';
 import SystemLogsPrivacyClient from './SystemLogsPrivacyClient';
+
+export const metadata: Metadata = {
+  title: `개인정보 접근 이력 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 export default function Page() {
     // 클라이언트가 useSearchParams(URL 페이지 동기화)를 사용하므로 Suspense 경계가 필요하다.

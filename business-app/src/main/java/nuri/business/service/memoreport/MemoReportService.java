@@ -7,6 +7,7 @@ import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.memoreport.dto.MemoReportDto;
 import nuri.business.service.memoreport.dto.MemoReportMapper;
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.user.UserDisplayNameLookup;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,6 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +30,7 @@ public class MemoReportService {
 
     private final MemoReportRepository memoReportRepository;
     private final MemoReportMapper memoReportMapper;
+    private final UserDisplayNameLookup userDisplayNameLookup;
     private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
@@ -47,8 +53,7 @@ public class MemoReportService {
         Objects.requireNonNull(pageable);
         nuri.business.security.util.SecurityUtil.assertPermission("MEMO_RPT_READ_ALL");
         // 검색어를 받고도 무시하던 default 구현(findAll)을 실제 제목 검색으로 대체했다.
-        return memoReportRepository.searchByTitle(keyword != null ? keyword : "", newestFirst(pageable))
-                .map(this::toDtoWithPermission);
+        return toDtoPage(memoReportRepository.searchByTitle(keyword != null ? keyword : "", newestFirst(pageable)));
     }
 
     /**
@@ -62,7 +67,7 @@ public class MemoReportService {
         Page<MemoReport> page = hasKeyword(keyword)
                 ? memoReportRepository.findByUserIdAndRptTtlContaining(writerId, keyword.trim(), newestFirst(pageable))
                 : memoReportRepository.findByUserId(writerId, newestFirst(pageable));
-        return page.map(this::toDtoWithPermission);
+        return toDtoPage(page);
     }
 
     /** 수신함. 발신함과 같은 이유로 제목 검색을 지원한다(소유 스코프는 rptrId 로 유지). */
@@ -71,7 +76,7 @@ public class MemoReportService {
         Page<MemoReport> page = hasKeyword(keyword)
                 ? memoReportRepository.findByRptrIdAndRptTtlContaining(rptUserId, keyword.trim(), newestFirst(pageable))
                 : memoReportRepository.findByRptrId(rptUserId, newestFirst(pageable));
-        return page.map(this::toDtoWithPermission);
+        return toDtoPage(page);
     }
 
     /**
@@ -117,9 +122,26 @@ public class MemoReportService {
                 .isPresent();
     }
 
-    /** 매퍼는 요청 컨텍스트를 모르므로 수정·삭제의 독립적인 서버 판정을 덧붙인다. */
-    private MemoReportDto toDtoWithPermission(MemoReport entity) {
+    /** 열람 범위가 확정된 페이지의 참여자만 한 번에 해석한다. */
+    private Page<MemoReportDto> toDtoPage(Page<MemoReport> page) {
+        Map<String, String> names = participantNames(page.getContent());
+        return page.map(entity -> toDtoWithPermission(entity, names));
+    }
+
+    private Map<String, String> participantNames(Collection<MemoReport> reports) {
+        var ids = new LinkedHashSet<String>();
+        for (MemoReport report : reports) {
+            if (org.springframework.util.StringUtils.hasText(report.getUserId())) ids.add(report.getUserId());
+            if (org.springframework.util.StringUtils.hasText(report.getRptrId())) ids.add(report.getRptrId());
+        }
+        return ids.isEmpty() ? Map.of() : userDisplayNameLookup.findDisplayNames(ids);
+    }
+
+    /** 매퍼는 요청 컨텍스트를 모르므로 이름과 수정·삭제의 독립적인 서버 판정을 덧붙인다. */
+    private MemoReportDto toDtoWithPermission(MemoReport entity, Map<String, String> names) {
         MemoReportDto dto = memoReportMapper.toDto(entity);
+        dto.setWrterNm(entity.getUserId() == null ? null : names.get(entity.getUserId()));
+        dto.setRptrNm(entity.getRptrId() == null ? null : names.get(entity.getRptrId()));
         dto.setEditable(!hasInstruction(entity) && canModify(entity, "MEMO_RPT_UPDATE", "MEMO_RPT_UPDATE_ALL"));
         dto.setDeletable(canModify(entity, "MEMO_RPT_DELETE", "MEMO_RPT_DELETE_ALL"));
         return dto;
@@ -129,7 +151,7 @@ public class MemoReportService {
         MemoReport entity = memoReportRepository.findById(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertParticipantOrAdmin(entity); // [IDOR] 작성자·수신자·관리자만 열람
-        return toDtoWithPermission(entity);
+        return toDtoWithPermission(entity, participantNames(List.of(entity)));
     }
 
     /**

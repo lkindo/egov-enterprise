@@ -1,6 +1,12 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import { Suspense } from 'react';
 import CollaborationHubClient from '../CollaborationHubClient';
 import { HubListSkeleton } from '@/components/ui/hub/HubSkeleton';
+
+export const metadata: Metadata = {
+  title: `스크랩 관리 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 /** 허브 클라이언트가 `useSearchParams` 로 탭을 읽으므로 Suspense 경계가 필요하다(P1-7). */
 export default function ScrapsPage() {

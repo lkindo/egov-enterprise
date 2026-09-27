@@ -20,6 +20,7 @@ import java.util.stream.Stream;
  * 파일 시스템 비용이 선형으로 중복된다. 이 클래스는 한 테스트 JVM 안에서 디렉터리별 파일 목록과
  * UTF-8 텍스트를 한 번만 읽어 불변 스냅샷으로 공유한다. 하네스 실행 중 생산 소스를 수정하는 것은
  * 지원하지 않으며, 파일을 바꾼 뒤에는 새 Gradle 테스트 프로세스에서 다시 실행해야 한다.
+ * 변경을 검증하는 파일과 일회성 프로세스 출력은 {@link #readFresh(Path)}로 읽고 캐시에 남기지 않는다.
  */
 final class HarnessSourceIndex {
 
@@ -92,6 +93,15 @@ final class HarnessSourceIndex {
         Path normalized = path.toAbsolutePath().normalize();
         try {
             return TEXT.computeIfAbsent(normalized, ignored -> readUtf8(normalized));
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
+        }
+    }
+
+    /** 변경 관측·일회성 출력용 읽기. 공유 스냅샷을 조회하거나 갱신하지 않는다. */
+    static String readFresh(Path path) throws IOException {
+        try {
+            return readUtf8(path.toAbsolutePath().normalize());
         } catch (UncheckedIOException e) {
             throw e.getCause();
         }

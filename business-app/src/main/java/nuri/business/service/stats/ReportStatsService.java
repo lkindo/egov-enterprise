@@ -56,7 +56,7 @@ public class ReportStatsService {
     }
 
     /**
-     * 날짜별 접속(로그인) 통계
+     * 날짜별 성공 로그인 통계
      */
     public List<Object[]> getConnectStatsByDate(String fromDate, String toDate) {
         DateRange range = range(fromDate, toDate);
@@ -65,7 +65,7 @@ public class ReportStatsService {
     }
 
     /**
-     * 통계 요약(총 사용자/총 게시글/오늘 접속) — 대시보드 상단 요약 카드용.
+     * 통계 요약(총 사용자/총 게시글/오늘 성공 로그인) — 대시보드 상단 요약 카드용.
      * 프런트 StatsAdminService.getSummary()가 호출하는 GET /api/v1/admin/system/statistics/summary 백엔드.
      */
     public nuri.business.service.stats.dto.SummaryStatsDto getSummary() {

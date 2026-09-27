@@ -1,7 +1,35 @@
 /** Domain ownership rules for composing the existing source, without changing its module boundaries. */
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from 'node:fs';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { createHash } from 'node:crypto';
+
+/** Exact support files follow their optional consumer while module dependencies stay unchanged. */
+export function domainSupportFiles(root, manifest) {
+  const result = new Map();
+  const owners = new Set();
+  const realRoot = realpathSync(root);
+  for (const [pack, value] of Object.entries(manifest.packs ?? {})) {
+    const declarations = value.backend?.domainSupportFiles ?? {};
+    if (!declarations || typeof declarations !== 'object' || Array.isArray(declarations)) throw new Error(`Invalid domain support declarations: ${pack}`);
+    for (const [domain, files] of Object.entries(declarations)) {
+      if (!value.backend?.appDomains?.includes(domain) || result.has(domain)
+        || !Array.isArray(files) || files.length === 0) throw new Error(`Invalid domain support owner: ${pack}/${domain}`);
+      for (const file of files) {
+        if (typeof file !== 'string'
+          || !/^(?:foundation|business-core)\/src\/(?:main|test)\/java\/(?:[A-Za-z_$][\w$]*\/)+[A-Za-z_$][\w$]*\.java$/u.test(file)
+          || owners.has(file)) throw new Error(`Invalid or duplicate domain support file: ${file}`);
+        const absolute = resolve(root, file);
+        if (!existsSync(absolute) || !statSync(absolute).isFile()) throw new Error(`Missing domain support file: ${file}`);
+        const child = relative(realRoot, realpathSync(absolute));
+        if (isAbsolute(child) || child === '..' || child.startsWith(`..${sep}`)
+          || child.split(sep).join('/') !== file) throw new Error(`Unsafe domain support file: ${file}`);
+        owners.add(file);
+      }
+      result.set(domain, [...files]);
+    }
+  }
+  return result;
+}
 
 export function verifyCompositionDatabaseFiles(migrationDirectory, lock) {
   if (lock.validated !== true || !lock.migrationFiles || typeof lock.migrationFiles !== 'object') throw new Error('A validated composition DB bundle is required');
@@ -21,6 +49,7 @@ export function verifyCompositionDatabaseFiles(migrationDirectory, lock) {
 const RBAC = 'api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java';
 const RBAC_DOMAINS = ['survey', 'stats', 'system', 'informalsanction'];
 const GATE_OWNERS = {
+  'api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java': ['note', 'notification'],
   'api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java': ['informalsanction'],
   'api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java': ['system'],
   'api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java': ['board', 'system'],
@@ -114,7 +143,7 @@ export function projectComposerJava(file, source, profile) {
 }
 
 /** Selected source roots are an expected population, never inferred from what survived cascading removal. */
-export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition) {
+export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition, manifest) {
   if (composition.profile !== 'custom') return;
   const requireFile = path => {
     const normalized = path.replaceAll('\\', '/');
@@ -134,6 +163,8 @@ export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition
   for (const domain of composition.resolvedDomains) for (const layer of ['domain', 'service']) {
     assertTree(join(sourceRoot, 'business-app/src/main/java/nuri/business', layer, domain));
   }
+  const support = domainSupportFiles(sourceRoot, manifest ?? JSON.parse(readFileSync(join(sourceRoot, 'config/reusable-base-profiles.json'), 'utf8')));
+  for (const domain of composition.resolvedDomains) for (const file of support.get(domain) ?? []) requireFile(file);
   for (const path of composition.frontend.includedPaths) assertTree(join(sourceRoot, 'frontend', path));
   for (const path of composition.frontend.includedPaths) if (existsSync(join(sourceRoot, 'frontend', path)) && statSync(join(sourceRoot, 'frontend', path)).isFile()) requireFile(`frontend/${path}`);
   const selected = new Set(composition.resolvedDomains);

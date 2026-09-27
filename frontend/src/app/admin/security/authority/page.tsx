@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import { Suspense } from 'react';
 import SecurityHubClient from './SecurityHubClient';
+
+export const metadata: Metadata = {
+  title: `권한 관리 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 export default async function SecurityAuthorityHubPage() {
   return (

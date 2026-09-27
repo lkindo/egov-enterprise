@@ -64,6 +64,24 @@ describe('SmartNotificationHub', () => {
     serve();
   });
 
+  it('알림 날짜는 표준 시각으로 표시하고 생성 시각 폴백과 미상을 구분한다', async () => {
+    serve({ getNotifications: () => ({
+      list: [
+        { ...UNREAD, notiDt: '2026-09-27T09:10:11.123456' },
+        { ...READ, notiDt: null, crtDt: '2026-09-26T08:07:06' },
+        { ...READ, notiSn: 9, notiTtlNm: '날짜 없음', notiDt: null },
+        { ...READ, notiSn: 8, notiTtlNm: '손상 날짜', notiDt: 'broken' },
+      ], total: 4, page: 0, size: 20, totalPage: 1,
+    }) });
+    renderHub();
+
+    expect(await screen.findByText('2026-09-27 09:10:11')).toBeInTheDocument();
+    expect(screen.getByText('2026-09-26 08:07:06')).toBeInTheDocument();
+    for (const title of ['날짜 없음', '손상 날짜']) {
+      expect(within(screen.getByText(title).closest('tr')!).getByText('-')).toBeInTheDocument();
+    }
+  });
+
   it('서버 페이지로 조회하고, 읽음 조건·검색어를 서버 조건으로 보낸다', async () => {
     const user = userEvent.setup();
     renderHub();

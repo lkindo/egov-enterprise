@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -43,14 +44,46 @@ public class SurveyResultService {
 
     /** 응답 목록(관리). 응답자명 부분일치. */
     public Page<SurveyResultDto> getResponseList(String keyword, Pageable pageable) {
-        return resultRepository.searchByRspnsNm(keyword == null ? "" : keyword, pageable)
-                .map(SurveyResultDto::from);
+        Page<SurveyResult> page = resultRepository.searchByRspnsNm(keyword == null ? "" : keyword, pageable);
+        Map<Long, SurveyArticle> articles = selectedArticles(page.getContent());
+        return page.map(result -> toResponseDto(result, articles));
     }
 
     public SurveyResultDto getResponse(Long srvyRspnsSn) {
-        return resultRepository.findById(Objects.requireNonNull(srvyRspnsSn))
-                .map(SurveyResultDto::from)
+        SurveyResult result = resultRepository.findById(Objects.requireNonNull(srvyRspnsSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        return toResponseDto(result, selectedArticles(List.of(result)));
+    }
+
+    /** 자유서술·기타 답이 없는 선택 응답만 페이지 단위로 해석한다. */
+    private Map<Long, SurveyArticle> selectedArticles(List<SurveyResult> results) {
+        List<Long> articleIds = results.stream()
+                .filter(this::needsChoiceContent)
+                .map(SurveyResult::getSrvyArtclSn)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (articleIds.isEmpty()) {
+            return Map.of();
+        }
+        return articleRepository.findAllById(articleIds).stream()
+                .collect(Collectors.toMap(SurveyArticle::getSrvyArtclSn, Function.identity()));
+    }
+
+    private boolean needsChoiceContent(SurveyResult result) {
+        return !StringUtils.hasText(result.getRspdntAnsCn()) && !StringUtils.hasText(result.getEtcAnsCn());
+    }
+
+    private SurveyResultDto toResponseDto(SurveyResult result, Map<Long, SurveyArticle> articles) {
+        String answer = result.getRspdntAnsCn();
+        SurveyArticle article = result.getSrvyArtclSn() == null ? null : articles.get(result.getSrvyArtclSn());
+        // 저장된 식별자가 잘못 연결됐어도 다른 설문·문항의 내용을 응답 열람 권한으로 노출하지 않는다.
+        if (needsChoiceContent(result) && article != null
+                && result.getSrvySn() != null && result.getSrvySn().equals(article.getSrvySn())
+                && result.getSrvyQstnSn() != null && result.getSrvyQstnSn().equals(article.getSrvyQstnSn())) {
+            answer = article.getArtclCn();
+        }
+        return SurveyResultDto.from(result, answer);
     }
 
     @Transactional

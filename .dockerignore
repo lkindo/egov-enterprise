@@ -45,6 +45,8 @@ node_modules
 out
 .qwen
 .gemini
+.agent/temp
+**/hs_err_pid*.log
 tasks
 records
 test-uploads

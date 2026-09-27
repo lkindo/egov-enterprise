@@ -224,6 +224,8 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
         sourceRef: 'v1.0.0', selection: { domains: [] } }, loadProjectComposerCatalog(ROOT)) : undefined;
       const profile = composition ? { ...profiles.profiles.core, resolvedDomains: composition.resolvedDomains, frontendRemovePaths: composition.frontend.removePaths } : profiles.profiles[profileName];
       pruneJava(output, profiles, profile);
+      const support = profiles.packs.demo.backend.domainSupportFiles.memoreport;
+      for (const file of support) assert.equal(existsSync(join(output, file)), profileName === 'demo', `${profileName}: domain support ${file}`);
       stripExcludedFrontendPackBlocks(output, profiles, profile);
       pruneFrontend(output, profiles, profile);
       const manifest = { ...profiles, sourcePolicy: { ...profiles.sourcePolicy, generatedProfile: profileName },

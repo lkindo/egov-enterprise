@@ -48,7 +48,7 @@ export function discoverSpecs(specRoot = SPEC_ROOT) {
 // Audited route owners. Shared inputs and unrecognized dependencies remain full.
 // admin/user is deliberately excluded: identity/organization changes retain full execution.
 export const IMPACT_RULES = [
-  { prefixes: ['frontend/src/app/admin/survey/'], specs: ['journeys/online-polls.spec.ts'] },
+  { prefixes: ['frontend/src/app/admin/survey/'], specs: ['journeys/online-polls.spec.ts', 'journeys/public-navigation.spec.ts'] },
   { prefixes: ['frontend/src/app/approvals/'], specs: ['journeys/approvals.spec.ts', 'journeys/public-navigation.spec.ts', 'journeys/workflow-demo.spec.ts'] },
   { prefixes: ['frontend/src/app/admin/workflow/'], specs: ['journeys/workflow-demo.spec.ts', 'journeys/community-navigation.spec.ts'] },
   { prefixes: ['frontend/src/app/admin/collaboration/address-book/'], specs: ['journeys/address-book.spec.ts', 'contracts/address-book-ownership.spec.ts'] },

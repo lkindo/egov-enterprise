@@ -50,13 +50,18 @@ public record SurveyResultDto(
 
     /** 엔티티 → DTO. 조회 전용이라 역방향은 두지 않는다. */
     public static SurveyResultDto from(SurveyResult entity) {
+        return from(entity, entity.getRspdntAnsCn());
+    }
+
+    /** 저장된 답변은 바꾸지 않고, 조회 계층이 확인한 선택 항목 내용을 표시할 수 있다. */
+    public static SurveyResultDto from(SurveyResult entity, String answerContent) {
         return SurveyResultDto.builder()
                 .srvyRspnsSn(entity.getSrvyRspnsSn())
                 .srvySn(entity.getSrvySn())
                 .srvyTmpltSn(entity.getSrvyTmpltSn())
                 .srvyQstnSn(entity.getSrvyQstnSn())
                 .srvyArtclSn(entity.getSrvyArtclSn())
-                .rspdntAnsCn(entity.getRspdntAnsCn())
+                .rspdntAnsCn(answerContent)
                 .rspnsNm(entity.getRspnsNm())
                 .etcAnsCn(entity.getEtcAnsCn())
                 .frstRgtrId(entity.getFrstRgtrId())

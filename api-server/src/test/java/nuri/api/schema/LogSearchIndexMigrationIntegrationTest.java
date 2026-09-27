@@ -38,14 +38,48 @@ class LogSearchIndexMigrationIntegrationTest extends SharedPostgresMigrationTest
             assertPlan(s, "SELECT lgn_sn FROM tb_login_log WHERE crt_dt >= timestamp '2026-01-01' AND crt_dt < timestamp '2026-01-02' ORDER BY crt_dt DESC", "ix_tb_login_log_crt_dt");
             // [2026-09-26 DIP B5 F10] 일별 로그인 통계도 같은 인덱스를 탄다. 문장은 저장소 애노테이션에서 그대로 읽는다 —
             //   종전 to_char(CRT_DT) BETWEEN 은 컬럼을 문자열로 바꿔 비교해 인덱스를 쓸 수 없었다.
-            assertPlan(s, nuri.business.domain.log.LoginLogRepository.class
-                    .getMethod("countLoginsByDate", String.class, String.class)
-                    .getAnnotation(org.springframework.data.jpa.repository.Query.class).value()
-                    .replace(":fromDate", "'20260101'").replace(":toDate", "'20260102'"), "ix_tb_login_log_crt_dt");
+            assertPlan(s, loginCountsQuery("20260101", "20260102"), "ix_tb_login_log_crt_dt");
             assertPlan(s, "SELECT sys_log_sn FROM tb_sys_log WHERE btrim(ocrn_ymd) BETWEEN '20260101' AND '20260102'", "ix_tb_sys_log_ocrn_ymd_trim");
             assertPlan(s, "SELECT sys_log_sn FROM tb_sys_log ORDER BY ocrn_ymd DESC LIMIT 10", "ix_tb_sys_log_ocrn_ymd");
             assertPlan(s, "SELECT prvc_log_sn FROM tb_privacy_log WHERE inq_dt >= timestamp '2026-01-01' AND inq_dt < timestamp '2026-01-02' ORDER BY inq_dt DESC", "ix_tb_privacy_log_inq_dt");
+            assertSuccessfulLoginCounts(s);
         }
+    }
+
+    private static String loginCountsQuery(String from, String to) throws Exception {
+        return nuri.business.domain.log.LoginLogRepository.class
+                .getMethod("countLoginsByDate", String.class, String.class)
+                .getAnnotation(org.springframework.data.jpa.repository.Query.class).value()
+                .replace(":fromDate", "'" + from + "'").replace(":toDate", "'" + to + "'");
+    }
+
+    /** 운영 쿼리 원문을 실제 PostgreSQL에서 실행한다. H2 함수 별칭이나 복제 SQL로 대체하지 않는다. */
+    private static void assertSuccessfulLoginCounts(Statement statement) throws Exception {
+        statement.executeUpdate("""
+                INSERT INTO tb_login_log(err_ocrn_yn,crt_dt) VALUES
+                  ('N',timestamp '2099-09-01 00:00:00'),
+                  ('N',timestamp '2099-09-02 23:59:59.999999'),
+                  ('Y',timestamp '2099-09-01 12:00:00'),
+                  (NULL,timestamp '2099-09-01 13:00:00'),
+                  ('N',timestamp '2099-08-31 23:59:59.999999'),
+                  ('N',timestamp '2099-09-03 00:00:00')
+                """);
+        assertThatThrownBy(() -> statement.executeUpdate(
+                "INSERT INTO tb_login_log(err_ocrn_yn,crt_dt) VALUES ('X',timestamp '2099-09-01 14:00:00')"))
+                .as("정의되지 않은 오류 여부는 기존 DB 제약이 거부한다")
+                .isInstanceOf(java.sql.SQLException.class)
+                .extracting(failure -> ((java.sql.SQLException) failure).getSQLState()).isEqualTo("23514");
+        try (var rows = statement.executeQuery(loginCountsQuery("20990901", "20990902"))) {
+            assertThat(rows.next()).isTrue();
+            assertThat(rows.getString(1)).isEqualTo("2099-09-01");
+            assertThat(rows.getLong(2)).as("성공 로그인만 집계하며 실패·미상 시도를 제외한다").isEqualTo(1);
+            assertThat(rows.next()).isTrue();
+            assertThat(rows.getString(1)).isEqualTo("2099-09-02");
+            assertThat(rows.getLong(2)).as("종료일 마지막 소수초를 포함한다").isEqualTo(1);
+            assertThat(rows.next()).isFalse();
+        }
+        assertThat(count(statement, "SELECT count(*) FROM tb_login_log WHERE crt_dt >= timestamp '2099-09-01' AND crt_dt < timestamp '2099-09-03'"))
+                .as("실패·미상 시도 원본 이력을 지우지 않는다").isEqualTo(4);
     }
 
     private static long count(Statement s, String sql) throws Exception {

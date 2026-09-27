@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import SurveyDetailClient from './SurveyDetailClient';
 import { notFound } from 'next/navigation';
+
+export const metadata: Metadata = {
+  title: `설문 참여 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 /**
  * 종전에는 {@code params} 를 받지도, 넘기지도 않았다 — `[id]` 세그먼트가 장식이었다.

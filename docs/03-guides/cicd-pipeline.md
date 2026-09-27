@@ -66,7 +66,7 @@ dependency-submission.yml (pull_request, contents:read)
 > - **계약 드리프트 (HARD, CI FAIL)**: `backend-build` 의 `git diff --exit-code api-docs.json`(커밋된 스펙이 실제 DTO/컨트롤러와 어긋나면 실패) 과 `frontend-build` 의 `codegen:verify`/`codegen:verify:zod`(스펙 대비 생성 타입·Zod 미갱신 시 실패).
 > - **스키마 무결성 (HARD, CI FAIL)**: classifier가 schema 영향으로 판정하면 `Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)`이 Flyway 전량 적용 + Hibernate `ddl-auto:validate`로 물리 정합성을 검증한다. `:foundation:test --no-build-cache`를 재실행하는 `Cache-bypass regression gate (foundation, main only)`는 같은 schema 조건에 더해 `refs/heads/main`에서만 실행한다.
 > - **프론트엔드 정적 품질 (HARD, CI FAIL)**: ESLint error 0건과 `frontend/package.json`의 warning 상한을 함께 강제한다(`pnpm run lint`). 의존성 감사는 `pnpm audit --json` 단일 조회를 정책 evaluator가 판정해 Critical 전체와 운영 의존성 High를 차단하고, 개발 전용 High는 warning으로 남기며 형식·네트워크 오류는 실패 처리한다.
-> - **증분 뮤테이션 (HARD, CI FAIL)**: PIT 스코프 10개 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. 제품 8개는 `mutation-scope`, 이관 2개는 `mutation-scope-migration`이 소유하며 독립된 영향 출력으로 선택한다. 이관 출력은 더 이상 온라인 `mutation`의 부분집합이 아니다([ADR-0022](../02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)). `mutation-test`는 소스마다 기대 실행·명시적 skip을 fail-closed로 집계한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
+> - **변경 영향별 뮤테이션 (HARD, CI FAIL)**: PIT 스코프 10개 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. 제품 8개는 `mutation-scope`, 이관 2개는 `mutation-scope-migration`이 소유하며 독립된 영향 출력으로 선택한다. 이관 출력은 더 이상 온라인 `mutation`의 부분집합이 아니다([ADR-0022](../02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)). `mutation-test`는 소스마다 기대 실행·명시적 skip을 fail-closed로 집계한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
 > - **OWASP Dependency-Check 분리**: 기존 의존성 전수 검사는 별도의 주간·수동 워크플로우(`.github/workflows/dependency-check.yml`)가 담당한다. 모듈 리포트 누락은 실패하지만 scan step 자체는 `continue-on-error`라 취약점 outcome은 PR 차단이 아니며, required 증분 review와 같은 강도로 해석하지 않는다.
 
 `migration-validate-verify`의 CI 실행 상한은 60분이고 다른 PIT 스코프는 30분이다. 60분 표현식은 `mutation-scope-migration`에만 있고 제품 스코프 잡은 30분 고정이며, 두 값을 required-check 계약이 함께 고정한다.
@@ -78,9 +78,9 @@ dependency-submission.yml (pull_request, contents:read)
 DB 초기화 비용이 짧은 시험의 시간 예산을 넘을 수 있다. 이 설명이 각 CI 타임아웃의 원인을 확정하지는 않는다.
 메타데이터 시험의 `getColumns()` 모형도 조회마다 독립된 ResultSet을 만들고,
 행 밖·EOF·닫힘 상태의 getter는 SQLException을 발생시켜 실제 JDBC 계약을 지킨다.
-로컬 보완 검증은 기존 증분 기록을 보존하고 별도 기록으로 변이를 재계산한다.
-[PIT의 증분 최적화](https://pitest.org/quickstart/incremental_analysis/)가 시험만 바뀐 경우에도
-이전 무한 루프 결과를 재사용할 수 있기 때문이다.
+현재 [PIT 설정](../02-architecture/pitest-mutation-testing.md)은 엔진 `1.25.9`를 고정하고
+history 입출력·기본 증분 분석·CI history 전용 캐시를 사용하지 않는다.
+선택한 스코프의 변이를 이전 결과 재사용 없이 재계산하므로 반복 실행 비용이 늘 수 있다.
 대상 클래스·DB 시험·75% 임계값·전체 결과의 실패 집계는 유지한다.
 작업별 시간 표현식은 [GitHub의 matrix 지원](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#context-availability)을 사용하며
 기존 required-checks 계약이 다른 범위 확대·상한 변경·삭제·주석 대체·중복 키를 실패로 확인한다.
@@ -152,14 +152,15 @@ Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 �
 ./gradlew :foundation:test --no-build-cache
 
 # 2. 선택된 온라인 4모듈 빌드·테스트 (OpenAPI 정적 추출 포함)
+repo_root="$(git rev-parse --show-toplevel)"
 ./gradlew onlineBuild jacocoOnlineCoverageVerification \
-  -Dopenapi.export.path=api-docs.json --warning-mode fail
+  "-Dopenapi.export.path=$repo_root/api-docs.json" --warning-mode fail
 
 # 3. 물리 PostgreSQL 17 스키마 실측 검증 (Testcontainers + Flyway + Hibernate validate)
 ./gradlew :api-server:schemaValidationTest
 
 # 4. 계약 드리프트 검증 (백엔드 스펙 신선도 확인)
-git diff --exit-code api-docs.json
+git diff --exit-code -- "$repo_root/api-docs.json"
 
 # 5. migration=true인 별도 job: 이관 테스트·bootJar·85/70 커버리지
 node scripts/verify.mjs migration
@@ -421,9 +422,29 @@ git config core.hooksPath .githooks
 
 ## 릴리스 프런트엔드 런타임 인계
 
+루트 Docker context는 `.agent/temp`와 모든 하위 경로의 JVM 충돌 진단 로그(`hs_err_pid*.log`)를 제외한다. 격리 검증의 자격 파일·백업 증거와 프로세스 정보를 담을 수 있는 진단 로그를 후속 API 이미지 빌드에 전달하지 않도록 기존 Docker context 계약에서 제외와 재포함 금지를 검사한다. 프런트엔드 context는 `frontend/`로 한정되어 이 저장소 루트 임시 경로를 포함하지 않는다.
+
 `release.yml`은 frontend image를 build/push할 뿐 배포하지 않는다. build step의 repository variables는 Next production build를 검증하기 위한 입력이고, 발행된 image를 어느 backend에 연결할지는 runtime deploy owner가 별도로 인계해야 한다. build arguments가 container runtime environment를 대신한다고 간주하지 않는다.
 
-이미지는 **GHCR**(`ghcr.io/<owner>/egov-api`·`ghcr.io/<owner>/egov-frontend`)로 발행한다(DEC-OPS-103). 별도 레지스트리 시크릿을 두지 않고 `GITHUB_TOKEN`과 `permissions: packages: write`로 push하며, GHCR이 대문자 경로를 거부하므로 소유자 이름을 소문자로 정규화한다. 두 이미지 push가 실패하면 GitHub 릴리스도 발행되지 않는다 — 무조건 push, push 뒤 릴리스 순서, 권한 선언과 로그인·push 대상 일치를 [`WorkflowManifestLinterTest`](../../api-server/src/test/java/nuri/api/harness/WorkflowManifestLinterTest.java)가 정적으로 고정한다. 운영 Compose는 이 이미지를 pull하지 않고 로컬 빌드하므로, 발행물의 소비자는 인수처가 배포 manifest에서 정한다.
+프런트엔드 Docker builder만 `NEXT_DOCKER_STANDALONE=true`로 standalone 출력을 켠다. Docker의 tracing root는 `/app`이며 runner에는 추적된 서버·의존성, `.next/static`, `public`만 복사한다. `nextjs` 사용자가 `node server.js`로 3000 포트에 기동하며 telemetry는 계속 꺼 둔다. 일반 호스트 빌드는 기존 출력과 repository root를 유지한다. API·actuator·WebSocket rewrite는 빌드 때 정해지므로 runtime URL을 바꾼다고 다시 생성되지 않는다. BFF의 runtime 환경 인계와 기존 Secure/HttpOnly 세션 정책은 그대로 필요하다. 이미지 크기·취약점 감소와 실제 기동은 해당 소스의 이미지 ID로 검증해야 하며 정적 계약 통과로 대신하지 않는다.
+
+로컬 운영 형상 검증은 [`run-isolated-release-smoke.mjs`](../../scripts/run-isolated-release-smoke.mjs)를 사용한다. `node scripts/run-isolated-release-smoke.mjs --source-info`가 반환한 revision과 실제 작업 트리 해시를 두 Docker build의 `BASELINE_BUILD_SHA`·`BASELINE_BUILD_INPUT_TREE_SHA256`에 전달한 뒤, `node scripts/run-isolated-release-smoke.mjs --api-image sha256:<64자리> --frontend-image sha256:<64자리>`로 그 이미지 ID를 검사한다. 필요한 PostgreSQL·edge digest 이미지도 로컬에 있어야 한다. 실행기는 빌드·pull·push·원격 CI·운영 DB 접속을 하지 않는다. 기존 E2E의 `e2e` 전용 검증기를 넓히지 않고 별도의 `prod` 계획을 검증한다.
+
+실행 순서는 소유한 tmpfs DB에서 migration-only `e2e` bootstrap으로 명시적 권한 cutover를 수행하고, `prod` 단독 API와 frontend·edge를 기동한 뒤 HTTP·첨부·관리 포트 경계를 검사하는 것이다. 이어 DB와 첨부를 백업하고 두 번째 새 DB·볼륨에 복구해 같은 이미지의 동작을 검사한다. 성공 증거는 모든 검사와 소유 자원 정리가 끝난 뒤에만 `.agent/temp/egov-release-smoke-*/result.json`에 기록한다. 작업 트리가 바뀌거나 이미지의 source label이 다르면 거부하며, dirty 실행 증거에는 `publicationApproved: false`를 기록한다. 실행기는 현재 로컬 수동 검증 경로이며 release workflow의 자동 smoke 단계로 연결됐다는 뜻은 아니다.
+
+소스 입력은 물리 경로도 저장소 내부인지 검사하며, 컨테이너 시작 전 실제 이미지 명령·사용자·mount·발행 포트를 계획과 대조한다. 증거에는 실제 복사한 edge template의 SHA-256도 포함한다. 인코딩된 인증 경로 검사는 정상 로그인·refresh를 선행한 뒤 토큰 필드가 없는 400/404 응답을 요구한다. 빈 200, 인증 실패, 요청 제한, 서버 장애는 안전한 경로 거절의 증거가 아니다. 복구 행 수는 모든 테이블의 유효한 정수 값을 확인하고 테이블 이름 순서를 정규화해 비교한다.
+
+이 검증은 빈 DB에서 별도 cutover 없이 `prod`가 자동 설치된다는 주장, 과거 v0.1.0 데이터의 forward upgrade, 구 이미지 rollback, 운영 RTO/RPO, TLS 브라우저 E2E 또는 SMTP 실발송을 증명하지 않는다. HTTP loopback의 쿠키는 테스트 컨텍스트만 재전송하며 Secure/HttpOnly 정책을 완화하지 않는다. 실제 Next→Spring 경로의 이중 인코딩·잘못된 percent 입력은 유효한 폐기용 로그인·refresh 대조군을 사용해 상태와 토큰 노출 여부만 기록한다. DB·첨부 복구의 범위는 [복구 runbook](../04-operations/backup-and-restore-runbook.md)을 따른다.
+
+이미지는 **GHCR**(`ghcr.io/<owner>/egov-api`·`ghcr.io/<owner>/egov-frontend`)로 발행한다(DEC-OPS-103). 태그 대상은 계속 main 이력과 required-checks.json의 성공한 필수 체크를 모두 요구한다. 두 API URL의 공용 검증기를 Gradle·Docker 빌드보다 먼저 실행하고, 두 이미지를 로컬에 적재한 뒤 이미지 ID와 revision을 검증한다. 이어 `node scripts/release-images.mjs scan`으로 두 이미지의 취약점과 SBOM을 검사한 뒤, 그 동일 이미지만 `GITHUB_TOKEN`으로 push한다. 두 registry digest를 확보한 경우에만 `release-manifest.json`을 생성해 GitHub Release 자산으로 게시한다. 두 번째 push 실패 시 첫 이미지가 레지스트리에 남을 수 있지만 완성 manifest와 GitHub Release는 생성되지 않는다. 이 절차는 registry의 두 push를 원자적으로 만들지 않는다.
+
+스캐너는 [공식 Trivy 0.74.0 이미지](https://github.com/aquasecurity/trivy/pkgs/container/trivy/1132805973?tag=0.74.0)의 digest로 고정한다. `docker save`의 대상은 검증한 이미지 ID이고 scanner에는 archive를 읽기 전용으로 전달한다. Docker socket·작업 트리·자격 파일을 마운트하지 않으며 전용 cache/output만 쓸 수 있다. 런타임 이미지의 HIGH/CRITICAL은 미수정 취약점도 포함해 `--exit-code 1`로 차단한다. CycloneDX에도 [공식 문서](https://github.com/aquasecurity/trivy/blob/v0.74.0/docs/guide/supply-chain/sbom.md)에 따라 `--scanners vuln`를 명시한다. 두 이미지 검사·SBOM 생성이 모두 성공해야 `release-scan-evidence.json`이 생기며, 발행기는 이미지 ID·소스 revision·실행 회차·스캐너와 DB metadata·report/SBOM 해시를 재검증한다. 승인된 태그 발행의 기존 Release 단계에만 완료 receipt, 두 SBOM과 그 해시가 참조하는 vulnerability JSON 두 개를 함께 보존한다. 이 계약 테스트의 성공은 실제 이미지의 취약점 검사 결과가 아니다.
+
+`workflow_dispatch`는 발행 없는 dry-run이다. 선택한 checkout의 검증·두 이미지 빌드·ID/revision 검증·취약점 검사·SBOM 생성을 실행하며 GHCR 로그인, push, GitHub Release, cache export, build-record artifact upload는 수행하지 않는다. scan 산출물도 로컬에만 남는다. 외부 의존성·스캐너·취약점 DB·캐시 다운로드는 할 수 있다. 이 수동 실행 자체도 원격 작업이므로 로컬 검증만으로 실행했다고 간주하지 않는다. 발행 단계의 권한은 `build-and-push` 잡에 한정하며, 수동 실행에서도 발행 단계의 조건과 스크립트의 이벤트 검증이 함께 차단한다.
+
+배포 호스트는 Bash·Docker Compose v2·jq와 승인된 Release의 `release-manifest.json`을 준비해 `./scripts/deploy.sh /secure/path/release-manifest.json`을 실행한다. 스크립트는 완성된 두 digest와 revision을 검사하고, 기존 `API_IMAGE_REF`·`FRONTEND_IMAGE_REF`가 있으면 일치 여부를 확인한 뒤 해당 이미지를 pull한다. 기관이 승인한 다른 registry digest도 기존처럼 소비할 수 있으며 발행기는 GHCR만 사용한다. 이미지 label과 실행 컨테이너 identity·health를 검사하며 `--no-build`로 기동한다. manifest는 서명이나 배포 승인의 대체물이 아니므로 신뢰하는 승인된 Release에서 받아야 한다. 신규 설치·기존 DB 업그레이드의 production smoke 증거는 별도 검증 범위다.
+
+기존 [`WorkflowManifestLinterTest`](../../api-server/src/test/java/nuri/api/harness/WorkflowManifestLinterTest.java)가 실행 순서·권한·dry-run 경계를 검사하고, [`release-images.test.mjs`](../../scripts/release-images.test.mjs)는 스캐너 실패·취약점·증거 변조의 발행 차단과 첫/두 번째 push 실패·digest 누락 시 완성 manifest가 생기지 않는지를 command runner로 확인한다.
 
 <!-- FRONTEND_RELEASE_RUNTIME_API_HANDOFF -->
 

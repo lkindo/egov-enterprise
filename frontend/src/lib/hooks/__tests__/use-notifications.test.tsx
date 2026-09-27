@@ -24,7 +24,7 @@ vi.mock('next/config', () => ({
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useNotifications } from '../use-notifications';
+import { normalizeNotification, useNotifications } from '../use-notifications';
 import { announceNotificationsChanged, subscribeNotificationsChanged } from '@/lib/notifications/notification-sync';
 import client from '@/lib/api/client';
 
@@ -91,6 +91,17 @@ describe('useNotifications', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it('알림 시각이 없으면 현재 시각을 만들지 않고 생성 시각만 폴백한다', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2030-01-01T12:00:00Z'));
+    const dated = { ...NOTIF, crtDt: '2026-09-27T09:10:11.123456' };
+    expect(normalizeNotification(dated)?.notiDt).toBe(NOTIF.notiDt);
+    expect(normalizeNotification({ ...dated, notiDt: null })?.notiDt).toBe(dated.crtDt);
+    expect(normalizeNotification({ ...dated, notiDt: '' })?.notiDt).toBe(dated.crtDt);
+    expect(normalizeNotification({ ...NOTIF, notiDt: null })?.notiDt).toBe('');
+    expect(normalizeNotification({ ...NOTIF, notiDt: 'broken' })?.notiDt).toBe('broken');
   });
 
   describe('조회 중과 알림 없음을 구분한다', () => {

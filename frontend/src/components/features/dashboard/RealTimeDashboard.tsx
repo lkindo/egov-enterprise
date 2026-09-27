@@ -6,6 +6,7 @@ import { useWebSocket } from '@/contexts/websocket-context';
 import { normalizeNotification, type Notification as ServerNotification } from '@/lib/hooks/use-notifications';
 import { Bell, TrendingUp, Users, Activity, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toDisplayDateTime } from '@/lib/format-date';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,21 +31,6 @@ export interface RealTimeStats {
 
 interface RealTimeDashboardProps {
   onNotification?: (notification: RealTimeNotification) => void;
-}
-
-/**
- * 알림 시각 표기. 시스템 표준은 'yyyy-MM-dd HH:mm:ss' 다.
- *
- * <p>[2026-09-08] 종전 `toLocaleString()` 은 브라우저 로케일을 따라가 '2026. 9. 8. 오후 8:05:13'
- * 처럼 자릿수·구분자·오전/오후 표기가 사용자마다 달라졌다. 서버·다른 화면과 같은 형식으로 고정한다.
- * 값이 시각으로 해석되지 않으면 원문을 그대로 보여 준다(없는 시각을 지어내지 않는다).
- */
-function formatTimestamp(value: string): string {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`
-    + ` ${pad(parsed.getHours())}:${pad(parsed.getMinutes())}:${pad(parsed.getSeconds())}`;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -234,7 +220,7 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
                         <span className="text-xs text-muted-foreground">
                           {/* [2026-09-08] toLocaleString 은 브라우저 로케일에 따라 '2026. 9. 8.' 처럼
                               자릿수와 구분자가 달라진다. 시스템 표준 표기로 고정한다. */}
-                          {formatTimestamp(notification.timestamp)}
+                          {toDisplayDateTime(new Date(notification.timestamp))}
                         </span>
                       </div>
                     ))}
@@ -249,9 +235,8 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
       {/* 실시간 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/*
-          [2026-09-26 DIP V1] 두 값은 사용자 수도 분당 방문도 아니다. 서버(RealTimeDashboardService)는 이 서버
-          인스턴스의 실시간 연결(WebSocket) 수를 세고, visitsPerMinute 는 연결될 때마다 오르기만 하고 1분마다
-          초기화되지 않는 재기동 이후 누적 연결 수다. 서버를 여러 대 두면 다른 서버의 연결은 세지 않는다.
+          서버(RealTimeDashboardService)는 이 인스턴스의 활성 연결을 세고, visitsPerMinute 는 새 연결마다
+          증가한 뒤 스케줄러가 1분마다 0으로 초기화한다. 최근 60초 이동 구간이나 고유 사용자 수는 아니다.
         */}
         <RealTimeStatCard
           title="실시간 연결 세션(이 서버)"
@@ -261,7 +246,8 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
           color="blue"
         />
         <RealTimeStatCard
-          title="누적 연결(이 서버, 재기동 이후)"
+          title="새 연결(이 서버, 1분마다 초기화)"
+          description="마지막 초기화 이후 연결 횟수이며, 활성 세션 수나 고유 사용자 수가 아닙니다."
           value={stats?.visitsPerMinute ?? null}
           icon={<TrendingUp size={20} />}
           trend="회"
@@ -300,6 +286,7 @@ const statColorClasses = {
 
 interface RealTimeStatCardProps {
   title: string;
+  description?: string;
   value: number | null;
   icon: ReactNode;
   trend?: string;
@@ -307,7 +294,7 @@ interface RealTimeStatCardProps {
   color?: keyof typeof statColorClasses;
 }
 
-function RealTimeStatCard({ title, value, icon, trend, unavailableMessage, color = 'blue' }: RealTimeStatCardProps) {
+function RealTimeStatCard({ title, description, value, icon, trend, unavailableMessage, color = 'blue' }: RealTimeStatCardProps) {
 
   return (
     <Card className="transition-all hover:shadow-md">
@@ -326,6 +313,7 @@ function RealTimeStatCard({ title, value, icon, trend, unavailableMessage, color
         <p className="text-xs font-bold text-muted-foreground tracking-tight mt-1">
           {title}
         </p>
+        {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
         {unavailableMessage && <p className="text-xs text-destructive-emphasis mt-1">{unavailableMessage}</p>}
       </CardContent>
     </Card>

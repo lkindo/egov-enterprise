@@ -4,6 +4,14 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import nuri.business.domain.config.JpaConfig;
 import nuri.business.security.audit.LoginUserAuditorAware;
+import nuri.business.security.util.SecurityUtil;
+import nuri.business.service.mail.EmailSender;
+import nuri.business.service.mail.MailAsyncProcessor;
+import nuri.business.service.mail.MailService;
+import nuri.business.service.mail.dto.SentMailDto;
+import nuri.business.service.user.UserContactService;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,7 +25,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 @DataJpaTest
 @Import({JpaConfig.class, LoginUserAuditorAware.class})
@@ -137,5 +148,89 @@ class SentMailRepositoryTest {
         // 스코프가 null(관리자 전건)일 때만 전건이 보인다 — 대조군
         Page<SentMail> all = sentMailRepository.searchSentMails(null, "1", "", PageRequest.of(0, 10));
         assertThat(all.getContent()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("서비스와 실제 쿼리: 타인 본문을 바꿔도 관리자 본문 검색의 페이지와 전체 건수는 변하지 않는다")
+    void bodySearchDoesNotDependOnAnotherSendersContentOrPageCounts() {
+        Long firstOwn = saveSearchMail("search-admin", "own first", "private-marker");
+        Long secondOwn = saveSearchMail("search-admin", "own second", "private-marker");
+        saveSearchMail("search-admin", "own unrelated", "other content");
+        saveSearchMail("another-sender", "other first", "private-marker");
+        saveSearchMail("another-sender", "other second", "private-marker");
+        saveSearchMail(null, "unknown sender", "private-marker");
+
+        MailService service = searchService();
+        try (MockedStatic<SecurityUtil> security = Mockito.mockStatic(SecurityUtil.class)) {
+            security.when(() -> SecurityUtil.hasPermission("MAIL_READ_ALL")).thenReturn(true);
+            security.when(SecurityUtil::getCurrentLoginId).thenReturn(Optional.of("search-admin"));
+
+            Page<SentMailDto> beforeFirst = service.getSentMailList("2", "private-marker", PageRequest.of(0, 1));
+            Page<SentMailDto> beforeSecond = service.getSentMailList("2", "private-marker", PageRequest.of(1, 1));
+            assertThat(beforeFirst.getContent()).extracting(SentMailDto::getEmlDsptchSn).containsExactly(secondOwn);
+            assertThat(beforeSecond.getContent()).extracting(SentMailDto::getEmlDsptchSn).containsExactly(firstOwn);
+            assertThat(beforeFirst.getTotalElements()).isEqualTo(2);
+            assertThat(beforeSecond.getTotalElements()).isEqualTo(2);
+            assertThat(beforeFirst.getTotalPages()).isEqualTo(2);
+
+            em.createNativeQuery("update tb_email_dsptch_manage set eml_cn = ?1 where frst_rgtr_id = ?2 or frst_rgtr_id is null")
+                    .setParameter(1, "changed-hidden-marker").setParameter(2, "another-sender").executeUpdate();
+            em.clear();
+
+            Page<SentMailDto> afterFirst = service.getSentMailList("2", "private-marker", PageRequest.of(0, 1));
+            Page<SentMailDto> afterSecond = service.getSentMailList("2", "private-marker", PageRequest.of(1, 1));
+            assertThat(afterFirst.getContent()).extracting(SentMailDto::getEmlDsptchSn).containsExactly(secondOwn);
+            assertThat(afterSecond.getContent()).extracting(SentMailDto::getEmlDsptchSn).containsExactly(firstOwn);
+            assertThat(afterFirst.getTotalElements()).isEqualTo(beforeFirst.getTotalElements());
+            assertThat(afterSecond.getTotalElements()).isEqualTo(beforeSecond.getTotalElements());
+            Page<SentMailDto> hiddenOnly = service.getSentMailList("2", "changed-hidden-marker", PageRequest.of(0, 1));
+            assertThat(hiddenOnly.getContent()).isEmpty();
+            assertThat(hiddenOnly.getTotalElements()).isZero();
+        }
+    }
+
+    @Test
+    @DisplayName("서비스와 실제 쿼리: 본인 본문 검색과 관리자 제목·발신자 검색의 기존 범위를 보존한다")
+    void bodySearchKeepsOwnMatchesAndLeavesMetadataSearchScopeUnchanged() {
+        Long own = saveSearchMail("search-admin", "shared-search-title", "own-body-marker");
+        Long other = saveSearchMail("another-sender", "shared-search-title", "other-body-marker");
+        MailService service = searchService();
+        try (MockedStatic<SecurityUtil> security = Mockito.mockStatic(SecurityUtil.class)) {
+            security.when(() -> SecurityUtil.hasPermission("MAIL_READ_ALL")).thenReturn(true);
+            security.when(SecurityUtil::getCurrentLoginId).thenReturn(Optional.of("search-admin"));
+
+            Page<SentMailDto> ownBody = service.getSentMailList("2", "own-body-marker", PageRequest.of(0, 10));
+            assertThat(ownBody.getContent()).extracting(SentMailDto::getEmlDsptchSn).containsExactly(own);
+            assertThat(ownBody.getContent()).extracting(SentMailDto::getEmailCn).containsExactly("own-body-marker");
+
+            for (String condition : new String[]{"1", "3"}) {
+                String keyword = "1".equals(condition) ? "shared-search-title" : "search-sender-label";
+                Page<SentMailDto> metadata = service.getSentMailList(condition, keyword, PageRequest.of(0, 1));
+                assertThat(metadata.getContent()).extracting(SentMailDto::getEmlDsptchSn).containsExactly(other);
+                assertThat(metadata.getTotalElements()).isEqualTo(2);
+                assertThat(metadata.getContent()).extracting(SentMailDto::getEmailCn).containsOnlyNulls();
+            }
+
+            security.when(() -> SecurityUtil.hasPermission("MAIL_READ_ALL")).thenReturn(false);
+            Page<SentMailDto> ownTitle = service.getSentMailList("1", "shared-search-title", PageRequest.of(0, 10));
+            assertThat(ownTitle.getContent()).extracting(SentMailDto::getEmlDsptchSn).containsExactly(own);
+            assertThat(ownTitle.getTotalElements()).isEqualTo(1);
+        }
+    }
+
+    private MailService searchService() {
+        return new MailService(sentMailRepository, mock(MailAsyncProcessor.class), mock(UserContactService.class),
+                mock(EmailSender.class));
+    }
+
+    /** 격리된 테스트 DB의 가상 메일만 만든다. 저장 감사값을 바꿔 서로 다른 발신자를 표현한다. */
+    private Long saveSearchMail(String owner, String title, String body) {
+        SentMail mail = sentMailRepository.save(SentMail.builder().emlTtl(title).emlCn(body)
+                .sndptyNm("search-sender-label").build());
+        em.flush();
+        em.createNativeQuery("update tb_email_dsptch_manage set frst_rgtr_id = ?1 where eml_dsptch_sn = ?2")
+                .setParameter(1, owner).setParameter(2, mail.getEmlDsptchSn()).executeUpdate();
+        em.clear();
+        return mail.getEmlDsptchSn();
     }
 }

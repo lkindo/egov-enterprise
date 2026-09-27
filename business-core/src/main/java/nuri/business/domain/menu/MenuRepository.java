@@ -10,6 +10,18 @@ import java.util.Optional;
 
 @Repository
 public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositoryCustom {
+    interface ParentLink {
+        Long getMenuSn();
+        Long getUpMenuSn();
+    }
+
+    /** 권한 관리와 같은 메뉴 번호 순서로 잠근다. 자기 FK의 KEY SHARE와는 충돌하지 않는다. */
+    @Query(value = """
+            SELECT menu_sn AS "menuSn", up_menu_sn AS "upMenuSn"
+            FROM tb_menu_info ORDER BY menu_sn FOR NO KEY UPDATE
+            """, nativeQuery = true)
+    List<ParentLink> findParentLinksForUpdate();
+
     List<Menu> findAllByOrderByUpMenuSnAscMenuOrdrAsc();
 
     List<Menu> findByUpMenuSnOrderByMenuOrdrAsc(Long upMenuSn);
@@ -33,6 +45,22 @@ public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositor
      */
     @Query("SELECT m FROM Menu m WHERE m.modernRoute IS NULL")
     List<Menu> findAllWithoutModernRoute();
+
+    /** 시작 시 읽은 스냅샷으로 부모 등 다른 필드를 덮어쓰지 않고, 아직 같은 프로그램의 빈 경로만 보강한다. */
+    @org.springframework.transaction.annotation.Transactional
+    @Modifying
+    @Query("""
+            UPDATE Menu m SET m.modernRoute = :modernRoute,
+                m.mdfcnDt = :modifiedAt, m.lastMdfrId = :modifiedBy
+            WHERE m.menuSn = :menuId AND m.modernRoute IS NULL
+              AND (m.prgrmFileNm = :expectedProgramFileNm
+                OR (m.prgrmFileNm IS NULL AND :expectedProgramFileNm IS NULL))
+            """)
+    int fillModernRouteIfUnchanged(@Param("menuId") Long menuId,
+            @Param("expectedProgramFileNm") String expectedProgramFileNm,
+            @Param("modernRoute") String modernRoute,
+            @Param("modifiedAt") java.time.LocalDateTime modifiedAt,
+            @Param("modifiedBy") String modifiedBy);
 
     /**
      * modern_route 로 메뉴 조회

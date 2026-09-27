@@ -78,6 +78,36 @@ function redirectedToLogin(res: Response): boolean {
 }
 
 describe('proxy 인증 게이트', () => {
+  it.each([
+    '/api/v1/auth/%6cogin',
+    '/api/v1/auth/%72eissue',
+    '/api/v1/%61uth/login',
+    '/api/%76%31/auth/reissue',
+    '/a%70i/v1/auth/login',
+    '/api/v1/%61uth/%6Cogin',
+    '/api/v1/auth/reissue%2f',
+  ])('거부: 인코딩된 인증 토큰 경로가 rewrite로 BFF를 우회하지 못한다: %s', async path => {
+    const response = await proxy(new NextRequestCtor(`http://localhost:3001${path}`, { method: 'POST' }));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      success: false, code: 'INVALID_AUTH_PATH', message: '요청 경로가 올바르지 않습니다.',
+    });
+    expect(response.headers.get('x-middleware-next')).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    '/api/v1/auth/login', '/api/v1/auth/reissue',
+    '/api/v1/boards/%ED%95%9C%EA%B8%80', '/api/v1/files/fixture%20file',
+    '/api/v1/boards/%2572eissue',
+  ])('유지: 정규 인증 별칭과 일반 업무 자원의 인코딩을 통과시킨다: %s', async path => {
+    const response = await proxy(new NextRequestCtor(`http://localhost:3001${path}`, { method: 'POST' }));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+  });
+
   it('같은 시크릿의 토큰은 통과하고 진단은 비밀 파생값 없이 필요한 메타만 남긴다', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     try {

@@ -40,7 +40,9 @@
 `scripts/deploy.sh`를 실행하지 않는다.**
 
 `scripts/deploy.sh`는 운영 배포와 clean-host 복원의 provenance를 일치시키기 위해
-`API_IMAGE_REF`와 `FRONTEND_IMAGE_REF`에 registry의 immutable digest reference를 요구한다.
+승인된 GitHub Release에서 받은 완성된 `release-manifest.json`을 인자로 요구한다(jq 필요).
+manifest의 두 registry digest를 `API_IMAGE_REF`와 `FRONTEND_IMAGE_REF`로 주입하며,
+기존 환경값이 있으면 manifest와 일치해야 한다. manifest는 서명이나 운영 배포 승인을 대신하지 않는다.
 두 이미지는 동일한 `org.opencontainers.image.revision` label을 가져야 하며, 스크립트가 pull과
 검증을 마친 뒤 `--no-build`로만 기동한다. 운영 호스트의 checkout에서 이미지를 즉석 빌드하지 않는다.
 
@@ -134,7 +136,7 @@ rm -rf -- "$MIGRATION_DIR"
 # 6) 이제만 정상 배포한다. 완료 뒤 관리자 첨부 정합성 점검까지 통과해야 전환 완료다.
 MIGRATION_STOPPED=0
 trap - EXIT
-./scripts/deploy.sh
+./scripts/deploy.sh /secure/path/release-manifest.json
 ```
 
 파일 수나 해시가 다르면 marker를 만들지 말고, 기존 컨테이너를 보존한 채 원인을 조사한다. 배포 후에는
@@ -419,6 +421,12 @@ docker run --rm --network none --user 0:0 --entrypoint sh \
 2026-09-09 Flyway 2.96 시점 재실행은 82개 테이블(이력 테이블 포함)·17,188행을 대조했고, 백업 0.498초,
 복원·검증 1.266초, 백업 시점 대비 누락 0행이었다. 이는 합성 데이터의 구성 요소 복구 검증이다.
 운영 백업 존재, 앱 이미지·권한·외부 DB·네트워크 복구 시간이나 운영 RTO/RPO를 증명하지 않는다.
+
+별도의 [`run-isolated-release-smoke.mjs`](../../scripts/run-isolated-release-smoke.mjs)는 로컬의 정확한 API/frontend 이미지 ID와 현재 소스 해시를 검사하고, `prod` API·frontend·edge를 통해 합성 첨부를 올린 뒤 소유한 tmpfs PostgreSQL과 전용 첨부 볼륨을 백업한다. 두 번째 새 DB·볼륨에 `pg_restore`·첨부 tar를 복원하고 동일 이미지의 로그인·세션·첨부 다운로드를 재검사한다. 성공 시에만 두 이미지 ID, source hash와 dirty 여부, 백업 해시, 범위·시간을 임시 `result.json`에 기록한다. 실행 명령과 이미지 준비 계약은 [CI 가이드](../03-guides/cicd-pipeline.md#릴리스-프런트엔드-런타임-인계)에 있다.
+
+이 실행기는 동일 버전 이미지와 합성 데이터의 설치·복구 경로다. ARIA 암호문의 동일/다른 키 검증은 위 Java 구성 요소 테스트가 담당하며, smoke의 로그인·첨부 성공이 그 검증을 대체하지 않는다. v0.1.0 등 과거 배포의 정확한 마이그레이션 이력에서 새 이미지로 전환하는 업그레이드와 구 이미지 rollback은 별도 증거가 필요하다. 폐기용 `e2e` bootstrap의 cutover 증거를 운영 승인·백업 원장으로 사용하지 않으며, 실제 운영 백업·보존·RTO/RPO는 아래 결정 경계를 따른다.
+
+이전 버전 검증의 시작점은 `v0.1.0`의 고정 커밋 `fa2a79386734671b90166e33ec355e4784715773`이다. 이 태그의 versioned SQL 85개(`V2_0`~`V2_84`)는 `0ef8af32f`까지 유지됐지만 repeatable 3개는 달라졌다. 현재 SQL에 target `2.84`만 지정하면 태그 당시 DB를 재현하지 못한다. 재개하려면 태그 원본 SQL·repeatable과 실행 이미지 출처를 고정한 합성 DB, 실제 Flyway 이력·데이터 보존 비교, [권한 전환 절차](authorization-cutover-runbook.md)의 Contract, 업그레이드 전 전체 백업과 구 이미지 복원 검증이 필요하다. 그 전까지 `historicalUpgrade: not-tested`를 유지한다.
 
 ## 4. 주기·보존·RTO/RPO — **미결정**
 

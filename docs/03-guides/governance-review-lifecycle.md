@@ -102,13 +102,17 @@ npm run adoption:check -- --execution config/governance/execution.json --environ
   "images": {
     "api": "registry.example.org/institution/api@sha256:<실제 64자리 digest>",
     "frontend": "registry.example.org/institution/frontend@sha256:<실제 64자리 digest>"
+  },
+  "releaseManifest": {
+    "path": "execution/release-manifest.json",
+    "sha256": "<승인된 완성 manifest 원본 바이트의 64자리 SHA-256>"
   }
 }
 ```
 
-기관 승인 원장의 `execution-artifacts` evidence는 이 descriptor의 정확한 경로·원본 바이트 SHA-256을 가리켜야 한다. 같은 태그의 내용 변경을 허용하지 않도록 이미지 태그 대신 digest를 사용한다. descriptor 변경·기술 검사 실패·검사 중 근거 변경·기관 승인 만료는 최종 실행을 차단한다.
+기관 승인 원장의 `execution-artifacts` evidence는 이 descriptor의 정확한 경로·원본 바이트 SHA-256을 가리켜야 한다. `releaseManifest`는 승인된 두 이미지 발행을 완료한 manifest의 저장소 내부 경로와 원본 바이트 SHA-256이며, 그 두 digest는 `images`와 같아야 한다. manifest 없는 과거 descriptor는 자동 변환하지 않고 재검토 대상으로 차단한다. 같은 태그의 내용 변경을 허용하지 않도록 이미지 태그 대신 digest를 사용한다. descriptor·manifest 변경·기술 검사 실패·검사 중 근거 변경·기관 승인 만료는 최종 실행을 차단한다.
 
-승인된 실제 배포를 시작할 때만 같은 명령에 `--execute`를 추가한다. 온라인은 검토된 두 image ref를 `scripts/deploy.sh`에 전달한다. 이관은 아래 ADR-0008 load 진입점으로 연결한다. 명령을 직접 우회할 수 없는 운영 권한·파이프라인 구성은 기관의 책임이며, 이 wrapper의 통과는 외부 인가·로그·접근성의 실측 완료 판정이 아니다.
+승인된 실제 배포를 시작할 때만 같은 명령에 `--execute`를 추가한다. 온라인은 검토된 manifest 경로와 두 image ref를 `scripts/deploy.sh`에 전달한다(jq 필요). 이관은 아래 ADR-0008 load 진입점으로 연결한다. 명령을 직접 우회할 수 없는 운영 권한·파이프라인 구성은 기관의 책임이며, 이 wrapper의 통과는 외부 인가·로그·접근성의 실측 완료 판정이 아니다.
 
 ## 4. 독립 migration-tool 도입
 

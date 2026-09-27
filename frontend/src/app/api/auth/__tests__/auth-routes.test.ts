@@ -6,6 +6,8 @@ import axios from 'axios';
 import { POST as login } from '../login/route';
 import { POST as logout } from '../logout/route';
 import { POST as reissue } from '../reissue/route';
+import { POST as aliasLogin } from '../../v1/auth/login/route';
+import { POST as aliasReissue } from '../../v1/auth/reissue/route';
 
 /**
  * 인증 프록시 라우트(login · logout · reissue) 계약 테스트.
@@ -59,6 +61,43 @@ function tokenWithExp(expSeconds: number): string {
 }
 
 const inOneHour = () => Math.floor(Date.now() / 1000) + 3600;
+
+describe.each([
+  { path: '/api/v1/auth/login', handler: aliasLogin, body: { userId: 'fixture', password: 'fixture' } },
+  { path: '/api/v1/auth/reissue', handler: aliasReissue, body: undefined },
+])('$path 브라우저 별칭 계약', ({ path, handler, body }) => {
+  it('토큰을 HttpOnly 쿠키로만 전달하고 표시 권한과 refresh 쿠키를 보존한다', async () => {
+    const token = tokenWithExp(inOneHour());
+    const refreshCookie = 'refreshToken=fixture; Path=/; HttpOnly; Secure; SameSite=Strict';
+    mockedPost.mockResolvedValue({
+      status: 200,
+      data: tokenEnvelope({ accessToken: token, role: 'ROLE_USER' }),
+      headers: { 'set-cookie': [refreshCookie] },
+    });
+
+    const response = await handler(postRequest(path, body, { cookie: 'refreshToken=fixture' }));
+    const result = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(result.data).toMatchObject(authorization);
+    expect(Object.keys(result.data)).not.toContain('accessToken');
+    expect(Object.keys(result.data)).not.toContain('refreshToken');
+    expect(JSON.stringify(result)).not.toContain(token);
+    expectSessionCookiePolicy(response, true);
+    expect(response.headers.getSetCookie()).toContain(refreshCookie);
+  });
+
+  it.each([401, 429, 503])('upstream %s를 안전한 오류로 전달한다', async status => {
+    const privateMessage = 'synthetic private upstream detail';
+    mockedPost.mockRejectedValue(axiosError(status, { message: privateMessage }));
+
+    const response = await handler(postRequest(path, body));
+
+    expect(response.status).toBe(status === 503 ? 502 : status);
+    expect(JSON.stringify(await response.json())).not.toContain(privateMessage);
+    expect(setCookie(response, 'accessToken')).toBeNull();
+  });
+});
 
 interface ParsedCookie {
   value: string;

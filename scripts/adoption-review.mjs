@@ -68,7 +68,7 @@ export function containedFile(repoRoot, file) {
 export function adoptionScope(repoRoot, { product, profile }) {
   validateProductProfile(product, profile);
   const common = ['build.gradle', 'settings.gradle', 'gradle.properties', 'gradle', 'buildSrc', 'gradlew', 'gradlew.bat', '.gitattributes',
-    'scripts/adoption-review.mjs', 'scripts/governance-review.mjs', 'scripts/adoption-execute.mjs',
+    'scripts/adoption-review.mjs', 'scripts/governance-review.mjs', 'scripts/adoption-execute.mjs', 'scripts/release-images.mjs',
     'scripts/verify.mjs', 'scripts/verify-reusable-artifact.mjs',
     'reusable-base-lock.json', 'scripts/reusable-layout.mjs',
     'scripts/reusable-layout-runtime.mjs', 'scripts/reusable-single-module.mjs'];
@@ -82,7 +82,8 @@ export function adoptionScope(repoRoot, { product, profile }) {
     : [...common, ...['foundation', 'business-core', 'business-app', 'api-server'].flatMap((module) =>
       [`${module}/src/main`, `${module}/build.gradle`]),
     'frontend/src', 'frontend/next.config.ts', 'frontend/package.json', 'frontend/pnpm-lock.yaml',
-    'frontend/Dockerfile', 'frontend/.dockerignore', 'api-server/Dockerfile', 'api-server/.dockerignore', '.dockerignore',
+    'frontend/Dockerfile', 'frontend/.dockerignore', 'frontend/scripts/validate-api-build-urls.mjs',
+    'api-server/Dockerfile', 'api-server/.dockerignore', '.dockerignore',
     'docker-compose.yml', 'docker-compose.prod.yml', 'scripts/deploy.sh',
     '.github/workflows/release.yml', 'config/deployment',
     'config/ui-url-state-census.json', 'config/ui-url-state-approval.json', 'config/ui-url-state-approval.schema.json',

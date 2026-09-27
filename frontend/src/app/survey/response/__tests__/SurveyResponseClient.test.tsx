@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SurveyResponseClient from '../SurveyResponseClient';
@@ -180,5 +180,35 @@ describe('SurveyResponseClient destructive boundary', () => {
 
     expect(await screen.findByText('등록된 응답이 없습니다.')).toBeInTheDocument();
     expect(screen.queryByText('검색 결과가 없습니다.')).toBeNull();
+  });
+
+  it('선택형 표시: 서버가 보강한 선택 내용과 삭제된 항목 안내를 표시하고 자유답·기타 우선순위를 보존한다', async () => {
+    const base = {
+      srvySn: 201, srvyTmpltSn: 11, srvyQstnSn: 301, srvyArtclSn: 401,
+      rspdntAnsCn: '', etcAnsCn: '', frstRgtrId: 'test-user', crtDt: '2026-09-27',
+    };
+    mocks.getResponses.mockResolvedValue({
+      list: [
+        { ...base, srvyRspnsSn: 21, rspnsNm: '선택 응답', rspdntAnsCn: '교육' },
+        { ...base, srvyRspnsSn: 22, srvyArtclSn: 402, rspnsNm: '선택 응답', rspdntAnsCn: '복지' },
+        { ...base, srvyRspnsSn: 23, srvyArtclSn: 499, rspnsNm: '항목 조회 불가 응답' },
+        { ...base, srvyRspnsSn: 24, rspnsNm: '직접 작성 응답', rspdntAnsCn: '작성한 답변', etcAnsCn: '보조 입력' },
+        { ...base, srvyRspnsSn: 25, rspnsNm: '기타 선택 응답', rspdntAnsCn: ' ', etcAnsCn: '재택 근무 확대' },
+      ],
+      total: 5,
+      totalPage: 1,
+    });
+    renderSubject();
+
+    expect(await screen.findByText('교육')).toBeVisible();
+    expect(screen.getByText('복지')).toBeVisible();
+    expect(screen.getAllByText('선택 응답')).toHaveLength(2);
+    const unavailableRow = screen.getByText('항목 조회 불가 응답').closest('tr')!;
+    expect(within(unavailableRow).getByText('선택 항목을 확인할 수 없습니다.')).toBeVisible();
+    expect(screen.getByText('작성한 답변')).toBeVisible();
+    expect(screen.queryByText(/보조 입력/)).toBeNull();
+    expect(screen.getByText('기타: 재택 근무 확대')).toBeVisible();
+    expect(mocks.getResponses).toHaveBeenCalledTimes(1);
+    expect(mocks.deleteResponse).not.toHaveBeenCalled();
   });
 });

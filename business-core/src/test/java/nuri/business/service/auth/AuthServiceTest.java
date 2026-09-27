@@ -66,7 +66,12 @@ class AuthServiceTest {
 
     private AutoCloseable mocks;
     @BeforeEach
-    void setUp() { mocks=MockitoAnnotations.openMocks(this); }
+    void setUp() {
+        mocks=MockitoAnnotations.openMocks(this);
+        when(jwtTokenProvider.createRefreshToken(anyString())).thenReturn("refresh-token-fixture");
+        when(jwtTokenProvider.getExpiration(anyString()))
+                .thenReturn(java.util.Date.from(java.time.Instant.now().plusSeconds(604800)));
+    }
     @org.junit.jupiter.api.AfterEach
     void closeMocks() throws Exception { mocks.close(); }
     private static nuri.foundation.security.service.CustomUserDetails principal(String id,String... groups) {
@@ -114,7 +119,7 @@ class AuthServiceTest {
         when(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of(refreshToken))).thenReturn(java.util.Optional.of(rt));
         
         when(userDetailsService.loadUserByUsername("user")).thenReturn(principal("user","ROLE_USER"));
-        when(refreshTokenRepository.rotateIfCurrent(any(), any(), any(), any())).thenReturn(1);
+        when(refreshTokenRepository.rotateIfCurrent(any(), any(), any(), any(), any())).thenReturn(1);
         when(jwtTokenProvider.createAccessToken(eq("user"), anyString())).thenReturn("new_access_token");
 
         // When
@@ -146,7 +151,7 @@ class AuthServiceTest {
         when(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of(refreshToken))).thenReturn(java.util.Optional.of(rt));
 
         when(jwtTokenProvider.createAccessToken(eq(userId), eq("ROLE_ADMIN"))).thenReturn("new_access_token_admin");
-        when(refreshTokenRepository.rotateIfCurrent(any(), any(), any(), any())).thenReturn(1);
+        when(refreshTokenRepository.rotateIfCurrent(any(), any(), any(), any(), any())).thenReturn(1);
 
         // When
         TokenResponse response = authService.reissue(refreshToken, "127.0.0.1");
@@ -178,7 +183,7 @@ class AuthServiceTest {
         when(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of(refreshToken))).thenReturn(java.util.Optional.of(rt));
 
         when(jwtTokenProvider.createAccessToken(eq(userId), isNull())).thenReturn("new_access_token_user");
-        when(refreshTokenRepository.rotateIfCurrent(any(), any(), any(), any())).thenReturn(1);
+        when(refreshTokenRepository.rotateIfCurrent(any(), any(), any(), any(), any())).thenReturn(1);
 
         // When
         TokenResponse response = authService.reissue(refreshToken, "127.0.0.1");

@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import { Suspense } from 'react';
 import KnowledgeHubClient from '../KnowledgeHubClient';
+
+export const metadata: Metadata = {
+  title: `자주 묻는 질문 관리 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 export default function FAQPage() {
   return (

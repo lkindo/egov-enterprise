@@ -79,6 +79,42 @@ function fixtureOutput(result) {
   return `${result.stderr}${result.stdout}`;
 }
 
+test('생성된 미사용 계약은 중첩 Zod 생성까지 포함한 순수 초기화 단위로 제거할 수 있다', () => {
+  const fixture = runFixture(contractSpec({
+    '/api/v1/items/{id}': {
+      get: {
+        operationId: 'readItem',
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+        responses: wrappedVoidResponse(),
+      },
+    },
+  }, {
+    Item: { type: 'object', properties: { name: { type: 'string', pattern: '^[A-Z]+$' } } },
+    ItemList: { type: 'array', items: { $ref: '#/components/schemas/Item' } },
+    Labels: { type: 'array', items: { type: 'string' } },
+    Scalar: { type: 'string' },
+  }));
+  assert.equal(fixture.status, 0, fixtureOutput(fixture));
+  const declarations = [...fixture.zodSource.matchAll(/^export const (\w+) = (.+)$/gm)];
+  assert.equal(declarations.length, 15);
+  for (const [, name, initializer] of declarations) {
+    if (/^\w+Schema;$/.test(initializer)) continue; // Pure aliases do not construct a schema.
+    assert.match(initializer, /^\/\*#__PURE__\*\/ \(\(\) => /, name);
+  }
+  assert.match(fixture.operationSource,
+    /export const readItemOperation = \/\*#__PURE__\*\/ \(\(\) => \{\n  return defineGeneratedOperation\(\{/);
+  assert.match(fixture.operationSource, /pathSchema: z\.object\(\{ "id": z\.number\(\)\.int\(\) \}\)\.strict\(\)/);
+  assert.match(fixture.operationSource, /responseForbiddenPaths: \[\],\n  \}\);\n\}\)\(\);/);
+});
+
+test('사용되지 않는 component의 잘못된 정규식도 생성 단계에서 거부한다', () => {
+  const fixture = runFixture(contractSpec({}, {
+    InvalidPattern: { type: 'object', properties: { name: { type: 'string', pattern: '[' } } },
+  }));
+  assert.notEqual(fixture.status, 0);
+  assert.match(fixtureOutput(fixture), /Invalid regular expression/);
+});
+
 test('generated operation descriptor가 OpenAPI의 모든 operationId·method·path를 정확히 결속한다', () => {
   const spec = JSON.parse(readFileSync(apiDocsPath, 'utf8'));
   const operations = specOperations(spec);
@@ -530,10 +566,10 @@ test('readOnly/writeOnly component는 요청·응답 방향별 스키마로 분�
   assert.equal(fixture.status, 0);
 
   const requestSection = fixture.zodSource.match(
-    /export const UserDtoRequestSchema = z\.object\(\{([\s\S]*?)\n\}\);/,
+    /export const UserDtoRequestSchema = \/\*#__PURE__\*\/ \(\(\) => z\.object\(\{([\s\S]*?)\n\}\)\)\(\);/,
   )?.[1] ?? '';
   const responseSection = fixture.zodSource.match(
-    /export const UserDtoResponseSchema = z\.object\(\{([\s\S]*?)\n\}\);/,
+    /export const UserDtoResponseSchema = \/\*#__PURE__\*\/ \(\(\) => z\.object\(\{([\s\S]*?)\n\}\)\)\(\);/,
   )?.[1] ?? '';
   assert.match(requestSection, /pswd: z\.string\(\)/);
   assert.doesNotMatch(requestSection, /\bid:/);

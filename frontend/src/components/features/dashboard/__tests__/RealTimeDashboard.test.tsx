@@ -48,7 +48,31 @@ describe('RealTimeDashboard', () => {
 
     act(() => statsHandler({ body: JSON.stringify({ activeUsers: 7, visitsPerMinute: 3, newPosts: 2, alerts: 1 }) }));
     expect(screen.getByText('7')).toBeInTheDocument();
-    expect(screen.getByText('누적 연결(이 서버, 재기동 이후)').previousElementSibling).toHaveTextContent('3');
+    expect(screen.getByText('새 연결(이 서버, 1분마다 초기화)').previousElementSibling).toHaveTextContent('3');
+  });
+
+  it('서버 초기화 전후의 새 연결 횟수를 누적으로 설명하지 않는다', () => {
+    render(<RealTimeDashboard />);
+    const statsHandler = handlers.get('/topic/dashboard/stats')!;
+    for (const visitsPerMinute of [3, 0, 1]) {
+      act(() => statsHandler({ body: JSON.stringify({ activeUsers: 7, visitsPerMinute, newPosts: 2, alerts: 1 }) }));
+      expect(screen.getByText('새 연결(이 서버, 1분마다 초기화)').previousElementSibling)
+        .toHaveTextContent(String(visitsPerMinute));
+      expect(screen.getByText('실시간 연결 세션(이 서버)').previousElementSibling).toHaveTextContent('7');
+    }
+    expect(screen.getByText('마지막 초기화 이후 연결 횟수이며, 활성 세션 수나 고유 사용자 수가 아닙니다.')).toBeInTheDocument();
+    expect(screen.queryByText(/재기동 이후/)).not.toBeInTheDocument();
+  });
+
+  it('실시간 알림의 누락·손상 날짜는 현재 시각 대신 미상으로 표시한다', () => {
+    render(<RealTimeDashboard />);
+    const handler = handlers.get('/user/queue/notifications')!;
+    for (const [notiSn, notiDt] of [[1, null], [2, 'broken']] as const) {
+      act(() => handler({ body: JSON.stringify({ notiSn, notiTtlNm: `알림 ${notiSn}`, notiDt, readYn: 'N' }) }));
+    }
+    fireEvent.click(screen.getByRole('button', { name: '알림 열기, 읽지 않음 2개' }));
+    expect(screen.getAllByText('-')).toHaveLength(2);
+    expect(screen.queryByText('broken')).not.toBeInTheDocument();
   });
 
   it('유효한 통계를 한 번도 수신하지 않은 상태를 실제 0으로 표시하지 않는다', () => {

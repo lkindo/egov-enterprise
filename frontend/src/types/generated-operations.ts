@@ -474,7 +474,8 @@ function defineGeneratedOperation<
   return descriptor;
 }
 
-export const getWorkReportOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getWorkReportOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getWorkReport",
   method: "get",
   path: "/api/v1/work-reports/{rptpSn}",
@@ -489,9 +490,11 @@ export const getWorkReportOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseWorkReportDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateWorkReportOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateWorkReportOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateWorkReport",
   method: "put",
   path: "/api/v1/work-reports/{rptpSn}",
@@ -506,9 +509,11 @@ export const updateWorkReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptSttsCd"],["rptTypeCd"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteWorkReportOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteWorkReportOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteWorkReport",
   method: "delete",
   path: "/api/v1/work-reports/{rptpSn}",
@@ -523,9 +528,11 @@ export const deleteWorkReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getMeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getMeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getMe",
   method: "get",
   path: "/api/v1/users/me",
@@ -540,9 +547,11 @@ export const getMeOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseUserDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [["pswd"],["pswdHint"],["pswdCrans"]],
-});
+  });
+})();
 
-export const updateMeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateMeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateMe",
   method: "put",
   path: "/api/v1/users/me",
@@ -557,9 +566,11 @@ export const updateMeOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const changePasswordOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const changePasswordOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "changePassword",
   method: "put",
   path: "/api/v1/users/me/password",
@@ -574,9 +585,11 @@ export const changePasswordOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getScrapOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getScrapOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getScrap",
   method: "get",
   path: "/api/v1/scraps/{scrapSn}",
@@ -591,9 +604,11 @@ export const getScrapOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseScrapDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateScrapOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateScrapOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateScrap",
   method: "put",
   path: "/api/v1/scraps/{scrapSn}",
@@ -608,9 +623,11 @@ export const updateScrapOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteScrapOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteScrapOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteScrap",
   method: "delete",
   path: "/api/v1/scraps/{scrapSn}",
@@ -625,9 +642,11 @@ export const deleteScrapOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getScheduleOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getScheduleOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getSchedule",
   method: "get",
   path: "/api/v1/schedules/{schdlSn}",
@@ -642,9 +661,11 @@ export const getScheduleOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseScheduleDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateScheduleOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateScheduleOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateSchedule",
   method: "put",
   path: "/api/v1/schedules/{schdlSn}",
@@ -659,9 +680,11 @@ export const updateScheduleOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [["schdlSn"],["schdlIpAddr"],["schdlPicId"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["schdlDeptId"],["editable"],["deletable"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteScheduleOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteScheduleOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteSchedule",
   method: "delete",
   path: "/api/v1/schedules/{schdlSn}",
@@ -676,9 +699,11 @@ export const deleteScheduleOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getPollOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getPollOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getPoll",
   method: "get",
   path: "/api/v1/polls/{pollSn}",
@@ -693,9 +718,11 @@ export const getPollOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseOnlinePollManageDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updatePollOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updatePollOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updatePoll",
   method: "put",
   path: "/api/v1/polls/{pollSn}",
@@ -710,9 +737,11 @@ export const updatePollOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deletePollOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deletePollOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deletePoll",
   method: "delete",
   path: "/api/v1/polls/{pollSn}",
@@ -727,9 +756,11 @@ export const deletePollOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const addBookmarkOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const addBookmarkOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "addBookmark",
   method: "put",
   path: "/api/v1/menus/bookmarks/{menuNo}",
@@ -744,9 +775,11 @@ export const addBookmarkOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const removeBookmarkOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const removeBookmarkOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "removeBookmark",
   method: "delete",
   path: "/api/v1/menus/bookmarks/{menuNo}",
@@ -761,9 +794,11 @@ export const removeBookmarkOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getMemoReportOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getMemoReportOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getMemoReport",
   method: "get",
   path: "/api/v1/memo-reports/{memoRptSn}",
@@ -778,9 +813,11 @@ export const getMemoReportOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseMemoReportDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateMemoReportOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateMemoReportOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateMemoReport",
   method: "put",
   path: "/api/v1/memo-reports/{memoRptSn}",
@@ -795,9 +832,11 @@ export const updateMemoReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"],["editable"],["deletable"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteMemoReportOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteMemoReportOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteMemoReport",
   method: "delete",
   path: "/api/v1/memo-reports/{memoRptSn}",
@@ -812,9 +851,11 @@ export const deleteMemoReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getInformalSanctionOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getInformalSanctionOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getInformalSanction",
   method: "get",
   path: "/api/v1/informal-sanctions/{informalSanctionId}",
@@ -829,9 +870,11 @@ export const getInformalSanctionOperation = /*#__PURE__*/ defineGeneratedOperati
   envelopeSchema: ApiResponseInformalSanctionDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateInformalSanctionOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateInformalSanctionOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateInformalSanction",
   method: "put",
   path: "/api/v1/informal-sanctions/{informalSanctionId}",
@@ -846,9 +889,11 @@ export const updateInformalSanctionOperation = /*#__PURE__*/ defineGeneratedOper
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteInformalSanctionOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteInformalSanctionOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteInformalSanction",
   method: "delete",
   path: "/api/v1/informal-sanctions/{informalSanctionId}",
@@ -863,9 +908,11 @@ export const deleteInformalSanctionOperation = /*#__PURE__*/ defineGeneratedOper
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getInformalSanction_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getInformalSanction_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getInformalSanction_1",
   method: "get",
   path: "/api/v1/admin/system/ism/{informalSanctionId}",
@@ -880,9 +927,11 @@ export const getInformalSanction_1Operation = /*#__PURE__*/ defineGeneratedOpera
   envelopeSchema: ApiResponseInformalSanctionDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateInformalSanction_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateInformalSanction_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateInformalSanction_1",
   method: "put",
   path: "/api/v1/admin/system/ism/{informalSanctionId}",
@@ -897,9 +946,11 @@ export const updateInformalSanction_1Operation = /*#__PURE__*/ defineGeneratedOp
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteInformalSanction_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteInformalSanction_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteInformalSanction_1",
   method: "delete",
   path: "/api/v1/admin/system/ism/{informalSanctionId}",
@@ -914,9 +965,11 @@ export const deleteInformalSanction_1Operation = /*#__PURE__*/ defineGeneratedOp
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getManualOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getManualOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getManual",
   method: "get",
   path: "/api/v1/help/manuals/{onlnMnlSn}",
@@ -931,9 +984,11 @@ export const getManualOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseOnlineManualDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateManualOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateManualOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateManual",
   method: "put",
   path: "/api/v1/help/manuals/{onlnMnlSn}",
@@ -948,9 +1003,11 @@ export const updateManualOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteManualOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteManualOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteManual",
   method: "delete",
   path: "/api/v1/help/manuals/{onlnMnlSn}",
@@ -965,9 +1022,11 @@ export const deleteManualOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getHpcmOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getHpcmOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getHpcm",
   method: "get",
   path: "/api/v1/help/hpcm/{hlpSn}",
@@ -982,9 +1041,11 @@ export const getHpcmOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseHpcmDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateHpcmOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateHpcmOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateHpcm",
   method: "put",
   path: "/api/v1/help/hpcm/{hlpSn}",
@@ -999,9 +1060,11 @@ export const updateHpcmOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteHpcmOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteHpcmOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteHpcm",
   method: "delete",
   path: "/api/v1/help/hpcm/{hlpSn}",
@@ -1016,9 +1079,11 @@ export const deleteHpcmOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getDeptJobOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getDeptJobOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getDeptJob",
   method: "get",
   path: "/api/v1/dept-jobs/{deptTaskSn}",
@@ -1033,9 +1098,11 @@ export const getDeptJobOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseDeptJobDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateDeptJobOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateDeptJobOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateDeptJob",
   method: "put",
   path: "/api/v1/dept-jobs/{deptTaskSn}",
@@ -1050,9 +1117,11 @@ export const updateDeptJobOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["editable"],["deletable"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteDeptJobOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteDeptJobOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteDeptJob",
   method: "delete",
   path: "/api/v1/dept-jobs/{deptTaskSn}",
@@ -1067,9 +1136,11 @@ export const deleteDeptJobOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getDeptJobBoxOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getDeptJobBoxOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getDeptJobBox",
   method: "get",
   path: "/api/v1/dept-jobs/boxes/{deptTaskBoxSn}",
@@ -1084,9 +1155,11 @@ export const getDeptJobBoxOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseDeptJobBoxDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateDeptJobBoxOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateDeptJobBoxOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateDeptJobBox",
   method: "put",
   path: "/api/v1/dept-jobs/boxes/{deptTaskBoxSn}",
@@ -1101,9 +1174,11 @@ export const updateDeptJobBoxOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [["deptTaskBoxSn"],["deptNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteDeptJobBoxOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteDeptJobBoxOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteDeptJobBox",
   method: "delete",
   path: "/api/v1/dept-jobs/boxes/{deptTaskBoxSn}",
@@ -1118,9 +1193,11 @@ export const deleteDeptJobBoxOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateCommentOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateCommentOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateComment",
   method: "put",
   path: "/api/v1/comments/{commentNo}",
@@ -1135,9 +1212,11 @@ export const updateCommentOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [["wrterId"],["wrterNm"],["frstRgtrId"],["crtDt"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteCommentOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteCommentOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteComment",
   method: "delete",
   path: "/api/v1/comments/{commentNo}",
@@ -1152,9 +1231,11 @@ export const deleteCommentOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getPostOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getPostOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getPost",
   method: "get",
   path: "/api/v1/boards/{bbsId}/posts/{pstSn}",
@@ -1169,9 +1250,11 @@ export const getPostOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseBoardDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [["pswd"]],
-});
+  });
+})();
 
-export const updatePostOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updatePostOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updatePost",
   method: "put",
   path: "/api/v1/boards/{bbsId}/posts/{pstSn}",
@@ -1186,9 +1269,11 @@ export const updatePostOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deletePostOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deletePostOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deletePost",
   method: "delete",
   path: "/api/v1/boards/{bbsId}/posts/{pstSn}",
@@ -1203,9 +1288,11 @@ export const deletePostOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updatePostWithFilesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updatePostWithFilesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updatePostWithFiles",
   method: "put",
   path: "/api/v1/boards/{bbsId}/posts/{pstSn}/with-files",
@@ -1223,9 +1310,11 @@ export const updatePostWithFilesOperation = /*#__PURE__*/ defineGeneratedOperati
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "update",
   method: "put",
   path: "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}",
@@ -1240,9 +1329,11 @@ export const updateOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "delete",
   method: "delete",
   path: "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}",
@@ -1257,9 +1348,11 @@ export const deleteOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const confirmOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const confirmOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "confirm",
   method: "put",
   path: "/api/v1/approvals/{id}/confirm",
@@ -1274,9 +1367,11 @@ export const confirmOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getUserOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getUserOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getUser",
   method: "get",
   path: "/api/v1/admin/system/users/{userId}",
@@ -1291,9 +1386,11 @@ export const getUserOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseUserDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [["pswd"],["pswdHint"],["pswdCrans"]],
-});
+  });
+})();
 
-export const updateUserOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateUserOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateUser",
   method: "put",
   path: "/api/v1/admin/system/users/{userId}",
@@ -1308,9 +1405,11 @@ export const updateUserOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteUserOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteUserOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteUser",
   method: "delete",
   path: "/api/v1/admin/system/users/{userId}",
@@ -1325,9 +1424,11 @@ export const deleteUserOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getAbsenceOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getAbsenceOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getAbsence",
   method: "get",
   path: "/api/v1/admin/system/user-absences/{emplyrId}",
@@ -1342,9 +1443,11 @@ export const getAbsenceOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseUserAbsenceDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateAbsenceOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateAbsenceOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateAbsence",
   method: "put",
   path: "/api/v1/admin/system/user-absences/{emplyrId}",
@@ -1359,9 +1462,11 @@ export const updateAbsenceOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const selectTmplatInfoDetailOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const selectTmplatInfoDetailOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "selectTmplatInfoDetail",
   method: "get",
   path: "/api/v1/admin/system/templates/{tmpltId}",
@@ -1376,9 +1481,11 @@ export const selectTmplatInfoDetailOperation = /*#__PURE__*/ defineGeneratedOper
   envelopeSchema: ApiResponseTemplateDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateTmplatInfoOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateTmplatInfoOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateTmplatInfo",
   method: "put",
   path: "/api/v1/admin/system/templates/{tmpltId}",
@@ -1393,9 +1500,11 @@ export const updateTmplatInfoOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseTemplateDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteTmplatInfoOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteTmplatInfoOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteTmplatInfo",
   method: "delete",
   path: "/api/v1/admin/system/templates/{tmpltId}",
@@ -1410,9 +1519,11 @@ export const deleteTmplatInfoOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateQuestionOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateQuestionOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateQuestion",
   method: "put",
   path: "/api/v1/admin/system/surveys/{srvySn}/questions/{srvyQstnSn}",
@@ -1427,9 +1538,11 @@ export const updateQuestionOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteQuestionOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteQuestionOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteQuestion",
   method: "delete",
   path: "/api/v1/admin/system/surveys/{srvySn}/questions/{srvyQstnSn}",
@@ -1444,9 +1557,11 @@ export const deleteQuestionOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateQuestion_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateQuestion_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateQuestion_1",
   method: "put",
   path: "/api/v1/surveys/{srvySn}/questions/{srvyQstnSn}",
@@ -1461,9 +1576,11 @@ export const updateQuestion_1Operation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteQuestion_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteQuestion_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteQuestion_1",
   method: "delete",
   path: "/api/v1/surveys/{srvySn}/questions/{srvyQstnSn}",
@@ -1478,9 +1595,11 @@ export const deleteQuestion_1Operation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getSurveyOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getSurveyOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getSurvey",
   method: "get",
   path: "/api/v1/admin/system/surveys/{srvySn}",
@@ -1495,9 +1614,11 @@ export const getSurveyOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseSurveyInfoDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateSurveyOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateSurveyOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateSurvey",
   method: "put",
   path: "/api/v1/admin/system/surveys/{srvySn}",
@@ -1512,9 +1633,11 @@ export const updateSurveyOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [["responded"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteSurveyOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteSurveyOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteSurvey",
   method: "delete",
   path: "/api/v1/admin/system/surveys/{srvySn}",
@@ -1529,9 +1652,11 @@ export const deleteSurveyOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getSurvey_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getSurvey_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getSurvey_1",
   method: "get",
   path: "/api/v1/surveys/{srvySn}",
@@ -1546,9 +1671,11 @@ export const getSurvey_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseSurveyInfoDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateSurvey_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateSurvey_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateSurvey_1",
   method: "put",
   path: "/api/v1/surveys/{srvySn}",
@@ -1563,9 +1690,11 @@ export const updateSurvey_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [["responded"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteSurvey_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteSurvey_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteSurvey_1",
   method: "delete",
   path: "/api/v1/surveys/{srvySn}",
@@ -1580,9 +1709,11 @@ export const deleteSurvey_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getTemplateOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getTemplateOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getTemplate",
   method: "get",
   path: "/api/v1/admin/system/surveys/templates/{srvyTmpltSn}",
@@ -1597,9 +1728,11 @@ export const getTemplateOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseSurveyTemplateDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateTemplateOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateTemplateOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateTemplate",
   method: "put",
   path: "/api/v1/admin/system/surveys/templates/{srvyTmpltSn}",
@@ -1614,9 +1747,11 @@ export const updateTemplateOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteTemplateOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteTemplateOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteTemplate",
   method: "delete",
   path: "/api/v1/admin/system/surveys/templates/{srvyTmpltSn}",
@@ -1631,9 +1766,11 @@ export const deleteTemplateOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getTemplate_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getTemplate_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getTemplate_1",
   method: "get",
   path: "/api/v1/surveys/templates/{srvyTmpltSn}",
@@ -1648,9 +1785,11 @@ export const getTemplate_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseSurveyTemplateDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateTemplate_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateTemplate_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateTemplate_1",
   method: "put",
   path: "/api/v1/surveys/templates/{srvyTmpltSn}",
@@ -1665,9 +1804,11 @@ export const updateTemplate_1Operation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteTemplate_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteTemplate_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteTemplate_1",
   method: "delete",
   path: "/api/v1/surveys/templates/{srvyTmpltSn}",
@@ -1682,9 +1823,11 @@ export const deleteTemplate_1Operation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateItemOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateItemOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateItem",
   method: "put",
   path: "/api/v1/admin/system/surveys/questions/items/{srvyArtclSn}",
@@ -1699,9 +1842,11 @@ export const updateItemOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteItemOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteItemOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteItem",
   method: "delete",
   path: "/api/v1/admin/system/surveys/questions/items/{srvyArtclSn}",
@@ -1716,9 +1861,11 @@ export const deleteItemOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateItem_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateItem_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateItem_1",
   method: "put",
   path: "/api/v1/surveys/questions/items/{srvyArtclSn}",
@@ -1733,9 +1880,11 @@ export const updateItem_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteItem_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteItem_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteItem_1",
   method: "delete",
   path: "/api/v1/surveys/questions/items/{srvyArtclSn}",
@@ -1750,9 +1899,11 @@ export const deleteItem_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getRoleOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getRoleOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getRole",
   method: "get",
   path: "/api/v1/admin/system/roles/{roleCode}",
@@ -1767,9 +1918,11 @@ export const getRoleOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseRoleManageDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateRoleOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateRoleOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateRole",
   method: "put",
   path: "/api/v1/admin/system/roles/{roleCode}",
@@ -1784,9 +1937,11 @@ export const updateRoleOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteRoleOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteRoleOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteRole",
   method: "delete",
   path: "/api/v1/admin/system/roles/{roleCode}",
@@ -1801,9 +1956,11 @@ export const deleteRoleOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getProgramOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getProgramOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getProgram",
   method: "get",
   path: "/api/v1/admin/system/programs/{progrmFileNm}",
@@ -1818,9 +1975,11 @@ export const getProgramOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseProgramDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateProgramOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateProgramOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateProgram",
   method: "put",
   path: "/api/v1/admin/system/programs/{progrmFileNm}",
@@ -1835,9 +1994,11 @@ export const updateProgramOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteProgramOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteProgramOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteProgram",
   method: "delete",
   path: "/api/v1/admin/system/programs/{progrmFileNm}",
@@ -1852,9 +2013,11 @@ export const deleteProgramOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getPopupOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getPopupOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getPopup",
   method: "get",
   path: "/api/v1/admin/system/popups/{popupSn}",
@@ -1869,9 +2032,11 @@ export const getPopupOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePopupDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updatePopupOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updatePopupOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updatePopup",
   method: "put",
   path: "/api/v1/admin/system/popups/{popupSn}",
@@ -1886,9 +2051,11 @@ export const updatePopupOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deletePopupOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deletePopupOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deletePopup",
   method: "delete",
   path: "/api/v1/admin/system/popups/{popupSn}",
@@ -1903,9 +2070,11 @@ export const deletePopupOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getPolicyOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getPolicyOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getPolicy",
   method: "get",
   path: "/api/v1/admin/system/policies/{type}",
@@ -1920,9 +2089,11 @@ export const getPolicyOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePolicyResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updatePolicyOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updatePolicyOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updatePolicy",
   method: "put",
   path: "/api/v1/admin/system/policies/{type}",
@@ -1937,9 +2108,11 @@ export const updatePolicyOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getMenuOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getMenuOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getMenu",
   method: "get",
   path: "/api/v1/admin/system/menus/{menuNo}",
@@ -1954,9 +2127,11 @@ export const getMenuOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseMenuDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateMenuOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateMenuOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateMenu",
   method: "put",
   path: "/api/v1/admin/system/menus/{menuNo}",
@@ -1971,9 +2146,11 @@ export const updateMenuOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteMenuOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteMenuOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteMenu",
   method: "delete",
   path: "/api/v1/admin/system/menus/{menuNo}",
@@ -1988,9 +2165,11 @@ export const deleteMenuOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateMenuOrderOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateMenuOrderOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateMenuOrder",
   method: "put",
   path: "/api/v1/admin/system/menus/batch-order",
@@ -2005,9 +2184,11 @@ export const updateMenuOrderOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getLoginPolicyOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getLoginPolicyOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getLoginPolicy",
   method: "get",
   path: "/api/v1/admin/system/login-policies/{userId}",
@@ -2022,9 +2203,11 @@ export const getLoginPolicyOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLoginPolicyDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const insertLoginPolicyOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const insertLoginPolicyOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "insertLoginPolicy",
   method: "post",
   path: "/api/v1/admin/system/login-policies/{userId}",
@@ -2039,9 +2222,11 @@ export const insertLoginPolicyOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateLoginPolicyOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateLoginPolicyOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateLoginPolicy",
   method: "put",
   path: "/api/v1/admin/system/login-policies/{userId}",
@@ -2056,9 +2241,11 @@ export const updateLoginPolicyOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteLoginPolicyOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteLoginPolicyOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteLoginPolicy",
   method: "delete",
   path: "/api/v1/admin/system/login-policies/{userId}",
@@ -2073,9 +2260,11 @@ export const deleteLoginPolicyOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getIsgOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getIsgOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getIsg",
   method: "get",
   path: "/api/v1/admin/system/isg/{itntSrvcSn}",
@@ -2090,9 +2279,11 @@ export const getIsgOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseInternetSvcGuidanceDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateIsgOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateIsgOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateIsg",
   method: "put",
   path: "/api/v1/admin/system/isg/{itntSrvcSn}",
@@ -2107,9 +2298,11 @@ export const updateIsgOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [["itntSrvcSn"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteIsgOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteIsgOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteIsg",
   method: "delete",
   path: "/api/v1/admin/system/isg/{itntSrvcSn}",
@@ -2124,9 +2317,11 @@ export const deleteIsgOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getGroupOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getGroupOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getGroup",
   method: "get",
   path: "/api/v1/admin/system/groups/{groupId}",
@@ -2141,9 +2336,11 @@ export const getGroupOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseGroupManageDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateGroupOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateGroupOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateGroup",
   method: "put",
   path: "/api/v1/admin/system/groups/{groupId}",
@@ -2158,9 +2355,11 @@ export const updateGroupOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteGroupOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteGroupOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteGroup",
   method: "delete",
   path: "/api/v1/admin/system/groups/{groupId}",
@@ -2175,9 +2374,11 @@ export const deleteGroupOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getDeptOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getDeptOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getDept",
   method: "get",
   path: "/api/v1/admin/system/departments/{deptId}",
@@ -2192,9 +2393,11 @@ export const getDeptOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseDeptManageDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateDeptOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateDeptOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateDept",
   method: "put",
   path: "/api/v1/admin/system/departments/{deptId}",
@@ -2209,9 +2412,11 @@ export const updateDeptOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteDeptOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteDeptOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteDept",
   method: "delete",
   path: "/api/v1/admin/system/departments/{deptId}",
@@ -2226,9 +2431,11 @@ export const deleteDeptOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateDeptHierarchyOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateDeptHierarchyOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateDeptHierarchy",
   method: "put",
   path: "/api/v1/admin/system/departments/batch-hierarchy",
@@ -2243,9 +2450,11 @@ export const updateDeptHierarchyOperation = /*#__PURE__*/ defineGeneratedOperati
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getDetailCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getDetailCodeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getDetailCode",
   method: "get",
   path: "/api/v1/admin/system/codes/detail/{codeId}/{code}",
@@ -2260,9 +2469,11 @@ export const getDetailCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseCmmnDetailCodeDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateDetailCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateDetailCodeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateDetailCode",
   method: "put",
   path: "/api/v1/admin/system/codes/detail/{codeId}/{code}",
@@ -2277,9 +2488,11 @@ export const updateDetailCodeOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteDetailCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteDetailCodeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteDetailCode",
   method: "delete",
   path: "/api/v1/admin/system/codes/detail/{codeId}/{code}",
@@ -2294,9 +2507,11 @@ export const deleteDetailCodeOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getCmmnCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getCmmnCodeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getCmmnCode",
   method: "get",
   path: "/api/v1/admin/system/codes/cmmn/{codeId}",
@@ -2311,9 +2526,11 @@ export const getCmmnCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseCmmnCodeDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateCmmnCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateCmmnCodeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateCmmnCode",
   method: "put",
   path: "/api/v1/admin/system/codes/cmmn/{codeId}",
@@ -2328,9 +2545,11 @@ export const updateCmmnCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteCmmnCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteCmmnCodeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteCmmnCode",
   method: "delete",
   path: "/api/v1/admin/system/codes/cmmn/{codeId}",
@@ -2345,9 +2564,11 @@ export const deleteCmmnCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateCmmnCodeHierarchyOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateCmmnCodeHierarchyOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateCmmnCodeHierarchy",
   method: "put",
   path: "/api/v1/admin/system/codes/cmmn/batch-hierarchy",
@@ -2362,9 +2583,11 @@ export const updateCmmnCodeHierarchyOperation = /*#__PURE__*/ defineGeneratedOpe
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getClCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getClCodeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getClCode",
   method: "get",
   path: "/api/v1/admin/system/codes/cl/{clCode}",
@@ -2379,9 +2602,11 @@ export const getClCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseCmmnClCodeDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateClCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateClCodeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateClCode",
   method: "put",
   path: "/api/v1/admin/system/codes/cl/{clCode}",
@@ -2396,9 +2621,11 @@ export const updateClCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteClCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteClCodeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteClCode",
   method: "delete",
   path: "/api/v1/admin/system/codes/cl/{clCode}",
@@ -2413,9 +2640,11 @@ export const deleteClCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getAdministCodeDetailOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getAdministCodeDetailOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getAdministCodeDetail",
   method: "get",
   path: "/api/v1/admin/system/codes/administ/{code}",
@@ -2430,9 +2659,11 @@ export const getAdministCodeDetailOperation = /*#__PURE__*/ defineGeneratedOpera
   envelopeSchema: ApiResponseAdministCodeDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateAdministCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateAdministCodeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateAdministCode",
   method: "put",
   path: "/api/v1/admin/system/codes/administ/{code}",
@@ -2447,9 +2678,11 @@ export const updateAdministCodeOperation = /*#__PURE__*/ defineGeneratedOperatio
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteAdministCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteAdministCodeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteAdministCode",
   method: "delete",
   path: "/api/v1/admin/system/codes/administ/{code}",
@@ -2464,9 +2697,11 @@ export const deleteAdministCodeOperation = /*#__PURE__*/ defineGeneratedOperatio
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getBoardMasterOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getBoardMasterOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getBoardMaster",
   method: "get",
   path: "/api/v1/admin/system/board-masters/{bbsId}",
@@ -2481,9 +2716,11 @@ export const getBoardMasterOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseBoardMasterDetailResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateBoardMasterOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateBoardMasterOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateBoardMaster",
   method: "put",
   path: "/api/v1/admin/system/board-masters/{bbsId}",
@@ -2498,9 +2735,11 @@ export const updateBoardMasterOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteBoardMasterOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteBoardMasterOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteBoardMaster",
   method: "delete",
   path: "/api/v1/admin/system/board-masters/{bbsId}",
@@ -2515,9 +2754,11 @@ export const deleteBoardMasterOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getBannerOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getBannerOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getBanner",
   method: "get",
   path: "/api/v1/admin/system/banners/{bnrSn}",
@@ -2532,9 +2773,11 @@ export const getBannerOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseBannerDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateBannerOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateBannerOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateBanner",
   method: "put",
   path: "/api/v1/admin/system/banners/{bnrSn}",
@@ -2549,9 +2792,11 @@ export const updateBannerOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteBannerOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteBannerOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteBanner",
   method: "delete",
   path: "/api/v1/admin/system/banners/{bnrSn}",
@@ -2566,9 +2811,11 @@ export const deleteBannerOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getAuthorOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getAuthorOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getAuthor",
   method: "get",
   path: "/api/v1/admin/system/authorities/{authrtCd}",
@@ -2583,9 +2830,11 @@ export const getAuthorOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseAuthorManageDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateAuthorOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateAuthorOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateAuthor",
   method: "put",
   path: "/api/v1/admin/system/authorities/{authrtCd}",
@@ -2600,9 +2849,11 @@ export const updateAuthorOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteAuthorOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteAuthorOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteAuthor",
   method: "delete",
   path: "/api/v1/admin/system/authorities/{authrtCd}",
@@ -2617,9 +2868,11 @@ export const deleteAuthorOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateRewardOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateRewardOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateReward",
   method: "put",
   path: "/api/v1/admin/operation/rewards/{rwrdSn}",
@@ -2634,9 +2887,11 @@ export const updateRewardOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseRewardManageDtoResponseSchema,
   requestForbiddenPaths: [["sanctnerId"],["confmAt"],["sanctnDt"],["returnResn"],["ifmlAtrzSn"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteRewardOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteRewardOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteReward",
   method: "delete",
   path: "/api/v1/admin/operation/rewards/{rwrdSn}",
@@ -2651,9 +2906,11 @@ export const deleteRewardOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateExternalHrOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateExternalHrOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateExternalHr",
   method: "put",
   path: "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}",
@@ -2668,9 +2925,11 @@ export const updateExternalHrOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseExternalHrDtoResponseSchema,
   requestForbiddenPaths: [["crtDt"],["frstRgtrId"],["mdfcnDt"],["lastMdfrId"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteExternalHrOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteExternalHrOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteExternalHr",
   method: "delete",
   path: "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}",
@@ -2685,9 +2944,11 @@ export const deleteExternalHrOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getEventOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getEventOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getEvent",
   method: "get",
   path: "/api/v1/admin/operation/events/{evntSn}",
@@ -2702,9 +2963,11 @@ export const getEventOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseEventInfoDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateEventOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateEventOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateEvent",
   method: "put",
   path: "/api/v1/admin/operation/events/{evntSn}",
@@ -2719,9 +2982,11 @@ export const updateEventOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteEventOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteEventOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteEvent",
   method: "delete",
   path: "/api/v1/admin/operation/events/{evntSn}",
@@ -2736,9 +3001,11 @@ export const deleteEventOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getCommunityOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getCommunityOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getCommunity",
   method: "get",
   path: "/api/v1/admin/content/community/{cmntySn}",
@@ -2753,9 +3020,11 @@ export const getCommunityOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseCommunityDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateCommunityOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateCommunityOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateCommunity",
   method: "put",
   path: "/api/v1/admin/content/community/{cmntySn}",
@@ -2770,9 +3039,11 @@ export const updateCommunityOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteCommunityOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteCommunityOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteCommunity",
   method: "delete",
   path: "/api/v1/admin/content/community/{cmntySn}",
@@ -2787,9 +3058,11 @@ export const deleteCommunityOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const authzMembershipsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const authzMembershipsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "authzMemberships",
   method: "get",
   path: "/api/v1/admin/authorization/users/{userId}/groups",
@@ -2804,9 +3077,11 @@ export const authzMembershipsOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseMembershipSnapshotResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const authzReplaceMembershipsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const authzReplaceMembershipsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "authzReplaceMemberships",
   method: "put",
   path: "/api/v1/admin/authorization/users/{userId}/groups",
@@ -2821,9 +3096,11 @@ export const authzReplaceMembershipsOperation = /*#__PURE__*/ defineGeneratedOpe
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const authzGroupOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const authzGroupOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "authzGroup",
   method: "get",
   path: "/api/v1/admin/authorization/groups/{code}",
@@ -2838,9 +3115,11 @@ export const authzGroupOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseGroupSnapshotResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const authzUpdateGroupOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const authzUpdateGroupOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "authzUpdateGroup",
   method: "put",
   path: "/api/v1/admin/authorization/groups/{code}",
@@ -2855,9 +3134,11 @@ export const authzUpdateGroupOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const authzDeleteGroupOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const authzDeleteGroupOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "authzDeleteGroup",
   method: "delete",
   path: "/api/v1/admin/authorization/groups/{code}",
@@ -2872,9 +3153,11 @@ export const authzDeleteGroupOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const authzReplaceGrantsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const authzReplaceGrantsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "authzReplaceGrants",
   method: "put",
   path: "/api/v1/admin/authorization/groups/{code}/grants",
@@ -2889,9 +3172,11 @@ export const authzReplaceGrantsOperation = /*#__PURE__*/ defineGeneratedOperatio
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const authzDepartmentMembershipsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const authzDepartmentMembershipsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "authzDepartmentMemberships",
   method: "get",
   path: "/api/v1/admin/authorization/departments/{departmentId}/memberships",
@@ -2906,9 +3191,11 @@ export const authzDepartmentMembershipsOperation = /*#__PURE__*/ defineGenerated
   envelopeSchema: ApiResponseDepartmentSnapshotResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const authzUpdateDepartmentMembershipsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const authzUpdateDepartmentMembershipsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "authzUpdateDepartmentMemberships",
   method: "put",
   path: "/api/v1/admin/authorization/departments/{departmentId}/memberships",
@@ -2923,9 +3210,11 @@ export const authzUpdateDepartmentMembershipsOperation = /*#__PURE__*/ defineGen
   envelopeSchema: ApiResponseDepartmentSnapshotResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getAddressBookOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getAddressBookOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getAddressBook",
   method: "get",
   path: "/api/v1/address-books/{adbkSn}",
@@ -2940,9 +3229,11 @@ export const getAddressBookOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseAddressBookDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateAddressBookOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateAddressBookOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateAddressBook",
   method: "put",
   path: "/api/v1/address-books/{adbkSn}",
@@ -2957,9 +3248,11 @@ export const updateAddressBookOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [["adbkMan","*","userId"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteAddressBookOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteAddressBookOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteAddressBook",
   method: "delete",
   path: "/api/v1/address-books/{adbkSn}",
@@ -2974,9 +3267,11 @@ export const deleteAddressBookOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getWorkReportListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getWorkReportListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getWorkReportList",
   method: "get",
   path: "/api/v1/work-reports",
@@ -2991,9 +3286,11 @@ export const getWorkReportListOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponsePageResponseWorkReportDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createWorkReportOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createWorkReportOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createWorkReport",
   method: "post",
   path: "/api/v1/work-reports",
@@ -3008,9 +3305,11 @@ export const createWorkReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptSttsCd"],["rptTypeCd"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const signupOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const signupOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "signup",
   method: "post",
   path: "/api/v1/users/signup",
@@ -3025,9 +3324,11 @@ export const signupOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseUserResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const submitOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const submitOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "submit",
   method: "post",
   path: "/api/v1/surveys/{srvySn}/responses",
@@ -3042,9 +3343,11 @@ export const submitOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseIntegerResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getMyScrapListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getMyScrapListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getMyScrapList",
   method: "get",
   path: "/api/v1/scraps",
@@ -3059,9 +3362,11 @@ export const getMyScrapListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseScrapDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createScrapOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createScrapOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createScrap",
   method: "post",
   path: "/api/v1/scraps",
@@ -3076,9 +3381,11 @@ export const createScrapOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getScheduleListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getScheduleListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getScheduleList",
   method: "get",
   path: "/api/v1/schedules",
@@ -3093,9 +3400,11 @@ export const getScheduleListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseScheduleDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createScheduleOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createScheduleOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createSchedule",
   method: "post",
   path: "/api/v1/schedules",
@@ -3110,9 +3419,11 @@ export const createScheduleOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [["schdlSn"],["schdlIpAddr"],["schdlPicId"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["schdlDeptId"],["editable"],["deletable"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getPollsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getPollsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getPolls",
   method: "get",
   path: "/api/v1/polls",
@@ -3127,9 +3438,11 @@ export const getPollsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseOnlinePollManageDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createPollOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createPollOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createPoll",
   method: "post",
   path: "/api/v1/polls",
@@ -3144,9 +3457,11 @@ export const createPollOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const voteOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const voteOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "vote",
   method: "post",
   path: "/api/v1/polls/{pollSn}/vote/{pollArtclSn}",
@@ -3161,9 +3476,11 @@ export const voteOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getNotificationsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getNotificationsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getNotifications",
   method: "get",
   path: "/api/v1/notifications",
@@ -3178,9 +3495,11 @@ export const getNotificationsOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponsePageResponseNotificationDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createNotificationOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createNotificationOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createNotification",
   method: "post",
   path: "/api/v1/notifications",
@@ -3195,9 +3514,11 @@ export const createNotificationOperation = /*#__PURE__*/ defineGeneratedOperatio
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [["notiSn"],["notiDt"],["notiIvlVal"],["rcvrId"],["readYn"],["crtDt"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const markAsReadOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const markAsReadOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "markAsRead",
   method: "post",
   path: "/api/v1/notifications/{notiSn}/read",
@@ -3212,9 +3533,11 @@ export const markAsReadOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const markAllAsReadOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const markAllAsReadOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "markAllAsRead",
   method: "post",
   path: "/api/v1/notifications/read-all",
@@ -3229,9 +3552,11 @@ export const markAllAsReadOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseIntegerResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const sendNoteOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const sendNoteOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "sendNote",
   method: "post",
   path: "/api/v1/notes",
@@ -3246,9 +3571,11 @@ export const sendNoteOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [["recipients","*","openYn"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getMemoReportsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getMemoReportsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getMemoReports",
   method: "get",
   path: "/api/v1/memo-reports",
@@ -3263,9 +3590,11 @@ export const getMemoReportsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseMemoReportDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createMemoReportOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createMemoReportOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createMemoReport",
   method: "post",
   path: "/api/v1/memo-reports",
@@ -3280,9 +3609,11 @@ export const createMemoReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"],["editable"],["deletable"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getSentMailsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getSentMailsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getSentMails",
   method: "get",
   path: "/api/v1/mails",
@@ -3297,9 +3628,11 @@ export const getSentMailsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseSentMailDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [["list","*","recipients"]],
-});
+  });
+})();
 
-export const sendMailOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const sendMailOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "sendMail",
   method: "post",
   path: "/api/v1/mails",
@@ -3314,9 +3647,11 @@ export const sendMailOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [["resendable"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const resendMailOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const resendMailOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "resendMail",
   method: "post",
   path: "/api/v1/mails/{emlDsptchSn}/resend",
@@ -3331,9 +3666,11 @@ export const resendMailOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getInformalSanctionListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getInformalSanctionListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getInformalSanctionList",
   method: "get",
   path: "/api/v1/informal-sanctions",
@@ -3348,9 +3685,11 @@ export const getInformalSanctionListOperation = /*#__PURE__*/ defineGeneratedOpe
   envelopeSchema: ApiResponsePageResponseInformalSanctionDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const registerInformalSanctionOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const registerInformalSanctionOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "registerInformalSanction",
   method: "post",
   path: "/api/v1/informal-sanctions",
@@ -3365,9 +3704,11 @@ export const registerInformalSanctionOperation = /*#__PURE__*/ defineGeneratedOp
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getInformalSanctionList_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getInformalSanctionList_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getInformalSanctionList_1",
   method: "get",
   path: "/api/v1/admin/system/ism",
@@ -3382,9 +3723,11 @@ export const getInformalSanctionList_1Operation = /*#__PURE__*/ defineGeneratedO
   envelopeSchema: ApiResponsePageResponseInformalSanctionDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const registerInformalSanction_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const registerInformalSanction_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "registerInformalSanction_1",
   method: "post",
   path: "/api/v1/admin/system/ism",
@@ -3399,9 +3742,11 @@ export const registerInformalSanction_1Operation = /*#__PURE__*/ defineGenerated
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getManualsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getManualsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getManuals",
   method: "get",
   path: "/api/v1/help/manuals",
@@ -3416,9 +3761,11 @@ export const getManualsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseOnlineManualDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createManualOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createManualOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createManual",
   method: "post",
   path: "/api/v1/help/manuals",
@@ -3433,9 +3780,11 @@ export const createManualOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getHpcmListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getHpcmListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getHpcmList",
   method: "get",
   path: "/api/v1/help/hpcm",
@@ -3450,9 +3799,11 @@ export const getHpcmListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseHpcmDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const insertHpcmOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const insertHpcmOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "insertHpcm",
   method: "post",
   path: "/api/v1/help/hpcm",
@@ -3467,9 +3818,11 @@ export const insertHpcmOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const uploadFilesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const uploadFilesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "uploadFiles",
   method: "post",
   path: "/api/v1/files",
@@ -3486,9 +3839,11 @@ export const uploadFilesOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const uploadFiles_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const uploadFiles_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "uploadFiles_1",
   method: "post",
   path: "/api/v1/admin/system/files",
@@ -3505,9 +3860,11 @@ export const uploadFiles_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const uploadFiles_2Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const uploadFiles_2Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "uploadFiles_2",
   method: "post",
   path: "/api/v1/admin/content/files",
@@ -3524,9 +3881,11 @@ export const uploadFiles_2Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const uploadFiles_3Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const uploadFiles_3Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "uploadFiles_3",
   method: "post",
   path: "/api/v1/admin/operation/files",
@@ -3543,9 +3902,11 @@ export const uploadFiles_3Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getDeptJobListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getDeptJobListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getDeptJobList",
   method: "get",
   path: "/api/v1/dept-jobs",
@@ -3560,9 +3921,11 @@ export const getDeptJobListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseDeptJobDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createDeptJobOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createDeptJobOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createDeptJob",
   method: "post",
   path: "/api/v1/dept-jobs",
@@ -3577,9 +3940,11 @@ export const createDeptJobOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["editable"],["deletable"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getDeptJobBoxListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getDeptJobBoxListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getDeptJobBoxList",
   method: "get",
   path: "/api/v1/dept-jobs/boxes",
@@ -3594,9 +3959,11 @@ export const getDeptJobBoxListOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponsePageResponseDeptJobBoxDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createDeptJobBoxOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createDeptJobBoxOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createDeptJobBox",
   method: "post",
   path: "/api/v1/dept-jobs/boxes",
@@ -3611,9 +3978,11 @@ export const createDeptJobBoxOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [["deptTaskBoxSn"],["deptNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const joinCommunityOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const joinCommunityOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "joinCommunity",
   method: "post",
   path: "/api/v1/communities/{cmntySn}/join",
@@ -3628,9 +3997,11 @@ export const joinCommunityOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getCommentsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getCommentsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getComments",
   method: "get",
   path: "/api/v1/comments",
@@ -3645,9 +4016,11 @@ export const getCommentsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseCommentDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [["list","*","pswd"]],
-});
+  });
+})();
 
-export const createCommentOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createCommentOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createComment",
   method: "post",
   path: "/api/v1/comments",
@@ -3662,9 +4035,11 @@ export const createCommentOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [["wrterId"],["wrterNm"],["frstRgtrId"],["crtDt"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getList",
   method: "get",
   path: "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions",
@@ -3679,9 +4054,11 @@ export const getListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListSatisfactionDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "create",
   method: "post",
   path: "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions",
@@ -3696,9 +4073,11 @@ export const createOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createPostWithFilesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createPostWithFilesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createPostWithFiles",
   method: "post",
   path: "/api/v1/boards/{bbsId}/posts/with-files",
@@ -3716,9 +4095,11 @@ export const createPostWithFilesOperation = /*#__PURE__*/ defineGeneratedOperati
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createPostOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createPostOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createPost",
   method: "post",
   path: "/api/v1/boards/posts",
@@ -3733,9 +4114,11 @@ export const createPostOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const reissueOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const reissueOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "reissue",
   method: "post",
   path: "/api/v1/auth/reissue",
@@ -3750,9 +4133,11 @@ export const reissueOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseTokenResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const logoutOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const logoutOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "logout",
   method: "post",
   path: "/api/v1/auth/logout",
@@ -3767,9 +4152,11 @@ export const logoutOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseStringResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const loginOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const loginOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "login",
   method: "post",
   path: "/api/v1/auth/login",
@@ -3784,9 +4171,11 @@ export const loginOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseTokenResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createApprovalOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createApprovalOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createApproval",
   method: "post",
   path: "/api/v1/approvals",
@@ -3801,9 +4190,11 @@ export const createApprovalOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const resubmitApprovalOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const resubmitApprovalOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "resubmitApproval",
   method: "post",
   path: "/api/v1/approvals/{id}/resubmissions",
@@ -3818,9 +4209,11 @@ export const resubmitApprovalOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getUsersOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getUsersOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getUsers",
   method: "get",
   path: "/api/v1/admin/system/users",
@@ -3835,9 +4228,11 @@ export const getUsersOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseUserDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [["list","*","pswd"],["list","*","pswdHint"],["list","*","pswdCrans"]],
-});
+  });
+})();
 
-export const insertUserOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const insertUserOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "insertUser",
   method: "post",
   path: "/api/v1/admin/system/users",
@@ -3852,9 +4247,11 @@ export const insertUserOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseStringResponseSchema,
   requestForbiddenPaths: [["groups"],["permissions"],["authorizationVersion"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteUsersOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteUsersOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteUsers",
   method: "delete",
   path: "/api/v1/admin/system/users",
@@ -3869,9 +4266,11 @@ export const deleteUsersOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getUserAuthoritiesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getUserAuthoritiesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getUserAuthorities",
   method: "get",
   path: "/api/v1/admin/system/user-authorities",
@@ -3886,9 +4285,11 @@ export const getUserAuthoritiesOperation = /*#__PURE__*/ defineGeneratedOperatio
   envelopeSchema: ApiResponsePageResponseAuthorGroupProjectionResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const saveUserAuthoritiesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const saveUserAuthoritiesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "saveUserAuthorities",
   method: "post",
   path: "/api/v1/admin/system/user-authorities",
@@ -3903,9 +4304,11 @@ export const saveUserAuthoritiesOperation = /*#__PURE__*/ defineGeneratedOperati
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteUserAuthoritiesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteUserAuthoritiesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteUserAuthorities",
   method: "delete",
   path: "/api/v1/admin/system/user-authorities",
@@ -3920,9 +4323,11 @@ export const deleteUserAuthoritiesOperation = /*#__PURE__*/ defineGeneratedOpera
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const selectTmplatInfoListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const selectTmplatInfoListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "selectTmplatInfoList",
   method: "get",
   path: "/api/v1/admin/system/templates",
@@ -3937,9 +4342,11 @@ export const selectTmplatInfoListOperation = /*#__PURE__*/ defineGeneratedOperat
   envelopeSchema: ApiResponseListTemplateDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const insertTmplatInfoOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const insertTmplatInfoOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "insertTmplatInfo",
   method: "post",
   path: "/api/v1/admin/system/templates",
@@ -3954,9 +4361,11 @@ export const insertTmplatInfoOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getQuestionsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getQuestionsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getQuestions",
   method: "get",
   path: "/api/v1/admin/system/surveys/{srvySn}/questions",
@@ -3971,9 +4380,11 @@ export const getQuestionsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListSurveyQuestionDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const insertQuestionOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const insertQuestionOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "insertQuestion",
   method: "post",
   path: "/api/v1/admin/system/surveys/{srvySn}/questions",
@@ -3988,9 +4399,11 @@ export const insertQuestionOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getQuestions_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getQuestions_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getQuestions_1",
   method: "get",
   path: "/api/v1/surveys/{srvySn}/questions",
@@ -4005,9 +4418,11 @@ export const getQuestions_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListSurveyQuestionDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const insertQuestion_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const insertQuestion_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "insertQuestion_1",
   method: "post",
   path: "/api/v1/surveys/{srvySn}/questions",
@@ -4022,9 +4437,11 @@ export const insertQuestion_1Operation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const copySurveyOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const copySurveyOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "copySurvey",
   method: "post",
   path: "/api/v1/admin/system/surveys/{srvySn}/copy",
@@ -4039,9 +4456,11 @@ export const copySurveyOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const copySurvey_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const copySurvey_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "copySurvey_1",
   method: "post",
   path: "/api/v1/surveys/{srvySn}/copy",
@@ -4056,9 +4475,11 @@ export const copySurvey_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getTemplatesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getTemplatesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getTemplates",
   method: "get",
   path: "/api/v1/admin/system/surveys/templates",
@@ -4073,9 +4494,11 @@ export const getTemplatesOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseSurveyTemplateDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const insertTemplateOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const insertTemplateOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "insertTemplate",
   method: "post",
   path: "/api/v1/admin/system/surveys/templates",
@@ -4090,9 +4513,11 @@ export const insertTemplateOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getTemplates_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getTemplates_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getTemplates_1",
   method: "get",
   path: "/api/v1/surveys/templates",
@@ -4107,9 +4532,11 @@ export const getTemplates_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseSurveyTemplateDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const insertTemplate_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const insertTemplate_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "insertTemplate_1",
   method: "post",
   path: "/api/v1/surveys/templates",
@@ -4124,9 +4551,11 @@ export const insertTemplate_1Operation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const insertItemOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const insertItemOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "insertItem",
   method: "post",
   path: "/api/v1/admin/system/surveys/questions/{srvyQstnSn}/items",
@@ -4141,9 +4570,11 @@ export const insertItemOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const insertItem_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const insertItem_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "insertItem_1",
   method: "post",
   path: "/api/v1/surveys/questions/{srvyQstnSn}/items",
@@ -4158,9 +4589,11 @@ export const insertItem_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getSurveysOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getSurveysOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getSurveys",
   method: "get",
   path: "/api/v1/admin/system/surveys",
@@ -4175,9 +4608,11 @@ export const getSurveysOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseSurveyInfoDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const insertSurveyOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const insertSurveyOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "insertSurvey",
   method: "post",
   path: "/api/v1/admin/system/surveys",
@@ -4192,9 +4627,11 @@ export const insertSurveyOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [["responded"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getSurveys_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getSurveys_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getSurveys_1",
   method: "get",
   path: "/api/v1/surveys",
@@ -4209,9 +4646,11 @@ export const getSurveys_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseSurveyInfoDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const insertSurvey_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const insertSurvey_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "insertSurvey_1",
   method: "post",
   path: "/api/v1/surveys",
@@ -4226,9 +4665,11 @@ export const insertSurvey_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [["responded"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getRolesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getRolesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getRoles",
   method: "get",
   path: "/api/v1/admin/system/roles",
@@ -4243,9 +4684,11 @@ export const getRolesOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseRoleManageDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createRoleOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createRoleOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createRole",
   method: "post",
   path: "/api/v1/admin/system/roles",
@@ -4260,9 +4703,11 @@ export const createRoleOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteRolesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteRolesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteRoles",
   method: "delete",
   path: "/api/v1/admin/system/roles",
@@ -4277,9 +4722,11 @@ export const deleteRolesOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getProgramListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getProgramListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getProgramList",
   method: "get",
   path: "/api/v1/admin/system/programs",
@@ -4294,9 +4741,11 @@ export const getProgramListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseProgramDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createProgramOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createProgramOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createProgram",
   method: "post",
   path: "/api/v1/admin/system/programs",
@@ -4311,9 +4760,11 @@ export const createProgramOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getPopupsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getPopupsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getPopups",
   method: "get",
   path: "/api/v1/admin/system/popups",
@@ -4328,9 +4779,11 @@ export const getPopupsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponsePopupDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createPopupOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createPopupOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createPopup",
   method: "post",
   path: "/api/v1/admin/system/popups",
@@ -4345,9 +4798,11 @@ export const createPopupOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getMenuListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getMenuListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getMenuList",
   method: "get",
   path: "/api/v1/admin/system/menus",
@@ -4362,9 +4817,11 @@ export const getMenuListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseMenuDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createMenuOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createMenuOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createMenu",
   method: "post",
   path: "/api/v1/admin/system/menus",
@@ -4379,9 +4836,11 @@ export const createMenuOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getMenuCreationListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getMenuCreationListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getMenuCreationList",
   method: "get",
   path: "/api/v1/admin/system/menus/creation/{authorCode}",
@@ -4396,9 +4855,11 @@ export const getMenuCreationListOperation = /*#__PURE__*/ defineGeneratedOperati
   envelopeSchema: ApiResponseListMenuCreateDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createMenuCreationOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createMenuCreationOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createMenuCreation",
   method: "post",
   path: "/api/v1/admin/system/menus/creation/{authorCode}",
@@ -4413,9 +4874,11 @@ export const createMenuCreationOperation = /*#__PURE__*/ defineGeneratedOperatio
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getIsgListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getIsgListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getIsgList",
   method: "get",
   path: "/api/v1/admin/system/isg",
@@ -4430,9 +4893,11 @@ export const getIsgListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseInternetSvcGuidanceDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const registerIsgOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const registerIsgOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "registerIsg",
   method: "post",
   path: "/api/v1/admin/system/isg",
@@ -4447,9 +4912,11 @@ export const registerIsgOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [["itntSrvcSn"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getGroupsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getGroupsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getGroups",
   method: "get",
   path: "/api/v1/admin/system/groups",
@@ -4464,9 +4931,11 @@ export const getGroupsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseGroupManageDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createGroupOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createGroupOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createGroup",
   method: "post",
   path: "/api/v1/admin/system/groups",
@@ -4481,9 +4950,11 @@ export const createGroupOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteGroupsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteGroupsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteGroups",
   method: "delete",
   path: "/api/v1/admin/system/groups",
@@ -4498,9 +4969,11 @@ export const deleteGroupsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const saveDeptUserAuthoritiesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const saveDeptUserAuthoritiesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "saveDeptUserAuthorities",
   method: "post",
   path: "/api/v1/admin/system/dept-authorities/batch",
@@ -4515,9 +4988,11 @@ export const saveDeptUserAuthoritiesOperation = /*#__PURE__*/ defineGeneratedOpe
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getDeptsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getDeptsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getDepts",
   method: "get",
   path: "/api/v1/admin/system/departments",
@@ -4532,9 +5007,11 @@ export const getDeptsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseDeptManageDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const insertDeptOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const insertDeptOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "insertDept",
   method: "post",
   path: "/api/v1/admin/system/departments",
@@ -4549,9 +5026,11 @@ export const insertDeptOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseStringResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const processInstitutionCodeRecptnOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const processInstitutionCodeRecptnOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "processInstitutionCodeRecptn",
   method: "post",
   path: "/api/v1/admin/system/codes/institution/receptions/process",
@@ -4566,9 +5045,11 @@ export const processInstitutionCodeRecptnOperation = /*#__PURE__*/ defineGenerat
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getDetailCodeListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getDetailCodeListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getDetailCodeList",
   method: "get",
   path: "/api/v1/admin/system/codes/detail",
@@ -4583,9 +5064,11 @@ export const getDetailCodeListOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponsePageResponseCmmnDetailCodeDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createDetailCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createDetailCodeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createDetailCode",
   method: "post",
   path: "/api/v1/admin/system/codes/detail",
@@ -4600,9 +5083,11 @@ export const createDetailCodeOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getCmmnCodeListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getCmmnCodeListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getCmmnCodeList",
   method: "get",
   path: "/api/v1/admin/system/codes/cmmn",
@@ -4617,9 +5102,11 @@ export const getCmmnCodeListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseCmmnCodeDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createCmmnCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createCmmnCodeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createCmmnCode",
   method: "post",
   path: "/api/v1/admin/system/codes/cmmn",
@@ -4634,9 +5121,11 @@ export const createCmmnCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getClCodeListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getClCodeListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getClCodeList",
   method: "get",
   path: "/api/v1/admin/system/codes/cl",
@@ -4651,9 +5140,11 @@ export const getClCodeListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseCmmnClCodeDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createClCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createClCodeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createClCode",
   method: "post",
   path: "/api/v1/admin/system/codes/cl",
@@ -4668,9 +5159,11 @@ export const createClCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getAdministCodeListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getAdministCodeListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getAdministCodeList",
   method: "get",
   path: "/api/v1/admin/system/codes/administ",
@@ -4685,9 +5178,11 @@ export const getAdministCodeListOperation = /*#__PURE__*/ defineGeneratedOperati
   envelopeSchema: ApiResponsePageResponseAdministCodeDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createAdministCodeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createAdministCodeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createAdministCode",
   method: "post",
   path: "/api/v1/admin/system/codes/administ",
@@ -4702,9 +5197,11 @@ export const createAdministCodeOperation = /*#__PURE__*/ defineGeneratedOperatio
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getBoardMasterListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getBoardMasterListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getBoardMasterList",
   method: "get",
   path: "/api/v1/admin/system/board-masters",
@@ -4719,9 +5216,11 @@ export const getBoardMasterListOperation = /*#__PURE__*/ defineGeneratedOperatio
   envelopeSchema: ApiResponsePageResponseBoardMasterSummaryResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createBoardMasterOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createBoardMasterOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createBoardMaster",
   method: "post",
   path: "/api/v1/admin/system/board-masters",
@@ -4736,9 +5235,11 @@ export const createBoardMasterOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponseStringResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateBoardMasterStatusInBatchOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateBoardMasterStatusInBatchOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateBoardMasterStatusInBatch",
   method: "post",
   path: "/api/v1/admin/system/board-masters/batch/status",
@@ -4753,9 +5254,11 @@ export const updateBoardMasterStatusInBatchOperation = /*#__PURE__*/ defineGener
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteBoardMastersInBatchOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteBoardMastersInBatchOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteBoardMastersInBatch",
   method: "post",
   path: "/api/v1/admin/system/board-masters/batch/delete",
@@ -4770,9 +5273,11 @@ export const deleteBoardMastersInBatchOperation = /*#__PURE__*/ defineGeneratedO
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getBannersOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getBannersOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getBanners",
   method: "get",
   path: "/api/v1/admin/system/banners",
@@ -4787,9 +5292,11 @@ export const getBannersOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseBannerDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const insertBannerOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const insertBannerOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "insertBanner",
   method: "post",
   path: "/api/v1/admin/system/banners",
@@ -4804,9 +5311,11 @@ export const insertBannerOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getAuthorsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getAuthorsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getAuthors",
   method: "get",
   path: "/api/v1/admin/system/authorities",
@@ -4821,9 +5330,11 @@ export const getAuthorsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseAuthorManageDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createAuthorOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createAuthorOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createAuthor",
   method: "post",
   path: "/api/v1/admin/system/authorities",
@@ -4838,9 +5349,11 @@ export const createAuthorOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteAuthorsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteAuthorsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteAuthors",
   method: "delete",
   path: "/api/v1/admin/system/authorities",
@@ -4855,9 +5368,11 @@ export const deleteAuthorsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getAuthorRolesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getAuthorRolesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getAuthorRoles",
   method: "get",
   path: "/api/v1/admin/system/authorities/{authrtCd}/roles",
@@ -4872,9 +5387,11 @@ export const getAuthorRolesOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseAuthorRoleProjectionResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const saveAuthorRolesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const saveAuthorRolesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "saveAuthorRoles",
   method: "post",
   path: "/api/v1/admin/system/authorities/{authrtCd}/roles",
@@ -4889,9 +5406,11 @@ export const saveAuthorRolesOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getSmsListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getSmsListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getSmsList",
   method: "get",
   path: "/api/v1/admin/operation/sms",
@@ -4906,9 +5425,11 @@ export const getSmsListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseSmsDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const sendSmsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const sendSmsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "sendSms",
   method: "post",
   path: "/api/v1/admin/operation/sms",
@@ -4923,9 +5444,11 @@ export const sendSmsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getAllRewardsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getAllRewardsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getAllRewards",
   method: "get",
   path: "/api/v1/admin/operation/rewards",
@@ -4940,9 +5463,11 @@ export const getAllRewardsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseRewardManageDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createRewardOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createRewardOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createReward",
   method: "post",
   path: "/api/v1/admin/operation/rewards",
@@ -4957,9 +5482,11 @@ export const createRewardOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseRewardManageDtoResponseSchema,
   requestForbiddenPaths: [["sanctnerId"],["confmAt"],["sanctnDt"],["returnResn"],["ifmlAtrzSn"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getAllExternalHrOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getAllExternalHrOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getAllExternalHr",
   method: "get",
   path: "/api/v1/admin/operation/external-hr",
@@ -4974,9 +5501,11 @@ export const getAllExternalHrOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponsePageResponseExternalHrDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createExternalHrOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createExternalHrOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createExternalHr",
   method: "post",
   path: "/api/v1/admin/operation/external-hr",
@@ -4991,9 +5520,11 @@ export const createExternalHrOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseExternalHrDtoResponseSchema,
   requestForbiddenPaths: [["crtDt"],["frstRgtrId"],["mdfcnDt"],["lastMdfrId"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getEventListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getEventListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getEventList",
   method: "get",
   path: "/api/v1/admin/operation/events",
@@ -5008,9 +5539,11 @@ export const getEventListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseEventInfoDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createEventOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createEventOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createEvent",
   method: "post",
   path: "/api/v1/admin/operation/events",
@@ -5025,9 +5558,11 @@ export const createEventOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const dispatchNotificationsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const dispatchNotificationsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "dispatchNotifications",
   method: "post",
   path: "/api/v1/admin/notifications/dispatch",
@@ -5042,9 +5577,11 @@ export const dispatchNotificationsOperation = /*#__PURE__*/ defineGeneratedOpera
   envelopeSchema: ApiResponseIntegerResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getCommunitiesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getCommunitiesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getCommunities",
   method: "get",
   path: "/api/v1/admin/content/community",
@@ -5059,9 +5596,11 @@ export const getCommunitiesOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseCommunityDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createCommunityOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createCommunityOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createCommunity",
   method: "post",
   path: "/api/v1/admin/content/community",
@@ -5076,9 +5615,11 @@ export const createCommunityOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseCommunityDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const authzGroupsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const authzGroupsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "authzGroups",
   method: "get",
   path: "/api/v1/admin/authorization/groups",
@@ -5093,9 +5634,11 @@ export const authzGroupsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListGroupSummaryResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const authzCreateGroupOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const authzCreateGroupOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "authzCreateGroup",
   method: "post",
   path: "/api/v1/admin/authorization/groups",
@@ -5110,9 +5653,11 @@ export const authzCreateGroupOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getAddressBooksOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getAddressBooksOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getAddressBooks",
   method: "get",
   path: "/api/v1/address-books",
@@ -5127,9 +5672,11 @@ export const getAddressBooksOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseAddressBookDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const createAddressBookOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const createAddressBookOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "createAddressBook",
   method: "post",
   path: "/api/v1/address-books",
@@ -5144,9 +5691,11 @@ export const createAddressBookOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [["adbkMan","*","userId"]],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateDrctMatterOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateDrctMatterOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateDrctMatter",
   method: "patch",
   path: "/api/v1/memo-reports/{memoRptSn}/instr-cn",
@@ -5161,9 +5710,11 @@ export const updateDrctMatterOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const confirmInformalSanctionOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const confirmInformalSanctionOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "confirmInformalSanction",
   method: "patch",
   path: "/api/v1/informal-sanctions/{informalSanctionId}/confirm",
@@ -5178,9 +5729,11 @@ export const confirmInformalSanctionOperation = /*#__PURE__*/ defineGeneratedOpe
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const confirmInformalSanction_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const confirmInformalSanction_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "confirmInformalSanction_1",
   method: "patch",
   path: "/api/v1/admin/system/ism/{informalSanctionId}/confirm",
@@ -5195,9 +5748,11 @@ export const confirmInformalSanction_1Operation = /*#__PURE__*/ defineGeneratedO
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const markQuestionSolvedOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const markQuestionSolvedOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "markQuestionSolved",
   method: "patch",
   path: "/api/v1/boards/{bbsId}/posts/{pstSn}/solved",
@@ -5212,9 +5767,11 @@ export const markQuestionSolvedOperation = /*#__PURE__*/ defineGeneratedOperatio
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const likePostOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const likePostOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "likePost",
   method: "patch",
   path: "/api/v1/boards/{bbsId}/posts/{pstSn}/like",
@@ -5229,9 +5786,11 @@ export const likePostOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseIntegerResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const unlockUserOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const unlockUserOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "unlockUser",
   method: "patch",
   path: "/api/v1/admin/system/users/{userId}/unlock",
@@ -5246,9 +5805,11 @@ export const unlockUserOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updatePasswordByAdminOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updatePasswordByAdminOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updatePasswordByAdmin",
   method: "patch",
   path: "/api/v1/admin/system/users/{userId}/password",
@@ -5263,9 +5824,11 @@ export const updatePasswordByAdminOperation = /*#__PURE__*/ defineGeneratedOpera
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateUsersStatusOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateUsersStatusOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateUsersStatus",
   method: "patch",
   path: "/api/v1/admin/system/users/status",
@@ -5280,9 +5843,11 @@ export const updateUsersStatusOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const updateUsersRoleOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const updateUsersRoleOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "updateUsersRole",
   method: "patch",
   path: "/api/v1/admin/system/users/role",
@@ -5297,9 +5862,11 @@ export const updateUsersRoleOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const moveUsersToDeptOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const moveUsersToDeptOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "moveUsersToDept",
   method: "patch",
   path: "/api/v1/admin/system/users/dept",
@@ -5314,9 +5881,11 @@ export const moveUsersToDeptOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const withdrawMemberOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const withdrawMemberOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "withdrawMember",
   method: "patch",
   path: "/api/v1/admin/content/community/{cmntySn}/members/{userId}/withdraw",
@@ -5331,9 +5900,11 @@ export const withdrawMemberOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const approveMemberOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const approveMemberOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "approveMember",
   method: "patch",
   path: "/api/v1/admin/content/community/{cmntySn}/members/{userId}/approve",
@@ -5348,9 +5919,11 @@ export const approveMemberOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const searchAssignableUsersOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const searchAssignableUsersOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "searchAssignableUsers",
   method: "get",
   path: "/api/v1/users/search",
@@ -5365,9 +5938,11 @@ export const searchAssignableUsersOperation = /*#__PURE__*/ defineGeneratedOpera
   envelopeSchema: ApiResponseListUserSearchDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const checkIdDplctOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const checkIdDplctOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "checkIdDplct",
   method: "get",
   path: "/api/v1/users/check-id",
@@ -5382,9 +5957,11 @@ export const checkIdDplctOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseBooleanResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getStatsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getStats",
   method: "get",
   path: "/api/v1/surveys/{srvySn}/stats",
@@ -5399,9 +5976,11 @@ export const getStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListSurveyStatsDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const exportStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const exportStatsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "exportStats",
   method: "get",
   path: "/api/v1/surveys/{srvySn}/stats/export.xlsx",
@@ -5416,9 +5995,11 @@ export const exportStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: null,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getConnectStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getConnectStatsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getConnectStats",
   method: "get",
   path: "/api/v1/statistics/connect",
@@ -5433,9 +6014,11 @@ export const getConnectStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListStatsDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getScheduleByDateRangeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getScheduleByDateRangeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getScheduleByDateRange",
   method: "get",
   path: "/api/v1/schedules/range",
@@ -5450,9 +6033,11 @@ export const getScheduleByDateRangeOperation = /*#__PURE__*/ defineGeneratedOper
   envelopeSchema: ApiResponseListScheduleDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getMonthlyScheduleOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getMonthlyScheduleOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getMonthlySchedule",
   method: "get",
   path: "/api/v1/schedules/monthly",
@@ -5467,9 +6052,11 @@ export const getMonthlyScheduleOperation = /*#__PURE__*/ defineGeneratedOperatio
   envelopeSchema: ApiResponseListScheduleDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getDeptScheduleListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getDeptScheduleListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getDeptScheduleList",
   method: "get",
   path: "/api/v1/schedules/dept",
@@ -5484,9 +6071,11 @@ export const getDeptScheduleListOperation = /*#__PURE__*/ defineGeneratedOperati
   envelopeSchema: ApiResponsePageResponseScheduleDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const triggerErrorOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const triggerErrorOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "triggerError",
   method: "get",
   path: "/api/v1/public/debug/error",
@@ -5501,9 +6090,11 @@ export const triggerErrorOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getPopup_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getPopup_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getPopup_1",
   method: "get",
   path: "/api/v1/popups/{popupSn}",
@@ -5518,9 +6109,11 @@ export const getPopup_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePopupDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getActivePopupsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getActivePopupsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getActivePopups",
   method: "get",
   path: "/api/v1/popups/active",
@@ -5535,9 +6128,11 @@ export const getActivePopupsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListPopupDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getPollItemsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getPollItemsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getPollItems",
   method: "get",
   path: "/api/v1/polls/{pollSn}/items",
@@ -5552,9 +6147,11 @@ export const getPollItemsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListOnlinePollArticleDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getNotificationOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getNotificationOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getNotification",
   method: "get",
   path: "/api/v1/notifications/{notiSn}",
@@ -5569,9 +6166,11 @@ export const getNotificationOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseNotificationDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteNotificationOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteNotificationOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteNotification",
   method: "delete",
   path: "/api/v1/notifications/{notiSn}",
@@ -5586,9 +6185,11 @@ export const deleteNotificationOperation = /*#__PURE__*/ defineGeneratedOperatio
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getUnreadCountOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getUnreadCountOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getUnreadCount",
   method: "get",
   path: "/api/v1/notifications/unread-count",
@@ -5603,9 +6204,11 @@ export const getUnreadCountOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getNoteOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getNoteOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getNote",
   method: "get",
   path: "/api/v1/notes/{noteSn}",
@@ -5620,9 +6223,11 @@ export const getNoteOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseNoteDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getSentNotesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getSentNotesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getSentNotes",
   method: "get",
   path: "/api/v1/notes/sent",
@@ -5637,9 +6242,11 @@ export const getSentNotesOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseNoteDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getReceivedNotesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getReceivedNotesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getReceivedNotes",
   method: "get",
   path: "/api/v1/notes/received",
@@ -5654,9 +6261,11 @@ export const getReceivedNotesOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponsePageResponseNoteDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getUnreadReceivedCountOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getUnreadReceivedCountOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getUnreadReceivedCount",
   method: "get",
   path: "/api/v1/notes/received/unread-count",
@@ -5671,9 +6280,11 @@ export const getUnreadReceivedCountOperation = /*#__PURE__*/ defineGeneratedOper
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getLeftMenuOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getLeftMenuOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getLeftMenu",
   method: "get",
   path: "/api/v1/menus/left",
@@ -5688,9 +6299,11 @@ export const getLeftMenuOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseMenuListResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getHeadMenuOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getHeadMenuOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getHeadMenu",
   method: "get",
   path: "/api/v1/menus/head",
@@ -5705,9 +6318,11 @@ export const getHeadMenuOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseMenuListResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getMyBookmarksOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getMyBookmarksOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getMyBookmarks",
   method: "get",
   path: "/api/v1/menus/bookmarks",
@@ -5722,9 +6337,11 @@ export const getMyBookmarksOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListMenuBookmarkDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getReceivedReportsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getReceivedReportsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getReceivedReports",
   method: "get",
   path: "/api/v1/memo-reports/received",
@@ -5739,9 +6356,11 @@ export const getReceivedReportsOperation = /*#__PURE__*/ defineGeneratedOperatio
   envelopeSchema: ApiResponsePageResponseMemoReportDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getMyReportsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getMyReportsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getMyReports",
   method: "get",
   path: "/api/v1/memo-reports/my",
@@ -5756,9 +6375,11 @@ export const getMyReportsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseMemoReportDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getSentMailOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getSentMailOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getSentMail",
   method: "get",
   path: "/api/v1/mails/{emlDsptchSn}",
@@ -5773,9 +6394,11 @@ export const getSentMailOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseSentMailDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [["recipients"]],
-});
+  });
+})();
 
-export const deleteMailOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteMailOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteMail",
   method: "delete",
   path: "/api/v1/mails/{emlDsptchSn}",
@@ -5790,9 +6413,11 @@ export const deleteMailOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getMailDeliveryStatusOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getMailDeliveryStatusOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getMailDeliveryStatus",
   method: "get",
   path: "/api/v1/mails/delivery-status",
@@ -5807,9 +6432,11 @@ export const getMailDeliveryStatusOperation = /*#__PURE__*/ defineGeneratedOpera
   envelopeSchema: ApiResponseMailDeliveryStatusDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const checkHealthOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const checkHealthOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "checkHealth",
   method: "get",
   path: "/api/v1/health",
@@ -5824,9 +6451,11 @@ export const checkHealthOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseHealthStatusResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const downloadFileOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const downloadFileOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "downloadFile",
   method: "get",
   path: "/api/v1/files/{atchFileSn}/{fileSn}",
@@ -5841,9 +6470,11 @@ export const downloadFileOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: null,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteFileOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteFileOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteFile",
   method: "delete",
   path: "/api/v1/files/{atchFileSn}/{fileSn}",
@@ -5858,9 +6489,11 @@ export const deleteFileOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const downloadFile_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const downloadFile_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "downloadFile_1",
   method: "get",
   path: "/api/v1/admin/system/files/{atchFileSn}/{fileSn}",
@@ -5875,9 +6508,11 @@ export const downloadFile_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: null,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteFile_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteFile_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteFile_1",
   method: "delete",
   path: "/api/v1/admin/system/files/{atchFileSn}/{fileSn}",
@@ -5892,9 +6527,11 @@ export const deleteFile_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const downloadFile_2Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const downloadFile_2Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "downloadFile_2",
   method: "get",
   path: "/api/v1/admin/content/files/{atchFileSn}/{fileSn}",
@@ -5909,9 +6546,11 @@ export const downloadFile_2Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: null,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteFile_2Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteFile_2Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteFile_2",
   method: "delete",
   path: "/api/v1/admin/content/files/{atchFileSn}/{fileSn}",
@@ -5926,9 +6565,11 @@ export const deleteFile_2Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const downloadFile_3Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const downloadFile_3Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "downloadFile_3",
   method: "get",
   path: "/api/v1/admin/operation/files/{atchFileSn}/{fileSn}",
@@ -5943,9 +6584,11 @@ export const downloadFile_3Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: null,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteFile_3Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteFile_3Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteFile_3",
   method: "delete",
   path: "/api/v1/admin/operation/files/{atchFileSn}/{fileSn}",
@@ -5960,9 +6603,11 @@ export const deleteFile_3Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getFileListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getFileListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getFileList",
   method: "get",
   path: "/api/v1/files/{atchFileSn}",
@@ -5977,9 +6622,11 @@ export const getFileListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListFileDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getFileList_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getFileList_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getFileList_1",
   method: "get",
   path: "/api/v1/admin/system/files/{atchFileSn}",
@@ -5994,9 +6641,11 @@ export const getFileList_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListFileDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getFileList_2Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getFileList_2Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getFileList_2",
   method: "get",
   path: "/api/v1/admin/content/files/{atchFileSn}",
@@ -6011,9 +6660,11 @@ export const getFileList_2Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListFileDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getFileList_3Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getFileList_3Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getFileList_3",
   method: "get",
   path: "/api/v1/admin/operation/files/{atchFileSn}",
@@ -6028,9 +6679,11 @@ export const getFileList_3Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListFileDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getDashboardDataOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getDashboardDataOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getDashboardData",
   method: "get",
   path: "/api/v1/dashboard",
@@ -6045,9 +6698,11 @@ export const getDashboardDataOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseDashboardResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [["taskList","*","pswd"],["notiList","*","pswd"]],
-});
+  });
+})();
 
-export const getCommunities_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getCommunities_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getCommunities_1",
   method: "get",
   path: "/api/v1/communities",
@@ -6062,9 +6717,11 @@ export const getCommunities_1Operation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponsePageResponseCommunityDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getCommunity_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getCommunity_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getCommunity_1",
   method: "get",
   path: "/api/v1/communities/{cmntySn}",
@@ -6079,9 +6736,11 @@ export const getCommunity_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseCommunityDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getMyMembershipOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getMyMembershipOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getMyMembership",
   method: "get",
   path: "/api/v1/communities/{cmntySn}/membership",
@@ -6096,9 +6755,11 @@ export const getMyMembershipOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseCommunityMembershipDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const leaveCommunityOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const leaveCommunityOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "leaveCommunity",
   method: "delete",
   path: "/api/v1/communities/{cmntySn}/membership",
@@ -6113,9 +6774,11 @@ export const leaveCommunityOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getCommunityBoardsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getCommunityBoardsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getCommunityBoards",
   method: "get",
   path: "/api/v1/communities/{cmntySn}/boards",
@@ -6130,9 +6793,11 @@ export const getCommunityBoardsOperation = /*#__PURE__*/ defineGeneratedOperatio
   envelopeSchema: ApiResponseListCommunityBoardDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getPostsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getPostsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getPosts",
   method: "get",
   path: "/api/v1/boards/{bbsId}",
@@ -6147,9 +6812,11 @@ export const getPostsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseBoardDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [["list","*","pswd"]],
-});
+  });
+})();
 
-export const getStats_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getStats_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getStats_1",
   method: "get",
   path: "/api/v1/boards/{bbsId}/stats",
@@ -6164,9 +6831,11 @@ export const getStats_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseBoardStatsResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getAverageOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getAverageOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getAverage",
   method: "get",
   path: "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/average",
@@ -6181,9 +6850,11 @@ export const getAverageOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseSatisfactionAverageResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getBoardMetaOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getBoardMetaOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getBoardMeta",
   method: "get",
   path: "/api/v1/boards/{bbsId}/meta",
@@ -6198,9 +6869,11 @@ export const getBoardMetaOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseBoardMetaDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const searchPostsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const searchPostsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "searchPosts",
   method: "get",
   path: "/api/v1/boards/search",
@@ -6215,9 +6888,11 @@ export const searchPostsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListBoardSearchItemResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getPublicFaqsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getPublicFaqsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getPublicFaqs",
   method: "get",
   path: "/api/v1/boards/public-faqs",
@@ -6232,9 +6907,11 @@ export const getPublicFaqsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponsePublicFaqListItemResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getPublicFaqDetailOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getPublicFaqDetailOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getPublicFaqDetail",
   method: "get",
   path: "/api/v1/boards/public-faqs/{pstSn}",
@@ -6249,9 +6926,11 @@ export const getPublicFaqDetailOperation = /*#__PURE__*/ defineGeneratedOperatio
   envelopeSchema: ApiResponsePublicFaqDetailResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getReflectedBannersOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getReflectedBannersOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getReflectedBanners",
   method: "get",
   path: "/api/v1/banners/reflected",
@@ -6266,9 +6945,11 @@ export const getReflectedBannersOperation = /*#__PURE__*/ defineGeneratedOperati
   envelopeSchema: ApiResponseListBannerDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getCurrentUserOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getCurrentUserOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getCurrentUser",
   method: "get",
   path: "/api/v1/auth/me",
@@ -6283,9 +6964,11 @@ export const getCurrentUserOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseCurrentUserResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getApprovalDetailOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getApprovalDetailOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getApprovalDetail",
   method: "get",
   path: "/api/v1/approvals/{id}",
@@ -6300,9 +6983,11 @@ export const getApprovalDetailOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponseInformalSanctionDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const cancelApprovalOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const cancelApprovalOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "cancelApproval",
   method: "delete",
   path: "/api/v1/approvals/{id}",
@@ -6317,9 +7002,11 @@ export const cancelApprovalOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getTaskTypesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getTaskTypesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getTaskTypes",
   method: "get",
   path: "/api/v1/approvals/task-types",
@@ -6334,9 +7021,11 @@ export const getTaskTypesOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListCommonCodeDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getProcessedOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getProcessedOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getProcessed",
   method: "get",
   path: "/api/v1/approvals/processed",
@@ -6351,9 +7040,11 @@ export const getProcessedOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseInformalSanctionDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getPendingOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getPendingOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getPending",
   method: "get",
   path: "/api/v1/approvals/pending",
@@ -6368,9 +7059,11 @@ export const getPendingOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseInformalSanctionDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getMyHistoryOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getMyHistoryOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getMyHistory",
   method: "get",
   path: "/api/v1/approvals/my",
@@ -6385,9 +7078,11 @@ export const getMyHistoryOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseInformalSanctionDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getDepartmentRecipientsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getDepartmentRecipientsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getDepartmentRecipients",
   method: "get",
   path: "/api/v1/admin/system/users/by-department/{ognzId}",
@@ -6402,9 +7097,11 @@ export const getDepartmentRecipientsOperation = /*#__PURE__*/ defineGeneratedOpe
   envelopeSchema: ApiResponseDepartmentRecipientsDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getAbsencesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getAbsencesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getAbsences",
   method: "get",
   path: "/api/v1/admin/system/user-absences",
@@ -6419,9 +7116,11 @@ export const getAbsencesOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListUserAbsenceDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getResponsesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getResponsesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getResponses",
   method: "get",
   path: "/api/v1/admin/system/survey-responses",
@@ -6436,9 +7135,11 @@ export const getResponsesOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseSurveyResultDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getResponseOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getResponseOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getResponse",
   method: "get",
   path: "/api/v1/admin/system/survey-responses/{srvyRspnsSn}",
@@ -6453,9 +7154,11 @@ export const getResponseOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseSurveyResultDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteResponseOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteResponseOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteResponse",
   method: "delete",
   path: "/api/v1/admin/system/survey-responses/{srvyRspnsSn}",
@@ -6470,9 +7173,11 @@ export const deleteResponseOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getUserStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getUserStatsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getUserStats",
   method: "get",
   path: "/api/v1/admin/system/statistics/user",
@@ -6487,9 +7192,11 @@ export const getUserStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListStatsDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getSummaryOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getSummaryOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getSummary",
   method: "get",
   path: "/api/v1/admin/system/statistics/summary",
@@ -6504,9 +7211,11 @@ export const getSummaryOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseSummaryStatsDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getReportStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getReportStatsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getReportStats",
   method: "get",
   path: "/api/v1/admin/system/statistics/report",
@@ -6521,9 +7230,11 @@ export const getReportStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListStatsDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getDataUsageStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getDataUsageStatsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getDataUsageStats",
   method: "get",
   path: "/api/v1/admin/system/statistics/data-usage",
@@ -6538,9 +7249,11 @@ export const getDataUsageStatsOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponseListStatsDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getConnectStats_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getConnectStats_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getConnectStats_1",
   method: "get",
   path: "/api/v1/admin/system/statistics/connect",
@@ -6555,9 +7268,11 @@ export const getConnectStats_1Operation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponseListStatsDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getBbsStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getBbsStatsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getBbsStats",
   method: "get",
   path: "/api/v1/admin/system/statistics/bbs",
@@ -6572,9 +7287,11 @@ export const getBbsStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListStatsDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getPoliciesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getPoliciesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getPolicies",
   method: "get",
   path: "/api/v1/admin/system/policies",
@@ -6589,9 +7306,11 @@ export const getPoliciesOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListPolicyResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getMenuCreationManageListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getMenuCreationManageListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getMenuCreationManageList",
   method: "get",
   path: "/api/v1/admin/system/menus/creation-manage",
@@ -6606,9 +7325,11 @@ export const getMenuCreationManageListOperation = /*#__PURE__*/ defineGeneratedO
   envelopeSchema: ApiResponsePageResponseMenuCreateDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getAllMenusOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getAllMenusOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getAllMenus",
   method: "get",
   path: "/api/v1/admin/system/menus/all",
@@ -6623,9 +7344,11 @@ export const getAllMenusOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListMenuDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getWebLogListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getWebLogListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getWebLogList",
   method: "get",
   path: "/api/v1/admin/system/logs/web",
@@ -6640,9 +7363,11 @@ export const getWebLogListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseWebLogDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const exportWebLogsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const exportWebLogsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "exportWebLogs",
   method: "get",
   path: "/api/v1/admin/system/logs/web/export.xlsx",
@@ -6657,9 +7382,11 @@ export const exportWebLogsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: null,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getUserLogListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getUserLogListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getUserLogList",
   method: "get",
   path: "/api/v1/admin/system/logs/user",
@@ -6674,9 +7401,11 @@ export const getUserLogListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseUserLogDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const exportUserLogsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const exportUserLogsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "exportUserLogs",
   method: "get",
   path: "/api/v1/admin/system/logs/user/export.xlsx",
@@ -6691,9 +7420,11 @@ export const exportUserLogsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: null,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getSysLogListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getSysLogListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getSysLogList",
   method: "get",
   path: "/api/v1/admin/system/logs/system",
@@ -6708,9 +7439,11 @@ export const getSysLogListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseSysLogDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getSysLogOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getSysLogOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getSysLog",
   method: "get",
   path: "/api/v1/admin/system/logs/system/{sysLogSn}",
@@ -6725,9 +7458,11 @@ export const getSysLogOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseSysLogDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const exportSystemLogsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const exportSystemLogsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "exportSystemLogs",
   method: "get",
   path: "/api/v1/admin/system/logs/system/export.xlsx",
@@ -6742,9 +7477,11 @@ export const exportSystemLogsOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: null,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getPrivacyLogListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getPrivacyLogListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getPrivacyLogList",
   method: "get",
   path: "/api/v1/admin/system/logs/privacy",
@@ -6759,9 +7496,11 @@ export const getPrivacyLogListOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponsePageResponsePrivacyLogDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const exportPrivacyLogsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const exportPrivacyLogsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "exportPrivacyLogs",
   method: "get",
   path: "/api/v1/admin/system/logs/privacy/export.xlsx",
@@ -6776,9 +7515,11 @@ export const exportPrivacyLogsOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: null,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getLoginLogListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getLoginLogListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getLoginLogList",
   method: "get",
   path: "/api/v1/admin/system/logs/login",
@@ -6793,9 +7534,11 @@ export const getLoginLogListOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseLoginLogDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getLoginLogOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getLoginLogOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getLoginLog",
   method: "get",
   path: "/api/v1/admin/system/logs/login/{lgnSn}",
@@ -6810,9 +7553,11 @@ export const getLoginLogOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseLoginLogDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const exportLoginLogsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const exportLoginLogsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "exportLoginLogs",
   method: "get",
   path: "/api/v1/admin/system/logs/login/export.xlsx",
@@ -6827,9 +7572,11 @@ export const exportLoginLogsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: null,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getLoginPolicyListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getLoginPolicyListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getLoginPolicyList",
   method: "get",
   path: "/api/v1/admin/system/login-policies",
@@ -6844,9 +7591,11 @@ export const getLoginPolicyListOperation = /*#__PURE__*/ defineGeneratedOperatio
   envelopeSchema: ApiResponsePageResponseLoginPolicyDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getDeptAuthoritiesOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getDeptAuthoritiesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getDeptAuthorities",
   method: "get",
   path: "/api/v1/admin/system/dept-authorities/{deptId}",
@@ -6861,9 +7610,11 @@ export const getDeptAuthoritiesOperation = /*#__PURE__*/ defineGeneratedOperatio
   envelopeSchema: ApiResponsePageResponseDeptAuthorProjectionResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getDeptTreeOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getDeptTreeOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getDeptTree",
   method: "get",
   path: "/api/v1/admin/system/departments/tree",
@@ -6878,9 +7629,11 @@ export const getDeptTreeOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListDeptManageDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getInstitutionCodeListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getInstitutionCodeListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getInstitutionCodeList",
   method: "get",
   path: "/api/v1/admin/system/codes/institution",
@@ -6895,9 +7648,11 @@ export const getInstitutionCodeListOperation = /*#__PURE__*/ defineGeneratedOper
   envelopeSchema: ApiResponsePageResponseInstitutionCodeDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getInstitutionCodeDetailOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getInstitutionCodeDetailOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getInstitutionCodeDetail",
   method: "get",
   path: "/api/v1/admin/system/codes/institution/{code}",
@@ -6912,9 +7667,11 @@ export const getInstitutionCodeDetailOperation = /*#__PURE__*/ defineGeneratedOp
   envelopeSchema: ApiResponseInstitutionCodeDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getInstitutionCodeRecptnListOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getInstitutionCodeRecptnListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getInstitutionCodeRecptnList",
   method: "get",
   path: "/api/v1/admin/system/codes/institution/receptions",
@@ -6929,9 +7686,11 @@ export const getInstitutionCodeRecptnListOperation = /*#__PURE__*/ defineGenerat
   envelopeSchema: ApiResponsePageResponseInstitutionCodeRecptnDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getChangeHistoryOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getChangeHistoryOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getChangeHistory",
   method: "get",
   path: "/api/v1/admin/system/codes/change-history",
@@ -6946,9 +7705,11 @@ export const getChangeHistoryOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponsePageResponseCommonCodeChangeDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const isBoardMasterDeletableOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const isBoardMasterDeletableOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "isBoardMasterDeletable",
   method: "get",
   path: "/api/v1/admin/system/board-masters/{bbsId}/deletable",
@@ -6963,9 +7724,11 @@ export const isBoardMasterDeletableOperation = /*#__PURE__*/ defineGeneratedOper
   envelopeSchema: ApiResponseBooleanResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getReflectedBanners_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getReflectedBanners_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getReflectedBanners_1",
   method: "get",
   path: "/api/v1/admin/system/banners/reflected",
@@ -6980,9 +7743,11 @@ export const getReflectedBanners_1Operation = /*#__PURE__*/ defineGeneratedOpera
   envelopeSchema: ApiResponseListBannerDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getAuthorMenusOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getAuthorMenusOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getAuthorMenus",
   method: "get",
   path: "/api/v1/admin/system/authorities/{authrtCd}/menus",
@@ -6997,9 +7762,11 @@ export const getAuthorMenusOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseListMenuCreateDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getSmsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getSmsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getSms",
   method: "get",
   path: "/api/v1/admin/operation/sms/{smsTrsmSn}",
@@ -7014,9 +7781,11 @@ export const getSmsOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseSmsDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getSmsRecipientsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getSmsRecipientsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getSmsRecipients",
   method: "get",
   path: "/api/v1/admin/operation/sms/{smsTrsmSn}/recipients",
@@ -7031,9 +7800,11 @@ export const getSmsRecipientsOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseListSmsRecptnDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getDeliveryStatusOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getDeliveryStatusOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getDeliveryStatus",
   method: "get",
   path: "/api/v1/admin/operation/sms/delivery-status",
@@ -7048,9 +7819,11 @@ export const getDeliveryStatusOperation = /*#__PURE__*/ defineGeneratedOperation
   envelopeSchema: ApiResponseSmsDeliveryStatusDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const scanOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const scanOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "scan",
   method: "get",
   path: "/api/v1/admin/files/integrity",
@@ -7065,9 +7838,11 @@ export const scanOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseAttachmentIntegrityReportResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getMembersOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getMembersOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getMembers",
   method: "get",
   path: "/api/v1/admin/content/community/{cmntySn}/members",
@@ -7082,9 +7857,11 @@ export const getMembersOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseCommunityMemberDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getCommunityPortletOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const getCommunityPortletOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getCommunityPortlet",
   method: "get",
   path: "/api/v1/admin/content/community/portlet",
@@ -7099,9 +7876,11 @@ export const getCommunityPortletOperation = /*#__PURE__*/ defineGeneratedOperati
   envelopeSchema: ApiResponseListCommunityDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const getComments_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const getComments_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "getComments_1",
   method: "get",
   path: "/api/v1/admin/comments",
@@ -7116,9 +7895,11 @@ export const getComments_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseCommentDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [["list","*","pswd"]],
-});
+  });
+})();
 
-export const authzUsersOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const authzUsersOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "authzUsers",
   method: "get",
   path: "/api/v1/admin/authorization/users",
@@ -7133,9 +7914,11 @@ export const authzUsersOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseUserChoiceResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const authzHistoryOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const authzHistoryOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "authzHistory",
   method: "get",
   path: "/api/v1/admin/authorization/history",
@@ -7150,9 +7933,11 @@ export const authzHistoryOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseChangeResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const authzDepartmentsOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const authzDepartmentsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "authzDepartments",
   method: "get",
   path: "/api/v1/admin/authorization/departments",
@@ -7167,9 +7952,11 @@ export const authzDepartmentsOperation = /*#__PURE__*/ defineGeneratedOperation(
   envelopeSchema: ApiResponseListDepartmentChoiceResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const authzCatalogOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const authzCatalogOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "authzCatalog",
   method: "get",
   path: "/api/v1/admin/authorization/catalog",
@@ -7184,9 +7971,11 @@ export const authzCatalogOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseCatalogResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const searchUsersOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const searchUsersOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "searchUsers",
   method: "get",
   path: "/api/v1/address-books/search-users",
@@ -7201,9 +7990,11 @@ export const searchUsersOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponsePageResponseAddressBookUserDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteNoteOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteNoteOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteNote",
   method: "delete",
   path: "/api/v1/notes/{relationSn}",
@@ -7218,9 +8009,11 @@ export const deleteNoteOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const moderateOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const moderateOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "moderate",
   method: "delete",
   path: "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}/moderate",
@@ -7235,9 +8028,11 @@ export const moderateOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteBoardMasterPhysicallyOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteBoardMasterPhysicallyOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteBoardMasterPhysically",
   method: "delete",
   path: "/api/v1/admin/system/board-masters/{bbsId}/physical",
@@ -7252,9 +8047,11 @@ export const deleteBoardMasterPhysicallyOperation = /*#__PURE__*/ defineGenerate
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const rejectMemberOperation = /*#__PURE__*/ defineGeneratedOperation({
+export const rejectMemberOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "rejectMember",
   method: "delete",
   path: "/api/v1/admin/content/community/{cmntySn}/members/{userId}",
@@ -7269,9 +8066,11 @@ export const rejectMemberOperation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();
 
-export const deleteComment_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+export const deleteComment_1Operation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
   id: "deleteComment_1",
   method: "delete",
   path: "/api/v1/admin/comments/{id}",
@@ -7286,4 +8085,5 @@ export const deleteComment_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
-});
+  });
+})();

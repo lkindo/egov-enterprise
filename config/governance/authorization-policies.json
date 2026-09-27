@@ -3216,6 +3216,25 @@
       ]
     },
     {
+      "target": "MailService#getSentMailList",
+      "source": "business-app/src/main/java/nuri/business/service/mail/MailService.java",
+      "policy": "REACHABILITY_WITH_PRIVACY",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "boolean searchesBody = \"2\".equals(searchCondition) && hasText(searchKeyword);",
+        "String senderLoginId = searchesBody ? nuri.business.security.util.SecurityUtil.getCurrentLoginId().filter(MailService::hasText).orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED)) : resolveSenderScope();",
+        "searchSentMails(senderLoginId, searchCondition, searchKeyword, Objects.requireNonNull(pageable))"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.getCurrentEsntlId()",
+        "SecurityUtil.hasRole(",
+        "SecurityUtil.hasPermission(",
+        "assertOwnerOrPermission",
+        ".orElse(null)"
+      ],
+      "parameterCount": 3
+    },
+    {
       "target": "MailService#resolveSenderScope",
       "source": "business-app/src/main/java/nuri/business/service/mail/MailService.java",
       "policy": "OWNER_OR_ADMIN",

@@ -12,6 +12,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -212,6 +215,73 @@ class MailServiceTest {
         assertThat(mailService.getSentMail(1L).getEmailCn()).isEqualTo("남의 본문");
         assertThat(mailService.getSentMailList("1", null, PageRequest.of(0, 10)).getContent())
                 .extracting(SentMailDto::getEmailCn).containsExactly("남의 본문");
+    }
+
+    @Test
+    @DisplayName("관리자의 본문 검색도 본인 발송으로 제한한다 — 숨긴 본문을 결과와 건수로 추론할 수 없다")
+    void getSentMailList_bodySearch_adminScopedToSelf() {
+        Pageable pageable = PageRequest.of(0, 1);
+        given(sentMailRepository.searchSentMails(nullable(String.class), eq("2"), eq("본문 단서"), eq(pageable)))
+                .willReturn(Page.empty(pageable));
+
+        mailService.getSentMailList("2", "본문 단서", pageable);
+
+        verify(sentMailRepository).searchSentMails("admin", "2", "본문 단서", pageable);
+    }
+
+    @Test
+    @DisplayName("일반 사용자는 계속 본인 메일 본문을 검색할 수 있다")
+    void getSentMailList_bodySearch_userScopedToSelf() {
+        asUser("sender");
+        Pageable pageable = PageRequest.of(0, 1);
+        given(sentMailRepository.searchSentMails(nullable(String.class), eq("2"), eq("본문 단서"), eq(pageable)))
+                .willReturn(Page.empty(pageable));
+
+        mailService.getSentMailList("2", "본문 단서", pageable);
+
+        verify(sentMailRepository).searchSentMails("sender", "2", "본문 단서", pageable);
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"  "})
+    @DisplayName("관리자라도 본문 검색의 발신자를 식별할 수 없으면 전건 조회로 바꾸지 않고 거부한다")
+    void getSentMailList_bodySearch_requiresNonBlankLoginId(String loginId) {
+        securityUtil.when(SecurityUtil::getCurrentLoginId).thenReturn(Optional.ofNullable(loginId));
+
+        assertThatThrownBy(() -> mailService.getSentMailList("2", "본문 단서", PageRequest.of(0, 1)))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(error -> assertThat(((BusinessException) error).getErrorCode())
+                        .isEqualTo(CommonErrorCode.ACCESS_DENIED));
+
+        verifyNoInteractions(sentMailRepository);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"1", "3"})
+    @DisplayName("관리자의 제목·발신자 검색은 기존 전체 이력 범위를 유지한다")
+    void getSentMailList_metadataSearch_keepsAdminScope(String condition) {
+        Pageable pageable = PageRequest.of(0, 10);
+        given(sentMailRepository.searchSentMails(nullable(String.class), eq(condition), eq("검색어"), eq(pageable)))
+                .willReturn(Page.empty(pageable));
+
+        mailService.getSentMailList(condition, "검색어", pageable);
+
+        verify(sentMailRepository).searchSentMails(null, condition, "검색어", pageable);
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"  "})
+    @DisplayName("본문 조건이어도 검색어가 없으면 본문을 판정하지 않으므로 관리자 이력 범위를 유지한다")
+    void getSentMailList_emptyBodySearch_keepsAdminScope(String keyword) {
+        Pageable pageable = PageRequest.of(0, 10);
+        given(sentMailRepository.searchSentMails(nullable(String.class), eq("2"), eq(keyword), eq(pageable)))
+                .willReturn(Page.empty(pageable));
+
+        mailService.getSentMailList("2", keyword, pageable);
+
+        verify(sentMailRepository).searchSentMails(null, "2", keyword, pageable);
     }
 
     @Test

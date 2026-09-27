@@ -34,6 +34,7 @@ import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { deptScheduleFormSchema } from './schedule-form-validation';
+import { PagePagination } from '@/components/common/PagePagination';
 
 const SCHEDULE_FORM_LABELS = {
     schdlNm: '일정명',
@@ -70,10 +71,13 @@ export default function ScheduleDeptClient() {
     const [loading, setLoading] = useState(true);
     // 조회 실패를 "등록된 일정 없음"으로 위장하지 않기 위해 실패 사유를 목록 영역에 그대로 노출한다.
     const [fetchError, setFetchError] = useState<Error | null>(null);
+    const [pageInfo, setPageInfo] = useState({ total: 0, size: 10 });
+    const fetchSequence = useRef(0);
     // 서버는 pageIndex/pageUnit 을 받는다. 종전의 pageNo 는 ApiService 매핑 대상이 아니라
     // 그대로 전달돼 서버에서 무시됐고, 그래서 '조회' 버튼이 사실상 무동작이었다.
     const [params, setParams] = useState<ScheduleSearchParams>({
         pageIndex: 1,
+        size: 10,
         schdlNm: '',
     });
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -99,22 +103,34 @@ export default function ScheduleDeptClient() {
     });
 
     const fetchList = useCallback(async () => {
+        const sequence = ++fetchSequence.current;
         setLoading(true);
         setFetchError(null);
         try {
             const response = await getDeptScheduleList(params);
+            if (sequence !== fetchSequence.current) return;
+            const size = response?.size > 0 ? response.size : (params.size ?? 10);
+            const total = response?.total ?? 0;
+            const lastPage = Math.max(1, Math.ceil(total / size));
+            if ((params.pageIndex ?? 1) > lastPage) {
+                setParams((current) => ({ ...current, pageIndex: lastPage, size }));
+                return;
+            }
+            setPageInfo({ total, size });
             setSchedules(response?.list ?? []);
         } catch (err) {
+            if (sequence !== fetchSequence.current) return;
             // 실패를 빈 목록으로 삼키면 화면이 "일정 0건"으로 거짓말한다 — 사유와 재시도 수단을 노출한다.
             setFetchError(toError(err));
             setSchedules([]);
         } finally {
-            setLoading(false);
+            if (sequence === fetchSequence.current) setLoading(false);
         }
     }, [params]);
 
     useEffect(() => {
-        fetchList();
+        void fetchList();
+        return () => { fetchSequence.current += 1; };
     }, [fetchList]);
 
     const handleSearch = (e: React.FormEvent) => {
@@ -253,7 +269,7 @@ export default function ScheduleDeptClient() {
                     placeholder="일정명으로 검색하세요"
                     className="max-w-sm rounded-lg"
                     value={params.schdlNm}
-                    onChange={(e) => setParams(prev => ({ ...prev, schdlNm: e.target.value }))}
+                    onChange={(e) => setParams(prev => ({ ...prev, schdlNm: e.target.value, pageIndex: 1 }))}
                 />
                 <Button onClick={handleSearch} className="rounded-lg px-8 font-bold">조회</Button>
             </div>
@@ -307,7 +323,7 @@ export default function ScheduleDeptClient() {
                                 const isDeleting = deletingScheduleSn === schedule.schdlSn;
                                 return (
                                 <TableRow key={schedule.schdlSn} className="hover:bg-muted/50 transition-colors">
-                                    <TableCell className="text-center font-mono text-muted-foreground">{index + 1}</TableCell>
+                                    <TableCell className="text-center font-mono text-muted-foreground">{((params.pageIndex ?? 1) - 1) * pageInfo.size + index + 1}</TableCell>
                                     <TableCell className="font-bold text-foreground">{schedule.schdlNm}</TableCell>
                                     <TableCell className="text-sm font-medium">
                                         {formatYmd(schedule.schdlBgngYmd)} ~ {formatYmd(schedule.schdlEndYmd)}
@@ -352,6 +368,14 @@ export default function ScheduleDeptClient() {
                     </TableBody>
                 </Table>
             </div>
+            {!loading && !fetchError && (
+                <PagePagination
+                    total={pageInfo.total}
+                    page={params.pageIndex ?? 1}
+                    size={pageInfo.size}
+                    onPageChange={(pageIndex) => setParams((current) => ({ ...current, pageIndex, size: pageInfo.size }))}
+                />
+            )}
 
             <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
                 <DialogContent className="max-w-md rounded-lg border-none shadow-2xl p-8">

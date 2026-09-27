@@ -53,6 +53,21 @@ PostgreSQL 스키마 변경의 구버전 호환성 파손 위험을 줄이기 �
 - `reviewBy`가 도래한 레거시 부채와 `expiresAt`이 도래한 신규 waiver는 실패한다.
 - 이 인벤토리는 기존 파괴 DDL의 안전성을 증명하거나 승인하지 않는다. 정기 검토 시 운영 증거를 확인하고, 적용 migration을 수정하는 대신 후속 보정 migration·문서·배포 통제로 부채를 해소한다.
 
+### 3.2 보호 이력에 있던 versioned SQL의 불변성
+
+기존 ZDM 게이트가 Git 보호 기준에 존재한 `V*__*.sql`의 변경·삭제·개명을 추가로 차단한다. 커밋, index, 현재 작업 파일을 모두 비교하므로 작업 파일만 복원해서 커밋될 변경을 가릴 수 없다. 줄바꿈은 기존 fingerprint와 같이 정규화하며 SQL 내용·주석·공백 변경은 허용하지 않는다. 기준에 없던 새 버전과 `R__` repeatable SQL의 변경은 이력 불변성 검사 대상이 아니며, 기존 DDL·waiver 검사는 계속 적용된다. 이 검사는 저장소 이력을 보호하며 실제 운영 DB에 적용된 버전을 증명하지 않는다.
+
+- PR은 event의 immutable base/head SHA와 실제 checkout merge의 두 부모를 대조한다. 부모 PR을 대상으로 한 stacked PR도 보호 branch와 base의 공통 조상에 있던 SQL을 검사한다.
+- branch push는 event의 `before`가 유효하고 tested SHA의 조상이어야 한다. zero SHA·누락된 object·비조상 push를 현재 HEAD로 대체하지 않는다. 보호 branch 또는 기존 CI의 `master` push만 지원한다.
+- release tag push는 tag가 tested SHA를 가리키고 그 commit이 보호 branch 이력에 포함되어야 한다. 새 tag의 zero `before`는 branch push와 구분한다. release의 기존 required CI 증거 검증은 별도로 유지한다.
+- 로컬과 `workflow_dispatch`는 [required-checks](../../.github/required-checks.json)의 보호 branch에 대한 `origin/<branch>`와 tested HEAD의 공통 조상을 사용한다. GitHub 실행은 추가로 `GITHUB_SHA`와 checkout을 결속한다. 다른 GitHub event는 실패한다.
+
+원본 저장소와 commit 또는 ref가 있는 파생 저장소는 전체 이력과 보호 remote ref가 필요하다. CI backend checkout은 `fetch-depth: 0`이며 `onlineBuild → check → harnessTest` 결과가 기존 required `backend-build`로 집계된다. 로컬 실행은 `./gradlew :api-server:harnessTest --tests '*ZeroDowntimeMigrationLinterTest'`를 사용한다. 이력이 없으면 먼저 `git fetch origin main`을 실행하고, shallow clone이면 `git fetch --unshallow origin`으로 전체 이력을 준비한다(보호 branch가 다른 파생 저장소는 해당 branch 사용). 기준 ref를 임의의 HEAD로 재동결하는 우회 옵션은 제공하지 않는다.
+
+[ADR-0018](decisions/ADR-0018-governance-review-lifecycle-and-adoption.md)의 생성 산출물은 원본 V2 이력을 V1 baseline으로 바꾼다. 기존 `ReusableHarnessProfile`의 profile·lock·manifest hash·소스 모집단 검증을 통과한 산출물은 자체 `.git`이 없는 archive 또는 생성기가 `git init`만 수행한 빈 저장소일 때 원본 Git 이력 검사를 적용하지 않는다. 빈 저장소는 자체 Git 디렉터리·동일 top-level·비얕은 이력을 확인하고, 성공한 전체 ref 조회가 비어 있으며 정상 symbolic HEAD가 `refs/heads/...`를 가리켜 commit이 없는 unborn 상태임을 확인해야 한다. Git 명령 실패나 손상된 HEAD·refs를 빈 이력으로 해석하지 않는다. HEAD commit 또는 ref가 하나라도 있으면 초기 생성물로 통과시키지 않는다.
+
+부모 producer 저장소의 Git 이력을 기준으로 사용하지 않으며, DDL·waiver·생성물 무결성 검사는 유지한다. 일반 소스 archive·미표시 빈 Git 저장소나 잘못된 projection 증거는 실패한다. 정상 생성물·HEAD만 있는 저장소·refs만 있는 저장소·도입 후 SQL 변조·손상된 Git 메타데이터·shallow 저장소를 같은 기존 하네스의 격리 fixture로 검사한다.
+
 ## 4. 모니터링 연동
 이 하네스는 `./gradlew :api-server:harnessTest`에 포함되고, 소스 변경 시 로컬 pre-push와 상위 검증 경로에서 실행된다. 문서-only fast-pass는 이를 실행하지 않는다. 위반 감지 시 JUnit 테스트를 실패시키며, 규칙이나 실행 경로를 바꿀 때는 의도적 위반이 red가 되는지 확인한다.
 

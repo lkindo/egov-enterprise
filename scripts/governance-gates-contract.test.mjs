@@ -18,6 +18,8 @@ import {
   parseMutationScopeMatrix,
   readPopulationConsumer,
   validateGovernanceRegistry,
+  validateCriticalMutationTargets,
+  validatePitResultCheck,
   validatePlaywrightProjectContract,
 } from './governance-gates-contract.mjs';
 
@@ -304,6 +306,47 @@ test('PIT must fail closed when a target produces no mutations', () => {
     .failWhenNoMutations = false;
 
   assert.match(validate(registry).join('\n'), /failWhenNoMutations must remain true/i);
+});
+
+test('PIT result check stays attached to its task and validates the exact XML output', () => {
+  const source = readFileSync(path.join(repoRoot, 'build.gradle'), 'utf8');
+  assert.deepEqual(validatePitResultCheck(source), []);
+});
+
+test('PIT result-check removal, status inversion, unsafe parsing and decoys are rejected', () => {
+  const source = readFileSync(path.join(repoRoot, 'build.gradle'), 'utf8');
+  const mutations = [
+    ["pitestVersion = '1.25.9'", "pitestVersion = '1.22.1'"],
+    ["pitestVersion = '1.25.9'", "// pitestVersion = '1.25.9'"],
+    ["pitestVersion = '1.25.9'", "pitestVersion = '1.25.9'\n        pitestVersion = '1.22.1'"],
+    ['enableDefaultIncrementalAnalysis = false', 'enableDefaultIncrementalAnalysis = true'],
+    ['enableDefaultIncrementalAnalysis = false', '// enableDefaultIncrementalAnalysis = false'],
+    ['enableDefaultIncrementalAnalysis = false', 'enableDefaultIncrementalAnalysis = false\n        enableDefaultIncrementalAnalysis = true'],
+    ['enableDefaultIncrementalAnalysis = false', "enableDefaultIncrementalAnalysis = false\n        historyInputLocation = file('old-history.txt')"],
+    ['enableDefaultIncrementalAnalysis = false', "enableDefaultIncrementalAnalysis = false\n        historyOutputLocation = file('old-history.txt')"],
+    ["tasks.named('pitest') {", "tasks.named('test') {"],
+    ['doLast { task ->', 'doFirst { task ->'],
+    ['doFirst { task ->', 'doLast { task ->'],
+    ['timestampedReports = false', 'timestampedReports = true'],
+    ["task.reportDir.file('mutations.xml')", "layout.buildDirectory.file('stale/mutations.xml')"],
+    ['if (!mutationReport.isFile())', 'if (false)'],
+    ["getAttribute('status') == 'RUN_ERROR'", "getAttribute('status') != 'RUN_ERROR'"],
+    ["getAttribute('status') == 'RUN_ERROR'", "getAttribute('status') == 'TIMED_OUT'"],
+    ["disallow-doctype-decl', true", "disallow-doctype-decl', false"],
+    ["ACCESS_EXTERNAL_DTD, ''", "ACCESS_EXTERNAL_DTD, 'all'"],
+    ['catch (org.xml.sax.SAXException | IOException exception) {', 'catch (IOException exception) {'],
+    ['if (mutations.length == 0)', 'if (false)'],
+    ['!mutationReport.delete()', 'false'],
+    ['!reportDirectory.toPath().startsWith', 'reportDirectory.toPath().startsWith'],
+    ['java.nio.file.Files.isSymbolicLink(mutationReport.toPath())', 'false'],
+    ["if (mutations.item(index).getAttribute('status') == 'RUN_ERROR')", "def decoy = \"if (mutations.item(index).getAttribute('status') == 'RUN_ERROR')\"; if (false)"],
+  ];
+  for (const [before, after] of mutations) {
+    assert.ok(source.includes(before), `fixture target must exist: ${before}`);
+    assert.notDeepEqual(validatePitResultCheck(source.replace(before, after)), [], before);
+  }
+  assert.notDeepEqual(validatePitResultCheck(source.split(/\r?\n/).map(line => `// ${line}`).join('\n')), []);
+  assert.notDeepEqual(validatePitResultCheck(`def decoy = ${JSON.stringify(source)}`), []);
 });
 
 test('duplicate stable rule IDs and duplicate sources are rejected', () => {
@@ -644,6 +687,50 @@ test('PIT registry and CI keep the same exact ten-scope matrix catalog', () => {
   for (const entry of product.scopes) assert.equal(owners.get(entry.scope), 'mutation-scope');
   for (const entry of migration.scopes) assert.equal(owners.get(entry.scope), 'mutation-scope-migration');
   assert.doesNotMatch(pit.selector.matrixScopes[0].classes, /service\.(?:image|calendar|log)\.\*/);
+});
+
+test('PIT critical security targets remain in both the existing registry and CI scopes', () => {
+  const registry = loadGovernanceRegistry(registryPath);
+  const declared = registry.gateSets.find(({ id }) => id === 'GATESET-PIT-MUTATION-AGGREGATE').selector.matrixScopes;
+  const ci = readFileSync(path.join(repoRoot, '.github/workflows/ci.yml'), 'utf8');
+  const actual = parseMutationScopeMatrix(ci, 'mutation-scope');
+  assert.deepEqual(actual.errors, []);
+  assert.deepEqual(validateCriticalMutationTargets(declared), []);
+  assert.deepEqual(validateCriticalMutationTargets(actual.scopes), []);
+});
+
+test('PIT critical security targets cannot disappear by narrowing both matching catalogs', () => {
+  const retained = ['nuri.business.service.auth.*', 'nuri.business.service.login.*', 'nuri.business.security.util.*'];
+  const added = ['nuri.business.service.menu.MenuService', 'nuri.business.security.iam.EgovAuthenticationProvider',
+    'nuri.business.security.filter.RateLimitFilter'];
+  const survey = 'nuri.business.service.survey.SurveyResultService';
+  const scope = classes => [
+    { scope: 'business-core-auth', classes: classes.join(',') },
+    { scope: 'business-app', classes: survey },
+  ];
+  assert.deepEqual(validateCriticalMutationTargets(scope([...retained, ...added])), []);
+  for (const missing of added) {
+    const fixture = scope([...retained, ...added.filter(target => target !== missing)]);
+    assert.deepEqual(validateCriticalMutationTargets(fixture), [
+      `PIT business-core-auth is missing critical target '${missing}'`,
+    ]);
+  }
+  const missingSurvey = scope([...retained, ...added]);
+  missingSurvey[1].classes = 'nuri.business.service.mail.*';
+  assert.deepEqual(validateCriticalMutationTargets(missingSurvey), [
+    `PIT business-app is missing critical target '${survey}'`,
+  ]);
+  assert.equal(validateCriticalMutationTargets([]).length, added.length + 1);
+
+  // Exercise the real registry validator too, so a detached helper cannot satisfy this contract.
+  const registry = clone(loadGovernanceRegistry(registryPath));
+  const declared = registry.gateSets.find(({ id }) => id === 'GATESET-PIT-MUTATION-AGGREGATE').selector.matrixScopes;
+  const protectedTargets = [...added, survey];
+  for (const entry of declared) {
+    entry.classes = entry.classes.split(',').filter(target => !protectedTargets.includes(target)).join(',');
+  }
+  const errors = validate(registry).join('\n');
+  for (const target of protectedTargets) assert.ok(errors.includes(`missing critical target '${target}'`));
 });
 
 test('a PIT scope declared under the wrong job is rejected', () => {

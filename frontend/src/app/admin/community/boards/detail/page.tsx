@@ -1,7 +1,13 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { BoardDetailClient } from './BoardDetailClient';
 import { getInitialBoardDetailData } from './BoardDetailServer';
+
+export const metadata: Metadata = {
+  title: `게시글 상세 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 function BoardDetailSkeleton() {
   return (

@@ -395,8 +395,8 @@ test('mutation aggregate remains bound to its source job and real PIT command', 
     '  mutation-scope:\n    continue-on-error: true\n',
   );
   const pitStepContinue = ciContent.replace(
-    /      - name: Incremental Mutation Test \(\$\{\{ matrix\.scope \}\}\)\r?\n/,
-    '      - name: Incremental Mutation Test (${{ matrix.scope }})\n        continue-on-error: true\n',
+    /      - name: Mutation Test \(\$\{\{ matrix\.scope \}\}\)\r?\n/,
+    '      - name: Mutation Test (${{ matrix.scope }})\n        continue-on-error: true\n',
   );
 
   assert.match(validateStaticContract({ manifest, ciContent: noNeeds }).join('\n'), /needs.*mutation-scope/i);
@@ -431,8 +431,8 @@ test('required source and aggregate steps cannot replace bash with a no-op shell
     '        id: e2e-run\n        shell: echo {0}',
   );
   const pitShell = ciContent.replace(
-    '      - name: Incremental Mutation Test (${{ matrix.scope }})',
-    '      - name: Incremental Mutation Test (${{ matrix.scope }})\n        shell: echo {0}',
+    '      - name: Mutation Test (${{ matrix.scope }})',
+    '      - name: Mutation Test (${{ matrix.scope }})\n        shell: echo {0}',
   );
   const aggregateShell = ciContent.replace(
     '      - name: E2E 샤드 결과 집계',
@@ -786,8 +786,8 @@ test('PIT source step cannot disable strict mutation or detach its target matrix
 
 test('PIT source and aggregate result steps cannot be conditionally skipped', () => {
   const skippedSource = ciContent.replace(
-    /      - name: Incremental Mutation Test \(\$\{\{ matrix\.scope \}\}\)\r?\n/,
-    '      - name: Incremental Mutation Test (${{ matrix.scope }})\n        if: false\n',
+    /      - name: Mutation Test \(\$\{\{ matrix\.scope \}\}\)\r?\n/,
+    '      - name: Mutation Test (${{ matrix.scope }})\n        if: false\n',
   );
   const skippedAggregate = ciContent.replace(
     /      - name: 뮤테이션 스코프 결과 집계\r?\n/,
@@ -812,7 +812,7 @@ test('frontend heavy source starts independently from the backend heavy source',
 test('Gradle verification commands fail on deprecation warnings', () => {
   const guardedCommands = [
     './gradlew :foundation:test --no-build-cache --warning-mode fail --console=plain',
-    './gradlew onlineBuild jacocoOnlineCoverageVerification -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain',
+    './gradlew onlineBuild jacocoOnlineCoverageVerification "-Dopenapi.export.path=$GITHUB_WORKSPACE/api-docs.json" --warning-mode fail --console=plain',
     './gradlew :api-server:schemaValidationTest --warning-mode fail --console=plain',
     './gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain',
   ];
@@ -841,7 +841,7 @@ test('mutation jobs provision the Gradle distribution with a bounded retry befor
   assert.match(ciContent, /if \[ "\$attempt" -eq 3 \]; then/);
 
   const provision = ciContent.indexOf('name: Provision Gradle distribution with bounded retry');
-  const pit = ciContent.indexOf('name: Incremental Mutation Test (${{ matrix.scope }})');
+  const pit = ciContent.indexOf('name: Mutation Test (${{ matrix.scope }})');
   assert.ok(provision >= 0 && provision < pit, 'Gradle distribution retry must run before the PIT hard gate');
 });
 

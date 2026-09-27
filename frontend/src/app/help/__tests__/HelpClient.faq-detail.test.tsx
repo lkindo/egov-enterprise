@@ -95,7 +95,7 @@ describe('HelpClient FAQ detail', () => {
     expect(harness.getFaqDetail).toHaveBeenCalledTimes(2);
     expect(search).toHaveValue('계정');
     await waitFor(() => {
-      expect(harness.getFaqs).toHaveBeenLastCalledWith({ keyword: '계정' });
+      expect(harness.getFaqs).toHaveBeenLastCalledWith({ page: 0, size: 10, keyword: '계정' });
     });
   });
 });

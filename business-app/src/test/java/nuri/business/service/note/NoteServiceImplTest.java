@@ -12,6 +12,8 @@ import nuri.foundation.core.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -338,6 +340,7 @@ class NoteServiceImplTest {
     @DisplayName("쪽지 발송 성공 - 단일 수신자")
     void sendNote_singleRecipient() throws Exception {
         // given
+        given(userRepository.findByEsntlIdIn(List.of("user2"))).willReturn(List.of(user("user2", "수신자")));
         String dsptchUserId = "user1";
         NoteDto dto = NoteDto.builder()
                 .noteSj("Subject")
@@ -358,6 +361,8 @@ class NoteServiceImplTest {
     @DisplayName("쪽지 발송 성공 - 다중 수신자 콤마 파싱")
     void sendNote_multipleRecipients() throws Exception {
         // given
+        given(userRepository.findByEsntlIdIn(List.of("user2", "user3")))
+                .willReturn(List.of(user("user2", "수신자2"), user("user3", "수신자3")));
         String dsptchUserId = "user1";
         NoteDto dto = NoteDto.builder()
                 .noteSj("Subject")
@@ -375,6 +380,56 @@ class NoteServiceImplTest {
         verify(noteRecptnRepository, times(2)).save(any(NoteRecptn.class));
     }
 
+    @Test
+    @DisplayName("수신자 중 없는 계정이 하나라도 있으면 본문·발신·수신·알림을 모두 저장하지 않는다")
+    void sendNote_missingAccountRejectsBeforeAnyWrite() {
+        given(userRepository.findByEsntlIdIn(List.of("active", "missing")))
+                .willReturn(List.of(user("active", "수신자")));
+
+        assertThatThrownBy(() -> noteService.sendNote("sender", NoteDto.builder()
+                .noteSj("제목").noteCn("본문").rcverId("active, missing").build()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+
+        verifyNoInteractions(noteRepository, noteTrnsmitRepository, noteRecptnRepository, eventPublisher);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"A", "D"})
+    @DisplayName("승인 대기·사용 중지 수신자가 섞이면 정상 수신자에게도 일부 발송하지 않는다")
+    void sendNote_inactiveAccountRejectsBeforeAnyWrite(String status) {
+        var inactive = nuri.business.domain.user.entity.User.builder()
+                .userId("inactive").pswd("x").esntlId("inactive").userNm("수신자")
+                .userSttsCd(status).build();
+        given(userRepository.findByEsntlIdIn(List.of("active", "inactive")))
+                .willReturn(List.of(user("active", "수신자"), inactive));
+
+        assertThatThrownBy(() -> noteService.sendNote("sender", NoteDto.builder()
+                .noteSj("제목").noteCn("본문").rcverId("active, inactive").build()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+
+        verifyNoInteractions(noteRepository, noteTrnsmitRepository, noteRecptnRepository, eventPublisher);
+    }
+
+    @Test
+    @DisplayName("활성 수신자의 기존 공백 토큰 무시·중복 수신 규칙을 바꾸지 않는다")
+    void sendNote_keepsDuplicateAndBlankTokenSemantics() {
+        given(userRepository.findByEsntlIdIn(List.of("active")))
+                .willReturn(List.of(user("active", "수신자")));
+
+        noteService.sendNote("sender", NoteDto.builder()
+                .noteSj("제목").noteCn("본문").rcverId(" active, ,active, ").build());
+
+        org.mockito.ArgumentCaptor<NoteRecptn> recipients = org.mockito.ArgumentCaptor.forClass(NoteRecptn.class);
+        verify(noteRepository).save(any(Note.class));
+        verify(noteTrnsmitRepository).save(any(NoteTrnsmit.class));
+        verify(noteRecptnRepository, times(2)).save(recipients.capture());
+        assertThat(recipients.getAllValues()).extracting(NoteRecptn::getRcvrId)
+                .containsExactly("active", "active");
+        verify(eventPublisher, times(2)).publishEvent(any(Object.class));
+    }
+
     /**
      * 쪽지가 도착하면 수신자에게 알린다.
      *
@@ -384,6 +439,8 @@ class NoteServiceImplTest {
     @Test
     @DisplayName("쪽지 발송 시 수신자마다 알림을 요청한다")
     void sendNote_requestsNotificationPerRecipient() {
+        given(userRepository.findByEsntlIdIn(List.of("user2", "user3")))
+                .willReturn(List.of(user("user2", "수신자2"), user("user3", "수신자3")));
         noteService.sendNote("user1", NoteDto.builder()
                 .noteSj("회의 일정 공유").noteCn("본문").rcverId("user2, user3").build());
 
@@ -404,6 +461,7 @@ class NoteServiceImplTest {
     @Test
     @DisplayName("알림에 쪽지 본문을 복제하지 않는다")
     void sendNote_notificationCarriesSubjectNotBody() {
+        given(userRepository.findByEsntlIdIn(List.of("user2"))).willReturn(List.of(user("user2", "수신자")));
         noteService.sendNote("user1", NoteDto.builder()
                 .noteSj("회의 일정 공유").noteCn("대외비 본문 내용").rcverId("user2").build());
 
@@ -503,7 +561,7 @@ class NoteServiceImplTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
-        verify(noteRecptnRepository, never()).save(any());
+        verifyNoInteractions(noteRepository, noteTrnsmitRepository, noteRecptnRepository, eventPublisher);
     }
 
     @Test

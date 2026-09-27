@@ -362,14 +362,37 @@ class JwtTokenProviderTest {
     @DisplayName("리프레시 토큰 쿠키 추가 성공")
     void addRefreshTokenCookie_success() {
         MockHttpServletResponse response = new MockHttpServletResponse();
-        jwtTokenProvider.addRefreshTokenCookie(response, "ref-token");
+        String token = jwtTokenProvider.createRefreshToken("cookie-test-user");
+        jwtTokenProvider.addRefreshTokenCookie(response, token);
         
         String setCookieHeader = response.getHeader(org.springframework.http.HttpHeaders.SET_COOKIE);
         assertThat(setCookieHeader).isNotNull();
-        assertThat(setCookieHeader).contains("refreshToken=ref-token");
+        assertThat(setCookieHeader).contains("refreshToken=" + token);
         assertThat(setCookieHeader).contains("HttpOnly");
         assertThat(setCookieHeader).contains("SameSite=Strict");
     }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(longs = {120000L, 604800000L, 1209600000L})
+    @DisplayName("회전 토큰 쿠키는 설정 수명이 아니라 실제 절대 만료까지의 남은 시간만 유지한다")
+    void refreshCookieCannotExtendRotatedTokenLifetime(long configuredValidityMs) {
+        ReflectionTestUtils.setField(jwtTokenProvider, "refreshTokenValidityInMilliseconds", configuredValidityMs);
+        String rotated = jwtTokenProvider.createRefreshToken("cookie-test-user",
+                new Date(System.currentTimeMillis() + 60_000));
+        long expiryMs = jwtTokenProvider.getExpiration(rotated).getTime();
+        long before = System.currentTimeMillis();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        jwtTokenProvider.addRefreshTokenCookie(response, rotated);
+
+        long after = System.currentTimeMillis();
+        var matcher = java.util.regex.Pattern.compile("Max-Age=(\\d+)")
+                .matcher(response.getHeader(org.springframework.http.HttpHeaders.SET_COOKIE));
+        assertThat(matcher.find()).isTrue();
+        assertThat(Long.parseLong(matcher.group(1)))
+                .isBetween(Math.max(0, (expiryMs - after) / 1000), Math.max(0, (expiryMs - before) / 1000));
+    }
+
 
     @Test
     @DisplayName("리프레시 토큰 해석 성공")

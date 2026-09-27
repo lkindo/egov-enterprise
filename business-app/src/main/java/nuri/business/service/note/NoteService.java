@@ -164,6 +164,24 @@ public class NoteService {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
         }
         try {
+            List<String> receiverIds = java.util.Arrays.stream(dto.getRcverId().split(","))
+                    .map(String::trim)
+                    .filter(id -> !id.isEmpty())
+                    .toList();
+            if (receiverIds.isEmpty()) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+            // 피커를 우회한 요청도 저장 전에 모든 수신자의 현재 사용 중 상태를 확인한다.
+            // 조회만 중복을 제거하고, 기존 수신행·알림의 순서와 중복 의미는 유지한다.
+            java.util.Set<String> activeReceiverIds = userRepository
+                    .findByEsntlIdIn(receiverIds.stream().distinct().toList()).stream()
+                    .filter(user -> "P".equals(user.getUserSttsCd()))
+                    .map(User::getEsntlId)
+                    .collect(Collectors.toSet());
+            if (!activeReceiverIds.containsAll(receiverIds)) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+
             Note note = Note.builder()
                     .noteTtl(dto.getNoteSj())
                     .noteCn(dto.getNoteCn())
@@ -176,33 +194,17 @@ public class NoteService {
                     .build();
             noteTrnsmitRepository.save(trnsmit);
 
-            if (dto.getRcverId() != null) {
-                String[] rcverIds = dto.getRcverId().split(",");
-                boolean anyRecipient = false;
-                java.util.List<String> notifyTargets = new java.util.ArrayList<>();
-                for (String raw : rcverIds) {
-                    // [V2_21] 공백/NULL 수신자 방어 — rcvr_id NULL 사본은 어떤 수신자도 소유하지 못해
-                    // 논리삭제(IDOR 가드 통과 불가)가 영원히 불가능 → 물리 수거를 구조적으로 봉쇄한다. 원천 차단.
-                    if (raw == null || raw.trim().isEmpty()) {
-                        continue;
-                    }
-                    anyRecipient = true;
-                    String receiverId = raw.trim();
-                    NoteRecptn recptn = NoteRecptn.builder()
-                            .note(note)
-                            .noteDsptch(trnsmit)
-                            .rcvrId(receiverId)
-                            .openYn("N")
-                            .rcptnSeCd("0")
-                            .build();
-                    noteRecptnRepository.save(recptn);
-                    notifyTargets.add(receiverId);
-                }
-                if (!anyRecipient) {
-                    throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
-                }
-                publishReceivedNotifications(notifyTargets, dto.getNoteSj());
+            for (String receiverId : receiverIds) {
+                NoteRecptn recptn = NoteRecptn.builder()
+                        .note(note)
+                        .noteDsptch(trnsmit)
+                        .rcvrId(receiverId)
+                        .openYn("N")
+                        .rcptnSeCd("0")
+                        .build();
+                noteRecptnRepository.save(recptn);
             }
+            publishReceivedNotifications(receiverIds, dto.getNoteSj());
         } catch (BusinessException e) {
             throw e; // 입력 검증 등 의도된 비즈니스 예외는 그대로 전파
         } catch (Exception e) {

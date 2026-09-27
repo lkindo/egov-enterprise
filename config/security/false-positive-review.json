@@ -11,12 +11,12 @@
       "fingerprint": "dec982be271ed34f:1",
       "sourceSha256": "907be49f1f3d1327f0e1ecc20d176f3d6e7b923aeccea5c032ab755a987d1487",
       "expiresOn": "2026-12-08",
-      "reason": "Stateless Bearer API; Strict HttpOnly session cookies and Origin checks; cookie-authenticated SockJS transports separately require exact trusted Origin; legacy CSRF remains enabled.",
+      "reason": "Stateless Bearer API; Strict HttpOnly session cookies and Origin checks; cookie-authenticated SockJS transports separately require exact trusted Origin; legacy CSRF remains enabled. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-09-28: encoded token endpoint aliases now terminate with HTTP 400; existing Origin checks and Bearer forwarding are unchanged.",
       "id": "SAST-FP-001",
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "f011ac0d51ff4f8792a573f27d93e95722f69f8130edb398d5e9ee23b1103544"
+          "sha256": "48644fef4f7d767c4db29cf25036fe22207f3b58c53e01c0238e16c60a058eed"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java",
@@ -32,7 +32,7 @@
         },
         {
           "file": "frontend/src/proxy.ts",
-          "sha256": "4df4855e30b22c339da91ebafeca878b1b4f5a6de850772e3ef87746321b61ec"
+          "sha256": "97686e1699472563e9b6d1deee536a86f1c7584aec52fad2761870e9376e59ac"
         },
         {
           "file": "frontend/src/app/api/auth/login/route.ts",
@@ -69,12 +69,12 @@
       "fingerprint": "a46799a1753058c0:1",
       "sourceSha256": "abb96530b1ebe5fe31581177fc9afed0201d91e3447f65090a9495c18a4d46ed",
       "expiresOn": "2026-12-08",
-      "reason": "Fallback core chain uses stateless Bearer authentication and Origin validation.",
+      "reason": "Fallback core chain uses stateless Bearer authentication and Origin validation. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged.",
       "id": "SAST-FP-002",
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "f011ac0d51ff4f8792a573f27d93e95722f69f8130edb398d5e9ee23b1103544"
+          "sha256": "48644fef4f7d767c4db29cf25036fe22207f3b58c53e01c0238e16c60a058eed"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java",
@@ -118,9 +118,9 @@
       "file": "scripts/ui-quality-baseline-launch.mjs",
       "line": 490,
       "fingerprint": "e32fd5e9f6d93cdf:1",
-      "sourceSha256": "ee234695f949363cb450566f629b72a7ef574e14cbed6c23d74668e91617a904",
+      "sourceSha256": "c1f581c346ab99eaeb9f630b41b877669dbf24e8bb91e994016a5a3ccb9f1118",
       "expiresOn": "2026-12-08",
-      "reason": "Opens an existing file O_RDONLY, with POSIX O_NOFOLLOW and O_NONBLOCK; no creation; verifies descriptor identity and bounded content.",
+      "reason": "Opens an existing file O_RDONLY, with POSIX O_NOFOLLOW and O_NONBLOCK; no creation; verifies descriptor identity and bounded content. Re-reviewed 2026-09-28: only the frontend readiness target changed to IPv4 /login; file-read defenses and the finding line are unchanged.",
       "id": "SAST-FP-006",
       "supportingSources": []
     },
@@ -133,12 +133,12 @@
       "fingerprint": "42098952e5b35237:1",
       "sourceSha256": "bd588f5d6517c2268616e74f51fc6372b373fa840b06ec01d8d78d0e8cc2a646",
       "expiresOn": "2026-12-08",
-      "reason": "In-memory H2 test-only profile and test-only H2 dependency; no production database credential.",
+      "reason": "In-memory H2 test-only profile and test-only H2 dependency; no production database credential. Re-reviewed 2026-09-28: PIT result verification and generated-source wiring changed; H2 remains test-only and application-test.yml is unchanged.",
       "id": "SAST-FP-007",
       "supportingSources": [
         {
           "file": "build.gradle",
-          "sha256": "01137059ce36d451e046bc3850c055aa4aaa0d819a40bcbe997ba37e0b1a64aa"
+          "sha256": "5b71e18af81f725f4523d837a8ee4bf4a11ed32daac137d9cbea1d16d4319cd8"
         },
         {
           "file": "api-server/build.gradle",
@@ -146,15 +146,15 @@
         },
         {
           "file": "foundation/build.gradle",
-          "sha256": "fd15c5256839fed66be5bc1b408bb81f46c8a455e8a6bad12888be667259dab3"
+          "sha256": "41f4adf88489d5df7e2ecbfe8de04f2ffa13a917842220994078c94dd007984d"
         },
         {
           "file": "business-core/build.gradle",
-          "sha256": "ce6aff302c9b6a9b9d894dd9af937692c69c32beb273fab9c6d0d8d65543e878"
+          "sha256": "90087f5296780aecd6ce692f2fe4f1accce58a742b0d9cd444efdc10648a430c"
         },
         {
           "file": "business-app/build.gradle",
-          "sha256": "589f9cba4081699f678377db45939ef782eaa01ed28ac4180def6daccf95a955"
+          "sha256": "d297c2e626efe2d8e0e45e3811d82a8316bab9259a729a76c9130ca6564e2860"
         },
         {
           "file": "migration-tool/build.gradle",
@@ -171,12 +171,12 @@
       "fingerprint": "3bdaa522982a3650:1",
       "sourceSha256": "884972eb7ed63f7e0cb1eec832a0ec3a1aea7686d8d3b5b5412460a438ef7698",
       "expiresOn": "2026-12-08",
-      "reason": "Missing or invalid credentials clear the security context, return HTTP 401 and terminate before the transport chain. Only signature-validated JWTs with fresh enabled account details and a nonblank current authorization version reach the chain; conditional authentication-state inspection does not bypass access control.",
+      "reason": "Missing or invalid credentials clear the security context, return HTTP 401 and terminate before the transport chain. Only signature-validated JWTs with fresh enabled account details and a nonblank current authorization version reach the chain; conditional authentication-state inspection does not bypass access control. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged.",
       "id": "SAST-FP-008",
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "f011ac0d51ff4f8792a573f27d93e95722f69f8130edb398d5e9ee23b1103544"
+          "sha256": "48644fef4f7d767c4db29cf25036fe22207f3b58c53e01c0238e16c60a058eed"
         },
         {
           "file": "business-core/src/main/java/nuri/business/security/iam/JpaUserAuthAdapter.java",

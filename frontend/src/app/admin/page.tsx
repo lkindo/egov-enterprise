@@ -1,8 +1,14 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import { QueryClient, dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import AdminDashboardClient from './AdminDashboardClient';
 import { auditAdminService } from '@/services/foundation/system/AuditAdminService';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
 import { authorAdminService } from '@/services/foundation/system/AuthorAdminService';
+
+export const metadata: Metadata = {
+  title: `관리자 대시보드 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 /**
  * 관리자 대시보드 메인 페이지 (Server Component)

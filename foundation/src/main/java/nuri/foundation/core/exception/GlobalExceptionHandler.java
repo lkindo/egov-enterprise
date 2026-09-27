@@ -12,6 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -156,6 +157,23 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(ApiResponse.error(CommonErrorCode.UNAUTHORIZED, resolve(CommonErrorCode.UNAUTHORIZED)), HttpStatus.UNAUTHORIZED);
     }
 
+    /** 인증 저장소·인코더·principal 계약 장애는 자격 증명 거부와 구분한다. */
+    @ExceptionHandler(AuthenticationServiceException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleAuthenticationServiceException(AuthenticationServiceException e) {
+        // 예외 메시지나 원인에는 연결 정보가 포함될 수 있다. 응답과 이 경계의 로그에는 복제하지 않는다.
+        log.error(">>> Authentication service failure: {}", e.getClass().getSimpleName());
+        java.util.Set<Throwable> visited = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (Throwable cause = e; cause != null && visited.add(cause); cause = cause.getCause()) {
+            if (cause instanceof org.springframework.transaction.CannotCreateTransactionException
+                    || cause instanceof org.springframework.dao.DataAccessResourceFailureException) {
+                return connectionUnavailableResponse();
+            }
+        }
+        // 확인된 연결 장애만 503이다. 파손된 해시·인코더 설정·principal 계약 오류는 500으로 남긴다.
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error(CommonErrorCode.INTERNAL_SERVER_ERROR, resolve(CommonErrorCode.INTERNAL_SERVER_ERROR)));
+    }
+
     /**
      * 낙관적 락 충돌 예외 처리
      */
@@ -171,6 +189,40 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT);
     }
 
+    /** 잠금 획득 실패·교착/직렬화 충돌은 최신 상태를 확인해야 하는 409이다. 쓰기를 자동 재시도하지 않는다. */
+    @ExceptionHandler(org.springframework.dao.PessimisticLockingFailureException.class)
+    protected ResponseEntity<ApiResponse<Void>> handlePessimisticLockingFailure(
+            org.springframework.dao.PessimisticLockingFailureException e) {
+        log.warn(">>> Database concurrency conflict: {}", e.getClass().getSimpleName());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(CommonErrorCode.CONCURRENT_MODIFICATION,
+                        resolve(CommonErrorCode.CONCURRENT_MODIFICATION)));
+    }
+
+    @ExceptionHandler(org.springframework.dao.QueryTimeoutException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleQueryTimeout(org.springframework.dao.QueryTimeoutException e) {
+        log.error(">>> Database query timed out: {}", e.getClass().getSimpleName());
+        return connectionUnavailableResponse();
+    }
+
+    /** JDBC 기본 변환기가 분류하지 않은 PostgreSQL 잠금 실패도 같은 동시성 계약을 따른다. */
+    @ExceptionHandler(org.springframework.dao.DataAccessException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleUnclassifiedDataAccess(org.springframework.dao.DataAccessException e) {
+        String sqlState = extractSqlState(e);
+        log.error(">>> Unclassified database failure: {} SQLState={}", e.getClass().getSimpleName(), sqlState);
+        if ("55P03".equals(sqlState) || "40001".equals(sqlState) || "40P01".equals(sqlState)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error(CommonErrorCode.CONCURRENT_MODIFICATION,
+                            resolve(CommonErrorCode.CONCURRENT_MODIFICATION)));
+        }
+        if ("57014".equals(sqlState)) {
+            return connectionUnavailableResponse();
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error(CommonErrorCode.INTERNAL_SERVER_ERROR,
+                        resolve(CommonErrorCode.INTERNAL_SERVER_ERROR)));
+    }
+
     /**
      * 데이터 무결성 위반(주로 유니크 제약) 예외 처리 — 500 이 아닌 409(Conflict).
      * check-then-act(중복 검사 후 insert) 패턴은 동시 요청 경합 시 pre-check 를 함께 통과해
@@ -183,8 +235,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
     protected ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(
             org.springframework.dao.DataIntegrityViolationException e) {
-        Throwable cause = e.getMostSpecificCause();
-        log.warn(">>> Data Integrity Violation: {}", cause != null ? cause.getMessage() : e.getMessage());
+        String sqlState = extractSqlState(e);
+        // SQL 본문·실패한 행/값은 개인정보를 포함할 수 있으므로 이 경계에서는 종류만 기록한다.
+        log.warn(">>> Data Integrity Violation: SQLState={}", sqlState);
 
         // [2026-07-28 §2.D] 제약의 **종류**로 나눈다. 종전에는 모든 무결성 위반을 409 "이미 존재하거나
         //   사용 중인 값" 으로 뭉갰다. 그런데 V2_24 로 `_yn` 컬럼 60개에 CHECK 가 생기면서, 클라이언트가
@@ -192,11 +245,18 @@ public class GlobalExceptionHandler {
         //   불변식이 DB 에만 있고 API 응답 의미로 전파되지 않던 것(§2.D "불변식이 한 레이어에만 존재").
         //   DTO 56곳에 @Pattern 을 뿌리는 대신(AGENTS.md Evidence guardrails H4 일괄치환 회피) 여기서 SQLState 로 갈라
         //   CHECK/NOT NULL 은 400 으로 정정한다. UNIQUE/FK 는 종전대로 409(의미가 맞다).
-        String sqlState = extractSqlState(cause);
-        if ("23514".equals(sqlState) || "23502".equals(sqlState)) { // check_violation / not_null_violation
+        if ("23514".equals(sqlState) || "23502".equals(sqlState)
+                || "22001".equals(sqlState) || "22003".equals(sqlState)
+                || "22007".equals(sqlState) || "22008".equals(sqlState) || "22P02".equals(sqlState)) {
             return ResponseEntity.badRequest().body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE,
                     resolve("handler.constraint_invalid_value", null,
                             "허용되지 않는 값이 포함되어 있습니다. 입력값을 확인해 주십시오.")));
+        }
+        // 22 전체를 입력 오류로 취급하면 0으로 나누기·시퀀스 고갈 같은 서버 결함을 감춘다.
+        if (sqlState != null && !sqlState.startsWith("23")) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(CommonErrorCode.INTERNAL_SERVER_ERROR,
+                            resolve(CommonErrorCode.INTERNAL_SERVER_ERROR)));
         }
         return new ResponseEntity<>(
                 ApiResponse.error(CommonErrorCode.DUPLICATE_RESOURCE,
@@ -205,9 +265,10 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT);
     }
 
-    /** 원인 체인에서 SQLState 를 찾는다(Postgres: 23514=CHECK, 23502=NOT NULL, 23505=UNIQUE, 23503=FK). */
+    /** Spring/Hibernate 원인 체인의 SQLState를 읽으며 순환한 예외 체인에도 종료한다. */
     private static String extractSqlState(Throwable cause) {
-        for (Throwable t = cause; t != null; t = t.getCause() == t ? null : t.getCause()) {
+        java.util.Set<Throwable> visited = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (Throwable t = cause; t != null && visited.add(t); t = t.getCause()) {
             if (t instanceof java.sql.SQLException sqlEx && sqlEx.getSQLState() != null) {
                 return sqlEx.getSQLState();
             }
@@ -483,6 +544,10 @@ public class GlobalExceptionHandler {
             org.springframework.dao.DataAccessResourceFailureException.class })
     protected ResponseEntity<ApiResponse<Void>> handleConnectionUnavailable(Exception e) {
         log.error(">>> DB connection unavailable (pool exhausted or DB down): {}", e.getMessage(), e);
+        return connectionUnavailableResponse();
+    }
+
+    private ResponseEntity<ApiResponse<Void>> connectionUnavailableResponse() {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .header(HttpHeaders.RETRY_AFTER, "5")
                 .body(ApiResponse.error(CommonErrorCode.SERVER_OVERLOAD,

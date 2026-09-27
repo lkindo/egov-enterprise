@@ -36,6 +36,16 @@ test('standalone migration export retains independent verification and clears in
     'the exported repository has one independent cache writer');
   assert.doesNotMatch(workflow, /^    paths(?:-ignore)?:/m,
     'standalone product must validate every changed runtime helper without producer CI');
+  // Resolve the complete module graph before injecting individual missing helpers.
+  // Importing these entrypoints must not run verification, scanning or publication.
+  for (const entrypoint of ['adoption-execute.mjs', 'governance-review.mjs']) {
+    const imported = spawnSync(process.execPath,
+      ['--input-type=module', '--eval', `await import('./scripts/${entrypoint}')`],
+      { cwd: outputRoot, encoding: 'utf8' });
+    assert.equal(imported.status, 0, `${entrypoint} must import independently: ${imported.stderr}`);
+    assert.equal(imported.stdout, '');
+    assert.equal(imported.stderr, '');
+  }
   for (const args of [
     ['--test', 'scripts/migration-verification-contract.test.mjs', 'scripts/adoption-execute.test.mjs'],
     ['scripts/governance-review.mjs', '--product', 'migration-tool', '--mode', 'report'],
@@ -50,6 +60,7 @@ test('standalone migration export retains independent verification and clears in
   // silently resolved from the producer checkout or an installed package.
   for (const [dependency, entrypoint] of [
     ['reusable-layout.mjs', 'adoption-execute.mjs'],
+    ['release-images.mjs', 'adoption-execute.mjs'],
     ['ci-change-scope.mjs', 'governance-review.mjs'],
     ['read-regular-file.mjs', 'governance-review.mjs'],
   ]) {

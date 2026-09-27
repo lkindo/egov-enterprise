@@ -170,6 +170,33 @@ autovacuum 지연, dead tuple, transaction age를 확인한 뒤 원인을 판정
 
 ## 5. 변경 검증
 
+### DB 오류 응답과 timeout
+
+[전역 예외 처리기](../../foundation/src/main/java/nuri/foundation/core/exception/GlobalExceptionHandler.java)는
+Spring이 변환한 DB 예외를 다음처럼 구분한다. SQL과 실패한 입력값을 응답에 넣지 않는다.
+
+| 원인 | HTTP / 코드 | 처리 의미 |
+|---|---|---|
+| 길이·숫자 범위·날짜·형식 오류 (`22001`, `22003`, `22007`, `22008`, `22P02`) | 400 / `C001` | 입력값 확인 |
+| CHECK·NOT NULL (`23514`, `23502`) | 400 / `C001` | 허용 값·필수 값 확인 |
+| UNIQUE·FK 등 무결성 제약 충돌 | 409 / `C008` | 현재 데이터와의 충돌 확인 |
+| Spring의 비관적 잠금/트랜잭션 충돌, 미분류 예외의 `55P03`·`40001`·`40P01` | 409 / `C013` | 최신 상태를 확인한 뒤 재시도 여부 판단 |
+| Spring의 쿼리 시간초과·연결 불가 | 503 / `S002`, `Retry-After: 5` | 일시적 처리 불가 |
+| 0으로 나누기·시퀀스 고갈 등 다른 data/internal 오류 | 500 / `C004` | 서버 결함 조사 |
+
+SQLState `22` 전체를 사용자 입력 오류로 바꾸지 않는다. 분류의 의미는
+[PostgreSQL 오류 코드](https://www.postgresql.org/docs/17/errcodes-appendix.html)를 대조하며,
+[실제 DB 계약 테스트](../../api-server/src/test/java/nuri/api/schema/DatabaseExceptionTranslationIntegrationTest.java)가
+PostgreSQL → `JdbcTemplate` → HTTP 응답과 잠금·시간초과 후 연결 회복을 확인한다.
+`Retry-After`는 쓰기 요청의 무조건 재전송을 허용하지 않는다. 쓰기 재시도는 트랜잭션 결과와 멱등성을 먼저 확인한다.
+
+timeout을 정하기 전 `pg_settings`의 `setting`, `reset_val`, `source`와 해당 role/database 설정을 함께 읽는다.
+[db-bridge](../../.agent/scripts/db-bridge.js)는 진단용 트랜잭션에 `statement_timeout`과 `lock_timeout`을
+각각 3초로 설정하므로, 그 세션의 `setting`을 애플리케이션 설정으로 오인하지 않는다.
+애플리케이션 접속의 유효 설정은 별도로 확인하며 온라인 요청·migration·배치의 상한은 운영 승인 후 적용한다.
+
+### 변경 전후 비교
+
 1. 같은 데이터 snapshot과 workload로 변경 전·후를 여러 회차 비교한다.
 2. latency뿐 아니라 error, CPU/I/O, lock, pool pending, write throughput을 함께 본다.
 3. schema 변경은 live `information_schema`와 Flyway history, application mapping을 대조한다.

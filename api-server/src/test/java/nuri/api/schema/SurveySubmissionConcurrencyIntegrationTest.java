@@ -1,7 +1,9 @@
 package nuri.api.schema;
 
+import nuri.business.core.harness.QueryCountInspector;
 import nuri.business.service.survey.SurveyResultService;
 import nuri.business.service.survey.dto.SurveyResponseSubmitDto;
+import nuri.business.service.survey.dto.SurveyResultDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.security.service.CustomUserDetails;
 import org.junit.jupiter.api.AfterEach;
@@ -10,6 +12,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,7 +23,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +50,8 @@ class SurveySubmissionConcurrencyIntegrationTest {
     private long secondArticle;
     private long thirdArticle;
     private long fourthArticle;
+    private Long foreignSurvey;
+    private List<String> measuredSql = List.of();
 
     @BeforeEach
     void prepareSurvey() {
@@ -62,11 +71,17 @@ class SurveySubmissionConcurrencyIntegrationTest {
     @AfterEach
     void removeOwnFixture() {
         SecurityContextHolder.clearContext();
-        jdbc.update("DELETE FROM tb_srvy_rslt WHERE srvy_sn=?", survey);
-        jdbc.update("DELETE FROM tb_srvy_artcl WHERE srvy_sn=?", survey);
-        jdbc.update("DELETE FROM tb_srvy_qstn WHERE srvy_sn=?", survey);
-        jdbc.update("DELETE FROM tb_srvy_info WHERE srvy_sn=?", survey);
+        QueryCountInspector.clear();
+        removeSurveyFixture(survey);
+        if (foreignSurvey != null) removeSurveyFixture(foreignSurvey);
         jdbc.update("DELETE FROM tb_srvy_tmplt WHERE srvy_tmplt_sn=?", template);
+    }
+
+    private void removeSurveyFixture(long surveyId) {
+        jdbc.update("DELETE FROM tb_srvy_rslt WHERE srvy_sn=?", surveyId);
+        jdbc.update("DELETE FROM tb_srvy_artcl WHERE srvy_sn=?", surveyId);
+        jdbc.update("DELETE FROM tb_srvy_qstn WHERE srvy_sn=?", surveyId);
+        jdbc.update("DELETE FROM tb_srvy_info WHERE srvy_sn=?", surveyId);
     }
 
     @Test
@@ -119,6 +134,125 @@ class SurveySubmissionConcurrencyIntegrationTest {
         authenticate("survey-other-user");
         assertThat(service.submitResponse(survey, answers(false))).isEqualTo(2);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_srvy_rslt WHERE srvy_sn=?", Integer.class, survey)).isEqualTo(4);
+    }
+
+    @Test
+    void responseListBatchesChoiceLabelsAcrossQuestionsAndDeduplicatesArticleIds() {
+        String respondent = "choice-batch-" + survey;
+        List<Long> articles = List.of(firstArticle, secondArticle, thirdArticle, fourthArticle);
+        List<Long> questions = List.of(firstQuestion, firstQuestion, secondQuestion, secondQuestion);
+        List<String> labels = List.of("첫 문항 첫 선택", "첫 문항 둘째 선택", "둘째 문항 첫 선택", "둘째 문항 둘째 선택");
+        List<Long> responseIds = new ArrayList<>();
+        for (int index = 0; index < articles.size(); index++) {
+            jdbc.update("UPDATE tb_srvy_artcl SET artcl_cn=? WHERE srvy_artcl_sn=? AND srvy_sn=?",
+                    labels.get(index), articles.get(index), survey);
+            for (int respondentIndex = 0; respondentIndex < 2; respondentIndex++) {
+                int answerSet = (index % 2) * 2 + respondentIndex;
+                responseIds.add(response(questions.get(index), articles.get(index), respondent,
+                        "choice-user-" + answerSet, null, null));
+            }
+        }
+
+        Page<SurveyResultDto> page = measuredResponseList(respondent, 8);
+
+        assertThat(page.getTotalElements()).isEqualTo(8);
+        assertThat(page.getContent()).extracting(SurveyResultDto::srvyRspnsSn).containsExactlyElementsOf(responseIds);
+        assertThat(page.getContent()).extracting(SurveyResultDto::srvyQstnSn)
+                .containsExactly(firstQuestion, firstQuestion, firstQuestion, firstQuestion,
+                        secondQuestion, secondQuestion, secondQuestion, secondQuestion);
+        assertThat(page.getContent()).extracting(SurveyResultDto::rspdntAnsCn)
+                .containsExactly(labels.get(0), labels.get(0), labels.get(1), labels.get(1),
+                        labels.get(2), labels.get(2), labels.get(3), labels.get(3));
+        List<String> articleQueries = measuredArticleQueries(3);
+        assertThat(articleQueries).as("여러 문항의 선택 내용은 한 번에 조회").hasSize(1);
+        // 동일 선택을 한 응답 8행은 보존하되 현재 PG/Hibernate IN 조회의 바인드는 고유 ID 4개다.
+        // 4와 8은 모두 2의 거듭제곱이므로 IN 절 padding 유무로 중복 제거 판정이 달라지지 않는다.
+        assertThat(articleQueries.getFirst().chars().filter(character -> character == '?').count())
+                .as("응답 중복을 제거하지 않고 선택 조회 ID만 중복 제거").isEqualTo(4);
+    }
+
+    @Test
+    void responseListPreservesTextAnswersAndSkipsEmptyChoiceQueries() {
+        String respondent = "text-answers-" + survey;
+        long textResponse = response(firstQuestion, firstArticle, respondent, "text-user", "직접 작성한 답", null);
+        long otherResponse = response(secondQuestion, thirdArticle, respondent, "other-user", null, "직접 작성한 기타 답");
+
+        Page<SurveyResultDto> page = measuredResponseList(respondent, 8);
+
+        assertThat(page.getTotalElements()).isEqualTo(2);
+        assertThat(page.getContent()).extracting(SurveyResultDto::srvyRspnsSn)
+                .containsExactly(textResponse, otherResponse);
+        assertThat(page.getContent()).extracting(SurveyResultDto::rspdntAnsCn).containsExactly("직접 작성한 답", null);
+        assertThat(page.getContent()).extracting(SurveyResultDto::etcAnsCn).containsExactly(null, "직접 작성한 기타 답");
+        assertThat(measuredArticleQueries(2)).as("선택 내용을 보충할 응답이 없으면 항목 조회 없음").isEmpty();
+
+        Page<SurveyResultDto> empty = measuredResponseList("no-responses-" + survey, 8);
+
+        assertThat(empty.getTotalElements()).isZero();
+        assertThat(empty.getContent()).isEmpty();
+        assertThat(measuredArticleQueries(2)).as("빈 응답 페이지의 항목 조회 없음").isEmpty();
+    }
+
+    @Test
+    void responseListDoesNotExposeForeignSurveyOrQuestionLabels() {
+        String respondent = "choice-ownership-" + survey;
+        jdbc.update("UPDATE tb_srvy_artcl SET artcl_cn=? WHERE srvy_artcl_sn=? AND srvy_sn=?",
+                "열람 가능한 선택", firstArticle, survey);
+        jdbc.update("UPDATE tb_srvy_artcl SET artcl_cn=? WHERE srvy_artcl_sn=? AND srvy_sn=?",
+                "다른 문항의 비공개 선택", thirdArticle, survey);
+        foreignSurvey = jdbc.queryForObject("""
+                INSERT INTO tb_srvy_info (srvy_ttl, srvy_tmplt_sn, srvy_bgng_ymd, srvy_end_ymd)
+                VALUES ('소속 혼입 검증', ?, '20000101', '29991231') RETURNING srvy_sn
+                """, Long.class, template);
+        long foreignQuestion = jdbc.queryForObject("""
+                INSERT INTO tb_srvy_qstn (srvy_sn, srvy_tmplt_sn, qstn_sn, qstn_cn, max_chc_cnt)
+                VALUES (?, ?, 1, '다른 설문의 문항', 1) RETURNING srvy_qstn_sn
+                """, Long.class, foreignSurvey, template);
+        long foreignArticle = jdbc.queryForObject("""
+                INSERT INTO tb_srvy_artcl (srvy_sn, srvy_tmplt_sn, srvy_qstn_sn, artcl_sn, artcl_cn, etc_ans_yn)
+                VALUES (?, ?, ?, 1, '다른 설문의 비공개 선택', 'N') RETURNING srvy_artcl_sn
+                """, Long.class, foreignSurvey, template, foreignQuestion);
+        long ownResponse = response(firstQuestion, firstArticle, respondent, "own-user", null, null);
+        // 각 FK는 유효하지만 복합 소속이 다른 실제 행이다. 물리 제약을 끄거나 없는 ID를 만들지 않는다.
+        long wrongQuestionResponse = response(firstQuestion, thirdArticle, respondent, "wrong-question", null, null);
+        long wrongSurveyResponse = response(foreignQuestion, foreignArticle, respondent, "wrong-survey", null, null);
+
+        Page<SurveyResultDto> page = measuredResponseList(respondent, 8);
+
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        assertThat(page.getContent()).extracting(SurveyResultDto::srvyRspnsSn)
+                .containsExactly(ownResponse, wrongQuestionResponse, wrongSurveyResponse);
+        assertThat(page.getContent()).extracting(SurveyResultDto::srvySn).containsOnly(survey);
+        assertThat(page.getContent()).extracting(SurveyResultDto::srvyQstnSn)
+                .containsExactly(firstQuestion, firstQuestion, foreignQuestion);
+        assertThat(page.getContent()).extracting(SurveyResultDto::rspdntAnsCn)
+                .containsExactly("열람 가능한 선택", null, null);
+        assertThat(measuredArticleQueries(3)).as("소속 검증도 단일 항목 조회 결과에서 수행").hasSize(1);
+    }
+
+    private Page<SurveyResultDto> measuredResponseList(String respondent, int pageSize) {
+        QueryCountInspector.start();
+        try {
+            return service.getResponseList(respondent, PageRequest.of(0, pageSize, Sort.by("srvyRspnsSn")));
+        } finally {
+            measuredSql = QueryCountInspector.getQueries();
+            QueryCountInspector.clear();
+        }
+    }
+
+    private List<String> measuredArticleQueries(int maximumQueries) {
+        // JDBC seed/cleanup은 측정 밖이다. 0이면 계측 미연결이므로 성공으로 받아들이지 않는다.
+        assertThat(measuredSql.size()).as("실제 응답 조회 + 선택적 count + 선택 항목 일괄 조회")
+                .isBetween(1, maximumQueries);
+        return measuredSql.stream().filter(sql -> sql.toLowerCase(Locale.ROOT).contains("tb_srvy_artcl")).toList();
+    }
+
+    private long response(long question, long article, String respondent, String author, String answer, String otherAnswer) {
+        return jdbc.queryForObject("""
+                INSERT INTO tb_srvy_rslt (srvy_sn, srvy_tmplt_sn, srvy_qstn_sn, srvy_artcl_sn,
+                                          rspdnt_ans_cn, rspns_nm, etc_ans_cn, frst_rgtr_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING srvy_rspns_sn
+                """, Long.class, survey, template, question, article, answer, respondent, otherAnswer, author);
     }
 
     private String submit(SurveyResponseSubmitDto answers, String name, CountDownLatch ready) {

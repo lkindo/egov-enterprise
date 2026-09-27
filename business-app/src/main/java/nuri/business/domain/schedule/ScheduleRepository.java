@@ -20,7 +20,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     //   종전에는 '부서 일정' 목록도 s.schdlPicId = 내 loginId 로 걸러 사실상 '내가 만든 일정'만 보였다.
     //   화면명(부서 일정 관리)·스키마(schdlSeCd '1'=부서, schdlDeptId)와 동작이 어긋나 있던 것을 바로잡는다.
     @Query("SELECT s FROM Schedule s WHERE (:schdlSeCd IS NULL OR s.schdlSeCd = :schdlSeCd) AND s.schdlDeptId = :deptId "
-            + "AND (:searchWrd IS NULL OR :searchWrd = '' OR LOWER(s.schdlNm) LIKE LOWER(CONCAT('%', :searchWrd, '%')))")
+            + "AND (:searchWrd IS NULL OR :searchWrd = '' OR LOWER(s.schdlNm) LIKE LOWER(CONCAT('%', :searchWrd, '%'))) "
+            + "ORDER BY s.schdlBgngYmd ASC, s.schdlSn ASC")
     Page<Schedule> searchDeptSchedules(@Param("schdlSeCd") String schdlSeCd, @Param("deptId") String deptId,
                                        @Param("searchWrd") String searchWrd, Pageable pageable);
 

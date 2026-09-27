@@ -94,6 +94,33 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
     expect(mocks.searchPosts).not.toHaveBeenCalled();
   });
 
+  it('3·4단계 메뉴를 전체 조상 경로와 안전한 목적지로 찾고 중지 분류는 제외한다', async () => {
+    mocks.getHeadMenus.mockResolvedValue([
+      { menuNo: 1, menuNm: '업무', modernRoute: '/admin/work-hub', children: [
+        { menuNo: 11, menuNm: '팀 업무', children: [
+          { menuNo: 111, menuNm: '보고 목록', modernRoute: '/reports?tab=list#results', children: [
+            { menuNo: 1111, menuNm: '보고 상세', modernRoute: '/reports/detail?view=summary#content' },
+            { menuNo: 1112, menuNm: '위험 보고', modernRoute: '//external.example', chkURL: 'legacy/report.do' },
+          ] },
+        ] },
+        { menuNo: 88, menuNm: '중지 분류', useYn: 'N', children: [
+          { menuNo: 89, menuNm: '중지 보고', modernRoute: '/reports?tab=list#results' },
+        ] },
+      ] },
+    ]);
+    render(<SearchResultsContent initialResults={emptyResults} query="보고" />);
+
+    expect(await screen.findByRole('link', { name: '보고 목록 업무 > 팀 업무 모듈' }))
+      .toHaveAttribute('href', '/reports?tab=list#results');
+    expect(screen.getByRole('link', { name: '보고 상세 업무 > 팀 업무 > 보고 목록 모듈' }))
+      .toHaveAttribute('href', '/reports/detail?view=summary#content');
+    expect(screen.getByRole('button', { name: '메뉴 바로가기 2건' })).toBeInTheDocument();
+    expect(screen.queryByText('위험 보고')).toBeNull();
+    expect(screen.queryByText('중지 보고')).toBeNull();
+    expect(mocks.getHeadMenus).toHaveBeenCalledOnce();
+    expect(mocks.getLeftMenus).not.toHaveBeenCalled();
+  });
+
   it('일반 인증 사용자용 최소정보 검색 API로 조회한다', async () => {
     render(<SearchResultsContent initialResults={emptyResults} query="홍길" />);
 

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -8,6 +9,130 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CONTRACT_PATH = path.join(ROOT, 'config/frontend-visible-terms.json');
 
 import { validateVisibleTerms as validateContract } from './frontend-visible-terms-contract.mjs';
+import { discoverPageRoutes, expectedRouting, inspectRouteRepository } from './ui-route-capabilities-contract.mjs';
+
+// These source checks run before frontend dependencies are installed. Interpret only
+// the static string/SITE_IDENTITY metadata used here; unsupported expressions fail
+// closed. This is not a replacement for Next's rendered document-title checks.
+function sourceTokens(source) {
+  const literals = [];
+  const code = source.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|\/\/[^\r\n]*|\/\*[\s\S]*?\*\//g, (part) => {
+    if (part.startsWith('//') || part.startsWith('/*')) return '';
+    const token = `__title_literal_${literals.length}__`;
+    literals.push(part);
+    return token;
+  });
+  return { code, literals };
+}
+
+function metadataTitle(source, identity) {
+  const { code, literals } = sourceTokens(source);
+  if (!/\bexport\s+const\s+metadata\b/.test(code)) return undefined;
+  if (/^\s*__title_literal_\d+__\s*;/.test(code) && literals[0]?.slice(1, -1) === 'use client') return null;
+  const object = /\bexport\s+const\s+metadata\s*(?::\s*Metadata\s*)?=\s*\{([^{}]*)\}/.exec(code)?.[1];
+  if (!object) return null;
+  const expression = /(?:^|,)\s*title\s*:\s*([^,]+)\s*(?:,|$)/.exec(object)?.[1]?.trim();
+  if (!expression) return undefined;
+  const identityKey = /^SITE_IDENTITY\.(\w+)$/.exec(expression)?.[1];
+  if (identityKey) return identity[identityKey] ?? null;
+  const index = /^__title_literal_(\d+)__$/.exec(expression)?.[1];
+  if (index === undefined) return null;
+  const literal = literals[Number(index)];
+  let value = literal.slice(1, -1);
+  if (literal.startsWith('`')) {
+    value = value.replace(/\$\{SITE_IDENTITY\.(\w+)\}/g, (_, key) => identity[key] ?? '${unresolved}');
+    if (value.includes('${')) return null;
+  }
+  return value;
+}
+
+function inspectDocumentTitles(repository, identity) {
+  const errors = [];
+  const titles = new Map();
+  const appRoot = path.join(repository.repoRoot, 'frontend/src/app');
+  for (const { route, source } of repository.pages) {
+    if (expectedRouting(repository, route, source).kind !== 'page') continue;
+    let title = metadataTitle(fs.readFileSync(path.join(repository.repoRoot, source), 'utf8'), identity);
+    // Next inherits layout metadata, never the parent route's page metadata.
+    for (let directory = path.dirname(path.join(repository.repoRoot, source)); title === undefined; directory = path.dirname(directory)) {
+      for (const extension of ['js', 'jsx', 'ts', 'tsx']) {
+        const layout = path.join(directory, `layout.${extension}`);
+        if (fs.existsSync(layout)) title = metadataTitle(fs.readFileSync(layout, 'utf8'), identity);
+      }
+      if (directory === appRoot) break;
+    }
+    titles.set(route, title);
+    const purpose = typeof title === 'string' ? title.split(/\s+[|–—-]\s+/)[0].trim() : '';
+    if (!purpose || (route !== '/' && Object.values(identity).includes(purpose))) {
+      errors.push(`${route}: document title must identify the page purpose beyond the site identity`);
+    }
+  }
+  return { errors, titles };
+}
+
+function currentSiteIdentity() {
+  const source = fs.readFileSync(path.join(ROOT, 'frontend/src/config/site-identity.ts'), 'utf8');
+  return Object.fromEntries([...source.matchAll(/^\s*(\w+):\s*'([^']*)',?$/gm)].map(([, key, value]) => [key, value]));
+}
+
+test('direct content routes have a purpose-specific document title through page or server layout metadata', () => {
+  const repository = inspectRouteRepository(ROOT);
+  const result = inspectDocumentTitles(repository, currentSiteIdentity());
+  assert.ok(result.titles.size > 0, 'title population must not be empty');
+  assert.deepEqual(result.errors, []);
+  // Representative user tasks guard against a nonempty but unrelated copied title.
+  for (const [route, purpose] of [
+    ['/login', '로그인'], ['/admin', '관리자 대시보드'], ['/note', '쪽지함'],
+    ['/search', '통합 검색'], ['/survey/response/[id]', '설문 응답 상세'],
+    ['/admin/community/boards/maker', '게시판 생성'],
+    ['/admin/community/boards/master', '게시판 관리'],
+  ]) assert.ok(result.titles.get(route)?.startsWith(`${purpose} | `), route);
+});
+
+test('document-title fixtures reject common titles, client metadata and false page inheritance while preserving redirects', (t) => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'egov-document-title-'));
+  t.after(() => {
+    assert.ok(path.resolve(tempRoot).startsWith(`${path.resolve(os.tmpdir())}${path.sep}egov-document-title-`));
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  });
+  const identity = { siteName: 'Fixture portal', frameworkName: 'Fixture framework' };
+  const write = (relative, source) => {
+    const file = path.join(tempRoot, 'frontend/src/app', relative);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, source);
+  };
+  const page = 'export default function Page() { return <main />; }';
+  write('layout.tsx', 'export const metadata = { title: SITE_IDENTITY.siteName };');
+  write('page.tsx', page);
+  write('login/page.tsx', `export const metadata = { title: 'Fixture portal' }; ${page}`);
+  write('parent/page.tsx', `export const metadata = { title: 'Parent work | Fixture framework' }; ${page}`);
+  write('parent/child/page.tsx', page);
+  write('conditional/page.tsx', `export default function Page() { if (!user) redirect('/login'); return <main />; }`);
+  write('legacy/page.tsx', `export default function Page() { redirect('/parent'); }`);
+  write('configured/page.tsx', page);
+  write('client/page.tsx', `'use client'; export const metadata = { title: 'Client work | Fixture framework' }; ${page}`);
+  write('(workspace)/notes/page.tsx', `'use client'; ${page}`);
+  write('(workspace)/notes/layout.tsx', 'export const metadata = { title: `Notes | ${SITE_IDENTITY.frameworkName}` };');
+  const repository = {
+    repoRoot: tempRoot,
+    pages: discoverPageRoutes(tempRoot),
+    configRedirects: { redirects: new Map([['/configured', { kind: 'config-redirect', target: '/parent' }]]) },
+  };
+  const result = inspectDocumentTitles(repository, identity);
+  assert.deepEqual(result.errors.map((error) => error.split(':')[0]).sort(), ['/client', '/conditional', '/login', '/parent/child']);
+  assert.equal(result.titles.get('/'), identity.siteName);
+  assert.equal(result.titles.get('/notes'), 'Notes | Fixture framework');
+  assert.equal(result.titles.has('/legacy'), false);
+  assert.equal(result.titles.has('/configured'), false);
+  for (const title of ["''", 'SITE_IDENTITY.siteName', '`Only ${unknown}`']) {
+    write('login/page.tsx', `export const metadata = { title: ${title} }; ${page}`);
+    assert.ok(inspectDocumentTitles(repository, identity).errors.some((error) => error.startsWith('/login:')), title);
+  }
+  write('login/page.tsx', `/* export const metadata = { title: 'Comment only' }; */ ${page}`);
+  assert.ok(inspectDocumentTitles(repository, identity).errors.some((error) => error.startsWith('/login:')));
+  write('login/page.tsx', `export const metadata = { title: 'Login | Fixture framework' }; ${page}`);
+  assert.equal(inspectDocumentTitles(repository, identity).errors.some((error) => error.startsWith('/login:')), false);
+});
 
 test('structured content contract has an exact bounded pilot population and honest approval state', () => {
   const contract = JSON.parse(fs.readFileSync(CONTRACT_PATH, 'utf8'));

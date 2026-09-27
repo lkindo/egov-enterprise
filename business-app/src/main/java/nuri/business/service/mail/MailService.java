@@ -75,8 +75,13 @@ public class MailService {
 
     public Page<SentMailDto> getSentMailList(String searchCondition, String searchKeyword, Pageable pageable) {
         log.debug("Searching sent mails");
-        // [IDOR] 일반 사용자는 자신이 발송한 건만, 관리자는 전건 — 발송메일 전건 노출 차단
-        String senderLoginId = resolveSenderScope();
+        // 본문 검색은 발신자 본인만 허용한다(DEC-OPS-134). 응답에서 본문을 지워도 검색 결과·전체 건수가
+        // 타인 본문에 따라 달라지면 내용을 추론할 수 있으므로, 페이지와 count 쿼리의 공통 스코프를 제한한다.
+        boolean searchesBody = "2".equals(searchCondition) && hasText(searchKeyword);
+        String senderLoginId = searchesBody
+                ? nuri.business.security.util.SecurityUtil.getCurrentLoginId().filter(MailService::hasText)
+                        .orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                : resolveSenderScope();
         return sentMailRepository
                 .searchSentMails(senderLoginId, searchCondition, searchKeyword, Objects.requireNonNull(pageable))
                 .map(this::toResponse);

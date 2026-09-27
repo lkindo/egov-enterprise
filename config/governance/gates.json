@@ -20,7 +20,7 @@
         },
         {
           "source": ".github/workflows/ci.yml",
-          "fragment": "./gradlew onlineBuild jacocoOnlineCoverageVerification -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
+          "fragment": "./gradlew onlineBuild jacocoOnlineCoverageVerification \"-Dopenapi.export.path=$GITHUB_WORKSPACE/api-docs.json\" --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
           "tiers": [
             "ci"
           ],
@@ -70,7 +70,7 @@
         },
         {
           "source": ".github/workflows/ci.yml",
-          "fragment": "./gradlew onlineBuild jacocoOnlineCoverageVerification -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
+          "fragment": "./gradlew onlineBuild jacocoOnlineCoverageVerification \"-Dopenapi.export.path=$GITHUB_WORKSPACE/api-docs.json\" --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
           "tiers": [
             "ci"
           ],
@@ -304,7 +304,7 @@
       "failWhenNoMutations": true,
       "matrixGateSetId": "GATESET-PIT-MUTATION-AGGREGATE",
       "owner": "backend-platform",
-      "redProof": "Broaden the frozen exclusion allowlist across a matrix target or disable failWhenNoMutations; the population contract must fail."
+      "redProof": "Broaden the frozen exclusion allowlist across a matrix target, disable failWhenNoMutations, remove the verified engine pin, re-enable incremental history, detach the PIT XML result check, or invert its RUN_ERROR condition; the existing population contract must fail."
     }
   ],
   "gateSets": [
@@ -573,7 +573,7 @@
           },
           {
             "source": ".github/workflows/ci.yml",
-            "fragment": "./gradlew onlineBuild jacocoOnlineCoverageVerification -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
+            "fragment": "./gradlew onlineBuild jacocoOnlineCoverageVerification \"-Dopenapi.export.path=$GITHUB_WORKSPACE/api-docs.json\" --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
             "tiers": [
               "ci"
             ],
@@ -733,6 +733,18 @@
         {
           "id": "DB-AUTHORIZATION-ADMINISTRATION",
           "source": "api-server/src/test/java/nuri/api/schema/AuthorizationAdministrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-ASSIGNMENT-RECIPIENT-INTEGRITY",
+          "source": "api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java"
+        },
+        {
+          "id": "DB-EXCEPTION-TRANSLATION",
+          "source": "api-server/src/test/java/nuri/api/schema/DatabaseExceptionTranslationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MENU-HIERARCHY-INTEGRITY",
+          "source": "api-server/src/test/java/nuri/api/schema/MenuHierarchyIntegrityIntegrationTest.java"
         },
         {
           "id": "DB-AUTHORIZATION-CONTRACT",
@@ -1489,7 +1501,7 @@
             "scope": "business-app",
             "job": "mutation-scope",
             "gradle": ":business-app:pitest",
-            "classes": "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.informalsanction.*,nuri.business.service.comment.*,nuri.business.service.isg.*,nuri.business.service.operation.*",
+            "classes": "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.informalsanction.*,nuri.business.service.comment.*,nuri.business.service.isg.*,nuri.business.service.operation.*,nuri.business.service.survey.SurveyResultService",
             "tests": "nuri.business.*"
           },
           {
@@ -1545,7 +1557,7 @@
             "scope": "business-core-auth",
             "job": "mutation-scope",
             "gradle": ":business-core:pitest",
-            "classes": "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*",
+            "classes": "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*,nuri.business.service.menu.MenuService,nuri.business.security.iam.EgovAuthenticationProvider,nuri.business.security.filter.RateLimitFilter",
             "tests": "nuri.business.*"
           },
           {

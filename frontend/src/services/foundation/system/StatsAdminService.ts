@@ -55,7 +55,7 @@ class StatsAdminService extends AdminService {
     return response as Record<string, unknown>;
   }
 
-  /** 접속 통계 조회 (시스템 활성/화면 요청 지표의 유일한 실존 소스) */
+  /** 날짜별 성공 로그인 건수. 실패·결과 미상 시도와 화면 조회 요청은 포함하지 않는다. */
   async getConnectStats(
     params?: { fromDate?: string; toDate?: string; statsKind?: string },
     config?: AxiosRequestConfig,

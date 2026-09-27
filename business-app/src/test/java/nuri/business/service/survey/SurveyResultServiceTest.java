@@ -2,6 +2,7 @@ package nuri.business.service.survey;
 
 import nuri.business.domain.survey.*;
 import nuri.business.service.survey.dto.SurveyResponseSubmitDto;
+import nuri.business.service.survey.dto.SurveyResultDto;
 import nuri.business.service.survey.dto.SurveyStatsDto;
 import nuri.foundation.core.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
@@ -12,6 +13,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 
@@ -23,6 +27,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -71,6 +77,98 @@ class SurveyResultServiceTest {
             @Override public Long getSrvyArtclSn() { return artclSn; }
             @Override public long getCnt() { return cnt; }
         };
+    }
+
+    // ---------- 응답 표시 ----------
+
+    @Test
+    @DisplayName("응답 목록은 여러 문항의 선택 내용을 페이지당 한 번에 조회하고 중복 항목 조회를 합친다")
+    void responseListEnrichesChoicesWithOneBatchWithoutMutatingStoredAnswers() {
+        var first = response(1L, 201L, 301L, 401L, null, null);
+        var second = response(2L, 201L, 302L, 402L, "", null);
+        var duplicate = response(3L, 201L, 301L, 401L, null, null);
+        var pageable = PageRequest.of(0, 10);
+        given(resultRepository.searchByRspnsNm("", pageable))
+                .willReturn(new PageImpl<>(List.of(first, second, duplicate,
+                        response(4L, 201L, 301L, 401L, "직접 쓴 답변", null),
+                        response(5L, 201L, 302L, 402L, null, "기타 원문")), pageable, 23));
+        given(articleRepository.findAllById(List.of(401L, 402L)))
+                .willReturn(List.of(article(401L, 301L, "예"), article(402L, 302L, "문화")));
+
+        var result = service.getResponseList(null, pageable);
+
+        assertThat(result.getContent()).extracting(SurveyResultDto::rspdntAnsCn)
+                .containsExactly("예", "문화", "예", "직접 쓴 답변", null);
+        assertThat(result.getContent()).extracting(SurveyResultDto::srvyQstnSn).containsExactly(301L, 302L, 301L, 301L, 302L);
+        assertThat(result.getContent().get(4).etcAnsCn()).isEqualTo("기타 원문");
+        assertThat(result.getTotalElements()).isEqualTo(23);
+        assertThat(first.getRspdntAnsCn()).isNull();
+        assertThat(second.getRspdntAnsCn()).isEmpty();
+        verify(articleRepository).findAllById(List.of(401L, 402L));
+        verifyNoMoreInteractions(articleRepository);
+        verifyNoInteractions(questionRepository, infoRepository);
+    }
+
+    @Test
+    @DisplayName("자유서술과 기타 답변이 있으면 원문을 보존하고 항목을 추가 조회하지 않는다")
+    void responseListPreservesFreeTextAndOtherAnswersWithoutLookup() {
+        var pageable = PageRequest.of(0, 10);
+        given(resultRepository.searchByRspnsNm("응답자", pageable)).willReturn(new PageImpl<>(List.of(
+                response(1L, 201L, 301L, 401L, "  자유서술 원문  ", null),
+                response(2L, 201L, 301L, 401L, null, "기타 원문"),
+                response(3L, 201L, 301L, 401L, "기존 답변 우선", "기타 원문"))));
+
+        var result = service.getResponseList("응답자", pageable).getContent();
+
+        assertThat(result).extracting(SurveyResultDto::rspdntAnsCn).containsExactly("  자유서술 원문  ", null, "기존 답변 우선");
+        assertThat(result).extracting(SurveyResultDto::etcAnsCn).containsExactly(null, "기타 원문", "기타 원문");
+        verifyNoInteractions(articleRepository, questionRepository, infoRepository);
+    }
+
+    @Test
+    @DisplayName("타설문·타문항 항목 내용과 삭제된 선택지는 응답에 보강하지 않는다")
+    void responseListDoesNotExposeForeignOrDeletedArticleContent() {
+        var pageable = PageRequest.of(0, 10);
+        given(resultRepository.searchByRspnsNm("", pageable)).willReturn(new PageImpl<>(List.of(
+                response(1L, 201L, 301L, 401L, null, null),
+                response(2L, 201L, 301L, 402L, null, null),
+                response(3L, 201L, 301L, 403L, "", null))));
+        given(articleRepository.findAllById(List.of(401L, 402L, 403L))).willReturn(List.of(
+                SurveyArticle.builder().srvyArtclSn(401L).srvySn(999L).srvyQstnSn(301L).artclCn("다른 설문의 내용").build(),
+                article(402L, 999L, "다른 문항의 내용")));
+
+        var result = service.getResponseList(null, pageable).getContent();
+
+        assertThat(result).extracting(SurveyResultDto::rspdntAnsCn).containsExactly(null, null, "");
+        verifyNoInteractions(questionRepository, infoRepository);
+    }
+
+    @Test
+    @DisplayName("응답 단건도 목록과 같은 선택 항목 내용을 반환한다")
+    void responseDetailUsesTheSameChoiceContent() {
+        given(resultRepository.findById(1L)).willReturn(java.util.Optional.of(response(1L, 201L, 301L, 401L, null, null)));
+        given(articleRepository.findAllById(List.of(401L))).willReturn(List.of(article(401L, 301L, "선택 내용")));
+
+        assertThat(service.getResponse(1L).rspdntAnsCn()).isEqualTo("선택 내용");
+
+        verify(articleRepository).findAllById(List.of(401L));
+        verifyNoMoreInteractions(articleRepository);
+    }
+
+    @Test
+    @DisplayName("빈 응답 페이지는 선택 항목을 조회하지 않는다")
+    void emptyResponsePageDoesNotQueryArticles() {
+        var pageable = PageRequest.of(0, 10);
+        given(resultRepository.searchByRspnsNm("", pageable)).willReturn(Page.empty(pageable));
+
+        assertThat(service.getResponseList(null, pageable)).isEmpty();
+
+        verifyNoInteractions(articleRepository, questionRepository, infoRepository);
+    }
+
+    private static SurveyResult response(Long id, Long surveyId, Long questionId, Long articleId, String answer, String other) {
+        return SurveyResult.builder().srvyRspnsSn(id).srvySn(surveyId).srvyQstnSn(questionId).srvyArtclSn(articleId)
+                .rspdntAnsCn(answer).etcAnsCn(other).build();
     }
 
     // ---------- 통계 ----------

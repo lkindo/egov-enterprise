@@ -2,6 +2,9 @@ import withBundleAnalyzer from '@next/bundle-analyzer';
 import type { NextConfig } from 'next';
 import { fileURLToPath } from 'node:url';
 
+// Docker builds trace their runtime files; ordinary Windows builds avoid standalone symlinks.
+const dockerStandalone = process.env.NEXT_DOCKER_STANDALONE === 'true';
+
 const nextConfig: NextConfig = {
   // [csp Phase 4 · 2026-08-20] PPR/정적 셸 비활성 — nonce CSP 의 전제 조건.
   //   nonce 는 요청마다 다른데 cacheComponents(PPR)는 페이지 셸을 빌드타임에 정적 프리렌더한다.
@@ -17,7 +20,7 @@ const nextConfig: NextConfig = {
   //   프레임워크·버전 노출은 공격자가 알려진 취약점을 겨냥할 표면을 좁혀 주므로 끈다.
   //   기능 영향 없음(순수 정보성 헤더).
   poweredByHeader: false,
-  // output: 'standalone', // Standalone mode causes symlink EPERM on Windows without Developer Mode/Admin. Disabling for local build verification.
+  output: dockerStandalone ? 'standalone' : undefined,
   experimental: {
     // ppr: 'incremental', // Merged into cacheComponents
     // [bundle-barrel-imports] 배럴 임포트 자동 최적화 - 200-800ms 빌드 속도 향상
@@ -52,7 +55,7 @@ const nextConfig: NextConfig = {
     },
   } satisfies Pick<NextConfig, 'webpack'> : {}),
   turbopack: {
-    root: fileURLToPath(new URL('..', import.meta.url)),
+    root: fileURLToPath(new URL(dockerStandalone ? '.' : '..', import.meta.url)),
   },
   async headers() {
     // [csp Phase 1] prod/dev 분리.

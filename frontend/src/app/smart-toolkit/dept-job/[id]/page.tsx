@@ -1,4 +1,10 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import DeptJobDetailClient from './DeptJobDetailClient';
+
+export const metadata: Metadata = {
+  title: `부서 업무 상세 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 /**
  * 종전에는 `<DeptJobDetailClient />` 로 **params 를 넘기지 않았다**. 클라이언트도 받지 않았으므로

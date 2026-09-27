@@ -1,6 +1,12 @@
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import { BoardRegistClient } from './BoardRegistClient';
 import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
 import { NOTICE_BOARD_ID } from '@/config/board-ids';
+
+export const metadata: Metadata = {
+  title: `게시글 작성·수정 | ${SITE_IDENTITY.frameworkName}`,
+};
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

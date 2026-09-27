@@ -11,6 +11,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
@@ -72,5 +73,30 @@ class ScheduleRepositoryOrderTest {
         assertThat(monthly).containsExactlyElementsOf(expected);
         assertThat(range).containsExactlyElementsOf(expected);
         assertThat(ownerRange).containsExactlyElementsOf(expected);
+    }
+
+    @Test
+    @DisplayName("부서 일정 페이지는 날짜·일련번호 순이며 부서·구분·검색 범위를 유지한다")
+    void departmentPagesHaveStableOrderAndPreserveScope() {
+        scheduleRepository.save(Schedule.builder().schdlNm("회의 - 다른 부서")
+                .schdlSeCd("1").schdlDeptId("DEPT_B").schdlBgngYmd("20260801").build());
+        save("회의 - 개인 일정", "20260801");
+        scheduleRepository.save(Schedule.builder().schdlNm("검색 범위 밖")
+                .schdlSeCd("1").schdlDeptId("DEPT_A").schdlBgngYmd("20260801").build());
+        Schedule later = scheduleRepository.save(Schedule.builder().schdlNm("회의 - 늦은 날짜")
+                .schdlSeCd("1").schdlDeptId("DEPT_A").schdlBgngYmd("20260910").build());
+        Schedule first = scheduleRepository.save(Schedule.builder().schdlNm("회의 - 같은 날 먼저")
+                .schdlSeCd("1").schdlDeptId("DEPT_A").schdlBgngYmd("20260905").build());
+        Schedule second = scheduleRepository.save(Schedule.builder().schdlNm("회의 - 같은 날 나중")
+                .schdlSeCd("1").schdlDeptId("DEPT_A").schdlBgngYmd("20260905").build());
+        scheduleRepository.flush();
+
+        var page1 = scheduleRepository.searchDeptSchedules("1", "DEPT_A", "회의", PageRequest.of(0, 2));
+        var page2 = scheduleRepository.searchDeptSchedules("1", "DEPT_A", "회의", PageRequest.of(1, 2));
+
+        assertThat(page1.getTotalElements()).isEqualTo(3);
+        assertThat(page1.getContent()).extracting(Schedule::getSchdlSn)
+                .containsExactly(first.getSchdlSn(), second.getSchdlSn());
+        assertThat(page2.getContent()).extracting(Schedule::getSchdlSn).containsExactly(later.getSchdlSn());
     }
 }

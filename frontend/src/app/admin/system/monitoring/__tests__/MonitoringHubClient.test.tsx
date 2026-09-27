@@ -198,6 +198,34 @@ describe('MonitoringHubClient', () => {
     mocks.integrity.mockResolvedValue({ checked: 0, missing: 0, samples: [], storageRoot: '/srv/uploads', storedFilesChecked: 0, orphanCandidates: 0, undecidable: 0, orphanSamples: [] });
   });
 
+  it('감사 보기도 전체 시스템 로그를 표시하며 보안 전용 분류가 없음을 알린다', async () => {
+    mocks.audit.mockResolvedValue(page([auditRow, systemRow]));
+    renderHub('tab=security');
+
+    expect(await screen.findByText('AUTH')).toBeInTheDocument();
+    expect(screen.getByText('SYSTEM')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '시스템 로그(감사 보기)' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('시스템 로그 탭과 같은 전체 데이터이며 보안 전용 분류를 제공하지 않습니다.')).toBeInTheDocument();
+    expect(mocks.audit).toHaveBeenCalledWith({ page: 0, size: 50, searchKeyword: '' });
+    expect(mocks.system).not.toHaveBeenCalled();
+  });
+
+  it('로그인 이력은 성공·실패·미상 시도를 구분하며 세 종류를 모두 보존한다', async () => {
+    mocks.login.mockResolvedValue(page([
+      { ...loginRow, lgnSn: 31, loginId: '성공 계정', errOccrrAt: 'N' },
+      { ...loginRow, lgnSn: 32, loginId: '실패 입력', errOccrrAt: 'Y' },
+      { ...loginRow, lgnSn: 33, loginId: '미상 기록', errOccrrAt: null },
+    ]));
+    renderHub('tab=login');
+
+    await screen.findByText('성공 계정');
+    for (const [id, result] of [['성공 계정', '성공'], ['실패 입력', '실패'], ['미상 기록', '결과 미상']]) {
+      expect(within(screen.getByText(id).closest('tr')!).getByText(result)).toBeInTheDocument();
+    }
+    expect(screen.getByRole('tab', { name: '로그인 시도 이력' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('성공·실패·결과 미상 로그인 시도를 조회합니다. 성공 로그인 통계와 집계 범위가 다릅니다.')).toBeInTheDocument();
+  });
+
   /**
    * 조회 조건 입력의 접근 이름(KeywordFilter 의 label).
    *
@@ -399,7 +427,7 @@ describe('MonitoringHubClient', () => {
   it('퇴역한 인프라 구성도 탭 주소는 기본 탭으로 떨어지고 탭 목록에 없다', () => {
     renderHub('tab=topology');
     expect(screen.queryByRole('tab', { name: /인프라 구성도/ })).toBeNull();
-    expect(screen.getByRole('tab', { name: /보안 감사 로그/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: '시스템 로그(감사 보기)' })).toHaveAttribute('aria-selected', 'true');
   });
 
   /*
