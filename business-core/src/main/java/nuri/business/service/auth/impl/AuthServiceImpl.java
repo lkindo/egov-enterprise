@@ -83,6 +83,8 @@ public class AuthServiceImpl implements AuthService {
         
         // [정체성 경계] 인증 principal 의 이름(getName()==CustomUserDetails.getUsername()) 은 esntlId 이고,
         // 사용자가 입력한 로그인 ID 는 request.getUserId() 다. 둘은 서로 다른 식별자이므로 명시적으로 분리한다.
+        // 인증 제공자는 입력을 로그인 ID 로만 해석하므로(DEC-OPS-179), 인증을 통과한 입력은 곧 그 사용자의 로그인 ID 다 —
+        // 위 정책 검사와 아래 OTP 조회가 같은 키를 본다.
         String esntlId = authentication.getName();   // User @Id · JWT subject · RefreshToken key
         String loginId = request.getUserId();        // TB_LOGIN_POLICY @Id
         CustomUserDetails principal = requireCurrentPrincipal(authentication.getPrincipal(), esntlId);

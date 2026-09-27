@@ -85,7 +85,7 @@ class EgovAuthenticationProviderTest {
     void authenticate_success_egov() {
         // Given
         Authentication auth = new UsernamePasswordAuthenticationToken("testuser", "password");
-        lenient().when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        lenient().when(userRepository.findByUserId("testuser")).thenReturn(Optional.of(testUser));
         when(egovPasswordEncoder.matches("password", "hashedPassword", "testuser")).thenReturn(true);
         when(passwordEncoder.encode("password")).thenReturn("{bcrypt}migrated");
         
@@ -118,7 +118,7 @@ class EgovAuthenticationProviderTest {
                 .lckYn("N")
                 .chgPswdLastDt(lastRealChange)
                 .build();
-        when(userRepository.findById("legacy")).thenReturn(Optional.of(bareLegacyUser));
+        when(userRepository.findByUserId("legacy")).thenReturn(Optional.of(bareLegacyUser));
         when(egovPasswordEncoder.matches("password", "legacyHash", "legacy")).thenReturn(true);
         when(passwordEncoder.encode("password")).thenReturn("{bcrypt}migrated");
 
@@ -135,7 +135,7 @@ class EgovAuthenticationProviderTest {
     @Test
     @DisplayName("레거시 userId salt 불일치 시 esntlId salt를 호환 검증")
     void authenticate_success_legacyEsntlIdSalt_rehashes() {
-        when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByUserId("testuser")).thenReturn(Optional.of(testUser));
         when(egovPasswordEncoder.matches("password", "hashedPassword", "testuser")).thenReturn(false);
         when(egovPasswordEncoder.matches("password", "hashedPassword", "USR_0000000000001"))
                 .thenReturn(true);
@@ -158,7 +158,7 @@ class EgovAuthenticationProviderTest {
                 .userNm("Standard User")
                 .lckYn("N")
                 .build();
-        when(userRepository.findById("standard")).thenReturn(Optional.of(standardUser));
+        when(userRepository.findByUserId("standard")).thenReturn(Optional.of(standardUser));
         when(passwordEncoder.matches("password", "{bcrypt}current")).thenReturn(true);
         when(passwordEncoder.upgradeEncoding("{bcrypt}current")).thenReturn(false);
 
@@ -181,7 +181,7 @@ class EgovAuthenticationProviderTest {
                 .userNm("Standard User")
                 .lckYn("N")
                 .build();
-        when(userRepository.findById("standard")).thenReturn(Optional.of(standardUser));
+        when(userRepository.findByUserId("standard")).thenReturn(Optional.of(standardUser));
         when(passwordEncoder.matches("password", "{bcrypt}old-cost")).thenReturn(true);
         when(passwordEncoder.upgradeEncoding("{bcrypt}old-cost")).thenReturn(true);
         when(passwordEncoder.encode("password")).thenReturn("{bcrypt}current-cost");
@@ -196,7 +196,7 @@ class EgovAuthenticationProviderTest {
     @Test
     @DisplayName("재해시 실패는 기존 검증 성공을 막지 않고 다음 로그인 재시도를 남김")
     void authenticate_success_rehashFailure_keepsCompatibleLogin() {
-        when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByUserId("testuser")).thenReturn(Optional.of(testUser));
         when(egovPasswordEncoder.matches("password", "hashedPassword", "testuser")).thenReturn(true);
         when(passwordEncoder.encode("password")).thenThrow(new IllegalStateException("encoder unavailable"));
 
@@ -213,7 +213,7 @@ class EgovAuthenticationProviderTest {
     void authenticate_fail_wrongPassword() {
         // Given
         Authentication auth = new UsernamePasswordAuthenticationToken("testuser", "wrongpassword");
-        lenient().when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        lenient().when(userRepository.findByUserId("testuser")).thenReturn(Optional.of(testUser));
         lenient().when(egovPasswordEncoder.matches(anyString(), anyString(), anyString())).thenReturn(false);
 
         // When & Then
@@ -229,7 +229,7 @@ class EgovAuthenticationProviderTest {
     @DisplayName("레거시 비밀번호 불일치는 표준 인코더 오류로 위장하지 않고 인증 실패로 처리")
     void authenticate_legacyMismatch_doesNotFallThroughToStandardEncoder() {
         Authentication auth = new UsernamePasswordAuthenticationToken("testuser", "wrongpassword");
-        when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByUserId("testuser")).thenReturn(Optional.of(testUser));
         when(egovPasswordEncoder.matches("wrongpassword", "hashedPassword", "testuser")).thenReturn(false);
         when(egovPasswordEncoder.matches("wrongpassword", "hashedPassword", "USR_0000000000001"))
                 .thenReturn(false);
@@ -246,12 +246,30 @@ class EgovAuthenticationProviderTest {
     void authenticate_fail_userNotFound() {
         // Given
         Authentication auth = new UsernamePasswordAuthenticationToken("nonexistent", "password");
-        lenient().when(userRepository.findById("nonexistent")).thenReturn(Optional.empty());
-        lenient().when(userRepository.findByEsntlId("nonexistent")).thenReturn(Optional.empty());
+        lenient().when(userRepository.findByUserId("nonexistent")).thenReturn(Optional.empty());
 
         // When & Then
         assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
                 .isInstanceOf(BadCredentialsException.class);
+    }
+
+    @Test
+    @DisplayName("로그인 입력은 로그인 ID로만 찾는다 — esntlId를 넣으면 로그인 정책을 우회할 수 있어 거부한다")
+    void authenticate_esntlIdInput_isNotAccepted() {
+        // 로그인 정책·OTP 는 입력값을 로그인 ID 로 조회한다(AuthServiceImpl). 인증이 esntlId 로도 사용자를 찾으면
+        // 비밀번호를 아는 사용자가 esntlId 를 넣어 IP·시간대·접속 제한을 빈 정책으로 통과한다(DEC-OPS-179).
+        Authentication auth = new UsernamePasswordAuthenticationToken(testUser.getEsntlId(), "password");
+        when(userRepository.findByUserId(testUser.getEsntlId())).thenReturn(Optional.empty());
+        lenient().when(userRepository.findById(testUser.getEsntlId())).thenReturn(Optional.of(testUser));
+        lenient().when(userRepository.findByEsntlId(testUser.getEsntlId())).thenReturn(Optional.of(testUser));
+        lenient().when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        lenient().when(egovPasswordEncoder.matches(anyString(), anyString(), anyString())).thenReturn(true);
+
+        assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
+                .isInstanceOf(BadCredentialsException.class);
+        verify(userRepository, never()).findById(anyString());
+        verify(userRepository, never()).findByEsntlId(anyString());
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
@@ -280,7 +298,7 @@ class EgovAuthenticationProviderTest {
                 .lckYn("N")
                 .build();
         Authentication auth = new UsernamePasswordAuthenticationToken("testuser", "password");
-        when(userRepository.findById("testuser")).thenReturn(Optional.of(brokenUser));
+        when(userRepository.findByUserId("testuser")).thenReturn(Optional.of(brokenUser));
         when(passwordEncoder.matches("password", "{unknown}broken"))
                 .thenThrow(new IllegalArgumentException("unknown hash id"));
 
@@ -298,7 +316,7 @@ class EgovAuthenticationProviderTest {
         // Given
         testUser.lockAccount();
         Authentication auth = new UsernamePasswordAuthenticationToken("testuser", "password");
-        lenient().when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        lenient().when(userRepository.findByUserId("testuser")).thenReturn(Optional.of(testUser));
 
         // When & Then
         assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
@@ -319,7 +337,7 @@ class EgovAuthenticationProviderTest {
                 .lckYn("N")
                 .build();
         Authentication auth = new UsernamePasswordAuthenticationToken("webmaster", "password");
-        lenient().when(userRepository.findById("webmaster")).thenReturn(Optional.of(webmasterUser));
+        lenient().when(userRepository.findByUserId("webmaster")).thenReturn(Optional.of(webmasterUser));
         lenient().when(egovPasswordEncoder.matches("password", "hashedPassword", "webmaster")).thenReturn(true);
         lenient().when(passwordEncoder.encode("password")).thenReturn("{bcrypt}migrated");
         var current = principal("USR_0000000000001", List.of("ROLE_ADMIN", "SURVEY"),
@@ -339,7 +357,7 @@ class EgovAuthenticationProviderTest {
     @Test
     void inactiveAccountIsRejectedBeforePasswordOrAuthorizationLookup() {
         testUser.updateStatus("D");
-        when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByUserId("testuser")).thenReturn(Optional.of(testUser));
         assertThatThrownBy(() -> authenticationProvider.authenticate(
                 new UsernamePasswordAuthenticationToken("testuser", "password")))
                 .isInstanceOf(DisabledException.class);
@@ -349,7 +367,7 @@ class EgovAuthenticationProviderTest {
 
     @Test
     void emptyCurrentGrantsDoNotAcquireFallbackAuthorities() {
-        when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByUserId("testuser")).thenReturn(Optional.of(testUser));
         when(egovPasswordEncoder.matches("password", "hashedPassword", "testuser")).thenReturn(true);
         when(passwordEncoder.encode("password")).thenReturn("{bcrypt}migrated");
         when(userDetailsService.loadUserByUsername(testUser.getEsntlId()))
@@ -373,7 +391,7 @@ class EgovAuthenticationProviderTest {
     @DisplayName("잠금 - 임계값 미만(4회) 실패는 잠기지 않는다")
     void lockout_belowThreshold_notLocked() {
         // Given
-        lenient().when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        lenient().when(userRepository.findByUserId("testuser")).thenReturn(Optional.of(testUser));
         lenient().when(egovPasswordEncoder.matches(anyString(), anyString(), anyString())).thenReturn(false);
 
         // When — 임계값 직전(4회)까지 실패
@@ -391,7 +409,7 @@ class EgovAuthenticationProviderTest {
     @DisplayName("잠금 - 임계값(5회)째 실패에서 잠기고 잠금 시각이 기록된다")
     void lockout_atThreshold_locks() {
         // Given
-        lenient().when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        lenient().when(userRepository.findByUserId("testuser")).thenReturn(Optional.of(testUser));
         lenient().when(egovPasswordEncoder.matches(anyString(), anyString(), anyString())).thenReturn(false);
 
         // When — 5회 실패 (5회째까지는 잠금 검사를 통과하므로 전부 BadCredentials)
@@ -427,7 +445,7 @@ class EgovAuthenticationProviderTest {
                 .lckCnt(MAX_FAILURES)
                 .lckLastPnttm(LocalDateTime.now())
                 .build();
-        lenient().when(userRepository.findById("lockeduser")).thenReturn(Optional.of(lockedUser));
+        lenient().when(userRepository.findByUserId("lockeduser")).thenReturn(Optional.of(lockedUser));
         // 비밀번호는 '정답'이지만 잠금 검사가 먼저다
 
         Authentication auth = new UsernamePasswordAuthenticationToken("lockeduser", "password");
@@ -454,7 +472,7 @@ class EgovAuthenticationProviderTest {
                 .lckCnt(MAX_FAILURES)
                 .lckLastPnttm(LocalDateTime.now().minusMinutes(LOCK_MINUTES + 1))
                 .build();
-        lenient().when(userRepository.findById("expireduser")).thenReturn(Optional.of(expiredLockUser));
+        lenient().when(userRepository.findByUserId("expireduser")).thenReturn(Optional.of(expiredLockUser));
         lenient().when(egovPasswordEncoder.matches("password", "hashedPassword", "expireduser")).thenReturn(true);
         lenient().when(passwordEncoder.encode(anyString())).thenReturn("{bcrypt}migrated");
 
@@ -477,7 +495,7 @@ class EgovAuthenticationProviderTest {
     void lockout_disabledWhenThresholdNotPositive() {
         // Given — 운영 긴급 회피 스위치
         ReflectionTestUtils.setField(authenticationProvider, "maxLoginFailures", 0);
-        lenient().when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        lenient().when(userRepository.findByUserId("testuser")).thenReturn(Optional.of(testUser));
         lenient().when(egovPasswordEncoder.matches(anyString(), anyString(), anyString())).thenReturn(false);
 
         // When — 임계값을 훌쩍 넘겨 실패

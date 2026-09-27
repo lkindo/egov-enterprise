@@ -67,9 +67,11 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
         try {
             log.debug(">>> [EgovAuthenticationProvider] DB identity lookup started");
             
+            // [2026-09-27 DEC-OPS-179] 로그인 입력은 로그인 ID 로만 찾는다. 로그인 정책·OTP 는 입력값을 로그인 ID 로
+            //   조회하므로(AuthServiceImpl), 여기서 PK·esntlId 로도 찾으면 비밀번호를 아는 사용자가 esntlId 를 넣어
+            //   관리자가 건 IP·시간대·접속 제한과 OTP 를 빈 정책으로 통과한다. 토큰 subject(esntlId)의 해석은
+            //   이 경로가 아니라 JpaUserAuthAdapter 가 맡는다.
             User userEntity = userRepository.findByUserId(userId)
-                    .or(() -> userRepository.findById(userId))
-                    .or(() -> userRepository.findByEsntlId(userId))
                     .orElseThrow(() -> {
                         log.warn(">>> [EgovAuthenticationProvider] Authentication rejected: unknown identity");
                         return new BadCredentialsException("Invalid User ID or Password");
