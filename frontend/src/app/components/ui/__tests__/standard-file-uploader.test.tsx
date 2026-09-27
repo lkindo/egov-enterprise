@@ -147,6 +147,15 @@ describe('StandardFileUploader', () => {
     expect(toastMocks.error).not.toHaveBeenCalled();
   });
 
+  it('[DIP B5 F9] accept 를 주지 않으면 서버가 받는 확장자만 받는다 — 실행 파일은 선택 단계에서 막는다', () => {
+    render(<StandardFileUploader />);
+    expect(input().getAttribute('accept')).toContain('.hwp');
+    fireEvent.drop(dropZone(), { dataTransfer: { files: [file('setup.exe', 'application/octet-stream')] } });
+    expect(toastMocks.error).toHaveBeenCalledWith('setup.exe 형식은 첨부할 수 없습니다.');
+    fireEvent.drop(dropZone(), { dataTransfer: { files: [file('report.hwp', 'application/octet-stream')] } });
+    expect(screen.getByText('report.hwp')).toBeInTheDocument();
+  });
+
   it('드래그 상태를 표시하고 허용되지 않은 형식은 차단한다', () => {
     render(<StandardFileUploader accept=".pdf" />);
     const executable = file('payload.exe', 'application/octet-stream');

@@ -96,6 +96,8 @@ public class SatisfactionApiController {
         dto.setPstSn(pstSn);
         // 댓글 등록(CommentApiController:47)과 같은 자리에서 같은 검사를 한다 — 볼 수 없는 글에 평가를 남길 수 없다.
         boardService.assertCommentAccess(bbsId, pstSn);
+        // [2026-09-27 DIP B5 F9] 만족도 조사를 쓰지 않는 게시판에는 새 평가를 받지 않는다.
+        boardService.assertSatisfactionEnabled(bbsId);
         return ResponseEntity.ok(ApiResponse.success(satisfactionService.createSatisfaction(dto)));
     }
 

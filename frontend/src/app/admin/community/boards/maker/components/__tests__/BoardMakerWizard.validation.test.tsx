@@ -100,6 +100,24 @@ describe('BoardMakerWizard validation', () => {
     expect(createMenu).toHaveBeenCalledTimes(outcome === 'absent' ? 2 : 1);
   });
 
+  it('[DIP B5 F9] 게시판 기능(댓글·만족도·첨부) 선택을 생성 요청에 싣는다 — 기본은 모두 받음', async () => {
+    createBoardMaster.mockResolvedValue('BBSMSTR_AAAAAAAAAAAA');
+    render(<BoardMakerWizard />);
+    fireEvent.change(screen.getByRole('textbox', { name: '게시판 명칭' }), { target: { value: '사내 소식' } });
+    expect(screen.getByRole('checkbox', { name: /댓글 받기/ })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /만족도 평가 받기/ })).toBeChecked();
+    fireEvent.click(screen.getByRole('checkbox', { name: /만족도 평가 받기/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /파일 첨부 허용/ }));
+    for (const step of ['템플릿 선택', '접근 권한 안내', '메뉴 배포']) {
+      fireEvent.click(screen.getByRole('button', { name: /다음 단계로/ }));
+      await screen.findByRole('heading', { name: step });
+    }
+    fireEvent.click(screen.getByRole('button', { name: '게시판 생성 및 메뉴 배포' }));
+
+    await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
+    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ ansYn: 'Y', stsfdgYn: 'N', fileAtchPsbltyYn: 'N' });
+  });
+
   it('does not advance on an invalid first step and exposes summary, inline error, and focus', async () => {
     render(<BoardMakerWizard />);
     const title = screen.getByRole('textbox', { name: '게시판 명칭' });

@@ -377,6 +377,8 @@ public class BoardService extends BaseAbstractService {
                         assertCommunityAccess(master);
                         if (request.atchFileSn() != null) {
                                 attachmentAssignmentPolicy.assertAssignable(request.atchFileSn());
+                                // [2026-09-27 DIP B5 F9] 미리 올린 첨부 묶음을 붙이는 경로도 게시판 첨부 설정을 지난다.
+                                assertAttachmentPolicy(master, 0, fileService.getFileList(request.atchFileSn()).size());
                         }
 
                         // 사용자 정보 조회 (실패 시 익명 처리)
@@ -447,6 +449,8 @@ public class BoardService extends BaseAbstractService {
                 assertCommunityAccess(master);
                 Long atchFileSn = request.atchFileSn();
                 if (files != null && !files.isEmpty()) {
+                        // [2026-09-27 DIP B5 F9] 게시판 첨부 설정(허용·파일 수·파일당 크기)을 저장 전에 본다.
+                        assertNewFilesAllowed(master, 0, files);
                         atchFileSn = fileService.uploadFiles(files);
                 }
 
@@ -532,6 +536,12 @@ public class BoardService extends BaseAbstractService {
                         List<MultipartFile> files) throws IOException {
                 Long atchFileSn = request.atchFileSn();
                 if (files != null && !files.isEmpty()) {
+                        // [2026-09-27 DIP B5 F9] 답글도 게시판 첨부 설정을 저장 전에 본다(등록과 같은 순서).
+                        BoardMaster master = boardMasterRepository
+                                        .findById(required(request.bbsId(), "bbsId 는 null 일 수 없습니다"))
+                                        .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+                        assertCommunityAccess(master);
+                        assertNewFilesAllowed(master, 0, files);
                         atchFileSn = fileService.uploadFiles(files);
                 }
 
@@ -624,6 +634,71 @@ public class BoardService extends BaseAbstractService {
                 if ("Y".equalsIgnoreCase(detail.getScrtYn())) {
                         SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL");
                 }
+        }
+
+        /**
+         * 댓글 등록 전 게시판 설정(댓글 사용 여부 {@code ansYn})을 본다(2026-09-27 DIP B5 F9). 회원·비밀글 가드
+         * ({@link #assertCommentAccess}) 뒤에 부른다. 이미 달린 댓글의 수정·삭제는 막지 않는다 — 설정을 끈 뒤에도
+         * 작성자가 자기 댓글을 정리할 수 있어야 한다.
+         */
+        @Transactional(readOnly = true)
+        public void assertCommentsEnabled(String bbsId) {
+                if (!"Y".equals(findBoardMaster(bbsId).getAnsYn())) {
+                        throw new BusinessException(CommonErrorCode.INVALID_STATE, "이 게시판은 댓글을 받지 않습니다.");
+                }
+        }
+
+        /** 만족도 등록 전 게시판 설정(만족도 조사 사용 여부 {@code stsfdgYn})을 본다(2026-09-27 DIP B5 F9). */
+        @Transactional(readOnly = true)
+        public void assertSatisfactionEnabled(String bbsId) {
+                if (!"Y".equals(findBoardMaster(bbsId).getStsfdgYn())) {
+                        throw new BusinessException(CommonErrorCode.INVALID_STATE, "이 게시판은 만족도 조사를 받지 않습니다.");
+                }
+        }
+
+        private BoardMaster findBoardMaster(String bbsId) {
+                return boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
+                                .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+        }
+
+        /**
+         * 새로 올릴 파일이 게시판 첨부 설정을 지키는가(2026-09-27 DIP B5 F9). 종전에는 설정이 저장될 뿐 집행자가 없어,
+         * 첨부를 3개·5MB 로 정한 게시판에도 요청당 20개·10MB 까지 붙었다.
+         *
+         * @param existing 이미 글에 붙은 파일 수
+         */
+        static void assertNewFilesAllowed(BoardMaster master, int existing, List<MultipartFile> files) {
+                List<MultipartFile> incoming = files == null ? List.of()
+                                : files.stream().filter(file -> file != null && !file.isEmpty()).toList();
+                if (incoming.isEmpty()) return;
+                assertAttachmentPolicy(master, existing, incoming.size());
+                Long maxBytes = master.getAtchPsbltyFileSz();
+                if (maxBytes != null && maxBytes > 0) {
+                        for (MultipartFile file : incoming) {
+                                if (file.getSize() > maxBytes) {
+                                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                                                        "이 게시판은 파일 하나당 최대 " + describeBytes(maxBytes) + "까지 받습니다.");
+                                }
+                        }
+                }
+        }
+
+        /** 첨부 허용 여부와 파일 수. 파일 수가 0 이하이거나 비어 있으면 게시판 상한이 없다(서버 전역 상한만 적용). */
+        static void assertAttachmentPolicy(BoardMaster master, int existing, int incoming) {
+                if (incoming <= 0) return;
+                if (!"Y".equals(master.getFileAtchPsbltyYn())) {
+                        throw new BusinessException(CommonErrorCode.INVALID_STATE, "이 게시판은 파일 첨부를 받지 않습니다.");
+                }
+                Integer maxFiles = master.getAtchPsbltyFileQty();
+                if (maxFiles != null && maxFiles > 0 && existing + incoming > maxFiles) {
+                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                                        "이 게시판은 첨부 파일을 최대 " + maxFiles + "개까지 받습니다.");
+                }
+        }
+
+        private static String describeBytes(long bytes) {
+                long mb = 1024L * 1024L;
+                return bytes % mb == 0 ? (bytes / mb) + "MB" : bytes + "바이트";
         }
 
         @Transactional(readOnly = true)
@@ -748,6 +823,10 @@ public class BoardService extends BaseAbstractService {
                 }
 
                 if (files != null && !files.isEmpty()) {
+                        // [2026-09-27 DIP B5 F9] 이미 붙은 파일과 새 파일을 합쳐 게시판 첨부 설정을 본다.
+                        BoardMaster master = boardMasterRepository.findById(bbsId)
+                                        .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+                        assertNewFilesAllowed(master, fileService.getFileList(atchFileSn).size(), files);
                         if (atchFileSn == null) {
                                 // 게시글 소유권을 먼저 확인한 뒤 이 호출에서 새로 만든 첨부는
                                 // 클라이언트가 선택한 외부 식별자가 아니므로 재할당 조회가 필요 없다.

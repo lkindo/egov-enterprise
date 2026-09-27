@@ -34,13 +34,13 @@ vi.mock('@/services/business/board/SatisfactionService', () => ({
 
 const mocked = vi.mocked(satisfactionService);
 
-function renderWidget() {
+function renderWidget(acceptsNewRatings = true) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <SatisfactionSection bbsId="BBS_01" pstSn={1} />
+      <SatisfactionSection bbsId="BBS_01" pstSn={1} acceptsNewRatings={acceptsNewRatings} />
     </QueryClientProvider>
   );
 }
@@ -58,6 +58,16 @@ describe('SatisfactionSection', () => {
     testState.role = 'USER';
     testState.permissions = ['SATISFY_CREATE', 'SATISFY_UPDATE', 'SATISFY_DELETE'];
     testState.confirm.mockResolvedValue(true);
+  });
+
+  it('[DIP B5 F9] 만족도 조사를 쓰지 않는 게시판은 입력 폼 대신 사유를 보이고, 남은 평가는 그대로 보인다', async () => {
+    mocked.list.mockResolvedValue([{ dgstfnSn: 1, bbsId: 'BBS_01', pstSn: 1, dgstfnScr: 4, dgstfnCn: '좋아요', userNm: '김갑', useYn: 'Y' }]);
+    mocked.average.mockResolvedValue({ average: 4 });
+    renderWidget(false);
+
+    expect(await screen.findByText('좋아요')).toBeInTheDocument();
+    expect(screen.getByText('이 게시판은 새 만족도 평가를 받지 않습니다.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '만족도 등록' })).not.toBeInTheDocument();
   });
 
   it('게시글 경로(bbsId/pstSn)를 서비스에 그대로 전달한다', async () => {

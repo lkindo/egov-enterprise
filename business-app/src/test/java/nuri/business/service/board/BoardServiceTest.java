@@ -1128,6 +1128,107 @@ class BoardServiceTest {
         verify(boardRepository).save(argThat(b -> "user1".equals(b.getUserId()) && "실제작성자".equals(b.getUserNm())));
     }
 
+    // ── [2026-09-27 DIP B5 F9] 게시판 설정 집행 ───────────────────────────────────────────
+
+    private static org.springframework.mock.web.MockMultipartFile upload(String name, int bytes) {
+        return new org.springframework.mock.web.MockMultipartFile("files", name, "text/plain", new byte[bytes]);
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F9] 댓글·만족도를 쓰지 않는 게시판은 새 댓글·평가를 거부하고, 쓰는 게시판은 통과시킨다")
+    void commentAndRatingGuardsFollowBoardSettings() {
+        given(boardMasterRepository.findById("OFF")).willReturn(Optional.of(
+                BoardMaster.builder().bbsId("OFF").ansYn("N").stsfdgYn("N").build()));
+        given(boardMasterRepository.findById("ON")).willReturn(Optional.of(
+                BoardMaster.builder().bbsId("ON").ansYn("Y").stsfdgYn("Y").build()));
+
+        assertThatThrownBy(() -> boardService.assertCommentsEnabled("OFF"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
+                .hasMessageContaining("댓글");
+        assertThatThrownBy(() -> boardService.assertSatisfactionEnabled("OFF"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
+                .hasMessageContaining("만족도");
+        boardService.assertCommentsEnabled("ON");
+        boardService.assertSatisfactionEnabled("ON");
+        // 값을 보내지 않고 만든 게시판은 지금까지의 동작(받음)을 유지한다.
+        BoardMaster unspecified = BoardMaster.builder().bbsId("DEFAULT").build();
+        assertThat(unspecified.getAnsYn()).isEqualTo("Y");
+        assertThat(unspecified.getStsfdgYn()).isEqualTo("Y");
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F9] 첨부를 받지 않거나, 파일 수·파일당 크기를 넘는 첨부는 저장하기 전에 거부한다")
+    void createPostWithFilesEnforcesBoardAttachmentSettingsBeforeUpload() throws IOException {
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null);
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01")
+                .fileAtchPsbltyYn("N").atchPsbltyFileQty(3).build()));
+        assertThatThrownBy(() -> boardService.createPostWithFiles("user1", request, java.util.List.of(upload("a.txt", 1))))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
+                .hasMessageContaining("파일 첨부를 받지 않습니다");
+
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01")
+                .fileAtchPsbltyYn("Y").atchPsbltyFileQty(2).atchPsbltyFileSz(1024L * 1024L).build()));
+        assertThatThrownBy(() -> boardService.createPostWithFiles("user1", request,
+                java.util.List.of(upload("a.txt", 1), upload("b.txt", 1), upload("c.txt", 1))))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
+                .hasMessageContaining("최대 2개");
+        assertThatThrownBy(() -> boardService.createPostWithFiles("user1", request,
+                java.util.List.of(upload("big.txt", 1024 * 1024 + 1))))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
+                .hasMessageContaining("최대 1MB");
+
+        verify(fileService, never()).uploadFiles(any());
+        verify(boardRepository, never()).save(any(Board.class));
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F9] 수정은 이미 붙은 파일과 새 파일을 합쳐 센다 — 파일 수 상한이 0 이하면 게시판 상한이 없다")
+    void updatePostWithFilesCountsExistingAttachments() throws IOException {
+        Long pstSn = 1L;
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, null, null, null, null, null, null, null);
+        Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).userId("user1").atchFileSn(77L).build();
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
+        given(fileService.getFileList(77L)).willReturn(java.util.Collections.nCopies(2, (nuri.business.service.file.dto.FileDto) null));
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01")
+                .fileAtchPsbltyYn("Y").atchPsbltyFileQty(3).build()));
+
+        assertThatThrownBy(() -> boardService.updatePostWithFiles("BBS_01", pstSn, request,
+                java.util.List.of(upload("a.txt", 1), upload("b.txt", 1))))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        verify(fileService, never()).updateFiles(any(), any());
+
+        boardService.updatePostWithFiles("BBS_01", pstSn, request, java.util.List.of(upload("a.txt", 1)));
+        verify(fileService).updateFiles(eq(77L), any());
+
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01")
+                .fileAtchPsbltyYn("Y").atchPsbltyFileQty(0).build()));
+        boardService.updatePostWithFiles("BBS_01", pstSn, request,
+                java.util.List.of(upload("a.txt", 1), upload("b.txt", 1), upload("c.txt", 1)));
+        verify(fileService, times(2)).updateFiles(eq(77L), any());
+    }
+
+    @Test
+    @DisplayName("[DIP B5 F9] 미리 올린 첨부 묶음을 붙이는 등록도 게시판 파일 수를 지킨다")
+    void createPostWithAssignedGroupEnforcesFileCount() {
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(BoardMaster.builder()
+                .bbsId("BBS_01").fileAtchPsbltyYn("Y").atchPsbltyFileQty(3).build()));
+        given(fileService.getFileList(101L)).willReturn(java.util.Collections.nCopies(4, (nuri.business.service.file.dto.FileDto) null));
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, 101L, null, null, null, null, null, null);
+
+        assertThatThrownBy(() -> boardService.createPost("user1", request))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
+                .hasMessageContaining("최대 3개");
+        verify(boardRepository, never()).save(any(Board.class));
+    }
+
+    /** [2026-09-27 DIP B5 F9] 첨부 설정이 집행되므로 첨부 경로의 게시판은 첨부를 허용해야 한다. */
+    private static BoardMaster attachableMaster(String bbsId) {
+        return BoardMaster.builder().bbsId(bbsId).fileAtchPsbltyYn("Y").build();
+    }
+
     @Test
     @DisplayName("파일을 포함하여 게시글 생성")
     void createPostWithFiles() throws IOException {
@@ -1139,7 +1240,7 @@ class BoardServiceTest {
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
                 .singletonList(file);
 
-        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
+        BoardMaster master = attachableMaster("BBS_01");
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(fileService.uploadFiles(files)).willReturn(101L);
@@ -1223,8 +1324,9 @@ class BoardServiceTest {
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
                 .singletonList(file);
 
-        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
+        BoardMaster master = attachableMaster("BBS_01");
         Board parent = Board.builder().pstSn(parentId).sortOrdr(100L).ansLv(0).build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(fileService.uploadFiles(files)).willReturn(101L);
@@ -1397,6 +1499,7 @@ class BoardServiceTest {
 
         Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).userId("user1").build();
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(attachableMaster("BBS_01")));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
         given(fileService.uploadFiles(files)).willReturn(102L);
 
@@ -1421,6 +1524,7 @@ class BoardServiceTest {
                 .singletonList(file);
         Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).userId("user1").atchFileSn(77L).build();
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(attachableMaster("BBS_01")));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
 
         boardService.updatePostWithFiles(bbsId, pstSn, request, files);
@@ -1531,6 +1635,7 @@ class BoardServiceTest {
 
         Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).userId("user1").build();
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(attachableMaster("BBS_01")));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
 
         // when

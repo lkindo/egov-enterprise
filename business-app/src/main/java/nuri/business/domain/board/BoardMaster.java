@@ -66,10 +66,10 @@ public class BoardMaster extends BaseEntity {
 
     // --- [JPA Mapping] ---
     @Column(length = 1, nullable = false)
-    private String ansYn = "N";
+    private String ansYn = "Y";
 
     @Column(length = 1, nullable = false)
-    private String stsfdgYn = "N";
+    private String stsfdgYn = "Y";
 
     private BoardMaster(String bbsId, String bbsTtl, String bbsExpln, String bbsTypeCd, String bbsAtrbCd,
             String ansPsbltyYn, String fileAtchPsbltyYn, Integer atchPsbltyFileQty, Long atchPsbltyFileSz,
@@ -88,8 +88,10 @@ public class BoardMaster extends BaseEntity {
         this.useYn = useYn != null ? useYn : "Y";
         this.tmpltId = tmpltId;
         this.cmntySn = cmntySn;
-        this.ansYn = ansYn != null ? ansYn : "N";
-        this.stsfdgYn = stsfdgYn != null ? stsfdgYn : "N";
+        // [2026-09-27 DIP B5 F9] 댓글·만족도 설정을 집행하면서 기본값을 지금까지의 실제 동작(받음)인 Y 로 둔다.
+        //   종전 기본값 N 은 읽히지 않았으므로 값을 보내지 않는 호출부의 동작이 바뀌지 않는다.
+        this.ansYn = ansYn != null ? ansYn : "Y";
+        this.stsfdgYn = stsfdgYn != null ? stsfdgYn : "Y";
     }
 
     /**
@@ -105,8 +107,8 @@ public class BoardMaster extends BaseEntity {
     }
 
     public void registerOption(String ansYn, String stsfdgYn) {
-        this.ansYn = ansYn != null ? ansYn : "N";
-        this.stsfdgYn = stsfdgYn != null ? stsfdgYn : "N";
+        this.ansYn = ansYn != null ? ansYn : "Y";
+        this.stsfdgYn = stsfdgYn != null ? stsfdgYn : "Y";
         this.option = BoardMasterOption.builder()
                 .boardMaster(this)
                 .bbsId(this.bbsId)
@@ -139,8 +141,8 @@ public class BoardMaster extends BaseEntity {
      */
     private void syncOption() {
         // BoardMaster 컬럼(nullable=false) 방어 및 Option 과의 값 일치 보장
-        this.ansYn = this.ansYn != null ? this.ansYn : "N";
-        this.stsfdgYn = this.stsfdgYn != null ? this.stsfdgYn : "N";
+        this.ansYn = this.ansYn != null ? this.ansYn : "Y";
+        this.stsfdgYn = this.stsfdgYn != null ? this.stsfdgYn : "Y";
         if (this.option != null) {
             this.option.changeAnsYn(this.ansYn);
             this.option.changeStsfdgYn(this.stsfdgYn);
