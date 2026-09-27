@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { closeSync, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, readSync, writeFileSync } from 'node:fs';
+import { closeSync, constants, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, readSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -134,10 +134,13 @@ export function validateImageArchive(source, imageId) {
 export function readImageArchive(file, imageId) {
   let descriptor;
   try {
-    if (lstatSync(file).isSymbolicLink()) throw scanFailure();
-    descriptor = openSync(file, 'r'); const stat = fstatSync(descriptor);
-    if (!stat.isFile()) throw scanFailure();
-    return validateImageArchive({ size: stat.size, read: (offset, length) => {
+    const flags = constants.O_RDONLY | (process.platform === 'win32' ? 0 : constants.O_NOFOLLOW | constants.O_NONBLOCK);
+    descriptor = openSync(file, flags);
+    const stat = fstatSync(descriptor, { bigint: true }); const named = lstatSync(file, { bigint: true });
+    // Windows lacks O_NOFOLLOW; bind the path's regular-file identity to the opened descriptor on every platform.
+    if (!stat.isFile() || named.isSymbolicLink() || !named.isFile()
+      || stat.dev !== named.dev || stat.ino !== named.ino) throw scanFailure();
+    return validateImageArchive({ size: Number(stat.size), read: (offset, length) => {
       const buffer = Buffer.alloc(length); let read = 0;
       while (read < length) { const count = readSync(descriptor, buffer, read, length - read, offset + read);
         if (count === 0) throw scanFailure(); read += count; }
@@ -145,6 +148,13 @@ export function readImageArchive(file, imageId) {
     } }, imageId);
   } catch { throw scanFailure(); }
   finally { if (descriptor !== undefined) closeSync(descriptor); }
+}
+
+function writeExclusiveFile(file, data, { encoding = 'utf8', mode = 0o600 } = {}) {
+  // Claim the output atomically, then write only that descriptor even if its path is replaced.
+  const descriptor = openSync(file, 'wx', mode);
+  try { writeFileSync(descriptor, data, { encoding }); }
+  finally { closeSync(descriptor); }
 }
 
 export function validateImageScan(report, sbom, identity) {
@@ -254,7 +264,7 @@ export function scanReleaseImages(env, { run = runDocker, root = process.cwd() }
   const receipt = { schemaVersion: 1, revision: env.GITHUB_SHA, createdAt: new Date().toISOString(),
     runId: env.GITHUB_RUN_ID ?? null, runAttempt: env.GITHUB_RUN_ATTEMPT ?? null,
     scannerImage: RELEASE_SCANNER_IMAGE, scannerImageId, scanner: metadata, images: scanned };
-  writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, { encoding: 'utf8', flag: 'wx', mode: 0o600 });
+  writeExclusiveFile(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, { encoding: 'utf8', flag: 'wx', mode: 0o600 });
   return receipt;
 }
 
@@ -311,7 +321,7 @@ export function verifyReleaseImages(env, run = runDocker) {
   return images;
 }
 
-export function publishReleaseImages(env, { run = runDocker, write = writeFileSync, exists = existsSync, read = readFileSync, readArchive = readImageArchive } = {}) {
+export function publishReleaseImages(env, { run = runDocker, write = writeExclusiveFile, exists = existsSync, read = readFileSync, readArchive = readImageArchive } = {}) {
   if (env.GITHUB_EVENT_NAME !== 'push' || !/^refs\/tags\/v[^\s]+$/u.test(env.GITHUB_REF ?? '')) {
     throw new Error('Image publication requires a release tag push.');
   }

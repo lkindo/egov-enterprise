@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import fs, { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, relative, resolve, sep } from 'node:path';
 import { createServer } from 'node:http';
@@ -538,6 +539,45 @@ function temporaryScanRoot(t) {
   return root;
 }
 
+test('archive descriptor rejects a controlled symlink race at open and mismatched path identity', t => {
+  const root = temporaryScanRoot(t); const file = join(root, 'image.tar');
+  writeFileSync(file, imageArchives[0].bytes);
+  const open = fs.openSync; const lstat = fs.lstatSync;
+  for (const changed of ['symlink', 'identity']) {
+    let opened = false;
+    t.mock.method(fs, 'openSync', (...args) => {
+      const descriptor = open(...args); if (args[0] === file) opened = true; return descriptor;
+    });
+    t.mock.method(fs, 'lstatSync', (...args) => {
+      const stat = lstat(...args);
+      // Model a last-component replacement precisely at open, without OS symlink privileges.
+      if (args[0] !== file || !opened) return stat;
+      return new Proxy(stat, { get: (target, key) => key === 'isSymbolicLink' && changed === 'symlink'
+        ? () => true : key === 'ino' && changed === 'identity'
+          ? (typeof target.ino === 'bigint' ? target.ino + 1n : target.ino === 0 ? 1 : 0) : Reflect.get(target, key) });
+    });
+    syncBuiltinESMExports();
+    try { assert.throws(() => readImageArchive(file, imageArchives[0].imageId), /scan evidence/u, changed); }
+    finally { t.mock.restoreAll(); syncBuiltinESMExports(); }
+  }
+});
+
+test('archive descriptor reads a regular file and rejects a directory with nonblocking no-follow flags on POSIX', t => {
+  const root = temporaryScanRoot(t); const file = join(root, 'image.tar');
+  writeFileSync(file, imageArchives[0].bytes);
+  const open = fs.openSync; const flags = [];
+  t.mock.method(fs, 'openSync', (...args) => { flags.push(args[1]); return open(...args); });
+  syncBuiltinESMExports();
+  try {
+    assert.deepEqual(readImageArchive(file, imageArchives[0].imageId), validateImageArchive(imageArchives[0].bytes, imageArchives[0].imageId));
+    assert.throws(() => readImageArchive(root, imageArchives[0].imageId), /scan evidence/u);
+    if (process.platform !== 'win32') for (const value of flags) {
+      assert.equal(value & fs.constants.O_NOFOLLOW, fs.constants.O_NOFOLLOW);
+      assert.equal(value & fs.constants.O_NONBLOCK, fs.constants.O_NONBLOCK);
+    }
+  } finally { t.mock.restoreAll(); syncBuiltinESMExports(); }
+});
+
 function scannerFixture(root, { failScan = 0, badId = false } = {}) {
   const base = fixture(); let scans = 0; const calls = [];
   return { calls, run: args => {
@@ -596,6 +636,38 @@ test('wrong scanned image identity cannot create a completion receipt', t => {
   const root = temporaryScanRoot(t); const runner = scannerFixture(root, { badId: true });
   assert.throws(() => scanReleaseImages(env, { root, run: runner.run }), /scan evidence/u);
   assert.throws(() => readFileSync(join(root, RELEASE_SCAN_RECEIPT)), /ENOENT/u);
+});
+
+test('an exclusive scan receipt collision preserves the competing file after both scans', t => {
+  const root = temporaryScanRoot(t); const runner = scannerFixture(root);
+  const receipt = join(root, RELEASE_SCAN_RECEIPT); const competing = 'synthetic competing receipt';
+  assert.throws(() => scanReleaseImages(env, { root, run: args => {
+    const result = runner.run(args);
+    if (args.includes('version')) writeFileSync(receipt, competing, { flag: 'wx' });
+    return result;
+  } }), { code: 'EEXIST' });
+  assert.equal(readFileSync(receipt, 'utf8'), competing);
+  assert.equal(runner.calls.filter(args => args[0] === 'run' && !args.includes('version')).length, 4);
+});
+
+test('the default exclusive manifest writer preserves a post-preflight collision and completes a fresh publication', t => {
+  const root = temporaryScanRoot(t); const originalDirectory = process.cwd();
+  process.chdir(root);
+  try {
+    const output = 'release-manifest.json'; const competing = 'synthetic competing manifest';
+    const collision = fixture(); let pushes = 0;
+    assert.throws(() => publishReleaseImages(env, { ...collision, write: undefined, run: args => {
+      const result = collision.run(args);
+      if (args[1] === 'push' && ++pushes === 2) writeFileSync(output, competing, { flag: 'wx' });
+      return result;
+    } }), { code: 'EEXIST' });
+    assert.equal(readFileSync(output, 'utf8'), competing); assert.equal(pushes, 2);
+    fs.unlinkSync(output);
+    const fresh = fixture();
+    const manifest = publishReleaseImages(env, { ...fresh, write: undefined });
+    assert.deepEqual(JSON.parse(readFileSync(output, 'utf8')), manifest);
+    assert.equal(fresh.calls.filter(args => args[1] === 'push').length, 2);
+  } finally { process.chdir(originalDirectory); }
 });
 
 test('a real scanner child failing on the frontend blocks publication without leaking diagnostics', t => {

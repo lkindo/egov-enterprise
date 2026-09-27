@@ -261,3 +261,11 @@ run `ed64190b29de0ebe4c0644d3`는 위 새 image ID 쌍으로 **exit 0·196.465�
 메일 본문 검색의 수동 인가 검사는 `getSentMailList`의 3인자 메서드를 선택한다. 본문 검색의 발신자 `loginId` 제한과 나머지 목록 조회 범위를 `REACHABILITY_WITH_PRIVACY`로 기록하며 기존 실행 정책은 바꾸지 않는다. 수동 guard도 기존 인자 수 기반 메서드 선택기를 사용하고, 잘못된 인자 수·같은 인자 수의 중복 선언·guard 삭제·권한 우회가 차단되는 반례를 검사한다. 실제 `SecurityAuthAnnotationLinterTest` 7/7 및 생성 권한 계약 5개 검증이 통과했다. 같은 실행에서 별도 baseline 검사는 예상한 registry·검사 소스 해시 두 줄의 불일치를 차단했고, 실제 산출값 반영 뒤 mirror·문서·공용 메모리 계약 25/25가 통과했다. 로그는 `build/review-loop/delivery-auth-harness.log`, `delivery-final-static.log`다. 실행 경로는 기존 `harnessTest`와 required backend CI를 유지한다.
 
 통계 census와 E2E의 접근 이름은 실제 성공 로그인 집계의 제목과 일치시킨다. 차트·원본 표·집계 근거의 필수 단언은 유지한다. 통계 관련 6/6 및 E2E 타입 검사를 통과했고, 옛 제목 주입 시 지정된 단언 1건이 실패한 후 원본을 복구했다. 증거는 `build/review-loop/stats-contract-green.log`, `stats-contract-title-mutant-red.log`, `stats-pom-types.log`다. 이 정합 보완을 이전 이미지·복원 실행의 입력에 소급해 포함하지 않는다.
+
+### PR #792의 원격 검증 보완
+
+첫 CI의 JavaScript CodeQL은 `release-images.mjs`의 파일 경쟁 조건 3곳을 차단했다. archive는 먼저 연 descriptor와 경로의 regular-file·심볼릭 링크·정확한 inode/device를 대조하며, POSIX에서는 `O_NOFOLLOW|O_NONBLOCK`을 적용한다. receipt와 manifest는 기존의 배타 생성 의미를 유지하면서 `openSync('wx')`로 얻은 descriptor에 쓴다. 두 이미지의 게시 성공 뒤 manifest를 기록하는 순서와 기존 출력 선점 차단을 유지하며 SAST 예외는 추가하지 않는다.
+
+통합자가 관련 Node 65/65, 격리 Linux 표적 4/4를 직접 통과시켰다. 심볼릭 링크 검사 제거 시 1건, 배타 생성 제거 시 2건의 의도한 assertion red를 확인하고 원본을 복구했다. 기존 실제 이미지 두 archive와 report·SBOM·receipt의 결속도 새 reader로 통과했다. 이는 새 이미지 빌드·취약점 scan·게시 실행이 아니다. 증거는 `build/review-loop/pr792-release-filesystem-root-green.log`, `pr792-release-filesystem-linux-root.log`, `pr792-release-root-{symlink,exclusive}-red.log`, `pr792-existing-archive-reverification.json`이다. 처음 지정한 Linux 이미지가 로컬에 없어 실행 준비가 실패한 기록은 `pr792-release-filesystem-linux-green.log`에 별도로 보존하며 성공 검사로 세지 않는다.
+
+E2E shard 2는 59개 통과·1개 실패·skip/flaky 0이었다. 실패는 대시보드의 승인된 시스템 로그 문구 3곳과 Linux 시각 기준 이미지의 불일치였고, 최초·재시도의 actual PNG는 동일 SHA256 `f46e4e04a7f9efab527f97ede8f3b7f02400ec627052646ef11128ca28c61a66`였다. 통합자가 expected·actual·diff를 직접 검토하고 DOM·소스와 대조한 뒤 해당 기준 이미지 한 장만 실제 CI 바이트로 갱신했다. 다른 기준 이미지·마스크·허용 오차는 유지했다. 근거는 `build/review-loop/ci-pr792-shard2-e2250b2/baseline-adoption.json`이다. 최초 실패 이후 미실행된 같은 테스트의 후속 화면과 변경 커밋의 CodeQL·E2E 성공은 새 required CI에서 판정한다.
