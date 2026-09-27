@@ -135,7 +135,7 @@ Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 �
 - **Push**: `main`, `master` 브랜치, PR과 같은 영향 분류·fail-closed fallback 적용
 - **Pull Request**: base 브랜치 제한 없이 모든 PR, 변경 범위 분류와 fail-closed fallback 적용
 - **Workflow Dispatch**: GitHub UI / CLI 에서 수동 실행 지원 (`workflow_dispatch`)
-- **Concurrency**: 동일 ref 연속 푸시 시 이전 실행 자동 중단 (`concurrency: group: ci-${{ github.ref }}, cancel-in-progress: true`)
+- **Concurrency**: main 밖의 ref(PR 등)는 연속 푸시 시 이전 실행을 자동 중단한다(`ci-${{ github.ref }}`). main 은 커밋마다 따로 끝까지 검증한다(`ci-main-${{ github.sha }}`, 취소 없음) — push 범위가 직전 main SHA 와의 차이라, 앞 실행이 취소되거나 대기 중에 교체되면 그 커밋의 코드가 어떤 main 실행에서도 검사되지 않는다(GAP-CI-001·DEC-OPS-178). [required-check 계약](../../scripts/required-checks-contract.test.mjs)이 이 형태를 고정한다.
 
 ---
 

@@ -771,6 +771,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/BoardCommentRatingEnableMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-RETIRED-POST-PASSWORD-CLEAR",
+          "source": "api-server/src/test/java/nuri/api/schema/RetiredPostPasswordClearMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-BOARD-POST-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/BoardPostBigintMigrationIntegrationTest.java"
         },
