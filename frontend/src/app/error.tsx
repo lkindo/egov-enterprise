@@ -7,8 +7,10 @@ import { MessageSquare } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { ErrorReference } from '@/app/components/ui/error-reference';
 
 export default function Error({
+    error,
     reset,
 }: {
     error: Error & { digest?: string };
@@ -63,6 +65,7 @@ export default function Error({
                     </Link>
                 </div>
                 {/* reusable-base:demo:end */}
+                <ErrorReference digest={error.digest} />
             </div>
         </div>
     );

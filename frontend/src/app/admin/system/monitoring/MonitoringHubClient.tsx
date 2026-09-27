@@ -17,7 +17,9 @@ import {
   ShieldAlert,
   Terminal,
   RefreshCcw,
+  /* reusable-base:demo:start */
   Zap,
+  /* reusable-base:demo:end */
   LogIn,
   Download,
   /* reusable-base:collaboration:start */
@@ -73,7 +75,10 @@ const SystemStatusRadar = dynamic(() => import('@/app/components/ui/observabilit
 
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { SampleDataBadge, NavButton, StatusIndicator, HarnessDashboardOverview, SkillDetailView, TestDetailView } from './components/MonitoringPanels';
+import { SampleDataBadge, NavButton, StatusIndicator } from './components/MonitoringPanels';
+/* reusable-base:demo:start */
+import { HARNESS_TAB_VIEW } from './components/HarnessAtlasPanels';
+/* reusable-base:demo:end */
 import { toDisplayDateTime } from '@/lib/format-date';
 import { LOGIN_LOG_EXPORT_HEADERS } from './log-export-headers';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
@@ -93,7 +98,26 @@ const MONITORING_TABS: MonitoringTab[] = ['SECURITY', 'SYSTEM', 'LOGIN', 'OBSERV
   /* reusable-base:collaboration:start */
   'COMMENTS',
   /* reusable-base:collaboration:end */
-  'HARNESS'];
+  /* reusable-base:demo:start */
+  'HARNESS',
+  /* reusable-base:demo:end */
+];
+
+/**
+ * 목록·가동 상태 밖의 부가 탭(2026-09-27 DIP B5 F11). 탭마다 본문·개요·선택 항목 조회·상세를 한 묶음으로 등록한다.
+ * 하네스 아틀라스는 demo pack 소유라 축소 프로필에서는 등록 줄이 빠지고 탭도 함께 사라진다.
+ */
+type ExtraTabView = {
+  render: (props: { selectedItemId: string | number | null; onSelect: (id: string) => void }) => React.ReactNode;
+  overview: () => React.ReactNode;
+  find: (id: string) => object | null;
+  detail: (item: unknown) => { title: string; view: React.ReactNode } | null;
+};
+const EXTRA_TAB_VIEWS: Partial<Record<MonitoringTab, ExtraTabView>> = {
+  /* reusable-base:demo:start */
+  HARNESS: HARNESS_TAB_VIEW,
+  /* reusable-base:demo:end */
+};
 
 /** 목록 탭(서버 데이터 조회 + 페이저를 쓰는 탭) 여부 */
 const LIST_TABS: MonitoringTab[] = ['SECURITY', 'SYSTEM', 'LOGIN',
@@ -105,34 +129,6 @@ const LIST_TABS: MonitoringTab[] = ['SECURITY', 'SYSTEM', 'LOGIN',
 /** 페이지당 건수 기본값. 사용자가 바꾸면 화면 상태가 이긴다(A1 필수 — 페이지당 건수 선택). */
 const DEFAULT_PAGE_SIZE = 50;
 
-/**
- * 에이전트 하네스 아틀라스의 스킬 카탈로그.
- * ⚠ 실측 계측이 아니라 저장소의 `.agent/skills/` 목록을 옮겨둔 **정적 카탈로그**다.
- * 과거 이 배열이 렌더 함수와 상세 조회에 각각 중복 정의되어 있어 한쪽만 수정되는 사고가 있었다.
- */
-export const HARNESS_SKILLS = [
-  { id: "SKILL_ENG_01", name: "Deep Context Mapper", desc: "1M+ 대용량 메모리 기반 다중 모듈 및 DB 위상 맵 로드", status: "ACTIVE", type: "SKILL" as const },
-  { id: "SKILL_ENG_02", name: "API Contract Guardian", desc: "DB 제약조건 ➔ BE DTO ➔ FE Zod 스키마 연쇄 거울 동기화", status: "ACTIVE", type: "SKILL" as const },
-  { id: "SKILL_ENG_03", name: "OWASP Security Auditor", desc: "Spring Security, Next.js 미들웨어, JWT Red Team 검증", status: "ACTIVE", type: "SKILL" as const },
-  { id: "SKILL_ENG_04", name: "Resilience Debugger", desc: "DB Bridge 및 로컬 프로세스 좀비 포트 정리 및 자가복구", status: "ACTIVE", type: "SKILL" as const },
-  { id: "SKILL_ENG_05", name: "Zero-Downtime Planner", desc: "PostgreSQL 스키마 변경 시 무중단 Expand-and-Contract 설계", status: "ACTIVE", type: "SKILL" as const },
-  { id: "SKILL_ENG_06", name: "Mutation Testing Auditor", desc: "의도적 버그 주입으로 단위/통합 테스트 방어력 실증", status: "ACTIVE", type: "SKILL" as const },
-  { id: "SKILL_ENG_07", name: "Visual Auditor", desc: "브라우저 subagent 네이티브 픽셀 비교 regression 오디팅", status: "ACTIVE", type: "SKILL" as const },
-  { id: "SKILL_ENG_08", name: "Docs-as-Code Sync", desc: "로직 변경에 따른 Markdown 가이드 및 Mermaid 다이어그램 동적 갱신", status: "ACTIVE", type: "SKILL" as const }
-];
-export type HarnessSkill = (typeof HARNESS_SKILLS)[number];
-
-/**
- * JPA 가드레일 계측 예시 로그.
- * ⚠ 실측 소스가 없는 **샘플 데이터**다. 화면에서도 '샘플' 배지로 명시한다.
- */
-export const HARNESS_SAMPLE_TESTS = [
-  { id: "TEST_01", testName: "QueryCountGuardrailIntegrationTest.queryCountGuardrail_successWithinLimit", queries: 12, max: 15, status: "SAFE", time: "방금 전", type: "TEST" as const },
-  { id: "TEST_02", testName: "ScheduleServiceTest.deleteSchedule_fail_notCreator", queries: 2, max: 10, status: "SAFE", time: "3분 전", type: "TEST" as const },
-  { id: "TEST_03", testName: "NoteServiceImplTest.getReceivedNotes", queries: 4, max: 10, status: "SAFE", time: "8분 전", type: "TEST" as const },
-  { id: "TEST_04", testName: "InstitutionCodeServiceTest.verifyCodeRetrievalWithCaching", queries: 1, max: 5, status: "SAFE", time: "15분 전", type: "TEST" as const }
-];
-export type HarnessTest = (typeof HARNESS_SAMPLE_TESTS)[number];
 
 /** CSV 반출 컬럼 매핑 — 백엔드 DTO(SysLogDto / LoginLog / CommentDetail)의 실제 필드명을 따른다. */
 const SYS_LOG_EXPORT_HEADERS = [
@@ -188,13 +184,6 @@ type ListTabConfig =
   /* reusable-base:collaboration:end */
   | (BaseListTabConfig<AuditLog> & { kind: 'SECURITY' });
 
-function isSkillItem(item: unknown): item is HarnessSkill {
-  return typeof item === 'object' && item !== null && 'type' in item && (item as { type: string }).type === 'SKILL';
-}
-
-function isTestItem(item: unknown): item is HarnessTest {
-  return typeof item === 'object' && item !== null && 'type' in item && (item as { type: string }).type === 'TEST';
-}
 
 /** 실측 소스가 없는 위젯에 붙이는 공용 '샘플 데이터' 배지 */
 export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defaultTab?: MonitoringTab }) {
@@ -411,11 +400,9 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
     const idStr = String(selectedItemId);
-    if (idStr.startsWith('SKILL_')) {
-      return HARNESS_SKILLS.find(s => s.id === idStr) || null;
-    }
-    if (idStr.startsWith('TEST_')) {
-      return HARNESS_SAMPLE_TESTS.find(t => t.id === idStr) || null;
+    for (const view of Object.values(EXTRA_TAB_VIEWS)) {
+      const found = view?.find(idStr);
+      if (found) return found;
     }
 /* reusable-base:collaboration:start */
     if (activeTab === 'COMMENTS') return comments.find(c => c.ansSn === selectedItemId);
@@ -741,118 +728,6 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     </div>
   );
 
-  const renderHarness = () => {
-    return (
-      <div className="space-y-4 font-sans text-foreground">
-        {/* --- Section 1: 8대 독점 네이티브 엔진 리스트 (2열 배치) --- */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">8대 네이티브 오케스트레이션 엔진</h4>
-            <SampleDataBadge />
-            <div className="h-px bg-muted flex-1" />
-          </div>
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            {HARNESS_SKILLS.map((skill, index) => (
-              <button
-                key={skill.id}
-                type="button"
-                aria-label={`${skill.name} 엔진 상세 보기`}
-                aria-pressed={selectedItemId === skill.id}
-                onClick={() => setSelectedItemId(skill.id)}
-                className={cn(
-                  "flex flex-col justify-between rounded-md border bg-muted px-3 py-2 text-left outline-none transition-colors",
-                  selectedItemId === skill.id
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary"
-                )}
-              >
-                <div className="space-y-2 w-full">
-                  <div className="flex items-center justify-between w-full">
-                    <span className="font-mono text-[10px] text-muted-foreground">ENG_0{index + 1}</span>
-                    <div className="flex items-center gap-1 rounded border border-success/40 bg-success/15 px-1.5 py-0.5 text-xs text-foreground">
-                      <div className="size-1.5 rounded-full bg-success" aria-hidden="true" />
-                      {skill.status}
-                    </div>
-                  </div>
-                  <h5 className={cn("text-[length:var(--font-size-body)] font-semibold", selectedItemId === skill.id ? "text-primary" : "text-foreground")}>{skill.name}</h5>
-                  <p className="text-xs leading-tight text-muted-foreground">{skill.desc}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* --- Section 2: JPA 성능 가드레일 계측 패널 (가로 전체 활용) --- */}
-        <div className="space-y-3 rounded-md border border-border bg-card p-4">
-          <div className="flex items-center justify-between gap-4 flex-wrap border-b border-border pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                <Zap size={18} />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-foreground leading-none">JPA Performance Guardrail Telemetry</h4>
-                {/* '실시간 계측'이라는 표현은 사실이 아니므로 제거 — 아래 목록은 예시 로그다. */}
-                <p className="mt-0.5 text-xs text-muted-foreground">테스트-타임 SQL 쿼리 가드레일 예시 보드</p>
-              </div>
-            </div>
-            <SampleDataBadge />
-          </div>
-
-          {/* Test list */}
-          <div className="max-h-[320px] space-y-1 overflow-y-auto pr-1">
-            {HARNESS_SAMPLE_TESTS.map(log => (
-              <button
-                key={log.id}
-                type="button"
-                aria-label={`${log.testName} 계측 상세 보기`}
-                aria-pressed={selectedItemId === log.id}
-                onClick={() => setSelectedItemId(log.id)}
-                className={cn(
-                  "flex w-full items-center justify-between rounded-md border px-3 py-2 text-left outline-none transition-colors",
-                  selectedItemId === log.id
-                    ? "border-primary bg-primary/5"
-                    : "border-border bg-muted hover:border-primary"
-                )}
-              >
-                <div className="space-y-1 min-w-0 pr-4">
-                  <h5 className={cn("truncate text-[length:var(--font-size-body)] font-medium leading-snug", selectedItemId === log.id ? "text-primary" : "text-foreground")}>{log.testName}</h5>
-                  <p className="text-xs text-muted-foreground">측정 시간: {log.time}</p>
-                </div>
-                <div className="flex items-center gap-4 shrink-0">
-                  <div className="text-right">
-                    <div className="text-xs tabular-nums text-foreground">{log.queries} / {log.max} SQL</div>
-                    <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden mt-1 relative">
-                      <div
-                        className="h-full bg-success"
-                        style={{ width: `${(log.queries / log.max) * 100}%` }}
-                        aria-hidden="true"
-                      />
-                    </div>
-                  </div>
-                  <span className="rounded border border-success/40 bg-success/15 px-2 py-0.5 text-xs text-foreground">
-                    {log.status}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-3 rounded-md border border-border bg-muted p-3">
-            <div className="shrink-0 rounded-md border border-border bg-card p-2 text-primary">
-              <CheckCircle2 size={16} aria-hidden="true" />
-            </div>
-            <div className="space-y-0.5">
-              <h6 className="text-[length:var(--font-size-body)] font-semibold text-foreground">Shift-Left Quality Assurance</h6>
-              <p className="text-xs leading-tight text-muted-foreground">
-                테스트 가동 시 스레드 로컬 카운터가 데이터베이스 질의를 자동 카운팅하며, 임계값 초과 시 즉각 테스트를 강제 실패시켜 N+1 발생을 실시간 경보합니다.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   /**
    * 현재 탭의 목록 상태(데이터·로딩·오류·재시도·페이저·반출 스키마)를 한 곳에 모은다.
    * 과거에는 4중 삼항 연산자가 prop 마다 반복돼 error/onRetry 를 붙일 자리가 없었고,
@@ -971,16 +846,19 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     { tab: 'SYSTEM', icon: <Terminal size={14} />, label: '시스템 로그' },
     { tab: 'LOGIN', icon: <LogIn size={14} />, label: '접속 이력' },
     { tab: 'OBSERVABILITY', icon: <MonitorCheck size={14} />, label: '가동 상태' },
+/* reusable-base:demo:start */
     { tab: 'HARNESS', icon: <Zap size={14} />, label: '하네스 아틀라스' },
+/* reusable-base:demo:end */
 /* reusable-base:collaboration:start */
     { tab: 'COMMENTS', icon: <MessageSquare size={14} />, label: '사용자 의견 관리' },
 /* reusable-base:collaboration:end */
   ];
 
   /** 선택 항목의 상세. 종전에는 우측 3열 패널이었고, 미선택 시 '인텔리전스 대기 중' 장식이 자리를 채웠다. */
-  const detailKind = isSkillItem(selectedItem)
-    ? 'SKILL'
-    : isTestItem(selectedItem) ? 'TEST' : 'RECORD';
+  const extraDetail = selectedItem
+    ? Object.values(EXTRA_TAB_VIEWS).map((view) => view?.detail(selectedItem) ?? null).find(Boolean) ?? null
+    : null;
+  const extraTab = EXTRA_TAB_VIEWS[activeTab];
 
   return (
     <>
@@ -1062,7 +940,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         className="space-y-4"
       >
         {activeTab === 'OBSERVABILITY' ? renderObservability()
-          : activeTab === 'HARNESS' ? renderHarness()
+          : extraTab ? extraTab.render({ selectedItemId, onSelect: setSelectedItemId })
           : listConfig ? (
             listConfig.kind === 'SYSTEM' ? (
               <StandardDataTable
@@ -1156,7 +1034,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           ) : null}
 
         {/* 하네스 탭은 선택 전에도 자체 요약을 갖는다(빈 자리를 채우는 장식이 아니라 그 탭의 내용이다). */}
-        {activeTab === 'HARNESS' && !selectedItem && <HarnessDashboardOverview />}
+        {extraTab && !selectedItem && extraTab.overview()}
 
         {selectedItem && (
           <section
@@ -1166,24 +1044,18 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             <header className="flex items-start justify-between gap-2 border-b border-border p-[var(--filter-pad)]">
               <div className="min-w-0">
                 <h2 className="text-sm font-semibold text-foreground">
-                  {detailKind === 'SKILL' ? '스킬 상세'
-                    : detailKind === 'TEST' ? '테스트 상세'
-                      : '선택 항목 상세'}
+                  {extraDetail ? extraDetail.title : '선택 항목 상세'}
                 </h2>
                 <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
                   식별자 {selectedItemId}
                 </p>
                 {/* [2026-09-15 DEC-OPS-100] 하네스 스킬·테스트 상세는 정적 카탈로그·표본이라 목록과 같은 고지를 둔다(demo). 실제 로그·의견 기록에는 붙이지 않는다. */}
-                {detailKind !== 'RECORD' ? <div className="mt-2"><SampleDataBadge /></div> : null}
+                {extraDetail ? <div className="mt-2"><SampleDataBadge /></div> : null}
               </div>
               <Button variant="outline" size="sm" onClick={() => setSelectedItemId(null)}>닫기</Button>
             </header>
             <div className="p-[var(--filter-pad)]">
-              {detailKind === 'SKILL' && isSkillItem(selectedItem) ? (
-                <SkillDetailView skill={selectedItem} />
-              ) : detailKind === 'TEST' && isTestItem(selectedItem) ? (
-                <TestDetailView test={selectedItem} />
-              ) : (
+              {extraDetail ? extraDetail.view : (
                 <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded border border-border bg-muted p-3 text-xs text-foreground">
                   {JSON.stringify(selectedItem, null, 2)}
                 </pre>

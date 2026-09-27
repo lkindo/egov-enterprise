@@ -3,6 +3,7 @@
 import { AlertTriangle, RefreshCcw, Home, ArrowLeft, Bug, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { ErrorReference } from '@/app/components/ui/error-reference';
 
 function statusFrom(value: unknown): number | undefined {
   if (!value || typeof value !== 'object') return undefined;
@@ -120,6 +121,7 @@ export default function AdminError({
   // 기본: 시스템 오류 (500 등)
   return (
     <ErrorLayout
+      digest={error.digest}
       icon={<AlertTriangle className="w-12 h-12" />}
       iconColor="text-rose-500"
       iconBg="bg-rose-500/10"
@@ -144,6 +146,7 @@ function ErrorLayout({
   title,
   description,
   actions,
+  digest,
 }: {
   icon: React.ReactNode;
   iconColor: string;
@@ -151,6 +154,8 @@ function ErrorLayout({
   title: string;
   description: string;
   actions: React.ReactNode;
+  /** 시스템 오류일 때만 넘긴다 — 401·403·404 는 원인이 화면에 이미 적혀 있다. */
+  digest?: string;
 }) {
   return (
     <div className="flex items-center justify-center min-h-[60vh] p-8">
@@ -164,6 +169,7 @@ function ErrorLayout({
         <h1 className="text-2xl font-bold text-foreground tracking-tight mb-3">{title}</h1>
         <p className="text-muted-foreground font-medium leading-relaxed mb-8">{description}</p>
         <div className="flex items-center gap-3">{actions}</div>
+        <ErrorReference digest={digest} className="mt-6 text-xs text-muted-foreground" />
       </motion.div>
     </div>
   );
