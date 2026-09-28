@@ -1088,6 +1088,22 @@ async function visibleWithin(locator, timeout) {
   return locator.waitFor({ state: 'visible', timeout }).then(() => true).catch(() => false);
 }
 
+export function createEmptyUserLogPage(requestUrl) {
+  const readPositiveInteger = (name) => {
+    const values = requestUrl.searchParams.getAll(name);
+    const value = Number(values[0]);
+    if (values.length !== 1 || !/^[1-9]\d*$/.test(values[0]) || !Number.isSafeInteger(value)) {
+      throw new Error('synthetic log pagination request is invalid');
+    }
+    return value;
+  };
+  return {
+    list: [], total: 0, totalPage: 0,
+    page: readPositiveInteger('pageIndex'),
+    size: readPositiveInteger('pageUnit'),
+  };
+}
+
 async function installStatePreparation(page, stateCase) {
   const preparation = { coverage: 'route-loaded-only', assertions: [], taskEvidence: [] };
 
@@ -1112,7 +1128,7 @@ async function installStatePreparation(page, stateCase) {
             success: true,
             code: 'SUCCESS',
             message: 'Synthetic zero-result fixture',
-            data: { list: [], total: 0, totalPage: 1, pageIndex: 1 },
+            data: createEmptyUserLogPage(url),
           }),
         });
         return;
@@ -1186,6 +1202,38 @@ function syntheticMutationFailure(reasonCode) {
   const error = new Error('synthetic mutation fixture failed');
   error.code = reasonCode;
   return error;
+}
+
+export function createSyntheticFixtureApi(context, baseOrigin) {
+  const origin = validateLoopbackOrigin(baseOrigin);
+  const hostname = new URL(origin).hostname;
+  return {
+    async fetch(requestPath, options = {}) {
+      if (typeof requestPath !== 'string' || !requestPath.startsWith('/api/v1/') || requestPath.includes('\\')) {
+        throw syntheticMutationFailure('synthetic-mutation-api-path-invalid');
+      }
+      const target = new URL(requestPath, origin);
+      if (target.origin !== origin || !target.pathname.startsWith('/api/v1/') || target.hash
+        || /%2f|%5c/i.test(target.pathname)) {
+        throw syntheticMutationFailure('synthetic-mutation-api-path-invalid');
+      }
+      // Read current browser cookies without APIRequestContext's HTTP numeric-loopback Secure filter.
+      // Scope the explicit credential to this request; browser cookie policy and persisted state stay intact.
+      const candidates = (await context.cookies()).filter((cookie) => (
+        cookie.name === 'accessToken' && cookie.domain === hostname && cookie.path === '/'
+      ));
+      const cookie = candidates[0];
+      if (candidates.length !== 1 || typeof cookie.value !== 'string' || cookie.value.length === 0
+        || !Number.isFinite(cookie.expires) || (cookie.expires !== -1 && cookie.expires <= Date.now() / 1000)) {
+        throw syntheticMutationFailure('synthetic-mutation-api-auth-unavailable');
+      }
+      return context.request.fetch(target.href, {
+        ...options,
+        headers: { Authorization: `Bearer ${cookie.value}` },
+        maxRedirects: 0,
+      });
+    },
+  };
 }
 
 async function safeApiData(api, method, requestPath, {
@@ -1474,7 +1522,7 @@ async function exactSyntheticMenus(api, fixture) {
 async function exactSyntheticBoards(api, fixture) {
   const data = await safeApiData(api, 'GET', withSafeQuery(
     '/api/v1/admin/system/board-masters',
-    { searchWrd: fixture.boardTitle, pageIndex: 1, recordCountPerPage: 100 },
+    { searchCondition: '0', searchKeyword: fixture.boardTitle, pageIndex: 1, pageUnit: 100 },
   ), { reasonCode: 'synthetic-board-readback-failed' });
   const list = Array.isArray(data?.list) ? data.list : [];
   return list.filter((board) => board?.bbsTtl === fixture.boardTitle);
@@ -1577,7 +1625,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
       await idInput.fill(actorValue);
       await secretInput.fill(secretValue);
       await page.getByRole('button', { name: '로그인', exact: true }).click();
-      const alertVisible = await visibleWithin(page.getByRole('alert'), 15_000);
+      const alertVisible = await visibleWithin(page.getByTestId('login-error'), 15_000);
       const focusReturned = await pollForExpectedValue({
         readValue: () => idInput.evaluate((element) => document.activeElement === element),
         expectedValue: true,
@@ -1651,7 +1699,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
     }
     case 'user-hub-ready': {
       const fixture = createSyntheticMutationFixture(stateCase, mutationRunNonce);
-      const api = page.context().request;
+      const api = createSyntheticFixtureApi(page.context(), baseOrigin);
       await runSyntheticMutationLifecycle({
         execute: async () => {
           await createSyntheticUser(api, fixture);
@@ -1677,7 +1725,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
     }
     case 'mutation-error': {
       const fixture = createSyntheticMutationFixture(stateCase, mutationRunNonce);
-      const api = page.context().request;
+      const api = createSyntheticFixtureApi(page.context(), baseOrigin);
       await runSyntheticMutationLifecycle({
         execute: async () => {
           await createSyntheticUser(api, fixture);
@@ -1756,7 +1804,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
       const fixture = createSyntheticMutationFixture(stateCase, mutationRunNonce);
       const adminContext = await createAdminMutationContext(browser, baseOrigin);
       try {
-        const api = adminContext.request;
+        const api = createSyntheticFixtureApi(adminContext, baseOrigin);
         await runSyntheticMutationLifecycle({
           execute: async () => {
             await seedSyntheticFaq(api, fixture);
@@ -1802,7 +1850,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
     }
     case 'admin-compose-faq': {
       const fixture = createSyntheticMutationFixture(stateCase, mutationRunNonce);
-      const api = page.context().request;
+      const api = createSyntheticFixtureApi(page.context(), baseOrigin);
       await runSyntheticMutationLifecycle({
         execute: async () => {
           await fillFaqComposer(page, fixture);
@@ -1829,7 +1877,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
     }
     case 'admin-faq-readback': {
       const fixture = createSyntheticMutationFixture(stateCase, mutationRunNonce);
-      const api = page.context().request;
+      const api = createSyntheticFixtureApi(page.context(), baseOrigin);
       await runSyntheticMutationLifecycle({
         execute: async () => {
           await seedSyntheticFaq(api, fixture);
@@ -1854,7 +1902,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
     }
     case 'wizard-ready': {
       const fixture = createSyntheticMutationFixture(stateCase, mutationRunNonce);
-      const api = page.context().request;
+      const api = createSyntheticFixtureApi(page.context(), baseOrigin);
       await runSyntheticMutationLifecycle({
         execute: async () => {
           await completeBoardWizard(page, fixture);

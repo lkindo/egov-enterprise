@@ -72,6 +72,8 @@ import {
 } from '../frontend/scripts/ui-quality-baseline-core.mjs';
 
 import {
+  createEmptyUserLogPage,
+  createSyntheticFixtureApi,
   isPersistedBoardDraftKey,
   readCommittedFile,
   readBaselineBuildAttestationFile,
@@ -912,6 +914,41 @@ test('dense log probes use the actual KeywordFilter accessible label', () => {
   }
 });
 
+test('filtered-zero fixture satisfies the actual log page parser and requested pagination', () => {
+  const service = readFileSync(
+    join(repoRoot, 'frontend/src/services/foundation/system/SystemLogAdminService.ts'), 'utf8',
+  );
+  const parser = service.match(/function requireLogPage<T>\([\s\S]*?\n\}/)?.[0];
+  assert.ok(parser, 'the actual response parser must remain discoverable');
+  const arrayFields = [...parser.matchAll(/!Array\.isArray\(response\.(\w+)\)/g)].map((match) => match[1]);
+  const numericFields = [...parser.matchAll(/typeof response\.(\w+) !== 'number'/g)].map((match) => match[1]);
+  assert.equal(arrayFields.length, 1);
+  assert.equal(numericFields.length, 4);
+  assert.match(service, /query\.pageIndex = params\.pageIndex \?\? \(params\.page \?\? 0\) \+ 1/);
+  assert.match(service, /query\.pageUnit = params\.pageUnit \?\? params\.size/);
+  for (const [page, size] of [[1, 10], [3, 50]]) {
+    const requestUrl = new URL(`http://127.0.0.1/api/v1/admin/system/logs/user?pageIndex=${page}&pageUnit=${size}&searchKeyword=synthetic`);
+    const result = createEmptyUserLogPage(requestUrl);
+    for (const field of arrayFields) assert.ok(Array.isArray(result[field]), `missing log array field: ${field}`);
+    for (const field of numericFields) assert.equal(typeof result[field], 'number', `missing log number field: ${field}`);
+    assert.deepEqual(result, { list: [], total: 0, totalPage: 0, page, size });
+  }
+  const preparation = runnerSource.match(/async function installStatePreparation\(page, stateCase\) \{([\s\S]*?)\n  if \(stateCase\.stepId === 'server-error'\)/)?.[1];
+  assert.ok(preparation);
+  assert.match(preparation, /data: createEmptyUserLogPage\(url\)/);
+  assert.doesNotMatch(preparation, /pageIndex:\s*1/);
+  const pageResponse = readFileSync(
+    join(repoRoot, 'foundation/src/main/java/nuri/foundation/core/response/PageResponse.java'), 'utf8',
+  );
+  assert.match(pageResponse, /\.page\(page\.getNumber\(\) \+ 1\)/);
+  assert.match(pageResponse, /\.size\(page\.getSize\(\)\)/);
+  assert.match(pageResponse, /\.totalPage\(page\.getTotalPages\(\)\)/);
+  for (const query of ['', 'pageIndex=1', 'pageIndex=0&pageUnit=10', 'pageIndex=1&pageUnit=-1',
+    'pageIndex=1.5&pageUnit=10', 'pageIndex=1&pageUnit=10&pageUnit=50', 'pageIndex=9007199254740992&pageUnit=10']) {
+    assert.throws(() => createEmptyUserLogPage(new URL(`http://127.0.0.1/?${query}`)), /pagination request is invalid/);
+  }
+});
+
 test('wizard probes follow the actual step heading level and validation message', () => {
   const source = readFileSync(
     join(repoRoot, 'frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx'), 'utf8',
@@ -1022,6 +1059,149 @@ test('not-executed task evidence uses closed assertion/reason pairs and blocks c
     }),
     /unsupported not-executed task evidence/i,
   );
+});
+
+test('synthetic fixture API authenticates secure numeric-loopback cookies per request without changing browser state', async () => {
+  const origin = 'http://127.0.0.1:53181';
+  let cookies = [{
+    name: 'accessToken', value: 'context-one', domain: '127.0.0.1', path: '/',
+    secure: true, httpOnly: true, sameSite: 'Strict', expires: Date.now() / 1000 + 3600,
+  }];
+  let cookieReads = 0;
+  const calls = [];
+  const context = {
+    async cookies(...args) {
+      assert.deepEqual(args, [], 'URL-filtered cookies would reproduce Playwright secure numeric-loopback omission');
+      cookieReads += 1;
+      return cookies;
+    },
+    request: { async fetch(url, options) {
+      calls.push({ url, options });
+      return { status: () => options.headers?.Authorization === `Bearer ${cookies[0].value}` ? 200 : 401 };
+    } },
+  };
+  const api = createSyntheticFixtureApi(context, origin);
+  const initialState = structuredClone(cookies);
+  const data = { synthetic: true };
+  const first = await api.fetch('/api/v1/admin/system/users?size=1', { method: 'POST', data, failOnStatusCode: false });
+  assert.equal(first.status(), 200, 'fixture requests must carry the current authenticated context');
+  assert.deepEqual(cookies, initialState, 'secure flags and persisted state must remain unchanged');
+  cookies = [{ ...cookies[0], value: 'context-two' }];
+  const second = await api.fetch('/api/v1/admin/system/users/synthetic', {
+    method: 'DELETE', maxRedirects: 20, headers: { Authorization: 'caller-override' },
+  });
+  assert.equal(second.status(), 200, 'a renewed context credential must be read on the next request');
+  assert.equal(cookieReads, 2);
+  assert.equal(calls[0].url, `${origin}/api/v1/admin/system/users?size=1`);
+  assert.equal(calls[0].options.data, data);
+  assert.equal(calls[0].options.failOnStatusCode, false);
+  assert.deepEqual(calls.map(({ options }) => [options.method, options.maxRedirects]), [['POST', 0], ['DELETE', 0]]);
+  assert.notEqual(calls[0].options.headers.Authorization, calls[1].options.headers.Authorization);
+});
+
+test('synthetic fixture API rejects missing ambiguous stale or wrongly scoped authentication before sending', async () => {
+  const valid = { name: 'accessToken', value: 'synthetic', domain: '127.0.0.1', path: '/', expires: -1, secure: true };
+  const rejectedCookies = [
+    [], [valid, { ...valid }], [{ ...valid, name: 'refreshToken' }],
+    [{ ...valid, domain: 'localhost' }], [{ ...valid, domain: '.127.0.0.1' }],
+    [{ ...valid, domain: 'unrelated.invalid' }], [{ ...valid, path: '/api/v1' }],
+    [{ ...valid, value: '' }], [{ ...valid, expires: 0 }],
+    [{ ...valid, expires: Date.now() / 1000 - 1 }], [{ ...valid, expires: undefined }],
+  ];
+  let requests = 0;
+  for (const cookies of rejectedCookies) {
+    const api = createSyntheticFixtureApi({
+      cookies: async () => cookies,
+      request: { fetch: async () => { requests += 1; } },
+    }, 'http://127.0.0.1:53181');
+    await assert.rejects(api.fetch('/api/v1/auth/me'), (error) => (
+      error.code === 'synthetic-mutation-api-auth-unavailable'
+      && error.message === 'synthetic mutation fixture failed'
+    ));
+  }
+  assert.equal(requests, 0);
+  const exactContext = {
+    cookies: async () => [valid, { ...valid, domain: 'localhost' }, { ...valid, path: '/unrelated' }],
+    request: { fetch: async () => { requests += 1; return { status: () => 200 }; } },
+  };
+  assert.equal((await createSyntheticFixtureApi(exactContext, 'http://127.0.0.1:53181').fetch('/api/v1/auth/me')).status(), 200);
+  assert.equal(requests, 1, 'only the exact host and root-path cookie may be selected');
+});
+
+test('synthetic fixture API never sends credentials outside the bound root API or follows redirects', async () => {
+  let reads = 0;
+  let requests = 0;
+  const context = {
+    cookies: async () => { reads += 1; return [{ name: 'accessToken', value: 'synthetic', domain: '127.0.0.1', path: '/', expires: -1 }]; },
+    request: { fetch: async (_url, options) => {
+      requests += 1;
+      assert.equal(options.maxRedirects, 0);
+      return { status: () => 302 };
+    } },
+  };
+  const api = createSyntheticFixtureApi(context, 'http://127.0.0.1:53181');
+  for (const path of [undefined, 'http://127.0.0.1:53181/api/v1/auth/me',
+    'http://unrelated.invalid/api/v1/auth/me', '//unrelated.invalid/api/v1/auth/me',
+    '/api/v10/auth/me', '/api/v1', '/admin', '/api/v1/../../auth',
+    '/api/v1/%2e%2e/%2e%2e/auth', '/api/v1/..%2fauth', '/api/v1/..%5cauth',
+    '/api/v1/..\\auth', '/api/v1/auth/me#fragment']) {
+    await assert.rejects(api.fetch(path), (error) => error.code === 'synthetic-mutation-api-path-invalid');
+  }
+  assert.equal(reads, 0);
+  assert.equal(requests, 0);
+  for (const origin of ['http://unrelated.invalid', 'http://127.0.0.1/path', 'http://user@127.0.0.1']) {
+    assert.throws(() => createSyntheticFixtureApi(context, origin));
+  }
+  assert.equal((await api.fetch('/api/v1/auth/me', { maxRedirects: 10 })).status(), 302);
+  assert.equal(requests, 1, 'the caller receives the redirect without an authenticated follow-up request');
+});
+
+test('all six synthetic mutation paths acquire the context-bound fixture API', () => {
+  const paths = [
+    ['user-hub-ready', 'page.context()'], ['mutation-error', 'page.context()'],
+    ['user-faq-search', 'adminContext'], ['admin-compose-faq', 'page.context()'],
+    ['admin-faq-readback', 'page.context()'], ['wizard-ready', 'page.context()'],
+  ];
+  for (const [step, context] of paths) {
+    const body = runnerSource.match(new RegExp(String.raw`case '${step}': \{([\s\S]*?)\n      break;`))?.[1];
+    assert.ok(body, `the ${step} execution path must remain discoverable`);
+    assert.ok(body.includes(`const api = createSyntheticFixtureApi(${context}, baseOrigin);`), step);
+    assert.doesNotMatch(body, /const api = (?:page\.context\(\)|adminContext)\.request;/);
+    assert.match(body, /runSyntheticMutationLifecycle\(/);
+  }
+});
+
+test('synthetic board readback and cleanup use the actual title search and paging query contract', () => {
+  const controller = readFileSync(join(repoRoot,
+    'api-server/src/main/java/nuri/api/controller/business/admin/content/board/BoardMasterApiController.java'), 'utf8');
+  const dto = readFileSync(join(repoRoot,
+    'business-core/src/main/java/nuri/business/domain/common/BaseSearchDto.java'), 'utf8');
+  const service = readFileSync(join(repoRoot,
+    'business-app/src/main/java/nuri/business/service/board/BoardMasterService.java'), 'utf8');
+  const repository = readFileSync(join(repoRoot,
+    'business-app/src/main/java/nuri/business/domain/board/BoardMasterRepositoryImpl.java'), 'utf8');
+  assert.match(controller, /@ModelAttribute BaseSearchDto searchDto/);
+  assert.match(controller, /searchDto\.getSearchCondition\(\), searchDto\.getSearchKeyword\(\), pageable/);
+  assert.match(controller, /Pageable pageable = searchDto\.toPageable\(\)/);
+  assert.match(dto, /private int pageUnit = 10/);
+  assert.match(dto, /PageRequest\.of\(zeroBasedPageIndex\(\), effectivePageUnit\(\)\)/);
+  assert.match(dto, /return pageUnit > 0 \? pageUnit : DEFAULT_PAGE_UNIT/);
+  assert.match(service, /cond\.setSearchCnd\(searchCondition\)/);
+  assert.match(service, /cond\.setSearchWrd\(searchKeyword\)/);
+  const titleCondition = repository.match(/if \("([^"\n]+)"\.equals\(condition\.getSearchCnd\(\)\)\) \{\s*builder\.and\(boardMaster\.bbsTtl\.contains/)?.[1];
+  assert.ok(titleCondition, 'the repository must declare its title-search condition');
+  const body = runnerSource.match(/async function exactSyntheticBoards\(api, fixture\) \{([\s\S]*?)\n\}/)?.[1];
+  assert.ok(body);
+  const query = body.match(/\{ ([^{}]+) \},\s*\n\s*\), \{ reasonCode:/)?.[1];
+  assert.ok(query, 'the fixture query must remain inspectable');
+  const entries = Object.fromEntries(query.split(', ').map((entry) => entry.split(': ')));
+  assert.deepEqual(entries, {
+    searchCondition: `'${titleCondition}'`, searchKeyword: 'fixture.boardTitle', pageIndex: '1', pageUnit: '100',
+  }, 'readback must search the unique title with the page-size field the endpoint actually binds');
+  for (const helper of ['waitForSyntheticBoardDeploy', 'cleanupSyntheticBoardDeploy', 'syntheticBoardResidueCount']) {
+    const caller = runnerSource.match(new RegExp(String.raw`async function ${helper}\(api, fixture\) \{([\s\S]*?)\n\}`))?.[1];
+    assert.ok(caller?.includes('exactSyntheticBoards(api, fixture)'), `${helper} must use the same exact-title lookup`);
+  }
 });
 
 test('synthetic mutation evidence is closed, redacted and complete only after rollback with zero active residue', async () => {
@@ -3788,15 +3968,52 @@ test('state audit cancels motion before interaction and settles geometry before 
   assert.match(baselineProtocolSource, /axe보다 먼저 수행/);
 });
 
-test('invalid-login focus evidence waits for the bounded post-commit focus frame', () => {
-  const runnerSource = readFileSync(
-    new URL('../frontend/scripts/ui-quality-baseline-runner.mjs', import.meta.url),
-    'utf8',
-  );
+test('invalid-login focus evidence waits for its form error before the bounded post-commit focus frame', async () => {
   const invalidLoginStart = runnerSource.indexOf("case 'invalid-credentials':");
   const invalidLoginEnd = runnerSource.indexOf("case 'successful-login':", invalidLoginStart);
   assert.ok(invalidLoginStart >= 0 && invalidLoginEnd > invalidLoginStart);
   const invalidLoginSource = runnerSource.slice(invalidLoginStart, invalidLoginEnd);
+
+  const loginSource = readFileSync(join(repoRoot, 'frontend/src/app/login/LoginClient.tsx'), 'utf8');
+  const errorBlock = loginSource.match(/\{error && \(([\s\S]*?)<\/motion\.div>/)?.[1];
+  assert.ok(errorBlock, 'the form submission error must remain discoverable');
+  assert.match(errorBlock, /role="alert"/);
+  const errorTestId = errorBlock.match(/data-testid="([^"]+)"/)?.[1];
+  assert.ok(errorTestId);
+  const alertWait = invalidLoginSource.match(/const alertVisible = await visibleWithin\(page\.(getByRole|getByTestId)\('([^']+)'\), ([\d_]+)\)/);
+  assert.ok(alertWait, 'the login error wait must remain discoverable');
+  assert.equal(Number(alertWait[3].replaceAll('_', '')), 15_000, 'the existing wait budget must remain intact');
+
+  // Next's open-shadow route announcer also has role=alert. Its visibility must not finish this wait.
+  let showLoginError;
+  const loginErrorVisible = new Promise((resolve) => { showLoginError = resolve; });
+  const page = {
+    getByRole(name) {
+      assert.equal(name, 'alert');
+      return { waitFor: async () => undefined };
+    },
+    getByTestId(name) {
+      assert.equal(name, errorTestId, 'the selector must consume the actual form error producer');
+      return { waitFor: async ({ state, timeout }) => {
+        assert.equal(state, 'visible');
+        assert.equal(timeout, 15_000);
+        await loginErrorVisible;
+      } };
+    },
+  };
+  let observed = false;
+  const pending = page[alertWait[1]](alertWait[2])
+    .waitFor({ state: 'visible', timeout: 15_000 }).then(() => { observed = true; });
+  try {
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.equal(observed, false, 'a visible framework announcer must not be mistaken for a completed login failure');
+  } finally {
+    showLoginError();
+    await pending;
+  }
+  assert.equal(observed, true, 'the actual form error releases the wait');
+  assert.ok(invalidLoginSource.indexOf('const alertVisible') < invalidLoginSource.indexOf('const focusReturned'));
 
   assert.match(invalidLoginSource, /const focusReturned\s*=\s*await pollForExpectedValue\(\{/);
   assert.match(invalidLoginSource, /readValue:\s*\(\)\s*=>\s*idInput\.evaluate/);
