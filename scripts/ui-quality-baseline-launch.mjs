@@ -69,6 +69,8 @@ const SAFE_SYSTEM_ENVIRONMENT_NAMES = new Set([
   'pathext',
   'playwright_browsers_path',
   'programdata',
+  'programfiles',
+  'programw6432',
   'systemroot',
   'temp',
   'tmp',

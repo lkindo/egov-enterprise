@@ -170,6 +170,8 @@ npm run ui-quality:baseline:launch -- --attestation <absolute-outside-repository
 
 launcher는 clean `HEAD`와 attestation commit/tree를 먼저 exact 비교하고 scenario·runner·launcher contract를 Docker보다 먼저 실행한다. 그 뒤 OS 임시 디렉터리 아래에 secret value가 없는 전용 `compose.json`을 만들고, exact readback한 canonical bytes를 `docker compose --file -`의 stdin으로만 전달해 descriptor path 교체가 다른 Compose 실행으로 이어지지 않게 한다. `egov-uiux-baseline-r13-<32 lowercase hex>` project와 그 project에서 파생한 DB/API/frontend container·network name을 사용한다. API/frontend image에는 attestation의 immutable image ID를 직접 지정하고 build·pull을 금지하며, 두 host port는 `127.0.0.1`에만 publish한다. `docker compose up --wait` 뒤 full container ID, actual image, Compose project/service, network membership, health, restart count, exact port와 image-level provenance label을 bounded inspect로 다시 검증한다. 검증된 값과 필요한 admin credential만 closed allowlist environment로 같은 stack의 auth setup과 authoritative `--execute --include-performance` runner에 전달하며 DB/JWT/그 밖의 상속 환경은 runner에 전달하지 않는다. 성공·실패 모두 project·ephemeral DB volume을 `down --volumes --remove-orphans`로 정리하고 raw inspect, attestation path, credential은 출력하지 않는다. 기본 `docker-compose.yml`은 읽거나 수정하지 않으므로 개발용 고정 container 동작은 바뀌지 않는다.
 
+Windows에서는 Docker Compose 플러그인 탐색에 필요한 OS 경로 변수 `ProgramFiles`·`ProgramW6432`를 추가로 보존하며, DB/JWT의 runner 전달과 `GITHUB_TOKEN`·`NODE_OPTIONS` 등 불필요한 상속 환경은 계속 차단한다.
+
 비정상 종료와 cleanup 실패에는 secret이 없는 descriptor를 남긴다. 오류에 표시된 project 또는 OS 임시 디렉터리 `egov-ui-quality-baseline-r13` 아래 exact project directory를 확인한 뒤 다음 bounded recovery만 사용한다. descriptor가 canonical launcher shape와 다르거나 path가 symlink/junction·repository 내부이면 Docker 명령 전에 red다.
 
 ```powershell

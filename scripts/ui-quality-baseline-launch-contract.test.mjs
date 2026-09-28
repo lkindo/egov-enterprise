@@ -90,6 +90,8 @@ function createFixture() {
 function executionEnvironment() {
   return {
     PATH: 'safe-path',
+    ProgramFiles: 'C:\\SyntheticProgramFiles',
+    ProgramW6432: 'C:\\SyntheticProgramW6432',
     DOCKER_CONTEXT: 'baseline-closed-context',
     UI_BASELINE_DB_NAME: 'authz_e2e',
     UI_BASELINE_DB_USER: 'egov',
@@ -98,7 +100,17 @@ function executionEnvironment() {
     UI_BASELINE_ADMIN_ID: 'private-admin-id',
     UI_BASELINE_ADMIN_SECRET: 'private-admin-secret',
     UNRELATED_PRIVATE_VALUE: 'must-not-reach-any-child',
+    GITHUB_TOKEN: 'synthetic-excluded-token',
+    NODE_OPTIONS: 'synthetic-excluded-node-options',
   };
+}
+
+function assertClosedWindowsSystemEnvironment(environment) {
+  assert.equal(environment.ProgramFiles, 'C:\\SyntheticProgramFiles');
+  assert.equal(environment.ProgramW6432, 'C:\\SyntheticProgramW6432');
+  assert.equal(environment.UNRELATED_PRIVATE_VALUE, undefined);
+  assert.equal(environment.GITHUB_TOKEN, undefined);
+  assert.equal(environment.NODE_OPTIONS, undefined);
 }
 
 function containerProjection(role, mutation = {}) {
@@ -320,6 +332,7 @@ test('runner environment is a closed allowlist and does not inherit database, JW
   assert.equal(environment.UI_BASELINE_STACK_CLASSIFICATION, 'isolated-synthetic');
   assert.equal(environment.UI_BASELINE_SYNTHETIC_SEED_LABEL, 'isolated-fixture-v1');
   assert.equal(environment.NEXT_PUBLIC_API_URL, `http://127.0.0.1:${API_PORT}/api/v1`);
+  assertClosedWindowsSystemEnvironment(environment);
 });
 
 test('launch runs contracts before Compose, validates exact stack, passes a closed runner env and always cleans up', () => {
@@ -383,6 +396,7 @@ test('launch runs contracts before Compose, validates exact stack, passes a clos
   assert.ok(downCall.args.includes('--remove-orphans'));
   for (const dockerCall of executor.calls.filter(({ command }) => command === 'docker')) {
     assert.equal(dockerCall.env.DOCKER_CONTEXT, 'baseline-closed-context');
+    assertClosedWindowsSystemEnvironment(dockerCall.env);
   }
   assert.equal(existsSync(path.dirname(composeFile)), false);
 });
@@ -552,6 +566,10 @@ test('runner failure is redacted, cleanup failure leaves a bounded recovery file
     environment: executionEnvironment(),
   }, { executeCommand: wrapped.execute });
   assert.deepEqual(recovery, { status: 'recovered', projectName: PROJECT, cleanup: 'complete' });
+  const recoveryCall = executor.calls.at(-1);
+  assert.equal(recoveryCall.command, 'docker');
+  assert.ok(recoveryCall.args.includes('down'));
+  assertClosedWindowsSystemEnvironment(recoveryCall.env);
   assert.equal(existsSync(path.dirname(composePath)), false);
 });
 
