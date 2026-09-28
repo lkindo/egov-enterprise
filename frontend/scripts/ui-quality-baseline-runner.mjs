@@ -101,13 +101,13 @@ const READY_HEADINGS = Object.freeze({
   'dense-list-ready': '사용자 로그',
   'filtered-zero': '사용자 로그',
   'server-error': '사용자 로그',
-  'user-hub-ready': '조직 및 사용자 관리',
-  'mutation-error': '조직 및 사용자 관리',
+  'user-hub-ready': '계정 및 사용자 관리',
+  'mutation-error': '계정 및 사용자 관리',
   'composer-ready': '새 게시글 작성',
   'draft-restoration': '새 게시글 작성',
   'admin-compose-faq': '새 게시글 작성',
-  'admin-faq-readback': '지식 베이스',
-  'user-faq-search': '도움말 커스터머 센터',
+  'admin-faq-readback': '자주 묻는 질문',
+  'user-faq-search': '도움말 센터',
   'wizard-ready': '게시판 생성 마법사',
   'wizard-validation': '게시판 생성 마법사',
   [ONBOARDING_STEP_ID]: '관리자 업무 현황',
@@ -1332,6 +1332,7 @@ async function syntheticUserResidueCount(api, fixture) {
 async function selectSyntheticUser(page, fixture) {
   const search = page.getByPlaceholder('검색어를 입력하세요...');
   await search.fill(fixture.userName);
+  await search.press('Enter');
   await firstVisibleLocator(page.getByText(fixture.userName, { exact: true }));
   const checkbox = await firstVisibleLocator(page.getByRole('checkbox', { name: '항목 선택', exact: true }));
   await checkbox.click();
@@ -1450,7 +1451,7 @@ async function createAdminMutationContext(browser, baseOrigin) {
 
 async function fillFaqComposer(page, fixture) {
   await page.getByRole('textbox', { name: '게시글 제목', exact: true }).fill(fixture.faqTitle);
-  const editor = await firstVisibleLocator(page.getByRole('textbox', { name: '게시글 본문 내용', exact: true }));
+  const editor = await firstVisibleLocator(page.getByRole('textbox', { name: '게시글 본문 내용 (필수)', exact: true }));
   await editor.fill(fixture.faqContent);
   await page.getByRole('button', { name: '게시글 등록', exact: true }).click();
 }
@@ -1545,13 +1546,13 @@ async function completeBoardWizard(page, fixture) {
   await page.locator('#bbsTtl').fill(fixture.boardTitle);
   await page.locator('#bbsExpln').fill(fixture.boardDescription);
   await page.getByRole('button', { name: /다음 단계로/ }).click();
-  await page.getByRole('heading', { level: 3, name: '템플릿 선택', exact: true })
+  await page.getByRole('heading', { level: 2, name: '템플릿 선택', exact: true })
     .waitFor({ state: 'visible', timeout: 10_000 });
   await page.getByRole('button', { name: /다음 단계로/ }).click();
-  await page.getByRole('heading', { level: 3, name: '접근 권한 안내', exact: true })
+  await page.getByRole('heading', { level: 2, name: '접근 권한 안내', exact: true })
     .waitFor({ state: 'visible', timeout: 10_000 });
   await page.getByRole('button', { name: /다음 단계로/ }).click();
-  await page.getByRole('heading', { level: 3, name: '메뉴 배포', exact: true })
+  await page.getByRole('heading', { level: 2, name: '메뉴 배포', exact: true })
     .waitFor({ state: 'visible', timeout: 10_000 });
   await page.getByPlaceholder('메뉴에 표시될 이름을 입력하세요').fill(fixture.menuName);
   await page.getByRole('button', { name: '게시판 생성 및 메뉴 배포', exact: true }).click();
@@ -1567,7 +1568,7 @@ export function isPersistedBoardDraftKey(key) {
 async function exerciseState(page, stateCase, preparation, { browser, baseOrigin, mutationRunNonce }) {
   switch (stateCase.stepId) {
     case 'invalid-credentials': {
-      const idInput = page.locator('input[name="id"]');
+      const idInput = page.locator('input[name="userId"]');
       const secretInput = page.locator('input[name="password"]');
       const { actorValue, secretValue } = validateInvalidCredentialsProbeFixture({
         actorValue: 'UIQInvalidActor9',
@@ -1600,7 +1601,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
         }));
         break;
       }
-      await page.locator('input[name="id"]').fill(actor);
+      await page.locator('input[name="userId"]').fill(actor);
       await page.locator('input[name="password"]').fill(secret);
       const started = performance.now();
       await page.getByRole('button', { name: '로그인', exact: true }).click();
@@ -1613,7 +1614,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
       break;
     }
     case 'filtered-zero': {
-      const search = page.getByRole('textbox', { name: '데이터 검색' });
+      const search = page.getByRole('textbox', { name: '요청자명', exact: true });
       await search.fill('UI_BASELINE_NO_MATCH_9X8Y7Z');
       await search.press('Enter');
       const emptyVisible = await visibleWithin(
@@ -1630,7 +1631,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
       break;
     }
     case 'server-error': {
-      const search = page.getByRole('textbox', { name: '데이터 검색' });
+      const search = page.getByRole('textbox', { name: '요청자명', exact: true });
       preparation.armInjectedFailure?.();
       await search.fill('UI_BASELINE_FAILURE_PROBE');
       await search.press('Enter');
@@ -1786,9 +1787,9 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
     }
     case 'wizard-validation': {
       await page.getByRole('button', { name: /다음 단계로/ }).click();
-      const validationVisible = await visibleWithin(page.getByText(/게시판 명칭은 최소 2글자/), 5_000);
+      const validationVisible = await visibleWithin(page.getByText('게시판 명칭을 2자 이상 입력해 주세요.', { exact: true }), 5_000);
       const firstStepStillActive = await visibleWithin(
-        page.getByRole('heading', { level: 3, name: '기본 설정', exact: true }),
+        page.getByRole('heading', { level: 2, name: '기본 설정', exact: true }),
         5_000,
       );
       const focusOnName = await page.locator('#bbsTtl')
@@ -1834,6 +1835,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
           await seedSyntheticFaq(api, fixture);
           const search = page.getByRole('textbox', { name: '지식 검색어', exact: true });
           await search.fill(fixture.faqTitle);
+          await search.press('Enter');
           await firstVisibleLocator(
             page.getByRole('button', { name: `${fixture.faqTitle} 상세 보기`, exact: true }),
             { reasonCode: 'synthetic-faq-admin-readback-failed' },
@@ -2157,7 +2159,7 @@ async function navigateForPerformance(page, stateCase) {
     });
     await page.getByRole('heading', { level: 1, name: '엔터프라이즈', exact: true })
       .waitFor({ state: 'visible', timeout: 30_000 });
-    await page.locator('input[name="id"]').fill(process.env.UI_BASELINE_ADMIN_ID);
+    await page.locator('input[name="userId"]').fill(process.env.UI_BASELINE_ADMIN_ID);
     await page.locator('input[name="password"]').fill(process.env.UI_BASELINE_ADMIN_SECRET);
     const started = performance.now();
     await page.getByRole('button', { name: '로그인', exact: true }).click();

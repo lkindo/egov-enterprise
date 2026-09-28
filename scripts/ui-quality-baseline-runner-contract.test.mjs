@@ -842,6 +842,140 @@ test('first-use preference preparation establishes same-origin storage before cl
   assert.match(baselineProtocolSource, /request validation[^\n]*400[^\n]*unexpected-http-4xx/i);
 });
 
+test('all baseline login probes consume the names declared by the actual login form', () => {
+  const loginSource = readFileSync(
+    join(repoRoot, 'frontend/src/app/login/LoginClient.tsx'), 'utf8',
+  );
+  const validationSource = readFileSync(
+    join(repoRoot, 'frontend/src/hooks/useManualFormValidation.tsx'), 'utf8',
+  );
+  assert.match(validationSource, /const fieldProps = useCallback\(\(name: string\) => \{[\s\S]*?return \{\s*name,/,
+    'the producer must forward the declared field name to the rendered input');
+  const inputs = [...loginSource.matchAll(/<Input\b([\s\S]*?)\/>/g)];
+  const renderedName = (id) => {
+    const matches = inputs.filter(([, attributes]) => attributes.includes(`id="${id}"`));
+    assert.equal(matches.length, 1, 'each public login input must have one declaration');
+    const attributes = matches[0][1];
+    assert.doesNotMatch(attributes, /\bname\s*=/,
+      'an explicit name override requires reviewing the producer contract');
+    const names = [...attributes.matchAll(/validation\.fieldProps\('([^']+)'\)/g)];
+    assert.equal(names.length, 1, 'the input must declare exactly one validation field');
+    return names[0][1];
+  };
+  const expectedNames = [renderedName('id'), renderedName('password')];
+  const loginPaths = [
+    ['invalid credentials', /case 'invalid-credentials': \{([\s\S]*?)\n      break;/],
+    ['successful login', /case 'successful-login': \{([\s\S]*?)\n      break;/],
+    ['login performance', /async function navigateForPerformance\(page, stateCase\) \{([\s\S]*?)\n\}/],
+  ];
+  for (const [label, expression] of loginPaths) {
+    const body = runnerSource.match(expression)?.[1];
+    assert.ok(body, `${label} execution path must remain discoverable`);
+    const selectedNames = [...body.matchAll(/page\.locator\('input\[name="([^']+)"\]'\)/g)]
+      .map((match) => match[1]);
+    assert.deepEqual(selectedNames, expectedNames,
+      `${label} must resolve both fields from the actual login form`);
+  }
+});
+
+test('the FAQ composer probe uses the accessible name forwarded by the actual editor', () => {
+  const boardSource = readFileSync(
+    join(repoRoot, 'frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx'), 'utf8',
+  );
+  const editorSource = readFileSync(
+    join(repoRoot, 'frontend/src/components/ui/RichTextEditor.tsx'), 'utf8',
+  );
+  const declarations = [...boardSource.matchAll(/<RichTextEditor\b([\s\S]*?)\/>/g)];
+  assert.equal(declarations.length, 1, 'the FAQ composer must declare one editable body');
+  const declaredName = declarations[0][1].match(/\baria-label="([^"]+)"/)?.[1];
+  assert.ok(declaredName, 'the real editor must declare its accessible name');
+  assert.match(editorSource, /'aria-label': ariaLabel/);
+  assert.match(editorSource, /role: 'textbox'/);
+  const body = runnerSource.match(/async function fillFaqComposer\(page, fixture\) \{([\s\S]*?)\n\}/)?.[1];
+  assert.ok(body, 'the actual FAQ fill path must remain discoverable');
+  const selectedName = body.match(/firstVisibleLocator\(page\.getByRole\('textbox', \{ name: '([^']+)', exact: true \}\)\)/)?.[1];
+  assert.equal(selectedName, declaredName,
+    'the probe must consume the accessible name rendered by the editor, including required state');
+});
+
+test('dense log probes use the actual KeywordFilter accessible label', () => {
+  const source = readFileSync(
+    join(repoRoot, 'frontend/src/app/admin/system/logs/user/SystemLogsUserClient.tsx'), 'utf8',
+  );
+  const label = source.match(/<KeywordFilter\s+label="([^"]+)"/)?.[1];
+  assert.ok(label, 'the log page must declare its keyword label');
+  for (const step of ['filtered-zero', 'server-error']) {
+    const body = runnerSource.match(new RegExp(String.raw`case '${step}': \{([\s\S]*?)\n      break;`))?.[1];
+    assert.ok(body, 'the log recovery execution path must remain discoverable');
+    const selected = body.match(/const search = page\.getByRole\('textbox', \{ name: '([^']+)', exact: true \}\)/)?.[1];
+    assert.equal(selected, label, 'the log probe must select the label produced by KeywordFilter');
+  }
+});
+
+test('wizard probes follow the actual step heading level and validation message', () => {
+  const source = readFileSync(
+    join(repoRoot, 'frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx'), 'utf8',
+  );
+  const steps = source.match(/const STEPS = \[([\s\S]*?)\n\];/)?.[1];
+  assert.ok(steps, 'the wizard must declare its ordered steps');
+  const titles = [...steps.matchAll(/title: '([^']+)'/g)].map((match) => match[1]);
+  assert.equal(titles.length, 4);
+  const heading = source.match(/<h([1-6])\b[^>]*>\s*\{STEPS\[currentStep - 1\]\.title\}\s*<\/h\1>/);
+  assert.ok(heading, 'the real step heading must have a semantic level');
+  const consumers = [...runnerSource.matchAll(/getByRole\('heading', \{ level: ([1-6]), name: '([^']+)', exact: true \}\)/g)]
+    .filter((match) => titles.includes(match[2]));
+  assert.equal(consumers.length, titles.length, 'all four step heading consumers must remain covered');
+  assert.deepEqual(new Set(consumers.map((match) => match[2])), new Set(titles));
+  for (const match of consumers) assert.equal(match[1], heading[1], 'the probe must use the rendered heading level');
+  const message = source.match(/bbsTtl: BoardMasterDtoSchema\.shape\.bbsTtl[\s\S]*?\.min\(2, '([^']+)'\)/)?.[1];
+  assert.ok(message, 'the actual minimum-length rule must declare its error message');
+  const selected = runnerSource.match(/const validationVisible = await visibleWithin\(page\.getByText\('([^']+)', \{ exact: true \}\),/)?.[1];
+  assert.equal(selected, message, 'the empty-next probe must observe the actual validation message');
+});
+
+test('synthetic user and admin FAQ searches submit the actual KeywordFilter before readback', () => {
+  const keyword = readFileSync(join(repoRoot, 'frontend/src/app/components/patterns/keyword-filter.tsx'), 'utf8');
+  assert.match(keyword, /onSubmit=\{\(event\) => \{\s*event\.preventDefault\(\);\s*onSearch\(draft\.trim\(\)\);/);
+  assert.match(keyword, /onChange=\{\(event\) => setDraft\(event\.target\.value\)\}/);
+  const paths = [
+    ['user', 'frontend/src/app/admin/user/UserOrgHubClient.tsx', /async function selectSyntheticUser\(page, fixture\) \{([\s\S]*?)\n\}/],
+    ['admin FAQ', 'frontend/src/app/admin/help/KnowledgeHubClient.tsx', /case 'admin-faq-readback': \{([\s\S]*?)\n      break;/],
+  ];
+  for (const [label, producerPath, expression] of paths) {
+    const producer = readFileSync(join(repoRoot, producerPath), 'utf8');
+    assert.match(producer, /<KeywordFilter\b[\s\S]*?onSearch=/, `${label} must use submit-based search`);
+    const body = runnerSource.match(expression)?.[1];
+    assert.ok(body, `${label} probe must remain discoverable`);
+    const fill = body.indexOf('await search.fill(');
+    const submit = body.indexOf("await search.press('Enter')");
+    const readback = body.indexOf('await firstVisibleLocator(');
+    assert.ok(fill >= 0 && fill < submit && submit < readback,
+      `${label} must apply the draft before observing searched results`);
+  }
+});
+
+test('readiness headings follow the current user and FAQ page title producers', () => {
+  const userSource = readFileSync(join(repoRoot, 'frontend/src/app/admin/user/UserOrgHubClient.tsx'), 'utf8');
+  const adminFaqSource = readFileSync(join(repoRoot, 'frontend/src/app/admin/help/KnowledgeHubClient.tsx'), 'utf8');
+  const helpSource = readFileSync(join(repoRoot, 'frontend/src/app/help/HelpClient.tsx'), 'utf8');
+  assert.match(userSource, /const meta = TAB_META\[activeTab\]/);
+  assert.match(userSource, /<WorkListPage\s+title=\{meta\.title\}/);
+  assert.match(adminFaqSource, /<WorkListPage\s+title=\{CATEGORY_LABEL\[activeCategory\]\}/);
+  const userHeading = userSource.match(/USERS: \{\s*title: '([^']+)'/)?.[1];
+  const faqHeading = adminFaqSource.match(/const CATEGORY_LABEL[^=]*= \{[\s\S]*?FAQ: '([^']+)'/)?.[1];
+  const helpHeading = helpSource.match(/<WorkListPage\s+title="([^"]+)"/)?.[1];
+  assert.ok(userHeading && faqHeading && helpHeading, 'the actual page titles must remain discoverable');
+  const declared = runnerSource.match(/const READY_HEADINGS = Object\.freeze\(\{([\s\S]*?)\n\}\)/)?.[1];
+  assert.ok(declared, 'the runner readiness map must remain discoverable');
+  const actual = Object.fromEntries([...declared.matchAll(/'([^']+)': '([^']+)'/g)].map((match) => [match[1], match[2]]));
+  for (const [step, title] of Object.entries({
+    'user-hub-ready': userHeading,
+    'mutation-error': userHeading,
+    'admin-faq-readback': faqHeading,
+    'user-faq-search': helpHeading,
+  })) assert.equal(actual[step], title, `${step} must wait for its actual page title`);
+});
+
 test('not-executed task evidence uses closed assertion/reason pairs and blocks completion', () => {
   const closedPairs = [
     ['successful-login-executed', 'ephemeral-login-credentials-required'],

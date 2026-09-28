@@ -136,6 +136,8 @@ baseline runner는 매 실행마다 다음을 `environment.json`에 기록한다
 
 committed blob을 읽는 runner의 `git show`는 빌더와 같은 256MiB 출력 상한을 명시한다. 따라서 1MiB를 넘는 폰트·Atlas·생성 타입도 원본 바이트 그대로 해시하며, 상한 초과나 읽기 실패는 파일 제외·잘라내기 없이 실행을 중단한다.
 
+기존 runner 계약은 로그인 probe의 입력 이름과 실제 `LoginClient`의 `validation.fieldProps` 선언, 화면 제목·마법사 단계·검증 문구·FAQ 편집기 접근성 이름과 각 화면의 실제 선언을 함께 검증한다. 검색 probe는 해당 화면이 사용하는 `KeywordFilter`의 제출 동작을 마친 뒤 결과를 확인하며, 입력 즉시 검색하는 화면에는 이 동작을 추가하지 않는다.
+
 ```powershell
 pnpm -C frontend run ui-quality:plan
 node --test scripts/ui-quality-baseline-runner-contract.test.mjs
