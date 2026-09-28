@@ -134,6 +134,8 @@ baseline runner는 매 실행마다 다음을 `environment.json`에 기록한다
 
 `dirtyBuildInputDiffHash`는 HEAD 대비 tracked·staged·deleted 상태와 untracked production input의 현재 content hash를 경로 순서에 무관한 canonical record로 합성한다. 이때 `buildInputTreeHash`와 동일한 production path gate를 먼저 적용한다. `.env*`, Playwright auth state, key/keystore, `application-local.*`, storage/log/build/test 생성물처럼 제외된 후보에는 filesystem stat·read·content hash를 호출하지 않는다. artifact에는 최종 `64-hex` 또는 clean을 뜻하는 `null`만 남기며 원문 diff, raw diff, 파일 경로, 파일 내용은 남기지 않는다. `buildInputTreeHash`는 실행 commit의 selected Git blob raw bytes로 계산하고, protocol·runner·core·두 contract는 worktree raw bytes와 같은 commit의 blob raw bytes가 exact 일치할 때만 hash를 채택한다. 이 분리는 Windows CRLF checkout을 blob LF로 오인하거나, 반대로 변경된 worktree를 committed source로 가장하는 일을 막는다. Git 조회·선택 파일 읽기·hash 계산·형식 검증 중 하나라도 실패하면 fallback 값을 만들지 않고 browser launch 전 preflight를 red로 종료한다. runner는 시작과 종료에 commit SHA, tree hash, dirty fingerprint, manifest/plan, route truth, protocol과 tooling raw-byte hash를 모두 다시 계산하며 하나라도 달라지면 final seal을 쓰지 않는다.
 
+committed blob을 읽는 runner의 `git show`는 빌더와 같은 256MiB 출력 상한을 명시한다. 따라서 1MiB를 넘는 폰트·Atlas·생성 타입도 원본 바이트 그대로 해시하며, 상한 초과나 읽기 실패는 파일 제외·잘라내기 없이 실행을 중단한다.
+
 ```powershell
 pnpm -C frontend run ui-quality:plan
 node --test scripts/ui-quality-baseline-runner-contract.test.mjs

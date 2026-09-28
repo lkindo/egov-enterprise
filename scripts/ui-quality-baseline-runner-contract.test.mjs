@@ -6,6 +6,7 @@ import {
   readFileSync,
   readdirSync,
   renameSync,
+  rmSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
@@ -72,6 +73,7 @@ import {
 
 import {
   isPersistedBoardDraftKey,
+  readCommittedFile,
   readBaselineBuildAttestationFile,
   validateExecutionPreflight as validateRunnerExecutionPreflight,
 } from '../frontend/scripts/ui-quality-baseline-runner.mjs';
@@ -1591,6 +1593,39 @@ test('production snapshot selects explicit build inputs and rejects private, sec
     }),
     /raw committed bytes/i,
   );
+});
+
+test('committed source capture reads a binary Git blob larger than 1 MiB without truncation', (t) => {
+  const fixtureRoot = mkdtempSync(join(tmpdir(), 'uiq-committed-blob-'));
+  assert.equal(dirname(fixtureRoot), resolve(tmpdir()));
+  t.after(() => rmSync(fixtureRoot, { recursive: true, force: true }));
+  const git = (args, input) => {
+    const result = spawnSync('git', args, {
+      cwd: fixtureRoot,
+      input,
+      encoding: null,
+      windowsHide: true,
+    });
+    assert.equal(result.status, 0, 'synthetic Git fixture command must succeed');
+    return result.stdout.toString('utf8').trim();
+  };
+  git(['init', '--bare', '--quiet']);
+  const committedBytes = Buffer.alloc(2 * 1024 * 1024 + 17, 0xa5);
+  committedBytes[0] = 0x00;
+  committedBytes[committedBytes.length - 1] = 0xff;
+  const blob = git(['hash-object', '-w', '--stdin'], committedBytes);
+  const tree = git(['mktree'], `100644 blob ${blob}\tfixture.bin\n`);
+  const commit = git([
+    '-c', 'user.name=UI Quality Fixture',
+    '-c', 'user.email=ui-quality@example.invalid',
+    '-c', 'commit.gpgsign=false',
+    'commit-tree', tree, '-m', 'synthetic large binary blob',
+  ]);
+
+  const captured = readCommittedFile(commit, 'fixture.bin', { repositoryRoot: fixtureRoot });
+  assert.ok(Buffer.isBuffer(captured), 'committed capture must preserve raw bytes');
+  assert.equal(captured.length, committedBytes.length, 'the entire committed blob must be captured');
+  assert.ok(captured.equals(committedBytes), 'binary content must match the Git blob exactly');
 });
 
 test('production snapshot keeps source directories that collide with generated artifact names', () => {

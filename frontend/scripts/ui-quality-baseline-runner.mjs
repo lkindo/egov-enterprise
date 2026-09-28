@@ -413,7 +413,7 @@ export function validateExecutionPreflight({
   });
 }
 
-function readCommittedFile(buildSha, relativePath) {
+export function readCommittedFile(buildSha, relativePath, { repositoryRoot = repoRoot } = {}) {
   if (!/^[a-f0-9]{40}$/.test(buildSha)) {
     throw new Error('committed source capture requires an exact build SHA');
   }
@@ -425,7 +425,12 @@ function readCommittedFile(buildSha, relativePath) {
   return execFileSync(
     'git',
     ['show', `${buildSha}:${relativePath}`],
-    { cwd: repoRoot, encoding: 'buffer', stdio: ['ignore', 'pipe', 'ignore'] },
+    {
+      cwd: repositoryRoot,
+      encoding: 'buffer',
+      maxBuffer: 256 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    },
   );
 }
 
