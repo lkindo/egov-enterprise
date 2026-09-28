@@ -32,6 +32,69 @@ class LocalFileStorageServiceTest {
     }
 
     @Test
+    void deferredDeletionIsIdempotentAndPreservesLaterReplacement() throws IOException {
+        Path file = tempDir.resolve("same.txt");
+        Files.writeString(file, "old contents");
+        String identity = storageService.captureDeletionIdentity("same.txt", "");
+        var intent = java.util.UUID.randomUUID();
+        storageService.deleteCaptured(intent, "same.txt", "", identity);
+        storageService.deleteCaptured(intent, "same.txt", "", identity);
+        assertThat(file).doesNotExist();
+        Files.writeString(file, "new contents");
+        storageService.deleteCaptured(intent, "same.txt", "", identity);
+        assertThat(file).hasContent("new contents");
+    }
+
+    @Test
+    void replacementBeforeFirstDeliveryCannotBeDeletedEvenWithSameContents() throws IOException {
+        Path file = tempDir.resolve("replaced.txt");
+        Files.writeString(file, "same bytes");
+        String identity = storageService.captureDeletionIdentity("replaced.txt", "");
+        Path replacement = tempDir.resolve("new.txt");
+        Files.writeString(replacement, "same bytes");
+        Files.move(replacement, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        storageService.deleteCaptured(java.util.UUID.randomUUID(), "replaced.txt", "", identity);
+        assertThat(file).hasContent("same bytes");
+    }
+
+    @Test
+    void mutationOfCapturedObjectFailsClosedAndKeepsItsContents() throws IOException {
+        Path file = tempDir.resolve("modified.txt");
+        Files.writeString(file, "initial contents");
+        String identity = storageService.captureDeletionIdentity("modified.txt", "");
+        Files.writeString(file, "changed contents");
+        assertThatThrownBy(() -> storageService.deleteCaptured(java.util.UUID.randomUUID(), "modified.txt", "", identity))
+                .isInstanceOf(BusinessException.class);
+        assertThat(file).hasContent("changed contents");
+        storageService.releaseDeletionIdentity(identity);
+        assertThat(file).hasContent("changed contents");
+    }
+
+    @Test
+    void capturedAbsenceNeverDeletesAnObjectCreatedLater() throws IOException {
+        String identity = storageService.captureDeletionIdentity("later.txt", "");
+        Files.writeString(tempDir.resolve("later.txt"), "later object");
+        storageService.deleteCaptured(java.util.UUID.randomUUID(), "later.txt", "", identity);
+        assertThat(tempDir.resolve("later.txt")).hasContent("later object");
+    }
+
+    @Test
+    void retryAfterQuarantineCrashFinishesCapturedObjectAndPreservesSourceReplacement() throws IOException {
+        Path file = tempDir.resolve("crash.txt");
+        Files.writeString(file, "captured");
+        String identity = storageService.captureDeletionIdentity("crash.txt", "");
+        var intent = java.util.UUID.randomUUID();
+        Path quarantine = tempDir.resolve(".deletions");
+        Files.createDirectories(quarantine);
+        Path retained = quarantine.resolve(intent + ".object");
+        Files.move(file, retained, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+        Files.writeString(file, "replacement after crash");
+        storageService.deleteCaptured(intent, "crash.txt", "", identity);
+        assertThat(retained).doesNotExist();
+        assertThat(file).hasContent("replacement after crash");
+    }
+
+    @Test
     @DisplayName("파일 저장 테스트")
     void store_Success() throws IOException {
         // Given

@@ -57,6 +57,8 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
     @DisplayName("제품 권한은 보존하고 빈 base에만 초기 명시 권한과 메뉴를 만든다")
     void bootstrapSeedIsProfileSafeAndUnlocksAdmin() throws Exception {
         JsonNode compositionExpectation = readCompositionExpectation(resolveRepoRoot());
+        JsonNode expectedOperationGrants = compositionExpectation == null
+                ? readDefaultOperationGrants() : compositionExpectation.path("operationGrants");
         migrateThroughAuthorizationCutover();
         String frameworkSeedSql = readSeedSql(FRAMEWORK_SEED_RESOURCE);
         String adminBootstrapSeedSql = readSeedSql(ADMIN_BOOTSTRAP_SEED_RESOURCE);
@@ -87,13 +89,12 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
                 assertThat(singleLong(statement,"SELECT count(*) FROM tb_menu_info WHERE up_menu_sn IS NULL AND modern_route IS NOT NULL")).isZero();
                 assertThat(new TreeSet<>(stringColumn(statement,"SELECT modern_route FROM tb_menu_info WHERE up_menu_sn IS NOT NULL")))
                         .isEqualTo(new TreeSet<>(EXPECTED_LEAF_ROUTES));
-                assertThat(new TreeSet<>(stringColumn(statement,"SELECT authrt_grnt_cd FROM tb_authrt_grnt_map "
-                        + "WHERE authrt_cd='ROLE_ADMIN' AND authrt_type_cd='OPERATION'")))
-                        .isEqualTo(new TreeSet<>(nuri.business.security.authorization.PermissionCodes.ALL));
             } else {
                 assertCompositionSeed(statement, compositionExpectation);
                 assertCompositionMutationsRejected(connection, statement, compositionExpectation);
             }
+            assertOperationGrants(statement, expectedOperationGrants);
+            assertUnexpectedOperationGrantRejected(statement, expectedOperationGrants);
             assertThat(singleLong(statement,"SELECT count(*) FROM tb_menu_info WHERE use_yn <> 'Y' OR del_yn <> 'N'")).isZero();
             assertThat(singleLong(statement,"SELECT count(*) FROM tb_menu_info menu WHERE NOT EXISTS "
                     + "(SELECT 1 FROM tb_authrt_grnt_map grant_row WHERE grant_row.authrt_cd='ROLE_ADMIN' "
@@ -255,8 +256,51 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
                 expected.path("programs"), "selected program references");
         assertJsonRows(statement, "SELECT authrt_cd,authrt_grnt_cd FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION'",
                 expected.path("navigationGrants"), "exact selected NAVIGATION grants");
+        assertOperationGrants(statement, expected.path("operationGrants"));
+    }
+
+    /** No group receives a permission merely because the code exists in PermissionCodes.ALL. */
+    private JsonNode readDefaultOperationGrants() throws IOException {
+        try (InputStream stream = getClass().getResourceAsStream("/authorization/permission-catalog.json")) {
+            assertThat(stream).as("classpath permission catalog must exist").isNotNull();
+            ObjectMapper mapper = JsonMapper.builder().configureForJackson2().build();
+            JsonNode permissions = mapper.readTree(stream).path("permissions");
+            assertThat(permissions.isArray()).as("permission catalog must declare its entries").isTrue();
+            assertThat(permissions).isNotEmpty();
+            var expected = mapper.createArrayNode();
+            for (JsonNode permission : permissions) {
+                assertThat(permission.path("code").isString()).isTrue();
+                assertThat(permission.path("defaultGroups").isArray())
+                        .as("defaultGroups must be explicit for %s", permission.path("code").asString()).isTrue();
+                for (JsonNode group : permission.path("defaultGroups")) {
+                    assertThat(group.isString()).isTrue();
+                    expected.addObject().put("authrt_cd", group.asString())
+                            .put("authrt_grnt_cd", permission.path("code").asString());
+                }
+            }
+            assertThat(expected).as("base must retain its explicitly granted operations").isNotEmpty();
+            return expected;
+        }
+    }
+
+    private void assertOperationGrants(Statement statement, JsonNode expected) throws Exception {
         assertJsonRows(statement, "SELECT authrt_cd,authrt_grnt_cd FROM tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'",
-                expected.path("operationGrants"), "exact selected OPERATION codes and original default groups");
+                expected, "exact OPERATION permission and default-group pairs, including non-admin groups");
+    }
+
+    /** A non-admin overgrant must fail the same assertion, then only the synthetic row is removed. */
+    private void assertUnexpectedOperationGrantRejected(Statement statement, JsonNode expected) throws Exception {
+        String syntheticGrant = "authrt_cd='ROLE_SYSTEM' AND authrt_type_cd='OPERATION' "
+                + "AND authrt_grnt_cd='BOOTSTRAP_RED_PROBE'";
+        assertThat(singleLong(statement, "SELECT count(*) FROM tb_authrt_grnt_map WHERE " + syntheticGrant)).isZero();
+        assertThat(statement.executeUpdate("INSERT INTO tb_authrt_grnt_map(authrt_cd,authrt_type_cd,authrt_grnt_cd) "
+                + "VALUES('ROLE_SYSTEM','OPERATION','BOOTSTRAP_RED_PROBE')")).isEqualTo(1);
+        try {
+            assertThrows(AssertionError.class, () -> assertOperationGrants(statement, expected));
+        } finally {
+            assertThat(statement.executeUpdate("DELETE FROM tb_authrt_grnt_map WHERE " + syntheticGrant)).isEqualTo(1);
+        }
+        assertOperationGrants(statement, expected);
     }
 
     private void assertJsonRows(Statement statement, String query, JsonNode expected, String label) throws Exception {

@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserInfo } from '@/services/foundation/auth/authService';
 import type { MenuInfo } from '@/types/foundation/menu';
 import { Header } from '../header';
+import { HeaderNotifications } from '../header-notifications';
 
 const testState = vi.hoisted(() => ({
   user: null as UserInfo | null,
@@ -101,12 +102,26 @@ describe('Header account navigation authorization', () => {
     expect(await screen.findByRole('link', { name: '로그인 이동' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '주 메뉴 열기' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '테마 변경' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '알림' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '알림' })).not.toBeInTheDocument();
 
     const headerRow = container.querySelector('header > div.flex');
     expect(headerRow).not.toBeNull();
     expect(headerRow).toHaveClass('gap-3', 'sm:gap-4');
     expect(headerRow).not.toHaveClass('gap-4');
+  });
+
+  it('알림 벨은 현재 NOTI_READ 권한에만 보이고 같은 계정의 철회에도 사라진다', () => {
+    testState.user = { id: 'notification-user', name: '알림 사용자', groups: [], permissions: ['NOTI_READ'], authorizationVersion: 'v1' };
+    const { rerender } = render(<HeaderNotifications />);
+    expect(screen.getByRole('button', { name: '알림' })).toBeInTheDocument();
+
+    testState.user = { ...testState.user, permissions: [], authorizationVersion: 'v2' };
+    rerender(<HeaderNotifications />);
+    expect(screen.queryByRole('button', { name: '알림' })).not.toBeInTheDocument();
+
+    testState.user = { ...testState.user, permissions: ['NOTI_READ'], authorizationVersion: '' };
+    rerender(<HeaderNotifications />);
+    expect(screen.queryByRole('button', { name: '알림' })).not.toBeInTheDocument();
   });
 
   it('일반 사용자는 userSe 값과 무관하게 관리자 전용 링크를 볼 수 없다', async () => {

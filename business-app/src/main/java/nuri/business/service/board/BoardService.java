@@ -258,7 +258,19 @@ public class BoardService extends BaseAbstractService {
                 BoardMaster master = boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
                 assertCommunityAccess(master);
-                return nuri.business.service.board.dto.BoardMetaDto.from(master);
+                return nuri.business.service.board.dto.BoardMetaDto.from(master, requiredEditPermissions(bbsId));
+        }
+
+        /** 두 설정이 같은 게시판을 가리키면 두 편집 권한이 모두 필요하다. */
+        private List<String> requiredEditPermissions(String bbsId) {
+                var permissions = new java.util.ArrayList<String>();
+                if (bbsId.equals(boardIdProperties.getNoticeId())) permissions.add("NOTICE_EDIT");
+                if (bbsId.equals(boardIdProperties.getFaqId())) permissions.add("FAQ_EDIT");
+                return List.copyOf(permissions);
+        }
+
+        private void assertSpecialBoardEdit(String bbsId) {
+                requiredEditPermissions(bbsId).forEach(SecurityUtil::assertPermission);
         }
 
         @Transactional(readOnly = true)
@@ -367,6 +379,7 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional
         public Long createPost(@NonNull String userId, @NonNull BoardSaveRequest request) {
+                assertSpecialBoardEdit(request.bbsId());
                 Timer.Sample sample = Timer.start(meterRegistry);
 
                 try {
@@ -441,6 +454,7 @@ public class BoardService extends BaseAbstractService {
         public Long createPostWithFiles(@NonNull String userId, @NonNull BoardSaveRequest request,
                         List<MultipartFile> files)
                         throws IOException {
+                assertSpecialBoardEdit(request.bbsId());
                 // [2026-09-25 DIP I2] 게시판·커뮤니티 검증을 업로드보다 먼저 한다. 종전에는 파일을 먼저 저장한 뒤
                 //   createPost 가 없는 게시판·비회원을 거부해, 거부된 요청마다 접근할 수 없는 파일이 디스크에 남았다.
                 //   (그 뒤 단계의 실패는 FileService 가 트랜잭션 롤백 때 이번 호출로 저장한 파일을 지운다.)
@@ -465,15 +479,14 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional
         public Long replyPost(@NonNull String userId, @NonNull Long parentSn, @NonNull BoardSaveRequest request) {
+                assertSpecialBoardEdit(request.bbsId());
                 BoardMaster master = boardMasterRepository
                                 .findByIdWithPessimisticLock(request.bbsId())
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
                 // [2026-09-08 PD-CMTY-001] 등록과 같은 경계.
                 assertCommunityAccess(master);
 
-                Board parent = boardRepository
-                                .findById(parentSn)
-                                .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
+                Board parent = findReplyParent(request.bbsId(), parentSn);
                 if (request.atchFileSn() != null) {
                         attachmentAssignmentPolicy.assertAssignable(request.atchFileSn());
                 }
@@ -534,6 +547,9 @@ public class BoardService extends BaseAbstractService {
         public Long replyPostWithFiles(@NonNull String userId, @NonNull Long parentSn,
                         @NonNull BoardSaveRequest request,
                         List<MultipartFile> files) throws IOException {
+                assertSpecialBoardEdit(request.bbsId());
+                assertCommunityAccess(request.bbsId());
+                findReplyParent(request.bbsId(), parentSn);
                 Long atchFileSn = request.atchFileSn();
                 if (files != null && !files.isEmpty()) {
                         // [2026-09-27 DIP B5 F9] 답글도 게시판 첨부 설정을 저장 전에 본다(등록과 같은 순서).
@@ -552,6 +568,18 @@ public class BoardService extends BaseAbstractService {
                                 request.scrtYn(), request.useYn(), request.pswd());
 
                 return replyPost(userId, parentSn, newRequest);
+        }
+
+        /** 답글은 실제 부모 게시판·열람 경계를 지나며 파일 저장보다 먼저 검사한다. */
+        private Board findReplyParent(String bbsId, Long parentSn) {
+                Board parent = findPostInBoard(bbsId, parentSn);
+                if ("N".equals(parent.getUseYn())) {
+                        throw new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND);
+                }
+                if ("Y".equalsIgnoreCase(parent.getScrtYn())) {
+                        SecurityUtil.assertOwnerOrPermissionByEsntlId(parent.getUserId(), "BOARD_READ_ALL");
+                }
+                return parent;
         }
 
         /**
@@ -606,6 +634,7 @@ public class BoardService extends BaseAbstractService {
          */
         @Transactional
         public void markQuestionSolved(@NonNull String bbsId, @NonNull Long pstSn) {
+                assertSpecialBoardEdit(bbsId);
                 BoardMaster master = boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
                 assertCommunityAccess(master);
@@ -745,6 +774,7 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional
         public void updatePost(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardSaveRequest request) {
+                assertSpecialBoardEdit(bbsId);
                 required(bbsId, "bbsId 는 null 일 수 없습니다");
                 assertCommunityAccess(bbsId); // [2026-09-08 PD-CMTY-001]
                 Board board = findOwnedPost(bbsId, pstSn);
@@ -807,6 +837,7 @@ public class BoardService extends BaseAbstractService {
         public void updatePostWithFiles(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardSaveRequest request,
                         List<MultipartFile> files)
                         throws IOException {
+                assertSpecialBoardEdit(bbsId);
                 required(bbsId, "bbsId 는 null 일 수 없습니다");
                 // [2026-09-14 DEC-OPS-092] JSON 수정(updatePost)과 같은 커뮤니티 가드. 이 경로에만 빠져 있었다.
                 assertCommunityAccess(bbsId);
@@ -848,6 +879,7 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional
         public void deletePost(@NonNull String bbsId, @NonNull Long pstSn, String authorId) {
+                assertSpecialBoardEdit(bbsId);
                 assertCommunityAccess(required(bbsId, "bbsId 는 null 일 수 없습니다")); // [2026-09-08 PD-CMTY-001]
                 Board board = findPostInBoard(bbsId, pstSn);
 

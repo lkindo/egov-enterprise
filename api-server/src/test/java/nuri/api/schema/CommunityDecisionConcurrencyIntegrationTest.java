@@ -3,12 +3,14 @@ package nuri.api.schema;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import nuri.business.service.system.content.community.CommunityService;
+import nuri.business.service.user.UserService;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.security.service.CustomUserDetails;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -36,10 +39,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class CommunityDecisionConcurrencyIntegrationTest {
     private static final String USER_ID = "USRCNFRM_00000000001";
     @Autowired private CommunityService service;
+    @Autowired private UserService users;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PlatformTransactionManager transactionManager;
     @PersistenceContext private EntityManager entityManager;
     private long community;
+    private String deletedMember;
 
     @BeforeEach
     void prepareRequestedMembership() {
@@ -58,6 +63,35 @@ class CommunityDecisionConcurrencyIntegrationTest {
         SecurityContextHolder.clearContext();
         jdbc.update("DELETE FROM tb_cmnty_user_map WHERE cmnty_sn=?", community);
         jdbc.update("DELETE FROM tb_cmnty_info WHERE cmnty_sn=?", community);
+        if (deletedMember != null) jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", deletedMember);
+    }
+
+    @Test
+    void deletingWithdrawnMemberFlushesMembershipBeforeParentBulkDelete() {
+        deletedMember = "CU" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        jdbc.update("""
+                INSERT INTO tb_user_info (esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn)
+                VALUES (?,?,'unused-fixture-password','회원 삭제 검증','P','N')
+                """, deletedMember, deletedMember);
+        jdbc.update("""
+                INSERT INTO tb_cmnty_user_map (cmnty_sn,user_id,mbr_stts_cd,mngr_yn,use_yn,whdwl_ymd)
+                VALUES (?,?,'W','N','N',to_char(CURRENT_DATE,'YYYYMMDD'))
+                """, community, deletedMember);
+        String administrator = jdbc.queryForObject("SELECT user_id FROM tb_user_info WHERE esntl_id=?", String.class, USER_ID);
+        var principal = CustomUserDetails.builder().userId(administrator).esntlId(USER_ID)
+                .enabled(true).permissions(List.of("USER_DELETE")).build();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+
+        // 실제 UserService→동기 UserDeletionEvent→부모 bulk DELETE의 커밋 경계를 실행한다.
+        // 테스트에서 미리 flush하거나 자식 행을 지우면 실제 E2E의 FK 실패를 감춰 버린다.
+        users.deleteUser(deletedMember);
+
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_user_info WHERE esntl_id=?", Integer.class, deletedMember)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_cmnty_user_map WHERE user_id=?", Integer.class, deletedMember)).isZero();
+        assertThat(jdbc.queryForObject("SELECT mbr_stts_cd FROM tb_cmnty_user_map WHERE cmnty_sn=? AND user_id=?",
+                String.class, community, USER_ID)).isEqualTo("A");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_cmnty_info WHERE cmnty_sn=?", Integer.class, community)).isEqualTo(1);
     }
 
     @ParameterizedTest(name = "first decision approves={0}")

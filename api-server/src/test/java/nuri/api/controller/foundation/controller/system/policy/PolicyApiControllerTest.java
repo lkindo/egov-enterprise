@@ -18,6 +18,7 @@ import java.util.Optional;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -38,6 +39,30 @@ class PolicyApiControllerTest {
         mockMvc = MockMvcBuilders.standaloneSetup(policyApiController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
+    }
+
+    @Test
+    void createPolicyUsesNewInsertContract() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/system/policies/INTERNAL")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"plcyTtl\":\"기관 정책\",\"plcyCn\":\"등록된 본문\"}"))
+                .andExpect(status().isOk());
+        org.mockito.Mockito.verify(policyService).createPolicy("INTERNAL", "기관 정책", "등록된 본문");
+        org.mockito.Mockito.verify(policyService, org.mockito.Mockito.never())
+                .updatePolicy(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    void createRejectsBlankAndOversizedContentBeforeService() throws Exception {
+        for (String body : java.util.List.of(
+                "{\"plcyTtl\":\" \",\"plcyCn\":\"본문\"}",
+                "{\"plcyTtl\":\"제목\",\"plcyCn\":\" \"}",
+                "{\"plcyTtl\":\"제목\",\"plcyCn\":\"" + "가".repeat(4001) + "\"}")) {
+            mockMvc.perform(post("/api/v1/admin/system/policies/INTERNAL")
+                    .contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isBadRequest());
+        }
+        org.mockito.Mockito.verifyNoInteractions(policyService);
     }
 
     @Test

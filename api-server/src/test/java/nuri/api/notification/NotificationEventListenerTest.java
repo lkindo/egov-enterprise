@@ -1,12 +1,10 @@
 package nuri.api.notification;
 
 import nuri.business.service.notification.NotificationService;
-import nuri.business.service.notification.dto.NotificationDto;
 import nuri.business.service.notification.event.NotificationEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -25,6 +23,7 @@ class NotificationEventListenerTest {
         listener.handleNotificationEvent(event);
 
         // Then
-        verify(notificationService).createNotification(eq("testUser"), any(NotificationDto.class));
+        verify(notificationService).createForEvent(argThat(request -> request.eventId().equals(event.getEventId())
+                && request.receiverEsntlId().equals("testUser") && request.content().equals("test message")));
     }
 }

@@ -80,6 +80,9 @@ function redirectedToLogin(res: Response): boolean {
 describe('proxy 인증 게이트', () => {
   it.each([
     '/api/v1/auth/%6cogin',
+    '/api/v1/auth/%6dfa/verify',
+    '/api/v1/%61uth/mfa/enrollment/confirm',
+    '/api/v1/auth/mfa/%72eauthenticate',
     '/api/v1/auth/%72eissue',
     '/api/v1/%61uth/login',
     '/api/%76%31/auth/reissue',

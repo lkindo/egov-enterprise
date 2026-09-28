@@ -173,7 +173,7 @@ export default function TemplateAdminClient({
  try {
  const ok = await confirm({
  title: '템플릿 삭제',
- message: `'${item.tmpltNm}' 템플릿을 삭제합니다. 게시판이 참조 중인 템플릿은 서버가 삭제를 거부합니다. 삭제한 템플릿은 복구할 수 없습니다.`,
+ message: `'${item.tmpltNm}' 템플릿을 삭제합니다. 커뮤니티 또는 이전 게시판이 원장을 참조 중이면 삭제할 수 없습니다. 구현된 기본 게시판 레이아웃은 원장과 별개입니다. 삭제한 템플릿은 복구할 수 없습니다.`,
  confirmText: '삭제',
  variant: 'destructive',
  });
@@ -282,7 +282,7 @@ export default function TemplateAdminClient({
  return (
  <WorkListPage
  title="템플릿 관리"
- description="게시판·화면 구성에 쓰는 시스템 템플릿을 조회·등록합니다."
+ description="커뮤니티 등이 참조하는 템플릿 원장을 관리합니다. 게시판의 구현된 기본 레이아웃과는 별개이며, 경로를 등록해도 새 화면이 자동 생성되지 않습니다."
  breadcrumbItems={[{ label: '시스템관리' }, { label: '커뮤니티관리' }, { label: '템플릿관리' }]}
  totalCount={loadError ? undefined : templates.length}
  actions={
@@ -321,9 +321,9 @@ export default function TemplateAdminClient({
  <div className="w-16 h-11 bg-primary text-white rounded-lg flex items-center justify-center shadow-2xl shadow-primary/20 mx-auto">
  <Plus size={28} />
  </div>
- <DialogTitle className="text-3xl font-bold text-foreground tracking-tighter text-center">{editingId ? '템플릿 수정' : '신규 블루프린트 등록'}</DialogTitle>
+ <DialogTitle className="text-3xl font-bold text-foreground tracking-tighter text-center">{editingId ? '템플릿 수정' : '신규 템플릿 원장 등록'}</DialogTitle>
  <DialogDescription className="text-center font-bold text-muted-foreground text-sm">
- {editingId ? '템플릿 ID 는 바꿀 수 없습니다. 명칭·카테고리·경로·상태를 고칩니다.' : '시스템에 새로운 UI/UX 구조를 정의합니다.'}
+ {editingId ? '템플릿 ID 는 바꿀 수 없습니다. 명칭·카테고리·경로·상태를 고칩니다.' : '템플릿의 명칭·분류·관리 경로를 기록합니다. 경로를 실행하거나 새 화면을 생성하지 않습니다.'}
  </DialogDescription>
  </DialogHeader>
 

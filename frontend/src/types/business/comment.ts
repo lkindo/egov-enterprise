@@ -7,15 +7,10 @@ export interface CommentVO extends GeneratedCommentDto {
   ansSn: number;
   pstSn: number;
   bbsId: string;
-  wrterId: string;
   wrterNm: string;
-  /**
-   * 등록자 로그인 ID. 수정·삭제 버튼 노출 판정에 쓴다.
-   *
-   * ⚠ 서버 가드(`SecurityUtil.assertOwnerOrAdmin`)가 보는 필드와 같은 축이어야 한다.
-   *   wrterId(esntlId)로 판정하면 서버가 검사하는 값과 다른 값으로 표시를 정하게 된다.
-   */
-  frstRgtrId?: string;
+  /** 응답을 만든 서버의 소유권·기능권한 판정. 쓰기 API는 다시 검증한다. */
+  editable?: boolean;
+  deletable?: boolean;
   ansCn: string;
   crtDt: string;
 }

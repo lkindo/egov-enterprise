@@ -310,9 +310,11 @@ export function validatePageAuthorizationBinding(proxySource, helperSource) {
   if (!proxy.includes(guardedBranch)) {
     errors.push('proxy must apply current authorization and the original pathname to every admin page before returning permission denial');
   }
-  if (!helper.includes(`import{PAGE_PERMISSIONS}from${literalToken('@/types/generated-permissions')};`)
+  if (!helper.includes(`import{PAGE_PERMISSIONS,PAGE_PERMISSION_MODES}from${literalToken('@/types/generated-permissions')};`)
     || !helper.includes('constexact=PAGE_PERMISSIONS[normalizedPath];')
-    || !helper.includes('if(!entry)returnfalse;constrequired=entry[1];returnrequired.length===0||canAnyPermission(subject,required);')) {
+    || !helper.includes('if(!entry)returnfalse;constrequired=entry[1];'
+      + `if(PAGE_PERMISSION_MODES[entry[0]]===${literalToken('ALL')})returnrequired.length>0&&required.every(permission=>canPermission(subject,permission));`
+      + 'returnrequired.length===0||canAnyPermission(subject,required);')) {
     errors.push('page helper must consume generated PAGE_PERMISSIONS, prefer exact routes, and deny unregistered pages');
   }
   return errors;
@@ -321,6 +323,8 @@ export function validatePageAuthorizationBinding(proxySource, helperSource) {
 export function parsePageAuthorizationSources(source, helper, catalog, generated) {
   const generatedMatch = /^export const PAGE_PERMISSIONS:[^=]+?=\s*(\{[\s\S]*?\});\s*$/m.exec(generated);
   const generatedPages = generatedMatch ? JSON.parse(generatedMatch[1]) : null;
+  const generatedModesMatch = /^export const PAGE_PERMISSION_MODES:[^=]+?=\s*(\{[\s\S]*?\});\s*$/m.exec(generated);
+  const generatedModes = generatedModesMatch ? JSON.parse(generatedModesMatch[1]) : null;
   const bindingErrors = validatePageAuthorizationBinding(source, helper);
   const pagePermissions = catalog.pagePermissions;
   const codes = new Set((catalog.permissions ?? []).map(({ code }) => code));
@@ -333,7 +337,16 @@ export function parsePageAuthorizationSources(source, helper, catalog, generated
   if (JSON.stringify(pagePermissions) !== JSON.stringify(generatedPages)) {
     bindingErrors.push('generated PAGE_PERMISSIONS must exactly match the source page permission registry');
   }
-  return { pagePermissions, bindingErrors };
+  const pagePermissionModes = catalog.pagePermissionModes ?? {};
+  if (!pagePermissionModes || typeof pagePermissionModes !== 'object' || Array.isArray(pagePermissionModes)
+      || Object.entries(pagePermissionModes).some(([route, mode]) => !Array.isArray(pagePermissions?.[route])
+        || pagePermissions[route].length === 0 || !['ANY', 'ALL'].includes(mode))) {
+    bindingErrors.push('page permission mode registry is invalid');
+  }
+  if (JSON.stringify(pagePermissionModes) !== JSON.stringify(generatedModes)) {
+    bindingErrors.push('generated PAGE_PERMISSION_MODES must exactly match the source page permission modes');
+  }
+  return { pagePermissions, pagePermissionModes, bindingErrors };
 }
 
 export function readProxyAccessRules(repoRoot = ROOT) {

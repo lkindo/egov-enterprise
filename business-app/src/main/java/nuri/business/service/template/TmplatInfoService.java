@@ -68,7 +68,7 @@ public class TmplatInfoService extends BaseAbstractService {
     @Transactional
     public TemplateDto updateTmplatInfo(String tmplatId, TemplateDto templateDto) {
         required(templateDto, "템플릿 정보는 null 일 수 없습니다");
-        Template template = templateRepository.findById(required(tmplatId, "템플릿 ID 는 null 일 수 없습니다"))
+        Template template = templateRepository.findByIdForUpdate(required(tmplatId, "템플릿 ID 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         template.update(templateDto.getTmpltNm(), templateDto.getTmpltSeCd(), templateDto.getTmpltPath(), templateDto.getUseYn());
         return templateMapper.toDto(template);
@@ -82,7 +82,7 @@ public class TmplatInfoService extends BaseAbstractService {
      */
     @Transactional
     public void deleteTmplatInfo(String tmplatId) {
-        Template template = templateRepository.findById(required(tmplatId, "템플릿 ID 는 null 일 수 없습니다"))
+        Template template = templateRepository.findByIdForUpdate(required(tmplatId, "템플릿 ID 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertNotReferenced(template.getTmpltId());
         templateRepository.delete(template);

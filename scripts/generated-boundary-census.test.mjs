@@ -9,6 +9,7 @@ import {
   buildBoundaryCensus,
   buildResponseShapeCensus,
   compareBoundaryCensus,
+  collectVerifiedMfaBffOperations,
   evaluateBoundaryCompletion,
   evaluateResponseShape,
   validateBoundaryCensus,
@@ -16,6 +17,28 @@ import {
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifestPath = join(repoRoot, 'config', 'governance', 'generated-api-boundaries.json');
+
+const mfaRoutePath = 'frontend/src/app/api/auth/mfa/[...path]/route.ts';
+const mfaRouteSource = readFileSync(join(repoRoot, mfaRoutePath), 'utf8');
+const mfaActions = {
+  status: 'mfaStatus', 'enrollment/start': 'mfaStartEnrollment',
+  'enrollment/prepare': 'mfaPrepareEnrollment', 'enrollment/confirm': 'mfaConfirmEnrollment',
+  verify: 'mfaVerifyLogin', reauthenticate: 'mfaReauthenticate',
+  'recovery-codes': 'mfaRegenerateRecoveryCodes', disable: 'mfaDisable', 'recovery/admin': 'mfaRecoverAccount',
+};
+const mfaPaths = Object.fromEntries(Object.entries(mfaActions).map(([action, operationId]) => [
+  `/api/v1/auth/mfa/${action}`,
+  { [action === 'status' ? 'get' : 'post']: { operationId, responses: { 200: { description: 'ok' } } } },
+]));
+const mfaDescriptors = Object.entries(mfaActions).map(([action, operationId]) => `
+  export const ${operationId}Operation = defineGeneratedOperation({
+    id: "${operationId}",
+    method: "${action === 'status' ? 'get' : 'post'}",
+    path: "/api/v1/auth/mfa/${action}",
+    requestKind: "${action === 'status' ? 'none' : 'json'}",
+    responseKind: "${['disable', 'recovery/admin'].includes(action) ? 'void' : 'json'}",
+  });
+`).join('\n');
 
 const widgetGeneratedOperations = `
   const defineGeneratedOperation = (descriptor: unknown) => descriptor;
@@ -66,6 +89,69 @@ function withFixture(files, callback, paths) {
     rmSync(root, { recursive: true, force: true });
   }
 }
+
+test('MFA BFF accepts only the exact bounded route with generated request and response evidence', () => {
+  assert.deepEqual(collectVerifiedMfaBffOperations({ repoRoot }).map(({ operationId }) => operationId),
+    Object.values(mfaActions).sort(), 'current generated descriptors and actual BFF must agree');
+  withFixture({
+    [mfaRoutePath]: mfaRouteSource,
+    'frontend/src/types/generated-operations.ts': mfaDescriptors,
+  }, (root) => {
+    const records = buildBoundaryCensus({ repoRoot: root }).records;
+    assert.equal(records.length, 2);
+    assert.ok(records.every((record) => record.classification === 'special' && record.specialCase === 'auth-bff'));
+    assert.deepEqual(collectVerifiedMfaBffOperations({ repoRoot: root }).map(({ operationId }) => operationId),
+      Object.values(mfaActions).sort());
+    writeFileSync(join(root, mfaRoutePath), mfaRouteSource + '\nexport const unbounded = () => axios.get("/api/v1/arbitrary");\n');
+    const unbounded = buildBoundaryCensus({ repoRoot: root }).records.find(({ owner }) => owner === 'unbounded');
+    assert.notEqual(unbounded?.specialCase, 'auth-bff');
+  }, mfaPaths);
+});
+
+test('MFA BFF missing parsers, allowlist, descriptor binding or transport linkage makes completion red', () => {
+  const mutations = [
+    ['missing GET response parser', 'parseGeneratedOperationResponse(mfaStatusOperation, response.data)', 'response.data'],
+    ['unbound parser import', "@/lib/api/generated-operation'", "@/test-doubles/generated-operation'"],
+    ['unbound descriptor import', "@/types/generated-operations'", "@/test-doubles/generated-operations'"],
+    ['missing request parser', 'parseGeneratedOperationRequest(operation, body)', 'body'],
+    ['unparsed transport body', ', parsedBody, { headers:', ', body, { headers:'],
+    ['missing response parser', 'parseGeneratedOperationResponse(operation, upstream.data)', 'upstream.data'],
+    ['unexecuted response parser', 'parseGeneratedOperationResponse(operation, upstream.data)', 'false && parseGeneratedOperationResponse(operation, upstream.data)'],
+    ['different response descriptor', 'parseGeneratedOperationResponse(operation, upstream.data)', 'parseGeneratedOperationResponse(mfaStatusOperation, upstream.data)'],
+    ['removed action guard', 'if (!Object.hasOwn(operations, path)) return failure(404);', ''],
+    ['inverted action guard', 'if (!Object.hasOwn(operations, path))', 'if (Object.hasOwn(operations, path))'],
+    ['wrong action descriptor', 'disable: mfaDisableOperation,', 'disable: mfaRecoverAccountOperation,'],
+    ['unbounded map spread', 'const operations = {', 'const operations = { ...extraActions,'],
+    ['map mutation after creation', 'type RouteContext =', '(operations as any).arbitrary = mfaDisableOperation;\ntype RouteContext ='],
+    ['unbounded action target', '/auth/mfa/${action}', '/auth/mfa/${path}'],
+    ['shadowed parser binding', 'const parsedBody = parseGeneratedOperationRequest', 'const parseGeneratedOperationRequest = (_: unknown, value: unknown) => value;\n    const parsedBody = parseGeneratedOperationRequest'],
+  ];
+  for (const [label, before, after] of mutations) {
+    assert.ok(mfaRouteSource.includes(before), `mutation must apply: ${label}`);
+    withFixture({
+      [mfaRoutePath]: mfaRouteSource.replace(before, after),
+      'frontend/src/types/generated-operations.ts': mfaDescriptors,
+    }, (root) => {
+      const census = buildBoundaryCensus({ repoRoot: root });
+      assert.ok(census.records.some((record) => record.specialCase !== 'auth-bff'), label);
+      assert.equal(evaluateBoundaryCompletion(census).complete, false, label);
+      assert.ok(collectVerifiedMfaBffOperations({ repoRoot: root }).length < 9, `ledger must reject: ${label}`);
+    }, mfaPaths);
+  }
+});
+
+test('MFA BFF descriptors must match actual OpenAPI operations and are not a general auth directory exemption', () => {
+  withFixture({
+    [mfaRoutePath]: mfaRouteSource,
+    'frontend/src/app/api/auth/arbitrary/route.ts': mfaRouteSource,
+    'frontend/src/types/generated-operations.ts': mfaDescriptors.replace('id: "mfaDisable"', 'id: "differentOperation"'),
+  }, (root) => {
+    const census = buildBoundaryCensus({ repoRoot: root });
+    assert.ok(census.records.filter(({ file }) => file.includes('/arbitrary/')).every(({ specialCase }) => specialCase !== 'auth-bff'));
+    assert.deepEqual(collectVerifiedMfaBffOperations({ repoRoot: root }).map(({ operationId }) => operationId), ['mfaStatus']);
+    assert.equal(evaluateBoundaryCompletion(census).complete, false);
+  }, mfaPaths);
+});
 
 test('inventories every production HTTP boundary at call level with honest classifications', () => {
   withFixture({

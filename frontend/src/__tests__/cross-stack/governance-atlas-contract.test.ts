@@ -11,6 +11,7 @@ const HTML = read('frontend/public/governance_harness_atlas.html');
 const PANELS = ['start', 'map', 'domains', 'flows', 'rules', 'data', 'change', 'verification', 'operations', 'evidence'];
 interface RecordData {
   id: string; source: string; title: string; summary: string; status: string;
+  searchText?: string;
   details?: Array<{ label: string; value: unknown }>;
   links?: Array<{ label: string; path: string }>;
 }
@@ -263,6 +264,31 @@ describe('Governance Atlas rendered source and interaction contract', () => {
     expect(workflowCard.open).toBe(true);
     workflowCard.open = false;
     search.dispatchEvent(new browser.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  });
+
+  it('finds Accepted ADR body terms under its stable decision ID and preserves canonical evidence links', () => {
+    const decision = current.catalogs.decisions.find(record => record.id === 'ADR-0001')!;
+    const canonical = decision.links!.find(link => link.path.endsWith('/ADR-0001-core-app-product-boundary.md'))!;
+    const bodyOnly = '장기 생존 브랜치';
+    expect(decision.summary).not.toContain(bodyOnly);
+    expect(decision.searchText).toContain(bodyOnly);
+    const search = document.getElementById('atlas-search') as HTMLInputElement;
+    search.value = `${decision.id} ${bodyOnly}`;
+    search.dispatchEvent(new browser.window.Event('input'));
+    const stableTarget = cardId('decisions', decision.id);
+    const result = [...document.querySelectorAll<HTMLAnchorElement>('#search-results a')]
+      .find(link => link.hash === `#evidence/${stableTarget}`);
+    expect(result).toBeDefined();
+    navigate(result!.hash.slice(1));
+    const card = document.getElementById(stableTarget) as HTMLDetailsElement;
+    expect(card.open).toBe(true);
+    expect([...card.querySelectorAll<HTMLAnchorElement>('a')].some(link =>
+      decodeURIComponent(new URL(link.href).pathname).endsWith(`/${canonical.path}`))).toBe(true);
+    search.value = `${decision.id} decision-search-deliberate-no-match`;
+    search.dispatchEvent(new browser.window.Event('input'));
+    expect(document.querySelectorAll('#search-results li')).toHaveLength(0);
+    search.dispatchEvent(new browser.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    card.open = false;
   });
 
   it('supports navigation keys and persistent accessible theme controls', () => {

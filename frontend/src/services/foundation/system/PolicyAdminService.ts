@@ -5,6 +5,7 @@ import {
   getPoliciesOperation,
   getPolicyOperation,
   updatePolicyOperation,
+  createPolicyOperation,
 } from '@/types/generated-operations';
 
 export type SystemPolicy = components['schemas']['Policy'];
@@ -26,6 +27,10 @@ class PolicyAdminService extends AdminService {
 
   async updatePolicy(type: string, data: PolicyUpdateRequest, config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(updatePolicyOperation, { path: { type }, body: data, config });
+  }
+
+  async createPolicy(type: string, data: PolicyUpdateRequest, config?: AxiosRequestConfig): Promise<void> {
+    return this.executeGenerated(createPolicyOperation, { path: { type }, body: data, config });
   }
 }
 

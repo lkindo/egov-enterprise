@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   refresh: vi.fn(),
   setQueryData: vi.fn(),
   toast: vi.fn(),
+  permissions: ['BOARD_CREATE', 'NOTICE_EDIT', 'FAQ_EDIT'],
 }));
 
 vi.mock('next/navigation', () => ({
@@ -27,7 +28,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('next/link', () => ({
   default: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => <a {...props}>{children}</a>,
 }));
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { role: 'USER' } }) }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { role: 'USER', permissions: mocks.permissions, authorizationVersion: 'v1' } }) }));
 vi.mock('@/app/actions/boardActions', () => ({ likeBoardArticle: mocks.likeArticle }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/layout/DynamicBreadcrumb', () => ({ DynamicBreadcrumb: () => <nav /> }));
@@ -99,12 +100,12 @@ vi.mock('@tanstack/react-query', () => ({
 
 import { BoardListClient } from '../BoardListClient';
 
-async function renderList() {
+async function renderList(requiredEditPermissions: string[] = []) {
   const initialData = {
     list: [],
     total: 0,
     totalPage: 0,
-    masterInfo: { bbsTtl: '테스트 게시판', tmpltId: 'TMPLT_LIST' },
+    masterInfo: { bbsTtl: '테스트 게시판', tmpltId: 'TMPLT_LIST', requiredEditPermissions },
     fetchError: null,
   };
   const dataPromise = Promise.resolve(initialData as any);
@@ -122,8 +123,21 @@ async function renderList() {
 
 describe('BoardListClient empty state (DIP B5 F9 · G15)', () => {
   beforeEach(() => {
+    mocks.permissions = ['BOARD_CREATE', 'NOTICE_EDIT', 'FAQ_EDIT'];
     vi.clearAllMocks();
     mocks.params = new Map([['bbsId', 'BBS-1']]);
+  });
+
+  it('지정 공지·FAQ에서는 두 추가 권한을 모두 가져야 글쓰기를 제공한다', async () => {
+    mocks.permissions = ['BOARD_CREATE', 'NOTICE_EDIT'];
+    await renderList(['NOTICE_EDIT', 'FAQ_EDIT']);
+    expect(screen.queryByRole('button', { name: '글쓰기' })).not.toBeInTheDocument();
+  });
+
+  it('일반 게시판의 기존 작성 권한은 글쓰기를 계속 제공한다', async () => {
+    mocks.permissions = ['BOARD_CREATE'];
+    await renderList([]);
+    expect(screen.getByRole('button', { name: '글쓰기' })).toBeVisible();
   });
 
   it('조건 없이 0건이면 게시글이 아직 없다고 말한다', async () => {

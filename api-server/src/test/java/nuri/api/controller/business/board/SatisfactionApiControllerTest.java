@@ -112,11 +112,14 @@ class SatisfactionApiControllerTest {
     @DisplayName("목록 - 경로의 bbsId/pstSn 가 서비스까지 전달된다")
     void listPassesPathVariables() throws Exception {
         when(satisfactionService.getSatisfactionList(anyString(), any(Long.class)))
-                .thenReturn(List.of(SatisfactionDto.builder().dgstfnSn(1L).dgstfnScr(5).build()));
+                .thenReturn(List.of(SatisfactionDto.builder().dgstfnSn(1L).dgstfnScr(5)
+                        .userId("private-evaluator").userNm("비공개 성명").build()));
 
         mockMvc.perform(get("/api/v1/boards/BBS_01/posts/1/satisfactions"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].dgstfnScr").value(5));
+                .andExpect(jsonPath("$.data[0].dgstfnScr").value(5))
+                .andExpect(jsonPath("$.data[0].userId").doesNotExist())
+                .andExpect(jsonPath("$.data[0].userNm").doesNotExist());
 
         verify(satisfactionService).getSatisfactionList("BBS_01", 1L);
     }

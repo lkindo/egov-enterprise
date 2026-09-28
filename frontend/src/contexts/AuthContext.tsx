@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { useQueryClient } from '@tanstack/react-query';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
 import { advanceAuthorizationRequestEpoch, AUTHORIZATION_CHANGED_EVENT, markSignedIn, markSignedOut } from '@/lib/auth/authorization-state';
+import type { AuthLoginData } from '@/lib/auth/auth-bff-contract';
 import { loginErrorMessage } from '@/lib/auth/login-error';
 import {
   purgeBoardDraftStorage,
@@ -13,9 +14,11 @@ import {
 interface AuthContextType {
   user: UserInfo | null;
   loading: boolean;
-  login: (credentials: Record<string, string>) => Promise<void>;
+  mfaPending: boolean;
+  login: (credentials: Record<string, string>) => Promise<AuthLoginData>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  enterMfaChallenge: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,10 +32,12 @@ export function AuthProvider({
 }) {
   const [user, setUser] = useState<UserInfo | null>(initialUser);
   const [loading, setLoading] = useState(!initialUser);
+  const [isMfaPending, setMfaPending] = useState(false);
   const queryClient = useQueryClient();
   const currentUser = useRef(initialUser);
   const requestEpoch = useRef(0);
   const inFlightCheck = useRef<Promise<void> | null>(null);
+  const mfaPending = useRef(false);
   const invalidateAuthCheck = useCallback(() => {
     ++requestEpoch.current;
     inFlightCheck.current = null;
@@ -56,6 +61,7 @@ export function AuthProvider({
 
   const checkAuth = useCallback((): Promise<void> => {
     if (typeof window === 'undefined') return Promise.resolve();
+    if (mfaPending.current) return Promise.resolve();
     if (inFlightCheck.current) return inFlightCheck.current;
     const epoch = ++requestEpoch.current;
     const pending = (async () => {
@@ -76,7 +82,19 @@ export function AuthProvider({
     return pending;
   }, [commitUser]);
 
+  const enterMfaChallenge = useCallback(() => {
+    // Enrollment revokes the ordinary session. Stop polling/WS and discard delayed auth checks.
+    mfaPending.current = true;
+    setMfaPending(true);
+    markSignedOut();
+    invalidateAuthCheck();
+    commitUser(null);
+    setLoading(false);
+  }, [commitUser, invalidateAuthCheck]);
+
   const login = useCallback(async (credentials: Record<string, string>) => {
+    mfaPending.current = false;
+    setMfaPending(false);
     advanceAuthorizationRequestEpoch();
     const epoch = ++requestEpoch.current;
     inFlightCheck.current = null;
@@ -90,20 +108,29 @@ export function AuthProvider({
       };
       
       // Next.js Route Handler 로그인 호출 (토큰은 쿠키로 설정됨)
-      await authService.login(loginData);
+      const result = await authService.login(loginData);
+      if (epoch !== requestEpoch.current) throw new Error('Superseded authentication attempt');
+      if (result.authenticationStage === 'MFA_REQUIRED' || result.authenticationStage === 'ENROLLMENT_REQUIRED') {
+        enterMfaChallenge();
+        return result;
+      }
 
       // 전역 상태 업데이트
       const userData = await authService.getCurrentUser();
-      if (epoch === requestEpoch.current) commitUser(userData);
+      if (epoch !== requestEpoch.current) throw new Error('Superseded authentication attempt');
+      commitUser(userData);
+      return result;
     } catch (error) {
       // 요청 제한·서비스 장애만 따로 말하고 나머지는 같은 문구다(DIP D2).
       throw new Error(loginErrorMessage(error));
     } finally {
       if (epoch === requestEpoch.current) setLoading(false);
     }
-  }, [commitUser]);
+  }, [commitUser, enterMfaChallenge]);
 
   const logout = useCallback(async () => {
+    mfaPending.current = false;
+    setMfaPending(false);
     // 캐시를 비우기 전에 막는다 — 비운 순간 다시 렌더되는 화면의 조회가 여기서 취소된다(DIP B4).
     markSignedOut();
     advanceAuthorizationRequestEpoch();
@@ -147,7 +174,7 @@ export function AuthProvider({
   }, [checkAuth, invalidateAuthCheck]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, checkAuth }}>
+    <AuthContext.Provider value={{ user, loading, mfaPending: isMfaPending, login, logout, checkAuth, enterMfaChallenge }}>
       {children}
     </AuthContext.Provider>
   );

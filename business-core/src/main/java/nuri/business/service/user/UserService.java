@@ -77,6 +77,7 @@ public class UserService extends BaseAbstractService {
         private final ApplicationEventPublisher eventPublisher;
         private final nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots;
         private final nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration;
+        private final nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
 
         public UserService(UserRepository userRepository, UserAuthorityRepository userAuthorityRepository,
                         RefreshTokenRepository refreshTokenRepository, LoginPolicyRepository loginPolicyRepository,
@@ -87,7 +88,8 @@ public class UserService extends BaseAbstractService {
                         PasswordEncoder passwordEncoder,
                         ApplicationEventPublisher eventPublisher,
                         nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots,
-                        nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration) {
+                        nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration,
+                        nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit) {
                 this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
                 this.userAuthorityRepository = required(userAuthorityRepository,
                                 "UserAuthorityRepository 는 null 일 수 없습니다");
@@ -105,6 +107,7 @@ public class UserService extends BaseAbstractService {
                 this.eventPublisher = required(eventPublisher, "ApplicationEventPublisher 는 null 일 수 없습니다");
                 this.authorizationSnapshots = required(authorizationSnapshots);
                 this.authorizationAdministration = required(authorizationAdministration);
+                this.sensitiveAudit = required(sensitiveAudit);
         }
 
         /**
@@ -423,6 +426,9 @@ public class UserService extends BaseAbstractService {
          * access token 은 서명 기반이라 여기서 폐기되지 않고 자기 만료 시각까지 유효하다.
          */
         private void revokeRefreshTokens(User user) {
+                // 사용자→MFA 자격→refresh 순서로 잠근다. 비밀번호 이전의 도전은 더 이상 증명이 아니다.
+                userRepository.flush();
+                eventPublisher.publishEvent(new nuri.foundation.core.event.UserCredentialsChangedEvent(user.getEsntlId()));
                 refreshTokenRepository.deleteAllByEsntlIdIn(List.of(user.getEsntlId()));
         }
 
@@ -468,6 +474,10 @@ public class UserService extends BaseAbstractService {
                         // 재귀속 종착 계정이 사라지면 콘텐츠 보존 정책 자체가 붕괴한다
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
                 }
+                authorizationAdministration.lockAndAuthorize("USER_DELETE");
+                // 관리 전역 잠금 다음 사용자 행부터 잠가 MFA 완료·비밀번호 변경의 사용자→refresh 순서를 지킨다.
+                // refresh를 먼저 지우면 사용자 행을 보유한 MFA 요청과 서로 기다릴 수 있다.
+                esntlIds.stream().distinct().sorted().forEach(userRepository::findByEsntlIdForUpdate);
                 authorizationAdministration.removeDeletedUsers(esntlIds);
                 // [P2 키 규약] tb_auth_rfsh_tk 는 esntlId 단일 키잉 — 발급/로그아웃/재발급 전 경로가
                 // esntlId 기준임을 실측 확인했고, 레거시 loginId 키 행은 V2_18 이 정리한다(생성 경로 없음).
@@ -571,15 +581,18 @@ public class UserService extends BaseAbstractService {
         public void updatePasswordByAdmin(@NonNull String userId, @NonNull String newPassword) {
                 // [보안] 관리자 권한 확인
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_PASSWORD");
+                authorizationAdministration.lockAndAuthorize("USER_PASSWORD");
 
                 User user = userRepository.findByUserId(userId)
                                 .or(() -> userRepository.findById(userId))
                                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+                authorizationAdministration.authorizeProtectedAccountChange(user.getEsntlId());
                 user.updatePassword(passwordEncoder.encode(newPassword));
                 // [2026-09-26 DIP B4 P7, D5] 초기화는 계정 잠금도 푼다 — 잠긴 채로 새 비밀번호를 알려 주면 잠금 시간이
                 //   지날 때까지 그 비밀번호로도 들어올 수 없다.
                 user.unlockAccount();
                 revokeRefreshTokens(user);
+                sensitiveAudit.recordMutation("ADMIN_PASSWORD_RESET", user.getEsntlId());
         }
 
         /**
@@ -589,9 +602,11 @@ public class UserService extends BaseAbstractService {
         @Transactional
         public void unlockUser(@NonNull String userId) {
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_STATUS");
+                authorizationAdministration.lockAndAuthorize("USER_STATUS");
                 User user = userRepository.findByUserId(userId)
                                 .or(() -> userRepository.findById(userId))
                                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+                authorizationAdministration.authorizeProtectedAccountChange(user.getEsntlId());
                 user.unlockAccount();
         }
 
@@ -605,6 +620,7 @@ public class UserService extends BaseAbstractService {
                 authorizationAdministration.lockAndAuthorize("USER_STATUS");
                 long managerCount = authorizationAdministration.managerCount();
                 List<User> users = findAllByLoginIdOrThrow(userIds);
+                users.forEach(user -> authorizationAdministration.authorizeProtectedAccountChange(user.getEsntlId()));
                 users.forEach(user -> user.updateStatus(status));
                 userRepository.saveAllAndFlush(users);
                 authorizationAdministration.protectLastManager(managerCount);

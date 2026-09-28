@@ -124,13 +124,14 @@ class BoardEventListenerTest {
                 Board.builder().pstSn(1L).bbsId("BBS_01").pstTtl("연차 신청 안내")
                         .userId("USRCNFRM_AUTHOR").build()));
 
-        boardEventListener.handlePostCommented(
-                new PostCommentedEvent("BBS_01", 1L, "USRCNFRM_OTHER", "홍길동"));
+        var event = new PostCommentedEvent("BBS_01", 1L, "USRCNFRM_OTHER", "홍길동");
+        boardEventListener.handlePostCommented(event);
 
         org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> captor =
                 org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
         verify(eventPublisher).publishEvent(captor.capture());
         assertThat(captor.getValue().receiverEsntlId()).isEqualTo("USRCNFRM_AUTHOR");
+        assertThat(captor.getValue().eventId()).isEqualTo(event.eventId());
         assertThat(captor.getValue().content()).contains("홍길동").contains("연차 신청 안내");
         assertThat(captor.getValue().linkUrl()).contains("BBS_01").contains("1");
     }
@@ -171,5 +172,14 @@ class BoardEventListenerTest {
                 new PostCommentedEvent("BBS_01", 1L, "USRCNFRM_OTHER", "홍길동"));
 
         verify(eventPublisher, never()).publishEvent(any(Object.class));
+    }
+
+    @Test void failedNotificationIntentRollsBackTheCallingCommentTransaction() {
+        given(boardRepository.findById(1L)).willReturn(java.util.Optional.of(
+                Board.builder().pstSn(1L).bbsId("BBS_01").userId("author").build()));
+        org.mockito.Mockito.doThrow(new IllegalStateException("intent store unavailable"))
+                .when(eventPublisher).publishEvent(any(nuri.foundation.core.event.NotificationRequestedEvent.class));
+        assertThatThrownBy(() -> boardEventListener.handlePostCommented(new PostCommentedEvent("BBS_01", 1L, "other", "이름")))
+                .isInstanceOf(IllegalStateException.class);
     }
 }

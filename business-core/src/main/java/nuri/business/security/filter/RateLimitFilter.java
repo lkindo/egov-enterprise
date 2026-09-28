@@ -124,7 +124,8 @@ public class RateLimitFilter implements Filter {
         }
 
         String clientIp = getClientIp(httpRequest);
-        boolean login = httpRequest.getRequestURI().contains("/auth/login");
+        boolean login = httpRequest.getRequestURI().contains("/auth/login")
+                || httpRequest.getRequestURI().startsWith("/api/v1/auth/mfa/");
 
         // 로그인은 전용 버킷을 먼저 본다 — 로그인 한도를 넘긴 요청이 전체 한도까지 깎지 않게 한다.
         String deniedBy = null;

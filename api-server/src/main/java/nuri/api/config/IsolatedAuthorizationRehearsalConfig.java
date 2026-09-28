@@ -72,7 +72,42 @@ public class IsolatedAuthorizationRehearsalConfig {
                 throw new IllegalStateException("Disposable authorization rehearsal connection failed",failure);
             }
             flyway.migrate();
+            seedDisposableContentEditors(flyway,profiles,ack,expected);
         };
+    }
+
+    /** Explicit E2E content-editor fixture; never changes the production catalog or migration-only smoke bootstrap. */
+    static void seedDisposableContentEditors(Flyway flyway,Set<String> profiles,String ack,Target expected) {
+        boolean devFixtures=Arrays.stream(flyway.getConfiguration().getLocations())
+                .anyMatch(location -> "classpath:db/seed-dev".equals(location.getDescriptor()));
+        if (!devFixtures) return;
+        try (var connection=flyway.getConfiguration().getDataSource().getConnection()) {
+            Target actual=validateTarget(profiles,connection.getMetaData().getURL(),ack);
+            if (!expected.equals(actual) || !"PostgreSQL".equals(connection.getMetaData().getDatabaseProductName())) {
+                throw new IllegalStateException("Disposable content fixture datasource changed");
+            }
+            connection.setAutoCommit(false);
+            try {
+                var jdbc=new JdbcTemplate(new SingleConnectionDataSource(connection,true));
+                Integer syntheticAdmin=jdbc.queryForObject("SELECT count(*) FROM tb_user_info u "
+                        + "JOIN tb_authrt_user_map m ON m.scrty_dcsn_trgt_id=u.esntl_id "
+                        + "WHERE u.esntl_id='USRCNFRM_00000000001' AND u.user_id='webmaster' AND m.authrt_cd='ROLE_ADMIN'",Integer.class);
+                if (!Integer.valueOf(1).equals(syntheticAdmin)) {
+                    throw new IllegalStateException("Disposable content editor requires the seeded synthetic administrator");
+                }
+                for (String permission:java.util.List.of("NOTICE_EDIT","FAQ_EDIT")) {
+                    jdbc.update("INSERT INTO tb_authrt_grnt_map(authrt_cd,authrt_type_cd,authrt_grnt_cd,frst_rgtr_id,crt_dt,last_mdfr_id,mdfcn_dt) "
+                            + "VALUES ('ROLE_ADMIN','OPERATION',?,'E2E_FIXTURE',CURRENT_TIMESTAMP,'E2E_FIXTURE',CURRENT_TIMESTAMP) "
+                            + "ON CONFLICT (authrt_cd,authrt_type_cd,authrt_grnt_cd) DO NOTHING",permission);
+                }
+                connection.commit();
+            } catch (Exception failure) {
+                connection.rollback();
+                throw new IllegalStateException("Disposable content editor fixture failed",failure);
+            }
+        } catch (java.sql.SQLException failure) {
+            throw new IllegalStateException("Cannot verify disposable content editor datasource",failure);
+        }
     }
 
     static Target validateTarget(Set<String> profiles,String url,String ack) {

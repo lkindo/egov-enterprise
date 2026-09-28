@@ -29,6 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthorizationAdministrationService {
     private final JdbcTemplate jdbc;
     private static final Set<String> RESERVED = Set.of("ROLE_ADMIN", "ROLE_SYSTEM", "ROLE_USER", "ROLE_ANONYMOUS");
+    private static final Set<String> PROTECTED_PERMISSIONS = Set.of("AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD");
+    // Recovery authority needs the same trusted administration boundary without changing D02 account classification.
+    private static final Set<String> SENSITIVE_ADMINISTRATION_PERMISSIONS = Set.of("AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD", "MFA_RECOVER");
 
     public List<GroupSummary> groups() {
         SecurityUtil.assertPermission("AUTHRT_READ");
@@ -180,6 +183,7 @@ public class AuthorizationAdministrationService {
         if (RESERVED.contains(code)) invalid("예약된 그룹은 삭제할 수 없습니다.");
         var before = readGroup(code); requireVersion(before.version(),expectedVersion);
         if (jdbc.queryForObject("SELECT count(*) FROM tb_authrt_user_map WHERE authrt_cd=?",Long.class,code) != 0) throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE);
+        if (before.grants().stream().anyMatch(AuthorizationAdministrationService::isSensitiveAdministrationGrant)) authorizeProtectedAdministration();
         String id = UUID.randomUUID().toString();
         for (var grant: before.grants()) removeGrant(id,code,grant);
         jdbc.update("DELETE FROM tb_authrt_info WHERE authrt_cd=?",code);
@@ -260,6 +264,9 @@ public class AuthorizationAdministrationService {
     }
 
     private void applyGrants(String request, String group, List<Grant> before, Set<Grant> desired) {
+        boolean changesSensitiveGrant = before.stream().anyMatch(grant -> isSensitiveAdministrationGrant(grant) && !desired.contains(grant))
+                || desired.stream().anyMatch(grant -> isSensitiveAdministrationGrant(grant) && !before.contains(grant));
+        if (changesSensitiveGrant) authorizeProtectedAdministration();
         for (Grant old: before) if (!desired.contains(old)) removeGrant(request,group,old);
         for (Grant grant: desired) if (!before.contains(grant)) addGrant(request,group,grant);
     }
@@ -290,6 +297,13 @@ public class AuthorizationAdministrationService {
     }
 
     private void applyMemberships(String request, String userId, List<String> before, Set<String> desired) {
+        // Sensitive membership changes must not bypass protected-account or MFA recovery administration.
+        // Inspect changed groups themselves, even if another group currently supplies the same grant.
+        var changedGroups = new TreeSet<>(before);
+        changedGroups.addAll(desired);
+        changedGroups.removeIf(group -> before.contains(group) && desired.contains(group));
+        if (changedGroups.stream().anyMatch(group -> readGrants(group).stream()
+                .anyMatch(AuthorizationAdministrationService::isSensitiveAdministrationGrant))) authorizeProtectedAdministration();
         for (String group: before) if (!desired.contains(group)) {
             jdbc.update("DELETE FROM tb_authrt_user_map WHERE scrty_dcsn_trgt_id=? AND authrt_cd=?",userId,group);
             audit(request,"USER_GROUP","REMOVE",group,userId,null,"membership",group,null);
@@ -419,6 +433,32 @@ public class AuthorizationAdministrationService {
                 )
                 """, Boolean.class, actor, permission);
         if (!Boolean.TRUE.equals(allowed)) throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+    }
+
+    /**
+     * Caller retains its own operation permission. Protected targets additionally need the two
+     * trusted administration permissions, read from the DB after the shared serialization lock.
+     * Inactive or locked targets retain protection: their grants, not ability to log in, classify them.
+     */
+    @Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public void authorizeProtectedAccountChange(String esntlId) {
+        lockAdministration();
+        boolean protectedAccount = readMemberships(esntlId).groups().stream()
+                .anyMatch(group -> readGrants(group).stream().anyMatch(AuthorizationAdministrationService::isProtectedGrant));
+        if (protectedAccount) authorizeProtectedAdministration();
+    }
+
+    private void authorizeProtectedAdministration() {
+        lockAndAuthorize("AUTHRT_GRANT");
+        lockAndAuthorize("AUTHRT_ASSIGN");
+    }
+
+    private static boolean isProtectedGrant(Grant grant) {
+        return "OPERATION".equals(grant.type()) && PROTECTED_PERMISSIONS.contains(grant.code());
+    }
+
+    private static boolean isSensitiveAdministrationGrant(Grant grant) {
+        return "OPERATION".equals(grant.type()) && SENSITIVE_ADMINISTRATION_PERMISSIONS.contains(grant.code());
     }
 
     public long managerCount() {

@@ -105,6 +105,10 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
 
   const communities = data?.list ?? [];
   const total = data?.total ?? 0;
+  const activeTemplates = (templates ?? []).filter(template => template.tmpltId && template.useYn === 'Y');
+  const existingTemplateId = editing?.tmpltId;
+  const preserveExistingTemplate = !!existingTemplateId
+    && !activeTemplates.some(template => template.tmpltId === existingTemplateId);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['admin-communities'] });
@@ -118,12 +122,12 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
   };
 
   const startEdit = (community: Community) => {
-    if (!canUpdate) return;
+    if (!canUpdate || community.editable !== true) return;
     setEditing(community);
     form.reset({
       cmntyNm: community.cmntyNm ?? '',
       cmntyIntroCn: community.cmntyIntrcn ?? '',
-      tmpltId: (community as Community & { tmpltId?: string }).tmpltId || undefined,
+      tmpltId: community.tmpltId || undefined,
       useYn: community.useYn === 'N' ? 'N' : 'Y',
     });
   };
@@ -162,7 +166,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
   };
 
   const handleClose = async (community: Community) => {
-    if (!canDelete) return;
+    if (!canDelete || community.deletable !== true) return;
     if (closePendingRef.current) return;
     closePendingRef.current = true;
     setPendingCloseSn(community.cmntySn);
@@ -277,10 +281,10 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                     <Button type="button" variant="ghost" size="icon" aria-label={`${community.cmntyNm} 회원 관리`} onClick={() => setMembersOf(community)} disabled={saving}>
                       <Users size={16} aria-hidden="true" />
                     </Button>
-                    {canUpdate && <Button type="button" variant="ghost" size="icon" aria-label={`${community.cmntyNm} 수정`} onClick={() => startEdit(community)} disabled={saving}>
+                    {canUpdate && community.editable === true && <Button type="button" variant="ghost" size="icon" aria-label={`${community.cmntyNm} 수정`} onClick={() => startEdit(community)} disabled={saving}>
                       <Pencil size={16} aria-hidden="true" />
                     </Button>}
-                    {canDelete && <Button
+                    {canDelete && community.deletable === true && <Button
                       type="button"
                       variant="ghost"
                       size="icon"
@@ -350,8 +354,12 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                 <FormItem>
                   <FormLabel>템플릿</FormLabel>
                   <Select
-                    value={field.value ?? NO_TEMPLATE}
-                    onValueChange={(value) => field.onChange(value === NO_TEMPLATE ? undefined : value)}
+                    value={field.value || NO_TEMPLATE}
+                    onValueChange={(value) => {
+                      // 동적 기존 항목을 등록할 때 Radix의 native bridge가 빈 값을 보낼 수 있다.
+                      // 해제는 명시적인 '템플릿 없음'만 허용하고 RHF의 reset 기본값으로 되돌리지 않는다.
+                      if (value) field.onChange(value === NO_TEMPLATE ? '' : value);
+                    }}
                   >
                     <FormControl>
                       <SelectTrigger className="rounded-lg" aria-label="템플릿">
@@ -360,8 +368,10 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                     </FormControl>
                     <SelectContent>
                       <SelectItem value={NO_TEMPLATE}>템플릿 없음</SelectItem>
-                      {(templates ?? [])
-                        .filter((template) => Boolean(template.tmpltId))
+                      {preserveExistingTemplate && existingTemplateId && <SelectItem value={existingTemplateId}>
+                        {existingTemplateId} (기존 선택 유지·사용 상태 확인 필요)
+                      </SelectItem>}
+                      {activeTemplates
                         .map((template) => (
                           <SelectItem key={template.tmpltId} value={template.tmpltId as string}>
                             {template.tmpltNm || template.tmpltId}
@@ -369,6 +379,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                         ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">새 선택은 사용 중인 원장 항목만 가능합니다. 기존 선택은 유지할 수 있으며 경로 등록만으로 새 화면이 만들어지지는 않습니다.</p>
                   <FormMessage />
                 </FormItem>
               )}

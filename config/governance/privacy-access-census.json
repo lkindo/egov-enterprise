@@ -1,7 +1,12 @@
 {
   "schemaVersion": 1,
   "description": "개인정보 접근 증적(@PrivacyAccess) census 의 판정 원장. PrivacyAccessCensusLinterTest 가 읽고, scripts/privacy-access-census-contract.test.mjs 가 pack 태그를 재사용 base 생성기의 실제 제거 계획과 대조한다. 핸들러는 FQN#method 로 식별한다. 편집하면 baseline-manifest 의 __registry 해시도 함께 바뀌어야 한다.",
-  "packs": ["core", "collaboration", "survey", "demo"],
+  "packs": [
+    "core",
+    "collaboration",
+    "survey",
+    "demo"
+  ],
   "declaredHandlers": [
     {
       "controller": "nuri.api.controller.UserApiController",
@@ -34,6 +39,42 @@
       "method": "searchUsers",
       "pack": "demo",
       "note": "[2026-09-08 PD-SRVY-001] 설문 응답자 2건이 여기서 빠졌다 — 그 관리 표면(API 5본·화면)을 걷었기 때문이다. tb_srvy_rspdnt 는 성명·성별·생년월일·전화번호를 담는데 응답 결과와 ID 로 연결되지 않고 행을 만드는 경로도 없어 화면이 항상 빈 목록이었다. 테이블·엔티티는 남으므로 표면이 되살아나면 이 census 도 함께 복구한다."
+    },
+    {
+      "controller": "nuri.api.controller.business.addressbook.AddressBookApiController",
+      "method": "searchUserSelections",
+      "pack": "demo",
+      "note": "D03: 최소 사용자 선택도 이름·부서·내부 식별자를 조합하므로 민감 조회 감사 유지"
+    },
+    {
+      "controller": "nuri.api.controller.business.file.FileApiController",
+      "method": "downloadFile",
+      "pack": "core"
+    },
+    {
+      "controller": "nuri.api.controller.foundation.controller.system.log.LoginLogApiController",
+      "method": "exportLoginLogs",
+      "pack": "core"
+    },
+    {
+      "controller": "nuri.api.controller.foundation.controller.system.log.SystemLogApiController",
+      "method": "exportSystemLogs",
+      "pack": "core"
+    },
+    {
+      "controller": "nuri.api.controller.foundation.controller.system.log.UserLogApiController",
+      "method": "exportUserLogs",
+      "pack": "core"
+    },
+    {
+      "controller": "nuri.api.controller.foundation.controller.system.log.WebLogApiController",
+      "method": "exportWebLogs",
+      "pack": "core"
+    },
+    {
+      "controller": "nuri.api.controller.foundation.controller.system.log.PrivacyLogApiController",
+      "method": "exportPrivacyLogs",
+      "pack": "core"
     }
   ],
   "sensitiveGetExemptions": [
@@ -75,10 +116,29 @@
     }
   ],
   "knownSensitiveResponseTypes": [
-    { "type": "nuri.business.service.user.dto.UserDto", "pack": "core" },
-    { "type": "nuri.business.service.operation.dto.ExternalHrDto", "pack": "demo" },
-    { "type": "nuri.business.service.sms.dto.SmsRecptnDto", "pack": "collaboration" },
-    { "type": "nuri.business.service.addressbook.dto.AddressBookDto", "pack": "demo" },
-    { "type": "nuri.business.service.addressbook.dto.AddressBookUserDto", "pack": "demo" }
+    {
+      "type": "nuri.business.service.user.dto.UserDto",
+      "pack": "core"
+    },
+    {
+      "type": "nuri.business.service.operation.dto.ExternalHrDto",
+      "pack": "demo"
+    },
+    {
+      "type": "nuri.business.service.sms.dto.SmsRecptnDto",
+      "pack": "collaboration"
+    },
+    {
+      "type": "nuri.business.service.addressbook.dto.AddressBookDto",
+      "pack": "demo"
+    },
+    {
+      "type": "nuri.business.service.addressbook.dto.AddressBookUserDto",
+      "pack": "demo"
+    },
+    {
+      "type": "nuri.business.service.addressbook.dto.AddressBookUserSelectionDto",
+      "pack": "demo"
+    }
   ]
 }

@@ -21,6 +21,12 @@ export function closedEnvironment(source = process.env) {
     /^(PATH|SYSTEMROOT|WINDIR|COMSPEC|PATHEXT|TEMP|TMP|HOME|USERPROFILE|APPDATA|LOCALAPPDATA|PROGRAMDATA|PROGRAMFILES|PROGRAMW6432|JAVA_HOME|GRADLE_USER_HOME|CI|GITHUB_ACTIONS|GITHUB_RUN_ID|GITHUB_RUN_ATTEMPT|PLAYWRIGHT_BROWSERS_PATH|PLAYWRIGHT_JSON_OUTPUT_FILE|PLAYWRIGHT_HTML_OUTPUT_DIR|DOCKER_CONFIG|DOCKER_CONTEXT)$/i.test(key)));
 }
 
+/** A new keyring belongs only to this disposable API run; never read inherited MFA settings. */
+export function createIsolatedMfaEnvironment() {
+  return { MFA_ACTIVE_KEY_ID: 'e2e', MFA_KEYS_JSON: JSON.stringify({ e2e: randomBytes(32).toString('base64') }),
+    MFA_REQUIRE_PROTECTED: 'false' };
+}
+
 export function assertNoDotEnv(directory) {
   // Check names only. Never parse or temporarily rename another user's environment files.
   if (readdirSync(directory).some(name => /^\.env(?:$|\.(?!example$|sample$|template$))/.test(name))) {
@@ -182,12 +188,13 @@ export async function main(arguments_ = process.argv.slice(2)) {
       apiPort = await freePort();
       jwtSecret = randomBytes(48).toString('hex');
       const apiEnvironment = { ...clean, SPRING_PROFILES_ACTIVE: 'e2e',
+        ...createIsolatedMfaEnvironment(),
         DB_URL: `jdbc:postgresql://127.0.0.1:${databasePort}/authz_e2e`, DB_USERNAME: 'egov', DB_PASSWORD: password,
         SERVER_ADDRESS: '127.0.0.1', SERVER_PORT: String(apiPort), JWT_SECRET: jwtSecret,
         CORS_ALLOWED_ORIGINS: webUrl,
         JWT_ACCESS_TOKEN_VALIDITY_MS: '21600000', ALGORITHM_KEY: randomBytes(24).toString('hex'),
         NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true', NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE',
-        GLOBALS_FILE_STOREPATH: path.join(output, 'uploads'), NURI_LOG_RETENTION_ENABLED: 'false', NURI_ATTACHMENT_INTEGRITY_ENABLED: 'false' };
+        FILE_UPLOAD_PATH: path.join(output, 'uploads'), NURI_LOG_RETENTION_ENABLED: 'false', NURI_ATTACHMENT_INTEGRITY_ENABLED: 'false' };
       api = launch('backend', java, ['-jar', path.join(root, 'api-server/build/libs', jars[0]),
         '--spring.config.location=classpath:/'], output, apiEnvironment);
     }

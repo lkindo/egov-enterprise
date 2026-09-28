@@ -81,6 +81,11 @@ const SOURCE_EXTENSIONS = new Set([
   '.cjs',
 ]);
 const SHARED_API_CLIENT_FILE = 'frontend/src/lib/api/client.ts';
+const MFA_BFF_FILE = 'frontend/src/app/api/auth/mfa/[...path]/route.ts';
+const MFA_BFF_POST_ACTIONS = new Set([
+  'enrollment/start', 'enrollment/prepare', 'enrollment/confirm', 'verify',
+  'reauthenticate', 'recovery-codes', 'disable', 'recovery/admin',
+]);
 const INFRASTRUCTURE_FILES = new Set([
   'frontend/src/lib/api/generated-api-client.ts',
   'frontend/src/lib/navigation/full-result-download.ts',
@@ -371,6 +376,7 @@ function collectSourceSymbols(sourceFile) {
     generatedDescriptorBindings: new Map(),
     generatedExecutorBindings: new Map(),
     generatedExecutorLookalikeAliases: new Set(),
+    generatedParserBindings: new Map(),
     generatedServiceBaseBindings: new Map(),
     helpers: new Map(),
     navigationHelperBindings: new Map(),
@@ -392,6 +398,10 @@ function collectSourceSymbols(sourceFile) {
         for (const element of clause.namedBindings.elements) {
           if (element.isTypeOnly) continue;
           const importedName = element.propertyName?.text ?? element.name.text;
+          if (isExactFrontendModule(resolvedModuleName, 'lib/api/generated-operation')
+            && ['parseGeneratedOperationRequest', 'parseGeneratedOperationResponse'].includes(importedName)) {
+            addExactImportBinding(symbols.generatedParserBindings, element.name.text, importedName, element);
+          }
           if (GENERATED_EXECUTOR_EXPORTS.has(importedName)) {
             symbols.generatedExecutorLookalikeAliases.add(element.name.text);
             if (isExactFrontendModule(resolvedModuleName, 'lib/api/generated-api-client')) {
@@ -945,6 +955,165 @@ function directOrLegacyMetadata(call, recognized, context) {
   return { descriptorName: null, method, target, ...mapping };
 }
 
+function unwrapMfaExpression(expression) {
+  while (expression && (ts.isAsExpression(expression) || ts.isParenthesizedExpression(expression)
+    || ts.isTypeAssertionExpression(expression) || ts.isSatisfiesExpression(expression))) {
+    expression = expression.expression;
+  }
+  return expression;
+}
+
+function declarationAtUse(identifier) {
+  if (!identifier || !ts.isIdentifier(identifier)) return null;
+  for (let scope = identifier; scope; scope = scope.parent) {
+    const declarations = scopeBindings(scope, identifier.text);
+    if (declarations.length > 0) return declarations.length === 1 ? declarations[0] : null;
+  }
+  return null;
+}
+
+function constAtUse(identifier) {
+  const declaration = declarationAtUse(identifier);
+  return declaration && ts.isVariableDeclaration(declaration)
+    && (declaration.parent.flags & ts.NodeFlags.Const) !== 0 ? declaration : null;
+}
+
+function isGeneratedParser(call, name, context) {
+  return ts.isCallExpression(call) && ts.isIdentifier(call.expression)
+    && exactImportedNameAtUse(context.symbols.generatedParserBindings, call.expression.text, call.expression) === name;
+}
+
+function verifiedMfaDescriptor(expression, action, context) {
+  if (!expression || !ts.isIdentifier(expression)) return null;
+  const name = exactImportedNameAtUse(context.symbols.generatedDescriptorBindings, expression.text, expression);
+  const descriptor = context.descriptors.get(name);
+  const method = action === 'status' ? 'get' : 'post';
+  const path = `/api/v1/auth/mfa/${action}`;
+  const responseKind = ['disable', 'recovery/admin'].includes(action) ? 'void' : 'json';
+  if (!descriptor || descriptor.method !== method || descriptor.path !== path
+    || descriptor.requestKind !== (action === 'status' ? 'none' : 'json') || descriptor.responseKind !== responseKind) return null;
+  const mapping = mapOpenApi(method, path, context.operations);
+  return mapping.mappingStatus === 'openapi-route' && mapping.operationId === descriptor.operationId ? descriptor : null;
+}
+
+/** Deliberately narrow recognizer for the real MFA handler, not a general auth-path exemption. */
+function verifiedMfaBffDescriptors(call, recognized, context) {
+  if (context.file !== MFA_BFF_FILE || recognized.transport !== 'axios'
+    || !['get', 'post'].includes(recognized.method)) return [];
+  const receiver = call.expression.expression;
+  const axiosImport = declarationAtUse(receiver);
+  if (!axiosImport || !ts.isImportClause(axiosImport) || axiosImport.parent.moduleSpecifier.text !== 'axios') return [];
+  let handler = call.parent;
+  while (handler && !ts.isFunctionLike(handler)) handler = handler.parent;
+  if (!handler || !ts.isFunctionDeclaration(handler) || handler.parent !== call.getSourceFile()
+    || handler.name?.text !== recognized.method.toUpperCase()
+    || !handler.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)) return [];
+  const responseDeclaration = ts.isAwaitExpression(call.parent) ? call.parent.parent : null;
+  if (!responseDeclaration || !ts.isVariableDeclaration(responseDeclaration)
+    || (responseDeclaration.parent.flags & ts.NodeFlags.Const) === 0) return [];
+  const statement = responseDeclaration.parent.parent;
+  if (!ts.isVariableStatement(statement) || !ts.isBlock(statement.parent)) return [];
+  const subsequent = statement.parent.statements.filter((item) => item.getStart() > statement.getStart());
+  const responseParsers = [];
+  const findParser = (node) => {
+    if (ts.isFunctionLike(node) || ts.isConditionalExpression(node) || ts.isBinaryExpression(node)
+      || node.questionDotToken) return;
+    if (isGeneratedParser(node, 'parseGeneratedOperationResponse', context)) responseParsers.push(node);
+    ts.forEachChild(node, findParser);
+  };
+  for (const item of subsequent) {
+    // A parser hidden in an unexecuted branch/function does not validate the actual boundary.
+    if (ts.isVariableStatement(item) || ts.isReturnStatement(item)) findParser(item);
+  }
+  const parser = responseParsers.find((candidate) => {
+    const response = candidate.arguments[1];
+    return response && ts.isPropertyAccessExpression(response) && response.name.text === 'data'
+      && declarationAtUse(response.expression) === responseDeclaration;
+  });
+  if (!parser) return [];
+  const target = call.arguments[0];
+  if (!target || !ts.isTemplateExpression(target) || target.head.text !== ''
+    || !constAtUse(target.templateSpans[0]?.expression)) return [];
+  if (recognized.method === 'get') {
+    if (target.templateSpans.length !== 1 || target.templateSpans[0].literal.text !== '/auth/mfa/status') return [];
+    const descriptor = verifiedMfaDescriptor(parser.arguments[0], 'status', context);
+    return descriptor ? [descriptor] : [];
+  }
+  const requestDeclaration = constAtUse(call.arguments[1]);
+  const requestParser = requestDeclaration?.initializer;
+  if (!requestParser || !isGeneratedParser(requestParser, 'parseGeneratedOperationRequest', context)
+    || requestDeclaration.getStart() >= statement.getStart()
+    || requestDeclaration.parent.parent.parent !== statement.parent) return [];
+  const operation = constAtUse(requestParser.arguments[0]);
+  if (!operation || constAtUse(parser.arguments[0]) !== operation) return [];
+  const selected = unwrapMfaExpression(operation.initializer);
+  if (!selected || !ts.isElementAccessExpression(selected)) return [];
+  const actionMap = constAtUse(selected.expression);
+  const action = constAtUse(selected.argumentExpression);
+  const pathIdentifier = unwrapMfaExpression(action?.initializer);
+  const path = constAtUse(pathIdentifier);
+  if (!actionMap || actionMap.parent.parent.parent !== call.getSourceFile() || !action || !path
+    || target.templateSpans.length !== 2 || target.templateSpans[0].literal.text !== '/auth/mfa/'
+    || target.templateSpans[1].literal.text !== '' || constAtUse(target.templateSpans[1].expression) !== action) return [];
+  let guardedMapReference;
+  const guarded = handler.body.statements.some((item) => {
+    if (!ts.isIfStatement(item) || item.getStart() >= action.getStart()
+      || !ts.isPrefixUnaryExpression(item.expression) || item.expression.operator !== ts.SyntaxKind.ExclamationToken) return false;
+    const check = item.expression.operand;
+    const matches = ts.isCallExpression(check) && ts.isPropertyAccessExpression(check.expression)
+      && check.expression.name.text === 'hasOwn' && ts.isIdentifier(check.expression.expression)
+      && check.expression.expression.text === 'Object' && !declarationAtUse(check.expression.expression)
+      && constAtUse(check.arguments[0]) === actionMap && constAtUse(check.arguments[1]) === path
+      && ts.isReturnStatement(item.thenStatement);
+    if (matches) guardedMapReference = check.arguments[0];
+    return matches;
+  });
+  if (!guarded) return [];
+  // Reject mutation/alias escape of the supposedly fixed map, including through an `as any` cast.
+  let mapEscapes = false;
+  const inspectMapUse = (node) => {
+    if (ts.isIdentifier(node) && constAtUse(node) === actionMap && node !== actionMap.name
+      && node !== selected.expression && node !== guardedMapReference && !ts.isTypeQueryNode(node.parent)) mapEscapes = true;
+    ts.forEachChild(node, inspectMapUse);
+  };
+  inspectMapUse(call.getSourceFile());
+  if (mapEscapes) return [];
+  const map = unwrapMfaExpression(actionMap.initializer);
+  if (!map || !ts.isObjectLiteralExpression(map) || map.properties.length !== MFA_BFF_POST_ACTIONS.size) return [];
+  const verified = new Map();
+  for (const property of map.properties) {
+    if (!ts.isPropertyAssignment(property) || ts.isComputedPropertyName(property.name)) return [];
+    const key = propertyNameText(property.name);
+    if (!MFA_BFF_POST_ACTIONS.has(key) || verified.has(key)) return [];
+    const descriptor = verifiedMfaDescriptor(property.initializer, key, context);
+    if (!descriptor) return [];
+    verified.set(key, descriptor);
+  }
+  return [...verified.values()];
+}
+
+/** Shared executable evidence for the operation-consumer ledger; missing linkage yields no credit. */
+export function collectVerifiedMfaBffOperations({ repoRoot = DEFAULT_REPO_ROOT } = {}) {
+  const absolutePath = join(repoRoot, MFA_BFF_FILE);
+  if (!existsSync(absolutePath)) return [];
+  const sourceFile = ts.createSourceFile(MFA_BFF_FILE, readFileSync(absolutePath, 'utf8'), ts.ScriptTarget.Latest, true);
+  if (sourceFile.parseDiagnostics.length) return [];
+  const context = { file: MFA_BFF_FILE, symbols: collectSourceSymbols(sourceFile),
+    operations: loadOpenApiOperations(repoRoot), descriptors: loadGeneratedDescriptors(repoRoot) };
+  const verified = new Map();
+  const visit = (node) => {
+    if (ts.isCallExpression(node)) {
+      const recognized = recognizeCall(node, context);
+      if (recognized) for (const descriptor of verifiedMfaBffDescriptors(node, recognized, context)) {
+        verified.set(descriptor.operationId, { operationId: descriptor.operationId, method: descriptor.method, path: descriptor.path });
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return [...verified.values()].sort((left, right) => left.operationId.localeCompare(right.operationId));
+}
+
 function specialCaseFor(call, metadata, recognized, context) {
   if (recognized.kind === 'generated') return null;
   if (recognized.kind === 'binary-navigation'
@@ -952,6 +1121,7 @@ function specialCaseFor(call, metadata, recognized, context) {
   if (/^frontend\/src\/app\/api\/auth\/(?:login|logout|reissue)\/route\.ts$/.test(context.file)) {
     return 'auth-bff';
   }
+  if (verifiedMfaBffDescriptors(call, recognized, context).length > 0) return 'auth-bff';
   if (metadata.target?.startsWith('/api/auth/')) return 'auth-route-client';
   if (containsBlobResponse(call)) return 'binary';
   if (containsMultipart(call, context.symbols)) return 'multipart';

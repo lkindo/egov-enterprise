@@ -12,6 +12,10 @@ import java.util.List;
 @Repository("commonTemplateRepository")
 public interface TemplateRepository extends JpaRepository<Template, String>, TemplateRepositoryCustom {
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("SELECT t FROM Template t WHERE t.tmpltId = :id")
+    java.util.Optional<Template> findByIdForUpdate(@org.springframework.data.repository.query.Param("id") String id);
+
     Page<Template> findByTmpltNmContaining(String tmpltNm, Pageable pageable);
 
     Page<Template> findByTmpltSeCd(String tmpltSeCd, Pageable pageable);

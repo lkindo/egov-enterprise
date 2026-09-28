@@ -38,11 +38,18 @@ public class SanctionEventListener {
         this.eventPublisher = eventPublisher;
     }
 
-    // 발행 자체가 커밋 후 이뤄지도록 발행부(confirmInformalSanction)에서 TransactionUtils.runAfterCommit 로 감싼다.
-    // (@TransactionalEventListener + @Async 조합은 AsyncTransactionalListenerArchTest 게이트로 금지된다 — 커밋-전-async 방지.)
+    @EventListener
+    @org.springframework.transaction.annotation.Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public void handleStatusChanged(SanctionStatusChangedEvent event) {
+        publishInAppNotification(event);
+        nuri.foundation.core.util.TransactionUtils.runAfterCommit(() ->
+                eventPublisher.publishEvent(new SanctionExternalNotificationEvent(event)));
+    }
+
     @Async("logExecutor")
     @EventListener
-    public void handleStatusChanged(SanctionStatusChangedEvent event) {
+    public void handleExternalChannels(SanctionExternalNotificationEvent external) {
+        SanctionStatusChangedEvent event = external.status();
         log.info(">>> [Event] Sanction Status Changed: sanctionSn={}, status={}",
                 event.getInformalSanctionSn(), event.getNewStatus());
         
@@ -67,7 +74,6 @@ public class SanctionEventListener {
             sendMail(event, actorId, user, message);
         }
 
-        publishInAppNotification(event);
     }
 
     private nuri.business.service.user.dto.UserDto findApplicant(SanctionStatusChangedEvent event) {
@@ -136,24 +142,19 @@ public class SanctionEventListener {
      * 앱 내 알림은 전달 가능한 유일한 경로다. 특히 이 배포에는 실 SMS 게이트웨이가 없어
      * <b>사실상 유일하게 도달하는 통지</b>이므로 부수적인 실패에 함께 묻히지 않게 한다.
      *
-     * <p>이 리스너는 발행부가 커밋 이후 발행하도록 감싸 두었으므로 여기서 추가 트랜잭션 경계를
-     * 두지 않는다.
+     * <p>이 경로는 업무 트랜잭션 안에서 동기 실행한다. 저장 실패를 삼키면 전달 의도를 잃는다.
      */
     private void publishInAppNotification(SanctionStatusChangedEvent event) {
         if (!org.springframework.util.StringUtils.hasText(event.getApplicantId())) {
             return;
         }
-        try {
             eventPublisher.publishEvent(new nuri.foundation.core.event.NotificationRequestedEvent(
+                    event.getEventId(),
                     event.getApplicantId(),
                     "결재 상태 변경",
                     boundChannelContent(String.format("결재(번호 %s)가 %s되었습니다.%s",
                             event.getInformalSanctionSn(), statusLabel(event), reasonSuffix(event))),
                     "/approvals"));
-        } catch (Exception e) {
-            log.error("Failed to request in-app notification: sanctionSn={}, status={}, exceptionType={}",
-                    event.getInformalSanctionSn(), event.getNewStatus(), e.getClass().getSimpleName());
-        }
     }
 
     private static String reasonOrDefault(SanctionStatusChangedEvent event) {

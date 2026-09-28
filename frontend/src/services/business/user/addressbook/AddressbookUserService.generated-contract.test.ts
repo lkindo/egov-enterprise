@@ -17,6 +17,7 @@ const successEnvelope = (data: unknown) => ({
 });
 
 const member = { userId: 'user01', nm: '홍길동', emlAddr: 'user@example.com' };
+const selection = { esntlId: 'internal-user-01', userNm: '홍길동', ognzNm: '영업부' };
 /** [DIP B5 F8] 구성원 userId 는 서버 소유 읽기 전용이라 요청에는 싣지 않는다(응답에는 실린다). */
 const memberRequest = { nm: '홍길동', emlAddr: 'user@example.com' };
 const addressBook = {
@@ -35,7 +36,7 @@ describe('AddressbookUserService generated contract', () => {
     client.getRaw
       .mockResolvedValueOnce(successEnvelope({ list: [addressBook], total: 1 }))
       .mockResolvedValueOnce(successEnvelope(addressBook))
-      .mockResolvedValueOnce(successEnvelope({ list: [member], total: 1 }));
+      .mockResolvedValueOnce(successEnvelope({ list: [selection], total: 1 }));
     client.requestRaw
       .mockResolvedValueOnce(successEnvelope(null))
       .mockResolvedValueOnce(successEnvelope(null))
@@ -57,8 +58,8 @@ describe('AddressbookUserService generated contract', () => {
       rlsScopeCd: 'PUBLIC',
     })).resolves.toBeUndefined();
     await expect(addressbookUserService.deleteAddressBook(3)).resolves.toBeUndefined();
-    await expect(addressbookUserService.searchUsers('홍길동')).resolves.toMatchObject({
-      list: [member],
+    await expect(addressbookUserService.searchUserSelections('홍길동')).resolves.toMatchObject({
+      list: [selection],
       total: 1,
     });
 
@@ -67,7 +68,7 @@ describe('AddressbookUserService generated contract', () => {
       params: { page: 0, size: 20, searchWrd: '영업', searchCnd: '0' },
     });
     expect(client.getRaw).toHaveBeenNthCalledWith(2, 'address-books/3', undefined);
-    expect(client.getRaw).toHaveBeenNthCalledWith(3, 'address-books/search-users', {
+    expect(client.getRaw).toHaveBeenNthCalledWith(3, 'address-books/user-selections', {
       params: { searchWrd: '홍길동' },
     });
     expect(client.requestRaw).toHaveBeenNthCalledWith(1, {
@@ -84,6 +85,13 @@ describe('AddressbookUserService generated contract', () => {
       url: 'address-books/3',
       method: 'delete',
     });
+  });
+
+  it.each(['emlAddr', 'mblTelno', 'userId'])('선택 응답에 %s가 재유입해도 소비자에게 전달하지 않는다', async (field) => {
+    client.getRaw.mockResolvedValueOnce(successEnvelope({ list: [{ ...selection, [field]: 'private-value' }], total: 1 }));
+    const response = await addressbookUserService.searchUserSelections('홍길동');
+    expect(response.list).toEqual([selection]);
+    expect(response.list[0]).not.toHaveProperty(field);
   });
 
   it('AddressBookDto와 다른 응답은 경계에서 거부한다', async () => {

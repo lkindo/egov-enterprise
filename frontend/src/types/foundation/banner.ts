@@ -26,3 +26,7 @@ export interface Popup {
     frstRgtrId?: string;
     crtDt?: string;
 }
+
+/** Public display DTOs omit the administrator-only audit identity and timestamps. */
+export type PublicBanner = Omit<Banner, 'frstRgtrId' | 'crtDt'>;
+export type PublicPopup = Omit<Popup, 'frstRgtrId' | 'crtDt'>;

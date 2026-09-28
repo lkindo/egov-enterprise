@@ -5,7 +5,11 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.business.service.auth.dto.LoginRequest;
 import nuri.business.service.auth.dto.TokenResponse;
 import nuri.business.service.auth.impl.AuthServiceImpl;
+import nuri.business.service.auth.mfa.MfaRejectedException;
+import nuri.business.service.auth.mfa.MfaResults;
+import nuri.business.service.auth.mfa.MfaService;
 import nuri.foundation.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.domain.auth.UserAuthorityRepository;
 
@@ -24,6 +28,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Collections;
+import java.time.Instant;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -57,6 +63,9 @@ class AuthServiceTest {
     private nuri.business.service.auth.OtpService otpService;
 
     @Mock
+    private MfaService mfaService;
+
+    @Mock
 
      private nuri.business.service.log.LogService logService;
 
@@ -85,8 +94,9 @@ class AuthServiceTest {
         // Given
         LoginRequest request = LoginRequest.builder().userId("user").password("password").build();
         Authentication authentication = mock(Authentication.class);
+        CustomUserDetails authenticatedPrincipal = principal("user", "ROLE_USER");
         when(authentication.getName()).thenReturn("user");
-        when(authentication.getPrincipal()).thenReturn(principal("user","ROLE_USER"));
+        when(authentication.getPrincipal()).thenReturn(authenticatedPrincipal);
         when(authentication.getAuthorities()).thenAnswer(i -> Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
         
@@ -101,6 +111,8 @@ class AuthServiceTest {
         assertEquals("access_token", response.getAccessToken());
         assertEquals("refresh_token", response.getRefreshToken());
         assertEquals("ROLE_USER", response.getRole());
+        assertEquals("AUTHENTICATED", response.getAuthenticationStage());
+        verify(mfaService).beginLogin(same(authenticatedPrincipal), eq(false));
     }
 
     @Test
@@ -236,46 +248,49 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("로그인 - OTP 활성화 시 OTP 누락 실패")
+    @DisplayName("로그인 - legacy OTP 필수 계정은 등록 확인 전 제한 도전만 받는다")
     void testLoginOtpRequired() {
-        // Given
         LoginRequest request = LoginRequest.builder().userId("otpUser").password("pass").build();
-        Authentication auth = mock(Authentication.class);
-        when(auth.getName()).thenReturn("otpUser");
-        when(auth.getPrincipal()).thenReturn(principal("otpUser","ROLE_USER"));
+        Authentication auth = nuri.business.support.AuthorizationTestPrincipal.authentication("otpUser", "OTP_INTERNAL", "ROLE_USER");
         when(authenticationManager.authenticate(any())).thenReturn(auth);
 
         nuri.business.domain.login.LoginPolicy policy = mock(nuri.business.domain.login.LoginPolicy.class);
         when(policy.getOtpUseYn()).thenReturn("Y");
         when(loginPolicyRepository.findById("otpUser")).thenReturn(java.util.Optional.of(policy));
+        when(mfaService.beginLogin(same((CustomUserDetails) auth.getPrincipal()), eq(true))).thenReturn(new MfaResults.Challenge(
+                "ENROLLMENT_REQUIRED", "registration-challenge-fixture", Instant.now().plusSeconds(300)));
 
-        // When & Then
-        nuri.business.service.auth.LoginRejectedException ex = assertThrows(nuri.business.service.auth.LoginRejectedException.class, () -> authService.login(request, "127.0.0.1"));
-        assertEquals(nuri.business.service.auth.LoginFailureReason.OTP_MISSING, ex.reason());
+        TokenResponse response = authService.login(request, "127.0.0.1");
+
+        assertRestrictedChallenge(response, "ENROLLMENT_REQUIRED", "registration-challenge-fixture");
+        verify(mfaService).beginLogin(same((CustomUserDetails) auth.getPrincipal()), eq(true));
+        verifyNoInteractions(otpService, jwtTokenProvider, refreshTokenRepository);
+        verify(logService, never()).logLogin(anyString(), anyString(), anyString(), eq("N"), any());
     }
 
     @Test
-    @DisplayName("로그인 - OTP 활성화 시 잘못된 OTP 실패")
+    @DisplayName("로그인 - 위조 inline OTP는 제한 도전을 생략하지 못하고 2단계 오답도 거부한다")
     void testLoginOtpInvalid() {
-        // Given
         LoginRequest request = LoginRequest.builder().userId("otpUser").password("pass").otpCode(123456).build();
-        Authentication auth = mock(Authentication.class);
-        when(auth.getName()).thenReturn("otpUser");
-        when(auth.getPrincipal()).thenReturn(principal("otpUser","ROLE_USER"));
+        Authentication auth = nuri.business.support.AuthorizationTestPrincipal.authentication("otpUser", "OTP_INTERNAL", "ROLE_USER");
         when(authenticationManager.authenticate(any())).thenReturn(auth);
 
         nuri.business.domain.login.LoginPolicy policy = mock(nuri.business.domain.login.LoginPolicy.class);
         when(policy.getOtpUseYn()).thenReturn("Y");
         when(loginPolicyRepository.findById("otpUser")).thenReturn(java.util.Optional.of(policy));
+        when(mfaService.beginLogin(same((CustomUserDetails) auth.getPrincipal()), eq(true))).thenReturn(new MfaResults.Challenge(
+                "MFA_REQUIRED", "verification-challenge-fixture", Instant.now().plusSeconds(300)));
+        MfaRejectedException rejection = new MfaRejectedException();
+        when(mfaService.verifyLogin("verification-challenge-fixture", "000001", null, "127.0.0.1"))
+                .thenThrow(rejection);
 
-        User user = mock(User.class);
-        when(user.getOtpSecret()).thenReturn("SECRET");
-        when(userRepository.findById("otpUser")).thenReturn(java.util.Optional.of(user));
-        when(otpService.verifyCode("SECRET", 123456)).thenReturn(false);
+        TokenResponse response = authService.login(request, "127.0.0.1");
 
-        // When & Then
-        nuri.business.service.auth.LoginRejectedException ex = assertThrows(nuri.business.service.auth.LoginRejectedException.class, () -> authService.login(request, "127.0.0.1"));
-        assertEquals(nuri.business.service.auth.LoginFailureReason.OTP_INVALID, ex.reason());
+        assertRestrictedChallenge(response, "MFA_REQUIRED", "verification-challenge-fixture");
+        assertSame(rejection, assertThrows(MfaRejectedException.class, () ->
+                authService.verifyMfaLogin(response.getMfaChallenge(), "000001", null, "127.0.0.1")));
+        verify(mfaService).verifyLogin("verification-challenge-fixture", "000001", null, "127.0.0.1");
+        verifyNoInteractions(otpService, jwtTokenProvider, refreshTokenRepository, userDetailsService);
     }
 
     @Test
@@ -285,45 +300,82 @@ class AuthServiceTest {
         String loginId = "loginuser";
         String esntlId = "USR_ESNTL_0001";
         LoginRequest request = LoginRequest.builder().userId(loginId).password("pass").build(); // otpCode 없음
-        Authentication auth = mock(Authentication.class);
-        when(auth.getName()).thenReturn(esntlId);
-        when(auth.getPrincipal()).thenReturn(principal(esntlId,"ROLE_USER")); // 인증 principal 이름 = esntlId
+        Authentication auth = nuri.business.support.AuthorizationTestPrincipal.authentication(loginId, esntlId, "ROLE_USER");
         when(authenticationManager.authenticate(any())).thenReturn(auth);
 
         nuri.business.domain.login.LoginPolicy policy = mock(nuri.business.domain.login.LoginPolicy.class);
         when(policy.getOtpUseYn()).thenReturn("Y");
         // 정책은 로그인 ID 로만 키잉된다. (과거 버그 코드는 esntlId 로 조회해 여기서 못 찾고 OTP 를 skip 했다)
         when(loginPolicyRepository.findById(loginId)).thenReturn(java.util.Optional.of(policy));
+        when(mfaService.beginLogin(same((CustomUserDetails) auth.getPrincipal()), eq(true))).thenReturn(new MfaResults.Challenge(
+                "ENROLLMENT_REQUIRED", "identity-challenge-fixture", Instant.now().plusSeconds(300)));
 
-        // When & Then: OTP 코드가 없으므로 반드시 OTP 요구 예외가 발생해야 한다(버그 시엔 통과되어 토큰 발급됨).
-        nuri.business.service.auth.LoginRejectedException ex = assertThrows(nuri.business.service.auth.LoginRejectedException.class, () -> authService.login(request, "127.0.0.1"));
-        assertEquals(nuri.business.service.auth.LoginFailureReason.OTP_MISSING, ex.reason(), "OTP 정책이 무시되어 로그인이 통과됨(정체성 조회 버그)");
+        TokenResponse response = authService.login(request, "127.0.0.1");
+
+        assertRestrictedChallenge(response, "ENROLLMENT_REQUIRED", "identity-challenge-fixture");
+        verify(loginPolicyRepository).findById(loginId);
+        verify(loginPolicyRepository, never()).findById(esntlId);
+        verify(mfaService).beginLogin(same((CustomUserDetails) auth.getPrincipal()), eq(true));
+        verifyNoInteractions(jwtTokenProvider, refreshTokenRepository);
     }
 
     @Test
-    @DisplayName("[정체성/보안] OTP 검증 시 사용자(otpSecret)는 esntlId 로 조회한다")
+    @DisplayName("[정체성/보안] MFA 완료는 esntlId로 최신 principal을 조회하고 검증 시각·버전과 함께 토큰을 발급한다")
     void testLoginOtp_UserLookedUpByEsntlId() {
-        // Given
         String loginId = "loginuser";
         String esntlId = "USR_ESNTL_0001";
-        LoginRequest request = LoginRequest.builder().userId(loginId).password("pass").otpCode(123456).build();
-        Authentication auth = mock(Authentication.class);
-        when(auth.getName()).thenReturn(esntlId);
-        when(auth.getPrincipal()).thenReturn(principal(esntlId,"ROLE_USER"));
-        when(authenticationManager.authenticate(any())).thenReturn(auth);
+        String version = "mfa-version-fixture";
+        Instant verifiedAt = Instant.parse("2026-09-28T00:00:00Z");
+        CustomUserDetails current = CustomUserDetails.builder().userId(loginId).esntlId(esntlId)
+                .authorCode("ROLE_USER").enabled(true).lockAt("N")
+                .mfaCredentialVersion(version).mfaRequired(true).build();
+        when(mfaService.verifyLogin("completion-challenge-fixture", "000001", null, "127.0.0.1"))
+                .thenReturn(new MfaResults.Completion(esntlId, version, verifiedAt, List.of(), null));
+        when(userDetailsService.loadUserByUsername(esntlId)).thenReturn(current);
+        when(jwtTokenProvider.createAccessToken(esntlId, "ROLE_USER", version, verifiedAt)).thenReturn("mfa-access-fixture");
+        when(jwtTokenProvider.createRefreshToken(esntlId, version, verifiedAt)).thenReturn("mfa-refresh-fixture");
 
-        nuri.business.domain.login.LoginPolicy policy = mock(nuri.business.domain.login.LoginPolicy.class);
-        when(policy.getOtpUseYn()).thenReturn("Y");
-        when(loginPolicyRepository.findById(loginId)).thenReturn(java.util.Optional.of(policy));
+        TokenResponse response = authService.verifyMfaLogin("completion-challenge-fixture", "000001", null, "127.0.0.1");
 
-        User user = mock(User.class);
-        when(user.getOtpSecret()).thenReturn("SECRET");
-        when(userRepository.findById(esntlId)).thenReturn(java.util.Optional.of(user)); // User 는 esntlId 로 조회
-        when(otpService.verifyCode("SECRET", 123456)).thenReturn(false);
+        assertEquals("AUTHENTICATED", response.getAuthenticationStage());
+        assertEquals("mfa-access-fixture", response.getAccessToken());
+        assertEquals("mfa-refresh-fixture", response.getRefreshToken());
+        verify(userDetailsService).loadUserByUsername(esntlId);
+        verify(userDetailsService, never()).loadUserByUsername(loginId);
+        verify(loginPolicyManageService).validateLoginPolicy(loginId, "127.0.0.1");
+        verify(jwtTokenProvider).createAccessToken(esntlId, "ROLE_USER", version, verifiedAt);
+        verify(jwtTokenProvider).createRefreshToken(esntlId, version, verifiedAt);
+        verify(jwtTokenProvider, never()).createAccessToken(anyString(), anyString());
+        verify(jwtTokenProvider, never()).createRefreshToken(anyString());
+        verify(refreshTokenRepository).save(argThat(token -> esntlId.equals(token.getUserId())
+                && nuri.business.domain.auth.RefreshTokenDigest.of("mfa-refresh-fixture").equals(token.getRfshTkn())));
+        verifyNoInteractions(otpService, userRepository);
+    }
 
-        // When & Then
-        nuri.business.service.auth.LoginRejectedException ex = assertThrows(nuri.business.service.auth.LoginRejectedException.class, () -> authService.login(request, "127.0.0.1"));
-        assertEquals(nuri.business.service.auth.LoginFailureReason.OTP_INVALID, ex.reason());
+    @Test
+    @DisplayName("MFA 검증 뒤 자격 버전이 달라졌으면 정상 토큰을 발급하지 않는다")
+    void testMfaCompletionRejectsChangedCredentialVersion() {
+        CustomUserDetails current = CustomUserDetails.builder().userId("loginuser").esntlId("USR_ESNTL_0001")
+                .enabled(true).lockAt("N").mfaCredentialVersion("new-version-fixture").build();
+        when(mfaService.verifyLogin("completion-challenge-fixture", "000001", null, "127.0.0.1"))
+                .thenReturn(new MfaResults.Completion("USR_ESNTL_0001", "old-version-fixture", Instant.now(), List.of(), null));
+        when(userDetailsService.loadUserByUsername("USR_ESNTL_0001")).thenReturn(current);
+
+        assertThrows(MfaRejectedException.class, () ->
+                authService.verifyMfaLogin("completion-challenge-fixture", "000001", null, "127.0.0.1"));
+
+        verifyNoInteractions(jwtTokenProvider, refreshTokenRepository);
+    }
+
+    private static void assertRestrictedChallenge(TokenResponse response, String stage, String challenge) {
+        assertEquals(stage, response.getAuthenticationStage());
+        assertEquals(challenge, response.getMfaChallenge());
+        assertNotNull(response.getMfaChallengeExpiresAt());
+        assertNull(response.getAccessToken());
+        assertNull(response.getRefreshToken());
+        assertNull(response.getRole());
+        assertTrue(response.getGroups().isEmpty());
+        assertTrue(response.getPermissions().isEmpty());
     }
 
     @Test

@@ -41,6 +41,7 @@ public class AuthServiceImpl implements AuthService {
     private final nuri.business.service.auth.OtpService otpService;
     /** [W1-E2] 로그인 감사 기록. 이 배선 전까지 tb_login_log 는 영구히 비어 있었다. */
     private final nuri.business.service.log.LogService logService;
+    private final nuri.business.service.auth.mfa.MfaService mfaService;
 
     /**
      * <b>[트랜잭션 경계] {@code noRollbackFor} 는 여기에도 있어야 한다 — 없으면 계정 잠금이 발동하지 않는다.</b>
@@ -89,28 +90,22 @@ public class AuthServiceImpl implements AuthService {
         String loginId = request.getUserId();        // TB_LOGIN_POLICY @Id
         CustomUserDetails principal = requireCurrentPrincipal(authentication.getPrincipal(), esntlId);
 
-        // 2. OTP 검증 (정책에 활성화된 경우) — LoginPolicy 는 로그인 ID(TB_LOGIN_POLICY.@Id=userId) 로 키잉된다.
-        //    [버그 수정] 과거에는 esntlId 로 findById 하여 정책이 항상 empty → otpUseYn='Y' 여도 OTP 가 전원 무력화됐다.
-        loginPolicyRepository.findById(loginId).ifPresent(policy -> {
-            if ("Y".equals(policy.getOtpUseYn())) {
-                if (request.getOtpCode() == null) {
-                    log.warn(">>> [Login] OTP required");
-                    throw new LoginRejectedException(LoginFailureReason.OTP_MISSING);
-                }
+        // 과거 OTP 플래그는 제한 등록으로 이행한다. 평문 secret/inline Integer OTP로 업무 토큰을 발급하지 않는다.
+        boolean legacyOtpRequired = loginPolicyRepository.findById(loginId)
+                .map(policy -> "Y".equals(policy.getOtpUseYn())).orElse(false);
+        var challenge = mfaService.beginLogin(principal, legacyOtpRequired);
+        if (challenge != null) return TokenResponse.challenge(challenge);
+        return issueSession(principal, null, clientIp);
+    }
 
-                nuri.business.domain.user.entity.User user = userRepository.findById(esntlId)
-                        .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
-
-                if (!otpService.verifyCode(user.getOtpSecret(), request.getOtpCode())) {
-                    log.warn(">>> [Login] Invalid OTP");
-                    throw new LoginRejectedException(LoginFailureReason.OTP_INVALID);
-                }
-                log.info(">>> [Login] OTP verification succeeded");
-            }
-        });
-
-        String accessToken = jwtTokenProvider.createAccessToken(esntlId, principal.getAuthorCode());
-        String refreshToken = jwtTokenProvider.createRefreshToken(esntlId);
+    private TokenResponse issueSession(CustomUserDetails principal, java.time.Instant mfaVerifiedAt, String clientIp) {
+        String esntlId = principal.getEsntlId();
+        String loginId = principal.getLoginId();
+        String version = principal.getMfaCredentialVersion();
+        String accessToken = version == null ? jwtTokenProvider.createAccessToken(esntlId, principal.getAuthorCode())
+                : jwtTokenProvider.createAccessToken(esntlId, principal.getAuthorCode(), version, mfaVerifiedAt);
+        String refreshToken = version == null ? jwtTokenProvider.createRefreshToken(esntlId)
+                : jwtTokenProvider.createRefreshToken(esntlId, version, mfaVerifiedAt);
         // JWT에 기록된 초 단위 절대 만료를 저장해야 설정 수명과 회전 후 exp가 일치한다.
         java.time.Instant refreshExpiry = jwtTokenProvider.getExpiration(refreshToken).toInstant();
 
@@ -137,6 +132,33 @@ public class AuthServiceImpl implements AuthService {
         logService.logLogin(loginId, clientIp, "WEB", "N", null);
 
         return TokenResponse.from(accessToken, refreshToken, principal);
+    }
+
+    @Override
+    @Transactional(noRollbackFor = nuri.business.service.auth.mfa.MfaRejectedException.class)
+    public TokenResponse confirmMfaEnrollment(String challenge, String code, String clientIp) {
+        return completeMfa(mfaService.confirmEnrollment(challenge, code, clientIp), clientIp);
+    }
+
+    @Override
+    @Transactional(noRollbackFor = nuri.business.service.auth.mfa.MfaRejectedException.class)
+    public TokenResponse verifyMfaLogin(String challenge, String code, String recoveryCode, String clientIp) {
+        return completeMfa(mfaService.verifyLogin(challenge, code, recoveryCode, clientIp), clientIp);
+    }
+
+    @Override
+    @Transactional(noRollbackFor = nuri.business.service.auth.mfa.MfaRejectedException.class)
+    public TokenResponse regenerateMfaRecoveryCodes(String proof, String clientIp) {
+        return completeMfa(mfaService.regenerateRecoveryCodes(proof, clientIp), clientIp);
+    }
+
+    private TokenResponse completeMfa(nuri.business.service.auth.mfa.MfaResults.Completion completed, String clientIp) {
+        if (completed.nextChallenge() != null) return TokenResponse.challenge(completed.nextChallenge());
+        CustomUserDetails principal = requireCurrentPrincipal(userDetailsService.loadUserByUsername(completed.subject()), completed.subject());
+        if (!java.util.Objects.equals(principal.getMfaCredentialVersion(), completed.credentialVersion())
+                || completed.verifiedAt() == null) throw new nuri.business.service.auth.mfa.MfaRejectedException();
+        assertLoginPolicy(principal.getLoginId(), clientIp);
+        return issueSession(principal, completed.verifiedAt(), clientIp).withRecoveryCodes(completed.recoveryCodes());
     }
 
     /**
@@ -201,6 +223,8 @@ public class AuthServiceImpl implements AuthService {
         
         CustomUserDetails principal = requireCurrentPrincipal(
                 userDetailsService.loadUserByUsername(userId), userId);
+        var mfaEvidence = jwtTokenProvider.getMfaEvidence(refreshToken);
+        JwtTokenProvider.assertMfaSession(principal, mfaEvidence);
 
         // [2026-09-25 DIP S6 ②] 재발급도 로그인 정책을 다시 본다. 종전에는 로그인 때 한 번만 봐서, 관리자가
         //   IP·시간대·접속 제한을 새로 걸어도 리프레시 토큰 수명(최대 7일) 동안 세션이 계속 연장됐다.
@@ -216,7 +240,10 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(CommonErrorCode.INVALID_TOKEN);
         }
 
-        String newAccessToken = jwtTokenProvider.createAccessToken(userId, principal.getAuthorCode());
+        String mfaVersion = principal.getMfaCredentialVersion();
+        java.time.Instant verifiedAt = mfaEvidence == null ? null : mfaEvidence.verifiedAt();
+        String newAccessToken = mfaVersion == null ? jwtTokenProvider.createAccessToken(userId, principal.getAuthorCode())
+                : jwtTokenProvider.createAccessToken(userId, principal.getAuthorCode(), mfaVersion, verifiedAt);
 
         // [W1-06] 리프레시 토큰 회전.
         //   종전에는 같은 리프레시 토큰을 계속 돌려줬다. 탈취된 토큰은 만료(최대 7일)까지 유효했고,
@@ -232,8 +259,8 @@ public class AuthServiceImpl implements AuthService {
             absoluteExpiry = presentedExpiry;
         }
         absoluteExpiry = absoluteExpiry.truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
-        String rotatedRefreshToken = jwtTokenProvider.createRefreshToken(
-                userId, java.util.Date.from(absoluteExpiry));
+        String rotatedRefreshToken = mfaVersion == null ? jwtTokenProvider.createRefreshToken(userId, java.util.Date.from(absoluteExpiry))
+                : jwtTokenProvider.createRefreshToken(userId, java.util.Date.from(absoluteExpiry), mfaVersion, verifiedAt);
 
         //   ⚠ **회전은 원자적이어야 한다** — 제시된 토큰이 아직 저장값일 때만 바꾼다(2026-09-16).
         //   종전처럼 읽어 온 엔티티를 덮어쓰면, 같은 토큰으로 동시에 재발급한 두 요청이 **둘 다 성공**하고

@@ -52,6 +52,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
     private long fourthArticle;
     private Long foreignSurvey;
     private List<String> measuredSql = List.of();
+    private final List<String> cancellationUsers = new ArrayList<>();
 
     @BeforeEach
     void prepareSurvey() {
@@ -75,6 +76,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
         removeSurveyFixture(survey);
         if (foreignSurvey != null) removeSurveyFixture(foreignSurvey);
         jdbc.update("DELETE FROM tb_srvy_tmplt WHERE srvy_tmplt_sn=?", template);
+        cancellationUsers.forEach(user -> jdbc.update("DELETE FROM tb_user_info WHERE user_id=?", user));
     }
 
     private void removeSurveyFixture(long surveyId) {
@@ -270,6 +272,172 @@ class SurveySubmissionConcurrencyIntegrationTest {
         } finally {
             SecurityContextHolder.clearContext();
         }
+    }
+
+    @Test
+    void cancellationRemovesAllQuestionsAndChoicesButPreservesOtherPeopleAndSurveys() {
+        String author = cancellationUser("A");
+        String other = cancellationUser("B");
+        jdbc.update("UPDATE tb_srvy_qstn SET max_chc_cnt=2 WHERE srvy_qstn_sn=?", firstQuestion);
+        authenticate(author);
+        assertThat(service.submitResponse(survey, new SurveyResponseSubmitDto("표시명", List.of(
+                new SurveyResponseSubmitDto.Answer(firstQuestion, firstArticle, null, null),
+                new SurveyResponseSubmitDto.Answer(firstQuestion, secondArticle, null, null),
+                new SurveyResponseSubmitDto.Answer(secondQuestion, thirdArticle, null, null))))).isEqualTo(3);
+        long anchor = responseAnchor(author);
+        authenticate(other);
+        service.submitResponse(survey, answers(true));
+        foreignSurvey = jdbc.queryForObject("INSERT INTO tb_srvy_info(srvy_ttl,srvy_tmplt_sn) VALUES ('다른 설문',?) RETURNING srvy_sn", Long.class, template);
+        long foreignQuestion = jdbc.queryForObject("INSERT INTO tb_srvy_qstn(srvy_sn,srvy_tmplt_sn,max_chc_cnt) VALUES (?,?,1) RETURNING srvy_qstn_sn", Long.class, foreignSurvey, template);
+        long foreignArticle = jdbc.queryForObject("INSERT INTO tb_srvy_artcl(srvy_sn,srvy_tmplt_sn,srvy_qstn_sn) VALUES (?,?,?) RETURNING srvy_artcl_sn", Long.class, foreignSurvey, template, foreignQuestion);
+        jdbc.update("INSERT INTO tb_srvy_rslt(srvy_sn,srvy_tmplt_sn,srvy_qstn_sn,srvy_artcl_sn,frst_rgtr_id) VALUES (?,?,?,?,?)", foreignSurvey, template, foreignQuestion, foreignArticle, author);
+
+        authenticateCancellation(author);
+        service.cancelSubmission(anchor);
+        assertThat(answerCount(author)).isZero();
+        assertThat(answerCount(other)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_srvy_rslt WHERE srvy_sn=?", Integer.class, foreignSurvey)).isEqualTo(1);
+        assertThat(service.getStats(survey)).extracting(nuri.business.service.survey.dto.SurveyStatsDto::count).contains(1L);
+        authenticate(author);
+        assertThat(service.submitResponse(survey, answers(false))).isEqualTo(2);
+        authenticateCancellation(author);
+        service.cancelSubmission(responseAnchor(author));
+        jdbc.update("UPDATE tb_srvy_info SET srvy_bgng_ymd='20000101',srvy_end_ymd='20000102' WHERE srvy_sn=?", survey);
+        authenticate(author);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.submitResponse(survey, answers(false)))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void cancellationRejectsUnknownIdentityAndRollsBackTheWholeGroup() {
+        String author = cancellationUser("A");
+        authenticate(author);
+        service.submitResponse(survey, answers(false));
+        long anchor = responseAnchor(author);
+        authenticateCancellation(author);
+        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+            service.cancelSubmission(anchor);
+            status.setRollbackOnly();
+        });
+        assertThat(answerCount(author)).isEqualTo(2);
+        jdbc.update("UPDATE tb_srvy_rslt SET frst_rgtr_id=NULL WHERE srvy_rspns_sn=?", anchor);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.cancelSubmission(anchor))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_STATE);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_srvy_rslt WHERE srvy_sn=?", Integer.class, survey)).isEqualTo(2);
+    }
+
+    @Test
+    void concurrentCancellationAndResubmissionNeverLeavePartialAnswers() throws Exception {
+        String author = cancellationUser("A");
+        authenticate(author);
+        service.submitResponse(survey, answers(false));
+        long anchor = responseAnchor(author);
+        String application = "survey-cancel-" + survey;
+        try (var executor = Executors.newFixedThreadPool(2); var blocker = dataSource.getConnection()) {
+            blocker.setAutoCommit(false);
+            try (var lock = blocker.prepareStatement("SELECT srvy_sn FROM tb_srvy_info WHERE srvy_sn=? FOR UPDATE")) {
+                lock.setLong(1, survey);
+                lock.executeQuery().close();
+            }
+            var cancellation = executor.submit(() -> concurrentCancellationAction(author, application, () -> {
+                service.cancelSubmission(anchor);
+                return "cancelled";
+            }));
+            var submission = executor.submit(() -> {
+                try { return concurrentCancellationAction(author, application, () -> {
+                    service.submitResponse(survey, answers(true));
+                    return "submitted";
+                }); }
+                catch (BusinessException rejected) {
+                    assertThat(rejected).hasMessage("이미 응답한 설문입니다.");
+                    return "duplicate";
+                }
+            });
+            try {
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+                int waiting;
+                do {
+                    waiting = jdbc.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'", Integer.class, application);
+                    if (waiting < 2) Thread.sleep(20);
+                } while (waiting < 2 && System.nanoTime() < deadline);
+                assertThat(waiting).isEqualTo(2);
+            } finally { blocker.rollback(); }
+            assertThat(cancellation.get(20, TimeUnit.SECONDS)).isEqualTo("cancelled");
+            String outcome = submission.get(20, TimeUnit.SECONDS);
+            assertThat(answerCount(author)).isEqualTo(outcome.equals("submitted") ? 2 : 0);
+        }
+    }
+
+    private String concurrentCancellationAction(String author, String application, java.util.function.Supplier<String> action) {
+        authenticateCancellation(author);
+        try {
+            return new TransactionTemplate(transactionManager).execute(status -> {
+                jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                return action.get();
+            });
+        } finally { SecurityContextHolder.clearContext(); }
+    }
+
+    @Test
+    void concurrentCancellationCommitsExactlyOnceAndNeverDeletesAnotherSubmission() throws Exception {
+        String author = cancellationUser("A");
+        authenticate(author);
+        service.submitResponse(survey, answers(false));
+        long anchor = responseAnchor(author);
+        String application = "survey-cancel-twice-" + survey;
+        try (var executor = Executors.newFixedThreadPool(2); var blocker = dataSource.getConnection()) {
+            blocker.setAutoCommit(false);
+            try (var lock = blocker.prepareStatement("SELECT srvy_sn FROM tb_srvy_info WHERE srvy_sn=? FOR UPDATE")) {
+                lock.setLong(1, survey);
+                lock.executeQuery().close();
+            }
+            java.util.concurrent.Callable<String> cancel = () -> {
+                try { return concurrentCancellationAction(author, application, () -> {
+                    service.cancelSubmission(anchor);
+                    return "cancelled";
+                }); }
+                catch (BusinessException rejected) {
+                    assertThat(rejected.getErrorCode()).isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+                    return "already-cancelled";
+                }
+            };
+            var first = executor.submit(cancel);
+            var second = executor.submit(cancel);
+            try {
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+                int waiting;
+                do {
+                    waiting = jdbc.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'", Integer.class, application);
+                    if (waiting < 2) Thread.sleep(20);
+                } while (waiting < 2 && System.nanoTime() < deadline);
+                assertThat(waiting).isEqualTo(2);
+            } finally { blocker.rollback(); }
+            assertThat(List.of(first.get(20, TimeUnit.SECONDS), second.get(20, TimeUnit.SECONDS)))
+                    .containsExactlyInAnyOrder("cancelled", "already-cancelled");
+        }
+        assertThat(answerCount(author)).isZero();
+    }
+
+    private String cancellationUser(String suffix) {
+        String user = "SC" + survey + suffix;
+        jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,crt_dt) VALUES (?,?,'test-only-unusable','동명이인','P','2000-01-01')", user, user);
+        cancellationUsers.add(user);
+        return user;
+    }
+
+    private long responseAnchor(String author) {
+        return jdbc.queryForObject("SELECT min(srvy_rspns_sn) FROM tb_srvy_rslt WHERE srvy_sn=? AND frst_rgtr_id=?", Long.class, survey, author);
+    }
+
+    private int answerCount(String author) {
+        return jdbc.queryForObject("SELECT count(*) FROM tb_srvy_rslt WHERE srvy_sn=? AND frst_rgtr_id=?", Integer.class, survey, author);
+    }
+
+    private void authenticateCancellation(String loginId) {
+        var principal = CustomUserDetails.builder().userId(loginId).esntlId(loginId)
+                .enabled(true).permissions(List.of("SURVEY_RSP_DELETE")).build();
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
     }
 
     private void authenticate(String loginId) {

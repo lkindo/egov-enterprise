@@ -7,6 +7,7 @@ import nuri.business.domain.addressbook.AddressBookUser;
 import nuri.business.domain.addressbook.AddressBookUserRepository;
 import nuri.business.service.addressbook.dto.AddressBookDto;
 import nuri.business.service.addressbook.dto.AddressBookUserDto;
+import nuri.business.service.addressbook.dto.AddressBookUserSelectionDto;
 import nuri.foundation.core.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -174,7 +175,21 @@ public class AddressBookService {
         entity.update(entity.getAdbkNm(), entity.getRlsScopeCd(), "N");
     }
 
+    /** 외부 소비자 확인 전까지 구 연락처 응답을 유지한다. 신규 소비자는 최소 선택 계약을 쓴다. */
     public Page<AddressBookUserDto> searchUsers(String searchWrd, @NonNull Pageable pageable) {
+        return searchUserProjection(searchWrd, pageable, true)
+                .map(res -> AddressBookUserDto.builder().userId(res.getUserId()).nm(res.getUserNm())
+                        .emlAddr(res.getEmlAddr()).mblTelno(res.getMblTelno()).ofcTelno(res.getOfficeTelno()).homeTelno(res.getHomeTelno()).build());
+    }
+
+    public Page<AddressBookUserSelectionDto> searchUserSelections(String searchWrd, @NonNull Pageable pageable) {
+        return searchUserProjection(searchWrd, pageable, false)
+                .map(res -> new AddressBookUserSelectionDto(res.getEsntlId(), res.getUserNm(), res.getOgnzNm()));
+    }
+
+    private Page<nuri.business.domain.addressbook.AddressBookUserSearchResult> searchUserProjection(
+            String searchWrd, @NonNull Pageable pageable, boolean legacyContacts) {
+        nuri.business.security.util.SecurityUtil.assertPermission("ADBK_READ");
         Pageable requestedPageable = Objects.requireNonNull(pageable);
         Pageable cappedPageable = PageRequest.of(
                 requestedPageable.getPageNumber(),
@@ -185,15 +200,8 @@ public class AddressBookService {
             return Page.empty(cappedPageable);
         }
 
-        return addressBookRepository.searchAddressBookUsers(normalizedSearchWrd, cappedPageable)
-                .map(res -> AddressBookUserDto.builder()
-                        .userId(res.getUserId())
-                        .nm(res.getUserNm())
-                        .emlAddr(res.getEmlAddr())
-                        .mblTelno(res.getMblTelno())
-                        .ofcTelno(res.getOfficeTelno())
-                        .homeTelno(res.getHomeTelno())
-                        .build());
+        return legacyContacts ? addressBookRepository.searchAddressBookUsers(normalizedSearchWrd, cappedPageable)
+                : addressBookRepository.searchAddressBookUserSelections(normalizedSearchWrd, cappedPageable);
     }
 
     public AddressBookUserDto getAdbkUser(Long id) {

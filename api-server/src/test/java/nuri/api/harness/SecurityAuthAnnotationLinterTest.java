@@ -351,10 +351,12 @@ class SecurityAuthAnnotationLinterTest {
             if (!registeredGuardTargets.add(guard.target())) {
                 violations.add("중복 service guard target: " + guard.target());
             }
+            Map<String, Integer> helperCounts = new TreeMap<>();
             for (GuardMechanism mechanism : guard.mechanisms()) {
-                expectedHelpers.add(guard.target() + "#" + mechanism.helper() + "=" + mechanism.count());
+                helperCounts.merge(mechanism.helper(), mechanism.count(), Integer::sum);
                 validateHelperMeaning(guard, mechanism, violations);
             }
+            helperCounts.forEach((helper, count) -> expectedHelpers.add(guard.target() + "#" + helper + "=" + count));
         }
 
         SourceCensus census = scanSources();
@@ -702,7 +704,7 @@ class SecurityAuthAnnotationLinterTest {
     private static String findEnclosingMethod(String code, int position) {
         String prefix = code.substring(0, position);
         Pattern declaration = Pattern.compile(
-                "(?:public|protected|private|static|final|synchronized|\\s)+\\s+[\\w\\<\\>\\[\\]]+\\s+"
+                "(?:public|protected|private|static|final|synchronized|\\s)+\\s+[\\w.$\\<\\>\\[\\],?]+\\s+"
                         + "([a-zA-Z0-9_]+)\\s*\\([^\\)]*\\)\\s*(?:throws\\s+[\\w\\s,]+)?\\s*\\{");
         Matcher matcher = declaration.matcher(prefix);
         String lastMethod = "unknown";
@@ -768,25 +770,42 @@ class SecurityAuthAnnotationLinterTest {
             return;
         }
         int argumentIndex = mechanism.helper().equals("assertPermission") ? 0 : 1;
-        String expected;
-        if (guard.permissionParameter() == null) {
-            if (mechanism.permission() == null || !PermissionCodes.ALL.contains(mechanism.permission())) {
-                violations.add(guard.target() + " permission 코드 누락/미등록");
+        Map<String, Integer> expected = new TreeMap<>();
+        for (GuardMechanism item : guard.mechanisms()) {
+            if (!item.helper().equals(mechanism.helper())) continue;
+            String argument;
+            if (item.permission() != null) {
+                if (!PermissionCodes.ALL.contains(item.permission())) {
+                    violations.add(guard.target() + " permission 코드 미등록");
+                    return;
+                }
+                argument = "\"" + item.permission() + "\"";
+            } else if (guard.permissionParameter() != null) {
+                argument = guard.permissionParameter().name();
+                if (argument == null || !argument.matches("[a-zA-Z][a-zA-Z0-9]*")
+                        || guard.permissionParameter().callers() == null || guard.permissionParameter().callers().isEmpty()) {
+                    violations.add(guard.target() + " permission parameter/caller 계약 부재");
+                    return;
+                }
+                validatePermissionCallers(guard, source, target[1], violations);
+            } else {
+                violations.add(guard.target() + " permission 코드 누락");
                 return;
             }
-            expected = "\"" + mechanism.permission() + "\"";
-        } else {
-            expected = guard.permissionParameter().name();
-            if (expected == null || !expected.matches("[a-zA-Z][a-zA-Z0-9]*")
-                    || guard.permissionParameter().callers() == null || guard.permissionParameter().callers().isEmpty()) {
-                violations.add(guard.target() + " permission parameter/caller 계약 부재");
-                return;
-            }
-            validatePermissionCallers(guard, source, target[1], violations);
+            expected.merge(argument, item.count(), Integer::sum);
         }
-        if (!exactPermissionCalls(body, mechanism.helper(), argumentIndex, expected, mechanism.count())) {
+        if (!exactPermissionCallSet(body, mechanism.helper(), argumentIndex, expected)) {
             violations.add(guard.target() + " " + mechanism.helper() + " exact permission argument/count drift");
         }
+    }
+
+    private static boolean exactPermissionCallSet(String body, String helper, int index, Map<String, Integer> expected) {
+        Map<String, Integer> actual = new TreeMap<>();
+        for (List<String> args : callArguments(body, "SecurityUtil\\s*\\.\\s*" + Pattern.quote(helper))) {
+            if (args.size() != index + 1) return false;
+            actual.merge(args.get(index), 1, Integer::sum);
+        }
+        return !expected.isEmpty() && actual.equals(expected);
     }
 
     private static boolean exactPermissionCalls(String body, String helper, int index, String expected, int count) {
@@ -809,6 +828,16 @@ class SecurityAuthAnnotationLinterTest {
         assertNull(literalCallerPermission(List.of("request.permission()"), 0));
         assertNull(literalCallerPermission(List.of("\"AUTHRT_ASSIGN\"", "ignored"), 0));
         assertNull(literalCallerPermission(List.of(), 0));
+        String both = "SecurityUtil.assertPermission(\"POLL_READ\"); SecurityUtil.assertPermission(\"POLL_READ_ALL\");";
+        Map<String, Integer> required = Map.of("\"POLL_READ\"", 1, "\"POLL_READ_ALL\"", 1);
+        assertTrue(exactPermissionCallSet(both, "assertPermission", 0, required));
+        assertFalse(exactPermissionCallSet(both.replace("POLL_READ_ALL", "POLL_READ"), "assertPermission", 0, required));
+        assertFalse(exactPermissionCallSet("SecurityUtil.assertPermission(\"POLL_READ\");", "assertPermission", 0, required));
+        assertFalse(exactPermissionCallSet(both + "SecurityUtil.assertPermission(\"POLL_UPDATE\");", "assertPermission", 0, required));
+        String qualifiedReturn = "public String previous(String value) { return value; }\n"
+                + "private Page<nuri.business.dto.Selection> projection(String keyword) {\n"
+                + "SecurityUtil.assertPermission(\"ADBK_READ\"); }";
+        assertEquals("projection", findEnclosingMethod(qualifiedReturn, qualifiedReturn.indexOf("SecurityUtil")));
     }
 
     private void validatePermissionCallers(ServiceGuardPolicy guard, String source, String method,
@@ -826,7 +855,7 @@ class SecurityAuthAnnotationLinterTest {
         } else sources.put("", source);
         int index = guard.permissionParameter().argumentIndex() == null ? 1 : guard.permissionParameter().argumentIndex();
         if (index < 0 || index > 1) { violations.add(guard.target() + " unsupported permission argument index"); return; }
-        Map<String, String> actual = new TreeMap<>();
+        Map<String, List<String>> actual = new TreeMap<>();
         for (var entry : sources.entrySet()) {
             Matcher declarations = Pattern.compile("(?m)^\\s*(?:public|protected|private)\\s+(?:(?:static|final|synchronized)\\s+)*"
                     + "[\\w.$<>?,\\[\\] ]+\\s+(\\w+)\\s*\\(").matcher(entry.getValue());
@@ -838,9 +867,10 @@ class SecurityAuthAnnotationLinterTest {
                     String permission = literalCallerPermission(args, index);
                     if (permission == null) { violations.add(guard.target() + " 호출부의 literal permission 필요: " + caller); continue; }
                     String key = entry.getKey().isEmpty() ? caller : entry.getKey() + "#" + caller;
-                    if (!PermissionCodes.ALL.contains(permission) || actual.put(key, permission) != null) {
-                        violations.add(guard.target() + " 중복/미등록 permission caller: " + key);
+                    if (!PermissionCodes.ALL.contains(permission)) {
+                        violations.add(guard.target() + " 미등록 permission caller: " + key);
                     }
+                    actual.computeIfAbsent(key, ignored -> new ArrayList<>()).add(permission);
                 }
             }
         }
@@ -1219,7 +1249,7 @@ class SecurityAuthAnnotationLinterTest {
             Integer parameterCount) {
     }
 
-    private record PermissionParameter(String name, Map<String, String> callers, Integer argumentIndex, boolean qualifiedCallers) {}
+    private record PermissionParameter(String name, Map<String, List<String>> callers, Integer argumentIndex, boolean qualifiedCallers) {}
 
     private record GuardMechanism(
             String helper,

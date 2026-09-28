@@ -114,7 +114,7 @@
         if (fingerprint) content.append(element('p', '확인한 소스 SHA-256 ' + fingerprint, 'source-digest meta'));
         card.append(summary, content);
         grid.append(card);
-        const searchText = [record.id, record.title, record.summary, record.status, record.source,
+        const searchText = [record.id, record.title, record.summary, record.status, record.source, record.searchText || '',
           ...(record.details || []).map(detail => detail.label + ' ' + String(detail.value)),
           ...(record.links || []).map(link => link.label + ' ' + link.path),
         ].join(' ').toLocaleLowerCase();

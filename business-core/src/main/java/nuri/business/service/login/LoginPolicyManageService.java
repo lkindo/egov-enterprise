@@ -238,16 +238,13 @@ public class LoginPolicyManageService {
     }
 
     /**
-     * 2단계 인증(OTP) 설정을 켜지 못하게 한다(2026-09-25 DIP D6).
-     *
-     * <p>로그인은 OTP 가 켜진 사용자에게 번호를 요구하지만, 비밀키를 발급하거나 사용자가 번호를 입력하는
-     * 화면이 제품에 없다. 켜는 순간 그 사용자는 어떤 방법으로도 로그인할 수 없다 — 잠금과 같은 결과를
-     * "보안 강화" 처럼 보이는 스위치가 만든다. 등록 흐름을 만들기 전까지 서버가 거부한다. 끄는 것은 허용한다.
+     * 일반 로그인 정책은 MFA 자격을 활성화하지 않는다. MFA 전용 등록·확인 과업을 사용한다.
+     * 기존 플래그 N도 신규 자격 저장소의 ACTIVE/RECOVER 상태를 비활성화할 수 없다.
      */
     private static void rejectUnsupportedOtp(LoginPolicyDto dto) {
         if ("Y".equals(dto.getOtpUseYn())) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                    "2단계 인증(OTP)은 아직 제공하지 않습니다. 비밀키 발급·입력 경로가 없어 켜면 그 사용자는 로그인할 수 없습니다.");
+                    "2단계 인증은 내 계정의 인증앱 등록·확인 절차에서 설정해 주세요.");
         }
     }
 

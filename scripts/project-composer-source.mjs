@@ -50,6 +50,7 @@ const RBAC = 'api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizatio
 const RBAC_DOMAINS = ['survey', 'stats', 'system', 'informalsanction'];
 const GATE_OWNERS = {
   'api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java': ['note', 'notification'],
+  'api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java': ['memoreport'],
   'api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java': ['informalsanction'],
   'api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java': ['system'],
   'api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java': ['board', 'system'],

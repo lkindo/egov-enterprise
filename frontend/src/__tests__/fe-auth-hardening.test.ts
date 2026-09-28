@@ -35,6 +35,10 @@ function collectSource(dir: string): string[] {
 }
 
 type SessionCookieName = 'accessToken' | 'session_exp';
+const SESSION_WRITERS = [
+  'src/lib/auth/auth-session-response.ts',
+  'src/app/api/auth/reissue/route.ts',
+] as const;
 
 function extractCookieOptions(source: string, cookieName: SessionCookieName): string | null {
   const marker = new RegExp(`cookies\\.set\\(\\s*['"]${cookieName}['"]`, 'g');
@@ -58,7 +62,8 @@ function extractCookieOptions(source: string, cookieName: SessionCookieName): st
 
 function sessionCookiePolicyViolations(source: string): string[] {
   const violations: string[] = [];
-  if (!/const secureCookie = shouldUseSecureSessionCookie\(\s*request,\s*process\.env\.NODE_ENV,\s*process\.env\.ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE === 'true',\s*\);/u.test(source)) {
+  const policy = /const (\w+) = shouldUseSecureSessionCookie\(\s*request,\s*process\.env\.NODE_ENV,\s*process\.env\.ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE === 'true',?\s*\);/u.exec(source);
+  if (!policy) {
     violations.push('secure-policy-call');
   }
 
@@ -71,13 +76,16 @@ function sessionCookiePolicyViolations(source: string): string[] {
       violations.push(`${cookieName}.options`);
       continue;
     }
-    if (!new RegExp(`^\\s*httpOnly:\\s*${expectedHttpOnly},\\s*$`, 'm').test(options)) {
+    if (!new RegExp(`(?:^|,)\\s*httpOnly:\\s*${expectedHttpOnly}\\s*(?:,|$)`).test(options)) {
       violations.push(`${cookieName}.httpOnly`);
     }
-    if (!/^\s*secure:\s*secureCookie,\s*$/m.test(options)) {
+    const secureValue = policy?.[1];
+    const explicitSecure = secureValue && new RegExp(`(?:^|,)\\s*secure:\\s*${secureValue}\\s*(?:,|$)`).test(options);
+    const shorthandSecure = secureValue === 'secure' && /(?:^|,)\s*secure\s*(?:,|$)/u.test(options);
+    if (!explicitSecure && !shorthandSecure) {
       violations.push(`${cookieName}.secure`);
     }
-    if (!/^\s*sameSite:\s*'strict',\s*$/m.test(options)) {
+    if (!/(?:^|,)\s*sameSite:\s*'strict'\s*(?:,|$)/u.test(options)) {
       violations.push(`${cookieName}.sameSite`);
     }
   }
@@ -85,52 +93,79 @@ function sessionCookiePolicyViolations(source: string): string[] {
   return violations;
 }
 
+function loginWriterViolations(source: string): string[] {
+  const violations: string[] = [];
+  if (!/import\s*\{\s*authenticationResponse\s*\}\s*from\s*'@\/lib\/auth\/auth-session-response'/u.test(source)) {
+    violations.push('writer-import');
+  }
+  if (!/return authenticationResponse\(\s*request,\s*tokenResponse,/u.test(source)) {
+    violations.push('writer-return');
+  }
+  if (/\.cookies\.set\(/u.test(source)) violations.push('duplicate-cookie-writer');
+  return violations;
+}
+
+function mutateAccessCookie(source: string, mutate: (options: string) => string): string {
+  const options = extractCookieOptions(source, 'accessToken');
+  if (options === null) throw new Error('accessToken writer missing');
+  const mutatedOptions = mutate(options);
+  expect(mutatedOptions, 'mutation must change the actual accessToken options').not.toBe(options);
+  return source.replace(options, mutatedOptions);
+}
+
+const TOKEN_IN_JSON_DATA = /data:\s*(?:\{[^}]*\b(?:accessToken|refreshToken)\b|(?:token|tokenResponse)\b)/u;
+
 describe('🔒 FE 인증 하드닝 회귀 방지 게이트 (§2.F)', () => {
-  it.each([
-    ['로그인', 'src/app/api/auth/login/route.ts'],
-    ['재발급', 'src/app/api/auth/reissue/route.ts'],
-  ])('%s 라우트: accessToken·session_exp 속성이 공용 Secure 정책에 결속된다', (_, routePath) => {
-    const route = read(routePath);
-    expect(sessionCookiePolicyViolations(route)).toEqual([]);
+  it('로그인은 원 요청과 파싱한 응답을 공용 쿠키 writer에 반환한다', () => {
+    const route = read('src/app/api/auth/login/route.ts');
+    expect(loginWriterViolations(route)).toEqual([]);
+    expect(loginWriterViolations(route.replace("from '@/lib/auth/auth-session-response'", "from './unbound-writer'")))
+      .toContain('writer-import');
+    expect(loginWriterViolations(route.replace('return authenticationResponse(request,', 'return authenticationResponse(request.nextUrl,')))
+      .toContain('writer-return');
+  });
+
+  it.each(SESSION_WRITERS)('%s: accessToken·session_exp 속성이 공용 Secure 정책에 결속된다', writerPath => {
+    expect(sessionCookiePolicyViolations(read(writerPath))).toEqual([]);
   });
 
   it('쿠키 속성 게이트는 accessToken 블록의 secure:false와 SameSite 누락을 별도로 검출한다', () => {
-    for (const routePath of [
-      'src/app/api/auth/login/route.ts',
-      'src/app/api/auth/reissue/route.ts',
-    ]) {
-      const route = read(routePath);
-      const insecureAccessToken = route.replace('secure: secureCookie,', 'secure: false,');
-      const missingAccessTokenSameSite = route.replace("sameSite: 'strict',", '');
+    for (const writerPath of SESSION_WRITERS) {
+      const source = read(writerPath);
+      const insecureAccessToken = mutateAccessCookie(source, options => options.replace(
+        /(^|,)(\s*)secure(?:\s*:\s*\w+)?\s*(?=,|$)/u, '$1$2secure: false',
+      ));
+      const missingAccessTokenSameSite = mutateAccessCookie(source, options => options.replace(/sameSite:\s*'strict',?/u, ''));
 
-      expect(sessionCookiePolicyViolations(insecureAccessToken), routePath)
+      expect(sessionCookiePolicyViolations(insecureAccessToken), writerPath)
         .toContain('accessToken.secure');
-      expect(sessionCookiePolicyViolations(missingAccessTokenSameSite), routePath)
+      expect(sessionCookiePolicyViolations(missingAccessTokenSameSite), writerPath)
         .toContain('accessToken.sameSite');
     }
   });
 
-  it('라우트의 명시적 local-loopback opt-in 또는 원 요청 판정이 빠지면 red가 된다', () => {
-    for (const routePath of [
-      'src/app/api/auth/login/route.ts',
-      'src/app/api/auth/reissue/route.ts',
-    ]) {
-      const route = read(routePath);
-      const urlOnlyPolicy = route.replace(
-        /shouldUseSecureSessionCookie\([\s\S]*?\);/u,
-        'shouldUseSecureSessionCookie(request.nextUrl, process.env.NODE_ENV);',
-      );
-
-      expect(urlOnlyPolicy, `${routePath} mutation must change source`).not.toBe(route);
-      expect(sessionCookiePolicyViolations(urlOnlyPolicy), routePath)
-        .toContain('secure-policy-call');
+  it('writer의 명시적 local-loopback opt-in 또는 원 요청 판정이 빠지면 red가 된다', () => {
+    for (const writerPath of SESSION_WRITERS) {
+      const source = read(writerPath);
+      const mutations = [
+        source.replace(/shouldUseSecureSessionCookie\(\s*request,/gu, 'shouldUseSecureSessionCookie(request.nextUrl,'),
+        source.replaceAll("process.env.ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE === 'true'", 'true'),
+      ];
+      for (const mutation of mutations) {
+        expect(mutation, `${writerPath} mutation must change source`).not.toBe(source);
+        expect(sessionCookiePolicyViolations(mutation), writerPath).toContain('secure-policy-call');
+      }
     }
   });
 
-  it('로그인 라우트는 응답 바디에 accessToken 을 싣지 않는다', () => {
-    const login = read('src/app/api/auth/login/route.ts');
-    // 응답 바디에 accessToken 을 실어 반환하면 안 된다(role 만)
-    expect(login, '응답 바디에 accessToken 노출 회귀').not.toMatch(/data:\s*\{[^}]*accessToken/);
+  it('로그인과 공용 응답 writer는 응답 바디에 토큰을 싣지 않는다', () => {
+    for (const path of ['src/app/api/auth/login/route.ts', 'src/lib/auth/auth-session-response.ts']) {
+      expect(read(path), `${path}: 응답 바디에 토큰 노출 회귀`).not.toMatch(TOKEN_IN_JSON_DATA);
+    }
+    const writer = read('src/lib/auth/auth-session-response.ts');
+    const exposed = writer.replace('role: token.role', 'accessToken: token.accessToken, role: token.role');
+    expect(exposed, 'mutation must change the normal authentication JSON').not.toBe(writer);
+    expect(exposed).toMatch(TOKEN_IN_JSON_DATA);
   });
 
   it('브라우저 코드: 토큰을 localStorage/sessionStorage 에 저장하지 않는다', () => {

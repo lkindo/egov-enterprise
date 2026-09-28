@@ -64,8 +64,7 @@ export const PRODUCTION_BUILD_INPUT_PATHS = Object.freeze([
   'frontend/tsconfig.json',
   'frontend/src',
   'frontend/public',
-  'frontend/scripts/ui-quality-baseline-core.mjs',
-  'frontend/scripts/ui-quality-baseline-runner.mjs',
+  'frontend/scripts',
   'config/ui-quality-scenarios.json',
   'config/ui-route-capabilities.json',
 ]);
@@ -94,6 +93,7 @@ export const REQUIRED_PRODUCTION_BUILD_INPUT_FILES = Object.freeze([
   'frontend/tsconfig.json',
   'frontend/scripts/ui-quality-baseline-core.mjs',
   'frontend/scripts/ui-quality-baseline-runner.mjs',
+  'frontend/scripts/validate-api-build-urls.mjs',
   'config/ui-quality-scenarios.json',
   'config/ui-route-capabilities.json',
 ]);
@@ -107,6 +107,7 @@ const PRODUCTION_BUILD_INPUT_EXACT_FILES = new Set(
     'foundation/src/main',
     'frontend/src',
     'frontend/public',
+    'frontend/scripts',
   ].includes(entry)),
 );
 const PRODUCTION_BUILD_INPUT_PREFIXES = Object.freeze([
@@ -117,6 +118,7 @@ const PRODUCTION_BUILD_INPUT_PREFIXES = Object.freeze([
   'foundation/src/main/',
   'frontend/src/',
   'frontend/public/',
+  'frontend/scripts/',
 ]);
 const PRODUCTION_SOURCE_BUILD_INPUT_PREFIXES = Object.freeze(
   PRODUCTION_BUILD_INPUT_PREFIXES.filter((prefix) => prefix !== 'gradle/'),

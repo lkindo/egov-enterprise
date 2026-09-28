@@ -34,21 +34,25 @@ public class AuthorizationApiController {
     public ApiResponse<GroupSnapshot> group(@PathVariable String code) { return ApiResponse.success(service.group(code)); }
 
     @PostMapping("/groups")
+    @nuri.foundation.core.annotation.SensitiveOperation("권한 그룹 생성")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzCreateGroup")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#createGroup')")
     public ApiResponse<Void> createGroup(@Valid @RequestBody CreateGroup request) { service.createGroup(request); return ApiResponse.success(null); }
 
     @PutMapping("/groups/{code}")
+    @nuri.foundation.core.annotation.SensitiveOperation("권한 그룹 변경")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzUpdateGroup")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#updateGroup')")
     public ApiResponse<Void> updateGroup(@PathVariable String code,@Valid @RequestBody UpdateGroup request) { service.updateGroup(code,request); return ApiResponse.success(null); }
 
     @DeleteMapping("/groups/{code}")
+    @nuri.foundation.core.annotation.SensitiveOperation("권한 그룹 삭제")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzDeleteGroup")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#deleteGroup')")
     public ApiResponse<Void> deleteGroup(@PathVariable String code,@RequestParam String version) { service.deleteGroup(code,version); return ApiResponse.success(null); }
 
     @PutMapping("/groups/{code}/grants")
+    @nuri.foundation.core.annotation.SensitiveOperation("그룹 기능 권한 변경")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzReplaceGrants")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#replaceGrants')")
     public ApiResponse<Void> replaceGrants(@PathVariable String code,@Valid @RequestBody ReplaceGrants request) { service.replaceGrants(code,request); return ApiResponse.success(null); }
@@ -59,6 +63,7 @@ public class AuthorizationApiController {
     public ApiResponse<MembershipSnapshot> memberships(@PathVariable String userId) { return ApiResponse.success(service.memberships(userId)); }
 
     @PutMapping("/users/{userId}/groups")
+    @nuri.foundation.core.annotation.SensitiveOperation("사용자 그룹 변경")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzReplaceMemberships")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#replaceMemberships')")
     public ApiResponse<Void> replaceMemberships(@PathVariable String userId,@Valid @RequestBody ReplaceGroups request) { service.replaceMemberships(userId,request); return ApiResponse.success(null); }
@@ -93,6 +98,7 @@ public class AuthorizationApiController {
     }
 
     @PutMapping("/departments/{departmentId}/memberships")
+    @nuri.foundation.core.annotation.SensitiveOperation("부서 구성원 그룹 변경")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzUpdateDepartmentMemberships")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#changeDepartmentGroups')")
     public ApiResponse<DepartmentSnapshot> changeDepartmentGroups(@PathVariable String departmentId,@Valid @RequestBody ChangeDepartmentGroups request) {

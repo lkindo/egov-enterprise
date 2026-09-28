@@ -30,8 +30,13 @@ import {
 
 import { PolicyUpdateRequestSchema } from '@/types/generated-zod';
 import { htmlToSemanticPlainText } from '@/lib/html-to-text';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 export const policySchema = PolicyUpdateRequestSchema.extend({
+  plcyTypeCd: z.string().trim().min(1, '정책 유형 코드를 입력해 주세요.')
+    .max(12, '정책 유형 코드는 최대 12자입니다.')
+    .regex(/^[A-Z0-9_]+$/, '정책 유형 코드는 영대문자·숫자·밑줄만 사용할 수 있습니다.').optional(),
   plcyTtl: PolicyUpdateRequestSchema.shape.plcyTtl
     .trim()
     .min(1, '정책 제목을 입력해 주세요.')
@@ -48,6 +53,7 @@ export const policySchema = PolicyUpdateRequestSchema.extend({
 });
 
 const POLICY_FORM_LABELS = {
+ plcyTypeCd: '정책 유형 코드',
  plcyTtl: '정책 제목',
  plcyCn: '정책 내용',
  'root.server': '저장 오류',
@@ -63,6 +69,8 @@ function toError(value: unknown): Error {
 }
 
 export default function PolicyAdminClient() {
+ const { user } = useAuth();
+ const canWrite = canPermission(user, 'POLICY_UPDATE');
  const { toast } = useToast();
  const [policies, setPolicies] = useState<SystemPolicy[]>([]);
  const [loading, setLoading] = useState(true);
@@ -71,7 +79,7 @@ export default function PolicyAdminClient() {
  const [selectedPolicy, setSelectedPolicy] = useState<SystemPolicy | null>(null);
  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
- const form = useAppForm(policySchema, {
+ const form = useAppForm<typeof policySchema, PolicyFormValues>(policySchema, {
  defaultValues: {
  plcyTtl: '',
  plcyCn: ''
@@ -98,33 +106,45 @@ export default function PolicyAdminClient() {
   }, [fetchPolicies]);
 
  const handleEdit = (policy: SystemPolicy) => {
+ if (!canWrite) return;
  setSelectedPolicy(policy);
  form.reset({
+ plcyTypeCd: policy.plcyTypeCd,
  plcyTtl: policy.plcyTtl || '',
  plcyCn: policy.plcyCn || ''
  });
  setIsEditModalOpen(true);
  };
 
+ const handleCreate = () => {
+ if (!canWrite) return;
+ setSelectedPolicy(null);
+ form.reset({ plcyTypeCd: '', plcyTtl: '', plcyCn: '' });
+ setIsEditModalOpen(true);
+ };
+
  const onFormSubmit = async (values: PolicyFormValues) => {
- if (!selectedPolicy) return;
+ if (!canWrite) return;
  // 정책 유형 코드가 없으면 PUT 경로가 잘못 구성되므로 사전 차단한다.
- if (!selectedPolicy.plcyTypeCd) {
+ const type = selectedPolicy?.plcyTypeCd ?? values.plcyTypeCd;
+ if (!type) {
  form.setError('root.server', { type: 'server', message: '정책 유형 코드가 없어 저장할 수 없습니다.' });
  void form.focusError('root.server', 'server');
  return;
  }
  try {
- await policyAdminService.updatePolicy(selectedPolicy.plcyTypeCd, {
+ const payload = {
  plcyTtl: values.plcyTtl,
  plcyCn: values.plcyCn
- });
- toast('정책이 성공적으로 수정되었습니다', 'success');
+ };
+ if (selectedPolicy) await policyAdminService.updatePolicy(type, payload);
+ else await policyAdminService.createPolicy(type, payload);
+ toast(selectedPolicy ? '정책이 성공적으로 수정되었습니다' : '정책을 등록했습니다.', 'success');
  setIsEditModalOpen(false);
  fetchPolicies();
  } catch (error: unknown) {
  if (!form.applyServerErrors(error)) {
- toast('정책 수정에 실패했습니다. 입력값은 유지됩니다.', 'error');
+ toast('정책 저장에 실패했습니다. 입력값은 유지됩니다.', 'error');
  }
  }
  };
@@ -158,7 +178,7 @@ export default function PolicyAdminClient() {
  {
  header: '관리',
  className: 'text-right',
- accessor: (item) => (
+ accessor: (item) => canWrite ? (
  <div className="flex justify-end">
  <Button
  variant="ghost"
@@ -169,20 +189,23 @@ export default function PolicyAdminClient() {
  <Edit2 size={14} aria-hidden="true" /> 수정
  </Button>
  </div>
- )
+ ) : null
  }
  ];
 
  return (
  <WorkListPage
  title="시스템 정책 관리"
- description="로그인·개인정보 처리방침 등 시스템 전반의 정책을 조회·수정합니다."
+ description="정책을 등록·수정합니다. 열람에는 기존 정책 조회 권한이 필요합니다."
  breadcrumbItems={[{ label: '시스템관리' }, { label: '정책 관리' }]}
  totalCount={error ? undefined : policies.length}
  actions={
+ <div className="flex gap-2">
+ {canWrite && <Button type="button" onClick={handleCreate}>새 정책 등록</Button>}
  <Button onClick={fetchPolicies} variant="outline" size="sm">
  새로고침
  </Button>
+ </div>
  }
  >
  <StandardDataTable
@@ -207,7 +230,7 @@ export default function PolicyAdminClient() {
  <div className="flex items-center justify-between gap-4 border-b border-border bg-card pb-3 pl-5 pr-12 pt-4">
  <DialogHeader>
  <DialogTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
- 정책 수정 : <span className="font-mono text-muted-foreground">{selectedPolicy?.plcyTypeCd}</span>
+ {selectedPolicy ? <>정책 수정 : <span className="font-mono text-muted-foreground">{selectedPolicy.plcyTypeCd}</span></> : '새 정책 등록'}
  </DialogTitle>
  </DialogHeader>
  <div className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
@@ -219,6 +242,18 @@ export default function PolicyAdminClient() {
  <form onSubmit={form.handleSubmit(onFormSubmit)} noValidate>
  <div className="space-y-[var(--form-gap)] bg-card px-5 py-4 custom-scrollbar text-left">
  <FormErrorSummary labels={POLICY_FORM_LABELS} onNavigate={form.focusError} />
+ {!selectedPolicy && <ShadcnFormField
+ control={form.control}
+ name="plcyTypeCd"
+ required
+ render={({ field }) => (
+ <FormItem className="space-y-1.5">
+ <FormLabel>정책 유형 코드</FormLabel>
+ <FormControl><Input {...field} value={field.value ?? ''} maxLength={12} placeholder="영대문자·숫자·밑줄, 최대 12자" /></FormControl>
+ <FormMessage />
+ </FormItem>
+ )}
+ />}
  <ShadcnFormField
  control={form.control}
  name="plcyTtl"
@@ -260,7 +295,7 @@ export default function PolicyAdminClient() {
 
  <DialogFooter className="flex items-center border-t border-border bg-muted px-5 py-3">
  <div className="text-left text-xs text-muted-foreground">
- * 저장하면 정책 본문이 갱신됩니다. 이 본문을 보여 주는 화면은 관리자 전용 정책 열람(/help/policies)뿐입니다.
+ 저장한 정책은 기존 정책 조회 권한 안에서 열람합니다. 로그인 전 공개로 전환되지 않습니다.
  </div>
  <div className="flex shrink-0 gap-2">
  <Button variant="ghost" type="button" disabled={form.formState.isSubmitting} onClick={() => setIsEditModalOpen(false)}>취소</Button>
@@ -269,7 +304,7 @@ export default function PolicyAdminClient() {
  disabled={form.formState.isSubmitting}
  className="px-6"
  >
- {form.formState.isSubmitting ? '저장 중...' : '변경 사항 반영하기'}
+ {form.formState.isSubmitting ? '저장 중...' : selectedPolicy ? '변경 사항 반영하기' : '정책 등록하기'}
  </Button>
  </div>
  </DialogFooter>

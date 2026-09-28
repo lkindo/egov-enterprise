@@ -213,6 +213,7 @@ public class UserApiController {
     }
 
     @Operation(summary = "비밀번호 강제 변경", description = "특정 사용자의 비밀번호를 관리자 권한으로 변경합니다.")
+    @nuri.foundation.core.annotation.SensitiveOperation("관리자 비밀번호 초기화")
     @PatchMapping("/admin/system/users/{userId}/password")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#updatePasswordByAdmin')")
     public ResponseEntity<ApiResponse<Void>> updatePasswordByAdmin(

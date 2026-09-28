@@ -73,4 +73,6 @@ public interface SurveyResultRepository extends JpaRepository<SurveyResult, Long
      * 이 테이블에는 응답자 사용자 ID 컬럼이 따로 없어, 제출자 식별자는 사실상 이 감사 컬럼뿐이다.
      */
     boolean existsBySrvySnAndFrstRgtrId(Long srvySn, String frstRgtrId);
+
+    List<SurveyResult> findBySrvySnAndFrstRgtrId(Long srvySn, String frstRgtrId);
 }

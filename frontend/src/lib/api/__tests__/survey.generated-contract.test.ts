@@ -18,7 +18,7 @@ vi.mock('@/lib/api/client', () => ({
 }));
 
 import {
-  deleteResponseOperation,
+  cancelSubmissionOperation,
   exportStatsOperation,
   getResponseOperation,
   getResponsesOperation,
@@ -26,7 +26,7 @@ import {
 } from '@/types/generated-operations';
 import { SurveyResultDtoResponseSchema } from '@/types/generated-zod';
 import {
-  deleteQustnrRespondInfo,
+  cancelSurveySubmission,
   downloadSurveyStatsXlsx,
   getQustnrRespondInfoDetail,
   getQustnrRespondInfoList,
@@ -74,7 +74,7 @@ describe('survey API generated boundary', () => {
     }).success).toBe(true);
   });
 
-  it('목록·상세·삭제·통계 4건을 exact generated operation으로 실행한다', async () => {
+  it('목록·상세·전체 제출 취소·통계 4건을 exact generated operation으로 실행한다', async () => {
     executeGeneratedOperationMock
       .mockResolvedValueOnce({ list: [response], total: 1, page: 0, size: 10, totalPage: 1 })
       .mockResolvedValueOnce(response)
@@ -89,7 +89,7 @@ describe('survey API generated boundary', () => {
       totalPage: 1,
     });
     await expect(getQustnrRespondInfoDetail(11)).resolves.toEqual(response);
-    await expect(deleteQustnrRespondInfo(11)).resolves.toBeUndefined();
+    await expect(cancelSurveySubmission(11)).resolves.toBeUndefined();
     await expect(getSurveyStats({ srvySn: 2 })).resolves.toEqual([stats]);
 
     expect(executeGeneratedOperationMock).toHaveBeenNthCalledWith(1, getResponsesOperation, {
@@ -98,7 +98,7 @@ describe('survey API generated boundary', () => {
     expect(executeGeneratedOperationMock).toHaveBeenNthCalledWith(2, getResponseOperation, {
       path: { srvyRspnsSn: 11 },
     });
-    expect(executeGeneratedOperationMock).toHaveBeenNthCalledWith(3, deleteResponseOperation, {
+    expect(executeGeneratedOperationMock).toHaveBeenNthCalledWith(3, cancelSubmissionOperation, {
       path: { srvyRspnsSn: 11 },
     });
     expect(executeGeneratedOperationMock).toHaveBeenNthCalledWith(4, getStatsOperation, {

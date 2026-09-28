@@ -6,6 +6,7 @@ import nuri.foundation.core.annotation.PrivacyAccess;
 import nuri.business.service.addressbook.AddressBookService;
 import nuri.business.service.addressbook.dto.AddressBookDto;
 import nuri.business.service.addressbook.dto.AddressBookUserDto;
+import nuri.business.service.addressbook.dto.AddressBookUserSelectionDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -81,8 +82,10 @@ public class AddressBookApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "주소록 사용자 검색", description = "주소록에 추가할 사용자를 시스템 전체에서 검색합니다.")
-    @PrivacyAccess("주소록 사용자 검색(성명·이메일·전화번호)")
+    @Deprecated
+    @Operation(summary = "주소록 사용자 검색(구 계약)", deprecated = true,
+            description = "외부 소비자 확인 전까지 기존 로그인 ID(userId)·연락처 응답을 유지합니다. 신규 소비자는 연락처 없는 /user-selections의 내부 키(esntlId) 계약으로 전환합니다.")
+    @PrivacyAccess("주소록 사용자 검색(로그인 ID·성명·연락처, 퇴역 확인 대기)")
     @GetMapping("/search-users")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.addressbook.AddressBookApiController#searchUsers')")
     public ResponseEntity<ApiResponse<PageResponse<AddressBookUserDto>>> searchUsers(
@@ -90,5 +93,14 @@ public class AddressBookApiController {
             @PageableDefault(size = 10) Pageable pageable) {
         Page<AddressBookUserDto> result = addressBookService.searchUsers(searchWrd, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
+    }
+
+    @Operation(summary = "주소록 활성 사용자 선택", description = "활성 사용자의 내부 키·이름·부서만 반환합니다. 연락처와 로그인 ID는 반환하지 않습니다.")
+    @PrivacyAccess("주소록 활성 사용자 선택(성명·부서)")
+    @GetMapping("/user-selections")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.addressbook.AddressBookApiController#searchUserSelections')")
+    public ResponseEntity<ApiResponse<PageResponse<AddressBookUserSelectionDto>>> searchUserSelections(
+            @RequestParam String searchWrd, @PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(addressBookService.searchUserSelections(searchWrd, pageable))));
     }
 }

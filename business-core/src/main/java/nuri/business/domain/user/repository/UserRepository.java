@@ -17,6 +17,16 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     Optional<User> findByEsntlId(String esntlId);
     Optional<User> findByUserId(String userId);
 
+    /** 사용자 상태 변경과 신규 수신자 배정을 같은 사용자 행에서 직렬화한다. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT u FROM User u WHERE u.esntlId = :esntlId")
+    Optional<User> findByEsntlIdForUpdate(@Param("esntlId") String esntlId);
+
+    /** 로그인 ID로 기록된 과거 제출을 현재 사용자에 결속하는 동안 삭제/재생성을 막는다. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT u FROM User u WHERE u.userId = :userId")
+    Optional<User> findByUserIdForUpdate(@Param("userId") String userId);
+
     Optional<User> findByCertDnVl(String certDnVl);
 
     Optional<User> findByUserNmAndEmlAddr(String userNm, String emlAddr);

@@ -140,9 +140,30 @@
     "quality/board-draft-recovery.spec.ts": 8091,
     "quality/error-recovery.spec.ts": 10821,
     "quality/login-accessibility.spec.ts": 6741,
+    "quality/mfa-accessibility.spec.ts": 28695,
     "quality/responsive-shell.spec.ts": 14635,
     "quality/route-accessibility.spec.ts": 28743,
     "quality/stored-xss.spec.ts": 5814,
     "quality/visual-baselines.spec.ts": 14674
-  }
+  },
+  "supplementalMeasurements": [
+    {
+      "scope": [
+        "quality/mfa-accessibility.spec.ts"
+      ],
+      "status": "provisional-local-supplement",
+      "executionKind": "local-isolated",
+      "runId": "d0528e2707974e381c771679",
+      "sourceCommit": "15e28caabeb772236213f187ce13fae586a20dd6",
+      "sourceOverlaySha256": "d92db0491422dd5f112ca3d4ffd9ac12ee579250113e0691e6f42ab31421d642",
+      "capturedAt": "2026-09-28T04:44:00.588Z",
+      "runner": "Windows / local isolated Playwright",
+      "workers": 1,
+      "weightMethod": "observed-passed-attempt-duration-sum",
+      "observedPassedAttemptDurationMs": 28695,
+      "reportPath": "build/review-loop/completeness-a-20260928/e2e-worktree/build/isolated-e2e/d0528e2707974e381c771679/results.json",
+      "reportSha256": "ffdb047bfe73a798e6b622fa587d714cfed39b6a81f0440de466eff59bfcaeba",
+      "note": "Only this new MFA spec was measured locally. It did not run in the historical Linux workflow recorded by source; replace this provisional weight with the next successful CI observation."
+    }
+  ]
 }

@@ -58,6 +58,93 @@ describe('AuthContext', () => {
     });
   });
 
+  it('MFA 도전에서는 현재 사용자 조회나 일반 세션 승격을 하지 않는다', async () => {
+    vi.mocked(authService.getCurrentUser).mockRejectedValue(new Error('signed out'));
+    vi.mocked(authService.login).mockResolvedValue({ authenticationStage: 'MFA_REQUIRED', mfaChallengeExpiresAt: '2026-12-31T00:00:00Z' });
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    vi.mocked(authService.getCurrentUser).mockClear();
+    await act(async () => {
+      expect(await result.current.login({ id: 'test', password: 'password' })).toMatchObject({ authenticationStage: 'MFA_REQUIRED' });
+    });
+    expect(authService.getCurrentUser).not.toHaveBeenCalled();
+    expect(result.current.user).toBeNull();
+  });
+
+  it('MFA 등록 진입은 사용자 캐시를 폐기하고 늦은 세션 조회와 focus 재조회를 막는다', async () => {
+    const user = { id: 'fixture', esntlId: 'opaque', name: 'Fixture', role: 'USER', groups: ['ROLE_USER'], permissions: [], authorizationVersion: 'v1' };
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(user);
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.user?.id).toBe('fixture'));
+    queryClient.setQueryData(['private-data'], { fixture: true });
+    let resolve!: (value: typeof user) => void;
+    vi.mocked(authService.getCurrentUser).mockReturnValueOnce(new Promise(done => { resolve = done; }));
+    let pending!: Promise<void>;
+    act(() => { pending = result.current.checkAuth(); });
+    act(() => result.current.enterMfaChallenge());
+    expect(result.current.user).toBeNull();
+    expect(result.current.mfaPending).toBe(true);
+    expect(queryClient.getQueryData(['private-data'])).toBeUndefined();
+    expect(isSignedOut()).toBe(true);
+    await act(async () => { resolve(user); await pending; });
+    vi.mocked(authService.getCurrentUser).mockClear();
+    await act(async () => { window.dispatchEvent(new Event('focus')); await result.current.checkAuth(); });
+    expect(authService.getCurrentUser).not.toHaveBeenCalled();
+    expect(result.current.user).toBeNull();
+    expect(result.current.mfaPending).toBe(true);
+    await act(async () => { await result.current.logout(); });
+    expect(result.current.mfaPending).toBe(false);
+    expect(result.current.user).toBeNull();
+  });
+
+  it('이전 로그인 성공이 추가 인증 대기를 해제하지 않으며 새 로그인만 일반 세션을 복구한다', async () => {
+    vi.mocked(authService.getCurrentUser).mockResolvedValue(null as never);
+    let resolve!: (value: Awaited<ReturnType<typeof authService.login>>) => void;
+    vi.mocked(authService.login).mockReturnValueOnce(new Promise(done => { resolve = done; }));
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    let previousLogin!: Promise<unknown>;
+    act(() => { previousLogin = result.current.login({ id: 'fixture', password: 'fixture-password' }); });
+    act(() => result.current.enterMfaChallenge());
+    const authenticated = { authenticationStage: 'AUTHENTICATED' as const, role: 'ROLE_USER', groups: ['ROLE_USER'], permissions: [], authorizationVersion: 'v2' };
+    await act(async () => { resolve(authenticated); await expect(previousLogin).rejects.toThrow(); });
+    expect(result.current.mfaPending).toBe(true);
+    expect(result.current.user).toBeNull();
+
+    const user = { id: 'fixture', name: 'Fixture', ...authenticated };
+    vi.mocked(authService.login).mockResolvedValueOnce(authenticated);
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(user);
+    await act(async () => { await result.current.login({ id: 'fixture', password: 'fixture-password' }); });
+    expect(result.current.mfaPending).toBe(false);
+    expect(result.current.user?.id).toBe('fixture');
+  });
+
+  it.each([
+    ['MFA_REQUIRED', 'logout'], ['ENROLLMENT_REQUIRED', 'logout'],
+    ['MFA_REQUIRED', 'login'], ['ENROLLMENT_REQUIRED', 'login'],
+  ] as const)('늦은 %s 응답은 더 최근 %s 결과를 지우거나 대기를 복구하지 않는다', async (stage, latest) => {
+    vi.mocked(authService.getCurrentUser).mockResolvedValue(null as never);
+    let resolve!: (value: Awaited<ReturnType<typeof authService.login>>) => void;
+    vi.mocked(authService.login).mockReturnValueOnce(new Promise(done => { resolve = done; }));
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    let previousLogin!: Promise<unknown>;
+    act(() => { previousLogin = result.current.login({ id: 'previous', password: 'fixture-password' }); });
+    if (latest === 'logout') await act(async () => { await result.current.logout(); });
+    else {
+      vi.mocked(authService.login).mockResolvedValueOnce({ authenticationStage: 'AUTHENTICATED', role: 'ROLE_USER', groups: [], permissions: [], authorizationVersion: 'new' });
+      vi.mocked(authService.getCurrentUser).mockResolvedValueOnce({ id: 'current', name: 'Current', groups: [], permissions: [], authorizationVersion: 'new' });
+      await act(async () => { await result.current.login({ id: 'current', password: 'fixture-password' }); });
+    }
+    await act(async () => {
+      resolve({ authenticationStage: stage, mfaChallengeExpiresAt: '2026-12-31T00:00:00Z' });
+      await expect(previousLogin).rejects.toThrow();
+    });
+    expect(result.current.mfaPending).toBe(false);
+    expect(result.current.loading).toBe(false);
+    expect(result.current.user?.id ?? null).toBe(latest === 'login' ? 'current' : null);
+  });
+
   it('로그아웃 시 사용자 세션 정보가 비워져야 함', async () => {
     (authService.logout as any).mockResolvedValue({});
     localStorage.setItem('egov-board-draft:v2:user-1:BBS-1:create:new', 'draft');

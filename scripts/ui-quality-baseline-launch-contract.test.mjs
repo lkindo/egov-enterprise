@@ -91,7 +91,7 @@ function executionEnvironment() {
   return {
     PATH: 'safe-path',
     DOCKER_CONTEXT: 'baseline-closed-context',
-    UI_BASELINE_DB_NAME: 'egovdb',
+    UI_BASELINE_DB_NAME: 'authz_e2e',
     UI_BASELINE_DB_USER: 'egov',
     UI_BASELINE_DB_PASSWORD: 'private-db-password',
     UI_BASELINE_JWT_SECRET: 'private-jwt-secret',
@@ -237,7 +237,7 @@ test('compose specification binds immutable images, run-scoped names/network and
   assert.equal(specification.networks.baseline.name, NETWORK);
   assert.equal(
     specification.services.db.healthcheck.test[1],
-    'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"',
+    'pg_isready -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"',
   );
   assert.deepEqual(specification.services.frontend.healthcheck, {
     test: ['CMD-SHELL', 'wget --spider -q http://127.0.0.1:3000/login || exit 1'],
@@ -249,12 +249,15 @@ test('compose specification binds immutable images, run-scoped names/network and
     'JWT_ACCESS_TOKEN_VALIDITY_MS',
     'JWT_SECRET',
     'MANAGEMENT_HEALTH_MAIL_ENABLED',
+    'NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK',
+    'NURI_AUTHORIZATION_ISOLATED_CUTOVER',
     'SPRING_DATASOURCE_JDBC_URL',
     'SPRING_DATASOURCE_PASSWORD',
     'SPRING_DATASOURCE_URL',
     'SPRING_DATASOURCE_USERNAME',
     'SPRING_FLYWAY_LOCATIONS',
     'SPRING_JPA_HIBERNATE_DDL_AUTO',
+    'SPRING_PROFILES_ACTIVE',
   ]);
 });
 
@@ -347,7 +350,7 @@ test('launch runs contracts before Compose, validates exact stack, passes a clos
   assert.equal(typeof serializedCompose, 'string');
   assert.equal(
     configCall.env.SPRING_DATASOURCE_JDBC_URL,
-    'jdbc:postgresql://db:5432/egovdb',
+    'jdbc:postgresql://db:5432/authz_e2e',
   );
   for (const secret of ['private-db-password', 'private-jwt-secret', 'private-admin-secret']) {
     assert.equal(serializedCompose.includes(secret), false);
@@ -382,6 +385,42 @@ test('launch runs contracts before Compose, validates exact stack, passes a clos
     assert.equal(dockerCall.env.DOCKER_CONTEXT, 'baseline-closed-context');
   }
   assert.equal(existsSync(path.dirname(composeFile)), false);
+});
+
+test('baseline startup opts into exactly the disposable authorization rehearsal and ignores ambient overrides', () => {
+  for (const databaseName of [undefined, 'authz_e2e_baseline']) {
+    const fixture = createFixture();
+    const executor = fakeExecutor();
+    const environment = { ...executionEnvironment(),
+      SPRING_PROFILES_ACTIVE: 'prod,mock-security', SPRING_DATASOURCE_URL: 'jdbc:postgresql://remote/shared',
+      SPRING_JPA_HIBERNATE_DDL_AUTO: 'create-drop', SPRING_FLYWAY_LOCATIONS: 'classpath:db/unsafe',
+      NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'false', NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'untrusted',
+    };
+    delete environment.UI_BASELINE_DB_NAME;
+    if (databaseName) environment.UI_BASELINE_DB_NAME = databaseName;
+    launchAttestedBaseline({ ...launchInput(fixture), environment }, launchDependencies(executor));
+    const compose = findCall(executor.calls, ({ command, args }) => command === 'docker' && args.includes('config'));
+    assert.equal(compose.env.POSTGRES_DB, databaseName ?? 'authz_e2e');
+    assert.equal(compose.env.SPRING_PROFILES_ACTIVE, 'e2e');
+    assert.equal(compose.env.NURI_AUTHORIZATION_ISOLATED_CUTOVER, 'true');
+    assert.equal(compose.env.NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK, 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE');
+    assert.equal(compose.env.SPRING_DATASOURCE_URL, `jdbc:postgresql://db:5432/${databaseName ?? 'authz_e2e'}`);
+    assert.equal(compose.env.SPRING_DATASOURCE_JDBC_URL, compose.env.SPRING_DATASOURCE_URL);
+    assert.equal(compose.env.SPRING_JPA_HIBERNATE_DDL_AUTO, 'validate');
+    assert.equal(compose.env.SPRING_FLYWAY_LOCATIONS, 'classpath:db/migration,classpath:db/seed-dev');
+  }
+});
+
+test('baseline rejects non-disposable database names before creating a runtime descriptor or invoking Docker', () => {
+  for (const databaseName of ['egovdb', 'shared', 'AUTHZ_E2E', 'authz_e2e_', `authz_e2e_${'a'.repeat(41)}`, 'authz_e2e_x?currentSchema=private']) {
+    const fixture = createFixture();
+    const executor = fakeExecutor();
+    assert.throws(() => launchAttestedBaseline({ ...launchInput(fixture),
+      environment: { ...executionEnvironment(), UI_BASELINE_DB_NAME: databaseName },
+    }, launchDependencies(executor)), /database identity is invalid/);
+    assert.equal(executor.calls.some(({ command }) => command === 'docker'), false);
+    assert.equal(existsSync(fixture.runtimeRoot), false);
+  }
 });
 
 test('cleanup leaves the recovery descriptor intact when the bounded runtime directory is not empty', () => {

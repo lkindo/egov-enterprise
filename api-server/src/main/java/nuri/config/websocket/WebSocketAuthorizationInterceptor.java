@@ -1,10 +1,13 @@
 package nuri.config.websocket;
 
 import java.security.Principal;
-import java.util.Set;
+import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+import nuri.foundation.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.mfa.MfaSessionEvidence;
 import nuri.foundation.security.service.CustomUserDetails;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.Message;
@@ -37,9 +40,9 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 @Component
 public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
 
-    private static final Set<String> ALLOWED_SUBSCRIPTIONS = Set.of(
-            "/user/queue/notifications",
-            "/topic/dashboard/stats");
+    private static final Map<String, String> SUBSCRIPTION_PERMISSIONS = Map.of(
+            "/user/queue/notifications", "NOTI_READ",
+            "/topic/dashboard/stats", "DASHBOARD_READ");
 
     private final UserDetailsService userDetailsService;
     private final Map<String, SessionAuthorization> sessions = new ConcurrentHashMap<>();
@@ -79,8 +82,20 @@ public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
         if (command == StompCommand.CONNECT) {
             try {
                 CustomUserDetails current = loadCurrent(authentication.getName());
-                sessions.put(sessionId, new SessionAuthorization(current.getUsername(), current.getAuthorizationVersion()));
-                accessor.setUser(new UsernamePasswordAuthenticationToken(current, null, current.getAuthorities()));
+                CustomUserDetails handshake = (CustomUserDetails) authentication.getPrincipal();
+                if (!Objects.equals(handshake.getCredentialsChangedAt(), current.getCredentialsChangedAt())) {
+                    throw new AccessDeniedException("WebSocket credentials changed; authenticate again");
+                }
+                MfaSessionEvidence evidence = authentication.getDetails() instanceof MfaSessionEvidence signed ? signed : null;
+                JwtTokenProvider.assertMfaSession(current, evidence);
+                var connected = new SessionAuthorization(current.getUsername(), current.getAuthorizationVersion(),
+                        current.getCredentialsChangedAt(), evidence, new ConcurrentHashMap<>());
+                if (sessions.putIfAbsent(sessionId, connected) != null) {
+                    throw new AccessDeniedException("WebSocket session is already connected");
+                }
+                var canonical = new UsernamePasswordAuthenticationToken(current, null, current.getAuthorities());
+                canonical.setDetails(evidence);
+                accessor.setUser(canonical);
                 return MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
             } catch (RuntimeException denied) {
                 closeRevokedSession(sessionId);
@@ -89,10 +104,14 @@ public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
         }
 
         // HTTP 인증 당시 principal이나 연결 시점의 permission을 계속 신뢰하지 않는다.
-        requireUnchangedAuthorization(sessionId);
+        CurrentSession current = requireUnchangedAuthorization(sessionId);
         return switch (command) {
-            case UNSUBSCRIBE, ACK, NACK -> message;
-            case SUBSCRIBE -> authorizeSubscription(accessor.getDestination(), message);
+            case ACK, NACK -> message;
+            case UNSUBSCRIBE -> {
+                current.connected().subscriptions().remove(requireSubscriptionId(accessor.getSubscriptionId()));
+                yield message;
+            }
+            case SUBSCRIBE -> authorizeSubscription(accessor, current, message);
             // 클라이언트의 broker/app 직접 SEND는 이전과 같이 전부 거부한다.
             default -> throw new AccessDeniedException("STOMP command is not allowed: " + command);
         };
@@ -108,11 +127,18 @@ public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
                 }
                 String sessionId = SimpMessageHeaderAccessor.getSessionId(message.getHeaders());
                 try {
-                    requireUnchangedAuthorization(sessionId);
+                    CurrentSession current = requireUnchangedAuthorization(sessionId);
+                    String subscriptionId = requireSubscriptionId(SimpMessageHeaderAccessor.getSubscriptionId(message.getHeaders()));
+                    Subscription subscription = current.connected().subscriptions().get(subscriptionId);
+                    if (subscription == null || !subscription.destination().equals(SimpMessageHeaderAccessor.getDestination(message.getHeaders()))
+                            || !current.principal().getPermissions().contains(subscription.permission())) {
+                        throw new AccessDeniedException("Current WebSocket subscription permission required");
+                    }
                     return message;
                 } catch (RuntimeException denied) {
                     // 한 수신자의 회수/저장소 장애가 다른 수신자에게 보내는 publish를 실패시키지 않는다.
                     // 메시지는 전달하지 않고 해당 연결을 종료한다. 재연결은 현재 권한으로 다시 인증한다.
+                    closeRevokedSession(sessionId);
                     return null;
                 }
             }
@@ -135,7 +161,7 @@ public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
         forgetSession(event.getSessionId());
     }
 
-    private void requireUnchangedAuthorization(String sessionId) {
+    private CurrentSession requireUnchangedAuthorization(String sessionId) {
         try {
             SessionAuthorization connected = sessionId == null ? null : sessions.get(sessionId);
             if (connected == null) {
@@ -145,6 +171,11 @@ public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
             if (!connected.version().equals(current.getAuthorizationVersion())) {
                 throw new AccessDeniedException("WebSocket authorization changed; reconnect required");
             }
+            if (!Objects.equals(connected.credentialsChangedAt(), current.getCredentialsChangedAt())) {
+                throw new AccessDeniedException("WebSocket credentials changed; authenticate again");
+            }
+            JwtTokenProvider.assertMfaSession(current, connected.mfaEvidence());
+            return new CurrentSession(connected, current);
         } catch (RuntimeException denied) {
             closeRevokedSession(sessionId);
             throw denied;
@@ -181,13 +212,31 @@ public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
         }
     }
 
-    private record SessionAuthorization(String subject, String version) {}
+    private record SessionAuthorization(String subject, String version, Instant credentialsChangedAt, MfaSessionEvidence mfaEvidence,
+            Map<String, Subscription> subscriptions) {}
+    private record CurrentSession(SessionAuthorization connected, CustomUserDetails principal) {}
+    private record Subscription(String destination, String permission) {}
 
-    private static Message<?> authorizeSubscription(String destination, Message<?> message) {
-        if (destination != null && ALLOWED_SUBSCRIPTIONS.contains(destination)) {
-            return message;
+    private static Message<?> authorizeSubscription(StompHeaderAccessor accessor, CurrentSession current, Message<?> message) {
+        String destination = accessor.getDestination();
+        String permission = destination == null ? null : SUBSCRIPTION_PERMISSIONS.get(destination);
+        if (permission == null || !current.principal().getPermissions().contains(permission)) {
+            throw new AccessDeniedException("STOMP subscription permission is not allowed");
         }
-        throw new AccessDeniedException("STOMP subscription destination is not allowed");
+        String subscriptionId = requireSubscriptionId(accessor.getSubscriptionId());
+        // Spring DefaultUserDestinationResolver binds private queues to this exact session.
+        // Its real broker/resolver contract is exercised by WebSocketAuthorizationInterceptorTest.
+        String physicalDestination = "/user/queue/notifications".equals(destination)
+                ? "/queue/notifications-user" + accessor.getSessionId() : destination;
+        if (current.connected().subscriptions().putIfAbsent(subscriptionId, new Subscription(physicalDestination, permission)) != null) {
+            throw new AccessDeniedException("STOMP subscription ID is already registered");
+        }
+        return message;
+    }
+
+    private static String requireSubscriptionId(String subscriptionId) {
+        if (subscriptionId == null || subscriptionId.isBlank()) throw new AccessDeniedException("STOMP subscription ID is required");
+        return subscriptionId;
     }
 
     private static Authentication authenticated(Principal principal) {

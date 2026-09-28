@@ -90,7 +90,7 @@ describe('CommunityDetailHubClient join pending contract', () => {
     render(
       <CommunityDetailHubClient
         cmntySn={9}
-        initialData={{ cmntySn: 9, cmntyNm: '보존할 커뮤니티', cmntyIntroCn: '소개', useYn: 'Y', frstRgtrId: 'founder-login-id', crtDt: '2026-09-01T10:00:00' } as any}
+        initialData={{ cmntySn: 9, cmntyNm: '보존할 커뮤니티', cmntyIntroCn: '소개', useYn: 'Y', createdByMe: true, editable: false, deletable: false, crtDt: '2026-09-01T10:00:00' } as any}
       />,
     );
 

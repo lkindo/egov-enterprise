@@ -30,6 +30,7 @@ class LogRetentionSchedulerTest {
     /** [2026-09-02] 개인정보 접근 로그가 파기 대상에 편입됐다 — 종전에는 파기 경로 자체가 없었다. */
     @Mock private nuri.business.domain.log.PrivacyLogRepository privacyLogRepository;
 
+    @Mock private nuri.business.domain.log.SensitiveAuditLogRepository sensitiveAuditLogRepository;
     @InjectMocks private LogRetentionScheduler scheduler;
 
     private void setMonths(int web, int sys, int login, int user, int privacy) {
@@ -88,5 +89,21 @@ class LogRetentionSchedulerTest {
         scheduler.purgeExpiredLogs();
         verify(webLogRepository).deleteOldLogs(24);
         verify(privacyLogRepository, never()).deleteOldLogs(org.mockito.ArgumentMatchers.anyInt());
+    }
+    @Test
+    void sensitiveRetentionCannotBeReducedBelow24Months() {
+        ReflectionTestUtils.setField(scheduler, "sensitiveMonths", 23);
+        scheduler.purgeExpiredLogs();
+        verify(sensitiveAuditLogRepository, never()).deleteBefore(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void sensitiveRetentionUses24CalendarMonths() {
+        var before = java.time.LocalDateTime.now().minusMonths(24);
+        ReflectionTestUtils.setField(scheduler, "sensitiveMonths", 24);
+        scheduler.purgeExpiredLogs();
+        var cutoff = org.mockito.ArgumentCaptor.forClass(java.time.LocalDateTime.class);
+        verify(sensitiveAuditLogRepository).deleteBefore(cutoff.capture());
+        org.assertj.core.api.Assertions.assertThat(cutoff.getValue()).isBetween(before, java.time.LocalDateTime.now().minusMonths(24));
     }
 }

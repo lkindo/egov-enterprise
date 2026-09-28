@@ -39,7 +39,12 @@ public class AuthApiController {
         String clientIp = clientIpResolver.resolve(request);
         log.debug(">>> [Login] Authentication requested");
         TokenResponse tokenResponse = authService.login(loginRequest, clientIp);
-        jwtTokenProvider.addRefreshTokenCookie(response, tokenResponse.getRefreshToken());
+        response.setHeader("Cache-Control", "no-store");
+        if (tokenResponse.getRefreshToken() != null) {
+            jwtTokenProvider.addRefreshTokenCookie(response, tokenResponse.getRefreshToken());
+        } else {
+            jwtTokenProvider.removeRefreshTokenCookie(response);
+        }
         return ApiResponse.success(tokenResponse);
     }
 

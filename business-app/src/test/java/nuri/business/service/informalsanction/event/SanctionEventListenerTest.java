@@ -46,6 +46,13 @@ class SanctionEventListenerTest {
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
         sanctionEventListener = new SanctionEventListener(userService, eventPublisher);
+        lenient().doAnswer(call -> {
+            Object event = call.getArgument(0);
+            if (event instanceof SanctionExternalNotificationEvent external) {
+                sanctionEventListener.handleExternalChannels(external);
+            }
+            return null;
+        }).when(eventPublisher).publishEvent(any(Object.class));
     }
 
     /** 발행된 이벤트 중 해당 타입만 순서대로 모은다. */
@@ -316,8 +323,6 @@ class SanctionEventListenerTest {
                     .when(eventPublisher).publishEvent(any(SmsRequestedEvent.class));
             doThrow(new UnsupportedOperationException("PII_MAIL_EXCEPTION\r\nFORGED_MAIL_EXCEPTION"))
                     .when(eventPublisher).publishEvent(any(MailRequestedEvent.class));
-            doThrow(new SecurityException("PII_APP_EXCEPTION\r\nFORGED_APP_EXCEPTION"))
-                    .when(eventPublisher).publishEvent(any(NotificationRequestedEvent.class));
             sanctionEventListener.handleStatusChanged(new SanctionStatusChangedEvent(
                     73L, channelApplicant, "PII_ACTOR",
                     nuri.business.domain.informalsanction.SanctionStatus.REJECTED, reason));
@@ -335,7 +340,7 @@ class SanctionEventListenerTest {
                 71L, 72L, 73L, 74L,
                 nuri.business.domain.informalsanction.SanctionStatus.REJECTED,
                 "IllegalStateException", "IllegalArgumentException",
-                "UnsupportedOperationException", "SecurityException");
+                "UnsupportedOperationException");
         assertThat(appender.list).isNotEmpty();
         for (ILoggingEvent loggingEvent : appender.list) {
             assertThat(loggingEvent.getThrowableProxy())
@@ -357,8 +362,18 @@ class SanctionEventListenerTest {
                 .collect(java.util.stream.Collectors.joining("|"));
         assertThat(formattedLogs)
                 .contains("sanctionSn=71", "status=REJECTED", "exceptionType=IllegalStateException",
-                        "exceptionType=IllegalArgumentException", "exceptionType=UnsupportedOperationException",
-                        "exceptionType=SecurityException")
+                        "exceptionType=IllegalArgumentException", "exceptionType=UnsupportedOperationException")
                 .doesNotContain("PII_", "FORGED_", "98765432", "secret.invalid");
+    }
+
+    @Test void inAppIntentFailurePropagatesBeforeExternalChannelsAreScheduled() {
+        var event = new SanctionStatusChangedEvent(99L, "receiver", "actor",
+                nuri.business.domain.informalsanction.SanctionStatus.APPROVED, null);
+        doThrow(new IllegalStateException("intent unavailable"))
+                .when(eventPublisher).publishEvent(any(NotificationRequestedEvent.class));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> sanctionEventListener.handleStatusChanged(event))
+                .isInstanceOf(IllegalStateException.class);
+        verifyNoInteractions(userService);
+        verify(eventPublisher, never()).publishEvent(any(SanctionExternalNotificationEvent.class));
     }
 }

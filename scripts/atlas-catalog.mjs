@@ -439,13 +439,33 @@ export function buildAtlasCatalog(repoRoot) {
 
   const decisionSource = '.agent/memory/decisions.md';
   const decisionText = io.read(decisionSource);
-  const decisionRecords = tableRows(decisionText, '(?:ADR-\\d{4}|DEC-OPS-\\d{3}) \\|').map(({ raw, cells }) =>
-    record(cells[0], cells[0], excerpt(cells[2] ?? ''), cells[1], decisionSource, {
-      details: [detail('대체 범위 원문', cells.at(-1)),
+  const decisionRecords = tableRows(decisionText, '(?:ADR-\\d{4}|DEC-OPS-\\d{3}) \\|').map(({ raw, cells }) => {
+    const id = cells[0];
+    const links = localLinks(raw, decisionSource);
+    // Keep the memory row's stable ID/source. Only its explicit same-ID ADR is authoritative;
+    // related decisions and similarly named documents must not supply approval or search content.
+    const adrPaths = [...new Set(links.map(link => link.path.split('#')[0]).filter(source =>
+      source.startsWith('docs/02-architecture/decisions/') && path.posix.basename(source).startsWith(`${id}-`)))];
+    let adrTitle;
+    let adrText = '';
+    let adrStatus;
+    if (id.startsWith('ADR-')) {
+      requireValue(adrPaths.length === 1, `${id} must link exactly one same-ID ADR`);
+      const text = io.read(adrPaths[0]);
+      adrTitle = heading(text, '');
+      requireValue(new RegExp(`^${id}(?:\\s|:|：|—|$)`).test(adrTitle), `${id} canonical ADR heading differs`);
+      adrStatus = declaredDocumentStatus(text, adrPaths[0]);
+      if (cells[1] === 'accepted' && /^Accepted\b/i.test(adrStatus)) adrText = text;
+    }
+    return record(id, adrTitle || id, excerpt(cells[2] ?? ''), cells[1], decisionSource, {
+      details: [detail('결정 원문', cells[2]), detail('이유', cells[3]), detail('시행일', cells[5]),
+        ...(adrTitle ? [detail('ADR 선언 상태', adrStatus)] : []), detail('대체 범위 원문', cells.at(-1)),
         detail('효력 주의', '요약이며 원문이 우선합니다. 시행일·당시 수치는 역사 기록이고 accepted라도 일부 범위가 후속 결정으로 대체될 수 있습니다.')],
       supersedes: cells.at(-1), references: [...new Set([...raw.matchAll(/\b(?:ADR-\d{4}|DEC-OPS-\d{3})\b/g)].map(match => match[0]).filter(id => id !== cells[0]))],
-      links: localLinks(raw, decisionSource).slice(0, 3),
-    }));
+      links,
+      searchText: [...cells, adrText].join('\n'),
+    });
+  });
   const gapSource = '.agent/memory/known-gaps.md';
   const gapRecords = tableRows(io.read(gapSource), 'GAP-[A-Z]+-\\d{3} \\|').map(({ raw, cells }) =>
     record(cells[0], `${cells[0]} · ${cells[3]}`, cells[4], cells[2], gapSource,

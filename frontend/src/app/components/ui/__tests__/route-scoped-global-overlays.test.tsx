@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouteScopedGlobalOverlays } from '@/app/providers';
 import { GlobalCommandCenter } from '../global-command-center';
 import { GlobalShortcutProvider } from '../global-shortcut-provider';
@@ -9,6 +10,7 @@ const routeMocks = vi.hoisted(() => ({
   logout: vi.fn(),
   getHeadMenus: vi.fn(),
   getLeftMenus: vi.fn(),
+  getMyBookmarks: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -22,21 +24,24 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ logout: routeMocks.logout }),
+  useAuth: () => ({ logout: routeMocks.logout, user: { id: 'staff01', authorizationVersion: 'v1' } }),
 }));
 
 vi.mock('@/services/business/user/MenuService', () => ({
   menuService: {
     getHeadMenus: (...args: unknown[]) => routeMocks.getHeadMenus(...args),
     getLeftMenus: (...args: unknown[]) => routeMocks.getLeftMenus(...args),
+    getMyBookmarks: (...args: unknown[]) => routeMocks.getMyBookmarks(...args),
   },
 }));
 
 function renderRouteOverlays(children: React.ReactNode) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <GlobalShortcutProvider>
       <RouteScopedGlobalOverlays>{children}</RouteScopedGlobalOverlays>
-    </GlobalShortcutProvider>
+    </GlobalShortcutProvider>,
+    { wrapper: ({ children }) => <QueryClientProvider client={queryClient}>{children}</QueryClientProvider> },
   );
 }
 
@@ -46,6 +51,7 @@ describe('RouteScopedGlobalOverlays', () => {
     routeMocks.pathname = '/admin';
     routeMocks.getHeadMenus.mockResolvedValue([]);
     routeMocks.getLeftMenus.mockResolvedValue([]);
+    routeMocks.getMyBookmarks.mockResolvedValue([]);
   });
 
   it('업무 화면에서는 세 오버레이를 렌더하고 로그인 경로에서는 모두 언마운트한다', () => {

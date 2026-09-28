@@ -42,10 +42,10 @@ vi.mock('@tanstack/react-query', () => ({
 
 import { BoardDetailClient } from '../BoardDetailClient';
 
-function detail(tmpltId: string, qnaSttsCd: string, userId = 'owner-id') {
+function detail(tmpltId: string, qnaSttsCd: string, userId = 'owner-id', requiredEditPermissions: string[] = []) {
   return {
     article: { pstSn: 31, pstTtl: '질문', pstCn: '본문', userId, qnaSttsCd, likeCnt: 0, inqCnt: 1 },
-    masterInfo: { bbsTtl: 'Q&A', tmpltId },
+    masterInfo: { bbsTtl: 'Q&A', tmpltId, requiredEditPermissions },
     initialComments: [],
     fetchError: null,
   };
@@ -87,6 +87,11 @@ describe('BoardDetailClient 권한으로 막힌 글 (DIP V9)', () => {
 });
 
 describe('BoardDetailClient Q&A 해결 표시', () => {
+  it('작성자여도 지정 편집 권한이 없으면 수정·삭제·해결을 제공하지 않는다', async () => {
+    await renderDetail(detail('TMPLT_QNA', 'OPEN', 'owner-id', ['NOTICE_EDIT', 'FAQ_EDIT']));
+    expect(screen.queryByRole('button', { name: /수정|삭제|해결/ })).not.toBeInTheDocument();
+    expect(mocks.markQuestionSolved).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.searchParams.clear();

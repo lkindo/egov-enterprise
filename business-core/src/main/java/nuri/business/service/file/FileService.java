@@ -4,6 +4,9 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.foundation.core.storage.FileStorageService;
+import nuri.foundation.core.job.DurableWork;
+import nuri.foundation.core.job.DurableWorkPort;
+import tools.jackson.databind.ObjectMapper;
 import nuri.foundation.core.util.TransactionUtils;
 import nuri.business.domain.file.FileDetail;
 
@@ -38,6 +41,8 @@ public class FileService extends BaseAbstractService {
     private final FileDetailRepository fileDetailRepository;
     private final FileStorageService storageService;
     private final FileAccessPolicy accessPolicy;
+    private final DurableWorkPort durableWork;
+    private final ObjectMapper objectMapper;
 
     // [Security] 허용된 파일 확장자 화이트리스트
     private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(
@@ -55,11 +60,15 @@ public class FileService extends BaseAbstractService {
     public FileService(FileMasterRepository fileMasterRepository,
             FileDetailRepository fileDetailRepository,
             FileStorageService storageService,
-            FileAccessPolicy accessPolicy) {
+            FileAccessPolicy accessPolicy,
+            DurableWorkPort durableWork,
+            ObjectMapper objectMapper) {
         this.fileMasterRepository = required(fileMasterRepository, "fileMasterRepository 는 null 일 수 없습니다");
         this.fileDetailRepository = required(fileDetailRepository, "fileDetailRepository 는 null 일 수 없습니다");
         this.storageService = required(storageService, "storageService 는 null 일 수 없습니다");
         this.accessPolicy = required(accessPolicy, "accessPolicy 는 null 일 수 없습니다");
+        this.durableWork = required(durableWork, "durableWork 는 null 일 수 없습니다");
+        this.objectMapper = required(objectMapper, "objectMapper 는 null 일 수 없습니다");
     }
 
     /**
@@ -119,7 +128,7 @@ public class FileService extends BaseAbstractService {
         accessPolicy.assertDeletable(master);
         List<FileDetail> details = fileDetailRepository.findByFileMaster(required(master, "master 는 null 일 수 없습니다"));
         fileMasterRepository.delete(required(master, "master 는 null 일 수 없습니다"));
-        details.forEach(this::deleteStoredFileAfterCommit);
+        details.forEach(this::scheduleStoredFileDeletion);
     }
 
     /**
@@ -136,17 +145,23 @@ public class FileService extends BaseAbstractService {
         accessPolicy.assertDeletable(detail.getFileMaster());
 
         fileDetailRepository.delete(required(detail, "detail 는 null 일 수 없습니다"));
-        deleteStoredFileAfterCommit(detail);
+        scheduleStoredFileDeletion(detail);
     }
 
     /**
-     * DB 롤백 시 원본 파일을 보존한다. 커밋 후 저장소 장애나 프로세스 종료로 남은 실물은
-     * 첨부 무결성 점검의 고아 후보로 확인한다. DB와 파일시스템의 원자적 삭제를 보장하지는 않는다.
+     * 메타데이터 삭제와 의도를 함께 커밋한다. 저장 실패는 업무를 롤백하고, 물리 삭제 실패는
+     * 내구 작업의 재시도 대상이다. 재시도는 최초 실물 식별자를 검증해 교체 파일을 보존한다.
      */
-    private void deleteStoredFileAfterCommit(FileDetail detail) {
+    private void scheduleStoredFileDeletion(FileDetail detail) {
         String filename = required(detail.getStrgFileNm(), "detail.getStrgFileNm() 는 null 일 수 없습니다");
         String targetPath = required(detail.getFileStrgPath(), "detail.getFileStrgPath() 는 null 일 수 없습니다");
-        TransactionUtils.runAfterCommit(() -> storageService.delete(filename, targetPath));
+        String identity = storageService.captureDeletionIdentity(filename, targetPath);
+        // Each capture owns a distinct hard-link preparation, so compensating this rollback
+        // cannot remove the identity used by another committed deletion of the same detail.
+        TransactionUtils.runAfterRollback(() -> storageService.releaseDeletionIdentity(identity));
+        var intent = new FileDeletionIntent(filename, targetPath, identity);
+        durableWork.enqueue(new DurableWork(required(detail.getId(), "file detail identity is required"),
+                FileDeletionWorkHandler.TYPE, objectMapper.writeValueAsString(intent)));
     }
 
     /**

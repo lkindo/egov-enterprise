@@ -2,7 +2,7 @@ package nuri.api.controller.business.admin.content.popup;
 
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.service.system.content.popup.PopupService;
-import nuri.business.service.system.content.popup.dto.PopupDto;
+import nuri.api.controller.business.admin.content.popup.dto.PopupPublicResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,15 +25,16 @@ public class PopupUserApiController {
     @Operation(summary = "활성 팝업 목록 조회", description = "현재 게시 기간 내에 있는 활성 팝업 목록을 조회합니다.")
     @GetMapping("/active")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.popup.PopupUserApiController#getActivePopups')")
-    public ResponseEntity<ApiResponse<List<PopupDto>>> getActivePopups() {
-        return ResponseEntity.ok(ApiResponse.success(popupService.getActivePopups()));
+    public ResponseEntity<ApiResponse<List<PopupPublicResponse>>> getActivePopups() {
+        return ResponseEntity.ok(ApiResponse.success(popupService.getActivePopups().stream()
+                .map(PopupPublicResponse::from).toList()));
     }
 
     @Operation(summary = "팝업 상세 조회", description = "특정 팝업의 상세 정보를 조회합니다.")
     @GetMapping("/{popupSn}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.popup.PopupUserApiController#getPopup')")
-    public ResponseEntity<ApiResponse<PopupDto>> getPopup(
+    public ResponseEntity<ApiResponse<PopupPublicResponse>> getPopup(
             @Parameter(description = "팝업 일련번호") @PathVariable Long popupSn) {
-        return ResponseEntity.ok(ApiResponse.success(popupService.getPopup(popupSn)));
+        return ResponseEntity.ok(ApiResponse.success(PopupPublicResponse.from(popupService.getPopup(popupSn))));
     }
 }

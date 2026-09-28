@@ -7,7 +7,7 @@ import { lstatSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFil
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { closedEnvironment, assertBuildTarget } from './run-isolated-e2e.mjs';
-import { createProductionBuildInputTreeHash, selectProductionBuildInputPaths } from '../frontend/scripts/ui-quality-baseline-core.mjs';
+import { createProductionBuildInputTreeHash } from '../frontend/scripts/ui-quality-baseline-core.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ID = /^sha256:[a-f0-9]{64}$/u;
@@ -39,22 +39,21 @@ export function captureReleaseSmokeSource(root = ROOT, run = smokeCommand) {
   const outsideRoot = relative => relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative);
   const paths = run('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: root })
     .split('\0').filter(Boolean);
+  const revision = run('git', ['rev-parse', 'HEAD'], { cwd: root });
+  const dirty = run('git', ['status', '--porcelain', '--untracked-files=normal'], { cwd: root }).length > 0;
+  if (!/^[a-f0-9]{40}$/u.test(revision)) throw failure('invalid source revision');
   const read = file => {
     const target = path.resolve(root, file);
     const relative = path.relative(root, target);
     if (outsideRoot(relative) || !lstatSync(target).isFile() || lstatSync(target).isSymbolicLink()) throw failure('unsafe source input');
     const physicalTarget = realpathSync(target);
     if (outsideRoot(path.relative(physicalRoot, physicalTarget))) throw failure('unsafe source input');
-    return readFileSync(physicalTarget);
+    // Clean attested archives use Git blobs; checkout CRLF conversion must not redefine their identity.
+    // A dirty local build still identifies the actual worktree bytes, including untracked inputs.
+    return dirty ? readFileSync(physicalTarget)
+      : run('git', ['show', `${revision}:${file}`], { cwd: root, binary: true });
   };
-  const productionHash = createProductionBuildInputTreeHash({ trackedPaths: paths, readCommittedFile: read });
-  // Docker copies frontend/scripts too; include the URL preflight and every other script.
-  const selected = new Set(selectProductionBuildInputPaths(paths));
-  const extras = paths.filter(file => file.startsWith('frontend/scripts/') && /\.(?:mjs|cjs|js|json)$/u.test(file) && !selected.has(file)).sort();
-  const sourceTreeSha256 = hash([productionHash, ...extras.map(file => `${file}:${hash(read(file))}`)].join('\n'));
-  const revision = run('git', ['rev-parse', 'HEAD'], { cwd: root });
-  const dirty = run('git', ['status', '--porcelain', '--untracked-files=normal'], { cwd: root }).length > 0;
-  if (!/^[a-f0-9]{40}$/u.test(revision)) throw failure('invalid source revision');
+  const sourceTreeSha256 = createProductionBuildInputTreeHash({ trackedPaths: paths, readCommittedFile: read });
   return { revision, dirty, sourceTreeSha256 };
 }
 

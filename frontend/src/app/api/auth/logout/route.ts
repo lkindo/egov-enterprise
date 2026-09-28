@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { authLogoutResponseSchema } from '@/lib/auth/auth-bff-contract';
+import { clearMfaCookies } from '@/lib/auth/auth-session-response';
 import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
 import {
   parseGeneratedOperationRequest,
@@ -11,6 +12,7 @@ import { logoutOperation } from '@/types/generated-operations';
 const BACKEND_URL = (process.env.BACKEND_API_URL || 'http://127.0.0.1:8080/api/v1').replace(/\/$/, '');
 
 function expireLocalSessionCookies(response: NextResponse) {
+  clearMfaCookies(response);
   const expires = new Date(0);
 
   response.cookies.set('accessToken', '', {

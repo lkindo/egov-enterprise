@@ -16,7 +16,7 @@
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "48644fef4f7d767c4db29cf25036fe22207f3b58c53e01c0238e16c60a058eed"
+          "sha256": "a882133ab456e37b6a7915f27c72b9f1d995f354a6e2de4620d900339e3454c8"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java",
@@ -32,11 +32,15 @@
         },
         {
           "file": "frontend/src/proxy.ts",
-          "sha256": "97686e1699472563e9b6d1deee536a86f1c7584aec52fad2761870e9376e59ac"
+          "sha256": "ca5b1a8e5e7fd599375c5fae893cc44795e66bf1a2c462964ca42cf3d899be83"
         },
         {
           "file": "frontend/src/app/api/auth/login/route.ts",
-          "sha256": "8d00baeed752e5c96a3de1f136e679a54d090d1a04a7ccb05634e0ff02654ccc"
+          "sha256": "08fa6d102065d9f965bfc37fe9d8d7911bed2eeae2a6457d3d350d8596e6be97"
+        },
+        {
+          "file": "frontend/src/lib/auth/auth-session-response.ts",
+          "sha256": "27ff335859e1706e19798e1600325eed0899499997b26109cdf5ab16c778d3b5"
         },
         {
           "file": "frontend/src/app/api/auth/reissue/route.ts",
@@ -74,7 +78,7 @@
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "48644fef4f7d767c4db29cf25036fe22207f3b58c53e01c0238e16c60a058eed"
+          "sha256": "a882133ab456e37b6a7915f27c72b9f1d995f354a6e2de4620d900339e3454c8"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java",
@@ -103,9 +107,9 @@
       "language": "java",
       "ruleId": "java/user-controlled-bypass",
       "file": "api-server/src/main/java/nuri/api/interceptor/OperationalAuditInterceptor.java",
-      "line": 105,
+      "line": 101,
       "fingerprint": "16e3cc3672e181bf:1",
-      "sourceSha256": "80aeb8ebc9aabaa33e12030f491b0a790f80ee908c0a103d1af5733b89a1c3ae",
+      "sourceSha256": "f1720c041439d6183369d797c8c67ea37d612bb53cc1a4e23c480bd67ce98e8e",
       "expiresOn": "2026-12-08",
       "reason": "API audit scope filtering does not grant access or bypass authentication.",
       "id": "SAST-FP-003",
@@ -116,11 +120,11 @@
       "language": "javascript",
       "ruleId": "js/insecure-temporary-file",
       "file": "scripts/ui-quality-baseline-launch.mjs",
-      "line": 490,
+      "line": 498,
       "fingerprint": "e32fd5e9f6d93cdf:1",
-      "sourceSha256": "c1f581c346ab99eaeb9f630b41b877669dbf24e8bb91e994016a5a3ccb9f1118",
+      "sourceSha256": "e4f5eda31d3235785044a99d001e434348e88e042390f618387fd7ae5120f820",
       "expiresOn": "2026-12-08",
-      "reason": "Opens an existing file O_RDONLY, with POSIX O_NOFOLLOW and O_NONBLOCK; no creation; verifies descriptor identity and bounded content. Re-reviewed 2026-09-28: only the frontend readiness target changed to IPv4 /login; file-read defenses and the finding line are unchanged.",
+      "reason": "Opens an existing file O_RDONLY, with POSIX O_NOFOLLOW and O_NONBLOCK; no creation; verifies descriptor identity and bounded content. Re-reviewed 2026-09-28: disposable baseline stack configuration changed; file-read defenses are unchanged and the identical call moved from line 490 to 498.",
       "id": "SAST-FP-006",
       "supportingSources": []
     },
@@ -129,11 +133,11 @@
       "language": "javascript",
       "ruleId": "js/empty-password-in-configuration-file",
       "file": "api-server/src/main/resources/application-test.yml",
-      "line": 22,
+      "line": 26,
       "fingerprint": "42098952e5b35237:1",
-      "sourceSha256": "bd588f5d6517c2268616e74f51fc6372b373fa840b06ec01d8d78d0e8cc2a646",
+      "sourceSha256": "1660d78450bdd3d2d0fee75e0af78c62d5342ba1799b0130afdeed94590a227b",
       "expiresOn": "2026-12-08",
-      "reason": "In-memory H2 test-only profile and test-only H2 dependency; no production database credential. Re-reviewed 2026-09-28: PIT result verification and generated-source wiring changed; H2 remains test-only and application-test.yml is unchanged.",
+      "reason": "In-memory H2 test-only profile and test-only H2 dependency; no production database credential. Re-reviewed 2026-09-28: the durable-work scheduler is disabled for controlled tests; the H2 boundary is unchanged and the recorded SARIF region moved from line 22 to 26 after four inserted lines.",
       "id": "SAST-FP-007",
       "supportingSources": [
         {
@@ -176,11 +180,11 @@
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "48644fef4f7d767c4db29cf25036fe22207f3b58c53e01c0238e16c60a058eed"
+          "sha256": "a882133ab456e37b6a7915f27c72b9f1d995f354a6e2de4620d900339e3454c8"
         },
         {
           "file": "business-core/src/main/java/nuri/business/security/iam/JpaUserAuthAdapter.java",
-          "sha256": "17935e4f595d799891e5c84d9fc872cdd659c22fb896677c92911e7944b8f455"
+          "sha256": "127763bbabfe5e882e5e634b09f04f5e6f407c05e878b1ee459f1dbb359fd92a"
         },
         {
           "file": "business-core/src/main/java/nuri/business/security/authorization/AuthorizationSnapshotService.java",

@@ -45,6 +45,7 @@ const SHA256_HEX = /^[a-f0-9]{64}$/u;
 const DOCKER_IMAGE_ID = /^sha256:[a-f0-9]{64}$/u;
 const DOCKER_CONTAINER_ID = /^[a-f0-9]{64}$/u;
 const SAFE_DATABASE_IDENTIFIER = /^[A-Za-z][A-Za-z0-9_]{0,62}$/u;
+const DISPOSABLE_AUTHORIZATION_DATABASE = /^authz_e2e(?:_[a-z0-9]{1,40})?$/u;
 const SAFE_OPTIONAL_BOARD_ID = /^[A-Za-z0-9_-]{1,64}$/u;
 const POSTGRES_IMAGE = 'postgres:17@sha256:a426e44bac0b759c95894d68e1a0ac03ecc20b619f498a91aae373bf06d8508d';
 const CONTRACT_PATHS = Object.freeze([
@@ -124,9 +125,9 @@ function requireExecutionSecret(sourceEnvironment, name) {
 }
 
 function normalizedDatabaseIdentity(sourceEnvironment) {
-  const databaseName = sourceEnvironment?.UI_BASELINE_DB_NAME ?? 'egovdb';
+  const databaseName = sourceEnvironment?.UI_BASELINE_DB_NAME ?? 'authz_e2e';
   const databaseUser = sourceEnvironment?.UI_BASELINE_DB_USER ?? 'egov';
-  if (!SAFE_DATABASE_IDENTIFIER.test(databaseName)
+  if (!DISPOSABLE_AUTHORIZATION_DATABASE.test(databaseName)
     || !SAFE_DATABASE_IDENTIFIER.test(databaseUser)) {
     throw new Error('baseline launch database identity is invalid');
   }
@@ -215,7 +216,7 @@ export function createBaselineComposeSpecification({
         ]),
         tmpfs: Object.freeze(['/var/lib/postgresql/data']),
         healthcheck: Object.freeze({
-          test: Object.freeze(['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']),
+          test: Object.freeze(['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']),
           interval: '5s',
           timeout: '5s',
           retries: 24,
@@ -234,12 +235,15 @@ export function createBaselineComposeSpecification({
           'JWT_ACCESS_TOKEN_VALIDITY_MS',
           'JWT_SECRET',
           'MANAGEMENT_HEALTH_MAIL_ENABLED',
+          'NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK',
+          'NURI_AUTHORIZATION_ISOLATED_CUTOVER',
           'SPRING_DATASOURCE_JDBC_URL',
           'SPRING_DATASOURCE_PASSWORD',
           'SPRING_DATASOURCE_URL',
           'SPRING_DATASOURCE_USERNAME',
           'SPRING_FLYWAY_LOCATIONS',
           'SPRING_JPA_HIBERNATE_DDL_AUTO',
+          'SPRING_PROFILES_ACTIVE',
         ]),
         depends_on: Object.freeze({
           db: Object.freeze({ condition: 'service_healthy' }),
@@ -305,8 +309,12 @@ function createClosedComposeEnvironment({ sourceEnvironment, webOrigin }) {
     SPRING_DATASOURCE_JDBC_URL: `jdbc:postgresql://db:5432/${databaseName}`,
     SPRING_DATASOURCE_USERNAME: databaseUser,
     SPRING_DATASOURCE_PASSWORD: databasePassword,
-    SPRING_JPA_HIBERNATE_DDL_AUTO: 'none',
+    SPRING_JPA_HIBERNATE_DDL_AUTO: 'validate',
     SPRING_FLYWAY_LOCATIONS: 'classpath:db/migration,classpath:db/seed-dev',
+    // Fresh disposable DBs must run the reviewed Contract before later migrations and content-editor fixtures.
+    SPRING_PROFILES_ACTIVE: 'e2e',
+    NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true',
+    NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE',
     CORS_ALLOWED_ORIGINS: webOrigin,
     JWT_SECRET: jwtSecret,
     JWT_ACCESS_TOKEN_VALIDITY_MS: '14400000',
@@ -887,6 +895,7 @@ export function launchAttestedBaseline(input = {}, {
   const identity = createRunIdentity(randomBytes);
   const webOrigin = `http://127.0.0.1:${input.webPort}`;
   const apiOrigin = `http://127.0.0.1:${input.apiPort}`;
+  const composeEnvironment = createClosedComposeEnvironment({ sourceEnvironment, webOrigin });
   const runtime = prepareRuntimeDirectory(
     repositoryRoot,
     path.resolve(runtimeRootFrom(input)),
@@ -900,7 +909,6 @@ export function launchAttestedBaseline(input = {}, {
     apiPort: input.apiPort,
   });
   const composeBytes = writeComposeFile(runtime.composePath, specification);
-  const composeEnvironment = createClosedComposeEnvironment({ sourceEnvironment, webOrigin });
   const commonArgs = commonComposeArgs({
     projectName: identity.projectName,
     runDirectory: runtime.runDirectory,

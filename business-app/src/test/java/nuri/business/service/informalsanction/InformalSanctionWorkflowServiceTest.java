@@ -64,7 +64,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("다단계 결재 처리·권한·차수·커밋 후 알림 계약")
+@DisplayName("다단계 결재 처리·권한·차수·동기 알림 의도 계약")
 class InformalSanctionWorkflowServiceTest {
     @Mock private InformalSanctionRepository informalSanctionRepository;
     @Mock private InformalSanctionDetailRepository detailRepository;
@@ -335,8 +335,8 @@ class InformalSanctionWorkflowServiceTest {
     }
 
     @Test
-    @DisplayName("단계 이동 알림은 커밋 전에는 없고 커밋 후 정확히 활성 결재자에게 발행한다")
-    void stageNotificationIsPublishedOnlyAfterCommit() {
+    @DisplayName("단계 이동 알림 의도는 같은 트랜잭션에서 활성 결재자에게 한 번 발행한다")
+    void stageNotificationJoinsBusinessTransaction() {
         InformalSanction document = header("A");
         writable(document, List.of(line(1, 1, "first", true), line(1, 2, "next", false)));
         actor("first");
@@ -344,24 +344,26 @@ class InformalSanctionWorkflowServiceTest {
 
         service.confirmInformalSanction(7L, "C", null, 0);
 
-        verifyNoInteractions(eventPublisher);
+        assertThat(events(NotificationRequestedEvent.class)).extracting(NotificationRequestedEvent::receiverEsntlId)
+                .containsExactly("next");
         TransactionSynchronizationManager.getSynchronizations().forEach(TransactionSynchronization::afterCommit);
         assertThat(events(NotificationRequestedEvent.class)).extracting(NotificationRequestedEvent::receiverEsntlId)
                 .containsExactly("next");
     }
 
     @Test
-    @DisplayName("롤백된 단계 이동에서는 후속 알림을 발행하지 않는다")
-    void rolledBackStageTransitionDoesNotPublishNotification() {
+    @DisplayName("알림 의도 저장 실패는 결재 단계 처리에 전파되어 업무 롤백을 요구한다")
+    void intentFailurePropagatesThroughStageTransition() {
         InformalSanction document = header("A");
         writable(document, List.of(line(1, 1, "first", true), line(1, 2, "next", false)));
         actor("first");
         TransactionSynchronizationManager.initSynchronization();
 
-        service.confirmInformalSanction(7L, "C", null, 0);
-        TransactionSynchronizationManager.clearSynchronization();
-
-        verifyNoInteractions(eventPublisher);
+        org.mockito.Mockito.doThrow(new IllegalStateException("intent unavailable"))
+                .when(eventPublisher).publishEvent(any(NotificationRequestedEvent.class));
+        assertThatThrownBy(() -> service.confirmInformalSanction(7L, "C", null, 0))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(TransactionSynchronizationManager.getSynchronizations()).isEmpty();
     }
 
     @Test
@@ -479,8 +481,8 @@ class InformalSanctionWorkflowServiceTest {
     }
 
     @Test
-    @DisplayName("최종 승인 사건도 커밋 이전에는 발행하지 않는다")
-    void finalStatusEventIsPublishedOnlyAfterCommit() {
+    @DisplayName("최종 승인 사건은 앱 알림 의도 저장을 위해 업무 트랜잭션 안에서 발행한다")
+    void finalStatusEventJoinsBusinessTransaction() {
         InformalSanction document = header("A");
         writable(document, List.of(line(1, 1, "first", true)));
         actor("first");
@@ -489,7 +491,7 @@ class InformalSanctionWorkflowServiceTest {
         service.confirmInformalSanction(7L, "C", "완료", 0);
 
         assertThat(document.getAprvYn()).isEqualTo("C");
-        verifyNoInteractions(eventPublisher);
+        assertThat(events(SanctionStatusChangedEvent.class)).hasSize(1);
         TransactionSynchronizationManager.getSynchronizations().forEach(TransactionSynchronization::afterCommit);
         assertThat(events(SanctionStatusChangedEvent.class)).hasSize(1);
         assertThat(events(NotificationRequestedEvent.class)).isEmpty();

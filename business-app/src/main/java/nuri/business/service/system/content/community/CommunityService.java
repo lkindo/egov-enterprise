@@ -50,6 +50,7 @@ public class CommunityService {
      * 내보내지 않는다(H3).
      */
     private final UserRepository userRepository;
+    private final nuri.foundation.core.template.TemplateAssignmentPolicy templateAssignmentPolicy;
 
     /** [2026-09-26 DIP B5 F1] 가입 신청은 승인 권한자에게, 결과는 신청자에게 알린다(커밋 뒤). */
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
@@ -113,13 +114,13 @@ public class CommunityService {
                 .fetchOne(), 0L);
 
         return new PageImpl<>(
-                Objects.requireNonNull(content.stream().map(CommunityDto::from).collect(Collectors.toList())),
+                Objects.requireNonNull(content.stream().map(this::toDto).collect(Collectors.toList())),
                 Objects.requireNonNull(pageable), totalCount);
     }
 
     public CommunityDto getCommunity(Long cmntySn) {
         return communityRepository.findById(Objects.requireNonNull(cmntySn))
-                .map(CommunityDto::from)
+                .map(this::toDto)
                 .orElseThrow(() -> new BusinessException(
                         CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + cmntySn));
     }
@@ -143,39 +144,47 @@ public class CommunityService {
     public CommunityDto getActiveCommunity(Long cmntySn) {
         return communityRepository.findById(Objects.requireNonNull(cmntySn))
                 .filter(community -> "Y".equals(community.getUseYn()) && "REGC01".equals(community.getRegSeCd()))
-                .map(CommunityDto::from)
+                .map(this::toDto)
                 .orElseThrow(() -> new BusinessException(
                         CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + cmntySn));
     }
 
     @Transactional
     public CommunityDto createCommunity(String userId, CommunityDto dto) {
+        String templateId = normalizeTemplateId(dto.getTmpltId());
+        if (templateId != null) templateAssignmentPolicy.assertActiveForAssignment(templateId);
         Community community = Community.builder()
                 .cmntyNm(dto.getCmntyNm())
                 .cmntyIntroCn(dto.getCmntyIntroCn())
                 .regSeCd("REGC01")
-                .tmpltId(dto.getTmpltId())
+                .tmpltId(templateId)
                 .useYn("Y")
                 .build();
-        return CommunityDto.from(Objects
+        return toDto(Objects
                 .requireNonNull(communityRepository.save(Objects.requireNonNull(community))));
     }
 
     @Transactional
     public void updateCommunity(String userId, CommunityDto dto) {
-        Community community = communityRepository.findById(Objects.requireNonNull(dto.getCmntySn()))
+        Community community = communityRepository.findByIdForUpdate(Objects.requireNonNull(dto.getCmntySn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + dto.getCmntySn()));
+
+        String templateId = normalizeTemplateId(dto.getTmpltId());
+        // 기존 비활성·식별 불가 ID의 유지 정정은 허용한다. 새 선택만 활성 검증을 한다.
+        if (templateId != null && !Objects.equals(templateId, community.getTmpltId())) {
+            templateAssignmentPolicy.assertActiveForAssignment(templateId);
+        }
 
         community.update(
                 dto.getCmntyNm(),
                 dto.getCmntyIntroCn(),
-                dto.getTmpltId(),
+                templateId,
                 dto.getUseYn());
     }
 
     @Transactional
     public void deleteCommunity(Long cmntySn, String userId) {
-        Community community = communityRepository.findById(Objects.requireNonNull(cmntySn))
+        Community community = communityRepository.findByIdForUpdate(Objects.requireNonNull(cmntySn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + cmntySn));
         community.delete();
     }
@@ -188,8 +197,22 @@ public class CommunityService {
                 .orderBy(qCommunity.crtDt.desc())
                 .fetch()
                 .stream()
-                .map(CommunityDto::from)
+                .map(this::toDto)
                 .collect(Collectors.toList());
+    }
+
+    private static String normalizeTemplateId(String templateId) {
+        return templateId == null || templateId.isBlank() ? null : templateId;
+    }
+
+    private CommunityDto toDto(Community community) {
+        CommunityDto dto = CommunityDto.from(community);
+        dto.setCreatedByMe(SecurityUtil.getCurrentLoginId()
+                .filter(loginId -> loginId.equals(community.getFrstRgtrId())).isPresent());
+        // 개설자라는 이유로 관리자 쓰기 권한을 부여하지 않는다. 현행 API의 명시 권한과 같다.
+        dto.setEditable(SecurityUtil.hasPermission("COMMUNITY_UPDATE_ALL"));
+        dto.setDeletable(SecurityUtil.hasPermission("COMMUNITY_DELETE_ALL"));
+        return dto;
     }
 
     @Transactional
@@ -240,7 +263,9 @@ public class CommunityService {
                 .toList();
         String title = "커뮤니티 가입 신청이 들어왔습니다";
         String content = communityName(community) + " 에 새 가입 신청이 있습니다.";
-        approvers.forEach(receiver -> publishAfterCommit(receiver, title, content, COMMUNITY_MANAGE_ROUTE));
+        java.util.UUID eventId = java.util.UUID.randomUUID();
+        approvers.stream().sorted().forEach(receiver -> eventPublisher.publishEvent(
+                new nuri.foundation.core.event.NotificationRequestedEvent(eventId, receiver, title, content, COMMUNITY_MANAGE_ROUTE)));
     }
 
     private void notifyApplicant(Long cmntySn, String applicantEsntlId, boolean approved) {
@@ -248,16 +273,16 @@ public class CommunityService {
                 .orElse("커뮤니티");
         String title = approved ? "커뮤니티 가입이 승인되었습니다" : "커뮤니티 가입 신청이 반려되었습니다";
         String content = approved ? name + " 의 회원이 되었습니다." : name + " 가입 신청이 반려되었습니다. 다시 신청할 수 있습니다.";
-        publishAfterCommit(applicantEsntlId, title, content, "/cop/cmy/selectCommunityDetail/" + cmntySn);
+        publishNotification(applicantEsntlId, title, content, "/cop/cmy/selectCommunityDetail/" + cmntySn);
     }
 
     private static String communityName(Community community) {
         return community.getCmntyNm() != null && !community.getCmntyNm().isBlank() ? community.getCmntyNm() : "커뮤니티";
     }
 
-    private void publishAfterCommit(String receiver, String title, String content, String link) {
-        nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> eventPublisher.publishEvent(
-                new nuri.foundation.core.event.NotificationRequestedEvent(receiver, title, content, link)));
+    private void publishNotification(String receiver, String title, String content, String link) {
+        eventPublisher.publishEvent(
+                new nuri.foundation.core.event.NotificationRequestedEvent(receiver, title, content, link));
     }
 
     // ─── 멤버십 전이 (2026-09-06 DEC-OPS-043, 2026-09-25 DEC-OPS-131, GAP-CMTY-001) ─────────────────────

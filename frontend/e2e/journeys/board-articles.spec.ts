@@ -1,6 +1,53 @@
 import { expect,test } from '../fixtures/browser-test';
 import { getAdminBearerToken } from '../utils/admin-token';
 test.describe('게시판과 커뮤니티', () => {
+    test('일반 게시판 작성자는 지정 공지·FAQ 작성 화면과 직접 요청에서 차단된다', async ({ userPage, userRequest }) => {
+        // 기본 격리 환경은 공지와 FAQ가 같은 게시판이다. 두 권한을 모두 요구한다.
+        const bbsId = 'BBSMSTR_AAAAAAAAAAAA';
+        const metadata = await userRequest.get(`/api/v1/boards/${bbsId}/meta`);
+        expect(metadata.status()).toBe(200);
+        expect((await metadata.json()).data.requiredEditPermissions).toEqual(['NOTICE_EDIT', 'FAQ_EDIT']);
+        const current = await userRequest.get('/api/v1/auth/me');
+        expect(current.status()).toBe(200);
+        const permissions = (await current.json()).data.permissions as string[];
+        expect(permissions).toContain('BOARD_CREATE');
+        expect(permissions).not.toContain('NOTICE_EDIT');
+        expect(permissions).not.toContain('FAQ_EDIT');
+
+        await userPage.goto(`/admin/community/boards/select-board-list?bbsId=${bbsId}`);
+        await expect(userPage.getByRole('button', { name: '글쓰기', exact: true })).toHaveCount(0);
+        await userPage.goto(`/admin/community/boards/insert-board-article?bbsId=${bbsId}`);
+        await expect(userPage.getByText('이 게시판을 편집할 권한이 없습니다. 필요한 권한은 관리자에게 문의해 주세요.', { exact: true })).toBeVisible();
+        await expect(userPage.locator('input[name="pstTtl"]')).toBeDisabled();
+        await expect(userPage.getByRole('button', { name: '게시글 등록', exact: true })).toBeDisabled();
+        const denied = await userRequest.post('/api/v1/boards/posts', {
+            data: { bbsId, pstTtl: 'E2E denied protected board write', pstCn: '<p>Must not persist</p>' },
+        });
+        expect(denied.status()).toBe(403);
+
+        // 같은 사용자의 기본 작성 권한은 유지된다. 지정 공지와 분리된 기존 Q&A 게시판에서 확인한다.
+        const generalBoardId = 'BBSMSTR_DDDDDDDDDDDD';
+        const generalMetadata = await userRequest.get(`/api/v1/boards/${generalBoardId}/meta`);
+        expect(generalMetadata.status()).toBe(200);
+        expect((await generalMetadata.json()).data.requiredEditPermissions).toEqual([]);
+        const title = `E2E general board author ${Date.now()}`;
+        const created = await userRequest.post('/api/v1/boards/posts', {
+            data: { bbsId: generalBoardId, pstTtl: title, pstCn: '<p>Ordinary board author permission remains valid.</p>' },
+        });
+        expect(created.status()).toBe(200);
+        const pstSn = (await created.json()).data as number;
+        expect(Number.isSafeInteger(pstSn)).toBe(true);
+        try {
+            const stored = await userRequest.get(`/api/v1/boards/${generalBoardId}/posts/${pstSn}`);
+            expect(stored.status()).toBe(200);
+            expect((await stored.json()).data.pstTtl).toBe(title);
+            await userPage.goto(`/admin/community/boards/insert-board-article?bbsId=${generalBoardId}`);
+            await expect(userPage.locator('input[name="pstTtl"]')).toBeEnabled();
+            await expect(userPage.getByRole('button', { name: '게시글 등록', exact: true })).toBeEnabled();
+        } finally {
+            expect((await userRequest.delete(`/api/v1/boards/${generalBoardId}/posts/${pstSn}`)).status()).toBe(200);
+        }
+    });
     test.describe('Board & Community (Business Flow)', () => {
         // [2026-08-10 제거] `test.describe.configure({ mode: 'parallel' })`.
         //   playwright.config 는 `workers: 1` 이라(공유 DB 오염·OOM 방지) 이 선언은 **아무 효과가 없었다**.

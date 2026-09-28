@@ -71,6 +71,7 @@ class EgovAuthenticationProviderTest {
         // @Value 필드는 @InjectMocks 가 주입하지 않는다 (LogRetentionSchedulerTest 와 동일 관례).
         ReflectionTestUtils.setField(authenticationProvider, "maxLoginFailures", MAX_FAILURES);
         ReflectionTestUtils.setField(authenticationProvider, "lockMinutes", LOCK_MINUTES);
+        ReflectionTestUtils.setField(authenticationProvider, "unknownIdentityPasswordHash", "{bcrypt}isolated-dummy");
     }
 
     /** 비밀번호 불일치로 1회 실패시킨다. */
@@ -251,6 +252,31 @@ class EgovAuthenticationProviderTest {
         // When & Then
         assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
                 .isInstanceOf(BadCredentialsException.class);
+        verify(passwordEncoder).matches("password", "{bcrypt}isolated-dummy");
+        verify(userRepository, never()).save(any());
+        verifyNoInteractions(egovPasswordEncoder);
+    }
+
+    @Test
+    void unknownIdentityNeverAuthenticatesEvenWhenDummyComparisonReturnsTrue() {
+        when(passwordEncoder.matches("password", "{bcrypt}isolated-dummy")).thenReturn(true);
+        assertThatThrownBy(() -> authenticationProvider.authenticate(
+                new UsernamePasswordAuthenticationToken("absent", "password")))
+                .isInstanceOf(BadCredentialsException.class);
+        verify(userDetailsService, never()).loadUserByUsername(anyString());
+    }
+
+    @Test
+    void dummyHashUsesCurrentEncoderAtStartupAndItsFailureIsNotDisguisedAsBadPassword() {
+        when(passwordEncoder.encode(anyString())).thenReturn("{bcrypt}fresh-isolated-dummy");
+        authenticationProvider.initializeUnknownIdentityPassword();
+        when(passwordEncoder.matches("password", "{bcrypt}fresh-isolated-dummy"))
+                .thenThrow(new IllegalStateException("isolated encoder failure"));
+        assertThatThrownBy(() -> authenticationProvider.authenticate(
+                new UsernamePasswordAuthenticationToken("absent", "password")))
+                .isInstanceOf(AuthenticationServiceException.class);
+        verify(passwordEncoder).encode(anyString());
+        verify(userRepository, never()).save(any());
     }
 
     @Test

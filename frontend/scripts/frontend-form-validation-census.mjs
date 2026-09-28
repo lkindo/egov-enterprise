@@ -32,7 +32,8 @@ const NOT_APPLICABLE = 'not-applicable';
 const EDITABLE_TAG = /(?:^|\.)(?:input|textarea|select)$/i;
 const EDITABLE_COMPONENT = /(?:Input|Textarea|Select|Editor|Picker|Combobox|Switch|Checkbox|RadioGroup)$/;
 // [2026-09-26 DIP B5 F7] 'resend' 는 다시 보내는 쓰기다 — 어휘에 없으면 메일 재발송 같은 동작이 census 밖에 남는다.
-const WRITE_NAME = /^(?:create|update|delete|remove|save|submit|send|resend|register|insert|modify|move|join|leave|withdraw|approve|reject|assign|upload|like|recommend|vote)/i;
+// cancelSubmission mutates server state; QueryClient.cancelQueries only cancels local reads.
+const WRITE_NAME = /^(?:create|update|delete|remove|cancel(?!Queries$)|save|submit|send|resend|register|insert|modify|move|join|leave|withdraw|approve|reject|assign|upload|like|recommend|vote)/i;
 const BATCH_WRITE_NAME = /^(?:batch|bulk)(?:Create|Update|Delete|Remove|Save|Submit|Send|Register|Insert|Modify|Move|Assign|Upload)/;
 const DESTRUCTIVE_NAME = /^(?:delete|remove|leave|withdraw|revoke|destroy)/i;
 const PENDING_STATE_NAME = /(?:pending|saving|deleting|submitting|loading|request|busy|processing|uploading|sending|joining|leaving|liking|voting|recommending|active.*(?:operation|action|write)|[A-Za-z_$][\w$]*(?:operation|action))/i;
@@ -1287,7 +1288,13 @@ function collectSignals(ownerNode, formNode, sourceText, file, kind) {
     /\/components\/(?:ui|patterns)\//.test(file)
     || /\/src\/app\/admin\/patterns\//.test(file)
   ) && kind !== 'formless-write';
-  const authSignal = /\/src\/app\/(?:login|auth|otp)\//i.test(file);
+  // Shared MFA UI lives beside account controls. Recognize the actual auth-service import
+  // and second-factor call, without treating arbitrary account/business forms as auth.
+  const mfaImport = ownerNode.getSourceFile().getImportDeclarations().some((declaration) =>
+    declaration.getModuleSpecifierValue() === '@/services/foundation/auth/mfaService'
+      && declaration.getNamedImports().some((binding) => binding.getName() === 'mfaService' && !binding.getAliasNode()));
+  const authSignal = /\/src\/app\/(?:login|auth|otp)\//i.test(file)
+    || mfaImport && calls.some((call) => /^mfaService\.(?:verify|confirm|start|reauthenticate)$/.test(call.getExpression().getText()));
   const searchSignal = /(?:role\s*=\s*["']search|method\s*=\s*["']get|action\s*=\s*["'][^"']*search|handleSearch|onSearch|searchGroups|handleFilter)/i
     .test(`${formText} ${submitText}`);
   const useAppFormCall = calls.find((call) => callName(call) === 'useAppForm');

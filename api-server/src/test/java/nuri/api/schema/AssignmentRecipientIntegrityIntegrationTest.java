@@ -17,10 +17,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
@@ -29,15 +27,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/** 실제 서비스 트랜잭션과 PostgreSQL의 신규 배정 검증·롤백·커밋 후 알림을 확인한다. */
+/** 실제 서비스 트랜잭션과 PostgreSQL의 신규 배정 검증·알림과 전달 의도의 원자 저장을 확인한다. */
 @Tag("schema-validation")
-@SpringBootTest
+@SpringBootTest(properties = "nuri.durable-work.enabled=false")
 @org.springframework.context.annotation.Import(AuthorizationSchemaRehearsalTestConfiguration.class)
 @ActiveProfiles({"test", "tc"})
 class AssignmentRecipientIntegrityIntegrationTest {
@@ -47,7 +43,6 @@ class AssignmentRecipientIntegrityIntegrationTest {
     @Autowired private NotificationRepository notificationRepository;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PlatformTransactionManager transactionManager;
-    @Autowired @Qualifier("notificationExecutor") private Executor notificationExecutor;
 
     private String fixtureId;
     private String sender;
@@ -77,11 +72,10 @@ class AssignmentRecipientIntegrityIntegrationTest {
     }
 
     @AfterEach
-    void removeOnlyOwnFixtures() throws InterruptedException {
-        try {
-            awaitNotifications();
-        } finally {
+    void removeOnlyOwnFixtures() {
             SecurityContextHolder.clearContext();
+            jdbc.update("DELETE FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver' IN (?, ?, ?, ?, ?)",
+                    sender, active, waiting, disabled, missing);
             jdbc.update("DELETE FROM tb_user_noti WHERE rcvr_id IN (?, ?, ?, ?, ?)",
                     sender, active, waiting, disabled, missing);
             jdbc.update("DELETE FROM tb_note_rcptn WHERE note_sn IN (SELECT note_sn FROM tb_note_info WHERE note_ttl=?)",
@@ -90,7 +84,6 @@ class AssignmentRecipientIntegrityIntegrationTest {
             jdbc.update("DELETE FROM tb_note_info WHERE note_ttl=?", fixtureId);
             jdbc.update("DELETE FROM tb_dept_task_info WHERE frst_rgtr_id=?", sender);
             jdbc.update("DELETE FROM tb_user_info WHERE esntl_id IN (?, ?, ?, ?)", sender, active, waiting, disabled);
-        }
     }
 
     @ParameterizedTest
@@ -101,7 +94,6 @@ class AssignmentRecipientIntegrityIntegrationTest {
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
 
-        awaitNotifications();
         assertNoteRows(0);
         assertThat(notificationCount()).isZero();
     }
@@ -111,24 +103,24 @@ class AssignmentRecipientIntegrityIntegrationTest {
     void activeRecipientCommitsNoteGraphAndNotification() throws InterruptedException {
         noteService.sendNote(sender, note(active));
 
-        awaitNotifications();
         assertNoteRows(1);
         assertThat(notificationCount()).isEqualTo(1);
     }
 
     @Test
-    @DisplayName("상위 트랜잭션 롤백은 쪽지 관계 전체를 되돌리고 커밋 후 알림을 발행하지 않는다")
+    @DisplayName("상위 트랜잭션 롤백은 쪽지·알림·전달 의도를 함께 되돌린다")
     void rollbackRemovesTheWholeNoteGraphAndDoesNotNotify() throws InterruptedException {
         new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
             noteService.sendNote(sender, note(active));
             assertNoteRows(1);
-            assertThat(notificationCount()).isZero();
+            assertThat(notificationCount()).isEqualTo(1);
+            assertThat(deliveryIntentCount()).isEqualTo(1);
             status.setRollbackOnly();
         });
 
-        awaitNotifications();
         assertNoteRows(0);
         assertThat(notificationCount()).isZero();
+        assertThat(deliveryIntentCount()).isZero();
     }
 
     @ParameterizedTest
@@ -139,7 +131,6 @@ class AssignmentRecipientIntegrityIntegrationTest {
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
 
-        awaitNotifications();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_dept_task_info WHERE frst_rgtr_id=?",
                 Long.class, sender)).isZero();
         assertThat(notificationCount()).isZero();
@@ -156,7 +147,6 @@ class AssignmentRecipientIntegrityIntegrationTest {
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
 
-        awaitNotifications();
         assertThat(jdbc.queryForMap("SELECT * FROM tb_dept_task_info WHERE dept_task_sn=?", id)).isEqualTo(original);
         assertThat(notificationCount()).isZero();
     }
@@ -169,7 +159,6 @@ class AssignmentRecipientIntegrityIntegrationTest {
 
         deptJobService.updateDeptJob(id, job(explicitAssignee ? disabled : null));
 
-        awaitNotifications();
         assertThat(jdbc.queryForMap("SELECT dept_task_nm, dept_task_cn, pic_id FROM tb_dept_task_info WHERE dept_task_sn=?", id))
                 .containsEntry("dept_task_nm", fixtureId)
                 .containsEntry("dept_task_cn", "corrected")
@@ -182,7 +171,6 @@ class AssignmentRecipientIntegrityIntegrationTest {
     void activeAssigneeCommitsJobAndNotification() throws InterruptedException {
         long id = deptJobService.createDeptJob(job(active));
 
-        awaitNotifications();
         assertThat(jdbc.queryForObject("SELECT pic_id FROM tb_dept_task_info WHERE dept_task_sn=?", String.class, id))
                 .isEqualTo(active);
         assertThat(notificationCount()).isEqualTo(1);
@@ -228,6 +216,11 @@ class AssignmentRecipientIntegrityIntegrationTest {
                 Long.class, active, waiting, disabled, missing)).isEqualTo(expected);
     }
 
+    private long deliveryIntentCount() {
+        return jdbc.queryForObject("SELECT count(*) FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver' IN (?, ?, ?, ?, ?)",
+                Long.class, sender, active, waiting, disabled, missing);
+    }
+
     private long notificationCount() {
         // 실제 notification 소비자를 사용해 이 통합 검증의 선택 도메인 의존성도 명시한다.
         return List.of(sender, active, waiting, disabled, missing).stream()
@@ -235,16 +228,4 @@ class AssignmentRecipientIntegrityIntegrationTest {
                         org.springframework.data.domain.PageRequest.of(0, 1)).getTotalElements()).sum();
     }
 
-    private void awaitNotifications() throws InterruptedException {
-        var pool = ((ThreadPoolTaskExecutor) notificationExecutor).getThreadPoolExecutor();
-        long submitted = pool.getTaskCount();
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
-        while ((pool.getCompletedTaskCount() < submitted || pool.getActiveCount() != 0 || !pool.getQueue().isEmpty())
-                && System.nanoTime() < deadline) {
-            Thread.sleep(10);
-        }
-        assertThat(pool.getCompletedTaskCount()).as("수락한 알림 태스크 완료").isGreaterThanOrEqualTo(submitted);
-        assertThat(pool.getActiveCount()).isZero();
-        assertThat(pool.getQueue()).isEmpty();
-    }
 }

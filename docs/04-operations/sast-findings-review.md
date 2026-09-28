@@ -1,5 +1,22 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-09-28 MFA·감사·격리 검증 변경에 따른 재검토
+
+[ADR-0025](../02-architecture/decisions/ADR-0025-enterprise-completeness-and-durable-operations.md)의 구현으로 기존 승인 6건의 소스 참조 9곳이 달라졌다. 변경 전후 구문과 방어를 개별 대조해 다음 참조만 갱신한다.
+
+| 기존 항목 | 변경과 재검토 근거 |
+|---|---|
+| FP-001 | `JwtTokenProvider`는 기존 서명·계정 상태·비밀번호 변경 시각 검사 뒤에 현재 MFA 버전과 인증 시각 검사를 추가한다. `proxy.ts`는 인코딩한 MFA 토큰 경로도 400으로 거부한다. 로그인 BFF의 쿠키 처리는 `auth-session-response.ts`로 이동했으며 Strict·HttpOnly·Secure 정책과 토큰의 JSON 비노출을 유지한다. 제한 도전 응답은 기존 일반 세션을 지우고 별도의 제한 쿠키만 발급한다. 이동한 방어가 해시 검증 밖으로 빠지지 않도록 이 헬퍼를 기존 항목의 보완 소스에 추가한다. API의 Bearer·STATELESS·Origin 방어는 그대로다. |
+| FP-002 | 변경 참조는 같은 `JwtTokenProvider`뿐이다. 코어 fallback 체인의 Origin 검사와 Bearer 인증 의미는 유지되며 MFA 검사가 추가된다. |
+| FP-003 | `OperationalAuditInterceptor`의 민감 성공 감사는 응답 전 내구 기록 경로로 이동했다. 기존 `/api/` 감사 범위 필터와 `resolveLoginId(authentication)` 호출은 접근을 허용하는 검사가 아니다. 동일한 탐지 구문이 105행에서 101행으로 이동했다. |
+| FP-006 | UI 기준선 실행기가 자체 소유 임시 DB와 명시적 e2e·cutover 설정을 사용하도록 바뀌었다. 탐지된 파일 열기는 그대로 `O_RDONLY`이며 POSIX의 `O_NOFOLLOW`·`O_NONBLOCK`, 파일 종류·descriptor identity·크기 상한·읽기 전후 상태 검증을 유지한다. 동일한 호출이 490행에서 498행으로 이동했다. |
+| FP-007 | 테스트 컨텍스트에서 내구 작업 스케줄러를 끄는 4행만 파일 앞부분에 추가했다. H2 메모리 DB와 테스트 전용 의존성은 유지한다. 아래의 기존 SARIF 위치를 같은 구문에 맞춰 22행에서 26행으로 이동한다. |
+| FP-008 | SockJS 필터의 탐지 본문·69행·fingerprint와 거부 회귀는 변경되지 않았다. 자격 누락·무효·비인증 객체·빈 권한 버전은 컨텍스트 제거와 401 응답 후 전송 체인 전에 종료된다. 보완 소스인 JWT provider에는 MFA 검사가 추가됐고, `JpaUserAuthAdapter`는 서명으로 검증한 내부 subject만 조회해 다른 계정의 로그인 ID와 충돌하는 별칭 조회를 제거했다. 현재 계정 상태와 권한 스냅샷 조회는 유지한다. |
+
+FP-007은 보관된 실제 CodeQL 결과 두 개(`build/assessment-20260909/sast-js/javascript.sarif`, `build/completeness-followups/ci-final-sast/sast-javascript/javascript.sarif`)에서 규칙 `js/empty-password-in-configuration-file`, 대상 `api-server/src/main/resources/application-test.yml`, fingerprint `42098952e5b35237:1`, `startLine=22`, `startColumn=endColumn=3`을 확인했다. 변경 전 22행의 `  jpa:`는 현재 26행과 정확히 같다. 원래 SARIF의 region을 4행 이동하는 것이며, 사람이 비밀번호 설정으로 해석한 현재 24행으로 바꾸지 않는다. LF·혼합 개행을 대조한 기존 로컬 분석 산출물도 동일한 원래 위치를 기록한다.
+
+승인 항목 6건·규칙·fingerprint·승인일·만료일과 보안 임계값은 유지한다. FP-003·006·007의 동일 구문 위치만 옮기고, 새 탐지를 예외로 추가하지 않는다. 변경 전 기존 SAST 계약 17건 중 소스 해시 검증과 그에 의존하는 3건이 실패하는 것을 재현했고, 변경 후 같은 17건이 모두 통과했다. 현재 소스 결속과 미등록 fingerprint·위조 suppression·소스 및 방어 변경·만료·CLI 종료 상태를 계속 검사한다. 이 로컬 검사는 합성 SARIF를 사용하는 정책 검사이며 새 전체 CodeQL 분석의 통과 증거가 아니다. 현재 커밋의 실제 탐지 위치·fingerprint·건수 일치는 required `secure-coding` CI에서 확인해야 한다.
+
 ## 2026-09-26 재발급 실패 안내 문구 변경에 따른 재검토
 
 - `frontend/src/app/api/auth/reissue/route.ts`(FP-001 보완 소스): 재발급 실패 시 화면에 돌려주는 안내 문구 상수와 그 주석만

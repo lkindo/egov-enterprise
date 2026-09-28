@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,14 +85,12 @@ public class BoardEventListener {
      * <p><b>자기 글에 자기가 단 댓글은 알리지 않는다.</b> 자기 행동을 자기에게 통지하면
      * 알림함이 자기 발자국으로 채워져 정작 남이 남긴 반응이 묻힌다.
      *
-     * <p>[비파괴 원칙] 알림 실패가 댓글 등록을 되돌리면 안 된다. 이미 커밋된 뒤이므로
-     * 되돌릴 수도 없다 — 예외를 흡수하고 로그로 남긴다.
+     * <p>댓글과 알림 의도는 함께 저장한다. 저장 실패는 전파하고 실제 전달은 worker가 재시도한다.
      */
-    @Async
     @EventListener
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
     public void handlePostCommented(PostCommentedEvent event) {
-        try {
-            boardRepository.findById(event.pstSn()).ifPresent(post -> {
+            boardRepository.findById(event.pstSn()).filter(post -> event.bbsId().equals(post.getBbsId())).ifPresent(post -> {
                 String authorEsntlId = post.getUserId();
                 if (!org.springframework.util.StringUtils.hasText(authorEsntlId)) {
                     return;
@@ -105,6 +102,7 @@ public class BoardEventListener {
                         ? event.commenterName()
                         : "누군가";
                 eventPublisher.publishEvent(new NotificationRequestedEvent(
+                        event.eventId(),
                         authorEsntlId,
                         "새 댓글",
                         String.format("%s 님이 '%s' 글에 댓글을 남겼습니다.",
@@ -115,9 +113,5 @@ public class BoardEventListener {
                         String.format("/admin/community/boards/detail?bbsId=%s&pstSn=%d",
                                 post.getBbsId(), post.getPstSn())));
             });
-        } catch (Exception e) {
-            log.error("댓글 알림 요청 실패(댓글 등록에는 영향 없음) — pstSn={}, 예외유형={}",
-                    event.pstSn(), e.getClass().getSimpleName());
-        }
     }
 }

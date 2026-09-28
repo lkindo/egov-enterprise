@@ -29,12 +29,14 @@ const pretendard = localFont({
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
+  preload: false,
   variable: '--font-inter',
 });
 
 const outfit = Outfit({
   subsets: ['latin'],
   display: 'swap',
+  preload: false,
   variable: '--font-outfit',
 });
 

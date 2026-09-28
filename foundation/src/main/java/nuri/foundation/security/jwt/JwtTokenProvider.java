@@ -179,12 +179,18 @@ public class JwtTokenProvider {
     private static final String TYPE_REFRESH = "refresh";
 
     public String createAccessToken(String userId, String role) {
+        return createAccessToken(userId, role, null, null);
+    }
+
+    public String createAccessToken(String userId, String role, String mfaVersion, java.time.Instant verifiedAt) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + accessTokenValidityInMilliseconds);
         return Jwts.builder()
                 .subject(userId)
                 .claim("role", role)
                 .claim(CLAIM_TOKEN_TYPE, TYPE_ACCESS)
+                .claim("mfa_v", mfaVersion)
+                .claim("mfa_at", verifiedAt == null ? null : verifiedAt.getEpochSecond())
                 .issuedAt(now)
                 .expiration(validity)
                 .signWith(key)
@@ -203,9 +209,22 @@ public class JwtTokenProvider {
      * 최초 로그인 시점에 정해진 만료를 그대로 물려준다.
      */
     public String createRefreshToken(@org.jspecify.annotations.NonNull String userId, Date expiresAt) {
+        return createRefreshToken(userId, expiresAt, null, null);
+    }
+
+    public String createRefreshToken(@org.jspecify.annotations.NonNull String userId,
+            String mfaVersion, java.time.Instant verifiedAt) {
+        return createRefreshToken(userId, new Date(System.currentTimeMillis() + refreshTokenValidityInMilliseconds),
+                mfaVersion, verifiedAt);
+    }
+
+    public String createRefreshToken(@org.jspecify.annotations.NonNull String userId, Date expiresAt,
+            String mfaVersion, java.time.Instant verifiedAt) {
         return Jwts.builder()
                 .subject(userId)
                 .claim(CLAIM_TOKEN_TYPE, TYPE_REFRESH)
+                .claim("mfa_v", mfaVersion)
+                .claim("mfa_at", verifiedAt == null ? null : verifiedAt.getEpochSecond())
                 .issuedAt(new Date())
                 .expiration(expiresAt)
                 .signWith(key)
@@ -218,7 +237,34 @@ public class JwtTokenProvider {
                 Objects.requireNonNull(claims.getSubject(), "Subject in JWT token cannot be null"));
         new org.springframework.security.authentication.AccountStatusUserDetailsChecker().check(userDetails);
         rejectIfIssuedBeforeCredentialChange(claims.getIssuedAt(), userDetails);
-        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        var evidence = mfaEvidence(claims);
+        assertMfaSession(userDetails, evidence);
+        var authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        authentication.setDetails(evidence);
+        return authentication;
+    }
+
+    public nuri.foundation.security.mfa.MfaSessionEvidence getMfaEvidence(String token) {
+        return mfaEvidence(Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload());
+    }
+
+    private static nuri.foundation.security.mfa.MfaSessionEvidence mfaEvidence(io.jsonwebtoken.Claims claims) {
+        Number seconds = claims.get("mfa_at", Number.class);
+        return new nuri.foundation.security.mfa.MfaSessionEvidence(claims.get("mfa_v", String.class),
+                seconds == null ? null : java.time.Instant.ofEpochSecond(seconds.longValue()));
+    }
+
+    /** Refresh도 이 검사를 사용하고 원래 MFA 시각을 보존한다. 비밀번호 전용 세션의 상향 인증은 금지한다. */
+    public static void assertMfaSession(UserDetails principal,
+            nuri.foundation.security.mfa.MfaSessionEvidence evidence) {
+        if (!(principal instanceof nuri.foundation.security.service.CustomUserDetails current)) return;
+        String version = evidence == null ? null : evidence.credentialVersion();
+        java.time.Instant verifiedAt = evidence == null ? null : evidence.verifiedAt();
+        if (!Objects.equals(current.getMfaCredentialVersion(), version)
+                || (current.isMfaRequired() && (version == null || verifiedAt == null))
+                || (verifiedAt != null && verifiedAt.isAfter(java.time.Instant.now().plusSeconds(30)))) {
+            throw new org.springframework.security.authentication.CredentialsExpiredException("MFA session is no longer valid");
+        }
     }
 
     /**

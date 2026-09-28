@@ -14,6 +14,7 @@ import { loginErrorMessage } from '@/lib/auth/login-error';
 import { SITE_IDENTITY } from '@/config/site-identity';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { MfaChallengePanel } from '@/components/account/MfaChallengePanel';
 import { loginFormSchema } from './login-form-validation';
 
 const LOGIN_FORM_LABELS = {
@@ -73,10 +74,11 @@ function LoginContent() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
+    const [mfaStage, setMfaStage] = useState<'MFA_REQUIRED' | 'ENROLLMENT_REQUIRED' | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [authStep, setAuthStep] = useState(0); // 0: Idle, 1: Connecting, 2: Finalizing
     const submittingRef = React.useRef(false);
-    const { login, user, loading } = useAuth();
+    const { login, logout, user, loading } = useAuth();
     const router = useRouter();
     const shouldReduceMotion = useReducedMotion();
     const loginRootRef = React.useRef<HTMLDivElement>(null);
@@ -149,7 +151,11 @@ function LoginContent() {
         justLoggedIn.current = true;
 
         try {
-            await login({ id: validated.userId, password: validated.password });
+            const result = await login({ id: validated.userId, password: validated.password });
+            if (result?.authenticationStage === 'MFA_REQUIRED' || result?.authenticationStage === 'ENROLLMENT_REQUIRED') {
+                setPassword(''); setMfaStage(result.authenticationStage);
+                setIsSubmitting(false); submittingRef.current = false; setAuthStep(0); return;
+            }
 
             // 인증 성공 → "인증 완료 / 업무 환경 동기화" 단계 표시.
             // (기존에는 setAuthStep(2) 호출이 저장소 어디에도 없어 이 분기가 도달 불가능한 死코드였다.)
@@ -259,7 +265,10 @@ function LoginContent() {
                         제출되면 아이디·비밀번호가 주소창·history·Referer·접근 로그에 그대로 실린다
                         (주간 스캔이 그 URL 을 실제로 만들어 냈다). handleSubmit 이 preventDefault 하므로
                         하이드레이션 뒤 동작은 변하지 않고, 그 전 제출은 URL 에 값을 남기지 않는다. */}
-                    <form
+                    {mfaStage ? <CardContent className="px-8 pb-8"><MfaChallengePanel stage={mfaStage}
+                        onComplete={() => window.location.replace(redirectUrl)}
+                        onCancel={() => { void logout().finally(() => { setMfaStage(null); justLoggedIn.current = false; }); }}
+                    /></CardContent> : <form
                         noValidate
                         method="post"
                         onSubmit={handleSubmit}
@@ -405,7 +414,7 @@ function LoginContent() {
                                 </Button>
                             </motion.div>
                         </CardFooter>
-                    </form>
+                    </form>}
                 </Card>
 
             </motion.div>

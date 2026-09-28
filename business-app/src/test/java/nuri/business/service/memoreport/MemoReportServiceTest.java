@@ -45,6 +45,9 @@ class MemoReportServiceTest {
     private MemoReportRepository memoReportRepository;
 
     @Mock
+    private nuri.business.domain.user.repository.UserRepository userRepository;
+
+    @Mock
     private UserDisplayNameLookup userDisplayNameLookup;
 
     @Mock
@@ -62,10 +65,52 @@ class MemoReportServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        given(userRepository.findByEsntlIdForUpdate(anyString())).willAnswer(invocation -> Optional.of(
+                nuri.business.domain.user.entity.User.builder().esntlId(invocation.getArgument(0))
+                        .userSttsCd("P").build()));
     }
 
     /** 서비스가 정렬 없는 요청에 넣는 기본 정렬. 아래 테스트들은 이미 정렬된 요청을 보내 위임만 본다. */
     private static final Sort NEWEST_FIRST = Sort.by(Sort.Direction.DESC, "memoRptSn");
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"missing", "A", "D"})
+    @DisplayName("신규 수신자가 없거나 비활성이면 보고·첨부·알림을 남기지 않는다")
+    void createRejectsUnavailableRecipient(String state) {
+        given(userRepository.findByEsntlIdForUpdate("recipient")).willReturn(state.equals("missing")
+                ? Optional.empty() : Optional.of(nuri.business.domain.user.entity.User.builder()
+                        .esntlId("recipient").userSttsCd(state).build()));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.createMemoReport("writer",
+                MemoReportDto.builder().rptTtl("제목").rptrId("recipient").atchFileSn(5L).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        org.mockito.Mockito.verifyNoInteractions(memoReportRepository, attachmentAssignmentPolicy, eventPublisher);
+    }
+
+    @Test
+    @DisplayName("직접 API 수신자 변경은 거부하고 기존 보고를 보존한다")
+    void updateRejectsRecipientReplacement() {
+        MemoReport report = MemoReport.builder().memoRptSn(1L).rptrId("old").rptTtl("원본").build();
+        given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(report));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.updateMemoReport(1L, "writer",
+                MemoReportDto.builder().rptrId("new").rptTtl("변경").build()))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("수신자는 변경할 수 없습니다");
+        assertThat(report.getRptrId()).isEqualTo("old");
+        assertThat(report.getRptTtl()).isEqualTo("원본");
+        org.mockito.Mockito.verifyNoInteractions(userRepository, attachmentAssignmentPolicy, eventPublisher);
+    }
+
+    @Test
+    @DisplayName("기존 비활성·식별불가 수신자를 유지한 정정은 신규 수신자 검사 없이 허용한다")
+    void updatePreservesUnresolvableRecipient() {
+        MemoReport report = MemoReport.builder().memoRptSn(1L).rptrId("retired").rptTtl("오타").build();
+        given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(report));
+        memoReportService.updateMemoReport(1L, "writer", MemoReportDto.builder()
+                .rptrId("retired").rptTtl("정정").build());
+        assertThat(report.getRptTtl()).isEqualTo("정정");
+        assertThat(report.getRptrId()).isEqualTo("retired");
+        org.mockito.Mockito.verifyNoInteractions(userRepository);
+    }
 
     @ParameterizedTest
     @CsvSource({"all", "my", "received"})
@@ -342,7 +387,7 @@ class MemoReportServiceTest {
         // given
         Long memoRptSn = 1L;
         String userId = "user1";
-        MemoReport existingEntity = MemoReport.builder().memoRptSn(memoRptSn).userId(userId).build();
+        MemoReport existingEntity = MemoReport.builder().memoRptSn(memoRptSn).userId(userId).rptrId("reportr1").build();
         MemoReportDto updateDto = MemoReportDto.builder()
                 .memoRptSn(memoRptSn)
                 .rptTtl("Updated Subject")
@@ -351,7 +396,7 @@ class MemoReportServiceTest {
                 .memoRptYmd("20240502")
                 .build();
 
-        given(memoReportRepository.findById(memoRptSn)).willReturn(Optional.of(existingEntity));
+        given(memoReportRepository.findByIdForUpdate(memoRptSn)).willReturn(Optional.of(existingEntity));
 
         // when
         memoReportService.updateMemoReport(memoRptSn, userId, updateDto);
@@ -375,10 +420,10 @@ class MemoReportServiceTest {
         MemoReportDto request = MemoReportDto.builder()
                 .rptTtl("New Subject")
                 .rptCn("New Content")
-                .rptrId("new-reporter")
+                .rptrId("old-reporter")
                 .atchFileSn(101L)
                 .build();
-        given(memoReportRepository.findById(1L)).willReturn(Optional.of(existing));
+        given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existing));
         org.mockito.Mockito.doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
                 .when(attachmentAssignmentPolicy).assertAssignable(101L);
 
@@ -401,7 +446,7 @@ class MemoReportServiceTest {
                 .rptrId("reporter")
                 .atchFileSn(100L)
                 .build();
-        given(memoReportRepository.findById(1L)).willReturn(Optional.of(existing));
+        given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existing));
 
         memoReportService.updateMemoReport(1L, "user1", MemoReportDto.builder()
                 .rptTtl("Same")
@@ -438,7 +483,7 @@ class MemoReportServiceTest {
     void readMemoReport_recipientFirstView() {
         Long memoRptSn = 1L;
         MemoReport entity = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-writer").rptrId("esntl-me").build();
-        when(memoReportRepository.findById(memoRptSn)).thenReturn(Optional.of(entity));
+        when(memoReportRepository.findByIdForUpdate(memoRptSn)).thenReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-me"));
 
@@ -452,7 +497,7 @@ class MemoReportServiceTest {
     void readMemoReport_onlyRecipientFirstViewCounts() {
         Long memoRptSn = 1L;
         MemoReport unread = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-writer").rptrId("esntl-recipient").build();
-        when(memoReportRepository.findById(memoRptSn)).thenReturn(Optional.of(unread));
+        when(memoReportRepository.findByIdForUpdate(memoRptSn)).thenReturn(Optional.of(unread));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-writer"));
 
@@ -462,7 +507,7 @@ class MemoReportServiceTest {
         java.time.LocalDateTime firstView = java.time.LocalDateTime.of(2026, 9, 1, 9, 0);
         MemoReport read = MemoReport.builder().memoRptSn(2L).userId("esntl-writer").rptrId("esntl-recipient").build();
         read.updateInqireDt(firstView);
-        when(memoReportRepository.findById(2L)).thenReturn(Optional.of(read));
+        when(memoReportRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(read));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-recipient"));
 
@@ -474,7 +519,7 @@ class MemoReportServiceTest {
     @DisplayName("🔐 작성자는 지시사항을 쓸 수 없다 — 지시는 수신자·관리자만 남긴다 (DIP I7)")
     void updateDrctMatter_rejectsWriter() {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-writer").rptrId("esntl-recipient").build();
-        when(memoReportRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-writer"));
 
@@ -513,7 +558,7 @@ class MemoReportServiceTest {
     void updateDrctMatter_notifiesAuthor() {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).rptTtl("주간 보고")
                 .userId("esntl-writer").rptrId("esntl-recipient").build();
-        when(memoReportRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-recipient"));
 
@@ -535,6 +580,7 @@ class MemoReportServiceTest {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).rptTtl("원래 제목").rptCn("원래 본문")
                 .userId("esntl-writer").rptrId("esntl-recipient").build();
         entity.updateDrctMatter("보완해 주세요", java.time.LocalDateTime.now());
+        when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(entity));
         when(memoReportRepository.findById(1L)).thenReturn(Optional.of(entity));
         __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission(anyString())).thenReturn(true);
 
@@ -552,7 +598,7 @@ class MemoReportServiceTest {
     @DisplayName("수신자와 전체 수정 권한자는 지시사항을 남긴다 (DIP I7)")
     void updateDrctMatter_allowsRecipientAndAdmin() {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-writer").rptrId("esntl-recipient").build();
-        when(memoReportRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-recipient"));
 

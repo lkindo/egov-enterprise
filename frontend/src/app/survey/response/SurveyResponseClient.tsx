@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getQustnrRespondInfoList, deleteQustnrRespondInfo } from '@/lib/api/survey';
+import { getQustnrRespondInfoList, cancelSurveySubmission } from '@/lib/api/survey';
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
@@ -34,8 +34,12 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 export default function SurveyResponseClient() {
+  const { user } = useAuth();
+  const canCancel = canPermission(user, 'SURVEY_RSP_DELETE');
   const [pageNo, setPageNo] = useState(1);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [deletingResponseId, setDeletingResponseId] = useState<number | null>(null);
@@ -65,15 +69,18 @@ export default function SurveyResponseClient() {
   const totalPage = data?.totalPage ?? 1;
 
   const deleteMutation = useMutation({
-    mutationFn: (srvyRspnsSn: number) => deleteQustnrRespondInfo(srvyRspnsSn),
+    mutationFn: (srvyRspnsSn: number) => cancelSurveySubmission(srvyRspnsSn),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['survey-responses'] });
-      toast.success('삭제되었습니다.');
+      queryClient.invalidateQueries({ queryKey: ['survey-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['survey-response-detail'] });
+      setPageNo(1);
+      toast.success('전체 제출을 취소했습니다.');
     },
     onError: () => {
       // [2026-09-15 DEC-OPS-100] 오류 원문을 붙이지 않는다 — 서버 문구는 API 공통 토스트가 이미 알리고,
       //   원문이 transport 문구면 사용자 문장이 아니다. 여기서는 실패한 작업과 다음 행동만 말한다.
-      toast.error('응답을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      toast.error('전체 제출을 취소하지 못했습니다. 응답 상태와 권한을 확인해 주세요.');
     },
     onSettled: () => {
       deletingResponseIdRef.current = null;
@@ -87,13 +94,13 @@ export default function SurveyResponseClient() {
   };
 
   const handleDelete = async (srvyRspnsSn: number, name: string) => {
-    if (deletingResponseIdRef.current !== null) return;
+    if (!canCancel || deletingResponseIdRef.current !== null) return;
     deletingResponseIdRef.current = srvyRspnsSn;
     // [2026-09-06 DEC-OPS-038] 네이티브 confirm → useConfirm 모달. 동기 잠금(ref)은 확인 대기 중에도 유지된다.
     const ok = await confirm({
-      title: '응답 삭제',
-      message: `${name}님의 응답을 삭제하시겠습니까? 삭제한 응답은 복구할 수 없습니다.`,
-      confirmText: '삭제',
+      title: '전체 제출 취소',
+      message: `${name || '선택한 응답자'}님의 이 설문에 대한 모든 문항·선택 답변을 함께 취소합니다. 취소한 답변은 복구할 수 없습니다. 설문 기간 안이고 참여 권한이 있으면 다시 제출할 수 있습니다.`,
+      confirmText: '전체 제출 취소',
       variant: 'destructive',
     });
     if (!ok) {
@@ -110,7 +117,7 @@ export default function SurveyResponseClient() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">설문조사 응답 관리</h1>
           <p className="text-muted-foreground mt-1">
-            시스템에 등록된 설문조사 응답 현황을 확인하고 관리합니다.
+            문항별 답변을 조회합니다. 취소하면 같은 사람의 이 설문 전체 답변이 삭제됩니다.
           </p>
         </div>
         <div className="flex space-x-2">
@@ -216,17 +223,17 @@ export default function SurveyResponseClient() {
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
-                          <Button
+                          {canCancel && <Button
                             variant="ghost"
                             size="icon-sm"
-                            aria-label={`${item.rspnsNm || '설문'} 응답 ${deletingResponseId === item.srvyRspnsSn ? '삭제 중' : '삭제'}`}
+                            aria-label={`${item.rspnsNm || '설문'} 전체 제출 ${deletingResponseId === item.srvyRspnsSn ? '취소 중' : '취소'}`}
                             aria-busy={deletingResponseId === item.srvyRspnsSn || undefined}
                             disabled={deletingResponseId !== null}
                             className="text-destructive-emphasis hover:text-destructive-emphasis hover:bg-destructive/10"
                             onClick={() => { void handleDelete(item.srvyRspnsSn, item.rspnsNm); }}
                           >
                             <Trash2 className="h-4 w-4" />
-                          </Button>
+                          </Button>}
                         </div>
                       </TableCell>
                     </TableRow>

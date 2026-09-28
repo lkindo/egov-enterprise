@@ -41,9 +41,37 @@ class MenuBookmarkServiceTest {
     /** 메뉴 배정 판정은 사이드바와 같은 MenuService 판정을 쓴다. */
     @Mock
     private MenuService menuService;
+    @Mock
+    private nuri.business.domain.user.repository.UserRepository userRepository;
 
     @InjectMocks
     private MenuBookmarkService service;
+
+    @org.junit.jupiter.api.BeforeEach
+    void authenticateOwner() {
+        var principal = nuri.foundation.security.service.CustomUserDetails.builder()
+                .userId("bookmark-owner").esntlId(ME).enabled(true).lockAt("N").build();
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(principal, null, List.of()));
+        org.mockito.Mockito.lenient().when(userRepository.findByEsntlIdForUpdate(ME))
+                .thenReturn(java.util.Optional.of(org.mockito.Mockito.mock(nuri.business.domain.user.entity.User.class)));
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void clearPrincipal() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void anotherUserCannotBeSelectedThroughServiceArguments() {
+        assertThatThrownBy(() -> service.getMyBookmarks("OTHER")).isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(CommonErrorCode.ACCESS_DENIED);
+        assertThatThrownBy(() -> service.addBookmark("OTHER", 10L)).isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(CommonErrorCode.ACCESS_DENIED);
+        assertThatThrownBy(() -> service.removeBookmark("OTHER", 10L)).isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(CommonErrorCode.ACCESS_DENIED);
+        org.mockito.Mockito.verifyNoInteractions(bkmkMenuRepository, menuRepository, userRepository);
+    }
 
     private static Menu menu(long sn, String name, String useYn) {
         return Menu.builder().menuSn(sn).menuNm(name).useYn(useYn).build();

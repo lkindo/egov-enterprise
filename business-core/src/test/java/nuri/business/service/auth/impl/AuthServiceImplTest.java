@@ -91,6 +91,7 @@ class AuthServiceImplTest {
     @Mock private LoginPolicyRepository loginPolicyRepository;
     @Mock private OtpService otpService;
     @Mock private LogService logService;
+    @Mock private nuri.business.service.auth.mfa.MfaService mfaService;
     @Mock private Authentication authentication;
 
     @InjectMocks private AuthServiceImpl authService;
@@ -128,7 +129,7 @@ class AuthServiceImplTest {
         org.springframework.test.util.ReflectionTestUtils.invokeMethod(realProvider, "init");
         AuthServiceImpl service = new AuthServiceImpl(authenticationManager, realProvider, userRepository,
                 userDetailsService, refreshTokenRepository, loginPolicyManageService, loginPolicyRepository,
-                otpService, logService);
+                otpService, logService, mfaService);
         if (relogin) {
             given(refreshTokenRepository.findById(ESNTL_ID)).willReturn(Optional.of(RefreshToken.builder()
                     .userId(ESNTL_ID).rfshTkn("old-digest")
@@ -240,72 +241,65 @@ class AuthServiceImplTest {
         }
 
         @Test
-        @DisplayName("OTP 필수 계정이 코드를 누락하면 거부한다")
-        void rejectsWhenOtpRequiredButMissing() {
+        @DisplayName("MFA 필수 계정은 비밀번호 뒤 정상 토큰 대신 제한 도전을 받는다")
+        void returnsRestrictedChallengeBeforeMfa() {
             given(loginPolicyRepository.findById(LOGIN_ID)).willReturn(Optional.of(otpEnabledPolicy()));
-
-            assertThatThrownBy(() -> authService.login(loginRequest(null), CLIENT_IP))
-                    .isInstanceOf(LoginRejectedException.class)
-                    .satisfies(e -> assertThat(((LoginRejectedException) e).reason())
-                            .isEqualTo(LoginFailureReason.OTP_MISSING));
-
+            given(mfaService.beginLogin(any(), eq(true))).willReturn(new nuri.business.service.auth.mfa.MfaResults.Challenge(
+                    "MFA_REQUIRED", "restricted-proof", Instant.now().plusSeconds(300)));
+            TokenResponse response = authService.login(loginRequest(null), CLIENT_IP);
+            assertThat(response.getAuthenticationStage()).isEqualTo("MFA_REQUIRED");
+            assertThat(response.getMfaChallenge()).isEqualTo("restricted-proof");
+            assertThat(response.getAccessToken()).isNull();
+            assertThat(response.getRefreshToken()).isNull();
+            assertThat(response.getPermissions()).isEmpty();
             verify(refreshTokenRepository, never()).save(any());
-            verify(logService).logLogin(LOGIN_ID, CLIENT_IP, "WEB", "Y", "OTP_MISSING");
+            verify(logService, never()).logLogin(anyString(), anyString(), anyString(), eq("N"), any());
         }
 
         @Test
-        @DisplayName("OTP 필수 계정이 틀린 코드를 내면 거부한다")
-        void rejectsWhenOtpVerificationFails() {
-            // ⚠ userWithSecret() 은 내부에서 스터빙한다 — given(...) 인자 안에서 부르면
-            //   Mockito 가 중첩 스터빙으로 보고 UnfinishedStubbingException 을 던진다.
-            User user = userWithSecret();
+        @DisplayName("legacy inline OTP를 보내도 새 MFA 도전을 생략하지 못한다")
+        void inlineOtpCannotSkipChallenge() {
             given(loginPolicyRepository.findById(LOGIN_ID)).willReturn(Optional.of(otpEnabledPolicy()));
-            given(userRepository.findById(ESNTL_ID)).willReturn(Optional.of(user));
-            given(otpService.verifyCode(anyString(), org.mockito.ArgumentMatchers.anyInt())).willReturn(false);
-
-            assertThatThrownBy(() -> authService.login(loginRequest(111111), CLIENT_IP))
-                    .isInstanceOf(LoginRejectedException.class)
-                    .satisfies(e -> assertThat(((LoginRejectedException) e).reason())
-                            .isEqualTo(LoginFailureReason.OTP_INVALID));
-
+            given(mfaService.beginLogin(any(), eq(true))).willReturn(new nuri.business.service.auth.mfa.MfaResults.Challenge(
+                    "MFA_REQUIRED", "restricted-proof", Instant.now().plusSeconds(300)));
+            TokenResponse response = authService.login(loginRequest(654321), CLIENT_IP);
+            assertThat(response.getAuthenticationStage()).isEqualTo("MFA_REQUIRED");
+            assertThat(response.getAccessToken()).isNull();
+            verify(otpService, never()).verifyCode(anyString(), org.mockito.ArgumentMatchers.anyInt());
             verify(refreshTokenRepository, never()).save(any());
-            verify(logService).logLogin(LOGIN_ID, CLIENT_IP, "WEB", "Y", "OTP_INVALID");
         }
 
         @Test
-        @DisplayName("OTP 필수 계정: 사용자를 못 찾으면 USER_NOT_FOUND 로 끝난다 (null 반환 아님)")
-        void throwsWhenOtpUserMissing() {
-            given(loginPolicyRepository.findById(LOGIN_ID)).willReturn(Optional.of(otpEnabledPolicy()));
-            given(userRepository.findById(ESNTL_ID)).willReturn(Optional.empty());
-
-            // L62 `replaced return value with null` — orElseThrow 람다가 검증된 적이 없었다.
+        @DisplayName("MFA 준비 중 최신 사용자/자격 재검증 실패는 정상 토큰을 발급하지 않는다")
+        void rejectsChangedCredentialsBeforeIssuance() {
+            given(mfaService.beginLogin(any(), eq(false))).willThrow(new nuri.business.service.auth.mfa.MfaRejectedException());
             assertThatThrownBy(() -> authService.login(loginRequest(111111), CLIENT_IP))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOf(nuri.business.service.auth.mfa.MfaRejectedException.class);
+            verify(refreshTokenRepository, never()).save(any());
         }
 
         @Test
-        @DisplayName("OTP 검증은 사용자의 비밀키와 입력 코드로 수행된다")
-        void verifiesOtpWithUserSecretAndSubmittedCode() {
-            User user = userWithSecret();
+        @DisplayName("legacy OTP 정책은 새 등록 확인이 끝날 때까지 등록용 도전만 발급한다")
+        void legacyPolicyRequiresConfirmedEnrollment() {
             given(loginPolicyRepository.findById(LOGIN_ID)).willReturn(Optional.of(otpEnabledPolicy()));
-            given(userRepository.findById(ESNTL_ID)).willReturn(Optional.of(user));
-            given(otpService.verifyCode(anyString(), org.mockito.ArgumentMatchers.anyInt())).willReturn(true);
-
-            authService.login(loginRequest(654321), CLIENT_IP);
-
-            verify(otpService).verifyCode("USER-OTP-SECRET", 654321);
-            verify(refreshTokenRepository).save(any(RefreshToken.class));
+            given(mfaService.beginLogin(any(), eq(true))).willReturn(new nuri.business.service.auth.mfa.MfaResults.Challenge(
+                    "ENROLLMENT_REQUIRED", "registration-proof", Instant.now().plusSeconds(300)));
+            TokenResponse response = authService.login(loginRequest(654321), CLIENT_IP);
+            assertThat(response.getAuthenticationStage()).isEqualTo("ENROLLMENT_REQUIRED");
+            assertThat(response.getAccessToken()).isNull();
+            verify(refreshTokenRepository, never()).save(any());
         }
 
         @Test
-        @DisplayName("OTP 미사용 정책이면 OTP 검증을 아예 건너뛴다")
-        void skipsOtpWhenPolicyDisablesIt() {
+        @DisplayName("legacy OTP 플래그 N이 새 ACTIVE 자격의 도전을 끄지 못한다")
+        void disabledLegacyFlagDoesNotDisableMfa() {
             given(loginPolicyRepository.findById(LOGIN_ID))
                     .willReturn(Optional.of(LoginPolicy.create(LOGIN_ID, null, "Y", "N", null, null, "N")));
-
-            authService.login(loginRequest(null), CLIENT_IP);
-
+            given(mfaService.beginLogin(any(), eq(false))).willReturn(new nuri.business.service.auth.mfa.MfaResults.Challenge(
+                    "MFA_REQUIRED", "active-credential-proof", Instant.now().plusSeconds(300)));
+            assertThat(authService.login(loginRequest(null), CLIENT_IP).getAuthenticationStage()).isEqualTo("MFA_REQUIRED");
             verify(otpService, never()).verifyCode(anyString(), org.mockito.ArgumentMatchers.anyInt());
+            verify(refreshTokenRepository, never()).save(any());
         }
 
         @Test

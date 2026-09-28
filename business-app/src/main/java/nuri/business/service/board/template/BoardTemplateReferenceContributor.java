@@ -13,6 +13,10 @@ import java.util.Objects;
 @Component
 public class BoardTemplateReferenceContributor implements TemplateReferenceContributor {
 
+    /** 구현된 레이아웃 코드는 원장 행·경로와 독립적이다. 미해석 레거시 ID는 기존 보호를 유지한다. */
+    private static final java.util.Set<String> BUILT_IN_LAYOUTS = java.util.Set.of(
+            "TMPLT_HUB", "TMPLT_LIST", "TMPLT_GALLERY", "TMPLT_QNA", "TMPLT_CALENDAR", "TMPLT_FAQ", "TMPLT_WIKI");
+
     private final BoardMasterRepository boardMasterRepository;
 
     public BoardTemplateReferenceContributor(BoardMasterRepository boardMasterRepository) {
@@ -26,6 +30,7 @@ public class BoardTemplateReferenceContributor implements TemplateReferenceContr
 
     @Override
     public long countReferences(String tmpltId) {
+        if (BUILT_IN_LAYOUTS.contains(tmpltId)) return 0;
         return boardMasterRepository.countByTmpltId(tmpltId);
     }
 }
