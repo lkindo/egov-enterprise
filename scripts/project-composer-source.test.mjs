@@ -26,6 +26,9 @@ const integrityGates = [
   ['api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java', ['note', 'notification']],
   ['api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java', 'memoreport'],
   ['api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java', 'system'],
+  ['api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java', ['system', 'template']],
+  ['api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java', 'operation'],
+  ['api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java', 'notification'],
   ['api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java', 'template'],
 ];
 const gateDomains = owner => Array.isArray(owner) ? owner : [owner];
