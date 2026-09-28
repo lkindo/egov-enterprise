@@ -416,7 +416,19 @@ test.describe('명령 센터의 현재 계정·권한 경계', () => {
                     if ((node.modernRoute ?? node.url)?.startsWith('/')) return names.join(' > ');
                 }
             };
-            const initialMenus = await settledMenus(() => page.keyboard.press('Control+k'));
+            const initialMenus = await settledMenus(async () => {
+                // The command center loads dynamically after hydration. SSR account controls
+                // and networkidle do not prove that its shortcut callback is registered.
+                // Stop at the first accepted input so polling cannot toggle it closed again.
+                await expect.poll(() => page.evaluate(() => {
+                    const shortcut = new KeyboardEvent('keydown', {
+                        key: 'k', code: 'KeyK', ctrlKey: true, bubbles: true, cancelable: true,
+                    });
+                    window.dispatchEvent(shortcut);
+                    return shortcut.defaultPrevented;
+                }), { timeout: 20000, message: '명령 센터가 최초 Ctrl+K 입력을 수용해야 한다' }).toBe(true);
+                await expect(dialog).toBeVisible();
+            });
             await expect(dialog).toBeVisible();
             // Select the actual server-seeded title rather than assuming profile-specific labels.
             const adminMenuName = find(initialMenus);
