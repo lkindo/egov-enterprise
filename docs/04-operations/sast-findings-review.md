@@ -9,7 +9,7 @@
 | FP-001 | `JwtTokenProvider`는 기존 서명·계정 상태·비밀번호 변경 시각 검사 뒤에 현재 MFA 버전과 인증 시각 검사를 추가한다. `proxy.ts`는 인코딩한 MFA 토큰 경로도 400으로 거부한다. 로그인 BFF의 쿠키 처리는 `auth-session-response.ts`로 이동했으며 Strict·HttpOnly·Secure 정책과 토큰의 JSON 비노출을 유지한다. 제한 도전 응답은 기존 일반 세션을 지우고 별도의 제한 쿠키만 발급한다. 이동한 방어가 해시 검증 밖으로 빠지지 않도록 이 헬퍼를 기존 항목의 보완 소스에 추가한다. API의 Bearer·STATELESS·Origin 방어는 그대로다. |
 | FP-002 | 변경 참조는 같은 `JwtTokenProvider`뿐이다. 코어 fallback 체인의 Origin 검사와 Bearer 인증 의미는 유지되며 MFA 검사가 추가된다. |
 | FP-003 | `OperationalAuditInterceptor`의 민감 성공 감사는 응답 전 내구 기록 경로로 이동했다. 기존 `/api/` 감사 범위 필터와 `resolveLoginId(authentication)` 호출은 접근을 허용하는 검사가 아니다. 동일한 탐지 구문이 105행에서 101행으로 이동했다. |
-| FP-006 | UI 기준선 실행기가 자체 소유 임시 DB와 명시적 e2e·cutover 설정을 사용하도록 바뀌었다. 탐지된 파일 열기는 그대로 `O_RDONLY`이며 POSIX의 `O_NOFOLLOW`·`O_NONBLOCK`, 파일 종류·descriptor identity·크기 상한·읽기 전후 상태 검증을 유지한다. 동일한 호출이 490행에서 498행으로 이동했다. |
+| FP-006 | UI 기준선 실행기가 자체 소유 임시 DB와 명시적 e2e·cutover 설정을 사용하도록 바뀌었고, Windows Compose 탐색용 `ProgramFiles`·`ProgramW6432` 보존 2행을 추가했다. 탐지된 파일 열기는 그대로 `O_RDONLY`이며 POSIX의 `O_NOFOLLOW`·`O_NONBLOCK`, 파일 종류·descriptor identity·크기 상한·읽기 전후 상태 검증을 유지한다. 동일한 호출이 490행에서 500행으로 이동했다. 직전 498행 검토 이후의 두 allowlist 행을 제거하면 당시 소스와 LF 정규화 바이트가 전부 일치한다. |
 | FP-007 | 테스트 컨텍스트에서 내구 작업 스케줄러를 끄는 4행만 파일 앞부분에 추가했다. H2 메모리 DB와 테스트 전용 의존성은 유지한다. 아래의 기존 SARIF 위치를 같은 구문에 맞춰 22행에서 26행으로 이동한다. |
 | FP-008 | SockJS 필터의 탐지 본문·69행·fingerprint와 거부 회귀는 변경되지 않았다. 자격 누락·무효·비인증 객체·빈 권한 버전은 컨텍스트 제거와 401 응답 후 전송 체인 전에 종료된다. 보완 소스인 JWT provider에는 MFA 검사가 추가됐고, `JpaUserAuthAdapter`는 서명으로 검증한 내부 subject만 조회해 다른 계정의 로그인 ID와 충돌하는 별칭 조회를 제거했다. 현재 계정 상태와 권한 스냅샷 조회는 유지한다. |
 
