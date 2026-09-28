@@ -72,6 +72,7 @@ import {
 } from '../frontend/scripts/ui-quality-baseline-core.mjs';
 
 import {
+  completeSyntheticFaqNavigation,
   createEmptyUserLogPage,
   createSyntheticFixtureApi,
   isPersistedBoardDraftKey,
@@ -1169,6 +1170,142 @@ test('all six synthetic mutation paths acquire the context-bound fixture API', (
     assert.doesNotMatch(body, /const api = (?:page\.context\(\)|adminContext)\.request;/);
     assert.match(body, /runSyntheticMutationLifecycle\(/);
   }
+});
+
+function faqNavigationProbe() {
+  const baseOrigin = 'http://127.0.0.1:53181';
+  const boardId = process.env.UI_BASELINE_SYNTHETIC_FAQ_BOARD_ID || 'BBSMSTR_AAAAAAAAAAAA';
+  const stateCase = buildExecutionPlan(manifest).stateCases.find((item) => item.stepId === 'admin-compose-faq');
+  const fixture = { faqTitle: 'Synthetic FAQ navigation probe' };
+  const events = [];
+  const listeners = new Set();
+  const pstSn = 101;
+  const page = {
+    on(name, listener) { assert.equal(name, 'response'); listeners.add(listener); },
+    off(name, listener) { assert.equal(name, 'response'); listeners.delete(listener); },
+    async waitForURL(predicate) {
+      assert.equal(predicate(new URL(`${baseOrigin}/admin/community/boards/detail?bbsId=${boardId}&pstSn=${pstSn}`)), true);
+      assert.equal(predicate(new URL(`${baseOrigin}/admin/community/boards/detail?bbsId=${boardId}&pstSn=999`)), false);
+      events.push('detail-url');
+    },
+    getByRole(role, options) {
+      assert.equal(role, 'heading');
+      assert.equal(options.level, 1);
+      assert.equal(options.exact, true);
+      assert.ok([fixture.faqTitle, '새 게시글 작성'].includes(options.name));
+      return {
+        async count() { return 1; },
+        nth() { return { async isVisible() { events.push('detail-heading'); return true; } }; },
+        async waitFor() { assert.equal(options.name, '새 게시글 작성'); events.push('composer-ready'); },
+      };
+    },
+    async goto(url) {
+      assert.equal(new URL(url, baseOrigin).pathname, stateCase.identity.route);
+      events.push('composer-goto');
+    },
+  };
+  const emit = (kind, { post = pstSn, status = 200, origin = baseOrigin, board = boardId, finished = async () => null } = {}) => {
+    const response = {
+      url: () => `${origin}/api/v1/boards/${encodeURIComponent(board)}/posts/${post}/satisfactions${kind === 'average' ? '/average' : ''}`,
+      request: () => ({ method: () => 'GET' }), status: () => status, finished,
+    };
+    for (const listener of listeners) listener(response);
+  };
+  return { page, baseOrigin, stateCase, fixture, events, listeners, pstSn, emit };
+}
+
+test('FAQ cleanup waits for both exact-post response bodies and departure from the detail page', async () => {
+  const probe = faqNavigationProbe();
+  let finishList;
+  let finishAverage;
+  const listBody = new Promise((resolve) => { finishList = resolve; });
+  const averageBody = new Promise((resolve) => { finishAverage = resolve; });
+  const pending = runSyntheticMutationLifecycle({
+    execute: () => completeSyntheticFaqNavigation({ ...probe, submit: async () => {
+      assert.equal(probe.listeners.size, 1, 'observation must precede the submit callback');
+      probe.events.push('submit-and-authoritative-readback');
+      probe.emit('list', { origin: 'http://unrelated.invalid', status: 404 });
+      probe.emit('list', { board: 'OTHER_BOARD', status: 404 });
+      probe.emit('list', { finished: () => listBody });
+      probe.emit('average', { finished: () => averageBody });
+      return probe.pstSn;
+    } }),
+    cleanup: async () => { probe.events.push('cleanup'); },
+    readActiveResidueCount: async () => { probe.events.push('residue'); return 0; },
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(probe.events, ['submit-and-authoritative-readback']);
+  finishList(null);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(probe.events, ['submit-and-authoritative-readback'], 'one finished body cannot release cleanup');
+  finishAverage(null);
+  await pending;
+  assert.deepEqual(probe.events, [
+    'submit-and-authoritative-readback', 'detail-url', 'detail-heading',
+    'composer-goto', 'composer-ready', 'cleanup', 'residue',
+  ]);
+  assert.equal(probe.listeners.size, 0);
+});
+
+test('FAQ navigation rejects a different post, HTTP 404, or failed body while preserving cleanup and residue checks', async () => {
+  for (const invalid of [
+    { post: 999 },
+    { status: 404 },
+    { finished: async () => { throw new Error('synthetic response body failure'); } },
+  ]) {
+    const probe = faqNavigationProbe();
+    await assert.rejects(runSyntheticMutationLifecycle({
+      execute: () => completeSyntheticFaqNavigation({ ...probe, submit: async () => {
+        probe.emit('list', invalid);
+        probe.emit('average');
+        return probe.pstSn;
+      } }),
+      cleanup: async () => { probe.events.push('cleanup'); },
+      readActiveResidueCount: async () => { probe.events.push('residue'); return 0; },
+    }), (error) => error.code === 'synthetic-faq-authoritative-readback-failed');
+    assert.deepEqual(probe.events, ['cleanup', 'residue']);
+    assert.equal(probe.listeners.size, 0);
+  }
+});
+
+test('FAQ submit failure removes its observer and cleanup failure retains the existing closed failure contract', async () => {
+  const probe = faqNavigationProbe();
+  await assert.rejects(runSyntheticMutationLifecycle({
+    execute: () => completeSyntheticFaqNavigation({ ...probe, submit: async () => {
+      probe.emit('list', { finished: async () => { throw new Error('synthetic late body failure'); } });
+      throw new Error('synthetic submit failure');
+    } }),
+    cleanup: async () => { probe.events.push('cleanup'); throw new Error('synthetic cleanup failure'); },
+    readActiveResidueCount: async () => { probe.events.push('residue'); return 0; },
+  }), (error) => error.code === 'synthetic-mutation-cleanup-failed');
+  assert.deepEqual(probe.events, ['cleanup'], 'cleanup failure must not be reported as verified zero residue');
+  assert.equal(probe.listeners.size, 0);
+  await new Promise((resolve) => setImmediate(resolve));
+});
+
+test('FAQ navigation completion remains bound to the actual detail redirect, heading, and satisfaction GET producers', () => {
+  const actions = readFileSync(join(repoRoot, 'frontend/src/app/actions/boardActions.ts'), 'utf8');
+  const detail = readFileSync(join(repoRoot, 'frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx'), 'utf8');
+  const satisfaction = readFileSync(join(repoRoot, 'frontend/src/components/features/satisfaction/SatisfactionSection.tsx'), 'utf8');
+  const operations = readFileSync(join(repoRoot, 'frontend/src/types/generated-operations.ts'), 'utf8');
+  assert.match(actions, /redirect: `\/admin\/community\/boards\/detail\?bbsId=\$\{bbsId\}&pstSn=\$\{targetId\}`/);
+  assert.match(detail, /<h1[^>]*>\s*\{article\.pstTtl\}\s*<\/h1>/);
+  assert.match(satisfaction, /queryFn: \(\) => satisfactionService\.list\(bbsId, pstSn\)/);
+  assert.match(satisfaction, /queryFn: \(\) => satisfactionService\.average\(bbsId, pstSn\)/);
+  for (const [operation, suffix] of [['getList', ''], ['getAverage', '/average']]) {
+    const descriptor = operations.match(new RegExp(`export const ${operation}Operation = [\\s\\S]*?\\n\\}\\)\\(\\);`))?.[0];
+    assert.ok(descriptor);
+    assert.ok(descriptor.includes(`path: "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions${suffix}"`));
+  }
+  const body = runnerSource.match(/case 'admin-compose-faq': \{([\s\S]*?)\n      break;/)?.[1];
+  assert.ok(body);
+  assert.match(body, /execute: \(\) => completeSyntheticFaqNavigation\(/);
+  assert.match(body, /await fillFaqComposer\(page, fixture\)/);
+  assert.match(body, /await waitForExactFaqPost\(api, fixture\)/);
+  assert.match(body, /await assertFaqDetail\(api, fixture, post\.pstSn, \{\s*expectedContentKind: 'canonical-tiptap-html'/);
+  assert.match(body, /cleanup: \(\) => cleanupSyntheticFaq\(api, fixture\)/);
+  assert.match(body, /readActiveResidueCount: \(\) => syntheticFaqResidueCount\(api, fixture\)/);
+  assert.doesNotMatch(body, /await page\.goto\(/, 'return navigation must complete inside execute, before lifecycle cleanup');
 });
 
 test('synthetic board readback and cleanup use the actual title search and paging query contract', () => {

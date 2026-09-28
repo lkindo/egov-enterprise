@@ -1504,6 +1504,69 @@ async function fillFaqComposer(page, fixture) {
   await page.getByRole('button', { name: '게시글 등록', exact: true }).click();
 }
 
+export async function completeSyntheticFaqNavigation({ page, baseOrigin, stateCase, fixture, submit }) {
+  const origin = validateLoopbackOrigin(baseOrigin);
+  const boardId = process.env.UI_BASELINE_SYNTHETIC_FAQ_BOARD_ID || DEFAULT_SYNTHETIC_FAQ_BOARD_ID;
+  const postPrefix = `/api/v1/boards/${encodeURIComponent(boardId)}/posts/`;
+  const observed = [];
+  let observationFailed = false;
+  const onResponse = (response) => {
+    try {
+      const url = new URL(response.url());
+      if (url.origin !== origin || response.request().method() !== 'GET'
+        || !url.pathname.startsWith(postPrefix)) return;
+      const match = /^(\d+)\/satisfactions(?:\/(average))?$/.exec(url.pathname.slice(postPrefix.length));
+      if (!match) return;
+      const entry = {
+        pstSn: Number(match[1]), kind: match[2] || 'list', status: response.status(),
+        finished: false, failed: Boolean(url.search || url.hash),
+      };
+      observed.push(entry);
+      // Attach both handlers immediately: a body failure before submit resolves must not reject unhandled.
+      Promise.resolve().then(() => response.finished()).then((error) => {
+        entry.finished = true;
+        entry.failed ||= Boolean(error);
+      }, () => { entry.finished = true; entry.failed = true; });
+    } catch {
+      observationFailed = true;
+    }
+  };
+  page.on('response', onResponse);
+  try {
+    const pstSn = Number(await submit());
+    if (!Number.isSafeInteger(pstSn) || pstSn <= 0) {
+      throw syntheticMutationFailure('synthetic-faq-authoritative-readback-failed');
+    }
+    const failed = () => observationFailed || observed.some((entry) => (
+      entry.pstSn !== pstSn || entry.status !== 200 || entry.failed
+    ));
+    const settled = () => ['list', 'average'].every((kind) => (
+      observed.some((entry) => entry.kind === kind && entry.finished)
+    )) && observed.every((entry) => entry.finished);
+    // The authoritative API readback can finish before detail hydration starts these two GETs.
+    // Keep the article alive until both exact-post responses finish; 4xx remains a hard failure.
+    const complete = await pollForExpectedValue({
+      readValue: async () => failed() || settled(), expectedValue: true,
+    });
+    if (!complete || failed()) throw syntheticMutationFailure('synthetic-faq-authoritative-readback-failed');
+    await page.waitForURL((url) => url.origin === origin
+      && url.pathname === '/admin/community/boards/detail'
+      && url.searchParams.getAll('bbsId').length === 1 && url.searchParams.get('bbsId') === boardId
+      && url.searchParams.getAll('pstSn').length === 1 && url.searchParams.get('pstSn') === String(pstSn),
+    { timeout: 10_000 });
+    await firstVisibleLocator(page.getByRole('heading', { level: 1, name: fixture.faqTitle, exact: true }), {
+      reasonCode: 'synthetic-faq-authoritative-readback-failed',
+    });
+    await page.goto(`${stateCase.identity.route}${resolveQueryTemplate(stateCase)}`, {
+      waitUntil: 'domcontentloaded', timeout: 30_000,
+    });
+    await waitForReadyHeading(page, stateCase);
+    if (failed()) throw syntheticMutationFailure('synthetic-faq-authoritative-readback-failed');
+  } finally {
+    page.off('response', onResponse);
+  }
+}
+
 async function flattenMenus(items, output = []) {
   for (const item of Array.isArray(items) ? items : []) {
     output.push(item);
@@ -1852,21 +1915,20 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
       const fixture = createSyntheticMutationFixture(stateCase, mutationRunNonce);
       const api = createSyntheticFixtureApi(page.context(), baseOrigin);
       await runSyntheticMutationLifecycle({
-        execute: async () => {
-          await fillFaqComposer(page, fixture);
-          const post = await waitForExactFaqPost(api, fixture);
-          await assertFaqDetail(api, fixture, post.pstSn, {
-            expectedContentKind: 'canonical-tiptap-html',
-          });
-        },
+        execute: () => completeSyntheticFaqNavigation({
+          page, baseOrigin, stateCase, fixture,
+          submit: async () => {
+            await fillFaqComposer(page, fixture);
+            const post = await waitForExactFaqPost(api, fixture);
+            await assertFaqDetail(api, fixture, post.pstSn, {
+              expectedContentKind: 'canonical-tiptap-html',
+            });
+            return post.pstSn;
+          },
+        }),
         cleanup: () => cleanupSyntheticFaq(api, fixture),
         readActiveResidueCount: () => syntheticFaqResidueCount(api, fixture),
       });
-      await page.goto(`${stateCase.identity.route}${resolveQueryTemplate(stateCase)}`, {
-        waitUntil: 'domcontentloaded',
-        timeout: 30_000,
-      });
-      await waitForReadyHeading(page, stateCase);
       preparation.coverage = 'synthetic-faq-ui-save-readback-cleanup-complete';
       preparation.assertions.push({ id: 'synthetic-faq-authoritative-save-readback', passed: true });
       preparation.taskEvidence.push(completedSyntheticMutationEvidence(

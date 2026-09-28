@@ -306,6 +306,8 @@ performance 실패 artifact에는 raw exception, message, URL, response payload�
 4. 검색하고 항목을 열어 답변 내용까지 확인하면 종료한다.
 5. USER에게 admin action이 노출되거나 admin-only detail이 보이면 critical authorization/privacy finding으로 기록한다.
 
+자동 작성 probe는 저장 전 만족도 목록·평균 응답 관측을 등록하고, 저장한 게시글의 상세 URL·제목과 두 GET의 200 응답 및 전송 완료를 확인한다. 작성 화면으로 돌아가 준비 상태를 확인한 뒤 fixture를 삭제하고 활성 잔여 0을 재조회한다. 독립 API의 저장 확인만으로 화면 전환이 끝났다고 간주하지 않는다. 상세 화면이 조회 중인 게시글을 먼저 삭제해 발생하는 404도 기존 HTTP 오류 판정에서 제외하지 않으며, 중간 검증 실패 시에도 기존 mutation lifecycle의 정리는 실행한다.
+
 #### Board maker wizard
 
 1. 첫 단계에서 필수 이름을 비워 다음을 눌러 오류와 focus를 확인한다.

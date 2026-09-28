@@ -470,7 +470,7 @@ function TabButton({ active, onClick, icon, label }: TabButtonProps) {
       onClick={onClick}
       className={cn(
         "flex h-[var(--control-h-sm)] items-center gap-2 rounded px-4 text-xs font-bold transition-colors",
-        active ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"
+        active ? "bg-muted text-primary dark:text-foreground" : "text-muted-foreground hover:text-foreground"
       )}
     >
       {icon}
