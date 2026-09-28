@@ -109,6 +109,9 @@ services:
       CORS_ORIGIN_2:
       LOGIN_MAX_FAILURES:
       LOGIN_LOCK_MINUTES:
+      MFA_ACTIVE_KEY_ID:
+      MFA_KEYS_JSON:
+      MFA_REQUIRE_PROTECTED:
       # [2026-09-14 ADR-0019] 요청 제한 한도. 낮추는 순서는 application.yml 의 rate-limit 주석을 따른다.
       RATE_LIMIT_REQUESTS_PER_MINUTE:
       RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:

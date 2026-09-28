@@ -739,6 +739,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java"
         },
         {
+          "id": "DB-MEMO-REPORT-RECIPIENT-INTEGRITY",
+          "source": "api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java"
+        },
+        {
           "id": "DB-EXCEPTION-TRANSLATION",
           "source": "api-server/src/test/java/nuri/api/schema/DatabaseExceptionTranslationIntegrationTest.java"
         },

@@ -4,8 +4,6 @@ import nuri.business.domain.notification.NotificationRepository;
 import nuri.business.service.deptjob.DeptJobService;
 import nuri.business.service.deptjob.dto.DeptJobDto;
 import nuri.business.service.note.NoteService;
-import nuri.business.service.memoreport.MemoReportService;
-import nuri.business.service.memoreport.dto.MemoReportDto;
 import nuri.business.service.note.dto.NoteDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
@@ -29,7 +27,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -43,9 +40,6 @@ class AssignmentRecipientIntegrityIntegrationTest {
 
     @Autowired private NoteService noteService;
     @Autowired private DeptJobService deptJobService;
-    @Autowired private MemoReportService memoReportService;
-    @Autowired private javax.sql.DataSource dataSource;
-    @Autowired private jakarta.persistence.EntityManager entityManager;
     @Autowired private NotificationRepository notificationRepository;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PlatformTransactionManager transactionManager;
@@ -89,7 +83,6 @@ class AssignmentRecipientIntegrityIntegrationTest {
             jdbc.update("DELETE FROM tb_note_sndng WHERE sndr_id=?", sender);
             jdbc.update("DELETE FROM tb_note_info WHERE note_ttl=?", fixtureId);
             jdbc.update("DELETE FROM tb_dept_task_info WHERE frst_rgtr_id=?", sender);
-            jdbc.update("DELETE FROM tb_memo_rpt_info WHERE user_id=?", sender);
             jdbc.update("DELETE FROM tb_user_info WHERE esntl_id IN (?, ?, ?, ?)", sender, active, waiting, disabled);
     }
 
@@ -187,112 +180,6 @@ class AssignmentRecipientIntegrityIntegrationTest {
         jdbc.update("INSERT INTO tb_user_info(esntl_id, user_id, pswd, user_nm, user_stts_cd, lck_yn, sbscrb_ymd) "
                 + "VALUES (?, ?, 'test-only-unusable', '시험 계정', ?, 'N', to_char(CURRENT_DATE, 'YYYYMMDD'))",
                 id, id, state);
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"missing", "A", "D"})
-    void unavailableMemoRecipientLeavesNoReportOrNotification(String state) throws InterruptedException {
-        assertThatThrownBy(() -> memoReportService.createMemoReport(sender, memo(unavailable(state))))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_memo_rpt_info WHERE user_id=?", Long.class, sender)).isZero();
-        assertThat(notificationCount()).isZero();
-    }
-
-    @Test
-    void memoRecipientIsFixedAndInactiveExistingRecipientDoesNotBlockCorrection() {
-        long id = memoReportService.createMemoReport(sender, memo(active));
-        jdbc.update("UPDATE tb_user_info SET user_stts_cd='D' WHERE esntl_id=?", active);
-        var correction = memo(active);
-        correction.setRptCn("corrected");
-        memoReportService.updateMemoReport(id, sender, correction);
-        assertThatThrownBy(() -> memoReportService.updateMemoReport(id, sender, memo(sender)))
-                .isInstanceOf(BusinessException.class);
-        assertThat(jdbc.queryForMap("SELECT rptr_id, rpt_cn FROM tb_memo_rpt_info WHERE memo_rpt_sn=?", id))
-                .containsEntry("rptr_id", active).containsEntry("rpt_cn", "corrected");
-    }
-
-    @Test
-    void memoRegistrationWaitsForConcurrentDeactivationAndRejectsItsCommittedState() throws Exception {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        try (var blocker = dataSource.getConnection(); var executor = java.util.concurrent.Executors.newSingleThreadExecutor()) {
-            blocker.setAutoCommit(false);
-            try (var update = blocker.prepareStatement("UPDATE tb_user_info SET user_stts_cd='D' WHERE esntl_id=?")) {
-                update.setString(1, active);
-                update.executeUpdate();
-            }
-            String application = fixtureId + "memo";
-            var pending = executor.submit(() -> {
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                try {
-                    return new TransactionTemplate(transactionManager).execute(status -> {
-                        jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
-                        return memoReportService.createMemoReport(sender, memo(active));
-                    });
-                } finally {
-                    SecurityContextHolder.clearContext();
-                }
-            });
-            try {
-                waitForDatabaseLock(application, 1);
-            } finally {
-                blocker.commit();
-            }
-            assertThatThrownBy(() -> pending.get(20, TimeUnit.SECONDS))
-                    .hasCauseInstanceOf(BusinessException.class);
-            assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_memo_rpt_info WHERE user_id=?", Long.class, sender)).isZero();
-        }
-    }
-
-    @Test
-    void concurrentRecipientReadsPreserveExactlyTheFirstReadTime() throws Exception {
-        long id = memoReportService.createMemoReport(sender, memo(active));
-        // 작성자가 확인해도 수신자 읽음은 생기지 않는다.
-        memoReportService.readMemoReport(id);
-        assertThat(jdbc.queryForObject("SELECT rptr_inq_dt FROM tb_memo_rpt_info WHERE memo_rpt_sn=?", java.sql.Timestamp.class, id)).isNull();
-        try (var blocker = dataSource.getConnection(); var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
-            blocker.setAutoCommit(false);
-            try (var lock = blocker.prepareStatement("SELECT memo_rpt_sn FROM tb_memo_rpt_info WHERE memo_rpt_sn=? FOR UPDATE")) {
-                lock.setLong(1, id);
-                lock.executeQuery().close();
-            }
-            String application = fixtureId + "read";
-            java.util.concurrent.Callable<java.sql.Timestamp> read = () -> {
-                var principal = CustomUserDetails.builder().userId(active).esntlId(active).enabled(true).build();
-                SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
-                try {
-                    return new TransactionTemplate(transactionManager).execute(status -> {
-                        jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
-                        memoReportService.readMemoReport(id);
-                        entityManager.flush();
-                        return jdbc.queryForObject("SELECT rptr_inq_dt FROM tb_memo_rpt_info WHERE memo_rpt_sn=?",
-                                java.sql.Timestamp.class, id);
-                    });
-                } finally { SecurityContextHolder.clearContext(); }
-            };
-            var first = executor.submit(read);
-            var second = executor.submit(read);
-            try { waitForDatabaseLock(application, 2); } finally { blocker.rollback(); }
-            var firstRead = first.get(20, TimeUnit.SECONDS);
-            assertThat(firstRead).isNotNull().isEqualTo(second.get(20, TimeUnit.SECONDS));
-            assertThat(jdbc.queryForObject("SELECT rptr_inq_dt FROM tb_memo_rpt_info WHERE memo_rpt_sn=?", java.sql.Timestamp.class, id))
-                    .isEqualTo(firstRead);
-        }
-    }
-
-    private MemoReportDto memo(String receiver) {
-        return MemoReportDto.builder().rptTtl(fixtureId).rptCn("original").rptrId(receiver).build();
-    }
-
-    private void waitForDatabaseLock(String application, int expected) throws InterruptedException {
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
-        int waiting;
-        do {
-            waiting = jdbc.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() "
-                    + "AND application_name=? AND wait_event_type='Lock'", Integer.class, application);
-            if (waiting < expected) Thread.sleep(20);
-        } while (waiting < expected && System.nanoTime() < deadline);
-        assertThat(waiting).as("실제 PostgreSQL 행 잠금 대기").isEqualTo(expected);
     }
 
     private long insertJob(String assignee) {
