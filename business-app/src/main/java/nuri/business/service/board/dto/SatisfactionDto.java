@@ -1,6 +1,8 @@
 package nuri.business.service.board.dto;
 
 import jakarta.validation.constraints.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import lombok.*;
 import java.time.LocalDateTime;
@@ -24,7 +26,11 @@ public class SatisfactionDto {
     @Min(1)
     @Max(5)
     private Integer dgstfnScr;
+    @JsonIgnore
+    @Schema(hidden = true)
     private String userId;
+    @JsonIgnore
+    @Schema(hidden = true)
     private String userNm;
     @Size(max = 1)
     @NotBlank

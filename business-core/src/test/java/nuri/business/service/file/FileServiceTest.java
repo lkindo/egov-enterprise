@@ -9,6 +9,11 @@ import nuri.business.service.file.dto.FileDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.storage.FileStorageService;
+import nuri.foundation.core.job.DurableWorkPort;
+import org.mockito.Spy;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -61,6 +66,9 @@ class FileServiceTest {
      */
     @Mock
     private FileAccessPolicy accessPolicy;
+
+    @Mock private DurableWorkPort durableWork;
+    @Spy private ObjectMapper objectMapper = JsonMapper.builder().build();
 
     @Test
     @DisplayName("🚨 업로드 뒤 트랜잭션이 롤백되면 이번에 저장한 파일을 지운다 — 커밋되면 남긴다 (DIP I2)")
@@ -343,12 +351,16 @@ class FileServiceTest {
 
         given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
         given(fileDetailRepository.findByFileMaster(master)).willReturn(Collections.singletonList(detail));
+        ReflectionTestUtils.setField(detail, "id", java.util.UUID.randomUUID());
+        given(storageService.captureDeletionIdentity("stored.jpg", "path")).willReturn("a".repeat(64));
 
         // when
         fileService.deleteFiles(atchFileSn);
 
         // then
-        verify(storageService, times(1)).delete("stored.jpg", "path");
+        verify(storageService, never()).delete(anyString(), anyString());
+        verify(durableWork).enqueue(argThat(work -> work.key().equals(detail.getId())
+                && work.type().equals("FILE_DELETE") && work.payload().contains("stored.jpg")));
         verify(fileMasterRepository, times(1)).delete(master);
         verify(accessPolicy).assertDeletable(master);
     }
@@ -370,7 +382,7 @@ class FileServiceTest {
     }
 
     @Test
-    @DisplayName("파일 단건 삭제 — 삭제 판정을 통과한 뒤 저장소와 행을 지운다")
+    @DisplayName("파일 단건 삭제 — 삭제 판정을 통과한 뒤 행 삭제와 내구 의도를 함께 요청한다")
     void deleteFile() throws IOException {
         // given
         Long atchFileSn = 123L;
@@ -383,13 +395,16 @@ class FileServiceTest {
                 .build();
 
         given(fileDetailRepository.findByFileMasterAtchFileSnAndAtchFileSeq(anyLong(), anyInt())).willReturn(Optional.of(detail));
+        ReflectionTestUtils.setField(detail, "id", java.util.UUID.randomUUID());
+        given(storageService.captureDeletionIdentity("stored.jpg", "path")).willReturn("a".repeat(64));
 
         // when
         fileService.deleteFile(atchFileSn, fileSn);
 
         // then
         verify(accessPolicy).assertDeletable(master);
-        verify(storageService, times(1)).delete("stored.jpg", "path");
+        verify(storageService, never()).delete(anyString(), anyString());
+        verify(durableWork).enqueue(argThat(work -> work.key().equals(detail.getId()) && work.type().equals("FILE_DELETE")));
         verify(fileDetailRepository, times(1)).delete(detail);
     }
 

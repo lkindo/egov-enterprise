@@ -14,7 +14,6 @@ import nuri.business.service.informalsanction.event.SanctionStatusChangedEvent;
 import nuri.foundation.core.event.NotificationRequestedEvent;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
-import nuri.foundation.core.util.TransactionUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -159,9 +158,10 @@ public class InformalSanctionService {
         sanction.withdraw();
         lines.forEach(InformalSanctionDetail::cancel);
         history.updateResult(sanction);
-        TransactionUtils.runAfterCommit(() -> activeApprovers.forEach(receiver -> eventPublisher.publishEvent(
-                new NotificationRequestedEvent(receiver, "결재가 회수되었습니다",
-                        "결재(번호 " + id + ")를 신청자가 회수했습니다. 처리할 필요가 없습니다.", "/approvals"))));
+        java.util.UUID eventId = java.util.UUID.randomUUID();
+        activeApprovers.stream().sorted().forEach(receiver -> eventPublisher.publishEvent(
+                new NotificationRequestedEvent(eventId, receiver, "결재가 회수되었습니다",
+                        "결재(번호 " + id + ")를 신청자가 회수했습니다. 처리할 필요가 없습니다.", "/approvals")));
     }
 
     @Transactional
@@ -283,15 +283,16 @@ public class InformalSanctionService {
         Long id = sanction.getIfmlAtrzSn();
         List<String> receivers = lines.stream().filter(d -> d.status() == ApprovalStatus.ACTIVE)
                 .map(d -> d.getId().getUserId()).toList();
-        TransactionUtils.runAfterCommit(() -> receivers.forEach(receiver -> eventPublisher.publishEvent(
-                new NotificationRequestedEvent(receiver, "결재 순서 도래",
-                        "결재(번호 " + id + ")를 확인해 주세요.", "/approvals"))));
+        java.util.UUID eventId = java.util.UUID.randomUUID();
+        receivers.stream().sorted().forEach(receiver -> eventPublisher.publishEvent(
+                new NotificationRequestedEvent(eventId, receiver, "결재 순서 도래",
+                        "결재(번호 " + id + ")를 확인해 주세요.", "/approvals")));
     }
 
     private void publishFinalStatus(InformalSanction sanction, String actor, String opinion) {
         SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(sanction.getIfmlAtrzSn(),
                 sanction.getAplcntId(), actor, SanctionStatus.fromCode(sanction.getAprvYn()), opinion);
-        TransactionUtils.runAfterCommit(() -> eventPublisher.publishEvent(event));
+        eventPublisher.publishEvent(event);
     }
 
     private List<ApprovalStageRequest> validateStages(String applicant, List<ApprovalStageRequest> requests) {

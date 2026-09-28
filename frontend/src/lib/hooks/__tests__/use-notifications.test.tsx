@@ -30,7 +30,8 @@ import client from '@/lib/api/client';
 
 const toast = vi.fn();
 let wsState: { client: unknown; isConnected: boolean } = { client: null, isConnected: false };
-let authUser: { id: string } | null = { id: 'U1' };
+const authorizedUser = (id: string) => ({ id, permissions: ['NOTI_READ'], authorizationVersion: 'v1' });
+let authUser: ReturnType<typeof authorizedUser> | null = authorizedUser('U1');
 
 vi.mock('@/lib/api/client', () => ({ default: { getRaw: vi.fn(), requestRaw: vi.fn() } }));
 vi.mock('@/contexts/websocket-context', () => ({ useWebSocket: () => wsState }));
@@ -85,7 +86,7 @@ describe('useNotifications', () => {
     vi.clearAllMocks();
     vi.useRealTimers();
     wsState = { client: null, isConnected: false };
-    authUser = { id: 'U1' };
+    authUser = authorizedUser('U1');
     mockFetch([NOTIF], 3);
   });
 
@@ -105,6 +106,81 @@ describe('useNotifications', () => {
   });
 
   describe('조회 중과 알림 없음을 구분한다', () => {
+    it.each([
+      { permissions: [], authorizationVersion: 'v1' },
+      { permissions: ['NOTI_READ'], authorizationVersion: '' },
+    ])('현재 알림 권한이 검증되지 않으면 조회·구독·수동 변경을 보내지 않는다: %o', async (scope) => {
+      authUser = { id: 'U1', ...scope };
+      const subscribe = vi.fn(() => ({ unsubscribe: vi.fn() }));
+      wsState = { client: { subscribe }, isConnected: true };
+      const { result } = renderHook(() => useNotifications());
+      vi.useFakeTimers();
+      await act(async () => {
+        vi.advanceTimersByTime(120000);
+        announceNotificationsChanged('center');
+        await result.current.refresh();
+        await result.current.markAsRead(1);
+        await result.current.markAllAsRead();
+        await result.current.removeNotification(1);
+      });
+      expect(client.getRaw).not.toHaveBeenCalled();
+      expect(client.requestRaw).not.toHaveBeenCalled();
+      expect(subscribe).not.toHaveBeenCalled();
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    it('같은 계정의 권한 철회는 지연 응답·WS·폴링을 폐기하고 재허용 시 새로 조회한다', async () => {
+      let handler: ((message: { body: string }) => void) | undefined;
+      const unsubscribe = vi.fn();
+      const subscribe = vi.fn((_destination: string, callback: (message: { body: string }) => void) => {
+        handler = callback;
+        return { unsubscribe };
+      });
+      wsState = { client: { subscribe }, isConnected: true };
+      const { result, rerender } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.notifications).toHaveLength(1));
+      const oldHandler = handler!;
+      const delayedList = deferred<never>();
+      const delayedCount = deferred<never>();
+      vi.mocked(client.getRaw).mockImplementation((url: string) => (
+        url.includes('unread-count') ? delayedCount.promise : delayedList.promise
+      ));
+      let refresh!: Promise<void>;
+      act(() => { refresh = result.current.refresh(); });
+
+      authUser = { ...authorizedUser('U1'), permissions: [], authorizationVersion: 'v2' };
+      rerender();
+      expect(unsubscribe).toHaveBeenCalledTimes(1);
+      expect(result.current.notifications).toEqual([]);
+      expect(result.current.unreadCount).toBe(0);
+      toast.mockClear();
+      vi.mocked(client.getRaw).mockClear();
+      vi.useFakeTimers();
+      await act(async () => {
+        delayedList.resolve(listResponse([NOTIF]));
+        delayedCount.resolve(countResponse(99));
+        await refresh;
+        oldHandler({ body: JSON.stringify({ ...NOTIF, notiSn: 99 }) });
+        vi.advanceTimersByTime(120000);
+        announceNotificationsChanged('center');
+        await result.current.refresh();
+      });
+      expect(client.getRaw).not.toHaveBeenCalled();
+      expect(result.current.notifications).toEqual([]);
+      expect(result.current.unreadCount).toBe(0);
+      expect(result.current.error).toBeNull();
+      expect(toast).not.toHaveBeenCalled();
+
+      vi.useRealTimers();
+      mockFetch([{ ...NOTIF, notiSn: 2 }], 1);
+      authUser = { ...authorizedUser('U1'), authorizationVersion: 'v3' };
+      rerender();
+      expect(result.current.isLoading).toBe(true);
+      await waitFor(() => expect(result.current.notifications.map(item => item.notiSn)).toEqual([2]));
+      expect(result.current.unreadCount).toBe(1);
+      expect(subscribe).toHaveBeenCalledTimes(2);
+    });
+
     it('첫 조회가 끝나기 전에는 isLoading 이고, 끝나면 내린다', async () => {
       const list = deferred<unknown>();
       vi.mocked(client.getRaw).mockImplementation((url: string) =>
@@ -470,12 +546,12 @@ describe('useNotifications', () => {
 
       let oldMark!: Promise<void>;
       act(() => { oldMark = result.current.markAsRead(1); });
-      authUser = { id: 'U2' };
+      authUser = authorizedUser('U2');
       mockFetch([], 0);
       rerender();
       expect(result.current.notifications).toEqual([]);
 
-      authUser = { id: 'U1' };
+      authUser = authorizedUser('U1');
       mockFetch([NOTIF], 2);
       rerender();
       await waitFor(() => expect(result.current.unreadCount).toBe(2));
@@ -554,10 +630,10 @@ describe('useNotifications', () => {
 
       let oldMark!: Promise<void>;
       act(() => { oldMark = result.current.markAllAsRead(); });
-      authUser = { id: 'U2' };
+      authUser = authorizedUser('U2');
       mockFetch([], 0);
       rerender();
-      authUser = { id: 'U1' };
+      authUser = authorizedUser('U1');
       mockFetch([NOTIF], 2);
       rerender();
       await waitFor(() => expect(result.current.unreadCount).toBe(2));
@@ -1094,7 +1170,7 @@ describe('useNotifications', () => {
       toast.mockClear();
       mockFetch([], 0);
 
-      authUser = { id: 'U2' };
+      authUser = authorizedUser('U2');
       rerender();
       await act(async () => {
         u1Handler({ body: JSON.stringify({ ...NOTIF, notiSn: 99, notiTtlNm: 'U1 전용 알림' }) });

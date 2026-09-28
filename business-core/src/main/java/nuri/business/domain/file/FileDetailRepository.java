@@ -9,6 +9,7 @@ import java.util.List;
  */
 @Repository
 public interface FileDetailRepository extends JpaRepository<FileDetail, java.util.UUID> {
+    boolean existsByFileStrgPathAndStrgFileNm(String fileStrgPath, String strgFileNm);
     List<FileDetail> findByFileMaster(FileMaster fileMaster);
 
     org.springframework.data.domain.Page<FileDetail> findByOrgnlFileNmContaining(String orgnlFileNm,

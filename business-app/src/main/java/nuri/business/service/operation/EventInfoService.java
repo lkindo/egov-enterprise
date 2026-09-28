@@ -43,6 +43,7 @@ public class EventInfoService {
     @Transactional
     public Long createEvent(String userId, EventInfoDto dto) {
         log.info("Creating new event");
+        assertApprovalUnchanged(dto, "N", null);
  
         EventInfo eventInfo = EventInfo.builder()
                 .bizYr(dto.getBizYr())
@@ -54,8 +55,8 @@ public class EventInfoService {
                 .picNm(dto.getPicNm())
                 .prepMttr(dto.getPrepMttr())
                 .evntTypeCd(dto.getEvntTypeCd())
-                .evntAprvYn(dto.getEvntAprvYn())
-                .evntAprvYmd(normalizeYmd(dto.getEvntAprvYmd()))
+                .evntAprvYn("N")
+                .evntAprvYmd(null)
                 .build();
 
         EventInfo saved = eventInfoRepository.save(Objects.requireNonNull(eventInfo));
@@ -66,8 +67,9 @@ public class EventInfoService {
     @Transactional
     public void updateEvent(Long evntSn, String userId, EventInfoDto dto) {
         log.info("Updating event serial number: {}", evntSn);
-        EventInfo eventInfo = eventInfoRepository.findById(Objects.requireNonNull(evntSn))
+        EventInfo eventInfo = eventInfoRepository.findByIdForUpdate(Objects.requireNonNull(evntSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        assertApprovalUnchanged(dto, eventInfo.getEvntAprvYn(), eventInfo.getEvntAprvYmd());
  
         EventInfo updated = EventInfo.builder()
                 .evntSn(evntSn)
@@ -80,8 +82,8 @@ public class EventInfoService {
                 .picNm(dto.getPicNm())
                 .prepMttr(dto.getPrepMttr())
                 .evntTypeCd(dto.getEvntTypeCd())
-                .evntAprvYn(dto.getEvntAprvYn())
-                .evntAprvYmd(normalizeYmd(dto.getEvntAprvYmd()))
+                .evntAprvYn(eventInfo.getEvntAprvYn())
+                .evntAprvYmd(eventInfo.getEvntAprvYmd())
                 .build();
         // 재빌드-merge 패턴: 작성자(frstRgtrId)는 @CreatedBy 가 update 시 재적용되지 않으므로 기존 값 보존
         updated.setFrstRgtrId(eventInfo.getFrstRgtrId());
@@ -95,6 +97,16 @@ public class EventInfoService {
      */
     private static String normalizeYmd(String ymd) {
         return ymd == null ? null : ymd.replace("-", "");
+    }
+
+    /** 누락한 필드는 보존하며, 현행 UI의 같은 값 재전송은 허용한다. */
+    private static void assertApprovalUnchanged(EventInfoDto dto, String approved, String approvedDate) {
+        if ((dto.getEvntAprvYn() != null && !Objects.equals(dto.getEvntAprvYn(), approved))
+                || (dto.getEvntAprvYmd() != null
+                && !Objects.equals(normalizeYmd(dto.getEvntAprvYmd()), approvedDate))) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "승인 여부와 승인일은 일반 행사 편집에서 변경할 수 없습니다.");
+        }
     }
 
     @Transactional

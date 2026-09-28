@@ -2,6 +2,7 @@ package nuri.business.service.survey;
 
 import lombok.RequiredArgsConstructor;
 import nuri.business.domain.survey.*;
+import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.survey.dto.SurveyResponseSubmitDto;
 import nuri.business.service.survey.dto.SurveyResultDto;
@@ -41,6 +42,7 @@ public class SurveyResultService {
     private final SurveyQuestionRepository questionRepository;
     private final SurveyArticleRepository articleRepository;
     private final SurveyInfoRepository infoRepository;
+    private final UserRepository userRepository;
 
     /** 응답 목록(관리). 응답자명 부분일치. */
     public Page<SurveyResultDto> getResponseList(String keyword, Pageable pageable) {
@@ -88,10 +90,65 @@ public class SurveyResultService {
 
     @Transactional
     public void deleteResponse(Long srvyRspnsSn) {
-        if (!resultRepository.existsById(Objects.requireNonNull(srvyRspnsSn))) {
+        throw new BusinessException(CommonErrorCode.INVALID_STATE,
+                "답변 한 건 삭제는 지원하지 않습니다. 관리자 전체 제출 취소를 사용해 주세요.");
+    }
+
+    /** 답변 ID는 묶음을 찾는 앵커일 뿐, 이름이나 요청의 작성자로 묶지 않는다. */
+    @Transactional
+    public void cancelSubmission(Long srvyRspnsSn) {
+        SecurityUtil.assertPermission("SURVEY_RSP_DELETE");
+        SurveyResult anchor = resultRepository.findById(Objects.requireNonNull(srvyRspnsSn))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        SurveyInfo survey = infoRepository.findByIdForSubmission(anchor.getSrvySn())
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        String author = anchor.getFrstRgtrId();
+        if (!StringUtils.hasText(author)) throw ambiguousSubmission();
+        // 취소 중 계정 삭제/로그인 ID 재사용을 막고, 과거 재사용 여부는 아래 생성 시각으로 보수적으로 판정한다.
+        var user = userRepository.findByUserIdForUpdate(author).orElseThrow(SurveyResultService::ambiguousSubmission);
+        List<SurveyResult> rows = resultRepository.findBySrvySnAndFrstRgtrId(survey.getSrvySn(), author);
+        // 잠금 대기 중 다른 취소가 끝났다면 새 제출을 같은 작성자라는 이유로 지우지 않는다.
+        if (rows.stream().noneMatch(row -> srvyRspnsSn.equals(row.getSrvyRspnsSn()))) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         }
-        resultRepository.deleteById(srvyRspnsSn);
+        if (user.getCrtDt() == null || rows.stream().anyMatch(row -> row.getCrtDt() == null
+                || row.getCrtDt().isBefore(user.getCrtDt()))) {
+            throw ambiguousSubmission();
+        }
+        assertSingleSubmission(survey, rows);
+        resultRepository.deleteAll(rows);
+        resultRepository.flush();
+    }
+
+    private void assertSingleSubmission(SurveyInfo survey, List<SurveyResult> rows) {
+        Map<Long, SurveyQuestion> questions = questionRepository.findBySrvySnOrderByQstnSnAsc(survey.getSrvySn())
+                .stream().collect(Collectors.toMap(SurveyQuestion::getSrvyQstnSn, Function.identity()));
+        Map<Long, SurveyArticle> articles = articleRepository
+                .findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(questions.keySet())
+                .stream().collect(Collectors.toMap(SurveyArticle::getSrvyArtclSn, Function.identity()));
+        Set<String> answers = new HashSet<>();
+        Map<Long, Long> perQuestion = new LinkedHashMap<>();
+        for (SurveyResult row : rows) {
+            SurveyQuestion question = questions.get(row.getSrvyQstnSn());
+            SurveyArticle article = articles.get(row.getSrvyArtclSn());
+            if (question == null || article == null
+                    || !Objects.equals(survey.getSrvyTmpltSn(), row.getSrvyTmpltSn())
+                    || !Objects.equals(survey.getSrvySn(), article.getSrvySn())
+                    || !Objects.equals(row.getSrvyQstnSn(), article.getSrvyQstnSn())
+                    || !answers.add(row.getSrvyQstnSn() + ":" + row.getSrvyArtclSn())) {
+                throw ambiguousSubmission();
+            }
+            long count = perQuestion.merge(row.getSrvyQstnSn(), 1L, Long::sum);
+            int limit = question.getMaxChcCnt() == null || question.getMaxChcCnt() <= 0 ? 1 : question.getMaxChcCnt();
+            if (count > limit) throw ambiguousSubmission();
+        }
+        Set<Long> required = articles.values().stream().map(SurveyArticle::getSrvyQstnSn).collect(Collectors.toSet());
+        if (!perQuestion.keySet().equals(required)) throw ambiguousSubmission();
+    }
+
+    private static BusinessException ambiguousSubmission() {
+        return new BusinessException(CommonErrorCode.INVALID_STATE,
+                "제출자 또는 전체 답변 묶음을 확인할 수 없어 취소할 수 없습니다. 이전 응답을 확인해 주세요.");
     }
 
     /**

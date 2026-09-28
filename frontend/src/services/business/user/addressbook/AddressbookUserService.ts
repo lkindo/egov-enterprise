@@ -4,12 +4,13 @@ import { AxiosRequestConfig } from 'axios';
 
 import { NameCard } from '@/types/business/addressbook';
 import type { GeneratedOperationRequest } from '@/types/generated-operations';
+import { PageResponseAddressBookUserSelectionDtoResponseSchema } from '@/types/generated-zod';
 import {
   createAddressBookOperation,
   deleteAddressBookOperation,
   getAddressBookOperation,
   getAddressBooksOperation,
-  searchUsersOperation,
+  searchUserSelectionsOperation,
   updateAddressBookOperation,
 } from '@/types/generated-operations';
 
@@ -20,6 +21,12 @@ export interface AddressBook {
   wrterId: string;
   crtDt: string;
   adbkMan?: NameCard[];
+}
+
+export interface AddressBookUserSelection {
+  esntlId: string;
+  userNm: string;
+  ognzNm?: string | null;
 }
 
 /**
@@ -103,13 +110,16 @@ class AddressbookUserService extends UserService {
   }
 
   /**
-   * 사용자 검색 (주소록 대상자 검색)
+   * 활성 사용자 선택. 수동 주소록 연락처와 다른 계약이며 로그인 ID를 내부 키로 바꾸어 반환하지 않는다.
    */
-  async searchUsers(searchWrd: string, config?: AxiosRequestConfig): Promise<PageResponse<NameCard>> {
-    return this.executeGenerated(searchUsersOperation, {
+  async searchUserSelections(searchWrd: string, config?: AxiosRequestConfig): Promise<PageResponse<AddressBookUserSelection>> {
+    const response = await this.executeGenerated(searchUserSelectionsOperation, {
       query: { searchWrd },
       config,
-    }) as Promise<PageResponse<NameCard>>;
+    });
+    // The general transport preserves unknown future fields. This privacy-specific adapter
+    // projects the minimum generated response before any picker can consume it.
+    return PageResponseAddressBookUserSelectionDtoResponseSchema.parse(response) as PageResponse<AddressBookUserSelection>;
   }
 }
 

@@ -87,6 +87,24 @@ public class PolicyService {
         systemPolicyRepository.save(policy);
     }
 
+    /** 첫 등록은 기존 PUT upsert와 구분하고 DB PK로 동시 중복 생성도 거부한다. */
+    @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = CACHE_SYSTEM_POLICIES, key = "#type"),
+        @CacheEvict(value = CACHE_SYSTEM_POLICIES_ALL, allEntries = true)
+    })
+    public void createPolicy(String type, String title, String content) {
+        nuri.business.security.util.SecurityUtil.assertPermission("POLICY_UPDATE");
+        validatePolicyType(type);
+        if (systemPolicyRepository.existsById(type)) {
+            throw new nuri.foundation.core.exception.BusinessException(
+                    "이미 등록된 정책 유형입니다. 기존 정책을 수정해 주세요.",
+                    nuri.foundation.core.exception.CommonErrorCode.DUPLICATE_RESOURCE);
+        }
+        systemPolicyRepository.insert(SystemPolicy.builder()
+                .plcyTypeCd(type).plcyTtl(title).plcyCn(content).build());
+    }
+
     /** {@code tb_plcy_manage.plcy_type_cd} 의 물리 폭. PK 라 넘치면 INSERT 가 통째로 실패한다. */
     static final int POLICY_TYPE_MAX_LENGTH = 12;
 

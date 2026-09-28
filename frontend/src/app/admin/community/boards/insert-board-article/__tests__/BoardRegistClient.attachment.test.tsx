@@ -66,8 +66,13 @@ vi.mock('@/hooks/use-auto-save-draft', () => ({
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'writer', esntlId: 'writer-owner' } }),
+  useAuth: () => ({ user: { id: 'writer', esntlId: 'writer-owner', authorizationVersion: 'test-v1', permissions: ['BOARD_CREATE', 'BOARD_UPDATE'] } }),
 }));
+
+vi.mock('@/queries/board-master-query-options', () => ({ boardMasterQueryOptions: {
+  meta: () => ({ queryKey: ['board-meta-test'], initialData: { requiredEditPermissions: [] },
+    queryFn: async () => ({ requiredEditPermissions: [] }) }),
+} }));
 
 vi.mock('@/app/components/ui/toast', () => ({
   useToast: () => ({ toast: mocks.toast }),
@@ -101,7 +106,7 @@ function renderSubject(props: { pstSn?: number; initialData?: { pstSn?: number; 
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <BoardRegistClient bbsId={BBS_ID} pstSn={props.pstSn} initialData={props.initialData ?? null} />
+      <BoardRegistClient bbsId={BBS_ID} pstSn={props.pstSn} initialData={props.initialData ? { ...props.initialData, userId: 'writer-owner' } : null} />
     </QueryClientProvider>,
   );
 }

@@ -29,3 +29,4 @@
 | [ADR-0022](ADR-0022-ci-independent-module-impact-and-cache.md) | 온라인·이관 독립 영향 분류, 커버리지·required 보존과 Gradle 캐시 | Accepted |
 | [ADR-0023](ADR-0023-e2e-impact-selection-and-cache-writer.md) | PR E2E 영향 선별·main 전수와 단일 캐시 writer | Accepted |
 | [ADR-0024](ADR-0024-spring-boot-4-two-phase-migration.md) | Spring Boot 4.1 두 단계 전환(Jackson 2 호환 → Jackson 3) | Accepted |
+| [ADR-0025](ADR-0025-enterprise-completeness-and-durable-operations.md) | D01~D15 A: 보호계정·최소 응답·업무 규칙·MFA·내구 알림/감사/삭제와 검증 범위 | Accepted |

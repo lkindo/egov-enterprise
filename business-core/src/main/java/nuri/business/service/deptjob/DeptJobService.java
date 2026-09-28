@@ -63,8 +63,8 @@ public class DeptJobService extends BaseAbstractService {
         }
         String name = deptJob.getDeptTaskNm() != null && !deptJob.getDeptTaskNm().isBlank() ? deptJob.getDeptTaskNm() : "(업무명 없음)";
         String link = "/smart-toolkit/dept-job/" + deptJob.getDeptTaskSn();
-        nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> eventPublisher.publishEvent(
-                new nuri.foundation.core.event.NotificationRequestedEvent(assigneeEsntlId, "업무가 배정되었습니다", name, link)));
+        eventPublisher.publishEvent(
+                new nuri.foundation.core.event.NotificationRequestedEvent(assigneeEsntlId, "업무가 배정되었습니다", name, link));
     }
 
     /**

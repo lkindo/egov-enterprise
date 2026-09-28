@@ -2,7 +2,6 @@ package nuri.api.interceptor;
 
 import nuri.foundation.core.annotation.PrivacyAccess;
 import nuri.foundation.core.event.AuditEvent;
-import nuri.foundation.core.event.PrivacyAccessEvent;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.foundation.security.net.ClientIpResolver;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,10 +25,7 @@ import java.time.LocalDateTime;
  * {@code UserActivityLogAggregator})가 수행한다 — 인터셉터를 영속 구현과 디커플링.
  * 감사 범위는 {@code /api/} 요청으로 한정(정적/actuator 제외).
  *
- * <p>[개인정보 접근] 핸들러에 {@link PrivacyAccess}가 붙어 있고 <b>성공 응답</b>이면
- * {@link PrivacyAccessEvent}를 추가로 발행한다. 실패 응답에는 발행하지 않는다 —
- * 인가 거부(403)나 미존재(404)는 개인정보를 <b>보지 못한</b> 요청이라, 기록하면 증적이
- * 실제 열람과 시도를 구분하지 못하게 된다.
+ * <p>민감 응답 감사는 SensitiveAuditInterceptor와 SensitiveResponseAuditAspect가 전송 전에 확정한다.
  */
 @Slf4j
 @Component
@@ -110,30 +106,7 @@ public class OperationalAuditInterceptor implements HandlerInterceptor {
                 serviceName,
                 methodName));
 
-        publishPrivacyAccessIfDeclared(handlerMethod, statusCode, serviceName, authentication, clientIp, occurredAt);
-    }
 
-    /**
-     * 핸들러가 개인정보 접근을 선언했고 성공 응답이면 접근 증적 이벤트를 발행한다.
-     *
-     * <p>성공 판정은 2xx·3xx 로 한다. 본문이 없는 3xx 라도 조건부 조회(304)는 클라이언트가
-     * 이미 받은 개인정보를 계속 쓰는 것이므로 열람으로 본다.
-     */
-    private void publishPrivacyAccessIfDeclared(HandlerMethod handlerMethod, int statusCode, String serviceName,
-            Authentication authentication, String clientIp, LocalDateTime occurredAt) {
-        if (handlerMethod == null || statusCode >= 400) {
-            return;
-        }
-        PrivacyAccess privacyAccess = handlerMethod.getMethodAnnotation(PrivacyAccess.class);
-        if (privacyAccess == null) {
-            return;
-        }
-        eventPublisher.publishEvent(new PrivacyAccessEvent(
-                privacyAccess.value(),
-                serviceName,
-                resolveLoginId(authentication),
-                clientIp,
-                occurredAt));
     }
 
     /** 감사 표기용 loginId. {@code tb_web_log}·{@code tb_sys_log}가 종전부터 쓰던 식별자다. */

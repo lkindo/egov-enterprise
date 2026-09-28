@@ -5,6 +5,7 @@ import type { IMessage } from '@stomp/stompjs';
 import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
 import { useWebSocket } from '@/contexts/websocket-context';
 import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 import { useToast } from '@/app/components/ui/toast';
 import { normalizeInternalRoute } from '@/lib/navigation/internal-route';
 import {
@@ -174,7 +175,8 @@ export function useNotifications() {
   const { client: wsClient, isConnected } = useWebSocket();
   const { user } = useAuth();
   const { toast } = useToast();
-  const userId = user?.id ?? null;
+  // 인증만으로 알림 권한을 가정하지 않는다. 권한 철회도 사용자 전환과 같은 lifecycle로 폐기한다.
+  const userId = canPermission(user, 'NOTI_READ') ? user?.id ?? null : null;
 
   // 비동기 REST snapshot보다 나중에 일어난 로컬 사실(WS·읽음)을 잃지 않기 위한 barrier 상태.
   const notificationsRef = useRef<Notification[]>([]);
@@ -377,6 +379,7 @@ export function useNotifications() {
     replaceNotifications([]);
     replaceUnreadCount(0);
     setError(null);
+    setSettledOwnerId(null);
   }, [replaceNotifications, replaceUnreadCount, userId]);
 
   const beginReadMutations = (ids: number[], generation: number) => {

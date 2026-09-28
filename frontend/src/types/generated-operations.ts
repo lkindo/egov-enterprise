@@ -45,6 +45,7 @@ import {
   ApiResponseIntegerResponseSchema,
   ApiResponseInternetSvcGuidanceDtoResponseSchema,
   ApiResponseListBannerDtoResponseSchema,
+  ApiResponseListBannerPublicResponseResponseSchema,
   ApiResponseListBoardSearchItemResponseResponseSchema,
   ApiResponseListCommonCodeDtoResponseSchema,
   ApiResponseListCommunityBoardDtoResponseSchema,
@@ -58,7 +59,7 @@ import {
   ApiResponseListMenuDtoResponseSchema,
   ApiResponseListOnlinePollArticleDtoResponseSchema,
   ApiResponseListPolicyResponseSchema,
-  ApiResponseListPopupDtoResponseSchema,
+  ApiResponseListPopupPublicResponseResponseSchema,
   ApiResponseListSatisfactionDtoResponseSchema,
   ApiResponseListScheduleDtoResponseSchema,
   ApiResponseListSmsRecptnDtoResponseSchema,
@@ -76,12 +77,16 @@ import {
   ApiResponseMemoReportDtoResponseSchema,
   ApiResponseMenuDtoResponseSchema,
   ApiResponseMenuListResponseResponseSchema,
+  ApiResponseMfaEnrollmentResponseResponseSchema,
+  ApiResponseMfaReauthenticationResponseResponseSchema,
+  ApiResponseMfaStatusResponseResponseSchema,
   ApiResponseNoteDtoResponseSchema,
   ApiResponseNotificationDtoResponseSchema,
   ApiResponseOnlineManualDtoResponseSchema,
   ApiResponseOnlinePollManageDtoResponseSchema,
   ApiResponsePageResponseAddressBookDtoResponseSchema,
   ApiResponsePageResponseAddressBookUserDtoResponseSchema,
+  ApiResponsePageResponseAddressBookUserSelectionDtoResponseSchema,
   ApiResponsePageResponseAdministCodeDtoResponseSchema,
   ApiResponsePageResponseAuthorGroupProjectionResponseSchema,
   ApiResponsePageResponseAuthorManageDtoResponseSchema,
@@ -137,8 +142,10 @@ import {
   ApiResponsePageResponseUserLogDtoResponseSchema,
   ApiResponsePageResponseWebLogDtoResponseSchema,
   ApiResponsePageResponseWorkReportDtoResponseSchema,
+  ApiResponsePageStatusResponseSchema,
   ApiResponsePolicyResponseSchema,
   ApiResponsePopupDtoResponseSchema,
+  ApiResponsePopupPublicResponseResponseSchema,
   ApiResponseProgramDtoResponseSchema,
   ApiResponsePublicFaqDetailResponseResponseSchema,
   ApiResponseRewardManageDtoResponseSchema,
@@ -170,6 +177,7 @@ import {
   AuthorManageDtoResponseSchema,
   BannerDtoRequestSchema,
   BannerDtoResponseSchema,
+  BannerPublicResponseResponseSchema,
   BoardDtoResponseSchema,
   BoardMasterBatchDeleteRequestRequestSchema,
   BoardMasterBatchStatusRequestRequestSchema,
@@ -243,6 +251,16 @@ import {
   MenuDtoRequestSchema,
   MenuDtoResponseSchema,
   MenuListResponseResponseSchema,
+  MfaChallengeRequestRequestSchema,
+  MfaCodeRequestRequestSchema,
+  MfaEnrollmentResponseResponseSchema,
+  MfaLoginVerificationRequestRequestSchema,
+  MfaPasswordRequestRequestSchema,
+  MfaReauthProofRequestRequestSchema,
+  MfaReauthenticationRequestRequestSchema,
+  MfaReauthenticationResponseResponseSchema,
+  MfaRecoveryApprovalRequestRequestSchema,
+  MfaStatusResponseResponseSchema,
   NoteDtoRequestSchema,
   NoteDtoResponseSchema,
   NotificationDispatchRequestRequestSchema,
@@ -255,6 +273,7 @@ import {
   OnlinePollManageRequestRequestSchema,
   PageResponseAddressBookDtoResponseSchema,
   PageResponseAddressBookUserDtoResponseSchema,
+  PageResponseAddressBookUserSelectionDtoResponseSchema,
   PageResponseAdministCodeDtoResponseSchema,
   PageResponseAuthorGroupProjectionResponseSchema,
   PageResponseAuthorManageDtoResponseSchema,
@@ -310,11 +329,13 @@ import {
   PageResponseUserLogDtoResponseSchema,
   PageResponseWebLogDtoResponseSchema,
   PageResponseWorkReportDtoResponseSchema,
+  PageStatusResponseSchema,
   PasswordChangeRequestRequestSchema,
   PolicyResponseSchema,
   PolicyUpdateRequestRequestSchema,
   PopupDtoRequestSchema,
   PopupDtoResponseSchema,
+  PopupPublicResponseResponseSchema,
   ProgramDtoRequestSchema,
   ProgramDtoResponseSchema,
   PublicFaqDetailResponseResponseSchema,
@@ -1210,7 +1231,7 @@ export const updateCommentOperation = /*#__PURE__*/ (() => {
   requestSchema: CommentDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [["wrterId"],["wrterNm"],["frstRgtrId"],["crtDt"]],
+  requestForbiddenPaths: [["wrterNm"],["editable"],["deletable"],["crtDt"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -2087,6 +2108,25 @@ export const getPolicyOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: z.lazy(() => PolicyResponseSchema),
   envelopeSchema: ApiResponsePolicyResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const createPolicyOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "createPolicy",
+  method: "post",
+  path: "/api/v1/admin/system/policies/{type}",
+  requestKind: "json",
+  responseKind: "void",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "type": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: PolicyUpdateRequestRequestSchema.strict(),
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
@@ -3037,7 +3077,7 @@ export const updateCommunityOperation = /*#__PURE__*/ (() => {
   requestSchema: CommunityDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["createdByMe"],["editable"],["deletable"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -4033,7 +4073,7 @@ export const createCommentOperation = /*#__PURE__*/ (() => {
   requestSchema: CommentDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [["wrterId"],["wrterNm"],["frstRgtrId"],["crtDt"]],
+  requestForbiddenPaths: [["wrterNm"],["editable"],["deletable"],["crtDt"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -4131,6 +4171,158 @@ export const reissueOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: z.lazy(() => TokenResponseResponseSchema),
   envelopeSchema: ApiResponseTokenResponseResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const mfaVerifyLoginOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "mfaVerifyLogin",
+  method: "post",
+  path: "/api/v1/auth/mfa/verify",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: MfaLoginVerificationRequestRequestSchema.strict(),
+  responseSchema: z.lazy(() => TokenResponseResponseSchema),
+  envelopeSchema: ApiResponseTokenResponseResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const mfaRecoverAccountOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "mfaRecoverAccount",
+  method: "post",
+  path: "/api/v1/auth/mfa/recovery/admin",
+  requestKind: "json",
+  responseKind: "void",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: MfaRecoveryApprovalRequestRequestSchema.strict(),
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const mfaRegenerateRecoveryCodesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "mfaRegenerateRecoveryCodes",
+  method: "post",
+  path: "/api/v1/auth/mfa/recovery-codes",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: MfaReauthProofRequestRequestSchema.strict(),
+  responseSchema: z.lazy(() => TokenResponseResponseSchema),
+  envelopeSchema: ApiResponseTokenResponseResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const mfaReauthenticateOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "mfaReauthenticate",
+  method: "post",
+  path: "/api/v1/auth/mfa/reauthenticate",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: MfaReauthenticationRequestRequestSchema.strict(),
+  responseSchema: z.lazy(() => MfaReauthenticationResponseResponseSchema),
+  envelopeSchema: ApiResponseMfaReauthenticationResponseResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const mfaStartEnrollmentOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "mfaStartEnrollment",
+  method: "post",
+  path: "/api/v1/auth/mfa/enrollment/start",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: MfaPasswordRequestRequestSchema.strict(),
+  responseSchema: z.lazy(() => MfaEnrollmentResponseResponseSchema),
+  envelopeSchema: ApiResponseMfaEnrollmentResponseResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const mfaPrepareEnrollmentOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "mfaPrepareEnrollment",
+  method: "post",
+  path: "/api/v1/auth/mfa/enrollment/prepare",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: MfaChallengeRequestRequestSchema.strict(),
+  responseSchema: z.lazy(() => MfaEnrollmentResponseResponseSchema),
+  envelopeSchema: ApiResponseMfaEnrollmentResponseResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const mfaConfirmEnrollmentOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "mfaConfirmEnrollment",
+  method: "post",
+  path: "/api/v1/auth/mfa/enrollment/confirm",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: MfaCodeRequestRequestSchema.strict(),
+  responseSchema: z.lazy(() => TokenResponseResponseSchema),
+  envelopeSchema: ApiResponseTokenResponseResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const mfaDisableOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "mfaDisable",
+  method: "post",
+  path: "/api/v1/auth/mfa/disable",
+  requestKind: "json",
+  responseKind: "void",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: MfaReauthProofRequestRequestSchema.strict(),
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
@@ -4972,6 +5164,25 @@ export const deleteGroupsOperation = /*#__PURE__*/ (() => {
   });
 })();
 
+export const durableJobRetryOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "durableJobRetry",
+  method: "post",
+  path: "/api/v1/admin/system/durable-jobs/{jobSn}/retry",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "jobSn": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
 export const saveDeptUserAuthoritiesOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
   id: "saveDeptUserAuthorities",
@@ -5613,7 +5824,7 @@ export const createCommunityOperation = /*#__PURE__*/ (() => {
   requestSchema: CommunityDtoRequestSchema.strict(),
   responseSchema: z.lazy(() => CommunityDtoResponseSchema),
   envelopeSchema: ApiResponseCommunityDtoResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["createdByMe"],["editable"],["deletable"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -6105,8 +6316,8 @@ export const getPopup_1Operation = /*#__PURE__*/ (() => {
   pathSchema: z.object({ "popupSn": z.number().int() }).strict(),
   querySchema: null,
   requestSchema: null,
-  responseSchema: z.lazy(() => PopupDtoResponseSchema),
-  envelopeSchema: ApiResponsePopupDtoResponseSchema,
+  responseSchema: z.lazy(() => PopupPublicResponseResponseSchema),
+  envelopeSchema: ApiResponsePopupPublicResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
@@ -6124,8 +6335,8 @@ export const getActivePopupsOperation = /*#__PURE__*/ (() => {
   pathSchema: null,
   querySchema: null,
   requestSchema: null,
-  responseSchema: z.array(z.lazy(() => PopupDtoResponseSchema)),
-  envelopeSchema: ApiResponseListPopupDtoResponseSchema,
+  responseSchema: z.array(z.lazy(() => PopupPublicResponseResponseSchema)),
+  envelopeSchema: ApiResponseListPopupPublicResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
@@ -6941,8 +7152,27 @@ export const getReflectedBannersOperation = /*#__PURE__*/ (() => {
   pathSchema: null,
   querySchema: null,
   requestSchema: null,
-  responseSchema: z.array(z.lazy(() => BannerDtoResponseSchema)),
-  envelopeSchema: ApiResponseListBannerDtoResponseSchema,
+  responseSchema: z.array(z.lazy(() => BannerPublicResponseResponseSchema)),
+  envelopeSchema: ApiResponseListBannerPublicResponseResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const mfaStatusOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "mfaStatus",
+  method: "get",
+  path: "/api/v1/auth/mfa/status",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.lazy(() => MfaStatusResponseResponseSchema),
+  envelopeSchema: ApiResponseMfaStatusResponseResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
@@ -7594,6 +7824,25 @@ export const getLoginPolicyListOperation = /*#__PURE__*/ (() => {
   });
 })();
 
+export const durableJobListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "durableJobList",
+  method: "get",
+  path: "/api/v1/admin/system/durable-jobs",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: z.object({ "page": z.number().int().optional(), "size": z.number().int().optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => PageStatusResponseSchema),
+  envelopeSchema: ApiResponsePageStatusResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
 export const getDeptAuthoritiesOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
   id: "getDeptAuthorities",
@@ -7974,6 +8223,25 @@ export const authzCatalogOperation = /*#__PURE__*/ (() => {
   });
 })();
 
+export const searchUserSelectionsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "searchUserSelections",
+  method: "get",
+  path: "/api/v1/address-books/user-selections",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: z.object({ "searchWrd": z.string(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => PageResponseAddressBookUserSelectionDtoResponseSchema),
+  envelopeSchema: ApiResponsePageResponseAddressBookUserSelectionDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
 export const searchUsersOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
   id: "searchUsers",
@@ -8022,6 +8290,25 @@ export const moderateOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "bbsId": z.string(), "pstSn": z.number().int(), "dgstfnSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const cancelSubmissionOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "cancelSubmission",
+  method: "delete",
+  path: "/api/v1/admin/system/survey-responses/{srvyRspnsSn}/submission",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "srvyRspnsSn": z.number().int() }).strict(),
   querySchema: null,
   requestSchema: null,
   responseSchema: null,

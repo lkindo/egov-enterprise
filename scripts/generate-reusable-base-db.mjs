@@ -161,6 +161,22 @@ function assertSameSet(actual, expected, label) {
   }
 }
 
+/** Available capabilities do not imply a grant: preserve each selected permission's approved default groups. */
+export function assertCompositionOperationGrants(actual, permissionCodes, permissionCatalog) {
+  const selected = new Set(permissionCodes);
+  const permissions = permissionCatalog.permissions.filter(permission => selected.has(permission.code));
+  if (permissions.length !== selected.size) fail('Composition references an unknown OPERATION code.');
+  const expected = permissions.flatMap(permission => permission.defaultGroups.map(group => {
+    if (!['ROLE_ADMIN', 'ROLE_SYSTEM', 'ROLE_USER'].includes(group)) fail(`Unknown default permission group: ${group}`);
+    return JSON.stringify([group, permission.code]);
+  }));
+  if (!Array.isArray(actual) || actual.some(row => !Array.isArray(row) || row.length !== 2
+    || row.some(value => typeof value !== 'string'))) fail('Invalid reapplied OPERATION grant rows.');
+  const rows = actual.map(row => JSON.stringify(row));
+  if (new Set(rows).size !== rows.length) fail('Duplicate reapplied OPERATION grant rows.');
+  assertSameSet(rows, expected, '재적용 DB selected OPERATION group/code grants');
+}
+
 function quoteSqlIdentifier(value) {
   return `"${value.replaceAll('"', '""')}"`;
 }
@@ -581,8 +597,9 @@ async function main() {
       assertSchemaPreserved(selectedSchema.snapshot, reappliedSchema, '재적용 DB physical schema');
       assertSameSet(psql(args.container, user, verifyDb, 'SELECT menu_sn FROM public.tb_menu_info ORDER BY menu_sn').split(/\r?\n/),
         menuProjection.menus.map(menu => String(menu.menu_sn)), '재적용 DB selected menus');
-      assertSameSet(psql(args.container, user, verifyDb, "SELECT DISTINCT authrt_grnt_cd FROM public.tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION' ORDER BY authrt_grnt_cd").split(/\r?\n/),
-        composition.permissionCodes, '재적용 DB selected OPERATION codes');
+      assertCompositionOperationGrants(JSON.parse(psql(args.container, user, verifyDb,
+        "SELECT COALESCE(json_agg(json_build_array(authrt_cd, authrt_grnt_cd) ORDER BY authrt_cd, authrt_grnt_cd),'[]'::json)::text FROM public.tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'")),
+      composition.permissionCodes, JSON.parse(readFileSync(join(ROOT, 'config/governance/permission-catalog.json'), 'utf8')));
       assertSameSet(psql(args.container, user, verifyDb, "SELECT authrt_grnt_cd FROM public.tb_authrt_grnt_map WHERE authrt_cd='ROLE_ADMIN' AND authrt_type_cd='NAVIGATION' ORDER BY authrt_grnt_cd").split(/\r?\n/),
         menuProjection.menus.map(menu => String(menu.menu_sn)), '재적용 DB selected NAVIGATION codes');
     }

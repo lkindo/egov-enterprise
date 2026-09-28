@@ -61,7 +61,7 @@ describe('SatisfactionSection', () => {
   });
 
   it('[DIP B5 F9] 만족도 조사를 쓰지 않는 게시판은 입력 폼 대신 사유를 보이고, 남은 평가는 그대로 보인다', async () => {
-    mocked.list.mockResolvedValue([{ dgstfnSn: 1, bbsId: 'BBS_01', pstSn: 1, dgstfnScr: 4, dgstfnCn: '좋아요', userNm: '김갑', useYn: 'Y' }]);
+    mocked.list.mockResolvedValue([{ dgstfnSn: 1, bbsId: 'BBS_01', pstSn: 1, dgstfnScr: 4, dgstfnCn: '좋아요', useYn: 'Y' }]);
     mocked.average.mockResolvedValue({ average: 4 });
     renderWidget(false);
 
@@ -97,7 +97,7 @@ describe('SatisfactionSection', () => {
   it('평균과 응답 수를 표시한다', async () => {
     mocked.average.mockResolvedValue({ average: 4.25 });
     mocked.list.mockResolvedValue([
-      { dgstfnSn: 1, dgstfnScr: 5, dgstfnCn: '좋아요', userNm: '홍길동', useYn: 'Y' },
+      { dgstfnSn: 1, dgstfnScr: 5, dgstfnCn: '좋아요', useYn: 'Y' },
       { dgstfnSn: 2, dgstfnScr: 3, useYn: 'Y' },
     ]);
 
@@ -108,12 +108,12 @@ describe('SatisfactionSection', () => {
     expect(screen.getByText('좋아요')).toBeInTheDocument();
   });
 
-  it('작성자명이 없으면 익명으로 표시한다', async () => {
+  it('평가자는 비공개로 표시한다', async () => {
     mocked.list.mockResolvedValue([{ dgstfnSn: 1, dgstfnScr: 4, useYn: 'Y' }]);
 
     renderWidget();
 
-    expect(await screen.findByText('익명')).toBeInTheDocument();
+    expect(await screen.findByText('평가자 비공개')).toBeInTheDocument();
   });
 
   /** 별점 없이 제출하면 서버까지 가지 않는다 — 서버는 어차피 거부하지만 왕복이 낭비다. */
@@ -208,12 +208,12 @@ describe('SatisfactionSection', () => {
    */
   it('🔒 삭제 실패(권한 없음) 시 서버 판정을 그대로 노출한다', async () => {
     const user = userEvent.setup();
-    mocked.list.mockResolvedValue([{ dgstfnSn: 7, dgstfnScr: 5, userNm: '남의글', useYn: 'Y' }]);
+    mocked.list.mockResolvedValue([{ dgstfnSn: 7, dgstfnScr: 5, useYn: 'Y' }]);
     mocked.remove.mockRejectedValue(new Error('본인 확인에 실패했습니다.'));
 
     renderWidget();
 
-    await user.click(await screen.findByRole('button', { name: '남의글의 만족도 삭제' }));
+    await user.click(await screen.findByRole('button', { name: '비공개 평가자의 만족도 삭제' }));
 
     expect(await screen.findByText('본인 확인에 실패했습니다.')).toBeInTheDocument();
     expect(mocked.remove).toHaveBeenCalledWith('BBS_01', 1, 7);
@@ -221,10 +221,10 @@ describe('SatisfactionSection', () => {
 
   it('삭제는 같은 tick 중복 실행을 막고 pending 상태를 안내한다', async () => {
     let rejectDelete!: (reason?: unknown) => void;
-    mocked.list.mockResolvedValue([{ dgstfnSn: 7, dgstfnScr: 5, userNm: '삭제대상', useYn: 'Y' }]);
+    mocked.list.mockResolvedValue([{ dgstfnSn: 7, dgstfnScr: 5, useYn: 'Y' }]);
     mocked.remove.mockReturnValueOnce(new Promise((_, reject) => { rejectDelete = reject; }));
     renderWidget();
-    const deleteButton = await screen.findByRole('button', { name: '삭제대상의 만족도 삭제' });
+    const deleteButton = await screen.findByRole('button', { name: '비공개 평가자의 만족도 삭제' });
 
     act(() => {
       deleteButton.click();
@@ -232,7 +232,7 @@ describe('SatisfactionSection', () => {
     });
 
     await waitFor(() => expect(mocked.remove).toHaveBeenCalledTimes(1));
-    const pendingButton = screen.getByRole('button', { name: '삭제대상의 만족도 삭제 중…' });
+    const pendingButton = screen.getByRole('button', { name: '비공개 평가자의 만족도 삭제 중…' });
     expect(pendingButton).toBeDisabled();
     expect(pendingButton).toHaveAttribute('aria-busy', 'true');
     await act(async () => rejectDelete(new Error('삭제 처리 실패')));
@@ -249,11 +249,11 @@ describe('SatisfactionSection', () => {
   it('수정은 기존 점수·내용으로 열리고 저장하면 그 둘을 보낸다', async () => {
     const user = userEvent.setup();
     mocked.list.mockResolvedValue([
-      { dgstfnSn: 7, dgstfnScr: 2, dgstfnCn: '보통입니다', userNm: '홍길동', useYn: 'Y' },
+      { dgstfnSn: 7, dgstfnScr: 2, dgstfnCn: '보통입니다', useYn: 'Y' },
     ]);
     renderWidget();
 
-    await user.click(await screen.findByRole('button', { name: '홍길동의 만족도 수정' }));
+    await user.click(await screen.findByRole('button', { name: '비공개 평가자의 만족도 수정' }));
     const textarea = screen.getByLabelText('만족도 의견 수정');
     expect(textarea).toHaveValue('보통입니다');
 
@@ -274,12 +274,12 @@ describe('SatisfactionSection', () => {
   it('🔒 수정 실패(권한 없음)는 서버 판정을 그대로 노출하고 편집 값을 지키지 않는다', async () => {
     const user = userEvent.setup();
     mocked.list.mockResolvedValue([
-      { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', userNm: '홍길동', useYn: 'Y' },
+      { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', useYn: 'Y' },
     ]);
     mocked.update.mockRejectedValue(new Error('수정 권한이 없습니다.'));
     renderWidget();
 
-    await user.click(await screen.findByRole('button', { name: '홍길동의 만족도 수정' }));
+    await user.click(await screen.findByRole('button', { name: '비공개 평가자의 만족도 수정' }));
     await user.click(screen.getByRole('button', { name: '만족도 저장' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('수정 권한이 없습니다.');
@@ -290,15 +290,15 @@ describe('SatisfactionSection', () => {
   it('수정 중에는 삭제 버튼을 잠근다 — 편집 중인 항목이 사라지지 않게 한다', async () => {
     const user = userEvent.setup();
     mocked.list.mockResolvedValue([
-      { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', userNm: '홍길동', useYn: 'Y' },
+      { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', useYn: 'Y' },
     ]);
     renderWidget();
 
-    await user.click(await screen.findByRole('button', { name: '홍길동의 만족도 수정' }));
-    expect(screen.queryByRole('button', { name: /홍길동의 만족도 삭제/ })).toBeNull();
+    await user.click(await screen.findByRole('button', { name: '비공개 평가자의 만족도 수정' }));
+    expect(screen.queryByRole('button', { name: /비공개 평가자의 만족도 삭제/ })).toBeNull();
 
     await user.click(screen.getByRole('button', { name: '취소' }));
-    expect(await screen.findByRole('button', { name: '홍길동의 만족도 삭제' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: '비공개 평가자의 만족도 삭제' })).toBeInTheDocument();
     expect(mocked.update).not.toHaveBeenCalled();
   });
 
@@ -311,11 +311,11 @@ describe('SatisfactionSection', () => {
   */
   it('일반 사용자의 삭제는 일반 경로로 나간다', async () => {
     mocked.list.mockResolvedValue([
-      { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', userNm: '홍길동', useYn: 'Y' },
+      { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', useYn: 'Y' },
     ]);
     renderWidget();
 
-    fireEvent.click(await screen.findByRole('button', { name: /홍길동의 만족도 삭제/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /비공개 평가자의 만족도 삭제/ }));
 
     await waitFor(() => expect(mocked.remove).toHaveBeenCalledWith('BBS_01', 1, 7));
     expect(mocked.moderate).not.toHaveBeenCalled();
@@ -327,14 +327,15 @@ describe('SatisfactionSection', () => {
     testState.role = 'ADMIN';
     testState.permissions = ['SATISFY_MODERATE'];
     mocked.list.mockResolvedValue([
-      { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', userNm: '김철수', useYn: 'Y' },
+      { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', useYn: 'Y' },
     ]);
     renderWidget();
 
-    fireEvent.click(await screen.findByRole('button', { name: /김철수의 만족도 삭제/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /비공개 평가자의 만족도 삭제/ }));
 
     await waitFor(() => expect(testState.confirm).toHaveBeenCalledTimes(1));
-    expect(testState.confirm.mock.calls[0][0].message).toContain('김철수');
+    expect(testState.confirm.mock.calls[0][0].message).toContain('비공개 평가자');
+    expect(testState.confirm.mock.calls[0][0].message).not.toContain('김철수');
     await waitFor(() => expect(mocked.moderate).toHaveBeenCalledWith('BBS_01', 1, 7));
     expect(mocked.remove).not.toHaveBeenCalled();
   });
@@ -344,17 +345,17 @@ describe('SatisfactionSection', () => {
     testState.permissions = ['SATISFY_MODERATE'];
     testState.confirm.mockResolvedValue(false);
     mocked.list.mockResolvedValue([
-      { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', userNm: '김철수', useYn: 'Y' },
+      { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', useYn: 'Y' },
     ]);
     renderWidget();
 
-    fireEvent.click(await screen.findByRole('button', { name: /김철수의 만족도 삭제/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /비공개 평가자의 만족도 삭제/ }));
 
     await waitFor(() => expect(testState.confirm).toHaveBeenCalledTimes(1));
     expect(mocked.moderate).not.toHaveBeenCalled();
     expect(mocked.remove).not.toHaveBeenCalled();
     // 취소 후 다시 시도할 수 있어야 한다 — 잠금이 풀린다.
-    expect(await screen.findByRole('button', { name: /김철수의 만족도 삭제$/ })).toBeEnabled();
+    expect(await screen.findByRole('button', { name: /비공개 평가자의 만족도 삭제$/ })).toBeEnabled();
   });
 
   it('만족도가 없으면 안내 문구를 보여준다', async () => {

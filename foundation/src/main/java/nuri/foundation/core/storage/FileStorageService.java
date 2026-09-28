@@ -28,6 +28,21 @@ public interface FileStorageService {
     boolean exists(String filename, String targetPath);
     void delete(String filename, String targetPath);
     void delete(String filename);
+
+    /** Capture an opaque identity for deferred deletion; an absent object must stay a no-op. */
+    default String captureDeletionIdentity(String filename, String targetPath) {
+        throw new UnsupportedOperationException("This storage adapter does not support safe deferred deletion");
+    }
+
+    /** Idempotently remove only the captured object, never a replacement at the same path. */
+    default void deleteCaptured(java.util.UUID intent, String filename, String targetPath, String identity) {
+        throw new UnsupportedOperationException("This storage adapter does not support safe deferred deletion");
+    }
+
+    /** Release only the identity preparation created by an operation whose DB transaction rolled back. */
+    default void releaseDeletionIdentity(String identity) {
+        throw new UnsupportedOperationException("This storage adapter does not support safe deferred deletion");
+    }
     Stream<Path> loadAll(String targetPath);
     Stream<Path> loadAll();
     Path load(String filename);

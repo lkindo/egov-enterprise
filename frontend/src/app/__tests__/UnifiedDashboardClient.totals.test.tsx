@@ -1,6 +1,6 @@
 import { act, Suspense } from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 // 로더(collaboration pack)를 타입으로 참조한다 — core 투영에서 로더가 걷히면 이 테스트도 함께 빠진다.
 // 업무 홈의 dataPromise 속성은 collaboration 블록 안에 있어 core 에는 없다.
 import type { loadDashboardData } from '../dashboard-data';
@@ -17,18 +17,23 @@ vi.mock('next/dynamic', () => ({
     return null;
   },
 }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn() }) }));
+const session = vi.hoisted(() => ({
+  user: { id: 'user', userNm: '사용자', role: 'ROLE_USER' } as { id: string; userNm: string; role: string } | null,
+  mfaPending: false,
+  replace: vi.fn(),
+}));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: session.replace, push: vi.fn() }) }));
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'user', userNm: '사용자', role: 'ROLE_USER' }, loading: false }),
+  useAuth: () => ({ user: session.user, loading: false, mfaPending: session.mfaPending }),
 }));
 vi.mock('@/app/components/dashboard/DashboardSkeleton', () => ({ DashboardSkeleton: () => null }));
 
 const { default: UnifiedDashboardClient } = await import('../UnifiedDashboardClient');
 
-type DashboardData = Awaited<ReturnType<typeof loadDashboardData>>;
+type DashboardData = NonNullable<Awaited<ReturnType<typeof loadDashboardData>>>;
 
-async function renderHome(data: Partial<DashboardData>) {
-  const dataPromise = Promise.resolve({
+async function renderHome(data: Partial<DashboardData> | null) {
+  const dataPromise = Promise.resolve(data === null ? null : {
     initialNotiList: [],
     initialTaskList: [],
     notiListTotal: 0,
@@ -47,6 +52,35 @@ async function renderHome(data: Partial<DashboardData>) {
 }
 
 describe('업무 홈 게시판 카드·목록 (DIP V1)', () => {
+  beforeEach(() => {
+    session.user = { id: 'user', userNm: '사용자', role: 'ROLE_USER' };
+    session.mfaPending = false;
+    session.replace.mockClear();
+  });
+
+  it.each([false, true])('일반 세션이 없으면 업무 데이터는 숨기고 MFA 대기(%s) 동안만 자동 이동을 유예한다', async (mfaPending) => {
+    session.user = null;
+    session.mfaPending = mfaPending;
+    await renderHome({ initialTaskList: [{ id: 'private', title: '세션 전용 업무', date: '', isNew: false }] });
+    expect(screen.queryByText('세션 전용 업무')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '새 게시글 작성' })).not.toBeInTheDocument();
+    if (mfaPending) expect(session.replace).not.toHaveBeenCalled();
+    else expect(session.replace).toHaveBeenCalledWith('/login');
+  });
+
+  it('접근불가 홈은 이유와 다음 행동을 알리고 0건 목록이나 업무 링크로 위장하지 않는다', async () => {
+    await renderHome(null);
+
+    expect(screen.getByRole('heading', { name: '업무 홈', level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('업무 홈 대시보드에 접근할 권한이 없습니다.');
+    expect(screen.getByRole('status')).toHaveTextContent('메뉴에서 이용 가능한 업무를 선택해 주세요.');
+    expect(screen.queryByText('0건')).toBeNull();
+    expect(screen.queryByText('새 공지사항이 없습니다.')).toBeNull();
+    expect(screen.queryByText('업무게시판에 등록된 글이 없습니다.')).toBeNull();
+    expect(screen.queryByRole('link', { name: '새 게시글 작성' })).toBeNull();
+    expect(screen.queryByRole('link', { name: '결재함 열기' })).toBeNull();
+  });
+
   it('🚨 카드는 목록 길이가 아니라 게시판 전체 글 수를 보여 준다', async () => {
     await renderHome({
       initialTaskList: [{ id: '1', title: '최근 글', date: '2026-09-26', isNew: false }],

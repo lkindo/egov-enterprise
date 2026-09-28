@@ -117,7 +117,7 @@ export function PeriodFilter({ value, onChange, label, presets }: PeriodFilterPr
               onClick={() => onChange(presetToPeriod(preset.key, new Date()))}
               className={cn(
                 'flex h-[var(--control-h-sm)] items-center rounded px-3 text-xs font-bold transition-colors',
-                activePreset === preset.key ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground',
+                activePreset === preset.key ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {preset.label}

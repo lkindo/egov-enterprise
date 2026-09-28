@@ -40,7 +40,7 @@ interface UnifiedDashboardClientProps {
     notiListTotal: number | null;
     taskListTotal: number | null;
     pendingApprovalCount: number | null;
-  }>;
+  } | null>; // null is the server's explicit 403 state, never a failed/empty data fallback.
 }
 /* reusable-base:collaboration:end */
 
@@ -124,22 +124,16 @@ export default function UnifiedDashboardClient(
 ) {
   /* reusable-base:collaboration:start */
   const data = use(dataPromise);
-  const notiList = data.initialNotiList || [];
-  const taskList = data.initialTaskList || [];
   /* reusable-base:collaboration:end */
-  /* reusable-base:demo:start */
-  // [2026-09-15 DEC-OPS-100] 셀 수 없는 결재 대기(null)를 0건으로 말하지 않는다(unknownAsZero).
-  const pendingCount = data.pendingApprovalCount;
-  /* reusable-base:demo:end */
-  const { user, loading } = useAuth();
+  const { user, loading, mfaPending } = useAuth();
   const router = useRouter();
 
-  // Redirect to login if not authenticated
+  // Enrollment revokes the ordinary session; keep its header challenge mounted while hiding home data.
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !mfaPending) {
       router.replace('/login');
     }
-  }, [user, loading, router]);
+  }, [user, loading, mfaPending, router]);
 
   if (loading || !user) {
     return (
@@ -150,6 +144,25 @@ export default function UnifiedDashboardClient(
     );
   }
 
+  /* reusable-base:collaboration:start */
+  if (data === null) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">업무 홈</h1>
+        <div role="status" className="rounded-md border border-border bg-card px-4 py-3 text-[length:var(--font-size-body)]">
+          <p className="font-medium text-foreground">업무 홈 대시보드에 접근할 권한이 없습니다.</p>
+          <p className="mt-1 text-muted-foreground">메뉴에서 이용 가능한 업무를 선택해 주세요.</p>
+        </div>
+      </div>
+    );
+  }
+  const notiList = data.initialNotiList || [];
+  const taskList = data.initialTaskList || [];
+  /* reusable-base:collaboration:end */
+  /* reusable-base:demo:start */
+  // [2026-09-15 DEC-OPS-100] 셀 수 없는 결재 대기(null)를 0건으로 말하지 않는다(unknownAsZero).
+  const pendingCount = data.pendingApprovalCount;
+  /* reusable-base:demo:end */
 
   return (
     <div className="space-y-4">

@@ -50,16 +50,10 @@ export default function CommentSection({ pstSn, bbsId, initialComments, totalCom
   const confirm = useConfirm();
   const { user } = useAuth();
 
-  /**
-   * 수정·삭제 버튼 노출 판정.
-   *
-   * 서버 가드({@code SecurityUtil.assertOwnerOrAdmin})와 **같은 축**을 본다 — 등록자 로그인 ID.
-   * 종전에는 판정 자체가 없어 남의 댓글에도 버튼이 떴고, 사용자는 확인창을 통과한 뒤에야 실패했다.
-   * 소유자의 수정·삭제 기능권한과 다른 작성자의 댓글 관리 권한을 구분한다.
-   */
+  // 응답에 로그인 ID를 싣지 않는다. 서버 판정과 현재 기능권한을 모두 충족해야 버튼을 보인다.
   const canManageComment = (comment: CommentView, action: 'UPDATE' | 'DELETE') =>
     canPermission(user, `COMMENT_${action}`)
-    && (canPermission(user, `COMMENT_${action}_ALL`) || Boolean(user?.id && comment.frstRgtrId && comment.frstRgtrId === user.id));
+    && (action === 'UPDATE' ? comment.editable === true : comment.deletable === true);
   
   // Optimistic State Management (React 19)
   const [optimisticComments, addOptimisticComment] = useOptimistic<CommentView[], OptimisticCommentAction>(
@@ -131,8 +125,9 @@ export default function CommentSection({ pstSn, bbsId, initialComments, totalCom
           pstSn,
           bbsId,
           ansCn: content,
-          wrterId: '',
           wrterNm: user?.name ?? '', // 서버가 확정한 이름이 도착하면 대체된다
+          editable: false,
+          deletable: false,
           crtDt: new Date().toISOString(),
           isOptimistic: true
         }

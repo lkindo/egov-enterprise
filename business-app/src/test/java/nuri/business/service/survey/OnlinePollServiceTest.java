@@ -38,6 +38,49 @@ import static org.mockito.Mockito.mockStatic;
 @DisplayName("OnlinePollService 단위 테스트")
 class OnlinePollServiceTest {
 
+    @org.junit.jupiter.api.AfterEach
+    void clearPrincipal() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
+
+    private static void authenticatePermissions(List<String> permissions) {
+        var principal = nuri.foundation.security.service.CustomUserDetails.builder()
+                .userId("poll-editor").esntlId("poll-editor-id").enabled(true).lockAt("N")
+                .groups(List.of("ROLE_ADMIN")).permissions(permissions).authorizationVersion("poll-v1").build();
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        principal, null, principal.getAuthorities()));
+    }
+
+    private static void authenticatePollEditor() {
+        authenticatePermissions(List.of("POLL_READ", "POLL_READ_ALL", "POLL_CREATE", "POLL_UPDATE", "POLL_DELETE"));
+    }
+
+    @Test
+    void managementWritesRequireBothReadsAndTheirOwnOperationBeforeRepositoryAccess() {
+        var operations = List.<Runnable>of(
+                () -> onlinePollService.insertPoll(OnlinePollManageDto.builder().build()),
+                () -> onlinePollService.updatePoll(OnlinePollManageDto.builder().build()),
+                () -> onlinePollService.deletePoll(1L),
+                () -> onlinePollService.insertPollItem(OnlinePollArticleDto.builder().build()),
+                () -> onlinePollService.updatePollItem(OnlinePollArticleDto.builder().build()),
+                () -> onlinePollService.deletePollItem(1L));
+        var operationPermissions = List.of("POLL_CREATE", "POLL_UPDATE", "POLL_DELETE", "POLL_UPDATE", "POLL_UPDATE", "POLL_DELETE");
+        for (int index = 0; index < operations.size(); index++) {
+            String operation = operationPermissions.get(index);
+            for (var permissions : List.of(List.<String>of(), List.of(operation),
+                    List.of("POLL_READ", operation), List.of("POLL_READ_ALL", operation),
+                    List.of("POLL_READ", "POLL_READ_ALL"), List.of("SURVEY_READ", "SURVEY_READ_ALL", operation))) {
+                authenticatePermissions(permissions);
+                assertThatThrownBy(operations.get(index)::run).isInstanceOf(BusinessException.class)
+                        .extracting("errorCode").isEqualTo(CommonErrorCode.ACCESS_DENIED);
+            }
+        }
+        org.mockito.Mockito.verifyNoInteractions(pollManageRepository, pollResultRepository);
+        org.mockito.Mockito.verify(pollItemRepository, org.mockito.Mockito.never()).findById(any());
+        org.mockito.Mockito.verify(pollItemRepository, org.mockito.Mockito.never()).deleteById(any());
+    }
+
     @org.mockito.Spy
     nuri.business.service.survey.dto.OnlinePollArticleMapper onlinePollArticleMapper = new nuri.business.service.survey.dto.OnlinePollArticleMapperImpl();
 
@@ -302,6 +345,8 @@ class OnlinePollServiceTest {
     void insertPoll() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_CREATE")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("VeryLongUserIdExceeding20Chars"));
 
             OnlinePollArticleDto itemDto = OnlinePollArticleDto.builder()
@@ -329,6 +374,8 @@ class OnlinePollServiceTest {
     void insertPoll_Fail_InvalidDates() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_CREATE")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
                     .pollNm("New Poll")
                     .pollBgngYmd("2024-12-31")
@@ -357,6 +404,8 @@ class OnlinePollServiceTest {
     void updatePoll_Success() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_UPDATE")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("VeryLongUserIdExceeding20Chars"));
 
             OnlinePollManage entity = OnlinePollManage.builder()
@@ -395,6 +444,8 @@ class OnlinePollServiceTest {
     void updatePoll_KeepsAutoDisposeWhenAbsent() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_UPDATE")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("admin"));
 
             OnlinePollManage entity = OnlinePollManage.builder()
@@ -425,6 +476,8 @@ class OnlinePollServiceTest {
     void updatePoll_AppliesExplicitAutoDispose() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_UPDATE")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("admin"));
 
             OnlinePollManage entity = OnlinePollManage.builder()
@@ -454,6 +507,8 @@ class OnlinePollServiceTest {
     void updatePoll_Success_NullArticles() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_UPDATE")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
 
             OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).pollNm("Old").build();
             given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
@@ -475,6 +530,8 @@ class OnlinePollServiceTest {
     void updatePoll_Fail() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_UPDATE")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
             given(pollManageRepository.findById(99L)).willReturn(Optional.empty());
             OnlinePollManageDto dto = OnlinePollManageDto.builder().pollSn(99L).build();
             assertThat(assertThrows(BusinessException.class, () -> onlinePollService.updatePoll(dto))
@@ -499,6 +556,8 @@ class OnlinePollServiceTest {
     void deletePoll() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_DELETE")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
             onlinePollService.deletePoll(1L);
             verify(pollManageRepository, times(1)).deleteById(1L);
         }
@@ -687,6 +746,8 @@ class OnlinePollServiceTest {
     void insertPoll_EmptyStringsFallback() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_CREATE")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
 
             // 비정상적이거나 빈 값을 넣었을 때 분기를 탄다
@@ -715,6 +776,8 @@ class OnlinePollServiceTest {
     void updatePoll_MergeArticles() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_UPDATE")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
 
             OnlinePollArticle oldItem1 = OnlinePollArticle.builder().pollArtclSn(11L).pollArtclNm("Old1").build();
@@ -777,19 +840,22 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("insertPollItem - pollManage를 찾지 못할 때 예외")
     void insertPollItem_Fail_NotFound() {
+        authenticatePollEditor();
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
             
             given(pollManageRepository.findById(99L)).willReturn(Optional.empty());
             OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollSn(99L).pollArtclNm("A").build();
             
-            assertThrows(BusinessException.class, () -> onlinePollService.insertPollItem(dto));
+            assertThat(assertThrows(BusinessException.class, () -> onlinePollService.insertPollItem(dto)).getErrorCode())
+                    .isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND);
         }
     }
 
     @Test
     @DisplayName("updatePollItem - 내용이 빈 문자열일 때")
     void updatePollItem_EmptyContent() {
+        authenticatePollEditor();
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
 
@@ -808,6 +874,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 항목 수정 - 성공")
     void updatePollItem_Success() {
+        authenticatePollEditor();
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("VeryLongUserIdExceeding20Chars"));
 
@@ -824,9 +891,11 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 항목 수정 - 실패 (데이터 없음)")
     void updatePollItem_Fail() {
+        authenticatePollEditor();
         given(pollItemRepository.findById(99L)).willReturn(Optional.empty());
         OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollArtclSn(99L).build();
-        assertThrows(BusinessException.class, () -> onlinePollService.updatePollItem(dto));
+        assertThat(assertThrows(BusinessException.class, () -> onlinePollService.updatePollItem(dto)).getErrorCode())
+                .isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND);
     }
 
     @Test
@@ -834,6 +903,8 @@ class OnlinePollServiceTest {
     void insertPoll_DatesNull() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_CREATE")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
                     .pollNm("New Poll")
                     .pollBgngYmd(null)
@@ -850,6 +921,8 @@ class OnlinePollServiceTest {
     void insertPoll_PollKndCd_NullOrShort() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_CREATE")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
             
             // Null case
             OnlinePollManageDto dto1 = OnlinePollManageDto.builder()
@@ -905,6 +978,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 항목 삭제")
     void deletePollItem() {
+        authenticatePollEditor();
         onlinePollService.deletePollItem(11L);
         verify(pollItemRepository, times(1)).deleteById(11L);
     }
@@ -913,6 +987,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("투표가 있는 항목은 삭제하지 않고 투표도 보존한다")
     void deletePollItem_WithVotes_IsBlocked() {
+        authenticatePollEditor();
         given(pollResultRepository.countByPollArtclSn(11L)).willReturn(2L);
 
         assertThatThrownBy(() -> onlinePollService.deletePollItem(11L))

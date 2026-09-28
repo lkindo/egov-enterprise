@@ -10,6 +10,8 @@ import nuri.business.domain.menu.BkmkMenu;
 import nuri.business.domain.menu.BkmkMenuRepository;
 import nuri.business.domain.menu.Menu;
 import nuri.business.domain.menu.MenuRepository;
+import nuri.business.domain.user.repository.UserRepository;
+import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.menu.dto.MenuBookmarkDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
@@ -34,8 +36,10 @@ public class MenuBookmarkService {
     private final BkmkMenuRepository bkmkMenuRepository;
     private final MenuRepository menuRepository;
     private final MenuService menuService;
+    private final UserRepository userRepository;
 
     public List<MenuBookmarkDto> getMyBookmarks(String esntlId) {
+        SecurityUtil.assertOwnerByEsntlId(esntlId);
         List<BkmkMenu> rows = bkmkMenuRepository.findByIdUserIdOrderByCrtDtAsc(Objects.requireNonNull(esntlId));
         if (rows.isEmpty()) {
             return List.of();
@@ -50,6 +54,7 @@ public class MenuBookmarkService {
 
     @Transactional
     public void addBookmark(String esntlId, Long menuNo) {
+        lockBookmarkOwner(esntlId);
         Menu menu = visibleMenus(List.of(Objects.requireNonNull(menuNo))).get(menuNo);
         if (menu == null) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "즐겨찾기할 수 있는 메뉴가 아닙니다.");
@@ -68,7 +73,16 @@ public class MenuBookmarkService {
     /** 없으면 아무 일도 하지 않는다 — 이미 뺀 즐겨찾기를 다시 빼는 것은 실패가 아니다. */
     @Transactional
     public void removeBookmark(String esntlId, Long menuNo) {
+        lockBookmarkOwner(esntlId);
         bkmkMenuRepository.deleteById(new BkmkMenu.BkmkMenuId(Objects.requireNonNull(menuNo), Objects.requireNonNull(esntlId)));
+    }
+
+    private void lockBookmarkOwner(String esntlId) {
+        SecurityUtil.assertOwnerByEsntlId(esntlId);
+        // Existing user row serializes count + insert and removal even when no bookmarks exist yet.
+        // All competing writes lock the same parent; a per-bookmark lock cannot protect the quota.
+        userRepository.findByEsntlIdForUpdate(Objects.requireNonNull(esntlId))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
     private Map<Long, Menu> visibleMenus(Collection<Long> menuNos) {

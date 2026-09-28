@@ -14,9 +14,8 @@ package nuri.foundation.core.event;
  * 쪽지가 도착해도 시스템이 알림을 만들지 않았다. 미읽음 카운트·WebSocket 전달·화면은 모두
  * 완성돼 있었는데 <b>알릴 사건이 아무것도 들어오지 않는</b> 상태였다.
  *
- * <p><b>발행 시점 규약</b> — 반드시 <b>커밋 이후</b>에 발행한다
- * ({@code TransactionUtils.runAfterCommit}). 커밋 전에 발행하면 롤백된 업무에 대한 알림이
- * 남아 사용자가 존재하지 않는 결재·쪽지를 보러 간다.
+ * <p>업무 트랜잭션 안에서 동기로 발행한다. 소비자는 알림과 전달 의도를 같은 트랜잭션에
+ * 저장하며, 외부 전달만 커밋된 작업으로 재시도한다. 재발행은 같은 eventId를 보존한다.
  *
  * @param receiverEsntlId 수신자 고유 ID(esntlId). {@code tb_user_noti.rcvr_id} 축과 같다 —
  *                        loginId 를 넣으면 알림이 아무에게도 보이지 않는다
@@ -25,11 +24,20 @@ package nuri.foundation.core.event;
  * @param linkUrl         눌렀을 때 이동할 내부 경로. 없으면 {@code null}
  */
 public record NotificationRequestedEvent(
+        java.util.UUID eventId,
         String receiverEsntlId,
         String title,
         String content,
         String linkUrl
 ) implements DomainEvent {
+
+    public NotificationRequestedEvent {
+        java.util.Objects.requireNonNull(eventId, "eventId");
+    }
+
+    public NotificationRequestedEvent(String receiverEsntlId, String title, String content, String linkUrl) {
+        this(java.util.UUID.randomUUID(), receiverEsntlId, title, content, linkUrl);
+    }
 
     /** 수신자가 없으면 알림을 만들 수 없다 — 발행 측에서 걸러야 하지만 소비 측도 방어한다. */
     public boolean hasReceiver() {

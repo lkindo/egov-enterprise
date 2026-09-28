@@ -78,6 +78,19 @@ describe('ordinary generated boundary wave5', () => {
     expect(client.getRaw).toHaveBeenNthCalledWith(4, 'users/search', { params: { keyword: '홍길' } });
   });
 
+  it('public banner and popup consumers discard administrator audit identity even if it reappears', async () => {
+    const popup = { popupSn: 3, popupTtlNm: '안내' };
+    const banner = { bnrSn: 4, bnrNm: '메인' };
+    const audit = { frstRgtrId: 'private-operator', crtDt: '2026-09-28T00:00:00' };
+    client.getRaw
+      .mockResolvedValueOnce(success([{ ...popup, ...audit }]))
+      .mockResolvedValueOnce(success({ ...popup, ...audit }))
+      .mockResolvedValueOnce(success([{ ...banner, ...audit }]));
+    await expect(popupService.getActivePopups()).resolves.toStrictEqual([popup]);
+    await expect(popupService.getPopup(3)).resolves.toStrictEqual(popup);
+    await expect(bannerService.getReflectedBanners()).resolves.toStrictEqual([banner]);
+  });
+
   it('both community services normalize legacy aliases into the generated Pageable query', async () => {
     client.getRaw
       .mockResolvedValueOnce(success(emptyPage))

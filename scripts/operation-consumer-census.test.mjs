@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
@@ -70,6 +70,35 @@ test('소비자도 원장 항목도 없는 operation 은 red 다 — 이 게이�
   });
   assert.equal(result.summary.unclassified, 1);
   assert.deepEqual(result.errors.map((error) => error.code), ['UNCONSUMED_OPERATION']);
+});
+
+test('MFA BFF 원장은 실제 검증된 동작만 인정하고 응답 검증 제거를 red로 유지한다', () => {
+  const root = mkdtempSync(join(tmpdir(), 'mfa-operation-consumer-'));
+  const route = 'frontend/src/app/api/auth/mfa/[...path]/route.ts';
+  try {
+    const actualApi = JSON.parse(readFileSync(resolve('api-docs.json'), 'utf8'));
+    const apiDoc = { ...actualApi, paths: Object.fromEntries(Object.entries(actualApi.paths)
+      .filter(([path]) => path.startsWith('/api/v1/auth/mfa/'))) };
+    writeFileSync(join(root, 'api-docs.json'), JSON.stringify(apiDoc));
+    for (const file of [route, 'frontend/src/types/generated-operations.ts']) {
+      mkdirSync(dirname(join(root, file)), { recursive: true });
+      writeFileSync(join(root, file), readFileSync(resolve(file), 'utf8'));
+    }
+    const entries = Object.values(apiDoc.paths).flatMap(path => Object.values(path))
+      .filter(operation => operation.operationId)
+      .map(operation => ({ operationId: operation.operationId, category: 'bff-route-handler',
+        note: 'Restricted MFA proof is consumed by the actual fixed-action BFF.', evidence: [route] }));
+    assert.equal(entries.length, 9);
+    const inspect = () => analyze({ apiDoc, boundaries: { records: [] },
+      ledger: { expected: { unwiredMax: 0 }, entries }, repoRoot: root });
+    assert.deepEqual(inspect().errors, []);
+    const source = readFileSync(join(root, route), 'utf8');
+    writeFileSync(join(root, route), source.replaceAll('parseGeneratedOperationResponse(', 'unvalidatedResponse('));
+    const failures = inspect().errors.filter(error => error.code === 'UNPROVEN_EVIDENCE');
+    assert.equal(failures.length, 9);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('별칭 중복은 기계 파생이다 — 기본 operation 이 소비 중일 때만, 그리고 원장 등재는 거부된다', () => {

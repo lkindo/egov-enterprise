@@ -263,7 +263,6 @@ describe('satisfactionService 요청 본문과 응답 전달', () => {
       useYn: 'Y',
       dgstfnCn: '도움이 되었습니다',
       dgstfnScr: 4,
-      userNm: '홍길동',
     };
     const snapshot = { ...body };
 
@@ -280,7 +279,7 @@ describe('satisfactionService 요청 본문과 응답 전달', () => {
     await expect(satisfactionService.create(BBS_ID, PST_SN, { dgstfnScr: 5, useYn: 'Y' })).resolves.toBe(9001);
   });
 
-  it('목록 응답 배열을 재가공 없이 그대로 반환한다', async () => {
+  it('목록의 공개 필드는 생성 응답 계약으로 검증하고 그대로 보존한다', async () => {
     const rows: Satisfaction[] = [
       { dgstfnSn: 1, useYn: 'Y', dgstfnScr: 5 },
       { dgstfnSn: 2, useYn: 'Y', dgstfnScr: 3 },
@@ -288,6 +287,11 @@ describe('satisfactionService 요청 본문과 응답 전달', () => {
     client.get.mockResolvedValueOnce(rows);
 
     await expect(satisfactionService.list(BBS_ID, PST_SN)).resolves.toEqual(rows);
+  });
+
+  it.each(['userId', 'userNm'])('평가자 신원 %s가 재유입해도 화면 소비자에게 전달하지 않는다', async (field) => {
+    client.get.mockResolvedValueOnce([{ dgstfnSn: 1, dgstfnScr: 5, useYn: 'Y', [field]: 'private-evaluator' }]);
+    await expect(satisfactionService.list(BBS_ID, PST_SN)).resolves.toEqual([{ dgstfnSn: 1, dgstfnScr: 5, useYn: 'Y' }]);
   });
 
   it('평균 응답의 0 을 falsy 로 뭉개지 않고 그대로 반환한다', async () => {

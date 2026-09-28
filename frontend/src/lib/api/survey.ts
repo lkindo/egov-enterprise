@@ -3,7 +3,7 @@ import { QustnrRespondInfo, SurveyResultStats } from '@/types/business/survey';
 import type { PageResponse } from '@/types/foundation/system';
 import type { components } from '@/types/generated-api';
 import {
-  deleteResponseOperation,
+  cancelSubmissionOperation,
   exportStatsOperation,
   getResponseOperation,
   getResponsesOperation,
@@ -106,9 +106,9 @@ export const getQustnrRespondInfoDetail = async (srvyRspnsSn: number): Promise<Q
   return requireSurveyResponse(response);
 };
 
-/** 응답 삭제는 백엔드가 `@AdminOnly` 다 — ADMIN 이 아니면 403. */
-export const deleteQustnrRespondInfo = async (srvyRspnsSn: number): Promise<void> => {
-  return executeGeneratedOperation(deleteResponseOperation, { path: { srvyRspnsSn } });
+/** 관리자의 전체 제출 취소. 답변 ID와 같은 설문·제출자의 전체 묶음을 취소한다. */
+export const cancelSurveySubmission = async (srvyRspnsSn: number): Promise<void> => {
+  return executeGeneratedOperation(cancelSubmissionOperation, { path: { srvyRspnsSn } });
 };
 
 /**

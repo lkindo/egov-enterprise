@@ -73,7 +73,7 @@ vi.mock('@/hooks/use-auto-save-draft', () => ({
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'writer', esntlId: 'writer-owner' } }),
+  useAuth: () => ({ user: { id: 'writer', esntlId: 'writer-owner', authorizationVersion: 'test-v1', permissions: ['BOARD_CREATE', 'BOARD_UPDATE'] } }),
 }));
 
 vi.mock('@/app/components/ui/toast', () => ({
@@ -108,7 +108,7 @@ vi.mock('@/app/components/ui/standard-file-uploader', () => ({
 }));
 
 vi.mock('@/services/business/user/board/BoardUserService', () => ({
-  boardUserService: { getBoardMeta: (...args: unknown[]) => mocks.getBoardMeta(...args) },
+  boardUserService: { getBoardMeta: async (...args: unknown[]) => ({ ...await mocks.getBoardMeta(...args), requiredEditPermissions: [] }) },
 }));
 
 const BBS_ID = 'BBSMSTR_AAAAAAAAAAAA';
@@ -117,7 +117,7 @@ function renderSubject(props: { pstSn?: number; initialData?: { pstSn?: number; 
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <BoardRegistClient bbsId={BBS_ID} pstSn={props.pstSn} initialData={props.initialData ?? null} />
+      <BoardRegistClient bbsId={BBS_ID} pstSn={props.pstSn} initialData={props.initialData ? { ...props.initialData, userId: 'writer-owner' } : null} />
     </QueryClientProvider>,
   );
 }

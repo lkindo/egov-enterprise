@@ -1,6 +1,8 @@
 package nuri.business.service.system.content.community.dto;
 
 import jakarta.validation.constraints.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import nuri.business.domain.system.content.community.Community;
@@ -12,8 +14,9 @@ import java.time.format.DateTimeFormatter;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(onConstructor_ = @com.fasterxml.jackson.annotation.JsonCreator)
+// Use setters for requests; response-only primitive flags must never become creator inputs.
+@AllArgsConstructor(onConstructor_ = @com.fasterxml.jackson.annotation.JsonCreator(mode = com.fasterxml.jackson.annotation.JsonCreator.Mode.DISABLED))
 public class CommunityDto {
     private Long cmntySn;
     // [2026-09-06 DEC-OPS-037] 제품 규칙(컬럼은 nullable) — 이름 없는 커뮤니티는 목록·포틀릿에서 빈칸이 된다.
@@ -33,7 +36,18 @@ public class CommunityDto {
     @NotBlank
     @Pattern(regexp = "^(?:Y|N)$")
     private String useYn;
+    @JsonIgnore
+    @Schema(hidden = true)
     private String frstRgtrId;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
+    private boolean createdByMe;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
+    private boolean editable;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
+    private boolean deletable;
     // [2026-09-26 DIP V2] 등록자명(frstRegisterNm)은 from() 이 채우지 않아 늘 null 이라 걷었다.
     private String crtDt;
 

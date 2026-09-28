@@ -214,6 +214,78 @@ class AuthorizationAdministrationServiceTest {
         assertThat(db.audits()).hasSize(5);
     }
 
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD", "MFA_RECOVER"})
+    void protectedGrantAdditionAndRemovalRequireBothAdministrationPermissions(String permission) {
+        Grant protectedGrant = new Grant("OPERATION", permission);
+        authenticate("operator_login", "OPERATOR_ID", Set.of("AUTHRT_READ", "AUTHRT_GRANT"));
+        error(CommonErrorCode.ACCESS_DENIED, () -> service.replaceGrants("G_C",
+                new ReplaceGrants(List.of(protectedGrant), service.group("G_C").version(), true)));
+        assertThat(db.writes).isEmpty();
+
+        db.groups.put("G_C", new GroupData("Protected", null, List.of(protectedGrant)));
+        error(CommonErrorCode.ACCESS_DENIED, () -> service.replaceGrants("G_C",
+                new ReplaceGrants(List.of(), service.group("G_C").version(), true)));
+        assertThat(db.writes).isEmpty();
+    }
+
+    @Test
+    void ordinaryGrantChangesKeepTheExistingSinglePermissionContract() {
+        db.groups.put("G_C", new GroupData("Protected", null, List.of(new Grant("OPERATION", "USER_PASSWORD"))));
+        authenticate("operator_login", "OPERATOR_ID", Set.of("AUTHRT_READ", "AUTHRT_GRANT"));
+        service.replaceGrants("G_C", new ReplaceGrants(
+                List.of(new Grant("OPERATION", "USER_PASSWORD"), READ), service.group("G_C").version(), true));
+        assertThat(db.writesTo("tb_authrt_grnt_map")).singleElement()
+                .satisfies(write -> assertThat(write.values()).contains("BOARD_READ"));
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"USER_PASSWORD", "MFA_RECOVER"})
+    void protectedMembershipAdditionRemovalAndDepartmentBatchRequireBothAdministrationPermissions(String permission) {
+        db.groups.put("G_C", new GroupData("Protected", null, List.of(new Grant("OPERATION", permission))));
+        authenticate("operator_login", "OPERATOR_ID", Set.of("AUTHRT_READ", "AUTHRT_ASSIGN"));
+        error(CommonErrorCode.ACCESS_DENIED, () -> service.replaceMemberships("U_2",
+                new ReplaceGroups(List.of("G_B", "G_C"), service.memberships("U_2").version(), true)));
+        error(CommonErrorCode.ACCESS_DENIED, () -> service.changeDepartmentGroups("D_1",
+                new ChangeDepartmentGroups(List.of("U_2"), "G_C", "ADD", service.departmentMemberships("D_1").version(), true)));
+        db.memberships.put("U_2", List.of("G_B", "G_C"));
+        error(CommonErrorCode.ACCESS_DENIED, () -> service.replaceMemberships("U_2",
+                new ReplaceGroups(List.of("G_B"), service.memberships("U_2").version(), true)));
+        error(CommonErrorCode.ACCESS_DENIED, () -> service.changeDepartmentGroups("D_1",
+                new ChangeDepartmentGroups(List.of("U_2"), "G_C", "REMOVE", service.departmentMemberships("D_1").version(), true)));
+        assertThat(db.writes).isEmpty();
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"USER_PASSWORD", "MFA_RECOVER"})
+    void deletionCannotRemoveProtectedGrantsOrMembershipsWithOnlyDeleteAuthority(String permission) {
+        db.groups.put("G_C", new GroupData("Protected", null, List.of(new Grant("OPERATION", permission))));
+        authenticate("operator_login", "OPERATOR_ID", Set.of("AUTHRT_READ", "AUTHRT_DELETE", "USER_DELETE"));
+        error(CommonErrorCode.ACCESS_DENIED, () -> service.deleteGroup("G_C", service.group("G_C").version()));
+        db.memberships.put("U_2", List.of("G_C"));
+        error(CommonErrorCode.ACCESS_DENIED, () -> service.removeDeletedUsers(List.of("U_2")));
+        assertThat(db.writes).isEmpty();
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"USER_PASSWORD", "MFA_RECOVER"})
+    void signupDefaultCannotSilentlyGrantProtectedPermissions(String permission) {
+        db.groups.put("ROLE_USER", new GroupData("Default", null, List.of(new Grant("OPERATION", permission))));
+        db.memberships.put("U_2", List.of());
+        authenticate("operator_login", "OPERATOR_ID", Set.of());
+        error(CommonErrorCode.ACCESS_DENIED, () -> service.assignNewUser("U_2"));
+        assertThat(db.writes).isEmpty();
+    }
+
+    @Test
+    void recoveryAuthorityAloneDoesNotExpandProtectedAccountClassification() {
+        db.groups.put("G_C", new GroupData("Recovery", null, List.of(new Grant("OPERATION", "MFA_RECOVER"))));
+        db.memberships.put("U_2", List.of("G_C"));
+        authenticate("operator_login", "OPERATOR_ID", Set.of("USER_PASSWORD"));
+        service.authorizeProtectedAccountChange("U_2");
+        assertThat(db.writes).isEmpty();
+    }
+
     static Stream<List<Grant>> invalidGrants() {
         return Stream.of(Arrays.asList((Grant) null), List.of(new Grant("OPERATION", null)),
                 List.of(new Grant("OPERATION", "NOT_REGISTERED")), List.of(new Grant("NAVIGATION", "0")),

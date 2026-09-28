@@ -6,6 +6,7 @@ import {
   readFileSync,
   readdirSync,
   renameSync,
+  rmSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
@@ -71,7 +72,11 @@ import {
 } from '../frontend/scripts/ui-quality-baseline-core.mjs';
 
 import {
+  completeSyntheticFaqNavigation,
+  createEmptyUserLogPage,
+  createSyntheticFixtureApi,
   isPersistedBoardDraftKey,
+  readCommittedFile,
   readBaselineBuildAttestationFile,
   validateExecutionPreflight as validateRunnerExecutionPreflight,
 } from '../frontend/scripts/ui-quality-baseline-runner.mjs';
@@ -840,6 +845,175 @@ test('first-use preference preparation establishes same-origin storage before cl
   assert.match(baselineProtocolSource, /request validation[^\n]*400[^\n]*unexpected-http-4xx/i);
 });
 
+test('all baseline login probes consume the names declared by the actual login form', () => {
+  const loginSource = readFileSync(
+    join(repoRoot, 'frontend/src/app/login/LoginClient.tsx'), 'utf8',
+  );
+  const validationSource = readFileSync(
+    join(repoRoot, 'frontend/src/hooks/useManualFormValidation.tsx'), 'utf8',
+  );
+  assert.match(validationSource, /const fieldProps = useCallback\(\(name: string\) => \{[\s\S]*?return \{\s*name,/,
+    'the producer must forward the declared field name to the rendered input');
+  const inputs = [...loginSource.matchAll(/<Input\b([\s\S]*?)\/>/g)];
+  const renderedName = (id) => {
+    const matches = inputs.filter(([, attributes]) => attributes.includes(`id="${id}"`));
+    assert.equal(matches.length, 1, 'each public login input must have one declaration');
+    const attributes = matches[0][1];
+    assert.doesNotMatch(attributes, /\bname\s*=/,
+      'an explicit name override requires reviewing the producer contract');
+    const names = [...attributes.matchAll(/validation\.fieldProps\('([^']+)'\)/g)];
+    assert.equal(names.length, 1, 'the input must declare exactly one validation field');
+    return names[0][1];
+  };
+  const expectedNames = [renderedName('id'), renderedName('password')];
+  const loginPaths = [
+    ['invalid credentials', /case 'invalid-credentials': \{([\s\S]*?)\n      break;/],
+    ['successful login', /case 'successful-login': \{([\s\S]*?)\n      break;/],
+    ['login performance', /async function navigateForPerformance\(page, stateCase\) \{([\s\S]*?)\n\}/],
+  ];
+  for (const [label, expression] of loginPaths) {
+    const body = runnerSource.match(expression)?.[1];
+    assert.ok(body, `${label} execution path must remain discoverable`);
+    const selectedNames = [...body.matchAll(/page\.locator\('input\[name="([^']+)"\]'\)/g)]
+      .map((match) => match[1]);
+    assert.deepEqual(selectedNames, expectedNames,
+      `${label} must resolve both fields from the actual login form`);
+  }
+});
+
+test('the FAQ composer probe uses the accessible name forwarded by the actual editor', () => {
+  const boardSource = readFileSync(
+    join(repoRoot, 'frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx'), 'utf8',
+  );
+  const editorSource = readFileSync(
+    join(repoRoot, 'frontend/src/components/ui/RichTextEditor.tsx'), 'utf8',
+  );
+  const declarations = [...boardSource.matchAll(/<RichTextEditor\b([\s\S]*?)\/>/g)];
+  assert.equal(declarations.length, 1, 'the FAQ composer must declare one editable body');
+  const declaredName = declarations[0][1].match(/\baria-label="([^"]+)"/)?.[1];
+  assert.ok(declaredName, 'the real editor must declare its accessible name');
+  assert.match(editorSource, /'aria-label': ariaLabel/);
+  assert.match(editorSource, /role: 'textbox'/);
+  const body = runnerSource.match(/async function fillFaqComposer\(page, fixture\) \{([\s\S]*?)\n\}/)?.[1];
+  assert.ok(body, 'the actual FAQ fill path must remain discoverable');
+  const selectedName = body.match(/firstVisibleLocator\(page\.getByRole\('textbox', \{ name: '([^']+)', exact: true \}\)\)/)?.[1];
+  assert.equal(selectedName, declaredName,
+    'the probe must consume the accessible name rendered by the editor, including required state');
+});
+
+test('dense log probes use the actual KeywordFilter accessible label', () => {
+  const source = readFileSync(
+    join(repoRoot, 'frontend/src/app/admin/system/logs/user/SystemLogsUserClient.tsx'), 'utf8',
+  );
+  const label = source.match(/<KeywordFilter\s+label="([^"]+)"/)?.[1];
+  assert.ok(label, 'the log page must declare its keyword label');
+  for (const step of ['filtered-zero', 'server-error']) {
+    const body = runnerSource.match(new RegExp(String.raw`case '${step}': \{([\s\S]*?)\n      break;`))?.[1];
+    assert.ok(body, 'the log recovery execution path must remain discoverable');
+    const selected = body.match(/const search = page\.getByRole\('textbox', \{ name: '([^']+)', exact: true \}\)/)?.[1];
+    assert.equal(selected, label, 'the log probe must select the label produced by KeywordFilter');
+  }
+});
+
+test('filtered-zero fixture satisfies the actual log page parser and requested pagination', () => {
+  const service = readFileSync(
+    join(repoRoot, 'frontend/src/services/foundation/system/SystemLogAdminService.ts'), 'utf8',
+  );
+  const parser = service.match(/function requireLogPage<T>\([\s\S]*?\n\}/)?.[0];
+  assert.ok(parser, 'the actual response parser must remain discoverable');
+  const arrayFields = [...parser.matchAll(/!Array\.isArray\(response\.(\w+)\)/g)].map((match) => match[1]);
+  const numericFields = [...parser.matchAll(/typeof response\.(\w+) !== 'number'/g)].map((match) => match[1]);
+  assert.equal(arrayFields.length, 1);
+  assert.equal(numericFields.length, 4);
+  assert.match(service, /query\.pageIndex = params\.pageIndex \?\? \(params\.page \?\? 0\) \+ 1/);
+  assert.match(service, /query\.pageUnit = params\.pageUnit \?\? params\.size/);
+  for (const [page, size] of [[1, 10], [3, 50]]) {
+    const requestUrl = new URL(`http://127.0.0.1/api/v1/admin/system/logs/user?pageIndex=${page}&pageUnit=${size}&searchKeyword=synthetic`);
+    const result = createEmptyUserLogPage(requestUrl);
+    for (const field of arrayFields) assert.ok(Array.isArray(result[field]), `missing log array field: ${field}`);
+    for (const field of numericFields) assert.equal(typeof result[field], 'number', `missing log number field: ${field}`);
+    assert.deepEqual(result, { list: [], total: 0, totalPage: 0, page, size });
+  }
+  const preparation = runnerSource.match(/async function installStatePreparation\(page, stateCase\) \{([\s\S]*?)\n  if \(stateCase\.stepId === 'server-error'\)/)?.[1];
+  assert.ok(preparation);
+  assert.match(preparation, /data: createEmptyUserLogPage\(url\)/);
+  assert.doesNotMatch(preparation, /pageIndex:\s*1/);
+  const pageResponse = readFileSync(
+    join(repoRoot, 'foundation/src/main/java/nuri/foundation/core/response/PageResponse.java'), 'utf8',
+  );
+  assert.match(pageResponse, /\.page\(page\.getNumber\(\) \+ 1\)/);
+  assert.match(pageResponse, /\.size\(page\.getSize\(\)\)/);
+  assert.match(pageResponse, /\.totalPage\(page\.getTotalPages\(\)\)/);
+  for (const query of ['', 'pageIndex=1', 'pageIndex=0&pageUnit=10', 'pageIndex=1&pageUnit=-1',
+    'pageIndex=1.5&pageUnit=10', 'pageIndex=1&pageUnit=10&pageUnit=50', 'pageIndex=9007199254740992&pageUnit=10']) {
+    assert.throws(() => createEmptyUserLogPage(new URL(`http://127.0.0.1/?${query}`)), /pagination request is invalid/);
+  }
+});
+
+test('wizard probes follow the actual step heading level and validation message', () => {
+  const source = readFileSync(
+    join(repoRoot, 'frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx'), 'utf8',
+  );
+  const steps = source.match(/const STEPS = \[([\s\S]*?)\n\];/)?.[1];
+  assert.ok(steps, 'the wizard must declare its ordered steps');
+  const titles = [...steps.matchAll(/title: '([^']+)'/g)].map((match) => match[1]);
+  assert.equal(titles.length, 4);
+  const heading = source.match(/<h([1-6])\b[^>]*>\s*\{STEPS\[currentStep - 1\]\.title\}\s*<\/h\1>/);
+  assert.ok(heading, 'the real step heading must have a semantic level');
+  const consumers = [...runnerSource.matchAll(/getByRole\('heading', \{ level: ([1-6]), name: '([^']+)', exact: true \}\)/g)]
+    .filter((match) => titles.includes(match[2]));
+  assert.equal(consumers.length, titles.length, 'all four step heading consumers must remain covered');
+  assert.deepEqual(new Set(consumers.map((match) => match[2])), new Set(titles));
+  for (const match of consumers) assert.equal(match[1], heading[1], 'the probe must use the rendered heading level');
+  const message = source.match(/bbsTtl: BoardMasterDtoSchema\.shape\.bbsTtl[\s\S]*?\.min\(2, '([^']+)'\)/)?.[1];
+  assert.ok(message, 'the actual minimum-length rule must declare its error message');
+  const selected = runnerSource.match(/const validationVisible = await visibleWithin\(page\.getByText\('([^']+)', \{ exact: true \}\),/)?.[1];
+  assert.equal(selected, message, 'the empty-next probe must observe the actual validation message');
+});
+
+test('synthetic user and admin FAQ searches submit the actual KeywordFilter before readback', () => {
+  const keyword = readFileSync(join(repoRoot, 'frontend/src/app/components/patterns/keyword-filter.tsx'), 'utf8');
+  assert.match(keyword, /onSubmit=\{\(event\) => \{\s*event\.preventDefault\(\);\s*onSearch\(draft\.trim\(\)\);/);
+  assert.match(keyword, /onChange=\{\(event\) => setDraft\(event\.target\.value\)\}/);
+  const paths = [
+    ['user', 'frontend/src/app/admin/user/UserOrgHubClient.tsx', /async function selectSyntheticUser\(page, fixture\) \{([\s\S]*?)\n\}/],
+    ['admin FAQ', 'frontend/src/app/admin/help/KnowledgeHubClient.tsx', /case 'admin-faq-readback': \{([\s\S]*?)\n      break;/],
+  ];
+  for (const [label, producerPath, expression] of paths) {
+    const producer = readFileSync(join(repoRoot, producerPath), 'utf8');
+    assert.match(producer, /<KeywordFilter\b[\s\S]*?onSearch=/, `${label} must use submit-based search`);
+    const body = runnerSource.match(expression)?.[1];
+    assert.ok(body, `${label} probe must remain discoverable`);
+    const fill = body.indexOf('await search.fill(');
+    const submit = body.indexOf("await search.press('Enter')");
+    const readback = body.indexOf('await firstVisibleLocator(');
+    assert.ok(fill >= 0 && fill < submit && submit < readback,
+      `${label} must apply the draft before observing searched results`);
+  }
+});
+
+test('readiness headings follow the current user and FAQ page title producers', () => {
+  const userSource = readFileSync(join(repoRoot, 'frontend/src/app/admin/user/UserOrgHubClient.tsx'), 'utf8');
+  const adminFaqSource = readFileSync(join(repoRoot, 'frontend/src/app/admin/help/KnowledgeHubClient.tsx'), 'utf8');
+  const helpSource = readFileSync(join(repoRoot, 'frontend/src/app/help/HelpClient.tsx'), 'utf8');
+  assert.match(userSource, /const meta = TAB_META\[activeTab\]/);
+  assert.match(userSource, /<WorkListPage\s+title=\{meta\.title\}/);
+  assert.match(adminFaqSource, /<WorkListPage\s+title=\{CATEGORY_LABEL\[activeCategory\]\}/);
+  const userHeading = userSource.match(/USERS: \{\s*title: '([^']+)'/)?.[1];
+  const faqHeading = adminFaqSource.match(/const CATEGORY_LABEL[^=]*= \{[\s\S]*?FAQ: '([^']+)'/)?.[1];
+  const helpHeading = helpSource.match(/<WorkListPage\s+title="([^"]+)"/)?.[1];
+  assert.ok(userHeading && faqHeading && helpHeading, 'the actual page titles must remain discoverable');
+  const declared = runnerSource.match(/const READY_HEADINGS = Object\.freeze\(\{([\s\S]*?)\n\}\)/)?.[1];
+  assert.ok(declared, 'the runner readiness map must remain discoverable');
+  const actual = Object.fromEntries([...declared.matchAll(/'([^']+)': '([^']+)'/g)].map((match) => [match[1], match[2]]));
+  for (const [step, title] of Object.entries({
+    'user-hub-ready': userHeading,
+    'mutation-error': userHeading,
+    'admin-faq-readback': faqHeading,
+    'user-faq-search': helpHeading,
+  })) assert.equal(actual[step], title, `${step} must wait for its actual page title`);
+});
+
 test('not-executed task evidence uses closed assertion/reason pairs and blocks completion', () => {
   const closedPairs = [
     ['successful-login-executed', 'ephemeral-login-credentials-required'],
@@ -886,6 +1060,285 @@ test('not-executed task evidence uses closed assertion/reason pairs and blocks c
     }),
     /unsupported not-executed task evidence/i,
   );
+});
+
+test('synthetic fixture API authenticates secure numeric-loopback cookies per request without changing browser state', async () => {
+  const origin = 'http://127.0.0.1:53181';
+  let cookies = [{
+    name: 'accessToken', value: 'context-one', domain: '127.0.0.1', path: '/',
+    secure: true, httpOnly: true, sameSite: 'Strict', expires: Date.now() / 1000 + 3600,
+  }];
+  let cookieReads = 0;
+  const calls = [];
+  const context = {
+    async cookies(...args) {
+      assert.deepEqual(args, [], 'URL-filtered cookies would reproduce Playwright secure numeric-loopback omission');
+      cookieReads += 1;
+      return cookies;
+    },
+    request: { async fetch(url, options) {
+      calls.push({ url, options });
+      return { status: () => options.headers?.Authorization === `Bearer ${cookies[0].value}` ? 200 : 401 };
+    } },
+  };
+  const api = createSyntheticFixtureApi(context, origin);
+  const initialState = structuredClone(cookies);
+  const data = { synthetic: true };
+  const first = await api.fetch('/api/v1/admin/system/users?size=1', { method: 'POST', data, failOnStatusCode: false });
+  assert.equal(first.status(), 200, 'fixture requests must carry the current authenticated context');
+  assert.deepEqual(cookies, initialState, 'secure flags and persisted state must remain unchanged');
+  cookies = [{ ...cookies[0], value: 'context-two' }];
+  const second = await api.fetch('/api/v1/admin/system/users/synthetic', {
+    method: 'DELETE', maxRedirects: 20, headers: { Authorization: 'caller-override' },
+  });
+  assert.equal(second.status(), 200, 'a renewed context credential must be read on the next request');
+  assert.equal(cookieReads, 2);
+  assert.equal(calls[0].url, `${origin}/api/v1/admin/system/users?size=1`);
+  assert.equal(calls[0].options.data, data);
+  assert.equal(calls[0].options.failOnStatusCode, false);
+  assert.deepEqual(calls.map(({ options }) => [options.method, options.maxRedirects]), [['POST', 0], ['DELETE', 0]]);
+  assert.notEqual(calls[0].options.headers.Authorization, calls[1].options.headers.Authorization);
+});
+
+test('synthetic fixture API rejects missing ambiguous stale or wrongly scoped authentication before sending', async () => {
+  const valid = { name: 'accessToken', value: 'synthetic', domain: '127.0.0.1', path: '/', expires: -1, secure: true };
+  const rejectedCookies = [
+    [], [valid, { ...valid }], [{ ...valid, name: 'refreshToken' }],
+    [{ ...valid, domain: 'localhost' }], [{ ...valid, domain: '.127.0.0.1' }],
+    [{ ...valid, domain: 'unrelated.invalid' }], [{ ...valid, path: '/api/v1' }],
+    [{ ...valid, value: '' }], [{ ...valid, expires: 0 }],
+    [{ ...valid, expires: Date.now() / 1000 - 1 }], [{ ...valid, expires: undefined }],
+  ];
+  let requests = 0;
+  for (const cookies of rejectedCookies) {
+    const api = createSyntheticFixtureApi({
+      cookies: async () => cookies,
+      request: { fetch: async () => { requests += 1; } },
+    }, 'http://127.0.0.1:53181');
+    await assert.rejects(api.fetch('/api/v1/auth/me'), (error) => (
+      error.code === 'synthetic-mutation-api-auth-unavailable'
+      && error.message === 'synthetic mutation fixture failed'
+    ));
+  }
+  assert.equal(requests, 0);
+  const exactContext = {
+    cookies: async () => [valid, { ...valid, domain: 'localhost' }, { ...valid, path: '/unrelated' }],
+    request: { fetch: async () => { requests += 1; return { status: () => 200 }; } },
+  };
+  assert.equal((await createSyntheticFixtureApi(exactContext, 'http://127.0.0.1:53181').fetch('/api/v1/auth/me')).status(), 200);
+  assert.equal(requests, 1, 'only the exact host and root-path cookie may be selected');
+});
+
+test('synthetic fixture API never sends credentials outside the bound root API or follows redirects', async () => {
+  let reads = 0;
+  let requests = 0;
+  const context = {
+    cookies: async () => { reads += 1; return [{ name: 'accessToken', value: 'synthetic', domain: '127.0.0.1', path: '/', expires: -1 }]; },
+    request: { fetch: async (_url, options) => {
+      requests += 1;
+      assert.equal(options.maxRedirects, 0);
+      return { status: () => 302 };
+    } },
+  };
+  const api = createSyntheticFixtureApi(context, 'http://127.0.0.1:53181');
+  for (const path of [undefined, 'http://127.0.0.1:53181/api/v1/auth/me',
+    'http://unrelated.invalid/api/v1/auth/me', '//unrelated.invalid/api/v1/auth/me',
+    '/api/v10/auth/me', '/api/v1', '/admin', '/api/v1/../../auth',
+    '/api/v1/%2e%2e/%2e%2e/auth', '/api/v1/..%2fauth', '/api/v1/..%5cauth',
+    '/api/v1/..\\auth', '/api/v1/auth/me#fragment']) {
+    await assert.rejects(api.fetch(path), (error) => error.code === 'synthetic-mutation-api-path-invalid');
+  }
+  assert.equal(reads, 0);
+  assert.equal(requests, 0);
+  for (const origin of ['http://unrelated.invalid', 'http://127.0.0.1/path', 'http://user@127.0.0.1']) {
+    assert.throws(() => createSyntheticFixtureApi(context, origin));
+  }
+  assert.equal((await api.fetch('/api/v1/auth/me', { maxRedirects: 10 })).status(), 302);
+  assert.equal(requests, 1, 'the caller receives the redirect without an authenticated follow-up request');
+});
+
+test('all six synthetic mutation paths acquire the context-bound fixture API', () => {
+  const paths = [
+    ['user-hub-ready', 'page.context()'], ['mutation-error', 'page.context()'],
+    ['user-faq-search', 'adminContext'], ['admin-compose-faq', 'page.context()'],
+    ['admin-faq-readback', 'page.context()'], ['wizard-ready', 'page.context()'],
+  ];
+  for (const [step, context] of paths) {
+    const body = runnerSource.match(new RegExp(String.raw`case '${step}': \{([\s\S]*?)\n      break;`))?.[1];
+    assert.ok(body, `the ${step} execution path must remain discoverable`);
+    assert.ok(body.includes(`const api = createSyntheticFixtureApi(${context}, baseOrigin);`), step);
+    assert.doesNotMatch(body, /const api = (?:page\.context\(\)|adminContext)\.request;/);
+    assert.match(body, /runSyntheticMutationLifecycle\(/);
+  }
+});
+
+function faqNavigationProbe() {
+  const baseOrigin = 'http://127.0.0.1:53181';
+  const boardId = process.env.UI_BASELINE_SYNTHETIC_FAQ_BOARD_ID || 'BBSMSTR_AAAAAAAAAAAA';
+  const stateCase = buildExecutionPlan(manifest).stateCases.find((item) => item.stepId === 'admin-compose-faq');
+  const fixture = { faqTitle: 'Synthetic FAQ navigation probe' };
+  const events = [];
+  const listeners = new Set();
+  const pstSn = 101;
+  const page = {
+    on(name, listener) { assert.equal(name, 'response'); listeners.add(listener); },
+    off(name, listener) { assert.equal(name, 'response'); listeners.delete(listener); },
+    async waitForURL(predicate) {
+      assert.equal(predicate(new URL(`${baseOrigin}/admin/community/boards/detail?bbsId=${boardId}&pstSn=${pstSn}`)), true);
+      assert.equal(predicate(new URL(`${baseOrigin}/admin/community/boards/detail?bbsId=${boardId}&pstSn=999`)), false);
+      events.push('detail-url');
+    },
+    getByRole(role, options) {
+      assert.equal(role, 'heading');
+      assert.equal(options.level, 1);
+      assert.equal(options.exact, true);
+      assert.ok([fixture.faqTitle, '새 게시글 작성'].includes(options.name));
+      return {
+        async count() { return 1; },
+        nth() { return { async isVisible() { events.push('detail-heading'); return true; } }; },
+        async waitFor() { assert.equal(options.name, '새 게시글 작성'); events.push('composer-ready'); },
+      };
+    },
+    async goto(url) {
+      assert.equal(new URL(url, baseOrigin).pathname, stateCase.identity.route);
+      events.push('composer-goto');
+    },
+  };
+  const emit = (kind, { post = pstSn, status = 200, origin = baseOrigin, board = boardId, finished = async () => null } = {}) => {
+    const response = {
+      url: () => `${origin}/api/v1/boards/${encodeURIComponent(board)}/posts/${post}/satisfactions${kind === 'average' ? '/average' : ''}`,
+      request: () => ({ method: () => 'GET' }), status: () => status, finished,
+    };
+    for (const listener of listeners) listener(response);
+  };
+  return { page, baseOrigin, stateCase, fixture, events, listeners, pstSn, emit };
+}
+
+test('FAQ cleanup waits for both exact-post response bodies and departure from the detail page', async () => {
+  const probe = faqNavigationProbe();
+  let finishList;
+  let finishAverage;
+  const listBody = new Promise((resolve) => { finishList = resolve; });
+  const averageBody = new Promise((resolve) => { finishAverage = resolve; });
+  const pending = runSyntheticMutationLifecycle({
+    execute: () => completeSyntheticFaqNavigation({ ...probe, submit: async () => {
+      assert.equal(probe.listeners.size, 1, 'observation must precede the submit callback');
+      probe.events.push('submit-and-authoritative-readback');
+      probe.emit('list', { origin: 'http://unrelated.invalid', status: 404 });
+      probe.emit('list', { board: 'OTHER_BOARD', status: 404 });
+      probe.emit('list', { finished: () => listBody });
+      probe.emit('average', { finished: () => averageBody });
+      return probe.pstSn;
+    } }),
+    cleanup: async () => { probe.events.push('cleanup'); },
+    readActiveResidueCount: async () => { probe.events.push('residue'); return 0; },
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(probe.events, ['submit-and-authoritative-readback']);
+  finishList(null);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(probe.events, ['submit-and-authoritative-readback'], 'one finished body cannot release cleanup');
+  finishAverage(null);
+  await pending;
+  assert.deepEqual(probe.events, [
+    'submit-and-authoritative-readback', 'detail-url', 'detail-heading',
+    'composer-goto', 'composer-ready', 'cleanup', 'residue',
+  ]);
+  assert.equal(probe.listeners.size, 0);
+});
+
+test('FAQ navigation rejects a different post, HTTP 404, or failed body while preserving cleanup and residue checks', async () => {
+  for (const invalid of [
+    { post: 999 },
+    { status: 404 },
+    { finished: async () => { throw new Error('synthetic response body failure'); } },
+  ]) {
+    const probe = faqNavigationProbe();
+    await assert.rejects(runSyntheticMutationLifecycle({
+      execute: () => completeSyntheticFaqNavigation({ ...probe, submit: async () => {
+        probe.emit('list', invalid);
+        probe.emit('average');
+        return probe.pstSn;
+      } }),
+      cleanup: async () => { probe.events.push('cleanup'); },
+      readActiveResidueCount: async () => { probe.events.push('residue'); return 0; },
+    }), (error) => error.code === 'synthetic-faq-authoritative-readback-failed');
+    assert.deepEqual(probe.events, ['cleanup', 'residue']);
+    assert.equal(probe.listeners.size, 0);
+  }
+});
+
+test('FAQ submit failure removes its observer and cleanup failure retains the existing closed failure contract', async () => {
+  const probe = faqNavigationProbe();
+  await assert.rejects(runSyntheticMutationLifecycle({
+    execute: () => completeSyntheticFaqNavigation({ ...probe, submit: async () => {
+      probe.emit('list', { finished: async () => { throw new Error('synthetic late body failure'); } });
+      throw new Error('synthetic submit failure');
+    } }),
+    cleanup: async () => { probe.events.push('cleanup'); throw new Error('synthetic cleanup failure'); },
+    readActiveResidueCount: async () => { probe.events.push('residue'); return 0; },
+  }), (error) => error.code === 'synthetic-mutation-cleanup-failed');
+  assert.deepEqual(probe.events, ['cleanup'], 'cleanup failure must not be reported as verified zero residue');
+  assert.equal(probe.listeners.size, 0);
+  await new Promise((resolve) => setImmediate(resolve));
+});
+
+test('FAQ navigation completion remains bound to the actual detail redirect, heading, and satisfaction GET producers', () => {
+  const actions = readFileSync(join(repoRoot, 'frontend/src/app/actions/boardActions.ts'), 'utf8');
+  const detail = readFileSync(join(repoRoot, 'frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx'), 'utf8');
+  const satisfaction = readFileSync(join(repoRoot, 'frontend/src/components/features/satisfaction/SatisfactionSection.tsx'), 'utf8');
+  const operations = readFileSync(join(repoRoot, 'frontend/src/types/generated-operations.ts'), 'utf8');
+  assert.match(actions, /redirect: `\/admin\/community\/boards\/detail\?bbsId=\$\{bbsId\}&pstSn=\$\{targetId\}`/);
+  assert.match(detail, /<h1[^>]*>\s*\{article\.pstTtl\}\s*<\/h1>/);
+  assert.match(satisfaction, /queryFn: \(\) => satisfactionService\.list\(bbsId, pstSn\)/);
+  assert.match(satisfaction, /queryFn: \(\) => satisfactionService\.average\(bbsId, pstSn\)/);
+  for (const [operation, suffix] of [['getList', ''], ['getAverage', '/average']]) {
+    const descriptor = operations.match(new RegExp(`export const ${operation}Operation = [\\s\\S]*?\\n\\}\\)\\(\\);`))?.[0];
+    assert.ok(descriptor);
+    assert.ok(descriptor.includes(`path: "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions${suffix}"`));
+  }
+  const body = runnerSource.match(/case 'admin-compose-faq': \{([\s\S]*?)\n      break;/)?.[1];
+  assert.ok(body);
+  assert.match(body, /execute: \(\) => completeSyntheticFaqNavigation\(/);
+  assert.match(body, /await fillFaqComposer\(page, fixture\)/);
+  assert.match(body, /await waitForExactFaqPost\(api, fixture\)/);
+  assert.match(body, /await assertFaqDetail\(api, fixture, post\.pstSn, \{\s*expectedContentKind: 'canonical-tiptap-html'/);
+  assert.match(body, /cleanup: \(\) => cleanupSyntheticFaq\(api, fixture\)/);
+  assert.match(body, /readActiveResidueCount: \(\) => syntheticFaqResidueCount\(api, fixture\)/);
+  assert.doesNotMatch(body, /await page\.goto\(/, 'return navigation must complete inside execute, before lifecycle cleanup');
+});
+
+test('synthetic board readback and cleanup use the actual title search and paging query contract', () => {
+  const controller = readFileSync(join(repoRoot,
+    'api-server/src/main/java/nuri/api/controller/business/admin/content/board/BoardMasterApiController.java'), 'utf8');
+  const dto = readFileSync(join(repoRoot,
+    'business-core/src/main/java/nuri/business/domain/common/BaseSearchDto.java'), 'utf8');
+  const service = readFileSync(join(repoRoot,
+    'business-app/src/main/java/nuri/business/service/board/BoardMasterService.java'), 'utf8');
+  const repository = readFileSync(join(repoRoot,
+    'business-app/src/main/java/nuri/business/domain/board/BoardMasterRepositoryImpl.java'), 'utf8');
+  assert.match(controller, /@ModelAttribute BaseSearchDto searchDto/);
+  assert.match(controller, /searchDto\.getSearchCondition\(\), searchDto\.getSearchKeyword\(\), pageable/);
+  assert.match(controller, /Pageable pageable = searchDto\.toPageable\(\)/);
+  assert.match(dto, /private int pageUnit = 10/);
+  assert.match(dto, /PageRequest\.of\(zeroBasedPageIndex\(\), effectivePageUnit\(\)\)/);
+  assert.match(dto, /return pageUnit > 0 \? pageUnit : DEFAULT_PAGE_UNIT/);
+  assert.match(service, /cond\.setSearchCnd\(searchCondition\)/);
+  assert.match(service, /cond\.setSearchWrd\(searchKeyword\)/);
+  const titleCondition = repository.match(/if \("([^"\n]+)"\.equals\(condition\.getSearchCnd\(\)\)\) \{\s*builder\.and\(boardMaster\.bbsTtl\.contains/)?.[1];
+  assert.ok(titleCondition, 'the repository must declare its title-search condition');
+  const body = runnerSource.match(/async function exactSyntheticBoards\(api, fixture\) \{([\s\S]*?)\n\}/)?.[1];
+  assert.ok(body);
+  const query = body.match(/\{ ([^{}]+) \},\s*\n\s*\), \{ reasonCode:/)?.[1];
+  assert.ok(query, 'the fixture query must remain inspectable');
+  const entries = Object.fromEntries(query.split(', ').map((entry) => entry.split(': ')));
+  assert.deepEqual(entries, {
+    searchCondition: `'${titleCondition}'`, searchKeyword: 'fixture.boardTitle', pageIndex: '1', pageUnit: '100',
+  }, 'readback must search the unique title with the page-size field the endpoint actually binds');
+  for (const helper of ['waitForSyntheticBoardDeploy', 'cleanupSyntheticBoardDeploy', 'syntheticBoardResidueCount']) {
+    const caller = runnerSource.match(new RegExp(String.raw`async function ${helper}\(api, fixture\) \{([\s\S]*?)\n\}`))?.[1];
+    assert.ok(caller?.includes('exactSyntheticBoards(api, fixture)'), `${helper} must use the same exact-title lookup`);
+  }
 });
 
 test('synthetic mutation evidence is closed, redacted and complete only after rollback with zero active residue', async () => {
@@ -1519,9 +1972,14 @@ test('production snapshot selects explicit build inputs and rejects private, sec
     'frontend/src/app/page.tsx',
     'frontend/public/logo.svg',
     'frontend/scripts/ui-quality-baseline-core.mjs',
+    'frontend/scripts/validate-api-build-urls.mjs',
+    'frontend/scripts/nested/build-helper.cjs',
     'config/ui-quality-scenarios.json',
     'config/ui-route-capabilities.json',
     'frontend/.env.e2e',
+    'frontend/scripts/.env.production',
+    'frontend/scripts/private-key.pem',
+    'frontend/scripts/node_modules/ignored/index.js',
     'frontend/playwright/.auth/admin.json',
     'frontend/test-results/result.json',
     'api-server/build/libs/app.jar',
@@ -1586,6 +2044,39 @@ test('production snapshot selects explicit build inputs and rejects private, sec
     }),
     /raw committed bytes/i,
   );
+});
+
+test('committed source capture reads a binary Git blob larger than 1 MiB without truncation', (t) => {
+  const fixtureRoot = mkdtempSync(join(tmpdir(), 'uiq-committed-blob-'));
+  assert.equal(dirname(fixtureRoot), resolve(tmpdir()));
+  t.after(() => rmSync(fixtureRoot, { recursive: true, force: true }));
+  const git = (args, input) => {
+    const result = spawnSync('git', args, {
+      cwd: fixtureRoot,
+      input,
+      encoding: null,
+      windowsHide: true,
+    });
+    assert.equal(result.status, 0, 'synthetic Git fixture command must succeed');
+    return result.stdout.toString('utf8').trim();
+  };
+  git(['init', '--bare', '--quiet']);
+  const committedBytes = Buffer.alloc(2 * 1024 * 1024 + 17, 0xa5);
+  committedBytes[0] = 0x00;
+  committedBytes[committedBytes.length - 1] = 0xff;
+  const blob = git(['hash-object', '-w', '--stdin'], committedBytes);
+  const tree = git(['mktree'], `100644 blob ${blob}\tfixture.bin\n`);
+  const commit = git([
+    '-c', 'user.name=UI Quality Fixture',
+    '-c', 'user.email=ui-quality@example.invalid',
+    '-c', 'commit.gpgsign=false',
+    'commit-tree', tree, '-m', 'synthetic large binary blob',
+  ]);
+
+  const captured = readCommittedFile(commit, 'fixture.bin', { repositoryRoot: fixtureRoot });
+  assert.ok(Buffer.isBuffer(captured), 'committed capture must preserve raw bytes');
+  assert.equal(captured.length, committedBytes.length, 'the entire committed blob must be captured');
+  assert.ok(captured.equals(committedBytes), 'binary content must match the Git blob exactly');
 });
 
 test('production snapshot keeps source directories that collide with generated artifact names', () => {
@@ -3614,15 +4105,52 @@ test('state audit cancels motion before interaction and settles geometry before 
   assert.match(baselineProtocolSource, /axe보다 먼저 수행/);
 });
 
-test('invalid-login focus evidence waits for the bounded post-commit focus frame', () => {
-  const runnerSource = readFileSync(
-    new URL('../frontend/scripts/ui-quality-baseline-runner.mjs', import.meta.url),
-    'utf8',
-  );
+test('invalid-login focus evidence waits for its form error before the bounded post-commit focus frame', async () => {
   const invalidLoginStart = runnerSource.indexOf("case 'invalid-credentials':");
   const invalidLoginEnd = runnerSource.indexOf("case 'successful-login':", invalidLoginStart);
   assert.ok(invalidLoginStart >= 0 && invalidLoginEnd > invalidLoginStart);
   const invalidLoginSource = runnerSource.slice(invalidLoginStart, invalidLoginEnd);
+
+  const loginSource = readFileSync(join(repoRoot, 'frontend/src/app/login/LoginClient.tsx'), 'utf8');
+  const errorBlock = loginSource.match(/\{error && \(([\s\S]*?)<\/motion\.div>/)?.[1];
+  assert.ok(errorBlock, 'the form submission error must remain discoverable');
+  assert.match(errorBlock, /role="alert"/);
+  const errorTestId = errorBlock.match(/data-testid="([^"]+)"/)?.[1];
+  assert.ok(errorTestId);
+  const alertWait = invalidLoginSource.match(/const alertVisible = await visibleWithin\(page\.(getByRole|getByTestId)\('([^']+)'\), ([\d_]+)\)/);
+  assert.ok(alertWait, 'the login error wait must remain discoverable');
+  assert.equal(Number(alertWait[3].replaceAll('_', '')), 15_000, 'the existing wait budget must remain intact');
+
+  // Next's open-shadow route announcer also has role=alert. Its visibility must not finish this wait.
+  let showLoginError;
+  const loginErrorVisible = new Promise((resolve) => { showLoginError = resolve; });
+  const page = {
+    getByRole(name) {
+      assert.equal(name, 'alert');
+      return { waitFor: async () => undefined };
+    },
+    getByTestId(name) {
+      assert.equal(name, errorTestId, 'the selector must consume the actual form error producer');
+      return { waitFor: async ({ state, timeout }) => {
+        assert.equal(state, 'visible');
+        assert.equal(timeout, 15_000);
+        await loginErrorVisible;
+      } };
+    },
+  };
+  let observed = false;
+  const pending = page[alertWait[1]](alertWait[2])
+    .waitFor({ state: 'visible', timeout: 15_000 }).then(() => { observed = true; });
+  try {
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.equal(observed, false, 'a visible framework announcer must not be mistaken for a completed login failure');
+  } finally {
+    showLoginError();
+    await pending;
+  }
+  assert.equal(observed, true, 'the actual form error releases the wait');
+  assert.ok(invalidLoginSource.indexOf('const alertVisible') < invalidLoginSource.indexOf('const focusReturned'));
 
   assert.match(invalidLoginSource, /const focusReturned\s*=\s*await pollForExpectedValue\(\{/);
   assert.match(invalidLoginSource, /readValue:\s*\(\)\s*=>\s*idInput\.evaluate/);

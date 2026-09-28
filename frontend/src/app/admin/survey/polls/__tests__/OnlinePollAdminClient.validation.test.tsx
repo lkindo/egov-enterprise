@@ -9,6 +9,11 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
+  permissions: ['POLL_READ', 'POLL_READ_ALL', 'POLL_CREATE'],
+}));
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { permissions: mocks.permissions, authorizationVersion: 'poll-test-v1' } }),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -59,8 +64,26 @@ function renderClient() {
 describe('OnlinePollAdminClient validation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.permissions = ['POLL_READ', 'POLL_READ_ALL', 'POLL_CREATE'];
     mocks.list.mockResolvedValue({ list: [], total: 0 });
     mocks.create.mockResolvedValue(undefined);
+  });
+
+  it.each([[], ['POLL_READ', 'POLL_READ_ALL'], ['POLL_CREATE'], ['POLL_READ', 'POLL_CREATE'], ['POLL_READ_ALL', 'POLL_CREATE']])('hides create when one of the required permissions is absent: %j', (...permissions) => {
+    mocks.permissions = permissions as string[];
+    renderClient();
+    expect(screen.queryByRole('button', { name: /신규 설문 등록/ })).not.toBeInTheDocument();
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('closes the create affordance when permission is revoked while the dialog is open', async () => {
+    const view = renderClient();
+    fireEvent.click(await screen.findByRole('button', { name: /신규 설문 등록/ }));
+    expect(screen.getByRole('region', { name: '신규 설문 등록' })).toBeInTheDocument();
+    mocks.permissions = ['POLL_READ', 'POLL_READ_ALL'];
+    view.rerender(<QueryClientProvider client={new QueryClient()}><OnlinePollAdminClient /></QueryClientProvider>);
+    expect(screen.queryByRole('region', { name: '신규 설문 등록' })).not.toBeInTheDocument();
+    expect(mocks.create).not.toHaveBeenCalled();
   });
 
   it('blocks an incomplete poll and focuses its first invalid field', async () => {

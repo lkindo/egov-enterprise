@@ -14,8 +14,10 @@ import lombok.Builder;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AddressBookUserSearchResult {
+    private String esntlId;
     private String userId;
     private String userNm;
+    private String ognzNm;
     private String emlAddr;
     private String homeTelno;
     private String mblTelno;

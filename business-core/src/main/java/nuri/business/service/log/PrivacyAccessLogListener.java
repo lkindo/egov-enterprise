@@ -7,22 +7,13 @@ import nuri.business.domain.log.PrivacyLogRepository;
 import nuri.foundation.core.event.PrivacyAccessEvent;
 import nuri.foundation.core.util.IdGenerationUtil;
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Component;
 
 /**
- * 개인정보 접근 증적을 {@code tb_privacy_log}로 영속화하는 비동기 리스너.
- *
- * <p><b>⚠ 종전에는 이 테이블에 쓰는 코드가 저장소에 하나도 없었다.</b> 조회 서비스
- * ({@code PrivacyLogManageService})와 관리 화면 {@code /admin/system/logs/privacy}는 있었지만
- * 적재 경로가 없어 <b>영원히 빈 표</b>였다. 그 서비스의 javadoc이 "적재는 개인정보 접근 지점이
- * 담당한다"고 적어 둔 그 지점이 존재하지 않았다.
- *
- * <p>기록 대상은 {@link nuri.foundation.core.annotation.PrivacyAccess}가 붙은 핸들러의
- * <b>성공 응답</b>뿐이다. 어디까지 기록되는지는 그 애노테이션의 부착 지점이 정본이다.
- *
- * <p>[비파괴 원칙] 감사 전용 풀에서 비동기 실행하고 실패를 세되 원 요청에는 영향을 주지 않는다.
- * 단, 개인정보 증적은 컴플라이언스 대상이라 유실을 <b>WARN 이 아니라 ERROR</b>로 남긴다.
+ * PREPARED 원장과 같은 트랜잭션으로 기존 개인정보 감사 화면의 투영을 기록한다.
+ * 동기 저장 실패는 전송 전에 전파한다. PREPARED는 응답 준비이며 클라이언트 수신 증거가 아니다.
  */
 @Slf4j
 @Component
@@ -46,8 +37,8 @@ public class PrivacyAccessLogListener {
     private final java.util.concurrent.atomic.AtomicLong persistFailureCount =
             new java.util.concurrent.atomic.AtomicLong();
 
-    @Async("auditExecutor")
     @EventListener
+    @Transactional(propagation = Propagation.MANDATORY)
     public void onPrivacyAccess(PrivacyAccessEvent event) {
         try {
             PrivacyLog entity = PrivacyLog.builder()
@@ -58,12 +49,15 @@ public class PrivacyAccessLogListener {
                     .dmndUserId(event.userId())
                     .dmndUserIpAddr(event.clientIp())
                     .build();
-            privacyLogRepository.save(entity);
+            privacyLogRepository.saveAndFlush(entity);
         } catch (Exception e) {
             long total = persistFailureCount.incrementAndGet();
             recordDropMetric();
-            log.error("개인정보 접근 로그 영속화 실패(요청 처리에는 영향 없음) — 누적 유실 {}건, 예외유형={}",
+            log.error("개인정보 접근 준비 기록 실패(민감 응답 차단) — 누적 실패 {}건, 예외유형={}",
                     total, e.getClass().getSimpleName());
+            throw new nuri.foundation.core.exception.BusinessException(
+                    nuri.foundation.core.exception.CommonErrorCode.SERVER_OVERLOAD,
+                    "감사 기록을 저장할 수 없어 민감 응답을 중단했습니다.");
         }
     }
 

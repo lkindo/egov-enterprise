@@ -58,6 +58,7 @@ class UserServiceAdditionalTest {
     @Mock private nuri.business.domain.user.repository.DeptManageRepository deptManageRepository;
     @Mock private nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots;
     @Mock private nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration;
+    @Mock private nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
     private UserService userService;
 
     @BeforeEach
@@ -65,7 +66,7 @@ class UserServiceAdditionalTest {
         userService = new UserService(userRepository, userAuthorityRepository, refreshTokenRepository,
                 loginPolicyRepository, userAbsenceRepository,
                 userLogRepository, deptJobRepository, deptManageRepository, passwordEncoder, eventPublisher,
-                authorizationSnapshots, authorizationAdministration);
+                authorizationSnapshots, authorizationAdministration, sensitiveAudit);
     }
 
     private User.UserBuilder createBaseUser(String userId) {
@@ -297,6 +298,12 @@ class UserServiceAdditionalTest {
             verify(eventPublisher).publishEvent(eventCaptor.capture());
             assertThat(eventCaptor.getValue().esntlIds()).containsExactly("ESNTL_" + userId);
             verify(userRepository).deleteAllInBatch(java.util.List.of(user));
+            var order = inOrder(authorizationAdministration, userRepository, refreshTokenRepository);
+            order.verify(authorizationAdministration).lockAndAuthorize("USER_DELETE");
+            order.verify(userRepository).findByEsntlIdForUpdate("ESNTL_" + userId);
+            order.verify(authorizationAdministration).removeDeletedUsers(java.util.List.of("ESNTL_" + userId));
+            order.verify(refreshTokenRepository).deleteAllByEsntlIdIn(java.util.List.of("ESNTL_" + userId));
+            order.verify(userRepository).deleteAllInBatch(java.util.List.of(user));
         }
     }
 
@@ -350,12 +357,19 @@ class UserServiceAdditionalTest {
             when(userRepository.findByUserId("loginB")).thenReturn(Optional.of(userB));
 
             // When — FE(UserOrgHubClient)는 loginId 목록을 보낸다
-            userService.deleteUserList(java.util.List.of("loginA", "loginB"));
+            userService.deleteUserList(java.util.List.of("loginB", "loginA"));
 
             // Then — PK(esntlId)로 확정된 실제 사용자들이 삭제되어야 한다
-            verify(authorizationAdministration).removeDeletedUsers(java.util.List.of("ESNTL_loginA", "ESNTL_loginB"));
-            verify(userRepository).deleteAllInBatch(java.util.List.of(userA, userB));
+            verify(authorizationAdministration).removeDeletedUsers(java.util.List.of("ESNTL_loginB", "ESNTL_loginA"));
+            verify(userRepository).deleteAllInBatch(java.util.List.of(userB, userA));
             verify(eventPublisher).publishEvent(any(nuri.business.service.user.event.UserDeletionEvent.class));
+            var order = inOrder(authorizationAdministration, userRepository, refreshTokenRepository);
+            order.verify(authorizationAdministration).lockAndAuthorize("USER_DELETE");
+            order.verify(userRepository).findByEsntlIdForUpdate("ESNTL_loginA");
+            order.verify(userRepository).findByEsntlIdForUpdate("ESNTL_loginB");
+            order.verify(authorizationAdministration).removeDeletedUsers(java.util.List.of("ESNTL_loginB", "ESNTL_loginA"));
+            order.verify(refreshTokenRepository).deleteAllByEsntlIdIn(java.util.List.of("ESNTL_loginB", "ESNTL_loginA"));
+            order.verify(userRepository).deleteAllInBatch(java.util.List.of(userB, userA));
         }
     }
 

@@ -13,6 +13,7 @@ import {
 import DOMPurify from 'isomorphic-dompurify';
 import { cn } from '@/lib/utils';
 import { canPermission } from '@/lib/auth/permissions';
+import { canEditConfiguredBoard } from '@/lib/auth/board-edit-permissions';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/app/components/ui/toast';
@@ -91,8 +92,9 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     initialData: initialData.article,
     enabled: !!initialData.article && hasValidPstSn,
   });
-  const canUpdateArticle = canManageBoardArticle(user, article?.userId, 'UPDATE');
-  const canDeleteArticle = canManageBoardArticle(user, article?.userId, 'DELETE');
+  const canEditBoard = canEditConfiguredBoard(user, masterInfo);
+  const canUpdateArticle = canEditBoard && canManageBoardArticle(user, article?.userId, 'UPDATE');
+  const canDeleteArticle = canEditBoard && canManageBoardArticle(user, article?.userId, 'DELETE');
 
   // 감사 P1-5/P1-6: 첨부 영역은 과거 "Technical_Spec_Unit_XXXX.pdf · 3.4 MB" 라는 존재하지 않는 파일을
   // 하드코딩해 보여주고, 다운로드 아이콘에는 핸들러조차 없었다. 이미 있는 fileService 로 실제 목록을 배선한다.

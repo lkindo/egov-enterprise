@@ -310,7 +310,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  )}
  </div>
 
- <div className="grid gap-3 lg:grid-cols-2">
+ <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
  <AsideSection title="인기 문서" description="조회수가 높은 문서" icon={TrendingUp}>
  {isHotError ? (
  <p role="alert" className="py-6 text-center text-[length:var(--font-size-body)] text-destructive-emphasis">인기 문서를 불러오지 못했습니다.</p>

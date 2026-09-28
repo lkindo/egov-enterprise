@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { createVisualAdmin } from '../fixtures/visual-admin';
+import { getAdminBearerToken } from '../utils/admin-token';
 import { expect,test } from '../fixtures/browser-test';
 test.describe('공통 셸과 인증', () => {
     test.describe('Core Base (Auth & Dashboard)', () => {
@@ -361,5 +364,165 @@ test.describe('인증 경계', () => {
             await page.goto('/admin/system/menus');
             await expect(page).toHaveURL(/\/login/, { timeout: 20000 });
         });
+    });
+});
+
+
+test.describe('명령 센터의 현재 계정·권한 경계', () => {
+    test('권한 회수와 계정 전환은 늦은 메뉴 응답·재열기·뒤로가기에도 이전 메뉴를 복원하지 않는다', async ({ actorPage, request, baseURL }) => {
+        if (!baseURL) throw new Error('The verified browser base URL is required.');
+        const fixture = await createVisualAdmin(request, baseURL);
+        const actor = await actorPage({ storageState: fixture.storageState });
+        const { page, context, guard } = actor;
+        let releaseOldResponse: (() => void) | undefined;
+        try {
+            guard.expectErrors([{
+                id: 'E2E-COMMAND-AUTH-CANCELLED-GET',
+                specScope: 'authentication.spec.ts :: 권한 회수와 계정 전환은 늦은 메뉴 응답·재열기·뒤로가기에도 이전 메뉴를 복원하지 않는다',
+                channel: 'requestfailed', urlPattern: /\/api\/v1\/menus\/(?:head|bookmarks)(?:\?|$)/,
+                messagePattern: /^net::ERR_ABORTED$/, method: 'GET', status: null,
+                minOccurrences: 1, maxOccurrences: 6,
+                reason: '권한·계정 변경에서 이전 주체의 실행 중 메뉴 조회를 AbortSignal로 취소하는 반례다.', expiresAt: '2026-12-31',
+            }]);
+            await page.goto('/');
+            await expect(page.getByRole('button', { name: '사용자 계정 메뉴', exact: true })).toBeVisible();
+            await page.waitForLoadState('networkidle');
+            const dialog = page.getByRole('dialog', { name: '글로벌 커맨드 센터', exact: true });
+            type Node = { menuNm: string; modernRoute?: string; url?: string; children?: Node[] };
+            const settledMenus = async (action: () => Promise<unknown>): Promise<Node[]> => {
+                const [head, bookmarks] = await Promise.all([
+                    page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/menus/head'
+                        && response.request().method() === 'GET' && response.status() === 200),
+                    page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/menus/bookmarks'
+                        && response.request().method() === 'GET' && response.status() === 200),
+                    action(),
+                ]);
+                expect(bookmarks.status()).toBe(200);
+                return (await head.json()).data.list as Node[];
+            };
+            const find = (nodes: Node[], parents: string[] = []): string | undefined => {
+                for (const node of nodes) {
+                    const names = [...parents, node.menuNm];
+                    if ((node.modernRoute ?? node.url) === '/admin/system/menus') return names.join(' > ');
+                    const nested = find(node.children ?? [], names);
+                    if (nested) return nested;
+                }
+            };
+            const firstAllowed = (nodes: Node[], parents: string[] = []): string | undefined => {
+                for (const node of nodes) {
+                    const names = [...parents, node.menuNm];
+                    const child = firstAllowed(node.children ?? [], names);
+                    if (child) return child;
+                    if ((node.modernRoute ?? node.url)?.startsWith('/')) return names.join(' > ');
+                }
+            };
+            const initialMenus = await settledMenus(async () => {
+                // The command center loads dynamically after hydration. SSR account controls
+                // and networkidle do not prove that its shortcut callback is registered.
+                // Stop at the first accepted input so polling cannot toggle it closed again.
+                await expect.poll(() => page.evaluate(() => {
+                    const shortcut = new KeyboardEvent('keydown', {
+                        key: 'k', code: 'KeyK', ctrlKey: true, bubbles: true, cancelable: true,
+                    });
+                    window.dispatchEvent(shortcut);
+                    return shortcut.defaultPrevented;
+                }), { timeout: 20000, message: '명령 센터가 최초 Ctrl+K 입력을 수용해야 한다' }).toBe(true);
+                await expect(dialog).toBeVisible();
+            });
+            await expect(dialog).toBeVisible();
+            // Select the actual server-seeded title rather than assuming profile-specific labels.
+            const adminMenuName = find(initialMenus);
+            if (!adminMenuName) throw new Error('The isolated admin menu fixture has no registered menu-administration route.');
+            const adminOption = dialog.getByRole('option', { name: adminMenuName, exact: true });
+            const searchAdminMenu = () => dialog.getByRole('combobox', { name: '글로벌 커맨드 센터 검색어 입력', exact: true }).fill(adminMenuName);
+            // An empty query intentionally shows only the first ten suggestions.
+            // Search the same target before both presence and absence assertions.
+            await searchAdminMenu();
+            await expect(adminOption.first()).toBeVisible();
+            await page.keyboard.press('Escape');
+            await expect(dialog).toBeHidden();
+
+            let holdNext = true;
+            let oldResponseCaptured: (() => void) | undefined;
+            let oldResponseHandled: (() => void) | undefined;
+            const captured = new Promise<void>(resolve => { oldResponseCaptured = resolve; });
+            const release = new Promise<void>(resolve => { releaseOldResponse = resolve; });
+            const handled = new Promise<void>(resolve => { oldResponseHandled = resolve; });
+            await page.route('**/api/v1/menus/head', async route => {
+                const response = await route.fetch();
+                const held = holdNext;
+                if (held) { holdNext = false; oldResponseCaptured?.(); await release; }
+                try { await route.fulfill({ response }); }
+                catch (error) {
+                    if (!page.isClosed() && route.request().failure()?.errorText !== 'net::ERR_ABORTED') throw error;
+                }
+                finally { if (held) oldResponseHandled?.(); }
+            });
+            await page.keyboard.press('Control+k');
+            await captured;
+            await searchAdminMenu();
+            const membershipUrl = `/api/v1/admin/authorization/users/${fixture.esntlId}/groups`;
+            const administrator = { Authorization: `Bearer ${getAdminBearerToken()}` };
+            const before = await request.get(membershipUrl, { headers: administrator });
+            expect(before.status()).toBe(200);
+            const snapshot = (await before.json()).data;
+            expect((await request.put(membershipUrl, { headers: administrator, data: {
+                groups: ['ROLE_USER'], version: snapshot.version, complete: true,
+            } })).status()).toBe(200);
+            const [, revokedMenus] = await Promise.all([
+                page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/auth/me' && response.status() === 200),
+                settledMenus(() => page.evaluate(() => window.dispatchEvent(new Event('authorization-changed')))),
+            ]);
+            expect(find(revokedMenus), '회수된 서버 메뉴에 관리자 대상이 없어야 한다').toBeUndefined();
+            const allowedMenuName = firstAllowed(revokedMenus);
+            if (!allowedMenuName) throw new Error('The revoked user fixture has no allowed menu for the positive control.');
+            const assertRevokedMenuState = async () => {
+                // A hidden loading list cannot satisfy the negative assertion: first require
+                // an allowed server menu to render, then search the revoked target explicitly.
+                await dialog.getByRole('combobox', { name: '글로벌 커맨드 센터 검색어 입력', exact: true }).fill(allowedMenuName);
+                await expect(dialog.getByRole('option', { name: allowedMenuName, exact: true }).first()).toBeVisible();
+                await searchAdminMenu();
+                await expect(adminOption).toHaveCount(0);
+            };
+            await assertRevokedMenuState();
+            releaseOldResponse?.();
+            await handled;
+            await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+            await assertRevokedMenuState();
+            for (let turn = 0; turn < 3; turn++) {
+                await page.keyboard.press('Escape');
+                await expect(dialog).toBeHidden();
+                await settledMenus(() => page.keyboard.press('Control+k'));
+                await expect(dialog).toBeVisible();
+                await assertRevokedMenuState();
+            }
+
+            // Replace real browser cookies while the same AuthProvider remains mounted.
+            const sharedAdmin = JSON.parse(readFileSync('playwright/.auth/admin.json', 'utf8'));
+            await context.clearCookies();
+            await context.addCookies(sharedAdmin.cookies);
+            await Promise.all([
+                page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/auth/me' && response.status() === 200),
+                settledMenus(() => page.evaluate(() => window.dispatchEvent(new Event('authorization-changed')))),
+            ]);
+            await searchAdminMenu();
+            await expect(adminOption.first()).toBeVisible();
+            await page.keyboard.press('Escape');
+            await page.evaluate(() => history.pushState({}, '', '/?command-cache-probe=1'));
+            await page.goBack();
+            await context.clearCookies();
+            await context.addCookies(fixture.storageState.cookies);
+            await Promise.all([
+                page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/auth/me' && response.status() === 200),
+                page.evaluate(() => window.dispatchEvent(new Event('authorization-changed'))),
+            ]);
+            await settledMenus(() => page.keyboard.press('Control+k'));
+            await expect(dialog).toBeVisible();
+            await assertRevokedMenuState();
+        } finally {
+            releaseOldResponse?.();
+            await context.close();
+            await fixture.dispose();
+        }
     });
 });

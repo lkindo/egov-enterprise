@@ -97,6 +97,7 @@
 | [ADR-0022](02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md) | PR·통합 push의 독립 모듈 영향 분류, 커버리지·required 보존과 Gradle 캐시 |
 | [ADR-0023](02-architecture/decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md) | PR의 검증된 E2E spec 선별, main 전수와 Gradle 단일 캐시 writer |
 | [ADR-0024](02-architecture/decisions/ADR-0024-spring-boot-4-two-phase-migration.md) | Spring Boot 4.1 두 단계 전환과 조용히 바뀌는 동작의 고정 |
+| [ADR-0025](02-architecture/decisions/ADR-0025-enterprise-completeness-and-durable-operations.md) | 승인된 D01~D15 A·F01~F08의 제품 계약, 내구성 및 운영 적용 경계 |
 
 ## 03-guides — 개발 지침
 
@@ -141,6 +142,8 @@
 | [ui-quality-assisted-accessibility.md](04-operations/ui-quality-assisted-accessibility.md) | 수동 접근성 평가를 대체하지 않는 keyboard·viewport·forced-colors·reduced-motion 자동 보조 증거 |
 | [ui-ux-modernization-user-action-runbook.md](04-operations/ui-ux-modernization-user-action-runbook.md) | 자동화 완료 후 사용자·제품·운영 책임자가 남은 작업을 한 단계씩 검증·승인하는 마감 런북 |
 | [backup-and-restore-runbook.md](04-operations/backup-and-restore-runbook.md) | DB·첨부 실물·암호화 키를 한 세트로 백업/복원하는 절차와 복원 검증 4단계 (주기·RTO/RPO 는 미결정) |
+| [durable-work-recovery.md](04-operations/durable-work-recovery.md) | 후속 작업 상태·시도 한도·감사와 결속한 재처리, 교체 파일 보호와 중단 후 재개 |
+| [mfa-operations.md](04-operations/mfa-operations.md) | TOTP 등록·로그인·분실 복구, 키 설정·백업, 세션 폐기·감사와 보호계정 단계 적용 경계 |
 | [authorization-cutover-runbook.md](04-operations/authorization-cutover-runbook.md) | 구 writer 중지·백업·V2_98/99·검증·수동 Contract·새 앱 기동 및 복구 경계 |
 | [migration-recovery-runbook.md](04-operations/migration-recovery-runbook.md) | 대상 DB 환경 결속·스키마 허용 목록·실행 증거·부분 적재 재개·백업을 통한 전체 롤백 |
 | [migration-release-log.md](04-operations/migration-release-log.md) | 마이그레이션이 어느 릴리스로 언제 배포됐는지의 기록 — Contract waiver의 선행 Expand 관측 기간 근거 |

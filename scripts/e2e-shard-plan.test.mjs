@@ -104,8 +104,9 @@ test('immutable PR merge selects owners and redistributes exactly those files ov
   const input = isolatedPullRequest(t);
   const selected = resolveCiImpactPlan(input);
   assert.equal(selected.mode, 'selected', selected.reasons.join('; '));
-  assert.equal(selected.selectedSpecs.length, 10);
+  assert.equal(selected.selectedSpecs.length, 11);
   assert.ok(selected.selectedSpecs.includes('journeys/rewards.spec.ts'));
+  assert.ok(selected.selectedSpecs.includes('quality/mfa-accessibility.spec.ts'));
   const shards = buildDurationBalancedPlan(loadDurationProfile(), 2, selected.selectedSpecs);
   assert.deepEqual(shards.flatMap(shard => shard.specs).sort(), selected.selectedSpecs);
   assert.ok(shards.every(shard => shard.specs.length > 0));
@@ -140,7 +141,8 @@ test('Actions merge SHA selects when the API mergeability field is null, absent 
     const selected = resolveCiImpactPlan(input);
     assert.equal(selected.mode, 'selected', selected.reasons.join('; '));
     assert.equal(selected.checkoutSha, input.githubSha);
-    assert.equal(selected.selectedSpecs.length, 10);
+    assert.equal(selected.selectedSpecs.length, 11);
+    assert.ok(selected.selectedSpecs.includes('quality/mfa-accessibility.spec.ts'));
   }
 });
 

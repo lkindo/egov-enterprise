@@ -89,6 +89,57 @@ test('route uncertainty and historical decisions retain their source status', ()
   assert.ok(baseline.catalogs.operations.some(operation => operation.status === 'documented-operation'));
 });
 
+test('decision search preserves full rationale, late evidence links and stable record identity', () => {
+  const source = '.agent/memory/decisions.md';
+  const original = baseline.catalogs.decisions.find(item => item.id === 'DEC-OPS-001');
+  mutate(source, text => text.replace(/^\| DEC-OPS-001 \|.*$/m, line => {
+    const cells = line.replace(/^\|\s*|\s*\|$/g, '').split(/\s+\|\s+/);
+    cells[2] = `${'long decision '.repeat(45)}full-decision-tail-probe`;
+    cells[3] = 'rationale-only-search-probe';
+    cells[4] += ', [fourth evidence probe](../../docs/README.md#문서-목록)';
+    return `| ${cells.join(' | ')} |`;
+  }), () => {
+    const decision = buildAtlasCatalog(fixture).catalogs.decisions.find(item => item.id === original.id);
+    assert.equal(decision.source, original.source);
+    assert.equal(decision.status, original.status);
+    assert.equal(decision.summary.includes('full-decision-tail-probe'), false, 'display excerpt stays bounded');
+    assert.match(decision.searchText, /full-decision-tail-probe/);
+    assert.match(decision.searchText, /rationale-only-search-probe/);
+    assert.ok(decision.details.some(item => item.label === '시행일' && item.value === '2026-08-18'));
+    assert.deepEqual(decision.links.slice(0, 3), original.links);
+    assert.deepEqual(decision.links[3], { label: 'fourth evidence probe', path: 'docs/README.md#문서-목록' });
+  });
+});
+
+test('only an explicitly linked same-ID Accepted ADR supplies canonical search text', () => {
+  const id = 'ADR-0001';
+  const source = 'docs/02-architecture/decisions/ADR-0001-core-app-product-boundary.md';
+  const record = baseline.catalogs.decisions.find(item => item.id === id);
+  assert.equal(record.source, '.agent/memory/decisions.md');
+  assert.equal(record.title, fs.readFileSync(path.join(repo, source), 'utf8').match(/^#\s+(.+)$/m)[1].trim());
+  assert.ok(record.links.some(link => link.path === source));
+  mutate(source, text => `${text}\n## Canonical body search probe\nADR-body-only-probe\n`, () => {
+    const indexed = buildAtlasCatalog(fixture).catalogs.decisions.find(item => item.id === id);
+    assert.match(indexed.searchText, /ADR-body-only-probe/);
+    assert.equal(indexed.id, record.id);
+    assert.deepEqual(indexed.links, record.links);
+  });
+  mutate(source, text => text.replace('상태: Accepted', '상태: Proposed') + '\nnot-approved-body-probe\n', () => {
+    const indexed = buildAtlasCatalog(fixture).catalogs.decisions.find(item => item.id === id);
+    assert.equal(indexed.status, 'accepted', 'the historical memory status is not silently rewritten');
+    assert.ok(indexed.details.some(item => item.label === 'ADR 선언 상태' && item.value === 'Proposed'));
+    assert.equal(indexed.searchText.includes('not-approved-body-probe'), false);
+  });
+  mutate('.agent/memory/decisions.md', text => text.replace(
+    '(../../docs/02-architecture/decisions/ADR-0001-core-app-product-boundary.md)',
+    '(../../docs/02-architecture/decisions/ADR-0002-korean-first-frontend.md)'), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), /ADR-0001 must link exactly one same-ID ADR/);
+  });
+  mutate(source, text => text.replace('# ADR-0001:', '# ADR-9999:'), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), /ADR-0001 canonical ADR heading differs/);
+  });
+});
+
 test('every constitution article retains exact text and distinguishes explicit partial mappings from unverified coverage', () => {
   for (const article of baseline.catalogs.constitutions) {
     const source = fs.readFileSync(path.join(repo, article.source), 'utf8').replace(/\r\n?/g, '\n');

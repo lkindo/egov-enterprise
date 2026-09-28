@@ -47,6 +47,10 @@ class SurveyResponseAuthorizationTest {
         var reader = nuri.security.support.MethodPermissionContract.authentication(List.of("OPERATIONS_TEAM"), "SURVEY_RSP_READ");
         assertThat(new nuri.business.security.authorization.PermissionPolicy().allowed(reader,
                 method.getDeclaringClass().getName() + "#" + method.getName())).isFalse();
+        var cancel = handler(SurveyResponseAdminApiController.class, "cancelSubmission");
+        nuri.security.support.MethodPermissionContract.assertOperation(cancel, "SURVEY_RSP_DELETE", false);
+        assertThat(new nuri.business.security.authorization.PermissionPolicy().allowed(reader,
+                cancel.getDeclaringClass().getName() + "#" + cancel.getName())).isFalse();
     }
 
     /** 엔드포인트가 늘면 이 단언이 먼저 깨져 인가 검토를 강제한다. */
@@ -55,7 +59,7 @@ class SurveyResponseAuthorizationTest {
     void handlerCountIsPinned() {
         // [2026-09-26 DIP B5 F6] 2 → 3: 결과 xlsx 반출(exportStats, SURVEY_READ). 인가는 위 submissionApiIsAuthenticated 가 고정한다.
         assertThat(mappedHandlers(SurveySubmissionApiController.class)).hasSize(3);
-        assertThat(mappedHandlers(SurveyResponseAdminApiController.class)).hasSize(3);
+        assertThat(mappedHandlers(SurveyResponseAdminApiController.class)).hasSize(4);
     }
 
     private static List<Method> mappedHandlers(Class<?> type) {

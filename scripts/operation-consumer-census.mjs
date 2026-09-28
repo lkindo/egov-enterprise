@@ -54,8 +54,9 @@
  */
 import { createRequire } from 'node:module';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { collectVerifiedMfaBffOperations } from './generated-boundary-census.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 export const DEFAULT_REPO_ROOT = resolve(dirname(SCRIPT_PATH), '..');
@@ -139,6 +140,7 @@ export function isAliasDuplicate(operation, byOperationId, consumed, ledgered = 
 }
 
 export function analyze({ apiDoc, boundaries, ledger, repoRoot = DEFAULT_REPO_ROOT }) {
+  let verifiedMfaOperations;
   const errors = [];
   const operations = readOperations(apiDoc);
   const byOperationId = new Map(operations.map((operation) => [operation.operationId, operation]));
@@ -253,10 +255,17 @@ export function analyze({ apiDoc, boundaries, ledger, repoRoot = DEFAULT_REPO_RO
     }
     const suffix = pathSuffix(operation.path);
     const proven = evidence.some((relativePath) => {
-      if (typeof relativePath !== 'string' || relativePath.includes('..')) return false;
+      if (typeof relativePath !== 'string' || isAbsolute(relativePath)
+        || relativePath.split(/[\\/]/u).includes('..')) return false;
       const absolute = resolve(repoRoot, relativePath);
-      if (!absolute.startsWith(resolve(repoRoot))) return false;
+      if (!absolute.startsWith(`${resolve(repoRoot)}${sep}`)) return false;
       if (!existsSync(absolute)) return false;
+      if (relativePath === 'frontend/src/app/api/auth/mfa/[...path]/route.ts') {
+        if (entry.category !== 'bff-route-handler') return false;
+        verifiedMfaOperations ??= collectVerifiedMfaBffOperations({ repoRoot });
+        return verifiedMfaOperations.some((verified) => verified.operationId === operation.operationId
+          && verified.method.toUpperCase() === operation.method && verified.path === operation.path);
+      }
       return readFileSync(absolute, 'utf8').includes(suffix);
     });
     if (!proven) {

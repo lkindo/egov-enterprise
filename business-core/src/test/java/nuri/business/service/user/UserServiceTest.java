@@ -65,6 +65,7 @@ class UserServiceTest {
     @Mock private nuri.business.domain.user.repository.DeptManageRepository deptManageRepository;
     @Mock private nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots;
     @Mock private nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration;
+    @Mock private nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
 
     @InjectMocks
     private UserService userService;

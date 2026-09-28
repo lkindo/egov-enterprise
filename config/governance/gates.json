@@ -739,6 +739,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java"
         },
         {
+          "id": "DB-MEMO-REPORT-RECIPIENT-INTEGRITY",
+          "source": "api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java"
+        },
+        {
           "id": "DB-EXCEPTION-TRANSLATION",
           "source": "api-server/src/test/java/nuri/api/schema/DatabaseExceptionTranslationIntegrationTest.java"
         },
@@ -993,6 +997,46 @@
         {
           "id": "DB-WRITE-SMOKE",
           "source": "api-server/src/test/java/nuri/api/schema/WriteSmokeIntegrationTest.java"
+        },
+        {
+          "id": "DB-BUSINESS-POLICY-INTEGRITY",
+          "source": "api-server/src/test/java/nuri/api/schema/BusinessPolicyIntegrityIntegrationTest.java"
+        },
+        {
+          "id": "DB-COMMUNITY-TEMPLATE-INTEGRITY",
+          "source": "api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java"
+        },
+        {
+          "id": "DB-DURABLE-WORK",
+          "source": "api-server/src/test/java/nuri/api/schema/DurableWorkIntegrationTest.java"
+        },
+        {
+          "id": "DB-EVENT-APPROVAL-INTEGRITY",
+          "source": "api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java"
+        },
+        {
+          "id": "DB-FILE-DELETION-DURABILITY",
+          "source": "api-server/src/test/java/nuri/api/schema/FileDeletionDurabilityIntegrationTest.java"
+        },
+        {
+          "id": "DB-MENU-BOOKMARK-CONCURRENCY",
+          "source": "api-server/src/test/java/nuri/api/schema/MenuBookmarkConcurrencyIntegrationTest.java"
+        },
+        {
+          "id": "DB-MFA-FLOW",
+          "source": "api-server/src/test/java/nuri/api/schema/MfaFlowIntegrationTest.java"
+        },
+        {
+          "id": "DB-NOTIFICATION-DURABILITY",
+          "source": "api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java"
+        },
+        {
+          "id": "DB-PROTECTED-ACCOUNT-ADMINISTRATION",
+          "source": "api-server/src/test/java/nuri/api/schema/ProtectedAccountAdministrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-SENSITIVE-AUDIT-DURABILITY",
+          "source": "api-server/src/test/java/nuri/api/schema/SensitiveAuditDurabilityIntegrationTest.java"
         }
       ]
     },

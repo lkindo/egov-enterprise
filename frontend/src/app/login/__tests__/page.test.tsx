@@ -115,6 +115,18 @@ describe('LoginPage Component', () => {
     await waitFor(() => expect(idInput).toHaveFocus());
   });
 
+  it('비밀번호 뒤 추가 인증 단계에서는 이동하지 않고 OTP 입력 화면으로 전환한다', async () => {
+    mockLogin.mockResolvedValueOnce({ authenticationStage: 'MFA_REQUIRED', mfaChallengeExpiresAt: '2026-12-31T00:00:00Z' });
+    render(<LoginPage />);
+    fireEvent.change(screen.getByRole('textbox', { name: '아이디' }), { target: { value: 'testuser' } });
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'password123' } });
+    fireEvent.click(screen.getByRole('button', { name: /로그인/ }));
+    expect(await screen.findByLabelText('인증앱 코드')).toBeVisible();
+    expect(screen.queryByLabelText('비밀번호')).not.toBeInTheDocument();
+    expect(screen.queryByText('인증 완료')).not.toBeInTheDocument();
+    expect(mockLogin).toHaveBeenCalledOnce();
+  });
+
   it('calls login service once and locks the form for same-tick duplicate submits', async () => {
     mockLogin.mockImplementationOnce(() => new Promise(() => undefined));
     render(<LoginPage />);

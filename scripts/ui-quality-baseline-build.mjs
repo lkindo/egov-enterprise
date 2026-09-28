@@ -71,6 +71,7 @@ const FRONTEND_ARCHIVE_PATHS = Object.freeze([
   'tsconfig.json',
   'public',
   'src',
+  'scripts',
 ]);
 
 const CONFIG_CONTEXT_EXCLUSIONS = Object.freeze([
@@ -315,7 +316,7 @@ function dockerImageInspectFormat() {
     '{"Id":{{json .Id}},',
     '"Labels":{',
     `"BuildSha":{{json (index .Config.Labels ${revisionLabel})}},`,
-    `"BuildInputTreeHash":{{json (index .Config.Labels ${treeLabel})}}}`,
+    `"BuildInputTreeHash":{{json (index .Config.Labels ${treeLabel})}}}}`,
   ].join('');
 }
 

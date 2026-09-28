@@ -101,13 +101,13 @@ const READY_HEADINGS = Object.freeze({
   'dense-list-ready': '사용자 로그',
   'filtered-zero': '사용자 로그',
   'server-error': '사용자 로그',
-  'user-hub-ready': '조직 및 사용자 관리',
-  'mutation-error': '조직 및 사용자 관리',
+  'user-hub-ready': '계정 및 사용자 관리',
+  'mutation-error': '계정 및 사용자 관리',
   'composer-ready': '새 게시글 작성',
   'draft-restoration': '새 게시글 작성',
   'admin-compose-faq': '새 게시글 작성',
-  'admin-faq-readback': '지식 베이스',
-  'user-faq-search': '도움말 커스터머 센터',
+  'admin-faq-readback': '자주 묻는 질문',
+  'user-faq-search': '도움말 센터',
   'wizard-ready': '게시판 생성 마법사',
   'wizard-validation': '게시판 생성 마법사',
   [ONBOARDING_STEP_ID]: '관리자 업무 현황',
@@ -413,7 +413,7 @@ export function validateExecutionPreflight({
   });
 }
 
-function readCommittedFile(buildSha, relativePath) {
+export function readCommittedFile(buildSha, relativePath, { repositoryRoot = repoRoot } = {}) {
   if (!/^[a-f0-9]{40}$/.test(buildSha)) {
     throw new Error('committed source capture requires an exact build SHA');
   }
@@ -425,7 +425,12 @@ function readCommittedFile(buildSha, relativePath) {
   return execFileSync(
     'git',
     ['show', `${buildSha}:${relativePath}`],
-    { cwd: repoRoot, encoding: 'buffer', stdio: ['ignore', 'pipe', 'ignore'] },
+    {
+      cwd: repositoryRoot,
+      encoding: 'buffer',
+      maxBuffer: 256 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    },
   );
 }
 
@@ -1083,6 +1088,22 @@ async function visibleWithin(locator, timeout) {
   return locator.waitFor({ state: 'visible', timeout }).then(() => true).catch(() => false);
 }
 
+export function createEmptyUserLogPage(requestUrl) {
+  const readPositiveInteger = (name) => {
+    const values = requestUrl.searchParams.getAll(name);
+    const value = Number(values[0]);
+    if (values.length !== 1 || !/^[1-9]\d*$/.test(values[0]) || !Number.isSafeInteger(value)) {
+      throw new Error('synthetic log pagination request is invalid');
+    }
+    return value;
+  };
+  return {
+    list: [], total: 0, totalPage: 0,
+    page: readPositiveInteger('pageIndex'),
+    size: readPositiveInteger('pageUnit'),
+  };
+}
+
 async function installStatePreparation(page, stateCase) {
   const preparation = { coverage: 'route-loaded-only', assertions: [], taskEvidence: [] };
 
@@ -1107,7 +1128,7 @@ async function installStatePreparation(page, stateCase) {
             success: true,
             code: 'SUCCESS',
             message: 'Synthetic zero-result fixture',
-            data: { list: [], total: 0, totalPage: 1, pageIndex: 1 },
+            data: createEmptyUserLogPage(url),
           }),
         });
         return;
@@ -1181,6 +1202,38 @@ function syntheticMutationFailure(reasonCode) {
   const error = new Error('synthetic mutation fixture failed');
   error.code = reasonCode;
   return error;
+}
+
+export function createSyntheticFixtureApi(context, baseOrigin) {
+  const origin = validateLoopbackOrigin(baseOrigin);
+  const hostname = new URL(origin).hostname;
+  return {
+    async fetch(requestPath, options = {}) {
+      if (typeof requestPath !== 'string' || !requestPath.startsWith('/api/v1/') || requestPath.includes('\\')) {
+        throw syntheticMutationFailure('synthetic-mutation-api-path-invalid');
+      }
+      const target = new URL(requestPath, origin);
+      if (target.origin !== origin || !target.pathname.startsWith('/api/v1/') || target.hash
+        || /%2f|%5c/i.test(target.pathname)) {
+        throw syntheticMutationFailure('synthetic-mutation-api-path-invalid');
+      }
+      // Read current browser cookies without APIRequestContext's HTTP numeric-loopback Secure filter.
+      // Scope the explicit credential to this request; browser cookie policy and persisted state stay intact.
+      const candidates = (await context.cookies()).filter((cookie) => (
+        cookie.name === 'accessToken' && cookie.domain === hostname && cookie.path === '/'
+      ));
+      const cookie = candidates[0];
+      if (candidates.length !== 1 || typeof cookie.value !== 'string' || cookie.value.length === 0
+        || !Number.isFinite(cookie.expires) || (cookie.expires !== -1 && cookie.expires <= Date.now() / 1000)) {
+        throw syntheticMutationFailure('synthetic-mutation-api-auth-unavailable');
+      }
+      return context.request.fetch(target.href, {
+        ...options,
+        headers: { Authorization: `Bearer ${cookie.value}` },
+        maxRedirects: 0,
+      });
+    },
+  };
 }
 
 async function safeApiData(api, method, requestPath, {
@@ -1327,6 +1380,7 @@ async function syntheticUserResidueCount(api, fixture) {
 async function selectSyntheticUser(page, fixture) {
   const search = page.getByPlaceholder('검색어를 입력하세요...');
   await search.fill(fixture.userName);
+  await search.press('Enter');
   await firstVisibleLocator(page.getByText(fixture.userName, { exact: true }));
   const checkbox = await firstVisibleLocator(page.getByRole('checkbox', { name: '항목 선택', exact: true }));
   await checkbox.click();
@@ -1445,9 +1499,72 @@ async function createAdminMutationContext(browser, baseOrigin) {
 
 async function fillFaqComposer(page, fixture) {
   await page.getByRole('textbox', { name: '게시글 제목', exact: true }).fill(fixture.faqTitle);
-  const editor = await firstVisibleLocator(page.getByRole('textbox', { name: '게시글 본문 내용', exact: true }));
+  const editor = await firstVisibleLocator(page.getByRole('textbox', { name: '게시글 본문 내용 (필수)', exact: true }));
   await editor.fill(fixture.faqContent);
   await page.getByRole('button', { name: '게시글 등록', exact: true }).click();
+}
+
+export async function completeSyntheticFaqNavigation({ page, baseOrigin, stateCase, fixture, submit }) {
+  const origin = validateLoopbackOrigin(baseOrigin);
+  const boardId = process.env.UI_BASELINE_SYNTHETIC_FAQ_BOARD_ID || DEFAULT_SYNTHETIC_FAQ_BOARD_ID;
+  const postPrefix = `/api/v1/boards/${encodeURIComponent(boardId)}/posts/`;
+  const observed = [];
+  let observationFailed = false;
+  const onResponse = (response) => {
+    try {
+      const url = new URL(response.url());
+      if (url.origin !== origin || response.request().method() !== 'GET'
+        || !url.pathname.startsWith(postPrefix)) return;
+      const match = /^(\d+)\/satisfactions(?:\/(average))?$/.exec(url.pathname.slice(postPrefix.length));
+      if (!match) return;
+      const entry = {
+        pstSn: Number(match[1]), kind: match[2] || 'list', status: response.status(),
+        finished: false, failed: Boolean(url.search || url.hash),
+      };
+      observed.push(entry);
+      // Attach both handlers immediately: a body failure before submit resolves must not reject unhandled.
+      Promise.resolve().then(() => response.finished()).then((error) => {
+        entry.finished = true;
+        entry.failed ||= Boolean(error);
+      }, () => { entry.finished = true; entry.failed = true; });
+    } catch {
+      observationFailed = true;
+    }
+  };
+  page.on('response', onResponse);
+  try {
+    const pstSn = Number(await submit());
+    if (!Number.isSafeInteger(pstSn) || pstSn <= 0) {
+      throw syntheticMutationFailure('synthetic-faq-authoritative-readback-failed');
+    }
+    const failed = () => observationFailed || observed.some((entry) => (
+      entry.pstSn !== pstSn || entry.status !== 200 || entry.failed
+    ));
+    const settled = () => ['list', 'average'].every((kind) => (
+      observed.some((entry) => entry.kind === kind && entry.finished)
+    )) && observed.every((entry) => entry.finished);
+    // The authoritative API readback can finish before detail hydration starts these two GETs.
+    // Keep the article alive until both exact-post responses finish; 4xx remains a hard failure.
+    const complete = await pollForExpectedValue({
+      readValue: async () => failed() || settled(), expectedValue: true,
+    });
+    if (!complete || failed()) throw syntheticMutationFailure('synthetic-faq-authoritative-readback-failed');
+    await page.waitForURL((url) => url.origin === origin
+      && url.pathname === '/admin/community/boards/detail'
+      && url.searchParams.getAll('bbsId').length === 1 && url.searchParams.get('bbsId') === boardId
+      && url.searchParams.getAll('pstSn').length === 1 && url.searchParams.get('pstSn') === String(pstSn),
+    { timeout: 10_000 });
+    await firstVisibleLocator(page.getByRole('heading', { level: 1, name: fixture.faqTitle, exact: true }), {
+      reasonCode: 'synthetic-faq-authoritative-readback-failed',
+    });
+    await page.goto(`${stateCase.identity.route}${resolveQueryTemplate(stateCase)}`, {
+      waitUntil: 'domcontentloaded', timeout: 30_000,
+    });
+    await waitForReadyHeading(page, stateCase);
+    if (failed()) throw syntheticMutationFailure('synthetic-faq-authoritative-readback-failed');
+  } finally {
+    page.off('response', onResponse);
+  }
 }
 
 async function flattenMenus(items, output = []) {
@@ -1468,7 +1585,7 @@ async function exactSyntheticMenus(api, fixture) {
 async function exactSyntheticBoards(api, fixture) {
   const data = await safeApiData(api, 'GET', withSafeQuery(
     '/api/v1/admin/system/board-masters',
-    { searchWrd: fixture.boardTitle, pageIndex: 1, recordCountPerPage: 100 },
+    { searchCondition: '0', searchKeyword: fixture.boardTitle, pageIndex: 1, pageUnit: 100 },
   ), { reasonCode: 'synthetic-board-readback-failed' });
   const list = Array.isArray(data?.list) ? data.list : [];
   return list.filter((board) => board?.bbsTtl === fixture.boardTitle);
@@ -1540,13 +1657,13 @@ async function completeBoardWizard(page, fixture) {
   await page.locator('#bbsTtl').fill(fixture.boardTitle);
   await page.locator('#bbsExpln').fill(fixture.boardDescription);
   await page.getByRole('button', { name: /다음 단계로/ }).click();
-  await page.getByRole('heading', { level: 3, name: '템플릿 선택', exact: true })
+  await page.getByRole('heading', { level: 2, name: '템플릿 선택', exact: true })
     .waitFor({ state: 'visible', timeout: 10_000 });
   await page.getByRole('button', { name: /다음 단계로/ }).click();
-  await page.getByRole('heading', { level: 3, name: '접근 권한 안내', exact: true })
+  await page.getByRole('heading', { level: 2, name: '접근 권한 안내', exact: true })
     .waitFor({ state: 'visible', timeout: 10_000 });
   await page.getByRole('button', { name: /다음 단계로/ }).click();
-  await page.getByRole('heading', { level: 3, name: '메뉴 배포', exact: true })
+  await page.getByRole('heading', { level: 2, name: '메뉴 배포', exact: true })
     .waitFor({ state: 'visible', timeout: 10_000 });
   await page.getByPlaceholder('메뉴에 표시될 이름을 입력하세요').fill(fixture.menuName);
   await page.getByRole('button', { name: '게시판 생성 및 메뉴 배포', exact: true }).click();
@@ -1562,7 +1679,7 @@ export function isPersistedBoardDraftKey(key) {
 async function exerciseState(page, stateCase, preparation, { browser, baseOrigin, mutationRunNonce }) {
   switch (stateCase.stepId) {
     case 'invalid-credentials': {
-      const idInput = page.locator('input[name="id"]');
+      const idInput = page.locator('input[name="userId"]');
       const secretInput = page.locator('input[name="password"]');
       const { actorValue, secretValue } = validateInvalidCredentialsProbeFixture({
         actorValue: 'UIQInvalidActor9',
@@ -1571,7 +1688,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
       await idInput.fill(actorValue);
       await secretInput.fill(secretValue);
       await page.getByRole('button', { name: '로그인', exact: true }).click();
-      const alertVisible = await visibleWithin(page.getByRole('alert'), 15_000);
+      const alertVisible = await visibleWithin(page.getByTestId('login-error'), 15_000);
       const focusReturned = await pollForExpectedValue({
         readValue: () => idInput.evaluate((element) => document.activeElement === element),
         expectedValue: true,
@@ -1595,7 +1712,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
         }));
         break;
       }
-      await page.locator('input[name="id"]').fill(actor);
+      await page.locator('input[name="userId"]').fill(actor);
       await page.locator('input[name="password"]').fill(secret);
       const started = performance.now();
       await page.getByRole('button', { name: '로그인', exact: true }).click();
@@ -1608,7 +1725,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
       break;
     }
     case 'filtered-zero': {
-      const search = page.getByRole('textbox', { name: '데이터 검색' });
+      const search = page.getByRole('textbox', { name: '요청자명', exact: true });
       await search.fill('UI_BASELINE_NO_MATCH_9X8Y7Z');
       await search.press('Enter');
       const emptyVisible = await visibleWithin(
@@ -1625,7 +1742,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
       break;
     }
     case 'server-error': {
-      const search = page.getByRole('textbox', { name: '데이터 검색' });
+      const search = page.getByRole('textbox', { name: '요청자명', exact: true });
       preparation.armInjectedFailure?.();
       await search.fill('UI_BASELINE_FAILURE_PROBE');
       await search.press('Enter');
@@ -1645,7 +1762,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
     }
     case 'user-hub-ready': {
       const fixture = createSyntheticMutationFixture(stateCase, mutationRunNonce);
-      const api = page.context().request;
+      const api = createSyntheticFixtureApi(page.context(), baseOrigin);
       await runSyntheticMutationLifecycle({
         execute: async () => {
           await createSyntheticUser(api, fixture);
@@ -1671,7 +1788,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
     }
     case 'mutation-error': {
       const fixture = createSyntheticMutationFixture(stateCase, mutationRunNonce);
-      const api = page.context().request;
+      const api = createSyntheticFixtureApi(page.context(), baseOrigin);
       await runSyntheticMutationLifecycle({
         execute: async () => {
           await createSyntheticUser(api, fixture);
@@ -1750,7 +1867,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
       const fixture = createSyntheticMutationFixture(stateCase, mutationRunNonce);
       const adminContext = await createAdminMutationContext(browser, baseOrigin);
       try {
-        const api = adminContext.request;
+        const api = createSyntheticFixtureApi(adminContext, baseOrigin);
         await runSyntheticMutationLifecycle({
           execute: async () => {
             await seedSyntheticFaq(api, fixture);
@@ -1781,9 +1898,9 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
     }
     case 'wizard-validation': {
       await page.getByRole('button', { name: /다음 단계로/ }).click();
-      const validationVisible = await visibleWithin(page.getByText(/게시판 명칭은 최소 2글자/), 5_000);
+      const validationVisible = await visibleWithin(page.getByText('게시판 명칭을 2자 이상 입력해 주세요.', { exact: true }), 5_000);
       const firstStepStillActive = await visibleWithin(
-        page.getByRole('heading', { level: 3, name: '기본 설정', exact: true }),
+        page.getByRole('heading', { level: 2, name: '기본 설정', exact: true }),
         5_000,
       );
       const focusOnName = await page.locator('#bbsTtl')
@@ -1796,23 +1913,22 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
     }
     case 'admin-compose-faq': {
       const fixture = createSyntheticMutationFixture(stateCase, mutationRunNonce);
-      const api = page.context().request;
+      const api = createSyntheticFixtureApi(page.context(), baseOrigin);
       await runSyntheticMutationLifecycle({
-        execute: async () => {
-          await fillFaqComposer(page, fixture);
-          const post = await waitForExactFaqPost(api, fixture);
-          await assertFaqDetail(api, fixture, post.pstSn, {
-            expectedContentKind: 'canonical-tiptap-html',
-          });
-        },
+        execute: () => completeSyntheticFaqNavigation({
+          page, baseOrigin, stateCase, fixture,
+          submit: async () => {
+            await fillFaqComposer(page, fixture);
+            const post = await waitForExactFaqPost(api, fixture);
+            await assertFaqDetail(api, fixture, post.pstSn, {
+              expectedContentKind: 'canonical-tiptap-html',
+            });
+            return post.pstSn;
+          },
+        }),
         cleanup: () => cleanupSyntheticFaq(api, fixture),
         readActiveResidueCount: () => syntheticFaqResidueCount(api, fixture),
       });
-      await page.goto(`${stateCase.identity.route}${resolveQueryTemplate(stateCase)}`, {
-        waitUntil: 'domcontentloaded',
-        timeout: 30_000,
-      });
-      await waitForReadyHeading(page, stateCase);
       preparation.coverage = 'synthetic-faq-ui-save-readback-cleanup-complete';
       preparation.assertions.push({ id: 'synthetic-faq-authoritative-save-readback', passed: true });
       preparation.taskEvidence.push(completedSyntheticMutationEvidence(
@@ -1823,12 +1939,13 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
     }
     case 'admin-faq-readback': {
       const fixture = createSyntheticMutationFixture(stateCase, mutationRunNonce);
-      const api = page.context().request;
+      const api = createSyntheticFixtureApi(page.context(), baseOrigin);
       await runSyntheticMutationLifecycle({
         execute: async () => {
           await seedSyntheticFaq(api, fixture);
           const search = page.getByRole('textbox', { name: '지식 검색어', exact: true });
           await search.fill(fixture.faqTitle);
+          await search.press('Enter');
           await firstVisibleLocator(
             page.getByRole('button', { name: `${fixture.faqTitle} 상세 보기`, exact: true }),
             { reasonCode: 'synthetic-faq-admin-readback-failed' },
@@ -1847,7 +1964,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
     }
     case 'wizard-ready': {
       const fixture = createSyntheticMutationFixture(stateCase, mutationRunNonce);
-      const api = page.context().request;
+      const api = createSyntheticFixtureApi(page.context(), baseOrigin);
       await runSyntheticMutationLifecycle({
         execute: async () => {
           await completeBoardWizard(page, fixture);
@@ -2152,7 +2269,7 @@ async function navigateForPerformance(page, stateCase) {
     });
     await page.getByRole('heading', { level: 1, name: '엔터프라이즈', exact: true })
       .waitFor({ state: 'visible', timeout: 30_000 });
-    await page.locator('input[name="id"]').fill(process.env.UI_BASELINE_ADMIN_ID);
+    await page.locator('input[name="userId"]').fill(process.env.UI_BASELINE_ADMIN_ID);
     await page.locator('input[name="password"]').fill(process.env.UI_BASELINE_ADMIN_SECRET);
     const started = performance.now();
     await page.getByRole('button', { name: '로그인', exact: true }).click();

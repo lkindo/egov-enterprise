@@ -160,4 +160,47 @@ class AddressBookServiceImplTest {
         assertThat(result.getSize()).isEqualTo(20);
         verifyNoInteractions(addressBookRepository);
     }
+
+    @Test
+    @DisplayName("신규 선택 계약은 login ID와 다른 내부 키를 반환하고 구 계약 의미는 보존한다")
+    void selectionsPreserveIdentityAxesAndDropContacts() {
+        AddressBookUserSearchResult projection = new AddressBookUserSearchResult();
+        projection.setEsntlId("internal-key");
+        projection.setUserId("login-id");
+        projection.setUserNm("동명이인");
+        projection.setOgnzNm("개발부");
+        projection.setEmlAddr("legacy@example.test");
+        projection.setMblTelno("01000000000");
+        given(addressBookRepository.searchAddressBookUsers(eq("동명"), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(projection)));
+
+        given(addressBookRepository.searchAddressBookUserSelections(eq("동명"), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(projection)));
+
+        var selection = addressBookService.searchUserSelections(" 동명 ", PageRequest.of(0, 100)).getContent().get(0);
+        var legacy = addressBookService.searchUsers("동명", PageRequest.of(0, 20)).getContent().get(0);
+
+        assertThat(selection.esntlId()).isEqualTo("internal-key");
+        assertThat(selection.userNm()).isEqualTo("동명이인");
+        assertThat(selection.ognzNm()).isEqualTo("개발부");
+        assertThat(legacy.getUserId()).isEqualTo("login-id");
+        assertThat(legacy.getEmlAddr()).isEqualTo("legacy@example.test");
+        assertThat(legacy.getMblTelno()).isEqualTo("01000000000");
+        verify(addressBookRepository).searchAddressBookUsers("동명", PageRequest.of(0, 20));
+        verify(addressBookRepository).searchAddressBookUserSelections("동명", PageRequest.of(0, 20));
+    }
+
+    @Test
+    @DisplayName("주소록 읽기 권한 없이는 신구 선택 경로 모두 저장소에 접근하지 않는다")
+    void selectionsRequireReadPermission() {
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.assertPermission("ADBK_READ"))
+                .thenThrow(new org.springframework.security.access.AccessDeniedException("denied"));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                addressBookService.searchUserSelections("검색", PageRequest.of(0, 20)))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                addressBookService.searchUsers("검색", PageRequest.of(0, 20)))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        verifyNoInteractions(addressBookRepository);
+    }
 }

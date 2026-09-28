@@ -1,4 +1,6 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GlobalCommandCenter } from '../global-command-center';
@@ -11,7 +13,7 @@ const mocks = vi.hoisted(() => ({
   getHeadMenus: vi.fn(),
   getLeftMenus: vi.fn(),
   getMyBookmarks: vi.fn(),
-  user: undefined as { id: string } | undefined,
+  user: undefined as { id: string; esntlId?: string; authorizationVersion?: string } | undefined,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -33,16 +35,21 @@ vi.mock('@/services/business/user/MenuService', () => ({
 function CommandCenterHarness({
   isMounted = true,
   onBackgroundClick,
+  queryClient: providedQueryClient,
 }: {
   isMounted?: boolean;
   onBackgroundClick?: () => void;
+  queryClient?: QueryClient;
 }) {
+  const [queryClient] = useState(() => providedQueryClient ?? new QueryClient({ defaultOptions: { queries: { retry: false } } }));
   return (
+    <QueryClientProvider client={queryClient}>
     <GlobalShortcutProvider>
       <button type="button" onClick={onBackgroundClick}>커맨드 센터 호출 위치</button>
       <div data-testid="preconfigured-background">기존 속성 보존 대상</div>
       {isMounted && <GlobalCommandCenter />}
     </GlobalShortcutProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -64,8 +71,25 @@ describe('GlobalCommandCenter accessibility contract', () => {
     mocks.getHeadMenus.mockResolvedValue([]);
     mocks.getLeftMenus.mockResolvedValue([]);
     mocks.getMyBookmarks.mockResolvedValue([]);
-    mocks.user = undefined;
+    mocks.user = { id: 'staff01', esntlId: 'internal-1', authorizationVersion: 'v1' };
     window.localStorage.clear();
+  });
+
+  it('열린 명령센터도 메뉴 무효화 시 과거 항목을 감추고 회수된 응답을 반영한다', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    mocks.getHeadMenus.mockResolvedValueOnce([{ menuNo: 88, menuNm: '회수될 메뉴', modernRoute: '/old-menu' }]);
+    const user = userEvent.setup();
+    render(<CommandCenterHarness queryClient={queryClient} />);
+    await openFromTrigger(user);
+    expect(await screen.findByRole('option', { name: '회수될 메뉴' })).toBeInTheDocument();
+
+    let finishRefresh!: (menus: never[]) => void;
+    mocks.getHeadMenus.mockImplementationOnce(() => new Promise(resolve => { finishRefresh = resolve; }));
+    await act(async () => { void queryClient.invalidateQueries({ queryKey: ['menus'] }); });
+    await waitFor(() => expect(screen.queryByRole('option', { name: '회수될 메뉴' })).not.toBeInTheDocument());
+    await act(async () => { finishRefresh([]); });
+    expect(screen.queryByRole('option', { name: '회수될 메뉴' })).not.toBeInTheDocument();
+    expect(mocks.getHeadMenus).toHaveBeenCalledTimes(2);
   });
 
   it('🚨 검색어가 비면 즐겨찾기와 최근 방문을 먼저 보이고, 지금 볼 수 없는 메뉴는 뺀다 (DIP B5 F2)', async () => {
@@ -141,8 +165,56 @@ describe('GlobalCommandCenter accessibility contract', () => {
     fireEvent.change(screen.getByRole('combobox', { name: '글로벌 커맨드 센터 검색어 입력' }), { target: { value: '결재 이력' } });
     await user.click(await screen.findByRole('option', { name: '업무 > 팀 업무 > 결재함 > 결재 이력' }));
     expect(mocks.push).toHaveBeenLastCalledWith('/approvals?tab=archive#list');
-    expect(mocks.getHeadMenus).toHaveBeenCalledOnce();
+    expect(mocks.getHeadMenus).toHaveBeenCalledTimes(3);
     expect(mocks.getLeftMenus).not.toHaveBeenCalled();
+  });
+
+  it('권한 버전이 바뀌면 이전 메뉴를 즉시 숨기고 새 허용 목록을 읽는다', async () => {
+    const user = userEvent.setup();
+    mocks.getHeadMenus.mockResolvedValueOnce([{ menuNo: 1, menuNm: '회수할 메뉴', modernRoute: '/admin/help' }]);
+    const { rerender } = renderCommandCenter();
+    await openFromTrigger(user);
+    expect(await screen.findByRole('option', { name: '회수할 메뉴' })).toBeInTheDocument();
+    mocks.user = { ...mocks.user!, authorizationVersion: 'v2' };
+    mocks.getHeadMenus.mockResolvedValueOnce([]);
+    rerender(<CommandCenterHarness />);
+    expect(screen.queryByRole('option', { name: '회수할 메뉴' })).toBeNull();
+    await waitFor(() => expect(mocks.getHeadMenus).toHaveBeenCalledTimes(2));
+    expect(screen.queryByRole('option', { name: '회수할 메뉴' })).toBeNull();
+  });
+
+  it('계정 전환 뒤 도착한 이전 메뉴·즐겨찾기 응답을 다시 표시하지 않는다', async () => {
+    const user = userEvent.setup();
+    let resolveOldMenu!: (value: unknown) => void;
+    let resolveOldBookmarks!: (value: unknown) => void;
+    mocks.getHeadMenus.mockReturnValueOnce(new Promise(resolve => { resolveOldMenu = resolve; }));
+    mocks.getMyBookmarks.mockReturnValueOnce(new Promise(resolve => { resolveOldBookmarks = resolve; }));
+    const { rerender } = renderCommandCenter();
+    await openFromTrigger(user);
+    mocks.user = { id: 'staff02', esntlId: 'internal-2', authorizationVersion: 'v1' };
+    mocks.getHeadMenus.mockResolvedValueOnce([{ menuNo: 2, menuNm: '새 계정 메뉴', modernRoute: '/admin/work-hub' }]);
+    rerender(<CommandCenterHarness />);
+    expect(await screen.findByRole('option', { name: '새 계정 메뉴' })).toBeInTheDocument();
+    await act(async () => {
+      resolveOldMenu([{ menuNo: 1, menuNm: '이전 계정 메뉴', modernRoute: '/admin/help' }]);
+      resolveOldBookmarks([{ menuNo: 1 }]);
+    });
+    expect(screen.queryByRole('option', { name: '이전 계정 메뉴' })).toBeNull();
+    expect(screen.queryByRole('group', { name: '즐겨찾기' })).toBeNull();
+    expect(screen.getByRole('option', { name: '새 계정 메뉴' })).toBeInTheDocument();
+  });
+
+  it('같은 계정에서 다시 열어도 메뉴 변경과 빈 응답을 반영한다', async () => {
+    const user = userEvent.setup();
+    mocks.getHeadMenus.mockResolvedValueOnce([{ menuNo: 1, menuNm: '삭제할 메뉴', modernRoute: '/admin/help' }]);
+    renderCommandCenter();
+    await openFromTrigger(user);
+    expect(await screen.findByRole('option', { name: '삭제할 메뉴' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    mocks.getHeadMenus.mockResolvedValueOnce([]);
+    await openFromTrigger(user);
+    await waitFor(() => expect(mocks.getHeadMenus).toHaveBeenCalledTimes(2));
+    expect(screen.queryByRole('option', { name: '삭제할 메뉴' })).toBeNull();
   });
 
   it('광역 검색 제안은 선언된 q만 인코딩하여 기존 검색 주소로 이동한다', async () => {

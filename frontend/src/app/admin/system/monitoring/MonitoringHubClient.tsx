@@ -504,7 +504,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           </div>
           <div className="flex-1 space-y-0.5 min-w-0">
             <h4 className="truncate text-[length:var(--font-size-body)] font-medium text-foreground">{c.ansCn}</h4>
-            <p className="text-xs text-muted-foreground">USER_ID: {c.wrterId}</p>
+            <p className="text-xs text-muted-foreground">{c.wrterNm ?? '작성자 정보 없음'}</p>
           </div>
           {selectedItemId === c.ansSn && (
             <Button 

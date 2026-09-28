@@ -32,8 +32,8 @@ function toDashboardTask(item: DashboardItem): DashboardTask {
 }
 
 /**
- * Dashboard failures must reach the route error boundary. Returning an all-zero
- * object here would turn an outage or contract drift into a false "nothing to do" state.
+ * Only an authoritative 403 becomes the explicit access-denied state (null).
+ * Other failures reach the route error boundary; none become an all-zero dashboard.
  */
 export async function loadDashboardData() {
   const cookieStore = await cookies();
@@ -43,7 +43,12 @@ export async function loadDashboardData() {
 
   const dashboardResponse = await executeGeneratedOperation(getDashboardDataOperation, {
     config: { headers: { Authorization: `Bearer ${accessToken}` } },
+  }).catch((error: unknown) => {
+    const status = (error as { response?: { status?: unknown } } | null)?.response?.status;
+    if (status === 403) return null;
+    throw error;
   });
+  if (dashboardResponse === null) return null;
 
   return {
     initialNotiList: dashboardResponse.notiList.slice(0, 6).map(toDashboardTask),

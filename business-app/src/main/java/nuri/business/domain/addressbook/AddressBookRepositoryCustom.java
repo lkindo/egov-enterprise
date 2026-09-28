@@ -7,6 +7,8 @@ public interface AddressBookRepositoryCustom {
     Page<AddressBook> searchAddressBooks(String userId, String ognzId, String searchCondition, String searchKeyword,
             Pageable pageable);
 
-    // MyBatis selectManList 연동
+    Page<AddressBookUserSearchResult> searchAddressBookUserSelections(String searchKeyword, Pageable pageable);
+
+    // Deprecated external contract: retirement waits for consumer confirmation.
     Page<AddressBookUserSearchResult> searchAddressBookUsers(String searchKeyword, Pageable pageable);
 }

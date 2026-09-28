@@ -9,14 +9,17 @@ import nuri.business.service.notification.dto.NotificationDispatchRequest;
 import nuri.business.service.notification.dto.NotificationDto;
 import nuri.business.service.notification.dto.NotificationMapper;
 import nuri.business.service.user.UserContactService;
-import nuri.foundation.core.util.TransactionUtils;
+import nuri.foundation.core.event.NotificationRequestedEvent;
+import nuri.foundation.core.job.DurableWork;
+import nuri.foundation.core.job.DurableWorkPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import tools.jackson.databind.ObjectMapper;
 import java.util.Objects;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,10 +31,11 @@ import java.util.stream.Collectors;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
-    private final SimpMessagingTemplate messagingTemplate;
     private final NotificationMapper notificationMapper;
     /** 관리자 발송의 수신자 존재 확인 — 코어 사용자 도메인만 esntlId 를 해석할 수 있다(DEC-OPS-035 와 같은 축). */
     private final UserContactService userContactService;
+    private final DurableWorkPort durableWork;
+    private final ObjectMapper objectMapper;
 
     /**
      * 받은 알림 목록. {@code readYn} 은 비우면 전체, {@code N} 이면 읽지 않은 알림, {@code Y} 면 읽은 알림이다.
@@ -64,30 +68,24 @@ public class NotificationService {
     @Transactional
     public Long createNotification(String userId, NotificationDto dto) {
         requireUserId(userId);
-        log.info("Creating notification");
-        Notification entity = Notification.builder()
-                .notiTtlNm(dto.getNotiTtlNm())
-                .notiCn(dto.getNotiCn())
-                .rcvrId(userId)
-                .linkUrl(dto.getLinkUrl())
-                .build();
+        return createForEvent(new NotificationRequestedEvent(userId, dto.getNotiTtlNm(), dto.getNotiCn(), dto.getLinkUrl()));
+    }
 
-        Notification saved = notificationRepository.save(entity);
-
-        // [커밋-후 발송] WebSocket 알림은 저장 트랜잭션 커밋 후에 보낸다 — 롤백(제약위반/상위 tx 롤백) 시
-        // DB 에 없는 유령 알림이 클라이언트로 전송되는 결함 방지(Sms/Mail/Board/Sanction 과 동일한 runAfterCommit 표준).
-        NotificationDto responseDto = notificationMapper.toDto(saved);
-        TransactionUtils.runAfterCommit(() -> {
-            try {
-                // 수신자 식별자는 인증 Principal(esntlId)과 동일하다. 공용 topic 으로 복제하면
-                // 다른 사용자의 제목·본문·링크가 전원에게 노출되므로 개인 user destination 만 사용한다.
-                messagingTemplate.convertAndSendToUser(userId, "/queue/notifications", responseDto);
-            } catch (Exception e) {
-                log.error("Failed to send WebSocket notification", e);
-            }
+    @Transactional(propagation = Propagation.MANDATORY)
+    public Long createForEvent(NotificationRequestedEvent event) {
+        requireUserId(event.receiverEsntlId());
+        String fingerprint = NotificationDeliveryIntent.fingerprint(event);
+        DurableWork work = durableWork.enqueueOnce(NotificationDeliveryIntent.key(event), NotificationDeliveryWorkHandler.TYPE, () -> {
+            Notification saved = notificationRepository.save(Notification.builder()
+                    .notiTtlNm(event.title()).notiCn(event.content()).rcvrId(event.receiverEsntlId())
+                    .linkUrl(event.linkUrl()).build());
+            return objectMapper.writeValueAsString(new NotificationDeliveryIntent(saved.getNotiSn(), event.receiverEsntlId(), fingerprint));
         });
-
-        return saved.getNotiSn();
+        NotificationDeliveryIntent intent = objectMapper.readValue(work.payload(), NotificationDeliveryIntent.class);
+        if (!fingerprint.equals(intent.fingerprint()) || !event.receiverEsntlId().equals(intent.receiver())) {
+            throw new IllegalStateException("An existing notification event cannot change its request");
+        }
+        return intent.notificationId();
     }
 
     /**
@@ -95,7 +93,7 @@ public class NotificationService {
      *
      * <p>수신자는 esntlId 로 받고 코어 사용자 도메인({@link UserContactService})이 존재를 확인한다 — 하나라도 없으면
      * RESOURCE_NOT_FOUND 로 <b>전체를 거부</b>한다(부분 발송 금지, 메일·문자와 같은 규칙). 생성은 개인 알림과 같은
-     * 경로({@link #createNotification})를 지나므로 WebSocket 개인 큐 전송·커밋 후 발송 규칙도 그대로다.
+     * 경로({@link #createNotification})를 지나므로 알림·의도 원자 저장과 worker 개인 큐 전달 규칙도 같다.
      * 컨트롤러의 {@code @AdminOrSystem} 과 별개로 서비스에서 ADMIN/SYSTEM 을 다시 확인한다(백엔드 헌법 제8조).
      *
      * @return 만든 알림 수(중복 수신자는 한 번만)

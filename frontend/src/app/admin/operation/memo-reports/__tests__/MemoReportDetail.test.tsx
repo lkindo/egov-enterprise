@@ -10,9 +10,8 @@
  * '미열람' 상태도 해소할 수 없었다 — 열람 기록은 `GET /{memoRptSn}` 이 남기는데
  * (`MemoReportApiController` 가 `readMemoReport` 를 부른다) 그 호출부가 없었기 때문이다.
  *
- * 그리고 그 상태 라벨은 **틀렸다.** 서버는 열람 주체를 구분하지 않는다 —
- * `MemoReportService.readMemoReport` 는 작성자·수신자·관리자 중 누가 열어도 `rptrInqDt` 를
- * 갱신한다. 즉 작성자가 자기 보고를 다시 열기만 해도 '수신확인'으로 보였다.
+ * 현재 `MemoReportService.readMemoReport` 는 수신자의 첫 열람만 기록한다.
+ * 작성자·관리자의 열람은 수신자 읽음으로 바뀌지 않으며 화면 안내도 이 의미를 따른다.
  */
 
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -196,11 +195,7 @@ describe('메모보고 열람', () => {
     expect(screen.getByRole('button', { name: '다시 시도' })).toBeInTheDocument();
   });
 
-  it("상태 열은 '수신확인'이 아니라 '열람됨'이라고 말한다", async () => {
-    /*
-     * 서버는 열람 주체를 구분하지 않는다 — 작성자·관리자가 열어도 같은 타임스탬프가 찍힌다.
-     * '수신확인' 은 수신자가 봤다는 뜻이 되어 사실이 아니다.
-     */
+  it('열람 상태와 안내는 수신자의 첫 열람 의미를 설명한다', async () => {
     mocks.getReceivedReports.mockResolvedValue({
       list: [{ ...ROW, rptrInqDt: '2026-08-28T10:00:00' }],
       total: 1,
@@ -208,6 +203,7 @@ describe('메모보고 열람', () => {
     renderClient();
 
     expect(await screen.findByText('열람됨')).toBeVisible();
+    expect(screen.getByText('(수신자가 처음 열람한 시각을 기록합니다)')).toBeVisible();
     expect(screen.queryByText('수신확인')).not.toBeInTheDocument();
   });
 

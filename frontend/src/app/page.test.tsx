@@ -110,6 +110,22 @@ describe('DashboardPage Server Component', () => {
     await expect(loadDashboardData()).rejects.toThrow('dashboard unavailable');
   });
 
+  it('실제 API의 403은 데이터 없이 명시적인 접근불가 상태로 전달한다', async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: vi.fn().mockReturnValue({ value: 'mock-token' }) } as any);
+    vi.mocked(client.getRaw).mockRejectedValue(Object.assign(new Error('Forbidden'), { response: { status: 403 } }));
+
+    await expect(loadDashboardData()).resolves.toBeNull();
+    expect(client.getRaw).toHaveBeenCalledOnce();
+  });
+
+  it.each([401, 404, 429, 500, '403', undefined])('HTTP %s 실패를 권한 부족이나 빈 데이터로 바꾸지 않는다', async (status) => {
+    vi.mocked(cookies).mockResolvedValue({ get: vi.fn().mockReturnValue({ value: 'mock-token' }) } as any);
+    const failure = Object.assign(new Error('dashboard transport failed'), { response: { status } });
+    vi.mocked(client.getRaw).mockRejectedValue(failure);
+
+    await expect(loadDashboardData()).rejects.toBe(failure);
+  });
+
   it('홈 게시물 상세 이동에 필요한 서버 식별자를 보존한다', async () => {
     vi.mocked(cookies).mockResolvedValue({ get: vi.fn().mockReturnValue({ value: 'mock-token' }) } as unknown as Awaited<ReturnType<typeof cookies>>);
     vi.mocked(client.getRaw).mockResolvedValue(success({
@@ -117,7 +133,7 @@ describe('DashboardPage Server Component', () => {
       taskList: [{ pstSn: 42, pstTtl: '게시판 정보가 없는 자료' }], taskListTotal: 1, notiListTotal: 1,
       pendingApprovalCount: 0,
     }));
-    const result = await loadDashboardData();
+    const result = (await loadDashboardData())!;
     expect(result.initialNotiList[0]).toMatchObject({ bbsId: 'BBSMSTR_AAAAAAAAAAAA', pstSn: 41 });
     expect(result.initialTaskList[0]).not.toHaveProperty('bbsId');
     expect(result.initialTaskList[0]).not.toHaveProperty('pstSn');
@@ -160,7 +176,7 @@ describe('DashboardPage Server Component', () => {
       taskList: [], notiList: [], taskListTotal: 0, notiListTotal: 0, pendingApprovalCount: null,
     }));
 
-    const result = await loadDashboardData();
+    const result = (await loadDashboardData())!;
     expect(result.pendingApprovalCount).toBeNull();
   });
 
@@ -178,7 +194,7 @@ describe('DashboardPage Server Component', () => {
       pendingApprovalCount: 0,
     }));
 
-    const result = await loadDashboardData();
+    const result = (await loadDashboardData())!;
     expect(result.initialNotiList[0].date).toBe('2026-09-25');
     expect(result.taskListTotal).toBeNull();
     expect(result.notiListTotal).toBe(12);

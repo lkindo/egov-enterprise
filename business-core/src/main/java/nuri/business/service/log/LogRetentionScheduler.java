@@ -23,8 +23,8 @@ import java.util.function.IntConsumer;
  * 해당 테이블 삭제를 건너뛴다</b>. 이는 {@code enabled=true} 인데 월수 미설정(기본 0)/오설정(음수)으로
  * cutoff 가 '오늘'이 되어 <b>접속기록 전량이 파기되는 사고</b>(또는 설정 탈취 공격)를 코드 레벨에서 차단한다.
  *
- * <p>기본 <b>비활성</b>({@code nuri.log.retention.enabled=false}) — 인수처가 보존기간 수치를 확정한 뒤
- * 명시적으로 켠다. 테이블별 보존월은 {@code nuri.log.retention.{web,sys,login,user,privacy}-months}.
+     * <p>{@code nuri.log.retention.enabled=true}일 때 실행한다. 제품 application.yml 기본값은 true이며
+     * test profile은 false다. 테이블별 보존월은 {@code nuri.log.retention.{web,sys,login,user,privacy,sensitive}-months}.
  * (사용자 삭제 시 tb_user_log 는 즉시 정리되므로 user 보존은 잔여 백스톱이다.)
  *
  * <p>정책 문서: {@code docs/04-operations/log-retention-policy.md}.
@@ -51,6 +51,10 @@ public class LogRetentionScheduler {
      * 있으므로 {@link #purge} 의 하한 가드가 그대로 적용된다 — 짧게 설정해 전량파기하는 경로는 막힌다.
      */
     private final PrivacyLogRepository privacyLogRepository;
+    private final nuri.business.domain.log.SensitiveAuditLogRepository sensitiveAuditLogRepository;
+
+    @Value("${nuri.log.retention.sensitive-months:24}")
+    private int sensitiveMonths;
 
     @Value("${nuri.log.retention.web-months:0}")
     private int webMonths;
@@ -76,6 +80,12 @@ public class LogRetentionScheduler {
         purge("login_log", loginMonths, loginLogRepository::deleteOldLogs);
         purge("user_log", userMonths, userLogRepository::deleteOldLogs);
         purge("privacy_log", privacyMonths, privacyLogRepository::deleteOldLogs);
+        // D13 approved minimum is 24 months; never shorten this journal to the legacy 12-month floor.
+        if (sensitiveMonths >= 24) {
+            sensitiveAuditLogRepository.deleteBefore(java.time.LocalDateTime.now().minusMonths(sensitiveMonths));
+        } else {
+            log.warn("[log-retention] sys_adt_log 보존월={} < 24, 삭제 건너뜀", sensitiveMonths);
+        }
     }
 
     private void purge(String table, int months, IntConsumer deleter) {

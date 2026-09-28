@@ -12,6 +12,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.charset.StandardCharsets;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -19,6 +22,11 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
@@ -73,6 +81,7 @@ public class LocalFileStorageService implements FileStorageService {
         String normalizedExtension = extension == null ? "" : "." + extension.toLowerCase(Locale.ROOT);
         String savedFilename = UUID.randomUUID() + normalizedExtension;
         Path destinationFile = null;
+        boolean createdByThisCall = false;
 
         try {
             if (file.isEmpty()) {
@@ -88,10 +97,14 @@ public class LocalFileStorageService implements FileStorageService {
             }
 
             try (InputStream inputStream = file.getInputStream()) {
-                Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
+                // A stored UUID identifies an immutable object. A collision must never replace it.
+                try (var output = Files.newOutputStream(destinationFile, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
+                    createdByThisCall = true;
+                    inputStream.transferTo(output);
+                }
             }
         } catch (IOException e) {
-            if (destinationFile != null && destinationFile.normalize().startsWith(rootLocation)) {
+            if (createdByThisCall && destinationFile != null && destinationFile.normalize().startsWith(rootLocation)) {
                 try {
                     Files.deleteIfExists(destinationFile);
                 } catch (IOException cleanupFailure) {
@@ -164,6 +177,144 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public void delete(String filename) {
         delete(filename, "");
+    }
+
+    @Override
+    public String captureDeletionIdentity(String filename, String targetPath) {
+        Path file = deletionSource(filename, targetPath);
+        Path anchor = null;
+        boolean created = false;
+        try {
+            if (!Files.exists(file, LinkOption.NOFOLLOW_LINKS)) return "ABSENT";
+            if (!Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) throw new IOException("Not a regular storage object");
+            Path quarantine = resolveWithinRoot(".deletions");
+            Files.createDirectories(quarantine);
+            assertRealPathWithinRoot(quarantine);
+            UUID preparation = UUID.randomUUID();
+            anchor = quarantine.resolve(preparation + ".anchor");
+            // Java's Windows provider may return a null fileKey. A hard link preserves the actual
+            // object identity and Files.isSameFile compares it on both NTFS and Linux filesystems.
+            Files.createLink(anchor, file);
+            created = true;
+            return preparation + ":" + objectIdentity(anchor);
+        } catch (IOException failure) {
+            if (created) {
+                try { Files.deleteIfExists(anchor); }
+                catch (IOException cleanup) { failure.addSuppressed(cleanup); }
+            }
+            throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public void releaseDeletionIdentity(String identity) {
+        if ("ABSENT".equals(identity)) return;
+        try {
+            Files.deleteIfExists(identityAnchor(identity));
+        } catch (IOException failure) {
+            throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public void deleteCaptured(UUID intent, String filename, String targetPath, String identity) {
+        Objects.requireNonNull(intent);
+        if ("ABSENT".equals(identity)) return;
+        Path anchor = identityAnchor(identity);
+        String fingerprint = identity.substring(37);
+        Path source = deletionSource(filename, targetPath);
+        Path quarantine = resolveWithinRoot(".deletions");
+        try {
+            Files.createDirectories(quarantine);
+            assertRealPathWithinRoot(quarantine);
+            Path retained = quarantine.resolve(intent + ".object");
+            Path lockPath = quarantine.resolve(intent + ".lock");
+            Path completed = quarantine.resolve(intent + ".done");
+            // OS locks coordinate retries by multiple processes. Keep the lock inode stable.
+            try (FileChannel channel = FileChannel.open(lockPath, StandardOpenOption.CREATE,
+                    StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS);
+                    FileLock lease = channel.tryLock()) {
+                if (lease == null) throw new IOException("Deletion already in progress");
+                if (Files.exists(completed, LinkOption.NOFOLLOW_LINKS)) {
+                    if (!identity.equals(Files.readString(completed))) throw new IOException("Invalid deletion receipt");
+                    Files.deleteIfExists(anchor);
+                    return;
+                }
+                if (!Files.isRegularFile(anchor, LinkOption.NOFOLLOW_LINKS)
+                        || !fingerprint.equals(objectIdentity(anchor))) {
+                    throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE);
+                }
+                if (!Files.exists(retained, LinkOption.NOFOLLOW_LINKS)) {
+                    if (!Files.exists(source, LinkOption.NOFOLLOW_LINKS) || !Files.isSameFile(source, anchor)) {
+                        // The old path was removed/replaced. Remove only our retained reference to
+                        // the original object; a later object at the path is never touched.
+                        finishDeletion(completed, anchor, identity);
+                        return;
+                    }
+                    // Atomic quarantine closes the check/unlink race. After a crash, the same intent
+                    // resumes with this captured object and never moves a replacement from source.
+                    Files.move(source, retained, StandardCopyOption.ATOMIC_MOVE);
+                }
+                if (!Files.isSameFile(retained, anchor) || !fingerprint.equals(objectIdentity(retained))) {
+                    // A replacement won the race before rename. Preserve it, even if its original
+                    // path is already occupied. No overwrite or deletion is an acceptable recovery.
+                    if (!Files.exists(source, LinkOption.NOFOLLOW_LINKS)) Files.move(retained, source);
+                    throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE);
+                }
+                Files.delete(retained);
+                finishDeletion(completed, anchor, identity);
+            }
+        } catch (IOException failure) {
+            throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private Path identityAnchor(String identity) {
+        if (identity == null || !identity.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:[0-9a-f]{64}")) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        return resolveWithinRoot(".deletions", identity.substring(0, 36) + ".anchor");
+    }
+
+    private void finishDeletion(Path completed, Path anchor, String identity) throws IOException {
+        Path temporary = completed.resolveSibling(completed.getFileName() + ".tmp");
+        Files.writeString(temporary, identity, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS);
+        Files.move(temporary, completed, StandardCopyOption.ATOMIC_MOVE);
+        Files.deleteIfExists(anchor);
+    }
+
+    private Path deletionSource(String filename, String targetPath) {
+        Path source = resolveWithinRoot(targetPath, filename);
+        if (source.startsWith(rootLocation.resolve(".deletions"))) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        return source;
+    }
+
+    private String objectIdentity(Path file) throws IOException {
+        assertRealPathWithinRoot(file);
+        BasicFileAttributes before = Files.readAttributes(file, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+        if (!before.isRegularFile() || before.isSymbolicLink()) {
+            throw new IOException("Storage identity is unavailable");
+        }
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            digest.update((before.fileKey() + "\n" + before.creationTime() + "\n" + before.lastModifiedTime()
+                    + "\n" + before.size() + "\n").getBytes(StandardCharsets.UTF_8));
+            try (InputStream input = Files.newInputStream(file, LinkOption.NOFOLLOW_LINKS)) {
+                byte[] buffer = new byte[8192];
+                for (int count; (count = input.read(buffer)) != -1;) digest.update(buffer, 0, count);
+            }
+            BasicFileAttributes after = Files.readAttributes(file, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+            if (!Objects.equals(before.fileKey(), after.fileKey()) || before.size() != after.size()
+                    || !before.lastModifiedTime().equals(after.lastModifiedTime())) {
+                throw new IOException("Storage object changed during identity capture");
+            }
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException(impossible);
+        }
     }
 
     @Override

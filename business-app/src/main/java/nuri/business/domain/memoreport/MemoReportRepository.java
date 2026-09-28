@@ -4,11 +4,19 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
+import java.util.Optional;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MemoReportRepository extends JpaRepository<MemoReport, Long> {
+    /** 최초 열람과 본문·지시 변경을 같은 보고 행에서 직렬화한다. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select m from MemoReport m where m.memoRptSn = :memoRptSn")
+    Optional<MemoReport> findByIdForUpdate(@Param("memoRptSn") Long memoRptSn);
+
     Page<MemoReport> findByUserId(String userId, Pageable pageable);
     Page<MemoReport> findByRptrId(String rptrId, Pageable pageable);
 

@@ -5,7 +5,31 @@ import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { assertSchemaPreserved, buildCompositionAdminSeed, canonicalConstraintDefinition, projectCompositionMenus,
   schemaSnapshotHash, schemaSnapshotSql, selectSchemaSnapshot, verifyResolvedDbComposition } from './project-composer-db.mjs';
-import { generatedMigrationSessionSql, parseDbGenerationArgs, safeDbOutputPath, sanitizePgDump } from './generate-reusable-base-db.mjs';
+import { assertCompositionOperationGrants, generatedMigrationSessionSql, parseDbGenerationArgs, safeDbOutputPath, sanitizePgDump } from './generate-reusable-base-db.mjs';
+
+test('composition DB requires exact default group/code grants and keeps available unassigned capabilities ungranted', () => {
+  const catalog = { permissions: [
+    { code: 'AUTHRT_GRANT', defaultGroups: ['ROLE_ADMIN'] },
+    { code: 'USER_READ', defaultGroups: ['ROLE_ADMIN', 'ROLE_USER'] },
+    { code: 'DWORK_RETRY', defaultGroups: [] },
+    { code: 'SURVEY_READ', defaultGroups: ['ROLE_USER'] },
+  ] };
+  const selected = ['AUTHRT_GRANT', 'USER_READ', 'DWORK_RETRY'];
+  const grants = [['ROLE_ADMIN', 'AUTHRT_GRANT'], ['ROLE_ADMIN', 'USER_READ'], ['ROLE_USER', 'USER_READ']];
+  assert.doesNotThrow(() => assertCompositionOperationGrants([...grants].reverse(), selected, catalog));
+  for (const changed of [grants.slice(0, -1),
+    [...grants, ['ROLE_ADMIN', 'DWORK_RETRY']],
+    [...grants, ['ROLE_USER', 'SURVEY_READ']],
+    [...grants.slice(0, -1), ['ROLE_SYSTEM', 'USER_READ']]]) {
+    assert.throws(() => assertCompositionOperationGrants(changed, selected, catalog), /group\/code grants.*불일치/);
+  }
+  assert.throws(() => assertCompositionOperationGrants([...grants, grants[0]], selected, catalog), /Duplicate/);
+  assert.throws(() => assertCompositionOperationGrants([['ROLE_ADMIN']], selected, catalog), /Invalid/);
+  assert.throws(() => assertCompositionOperationGrants(grants, [...selected, 'UNKNOWN'], catalog), /unknown OPERATION/);
+  assert.throws(() => assertCompositionOperationGrants([], ['USER_READ'], {
+    permissions: [{ code: 'USER_READ', defaultGroups: ['UNREVIEWED'] }],
+  }), /Unknown default permission group/);
+});
 
 test('DB CLI keeps legacy profile defaults and rejects ambiguous or missing composition input', () => {
   assert.deepEqual(parseDbGenerationArgs(['--profile', 'core']), {
@@ -156,7 +180,8 @@ test('selected seed keeps fresh-bootstrap and revocation guards while separating
   const bootstrapSql = readFileSync(new URL('../api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql', import.meta.url), 'utf8');
   const permissionCatalog = JSON.parse(readFileSync(new URL('../config/governance/permission-catalog.json', import.meta.url), 'utf8'));
   const projection = projectCompositionMenus({ menus, programs, menuRoutes: ['/admin/user/manage'] });
-  const options = { bootstrapSql, projection, permissionCatalog, permissionCodes: ['AUTHRT_GRANT', 'AUTHRT_ASSIGN', 'USER_READ'] };
+  const options = { bootstrapSql, projection, permissionCatalog,
+    permissionCodes: ['AUTHRT_GRANT', 'AUTHRT_ASSIGN', 'USER_READ', 'DWORK_READ', 'DWORK_RETRY', 'MFA_RECOVER', 'NOTICE_EDIT', 'FAQ_EDIT'] };
   const sql = buildCompositionAdminSeed(options);
   assert.equal(buildCompositionAdminSeed({ ...options, bootstrapSql: bootstrapSql.replace(/\r?\n/g, '\r\n') }), sql);
   assert.doesNotMatch(sql, /\r/);
@@ -169,6 +194,7 @@ test('selected seed keeps fresh-bootstrap and revocation guards while separating
   assert.match(sql, /Users'' list/);
   assert.ok(sql.includes('/api/v1/admin/users'));
   assert.doesNotMatch(sql, /'NOTE_SEND'|'SURVEY_READ'|'USER_DELETE'/);
+  assert.doesNotMatch(sql, /'DWORK_READ'|'DWORK_RETRY'|'MFA_RECOVER'|'NOTICE_EDIT'|'FAQ_EDIT'/);
   assert.doesNotMatch(sql, /menu_sn BETWEEN 910 AND 920/);
   assert.throws(() => buildCompositionAdminSeed({ ...options, permissionCodes: ['UNKNOWN'] }), /unknown OPERATION/);
   assert.throws(() => buildCompositionAdminSeed({ ...options, permissionCodes: ['USER_READ'] }), /preserve permission administration/);

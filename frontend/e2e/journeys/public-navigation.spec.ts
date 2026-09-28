@@ -34,13 +34,19 @@ async function readData<T>(request: APIRequestContext, url: string): Promise<T> 
 }
 
 test.describe('설문 응답 생명주기', () => {
-    test('설문 생성·참여·선택답 확인: 기간 등록·수정과 관리자 목록·상세 표시', async ({ adminPage, userPage, adminRequest }) => {
-        // browser-test의 자동 isolatedTarget 검사와 저장된 합성 사용자 세션을 그대로 사용한다.
+    test('설문 생성·참여·선택답 확인: 기간 등록·수정과 관리자 목록·상세 표시', async ({ adminPage, actorPage, adminRequest }) => {
+        // browser-test의 자동 isolatedTarget 검사와 정상 API로 생성한 합성 사용자만 사용한다.
         // online-polls의 pollSn과 구분되는 실제 srvySn 설문 생명주기다.
         const unique = randomUUID();
         const templateCode = `R6${unique.replaceAll('-', '').slice(0, 10)}`;
         const templateDescription = `E2E R6 설문 템플릿 ${unique}`;
         const surveyTitle = `E2E R6 기간·선택 응답 ${unique}`;
+        const users = '/api/v1/admin/system/users';
+        const userId = `E2E_SR_${unique.replaceAll('-', '').slice(0, 10)}`;
+        const userName = `E2E Survey ${unique.replaceAll('-', '').slice(0, 10)}`;
+        const password = `Aa1!${randomUUID()}`;
+        const { page: userPage, context: userContext } = await actorPage({ storageState: { cookies: [], origins: [] } });
+        let userCreated = false;
         const questionFixtures = [1, 2].map(index => ({
             questionText: `검증할 문항 ${index} ${unique}`,
             choiceLabel: `문항 ${index}에서 선택한 답변 ${unique}`,
@@ -53,6 +59,30 @@ test.describe('설문 응답 생명주기', () => {
         let surveyId: number | undefined;
 
         try {
+            await test.step('생성 시각이 확인되는 새 일반 사용자를 정상 API로 준비한다', async () => {
+                // 기존 TEST1 seed는 crt_dt가 NULL이다. 승인된 legacy 취소 거부를 완화하지 않고 신규 제출의 성공 경로를 검증한다.
+                const created = await adminRequest.post(users, {
+                    data: { userId, userNm: userName, pswd: password, role: 'USER' },
+                });
+                userCreated = created.ok();
+                expect(created.status()).toBe(200);
+                const owned = await readData<{ userId: string; userNm: string; crtDt?: string }>(adminRequest, `${users}/${userId}`);
+                expect(owned.userId).toBe(userId);
+                expect(owned.userNm).toBe(userName);
+                expect(Number.isFinite(Date.parse(owned.crtDt ?? '')), '신규 계정의 생성 시각이 저장되어야 한다').toBe(true);
+                // 이 전용 브라우저 컨텍스트에만 BFF 로그인 쿠키를 받는다. 공유 TEST1 인증 상태는 바꾸지 않는다.
+                const loggedIn = await userContext.request.post('/api/v1/auth/login', { data: { userId, password } });
+                expect(loggedIn.status()).toBe(200);
+                // Production cookies stay Secure. Chromium recognizes this owned loopback
+                // as a secure context; APIRequestContext's HTTP cookie filter does not.
+                const [currentResponse] = await Promise.all([
+                    userPage.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/auth/me'
+                        && response.request().method() === 'GET' && response.status() === 200),
+                    userPage.goto('/survey'),
+                ]);
+                const current = (await currentResponse.json()).data as { id: string };
+                expect(current.id).toBe(userId);
+            });
             await test.step('합성 템플릿 준비 후 실제 폼으로 시작일·종료일을 저장한다', async () => {
                 const created = await adminRequest.post(`${SURVEYS}/templates`, {
                     data: { srvyTmpltTypeCd: templateCode, srvyTmpltExpln: templateDescription },
@@ -154,8 +184,8 @@ test.describe('설문 응답 생명주기', () => {
                 await expect(main.getByRole('button', { name: '제출 완료', exact: true })).toBeDisabled();
             });
 
+            const responseIds = new Map<number, number>();
             await test.step('관리자가 두 문항의 응답 목록과 각각의 상세에서 선택한 레이블을 확인한다', async () => {
-                const responseIds = new Map<number, number>();
                 let pageCount = 1;
                 for (let page = 0; page < pageCount && responseIds.size < selectedAnswers.length; page++) {
                     const responses = await readData<ResponsePage>(adminRequest, `${RESPONSES}?page=${page}&size=10`);
@@ -193,6 +223,38 @@ test.describe('설문 응답 생명주기', () => {
                     await expect(main.getByText('응답 내용이 등록되지 않았습니다.', { exact: true })).toHaveCount(0);
                 }
             });
+            await test.step('한 답변에서 전체 제출을 취소하면 두 문항이 사라지고 기간 안에 다시 제출할 수 있다', async () => {
+                const anchor = responseIds.get(selectedAnswers[0].srvyArtclSn)!;
+                await adminPage.goto('/survey/response');
+                const main = adminPage.locator('main#main-content');
+                const selector = `a[href="/survey/response/${anchor}"]`;
+                const { totalPage } = await readData<ResponsePage>(adminRequest, `${RESPONSES}?page=0&size=10`);
+                await expect(main.getByText(`1 / ${totalPage} 페이지`, { exact: true })).toBeVisible();
+                for (let page = 1; page < totalPage && await main.locator(selector).count() === 0; page++) {
+                    await main.getByRole('button', { name: '다음', exact: true }).click();
+                    await expect(main.getByText(`${page + 1} / ${totalPage} 페이지`, { exact: true })).toBeVisible();
+                }
+                const row = main.getByRole('row').filter({ has: adminPage.locator(selector) });
+                await row.getByRole('button', { name: /전체 제출 취소$/ }).click();
+                const confirmation = adminPage.getByRole('dialog', { name: '전체 제출 취소', exact: true });
+                await expect(confirmation).toContainText('모든 문항·선택 답변');
+                const cancelled = adminPage.waitForResponse(response => new URL(response.url()).pathname === `${RESPONSES}/${anchor}/submission`
+                    && response.request().method() === 'DELETE');
+                await confirmation.getByRole('button', { name: '전체 제출 취소', exact: true }).click();
+                expect((await cancelled).status()).toBe(200);
+                for (const responseId of responseIds.values()) {
+                    expect((await adminRequest.get(`${RESPONSES}/${responseId}`)).status()).toBe(404);
+                }
+                await userPage.goto(`/survey/${surveyId}`);
+                for (const { choiceLabel } of selectedAnswers) {
+                    await userPage.getByRole('radio', { name: choiceLabel, exact: true }).check();
+                }
+                const submittedAgain = userPage.waitForResponse(response => new URL(response.url()).pathname === `/api/v1/surveys/${surveyId}/responses`
+                    && response.request().method() === 'POST');
+                await userPage.getByRole('button', { name: '응답 제출', exact: true }).click();
+                expect((await submittedAgain).status()).toBe(200);
+                await expect(userPage.getByRole('button', { name: '제출 완료', exact: true })).toBeDisabled();
+            });
         } finally {
             // API가 소유 설문의 자식부터 정리한다. ID와 합성 표식을 다시 대조하며 전체 목록 삭제는 하지 않는다.
             if (surveyId !== undefined) {
@@ -206,6 +268,13 @@ test.describe('설문 응답 생명주기', () => {
                 expect(owned.srvyTmpltTypeCd).toBe(templateCode);
                 expect(owned.srvyTmpltExpln).toBe(templateDescription);
                 expect((await adminRequest.delete(`${SURVEYS}/templates/${templateId}`)).status()).toBe(200);
+            }
+            if (userCreated) {
+                const owned = await readData<{ userId: string; userNm: string }>(adminRequest, `${users}/${userId}`);
+                expect(owned.userId).toBe(userId);
+                expect(owned.userNm).toBe(userName);
+                await userPage.goto('about:blank');
+                expect((await adminRequest.delete(`${users}/${userId}`)).status()).toBe(200);
             }
         }
     });

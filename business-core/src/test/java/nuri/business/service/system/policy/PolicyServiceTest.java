@@ -28,6 +28,34 @@ class PolicyServiceTest {
     private SystemPolicyRepository systemPolicyRepository;
 
     @Test
+    void createInsertsNewPolicyAndRejectsExistingCodeWithoutMerge() {
+        try (var security = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            policyService.createPolicy("NEW_POLICY", "제목", "본문");
+            var inserted = org.mockito.ArgumentCaptor.forClass(SystemPolicy.class);
+            verify(systemPolicyRepository).insert(inserted.capture());
+            assertThat(inserted.getValue().getPlcyTypeCd()).isEqualTo("NEW_POLICY");
+            assertThat(inserted.getValue().getPlcyCn()).isEqualTo("본문");
+            given(systemPolicyRepository.existsById("NEW_POLICY")).willReturn(true);
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> policyService.createPolicy("NEW_POLICY", "다른 제목", "다른 본문"))
+                    .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.DUPLICATE_RESOURCE);
+            verify(systemPolicyRepository, org.mockito.Mockito.never()).save(any());
+            verify(systemPolicyRepository, org.mockito.Mockito.times(1)).insert(any());
+        }
+    }
+
+    @Test
+    void createRequiresPolicyWritePermission() {
+        try (var security = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            security.when(() -> nuri.business.security.util.SecurityUtil.assertPermission("POLICY_UPDATE"))
+                    .thenThrow(new nuri.foundation.core.exception.BusinessException(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED));
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> policyService.createPolicy("NEW_POLICY", "제목", "본문"))
+                    .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
+            org.mockito.Mockito.verifyNoInteractions(systemPolicyRepository);
+        }
+    }
+
+    @Test
     @DisplayName("정책 목록 조회 성공")
     void getPolicies_Success() {
         // given

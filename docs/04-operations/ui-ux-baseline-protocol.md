@@ -134,6 +134,10 @@ baseline runner는 매 실행마다 다음을 `environment.json`에 기록한다
 
 `dirtyBuildInputDiffHash`는 HEAD 대비 tracked·staged·deleted 상태와 untracked production input의 현재 content hash를 경로 순서에 무관한 canonical record로 합성한다. 이때 `buildInputTreeHash`와 동일한 production path gate를 먼저 적용한다. `.env*`, Playwright auth state, key/keystore, `application-local.*`, storage/log/build/test 생성물처럼 제외된 후보에는 filesystem stat·read·content hash를 호출하지 않는다. artifact에는 최종 `64-hex` 또는 clean을 뜻하는 `null`만 남기며 원문 diff, raw diff, 파일 경로, 파일 내용은 남기지 않는다. `buildInputTreeHash`는 실행 commit의 selected Git blob raw bytes로 계산하고, protocol·runner·core·두 contract는 worktree raw bytes와 같은 commit의 blob raw bytes가 exact 일치할 때만 hash를 채택한다. 이 분리는 Windows CRLF checkout을 blob LF로 오인하거나, 반대로 변경된 worktree를 committed source로 가장하는 일을 막는다. Git 조회·선택 파일 읽기·hash 계산·형식 검증 중 하나라도 실패하면 fallback 값을 만들지 않고 browser launch 전 preflight를 red로 종료한다. runner는 시작과 종료에 commit SHA, tree hash, dirty fingerprint, manifest/plan, route truth, protocol과 tooling raw-byte hash를 모두 다시 계산하며 하나라도 달라지면 final seal을 쓰지 않는다.
 
+committed blob을 읽는 runner의 `git show`는 빌더와 같은 256MiB 출력 상한을 명시한다. 따라서 1MiB를 넘는 폰트·Atlas·생성 타입도 원본 바이트 그대로 해시하며, 상한 초과나 읽기 실패는 파일 제외·잘라내기 없이 실행을 중단한다.
+
+기존 runner 계약은 로그인 probe의 입력 이름과 실제 `LoginClient`의 `validation.fieldProps` 선언, 화면 제목·마법사 단계·검증 문구·FAQ 편집기 접근성 이름과 각 화면의 실제 선언을 함께 검증한다. 검색 probe는 해당 화면이 사용하는 `KeywordFilter`의 제출 동작을 마친 뒤 결과를 확인하며, 입력 즉시 검색하는 화면에는 이 동작을 추가하지 않는다.
+
 ```powershell
 pnpm -C frontend run ui-quality:plan
 node --test scripts/ui-quality-baseline-runner-contract.test.mjs
@@ -160,13 +164,17 @@ npm run ui-quality:baseline:build -- --build-sha <40-hex-head> --api-image egov-
 
 wrapper는 Docker 호출 전에 tracked·untracked dirty 상태, HEAD/build SHA, committed production-input tree, archive policy와 attestation 출력 경계를 fail-closed로 확인한다. 각 `docker build --pull --no-cache`는 별도 `--iidfile`을 사용한다. 각 build 직후 bounded `docker image inspect`(5초, 최대 4,096 bytes)로 같은 tag의 actual `.Id`가 iidfile의 `sha256:<64 lowercase hex>`와 exact 일치하는지, image-level `Config.Labels`의 `org.opencontainers.image.revision`과 `io.egov.ui-quality.build-input-tree-sha256`가 committed build SHA/tree와 exact 일치하는지 읽는다. 두 이미지가 모두 닫힌 뒤에만 `{payload,payloadSha256}` closed envelope를 canonical compact UTF-8+LF로 저장소 밖 새 regular file에 atomic rename하고 exact readback한다. `payload`는 schema/kind, `baselineRunId=r13`, build SHA, build-input tree hash, `commitTreeId`와 API/frontend actual image ID만 가진다. payload digest는 canonical payload bytes에, runner 환경의 attestation SHA-256은 exact envelope file bytes에 각각 결속한다. malformed·oversize·CLI 실패·wrong tag ID·label mismatch·기존 출력 파일·symlink는 publication 전에 red다.
 
-attested image의 표준 기동·실행 진입점은 아래 root package command다. 실행 전 `UI_BASELINE_DB_PASSWORD`, `UI_BASELINE_JWT_SECRET`, `UI_BASELINE_ADMIN_ID`, `UI_BASELINE_ADMIN_SECRET`을 현재 process에 안전하게 주입해야 하며 실제 값은 문서·명령 인자·로그에 쓰지 않는다. DB 이름과 사용자는 `UI_BASELINE_DB_NAME`, `UI_BASELINE_DB_USER`로 선택 주입할 수 있다.
+검사 계약은 합성 inspect 응답뿐 아니라 실제 명령에 전달하는 Go template의 JSON 구조도 확인한다. ID·두 라벨을 넣은 결과에서 `Labels`와 최상위 객체가 모두 닫혀야 하며, 닫는 괄호 누락은 기존 검사에서 실패한다. 전체 이미지 환경을 읽어 파싱 오류를 우회하지 않는다.
+
+attested image의 표준 기동·실행 진입점은 아래 root package command다. 실행 전 `UI_BASELINE_DB_PASSWORD`, `UI_BASELINE_JWT_SECRET`, `UI_BASELINE_ADMIN_ID`, `UI_BASELINE_ADMIN_SECRET`을 현재 process에 안전하게 주입해야 하며 실제 값은 문서·명령 인자·로그에 쓰지 않는다. DB 이름과 사용자는 `UI_BASELINE_DB_NAME`, `UI_BASELINE_DB_USER`로 선택 주입할 수 있다. DB 이름은 기본 `authz_e2e`이며 `authz_e2e_` 뒤에 소문자·숫자 1~40자를 붙인 격리 이름만 추가 허용한다. 실행기는 새 전용 컨테이너에서 고정 `e2e` 프로필과 명시적 disposable Contract 승인을 사용하고, V2_99→Contract→후속 migration→합성 관리자 공지·FAQ 편집 권한 fixture 순서를 거친다. 운영 DB에는 적용하지 않으며 스키마 설정은 `validate`로 고정한다.
 
 ```powershell
 npm run ui-quality:baseline:launch -- --attestation <absolute-outside-repository-attestation-path> --attestation-sha256 <64-lowercase-hex> --web-port <loopback-host-port> --api-port <different-loopback-host-port> --execute confirmed
 ```
 
 launcher는 clean `HEAD`와 attestation commit/tree를 먼저 exact 비교하고 scenario·runner·launcher contract를 Docker보다 먼저 실행한다. 그 뒤 OS 임시 디렉터리 아래에 secret value가 없는 전용 `compose.json`을 만들고, exact readback한 canonical bytes를 `docker compose --file -`의 stdin으로만 전달해 descriptor path 교체가 다른 Compose 실행으로 이어지지 않게 한다. `egov-uiux-baseline-r13-<32 lowercase hex>` project와 그 project에서 파생한 DB/API/frontend container·network name을 사용한다. API/frontend image에는 attestation의 immutable image ID를 직접 지정하고 build·pull을 금지하며, 두 host port는 `127.0.0.1`에만 publish한다. `docker compose up --wait` 뒤 full container ID, actual image, Compose project/service, network membership, health, restart count, exact port와 image-level provenance label을 bounded inspect로 다시 검증한다. 검증된 값과 필요한 admin credential만 closed allowlist environment로 같은 stack의 auth setup과 authoritative `--execute --include-performance` runner에 전달하며 DB/JWT/그 밖의 상속 환경은 runner에 전달하지 않는다. 성공·실패 모두 project·ephemeral DB volume을 `down --volumes --remove-orphans`로 정리하고 raw inspect, attestation path, credential은 출력하지 않는다. 기본 `docker-compose.yml`은 읽거나 수정하지 않으므로 개발용 고정 container 동작은 바뀌지 않는다.
+
+Windows에서는 Docker Compose 플러그인 탐색에 필요한 OS 경로 변수 `ProgramFiles`·`ProgramW6432`를 추가로 보존하며, DB/JWT의 runner 전달과 `GITHUB_TOKEN`·`NODE_OPTIONS` 등 불필요한 상속 환경은 계속 차단한다.
 
 비정상 종료와 cleanup 실패에는 secret이 없는 descriptor를 남긴다. 오류에 표시된 project 또는 OS 임시 디렉터리 `egov-ui-quality-baseline-r13` 아래 exact project directory를 확인한 뒤 다음 bounded recovery만 사용한다. descriptor가 canonical launcher shape와 다르거나 path가 symlink/junction·repository 내부이면 Docker 명령 전에 red다.
 
@@ -192,6 +200,8 @@ npm run ui-quality:baseline:launch -- --recover-project egov-uiux-baseline-r13-<
 | `UI_BASELINE_SYNTHETIC_BOARD_ID`, `UI_BASELINE_SYNTHETIC_FAQ_BOARD_ID` | 필요 시 격리 seed의 synthetic board를 지정. 미지정 시 현재 고정 synthetic seed ID 사용 | manifest placeholder만 기록 |
 
 auth state는 격리 launcher가 전용 `frontend/scripts/ui-quality-baseline-auth.mjs`로 생성한다. 이 진입점은 build attestation·컨테이너·이미지·네트워크를 다시 검증하고 일반 E2E의 cleanup을 실행하지 않는다. 인증과 runner 사이에 stack/image/port를 바꾸면 다시 생성한다.
+
+합성 mutation의 준비·readback·cleanup API는 같은 browser context의 현재 access cookie를 메모리에서 읽어 검증된 동일 origin의 `/api/v1/` 요청에만 Bearer로 전달한다. HTTP loopback의 Secure cookie를 브라우저와 Playwright API client가 다르게 선택할 수 있기 때문이다. 쿠키의 Secure/HttpOnly 속성이나 제품 인증 정책은 바꾸지 않으며, 다른 origin·경로·redirect 또는 누락·모호한 쿠키는 요청 전에 거부한다. 인증 값은 결과와 로그에 남기지 않는다. 빈 검색 결과 fixture도 실제 서비스 파서가 요구하는 `list`, `total`, `page`, `size`, `totalPage` 계약을 충족해야 한다. 합성 게시판 readback·cleanup 검색은 실제 `BaseSearchDto`의 `searchCondition=0`, `searchKeyword`, `pageIndex`, `pageUnit`을 사용해 제목과 페이지 크기를 명시한다.
 
 모든 provenance를 기록하는 full·mutation diagnostic·일반 diagnostic execute는 browser launch 전에 같은 build envelope와 stack을 검증하고 final seal 직전 둘 다 다시 검증한다. 먼저 runner는 저장소 밖 attestation regular file을 symlink·비정규 파일 없이 최대 4,096 bytes로 읽어 exact raw-file SHA-256, canonical `{payload,payloadSha256}` envelope, 실행 `buildSha`·`buildInputTreeHash`·`commitTreeId`, 환경의 두 image ID를 교차 검증한다. 시작과 종료는 같은 path·raw digest·payload identity에 결속된다.
 
@@ -296,6 +306,8 @@ performance 실패 artifact에는 raw exception, message, URL, response payload�
 4. 검색하고 항목을 열어 답변 내용까지 확인하면 종료한다.
 5. USER에게 admin action이 노출되거나 admin-only detail이 보이면 critical authorization/privacy finding으로 기록한다.
 
+자동 작성 probe는 저장 전 만족도 목록·평균 응답 관측을 등록하고, 저장한 게시글의 상세 URL·제목과 두 GET의 200 응답 및 전송 완료를 확인한다. 작성 화면으로 돌아가 준비 상태를 확인한 뒤 fixture를 삭제하고 활성 잔여 0을 재조회한다. 독립 API의 저장 확인만으로 화면 전환이 끝났다고 간주하지 않는다. 상세 화면이 조회 중인 게시글을 먼저 삭제해 발생하는 404도 기존 HTTP 오류 판정에서 제외하지 않으며, 중간 검증 실패 시에도 기존 mutation lifecycle의 정리는 실행한다.
+
 #### Board maker wizard
 
 1. 첫 단계에서 필수 이름을 비워 다음을 눌러 오류와 focus를 확인한다.
@@ -311,7 +323,7 @@ performance 실패 artifact에는 raw exception, message, URL, response payload�
 모든 render case는 다음 조건을 만족한 뒤 `@axe-core/playwright`를 실행한다.
 
 1. Chromium, `ko-KR`, `Asia/Seoul`, 고정 viewport와 color mode를 사용한다.
-2. runner는 scenario state 상호작용 전에 `animation: none`·`transition: none`·caret 안정화 style을 먼저 주입한다. `duration: 0s`만 적용하면 shake 같은 keyframe의 중간 transform을 고정할 수 있으므로 사용하지 않는다. 상호작용 또는 hard navigation 뒤에는 같은 style을 다시 주입하고, 남은 유한 animation은 final state로 완료하며 무한 animation은 취소한 뒤 두 animation frame을 기다린다. DOM-visible 오류와 React effect의 focus 복원을 같은 commit으로 가정하지 않으며, 오류 focus assertion은 boolean 일치만 최대 12 animation frame 동안 bounded poll한다. active element의 raw text·ID·DOM path는 artifact에 남기지 않고, 이 범위 안에 focus가 복원되지 않으면 assertion finding을 그대로 유지한다. 별도 reduced-motion 수동 검사의 의미는 유지한다.
+2. runner는 scenario state 상호작용 전에 `animation: none`·`transition: none`·caret 안정화 style을 먼저 주입한다. `duration: 0s`만 적용하면 shake 같은 keyframe의 중간 transform을 고정할 수 있으므로 사용하지 않는다. 상호작용 또는 hard navigation 뒤에는 같은 style을 다시 주입하고, 남은 유한 animation은 final state로 완료하며 무한 animation은 취소한 뒤 두 animation frame을 기다린다. 로그인 실패는 Next route announcer의 공용 `alert`가 아니라 제품의 `data-testid="login-error"`가 보일 때 준비됐다고 판정한다. DOM-visible 오류와 React effect의 focus 복원을 같은 commit으로 가정하지 않으며, 오류 focus assertion은 boolean 일치만 최대 12 animation frame 동안 bounded poll한다. active element의 raw text·ID·DOM path는 artifact에 남기지 않고, 이 범위 안에 focus가 복원되지 않으면 assertion finding을 그대로 유지한다. 별도 reduced-motion 수동 검사의 의미는 유지한다.
 3. broad timeout 대신 scenario별 heading, synthetic fixture, pending indicator 종료를 기다린다. post-state animation 정리 뒤의 visual readiness는 inline motion style의 내용 비노출 SHA-256 aggregate, active animation 수, visible `aria-busy` 수, 비어 있지 않은 document title 여부만 메모리 안에서 비교하며 최소 12 frame의 delivery window와 최대 24 frame 경계 안에서 3회 연속 안정돼야 한다. hash·sample은 artifact에 저장하지 않으며 text·selector·locator·DOM path를 읽거나 반환하지 않는다. 경계 안에 title/idle/stability가 관측되지 않으면 axe rule·threshold를 완화하거나 0건으로 기록하지 않고 `visual-readiness-failed` invalid로 닫는다. responsive geometry가 3회 연속 안정된 뒤, 화면에 보이고 실제 overflow 중인 `StandardDataTable` scroll region의 `role=region`·비어 있지 않은 accessible name·`tabIndex=0` commit을 최대 12 frame 안에서 2회 연속 확인하고 나서 axe를 실행한다. 이 readiness가 끝내 관측되지 않으면 rule을 끄거나 기다림을 무한정 늘리지 않고 해당 case를 invalid로 닫는다.
 4. clock·random content·차트처럼 결정적이지 않은 영역은 테스트 data를 고정한다. 화면 전체를 넓게 exclude하지 않는다.
 5. `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22a`, `wcag22aa` tag를 사용한다.

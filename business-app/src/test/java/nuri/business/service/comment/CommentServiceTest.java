@@ -46,6 +46,35 @@ class CommentServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({
+            "owner-login, true, false, true",
+            "different-login, true, false, false",
+            "different-login, true, true, true",
+            "owner-login, false, true, false"
+    })
+    @DisplayName("댓글 작업 플래그는 로그인 ID 소유권과 정확한 기본·대리 권한을 함께 판정한다")
+    void actionFlagsMatchOwnerAndPermissions(String loginId, boolean basePermission, boolean allPermission, boolean expected) {
+        Comment comment = Comment.builder().ansSn(1L).pstSn(1L).bbsId("BBS_01")
+                .wrterId("different-internal-key").ansCn("본문").useYn("Y").build();
+        comment.setFrstRgtrId("owner-login");
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId).thenReturn(Optional.of(loginId));
+        for (String permission : java.util.List.of("COMMENT_UPDATE", "COMMENT_DELETE")) {
+            __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission(permission)).thenReturn(basePermission);
+        }
+        for (String permission : java.util.List.of("COMMENT_UPDATE_ALL", "COMMENT_DELETE_ALL")) {
+            __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission(permission)).thenReturn(allPermission);
+        }
+        given(commentRepository.findByBbsIdAndPstSn(org.mockito.ArgumentMatchers.eq("BBS_01"),
+                org.mockito.ArgumentMatchers.eq(1L), any(Pageable.class)))
+                .willReturn(new PageImpl<>(java.util.List.of(comment)));
+
+        CommentDto dto = commentService.getComments(1L, "BBS_01", PageRequest.of(0, 10)).getContent().get(0);
+        assertThat(dto.isEditable()).isEqualTo(expected);
+        assertThat(dto.isDeletable()).isEqualTo(expected);
+        assertThat(comment.getFrstRgtrId()).isEqualTo("owner-login");
+    }
+
     @Test
     @DisplayName("🚨 관리자 목록은 조건이 없으면 살아 있는 전체 댓글을 최신순으로 준다 — bbs_id = NULL 로 늘 0건이 되지 않는다 (DIP I6 ⑥)")
     void getCommentsForModeration_withoutFilters() {

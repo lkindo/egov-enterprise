@@ -6,7 +6,6 @@ import nuri.business.domain.comment.exception.CommentErrorCode;
 import nuri.business.service.comment.dto.CommentDto;
 import nuri.foundation.core.event.PostCommentCountChangedEvent;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.util.TransactionUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -79,7 +78,7 @@ public class CommentService {
 
         Long ansSn = commentRepository.save(comment).getAnsSn();
         publishCountDelta(comment.getBbsId(), comment.getPstSn(), 1);
-        publishCommentedAfterCommit(comment.getBbsId(), comment.getPstSn(), wrterEsntlId, wrterNm);
+        publishCommented(comment.getBbsId(), comment.getPstSn(), wrterEsntlId, wrterNm);
         return ansSn;
     }
 
@@ -138,7 +137,7 @@ public class CommentService {
     }
 
     /**
-     * 댓글이 <b>새로 달렸음</b>을 커밋 이후에 알린다 — 게시글 작성자 알림의 출발점이다.
+     * 댓글이 <b>새로 달렸음</b>을 같은 트랜잭션에 알린다 — 게시글 작성자 알림의 출발점이다.
      *
      * <p><b>왜 개수 이벤트를 재사용하지 않는가</b> — 그 이벤트는 삭제에도 발행되고 누가 썼는지를
      * 나르지 않는다. 하나로 겸하게 하면 댓글을 지웠을 때도 "댓글이 달렸다" 알림이 나간다.
@@ -148,21 +147,25 @@ public class CommentService {
      * (GAP-ARCH-001 이 2026-08-29 에 역전시킨 바로 그 방향이다). 게시글을 소유한 board 가
      * 이 이벤트를 받아 작성자를 판정한다.
      */
-    private void publishCommentedAfterCommit(String bbsId, Long pstSn, String wrterEsntlId, String wrterNm) {
+    private void publishCommented(String bbsId, Long pstSn, String wrterEsntlId, String wrterNm) {
         if (bbsId == null || pstSn == null) return;
-        TransactionUtils.runAfterCommit(() -> eventPublisher.publishEvent(
-                new nuri.foundation.core.event.PostCommentedEvent(bbsId, pstSn, wrterEsntlId, wrterNm)));
+        eventPublisher.publishEvent(
+                new nuri.foundation.core.event.PostCommentedEvent(bbsId, pstSn, wrterEsntlId, wrterNm));
     }
 
     private CommentDto toDto(Comment entity) {
+        boolean owner = nuri.business.security.util.SecurityUtil.getCurrentLoginId()
+                .filter(loginId -> loginId.equals(entity.getFrstRgtrId())).isPresent();
         return CommentDto.builder()
                 .ansSn(entity.getAnsSn())
                 .pstSn(entity.getPstSn())
                 .bbsId(entity.getBbsId())
                 .wrterId(entity.getWrterId())
                 .wrterNm(entity.getWrterNm())
-                // 화면의 수정·삭제 버튼 판정은 아래 두 가드가 보는 축(frstRgtrId)과 같아야 한다.
-                .frstRgtrId(entity.getFrstRgtrId())
+                .editable(nuri.business.security.util.SecurityUtil.hasPermission("COMMENT_UPDATE")
+                        && (owner || nuri.business.security.util.SecurityUtil.hasPermission("COMMENT_UPDATE_ALL")))
+                .deletable(nuri.business.security.util.SecurityUtil.hasPermission("COMMENT_DELETE")
+                        && (owner || nuri.business.security.util.SecurityUtil.hasPermission("COMMENT_DELETE_ALL")))
                 .pswd(entity.getPswd())
                 .ansCn(entity.getAnsCn())
                 .crtDt(entity.getCrtDt() != null ? entity.getCrtDt().toString() : null)
