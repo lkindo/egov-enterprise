@@ -41,6 +41,6 @@ worker 재시도는 기존 알림 ID를 그대로 사용하므로 알림함에 �
 
 `DurableWorkIntegrationTest`는 격리 PostgreSQL에서 업무 롤백·중복 의도·임대 만료·복수 작업자·시도 한도·재처리 감사를 확인한다. `LocalFileStorageServiceTest`와 `FileDeletionTransactionTest`는 실제 임시 파일의 교체·중단·롤백 경계를 확인한다. 테스트 파일의 존재는 통과 증거가 아니며 실행 결과는 해당 변경의 검증 기록에서 확인한다. 운영 저장소에서의 중단·복구 리허설과 배포는 별도 승인 범위다.
 
-`NotificationDurabilityIntegrationTest`는 격리 PostgreSQL에서 알림·의도의 원자 롤백, 실제 advisory 잠금 대기를 동반한 동시 재발행, 요청 지문 불일치, 삭제 후 재발행, 전송 실패 재시도와 새 dispatcher의 만료 임대 회수를 검증한다. `AssignmentRecipientIntegrityIntegrationTest`는 실제 쪽지·메모·부서업무 경로의 수신자 정합과 원자 저장을 다룬다.
+`NotificationDurabilityIntegrationTest`는 격리 PostgreSQL에서 알림·의도의 원자 롤백, 실제 advisory 잠금 대기를 동반한 동시 재발행, 요청 지문 불일치, 삭제 후 재발행, 전송 실패 재시도와 새 dispatcher의 만료 임대 회수를 검증한다. `AssignmentRecipientIntegrityIntegrationTest`는 실제 쪽지·부서업무 경로의 수신자 정합과 원자 저장을 다루며, `MemoReportRecipientIntegrityIntegrationTest`는 메모 수신자의 활성 상태·고정과 최초 열람의 동시성을 검증한다.
 
 2026-09-28에는 격리 PostgreSQL 17과 임시 저장소에서 실제 JVM 강제 종료·재시작도 검증했다. 실행기를 끈 상태에서 정상 쪽지 전송·파일 업로드/삭제 API로 두 `PENDING` 의도를 커밋하고 해당 JVM만 강제 종료했다. 같은 JAR·DB·저장소·키로 실행기를 켜 재시작한 뒤 두 작업은 한 번의 시도로 완료됐다. 쪽지 내용과 기존 알림 한 건이 유지됐고 파일 실물·anchor는 제거되며 삭제 영수증이 남았다. 추가 polling에도 상태가 변하지 않았다. 이는 **커밋된 대기 작업 이후의 종료**에 대한 증거다. 전달 중이나 파일 격리 이동·삭제·영수증 기록 사이의 실제 프로세스 종료, 운영 저장소의 복구, WebSocket 클라이언트 수신 확인까지 증명하지 않는다.
