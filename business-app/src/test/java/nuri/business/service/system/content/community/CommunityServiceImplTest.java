@@ -43,6 +43,9 @@ class CommunityServiceImplTest {
     private CommunityRepository communityRepository;
 
     @Mock
+    private nuri.foundation.core.template.TemplateAssignmentPolicy templateAssignmentPolicy;
+
+    @Mock
     private JPAQueryFactory queryFactory;
 
     @Mock
@@ -53,6 +56,29 @@ class CommunityServiceImplTest {
 
     @Mock
     private JPAQuery<Long> countQuery;
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({
+            "owner-login, false, true, false",
+            "different-login, false, false, false",
+            "different-login, true, false, true"
+    })
+    @DisplayName("개설자 표시와 관리자 전용 수정·삭제 권한을 혼동하지 않는다")
+    void communityFlagsPreserveAdminOnlyWrites(String loginId, boolean adminPermission, boolean owner, boolean writable) {
+        Community community = Community.builder().cmntySn(101L).cmntyNm("커뮤니티").build();
+        community.setFrstRgtrId("owner-login");
+        given(communityRepository.findById(101L)).willReturn(Optional.of(community));
+        try (var security = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            security.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId).thenReturn(Optional.of(loginId));
+            security.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("COMMUNITY_UPDATE_ALL")).thenReturn(adminPermission);
+            security.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("COMMUNITY_DELETE_ALL")).thenReturn(adminPermission);
+            CommunityDto dto = communityService.getCommunity(101L);
+            assertThat(dto.isCreatedByMe()).isEqualTo(owner);
+            assertThat(dto.isEditable()).isEqualTo(writable);
+            assertThat(dto.isDeletable()).isEqualTo(writable);
+            assertThat(community.getFrstRgtrId()).isEqualTo("owner-login");
+        }
+    }
 
     @Test
     @DisplayName("커뮤니티 생성 - 성공")
@@ -199,7 +225,7 @@ class CommunityServiceImplTest {
                 .cmntySn(101L)
                 .cmntyNm("Comm A")
                 .build();
-        given(communityRepository.findById(101L)).willReturn(Optional.of(community));
+        given(communityRepository.findByIdForUpdate(101L)).willReturn(Optional.of(community));
         
         CommunityDto updateDto = CommunityDto.builder()
                 .cmntySn(101L)
@@ -212,6 +238,25 @@ class CommunityServiceImplTest {
         // then
         assertThat(community.getCmntyNm()).isEqualTo("Updated Comm");
     }
+
+    @Test
+    void newTemplateIsValidatedBeforeCreateOrUpdateAndOldSelectionCanBeKept() {
+        var rejected = new nuri.foundation.core.exception.BusinessException(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        org.mockito.Mockito.doThrow(rejected).when(templateAssignmentPolicy).assertActiveForAssignment("missing");
+        var request = CommunityDto.builder().cmntySn(101L).cmntyNm("정정").tmpltId("missing").build();
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> communityService.createCommunity("writer", request)).isSameAs(rejected);
+        verify(communityRepository, never()).save(any());
+        var existing = Community.builder().cmntySn(101L).cmntyNm("원래").tmpltId("retired").build();
+        given(communityRepository.findByIdForUpdate(101L)).willReturn(Optional.of(existing));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> communityService.updateCommunity("writer", request)).isSameAs(rejected);
+        assertThat(existing.getCmntyNm()).isEqualTo("원래");
+        communityService.updateCommunity("writer", CommunityDto.builder().cmntySn(101L).cmntyNm("정정").tmpltId("retired").build());
+        assertThat(existing.getTmpltId()).isEqualTo("retired");
+        assertThat(existing.getCmntyNm()).isEqualTo("정정");
+        verify(templateAssignmentPolicy, never()).assertActiveForAssignment("retired");
+        communityService.updateCommunity("writer", CommunityDto.builder().cmntySn(101L).cmntyNm("정정").tmpltId(null).build());
+        assertThat(existing.getTmpltId()).isNull();
+    }
     
     @Test
     @DisplayName("커뮤니티 삭제 (논리 삭제) - 성공")
@@ -221,13 +266,14 @@ class CommunityServiceImplTest {
                 .cmntySn(101L)
                 .useYn("Y")
                 .build();
-        given(communityRepository.findById(101L)).willReturn(Optional.of(community));
+        given(communityRepository.findByIdForUpdate(101L)).willReturn(Optional.of(community));
         
         // when
         communityService.deleteCommunity(101L, "user1");
         
         // then
         assertThat(community.getUseYn()).isEqualTo("N");
+        verify(communityRepository, never()).findById(any());
     }
     
     @Test

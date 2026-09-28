@@ -8,7 +8,8 @@ export interface CommentDetail {
   ansSn: number;
   pstSn: number;
   bbsId: string;
-  wrterId: string;
+  editable?: boolean;
+  deletable?: boolean;
   wrterNm: string;
   ansCn: string;
   crtDt: string;

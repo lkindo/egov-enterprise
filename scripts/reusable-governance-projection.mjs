@@ -125,6 +125,7 @@ export function projectPagePermissions(outputRoot) {
   }
   const removed = Object.keys(catalog.pagePermissions).filter(route => !routes.has(route));
   catalog.pagePermissions = Object.fromEntries(Object.entries(catalog.pagePermissions).filter(([route]) => routes.has(route)));
+  catalog.pagePermissionModes = Object.fromEntries(Object.entries(catalog.pagePermissionModes ?? {}).filter(([route]) => routes.has(route)));
   writeJson(outputRoot, path, catalog);
   // The catalog hash is shared by Java and TS: use its canonical generator, not a hand-edited TS map.
   generatePermissions(outputRoot);

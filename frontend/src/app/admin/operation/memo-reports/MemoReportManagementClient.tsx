@@ -498,7 +498,7 @@ export default function MemoReportManagementClient() {
       toolbarActions={
         <span className="text-[length:var(--font-size-body)] text-muted-foreground">
           현재 페이지 미열람 <span className="font-bold text-foreground">{unreadOnPage}</span>건
-          <span className="ml-2 text-xs">(열람 기록은 수신자·작성자·관리자 누구의 열람이든 남습니다)</span>
+          <span className="ml-2 text-xs">(수신자가 처음 열람한 시각을 기록합니다)</span>
         </span>
       }
     >
@@ -604,7 +604,7 @@ export default function MemoReportManagementClient() {
                 <h3 id="memo-report-body-heading" className="text-sm font-bold text-foreground">보고 내용</h3>
                 {isEditing ? (
                   /*
-                    수정은 제목·내용만 다룬다 — 수신자 변경은 별개 기능이고, 이 경로의 주 용도는
+                    수정은 제목·내용만 다룬다 — 등록 뒤 수신자는 고정이며, 이 경로의 주 용도는
                     오타 정정이다. rptrId 는 상세에서 읽어 그대로 되돌려 보낸다(서버 update 가
                     전체 치환이라 보내지 않으면 지워진다).
                   */

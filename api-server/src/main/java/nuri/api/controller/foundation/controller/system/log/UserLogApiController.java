@@ -77,6 +77,7 @@ public class UserLogApiController {
             description = "xlsx 바이너리 스트림",
             content = @Content(mediaType = XlsxExport.XLSX_MEDIA_TYPE,
                     schema = @Schema(type = "string", format = "binary")))
+    @nuri.foundation.core.annotation.PrivacyAccess("운영 로그 내보내기(사용자 식별자·접속 정보)")
     @GetMapping(value = "/export.xlsx", produces = XlsxExport.XLSX_MEDIA_TYPE)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.UserLogApiController#exportUserLogs')")
     public ResponseEntity<StreamingResponseBody> exportUserLogs(

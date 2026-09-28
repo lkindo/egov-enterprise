@@ -31,7 +31,7 @@ vi.mock('date-fns', () => ({
   format: vi.fn(() => '2024-03-10 12:00'),
 }));
 
-// 인증 주체 — 수정·삭제 버튼 노출 판정이 이 값과 등록자 로그인 ID 를 대조한다.
+// 현재 기능권한과 서버의 editable/deletable 판정을 함께 적용한다.
 const authMock = vi.hoisted(() => ({ user: { id: 'user01', name: '홍길동', role: 'ROLE_USER', permissions: ['COMMENT_CREATE', 'COMMENT_UPDATE', 'COMMENT_DELETE'], authorizationVersion: 'v1' } as { id: string; name: string; role: string; permissions: string[]; authorizationVersion: string } | null }));
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: authMock.user }),
@@ -53,9 +53,9 @@ describe('CommentSection Component', () => {
       ansSn: 101,
       pstSn: mockPstSn,
       bbsId: mockBbsId,
-      wrterId: 'user01',
       wrterNm: 'User One',
-      frstRgtrId: 'user01',
+      editable: true,
+      deletable: true,
       ansCn: 'First Comment',
       crtDt: '2024-03-10T12:00:00Z',
     },
@@ -397,8 +397,7 @@ describe('CommentSection Component', () => {
 
   it('남의 댓글에는 수정·삭제 버튼을 노출하지 않는다', () => {
     // 종전에는 판정 자체가 없어 버튼이 떴고, 사용자는 확인창을 통과한 뒤에야 서버 403 을 만났다.
-    // 판정 축은 서버 가드와 같은 등록자 로그인 ID 다.
-    const othersComment: CommentVO = { ...mockComments[0], frstRgtrId: 'someone-else' };
+    const othersComment: CommentVO = { ...mockComments[0], editable: false, deletable: false };
 
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[othersComment]} />);
 
@@ -412,7 +411,7 @@ describe('CommentSection Component', () => {
     const previous = authMock.user;
     authMock.user = { id: 'admin01', name: '관리자', role: 'ROLE_ADMIN', permissions: ['COMMENT_UPDATE', 'COMMENT_DELETE', 'COMMENT_UPDATE_ALL', 'COMMENT_DELETE_ALL'], authorizationVersion: 'v1' };
     try {
-      const othersComment: CommentVO = { ...mockComments[0], frstRgtrId: 'someone-else' };
+      const othersComment: CommentVO = { ...mockComments[0], editable: true, deletable: true };
 
       render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[othersComment]} />);
 
@@ -426,7 +425,7 @@ describe('CommentSection Component', () => {
     const previous = authMock.user;
     authMock.user = { id: 'admin01', name: '관리자', role: 'ROLE_ADMIN', permissions: ['COMMENT_UPDATE_ALL', 'COMMENT_DELETE_ALL'], authorizationVersion: 'v1' };
     try {
-      render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[{ ...mockComments[0], frstRgtrId: 'another-owner' }]} />);
+      render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
       expect(screen.queryByTestId('comment-edit-button')).toBeNull();
       expect(screen.queryByTestId('comment-delete-button')).toBeNull();
     } finally { authMock.user = previous; }

@@ -13,7 +13,13 @@ const mocks = vi.hoisted(() => ({
   restoreDraft: vi.fn(),
   saveBoardArticle: vi.fn(),
   toast: vi.fn(),
+  permissions: ['BOARD_CREATE', 'NOTICE_EDIT', 'FAQ_EDIT'],
 }));
+
+vi.mock('@/queries/board-master-query-options', () => ({ boardMasterQueryOptions: {
+  meta: () => ({ queryKey: ['board-meta-test'], initialData: { requiredEditPermissions: ['NOTICE_EDIT', 'FAQ_EDIT'] },
+    queryFn: async () => ({ requiredEditPermissions: ['NOTICE_EDIT', 'FAQ_EDIT'] }) }),
+} }));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ back: mocks.back, push: mocks.push, replace: mocks.replace }),
@@ -53,7 +59,7 @@ vi.mock('@/hooks/use-auto-save-draft', () => ({
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'writer', esntlId: 'writer-owner' } }),
+  useAuth: () => ({ user: { id: 'writer', esntlId: 'writer-owner', authorizationVersion: 'test-v1', permissions: mocks.permissions } }),
 }));
 
 vi.mock('@/app/components/ui/toast', () => ({
@@ -89,7 +95,17 @@ function deferred<T>() {
 describe('BoardRegistClient validation contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.permissions = ['BOARD_CREATE', 'NOTICE_EDIT', 'FAQ_EDIT'];
     mocks.saveBoardArticle.mockResolvedValue({ success: true, redirect: '/boards' });
+  });
+
+  it('공지·FAQ 편집 권한 중 하나라도 없으면 직접 작성 URL에서도 저장하지 않는다', async () => {
+    mocks.permissions = ['BOARD_CREATE', 'NOTICE_EDIT'];
+    renderSubject();
+    expect(await screen.findByText('이 게시판을 편집할 권한이 없습니다. 필요한 권한은 관리자에게 문의해 주세요.')).toBeVisible();
+    expect(screen.getByRole('textbox', { name: '게시글 제목' })).toBeDisabled();
+    fireEvent.submit(document.querySelector('form')!);
+    await waitFor(() => expect(mocks.saveBoardArticle).not.toHaveBeenCalled());
   });
 
   it('FormLabel을 올바른 provider 안에서 렌더하고 필수·길이 계약을 노출한다', async () => {

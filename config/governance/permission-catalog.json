@@ -2511,8 +2511,47 @@
         "ROLE_ADMIN",
         "ROLE_SYSTEM"
       ]
+    },
+    {
+      "code": "DWORK_READ",
+      "domain": "DWORK",
+      "action": "READ",
+      "name": "후속 작업 · 상태 조회",
+      "defaultGroups": []
+    },
+    {
+      "code": "DWORK_RETRY",
+      "domain": "DWORK",
+      "action": "RETRY",
+      "name": "후속 작업 · 재처리",
+      "defaultGroups": []
+    },
+    {
+      "code": "FAQ_EDIT",
+      "domain": "FAQ",
+      "action": "EDIT",
+      "name": "FAQ 게시판 · 편집",
+      "defaultGroups": []
+    },
+    {
+      "code": "MFA_RECOVER",
+      "domain": "MFA",
+      "action": "RECOVER",
+      "name": "다중요소 인증 · 계정 복구",
+      "defaultGroups": []
+    },
+    {
+      "code": "NOTICE_EDIT",
+      "domain": "NOTICE",
+      "action": "EDIT",
+      "name": "공지 게시판 · 편집",
+      "defaultGroups": []
     }
   ],
+  "pagePermissionModes": {
+    "/admin/survey/polls": "ALL",
+    "/admin/survey/polls/manage": "ALL"
+  },
   "pagePermissions": {
     "/": [],
     "/admin": [
@@ -2647,9 +2686,11 @@
       "SURVEY_CREATE_ALL"
     ],
     "/admin/survey/polls": [
+      "POLL_READ",
       "POLL_READ_ALL"
     ],
     "/admin/survey/polls/manage": [
+      "POLL_READ",
       "POLL_READ_ALL"
     ],
     "/admin/survey/polls/participate": [],

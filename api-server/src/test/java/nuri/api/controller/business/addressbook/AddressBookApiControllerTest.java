@@ -3,6 +3,7 @@ package nuri.api.controller.business.addressbook;
 import nuri.business.service.addressbook.AddressBookService;
 import nuri.business.service.addressbook.dto.AddressBookDto;
 import nuri.business.service.addressbook.dto.AddressBookUserDto;
+import nuri.business.service.addressbook.dto.AddressBookUserSelectionDto;
 import nuri.business.support.ControllerTestSupport;
 import nuri.foundation.core.annotation.PrivacyAccess;
 import org.junit.jupiter.api.DisplayName;
@@ -47,6 +48,8 @@ class AddressBookApiControllerTest extends ControllerTestSupport {
         assertThat(detail.value()).isNotBlank();
         assertThat(userSearch).isNotNull();
         assertThat(userSearch.value()).isNotBlank();
+        assertThat(AddressBookApiController.class.getDeclaredMethod("searchUserSelections", String.class, Pageable.class)
+                .getAnnotation(PrivacyAccess.class)).isNotNull();
     }
 
     @Test
@@ -156,7 +159,8 @@ class AddressBookApiControllerTest extends ControllerTestSupport {
     @DisplayName("사용자 검색 성공")
     void searchUsers_Success() throws Exception {
         // Given
-        Page<AddressBookUserDto> page = new PageImpl<>(List.of(new AddressBookUserDto()));
+        Page<AddressBookUserDto> page = new PageImpl<>(List.of(AddressBookUserDto.builder()
+                .userId("login-id").nm("동명이인").emlAddr("private@example.test").mblTelno("01000000000").build()));
         given(addressBookService.searchUsers(anyString(), any(Pageable.class))).willReturn(page);
 
         // When & Then
@@ -164,6 +168,26 @@ class AddressBookApiControllerTest extends ControllerTestSupport {
                 .param("searchWrd", "test")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.list").isArray());
+                .andExpect(jsonPath("$.data.list[0].userId").value("login-id"))
+                .andExpect(jsonPath("$.data.list[0].nm").value("동명이인"))
+                .andExpect(jsonPath("$.data.list[0].emlAddr").value("private@example.test"))
+                .andExpect(jsonPath("$.data.list[0].mblTelno").value("01000000000"))
+                .andExpect(jsonPath("$.data.list[0].esntlId").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("활성 사용자 선택 계약은 내부 키·성명·부서만 반환한다")
+    void userSelections_ReturnMinimalIdentity() throws Exception {
+        given(addressBookService.searchUserSelections(anyString(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(new AddressBookUserSelectionDto("internal-key", "동명이인", "개발부"))));
+
+        mockMvc.perform(get("/api/v1/address-books/user-selections").param("searchWrd", "동명"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list[0].esntlId").value("internal-key"))
+                .andExpect(jsonPath("$.data.list[0].userNm").value("동명이인"))
+                .andExpect(jsonPath("$.data.list[0].ognzNm").value("개발부"))
+                .andExpect(jsonPath("$.data.list[0].userId").doesNotExist())
+                .andExpect(jsonPath("$.data.list[0].emlAddr").doesNotExist())
+                .andExpect(jsonPath("$.data.list[0].mblTelno").doesNotExist());
     }
 }

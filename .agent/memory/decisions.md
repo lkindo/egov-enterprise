@@ -8,6 +8,7 @@ sensitivity: public-repo-safe
 verified_at: 2026-09-25
 verified_against: b9f2965a80f9dda9b15ef061984b4540e27df4fc
 canonical_sources:
+  - ../../docs/02-architecture/decisions/ADR-0025-enterprise-completeness-and-durable-operations.md
   - ../../docs/02-architecture/decisions/ADR-0024-spring-boot-4-two-phase-migration.md
   - ../../docs/02-architecture/decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md
   - ../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md
@@ -69,6 +70,7 @@ refresh_triggers:
 | ADR-0022 | accepted | PR·통합 push의 영향 분류를 통일하고 온라인·이관 build/PIT와 커버리지를 분리한다. Gradle 캐시 provider를 명시한다. | 독립 모듈의 불필요한 실행·중복과 직렬 대기를 줄인다. | [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md) | 2026-09-21 | ADR-0021 결정 4의 main 전수 강제·DEC-OPS-104의 PIT 부분집합 조건 |
 | ADR-0023 | accepted | PR의 검토된 화면만 E2E spec 선별, main 전수·전체 discovery 대조와 Gradle 단일 writer를 유지한다. | 매핑 누락과 캐시 저장 경합을 보완한다. | [ADR-0023](../../docs/02-architecture/decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md) | 2026-09-21 | ADR-0021의 E2E shadow·ADR-0022 결정 8 |
 | ADR-0024 | accepted | Spring Boot 4.1로 두 단계 전환한다. 1단계는 Jackson 2 호환 모듈로 API 계약을 유지하고 2단계에서 Jackson 3으로 옮긴다. | OSS 지원이 끝난 3.5 라인의 미수정 CVE를 해소하면서 전환 위험을 나눈다. | [ADR-0024](../../docs/02-architecture/decisions/ADR-0024-spring-boot-4-two-phase-migration.md) | 2026-09-24 | - |
+| ADR-0025 | accepted | 개선 결정 D01~D15 A와 F01~F08을 채택한다. 보호계정·최소 응답·업무 규칙·MFA·내구 알림/감사/삭제를 구현·검증한다. | 2026-09-28 사용자 전체 A 선택. 운영 적용·실계정 변경·발행은 별도 승인으로 남긴다. | [ADR-0025](../../docs/02-architecture/decisions/ADR-0025-enterprise-completeness-and-durable-operations.md) | 2026-09-28 | 겹치는 이전 정책 제안의 선택 대기 상태 |
 
 ## 운영 결정 index
 

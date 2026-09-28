@@ -1,6 +1,10 @@
 # 테스트 컨텍스트에선 로그 보존 스케줄러를 비활성화(H2 대상 스케줄 삭제 배제, 컨텍스트 단순 유지).
 # 보존 로직 자체는 LogRetentionSchedulerTest(단위)가 검증한다.
 nuri:
+  durable-work:
+    # Tests drive dispatcher leases explicitly. Cached Spring contexts must not
+    # consume another test's committed intent through a background scheduler.
+    enabled: false
   log:
     retention:
       enabled: false

@@ -131,6 +131,8 @@ test('page helper cannot change unknown denial or shadow exact static pages with
   for (const [before, after] of [
     ['if (!entry) return false;', 'if (!entry) return true;'],
     ['const exact = PAGE_PERMISSIONS[normalizedPath];', 'const exact = undefined;'],
+    ['required.every(permission => canPermission(subject, permission))', 'required.some(permission => canPermission(subject, permission))'],
+    ["PAGE_PERMISSION_MODES[entry[0]] === 'ALL'", "PAGE_PERMISSION_MODES[entry[0]] === 'NEVER'"],
     ["from '@/types/generated-permissions'", "from '@/types/unreviewed-permissions'"],
   ]) {
     assert.ok(pageHelperSource.includes(before), `red probe target missing: ${before}`);
@@ -144,6 +146,12 @@ test('page helper cannot change unknown denial or shadow exact static pages with
 });
 
 test('missing registry pages, unknown permissions and generated-page drift are red without changing the population', () => {
+  const wrongMode = structuredClone(pageCatalog);
+  wrongMode.pagePermissionModes['/admin/survey/polls'] = 'ANY';
+  assert.match(parsePageAuthorizationSources(proxySource, pageHelperSource, wrongMode, generatedPageSource).bindingErrors.join('\n'), /PAGE_PERMISSION_MODES must exactly match/);
+  const unregisteredMode = structuredClone(pageCatalog);
+  unregisteredMode.pagePermissionModes['/not-registered'] = 'ALL';
+  assert.match(parsePageAuthorizationSources(proxySource, pageHelperSource, unregisteredMode, generatedPageSource).bindingErrors.join('\n'), /mode registry is invalid/);
   const removed = structuredClone(pageCatalog);
   delete removed.pagePermissions['/admin/system/menus'];
   assert.match(parsePageAuthorizationSources(proxySource, pageHelperSource, removed, generatedPageSource).bindingErrors.join('\n'), /exactly match/);

@@ -27,12 +27,14 @@ export default function CommunityHubClient({
   /** 페이지당 건수(A1 필수). URL 에는 싣지 않는다. */
   const [pageSize, setPageSize] = useState(10);
   const [searchKeyword, setSearchKeyword] = useState('');
-  // 'managed' = 내가 개설한(= 목록의 '관리자' 열) 커뮤니티. 서버에 소유자 필터 파라미터가 없어
+  // 'managed' = 내가 개설한 커뮤니티. 서버에 소유자 필터 파라미터가 없어
   // 현재 조회된 페이지 안에서만 추리는 클라이언트 필터다.
   const [filter, setFilter] = useState<'all' | 'managed'>('all');
+  const authorizationScope = `${user?.id ?? ''}:${user?.esntlId ?? ''}:${user?.authorizationVersion ?? ''}`;
+  const [initialAuthorizationScope] = useState(authorizationScope);
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['communities', searchKeyword, page, pageSize],
+    queryKey: ['communities', authorizationScope, searchKeyword, page, pageSize],
     /*
      * [2026-08-25 실측 수정] 종전에는 `pageIndex`·`searchKeyword` 를 보냈는데
      * CommunityApiController 는 **Spring `Pageable`(page 0-based / size)** 과
@@ -46,23 +48,17 @@ export default function CommunityHubClient({
       searchCnd: '0',
       searchWrd: searchKeyword,
     }),
-    initialData: (page === 1 && !searchKeyword && pageSize === 10) ? initialData : undefined
+    initialData: (authorizationScope === initialAuthorizationScope && page === 1 && !searchKeyword && pageSize === 10) ? initialData : undefined,
+    placeholderData: undefined,
   });
-
-  // 옵셔널 체이닝 결과를 memo 밖에서 스칼라로 고정한다. memo 안에서 user?.id 와 user.id 를
-  // 섞어 읽으면 컴파일러가 의존성을 확정하지 못해 메모 보존에 실패한다
-  // (react-hooks/preserve-manual-memoization → 컴포넌트 전체 최적화 스킵).
-  const currentUserId = user?.id;
 
   const communities = useMemo(() => {
     const list = (data?.list || []) as CommunityVO[];
-    // frstRgtrId 는 JPA 감사(LoginUserAuditorAware)가 심는 로그인 ID 이고, useAuth().user.id 는
-    // /auth/me 가 내려주는 로그인 ID 라 동일 축이다.
     if (filter === 'managed') {
-      return currentUserId ? list.filter((item) => item.frstRgtrId === currentUserId) : [];
+      return list.filter((item) => item.createdByMe === true);
     }
     return list;
-  }, [data, filter, currentUserId]);
+  }, [data, filter]);
 
   const columns: Column<CommunityVO>[] = [
     {
@@ -91,16 +87,7 @@ export default function CommunityHubClient({
         </p>
       )
     },
-    /*
-      [2026-08-29] '관리자' 열을 걷는다.
-      읽던 `frstRegisterNm` 은 서버가 **어떤 경로에서도 채우지 않는다** — CommunityDto.from()
-      은 frstRgtrId 만 매핑한다. 그래서 방패 아이콘만 있는 빈 배지가 모든 행에 떴고, 관리자
-      이름이 있어야 할 자리처럼 보였다.
-      같은 필드를 읽던 커뮤니티 상세는 이미 걷었는데(웨이브 A) 계약이 상세 화면만 검사해
-      이 목록이 남아 있었다 — 계약을 같은 DTO 를 읽는 화면 전체로 넓힌다.
-      개설자 식별자(frstRgtrId)는 esntlId 원문이라 사람에게 보여 줄 값이 아니다. 이름을
-      보여 주려면 서버가 사용자 join 으로 내려주는 것이 선행이다.
-    */
+    // 서버가 제공하지 않는 관리자 표시명은 추측하지 않는다. 개설자 필터는 createdByMe를 사용한다.
     {
       header: '개설일',
       accessor: (item) => (

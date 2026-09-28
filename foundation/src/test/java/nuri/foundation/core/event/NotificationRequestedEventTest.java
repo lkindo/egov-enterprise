@@ -53,4 +53,11 @@ class NotificationRequestedEventTest {
     void acceptsPresentReceiver() {
         assertThat(event("USRCNFRM_0001").hasReceiver()).isTrue();
     }
+
+    @Test void replayPreservesIdentityAndDistinctEventsDoNotCollapse() {
+        var original = event("USRCNFRM_0001");
+        assertThat(original).isEqualTo(new NotificationRequestedEvent(original.eventId(), original.receiverEsntlId(),
+                original.title(), original.content(), original.linkUrl()));
+        assertThat(original.eventId()).isNotEqualTo(event("USRCNFRM_0001").eventId());
+    }
 }

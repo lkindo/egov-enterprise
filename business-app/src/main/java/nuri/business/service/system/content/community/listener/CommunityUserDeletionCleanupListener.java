@@ -29,6 +29,8 @@ public class CommunityUserDeletionCleanupListener {
         }
 
         communityUserRepository.deleteByIdUserIdIn(esntlIds);
+        // 파생 delete의 remove 예약을 부모 사용자 bulk DELETE보다 먼저 SQL로 반영한다.
+        communityUserRepository.flush();
         log.info("사용자 삭제 커뮤니티 정리: 대상 {}명 — 멤버십 삭제", esntlIds.size());
     }
 }

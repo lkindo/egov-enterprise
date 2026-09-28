@@ -53,11 +53,19 @@ public class SurveyResponseAdminApiController {
         return ResponseEntity.ok(ApiResponse.success(surveyResultService.getResponse(srvyRspnsSn)));
     }
 
-    @Operation(summary = "설문 응답 삭제", description = "되돌릴 수 없다. ADMIN 만 수행할 수 있다.")
+    @Operation(summary = "이전 답변 단건 삭제 (지원 종료)", description = "단건 삭제는 거부한다. 전체 제출 취소 경로로 전환해야 한다.", deprecated = true)
     @DeleteMapping("/{srvyRspnsSn}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyResponseAdminApiController#deleteResponse')")
     public ResponseEntity<ApiResponse<Void>> deleteResponse(@PathVariable Long srvyRspnsSn) {
         surveyResultService.deleteResponse(srvyRspnsSn);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "설문 전체 제출 취소", description = "선택한 답변과 같은 설문·확인 가능한 제출자의 답변 전체를 취소한다. 취소한 답변은 복원되지 않는다.")
+    @DeleteMapping("/{srvyRspnsSn}/submission")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyResponseAdminApiController#cancelSubmission')")
+    public ResponseEntity<ApiResponse<Void>> cancelSubmission(@PathVariable Long srvyRspnsSn) {
+        surveyResultService.cancelSubmission(srvyRspnsSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

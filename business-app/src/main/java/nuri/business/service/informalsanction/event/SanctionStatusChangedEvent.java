@@ -10,6 +10,7 @@ import nuri.business.domain.informalsanction.SanctionStatus;
 @Getter
 @RequiredArgsConstructor
 public class SanctionStatusChangedEvent {
+    private final java.util.UUID eventId = java.util.UUID.randomUUID();
     private final Long informalSanctionSn;
     private final String applicantId;
     private final String sanctionerId;

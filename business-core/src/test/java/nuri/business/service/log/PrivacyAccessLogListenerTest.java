@@ -14,7 +14,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -51,7 +51,7 @@ class PrivacyAccessLogListenerTest {
         listener.onPrivacyAccess(EVENT);
 
         ArgumentCaptor<PrivacyLog> captor = ArgumentCaptor.forClass(PrivacyLog.class);
-        verify(repository).save(captor.capture());
+        verify(repository).saveAndFlush(captor.capture());
         PrivacyLog saved = captor.getValue();
         assertThat(saved.getDmndUserId()).isEqualTo("admin");
         assertThat(saved.getDmndUserIpAddr()).isEqualTo("10.0.0.9");
@@ -71,21 +71,21 @@ class PrivacyAccessLogListenerTest {
                 "가".repeat(400), "S".repeat(150), "admin", "10.0.0.9", ACCESSED_AT));
 
         ArgumentCaptor<PrivacyLog> captor = ArgumentCaptor.forClass(PrivacyLog.class);
-        verify(repository).save(captor.capture());
+        verify(repository).saveAndFlush(captor.capture());
         assertThat(captor.getValue().getInqInfo()).hasSize(255);
         assertThat(captor.getValue().getSrvcNm()).hasSize(100);
     }
 
     @Test
-    @DisplayName("적재 실패는 요청을 깨뜨리지 않고 유실 카운터와 메트릭으로 드러난다")
-    void persistFailureIsCountedAndNotPropagated() {
+    @DisplayName("적재 실패는 민감 응답을 차단하고 실패 카운터로 드러난다")
+    void persistFailureBlocksResponseAndIsCounted() {
         PrivacyLogRepository repository = mock(PrivacyLogRepository.class);
-        when(repository.save(any(PrivacyLog.class)))
+        when(repository.saveAndFlush(any(PrivacyLog.class)))
                 .thenThrow(new DataIntegrityViolationException("unique violation"));
         SimpleMeterRegistry registry = new SimpleMeterRegistry();
         PrivacyAccessLogListener listener = listener(repository, registry);
 
-        assertThatCode(() -> listener.onPrivacyAccess(EVENT)).doesNotThrowAnyException();
+        assertThatThrownBy(() -> listener.onPrivacyAccess(EVENT)).isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
 
         assertThat(listener.getPersistFailureCount()).isEqualTo(1);
         assertThat(registry.find(PrivacyAccessLogListener.DROP_METRIC).counter()).isNotNull();

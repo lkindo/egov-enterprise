@@ -303,7 +303,7 @@ function isEncodedAuthTokenPath(pathname: string): boolean {
   try {
     // Static Next routes match the encoded path, while the upstream can decode a path segment.
     // Reject only aliases of these token endpoints; encoded business resource identifiers remain valid.
-    return /^\/api\/v1\/auth\/(?:login|reissue)\/?$/.test(decodeURIComponent(pathname));
+    return /^\/api\/v1\/auth\/(?:login|reissue|mfa(?:\/.*)?)\/?$/.test(decodeURIComponent(pathname));
   } catch {
     // Malformed paths are handled by normal routing/upstream validation, not guessed or recursively decoded.
     return false;

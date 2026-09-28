@@ -317,7 +317,7 @@ export default function SatisfactionSection({ bbsId, pstSn, acceptsNewRatings = 
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center gap-2">
                       <Stars score={item.dgstfnScr ?? 0} size={14} />
-                      <span className="text-xs font-bold text-foreground">{item.userNm || '익명'}</span>
+                      <span className="text-xs font-bold text-foreground">평가자 비공개</span>
                       <span className="text-xs text-muted-foreground font-mono tabular-nums">
                         {item.crtDt ? item.crtDt.substring(0, 10) : ''}
                       </span>
@@ -329,7 +329,7 @@ export default function SatisfactionSection({ bbsId, pstSn, acceptsNewRatings = 
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    aria-label={`${item.userNm || '익명'}의 만족도 수정`}
+                    aria-label="비공개 평가자의 만족도 수정"
                     className="shrink-0"
                     disabled={deletingSatisfactionId !== null || editingId !== null}
                     onClick={() => startEdit(item)}
@@ -339,11 +339,11 @@ export default function SatisfactionSection({ bbsId, pstSn, acceptsNewRatings = 
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    aria-label={`${item.userNm || '익명'}의 만족도 ${deletingSatisfactionId === item.dgstfnSn ? '삭제 중…' : '삭제'}`}
+                    aria-label={`비공개 평가자의 만족도 ${deletingSatisfactionId === item.dgstfnSn ? '삭제 중…' : '삭제'}`}
                     aria-busy={deletingSatisfactionId === item.dgstfnSn || undefined}
                     className="text-destructive-emphasis hover:bg-destructive/10 shrink-0"
                     disabled={deletingSatisfactionId !== null || editingId !== null}
-                    onClick={() => item.dgstfnSn && handleDelete(item.dgstfnSn, item.userNm || '익명')}
+                    onClick={() => item.dgstfnSn && handleDelete(item.dgstfnSn, '비공개 평가자')}
                   >
                     {deletingSatisfactionId === item.dgstfnSn
                       ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

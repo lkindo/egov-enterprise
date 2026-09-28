@@ -19,9 +19,17 @@ package nuri.foundation.core.event;
  * @param commenterName      표시용 댓글 작성자명. 없으면 {@code null}
  */
 public record PostCommentedEvent(
+        java.util.UUID eventId,
         String bbsId,
         Long pstSn,
         String commenterEsntlId,
         String commenterName
 ) implements DomainEvent {
+    public PostCommentedEvent {
+        java.util.Objects.requireNonNull(eventId, "eventId");
+    }
+
+    public PostCommentedEvent(String bbsId, Long pstSn, String commenterEsntlId, String commenterName) {
+        this(java.util.UUID.randomUUID(), bbsId, pstSn, commenterEsntlId, commenterName);
+    }
 }

@@ -2909,5 +2909,103 @@
     "handler": "nuri.api.controller.business.approval.ApprovalApiController#resubmitApproval",
     "access": "PERMISSION",
     "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/address-books/user-selections",
+    "handler": "nuri.api.controller.business.addressbook.AddressBookApiController#searchUserSelections",
+    "access": "PERMISSION",
+    "permission": "ADBK_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/durable-jobs",
+    "handler": "nuri.api.controller.foundation.controller.system.job.DurableJobApiController#getJobs",
+    "access": "PERMISSION",
+    "permission": "DWORK_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/durable-jobs/{jobSn}/retry",
+    "handler": "nuri.api.controller.foundation.controller.system.job.DurableJobApiController#retry",
+    "access": "PERMISSION",
+    "permission": "DWORK_RETRY"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/policies/{type}",
+    "handler": "nuri.api.controller.foundation.controller.system.policy.PolicyApiController#createPolicy",
+    "access": "PERMISSION",
+    "permission": "POLICY_UPDATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/survey-responses/{srvyRspnsSn}/submission",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyResponseAdminApiController#cancelSubmission",
+    "access": "PERMISSION",
+    "permission": "SURVEY_RSP_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/mfa/status",
+    "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaStatus",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/mfa/enrollment/start",
+    "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaStartEnrollment",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/mfa/enrollment/prepare",
+    "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaPrepareEnrollment",
+    "access": "PUBLIC",
+    "permission": null
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/mfa/enrollment/confirm",
+    "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaConfirmEnrollment",
+    "access": "PUBLIC",
+    "permission": null
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/mfa/verify",
+    "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaVerifyLogin",
+    "access": "PUBLIC",
+    "permission": null
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/mfa/reauthenticate",
+    "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaReauthenticate",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/mfa/recovery-codes",
+    "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaRegenerateRecoveryCodes",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/mfa/disable",
+    "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaDisable",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/mfa/recovery/admin",
+    "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaRecoverAccount",
+    "access": "PERMISSION",
+    "permission": "MFA_RECOVER"
   }
 ]

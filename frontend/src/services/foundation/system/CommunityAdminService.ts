@@ -22,7 +22,10 @@ export interface Community {
   cmntyIntrcn: string;
   useYn: 'Y' | 'N';
   rgstrSeCd?: string;
-  frstRgtrId?: string;
+  tmpltId?: string | null;
+  createdByMe?: boolean;
+  editable?: boolean;
+  deletable?: boolean;
   crtDt?: string;
 }
 

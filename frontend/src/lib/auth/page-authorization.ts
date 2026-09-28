@@ -1,7 +1,7 @@
-import { PAGE_PERMISSIONS } from '@/types/generated-permissions';
+import { PAGE_PERMISSIONS, PAGE_PERMISSION_MODES } from '@/types/generated-permissions';
 import type { PermissionCode } from '@/types/generated-permissions';
 import { authorizationStateSchema, type AuthorizationState } from '@/lib/auth/authorization-state';
-import { canAnyPermission } from '@/lib/auth/permissions';
+import { canAnyPermission, canPermission } from '@/lib/auth/permissions';
 import { executeGeneratedFetchOperation } from '@/lib/api/generated-api-client';
 import { getCurrentUserOperation } from '@/types/generated-operations';
 
@@ -34,6 +34,7 @@ export function canEnterRegisteredPage(pathname: string, subject: PageAccessSubj
   const entry = registeredPageEntry(pathname);
   if (!entry) return false;
   const required = entry[1];
+  if (PAGE_PERMISSION_MODES[entry[0]] === 'ALL') return required.length > 0 && required.every(permission => canPermission(subject, permission));
   return required.length === 0 || canAnyPermission(subject, required);
 }
 

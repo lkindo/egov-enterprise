@@ -40,9 +40,10 @@ class PostCommentedEventTest {
     }
 
     @Test
-    @DisplayName("같은 좌표·작성자의 사건은 값으로 같다")
-    void isValueEqual() {
-        assertThat(new PostCommentedEvent("BBS_01", 7L, "U1", "홍길동"))
-                .isEqualTo(new PostCommentedEvent("BBS_01", 7L, "U1", "홍길동"));
+    @DisplayName("재발행은 같은 사건 ID를 보존하고 별도 댓글은 다른 ID를 갖는다")
+    void replayPreservesEventIdentity() {
+        var first = new PostCommentedEvent("BBS_01", 7L, "U1", "홍길동");
+        assertThat(first).isEqualTo(new PostCommentedEvent(first.eventId(), "BBS_01", 7L, "U1", "홍길동"));
+        assertThat(first.eventId()).isNotEqualTo(new PostCommentedEvent("BBS_01", 7L, "U1", "홍길동").eventId());
     }
 }

@@ -97,6 +97,11 @@ class PrivacyAccessCensusLinterTest {
             "rcptntelno", "recipientphone", "rspdntnm",
             "homeaddr", "daddr", "residentregistrationnumber", "rrn", "ssn");
 
+    // The response-contract gate independently owns the binary population. Only aggregate statistics are exempt.
+    private static final Map<String, String> BINARY_PRIVACY_EXEMPTIONS = Map.of(
+            "nuri.api.controller.foundation.controller.system.service.survey.SurveySubmissionApiController#exportStats",
+            "문항별 집계만 반출하며 응답자 이름·ID·기타 자유 응답을 포함하지 않는다");
+
     private static final Pattern TYPE_NAME = Pattern.compile("[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*\\.[A-Z][A-Za-z0-9_]*");
     private static final Pattern METHOD_NAME = Pattern.compile("[a-z][A-Za-z0-9_]*");
 
@@ -176,6 +181,11 @@ class PrivacyAccessCensusLinterTest {
             }
             fail(sb.toString());
         }
+
+        Set<String> binarySensitive = requiredSensitiveBinaryHandlers(ResponseContractLinterTest.binaryAllowedHandlers(),
+                profile::retainsSource);
+        requireBinaryPrivacyCoverage(binarySensitive, actual);
+        sensitiveGetHandlers.addAll(binarySensitive);
 
         Set<String> expectedSensitiveGetHandlers = new TreeSet<>(expected.handlers());
         expectedSensitiveGetHandlers.addAll(expected.exemptions().keySet());
@@ -575,6 +585,45 @@ class PrivacyAccessCensusLinterTest {
         }
     }
 
+    private static Set<String> requiredSensitiveBinaryHandlers(Set<String> sourceHandlers, Predicate<String> retained) {
+        Set<String> allKeys = sourceHandlers.stream().map(PrivacyAccessCensusLinterTest::binaryHandlerKey)
+                .collect(java.util.stream.Collectors.toSet());
+        assertThat(allKeys).as("바이너리 개인정보 예외는 실제 binary census에 있어야 한다")
+                .containsAll(BINARY_PRIVACY_EXEMPTIONS.keySet());
+        return sourceHandlers.stream().filter(retained).map(PrivacyAccessCensusLinterTest::binaryHandlerKey)
+                .filter(key -> !BINARY_PRIVACY_EXEMPTIONS.containsKey(key))
+                .collect(java.util.stream.Collectors.toCollection(TreeSet::new));
+    }
+
+    private static String binaryHandlerKey(String sourceHandler) {
+        String path = sourceHandler.substring(sourceHandler.indexOf("/src/main/java/") + "/src/main/java/".length());
+        return path.replace(".java#", "#").replace('/', '.');
+    }
+
+    private static void requireBinaryPrivacyCoverage(Set<String> required, Set<String> annotated) {
+        assertThat(annotated).as("민감 binary handler의 @PrivacyAccess를 제거하면 응답 계약 census가 독립적으로 적발한다")
+                .containsAll(required);
+    }
+
+    @Test
+    void binaryAnnotationRemovalRemainsRedEvenWhenPrivacyRegistryIsEdited() {
+        Set<String> required = requiredSensitiveBinaryHandlers(ResponseContractLinterTest.binaryAllowedHandlers(), ignored -> true);
+        assertThat(required).hasSize(6).contains("nuri.api.controller.business.file.FileApiController#downloadFile");
+        for (String removed : required) {
+            Set<String> weakened = new HashSet<>(required);
+            weakened.remove(removed);
+            assertThatThrownBy(() -> requireBinaryPrivacyCoverage(required, weakened)).isInstanceOf(AssertionError.class);
+        }
+        assertThat(required).doesNotContain(BINARY_PRIVACY_EXEMPTIONS.keySet().iterator().next());
+    }
+
+    @Test
+    void minimalIdentityTupleIsSensitiveWithoutAnyContactFieldOrRegistryEntry() {
+        assertThat(hasSensitiveFieldGraph(SyntheticSelectionDto.class, new HashSet<>())).isTrue();
+    }
+
+    private record SyntheticSelectionDto(String esntlId, String userNm, String ognzNm) {}
+
     private static boolean isGetHandler(Method method) {
         RequestMapping mapping = AnnotatedElementUtils.findMergedAnnotation(method, RequestMapping.class);
         return mapping != null && Arrays.asList(mapping.method()).contains(RequestMethod.GET);
@@ -638,6 +687,12 @@ class PrivacyAccessCensusLinterTest {
     }
 
     private static boolean hasSensitiveFieldGraph(Class<?> dtoType, Set<Class<?>> visited) {
+        // Minimal directory selectors still join a stable subject with a person and department.
+        Set<String> declaredFields = Arrays.stream(dtoType.getDeclaredFields())
+                .filter(field -> !field.isSynthetic() && !Modifier.isStatic(field.getModifiers()))
+                .map(Field::getName).collect(java.util.stream.Collectors.toSet());
+        if (declaredFields.containsAll(Set.of("esntlId", "userNm", "ognzNm"))) return true;
+
         if (!visited.add(dtoType)) {
             return false;
         }

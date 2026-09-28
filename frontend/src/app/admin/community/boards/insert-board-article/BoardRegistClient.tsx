@@ -27,6 +27,8 @@ import {
   useFormField,
 } from '@/components/ui/form';
 import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
+import { canEditConfiguredBoard } from '@/lib/auth/board-edit-permissions';
 import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
 import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
 import { boardUploadLimits, formatMegabytes, SERVER_UPLOAD_ACCEPT, SERVER_UPLOAD_EXTENSIONS } from '@/lib/attachments/server-upload-limits';
@@ -50,6 +52,8 @@ const boardSchema = BoardSaveRequestSchema.extend({
 
 type BoardFormValues = z.infer<typeof boardSchema>;
 type BoardInitialData = Partial<BoardFormValues> & {
+  // 상세 응답의 소유자 키이며 저장 요청 필드가 아니다.
+  userId?: string;
   userNm?: string;
   pswd?: string;
 };
@@ -174,11 +178,15 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
    * (BoardService.assertNewFilesAllowed)가 같은 규칙으로 저장 전에 거부하므로, 화면이 더 많이 받아 두면 저장할 때에야 실패한다.
    * 설정을 아직 모르면 서버 상한으로 보이고 판정은 서버가 한다.
    */
-  const { data: boardMeta } = useQuery(boardMasterQueryOptions.meta(bbsId ?? ''));
+  const { data: boardMeta, isError: isBoardMetaError, refetch: refetchBoardMeta } = useQuery(boardMasterQueryOptions.meta(bbsId ?? ''));
+  const canWrite = canEditConfiguredBoard(user, boardMeta) && (activeRecordId
+    ? canPermission(user, 'BOARD_UPDATE') && (canPermission(user, 'BOARD_UPDATE_ALL')
+      || Boolean(user?.esntlId && initialData?.userId === user.esntlId))
+    : canPermission(user, 'BOARD_CREATE'));
   const uploadLimits = boardUploadLimits(boardMeta, attachments.length);
 
   const handleDeleteAttachment = async (file: AttachmentItem) => {
-    if (deletingRef.current) return;
+    if (!canWrite || deletingRef.current) return;
     deletingRef.current = true;
     const key = attachmentKey(file);
     setDeletingFileKey(key);
@@ -272,7 +280,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
   }, [confirm, hasDraft, restoreDraft, peekDraft, toast, activeRecordId, initialData, form]);
 
   const onSubmit = async (values: BoardFormValues) => {
-    if (submittingRef.current) return;
+    if (!canWrite || submittingRef.current) return;
     submittingRef.current = true;
     setIsSubmitting(true);
 
@@ -343,7 +351,14 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
       </div>
 
       <Form {...form}>
+        {isBoardMetaError ? <div role="alert" className="space-y-2">
+          <p>게시판 편집 권한을 확인하지 못했습니다. 입력 내용은 유지됩니다.</p>
+          <Button type="button" variant="outline" onClick={() => { void refetchBoardMeta(); }}>권한 다시 확인</Button>
+        </div> : !canWrite && <p role="status" className="text-sm text-muted-foreground">
+          {boardMeta ? '이 게시판을 편집할 권한이 없습니다. 필요한 권한은 관리자에게 문의해 주세요.' : '게시판 편집 권한을 확인하고 있습니다.'}
+        </p>}
         <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <fieldset disabled={!canWrite} className="contents">
           <p className="text-sm text-muted-foreground">
             초안 임시 보관은 현재 탭에서만 유효합니다. 새로고침하거나 탭을 닫으면 사라지므로 게시글을 등록해 주세요.
           </p>
@@ -548,6 +563,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
               </Button>
             </div>
           </div>
+          </fieldset>
         </form>
       </Form>
 

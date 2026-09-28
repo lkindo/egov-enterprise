@@ -30,6 +30,9 @@ describe('PolicyAdminService', () => {
       if (method === 'put') {
         await vi.mocked(client.put)(url, data, Object.keys(config).length > 0 ? config : undefined);
       }
+      if (method === 'post') {
+        await vi.mocked(client.post)(url, data, Object.keys(config).length > 0 ? config : undefined);
+      }
       return { success: true, code: 'S000', message: 'success', data: null };
     });
   });
@@ -50,5 +53,12 @@ describe('PolicyAdminService', () => {
     const data = { plcyTtl: 'Updated Title', plcyCn: 'Updated Content' };
     await policyAdminService.updatePolicy('privacy', data);
     expect(client.put).toHaveBeenCalledWith('admin/system/policies/privacy', data, undefined);
+  });
+
+  it('createPolicy uses POST and cannot silently use the update upsert', async () => {
+    const data = { plcyTtl: '새 정책', plcyCn: '새 본문' };
+    await policyAdminService.createPolicy('INTERNAL', data);
+    expect(client.post).toHaveBeenCalledWith('admin/system/policies/INTERNAL', data, undefined);
+    expect(client.put).not.toHaveBeenCalled();
   });
 });

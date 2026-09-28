@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
  * 시스템 정책 리포지토리
  */
 @Repository
-public interface SystemPolicyRepository extends JpaRepository<SystemPolicy, String> {
+public interface SystemPolicyRepository extends JpaRepository<SystemPolicy, String>, SystemPolicyRepositoryCustom {
 }

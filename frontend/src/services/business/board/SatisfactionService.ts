@@ -1,5 +1,6 @@
 import { ApiService } from '@/services/core/ApiService';
 import type { components } from '@/types/generated-api';
+import { SatisfactionDtoResponseSchema } from '@/types/generated-zod';
 import {
   createOperation,
   deleteOperation,
@@ -22,9 +23,10 @@ class SatisfactionService extends ApiService {
 
   /** 사용 중(use_yn='Y') 만족도 목록. */
   list = async (bbsId: string, pstSn: number): Promise<Satisfaction[]> => {
-    return this.executeGenerated(getListOperation, {
+    const response = await this.executeGenerated(getListOperation, {
       path: { bbsId, pstSn },
     });
+    return SatisfactionDtoResponseSchema.array().parse(response) as Satisfaction[];
   };
 
   /** 평균 점수. 평가가 없으면 `average` 가 없다. */

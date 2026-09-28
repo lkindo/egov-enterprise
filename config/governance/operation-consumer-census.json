@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "authority": "operation-consumer-census",
-  "generatedAt": "2026-09-07",
+  "generatedAt": "2026-09-28",
   "notes": [
     "Every documented OpenAPI operation must be consumed by the frontend, mechanically derivable as a springdoc alias duplicate, or listed here with a category and a reason.",
     "bff-route-handler and non-browser-consumer entries are machine-verified: an evidence file must exist and reference the operation path suffix. A category label alone proves nothing.",
@@ -12,7 +12,7 @@
     "Axis 2 is deliberately lenient, following UnreachableServiceLinter: a method counts as reachable if `.name(` appears anywhere in non-service production code. Common names may pass by collision — that direction misses violations rather than inventing them."
   ],
   "expected": {
-    "operationCount": 400,
+    "operationCount": 414,
     "unwiredMax": 10,
     "screenOrphanMax": 29
   },
@@ -110,6 +110,14 @@
       ]
     },
     {
+      "operationId": "deleteResponse",
+      "category": "superseded-surface",
+      "note": "ADR-0025 D09 moves the administrator screen to explicit whole-submission cancellation. The legacy single-row endpoint is retained as a compatibility surface; it is not the new screen task.",
+      "supersededBy": [
+        "cancelSubmission"
+      ]
+    },
+    {
       "operationId": "deleteRole",
       "category": "superseded-surface",
       "note": "Authorized authorization simplification retires operator-defined URL-role metadata and its assignment UI. The source-owned OPERATION catalog and versioned group grants replace that workflow; this does not claim that technical-role metadata CRUD remains a product feature. The compatibility endpoint is retained server-side while no production frontend consumer uses it. See docs/02-architecture/authorization-simplification-design.md.",
@@ -131,6 +139,22 @@
       "note": "Authorized authorization simplification routes this workflow to the canonical versioned authorization API. Users may belong to multiple groups; department changes apply ADD/REMOVE deltas and group deletion is an explicit single-group operation. Legacy unversioned/bulk replacement is no longer exposed by the frontend. See docs/02-architecture/authorization-simplification-design.md.",
       "supersededBy": [
         "authzReplaceMemberships"
+      ]
+    },
+    {
+      "operationId": "durableJobList",
+      "category": "non-browser-consumer",
+      "note": "ADR-0025 D12/D14 operator API used through the recovery runbook. Listing requires DWORK_READ; FAILED-only retry requires DWORK_RETRY and a transactional audit receipt. No browser administration screen or automatic account grant is claimed.",
+      "evidence": [
+        "docs/04-operations/durable-work-recovery.md"
+      ]
+    },
+    {
+      "operationId": "durableJobRetry",
+      "category": "non-browser-consumer",
+      "note": "ADR-0025 D12/D14 operator API used through the recovery runbook. Listing requires DWORK_READ; FAILED-only retry requires DWORK_RETRY and a transactional audit receipt. No browser administration screen or automatic account grant is claimed.",
+      "evidence": [
+        "docs/04-operations/durable-work-recovery.md"
       ]
     },
     {
@@ -257,6 +281,78 @@
       ]
     },
     {
+      "operationId": "mfaConfirmEnrollment",
+      "category": "bff-route-handler",
+      "note": "ADR-0025 D11 fixed-action Next MFA BFF uses the generated request/response contract. Restricted challenge and recent-auth proof stay in HttpOnly cookies; only completed authentication creates the normal session.",
+      "evidence": [
+        "frontend/src/app/api/auth/mfa/[...path]/route.ts"
+      ]
+    },
+    {
+      "operationId": "mfaDisable",
+      "category": "bff-route-handler",
+      "note": "ADR-0025 D11 fixed-action Next MFA BFF uses the generated request/response contract. Restricted challenge and recent-auth proof stay in HttpOnly cookies; only completed authentication creates the normal session.",
+      "evidence": [
+        "frontend/src/app/api/auth/mfa/[...path]/route.ts"
+      ]
+    },
+    {
+      "operationId": "mfaPrepareEnrollment",
+      "category": "bff-route-handler",
+      "note": "ADR-0025 D11 fixed-action Next MFA BFF uses the generated request/response contract. Restricted challenge and recent-auth proof stay in HttpOnly cookies; only completed authentication creates the normal session.",
+      "evidence": [
+        "frontend/src/app/api/auth/mfa/[...path]/route.ts"
+      ]
+    },
+    {
+      "operationId": "mfaReauthenticate",
+      "category": "bff-route-handler",
+      "note": "ADR-0025 D11 fixed-action Next MFA BFF uses the generated request/response contract. Restricted challenge and recent-auth proof stay in HttpOnly cookies; only completed authentication creates the normal session.",
+      "evidence": [
+        "frontend/src/app/api/auth/mfa/[...path]/route.ts"
+      ]
+    },
+    {
+      "operationId": "mfaRecoverAccount",
+      "category": "bff-route-handler",
+      "note": "ADR-0025 D11 fixed-action Next MFA BFF uses the generated request/response contract. Restricted challenge and recent-auth proof stay in HttpOnly cookies; only completed authentication creates the normal session.",
+      "evidence": [
+        "frontend/src/app/api/auth/mfa/[...path]/route.ts"
+      ]
+    },
+    {
+      "operationId": "mfaRegenerateRecoveryCodes",
+      "category": "bff-route-handler",
+      "note": "ADR-0025 D11 fixed-action Next MFA BFF uses the generated request/response contract. Restricted challenge and recent-auth proof stay in HttpOnly cookies; only completed authentication creates the normal session.",
+      "evidence": [
+        "frontend/src/app/api/auth/mfa/[...path]/route.ts"
+      ]
+    },
+    {
+      "operationId": "mfaStartEnrollment",
+      "category": "bff-route-handler",
+      "note": "ADR-0025 D11 fixed-action Next MFA BFF uses the generated request/response contract. Restricted challenge and recent-auth proof stay in HttpOnly cookies; only completed authentication creates the normal session.",
+      "evidence": [
+        "frontend/src/app/api/auth/mfa/[...path]/route.ts"
+      ]
+    },
+    {
+      "operationId": "mfaStatus",
+      "category": "bff-route-handler",
+      "note": "ADR-0025 D11 fixed-action Next MFA BFF uses the generated request/response contract. Restricted challenge and recent-auth proof stay in HttpOnly cookies; only completed authentication creates the normal session.",
+      "evidence": [
+        "frontend/src/app/api/auth/mfa/[...path]/route.ts"
+      ]
+    },
+    {
+      "operationId": "mfaVerifyLogin",
+      "category": "bff-route-handler",
+      "note": "ADR-0025 D11 fixed-action Next MFA BFF uses the generated request/response contract. Restricted challenge and recent-auth proof stay in HttpOnly cookies; only completed authentication creates the normal session.",
+      "evidence": [
+        "frontend/src/app/api/auth/mfa/[...path]/route.ts"
+      ]
+    },
+    {
       "operationId": "registerInformalSanction",
       "category": "superseded-surface",
       "note": "InformalSanctionApiController serves this domain at /api/v1/informal-sanctions (aliased at /api/v1/admin/system/ism). DEC-OPS-040 consolidated the ISM screen into /approvals, which calls ApprovalApiController instead; DEC-OPS-053 then removed the dead IsmAdminService. Both controllers wrap the same InformalSanctionService, so this is a superseded surface, not a missing feature. Neither controller is a subset of the other (approvals adds processed/task-types, ISM keeps detail/update), so retiring it is a backend design decision — see GAP-WIRING-001.",
@@ -299,6 +395,14 @@
       "note": "Authorized authorization simplification routes this workflow to the canonical versioned authorization API. Users may belong to multiple groups; department changes apply ADD/REMOVE deltas and group deletion is an explicit single-group operation. Legacy unversioned/bulk replacement is no longer exposed by the frontend. See docs/02-architecture/authorization-simplification-design.md.",
       "supersededBy": [
         "authzReplaceMemberships"
+      ]
+    },
+    {
+      "operationId": "searchUsers",
+      "category": "superseded-surface",
+      "note": "ADR-0025 D03 moves internal user selection to the active-user minimal esntlId contract. The legacy loginId/contact response remains until external consumers are confirmed; retaining compatibility does not approve contact disclosure for new consumers.",
+      "supersededBy": [
+        "searchUserSelections"
       ]
     },
     {

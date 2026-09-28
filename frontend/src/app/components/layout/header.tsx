@@ -50,6 +50,8 @@ import { ProfileEditForm } from '@/components/account/ProfileEditForm';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import type { UserDto } from '@/types/foundation/user';
 
+const MfaSettings = dynamic(() => import('@/components/account/MfaSettings').then(mod => mod.MfaSettings), { ssr: false });
+
 const StandardModal = dynamic(
   () => import('@/app/components/ui/standard-modal').then((mod) => mod.StandardModal),
   { ssr: false },
@@ -87,6 +89,8 @@ export function Header({
   */
   const { toast } = useToast();
   const [isPasswordOpen, setPasswordOpen] = useState(false);
+  const [isMfaOpen, setMfaOpen] = useState(false);
+  const [isMfaLocked, setMfaLocked] = useState(false);
   const [isPasswordPending, setPasswordPending] = useState(false);
   /*
     [2026-09-08] 내 프로필 수정. `PUT /users/me` 와 userService.updateMe 도 호출부가 0 이었다 —
@@ -298,6 +302,9 @@ export function Header({
                       >
                         <KeyRound size={14} /> 비밀번호 변경
                       </Button>
+                      <Button variant="ghost" aria-label="추가 인증 관리" className="w-full justify-start text-sm gap-2 font-medium" onClick={() => setMfaOpen(true)}>
+                        <ShieldCheck size={14} /> 추가 인증 관리
+                      </Button>
                       <Button
                         variant="ghost"
                         aria-label="로그아웃"
@@ -370,6 +377,9 @@ export function Header({
             }
           }}
         />
+      </StandardModal>
+      <StandardModal isOpen={isMfaOpen} onClose={() => setMfaOpen(false)} closeDisabled={isMfaLocked} title="추가 인증 관리" maxWidth="md">
+        {isMfaOpen && <MfaSettings onCloseLockChange={setMfaLocked} />}
       </StandardModal>
     </header>
   );

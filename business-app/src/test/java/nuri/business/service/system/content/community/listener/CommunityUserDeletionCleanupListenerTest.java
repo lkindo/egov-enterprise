@@ -1,6 +1,6 @@
 package nuri.business.service.system.content.community.listener;
 
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.List;
@@ -29,7 +29,9 @@ class CommunityUserDeletionCleanupListenerTest {
 
         listener.onUserDeletion(new UserDeletionEvent(esntlIds));
 
-        verify(communityUserRepository).deleteByIdUserIdIn(esntlIds);
+        var ordered = inOrder(communityUserRepository);
+        ordered.verify(communityUserRepository).deleteByIdUserIdIn(esntlIds);
+        ordered.verify(communityUserRepository).flush();
     }
 
     @Test

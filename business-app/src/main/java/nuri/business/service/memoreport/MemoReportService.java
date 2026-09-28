@@ -3,6 +3,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.business.domain.memoreport.MemoReport;
 import nuri.business.domain.memoreport.MemoReportRepository;
+import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.memoreport.dto.MemoReportDto;
 import nuri.business.service.memoreport.dto.MemoReportMapper;
@@ -29,6 +30,7 @@ import java.util.Map;
 public class MemoReportService {
 
     private final MemoReportRepository memoReportRepository;
+    private final UserRepository userRepository;
     private final MemoReportMapper memoReportMapper;
     private final UserDisplayNameLookup userDisplayNameLookup;
     private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
@@ -179,6 +181,15 @@ public class MemoReportService {
 
     @Transactional
     public Long createMemoReport(String userId, MemoReportDto dto) {
+        // 비활성화 UPDATE와 같은 사용자 행을 잠가 등록 중 상태가 바뀌지 않게 한다.
+        if (dto.getRptrId() == null || dto.getRptrId().isBlank()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "보고 수신자를 선택해 주세요.");
+        }
+        userRepository.findByEsntlIdForUpdate(dto.getRptrId())
+                .filter(user -> "P".equals(user.getUserSttsCd()))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "존재하는 활성 사용자를 보고 수신자로 선택해 주세요."));
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
@@ -195,7 +206,7 @@ public class MemoReportService {
         // [2026-09-26 DIP B4 P3] 받은 사람에게 알린다. 자기에게 보낸 보고는 알리지 않는다.
         String recipient = dto.getRptrId();
         if (org.springframework.util.StringUtils.hasText(recipient) && !recipient.equals(userId)) {
-            publishAfterCommit(recipient, "메모 보고가 도착했습니다", titleOf(dto.getRptTtl()));
+            publishNotification(recipient, "메모 보고가 도착했습니다", titleOf(dto.getRptTtl()));
         }
         return memoRptSn;
     }
@@ -204,10 +215,10 @@ public class MemoReportService {
         return org.springframework.util.StringUtils.hasText(rptTtl) ? rptTtl : "(제목 없음)";
     }
 
-    /** 커밋 뒤에만 알린다 — 롤백된 보고에 대한 알림이 남지 않게 한다(NotificationRequestedEvent 규약). */
-    private void publishAfterCommit(String receiverEsntlId, String title, String content) {
-        nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> eventPublisher.publishEvent(
-                new nuri.foundation.core.event.NotificationRequestedEvent(receiverEsntlId, title, content, MEMO_REPORT_ROUTE)));
+    /** 보고와 알림 의도를 같은 트랜잭션에 저장해 함께 commit/rollback한다. */
+    private void publishNotification(String receiverEsntlId, String title, String content) {
+        eventPublisher.publishEvent(
+                new nuri.foundation.core.event.NotificationRequestedEvent(receiverEsntlId, title, content, MEMO_REPORT_ROUTE));
     }
 
     /** 지시가 달렸는가. 지시는 그때의 본문을 두고 내린 것이라, 달린 뒤에는 본문을 바꾸지 않는다(P9). */
@@ -217,9 +228,13 @@ public class MemoReportService {
 
     @Transactional
     public void updateMemoReport(Long memoRptSn, String userId, MemoReportDto dto) {
-        MemoReport entity = memoReportRepository.findById(Objects.requireNonNull(memoRptSn))
+        MemoReport entity = memoReportRepository.findByIdForUpdate(Objects.requireNonNull(memoRptSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "MEMO_RPT_UPDATE_ALL"); // [IDOR] 작성자/관리자만 수정
+        if (!Objects.equals(entity.getRptrId(), dto.getRptrId())) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "등록한 보고의 수신자는 변경할 수 없습니다. 새 보고를 작성해 주세요.");
+        }
         // [2026-09-26 DIP B4 P9] 지시가 달린 뒤 본문을 바꾸면 지시가 가리키던 내용이 사라진다 — 관리자도 고치지 않는다.
         if (hasInstruction(entity)) {
             throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE, "지시가 달린 보고는 고칠 수 없습니다. 새 보고로 올려 주세요.");
@@ -249,7 +264,7 @@ public class MemoReportService {
      */
     @Transactional
     public void readMemoReport(@NonNull Long memoRptSn) {
-        memoReportRepository.findById(memoRptSn).ifPresent(entity -> {
+        memoReportRepository.findByIdForUpdate(memoRptSn).ifPresent(entity -> {
             assertParticipantOrAdmin(entity); // 열람 표시도 권한자만 — 미인가 요청이 조회일시를 갱신하지 못하게 한다
             boolean recipient = currentEsntlIdOrDeny().equals(entity.getRptrId());
             if (recipient && entity.getRptrInqDt() == null) {
@@ -260,7 +275,7 @@ public class MemoReportService {
 
     @Transactional
     public void updateDrctMatter(Long memoRptSn, String instrCn) {
-        MemoReport entity = memoReportRepository.findById(memoRptSn)
+        MemoReport entity = memoReportRepository.findByIdForUpdate(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertRecipientOrAdmin(entity); // [IDOR] 지시는 보고를 받은 사람·관리자만 남긴다
         entity.updateDrctMatter(instrCn, java.time.LocalDateTime.now());
@@ -269,7 +284,7 @@ public class MemoReportService {
         String actor = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
         if (org.springframework.util.StringUtils.hasText(instrCn)
                 && org.springframework.util.StringUtils.hasText(author) && !author.equals(actor)) {
-            publishAfterCommit(author, "메모 보고에 지시가 달렸습니다", titleOf(entity.getRptTtl()));
+            publishNotification(author, "메모 보고에 지시가 달렸습니다", titleOf(entity.getRptTtl()));
         }
     }
 

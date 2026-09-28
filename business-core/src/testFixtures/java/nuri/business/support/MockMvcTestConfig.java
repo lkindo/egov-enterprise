@@ -18,6 +18,13 @@ import java.util.List;
 @EnableSpringDataWebSupport(pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
 public class MockMvcTestConfig implements WebMvcConfigurer {
 
+    /** MVC slices retain the real audit interceptor while replacing its persistence boundary. */
+    @Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean(nuri.foundation.core.audit.SensitiveAuditPort.class)
+    public nuri.foundation.core.audit.SensitiveAuditPort sensitiveAuditPort() {
+        return org.mockito.Mockito.mock(nuri.foundation.core.audit.SensitiveAuditPort.class);
+    }
+
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
         resolvers.add(new PageableHandlerMethodArgumentResolver());

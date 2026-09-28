@@ -79,7 +79,8 @@ test('administrative statistics and workflow pages preserve their distinct acces
   }
   assert.deepEqual(catalog.pagePermissions['/admin'], ['DASHBOARD_ADMIN_READ']);
   for (const route of ['/admin/survey/polls', '/admin/survey/polls/manage']) {
-    assert.deepEqual(catalog.pagePermissions[route], ['POLL_READ_ALL']);
+    assert.deepEqual(catalog.pagePermissions[route], ['POLL_READ', 'POLL_READ_ALL']);
+    assert.equal(catalog.pagePermissionModes[route], 'ALL');
   }
   const ordinary = new Set(catalog.permissions.filter(row => row.defaultGroups.includes('ROLE_USER')).map(row => row.code));
   const administrative = policy.operationBindings.filter(row => row.path.startsWith('/api/v1/admin/'));
@@ -119,6 +120,9 @@ test('duplicate, unknown, overlong and empty permission or endpoint sources are 
     [policyPath, p => { const r = p.operationBindings.find(r => r.access === 'PERMISSION'); r.permission = 'UNKNOWN'; }, /Unknown permission/],
     [policyPath, p => { const r = p.operationBindings.find(r => r.access === 'PUBLIC'); r.permission = 'UNKNOWN'; }, /Unknown permission/],
     [catalogPath, c => { c.pagePermissions['/probe'] = ['UNKNOWN']; }, /Unknown page permission/],
+    [catalogPath, c => { c.pagePermissionModes['/probe'] = 'ALL'; }, /Invalid page permission mode/],
+    [catalogPath, c => { c.pagePermissionModes['/admin/survey/polls'] = 'UNKNOWN'; }, /Invalid page permission mode/],
+    [catalogPath, c => { c.pagePermissions['/admin/survey/polls'] = []; }, /Invalid page permission mode/],
   ];
   for (const [file, change, expected] of cases) {
     const dir = fixture(t);

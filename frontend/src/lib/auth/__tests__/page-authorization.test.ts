@@ -9,6 +9,14 @@ const upstream = (data: unknown, status = 200) => new Response(JSON.stringify({ 
 afterEach(() => vi.unstubAllGlobals());
 
 describe('page permission mapping', () => {
+  it.each(['/admin/survey/polls', '/admin/survey/polls/manage'])('requires both read permissions for %s', route => {
+    for (const permissions of [[], ['POLL_READ'], ['POLL_READ_ALL'], ['SURVEY_READ', 'SURVEY_READ_ALL']]) {
+      expect(canEnterRegisteredPage(route, { ...current, permissions })).toBe(false);
+    }
+    expect(canEnterRegisteredPage(route, { ...current, permissions: ['POLL_READ', 'POLL_READ_ALL'] })).toBe(true);
+    expect(canEnterRegisteredPage(`${route}/`, { ...current, permissions: ['POLL_READ', 'POLL_READ_ALL'] })).toBe(true);
+    expect(canEnterRegisteredPage(route, { permissions: ['POLL_READ', 'POLL_READ_ALL'] })).toBe(false);
+  });
   it('does not inherit an authenticated parent’s empty permission requirement for unknown children', () => {
     expect(canEnterRegisteredPage('/admin/work-hub', current)).toBe(true);
     expect(canEnterRegisteredPage('/admin/work-hub/unregistered-child', current)).toBe(false);

@@ -374,7 +374,7 @@ class BoardServiceTest {
         Long parentId = 1L;
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Content", null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().pstSn(parentId).sortOrdr(100L).ansLv(0).build();
+        Board parent = Board.builder().bbsId("BBS_01").pstSn(parentId).sortOrdr(100L).ansLv(0).build();
         UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
 
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
@@ -501,7 +501,7 @@ class BoardServiceTest {
     @DisplayName("답글 생성 - 답변순번은 형제 최대값 다음이고, 부모/기본 플래그가 정확히 설정된다")
     void replyPost_appliesDefaultsAndNextAnswerSeq() {
         Long parentId = 1L;
-        Board parent = Board.builder().pstSn(parentId).sortOrdr(100L).ansLv(0).build();
+        Board parent = Board.builder().bbsId("BBS_01").pstSn(parentId).sortOrdr(100L).ansLv(0).build();
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
                 .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").build()));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
@@ -1297,7 +1297,7 @@ class BoardServiceTest {
         Long parentId = 1L;
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().pstSn(parentId).sortOrdr(100L).ansLv(0).build();
+        Board parent = Board.builder().bbsId("BBS_01").pstSn(parentId).sortOrdr(100L).ansLv(0).build();
 
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
@@ -1325,7 +1325,7 @@ class BoardServiceTest {
                 .singletonList(file);
 
         BoardMaster master = attachableMaster("BBS_01");
-        Board parent = Board.builder().pstSn(parentId).sortOrdr(100L).ansLv(0).build();
+        Board parent = Board.builder().bbsId("BBS_01").pstSn(parentId).sortOrdr(100L).ansLv(0).build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
@@ -1346,7 +1346,7 @@ class BoardServiceTest {
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
                 .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").build()));
         given(boardRepository.findById(parentSn))
-                .willReturn(Optional.of(Board.builder().pstSn(parentSn).sortOrdr(10L).build()));
+                .willReturn(Optional.of(Board.builder().bbsId("BBS_01").pstSn(parentSn).sortOrdr(10L).build()));
         BoardSaveRequest request = new BoardSaveRequest(
                 "BBS_01", "Reply", "Cont", null, null, 101L,
                 null, null, null, null, null, null);
@@ -1786,7 +1786,7 @@ class BoardServiceTest {
         boardService.updatePostWithFiles("BBS_01", 1L, request, Collections.emptyList());
 
         // reply
-        Board parent = Board.builder().pstSn(1L).sortOrdr(100L).ansLv(0).build();
+        Board parent = Board.builder().bbsId("BBS_01").pstSn(1L).sortOrdr(100L).ansLv(0).build();
         given(boardRepository.findById(1L)).willReturn(Optional.of(parent));
         
         boardService.replyPostWithFiles(userId, 1L, request, null);

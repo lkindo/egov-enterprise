@@ -6,6 +6,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
@@ -14,6 +15,7 @@ import java.util.Objects;
 
 import static nuri.business.domain.addressbook.QAddressBook.addressBook;
 import static nuri.business.domain.user.entity.QUser.user;
+import static nuri.business.domain.organization.QOrganizationManage.organizationManage;
 
 @RequiredArgsConstructor
 public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
@@ -57,24 +59,36 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
 
     @Override
     public Page<AddressBookUserSearchResult> searchAddressBookUsers(String searchWrd, Pageable pageable) {
-        Pageable requestedPageable = Objects.requireNonNull(pageable);
+        return searchUserRows(searchWrd, pageable, true);
+    }
+
+    @Override
+    public Page<AddressBookUserSearchResult> searchAddressBookUserSelections(String searchWrd, Pageable pageable) {
+        return searchUserRows(searchWrd, pageable, false);
+    }
+
+    private Page<AddressBookUserSearchResult> searchUserRows(String searchWrd, Pageable pageable, boolean legacyContacts) {
+        Objects.requireNonNull(pageable);
+        Pageable requestedPageable = PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), 20));
         String normalizedSearchWrd = searchWrd == null ? "" : searchWrd.trim();
         if (normalizedSearchWrd.length() < 2) {
             return Page.empty(requestedPageable);
         }
         BooleanExpression searchPredicate = user.userNm.contains(normalizedSearchWrd)
-                .or(user.userId.contains(normalizedSearchWrd));
+                .or(user.userId.contains(normalizedSearchWrd))
+                .and(user.userSttsCd.eq("P"));
 
+        var projection = legacyContacts
+                ? Projections.fields(AddressBookUserSearchResult.class, user.userId, user.userNm, user.emlAddr, user.mblTelno)
+                : Projections.fields(AddressBookUserSearchResult.class, user.esntlId, user.userId, user.userNm, organizationManage.ognzNm);
         List<AddressBookUserSearchResult> results = queryFactory
-                .select(Projections.fields(AddressBookUserSearchResult.class,
-                         user.userId,
-                         user.userNm,
-                         user.emlAddr,
-                         user.mblTelno))
+                .select(projection)
                 .from(user)
+                .leftJoin(organizationManage).on(user.ognzId.eq(organizationManage.ognzId))
                 .where(searchPredicate)
                 .offset(requestedPageable.getOffset())
-                .limit(requestedPageable.getPageSize())
+                .limit(Math.min(requestedPageable.getPageSize(), 20))
+                .orderBy(user.userNm.asc(), user.esntlId.asc())
                 .fetch();
 
         Long total = queryFactory

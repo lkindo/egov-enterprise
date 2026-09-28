@@ -9,12 +9,15 @@ const mocks = vi.hoisted(() => ({
   getResponses: vi.fn(),
   toastError: vi.fn(),
   toastSuccess: vi.fn(),
+  permissions: ['SURVEY_RSP_READ', 'SURVEY_RSP_DELETE'],
 }));
+
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { authorizationVersion: 'test-v1', permissions: mocks.permissions } }) }));
 
 // [2026-09-06 DEC-OPS-038] 네이티브 confirm → useConfirm 모달(모듈 mock).
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/lib/api/survey', () => ({
-  deleteQustnrRespondInfo: (...args: unknown[]) => mocks.deleteResponse(...args),
+  cancelSurveySubmission: (...args: unknown[]) => mocks.deleteResponse(...args),
   getQustnrRespondInfoList: (...args: unknown[]) => mocks.getResponses(...args),
 }));
 
@@ -42,6 +45,7 @@ describe('SurveyResponseClient destructive boundary', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.permissions = ['SURVEY_RSP_READ', 'SURVEY_RSP_DELETE'];
     mocks.confirm.mockResolvedValue(true);
     mocks.getResponses.mockResolvedValue({
       list: [{
@@ -65,18 +69,40 @@ describe('SurveyResponseClient destructive boundary', () => {
    */
   it('첫 페이지를 0-base 로 요청한다 — 화면의 1페이지가 서버의 1페이지다', async () => {
     renderSubject();
-    await screen.findByRole('button', { name: '홍길동 응답 삭제' });
+    await screen.findByRole('button', { name: '홍길동 전체 제출 취소' });
 
     expect(mocks.getResponses).toHaveBeenCalledWith(
       expect.objectContaining({ page: 0, size: 10 }),
     );
   });
 
+  it('모든 문항과 선택을 취소함을 안내하고 사용자가 돌아가면 요청하지 않는다', async () => {
+    mocks.confirm.mockResolvedValueOnce(false);
+    renderSubject();
+    const cancel = await screen.findByRole('button', { name: '홍길동 전체 제출 취소' });
+    await act(async () => cancel.click());
+    expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({
+      title: '전체 제출 취소',
+      message: expect.stringContaining('모든 문항·선택 답변을 함께 취소'),
+      confirmText: '전체 제출 취소',
+    }));
+    expect(mocks.deleteResponse).not.toHaveBeenCalled();
+    expect(cancel).toBeEnabled();
+  });
+
+  it('응답 읽기 권한만 있으면 상세는 열 수 있지만 제출 취소를 제공하지 않는다', async () => {
+    mocks.permissions = ['SURVEY_RSP_READ'];
+    renderSubject();
+    expect(await screen.findByRole('button', { name: '홍길동 응답 상세보기' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: '홍길동 전체 제출 취소' })).not.toBeInTheDocument();
+    expect(mocks.deleteResponse).not.toHaveBeenCalled();
+  });
+
   it('확인된 삭제는 같은 tick 중복 요청을 막고 pending 상태를 안내한다', async () => {
     const pending = deferred<void>();
     mocks.deleteResponse.mockReturnValueOnce(pending.promise);
     renderSubject();
-    const remove = await screen.findByRole('button', { name: '홍길동 응답 삭제' });
+    const remove = await screen.findByRole('button', { name: '홍길동 전체 제출 취소' });
 
     act(() => {
       remove.click();
@@ -84,11 +110,11 @@ describe('SurveyResponseClient destructive boundary', () => {
     });
 
     await waitFor(() => expect(mocks.deleteResponse).toHaveBeenCalledTimes(1));
-    expect(screen.getByRole('button', { name: '홍길동 응답 삭제 중' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '홍길동 전체 제출 취소 중' })).toBeDisabled();
     expect(screen.getByRole('searchbox', { name: '응답자 이름 검색' })).toBeVisible();
 
     await act(async () => pending.resolve());
-    await waitFor(() => expect(mocks.toastSuccess).toHaveBeenCalledWith('삭제되었습니다.'));
+    await waitFor(() => expect(mocks.toastSuccess).toHaveBeenCalledWith('전체 제출을 취소했습니다.'));
   });
 
   it('확인 콜백 전에 동기 잠금하고 중복 삭제·pending·실패 복구를 한 경로에서 보장한다', async () => {
@@ -103,8 +129,8 @@ describe('SurveyResponseClient destructive boundary', () => {
       totalPage: 1,
     });
     renderSubject();
-    const remove = await screen.findByRole('button', { name: '홍길동 응답 삭제' });
-    const otherRemove = screen.getByRole('button', { name: '김영희 응답 삭제' });
+    const remove = await screen.findByRole('button', { name: '홍길동 전체 제출 취소' });
+    const otherRemove = screen.getByRole('button', { name: '김영희 전체 제출 취소' });
     let reentered = false;
     // 확인 모달이 열린 동안(응답 대기 중) 다른 행을 눌러도 동기 잠금이 막는다.
     mocks.confirm.mockImplementation(async () => {
@@ -118,29 +144,29 @@ describe('SurveyResponseClient destructive boundary', () => {
     act(() => remove.click());
 
     await waitFor(() => expect(mocks.deleteResponse).toHaveBeenCalledTimes(1));
-    const busy = screen.getByRole('button', { name: '홍길동 응답 삭제 중' });
+    const busy = screen.getByRole('button', { name: '홍길동 전체 제출 취소 중' });
     expect(busy).toBeDisabled();
     expect(busy).toHaveAttribute('aria-busy', 'true');
 
-    await act(async () => pending.reject(new Error('응답 삭제 API 장애')));
+    await act(async () => pending.reject(new Error('전체 제출 취소 API 장애')));
 
-    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('응답을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.'));
+    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('전체 제출을 취소하지 못했습니다. 응답 상태와 권한을 확인해 주세요.'));
     expect(screen.getByText('홍길동')).toBeVisible();
-    expect(screen.getByRole('button', { name: '홍길동 응답 삭제' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '홍길동 전체 제출 취소' })).toBeEnabled();
   });
 
   it('삭제 실패를 알리고 동일 응답을 다시 삭제할 수 있도록 pending 상태를 해제한다', async () => {
-    mocks.deleteResponse.mockRejectedValueOnce(new Error('응답 삭제 API 장애'));
+    mocks.deleteResponse.mockRejectedValueOnce(new Error('전체 제출 취소 API 장애'));
     renderSubject();
 
-    const remove = await screen.findByRole('button', { name: '홍길동 응답 삭제' });
+    const remove = await screen.findByRole('button', { name: '홍길동 전체 제출 취소' });
     await act(async () => {
       remove.click();
     });
 
-    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('응답을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.'));
-    expect(screen.getByRole('button', { name: '홍길동 응답 삭제' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: '홍길동 응답 삭제' })).not.toHaveAttribute('aria-busy');
+    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('전체 제출을 취소하지 못했습니다. 응답 상태와 권한을 확인해 주세요.'));
+    expect(screen.getByRole('button', { name: '홍길동 전체 제출 취소' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '홍길동 전체 제출 취소' })).not.toHaveAttribute('aria-busy');
     expect(mocks.toastSuccess).not.toHaveBeenCalled();
   });
 

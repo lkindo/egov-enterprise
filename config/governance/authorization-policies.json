@@ -1804,6 +1804,111 @@
       "handlerRequiredTokens": [
         "menuBookmarkService.removeBookmark(userDetails.getUsername(), menuNo)"
       ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/durable-jobs/{jobSn}/retry",
+      "handler": "nuri.api.controller.foundation.controller.system.job.DurableJobApiController#retry",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.job.DurableJobApiController#retry')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "DurableJobAdministrationService#retry"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/policies/{type}",
+      "handler": "nuri.api.controller.foundation.controller.system.policy.PolicyApiController#createPolicy",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.policy.PolicyApiController#createPolicy')",
+      "routeGate": "OPERATION_PERMISSION"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/survey-responses/{srvyRspnsSn}/submission",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyResponseAdminApiController#cancelSubmission",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyResponseAdminApiController#cancelSubmission')",
+      "routeGate": "OPERATION_PERMISSION"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/enrollment/start",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaStartEnrollment",
+      "policy": "SELF_WITH_CREDENTIAL",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.auth.MfaApiController#mfaStartEnrollment')",
+      "routeGate": "EXPLICIT_AUTHENTICATED",
+      "guardRef": "MfaService#startEnrollment",
+      "handlerRequiredTokens": [
+        "mfa.startEnrollment(body.password())"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/enrollment/prepare",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaPrepareEnrollment",
+      "policy": "PUBLIC",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.auth.MfaApiController#mfaPrepareEnrollment')",
+      "routeGate": "PUBLIC_FILTER"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/enrollment/confirm",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaConfirmEnrollment",
+      "policy": "PUBLIC",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.auth.MfaApiController#mfaConfirmEnrollment')",
+      "routeGate": "PUBLIC_FILTER"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/verify",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaVerifyLogin",
+      "policy": "PUBLIC",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.auth.MfaApiController#mfaVerifyLogin')",
+      "routeGate": "PUBLIC_FILTER"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/reauthenticate",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaReauthenticate",
+      "policy": "SELF_WITH_CREDENTIAL",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.auth.MfaApiController#mfaReauthenticate')",
+      "routeGate": "EXPLICIT_AUTHENTICATED",
+      "guardRef": "MfaService#reauthenticate",
+      "handlerRequiredTokens": [
+        "mfa.reauthenticate(body.password(), body.code())"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/recovery-codes",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaRegenerateRecoveryCodes",
+      "policy": "SELF_WITH_CREDENTIAL",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.auth.MfaApiController#mfaRegenerateRecoveryCodes')",
+      "routeGate": "EXPLICIT_AUTHENTICATED",
+      "guardRef": "MfaService#regenerateRecoveryCodes",
+      "handlerRequiredTokens": [
+        "auth.regenerateMfaRecoveryCodes(body.reauthToken(), clientIps.resolve(request))"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/disable",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaDisable",
+      "policy": "SELF_WITH_CREDENTIAL",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.auth.MfaApiController#mfaDisable')",
+      "routeGate": "EXPLICIT_AUTHENTICATED",
+      "guardRef": "MfaService#disable",
+      "handlerRequiredTokens": [
+        "mfa.disable(body.reauthToken(), clientIps.resolve(request))"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/recovery/admin",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaRecoverAccount",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.auth.MfaApiController#mfaRecoverAccount')",
+      "routeGate": "OPERATION_PERMISSION"
     }
   ],
   "serviceGuardPolicies": [
@@ -2221,8 +2326,12 @@
       "permissionParameter": {
         "name": "overridePermission",
         "callers": {
-          "updateDeptJob": "DEPT_JOB_UPDATE_ALL",
-          "deleteDeptJob": "DEPT_JOB_DELETE_ALL"
+          "updateDeptJob": [
+            "DEPT_JOB_UPDATE_ALL"
+          ],
+          "deleteDeptJob": [
+            "DEPT_JOB_DELETE_ALL"
+          ]
         }
       }
     },
@@ -2477,8 +2586,12 @@
       "permissionParameter": {
         "name": "overridePermission",
         "callers": {
-          "updateSatisfaction": "SATISFY_UPDATE_ALL",
-          "deleteSatisfaction": "SATISFY_DELETE_ALL"
+          "updateSatisfaction": [
+            "SATISFY_UPDATE_ALL"
+          ],
+          "deleteSatisfaction": [
+            "SATISFY_DELETE_ALL"
+          ]
         }
       }
     },
@@ -2953,19 +3066,61 @@
         "argumentIndex": 0,
         "qualifiedCallers": true,
         "callers": {
-          "AuthorizationAdministrationService#changeDepartmentGroups": "AUTHRT_ASSIGN",
-          "AuthorizationAdministrationService#createGroup": "AUTHRT_CREATE",
-          "AuthorizationAdministrationService#updateGroup": "AUTHRT_UPDATE",
-          "AuthorizationAdministrationService#deleteGroup": "AUTHRT_DELETE",
-          "AuthorizationAdministrationService#replaceGrants": "AUTHRT_GRANT",
-          "AuthorizationAdministrationService#replaceMemberships": "AUTHRT_ASSIGN",
-          "AuthorizationAdministrationService#removeDeletedUsers": "USER_DELETE",
-          "AuthorizationAdministrationService#replaceNavigationGrants": "AUTHRT_GRANT",
-          "AuthorizationAdministrationService#grantNewMenuToCompatibilityAdmin": "MENU_CREATE",
-          "AuthorizationAdministrationService#removeNavigationGrantsForMenus": "MENU_DELETE",
-          "UserService#updateUsersStatus": "USER_STATUS",
-          "UserService#registerUser": "USER_CREATE",
-          "UserService#moveUsersToDept": "USER_DEPT"
+          "AuthorizationAdministrationService#changeDepartmentGroups": [
+            "AUTHRT_ASSIGN"
+          ],
+          "AuthorizationAdministrationService#createGroup": [
+            "AUTHRT_CREATE"
+          ],
+          "AuthorizationAdministrationService#updateGroup": [
+            "AUTHRT_UPDATE"
+          ],
+          "AuthorizationAdministrationService#deleteGroup": [
+            "AUTHRT_DELETE"
+          ],
+          "AuthorizationAdministrationService#replaceGrants": [
+            "AUTHRT_GRANT"
+          ],
+          "AuthorizationAdministrationService#replaceMemberships": [
+            "AUTHRT_ASSIGN"
+          ],
+          "AuthorizationAdministrationService#removeDeletedUsers": [
+            "USER_DELETE"
+          ],
+          "AuthorizationAdministrationService#replaceNavigationGrants": [
+            "AUTHRT_GRANT"
+          ],
+          "AuthorizationAdministrationService#grantNewMenuToCompatibilityAdmin": [
+            "MENU_CREATE"
+          ],
+          "AuthorizationAdministrationService#removeNavigationGrantsForMenus": [
+            "MENU_DELETE"
+          ],
+          "UserService#updateUsersStatus": [
+            "USER_STATUS"
+          ],
+          "UserService#registerUser": [
+            "USER_CREATE"
+          ],
+          "UserService#moveUsersToDept": [
+            "USER_DEPT"
+          ],
+          "UserService#cleanupDependentsAndDelete": [
+            "USER_DELETE"
+          ],
+          "AuthorizationAdministrationService#authorizeProtectedAdministration": [
+            "AUTHRT_GRANT",
+            "AUTHRT_ASSIGN"
+          ],
+          "MfaService#recoverAccount": [
+            "MFA_RECOVER"
+          ],
+          "UserService#unlockUser": [
+            "USER_STATUS"
+          ],
+          "UserService#updatePasswordByAdmin": [
+            "USER_PASSWORD"
+          ]
         }
       }
     },
@@ -3066,6 +3221,154 @@
     },
     {
       "target": "InformalSanctionService#assertCurrentParticipant",
+      "policy": "STRICT_OWNER",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
+      "target": "AddressBookService#searchUserProjection",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "ADBK_READ"
+        }
+      ]
+    },
+    {
+      "target": "DurableJobAdministrationService#getJobs",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "DWORK_READ"
+        }
+      ]
+    },
+    {
+      "target": "DurableJobAdministrationService#retry",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "DWORK_RETRY"
+        }
+      ]
+    },
+    {
+      "target": "OnlinePollService#insertPollItem",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "POLL_UPDATE"
+        }
+      ]
+    },
+    {
+      "target": "OnlinePollService#updatePollItem",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "POLL_UPDATE"
+        }
+      ]
+    },
+    {
+      "target": "OnlinePollService#deletePollItem",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "POLL_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "PolicyService#createPolicy",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "POLICY_UPDATE"
+        }
+      ]
+    },
+    {
+      "target": "SurveyResultService#cancelSubmission",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SURVEY_RSP_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "OnlinePollService#assertManagementReadPermissions",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "POLL_READ"
+        },
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "POLL_READ_ALL"
+        }
+      ]
+    },
+    {
+      "target": "BoardService#findReplyParent",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrPermissionByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID",
+          "permission": "BOARD_READ_ALL"
+        }
+      ]
+    },
+    {
+      "target": "MenuBookmarkService#getMyBookmarks",
+      "policy": "STRICT_OWNER",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
+      "target": "MenuBookmarkService#lockBookmarkOwner",
       "policy": "STRICT_OWNER",
       "mechanisms": [
         {
@@ -3560,6 +3863,51 @@
         "SecurityUtil.hasPermission(",
         "assertOwnerOrPermission"
       ]
+    },
+    {
+      "target": "MfaService#startEnrollment",
+      "source": "business-core/src/main/java/nuri/business/service/auth/mfa/MfaService.java",
+      "policy": "SELF_WITH_CREDENTIAL",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "lockUser(currentSubject())",
+        "verifyPassword(user, credential, password)"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "MfaService#reauthenticate",
+      "source": "business-core/src/main/java/nuri/business/service/auth/mfa/MfaService.java",
+      "policy": "SELF_WITH_CREDENTIAL",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "lockUser(currentSubject())",
+        "verifyPassword(user, credential, password)",
+        "verifyTotp(credential, null, code)"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "MfaService#regenerateRecoveryCodes",
+      "source": "business-core/src/main/java/nuri/business/service/auth/mfa/MfaService.java",
+      "policy": "SELF_WITH_CREDENTIAL",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "lockChallenge(proof, Purpose.REAUTH, currentSubject(), clientIp)",
+        "locked.challenge().consume(utcNow())"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "MfaService#disable",
+      "source": "business-core/src/main/java/nuri/business/service/auth/mfa/MfaService.java",
+      "policy": "SELF_WITH_CREDENTIAL",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "lockChallenge(proof, Purpose.REAUTH, currentSubject(), clientIp)",
+        "locked.challenge().consume(utcNow())"
+      ],
+      "forbiddenTokens": []
     }
   ],
   "permissionCatalog": "config/governance/permission-catalog.json",
@@ -6474,6 +6822,104 @@
       "handler": "nuri.api.controller.business.approval.ApprovalApiController#resubmitApproval",
       "access": "PERMISSION",
       "permission": "APPROVAL_CREATE"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/address-books/user-selections",
+      "handler": "nuri.api.controller.business.addressbook.AddressBookApiController#searchUserSelections",
+      "access": "PERMISSION",
+      "permission": "ADBK_READ"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/system/durable-jobs",
+      "handler": "nuri.api.controller.foundation.controller.system.job.DurableJobApiController#getJobs",
+      "access": "PERMISSION",
+      "permission": "DWORK_READ"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/durable-jobs/{jobSn}/retry",
+      "handler": "nuri.api.controller.foundation.controller.system.job.DurableJobApiController#retry",
+      "access": "PERMISSION",
+      "permission": "DWORK_RETRY"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/policies/{type}",
+      "handler": "nuri.api.controller.foundation.controller.system.policy.PolicyApiController#createPolicy",
+      "access": "PERMISSION",
+      "permission": "POLICY_UPDATE"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/survey-responses/{srvyRspnsSn}/submission",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyResponseAdminApiController#cancelSubmission",
+      "access": "PERMISSION",
+      "permission": "SURVEY_RSP_DELETE"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/mfa/status",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaStatus",
+      "access": "AUTHENTICATED",
+      "permission": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/enrollment/start",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaStartEnrollment",
+      "access": "AUTHENTICATED",
+      "permission": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/enrollment/prepare",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaPrepareEnrollment",
+      "access": "PUBLIC",
+      "permission": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/enrollment/confirm",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaConfirmEnrollment",
+      "access": "PUBLIC",
+      "permission": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/verify",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaVerifyLogin",
+      "access": "PUBLIC",
+      "permission": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/reauthenticate",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaReauthenticate",
+      "access": "AUTHENTICATED",
+      "permission": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/recovery-codes",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaRegenerateRecoveryCodes",
+      "access": "AUTHENTICATED",
+      "permission": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/disable",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaDisable",
+      "access": "AUTHENTICATED",
+      "permission": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/recovery/admin",
+      "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaRecoverAccount",
+      "access": "PERMISSION",
+      "permission": "MFA_RECOVER"
     }
   ]
 }

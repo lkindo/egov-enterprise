@@ -123,6 +123,9 @@ class ResponseContractLinterTest {
             LOG_CONTROLLER_DIR + "PrivacyLogApiController.java#exportPrivacyLogs",
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveySubmissionApiController.java#exportStats");
 
+    /** 동일 바이너리 모집단을 개인정보 감사 게이트에서도 검증한다. */
+    static Set<String> binaryAllowedHandlers() { return BINARY_ALLOWED_HANDLERS; }
+
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 325건 대비 여유). */
     private static final int HANDLER_FLOOR = 250;
 

@@ -9,7 +9,9 @@ export interface CommunityVO {
   regSeCdNm?: string;
   tmpltId?: string;
   tmpltNm?: string;
-  frstRgtrId?: string;
+  createdByMe?: boolean;
+  editable?: boolean;
+  deletable?: boolean;
   crtDt?: string;
 }
 

@@ -48,11 +48,15 @@ public class CustomUserDetails implements UserDetails {
      * 알 수 없으면 null 이며, 그때는 이 기준으로 거부하지 않는다.
      */
     private final java.time.Instant credentialsChangedAt;
+    /** 현재 DB 자격 버전. 등록·복구·비활성화 후 이전 JWT를 거부하는 기준이다. */
+    private final String mfaCredentialVersion;
+    private final boolean mfaRequired;
 
     private CustomUserDetails(String userId, String esntlId, String userNm, String password,
                               String roleName, String lockAt, String authorCode,
                               List<String> authorityCodes, List<String> groups, List<String> permissions,
-                              String authorizationVersion, boolean enabled, java.time.Instant credentialsChangedAt) {
+                              String authorizationVersion, boolean enabled, java.time.Instant credentialsChangedAt,
+                              String mfaCredentialVersion, boolean mfaRequired) {
         this.userId = userId;
         this.esntlId = esntlId;
         this.userNm = userNm;
@@ -66,13 +70,15 @@ public class CustomUserDetails implements UserDetails {
         this.authorizationVersion = authorizationVersion;
         this.enabled = enabled;
         this.credentialsChangedAt = credentialsChangedAt;
+        this.mfaCredentialVersion = mfaCredentialVersion;
+        this.mfaRequired = mfaRequired;
     }
 
     /** 하위 호환성을 위한 7개 인자 생성자 (기존 테스트 및 호출부 지원) */
     public CustomUserDetails(String userId, String esntlId, String userNm, String password,
                              String roleName, String lockAt, String authorCode) {
         this(userId, esntlId, userNm, password, roleName, lockAt, authorCode,
-                null, List.of(), List.of(), null, false, null);
+                null, List.of(), List.of(), null, false, null, null, false);
     }
 
     @JsonIgnore

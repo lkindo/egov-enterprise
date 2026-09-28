@@ -243,10 +243,15 @@ export const PERMISSION_CODES = [
   "WORK_RPT_READ",
   "WORK_RPT_READ_ALL",
   "WORK_RPT_UPDATE",
-  "WORK_RPT_UPDATE_ALL"
+  "WORK_RPT_UPDATE_ALL",
+  "DWORK_READ",
+  "DWORK_RETRY",
+  "FAQ_EDIT",
+  "MFA_RECOVER",
+  "NOTICE_EDIT"
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
-export const PERMISSION_CATALOG_VERSION = "7feda2b76c901504036e5ddbff050a306c4e59d6c043025fb60a48890339f403";
+export const PERMISSION_CATALOG_VERSION = "88ea73f56485bface92f1ddb4862591f065ce05dcd0b37da7e20d1e1dab3646d";
 export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]>> = {
   "/": [],
   "/admin": [
@@ -381,9 +386,11 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
     "SURVEY_CREATE_ALL"
   ],
   "/admin/survey/polls": [
+    "POLL_READ",
     "POLL_READ_ALL"
   ],
   "/admin/survey/polls/manage": [
+    "POLL_READ",
     "POLL_READ_ALL"
   ],
   "/admin/survey/polls/participate": [],
@@ -529,4 +536,8 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
   "/survey/response": [],
   "/survey/response/[id]": [],
   "/survey/stats": []
+};
+export const PAGE_PERMISSION_MODES: Readonly<Record<string, 'ANY' | 'ALL'>> = {
+  "/admin/survey/polls": "ALL",
+  "/admin/survey/polls/manage": "ALL"
 };

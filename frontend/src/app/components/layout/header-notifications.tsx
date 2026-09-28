@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useNotifications } from '@/lib/hooks/use-notifications';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
+import { canPermission } from '@/lib/auth/permissions';
 import { AppNotificationDrawer } from '../ui/app-notification-drawer';
 
 /**
@@ -41,6 +42,8 @@ export function HeaderNotifications() {
     removeNotification,
     refresh: refreshNotifications,
   } = useNotifications();
+
+  if (!canPermission(user, 'NOTI_READ')) return null;
 
   return (
     <>

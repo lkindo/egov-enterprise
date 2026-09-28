@@ -1,5 +1,6 @@
 import { UserService } from '@/services/core/ApiService';
-import { Banner } from '@/types/foundation/banner';
+import { PublicBanner } from '@/types/foundation/banner';
+import { BannerPublicResponseResponseSchema } from '@/types/generated-zod';
 import { AxiosRequestConfig } from 'axios';
 import { getReflectedBannersOperation } from '@/types/generated-operations';
 
@@ -14,8 +15,9 @@ class BannerUserService extends UserService {
   }
 
   /** 메인화면 노출 배너 목록 */
-  async getReflectedBanners(config?: AxiosRequestConfig): Promise<Banner[]> {
-    return this.executeGenerated(getReflectedBannersOperation, { config }) as Promise<Banner[]>;
+  async getReflectedBanners(config?: AxiosRequestConfig): Promise<PublicBanner[]> {
+    const response = await this.executeGenerated(getReflectedBannersOperation, { config });
+    return BannerPublicResponseResponseSchema.array().parse(response) as PublicBanner[];
   }
 }
 

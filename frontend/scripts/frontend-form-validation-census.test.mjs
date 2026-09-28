@@ -28,6 +28,45 @@ function codes(errors) {
   return new Set(errors.map(({ code }) => code));
 }
 
+test('shared MFA forms require a real auth-service binding and remain fail-closed when omitted', () => {
+  const subject = fixture({
+    'frontend/src/components/account/Challenge.tsx': `
+      import { mfaService } from '@/services/foundation/auth/mfaService';
+      export function Challenge(){ return <form onSubmit={() => mfaService.verify({code:'123456'})}><input /></form>; }
+    `,
+    'frontend/src/components/account/Ordinary.tsx': `
+      const mfaService = { verify() {} };
+      export function Ordinary(){ return <form onSubmit={() => mfaService.verify()}><input /></form>; }
+    `,
+  });
+  try {
+    const manifest = createDraftManifest(subject.discovery);
+    assert.equal(manifest.entries.find(({ owner }) => owner === 'Challenge')?.classification, 'auth');
+    assert.notEqual(manifest.entries.find(({ owner }) => owner === 'Ordinary')?.classification, 'auth');
+    manifest.entries = manifest.entries.filter(({ owner }) => owner !== 'Challenge');
+    assert.equal(codes(validateFormValidationCensus({ ...subject, manifest })).has('UNREGISTERED_CANDIDATE'), true);
+  } finally { subject.cleanup(); }
+});
+
+test('service submission cancellation is a write sink rather than an untracked local cancel action', () => {
+  const subject = fixture({
+    'frontend/src/Submission.tsx': `
+      import { cancelSubmission } from '@/services/survey';
+      export function Submission(){
+        const handleCancel = () => { queryClient.cancelQueries(); return cancelSubmission(1); };
+        return <button onClick={handleCancel}>제출 취소</button>;
+      }
+    `,
+  });
+  try {
+    const action = subject.discovery.candidates.find(({ kind }) => kind === 'secondary-action');
+    assert.deepEqual(action?.writeSinks, ['cancelSubmission']);
+    const manifest = createDraftManifest(subject.discovery);
+    manifest.entries = [];
+    assert.equal(codes(validateFormValidationCensus({ ...subject, manifest })).has('UNREGISTERED_CANDIDATE'), true);
+  } finally { subject.cleanup(); }
+});
+
 test('AST discovery ignores comment/string decoys and includes member forms', () => {
   const subject = fixture({
     'frontend/src/Motion.tsx': `

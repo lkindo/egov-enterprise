@@ -149,7 +149,7 @@ class TmplatInfoServiceTest {
     @DisplayName("템플릿 삭제 — 존재하는 대상을 찾아 지운다(종전 deleteById 는 없는 ID 도 조용히 성공했다)")
     void deleteTmplatInfo() {
         Template template = Template.builder().tmpltId("TMPLT_001").tmpltNm("n").tmpltSeCd("TMPT01").tmpltPath("/p").useYn("Y").build();
-        when(templateRepository.findById("TMPLT_001")).thenReturn(Optional.of(template));
+        when(templateRepository.findByIdForUpdate("TMPLT_001")).thenReturn(Optional.of(template));
 
         tmplatInfoService.deleteTmplatInfo("TMPLT_001");
 
@@ -162,7 +162,7 @@ class TmplatInfoServiceTest {
     @DisplayName("여러 도메인이 참조 중인 템플릿은 RESOURCE_IN_USE(409) 로 거부하고 참조원·건수를 밝힌다")
     void deleteTmplatInfo_blockedWhenReferenced() {
         Template template = Template.builder().tmpltId("TMPLT_001").tmpltNm("n").tmpltSeCd("TMPT01").tmpltPath("/p").useYn("Y").build();
-        when(templateRepository.findById("TMPLT_001")).thenReturn(Optional.of(template));
+        when(templateRepository.findByIdForUpdate("TMPLT_001")).thenReturn(Optional.of(template));
         when(boardReferences.sourceLabel()).thenReturn("게시판");
         when(boardReferences.countReferences("TMPLT_001")).thenReturn(2L);
         when(additionalReferences.sourceLabel()).thenReturn("확장 도메인");
@@ -180,7 +180,7 @@ class TmplatInfoServiceTest {
     @DisplayName("참조가 하나도 없으면 삭제하고, 참조원이 등록되지 않은 projection 에서도 삭제는 동작한다")
     void deleteTmplatInfo_allowedWithoutReferences() {
         Template template = Template.builder().tmpltId("TMPLT_002").tmpltNm("n").tmpltSeCd("TMPT01").tmpltPath("/p").useYn("Y").build();
-        when(templateRepository.findById("TMPLT_002")).thenReturn(Optional.of(template));
+        when(templateRepository.findByIdForUpdate("TMPLT_002")).thenReturn(Optional.of(template));
         when(boardReferences.countReferences("TMPLT_002")).thenReturn(0L);
         when(additionalReferences.countReferences("TMPLT_002")).thenReturn(0L);
 
@@ -199,7 +199,7 @@ class TmplatInfoServiceTest {
     @DisplayName("템플릿 수정 — ID 는 두고 명칭·구분·경로·사용여부를 갱신한다")
     void updateTmplatInfo() {
         Template template = Template.builder().tmpltId("TMPLT_001").tmpltNm("Old").tmpltSeCd("TMPT01").tmpltPath("/old").useYn("Y").build();
-        when(templateRepository.findById("TMPLT_001")).thenReturn(Optional.of(template));
+        when(templateRepository.findByIdForUpdate("TMPLT_001")).thenReturn(Optional.of(template));
         TemplateDto dto = TemplateDto.builder().tmpltId("IGNORED").tmpltNm("New").tmpltSeCd("TMPT02").tmpltPath("/new").useYn("N").build();
 
         TemplateDto result = tmplatInfoService.updateTmplatInfo("TMPLT_001", dto);
@@ -214,7 +214,7 @@ class TmplatInfoServiceTest {
     @Test
     @DisplayName("없는 템플릿의 수정·삭제는 RESOURCE_NOT_FOUND")
     void updateOrDeleteTmplatInfo_NotFound() {
-        when(templateRepository.findById("NONE")).thenReturn(Optional.empty());
+        when(templateRepository.findByIdForUpdate("NONE")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> tmplatInfoService.updateTmplatInfo("NONE", TemplateDto.builder().tmpltNm("x").build()))
                 .isInstanceOf(BusinessException.class);

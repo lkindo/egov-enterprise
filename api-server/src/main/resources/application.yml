@@ -155,12 +155,17 @@ nuri:
       #   형제 테이블과 같은 2년으로 둔다. 인수처 규모·규정에 따라 상향할 수는 있어도 하향은
       #   스케줄러의 법정 하한 가드가 막는다. 파기 경로 부재는 log-retention-policy.md 참조.
       privacy-months: 24        # 개인정보 접근 증적 2년
+      sensitive-months: 24      # 응답 전 준비·민감 작업 시도/결과 증적
 
   # 로그인 무차별 대입(brute-force) 방어 — 연속 실패 N회 도달 시 계정 잠금, M분 경과 후 자동 해제.
   # 판정/해제 주체: EgovAuthenticationProvider. 잠금 시각은 tb_user_info.lck_last_pnttm 에 기록된다.
   # ⚠ max-failures 를 0 이하로 두면 잠금이 비활성화된다 — 오설정으로 정상 사용자가 대량 잠기는
   #   가용성 사고를 재배포 없이 즉시 회피하기 위한 운영 탈출구다(평시에는 반드시 1 이상 유지).
   security:
+    mfa:
+      active-key-id: ${MFA_ACTIVE_KEY_ID:}
+      keys-json: ${MFA_KEYS_JSON:}
+      require-protected: ${MFA_REQUIRE_PROTECTED:false}
     login:
       max-failures: ${LOGIN_MAX_FAILURES:5}   # 연속 실패 5회째에 잠금
       lock-minutes: ${LOGIN_LOCK_MINUTES:15}  # 잠금 지속 15분(경과 후 다음 시도에서 자동 해제)

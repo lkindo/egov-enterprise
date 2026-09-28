@@ -43,6 +43,7 @@ public class FileApiController {
     }
 
     @Operation(summary = "파일 다운로드", description = "특정 파일을 다운로드합니다.")
+    @nuri.foundation.core.annotation.PrivacyAccess("첨부파일 다운로드")
     @GetMapping("/{atchFileSn}/{fileSn}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.file.FileApiController#downloadFile')")
     public ResponseEntity<Resource> downloadFile(

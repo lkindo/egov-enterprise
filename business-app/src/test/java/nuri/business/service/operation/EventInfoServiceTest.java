@@ -42,6 +42,44 @@ class EventInfoServiceTest {
     private nuri.business.domain.operation.ExternalHrRepository externalHrRepository;
 
     @Test
+    void createStartsUnapprovedAndRejectsApprovalInjection() {
+        given(eventInfoRepository.save(any(EventInfo.class))).willAnswer(invocation -> invocation.getArgument(0));
+        eventInfoService.createEvent("writer", EventInfoDto.builder().evntNm("새 행사").build());
+        var saved = org.mockito.ArgumentCaptor.forClass(EventInfo.class);
+        verify(eventInfoRepository).save(saved.capture());
+        assertThat(saved.getValue().getEvntAprvYn()).isEqualTo("N");
+        assertThat(saved.getValue().getEvntAprvYmd()).isNull();
+        org.mockito.Mockito.clearInvocations(eventInfoRepository);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> eventInfoService.createEvent("writer",
+                EventInfoDto.builder().evntAprvYn("Y").evntAprvYmd("20260928").build()))
+                .isInstanceOf(BusinessException.class);
+        org.mockito.Mockito.verifyNoInteractions(eventInfoRepository);
+    }
+
+    @Test
+    void updatePreservesApprovalWhenOmittedOrResentAndRejectsChanges() {
+        EventInfo existing = EventInfo.builder().evntSn(1L).evntNm("기존")
+                .evntAprvYn("Y").evntAprvYmd("20260927").build();
+        given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existing));
+        eventInfoService.updateEvent(1L, "writer", EventInfoDto.builder().evntNm("정정").build());
+        eventInfoService.updateEvent(1L, "writer", EventInfoDto.builder().evntNm("정정")
+                .evntAprvYn("Y").evntAprvYmd("2026-09-27").build());
+        var saved = org.mockito.ArgumentCaptor.forClass(EventInfo.class);
+        verify(eventInfoRepository, times(2)).save(saved.capture());
+        assertThat(saved.getAllValues()).allSatisfy(event -> {
+            assertThat(event.getEvntAprvYn()).isEqualTo("Y");
+            assertThat(event.getEvntAprvYmd()).isEqualTo("20260927");
+        });
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> eventInfoService.updateEvent(1L, "writer",
+                EventInfoDto.builder().evntNm("변조").evntAprvYn("N").build()))
+                .isInstanceOf(BusinessException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> eventInfoService.updateEvent(1L, "writer",
+                EventInfoDto.builder().evntNm("변조").evntAprvYmd("").build()))
+                .isInstanceOf(BusinessException.class);
+        verify(eventInfoRepository, times(2)).save(any());
+    }
+
+    @Test
     @DisplayName("이벤트 목록 조회")
     void getEventList() {
         // given
@@ -111,7 +149,7 @@ class EventInfoServiceTest {
     void updateEvent() {
         // given
         EventInfo existingEvent = EventInfo.builder().evntSn(1L).evntCn("Old Event").build();
-        given(eventInfoRepository.findById(1L)).willReturn(Optional.of(existingEvent));
+        given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existingEvent));
         
         EventInfoDto updateDto = EventInfoDto.builder().evntCn("Updated Event").bizYr("2025").build();
 
@@ -126,7 +164,7 @@ class EventInfoServiceTest {
     @DisplayName("이벤트 수정 - 실패 (존재하지 않음)")
     void updateEvent_Fail_NotFound() {
         // given
-        given(eventInfoRepository.findById(99L)).willReturn(Optional.empty());
+        given(eventInfoRepository.findByIdForUpdate(99L)).willReturn(Optional.empty());
         EventInfoDto updateDto = EventInfoDto.builder().evntCn("Updated Event").build();
 
         // when & then

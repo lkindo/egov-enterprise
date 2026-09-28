@@ -71,6 +71,7 @@ const FRONTEND_ARCHIVE_PATHS = Object.freeze([
   'tsconfig.json',
   'public',
   'src',
+  'scripts',
 ]);
 
 const CONFIG_CONTEXT_EXCLUSIONS = Object.freeze([

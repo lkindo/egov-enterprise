@@ -1,20 +1,17 @@
 package nuri.business.service.notification.listener;
 
 import nuri.business.service.notification.NotificationService;
-import nuri.business.service.notification.dto.NotificationDto;
 import nuri.foundation.core.event.NotificationRequestedEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.ArgumentCaptor;
 import org.springframework.scheduling.annotation.Async;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -32,14 +29,12 @@ import static org.mockito.Mockito.verify;
 class NotificationRequestListenerTest {
 
     @Test
-    @DisplayName("알림 리스너는 부모 logExecutor와 분리된 전용 executor를 사용한다")
-    void usesDedicatedNotificationExecutor() throws NoSuchMethodException {
-        Async async = NotificationRequestListener.class
-                .getDeclaredMethod("onNotificationRequested", NotificationRequestedEvent.class)
-                .getAnnotation(Async.class);
-
-        assertThat(async).isNotNull();
-        assertThat(async.value()).isEqualTo("notificationExecutor");
+    @DisplayName("알림 생성 의도는 업무 트랜잭션에 동기로 참여한다")
+    void requiresSynchronousBusinessTransaction() throws NoSuchMethodException {
+        var method = NotificationRequestListener.class.getDeclaredMethod("onNotificationRequested", NotificationRequestedEvent.class);
+        assertThat(method.getAnnotation(Async.class)).isNull();
+        assertThat(method.getAnnotation(org.springframework.transaction.annotation.Transactional.class).propagation())
+                .isEqualTo(org.springframework.transaction.annotation.Propagation.MANDATORY);
     }
 
     @Test
@@ -48,14 +43,9 @@ class NotificationRequestListenerTest {
         NotificationService service = mock(NotificationService.class);
         NotificationRequestListener listener = new NotificationRequestListener(service);
 
-        listener.onNotificationRequested(new NotificationRequestedEvent(
-                "USRCNFRM_0001", "결재 상태 변경", "결재(ID:7)가 승인 되었습니다.", "/approvals"));
-
-        ArgumentCaptor<NotificationDto> captor = ArgumentCaptor.forClass(NotificationDto.class);
-        verify(service).createNotification(org.mockito.ArgumentMatchers.eq("USRCNFRM_0001"), captor.capture());
-        assertThat(captor.getValue().getNotiTtlNm()).isEqualTo("결재 상태 변경");
-        assertThat(captor.getValue().getNotiCn()).isEqualTo("결재(ID:7)가 승인 되었습니다.");
-        assertThat(captor.getValue().getLinkUrl()).isEqualTo("/approvals");
+        var event = new NotificationRequestedEvent("USRCNFRM_0001", "결재 상태 변경", "결재(ID:7)가 승인 되었습니다.", "/approvals");
+        listener.onNotificationRequested(event);
+        verify(service).createForEvent(event);
     }
 
     /**
@@ -72,23 +62,19 @@ class NotificationRequestListenerTest {
 
         listener.onNotificationRequested(new NotificationRequestedEvent(receiver, "제목", "본문", null));
 
-        verify(service, never()).createNotification(anyString(), any());
+        verify(service, never()).createForEvent(any());
     }
 
-    /**
-     * 원 업무(결재 승인·쪽지 발송)는 이미 커밋됐다. 알림 실패로 그것을 되돌릴 수 없고
-     * 되돌려서도 안 된다 — 알림은 업무의 부수 효과이지 업무 자체가 아니다.
-     */
     @Test
-    @DisplayName("알림 생성 실패가 업무 경로로 전파되지 않는다")
-    void swallowsFailureSoBusinessPathIsUnaffected() {
+    @DisplayName("알림 의도 저장 실패는 업무 경로에 전파되어 함께 롤백한다")
+    void propagatesPersistenceFailure() {
         NotificationService service = mock(NotificationService.class);
         doThrow(new IllegalStateException("db down"))
-                .when(service).createNotification(anyString(), any());
+                .when(service).createForEvent(any());
         NotificationRequestListener listener = new NotificationRequestListener(service);
 
-        assertThatCode(() -> listener.onNotificationRequested(
+        assertThatThrownBy(() -> listener.onNotificationRequested(
                 new NotificationRequestedEvent("USRCNFRM_0001", "제목", "본문", null)))
-                .doesNotThrowAnyException();
+                .isInstanceOf(IllegalStateException.class);
     }
 }

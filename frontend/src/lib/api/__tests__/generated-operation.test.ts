@@ -65,8 +65,16 @@ describe('generated operation contract', () => {
       pstSn: 7,
       bbsId: 'BBSMSTR_A',
       ansCn: '댓글',
-      wrterId: 'forged-writer',
+      editable: true,
     } as never)).toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
+
+    // 일반 DTO에서 퇴역한 작성자 ID도 strict 요청 계약이 계속 거부한다.
+    expect(() => parseGeneratedOperationRequest(createCommentOperation, {
+      pstSn: 7,
+      bbsId: 'BBSMSTR_A',
+      ansCn: '댓글',
+      wrterId: 'forged-writer',
+    } as never)).toThrow('생성 API 요청이 OpenAPI 계약과 일치하지 않습니다.');
 
     let thrown: unknown;
     try {

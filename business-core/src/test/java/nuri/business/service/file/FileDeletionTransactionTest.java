@@ -4,6 +4,12 @@ import nuri.business.domain.file.FileDetail;
 import nuri.business.domain.file.FileDetailRepository;
 import nuri.business.domain.file.FileMaster;
 import nuri.business.domain.file.FileMasterRepository;
+import nuri.foundation.core.job.DurableWork;
+import nuri.foundation.core.job.DurableWorkPort;
+import org.mockito.ArgumentCaptor;
+import org.springframework.test.util.ReflectionTestUtils;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -30,6 +36,8 @@ class FileDeletionTransactionTest {
     private final FileMasterRepository masters = mock(FileMasterRepository.class);
     private final FileDetailRepository details = mock(FileDetailRepository.class);
     private final FileAccessPolicy policy = mock(FileAccessPolicy.class);
+    private final DurableWorkPort work = mock(DurableWorkPort.class);
+    private final ObjectMapper mapper = JsonMapper.builder().build();
     private final CommitFailureTransactionManager manager = new CommitFailureTransactionManager();
     private final TransactionTemplate transaction = new TransactionTemplate(manager);
     private FileService service;
@@ -44,11 +52,12 @@ class FileDeletionTransactionTest {
         master = new FileMaster(123L);
         detail = FileDetail.builder().fileMaster(master).atchFileSeq(1)
                 .strgFileNm("retained.txt").fileStrgPath("general/123").build();
+        ReflectionTestUtils.setField(detail, "id", java.util.UUID.randomUUID());
         file = directory.resolve("general/123/retained.txt");
         Files.createDirectories(file.getParent());
         Files.writeString(file, "preserve on rollback");
         when(details.findByFileMasterAtchFileSnAndAtchFileSeq(123L, 1)).thenReturn(Optional.of(detail));
-        service = new FileService(masters, details, storage, policy);
+        service = new FileService(masters, details, storage, policy, work, mapper);
     }
 
     @Test
@@ -70,12 +79,16 @@ class FileDeletionTransactionTest {
     }
 
     @Test
-    void successfulCommitDeletesTheFileOnlyAfterDatabaseCompletion() {
+    void successfulCommitPreservesFileUntilDurableIntentIsDelivered() {
         transaction.executeWithoutResult(status -> {
             deleteOne();
             assertThat(file).exists();
             verify(details).delete(detail);
         });
+        assertThat(file).exists();
+        ArgumentCaptor<DurableWork> captured = ArgumentCaptor.forClass(DurableWork.class);
+        verify(work).enqueue(captured.capture());
+        new FileDeletionWorkHandler(storage, details, mapper).execute(captured.getValue());
         assertThat(file).doesNotExist();
     }
 
@@ -103,27 +116,28 @@ class FileDeletionTransactionTest {
     }
 
     @Test
-    void storageFailureAfterCommitLeavesAnOrphanButDoesNotStopOtherCleanup() throws IOException {
+    void intentPersistenceFailureRollsBackInsteadOfDroppingPhysicalDeletion() throws IOException {
         Path otherFile = file.resolveSibling("other.txt");
         Files.writeString(otherFile, "other attachment");
         FileDetail other = FileDetail.builder().fileMaster(master).atchFileSeq(2)
                 .strgFileNm("other.txt").fileStrgPath("general/123").build();
+        ReflectionTestUtils.setField(other, "id", java.util.UUID.randomUUID());
         when(masters.findById(123L)).thenReturn(Optional.of(master));
         when(details.findByFileMaster(master)).thenReturn(List.of(detail, other));
-        doThrow(new IllegalStateException("injected storage failure"))
-                .when(storage).delete("retained.txt", "general/123");
+        doThrow(new IllegalStateException("injected intent persistence failure"))
+                .when(work).enqueue(any());
 
-        transaction.executeWithoutResult(status -> {
+        assertThatThrownBy(() -> transaction.executeWithoutResult(status -> {
             try {
                 service.deleteFiles(123L);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-        });
+        })).isInstanceOf(IllegalStateException.class);
 
         verify(masters).delete(master);
         assertThat(file).exists();
-        assertThat(otherFile).doesNotExist();
+        assertThat(otherFile).exists();
     }
 
     private void deleteOne() {

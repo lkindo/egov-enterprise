@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { popupService } from '@/services/business/user/PopupService';
 import { isCanceledRequest } from '@/lib/safe-error-log';
-import { Popup } from '@/types/foundation/banner';
+import { PublicPopup } from '@/types/foundation/banner';
 import Image from 'next/image';
 import { AttachmentImage, extractAtchFileSn } from '@/app/components/ui/attachment-image';
 
@@ -40,7 +40,7 @@ function hideUntilMidnight(popupSn: number) {
 }
 
 export function PopupManager() {
-    const [activePopups, setActivePopups] = useState<Popup[]>([]);
+    const [activePopups, setActivePopups] = useState<PublicPopup[]>([]);
     const [visiblePopupSns, setVisiblePopupSns] = useState<number[]>([]);
 
     useEffect(() => {

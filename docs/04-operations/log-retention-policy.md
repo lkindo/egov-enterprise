@@ -25,7 +25,8 @@
 | `tb_sys_log` | 만료 배치 파기 | `sys-months: 24` | 시스템 처리 로그의 개인정보·감사 범위를 인수처가 분류 |
 | `tb_login_log` | 성공 로그인 비동기 기록 + 관리자·통계 조회 + 만료 배치 파기 | `login-months: 24` | 실패·OTP 거부 등 성공 이전 경로는 현재 기록 범위가 아님 |
 | `tb_user_log` | 사용자 삭제 시 정리 + 만료 백스톱 | `user-months: 24` | 접속기록이 아닌 개인 사용통계로 취급. 참조 무결성 확인 |
-| `tb_privacy_log` | `@PrivacyAccess` 선언 핸들러의 성공 조회를 비동기 기록 + 만료 배치 파기 | `privacy-months: 24` (2026-09-02 편입) | 기록 대상은 애노테이션 census 가 동결한다. 종전에는 기록·파기 경로가 모두 없어 표가 늘 비어 있었다 |
+| `tb_privacy_log` | `@PrivacyAccess` 선언 핸들러의 응답 전 준비를 동기 기록 + 만료 배치 파기 | `privacy-months: 24` | 기록 저장 실패 시 응답 본문을 내보내지 않는다. 준비 기록은 클라이언트 수신 완료의 증거가 아니다 |
+| `tb_sys_adt_log` | 민감 요청 시도·응답 전 준비·처리 결과 및 트랜잭션에 결속한 변경 기록 | `sensitive-months: 24` | 요청 ID로 상태를 연결한다. 응답 중단·거부·실패를 성공과 구분하며 OTP·복구코드·요청 본문을 저장하지 않는다 |
 | `tb_inst_cd_rcptn_log` | 이 정책 대상 아님 | 기관코드 수신 로그 | 개인정보가 유입되면 분류를 재검토 |
 
 정본 구현:
@@ -34,15 +35,17 @@
 - [`AuthServiceImpl`](../../business-core/src/main/java/nuri/business/service/auth/impl/AuthServiceImpl.java)의 성공 로그인 기록과
   [`LogService`](../../business-core/src/main/java/nuri/business/service/log/LogService.java)의 비동기 저장
 - [`application.yml`](../../api-server/src/main/resources/application.yml)의 `nuri.log.retention.*`
+- [`SensitiveAuditService`](../../business-core/src/main/java/nuri/business/service/log/SensitiveAuditService.java)의 독립 기록 트랜잭션과 업무 트랜잭션 결속 기록
 - 사용자 삭제 경로의 종속 데이터 정리
 
 ## scheduler 계약
 
 - base 설정은 `LOG_RETENTION_ENABLED` 기본값을 `true`로 두며 test profile은 비활성화한다.
 - 기본 cron은 매일 04:00 Asia/Seoul이고 `nuri.log.retention.cron`으로 바꿀 수 있다.
-- web/sys/login/user 각각 24개월 기본값을 사용한다.
+- web/sys/login/user/privacy/sensitive 각각 24개월 기본값을 사용한다.
 - 어느 보존월이든 12 미만이면 해당 삭제를 건너뛰고 WARN을 남긴다. 이 하한은 오설정에 의한 대량 파기를
   줄이는 안전장치이지, 인수처가 12개월만 설정해도 항상 적법하다는 판정기가 아니다.
+- 민감 작업 원장(`sensitive-months`)은 이번 승인 범위의 24개월을 하한으로 지키며, 그보다 작으면 삭제하지 않는다.
 - 삭제 술어와 index는 현재 repository·Flyway가 정본이다. 문서에 복사한 SQL을 임의 실행하지 않는다.
 
 ## 알림 보존 (2026-09-06, DEC-OPS-038)

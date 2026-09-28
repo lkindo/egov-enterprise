@@ -759,6 +759,18 @@ jobs:
       - name: Generate ephemeral JWT secret (backend/frontend 대칭)
         run: echo "JWT_SECRET=$(openssl rand -hex 44)" >> "$GITHUB_ENV"
 
+      # MFA는 격리 API에만 회차별 키를 제공한다. 운영 키나 보호계정 강제 적용은 상속하지 않는다.
+      - name: Generate isolated MFA keyring (masked, no protected-account rollout)
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync } from 'node:fs';
+          import { createIsolatedMfaEnvironment } from './scripts/run-isolated-e2e.mjs';
+          const environment = createIsolatedMfaEnvironment();
+          for (const value of Object.values(JSON.parse(environment.MFA_KEYS_JSON))) console.log(`::add-mask::${value}`);
+          console.log(`::add-mask::${environment.MFA_KEYS_JSON}`);
+          appendFileSync(process.env.GITHUB_ENV, Object.entries(environment).map(([key, value]) => `${key}=${value}\n`).join(''));
+          NODE
+
       # Playwright storageState는 실행 중 갱신되지 않으므로 CI E2E에서만 토큰 수명을 6시간으로 둔다.
       # 운영 기본값은 바꾸지 않으며, shard 중간 만료를 애플리케이션 실패로 오인하지 않게 한다.
       - name: Extend access token lifetime for E2E (운영 기본값은 불변)

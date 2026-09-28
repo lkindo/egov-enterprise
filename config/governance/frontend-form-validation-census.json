@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 66,
-    "nativeFormFiles": 56,
+    "nativeFormOccurrences": 68,
+    "nativeFormFiles": 58,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 19,
     "secondaryActionBoundaries": 70,
-    "candidateCount": 156
+    "candidateCount": 158
   },
   "entries": [
     {
@@ -1365,6 +1365,40 @@
       "serverErrors": "not-applicable",
       "pendingGuard": "not-applicable",
       "testEvidence": []
+    },
+    {
+      "key": "native-form:frontend/src/components/account/MfaChallengePanel.tsx#MfaChallengePanel[1]",
+      "kind": "native-form",
+      "file": "frontend/src/components/account/MfaChallengePanel.tsx",
+      "owner": "MfaChallengePanel",
+      "classification": "auth",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "local:challengeFormSchema(mfaCodeSchema+mfaRecoveryCodeSchema)",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "form-level-auth-error-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/account/__tests__/MfaChallengePanel.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/components/account/MfaSettings.tsx#MfaSettings[1]",
+      "kind": "native-form",
+      "file": "frontend/src/components/account/MfaSettings.tsx",
+      "owner": "MfaSettings",
+      "classification": "auth",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "local:managementFormSchema(mfaBrowserRequests)",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "form-level-auth-error-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/account/__tests__/MfaSettings.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
     },
     {
       "key": "native-form:frontend/src/components/account/ChangePasswordForm.tsx#ChangePasswordForm[1]",
@@ -2840,8 +2874,8 @@
       "owner": "SurveyResponseClient",
       "handler": "handleDelete",
       "writeSinks": [
-        "deleteMutation.mutate",
-        "deleteQustnrRespondInfo"
+        "cancelSurveySubmission",
+        "deleteMutation.mutate"
       ],
       "classification": "destructive",
       "status": "compliant",

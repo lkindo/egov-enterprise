@@ -5,8 +5,9 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createServer } from 'node:http';
 import { randomBytes } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { validateIsolationManifest, assertOwnedDatabase, assertOwnedComposeRuntime, assertIsolatedTarget, validateComposePlan } from './e2e-isolation.mjs';
-import { closedEnvironment, assertNoDotEnv, assertBuildTarget, discoveryArguments } from './run-isolated-e2e.mjs';
+import { closedEnvironment, createIsolatedMfaEnvironment, assertNoDotEnv, assertBuildTarget, discoveryArguments } from './run-isolated-e2e.mjs';
 import { createSmokeContext, createReleaseSmokePlan, validateReleaseSmokePlan,
   assertOwnedSmokeContainer, captureReleaseSmokeSource, validateSmokeBarrier, validateSmokeImages,
   waitForSmokeHealth, runSmokeStages, createSmokeFailureDiagnostic } from './run-isolated-release-smoke.mjs';
@@ -323,8 +324,93 @@ test('closed environment removes inherited datasource, proxy, Java/Node injectio
   assert.deepEqual(closedEnvironment({ PATH: 'tools', JAVA_HOME: 'jdk', ProgramFiles: 'programs', ProgramW6432: 'native-programs',
     PROGRAMFILES_SECRET: 'remote', DB_URL: 'remote', SPRING_APPLICATION_JSON: 'remote',
     NODE_OPTIONS: '--require=unsafe', JAVA_TOOL_OPTIONS: 'unsafe', HTTPS_PROXY: 'remote', JWT_SECRET: 'remote', BACKEND_API_URL: 'remote',
+    MFA_KEYS_JSON: 'foreign', MFA_ACTIVE_KEY_ID: 'foreign', MFA_REQUIRE_PROTECTED: 'true',
+    NURI_SECURITY_MFA_KEYS_JSON: 'foreign', NURI_SECURITY_MFA_REQUIRE_PROTECTED: 'true',
     NEXT_PUBLIC_API_URL: 'remote', DOCKER_HOST: 'tcp://remote:2375', PLAYWRIGHT_JSON_OUTPUT_FILE: 'report.json' }),
   { PATH: 'tools', JAVA_HOME: 'jdk', ProgramFiles: 'programs', ProgramW6432: 'native-programs', PLAYWRIGHT_JSON_OUTPUT_FILE: 'report.json' });
+});
+
+test('isolated MFA uses a fresh 256-bit key and never inherits an enforced or external keyring', () => {
+  const first = createIsolatedMfaEnvironment(); const second = createIsolatedMfaEnvironment();
+  assert.deepEqual(Object.keys(first).sort(), ['MFA_ACTIVE_KEY_ID', 'MFA_KEYS_JSON', 'MFA_REQUIRE_PROTECTED']);
+  assert.equal(first.MFA_ACTIVE_KEY_ID, 'e2e'); assert.equal(first.MFA_REQUIRE_PROTECTED, 'false');
+  const keys = JSON.parse(first.MFA_KEYS_JSON);
+  assert.deepEqual(Object.keys(keys), ['e2e']);
+  assert.equal(Buffer.from(keys.e2e, 'base64').length, 32);
+  assert.ok(Buffer.from(keys.e2e, 'base64').toString('base64') === keys.e2e);
+  assert.ok(first.MFA_KEYS_JSON !== second.MFA_KEYS_JSON);
+});
+
+function mfaWiringSources() {
+  return Object.fromEntries(['scripts/run-isolated-e2e.mjs', '.github/workflows/ci.yml', 'docker-compose.authz-e2e.yml']
+    .map(file => [file, readFileSync(new URL(`../${file}`, import.meta.url), 'utf8').replace(/\r\n/g, '\n')]));
+}
+
+function assertMfaWiring(sources) {
+  const runner = sources['scripts/run-isolated-e2e.mjs'];
+  assert.match(runner, /MFA_KEYS_JSON: JSON\.stringify\(\{ e2e: randomBytes\(32\)\.toString\('base64'\) \}\)/u);
+  assert.match(runner, /MFA_REQUIRE_PROTECTED: 'false'/u);
+  assert.match(runner, /const apiEnvironment = \{ \.\.\.clean,[\s\S]*?\.\.\.createIsolatedMfaEnvironment\(\),/u);
+  const job = sources['.github/workflows/ci.yml'].match(/^  e2e-tests:\n([\s\S]*?)(?=^  [a-zA-Z0-9_-]+:)/mu)?.[1];
+  assert.ok(job);
+  assert.match(job, /COMPOSE_FILE: docker-compose\.yml:docker-compose\.authz-e2e\.yml/u);
+  const step = job.match(/- name: Generate isolated MFA keyring[^\n]*\n[\s\S]*?(?=\n      - name:)/u)?.[0];
+  assert.ok(step);
+  assert.ok(job.indexOf('Generate isolated MFA keyring') < job.indexOf('node scripts/e2e-compose-preflight.mjs'));
+  assert.match(step, /const environment = createIsolatedMfaEnvironment\(\);/u);
+  assert.match(step, /Object\.values\(JSON\.parse\(environment\.MFA_KEYS_JSON\)\)\) console\.log\(`::add-mask::\$\{value\}`\)/u);
+  assert.match(step, /console\.log\(`::add-mask::\$\{environment\.MFA_KEYS_JSON\}`\)/u);
+  assert.ok(step.indexOf('::add-mask::') < step.indexOf('appendFileSync(process.env.GITHUB_ENV'));
+  const overlay = sources['docker-compose.authz-e2e.yml'];
+  for (const key of ['MFA_ACTIVE_KEY_ID', 'MFA_KEYS_JSON']) assert.ok(overlay.includes(key + ': ${' + key + ':-}'));
+  assert.match(overlay, /^      MFA_REQUIRE_PROTECTED: "false"$/mu);
+  return step;
+}
+
+test('local and CI execution wire fresh MFA into the API, and missing generation, masking or injection is red', () => {
+  const sources = mfaWiringSources(); assertMfaWiring(sources);
+  for (const [file, before, after] of [
+    ['scripts/run-isolated-e2e.mjs', 'randomBytes(32).toString(\'base64\')', 'randomBytes(16).toString(\'base64\')'],
+    ['scripts/run-isolated-e2e.mjs', '...createIsolatedMfaEnvironment(),', ''],
+    ['.github/workflows/ci.yml', 'const environment = createIsolatedMfaEnvironment();', 'const environment = process.env;'],
+    ['.github/workflows/ci.yml', '      - name: Generate isolated MFA keyring',
+      '      - name: Premature startup\n        run: node scripts/e2e-compose-preflight.mjs\n\n      - name: Generate isolated MFA keyring'],
+    ['.github/workflows/ci.yml', 'console.log(`::add-mask::${value}`)', 'void value'],
+    ['.github/workflows/ci.yml', 'console.log(`::add-mask::${environment.MFA_KEYS_JSON}`)', 'void environment.MFA_KEYS_JSON'],
+    ['docker-compose.authz-e2e.yml', 'MFA_KEYS_JSON: ${MFA_KEYS_JSON:-}', 'MFA_KEYS_JSON:'],
+    ['docker-compose.authz-e2e.yml', 'MFA_REQUIRE_PROTECTED: "false"', 'MFA_REQUIRE_PROTECTED: "true"'],
+  ]) {
+    const changed = { ...sources, [file]: sources[file].replace(before, after) };
+    assert.notEqual(changed[file], sources[file]);
+    assert.throws(() => assertMfaWiring(changed), { name: 'AssertionError' });
+  }
+});
+
+test('the actual CI MFA generation script masks values before private environment handoff without inheriting keys', () => {
+  const step = assertMfaWiring(mfaWiringSources());
+  const code = step.match(/node --input-type=module <<'NODE'\n([\s\S]*?)\n          NODE/u)?.[1];
+  assert.ok(code);
+  const directory = mkdtempSync(path.join(tmpdir(), 'e2e-mfa-env-'));
+  const file = path.join(directory, 'github-env');
+  try {
+    const output = execFileSync(process.execPath, ['--input-type=module', '-e', code], {
+      cwd: new URL('..', import.meta.url), encoding: 'utf8',
+      env: { ...closedEnvironment(), GITHUB_ENV: file, MFA_ACTIVE_KEY_ID: 'inherited', MFA_KEYS_JSON: 'inherited', MFA_REQUIRE_PROTECTED: 'true' },
+    });
+    const values = Object.fromEntries(readFileSync(file, 'utf8').trim().split('\n').map(line => {
+      const separator = line.indexOf('='); return [line.slice(0, separator), line.slice(separator + 1)];
+    }));
+    assert.equal(values.MFA_ACTIVE_KEY_ID, 'e2e'); assert.equal(values.MFA_REQUIRE_PROTECTED, 'false');
+    const keys = JSON.parse(values.MFA_KEYS_JSON); assert.deepEqual(Object.keys(keys), ['e2e']);
+    assert.equal(Buffer.from(keys.e2e, 'base64').length, 32);
+    const emitted = output.trim().split('\n');
+    assert.equal(emitted.length, 2);
+    assert.ok(emitted[0] === `::add-mask::${keys.e2e}`);
+    assert.ok(emitted[1] === `::add-mask::${values.MFA_KEYS_JSON}`);
+  } finally {
+    assert.equal(path.dirname(path.resolve(directory)), path.resolve(tmpdir()));
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 test('dotenv contents are never read and unexpected production rewrites are refused', () => {
   const directory = mkdtempSync(path.join(tmpdir(), 'e2e-isolation-'));

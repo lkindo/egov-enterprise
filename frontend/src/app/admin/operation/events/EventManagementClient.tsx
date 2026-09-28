@@ -171,8 +171,8 @@ export default function EventManagementClient() {
    * 아예 없었다** — 목록 컬럼에 없고 상세 화면도 없었다.
    *
    * ⚠ 원본을 통째로 들고 있는 이유: PUT 은 전체 DTO 를 받는데 이 폼은 5개 필드만 다룬다.
-   *   폼 값만 보내면 picNm·prepMttr·evntTypeCd·evntAprvYn 같은 **화면에 없는 값이 조용히
-   *   지워진다.** 저장할 때 원본 위에 편집분만 덮는다.
+   *   폼 값만 보내면 picNm·prepMttr·evntTypeCd 같은 화면에 없는 값이 지워진다.
+   *   저장할 때 원본 위에 편집분만 덮는다. 승인 여부·승인일은 서버에서 현재 값을 보존한다.
    */
   const [editingEvent, setEditingEvent] = useState<EventInfo | null>(null);
   const [isLoadingEvent, setIsLoadingEvent] = useState(false);
@@ -225,8 +225,8 @@ export default function EventManagementClient() {
 
           ⚠ 원본의 null 은 **떨어뜨려야** 한다. 생성 계약의 요청 스키마는 이 필드들을
           `.optional()`(null 거부)로, 응답 스키마는 `.optional().nullable()` 로 선언한다
-          (DEC-OPS-028 의 방향 비대칭). 이 화면의 **등록** 경로는 evntTypeCd·evntAprvYn·
-          evntAprvYmd 를 보내지 않아 서버가 null 로 저장하므로, 그렇게 만든 행을 수정하려
+          (DEC-OPS-028 의 방향 비대칭). 이 화면의 등록 경로는 evntTypeCd·evntAprvYmd 를
+          보내지 않아 서버가 null 로 저장하므로, 그렇게 만든 행을 수정하려
           하면 null 이 그대로 요청에 실려 `parseGeneratedOperationRequest` 가 **HTTP 전에**
           throw 했다 — 즉 이 화면으로 만든 행사는 이름 한 글자도 고칠 수 없었고, 서버에
           요청이 닿지 않아 로그에도 단서가 없었다.

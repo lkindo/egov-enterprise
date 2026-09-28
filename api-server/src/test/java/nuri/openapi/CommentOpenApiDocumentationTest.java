@@ -26,7 +26,7 @@ class CommentOpenApiDocumentationTest {
   @Autowired private tools.jackson.databind.ObjectMapper objectMapper;
 
   @Test
-  @DisplayName("댓글 DTO는 응답 nullable 필드와 요청 비밀번호 방향을 정확히 문서화한다")
+  @DisplayName("댓글 DTO는 내부 신원을 숨기고 표시명·편집 판정과 요청 비밀번호 방향을 문서화한다")
   void commentDtoNullabilityAndAccessContract_isDocumented() throws Exception {
     String content = mockMvc.perform(get("/v3/api-docs")
         .contentType(MediaType.APPLICATION_JSON))
@@ -48,9 +48,11 @@ class CommentOpenApiDocumentationTest {
     });
 
     assertThat(nullableProperties)
-        .containsExactlyInAnyOrder("wrterId", "wrterNm", "frstRgtrId", "crtDt");
+        .containsExactlyInAnyOrder("wrterNm", "crtDt");
     assertThat(readOnlyProperties)
-        .containsExactlyInAnyOrder("wrterId", "wrterNm", "frstRgtrId", "crtDt");
+        .containsExactlyInAnyOrder("wrterNm", "editable", "deletable", "crtDt");
+    assertThat(properties.has("wrterId")).isFalse();
+    assertThat(properties.has("frstRgtrId")).isFalse();
     assertThat(properties.path("pswd").path("writeOnly").asBoolean(false)).isTrue();
     assertThat(properties.path("pswd").path("readOnly").asBoolean(false)).isFalse();
     assertThat(isNullableSchema(properties.path("pswd"))).isFalse();

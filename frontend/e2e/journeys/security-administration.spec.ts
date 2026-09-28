@@ -1,6 +1,7 @@
 import { APIRequestContext,APIResponse } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
 import { expect,test } from '../fixtures/browser-test';
+import { collectPageCoverage } from '../fixtures/page-observation';
 import { getAdminBearerToken } from '../utils/admin-token';
 test.describe('사용자와 권한 관리', () => {
     test.describe('Admin System (Core Management)', () => {
@@ -282,7 +283,7 @@ test.describe('권한 변경과 충돌 제어', () => {
     });
     test.describe('복수 권한 그룹의 실제 API와 편집 화면', () => {
         test.use({ storageState: 'playwright/.auth/admin.json' });
-        test('그룹 합집합·부분/완전 회수·403·오래된 버전 409와 검색 중 전체 선택 보존', async ({ page, playwright, baseURL }) => {
+        test('그룹 합집합·부분/완전 회수·403·오래된 버전 409와 검색 중 전체 선택 보존', async ({ page, actorPage, playwright, baseURL }) => {
             if (!baseURL || !['localhost', '127.0.0.1', '[::1]'].includes(new URL(baseURL).hostname)) {
                 throw new Error('Authorization fixtures require the isolated loopback E2E stack.');
             }
@@ -457,6 +458,50 @@ test.describe('권한 변경과 충돌 제어', () => {
                     expect(await group(request, administrator, groupA)).toEqual(withoutNavigation);
                     await replaceGrants(request, administrator, groupA, grantsA);
                     await page.goto('/');
+                });
+                await test.step('투표 관리는 두 조회 권한을 모두 요구하고 등록 권한을 별도로 검사한다', async () => {
+                    const routes = ['/admin/survey/polls', '/admin/survey/polls/manage'];
+                    for (const permissions of [['POLL_READ'], ['POLL_READ_ALL'], ['POLL_CREATE']]) {
+                        await replaceGrants(request, administrator, groupA,
+                            permissions.map(code => ({ type: 'OPERATION', code })));
+                        for (const route of routes) {
+                            const denied = await request.get(route, { headers: { Cookie: `accessToken=${token}` }, maxRedirects: 0 });
+                            expect(denied.status(), `${permissions.join('+')}만으로 관리 화면 진입 불가`).toBe(307);
+                            expect(new URL(denied.headers().location, baseURL).searchParams.get('auth_error')).toBe('unauthorized');
+                        }
+                        const directWrite = await request.post('/api/v1/polls', {
+                            headers: user,
+                            data: { pollNm: `E2E AND ${suffix}`, pollBgngYmd: '20990101', pollEndYmd: '20990102',
+                                pollKndCd: 'POLL01', pollDsuseYn: 'N', pollArticles: [{ pollArtclNm: 'A' }, { pollArtclNm: 'B' }] },
+                        });
+                        expect(directWrite.status(), '조회 권한이나 등록 권한 일부만 가진 직접 쓰기도 거부').toBe(403);
+                    }
+                    const reads: Grant[] = ['POLL_READ', 'POLL_READ_ALL'].map(code => ({ type: 'OPERATION', code }));
+                    await replaceGrants(request, administrator, groupA, reads);
+                    const actor = await actorPage({ storageState: { cookies: [], origins: [] } });
+                    try {
+                        await actor.context.addCookies([{ name: 'accessToken', value: token, url: baseURL, httpOnly: true, sameSite: 'Strict' }]);
+                        await actor.page.goto(routes[0]);
+                        await expect(actor.page.getByRole('heading', { name: '온라인 투표 관리', exact: true })).toBeVisible();
+                        await expect(actor.page.getByRole('button', { name: '알림', exact: true })).toHaveCount(0);
+                        await expect(actor.page.getByRole('button', { name: '신규 설문 등록', exact: true })).toHaveCount(0);
+                        await replaceGrants(request, administrator, groupA, [...reads, { type: 'OPERATION', code: 'POLL_CREATE' }]);
+                        await actor.page.reload();
+                        await actor.page.getByRole('button', { name: '신규 설문 등록', exact: true }).click();
+                        await expect(actor.page.getByRole('dialog', { name: '신규 설문 등록', exact: true })).toBeVisible();
+                        await actor.page.keyboard.press('Escape');
+                        await actor.page.goto('/');
+                        await expect(actor.page.getByRole('heading', { name: '업무 홈', exact: true })).toBeVisible();
+                        await expect(actor.page.getByRole('status').filter({
+                            hasText: '업무 홈 대시보드에 접근할 권한이 없습니다.',
+                        })).toBeVisible();
+                    } finally {
+                        // Observe the live page before its synthetic user is revoked/deleted.
+                        // The fixture still verifies every recorded browser error at teardown.
+                        try { await collectPageCoverage(actor.page); }
+                        finally { await actor.context.close(); }
+                    }
+                    await replaceGrants(request, administrator, groupA, grantsA);
                 });
                 // The same login token is reused throughout: every request must load current grants.
                 await replaceGrants(request, administrator, groupB, [{ type: 'OPERATION', code: 'PROGRAM_READ' }]);

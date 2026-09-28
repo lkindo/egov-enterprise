@@ -58,11 +58,15 @@ function assertWiring(sources) {
   assert.match(java, /@ConditionalOnProperty\(name = "nuri\.authorization\.isolated-cutover", havingValue = "true"\)/);
   assert.match(java, /!profiles\.equals\(Set\.of\("e2e"\)\)/);
   assert.match(java, /!ACK\.equals\(ack\)/);
-  assert.match(java, /!expected\.equals\(actual\)/);
+  assert.match(java.slice(0,java.indexOf('Flyway.configure().configuration(')), /!expected\.equals\(actual\)/);
   const stagedMigrate = 'Flyway.configure().configuration(flyway.getConfiguration()).target("2.99").load().migrate();';
   assert.ok(java.indexOf('validateTarget(profiles,connection.getMetaData().getURL(),ack)') < java.indexOf(stagedMigrate));
   assert.ok(java.indexOf(stagedMigrate) < java.indexOf('statement.execute(new String(input.readAllBytes(),StandardCharsets.UTF_8))'));
   assert.ok(java.indexOf('connection.commit()') < java.indexOf('flyway.migrate()'));
+  assert.ok(java.indexOf('flyway.migrate();') < java.indexOf('seedDisposableContentEditors(flyway,profiles,ack,expected);'));
+  assert.match(java, /"classpath:db\/seed-dev"\.equals\(location\.getDescriptor\(\)\)/);
+  assert.match(java, /if \(!devFixtures\) return;/);
+  assert.match(java, /List\.of\("NOTICE_EDIT","FAQ_EDIT"\)/);
   assert.match(java, /set_config\('app\.authorization_catalog_version',\?,true\)",String\.class,AuthorizationReviewedMigrationCatalog\.version\(\)\)/);
   assert.doesNotMatch(java, /PermissionCodes\.CATALOG_VERSION/);
   assert.match(sources.get(testSupport), /statement\.setString\(3, AuthorizationReviewedMigrationCatalog\.version\(\)\)/);
@@ -87,6 +91,8 @@ test('missing execution wiring, unsafe defaults and removed isolation checks are
     [config, s => s.replace('!expected.equals(actual)', 'false')],
     [config, s => s.replace('.target("2.99")', '.target("latest")')],
     [config, s => s.replace('AuthorizationReviewedMigrationCatalog.version()', 'PermissionCodes.CATALOG_VERSION')],
+    [config, s => s.replace('if (!devFixtures) return;', '')],
+    [config, s => s.replace('seedDisposableContentEditors(flyway,profiles,ack,expected);', '')],
     [testSupport, s => s.replace('AuthorizationReviewedMigrationCatalog.version()', 'PermissionCodes.CATALOG_VERSION')],
     [config, s => s.replace('            flyway.migrate();', '').replace('            // Check the effective datasource', '            flyway.migrate();\n            // Check the effective datasource')],
   ];

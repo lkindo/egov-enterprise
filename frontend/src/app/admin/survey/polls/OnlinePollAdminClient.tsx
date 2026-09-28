@@ -45,6 +45,8 @@ import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { adminPollFormSchema } from '../manage/poll-form-validation';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
@@ -68,6 +70,8 @@ export default function OnlinePollAdminClient() {
  const pathname = usePathname();
  const searchParams = useSearchParams();
  const { success, error: toastError } = useToast();
+ const { user } = useAuth();
+ const canCreate = ['POLL_READ', 'POLL_READ_ALL', 'POLL_CREATE'].every(permission => canPermission(user, permission));
  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
  // 페이지는 URL 파생값이다 — 공유·새로고침·뒤로가기에서 위치가 복원된다(P1-7).
@@ -147,7 +151,7 @@ export default function OnlinePollAdminClient() {
  };
 
  const handleAdd = async () => {
- if (savingRef.current) return;
+ if (savingRef.current || !canCreate) return;
  const validated = validation.validate({
   ...newPoll,
   // API 조회 타입은 선택 항목을 optional 로 선언하지만, 신규 등록 계약은 최소 2개를 요구한다.
@@ -255,7 +259,7 @@ export default function OnlinePollAdminClient() {
  >
  <RefreshCcw size={16} className={cn(isLoading && "animate-spin")} aria-hidden="true" /> 새로고침
  </Button>
- <Button
+ {canCreate && <Button
  size="sm"
  onClick={() => {
  validation.setFormErrors({}, false);
@@ -264,7 +268,7 @@ export default function OnlinePollAdminClient() {
  className="gap-2"
  >
  <Plus size={16} aria-hidden="true" /> 신규 설문 등록
- </Button>
+ </Button>}
  </>
  }
  filter={
@@ -308,7 +312,7 @@ export default function OnlinePollAdminClient() {
  />
 
  <Dialog
- open={isAddOpen}
+ open={isAddOpen && canCreate}
  onOpenChange={(open) => {
  if (!open && savingRef.current) return;
  setIsAddOpen(open);

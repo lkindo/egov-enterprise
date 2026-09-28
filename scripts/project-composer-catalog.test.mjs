@@ -72,6 +72,20 @@ test('new undeclared domain, table and UI ownership become visible failures', t 
   assert.throws(() => loadProjectComposerCatalog(root), /no capability refinement/);
 });
 
+test('configured notice and FAQ permissions belong to the optional board capability', t => {
+  const board = catalog.capabilities.find(capability => capability.id === 'board');
+  for (const code of ['NOTICE_EDIT', 'FAQ_EDIT']) {
+    assert.ok(board.permissionCodes.includes(code));
+    assert.ok(!catalog.core.permissionCodes.includes(code));
+  }
+  const root = fixture(t);
+  const path = join(root, 'config/governance/permission-catalog.json');
+  const permissions = JSON.parse(readFileSync(path, 'utf8'));
+  permissions.permissions = permissions.permissions.filter(row => row.code !== 'FAQ_EDIT');
+  writeFileSync(path, JSON.stringify(permissions));
+  assert.throws(() => loadProjectComposerCatalog(root), /unknown permission domain: FAQ/);
+});
+
 test('stale manifest source references and a removed shared table contract fail closed', t => {
   const root = fixture(t);
   const file = join(root, 'config/reusable-base-profiles.json');

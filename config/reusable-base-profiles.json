@@ -20,7 +20,7 @@
       "acknowledgedRemovedGates": [
         {
           "file": "api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java",
-          "reason": "쪽지·담당자 저장과 실제 알림 소비자의 커밋 후 동작을 함께 검증하는 통합 테스트다. core에는 note/notification 서비스·테이블이 없어 이 통합 과업 자체가 성립하지 않는다. core 담당자 검증의 DeptJobServiceTest는 계속 포함한다."
+          "reason": "쪽지·담당자 저장과 알림·내구 작업의 동일 트랜잭션 원자성을 검증한다. core에는 note/notification 서비스·테이블이 없어 이 통합 과업이 성립하지 않는다. core 담당자 검증은 DeptJobServiceTest에, 내구 작업은 DurableWorkIntegrationTest에 유지한다."
         },
         {
           "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
@@ -45,6 +45,18 @@
         {
           "file": "api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java",
           "reason": "demo 소유 표면(통계·배너/팝업·약식결재·설문·투표)의 RBAC 매트릭스라 그 표면이 없는 프로필에서는 검사 대상이 없다. core 표면(사용자·로그인 정책·익명·미등록 라우트·그룹 의미)의 RbacAuthorizationMatrixTest 는 stats 참조를 걷어 모든 프로필에 남는다."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java",
+          "reason": "demo 행사 서비스의 승인 필드 불변성을 검증한다. 행사 기능이 없는 프로필에서는 대상이 없고, 분리한 BusinessPolicyIntegrityIntegrationTest의 core 정책 검증은 유지한다."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java",
+          "reason": "demo 커뮤니티와 템플릿의 신규 연결·비활성화·삭제 경합을 검증한다. 두 기능이 없는 프로필에서는 검증 대상이 없다."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java",
+          "reason": "collaboration 알림 행과 내구 작업의 동시 저장·재시도·중복 전달 검증이다. core에서는 알림 기능 자체가 없으며 공통 작업 엔진 검증은 DurableWorkIntegrationTest로 유지한다."
         }
       ],
       "description": "인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심의 최소 프레임워크"
@@ -84,6 +96,14 @@
         {
           "file": "api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java",
           "reason": "demo 소유 표면(통계·배너/팝업·약식결재·설문·투표)의 RBAC 매트릭스라 그 표면이 없는 프로필에서는 검사 대상이 없다. core 표면(사용자·로그인 정책·익명·미등록 라우트·그룹 의미)의 RbacAuthorizationMatrixTest 는 stats 참조를 걷어 모든 프로필에 남는다."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java",
+          "reason": "demo 행사 서비스의 승인 필드 불변성을 검증한다. 행사 기능이 없는 프로필에서는 대상이 없고, 분리한 BusinessPolicyIntegrityIntegrationTest의 core 정책 검증은 유지한다."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java",
+          "reason": "demo 커뮤니티와 템플릿의 신규 연결·비활성화·삭제 경합을 검증한다. 두 기능이 없는 프로필에서는 검증 대상이 없다."
         }
       ],
       "description": "core + 게시판 클러스터 + 메일·쪽지·알림·SMS"
@@ -117,7 +137,10 @@
       },
       "database": {
         "sequences": [
-          "revinfo_seq"
+          "revinfo_seq",
+          "sq_auth_cert_dmnd",
+          "sq_auth_otp_cert",
+          "sq_auth_rstr_cd"
         ],
         "tables": [
           "meta_standard_domains",
@@ -125,7 +148,10 @@
           "meta_standard_words",
           "revinfo",
           "tb_admdst_cd",
+          "tb_auth_cert_dmnd",
+          "tb_auth_otp_cert",
           "tb_auth_rfsh_tk",
+          "tb_auth_rstr_cd",
           "tb_authrt_chg_hstry",
           "tb_authrt_grnt_map",
           "tb_authrt_group_info",
@@ -151,6 +177,8 @@
           "tb_prgrm_lst",
           "tb_privacy_log",
           "tb_stmp_info",
+          "tb_sys_adt_log",
+          "tb_sys_job",
           "tb_sys_log",
           "tb_user_absn",
           "tb_user_info",
@@ -411,15 +439,15 @@
     }
   ],
   "databaseSnapshot": {
-    "source": "isolated PostgreSQL 17/public; repository migrations through V2_101 and explicit authorization Contract (not OCI deployment state); V2_107 adds tb_bbs_rcmdtn_hstry (+1 table, no sequence), V2_102-V2_106 and V2_108-V2_109 create or drop none, and V2_110 adds tb_com_cd_chg_hstry (+1 table, +1 identity sequence)",
-    "checkedAt": "2026-09-16T00:43:23.368Z",
-    "physicalTableCountExcludingFlyway": 82,
-    "physicalSequenceCount": 50,
-    "physicalStandaloneSequenceCount": 3,
+    "source": "isolated PostgreSQL 17/public; repository migrations through V2_115 and explicit authorization Contract; physical inventory measured before durable crash/restart phase (not OCI deployment state); MFA sequences are standalone, durable-work and sensitive-audit sequences are table-owned",
+    "checkedAt": "2026-09-28T02:26:26.416Z",
+    "physicalTableCountExcludingFlyway": 87,
+    "physicalSequenceCount": 55,
+    "physicalStandaloneSequenceCount": 6,
     "metaRows": {
-      "meta_standard_words": 3386,
-      "meta_standard_terms": 13220,
-      "meta_standard_domains": 129
+      "meta_standard_words": 3387,
+      "meta_standard_terms": 13230,
+      "meta_standard_domains": 130
     }
   }
 }

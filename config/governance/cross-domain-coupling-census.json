@@ -19,6 +19,17 @@
       "pack": "demo"
     },
     {
+      "file": "board/attachment/BoardAttachmentSourceContributor.java",
+      "owner": "board",
+      "target": "file",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.file.AttachmentSource",
+        "nuri.business.service.file.AttachmentSourceContributor"
+      ],
+      "pack": "collaboration"
+    },
+    {
       "file": "board/BoardService.java",
       "owner": "board",
       "target": "file",
@@ -38,17 +49,6 @@
         "nuri.business.domain.user.exception.UserErrorCode",
         "nuri.business.service.user.UserService",
         "nuri.business.service.user.dto.UserDto"
-      ],
-      "pack": "collaboration"
-    },
-    {
-      "file": "board/attachment/BoardAttachmentSourceContributor.java",
-      "owner": "board",
-      "target": "file",
-      "module": "business-core",
-      "types": [
-        "nuri.business.service.file.AttachmentSource",
-        "nuri.business.service.file.AttachmentSourceContributor"
       ],
       "pack": "collaboration"
     },
@@ -73,6 +73,17 @@
       "pack": "collaboration"
     },
     {
+      "file": "informalsanction/event/SanctionEventListener.java",
+      "owner": "informalsanction",
+      "target": "user",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.user.UserService",
+        "nuri.business.service.user.dto.UserDto"
+      ],
+      "pack": "demo"
+    },
+    {
       "file": "informalsanction/InformalSanctionService.java",
       "owner": "informalsanction",
       "target": "code",
@@ -95,27 +106,6 @@
       "pack": "demo"
     },
     {
-      "file": "informalsanction/event/SanctionEventListener.java",
-      "owner": "informalsanction",
-      "target": "user",
-      "module": "business-core",
-      "types": [
-        "nuri.business.service.user.UserService",
-        "nuri.business.service.user.dto.UserDto"
-      ],
-      "pack": "demo"
-    },
-    {
-      "file": "mail/MailService.java",
-      "owner": "mail",
-      "target": "user",
-      "module": "business-core",
-      "types": [
-        "nuri.business.service.user.UserContactService"
-      ],
-      "pack": "collaboration"
-    },
-    {
       "file": "mail/attachment/MailAttachmentSourceContributor.java",
       "owner": "mail",
       "target": "file",
@@ -127,14 +117,14 @@
       "pack": "collaboration"
     },
     {
-      "file": "memoreport/MemoReportService.java",
-      "owner": "memoreport",
-      "target": "file",
+      "file": "mail/MailService.java",
+      "owner": "mail",
+      "target": "user",
       "module": "business-core",
       "types": [
-        "nuri.business.service.file.AttachmentAssignmentPolicy"
+        "nuri.business.service.user.UserContactService"
       ],
-      "pack": "demo"
+      "pack": "collaboration"
     },
     {
       "file": "memoreport/attachment/MemoReportAttachmentSourceContributor.java",
@@ -148,15 +138,24 @@
       "pack": "demo"
     },
     {
-      "file": "note/NoteService.java",
-      "owner": "note",
+      "file": "memoreport/MemoReportService.java",
+      "owner": "memoreport",
+      "target": "file",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.file.AttachmentAssignmentPolicy"
+      ],
+      "pack": "demo"
+    },
+    {
+      "file": "memoreport/MemoReportService.java",
+      "owner": "memoreport",
       "target": "user",
       "module": "business-core",
       "types": [
-        "nuri.business.domain.user.entity.User",
         "nuri.business.domain.user.repository.UserRepository"
       ],
-      "pack": "collaboration"
+      "pack": "demo"
     },
     {
       "file": "note/attachment/NoteAttachmentSourceContributor.java",
@@ -170,12 +169,13 @@
       "pack": "collaboration"
     },
     {
-      "file": "notification/NotificationService.java",
-      "owner": "notification",
+      "file": "note/NoteService.java",
+      "owner": "note",
       "target": "user",
       "module": "business-core",
       "types": [
-        "nuri.business.service.user.UserContactService"
+        "nuri.business.domain.user.entity.User",
+        "nuri.business.domain.user.repository.UserRepository"
       ],
       "pack": "collaboration"
     },
@@ -190,6 +190,27 @@
       "pack": "collaboration"
     },
     {
+      "file": "notification/NotificationService.java",
+      "owner": "notification",
+      "target": "user",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.user.UserContactService"
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "file": "operation/attachment/RewardAttachmentSourceContributor.java",
+      "owner": "operation",
+      "target": "file",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.file.AttachmentSource",
+        "nuri.business.service.file.AttachmentSourceContributor"
+      ],
+      "pack": "demo"
+    },
+    {
       "file": "operation/RewardManageService.java",
       "owner": "operation",
       "target": "file",
@@ -200,8 +221,8 @@
       "pack": "demo"
     },
     {
-      "file": "operation/attachment/RewardAttachmentSourceContributor.java",
-      "owner": "operation",
+      "file": "report/attachment/ReportAttachmentSourceContributor.java",
+      "owner": "report",
       "target": "file",
       "module": "business-core",
       "types": [
@@ -231,8 +252,8 @@
       "pack": "demo"
     },
     {
-      "file": "report/attachment/ReportAttachmentSourceContributor.java",
-      "owner": "report",
+      "file": "schedule/attachment/ScheduleAttachmentSourceContributor.java",
+      "owner": "schedule",
       "target": "file",
       "module": "business-core",
       "types": [
@@ -272,17 +293,6 @@
       "pack": "demo"
     },
     {
-      "file": "schedule/attachment/ScheduleAttachmentSourceContributor.java",
-      "owner": "schedule",
-      "target": "file",
-      "module": "business-core",
-      "types": [
-        "nuri.business.service.file.AttachmentSource",
-        "nuri.business.service.file.AttachmentSourceContributor"
-      ],
-      "pack": "demo"
-    },
-    {
       "file": "sms/SmsService.java",
       "owner": "sms",
       "target": "user",
@@ -291,6 +301,17 @@
         "nuri.business.service.user.UserContactService"
       ],
       "pack": "collaboration"
+    },
+    {
+      "file": "stats/attachment/StatsAttachmentSourceContributor.java",
+      "owner": "stats",
+      "target": "file",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.file.AttachmentSource",
+        "nuri.business.service.file.AttachmentSourceContributor"
+      ],
+      "pack": "demo"
     },
     {
       "file": "stats/ReportStatsService.java",
@@ -314,15 +335,14 @@
       "pack": "demo"
     },
     {
-      "file": "stats/attachment/StatsAttachmentSourceContributor.java",
-      "owner": "stats",
-      "target": "file",
+      "file": "survey/SurveyResultService.java",
+      "owner": "survey",
+      "target": "user",
       "module": "business-core",
       "types": [
-        "nuri.business.service.file.AttachmentSource",
-        "nuri.business.service.file.AttachmentSourceContributor"
+        "nuri.business.domain.user.repository.UserRepository"
       ],
-      "pack": "demo"
+      "pack": "survey"
     },
     {
       "file": "system/attachment/ContentAttachmentSourceContributor.java",

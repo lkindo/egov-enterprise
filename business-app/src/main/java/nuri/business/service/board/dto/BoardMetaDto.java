@@ -23,9 +23,11 @@ public record BoardMetaDto(
         @Schema(description = "첨부 가능 파일 수", nullable = true) Integer atchPsbltyFileQty,
         @Schema(description = "첨부 가능 파일 크기(바이트)", nullable = true) Long atchPsbltyFileSz,
         @Schema(description = "만족도 조사 사용 여부", allowableValues = { "Y", "N" }, nullable = true) String stsfdgYn,
-        @Schema(description = "댓글 사용 여부(2026-09-27 DIP B5 F9 — N 이면 새 댓글을 받지 않는다)", allowableValues = { "Y", "N" }, nullable = true) String ansYn) {
+        @Schema(description = "댓글 사용 여부(2026-09-27 DIP B5 F9 — N 이면 새 댓글을 받지 않는다)", allowableValues = { "Y", "N" }, nullable = true) String ansYn,
+        @Schema(description = "일반 게시글 쓰기 권한에 추가로 모두 필요한 편집 권한. 일반 게시판은 빈 배열입니다.", requiredMode = Schema.RequiredMode.REQUIRED)
+        java.util.List<String> requiredEditPermissions) {
 
-    public static BoardMetaDto from(BoardMaster master) {
+    public static BoardMetaDto from(BoardMaster master, java.util.List<String> requiredEditPermissions) {
         return new BoardMetaDto(
                 master.getBbsId(),
                 master.getBbsTtl(),
@@ -37,6 +39,6 @@ public record BoardMetaDto(
                 master.getAtchPsbltyFileQty(),
                 master.getAtchPsbltyFileSz(),
                 master.getStsfdgYn(),
-                master.getAnsYn());
+                master.getAnsYn(), java.util.List.copyOf(requiredEditPermissions));
     }
 }

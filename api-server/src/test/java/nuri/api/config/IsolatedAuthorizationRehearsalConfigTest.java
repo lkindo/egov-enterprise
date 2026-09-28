@@ -8,6 +8,43 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class IsolatedAuthorizationRehearsalConfigTest {
     @Test
+    void migrationOnlySmokeDoesNotAcquireSyntheticContentEditorPermissions() {
+        var flyway=org.mockito.Mockito.mock(org.flywaydb.core.Flyway.class);
+        var configuration=org.mockito.Mockito.mock(org.flywaydb.core.api.configuration.Configuration.class);
+        org.mockito.Mockito.when(flyway.getConfiguration()).thenReturn(configuration);
+        org.mockito.Mockito.when(configuration.getLocations()).thenReturn(
+                org.flywaydb.core.Flyway.configure().locations("classpath:db/migration").getLocations());
+
+        IsolatedAuthorizationRehearsalConfig.seedDisposableContentEditors(flyway,Set.of("e2e"),
+                IsolatedAuthorizationRehearsalConfig.ACK,new IsolatedAuthorizationRehearsalConfig.Target("db",5432,"authz_e2e"));
+
+        org.mockito.Mockito.verify(configuration,org.mockito.Mockito.never()).getDataSource();
+    }
+
+    @Test
+    void contentFixtureRechecksActualTargetBeforeItCanStartAWritingTransaction() throws Exception {
+        var flyway=org.mockito.Mockito.mock(org.flywaydb.core.Flyway.class);
+        var configuration=org.mockito.Mockito.mock(org.flywaydb.core.api.configuration.Configuration.class);
+        var datasource=org.mockito.Mockito.mock(javax.sql.DataSource.class);
+        var connection=org.mockito.Mockito.mock(java.sql.Connection.class);
+        var metadata=org.mockito.Mockito.mock(java.sql.DatabaseMetaData.class);
+        org.mockito.Mockito.when(flyway.getConfiguration()).thenReturn(configuration);
+        org.mockito.Mockito.when(configuration.getLocations()).thenReturn(
+                org.flywaydb.core.Flyway.configure().locations("classpath:db/seed-dev").getLocations());
+        org.mockito.Mockito.when(configuration.getDataSource()).thenReturn(datasource);
+        org.mockito.Mockito.when(datasource.getConnection()).thenReturn(connection);
+        org.mockito.Mockito.when(connection.getMetaData()).thenReturn(metadata);
+        org.mockito.Mockito.when(metadata.getURL()).thenReturn("jdbc:postgresql://db/authz_e2e_other");
+
+        assertThatThrownBy(() -> IsolatedAuthorizationRehearsalConfig.seedDisposableContentEditors(flyway,Set.of("e2e"),
+                IsolatedAuthorizationRehearsalConfig.ACK,new IsolatedAuthorizationRehearsalConfig.Target("db",5432,"authz_e2e")))
+                .isInstanceOf(IllegalStateException.class);
+
+        org.mockito.Mockito.verify(connection,org.mockito.Mockito.never()).setAutoCommit(org.mockito.ArgumentMatchers.anyBoolean());
+        org.mockito.Mockito.verify(connection,org.mockito.Mockito.never()).prepareStatement(org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
     void permitsOnlyAcknowledgedNamedLocalDisposableTargets() {
         assertThat(IsolatedAuthorizationRehearsalConfig.validateTarget(Set.of("e2e"),
                 "jdbc:postgresql://127.0.0.1:55432/authz_e2e_readiness?currentSchema=public&connectTimeout=3",

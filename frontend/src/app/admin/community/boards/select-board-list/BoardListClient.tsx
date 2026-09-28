@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Plus, Settings2, X, AlertTriangle } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
+import { canPermission } from '@/lib/auth/permissions';
+import { canEditConfiguredBoard } from '@/lib/auth/board-edit-permissions';
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 import { BoardPost } from '@/types/business/board';
 import { useToast } from '@/app/components/ui/toast';
@@ -205,6 +207,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: BoardLis
  // 마스터 정보 및 템플릿 확인
 
  const masterInfo = initialData.masterInfo || null;
+ const canCreateArticle = canPermission(user, 'BOARD_CREATE') && canEditConfiguredBoard(user, masterInfo);
  const tmpltId = masterInfo?.tmpltId || 'TMPLT_LIST';
 
  // 실제 API 요청에 사용할 파라미터들 (URL 파라미터를 최우선으로 함)
@@ -476,11 +479,11 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: BoardLis
          </Button>
        </Link>
      )}
-     <Link href={`/admin/community/boards/insert-board-article?bbsId=${bbsId}`}>
+     {canCreateArticle && <Link href={`/admin/community/boards/insert-board-article?bbsId=${bbsId}`}>
        <Button size="sm" className="gap-1.5" aria-label="글쓰기">
          <Plus size={16} aria-hidden="true" /> 글쓰기
        </Button>
-     </Link>
+     </Link>}
    </div>
  </div>
  {/* 분리된 필터 영역 */}

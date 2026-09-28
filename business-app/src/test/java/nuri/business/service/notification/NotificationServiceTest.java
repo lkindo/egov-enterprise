@@ -41,6 +41,12 @@ class NotificationServiceTest {
     @Mock
     private UserContactService userContactService;
 
+    @Mock
+    private nuri.foundation.core.job.DurableWorkPort durableWork;
+
+    @org.mockito.Spy
+    tools.jackson.databind.ObjectMapper objectMapper = new tools.jackson.databind.ObjectMapper();
+
     @org.mockito.Spy
     nuri.business.service.notification.dto.NotificationMapper notificationMapper = new nuri.business.service.notification.dto.NotificationMapperImpl();
 
@@ -50,6 +56,9 @@ class NotificationServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        lenient().when(durableWork.enqueueOnce(any(), anyString(), any())).thenAnswer(call ->
+                new nuri.foundation.core.job.DurableWork(call.getArgument(0), call.getArgument(1),
+                        call.<java.util.function.Supplier<String>>getArgument(2).get()));
     }
 
     private Notification createMockEntity(Long id) {
@@ -103,7 +112,7 @@ class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("알림 생성 - 성공 (WebSocket 전송 포함)")
+    @DisplayName("알림 생성은 행과 전달 의도를 저장하고 WebSocket은 호출하지 않는다")
     void createNotification_success() {
         NotificationDto dto = NotificationDto.builder()
                 .notiTtlNm("Title")
@@ -119,26 +128,19 @@ class NotificationServiceTest {
         assertNotNull(id);
         assertEquals(1L, id);
         verify(notificationRepository).save(any(Notification.class));
-        verify(messagingTemplate).convertAndSendToUser(eq("user123"), eq("/queue/notifications"),
-                any(NotificationDto.class));
-        verify(messagingTemplate, never()).convertAndSend(eq("/topic/public"), any(NotificationDto.class));
+        verify(durableWork).enqueueOnce(any(), eq(NotificationDeliveryWorkHandler.TYPE), any());
+        verifyNoInteractions(messagingTemplate);
     }
 
     @Test
-    @DisplayName("알림 생성 - WebSocket 오류 발생 시에도 서비스는 정상 작동")
-    void createNotification_webSocketError_stillSuccess() {
+    @DisplayName("전달 의도 저장 실패는 호출자까지 전파된다")
+    void createNotification_intentPersistenceFailureIsPropagated() {
         NotificationDto dto = NotificationDto.builder().notiTtlNm("Title").build();
-        when(notificationRepository.save(any(Notification.class)))
-                .thenReturn(createMockEntity(2L));
-        doThrow(new RuntimeException("Socket error")).when(messagingTemplate)
-                .convertAndSendToUser(eq("user123"), eq("/queue/notifications"), any(Object.class));
+        doThrow(new IllegalStateException("intent storage unavailable")).when(durableWork).enqueueOnce(any(), anyString(), any());
 
         // When
-        Long id = notificationService.createNotification("user123", dto);
-
-        // Then
-        assertEquals(2L, id);
-        verify(notificationRepository).save(any(Notification.class));
+        assertThrows(IllegalStateException.class, () -> notificationService.createNotification("user123", dto));
+        verifyNoInteractions(messagingTemplate);
     }
 
     @Test
@@ -150,6 +152,18 @@ class NotificationServiceTest {
 
         verify(notificationRepository, never()).save(any());
         verify(messagingTemplate, never()).convertAndSendToUser(anyString(), anyString(), any());
+    }
+
+    @Test void replayReturnsExistingIdWithoutRecreatingRowAndChecksOriginalRequestFingerprint() {
+        var event = new nuri.foundation.core.event.NotificationRequestedEvent("user123", "title", "content", "/note");
+        var stored = new nuri.foundation.core.job.DurableWork(NotificationDeliveryIntent.key(event), NotificationDeliveryWorkHandler.TYPE,
+                objectMapper.writeValueAsString(new NotificationDeliveryIntent(77L, "user123", NotificationDeliveryIntent.fingerprint(event))));
+        doReturn(stored).when(durableWork).enqueueOnce(any(), anyString(), any());
+        assertEquals(77L, notificationService.createForEvent(event));
+        var different = new nuri.foundation.core.event.NotificationRequestedEvent(event.eventId(), "user123", "changed", "content", "/note");
+        assertThrows(IllegalStateException.class, () -> notificationService.createForEvent(different));
+        verify(notificationRepository, never()).save(any());
+        verifyNoInteractions(messagingTemplate);
     }
 
     @Test

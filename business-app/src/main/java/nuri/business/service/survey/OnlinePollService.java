@@ -136,6 +136,7 @@ public class OnlinePollService {
     @Transactional
     public void insertPoll(OnlinePollManageDto dto) {
         nuri.business.security.util.SecurityUtil.assertPermission("POLL_CREATE");
+        assertManagementReadPermissions();
         
         String beginDe = normalizeDate(dto.getPollBgngYmd());
         String endDe = normalizeDate(dto.getPollEndYmd());
@@ -172,6 +173,7 @@ public class OnlinePollService {
     @Transactional
     public void updatePoll(OnlinePollManageDto dto) {
         nuri.business.security.util.SecurityUtil.assertPermission("POLL_UPDATE");
+        assertManagementReadPermissions();
 
         String beginDe = normalizeDate(dto.getPollBgngYmd());
         String endDe = normalizeDate(dto.getPollEndYmd());
@@ -223,6 +225,7 @@ public class OnlinePollService {
     @Transactional
     public void deletePoll(Long pollSn) {
         nuri.business.security.util.SecurityUtil.assertPermission("POLL_DELETE");
+        assertManagementReadPermissions();
 
         // [V2_13 결속] 투표 결과 선정리 — fk_tb_onln_poll_rslt_*(NO ACTION) 하에서 결과 보유 투표 삭제가
         // 409 로 파손되던 기왕 부채 해소 (항목은 pollArticles cascade 가 정리)
@@ -309,6 +312,8 @@ public class OnlinePollService {
 
     @Transactional
     public void insertPollItem(OnlinePollArticleDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("POLL_UPDATE");
+        assertManagementReadPermissions();
         OnlinePollManage pollManage = pollManageRepository.findById(dto.getPollSn())
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
@@ -326,6 +331,8 @@ public class OnlinePollService {
 
     @Transactional
     public void updatePollItem(OnlinePollArticleDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("POLL_UPDATE");
+        assertManagementReadPermissions();
         OnlinePollArticle entity = pollItemRepository.findById(Objects.requireNonNull(dto.getPollArtclSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getPollArtclNm().length() > 100 ? dto.getPollArtclNm().substring(0, 100) : dto.getPollArtclNm());
@@ -337,6 +344,8 @@ public class OnlinePollService {
 
     @Transactional
     public void deletePollItem(Long pollArtclSn) {
+        nuri.business.security.util.SecurityUtil.assertPermission("POLL_DELETE");
+        assertManagementReadPermissions();
         Objects.requireNonNull(pollArtclSn);
         // [2026-09-14 DEC-OPS-095] 투표가 있는 항목을 지우면 그 투표가 경고 없이 사라지고 결과가 조작된다.
         //   설문 문항·항목 삭제와 같은 기준으로 막는다. 투표째 정리하려면 투표 전체를 삭제한다.
@@ -414,6 +423,11 @@ public class OnlinePollService {
             }
         }
         return false;
+    }
+
+    private static void assertManagementReadPermissions() {
+        nuri.business.security.util.SecurityUtil.assertPermission("POLL_READ");
+        nuri.business.security.util.SecurityUtil.assertPermission("POLL_READ_ALL");
     }
 
     private void validatePollDates(String beginDe, String endDe) {

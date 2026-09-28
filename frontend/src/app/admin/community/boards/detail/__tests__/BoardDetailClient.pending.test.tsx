@@ -65,7 +65,7 @@ const detailData = {
     likeCnt: 2,
     inqCnt: 3,
   },
-  masterInfo: { bbsTtl: '테스트 게시판', tmpltId: 'TMPLT_LIST' },
+  masterInfo: { bbsTtl: '테스트 게시판', tmpltId: 'TMPLT_LIST', requiredEditPermissions: [] },
   initialComments: [],
   fetchError: null,
 };

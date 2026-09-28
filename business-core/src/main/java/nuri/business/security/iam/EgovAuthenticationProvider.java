@@ -31,6 +31,19 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
     private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
     private final EgovPasswordEncoder egovPasswordEncoder;
+    private String unknownIdentityPasswordHash;
+
+    /** 현재 표준 인코더의 비용으로 한 번 준비하며 원문·해시는 출력하지 않는다. */
+    @jakarta.annotation.PostConstruct
+    void initializeUnknownIdentityPassword() {
+        byte[] random = new byte[32];
+        new java.security.SecureRandom().nextBytes(random);
+        unknownIdentityPasswordHash = passwordEncoder.encode(java.util.Base64.getEncoder().encodeToString(random));
+        java.util.Arrays.fill(random, (byte) 0);
+        if (unknownIdentityPasswordHash == null || unknownIdentityPasswordHash.isBlank()) {
+            throw new IllegalStateException("Password verification configuration is unavailable");
+        }
+    }
 
     /**
      * 연속 인증 실패 허용 횟수. 이 횟수에 <b>도달</b>하면 계정을 잠근다(기본 5).
@@ -73,6 +86,8 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             //   이 경로가 아니라 JpaUserAuthAdapter 가 맡는다.
             User userEntity = userRepository.findByUserId(userId)
                     .orElseThrow(() -> {
+                        // 결과에 관계없이 존재하지 않는 계정은 거부한다. 현재 표준 해시의 작업만 동일하게 수행한다.
+                        passwordEncoder.matches(password == null ? "" : password, unknownIdentityPasswordHash);
                         log.warn(">>> [EgovAuthenticationProvider] Authentication rejected: unknown identity");
                         return new BadCredentialsException("Invalid User ID or Password");
                     });

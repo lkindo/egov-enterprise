@@ -79,7 +79,7 @@ describe('CommunityHubClient', () => {
         cmntyNm: '개발자 커뮤니티',
         cmntyIntroCn: '개발 관련 논의',
         crtDt: '2024-05-01',
-        frstRgtrId: 'test-user',
+        createdByMe: true,
         useYn: 'Y',
       },
       {
@@ -87,7 +87,7 @@ describe('CommunityHubClient', () => {
         cmntyNm: '보안 커뮤니티',
         cmntyIntroCn: '',
         crtDt: '2024-06-01',
-        frstRgtrId: 'other-user',
+        createdByMe: false,
         useYn: 'Y',
       }
     ],

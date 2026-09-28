@@ -39,11 +39,16 @@ class PopupUserApiControllerTest {
     @Test
     @DisplayName("활성 팝업 목록 조회")
     void getActivePopups() throws Exception {
-        when(popupService.getActivePopups()).thenReturn(Collections.emptyList());
+        PopupDto dto = new PopupDto();
+        dto.setPopupSn(1L);
+        dto.setPopupTtlNm("운영 안내");
+        dto.setFrstRgtrId("private-admin-login");
+        when(popupService.getActivePopups()).thenReturn(Collections.singletonList(dto));
 
         mockMvc.perform(get("/api/v1/popups/active"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.data[0].popupTtlNm").value("운영 안내"))
+                .andExpect(jsonPath("$.data[0].frstRgtrId").doesNotExist());
     }
 
     @Test
@@ -51,10 +56,12 @@ class PopupUserApiControllerTest {
     void getPopup() throws Exception {
         PopupDto dto = new PopupDto();
         dto.setPopupSn(1L);
+        dto.setFrstRgtrId("private-admin-login");
         when(popupService.getPopup(1L)).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/popups/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.data.popupSn").value(1))
+                .andExpect(jsonPath("$.data.frstRgtrId").doesNotExist());
     }
 }

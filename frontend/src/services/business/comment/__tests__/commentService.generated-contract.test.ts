@@ -13,9 +13,9 @@ const comment = {
   ansSn: 11,
   pstSn: 7,
   bbsId: 'BBSMSTR_A',
-  wrterId: 'writer-1',
   wrterNm: '작성자',
-  frstRgtrId: 'user-1',
+  editable: true,
+  deletable: false,
   ansCn: '댓글 본문',
   crtDt: '2026-08-30T12:00:00',
 };
@@ -58,9 +58,7 @@ describe('commentService generated response contract', () => {
     client.getRaw.mockResolvedValueOnce(successEnvelope({
       list: [{
         ...comment,
-        wrterId: null,
         wrterNm: null,
-        frstRgtrId: null,
         crtDt: null,
       }],
       total: 1,
@@ -70,12 +68,19 @@ describe('commentService generated response contract', () => {
 
     expect(page.list[0]).toMatchObject({
       ansSn: 11,
-      wrterId: '',
       wrterNm: '작성자 정보 없음',
       crtDt: '',
     });
-    expect(page.list[0].frstRgtrId).toBeUndefined();
+    expect(page.list[0]).not.toHaveProperty('frstRgtrId');
+    expect(page.list[0]).not.toHaveProperty('wrterId');
     expect(page.list[0]).not.toHaveProperty('pswd');
+  });
+
+  it.each(['frstRgtrId', 'wrterId'])('작성자 식별자 %s가 재유입해도 화면 소비자에게 전달하지 않는다', async (field) => {
+    client.getRaw.mockResolvedValueOnce(successEnvelope({ list: [{ ...comment, [field]: 'private-login' }], total: 1 }));
+    const response = await commentService.getComments({ pstSn: 7, bbsId: 'BBSMSTR_A' });
+    expect(response.list).toEqual([comment]);
+    expect(response.list[0]).not.toHaveProperty(field);
   });
 
   it('writeOnly 비밀번호가 응답에 섞이면 서비스 경계에서 거부한다', async () => {

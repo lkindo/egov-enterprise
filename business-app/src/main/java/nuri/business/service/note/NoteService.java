@@ -208,7 +208,7 @@ public class NoteService {
         } catch (BusinessException e) {
             throw e; // 입력 검증 등 의도된 비즈니스 예외는 그대로 전파
         } catch (Exception e) {
-            log.error("Failed to send note", e);
+            log.error("Failed to send note: exceptionType={}", e.getClass().getSimpleName());
             throw new BusinessException("쪽지 발송 중 오류가 발생했습니다.", CommonErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
@@ -216,8 +216,7 @@ public class NoteService {
     /**
      * 쪽지 수신 알림 요청.
      *
-     * <p><b>반드시 커밋 이후에 발행한다.</b> 커밋 전에 발행하면 롤백된 쪽지에 대한 알림이 남아
-     * 사용자가 존재하지 않는 쪽지를 보러 간다. 쪽지함이 비어 있는데 알림만 있는 상태가 그것이다.
+     * <p>쪽지와 알림·전달 의도를 같은 트랜잭션에 저장한다. 실제 전송은 커밋된 작업만 처리한다.
      *
      * <p><b>제목만 싣고 본문은 싣지 않는다.</b> 알림은 목록·종 아이콘·WebSocket 으로 퍼지므로
      * 본문을 복제하면 쪽지의 열람 통제({@code NoteRecptn} 소유자 가드)를 우회하는 사본이 생긴다.
@@ -228,15 +227,11 @@ public class NoteService {
             return;
         }
         String title = org.springframework.util.StringUtils.hasText(subject) ? subject : "(제목 없음)";
-        nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> {
-            for (String receiverId : receiverIds) {
-                eventPublisher.publishEvent(new nuri.foundation.core.event.NotificationRequestedEvent(
-                        receiverId,
-                        "새 쪽지",
-                        title,
-                        "/note"));
-            }
-        });
+        java.util.UUID eventId = java.util.UUID.randomUUID();
+        for (String receiverId : receiverIds.stream().sorted().toList()) {
+            eventPublisher.publishEvent(new nuri.foundation.core.event.NotificationRequestedEvent(
+                    eventId, receiverId, "새 쪽지", title, "/note"));
+        }
     }
 
     /**

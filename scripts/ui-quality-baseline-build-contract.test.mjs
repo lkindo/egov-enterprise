@@ -1,6 +1,7 @@
 import { readRegularFile } from './read-regular-file.mjs';
 import assert from 'node:assert/strict';
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -32,6 +33,8 @@ import {
   validateBuiltImageInspection,
   writeBaselineBuildAttestation,
 } from './ui-quality-baseline-build.mjs';
+import { REQUIRED_PRODUCTION_BUILD_INPUT_FILES } from '../frontend/scripts/ui-quality-baseline-core.mjs';
+import { captureReleaseSmokeSource, validateSmokeImages } from './run-isolated-release-smoke.mjs';
 
 const BUILD_SHA = '0123456789abcdef0123456789abcdef01234567';
 const TREE_HASH = 'a'.repeat(64);
@@ -109,6 +112,7 @@ function createGitFixture() {
   git(root, ['init', '--quiet']);
   git(root, ['config', 'user.email', 'fixture@example.invalid']);
   git(root, ['config', 'user.name', 'Fixture']);
+  git(root, ['config', 'core.autocrlf', 'false']);
 
   writeFixtureFile(root, '.gitignore', `
 **/application-local.yml
@@ -156,8 +160,12 @@ function createGitFixture() {
   writeFixtureFile(root, 'frontend/tsconfig.json', '{}\n');
   writeFixtureFile(root, 'frontend/public/fixture.txt', 'public\n');
   writeFixtureFile(root, 'frontend/src/page.ts', 'export const page = true;\n');
+  writeFixtureFile(root, 'frontend/scripts/validate-api-build-urls.mjs', 'export const preflight = true;\n');
   writeFixtureFile(root, 'frontend/e2e/not-production.spec.ts', 'throw new Error();\n');
   writeFixtureFile(root, 'scripts/ui-quality-baseline-build.mjs', 'export {};\n');
+  for (const required of REQUIRED_PRODUCTION_BUILD_INPUT_FILES) {
+    if (!existsSync(path.join(root, required))) writeFixtureFile(root, required, `fixture ${required}\n`);
+  }
 
   git(root, ['add', '.']);
   git(root, [
@@ -399,6 +407,7 @@ test('clean committed archives exclude ignored host config and generated sources
   assert.ok(!rootEntries.includes('frontend/src/page.ts'));
   assert.ok(!rootEntries.includes('scripts/ui-quality-baseline-build.mjs'));
   assert.ok(frontendEntries.includes('src/page.ts'));
+  assert.ok(frontendEntries.includes('scripts/validate-api-build-urls.mjs'));
   assert.ok(!frontendEntries.includes('e2e/not-production.spec.ts'));
   for (const ignoredPath of ignoredPaths) {
     assert.ok(!rootEntries.includes(ignoredPath), `${ignoredPath} entered root context`);
@@ -410,6 +419,61 @@ test('clean committed archives exclude ignored host config and generated sources
   assert.equal(contexts.buildSha, buildSha);
   assert.equal(contexts.buildInputTreeHash, TREE_HASH);
   assert.match(contexts.commitTreeId, /^[a-f0-9]{40}$/u);
+});
+
+test('committed baseline archives and clean autocrlf smoke use one production input identity', () => {
+  const { root } = createGitFixture();
+  git(root, ['config', 'core.autocrlf', 'true']);
+  const preflight = 'frontend/scripts/validate-api-build-urls.mjs';
+  writeFixtureFile(root, '.gitattributes', `${preflight} text eol=crlf\n`);
+  writeFixtureFile(root, preflight, 'export const preflight = true;\r\n');
+  git(root, ['add', '.gitattributes', preflight]);
+  git(root, ['commit', '--quiet', '-m', 'explicit CRLF checkout']);
+  const buildSha = git(root, ['rev-parse', 'HEAD']).trim();
+  assert.equal(git(root, ['status', '--porcelain']).trim(), '');
+  assert.notDeepEqual(readFileSync(path.join(root, preflight)), git(root, ['show', `${buildSha}:${preflight}`], { encoding: 'buffer' }));
+
+  const contexts = prepareCleanBuildContexts({ repositoryRoot: root, buildSha,
+    outputDirectory: temporaryDirectory('egov-shared-build-identity-') });
+  const captured = captureReleaseSmokeSource(root);
+  assert.equal(captured.dirty, false);
+  assert.equal(captured.sourceTreeSha256, contexts.buildInputTreeHash);
+  assert.ok(tarEntryNames(contexts.frontendArchivePath).includes('scripts/validate-api-build-urls.mjs'));
+});
+
+test('a copied preflight change invalidates both old attestation and release image labels', () => {
+  const { root, buildSha } = createGitFixture();
+  const contexts = prepareCleanBuildContexts({ repositoryRoot: root, buildSha,
+    outputDirectory: temporaryDirectory('egov-original-build-identity-') });
+  const before = captureReleaseSmokeSource(root);
+  const images = Object.fromEntries(['api', 'frontend', 'db', 'edge'].map((role, index) => [role, {
+    Id: `sha256:${String(index + 1).repeat(64)}`, Config: { Labels: {
+      'org.opencontainers.image.revision': buildSha,
+      'io.egov.ui-quality.build-input-tree-sha256': contexts.buildInputTreeHash,
+    }, Env: [] },
+  }]));
+  images.api.Config.User = 'spring:spring';
+  images.api.Config.Entrypoint = ['sh', '-c', 'exec java $JAVA_OPTS -jar app.jar'];
+  images.api.Config.Cmd = null;
+  images.frontend.Config.User = 'nextjs';
+  images.frontend.Config.Cmd = ['node', 'server.js'];
+  images.frontend.Config.Env = ['NODE_ENV=production', 'HOSTNAME=0.0.0.0', 'NEXT_TELEMETRY_DISABLED=1'];
+  validateSmokeImages(images, before);
+
+  writeFixtureFile(root, 'frontend/scripts/validate-api-build-urls.mjs', 'export const preflight = false;\n');
+  const dirty = captureReleaseSmokeSource(root);
+  assert.equal(dirty.dirty, true);
+  assert.notEqual(dirty.sourceTreeSha256, before.sourceTreeSha256);
+  assert.throws(() => validateSmokeImages(images, dirty), /image source identity mismatch/u);
+
+  git(root, ['add', 'frontend/scripts/validate-api-build-urls.mjs']);
+  git(root, ['commit', '--quiet', '-m', 'changed preflight']);
+  const changed = captureReleaseSmokeSource(root);
+  assert.equal(changed.dirty, false);
+  assert.notEqual(changed.sourceTreeSha256, contexts.buildInputTreeHash);
+  assert.throws(() => prepareCleanBuildContexts({ repositoryRoot: root, buildSha: changed.revision,
+    expectedBuildInputTreeHash: contexts.buildInputTreeHash,
+    outputDirectory: temporaryDirectory('egov-stale-build-identity-') }), /committed build-input tree hash mismatch/u);
 });
 
 test('clean snapshot wrapper derives the committed build-input tree hash when the CLI supplies none', () => {

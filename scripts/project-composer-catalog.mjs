@@ -36,7 +36,7 @@ function walk(directory) {
 const FEATURES = {
   addressbook: { label: '주소록', permissions: ['ADBK'], paths: [
     'src/app/admin/collaboration/address-book', 'src/services/business/user/addressbook', 'src/types/business/addressbook.ts'], routes: ['/admin/collaboration/address-book'] },
-  board: { label: '게시판·지식', permissions: ['BOARD', 'BBS_MST', 'SATISFY'], paths: [
+  board: { label: '게시판·지식', permissions: ['BOARD', 'BBS_MST', 'SATISFY', 'NOTICE', 'FAQ'], paths: [
     'src/app/actions/boardActions.ts', 'src/services/business/user/board/BoardUserService.ts',
     'src/services/foundation/system/BoardAdminService.ts', 'src/services/business/board/SatisfactionService.ts',
     'src/services/business/knowledge/knowledgeService.ts', 'src/app/admin/community/boards'],

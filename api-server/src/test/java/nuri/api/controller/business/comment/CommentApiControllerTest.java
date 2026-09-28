@@ -93,6 +93,10 @@ class CommentApiControllerTest {
                         .bbsId("BBS_001")
                         .ansCn("Comment")
                         .pswd("response-must-not-expose-this")
+                        .wrterId("internal-writer-key")
+                        .frstRgtrId("owner-login")
+                        .editable(true)
+                        .deletable(false)
                         .build()
         ));
         given(commentService.getComments(any(Long.class), anyString(), any(Pageable.class))).willReturn(page);
@@ -106,9 +110,11 @@ class CommentApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.list[0].ansSn").value(1))
-                .andExpect(jsonPath("$.data.list[0].wrterId").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.data.list[0].wrterId").doesNotExist())
                 .andExpect(jsonPath("$.data.list[0].wrterNm").value(org.hamcrest.Matchers.nullValue()))
-                .andExpect(jsonPath("$.data.list[0].frstRgtrId").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.data.list[0].frstRgtrId").doesNotExist())
+                .andExpect(jsonPath("$.data.list[0].editable").value(true))
+                .andExpect(jsonPath("$.data.list[0].deletable").value(false))
                 .andExpect(jsonPath("$.data.list[0].crtDt").value(org.hamcrest.Matchers.nullValue()))
                 .andExpect(jsonPath("$.data.list[0].pswd").doesNotExist());
         verify(boardService).assertCommentAccess("BBS_001", 1L);
@@ -163,6 +169,7 @@ class CommentApiControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"pstSn\":\"1\",\"bbsId\":\"BBS_001\",\"ansCn\":\"Content\","
                         + "\"wrterId\":\"SPOOFED_ID\",\"wrterNm\":\"남의이름\","
+                        + "\"frstRgtrId\":\"SPOOFED_LOGIN\",\"editable\":true,\"deletable\":true,"
                         + "\"crtDt\":\"2099-01-01T00:00:00\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
@@ -176,6 +183,9 @@ class CommentApiControllerTest {
         assertThat(body.getValue().getWrterId()).isNull();
         assertThat(body.getValue().getWrterNm()).isNull();
         assertThat(body.getValue().getCrtDt()).isNull();
+        assertThat(body.getValue().getFrstRgtrId()).isNull();
+        assertThat(body.getValue().isEditable()).isFalse();
+        assertThat(body.getValue().isDeletable()).isFalse();
     }
 
     @Test

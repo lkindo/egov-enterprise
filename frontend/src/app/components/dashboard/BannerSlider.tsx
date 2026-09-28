@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink, Pause, Play } from 'lucide-react';
 import { bannerService } from '@/services/business/user/BannerService';
 import { isCanceledRequest } from '@/lib/safe-error-log';
-import { Banner } from '@/types/foundation/banner';
+import { PublicBanner } from '@/types/foundation/banner';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { AttachmentImage } from '@/app/components/ui/attachment-image';
 
 export function BannerSlider() {
-  const [banners, setBanners] = useState<Banner[]>([]);
+  const [banners, setBanners] = useState<PublicBanner[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   // [2026-09-24] 자동 넘김은 사용자가 멈출 수 있어야 한다(WCAG 2.2.2). WAI-ARIA 캐러셀 패턴을 따라

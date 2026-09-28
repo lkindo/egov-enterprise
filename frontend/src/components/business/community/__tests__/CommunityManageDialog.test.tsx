@@ -67,8 +67,8 @@ vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.co
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 
 const communities = [
-  { cmntySn: 11, cmntyNm: '독서 모임', cmntyIntrcn: '책을 읽습니다', useYn: 'Y', tmpltId: 'TMPL01' },
-  { cmntySn: 12, cmntyNm: '폐쇄된 모임', cmntyIntrcn: '', useYn: 'N' },
+  { cmntySn: 11, cmntyNm: '독서 모임', cmntyIntrcn: '책을 읽습니다', useYn: 'Y', tmpltId: 'TMPL01', editable: true, deletable: true },
+  { cmntySn: 12, cmntyNm: '폐쇄된 모임', cmntyIntrcn: '', useYn: 'N', editable: true, deletable: true },
 ];
 
 function renderDialog() {
@@ -85,7 +85,7 @@ describe('CommunityManageDialog', () => {
     vi.clearAllMocks();
     mocks.permissions = ['COMMUNITY_READ_ALL', 'COMMUNITY_CREATE_ALL', 'COMMUNITY_UPDATE_ALL', 'COMMUNITY_DELETE_ALL'];
     mocks.getCommunityList.mockResolvedValue({ list: communities, total: 2, page: 0, size: 10, totalPage: 1 });
-    mocks.getTemplateList.mockResolvedValue([{ tmpltId: 'TMPL01', tmpltNm: '기본 템플릿' }]);
+    mocks.getTemplateList.mockResolvedValue([{ tmpltId: 'TMPL01', tmpltNm: '기본 템플릿', useYn: 'Y' }]);
     mocks.createCommunity.mockResolvedValue({ cmntySn: 13 });
     mocks.updateCommunity.mockResolvedValue(undefined);
     mocks.deleteCommunity.mockResolvedValue(undefined);
@@ -103,6 +103,22 @@ describe('CommunityManageDialog', () => {
     expect(mocks.createCommunity).not.toHaveBeenCalled();
     expect(mocks.updateCommunity).not.toHaveBeenCalled();
     expect(mocks.deleteCommunity).not.toHaveBeenCalled();
+  });
+
+  it('새 선택은 활성 원장만 보이고 기존 비활성 선택은 정정할 때 유지할 수 있다', async () => {
+    mocks.getTemplateList.mockResolvedValue([
+      { tmpltId: 'ACTIVE', tmpltNm: '새 활성 템플릿', useYn: 'Y' },
+      { tmpltId: 'TMPL01', tmpltNm: '기존 비활성 템플릿', useYn: 'N' },
+      { tmpltId: 'OTHER_OFF', tmpltNm: '선택 불가', useYn: 'N' },
+    ]);
+    renderDialog();
+    expect(await screen.findByRole('option', { name: '새 활성 템플릿' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /기존 선택 유지|선택 불가/ })).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: '독서 모임 수정' }));
+    expect(screen.getByRole('option', { name: /TMPL01.*기존 선택 유지/ })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: '선택 불가' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
+    await waitFor(() => expect(mocks.updateCommunity).toHaveBeenCalledWith(11, expect.objectContaining({ tmpltId: 'TMPL01' })));
   });
 
   // [2026-09-06 DEC-OPS-043] 행의 '회원 관리' 가 같은 다이얼로그 안에서 회원 패널로 바꿔 끼우고, 돌아오면 목록·폼이 복원된다.

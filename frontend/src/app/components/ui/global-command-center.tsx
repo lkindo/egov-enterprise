@@ -13,8 +13,8 @@ import { Users } from 'lucide-react';
 /* reusable-base:collaboration:end */
 import { cn } from '@/lib/utils';
 import { useShortcut } from './global-shortcut-provider';
-import { menuService } from '@/services/business/user/MenuService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCommandMenuData } from '@/hooks/api/use-command-menu-data';
 import { readRecentMenuNos } from '@/lib/navigation/recent-menus';
 import { walkMenuTree } from '@/lib/navigation/active-menu';
 import { SEARCH_URL_STATE, parseSearchUrlState, serializeSearchQuery, searchUrlErrorMessage } from '@/lib/navigation/search-url-state';
@@ -45,17 +45,35 @@ export function GlobalCommandCenter() {
   const parsedSearch = parseSearchUrlState({ q: search });
   const searchQueryError = parsedSearch.ok ? null : searchUrlErrorMessage(parsedSearch.error);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [menus, setMenus] = useState<CommandItem[]>([]);
   // [2026-09-26 DIP B5 F2] 검색어가 비었을 때 먼저 보일 즐겨찾기·최근 방문. 메뉴 번호만 들고, 보일 때 지금 볼 수
   //   있는 메뉴 목록과 맞춰 본다 — 배정이 회수된 메뉴는 기록에 있어도 보이지 않는다.
-  const [menuByNo, setMenuByNo] = useState<ReadonlyMap<number, CommandItem>>(new Map());
-  const [bookmarkNos, setBookmarkNos] = useState<number[]>([]);
-  const [recentNos, setRecentNos] = useState<number[]>([]);
-  const [, setIsSearching] = useState(false);
+  const [recentSnapshot, setRecentSnapshot] = useState<{ userKey?: string; menuNos: number[] }>({ menuNos: [] });
 
   const router = useRouter();
   const { logout, user } = useAuth();
   const userKey = user?.id;
+  const { headMenus, bookmarkNos } = useCommandMenuData(isOpen, user);
+  const recentNos = useMemo(() => recentSnapshot.userKey === userKey ? recentSnapshot.menuNos : [], [recentSnapshot, userKey]);
+  const { menus, menuByNo } = useMemo(() => {
+    const byNo = new Map<number, CommandItem>();
+    const allHead: CommandItem[] = [];
+    const subItems: CommandItem[] = [];
+    for (const { item: node, ancestors } of walkMenuTree(headMenus)) {
+      const url = resolveMenuInternalRoute(node);
+      if (!url) continue;
+      const isHead = ancestors.length === 0;
+      const item: CommandItem = {
+        id: isHead ? `cmd-head-${node.menuNo}` : `cmd-left-${[...ancestors, node].map(menu => menu.menuNo).join('-')}`,
+        name: [...ancestors, node].map(menu => menu.menuNm).join(' > '),
+        url,
+        category: '메뉴',
+        icon: isHead ? <LayoutDashboard size={16} /> : <ArrowRight size={14} />,
+      };
+      byNo.set(node.menuNo, item);
+      (isHead ? allHead : subItems).push(item);
+    }
+    return { menus: [...allHead, ...subItems], menuByNo: byNo };
+  }, [headMenus]);
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
@@ -77,7 +95,7 @@ export function GlobalCommandCenter() {
     setSelectedIndex(0);
     setSearch('');
     // 여는 순간의 최근 방문을 읽는다(effect 안 setState 를 두지 않는다).
-    setRecentNos(readRecentMenuNos(userKey));
+    setRecentSnapshot({ userKey, menuNos: readRecentMenuNos(userKey) });
     setIsOpen(true);
   }, [userKey]);
 
@@ -94,61 +112,6 @@ export function GlobalCommandCenter() {
       openCommandCenter();
     }
   });
-
-  // 2. 초기 메뉴 데이터 로드
-  useEffect(() => {
-    async function fetchAllMenus() {
-      if (!isOpen) return;
-
-      setIsSearching(true);
-      try {
-        const head = await menuService.getHeadMenus();
-        if (head && head.length > 0) {
-          const byNo = new Map<number, CommandItem>();
-          const allHead: CommandItem[] = [];
-          const subItems: CommandItem[] = [];
-          // children 전체를 한 번 받은 트리에서 읽는다. 분류에 경로가 없어도 말단까지 탐색한다.
-          for (const { item: node, ancestors } of walkMenuTree(head)) {
-            const url = resolveMenuInternalRoute(node);
-            if (!url) continue;
-            const isHead = ancestors.length === 0;
-            const item: CommandItem = {
-              id: isHead ? `cmd-head-${node.menuNo}` : `cmd-left-${[...ancestors, node].map(menu => menu.menuNo).join('-')}`,
-              name: [...ancestors, node].map(menu => menu.menuNm).join(' > '),
-              url,
-              category: '메뉴' as const,
-              icon: isHead ? <LayoutDashboard size={16} /> : <ArrowRight size={14} />
-            };
-            byNo.set(node.menuNo, item);
-            (isHead ? allHead : subItems).push(item);
-          }
-          setMenus([...allHead, ...subItems]);
-          setMenuByNo(byNo);
-        }
-      } catch {
-        // 메뉴 조회 실패 시에도 로그아웃 같은 로컬 안전 작업은 계속 제공한다.
-      } finally {
-        setIsSearching(false);
-      }
-    }
-    if (isOpen && menus.length === 0) fetchAllMenus();
-  }, [isOpen, menus.length]); 
-
-  // 열 때마다 즐겨찾기와 최근 방문을 다시 읽는다 — 사이드바에서 방금 바꾼 즐겨찾기가 바로 보여야 한다.
-  useEffect(() => {
-    if (!isOpen) return;
-    let active = true;
-    (async () => {
-      try {
-        const bookmarks = await menuService.getMyBookmarks();
-        if (active) setBookmarkNos(bookmarks.map(bookmark => bookmark.menuNo));
-      } catch {
-        // 즐겨찾기를 못 읽어도 메뉴 검색은 그대로 쓴다.
-        if (active) setBookmarkNos([]);
-      }
-    })();
-    return () => { active = false; };
-  }, [isOpen]);
 
   // 3. 고정 액션 정의
   // 관리자 mutation이나 구현 상태가 섞인 화면을 여기서 추정해 노출하지 않는다.

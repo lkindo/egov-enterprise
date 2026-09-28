@@ -16,6 +16,7 @@ import java.util.List;
 public class WebMvcConfig implements WebMvcConfigurer {
 
     private final OperationalAuditInterceptor operationalAuditInterceptor;
+    private final org.springframework.beans.factory.ObjectProvider<nuri.api.interceptor.SensitiveAuditInterceptor> sensitiveAuditInterceptor;
 
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
@@ -57,6 +58,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(new nuri.api.interceptor.SortParameterGuard())
 
                 .addPathPatterns("/api/**");
+
+        sensitiveAuditInterceptor.ifAvailable(interceptor -> registry.addInterceptor(interceptor).addPathPatterns("/api/**"));
 
         registry.addInterceptor(operationalAuditInterceptor)
 

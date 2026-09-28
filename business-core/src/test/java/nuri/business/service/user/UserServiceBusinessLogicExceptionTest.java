@@ -67,6 +67,7 @@ class UserServiceBusinessLogicExceptionTest {
         private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
         @Mock private nuri.business.domain.user.repository.DeptManageRepository deptManageRepository;
+        @Mock private nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
 
     @InjectMocks
         private UserService userService;
