@@ -13,7 +13,6 @@ import nuri.business.service.log.UserLogManageService;
 import nuri.business.service.log.dto.UserLogDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.foundation.security.annotation.AdminOrSystem;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;

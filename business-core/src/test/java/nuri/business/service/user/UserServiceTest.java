@@ -3,7 +3,6 @@ package nuri.business.service.user;
 import nuri.business.domain.user.repository.UserListFilter;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.auth.UserAuthority;
-import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.user.dto.UserDto;
@@ -35,9 +34,6 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
-
-    @Mock
-    private UserAuthorityRepository userAuthorityRepository;
 
     @Mock
     private nuri.business.domain.auth.RefreshTokenRepository refreshTokenRepository;
@@ -148,7 +144,7 @@ class UserServiceTest {
         assertSame(revoked, actual);
         verify(authorizationAdministration).lockAndAuthorize("USER_CREATE");
         verifyNoMoreInteractions(authorizationAdministration);
-        verifyNoInteractions(userRepository, userAuthorityRepository, passwordEncoder, eventPublisher);
+        verifyNoInteractions(userRepository, passwordEncoder, eventPublisher, sensitiveAudit);
     }
 
     /**
@@ -537,7 +533,7 @@ class UserServiceTest {
         assertSame(revoked, actual);
         verify(authorizationAdministration).lockAndAuthorize("USER_DEPT");
         verifyNoMoreInteractions(authorizationAdministration);
-        verifyNoInteractions(userRepository, userAuthorityRepository, eventPublisher);
+        verifyNoInteractions(userRepository, eventPublisher, sensitiveAudit);
     }
 
     @Test
@@ -549,7 +545,7 @@ class UserServiceTest {
             var error=assertThrows(BusinessException.class,() -> userService.updateUsersRole(List.of("user1"),role));
             assertEquals(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE,error.getErrorCode());
         }
-        verifyNoInteractions(userRepository,userAuthorityRepository,authorizationAdministration);
+        verifyNoInteractions(userRepository, authorizationAdministration, eventPublisher, sensitiveAudit);
     }
 
     @Test

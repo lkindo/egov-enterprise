@@ -9,7 +9,6 @@ import nuri.business.domain.operation.RewardManage;
 import nuri.business.domain.operation.RewardManageRepository;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.operation.dto.RewardManageDto;
-import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -2,7 +2,6 @@ package nuri.business.service.auth;
 
 import nuri.business.domain.auth.Authority;
 import nuri.business.domain.auth.AuthorityRepository;
-import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.auth.dto.AuthorManageDto;
 import nuri.business.security.util.SecurityUtil;
@@ -15,10 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * 권한 관리 서비스

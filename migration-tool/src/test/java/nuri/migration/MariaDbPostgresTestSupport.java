@@ -27,18 +27,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 abstract class MariaDbPostgresTestSupport {
     @Container
-    protected static final MariaDBContainer MARIADB = new MariaDBContainer(DockerImageName.parse(
+    protected static final MariaDBContainer MARIADB = mariaDbFixture();
+    @Container
+    protected static final PostgreSQLContainer POSTGRES = postgresFixture();
+
+    private static MariaDBContainer mariaDbFixture() {
+        MariaDBContainer fixture = new MariaDBContainer(DockerImageName.parse(
             "mariadb@sha256:80494b9810694179889f7281ec44ca928241df577159c0356a1070e2e94616a1")
-            .asCompatibleSubstituteFor("mariadb"))
-            .withDatabaseName("migration_fixture")
+            .asCompatibleSubstituteFor("mariadb"));
+        fixture.withDatabaseName("migration_fixture")
             .withUsername("migration_fixture_reader")
             .withPassword(UUID.randomUUID().toString())
             .withCommand("--max-allowed-packet=67108864", "--character-set-server=utf8mb4",
                     "--collation-server=utf8mb4_unicode_ci")
             .withUrlParam("useCatalogTerm", "SCHEMA");
-    @Container
-    protected static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine")
-            .withPassword(UUID.randomUUID().toString());
+        return fixture;
+    }
+
+    private static PostgreSQLContainer postgresFixture() {
+        PostgreSQLContainer fixture = new PostgreSQLContainer("postgres:17-alpine");
+        fixture.withPassword(UUID.randomUUID().toString());
+        return fixture;
+    }
 
     @BeforeAll
     static void recordDatabaseVersions() throws Exception {

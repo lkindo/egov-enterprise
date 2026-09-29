@@ -4,11 +4,8 @@ import nuri.business.domain.auth.AuthorGroupProjection;
 import nuri.business.domain.auth.DeptAuthorProjection;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
-import nuri.business.domain.auth.AuthorityRepository;
-import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.common.BaseSearchDto;
-import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.auth.dto.DeptAuthorBatchRequest;
 import nuri.business.service.auth.dto.UserAuthorityDto;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 사용자-권한 매핑 관계를 관리하는 서비스
@@ -29,8 +25,6 @@ import java.util.stream.Collectors;
 public class UserAuthorityManageService {
 
     private final UserAuthorityRepository userAuthorityRepository;
-    private final UserRepository userRepository;
-    private final AuthorityRepository authorityRepository;
 
     /**
      * 사용자별 권한 목록 조회

@@ -3,13 +3,13 @@ package nuri.api.harness;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.opentest4j.AssertionFailedError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -166,7 +166,7 @@ class SignupContractLinterTest {
         String serviceCode = stripComments(HarnessSourceIndex.read(serviceFile));
         SignupSlice slice = sliceMethod(serviceCode, SIGNUP_METHOD, DTO_CLASS);
         if (slice == null) {
-            fail("게이트 무결성 파손: " + SERVICE_PATH + " 에서 " + SIGNUP_METHOD + "(" + DTO_CLASS
+            throw new AssertionFailedError("게이트 무결성 파손: " + SERVICE_PATH + " 에서 " + SIGNUP_METHOD + "(" + DTO_CLASS
                     + " …) 본문을 추출하지 못했습니다."
                     + "\n   메서드 시그니처가 바뀌었다면 이 린터도 함께 갱신하십시오. 추출 실패를 통과로 처리하면"
                     + "\n   registerUser() 의 Role.valueOf 까지 함께 눈감게 되어 게이트가 무의미해집니다.");

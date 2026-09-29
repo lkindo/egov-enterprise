@@ -1,6 +1,5 @@
 package nuri.business.service.user.dto;
 
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.user.entity.User;

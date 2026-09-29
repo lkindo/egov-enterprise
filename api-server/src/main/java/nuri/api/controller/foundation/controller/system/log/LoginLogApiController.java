@@ -5,7 +5,6 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.foundation.security.annotation.AdminOrSystem;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.log.LoginLogManageService;
 import nuri.business.service.log.dto.LoginLogDto;

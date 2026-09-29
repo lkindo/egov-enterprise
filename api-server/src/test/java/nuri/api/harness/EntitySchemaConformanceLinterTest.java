@@ -117,7 +117,7 @@ class EntitySchemaConformanceLinterTest {
     private static final Pattern DOLLAR_TAG = Pattern.compile("\\$\\w*\\$");
 
     private static final int VARCHAR_UNBOUNDED = Integer.MAX_VALUE;
-    /** {@code @Column} 의 length 기본값 — 명시 여부를 구분할 수 없으므로 길이 검사에서 제외 */
+    /** {@code @Column} 이 없는 String 필드에 적용하는 JPA 기본 길이. */
     private static final int JPA_DEFAULT_LENGTH = 255;
 
     @Test
@@ -182,7 +182,7 @@ class EntitySchemaConformanceLinterTest {
                 // ② 길이 초과 — 엔티티가 물리보다 길면 런타임 'value too long'
                 Column col = field.getAnnotation(Column.class);
                 if (field.getType() == String.class) {
-                    int entityLen = (col != null) ? col.length() : 255;
+                    int entityLen = (col != null) ? col.length() : JPA_DEFAULT_LENGTH;
                     int physicalLen = lengthOf(physicalType);
                     if (entityLen > physicalLen && !KNOWN_DRIFT.contains(key + ":length")) {
                         violations.add(String.format("%s → %s.%s [길이 초과] 엔티티 length=%d > 물리 %s",

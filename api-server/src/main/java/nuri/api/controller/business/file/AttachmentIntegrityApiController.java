@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import nuri.business.service.file.AttachmentIntegrityService;
 import nuri.business.service.file.dto.AttachmentIntegrityReport;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.foundation.security.annotation.AdminOrSystem;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

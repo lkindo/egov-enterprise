@@ -9,8 +9,6 @@ import nuri.business.service.board.BoardService;
 import nuri.business.service.board.SatisfactionService;
 import nuri.business.service.board.dto.SatisfactionDto;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.foundation.security.annotation.AdminOnly;
-import nuri.foundation.security.annotation.Authenticated;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

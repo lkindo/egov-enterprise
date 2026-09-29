@@ -8,7 +8,6 @@ import nuri.business.service.auth.RoleManageService;
 import nuri.business.service.auth.dto.RoleManageDto;
 import org.springframework.http.MediaType;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;

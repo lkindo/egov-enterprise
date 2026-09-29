@@ -13,7 +13,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.hamcrest.Matchers.hasItem;
 import static org.assertj.core.api.Assertions.assertThat;
 import static nuri.openapi.OpenApiDocumentationTest.assertNullableProperties;
-import static nuri.openapi.OpenApiDocumentationTest.isNullableSchema;
 
 /** Domain fixture is removed with its explicit source dependency; common spec generation remains. */
 @ApiHttpIntegrationTest
@@ -23,7 +22,6 @@ import static nuri.openapi.OpenApiDocumentationTest.isNullableSchema;
 })
 class BoardOpenApiDocumentationTest {
   @Autowired private MockMvc mockMvc;
-  @Autowired private tools.jackson.databind.ObjectMapper objectMapper;
 
   @Test
   @DisplayName("공개 FAQ 전용 경로와 closed response schema가 OpenAPI에 노출된다")
@@ -50,7 +48,7 @@ class BoardOpenApiDocumentationTest {
     tools.jackson.databind.JsonNode schemas =
         tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build().readTree(content)
             .path("components").path("schemas");
-    assertNullableProperties(schemas.path("BoardDto"),
+    assertNullableProperties(schemas.path(BoardDto.class.getSimpleName()),
         "ansSn", "pstTtl", "pstCn", "upPstSn", "sortOrdr", "ttlBoldYn", "inqCnt",
         "useYn", "pstBgngYmd", "pstEndYmd", "userId", "userNm", "atchFileSn", "scrtYn",
         "evntDt", "qnaSttsCd", "qnaCatCd", "likeCnt", "commentCnt", "fileCnt",

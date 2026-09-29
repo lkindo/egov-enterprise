@@ -7,7 +7,6 @@ import nuri.business.service.system.content.community.CommunityService;
 import nuri.business.service.system.content.community.dto.CommunityDto;
 import nuri.business.service.system.content.community.dto.CommunityMemberDto;
 import nuri.business.domain.system.content.community.CommunityMemberStatus;
-import nuri.foundation.security.annotation.AdminOrSystem;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

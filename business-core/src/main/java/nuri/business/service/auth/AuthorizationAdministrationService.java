@@ -208,7 +208,9 @@ public class AuthorizationAdministrationService {
     private TreeSet<Grant> validateGrants(List<Grant> grants) {
         var result = new TreeSet<Grant>();
         for (var grant: grants) {
-            if (grant==null || grant.code()==null) invalid("권한 값이 필요합니다.");
+            if (grant==null || grant.code()==null) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,"권한 값이 필요합니다.");
+            }
             if ("OPERATION".equals(grant.type())) {
                 if (!PermissionCodes.ALL.contains(grant.code())) invalid("알 수 없는 기능 권한입니다.");
             } else if ("NAVIGATION".equals(grant.type())) {

@@ -11,11 +11,7 @@ import nuri.business.service.auth.mfa.MfaService;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.domain.user.repository.UserRepository;
-import nuri.business.domain.auth.UserAuthorityRepository;
 
-import nuri.business.domain.auth.UserAuthority;
-import nuri.business.domain.user.entity.Role;
-import nuri.business.domain.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -148,7 +144,6 @@ class AuthServiceTest {
         // Given
         String refreshToken = "valid_refresh_token";
         String userId = "user123";
-        String esntlId = "USR_0000001";
         
         when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(true);
         when(jwtTokenProvider.getUserId(refreshToken)).thenReturn(userId);
@@ -180,7 +175,6 @@ class AuthServiceTest {
         // Given
         String refreshToken = "valid_refresh_token";
         String userId = "user123";
-        String esntlId = "USR_0000001";
 
         when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(true);
         when(jwtTokenProvider.getUserId(refreshToken)).thenReturn(userId);

@@ -1,6 +1,5 @@
 package nuri.business.service.file;
 
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import nuri.business.service.file.dto.AttachmentIntegrityReport;

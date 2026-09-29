@@ -25,6 +25,12 @@
 - **JDK 21**, **Node ≥ 22 + pnpm**, **Docker**(로컬 DB), **PowerShell**(Windows) 또는 bash.
 - Gradle/wrapper는 저장소에 포함(`./gradlew`).
 
+### Java IDE 진단
+
+VS Code/Antigravity의 Java 확장은 Eclipse JDT로, Gradle은 JDK 21의 javac로 소스를 검사한다. 따라서 Gradle 컴파일이 통과해도 IDE의 null 계약·미사용 항목 진단은 남을 수 있다. 로컬 `java.compile.nullAnalysis.mode`는 `automatic`으로 유지하고, 수정한 파일에 이전 진단이 남으면 명령 팔레트에서 `Java: Reload Projects`를 실행한다.
+
+외부 라이브러리의 null 계약을 추가 인식시키는 설정은 전체 소스에 영향을 준다. 적용 전후에 같은 컴파일러로 전체 진단을 비교하고, 메서드 참조의 입력 계약을 확인한다. 경고 개수만 줄이기 위한 분석 비활성화나 일괄 람다 치환은 하지 않는다.
+
 ---
 
 ## 2. 복제 & 리브랜딩
