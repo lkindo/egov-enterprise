@@ -53,7 +53,7 @@ npm run review:migration
 | control | 검토 내용 |
 |---|---|
 | `data-classification` | 실제 업무 데이터, 허용 URL 상태·검색 안내·입력 목적, 기관의 노출 허용 범위 |
-| `authorization` | 실제 그룹·기능·메뉴·객체 접근과 허용/거부 결과. 배포 시점의 앱 버전과 구 권한 writer의 종료, 그 뒤의 로그인·복수 그룹·권한 회수·메뉴 동작을 함께 확인한다 — DB 적용만으로는 증명되지 않는다 |
+| `authorization` | 실제 그룹·기능·메뉴·객체 접근과 허용/거부 결과. 배포 시점의 앱 버전과 구 권한 writer의 종료, 그 뒤의 로그인·복수 그룹·권한 회수·메뉴 동작을 함께 확인한다 — DB 적용만으로는 증명되지 않는다. `NOTICE_EDIT`·`FAQ_EDIT`·`DWORK_READ`·`DWORK_RETRY`·`MFA_RECOVER`는 기본 그룹이 없어 자동 배정되지 않는다(ADR-0025). 특히 공지·FAQ 게시판 쓰기는 배정 전까지 관리자도 거부되므로, 새 앱 배포 뒤 담당 그룹을 정해 배정하고 같은 트랜잭션에 변경 이력을 남긴다(먼저 넣으면 구 앱이 모르는 권한 코드로 그룹 저장을 거부할 수 있다) |
 | `request-logging` | 프록시·WAF·앱·분석 도구의 수집 필드, 검색어 복제·보존·접근 정책 |
 | `accessibility` | 기관 화면·사용자·지원 환경의 접근성 및 필요한 수동 평가 |
 | `backup-recovery` | 실제 백업 세트의 존재와 접속 토폴로지, 목표 RTO/RPO, 운영 규모 restore drill과 복원 후 앱 smoke 결과 |

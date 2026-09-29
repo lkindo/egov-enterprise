@@ -1,6 +1,6 @@
 # 근거 기반 개선 루프: 권한·공개 범위 결정 제안
 
-**상태: 사용자 검토용 미승인 제안.** 2026-09-27 현재 소스를 대조한 R4 결정 입력물이며 규범, Accepted ADR, 승인 기록을 대체하지 않는다. 이 문서 작성으로 권한·응답·데이터는 바뀌지 않는다. R4-3의 브라우저 토큰 비공개 원칙만 기존 승인 이행으로 분리한다.
+**상태: 결정 입력물(보존).** 2026-09-28 [ADR-0025](../02-architecture/decisions/ADR-0025-enterprise-completeness-and-durable-operations.md)가 겹치는 선택지를 결정했다(R4-1→D03, R4-2→D02, R4-4→D06, R4-5→D07, R4-6→D08, R4-7→D04, R6 삭제 단위→D09). 현재 정책은 ADR-0025를 따르고, 아래는 당시의 선택지 기록이다. **원래 상태: 사용자 검토용 미승인 제안.** 2026-09-27 현재 소스를 대조한 R4 결정 입력물이며 규범, Accepted ADR, 승인 기록을 대체하지 않는다. 이 문서 작성으로 권한·응답·데이터는 바뀌지 않는다. R4-3의 브라우저 토큰 비공개 원칙만 기존 승인 이행으로 분리한다.
 
 [재평가](adversarial-reassessment-2026-09-27.md)와 [실행 프롬프트](../03-guides/evidence-first-improvement-loop-prompt.md)의 후속이다. 아래 표의 권한은 [permission catalog](../../config/governance/permission-catalog.json)와 [operation bindings](../../config/governance/authorization-policies.json)의 현재 계약이다. 기본 그룹은 초기 배정일 뿐 실제 운영 계정의 보유 권한을 뜻하지 않는다. live DB, 실제 외부 API 소비자, 운영 설정은 이번 문서에서 실측하지 않았다.
 
