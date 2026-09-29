@@ -76,8 +76,8 @@ Oracle crash-recovery 시험은 별도 JVM에서 일반 classpath/JAR를 실행�
     `mutation-scope-migration`은 각각 `max-parallel: 1`을 사용한다. CodeQL Java·JavaScript/TypeScript와
     이관 PIT 네 scope의 모집단·명령·임계값은 모두 유지한다. run `36575378891`에서 각 matrix의 실제 실행
     합계는 약 7분 20초와 4분 12초였으므로 직렬 입장 후에도 12분 목표 안에 완료할 수 있다. 재사용 profile
-    여섯 개는 짧은 `frontend-scope`가 슬롯을 반납한 뒤 함께 시작한다. `secret-scan`과 custom composition 두
-    layout은 `backend-scope`가 슬롯을 반납한 뒤 시작한다. profile·custom은 `!cancelled()`와 분류 성공 검사를
+    여섯 개는 짧은 `frontend-scope`가 슬롯을 반납한 뒤 함께 시작한다. custom composition 두 layout은
+    `backend-scope` 뒤, `secret-scan`은 frontend coverage 뒤 시작한다. profile·custom은 `!cancelled()`와 분류 성공 검사를
     사용해 취소에는 반응하면서 선행 job 실패·skip이 선택된 검증을 생략시키지 못하게 한다. secret-scan은
     `always()`와 분류 성공 검사를 유지한다.
 

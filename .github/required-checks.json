@@ -250,7 +250,7 @@
       "jobId": "secret-scan",
       "needs": [
         "change-scope",
-        "backend-scope"
+        "frontend-coverage-scope"
       ],
       "jobIf": "always()"
     },

@@ -189,10 +189,10 @@ jobs:
   # 로컬 훅과 무관하게 required CI에서 gitleaks를 hard-fail로 실행한다.
   # 라이선스·가변 태그 노출을 피하려고 고정 버전 바이너리를 직접 내려받는다.
   secret-scan:
-    # full run에서는 backend source가 슬롯을 반납한 뒤 시작해 재사용 profile 6개가
-    # frontend production 직후 함께 입장할 수 있게 한다.
-    # always()라 backend 실패·skip도 보안 검증을 생략시키지 않는다.
-    needs: [change-scope, backend-scope]
+    # full run에서는 frontend coverage가 슬롯을 반납한 뒤 시작해 재사용 profile 6개와
+    # custom 두 layout이 먼저 입장할 수 있게 한다.
+    # always()라 coverage 실패·skip도 보안 검증을 생략시키지 않는다.
+    needs: [change-scope, frontend-coverage-scope]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 20
