@@ -83,5 +83,6 @@ paths = [
   '''database/dumps/''',
   #   ⚠ `.env` 와 `ssh-key-*.key` 는 **면제하지 않는다.** 둘 다 gitignore 되어 있지만,
   #     로컬 스캔에서 걸리는 것이 정상이고 그 신호는 유지되어야 한다
-  #     (디스크의 ssh-key-2026-01-18.key 는 아직 삭제되지 않았다 — pending-decisions.md 참조).
+  #     (디스크의 ssh-key-2026-01-18.key 는 Git 이력에는 없고 로컬에만 남아 있다 — 2026-09-30 확인.
+  #      삭제는 저장소 소유자 조치이며, 옛 pending-decisions.md 항목은 2026-08-19 에 걷혔다).
 ]
