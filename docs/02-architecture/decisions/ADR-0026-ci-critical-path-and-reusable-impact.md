@@ -43,11 +43,12 @@ Oracle crash-recovery 시험은 별도 JVM에서 일반 classpath/JAR를 실행�
 1. `change-scope`는 `reusable`과 `reusable-matrix`를 출력한다. pack 소유가 증명된 backend domain 또는
    frontend 제거 경로는 그 pack을 포함하는 profile×두 layout만 선택한다. 공용·복합·미분류 입력과 비교 불가
    상태는 core·collaboration·demo의 두 layout 전부로 돌아간다. 문서 전용 변경은 기존처럼 생략한다.
-2. `reusable-base`는 분류기가 만든 `include` matrix만 실행한다. `backend-build`는 분류 결과와 실제 job 결과를
-   계속 fail-closed로 집계한다. profile 선별은 required 검증을 main 이후로 옮기지 않는다.
+2. `reusable-base`는 분류기가 만든 `include` matrix만 실행한다. core가 선택되면 두 layout의 custom composition은
+   별도 `reusable-custom` matrix에서 profile 생성과 병렬 실행한다. `backend-build`는 두 job의 기대 실행과 실제
+   결과를 각각 fail-closed로 집계한다. profile 선별이나 custom 분리는 required 검증을 main 이후로 옮기지 않는다.
 3. 물리 스키마 검증을 읽기 전용 Gradle cache를 쓰는 `backend-schema-scope`로 분리한다. 이 잡과
    `backend-scope`는 둘 다 `change-scope` 직후 시작하며, `backend-build`는 backend·schema·migration·reusable
-   네 source의 기대 실행 또는 명시적 skip을 각각 검사한다.
+   profile·custom source의 기대 실행 또는 명시적 skip을 각각 검사한다.
 4. backend·schema·migration 잡은 JUnit XML의 suite 시간을 step summary로 남긴다. migration XML은 14일
    artifact로 보존해 DB vendor 샤딩을 실제 class 시간으로 설계한다. 이미지 pull은 별도 step으로 유지해
    다운로드와 컨테이너 초기화·테스트 시간을 혼동하지 않는다.
@@ -82,3 +83,9 @@ registry는 schema-validation의 실제 CI job을 정확히 가리킨다.
 이 로컬 결과는 Linux runner 준비·캐시·대기를 포함하지 않는다. 변경 SHA의 required CI에서 14개 PIT scope와
 세 migration leaf 및 aggregate가 모두 성공하고 전체 wall-clock을 다시 측정해야 12분 목표 달성을 판정한다.
 PIT history는 shadow 비교가 full 결과와 동등할 때만 required 적용을 검토한다.
+
+[3차 전체 실행 36566919897](https://github.com/lkindo/egov-enterprise/actions/runs/36566919897)은 세 migration leaf가
+6분 0초·6분 50초·7분 23초, 이관 PIT 네 scope가 1분 22초~1분 53초로 끝나 종전 병목 제거를 확인했다. 다만
+aggregate가 shallow checkout에서 측정 commit을 찾지 못해 실패했고, `reusable-base core/single`은 profile 6분 38초와
+custom 5분 52초를 직렬 실행해 12분 58초가 걸렸다. aggregate와 leaf는 provenance 검사를 위해 전체 이력을 받고,
+profile/custom은 위 결정대로 병렬 job으로 분리한다. 이 실행은 실패 표본이므로 목표 달성 근거로 쓰지 않는다.

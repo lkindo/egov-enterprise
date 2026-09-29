@@ -36,7 +36,8 @@ push/PR / workflow_dispatch
         ├─ migration-test-scope (migration=true: 123개 이관 테스트 클래스를 3개 matrix로 정확히 분배)
         │   └─ migration-scope (세 결과 집계·JaCoCo 병합·bootJar·85/70 커버리지)
         ├─ reusable-base (영향받는 core·collaboration·demo profile×layout 생성·기술 검증)
-        ├─ backend-build (온라인·스키마·이관 source와 reusable-base 결과를 집계)
+        ├─ reusable-custom (core 영향 시 custom composition 두 layout을 profile과 병렬 검증)
+        ├─ backend-build (온라인·스키마·이관·재사용 profile·custom 결과를 집계)
         ├─ frontend-scope (frontend=true인 경우의 실제 무거운 실행, backend와 독립)
         │   └─ codegen·lint·audit·Next build·Vitest coverage·bundle budget
         ├─ frontend-build (frontend-scope를 집계해 항상 완료되는 안정 required context)
@@ -86,7 +87,7 @@ history 입출력·기본 증분 분석·CI history 전용 캐시를 사용하�
 
 > **브랜치 보호 SSOT와 live 경계**: `.github/required-checks.json`이 보호·릴리스 기준 브랜치, 안정 required context 6개, 원본 job/matrix, 신뢰할 GitHub Actions integration ID와 review policy 목표를 정의한다. `scripts/verify-branch-protection.mjs`는 required check·strict/provider/bypass뿐 아니라 approval 수, code-owner, last-push, stale review, thread resolution을 live ruleset과 exact-match한다. 저장소 명세가 바뀌어도 원격 설정은 자동 변경되지 않으므로 `verify:ops`가 green이기 전에는 적용 완료로 보지 않는다. 현재 외부 drift는 [공용 gap 인덱스](../../.agent/memory/known-gaps.md)를 따른다.
 
-E2E와 두 PIT source는 `change-scope`만 선행 조건으로 가진다. 각 job이 필요한 코드와 실행 환경을 직접 빌드하며, backend/frontend artifact를 기다리지 않는다. `migration-test-scope`도 분류 직후 세 leaf를 시작하고 `migration-scope`가 세 결과와 증거를 합친다. `backend-build`는 온라인 `backend-scope`, 병렬 `backend-schema-scope`, 집계된 `migration-scope`와 영향받는 재사용 profile×layout 결과를 각각 검사한다. E2E/PIT가 먼저 성공해도 선택된 다른 required 검사의 실패를 상쇄하지 못한다. CodeQL은 소스 변경에서 Java·JavaScript/TypeScript 양언어 분석을 유지한다.
+E2E와 두 PIT source는 `change-scope`만 선행 조건으로 가진다. 각 job이 필요한 코드와 실행 환경을 직접 빌드하며, backend/frontend artifact를 기다리지 않는다. `migration-test-scope`도 분류 직후 세 leaf를 시작하고 `migration-scope`가 세 결과와 증거를 합친다. `backend-build`는 온라인 `backend-scope`, 병렬 `backend-schema-scope`, 집계된 `migration-scope`, 영향받는 재사용 profile×layout과 core 영향 시 별도 custom×layout 결과를 각각 검사한다. E2E/PIT가 먼저 성공해도 선택된 다른 required 검사의 실패를 상쇄하지 못한다. CodeQL은 소스 변경에서 Java·JavaScript/TypeScript 양언어 분석을 유지한다.
 
 이관 테스트 분할의 입력은 [duration profile](../../config/migration-test-duration-profile.json)이다. 성공한 Linux run의
 JUnit XML에서 발견한 123개 소스 테스트 클래스를 정확히 덮고, 측정 시간을 LPT 방식으로 41개씩 나눈다. 각 leaf는
@@ -127,8 +128,9 @@ shard가 현재 런타임에서도 균형이 맞는다는 뜻은 아니다.
 실행한다. 각 호출은 새 격리 PostgreSQL과 DB·소스 번들을 생성하고 산출물의 거버넌스 무결성·활성 원장·
 Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 검사한다. pack 소유가 manifest로 증명된
 `business-app` 도메인과 프런트 제거 경로만 해당 pack을 포함하는 profile로 줄이고, 공용·미분류 입력은 6개
-matrix 전부로 돌아간다. 문서 전용 변경은 명시적으로 skip하며
-실패·취소·예상 밖 skip은 `backend-build` 집계에서 통과하지 않는다. 원본 제품 회귀 테스트는 기존 실행 경로에 남는다.
+matrix 전부로 돌아간다. core가 선택되면 custom composition의 두 layout은 `reusable-custom`에서 profile 검증과
+병렬 실행한다. 문서 전용 변경은 둘 다 명시적으로 skip하며 실패·취소·예상 밖 skip은 `backend-build`의 독립
+집계에서 통과하지 않는다. 원본 제품 회귀 테스트는 기존 실행 경로에 남는다.
 
 로컬 진입점은 `npm run base:verify -- --profile core`이며 [생성 가이드](reusable-base-guide.md)를 따른다.
 개발·CI driver의 lock에는 `localDevelopmentBuild`를 남기므로 기술 검증 성공만으로 공식 릴리스 자산이 되지 않는다.

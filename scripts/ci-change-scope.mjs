@@ -277,6 +277,7 @@ export function classifyChangedFiles(changedFiles, { forceFull = false } = {}) {
   const mutation = full || files.some(file => matchesAny(file, MUTATION_RELEVANT));
   const mutationMigrationTool = full || files.some(isMigrationToolMutation);
   const reusableProfiles = selectedReusableProfiles(files, { full, docsOnly });
+  const reusableCustom = reusableProfiles.includes('core');
 
   return {
     files,
@@ -294,6 +295,7 @@ export function classifyChangedFiles(changedFiles, { forceFull = false } = {}) {
     mutation,
     mutationMigrationTool,
     reusable: reusableProfiles.length > 0,
+    reusableCustom,
     reusableProfiles,
     reusableMatrix: reusableMatrix(reusableProfiles.length > 0 ? reusableProfiles : undefined),
   };
@@ -328,6 +330,7 @@ export function githubOutputs(result) {
     mutation: bool(result.mutation),
     mutation_migration_tool: bool(result.mutationMigrationTool),
     reusable: bool(result.reusable),
+    reusable_custom: bool(result.reusableCustom),
     reusable_matrix: JSON.stringify(result.reusableMatrix),
     unknown_count: String(result.unknownFiles.length),
   };

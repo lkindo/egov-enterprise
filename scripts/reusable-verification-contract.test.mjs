@@ -202,23 +202,36 @@ test('generated package and hook call product verification without changing the 
 function validatePipeline(workflow, manifest) {
   const errors = validateStaticContract({ manifest, ciContent: workflow });
   const job = parseWorkflowJobs(workflow).get('reusable-base') ?? '';
+  const customJob = parseWorkflowJobs(workflow).get('reusable-custom') ?? '';
   if (!/^      reusable: \$\{\{ steps\.scope\.outputs\.reusable \}\}$/m.test(workflow)) {
     errors.push('change-scope must publish the reusable selection flag');
   }
   if (!/^      reusable-matrix: \$\{\{ steps\.scope\.outputs\.reusable_matrix \}\}$/m.test(workflow)) {
     errors.push('change-scope must publish the reusable profile matrix');
   }
+  if (!/^      reusable-custom: \$\{\{ steps\.scope\.outputs\.reusable_custom \}\}$/m.test(workflow)) {
+    errors.push('change-scope must publish the custom composition selection flag');
+  }
   for (const expected of [
     /^    needs: \[change-scope\]$/m,
     /^    if: needs.change-scope.outputs.reusable == 'true'$/m,
     /^      matrix: \$\{\{ fromJSON\(needs.change-scope.outputs\['reusable-matrix'\]\) \}\}$/m,
     /^        run: node scripts\/verify-reusable-base.mjs --profile \$\{\{ matrix.profile \}\} --layout \$\{\{ matrix.layout \}\}$/m,
-    /^        run: node scripts\/verify-project-composer.mjs --layout \$\{\{ matrix.layout \}\}$/m,
     /^      - name: Retain reusable profile verification\n        if: always\(\)$/m,
-    /^            build\/project-composer\/jobs\/\*\/report\.json$/m,
     /^          if-no-files-found: error$/m,
   ]) if (!expected.test(job)) errors.push(`missing reusable pipeline contract: ${expected}`);
+  for (const expected of [
+    /^    needs: \[change-scope\]$/m,
+    /^    if: needs\.change-scope\.outputs\['reusable-custom'\] == 'true'$/m,
+    /^      fail-fast: false$/m,
+    /^        layout: \[multi-module, single-module\]$/m,
+    /^        run: node scripts\/verify-project-composer.mjs --layout \$\{\{ matrix.layout \}\}$/m,
+    /^      - name: Retain custom composition verification\n        if: always\(\)$/m,
+    /^            build\/project-composer\/jobs\/\*\/report\.json$/m,
+    /^          if-no-files-found: error$/m,
+  ]) if (!expected.test(customJob)) errors.push(`missing custom composition pipeline contract: ${expected}`);
   if (/^\s*(?:include|exclude|continue-on-error|defaults):/m.test(job)) errors.push('matrix or execution override is not allowed');
+  if (/^\s*(?:include|exclude|continue-on-error|defaults):/m.test(customJob)) errors.push('custom matrix or execution override is not allowed');
   return errors;
 }
 
@@ -232,17 +245,25 @@ test('required CI binds the fail-closed classifier matrix and rejects weakening 
     value => value.replace(' --layout ${{ matrix.layout }}', ''),
     value => value.replace("outputs.reusable == 'true'", "outputs.backend == 'true'"),
     value => value.replace('node scripts/verify-reusable-base.mjs', 'echo bypass'),
-    value => value.replace('node scripts/verify-project-composer.mjs', 'echo bypass'),
-    value => value.replace("if: matrix.profile == 'core'", 'if: false'),
     value => value.replace('        if: always()\n', ''),
-    value => value.replace('build/project-composer/jobs/*/report.json', 'build/omitted-report.json'),
     value => value.replace('if-no-files-found: error', 'if-no-files-found: warn'),
     value => value.replace('    steps:', '    continue-on-error: true\n    steps:'),
     value => value.replace('        run: node scripts/verify-reusable-base', '        if: false\n        run: node scripts/verify-reusable-base'),
   ]) assert.ok(validatePipeline(workflow.replace(job, mutate(job)), manifest).length);
+  const customJob = parseWorkflowJobs(workflow).get('reusable-custom');
+  for (const mutate of [
+    value => value.replace("outputs['reusable-custom'] == 'true'", "outputs.backend == 'true'"),
+    value => value.replace('layout: [multi-module, single-module]', 'layout: [single-module]'),
+    value => value.replace('node scripts/verify-project-composer.mjs', 'echo bypass'),
+    value => value.replace('        if: always()\n', ''),
+    value => value.replace('build/project-composer/jobs/*/report.json', 'build/omitted-report.json'),
+    value => value.replace('if-no-files-found: error', 'if-no-files-found: warn'),
+    value => value.replace('    steps:', '    continue-on-error: true\n    steps:'),
+  ]) assert.ok(validatePipeline(workflow.replace(customJob, mutate(customJob)), manifest).length);
   for (const mutate of [
     value => value.replace('reusable: ${{ steps.scope.outputs.reusable }}', 'reusable: false'),
+    value => value.replace('reusable-custom: ${{ steps.scope.outputs.reusable_custom }}', 'reusable-custom: false'),
     value => value.replace('reusable-matrix: ${{ steps.scope.outputs.reusable_matrix }}', 'reusable-matrix: {}'),
   ]) assert.ok(validatePipeline(mutate(workflow), manifest).length);
-  assert.ok(validatePipeline(workflow.replace('needs: [change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base]', 'needs: [change-scope, backend-scope, backend-schema-scope, migration-scope]'), manifest).length);
+  assert.ok(validatePipeline(workflow.replace('needs: [change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base, reusable-custom]', 'needs: [change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base]'), manifest).length);
 });

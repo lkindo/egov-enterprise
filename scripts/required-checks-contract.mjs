@@ -290,6 +290,7 @@ const GRADLE_CACHE_READ_ONLY = {
     'migration-test-scope': "${{ needs.change-scope.outputs.backend != 'false' || strategy.job-index != 0 }}",
     'migration-scope': 'true',
     'reusable-base': 'true',
+    'reusable-custom': 'true',
     'mutation-scope': 'true',
     'mutation-scope-migration': 'true',
   },

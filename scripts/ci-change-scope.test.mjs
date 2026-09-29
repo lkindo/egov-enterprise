@@ -327,6 +327,7 @@ test('reusable-base matrix only retains profiles that contain a changed pack dom
     'business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java',
   ]);
   assert.deepEqual(demoOnly.reusableProfiles, ['demo']);
+  assert.equal(demoOnly.reusableCustom, false);
   assert.deepEqual(demoOnly.reusableMatrix.include, [
     { profile: 'demo', layout: 'multi-module' },
     { profile: 'demo', layout: 'single-module' },
@@ -346,6 +347,7 @@ test('reusable-base matrix only retains profiles that contain a changed pack dom
     'foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java',
   ]);
   assert.deepEqual(sharedInput.reusableProfiles, ['core', 'collaboration', 'demo']);
+  assert.equal(sharedInput.reusableCustom, true);
 });
 
 test('mixed reusable-base inputs take the conservative union and docs do not expand it', () => {
@@ -435,6 +437,7 @@ test('GitHub outputs are explicit strings for job conditions', () => {
     mutation: 'false',
     mutation_migration_tool: 'false',
     reusable: 'false',
+    reusable_custom: 'false',
     reusable_matrix: JSON.stringify({
       include: [
         { profile: 'core', layout: 'multi-module' },

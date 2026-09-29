@@ -13,9 +13,8 @@
   },
   "criticalSteps": [
     {
-      "jobId": "reusable-base",
+      "jobId": "reusable-custom",
       "name": "Generate and verify custom composition",
-      "if": "matrix.profile == 'core'",
       "run": "node scripts/verify-project-composer.mjs --layout ${{ matrix.layout }}"
     },
     {
@@ -96,7 +95,8 @@
         "backend-scope",
         "backend-schema-scope",
         "migration-scope",
-        "reusable-base"
+        "reusable-base",
+        "reusable-custom"
       ],
       "jobIf": "always()",
       "aggregate": [
@@ -172,6 +172,24 @@
           "resultExpression": "needs.reusable-base.result",
           "successResult": "success",
           "scopeExpression": "needs.change-scope.outputs.reusable",
+          "classifierResultExpression": "needs.change-scope.result",
+          "skippedResult": "skipped"
+        },
+        {
+          "sourceJobId": "reusable-custom",
+          "sourceNeeds": [
+            "change-scope"
+          ],
+          "sourceJobIf": "needs.change-scope.outputs['reusable-custom'] == 'true'",
+          "sourceStepName": "Generate and verify custom composition",
+          "sourceRun": "node scripts/verify-project-composer.mjs --layout ${{ matrix.layout }}",
+          "sourceWorkingDirectory": null,
+          "sourceEnv": {},
+          "aggregateStepName": "사용자 구성 결과 집계",
+          "aggregateRun": "node scripts/aggregate-required-check.mjs",
+          "resultExpression": "needs.reusable-custom.result",
+          "successResult": "success",
+          "scopeExpression": "needs.change-scope.outputs['reusable-custom']",
           "classifierResultExpression": "needs.change-scope.result",
           "skippedResult": "skipped"
         }
