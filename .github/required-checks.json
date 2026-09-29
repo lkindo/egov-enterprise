@@ -13,9 +13,8 @@
   },
   "criticalSteps": [
     {
-      "jobId": "reusable-base",
+      "jobId": "reusable-custom",
       "name": "Generate and verify custom composition",
-      "if": "matrix.profile == 'core'",
       "run": "node scripts/verify-project-composer.mjs --layout ${{ matrix.layout }}"
     },
     {
@@ -35,7 +34,7 @@
       "run": "node scripts/aggregate-required-check.mjs",
       "env": {
         "CLASSIFIER_RESULT": "${{ needs.change-scope.result }}",
-        "EXPECTED_WORK": "${{ needs.change-scope.outputs['docs-only'] != 'true' }}",
+        "EXPECTED_WORK": "${{ needs.change-scope.outputs.reusable }}",
         "SOURCE_RESULT": "${{ needs.reusable-base.result }}"
       }
     },
@@ -94,8 +93,10 @@
       "needs": [
         "change-scope",
         "backend-scope",
+        "backend-schema-scope",
         "migration-scope",
-        "reusable-base"
+        "reusable-base",
+        "reusable-custom"
       ],
       "jobIf": "always()",
       "aggregate": [
@@ -120,18 +121,77 @@
         {
           "sourceJobId": "migration-scope",
           "sourceNeeds": [
-            "change-scope"
+            "change-scope",
+            "migration-test-scope"
           ],
-          "sourceJobIf": "needs.change-scope.outputs.migration == 'true'",
+          "sourceJobIf": "always() && needs.change-scope.result == 'success' && needs.change-scope.outputs.migration == 'true'",
           "sourceStepName": "Verify the independent migration module",
           "sourceRun": "node scripts/verify.mjs migration",
           "sourceWorkingDirectory": null,
-          "sourceEnv": {},
+          "sourceEnv": {
+            "MIGRATION_SHARD_EXECUTION_ROOT": "build/migration-shards"
+          },
           "aggregateStepName": "이관 도구 범위 결과 집계",
           "aggregateRun": "node scripts/aggregate-required-check.mjs",
           "resultExpression": "needs.migration-scope.result",
           "successResult": "success",
           "scopeExpression": "needs.change-scope.outputs.migration",
+          "classifierResultExpression": "needs.change-scope.result",
+          "skippedResult": "skipped"
+        },
+        {
+          "sourceJobId": "backend-schema-scope",
+          "sourceNeeds": [
+            "change-scope"
+          ],
+          "sourceJobIf": "needs.change-scope.outputs.schema == 'true'",
+          "sourceStepName": "Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)",
+          "sourceRun": "set -o pipefail\n./gradlew :api-server:schemaValidationTest --warning-mode fail --console=plain 2>&1 | tee /tmp/schema-validation.log",
+          "sourceWorkingDirectory": null,
+          "sourceEnv": {},
+          "aggregateStepName": "물리 스키마 검증 결과 집계",
+          "aggregateRun": "node scripts/aggregate-required-check.mjs",
+          "resultExpression": "needs.backend-schema-scope.result",
+          "successResult": "success",
+          "scopeExpression": "needs.change-scope.outputs.schema",
+          "classifierResultExpression": "needs.change-scope.result",
+          "skippedResult": "skipped"
+        },
+        {
+          "sourceJobId": "reusable-base",
+          "sourceNeeds": [
+            "change-scope",
+            "frontend-scope"
+          ],
+          "sourceJobIf": "!cancelled() && needs.change-scope.result == 'success' && needs.change-scope.outputs.reusable == 'true'",
+          "sourceStepName": "Generate and verify reusable profile",
+          "sourceRun": "node scripts/verify-reusable-base.mjs --profile ${{ matrix.profile }} --layout ${{ matrix.layout }}",
+          "sourceWorkingDirectory": null,
+          "sourceEnv": {},
+          "aggregateStepName": "재사용 프로필 결과 집계",
+          "aggregateRun": "node scripts/aggregate-required-check.mjs",
+          "resultExpression": "needs.reusable-base.result",
+          "successResult": "success",
+          "scopeExpression": "needs.change-scope.outputs.reusable",
+          "classifierResultExpression": "needs.change-scope.result",
+          "skippedResult": "skipped"
+        },
+        {
+          "sourceJobId": "reusable-custom",
+          "sourceNeeds": [
+            "change-scope",
+            "backend-scope"
+          ],
+          "sourceJobIf": "!cancelled() && needs.change-scope.result == 'success' && needs.change-scope.outputs['reusable-custom'] == 'true'",
+          "sourceStepName": "Generate and verify custom composition",
+          "sourceRun": "node scripts/verify-project-composer.mjs --layout ${{ matrix.layout }}",
+          "sourceWorkingDirectory": null,
+          "sourceEnv": {},
+          "aggregateStepName": "사용자 구성 결과 집계",
+          "aggregateRun": "node scripts/aggregate-required-check.mjs",
+          "resultExpression": "needs.reusable-custom.result",
+          "successResult": "success",
+          "scopeExpression": "needs.change-scope.outputs['reusable-custom']",
           "classifierResultExpression": "needs.change-scope.result",
           "skippedResult": "skipped"
         }
@@ -142,27 +202,48 @@
       "jobId": "frontend-build",
       "needs": [
         "change-scope",
-        "frontend-scope"
+        "frontend-scope",
+        "frontend-coverage-scope"
       ],
       "jobIf": "always()",
-      "aggregate": {
-        "sourceJobId": "frontend-scope",
-        "sourceNeeds": [
-          "change-scope"
-        ],
-        "sourceJobIf": "needs.change-scope.outputs.frontend == 'true'",
-        "sourceStepName": "Build and Test",
-        "sourceRun": "set -o pipefail\npnpm run build 2>&1 | tee /tmp/fe-build.log\npnpm run bundle:check\npnpm run test:coverage 2>&1 | tee /tmp/fe-test.log",
-        "sourceWorkingDirectory": "frontend",
-        "sourceEnv": {},
-        "aggregateStepName": "프론트엔드 범위 결과 집계",
-        "aggregateRun": "node scripts/aggregate-required-check.mjs",
-        "resultExpression": "needs.frontend-scope.result",
-        "successResult": "success",
-        "scopeExpression": "needs.change-scope.outputs.frontend",
-        "classifierResultExpression": "needs.change-scope.result",
-        "skippedResult": "skipped"
-      }
+      "aggregate": [
+        {
+          "sourceJobId": "frontend-scope",
+          "sourceNeeds": [
+            "change-scope"
+          ],
+          "sourceJobIf": "needs.change-scope.outputs.frontend == 'true'",
+          "sourceStepName": "Build production frontend",
+          "sourceRun": "set -o pipefail\npnpm run build 2>&1 | tee /tmp/fe-build.log\npnpm run bundle:check",
+          "sourceWorkingDirectory": "frontend",
+          "sourceEnv": {},
+          "aggregateStepName": "프론트엔드 범위 결과 집계",
+          "aggregateRun": "node scripts/aggregate-required-check.mjs",
+          "resultExpression": "needs.frontend-scope.result",
+          "successResult": "success",
+          "scopeExpression": "needs.change-scope.outputs.frontend",
+          "classifierResultExpression": "needs.change-scope.result",
+          "skippedResult": "skipped"
+        },
+        {
+          "sourceJobId": "frontend-coverage-scope",
+          "sourceNeeds": [
+            "change-scope"
+          ],
+          "sourceJobIf": "needs.change-scope.outputs.frontend == 'true'",
+          "sourceStepName": "Frontend unit and coverage suite",
+          "sourceRun": "set -o pipefail\npnpm run test:coverage 2>&1 | tee /tmp/fe-test.log",
+          "sourceWorkingDirectory": "frontend",
+          "sourceEnv": {},
+          "aggregateStepName": "프론트엔드 커버리지 결과 집계",
+          "aggregateRun": "node scripts/aggregate-required-check.mjs",
+          "resultExpression": "needs.frontend-coverage-scope.result",
+          "successResult": "success",
+          "scopeExpression": "needs.change-scope.outputs.frontend",
+          "classifierResultExpression": "needs.change-scope.result",
+          "skippedResult": "skipped"
+        }
+      ]
     },
     {
       "context": "secret-scan",

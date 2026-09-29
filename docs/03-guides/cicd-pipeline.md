@@ -28,20 +28,21 @@
 push/PR / workflow_dispatch
     │
     └─ change-scope (PR·main/master push: 같은 영향 분류 / 비교 불가·수동: 전수)
-        ├─ sast-scope (Java·JavaScript/TypeScript CodeQL security-extended)
+        ├─ sast-scope (Java·JavaScript/TypeScript CodeQL security-extended, 한 runner 슬롯에서 순차 실행)
         │   └─ secure-coding (High/Critical 차단, 언어별 결과 집계)
-        ├─ secret-scan (운영 계약·snapshot readiness·PR runtime 의존성 review·비밀 스캔)
-        ├─ backend-scope (backend=true인 경우의 실제 무거운 실행)
-        │   ├─ 온라인 4모듈 빌드·테스트·커버리지·OpenAPI 신선도
-        │   └─ schema=true일 때만 PostgreSQL schema-validation
-        ├─ migration-scope (migration=true: 독립 이관 테스트·bootJar·커버리지)
-        ├─ reusable-base (문서 전용이 아니면 core·collaboration·demo 실제 생성·기술 검증)
-        ├─ backend-build (온라인·이관 source와 reusable-base 결과를 집계)
-        ├─ frontend-scope (frontend=true인 경우의 실제 무거운 실행, backend와 독립)
-        │   └─ codegen·lint·audit·Next build·Vitest coverage·bundle budget
-        ├─ frontend-build (frontend-scope를 집계해 항상 완료되는 안정 required context)
-        ├─ mutation-scope (mutation=true, 상류 빌드 대기 없이 제품 PIT 8개 배치·최대 3개 동시 실행)
-        ├─ mutation-scope-migration (mutation-migration-tool=true, 상류 빌드 대기 없이 이관 PIT 2개)
+        ├─ secret-scan (분류 직후 운영 계약·snapshot readiness·PR runtime 의존성 review·비밀 스캔)
+        ├─ backend-scope (backend=true: 온라인 4모듈 빌드·테스트·커버리지·OpenAPI 신선도)
+        ├─ backend-schema-scope (schema=true: backend와 병렬 PostgreSQL schema-validation)
+        ├─ migration-test-scope (migration=true: 123개 이관 테스트 클래스를 3개 matrix로 정확히 분배)
+        │   └─ migration-scope (세 결과 집계·JaCoCo 병합·bootJar·85/70 커버리지)
+        ├─ reusable-base (frontend-scope 완료 뒤 영향받는 core·collaboration·demo profile×layout 동시 생성·기술 검증)
+        ├─ reusable-custom (backend-scope 완료 뒤 core 영향 시 custom composition 두 layout 검증)
+        ├─ backend-build (온라인·스키마·이관·재사용 profile·custom 결과를 집계)
+        ├─ frontend-scope (codegen·typecheck·lint·audit·Next build·bundle budget)
+        ├─ frontend-coverage-scope (frontend-scope와 병렬로 전체 Vitest coverage)
+        ├─ frontend-build (두 frontend source를 각각 집계하는 안정 required context)
+        ├─ mutation-scope (mutation=true, 상류 빌드 대기 없이 제품 PIT 10개 배치·최대 5개 동시 실행)
+        ├─ mutation-scope-migration (mutation-migration-tool=true, 상류 빌드 대기 없이 이관 PIT 4개를 한 슬롯에서 실행)
         │   └─ mutation-test (두 소스를 각각 fail-closed로 집계하는 안정 required aggregate)
         └─ e2e-tests (e2e=true, 상류 빌드 대기 없이 내부 2 shard)
             ├─ 전체 API·브라우저 모집단 분배 + 실행 목록/결과 대조
@@ -66,13 +67,12 @@ dependency-submission.yml (pull_request, contents:read)
 > - **계약 드리프트 (HARD, CI FAIL)**: `backend-build` 의 `git diff --exit-code api-docs.json`(커밋된 스펙이 실제 DTO/컨트롤러와 어긋나면 실패) 과 `frontend-build` 의 `codegen:verify`/`codegen:verify:zod`(스펙 대비 생성 타입·Zod 미갱신 시 실패).
 > - **스키마 무결성 (HARD, CI FAIL)**: classifier가 schema 영향으로 판정하면 `Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)`이 Flyway 전량 적용 + Hibernate `ddl-auto:validate`로 물리 정합성을 검증한다. `:foundation:test --no-build-cache`를 재실행하는 `Cache-bypass regression gate (foundation, main only)`는 같은 schema 조건에 더해 `refs/heads/main`에서만 실행한다.
 > - **프론트엔드 정적 품질 (HARD, CI FAIL)**: ESLint error 0건과 `frontend/package.json`의 warning 상한을 함께 강제한다(`pnpm run lint`). 의존성 감사는 `pnpm audit --json` 단일 조회를 정책 evaluator가 판정해 Critical 전체와 운영 의존성 High를 차단하고, 개발 전용 High는 warning으로 남기며 형식·네트워크 오류는 실패 처리한다.
-> - **변경 영향별 뮤테이션 (HARD, CI FAIL)**: PIT 스코프 10개 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. 제품 8개는 `mutation-scope`, 이관 2개는 `mutation-scope-migration`이 소유하며 독립된 영향 출력으로 선택한다. 이관 출력은 더 이상 온라인 `mutation`의 부분집합이 아니다([ADR-0022](../02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)). `mutation-test`는 소스마다 기대 실행·명시적 skip을 fail-closed로 집계한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
+> - **변경 영향별 뮤테이션 (HARD, CI FAIL)**: PIT 스코프 14개 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. 제품 10개는 `mutation-scope`, 이관 4개는 `mutation-scope-migration`이 소유하며 독립된 영향 출력으로 선택한다. 이관 출력은 더 이상 온라인 `mutation`의 부분집합이 아니다([ADR-0022](../02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)). `mutation-test`는 소스마다 기대 실행·명시적 skip을 fail-closed로 집계한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
 > - **OWASP Dependency-Check 분리**: 기존 의존성 전수 검사는 별도의 주간·수동 워크플로우(`.github/workflows/dependency-check.yml`)가 담당한다. 모듈 리포트 누락은 실패하지만 scan step 자체는 `continue-on-error`라 취약점 outcome은 PR 차단이 아니며, required 증분 review와 같은 강도로 해석하지 않는다.
 
-`migration-validate-verify`의 CI 실행 상한은 60분이고 다른 PIT 스코프는 30분이다. 60분 표현식은 `mutation-scope-migration`에만 있고 제품 스코프 잡은 30분 고정이며, 두 값을 required-check 계약이 함께 고정한다.
-실제 DB를 포함한 실행은 [30분](https://github.com/lkindo/egov-enterprise/actions/runs/35010396436/job/104528840104)과
-[60분](https://github.com/lkindo/egov-enterprise/actions/runs/35016770629/job/104548958474) 상한에서 취소됐다.
-두 번째 실행의 불완전한 보고서에 남은 식별자·정렬 검증 변이 6건은 같은 경계를 검증하는 빠른 단위 테스트로 잡는다.
+제품·이관 PIT job의 실행 상한은 모두 30분이다. 종전 결합 `migration-validate-verify`가 60분 상한에서도
+취소된 뒤 빠른 단위 테스트가 식별자·정렬 경계의 변이를 보완했고, 2026-09-29 성공 보고서의 validate·verify
+모집단과 점수를 근거로 두 scope를 분리했다. 상한 확대 대신 각 scope의 75%를 독립 적용한다.
 [JUnit 5 PIT 플러그인](https://github.com/pitest/pitest-junit5-plugin/blob/1.2.1/src/main/java/org/pitest/junit5/JUnit5TestUnit.java)은
 커버리지 측정과 개별 변이 실행에서 클래스 초기화를 다시 수행하므로,
 DB 초기화 비용이 짧은 시험의 시간 예산을 넘을 수 있다. 이 설명이 각 CI 타임아웃의 원인을 확정하지는 않는다.
@@ -87,11 +87,33 @@ history 입출력·기본 증분 분석·CI history 전용 캐시를 사용하�
 
 > **브랜치 보호 SSOT와 live 경계**: `.github/required-checks.json`이 보호·릴리스 기준 브랜치, 안정 required context 6개, 원본 job/matrix, 신뢰할 GitHub Actions integration ID와 review policy 목표를 정의한다. `scripts/verify-branch-protection.mjs`는 required check·strict/provider/bypass뿐 아니라 approval 수, code-owner, last-push, stale review, thread resolution을 live ruleset과 exact-match한다. 저장소 명세가 바뀌어도 원격 설정은 자동 변경되지 않으므로 `verify:ops`가 green이기 전에는 적용 완료로 보지 않는다. 현재 외부 drift는 [공용 gap 인덱스](../../.agent/memory/known-gaps.md)를 따른다.
 
-E2E와 두 PIT source는 `change-scope`만 선행 조건으로 가진다. 각 job이 필요한 코드와 실행 환경을 직접 빌드하며, backend/frontend artifact를 기다리지 않는다. `backend-build`는 온라인 `backend-scope`와 독립 `migration-scope`의 선택 결과를 각각 집계하고 기존 재사용 profile×layout 검증도 요구한다. E2E/PIT가 먼저 성공해도 선택된 다른 required 검사의 실패를 상쇄하지 못한다. CodeQL은 소스 변경에서 Java·JavaScript/TypeScript 양언어 분석을 유지한다.
+E2E와 두 PIT source는 `change-scope`만 선행 조건으로 가진다. 각 job이 필요한 코드와 실행 환경을 직접 빌드하며, backend/frontend artifact를 기다리지 않는다. frontend build/bundle과 unit/coverage도 서로 산출물을 소비하지 않으므로 분류 직후 별도 source로 시작하고 `frontend-build`가 둘을 모두 집계한다. `migration-test-scope`도 분류 직후 세 leaf를 시작하고 `migration-scope`가 세 결과와 증거를 합친다. `backend-build`는 온라인 `backend-scope`, 병렬 `backend-schema-scope`, 집계된 `migration-scope`, 영향받는 재사용 profile×layout과 core 영향 시 별도 custom×layout 결과를 각각 검사한다. E2E/PIT가 먼저 성공해도 선택된 다른 required 검사의 실패를 상쇄하지 못한다. CodeQL은 소스 변경에서 Java·JavaScript/TypeScript 양언어 분석을 유지한다.
+
+이관 테스트 분할의 입력은 [duration profile](../../config/migration-test-duration-profile.json)이다. 성공한 Linux run의
+JUnit XML에서 발견한 123개 소스 테스트 클래스를 정확히 덮고, 측정 시간을 LPT 방식으로 41개씩 나눈다. 각 leaf는
+실제 XML 클래스 census와 manifest를 확인한 뒤 `.exec`를 보존한다. aggregate는 세 manifest의 좌표·클래스·측정
+commit, 각 leaf의 XML census, 정확히 세 개의 비어 있지 않은 `.exec`를 다시 확인한다. 그 후에만 기존 LINE 85%·
+BRANCH 70% 게이트를 병합 데이터로 실행한다. 프로필에 없는 새 테스트나 stale 테스트, leaf 누락, 빈 실행 데이터는
+모두 실패한다. 로컬 `verify:migration`과 주간 workflow는 환경변수가 없으므로 기존 전체 테스트 경로를 유지한다.
 
 PIT 분류는 production/test Java뿐 아니라 `src/testFixtures/**`, `src/main/resources/**`, `src/test/resources/**`를 포함한다. 온라인 4모듈의 의존 관계는 한 범위로 유지하며 개별 Java 파일별 시험 선택은 하지 않는다. 이관 전용 소스·리소스·build 변경은 이관 build/PIT를 선택하고 온라인 build/PIT·frontend·schema·E2E를 선택하지 않는다. 공용 Gradle 입력과 양쪽 ID 생성 의미 계약(`IdGenerationUtil`, `Constants`, `StandardIdGenerator`)은 두 모듈을 선택한다. 미지 입력·빈 비교는 전수이며 루트 `db_columns.json`도 기존 전수 fallback을 유지한다. 정확한 경계는 [분류기](../../scripts/ci-change-scope.mjs)와 [회귀 계약](../../scripts/ci-change-scope.test.mjs)이 소유한다.
 
-제품 PIT 8개 배치는 모두 유지하고 `mutation-scope`의 `max-parallel: 3`으로 동시 실행만 제한한다. 초기 실행에서 저장소의 세 워크플로우를 합쳐 최대 20개 job 동시 실행과 E2E 111초·긴 migration PIT 116초 대기를 관측했다. 이 제한은 E2E·migration·reusable backend 검증에 runner 여유를 남기려는 조치다. 20은 관측치이며 관리 설정의 상한을 확인한 값이 아니고, 다른 PR 부하와 GitHub 스케줄링에 따른 대기 해소나 전체 시간 단축을 보장하지 않는다.
+제품 PIT는 종전 대상의 정확한 합집합을 10개 scope로 실행하고 `mutation-scope`의 `max-parallel: 4`를 사용한다. 5슬롯 실행은 backend 완료 뒤 custom composition이 최대 1분 54초 runner를 기다리게 했다. 같은 SHA의 실측 job 총시간 391·384·332·288·178·171초 순으로 긴 여섯 scope를 먼저 선언하면 4슬롯에서도 mutation aggregate가 10분 안쪽에 끝나는 반면 custom 두 layout용 입장 여유를 만든다. 이 LPT 순서와 동시 수는 모집단·테스트·75% 게이트를 바꾸지 않는다. `business-app` 세 분할과 이관 네 분할은 기존 성공 보고서에서 각 집합이 75%를 넘는 것을 확인했으며, 새 required 실행의 성공과 시간은 별도로 확인한다. 관측값을 관리 설정의 runner 상한으로 해석하지 않는다.
+
+동시 20개 runner를 사용하는 전체 변경에서는 [실행 36575378891](https://github.com/lkindo/egov-enterprise/actions/runs/36575378891)처럼
+E2E와 재사용 검증이 5분 이상 배정을 기다릴 수 있다. `sast-scope`의 두 언어와
+`mutation-scope-migration`의 네 scope는 각각 `max-parallel: 1`로 입장을 제한해 초기 슬롯을 임계 작업에
+남긴다. 이는 검증 삭제나 nightly 이관이 아니며 CodeQL 양언어, 이관 PIT 네 모집단과 각 75% 판정을 모두
+같은 required 실행에서 끝낸다. 해당 실행의 실제 작업 합계가 약 7분 20초와 4분 12초였다는 근거로 선택했으며,
+각 job의 30/40분 안전 상한과 fail-fast 비활성화도 유지한다. 후속 [실행 36579753346](https://github.com/lkindo/egov-enterprise/actions/runs/36579753346)에서
+재사용 여덟 job은 즉시 시작했지만 migration 3번 shard가 5분 20초 기다렸다. 다음
+[실행 36583969340](https://github.com/lkindo/egov-enterprise/actions/runs/36583969340)에서 `reusable-base`를
+다섯 개로 제한하자 migration 대기는 줄었지만 뒤로 밀린 `demo/single-module`이 7분 52초 걸려 전체가
+14분 42초가 됐다. 따라서 profile별 상한은 두지 않는다. 여섯 profile 전체와 `secret-scan`을
+`frontend-scope` 완료 뒤 시작해 초기 슬롯은 세 migration shard에 주고, frontend가 반납한 슬롯에서는
+profile을 함께 실행한다. reusable source는 `!cancelled()`와 분류 성공 검사를 써 취소에는 반응하면서
+frontend 실패·skip에서도 선택된 검증을 실행한다. `secret-scan`은 `always()`를 유지한다. 검사 모집단·
+required context·실패 판정은 바뀌지 않는다.
 
 PR과 **main/master push는 같은 영향 분류**를 적용한다. PR은 base/head, push는 이전/현재 SHA를 비교하며 수동 실행·비교 기준 부재·미지 또는 빈 변경은 전수로 돌아간다. 따라서 문서 전용 fast path는 기본 브랜치에도 적용된다. 전수 로컬 `localGate`·`jacocoRootCoverageVerification`은 유지하며, 릴리스는 대상 커밋의 required 성공과 릴리스 고유 증거를 확인한다. 주간 취약점 감사·부하·DR 검증은 각각의 별도 워크플로우와 격리 환경에서 실행한다.
 
@@ -117,10 +139,13 @@ shard가 현재 런타임에서도 균형이 맞는다는 뜻은 아니다.
 
 ### 재사용 프로필과 독립 이관 검증
 
-`reusable-base`는 core·collaboration·demo matrix에서 `node scripts/verify-reusable-base.mjs --profile <profile>`을
+`reusable-base`는 영향받는 core·collaboration·demo profile과 두 layout matrix에서 `node scripts/verify-reusable-base.mjs --profile <profile>`을
 실행한다. 각 호출은 새 격리 PostgreSQL과 DB·소스 번들을 생성하고 산출물의 거버넌스 무결성·활성 원장·
-Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 검사한다. 문서 전용 변경만 명시적으로 skip하며
-실패·취소·예상 밖 skip은 `backend-build` 집계에서 통과하지 않는다. 원본 제품 회귀 테스트는 기존 실행 경로에 남는다.
+Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 검사한다. pack 소유가 manifest로 증명된
+`business-app` 도메인과 프런트 제거 경로만 해당 pack을 포함하는 profile로 줄이고, 공용·미분류 입력은 6개
+matrix 전부로 돌아간다. core가 선택되면 custom composition의 두 layout은 `reusable-custom`에서 backend source
+완료 뒤 함께 실행한다. profile 여섯 개는 frontend production 완료 뒤 함께 입장한다. 문서 전용 변경은 둘 다 명시적으로 skip하며 실패·취소·예상 밖 skip은 `backend-build`의 독립
+집계에서 통과하지 않는다. 원본 제품 회귀 테스트는 기존 실행 경로에 남는다.
 
 로컬 진입점은 `npm run base:verify -- --profile core`이며 [생성 가이드](reusable-base-guide.md)를 따른다.
 개발·CI driver의 lock에는 `localDevelopmentBuild`를 남기므로 기술 검증 성공만으로 공식 릴리스 자산이 되지 않는다.
@@ -143,7 +168,9 @@ Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 �
 
 ### Gradle 설정
 
-`backend-scope`는 JDK 21과 `gradle/actions/setup-gradle`을 사용하며 action 참조는 workflow의 검증된 commit SHA로 고정한다. 캐시 옵션과 wrapper 다운로드 재시도는 [ci.yml](../../.github/workflows/ci.yml)의 `Setup Gradle`·`Provision Gradle distribution with bounded retry` 단계가 정본이다.
+`backend-scope`와 `backend-schema-scope`는 `change-scope` 직후 병렬로 시작한다. 전자는 Gradle cache writer로
+온라인 빌드·커버리지를, 후자는 읽기 전용 cache로 물리 PostgreSQL 검증을 담당한다. action 참조는 workflow의
+검증된 commit SHA로 고정한다. 캐시 옵션과 wrapper 다운로드 재시도는 [ci.yml](../../.github/workflows/ci.yml)이 정본이다.
 
 ### 실행 명령어
 
@@ -214,7 +241,7 @@ pnpm run test:coverage
 
 ### 생성 아티팩트
 
-`frontend-scope`는 `next-build-cache` artifact를 업로드하지 않는다. 해당 업로드는 소비자가 없고 유효한 빌드 재사용 효과도 없어 2026-09-01 제거됐다. Next production build·bundle budget·Vitest coverage 결과는 각 실행 로그에서 확인한다.
+`frontend-scope`는 `next-build-cache` artifact를 업로드하지 않는다. 해당 업로드는 소비자가 없고 유효한 빌드 재사용 효과도 없어 2026-09-01 제거됐다. Next production build·bundle budget은 `frontend-scope`, 전체 Vitest coverage는 `frontend-coverage-scope`에서 병렬 실행하고 안정 context `frontend-build`가 둘 다 성공해야 통과한다.
 
 ---
 

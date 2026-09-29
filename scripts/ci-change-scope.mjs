@@ -1,9 +1,41 @@
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const DEFAULT_REUSABLE_PROFILE_NAMES = ['core', 'collaboration', 'demo'];
+
+function loadReusableManifest() {
+  try {
+    const manifest = JSON.parse(readFileSync(
+      path.join(REPO_ROOT, 'config', 'reusable-base-profiles.json'),
+      'utf8',
+    ));
+    if (!manifest?.profiles || !manifest?.packs) return null;
+    return manifest;
+  } catch {
+    // Standalone exports intentionally do not carry the root profile catalog.
+    // Missing or unreadable ownership evidence must expand to every profile,
+    // never skip verification or make an independent artifact unusable.
+    return null;
+  }
+}
+
+const REUSABLE_MANIFEST = loadReusableManifest();
+const REUSABLE_PROFILE_NAMES = REUSABLE_MANIFEST
+  ? Object.keys(REUSABLE_MANIFEST.profiles)
+  : DEFAULT_REUSABLE_PROFILE_NAMES;
+
+function reusableMatrix(profileNames = REUSABLE_PROFILE_NAMES) {
+  return {
+    include: profileNames.flatMap(profile => [
+      { profile, layout: 'multi-module' },
+      { profile, layout: 'single-module' },
+    ]),
+  };
+}
 
 const DOCUMENTATION_ONLY = [
   /^(?:README|AGENTS|GEMINI|CLAUDE)\.md$/,
@@ -183,6 +215,44 @@ function isE2eRelevant(file) {
   return matchesAny(file, E2E_RELEVANT) || /^frontend\//.test(file);
 }
 
+function reusableProfilesForFile(file) {
+  if (isDocumentationOnly(file)) return [];
+  if (!REUSABLE_MANIFEST) return REUSABLE_PROFILE_NAMES;
+
+  // business-app pack domains are physically removed from profiles that do not
+  // include their owner pack. Common modules, support code and unclassified
+  // paths remain fail-closed to every profile.
+  const backendDomain = file.match(
+    /^business-app\/src\/(?:main|test)\/java\/nuri\/business\/(?:domain|service)\/([^/]+)\//,
+  )?.[1];
+  const backendPack = backendDomain && Object.entries(REUSABLE_MANIFEST.packs)
+    .find(([, pack]) => pack.backend?.appDomains?.includes(backendDomain))?.[0];
+
+  const frontendRelative = file.startsWith('frontend/') ? file.slice('frontend/'.length) : '';
+  const frontendPacks = frontendRelative
+    ? Object.entries(REUSABLE_MANIFEST.packs)
+      .filter(([, pack]) => pack.frontend?.removePaths?.some(
+        removed => frontendRelative === removed || frontendRelative.startsWith(`${removed}/`),
+      ))
+      .map(([packName]) => packName)
+    : [];
+
+  const ownerPacks = new Set([backendPack, ...frontendPacks].filter(Boolean));
+  if (ownerPacks.size === 0) return REUSABLE_PROFILE_NAMES;
+
+  return REUSABLE_PROFILE_NAMES.filter(profileName => {
+    const packs = new Set(REUSABLE_MANIFEST.profiles[profileName].packs);
+    return [...ownerPacks].some(pack => packs.has(pack));
+  });
+}
+
+function selectedReusableProfiles(files, { full, docsOnly }) {
+  if (full) return REUSABLE_PROFILE_NAMES;
+  if (docsOnly) return [];
+  const selected = new Set(files.flatMap(reusableProfilesForFile));
+  return REUSABLE_PROFILE_NAMES.filter(profile => selected.has(profile));
+}
+
 /**
  * Fail-closed CI scope classification.
  *
@@ -206,6 +276,8 @@ export function classifyChangedFiles(changedFiles, { forceFull = false } = {}) {
   const e2e = full || crossStack || files.some(isE2eRelevant);
   const mutation = full || files.some(file => matchesAny(file, MUTATION_RELEVANT));
   const mutationMigrationTool = full || files.some(isMigrationToolMutation);
+  const reusableProfiles = selectedReusableProfiles(files, { full, docsOnly });
+  const reusableCustom = reusableProfiles.includes('core');
 
   return {
     files,
@@ -222,6 +294,10 @@ export function classifyChangedFiles(changedFiles, { forceFull = false } = {}) {
     e2e,
     mutation,
     mutationMigrationTool,
+    reusable: reusableProfiles.length > 0,
+    reusableCustom,
+    reusableProfiles,
+    reusableMatrix: reusableMatrix(reusableProfiles.length > 0 ? reusableProfiles : undefined),
   };
 }
 
@@ -253,6 +329,9 @@ export function githubOutputs(result) {
     e2e: bool(result.e2e),
     mutation: bool(result.mutation),
     mutation_migration_tool: bool(result.mutationMigrationTool),
+    reusable: bool(result.reusable),
+    reusable_custom: bool(result.reusableCustom),
+    reusable_matrix: JSON.stringify(result.reusableMatrix),
     unknown_count: String(result.unknownFiles.length),
   };
 }

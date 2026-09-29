@@ -77,12 +77,43 @@ function assertProductMutationConcurrency(content) {
   const jobs = parseWorkflowJobs(content);
   const product = jobs.get('mutation-scope') ?? '';
   const migration = jobs.get('mutation-scope-migration') ?? '';
-  assert.deepEqual(product.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 3'],
-    'product PIT must reserve runner capacity with exactly three concurrent batches');
-  assert.equal([...product.matchAll(/^ {10}- scope: \S+$/gm)].length, 8, 'all eight product PIT batches must remain');
+  assert.deepEqual(product.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 4'],
+    'product PIT must reserve custom admission capacity with exactly four concurrent batches');
+  assert.equal([...product.matchAll(/^ {10}- scope: \S+$/gm)].length, 10, 'all ten product PIT batches must remain');
   for (const job of [product, migration]) assert.match(job, /^ {4}needs: \[change-scope\]$/m);
-  assert.doesNotMatch(migration, /^ {6}max-parallel:/m, 'migration keeps its independent concurrency');
-  assert.match(migration, /^ {10}- scope: migration-validate-verify$/m);
+  for (const scope of ['migration-transform-registry', 'migration-transform-converter', 'migration-validate', 'migration-verify']) {
+    assert.match(migration, new RegExp(`^ {10}- scope: ${scope}$`, 'm'));
+  }
+}
+
+function assertRunnerAdmissionControl(content) {
+  const jobs = parseWorkflowJobs(content);
+  for (const jobId of ['sast-scope', 'mutation-scope-migration']) {
+    const job = jobs.get(jobId) ?? '';
+    assert.deepEqual(job.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 1'],
+      `${jobId} must consume exactly one runner slot at a time`);
+  }
+  const reusable = jobs.get('reusable-base') ?? '';
+  assert.match(reusable, /^ {4}needs: \[change-scope, frontend-scope\]$/m,
+    'reusable-base must wait until frontend production releases its runner');
+  assert.match(reusable,
+    /^ {4}if: "!cancelled\(\) && needs\.change-scope\.result == 'success' && needs\.change-scope\.outputs\.reusable == 'true'"$/m,
+    'frontend failure or skip must not silently suppress selected reusable validation');
+  assert.equal(reusable.match(/^ {6}max-parallel:.*$/gm), null,
+    'all selected reusable profiles must start together once admitted');
+}
+
+function assertProductMutationLptOrder(content) {
+  const product = parseWorkflowJobs(content).get('mutation-scope') ?? '';
+  const scopes = [...product.matchAll(/^ {10}- scope: (\S+)$/gm)].map(match => match[1]);
+  assert.deepEqual(scopes.slice(0, 6), [
+    'business-app-board',
+    'business-core-file',
+    'business-app-workflow',
+    'business-app-delivery-operation',
+    'business-core-auth',
+    'business-core-code-user-common',
+  ], 'the measured longest PIT batches must enter the four-runner pool before short foundation batches');
 }
 
 const baselineRunner = 'node ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=full-suite e2e/quality/visual-baselines.spec.ts -g "Visual Regression Baseline" --update-snapshots';
@@ -453,11 +484,21 @@ test('stable backend and frontend contexts aggregate conditional source jobs fai
     const requiredJob = parseWorkflowJobs(ciContent).get(check.jobId);
     assert.ok(requiredJob);
     assert.match(requiredJob, /^    if: always\(\)$/m);
-    assert.deepEqual(check.needs, ['change-scope', sourceJobId, ...(scope === 'backend' ? ['migration-scope', 'reusable-base'] : [])]);
+    assert.deepEqual(check.needs, ['change-scope', sourceJobId,
+      ...(scope === 'backend'
+        ? ['backend-schema-scope', 'migration-scope', 'reusable-base', 'reusable-custom']
+        : ['frontend-coverage-scope'])]);
     const aggregate = Array.isArray(check.aggregate) ? check.aggregate[0] : check.aggregate;
     assert.equal(aggregate.sourceJobId, sourceJobId);
     assert.equal(aggregate.scopeExpression, `needs.change-scope.outputs.${scope}`);
     assert.equal(aggregate.resultExpression, `needs.${sourceJobId}.result`);
+    if (scope === 'frontend') {
+      assert.ok(Array.isArray(check.aggregate));
+      assert.equal(check.aggregate.length, 2);
+      assert.equal(check.aggregate[1].sourceJobId, 'frontend-coverage-scope');
+      assert.equal(check.aggregate[1].scopeExpression, 'needs.change-scope.outputs.frontend');
+      assert.equal(check.aggregate[1].resultExpression, 'needs.frontend-coverage-scope.result');
+    }
   }
 
   const detachedSource = mutateWorkflowJob(ciContent, 'backend-scope', block => block.replace(
@@ -474,15 +515,15 @@ test('stable backend and frontend contexts aggregate conditional source jobs fai
 
 test('E2E and PIT sources start after classification without waiting for independent builds', () => {
   assertProductMutationConcurrency(ciContent);
-  for (const replacement of ['', '      max-parallel: 2\n', '      max-parallel: 8\n', '      # max-parallel: 3\n']) {
+  for (const replacement of ['', '      max-parallel: 3\n', '      max-parallel: 8\n', '      # max-parallel: 4\n']) {
     const changed = mutateWorkflowJob(ciContent, 'mutation-scope',
-      block => block.replace('      max-parallel: 3\n', replacement));
+      block => block.replace('      max-parallel: 4\n', replacement));
     assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
-    assert.throws(() => assertProductMutationConcurrency(changed), /three concurrent batches/);
+    assert.throws(() => assertProductMutationConcurrency(changed), /four concurrent batches/);
   }
   const removedBatch = mutateWorkflowJob(ciContent, 'mutation-scope',
-    block => block.replace(/^ {10}- scope: business-app\n(?: {12}.+\n)+/m, ''));
-  assert.throws(() => assertProductMutationConcurrency(removedBatch), /all eight product PIT batches/);
+    block => block.replace(/^ {10}- scope: business-app-board\n(?: {12}.+\n)+/m, ''));
+  assert.throws(() => assertProductMutationConcurrency(removedBatch), /all ten product PIT batches/);
   const serializedMigration = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
     block => block.replace('    needs: [change-scope]', '    needs: [change-scope, mutation-scope]'));
   assert.throws(() => assertProductMutationConcurrency(serializedMigration));
@@ -561,11 +602,18 @@ test('main CI runs are never cancelled or replaced by a later main push', () => 
 
 test('backend required context binds independent migration verification fail closed', () => {
   const check = manifest.requiredChecks.find(check => check.context === 'backend-build');
-  assert.equal(check.aggregate.length, 2);
-  assert.equal(check.aggregate[1].sourceJobId, 'migration-scope');
-  assert.equal(check.aggregate[1].scopeExpression, 'needs.change-scope.outputs.migration');
+  assert.equal(check.aggregate.length, 5);
+  const migrationAggregate = check.aggregate.find(source => source.sourceJobId === 'migration-scope');
+  assert.equal(migrationAggregate.scopeExpression, 'needs.change-scope.outputs.migration');
+  assert.deepEqual(migrationAggregate.sourceNeeds, ['change-scope', 'migration-test-scope']);
+  assert.deepEqual(migrationAggregate.sourceEnv, {
+    MIGRATION_SHARD_EXECUTION_ROOT: 'build/migration-shards',
+  });
+  const migrationJob = parseWorkflowJobs(ciContent).get('migration-scope') ?? '';
+  assert.match(migrationJob, /^          persist-credentials: false\n          # verify\.mjs reruns the profile provenance contract after artifact download\.\n          fetch-depth: 0$/m);
   for (const mutate of [
-    block => block.replace("    if: needs.change-scope.outputs.migration == 'true'", '    if: false'),
+    block => block.replace(/^    if:.*$/m, '    if: false'),
+    block => block.replace('    needs: [change-scope, migration-test-scope]', '    needs: change-scope'),
     block => block.replace('node scripts/verify.mjs migration', 'echo skipped'),
     block => block.replace('    steps:', '    defaults:\n      run:\n        shell: echo {0}\n    steps:'),
     block => block.replace('        run: node scripts/verify.mjs migration', '        if: false\n        run: node scripts/verify.mjs migration'),
@@ -573,6 +621,20 @@ test('backend required context binds independent migration verification fail clo
     const changed = mutateWorkflowJob(ciContent, 'migration-scope', mutate);
     assert.ok(validateStaticContract({ manifest, ciContent: changed }).length);
   }
+  const shallowHistory = mutateWorkflowJob(ciContent, 'migration-scope',
+    block => block.replace('          fetch-depth: 0', '          fetch-depth: 1'));
+  assert.throws(() => assert.match(parseWorkflowJobs(shallowHistory).get('migration-scope') ?? '',
+    /^          persist-credentials: false\n          # verify\.mjs reruns the profile provenance contract after artifact download\.\n          fetch-depth: 0$/m));
+});
+
+test('product PIT uses measured longest-processing-time ordering without changing its population', () => {
+  assertProductMutationLptOrder(ciContent);
+  const weakened = ciContent
+    .replace('- scope: business-core-auth', '- scope: temporary-order-placeholder')
+    .replace('- scope: foundation-security-filter', '- scope: business-core-auth')
+    .replace('- scope: temporary-order-placeholder', '- scope: foundation-security-filter');
+  assert.notEqual(weakened, ciContent);
+  assert.throws(() => assertProductMutationLptOrder(weakened), /measured longest PIT batches/);
 });
 
 test('E2E builds and loads the cached local API image with no registry or upstream artifact dependency', () => {
@@ -593,7 +655,8 @@ test('E2E builds and loads the cached local API image with no registry or upstre
 test('backend and frontend hard build steps cannot be skipped or made advisory', () => {
   for (const [jobId, stepName] of [
     ['backend-scope', 'Build and Test with Gradle'],
-    ['frontend-scope', 'Build and Test'],
+    ['frontend-scope', 'Build production frontend'],
+    ['frontend-coverage-scope', 'Frontend unit and coverage suite'],
   ]) {
     for (const weakening of [
       '        if: false\n',
@@ -649,6 +712,10 @@ test('classifier, required, and source jobs must checkout the workflow commit wi
   assert.match(
     validateStaticContract({ manifest, ciContent: addRefOverride(ciContent, 'frontend-scope') }).join('\n'),
     /frontend-scope.*checkout.*ref/i,
+  );
+  assert.match(
+    validateStaticContract({ manifest, ciContent: addRefOverride(ciContent, 'frontend-coverage-scope') }).join('\n'),
+    /frontend-coverage-scope.*checkout.*ref/i,
   );
   assert.match(
     validateStaticContract({ manifest, ciContent: addRefOverride(ciContent, 'e2e-tests') }).join('\n'),
@@ -802,11 +869,89 @@ test('frontend heavy source starts independently from the backend heavy source',
   const frontendJob = ciContent.match(
     /^  frontend-scope:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
   )?.[0];
+  const coverageJob = ciContent.match(
+    /^  frontend-coverage-scope:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
+  )?.[0];
 
   assert.ok(frontendJob, 'frontend-scope job must exist');
+  assert.ok(coverageJob, 'frontend-coverage-scope job must exist');
   assert.match(frontendJob, /^    needs: change-scope$/m);
+  assert.match(coverageJob, /^    needs: change-scope$/m);
   assert.doesNotMatch(frontendJob, /^    needs:.*backend-scope/m,
     'frontend-scope consumes no backend artifact and must not be serialized behind backend-scope');
+  assert.doesNotMatch(coverageJob, /^    needs:.*(?:backend-scope|frontend-scope)/m,
+    'frontend coverage must run beside production build rather than after another heavy source');
+});
+
+test('physical schema validation runs in parallel and remains required by backend-build', () => {
+  const schemaJob = ciContent.match(
+    /^  backend-schema-scope:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
+  )?.[0];
+  const backendJob = ciContent.match(
+    /^  backend-scope:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
+  )?.[0];
+  const aggregateJob = ciContent.match(
+    /^  backend-build:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
+  )?.[0];
+
+  assert.ok(schemaJob, 'backend-schema-scope job must exist');
+  assert.ok(backendJob, 'backend-scope job must exist');
+  assert.ok(aggregateJob, 'backend-build job must exist');
+  assert.match(schemaJob, /^    needs: change-scope$/m);
+  assert.match(schemaJob, /^    if: needs\.change-scope\.outputs\.schema == 'true'$/m);
+  assert.match(schemaJob, /\.\/gradlew :api-server:schemaValidationTest --warning-mode fail --console=plain/);
+  assert.doesNotMatch(backendJob, /:api-server:schemaValidationTest/,
+    'schema validation must not remain serialized behind online tests');
+  assert.match(aggregateJob,
+    /^    needs: \[change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base, reusable-custom\]$/m);
+  assert.match(aggregateJob, /EXPECTED_WORK: \$\{\{ needs\.change-scope\.outputs\.schema \}\}/);
+  assert.match(aggregateJob, /SOURCE_RESULT: \$\{\{ needs\.backend-schema-scope\.result \}\}/);
+
+  const detached = aggregateJob.replace('needs.backend-schema-scope.result', 'needs.backend-scope.result');
+  assert.doesNotMatch(detached, /SOURCE_RESULT: \$\{\{ needs\.backend-schema-scope\.result \}\}/,
+    'negative proof: detaching the schema source must violate the required expression');
+});
+
+test('reusable-base consumes the fail-closed impacted profile matrix', () => {
+  const classifierJob = ciContent.match(
+    /^  change-scope:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
+  )?.[0];
+  const reusableJob = ciContent.match(
+    /^  reusable-base:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
+  )?.[0];
+  const customJob = ciContent.match(
+    /^  reusable-custom:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
+  )?.[0];
+  const aggregateJob = ciContent.match(
+    /^  backend-build:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
+  )?.[0];
+
+  assert.ok(classifierJob && reusableJob && customJob && aggregateJob);
+  assert.match(classifierJob, /reusable: \$\{\{ steps\.scope\.outputs\.reusable \}\}/);
+  assert.match(classifierJob, /reusable-matrix: \$\{\{ steps\.scope\.outputs\.reusable_matrix \}\}/);
+  assert.match(classifierJob, /reusable-custom: \$\{\{ steps\.scope\.outputs\.reusable_custom \}\}/);
+  assert.match(reusableJob, /^    needs: \[change-scope, frontend-scope\]$/m);
+  assert.match(reusableJob,
+    /^    if: "!cancelled\(\) && needs\.change-scope\.result == 'success' && needs\.change-scope\.outputs\.reusable == 'true'"$/m);
+  assert.doesNotMatch(reusableJob, /^      max-parallel:/m);
+  assert.match(reusableJob,
+    /^      matrix: \$\{\{ fromJSON\(needs\.change-scope\.outputs\['reusable-matrix'\]\) \}\}$/m);
+  assert.doesNotMatch(reusableJob, /verify-project-composer/);
+  assert.match(customJob, /^    needs: \[change-scope, backend-scope\]$/m);
+  assert.match(customJob,
+    /^    if: "!cancelled\(\) && needs\.change-scope\.result == 'success' && needs\.change-scope\.outputs\['reusable-custom'\] == 'true'"$/m);
+  assert.match(customJob, /^        layout: \[single-module, multi-module\]$/m);
+  assert.match(customJob, /^        run: node scripts\/verify-project-composer\.mjs --layout \$\{\{ matrix\.layout \}\}$/m);
+  assert.match(aggregateJob, /EXPECTED_WORK: \$\{\{ needs\.change-scope\.outputs\.reusable \}\}/);
+  assert.match(aggregateJob, /EXPECTED_WORK: \$\{\{ needs\.change-scope\.outputs\['reusable-custom'\] \}\}/);
+
+  const staticFullMatrix = reusableJob.replace(
+    "      matrix: ${{ fromJSON(needs.change-scope.outputs['reusable-matrix']) }}",
+    '      matrix:\n        profile: [core, collaboration, demo]\n        layout: [multi-module, single-module]',
+  );
+  assert.doesNotMatch(staticFullMatrix,
+    /matrix: \$\{\{ fromJSON\(needs\.change-scope\.outputs\['reusable-matrix'\]\) \}\}/,
+    'negative proof: replacing the impacted matrix with the old unconditional matrix must violate this contract');
 });
 
 test('Gradle verification commands fail on deprecation warnings', () => {
@@ -845,32 +990,58 @@ test('mutation jobs provision the Gradle distribution with a bounded retry befor
   assert.ok(provision >= 0 && provision < pit, 'Gradle distribution retry must run before the PIT hard gate');
 });
 
-test('only the measured migration validate/verify scope gets a bounded longer PIT job', () => {
+test('sharded PIT jobs keep the common bounded timeout', () => {
   assert.deepEqual(validateStaticContract({ manifest, ciContent }), []);
-  // 60분 표현식은 이관 전용 잡에만 있고, 제품 스코프 잡은 30분 고정이다(DEC-OPS-104).
-  const timeoutLine = "    timeout-minutes: ${{ matrix.scope == 'migration-validate-verify' && 60 || 30 }}";
-  const invalidTimeouts = [
-    '    timeout-minutes: 30',
-    '    timeout-minutes: 60',
-    timeoutLine.replace('migration-validate-verify', 'migration-transform'),
-    timeoutLine.replace('&& 60', '&& 90'),
-    timeoutLine.replace('|| 30', '|| 60'),
-    `    # ${timeoutLine.trim()}`,
-    `${timeoutLine}\n    timeout-minutes: 30`,
-  ];
-  // 제품 스코프 잡에 60분을 되돌려 주는 것도 red 다 — 그 잡에는 60분이 필요한 스코프가 없다.
-  const productTimeoutBack = mutateWorkflowJob(ciContent, 'mutation-scope',
-    block => block.replace('    timeout-minutes: 30', timeoutLine));
-  assert.match(validateStaticContract({ manifest, ciContent: productTimeoutBack }).join('\n'),
-    /mutation-scope timeout must be exactly 30/i);
-  for (const replacement of invalidTimeouts) {
-    // 변형 대상은 이관 전용 잡이다 — 60분 표현식이 사는 유일한 자리다.
-    const changed = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
-      block => block.replace(timeoutLine, replacement));
-    assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'), 'negative fixture must change the job');
-    assert.match(validateStaticContract({ manifest, ciContent: changed }).join('\n'),
-      /mutation-scope-migration timeout/);
+  for (const jobId of ['mutation-scope', 'mutation-scope-migration']) {
+    for (const replacement of ['    timeout-minutes: 60', '    timeout-minutes: 15', '    # timeout-minutes: 30']) {
+      const changed = mutateWorkflowJob(ciContent, jobId,
+        block => block.replace('    timeout-minutes: 30', replacement));
+      assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'), 'negative fixture must change the job');
+      assert.match(validateStaticContract({ manifest, ciContent: changed }).join('\n'),
+        new RegExp(`${jobId} timeout`, 'i'));
+    }
   }
+});
+
+test('short noncritical matrices reserve runner capacity without dropping validation', () => {
+  assertRunnerAdmissionControl(ciContent);
+  for (const jobId of ['sast-scope', 'mutation-scope-migration']) {
+    for (const replacement of ['', '      max-parallel: 2\n', '      # max-parallel: 1\n']) {
+      const changed = mutateWorkflowJob(ciContent, jobId,
+        block => block.replace('      max-parallel: 1\n', replacement));
+      assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
+      assert.throws(() => assertRunnerAdmissionControl(changed), /one runner slot/);
+    }
+  }
+  for (const replacement of [
+    '    needs: change-scope',
+    '    needs: [change-scope, backend-scope]',
+    '    # needs: [change-scope, frontend-scope]',
+  ]) {
+    const changed = mutateWorkflowJob(ciContent, 'reusable-base',
+      block => block.replace('    needs: [change-scope, frontend-scope]', replacement));
+    assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
+    assert.throws(() => assertRunnerAdmissionControl(changed), /frontend production/);
+  }
+  for (const replacement of [
+    "    if: needs.change-scope.outputs.reusable == 'true'",
+    "    if: \"!cancelled() && needs.change-scope.outputs.reusable == 'true'\"",
+    "    if: \"!cancelled() && needs.change-scope.result == 'success'\"",
+    "    if: \"always() && needs.change-scope.result == 'success' && needs.change-scope.outputs.reusable == 'true'\"",
+  ]) {
+    const changed = mutateWorkflowJob(ciContent, 'reusable-base', block => block.replace(
+      "    if: \"!cancelled() && needs.change-scope.result == 'success' && needs.change-scope.outputs.reusable == 'true'\"",
+      replacement,
+    ));
+    assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
+    assert.throws(() => assertRunnerAdmissionControl(changed), /silently suppress/);
+  }
+  const throttled = mutateWorkflowJob(ciContent, 'reusable-base', block => block.replace(
+    '    strategy:\n',
+    '    strategy:\n      max-parallel: 5\n',
+  ));
+  assert.notEqual(throttled, ciContent.replace(/\r\n/g, '\n'));
+  assert.throws(() => assertRunnerAdmissionControl(throttled), /start together/);
 });
 
 // [2026-08-16 신설] 훅 전용이던 검증을 CI 로 미러링하면서, 그 스텝이 조용히 사라지지
@@ -996,15 +1167,15 @@ test('every Gradle setup rejects unreviewed cache clients, providers and writer 
       checked += 1;
     }
   }
-  assert.equal(checked, 8, 'all producer Gradle cache callers must be covered');
+  assert.equal(checked, 11, 'all producer Gradle cache callers must be covered');
 });
 
 test('cache writer election remains tied to selected backend and migration jobs', () => {
   const normalizedCi = ciContent.replace(/\r\n/g, '\n');
   const workflow = { path: '.github/workflows/ci.yml', content: normalizedCi };
   assert.deepEqual(validatePinnedWorkflowUses([workflow]), []);
-  for (const [jobId, readOnly] of [['backend-scope', 'true'], ['migration-scope', 'false'],
-    ['reusable-base', 'false'], ['mutation-scope', 'false'], ['mutation-scope-migration', 'false']]) {
+  for (const [jobId, readOnly] of [['backend-scope', 'true'], ['backend-schema-scope', 'false'], ['migration-test-scope', 'true'], ['migration-scope', 'false'],
+    ['reusable-base', 'false'], ['reusable-custom', 'false'], ['mutation-scope', 'false'], ['mutation-scope-migration', 'false']]) {
     const changed = mutateWorkflowJob(normalizedCi, jobId, block => block.replace(/cache-read-only:[^\n]*/, `cache-read-only: ${readOnly}`));
     assert.notEqual(changed, normalizedCi);
     assert.match(validatePinnedWorkflowUses([{ ...workflow, content: changed }]).join('\n'), /cache-read-only/);
@@ -1020,8 +1191,8 @@ test('cache writer election remains tied to selected backend and migration jobs'
       assert.notDeepEqual(validateStaticContract({ manifest, ciContent: changed }), []);
     }
   }
-  const openOnMissingOutput = normalizedCi.replace("cache-read-only: ${{ needs.change-scope.outputs.backend != 'false' }}",
-    "cache-read-only: ${{ needs.change-scope.outputs.backend == 'true' }}");
+  const openOnMissingOutput = normalizedCi.replace("cache-read-only: ${{ needs.change-scope.outputs.backend != 'false' || strategy.job-index != 0 }}",
+    "cache-read-only: ${{ needs.change-scope.outputs.backend == 'true' || strategy.job-index != 0 }}");
   assert.notEqual(openOnMissingOutput, normalizedCi);
   assert.match(validatePinnedWorkflowUses([{ ...workflow, content: openOnMissingOutput }]).join('\n'), /cache-read-only/);
   for (const mutate of [
@@ -1035,6 +1206,45 @@ test('cache writer election remains tied to selected backend and migration jobs'
   }
   const duplicated = `${normalizedCi}\n  unexpected-cache-writer:\n    steps:\n      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb\n        with:\n          cache-provider: basic\n          cache-read-only: false\n`;
   assert.match(validatePinnedWorkflowUses([{ ...workflow, content: duplicated }]).join('\n'), /no reviewed writer policy/);
+});
+
+function assertMigrationTestShards(source) {
+  const job = parseWorkflowJobs(source).get('migration-test-scope') ?? '';
+  assert.match(job, /^    needs: change-scope$/m);
+  assert.match(job, /^    if: needs\.change-scope\.outputs\.migration == 'true'$/m);
+  assert.match(job, /^    timeout-minutes: 30$/m);
+  assert.match(job, /^      fail-fast: false$/m);
+  assert.match(job, /^        shard: \[1\/3, 2\/3, 3\/3\]$/m);
+  assert.match(job, /^          persist-credentials: false\n          # The measured duration profile is bound to its historical source commit\.\n          fetch-depth: 0$/m);
+  assert.match(job, /^        run: node --test scripts\/migration-verification-contract\.test\.mjs$/m);
+  assert.match(job, /^        run: node scripts\/migration-test-shard\.mjs --shard "\$\{\{ matrix\.shard \}\}"$/m);
+  assert.match(job, /^        if: always\(\)\n        uses: actions\/upload-artifact@[a-f0-9]{40}(?:\s+#.*)?$/m);
+  for (const evidence of [
+    'migration-tool/build/jacoco/test.exec',
+    'migration-tool/build/test-results/test/**/*.xml',
+    'migration-tool/build/migration-shard-manifest.json',
+  ]) assert.ok(job.includes(evidence));
+  assert.match(job, /^          if-no-files-found: error$/m);
+}
+
+test('migration test matrix is an exact three-way population with fail-closed evidence', () => {
+  assertMigrationTestShards(ciContent);
+  for (const [before, after] of [
+    ['shard: [1/3, 2/3, 3/3]', 'shard: [1/3, 2/3]'],
+    ['fail-fast: false', 'fail-fast: true'],
+    ['          fetch-depth: 0', '          fetch-depth: 1'],
+    ['node --test scripts/migration-verification-contract.test.mjs', 'echo skipped'],
+    ['node scripts/migration-test-shard.mjs --shard "${{ matrix.shard }}"', 'echo skipped'],
+    ['        if: always()\n        uses: actions/upload-artifact@', '        uses: actions/upload-artifact@'],
+    ['migration-tool/build/jacoco/test.exec', 'migration-tool/build/jacoco/missing.exec'],
+    ['migration-tool/build/test-results/test/**/*.xml', 'migration-tool/build/test-results/missing/*.xml'],
+    ['migration-tool/build/migration-shard-manifest.json', 'migration-tool/build/missing.json'],
+    ['if-no-files-found: error', 'if-no-files-found: ignore'],
+  ]) {
+    const changed = mutateWorkflowJob(ciContent, 'migration-test-scope', block => block.replace(before, after));
+    assert.notEqual(changed, ciContent);
+    assert.throws(() => assertMigrationTestShards(changed));
+  }
 });
 
 test('frontend heavy source type-checks the e2e sources excluded from the root tsconfig', () => {
@@ -1070,10 +1280,17 @@ test('change classification is fail-closed and its contract runs in the required
   assert.match(classifierJob, /node scripts\/ci-change-scope\.mjs/);
   assert.match(classifierJob, /Unknown or empty|unknown range|unknown means full pipeline/i);
   assert.ok(secretScanJob, 'secret-scan job must exist');
-  assert.match(secretScanJob, /^    needs: change-scope$/m);
+  assert.match(secretScanJob, /^    needs: \[change-scope\]$/m);
   assert.match(secretScanJob, /^    if: always\(\)$/m);
   assert.match(secretScanJob, /needs\.change-scope\.result.*!=.*success[\s\S]*?exit 1/);
   assert.match(secretScanJob, /npm run test:operational-contracts/);
+
+  const detachedAdmission = mutateWorkflowJob(ciContent, 'secret-scan', block => block.replace(
+    '    needs: [change-scope]',
+    '    needs: []',
+  ));
+  assert.match(validateStaticContract({ manifest, ciContent: detachedAdmission }).join('\n'),
+    /secret-scan.*needs/i);
 });
 
 // [2026-08-31 개정] Atlas 계약을 포함한 크로스 스택 계약(frontend/src/__tests__/cross-stack)은

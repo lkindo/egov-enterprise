@@ -268,7 +268,7 @@ export function validateCriticalMutationTargets(scopes) {
       'nuri.business.security.iam.EgovAuthenticationProvider',
       'nuri.business.security.filter.RateLimitFilter',
     ],
-    'business-app': ['nuri.business.service.survey.SurveyResultService'],
+    'business-app-delivery-operation': ['nuri.business.service.survey.SurveyResultService'],
   };
   return Object.entries(required).flatMap(([scope, targets]) => {
     const entry = scopes.find(candidate => candidate?.scope === scope);
@@ -281,11 +281,11 @@ export function validateCriticalMutationTargets(scopes) {
 function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel) {
   const expected = selector.matrixScopes;
   if (!Array.isArray(expected)) {
-    errors.push(`${setLabel}: PIT matrix catalog must contain exactly 10 scopes`);
+    errors.push(`${setLabel}: PIT matrix catalog must contain exactly 14 scopes`);
     return;
   }
-  if (expected.length !== 10) {
-    errors.push(`${setLabel}: PIT matrix catalog must contain exactly 10 scopes`);
+  if (expected.length !== 14) {
+    errors.push(`${setLabel}: PIT matrix catalog must contain exactly 14 scopes`);
   }
   errors.push(...validateCriticalMutationTargets(expected).map(error => `${setLabel}: ${error}`));
 

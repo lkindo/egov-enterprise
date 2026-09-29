@@ -99,7 +99,7 @@
           "tiers": [
             "ci"
           ],
-          "job": "frontend-scope"
+          "job": "frontend-coverage-scope"
         }
       ]
     },
@@ -689,8 +689,7 @@
             "tiers": [
               "ci"
             ],
-            "job": "backend-scope",
-            "conditional": true
+            "job": "backend-schema-scope"
           }
         ]
       },
@@ -1159,7 +1158,7 @@
             "tiers": [
               "ci"
             ],
-            "job": "frontend-scope"
+            "job": "frontend-coverage-scope"
           }
         ]
       },
@@ -1371,7 +1370,7 @@
             "tiers": [
               "ci"
             ],
-            "job": "frontend-scope"
+            "job": "frontend-coverage-scope"
           }
         ]
       },
@@ -1542,10 +1541,24 @@
         },
         "matrixScopes": [
           {
-            "scope": "business-app",
+            "scope": "business-app-board",
             "job": "mutation-scope",
             "gradle": ":business-app:pitest",
-            "classes": "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.informalsanction.*,nuri.business.service.comment.*,nuri.business.service.isg.*,nuri.business.service.operation.*,nuri.business.service.survey.SurveyResultService",
+            "classes": "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.comment.*",
+            "tests": "nuri.business.*"
+          },
+          {
+            "scope": "business-app-workflow",
+            "job": "mutation-scope",
+            "gradle": ":business-app:pitest",
+            "classes": "nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.informalsanction.*",
+            "tests": "nuri.business.*"
+          },
+          {
+            "scope": "business-app-delivery-operation",
+            "job": "mutation-scope",
+            "gradle": ":business-app:pitest",
+            "classes": "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.isg.*,nuri.business.service.operation.*,nuri.business.service.survey.SurveyResultService",
             "tests": "nuri.business.*"
           },
           {
@@ -1584,18 +1597,32 @@
             "tests": "nuri.foundation.*"
           },
           {
-            "scope": "migration-transform",
+            "scope": "migration-transform-registry",
             "job": "mutation-scope-migration",
             "gradle": ":migration-tool:pitest",
-            "classes": "nuri.migration.transform.*",
-            "tests": "nuri.migration.*"
+            "classes": "nuri.migration.transform.TransformerRegistry",
+            "tests": "nuri.migration.transform.TransformerRegistryTest,nuri.migration.artifact.MigrationExecutionContractTest"
           },
           {
-            "scope": "migration-validate-verify",
+            "scope": "migration-transform-converter",
             "job": "mutation-scope-migration",
             "gradle": ":migration-tool:pitest",
-            "classes": "nuri.migration.validate.*,nuri.migration.verify.*",
-            "tests": "nuri.migration.*"
+            "classes": "nuri.migration.transform.TypeConverter",
+            "tests": "nuri.migration.transform.TypeConverterTest,nuri.migration.MigrationSafetyIntegrationTest"
+          },
+          {
+            "scope": "migration-validate",
+            "job": "mutation-scope-migration",
+            "gradle": ":migration-tool:pitest",
+            "classes": "nuri.migration.validate.*",
+            "tests": "nuri.migration.validate.MappingValidatorTest,nuri.migration.validate.MappingValidatorTypedIdentityTest,nuri.migration.MigrationPipelineTest"
+          },
+          {
+            "scope": "migration-verify",
+            "job": "mutation-scope-migration",
+            "gradle": ":migration-tool:pitest",
+            "classes": "nuri.migration.verify.*",
+            "tests": "nuri.migration.verify.MigrationVerifierTest,nuri.migration.verify.MigrationVerifierTypedIdentityTest,nuri.migration.MigrationSafetyIntegrationTest"
           },
           {
             "scope": "business-core-auth",

@@ -355,8 +355,12 @@ class WorkflowManifestLinterTest {
                 new String[]{"coverageScopeClasses([p]).every { it.isEmpty() }", "false"},
                 new String[]{"def jacocoOnlineExecutionData = coverageScopeData(onlineCoverageProjects)",
                         "def jacocoOnlineExecutionData = jacocoAggregateExecutionData"},
-                new String[]{"def jacocoMigrationExecutionData = coverageScopeData(migrationCoverageProjects)",
+                new String[]{"? jacocoMigrationShardExecutionData : coverageScopeData(migrationCoverageProjects)",
                         "def jacocoMigrationExecutionData = jacocoAggregateExecutionData"},
+                new String[]{"def migrationShardExecutionRoot = providers.gradleProperty('migrationShardExecutionRoot')",
+                        "def migrationShardExecutionRoot = providers.gradleProperty('unreviewedRoot')"},
+                new String[]{"if (data.size() != 3)", "if (false)"},
+                new String[]{"!file.isFile() || file.length() == 0", "false"},
                 new String[]{"executionData.setFrom(jacocoOnlineExecutionData)", "// omitted online execution data"},
                 new String[]{"classDirectories.setFrom(jacocoMigrationClassDirectories)", "// omitted migration classes"},
                 new String[]{"dependsOn tasks.named('jacocoMigrationReport')", "// omitted migration report"})) {
@@ -390,17 +394,30 @@ class WorkflowManifestLinterTest {
                 "dependsOn onlineCoverageProjects.collect { p -> p.tasks.named('build') }")) {
             if (!gradle.contains(fragment)) violations.add("분리 coverage 입력/실행 계약 누락: " + fragment);
         }
-        for (String scope : List.of("Online", "Migration")) {
-            String projects = scope.toLowerCase(java.util.Locale.ROOT) + "CoverageProjects";
-            for (String fragment : List.of(
-                    "def jacoco" + scope + "ClassDirectories = coverageScopeClasses(" + projects + ")",
-                    "def jacoco" + scope + "ExecutionData = coverageScopeData(" + projects + ")",
-                    "registerCoverageScopeReport('jacoco" + scope + "Report', " + projects + ",",
-                    "dependsOn tasks.named('jacoco" + scope + "Report')",
-                    "classDirectories.setFrom(jacoco" + scope + "ClassDirectories)",
-                    "executionData.setFrom(jacoco" + scope + "ExecutionData)")) {
-                if (!gradle.contains(fragment)) violations.add(scope + " coverage 바인딩 누락: " + fragment);
-            }
+        for (String fragment : List.of(
+                "def jacocoOnlineClassDirectories = coverageScopeClasses(onlineCoverageProjects)",
+                "def jacocoOnlineExecutionData = coverageScopeData(onlineCoverageProjects)",
+                "registerCoverageScopeReport('jacocoOnlineReport', onlineCoverageProjects,",
+                "dependsOn tasks.named('jacocoOnlineReport')",
+                "classDirectories.setFrom(jacocoOnlineClassDirectories)",
+                "executionData.setFrom(jacocoOnlineExecutionData)")) {
+            if (!gradle.contains(fragment)) violations.add("Online coverage 바인딩 누락: " + fragment);
+        }
+        for (String fragment : List.of(
+                "def jacocoMigrationClassDirectories = coverageScopeClasses(migrationCoverageProjects)",
+                "def migrationShardExecutionRoot = providers.gradleProperty('migrationShardExecutionRoot')",
+                "def migrationShardedCoverage = migrationShardExecutionRoot.isPresent()",
+                "include: '**/*.exec'",
+                "? jacocoMigrationShardExecutionData : coverageScopeData(migrationCoverageProjects)",
+                "acceptsMigrationShards && migrationShardedCoverage",
+                "dependsOn projects.collect { p -> p.tasks.named('classes') }",
+                "if (data.size() != 3)",
+                "!file.isFile() || file.length() == 0",
+                "registerCoverageScopeReport('jacocoMigrationReport', migrationCoverageProjects,",
+                "dependsOn tasks.named('jacocoMigrationReport')",
+                "classDirectories.setFrom(jacocoMigrationClassDirectories)",
+                "executionData.setFrom(jacocoMigrationExecutionData)")) {
+            if (!gradle.contains(fragment)) violations.add("Migration coverage 바인딩 누락: " + fragment);
         }
         return violations;
     }

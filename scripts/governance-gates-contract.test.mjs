@@ -667,7 +667,7 @@ test('PIT remains bound to the strict source matrix and stable aggregate context
   assert.match(validate(registry).join('\n'), /ghost required-check aggregate selector.*mutation-test/i);
 });
 
-test('PIT registry and CI keep the same exact ten-scope matrix catalog', () => {
+test('PIT registry and CI keep the same exact fourteen-scope matrix catalog', () => {
   const registry = loadGovernanceRegistry(registryPath);
   const pit = registry.gateSets.find(({ id }) => id === 'GATESET-PIT-MUTATION-AGGREGATE');
   // 스코프는 두 잡에 나뉘어 산다(DEC-OPS-104) — union 이 원장과 정확히 같아야 한다.
@@ -677,7 +677,7 @@ test('PIT registry and CI keep the same exact ten-scope matrix catalog', () => {
 
   assert.deepEqual(product.errors, []);
   assert.deepEqual(migration.errors, []);
-  assert.equal(pit.selector.matrixScopes.length, 10);
+  assert.equal(pit.selector.matrixScopes.length, 14);
   assert.deepEqual(pit.selector.sourceJobIds, ['mutation-scope', 'mutation-scope-migration']);
   const byScope = (a, b) => a.scope.localeCompare(b.scope);
   const declared = pit.selector.matrixScopes.map(({ job, ...rest }) => rest).sort(byScope);
@@ -706,7 +706,7 @@ test('PIT critical security targets cannot disappear by narrowing both matching 
   const survey = 'nuri.business.service.survey.SurveyResultService';
   const scope = classes => [
     { scope: 'business-core-auth', classes: classes.join(',') },
-    { scope: 'business-app', classes: survey },
+    { scope: 'business-app-delivery-operation', classes: survey },
   ];
   assert.deepEqual(validateCriticalMutationTargets(scope([...retained, ...added])), []);
   for (const missing of added) {
@@ -718,7 +718,7 @@ test('PIT critical security targets cannot disappear by narrowing both matching 
   const missingSurvey = scope([...retained, ...added]);
   missingSurvey[1].classes = 'nuri.business.service.mail.*';
   assert.deepEqual(validateCriticalMutationTargets(missingSurvey), [
-    `PIT business-app is missing critical target '${survey}'`,
+    `PIT business-app-delivery-operation is missing critical target '${survey}'`,
   ]);
   assert.equal(validateCriticalMutationTargets([]).length, added.length + 1);
 
@@ -737,7 +737,7 @@ test('a PIT scope declared under the wrong job is rejected', () => {
   // [DEC-OPS-104] 태그만 바꾸면 그 스코프가 다른 잡에서 도는 것처럼 보인다 — 조건이 달라 실행 시점이 바뀐다.
   const registry = clone(loadGovernanceRegistry(registryPath));
   const pit = registry.gateSets.find(({ id }) => id === 'GATESET-PIT-MUTATION-AGGREGATE');
-  const entry = pit.selector.matrixScopes.find(({ scope }) => scope === 'migration-validate-verify');
+  const entry = pit.selector.matrixScopes.find(({ scope }) => scope === 'migration-validate');
   entry.job = 'mutation-scope';
 
   assert.match(validate(registry).join('\n'), /is declared under .mutation-scope. but runs in/i);
@@ -749,7 +749,7 @@ test('deleting a PIT scope is rejected in both the fixed catalog size and CI com
   const [removed] = pit.selector.matrixScopes.splice(3, 1);
   const errors = validate(registry).join('\n');
 
-  assert.match(errors, /PIT matrix catalog must contain exactly 10 scopes/i);
+  assert.match(errors, /PIT matrix catalog must contain exactly 14 scopes/i);
   assert.match(errors, new RegExp(`unregistered CI mutation matrix scope '${removed.scope}'`, 'i'));
 });
 
@@ -758,7 +758,7 @@ test('duplicating a PIT scope is rejected instead of silently overwriting it', (
   const pit = registry.gateSets.find(({ id }) => id === 'GATESET-PIT-MUTATION-AGGREGATE');
   pit.selector.matrixScopes.push(clone(pit.selector.matrixScopes[0]));
 
-  assert.match(validate(registry).join('\n'), /duplicate PIT matrix scope 'business-app'/i);
+  assert.match(validate(registry).join('\n'), /duplicate PIT matrix scope 'business-app-board'/i);
 });
 
 test('narrowing any PIT scope field is rejected against the CI matrix', () => {

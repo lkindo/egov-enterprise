@@ -1,8 +1,21 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 import { runInNewContext } from 'node:vm';
 
+import {
+  buildMigrationShardPlan,
+  discoverMigrationTestClasses,
+  loadMigrationDurationProfile,
+  migrationShardGradleArguments,
+  parseShard,
+  validateMigrationDurationProfile,
+  verifyMigrationShardArtifacts,
+  verifyMigrationShardResults,
+} from './migration-test-shard.mjs';
 import { parseWorkflowJobs } from './required-checks-contract.mjs';
 
 const runner = readFileSync(new URL('./verify.mjs', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
@@ -14,6 +27,7 @@ const workflow = readFileSync(new URL('../.github/workflows/migration-tool.yml',
 const moduleBuild = readFileSync(new URL('../migration-tool/build.gradle', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 const contractCommand = 'node --test scripts/migration-verification-contract.test.mjs';
 const moduleTasks = ':migration-tool:compileJava :migration-tool:compileTestJava :migration-tool:test :migration-tool:bootJar jacocoMigrationCoverageVerification';
+const shardedModuleTasks = ':migration-tool:compileJava :migration-tool:bootJar jacocoMigrationCoverageVerification -PmigrationShardExecutionRoot=build/migration-shards';
 const gradleOptions = '--no-daemon --warning-mode fail --console=plain -Dfile.encoding=UTF-8';
 const standaloneProduct = existsSync(new URL('../migration-product-lock.json', import.meta.url));
 
@@ -25,11 +39,14 @@ const childOnlyTests = [
   'nuri.migration.MariaDbPackagedCliIntegrationTest',
   'nuri.migration.EtlSqlServerCrashRecoveryIntegrationTest',
   'nuri.migration.SqlServerPackagedCliIntegrationTest',
+  'nuri.migration.EtlOracleCrashRecoveryIntegrationTest',
   'nuri.migration.OraclePackagedCliIntegrationTest',
 ];
 const childOnlyScopes = [
-  ['nuri.migration.transform.*'],
-  ['nuri.migration.validate.*', 'nuri.migration.verify.*'],
+  ['nuri.migration.transform.TransformerRegistry'],
+  ['nuri.migration.transform.TypeConverter'],
+  ['nuri.migration.validate.*'],
+  ['nuri.migration.verify.*'],
 ];
 const ordinaryDrillConfiguration = `
 tasks.named('test', Test) {
@@ -160,7 +177,7 @@ function validateDrillBuild(source) {
 
 // Execute the actual dispatch and helper calls while replacing only process I/O.
 // A command in a comment, an uncalled helper, or a different scope cannot count.
-function observeMigrationCommands(source, os, failCommand) {
+function observeMigrationCommands(source, os, failCommand, extraEnv = {}) {
   const commands = [];
   const exits = [];
   const executable = source.replace(/^import [^\r\n]+ from 'node:[^']+';\r?$/gm, '');
@@ -173,12 +190,24 @@ function observeMigrationCommands(source, os, failCommand) {
     randomBytes: () => { throw new Error('frontend build environment must not run'); },
     process: {
       argv: ['node', 'scripts/verify.mjs', 'migration'],
-      env: {},
+      env: extraEnv,
       exit: (code) => exits.push(code),
     },
     console: { log() {}, warn() {}, error() {} },
   }, { timeout: 1000 });
   return { commands, exits };
+}
+
+function validateShardedRunner(source, os = 'linux') {
+  const expectedGradlew = os === 'win32' ? '.\\gradlew.bat' : './gradlew';
+  const { commands, exits } = observeMigrationCommands(source, os, undefined, {
+    MIGRATION_SHARD_EXECUTION_ROOT: 'build/migration-shards',
+  });
+  return JSON.stringify(commands) === JSON.stringify([
+    contractCommand,
+    'node scripts/migration-test-shard.mjs --verify-artifacts build/migration-shards',
+    `${expectedGradlew} ${shardedModuleTasks} ${gradleOptions}`,
+  ]) && exits.length === 0 ? [] : ['sharded migration execution must verify the exact artifacts before merged coverage'];
 }
 
 function validateRunner(source, os = 'linux') {
@@ -259,10 +288,74 @@ function validateWorkflow(source) {
 test('migration scope executes only its independent contracts and module tasks on Windows and Linux', () => {
   assert.deepEqual(validateRunner(runner, 'win32'), []);
   assert.deepEqual(validateRunner(runner, 'linux'), []);
+  assert.deepEqual(validateShardedRunner(runner, 'win32'), []);
+  assert.deepEqual(validateShardedRunner(runner, 'linux'), []);
   assert.doesNotMatch(moduleBuild, /\b(?:api|implementation|testImplementation)\s+project\(/);
 });
 
-test('child-only PIT probes are excluded only from the two exact CI target scopes while ordinary Test retains them', () => {
+test('migration duration profile exactly covers source tests and produces three balanced disjoint shards', () => {
+  const profile = loadMigrationDurationProfile();
+  const classes = discoverMigrationTestClasses();
+  assert.deepEqual(validateMigrationDurationProfile(profile, classes), []);
+  assert.equal(classes.length, 123);
+  const plan = buildMigrationShardPlan(profile, classes);
+  assert.equal(plan.length, 3);
+  assert.deepEqual(plan.flatMap(({ classes: selected }) => selected).sort(), classes);
+  assert.equal(new Set(plan.flatMap(({ classes: selected }) => selected)).size, classes.length);
+  assert.ok(Math.max(...plan.map(({ durationMs }) => durationMs)) - Math.min(...plan.map(({ durationMs }) => durationMs)) <= 1);
+  for (const shard of plan) {
+    const args = migrationShardGradleArguments(shard.shard, profile, classes);
+    const selected = args.flatMap((value, index) => args[index - 1] === '--tests' ? [value] : []);
+    assert.deepEqual(selected, shard.classes);
+  }
+  assert.throws(() => parseShard('1/2', 3), /invalid migration shard/);
+  execFileSync('git', ['cat-file', '-e', `${profile.source.commit}^{commit}`]);
+  execFileSync('git', ['merge-base', '--is-ancestor', profile.source.commit, 'HEAD']);
+});
+
+test('migration shard profile and evidence drift are reproducible reds', (t) => {
+  const profile = loadMigrationDurationProfile();
+  const classes = discoverMigrationTestClasses();
+  const missing = structuredClone(profile);
+  delete missing.durationsMs[classes[0]];
+  assert.match(validateMigrationDurationProfile(missing, classes).join('\n'), /missing test classes/);
+  const stale = structuredClone(profile);
+  stale.durationsMs['nuri.migration.StaleTest'] = 1;
+  assert.match(validateMigrationDurationProfile(stale, classes).join('\n'), /stale test classes/);
+  const invalid = structuredClone(profile);
+  invalid.durationsMs[classes[0]] = 0;
+  assert.match(validateMigrationDurationProfile(invalid, classes).join('\n'), /positive integer/);
+
+  const root = mkdtempSync(join(tmpdir(), 'migration-shards-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const plan = buildMigrationShardPlan(profile, classes);
+  for (const [index, shard] of plan.entries()) {
+    const buildRoot = join(root, `migration-test-shard-${index}`, 'migration-tool', 'build');
+    const resultRoot = join(buildRoot, 'test-results', 'test');
+    mkdirSync(join(buildRoot, 'jacoco'), { recursive: true });
+    mkdirSync(resultRoot, { recursive: true });
+    writeFileSync(join(buildRoot, 'jacoco', 'test.exec'), `exec-${index}`);
+    for (const className of shard.classes) {
+      writeFileSync(join(resultRoot, `TEST-${className}.xml`), '<testsuite/>');
+    }
+    writeFileSync(join(buildRoot, 'migration-shard-manifest.json'), JSON.stringify({
+      schemaVersion: 1, shard: shard.shard, profileCommit: profile.source.commit, classes: shard.classes,
+    }));
+  }
+  assert.deepEqual(verifyMigrationShardArtifacts(root, profile, classes), []);
+  writeFileSync(join(root, 'migration-test-shard-0', 'migration-tool', 'build', 'jacoco', 'test.exec'), '');
+  assert.match(verifyMigrationShardArtifacts(root, profile, classes).join('\n'), /empty JaCoCo exec|no nonempty bound/);
+
+  const results = join(root, 'results');
+  mkdirSync(results);
+  const selected = plan[0].classes.slice(0, 2);
+  selected.forEach((className) => writeFileSync(join(results, `TEST-${className}.xml`), '<testsuite/>'));
+  assert.deepEqual(verifyMigrationShardResults(selected, results), selected);
+  writeFileSync(join(results, 'TEST-nuri.migration.UnexpectedTest.xml'), '<testsuite/>');
+  assert.throws(() => verifyMigrationShardResults(selected, results), /result census mismatch/);
+});
+
+test('child-only PIT probes are excluded only from the four exact CI target scopes while ordinary Test retains them', () => {
   assert.deepEqual(validateDrillBuild(moduleBuild), []);
   assert.deepEqual(validateDrillBuild(moduleBuild.replace(/\n/g, '\r\n')), []);
   assert.deepEqual(validateRunner(runner, 'win32'), []);
@@ -270,14 +363,14 @@ test('child-only PIT probes are excluded only from the two exact CI target scope
   assert.deepEqual(validateWorkflow(workflow), []);
 });
 
-test('broad PIT exclusions, excluded Oracle engine probes, and ordinary Test filters turn red', () => {
+test('broad PIT exclusions, unregistered engine probes, and ordinary Test filters turn red', () => {
   for (const mutate of [
     (source) => source.replace(childOnlyTests[0], 'nuri.migration.*IntegrationTest'),
     (source) => source.replace(`,\n                '${childOnlyTests[3]}'`, ''),
     (source) => source.replace(`,\n                '${childOnlyTests[4]}'`, ''),
     (source) => source.replace(`,\n                '${childOnlyTests[5]}'`, ''),
     (source) => source.replace(`,\n                '${childOnlyTests[6]}'`, ''),
-    (source) => source.replace(`'${childOnlyTests[1]}'`, `'${childOnlyTests[1]}',\n                'nuri.migration.EtlOracleCrashRecoveryIntegrationTest'`),
+    (source) => source.replace(`'${childOnlyTests[1]}'`, `'${childOnlyTests[1]}',\n                'nuri.migration.EtlOraclePostgresIntegrationTest'`),
     (source) => source.replace("tasks.named('test', Test) {", "tasks.named('test', Test) {\n    exclude '**/*IntegrationTest*'"),
     (source) => source.replace("tasks.named('test', Test) {", "tasks.named('test', Test) {\n    onlyIf { false }"),
     (source) => `tasks.named('test') { enabled = false }\n${source}`,
@@ -299,7 +392,7 @@ test('unconditional, broadened, disabled, and comment or quoted-string PIT polic
   for (const mutate of [
     (source) => source.replace('if (targetClasses.get()', 'if (true || targetClasses.get()'),
     (source) => source.replace('if (targetClasses.get()', 'if (false && targetClasses.get()'),
-    (source) => source.replace("['nuri.migration.transform.*'].toSet()", "['nuri.*'].toSet()"),
+    (source) => source.replace("['nuri.migration.transform.TransformerRegistry'].toSet()", "['nuri.*'].toSet()"),
     (source) => source.replace('excludedTestClasses = [', '// excludedTestClasses = ['),
     (source) => source.replace('    if (targetClasses.get()', '    /* if (targetClasses.get()')
       .replace('    jvmArgs.add(providers.provider {', '    */\n    jvmArgs.add(providers.provider {'),
@@ -322,7 +415,11 @@ test('online coupling, removed commands, unqualified Gradle tasks, and load invo
     (source) => source.replace(' jacocoMigrationCoverageVerification', ''),
     (source) => source.replace('jacocoMigrationCoverageVerification', 'jacocoRootCoverageVerification'),
     (source) => source.replace(`run('${contractCommand}');`, `run('java -jar migration-tool.jar load');\n    run('${contractCommand}');`),
-  ]) assert.notDeepEqual(validateRunner(mutate(runner)), []);
+  ]) {
+    const changed = mutate(runner);
+    assert.notEqual(changed, runner);
+    assert.ok(validateRunner(changed).length > 0 || validateShardedRunner(changed).length > 0);
+  }
 });
 
 test('migration scope propagates contract and Gradle failure before claiming completion', () => {
