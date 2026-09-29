@@ -30,13 +30,13 @@ push/PR / workflow_dispatch
     └─ change-scope (PR·main/master push: 같은 영향 분류 / 비교 불가·수동: 전수)
         ├─ sast-scope (Java·JavaScript/TypeScript CodeQL security-extended, 한 runner 슬롯에서 순차 실행)
         │   └─ secure-coding (High/Critical 차단, 언어별 결과 집계)
-        ├─ secret-scan (frontend-scope 완료 뒤 운영 계약·snapshot readiness·PR runtime 의존성 review·비밀 스캔)
+        ├─ secret-scan (backend-scope 완료 뒤 운영 계약·snapshot readiness·PR runtime 의존성 review·비밀 스캔)
         ├─ backend-scope (backend=true: 온라인 4모듈 빌드·테스트·커버리지·OpenAPI 신선도)
         ├─ backend-schema-scope (schema=true: backend와 병렬 PostgreSQL schema-validation)
         ├─ migration-test-scope (migration=true: 123개 이관 테스트 클래스를 3개 matrix로 정확히 분배)
         │   └─ migration-scope (세 결과 집계·JaCoCo 병합·bootJar·85/70 커버리지)
         ├─ reusable-base (frontend-scope 완료 뒤 영향받는 core·collaboration·demo profile×layout 동시 생성·기술 검증)
-        ├─ reusable-custom (core 영향 시 custom composition 두 layout을 profile과 병렬 검증)
+        ├─ reusable-custom (backend-scope 완료 뒤 core 영향 시 custom composition 두 layout 검증)
         ├─ backend-build (온라인·스키마·이관·재사용 profile·custom 결과를 집계)
         ├─ frontend-scope (codegen·typecheck·lint·audit·Next build·bundle budget)
         ├─ frontend-coverage-scope (frontend-scope와 병렬로 전체 Vitest coverage)
@@ -143,8 +143,8 @@ shard가 현재 런타임에서도 균형이 맞는다는 뜻은 아니다.
 실행한다. 각 호출은 새 격리 PostgreSQL과 DB·소스 번들을 생성하고 산출물의 거버넌스 무결성·활성 원장·
 Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 검사한다. pack 소유가 manifest로 증명된
 `business-app` 도메인과 프런트 제거 경로만 해당 pack을 포함하는 profile로 줄이고, 공용·미분류 입력은 6개
-matrix 전부로 돌아간다. core가 선택되면 custom composition의 두 layout은 `reusable-custom`에서 profile 검증과
-병렬 실행한다. 문서 전용 변경은 둘 다 명시적으로 skip하며 실패·취소·예상 밖 skip은 `backend-build`의 독립
+matrix 전부로 돌아간다. core가 선택되면 custom composition의 두 layout은 `reusable-custom`에서 backend source
+완료 뒤 함께 실행한다. profile 여섯 개는 frontend production 완료 뒤 함께 입장한다. 문서 전용 변경은 둘 다 명시적으로 skip하며 실패·취소·예상 밖 skip은 `backend-build`의 독립
 집계에서 통과하지 않는다. 원본 제품 회귀 테스트는 기존 실행 경로에 남는다.
 
 로컬 진입점은 `npm run base:verify -- --profile core`이며 [생성 가이드](reusable-base-guide.md)를 따른다.

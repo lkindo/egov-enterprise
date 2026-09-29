@@ -76,9 +76,10 @@ Oracle crash-recovery 시험은 별도 JVM에서 일반 classpath/JAR를 실행�
     `mutation-scope-migration`은 각각 `max-parallel: 1`을 사용한다. CodeQL Java·JavaScript/TypeScript와
     이관 PIT 네 scope의 모집단·명령·임계값은 모두 유지한다. run `36575378891`에서 각 matrix의 실제 실행
     합계는 약 7분 20초와 4분 12초였으므로 직렬 입장 후에도 12분 목표 안에 완료할 수 있다. 재사용 profile
-    여섯 개와 `secret-scan`은 짧은 `frontend-scope`가 슬롯을 반납한 뒤 시작한다. profile은 여섯 개를 함께
-    실행하고 `!cancelled()`와 분류 성공 검사를 사용해 취소에는 반응하면서 frontend 실패·skip이 선택된 검증을
-    생략시키지 못하게 한다. secret-scan은 `always()`와 분류 성공 검사를 유지한다.
+    여섯 개는 짧은 `frontend-scope`가 슬롯을 반납한 뒤 함께 시작한다. `secret-scan`과 custom composition 두
+    layout은 `backend-scope`가 슬롯을 반납한 뒤 시작한다. profile·custom은 `!cancelled()`와 분류 성공 검사를
+    사용해 취소에는 반응하면서 선행 job 실패·skip이 선택된 검증을 생략시키지 못하게 한다. secret-scan은
+    `always()`와 분류 성공 검사를 유지한다.
 
 ## 검증과 한계
 
@@ -139,3 +140,11 @@ migration shard용 초기 슬롯 두 개를 확보한다. 같은 실행의 E2E 2
 입장시키고, 3분 12초에 끝난 `frontend-scope` 뒤에서 여섯 profile과 secret-scan을 함께 시작한다.
 `backend-schema-scope`의 1건 실패는 격리 DB의 `V2_94`가 PostgreSQL `55P03` lock을 즉시 획득하지 못한
 표본이며, 다음 동일 구성 실행에서 재현성을 확인한다. 7차도 required 실패 표본이므로 중앙값에는 포함하지 않는다.
+
+[8차 전체 실행 36586715822](https://github.com/lkindo/egov-enterprise/actions/runs/36586715822)은 schema를 포함한
+실제 제품 검증이 모두 성공했고, `secret-scan` 안의 중복 계약 한 건만 이전 admission을 기대해 실패했다. 전체
+required 집계는 12분 16초였고 마지막 재사용 profile은 frontend 완료보다 2분 23초 늦은 4분 59초에 시작했다.
+frontend 완료 시 custom 두 layout과 secret-scan이 이미 세 슬롯을 점유한 것이 원인이므로, profile 여섯 개만
+frontend 뒤에서 먼저 입장시키고 custom 두 layout과 secret-scan은 4분 45초에 끝난 backend 뒤로 옮긴다.
+검증 모집단·명령·실패 판정은 유지하며 admission 의존성과 취소 처리를 positive/negative 계약으로 고정한다.
+8차는 계약 실패 표본이므로 중앙값에는 포함하지 않는다.

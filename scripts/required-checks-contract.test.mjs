@@ -937,7 +937,9 @@ test('reusable-base consumes the fail-closed impacted profile matrix', () => {
   assert.match(reusableJob,
     /^      matrix: \$\{\{ fromJSON\(needs\.change-scope\.outputs\['reusable-matrix'\]\) \}\}$/m);
   assert.doesNotMatch(reusableJob, /verify-project-composer/);
-  assert.match(customJob, /^    if: needs\.change-scope\.outputs\['reusable-custom'\] == 'true'$/m);
+  assert.match(customJob, /^    needs: \[change-scope, backend-scope\]$/m);
+  assert.match(customJob,
+    /^    if: "!cancelled\(\) && needs\.change-scope\.result == 'success' && needs\.change-scope\.outputs\['reusable-custom'\] == 'true'"$/m);
   assert.match(customJob, /^        layout: \[multi-module, single-module\]$/m);
   assert.match(customJob, /^        run: node scripts\/verify-project-composer\.mjs --layout \$\{\{ matrix\.layout \}\}$/m);
   assert.match(aggregateJob, /EXPECTED_WORK: \$\{\{ needs\.change-scope\.outputs\.reusable \}\}/);
@@ -1278,13 +1280,13 @@ test('change classification is fail-closed and its contract runs in the required
   assert.match(classifierJob, /node scripts\/ci-change-scope\.mjs/);
   assert.match(classifierJob, /Unknown or empty|unknown range|unknown means full pipeline/i);
   assert.ok(secretScanJob, 'secret-scan job must exist');
-  assert.match(secretScanJob, /^    needs: \[change-scope, frontend-scope\]$/m);
+  assert.match(secretScanJob, /^    needs: \[change-scope, backend-scope\]$/m);
   assert.match(secretScanJob, /^    if: always\(\)$/m);
   assert.match(secretScanJob, /needs\.change-scope\.result.*!=.*success[\s\S]*?exit 1/);
   assert.match(secretScanJob, /npm run test:operational-contracts/);
 
   const detachedAdmission = mutateWorkflowJob(ciContent, 'secret-scan', block => block.replace(
-    '    needs: [change-scope, frontend-scope]',
+    '    needs: [change-scope, backend-scope]',
     '    needs: change-scope',
   ));
   assert.match(validateStaticContract({ manifest, ciContent: detachedAdmission }).join('\n'),

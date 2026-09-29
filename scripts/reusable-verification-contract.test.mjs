@@ -213,16 +213,16 @@ function validatePipeline(workflow, manifest) {
     errors.push('change-scope must publish the custom composition selection flag');
   }
   for (const expected of [
-    /^    needs: \[change-scope\]$/m,
-    /^    if: needs.change-scope.outputs.reusable == 'true'$/m,
+    /^    needs: \[change-scope, frontend-scope\]$/m,
+    /^    if: "!cancelled\(\) && needs\.change-scope\.result == 'success' && needs\.change-scope\.outputs\.reusable == 'true'"$/m,
     /^      matrix: \$\{\{ fromJSON\(needs.change-scope.outputs\['reusable-matrix'\]\) \}\}$/m,
     /^        run: node scripts\/verify-reusable-base.mjs --profile \$\{\{ matrix.profile \}\} --layout \$\{\{ matrix.layout \}\}$/m,
     /^      - name: Retain reusable profile verification\n        if: always\(\)$/m,
     /^          if-no-files-found: error$/m,
   ]) if (!expected.test(job)) errors.push(`missing reusable pipeline contract: ${expected}`);
   for (const expected of [
-    /^    needs: \[change-scope\]$/m,
-    /^    if: needs\.change-scope\.outputs\['reusable-custom'\] == 'true'$/m,
+    /^    needs: \[change-scope, backend-scope\]$/m,
+    /^    if: "!cancelled\(\) && needs\.change-scope\.result == 'success' && needs\.change-scope\.outputs\['reusable-custom'\] == 'true'"$/m,
     /^      fail-fast: false$/m,
     /^        layout: \[multi-module, single-module\]$/m,
     /^        run: node scripts\/verify-project-composer.mjs --layout \$\{\{ matrix.layout \}\}$/m,
@@ -230,6 +230,7 @@ function validatePipeline(workflow, manifest) {
     /^            build\/project-composer\/jobs\/\*\/report\.json$/m,
     /^          if-no-files-found: error$/m,
   ]) if (!expected.test(customJob)) errors.push(`missing custom composition pipeline contract: ${expected}`);
+  if (/^      max-parallel:/m.test(job)) errors.push('reusable profiles must enter together after frontend admission');
   if (/^\s*(?:include|exclude|continue-on-error|defaults):/m.test(job)) errors.push('matrix or execution override is not allowed');
   if (/^\s*(?:include|exclude|continue-on-error|defaults):/m.test(customJob)) errors.push('custom matrix or execution override is not allowed');
   return errors;
@@ -240,26 +241,41 @@ test('required CI binds the fail-closed classifier matrix and rejects weakening 
   const manifest = JSON.parse(readFileSync('.github/required-checks.json', 'utf8'));
   assert.deepEqual(validatePipeline(workflow, manifest), []);
   const job = parseWorkflowJobs(workflow).get('reusable-base');
-  for (const mutate of [
-    value => value.replace("fromJSON(needs.change-scope.outputs['reusable-matrix'])", "fromJSON('{\"include\":[]}')"),
-    value => value.replace(' --layout ${{ matrix.layout }}', ''),
-    value => value.replace("outputs.reusable == 'true'", "outputs.backend == 'true'"),
-    value => value.replace('node scripts/verify-reusable-base.mjs', 'echo bypass'),
-    value => value.replace('        if: always()\n', ''),
-    value => value.replace('if-no-files-found: error', 'if-no-files-found: warn'),
-    value => value.replace('    steps:', '    continue-on-error: true\n    steps:'),
-    value => value.replace('        run: node scripts/verify-reusable-base', '        if: false\n        run: node scripts/verify-reusable-base'),
-  ]) assert.ok(validatePipeline(workflow.replace(job, mutate(job)), manifest).length);
+  for (const [name, mutate] of [
+    ['empty matrix', value => value.replace("fromJSON(needs.change-scope.outputs['reusable-matrix'])", "fromJSON('{\"include\":[]}')")],
+    ['missing layout', value => value.replace(' --layout ${{ matrix.layout }}', '')],
+    ['wrong scope', value => value.replace("outputs.reusable == 'true'", "outputs.backend == 'true'")],
+    ['bypass command', value => value.replace('node scripts/verify-reusable-base.mjs', 'echo bypass')],
+    ['missing artifact always', value => value.replace('        if: always()\n', '')],
+    ['advisory artifact', value => value.replace('if-no-files-found: error', 'if-no-files-found: warn')],
+    ['advisory job', value => value.replace('    steps:', '    continue-on-error: true\n    steps:')],
+    ['skipped command', value => value.replace('        run: node scripts/verify-reusable-base', '        if: false\n        run: node scripts/verify-reusable-base')],
+    ['detached admission', value => value.replace('    needs: [change-scope, frontend-scope]', '    needs: [change-scope]')],
+    ['throttled profiles', value => value.replace('    strategy:\n', '    strategy:\n      max-parallel: 5\n')],
+    ['ignores cancellation', value => value.replace('    if: "!cancelled()', '    if: "always()')],
+  ]) {
+    const changedJob = mutate(job);
+    assert.notEqual(changedJob, job, `negative mutation must change reusable job: ${name}`);
+    assert.ok(validatePipeline(workflow.replace(job, changedJob), manifest).length,
+      `negative mutation must fail reusable pipeline contract: ${name}`);
+  }
   const customJob = parseWorkflowJobs(workflow).get('reusable-custom');
-  for (const mutate of [
-    value => value.replace("outputs['reusable-custom'] == 'true'", "outputs.backend == 'true'"),
-    value => value.replace('layout: [multi-module, single-module]', 'layout: [single-module]'),
-    value => value.replace('node scripts/verify-project-composer.mjs', 'echo bypass'),
-    value => value.replace('        if: always()\n', ''),
-    value => value.replace('build/project-composer/jobs/*/report.json', 'build/omitted-report.json'),
-    value => value.replace('if-no-files-found: error', 'if-no-files-found: warn'),
-    value => value.replace('    steps:', '    continue-on-error: true\n    steps:'),
-  ]) assert.ok(validatePipeline(workflow.replace(customJob, mutate(customJob)), manifest).length);
+  for (const [name, mutate] of [
+    ['wrong scope', value => value.replace("outputs['reusable-custom'] == 'true'", "outputs.backend == 'true'")],
+    ['missing layout', value => value.replace('layout: [multi-module, single-module]', 'layout: [single-module]')],
+    ['bypass command', value => value.replace('node scripts/verify-project-composer.mjs', 'echo bypass')],
+    ['missing artifact always', value => value.replace('        if: always()\n', '')],
+    ['wrong artifact', value => value.replace('build/project-composer/jobs/*/report.json', 'build/omitted-report.json')],
+    ['advisory artifact', value => value.replace('if-no-files-found: error', 'if-no-files-found: warn')],
+    ['advisory job', value => value.replace('    steps:', '    continue-on-error: true\n    steps:')],
+    ['detached admission', value => value.replace('    needs: [change-scope, backend-scope]', '    needs: [change-scope]')],
+    ['ignores cancellation', value => value.replace('    if: "!cancelled()', '    if: "always()')],
+  ]) {
+    const changedJob = mutate(customJob);
+    assert.notEqual(changedJob, customJob, `negative mutation must change custom job: ${name}`);
+    assert.ok(validatePipeline(workflow.replace(customJob, changedJob), manifest).length,
+      `negative mutation must fail custom pipeline contract: ${name}`);
+  }
   for (const mutate of [
     value => value.replace('reusable: ${{ steps.scope.outputs.reusable }}', 'reusable: false'),
     value => value.replace('reusable-custom: ${{ steps.scope.outputs.reusable_custom }}', 'reusable-custom: false'),

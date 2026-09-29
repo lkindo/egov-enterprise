@@ -179,9 +179,10 @@
         {
           "sourceJobId": "reusable-custom",
           "sourceNeeds": [
-            "change-scope"
+            "change-scope",
+            "backend-scope"
           ],
-          "sourceJobIf": "needs.change-scope.outputs['reusable-custom'] == 'true'",
+          "sourceJobIf": "!cancelled() && needs.change-scope.result == 'success' && needs.change-scope.outputs['reusable-custom'] == 'true'",
           "sourceStepName": "Generate and verify custom composition",
           "sourceRun": "node scripts/verify-project-composer.mjs --layout ${{ matrix.layout }}",
           "sourceWorkingDirectory": null,
@@ -249,7 +250,7 @@
       "jobId": "secret-scan",
       "needs": [
         "change-scope",
-        "frontend-scope"
+        "backend-scope"
       ],
       "jobIf": "always()"
     },
