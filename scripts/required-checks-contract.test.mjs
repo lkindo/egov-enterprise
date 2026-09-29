@@ -1094,6 +1094,7 @@ function assertMigrationTestShards(source) {
   assert.match(job, /^    timeout-minutes: 30$/m);
   assert.match(job, /^      fail-fast: false$/m);
   assert.match(job, /^        shard: \[1\/3, 2\/3, 3\/3\]$/m);
+  assert.match(job, /^          persist-credentials: false\n          # The measured duration profile is bound to its historical source commit\.\n          fetch-depth: 0$/m);
   assert.match(job, /^        run: node --test scripts\/migration-verification-contract\.test\.mjs$/m);
   assert.match(job, /^        run: node scripts\/migration-test-shard\.mjs --shard "\$\{\{ matrix\.shard \}\}"$/m);
   assert.match(job, /^        if: always\(\)\n        uses: actions\/upload-artifact@[a-f0-9]{40}(?:\s+#.*)?$/m);
@@ -1110,6 +1111,7 @@ test('migration test matrix is an exact three-way population with fail-closed ev
   for (const [before, after] of [
     ['shard: [1/3, 2/3, 3/3]', 'shard: [1/3, 2/3]'],
     ['fail-fast: false', 'fail-fast: true'],
+    ['          fetch-depth: 0', '          fetch-depth: 1'],
     ['node --test scripts/migration-verification-contract.test.mjs', 'echo skipped'],
     ['node scripts/migration-test-shard.mjs --shard "${{ matrix.shard }}"', 'echo skipped'],
     ['        if: always()\n        uses: actions/upload-artifact@', '        uses: actions/upload-artifact@'],
