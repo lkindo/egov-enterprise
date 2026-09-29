@@ -31,12 +31,11 @@ push/PR / workflow_dispatch
         ├─ sast-scope (Java·JavaScript/TypeScript CodeQL security-extended)
         │   └─ secure-coding (High/Critical 차단, 언어별 결과 집계)
         ├─ secret-scan (운영 계약·snapshot readiness·PR runtime 의존성 review·비밀 스캔)
-        ├─ backend-scope (backend=true인 경우의 실제 무거운 실행)
-        │   ├─ 온라인 4모듈 빌드·테스트·커버리지·OpenAPI 신선도
-        │   └─ schema=true일 때만 PostgreSQL schema-validation
+        ├─ backend-scope (backend=true: 온라인 4모듈 빌드·테스트·커버리지·OpenAPI 신선도)
+        ├─ backend-schema-scope (schema=true: backend와 병렬 PostgreSQL schema-validation)
         ├─ migration-scope (migration=true: 독립 이관 테스트·bootJar·커버리지)
-        ├─ reusable-base (문서 전용이 아니면 core·collaboration·demo 실제 생성·기술 검증)
-        ├─ backend-build (온라인·이관 source와 reusable-base 결과를 집계)
+        ├─ reusable-base (영향받는 core·collaboration·demo profile×layout 생성·기술 검증)
+        ├─ backend-build (온라인·스키마·이관 source와 reusable-base 결과를 집계)
         ├─ frontend-scope (frontend=true인 경우의 실제 무거운 실행, backend와 독립)
         │   └─ codegen·lint·audit·Next build·Vitest coverage·bundle budget
         ├─ frontend-build (frontend-scope를 집계해 항상 완료되는 안정 required context)
@@ -87,7 +86,7 @@ history 입출력·기본 증분 분석·CI history 전용 캐시를 사용하�
 
 > **브랜치 보호 SSOT와 live 경계**: `.github/required-checks.json`이 보호·릴리스 기준 브랜치, 안정 required context 6개, 원본 job/matrix, 신뢰할 GitHub Actions integration ID와 review policy 목표를 정의한다. `scripts/verify-branch-protection.mjs`는 required check·strict/provider/bypass뿐 아니라 approval 수, code-owner, last-push, stale review, thread resolution을 live ruleset과 exact-match한다. 저장소 명세가 바뀌어도 원격 설정은 자동 변경되지 않으므로 `verify:ops`가 green이기 전에는 적용 완료로 보지 않는다. 현재 외부 drift는 [공용 gap 인덱스](../../.agent/memory/known-gaps.md)를 따른다.
 
-E2E와 두 PIT source는 `change-scope`만 선행 조건으로 가진다. 각 job이 필요한 코드와 실행 환경을 직접 빌드하며, backend/frontend artifact를 기다리지 않는다. `backend-build`는 온라인 `backend-scope`와 독립 `migration-scope`의 선택 결과를 각각 집계하고 기존 재사용 profile×layout 검증도 요구한다. E2E/PIT가 먼저 성공해도 선택된 다른 required 검사의 실패를 상쇄하지 못한다. CodeQL은 소스 변경에서 Java·JavaScript/TypeScript 양언어 분석을 유지한다.
+E2E와 두 PIT source는 `change-scope`만 선행 조건으로 가진다. 각 job이 필요한 코드와 실행 환경을 직접 빌드하며, backend/frontend artifact를 기다리지 않는다. `backend-build`는 온라인 `backend-scope`, 병렬 `backend-schema-scope`, 독립 `migration-scope`와 영향받는 재사용 profile×layout 결과를 각각 집계한다. E2E/PIT가 먼저 성공해도 선택된 다른 required 검사의 실패를 상쇄하지 못한다. CodeQL은 소스 변경에서 Java·JavaScript/TypeScript 양언어 분석을 유지한다.
 
 PIT 분류는 production/test Java뿐 아니라 `src/testFixtures/**`, `src/main/resources/**`, `src/test/resources/**`를 포함한다. 온라인 4모듈의 의존 관계는 한 범위로 유지하며 개별 Java 파일별 시험 선택은 하지 않는다. 이관 전용 소스·리소스·build 변경은 이관 build/PIT를 선택하고 온라인 build/PIT·frontend·schema·E2E를 선택하지 않는다. 공용 Gradle 입력과 양쪽 ID 생성 의미 계약(`IdGenerationUtil`, `Constants`, `StandardIdGenerator`)은 두 모듈을 선택한다. 미지 입력·빈 비교는 전수이며 루트 `db_columns.json`도 기존 전수 fallback을 유지한다. 정확한 경계는 [분류기](../../scripts/ci-change-scope.mjs)와 [회귀 계약](../../scripts/ci-change-scope.test.mjs)이 소유한다.
 
@@ -117,9 +116,11 @@ shard가 현재 런타임에서도 균형이 맞는다는 뜻은 아니다.
 
 ### 재사용 프로필과 독립 이관 검증
 
-`reusable-base`는 core·collaboration·demo matrix에서 `node scripts/verify-reusable-base.mjs --profile <profile>`을
+`reusable-base`는 영향받는 core·collaboration·demo profile과 두 layout matrix에서 `node scripts/verify-reusable-base.mjs --profile <profile>`을
 실행한다. 각 호출은 새 격리 PostgreSQL과 DB·소스 번들을 생성하고 산출물의 거버넌스 무결성·활성 원장·
-Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 검사한다. 문서 전용 변경만 명시적으로 skip하며
+Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 검사한다. pack 소유가 manifest로 증명된
+`business-app` 도메인과 프런트 제거 경로만 해당 pack을 포함하는 profile로 줄이고, 공용·미분류 입력은 6개
+matrix 전부로 돌아간다. 문서 전용 변경은 명시적으로 skip하며
 실패·취소·예상 밖 skip은 `backend-build` 집계에서 통과하지 않는다. 원본 제품 회귀 테스트는 기존 실행 경로에 남는다.
 
 로컬 진입점은 `npm run base:verify -- --profile core`이며 [생성 가이드](reusable-base-guide.md)를 따른다.
@@ -143,7 +144,9 @@ Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 �
 
 ### Gradle 설정
 
-`backend-scope`는 JDK 21과 `gradle/actions/setup-gradle`을 사용하며 action 참조는 workflow의 검증된 commit SHA로 고정한다. 캐시 옵션과 wrapper 다운로드 재시도는 [ci.yml](../../.github/workflows/ci.yml)의 `Setup Gradle`·`Provision Gradle distribution with bounded retry` 단계가 정본이다.
+`backend-scope`와 `backend-schema-scope`는 `change-scope` 직후 병렬로 시작한다. 전자는 Gradle cache writer로
+온라인 빌드·커버리지를, 후자는 읽기 전용 cache로 물리 PostgreSQL 검증을 담당한다. action 참조는 workflow의
+검증된 commit SHA로 고정한다. 캐시 옵션과 wrapper 다운로드 재시도는 [ci.yml](../../.github/workflows/ci.yml)이 정본이다.
 
 ### 실행 명령어
 

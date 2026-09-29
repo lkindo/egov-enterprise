@@ -202,11 +202,16 @@ test('generated package and hook call product verification without changing the 
 function validatePipeline(workflow, manifest) {
   const errors = validateStaticContract({ manifest, ciContent: workflow });
   const job = parseWorkflowJobs(workflow).get('reusable-base') ?? '';
+  if (!/^      reusable: \$\{\{ steps\.scope\.outputs\.reusable \}\}$/m.test(workflow)) {
+    errors.push('change-scope must publish the reusable selection flag');
+  }
+  if (!/^      reusable-matrix: \$\{\{ steps\.scope\.outputs\.reusable_matrix \}\}$/m.test(workflow)) {
+    errors.push('change-scope must publish the reusable profile matrix');
+  }
   for (const expected of [
     /^    needs: \[change-scope\]$/m,
-    /^    if: needs.change-scope.outputs\['docs-only'\] != 'true'$/m,
-    /^        profile: \[core, collaboration, demo\]$/m,
-    /^        layout: \[multi-module, single-module\]$/m,
+    /^    if: needs.change-scope.outputs.reusable == 'true'$/m,
+    /^      matrix: \$\{\{ fromJSON\(needs.change-scope.outputs\['reusable-matrix'\]\) \}\}$/m,
     /^        run: node scripts\/verify-reusable-base.mjs --profile \$\{\{ matrix.profile \}\} --layout \$\{\{ matrix.layout \}\}$/m,
     /^        run: node scripts\/verify-project-composer.mjs --layout \$\{\{ matrix.layout \}\}$/m,
     /^      - name: Retain reusable profile verification\n        if: always\(\)$/m,
@@ -217,16 +222,15 @@ function validatePipeline(workflow, manifest) {
   return errors;
 }
 
-test('required CI binds every generated profile and layout and rejects weakening mutations', () => {
+test('required CI binds the fail-closed classifier matrix and rejects weakening mutations', () => {
   const workflow = readFileSync('.github/workflows/ci.yml', 'utf8').replace(/\r\n/g, '\n');
   const manifest = JSON.parse(readFileSync('.github/required-checks.json', 'utf8'));
   assert.deepEqual(validatePipeline(workflow, manifest), []);
   const job = parseWorkflowJobs(workflow).get('reusable-base');
   for (const mutate of [
-    value => value.replace('[core, collaboration, demo]', '[demo]'),
-    value => value.replace('[multi-module, single-module]', '[multi-module]'),
+    value => value.replace("fromJSON(needs.change-scope.outputs['reusable-matrix'])", "fromJSON('{\"include\":[]}')"),
     value => value.replace(' --layout ${{ matrix.layout }}', ''),
-    value => value.replace("outputs['docs-only'] != 'true'", 'outputs.backend == true'),
+    value => value.replace("outputs.reusable == 'true'", "outputs.backend == 'true'"),
     value => value.replace('node scripts/verify-reusable-base.mjs', 'echo bypass'),
     value => value.replace('node scripts/verify-project-composer.mjs', 'echo bypass'),
     value => value.replace("if: matrix.profile == 'core'", 'if: false'),
@@ -236,5 +240,9 @@ test('required CI binds every generated profile and layout and rejects weakening
     value => value.replace('    steps:', '    continue-on-error: true\n    steps:'),
     value => value.replace('        run: node scripts/verify-reusable-base', '        if: false\n        run: node scripts/verify-reusable-base'),
   ]) assert.ok(validatePipeline(workflow.replace(job, mutate(job)), manifest).length);
-  assert.ok(validatePipeline(workflow.replace('needs: [change-scope, backend-scope, migration-scope, reusable-base]', 'needs: [change-scope, backend-scope, migration-scope]'), manifest).length);
+  for (const mutate of [
+    value => value.replace('reusable: ${{ steps.scope.outputs.reusable }}', 'reusable: false'),
+    value => value.replace('reusable-matrix: ${{ steps.scope.outputs.reusable_matrix }}', 'reusable-matrix: {}'),
+  ]) assert.ok(validatePipeline(mutate(workflow), manifest).length);
+  assert.ok(validatePipeline(workflow.replace('needs: [change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base]', 'needs: [change-scope, backend-scope, backend-schema-scope, migration-scope]'), manifest).length);
 });

@@ -689,8 +689,7 @@
             "tiers": [
               "ci"
             ],
-            "job": "backend-scope",
-            "conditional": true
+            "job": "backend-schema-scope"
           }
         ]
       },

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import test from 'node:test';
 
 import fs from 'node:fs';
@@ -316,7 +317,49 @@ test('unknown and empty change sets fail closed to the full pipeline', () => {
     assert.equal(result.e2e, true);
     assert.equal(result.mutation, true);
     assert.equal(result.mutationMigrationTool, true);
+    assert.equal(result.reusable, true);
+    assert.deepEqual(result.reusableProfiles, ['core', 'collaboration', 'demo']);
   }
+});
+
+test('reusable-base matrix only retains profiles that contain a changed pack domain', () => {
+  const demoOnly = classifyChangedFiles([
+    'business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java',
+  ]);
+  assert.deepEqual(demoOnly.reusableProfiles, ['demo']);
+  assert.deepEqual(demoOnly.reusableMatrix.include, [
+    { profile: 'demo', layout: 'multi-module' },
+    { profile: 'demo', layout: 'single-module' },
+  ]);
+
+  const collaborationAndDemo = classifyChangedFiles([
+    'business-app/src/test/java/nuri/business/service/board/BoardServiceTest.java',
+  ]);
+  assert.deepEqual(collaborationAndDemo.reusableProfiles, ['collaboration', 'demo']);
+
+  const frontendDemoOnly = classifyChangedFiles([
+    'frontend/src/app/admin/stats/page.tsx',
+  ]);
+  assert.deepEqual(frontendDemoOnly.reusableProfiles, ['demo']);
+
+  const sharedInput = classifyChangedFiles([
+    'foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java',
+  ]);
+  assert.deepEqual(sharedInput.reusableProfiles, ['core', 'collaboration', 'demo']);
+});
+
+test('mixed reusable-base inputs take the conservative union and docs do not expand it', () => {
+  const packAndDocs = classifyChangedFiles([
+    'business-app/src/main/java/nuri/business/service/survey/SurveyService.java',
+    'docs/03-guides/testing-guide.md',
+  ]);
+  assert.deepEqual(packAndDocs.reusableProfiles, ['demo']);
+
+  const packAndCommon = classifyChangedFiles([
+    'business-app/src/main/java/nuri/business/service/survey/SurveyService.java',
+    'api-server/src/main/java/nuri/config/AsyncConfig.java',
+  ]);
+  assert.deepEqual(packAndCommon.reusableProfiles, ['core', 'collaboration', 'demo']);
 });
 
 test('explicit full regression includes every heavy gate even for documentation-only inputs', () => {
@@ -391,8 +434,40 @@ test('GitHub outputs are explicit strings for job conditions', () => {
     e2e: 'false',
     mutation: 'false',
     mutation_migration_tool: 'false',
+    reusable: 'false',
+    reusable_matrix: JSON.stringify({
+      include: [
+        { profile: 'core', layout: 'multi-module' },
+        { profile: 'core', layout: 'single-module' },
+        { profile: 'collaboration', layout: 'multi-module' },
+        { profile: 'collaboration', layout: 'single-module' },
+        { profile: 'demo', layout: 'multi-module' },
+        { profile: 'demo', layout: 'single-module' },
+      ],
+    }),
     unknown_count: '0',
   });
+});
+
+test('standalone exports without the profile catalog fail closed to every reusable profile', (t) => {
+  const root = fs.mkdtempSync(path.join(tmpdir(), 'egov-ci-scope-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(root, 'scripts'), { recursive: true });
+  fs.copyFileSync(
+    path.join(repoRoot, 'scripts', 'ci-change-scope.mjs'),
+    path.join(root, 'scripts', 'ci-change-scope.mjs'),
+  );
+
+  const result = spawnSync(process.execPath, [
+    'scripts/ci-change-scope.mjs',
+    '--file',
+    'business-app/src/main/java/nuri/business/domain/demo/Sample.java',
+  ], { cwd: root, encoding: 'utf8' });
+
+  assert.equal(result.status, 0, result.stderr);
+  const report = JSON.parse(result.stdout);
+  assert.deepEqual(report.reusableProfiles, ['core', 'collaboration', 'demo']);
+  assert.equal(report.reusableMatrix.include.length, 6);
 });
 
 test('git discovery includes deletions so mixed doc and source changes cannot fast-pass', () => {

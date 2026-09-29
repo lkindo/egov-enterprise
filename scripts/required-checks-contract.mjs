@@ -286,6 +286,7 @@ function validateCriticalSteps(criticalSteps, jobs) {
 const GRADLE_CACHE_READ_ONLY = {
   '.github/workflows/ci.yml': {
     'backend-scope': 'false',
+    'backend-schema-scope': 'true',
     'migration-scope': "${{ needs.change-scope.outputs.backend != 'false' }}",
     'reusable-base': 'true',
     'mutation-scope': 'true',

@@ -35,7 +35,7 @@
       "run": "node scripts/aggregate-required-check.mjs",
       "env": {
         "CLASSIFIER_RESULT": "${{ needs.change-scope.result }}",
-        "EXPECTED_WORK": "${{ needs.change-scope.outputs['docs-only'] != 'true' }}",
+        "EXPECTED_WORK": "${{ needs.change-scope.outputs.reusable }}",
         "SOURCE_RESULT": "${{ needs.reusable-base.result }}"
       }
     },
@@ -94,6 +94,7 @@
       "needs": [
         "change-scope",
         "backend-scope",
+        "backend-schema-scope",
         "migration-scope",
         "reusable-base"
       ],
@@ -132,6 +133,42 @@
           "resultExpression": "needs.migration-scope.result",
           "successResult": "success",
           "scopeExpression": "needs.change-scope.outputs.migration",
+          "classifierResultExpression": "needs.change-scope.result",
+          "skippedResult": "skipped"
+        },
+        {
+          "sourceJobId": "backend-schema-scope",
+          "sourceNeeds": [
+            "change-scope"
+          ],
+          "sourceJobIf": "needs.change-scope.outputs.schema == 'true'",
+          "sourceStepName": "Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)",
+          "sourceRun": "set -o pipefail\n./gradlew :api-server:schemaValidationTest --warning-mode fail --console=plain 2>&1 | tee /tmp/schema-validation.log",
+          "sourceWorkingDirectory": null,
+          "sourceEnv": {},
+          "aggregateStepName": "물리 스키마 검증 결과 집계",
+          "aggregateRun": "node scripts/aggregate-required-check.mjs",
+          "resultExpression": "needs.backend-schema-scope.result",
+          "successResult": "success",
+          "scopeExpression": "needs.change-scope.outputs.schema",
+          "classifierResultExpression": "needs.change-scope.result",
+          "skippedResult": "skipped"
+        },
+        {
+          "sourceJobId": "reusable-base",
+          "sourceNeeds": [
+            "change-scope"
+          ],
+          "sourceJobIf": "needs.change-scope.outputs.reusable == 'true'",
+          "sourceStepName": "Generate and verify reusable profile",
+          "sourceRun": "node scripts/verify-reusable-base.mjs --profile ${{ matrix.profile }} --layout ${{ matrix.layout }}",
+          "sourceWorkingDirectory": null,
+          "sourceEnv": {},
+          "aggregateStepName": "재사용 프로필 결과 집계",
+          "aggregateRun": "node scripts/aggregate-required-check.mjs",
+          "resultExpression": "needs.reusable-base.result",
+          "successResult": "success",
+          "scopeExpression": "needs.change-scope.outputs.reusable",
           "classifierResultExpression": "needs.change-scope.result",
           "skippedResult": "skipped"
         }

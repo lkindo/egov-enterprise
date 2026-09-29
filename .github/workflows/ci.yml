@@ -41,6 +41,8 @@ jobs:
       e2e: ${{ steps.scope.outputs.e2e }}
       mutation: ${{ steps.scope.outputs.mutation }}
       mutation-migration-tool: ${{ steps.scope.outputs.mutation_migration_tool }}
+      reusable: ${{ steps.scope.outputs.reusable }}
+      reusable-matrix: ${{ steps.scope.outputs.reusable_matrix }}
       sast: ${{ steps.scope.outputs.sast }}
       docs-only: ${{ steps.scope.outputs.docs_only }}
       atlas: ${{ steps.scope.outputs.atlas }}
@@ -400,26 +402,16 @@ jobs:
           set -o pipefail
           ./gradlew onlineBuild jacocoOnlineCoverageVerification "-Dopenapi.export.path=$GITHUB_WORKSPACE/api-docs.json" --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log
 
-      # 빈 PostgreSQL 17에 Flyway 전량 적용 후 Hibernate validate로 실제 물리 계약을 검사한다.
-      # 오프라인 Entity 린터와 상보적이며 Docker가 필요한 이 검증은 스킵하지 않는다.
-      # 이미지를 먼저 받아 pull 실패와 스키마 실패를 분리해 진단한다.
-      - name: Pre-pull PostgreSQL image for Testcontainers
-        if: needs.change-scope.outputs.schema == 'true'
-        run: docker pull --quiet postgres:17-alpine || (sleep 15 && docker pull --quiet postgres:17-alpine)
-
-      - name: Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)
-        id: schema-validation
-        if: needs.change-scope.outputs.schema == 'true'
-        run: |
-          set -o pipefail
-          ./gradlew :api-server:schemaValidationTest --warning-mode fail --console=plain 2>&1 | tee /tmp/schema-validation.log
-
       - name: Verify committed api-docs.json is fresh (contract drift gate)
         id: api-docs-gate
         # api-docs.json이 tracked 상태인지 먼저 확인해 삭제가 diff 검사에서 공집합 통과하지 않게 한다.
         run: |
           git ls-files --error-unmatch -- "$GITHUB_WORKSPACE/api-docs.json"
           git diff --exit-code -- "$GITHUB_WORKSPACE/api-docs.json"
+
+      - name: Publish backend JUnit duration evidence
+        if: always()
+        run: node scripts/ci-junit-duration-summary.mjs >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check OpenAPI Spec Changes
         id: openapi-changes
@@ -466,19 +458,70 @@ jobs:
             echo "::error title=$1::$MSG"
           }
           # 어떤 스텝이 실제로 실패했는지 먼저 명시 — 로그 tail 만 보면 통과한 스텝을 오인한다
-          echo "::error title=실패 스텝 판정::build-and-test=${{ steps.build-and-test.outcome }} / schema-validation=${{ steps.schema-validation.outcome }} / api-docs-gate=${{ steps.api-docs-gate.outcome }}"
+          echo "::error title=실패 스텝 판정::build-and-test=${{ steps.build-and-test.outcome }} / api-docs-gate=${{ steps.api-docs-gate.outcome }}"
           # 컴파일/태스크 오류 본문을 별도로 발췌 — tail 창에 안 잡히는 경우가 있다
           if [ -f /tmp/build-and-test.log ]; then
             echo "::error title=오류 발췌(error:/What went wrong)::$(grep -E "error:|What went wrong|Compilation failed|FAILED$" -A 3 /tmp/build-and-test.log | tail -c 2500 | paste -sd' ' -)"
           fi
           emit "Build and Test 마지막 출력" /tmp/build-and-test.log
-          emit "Schema Validation 마지막 출력" /tmp/schema-validation.log
           # 실패한 JUnit 테스트의 클래스·메시지를 최대 5건 노출
           node scripts/ci-annotate-test-failures.mjs
           # 계약 드리프트 게이트가 붉을 때 무엇이 달라졌는지도 노출
           if ! git diff --quiet api-docs.json 2>/dev/null; then
             echo "::error title=api-docs.json 드리프트::$(git diff --stat api-docs.json)"
           fi
+
+  # Physical schema validation is independent from online unit/coverage work.
+  # Running it in a separate reader job removes a serial 6-minute segment while
+  # backend-build still requires both sources through fail-closed aggregation.
+  backend-schema-scope:
+    needs: change-scope
+    if: needs.change-scope.outputs.schema == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6  # v6.0.1
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb  # v6.3.0
+        with:
+          cache-provider: basic
+          cache-read-only: true
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # Pull timing is visible separately from container initialization and tests.
+      - name: Pre-pull PostgreSQL image for Testcontainers
+        id: schema-image
+        run: docker pull --quiet postgres:17-alpine || (sleep 15 && docker pull --quiet postgres:17-alpine)
+
+      - name: Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)
+        id: schema-validation
+        run: |
+          set -o pipefail
+          ./gradlew :api-server:schemaValidationTest --warning-mode fail --console=plain 2>&1 | tee /tmp/schema-validation.log
+
+      - name: Publish schema JUnit duration evidence
+        if: always()
+        run: node scripts/ci-junit-duration-summary.mjs >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Surface schema validation failure detail
+        if: failure()
+        run: |
+          echo "::error title=실패 스텝 판정::image=${{ steps.schema-image.outcome }} / schema-validation=${{ steps.schema-validation.outcome }}"
+          if [ -f /tmp/schema-validation.log ]; then
+            echo "::error title=Schema Validation 마지막 출력::$(tail -c 3000 /tmp/schema-validation.log | tr -d '\r' | sed ':a;N;$!ba;s/\n/%0A/g')"
+          fi
+          node scripts/ci-annotate-test-failures.mjs
 
   migration-scope:
     needs: change-scope
@@ -510,6 +553,19 @@ jobs:
 
       - name: Verify the independent migration module
         run: node scripts/verify.mjs migration
+
+      - name: Publish migration JUnit duration evidence
+        if: always()
+        run: node scripts/ci-junit-duration-summary.mjs >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Retain migration JUnit timing evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: migration-junit-timing-${{ github.sha }}
+          path: migration-tool/build/test-results/**/*.xml
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Retain the verified migration CLI
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
@@ -634,14 +690,12 @@ jobs:
   # explicitly unselected source must be skipped. Every other state is red.
   reusable-base:
     needs: [change-scope]
-    if: needs.change-scope.outputs['docs-only'] != 'true'
+    if: needs.change-scope.outputs.reusable == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
-      matrix:
-        profile: [core, collaboration, demo]
-        layout: [multi-module, single-module]
+      matrix: ${{ fromJSON(needs.change-scope.outputs['reusable-matrix']) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -680,7 +734,7 @@ jobs:
           retention-days: 7
 
   backend-build:
-    needs: [change-scope, backend-scope, migration-scope, reusable-base]
+    needs: [change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -701,10 +755,17 @@ jobs:
           SOURCE_RESULT: ${{ needs.migration-scope.result }}
         run: node scripts/aggregate-required-check.mjs
 
+      - name: 물리 스키마 검증 결과 집계
+        env:
+          CLASSIFIER_RESULT: ${{ needs.change-scope.result }}
+          EXPECTED_WORK: ${{ needs.change-scope.outputs.schema }}
+          SOURCE_RESULT: ${{ needs.backend-schema-scope.result }}
+        run: node scripts/aggregate-required-check.mjs
+
       - name: 재사용 프로필 결과 집계
         env:
           CLASSIFIER_RESULT: ${{ needs.change-scope.result }}
-          EXPECTED_WORK: ${{ needs.change-scope.outputs['docs-only'] != 'true' }}
+          EXPECTED_WORK: ${{ needs.change-scope.outputs.reusable }}
           SOURCE_RESULT: ${{ needs.reusable-base.result }}
         run: node scripts/aggregate-required-check.mjs
 
