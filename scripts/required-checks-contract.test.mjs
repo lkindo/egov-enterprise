@@ -94,8 +94,13 @@ function assertRunnerAdmissionControl(content) {
       `${jobId} must consume exactly one runner slot at a time`);
   }
   const reusable = jobs.get('reusable-base') ?? '';
-  assert.deepEqual(reusable.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 5'],
-    'reusable-base must leave one initial runner slot for critical migration work');
+  assert.match(reusable, /^ {4}needs: \[change-scope, frontend-scope\]$/m,
+    'reusable-base must wait until frontend production releases its runner');
+  assert.match(reusable,
+    /^ {4}if: "!cancelled\(\) && needs\.change-scope\.result == 'success' && needs\.change-scope\.outputs\.reusable == 'true'"$/m,
+    'frontend failure or skip must not silently suppress selected reusable validation');
+  assert.equal(reusable.match(/^ {6}max-parallel:.*$/gm), null,
+    'all selected reusable profiles must start together once admitted');
 }
 
 function assertProductMutationLptOrder(content) {
@@ -925,8 +930,10 @@ test('reusable-base consumes the fail-closed impacted profile matrix', () => {
   assert.match(classifierJob, /reusable: \$\{\{ steps\.scope\.outputs\.reusable \}\}/);
   assert.match(classifierJob, /reusable-matrix: \$\{\{ steps\.scope\.outputs\.reusable_matrix \}\}/);
   assert.match(classifierJob, /reusable-custom: \$\{\{ steps\.scope\.outputs\.reusable_custom \}\}/);
-  assert.match(reusableJob, /^    if: needs\.change-scope\.outputs\.reusable == 'true'$/m);
-  assert.match(reusableJob, /^      max-parallel: 5$/m);
+  assert.match(reusableJob, /^    needs: \[change-scope, frontend-scope\]$/m);
+  assert.match(reusableJob,
+    /^    if: "!cancelled\(\) && needs\.change-scope\.result == 'success' && needs\.change-scope\.outputs\.reusable == 'true'"$/m);
+  assert.doesNotMatch(reusableJob, /^      max-parallel:/m);
   assert.match(reusableJob,
     /^      matrix: \$\{\{ fromJSON\(needs\.change-scope\.outputs\['reusable-matrix'\]\) \}\}$/m);
   assert.doesNotMatch(reusableJob, /verify-project-composer/);
@@ -1004,12 +1011,35 @@ test('short noncritical matrices reserve runner capacity without dropping valida
       assert.throws(() => assertRunnerAdmissionControl(changed), /one runner slot/);
     }
   }
-  for (const replacement of ['', '      max-parallel: 6\n', '      # max-parallel: 5\n']) {
+  for (const replacement of [
+    '    needs: change-scope',
+    '    needs: [change-scope, backend-scope]',
+    '    # needs: [change-scope, frontend-scope]',
+  ]) {
     const changed = mutateWorkflowJob(ciContent, 'reusable-base',
-      block => block.replace('      max-parallel: 5\n', replacement));
+      block => block.replace('    needs: [change-scope, frontend-scope]', replacement));
     assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
-    assert.throws(() => assertRunnerAdmissionControl(changed), /initial runner slot/);
+    assert.throws(() => assertRunnerAdmissionControl(changed), /frontend production/);
   }
+  for (const replacement of [
+    "    if: needs.change-scope.outputs.reusable == 'true'",
+    "    if: \"!cancelled() && needs.change-scope.outputs.reusable == 'true'\"",
+    "    if: \"!cancelled() && needs.change-scope.result == 'success'\"",
+    "    if: \"always() && needs.change-scope.result == 'success' && needs.change-scope.outputs.reusable == 'true'\"",
+  ]) {
+    const changed = mutateWorkflowJob(ciContent, 'reusable-base', block => block.replace(
+      "    if: \"!cancelled() && needs.change-scope.result == 'success' && needs.change-scope.outputs.reusable == 'true'\"",
+      replacement,
+    ));
+    assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
+    assert.throws(() => assertRunnerAdmissionControl(changed), /silently suppress/);
+  }
+  const throttled = mutateWorkflowJob(ciContent, 'reusable-base', block => block.replace(
+    '    strategy:\n',
+    '    strategy:\n      max-parallel: 5\n',
+  ));
+  assert.notEqual(throttled, ciContent.replace(/\r\n/g, '\n'));
+  assert.throws(() => assertRunnerAdmissionControl(throttled), /start together/);
 });
 
 // [2026-08-16 신설] 훅 전용이던 검증을 CI 로 미러링하면서, 그 스텝이 조용히 사라지지

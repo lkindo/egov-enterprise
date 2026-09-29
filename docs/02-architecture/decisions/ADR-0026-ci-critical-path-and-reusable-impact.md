@@ -72,13 +72,13 @@ Oracle crash-recovery 시험은 별도 JVM에서 일반 classpath/JAR를 실행�
 9. 제품 PIT 10개의 대상·임계값은 바꾸지 않고, `max-parallel: 5`의 선언 순서만 Linux
    실측 시간이 긴 순서로 배치한다. 첫 다섯 슬롯은 339·334·307·289·273초 범위를 먼저 받고,
    234초 범위가 다음으로 대기하여 54~61초 foundation 범위 뒤로 긴 인증 범위가 밀리지 않게 한다.
-10. 동시 20개 runner 환경에서 임계 E2E·재사용 검증이 초기 배정에서 밀리지 않도록 `sast-scope`와
+10. 동시 20개 runner 환경에서 임계 E2E·migration 검증이 초기 배정에서 밀리지 않도록 `sast-scope`와
     `mutation-scope-migration`은 각각 `max-parallel: 1`을 사용한다. CodeQL Java·JavaScript/TypeScript와
     이관 PIT 네 scope의 모집단·명령·임계값은 모두 유지한다. run `36575378891`에서 각 matrix의 실제 실행
     합계는 약 7분 20초와 4분 12초였으므로 직렬 입장 후에도 12분 목표 안에 완료할 수 있다. 재사용 profile
-    여섯 개는 `max-parallel: 5`로 첫 배정을 제한하고 가장 짧은 여섯 번째 profile을 첫 완료 뒤 시작한다.
-    `secret-scan`은 짧은 `frontend-scope`가 슬롯을 반납한 뒤 시작하되 `always()`와 분류 성공 검사를 유지해
-    frontend 실패·skip이 보안 검증을 생략시키지 못하게 한다.
+    여섯 개와 `secret-scan`은 짧은 `frontend-scope`가 슬롯을 반납한 뒤 시작한다. profile은 여섯 개를 함께
+    실행하고 `!cancelled()`와 분류 성공 검사를 사용해 취소에는 반응하면서 frontend 실패·skip이 선택된 검증을
+    생략시키지 못하게 한다. secret-scan은 `always()`와 분류 성공 검사를 유지한다.
 
 ## 검증과 한계
 
@@ -130,3 +130,12 @@ migration shard용 초기 슬롯 두 개를 확보한다. 같은 실행의 E2E 2
 합성 사용자 정리와 주기적 활동 로그 flush가 FK에서 경합해 첫 삭제만 409였고 재시도에서 통과했다.
 소유 데이터 조회와 자식 설문 삭제를 유지하며, 이 cleanup만 409일 때 한 번 재시도하고 최종 404를 확인한다.
 6차는 required 실패 표본이므로 중앙값에는 포함하지 않는다.
+
+[7차 전체 실행 36583969340](https://github.com/lkindo/egov-enterprise/actions/runs/36583969340)은 재사용 profile
+상한과 secret-scan 지연을 실측했다. migration 2·3번 shard는 각각 1분 35초·3분 15초에 시작해 6차보다
+최대 4분가량 빨라졌고, 세 shard는 10분 55초 안에 끝났다. 그러나 scheduler가 `demo/single-module`을
+6분 40초까지 미뤘고 이 profile 자체가 7분 52초 걸려 전체를 14분 42초로 늘렸다. 따라서 profile 하나를
+지연시키는 `max-parallel: 5`는 폐기한다. 초기에는 profile 전체를 보류해 migration 세 shard를 먼저
+입장시키고, 3분 12초에 끝난 `frontend-scope` 뒤에서 여섯 profile과 secret-scan을 함께 시작한다.
+`backend-schema-scope`의 1건 실패는 격리 DB의 `V2_94`가 PostgreSQL `55P03` lock을 즉시 획득하지 못한
+표본이며, 다음 동일 구성 실행에서 재현성을 확인한다. 7차도 required 실패 표본이므로 중앙값에는 포함하지 않는다.

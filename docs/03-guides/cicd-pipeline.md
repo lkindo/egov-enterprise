@@ -35,7 +35,7 @@ push/PR / workflow_dispatch
         ├─ backend-schema-scope (schema=true: backend와 병렬 PostgreSQL schema-validation)
         ├─ migration-test-scope (migration=true: 123개 이관 테스트 클래스를 3개 matrix로 정확히 분배)
         │   └─ migration-scope (세 결과 집계·JaCoCo 병합·bootJar·85/70 커버리지)
-        ├─ reusable-base (영향받는 core·collaboration·demo profile×layout 생성·기술 검증)
+        ├─ reusable-base (frontend-scope 완료 뒤 영향받는 core·collaboration·demo profile×layout 동시 생성·기술 검증)
         ├─ reusable-custom (core 영향 시 custom composition 두 layout을 profile과 병렬 검증)
         ├─ backend-build (온라인·스키마·이관·재사용 profile·custom 결과를 집계)
         ├─ frontend-scope (codegen·typecheck·lint·audit·Next build·bundle budget)
@@ -106,10 +106,14 @@ E2E와 재사용 검증이 5분 이상 배정을 기다릴 수 있다. `sast-sco
 남긴다. 이는 검증 삭제나 nightly 이관이 아니며 CodeQL 양언어, 이관 PIT 네 모집단과 각 75% 판정을 모두
 같은 required 실행에서 끝낸다. 해당 실행의 실제 작업 합계가 약 7분 20초와 4분 12초였다는 근거로 선택했으며,
 각 job의 30/40분 안전 상한과 fail-fast 비활성화도 유지한다. 후속 [실행 36579753346](https://github.com/lkindo/egov-enterprise/actions/runs/36579753346)에서
-재사용 여덟 job은 즉시 시작했지만 migration 3번 shard가 5분 20초 기다렸다. 따라서 `reusable-base`는
-동시에 다섯 profile만 실행하고, 가장 짧은 여섯 번째 profile은 첫 완료 슬롯을 쓴다. `secret-scan`은
-`frontend-scope` 완료 뒤 시작하지만 `always()`와 분류 결과 검사를 유지해 frontend 실패·skip에서도 실행된다.
-이 두 슬롯은 migration shard의 초기 입장에 쓰며 검사 모집단·required context·실패 판정은 바뀌지 않는다.
+재사용 여덟 job은 즉시 시작했지만 migration 3번 shard가 5분 20초 기다렸다. 다음
+[실행 36583969340](https://github.com/lkindo/egov-enterprise/actions/runs/36583969340)에서 `reusable-base`를
+다섯 개로 제한하자 migration 대기는 줄었지만 뒤로 밀린 `demo/single-module`이 7분 52초 걸려 전체가
+14분 42초가 됐다. 따라서 profile별 상한은 두지 않는다. 여섯 profile 전체와 `secret-scan`을
+`frontend-scope` 완료 뒤 시작해 초기 슬롯은 세 migration shard에 주고, frontend가 반납한 슬롯에서는
+profile을 함께 실행한다. reusable source는 `!cancelled()`와 분류 성공 검사를 써 취소에는 반응하면서
+frontend 실패·skip에서도 선택된 검증을 실행한다. `secret-scan`은 `always()`를 유지한다. 검사 모집단·
+required context·실패 판정은 바뀌지 않는다.
 
 PR과 **main/master push는 같은 영향 분류**를 적용한다. PR은 base/head, push는 이전/현재 SHA를 비교하며 수동 실행·비교 기준 부재·미지 또는 빈 변경은 전수로 돌아간다. 따라서 문서 전용 fast path는 기본 브랜치에도 적용된다. 전수 로컬 `localGate`·`jacocoRootCoverageVerification`은 유지하며, 릴리스는 대상 커밋의 required 성공과 릴리스 고유 증거를 확인한다. 주간 취약점 감사·부하·DR 검증은 각각의 별도 워크플로우와 격리 환경에서 실행한다.
 

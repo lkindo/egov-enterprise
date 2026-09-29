@@ -160,9 +160,10 @@
         {
           "sourceJobId": "reusable-base",
           "sourceNeeds": [
-            "change-scope"
+            "change-scope",
+            "frontend-scope"
           ],
-          "sourceJobIf": "needs.change-scope.outputs.reusable == 'true'",
+          "sourceJobIf": "!cancelled() && needs.change-scope.result == 'success' && needs.change-scope.outputs.reusable == 'true'",
           "sourceStepName": "Generate and verify reusable profile",
           "sourceRun": "node scripts/verify-reusable-base.mjs --profile ${{ matrix.profile }} --layout ${{ matrix.layout }}",
           "sourceWorkingDirectory": null,

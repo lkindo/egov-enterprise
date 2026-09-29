@@ -814,14 +814,14 @@ jobs:
   # Stable required contexts. A selected heavy source must succeed; an
   # explicitly unselected source must be skipped. Every other state is red.
   reusable-base:
-    needs: [change-scope]
-    if: needs.change-scope.outputs.reusable == 'true'
+    # 전체 profile을 frontend production source 뒤에서 함께 시작한다. full run의 초기
+    # runner는 migration shard에 먼저 배정하고, profile 하나를 뒤로 밀어 새 임계 경로를
+    # 만들지 않는다. !cancelled()라 취소에는 반응하면서 frontend 실패·skip은 검증을 생략시키지 않는다.
+    needs: [change-scope, frontend-scope]
+    if: "!cancelled() && needs.change-scope.result == 'success' && needs.change-scope.outputs.reusable == 'true'"
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
-      # 여섯 profile 중 다섯만 먼저 입장시켜 migration shard용 초기 슬롯을 보장한다.
-      # 가장 짧은 여섯 번째 profile은 첫 완료 뒤 시작해도 run 36579753346 실측상 12분 안이다.
-      max-parallel: 5
       fail-fast: false
       matrix: ${{ fromJSON(needs.change-scope.outputs['reusable-matrix']) }}
     steps:
