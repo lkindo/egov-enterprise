@@ -28,7 +28,7 @@
 push/PR / workflow_dispatch
     │
     └─ change-scope (PR·main/master push: 같은 영향 분류 / 비교 불가·수동: 전수)
-        ├─ sast-scope (Java·JavaScript/TypeScript CodeQL security-extended)
+        ├─ sast-scope (Java·JavaScript/TypeScript CodeQL security-extended, 한 runner 슬롯에서 순차 실행)
         │   └─ secure-coding (High/Critical 차단, 언어별 결과 집계)
         ├─ secret-scan (운영 계약·snapshot readiness·PR runtime 의존성 review·비밀 스캔)
         ├─ backend-scope (backend=true: 온라인 4모듈 빌드·테스트·커버리지·OpenAPI 신선도)
@@ -42,7 +42,7 @@ push/PR / workflow_dispatch
         ├─ frontend-coverage-scope (frontend-scope와 병렬로 전체 Vitest coverage)
         ├─ frontend-build (두 frontend source를 각각 집계하는 안정 required context)
         ├─ mutation-scope (mutation=true, 상류 빌드 대기 없이 제품 PIT 10개 배치·최대 5개 동시 실행)
-        ├─ mutation-scope-migration (mutation-migration-tool=true, 상류 빌드 대기 없이 이관 PIT 4개)
+        ├─ mutation-scope-migration (mutation-migration-tool=true, 상류 빌드 대기 없이 이관 PIT 4개를 한 슬롯에서 실행)
         │   └─ mutation-test (두 소스를 각각 fail-closed로 집계하는 안정 required aggregate)
         └─ e2e-tests (e2e=true, 상류 빌드 대기 없이 내부 2 shard)
             ├─ 전체 API·브라우저 모집단 분배 + 실행 목록/결과 대조
@@ -99,6 +99,13 @@ BRANCH 70% 게이트를 병합 데이터로 실행한다. 프로필에 없는 �
 PIT 분류는 production/test Java뿐 아니라 `src/testFixtures/**`, `src/main/resources/**`, `src/test/resources/**`를 포함한다. 온라인 4모듈의 의존 관계는 한 범위로 유지하며 개별 Java 파일별 시험 선택은 하지 않는다. 이관 전용 소스·리소스·build 변경은 이관 build/PIT를 선택하고 온라인 build/PIT·frontend·schema·E2E를 선택하지 않는다. 공용 Gradle 입력과 양쪽 ID 생성 의미 계약(`IdGenerationUtil`, `Constants`, `StandardIdGenerator`)은 두 모듈을 선택한다. 미지 입력·빈 비교는 전수이며 루트 `db_columns.json`도 기존 전수 fallback을 유지한다. 정확한 경계는 [분류기](../../scripts/ci-change-scope.mjs)와 [회귀 계약](../../scripts/ci-change-scope.test.mjs)이 소유한다.
 
 제품 PIT는 종전 대상의 정확한 합집합을 10개 scope로 실행하고 `mutation-scope`의 `max-parallel: 5`를 사용한다. [전체 실행 36550933968](https://github.com/lkindo/egov-enterprise/actions/runs/36550933968)에서 3개 제한이 후속 scope를 최대 6분 58초 대기시켰기 때문이다. [실행 36569461799](https://github.com/lkindo/egov-enterprise/actions/runs/36569461799)의 실측 339·334·307·289·273·234초 순으로 여섯 긴 scope를 먼저 선언하고 54~61초 foundation scope를 뒤에 둔다. 이 LPT 순서는 모집단·테스트·75% 게이트를 바꾸지 않고, 짧은 작업 뒤에 긴 인증 범위가 밀리는 대기만 줄인다. `business-app` 세 분할과 이관 네 분할은 기존 성공 보고서에서 각 집합이 75%를 넘는 것을 확인했으며, 새 required 실행의 성공과 시간은 별도로 확인한다. 관측값을 관리 설정의 runner 상한으로 해석하지 않는다.
+
+동시 20개 runner를 사용하는 전체 변경에서는 [실행 36575378891](https://github.com/lkindo/egov-enterprise/actions/runs/36575378891)처럼
+E2E와 재사용 검증이 5분 이상 배정을 기다릴 수 있다. `sast-scope`의 두 언어와
+`mutation-scope-migration`의 네 scope는 각각 `max-parallel: 1`로 입장을 제한해 초기 슬롯을 임계 작업에
+남긴다. 이는 검증 삭제나 nightly 이관이 아니며 CodeQL 양언어, 이관 PIT 네 모집단과 각 75% 판정을 모두
+같은 required 실행에서 끝낸다. 해당 실행의 실제 작업 합계가 약 7분 20초와 4분 12초였다는 근거로 선택했으며,
+각 job의 30/40분 안전 상한과 fail-fast 비활성화도 유지한다.
 
 PR과 **main/master push는 같은 영향 분류**를 적용한다. PR은 base/head, push는 이전/현재 SHA를 비교하며 수동 실행·비교 기준 부재·미지 또는 빈 변경은 전수로 돌아간다. 따라서 문서 전용 fast path는 기본 브랜치에도 적용된다. 전수 로컬 `localGate`·`jacocoRootCoverageVerification`은 유지하며, 릴리스는 대상 커밋의 required 성공과 릴리스 고유 증거를 확인한다. 주간 취약점 감사·부하·DR 검증은 각각의 별도 워크플로우와 격리 환경에서 실행한다.
 

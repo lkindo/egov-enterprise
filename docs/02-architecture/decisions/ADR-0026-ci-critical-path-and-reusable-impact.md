@@ -72,6 +72,10 @@ Oracle crash-recovery 시험은 별도 JVM에서 일반 classpath/JAR를 실행�
 9. 제품 PIT 10개의 대상·임계값은 바꾸지 않고, `max-parallel: 5`의 선언 순서만 Linux
    실측 시간이 긴 순서로 배치한다. 첫 다섯 슬롯은 339·334·307·289·273초 범위를 먼저 받고,
    234초 범위가 다음으로 대기하여 54~61초 foundation 범위 뒤로 긴 인증 범위가 밀리지 않게 한다.
+10. 동시 20개 runner 환경에서 임계 E2E·재사용 검증이 초기 배정에서 밀리지 않도록 `sast-scope`와
+    `mutation-scope-migration`은 각각 `max-parallel: 1`을 사용한다. CodeQL Java·JavaScript/TypeScript와
+    이관 PIT 네 scope의 모집단·명령·임계값은 모두 유지한다. run `36575378891`에서 각 matrix의 실제 실행
+    합계는 약 7분 20초와 4분 12초였으므로 직렬 입장 후에도 12분 목표 안에 완료할 수 있다.
 
 ## 검증과 한계
 
@@ -105,3 +109,11 @@ profile/custom은 위 결정대로 병렬 job으로 분리한다. 이 실행은 
 처리했다. 이 표본을 근거로 frontend build/coverage를 분리하고 제품 PIT를 LPT 순서로 배치했으며,
 MFA 테스트는 세션 쿠키 미존재를 즉시 확인한 뒤 제한 쿠키의 정확한 보안 속성 반영만 제한 시간 대기한다.
 4차도 실패 표본이므로 12분 중앙값 달성 판정에는 green 재실행을 사용한다.
+
+[5차 전체 실행 36575378891](https://github.com/lkindo/egov-enterprise/actions/runs/36575378891)은 모든 required
+check가 성공했지만 전체는 13분 48초였다. 분리한 frontend required는 7분 25초에 끝났고 제품 PIT도
+가장 늦은 scope가 9분 52초에 끝나 두 코드 병목은 해소됐다. 반면 동시 20개 runner가 이미 배정되어
+E2E 1번 shard와 `reusable-base demo/single-module`이 각각 5분 22초와 5분 29초를 기다렸고, 이 대기가
+전체 초과분을 만들었다. 같은 실행에서 CodeQL 양언어의 실행 합계는 약 7분 20초, 이관 PIT 네 scope는
+약 4분 12초였으므로 두 짧은 비임계 matrix를 한 슬롯씩 사용하도록 결정 10의 입장 제어를 적용한다.
+실제 12분 이하 중앙값 판정은 이 설정을 포함한 동일 SHA의 연속 green 실행으로 확인한다.

@@ -81,9 +81,17 @@ function assertProductMutationConcurrency(content) {
     'product PIT must reserve runner capacity with exactly five concurrent batches');
   assert.equal([...product.matchAll(/^ {10}- scope: \S+$/gm)].length, 10, 'all ten product PIT batches must remain');
   for (const job of [product, migration]) assert.match(job, /^ {4}needs: \[change-scope\]$/m);
-  assert.doesNotMatch(migration, /^ {6}max-parallel:/m, 'migration keeps its independent concurrency');
   for (const scope of ['migration-transform-registry', 'migration-transform-converter', 'migration-validate', 'migration-verify']) {
     assert.match(migration, new RegExp(`^ {10}- scope: ${scope}$`, 'm'));
+  }
+}
+
+function assertRunnerAdmissionControl(content) {
+  const jobs = parseWorkflowJobs(content);
+  for (const jobId of ['sast-scope', 'mutation-scope-migration']) {
+    const job = jobs.get(jobId) ?? '';
+    assert.deepEqual(job.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 1'],
+      `${jobId} must consume exactly one runner slot at a time`);
   }
 }
 
@@ -978,6 +986,18 @@ test('sharded PIT jobs keep the common bounded timeout', () => {
       assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'), 'negative fixture must change the job');
       assert.match(validateStaticContract({ manifest, ciContent: changed }).join('\n'),
         new RegExp(`${jobId} timeout`, 'i'));
+    }
+  }
+});
+
+test('short noncritical matrices reserve runner capacity without dropping validation', () => {
+  assertRunnerAdmissionControl(ciContent);
+  for (const jobId of ['sast-scope', 'mutation-scope-migration']) {
+    for (const replacement of ['', '      max-parallel: 2\n', '      # max-parallel: 1\n']) {
+      const changed = mutateWorkflowJob(ciContent, jobId,
+        block => block.replace('      max-parallel: 1\n', replacement));
+      assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
+      assert.throws(() => assertRunnerAdmissionControl(changed), /one runner slot/);
     }
   }
 });

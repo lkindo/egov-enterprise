@@ -100,6 +100,9 @@ jobs:
       contents: read
       security-events: write
     strategy:
+      # 20-runner pool에서 E2E/reusable 임계 작업이 밀리지 않게 두 언어를 한 슬롯에서 실행한다.
+      # run 36575378891의 합산 실측은 약 7분 20초라 12분 목표 안에서 양언어 전수 분석을 유지한다.
+      max-parallel: 1
       fail-fast: false
       matrix:
         language: [java, javascript]
@@ -1419,6 +1422,9 @@ jobs:
     # 네 scope 모두 30분 안에 끝나야 한다. 종전 결합 범위의 60분 예외는 샤딩으로 제거한다.
     timeout-minutes: 30
     strategy:
+      # 네 짧은 scope를 한 슬롯에서 실행해 초기 runner를 E2E/reusable에 양보한다.
+      # run 36575378891의 합산 실측은 약 4분 12초이며 대상·테스트·75% gate는 그대로다.
+      max-parallel: 1
       # 한 스코프가 깨져도 나머지를 끝까지 돌린다 — 어디까지 무너졌는지 한 번에 봐야 한다.
       fail-fast: false
       matrix:
