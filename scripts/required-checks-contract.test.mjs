@@ -77,12 +77,14 @@ function assertProductMutationConcurrency(content) {
   const jobs = parseWorkflowJobs(content);
   const product = jobs.get('mutation-scope') ?? '';
   const migration = jobs.get('mutation-scope-migration') ?? '';
-  assert.deepEqual(product.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 3'],
-    'product PIT must reserve runner capacity with exactly three concurrent batches');
-  assert.equal([...product.matchAll(/^ {10}- scope: \S+$/gm)].length, 8, 'all eight product PIT batches must remain');
+  assert.deepEqual(product.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 5'],
+    'product PIT must reserve runner capacity with exactly five concurrent batches');
+  assert.equal([...product.matchAll(/^ {10}- scope: \S+$/gm)].length, 10, 'all ten product PIT batches must remain');
   for (const job of [product, migration]) assert.match(job, /^ {4}needs: \[change-scope\]$/m);
   assert.doesNotMatch(migration, /^ {6}max-parallel:/m, 'migration keeps its independent concurrency');
-  assert.match(migration, /^ {10}- scope: migration-validate-verify$/m);
+  for (const scope of ['migration-transform-registry', 'migration-transform-converter', 'migration-validate', 'migration-verify']) {
+    assert.match(migration, new RegExp(`^ {10}- scope: ${scope}$`, 'm'));
+  }
 }
 
 const baselineRunner = 'node ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=full-suite e2e/quality/visual-baselines.spec.ts -g "Visual Regression Baseline" --update-snapshots';
@@ -475,15 +477,15 @@ test('stable backend and frontend contexts aggregate conditional source jobs fai
 
 test('E2E and PIT sources start after classification without waiting for independent builds', () => {
   assertProductMutationConcurrency(ciContent);
-  for (const replacement of ['', '      max-parallel: 2\n', '      max-parallel: 8\n', '      # max-parallel: 3\n']) {
+  for (const replacement of ['', '      max-parallel: 3\n', '      max-parallel: 8\n', '      # max-parallel: 5\n']) {
     const changed = mutateWorkflowJob(ciContent, 'mutation-scope',
-      block => block.replace('      max-parallel: 3\n', replacement));
+      block => block.replace('      max-parallel: 5\n', replacement));
     assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
-    assert.throws(() => assertProductMutationConcurrency(changed), /three concurrent batches/);
+    assert.throws(() => assertProductMutationConcurrency(changed), /five concurrent batches/);
   }
   const removedBatch = mutateWorkflowJob(ciContent, 'mutation-scope',
-    block => block.replace(/^ {10}- scope: business-app\n(?: {12}.+\n)+/m, ''));
-  assert.throws(() => assertProductMutationConcurrency(removedBatch), /all eight product PIT batches/);
+    block => block.replace(/^ {10}- scope: business-app-board\n(?: {12}.+\n)+/m, ''));
+  assert.throws(() => assertProductMutationConcurrency(removedBatch), /all ten product PIT batches/);
   const serializedMigration = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
     block => block.replace('    needs: [change-scope]', '    needs: [change-scope, mutation-scope]'));
   assert.throws(() => assertProductMutationConcurrency(serializedMigration));
@@ -903,31 +905,16 @@ test('mutation jobs provision the Gradle distribution with a bounded retry befor
   assert.ok(provision >= 0 && provision < pit, 'Gradle distribution retry must run before the PIT hard gate');
 });
 
-test('only the measured migration validate/verify scope gets a bounded longer PIT job', () => {
+test('sharded PIT jobs keep the common bounded timeout', () => {
   assert.deepEqual(validateStaticContract({ manifest, ciContent }), []);
-  // 60분 표현식은 이관 전용 잡에만 있고, 제품 스코프 잡은 30분 고정이다(DEC-OPS-104).
-  const timeoutLine = "    timeout-minutes: ${{ matrix.scope == 'migration-validate-verify' && 60 || 30 }}";
-  const invalidTimeouts = [
-    '    timeout-minutes: 30',
-    '    timeout-minutes: 60',
-    timeoutLine.replace('migration-validate-verify', 'migration-transform'),
-    timeoutLine.replace('&& 60', '&& 90'),
-    timeoutLine.replace('|| 30', '|| 60'),
-    `    # ${timeoutLine.trim()}`,
-    `${timeoutLine}\n    timeout-minutes: 30`,
-  ];
-  // 제품 스코프 잡에 60분을 되돌려 주는 것도 red 다 — 그 잡에는 60분이 필요한 스코프가 없다.
-  const productTimeoutBack = mutateWorkflowJob(ciContent, 'mutation-scope',
-    block => block.replace('    timeout-minutes: 30', timeoutLine));
-  assert.match(validateStaticContract({ manifest, ciContent: productTimeoutBack }).join('\n'),
-    /mutation-scope timeout must be exactly 30/i);
-  for (const replacement of invalidTimeouts) {
-    // 변형 대상은 이관 전용 잡이다 — 60분 표현식이 사는 유일한 자리다.
-    const changed = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
-      block => block.replace(timeoutLine, replacement));
-    assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'), 'negative fixture must change the job');
-    assert.match(validateStaticContract({ manifest, ciContent: changed }).join('\n'),
-      /mutation-scope-migration timeout/);
+  for (const jobId of ['mutation-scope', 'mutation-scope-migration']) {
+    for (const replacement of ['    timeout-minutes: 60', '    timeout-minutes: 15', '    # timeout-minutes: 30']) {
+      const changed = mutateWorkflowJob(ciContent, jobId,
+        block => block.replace('    timeout-minutes: 30', replacement));
+      assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'), 'negative fixture must change the job');
+      assert.match(validateStaticContract({ manifest, ciContent: changed }).join('\n'),
+        new RegExp(`${jobId} timeout`, 'i'));
+    }
   }
 });
 

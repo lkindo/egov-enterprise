@@ -657,12 +657,11 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
   if (jobs.size < 3) {
     errors.push(`workflow job parsing failed: only ${jobs.size} job(s) found`);
   }
-  // 60분은 실측으로 30분을 넘은 migration-validate-verify 에만 허용한다. 그 스코프가 전용 잡으로
-  //   옮겨졌으므로(DEC-OPS-104) 제품 스코프 잡은 30분 고정이고 60분 표현식은 이관 잡에만 있어야 한다.
-  //   둘을 함께 고정해야 "제품 잡에 60분을 주는" 되돌림도 red 가 된다.
+  // 2026-09-29 실측으로 긴 PIT 모집단을 독립 75% scope로 나눴다. 두 source job 모두
+  // 30분 상한을 공유하며 예전 migration 결합 scope의 60분 예외를 되살리면 red 다.
   const mutationTimeouts = [
     ['mutation-scope', '30'],
-    ['mutation-scope-migration', "${{ matrix.scope == 'migration-validate-verify' && 60 || 30 }}"],
+    ['mutation-scope-migration', '30'],
   ];
   for (const [jobId, expected] of mutationTimeouts) {
     const job = jobs.get(jobId) ?? '';

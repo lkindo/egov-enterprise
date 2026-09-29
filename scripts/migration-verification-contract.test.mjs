@@ -25,11 +25,14 @@ const childOnlyTests = [
   'nuri.migration.MariaDbPackagedCliIntegrationTest',
   'nuri.migration.EtlSqlServerCrashRecoveryIntegrationTest',
   'nuri.migration.SqlServerPackagedCliIntegrationTest',
+  'nuri.migration.EtlOracleCrashRecoveryIntegrationTest',
   'nuri.migration.OraclePackagedCliIntegrationTest',
 ];
 const childOnlyScopes = [
-  ['nuri.migration.transform.*'],
-  ['nuri.migration.validate.*', 'nuri.migration.verify.*'],
+  ['nuri.migration.transform.TransformerRegistry'],
+  ['nuri.migration.transform.TypeConverter'],
+  ['nuri.migration.validate.*'],
+  ['nuri.migration.verify.*'],
 ];
 const ordinaryDrillConfiguration = `
 tasks.named('test', Test) {
@@ -262,7 +265,7 @@ test('migration scope executes only its independent contracts and module tasks o
   assert.doesNotMatch(moduleBuild, /\b(?:api|implementation|testImplementation)\s+project\(/);
 });
 
-test('child-only PIT probes are excluded only from the two exact CI target scopes while ordinary Test retains them', () => {
+test('child-only PIT probes are excluded only from the four exact CI target scopes while ordinary Test retains them', () => {
   assert.deepEqual(validateDrillBuild(moduleBuild), []);
   assert.deepEqual(validateDrillBuild(moduleBuild.replace(/\n/g, '\r\n')), []);
   assert.deepEqual(validateRunner(runner, 'win32'), []);
@@ -270,14 +273,14 @@ test('child-only PIT probes are excluded only from the two exact CI target scope
   assert.deepEqual(validateWorkflow(workflow), []);
 });
 
-test('broad PIT exclusions, excluded Oracle engine probes, and ordinary Test filters turn red', () => {
+test('broad PIT exclusions, unregistered engine probes, and ordinary Test filters turn red', () => {
   for (const mutate of [
     (source) => source.replace(childOnlyTests[0], 'nuri.migration.*IntegrationTest'),
     (source) => source.replace(`,\n                '${childOnlyTests[3]}'`, ''),
     (source) => source.replace(`,\n                '${childOnlyTests[4]}'`, ''),
     (source) => source.replace(`,\n                '${childOnlyTests[5]}'`, ''),
     (source) => source.replace(`,\n                '${childOnlyTests[6]}'`, ''),
-    (source) => source.replace(`'${childOnlyTests[1]}'`, `'${childOnlyTests[1]}',\n                'nuri.migration.EtlOracleCrashRecoveryIntegrationTest'`),
+    (source) => source.replace(`'${childOnlyTests[1]}'`, `'${childOnlyTests[1]}',\n                'nuri.migration.EtlOraclePostgresIntegrationTest'`),
     (source) => source.replace("tasks.named('test', Test) {", "tasks.named('test', Test) {\n    exclude '**/*IntegrationTest*'"),
     (source) => source.replace("tasks.named('test', Test) {", "tasks.named('test', Test) {\n    onlyIf { false }"),
     (source) => `tasks.named('test') { enabled = false }\n${source}`,
@@ -299,7 +302,7 @@ test('unconditional, broadened, disabled, and comment or quoted-string PIT polic
   for (const mutate of [
     (source) => source.replace('if (targetClasses.get()', 'if (true || targetClasses.get()'),
     (source) => source.replace('if (targetClasses.get()', 'if (false && targetClasses.get()'),
-    (source) => source.replace("['nuri.migration.transform.*'].toSet()", "['nuri.*'].toSet()"),
+    (source) => source.replace("['nuri.migration.transform.TransformerRegistry'].toSet()", "['nuri.*'].toSet()"),
     (source) => source.replace('excludedTestClasses = [', '// excludedTestClasses = ['),
     (source) => source.replace('    if (targetClasses.get()', '    /* if (targetClasses.get()')
       .replace('    jvmArgs.add(providers.provider {', '    */\n    jvmArgs.add(providers.provider {'),

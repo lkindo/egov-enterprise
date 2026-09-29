@@ -10,14 +10,14 @@
 |---|---|
 | 엔진·플러그인 | PIT 엔진 `1.25.9` 명시 고정, 루트 Gradle 플러그인 `1.19.0`, JUnit 5 플러그인 `1.2.1`; 하위 Java 모듈에 공통 적용 |
 | 대상 | `PIT_TARGET_CLASSES`·`PIT_TARGET_TESTS`의 쉼표 구분 클래스명 glob. 미설정 시 각각 `nuri.*` |
-| CI | 제품 8개 스코프(`mutation-scope`)와 이관 도구 2개 스코프(`mutation-scope-migration`, DEC-OPS-104)를 병렬 실행하고 안정 required context `mutation-test`가 두 잡을 집계 |
+| CI | 제품 10개 스코프(`mutation-scope`)와 이관 도구 4개 스코프(`mutation-scope-migration`, DEC-OPS-104·180)를 병렬 실행하고 안정 required context `mutation-test`가 두 잡을 집계 |
 | 하한 | `STRICT_MUTATION=true`일 때 75%, 미설정 로컬 실행은 threshold 0의 리포트 모드. `CI=true`만으로 활성화되지 않음 |
 | 빈 모집단 | `failWhenNoMutations = true`이므로 대상 오타·과도한 제외로 mutation이 0건이면 로컬도 실패 |
 | 결과 | 모듈별 `build/reports/pitest`의 HTML/XML; 정확한 하위 경로는 해당 실행 출력 확인 |
 | 실행 오류 | 기존 `pitest` 후처리가 해당 태스크 `reportDir/mutations.xml`을 검사한다. `RUN_ERROR` 또는 누락·손상·빈 XML이면 로컬 리포트 모드도 실패한다. `TIMED_OUT`의 기존 PIT 판정과 75% 하한은 유지한다. |
 | 변이 재계산 | `enableDefaultIncrementalAnalysis = false`, history 입출력·CI 전용 캐시 없음. PIT가 실행되는 선택 스코프의 변이를 이전 판정 재사용 없이 재계산 |
 
-기존 `business-core-auth` 스코프는 인증·로그인·보안 유틸에 더해 `MenuService`, `EgovAuthenticationProvider`, business-core의 `RateLimitFilter` 세 클래스를 명시적으로 검사한다. 메뉴 순환·배치의 최종 부모 그래프, 비밀번호/계정 상태/인증 장애 구분, 요청 한도 분기의 테스트 탐지력을 확인하기 위한 범위다. 기존 `business-app` 스코프는 `SurveyResultService` 한 클래스를 추가해 제출자·중복·기간·문항/항목 소속 검증과 응답 표시의 선택항목 노출 경계를 검사한다. 패키지 전체나 새 잡을 추가하지 않으며 기존 테스트 glob과 75% 하한을 유지한다. 기존 registry/workflow 계약은 양쪽의 일치를 검사하고, 네 경계를 양쪽에서 함께 제거해도 실패한다.
+기존 `business-core-auth` 스코프는 인증·로그인·보안 유틸에 더해 `MenuService`, `EgovAuthenticationProvider`, business-core의 `RateLimitFilter` 세 클래스를 명시적으로 검사한다. 메뉴 순환·배치의 최종 부모 그래프, 비밀번호/계정 상태/인증 장애 구분, 요청 한도 분기의 테스트 탐지력을 확인하기 위한 범위다. 종전 `business-app` 대상은 board, workflow, delivery/operation의 겹침 없는 세 scope로 나뉜다. 마지막 scope는 `SurveyResultService`를 포함해 제출자·중복·기간·문항/항목 소속 검증과 응답 표시의 선택항목 노출 경계를 검사한다. 세 scope 모두 같은 테스트 glob과 75% 하한을 독립 적용한다. registry/workflow 계약은 14개 scope의 정확한 일치와 핵심 대상을 검사하며 양쪽에서 함께 제거해도 실패한다.
 
 이 클래스들의 PIT 결과가 실제 PostgreSQL 행 잠금·native SQL·트랜잭션 원자성을 대신하지는 않는다. 특히 메뉴 순환의 무한 반복 mutant는 timeout으로 탐지될 수 있으므로 결과의 `KILLED`와 `TIMED_OUT`을 구분하고 관련 DB 통합 테스트 증거를 함께 남긴다. 대상 편입은 실행 성공이나 점수 확보의 증거가 아니며 해당 변경 SHA의 리포트와 소요시간으로 판정한다.
 
@@ -33,7 +33,7 @@ history 플러그인은 추가하지 않는다. 이전 [history 기반 최적화
 
 JUnit Platform launcher는 공통 `testRuntimeOnly`로 선언하고 `addJUnitPlatformLauncher = false`로 PIT의 별도 자동 탐색을 끈다. 실제 managed test runtime classpath를 사용해 BOM override가 빠진 임시 configuration이 의존성 그래프에 낡은 버전을 보고하는 문제를 방지한다. 이는 테스트나 의존성 스캔의 제외 설정이 아니다.
 
-`migration-tool`의 [모듈 설정](../../migration-tool/build.gradle)은 Gradle `test`와 PIT minion 모두에 `migration.drill.classpath`를 전달한다. [프로세스 복구 테스트](../../migration-tool/src/test/java/nuri/migration/EtlCrashRecoveryPostgresIntegrationTest.java)가 새 JVM을 시작할 때 이 classpath를 쓰므로 PostgreSQL/Docker가 필요하다. 자식 JVM 자체가 PIT로 계측되는 것은 아니며, 해당 프로세스 테스트는 종료·재개·중복 방지 계약을 검사하고 in-process 테스트가 mutation 탐지를 보완한다.
+`migration-tool`의 [모듈 설정](../../migration-tool/build.gradle)은 Gradle `test`와 PIT minion 모두에 `migration.drill.classpath`를 전달한다. [프로세스 복구 테스트](../../migration-tool/src/test/java/nuri/migration/EtlCrashRecoveryPostgresIntegrationTest.java)가 새 JVM을 시작할 때 이 classpath를 쓰므로 PostgreSQL/Docker가 필요하다. 자식 JVM 자체가 PIT로 계측되는 것은 아니며, 해당 프로세스 테스트는 종료·재개·중복 방지 계약을 검사하고 in-process 테스트가 mutation 탐지를 보완한다. 일반 classpath/JAR를 시작하는 MySQL·MariaDB·SQL Server·Oracle crash/packaged CLI 시험 8개는 transform 두 클래스와 validate·verify의 네 CI scope에서만 제외한다. ordinary `test`와 로컬 전체 PIT에는 남으며 광역 제외와 미등록 외부 프로세스 시험은 계약이 거부한다.
 
 ## 실행 방법
 
@@ -48,6 +48,6 @@ $env:STRICT_MUTATION = 'true'
 ./gradlew :foundation:pitest --warning-mode fail --console=plain
 ```
 
-환경변수는 같은 PowerShell 세션의 다음 실행에도 남는다. 이후 다른 스코프를 실행할 때는 값을 명시적으로 다시 설정하거나 별도 셸을 사용한다. 모듈/클래스가 존재하는지 먼저 확인하고, 실행 대상·mutation 수·점수·survivor와 실제 종료 코드를 함께 기록한다. 로컬의 선택 스코프 green을 CI 10개(제품 8 + 이관 2) 전체 통과로 보고하지 않는다.
+환경변수는 같은 PowerShell 세션의 다음 실행에도 남는다. 이후 다른 스코프를 실행할 때는 값을 명시적으로 다시 설정하거나 별도 셸을 사용한다. 모듈/클래스가 존재하는지 먼저 확인하고, 실행 대상·mutation 수·점수·survivor와 실제 종료 코드를 함께 기록한다. 로컬의 선택 스코프 green을 CI 14개(제품 10 + 이관 4) 전체 통과로 보고하지 않는다.
 
-*Verified against current Gradle configuration, CI and gate registry: 2026-09-27.*
+*Verified against current Gradle configuration, CI and gate registry: 2026-09-29.*

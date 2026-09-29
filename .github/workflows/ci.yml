@@ -1115,15 +1115,28 @@ jobs:
     # 이 잡에는 60분이 필요한 스코프가 없다 — 그 범위는 mutation-scope-migration 이 가져갔다.
     timeout-minutes: 30
     strategy:
-      # 제품 8개 배치는 모두 실행하되 E2E와 긴 migration 작업에 runner 여유를 남긴다.
-      max-parallel: 3
+      # 제품 10개 배치는 모두 실행하되 E2E와 긴 migration 작업에 runner 여유를 남긴다.
+      # 2026-09-29 실측에서 3개 제한은 후속 scope를 최대 6분 58초 대기시켰다.
+      max-parallel: 5
       # 한 스코프가 깨져도 나머지를 끝까지 돌린다 — 어디까지 무너졌는지 한 번에 봐야 한다.
       fail-fast: false
       matrix:
         include:
-          - scope: business-app
+          # 종전 단일 business-app 범위는 1,279 mutations, 14분 12초였다. 현재 report를
+          # 겹침 없는 세 모집단으로 나누고 각 모집단에 75%를 따로 적용해 gate를 강화한다.
+          - scope: business-app-board
             gradle: ":business-app:pitest"
-            classes: "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.informalsanction.*,nuri.business.service.comment.*,nuri.business.service.isg.*,nuri.business.service.operation.*,nuri.business.service.survey.SurveyResultService"
+            classes: "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.comment.*"
+            tests: "nuri.business.*"
+
+          - scope: business-app-workflow
+            gradle: ":business-app:pitest"
+            classes: "nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.informalsanction.*"
+            tests: "nuri.business.*"
+
+          - scope: business-app-delivery-operation
+            gradle: ":business-app:pitest"
+            classes: "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.isg.*,nuri.business.service.operation.*,nuri.business.service.survey.SurveyResultService"
             tests: "nuri.business.*"
 
           - scope: business-core-file
@@ -1228,23 +1241,34 @@ jobs:
     needs: [change-scope]
     if: ${{ !cancelled() && needs.change-scope.result == 'success' && needs.change-scope.outputs['mutation-migration-tool'] == 'true' }}
     runs-on: ubuntu-latest
-    # 실제 DB coverage 후 변이 실행이 30분을 넘은 validate/verify 범위만 시간을 확보한다.
-    timeout-minutes: ${{ matrix.scope == 'migration-validate-verify' && 60 || 30 }}
+    # 네 scope 모두 30분 안에 끝나야 한다. 종전 결합 범위의 60분 예외는 샤딩으로 제거한다.
+    timeout-minutes: 30
     strategy:
       # 한 스코프가 깨져도 나머지를 끝까지 돌린다 — 어디까지 무너졌는지 한 번에 봐야 한다.
       fail-fast: false
       matrix:
         include:
-          # 레거시 값 변환의 빈 값·정밀도·날짜 경계에서 조용한 데이터 손상을 탐지한다.
-          - scope: migration-transform
+          # 2026-09-29 실측: 종전 transform 결합 범위는 74 mutations, 15분 11초였다.
+          # 두 클래스와 validate/verify를 독립 75% gate로 나눠 같은 모집단을 병렬 검증한다.
+          - scope: migration-transform-registry
             gradle: ":migration-tool:pitest"
-            classes: "nuri.migration.transform.*"
+            classes: "nuri.migration.transform.TransformerRegistry"
+            tests: "nuri.migration.*"
+
+          - scope: migration-transform-converter
+            gradle: ":migration-tool:pitest"
+            classes: "nuri.migration.transform.TypeConverter"
             tests: "nuri.migration.*"
 
           # 매핑·fkRef와 이관 행 수 검증을 뒤집어 유실·고아 데이터를 PASS로 판정하는 회귀를 차단한다.
-          - scope: migration-validate-verify
+          - scope: migration-validate
             gradle: ":migration-tool:pitest"
-            classes: "nuri.migration.validate.*,nuri.migration.verify.*"
+            classes: "nuri.migration.validate.*"
+            tests: "nuri.migration.*"
+
+          - scope: migration-verify
+            gradle: ":migration-tool:pitest"
+            classes: "nuri.migration.verify.*"
             tests: "nuri.migration.*"
 
     steps:
