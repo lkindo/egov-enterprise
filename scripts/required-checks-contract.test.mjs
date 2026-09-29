@@ -93,6 +93,9 @@ function assertRunnerAdmissionControl(content) {
     assert.deepEqual(job.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 1'],
       `${jobId} must consume exactly one runner slot at a time`);
   }
+  const reusable = jobs.get('reusable-base') ?? '';
+  assert.deepEqual(reusable.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 5'],
+    'reusable-base must leave one initial runner slot for critical migration work');
 }
 
 function assertProductMutationLptOrder(content) {
@@ -923,6 +926,7 @@ test('reusable-base consumes the fail-closed impacted profile matrix', () => {
   assert.match(classifierJob, /reusable-matrix: \$\{\{ steps\.scope\.outputs\.reusable_matrix \}\}/);
   assert.match(classifierJob, /reusable-custom: \$\{\{ steps\.scope\.outputs\.reusable_custom \}\}/);
   assert.match(reusableJob, /^    if: needs\.change-scope\.outputs\.reusable == 'true'$/m);
+  assert.match(reusableJob, /^      max-parallel: 5$/m);
   assert.match(reusableJob,
     /^      matrix: \$\{\{ fromJSON\(needs\.change-scope\.outputs\['reusable-matrix'\]\) \}\}$/m);
   assert.doesNotMatch(reusableJob, /verify-project-composer/);
@@ -999,6 +1003,12 @@ test('short noncritical matrices reserve runner capacity without dropping valida
       assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
       assert.throws(() => assertRunnerAdmissionControl(changed), /one runner slot/);
     }
+  }
+  for (const replacement of ['', '      max-parallel: 6\n', '      # max-parallel: 5\n']) {
+    const changed = mutateWorkflowJob(ciContent, 'reusable-base',
+      block => block.replace('      max-parallel: 5\n', replacement));
+    assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
+    assert.throws(() => assertRunnerAdmissionControl(changed), /initial runner slot/);
   }
 });
 
@@ -1238,10 +1248,17 @@ test('change classification is fail-closed and its contract runs in the required
   assert.match(classifierJob, /node scripts\/ci-change-scope\.mjs/);
   assert.match(classifierJob, /Unknown or empty|unknown range|unknown means full pipeline/i);
   assert.ok(secretScanJob, 'secret-scan job must exist');
-  assert.match(secretScanJob, /^    needs: change-scope$/m);
+  assert.match(secretScanJob, /^    needs: \[change-scope, frontend-scope\]$/m);
   assert.match(secretScanJob, /^    if: always\(\)$/m);
   assert.match(secretScanJob, /needs\.change-scope\.result.*!=.*success[\s\S]*?exit 1/);
   assert.match(secretScanJob, /npm run test:operational-contracts/);
+
+  const detachedAdmission = mutateWorkflowJob(ciContent, 'secret-scan', block => block.replace(
+    '    needs: [change-scope, frontend-scope]',
+    '    needs: change-scope',
+  ));
+  assert.match(validateStaticContract({ manifest, ciContent: detachedAdmission }).join('\n'),
+    /secret-scan.*needs/i);
 });
 
 // [2026-08-31 개정] Atlas 계약을 포함한 크로스 스택 계약(frontend/src/__tests__/cross-stack)은

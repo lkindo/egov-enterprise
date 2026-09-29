@@ -274,7 +274,15 @@ test.describe('설문 응답 생명주기', () => {
                 expect(owned.userId).toBe(userId);
                 expect(owned.userNm).toBe(userName);
                 await userPage.goto('about:blank');
-                expect((await adminRequest.delete(`${users}/${userId}`)).status()).toBe(200);
+                let removed = await adminRequest.delete(`${users}/${userId}`);
+                if (removed.status() === 409) {
+                    // 활동 로그의 주기 flush가 이 합성 사용자의 마지막 요청을 삽입하는 순간과 겹치면
+                    // 첫 정리 트랜잭션만 FK 경합으로 되돌아간다. 설문 계약을 재실행하지 않고 정리만 한 번 재시도한다.
+                    await new Promise(resolve => setTimeout(resolve, 250));
+                    removed = await adminRequest.delete(`${users}/${userId}`);
+                }
+                expect(removed.status(), '합성 설문 사용자는 bounded cleanup 뒤 삭제되어야 한다').toBe(200);
+                expect((await adminRequest.get(`${users}/${userId}`)).status()).toBe(404);
             }
         }
     });

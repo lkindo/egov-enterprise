@@ -75,7 +75,10 @@ Oracle crash-recovery 시험은 별도 JVM에서 일반 classpath/JAR를 실행�
 10. 동시 20개 runner 환경에서 임계 E2E·재사용 검증이 초기 배정에서 밀리지 않도록 `sast-scope`와
     `mutation-scope-migration`은 각각 `max-parallel: 1`을 사용한다. CodeQL Java·JavaScript/TypeScript와
     이관 PIT 네 scope의 모집단·명령·임계값은 모두 유지한다. run `36575378891`에서 각 matrix의 실제 실행
-    합계는 약 7분 20초와 4분 12초였으므로 직렬 입장 후에도 12분 목표 안에 완료할 수 있다.
+    합계는 약 7분 20초와 4분 12초였으므로 직렬 입장 후에도 12분 목표 안에 완료할 수 있다. 재사용 profile
+    여섯 개는 `max-parallel: 5`로 첫 배정을 제한하고 가장 짧은 여섯 번째 profile을 첫 완료 뒤 시작한다.
+    `secret-scan`은 짧은 `frontend-scope`가 슬롯을 반납한 뒤 시작하되 `always()`와 분류 성공 검사를 유지해
+    frontend 실패·skip이 보안 검증을 생략시키지 못하게 한다.
 
 ## 검증과 한계
 
@@ -117,3 +120,13 @@ E2E 1번 shard와 `reusable-base demo/single-module`이 각각 5분 22초와 5�
 전체 초과분을 만들었다. 같은 실행에서 CodeQL 양언어의 실행 합계는 약 7분 20초, 이관 PIT 네 scope는
 약 4분 12초였으므로 두 짧은 비임계 matrix를 한 슬롯씩 사용하도록 결정 10의 입장 제어를 적용한다.
 실제 12분 이하 중앙값 판정은 이 설정을 포함한 동일 SHA의 연속 green 실행으로 확인한다.
+
+[6차 전체 실행 36579753346](https://github.com/lkindo/egov-enterprise/actions/runs/36579753346)은 두 E2E shard와
+재사용 여덟 job을 분류 완료 4~5초 뒤 시작시켜 5차의 대기를 제거했다. frontend coverage는 10분 54초,
+제품 PIT aggregate는 10분 1초에 끝났다. 그러나 runner가 재사용 job에 먼저 배정되면서 migration 3번
+shard는 5분 20초 늦게 시작해 backend required가 13분 9초에 끝났다. 이 표본을 근거로 재사용 profile을
+최대 다섯 개로 제한하고, 6분 50초 걸린 secret-scan은 3분 24초 frontend production job 뒤로 옮겨
+migration shard용 초기 슬롯 두 개를 확보한다. 같은 실행의 E2E 2번 shard는 설문 기능이 모두 통과한 뒤
+합성 사용자 정리와 주기적 활동 로그 flush가 FK에서 경합해 첫 삭제만 409였고 재시도에서 통과했다.
+소유 데이터 조회와 자식 설문 삭제를 유지하며, 이 cleanup만 409일 때 한 번 재시도하고 최종 404를 확인한다.
+6차는 required 실패 표본이므로 중앙값에는 포함하지 않는다.

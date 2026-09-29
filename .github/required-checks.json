@@ -247,7 +247,8 @@
       "context": "secret-scan",
       "jobId": "secret-scan",
       "needs": [
-        "change-scope"
+        "change-scope",
+        "frontend-scope"
       ],
       "jobIf": "always()"
     },

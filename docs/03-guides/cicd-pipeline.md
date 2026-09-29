@@ -30,7 +30,7 @@ push/PR / workflow_dispatch
     └─ change-scope (PR·main/master push: 같은 영향 분류 / 비교 불가·수동: 전수)
         ├─ sast-scope (Java·JavaScript/TypeScript CodeQL security-extended, 한 runner 슬롯에서 순차 실행)
         │   └─ secure-coding (High/Critical 차단, 언어별 결과 집계)
-        ├─ secret-scan (운영 계약·snapshot readiness·PR runtime 의존성 review·비밀 스캔)
+        ├─ secret-scan (frontend-scope 완료 뒤 운영 계약·snapshot readiness·PR runtime 의존성 review·비밀 스캔)
         ├─ backend-scope (backend=true: 온라인 4모듈 빌드·테스트·커버리지·OpenAPI 신선도)
         ├─ backend-schema-scope (schema=true: backend와 병렬 PostgreSQL schema-validation)
         ├─ migration-test-scope (migration=true: 123개 이관 테스트 클래스를 3개 matrix로 정확히 분배)
@@ -105,7 +105,11 @@ E2E와 재사용 검증이 5분 이상 배정을 기다릴 수 있다. `sast-sco
 `mutation-scope-migration`의 네 scope는 각각 `max-parallel: 1`로 입장을 제한해 초기 슬롯을 임계 작업에
 남긴다. 이는 검증 삭제나 nightly 이관이 아니며 CodeQL 양언어, 이관 PIT 네 모집단과 각 75% 판정을 모두
 같은 required 실행에서 끝낸다. 해당 실행의 실제 작업 합계가 약 7분 20초와 4분 12초였다는 근거로 선택했으며,
-각 job의 30/40분 안전 상한과 fail-fast 비활성화도 유지한다.
+각 job의 30/40분 안전 상한과 fail-fast 비활성화도 유지한다. 후속 [실행 36579753346](https://github.com/lkindo/egov-enterprise/actions/runs/36579753346)에서
+재사용 여덟 job은 즉시 시작했지만 migration 3번 shard가 5분 20초 기다렸다. 따라서 `reusable-base`는
+동시에 다섯 profile만 실행하고, 가장 짧은 여섯 번째 profile은 첫 완료 슬롯을 쓴다. `secret-scan`은
+`frontend-scope` 완료 뒤 시작하지만 `always()`와 분류 결과 검사를 유지해 frontend 실패·skip에서도 실행된다.
+이 두 슬롯은 migration shard의 초기 입장에 쓰며 검사 모집단·required context·실패 판정은 바뀌지 않는다.
 
 PR과 **main/master push는 같은 영향 분류**를 적용한다. PR은 base/head, push는 이전/현재 SHA를 비교하며 수동 실행·비교 기준 부재·미지 또는 빈 변경은 전수로 돌아간다. 따라서 문서 전용 fast path는 기본 브랜치에도 적용된다. 전수 로컬 `localGate`·`jacocoRootCoverageVerification`은 유지하며, 릴리스는 대상 커밋의 required 성공과 릴리스 고유 증거를 확인한다. 주간 취약점 감사·부하·DR 검증은 각각의 별도 워크플로우와 격리 환경에서 실행한다.
 

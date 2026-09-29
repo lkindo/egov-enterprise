@@ -189,7 +189,9 @@ jobs:
   # 로컬 훅과 무관하게 required CI에서 gitleaks를 hard-fail로 실행한다.
   # 라이선스·가변 태그 노출을 피하려고 고정 버전 바이너리를 직접 내려받는다.
   secret-scan:
-    needs: change-scope
+    # full run에서는 짧은 frontend production source가 슬롯을 반납한 뒤 시작한다.
+    # always()라 frontend 실패·skip도 보안 검증을 생략시키지 않는다.
+    needs: [change-scope, frontend-scope]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -817,6 +819,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
+      # 여섯 profile 중 다섯만 먼저 입장시켜 migration shard용 초기 슬롯을 보장한다.
+      # 가장 짧은 여섯 번째 profile은 첫 완료 뒤 시작해도 run 36579753346 실측상 12분 안이다.
+      max-parallel: 5
       fail-fast: false
       matrix: ${{ fromJSON(needs.change-scope.outputs['reusable-matrix']) }}
     steps:
