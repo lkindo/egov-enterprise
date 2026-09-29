@@ -287,7 +287,8 @@ const GRADLE_CACHE_READ_ONLY = {
   '.github/workflows/ci.yml': {
     'backend-scope': 'false',
     'backend-schema-scope': 'true',
-    'migration-scope': "${{ needs.change-scope.outputs.backend != 'false' }}",
+    'migration-test-scope': "${{ needs.change-scope.outputs.backend != 'false' || strategy.job-index != 0 }}",
+    'migration-scope': 'true',
     'reusable-base': 'true',
     'mutation-scope': 'true',
     'mutation-scope-migration': 'true',

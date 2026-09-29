@@ -152,7 +152,7 @@ Windows/macOS에서는 Linux 기준선을 비교하는 `quality/visual-baselines
 
 ### 5.2 PR·통합 push: 독립 모듈을 분리하고 선택된 검증을 병렬 실행한다
 
-- [CI](../../.github/workflows/ci.yml)의 변경 분류가 성공하면 온라인 backend, 독립 migration, frontend, 선택된 PIT, E2E, 보안·재사용 검증을 각 조건에 따라 시작한다. E2E와 PIT는 backend 전체 성공 대기 대신 classifier 결과에 의존한다.
+- [CI](../../.github/workflows/ci.yml)의 변경 분류가 성공하면 온라인 backend, 독립 migration, frontend, 선택된 PIT, E2E, 보안·재사용 검증을 각 조건에 따라 시작한다. E2E와 PIT는 backend 전체 성공 대기 대신 classifier 결과에 의존한다. migration은 실측 profile이 정확히 덮는 123개 테스트 클래스를 3개 leaf로 실행하고, 후속 aggregate가 XML census와 세 JaCoCo 실행 데이터를 검증·병합해 기존 85/70 게이트를 적용한다.
 - 기존 6개 required context와 실패 집계를 유지한다. E2E/PIT가 먼저 끝나도 backend 테스트·스키마·JaCoCo 실패를 허용하지 않는다.
 - 온라인 PIT가 선택되면 제품 10개 배치를 모두 실행하고 `max-parallel: 5`로 동시 실행한다. [전체 실행 36550933968](https://github.com/lkindo/egov-enterprise/actions/runs/36550933968)에서 3개 제한이 뒤쪽 scope를 최대 6분 58초 대기시켰고 E2E·재사용 잡은 이미 11분대에 끝났다. 5개는 해당 실행의 대기 관측에 근거한 값이며 계정 runner 상한이나 다른 PR 부하까지 통제한다고 주장하지 않는다. 종전 `business-app`은 기존 보고서의 겹침 없는 세 클래스 집합으로 나누고 각 집합에 75%를 독립 적용한다.
 - E2E가 필요한 PR은 아래의 검토된 화면 수정만 spec 단위로 선별한다. main과 공유·미지 입력은 API·브라우저 전수를 두 shard에 배분한다.

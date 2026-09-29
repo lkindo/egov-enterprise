@@ -137,12 +137,12 @@
       "fingerprint": "42098952e5b35237:1",
       "sourceSha256": "1660d78450bdd3d2d0fee75e0af78c62d5342ba1799b0130afdeed94590a227b",
       "expiresOn": "2026-12-08",
-      "reason": "In-memory H2 test-only profile and test-only H2 dependency; no production database credential. Re-reviewed 2026-09-28: the durable-work scheduler is disabled for controlled tests; the H2 boundary is unchanged and the recorded SARIF region moved from line 22 to 26 after four inserted lines. Re-reviewed 2026-09-29: root build.gradle changed only to raise jackson-databind patch versions (BOM properties and buildscript constraints for GHSA-q4xh-88c3-wmh7); H2 remains testImplementation/testRuntimeOnly in api-server/build.gradle. Re-reviewed 2026-09-29: migration-tool/build.gradle changed only the exact PIT target-scope condition and child-JVM test exclusion census; its test-only H2 dependency and production credential boundary are unchanged.",
+      "reason": "In-memory H2 test-only profile and test-only H2 dependency; no production database credential. Re-reviewed 2026-09-28: the durable-work scheduler is disabled for controlled tests; the H2 boundary is unchanged and the recorded SARIF region moved from line 22 to 26 after four inserted lines. Re-reviewed 2026-09-29: root build.gradle changed only to raise jackson-databind patch versions (BOM properties and buildscript constraints for GHSA-q4xh-88c3-wmh7); H2 remains testImplementation/testRuntimeOnly in api-server/build.gradle. Re-reviewed 2026-09-29: migration-tool/build.gradle changed only the exact PIT target-scope condition and child-JVM test exclusion census; its test-only H2 dependency and production credential boundary are unchanged. Re-reviewed 2026-09-29: root build.gradle now accepts three verified migration JaCoCo shard files for the existing 85/70 coverage tasks; dependency scopes and the test-only H2 boundary are unchanged.",
       "id": "SAST-FP-007",
       "supportingSources": [
         {
           "file": "build.gradle",
-          "sha256": "3062651039ed5f4bbfcbf10c595777f3c6872bae405f4244c4aff9857f5a8470"
+          "sha256": "87bd67827997e5954136a3d7ee98e5c9bcd8fb7b451f5e5c24961ae5d4683d7a"
         },
         {
           "file": "api-server/build.gradle",

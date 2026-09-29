@@ -567,8 +567,13 @@ test('backend required context binds independent migration verification fail clo
   assert.equal(check.aggregate.length, 4);
   const migrationAggregate = check.aggregate.find(source => source.sourceJobId === 'migration-scope');
   assert.equal(migrationAggregate.scopeExpression, 'needs.change-scope.outputs.migration');
+  assert.deepEqual(migrationAggregate.sourceNeeds, ['change-scope', 'migration-test-scope']);
+  assert.deepEqual(migrationAggregate.sourceEnv, {
+    MIGRATION_SHARD_EXECUTION_ROOT: 'build/migration-shards',
+  });
   for (const mutate of [
-    block => block.replace("    if: needs.change-scope.outputs.migration == 'true'", '    if: false'),
+    block => block.replace(/^    if:.*$/m, '    if: false'),
+    block => block.replace('    needs: [change-scope, migration-test-scope]', '    needs: change-scope'),
     block => block.replace('node scripts/verify.mjs migration', 'echo skipped'),
     block => block.replace('    steps:', '    defaults:\n      run:\n        shell: echo {0}\n    steps:'),
     block => block.replace('        run: node scripts/verify.mjs migration', '        if: false\n        run: node scripts/verify.mjs migration'),
@@ -1041,14 +1046,14 @@ test('every Gradle setup rejects unreviewed cache clients, providers and writer 
       checked += 1;
     }
   }
-  assert.equal(checked, 9, 'all producer Gradle cache callers must be covered');
+  assert.equal(checked, 10, 'all producer Gradle cache callers must be covered');
 });
 
 test('cache writer election remains tied to selected backend and migration jobs', () => {
   const normalizedCi = ciContent.replace(/\r\n/g, '\n');
   const workflow = { path: '.github/workflows/ci.yml', content: normalizedCi };
   assert.deepEqual(validatePinnedWorkflowUses([workflow]), []);
-  for (const [jobId, readOnly] of [['backend-scope', 'true'], ['backend-schema-scope', 'false'], ['migration-scope', 'false'],
+  for (const [jobId, readOnly] of [['backend-scope', 'true'], ['backend-schema-scope', 'false'], ['migration-test-scope', 'true'], ['migration-scope', 'false'],
     ['reusable-base', 'false'], ['mutation-scope', 'false'], ['mutation-scope-migration', 'false']]) {
     const changed = mutateWorkflowJob(normalizedCi, jobId, block => block.replace(/cache-read-only:[^\n]*/, `cache-read-only: ${readOnly}`));
     assert.notEqual(changed, normalizedCi);
@@ -1065,8 +1070,8 @@ test('cache writer election remains tied to selected backend and migration jobs'
       assert.notDeepEqual(validateStaticContract({ manifest, ciContent: changed }), []);
     }
   }
-  const openOnMissingOutput = normalizedCi.replace("cache-read-only: ${{ needs.change-scope.outputs.backend != 'false' }}",
-    "cache-read-only: ${{ needs.change-scope.outputs.backend == 'true' }}");
+  const openOnMissingOutput = normalizedCi.replace("cache-read-only: ${{ needs.change-scope.outputs.backend != 'false' || strategy.job-index != 0 }}",
+    "cache-read-only: ${{ needs.change-scope.outputs.backend == 'true' || strategy.job-index != 0 }}");
   assert.notEqual(openOnMissingOutput, normalizedCi);
   assert.match(validatePinnedWorkflowUses([{ ...workflow, content: openOnMissingOutput }]).join('\n'), /cache-read-only/);
   for (const mutate of [
@@ -1080,6 +1085,43 @@ test('cache writer election remains tied to selected backend and migration jobs'
   }
   const duplicated = `${normalizedCi}\n  unexpected-cache-writer:\n    steps:\n      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb\n        with:\n          cache-provider: basic\n          cache-read-only: false\n`;
   assert.match(validatePinnedWorkflowUses([{ ...workflow, content: duplicated }]).join('\n'), /no reviewed writer policy/);
+});
+
+function assertMigrationTestShards(source) {
+  const job = parseWorkflowJobs(source).get('migration-test-scope') ?? '';
+  assert.match(job, /^    needs: change-scope$/m);
+  assert.match(job, /^    if: needs\.change-scope\.outputs\.migration == 'true'$/m);
+  assert.match(job, /^    timeout-minutes: 30$/m);
+  assert.match(job, /^      fail-fast: false$/m);
+  assert.match(job, /^        shard: \[1\/3, 2\/3, 3\/3\]$/m);
+  assert.match(job, /^        run: node --test scripts\/migration-verification-contract\.test\.mjs$/m);
+  assert.match(job, /^        run: node scripts\/migration-test-shard\.mjs --shard "\$\{\{ matrix\.shard \}\}"$/m);
+  assert.match(job, /^        if: always\(\)\n        uses: actions\/upload-artifact@[a-f0-9]{40}(?:\s+#.*)?$/m);
+  for (const evidence of [
+    'migration-tool/build/jacoco/test.exec',
+    'migration-tool/build/test-results/test/**/*.xml',
+    'migration-tool/build/migration-shard-manifest.json',
+  ]) assert.ok(job.includes(evidence));
+  assert.match(job, /^          if-no-files-found: error$/m);
+}
+
+test('migration test matrix is an exact three-way population with fail-closed evidence', () => {
+  assertMigrationTestShards(ciContent);
+  for (const [before, after] of [
+    ['shard: [1/3, 2/3, 3/3]', 'shard: [1/3, 2/3]'],
+    ['fail-fast: false', 'fail-fast: true'],
+    ['node --test scripts/migration-verification-contract.test.mjs', 'echo skipped'],
+    ['node scripts/migration-test-shard.mjs --shard "${{ matrix.shard }}"', 'echo skipped'],
+    ['        if: always()\n        uses: actions/upload-artifact@', '        uses: actions/upload-artifact@'],
+    ['migration-tool/build/jacoco/test.exec', 'migration-tool/build/jacoco/missing.exec'],
+    ['migration-tool/build/test-results/test/**/*.xml', 'migration-tool/build/test-results/missing/*.xml'],
+    ['migration-tool/build/migration-shard-manifest.json', 'migration-tool/build/missing.json'],
+    ['if-no-files-found: error', 'if-no-files-found: ignore'],
+  ]) {
+    const changed = mutateWorkflowJob(ciContent, 'migration-test-scope', block => block.replace(before, after));
+    assert.notEqual(changed, ciContent);
+    assert.throws(() => assertMigrationTestShards(changed));
+  }
 });
 
 test('frontend heavy source type-checks the e2e sources excluded from the root tsconfig', () => {

@@ -121,13 +121,16 @@
         {
           "sourceJobId": "migration-scope",
           "sourceNeeds": [
-            "change-scope"
+            "change-scope",
+            "migration-test-scope"
           ],
-          "sourceJobIf": "needs.change-scope.outputs.migration == 'true'",
+          "sourceJobIf": "always() && needs.change-scope.result == 'success' && needs.change-scope.outputs.migration == 'true'",
           "sourceStepName": "Verify the independent migration module",
           "sourceRun": "node scripts/verify.mjs migration",
           "sourceWorkingDirectory": null,
-          "sourceEnv": {},
+          "sourceEnv": {
+            "MIGRATION_SHARD_EXECUTION_ROOT": "build/migration-shards"
+          },
           "aggregateStepName": "이관 도구 범위 결과 집계",
           "aggregateRun": "node scripts/aggregate-required-check.mjs",
           "resultExpression": "needs.migration-scope.result",

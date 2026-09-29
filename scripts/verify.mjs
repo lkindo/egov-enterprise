@@ -116,7 +116,16 @@ try {
     // ADR-0018: module tests use disposable fixtures; this never invokes the
     // migration CLI against adopter data or grants an operational load approval.
     run('node --test scripts/migration-verification-contract.test.mjs');
-    run(`${gradlew} :migration-tool:compileJava :migration-tool:compileTestJava :migration-tool:test :migration-tool:bootJar jacocoMigrationCoverageVerification --no-daemon --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);
+    const shardRoot = process.env.MIGRATION_SHARD_EXECUTION_ROOT;
+    if (shardRoot) {
+      if (!/^[A-Za-z0-9._/-]+$/.test(shardRoot) || shardRoot.split('/').includes('..')) {
+        throw new Error('MIGRATION_SHARD_EXECUTION_ROOT must be a repository-relative safe path');
+      }
+      run(`node scripts/migration-test-shard.mjs --verify-artifacts ${shardRoot}`);
+      run(`${gradlew} :migration-tool:compileJava :migration-tool:bootJar jacocoMigrationCoverageVerification -PmigrationShardExecutionRoot=${shardRoot} --no-daemon --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);
+    } else {
+      run(`${gradlew} :migration-tool:compileJava :migration-tool:compileTestJava :migration-tool:test :migration-tool:bootJar jacocoMigrationCoverageVerification --no-daemon --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);
+    }
   }
 
   console.log(`\n✅ [verify:${scope}] 요청 범위 검증 통과`);

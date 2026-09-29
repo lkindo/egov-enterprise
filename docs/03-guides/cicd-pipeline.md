@@ -33,7 +33,8 @@ push/PR / workflow_dispatch
         ├─ secret-scan (운영 계약·snapshot readiness·PR runtime 의존성 review·비밀 스캔)
         ├─ backend-scope (backend=true: 온라인 4모듈 빌드·테스트·커버리지·OpenAPI 신선도)
         ├─ backend-schema-scope (schema=true: backend와 병렬 PostgreSQL schema-validation)
-        ├─ migration-scope (migration=true: 독립 이관 테스트·bootJar·커버리지)
+        ├─ migration-test-scope (migration=true: 123개 이관 테스트 클래스를 3개 matrix로 정확히 분배)
+        │   └─ migration-scope (세 결과 집계·JaCoCo 병합·bootJar·85/70 커버리지)
         ├─ reusable-base (영향받는 core·collaboration·demo profile×layout 생성·기술 검증)
         ├─ backend-build (온라인·스키마·이관 source와 reusable-base 결과를 집계)
         ├─ frontend-scope (frontend=true인 경우의 실제 무거운 실행, backend와 독립)
@@ -85,7 +86,14 @@ history 입출력·기본 증분 분석·CI history 전용 캐시를 사용하�
 
 > **브랜치 보호 SSOT와 live 경계**: `.github/required-checks.json`이 보호·릴리스 기준 브랜치, 안정 required context 6개, 원본 job/matrix, 신뢰할 GitHub Actions integration ID와 review policy 목표를 정의한다. `scripts/verify-branch-protection.mjs`는 required check·strict/provider/bypass뿐 아니라 approval 수, code-owner, last-push, stale review, thread resolution을 live ruleset과 exact-match한다. 저장소 명세가 바뀌어도 원격 설정은 자동 변경되지 않으므로 `verify:ops`가 green이기 전에는 적용 완료로 보지 않는다. 현재 외부 drift는 [공용 gap 인덱스](../../.agent/memory/known-gaps.md)를 따른다.
 
-E2E와 두 PIT source는 `change-scope`만 선행 조건으로 가진다. 각 job이 필요한 코드와 실행 환경을 직접 빌드하며, backend/frontend artifact를 기다리지 않는다. `backend-build`는 온라인 `backend-scope`, 병렬 `backend-schema-scope`, 독립 `migration-scope`와 영향받는 재사용 profile×layout 결과를 각각 집계한다. E2E/PIT가 먼저 성공해도 선택된 다른 required 검사의 실패를 상쇄하지 못한다. CodeQL은 소스 변경에서 Java·JavaScript/TypeScript 양언어 분석을 유지한다.
+E2E와 두 PIT source는 `change-scope`만 선행 조건으로 가진다. 각 job이 필요한 코드와 실행 환경을 직접 빌드하며, backend/frontend artifact를 기다리지 않는다. `migration-test-scope`도 분류 직후 세 leaf를 시작하고 `migration-scope`가 세 결과와 증거를 합친다. `backend-build`는 온라인 `backend-scope`, 병렬 `backend-schema-scope`, 집계된 `migration-scope`와 영향받는 재사용 profile×layout 결과를 각각 검사한다. E2E/PIT가 먼저 성공해도 선택된 다른 required 검사의 실패를 상쇄하지 못한다. CodeQL은 소스 변경에서 Java·JavaScript/TypeScript 양언어 분석을 유지한다.
+
+이관 테스트 분할의 입력은 [duration profile](../../config/migration-test-duration-profile.json)이다. 성공한 Linux run의
+JUnit XML에서 발견한 123개 소스 테스트 클래스를 정확히 덮고, 측정 시간을 LPT 방식으로 41개씩 나눈다. 각 leaf는
+실제 XML 클래스 census와 manifest를 확인한 뒤 `.exec`를 보존한다. aggregate는 세 manifest의 좌표·클래스·측정
+commit, 각 leaf의 XML census, 정확히 세 개의 비어 있지 않은 `.exec`를 다시 확인한다. 그 후에만 기존 LINE 85%·
+BRANCH 70% 게이트를 병합 데이터로 실행한다. 프로필에 없는 새 테스트나 stale 테스트, leaf 누락, 빈 실행 데이터는
+모두 실패한다. 로컬 `verify:migration`과 주간 workflow는 환경변수가 없으므로 기존 전체 테스트 경로를 유지한다.
 
 PIT 분류는 production/test Java뿐 아니라 `src/testFixtures/**`, `src/main/resources/**`, `src/test/resources/**`를 포함한다. 온라인 4모듈의 의존 관계는 한 범위로 유지하며 개별 Java 파일별 시험 선택은 하지 않는다. 이관 전용 소스·리소스·build 변경은 이관 build/PIT를 선택하고 온라인 build/PIT·frontend·schema·E2E를 선택하지 않는다. 공용 Gradle 입력과 양쪽 ID 생성 의미 계약(`IdGenerationUtil`, `Constants`, `StandardIdGenerator`)은 두 모듈을 선택한다. 미지 입력·빈 비교는 전수이며 루트 `db_columns.json`도 기존 전수 fallback을 유지한다. 정확한 경계는 [분류기](../../scripts/ci-change-scope.mjs)와 [회귀 계약](../../scripts/ci-change-scope.test.mjs)이 소유한다.
 

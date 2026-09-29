@@ -1601,28 +1601,28 @@
             "job": "mutation-scope-migration",
             "gradle": ":migration-tool:pitest",
             "classes": "nuri.migration.transform.TransformerRegistry",
-            "tests": "nuri.migration.*"
+            "tests": "nuri.migration.transform.TransformerRegistryTest,nuri.migration.artifact.MigrationExecutionContractTest"
           },
           {
             "scope": "migration-transform-converter",
             "job": "mutation-scope-migration",
             "gradle": ":migration-tool:pitest",
             "classes": "nuri.migration.transform.TypeConverter",
-            "tests": "nuri.migration.*"
+            "tests": "nuri.migration.transform.TypeConverterTest,nuri.migration.MigrationSafetyIntegrationTest"
           },
           {
             "scope": "migration-validate",
             "job": "mutation-scope-migration",
             "gradle": ":migration-tool:pitest",
             "classes": "nuri.migration.validate.*",
-            "tests": "nuri.migration.*"
+            "tests": "nuri.migration.validate.MappingValidatorTest,nuri.migration.validate.MappingValidatorTypedIdentityTest,nuri.migration.MigrationPipelineTest"
           },
           {
             "scope": "migration-verify",
             "job": "mutation-scope-migration",
             "gradle": ":migration-tool:pitest",
             "classes": "nuri.migration.verify.*",
-            "tests": "nuri.migration.*"
+            "tests": "nuri.migration.verify.MigrationVerifierTest,nuri.migration.verify.MigrationVerifierTypedIdentityTest,nuri.migration.MigrationSafetyIntegrationTest"
           },
           {
             "scope": "business-core-auth",

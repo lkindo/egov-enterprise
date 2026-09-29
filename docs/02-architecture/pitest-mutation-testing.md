@@ -35,6 +35,13 @@ JUnit Platform launcher는 공통 `testRuntimeOnly`로 선언하고 `addJUnitPla
 
 `migration-tool`의 [모듈 설정](../../migration-tool/build.gradle)은 Gradle `test`와 PIT minion 모두에 `migration.drill.classpath`를 전달한다. [프로세스 복구 테스트](../../migration-tool/src/test/java/nuri/migration/EtlCrashRecoveryPostgresIntegrationTest.java)가 새 JVM을 시작할 때 이 classpath를 쓰므로 PostgreSQL/Docker가 필요하다. 자식 JVM 자체가 PIT로 계측되는 것은 아니며, 해당 프로세스 테스트는 종료·재개·중복 방지 계약을 검사하고 in-process 테스트가 mutation 탐지를 보완한다. 일반 classpath/JAR를 시작하는 MySQL·MariaDB·SQL Server·Oracle crash/packaged CLI 시험 8개는 transform 두 클래스와 validate·verify의 네 CI scope에서만 제외한다. ordinary `test`와 로컬 전체 PIT에는 남으며 광역 제외와 미등록 외부 프로세스 시험은 계약이 거부한다.
 
+이관 네 CI scope의 `targetTests`는 full-test PIT 보고서에서 실제 변이를 kill한 2~3개 테스트 클래스로 제한한다.
+이는 `targetClasses`나 변이 생성기를 줄이지 않는다. 로컬 비교에서 기존/정밀 실행의 변이 모집단은 registry 39,
+converter 35, validate 220, verify 162개로 같았다. 세 scope의 상태는 완전히 같았고 converter 한 건만
+`TIMED_OUT`에서 `SURVIVED`로 바뀌었다. 종전 timeout을 성공적인 kill로 오인하지 않고 생존 변이를 노출하므로
+검증 신호를 약화하지 않으며, 해당 scope의 test strength 97%와 75% 하한은 유지한다. 대상 테스트를 다시 바꿀 때는
+동일 변이 식별자·상태 비교와 strict 실행을 반복한다.
+
 ## 실행 방법
 
 ```powershell

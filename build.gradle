@@ -563,20 +563,36 @@ def coverageScopeData = { projects ->
 def jacocoOnlineClassDirectories = coverageScopeClasses(onlineCoverageProjects)
 def jacocoOnlineExecutionData = coverageScopeData(onlineCoverageProjects)
 def jacocoMigrationClassDirectories = coverageScopeClasses(migrationCoverageProjects)
-def jacocoMigrationExecutionData = coverageScopeData(migrationCoverageProjects)
+// Required CI may run the exact migration test population in three measured shards. The
+// existing report/verification task names and 85/70 rules stay authoritative; only their
+// execution-data source changes when the aggregate supplies the explicit shard root.
+def migrationShardExecutionRoot = providers.gradleProperty('migrationShardExecutionRoot')
+def migrationShardedCoverage = migrationShardExecutionRoot.isPresent()
+def jacocoMigrationShardExecutionData = files(providers.provider {
+    if (!migrationShardedCoverage) return []
+    fileTree(dir: file(migrationShardExecutionRoot.get()), include: '**/*.exec').files.sort()
+})
+def jacocoMigrationExecutionData = migrationShardedCoverage
+        ? jacocoMigrationShardExecutionData : coverageScopeData(migrationCoverageProjects)
 
 // Missing execution data must fail before JacocoReport's empty-input skip can
 // turn an omitted module/test task into a green coverage check.
-def registerCoverageScopeReport = { String taskName, projects, classFiles, executionFiles, String outputName ->
+def registerCoverageScopeReport = { String taskName, projects, classFiles, executionFiles, String outputName,
+                                    boolean acceptsMigrationShards = false ->
     def inputsGate = tasks.register("${taskName}Inputs") {
         group = 'Verification'
-        dependsOn { coverageScopeTests(projects) }
+        if (acceptsMigrationShards && migrationShardedCoverage) {
+            dependsOn projects.collect { p -> p.tasks.named('classes') }
+        } else {
+            dependsOn { coverageScopeTests(projects) }
+        }
         doLast {
             if (projects.isEmpty()) throw new GradleException("${taskName}: no projects selected")
             projects.each { p ->
                 if (coverageScopeClasses([p]).every { it.isEmpty() }) {
                     throw new GradleException("${taskName}: no production classes for ${p.path}")
                 }
+                if (acceptsMigrationShards && migrationShardedCoverage) return
                 def testTasks = coverageScopeTests([p])
                 if (testTasks.isEmpty()) throw new GradleException("${taskName}: no coverage tests for ${p.path}")
                 testTasks.each { testTask ->
@@ -588,6 +604,17 @@ def registerCoverageScopeReport = { String taskName, projects, classFiles, execu
                     def data = testTask.extensions.getByType(org.gradle.testing.jacoco.plugins.JacocoTaskExtension).destinationFile
                     if (data == null || !data.isFile() || data.length() == 0) {
                         throw new GradleException("${taskName}: missing execution data for ${testTask.path}")
+                    }
+                }
+            }
+            if (acceptsMigrationShards && migrationShardedCoverage) {
+                def data = executionFiles.files.sort()
+                if (data.size() != 3) {
+                    throw new GradleException("${taskName}: expected exactly 3 migration shard execution files, found ${data.size()}")
+                }
+                data.each { file ->
+                    if (!file.isFile() || file.length() == 0) {
+                        throw new GradleException("${taskName}: missing or empty migration shard execution data: ${file}")
                     }
                 }
             }
@@ -610,7 +637,7 @@ def registerCoverageScopeReport = { String taskName, projects, classFiles, execu
 registerCoverageScopeReport('jacocoOnlineReport', onlineCoverageProjects,
         jacocoOnlineClassDirectories, jacocoOnlineExecutionData, 'online')
 registerCoverageScopeReport('jacocoMigrationReport', migrationCoverageProjects,
-        jacocoMigrationClassDirectories, jacocoMigrationExecutionData, 'migration')
+        jacocoMigrationClassDirectories, jacocoMigrationExecutionData, 'migration', true)
 
 tasks.register('onlineBuild') {
     group = 'Build'
