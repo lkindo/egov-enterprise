@@ -27,10 +27,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 abstract class MySqlPostgresTestSupport {
     @Container
-    protected static final MySQLContainer MYSQL = new MySQLContainer(DockerImageName.parse(
+    protected static final MySQLContainer MYSQL = mysqlFixture();
+    @Container
+    protected static final PostgreSQLContainer POSTGRES = postgresFixture();
+
+    private static MySQLContainer mysqlFixture() {
+        MySQLContainer fixture = new MySQLContainer(DockerImageName.parse(
             "mysql@sha256:85b9bf2e29cf836ecb8c2a15a935d4ba0c606631dff1dd79531a11983c638f2a")
-            .asCompatibleSubstituteFor("mysql"))
-            .withDatabaseName("migration_fixture")
+            .asCompatibleSubstituteFor("mysql"));
+        fixture.withDatabaseName("migration_fixture")
             .withUsername("migration_fixture_reader")
             .withPassword(UUID.randomUUID().toString())
             .withCommand("--max-allowed-packet=67108864", "--character-set-server=utf8mb4",
@@ -38,9 +43,14 @@ abstract class MySqlPostgresTestSupport {
             .withUrlParam("databaseTerm", "SCHEMA")
             .withUrlParam("useCursorFetch", "true")
             .withUrlParam("defaultFetchSize", "1");
-    @Container
-    protected static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine")
-            .withPassword(UUID.randomUUID().toString());
+        return fixture;
+    }
+
+    private static PostgreSQLContainer postgresFixture() {
+        PostgreSQLContainer fixture = new PostgreSQLContainer("postgres:17-alpine");
+        fixture.withPassword(UUID.randomUUID().toString());
+        return fixture;
+    }
 
     @BeforeAll
     static void recordDatabaseVersions() throws Exception {

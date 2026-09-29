@@ -5,7 +5,6 @@ import nuri.business.domain.file.FileMaster;
 import nuri.business.security.util.SecurityUtil;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
-import nuri.business.security.AuthorityConstants;
 import org.springframework.stereotype.Component;
 
 /**

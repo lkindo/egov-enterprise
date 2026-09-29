@@ -1,7 +1,6 @@
 package nuri.openapi;
 
 import nuri.api.support.ApiHttpIntegrationTest;
-import nuri.business.service.survey.dto.SurveyResultDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,11 +8,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.hamcrest.Matchers.hasItem;
 import static org.assertj.core.api.Assertions.assertThat;
 import static nuri.openapi.OpenApiDocumentationTest.assertNullableProperties;
-import static nuri.openapi.OpenApiDocumentationTest.isNullableSchema;
 
 /** Domain fixture is removed with its explicit source dependency; common spec generation remains. */
 @ApiHttpIntegrationTest

@@ -12,8 +12,6 @@ import nuri.foundation.constants.Constants;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.auth.RefreshTokenRepository;
-import nuri.business.domain.auth.UserAuthority;
-import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.login.LoginPolicyRepository;
 import nuri.business.domain.user.entity.Role;
 import nuri.business.domain.user.entity.User;
@@ -66,7 +64,6 @@ public class UserService extends BaseAbstractService {
 
 
         private final UserRepository userRepository;
-        private final UserAuthorityRepository userAuthorityRepository;
         private final RefreshTokenRepository refreshTokenRepository;
         private final LoginPolicyRepository loginPolicyRepository;
         private final nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository;
@@ -79,7 +76,7 @@ public class UserService extends BaseAbstractService {
         private final nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration;
         private final nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
 
-        public UserService(UserRepository userRepository, UserAuthorityRepository userAuthorityRepository,
+        public UserService(UserRepository userRepository,
                         RefreshTokenRepository refreshTokenRepository, LoginPolicyRepository loginPolicyRepository,
                         nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository,
                         nuri.business.domain.log.UserLogRepository userLogRepository,
@@ -91,8 +88,6 @@ public class UserService extends BaseAbstractService {
                         nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration,
                         nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit) {
                 this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
-                this.userAuthorityRepository = required(userAuthorityRepository,
-                                "UserAuthorityRepository 는 null 일 수 없습니다");
                 this.refreshTokenRepository = required(refreshTokenRepository,
                                 "RefreshTokenRepository 는 null 일 수 없습니다");
                 this.loginPolicyRepository = required(loginPolicyRepository,

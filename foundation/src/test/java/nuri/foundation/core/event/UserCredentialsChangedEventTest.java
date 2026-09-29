@@ -20,6 +20,6 @@ class UserCredentialsChangedEventTest {
         assertThat(UserCredentialsChangedEvent.class.getRecordComponents())
                 .extracting(RecordComponent::getName).containsExactly("esntlId");
         assertThat(UserCredentialsChangedEvent.class.getRecordComponents())
-                .extracting(RecordComponent::getType).containsExactly(String.class);
+                .<Class<?>>extracting(RecordComponent::getType).containsExactly(String.class);
     }
 }

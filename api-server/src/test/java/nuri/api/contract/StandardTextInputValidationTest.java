@@ -1,6 +1,5 @@
 package nuri.api.contract;
 
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import jakarta.validation.Validation;
 import org.junit.jupiter.api.Test;

@@ -4,7 +4,6 @@ import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.report.WorkReport;
 import nuri.business.domain.report.WorkReportRepository;
 import nuri.business.domain.user.repository.UserRepository;
-import nuri.business.security.AuthorityConstants;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.report.dto.WorkReportDto;
@@ -21,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service

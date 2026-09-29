@@ -1,6 +1,5 @@
 package nuri.business.security.annotation;
 
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import java.io.IOException;
 import java.util.List;

@@ -5,7 +5,6 @@ import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.domain.log.WebLogRepository;
 import nuri.business.service.log.dto.WebLogDto;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;

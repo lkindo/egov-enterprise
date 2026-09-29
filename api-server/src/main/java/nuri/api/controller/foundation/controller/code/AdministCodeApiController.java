@@ -2,7 +2,6 @@ package nuri.api.controller.foundation.controller.code;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.foundation.security.annotation.AdminOrSystem;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.security.util.SecurityUtil;

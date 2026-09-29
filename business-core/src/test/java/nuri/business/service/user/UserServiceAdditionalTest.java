@@ -2,7 +2,6 @@ package nuri.business.service.user;
 import nuri.business.domain.user.exception.UserErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.user.dto.UserDto;
@@ -30,9 +29,6 @@ class UserServiceAdditionalTest {
 
     @Mock
     private UserRepository userRepository;
-
-    @Mock
-    private UserAuthorityRepository userAuthorityRepository;
 
     @Mock
     private nuri.business.domain.auth.RefreshTokenRepository refreshTokenRepository;
@@ -63,7 +59,7 @@ class UserServiceAdditionalTest {
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, userAuthorityRepository, refreshTokenRepository,
+        userService = new UserService(userRepository, refreshTokenRepository,
                 loginPolicyRepository, userAbsenceRepository,
                 userLogRepository, deptJobRepository, deptManageRepository, passwordEncoder, eventPublisher,
                 authorizationSnapshots, authorizationAdministration, sensitiveAudit);
@@ -341,7 +337,8 @@ class UserServiceAdditionalTest {
             assertThatThrownBy(() -> userService.deleteUser("webmaster"))
                     .isInstanceOf(BusinessException.class);
             verify(userRepository, never()).deleteAllInBatch(anyList());
-            verify(userAuthorityRepository, never()).deleteAllByIdInBatch(anyList());
+            verifyNoInteractions(authorizationAdministration, eventPublisher, sensitiveAudit,
+                    refreshTokenRepository);
         }
     }
 

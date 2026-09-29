@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -29,6 +28,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -69,6 +69,11 @@ class ApiDocsSchemaFieldLinterTest {
         assertFalse(jsonPropertyNames(DynamicPropertiesFixture.class, true).contains("extensions"));
         assertTrue(jsonPropertyNames(NamedMapFixture.class, false).contains("extensions"));
         assertTrue(jsonPropertyNames(NamedMapFixture.class, true).contains("extensions"));
+
+        NamedMapFixture namedMap = new NamedMapFixture();
+        JsonMapper mapper = JsonMapper.builder().configureForJackson2().build();
+        assertEquals(mapper.valueToTree(namedMap.getExtensions()),
+                mapper.valueToTree(namedMap).get("extensions"));
     }
 
     /** DTO 클래스를 찾을 베이스 패키지. */

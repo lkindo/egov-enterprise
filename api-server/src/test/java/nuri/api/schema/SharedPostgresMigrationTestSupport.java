@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p>서버는 테스트 JVM에서 한 번만 lazy-start하고, 각 하위 클래스는 서로 다른 database를 생성한다.
  * 따라서 migration target과 fixture가 서로 오염되지 않으며 JUnit 병렬 실행에서도 이름이 충돌하지 않는다.
  * 접속 암호는 소스에 두지 않고 JVM마다 생성하며, 클래스 종료 시 강제 drop해 실패한 연결도 정리한다.
+ * 공용 서버는 테스트 JVM의 정상 종료 훅이 정리하며, 시작 실패 시에도 즉시 정리를 시도한다.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class SharedPostgresMigrationTestSupport {
@@ -162,18 +163,34 @@ public abstract class SharedPostgresMigrationTestSupport {
     }
 
     private static PostgreSQLContainer startSharedServer() {
-        PostgreSQLContainer server = new PostgreSQLContainer("postgres:17-alpine")
-                .withDatabaseName("postgres")
+        PostgreSQLContainer server = new PostgreSQLContainer("postgres:17-alpine");
+        server.withDatabaseName("postgres")
                 .withUsername("schema_test")
                 .withPassword(UUID.randomUUID().toString());
-        server.start();
-        int starts = SERVER_START_COUNT.incrementAndGet();
-        if (starts != 1) {
-            server.stop();
-            throw new IllegalStateException("공용 PostgreSQL 서버 중복 시작 감지: " + starts);
+        try {
+            server.start();
+            int starts = SERVER_START_COUNT.incrementAndGet();
+            if (starts != 1) {
+                throw new IllegalStateException("공용 PostgreSQL 서버 중복 시작 감지: " + starts);
+            }
+            Runtime.getRuntime().addShutdownHook(new Thread(
+                    () -> stopSharedServer(server), "schema-shared-postgres-stop"));
+            log.info("[schema-shared-postgres] started container={} starts={}", server.getContainerId(), starts);
+            return server;
+        } catch (RuntimeException | Error failure) {
+            try {
+                stopSharedServer(server);
+            } catch (RuntimeException | Error cleanupFailure) {
+                failure.addSuppressed(cleanupFailure);
+            }
+            throw failure;
         }
-        log.info("[schema-shared-postgres] started container={} starts={}", server.getContainerId(), starts);
-        return server;
+    }
+
+    private static void stopSharedServer(PostgreSQLContainer server) {
+        synchronized (server) {
+            server.stop();
+        }
     }
 
     private static final class ServerHolder {

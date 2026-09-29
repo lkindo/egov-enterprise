@@ -1,6 +1,5 @@
 package nuri.api.schema;
 
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import nuri.foundation.core.config.ProjectCryptoConfig;
 import org.flywaydb.core.Flyway;

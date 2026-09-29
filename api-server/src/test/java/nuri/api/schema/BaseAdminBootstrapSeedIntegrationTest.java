@@ -351,7 +351,7 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
     private String readSeedSql(String resource) throws IOException {
         try (InputStream stream = getClass().getResourceAsStream(resource)) {
             if (stream == null) {
-                fail("부트스트랩 시드 파일이 classpath 에 없습니다: " + resource
+                return fail("부트스트랩 시드 파일이 classpath 에 없습니다: " + resource
                         + " — 파일 삭제/개명은 생성 base 의 day-1 관리자 잠금을 되살립니다.");
             }
             return new String(stream.readAllBytes(), StandardCharsets.UTF_8);

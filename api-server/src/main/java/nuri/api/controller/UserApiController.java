@@ -21,7 +21,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import nuri.foundation.core.annotation.PrivacyAccess;
-import nuri.foundation.security.annotation.Authenticated;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 

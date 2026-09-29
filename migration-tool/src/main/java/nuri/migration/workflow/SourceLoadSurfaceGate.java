@@ -11,7 +11,6 @@ import nuri.migration.model.MappingSpec.TableMapping;
 
 import java.sql.Types;
 import java.util.EnumSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;

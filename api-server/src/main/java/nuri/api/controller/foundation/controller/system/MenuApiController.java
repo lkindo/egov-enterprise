@@ -3,7 +3,6 @@ package nuri.api.controller.foundation.controller.system;
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.foundation.security.annotation.AdminOrSystem;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.menu.MenuService;
 import nuri.business.service.menu.dto.MenuCreateDto;

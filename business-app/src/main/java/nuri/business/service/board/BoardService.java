@@ -25,7 +25,6 @@ import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.file.FileService;
 import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.UserDto;
-import nuri.business.security.AuthorityConstants;
 import nuri.business.security.util.SecurityUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
