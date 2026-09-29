@@ -71,7 +71,14 @@ updates:
           - "org.junit*"
           - "org.mockito*"
           - "org.testcontainers*"
-      # [2026-08-03] 위 두 그룹에 걸리지 않는 나머지 minor/patch 도 접는다.
+      # [2026-09-30] Gradle wrapper 는 라이브러리와 따로 올린다. 9.8.0 에서 PIT 플러그인 1.19.0 이
+      #   deprecated Configuration.setVisible 을 호출해 CI 의 --warning-mode fail 이 모든 Gradle 잡을 막았고,
+      #   그 wrapper 가 같은 묶음의 라이브러리 패치까지 붙잡았다(#802). wrapper PR 은 붉은 채로 따로 보인다.
+      #   묶음은 먼저 정의된 그룹이 가져가므로 이 그룹은 catch-all 보다 앞에 둔다.
+      gradle-wrapper:
+        patterns:
+          - "gradle-wrapper"
+      # [2026-08-03] 위 그룹들에 걸리지 않는 나머지 minor/patch 도 접는다.
       #   그룹 정의가 있어도 패턴 밖 패키지는 단건 PR 이 되므로, catch-all 이 없으면
       #   '그룹핑했다' 는 서술과 실제 PR 수가 어긋난다(실측: gradle 단건 PR 다수).
       other-minor-and-patch:

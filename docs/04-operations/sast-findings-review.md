@@ -1,5 +1,16 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-09-30 Gradle 라이브러리 패치 상향에 따른 H2 테스트 경계 재검토
+
+SAST-FP-007의 보완 소스인 루트 `build.gradle`과 `foundation/build.gradle`의 버전 숫자만 바뀌었다.
+루트는 빌드 플러그인 classpath 제약(HttpComponents core 5.4.4, jackson-databind 2.22.3·3.2.3)이고,
+foundation 은 `bucket4j_jdk17-core` 8.20.0 과 테스트 런타임 `jcl-over-slf4j` 2.0.20 이다. H2 는 모든 모듈에서
+여전히 테스트 구성(`testImplementation`·`testRuntimeOnly`·`testFixturesApi`)에만 있다. 탐지 원문
+`application-test.yml`과 나머지 보완 소스 4개의 해시는 기존 승인값과 일치한다.
+
+두 보완 소스와 registry 해시만 재결속한다. 예외 6건의 범위·규칙·행·fingerprint·승인일·만료일과 보안 임계값은
+유지한다. 근거는 의존성 선언의 재검토이며 CodeQL 실행의 증거가 아니다.
+
 ## 2026-09-29 jackson-databind 패치 상향에 따른 H2 테스트 경계 재검토
 
 SAST-FP-007의 보완 소스인 루트 `build.gradle`에 jackson-databind 패치 버전만 올리는 설정을 넣었다.
