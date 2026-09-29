@@ -1,11 +1,15 @@
 package nuri.api.schema;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusConfig;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import nuri.business.domain.system.job.DurableJob;
 import nuri.business.domain.system.job.DurableJobRepository;
 import nuri.business.service.system.job.DurableJobAdministrationService;
@@ -21,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -194,6 +199,31 @@ class DurableWorkIntegrationTest {
         }
         assertThat(delivery.calls.get()).isEqualTo(1);
         assertThat(job().getPrcsSttsNm()).isEqualTo("SUCCEEDED");
+    }
+
+    /**
+     * 재시도 예산을 다 쓴 전이만 센다 — RETRY 는 세지 않는다. 경보 규칙(EgovDurableWorkFailed)이 이 노출 이름을 참조하므로
+     * observability-alert-rules 계약이 아래 scrape 문자열을 증거로 대조한다.
+     */
+    @Test
+    void exhaustedRetryBudgetIsCountedOnceForPrometheus() {
+        var prometheus = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        var metrics = new StaticListableBeanFactory(Map.of("meterRegistry", prometheus)).getBeanProvider(MeterRegistry.class);
+        var worker = new DurableWorkDispatcher(repository, List.of(delivery), manager, false, metrics);
+        enqueue();
+        delivery.fail = true;
+        for (int attempt = 0; attempt < 7; attempt++) {
+            makeDue();
+            assertThat(worker.dispatchOne()).isTrue();
+        }
+        assertThat(job().getPrcsSttsNm()).isEqualTo("RETRY");
+        assertThat(prometheus.scrape()).doesNotContain("nuri_durable_work_failed_total");
+        makeDue();
+        assertThat(worker.dispatchOne()).isTrue();
+        assertThat(job().getPrcsSttsNm()).isEqualTo("FAILED");
+        assertThat(prometheus.scrape()).contains("nuri_durable_work_failed_total{type=\"TEST_DELIVERY\"} 1.0");
+        assertThat(worker.dispatchOne()).isFalse();
+        assertThat(prometheus.scrape()).doesNotContain("nuri_durable_work_failed_total{type=\"TEST_DELIVERY\"} 2.0");
     }
 
     @Test

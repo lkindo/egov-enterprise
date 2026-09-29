@@ -17,6 +17,10 @@
 3. `DWORK_RETRY` 권한으로 `POST /api/v1/admin/system/durable-jobs/{jobSn}/retry`를 호출한다. `FAILED` 작업만 가능하며 다른 상태는 거절한다. 업무 재처리 상태 변경과 `DURABLE_WORK_RETRY` 감사 기록이 함께 커밋된다. 감사 저장 실패 시 상태도 바뀌지 않는다.
 4. 새로운 시도의 결과를 다시 조회한다. 권한은 카탈로그에만 등록하며 기본 그룹이나 실계정에 자동 배정하지 않는다.
 
+FAILED 전이는 `nuri_durable_work_failed_total{type=...}` 카운터로 `/actuator/prometheus` 에 노출되고, 경보 예시
+`EgovDurableWorkFailed` 가 이를 본다([관측성 기본값](observability-baseline.md)). 카운터는 전이 순간에만 오르므로
+재기동 전에 이미 FAILED 로 남은 작업은 경보가 아니라 위 1번 조회로 찾는다.
+
 ## 앱 알림의 보장과 한계
 
 결재의 순서 도래·회수·결과, 쪽지 도착, 메모보고·지시, 부서업무 배정, 커뮤니티 가입 신청·결정, 게시글의 새 댓글과 직접 생성·관리자 발송 알림을 대상으로 한다. 현재 발행 경로는 업무 트랜잭션 안에서 알림 행과 `NOTIFICATION_DELIVERY` 작업을 함께 저장한다. 어느 저장이든 실패하면 같은 업무 변경도 롤백한다. 커밋 후 worker는 저장된 알림을 개인 WebSocket 큐에 전달하며, 전송 실패는 이미 성공한 업무를 되돌리지 않는다. 알림은 worker 전송 전에도 본인의 REST 알림함에서 조회할 수 있다.

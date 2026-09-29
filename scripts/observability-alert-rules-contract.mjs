@@ -28,11 +28,13 @@ export const PATHS = Object.freeze({
   loginIntegrationTest: 'api-server/src/test/java/nuri/auth/AuthenticationControllerIntegrationTest.java',
   attachmentScheduler: 'business-core/src/main/java/nuri/business/service/file/AttachmentIntegrityScheduler.java',
   attachmentSchedulerTest: 'business-core/src/test/java/nuri/business/service/file/AttachmentIntegritySchedulerTest.java',
+  durableDispatcher: 'business-core/src/main/java/nuri/business/service/system/job/DurableWorkDispatcher.java',
+  durableWorkTest: 'api-server/src/test/java/nuri/api/schema/DurableWorkIntegrationTest.java',
 });
 
 /** 템플릿이 약속한 경보. 빠지면 red 다(ADR 없이 예시가 사라지는 것을 막는다). */
 export const REQUIRED_ALERTS = Object.freeze(['EgovRateLimitRejectionsSustained', 'EgovLoginFailureSpike',
-  'EgovAttachmentIntegrityNoHealthyRun']);
+  'EgovAttachmentIntegrityNoHealthyRun', 'EgovDurableWorkFailed']);
 
 const APPLICATION_TAG_EVIDENCE = [PATHS.applicationYml, 'application: ${spring.application.name'];
 
@@ -61,6 +63,16 @@ export const METRIC_BINDINGS = Object.freeze({
     labelValues: {
       outcome: { PASS: [PATHS.attachmentSchedulerTest, 'nuri_attachment_integrity_runs_total{outcome=\\"PASS\\"} 1.0'] },
     },
+  },
+  nuri_durable_work_failed_total: {
+    labels: ['application', 'type'],
+    evidence: [
+      APPLICATION_TAG_EVIDENCE,
+      [PATHS.durableDispatcher, 'FAILED_METRIC = "nuri.durable.work.failed"'],
+      [PATHS.durableDispatcher, 'TYPE_TAG = "type"'],
+      [PATHS.durableWorkTest, 'nuri_durable_work_failed_total{type=\\"TEST_DELIVERY\\"} 1.0'],
+    ],
+    labelValues: {},
   },
   http_server_requests_seconds_count: {
     labels: ['application', 'uri', 'status', 'method', 'outcome', 'exception', 'error'],
