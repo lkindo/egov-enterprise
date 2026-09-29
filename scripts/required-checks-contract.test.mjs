@@ -1280,14 +1280,14 @@ test('change classification is fail-closed and its contract runs in the required
   assert.match(classifierJob, /node scripts\/ci-change-scope\.mjs/);
   assert.match(classifierJob, /Unknown or empty|unknown range|unknown means full pipeline/i);
   assert.ok(secretScanJob, 'secret-scan job must exist');
-  assert.match(secretScanJob, /^    needs: \[change-scope, frontend-coverage-scope\]$/m);
+  assert.match(secretScanJob, /^    needs: \[change-scope\]$/m);
   assert.match(secretScanJob, /^    if: always\(\)$/m);
   assert.match(secretScanJob, /needs\.change-scope\.result.*!=.*success[\s\S]*?exit 1/);
   assert.match(secretScanJob, /npm run test:operational-contracts/);
 
   const detachedAdmission = mutateWorkflowJob(ciContent, 'secret-scan', block => block.replace(
-    '    needs: [change-scope, frontend-coverage-scope]',
-    '    needs: change-scope',
+    '    needs: [change-scope]',
+    '    needs: []',
   ));
   assert.match(validateStaticContract({ manifest, ciContent: detachedAdmission }).join('\n'),
     /secret-scan.*needs/i);

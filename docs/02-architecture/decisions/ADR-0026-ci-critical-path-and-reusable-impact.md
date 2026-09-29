@@ -77,7 +77,7 @@ Oracle crash-recovery 시험은 별도 JVM에서 일반 classpath/JAR를 실행�
     이관 PIT 네 scope의 모집단·명령·임계값은 모두 유지한다. run `36575378891`에서 각 matrix의 실제 실행
     합계는 약 7분 20초와 4분 12초였으므로 직렬 입장 후에도 12분 목표 안에 완료할 수 있다. 재사용 profile
     여섯 개는 짧은 `frontend-scope`가 슬롯을 반납한 뒤 함께 시작한다. custom composition 두 layout은
-    `backend-scope` 뒤, `secret-scan`은 frontend coverage 뒤 시작한다. profile·custom은 `!cancelled()`와 분류 성공 검사를
+    `backend-scope` 뒤 시작하고 `secret-scan`은 분류 직후 실행한다. profile·custom은 `!cancelled()`와 분류 성공 검사를
     사용해 취소에는 반응하면서 선행 job 실패·skip이 선택된 검증을 생략시키지 못하게 한다. secret-scan은
     `always()`와 분류 성공 검사를 유지한다.
 
@@ -155,3 +155,8 @@ custom single-module은 backend 완료 뒤 runner를 기다려 attempt 2에서 5
 같은 실행의 제품 PIT 10개 job 총시간은 391·384·332·288·178·171초와 60~107초였으므로 동시 수를 4로
 낮추고 현재 실측 LPT 순서로 재배치한다. custom은 긴 single-module을 먼저 선언한다. 검증 모집단·임계값은
 유지하면서 두 custom job이 backend 완료 직후 입장할 슬롯을 확보한다.
+
+9차 조정의 green 표본은 11분 34초와 12분 46초였다. 후자는 frontend coverage가 9분 14초로 변동한 뒤
+3분 5초 `secret-scan`을 시작해 보안 job이 새 임계 경로가 됐다. full run 초기 작업은 제품 PIT를 4-slot로
+제한한 상태에서 secret-scan을 포함해도 20개보다 적으므로, 보안 job을 분류 직후 시작해 profile·custom admission
+전에 끝낸다. 보안 단계·실패 판정은 그대로 유지한다.

@@ -30,7 +30,7 @@ push/PR / workflow_dispatch
     └─ change-scope (PR·main/master push: 같은 영향 분류 / 비교 불가·수동: 전수)
         ├─ sast-scope (Java·JavaScript/TypeScript CodeQL security-extended, 한 runner 슬롯에서 순차 실행)
         │   └─ secure-coding (High/Critical 차단, 언어별 결과 집계)
-        ├─ secret-scan (frontend coverage 완료 뒤 운영 계약·snapshot readiness·PR runtime 의존성 review·비밀 스캔)
+        ├─ secret-scan (분류 직후 운영 계약·snapshot readiness·PR runtime 의존성 review·비밀 스캔)
         ├─ backend-scope (backend=true: 온라인 4모듈 빌드·테스트·커버리지·OpenAPI 신선도)
         ├─ backend-schema-scope (schema=true: backend와 병렬 PostgreSQL schema-validation)
         ├─ migration-test-scope (migration=true: 123개 이관 테스트 클래스를 3개 matrix로 정확히 분배)
