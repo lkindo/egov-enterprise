@@ -6,13 +6,13 @@ buildscript {
             // Keep compatible patch floors until upstream plugins supply these versions.
             classpath('org.apache.httpcomponents.client5:httpclient5:5.6.4')
             classpath('org.apache.httpcomponents.client5:httpclient5-cache:5.6.4')
-            classpath('org.apache.httpcomponents.core5:httpcore5:5.4.3')
-            classpath('org.apache.httpcomponents.core5:httpcore5-h2:5.4.3')
+            classpath('org.apache.httpcomponents.core5:httpcore5:5.4.4')
+            classpath('org.apache.httpcomponents.core5:httpcore5-h2:5.4.4')
             // Dependency-Check 13.0.0 → open-vulnerability-clients 9.0.6 경유 jackson-databind 2.22.1
             // (GHSA-q4xh-88c3-wmh7, 2.22.x <2.22.2). 2026-09-29 추가, 플러그인이 2.22.2 이상을 가져오면 제거.
-            classpath('com.fasterxml.jackson.core:jackson-databind:2.22.2')
+            classpath('com.fasterxml.jackson.core:jackson-databind:2.22.3')
             // 같은 권고의 3.x 라인(<3.1.6). Boot Gradle 플러그인 4.1.1 이 3.1.5 를 가져온다 — 플러그인 상향 때 제거.
-            classpath('tools.jackson.core:jackson-databind:3.1.7')
+            classpath('tools.jackson.core:jackson-databind:3.2.3')
         }
     }
 }
