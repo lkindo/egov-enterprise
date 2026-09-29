@@ -66,7 +66,13 @@ test.describe('실제 추가 인증과 키보드 접근성', () => {
         const login = async () => {
             await page.getByRole('textbox', { name: '아이디', exact: true }).fill(userId);
             await fillSecret('비밀번호', password);
-            await page.getByRole('button', { name: /로그인/ }).click();
+            const [response] = await Promise.all([
+                page.waitForResponse(candidate => new URL(candidate.url()).pathname === '/api/auth/login'
+                    && candidate.request().method() === 'POST', { timeout: 20_000 }),
+                page.getByRole('button', { name: /로그인/ }).click(),
+            ]);
+            expect(response.status(), '로그인 Route Handler 응답 상태').toBe(200);
+            await response.finished();
         };
         try {
             await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -101,7 +107,16 @@ test.describe('실제 추가 인증과 키보드 접근성', () => {
             await expect(page.getByRole('heading', { name: '추가 인증', exact: true })).toBeFocused();
             const restricted = await context.cookies();
             expect(restricted.some(cookie => cookie.name === 'accessToken' || cookie.name === 'refreshToken')).toBe(false);
-            expect(restricted.some(cookie => cookie.name === 'mfa_challenge' && cookie.httpOnly && cookie.sameSite === 'Strict')).toBe(true);
+            // The response headers and MFA view can become observable just before Chromium's cookie
+            // store catches up. Keep the immediate no-session assertion above, then wait only for the
+            // restricted challenge to appear with the exact security attributes.
+            await expect.poll(async () => {
+                const challenge = (await context.cookies()).find(cookie => cookie.name === 'mfa_challenge');
+                return challenge ? { httpOnly: challenge.httpOnly, sameSite: challenge.sameSite } : null;
+            }, { message: '제한 MFA 쿠키와 보안 속성 반영', timeout: 10_000 }).toEqual({
+                httpOnly: true,
+                sameSite: 'Strict',
+            });
             let verificationRequests = 0;
             page.on('request', request => { if (new URL(request.url()).pathname === '/api/auth/mfa/verify') verificationRequests += 1; });
             await page.keyboard.press('Tab');

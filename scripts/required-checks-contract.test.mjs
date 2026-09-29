@@ -87,6 +87,19 @@ function assertProductMutationConcurrency(content) {
   }
 }
 
+function assertProductMutationLptOrder(content) {
+  const product = parseWorkflowJobs(content).get('mutation-scope') ?? '';
+  const scopes = [...product.matchAll(/^ {10}- scope: (\S+)$/gm)].map(match => match[1]);
+  assert.deepEqual(scopes.slice(0, 6), [
+    'business-app-board',
+    'business-app-workflow',
+    'business-app-delivery-operation',
+    'business-core-file',
+    'business-core-auth',
+    'business-core-code-user-common',
+  ], 'the measured longest PIT batches must enter the five-runner pool before short foundation batches');
+}
+
 const baselineRunner = 'node ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=full-suite e2e/quality/visual-baselines.spec.ts -g "Visual Regression Baseline" --update-snapshots';
 const baselineResultGate = 'node ../scripts/playwright-result-contract.mjs --report /tmp/e2e-results.json --inventory /tmp/e2e-inventory.json e2e/quality/visual-baselines.spec.ts';
 
@@ -456,11 +469,20 @@ test('stable backend and frontend contexts aggregate conditional source jobs fai
     assert.ok(requiredJob);
     assert.match(requiredJob, /^    if: always\(\)$/m);
     assert.deepEqual(check.needs, ['change-scope', sourceJobId,
-      ...(scope === 'backend' ? ['backend-schema-scope', 'migration-scope', 'reusable-base', 'reusable-custom'] : [])]);
+      ...(scope === 'backend'
+        ? ['backend-schema-scope', 'migration-scope', 'reusable-base', 'reusable-custom']
+        : ['frontend-coverage-scope'])]);
     const aggregate = Array.isArray(check.aggregate) ? check.aggregate[0] : check.aggregate;
     assert.equal(aggregate.sourceJobId, sourceJobId);
     assert.equal(aggregate.scopeExpression, `needs.change-scope.outputs.${scope}`);
     assert.equal(aggregate.resultExpression, `needs.${sourceJobId}.result`);
+    if (scope === 'frontend') {
+      assert.ok(Array.isArray(check.aggregate));
+      assert.equal(check.aggregate.length, 2);
+      assert.equal(check.aggregate[1].sourceJobId, 'frontend-coverage-scope');
+      assert.equal(check.aggregate[1].scopeExpression, 'needs.change-scope.outputs.frontend');
+      assert.equal(check.aggregate[1].resultExpression, 'needs.frontend-coverage-scope.result');
+    }
   }
 
   const detachedSource = mutateWorkflowJob(ciContent, 'backend-scope', block => block.replace(
@@ -589,6 +611,16 @@ test('backend required context binds independent migration verification fail clo
     /^          persist-credentials: false\n          # verify\.mjs reruns the profile provenance contract after artifact download\.\n          fetch-depth: 0$/m));
 });
 
+test('product PIT uses measured longest-processing-time ordering without changing its population', () => {
+  assertProductMutationLptOrder(ciContent);
+  const weakened = ciContent
+    .replace('- scope: business-core-auth', '- scope: temporary-order-placeholder')
+    .replace('- scope: foundation-security-filter', '- scope: business-core-auth')
+    .replace('- scope: temporary-order-placeholder', '- scope: foundation-security-filter');
+  assert.notEqual(weakened, ciContent);
+  assert.throws(() => assertProductMutationLptOrder(weakened), /measured longest PIT batches/);
+});
+
 test('E2E builds and loads the cached local API image with no registry or upstream artifact dependency', () => {
   assertE2eImageBuild(ciContent);
   for (const [before, after] of [
@@ -607,7 +639,8 @@ test('E2E builds and loads the cached local API image with no registry or upstre
 test('backend and frontend hard build steps cannot be skipped or made advisory', () => {
   for (const [jobId, stepName] of [
     ['backend-scope', 'Build and Test with Gradle'],
-    ['frontend-scope', 'Build and Test'],
+    ['frontend-scope', 'Build production frontend'],
+    ['frontend-coverage-scope', 'Frontend unit and coverage suite'],
   ]) {
     for (const weakening of [
       '        if: false\n',
@@ -663,6 +696,10 @@ test('classifier, required, and source jobs must checkout the workflow commit wi
   assert.match(
     validateStaticContract({ manifest, ciContent: addRefOverride(ciContent, 'frontend-scope') }).join('\n'),
     /frontend-scope.*checkout.*ref/i,
+  );
+  assert.match(
+    validateStaticContract({ manifest, ciContent: addRefOverride(ciContent, 'frontend-coverage-scope') }).join('\n'),
+    /frontend-coverage-scope.*checkout.*ref/i,
   );
   assert.match(
     validateStaticContract({ manifest, ciContent: addRefOverride(ciContent, 'e2e-tests') }).join('\n'),
@@ -816,11 +853,18 @@ test('frontend heavy source starts independently from the backend heavy source',
   const frontendJob = ciContent.match(
     /^  frontend-scope:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
   )?.[0];
+  const coverageJob = ciContent.match(
+    /^  frontend-coverage-scope:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
+  )?.[0];
 
   assert.ok(frontendJob, 'frontend-scope job must exist');
+  assert.ok(coverageJob, 'frontend-coverage-scope job must exist');
   assert.match(frontendJob, /^    needs: change-scope$/m);
+  assert.match(coverageJob, /^    needs: change-scope$/m);
   assert.doesNotMatch(frontendJob, /^    needs:.*backend-scope/m,
     'frontend-scope consumes no backend artifact and must not be serialized behind backend-scope');
+  assert.doesNotMatch(coverageJob, /^    needs:.*(?:backend-scope|frontend-scope)/m,
+    'frontend coverage must run beside production build rather than after another heavy source');
 });
 
 test('physical schema validation runs in parallel and remains required by backend-build', () => {

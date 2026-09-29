@@ -38,9 +38,9 @@ push/PR / workflow_dispatch
         ├─ reusable-base (영향받는 core·collaboration·demo profile×layout 생성·기술 검증)
         ├─ reusable-custom (core 영향 시 custom composition 두 layout을 profile과 병렬 검증)
         ├─ backend-build (온라인·스키마·이관·재사용 profile·custom 결과를 집계)
-        ├─ frontend-scope (frontend=true인 경우의 실제 무거운 실행, backend와 독립)
-        │   └─ codegen·lint·audit·Next build·Vitest coverage·bundle budget
-        ├─ frontend-build (frontend-scope를 집계해 항상 완료되는 안정 required context)
+        ├─ frontend-scope (codegen·typecheck·lint·audit·Next build·bundle budget)
+        ├─ frontend-coverage-scope (frontend-scope와 병렬로 전체 Vitest coverage)
+        ├─ frontend-build (두 frontend source를 각각 집계하는 안정 required context)
         ├─ mutation-scope (mutation=true, 상류 빌드 대기 없이 제품 PIT 10개 배치·최대 5개 동시 실행)
         ├─ mutation-scope-migration (mutation-migration-tool=true, 상류 빌드 대기 없이 이관 PIT 4개)
         │   └─ mutation-test (두 소스를 각각 fail-closed로 집계하는 안정 required aggregate)
@@ -87,7 +87,7 @@ history 입출력·기본 증분 분석·CI history 전용 캐시를 사용하�
 
 > **브랜치 보호 SSOT와 live 경계**: `.github/required-checks.json`이 보호·릴리스 기준 브랜치, 안정 required context 6개, 원본 job/matrix, 신뢰할 GitHub Actions integration ID와 review policy 목표를 정의한다. `scripts/verify-branch-protection.mjs`는 required check·strict/provider/bypass뿐 아니라 approval 수, code-owner, last-push, stale review, thread resolution을 live ruleset과 exact-match한다. 저장소 명세가 바뀌어도 원격 설정은 자동 변경되지 않으므로 `verify:ops`가 green이기 전에는 적용 완료로 보지 않는다. 현재 외부 drift는 [공용 gap 인덱스](../../.agent/memory/known-gaps.md)를 따른다.
 
-E2E와 두 PIT source는 `change-scope`만 선행 조건으로 가진다. 각 job이 필요한 코드와 실행 환경을 직접 빌드하며, backend/frontend artifact를 기다리지 않는다. `migration-test-scope`도 분류 직후 세 leaf를 시작하고 `migration-scope`가 세 결과와 증거를 합친다. `backend-build`는 온라인 `backend-scope`, 병렬 `backend-schema-scope`, 집계된 `migration-scope`, 영향받는 재사용 profile×layout과 core 영향 시 별도 custom×layout 결과를 각각 검사한다. E2E/PIT가 먼저 성공해도 선택된 다른 required 검사의 실패를 상쇄하지 못한다. CodeQL은 소스 변경에서 Java·JavaScript/TypeScript 양언어 분석을 유지한다.
+E2E와 두 PIT source는 `change-scope`만 선행 조건으로 가진다. 각 job이 필요한 코드와 실행 환경을 직접 빌드하며, backend/frontend artifact를 기다리지 않는다. frontend build/bundle과 unit/coverage도 서로 산출물을 소비하지 않으므로 분류 직후 별도 source로 시작하고 `frontend-build`가 둘을 모두 집계한다. `migration-test-scope`도 분류 직후 세 leaf를 시작하고 `migration-scope`가 세 결과와 증거를 합친다. `backend-build`는 온라인 `backend-scope`, 병렬 `backend-schema-scope`, 집계된 `migration-scope`, 영향받는 재사용 profile×layout과 core 영향 시 별도 custom×layout 결과를 각각 검사한다. E2E/PIT가 먼저 성공해도 선택된 다른 required 검사의 실패를 상쇄하지 못한다. CodeQL은 소스 변경에서 Java·JavaScript/TypeScript 양언어 분석을 유지한다.
 
 이관 테스트 분할의 입력은 [duration profile](../../config/migration-test-duration-profile.json)이다. 성공한 Linux run의
 JUnit XML에서 발견한 123개 소스 테스트 클래스를 정확히 덮고, 측정 시간을 LPT 방식으로 41개씩 나눈다. 각 leaf는
@@ -98,7 +98,7 @@ BRANCH 70% 게이트를 병합 데이터로 실행한다. 프로필에 없는 �
 
 PIT 분류는 production/test Java뿐 아니라 `src/testFixtures/**`, `src/main/resources/**`, `src/test/resources/**`를 포함한다. 온라인 4모듈의 의존 관계는 한 범위로 유지하며 개별 Java 파일별 시험 선택은 하지 않는다. 이관 전용 소스·리소스·build 변경은 이관 build/PIT를 선택하고 온라인 build/PIT·frontend·schema·E2E를 선택하지 않는다. 공용 Gradle 입력과 양쪽 ID 생성 의미 계약(`IdGenerationUtil`, `Constants`, `StandardIdGenerator`)은 두 모듈을 선택한다. 미지 입력·빈 비교는 전수이며 루트 `db_columns.json`도 기존 전수 fallback을 유지한다. 정확한 경계는 [분류기](../../scripts/ci-change-scope.mjs)와 [회귀 계약](../../scripts/ci-change-scope.test.mjs)이 소유한다.
 
-제품 PIT는 종전 대상의 정확한 합집합을 10개 scope로 실행하고 `mutation-scope`의 `max-parallel: 5`를 사용한다. [전체 실행 36550933968](https://github.com/lkindo/egov-enterprise/actions/runs/36550933968)에서 3개 제한이 후속 scope를 최대 6분 58초 대기시켰기 때문이다. `business-app` 세 분할과 이관 네 분할은 기존 성공 보고서에서 각 집합이 75%를 넘는 것을 확인했으며, 새 required 실행의 성공과 시간은 별도로 확인한다. 관측값을 관리 설정의 runner 상한으로 해석하지 않는다.
+제품 PIT는 종전 대상의 정확한 합집합을 10개 scope로 실행하고 `mutation-scope`의 `max-parallel: 5`를 사용한다. [전체 실행 36550933968](https://github.com/lkindo/egov-enterprise/actions/runs/36550933968)에서 3개 제한이 후속 scope를 최대 6분 58초 대기시켰기 때문이다. [실행 36569461799](https://github.com/lkindo/egov-enterprise/actions/runs/36569461799)의 실측 339·334·307·289·273·234초 순으로 여섯 긴 scope를 먼저 선언하고 54~61초 foundation scope를 뒤에 둔다. 이 LPT 순서는 모집단·테스트·75% 게이트를 바꾸지 않고, 짧은 작업 뒤에 긴 인증 범위가 밀리는 대기만 줄인다. `business-app` 세 분할과 이관 네 분할은 기존 성공 보고서에서 각 집합이 75%를 넘는 것을 확인했으며, 새 required 실행의 성공과 시간은 별도로 확인한다. 관측값을 관리 설정의 runner 상한으로 해석하지 않는다.
 
 PR과 **main/master push는 같은 영향 분류**를 적용한다. PR은 base/head, push는 이전/현재 SHA를 비교하며 수동 실행·비교 기준 부재·미지 또는 빈 변경은 전수로 돌아간다. 따라서 문서 전용 fast path는 기본 브랜치에도 적용된다. 전수 로컬 `localGate`·`jacocoRootCoverageVerification`은 유지하며, 릴리스는 대상 커밋의 required 성공과 릴리스 고유 증거를 확인한다. 주간 취약점 감사·부하·DR 검증은 각각의 별도 워크플로우와 격리 환경에서 실행한다.
 
@@ -226,7 +226,7 @@ pnpm run test:coverage
 
 ### 생성 아티팩트
 
-`frontend-scope`는 `next-build-cache` artifact를 업로드하지 않는다. 해당 업로드는 소비자가 없고 유효한 빌드 재사용 효과도 없어 2026-09-01 제거됐다. Next production build·bundle budget·Vitest coverage 결과는 각 실행 로그에서 확인한다.
+`frontend-scope`는 `next-build-cache` artifact를 업로드하지 않는다. 해당 업로드는 소비자가 없고 유효한 빌드 재사용 효과도 없어 2026-09-01 제거됐다. Next production build·bundle budget은 `frontend-scope`, 전체 Vitest coverage는 `frontend-coverage-scope`에서 병렬 실행하고 안정 context `frontend-build`가 둘 다 성공해야 통과한다.
 
 ---
 

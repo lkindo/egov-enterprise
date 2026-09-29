@@ -732,13 +732,12 @@ jobs:
       - name: Generate ephemeral JWT secret (frontend build only)
         run: echo "JWT_SECRET=$(openssl rand -hex 44)" >> "$GITHUB_ENV"
 
-      - name: Build and Test
+      - name: Build production frontend
         id: fe-build
         run: |
           set -o pipefail
           pnpm run build 2>&1 | tee /tmp/fe-build.log
           pnpm run bundle:check
-          pnpm run test:coverage 2>&1 | tee /tmp/fe-test.log
         working-directory: frontend
 
       # [2026-09-01 제거] `next-build-cache` 업로드를 걷어낸다.
@@ -757,10 +756,55 @@ jobs:
         if: failure()
         run: |
           echo "::error title=실패 스텝 판정::install=${{ steps.fe-install.outcome }} / form-validation=${{ steps.fe-form-validation.outcome }} / codegen=${{ steps.fe-codegen.outcome }} / typecheck-e2e=${{ steps.fe-typecheck-e2e.outcome }} / lint=${{ steps.fe-lint.outcome }} / audit=${{ steps.fe-audit.outcome }} / build=${{ steps.fe-build.outcome }}"
-          for f in /tmp/fe-build.log /tmp/fe-test.log; do
+          for f in /tmp/fe-build.log; do
             [ -f "$f" ] || continue
             echo "::error title=$(basename $f) 마지막 출력::$(tail -c 2000 "$f" | paste -sd' ' -)"
           done
+
+  # Unit/coverage is independent from the production bundle after dependency installation.
+  # A separate runner removes their measured 8m + 2m serial chain while frontend-build below
+  # still requires both sources through fail-closed aggregation.
+  frontend-coverage-scope:
+    needs: change-scope
+    if: needs.change-scope.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413  # v6.1.0
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend
+
+      - name: Generate ephemeral JWT secret (frontend tests only)
+        run: echo "JWT_SECRET=$(openssl rand -hex 44)" >> "$GITHUB_ENV"
+
+      - name: Frontend unit and coverage suite
+        id: fe-coverage
+        run: |
+          set -o pipefail
+          pnpm run test:coverage 2>&1 | tee /tmp/fe-test.log
+        working-directory: frontend
+
+      - name: Surface coverage failure detail (annotations)
+        if: failure()
+        run: |
+          echo "::error title=실패 스텝 판정::coverage=${{ steps.fe-coverage.outcome }}"
+          if [ -f /tmp/fe-test.log ]; then
+            echo "::error title=fe-test.log 마지막 출력::$(tail -c 2000 /tmp/fe-test.log | paste -sd' ' -)"
+          fi
 
   # Stable required contexts. A selected heavy source must succeed; an
   # explicitly unselected source must be skipped. Every other state is red.
@@ -890,7 +934,7 @@ jobs:
         run: node scripts/aggregate-required-check.mjs
 
   frontend-build:
-    needs: [change-scope, frontend-scope]
+    needs: [change-scope, frontend-scope, frontend-coverage-scope]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -902,6 +946,13 @@ jobs:
           CLASSIFIER_RESULT: ${{ needs.change-scope.result }}
           EXPECTED_WORK: ${{ needs.change-scope.outputs.frontend }}
           SOURCE_RESULT: ${{ needs.frontend-scope.result }}
+        run: node scripts/aggregate-required-check.mjs
+
+      - name: 프론트엔드 커버리지 결과 집계
+        env:
+          CLASSIFIER_RESULT: ${{ needs.change-scope.result }}
+          EXPECTED_WORK: ${{ needs.change-scope.outputs.frontend }}
+          SOURCE_RESULT: ${{ needs.frontend-coverage-scope.result }}
         run: node scripts/aggregate-required-check.mjs
 
   e2e-tests:
@@ -1242,6 +1293,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # GitHub starts matrix entries in declaration order. Keep the measured longest five
+          # first (339s, 334s, 307s, 289s, 273s on run 36569461799), then the 234s scope.
+          # This LPT ordering changes no target or threshold; it prevents the long auth scopes
+          # from waiting behind the four 54-61s foundation scopes under max-parallel: 5.
           # 종전 단일 business-app 범위는 1,279 mutations, 14분 12초였다. 현재 report를
           # 겹침 없는 세 모집단으로 나누고 각 모집단에 75%를 따로 적용해 gate를 강화한다.
           - scope: business-app-board
@@ -1262,6 +1317,19 @@ jobs:
           - scope: business-core-file
             gradle: ":business-core:pitest"
             classes: "nuri.business.domain.file.*,nuri.business.service.file.*,nuri.business.service.code.*,nuri.business.domain.log.*,nuri.business.service.deptjob.*"
+            tests: "nuri.business.*"
+
+          # 로그인 IP·시간 정책, refresh 회전, 감사·OTP와 인증 provider·요청 제한·메뉴 순환을 검증한다.
+          - scope: business-core-auth
+            gradle: ":business-core:pitest"
+            classes: "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*,nuri.business.service.menu.MenuService,nuri.business.security.iam.EgovAuthenticationProvider,nuri.business.security.filter.RateLimitFilter"
+            tests: "nuri.business.*"
+
+          # QueryDSL 조건 누락으로 전체 조회·계정 열거가 되는 회귀와 공용 paging 경계를 검증한다.
+          # 같은 공통 범위의 주민번호 암복호화 변환도 함께 보호한다.
+          - scope: business-core-code-user-common
+            gradle: ":business-core:pitest"
+            classes: "nuri.business.domain.code.*,nuri.business.domain.user.repository.*,nuri.business.domain.common.*"
             tests: "nuri.business.*"
 
           # 상태변경 요청의 Origin/Referer 검증 우회를 탐지하는 보안 경계다.
@@ -1287,19 +1355,6 @@ jobs:
             gradle: ":foundation:pitest"
             classes: "nuri.foundation.security.net.*"
             tests: "nuri.foundation.*"
-
-          # 로그인 IP·시간 정책, refresh 회전, 감사·OTP와 인증 provider·요청 제한·메뉴 순환을 검증한다.
-          - scope: business-core-auth
-            gradle: ":business-core:pitest"
-            classes: "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*,nuri.business.service.menu.MenuService,nuri.business.security.iam.EgovAuthenticationProvider,nuri.business.security.filter.RateLimitFilter"
-            tests: "nuri.business.*"
-
-          # QueryDSL 조건 누락으로 전체 조회·계정 열거가 되는 회귀와 공용 paging 경계를 검증한다.
-          # 같은 공통 범위의 주민번호 암복호화 변환도 함께 보호한다.
-          - scope: business-core-code-user-common
-            gradle: ":business-core:pitest"
-            classes: "nuri.business.domain.code.*,nuri.business.domain.user.repository.*,nuri.business.domain.common.*"
-            tests: "nuri.business.*"
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1

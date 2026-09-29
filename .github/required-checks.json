@@ -200,27 +200,48 @@
       "jobId": "frontend-build",
       "needs": [
         "change-scope",
-        "frontend-scope"
+        "frontend-scope",
+        "frontend-coverage-scope"
       ],
       "jobIf": "always()",
-      "aggregate": {
-        "sourceJobId": "frontend-scope",
-        "sourceNeeds": [
-          "change-scope"
-        ],
-        "sourceJobIf": "needs.change-scope.outputs.frontend == 'true'",
-        "sourceStepName": "Build and Test",
-        "sourceRun": "set -o pipefail\npnpm run build 2>&1 | tee /tmp/fe-build.log\npnpm run bundle:check\npnpm run test:coverage 2>&1 | tee /tmp/fe-test.log",
-        "sourceWorkingDirectory": "frontend",
-        "sourceEnv": {},
-        "aggregateStepName": "프론트엔드 범위 결과 집계",
-        "aggregateRun": "node scripts/aggregate-required-check.mjs",
-        "resultExpression": "needs.frontend-scope.result",
-        "successResult": "success",
-        "scopeExpression": "needs.change-scope.outputs.frontend",
-        "classifierResultExpression": "needs.change-scope.result",
-        "skippedResult": "skipped"
-      }
+      "aggregate": [
+        {
+          "sourceJobId": "frontend-scope",
+          "sourceNeeds": [
+            "change-scope"
+          ],
+          "sourceJobIf": "needs.change-scope.outputs.frontend == 'true'",
+          "sourceStepName": "Build production frontend",
+          "sourceRun": "set -o pipefail\npnpm run build 2>&1 | tee /tmp/fe-build.log\npnpm run bundle:check",
+          "sourceWorkingDirectory": "frontend",
+          "sourceEnv": {},
+          "aggregateStepName": "프론트엔드 범위 결과 집계",
+          "aggregateRun": "node scripts/aggregate-required-check.mjs",
+          "resultExpression": "needs.frontend-scope.result",
+          "successResult": "success",
+          "scopeExpression": "needs.change-scope.outputs.frontend",
+          "classifierResultExpression": "needs.change-scope.result",
+          "skippedResult": "skipped"
+        },
+        {
+          "sourceJobId": "frontend-coverage-scope",
+          "sourceNeeds": [
+            "change-scope"
+          ],
+          "sourceJobIf": "needs.change-scope.outputs.frontend == 'true'",
+          "sourceStepName": "Frontend unit and coverage suite",
+          "sourceRun": "set -o pipefail\npnpm run test:coverage 2>&1 | tee /tmp/fe-test.log",
+          "sourceWorkingDirectory": "frontend",
+          "sourceEnv": {},
+          "aggregateStepName": "프론트엔드 커버리지 결과 집계",
+          "aggregateRun": "node scripts/aggregate-required-check.mjs",
+          "resultExpression": "needs.frontend-coverage-scope.result",
+          "successResult": "success",
+          "scopeExpression": "needs.change-scope.outputs.frontend",
+          "classifierResultExpression": "needs.change-scope.result",
+          "skippedResult": "skipped"
+        }
+      ]
     },
     {
       "context": "secret-scan",

@@ -66,6 +66,12 @@ Oracle crash-recovery 시험은 별도 JVM에서 일반 classpath/JAR를 실행�
    XML census·manifest·JaCoCo `.exec`를 남긴다. 후속 `migration-scope`는 세 leaf 성공을 fail-closed로 집계하고,
    manifest·클래스·프로필 provenance·세 실행 파일을 검증한 뒤 기존 `jacocoMigrationCoverageVerification`에서
    실행 데이터를 병합한다. LINE 85%·BRANCH 70%, 로컬/주간 전체 테스트, required context 6개는 유지한다.
+8. `frontend-scope`의 프로덕션 build·bundle budget과 `frontend-coverage-scope`의 전체 Vitest coverage를
+   독립 runner에서 병렬 실행한다. `frontend-build`는 두 source를 각각 fail-closed로 집계하며
+   codegen·typecheck·lint·audit·build·bundle·coverage 게이트를 모두 유지한다.
+9. 제품 PIT 10개의 대상·임계값은 바꾸지 않고, `max-parallel: 5`의 선언 순서만 Linux
+   실측 시간이 긴 순서로 배치한다. 첫 다섯 슬롯은 339·334·307·289·273초 범위를 먼저 받고,
+   234초 범위가 다음으로 대기하여 54~61초 foundation 범위 뒤로 긴 인증 범위가 밀리지 않게 한다.
 
 ## 검증과 한계
 
@@ -89,3 +95,13 @@ PIT history는 shadow 비교가 full 결과와 동등할 때만 required 적용�
 aggregate가 shallow checkout에서 측정 commit을 찾지 못해 실패했고, `reusable-base core/single`은 profile 6분 38초와
 custom 5분 52초를 직렬 실행해 12분 58초가 걸렸다. aggregate와 leaf는 provenance 검사를 위해 전체 이력을 받고,
 profile/custom은 위 결정대로 병렬 job으로 분리한다. 이 실행은 실패 표본이므로 목표 달성 근거로 쓰지 않는다.
+
+[4차 전체 실행 36569461799](https://github.com/lkindo/egov-enterprise/actions/runs/36569461799)은 migration leaf가
+6분 0초~8분 58초, 이관 PIT가 53초~1분 20초, reusable profile과 custom이 최대 6분 33초와
+6분 23초로 성공했다. shallow provenance와 profile/custom 직렬 병목이 해소됐다. 다만 전체는
+12분 28초였고, frontend source의 Next build+coverage 직렬 구간이 11분 41초, PIT의 뒤쪽 인증
+범위는 runner/matrix 대기를 포함해 12분 16초에 끝났다. E2E 1번 shard는 MFA 제한 쿠키를 즉시
+한 번만 조회한 경과 조건으로 첫 시도가 실패하고 재시도는 통과했으므로 flaky=0 계약이 전체를 실패
+처리했다. 이 표본을 근거로 frontend build/coverage를 분리하고 제품 PIT를 LPT 순서로 배치했으며,
+MFA 테스트는 세션 쿠키 미존재를 즉시 확인한 뒤 제한 쿠키의 정확한 보안 속성 반영만 제한 시간 대기한다.
+4차도 실패 표본이므로 12분 중앙값 달성 판정에는 green 재실행을 사용한다.
