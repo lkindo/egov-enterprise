@@ -137,12 +137,12 @@
       "fingerprint": "42098952e5b35237:1",
       "sourceSha256": "1660d78450bdd3d2d0fee75e0af78c62d5342ba1799b0130afdeed94590a227b",
       "expiresOn": "2026-12-08",
-      "reason": "In-memory H2 test-only profile and test-only H2 dependency; no production database credential. Re-reviewed 2026-09-28: the durable-work scheduler is disabled for controlled tests; the H2 boundary is unchanged and the recorded SARIF region moved from line 22 to 26 after four inserted lines.",
+      "reason": "In-memory H2 test-only profile and test-only H2 dependency; no production database credential. Re-reviewed 2026-09-28: the durable-work scheduler is disabled for controlled tests; the H2 boundary is unchanged and the recorded SARIF region moved from line 22 to 26 after four inserted lines. Re-reviewed 2026-09-29: root build.gradle changed only to raise jackson-databind patch versions (BOM properties and buildscript constraints for GHSA-q4xh-88c3-wmh7); H2 remains testImplementation/testRuntimeOnly in api-server/build.gradle.",
       "id": "SAST-FP-007",
       "supportingSources": [
         {
           "file": "build.gradle",
-          "sha256": "5b71e18af81f725f4523d837a8ee4bf4a11ed32daac137d9cbea1d16d4319cd8"
+          "sha256": "3062651039ed5f4bbfcbf10c595777f3c6872bae405f4244c4aff9857f5a8470"
         },
         {
           "file": "api-server/build.gradle",

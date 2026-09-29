@@ -8,6 +8,11 @@ buildscript {
             classpath('org.apache.httpcomponents.client5:httpclient5-cache:5.6.4')
             classpath('org.apache.httpcomponents.core5:httpcore5:5.4.3')
             classpath('org.apache.httpcomponents.core5:httpcore5-h2:5.4.3')
+            // Dependency-Check 13.0.0 → open-vulnerability-clients 9.0.6 경유 jackson-databind 2.22.1
+            // (GHSA-q4xh-88c3-wmh7, 2.22.x <2.22.2). 2026-09-29 추가, 플러그인이 2.22.2 이상을 가져오면 제거.
+            classpath('com.fasterxml.jackson.core:jackson-databind:2.22.2')
+            // 같은 권고의 3.x 라인(<3.1.6). Boot Gradle 플러그인 4.1.1 이 3.1.5 를 가져온다 — 플러그인 상향 때 제거.
+            classpath('tools.jackson.core:jackson-databind:3.1.7')
         }
     }
 }
@@ -212,6 +217,14 @@ subprojects { subproject ->
     //   https://tomcat.apache.org/security-11.html#Fixed_in_Apache_Tomcat_11.0.26
     //   제거 조건: Boot BOM 이 11.0.26 이상을 관리하면.
     ext['tomcat.version'] = '11.0.26'
+
+    // [2026-09-29] jackson-databind GHSA-q4xh-88c3-wmh7(high, DoS) — 2026-09-28 게시. 취약 범위는
+    //   tools.jackson 3.x <3.1.6, com.fasterxml 2.19~<2.21.6 이고 4.1.1 BOM 은 3.1.5·2.21.5 를 준다.
+    //   Boot 4.1.2 는 아직 없어 두 BOM 속성을 같은 minor 의 최신 패치로 올린다(Maven Central 200 확인).
+    //   jackson-bom 은 온라인 앱의 Jackson 3, jackson-2-bom 은 호환 모듈·migration-tool 의 Jackson 2 다.
+    //   제거 조건: Boot BOM 이 3.1.7·2.21.7 이상을 관리하면(남겨 두면 다음 BOM 상향 때 끌어내리는 하한이 된다).
+    ext['jackson-bom.version'] = '3.1.7'
+    ext['jackson-2-bom.version'] = '2.21.7'
 
     //   [2026-08-07 CVE 상환 2차] 열린 Dependabot 알림 84건을 **실제 해석 버전**으로 재판정한 결과
     //   조치가 필요한 maven 항목은 12건이었다(나머지는 §아래 census 참조). BOM 이 관리하는 3종을
