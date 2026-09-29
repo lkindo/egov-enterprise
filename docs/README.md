@@ -136,7 +136,7 @@
 | [verification-blindspots.md](04-operations/verification-blindspots.md) | **검증 사각지대** — "빌드 성공"과 "실제 작동"의 차이 |
 | [adversarial-reassessment-2026-09-27.md](04-operations/adversarial-reassessment-2026-09-27.md) | 0ef8af32f 기준 Claude 평가의 수용·반박, 11개 분야·33개 도메인 잠정 평가와 개선 배치 |
 | [evidence-first-improvement-verification-2026-09-27.md](04-operations/evidence-first-improvement-verification-2026-09-27.md) | R0–R9 로컬 검증 결과와 미완료 경계 — 실제 제목·설문 E2E, Lighthouse 비교, 승인·운영 증거 대기 |
-| [evidence-first-policy-decisions-2026-09-27.md](04-operations/evidence-first-policy-decisions-2026-09-27.md) | 개선 루프 R4 권한·공개 범위와 R6 삭제 단위의 미승인 선택지, 기존 승인 이행·소비자·검증 경계 |
+| [evidence-first-policy-decisions-2026-09-27.md](04-operations/evidence-first-policy-decisions-2026-09-27.md) | 개선 루프 R4 권한·공개 범위와 R6 삭제 단위의 당시 선택지 — ADR-0025가 결정해 기록으로 보존 |
 | [pending-decisions.md](04-operations/pending-decisions.md) | 사용자 결정 대기 항목 트래커 |
 | [url-state-class-approval-evidence.md](04-operations/url-state-class-approval-evidence.md) | URL-state 부류별 owner 승인 근거와 현재 판정 — 비규범 컨테이너 안의 4개 독립 승인(`search-input`만 ADR-0009 `accepted-risk`), 3개 미해결 |
 | [ui-ux-baseline-protocol.md](04-operations/ui-ux-baseline-protocol.md) | 긴급 수리 후·파일럿 전 8개 대표 시나리오 reference baseline·접근성·성능·증거 수집 프로토콜 |
