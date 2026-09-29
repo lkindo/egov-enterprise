@@ -1,5 +1,17 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-09-29 jackson-databind 패치 상향에 따른 H2 테스트 경계 재검토
+
+SAST-FP-007의 보완 소스인 루트 `build.gradle`에 jackson-databind 패치 버전만 올리는 설정을 넣었다.
+GHSA-q4xh-88c3-wmh7(2026-09-28 게시) 때문에 BOM 속성 `jackson-bom.version`(3.1.7)과
+`jackson-2-bom.version`(2.21.7)을 올리고, 빌드 플러그인 classpath 에 2.22.2·3.1.7 제약을 추가했다.
+H2 는 여전히 `api-server/build.gradle` 의 `testImplementation`·`testRuntimeOnly` 에만 있고 운영 classpath 에 들어가지 않는다.
+탐지 원문 `application-test.yml`과 다른 보완 소스 5개의 해시는 기존 승인값과 일치한다.
+
+루트 build 보완 소스 하나와 승인 목록의 registry 해시만 재결속한다(사용자 승인 2026-09-29). 예외 6건의 범위·규칙·행·
+fingerprint·승인일·만료일과 보안 임계값은 유지한다. 이번 근거는 의존성 선언의 재검토이며 CodeQL 실행의 증거가 아니다.
+CodeQL·required CI 결과는 병합할 커밋에서 확인한다.
+
 ## 2026-09-28 MFA·감사·격리 검증 변경에 따른 재검토
 
 [ADR-0025](../02-architecture/decisions/ADR-0025-enterprise-completeness-and-durable-operations.md)의 구현으로 기존 승인 6건의 소스 참조 9곳이 달라졌다. 변경 전후 구문과 방어를 개별 대조해 다음 참조만 갱신한다.
