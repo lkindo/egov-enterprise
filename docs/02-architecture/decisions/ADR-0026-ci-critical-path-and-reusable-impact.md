@@ -56,7 +56,7 @@ Oracle crash-recovery 시험은 별도 JVM에서 일반 classpath/JAR를 실행�
    증거가 없기 때문이다. 대신 위 보고서의 겹침 없는 클래스 집합으로 제품 `business-app`을 3개, 이관
    transform/validate/verify를 4개 scope로 분할한다. 이관 네 scope의 `targetTests`는 기존 full-test 보고서에서
    실제 killing test로 관찰된 2~3개 클래스로 고정한다. 각 scope에 `STRICT_MUTATION=true`와 75%를 독립 적용하고,
-   registry와 CI의 정확한 합집합·scope 수를 계약으로 고정한다. 제품 scope는 총 10개가 되어 `max-parallel: 5`로
+   registry와 CI의 정확한 합집합·scope 수를 계약으로 고정한다. 제품 scope는 총 10개가 되어 `max-parallel: 4`로
    실행한다. 기존 변이를 빼거나 history로 판정을 재사용하지 않는다.
 6. 외부 JVM을 시작하는 DB crash/packaged CLI 시험 8개는 위 네 이관 scope에서만 제외한다. ordinary `test`와
    로컬 전체 `nuri.*` PIT에는 남긴다. 미등록 외부 프로세스 시험 추가, 광역 제외, ordinary Test 필터는 계약이
@@ -69,9 +69,9 @@ Oracle crash-recovery 시험은 별도 JVM에서 일반 classpath/JAR를 실행�
 8. `frontend-scope`의 프로덕션 build·bundle budget과 `frontend-coverage-scope`의 전체 Vitest coverage를
    독립 runner에서 병렬 실행한다. `frontend-build`는 두 source를 각각 fail-closed로 집계하며
    codegen·typecheck·lint·audit·build·bundle·coverage 게이트를 모두 유지한다.
-9. 제품 PIT 10개의 대상·임계값은 바꾸지 않고, `max-parallel: 5`의 선언 순서만 Linux
-   실측 시간이 긴 순서로 배치한다. 첫 다섯 슬롯은 339·334·307·289·273초 범위를 먼저 받고,
-   234초 범위가 다음으로 대기하여 54~61초 foundation 범위 뒤로 긴 인증 범위가 밀리지 않게 한다.
+9. 제품 PIT 10개의 대상·임계값은 바꾸지 않고, `max-parallel: 4`와 Linux 실측 LPT 순서를 사용한다.
+   긴 여섯 범위를 391·384·332·288·178·171초 순으로 먼저 배치해 짧은 foundation 범위 뒤로 밀리지 않게 한다.
+   한 슬롯을 custom admission에 돌려도 이 스케줄은 mutation aggregate를 10분 안쪽에 끝낸다.
 10. 동시 20개 runner 환경에서 임계 E2E·migration 검증이 초기 배정에서 밀리지 않도록 `sast-scope`와
     `mutation-scope-migration`은 각각 `max-parallel: 1`을 사용한다. CodeQL Java·JavaScript/TypeScript와
     이관 PIT 네 scope의 모집단·명령·임계값은 모두 유지한다. run `36575378891`에서 각 matrix의 실제 실행
@@ -148,3 +148,10 @@ frontend 완료 시 custom 두 layout과 secret-scan이 이미 세 슬롯을 점
 frontend 뒤에서 먼저 입장시키고 custom 두 layout과 secret-scan은 4분 45초에 끝난 backend 뒤로 옮긴다.
 검증 모집단·명령·실패 판정은 유지하며 admission 의존성과 취소 처리를 positive/negative 계약으로 고정한다.
 8차는 계약 실패 표본이므로 중앙값에는 포함하지 않는다.
+
+[9차 전체 실행 36589260754](https://github.com/lkindo/egov-enterprise/actions/runs/36589260754)은 attempt 1·2가 모두
+green이었지만 각각 12분 21초·13분 30초였다. profile 6개는 frontend 완료 뒤 3~26초 안에 시작했으나,
+custom single-module은 backend 완료 뒤 runner를 기다려 attempt 2에서 5분 59초에 시작하고 7분 17초 실행됐다.
+같은 실행의 제품 PIT 10개 job 총시간은 391·384·332·288·178·171초와 60~107초였으므로 동시 수를 4로
+낮추고 현재 실측 LPT 순서로 재배치한다. custom은 긴 single-module을 먼저 선언한다. 검증 모집단·임계값은
+유지하면서 두 custom job이 backend 완료 직후 입장할 슬롯을 확보한다.

@@ -867,7 +867,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        layout: [multi-module, single-module]
+        # Linux 실측에서 single-module이 더 길다. runner가 하나씩 열려도 긴 layout을 먼저 시작한다.
+        layout: [single-module, multi-module]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -1297,22 +1298,26 @@ jobs:
     # 이 잡에는 60분이 필요한 스코프가 없다 — 그 범위는 mutation-scope-migration 이 가져갔다.
     timeout-minutes: 30
     strategy:
-      # 제품 10개 배치는 모두 실행하되 E2E와 긴 migration 작업에 runner 여유를 남긴다.
-      # 2026-09-29 실측에서 3개 제한은 후속 scope를 최대 6분 58초 대기시켰다.
-      max-parallel: 5
+      # 제품 10개 배치는 모두 실행하되 backend 완료 시 custom 두 layout이 입장할 슬롯을 남긴다.
+      # 2026-09-29 attempt 2의 현행 분할 실측으로 4-slot LPT 종료를 10분 안쪽으로 계산했다.
+      max-parallel: 4
       # 한 스코프가 깨져도 나머지를 끝까지 돌린다 — 어디까지 무너졌는지 한 번에 봐야 한다.
       fail-fast: false
       matrix:
         include:
-          # GitHub starts matrix entries in declaration order. Keep the measured longest five
-          # first (339s, 334s, 307s, 289s, 273s on run 36569461799), then the 234s scope.
-          # This LPT ordering changes no target or threshold; it prevents the long auth scopes
-          # from waiting behind the four 54-61s foundation scopes under max-parallel: 5.
+          # GitHub starts matrix entries in declaration order. Attempt 2의 job 총시간
+          # 391·384·332·288·178·171초 순으로 긴 여섯 scope를 먼저 둔다.
+          # 이 LPT 순서는 target이나 threshold를 바꾸지 않고 4-slot 종료 시각을 줄인다.
           # 종전 단일 business-app 범위는 1,279 mutations, 14분 12초였다. 현재 report를
           # 겹침 없는 세 모집단으로 나누고 각 모집단에 75%를 따로 적용해 gate를 강화한다.
           - scope: business-app-board
             gradle: ":business-app:pitest"
             classes: "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.comment.*"
+            tests: "nuri.business.*"
+
+          - scope: business-core-file
+            gradle: ":business-core:pitest"
+            classes: "nuri.business.domain.file.*,nuri.business.service.file.*,nuri.business.service.code.*,nuri.business.domain.log.*,nuri.business.service.deptjob.*"
             tests: "nuri.business.*"
 
           - scope: business-app-workflow
@@ -1323,11 +1328,6 @@ jobs:
           - scope: business-app-delivery-operation
             gradle: ":business-app:pitest"
             classes: "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.isg.*,nuri.business.service.operation.*,nuri.business.service.survey.SurveyResultService"
-            tests: "nuri.business.*"
-
-          - scope: business-core-file
-            gradle: ":business-core:pitest"
-            classes: "nuri.business.domain.file.*,nuri.business.service.file.*,nuri.business.service.code.*,nuri.business.domain.log.*,nuri.business.service.deptjob.*"
             tests: "nuri.business.*"
 
           # 로그인 IP·시간 정책, refresh 회전, 감사·OTP와 인증 provider·요청 제한·메뉴 순환을 검증한다.

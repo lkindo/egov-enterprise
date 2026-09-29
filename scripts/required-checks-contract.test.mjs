@@ -77,8 +77,8 @@ function assertProductMutationConcurrency(content) {
   const jobs = parseWorkflowJobs(content);
   const product = jobs.get('mutation-scope') ?? '';
   const migration = jobs.get('mutation-scope-migration') ?? '';
-  assert.deepEqual(product.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 5'],
-    'product PIT must reserve runner capacity with exactly five concurrent batches');
+  assert.deepEqual(product.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 4'],
+    'product PIT must reserve custom admission capacity with exactly four concurrent batches');
   assert.equal([...product.matchAll(/^ {10}- scope: \S+$/gm)].length, 10, 'all ten product PIT batches must remain');
   for (const job of [product, migration]) assert.match(job, /^ {4}needs: \[change-scope\]$/m);
   for (const scope of ['migration-transform-registry', 'migration-transform-converter', 'migration-validate', 'migration-verify']) {
@@ -108,12 +108,12 @@ function assertProductMutationLptOrder(content) {
   const scopes = [...product.matchAll(/^ {10}- scope: (\S+)$/gm)].map(match => match[1]);
   assert.deepEqual(scopes.slice(0, 6), [
     'business-app-board',
+    'business-core-file',
     'business-app-workflow',
     'business-app-delivery-operation',
-    'business-core-file',
     'business-core-auth',
     'business-core-code-user-common',
-  ], 'the measured longest PIT batches must enter the five-runner pool before short foundation batches');
+  ], 'the measured longest PIT batches must enter the four-runner pool before short foundation batches');
 }
 
 const baselineRunner = 'node ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=full-suite e2e/quality/visual-baselines.spec.ts -g "Visual Regression Baseline" --update-snapshots';
@@ -515,11 +515,11 @@ test('stable backend and frontend contexts aggregate conditional source jobs fai
 
 test('E2E and PIT sources start after classification without waiting for independent builds', () => {
   assertProductMutationConcurrency(ciContent);
-  for (const replacement of ['', '      max-parallel: 3\n', '      max-parallel: 8\n', '      # max-parallel: 5\n']) {
+  for (const replacement of ['', '      max-parallel: 3\n', '      max-parallel: 8\n', '      # max-parallel: 4\n']) {
     const changed = mutateWorkflowJob(ciContent, 'mutation-scope',
-      block => block.replace('      max-parallel: 5\n', replacement));
+      block => block.replace('      max-parallel: 4\n', replacement));
     assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
-    assert.throws(() => assertProductMutationConcurrency(changed), /five concurrent batches/);
+    assert.throws(() => assertProductMutationConcurrency(changed), /four concurrent batches/);
   }
   const removedBatch = mutateWorkflowJob(ciContent, 'mutation-scope',
     block => block.replace(/^ {10}- scope: business-app-board\n(?: {12}.+\n)+/m, ''));
@@ -940,7 +940,7 @@ test('reusable-base consumes the fail-closed impacted profile matrix', () => {
   assert.match(customJob, /^    needs: \[change-scope, backend-scope\]$/m);
   assert.match(customJob,
     /^    if: "!cancelled\(\) && needs\.change-scope\.result == 'success' && needs\.change-scope\.outputs\['reusable-custom'\] == 'true'"$/m);
-  assert.match(customJob, /^        layout: \[multi-module, single-module\]$/m);
+  assert.match(customJob, /^        layout: \[single-module, multi-module\]$/m);
   assert.match(customJob, /^        run: node scripts\/verify-project-composer\.mjs --layout \$\{\{ matrix\.layout \}\}$/m);
   assert.match(aggregateJob, /EXPECTED_WORK: \$\{\{ needs\.change-scope\.outputs\.reusable \}\}/);
   assert.match(aggregateJob, /EXPECTED_WORK: \$\{\{ needs\.change-scope\.outputs\['reusable-custom'\] \}\}/);

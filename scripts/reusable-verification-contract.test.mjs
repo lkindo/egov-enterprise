@@ -224,7 +224,7 @@ function validatePipeline(workflow, manifest) {
     /^    needs: \[change-scope, backend-scope\]$/m,
     /^    if: "!cancelled\(\) && needs\.change-scope\.result == 'success' && needs\.change-scope\.outputs\['reusable-custom'\] == 'true'"$/m,
     /^      fail-fast: false$/m,
-    /^        layout: \[multi-module, single-module\]$/m,
+    /^        layout: \[single-module, multi-module\]$/m,
     /^        run: node scripts\/verify-project-composer.mjs --layout \$\{\{ matrix.layout \}\}$/m,
     /^      - name: Retain custom composition verification\n        if: always\(\)$/m,
     /^            build\/project-composer\/jobs\/\*\/report\.json$/m,
@@ -262,7 +262,7 @@ test('required CI binds the fail-closed classifier matrix and rejects weakening 
   const customJob = parseWorkflowJobs(workflow).get('reusable-custom');
   for (const [name, mutate] of [
     ['wrong scope', value => value.replace("outputs['reusable-custom'] == 'true'", "outputs.backend == 'true'")],
-    ['missing layout', value => value.replace('layout: [multi-module, single-module]', 'layout: [single-module]')],
+    ['missing layout', value => value.replace('layout: [single-module, multi-module]', 'layout: [single-module]')],
     ['bypass command', value => value.replace('node scripts/verify-project-composer.mjs', 'echo bypass')],
     ['missing artifact always', value => value.replace('        if: always()\n', '')],
     ['wrong artifact', value => value.replace('build/project-composer/jobs/*/report.json', 'build/omitted-report.json')],
