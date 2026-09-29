@@ -1,6 +1,5 @@
 package nuri.api.harness;
 
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import nuri.business.security.authorization.PermissionPolicy;
 import nuri.business.security.authorization.PermissionCodes;

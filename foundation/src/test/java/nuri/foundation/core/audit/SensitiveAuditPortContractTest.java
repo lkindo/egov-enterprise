@@ -22,7 +22,7 @@ class SensitiveAuditPortContractTest {
                 .containsExactly("requestId", "operation", "actorLoginId", "actorEsntlId",
                         "clientIp", "description", "targetId");
         assertThat(SensitiveAuditPort.Context.class.getRecordComponents())
-                .extracting(RecordComponent::getType).containsOnly(String.class);
+                .<Class<?>>extracting(RecordComponent::getType).containsOnly(String.class);
         assertThat(context.actorLoginId()).isEqualTo("operator-login");
         assertThat(context.actorEsntlId()).isEqualTo("SUBJECT_1");
         assertThat(context.targetId()).isEqualTo("attachment-42/1");

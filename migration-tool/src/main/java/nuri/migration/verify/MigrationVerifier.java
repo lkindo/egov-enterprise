@@ -206,7 +206,7 @@ public class MigrationVerifier {
                 for (MigrationStateStore.CheckpointEntry checkpoint : batch) {
                     TargetRowSummary matched = rows.byKey().get(checkpoint.targetKey());
                     long matches = matched == null ? 0 : matched.count();
-                    if (matches != 1) {
+                    if (matched == null || matches != 1) {
                         return new ScopedVerification(checkpoints.size(),
                                 "run scoped parity 불일치: targetDigest=" + keyDigest(checkpoint.targetKey())
                                         + " 행수=" + matches);
@@ -288,7 +288,7 @@ public class MigrationVerifier {
                     MigrationStateStore.CheckpointEntry checkpoint = item.checkpoint();
                     TargetRowSummary matched = rows.byKey().get(checkpoint.targetKey());
                     long matches = matched == null ? 0 : matched.count();
-                    if (matches != 1) {
+                    if (matched == null || matches != 1) {
                         return new ScopedVerification(checkpoints.size(),
                                 "run scoped parity 불일치: targetDigest=" + keyDigest(checkpoint.targetKey())
                                         + " 행수=" + matches);

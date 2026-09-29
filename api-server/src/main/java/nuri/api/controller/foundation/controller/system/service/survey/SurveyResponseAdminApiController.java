@@ -7,8 +7,6 @@ import nuri.business.service.survey.SurveyResultService;
 import nuri.business.service.survey.dto.SurveyResultDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.foundation.security.annotation.AdminOnly;
-import nuri.foundation.security.annotation.AdminOrSystem;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;

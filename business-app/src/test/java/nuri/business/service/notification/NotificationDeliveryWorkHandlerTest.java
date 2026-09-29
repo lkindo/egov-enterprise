@@ -13,7 +13,6 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import tools.jackson.databind.ObjectMapper;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.ArgumentMatchers.*;
 
 class NotificationDeliveryWorkHandlerTest {
     final NotificationRepository repository = mock(NotificationRepository.class);

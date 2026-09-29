@@ -47,6 +47,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -193,12 +194,12 @@ public class EtlExecutor {
             }
         } catch (SQLException sourceConnectionFailure) {
             if (stateInitialized) {
-                state.mark(targetJt, "FAILED");
+                Objects.requireNonNull(state).mark(targetJt, "FAILED");
             }
             throw new IllegalStateException("source read session failed", sourceConnectionFailure);
         } catch (Throwable failure) {
             if (stateInitialized && !isJvmFatal(failure)) {
-                state.mark(targetJt, "FAILED");
+                Objects.requireNonNull(state).mark(targetJt, "FAILED");
             }
             throw propagate(failure);
         }
@@ -207,7 +208,7 @@ public class EtlExecutor {
         }
         if (stateInitialized) {
             boolean failed = results.stream().anyMatch(result -> !result.errors().isEmpty());
-            state.mark(targetJt, failed ? "FAILED" : "LOADED");
+            Objects.requireNonNull(state).mark(targetJt, failed ? "FAILED" : "LOADED");
         }
         return results;
     }
@@ -737,26 +738,28 @@ public class EtlExecutor {
             try {
                 Map<String, Object> out = transformRow(row, spec, t, reg);
                 c[1]++;
-                CheckpointEntry checkpoint = state == null
-                        ? null : checkpoint(row, out, t, writePlan.targetColumns());
-                CheckpointEntry durable = state == null ? null : state.find(t.source(), checkpoint.sourceKey());
-                if (durable != null) {
-                    if (t.identity() != null
-                            && reg.checkpoint().pendingSize() > rowCheckpoint.pendingSize()) {
-                        errors.add("resume checkpoint/keymap missing for durable typed identity("
-                                + t.source() + ", sourceDigest="
-                                + keyDigest(checkpoint.sourceKey()) + ")");
+                CheckpointEntry checkpoint = null;
+                if (state != null) {
+                    checkpoint = checkpoint(row, out, t, writePlan.targetColumns());
+                    CheckpointEntry durable = state.find(t.source(), checkpoint.sourceKey());
+                    if (durable != null) {
+                        if (t.identity() != null
+                                && reg.checkpoint().pendingSize() > rowCheckpoint.pendingSize()) {
+                            errors.add("resume checkpoint/keymap missing for durable typed identity("
+                                    + t.source() + ", sourceDigest="
+                                    + keyDigest(checkpoint.sourceKey()) + ")");
+                            reg.rollback(rowCheckpoint);
+                            continue;
+                        }
+                        if (!durable.rowChecksum().equals(checkpoint.rowChecksum())
+                                || !durable.targetKey().equals(checkpoint.targetKey())
+                                || !durable.targetTable().equalsIgnoreCase(checkpoint.targetTable())) {
+                            errors.add("resume checkpoint/source checksum 불일치(" + t.source()
+                                    + ", sourceDigest=" + keyDigest(checkpoint.sourceKey()) + ")");
+                        }
                         reg.rollback(rowCheckpoint);
                         continue;
                     }
-                    if (!durable.rowChecksum().equals(checkpoint.rowChecksum())
-                            || !durable.targetKey().equals(checkpoint.targetKey())
-                            || !durable.targetTable().equalsIgnoreCase(checkpoint.targetTable())) {
-                        errors.add("resume checkpoint/source checksum 불일치(" + t.source()
-                                + ", sourceDigest=" + keyDigest(checkpoint.sourceKey()) + ")");
-                    }
-                    reg.rollback(rowCheckpoint);
-                    continue;
                 }
                 batch.add(new PreparedRow(row, toArguments(out, writePlan.insertColumns()), checkpoint));
             } catch (RuntimeException ignored) {
@@ -1408,10 +1411,6 @@ public class EtlExecutor {
         return base + " RETURNING " + String.join(", ", returningColumns.stream()
                 .map(SourceIntrospector::ident)
                 .toList());
-    }
-
-    private static String buildInsertSql(String table, List<String> cols) {
-        return buildInsertSql(table, cols, List.of());
     }
 
     private static String[] lowerLabels(ResultSetMetaData md) throws SQLException {

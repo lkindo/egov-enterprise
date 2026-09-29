@@ -22,8 +22,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 abstract class OraclePostgresTestSupport {
     protected static final JdbcDatabaseContainer<?> ORACLE = oracleFixture();
     @Container
-    protected static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine")
-            .withPassword(UUID.randomUUID().toString());
+    protected static final PostgreSQLContainer POSTGRES = postgresFixture();
+
+    private static PostgreSQLContainer postgresFixture() {
+        PostgreSQLContainer fixture = new PostgreSQLContainer("postgres:17-alpine");
+        fixture.withPassword(UUID.randomUUID().toString());
+        return fixture;
+    }
 
     @BeforeAll
     static void recordDatabaseVersions() throws Exception {
@@ -97,11 +102,12 @@ abstract class OraclePostgresTestSupport {
             Runtime.getRuntime().addShutdownHook(new Thread(fixture::stop, "migration-oracle19c-fixture-stop"));
             return fixture;
         }
-        return new OracleContainer("gvenzl/oracle-free:23-slim-faststart")
-                .withUsername("migration_fixture_reader")
+        OracleContainer fixture = new OracleContainer("gvenzl/oracle-free:23-slim-faststart");
+        fixture.withUsername("migration_fixture_reader")
                 .withPassword(UUID.randomUUID().toString())
                 // Keep the default Oracle Free lifecycle and allowance unchanged.
                 .withStartupTimeout(Duration.ofMinutes(5));
+        return fixture;
     }
 
     protected static MappingSpec.DbConfig sourceConfig() {

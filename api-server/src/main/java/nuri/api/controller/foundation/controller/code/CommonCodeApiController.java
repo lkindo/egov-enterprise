@@ -9,7 +9,6 @@ import nuri.business.service.code.dto.CmmnCodeHierarchyDto;
 import nuri.business.service.code.dto.CmmnDetailCodeDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.foundation.security.annotation.AdminOrSystem;
 import nuri.business.domain.common.BaseSearchDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

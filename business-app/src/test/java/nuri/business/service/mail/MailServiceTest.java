@@ -25,7 +25,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import nuri.business.security.AuthorityConstants;
 import nuri.business.security.util.SecurityUtil;
 
 import java.util.List;

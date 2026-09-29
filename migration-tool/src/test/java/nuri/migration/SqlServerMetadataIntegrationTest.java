@@ -1,6 +1,7 @@
 package nuri.migration;
 
 import org.junit.jupiter.api.Test;
+import org.opentest4j.AssertionFailedError;
 
 import java.math.BigDecimal;
 import java.sql.Types;
@@ -108,7 +109,9 @@ class SqlServerMetadataIntegrationTest extends SqlServerPostgresTestSupport {
                 Map<String, Object> values = new LinkedHashMap<>();
                 for (int index = 1; index <= resultMetadata.getColumnCount(); index++) {
                     Object value = rows.getObject(index);
-                    assertThat(value != null).isTrue();
+                    if (value == null) {
+                        throw new AssertionFailedError("SQL Server JDBC fixture value must be non-null at column " + index);
+                    }
                     String column = resultMetadata.getColumnName(index);
                     values.put(column, value);
                     assertThat(value.getClass()).isEqualTo(classes.get(column));

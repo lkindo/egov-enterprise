@@ -29,7 +29,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @DisplayName("MemoReportService 단위 테스트")

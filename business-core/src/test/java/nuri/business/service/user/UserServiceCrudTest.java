@@ -1,8 +1,6 @@
 package nuri.business.service.user;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.business.domain.auth.UserAuthority;
-import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.service.user.dto.UserResponse;
 import nuri.business.service.user.dto.UserSignupRequest;
 import nuri.business.domain.user.entity.User;
@@ -36,9 +34,6 @@ class UserServiceCrudTest {
 
   @Mock
   private UserRepository userRepository;
-
-  @Mock
-  private UserAuthorityRepository userAuthorityRepository;
 
   @Mock
   private nuri.business.domain.auth.RefreshTokenRepository refreshTokenRepository;

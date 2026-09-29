@@ -4,15 +4,25 @@ import nuri.api.schema.SharedPostgresMigrationTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedConstruction;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Answers.RETURNS_SELF;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.withSettings;
 
 /** PostgreSQL migration suite의 공유 서버·격리 database 구조를 보호하는 governance gate. */
 @Tag("governance-harness")
@@ -53,6 +63,59 @@ class SharedPostgresMigrationHarnessContractTest {
         assertThatThrownBy(() -> SharedPostgresMigrationTestSupport.databaseNameFor("Test", "x".repeat(64)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("식별자 한도");
+    }
+
+    @Test
+    void sharedServerStartFailureStopsItsOwnedContainerAndPreservesTheFailure() throws Exception {
+        int startsBefore = sharedServerStartCount();
+        RuntimeException startFailure = new IllegalStateException("synthetic container start failure");
+        var start = SharedPostgresMigrationTestSupport.class.getDeclaredMethod("startSharedServer");
+        start.setAccessible(true);
+
+        try (MockedConstruction<PostgreSQLContainer> construction = mockConstruction(
+                PostgreSQLContainer.class, withSettings().defaultAnswer(RETURNS_SELF),
+                (container, context) -> doThrow(startFailure).when(container).start())) {
+            InvocationTargetException wrapper = assertThrows(InvocationTargetException.class, () -> start.invoke(null));
+
+            assertThat(wrapper.getCause()).isSameAs(startFailure);
+            assertThat(startFailure.getSuppressed()).isEmpty();
+            assertThat(construction.constructed()).hasSize(1);
+            PostgreSQLContainer owned = construction.constructed().getFirst();
+            verify(owned).start();
+            verify(owned).stop();
+            assertThat(sharedServerStartCount()).isEqualTo(startsBefore);
+        }
+    }
+
+    @Test
+    void sharedServerCleanupFailureIsSuppressedWithoutReplacingTheStartFailure() throws Exception {
+        int startsBefore = sharedServerStartCount();
+        RuntimeException startFailure = new IllegalStateException("synthetic container start failure");
+        RuntimeException cleanupFailure = new IllegalStateException("synthetic container cleanup failure");
+        var start = SharedPostgresMigrationTestSupport.class.getDeclaredMethod("startSharedServer");
+        start.setAccessible(true);
+
+        try (MockedConstruction<PostgreSQLContainer> construction = mockConstruction(
+                PostgreSQLContainer.class, withSettings().defaultAnswer(RETURNS_SELF), (container, context) -> {
+                    doThrow(startFailure).when(container).start();
+                    doThrow(cleanupFailure).when(container).stop();
+                })) {
+            InvocationTargetException wrapper = assertThrows(InvocationTargetException.class, () -> start.invoke(null));
+
+            assertThat(wrapper.getCause()).isSameAs(startFailure);
+            assertThat(startFailure.getSuppressed()).containsExactly(cleanupFailure);
+            assertThat(construction.constructed()).hasSize(1);
+            PostgreSQLContainer owned = construction.constructed().getFirst();
+            verify(owned).start();
+            verify(owned).stop();
+            assertThat(sharedServerStartCount()).isEqualTo(startsBefore);
+        }
+    }
+
+    private static int sharedServerStartCount() throws ReflectiveOperationException {
+        var field = SharedPostgresMigrationTestSupport.class.getDeclaredField("SERVER_START_COUNT");
+        field.setAccessible(true);
+        return ((AtomicInteger) field.get(null)).get();
     }
 
     @Test

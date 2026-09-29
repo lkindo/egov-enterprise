@@ -8,7 +8,6 @@ import jakarta.validation.Valid;
 import nuri.foundation.core.annotation.PrivacyAccess;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.foundation.security.annotation.AdminOrSystem;
 import nuri.business.service.operation.ExternalHrService;
 import nuri.business.service.operation.dto.ExternalHrDto;
 import lombok.RequiredArgsConstructor;

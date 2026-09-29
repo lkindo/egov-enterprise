@@ -1,12 +1,6 @@
 package nuri.migration;
 
-import lombok.RequiredArgsConstructor;
-import nuri.migration.etl.EtlExecutor;
 import nuri.migration.etl.MigrationMode;
-import nuri.migration.model.MappingLoader;
-import nuri.migration.source.SourceIntrospector;
-import nuri.migration.validate.MappingValidator;
-import nuri.migration.verify.MigrationVerifier;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -15,14 +9,7 @@ import java.util.List;
 
 /** 승인 artifact가 없는 legacy CLI source-read를 차단하고 workflow 진입점으로 유도한다. */
 @Component
-@RequiredArgsConstructor
 public class MigrationRunner implements ApplicationRunner {
-
-    private final MappingLoader loader;
-    private final MappingValidator validator;
-    private final EtlExecutor executor;
-    private final MigrationVerifier verifier;
-    private final SourceIntrospector introspector;
 
     @Override
     public void run(ApplicationArguments args) {

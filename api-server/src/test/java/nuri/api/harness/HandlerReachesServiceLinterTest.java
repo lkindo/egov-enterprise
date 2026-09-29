@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -189,12 +188,6 @@ class HandlerReachesServiceLinterTest {
             }
         }
         return result;
-    }
-
-    /** cwd 또는 상위에서 settings.gradle 을 가진 저장소 루트를 찾는다(IdentityAxisLinter 경로해석 관행). */
-    private static Path resolveRepoRoot() {
-        // [2026-08-31] 공용 인덱스에 위임 — 7개 사본의 로직 드리프트(무음 폴백 포함)를 제거했다.
-        return HarnessSourceIndex.repoRoot();
     }
 
     // ---- 본문 추출(중괄호 균형) ----------------------------------------------

@@ -15,7 +15,6 @@ import org.springframework.data.web.PageableDefault;
 import nuri.business.security.annotation.LoginUser;
 import nuri.foundation.security.service.CustomUserDetails;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Notification", description = "알림 관리 API")

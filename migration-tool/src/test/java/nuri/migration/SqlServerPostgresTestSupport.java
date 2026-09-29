@@ -19,15 +19,25 @@ import java.util.UUID;
 abstract class SqlServerPostgresTestSupport {
     protected static final String SOURCE_DATABASE = "migration_fixture";
     @Container
-    protected static final MSSQLServerContainer SQLSERVER = new MSSQLServerContainer(
-            "mcr.microsoft.com/mssql/server@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090")
-            .acceptLicense()
+    protected static final MSSQLServerContainer SQLSERVER = sqlServerFixture();
+    @Container
+    protected static final PostgreSQLContainer POSTGRES = postgresFixture();
+
+    private static MSSQLServerContainer sqlServerFixture() {
+        MSSQLServerContainer fixture = new MSSQLServerContainer(
+            "mcr.microsoft.com/mssql/server@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090");
+        fixture.acceptLicense()
             .withPassword("SqlServer1!" + UUID.randomUUID())
             .withUrlParam("encrypt", "true")
             .withUrlParam("trustServerCertificate", "true");
-    @Container
-    protected static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine")
-            .withPassword(UUID.randomUUID().toString());
+        return fixture;
+    }
+
+    private static PostgreSQLContainer postgresFixture() {
+        PostgreSQLContainer fixture = new PostgreSQLContainer("postgres:17-alpine");
+        fixture.withPassword(UUID.randomUUID().toString());
+        return fixture;
+    }
 
     @BeforeAll
     static void createDisposableDatabaseAndRecordVersions() throws Exception {

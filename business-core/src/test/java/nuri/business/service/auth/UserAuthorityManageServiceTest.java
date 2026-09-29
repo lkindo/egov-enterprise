@@ -2,13 +2,9 @@ package nuri.business.service.auth;
 
 import nuri.business.domain.auth.AuthorGroupProjection;
 import nuri.business.domain.auth.DeptAuthorProjection;
-import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.common.BaseSearchDto;
-import nuri.business.domain.user.entity.User;
-import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.auth.dto.DeptAuthorBatchRequest;
-import nuri.business.service.auth.dto.UserAuthorityDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,15 +17,12 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.lenient;
 import org.mockito.ArgumentCaptor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserAuthorityManageService 단위 테스트")
@@ -37,12 +30,6 @@ class UserAuthorityManageServiceTest {
 
     @Mock
     private UserAuthorityRepository userAuthorityRepository;
-
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private nuri.business.domain.auth.AuthorityRepository authorityRepository;
 
     @InjectMocks
     private UserAuthorityManageService userAuthorityManageService;
@@ -143,6 +130,6 @@ class UserAuthorityManageServiceTest {
         for(var call:calls) org.assertj.core.api.Assertions.assertThatThrownBy(call::run)
             .isInstanceOfSatisfying(nuri.foundation.core.exception.BusinessException.class,
                 e -> assertEquals(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE,e.getErrorCode()));
-        verifyNoInteractions(userAuthorityRepository,userRepository,authorityRepository);
+        verifyNoInteractions(userAuthorityRepository);
     }
 }

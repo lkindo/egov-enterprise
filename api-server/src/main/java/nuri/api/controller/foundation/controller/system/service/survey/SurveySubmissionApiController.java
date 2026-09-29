@@ -8,7 +8,6 @@ import nuri.business.service.survey.SurveyResultService;
 import nuri.business.service.survey.dto.SurveyResponseSubmitDto;
 import nuri.business.service.survey.dto.SurveyStatsDto;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.foundation.security.annotation.Authenticated;
 import nuri.api.support.XlsxExport;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

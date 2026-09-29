@@ -9,10 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.hamcrest.Matchers.hasItem;
 import static org.assertj.core.api.Assertions.assertThat;
-import static nuri.openapi.OpenApiDocumentationTest.assertNullableProperties;
 import static nuri.openapi.OpenApiDocumentationTest.isNullableSchema;
 
 /** Domain fixture is removed with its explicit source dependency; common spec generation remains. */
@@ -23,7 +20,6 @@ import static nuri.openapi.OpenApiDocumentationTest.isNullableSchema;
 })
 class CommentOpenApiDocumentationTest {
   @Autowired private MockMvc mockMvc;
-  @Autowired private tools.jackson.databind.ObjectMapper objectMapper;
 
   @Test
   @DisplayName("댓글 DTO는 내부 신원을 숨기고 표시명·편집 판정과 요청 비밀번호 방향을 문서화한다")
@@ -35,7 +31,7 @@ class CommentOpenApiDocumentationTest {
 
     tools.jackson.databind.JsonNode properties =
         tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build().readTree(content)
-            .path("components").path("schemas").path("CommentDto").path("properties");
+            .path("components").path("schemas").path(CommentDto.class.getSimpleName()).path("properties");
     java.util.Set<String> nullableProperties = new java.util.HashSet<>();
     java.util.Set<String> readOnlyProperties = new java.util.HashSet<>();
     properties.properties().forEach(entry -> {
