@@ -14549,6 +14549,15 @@
             }
           },
           {
+            "name": "resultCode",
+            "in": "query",
+            "description": "발송 결과(P 대기·S 성공·F 실패). 비우면 전체",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "description": "Zero-based page index (0..N)",
@@ -42424,7 +42433,26 @@
           "recptnCnt": {
             "type": "integer",
             "format": "int32",
-            "description": "수신자 수"
+            "description": "수신자 수",
+            "readOnly": true
+          },
+          "successCnt": {
+            "type": "integer",
+            "format": "int32",
+            "description": "전달 완료 수신자 수",
+            "readOnly": true
+          },
+          "failureCnt": {
+            "type": "integer",
+            "format": "int32",
+            "description": "전달 실패 수신자 수",
+            "readOnly": true
+          },
+          "pendingCnt": {
+            "type": "integer",
+            "format": "int32",
+            "description": "대기 중 수신자 수",
+            "readOnly": true
           },
           "frstRgtrId": {
             "type": "string",

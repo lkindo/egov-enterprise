@@ -16,6 +16,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -34,6 +35,9 @@ class SmsAsyncProcessorTest {
 
     @Mock
     private io.micrometer.core.instrument.MeterRegistry meterRegistry;
+
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @BeforeEach
     void setUp() {
@@ -104,6 +108,40 @@ class SmsAsyncProcessorTest {
         assertThat(smsAsyncProcessor.recoverSmsSending(new RuntimeException("Error"),
                 1L, "0101", "0102", "Hello")).isFalse();
         verify(smsRecptnRepository, never()).findById(any());
+    }
+
+    @Test
+    @DisplayName("실패한 수신자가 있으면 발신자에게 전체·실패 수를 한 번 알린다 — 번호·본문은 싣지 않는다")
+    void failedRecipientsNotifySenderOnce() {
+        SmsRecptn ok = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("01011112222").build();
+        SmsRecptn bad = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("01033334444").build();
+        given(smsRecptnRepository.findByIdSmsTrsmSn(1L)).willReturn(List.of(ok, bad));
+        given(smsSender.send(eq("01011112222"), anyString(), anyString())).willReturn(true);
+        given(smsSender.send(eq("01033334444"), anyString(), anyString())).willReturn(false);
+
+        smsAsyncProcessor.processSending(1L, "0102", "비밀 문구", "SENDER-1");
+
+        var captor = org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+        verify(eventPublisher, times(1)).publishEvent(captor.capture());
+        var event = captor.getValue();
+        assertThat(event.receiverEsntlId()).isEqualTo("SENDER-1");
+        assertThat(event.title()).isEqualTo("문자 발송 실패");
+        assertThat(event.content()).isEqualTo("문자 2건 중 1건을 보내지 못했습니다. 문자 관리에서 수신자 결과를 확인해 주세요.")
+                .doesNotContain("01033334444").doesNotContain("비밀 문구");
+        assertThat(event.linkUrl()).isEqualTo("/admin/uss/ion/sms");
+    }
+
+    @Test
+    @DisplayName("모두 성공했거나 발신자를 모르면 알리지 않는다")
+    void allDeliveredOrUnknownSenderDoesNotNotify() {
+        SmsRecptn ok = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("0101").build();
+        given(smsRecptnRepository.findByIdSmsTrsmSn(1L)).willReturn(List.of(ok));
+        given(smsSender.send(anyString(), anyString(), anyString())).willReturn(true, false);
+
+        smsAsyncProcessor.processSending(1L, "0102", "Hello", "SENDER-1");
+        smsAsyncProcessor.processSending(1L, "0102", "Hello");
+
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test

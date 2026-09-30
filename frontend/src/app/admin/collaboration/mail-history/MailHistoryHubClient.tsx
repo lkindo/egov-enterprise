@@ -19,6 +19,16 @@ import { canPermission } from '@/lib/auth/permissions';
 
 const PAGE_SIZE = 20;
 
+/**
+ * 대기 중인 메일이 보이면 결과가 반영될 때까지 다시 읽는 간격과 기한. 발송 직후·재발송 직후부터 기한까지만 돈다 —
+ * 오래 멈춘 대기 이력이 있는 페이지를 연 채 두어도 영원히 조회하지 않게 한다.
+ */
+const PENDING_POLL_MS = 5_000;
+const PENDING_POLL_WINDOW_MS = 2 * 60_000;
+
+type ResultFilter = '' | 'F' | 'P' | 'S';
+const RESULT_FILTER_LABEL: Record<Exclude<ResultFilter, ''>, string> = { F: '실패', P: '대기', S: '성공' };
+
 function sendResultBadge(code?: string) {
   switch (code) {
     case MAIL_SEND_RESULT.SUCCESS:
@@ -77,7 +87,11 @@ export default function MailHistoryHubClient() {
   const [searchField, setSearchField] = useState<'1' | '3'>('1');
   const [page, setPage] = useState(1);
   const [selectedMailId, setSelectedMailId] = useState<number | null>(null);
+  // [2026-10-01] 결과로 좁힌다 — 실패한 메일을 찾으려고 페이지를 넘기지 않게 한다.
+  const [resultFilter, setResultFilter] = useState<ResultFilter>('');
   const debouncedKeyword = useDebouncedValue(searchKeyword, 300);
+  // 대기 이력을 다시 읽는 기한. 화면을 연 때와 다시 보낸 때부터 잰다.
+  const pollUntilRef = useRef<number | null>(null);
 
   const {
     data: mailData,
@@ -86,14 +100,24 @@ export default function MailHistoryHubClient() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ['mail-history', searchField, debouncedKeyword, page],
+    queryKey: ['mail-history', searchField, debouncedKeyword, resultFilter, page],
     queryFn: () => mailService.getSentMails({
       page: page - 1,
       size: PAGE_SIZE,
       searchKeyword: debouncedKeyword,
       // 백엔드 SentMailRepositoryImpl 계약상 '1'은 제목, '3'은 발신자 검색이다.
       searchCondition: searchField,
+      ...(resultFilter ? { resultCode: resultFilter } : {}),
     }),
+    // [2026-10-01] 발송은 비동기라 보낸 직후의 이력은 '대기' 다. 대기가 보이면 기한 안에서 다시 읽어 결과를 반영한다 —
+    //   종전에는 새로고침을 눌러야 성공·실패가 보였다.
+    refetchInterval: (query) => {
+      const list = query.state.data?.list ?? [];
+      if (!list.some((mail) => mail.sndngResultCode === MAIL_SEND_RESULT.PENDING)) return false;
+      const now = Date.now();
+      if (pollUntilRef.current === null) pollUntilRef.current = now + PENDING_POLL_WINDOW_MS;
+      return now < pollUntilRef.current ? PENDING_POLL_MS : false;
+    },
   });
 
   const mails: SentMail[] = mailData?.list ?? [];
@@ -125,6 +149,7 @@ export default function MailHistoryHubClient() {
     mutationFn: (emlDsptchSn: number) => mailService.resendMail(emlDsptchSn),
     onSuccess: () => {
       toast('메일을 다시 보냈습니다. 결과는 잠시 뒤 이 목록에 반영됩니다.', 'success');
+      pollUntilRef.current = Date.now() + PENDING_POLL_WINDOW_MS;
       void queryClient.invalidateQueries({ queryKey: ['mail-history'] });
     },
     onError: (error) => {
@@ -177,6 +202,12 @@ export default function MailHistoryHubClient() {
     setSelectedMailId(null);
   };
 
+  const handleResultFilterChange = (value: string) => {
+    setResultFilter(value === 'F' || value === 'P' || value === 'S' ? value : '');
+    setPage(1);
+    setSelectedMailId(null);
+  };
+
   const handlePageChange = (nextPage: number) => {
     setPage(nextPage);
     setSelectedMailId(null);
@@ -192,7 +223,9 @@ export default function MailHistoryHubClient() {
 
   const masterDescription = isError
     ? '발신 이력을 불러오지 못했습니다.'
-    : `전체 ${totalCount.toLocaleString()}건 · 현재 페이지 성공 ${pageSuccess} · 대기 ${pagePending} · 실패 ${pageFailure}`;
+    : resultFilter
+      ? `${RESULT_FILTER_LABEL[resultFilter]} ${totalCount.toLocaleString()}건`
+      : `전체 ${totalCount.toLocaleString()}건 · 현재 페이지 성공 ${pageSuccess} · 대기 ${pagePending} · 실패 ${pageFailure}`;
 
   return (
     <MasterDetailPage
@@ -253,6 +286,17 @@ export default function MailHistoryHubClient() {
             <option value="1">제목</option>
             <option value="3">발신자</option>
           </select>
+          <select
+            aria-label="발송 결과"
+            value={resultFilter}
+            onChange={(event) => handleResultFilterChange(event.target.value)}
+            className="ml-2 mt-2 h-[var(--control-h-sm)] rounded-md border border-input bg-background px-2 text-xs"
+          >
+            <option value="">결과 전체</option>
+            <option value="F">실패만</option>
+            <option value="P">대기만</option>
+            <option value="S">성공만</option>
+          </select>
         </div>
       )}
       master={(
@@ -276,10 +320,10 @@ export default function MailHistoryHubClient() {
           ) : mails.length === 0 ? (
             <div role="status" className="rounded-md border border-dashed border-border p-6 text-center">
               <p className="text-sm font-semibold text-foreground">
-                {debouncedKeyword ? '검색 결과가 없습니다.' : '발신 이력이 없습니다.'}
+                {debouncedKeyword || resultFilter ? '조건에 맞는 메일이 없습니다.' : '발신 이력이 없습니다.'}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {debouncedKeyword ? '메일 제목 검색어를 변경해 보세요.' : '메일을 발송하면 이곳에서 결과를 확인할 수 있습니다.'}
+                {debouncedKeyword || resultFilter ? '검색어나 발송 결과 조건을 바꿔 보세요.' : '메일을 발송하면 이곳에서 결과를 확인할 수 있습니다.'}
               </p>
             </div>
           ) : (

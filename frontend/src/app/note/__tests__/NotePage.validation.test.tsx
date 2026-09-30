@@ -195,7 +195,37 @@ describe('NotePage validation contract', () => {
     expect(await screen.findByText('사용할 수 없는 제목입니다.')).toBeInTheDocument();
     expect(title).toHaveValue('보존할 제목');
     await waitFor(() => expect(title).toHaveFocus());
-    expect(mocks.toast).not.toHaveBeenCalledWith('전송 중 오류가 발생했습니다.', 'error');
+    expect(mocks.toast).not.toHaveBeenCalledWith(expect.anything(), 'error');
+  });
+
+  it('필드가 아닌 서버 거부는 서버가 밝힌 사유를 그대로 알리고 입력을 보존한다', async () => {
+    mocks.sendNote.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { status: 400, data: { message: '김수신 님은 사용 중인 계정이 아니어서 쪽지를 받을 수 없습니다. 이 수신자를 빼고 다시 보내 주세요.' } },
+    });
+    openComposer();
+    selectRecipient();
+    const title = screen.getByRole('textbox', { name: '시스템 제목' });
+    fireEvent.change(title, { target: { value: '보존할 제목' } });
+    fireEvent.change(screen.getByRole('textbox', { name: '데이터 바디 (내용)' }), { target: { value: '본문' } });
+
+    fireEvent.click(screen.getByRole('button', { name: '메시지 전송' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      '김수신 님은 사용 중인 계정이 아니어서 쪽지를 받을 수 없습니다. 이 수신자를 빼고 다시 보내 주세요.', 'error'));
+    expect(title).toHaveValue('보존할 제목');
+  });
+
+  it('사유가 없는 전송 실패는 과업 이름이 붙은 기본 문구로 알린다', async () => {
+    mocks.sendNote.mockRejectedValueOnce({ isAxiosError: true, message: 'Network Error' });
+    openComposer();
+    selectRecipient();
+    fireEvent.change(screen.getByRole('textbox', { name: '시스템 제목' }), { target: { value: '제목' } });
+    fireEvent.change(screen.getByRole('textbox', { name: '데이터 바디 (내용)' }), { target: { value: '본문' } });
+
+    fireEvent.click(screen.getByRole('button', { name: '메시지 전송' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('쪽지를 보내지 못했습니다.', 'error'));
   });
 
   it('전송 중 연속 클릭을 동기적으로 차단한다', async () => {

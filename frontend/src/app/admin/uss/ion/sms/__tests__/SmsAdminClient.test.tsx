@@ -1,3 +1,4 @@
+import type * as React from 'react';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,6 +17,8 @@ const mocks = vi.hoisted(() => ({
   deliveryStatusData: undefined as { deliveryConfigured?: boolean; defaultSenderTelno?: string | null } | undefined,
   /** 피커 stub 이 마지막으로 받은 주소록 출처. 조합 지점이 무엇을 주입했는지 동일성으로 본다. */
   pickerProps: { addressBook: undefined as unknown },
+  /** 목록 조회 결과. 비우면 빈 목록이다. */
+  listData: undefined as { list: unknown[]; total: number; totalPage: number } | undefined,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -37,7 +40,7 @@ vi.mock('@tanstack/react-query', () => ({
       // 발송 가능 상태는 테스트가 키별로 덮어쓸 수 있게 한다 — 배너의 두 방향을 모두 검증한다.
       data: key === 'admin-sms-delivery-status'
         ? mocks.deliveryStatusData
-        : { list: [], total: 0, totalPage: 1 },
+        : key === 'admin-sms' && mocks.listData ? mocks.listData : { list: [], total: 0, totalPage: 1 },
       isLoading: false,
       isError: false,
       error: null,
@@ -71,7 +74,14 @@ vi.mock('@/app/components/patterns/work-list-page', () => ({
     <main>{actions}{filter}{children}</main>
   ),
 }));
-vi.mock('@/app/components/ui/standard-data-table', () => ({ StandardDataTable: () => <div /> }));
+// 목록 데이터를 준 테스트에서만 행을 그린다 — 열 accessor 가 무엇을 보이는지 검사한다.
+vi.mock('@/app/components/ui/standard-data-table', () => ({
+  StandardDataTable: ({ columns, data }: { columns: { accessor: (row: unknown, index: number) => unknown }[]; data: unknown[] }) => (
+    mocks.listData
+      ? <div>{data.map((row, rowIndex) => <div key={rowIndex}>{columns.map((column, columnIndex) => <div key={columnIndex}>{column.accessor(row, rowIndex) as React.ReactNode}</div>)}</div>)}</div>
+      : <div />
+  ),
+}));
 
 // 피커 자체의 계약은 recipient-picker.test.tsx 가 본다. 여기서는 조합 지점이 무엇을 넘기는지만 기록한다.
 vi.mock('@/app/components/ui/recipient-picker', async () => {
@@ -112,6 +122,31 @@ async function openSmsForm(user: ReturnType<typeof userEvent.setup>) {
  * 라벨도 실제 축과 달랐다 — 서버가 번호로 거르는 축은 **수신**전화번호이고 발신번호로
  * 거르는 경로는 없는데 화면은 '발신번호 · 내용' 이라고 말했다.
  */
+describe('SMS 발송 건별 결과 수', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+
+  it('목록 행마다 수신자 수와 완료·실패·대기 수를 보인다 — 실패는 강조한다', () => {
+    mocks.listData = {
+      list: [
+        { smsTrsmSn: 1, sndngTelno: '0212345678', sndngCn: '점검 안내', recptnCnt: 4, successCnt: 2, failureCnt: 1, pendingCnt: 1 },
+        { smsTrsmSn: 2, sndngTelno: '0212345678', sndngCn: '완료 안내', recptnCnt: 3, successCnt: 3, failureCnt: 0, pendingCnt: 0 },
+      ],
+      total: 2,
+      totalPage: 1,
+    };
+    try {
+      render(<SmsAdminClient initialSmsList={null} />);
+      const summary = (text: string) => screen.getAllByText((_content, element) => element?.tagName === 'SPAN'
+        && element.parentElement?.tagName !== 'SPAN' && element.textContent === text);
+      expect(summary('4명 · 완료 2 · 실패 1 · 대기 1').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('· 실패 1', { exact: false })[0]).toHaveClass('text-destructive-emphasis');
+      expect(summary('3명 · 완료 3').length).toBeGreaterThan(0);
+    } finally {
+      mocks.listData = undefined;
+    }
+  });
+});
+
 describe('SMS 조회 조건 전달', () => {
   beforeEach(() => {
     vi.clearAllMocks();

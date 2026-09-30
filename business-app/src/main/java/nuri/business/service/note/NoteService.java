@@ -173,12 +173,25 @@ public class NoteService {
             }
             // 피커를 우회한 요청도 저장 전에 모든 수신자의 현재 사용 중 상태를 확인한다.
             // 조회만 중복을 제거하고, 기존 수신행·알림의 순서와 중복 의미는 유지한다.
-            java.util.Set<String> activeReceiverIds = userRepository
-                    .findByEsntlIdIn(receiverIds.stream().distinct().toList()).stream()
+            List<User> receivers = userRepository.findByEsntlIdIn(receiverIds.stream().distinct().toList());
+            java.util.Set<String> activeReceiverIds = receivers.stream()
                     .filter(user -> "P".equals(user.getUserSttsCd()))
                     .map(User::getEsntlId)
                     .collect(Collectors.toSet());
             if (!activeReceiverIds.containsAll(receiverIds)) {
+                // [2026-10-01] 사용 중이 아닌 수신자는 이름을 밝혀 거부한다 — 결재자 지정과 같은 규칙(DEC-OPS-155).
+                //   없는 식별자는 종전 문구로 거부하고 식별자를 되돌려 주지 않는다.
+                List<String> inactiveNames = receivers.stream()
+                        .filter(user -> !"P".equals(user.getUserSttsCd()))
+                        .map(User::getUserNm)
+                        .filter(org.springframework.util.StringUtils::hasText)
+                        .distinct()
+                        .toList();
+                if (!inactiveNames.isEmpty()) {
+                    throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                            String.join(", ", inactiveNames) + " 님은 사용 중인 계정이 아니어서 쪽지를 받을 수 없습니다."
+                                    + " 이 수신자를 빼고 다시 보내 주세요.");
+                }
                 throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
             }
 

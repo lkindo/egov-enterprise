@@ -3662,7 +3662,7 @@ export const getSentMailsOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "searchCondition": z.string().optional(), "searchKeyword": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "searchCondition": z.string().optional(), "searchKeyword": z.string().optional(), "resultCode": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseSentMailDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseSentMailDtoResponseSchema,
@@ -5653,7 +5653,7 @@ export const sendSmsOperation = /*#__PURE__*/ (() => {
   requestSchema: SmsDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["recptnCnt"],["successCnt"],["failureCnt"],["pendingCnt"]],
   responseForbiddenPaths: [],
   });
 })();

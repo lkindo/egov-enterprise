@@ -94,7 +94,7 @@ class MailResendServiceTest {
 
         mailService.resendMail(7L);
 
-        verify(mailAsyncProcessor).processSending(7L, "제목", "본문", SYSTEM_SENDER, "new@example.com");
+        verify(mailAsyncProcessor).processSending(eq(7L), eq("제목"), eq("본문"), eq(SYSTEM_SENDER), eq("new@example.com"), any());
     }
 
     @Test
@@ -105,7 +105,7 @@ class MailResendServiceTest {
 
         mailService.resendMail(8L);
 
-        verify(mailAsyncProcessor).processSending(8L, "제목", "본문", SYSTEM_SENDER, "direct@example.com");
+        verify(mailAsyncProcessor).processSending(eq(8L), eq("제목"), eq("본문"), eq(SYSTEM_SENDER), eq("direct@example.com"), any());
     }
 
     @Test
@@ -132,7 +132,7 @@ class MailResendServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(CommonErrorCode.ACCESS_DENIED);
         verify(sentMailRepository, never()).claimForResend(anyLong(), anyString(), any(), any());
-        verify(mailAsyncProcessor, never()).processSending(anyLong(), anyString(), anyString(), anyString(), anyString());
+        verify(mailAsyncProcessor, never()).processSending(anyLong(), anyString(), anyString(), anyString(), anyString(), any());
     }
 
     @Test
@@ -172,7 +172,7 @@ class MailResendServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(CommonErrorCode.CONCURRENT_MODIFICATION);
 
-        verify(mailAsyncProcessor, never()).processSending(anyLong(), anyString(), anyString(), anyString(), anyString());
+        verify(mailAsyncProcessor, never()).processSending(anyLong(), anyString(), anyString(), anyString(), anyString(), any());
     }
 
     @Test

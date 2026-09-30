@@ -74,7 +74,32 @@ public class SmsService {
 
     public Page<SmsDto> getSmsList(String searchCondition, String searchKeyword, Pageable pageable) {
         log.debug("Searching SMS");
-        return smsRepository.searchSms(searchCondition, searchKeyword, pageable).map(smsMapper::toDto);
+        Page<SmsDto> page = smsRepository.searchSms(searchCondition, searchKeyword, pageable).map(smsMapper::toDto);
+        attachResultCounts(page.getContent());
+        return page;
+    }
+
+    /**
+     * 목록 한 쪽의 발송 건마다 수신자 결과 수를 싣는다(쿼리 한 번). 수신자가 없는 건은 0 이다.
+     * 번호는 싣지 않는다 — 수신자별 결과는 종전대로 수신자 결과 조회가 보인다.
+     */
+    private void attachResultCounts(List<SmsDto> rows) {
+        List<Long> ids = rows.stream().map(SmsDto::getSmsTrsmSn).filter(Objects::nonNull).toList();
+        Map<Long, Map<String, Long>> counts = new java.util.HashMap<>();
+        if (!ids.isEmpty()) {
+            for (var row : smsRecptnRepository.countByResult(ids)) {
+                counts.computeIfAbsent(row.getSmsTrsmSn(), k -> new java.util.HashMap<>())
+                        .merge(row.getRsltCd() == null ? "" : row.getRsltCd(), row.getCnt(), Long::sum);
+            }
+        }
+        for (SmsDto dto : rows) {
+            Map<String, Long> byResult = counts.getOrDefault(dto.getSmsTrsmSn(), Map.of());
+            long total = byResult.values().stream().mapToLong(Long::longValue).sum();
+            dto.setRecptnCnt((int) total);
+            dto.setSuccessCnt(byResult.getOrDefault("S", 0L).intValue());
+            dto.setFailureCnt(byResult.getOrDefault("F", 0L).intValue());
+            dto.setPendingCnt(byResult.getOrDefault("P", 0L).intValue());
+        }
     }
 
     public SmsDto getSms(Long smsTrsmSn) {
@@ -115,9 +140,11 @@ public class SmsService {
             // 새 트랜잭션이 미커밋 수신자(READ_COMMITTED)를 못 봐 발송 루프가 no-op → SMS 영구 미발송되던 문제 방지.
             final String senderTel = dto.getSndngTelno();
             final String content = dto.getSndngCn();
+            // 실패한 수신자가 있으면 보낸 사람에게 알린다(DIP B5).
+            final String senderEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
             nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> {
                 try {
-                    smsAsyncProcessor.processSending(smsTrsmSn, senderTel, content);
+                    smsAsyncProcessor.processSending(smsTrsmSn, senderTel, content, senderEsntlId);
                 } catch (RuntimeException rejected) {
                     log.error("SMS dispatch queue rejected transmission serial number: {}, errorType: {}",
                             smsTrsmSn, rejected.getClass().getSimpleName());
@@ -154,6 +181,27 @@ public class SmsService {
         Map<String, UserContactService.UserContact> contacts = userContactService.resolve(esntlIds).stream()
                 .collect(Collectors.toMap(UserContactService.UserContact::esntlId, Function.identity(),
                         (first, second) -> first));
+
+        // [2026-10-01] 번호가 없는 수신자를 한 번에 모두 알린다 — 부서 전체를 담으면 한 명씩 빼며 다시 보내야 했다.
+        //   전체 거부(부분 발송 금지, DEC-OPS-035)는 그대로다.
+        List<String> missing = new ArrayList<>();
+        for (SmsRecptnDto recipient : recipients) {
+            if (!hasText(recipient.getEsntlId())) continue;
+            UserContactService.UserContact contact = contacts.get(recipient.getEsntlId().trim());
+            if (contact == null || contact.mblTelno() == null) {
+                missing.add(contact == null || !hasText(contact.userNm())
+                        ? recipient.getEsntlId().trim() : contact.userNm().trim());
+            }
+        }
+        if (missing.size() == 1) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "'" + missing.getFirst() + "' 님은 등록된 휴대전화 번호가 없어 문자를 보낼 수 없습니다.");
+        }
+        if (missing.size() > 1) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "등록된 휴대전화 번호가 없는 수신자가 " + missing.size() + "명 있어 문자를 보낼 수 없습니다: "
+                            + String.join(", ", missing) + ". 이 수신자를 빼고 다시 보내 주세요.");
+        }
 
         LinkedHashSet<String> numbers = new LinkedHashSet<>();
         for (SmsRecptnDto recipient : recipients) {

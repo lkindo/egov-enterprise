@@ -85,7 +85,7 @@ class SmsServiceTest {
         smsService.sendSms("user01", dto);
 
         verify(smsRecptnRepository).save(argThat(r -> "01012345678".equals(r.getRcptnTelno())));
-        verify(smsAsyncProcessor).processSending(eq(101L), anyString(), anyString());
+        verify(smsAsyncProcessor).processSending(eq(101L), anyString(), anyString(), any());
     }
 
     @Test
@@ -116,6 +116,33 @@ class SmsServiceTest {
         // Then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getSmsTrsmSn()).isEqualTo(101L);
+    }
+
+    @Test
+    @DisplayName("목록은 발송 건마다 수신자 수와 결과별 수를 한 번의 집계로 싣는다 — 수신자가 없으면 0 이다")
+    void getSmsList_attachesResultCounts() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Sms> page = new PageImpl<>(List.of(sms(101L, "01011112222", "Hello"), sms(102L, "01011112222", "Bye")),
+                pageable, 2);
+        when(smsRepository.searchSms(anyString(), anyString(), any(Pageable.class))).thenReturn(page);
+        when(smsRecptnRepository.countByResult(List.of(101L, 102L))).thenReturn(List.of(
+                resultCount(101L, "S", 2), resultCount(101L, "F", 1), resultCount(101L, "P", 1)));
+
+        List<SmsDto> rows = smsService.getSmsList("1", "", pageable).getContent();
+
+        assertThat(rows.get(0)).extracting(SmsDto::getRecptnCnt, SmsDto::getSuccessCnt, SmsDto::getFailureCnt,
+                SmsDto::getPendingCnt).containsExactly(4, 2, 1, 1);
+        assertThat(rows.get(1)).extracting(SmsDto::getRecptnCnt, SmsDto::getSuccessCnt, SmsDto::getFailureCnt,
+                SmsDto::getPendingCnt).containsExactly(0, 0, 0, 0);
+        verify(smsRecptnRepository, times(1)).countByResult(any());
+    }
+
+    private static SmsRecptnRepository.ResultCount resultCount(Long sn, String code, long cnt) {
+        return new SmsRecptnRepository.ResultCount() {
+            @Override public Long getSmsTrsmSn() { return sn; }
+            @Override public String getRsltCd() { return code; }
+            @Override public long getCnt() { return cnt; }
+        };
     }
 
     @Test
@@ -163,7 +190,7 @@ class SmsServiceTest {
         assertThat(smsTrsmSn).isEqualTo(101L);
         verify(smsRepository).save(any(Sms.class));
         verify(smsRecptnRepository).save(any(SmsRecptn.class));
-        verify(smsAsyncProcessor).processSending(eq(smsTrsmSn), eq("01011112222"), eq("Test Message"));
+        verify(smsAsyncProcessor).processSending(eq(smsTrsmSn), eq("01011112222"), eq("Test Message"), any());
     }
 
     @Test
@@ -175,7 +202,7 @@ class SmsServiceTest {
                 .recipients(List.of(SmsRecptnDto.builder().rcptnTelno("01033334444").build()))
                 .build();
         doThrow(new java.util.concurrent.RejectedExecutionException("full"))
-                .when(smsAsyncProcessor).processSending(anyLong(), anyString(), anyString());
+                .when(smsAsyncProcessor).processSending(anyLong(), anyString(), anyString(), any());
 
         Long smsTrsmSn = smsService.sendSms("user01", dto);
 
@@ -204,7 +231,7 @@ class SmsServiceTest {
         verify(smsRecptnRepository, times(2)).save(saved.capture());
         assertThat(saved.getAllValues()).extracting(SmsRecptn::getRcptnTelno)
                 .containsExactly("01033334444", "01099998888");
-        verify(smsAsyncProcessor).processSending(eq(101L), eq("01011112222"), eq("Hello"));
+        verify(smsAsyncProcessor).processSending(eq(101L), eq("01011112222"), eq("Hello"), any());
     }
 
     @Test
@@ -222,6 +249,24 @@ class SmsServiceTest {
                 .hasMessageContaining("병");
         verify(smsRepository, never()).save(any(Sms.class));
         verify(smsRecptnRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("번호가 없는 수신자가 여럿이면 한 번에 모두 밝히고 발송 헤더를 남기지 않는다")
+    void sendSms_namesEveryUserWithoutPhone() {
+        SmsDto dto = SmsDto.builder()
+                .sndngTelno("01011112222").sndngCn("Hello")
+                .recipients(List.of(SmsRecptnDto.builder().esntlId("USR_B").build(),
+                        SmsRecptnDto.builder().esntlId("USR_C").build()))
+                .build();
+        when(userContactService.resolve(List.of("USR_B", "USR_C"))).thenReturn(List.of(
+                new UserContactService.UserContact("USR_B", "병", null, null),
+                new UserContactService.UserContact("USR_C", "정", null, null)));
+
+        assertThatThrownBy(() -> smsService.sendSms("user01", dto))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("등록된 휴대전화 번호가 없는 수신자가 2명 있어 문자를 보낼 수 없습니다: 병, 정. 이 수신자를 빼고 다시 보내 주세요.");
+        verify(smsRepository, never()).save(any(Sms.class));
     }
 
     @Test
@@ -271,7 +316,7 @@ class SmsServiceTest {
         assertThat(smsTrsmSn).isEqualTo(101L);
         verify(smsRepository).save(any(Sms.class));
         verify(smsRecptnRepository, never()).save(any());
-        verify(smsAsyncProcessor, never()).processSending(anyLong(), anyString(), anyString());
+        verify(smsAsyncProcessor, never()).processSending(anyLong(), anyString(), anyString(), any());
     }
 
     @Test

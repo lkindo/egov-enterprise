@@ -389,6 +389,8 @@ class NoteServiceImplTest {
         assertThatThrownBy(() -> noteService.sendNote("sender", NoteDto.builder()
                 .noteSj("제목").noteCn("본문").rcverId("active, missing").build()))
                 .isInstanceOf(BusinessException.class)
+                // 없는 식별자는 이름을 밝히지 않고 되돌려 주지도 않는다.
+                .satisfies(e -> org.assertj.core.api.Assertions.assertThat(e.getMessage()).doesNotContain("missing"))
                 .extracting("errorCode").isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
 
         verifyNoInteractions(noteRepository, noteTrnsmitRepository, noteRecptnRepository, eventPublisher);
@@ -407,6 +409,7 @@ class NoteServiceImplTest {
         assertThatThrownBy(() -> noteService.sendNote("sender", NoteDto.builder()
                 .noteSj("제목").noteCn("본문").rcverId("active, inactive").build()))
                 .isInstanceOf(BusinessException.class)
+                .hasMessage("수신자 님은 사용 중인 계정이 아니어서 쪽지를 받을 수 없습니다. 이 수신자를 빼고 다시 보내 주세요.")
                 .extracting("errorCode").isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
 
         verifyNoInteractions(noteRepository, noteTrnsmitRepository, noteRecptnRepository, eventPublisher);

@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import * as z from 'zod';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -94,6 +94,7 @@ function toRequestRecipient(recipient: RecipientSelection): z.infer<typeof MailR
 
 export default function MailSendHubClient() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitPendingRef = useRef(false);
@@ -188,6 +189,8 @@ export default function MailSendHubClient() {
       await mailService.sendMail(validated);
       completedRef.current = true;
       toast('메일이 발송 요청되었습니다.', 'success');
+      // [2026-10-01] 이력 화면이 60초 캐시를 보여 방금 보낸 메일이 없는 목록이 뜨지 않게 한다.
+      void queryClient.invalidateQueries({ queryKey: ['mail-history'] });
       router.push('/admin/collaboration/mail-history');
     } catch (error: unknown) {
       const fieldErrors = extractFieldErrors(error);

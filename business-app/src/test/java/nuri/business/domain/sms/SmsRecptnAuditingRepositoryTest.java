@@ -62,6 +62,21 @@ class SmsRecptnAuditingRepositoryTest {
     }
 
     @Test
+    @DisplayName("발송 건마다 결과 코드별 수신자 수를 한 번에 센다")
+    void countsRecipientsByResultPerDispatch() {
+        repository.saveAndFlush(SmsRecptn.builder().smsTrsmSn(801L).rcptnTelno("01000000001").rsltCd("S").build());
+        repository.saveAndFlush(SmsRecptn.builder().smsTrsmSn(801L).rcptnTelno("01000000002").rsltCd("S").build());
+        repository.saveAndFlush(SmsRecptn.builder().smsTrsmSn(801L).rcptnTelno("01000000003").rsltCd("F").build());
+        repository.saveAndFlush(SmsRecptn.builder().smsTrsmSn(802L).rcptnTelno("01000000004").rsltCd("P").build());
+        repository.saveAndFlush(SmsRecptn.builder().smsTrsmSn(803L).rcptnTelno("01000000005").rsltCd("S").build());
+
+        var rows = repository.countByResult(java.util.List.of(801L, 802L));
+
+        assertThat(rows).extracting(r -> r.getSmsTrsmSn() + ":" + r.getRsltCd() + "=" + r.getCnt())
+                .containsExactlyInAnyOrder("801:S=2", "801:F=1", "802:P=1");
+    }
+
+    @Test
     @DisplayName("SecurityContext 없는 비동기 결과 기록은 생성/수정 감사값을 SYSTEM으로 보존한다")
     void asyncResultUpdateAppliesJpaAuditingListener() {
         SecurityContextHolder.clearContext();

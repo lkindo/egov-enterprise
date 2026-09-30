@@ -124,11 +124,13 @@ class DispatchRetryBoundaryIntegrationTest {
     @EnableRetry
     @EnableTransactionManagement
     static class RetryConfiguration {
-        @Bean MailAsyncProcessor mail(EmailSender sender, SentMailRepository repository, SimpleMeterRegistry meters) {
-            return new MailAsyncProcessor(sender, repository, meters);
+        @Bean MailAsyncProcessor mail(EmailSender sender, SentMailRepository repository, SimpleMeterRegistry meters,
+                org.springframework.context.ApplicationEventPublisher events) {
+            return new MailAsyncProcessor(sender, repository, meters, events);
         }
-        @Bean SmsAsyncProcessor sms(SmsSender sender, SmsRecptnRepository repository, SimpleMeterRegistry meters) {
-            return new SmsAsyncProcessor(sender, repository, meters);
+        @Bean SmsAsyncProcessor sms(SmsSender sender, SmsRecptnRepository repository, SimpleMeterRegistry meters,
+                org.springframework.context.ApplicationEventPublisher events) {
+            return new SmsAsyncProcessor(sender, repository, meters, events);
         }
         @Bean SimpleMeterRegistry meters() { return new SimpleMeterRegistry(); }
         @Bean FailingCommitManager transactionManager() { return new FailingCommitManager(); }

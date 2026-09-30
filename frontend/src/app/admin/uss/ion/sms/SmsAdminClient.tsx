@@ -384,8 +384,19 @@ export default function SmsAdminClient({
     // 대신 그 상세를 여는 경로를 붙인다 — 결과를 볼 방법이 아예 없으면 '접수했다'는 안내도 확인할 수 없다.
     {
       header: '전달 결과',
-      className: 'w-36',
+      className: 'w-44',
+      // [2026-10-01] 목록 조회가 발송 건마다 결과별 수를 싣는다 — 실패한 건을 한 번에 찾고, 수신자별 결과는 버튼으로 연다.
       accessor: (item: SmsDto) => (
+        <div className="flex flex-col items-start gap-1">
+        {item.recptnCnt != null && (
+          <span className="text-xs text-muted-foreground">
+            {`${item.recptnCnt}명 · 완료 ${item.successCnt ?? 0}`}
+            {(item.failureCnt ?? 0) > 0 && (
+              <span className="font-semibold text-destructive-emphasis">{` · 실패 ${item.failureCnt}`}</span>
+            )}
+            {(item.pendingCnt ?? 0) > 0 && ` · 대기 ${item.pendingCnt}`}
+          </span>
+        )}
         <Button
           type="button"
           variant="outline"
@@ -395,6 +406,7 @@ export default function SmsAdminClient({
         >
           수신자 결과
         </Button>
+        </div>
       )
     }
   ];

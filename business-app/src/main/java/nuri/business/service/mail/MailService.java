@@ -74,6 +74,22 @@ public class MailService {
     }
 
     public Page<SentMailDto> getSentMailList(String searchCondition, String searchKeyword, Pageable pageable) {
+        return getSentMailList(searchCondition, searchKeyword, null, pageable);
+    }
+
+    /** 발송 결과 조건의 어휘. 이력 행의 {@code dsptch_rslt_cd} 값과 같다. */
+    private static final java.util.Set<String> RESULT_CODES = java.util.Set.of("P", "S", "F");
+
+    /**
+     * 발신 이력을 조회한다. {@code resultCode} 로 발송 결과를 좁힐 수 있다(2026-10-01) — 실패한 메일을 찾으려고
+     * 페이지를 넘기지 않게 한다. 어휘 밖 값은 400 이다(빈 결과로 보이면 입력 실수를 사실로 읽는다).
+     */
+    public Page<SentMailDto> getSentMailList(String searchCondition, String searchKeyword, String resultCode,
+            Pageable pageable) {
+        String result = hasText(resultCode) ? resultCode.trim() : null;
+        if (result != null && !RESULT_CODES.contains(result)) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "발송 결과 조건은 P, S, F 중 하나여야 합니다.");
+        }
         log.debug("Searching sent mails");
         // 본문 검색은 발신자 본인만 허용한다(DEC-OPS-134). 응답에서 본문을 지워도 검색 결과·전체 건수가
         // 타인 본문에 따라 달라지면 내용을 추론할 수 있으므로, 페이지와 count 쿼리의 공통 스코프를 제한한다.
@@ -83,7 +99,8 @@ public class MailService {
                         .orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))
                 : resolveSenderScope();
         return sentMailRepository
-                .searchSentMails(senderLoginId, searchCondition, searchKeyword, Objects.requireNonNull(pageable))
+                .searchSentMails(senderLoginId, searchCondition, searchKeyword, result,
+                        Objects.requireNonNull(pageable))
                 .map(this::toResponse);
     }
 
@@ -161,9 +178,11 @@ public class MailService {
         final String subject = sentMail.getEmlTtl();
         final String emailCn = sentMail.getEmlCn();
         final String dsptchPerson = systemSenderAddress;
+        // 실패로 확정되면 이 사람에게 알린다(재발송한 사람 = 발신자 본인).
+        final String senderEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
         nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> {
             try {
-                mailAsyncProcessor.processSending(emlDsptchSn, subject, emailCn, dsptchPerson, address);
+                mailAsyncProcessor.processSending(emlDsptchSn, subject, emailCn, dsptchPerson, address, senderEsntlId);
             } catch (RuntimeException rejected) {
                 log.error("Mail resend queue rejected dispatch serial number: {}, errorType: {}",
                         emlDsptchSn, rejected.getClass().getSimpleName());
@@ -317,6 +336,26 @@ public class MailService {
                 .collect(Collectors.toMap(UserContactService.UserContact::esntlId, Function.identity(),
                         (first, second) -> first));
 
+        // [2026-10-01] 연락처가 없는 수신자를 한 번에 모두 알린다 — 첫 사람에서 멈추면 부서 전체를 담은 사용자는
+        //   한 명씩 빼며 다시 보내야 했다. 전체 거부(부분 발송 금지, DEC-OPS-035)는 그대로다.
+        List<String> missing = new ArrayList<>();
+        for (MailRecipientDto recipient : recipients) {
+            if (!hasText(recipient.getEsntlId())) continue;
+            UserContactService.UserContact contact = contacts.get(recipient.getEsntlId().trim());
+            if (contact == null || contact.emlAddr() == null) {
+                missing.add(contact == null ? recipient.getEsntlId().trim() : displayNameOf(contact.userNm()));
+            }
+        }
+        if (missing.size() == 1) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "'" + missing.getFirst() + "' 님은 등록된 이메일 주소가 없어 메일을 보낼 수 없습니다.");
+        }
+        if (missing.size() > 1) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "등록된 이메일 주소가 없는 수신자가 " + missing.size() + "명 있어 메일을 보낼 수 없습니다: "
+                            + String.join(", ", missing) + ". 이 수신자를 빼고 다시 보내 주세요.");
+        }
+
         // 주소 → 이력 표시값·수신자 식별자. 같은 주소는 먼저 나온 수신자로 한 번만 보낸다.
         LinkedHashMap<String, ResolvedRecipient> byAddress = new LinkedHashMap<>();
         for (MailRecipientDto recipient : recipients) {
@@ -392,9 +431,11 @@ public class MailService {
         final String emailCn = dto.getEmailCn();
         // SMTP From 은 설정된 시스템 주소다. 요청 본문에서 오지 않으므로 null 이 될 수 없다.
         final String dsptchPerson = systemSenderAddress;
+        // 실패로 확정되면 보낸 사람에게 알린다(DIP B5 — 종전에는 이력의 'F' 에만 남았다).
+        final String senderEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
         nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> {
             try {
-                mailAsyncProcessor.processSending(emlDsptchSn, subject, emailCn, dsptchPerson, recptnPerson);
+                mailAsyncProcessor.processSending(emlDsptchSn, subject, emailCn, dsptchPerson, recptnPerson, senderEsntlId);
             } catch (RuntimeException rejected) {
                 // @Async 본문 예외는 호출자에게 나오지 않는다. 여기서 보이는 예외는 제출 거부다.
                 // 커밋된 P 행을 방치하지 않고 명시적 실패로 바꿔 운영자가 재처리할 수 있게 한다.

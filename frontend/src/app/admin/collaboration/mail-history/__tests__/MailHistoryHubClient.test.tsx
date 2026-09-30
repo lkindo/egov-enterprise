@@ -286,6 +286,60 @@ describe('MailHistoryHubClient A2 master-detail 계약', () => {
     }));
   });
 
+  it('발송 결과로 좁혀 조회하고, 결과가 없으면 조건을 바꾸라고 말한다', async () => {
+    mocks.getSentMails.mockResolvedValue({ list: sentMails, total: 3, totalPage: 1 });
+    renderClient();
+    await screen.findByRole('button', { name: '월간 운영 보고 발신 이력 상세 열기' });
+
+    mocks.getSentMails.mockResolvedValue({ list: [], total: 0, totalPage: 0 });
+    fireEvent.change(screen.getByRole('combobox', { name: '발송 결과' }), { target: { value: 'F' } });
+
+    await waitFor(() => expect(mocks.getSentMails).toHaveBeenLastCalledWith({
+      page: 0,
+      size: 20,
+      searchKeyword: '',
+      searchCondition: '1',
+      resultCode: 'F',
+    }));
+    expect(await screen.findByText('조건에 맞는 메일이 없습니다.')).toBeInTheDocument();
+    expect(screen.getByText('실패 0건')).toBeInTheDocument();
+  });
+
+  it('대기 중인 메일이 보이면 기한 안에서만 다시 읽어 결과를 반영한다', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      mocks.getSentMails.mockResolvedValue({ list: sentMails, total: 3, totalPage: 1 });
+      renderClient();
+      await screen.findByRole('button', { name: '예약 발송 발신 이력 상세 열기' });
+      const initialCalls = mocks.getSentMails.mock.calls.length;
+
+      await act(async () => { await vi.advanceTimersByTimeAsync(5_100); });
+      await waitFor(() => expect(mocks.getSentMails.mock.calls.length).toBeGreaterThan(initialCalls));
+
+      // 기한(2분)이 지나면 대기가 남아 있어도 더 읽지 않는다.
+      await act(async () => { await vi.advanceTimersByTimeAsync(130_000); });
+      const settled = mocks.getSentMails.mock.calls.length;
+      await act(async () => { await vi.advanceTimersByTimeAsync(20_000); });
+      expect(mocks.getSentMails.mock.calls.length).toBe(settled);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('대기 중인 메일이 없으면 다시 읽지 않는다', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      mocks.getSentMails.mockResolvedValue({ list: sentMails.filter((mail) => mail.sndngResultCode !== 'P'), total: 2, totalPage: 1 });
+      renderClient();
+      await screen.findByRole('button', { name: '월간 운영 보고 발신 이력 상세 열기' });
+      const calls = mocks.getSentMails.mock.calls.length;
+      await act(async () => { await vi.advanceTimersByTimeAsync(15_000); });
+      expect(mocks.getSentMails.mock.calls.length).toBe(calls);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('🚨 발신자를 목록과 상세에 보이고 발신자로도 검색한다 (DIP V4)', async () => {
     mocks.getSentMails.mockResolvedValue({
       list: [{ ...sentMails[0], dsptchPerson: '홍발신' }],

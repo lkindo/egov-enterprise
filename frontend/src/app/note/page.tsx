@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { failureMessage } from '@/lib/safe-error-log';
 import { noteComposeSchema } from './note-form-validation';
 
 const NOTE_FORM_LABELS = {
@@ -210,7 +211,8 @@ export default function NotePage() {
     } catch (error) {
       const fieldErrors = extractFieldErrors(error);
       if (fieldErrors) validation.setFormErrors(fieldErrors);
-      else toast('전송 중 오류가 발생했습니다.', 'error');
+      // [2026-10-01] 서버가 밝힌 사유(사용 중이 아닌 수신자 이름 등)를 그대로 보인다 — 무엇을 고칠지 알 수 있게.
+      else toast(failureMessage(error, '쪽지를 보내지 못했습니다.'), 'error');
     } finally {
       sendingRef.current = false;
       setIsSending(false);

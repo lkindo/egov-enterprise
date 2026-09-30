@@ -23,6 +23,10 @@ public class MailAsyncProcessor {
     private final EmailSender emailSender;
     private final SentMailRepository sentMailRepository;
     private final io.micrometer.core.instrument.MeterRegistry meterRegistry;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+
+    /** 발신 이력 화면. 실패 알림을 누르면 여기서 결과를 확인하고 다시 보낸다. */
+    static final String MAIL_HISTORY_PATH = "/admin/collaboration/mail-history";
 
     private MailAsyncProcessor self;
 
@@ -37,9 +41,46 @@ public class MailAsyncProcessor {
      */
     @Async("taskExecutor")
     public void processSending(Long emlDsptchSn, String sj, String emailCn, String dsptchPerson, String recptnPerson) {
+        processSending(emlDsptchSn, sj, emailCn, dsptchPerson, recptnPerson, null);
+    }
+
+    /**
+     * 발송하고 결과를 기록한다. 재시도까지 끝나 실패로 확정되면 발신자에게 한 번 알린다(2026-10-01).
+     *
+     * <p>종전에는 실패가 이력의 'F' 와 메트릭에만 남아, 발신자는 이력 화면을 찾아 들어가기 전까지 몰랐다.
+     * 알림에는 제목과 받는 사람의 이력 표시값만 싣는다 — 본문·주소는 싣지 않는다(DIP D8).
+     *
+     * @param senderEsntlId 알릴 발신자. 없으면(시스템 발송·호환 호출) 알리지 않는다.
+     */
+    @Async("taskExecutor")
+    public void processSending(Long emlDsptchSn, String sj, String emailCn, String dsptchPerson, String recptnPerson,
+            String senderEsntlId) {
         boolean delivered = self.deliverMail(emlDsptchSn, sj, emailCn, dsptchPerson, recptnPerson);
         meterRegistry.counter("mail.dispatch.total", "result", delivered ? "success" : "failure").increment();
         self.recordResult(emlDsptchSn, delivered ? "S" : "F");
+        if (!delivered && senderEsntlId != null && !senderEsntlId.isBlank()) {
+            try {
+                self.notifyDeliveryFailure(emlDsptchSn, senderEsntlId);
+            } catch (RuntimeException e) {
+                // 알림 실패가 발송 결과 기록을 되돌리지 않는다 — 결과는 이미 이력에 있다.
+                log.error("Mail failure notice could not be requested for dispatch serial number: {}, errorType: {}",
+                        emlDsptchSn, e.getClass().getSimpleName());
+            }
+        }
+    }
+
+    /** 실패로 확정된 발송을 발신자에게 알린다 — 알림은 업무 트랜잭션 안에서 저장된다(NotificationRequestListener). */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void notifyDeliveryFailure(Long emlDsptchSn, String senderEsntlId) {
+        sentMailRepository.findById(emlDsptchSn).ifPresent(mail -> eventPublisher.publishEvent(
+                new nuri.foundation.core.event.NotificationRequestedEvent(senderEsntlId, "메일 발송 실패",
+                        failureNotice(mail.getEmlTtl(), mail.getRcvrNm()), MAIL_HISTORY_PATH)));
+    }
+
+    static String failureNotice(String title, String receiverName) {
+        String subject = title == null || title.isBlank() ? "메일" : "「" + title.trim() + "」 메일";
+        String receiver = receiverName == null || receiverName.isBlank() ? "" : receiverName.trim() + "에게 ";
+        return subject + "을 " + receiver + "보내지 못했습니다. 발신 이력에서 결과를 확인하고 다시 보낼 수 있습니다.";
     }
 
     /** 발송만 재시도한다. 결과 기록이나 커밋 실패는 이 경계로 전파되지 않는다. */
