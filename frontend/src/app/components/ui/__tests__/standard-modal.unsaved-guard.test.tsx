@@ -20,7 +20,7 @@ function FormModal({ onClose, isOpen = true }: { onClose: () => void; isOpen?: b
       <form>
         <label>
           이름
-          <input name="name" />
+          <input name="name" aria-label="이름" />
         </label>
       </form>
     </StandardModal>
@@ -87,7 +87,7 @@ describe('StandardModal 미저장 닫기 보호', () => {
         <form role="search">
           <label>
             검색어
-            <input name="keyword" />
+            <input name="keyword" aria-label="검색어" />
           </label>
         </form>
       </StandardModal>,
@@ -129,7 +129,7 @@ describe('StandardModal 미저장 닫기 보호', () => {
           <form>
             <label>
               제목
-              <input name="title" onChange={() => setDirty(true)} />
+              <input name="title" aria-label="제목" onChange={() => setDirty(true)} />
             </label>
           </form>
         </StandardModal>
