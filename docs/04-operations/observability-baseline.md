@@ -11,7 +11,9 @@
 | 요청 제한(429) 카운터 | `security_ratelimit_rejected_total{bucket="login"\|"all"}` | [RateLimitFilter](../../business-core/src/main/java/nuri/business/security/filter/RateLimitFilter.java) |
 | 로그인 실패 | 표준 요청 메트릭 `http_server_requests_seconds_count{uri="/api/v1/auth/login",status="401"}` | [로그인 통합 테스트](../../api-server/src/test/java/nuri/auth/AuthenticationControllerIntegrationTest.java) |
 | 콘솔 로그 | 기본은 텍스트. `json-logs` 프로파일로 ECS JSON 전환 | [logback-spring.xml](../../api-server/src/main/resources/logback-spring.xml) |
-| 경보 규칙 예시 | 429 지속·로그인 실패 급증·첨부 점검 미완료 3건 | [prometheus-alert-rules.yml](../../config/observability/prometheus-alert-rules.yml) |
+| 내구 작업 실패 카운터 | `nuri_durable_work_failed_total{type=...}` — 재시도 예산(8회)을 다 써 FAILED 로 전이한 순간에 오른다 | [DurableWorkDispatcher](../../business-core/src/main/java/nuri/business/service/system/job/DurableWorkDispatcher.java), [후속 작업 재처리](durable-work-recovery.md) |
+| OTLP 메트릭 push | 기본 꺼짐. `OTLP_METRICS_EXPORT_ENABLED=true` 와 `OTLP_METRICS_URL` 로 켠다(Boot 4 자체 기본값은 켜짐이라 설정으로 끈다) | [application.yml](../../api-server/src/main/resources/application.yml), [OtlpMetricsExportOptInTest](../../api-server/src/test/java/nuri/api/config/OtlpMetricsExportOptInTest.java) |
+| 경보 규칙 예시 | 429 지속·로그인 실패 급증·첨부 점검 미완료·내구 작업 FAILED 4건 | [prometheus-alert-rules.yml](../../config/observability/prometheus-alert-rules.yml) |
 
 ⚠ 요청 제한 필터는 HTTP 관측 필터보다 먼저 응답을 끝낸다. 그래서 **429 는 `http_server_requests` 에 나타나지 않는다.**
 429 추세는 반드시 전용 카운터로 본다.

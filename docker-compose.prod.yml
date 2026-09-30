@@ -112,6 +112,9 @@ services:
       MFA_ACTIVE_KEY_ID:
       MFA_KEYS_JSON:
       MFA_REQUIRE_PROTECTED:
+      # [2026-09-30] OTLP 메트릭 push 는 수집기를 정한 환경에서만 켠다(기본 false). 켜면 URL 도 함께 준다.
+      OTLP_METRICS_EXPORT_ENABLED:
+      OTLP_METRICS_URL:
       # [2026-09-14 ADR-0019] 요청 제한 한도. 낮추는 순서는 application.yml 의 rate-limit 주석을 따른다.
       RATE_LIMIT_REQUESTS_PER_MINUTE:
       RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:

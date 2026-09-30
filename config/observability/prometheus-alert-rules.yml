@@ -49,3 +49,16 @@ groups:
         annotations:
           summary: "첨부 무결성 점검이 24시간째 정상 완료를 기록하지 못했습니다"
           description: "최근 결과 JSON(last-complete.json·latest.json)의 outcome 으로 DRIFT·INCOMPLETE·FAILED 중 무엇인지 확인합니다."
+
+      # 내구 작업(알림 전달·첨부 물리 삭제 등)이 재시도 예산 8회를 다 써 FAILED 가 됐다. FAILED 는 스스로 풀리지 않는다 —
+      #   DWORK_RETRY 로 재처리하기 전까지 그 후속 처리는 멈춰 있다(docs/04-operations/durable-work-recovery.md).
+      #   type 은 실행기 유형이다. 카운터는 전이 순간에만 오르므로, 이미 FAILED 로 남아 있는 적체(재기동 전 전이 포함)는
+      #   이 규칙이 보지 않는다 — 적체는 GET /api/v1/admin/system/durable-jobs 로 확인한다.
+      - alert: EgovDurableWorkFailed
+        expr: sum by (application, type) (increase(nuri_durable_work_failed_total[1h])) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "내구 작업이 재시도 예산을 다 써 FAILED 가 됐습니다 (type={{ $labels.type }})"
+          description: "durable-jobs 조회로 대상 작업을 찾고, 저장소·전달 채널 원인을 고친 뒤 DWORK_RETRY 로 재처리합니다."

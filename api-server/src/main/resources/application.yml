@@ -272,6 +272,16 @@ management:
     metrics:
       export:
         enabled: true
+  # [2026-09-30] OTLP 메트릭 push 는 명시적으로 켠다. Boot 4 는 OTLP registry 가 classpath 에 있으면
+  #   management.otlp.metrics.export.enabled 기본값 true 로 1분마다 localhost:4318 에 push 를 시도한다 —
+  #   수집기가 없는 배포에서는 실패만 반복한다(추적·로그 OTLP 는 endpoint 가 없으면 만들어지지 않는다).
+  #   Prometheus scrape(/actuator/prometheus)는 그대로다. 켜려면 OTLP_METRICS_EXPORT_ENABLED=true 와 URL 을 준다.
+  #   OtlpMetricsExportOptInTest 가 이 키가 실제로 registry 를 끄고 켜는지 확인한다.
+  otlp:
+    metrics:
+      export:
+        enabled: ${OTLP_METRICS_EXPORT_ENABLED:false}
+        url: ${OTLP_METRICS_URL:http://localhost:4318/v1/metrics}
 
 Globals:
   File:
