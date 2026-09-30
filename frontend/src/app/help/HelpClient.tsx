@@ -178,11 +178,11 @@ export default function HelpClient() {
     },
     {
       header: '작성자',
-      accessor: (item: QNA) => <span className="text-muted-foreground/60 font-medium">{item.wrterNm}</span>
+      accessor: (item: QNA) => <span className="text-muted-foreground font-medium">{item.wrterNm}</span>
     },
     {
       header: '등록일',
-      accessor: (item: QNA) => <span className="text-muted-foreground/40 font-mono text-xs">{item.writngDe}</span>
+      accessor: (item: QNA) => <span className="text-muted-foreground font-mono text-xs">{item.writngDe}</span>
     },
     {
       header: '상태',

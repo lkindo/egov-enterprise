@@ -648,7 +648,7 @@ export default function SurveyQuestionsPanel() {
 
       {srvySn === null ? (
         <div className="p-16 text-center bg-card rounded-lg border-2 border-dashed">
-          <ListChecks size={36} className="mx-auto text-muted-foreground/30 mb-3" />
+          <ListChecks size={36} className="mx-auto text-muted-foreground/30 mb-3" aria-hidden="true" />
           <p className="text-muted-foreground">설문을 선택하면 문항과 선택 항목을 관리할 수 있습니다.</p>
         </div>
       ) : isLoading ? (
@@ -854,7 +854,7 @@ export default function SurveyQuestionsPanel() {
                       <ul className="space-y-1">
                         {(q.items ?? []).map((item) => (
                           <li key={item.srvyArtclSn} className="flex items-center gap-2 text-sm">
-                            <span className="text-muted-foreground/50">·</span>
+                            <span className="text-muted-foreground/50" aria-hidden="true">·</span>
                             {editingTarget === `item-${item.srvyArtclSn}` ? (
                               <form
                                 className="flex items-center gap-2 flex-1 min-w-0"

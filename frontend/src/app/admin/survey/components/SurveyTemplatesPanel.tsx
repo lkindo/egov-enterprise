@@ -239,7 +239,7 @@ export default function SurveyTemplatesPanel() {
         </div>
       ) : templates.length === 0 ? (
         <div className="p-16 text-center bg-card rounded-lg border-2 border-dashed">
-          <LayoutTemplate size={36} className="mx-auto text-muted-foreground/30 mb-3" />
+          <LayoutTemplate size={36} className="mx-auto text-muted-foreground/30 mb-3" aria-hidden="true" />
           <p className="text-muted-foreground">등록된 템플릿이 없습니다.</p>
         </div>
       ) : (

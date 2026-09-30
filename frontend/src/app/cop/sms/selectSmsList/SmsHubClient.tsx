@@ -178,7 +178,7 @@ export default function SmsHubClient({
     {
       header: 'TIMESTAMP',
       accessor: (item) => (
-        <div className="flex items-center gap-3 text-muted-foreground/40 font-bold text-xs tracking-tight">
+        <div className="flex items-center gap-3 text-muted-foreground font-bold text-xs tracking-tight">
           <Clock size={14} /> {item.crtDt ?? '-'}
         </div>
       )

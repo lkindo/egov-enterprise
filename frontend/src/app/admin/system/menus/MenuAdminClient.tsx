@@ -954,7 +954,7 @@ export default function MenuAdminClient({
                           ))}
                         </select>
                       </FormControl>
-                      <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
+                      <FormMessage className="text-xs font-bold text-destructive-emphasis ml-1" />
                     </FormItem>
                   )}
                 />

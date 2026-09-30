@@ -125,7 +125,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
                           variant="outline"
                           className={cn(
                             "w-full h-[var(--filter-control-h)] justify-start text-left font-bold text-sm rounded-lg border border-input bg-background transition-all hover:border-primary/50 shadow-sm",
-                            !range && "text-muted-foreground/50"
+                            !range && "text-muted-foreground"
                           )}
                         >
                           <CalendarIcon className="mr-3 h-4 w-4 opacity-50 text-primary" />
@@ -186,7 +186,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
             variant="ghost"
             size="sm"
             onClick={handleReset}
-            className="rounded-lg px-5 font-bold gap-2 text-xs tracking-widest text-muted-foreground/60 hover:bg-muted hover:text-foreground transition-all uppercase h-[var(--filter-control-h)]"
+            className="rounded-lg px-5 font-bold gap-2 text-xs tracking-widest text-muted-foreground hover:bg-muted hover:text-foreground transition-all uppercase h-[var(--filter-control-h)]"
           >
             <RotateCcw size={16} />
             초기화

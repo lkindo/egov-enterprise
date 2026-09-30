@@ -43,7 +43,7 @@ describe('설문 목록 탐색과 복구', () => {
     fireEvent.click(screen.getByRole('button', { name: '다음 페이지' }));
     expect(await screen.findByText('11번째 설문')).toBeInTheDocument();
     expect(mocks.getSurveys).toHaveBeenLastCalledWith({ page: 1, size: 10 }, expect.objectContaining({ signal: expect.any(AbortSignal) }));
-    expect(screen.getByRole('button', { name: '다음 페이지' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '다음 페이지' })).toHaveAttribute('aria-disabled', 'true');
     fireEvent.click(screen.getByRole('button', { name: '11번째 설문 설문 응답 열기' }));
     expect(mocks.push).toHaveBeenCalledWith('/survey/11');
     fireEvent.click(screen.getByRole('button', { name: '이전 페이지' }));

@@ -75,7 +75,7 @@ const SystemLogsSystemClient = () => {
         {
             header: '요청ID',
             accessor: (item: SysLog) => (
-                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/50 tabular-nums text-left">
+                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums text-left">
                     <Terminal size={12} className="opacity-30" />
                     {item.dmndId}
                 </div>
