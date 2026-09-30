@@ -143,7 +143,9 @@ npm run base:generate-source -- \
 검증된 V1 번들로 교체하고 `REUSABLE_BASE.md`와 `reusable-base-lock.json`을 기록한다.
 
 공식·개발용 산출물 모두 재배포 제한이 확인된 `.agent/skills/docx`, `pdf`, `pptx`, `xlsx` 디렉터리의
-파일을 복사하지 않는다. 원본 파일과 Git 이력은 변경하지 않으며, 이 제외가 나머지 자산의 배포 권리를
+파일을 복사하지 않는다. 2026-09-30부터는 원본 저장소도 이 네 디렉터리를 추적하지 않는다(DEC-OPS-182,
+`.gitignore`). 다시 추적되면 `project-composer-source` 계약이 red 다. 생성기의 제외는 로컬에 남은 사본이
+산출물로 새지 않도록 유지한다. Git 이력은 재작성하지 않았고, 이 제외가 나머지 자산의 배포 권리를
 보증하지는 않는다. 기존 산출물에는 소급 적용되지 않으므로 재사용·게시 전에 다시 생성해야 한다.
 개발용 `--allow-dirty` 생성은 그 밖의 추적 파일과 gitignore에 걸리지 않는 새 로컬 파일을 계속 포함한다.
 공식 산출물은 기존의 clean working tree·릴리스 태그 요건을 그대로 따른다.

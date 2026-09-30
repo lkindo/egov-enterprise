@@ -156,6 +156,12 @@ test/load-tests/results/
 .agent/temp/
 !**/.agent/knowledge/
 !**/.agent/skills/
+# [2026-09-30 DEC-OPS-182] 재배포가 제한된 스킬(© Anthropic, All rights reserved)은 공개 저장소에 두지 않는다.
+#   Claude Code 는 같은 기능을 기본 스킬로 갖는다. 다시 추적되면 project-composer-source 계약이 red 다.
+.agent/skills/docx/
+.agent/skills/pdf/
+.agent/skills/pptx/
+.agent/skills/xlsx/
 !**/.agent/workflows/
 !**/.agent/scripts/
 !**/.agent/mcp-servers/

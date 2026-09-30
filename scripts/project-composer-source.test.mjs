@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { spawnSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
@@ -208,6 +209,23 @@ function inspectFrontendSurvival(domains, currentCatalog = catalog) {
   const expected = [...selected, 'frontend/src/app/layout.tsx', 'frontend/src/app/page.tsx', 'frontend/src/app/login/page.tsx'];
   return { expectedCount: expected.length, missing: expected.filter(file => removed.has(file)) };
 }
+
+// [2026-09-30 DEC-OPS-182] 제한 스킬은 산출물에서 빼는 것만으로 부족하다 — 공개 원본 저장소가 추적하면 그 자체가 배포다.
+test('restricted Anthropic skills are neither tracked nor re-addable in the source repository', () => {
+  const restricted = ['docx', 'pdf', 'pptx', 'xlsx'].map(skill => `.agent/skills/${skill}`);
+  const tracked = spawnSync('git', ['ls-files', '--', ...restricted], { cwd: root, encoding: 'utf8' });
+  assert.equal(tracked.status, 0);
+  assert.equal(tracked.stdout.trim(), '', `restricted skills are tracked again:
+${tracked.stdout}`);
+  for (const directory of restricted) {
+    const ignored = spawnSync('git', ['check-ignore', '-q', `${directory}/SKILL.md`], { cwd: root });
+    assert.equal(ignored.status, 0, `${directory} must stay ignored`);
+  }
+  // 같은 폴더의 다른 스킬(Apache-2.0 포함)은 계속 추적할 수 있어야 한다.
+  for (const allowed of ['.agent/skills/db-governance/SKILL.md', '.agent/skills/skill-creator/SKILL.md', '.agent/skills/pdf-extra/SKILL.md']) {
+    assert.equal(spawnSync('git', ['check-ignore', '-q', allowed], { cwd: root }).status, 1, `${allowed} must not be ignored`);
+  }
+});
 
 test('every selectable capability preserves its declared frontend and mandatory entrypoints through actual import projection', () => {
   assert.equal(catalog.capabilities.length, 20, 'review the capability population when its declaration changes');
