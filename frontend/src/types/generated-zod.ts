@@ -168,6 +168,7 @@ export const MemoReportDtoSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   editable: z.boolean().optional(),
   deletable: z.boolean().optional(),
+  instructable: z.boolean().optional(),
 }))();
 export type MemoReportDto = z.infer<typeof MemoReportDtoSchema>;
 
@@ -5404,6 +5405,7 @@ export const MemoReportDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   editable: z.boolean().optional().nullable(),
   deletable: z.boolean().optional().nullable(),
+  instructable: z.boolean().optional().nullable(),
 }))();
 
 export const ApprovalApproverDtoRequestSchema = /*#__PURE__*/ (() => z.object({

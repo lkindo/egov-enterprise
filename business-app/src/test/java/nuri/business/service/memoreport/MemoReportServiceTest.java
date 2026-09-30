@@ -574,6 +574,53 @@ class MemoReportServiceTest {
     }
 
     @Test
+    @DisplayName("[2026-10-01] 지시 알림은 작성자의 발신함(tab=MY)으로 보내고, 이미 있던 지시를 바꾸면 '변경' 으로 알린다")
+    void updateDrctMatter_notifiesChangeToSentTab() {
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).rptTtl("주간 보고")
+                .userId("esntl-writer").rptrId("esntl-recipient").build();
+        when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(entity));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-recipient"));
+        org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> event =
+                org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+
+        memoReportService.updateDrctMatter(1L, "보완해 주세요");
+        verify(eventPublisher).publishEvent(event.capture());
+        assertThat(event.getValue().title()).isEqualTo("메모 보고에 지시가 달렸습니다");
+        assertThat(event.getValue().linkUrl()).isEqualTo("/admin/operation/memo-reports?tab=MY");
+
+        org.mockito.Mockito.clearInvocations(eventPublisher);
+        memoReportService.updateDrctMatter(1L, "기한을 앞당겨 주세요");
+        verify(eventPublisher).publishEvent(event.capture());
+        assertThat(event.getValue().title()).isEqualTo("메모 보고의 지시가 변경되었습니다");
+    }
+
+    @Test
+    @DisplayName("[2026-10-01] 지시가 달린 보고는 작성자가 지우지 못한다(409) — 전체 삭제 권한자는 지우되 두 당사자에게 알린다")
+    void deleteMemoReport_instructedIsProtected() {
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).rptTtl("주간 보고")
+                .userId("esntl-writer").rptrId("esntl-recipient").build();
+        entity.updateDrctMatter("보완해 주세요", java.time.LocalDateTime.now());
+        when(memoReportRepository.findById(1L)).thenReturn(Optional.of(entity));
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_DELETE_ALL")).thenReturn(false);
+
+        BusinessException ex = org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class,
+                () -> memoReportService.deleteMemoReport(1L));
+        assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_IN_USE);
+        verify(memoReportRepository, org.mockito.Mockito.never()).delete(any(MemoReport.class));
+
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_DELETE_ALL")).thenReturn(true);
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("esntl-admin"));
+        memoReportService.deleteMemoReport(1L);
+        verify(memoReportRepository).delete(entity);
+        org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> event =
+                org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+        verify(eventPublisher, org.mockito.Mockito.times(2)).publishEvent(event.capture());
+        assertThat(event.getAllValues()).extracting(nuri.foundation.core.event.NotificationRequestedEvent::receiverEsntlId)
+                .containsExactly("esntl-writer", "esntl-recipient");
+    }
+
+    @Test
     @DisplayName("[DIP B4 P9] 지시가 달린 보고는 관리자도 본문을 고칠 수 없다(409) — 수정 힌트도 닫는다")
     void updateMemoReport_rejectedAfterInstruction() {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).rptTtl("원래 제목").rptCn("원래 본문")

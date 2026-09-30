@@ -100,9 +100,13 @@ export default function MemoReportManagementClient() {
   const isAdmin = canPermission(user, 'MEMO_RPT_READ_ALL');
   // [2026-09-25 DIP I7] 지시는 보고를 받은 사람(rptrId, esntlId 축)이나 전체 수정 권한자만 남긴다.
   //   서버(MemoReportService.assertRecipientOrAdmin)와 같은 규칙이며 서버가 다시 판정한다.
-  const canInstruct = (report: { rptrId?: string } | null | undefined) =>
-    canPermission(user, 'MEMO_RPT_UPDATE_ALL')
-    || (!!user?.esntlId && !!report?.rptrId && user.esntlId === report.rptrId);
+  //   [2026-10-01] 서버가 판정한 instructable 을 먼저 쓴다 — 종전 화면은 지시 기능 권한(MEMO_RPT_INSTRUCT)을 보지 않아
+  //   권한을 회수해도 지시 칸이 남고 저장 때 403 을 만났다. 힌트가 없는 목록 행에서는 같은 규칙으로 계산한다.
+  const canInstruct = (report: { rptrId?: string; instructable?: boolean | null } | null | undefined) =>
+    typeof report?.instructable === 'boolean'
+      ? report.instructable
+      : canPermission(user, 'MEMO_RPT_INSTRUCT')
+        && (canPermission(user, 'MEMO_RPT_UPDATE_ALL') || (!!user?.esntlId && !!report?.rptrId && user.esntlId === report.rptrId));
   const { toast } = useToast();
   const confirm = useConfirm();
 
@@ -319,8 +323,19 @@ export default function MemoReportManagementClient() {
     savingInstructionRef.current = true;
     setSavingInstruction(true);
     try {
+      // [2026-10-01] 이미 있는 지시를 다른 내용으로 바꾸면 먼저 묻는다 — 종전에는 확인 없이 덮어썼고, 작성자는 같은 제목의
+      //   알림만 받아 새 지시인지 바뀐 지시인지 알 수 없었다(서버는 이제 '지시가 변경되었습니다' 로 알린다).
+      const previous = detail?.drctnMttr?.trim();
+      if (previous && previous !== values.drctnMttr.trim()) {
+        const ok = await confirm({
+          title: '지시 바꾸기',
+          message: '이전 지시를 새 지시로 바꿉니다. 이전 지시는 남지 않고, 보고한 사람에게 지시가 변경되었다고 알립니다.',
+          confirmText: '바꾸기',
+        });
+        if (!ok) return;
+      }
       await memoReportService.updateDrctMatter(detailTarget.memoRptSn, values.drctnMttr);
-      toast('지시사항을 등록했습니다.', 'success');
+      toast(previous ? '지시사항을 바꿨습니다.' : '지시사항을 등록했습니다.', 'success');
       instructionForm.reset({ drctnMttr: '' });
       await refetchDetail();
     } catch (error: unknown) {
@@ -445,6 +460,14 @@ export default function MemoReportManagementClient() {
         </div>
       ),
       className: 'w-36 text-center'
+    },
+    {
+      // [2026-10-01] 지시가 달린 보고를 목록에서 구분한다 — 응답에 이미 실려 오는데 상세를 열어야만 보였다.
+      header: '지시',
+      accessor: (report) => (report.drctnMttr?.trim()
+        ? <span className="inline-flex items-center rounded-md border border-border px-2 py-0.5 text-xs font-medium text-foreground">지시 있음</span>
+        : <span className="text-xs text-muted-foreground">없음</span>),
+      className: 'w-28 text-center'
     }
   ];
 
@@ -733,7 +756,7 @@ export default function MemoReportManagementClient() {
                         disabled={isSavingInstruction}
                         aria-busy={isSavingInstruction || undefined}
                       >
-                        {isSavingInstruction ? '등록 중…' : '지시사항 등록'}
+                        {isSavingInstruction ? '저장 중…' : detail?.drctnMttr ? '지시사항 바꾸기' : '지시사항 등록'}
                       </Button>
                     </div>
                   </form>

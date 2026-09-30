@@ -5631,6 +5631,8 @@ export interface components {
             readonly editable?: boolean;
             /** @description 현재 사용자가 삭제할 수 있는지(서버 판정) */
             readonly deletable?: boolean;
+            /** @description 현재 사용자가 지시를 남길 수 있는지(서버 판정) */
+            readonly instructable?: boolean;
         };
         ApprovalApproverDto: {
             userId?: string;
