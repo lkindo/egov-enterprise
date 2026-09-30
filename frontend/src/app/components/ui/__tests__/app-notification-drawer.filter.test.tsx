@@ -10,8 +10,8 @@ import { AppNotificationDrawer } from '../app-notification-drawer';
 describe('AppNotificationDrawer 필터', () => {
   const handlers = { onClose: vi.fn(), onMarkRead: vi.fn(), onMarkAllRead: vi.fn(), onDelete: vi.fn() };
   const notifications = [
-    { id: 1, title: '비밀번호가 변경되었습니다', message: '', time: '', isRead: true, type: 'SECURITY' },
-    { id: 2, title: '새 쪽지', message: '', time: '', isRead: false, type: 'ACTIVITY' },
+    { id: 1, title: '비밀번호가 변경되었습니다', message: '', time: '', isRead: true, type: 'SECURITY' as const },
+    { id: 2, title: '새 쪽지', message: '', time: '', isRead: false, type: 'ACTIVITY' as const },
   ];
 
   it('추측 분류 탭 없이 전체·읽지 않음만 두고, 범위가 최근 알림임을 말한다', async () => {
