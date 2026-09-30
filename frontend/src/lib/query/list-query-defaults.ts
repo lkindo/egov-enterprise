@@ -68,13 +68,24 @@ export function shouldPromoteQueryError(error: unknown, query: Query, client: Qu
   return !hasRenderedPageSibling(client, query);
 }
 
+/**
+ * 조회 재시도 규칙(2026-09-30). 4xx 는 다시 보내도 같은 답이 온다 — 권한 없음·없는 대상·잘못된 입력을 1초 뒤에
+ * 한 번 더 보내면 사용자는 같은 실패를 두 번 보고, 화면의 오류 안내도 그만큼 늦는다. 상태를 알 수 없는 실패
+ * (연결 끊김·시간 초과)와 5xx 만 한 번 재시도한다.
+ */
+export function shouldRetryQuery(failureCount: number, error: unknown): boolean {
+  if (failureCount >= 1) return false;
+  const status = getHttpStatus(error);
+  return status === 0 || status >= 500;
+}
+
 /** 앱 전역 QueryClient. providers 와 계약 테스트가 같은 설정을 쓰도록 여기서 만든다. */
 export function createAppQueryClient(): QueryClient {
   const client: QueryClient = new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 60 * 1000,
-        retry: 1,
+        retry: shouldRetryQuery,
         refetchOnWindowFocus: false,
         // [C1] 페이지·검색어를 바꾸는 동안 이전 페이지를 유지한다(페이지 모양 응답만).
         placeholderData: keepPreviousPageData,

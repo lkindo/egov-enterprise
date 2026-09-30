@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { Loader2, BarChart3, Download } from 'lucide-react';
+import { failureMessage } from '@/lib/safe-error-log';
 
 /**
  * 설문 결과 통계 패널 — `/survey/stats` 와 `/survey/[id]` 가 공유한다.
@@ -70,7 +71,7 @@ export function SurveyStatsPanel({ srvySn }: { srvySn: number | null }) {
     return (
       <Card className="border-destructive/20 bg-destructive/5 text-center py-10">
         <p className="text-destructive-emphasis font-medium">
-          오류 발생: {error instanceof Error ? error.message : '데이터를 가져오지 못했습니다.'}
+          오류 발생: {failureMessage(error, '데이터를 가져오지 못했습니다.')}
         </p>
       </Card>
     );

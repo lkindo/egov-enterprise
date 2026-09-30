@@ -86,6 +86,7 @@ import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
 import { canPermission } from '@/lib/auth/permissions';
+import { failureMessage } from '@/lib/safe-error-log';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
@@ -507,7 +508,7 @@ export default function UserOrgHubClient({
       if (extractFieldErrors(error)) throw error;
       // 인가 실패(403 등)를 포함한 서버 메시지를 그대로 보여준다 — 일반 문구로 뭉개면
       // 사용자는 권한 문제인지 입력 문제인지 알 수 없다(H3 의미 보존, 감사 m-2).
-      const message = error instanceof Error ? error.message : '사용자 저장 중 오류가 발생했습니다.';
+      const message = failureMessage(error, '사용자 저장 중 오류가 발생했습니다.');
       toast(message, 'error');
     } finally {
       finishNonFormAction(operation);
@@ -547,7 +548,7 @@ export default function UserOrgHubClient({
       toast('계정 잠금을 해제했습니다.', 'success');
       await queryClient.invalidateQueries({ queryKey: ['admin-user-detail', selectedItemId] });
     } catch (error) {
-      toast(error instanceof Error ? error.message : '계정 잠금을 해제하지 못했습니다.', 'error');
+      toast(failureMessage(error, '계정 잠금을 해제하지 못했습니다.'), 'error');
     } finally {
       finishNonFormAction(operation);
     }
@@ -574,7 +575,7 @@ export default function UserOrgHubClient({
         refetchUsers();
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : '사용자 삭제 중 오류가 발생했습니다.';
+      const message = failureMessage(error, '사용자 삭제 중 오류가 발생했습니다.');
       toast(message, 'error');
     } finally {
       finishNonFormAction(operation);
@@ -606,7 +607,7 @@ export default function UserOrgHubClient({
         refetchDepts();
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : '부서 삭제 중 오류가 발생했습니다.';
+      const message = failureMessage(error, '부서 삭제 중 오류가 발생했습니다.');
       toast(message, 'error');
     } finally {
       finishNonFormAction(operation);
@@ -632,7 +633,7 @@ export default function UserOrgHubClient({
         if (res.success) refetchUsers();
       }
     } catch (error) {
-      toast(error instanceof Error ? error.message : '일괄 삭제 중 오류가 발생했습니다.', 'error');
+      toast(failureMessage(error, '일괄 삭제 중 오류가 발생했습니다.'), 'error');
     } finally {
       finishNonFormAction(operation);
     }

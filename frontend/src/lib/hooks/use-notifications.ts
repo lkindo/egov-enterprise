@@ -40,6 +40,8 @@ export interface Notification {
 type NotificationKind = NonNullable<Notification['type']>;
 const NOTIFICATION_KINDS = new Set<NotificationKind>(['SECURITY', 'SYSTEM', 'ACTIVITY', 'INFO']);
 const DEFAULT_NOTIFICATION_WINDOW_SIZE = 10;
+/** 이 훅이 실패를 직접 알리는 조회의 요청 설정 — 전역 실패 토스트를 띄우지 않는다. */
+const QUIET = { suppressErrorToast: true } as const;
 const RECENT_ID_WINDOW_PAGES = 10;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -246,8 +248,10 @@ export function useNotifications() {
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const barrierRevision = localRevisionRef.current;
       const [listResult, countResult] = await Promise.allSettled([
-        executeGeneratedOperation(getNotificationsOperation, { query: {} }),
-        executeGeneratedOperation(getUnreadCountOperation, {}),
+        // [2026-09-30] 이 조회의 실패는 이 훅이 알린다(reportFetchError: 한 번의 토스트 + 드로어의 오류 상태).
+        //   전역 토스트까지 켜 두면 백엔드가 끊긴 동안 60초 되맞춤마다 같은 토스트가 모든 화면에 다시 떴다.
+        executeGeneratedOperation(getNotificationsOperation, { query: {}, config: QUIET }),
+        executeGeneratedOperation(getUnreadCountOperation, { config: QUIET }),
       ]);
 
       if (requestId !== latestRequestRef.current

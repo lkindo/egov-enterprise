@@ -44,6 +44,7 @@ import {
 } from '@/components/ui/form';
 import { z } from 'zod';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { failureMessage } from '@/lib/safe-error-log';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
@@ -202,7 +203,7 @@ export default function ManualAdminClient({
       toast(`'${manual.onlnMnlNm}' 매뉴얼을 삭제했습니다.`, 'success');
       refetch();
     } catch (err) {
-      toast(err instanceof Error ? err.message : '삭제에 실패했습니다.', 'error');
+      toast(failureMessage(err, '삭제에 실패했습니다.'), 'error');
     } finally {
       deletePendingRef.current = false;
       setDeletingManualId(null);

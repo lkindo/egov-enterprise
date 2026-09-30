@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { SurveyFormDialog } from '../SurveyFormDialog';
+import { failureMessage } from '@/lib/safe-error-log';
 
 const POLL_KIND_LABEL: Record<string, string> = {
     '001': '일반 설문',
@@ -93,7 +94,7 @@ export default function SurveyManageDetailClient() {
             await queryClient.invalidateQueries({ queryKey: ['admin-polls'] });
             router.push('/admin/survey/manage');
         } catch (e) {
-            const message = e instanceof Error ? e.message : '설문 삭제에 실패했습니다.';
+            const message = failureMessage(e, '설문 삭제에 실패했습니다.');
             setDeleteError(message);
             toastError(message);
         } finally {

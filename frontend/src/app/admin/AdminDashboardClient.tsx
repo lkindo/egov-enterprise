@@ -33,6 +33,12 @@ import { canOpenPage } from '@/lib/auth/page-access';
 
 // 발생일자는 'yyyyMMdd'(varchar 8)이고 시각 정보는 없다. 표시는 공용 관문(toDisplayYmd)이 yyyy-MM-dd 로 바꾼다.
 
+/*
+ * [2026-09-30] 세 조회의 실패는 이 화면이 화면 안 경고(role="alert")와 '다시 시도' 로 알린다. 전역 실패 토스트까지
+ * 켜 두면 같은 실패가 두 번 보이고, 60초 주기 조회가 실패할 때마다 토스트가 다시 떴다.
+ */
+const QUIET = { suppressErrorToast: true } as const;
+
 export default function AdminDashboardClient() {
   // [2026-09-26 DIP B4 P1] 링크는 라우트 게이트와 같은 판정으로만 보인다. 대시보드 권한만 가진 사람에게
   //   사용자·권한·감사 화면으로 가는 길을 보이면 누르는 순간 홈으로 튕긴다.
@@ -49,7 +55,7 @@ export default function AdminDashboardClient() {
     refetch: refetchAudit,
   } = useQuery({
     queryKey: ['admin-dashboard-recent-audits'],
-    queryFn: () => auditAdminService.getAuditLogs({ page: 0, size: 5 }),
+    queryFn: () => auditAdminService.getAuditLogs({ page: 0, size: 5 }, QUIET),
     refetchInterval: 60000,
     retry: 1,
     retryDelay: 5000,
@@ -61,7 +67,7 @@ export default function AdminDashboardClient() {
     refetch: refetchUsers,
   } = useQuery({
     queryKey: ['admin-dashboard-users'],
-    queryFn: () => userAdminService.getUserList({ pageNo: 1, size: 1 }),
+    queryFn: () => userAdminService.getUserList({ pageNo: 1, size: 1 }, QUIET),
     retry: 1,
     retryDelay: 5000,
   });
@@ -72,7 +78,7 @@ export default function AdminDashboardClient() {
     refetch: refetchAuthors,
   } = useQuery({
     queryKey: ['admin-dashboard-authors'],
-    queryFn: () => authorAdminService.getAuthorList({ pageIndex: 1, size: 1 }),
+    queryFn: () => authorAdminService.getAuthorList({ pageIndex: 1, size: 1 }, QUIET),
     retry: 1,
     retryDelay: 5000,
   });

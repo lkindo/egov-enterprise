@@ -9,7 +9,7 @@ const toastMocks = vi.hoisted(() => ({
   error: vi.fn(),
 }));
 
-vi.mock('sonner', () => ({ toast: toastMocks }));
+vi.mock('../toast', () => ({ useToast: () => toastMocks }));
 
 vi.mock('framer-motion', async () => {
   const ReactModule = await vi.importActual<typeof import('react')>('react');

@@ -95,11 +95,7 @@ vi.mock('@/components/ui/hub/HubStatusBadge', () => ({
 }));
 
 vi.mock('@/app/components/ui/toast', () => ({
-  useToast: () => ({ toast: mocks.toast }),
-}));
-
-vi.mock('sonner', () => ({
-  toast: { error: mocks.toastError, success: mocks.toastSuccess },
+  useToast: () => ({ toast: mocks.toast, error: mocks.toastError, success: mocks.toastSuccess }),
 }));
 
 vi.mock('@/app/components/ui/confirm-modal', () => ({

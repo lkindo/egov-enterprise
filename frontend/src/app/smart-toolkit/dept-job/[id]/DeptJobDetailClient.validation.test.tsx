@@ -27,8 +27,8 @@ vi.mock('@/contexts/UnsavedChangesContext', () => ({
 vi.mock('next/link', () => ({
   default: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => <a {...props}>{children}</a>,
 }));
-vi.mock('sonner', () => ({
-  toast: { error: mocks.toastError, success: mocks.toastSuccess },
+vi.mock('@/app/components/ui/toast', () => ({
+  useToast: () => ({ toast: vi.fn(), error: mocks.toastError, success: mocks.toastSuccess }),
 }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/services/business/user/deptJob/DeptJobUserService', () => ({

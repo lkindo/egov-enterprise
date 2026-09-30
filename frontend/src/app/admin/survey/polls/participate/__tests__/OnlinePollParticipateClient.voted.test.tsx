@@ -21,7 +21,11 @@ vi.mock('@/services/business/user/poll/PollUserService', () => ({
   },
 }));
 vi.mock('@/lib/hooks/use-today-ymd', () => ({ useTodayStorageYmd: () => '20260926' }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+// 실제 useToast 처럼 렌더 사이에 같은 객체를 돌려준다 — 새 객체면 목록 조회 effect 가 렌더마다 다시 돈다.
+vi.mock('@/app/components/ui/toast', () => {
+  const stable = { toast: vi.fn(), success: vi.fn(), error: vi.fn() };
+  return { useToast: () => stable };
+});
 vi.mock('@/app/components/layout/page-header', () => ({
   PageHeader: ({ title }: { title: string }) => <h1>{title}</h1>,
 }));

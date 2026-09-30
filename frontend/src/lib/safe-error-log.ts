@@ -87,6 +87,16 @@ export function userFacingErrorMessage(error: unknown): string | undefined {
   return typeof error.message === 'string' ? userSentence(error.message) : undefined;
 }
 
+/**
+ * 과업 이름이 붙은 실패 문구다. 서버가 준 사유가 있으면 그것을, 없으면 호출부의 과업별 기본 문구를 쓴다.
+ *
+ * ⚠ `error instanceof Error ? error.message : '<기본 문구>'` 로 쓰지 않는다 — axios 오류는 언제나 Error 라서
+ *   기본 문구가 쓰이지 않고, 전송 원문(`Network Error` 등)이 사용자 문장 자리에 들어간다.
+ */
+export function failureMessage(error: unknown, fallback: string): string {
+  return userFacingErrorMessage(error) ?? fallback;
+}
+
 // [2026-09-15 DEC-OPS-100] axios 가 만드는 전송 오류 문구다. 호출부가 error.message 를 문자열로 넘겨도
 //   사용자 문장으로 쓰지 않는다(server-error mustNotImply).
 const TRANSPORT_MESSAGE = /^(?:Request failed with status code \d{3}|Network Error|timeout of \d+ms exceeded|canceled|Unknown Network\/System Error)$/;

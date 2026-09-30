@@ -21,8 +21,8 @@ vi.mock('@/lib/api/survey', () => ({
   getQustnrRespondInfoList: (...args: unknown[]) => mocks.getResponses(...args),
 }));
 
-vi.mock('sonner', () => ({
-  toast: { error: mocks.toastError, success: mocks.toastSuccess },
+vi.mock('@/app/components/ui/toast', () => ({
+  useToast: () => ({ toast: vi.fn(), error: mocks.toastError, success: mocks.toastSuccess }),
 }));
 
 function deferred<T>() {

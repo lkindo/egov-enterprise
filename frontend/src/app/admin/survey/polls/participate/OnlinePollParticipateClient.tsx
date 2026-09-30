@@ -17,9 +17,10 @@ import { cn } from '@/lib/utils';
 import { toDisplayYmd } from '@/lib/format-date';
 import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
 import { getPollStatus, POLL_STATUS_LABEL, isPollActive } from '@/lib/poll-status';
-import { toast } from 'sonner';
+import { useToast } from '@/app/components/ui/toast';
 
 export default function OnlinePollParticipateClient() {
+ const toast = useToast();
  const [polls, setPolls] = useState<OnlinePollManageDetailVO[]>([]);
  /** 조회 실패 사유. null 이면 정상 — 실패와 '없음' 을 같은 화면으로 그리지 않는다. */
  const [loadError, setLoadError] = useState<string | null>(null);
@@ -49,7 +50,7 @@ export default function OnlinePollParticipateClient() {
   } finally {
   setLoading(false);
   }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     void fetchPolls();

@@ -8,6 +8,7 @@ import {
   isPageShaped,
   keepPreviousPageData,
   shouldPromoteQueryError,
+  shouldRetryQuery,
 } from '../list-query-defaults';
 
 /**
@@ -45,6 +46,17 @@ describe('list-query-defaults 판정', () => {
     expect(getHttpStatus({ statusCode: 404 })).toBe(404);
     expect(getHttpStatus(new Error('network'))).toBe(0);
     expect(getHttpStatus(null)).toBe(0);
+  });
+
+  it('4xx 는 재시도하지 않는다 — 같은 답을 1초 뒤에 한 번 더 받아 실패를 두 번 알릴 뿐이다', () => {
+    // [2026-09-30] 상태를 모르는 실패(연결·시간 초과)와 5xx 만 한 번 재시도한다.
+    for (const status of [400, 403, 404, 409, 429]) {
+      expect(shouldRetryQuery(0, { response: { status } })).toBe(false);
+    }
+    expect(shouldRetryQuery(0, serverError)).toBe(true);
+    expect(shouldRetryQuery(0, new Error('Network Error'))).toBe(true);
+    expect(shouldRetryQuery(1, serverError)).toBe(false);
+    expect(createAppQueryClient().getDefaultOptions().queries?.retry).toBe(shouldRetryQuery);
   });
 
   it('최초 로드의 5xx 만 오류 경계로 올리고, 같은 목록 계열의 다른 페이지가 그려져 있으면 올리지 않는다', () => {

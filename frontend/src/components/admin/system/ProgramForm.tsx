@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { ProgrmManage } from '@/types/foundation/system';
 import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
-import { toast } from 'sonner';
+import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { ProgramDtoSchema } from '@/types/generated-zod';
 
@@ -51,6 +51,7 @@ interface ProgramFormProps {
 
 export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChange }: ProgramFormProps) {
   const isEdit = !!data;
+  const toast = useToast();
   const confirm = useConfirm();
   const writePendingRef = useRef(false);
   const submitAttemptRef = useRef(false);

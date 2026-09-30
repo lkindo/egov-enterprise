@@ -30,6 +30,7 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 
 import { HpcmDtoSchema } from '@/types/generated-zod';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { failureMessage } from '@/lib/safe-error-log';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
@@ -235,7 +236,7 @@ export default function HpcmClient({
       toast(`'${item.hlpDfn}' 도움말을 삭제했습니다.`, 'success');
       await refetch();
     } catch (error: unknown) {
-      toast(error instanceof Error ? error.message : '도움말을 삭제하지 못했습니다.', 'error');
+      toast(failureMessage(error, '도움말을 삭제하지 못했습니다.'), 'error');
     } finally {
       deletingRef.current = false;
       setDeletingSn(null);

@@ -71,6 +71,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 import { flattenTree,  FlattenedItem,  getProjection,  listToTree } from './treeUtils';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
+import { failureMessage } from '@/lib/safe-error-log';
 
 type MenuFormValues = z.infer<typeof menuSchema>;
 
@@ -484,7 +485,7 @@ export default function MenuAdminClient({
       }
     } catch (error) {
       if (!form.applyServerErrors(error)) {
-        toast(error instanceof Error ? error.message : '메뉴 저장 중 오류가 발생했습니다.', 'error');
+        toast(failureMessage(error, '메뉴 저장 중 오류가 발생했습니다.'), 'error');
       }
     } finally {
       modalSavePendingRef.current = false;

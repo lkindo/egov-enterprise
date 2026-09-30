@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Upload, X, FileIcon, CheckCircle2, AlertCircle, Loader2, Hourglass } from 'lucide-react';
 import { cn } from '@/lib/utils';
 // [2026-09-20] framer-motion 을 걷었다 — 드롭존 확대·아이콘 바운스·첨부 행 진입 모션은 첨부 결과 도달만 늦춘다(카탈로그 §3).
-import { toast } from 'sonner';
+import { useToast } from './toast';
 import { SERVER_MAX_FILE_SIZE_MB, SERVER_UPLOAD_ACCEPT } from '@/lib/attachments/server-upload-limits';
 
 /** FileService와 tb_file_detail.orgnl_file_nm의 원본 파일명 상한. */
@@ -67,6 +67,7 @@ export function StandardFileUploader({
   name = "files",
   className
 }: StandardFileUploaderProps) {
+  const toast = useToast();
   const [fileStates, setFileStates] = useState<FileState[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fallbackIntervals = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
@@ -132,7 +133,7 @@ export function StandardFileUploader({
       ));
       toast.error(`${fileState.file.name} 업로드에 실패했습니다.`);
     }
-  }, [onUpload]);
+  }, [onUpload, toast]);
 
   const handleFiles = useCallback((files: File[]) => {
     const validFiles = files.filter(file => {
@@ -185,7 +186,7 @@ export function StandardFileUploader({
       });
       toast.success(`${newFileStates.length}개의 파일이 추가되었습니다.`);
     }
-  }, [fileStates, maxFiles, maxSizeMB, accept, onFilesChange, isAutoUpload, onUpload, performActualUpload, simulateUpload]);
+  }, [fileStates, maxFiles, maxSizeMB, accept, onFilesChange, isAutoUpload, onUpload, performActualUpload, simulateUpload, toast]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
