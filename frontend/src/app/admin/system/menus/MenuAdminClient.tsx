@@ -26,7 +26,6 @@ import {
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { saveMenuAction, updateMenuOrdersAction, deleteMenuAction } from '@/app/actions/menuActions';
 import { menuSchema } from '@/lib/validation/schemas';
@@ -69,11 +68,12 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import { flattenTree,  FlattenedItem,  getProjection,  listToTree } from './treeUtils';
+import { flattenTree,  FlattenedItem,  getProjection,  listToTree, menuParentCandidates } from './treeUtils';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { failureMessage } from '@/lib/safe-error-log';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
+import { treeDndAnnouncements, treeDndInstructions } from '@/lib/dnd/tree-dnd-accessibility';
 
 type MenuFormValues = z.infer<typeof menuSchema>;
 
@@ -675,6 +675,10 @@ export default function MenuAdminClient({
             sensors={sensors}
             collisionDetection={closestCenter}
             measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+            accessibility={{
+              announcements: treeDndAnnouncements('메뉴', (id) => flattenedMenus.find((m) => m.menuNo === Number(id))?.menuNm),
+              screenReaderInstructions: treeDndInstructions('메뉴', '수정 창의 상위 메뉴'),
+            }}
             onDragStart={handleDragStart}
             onDragMove={handleDragMove}
             onDragOver={handleDragOver}
@@ -926,12 +930,34 @@ export default function MenuAdminClient({
               )}
             />
             <div className="grid grid-cols-2 gap-6">
-                <FormItem>
-                  <Label className="text-xs font-bold text-foreground ml-1">상위 메뉴</Label>
-                  <div className="h-11 rounded-lg border-2 border-border flex items-center px-5 text-xs font-bold bg-muted/50 text-muted-foreground">
-                    {form.getValues('upperMenuId') === 0 ? '최상위(루트)' : `상위 메뉴 ID ${form.getValues('upperMenuId')}`}
-                  </div>
-                </FormItem>
+                {/* [2026-10-01] 끌지 않고 상위 메뉴를 바꾸는 키보드 대안. 종전에는 'ID 숫자' 를 읽기 전용으로만 보여,
+                    키보드 사용자는 메뉴를 다른 메뉴 아래로 옮길 수 없었다(WCAG 2.1.1). 서버가 순환을 거부한다. */}
+                <ShadcnFormField
+                  control={form.control} name="upperMenuId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold text-foreground ml-1">상위 메뉴</FormLabel>
+                      <FormControl>
+                        <select
+                          name={field.name}
+                          ref={field.ref}
+                          onBlur={field.onBlur}
+                          value={String(field.value ?? 0)}
+                          onChange={(event) => field.onChange(Number(event.target.value))}
+                          className="h-[var(--control-h)] w-full rounded-lg border border-input bg-background px-3 text-sm"
+                        >
+                          <option value="0">최상위(루트)</option>
+                          {menuParentCandidates(flattenedMenus, mode === 'edit' ? form.getValues('menuNo') : undefined).map((menu) => (
+                            <option key={menu.menuNo} value={String(menu.menuNo)}>
+                              {`${'　'.repeat(menu.depth)}${menu.menuNm}`}
+                            </option>
+                          ))}
+                        </select>
+                      </FormControl>
+                      <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
+                    </FormItem>
+                  )}
+                />
                 <ShadcnFormField
                   control={form.control} name="menuOrdr"
                   required

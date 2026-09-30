@@ -171,3 +171,26 @@ function arrayMove<T>(array: T[], from: number, to: number): T[] {
   newArray.splice(to, 0, newArray.splice(from, 1)[0]);
   return newArray;
 }
+
+/** 메뉴 계층의 가장 깊은 단계(0부터). 새 메뉴 추가 버튼과 같은 3단계 제한이다. */
+export const MAX_MENU_DEPTH = 2;
+
+/**
+ * [2026-10-01] 상위 메뉴로 고를 수 있는 메뉴 — 끌지 않고 상위를 바꾸는 키보드 대안의 선택지다. 자기 자신과 자기
+ * 하위 메뉴는 뺀다(서버도 순환을 거부한다). 옮긴 뒤 하위까지 포함해 3단계를 넘는 자리도 뺀다.
+ * menuNo 가 없으면(새 메뉴) 하위가 없는 것으로 본다.
+ */
+export function menuParentCandidates(items: readonly FlattenedItem[], menuNo?: number): FlattenedItem[] {
+  let height = 0;
+  const blocked = new Set<number>();
+  const start = menuNo == null ? -1 : items.findIndex((item) => item.menuNo === menuNo);
+  if (start >= 0) {
+    const base = items[start].depth;
+    blocked.add(items[start].menuNo);
+    for (let i = start + 1; i < items.length && items[i].depth > base; i += 1) {
+      blocked.add(items[i].menuNo);
+      height = Math.max(height, items[i].depth - base);
+    }
+  }
+  return items.filter((item) => !blocked.has(item.menuNo) && item.depth + 1 + height <= MAX_MENU_DEPTH);
+}

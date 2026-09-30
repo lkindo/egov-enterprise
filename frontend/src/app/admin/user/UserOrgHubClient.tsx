@@ -87,6 +87,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
 import { canPermission } from '@/lib/auth/permissions';
 import { failureMessage } from '@/lib/safe-error-log';
+import { DeptPlacementControls } from './DeptPlacementControls';
+import { treeDndAnnouncements, treeDndInstructions } from '@/lib/dnd/tree-dnd-accessibility';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
@@ -496,6 +498,8 @@ export default function UserOrgHubClient({
     previewDepts,
     sensors,
     dragHandlers: deptDragHandlers,
+    moveDeptToParent,
+    shiftDept,
   } = useDeptTree({
     deptKeyword,
     initialDepts,
@@ -763,6 +767,11 @@ export default function UserOrgHubClient({
     () => (selectedItemId ? (departments || []).find(d => d?.ognzId === selectedItemId) : undefined),
     [selectedItemId, departments]
   );
+  /** 조직도의 선택 부서 — 저장 전 옮긴 자리까지 담는다(드래그·키보드 대안 공통). */
+  const selectedFlatDept = selectedItemId ? flattenedDepts.find((d) => d.ognzId === selectedItemId) : undefined;
+  const selectedDeptParentId = selectedFlatDept
+    ? (selectedFlatDept.parentId ?? selectedFlatDept.unloadedParentId ?? null)
+    : (selectedDept?.upOgnzId ?? null);
   const selectedItem =
     !selectedItemId ? null
       : activeTab === 'DEPTS' ? (selectedDept ?? null)
@@ -1231,7 +1240,7 @@ export default function UserOrgHubClient({
             {isDeptTab ? (
               <UserOrgMasterSection
                 title="조직 구조"
-                description={canUpdateDept ? '끌어서 순서를 바꾸고 오른쪽으로 밀어 하위 부서로 만듭니다.' : '부서를 선택하면 오른쪽에 상세가 열립니다.'}
+                description={canUpdateDept ? '끌어서 순서를 바꾸고 오른쪽으로 밀어 하위 부서로 만듭니다. 키보드로는 부서를 고른 뒤 상세의 부서 자리 바꾸기를 씁니다.' : '부서를 선택하면 오른쪽에 상세가 열립니다.'}
                 icon={Network}
                 tools={canUpdateDept ? (
                   <Button
@@ -1274,6 +1283,10 @@ export default function UserOrgHubClient({
                           sensors={sensors}
                           collisionDetection={closestCenter}
                           measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+                          accessibility={{
+                            announcements: treeDndAnnouncements('부서', (id) => flattenedDepts.find((d) => d.ognzId === String(id))?.ognzNm ?? undefined),
+                            screenReaderInstructions: treeDndInstructions('부서', '상세의 부서 자리 바꾸기'),
+                          }}
                           {...deptDragHandlers}
                       >
                           <SortableContext items={previewDepts.map(n => n.ognzId || '')} strategy={verticalListSortingStrategy}>
@@ -1392,7 +1405,8 @@ export default function UserOrgHubClient({
                     /* 부서 코드·사용자 ID 는 패널 제목 아래 부제가 이미 말한다 — 같은 값을
                        항목으로 한 번 더 두면 여덟 칸 중 한 칸이 중복에 쓰인다. */
                     <DetailFieldList>
-                      <DetailField label="상위 부서" value={(selectedItem as Department)?.upOgnzId || '최상위'} />
+                      {/* [2026-10-01] ID 대신 이름을 보이고, 저장 전 옮긴 자리도 그대로 보인다. */}
+                      <DetailField label="상위 부서" value={selectedDeptParentId ? departmentLabel(selectedDeptParentId, departments) : '최상위'} />
                       <DetailField
                         label="부서 설명"
                         span
@@ -1400,7 +1414,18 @@ export default function UserOrgHubClient({
                       />
                       <DetailField label="소속 인원" span value={deptMembersLabel} />
                     </DetailFieldList>
-                  ) : (
+                  ) : null}
+                  {isDeptTab && canUpdateDept && selectedFlatDept ? (
+                    <DeptPlacementControls
+                      key={selectedFlatDept.ognzId}
+                      dept={selectedFlatDept}
+                      depts={flattenedDepts}
+                      disabled={isSaving || isDeptModalOpen}
+                      onMoveToParent={moveDeptToParent}
+                      onShift={shiftDept}
+                    />
+                  ) : null}
+                  {isDeptTab ? null : (
                     <DetailFieldList>
                       <DetailField label="사번" value={displayedUser?.emplNo || '미지정'} />
                       <DetailField label="직함" value={displayedUser?.ofcpsNm || '미지정'} />

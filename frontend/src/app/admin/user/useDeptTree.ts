@@ -15,7 +15,7 @@ import {
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { deptAdminService, Department } from '@/services/foundation/system/DeptAdminService';
 import { PageResponse } from '@/types/foundation/system';
-import { flattenDeptTree, listToDeptTree, getDeptProjection, FlattenedDept } from './departments/treeUtils';
+import { flattenDeptTree, listToDeptTree, getDeptProjection, reparentFlattened, shiftFlattened, FlattenedDept } from './departments/treeUtils';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { INDENTATION_WIDTH } from './UserOrgHubParts';
 
@@ -209,6 +209,24 @@ export function useDeptTree({
     },
   };
 
+  /** [2026-10-01] 드래그의 키보드 대안 — 상위 부서를 바꾼다. 바뀌었으면 true. 저장은 드래그와 같이 계층 저장이 한다. */
+  const moveDeptToParent = (ognzId: string, newParentId: string | null): boolean => {
+    const next = reparentFlattened(flattenedDepts, ognzId, newParentId);
+    if (!next) return false;
+    setFlattenedDepts(next);
+    setHasDeptChanges(true);
+    return true;
+  };
+
+  /** [2026-10-01] 드래그의 키보드 대안 — 같은 상위 아래에서 한 칸 옮긴다. 옮겼으면 true. */
+  const shiftDept = (ognzId: string, direction: 'up' | 'down'): boolean => {
+    const next = shiftFlattened(flattenedDepts, ognzId, direction);
+    if (!next) return false;
+    setFlattenedDepts(next);
+    setHasDeptChanges(true);
+    return true;
+  };
+
   return {
     isDeptsLoading,
     isDeptsError,
@@ -235,5 +253,7 @@ export function useDeptTree({
     previewDepts,
     sensors,
     dragHandlers,
+    moveDeptToParent,
+    shiftDept,
   };
 }

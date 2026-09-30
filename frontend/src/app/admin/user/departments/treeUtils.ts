@@ -159,3 +159,70 @@ export function changedDeptHierarchy(
     return !previous || previous.upOgnzId !== item.upOgnzId || previous.sortOrdr !== item.sortOrdr;
   });
 }
+
+/** 부서와 그 하위 전부가 평탄화 목록에서 차지하는 구간 [start, end). */
+function blockRange(items: readonly FlattenedDept[], start: number): [number, number] {
+  const depth = items[start].depth;
+  let end = start + 1;
+  while (end < items.length && items[end].depth > depth) end += 1;
+  return [start, end];
+}
+
+/**
+ * [2026-10-01] 끌지 않고 상위 부서를 바꾼다 — 드래그의 키보드 대안이다. 기본 키보드 센서는 순서만 옮기고 깊이를
+ * 바꾸지 못해, 키보드 사용자는 부서를 다른 부서 아래로 옮길 수 없었다. 하위 부서까지 함께 옮기며 새 상위의 마지막
+ * 하위 뒤에 둔다. 자기 자신·자기 하위를 상위로 고르거나 상위가 그대로면 null 이다.
+ */
+export function reparentFlattened(
+  items: readonly FlattenedDept[],
+  ognzId: string,
+  newParentId: string | null,
+): FlattenedDept[] | null {
+  const start = items.findIndex((n) => n.ognzId === ognzId);
+  if (start < 0) return null;
+  const node = items[start];
+  if ((node.parentId ?? null) === newParentId && !node.unloadedParentId) return null;
+  const [, end] = blockRange(items, start);
+  const block = items.slice(start, end);
+  if (newParentId !== null && block.some((n) => n.ognzId === newParentId)) return null;
+  const rest = [...items.slice(0, start), ...items.slice(end)];
+  let insertAt = rest.length;
+  let newDepth = 0;
+  if (newParentId !== null) {
+    const parentIndex = rest.findIndex((n) => n.ognzId === newParentId);
+    if (parentIndex < 0) return null;
+    newDepth = rest[parentIndex].depth + 1;
+    insertAt = blockRange(rest, parentIndex)[1];
+  }
+  const delta = newDepth - node.depth;
+  const moved = block.map((n, i) => (i === 0
+    ? { ...n, parentId: newParentId, depth: newDepth, unloadedParentId: null }
+    : { ...n, depth: n.depth + delta }));
+  return [...rest.slice(0, insertAt), ...moved, ...rest.slice(insertAt)];
+}
+
+/**
+ * [2026-10-01] 같은 상위 아래에서 한 칸 위·아래로 옮긴다(하위 부서 포함) — 드래그의 키보드 대안이다. 옮길 형제가
+ * 없거나, 상위가 조회 결과에 없어 형제를 알 수 없는 부서면 null 이다.
+ */
+export function shiftFlattened(
+  items: readonly FlattenedDept[],
+  ognzId: string,
+  direction: 'up' | 'down',
+): FlattenedDept[] | null {
+  const start = items.findIndex((n) => n.ognzId === ognzId);
+  if (start < 0) return null;
+  const node = items[start];
+  if (node.unloadedParentId) return null;
+  const [, end] = blockRange(items, start);
+  const isSibling = (n: FlattenedDept) => n.depth === node.depth && (n.parentId ?? null) === (node.parentId ?? null) && !n.unloadedParentId;
+  if (direction === 'up') {
+    let prev = start - 1;
+    while (prev >= 0 && items[prev].depth > node.depth) prev -= 1;
+    if (prev < 0 || !isSibling(items[prev])) return null;
+    return [...items.slice(0, prev), ...items.slice(start, end), ...items.slice(prev, start), ...items.slice(end)];
+  }
+  if (end >= items.length || !isSibling(items[end])) return null;
+  const [, nextEnd] = blockRange(items, end);
+  return [...items.slice(0, start), ...items.slice(end, nextEnd), ...items.slice(start, end), ...items.slice(nextEnd)];
+}
