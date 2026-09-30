@@ -19,9 +19,13 @@ import { Suspense } from 'react';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
 import { SITE_IDENTITY } from '@/config/site-identity';
 
+// [2026-10-01] 한글 전체를 담은 가변 글꼴(약 2MB)이라 미리 불러오지 않는다. 모든 라우트가 첫 방문마다 이 파일을
+//   JS 보다 먼저 받느라 첫 화면이 늦었다. display: swap 이라 본문은 대체 글꼴로 먼저 보이고 받는 대로 바뀐다.
+//   번들 예산 스크립트가 라우트별 preload 글꼴 바이트를 막는다.
 const pretendard = localFont({
   src: '../../public/fonts/PretendardVariable.woff2',
   display: 'swap',
+  preload: false,
   weight: '45 920',
   variable: '--font-pretendard',
 });

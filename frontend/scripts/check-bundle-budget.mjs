@@ -27,6 +27,12 @@
  * `import { z } from 'zod'` 는 tree-shaking 되지 않아 생성 스키마(`generated-zod.ts`)와 함께 한
  * 청크에 그대로 실린다. zod 만 4.4.3 으로 되돌린 동일 빌드의 최대 청크는 132,691B 였다(원인 격리 실측).
  * 4.5+ 기능을 쓰는 코드는 없다. 고정을 풀려면 예산 재산정 또는 zod 소비 방식 변경(`zod/mini` 등)이 선행이다.
+ *
+ * [2026-10-01] **미리 불러오는(preload) 글꼴도 센다.** 한글 전체를 담은 Pretendard 가변 글꼴(2,057,688B)이
+ * 모든 라우트에 `<link rel=preload>` 로 실려 첫 방문마다 JS 와 대역폭을 다퉜다 — JS 합계 예산보다 크다.
+ * 글꼴은 `display: swap` 으로 받으므로 미리 불러오지 않아도 본문은 대체 글꼴로 먼저 보인다. next/font 매니페스트
+ * (`.next/server/next-font-manifest.json`)에서 라우트마다 preload 되는 글꼴 바이트를 더해 가장 큰 라우트를 본다.
+ * 매니페스트가 없으면 측정할 수 없으므로 통과시키지 않는다.
  */
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -46,6 +52,26 @@ const BUDGETS = {
  * 여유가 줄었다는 사실 자체가 신호이며, 해소는 번들을 줄이거나 예산을 **사유와 함께** 재산정하는 것이다.
  */
 const HEADROOM_FLOOR = 0.1;
+
+/** 한 라우트가 미리 불러오는 글꼴 바이트 상한. 라틴 부분집합 몇 개는 들어가고 한글 전체 글꼴은 들어가지 않는다. */
+const PRELOADED_FONT_BUDGET = 200_000;
+const FONT_MANIFEST = path.resolve('.next/server/next-font-manifest.json');
+
+/** 라우트별 preload 글꼴 바이트 합계 중 가장 큰 것. 매니페스트의 파일 경로는 `.next` 기준이다. */
+async function measurePreloadedFonts() {
+  const manifest = JSON.parse(await readFile(FONT_MANIFEST, 'utf8'));
+  const sizes = new Map();
+  let largest = { route: null, bytes: 0, files: [] };
+  for (const [route, files] of Object.entries(manifest.app ?? {})) {
+    let bytes = 0;
+    for (const file of files) {
+      if (!sizes.has(file)) sizes.set(file, (await readFile(path.resolve('.next', file))).byteLength);
+      bytes += sizes.get(file);
+    }
+    if (bytes > largest.bytes) largest = { route, bytes, files };
+  }
+  return largest;
+}
 
 function headroomOf(actual, budget) {
   return { remaining: budget - actual, ratio: (budget - actual) / budget };
@@ -127,6 +153,18 @@ try {
         + `가 단일 예산 ${formatBytes(budget.single)} 초과`,
       );
     }
+  }
+
+  const fonts = await measurePreloadedFonts();
+  console.log(
+    `FONT preload: 라우트 최대 ${formatBytes(fonts.bytes)}/${formatBytes(PRELOADED_FONT_BUDGET)}`
+    + (fonts.route ? ` (${fonts.route})` : ' (미리 불러오는 글꼴 없음)'),
+  );
+  if (fonts.bytes > PRELOADED_FONT_BUDGET) {
+    violations.push(
+      `라우트 ${fonts.route} 가 미리 불러오는 글꼴 ${formatBytes(fonts.bytes)}가 예산 `
+      + `${formatBytes(PRELOADED_FONT_BUDGET)} 초과(${fonts.files.join(', ')}) — next/font 의 preload: false 를 검토하십시오.`,
+    );
   }
 
   if (violations.length > 0) {
