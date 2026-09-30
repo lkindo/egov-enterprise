@@ -269,3 +269,21 @@ run `ed64190b29de0ebe4c0644d3`는 위 새 image ID 쌍으로 **exit 0·196.465�
 통합자가 관련 Node 65/65, 격리 Linux 표적 4/4를 직접 통과시켰다. 심볼릭 링크 검사 제거 시 1건, 배타 생성 제거 시 2건의 의도한 assertion red를 확인하고 원본을 복구했다. 기존 실제 이미지 두 archive와 report·SBOM·receipt의 결속도 새 reader로 통과했다. 이는 새 이미지 빌드·취약점 scan·게시 실행이 아니다. 증거는 `build/review-loop/pr792-release-filesystem-root-green.log`, `pr792-release-filesystem-linux-root.log`, `pr792-release-root-{symlink,exclusive}-red.log`, `pr792-existing-archive-reverification.json`이다. 처음 지정한 Linux 이미지가 로컬에 없어 실행 준비가 실패한 기록은 `pr792-release-filesystem-linux-green.log`에 별도로 보존하며 성공 검사로 세지 않는다.
 
 E2E shard 2는 59개 통과·1개 실패·skip/flaky 0이었다. 실패는 대시보드의 승인된 시스템 로그 문구 3곳과 Linux 시각 기준 이미지의 불일치였고, 최초·재시도의 actual PNG는 동일 SHA256 `f46e4e04a7f9efab527f97ede8f3b7f02400ec627052646ef11128ca28c61a66`였다. 통합자가 expected·actual·diff를 직접 검토하고 DOM·소스와 대조한 뒤 해당 기준 이미지 한 장만 실제 CI 바이트로 갱신했다. 다른 기준 이미지·마스크·허용 오차는 유지했다. 근거는 `build/review-loop/ci-pr792-shard2-e2250b2/baseline-adoption.json`이다. 최초 실패 이후 미실행된 같은 테스트의 후속 화면과 변경 커밋의 CodeQL·E2E 성공은 새 required CI에서 판정한다.
+
+### 2026-09-30 현재 main 이미지 재검증 (ADR-0025 F08)
+
+위 이미지 증거는 `0ef8af32f` 위의 미커밋 트리와 #795 이전 입력에 결속돼 있었다. #799·#803~#806 병합 뒤의 main `956618bc8381919dc5a51c001c5ee335b5b19a68`에서 다시 실행했다. `--source-info`는 `dirty: false`, 입력 트리 해시 `0d9322715dc77603b58df2906322be715f29009661b2ff01c49d27c2c139a320`이다.
+
+| 단계 | 결과 |
+|---|---|
+| 빌드 | API `sha256:87eae06bc0c6d5fa472aa9442a640e04844ced589f8c9f3c6a23a574316cf7c5`, frontend `sha256:9d711f1aecaa3b3d45fcca9b59a96b87b49ae98c04811b9c8b8f7f58d8ef62a5`. 두 URL 빌드 인자는 smoke 계약의 `http://api:8080/api/v1`이다. |
+| `release-images.mjs verify`·`scan` | Trivy 0.74.0, VulnerabilityDB 갱신 2026-09-29 19:09 UTC. API(Alpine 3.23.6·패키지 320)와 frontend(Alpine 3.24.2·패키지 77) 모두 **HIGH·CRITICAL 0**. SBOM component 321·78. receipt SHA256 `bb579685c85c4002f2e2335264516d4d596fb866a245ac81dd1751152038d124`. |
+| `run-isolated-release-smoke.mjs` | exit 0, 306.157초. 검사 11종과 인코딩 경로 12회 모두 통과. 복원 뒤 88개 테이블 행 수 일치. result SHA256 `e53cf94fd58c73bc0b00d2e43b50bb056ed1ceabe4b660a59fbad16da2fcf9e6`. 소유 컨테이너·볼륨·네트워크 잔여 0. |
+| 여섯 재사용 조합 | 같은 커밋의 main CI(run 36653269892)에서 `reusable-base` 6조합과 `reusable-custom` 2종이 success. |
+
+이미지는 로컬에만 있고 게시하지 않았다(`publicationApproved: false`). 과거 버전 업그레이드·TLS 브라우저·SMTP·운영 배포는 여전히 범위 밖이다. 이 문서 갱신 자체는 위 이미지의 입력에 포함되지 않는다.
+
+같은 main 구간의 CI에서 다음 두 실패를 판정했다.
+
+- run 36653269892 `mutation-scope (business-app-board)`: 테스트 전에 `org.pitest:pitest-command-line:1.25.9` 해석에 실패했다. 같은 run의 다른 PIT 범위는 같은 좌표를 받았다. 저장소 인프라 일시 실패로 판정하고 실패 잡만 재실행했다.
+- run 36648015885 `e2e-tests (2/2)`: `journeys/help-content.spec.ts`의 질의응답 등록 테스트가 첫 시도에서 `GET /api/v1/notifications` 500을 관측하고 재시도에 통과했다. 결과 계약은 flaky 도 실패로 막는다. frontend 로그의 원인은 `Failed to proxy http://127.0.0.1:8080/api/v1/notifications Error: socket hang up`이다. Next rewrite 프록시가 백엔드와의 연결을 재사용하다 끊긴 것으로 보이며 이 변경들과 무관하다. 재발 조건과 조치는 GAP-FE-002에 둔다.
