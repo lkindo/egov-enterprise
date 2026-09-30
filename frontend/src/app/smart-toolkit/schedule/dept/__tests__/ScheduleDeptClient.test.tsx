@@ -20,8 +20,8 @@ vi.mock('@/services/business/schedule/deptScheduleService', () => ({
 
 // [2026-09-06 DEC-OPS-038] 네이티브 confirm → useConfirm 모달(모듈 mock).
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => harness.confirm }));
-vi.mock('sonner', () => ({
-  toast: { error: harness.toastError, success: vi.fn() },
+vi.mock('@/app/components/ui/toast', () => ({
+  useToast: () => ({ toast: vi.fn(), error: harness.toastError, success: vi.fn() }),
 }));
 
 import { parseGeneratedOperationRequest } from '@/lib/api/generated-operation';

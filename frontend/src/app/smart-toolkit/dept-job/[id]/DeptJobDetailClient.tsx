@@ -4,7 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useToast } from '@/app/components/ui/toast';
 import { ArrowLeft, ChevronRight, Home, Pencil, Trash2, User, Flag, Inbox } from 'lucide-react';
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -30,6 +30,7 @@ import { useDirtyCloseGuard } from '@/hooks/useDirtyCloseGuard';
  * (useAppForm + generated-zod 확장, FE 헌법 제7조·제13조 2항)을 쓴다.
  */
 export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number }) {
+    const toast = useToast();
     const router = useRouter();
     const queryClient = useQueryClient();
     const confirm = useConfirm();

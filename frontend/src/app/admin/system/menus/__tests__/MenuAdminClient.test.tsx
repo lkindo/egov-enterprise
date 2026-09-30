@@ -66,6 +66,11 @@ vi.mock('@/app/actions/menuActions', () => ({
   deleteMenuAction: mocks.deleteMenu,
 }));
 
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 모든 쓰기 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const FULL_PERMISSIONS = ['MENU_READ', 'MENU_CREATE', 'MENU_UPDATE', 'MENU_DELETE'];
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
+
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 
@@ -139,6 +144,7 @@ describe('MenuAdminClient Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.permissions = FULL_PERMISSIONS;
     mocks.confirm.mockResolvedValue(true);
     mocks.deleteMenu.mockResolvedValue({ success: true, message: '삭제되었습니다.' });
     mocks.saveMenu.mockResolvedValue({ success: true, message: '메뉴가 등록되었습니다.' });
@@ -475,5 +481,48 @@ describe('MenuAdminClient Component', () => {
     expect(pendingButton).toHaveAttribute('aria-busy', 'true');
     await act(async () => pending.reject(new Error('delete unavailable')));
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('메뉴 삭제 중 오류가 발생했습니다.', 'error'));
+  });
+
+  /*
+   * [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
+   * 이 화면은 MENU_READ 만으로 들어올 수 있어, 종전에는 조회만 맡은 담당자에게도 등록·수정·삭제·구조 저장이 모두 보였다.
+   */
+  async function renderMenus() {
+    await act(async () => {
+      render(
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <MenuAdminClient
+            menusPromise={Promise.resolve({ data: mockInitialMenus, error: null })}
+            programsPromise={Promise.resolve({ data: mockPrograms, error: null })}
+          />
+        </React.Suspense>,
+      );
+    });
+  }
+
+  it('조회 권한만 있으면 등록·수정·삭제·구조 저장과 끌기 핸들을 보이지 않는다', async () => {
+    auth.permissions = ['MENU_READ'];
+    await renderMenus();
+
+    fireEvent.click(screen.getByRole('button', { name: /Main Menu.*ID: 1/i }));
+    // 상세는 그대로 읽힌다 — 가리는 것은 쓰기 동작뿐이다.
+    expect(screen.getByRole('heading', { level: 2, name: 'Main Menu' })).toBeInTheDocument();
+    for (const name of ['신규 메뉴 등록', '하위 메뉴 추가', '메뉴 수정', '메뉴 삭제', '구조 저장', 'Main Menu 순서 이동 핸들']) {
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    }
+    expect(screen.queryByText(/그립 핸들로 순서와 상하 관계를 변경합니다/)).not.toBeInTheDocument();
+  });
+
+  it('권한은 동작마다 따로 본다 — 수정 권한만 있으면 메뉴 수정·구조 저장·끌기 핸들만 보인다', async () => {
+    auth.permissions = ['MENU_READ', 'MENU_UPDATE'];
+    await renderMenus();
+
+    fireEvent.click(screen.getByRole('button', { name: /Main Menu.*ID: 1/i }));
+    expect(screen.getByRole('button', { name: '메뉴 수정' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '구조 저장' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Main Menu 순서 이동 핸들' })).toBeInTheDocument();
+    for (const name of ['신규 메뉴 등록', '하위 메뉴 추가', '메뉴 삭제']) {
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    }
   });
 });

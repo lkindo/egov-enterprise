@@ -113,6 +113,8 @@
 - `알 수 없는 오류`만 표시하고 가능한 회복 action을 제공하지 않음.
 - 같은 mutation을 반복 클릭할 수 있게 두거나 실패 여부가 불명확한 상태에서 자동 재시도.
 
+**실패 한 번에 알림 하나(DEC-OPS-184).** 화면이 실패를 토스트로 알리면 전역 실패 토스트는 뜨지 않고, 서버가 준 사유는 같은 토스트의 설명 줄에 실린다. 화면 안(오류 패널·배지)에서 실패를 보이는 조회는 요청에 `suppressErrorToast`를 선언한다. 토스트는 [`useToast`](../../frontend/src/app/components/ui/toast.tsx)로만 띄우고(`sonner` 직접 import는 lint가 막는다), 과업별 기본 문구는 [`failureMessage`](../../frontend/src/lib/safe-error-log.ts)로 만든다. 4xx 조회는 재시도하지 않는다.
+
 서버 메시지를 그대로 보여 주지 않는다. 허용된 domain error code를 사용자 문구에 매핑하고, 알 수 없는 오류는 안전한 기본 문구로 수렴한다. 개인정보나 자유 입력은 console·analytics·오류 로그 payload에 기록하지 않는다. URL은 예외적으로 ADR-0009의 화면별 route/query key allowlist에 든 일반 업무 검색어만 허용하며 unknown query를 재전파하지 않고 same-view 변경에 `replace`를 우선한다. 앱은 자격증명·token·고유식별정보·고위험 개인정보·응답 본문을 위한 URL field를 만들거나 일반 검색창에서 입력을 요구·유도하지 않는다. 자유 입력에 예상 밖 값이 들어올 가능성은 내용 기반으로 완전 차단할 수 없는 잔여 위험이며, 이를 다른 화면의 URL 동기화나 고위험 검색 용도의 승인으로 해석하지 않는다.
 
 ## 6. 날짜·시간·숫자·단위

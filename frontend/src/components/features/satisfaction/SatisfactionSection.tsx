@@ -17,6 +17,7 @@ import {
 } from './satisfaction-form-validation';
 import { Stars } from './Stars';
 import { SatisfactionEditForm } from './SatisfactionEditForm';
+import { failureMessage } from '@/lib/safe-error-log';
 
 
 /**
@@ -117,7 +118,7 @@ export default function SatisfactionSection({ bbsId, pstSn, acceptsNewRatings = 
       invalidate();
     },
     // 서버가 소유자/관리자 판정에 실패하면 403 이다. 그 사실을 그대로 알린다.
-    onError: (e) => setError(e instanceof Error ? e.message : '삭제 권한이 없습니다.'),
+    onError: (e) => setError(failureMessage(e, '삭제 권한이 없습니다.')),
     onSettled: () => {
       deletePendingRef.current = false;
       setDeletingSatisfactionId(null);
@@ -173,7 +174,7 @@ export default function SatisfactionSection({ bbsId, pstSn, acceptsNewRatings = 
     } catch (mutationError) {
       deletePendingRef.current = false;
       setDeletingSatisfactionId(null);
-      setError(mutationError instanceof Error ? mutationError.message : '삭제 권한이 없습니다.');
+      setError(failureMessage(mutationError, '삭제 권한이 없습니다.'));
     }
   };
 

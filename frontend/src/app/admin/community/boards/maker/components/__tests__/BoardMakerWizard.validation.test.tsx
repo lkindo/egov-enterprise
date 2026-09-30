@@ -19,7 +19,11 @@ const { createBoardMaster, createMenu, getAllMenus, communities } = vi.hoisted((
 }));
 
 // 다른 관리 화면으로 가는 길은 라우트와 같은 판정(canOpenPage)으로 보인다 — 목적지 권한을 가진 관리자로 렌더한다.
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: ['MENU_READ', 'BBS_MST_READ', 'AUTHRT_READ'], authorizationVersion: 'v1' } }) }));
+// 제출 버튼은 게시판 생성·메뉴 등록 권한으로 보인다 — 기본은 두 권한을 모두 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const READ_ONLY_PERMISSIONS = ['MENU_READ', 'BBS_MST_READ', 'AUTHRT_READ'];
+const FULL_PERMISSIONS = [...READ_ONLY_PERMISSIONS, 'BBS_MST_CREATE', 'MENU_CREATE'];
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
@@ -59,6 +63,7 @@ const validDraft = {
 
 describe('BoardMakerWizard validation', () => {
   beforeEach(() => {
+    auth.permissions = FULL_PERMISSIONS;
     createBoardMaster.mockReset();
     createMenu.mockReset();
     createMenu.mockResolvedValue(undefined);
@@ -116,6 +121,26 @@ describe('BoardMakerWizard validation', () => {
 
     await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
     expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ ansYn: 'Y', stsfdgYn: 'N', fileAtchPsbltyYn: 'N' });
+  });
+
+  /*
+    [2026-10-01] 제출 버튼은 그 동작의 기능 권한으로 보인다.
+    마지막 제출은 게시판 생성(BBS_MST_CREATE)과 메뉴 등록(MENU_CREATE)을 함께 한다. 종전에는 권한이 없어도 버튼이 보여
+    네 단계를 다 채운 뒤 403 을 만났고, 메뉴 권한만 없으면 게시판만 만들어진 채 멈췄다.
+  */
+  it.each([
+    { label: '게시판 생성 권한이 없으면', permissions: [...READ_ONLY_PERMISSIONS, 'MENU_CREATE'], message: '게시판을 만들 권한이 없습니다.' },
+    { label: '메뉴 등록 권한만 없으면', permissions: [...READ_ONLY_PERMISSIONS, 'BBS_MST_CREATE'], message: '메뉴를 등록할 권한이 없어 게시판을 만들 수 없습니다.' },
+  ])('$label 첫 단계부터 사유를 보이고 다음 단계·제출 버튼을 두지 않는다', async ({ permissions, message }) => {
+    auth.permissions = permissions;
+    render(<BoardMakerWizard />);
+
+    // 네 단계를 다 채운 뒤에 알리지 않는다 — 만들 수 없는 마법사는 첫 화면에서 말한다.
+    expect(screen.getByRole('status')).toHaveTextContent(message);
+    expect(screen.queryByRole('button', { name: /다음 단계로/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: '게시판 생성 및 메뉴 배포' })).toBeNull();
+    expect(createBoardMaster).not.toHaveBeenCalled();
+    expect(createMenu).not.toHaveBeenCalled();
   });
 
   it('does not advance on an invalid first step and exposes summary, inline error, and focus', async () => {

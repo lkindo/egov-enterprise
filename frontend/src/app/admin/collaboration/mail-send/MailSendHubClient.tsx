@@ -5,6 +5,8 @@ import * as z from 'zod';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 import {
   Send,
   ArrowLeft,
@@ -101,6 +103,10 @@ export default function MailSendHubClient() {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   // [2026-09-27 DIP B5 F5] 부서 단위 일괄 선택 — 조직·사용자 조회 권한이 있을 때만 피커에 부서 탭이 생긴다.
   const departmentSource = useRecipientDepartmentSource();
+  // [2026-10-01] 발송 버튼은 발송 권한으로 보인다. 이 화면은 권한 없이도 들어올 수 있어, 종전에는 메일을 다 쓴 뒤에야
+  //   403 을 만났다. 작성이 이 화면의 목적이라 폼은 그대로 두고 버튼 자리에 사유를 보인다. 서버 인가는 그대로 집행된다(H3).
+  const { user } = useAuth();
+  const canSendMail = canPermission(user, 'MAIL_SEND');
 
   /*
    * [2026-09-26 DIP B5 F7] 이 배포에 SMTP 가 없으면 접수는 되지만 모든 메일이 실패로 기록된다. 보내기 전에 알린다.
@@ -109,6 +115,8 @@ export default function MailSendHubClient() {
   const { data: deliveryStatus } = useQuery({
     queryKey: ['mail-delivery-status'],
     queryFn: () => mailService.getDeliveryStatus(),
+    // 이 조회도 발송 권한(MAIL_SEND)을 요구한다. 보낼 수 없는 사람에게 403 과 '설정을 확인하지 못했습니다' 를 띄우지 않는다.
+    enabled: canSendMail,
   });
   const deliveryConfigured = deliveryStatus?.deliveryConfigured === true;
 
@@ -222,7 +230,7 @@ export default function MailSendHubClient() {
           onNavigate={validation.focusError}
         />
 
-        {!deliveryConfigured ? (
+        {canSendMail && !deliveryConfigured ? (
           <div
             role="status"
             className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 px-5 py-4"
@@ -449,6 +457,7 @@ export default function MailSendHubClient() {
             >
               취소
             </Button>
+            {canSendMail ? (
             <Button
               type="submit"
               data-testid="mail-send-btn"
@@ -463,6 +472,9 @@ export default function MailSendHubClient() {
                 </>
               )}
             </Button>
+            ) : (
+              <p role="status" className="text-sm text-muted-foreground">메일을 보낼 권한이 없습니다.</p>
+            )}
           </div>
         </div>
       </form>

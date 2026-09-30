@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 // ⚠ `useSearchParams` 를 여기서 쓰지 않는다 — 검색어는 서버가 prop 으로 준다(아래 주석 참조).
 import Link from 'next/link';
 import { Search, 
@@ -23,6 +23,8 @@ import { AbsenceBadge } from '@/app/components/ui/absence-badge';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 /* reusable-base:collaboration:end */
 import { menuService } from '@/services/business/user/MenuService';
+import { useOptionalAuth } from '@/contexts/AuthContext';
+import { canOpenPage } from '@/lib/auth/page-access';
 import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
 import { walkMenuTree } from '@/lib/navigation/active-menu';
 import { SEARCH_URL_STATE } from '@/lib/navigation/search-url-state';
@@ -109,7 +111,14 @@ export const SearchResultsContent = ({
     //   (회귀 방어: `__tests__/SearchClient.hydration.test.tsx` — 렌더 중 useSearchParams 를
     //    읽으면 red 가 된다.)
     const [loading, setLoading] = useState(false);
-    const [results, setResults] = useState(initialResults);
+    const [fetchedResults, setResults] = useState(initialResults);
+    // [2026-10-01] 메뉴 바로가기는 라우트 게이트와 같은 판정으로 보인다 — 배정됐어도 기능 권한이 없어 들어갈 수 없는
+    //   메뉴를 결과로 내면, 누를 때마다 사유 없이 홈으로 되돌려진다. 권한 상태를 아직 모르면 거르지 않는다.
+    const user = useOptionalAuth()?.user;
+    const results = useMemo(() => ({
+        ...fetchedResults,
+        menus: fetchedResults.menus.filter((item) => !user?.authorizationVersion || canOpenPage(user, item.path)),
+    }), [fetchedResults, user]);
     // 검색어(prop)에서 파생한다 — 렌더 경로에 클라이언트 전용 소스를 두지 않는 규칙을 지킨다.
     const trimmedQuery = (query || '').trim();
     const shortQuery = trimmedQuery.length > 0 && trimmedQuery.length < MIN_REMOTE_QUERY_LENGTH;

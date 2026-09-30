@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, User, Calendar, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { failureMessage } from '@/lib/safe-error-log';
 
 export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsSn: number }) {
     const router = useRouter();
@@ -32,7 +33,7 @@ export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsS
         return (
             <div className="p-8 text-center space-y-4">
                 <h1 className="bg-destructive/10 text-destructive-emphasis p-4 rounded-lg inline-block">
-                    {error instanceof Error ? error.message : '데이터를 불러오지 못했습니다.'}
+                    {failureMessage(error, '데이터를 불러오지 못했습니다.')}
                 </h1>
                 <Button onClick={() => router.back()}>뒤로 가기</Button>
             </div>

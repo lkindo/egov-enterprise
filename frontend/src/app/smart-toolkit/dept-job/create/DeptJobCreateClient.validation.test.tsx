@@ -14,8 +14,8 @@ vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
   useQuery: () => ({ data: { list: [] }, isFetching: false }),
 }));
-vi.mock('sonner', () => ({
-  toast: { error: mocks.toastError, success: mocks.toastSuccess },
+vi.mock('@/app/components/ui/toast', () => ({
+  useToast: () => ({ toast: vi.fn(), error: mocks.toastError, success: mocks.toastSuccess }),
 }));
 vi.mock('@/services/business/user/deptJob/DeptJobUserService', () => ({
   deptJobUserService: { createDeptJob: mocks.createDeptJob },

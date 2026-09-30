@@ -26,6 +26,8 @@ import {
 import { ProgramForm } from '@/components/admin/system/ProgramForm';
 
 import { extractErrorMessage } from '@/app/actions/actionUtils';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
@@ -64,6 +66,11 @@ export default function ProgramAdminClient({
 }) {
  const { toast } = useToast();
  const confirm = useConfirm();
+ // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 조회 권한(PROGRAM_READ)만으로 들어와 폼을 채운 뒤에야 403 을 만나지 않게 한다(표시 판정일 뿐 서버 인가는 그대로다).
+ const { user } = useAuth();
+ const canCreateProgram = canPermission(user, 'PROGRAM_CREATE');
+ const canUpdateProgram = canPermission(user, 'PROGRAM_UPDATE');
+ const canDeleteProgram = canPermission(user, 'PROGRAM_DELETE');
 
  const [isModalOpen, setIsOpen] = useState(false);
  const programWritePendingRef = useRef(false);
@@ -213,13 +220,15 @@ export default function ProgramAdminClient({
  ),
  className: 'w-64'
  },
- {
+ // 수정·삭제 권한이 하나도 없으면 관리 열을 두지 않는다.
+ ...(canUpdateProgram || canDeleteProgram ? [{
  header: '관리',
  className: 'text-right w-32',
  accessor: (item: Program) => {
  const isDeleting = deletingProgramFileName === item.prgrmFileNm;
  return (
  <div className="flex justify-end gap-2 pr-4">
+ {canUpdateProgram && (
  <Tooltip>
  <TooltipTrigger asChild>
  <Button size="icon" aria-label={`${item.prgrmKornNm} 프로그램 수정`} disabled={deletingProgramFileName !== null || isModalOpen} className="rounded-lg bg-muted border border-border text-muted-foreground hover:bg-primary hover:border-primary hover:text-white transition-all" onClick={() => handleOpenEdit(item)}>
@@ -230,7 +239,9 @@ export default function ProgramAdminClient({
  프로그램 속성 및 엔드포인트 수정
  </TooltipContent>
  </Tooltip>
+ )}
 
+ {canDeleteProgram && (
  <Tooltip>
  <TooltipTrigger asChild>
  <Button
@@ -250,10 +261,11 @@ export default function ProgramAdminClient({
  시스템 자산 영구 삭제
  </TooltipContent>
  </Tooltip>
+ )}
  </div>
  );
  }
- }
+ }] : []),
  ];
 
  return (
@@ -263,11 +275,11 @@ export default function ProgramAdminClient({
  breadcrumbItems={[{ label: '시스템관리' }, { label: '프로그램 관리' }]}
  filterStateKey="system-programs"
  totalCount={error ? undefined : total}
- actions={
+ actions={canCreateProgram ? (
  <Button size="sm" onClick={handleOpenCreate} disabled={deletingProgramFileName !== null || isModalOpen} className="gap-2">
  <Plus size={16} aria-hidden="true" /> 신규 등록
  </Button>
- }
+ ) : undefined}
  filter={
  <KeywordFilter
  label="프로그램명 · 파일명"
@@ -306,6 +318,7 @@ export default function ProgramAdminClient({
  onOpenChange={setIsOpen}
  onWritePendingChange={(pending) => { programWritePendingRef.current = pending; }}
  data={mode === 'edit' ? editingProgramFormData : undefined}
+ deletable={canDeleteProgram}
  onSuccess={() => {
  loadData(currentSearchWrd, page);
  setIsOpen(false);

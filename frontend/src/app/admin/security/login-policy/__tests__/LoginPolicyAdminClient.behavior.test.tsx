@@ -15,6 +15,12 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 모든 쓰기 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const READ_ONLY_PERMISSIONS = ['LOGIN_POL_READ'];
+const FULL_PERMISSIONS = [...READ_ONLY_PERMISSIONS, 'LOGIN_POL_CREATE', 'LOGIN_POL_UPDATE', 'LOGIN_POL_DELETE'];
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
+
 vi.mock('@/services/foundation/system/LoginPolicyAdminService', () => ({
   loginPolicyAdminService: {
     getLoginPolicyList: (...args: unknown[]) => mocks.list(...args),
@@ -81,6 +87,7 @@ function renderClient() {
 describe('LoginPolicyAdminClient validation behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.permissions = FULL_PERMISSIONS;
     mocks.list.mockResolvedValue({ list: [policy], total: 1, totalPage: 1 });
     mocks.save.mockResolvedValue(undefined);
     mocks.create.mockResolvedValue(undefined);
@@ -217,5 +224,35 @@ describe('LoginPolicyAdminClient validation behavior', () => {
     await waitFor(() => expect(ip).toHaveFocus());
     expect(screen.getByRole('button', { name: '정책 동기화 적용' })).toBeInTheDocument();
     expect(mocks.toast).not.toHaveBeenCalledWith(expect.any(String), 'error');
+  });
+
+  /*
+    [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
+    이 화면은 LOGIN_POL_READ 만으로 들어올 수 있어, 종전에는 조회만 맡은 담당자에게도 수정·해제가 모두 보였고
+    폼을 다 채운 뒤에야 403 을 만났다.
+  */
+  const newbie = { ...policy, userId: 'newbie', userNm: '신규 사용자', regYn: 'N' };
+
+  it('조회 권한만 있으면 정책 수정·해제 버튼을 보이지 않는다 — 목록은 그대로 읽힌다', async () => {
+    auth.permissions = READ_ONLY_PERMISSIONS;
+    mocks.list.mockResolvedValue({ list: [policy, newbie], total: 2, totalPage: 1 });
+    renderClient();
+
+    expect(await screen.findByText('테스트 사용자')).toBeInTheDocument();
+    expect(screen.getByText('신규 사용자')).toBeInTheDocument();
+    for (const name of ['테스트 사용자 로그인 정책 수정', '테스트 사용자 로그인 정책 해제', '신규 사용자 로그인 정책 수정']) {
+      expect(screen.queryByRole('button', { name })).toBeNull();
+    }
+  });
+
+  it('권한은 동작마다 따로 본다 — 저장이 등록이 되는 행은 등록 권한, 수정이 되는 행은 수정 권한으로 연다', async () => {
+    auth.permissions = [...READ_ONLY_PERMISSIONS, 'LOGIN_POL_CREATE'];
+    mocks.list.mockResolvedValue({ list: [policy, newbie], total: 2, totalPage: 1 });
+    renderClient();
+
+    // 정책이 없는 사용자는 등록 권한으로 열린다. 정책이 있는 사용자의 수정·해제는 각각의 권한이 없어 보이지 않는다.
+    expect(await screen.findByRole('button', { name: '신규 사용자 로그인 정책 수정' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '테스트 사용자 로그인 정책 수정' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '테스트 사용자 로그인 정책 해제' })).toBeNull();
   });
 });

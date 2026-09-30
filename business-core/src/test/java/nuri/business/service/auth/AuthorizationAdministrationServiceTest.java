@@ -135,7 +135,9 @@ class AuthorizationAdministrationServiceTest {
             assertThat(operation.action()).isNotBlank();
             assertThat(operation.name()).isNotBlank();
         });
-        assertThat(catalog.navigation()).containsExactly(new Navigation("1", "Root menu", null), new Navigation("2", "Child menu", "1"));
+        // 분류만 있는 메뉴(자리표시자 'dir')는 경로가 없고, 화면 메뉴는 modern_route 를 그대로 싣는다.
+        assertThat(catalog.navigation()).containsExactly(
+                new Navigation("1", "Root menu", null, null), new Navigation("2", "Child menu", "1", "/admin/user/manage"));
         assertThat(PermissionCodes.ALL).doesNotContain("1", "2");
         assertThat(db.calls).anySatisfy(sql -> assertThat(sql)
                 .contains("CASE WHEN up_menu_sn IS NULL OR up_menu_sn=0 THEN NULL", "ORDER BY menu_ordr NULLS LAST,menu_sn"));
@@ -670,7 +672,7 @@ class AuthorizationAdministrationServiceTest {
                             menuLocks.add(Long.valueOf(entry.getKey()));
                             return new Object[]{entry.getKey(),entry.getValue()};
                         }).toList();
-                    } else rows = rows(new Object[]{"1", "Root menu", null}, new Object[]{"2", "Child menu", "1"});
+                    } else rows = rows(new Object[]{"1", "Root menu", null, "dir"}, new Object[]{"2", "Child menu", "1", "/admin/user/manage"});
                 }
                 else if (sql.contains("tb_user_info")) {
                     if (sql.contains("user_id LIKE")) lastUserSearch = parameters;

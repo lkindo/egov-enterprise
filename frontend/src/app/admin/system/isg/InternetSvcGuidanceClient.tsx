@@ -31,6 +31,8 @@ import {
 } from '@/services/foundation/system/InternetSvcGuidanceAdminService';
 import type { PageResponse } from '@/types/foundation/system';
 import { InternetSvcGuidanceDtoRequestSchema } from '@/types/generated-zod';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 const StandardModal = dynamic(
   () => import('@/app/components/ui/standard-modal').then((mod) => mod.StandardModal),
@@ -70,6 +72,11 @@ export default function InternetSvcGuidanceClient({
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const confirm = useConfirm();
+  // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 조회 권한(SERVICE_READ)만으로 들어온 사람은 종전에 눌러 본 뒤에야 403 을 만났다(표시 판정일 뿐, 서버 인가는 그대로다).
+  const { user } = useAuth();
+  const canCreateGuidance = canPermission(user, 'SERVICE_CREATE');
+  const canUpdateGuidance = canPermission(user, 'SERVICE_UPDATE');
+  const canDeleteGuidance = canPermission(user, 'SERVICE_DELETE');
 
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(initialPage?.size || 10);
@@ -232,13 +239,15 @@ export default function InternetSvcGuidanceClient({
         </div>
       ),
     },
-    {
+    // 수정·삭제 권한이 하나도 없으면 관리 열을 두지 않는다.
+    ...(canUpdateGuidance || canDeleteGuidance ? [{
       header: '관리',
       className: 'text-right w-28',
-      accessor: (item) => {
+      accessor: (item: InternetSvcGuidance) => {
         const isDeleting = deletingSn !== null && deletingSn === item.itntSrvcSn;
         return (
           <div className="flex items-center justify-end gap-1 pr-2">
+            {canUpdateGuidance && (
             <Button
               variant="ghost"
               size="icon"
@@ -249,6 +258,8 @@ export default function InternetSvcGuidanceClient({
             >
               <Pencil size={16} aria-hidden="true" />
             </Button>
+            )}
+            {canDeleteGuidance && (
             <Button
               variant="ghost"
               size="icon"
@@ -262,10 +273,11 @@ export default function InternetSvcGuidanceClient({
                 ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                 : <Trash2 size={16} aria-hidden="true" />}
             </Button>
+            )}
           </div>
         );
       },
-    },
+    }] : []),
   ];
 
   return (
@@ -287,9 +299,11 @@ export default function InternetSvcGuidanceClient({
             <RefreshCcw size={16} aria-hidden="true" />
             새로고침
           </Button>
+          {canCreateGuidance && (
           <Button size="sm" onClick={openCreate} className="gap-2">
             <Plus size={16} aria-hidden="true" /> 서비스 안내 등록
           </Button>
+          )}
         </>
       }
       filter={

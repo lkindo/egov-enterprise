@@ -98,3 +98,32 @@ describe('검색어를 나르는 호출부는 안전 로깅을 쓴다', () => {
     expect(RAW_CONSOLE_CALL.test("catch (failure) { console.warn('failed', failure); }")).toBe(true);
   });
 });
+
+/**
+ * [2026-09-30] 과업별 기본 문구가 실제로 쓰이는가.
+ * 종전 호출부는 `error instanceof Error ? error.message : '<기본 문구>'` 였다 — axios 오류는 언제나 Error 라서
+ * 기본 문구가 한 번도 쓰이지 않았다.
+ */
+describe('failureMessage', () => {
+  it('서버가 준 사유가 있으면 그것을 쓴다', async () => {
+    const { failureMessage } = await import('../safe-error-log');
+    const error = Object.assign(new Error('Request failed with status code 409'), {
+      isAxiosError: true,
+      response: { status: 409, data: { message: '이미 처리된 결재입니다.' } },
+    });
+    expect(failureMessage(error, '결재를 승인하지 못했습니다.')).toBe('이미 처리된 결재입니다.');
+  });
+
+  it('전송 원문뿐인 실패는 과업별 기본 문구로 말한다', async () => {
+    const { failureMessage } = await import('../safe-error-log');
+    const network = Object.assign(new Error('Network Error'), { isAxiosError: true });
+    expect(failureMessage(network, '계정 잠금을 해제하지 못했습니다.')).toBe('계정 잠금을 해제하지 못했습니다.');
+    expect(failureMessage(new Error('Request failed with status code 500'), '저장하지 못했습니다.')).toBe('저장하지 못했습니다.');
+    expect(failureMessage(undefined, '저장하지 못했습니다.')).toBe('저장하지 못했습니다.');
+  });
+
+  it('화면 코드가 던진 한국어 오류는 그대로 쓴다', async () => {
+    const { failureMessage } = await import('../safe-error-log');
+    expect(failureMessage(new Error('응답 형식이 올바르지 않습니다.'), '불러오지 못했습니다.')).toBe('응답 형식이 올바르지 않습니다.');
+  });
+});

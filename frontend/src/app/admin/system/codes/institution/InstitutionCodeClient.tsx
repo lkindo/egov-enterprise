@@ -22,6 +22,8 @@ import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 type InstitutionTab = 'list' | 'reception';
 
@@ -43,6 +45,9 @@ export default function InstitutionCodeClient({
  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
  const { toast } = useToast();
  const confirm = useConfirm();
+ // [2026-10-01] 처리 완료 버튼은 그 동작의 기능 권한(INST_CODE_IMPORT)으로 보인다 — 조회 권한만으로는 눌러도 403 이다(표시 판정일 뿐 서버 인가는 그대로다).
+ const { user } = useAuth();
+ const canProcessReception = canPermission(user, 'INST_CODE_IMPORT');
 
  /** SSR 초기 목록. 1페이지·무검색 첫 진입에서만 자리표시자로 쓴다. */
  const seedList: InstitutionCode[] = initialData?.list ?? [];
@@ -245,7 +250,8 @@ export default function InstitutionCodeClient({
  ),
  className: 'w-24'
  },
- {
+ // 처리 권한이 없으면 관리 열을 두지 않는다 — 처리 상태(완료·대기)는 그대로 보인다.
+ ...(canProcessReception ? [{
  header: '관리',
  accessor: (item: InstitutionCodeRecptn) => (
  item.procSe !== '1' ? (
@@ -260,7 +266,7 @@ export default function InstitutionCodeClient({
  ) : null
  ),
  className: 'w-24 text-right'
- }
+ }] : []),
  ];
 
  /** 탭 전환 시 패널 DOM 은 하나만 존재하므로 aria-controls 대상 id 도 하나로 고정한다. */

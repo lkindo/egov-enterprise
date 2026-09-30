@@ -19,6 +19,7 @@ import {
  SelectTrigger,
  SelectValue,
 } from "@/components/ui/select";
+import { failureMessage } from '@/lib/safe-error-log';
 
 /**
  * 배정된 메뉴를 계층으로 묶는다.
@@ -95,7 +96,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
 
  /** 서버(SSR) 실패 또는 클라이언트 재조회 실패 — 둘 중 하나라도 있으면 사용자에게 드러낸다. */
  const authorityErrorMessage = isAuthorError
- ? (authorError instanceof Error ? authorError.message : '네트워크 상태를 확인한 뒤 다시 시도해 주세요.')
+ ? failureMessage(authorError, '네트워크 상태를 확인한 뒤 다시 시도해 주세요.')
  : initialAuthors.error;
 
  const {

@@ -14,6 +14,12 @@ const mocks = vi.hoisted(() => ({
   toast: vi.fn(),
 }));
 
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 모든 쓰기 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const READ_ONLY_PERMISSIONS = ['TEMPLATE_READ'];
+const FULL_PERMISSIONS = [...READ_ONLY_PERMISSIONS, 'TEMPLATE_CREATE', 'TEMPLATE_UPDATE', 'TEMPLATE_DELETE'];
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
+
 vi.mock('next/navigation', () => ({
   usePathname: () => '/admin/community/templates',
   useSearchParams: () => new URLSearchParams(),
@@ -74,6 +80,7 @@ async function openCreateDialog(user: ReturnType<typeof userEvent.setup>) {
 describe('TemplateAdminClient validation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.permissions = FULL_PERMISSIONS;
     mocks.createTemplate.mockResolvedValue(undefined);
     mocks.getTemplateList.mockResolvedValue([]);
   });
@@ -197,6 +204,7 @@ describe('TemplateAdminClient 수정·삭제', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.permissions = FULL_PERMISSIONS;
     mocks.getTemplateList.mockResolvedValue([ROW]);
     mocks.updateTemplate.mockResolvedValue({ ...ROW, tmpltNm: '새 이름' });
     mocks.deleteTemplate.mockResolvedValue(undefined);
@@ -267,5 +275,29 @@ describe('TemplateAdminClient 수정·삭제', () => {
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
     expect(mocks.deleteTemplate).not.toHaveBeenCalled();
+  });
+
+  /*
+   * [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
+   * 이 화면은 TEMPLATE_READ 만으로 들어올 수 있어, 종전에는 조회만 맡은 담당자에게도 등록·수정·삭제가 모두 보였고
+   * 폼을 다 채운 뒤에야 403 을 만났다.
+   */
+  it('조회 권한만 있으면 등록·수정·삭제 버튼을 보이지 않는다 — 목록은 그대로 읽힌다', async () => {
+    auth.permissions = READ_ONLY_PERMISSIONS;
+    renderClient([ROW]);
+
+    expect(await screen.findByText('공지 템플릿')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '신규 템플릿 등록' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '공지 템플릿 수정' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '공지 템플릿 삭제' })).toBeNull();
+  });
+
+  it('권한은 동작마다 따로 본다 — 수정 권한만 있으면 수정 버튼만 보인다', async () => {
+    auth.permissions = [...READ_ONLY_PERMISSIONS, 'TEMPLATE_UPDATE'];
+    renderClient([ROW]);
+
+    expect(await screen.findByRole('button', { name: '공지 템플릿 수정' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '신규 템플릿 등록' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '공지 템플릿 삭제' })).toBeNull();
   });
 });

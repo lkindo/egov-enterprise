@@ -24,6 +24,7 @@ import { canPermission } from '@/lib/auth/permissions';
 import { DeptJobBoxManageDialog } from '@/components/business/deptJob/DeptJobBoxManageDialog';
 import { useDeptJobSectionSlot } from '@/components/business/deptJob/dept-job-section-slot';
 import { type DeptJobVO } from '@/types/business/deptJob';
+import { failureMessage } from '@/lib/safe-error-log';
 
 /**
  * A1 — 부서 업무 목록 섹션(조회·등록·삭제).
@@ -165,7 +166,7 @@ export function DeptJobListSection({
     } catch (error) {
       // 필드 오류는 공용 폼이 귀속·focus 하도록 되돌린다.
       if (extractFieldErrors(error)) throw error;
-      toast(error instanceof Error ? error.message : '업무 등록에 실패했습니다.', 'error');
+      toast(failureMessage(error, '업무 등록에 실패했습니다.'), 'error');
     } finally {
       jobActionPendingRef.current = false;
       setJobAction(null);

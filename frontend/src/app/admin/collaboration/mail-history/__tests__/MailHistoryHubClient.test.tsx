@@ -34,6 +34,11 @@ vi.mock('@/lib/hooks/use-debounced-value', () => ({
   useDebouncedValue: (value: string) => value,
 }));
 
+// 발송·삭제 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 두 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
+beforeEach(() => { auth.permissions = ['MAIL_READ', 'MAIL_SEND', 'MAIL_DELETE']; });
+
 vi.mock('@/services/business/mail/MailService', () => ({
   MAIL_SEND_RESULT: { SUCCESS: 'S', FAILURE: 'F', PENDING: 'P' },
   mailService: {
@@ -371,5 +376,43 @@ describe('MailHistoryHubClient A2 master-detail 계약', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '발신 이력 새로고침' }));
     await waitFor(() => expect(mocks.getSentMails).toHaveBeenCalledTimes(2));
+  });
+});
+
+/*
+ * [2026-10-01] 발송·삭제 버튼은 그 동작의 기능 권한으로 보인다.
+ * 이 화면은 조회 권한만으로 이력을 볼 수 있어, 종전에는 신규 발송·다시 보내기·이력 삭제가 모두 보였고 누른 뒤에야
+ * 403 을 만났다.
+ */
+describe('MailHistoryHubClient 쓰기 권한 표시', () => {
+  const resendable = {
+    emlDsptchSn: 201, sj: '회의 안내', recptnPerson: '김수신', sndngResultCode: 'F', sndngDe: '2026-09-26 09:00',
+    dsptchPerson: '관리자', resendable: true,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getSentMails.mockResolvedValue({ list: [resendable], total: 1, totalPage: 1 });
+  });
+
+  it('발송·삭제 권한이 없으면 신규 발송·다시 보내기·이력 삭제를 보이지 않는다 — 상세는 그대로 읽힌다', async () => {
+    auth.permissions = ['MAIL_READ'];
+    renderClient();
+
+    fireEvent.click(await screen.findByText('받는 사람 김수신'));
+    expect(await screen.findByRole('button', { name: '상세 패널 닫기' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '신규 발송' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /다시 보내기/ })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('mail-detail-delete-btn')).not.toBeInTheDocument();
+  });
+
+  it('권한은 동작마다 따로 본다 — 삭제 권한만 있으면 이력 삭제만 보인다', async () => {
+    auth.permissions = ['MAIL_READ', 'MAIL_DELETE'];
+    renderClient();
+
+    fireEvent.click(await screen.findByText('받는 사람 김수신'));
+    expect(await screen.findByTestId('mail-detail-delete-btn')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '신규 발송' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /다시 보내기/ })).not.toBeInTheDocument();
   });
 });

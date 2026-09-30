@@ -35,6 +35,10 @@ vi.mock('@/app/components/layout/DynamicBreadcrumb', () => ({
   DynamicBreadcrumb: () => <nav aria-label="현재 위치" />,
 }));
 
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 모든 쓰기 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const FULL_PERMISSIONS = ['CODE_READ', 'CODE_CREATE', 'CODE_UPDATE', 'CODE_DELETE'];
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/services/foundation/system/CodeAdminService', () => ({
@@ -226,6 +230,7 @@ function deferred<T>() {
 describe('CommonCodeClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.permissions = FULL_PERMISSIONS;
     mocks.confirm.mockResolvedValue(true);
     mocks.getDetails.mockResolvedValue({
       list: [...details, { cdId: 'OTHER', dtlCd: 'X' }],
@@ -724,5 +729,42 @@ describe('CommonCodeClient', () => {
     expect(screen.getByRole('button', { name: '그룹 소속 저장' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: '게시 상태 (GRP2) 선택' }));
     expect(await screen.findByText('게시 상태 그룹')).toBeInTheDocument();
+  });
+
+  /*
+   * [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
+   * 이 화면은 CODE_READ 만으로 들어올 수 있어, 종전에는 조회만 맡은 담당자에게도 등록·수정·삭제·그룹 소속 저장이 모두 보였다.
+   */
+  it('조회 권한만 있으면 등록·수정·삭제·그룹 소속 저장과 끌기 핸들을 보이지 않는다', async () => {
+    auth.permissions = ['CODE_READ'];
+    renderClient();
+
+    // 상세 코드 목록·코드 검색·변경 이력은 그대로 읽힌다 — 가리는 것은 쓰기 동작뿐이다.
+    expect(await screen.findByText('활성')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '코드 검색' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '변경 이력' })).toBeInTheDocument();
+    for (const name of ['그룹 소속 저장', '분류 등록', '그룹 등록', '신규 상세 코드 등록', '그룹 수정', '활성 코드 수정', '활성 코드 삭제']) {
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    }
+    expect(screen.queryByRole('button', { name: /소속 분류 이동 핸들/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /분류는 이동할 수 없음/ })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '업무 도메인 (DOMAIN) 선택' }));
+    expect(await screen.findByRole('button', { name: '변경 이력' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '분류 수정' })).not.toBeInTheDocument();
+
+    // 저장 단축키도 연결하지 않는다 — 저장할 수 없는 변경을 만들지 않는다.
+    fireEvent.keyDown(screen.getByRole('button', { name: '사용자 상태 (GRP1) 선택' }), { key: 's', ctrlKey: true });
+    expect(mocks.saveHierarchy).not.toHaveBeenCalled();
+  });
+
+  it('권한은 동작마다 따로 본다 — 삭제 권한만 있으면 상세 코드 삭제만 보인다', async () => {
+    auth.permissions = ['CODE_READ', 'CODE_DELETE'];
+    renderClient();
+
+    expect(await screen.findByRole('button', { name: '활성 코드 삭제' })).toBeInTheDocument();
+    for (const name of ['그룹 소속 저장', '분류 등록', '그룹 등록', '신규 상세 코드 등록', '그룹 수정', '활성 코드 수정']) {
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    }
   });
 });

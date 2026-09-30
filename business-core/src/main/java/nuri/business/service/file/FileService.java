@@ -55,6 +55,7 @@ public class FileService extends BaseAbstractService {
     private static final int MAX_ORIGINAL_FILENAME_LENGTH = 300;
     private static final long MAX_FILE_SIZE_BYTES = 10L * 1024 * 1024;
     private static final long MAX_REQUEST_SIZE_BYTES = 50L * 1024 * 1024;
+    private static final String NO_FILE_MESSAGE = "올릴 파일이 없습니다. 내용이 있는 파일을 선택해 주세요.";
     private static final int SIGNATURE_READ_SIZE = 16;
 
     public FileService(FileMasterRepository fileMasterRepository,
@@ -287,26 +288,36 @@ public class FileService extends BaseAbstractService {
      * [Security] 파일 확장자 화이트리스트 검징
      */
     private void validateUploadBatch(List<MultipartFile> files, boolean requireNonEmpty) throws IOException {
-        if (files == null || files.size() > MAX_FILES_PER_REQUEST) {
-            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        // [2026-09-30] 한도가 있는 거부는 한도를 말한다 — 사유 없는 '입력값이 올바르지 않습니다' 로는 무엇을 줄여야 하는지 알 수 없다.
+        if (files == null) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, NO_FILE_MESSAGE);
+        }
+        if (files.size() > MAX_FILES_PER_REQUEST) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "파일은 한 번에 " + MAX_FILES_PER_REQUEST + "개까지 올릴 수 있습니다.");
         }
         if (requireNonEmpty && files.isEmpty()) {
-            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, NO_FILE_MESSAGE);
         }
 
         boolean containsFile = false;
         long totalSize = 0;
         for (MultipartFile file : files) {
             if (file == null) {
-                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, NO_FILE_MESSAGE);
             }
             if (file.isEmpty()) {
                 continue;
             }
             containsFile = true;
             long size = file.getSize();
-            if (size > MAX_FILE_SIZE_BYTES || totalSize > MAX_REQUEST_SIZE_BYTES - size) {
-                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            if (size > MAX_FILE_SIZE_BYTES) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "파일 하나의 크기는 " + megabytes(MAX_FILE_SIZE_BYTES) + "MB 이하여야 합니다.");
+            }
+            if (totalSize > MAX_REQUEST_SIZE_BYTES - size) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "한 번에 올리는 파일의 전체 크기는 " + megabytes(MAX_REQUEST_SIZE_BYTES) + "MB 이하여야 합니다.");
             }
             totalSize += size;
 
@@ -315,8 +326,12 @@ public class FileService extends BaseAbstractService {
         }
 
         if (requireNonEmpty && !containsFile) {
-            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, NO_FILE_MESSAGE);
         }
+    }
+
+    private static long megabytes(long bytes) {
+        return bytes / (1024 * 1024);
     }
 
     private String validateFileExtension(String filename) {

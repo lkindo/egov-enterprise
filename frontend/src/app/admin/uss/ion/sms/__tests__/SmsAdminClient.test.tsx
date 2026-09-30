@@ -57,6 +57,14 @@ vi.mock('@/services/foundation/operation/SmsAdminService', () => ({
 }));
 
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
+// 작성 버튼은 발송 권한으로 보인다 — 기본은 발송 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+// 부서 출처 훅(useOptionalAuth)은 종전처럼 인증 맥락 없음으로 둔다 — 부서 탭은 이 스펙의 대상이 아니다.
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }),
+  useOptionalAuth: () => undefined,
+}));
+beforeEach(() => { auth.permissions = ['SMS_READ', 'SMS_SEND']; });
 vi.mock('@/app/components/patterns/empty-result-message', () => ({ emptyResultMessage: (_value: string, fallback: string) => fallback }));
 vi.mock('@/app/components/patterns/work-list-page', () => ({
   WorkListPage: ({ actions, filter, children }: React.PropsWithChildren<{ actions?: React.ReactNode; filter?: React.ReactNode }>) => (
@@ -162,6 +170,30 @@ describe('SmsAdminClient 재사용 base 조합 지점', () => {
   });
 });
 /* reusable-base:demo:end */
+
+/*
+ * [2026-10-01] 작성 버튼은 발송 권한으로 보인다.
+ * 이 화면은 조회 권한(SMS_READ)만으로 들어올 수 있어, 종전에는 메시지를 다 쓴 뒤에야 403 을 만났다.
+ */
+describe('SmsAdminClient 발송 권한 표시', () => {
+  it('발송 권한이 없으면 작성 버튼 대신 사유를 보인다 — 이력 새로고침은 남는다', () => {
+    auth.permissions = ['SMS_READ'];
+    mocks.deliveryStatusData = { deliveryConfigured: true, defaultSenderTelno: '1588-0000' };
+    render(<SmsAdminClient initialSmsList={null} />);
+
+    expect(screen.queryByRole('button', { name: /새 메시지 구성/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('문자를 보낼 권한이 없습니다.');
+    expect(screen.getByRole('button', { name: /새로고침/ })).toBeInTheDocument();
+  });
+
+  it('발송 권한이 있으면 작성 버튼이 보이고 사유는 없다', () => {
+    mocks.deliveryStatusData = { deliveryConfigured: true, defaultSenderTelno: '1588-0000' };
+    render(<SmsAdminClient initialSmsList={null} />);
+
+    expect(screen.getByRole('button', { name: /새 메시지 구성/ })).toBeInTheDocument();
+    expect(screen.queryByText('문자를 보낼 권한이 없습니다.')).not.toBeInTheDocument();
+  });
+});
 
 describe('SmsAdminClient send validation', () => {
   beforeEach(() => {

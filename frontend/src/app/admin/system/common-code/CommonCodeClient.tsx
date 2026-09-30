@@ -56,6 +56,8 @@ import {
 } from '@/types/foundation/system';
 import { DomainCluster, GroupCode } from '@/types/foundation/code';
 import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 import {
  codeClusterFormSchema,
@@ -99,6 +101,11 @@ export default function CommonCodeClient({
  const queryClient = useQueryClient();
  const { toast } = useToast();
  const confirm = useConfirm();
+ // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 조회 권한(CODE_READ)만으로 들어와 폼을 채운 뒤에야 403 을 만나지 않게 한다(표시 판정일 뿐 서버 인가는 그대로다). 그룹 소속 저장은 CODE_UPDATE 다.
+ const { user } = useAuth();
+ const canCreateCode = canPermission(user, 'CODE_CREATE');
+ const canUpdateCode = canPermission(user, 'CODE_UPDATE');
+ const canDeleteCode = canPermission(user, 'CODE_DELETE');
 
  // --- State ---
  const [searchQuery, setSearchQuery] = useState('');
@@ -823,13 +830,15 @@ export default function CommonCodeClient({
  accessor: (item: CmmnDetailCode) => <HubStatusBadge status={item.useYn === 'Y' ? '사용 중' : '미사용'} variant={item.useYn === 'Y' ? 'success' : 'secondary'} />,
  className: 'w-32'
  },
- {
+ // 수정·삭제 권한이 하나도 없으면 관리 열을 두지 않는다.
+ ...(canUpdateCode || canDeleteCode ? [{
  header: '관리',
  className: 'text-right w-24',
  accessor: (item: CmmnDetailCode) => {
  const isDeleting = deletingDetailKey === `${selectedGroup?.cdId}:${item.dtlCd}`;
  return (
  <div className="flex justify-end gap-1.5">
+ {canUpdateCode && (
  <Button
  type="button"
  variant="ghost"
@@ -841,6 +850,8 @@ export default function CommonCodeClient({
  >
  <Settings size={14} className="text-muted-foreground" aria-hidden="true" />
  </Button>
+ )}
+ {canDeleteCode && (
  <Button
  type="button"
  variant="ghost"
@@ -855,10 +866,11 @@ export default function CommonCodeClient({
  ? <Loader2 size={14} className="animate-spin" aria-hidden="true" />
  : <Trash2 size={14} aria-hidden="true" />}
  </Button>
+ )}
  </div>
  );
  }
- }
+ }] : []),
  ];
 
  const activeNode = activeId ? flattenedNodes.find(n => n.id === activeId) : null;
@@ -874,7 +886,7 @@ export default function CommonCodeClient({
  breadcrumbItems={[{ label: '시스템관리' }, { label: '코드관리' }, { label: '공통 코드' }]}
  notice={notice}
  showBreadcrumb={!embedded}
- actions={(
+ actions={canUpdateCode ? (
  <Button
  type="button"
  onClick={handleSaveExplorerChanges}
@@ -885,14 +897,17 @@ export default function CommonCodeClient({
  <Save size={16} aria-hidden="true" />
  {isSaving ? '그룹 소속 저장 중…' : '그룹 소속 저장'}
  </Button>
- )}
+ ) : undefined}
  masterTitle="코드 분류 및 그룹"
  masterDescription={`분류 ${clCodes.length}개 · 그룹 ${groups.length}개`}
  masterTools={(
  <div className="flex flex-wrap items-center gap-2">
+ {canCreateCode && (
  <Button type="button" variant="outline" size="sm" onClick={openCreateCluster}>
  분류 등록
  </Button>
+ )}
+ {canCreateCode && (
  <Button
  type="button"
  variant="outline"
@@ -903,6 +918,7 @@ export default function CommonCodeClient({
  >
  그룹 등록
  </Button>
+ )}
  <Button type="button" variant="outline" size="sm" onClick={() => setIsPickerOpen(true)}>
  코드 검색
  </Button>
@@ -920,7 +936,7 @@ export default function CommonCodeClient({
  className="pl-10"
  />
  </div>
- {searchQuery && (
+ {searchQuery && canUpdateCode && (
  <p className="text-xs text-muted-foreground">검색 중에는 코드 그룹의 소속 분류를 변경할 수 없습니다.</p>
  )}
 
@@ -959,6 +975,7 @@ export default function CommonCodeClient({
  isSelected={isSelected}
  tabIndex={isSelected || (!selectedNode && index === 0) ? 0 : -1}
  dragDisabled={Boolean(searchQuery) || isSaving}
+ reorderable={canUpdateCode}
  parentClassificationName={node.type === 'group'
  ? flattenedNodes.find((candidate) => candidate.type === 'cluster' && candidate.id === node.parentId)?.name
  : undefined}
@@ -991,12 +1008,16 @@ export default function CommonCodeClient({
  detailActions={selectedGroup ? (
  /* 주 과업(상세 코드 등록)이 먼저다 — 목록에서 Tab 을 누르면 상세 액션의 첫 버튼으로 이동한다(A2 계약). */
  <div className="flex flex-wrap items-center gap-2">
+ {canCreateCode && (
  <Button type="button" onClick={handleCreateDetail} disabled={isDetailWritePending || isModalOpen} className="gap-2">
  <Plus size={16} aria-hidden="true" /> 신규 상세 코드 등록
  </Button>
+ )}
+ {canUpdateCode && (
  <Button type="button" variant="outline" onClick={openEditGroup} disabled={isStructureFormPending} className="gap-2">
  <Settings size={16} aria-hidden="true" /> 그룹 수정
  </Button>
+ )}
  <Button
  type="button"
  variant="outline"
@@ -1008,9 +1029,11 @@ export default function CommonCodeClient({
  </div>
  ) : selectedNode?.type === 'cluster' ? (
  <div className="flex flex-wrap items-center gap-2">
+ {canUpdateCode && (
  <Button type="button" variant="outline" onClick={openEditCluster} disabled={isStructureFormPending} className="gap-2">
  <Settings size={16} aria-hidden="true" /> 분류 수정
  </Button>
+ )}
  <Button
  type="button"
  variant="outline"
@@ -1068,7 +1091,7 @@ export default function CommonCodeClient({
  ) : undefined}
  emptyDetailTitle="선택된 코드 없음"
  emptyDetailDescription="왼쪽 목록에서 코드 분류 또는 그룹을 선택하세요."
- onSaveShortcut={handleSaveExplorerChanges}
+ onSaveShortcut={canUpdateCode ? handleSaveExplorerChanges : undefined}
  saveShortcutDisabled={saveDisabled}
  />
 

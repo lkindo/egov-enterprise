@@ -29,6 +29,19 @@ const mocks = vi.hoisted(() => ({
   uploadFiles: vi.fn(),
 }));
 
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 이 파일은 폼 검증 계약이 대상이라, 세 화면(배너·팝업, 행정 구역 코드, 프로그램)의 쓰기 권한을 모두 가진 관리자로 렌더한다.
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: {
+      permissions: [
+        'BANNER_CREATE', 'BANNER_UPDATE', 'BANNER_DELETE', 'POPUP_CREATE', 'POPUP_UPDATE', 'POPUP_DELETE', 'FILE_UPLOAD_ALL',
+        'ADMCODE_CREATE', 'ADMCODE_UPDATE', 'ADMCODE_DELETE', 'PROGRAM_CREATE', 'PROGRAM_UPDATE', 'PROGRAM_DELETE',
+      ],
+      authorizationVersion: 'v1',
+    },
+  }),
+}));
+
 vi.mock('next/navigation', () => ({
   usePathname: () => '/admin/system/banner',
   useRouter: () => ({ replace: mocks.replace }),
@@ -95,11 +108,7 @@ vi.mock('@/components/ui/hub/HubStatusBadge', () => ({
 }));
 
 vi.mock('@/app/components/ui/toast', () => ({
-  useToast: () => ({ toast: mocks.toast }),
-}));
-
-vi.mock('sonner', () => ({
-  toast: { error: mocks.toastError, success: mocks.toastSuccess },
+  useToast: () => ({ toast: mocks.toast, error: mocks.toastError, success: mocks.toastSuccess }),
 }));
 
 vi.mock('@/app/components/ui/confirm-modal', () => ({

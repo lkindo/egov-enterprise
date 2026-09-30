@@ -9,6 +9,11 @@ const mocks = vi.hoisted(() => ({
   getHeadMenus: vi.fn(),
   getLeftMenus: vi.fn(),
   push: vi.fn(),
+  authUser: undefined as { permissions: string[]; authorizationVersion: string } | undefined,
+}));
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useOptionalAuth: () => (mocks.authUser ? { user: mocks.authUser } : undefined),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -58,6 +63,7 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
     mocks.searchPosts.mockResolvedValue([]);
     mocks.getHeadMenus.mockResolvedValue([]);
     mocks.getLeftMenus.mockResolvedValue([]);
+    mocks.authUser = undefined;
   });
 
   /**
@@ -82,6 +88,22 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
     // 하드코딩 리터럴이 되살아나면 이 단언이 잡는다.
     expect(screen.queryByText('공지사항 관리')).toBeNull();
     expect(screen.queryByText('자유 게시판')).toBeNull();
+  });
+
+  it('기능 권한이 없어 들어갈 수 없는 메뉴는 바로가기 결과로 내지 않는다', async () => {
+    // [2026-10-01] 메뉴는 라우트 게이트와 같은 판정으로 보인다 — 배정만 되고 화면의 조회 권한이 없으면 누를 때마다 홈으로 되돌려진다.
+    mocks.authUser = { permissions: ['USER_READ'], authorizationVersion: 'v1' };
+    mocks.getHeadMenus.mockResolvedValue([
+      { menuNo: 1, menuNm: '관리', children: [
+        { menuNo: 2, menuNm: '시스템 메뉴 관리', modernRoute: '/admin/system/menus' },
+        { menuNo: 3, menuNm: '사용자 메뉴 배정 현황', modernRoute: '/admin/user/manage' },
+      ] },
+    ]);
+
+    render(<SearchResultsContent initialResults={emptyResults} query="메뉴" />);
+
+    expect(await screen.findByText('사용자 메뉴 배정 현황')).toBeInTheDocument();
+    expect(screen.queryByText('시스템 메뉴 관리')).toBeNull();
   });
 
   it('🚨 1글자 검색은 게시글·임직원을 부르지 않고 2자 이상이 필요하다고 안내한다 (DIP V9)', async () => {

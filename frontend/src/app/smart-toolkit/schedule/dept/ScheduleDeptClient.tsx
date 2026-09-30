@@ -28,7 +28,7 @@ import { format } from "date-fns";
 import { Loader2, Pencil,  Trash2,  Plus } from "lucide-react";
 import { getDeptScheduleList, createDeptSchedule, updateDeptSchedule, deleteDeptSchedule } from '@/services/business/schedule/deptScheduleService';
 import { DeptSchedule, ScheduleSearchParams } from '@/types/business/schedule';
-import { toast } from 'sonner';
+import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
@@ -67,6 +67,7 @@ const toError = (value: unknown): Error => {
 };
 
 export default function ScheduleDeptClient() {
+    const toast = useToast();
     const [schedules, setSchedules] = useState<DeptSchedule[]>([]);
     const [loading, setLoading] = useState(true);
     // 조회 실패를 "등록된 일정 없음"으로 위장하지 않기 위해 실패 사유를 목록 영역에 그대로 노출한다.

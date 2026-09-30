@@ -32,12 +32,13 @@ import {
   Trash2,
   BarChart3
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 
 export default function SurveyResponseClient() {
+  const toast = useToast();
   const { user } = useAuth();
   const canCancel = canPermission(user, 'SURVEY_RSP_DELETE');
   const [pageNo, setPageNo] = useState(1);

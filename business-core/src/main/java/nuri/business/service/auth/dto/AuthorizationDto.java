@@ -60,10 +60,15 @@ public final class AuthorizationDto {
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED) String domain,
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED) String action,
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED) String name) {}
+    /**
+     * {@code route} 는 메뉴가 여는 화면 경로다(분류만 있는 메뉴는 null). 권한 그룹 편집기가 "배정한 메뉴 가운데 이 그룹의
+     * 기능 권한으로 열 수 없는 메뉴" 를 저장 전에 알리는 데 쓴다 — 메뉴 표시와 화면 진입은 서로 다른 권한이 판정한다.
+     */
     public record Navigation(
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED) String code,
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED) String name,
-            @Schema(requiredMode=Schema.RequiredMode.REQUIRED, nullable=true, types={"string","null"}) String parentCode) {}
+            @Schema(requiredMode=Schema.RequiredMode.REQUIRED, nullable=true, types={"string","null"}) String parentCode,
+            @Schema(requiredMode=Schema.RequiredMode.REQUIRED, nullable=true, types={"string","null"}) String route) {}
     public record Catalog(
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED) List<Operation> operations,
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED) List<Navigation> navigation,

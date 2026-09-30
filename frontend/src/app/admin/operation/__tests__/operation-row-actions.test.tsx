@@ -27,6 +27,13 @@ const mocks = vi.hoisted(() => ({
   toast: vi.fn(),
 }));
 
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 쓰기 권한을 모두 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const READ_ONLY_PERMISSIONS = ['EXT_HR_READ', 'REWARD_READ'];
+const FULL_PERMISSIONS = [...READ_ONLY_PERMISSIONS, 'EXT_HR_CREATE', 'EXT_HR_UPDATE', 'EXT_HR_DELETE', 'REWARD_CREATE', 'REWARD_UPDATE', 'REWARD_DELETE'];
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
+beforeEach(() => { auth.permissions = FULL_PERMISSIONS; });
+
 vi.mock('next/navigation', () => ({
   usePathname: () => '/admin/operation/external-hr',
   useRouter: () => ({ replace: vi.fn() }),
@@ -298,5 +305,72 @@ describe('RewardManageClient 행 액션', () => {
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
     expect(mocks.deleteReward).not.toHaveBeenCalled();
+  });
+});
+
+/*
+ * [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
+ * 이 화면은 조회 권한(EXT_HR_READ·REWARD_READ)만으로 들어올 수 있어, 종전에는 조회만 맡은 사람에게도 등록·수정·삭제가 모두 보였고
+ * 누른 뒤에야 403 을 만났다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다.
+ */
+describe('외부인사·포상 쓰기 권한 표시', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getEvents.mockResolvedValue({ list: [{ evntSn: 1, evntNm: '가을 워크숍' }], total: 1, page: 1, size: 200, totalPage: 1 });
+    mocks.getExternalHrList.mockResolvedValue(pageOf(HR));
+    mocks.getRewardList.mockResolvedValue(pageOf(REWARD));
+  });
+
+  it('조회 권한만 있으면 외부인사 등록·수정·삭제 버튼을 보이지 않는다', async () => {
+    auth.permissions = READ_ONLY_PERMISSIONS;
+    renderWithClient(<ExternalHrClient initialPage={pageOf(HR)} />);
+
+    // 목록은 그대로 읽힌다 — 가리는 것은 쓰기 동작뿐이다.
+    expect(await screen.findByText('홍길동')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '인사 등록' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '홍길동 수정' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '홍길동 삭제' })).not.toBeInTheDocument();
+  });
+
+  it('외부인사 권한은 동작마다 따로 본다 — 삭제 권한만 있으면 삭제 버튼만 보인다', async () => {
+    auth.permissions = [...READ_ONLY_PERMISSIONS, 'EXT_HR_DELETE'];
+    renderWithClient(<ExternalHrClient initialPage={pageOf(HR)} />);
+
+    expect(await screen.findByRole('button', { name: '홍길동 삭제' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '홍길동 수정' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '인사 등록' })).not.toBeInTheDocument();
+  });
+
+  it('조회 권한만 있으면 포상 기록 등록·수정·삭제 버튼을 보이지 않는다', async () => {
+    auth.permissions = READ_ONLY_PERMISSIONS;
+    renderWithClient(<RewardManageClient initialPage={pageOf(REWARD)} />);
+
+    expect(await screen.findByText('모범 사원상')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '포상 기록 등록' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '모범 사원상 수정' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '모범 사원상 삭제' })).not.toBeInTheDocument();
+  });
+
+  it('수정 권한이 없어도 공적 내용은 조회 전용 창으로 읽을 수 있다 — 입력은 잠기고 저장 버튼은 없다', async () => {
+    // 공적 내용은 목록 열에 없다. 수정 버튼을 가리기만 하면 조회 담당자는 그 값을 볼 길을 잃는다.
+    auth.permissions = READ_ONLY_PERMISSIONS;
+    renderWithClient(<RewardManageClient initialPage={pageOf(REWARD)} />);
+    fireEvent.click(await screen.findByRole('button', { name: '모범 사원상 상세 보기' }));
+
+    const scope = within(await screen.findByRole('region', { name: '포상 기록 상세' }));
+    expect(scope.getByRole('textbox', { name: /^포상 명칭/ })).toHaveValue('모범 사원상');
+    expect(scope.getByRole('textbox', { name: /^포상 명칭/ })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: '수정 저장' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '닫기' })).toBeInTheDocument();
+    expect(mocks.updateReward).not.toHaveBeenCalled();
+  });
+
+  it('포상 권한은 동작마다 따로 본다 — 등록 권한만 있으면 등록 버튼만 보인다', async () => {
+    auth.permissions = [...READ_ONLY_PERMISSIONS, 'REWARD_CREATE'];
+    renderWithClient(<RewardManageClient initialPage={pageOf(REWARD)} />);
+
+    expect(await screen.findByRole('button', { name: '포상 기록 등록' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '모범 사원상 수정' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '모범 사원상 삭제' })).not.toBeInTheDocument();
   });
 });

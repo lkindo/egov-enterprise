@@ -47,6 +47,7 @@ import { adminPollFormSchema } from '../manage/poll-form-validation';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
+import { failureMessage } from '@/lib/safe-error-log';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
@@ -172,7 +173,7 @@ export default function OnlinePollAdminClient() {
  } catch (e) {
  const fieldErrors = extractFieldErrors(e);
  if (fieldErrors) validation.setFormErrors(fieldErrors);
- else toastError(e instanceof Error ? e.message : '설문 등록에 실패했습니다.');
+ else toastError(failureMessage(e, '설문 등록에 실패했습니다.'));
  } finally {
  savingRef.current = false;
  setIsSaving(false);

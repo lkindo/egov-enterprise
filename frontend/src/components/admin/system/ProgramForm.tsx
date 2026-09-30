@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { ProgrmManage } from '@/types/foundation/system';
 import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
-import { toast } from 'sonner';
+import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { ProgramDtoSchema } from '@/types/generated-zod';
 
@@ -47,10 +47,13 @@ interface ProgramFormProps {
   data?: ProgrmManage;
   onSuccess: () => void;
   onWritePendingChange?: (pending: boolean) => void;
+  /** 삭제 권한(PROGRAM_DELETE)이 없으면 수정 폼에 삭제 버튼을 두지 않는다 — 여는 화면이 권한을 판정해 넘긴다. */
+  deletable?: boolean;
 }
 
-export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChange }: ProgramFormProps) {
+export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChange, deletable = true }: ProgramFormProps) {
   const isEdit = !!data;
+  const toast = useToast();
   const confirm = useConfirm();
   const writePendingRef = useRef(false);
   const submitAttemptRef = useRef(false);
@@ -311,7 +314,7 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
               <Save size={18} />
               {isSaving || isSubmitting ? '동기화 중…' : '시스템 동기화'}
             </Button>
-            {isEdit && (
+            {isEdit && deletable && (
               <Button 
                 type="button" 
                 variant="ghost" 

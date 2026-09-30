@@ -44,6 +44,9 @@ import {
 } from '@/components/ui/form';
 import { z } from 'zod';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { failureMessage } from '@/lib/safe-error-log';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
@@ -75,6 +78,11 @@ export default function ManualAdminClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 조회 권한(HELP_READ)만으로 들어온 사람은 종전에 눌러 본 뒤에야 403 을 만났다(표시 판정일 뿐, 서버 인가는 그대로다).
+  const { user } = useAuth();
+  const canCreateManual = canPermission(user, 'HELP_CREATE');
+  const canUpdateManual = canPermission(user, 'HELP_UPDATE');
+  const canDeleteManual = canPermission(user, 'HELP_DELETE');
 
   const [isSaving, setIsSaving] = useState(false);
   const savePendingRef = useRef(false);
@@ -202,7 +210,7 @@ export default function ManualAdminClient({
       toast(`'${manual.onlnMnlNm}' 매뉴얼을 삭제했습니다.`, 'success');
       refetch();
     } catch (err) {
-      toast(err instanceof Error ? err.message : '삭제에 실패했습니다.', 'error');
+      toast(failureMessage(err, '삭제에 실패했습니다.'), 'error');
     } finally {
       deletePendingRef.current = false;
       setDeletingManualId(null);
@@ -247,11 +255,13 @@ export default function ManualAdminClient({
         </div>
       )
     },
-    {
+    // 수정·삭제 권한이 하나도 없으면 관리 열을 두지 않는다.
+    ...(canUpdateManual || canDeleteManual ? [{
       header: '관리',
       accessor: (item: ManualDto) => (
         <div className="flex items-center gap-2 justify-end">
           {/* 아이콘 전용 버튼은 스크린리더에서 전부 '버튼'으로 읽혀 오조작을 부른다 → 대상명 포함 접근명(감사 P1-10). */}
+          {canUpdateManual && (
           <Button
             variant="ghost"
             size="icon"
@@ -262,6 +272,8 @@ export default function ManualAdminClient({
           >
             <Edit2 size={16} aria-hidden="true" />
           </Button>
+          )}
+          {canDeleteManual && (
           <Button
             variant="ghost"
             size="icon"
@@ -275,9 +287,10 @@ export default function ManualAdminClient({
               ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
               : <Trash2 size={16} aria-hidden="true" />}
           </Button>
+          )}
         </div>
       )
-    }
+    }] : []),
   ];
 
   return (
@@ -299,9 +312,11 @@ export default function ManualAdminClient({
             <RefreshCcw size={16} className={cn(isFetching && "animate-spin")} aria-hidden="true" />
             새로고침
           </Button>
+          {canCreateManual && (
           <Button size="sm" disabled={isWritePending} onClick={handleOpenAdd} className="gap-2">
             <Plus size={16} aria-hidden="true" /> 새 매뉴얼 등록
           </Button>
+          )}
         </>
       }
       filter={

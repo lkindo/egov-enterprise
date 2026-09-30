@@ -30,6 +30,14 @@ vi.mock('@/app/components/ui/toast', () => ({
   useToast: () => ({ toast: mocks.toast }),
 }));
 
+// 발송 버튼은 발송 권한으로 보인다 — 기본은 발송 권한을 가진 사용자이고, 표시 판정 테스트만 권한을 줄인다.
+// 부서 출처 훅(useOptionalAuth)은 종전처럼 인증 맥락 없음으로 둔다 — 부서 탭은 이 스펙의 대상이 아니다.
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }),
+  useOptionalAuth: () => undefined,
+}));
+
 // 피커 자체의 계약은 recipient-picker.test.tsx 가 본다. 여기서는 "피커가 돌려준 선택을 화면이 어떻게 싣는가" 만 본다.
 vi.mock('@/app/components/ui/recipient-picker', async () => {
   const actual = await vi.importActual<typeof import('@/app/components/ui/recipient-picker')>('@/app/components/ui/recipient-picker');
@@ -70,7 +78,33 @@ function renderCompose() {
 }
 
 beforeEach(() => {
+  auth.permissions = ['MAIL_SEND'];
   mocks.getDeliveryStatus.mockResolvedValue({ deliveryConfigured: true, senderImplementation: 'RealEmailSender' });
+});
+
+/*
+ * [2026-10-01] 발송 버튼은 발송 권한으로 보인다.
+ * 이 화면은 권한 없이도 들어올 수 있어, 종전에는 메일을 다 쓴 뒤에야 403 을 만났다. 작성이 이 화면의 목적이라
+ * 폼은 그대로 두고 버튼 자리에 사유를 보인다.
+ */
+describe('MailSendHubClient 발송 권한 표시', () => {
+  it('발송 권한이 없으면 발송 버튼 대신 사유를 보인다 — 폼은 그대로 있다', async () => {
+    auth.permissions = [];
+    renderCompose();
+
+    await waitFor(() => expect(screen.queryByText(/메일 발송 설정/)).not.toBeInTheDocument());
+    expect(screen.queryByTestId('mail-send-btn')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('메일을 보낼 권한이 없습니다.');
+    expect(screen.getByTestId('mail-subject-input')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '취소' })).toBeInTheDocument();
+  });
+
+  it('발송 권한이 있으면 발송 버튼이 보이고 사유는 없다', async () => {
+    renderCompose();
+
+    expect(screen.getByTestId('mail-send-btn')).toBeInTheDocument();
+    expect(screen.queryByText('메일을 보낼 권한이 없습니다.')).not.toBeInTheDocument();
+  });
 });
 
 describe('MailSendHubClient 발송 가능 상태 (DIP B5 F7)', () => {

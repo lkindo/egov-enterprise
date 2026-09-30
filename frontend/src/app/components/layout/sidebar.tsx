@@ -15,9 +15,12 @@ import type { MenuInfo } from '@/types/foundation/menu';
 import { NavBookmarkSlot, NavItem, NavQueryScope, RecentMenuRecorder } from './NavItem';
 import { NavBookmarkToggle } from './NavBookmarkToggle';
 import { useAuth } from '@/contexts/AuthContext';
+import { openableMenus } from '@/lib/navigation/openable-menus';
 
 const renderNavBookmark = (item: MenuInfo) => <NavBookmarkToggle menuNo={item.menuNo} menuNm={item.menuNm} />;
 import { SITE_IDENTITY } from '@/config/site-identity';
+
+const NO_MENUS: MenuInfo[] = [];
 
 export function Sidebar({
   initialMenus = [],
@@ -60,13 +63,15 @@ export function Sidebar({
   }, [isSidebarOpen, setSidebarOpen]);
 
   // initialData가 실제로 있을 때만 주입한다. 빈 배열을 데이터로 확정하면 복구 query가 실행되지 않는다.
-  const { data: topMenus = [] } = useQuery({
+  const { data: assignedTopMenus = NO_MENUS } = useQuery({
     queryKey: ['menus', 'head', ...menuAuthorization.scope],
     queryFn: () => menuService.getHeadMenus(),
     initialData: menuAuthorization.acceptsInitialMenus && resolvedMenus.length > 0 ? resolvedMenus : undefined,
     enabled: menuAuthorization.authenticated,
     staleTime: 5 * 60 * 1000,
   });
+  // [2026-10-01] 배정된 메뉴 가운데 라우트 게이트가 통과시킬 것만 보인다(openableMenus 주석).
+  const topMenus = useMemo(() => openableMenus(assignedTopMenus, user), [assignedTopMenus, user]);
 
   const effectiveActiveMenuNo = topMenus.some((menu) => menu.menuNo === activeMenuNo)
     ? activeMenuNo : topMenus[0]?.menuNo ?? null;
@@ -76,7 +81,7 @@ export function Sidebar({
   // 전역 영역 선택은 HeaderSearchParamSync가 현재 URL로 동기화한다.
   // 여기서 첫 영역을 저장하면 같은 commit의 정확한 URL 선택을 덮어쓸 수 있다.
 
-  const { data: menus = prefetchedLeftMenus, isLoading: loading } = useQuery({
+  const { data: assignedMenus = prefetchedLeftMenus, isLoading: loading } = useQuery({
     queryKey: ['menus', 'left', effectiveActiveMenuNo, ...menuAuthorization.scope],
     queryFn: async () => {
       if (!effectiveActiveMenuNo) return [];
@@ -87,6 +92,7 @@ export function Sidebar({
     initialData: prefetchedLeftMenus.length > 0 ? prefetchedLeftMenus : undefined,
     staleTime: 5 * 60 * 1000,
   });
+  const menus = useMemo(() => openableMenus(assignedMenus, user), [assignedMenus, user]);
   const menuTree = useMemo(() => topMenus.map((menu) => menu.menuNo === effectiveActiveMenuNo
     ? { ...menu, children: menus } : menu), [topMenus, effectiveActiveMenuNo, menus]);
 
@@ -200,7 +206,9 @@ export function Sidebar({
             ) : menus.length === 0 ? (
               <div className="space-y-3 p-8 text-center text-muted-foreground">
                 <Database size={32} className="mx-auto" aria-hidden="true" />
-                <p className="text-sm font-bold tracking-tight">메뉴를 불러올 수 없습니다.</p>
+                <p className="text-sm font-bold tracking-tight">
+                  {assignedMenus.length > 0 ? '이 영역에는 열 수 있는 메뉴가 없습니다.' : '메뉴를 불러올 수 없습니다.'}
+                </p>
               </div>
             ) : (
               <NavQueryScope menus={menuTree}>

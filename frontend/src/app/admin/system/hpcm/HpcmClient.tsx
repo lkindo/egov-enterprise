@@ -30,6 +30,9 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 
 import { HpcmDtoSchema } from '@/types/generated-zod';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { failureMessage } from '@/lib/safe-error-log';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
@@ -105,6 +108,11 @@ export default function HpcmClient({
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const confirm = useConfirm();
+  // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 조회 권한(HELP_READ)만으로 들어온 사람은 종전에 눌러 본 뒤에야 403 을 만났다(표시 판정일 뿐, 서버 인가는 그대로다).
+  const { user } = useAuth();
+  const canCreateHelp = canPermission(user, 'HELP_CREATE');
+  const canUpdateHelp = canPermission(user, 'HELP_UPDATE');
+  const canDeleteHelp = canPermission(user, 'HELP_DELETE');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
@@ -235,7 +243,7 @@ export default function HpcmClient({
       toast(`'${item.hlpDfn}' 도움말을 삭제했습니다.`, 'success');
       await refetch();
     } catch (error: unknown) {
-      toast(error instanceof Error ? error.message : '도움말을 삭제하지 못했습니다.', 'error');
+      toast(failureMessage(error, '도움말을 삭제하지 못했습니다.'), 'error');
     } finally {
       deletingRef.current = false;
       setDeletingSn(null);
@@ -281,12 +289,14 @@ export default function HpcmClient({
         </p>
       )
     },
-    {
+    // 수정·삭제 권한이 하나도 없으면 관리 열을 두지 않는다.
+    ...(canUpdateHelp || canDeleteHelp ? [{
       header: '관리',
       className: 'text-right w-40',
-      accessor: (item) => (
+      accessor: (item: Hpcm) => (
         <div className="flex items-center gap-2 justify-end">
           {/* 아이콘 전용 버튼은 스크린리더에서 전부 '버튼'으로 읽힌다 → 대상명을 접근명에 넣는다. */}
+          {canUpdateHelp && (
           <Button
             variant="ghost"
             size="icon"
@@ -297,6 +307,8 @@ export default function HpcmClient({
           >
             <Edit2 size={16} aria-hidden="true" />
           </Button>
+          )}
+          {canDeleteHelp && (
           <Button
             variant="ghost"
             size="icon"
@@ -310,9 +322,10 @@ export default function HpcmClient({
               ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
               : <Trash2 size={16} aria-hidden="true" />}
           </Button>
+          )}
         </div>
       )
-    }
+    }] : []),
   ];
 
   return (
@@ -335,9 +348,11 @@ export default function HpcmClient({
             <Loader2 size={16} className={isFetching ? 'animate-spin' : undefined} aria-hidden="true" />
             새로고침
           </Button>
+          {canCreateHelp && (
           <Button size="sm" disabled={isWritePending} onClick={openCreate} className="gap-2">
             <Plus size={16} aria-hidden="true" /> 콘텐츠 등록
           </Button>
+          )}
         </>
       }
       filter={

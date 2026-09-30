@@ -26,6 +26,8 @@ import { createPoll, pollUserService } from '@/services/business/user/poll/PollU
 import type { OnlinePollManageVO } from '@/types/business/poll';
 import { toStorageYmd } from '@/lib/format-date';
 import { pollFormSchema } from './poll-form-validation';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 /** 오류 요약 라벨 — 종전 등록·수정 화면과 같은 문구를 쓴다. */
 const pollValidationLabels = {
@@ -72,6 +74,11 @@ export function SurveyFormDialog({
 }) {
   const { success, error: toastError } = useToast();
   const isEdit = mode === 'edit';
+  // [2026-10-01] 이 모달은 두 화면이 서로 다른 모드로 연다(목록은 등록, 상세는 수정). 여는 버튼은 각 화면이 그 권한으로
+  //   가리고, 저장 버튼은 여기서 모드의 권한으로 보인다 — 어느 화면이 열든 저장할 수 없는 폼이 저장 버튼을 갖지 않는다.
+  //   표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
+  const { user } = useAuth();
+  const canSave = isEdit ? canPermission(user, 'POLL_UPDATE') : canPermission(user, 'POLL_CREATE');
 
   const [formData, setFormData] = useState<OnlinePollManageVO>({
     pollNm: initialValues?.pollNm ?? '',
@@ -100,7 +107,8 @@ export function SurveyFormDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (savingRef.current) return;
+    // 저장 버튼이 없어도 설문명 칸의 Enter 는 폼을 제출한다 — 권한이 없으면 보내지 않는다.
+    if (savingRef.current || !canSave) return;
     // 저장 포맷은 'yyyyMMdd' 8자다 — 컬럼 varchar(8)/DTO @Size(max = 8) 이라 10자는 100% 400 이다.
     const validated = validation.validate({
       ...formData,
@@ -316,9 +324,15 @@ export function SurveyFormDialog({
           <Button type="button" variant="outline" onClick={requestClose} disabled={isSaving}>
             취소
           </Button>
+          {canSave ? (
           <Button type="submit" data-testid="poll-submit-button" disabled={isSaving} aria-busy={isSaving}>
             {isSaving ? '저장 중…' : isEdit ? '설문 수정' : '설문 등록'}
           </Button>
+          ) : (
+            <p role="status" className="self-center text-sm text-muted-foreground">
+              {isEdit ? '설문을 수정할 권한이 없습니다.' : '설문을 등록할 권한이 없습니다.'}
+            </p>
+          )}
         </div>
       </form>
     </StandardModal>

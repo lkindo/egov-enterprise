@@ -10,10 +10,18 @@ const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   createEvent: vi.fn(),
   deleteEvent: vi.fn(),
+  getEvent: vi.fn(),
   getEvents: vi.fn(),
   replace: vi.fn(),
   toast: vi.fn(),
 }));
+
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 쓰기 권한을 모두 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const READ_ONLY_PERMISSIONS = ['EVENT_READ'];
+const FULL_PERMISSIONS = [...READ_ONLY_PERMISSIONS, 'EVENT_CREATE', 'EVENT_UPDATE', 'EVENT_DELETE'];
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
+beforeEach(() => { auth.permissions = FULL_PERMISSIONS; });
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/admin/operation/events',
@@ -25,6 +33,7 @@ vi.mock('@/services/foundation/operation/eventService', () => ({
   eventService: {
     createEvent: mocks.createEvent,
     deleteEvent: mocks.deleteEvent,
+    getEvent: mocks.getEvent,
     getEvents: mocks.getEvents,
   },
 }));
@@ -287,5 +296,58 @@ describe('EventManagementClient create validation', () => {
 
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(reason, 'error'));
     expect(mocks.toast).not.toHaveBeenCalledWith('행사 삭제에 실패했습니다.', 'error');
+  });
+});
+
+/*
+ * [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
+ * 이 화면은 조회 권한(EVENT_READ)만으로 들어올 수 있어, 종전에는 조회만 맡은 사람에게도 등록·수정·삭제가 모두 보였고
+ * 누른 뒤에야 403 을 만났다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다.
+ */
+describe('EventManagementClient 쓰기 권한 표시', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getEvents.mockResolvedValue({
+      list: [{ evntSn: 7, evntNm: '가을 워크숍', evntCn: '본문', evntBgngYmd: '20260901', evntEndYmd: '20260902', evntUseCnt: 20 }],
+      total: 1,
+    });
+  });
+
+  it('조회 권한만 있으면 행사 등록·수정·삭제 버튼을 보이지 않는다', async () => {
+    auth.permissions = READ_ONLY_PERMISSIONS;
+    renderClient();
+
+    // 목록은 그대로 읽힌다 — 가리는 것은 쓰기 동작뿐이다.
+    expect(await screen.findByText('가을 워크숍')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /행사 등록/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '가을 워크숍 수정' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '가을 워크숍 삭제' })).not.toBeInTheDocument();
+  });
+
+  it('수정 권한이 없어도 상세는 조회 전용 창으로 읽을 수 있다 — 입력은 잠기고 저장 버튼은 없다', async () => {
+    // 상세 내용·담당자·준비사항은 목록 열에 없다. 수정 버튼을 가리기만 하면 조회 담당자는 그 값을 볼 길을 잃는다.
+    auth.permissions = READ_ONLY_PERMISSIONS;
+    mocks.getEvent.mockResolvedValue({
+      evntSn: 7, evntNm: '가을 워크숍', evntCn: '본문', picNm: '김담당', prepMttr: '버스 2대',
+      evntBgngYmd: '20260901', evntEndYmd: '20260902', evntUseCnt: 20,
+    });
+    renderClient();
+    fireEvent.click(await screen.findByRole('button', { name: '가을 워크숍 상세 보기' }));
+
+    expect(await screen.findByText('행사 상세')).toBeInTheDocument();
+    const prep = await screen.findByRole('textbox', { name: '준비사항' });
+    await waitFor(() => expect(prep).toHaveValue('버스 2대'));
+    expect(prep).toBeDisabled();
+    expect(screen.queryByRole('button', { name: '변경 사항 저장' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '닫기' })).toBeInTheDocument();
+  });
+
+  it('권한은 동작마다 따로 본다 — 수정 권한만 있으면 수정 버튼만 보인다', async () => {
+    auth.permissions = [...READ_ONLY_PERMISSIONS, 'EVENT_UPDATE'];
+    renderClient();
+
+    expect(await screen.findByRole('button', { name: '가을 워크숍 수정' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '가을 워크숍 삭제' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /행사 등록/ })).not.toBeInTheDocument();
   });
 });

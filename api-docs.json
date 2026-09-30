@@ -51169,12 +51169,19 @@
               "string",
               "null"
             ]
+          },
+          "route": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
           "code",
           "name",
-          "parentCode"
+          "parentCode",
+          "route"
         ]
       },
       "Operation": {

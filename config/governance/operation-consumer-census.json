@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "authority": "operation-consumer-census",
-  "generatedAt": "2026-09-28",
+  "generatedAt": "2026-10-01",
   "notes": [
     "Every documented OpenAPI operation must be consumed by the frontend, mechanically derivable as a springdoc alias duplicate, or listed here with a category and a reason.",
     "bff-route-handler and non-browser-consumer entries are machine-verified: an evidence file must exist and reference the operation path suffix. A category label alone proves nothing.",
@@ -9,12 +9,15 @@
     "Alias duplicates (springdoc _N suffixes over multi-path @RequestMapping) are derived, never listed. Listing one is an error.",
     "AXIS 2 (screen reachability): consumed on axis 1 only means a production TypeScript module calls the operation. Axis 2 additionally checks that the service method wrapping that call site is invoked from outside services/ and tests — the case that first exposed the gap was deleteRespondent, whose only caller was its own unit test.",
     "Axis 2 keeps no exception list on purpose: 77 entries would become a drawer (H2). It is a single monotonic ratchet (expected.screenOrphanMax) and prints the full offending list on failure, mirroring status-color-guard.",
-    "Axis 2 is deliberately lenient, following UnreachableServiceLinter: a method counts as reachable if `.name(` appears anywhere in non-service production code. Common names may pass by collision — that direction misses violations rather than inventing them."
+    "Axis 2 is deliberately lenient, following UnreachableServiceLinter: a method counts as reachable if `.name(` appears anywhere in non-service production code. Common names may pass by collision — that direction misses violations rather than inventing them.",
+    "AXIS 3 (write affordance, 2026-10-01): a screen that calls a non-GET operation must use that operation's permission for display (the permission code appears in the file, in every screen that opens it, or the route itself guarantees it). Admin screens were brought to zero; expected.ungatedWriteMax freezes the remaining self-service screens (notes, comments, approvals, scraps, department work) and must equal the measured count in both directions.",
+    "Axis 3 is a display check only. Server authorization is unchanged, and a permission literal proves the screen looked at it, not which button it gates."
   ],
   "expected": {
     "operationCount": 414,
     "unwiredMax": 10,
-    "screenOrphanMax": 29
+    "screenOrphanMax": 29,
+    "ungatedWriteMax": 48
   },
   "entries": [
     {

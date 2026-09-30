@@ -25,6 +25,7 @@ import Link from 'next/link';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
+import { failureMessage } from '@/lib/safe-error-log';
 
 export default function CommunityDetailHubClient({ 
   cmntySn,
@@ -104,8 +105,7 @@ export default function CommunityDetailHubClient({
       void queryClient.invalidateQueries({ queryKey: ['community-membership', cmntySn] });
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : '';
-      toast(message || '가입 신청 중 오류가 발생했습니다.', 'error');
+      toast(failureMessage(error, '가입 신청 중 오류가 발생했습니다.'), 'error');
     },
   });
 
@@ -143,8 +143,7 @@ export default function CommunityDetailHubClient({
       toast('커뮤니티에서 탈퇴했습니다.', 'success');
       void queryClient.invalidateQueries({ queryKey: ['community-membership', cmntySn] });
     } catch (error) {
-      const message = error instanceof Error ? error.message : '';
-      toast(message || '커뮤니티 탈퇴 중 오류가 발생했습니다.', 'error');
+      toast(failureMessage(error, '커뮤니티 탈퇴 중 오류가 발생했습니다.'), 'error');
     } finally {
       leavePendingRef.current = false;
       setLeaving(false);

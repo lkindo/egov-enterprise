@@ -6,7 +6,7 @@ import {
 
 const catalog = {
   operations: [{ code: 'BOARD_READ', domain: 'BOARD', action: 'READ', name: '게시글 조회' }, { code: 'BOARD_CREATE', domain: 'BOARD', action: 'CREATE', name: '게시글 등록' }],
-  navigation: [{ code: 'MENU_1', name: '게시판', parentCode: null }], catalogVersion: 'c1',
+  navigation: [{ code: 'MENU_1', name: '게시판', parentCode: null, route: null }], catalogVersion: 'c1',
 };
 const snapshot = { code: 'CONTENT', name: '콘텐츠 담당', description: null, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }], version: 'v1', complete: true };
 

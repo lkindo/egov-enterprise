@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import LogDashboardClient, { type InitialSystemLogs } from './LogDashboardClient';
+import { failureMessage } from '@/lib/safe-error-log';
 
 export const metadata: Metadata = {
   title: `통합 로그 조회 | ${SITE_IDENTITY.frameworkName}`,
@@ -23,7 +24,7 @@ export default async function LogDashboardPage() {
     .then((data) => ({ ok: true as const, data }))
     .catch((error: unknown) => ({
       ok: false as const,
-      message: error instanceof Error ? error.message : '시스템 로그를 불러오지 못했습니다.',
+      message: failureMessage(error, '시스템 로그를 불러오지 못했습니다.'),
     }));
 
   return (

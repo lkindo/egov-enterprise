@@ -41,6 +41,9 @@ vi.mock('@/app/components/ui/toast', () => ({
   useToast: () => ({ success: mocks.success, error: mocks.error }),
 }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
+// 수정·삭제 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 두 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
 vi.mock('@/services/business/user/poll/PollUserService', () => ({
   createPoll: vi.fn(),
   pollUserService: {
@@ -77,6 +80,7 @@ function renderClient() {
 describe('여론조사 상세 — 폐기와 삭제', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.permissions = ['POLL_UPDATE', 'POLL_DELETE'];
     mocks.getPollDetail.mockResolvedValue(POLL);
     mocks.updatePoll.mockResolvedValue(undefined);
     mocks.deletePoll.mockResolvedValue(undefined);
@@ -214,5 +218,26 @@ describe('여론조사 상세 — 폐기와 삭제', () => {
 
     await waitFor(() => expect(mocks.deletePoll).toHaveBeenCalledWith(7));
     await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/admin/survey/manage'));
+  });
+
+  /*
+   * [2026-10-01] 수정·삭제 버튼은 그 동작의 기능 권한으로 보인다.
+   * 이 상세는 설문 조회 권한만으로 들어올 수 있어, 종전에는 두 버튼이 모두 보였고 누른 뒤에야 403 을 만났다.
+   */
+  it('수정·삭제 권한이 없으면 두 버튼을 보이지 않는다 — 득표는 그대로 읽힌다', async () => {
+    auth.permissions = [];
+    renderClient();
+
+    expect(await screen.findByText('3표')).toBeInTheDocument();
+    expect(screen.queryByTestId('poll-edit-button')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '설문 삭제' })).not.toBeInTheDocument();
+  });
+
+  it('권한은 동작마다 따로 본다 — 수정 권한만 있으면 삭제 버튼은 없다', async () => {
+    auth.permissions = ['POLL_UPDATE'];
+    renderClient();
+
+    expect(await screen.findByTestId('poll-edit-button')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '설문 삭제' })).not.toBeInTheDocument();
   });
 });

@@ -32,6 +32,7 @@ import { ko } from 'date-fns/locale';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
+import { failureMessage } from '@/lib/safe-error-log';
 
 interface WorkHubClientProps {
   defaultTab?: string;
@@ -274,7 +275,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       await queryClient.invalidateQueries({ queryKey: ['work-reports'] });
     } catch (error) {
       if (extractFieldErrors(error)) throw error;
-      toast(error instanceof Error ? error.message : '업무 보고 저장 중 오류가 발생했습니다.', 'error');
+      toast(failureMessage(error, '업무 보고 저장 중 오류가 발생했습니다.'), 'error');
     } finally {
       reportActionPendingRef.current = false;
       setReportAction(null);
@@ -349,7 +350,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       toast('일정이 삭제되었습니다.', 'success');
       await queryClient.invalidateQueries({ queryKey: ['work-schedules'] });
     } catch (error) {
-      toast(error instanceof Error ? error.message : '일정 삭제 중 오류가 발생했습니다.', 'error');
+      toast(failureMessage(error, '일정 삭제 중 오류가 발생했습니다.'), 'error');
     } finally {
       scheduleActionPendingRef.current = false;
       setScheduleAction(null);

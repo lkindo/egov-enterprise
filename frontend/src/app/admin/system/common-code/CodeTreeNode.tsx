@@ -54,6 +54,8 @@ interface SortableCodeNodeProps {
  tabIndex: number;
  dragDisabled?: boolean;
  parentClassificationName?: string;
+ /** 소속 분류를 바꿀 권한(CODE_UPDATE)이 없으면 끌기 핸들을 두지 않는다 — 저장할 수 없는 변경을 만들지 않는다. */
+ reorderable?: boolean;
 }
 
 interface CodeNodeRowProps extends SortableCodeNodeProps {
@@ -71,6 +73,7 @@ const CodeNodeRow = ({
  tabIndex,
  dragDisabled = false,
  parentClassificationName,
+ reorderable = true,
  isOverlay = false,
  nodeRef,
  style,
@@ -98,6 +101,7 @@ const CodeNodeRow = ({
  <div className="absolute left-[11px] top-1/2 w-3 h-px bg-border" />
  )}
 
+ {reorderable && (
  <button
  type="button"
  {...dragHandleProps}
@@ -111,6 +115,7 @@ const CodeNodeRow = ({
  >
  <GripVertical size={16} aria-hidden="true" />
  </button>
+ )}
  <button
  type="button"
  onClick={onClick}
@@ -164,8 +169,9 @@ export const SortableCodeNode = ({
  tabIndex,
  dragDisabled = false,
  parentClassificationName,
+ reorderable = true,
 }: SortableCodeNodeProps) => {
- const nodeDragDisabled = dragDisabled || node.type === 'cluster';
+ const nodeDragDisabled = dragDisabled || !reorderable || node.type === 'cluster';
  const {
  attributes,
  listeners,
@@ -177,7 +183,7 @@ export const SortableCodeNode = ({
  id: node.id,
  disabled: {
  draggable: nodeDragDisabled,
- droppable: dragDisabled,
+ droppable: dragDisabled || !reorderable,
  },
  });
 
@@ -189,6 +195,7 @@ export const SortableCodeNode = ({
  tabIndex={tabIndex}
  dragDisabled={nodeDragDisabled}
  parentClassificationName={parentClassificationName}
+ reorderable={reorderable}
  nodeRef={setNodeRef}
  style={{
  transform: CSS.Translate.toString(transform),

@@ -15,6 +15,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 const harness = vi.hoisted(() => ({ getRewardList: vi.fn() }));
 
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 쓰기 권한을 모두 가진 관리자로 렌더한다.
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: ['REWARD_READ', 'REWARD_CREATE', 'REWARD_UPDATE', 'REWARD_DELETE'], authorizationVersion: 'v1' } }) }));
+
 vi.mock('@/services/foundation/operation/OperationAdminService', () => ({
   operationAdminService: { getRewardList: harness.getRewardList, createReward: vi.fn() },
 }));

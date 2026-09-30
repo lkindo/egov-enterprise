@@ -151,7 +151,8 @@ class FileServiceTest {
         given(oversized.getSize()).willReturn(10L * 1024 * 1024 + 1);
 
         assertThatThrownBy(() -> fileService.uploadFiles(List.of(oversized)))
-                .isInstanceOf(BusinessException.class);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("10MB 이하");
 
         verify(oversized, never()).getInputStream();
         verify(fileMasterRepository, never()).save(any());
@@ -160,12 +161,15 @@ class FileServiceTest {
     @Test
     @DisplayName("파일 업로드 - 빈 목록과 20개 초과 요청을 거부한다")
     void uploadFiles_rejectsEmptyOrExcessiveFileCount() {
+        // [2026-09-30] 한도가 있는 거부는 한도를 말한다 — 사유 없는 기본 문구로는 무엇을 줄여야 하는지 알 수 없다.
         assertThatThrownBy(() -> fileService.uploadFiles(List.of()))
-                .isInstanceOf(BusinessException.class);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("올릴 파일이 없습니다");
 
         MultipartFile placeholder = mock(MultipartFile.class);
         assertThatThrownBy(() -> fileService.uploadFiles(Collections.nCopies(21, placeholder)))
-                .isInstanceOf(BusinessException.class);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("20개까지");
 
         verify(fileMasterRepository, never()).save(any());
     }
@@ -204,7 +208,8 @@ class FileServiceTest {
                 .toList();
 
         assertThatThrownBy(() -> fileService.uploadFiles(files))
-                .isInstanceOf(BusinessException.class);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("전체 크기는 50MB 이하");
 
         verify(files.get(5), never()).getInputStream();
         verify(fileMasterRepository, never()).save(any());

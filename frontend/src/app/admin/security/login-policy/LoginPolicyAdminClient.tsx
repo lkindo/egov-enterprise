@@ -30,6 +30,8 @@ import {
 } from '@/components/ui/form';
 
 import { LoginPolicyDtoSchema } from '@/types/generated-zod';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 const optionalStartTimeSchema = LoginPolicyDtoSchema.shape.bgngTm
   .unwrap()
@@ -114,6 +116,13 @@ export default function LoginPolicyAdminClient() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const confirm = useConfirm();
+  // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다. 이 화면은 조회 권한(LOGIN_POL_READ)만으로 들어올 수 있어,
+  //   종전에는 폼을 다 채운 뒤에야 403 을 만났다. 정책이 없는 사용자의 저장은 등록, 있는 사용자의 저장은 수정이다.
+  //   표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
+  const { user } = useAuth();
+  const canCreatePolicy = canPermission(user, 'LOGIN_POL_CREATE');
+  const canUpdatePolicy = canPermission(user, 'LOGIN_POL_UPDATE');
+  const canDeletePolicy = canPermission(user, 'LOGIN_POL_DELETE');
   const [selectedPolicy, setSelectedPolicy] = useState<LoginPolicy | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   /**
@@ -300,11 +309,14 @@ export default function LoginPolicyAdminClient() {
           : <span className="text-muted-foreground">미적용</span>
       ),
     },
-    {
+    // 쓸 수 있는 동작이 하나도 없으면 설정 열을 두지 않는다 — 정책 내용은 앞 열들이 그대로 보인다.
+    ...(canCreatePolicy || canUpdatePolicy || canDeletePolicy ? [{
       header: '설정',
       className: 'text-right w-28',
-      accessor: (item) => (
+      accessor: (item: LoginPolicy) => (
         <div className="flex items-center justify-end gap-1">
+          {/* 같은 모달이 등록·수정을 겸한다 — 그 행에서 저장이 부를 동작의 권한으로 여는 버튼을 가린다. */}
+          {(item.regYn === 'Y' ? canUpdatePolicy : canCreatePolicy) && (
           <Button
             variant="ghost"
             size="icon-sm"
@@ -313,8 +325,9 @@ export default function LoginPolicyAdminClient() {
           >
             <Settings2 size={16} aria-hidden="true" />
           </Button>
+          )}
           {/* 정책이 있는 사용자에게만 해제를 노출한다 — 없는 대상에 삭제 버튼을 두면 거짓 어포던스다. */}
-          {item.regYn === 'Y' ? (
+          {item.regYn === 'Y' && canDeletePolicy ? (
             <Button
               variant="ghost"
               size="icon-sm"
@@ -329,7 +342,7 @@ export default function LoginPolicyAdminClient() {
           ) : null}
         </div>
       ),
-    },
+    }] : []),
   ];
 
   const otpEnabledCount = data.filter(p => p.otpUseYn === 'Y').length;

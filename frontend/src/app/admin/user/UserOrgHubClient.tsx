@@ -86,6 +86,7 @@ import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
 import { canPermission } from '@/lib/auth/permissions';
+import { failureMessage } from '@/lib/safe-error-log';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
@@ -200,6 +201,19 @@ export default function UserOrgHubClient({
   // 권한 그룹 화면은 이 허브와 권한이 다르다 — 라우트 게이트와 같은 판정으로만 길을 보인다(DIP B4 P1).
   const { user: currentUser } = useAuth();
   const canOpenAuthority = canOpenPage(currentUser, '/admin/security/authority');
+  // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다. 이 화면은 조회 권한(USER_READ)만으로 들어올 수 있어,
+  //   종전에는 헬프데스크 담당자에게도 등록·수정·초기화·삭제·일괄 작업이 모두 보였고 폼을 다 채운 뒤에야 403 을 만났다.
+  //   표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
+  const canCreateUser = canPermission(currentUser, 'USER_CREATE');
+  const canUpdateUser = canPermission(currentUser, 'USER_UPDATE');
+  const canResetPassword = canPermission(currentUser, 'USER_PASSWORD');
+  const canChangeUserStatus = canPermission(currentUser, 'USER_STATUS');
+  const canMoveUserDept = canPermission(currentUser, 'USER_DEPT');
+  const canDeleteUser = canPermission(currentUser, 'USER_DELETE');
+  const canCreateDept = canPermission(currentUser, 'DEPT_CREATE');
+  const canUpdateDept = canPermission(currentUser, 'DEPT_UPDATE');
+  const canDeleteDept = canPermission(currentUser, 'DEPT_DELETE');
+  const canUpdateAbsence = canPermission(currentUser, 'ABSENCE_UPDATE');
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [activeWriteOperation, setActiveWriteOperation] = useState<UserOrgWriteOperation | null>(null);
@@ -507,7 +521,7 @@ export default function UserOrgHubClient({
       if (extractFieldErrors(error)) throw error;
       // 인가 실패(403 등)를 포함한 서버 메시지를 그대로 보여준다 — 일반 문구로 뭉개면
       // 사용자는 권한 문제인지 입력 문제인지 알 수 없다(H3 의미 보존, 감사 m-2).
-      const message = error instanceof Error ? error.message : '사용자 저장 중 오류가 발생했습니다.';
+      const message = failureMessage(error, '사용자 저장 중 오류가 발생했습니다.');
       toast(message, 'error');
     } finally {
       finishNonFormAction(operation);
@@ -547,7 +561,7 @@ export default function UserOrgHubClient({
       toast('계정 잠금을 해제했습니다.', 'success');
       await queryClient.invalidateQueries({ queryKey: ['admin-user-detail', selectedItemId] });
     } catch (error) {
-      toast(error instanceof Error ? error.message : '계정 잠금을 해제하지 못했습니다.', 'error');
+      toast(failureMessage(error, '계정 잠금을 해제하지 못했습니다.'), 'error');
     } finally {
       finishNonFormAction(operation);
     }
@@ -574,7 +588,7 @@ export default function UserOrgHubClient({
         refetchUsers();
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : '사용자 삭제 중 오류가 발생했습니다.';
+      const message = failureMessage(error, '사용자 삭제 중 오류가 발생했습니다.');
       toast(message, 'error');
     } finally {
       finishNonFormAction(operation);
@@ -606,7 +620,7 @@ export default function UserOrgHubClient({
         refetchDepts();
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : '부서 삭제 중 오류가 발생했습니다.';
+      const message = failureMessage(error, '부서 삭제 중 오류가 발생했습니다.');
       toast(message, 'error');
     } finally {
       finishNonFormAction(operation);
@@ -632,7 +646,7 @@ export default function UserOrgHubClient({
         if (res.success) refetchUsers();
       }
     } catch (error) {
-      toast(error instanceof Error ? error.message : '일괄 삭제 중 오류가 발생했습니다.', 'error');
+      toast(failureMessage(error, '일괄 삭제 중 오류가 발생했습니다.'), 'error');
     } finally {
       finishNonFormAction(operation);
     }
@@ -682,8 +696,9 @@ export default function UserOrgHubClient({
 
 
 
+  // 권한이 있는 일괄 작업만 싣는다. 하나도 없으면 표의 선택 체크박스도 걷는다(아래 enableSelection).
   const userBulkActions = [
-    {
+    ...(canChangeUserStatus ? [{
       label: '상태 변경',
       icon: <Activity size={16} />,
       disabled: isSaving,
@@ -692,8 +707,8 @@ export default function UserOrgHubClient({
         setSelectedBulkItems(items as UserManage[]);
         setIsBulkStatusModalOpen(true);
       }
-    },
-    {
+    }] : []),
+    ...(canMoveUserDept ? [{
       label: '부서 이동',
       icon: <Network size={16} />,
       disabled: isSaving,
@@ -702,9 +717,8 @@ export default function UserOrgHubClient({
         setSelectedBulkItems(items as UserManage[]);
         setIsBulkMoveModalOpen(true);
       }
-    },
-
-    {
+    }] : []),
+    ...(canDeleteUser ? [{
       label: '일괄 삭제',
       icon: <UserMinus size={16} />,
       variant: 'destructive' as const,
@@ -712,7 +726,7 @@ export default function UserOrgHubClient({
       ariaBusy: activeWriteOperation === 'bulk-delete',
       pendingLabel: '일괄 삭제 처리 중…',
       onClick: handleBulkDelete
-    }
+    }] : []),
   ];
 
   // 조회 실패는 목록 영역에 ErrorStateDisplay(다시 시도 버튼 포함)로 상주 노출한다.
@@ -828,7 +842,8 @@ export default function UserOrgHubClient({
             : <span className="text-xs text-muted-foreground">정상</span>;
         },
       },
-      {
+      // 부재를 바꿀 권한(ABSENCE_UPDATE)이 없으면 조치 열을 두지 않는다 — 부재 여부는 그대로 보인다.
+      ...(canUpdateAbsence ? [{
         header: '조치',
         className: 'text-right w-36',
         accessor: (user: UserManage) => {
@@ -860,7 +875,7 @@ export default function UserOrgHubClient({
             </div>
           );
         },
-      },
+      }] : []),
     ] satisfies Column<UserManage>[]) : ([
       {
         header: '상태',
@@ -936,6 +951,7 @@ export default function UserOrgHubClient({
 
   const detailActions = isDeptTab ? (
     <>
+      {canUpdateDept && (
       <Button
         type="button"
         variant="outline"
@@ -947,6 +963,8 @@ export default function UserOrgHubClient({
       >
         <Pencil size={14} aria-hidden="true" /> 정보 수정
       </Button>
+      )}
+      {canDeleteDept && (
       <Button
         type="button"
         variant="destructive"
@@ -959,11 +977,13 @@ export default function UserOrgHubClient({
         <Trash2 size={14} aria-hidden="true" />
         {activeWriteOperation === 'delete-dept' ? '부서 삭제 중…' : '부서 삭제'}
       </Button>
+      )}
     </>
   ) : (
     <>
       {/* 종전에는 같은 `handleOpenUserEdit` 를 부르는 버튼이 패널 우상단(아이콘)과 하단(CTA)에
           두 벌 있었다 — 같은 명령을 두 곳에 두면 어느 쪽이 무엇을 하는지 판정 비용만 는다(G10). */}
+      {canUpdateUser && (
       <Button
         type="button"
         variant="outline"
@@ -975,6 +995,8 @@ export default function UserOrgHubClient({
       >
         <Pencil size={14} aria-hidden="true" /> 정보 수정
       </Button>
+      )}
+      {canResetPassword && (
       <Button
         type="button"
         variant="outline"
@@ -985,7 +1007,8 @@ export default function UserOrgHubClient({
       >
         <KeyRound size={14} aria-hidden="true" /> 비밀번호 초기화
       </Button>
-      {displayedUser?.lckYn === 'Y' && canPermission(currentUser, 'USER_STATUS') && (
+      )}
+      {displayedUser?.lckYn === 'Y' && canChangeUserStatus && (
         <Button
           type="button"
           variant="outline"
@@ -998,6 +1021,7 @@ export default function UserOrgHubClient({
           <LockOpen size={14} aria-hidden="true" /> 잠금 해제
         </Button>
       )}
+      {canDeleteUser && (
       <Button
         type="button"
         variant="destructive"
@@ -1011,6 +1035,7 @@ export default function UserOrgHubClient({
         {/* 실제 동작은 계정 삭제다. '접근 차단'은 무엇을 하는지 오인시킨다. */}
         {activeWriteOperation === 'delete-user' ? '사용자 삭제 중…' : '사용자 삭제'}
       </Button>
+      )}
     </>
   );
 
@@ -1023,11 +1048,11 @@ export default function UserOrgHubClient({
         : [{ label: '사용자 관리' }, { label: meta.title }]}
       filterStateKey="user-org-hub"
       totalCount={toolbarTotalCount}
-      actions={isDeptTab ? (
+      actions={isDeptTab ? (canCreateDept ? (
         <Button type="button" onClick={handleOpenDeptCreate} disabled={isSaving} className="gap-2">
           <LayoutGrid size={16} aria-hidden="true" /> 부서 등록
         </Button>
-      ) : activeTab === 'USERS' ? (
+      ) : undefined) : activeTab === 'USERS' && canCreateUser ? (
         <Button type="button" onClick={handleOpenUserCreate} disabled={isSaving} className="gap-2">
           <UserPlus size={16} aria-hidden="true" /> 사용자 등록
         </Button>
@@ -1202,9 +1227,9 @@ export default function UserOrgHubClient({
             {isDeptTab ? (
               <UserOrgMasterSection
                 title="조직 구조"
-                description="끌어서 순서를 바꾸고 오른쪽으로 밀어 하위 부서로 만듭니다."
+                description={canUpdateDept ? '끌어서 순서를 바꾸고 오른쪽으로 밀어 하위 부서로 만듭니다.' : '부서를 선택하면 오른쪽에 상세가 열립니다.'}
                 icon={Network}
-                tools={(
+                tools={canUpdateDept ? (
                   <Button
                     type="button"
                     size="sm"
@@ -1218,7 +1243,7 @@ export default function UserOrgHubClient({
                       : <Save size={14} aria-hidden="true" />}
                     {activeWriteOperation === 'dept-hierarchy' ? '조직 계층 저장 중…' : '조직 계층 저장'}
                   </Button>
-                )}
+                ) : undefined}
               >
                 {deptListChangedWhileEditing && (
                   <div role="status" className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
@@ -1256,6 +1281,7 @@ export default function UserOrgHubClient({
                                           isSelected={selectedItemId === node.ognzId}
                                           isTabStop={selectedItemId === node.ognzId || (selectedItemId === null && index === 0)}
                                           onClick={() => setSelectedItemId(node.ognzId || null)}
+                                          reorderable={canUpdateDept}
                                       />
                                   ))}
                               </div>
@@ -1302,7 +1328,7 @@ export default function UserOrgHubClient({
                   // ⚠ e2e(23-security-auth-supplement E12)가 /검색 결과가 없습니다|데이터가 존재하지 않습니다/ 로 단언한다.
                   emptyMessage={hasUserFilter && !searchKeyword.trim() ? '조건에 맞는 사용자가 없습니다.' : emptyResultMessage(searchKeyword, '데이터가 존재하지 않습니다.')}
                   // 업무형 화면은 진입 애니메이션을 두지 않는다(카탈로그 §3 금지 목록).
-                  enableSelection={true}
+                  enableSelection={canChangeUserStatus || canMoveUserDept || canDeleteUser}
                   bulkActions={userBulkActions}
                   className="border-none shadow-none bg-transparent"
                   // ⚠ 총 건수는 셸의 결과 툴바가 단독으로 소유한다 — 여기에 totalCount 를 다시 넘기면

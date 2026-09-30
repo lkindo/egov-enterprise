@@ -46,9 +46,11 @@ interface SortableDeptNodeProps {
     isTabStop: boolean;
     onClick: () => void;
     isOverlay?: boolean;
+    /** 계층을 바꿀 권한(DEPT_UPDATE)이 없으면 끌기 핸들을 두지 않는다 — 저장할 수 없는 변경을 만들지 않는다. */
+    reorderable?: boolean;
 }
 
-export const SortableDeptNode = ({ node, isSelected, isTabStop, onClick, isOverlay = false }: SortableDeptNodeProps) => {
+export const SortableDeptNode = ({ node, isSelected, isTabStop, onClick, isOverlay = false, reorderable = true }: SortableDeptNodeProps) => {
     const {
         attributes,
         listeners,
@@ -56,7 +58,7 @@ export const SortableDeptNode = ({ node, isSelected, isTabStop, onClick, isOverl
         transform,
         transition,
         isDragging,
-    } = useSortable({ id: node.ognzId || '', disabled: isOverlay });
+    } = useSortable({ id: node.ognzId || '', disabled: isOverlay || !reorderable });
 
     const style = {
         transform: isOverlay ? undefined : CSS.Translate.toString(transform),
@@ -91,6 +93,7 @@ export const SortableDeptNode = ({ node, isSelected, isTabStop, onClick, isOverl
                 isOverlay && "border-primary bg-card shadow-lg"
               )}
             >
+              {reorderable && (
               <button
                 type="button"
                 {...attributes}
@@ -101,6 +104,7 @@ export const SortableDeptNode = ({ node, isSelected, isTabStop, onClick, isOverl
               >
                 <GripVertical size={14} aria-hidden="true" />
               </button>
+              )}
               <button
                 type="button"
                 data-a2-master-item={isOverlay ? undefined : ''}

@@ -31,6 +31,8 @@ import { GroupManageDtoSchema } from '@/types/generated-zod';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { FormErrorSummary } from '@/components/ui/form';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 ;
 
 /** 이 화면이 소유한 쿼리 키. 새로고침/무효화는 반드시 이 범위로만 좁힌다. */
@@ -48,6 +50,13 @@ export default function SecurityGroupClient() {
  const queryClient = useQueryClient();
  const { toast } = useToast();
  const confirm = useConfirm();
+ // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다. 이 화면은 조회 권한(CLASS_GRP_READ)만으로 들어올 수 있어,
+ //   종전에는 등록·수정·삭제·일괄 삭제가 모두 보였고 폼을 다 채운 뒤에야 403 을 만났다.
+ //   표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
+ const { user } = useAuth();
+ const canCreateGroup = canPermission(user, 'CLASS_GRP_CREATE');
+ const canUpdateGroup = canPermission(user, 'CLASS_GRP_UPDATE');
+ const canDeleteGroup = canPermission(user, 'CLASS_GRP_DELETE');
  const submitPendingRef = useRef(false);
  const deletePendingRef = useRef(false);
  const [page, setPage] = useState(1);
@@ -261,14 +270,18 @@ export default function SecurityGroupClient() {
  ),
  className: 'w-48'
  },
- {
+ // 수정·삭제 권한이 하나도 없으면 관리 열을 두지 않는다.
+ ...(canUpdateGroup || canDeleteGroup ? [{
   header: '관리',
  className: 'text-right w-32',
  accessor: (item: GroupManage) => (
  <div className="flex justify-end gap-2 pr-4">
+ {canUpdateGroup && (
  <Button variant="ghost" size="icon" disabled={isDeletePending || isSubmitPending} onClick={() => handleEdit(item)} aria-label={`${item.groupNm || item.groupId} 그룹 수정`} className="bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold shadow-sm group">
  <Settings size={16} aria-hidden="true" className="group-hover:rotate-45 transition-transform" />
  </Button>
+ )}
+ {canDeleteGroup && (
  <Button
   variant="ghost"
   size="icon"
@@ -282,9 +295,10 @@ export default function SecurityGroupClient() {
   ? <Loader2 size={16} aria-hidden="true" className="animate-spin" />
   : <Trash2 size={16} aria-hidden="true" />}
  </Button>
+ )}
  </div>
  )
- }
+ }] : []),
  ];
 
  return (
@@ -306,9 +320,11 @@ export default function SecurityGroupClient() {
  <RefreshCcw size={16} aria-hidden="true" />
  새로고침
  </Button>
+ {canCreateGroup && (
  <Button size="sm" onClick={handleCreate} disabled={isDeletePending || isSubmitPending} className="gap-2">
  <Plus size={16} aria-hidden="true" /> 분류 그룹 등록
  </Button>
+ )}
  </>
  }
  filter={
@@ -322,15 +338,16 @@ export default function SecurityGroupClient() {
  >
  <StandardDataTable
  accessibleLabel="사용자 분류 그룹 목록"
- enableSelection
- bulkActions={[{
+ // 일괄 삭제 권한이 없으면 일괄 작업도 선택 체크박스도 두지 않는다.
+ enableSelection={canDeleteGroup}
+ bulkActions={canDeleteGroup ? [{
    label: '선택 그룹 삭제',
    variant: 'destructive',
    disabled: isBulkDeleting || isDeletePending || isSubmitPending,
    ariaBusy: isBulkDeleting,
    pendingLabel: '삭제 처리 중…',
    onClick: (items) => { void handleBulkDelete(items); },
- }]}
+ }] : []}
  keyField="groupId"
  columns={columns}
  data={groups}

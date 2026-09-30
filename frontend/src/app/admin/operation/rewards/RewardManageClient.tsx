@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Pencil, Plus, RefreshCcw, Trash2 } from 'lucide-react';
+import { Eye, Loader2, Pencil, Plus, RefreshCcw, Trash2 } from 'lucide-react';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
@@ -30,6 +30,8 @@ import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
 import { RewardManageDtoSchema } from '@/types/generated-zod';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 export const rewardSchema = RewardManageDtoSchema.extend({
   rwardNm: RewardManageDtoSchema.shape.rwardNm.unwrap().min(1),
@@ -53,6 +55,11 @@ const EMPTY_FORM: RewardFormValues = {
 export default function RewardManageClient({ initialPage }: { initialPage: PageResponse<Reward> }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 조회 권한(REWARD_READ)만으로 들어온 사람은 종전에 눌러 본 뒤에야 403 을 만났다(표시 판정일 뿐, 서버 인가는 그대로다).
+  const { user } = useAuth();
+  const canCreateReward = canPermission(user, 'REWARD_CREATE');
+  const canUpdateReward = canPermission(user, 'REWARD_UPDATE');
+  const canDeleteReward = canPermission(user, 'REWARD_DELETE');
   const [page, setPage] = useState(1);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -62,6 +69,8 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
   const confirm = useConfirm();
   /** 수정 대상. null 이면 등록 모달이다(2026-09-05 DEC-OPS-036 — 종전에는 등록만 되고 고칠 수 없었다, 감사 D11-01). */
   const [editing, setEditing] = useState<Reward | null>(null);
+  // 수정 권한 없이 연 행은 조회 전용이다 — 같은 창으로 공적 내용을 읽기만 한다.
+  const isViewOnly = editing !== null && !canUpdateReward;
   const [deletingSn, setDeletingSn] = useState<number | null>(null);
   const deletePendingRef = useRef(false);
 
@@ -140,6 +149,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
   const totalPages = data?.totalPage ?? Math.ceil(totalItems / size);
 
   const onRegisterSubmit = async (values: RewardFormValues) => {
+    if (isViewOnly) return;
     if (registerSubmitLock.current) return;
     registerSubmitLock.current = true;
     try {
@@ -219,10 +229,11 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
     //   (전 저장소 grep 실측). 그래서 두 열은 전 건 영구 '대기중'·빈칸이었고, 결재자는 무엇을
     //   눌러야 할지 알 수 없고 등록자는 왜 안 넘어가는지 알 수 없었다.
     //   열이 존재하는 것 자체가 없는 절차를 약속한다. 승인 기능을 만들 때 함께 되살린다.
+    // 공적 내용은 목록 열에 없고 이 창으로만 볼 수 있다. 수정 권한이 없으면 같은 창을 조회 전용으로 연다.
     {
       header: '관리',
       className: 'text-right w-28',
-      accessor: (item) => {
+      accessor: (item: Reward) => {
         const isDeleting = deletingSn !== null && deletingSn === item.rwrdSn;
         return (
           <div className="flex items-center justify-end gap-1 pr-2">
@@ -230,12 +241,13 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
               variant="ghost"
               size="icon"
               disabled={deletingSn !== null || registerLoading}
-              aria-label={`${item.rwardNm} 수정`}
+              aria-label={canUpdateReward ? `${item.rwardNm} 수정` : `${item.rwardNm} 상세 보기`}
               onClick={() => openEdit(item)}
               className="rounded-md text-muted-foreground"
             >
-              <Pencil size={16} aria-hidden="true" />
+              {canUpdateReward ? <Pencil size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
             </Button>
+            {canDeleteReward && (
             <Button
               variant="ghost"
               size="icon"
@@ -249,6 +261,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
                 ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                 : <Trash2 size={16} aria-hidden="true" />}
             </Button>
+            )}
           </div>
         );
       },
@@ -275,9 +288,11 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
             <RefreshCcw size={16} aria-hidden="true" />
             새로고침
           </Button>
+          {canCreateReward && (
           <Button size="sm" onClick={openCreate} className="gap-2">
             <Plus size={16} aria-hidden="true" /> 포상 기록 등록
           </Button>
+          )}
         </>
       }
       filter={
@@ -311,7 +326,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
       <StandardModal
         isOpen={isModalOpen}
         onClose={closeRegisterModal}
-        title={editing ? '포상 기록 수정' : '포상 기록 등록'}
+        title={isViewOnly ? '포상 기록 상세' : editing ? '포상 기록 수정' : '포상 기록 등록'}
         maxWidth="xl"
         footer={
           <div className="flex w-full gap-2">
@@ -322,8 +337,9 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
               disabled={registerLoading || form.formState.isSubmitting}
               className="flex-1"
             >
-              취소
+              {isViewOnly ? '닫기' : '취소'}
             </Button>
+            {!isViewOnly && (
             <Button 
               type="submit"
               form="reward-register-form"
@@ -332,6 +348,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
             >
 {registerLoading ? (editing ? '저장 중…' : '등록 중…') : (editing ? '수정 저장' : '최종 등록')}
             </Button>
+            )}
           </div>
         }
       >
@@ -342,6 +359,8 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
             onSubmit={form.handleSubmit(onRegisterSubmit)}
             className="space-y-[var(--form-gap)] pt-2 text-left"
           >
+            {/* 조회 전용이면 입력을 통째로 잠근다 — 값은 읽히고 바꿀 수는 없다. */}
+            <fieldset disabled={isViewOnly} className="contents">
             <FormErrorSummary
               labels={{
                 rwardNm: '포상 명칭',
@@ -427,6 +446,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
                 </FormItem>
               )}
             />
+            </fieldset>
           </form>
         </Form>
       </StandardModal>

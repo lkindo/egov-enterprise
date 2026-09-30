@@ -7,7 +7,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Briefcase, ArrowLeft } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/app/components/ui/toast';
+import { failureMessage } from '@/lib/safe-error-log';
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
 import { DeptJobForm, DeptJobFormValues } from '@/components/business/deptJob/DeptJobForm';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
@@ -23,6 +24,7 @@ import { extractFieldErrors } from '@/app/actions/actionUtils';
  * 이제 서버가 채번한 식별자로 상세 화면에 착지시킨다.
  */
 export default function DeptJobCreateClient() {
+  const toast = useToast();
   const router = useRouter();
   const queryClient = useQueryClient();
   const completedRef = useRef(false);
@@ -41,7 +43,7 @@ export default function DeptJobCreateClient() {
       router.push(newSn ? `/smart-toolkit/dept-job/${newSn}` : '/smart-toolkit/dept-job');
     } catch (error) {
       if (extractFieldErrors(error)) throw error;
-      toast.error(error instanceof Error ? error.message : '업무 등록에 실패했습니다.');
+      toast.error(failureMessage(error, '업무 등록에 실패했습니다.'));
     } finally { pendingRef.current = false; }
   };
 

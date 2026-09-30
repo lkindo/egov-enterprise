@@ -171,6 +171,29 @@ const eslintConfig = [
     }
   },
   {
+    // [2026-09-30] 토스트는 `useToast`(app/components/ui/toast) 하나로 띄운다.
+    //
+    // sonner 를 화면이 직접 부르면 두 가지가 빠진다. 문구 정규화를 거치지 않아 전송 원문(`Network Error`)이
+    // 사용자 문장 자리에 들어가고, "실패 한 번에 토스트 하나" 규칙(전역 실패 알림을 화면 토스트가 거둬 가는
+    // 경로)을 지나지 않아 같은 실패가 두 번 뜬다. 2026-09-30 기준 직접 호출 7곳을 옮기고 0건에서 동결한다.
+    files: ["src/**/*.ts", "src/**/*.tsx"],
+    ignores: [
+      "src/app/components/ui/toast.tsx",
+      "src/components/ui/sonner.tsx",
+      "src/**/__tests__/**",
+      "src/**/*.test.ts",
+      "src/**/*.test.tsx",
+    ],
+    rules: {
+      "no-restricted-imports": ["error", {
+        paths: [{
+          name: "sonner",
+          message: "sonner 를 직접 부르지 말고 useToast(@/app/components/ui/toast)를 쓰세요 — 문구 정규화와 '실패 1회 = 토스트 1개' 규칙이 그 안에 있습니다.",
+        }],
+      }],
+    },
+  },
+  {
     files: ["src/services/**/*.ts"],
     rules: {
       "@typescript-eslint/naming-convention": [

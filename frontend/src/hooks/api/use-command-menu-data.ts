@@ -1,4 +1,6 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { openableMenus } from '@/lib/navigation/openable-menus';
 import { menuService } from '@/services/business/user/MenuService';
 import type { UserInfo } from '@/services/foundation/auth/authService';
 import type { MenuInfo } from '@/types/foundation/menu';
@@ -25,9 +27,12 @@ export function useCommandMenuData(isOpen: boolean, user: UserInfo | null) {
     staleTime: 0,
     placeholderData: undefined,
   });
+  // 재조회 중에는 이전 허용 목록을 액션으로 제시하지 않는다. 응답이 늦어도 다른 scope로 옮겨지지 않는다.
+  const assignedMenus = enabled && !menus.isFetching && !menus.isError ? menus.data ?? NO_MENUS : NO_MENUS;
+  // [2026-10-01] 배정됐어도 기능 권한이 없어 들어갈 수 없는 메뉴는 제안하지 않는다 — 즐겨찾기·최근 방문도 이 목록과 맞춰 본다.
+  const headMenus = useMemo(() => openableMenus(assignedMenus, user), [assignedMenus, user]);
   return {
-    // 재조회 중에는 이전 허용 목록을 액션으로 제시하지 않는다. 응답이 늦어도 다른 scope로 옮겨지지 않는다.
-    headMenus: enabled && !menus.isFetching && !menus.isError ? menus.data ?? NO_MENUS : NO_MENUS,
+    headMenus,
     bookmarkNos: enabled && !bookmarks.isFetching && !bookmarks.isError
       ? bookmarks.data?.map(bookmark => bookmark.menuNo) ?? NO_BOOKMARKS : NO_BOOKMARKS,
   };
