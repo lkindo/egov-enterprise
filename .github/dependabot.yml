@@ -44,6 +44,15 @@ updates:
       #   (major 는 파괴적 변경이라 개별 판정이 필요하다).
       minor-and-patch:
         update-types: ["minor", "patch"]
+    # [2026-09-30] 런타임 메이저(JDK·Node)는 버전 번호가 아니라 결정이다 — 지원 주기(LTS)·ADR-0024 류의
+    #   전환 검증이 먼저다. #808(Temurin 21→23, 비 LTS·지원 종료)과 #809(Node 22→26)가 CI 를 통과했지만
+    #   CI e2e 는 프런트를 로컬 Node 로 돌려 Node 26 런타임을 검증하지 않는다. 메이저는 받지 않고, 같은 라인의
+    #   digest·패치 갱신은 계속 받는다. 런타임을 올릴 때는 이 항목을 ADR 과 함께 바꾼다.
+    ignore:
+      - dependency-name: "eclipse-temurin"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
 
   # ── Gradle ── 루트 build.gradle + gradle/libs.versions.toml + 5개 서브모듈
   #   ⚠ version-update 는 이 설정으로 돌지만, **security-update(취약점 기반 PR)는 의존성 그래프에
