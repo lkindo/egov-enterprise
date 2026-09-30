@@ -2,7 +2,7 @@
 # Node 22 LTS와 Alpine 3.24를 유지하고 세 스테이지에 같은 태그·다이제스트를 쓴다.
 # 2026-09-28 registry-1.docker.io의 library/node:22-alpine3.24 manifest list를 실조회했다.
 # 실제 이미지 내용은 다이제스트가 결정하므로 갱신할 때 태그와 다이제스트를 함께 확인한다.
-FROM node:22-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS deps
+FROM node:26-alpine3.24@sha256:0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80 AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 # [W0-11] CI(ci.yml)와 동일한 pnpm --frozen-lockfile 로 통일한다.
@@ -16,7 +16,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # Stage 2: Builder
-FROM node:22-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS builder
+FROM node:26-alpine3.24@sha256:0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80 AS builder
 WORKDIR /app
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
@@ -37,7 +37,7 @@ ENV NEXT_DOCKER_STANDALONE=true
 RUN pnpm run build
 
 # Stage 3: Runner
-FROM node:22-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS runner
+FROM node:26-alpine3.24@sha256:0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80 AS runner
 ARG BASELINE_BUILD_SHA
 ARG BASELINE_BUILD_INPUT_TREE_SHA256
 LABEL org.opencontainers.image.revision="${BASELINE_BUILD_SHA}" \
