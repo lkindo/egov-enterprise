@@ -81,6 +81,8 @@ class InformalSanctionWorkflowServiceTest {
     void setUp() {
         security = mockStatic(SecurityUtil.class, CALLS_REAL_METHODS);
         actor("owner");
+        // 기본은 결재 기능 권한을 모두 가진 사용자다. 권한이 빠진 경우는 해당 테스트가 따로 정한다.
+        permissions("APPROVAL_APPROVE", "APPROVAL_CANCEL", "APPROVAL_CREATE");
     }
 
     @AfterEach
@@ -93,6 +95,12 @@ class InformalSanctionWorkflowServiceTest {
 
     private void actor(String userId) {
         security.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
+    }
+
+    private void permissions(String... held) {
+        java.util.Set<String> granted = java.util.Set.of(held);
+        security.when(() -> SecurityUtil.hasPermission(org.mockito.ArgumentMatchers.anyString()))
+                .thenAnswer(invocation -> granted.contains(invocation.<String>getArgument(0)));
     }
 
     private InformalSanction header(String status) {
@@ -131,6 +139,9 @@ class InformalSanctionWorkflowServiceTest {
         given(userRepository.findAllById(any())).willReturn(java.util.Arrays.stream(userIds)
                 .map(userId -> User.builder().esntlId(userId).userId(userId).userNm(userId)
                         .pswd("{bcrypt}x").userSttsCd("P").build()).toList());
+        // 결재선 검증은 결재자의 결재 권한(APPROVAL_APPROVE)도 본다 — 기본은 모두 가진 것으로 둔다.
+        org.mockito.Mockito.lenient().when(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE"))
+                .thenReturn(List.of(userIds));
     }
 
     private void knownTask() {
@@ -219,8 +230,139 @@ class InformalSanctionWorkflowServiceTest {
         assertThat(next.status()).isEqualTo(ApprovalStatus.CANCELLED);
         assertThat(history.getAprvYn()).isEqualTo("R");
         assertThat(history.getRjctRsnCn()).isEqualTo("보완 필요");
-        assertThat(events(NotificationRequestedEvent.class)).isEmpty();
-        assertThat(events(SanctionStatusChangedEvent.class)).hasSize(1);
+        // [2026-10-01] 같은 차례였던 다른 결재자에게 알린다 — 알리지 않으면 대기함에서 문서가 이유 없이 사라진다.
+        //   아직 차례가 오지 않았던 다음 단계(next)와 반려한 본인에게는 알리지 않는다.
+        assertThat(events(NotificationRequestedEvent.class)).singleElement().satisfies(notification -> {
+            assertThat(notification.receiverEsntlId()).isEqualTo("peer");
+            assertThat(notification.title()).isEqualTo("결재가 반려되었습니다");
+            assertThat(notification.content()).contains("「원래 제목」", "번호 7", "다른 결재자가 반려했습니다");
+            assertThat(notification.linkUrl()).isEqualTo("/approvals");
+        });
+        assertThat(events(SanctionStatusChangedEvent.class)).singleElement()
+                .satisfies(event -> assertThat(event.getDocumentTitle()).isEqualTo("원래 제목"));
+    }
+
+    /*
+     * [2026-10-01] 이미 끝난 문서·이미 처리한 라인을 누른 것은 입력 오류가 아니라 먼저 일어난 처리와의 충돌이다.
+     * 종전에는 사유 없는 400(잘못된 상태 전이)이라 무슨 일이 있었는지 알 수 없었고, 화면도 충돌 흐름으로 가지 못했다.
+     */
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({
+            "R, 이미 반려된 결재입니다",
+            "W, 신청자가 회수한 결재입니다",
+            "C, 이미 승인이 끝난 결재입니다",
+    })
+    @DisplayName("이미 끝난 문서를 처리하면 무슨 일이 있었는지 밝혀 409 로 거부한다")
+    void decidingFinishedDocumentExplainsWhatHappened(String status, String reason) {
+        InformalSanction document = header(status);
+        InformalSanctionDetail own = line(1, 1, "first", true);
+        own.cancel();
+        given(informalSanctionRepository.findByIdForUpdate(7L)).willReturn(Optional.of(document));
+        given(detailRepository.findRevision(7L, document.getAtrzCycl())).willReturn(List.of(own));
+        actor("first");
+
+        assertThatThrownBy(() -> service.confirmInformalSanction(7L, "C", null, 0))
+                .isInstanceOfSatisfying(BusinessException.class, exception -> {
+                    assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.CONCURRENT_MODIFICATION);
+                    assertThat(exception.getMessage()).contains(reason, "최신 상태를 확인해 주세요");
+                });
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    @DisplayName("다른 탭에서 이미 처리한 라인을 다시 처리하면 409 로, 차례가 오지 않은 라인은 403 으로 사유를 말한다")
+    void decidingOwnDecidedOrWaitingLineExplainsWhy() {
+        InformalSanction document = header("A");
+        InformalSanctionDetail decided = line(1, 1, "first", true);
+        decided.decide(true, null, LocalDateTime.of(2026, 9, 16, 10, 0));
+        InformalSanctionDetail peer = line(1, 1, "peer", true);
+        InformalSanctionDetail waiting = line(1, 2, "next", false);
+        given(informalSanctionRepository.findByIdForUpdate(7L)).willReturn(Optional.of(document));
+        given(detailRepository.findRevision(7L, document.getAtrzCycl())).willReturn(List.of(decided, peer, waiting));
+
+        actor("first");
+        assertThatThrownBy(() -> service.confirmInformalSanction(7L, "C", null, 0))
+                .isInstanceOfSatisfying(BusinessException.class, exception -> {
+                    assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.CONCURRENT_MODIFICATION);
+                    assertThat(exception.getMessage()).contains("이미 처리한 결재입니다");
+                });
+
+        actor("next");
+        assertThatThrownBy(() -> service.confirmInformalSanction(7L, "C", null, 0))
+                .isInstanceOfSatisfying(BusinessException.class, exception -> {
+                    assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.ACCESS_DENIED);
+                    assertThat(exception.getMessage()).contains("아직 결재 차례가 아닙니다");
+                });
+        assertThat(peer.status()).isEqualTo(ApprovalStatus.ACTIVE);
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    @DisplayName("이미 끝난 문서의 회수와, 진행 중인 문서의 재상신은 409 로 사유를 말한다")
+    void withdrawingOrResubmittingInWrongStateExplainsWhy() {
+        InformalSanction approved = header("C");
+        given(informalSanctionRepository.findByIdForUpdate(7L)).willReturn(Optional.of(approved));
+        assertThatThrownBy(() -> service.deleteInformalSanction(7L, 0))
+                .isInstanceOfSatisfying(BusinessException.class, exception -> {
+                    assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.CONCURRENT_MODIFICATION);
+                    assertThat(exception.getMessage()).contains("이미 승인이 끝난 결재입니다", "회수할 수 없습니다");
+                });
+
+        InformalSanction inProgress = header("A");
+        given(informalSanctionRepository.findByIdForUpdate(7L)).willReturn(Optional.of(inProgress));
+        assertThatThrownBy(() -> service.resubmitInformalSanction(7L, draft(), 0,
+                List.of(stage(ApprovalStageKind.APPROVAL, "second"))))
+                .isInstanceOfSatisfying(BusinessException.class, exception -> {
+                    assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.CONCURRENT_MODIFICATION);
+                    assertThat(exception.getMessage()).contains("반려되었거나 회수한 결재만 다시 올릴 수 있습니다");
+                });
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    @DisplayName("결재 권한이 없는 사용자를 결재자로 지정하면 이름을 밝혀 거부한다 — 그 단계에서 문서가 멈추지 않게 한다")
+    void approverWithoutApprovePermissionIsRejectedByName() {
+        knownTask();
+        activeUsers("second", "next");
+        given(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).willReturn(List.of("second"));
+
+        assertThatThrownBy(() -> service.registerInformalSanction(draft(), List.of(
+                stage(ApprovalStageKind.AGREEMENT, "second"), stage(ApprovalStageKind.APPROVAL, "next"))))
+                .isInstanceOfSatisfying(BusinessException.class, exception -> {
+                    assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+                    assertThat(exception.getMessage()).isEqualTo("결재 권한이 없는 사용자는 결재자로 지정할 수 없습니다: next");
+                });
+        verify(informalSanctionRepository, never()).save(any(InformalSanction.class));
+    }
+
+    @Test
+    @DisplayName("처리·회수·재상신 힌트는 참여 조건뿐 아니라 그 동작의 기능 권한도 본다")
+    void hintsRequireOperationPermission() {
+        var pageable = PageRequest.of(0, 10);
+        InformalSanction inProgress = header("A");
+        given(informalSanctionRepository.findByAprvrId("first", pageable))
+                .willReturn(new PageImpl<>(List.of(inProgress), pageable, 1));
+        given(detailRepository.findVisibleForDocuments(List.of(7L), "first")).willReturn(List.of(line(1, 1, "first", true)));
+        given(historyRepository.findVisibleForDocuments(List.of(7L), "first"))
+                .willReturn(List.of(InformalSanctionHistory.create(inProgress)));
+        knownTask();
+        activeUsers("owner", "first");
+        actor("first");
+
+        permissions("APPROVAL_CANCEL", "APPROVAL_CREATE");
+        assertThat(service.getReceivedInformalSanctionList("first", pageable).getContent().get(0).isCanApprove()).isFalse();
+        permissions("APPROVAL_APPROVE");
+        assertThat(service.getReceivedInformalSanctionList("first", pageable).getContent().get(0).isCanApprove()).isTrue();
+
+        given(informalSanctionRepository.findSubmitted("owner", null, null, null, null, pageable))
+                .willReturn(new PageImpl<>(List.of(inProgress), pageable, 1));
+        given(detailRepository.findVisibleForDocuments(List.of(7L), "owner")).willReturn(List.of(line(1, 1, "first", true)));
+        given(historyRepository.findVisibleForDocuments(List.of(7L), "owner"))
+                .willReturn(List.of(InformalSanctionHistory.create(inProgress)));
+        actor("owner");
+        assertThat(service.getInformalSanctionList("owner", pageable).getContent().get(0).isCanWithdraw()).isFalse();
+        permissions("APPROVAL_CANCEL");
+        assertThat(service.getInformalSanctionList("owner", pageable).getContent().get(0).isCanWithdraw()).isTrue();
     }
 
     @Test

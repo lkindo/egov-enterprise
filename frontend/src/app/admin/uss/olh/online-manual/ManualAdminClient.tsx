@@ -46,6 +46,7 @@ import { z } from 'zod';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { failureMessage } from '@/lib/safe-error-log';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUnsavedCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import { canPermission } from '@/lib/auth/permissions';
 
 /**
@@ -157,6 +158,9 @@ export default function ManualAdminClient({
     if (savePendingRef.current || deletePendingRef.current) return;
     setIsFormOpen(open);
   };
+
+  // [2026-10-01] 폼에 입력이 있으면 Esc·배경·X 닫기 전에 확인한다(StandardModal 과 같은 보호).
+  const unsavedGuard = useUnsavedCloseGuard({ isOpen: isFormOpen, onClose: () => handleFormOpenChange(false) });
 
   const onFormSubmit = async (values: z.infer<typeof manualSchema>) => {
     if (savePendingRef.current || deletePendingRef.current) return;
@@ -352,8 +356,8 @@ export default function ManualAdminClient({
       />
 
 
-      <Dialog open={isFormOpen} onOpenChange={handleFormOpenChange}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto border-none shadow-2xl rounded-lg p-0 bg-card">
+      <Dialog open={isFormOpen} onOpenChange={(open) => { if (open) handleFormOpenChange(true); else unsavedGuard.requestClose(); }}>
+        <DialogContent onInputCapture={unsavedGuard.trackInput} onChangeCapture={unsavedGuard.trackInput} className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto border-none shadow-2xl rounded-lg p-0 bg-card">
           <Form {...form}>
             <form
               noValidate

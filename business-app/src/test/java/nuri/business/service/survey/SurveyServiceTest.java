@@ -1,6 +1,7 @@
 package nuri.business.service.survey;
 
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.domain.survey.*;
 import nuri.business.service.survey.dto.SurveyArticleDto;
 import nuri.business.service.survey.dto.SurveyInfoDto;
@@ -158,8 +159,36 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 템플릿 삭제 - 성공")
     void deleteTmplat_Success() {
+        given(tmplatRepository.existsById(101L)).willReturn(true);
+        given(infoRepository.countBySrvyTmpltSn(101L)).willReturn(0L);
         surveyService.deleteTmplat(101L);
         verify(tmplatRepository, times(1)).deleteById(101L);
+    }
+
+    @Test
+    @DisplayName("설문 템플릿 삭제 - 이 템플릿으로 만든 설문이 있으면 건수를 밝혀 409 로 거부한다")
+    void deleteTmplat_InUse_RejectsWithCount() {
+        // [2026-10-01] 종전에는 외래 키 오류가 사유 없는 409 기본 문구로 보였다.
+        given(tmplatRepository.existsById(101L)).willReturn(true);
+        given(infoRepository.countBySrvyTmpltSn(101L)).willReturn(3L);
+
+        assertThatThrownBy(() -> surveyService.deleteTmplat(101L))
+                .isInstanceOfSatisfying(BusinessException.class, exception -> {
+                    assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_IN_USE);
+                    assertThat(exception.getMessage()).contains("설문이 3건 있어 삭제할 수 없습니다");
+                });
+        verify(tmplatRepository, never()).deleteById(any());
+    }
+
+    @Test
+    @DisplayName("설문 템플릿 삭제 - 없는 템플릿은 조용히 성공하지 않고 404 다")
+    void deleteTmplat_Missing_NotFound() {
+        given(tmplatRepository.existsById(999L)).willReturn(false);
+
+        assertThatThrownBy(() -> surveyService.deleteTmplat(999L))
+                .isInstanceOfSatisfying(BusinessException.class, exception ->
+                        assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND));
+        verify(tmplatRepository, never()).deleteById(any());
     }
 
     // ==========================================

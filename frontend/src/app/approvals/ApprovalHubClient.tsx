@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { FormErrorSummary } from '@/components/ui/form';
 import { Check, X, User, Calendar, Info, Plus, RefreshCcw, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
@@ -29,10 +29,13 @@ import { emptyResultMessage } from '@/app/components/patterns/empty-result-messa
 import { ApprovalStepper } from './ApprovalStepper';
 import { ApprovalDraftDialog } from './ApprovalDraftDialog';
 import {
+  approvalKeys,
   approvalMutationOptions,
   approvalQueryOptions,
   type ApprovalTab,
 } from '@/queries/approval-query-options';
+import { canPermission } from '@/lib/auth/permissions';
+import { failureMessage } from '@/lib/safe-error-log';
 
 const EMPTY_APPROVALS: InformalSanctionDto[] = [];
 
@@ -323,9 +326,17 @@ export default function ApprovalHubClient() {
       const fieldErrors = extractFieldErrors(error);
       if (fieldErrors) decisionValidation.setFormErrors(fieldErrors);
       const conflict = typeof error === 'object' && error !== null && 'response' in error && (error as { response?: { status?: number } }).response?.status === 409;
-      if (conflict) setNeedsActionReview(true);
-      setActionError(conflict ? '다른 사용자가 문서를 변경했습니다. 입력한 의견은 유지됩니다. 최신 문서를 확인한 뒤 다시 처리해 주세요.' : `${actionNm} 처리 중 오류가 발생했습니다. 입력한 의견은 유지됩니다.`);
-      toast(`${actionNm} 처리 중 오류가 발생했습니다.`, 'error');
+      // [2026-10-01] 충돌(409)은 먼저 일어난 다른 처리다 — 다른 결재자의 반려, 신청자의 회수, 다른 탭에서의 처리.
+      //   서버가 무슨 일이 있었는지 말하므로 그 문구를 그대로 보이고, 목록·상세를 다시 읽어 사라진 문서를 걷는다.
+      if (conflict) {
+        setNeedsActionReview(true);
+        void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
+      }
+      setActionError(conflict
+        ? `${failureMessage(error, '다른 사용자가 문서를 변경했습니다.')} 입력한 의견은 유지됩니다.`
+        : `${failureMessage(error, `${actionNm} 처리 중 오류가 발생했습니다.`)} 입력한 의견은 유지됩니다.`);
+      // 사유는 위 화면 안 안내가 말한다. 토스트는 무엇을 못 했는지만 알린다(실패 1회 = 토스트 1개).
+      toast(`결재를 ${actionNm}하지 못했습니다.`, 'error');
     } finally {
       pendingActionRef.current = false;
       setPendingAction(null);
@@ -350,8 +361,11 @@ export default function ApprovalHubClient() {
       toast('문서를 회수했습니다. 처리 이력은 보존됩니다.', 'success');
       setActionError('');
     } catch (error) {
-      toast(extractErrorMessage(error, '기안 취소에 실패했습니다.'), 'error');
-      setActionError('문서를 회수하지 못했습니다. 최신 상태를 확인한 뒤 다시 시도해 주세요.');
+      const conflict = typeof error === 'object' && error !== null && 'response' in error && (error as { response?: { status?: number } }).response?.status === 409;
+      // 회수하려는 사이에 결재가 끝났을 수 있다 — 서버가 말한 사유를 보이고 최신 상태를 다시 읽는다.
+      if (conflict) void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
+      setActionError(failureMessage(error, '문서를 회수하지 못했습니다. 최신 상태를 확인한 뒤 다시 시도해 주세요.'));
+      toast('결재를 회수하지 못했습니다.', 'error');
     } finally {
       pendingActionRef.current = false;
       setPendingAction(null);
@@ -380,9 +394,14 @@ export default function ApprovalHubClient() {
 
   // 단계와 참여자 권한은 서버가 판정한다. 목록 탭이나 전체 문서 상태만으로 추론하지 않는다.
   const hasListedDocument = list.some(item => sanctionKey(item) === sanctionKey(selectedItem ?? ({} as InformalSanctionDto)));
-  const canDecide = Boolean(detailQuery.data?.canApprove) && hasListedDocument && !needsActionReview && !detailQuery.isError && !detailQuery.isFetching;
-  const canCancel = Boolean(detailQuery.data?.canWithdraw) && !needsActionReview && !detailQuery.isError && !detailQuery.isFetching;
-  const canResubmit = Boolean(detailQuery.data?.canResubmit) && !needsActionReview && !detailQuery.isError && !detailQuery.isFetching;
+  // [2026-10-01] 서버 힌트는 참여 조건과 기능 권한을 함께 본다. 화면도 같은 권한으로 한 번 더 가린다 — 권한이 방금
+  //   회수돼 캐시된 상세가 낡았더라도 버튼이 남지 않는다. 표시 판정일 뿐이며 서버 인가는 그대로다.
+  const canDraft = canPermission(user, 'APPROVAL_CREATE');
+  const canDecide = Boolean(detailQuery.data?.canApprove) && canPermission(user, 'APPROVAL_APPROVE') && hasListedDocument && !needsActionReview && !detailQuery.isError && !detailQuery.isFetching;
+  const canCancel = Boolean(detailQuery.data?.canWithdraw) && canPermission(user, 'APPROVAL_CANCEL') && !needsActionReview && !detailQuery.isError && !detailQuery.isFetching;
+  const canResubmit = Boolean(detailQuery.data?.canResubmit) && canDraft && !needsActionReview && !detailQuery.isError && !detailQuery.isFetching;
+  // 기안 권한이 없으면 없는 버튼을 가리키지 않는다.
+  const emptyMessage = activeTab === 'SUBMITTED' && !canDraft ? '올린 결재가 없습니다.' : EMPTY_MESSAGES[activeTab];
   const isAgreement = selectedItem?.stages?.find(stage => stage.status === 'ACTIVE')?.kind === 'AGREEMENT';
   const isActionPending = pendingAction !== null;
   const rejectReasonFieldProps = decisionValidation.fieldProps('reason');
@@ -414,12 +433,14 @@ export default function ApprovalHubClient() {
             상신을 저장하지 않았고(demo-isolated 승인), demo 밖 프로필에서는 사라진 라우트였다.
             상신은 같은 화면의 다이얼로그가 실제 API 로 수행한다 — 페이지 이동이 없으므로 button 이다.
           */}
+          {canDraft && (
           <Button type="button" disabled={isActionPending} onClick={() => {
             void navigate(() => { setRejectReason(''); decisionValidation.setFormErrors({}, false); setResubmission(undefined); setDraftOpen(true); });
           }}>
             <Plus aria-hidden="true" />
             새 결재 기안
           </Button>
+          )}
         </>
       )}
       navigation={(
@@ -460,8 +481,8 @@ export default function ApprovalHubClient() {
       master={(
         <div className="space-y-3">
           <KeywordFilter
-            label="제목"
-            placeholder="결재 문서 제목"
+            label="제목·번호"
+            placeholder="결재 문서 제목 또는 번호"
             value={keyword}
             onSearch={(next) => applyListFilter(() => setKeyword(next))}
             onReset={() => applyListFilter(() => { setKeyword(''); setPeriod(EMPTY_PERIOD); setStatusFilter(''); })}
@@ -502,8 +523,8 @@ export default function ApprovalHubClient() {
             <div role="status" className="rounded-md border border-dashed border-border p-6 text-center">
               <p className="text-sm font-semibold text-foreground">
                 {keyword
-                  ? emptyResultMessage(keyword, EMPTY_MESSAGES[activeTab])
-                  : hasListFilter ? '조건에 맞는 결재가 없습니다.' : EMPTY_MESSAGES[activeTab]}
+                  ? emptyResultMessage(keyword, emptyMessage)
+                  : hasListFilter ? '조건에 맞는 결재가 없습니다.' : emptyMessage}
               </p>
             </div>
           ) : (
@@ -549,6 +570,8 @@ export default function ApprovalHubClient() {
                       })() : null}
                       <span className="mt-2 flex items-baseline justify-between gap-3">
                         <span className="min-w-0 truncate text-xs text-muted-foreground">
+                          {/* 알림이 '결재(번호 N)' 으로 문서를 가리킨다 — 목록에서 같은 번호로 찾을 수 있어야 한다. */}
+                          {item.ifmlAtrzSn !== undefined && <span className="tabular-nums">번호 {item.ifmlAtrzSn} · </span>}
                           {item.aplcntNm || item.aplcntId || '기안자 미상'}
                         </span>
                         <span className="shrink-0 text-xs tabular-nums text-muted-foreground">

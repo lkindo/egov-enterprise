@@ -51,7 +51,8 @@ export async function bulkDeleteUsersAction(userIds: string[]): Promise<ActionRe
     await userAdminService.deleteUsers(userIds, axiosConfig);
 
     revalidatePath('/admin/user/manage');
-    return { success: true, message: `${userIds.length}명의 사용자가 삭제되었습니다.` };
+    // 서버는 이미 없는 계정을 건너뛴다 — 확인하지 않은 삭제 건수를 말하지 않는다.
+    return { success: true, message: '선택한 사용자를 삭제했습니다.' };
   } catch (error) {
     const errorMessage = extractErrorMessage(error, '일괄 삭제 중 오류 발생');
     return { success: false, message: errorMessage };

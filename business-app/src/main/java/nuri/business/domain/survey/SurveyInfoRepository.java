@@ -19,4 +19,7 @@ public interface SurveyInfoRepository extends JpaRepository<SurveyInfo, Long> {
 
     Optional<SurveyInfo> findBySrvySn(Long srvySn);
     Page<SurveyInfo> findBySrvyTtlContaining(String keyword, Pageable pageable);
+
+    /** 이 템플릿으로 만든 설문 수 — 템플릿 삭제 전에 쓰임을 확인한다. */
+    long countBySrvyTmpltSn(Long srvyTmpltSn);
 }

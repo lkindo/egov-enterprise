@@ -714,6 +714,21 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     expect(formCancel).toBeEnabled();
   });
 
+  it('사용자 삭제 확인은 실제로 일어나는 일과 되돌릴 수 있는 대안을 말한다', async () => {
+    // [2026-10-01] 종전 문구는 '계정과 접근 권한을 영구히 삭제' 뿐이었다. 서버는 콘텐츠를 시스템 관리자로 옮기고
+    //   알림·커뮤니티 가입 정보·로그인 정책을 지운다. 로그인만 막는 비활성화가 같은 화면에 있다.
+    mockConfirm.mockResolvedValue(false);
+    await selectFirstRow();
+
+    fireEvent.click(await screen.findByRole('button', { name: '사용자 삭제' }));
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
+
+    const { message } = mockConfirm.mock.calls[0][0] as { message: string };
+    expect(message).toContain('게시글·댓글·주소록은 시스템 관리자 계정으로 옮겨지고');
+    expect(message).toContain('알림·커뮤니티 가입 정보·로그인 정책은 함께 삭제됩니다');
+    expect(message).toContain('로그인만 막으려면 삭제하지 말고 계정 상태를 비활성으로 바꾸세요');
+  });
+
   it('삭제 확인을 거부하면 deleteUser 를 호출하지 않는다', async () => {
     mockConfirm.mockResolvedValue(false);
     await selectFirstRow();

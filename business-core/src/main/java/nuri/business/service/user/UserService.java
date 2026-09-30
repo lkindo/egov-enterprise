@@ -466,8 +466,11 @@ public class UserService extends BaseAbstractService {
                 }
                 List<String> esntlIds = users.stream().map(u -> u.getEsntlId()).collect(Collectors.toList());
                 if (esntlIds.contains(Constants.User.SYSTEM_ADMIN_ESNTL_ID)) {
-                        // 재귀속 종착 계정이 사라지면 콘텐츠 보존 정책 자체가 붕괴한다
-                        throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+                        // 재귀속 종착 계정이 사라지면 콘텐츠 보존 정책 자체가 붕괴한다.
+                        // [2026-10-01] 사유를 말한다 — 종전에는 '접근 권한이 없습니다' 로만 보여, 삭제 권한이 있는 관리자가
+                        //   일괄 선택에 이 계정이 섞인 것을 알 수 없었다(전체가 거부된다).
+                        throw new BusinessException(CommonErrorCode.ACCESS_DENIED,
+                                        "시스템 관리자 계정은 삭제할 수 없습니다. 선택에서 빼고 다시 시도해 주세요.");
                 }
                 authorizationAdministration.lockAndAuthorize("USER_DELETE");
                 // 관리 전역 잠금 다음 사용자 행부터 잠가 MFA 완료·비밀번호 변경의 사용자→refresh 순서를 지킨다.

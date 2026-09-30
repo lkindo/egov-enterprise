@@ -31,6 +31,7 @@ import {
 import { PolicyUpdateRequestSchema } from '@/types/generated-zod';
 import { htmlToSemanticPlainText } from '@/lib/html-to-text';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUnsavedCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import { canPermission } from '@/lib/auth/permissions';
 
 export const policySchema = PolicyUpdateRequestSchema.extend({
@@ -84,6 +85,12 @@ export default function PolicyAdminClient() {
  plcyTtl: '',
  plcyCn: ''
  }
+ });
+ // [2026-10-01] 폼에 입력이 있으면 Esc·배경·X 닫기 전에 확인한다(StandardModal 과 같은 보호). 저장 중에는 닫지 않는다.
+ const unsavedGuard = useUnsavedCloseGuard({
+ isOpen: isEditModalOpen,
+ onClose: () => setIsEditModalOpen(false),
+ closeDisabled: form.formState.isSubmitting,
  });
 
   const fetchPolicies = useCallback(async () => {
@@ -223,10 +230,11 @@ export default function PolicyAdminClient() {
  <Dialog
  open={isEditModalOpen}
  onOpenChange={(open) => {
- if (!form.formState.isSubmitting) setIsEditModalOpen(open);
+ if (open) setIsEditModalOpen(true);
+ else unsavedGuard.requestClose();
  }}
  >
- <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto rounded-lg border-none p-0 shadow-lg">
+ <DialogContent onInputCapture={unsavedGuard.trackInput} onChangeCapture={unsavedGuard.trackInput} className="sm:max-w-5xl max-h-[90vh] overflow-y-auto rounded-lg border-none p-0 shadow-lg">
  <div className="flex items-center justify-between gap-4 border-b border-border bg-card pb-3 pl-5 pr-12 pt-4">
  <DialogHeader>
  <DialogTitle className="flex items-center gap-2 text-base font-semibold text-foreground">

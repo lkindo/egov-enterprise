@@ -70,6 +70,8 @@ class ApprovalWorkflowIntegrationTest {
             }
             return result;
         });
+        // 결재선 검증은 결재자의 결재 권한(APPROVAL_APPROVE)도 본다.
+        when(users.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).thenReturn(List.of(FIRST, SECOND, FINAL));
     }
 
     @AfterEach
@@ -241,6 +243,11 @@ class ApprovalWorkflowIntegrationTest {
                 null, null, null, "C"), PageRequest.of(0, 50)).getContent())
                 .extracting(InformalSanctionDto::getIfmlAtrzSn).doesNotContain(discount, other);
 
+        // [2026-10-01] 검색어는 문서 번호에서도 찾는다 — 알림이 말하는 '결재(번호 N)' 으로 문서를 찾을 수 있어야 한다.
+        assertThat(service.getInformalSanctionList(OWNER, nuri.business.service.informalsanction.ApprovalListFilter.of(
+                String.valueOf(other), null, null, null), PageRequest.of(0, 50)).getContent())
+                .extracting(InformalSanctionDto::getIfmlAtrzSn).contains(other);
+
         authenticate(FIRST);
         assertThat(service.getPendingApprovalList(FIRST, nuri.business.service.informalsanction.ApprovalListFilter.of(
                 "할인 1000", null, null, null), PageRequest.of(0, 50)).getContent())
@@ -272,8 +279,11 @@ class ApprovalWorkflowIntegrationTest {
     }
 
     private static void authenticate(String id) {
-        var principal = CustomUserDetails.builder().userId(id).esntlId(id).build();
+        var principal = CustomUserDetails.builder().userId(id).esntlId(id).enabled(true).build();
+        // 처리·회수·재상신 힌트는 그 동작의 기능 권한도 본다 — 참여자는 결재 권한을 가진 일반 사용자다.
+        var authorities = java.util.stream.Stream.of("APPROVAL_READ", "APPROVAL_CREATE", "APPROVAL_APPROVE", "APPROVAL_CANCEL")
+                .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new).toList();
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+                new UsernamePasswordAuthenticationToken(principal, null, authorities));
     }
 }

@@ -151,6 +151,9 @@ const TAB_META: Record<UserOrgTab, { title: string; description: string }> = {
   },
 };
 
+/** 사용자 삭제 확인에서 밝히는 결과 — UserService.cleanupDependentsAndDelete 가 실제로 하는 일과 같아야 한다. */
+const USER_DELETE_CONSEQUENCE = '작성한 게시글·댓글·주소록은 시스템 관리자 계정으로 옮겨지고, 알림·커뮤니티 가입 정보·로그인 정책은 함께 삭제됩니다. 되돌릴 수 없습니다. 로그인만 막으려면 삭제하지 말고 계정 상태를 비활성으로 바꾸세요.';
+
 const USER_PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 /**
@@ -576,7 +579,8 @@ export default function UserOrgHubClient({
       const targetName = (selectedItem as UserManage)?.userNm ?? String(selectedItemId);
       const ok = await confirm({
         title: '사용자 삭제',
-        message: `'${targetName}(${selectedItemId})' 사용자의 계정과 접근 권한을 영구히 삭제합니다. 되돌릴 수 없습니다. 계속하시겠습니까?`,
+        // [2026-10-01] 삭제가 실제로 하는 일을 말한다 — 서버는 콘텐츠를 시스템 관리자로 재귀속하고 알림·멤버십·정책을 지운다.
+        message: `'${targetName}(${selectedItemId})' 사용자의 계정과 접근 권한을 영구히 삭제합니다. ${USER_DELETE_CONSEQUENCE}`,
         variant: 'destructive',
         confirmText: '삭제'
       });
@@ -636,7 +640,7 @@ export default function UserOrgHubClient({
     try {
       const ok = await confirm({
         title: '사용자 일괄 삭제',
-        message: `${userItems.length}명의 계정을 영구히 삭제합니다. 되돌릴 수 없습니다.\n대상: ${preview}`,
+        message: `${userItems.length}명의 계정과 접근 권한을 영구히 삭제합니다. ${USER_DELETE_CONSEQUENCE}\n대상: ${preview}`,
         variant: 'destructive',
         confirmText: '삭제'
       });

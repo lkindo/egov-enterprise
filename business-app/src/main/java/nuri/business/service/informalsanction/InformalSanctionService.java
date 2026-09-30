@@ -42,6 +42,9 @@ public class InformalSanctionService {
     private final EntityManager entityManager;
 
     static final String TASK_TYPE_CODE_GROUP = "COM075";
+    private static final String APPROVE_PERMISSION = "APPROVAL_APPROVE";
+    private static final String WITHDRAW_PERMISSION = "APPROVAL_CANCEL";
+    private static final String DRAFT_PERMISSION = "APPROVAL_CREATE";
     private static final List<String> PROCESSED_STATUS_CODES = List.of("C", "R");
 
     public Page<InformalSanctionDto> getInformalSanctionList(String aplcntId, Pageable pageable) {
@@ -149,6 +152,7 @@ public class InformalSanctionService {
     public void deleteInformalSanction(Long id, Integer expectedVersion) {
         InformalSanction sanction = lock(id);
         SecurityUtil.assertOwnerByEsntlId(sanction.getAplcntId());
+        assertInProgress(sanction, "회수");
         assertVersion(sanction, expectedVersion);
         InformalSanctionHistory history = currentHistory(sanction);
         List<InformalSanctionDetail> lines = detailRepository.findRevision(id, sanction.getAtrzCycl());
@@ -161,7 +165,7 @@ public class InformalSanctionService {
         java.util.UUID eventId = java.util.UUID.randomUUID();
         activeApprovers.stream().sorted().forEach(receiver -> eventPublisher.publishEvent(
                 new NotificationRequestedEvent(eventId, receiver, "결재가 회수되었습니다",
-                        "결재(번호 " + id + ")를 신청자가 회수했습니다. 처리할 필요가 없습니다.", "/approvals")));
+                        documentLabel(sanction) + "를 신청자가 회수했습니다. 처리할 필요가 없습니다.", "/approvals")));
     }
 
     @Transactional
@@ -176,7 +180,8 @@ public class InformalSanctionService {
         SecurityUtil.assertOwnerByEsntlId(sanction.getAplcntId());
         assertVersion(sanction, expectedVersion);
         if (!List.of("R", "W").contains(sanction.getAprvYn())) {
-            throw new BusinessException(CommonErrorCode.INVALID_STATE);
+            throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
+                    "반려되었거나 회수한 결재만 다시 올릴 수 있습니다. 최신 상태를 확인해 주세요.");
         }
         validateDocument(dto);
         List<ApprovalStageRequest> stages = validateStages(sanction.getAplcntId(),
@@ -196,9 +201,19 @@ public class InformalSanctionService {
         InformalSanctionDetail ownLine = lines.stream().filter(d -> actor.equals(d.getId().getUserId()))
                 .findFirst().orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
         SecurityUtil.assertOwnerByEsntlId(ownLine.getId().getUserId());
-        if (ownLine.status() == ApprovalStatus.WAITING) throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-        if (!"A".equals(sanction.getAprvYn()) || ownLine.status() != ApprovalStatus.ACTIVE) {
-            throw new BusinessException(CommonErrorCode.INVALID_STATE);
+        /*
+         * [2026-10-01] 이미 끝난 문서·이미 처리한 라인은 입력 오류가 아니라 **먼저 일어난 다른 처리와의 충돌**이다.
+         * 종전에는 사유 없는 400(잘못된 상태 전이)이라, 병렬 결재에서 다른 사람이 먼저 반려했거나 신청자가 회수한 문서를
+         * 누른 사람이 무슨 일이 있었는지 알 수 없었고 화면도 '최신 문서 확인' 흐름으로 가지 못했다(화면은 409 만 충돌로 본다).
+         * 결재선에 있는 사람에게만 도달하는 분기라(위에서 비참여자는 403) 문서 상태를 새로 노출하지 않는다.
+         */
+        assertInProgress(sanction, "처리");
+        if (ownLine.status() == ApprovalStatus.WAITING) {
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED, "아직 결재 차례가 아닙니다. 앞 단계의 결재가 끝나면 알림이 옵니다.");
+        }
+        if (ownLine.status() != ApprovalStatus.ACTIVE) {
+            throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
+                    "이미 처리한 결재입니다. 최신 상태를 확인해 주세요.");
         }
         assertVersion(sanction, expectedVersion);
         if (!"C".equals(aprvYn) && !"R".equals(aprvYn)) {
@@ -207,10 +222,19 @@ public class InformalSanctionService {
         InformalSanctionHistory history = currentHistory(sanction);
         ownLine.decide("C".equals(aprvYn), opinion, LocalDateTime.now());
         if ("R".equals(aprvYn)) {
+            // 병렬 단계에서 한 사람이 반려하면 같은 차례였던 다른 결재자의 라인도 취소된다. 회수와 같이 알린다 —
+            // 알리지 않으면 대기함에서 문서가 이유 없이 사라진다.
+            List<String> otherActiveApprovers = lines.stream()
+                    .filter(d -> d.status() == ApprovalStatus.ACTIVE && !actor.equals(d.getId().getUserId()))
+                    .map(d -> d.getId().getUserId()).sorted().toList();
             sanction.reject(opinion);
             lines.forEach(InformalSanctionDetail::cancel);
             history.updateResult(sanction);
             publishFinalStatus(sanction, actor, opinion);
+            java.util.UUID eventId = java.util.UUID.randomUUID();
+            otherActiveApprovers.forEach(receiver -> eventPublisher.publishEvent(
+                    new NotificationRequestedEvent(eventId, receiver, "결재가 반려되었습니다",
+                            documentLabel(sanction) + "를 다른 결재자가 반려했습니다. 처리할 필요가 없습니다.", "/approvals")));
             return;
         }
         BigDecimal stage = ownLine.getId().getAtrzSeq();
@@ -251,6 +275,27 @@ public class InformalSanctionService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
+    /** 진행 중(A)이 아닌 문서를 처리·회수하려는 것은 먼저 일어난 처리와의 충돌이다 — 무슨 일이 있었는지 말한다. */
+    private static void assertInProgress(InformalSanction sanction, String action) {
+        String status = sanction.getAprvYn();
+        if ("A".equals(status)) return;
+        String reason = switch (status == null ? "" : status) {
+            case "C" -> "이미 승인이 끝난 결재입니다.";
+            case "R" -> "이미 반려된 결재입니다.";
+            case "W" -> "신청자가 회수한 결재입니다.";
+            default -> "진행 중인 결재가 아닙니다.";
+        };
+        throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
+                reason + " " + action + "할 수 없습니다. 최신 상태를 확인해 주세요.");
+    }
+
+    /** 알림 본문에서 문서를 가리키는 말. 제목이 있으면 제목으로, 번호는 결재함 목록에서 찾는 열쇠로 함께 싣는다. */
+    static String documentLabel(InformalSanction sanction) {
+        String title = sanction.getDocTtl();
+        String number = "결재(번호 " + sanction.getIfmlAtrzSn() + ")";
+        return title == null || title.isBlank() ? number : "「" + title.trim() + "」 " + number;
+    }
+
     private static void assertVersion(InformalSanction sanction, Integer expectedVersion) {
         if (expectedVersion != null && (expectedVersion < 0 || !expectedVersion.equals(sanction.getVersion()))) {
             throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
@@ -280,18 +325,17 @@ public class InformalSanctionService {
     }
 
     private void publishStageAvailable(InformalSanction sanction, List<InformalSanctionDetail> lines) {
-        Long id = sanction.getIfmlAtrzSn();
         List<String> receivers = lines.stream().filter(d -> d.status() == ApprovalStatus.ACTIVE)
                 .map(d -> d.getId().getUserId()).toList();
         java.util.UUID eventId = java.util.UUID.randomUUID();
         receivers.stream().sorted().forEach(receiver -> eventPublisher.publishEvent(
                 new NotificationRequestedEvent(eventId, receiver, "결재 순서 도래",
-                        "결재(번호 " + id + ")를 확인해 주세요.", "/approvals")));
+                        documentLabel(sanction) + "를 확인해 주세요.", "/approvals")));
     }
 
     private void publishFinalStatus(InformalSanction sanction, String actor, String opinion) {
         SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(sanction.getIfmlAtrzSn(),
-                sanction.getAplcntId(), actor, SanctionStatus.fromCode(sanction.getAprvYn()), opinion);
+                sanction.getAplcntId(), actor, SanctionStatus.fromCode(sanction.getAprvYn()), opinion, sanction.getDocTtl());
         eventPublisher.publishEvent(event);
     }
 
@@ -341,6 +385,18 @@ public class InformalSanctionService {
                 .filter(u -> "P".equals(u.getUserSttsCd())).map(User::getEsntlId).collect(Collectors.toSet());
         if (!active.containsAll(participants)) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "결재자로 지정할 수 없는 사용자입니다.");
+        }
+        // [2026-10-01] 결재 권한(APPROVAL_APPROVE)이 없는 사람에게 올리면 그 단계에서 문서가 멈춘다 — 서버가 그 사람의
+        //   승인을 403 으로 거부하고, 대신 처리할 경로도 없다. 상신 시점에 이름을 밝혀 거부한다(사용 중지 계정과 같은 형태).
+        Set<String> approvers = new HashSet<>(userRepository.findActiveEsntlIdsHoldingPermission(APPROVE_PERMISSION));
+        List<String> unauthorizedNames = found.stream()
+                .filter(u -> !approvers.contains(u.getEsntlId()))
+                .map(u -> u.getUserNm() == null || u.getUserNm().isBlank() ? "이름 없는 사용자" : u.getUserNm())
+                .sorted()
+                .toList();
+        if (!unauthorizedNames.isEmpty()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "결재 권한이 없는 사용자는 결재자로 지정할 수 없습니다: " + String.join(", ", unauthorizedNames));
         }
         return List.copyOf(stages);
     }
@@ -437,10 +493,15 @@ public class InformalSanctionService {
         List<InformalSanctionDetail> visibleLines = lines.stream()
                 .filter(d -> d.getId().getAtrzCycl().compareTo(visibleCycle) == 0).toList();
         dto.setStages(stageDtos(visibleLines, users));
-        dto.setCanApprove(current && "A".equals(sanction.getAprvYn()) && visibleLines.stream()
+        // 힌트는 서버가 그 요청을 실제로 받아 줄 때만 참이다 — 참여 조건뿐 아니라 그 동작의 기능 권한도 본다.
+        // 권한을 회수한 그룹에게 버튼이 남으면 누른 뒤에야 403 을 만난다.
+        dto.setCanApprove(current && "A".equals(sanction.getAprvYn()) && SecurityUtil.hasPermission(APPROVE_PERMISSION)
+                && visibleLines.stream()
                 .anyMatch(d -> actor.equals(d.getId().getUserId()) && d.status() == ApprovalStatus.ACTIVE));
-        dto.setCanWithdraw(current && owner && "A".equals(sanction.getAprvYn()));
-        dto.setCanResubmit(current && owner && List.of("R", "W").contains(sanction.getAprvYn()));
+        dto.setCanWithdraw(current && owner && "A".equals(sanction.getAprvYn())
+                && SecurityUtil.hasPermission(WITHDRAW_PERMISSION));
+        dto.setCanResubmit(current && owner && List.of("R", "W").contains(sanction.getAprvYn())
+                && SecurityUtil.hasPermission(DRAFT_PERMISSION));
         dto.setHistory(includeHistory ? revisions.stream().filter(h -> allowed.contains(h.getId().getAtrzCycl()))
                 .sorted(Comparator.comparing((InformalSanctionHistory h) -> h.getId().getAtrzCycl()).reversed())
                 .map(h -> new ApprovalRevisionDto(h.getId().getAtrzCycl().intValueExact(), h.getDocTtl(), h.getDocCn(),

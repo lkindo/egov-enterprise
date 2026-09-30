@@ -53,6 +53,8 @@ export function KeywordFilter({
 
   return (
     <form
+      // 조회 조건이다 — 저장할 변경이 아니므로 모달의 미저장 확인이 이 입력을 세지 않는다(useUnsavedCloseGuard).
+      role="search"
       className="flex flex-wrap items-end gap-[var(--form-gap)]"
       onSubmit={(event) => {
         event.preventDefault();

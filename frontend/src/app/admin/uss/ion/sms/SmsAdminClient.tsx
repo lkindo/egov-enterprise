@@ -51,6 +51,7 @@ import {
 } from '@/components/ui/form';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUnsavedCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import { canPermission } from '@/lib/auth/permissions';
 
 /**
@@ -339,6 +340,9 @@ export default function SmsAdminClient({
     setIsSendOpen(open);
   };
 
+  // [2026-10-01] 폼에 입력이 있으면 Esc·배경·X 닫기 전에 확인한다(StandardModal 과 같은 보호).
+  const unsavedGuard = useUnsavedCloseGuard({ isOpen: isSendOpen, onClose: () => handleSendOpenChange(false) });
+
   const columns: Column<SmsDto>[] = [
     {
       header: '발송 일시',
@@ -513,8 +517,8 @@ export default function SmsAdminClient({
         />
 
       {/* Send Message Composition Dialog */}
-      <Dialog open={isSendOpen} onOpenChange={handleSendOpenChange}>
-        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto rounded-lg p-0 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-card/95 backdrop-blur-3xl">
+      <Dialog open={isSendOpen} onOpenChange={(open) => { if (open) handleSendOpenChange(true); else unsavedGuard.requestClose(); }}>
+        <DialogContent onInputCapture={unsavedGuard.trackInput} onChangeCapture={unsavedGuard.trackInput} className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto rounded-lg p-0 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-card/95 backdrop-blur-3xl">
           <Form {...form}>
             <form
               noValidate

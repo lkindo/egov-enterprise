@@ -36,7 +36,12 @@ vi.mock('@/app/components/ui/toast', () => ({
 vi.mock('@/app/components/ui/confirm-modal', () => ({
   useConfirm: () => mocks.confirm,
 }));
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { esntlId: 'approver' } }) }));
+// 버튼은 서버 힌트와 기능 권한을 함께 본다 — 기본은 결재 권한을 모두 가진 사용자이고, 표시 판정 테스트만 권한을 줄인다.
+const FULL_PERMISSIONS = ['APPROVAL_READ', 'APPROVAL_CREATE', 'APPROVAL_APPROVE', 'APPROVAL_CANCEL'];
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { esntlId: 'approver', permissions: auth.permissions, authorizationVersion: 'v1' } }),
+}));
 
 vi.mock('@/services/business/user/approval/ApprovalUserService', () => ({
   SANCTION_STATUS: {
@@ -133,6 +138,7 @@ function renderClient() {
 describe('ApprovalHubClient handleAction pending contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.permissions = FULL_PERMISSIONS;
     mocks.confirm.mockResolvedValue(true);
     mocks.cancelDraft.mockResolvedValue(undefined);
     mocks.confirmMutation.mockResolvedValue(undefined);
@@ -153,9 +159,9 @@ describe('ApprovalHubClient handleAction pending contract', () => {
 
     // 대기 탭에는 상태 조건이 없다(대기함은 늘 대기 문서다).
     expect(screen.queryByLabelText('문서 상태')).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('제목'), { target: { value: '휴가' } });
+    fireEvent.change(screen.getByLabelText('제목·번호'), { target: { value: '휴가' } });
     expect(mocks.getPending).not.toHaveBeenCalledWith(expect.objectContaining({ keyword: '휴가' }));
-    fireEvent.submit(screen.getByLabelText('제목').closest('form')!);
+    fireEvent.submit(screen.getByLabelText('제목·번호').closest('form')!);
     await waitFor(() => expect(mocks.getPending).toHaveBeenCalledWith(expect.objectContaining({ page: 0, size: 20, keyword: '휴가' })));
 
     fireEvent.click(screen.getByRole('button', { name: '최근 1주' }));
@@ -325,10 +331,10 @@ describe('ApprovalHubClient handleAction pending contract', () => {
       pending.reject(new Error('결재 승인 API 장애'));
     });
 
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
-      '승인 처리 중 오류가 발생했습니다.',
-      'error',
-    ));
+    // 토스트는 무엇을 못 했는지만, 사유는 화면 안 안내가 말한다(실패 1회 = 토스트 1개).
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('결재를 승인하지 못했습니다.', 'error'));
+    expect(mocks.toast).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('alert')).toHaveTextContent('결재 승인 API 장애 입력한 의견은 유지됩니다.');
     expect(screen.getByText('휴가 신청')).toBeInTheDocument();
     expect(approve).toBeEnabled();
     expect(approve).not.toHaveAttribute('aria-busy');
@@ -386,10 +392,8 @@ describe('ApprovalHubClient handleAction pending contract', () => {
       pending.reject(new Error('신청 상태인 경우에만 삭제할 수 있습니다.'));
     });
 
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
-      '신청 상태인 경우에만 삭제할 수 있습니다.',
-      'error',
-    ));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('결재를 회수하지 못했습니다.', 'error'));
+    expect(screen.getByRole('alert')).toHaveTextContent('신청 상태인 경우에만 삭제할 수 있습니다.');
     expect(cancel).toBeEnabled();
   });
 
@@ -433,10 +437,7 @@ describe('ApprovalHubClient handleAction pending contract', () => {
       pending.reject(new Error('결재 반려 API 장애'));
     });
 
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
-      '반려 처리 중 오류가 발생했습니다.',
-      'error',
-    ));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('결재를 반려하지 못했습니다.', 'error'));
     expect(reason).toHaveValue('예산 코드 확인이 필요합니다.');
     expect(reject).toBeEnabled();
     expect(reject).not.toHaveAttribute('aria-busy');
@@ -489,6 +490,37 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     fireEvent.click(screen.getByRole('button', { name: '다음 문서 #99 상세 열기' }));
     await waitFor(() => expect(screen.getByRole('button', { name: '다음 문서 #99 상세 열기' })).toHaveAttribute('aria-current', 'true'));
     expect(await screen.findByRole('textbox', { name: '결재 의견 (반려 시 필수)' })).toHaveValue('');
+  });
+
+  it('[2026-10-01] 다른 결재자가 먼저 반려했으면 서버가 말한 사유를 보이고 목록을 다시 읽는다', async () => {
+    // 종전에는 사유 없는 400 이라 무슨 일이 있었는지 알 수 없었고, 사라진 문서가 목록에 남았다.
+    mocks.confirmMutation.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { status: 409, data: { message: '이미 반려된 결재입니다. 처리할 수 없습니다. 최신 상태를 확인해 주세요.' } },
+    });
+    renderClient();
+    fireEvent.click(await screen.findByRole('button', { name: '결재 승인' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('이미 반려된 결재입니다. 처리할 수 없습니다.');
+    const listReads = mocks.getPending.mock.calls.length;
+    await waitFor(() => expect(mocks.getPending.mock.calls.length).toBeGreaterThan(listReads - 1));
+    expect(screen.queryByRole('button', { name: '결재 승인' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '최신 문서 확인' })).toBeInTheDocument();
+  });
+
+  it('[2026-10-01] 결재 기능 권한이 없으면 서버 힌트가 참이어도 기안·승인·반려 버튼을 보이지 않는다', async () => {
+    auth.permissions = ['APPROVAL_READ'];
+    renderClient();
+
+    expect(await screen.findByText('휴가 신청')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '새 결재 기안' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '결재 승인' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '결재 반려' })).not.toBeInTheDocument();
+  });
+
+  it('목록 항목에 문서 번호를 보인다 — 알림이 말하는 번호로 찾을 수 있다', async () => {
+    renderClient();
+    expect(await screen.findByText(/번호 73/)).toBeInTheDocument();
   });
 
   it('409 후 의견을 유지하고 최신 상세를 확인하기 전 재처리를 막는다', async () => {

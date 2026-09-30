@@ -152,9 +152,17 @@ public class SanctionEventListener {
                     event.getEventId(),
                     event.getApplicantId(),
                     "결재 상태 변경",
-                    boundChannelContent(String.format("결재(번호 %s)가 %s되었습니다.%s",
-                            event.getInformalSanctionSn(), statusLabel(event), reasonSuffix(event))),
+                    boundChannelContent(String.format("%s가 %s되었습니다.%s",
+                            documentLabel(event), statusLabel(event), reasonSuffix(event))),
                     "/approvals"));
+    }
+
+    /** 제목이 있으면 제목으로, 번호는 결재함 목록에서 찾는 열쇠로 함께 싣는다. 문자·메일 본문은 종전대로 번호만 쓴다. */
+    private static String documentLabel(SanctionStatusChangedEvent event) {
+        String number = "결재(번호 " + event.getInformalSanctionSn() + ")";
+        return org.springframework.util.StringUtils.hasText(event.getDocumentTitle())
+                ? "「" + event.getDocumentTitle().trim() + "」 " + number
+                : number;
     }
 
     private static String reasonOrDefault(SanctionStatusChangedEvent event) {

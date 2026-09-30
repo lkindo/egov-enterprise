@@ -31,6 +31,7 @@ import {
 
 import { LoginPolicyDtoSchema } from '@/types/generated-zod';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUnsavedCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import { canPermission } from '@/lib/auth/permissions';
 
 const optionalStartTimeSchema = LoginPolicyDtoSchema.shape.bgngTm
@@ -143,6 +144,12 @@ export default function LoginPolicyAdminClient() {
       endTm: '',
       otpUseYn: 'N',
     }
+  });
+  // [2026-10-01] 폼에 입력이 있으면 Esc·배경·X 닫기 전에 확인한다(StandardModal 과 같은 보호). 저장 중에는 닫지 않는다.
+  const unsavedGuard = useUnsavedCloseGuard({
+    isOpen: isEditModalOpen,
+    onClose: () => setIsEditModalOpen(false),
+    closeDisabled: form.formState.isSubmitting,
   });
 
   /**
@@ -412,10 +419,11 @@ export default function LoginPolicyAdminClient() {
       <Dialog
         open={isEditModalOpen}
         onOpenChange={(open) => {
-          if (!form.formState.isSubmitting) setIsEditModalOpen(open);
+          if (open) setIsEditModalOpen(true);
+          else unsavedGuard.requestClose();
         }}
       >
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg border-none shadow-2xl p-0">
+        <DialogContent onInputCapture={unsavedGuard.trackInput} onChangeCapture={unsavedGuard.trackInput} className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg border-none shadow-2xl p-0">
           <div className="bg-surface-inverse p-8 text-surface-inverse-foreground flex items-center justify-between">
             <div className="space-y-1">
               <DialogHeader>

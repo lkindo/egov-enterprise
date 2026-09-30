@@ -65,7 +65,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
       isPremium ? "p-[var(--filter-pad)] rounded-lg" : "p-5 rounded-lg",
       className
     )}>
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form role="search" onSubmit={handleSubmit} className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-primary/10 rounded-lg text-primary flex items-center justify-center transition-transform group-hover:rotate-6 duration-500 shadow-sm border border-primary/5">
