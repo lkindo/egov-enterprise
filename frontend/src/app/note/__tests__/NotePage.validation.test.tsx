@@ -133,7 +133,7 @@ describe('NotePage validation contract', () => {
   }
 
   function selectRecipient() {
-    fireEvent.click(screen.getByRole('button', { name: /타겟 검색/ }));
+    fireEvent.click(screen.getByRole('button', { name: /받는 사람 고르기/ }));
     fireEvent.click(screen.getByRole('button', { name: '홍길동 선택' }));
   }
 
@@ -153,12 +153,12 @@ describe('NotePage validation contract', () => {
   it('필수 수신자가 없으면 write 없이 검색 버튼으로 이동해 수정 방법을 안내한다', async () => {
     openComposer();
 
-    fireEvent.click(screen.getByRole('button', { name: '메시지 전송' }));
+    fireEvent.click(screen.getByRole('button', { name: '보내기' }));
 
     expect(mocks.sendNote).not.toHaveBeenCalled();
     expect(await screen.findByText('수신자를 선택해 주세요.')).toBeInTheDocument();
     expect(screen.getByTestId('note-form-error-summary')).toHaveTextContent('입력 오류');
-    const pickerButton = screen.getByRole('button', { name: /타겟 검색/ });
+    const pickerButton = screen.getByRole('button', { name: /받는 사람 고르기/ });
     expect(pickerButton).toHaveAttribute('aria-invalid', 'true');
     await waitFor(() => expect(pickerButton).toHaveFocus());
   });
@@ -166,12 +166,12 @@ describe('NotePage validation contract', () => {
   it('제목 256자·본문 4000자 한계를 넘으면 입력을 보존하고 첫 오류 필드로 이동한다', async () => {
     openComposer();
     selectRecipient();
-    const title = screen.getByRole('textbox', { name: '시스템 제목' });
-    const body = screen.getByRole('textbox', { name: '데이터 바디 (내용)' });
+    const title = screen.getByRole('textbox', { name: '제목' });
+    const body = screen.getByRole('textbox', { name: '내용' });
     fireEvent.change(title, { target: { value: '제'.repeat(257) } });
     fireEvent.change(body, { target: { value: '본'.repeat(4001) } });
 
-    fireEvent.click(screen.getByRole('button', { name: '메시지 전송' }));
+    fireEvent.click(screen.getByRole('button', { name: '보내기' }));
 
     expect(mocks.sendNote).not.toHaveBeenCalled();
     expect(await screen.findByText('제목: 최대 256자까지 입력할 수 있습니다.')).toBeInTheDocument();
@@ -187,15 +187,45 @@ describe('NotePage validation contract', () => {
     });
     openComposer();
     selectRecipient();
-    const title = screen.getByRole('textbox', { name: '시스템 제목' });
+    const title = screen.getByRole('textbox', { name: '제목' });
     fireEvent.change(title, { target: { value: '보존할 제목' } });
 
-    fireEvent.click(screen.getByRole('button', { name: '메시지 전송' }));
+    fireEvent.click(screen.getByRole('button', { name: '보내기' }));
 
     expect(await screen.findByText('사용할 수 없는 제목입니다.')).toBeInTheDocument();
     expect(title).toHaveValue('보존할 제목');
     await waitFor(() => expect(title).toHaveFocus());
-    expect(mocks.toast).not.toHaveBeenCalledWith('전송 중 오류가 발생했습니다.', 'error');
+    expect(mocks.toast).not.toHaveBeenCalledWith(expect.anything(), 'error');
+  });
+
+  it('필드가 아닌 서버 거부는 서버가 밝힌 사유를 그대로 알리고 입력을 보존한다', async () => {
+    mocks.sendNote.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { status: 400, data: { message: '김수신 님은 사용 중인 계정이 아니어서 쪽지를 받을 수 없습니다. 이 수신자를 빼고 다시 보내 주세요.' } },
+    });
+    openComposer();
+    selectRecipient();
+    const title = screen.getByRole('textbox', { name: '제목' });
+    fireEvent.change(title, { target: { value: '보존할 제목' } });
+    fireEvent.change(screen.getByRole('textbox', { name: '내용' }), { target: { value: '본문' } });
+
+    fireEvent.click(screen.getByRole('button', { name: '보내기' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      '김수신 님은 사용 중인 계정이 아니어서 쪽지를 받을 수 없습니다. 이 수신자를 빼고 다시 보내 주세요.', 'error'));
+    expect(title).toHaveValue('보존할 제목');
+  });
+
+  it('사유가 없는 전송 실패는 과업 이름이 붙은 기본 문구로 알린다', async () => {
+    mocks.sendNote.mockRejectedValueOnce({ isAxiosError: true, message: 'Network Error' });
+    openComposer();
+    selectRecipient();
+    fireEvent.change(screen.getByRole('textbox', { name: '제목' }), { target: { value: '제목' } });
+    fireEvent.change(screen.getByRole('textbox', { name: '내용' }), { target: { value: '본문' } });
+
+    fireEvent.click(screen.getByRole('button', { name: '보내기' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('쪽지를 보내지 못했습니다.', 'error'));
   });
 
   it('전송 중 연속 클릭을 동기적으로 차단한다', async () => {
@@ -203,10 +233,10 @@ describe('NotePage validation contract', () => {
     mocks.sendNote.mockImplementationOnce(() => new Promise<void>((resolve) => { finishSend = resolve; }));
     openComposer();
     selectRecipient();
-    fireEvent.change(screen.getByRole('textbox', { name: '시스템 제목' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: '제목' }), {
       target: { value: '정상 제목' },
     });
-    const send = screen.getByRole('button', { name: '메시지 전송' });
+    const send = screen.getByRole('button', { name: '보내기' });
 
     fireEvent.click(send);
     fireEvent.click(send);
@@ -214,9 +244,9 @@ describe('NotePage validation contract', () => {
     expect(mocks.sendNote).toHaveBeenCalledTimes(1);
     expect(send).toBeDisabled();
     expect(send).toHaveAttribute('aria-busy', 'true');
-    expect(send).toHaveAccessibleName('메시지 전송 중…');
+    expect(send).toHaveAccessibleName('보내는 중…');
     finishSend?.();
-    await waitFor(() => expect(screen.queryByRole('region', { name: '새 쪽지 기안' })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole('region', { name: '쪽지 쓰기' })).not.toBeInTheDocument());
   });
 
   it('쪽지 삭제는 같은 tick의 재요청을 막고 실패 후 행을 보존한다', async () => {
@@ -336,7 +366,9 @@ describe('NotePage validation contract', () => {
     expect(screen.queryByText('읽지 않음')).not.toBeInTheDocument();
 
     fireEvent.click(within(detail).getByRole('button', { name: '답장' }));
-    expect(screen.getByRole('textbox', { name: '수신 대상자' })).toHaveValue('발신자 이름 (sender-7)');
+    // [2026-10-01] 받는 사람은 이름 칩으로만 보이고 내부 식별자는 화면에 나오지 않는다.
+    expect(screen.getByRole('button', { name: '발신자 이름 수신자 제거' })).toBeInTheDocument();
+    expect(screen.queryByText(/sender-7/)).not.toBeInTheDocument();
     // [2026-09-26 DIP V3] 원 발신자가 수신자 칩으로 들어간다 — 제출 값에만 있으면 칩이 비어 보였다.
     expect(screen.getByText('총 1명 선택됨')).toBeInTheDocument();
   });
@@ -394,15 +426,15 @@ describe('NotePage validation contract', () => {
     const detail = screen.getByRole('region', { name: '쪽지 데이터 상세 정보' });
     fireEvent.click(await within(detail).findByRole('button', { name: '전달' }));
 
-    expect(screen.getByRole('textbox', { name: '시스템 제목' })).toHaveValue('Fwd: 회의 자료');
-    const body = (screen.getByRole('textbox', { name: '데이터 바디 (내용)' }) as HTMLTextAreaElement).value;
+    expect(screen.getByRole('textbox', { name: '제목' })).toHaveValue('Fwd: 회의 자료');
+    const body = (screen.getByRole('textbox', { name: '내용' }) as HTMLTextAreaElement).value;
     expect(body).toContain('보낸 사람: 김발신');
     expect(body).toContain('날짜: 2026-09-25');
     expect(body).toContain('제목: 회의 자료');
     expect(body.endsWith('원문 본문')).toBe(true);
     // 전달은 받는 사람을 새로 고른다 — 원 발신자를 몰래 넣지 않는다.
     expect(screen.queryByText('총 1명 선택됨')).not.toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: '수신 대상자' })).toHaveValue('');
+    expect(screen.getByText('사람 또는 부서에서 여러 명을 고를 수 있습니다.')).toBeInTheDocument();
   });
 
   it('[DIP B5 F4] 보낸 쪽지도 전달할 수 있고 받은 사람들을 인용하며 Fwd 를 겹쳐 붙이지 않는다', async () => {
@@ -422,8 +454,8 @@ describe('NotePage validation contract', () => {
     const detail = screen.getByRole('region', { name: '쪽지 데이터 상세 정보' });
     fireEvent.click(await within(detail).findByRole('button', { name: '전달' }));
 
-    expect(screen.getByRole('textbox', { name: '시스템 제목' })).toHaveValue('Fwd: 공지');
-    const body = (screen.getByRole('textbox', { name: '데이터 바디 (내용)' }) as HTMLTextAreaElement).value;
+    expect(screen.getByRole('textbox', { name: '제목' })).toHaveValue('Fwd: 공지');
+    const body = (screen.getByRole('textbox', { name: '내용' }) as HTMLTextAreaElement).value;
     expect(body).toContain('받는 사람: 김수신, 알 수 없는 사용자');
     expect(body).not.toContain('R2');
   });
@@ -539,15 +571,15 @@ describe('NotePage validation contract', () => {
 
   it('다중 수신자(총 길이 20자 초과)를 선택해도 유효성 검증을 통과하고 쉼표 구분자로 발송한다', async () => {
     openComposer();
-    fireEvent.click(screen.getByRole('button', { name: /타겟 검색/ }));
+    fireEvent.click(screen.getByRole('button', { name: /받는 사람 고르기/ }));
     fireEvent.click(screen.getByRole('button', { name: '다중 수신자 선택' }));
 
     expect(screen.getByText('총 2명 선택됨')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByRole('textbox', { name: '시스템 제목' }), { target: { value: '다중 발송 제목' } });
-    fireEvent.change(screen.getByRole('textbox', { name: '데이터 바디 (내용)' }), { target: { value: '다중 발송 본문' } });
+    fireEvent.change(screen.getByRole('textbox', { name: '제목' }), { target: { value: '다중 발송 제목' } });
+    fireEvent.change(screen.getByRole('textbox', { name: '내용' }), { target: { value: '다중 발송 본문' } });
 
-    fireEvent.click(screen.getByRole('button', { name: '메시지 전송' }));
+    fireEvent.click(screen.getByRole('button', { name: '보내기' }));
 
     await waitFor(() => {
       expect(mocks.sendNote).toHaveBeenCalledWith({

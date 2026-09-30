@@ -193,7 +193,7 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder || "엔터프라이즈 인사이트를 입력하십시오..."}
             style={{ minHeight }}
-            className="w-full p-8 resize-none outline-none bg-transparent text-sm font-bold leading-relaxed text-foreground/80 placeholder:text-muted-foreground/30 font-mono tracking-tight"
+            className="w-full p-8 resize-none outline-none bg-transparent text-sm font-bold leading-relaxed text-foreground/80 placeholder:text-muted-foreground font-mono tracking-tight"
           />
       </div>
 

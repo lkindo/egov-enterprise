@@ -9,21 +9,23 @@ import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { FormField } from '@/app/components/ui/standard-form';
 import { RecipientPicker, type RecipientSelection } from '@/app/components/ui/recipient-picker';
+import { useRecipientDepartmentSource } from '@/app/components/ui/recipient-department-source';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { noteService, Note } from '@/services/business/user/NoteService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, Search, User, Loader2, X, Forward } from 'lucide-react';
+import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, User, Loader2, X, Forward } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { failureMessage } from '@/lib/safe-error-log';
 import { noteComposeSchema } from './note-form-validation';
 
 const NOTE_FORM_LABELS = {
-  rcverId: '수신자',
+  rcverId: '받는 사람',
   noteSj: '제목',
   noteCn: '내용',
 };
@@ -101,6 +103,8 @@ export default function NotePage() {
 
   const [isWriteModalOpen, setWriteOpen] = useState(false);
   const [isPickerOpen, setPickerOpen] = useState(false);
+  // 부서 탭은 조직·사용자 조회 권한이 있을 때만 보인다(메일·문자와 같은 출처, DEC-OPS-172).
+  const departmentSource = useRecipientDepartmentSource();
   const [isDetailModalOpen, setDetailOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [detailTarget, setDetailTarget] = useState<NoteDetailTarget | null>(null);
@@ -210,7 +214,8 @@ export default function NotePage() {
     } catch (error) {
       const fieldErrors = extractFieldErrors(error);
       if (fieldErrors) validation.setFormErrors(fieldErrors);
-      else toast('전송 중 오류가 발생했습니다.', 'error');
+      // [2026-10-01] 서버가 밝힌 사유(사용 중이 아닌 수신자 이름 등)를 그대로 보인다 — 무엇을 고칠지 알 수 있게.
+      else toast(failureMessage(error, '쪽지를 보내지 못했습니다.'), 'error');
     } finally {
       sendingRef.current = false;
       setIsSending(false);
@@ -490,12 +495,12 @@ export default function NotePage() {
       <StandardModal
         isOpen={isWriteModalOpen}
         onClose={closeWriteModal}
-        title="새 쪽지 기안"
+        title="쪽지 쓰기"
         footer={
           <>
             <Button variant="ghost" disabled={isSending} onClick={closeWriteModal}>취소</Button>
             <Button disabled={isSending} aria-busy={isSending} onClick={handleSend}>
-              {isSending ? '메시지 전송 중…' : '메시지 전송'}
+              {isSending ? '보내는 중…' : '보내기'}
             </Button>
           </>
         }
@@ -507,35 +512,26 @@ export default function NotePage() {
             labels={NOTE_FORM_LABELS}
             onNavigate={validation.focusError}
           />
-          <FormField htmlFor="rcverId" label="대상자 식별 (수신자)" required error={validation.errors.rcverId}>
+          {/* [2026-10-01] 받는 사람은 이름 칩으로만 보인다. 종전에는 읽기 전용 칸에 내부 사용자 식별자(esntlId)를
+              '이름 (식별자)' 로 늘어놓았고, 버튼은 '타겟 검색', 라벨은 '대상자 식별' 이었다. */}
+          <FormField htmlFor="note-recipient-picker-button" label="받는 사람" required error={validation.errors.rcverId}>
             <div className="space-y-3">
-              <div className="flex gap-3">
-                <div className="relative flex-1">
-                  <UserPlus size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-                  <input
-                    type="text"
-                    id="rcverId"
-                    aria-label="수신 대상자"
-                    aria-required="true"
-                    {...validation.fieldProps('rcverId')}
-                    value={formData.rcverId
-                      ? (formData.rcverNm ? `${formData.rcverNm} (${formData.rcverId})` : formData.rcverId)
-                      : ''}
-                    placeholder="대상자를 식별하십시오 (다중 선택 가능)..."
-                    readOnly
-                    className="h-[var(--control-h)] w-full cursor-default rounded-md border border-border bg-muted pl-8 pr-3 text-[length:var(--font-size-body)] text-foreground outline-none"
-                  />
-                </div>
+              <div className="flex flex-wrap items-center gap-3">
                 <Button
                   id="note-recipient-picker-button"
                   type="button"
+                  // label for 가 버튼 이름을 '받는 사람' 으로 덮지 않게 보이는 문구를 그대로 이름으로 둔다.
+                  aria-label="받는 사람 고르기"
                   onClick={() => setPickerOpen(true)}
                   aria-invalid={validation.errors.rcverId ? 'true' : undefined}
                   aria-describedby={validation.errors.rcverId ? 'rcverId-error' : undefined}
                   variant="outline"
                 >
-                  <Search size={14} aria-hidden="true" /> 타겟 검색
+                  <UserPlus size={14} aria-hidden="true" /> 받는 사람 고르기
                 </Button>
+                {recipients.length === 0 && (
+                  <span className="text-xs text-muted-foreground">사람 또는 부서에서 여러 명을 고를 수 있습니다.</span>
+                )}
               </div>
 
               {recipients.length > 0 && (
@@ -565,11 +561,10 @@ export default function NotePage() {
               )}
             </div>
           </FormField>
-          <FormField htmlFor="noteSj" label="시스템 제목" required error={validation.errors.noteSj}>
+          <FormField htmlFor="noteSj" label="제목" required error={validation.errors.noteSj}>
             <input
               id="noteSj"
               type="text"
-              aria-label="시스템 제목"
               aria-required="true"
               maxLength={256}
               {...validation.fieldProps('noteSj')}
@@ -582,10 +577,9 @@ export default function NotePage() {
               className="h-[var(--control-h)] w-full rounded-md border border-border bg-background px-3 text-[length:var(--font-size-body)] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </FormField>
-          <FormField htmlFor="noteCn" label="데이터 바디 (내용)" error={validation.errors.noteCn}>
+          <FormField htmlFor="noteCn" label="내용" error={validation.errors.noteCn}>
             <textarea
               id="noteCn"
-              aria-label="데이터 바디 (내용)"
               maxLength={4000}
               {...validation.fieldProps('noteCn')}
               value={formData.noteCn}
@@ -594,7 +588,7 @@ export default function NotePage() {
                 validation.clearError('noteCn');
               }}
               className="min-h-[140px] w-full resize-y rounded-md border border-border bg-background p-3 text-[length:var(--font-size-body)] leading-relaxed text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="전달할 메시지 데이터를 상세히 기입하세요..."
+              placeholder="전할 내용을 입력하세요."
             />
           </FormField>
         </div>
@@ -605,8 +599,9 @@ export default function NotePage() {
           isOpen={isPickerOpen}
           onClose={() => setPickerOpen(false)}
           channel="notification"
+          department={departmentSource}
           onConfirm={handleConfirmRecipients}
-          title="쪽지 수신자 선택"
+          title="쪽지 받는 사람 선택"
         />
       )}
 

@@ -67,9 +67,25 @@ public class SurveyService {
         entity.update(dto.getSrvyTmpltTypeCd(), dto.getSrvyTmpltPathNm(), dto.getSrvyTmpltExpln());
     }
 
+    /**
+     * 템플릿 삭제. 이 템플릿으로 만든 설문이 있으면 건수를 밝혀 거부한다.
+     *
+     * <p>[2026-10-01] 종전에는 곧바로 {@code deleteById} 를 불렀다. 쓰이는 템플릿이면 외래 키가 막았지만 화면에는
+     * 사유 없는 409 기본 문구만 보였고, 없는 번호는 조용히 성공했다. 설문이 템플릿을 가리키므로 설문 건수를 말한다
+     * (문항·선택지·응답은 그 설문에 딸려 있다).
+     */
     @Transactional
     public void deleteTmplat(Long srvyTmpltSn) {
-        tmplatRepository.deleteById(Objects.requireNonNull(srvyTmpltSn));
+        Long id = Objects.requireNonNull(srvyTmpltSn);
+        if (!tmplatRepository.existsById(id)) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
+        long surveys = infoRepository.countBySrvyTmpltSn(id);
+        if (surveys > 0) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
+                    "이 템플릿으로 만든 설문이 " + surveys + "건 있어 삭제할 수 없습니다. 그 설문을 먼저 삭제하거나 다른 템플릿으로 바꿔 주세요.");
+        }
+        tmplatRepository.deleteById(id);
     }
 
     // 설문 정보

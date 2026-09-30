@@ -64,16 +64,18 @@ interface AppNotificationDrawerProps {
   centerHref?: string;
 }
 
-type FilterType = 'ALL' | 'SECURITY' | 'SYSTEM' | 'ACTIVITY';
+/**
+ * [2026-10-01] 드로어 필터는 사실로만 거른다. 종전의 '보안·시스템·활동' 은 제목 글자로 추측한 분류였고, 그마저
+ * 드로어가 불러온 최근 알림 안에서만 걸러 '보안 알림 없음' 이 전체에 대한 말처럼 읽혔다(알림 센터는 DEC-OPS-153 에서
+ * 같은 탭을 걷었다). 읽음 여부는 서버가 주는 사실이다. 범위가 최근 알림이라는 것은 문구가 말한다.
+ */
+type FilterType = 'ALL' | 'UNREAD';
 
 export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRead, onMarkAllRead, onDelete, error, onRetry, loading = false, unreadCount = 0, centerHref }: AppNotificationDrawerProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
   const hasUnreadNotifications = unreadCount > 0 || notifications.some(n => !n.isRead);
 
-  const filteredNotifications = notifications.filter(n => {
-    if (activeFilter === 'ALL') return true;
-    return n.type === activeFilter;
-  });
+  const filteredNotifications = activeFilter === 'UNREAD' ? notifications.filter((n) => !n.isRead) : notifications;
 
   const getIcon = (type?: string) => {
     switch (type) {
@@ -137,9 +139,11 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
 
           {/* Advanced Filter Matrix */}
           <div className="flex gap-1.5 border-b border-border bg-muted/30 p-3">
-             {(['ALL', 'SECURITY', 'SYSTEM', 'ACTIVITY'] as FilterType[]).map((f) => (
+             {(['ALL', 'UNREAD'] as FilterType[]).map((f) => (
                 <button
                    key={f}
+                   type="button"
+                   aria-pressed={activeFilter === f}
                    onClick={() => setActiveFilter(f)}
                    className={cn(
                       "cursor-pointer rounded-md border px-3 py-1.5 text-[length:var(--font-size-body)] transition-colors",
@@ -148,9 +152,10 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                          : "border-border bg-background text-muted-foreground hover:bg-accent"
                    )}
                 >
-                   {f === 'ALL' ? '전체' : f === 'SECURITY' ? '보안' : f === 'SYSTEM' ? '시스템' : '활동'}
+                   {f === 'ALL' ? '전체' : '읽지 않음'}
                 </button>
              ))}
+             <span className="ml-auto self-center text-xs text-muted-foreground">최근 알림</span>
              {/*
                 [2026-08-29] '알림 전체 삭제' 휴지통 버튼을 걷었다.
                 onClick·type·form 이 전혀 없어 눌러도 아무 일이 없었는데, hover 하면 빨갛게
@@ -194,7 +199,9 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                    className="flex h-full flex-col items-center justify-center text-muted-foreground"
                 >
                   <Zap size={28} className="mb-3" aria-hidden="true" />
-                  <span className="text-[length:var(--font-size-body)] text-muted-foreground">활성화된 알림이 없습니다</span>
+                  <span className="text-[length:var(--font-size-body)] text-muted-foreground">
+                    {activeFilter === 'UNREAD' ? '최근 알림 가운데 읽지 않은 알림이 없습니다' : '받은 알림이 없습니다'}
+                  </span>
                 </div>
              ) : (
                 filteredNotifications.map((notif) => {

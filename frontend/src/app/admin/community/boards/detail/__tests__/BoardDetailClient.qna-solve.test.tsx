@@ -76,7 +76,7 @@ describe('BoardDetailClient 권한으로 막힌 글 (DIP V9)', () => {
 
     expect(screen.getByRole('heading', { name: '볼 수 없는 게시글입니다' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '다시 시도' })).toBeNull();
-    expect(screen.getByRole('button', { name: '목록으로 돌아가기' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '목록으로' })).toBeInTheDocument();
   });
 
   it('대조군: 일반 조회 실패는 다시 시도를 준다', async () => {

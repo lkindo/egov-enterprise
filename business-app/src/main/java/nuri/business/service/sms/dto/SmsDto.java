@@ -40,8 +40,18 @@ public class SmsDto {
     @Size(min = 1, max = 4000)
     private String sndngCn;
 
-    @Schema(description = "수신자 수")
+    @Schema(description = "수신자 수", accessMode = Schema.AccessMode.READ_ONLY)
     private Integer recptnCnt;
+
+    // [2026-10-01] 발송 건의 결과를 목록에서 바로 본다 — 종전에는 수신자 수가 늘 0 이었고 결과는 건마다 열어야 보였다.
+    @Schema(description = "전달 완료 수신자 수", accessMode = Schema.AccessMode.READ_ONLY)
+    private Integer successCnt;
+
+    @Schema(description = "전달 실패 수신자 수", accessMode = Schema.AccessMode.READ_ONLY)
+    private Integer failureCnt;
+
+    @Schema(description = "대기 중 수신자 수", accessMode = Schema.AccessMode.READ_ONLY)
+    private Integer pendingCnt;
 
     @Schema(description = "최초 등록자")
     private String frstRgtrId;

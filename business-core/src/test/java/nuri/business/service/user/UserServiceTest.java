@@ -468,6 +468,29 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("사용자 다중 삭제 - 시스템 관리자 계정이 섞이면 사유를 밝혀 전체를 거부한다")
+    void deleteUserListRejectsSystemAdminWithReason() {
+        // [2026-10-01] 종전에는 사유 없는 '접근 권한이 없습니다' 라, 삭제 권한이 있는 관리자가 왜 막혔는지 알 수 없었다.
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+            User user1 = mock(User.class);
+            User admin = mock(User.class);
+            given(user1.getEsntlId()).willReturn("USR_TEST_ESNTL_0001");
+            given(admin.getEsntlId()).willReturn(nuri.foundation.constants.Constants.User.SYSTEM_ADMIN_ESNTL_ID);
+            given(userRepository.findByUserId("user1")).willReturn(Optional.of(user1));
+            given(userRepository.findByUserId("webmaster")).willReturn(Optional.of(admin));
+
+            var error = assertThrows(BusinessException.class,
+                    () -> userService.deleteUserList(List.of("user1", "webmaster")));
+
+            assertEquals(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED, error.getErrorCode());
+            assertEquals("시스템 관리자 계정은 삭제할 수 없습니다. 선택에서 빼고 다시 시도해 주세요.", error.getMessage());
+            verify(userRepository, never()).deleteAllInBatch(anyList());
+        }
+    }
+
+    @Test
     @DisplayName("사용자 상태 다중 변경 - 성공")
     void updateUsersStatusSuccessTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {

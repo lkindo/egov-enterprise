@@ -68,7 +68,7 @@ describe('사용자·조직 관리자 서버 액션', () => {
     const result = await bulkDeleteUsersAction(['U1']);
 
     expect(userAdminService.deleteUsers).toHaveBeenCalledWith(['U1'], {});
-    expect(result).toEqual({ success: true, message: '1명의 사용자가 삭제되었습니다.' });
+    expect(result).toEqual({ success: true, message: '선택한 사용자를 삭제했습니다.' });
   });
 
   it('조직 계층은 형제 안 순서를 1부터 부여하고 루트의 상위 ID는 비운다 (DIP C5)', async () => {

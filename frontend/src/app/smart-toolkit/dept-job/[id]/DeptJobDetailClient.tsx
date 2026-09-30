@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { useReturnToList } from '@/lib/navigation/use-return-to-list';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/app/components/ui/toast';
@@ -32,6 +33,11 @@ import { useDirtyCloseGuard } from '@/hooks/useDirtyCloseGuard';
 export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number }) {
     const toast = useToast();
     const router = useRouter();
+    // [2026-10-01] 업무 목록·워크허브에서 왔으면 뒤로 가 목록 조건을 살리고, 아니면 업무 목록으로 간다.
+    const returnToList = useReturnToList({
+        fallback: '/smart-toolkit/dept-job',
+        origins: ['/smart-toolkit/dept-job', '/admin/work-hub'],
+    });
     const queryClient = useQueryClient();
     const confirm = useConfirm();
     const [isEditing, setEditing] = React.useState(false);
@@ -160,7 +166,7 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
                 <h1 className="text-sm font-bold text-muted-foreground">
                     업무를 찾을 수 없습니다. 이미 삭제되었을 수 있습니다.
                 </h1>
-                <Button variant="outline" onClick={() => router.push('/smart-toolkit/dept-job')} className="font-bold">
+                <Button variant="outline" onClick={returnToList} className="font-bold">
                     목록으로
                 </Button>
             </div>
@@ -263,7 +269,7 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
                 </CardContent>
             </Card>
 
-            <Button variant="ghost" onClick={() => router.push('/smart-toolkit/dept-job')} className="font-bold gap-2">
+            <Button variant="ghost" onClick={returnToList} className="font-bold gap-2">
                 <ArrowLeft size={16} />
                 목록으로
             </Button>

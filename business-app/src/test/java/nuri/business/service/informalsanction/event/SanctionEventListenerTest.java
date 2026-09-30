@@ -238,6 +238,20 @@ class SanctionEventListenerTest {
     }
 
     @Test
+    @DisplayName("앱 내 알림은 문서 제목을 함께 말한다 — 번호만으로는 어느 결재인지 알 수 없다")
+    void inAppNotificationNamesTheDocument() {
+        // [2026-10-01] 종전 본문은 '결재(번호 N)' 뿐이었고 결재함 목록에는 번호가 보이지 않았다.
+        SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
+                12L, "USER_004", "SANCTIONER_001",
+                nuri.business.domain.informalsanction.SanctionStatus.APPROVED, null, "출장비 정산");
+
+        sanctionEventListener.handleStatusChanged(event);
+
+        assertThat(onlyPublished(NotificationRequestedEvent.class).content())
+                .isEqualTo("「출장비 정산」 결재(번호 12)가 승인되었습니다.");
+    }
+
+    @Test
     @DisplayName("최대 길이 반려 사유도 문자·메일·앱 알림의 최종 본문 한도를 넘지 않는다")
     void boundsFinalChannelMessagesForMaximumReason() {
         SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(

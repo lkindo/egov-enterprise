@@ -7390,7 +7390,22 @@ export interface components {
              * Format: int32
              * @description 수신자 수
              */
-            recptnCnt?: number;
+            readonly recptnCnt?: number;
+            /**
+             * Format: int32
+             * @description 전달 완료 수신자 수
+             */
+            readonly successCnt?: number;
+            /**
+             * Format: int32
+             * @description 전달 실패 수신자 수
+             */
+            readonly failureCnt?: number;
+            /**
+             * Format: int32
+             * @description 대기 중 수신자 수
+             */
+            readonly pendingCnt?: number;
             /** @description 최초 등록자 */
             frstRgtrId?: string;
             /**
@@ -22071,6 +22086,8 @@ export interface operations {
             query?: {
                 searchCondition?: string;
                 searchKeyword?: string;
+                /** @description 발송 결과(P 대기·S 성공·F 실패). 비우면 전체 */
+                resultCode?: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */

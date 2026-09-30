@@ -1,6 +1,6 @@
 import { describe, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
@@ -109,6 +109,47 @@ describe('하드코딩 색상 차단 게이트 (§2.B 브랜딩 토큰화 드리
         `🔗 [COLOR GUARD] 하드코딩 팔레트 색 ${total}건 != 베이스라인 ${BASELINE} — ${direction}.\n` +
         `globals.css 토큰(hub-*/시맨틱)으로 대체하세요(docs/03-guides/design-tokens.md). status 색은 제외 대상.\n` +
         `상위 파일:\n` + offenders.slice(0, 10).map(o => `  ${o.count}  ${o.file}`).join('\n')
+      );
+    }
+  });
+});
+
+/**
+ * [2026-10-01] 흐린 보조 글자(`text-muted-foreground/10~60`, `placeholder:` 포함)는 장식에만 둔다.
+ *
+ * 그룹 설명·ID 라벨·로그 시각·작성자·등록일 같은 데이터 글자에 쓰여 흰 배경 대비가 1.67~2.49:1 이었다(WCAG 1.4.3
+ * 기준 4.5:1). 토큰 대비 계약은 불투명도 수식어를 보지 않아 잡지 못했다. 데이터 글자 19곳은 걷었고, 남은 것은 모두
+ * 보조기술에서 뺀 장식(빈 상태 아이콘·구분자·연결선)이다. 파일별로 동결해 데이터 글자에 새로 쓰면 red 가 된다 —
+ * 장식이면 aria-hidden 과 함께 이 표에 사유를 남긴다.
+ */
+const MUTED_OPACITY = /\btext-muted-foreground\/[1-6]0\b/g;
+const MUTED_OPACITY_BASELINE: Record<string, number> = {
+  'src/app/admin/community/board/CommunityBoardClient.tsx': 2, // 빈 상태 아이콘, 행 화살표(aria-hidden)
+  'src/app/admin/survey/components/SurveyQuestionsPanel.tsx': 2, // 빈 상태 아이콘, 가운뎃점 구분자(aria-hidden)
+  'src/app/admin/survey/components/SurveyTemplatesPanel.tsx': 1, // 빈 상태 아이콘(aria-hidden)
+  'src/app/admin/system/logs/user/SystemLogsUserClient.tsx': 5, // 건수 사이 '/' 구분자(aria-hidden)
+  'src/app/components/ui/global-command-center.tsx': 1, // 빈 결과 아이콘(aria-hidden)
+  'src/app/components/ui/standard-data-table.tsx': 1, // 검색창 돋보기(aria-hidden)
+  'src/app/components/ui/workflow-canvas.tsx': 2, // 노드 연결선·화살촉(svg aria-hidden)
+  'src/app/search/SearchClient.tsx': 1, // 빈 결과 아이콘(aria-hidden)
+  'src/app/survey/components/SurveyStatsPanel.tsx': 1, // 빈 상태 아이콘(aria-hidden)
+};
+
+describe('흐린 보조 글자는 장식에만 (저대비 동결)', () => {
+  it('파일별 사용 수가 동결값과 정확히 같다 — 데이터 글자에 새로 쓰면 red', () => {
+    const actual: Record<string, number> = {};
+    for (const f of collectFiles(SRC)) {
+      const m = readFileSync(f, 'utf8').match(MUTED_OPACITY);
+      if (m && m.length > 0) actual[f.replace(SRC, 'src').split(sep).join('/')] = m.length;
+    }
+    const diff = [...new Set([...Object.keys(actual), ...Object.keys(MUTED_OPACITY_BASELINE)])]
+      .filter((file) => (actual[file] ?? 0) !== (MUTED_OPACITY_BASELINE[file] ?? 0))
+      .map((file) => `  ${file}: 실측 ${actual[file] ?? 0} / 동결 ${MUTED_OPACITY_BASELINE[file] ?? 0}`);
+    if (diff.length > 0) {
+      throw new Error(
+        '🔗 [CONTRAST GUARD] text-muted-foreground/10~60 사용이 동결값과 다르다.\n'
+        + '데이터 글자면 불투명도를 걷고(text-muted-foreground), 장식이면 aria-hidden 과 함께 동결표를 갱신하라.\n'
+        + diff.join('\n'),
       );
     }
   });

@@ -53,7 +53,7 @@ export function SurveyStatsPanel({ srvySn }: { srvySn: number | null }) {
   if (!hasValidSurvey) {
     return (
       <div className="text-center py-20 border-2 border-dashed rounded-lg">
-        <BarChart3 className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
+        <BarChart3 className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" aria-hidden="true" />
         <p className="text-muted-foreground">설문지를 선택하면 통계를 확인할 수 있습니다.</p>
       </div>
     );

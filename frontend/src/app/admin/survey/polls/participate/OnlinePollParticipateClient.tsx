@@ -225,7 +225,7 @@ export default function OnlinePollParticipateClient() {
  onClick={() => setViewMode('list')}
  className="h-[var(--control-h)] px-4 rounded-lg text-[length:var(--font-size-body)] font-medium border border-border"
  >
- 뒤로가기
+ 목록으로
  </Button>
  {viewMode === 'vote' && (
  <Button 

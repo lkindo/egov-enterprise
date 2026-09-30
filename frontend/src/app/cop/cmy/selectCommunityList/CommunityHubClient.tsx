@@ -7,7 +7,7 @@ import { emptyResultMessage } from '@/app/components/patterns/empty-result-messa
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 ;
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { RefreshCcw, Calendar, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { communityService } from '@/services/business/community/communityService';
@@ -91,7 +91,7 @@ export default function CommunityHubClient({
     {
       header: '개설일',
       accessor: (item) => (
-        <div className="flex items-center gap-3 text-muted-foreground/40 font-bold text-xs tracking-tight">
+        <div className="flex items-center gap-3 text-muted-foreground font-bold text-xs tracking-tight">
           <Calendar size={14} /> {item.crtDt?.substring(0, 10)}
         </div>
       )
@@ -134,17 +134,14 @@ export default function CommunityHubClient({
       }
       filter={
         <div className="space-y-[var(--form-gap)]">
-          <div className="min-w-60 max-w-xl space-y-1">
-            <label htmlFor="community-search" className="text-[length:var(--font-size-body)] font-medium">
-              커뮤니티명
-            </label>
-            <Input
-              id="community-search"
-              placeholder="커뮤니티 검색"
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-            />
-          </div>
+          {/* [2026-10-01] 조회 시점은 '조회'·Enter 다(카탈로그 G2) — 종전에는 글자마다 서버를 조회하고 페이지를
+              1로 돌리지 않아, 3페이지에서 검색하면 빈 화면이 나올 수 있었다. */}
+          <KeywordFilter
+            label="커뮤니티명"
+            placeholder="커뮤니티 검색"
+            value={searchKeyword}
+            onSearch={(keyword) => { setSearchKeyword(keyword); setPage(1); }}
+          />
           <div role="group" aria-label="조회 범위" className="flex flex-wrap items-center gap-2">
             <Button
               type="button"

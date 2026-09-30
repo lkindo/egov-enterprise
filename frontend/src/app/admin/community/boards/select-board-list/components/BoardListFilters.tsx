@@ -45,7 +45,7 @@ export const BoardListFilters = ({
       <form onSubmit={onSearch} className="flex flex-col gap-3 w-full">
         <div className="flex flex-col md:flex-row items-center gap-3 w-full">
           <Select value={searchCnd} onValueChange={setSearchCnd}>
-              <SelectTrigger className="w-full md:w-[220px] !h-12 rounded-lg border border-border bg-card font-bold shadow-sm flex items-center leading-none" aria-label="검색 조건 선택">
+              <SelectTrigger className="w-full md:w-[220px] !h-[var(--filter-control-h)] rounded-lg border border-border bg-card font-bold shadow-sm flex items-center leading-none" aria-label="검색 조건 선택">
                 <SelectValue placeholder="검색 조건" />
               </SelectTrigger>
               {/*
@@ -60,13 +60,13 @@ export const BoardListFilters = ({
                 <SelectItem value="2">작성자</SelectItem>
               </SelectContent>
           </Select>
-          <div className="relative flex-1 group !h-12">
+          <div className="relative flex-1 group !h-[var(--filter-control-h)]">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10 group-focus-within:text-primary transition-colors" />
             <Input
               id="board-search-input"
               data-testid="board-search-input"
               type="text"
-              className="pl-12 pr-10 !h-12 text-sm border border-border bg-card shadow-sm rounded-lg focus-visible:ring-primary/20 transition-all font-bold leading-none flex items-center"
+              className="pl-12 pr-10 !h-[var(--filter-control-h)] text-sm border border-border bg-card shadow-sm rounded-lg focus-visible:ring-primary/20 transition-all font-bold leading-none flex items-center"
               placeholder="어떤 정보를 찾으시나요?"
               value={searchWrd}
               onChange={(e) => setSearchWrd(e.target.value)}
@@ -97,7 +97,7 @@ export const BoardListFilters = ({
                   <Button
                     variant="outline"
                     className={cn(
-                      "!h-12 px-5 justify-start text-left font-bold rounded-lg border border-border bg-card shadow-sm w-full md:w-[220px] flex items-center leading-none",
+                      "!h-[var(--filter-control-h)] px-5 justify-start text-left font-bold rounded-lg border border-border bg-card shadow-sm w-full md:w-[220px] flex items-center leading-none",
                       !startDate && "text-muted-foreground"
                     )}
                     aria-label="기간 선택"
@@ -123,7 +123,7 @@ export const BoardListFilters = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => { setStartDate(undefined); setEndDate(undefined); }}
-                      className="!h-7 px-2 text-xs font-bold text-muted-foreground hover:text-destructive"
+                      className="!h-[var(--control-h-sm)] px-2 text-xs font-bold text-muted-foreground hover:text-destructive"
                       aria-label="기간 초기화"
                     >
                       <X size={12} className="mr-1" /> 초기화
@@ -151,7 +151,7 @@ export const BoardListFilters = ({
             </Popover>
 
             <Select value={orderBy} onValueChange={setOrderBy}>
-                <SelectTrigger data-testid="board-sort-select" className="w-full md:w-[140px] !h-12 rounded-lg border border-border bg-card font-bold shadow-sm text-sm flex items-center leading-none" aria-label="정렬 방식 선택">
+                <SelectTrigger data-testid="board-sort-select" className="w-full md:w-[140px] !h-[var(--filter-control-h)] rounded-lg border border-border bg-card font-bold shadow-sm text-sm flex items-center leading-none" aria-label="정렬 방식 선택">
                   <ArrowUpDown className="mr-2 h-3.5 w-3.5 text-primary opacity-50 shrink-0" />
                   <SelectValue placeholder="정렬 방식" />
                 </SelectTrigger>
@@ -164,10 +164,10 @@ export const BoardListFilters = ({
           </div>
 
           <div className="flex gap-2 w-full md:w-auto">
-             <Button type="button" variant="outline" size="lg" onClick={onReset} className="!h-12 px-6 gap-2 border-border font-bold rounded-lg" aria-label="필터 초기화">
+             <Button type="button" variant="outline" size="lg" onClick={onReset} className="!h-[var(--filter-control-h)] px-6 gap-2 border-border font-bold rounded-lg" aria-label="필터 초기화">
                초기화
              </Button>
-             <Button type="submit" size="lg" className="flex-1 md:flex-none !h-12 px-10 gap-2 bg-surface-inverse border border-surface-inverse-border shadow-xl hover:scale-105 transition-all active:scale-95 font-bold text-surface-inverse-foreground rounded-lg flex items-center leading-none" aria-label="검색 수행">
+             <Button type="submit" size="lg" className="flex-1 md:flex-none !h-[var(--filter-control-h)] px-10 gap-2 bg-surface-inverse border border-surface-inverse-border shadow-xl hover:scale-105 transition-all active:scale-95 font-bold text-surface-inverse-foreground rounded-lg flex items-center leading-none" aria-label="검색 수행">
                <Search className="w-4 h-4 shrink-0" /> 조회
              </Button>
           </div>

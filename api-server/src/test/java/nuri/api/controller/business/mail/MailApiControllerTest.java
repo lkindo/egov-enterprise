@@ -36,7 +36,7 @@ class MailApiControllerTest extends ControllerTestSupport {
     @DisplayName("발신 메일 목록 조회")
     void getSentMails() throws Exception {
         Page<SentMailDto> page = new PageImpl<>(List.of(SentMailDto.builder().emlDsptchSn(1L).build()));
-        given(mailService.getSentMailList(any(), any(), any())).willReturn(page);
+        given(mailService.getSentMailList(any(), any(), any(), any())).willReturn(page);
 
         mockMvc.perform(get("/api/v1/mails"))
                 .andExpect(status().isOk())

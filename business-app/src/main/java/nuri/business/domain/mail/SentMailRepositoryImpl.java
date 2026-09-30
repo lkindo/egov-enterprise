@@ -18,10 +18,11 @@ public class SentMailRepositoryImpl implements SentMailRepositoryCustom {
 
     @Override
     public Page<SentMail> searchSentMails(String senderLoginId, String searchCondition, String searchKeyword,
-            Pageable pageable) {
+            String resultCode, Pageable pageable) {
         List<SentMail> content = queryFactory
                 .selectFrom(sentMail)
-                .where(senderEq(senderLoginId), searchExpression(searchCondition, searchKeyword))
+                .where(senderEq(senderLoginId), searchExpression(searchCondition, searchKeyword),
+                        resultEq(resultCode))
                 .orderBy(sentMail.emlDsptchSn.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -30,7 +31,8 @@ public class SentMailRepositoryImpl implements SentMailRepositoryCustom {
         Long total = queryFactory
                 .select(sentMail.count())
                 .from(sentMail)
-                .where(senderEq(senderLoginId), searchExpression(searchCondition, searchKeyword))
+                .where(senderEq(senderLoginId), searchExpression(searchCondition, searchKeyword),
+                        resultEq(resultCode))
                 .fetchOne();
 
         return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
@@ -40,6 +42,10 @@ public class SentMailRepositoryImpl implements SentMailRepositoryCustom {
     /** 발신자(등록자) 한정 조건. 감사 컬럼 frstRgtrId 에는 loginId 가 저장된다. */
     private BooleanExpression senderEq(String senderLoginId) {
         return StringUtils.hasText(senderLoginId) ? sentMail.frstRgtrId.eq(senderLoginId) : null;
+    }
+
+    private BooleanExpression resultEq(String resultCode) {
+        return StringUtils.hasText(resultCode) ? sentMail.dsptchRsltCd.eq(resultCode) : null;
     }
 
     private BooleanExpression searchExpression(String searchCondition, String searchKeyword) {

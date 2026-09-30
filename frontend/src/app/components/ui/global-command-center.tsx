@@ -364,7 +364,7 @@ export function GlobalCommandCenter() {
             aria-invalid={Boolean(searchQueryError) || undefined}
             aria-describedby={searchQueryError ? 'command-search-query-error' : undefined}
             placeholder="검색..."
-            className="flex-1 bg-transparent border-none outline-none text-2xl font-bold placeholder:text-muted-foreground/30 tracking-tight"
+            className="flex-1 bg-transparent border-none outline-none text-2xl font-bold placeholder:text-muted-foreground tracking-tight"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -449,7 +449,7 @@ export function GlobalCommandCenter() {
           ) : (
             <div className="py-24 text-center space-y-6">
               <div className="w-24 h-24 bg-muted/30 rounded-lg flex items-center justify-center mx-auto animate-bounce">
-                <Zap size={32} className="text-muted-foreground/20" />
+                <Zap size={32} className="text-muted-foreground/20" aria-hidden="true" />
               </div>
               <div>
                 <p className="text-xl font-bold text-foreground">결과를 찾을 수 없습니다.</p>

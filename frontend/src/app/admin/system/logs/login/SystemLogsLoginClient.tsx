@@ -104,7 +104,7 @@ const SystemLogsLoginClient = () => {
         {
             header: '로그인 일련번호',
             accessor: (item: LoginLog) => (
-                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/50 tabular-nums">
+                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
                     {item.lgnSn}
                 </div>
             ),
@@ -165,7 +165,7 @@ const SystemLogsLoginClient = () => {
                             {loginFailureLabel(item.errorCode)}
                         </span>
                     ) : (
-                        <span className="text-xs font-bold text-muted-foreground/50">-</span>
+                        <span className="text-xs font-bold text-muted-foreground">-</span>
                     )}
                 </div>
             ),

@@ -129,22 +129,22 @@ const SystemLogsUserClient = () => {
                 <div className="flex items-center gap-1.5 font-mono text-xs tabular-nums">
                     <Terminal size={12} className="opacity-30" />
                     <span className="text-emerald-600 font-bold">{item.crtCnt ?? 0}</span>
-                    <span className="text-muted-foreground/40">/</span>
+                    <span className="text-muted-foreground/40" aria-hidden="true">/</span>
                     <span className="text-primary font-bold">{item.mdfcnCnt ?? 0}</span>
-                    <span className="text-muted-foreground/40">/</span>
+                    <span className="text-muted-foreground/40" aria-hidden="true">/</span>
                     <span className="text-muted-foreground font-bold">{item.inqCnt ?? 0}</span>
-                    <span className="text-muted-foreground/40">/</span>
+                    <span className="text-muted-foreground/40" aria-hidden="true">/</span>
                     <span className="text-rose-500 font-bold">{item.delCnt ?? 0}</span>
-                    <span className="text-muted-foreground/40">/</span>
+                    <span className="text-muted-foreground/40" aria-hidden="true">/</span>
                     <span
-                        className="text-muted-foreground/50 font-bold"
+                        className="text-muted-foreground font-bold"
                         title="출력 건수는 현재 측정하지 않습니다. 다운로드·내보내기는 HTTP 메서드만으로 조회와 구분되지 않습니다."
                         aria-label="출력 건수 측정 안 함"
                     >
                         –
                     </span>
-                    <span className="text-muted-foreground/40">/</span>
-                    <span className={(item.errCnt ?? 0) > 0 ? 'text-rose-600 font-black' : 'text-muted-foreground/50 font-bold'}>
+                    <span className="text-muted-foreground/40" aria-hidden="true">/</span>
+                    <span className={(item.errCnt ?? 0) > 0 ? 'text-rose-600 font-black' : 'text-muted-foreground font-bold'}>
                         {item.errCnt ?? 0}
                     </span>
                 </div>

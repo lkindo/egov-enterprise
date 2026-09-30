@@ -96,6 +96,11 @@ interface StandardDataTableBaseProps<T> {
   loading?: boolean;
   emptyMessage?: string;
   enableSelection?: boolean;
+  /**
+   * [2026-10-01] 행 선택 체크박스의 이름. 종전에는 모든 행이 '항목 선택' 이라 스크린리더로는 일괄 삭제할 대상을
+   * 구분할 수 없었다. 주지 않으면 첫 열의 값(문자열·숫자)으로, 그것도 없으면 행 순번으로 이름을 짓는다.
+   */
+  selectionLabel?: (item: T, index: number) => string;
   bulkActions?: BulkAction<T>[];
   keyField?: keyof T;
   className?: string;
@@ -162,12 +167,23 @@ interface DataRowProps<T extends object> {
   onRowClick?: (item: T) => void;
   rowActionLabel?: string;
   rowTestId?: string;
+  selectionLabel: string;
 }
 
 function renderCell<T extends object>(column: Column<T>, item: T, index: number): React.ReactNode {
   return typeof column.accessor === 'function'
     ? column.accessor(item, index)
     : item[column.accessor] as React.ReactNode;
+}
+
+/** 행 체크박스의 기본 이름 — 첫 열 값이 문자열·숫자면 그것으로, 아니면 행 순번으로 짓는다. */
+function defaultSelectionLabel<T extends object>(columns: Column<T>[], item: T, index: number): string {
+  for (const column of columns) {
+    if (typeof column.accessor === 'function') continue;
+    const value = item?.[column.accessor];
+    if ((typeof value === 'string' && value.trim()) || typeof value === 'number') return `${String(value).trim()} 선택`;
+  }
+  return `${index + 1}번째 항목 선택`;
 }
 
 function resolveRowActionLabel<T extends object>(
@@ -188,12 +204,14 @@ function DataRowComponent<T extends object>({
   onToggle,
   onRowClick,
   rowActionLabel,
-  rowTestId
+  rowTestId,
+  selectionLabel,
 }: DataRowProps<T>) {
   if (!item) return null;
 
   return (
     <tr
+      role="row"
       data-testid={rowTestId}
       className={cn(
         "group transition-all duration-300 outline-none focus-within:bg-muted/30 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
@@ -201,16 +219,17 @@ function DataRowComponent<T extends object>({
       )}
     >
       {enableSelection && (
-        <td className="px-[var(--cell-px)] py-[var(--cell-py)] text-center" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+        <td role="cell" className="px-[var(--cell-px)] py-[var(--cell-py)] text-center" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
           <Checkbox
             checked={isSelected}
             onCheckedChange={onToggle}
-            aria-label="항목 선택"
+            aria-label={selectionLabel}
           />
         </td>
       )}
       {columns.map((column, colIdx) => (
         <td
+          role="cell"
           key={`row-cell-${colIdx}`}
           // md 미만에서 thead 가 시각적으로 숨겨지므로 각 셀이 자기 열 이름을 스스로 보여줘야 한다.
           // 문자열 header 만 라벨로 쓴다(ReactNode header 는 CSS content 로 표현할 수 없다).
@@ -226,7 +245,7 @@ function DataRowComponent<T extends object>({
         </td>
       ))}
       {onRowClick && (
-        <td className="px-[var(--cell-px)] py-[var(--cell-py)] text-right">
+        <td role="cell" className="px-[var(--cell-px)] py-[var(--cell-py)] text-right">
           <Button
             type="button"
             variant="ghost"
@@ -257,6 +276,7 @@ export function StandardDataTable<T extends object>({
   rowActionLabel,
   emptyMessage = "데이터가 없습니다.",
   enableSelection = false,
+  selectionLabel,
   bulkActions = [],
   keyField: keyFieldProp,
   className,
@@ -440,6 +460,12 @@ export function StandardDataTable<T extends object>({
   });
   const leafColumns = table.getAllLeafColumns();
   const tableRows = table.getRowModel().rows;
+  /*
+    [2026-10-01] 스켈레톤은 보일 행이 없을 때만 그린다(카탈로그 G15 직전 결과 유지). 종전에는 페이지를 넘길 때마다
+    이미 보이던 행을 스켈레톤으로 바꿔 표가 깜빡이고 읽던 자리를 잃었다. 다시 불러오는 동안은 표의 aria-busy 와
+    '불러오는 중' 상태 문장이 알린다.
+  */
+  const showSkeleton = Boolean(loading) && tableRows.length === 0;
 
   return (
     <div className={cn("space-y-6", className)}>
@@ -542,6 +568,46 @@ export function StandardDataTable<T extends object>({
         <div className="w-full">
           {/* [2026-09-15 DEC-OPS-100] 로딩 스켈레톤은 aria-hidden 이라 보조기술에는 빈 표로 읽혔다 — 진행 상태를 말한다. */}
           {loading ? <p role="status" className="sr-only">{`${accessibleLabel}을(를) 불러오는 중…`}</p> : null}
+          {/* [2026-10-01] 좁은 화면(md 미만)에서는 머리글 행을 숨기고 그 안의 컨트롤을 탭 순서에서 뺀다(globals.css) —
+              보이지 않는 포커스 정지점이었다. 대신 카드 위에 보이는 전체 선택·정렬을 한 번 둔다. 데이터가 아니라 컨트롤이라
+              단일 DOM 원칙(ADR-0006)과 부딪히지 않는다. */}
+          {(enableSelection || leafColumns.some((c) => c.getCanSort())) && tableRows.length > 0 ? (
+            <div className="standard-data-table-narrow-controls flex-wrap items-center gap-3 border-b border-border px-3 py-2">
+              {enableSelection ? (
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox checked={headerChecked} onCheckedChange={toggleAll} />
+                  전체 선택
+                </label>
+              ) : null}
+              {leafColumns.some((c) => c.getCanSort()) ? (
+                <label className="flex items-center gap-2 text-sm">
+                  정렬 기준
+                  <select
+                    className="h-[var(--control-h-sm)] rounded-md border border-input bg-background px-2 text-sm"
+                    value={(() => {
+                      const sorted = leafColumns.find((c) => c.getIsSorted());
+                      return sorted ? `${sorted.id}:${sorted.getIsSorted()}` : '';
+                    })()}
+                    onChange={(event) => {
+                      const [id, direction] = event.target.value.split(':');
+                      if (!id) { table.resetSorting(); return; }
+                      leafColumns.find((c) => c.id === id)?.toggleSorting(direction === 'desc');
+                    }}
+                  >
+                    <option value="">정렬 안 함</option>
+                    {columns.map((column, idx) => {
+                      const tanColumn = leafColumns[idx];
+                      if (!tanColumn?.getCanSort() || typeof column.header !== 'string') return null;
+                      return [
+                        <option key={`${tanColumn.id}:asc`} value={`${tanColumn.id}:asc`}>{`${column.header} 오름차순`}</option>,
+                        <option key={`${tanColumn.id}:desc`} value={`${tanColumn.id}:desc`}>{`${column.header} 내림차순`}</option>,
+                      ];
+                    })}
+                  </select>
+                </label>
+              ) : null}
+            </div>
+          ) : null}
           <table
             role="table"
             aria-busy={loading || undefined}
@@ -613,7 +679,7 @@ export function StandardDataTable<T extends object>({
               </tr>
             </thead>
             <tbody role="rowgroup" className="divide-y divide-border/40">
-              {loading ? (
+              {showSkeleton ? (
                 Array.from({ length: pagination?.pageSize ?? 5 }).map((_, i) => (
                   // 로딩 스켈레톤은 순수 장식이므로 접근성 트리에서 제외한다(중복 낭독 방지).
                   <tr key={`loading-row-${i}`} className="animate-pulse" aria-hidden="true">
@@ -662,6 +728,7 @@ export function StandardDataTable<T extends object>({
                       onRowClick={onRowClick}
                       rowActionLabel={resolveRowActionLabel(rowActionLabel, item, displayIdx)}
                       rowTestId={rowTestId}
+                      selectionLabel={selectionLabel ? selectionLabel(item, displayIdx) : defaultSelectionLabel(columns, item, displayIdx)}
                     />
                   );
                 })
@@ -744,9 +811,10 @@ export function StandardDataTable<T extends object>({
                   <Button
                     variant="outline"
                     size="icon"
-                    className="rounded-lg border-2"
-                    disabled={pagination.currentPage <= 1}
-                    onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
+                    className="rounded-lg border-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+                    // [2026-10-01] disabled 는 누른 버튼에서 포커스를 빼앗는다 — 첫·끝 페이지에서 포커스가 사라졌다.
+                    aria-disabled={pagination.currentPage <= 1 || undefined}
+                    onClick={() => { if (pagination.currentPage > 1) pagination.onPageChange(pagination.currentPage - 1); }}
                     aria-label="이전 페이지"
                   >
                     <ChevronLeft size={18} aria-hidden="true" />
@@ -813,9 +881,9 @@ export function StandardDataTable<T extends object>({
                   <Button
                     variant="outline"
                     size="icon"
-                    className="rounded-lg border-2"
-                    disabled={pagination.currentPage >= pagination.totalPages}
-                    onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
+                    className="rounded-lg border-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+                    aria-disabled={pagination.currentPage >= pagination.totalPages || undefined}
+                    onClick={() => { if (pagination.currentPage < pagination.totalPages) pagination.onPageChange(pagination.currentPage + 1); }}
                     aria-label="다음 페이지"
                   >
                     <ChevronRight size={18} aria-hidden="true" />

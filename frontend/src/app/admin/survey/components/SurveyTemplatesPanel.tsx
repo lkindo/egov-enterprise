@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { surveyAdminService, SurveyTemplate } from '@/services/foundation/system/SurveyAdminService';
 import { PageResponse } from '@/types/foundation/system';
@@ -57,6 +58,7 @@ export default function SurveyTemplatesPanel() {
 
   const templates = data?.list ?? [];
   const invalidate = () => queryClient.invalidateQueries({ queryKey: key });
+  const confirm = useConfirm();
   const onError = (e: unknown) => setError(extractErrorMessage(e, '처리에 실패했습니다.'));
 
   const create = useMutation({
@@ -109,9 +111,24 @@ export default function SurveyTemplatesPanel() {
     },
   });
 
-  const beginDelete = (srvyTmpltSn: number) => {
+  /*
+   * [2026-10-01] 삭제 전에 확인한다. 종전에는 휴지통 한 번 클릭으로 곧바로 요청이 나가, 쓰이지 않는 템플릿이
+   * 되돌릴 수 없이 사라졌다(쓰이는 템플릿은 서버가 건수를 밝혀 거부한다).
+   * 잠금은 확인 대화보다 먼저 건다 — 확인이 떠 있는 동안 같은 tick 의 두 번째 클릭이 또 확인을 띄우지 않는다.
+   */
+  const beginDelete = async (srvyTmpltSn: number, label: string) => {
     if (deletePendingRef.current || editPendingRef.current || createPendingRef.current) return;
     deletePendingRef.current = true;
+    const approved = await confirm({
+      title: '설문 템플릿 삭제',
+      message: `「${label}」 템플릿을 삭제합니다. 삭제한 템플릿은 되돌릴 수 없습니다. 이 템플릿으로 만든 설문이 있으면 삭제되지 않습니다.`,
+      confirmText: '삭제',
+      variant: 'destructive',
+    }).catch(() => false);
+    if (!approved) {
+      deletePendingRef.current = false;
+      return;
+    }
     setDeletingTemplate(srvyTmpltSn);
     setError(null);
     remove.mutate(srvyTmpltSn);
@@ -222,7 +239,7 @@ export default function SurveyTemplatesPanel() {
         </div>
       ) : templates.length === 0 ? (
         <div className="p-16 text-center bg-card rounded-lg border-2 border-dashed">
-          <LayoutTemplate size={36} className="mx-auto text-muted-foreground/30 mb-3" />
+          <LayoutTemplate size={36} className="mx-auto text-muted-foreground/30 mb-3" aria-hidden="true" />
           <p className="text-muted-foreground">등록된 템플릿이 없습니다.</p>
         </div>
       ) : (
@@ -263,7 +280,7 @@ export default function SurveyTemplatesPanel() {
                 aria-busy={deletingTemplate === t.srvyTmpltSn}
                 disabled={deletingTemplate !== null || loadingTemplate !== null || create.isPending || editing?.srvyTmpltSn === t.srvyTmpltSn}
                 className="text-destructive-emphasis hover:bg-destructive/10 shrink-0"
-                onClick={() => t.srvyTmpltSn && beginDelete(t.srvyTmpltSn)}
+                onClick={() => { if (t.srvyTmpltSn) void beginDelete(t.srvyTmpltSn, String(t.srvyTmpltExpln || t.srvyTmpltSn)); }}
               >
                 {deletingTemplate === t.srvyTmpltSn
                   ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

@@ -33,8 +33,10 @@ public class MailApiController {
     public ResponseEntity<ApiResponse<PageResponse<SentMailDto>>> getSentMails(
             @RequestParam(required = false) String searchCondition,
             @RequestParam(required = false) String searchKeyword,
+            @io.swagger.v3.oas.annotations.Parameter(description = "발송 결과(P 대기·S 성공·F 실패). 비우면 전체")
+            @RequestParam(required = false) String resultCode,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<SentMailDto> result = mailService.getSentMailList(searchCondition, searchKeyword, pageable);
+        Page<SentMailDto> result = mailService.getSentMailList(searchCondition, searchKeyword, resultCode, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 

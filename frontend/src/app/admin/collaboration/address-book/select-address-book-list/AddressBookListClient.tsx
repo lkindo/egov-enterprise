@@ -45,6 +45,9 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  const [pageNo, setPageNo] = useState(initialParams.pageNo);
  const [pageUnit, setPageUnit] = useState(DEFAULT_PAGE_UNIT);
  const [searchWrd, setSearchWrd] = useState(initialParams.searchWrd);
+ // [2026-10-01] 조회에 쓴 검색어. 입력칸 값(searchWrd)과 나눈다 — 종전에는 입력만 하고 조회하지 않은 검색어가
+ //   페이지 이동·재조회·삭제 뒤 새로고침에 조용히 적용돼, 화면의 결과와 조건이 어긋났다.
+ const [appliedSearchWrd, setAppliedSearchWrd] = useState(initialParams.searchWrd);
  const [loading, setLoading] = useState(false);
  const [deletingAddressBookSn, setDeletingAddressBookSn] = useState<number | null>(null);
  const [createOpen, setCreateOpen] = useState(false);
@@ -79,20 +82,21 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  const handleSearch = (e: React.FormEvent) => {
  e.preventDefault();
  setPageNo(1); // [P1-8] 3페이지에서 검색 시 빈 화면이 되는 결함 방지
+ setAppliedSearchWrd(searchWrd);
  void fetchList(1, searchWrd);
  };
 
  /** 페이지 이동은 반드시 재조회를 동반해야 한다(과거에는 상태만 바뀌고 목록이 그대로였다). */
  const handlePageChange = (target: number) => {
  setPageNo(target);
- void fetchList(target, searchWrd);
+ void fetchList(target, appliedSearchWrd);
  };
 
  /** 페이지당 건수를 바꾸면 현재 페이지 번호는 의미가 달라지므로 1페이지부터 다시 조회한다. */
  const handlePageSizeChange = (size: number) => {
  setPageUnit(size);
  setPageNo(1);
- void fetchList(1, searchWrd, size);
+ void fetchList(1, appliedSearchWrd, size);
  };
 
  /** [P1-9] native confirm → useConfirm. 본문에 대상 주소록 명칭을 노출한다. */
@@ -112,7 +116,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
 
  await addressbookUserService.deleteAddressBook(item.adbkSn);
  toast('주소록이 삭제되었습니다.', 'success');
- await fetchList(pageNo, searchWrd);
+ await fetchList(pageNo, appliedSearchWrd);
  } catch {
  toast('삭제에 실패했습니다.', 'error');
  } finally {
@@ -211,7 +215,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  variant="outline"
  size="sm"
  aria-label="주소록 목록 새로고침"
- onClick={() => { void fetchList(pageNo, searchWrd); }}
+ onClick={() => { void fetchList(pageNo, appliedSearchWrd); }}
  className="gap-2"
  >
  <RefreshCcw size={16} aria-hidden="true" />
@@ -265,8 +269,8 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  keyField="adbkSn"
  loading={loading}
  error={fetchError}
- onRetry={() => { void fetchList(pageNo, searchWrd); }}
- emptyMessage={emptyResultMessage(searchWrd, '등록된 주소록이 없습니다.')}
+ onRetry={() => { void fetchList(pageNo, appliedSearchWrd); }}
+ emptyMessage={emptyResultMessage(appliedSearchWrd, '등록된 주소록이 없습니다.')}
  pagination={{
  currentPage: pageNo,
  totalPages: totalPages,
@@ -281,7 +285,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  isOpen={createOpen}
  onClose={() => setCreateOpen(false)}
  // 등록 성공 후 현재 페이지·검색어 그대로 다시 읽는다 — 이 보존이 모달 이행의 실질이다.
- onCreated={() => { void fetchList(pageNo, searchWrd); }}
+ onCreated={() => { void fetchList(pageNo, appliedSearchWrd); }}
  />
  ) : null}
  </WorkListPage>

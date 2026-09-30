@@ -31,6 +31,10 @@ import CommentSection from '@/components/features/comment/CommentSection';
 import SatisfactionSection from '@/components/features/satisfaction/SatisfactionSection';
 
 import { CommentVO } from '@/types/business/comment';
+import { useReturnToList } from '@/lib/navigation/use-return-to-list';
+
+/** 게시글 상세로 들어오는 목록 화면들. 여기서 왔으면 뒤로 가서 목록의 조건·스크롤을 살린다. */
+const BOARD_LIST_ORIGINS = ['/admin/community/boards/select-board-list', '/admin/help', '/cop/cmy/selectCommunityDetail/*', '/search', '/admin/community/board'] as const;
 
 interface BoardDetailClientProps {
   dataPromise: Promise<{
@@ -67,6 +71,12 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   const confirm = useConfirm();
   const searchParams = useSearchParams();
   const bbsId = searchParams.get('bbsId');
+  // [2026-10-01] '목록으로' — 게시판 목록·지식 허브·커뮤니티·통합 검색에서 왔으면 뒤로 가 조건을 살리고,
+  //   딥링크·새 탭이면 이 글의 게시판 목록으로 간다. 방문 기록 밖으로 나가는 router.back() 을 직접 부르지 않는다.
+  const returnToList = useReturnToList({
+    fallback: bbsId ? `/admin/community/boards/select-board-list?bbsId=${encodeURIComponent(bbsId)}` : '/admin/help',
+    origins: BOARD_LIST_ORIGINS,
+  });
   // [PD-UX-002 Q4] 서버와 같은 키 공간을 읽는다.
   //   page.tsx 는 `params.pstSn || params.nttId` 로 **두 키를 다 받는데** 여기는 pstSn 만 읽었다.
   //   그래서 `?nttId=` 로 들어오면 서버는 글을 제대로 렌더하지만 클라이언트는 pstSn=0 으로 동작했다 —
@@ -228,7 +238,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           <h1 className="text-xl font-bold text-foreground">볼 수 없는 게시글입니다</h1>
           <p className="text-sm font-medium text-muted-foreground max-w-md">{initialData.fetchError}</p>
         </div>
-        <Button variant="outline" onClick={() => router.back()}>목록으로 돌아가기</Button>
+        <Button variant="outline" onClick={returnToList}>목록으로</Button>
       </div>
     );
   }
@@ -244,7 +254,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
         </div>
         <div className="flex gap-3">
           <Button onClick={() => router.refresh()}>다시 시도</Button>
-          <Button variant="outline" onClick={() => router.back()}>목록으로 돌아가기</Button>
+          <Button variant="outline" onClick={returnToList}>목록으로</Button>
         </div>
       </div>
     );
@@ -254,7 +264,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[600px] space-y-6">
         <h1 className="text-[length:var(--font-size-body)] font-semibold text-foreground">게시글을 찾을 수 없습니다. 삭제되었거나 주소가 올바르지 않습니다.</h1>
-        <Button onClick={() => router.back()} aria-label="뒤로 가기">목록으로 돌아가기</Button>
+        <Button onClick={returnToList}>목록으로</Button>
       </div>
     );
   }
@@ -267,9 +277,8 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.back()}
+            onClick={returnToList}
             className="h-auto gap-1.5 px-0 text-muted-foreground hover:bg-transparent hover:text-primary"
-            aria-label="뒤로 가기"
           >
             <ArrowLeft size={16} aria-hidden="true" />
             <span className="text-[length:var(--font-size-body)]">목록으로</span>

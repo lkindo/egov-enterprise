@@ -51,6 +51,7 @@ import {
 } from '@/components/ui/form';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUnsavedCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import { canPermission } from '@/lib/auth/permissions';
 
 /**
@@ -339,6 +340,9 @@ export default function SmsAdminClient({
     setIsSendOpen(open);
   };
 
+  // [2026-10-01] 폼에 입력이 있으면 Esc·배경·X 닫기 전에 확인한다(StandardModal 과 같은 보호).
+  const unsavedGuard = useUnsavedCloseGuard({ isOpen: isSendOpen, onClose: () => handleSendOpenChange(false) });
+
   const columns: Column<SmsDto>[] = [
     {
       header: '발송 일시',
@@ -380,8 +384,19 @@ export default function SmsAdminClient({
     // 대신 그 상세를 여는 경로를 붙인다 — 결과를 볼 방법이 아예 없으면 '접수했다'는 안내도 확인할 수 없다.
     {
       header: '전달 결과',
-      className: 'w-36',
+      className: 'w-44',
+      // [2026-10-01] 목록 조회가 발송 건마다 결과별 수를 싣는다 — 실패한 건을 한 번에 찾고, 수신자별 결과는 버튼으로 연다.
       accessor: (item: SmsDto) => (
+        <div className="flex flex-col items-start gap-1">
+        {item.recptnCnt != null && (
+          <span className="text-xs text-muted-foreground">
+            {`${item.recptnCnt}명 · 완료 ${item.successCnt ?? 0}`}
+            {(item.failureCnt ?? 0) > 0 && (
+              <span className="font-semibold text-destructive-emphasis">{` · 실패 ${item.failureCnt}`}</span>
+            )}
+            {(item.pendingCnt ?? 0) > 0 && ` · 대기 ${item.pendingCnt}`}
+          </span>
+        )}
         <Button
           type="button"
           variant="outline"
@@ -391,6 +406,7 @@ export default function SmsAdminClient({
         >
           수신자 결과
         </Button>
+        </div>
       )
     }
   ];
@@ -513,8 +529,8 @@ export default function SmsAdminClient({
         />
 
       {/* Send Message Composition Dialog */}
-      <Dialog open={isSendOpen} onOpenChange={handleSendOpenChange}>
-        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto rounded-lg p-0 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-card/95 backdrop-blur-3xl">
+      <Dialog open={isSendOpen} onOpenChange={(open) => { if (open) handleSendOpenChange(true); else unsavedGuard.requestClose(); }}>
+        <DialogContent onInputCapture={unsavedGuard.trackInput} onChangeCapture={unsavedGuard.trackInput} className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto rounded-lg p-0 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-card/95 backdrop-blur-3xl">
           <Form {...form}>
             <form
               noValidate

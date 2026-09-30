@@ -3,6 +3,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUnsavedCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -58,11 +59,13 @@ export function StandardModal({
   maxWidth = 'md',
   closeDisabled = false,
 }: StandardModalProps) {
+  // [2026-10-01] 폼에 입력이 있으면 Esc·배경·X 닫기 전에 확인한다 — 화면이 따로 배선하지 않아도 모든 모달에 걸린다.
+  const { requestClose, trackInput } = useUnsavedCloseGuard({ isOpen, onClose, closeDisabled });
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
-        if (!open && !closeDisabled) onClose();
+        if (!open) requestClose();
       }}
     >
       <DialogContent
@@ -109,7 +112,11 @@ export function StandardModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-6 scrollbar-thin">
+        <div
+          className="flex-1 min-h-0 overflow-y-auto p-6 scrollbar-thin"
+          onInputCapture={trackInput}
+          onChangeCapture={trackInput}
+        >
           {children}
         </div>
 

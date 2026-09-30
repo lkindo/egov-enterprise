@@ -68,8 +68,10 @@ vi.mock('@/app/components/ui/recipient-picker', async () => {
 });
 
 /** 발송 가능 상태를 조회하므로 QueryClient 가 필요하다(DIP B5 F7). 기본은 SMTP 가 연결된 배포다. */
+let lastClient: QueryClient | null = null;
 function renderCompose() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  lastClient = client;
   return render(
     <QueryClientProvider client={client}>
       <MailSendHubClient />
@@ -344,7 +346,10 @@ describe('MailSendHubClient validation', () => {
 
     await waitFor(() => expect(mocks.sendMail).toHaveBeenCalledTimes(1));
     expect(submit).toBeDisabled();
+    const invalidate = vi.spyOn(lastClient!, 'invalidateQueries');
     resolveSend(1);
     await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/admin/collaboration/mail-history'));
+    // 이력 화면이 캐시된 목록(방금 보낸 메일이 없는)을 보이지 않게 먼저 비운다.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['mail-history'] });
   });
 });

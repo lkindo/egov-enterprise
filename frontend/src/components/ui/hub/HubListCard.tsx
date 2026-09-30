@@ -92,7 +92,7 @@ export function HubListCard({
               )}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-muted-foreground/40 tracking-tight tabular-nums">
+                <span className="text-xs font-bold text-muted-foreground tracking-tight tabular-nums">
                   {item.date || '-'}
                 </span>
                 <div className="w-1.5 h-1.5 rounded-full bg-border group-hover/item:bg-primary transition-colors" />

@@ -129,6 +129,9 @@ describe('CommunityHubClient', () => {
     fireEvent.change(screen.getByPlaceholderText('커뮤니티 검색'), {
       target: { value: '보안' },
     });
+    // [2026-10-01] 입력만으로는 조회하지 않는다 — '조회'·Enter 가 조회 시점이다(G2).
+    expect(getCommunityListMock).not.toHaveBeenCalledWith(expect.objectContaining({ searchWrd: '보안' }));
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
 
     /*
      * [2026-08-25 실측 수정] 종전 단언은 `{ pageIndex, searchKeyword }` 였다. 그러나

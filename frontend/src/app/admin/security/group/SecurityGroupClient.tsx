@@ -244,7 +244,7 @@ export default function SecurityGroupClient() {
  <Fingerprint size={18} className="text-primary" />
  </div>
  <div className="flex flex-col">
- <span className="text-xs font-bold text-muted-foreground/30 tracking-tight leading-none mb-1">그룹 ID</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none mb-1">그룹 ID</span>
  <span className="font-mono text-xs font-bold text-foreground tracking-widest uppercase">{item.groupId}</span>
  </div>
  </div>
@@ -256,7 +256,7 @@ export default function SecurityGroupClient() {
  accessor: (item: GroupManage) => (
  <div className="flex flex-col gap-0.5">
  <span className="font-bold text-foreground tracking-tight text-md uppercase leading-none mb-1">{item.groupNm}</span>
- <span className="text-xs font-bold text-muted-foreground/40 truncate block max-w-[300px] leading-none">{item.groupDc || '설명 없음'}</span>
+ <span className="text-xs font-bold text-muted-foreground truncate block max-w-[300px] leading-none">{item.groupDc || '설명 없음'}</span>
  </div>
  )
  },

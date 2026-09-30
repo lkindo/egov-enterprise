@@ -32,6 +32,9 @@ class MailAsyncProcessorTest {
     @Mock
     private io.micrometer.core.instrument.MeterRegistry meterRegistry;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @BeforeEach
     void setUp() {
         mailAsyncProcessor.setSelf(mailAsyncProcessor);
@@ -71,7 +74,7 @@ class MailAsyncProcessorTest {
     @DisplayName("SMTP 미설정은 재발송 없이 실패 상태와 지표를 기록한다")
     void unavailableSenderRecordsFailure() {
         var registry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
-        var processor = new MailAsyncProcessor(new LoggingEmailSender(), sentMailRepository, registry);
+        var processor = new MailAsyncProcessor(new LoggingEmailSender(), sentMailRepository, registry, eventPublisher);
         processor.setSelf(processor);
         SentMail mail = SentMail.builder().emlDsptchSn(1L).build();
         given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
@@ -84,6 +87,43 @@ class MailAsyncProcessorTest {
         org.assertj.core.api.Assertions.assertThat(registry.find("mail.dispatch.total").tag("result", "success").counter())
                 .isNull();
         verify(sentMailRepository, times(1)).findById(1L);
+    }
+
+    @Test
+    @DisplayName("실패로 확정되면 발신자에게 제목과 받는 사람을 밝혀 한 번 알린다 — 본문·주소는 싣지 않는다")
+    void finalFailureNotifiesSender() {
+        var processor = new MailAsyncProcessor(new LoggingEmailSender(), sentMailRepository,
+                new io.micrometer.core.instrument.simple.SimpleMeterRegistry(), eventPublisher);
+        processor.setSelf(processor);
+        SentMail mail = SentMail.create(1L, "주간 보고", "비밀 본문", "sender", "홍길동", "U1", "P", null);
+        given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
+
+        processor.processSending(1L, "주간 보고", "비밀 본문", "from", "hong@example.com", "SENDER-1");
+
+        var captor = org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+        verify(eventPublisher, times(1)).publishEvent(captor.capture());
+        var event = captor.getValue();
+        org.assertj.core.api.Assertions.assertThat(event.receiverEsntlId()).isEqualTo("SENDER-1");
+        org.assertj.core.api.Assertions.assertThat(event.title()).isEqualTo("메일 발송 실패");
+        org.assertj.core.api.Assertions.assertThat(event.content())
+                .isEqualTo("「주간 보고」 메일을 홍길동에게 보내지 못했습니다. 발신 이력에서 결과를 확인하고 다시 보낼 수 있습니다.")
+                .doesNotContain("비밀 본문").doesNotContain("hong@example.com");
+        org.assertj.core.api.Assertions.assertThat(event.linkUrl()).isEqualTo("/admin/collaboration/mail-history");
+    }
+
+    @Test
+    @DisplayName("성공한 발송과 발신자를 모르는 발송은 알리지 않는다")
+    void successOrUnknownSenderDoesNotNotify() throws Exception {
+        SentMail mail = SentMail.builder().emlDsptchSn(1L).build();
+        given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
+        mailAsyncProcessor.processSending(1L, "Sub", "Cn", "from", "to", "SENDER-1");
+
+        var failing = new MailAsyncProcessor(new LoggingEmailSender(), sentMailRepository,
+                new io.micrometer.core.instrument.simple.SimpleMeterRegistry(), eventPublisher);
+        failing.setSelf(failing);
+        failing.processSending(1L, "Sub", "Cn", "from", "to");
+
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test

@@ -126,6 +126,7 @@ import { Label } from '@/components/ui/label';
 import { omitNulls } from '@/lib/api/omit-nulls';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUnsavedCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import { canPermission } from '@/lib/auth/permissions';
 
 /**
@@ -316,6 +317,9 @@ export default function EventManagementClient() {
     if (!open) setEditingEvent(null);
   };
 
+  // [2026-10-01] 폼에 입력이 있으면 Esc·배경·X 닫기 전에 확인한다(StandardModal 과 같은 보호).
+  const unsavedGuard = useUnsavedCloseGuard({ isOpen: isCreateModalOpen, onClose: () => handleCreateModalOpenChange(false) });
+
   const handleSearchChange = (value: string) => {
     setSearchWrd(value);
     // 3페이지에서 검색해 빈 화면이 되는 것을 막는다.
@@ -468,7 +472,7 @@ export default function EventManagementClient() {
       />
 
       {/* Creation Modal */}
-      <Dialog open={isCreateModalOpen} onOpenChange={handleCreateModalOpenChange}>
+      <Dialog open={isCreateModalOpen} onOpenChange={(open) => { if (open) handleCreateModalOpenChange(true); else unsavedGuard.requestClose(); }}>
         {/*
           [2026-08-28] `overflow-hidden` 단독을 걷어내고 세로 스크롤을 준다.
 
@@ -479,7 +483,7 @@ export default function EventManagementClient() {
 
           잘라내는 것과 스크롤을 주는 것의 차이가 곧 "저장할 수 있는가" 다.
         */}
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg border-none p-0 shadow-lg">
+        <DialogContent onInputCapture={unsavedGuard.trackInput} onChangeCapture={unsavedGuard.trackInput} className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg border-none p-0 shadow-lg">
           <div className="border-b border-border bg-card pb-3 pl-5 pr-10 pt-4">
             <DialogHeader>
               <DialogTitle className="text-base font-semibold text-foreground">

@@ -3526,7 +3526,7 @@
       "requiredTokens": [
         "boolean searchesBody = \"2\".equals(searchCondition) && hasText(searchKeyword);",
         "String senderLoginId = searchesBody ? nuri.business.security.util.SecurityUtil.getCurrentLoginId().filter(MailService::hasText).orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED)) : resolveSenderScope();",
-        "searchSentMails(senderLoginId, searchCondition, searchKeyword, Objects.requireNonNull(pageable))"
+        "searchSentMails(senderLoginId, searchCondition, searchKeyword, result, Objects.requireNonNull(pageable))"
       ],
       "forbiddenTokens": [
         "SecurityUtil.getCurrentEsntlId()",
@@ -3535,7 +3535,7 @@
         "assertOwnerOrPermission",
         ".orElse(null)"
       ],
-      "parameterCount": 3
+      "parameterCount": 4
     },
     {
       "target": "MailService#resolveSenderScope",
@@ -3699,7 +3699,7 @@
       "denyReferences": 1,
       "requiredTokens": [
         "esntlIds.contains(Constants.User.SYSTEM_ADMIN_ESNTL_ID)",
-        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED, \"시스템 관리자 계정은 삭제할 수 없습니다. 선택에서 빼고 다시 시도해 주세요.\");"
       ],
       "forbiddenTokens": []
     },

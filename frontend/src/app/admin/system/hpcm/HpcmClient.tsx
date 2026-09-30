@@ -274,7 +274,7 @@ export default function HpcmClient({
     {
       header: 'ID / 레퍼런스',
       accessor: (item) => (
-        <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.3em] font-mono ">
+        <span className="text-xs font-bold text-muted-foreground tracking-[0.3em] font-mono ">
           SN: {item.hlpSn}
         </span>
       ),

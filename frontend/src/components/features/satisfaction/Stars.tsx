@@ -22,7 +22,7 @@ export function Stars({
         const star = (
           <Star
             size={size}
-            className={cn(filled ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30')}
+            className={cn(filled ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground')}
           />
         );
         return onSelect ? (

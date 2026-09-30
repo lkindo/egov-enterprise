@@ -131,6 +131,24 @@ describe('SurveyTemplatesPanel validation contract', () => {
     });
   });
 
+  it('템플릿 삭제 확인을 거부하면 요청을 보내지 않고 잠금을 푼다', async () => {
+    mocked.getTemplateList.mockResolvedValue({
+      list: [{ srvyTmpltSn: 101, srvyTmpltTypeCd: 'TYPE_A', srvyTmpltExpln: '기본 템플릿', frstRgtrId: 'admin', crtDt: '2026-08-06T00:00:00' }],
+      total: 1, page: 1, size: 50, totalPage: 1,
+    });
+    confirmMock.mockResolvedValue(false);
+    renderPanel();
+    const remove = await screen.findByRole('button', { name: '기본 템플릿 템플릿 삭제' });
+
+    await act(async () => { remove.click(); });
+
+    expect(confirmMock).toHaveBeenCalledTimes(1);
+    expect(mocked.deleteTemplate).not.toHaveBeenCalled();
+    // 잠금이 풀려 다시 누를 수 있다.
+    await act(async () => { remove.click(); });
+    expect(confirmMock).toHaveBeenCalledTimes(2);
+  });
+
   it('템플릿 삭제는 같은 tick 중복 요청을 막고 실패 상태를 보존한다', async () => {
     mocked.getTemplateList.mockResolvedValue({
       list: [{
@@ -149,6 +167,7 @@ describe('SurveyTemplatesPanel validation contract', () => {
     mocked.deleteTemplate.mockReturnValueOnce(new Promise<void>((_resolve, reject) => {
       rejectDelete = reject;
     }));
+    confirmMock.mockResolvedValue(true);
     renderPanel();
     const remove = await screen.findByRole('button', { name: '기본 템플릿 템플릿 삭제' });
 
@@ -158,6 +177,13 @@ describe('SurveyTemplatesPanel validation contract', () => {
     });
 
     await waitFor(() => expect(mocked.deleteTemplate).toHaveBeenCalledTimes(1));
+    // [2026-10-01] 삭제 전에 대상을 밝혀 한 번만 확인한다 — 종전에는 확인 없이 곧바로 요청이 나갔다.
+    expect(confirmMock).toHaveBeenCalledTimes(1);
+    expect(confirmMock).toHaveBeenCalledWith(expect.objectContaining({
+      title: '설문 템플릿 삭제',
+      message: expect.stringContaining('「기본 템플릿」'),
+      variant: 'destructive',
+    }));
     expect(screen.getByRole('button', { name: '기본 템플릿 템플릿 삭제 중' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '기본 템플릿 템플릿 삭제 중' })).toHaveAttribute('aria-busy', 'true');
     await act(async () => rejectDelete(new Error('템플릿 삭제 권한이 없습니다.')));

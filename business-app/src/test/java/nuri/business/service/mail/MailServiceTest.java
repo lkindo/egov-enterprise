@@ -101,7 +101,7 @@ class MailServiceTest {
     void getSentMailList_NoKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
         SentMail mail = SentMail.builder().emlDsptchSn(1L).emlTtl("Subject").build();
-        given(sentMailRepository.searchSentMails(isNull(), eq("1"), isNull(), eq(pageable)))
+        given(sentMailRepository.searchSentMails(isNull(), eq("1"), isNull(), isNull(), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(mail)));
 
         Page<SentMailDto> result = mailService.getSentMailList(null, pageable);
@@ -140,7 +140,7 @@ class MailServiceTest {
         org.mockito.ArgumentCaptor<SentMail> saved = org.mockito.ArgumentCaptor.forClass(SentMail.class);
         verify(sentMailRepository).save(saved.capture());
         assertThat(saved.getValue().getAtchFileSn()).isNull();
-        verify(mailAsyncProcessor).processSending(anyLong(), anyString(), anyString(), anyString(), anyString());
+        verify(mailAsyncProcessor).processSending(anyLong(), anyString(), anyString(), anyString(), anyString(), any());
     }
 
     @Test
@@ -176,7 +176,7 @@ class MailServiceTest {
         org.mockito.ArgumentCaptor<SentMail> saved = org.mockito.ArgumentCaptor.forClass(SentMail.class);
         verify(sentMailRepository).save(saved.capture());
         assertThat(saved.getValue().getRcvrNm()).isEqualTo("홍길동");
-        verify(mailAsyncProcessor).processSending(eq(5L), eq("제목"), eq("본문"), eq(SYSTEM_SENDER), eq("hong@egov.com"));
+        verify(mailAsyncProcessor).processSending(eq(5L), eq("제목"), eq("본문"), eq(SYSTEM_SENDER), eq("hong@egov.com"), any());
 
         // 이름을 모르면 주소를 대신 적지 않는다.
         mailService.sendToResolvedAddress("SANCTIONER_001",
@@ -198,7 +198,7 @@ class MailServiceTest {
         SentMail othersMail = SentMail.builder().emlDsptchSn(1L).emlTtl("S").emlCn("남의 본문").build();
         org.springframework.test.util.ReflectionTestUtils.setField(othersMail, "frstRgtrId", "someone");
         given(sentMailRepository.findById(1L)).willReturn(Optional.of(othersMail));
-        given(sentMailRepository.searchSentMails(isNull(), any(), any(), any()))
+        given(sentMailRepository.searchSentMails(isNull(), any(), any(), isNull(), any()))
                 .willReturn(new PageImpl<>(List.of(othersMail)));
 
         // 관리자(asAdmin 기본)는 조회는 되지만 본문은 비어 있다.
@@ -209,7 +209,7 @@ class MailServiceTest {
 
         // 발신자 본인은 본문을 받는다.
         asUser("someone");
-        given(sentMailRepository.searchSentMails(eq("someone"), any(), any(), any()))
+        given(sentMailRepository.searchSentMails(eq("someone"), any(), any(), isNull(), any()))
                 .willReturn(new PageImpl<>(List.of(othersMail)));
         assertThat(mailService.getSentMail(1L).getEmailCn()).isEqualTo("남의 본문");
         assertThat(mailService.getSentMailList("1", null, PageRequest.of(0, 10)).getContent())
@@ -220,12 +220,12 @@ class MailServiceTest {
     @DisplayName("관리자의 본문 검색도 본인 발송으로 제한한다 — 숨긴 본문을 결과와 건수로 추론할 수 없다")
     void getSentMailList_bodySearch_adminScopedToSelf() {
         Pageable pageable = PageRequest.of(0, 1);
-        given(sentMailRepository.searchSentMails(nullable(String.class), eq("2"), eq("본문 단서"), eq(pageable)))
+        given(sentMailRepository.searchSentMails(nullable(String.class), eq("2"), eq("본문 단서"), isNull(), eq(pageable)))
                 .willReturn(Page.empty(pageable));
 
         mailService.getSentMailList("2", "본문 단서", pageable);
 
-        verify(sentMailRepository).searchSentMails("admin", "2", "본문 단서", pageable);
+        verify(sentMailRepository).searchSentMails("admin", "2", "본문 단서", null, pageable);
     }
 
     @Test
@@ -233,12 +233,12 @@ class MailServiceTest {
     void getSentMailList_bodySearch_userScopedToSelf() {
         asUser("sender");
         Pageable pageable = PageRequest.of(0, 1);
-        given(sentMailRepository.searchSentMails(nullable(String.class), eq("2"), eq("본문 단서"), eq(pageable)))
+        given(sentMailRepository.searchSentMails(nullable(String.class), eq("2"), eq("본문 단서"), isNull(), eq(pageable)))
                 .willReturn(Page.empty(pageable));
 
         mailService.getSentMailList("2", "본문 단서", pageable);
 
-        verify(sentMailRepository).searchSentMails("sender", "2", "본문 단서", pageable);
+        verify(sentMailRepository).searchSentMails("sender", "2", "본문 단서", null, pageable);
     }
 
     @ParameterizedTest
@@ -261,12 +261,12 @@ class MailServiceTest {
     @DisplayName("관리자의 제목·발신자 검색은 기존 전체 이력 범위를 유지한다")
     void getSentMailList_metadataSearch_keepsAdminScope(String condition) {
         Pageable pageable = PageRequest.of(0, 10);
-        given(sentMailRepository.searchSentMails(nullable(String.class), eq(condition), eq("검색어"), eq(pageable)))
+        given(sentMailRepository.searchSentMails(nullable(String.class), eq(condition), eq("검색어"), isNull(), eq(pageable)))
                 .willReturn(Page.empty(pageable));
 
         mailService.getSentMailList(condition, "검색어", pageable);
 
-        verify(sentMailRepository).searchSentMails(null, condition, "검색어", pageable);
+        verify(sentMailRepository).searchSentMails(null, condition, "검색어", null, pageable);
     }
 
     @ParameterizedTest
@@ -275,12 +275,12 @@ class MailServiceTest {
     @DisplayName("본문 조건이어도 검색어가 없으면 본문을 판정하지 않으므로 관리자 이력 범위를 유지한다")
     void getSentMailList_emptyBodySearch_keepsAdminScope(String keyword) {
         Pageable pageable = PageRequest.of(0, 10);
-        given(sentMailRepository.searchSentMails(nullable(String.class), eq("2"), eq(keyword), eq(pageable)))
+        given(sentMailRepository.searchSentMails(nullable(String.class), eq("2"), eq(keyword), isNull(), eq(pageable)))
                 .willReturn(Page.empty(pageable));
 
         mailService.getSentMailList("2", keyword, pageable);
 
-        verify(sentMailRepository).searchSentMails(null, "2", keyword, pageable);
+        verify(sentMailRepository).searchSentMails(null, "2", keyword, null, pageable);
     }
 
     @Test
@@ -300,7 +300,7 @@ class MailServiceTest {
 
         org.mockito.ArgumentCaptor<String> from = org.mockito.ArgumentCaptor.forClass(String.class);
         verify(mailAsyncProcessor).processSending(
-                anyLong(), anyString(), anyString(), from.capture(), anyString());
+                anyLong(), anyString(), anyString(), from.capture(), anyString(), any());
         assertThat(from.getValue()).isEqualTo(SYSTEM_SENDER);
     }
 
@@ -319,7 +319,7 @@ class MailServiceTest {
 
         org.mockito.ArgumentCaptor<String> from = org.mockito.ArgumentCaptor.forClass(String.class);
         verify(mailAsyncProcessor).processSending(
-                anyLong(), anyString(), anyString(), from.capture(), anyString());
+                anyLong(), anyString(), anyString(), from.capture(), anyString(), any());
         assertThat(from.getValue()).isEqualTo(SYSTEM_SENDER);
     }
 
@@ -387,7 +387,7 @@ class MailServiceTest {
                 .build();
         doThrow(new java.util.concurrent.RejectedExecutionException("full"))
                 .when(mailAsyncProcessor)
-                .processSending(anyLong(), anyString(), anyString(), anyString(), anyString());
+                .processSending(anyLong(), anyString(), anyString(), anyString(), anyString(), any());
         given(sentMailRepository.save(any(SentMail.class)))
                 .willReturn(SentMail.builder().emlDsptchSn(2L).build());
 
@@ -430,9 +430,9 @@ class MailServiceTest {
         // [DIP B5 F7] 재발송이 현재 주소를 다시 찾도록 사용자 수신자는 식별자를 남긴다. 직접 입력한 주소는 없다.
         assertThat(saved.getAllValues()).extracting(SentMail::getRcvrId)
                 .containsExactly("USR_A", null, "USR_B");
-        verify(mailAsyncProcessor).processSending(eq(11L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("gap@example.com"));
-        verify(mailAsyncProcessor).processSending(eq(12L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("direct@example.com"));
-        verify(mailAsyncProcessor).processSending(eq(13L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("eul@example.com"));
+        verify(mailAsyncProcessor).processSending(eq(11L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("gap@example.com"), any());
+        verify(mailAsyncProcessor).processSending(eq(12L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("direct@example.com"), any());
+        verify(mailAsyncProcessor).processSending(eq(13L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("eul@example.com"), any());
     }
 
     @Test
@@ -452,7 +452,37 @@ class MailServiceTest {
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
                 .hasMessageContaining("병");
         verify(sentMailRepository, never()).save(any(SentMail.class));
-        verify(mailAsyncProcessor, never()).processSending(anyLong(), anyString(), anyString(), anyString(), anyString());
+        verify(mailAsyncProcessor, never()).processSending(anyLong(), anyString(), anyString(), anyString(), anyString(), any());
+    }
+
+    @Test
+    @DisplayName("발송 결과 조건은 P·S·F 만 받는다 — 어휘 밖 값은 빈 목록이 아니라 400 이다")
+    void getSentMailList_rejectsUnknownResultCode() {
+        assertThatThrownBy(() -> mailService.getSentMailList("1", null, "X", org.springframework.data.domain.PageRequest.of(0, 10)))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasMessage("발송 결과 조건은 P, S, F 중 하나여야 합니다.");
+        verifyNoInteractions(sentMailRepository);
+    }
+
+    @Test
+    @DisplayName("이메일이 없는 수신자가 여럿이면 한 번에 모두 밝힌다 — 한 명씩 빼며 다시 보내지 않게 한다")
+    void sendMail_recipients_namesEveryUserWithoutEmail() {
+        SentMailDto dto = SentMailDto.builder()
+                .sj("Subject").emailCn("Content")
+                .recipients(List.of(
+                        MailRecipientDto.builder().esntlId("USR_B").build(),
+                        MailRecipientDto.builder().esntlId("USR_A").build(),
+                        MailRecipientDto.builder().esntlId("USR_C").build()))
+                .build();
+        given(userContactService.resolve(List.of("USR_B", "USR_A", "USR_C"))).willReturn(List.of(
+                new UserContactService.UserContact("USR_B", "병", null, null),
+                new UserContactService.UserContact("USR_A", "갑", "gap@example.com", null),
+                new UserContactService.UserContact("USR_C", "정", null, null)));
+
+        assertThatThrownBy(() -> mailService.sendMail("admin", dto))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasMessage("등록된 이메일 주소가 없는 수신자가 2명 있어 메일을 보낼 수 없습니다: 병, 정. 이 수신자를 빼고 다시 보내 주세요.");
+        verify(sentMailRepository, never()).save(any(SentMail.class));
     }
 
     @Test
@@ -520,14 +550,14 @@ class MailServiceTest {
     @DisplayName("보낸 메일 목록 조회 - 키워드 포함(제목 조건으로 위임)")
     void getSentMailList_WithKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        given(sentMailRepository.searchSentMails(isNull(), eq("1"), eq("key"), eq(pageable)))
+        given(sentMailRepository.searchSentMails(isNull(), eq("1"), eq("key"), isNull(), eq(pageable)))
                 .willReturn(Page.empty());
 
         mailService.getSentMailList("key", pageable);
 
         // 키워드 전용 오버로드도 스코프가 적용되는 경로(searchSentMails)로 위임되어야 한다.
         // findBySjContaining 으로 되돌아가면 발신자 스코프가 무력화된다.
-        verify(sentMailRepository).searchSentMails(isNull(), eq("1"), eq("key"), eq(pageable));
+        verify(sentMailRepository).searchSentMails(isNull(), eq("1"), eq("key"), isNull(), eq(pageable));
         verify(sentMailRepository, never()).findBySjContaining(anyString(), any(Pageable.class));
     }
 
@@ -535,12 +565,12 @@ class MailServiceTest {
     @DisplayName("보낸 메일 목록 조회 - 검색 조건 포함")
     void getSentMailList_WithCondition() {
         Pageable pageable = PageRequest.of(0, 10);
-        given(sentMailRepository.searchSentMails(nullable(String.class), anyString(), anyString(), eq(pageable)))
+        given(sentMailRepository.searchSentMails(nullable(String.class), anyString(), anyString(), isNull(), eq(pageable)))
                 .willReturn(Page.empty());
 
         mailService.getSentMailList("sj", "key", pageable);
 
-        verify(sentMailRepository).searchSentMails(nullable(String.class), anyString(), anyString(), eq(pageable));
+        verify(sentMailRepository).searchSentMails(nullable(String.class), anyString(), anyString(), isNull(), eq(pageable));
     }
 
     @Test
@@ -548,14 +578,14 @@ class MailServiceTest {
     void getSentMailList_normalUser_scopedToSelf() {
         Pageable pageable = PageRequest.of(0, 10);
         asUser("user1");
-        given(sentMailRepository.searchSentMails(eq("user1"), anyString(), nullable(String.class), eq(pageable)))
+        given(sentMailRepository.searchSentMails(eq("user1"), anyString(), nullable(String.class), isNull(), eq(pageable)))
                 .willReturn(Page.empty());
 
         mailService.getSentMailList("1", null, pageable);
 
         // null(전건)이 아니라 반드시 본인 loginId 가 넘어가야 한다 — 발송메일 전건 노출 회귀 가드
-        verify(sentMailRepository).searchSentMails(eq("user1"), anyString(), nullable(String.class), eq(pageable));
-        verify(sentMailRepository, never()).searchSentMails(isNull(), anyString(), nullable(String.class),
+        verify(sentMailRepository).searchSentMails(eq("user1"), anyString(), nullable(String.class), isNull(), eq(pageable));
+        verify(sentMailRepository, never()).searchSentMails(isNull(), anyString(), nullable(String.class), isNull(),
                 any(Pageable.class));
     }
 
@@ -597,7 +627,7 @@ class MailServiceTest {
     void getSentMailList_EmptyKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
         SentMail mail = SentMail.builder().emlDsptchSn(1L).emlTtl("Subject").build();
-        given(sentMailRepository.searchSentMails(isNull(), eq("1"), eq(""), eq(pageable)))
+        given(sentMailRepository.searchSentMails(isNull(), eq("1"), eq(""), isNull(), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(mail)));
 
         Page<SentMailDto> result = mailService.getSentMailList("", pageable);

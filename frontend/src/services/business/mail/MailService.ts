@@ -49,6 +49,8 @@ class MailService extends ApiService {
   async getSentMails(params?: {
     searchCondition?: string;
     searchKeyword?: string;
+    /** 발송 결과(P·S·F). 비우면 전체 — 서버가 어휘 밖 값을 400 으로 거부한다. */
+    resultCode?: string;
     page?: number;
     size?: number;
   }): Promise<PageResponse<SentMail>> {

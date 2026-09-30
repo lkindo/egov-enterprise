@@ -25,6 +25,7 @@ import { DeptJobBoxManageDialog } from '@/components/business/deptJob/DeptJobBox
 import { useDeptJobSectionSlot } from '@/components/business/deptJob/dept-job-section-slot';
 import { type DeptJobVO } from '@/types/business/deptJob';
 import { failureMessage } from '@/lib/safe-error-log';
+import { useSessionListState } from '@/lib/hooks/use-session-list-state';
 
 /**
  * A1 — 부서 업무 목록 섹션(조회·등록·삭제).
@@ -54,6 +55,8 @@ export interface DeptJobListSectionProps {
 
 const DEFAULT_BREADCRUMB_ITEMS = [{ label: '나의 업무' }, { label: '업무 관리' }];
 
+const LIST_STATE_DEFAULTS = { searchKeyword: '', jobPage: 1, jobScope: 'mine', pageUnit: 10 };
+
 export function DeptJobListSection({
   leadingActions,
   breadcrumbItems = DEFAULT_BREADCRUMB_ITEMS,
@@ -68,14 +71,24 @@ export function DeptJobListSection({
   // 조회어. KeywordFilter 는 '조회' 버튼·Enter 로만 제출하는 명시 제출 컴포넌트이므로
   // 이 값은 타이핑이 아니라 onSearch 에서만 갱신된다 — 디바운스가 필요 없고 실제로도 없다.
   // (이 화면에서 디바운스가 실재하는 곳은 DeptJobForm 의 담당자 검색 피커뿐이다.)
-  const [searchKeyword, setSearchKeyword] = useState('');
+  /*
+    [2026-10-01] 조회 조건(검색어·페이지·조회 범위·페이지당 건수)을 이 탭이 살아 있는 동안 화면 키로 기억한다.
+    종전에는 컴포넌트 상태에만 있어 업무 상세에 다녀오면 '내 업무' 1페이지·빈 검색어로 돌아갔다 — 상세의
+    '목록으로' 가 뒤로 가도 목록은 새로 마운트되기 때문이다. URL 에는 싣지 않는다(PD-UX-002).
+  */
+  const [listState, updateListState] = useSessionListState(`dept-job-list:${filterStateKey}`, LIST_STATE_DEFAULTS);
+  const searchKeyword = listState.searchKeyword;
+  const setSearchKeyword = (keyword: string) => updateListState({ searchKeyword: keyword });
   // 목록 페이지(1-based). 종전에는 페이저가 없어 상위 N건만 보이고 나머지는 도달할 수 없었다.
-  const [jobPage, setJobPage] = useState(1);
+  const jobPage = listState.jobPage;
+  const setJobPage = (page: number) => updateListState({ jobPage: page });
   // 업무 목록의 소유 스코프. 기본은 '내 업무'(내가 담당자인 업무)이고, 토글로 부서 전체를 볼 수 있다.
   // 서버도 scope 미지정을 'mine' 으로 해석하므로 기본값이 양쪽에서 일치한다.
-  const [jobScope, setJobScope] = useState<'mine' | 'dept'>('mine');
+  const jobScope: 'mine' | 'dept' = listState.jobScope === 'dept' ? 'dept' : 'mine';
+  const setJobScope = (scope: 'mine' | 'dept') => updateListState({ jobScope: scope });
   /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
-  const [pageUnit, setPageUnit] = useState(10);
+  const pageUnit = listState.pageUnit;
+  const setPageUnit = (size: number) => updateListState({ pageUnit: size });
   /*
     업무 등록 다이얼로그.
 

@@ -191,7 +191,9 @@ function overridesIn(file: string, text: string): ControlHeightOverride[] {
       if (DENSITY_BOUND_TAGS.has(tag) && className && !NON_TEXT_INPUT_TYPES.has(typeText)) {
         const line = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
         for (const token of classStrings(className).join(' ').split(/\s+/)) {
-          if (FIXED_HEIGHT.test(token.split(':').pop() ?? '')) found.push({ file, line, tag, token });
+          // [2026-10-01] 중요 표시(!h-12 · h-12!)도 같은 고정 높이다 — 종전 정규식은 이 형태를 보지 못해 게시판 조회
+          //   조건의 !h-12 가 compact 밀도에서도 48px 로 남았다.
+          if (FIXED_HEIGHT.test((token.split(':').pop() ?? '').replace(/^!|!$/g, ''))) found.push({ file, line, tag, token });
         }
       }
     }
@@ -267,5 +269,42 @@ describe('Control height ↔ density token contract', () => {
       }
     }
     expect(drift, drift.join('\n')).toEqual([]);
+  });
+});
+
+/**
+ * [2026-10-01] A3 '이탈 시 미저장 경고' — 폼을 담은 모달은 사고성 닫기(Esc·배경·X)를 보호한다.
+ *
+ * `StandardModal` 은 이 보호를 스스로 건다(useUnsavedCloseGuard). 원시 `<Dialog>` 로 폼을 담는 화면은 그 보호를
+ * 물려받지 못하므로, 같은 훅(또는 화면이 dirty 를 넘기는 useDirtyCloseGuard)을 직접 써야 한다. 종전에는 폼 모달
+ * 약 20곳이 Esc 한 번에 입력을 경고 없이 잃었다.
+ *
+ * 도달할 수 없는 화면(next.config 리다이렉트)은 이행 대상이 아니다(DEC-OPS-023 ①).
+ */
+const UNREACHABLE_FORM_DIALOGS = new Set(['src/app/cop/sms/selectSmsList/SmsHubClient.tsx']);
+
+describe('A3 unsaved-close protection for form modals', () => {
+  const sources = tsxSources(join(FRONTEND_DIR, 'src', 'app'))
+    .concat(tsxSources(join(FRONTEND_DIR, 'src', 'components')))
+    .map((file) => ({ file: relative(FRONTEND_DIR, file).split(sep).join('/'), text: readFileSync(file, 'utf8') }))
+    .filter(({ file }) => !file.startsWith('src/app/components/ui/') && !file.startsWith('src/components/ui/'));
+  const rawFormDialogs = sources.filter(({ text }) => /<Dialog\b/.test(text) && /<form\b/.test(text));
+
+  it('finds the raw Dialog form screens it is meant to guard', () => {
+    expect(rawFormDialogs.length, '원시 Dialog 폼을 하나도 찾지 못하면 이 계약은 vacuous 하다').toBeGreaterThan(0);
+  });
+
+  it('requires every raw Dialog that hosts a form to wire the unsaved-close guard', () => {
+    const unguarded = rawFormDialogs
+      .filter(({ file }) => !UNREACHABLE_FORM_DIALOGS.has(file))
+      .filter(({ text }) => !/use(?:Unsaved|Dirty)CloseGuard\(/.test(text))
+      .map(({ file }) => file);
+    expect(unguarded, `폼을 담은 원시 Dialog 는 useUnsavedCloseGuard 를 쓰거나 StandardModal 로 옮긴다:\n${unguarded.join('\n')}`).toEqual([]);
+  });
+
+  it('keeps the guard inside StandardModal itself', () => {
+    const modal = readFileSync(join(FRONTEND_DIR, 'src', 'app', 'components', 'ui', 'standard-modal.tsx'), 'utf8');
+    expect(modal).toMatch(/useUnsavedCloseGuard\(/);
+    expect(modal).toMatch(/onInputCapture=\{trackInput\}/);
   });
 });

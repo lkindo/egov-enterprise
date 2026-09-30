@@ -28,6 +28,10 @@ public class SmsAsyncProcessor {
     private final SmsSender smsSender;
     private final SmsRecptnRepository smsRecptnRepository;
     private final io.micrometer.core.instrument.MeterRegistry meterRegistry;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+
+    /** 문자 관리 화면. 실패 알림을 누르면 여기서 수신자 결과를 확인한다. */
+    static final String SMS_ADMIN_PATH = "/admin/uss/ion/sms";
 
     private SmsAsyncProcessor self;
 
@@ -42,32 +46,62 @@ public class SmsAsyncProcessor {
      */
     @Async("taskExecutor")
     public void processSending(Long smsTrsmSn, String senderTel, String content) {
+        processSending(smsTrsmSn, senderTel, content, null);
+    }
+
+    /**
+     * 수신자마다 발송하고 결과를 기록한다. 실패한 수신자가 있으면 발신자에게 한 번 알린다(2026-10-01).
+     * 종전에는 실패가 수신자 행의 'F' 에만 남아, 발신자는 발송 건을 하나씩 열어 보기 전까지 몰랐다.
+     *
+     * @param senderEsntlId 알릴 발신자. 없으면 알리지 않는다.
+     */
+    @Async("taskExecutor")
+    public void processSending(Long smsTrsmSn, String senderTel, String content, String senderEsntlId) {
         log.info("Async processing started for SMS transmission serial number: {}", smsTrsmSn);
 
         List<SmsRecptn> recipients = smsRecptnRepository.findByIdSmsTrsmSn(smsTrsmSn);
 
+        int failed = 0;
         for (SmsRecptn recptn : recipients) {
             try {
-                self.sendToRecipient(recptn.getSmsTrsmSn(), recptn.getRcptnTelno(), senderTel, content);
+                if (!self.sendToRecipient(recptn.getSmsTrsmSn(), recptn.getRcptnTelno(), senderTel, content)) failed++;
             } catch (Exception e) {
+                failed++;
                 log.error("Final failure for SMS to: {}, errorType: {}",
                         nuri.foundation.core.util.PiiMaskUtil.phone(recptn.getRcptnTelno()),
                         e.getClass().getSimpleName());
             }
         }
 
+        if (failed > 0 && senderEsntlId != null && !senderEsntlId.isBlank()) {
+            try {
+                self.notifyDeliveryFailure(senderEsntlId, failed, recipients.size());
+            } catch (RuntimeException e) {
+                log.error("SMS failure notice could not be requested for transmission serial number: {}, errorType: {}",
+                        smsTrsmSn, e.getClass().getSimpleName());
+            }
+        }
         log.info("Async processing completed for SMS transmission serial number: {}", smsTrsmSn);
+    }
+
+    /** 실패 수를 발신자에게 알린다. 번호·본문은 싣지 않는다. */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void notifyDeliveryFailure(String senderEsntlId, int failed, int total) {
+        eventPublisher.publishEvent(new nuri.foundation.core.event.NotificationRequestedEvent(senderEsntlId,
+                "문자 발송 실패", "문자 " + total + "건 중 " + failed + "건을 보내지 못했습니다. 문자 관리에서 수신자 결과를 확인해 주세요.",
+                SMS_ADMIN_PATH));
     }
 
     /**
      * 개별 수신자 발송 (재시도 적용) — 외부 IO 이므로 트랜잭션을 열지 않는다.
      * 결과 기록만 updateResult 의 짧은 트랜잭션에 위임한다.
      */
-    public void sendToRecipient(Long smsTrsmSn, String rcptnTelno, String senderTel, String content) {
+    public boolean sendToRecipient(Long smsTrsmSn, String rcptnTelno, String senderTel, String content) {
         boolean delivered = self.deliverToRecipient(smsTrsmSn, rcptnTelno, senderTel, content);
         meterRegistry.counter("sms.dispatch.total", "result", delivered ? "success" : "failure").increment();
         self.recordResult(smsTrsmSn, rcptnTelno, delivered ? "S" : "F",
                 delivered ? "Success" : "Gateway delivery failed");
+        return delivered;
     }
 
     /** 외부 발송만 재시도하며 DB 기록·커밋 실패와 경계를 분리한다. */

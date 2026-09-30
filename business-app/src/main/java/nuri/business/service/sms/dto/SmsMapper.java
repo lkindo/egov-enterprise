@@ -20,7 +20,11 @@ import org.mapstruct.ReportingPolicy;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface SmsMapper {
 
-    @Mapping(target = "recptnCnt", constant = "0")
+    // 수신자 수와 결과 수는 목록 조회가 수신자 행에서 센다(SmsService#attachResultCounts). 단건 조회는 싣지 않는다.
+    @Mapping(target = "recptnCnt", ignore = true)
+    @Mapping(target = "successCnt", ignore = true)
+    @Mapping(target = "failureCnt", ignore = true)
+    @Mapping(target = "pendingCnt", ignore = true)
     @Mapping(target = "recipients", expression = "java(new java.util.ArrayList<>())")
     SmsDto toDto(Sms entity);
 }

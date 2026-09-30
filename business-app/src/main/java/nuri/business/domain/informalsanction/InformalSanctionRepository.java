@@ -16,9 +16,11 @@ import java.util.Optional;
 public interface InformalSanctionRepository extends JpaRepository<InformalSanction, Long> {
     /**
      * 목록 조회 조건(2026-09-26 DIP B5 F4) — 비어 있는 조건은 걸지 않는다. 검색어는 서비스가 소문자·LIKE 이스케이프를
-     * 마친 패턴이고, 기간은 요청일(yyyyMMdd) 포함 범위다.
+     * 마친 패턴이고, 기간은 요청일(yyyyMMdd) 포함 범위다. 검색어는 제목과 문서 번호에서 찾는다 — 알림이 말하는
+     * '결재(번호 N)' 으로 문서를 찾을 수 있어야 한다(2026-10-01).
      */
-    String LIST_FILTER = " and (:keyword is null or lower(s.docTtl) like :keyword escape '!')"
+    String LIST_FILTER = " and (:keyword is null or lower(s.docTtl) like :keyword escape '!'"
+            + " or cast(s.ifmlAtrzSn as string) like :keyword escape '!')"
             + " and (:fromYmd is null or s.reqYmd >= :fromYmd) and (:toYmd is null or s.reqYmd <= :toYmd)"
             + " and (:status is null or s.aprvYn = :status)";
 

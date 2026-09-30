@@ -25,12 +25,12 @@ describe('AppNotificationDrawer 로딩', () => {
     render(<AppNotificationDrawer isOpen loading notifications={[]} {...handlers} />);
 
     expect(screen.getByRole('status')).toHaveTextContent('알림을 불러오는 중…');
-    expect(screen.queryByText('활성화된 알림이 없습니다')).toBeNull();
+    expect(screen.queryByText('받은 알림이 없습니다')).toBeNull();
   });
 
   it('조회가 끝나고 비어 있으면 알림이 없다고 말한다', () => {
     render(<AppNotificationDrawer isOpen notifications={[]} {...handlers} />);
 
-    expect(screen.getByText('활성화된 알림이 없습니다')).toBeInTheDocument();
+    expect(screen.getByText('받은 알림이 없습니다')).toBeInTheDocument();
   });
 });

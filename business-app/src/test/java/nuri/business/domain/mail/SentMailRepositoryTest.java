@@ -105,6 +105,21 @@ class SentMailRepositoryTest {
     }
 
     @Test
+    @DisplayName("발송 결과로 좁히면 그 결과의 이력만 세고 싣는다 — '실패만 보기'")
+    void searchSentMails_byResultCode() {
+        java.time.LocalDateTime at = java.time.LocalDateTime.of(2026, 10, 1, 9, 0);
+        Long failed = saveMail("owner", "F", at);
+        saveMail("owner", "S", at);
+        saveMail("owner", "P", at);
+
+        Page<SentMail> onlyFailed = sentMailRepository.searchSentMails(null, null, null, "F", PageRequest.of(0, 10));
+        assertThat(onlyFailed.getTotalElements()).isEqualTo(1);
+        assertThat(onlyFailed.getContent()).extracting(SentMail::getEmlDsptchSn).containsExactly(failed);
+        assertThat(sentMailRepository.searchSentMails(null, null, null, null, PageRequest.of(0, 10)).getTotalElements())
+                .isEqualTo(5);
+    }
+
+    @Test
     @DisplayName("발송 메일 검색 테스트 - 제목 (1)")
     void searchSentMails_Subject() {
         Page<SentMail> result = sentMailRepository.searchSentMails(null, "1", "Subject", PageRequest.of(0, 10));
