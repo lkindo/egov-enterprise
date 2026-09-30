@@ -1205,3 +1205,38 @@ OCI 읽기 실측에서 `tb_bbs_item`에는 PK·스레드 위치·작성자·첨
 같은 조건의 실행 계획이 인덱스를 쓰는 것을 확인한다. 인덱스를 다른 컬럼에 만들면 계획 단언이 실패한다.
 게시판 목록의 작성일 정렬은 대부분 게시판 조건과 함께 쓰이므로 이 인덱스의 효과를 주장하지 않는다.
 대규모 운영 복제본은 유지보수 창에서 생성 시간을 먼저 측정한다.
+
+## 프록시 연결 재사용 경합 (GAP-FE-002, 2026-09-30)
+
+main CI run 36648015885(attempt 1, e2e 2/2)에서 `GET /api/v1/notifications` 가 한 번 500 이 됐고 frontend.log 에
+`Failed to proxy http://127.0.0.1:8080/api/v1/notifications Error: socket hang up`(code `ECONNRESET`)이 남았다.
+
+**확인한 사실**
+
+- Next 16.3.6 의 rewrite 는 `proxy-request.js` 에서 agent 없이 httpxy `ProxyServer` 를 만든다. 실패하면 `Failed to proxy` 를 남기고 500 을 쓴다.
+- compiled httpxy 는 `http.globalAgent` 가 아니라 모듈 전역 전용 Agent `{keepAlive: true, maxSockets: 256, maxFreeSockets: 64}` 를 쓴다. 이 Agent 에는 timeout 이 없다. Node 22 는 서버의 `Keep-Alive: timeout=N` 힌트를 기존 agent timeout 보다 작을 때만 적용하므로, 유휴 소켓은 클라이언트 쪽에서 무기한 풀에 남는다.
+- 백엔드는 Boot 4.1.1·Tomcat 11.0.26 기본값이다. `server.tomcat` 설정이 없어 connectionTimeout·keepAliveTimeout 이 20초이고, 응답에 `Keep-Alive: timeout=20` 을 싣는다.
+- 그래서 유휴 수명이 "클라이언트 무기한 > 서버 20초" 로 역전돼 있다. Tomcat 유지 시간을 늘려도 경합 경계가 뒤로 밀려 빈도만 줄어들 뿐 역전은 그대로다.
+- CI 발생 빈도: e2e-diagnostics 아티팩트가 남은 run 190개 중 frontend.log 기준 1건이다. 09-26 run 36214940019 의 Playwright `read ECONNRESET` 1건은 frontend.log 에 흔적이 없어 같은 원인으로 확정하지 않았다. 아티팩트 보관 기간(7일) 밖인 run 은 판정할 수 없다.
+- API 컨테이너는 두 경우 모두 재시작 없이 healthy 였다. API 로그는 e2e 진단 아티팩트에 없다.
+
+**재현 (격리 Tomcat 11.0.26 컨테이너, 기본 `connectionTimeout="20000"`, Node 22.17)**
+
+httpxy 와 같은 설정의 Agent 로 한 번 요청한 뒤 유휴 시간을 두고 같은 Agent 로 다시 요청했다.
+
+| 조건 | 결과 |
+|---|---|
+| 이벤트 루프가 한가함. 유휴 19.0~21.0초, 8구간 × 3회 | 실패 0/24. 20.05초부터는 Node 가 서버의 FIN 을 먼저 처리해 새 연결로 요청했다(`reusedSocket=false`). |
+| 19.8·19.9·19.95초에 깨어나 이벤트 루프를 400ms 점유한 뒤 요청, 각 5회 | **실패 15/15**. 모두 재사용 소켓이고 `socket hang up`(code `ECONNRESET`) 이다. |
+| 대조군: 20.1초에 깨어나 400ms 점유 | 실패 0/5 |
+
+결론: 서버가 20초 유휴 종료로 연결을 닫는 순간 Next 의 이벤트 루프가 SSR 등으로 바빠 FIN 을 처리하지 못하면, 풀은 그 소켓을 아직 살아 있다고 보고 요청을 싣는다. CI 로그와 같은 오류가 결정적으로 재현된다. CI 에서 실패한 요청이 실제로 재사용 소켓이었는지는 직접 측정하지 않았다.
+
+**아직 모르는 것과 경계**
+
+- **운영 형상 확인(2026-09-30)**: edge nginx 는 비업그레이드 요청에 `Connection: close` 를 싣는다(`config/edge/default.conf.template` 의 `map $http_upgrade` 기본값 `close`). 같은 main 소스를 `next start`(운영 빌드·미들웨어 포함)로 띄우고 요청 헤더와 연결을 기록하는 가짜 백엔드로 확인했다. 들어온 요청이 `Connection: close` 면 백엔드도 `close` 를 받고 요청마다 새 연결이었다(원격 포트 3개 모두 다름). keep-alive 요청은 같은 연결을 재사용했다(원격 포트 1개). 따라서 edge 를 거치는 운영 형상에서는 이 경합이 없고, Next 에 직접 붙는 CI e2e·로컬 개발·edge 없는 배포에서만 생긴다.
+- 남은 영향은 CI 의 드문 flaky(재실행 비용)와 edge 없는 배포다. 조치는 동작을 바꾸므로 결정이 필요하다. 후보별 효과가 다르다.
+  - 프록시 쪽 유휴 수명을 서버보다 짧게 한다. 원인을 제거하지만 rewrite 는 Agent 를 주입할 수단이 없어 프록시 경로를 바꿔야 한다.
+  - 백엔드 요청에 `Connection: close` 를 싣는다. 재사용을 없애지만 요청마다 새 연결을 맺는다.
+  - Tomcat 유지 시간을 늘린다. 빈도만 줄어든다.
+- 하지 않는다: flaky 차단 계약 완화, 재시도로 덮기, `node_modules` 패치, 측정 없는 timeout 조정.
