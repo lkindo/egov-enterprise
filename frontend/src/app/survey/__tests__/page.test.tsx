@@ -62,6 +62,18 @@ describe('설문 목록 탐색과 복구', () => {
     expect(mocks.getSurveys).toHaveBeenCalledTimes(2);
   });
 
+  it('이미 응답한 설문은 목록에서 응답 완료로 보이고, 행 동작은 결과 보기로 말한다 (2026-10-01)', async () => {
+    mocks.getSurveys.mockResolvedValue({
+      list: [{ ...survey(1), responded: true }, { ...survey(2), responded: false }],
+      total: 2, totalPage: 1, page: 0, size: 10,
+    });
+    renderPage();
+    expect(await screen.findByText('1번째 설문')).toBeInTheDocument();
+    expect(screen.getAllByText('응답 완료')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: '1번째 설문 설문 결과 보기' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '2번째 설문 설문 응답 열기' })).toBeInTheDocument();
+  });
+
   it('성공한 빈 응답에서만 등록된 설문이 없다고 안내한다', async () => {
     mocks.getSurveys.mockResolvedValue({ list: [], total: 0, totalPage: 0, page: 0, size: 10 });
     renderPage();

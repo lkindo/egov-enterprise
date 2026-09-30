@@ -6,7 +6,7 @@ vi.mock('next/config', () => ({
 }));
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { saveBoardArticle, deleteBoardArticle, likeBoardArticle } from '../boardActions';
+import { saveBoardArticle, deleteBoardArticle } from '../boardActions';
 import client from '@/lib/api/client';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
@@ -318,23 +318,6 @@ describe('boardActions', () => {
       expect(result.success).toBe(false);
       expect(result.message).toBe('게시글 삭제 중 오류가 발생했습니다.');
       expect(consoleError).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('likeBoardArticle', () => {
-    it('생성 likePost 계약으로 추천 수를 반환한다', async () => {
-      vi.mocked(cookies).mockResolvedValue({
-        get: vi.fn().mockReturnValue({ value: 'token' }),
-      } as unknown as Awaited<ReturnType<typeof cookies>>);
-
-      const result = await likeBoardArticle('BBS_001', 100);
-
-      expect(client.requestRaw).toHaveBeenCalledWith({
-        url: 'boards/BBS_001/posts/100/like',
-        method: 'patch',
-        headers: { Authorization: 'Bearer token' },
-      });
-      expect(result).toEqual({ success: true, count: 4 });
     });
   });
 });

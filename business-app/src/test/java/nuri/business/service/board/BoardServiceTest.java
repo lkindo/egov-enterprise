@@ -118,6 +118,25 @@ class BoardServiceTest {
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).pstSn()).isEqualTo(1L);
+        // 사용자를 모르면 추천 여부를 판정하지 않는다(null) — false 로 '추천하지 않았다' 고 말하지 않는다.
+        assertThat(result.getContent().get(0).recommended()).isNull();
+    }
+
+    @Test
+    @DisplayName("🚨 목록은 현재 사용자의 추천 여부를 한 번의 조회로 싣는다 (2026-10-01)")
+    void getBoardPosts_marksRecommendedPostsInOneQuery() {
+        String bbsId = "BBS_01";
+        Pageable pageable = PageRequest.of(0, 10);
+        given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
+        given(boardRepository.searchArticles(any(BoardSearchCondition.class), eq(pageable))).willReturn(new PageImpl<>(java.util.List.of(
+                BoardSearchResult.builder().pstSn(1L).build(), BoardSearchResult.builder().pstSn(2L).build())));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("USR_A"));
+        given(recommendationRepository.findRecommendedPstSns("USR_A", java.util.List.of(1L, 2L))).willReturn(java.util.List.of(2L));
+
+        Page<BoardDto> result = boardService.getBoardPosts(bbsId, pageable);
+
+        assertThat(result.getContent()).extracting(BoardDto::recommended).containsExactly(false, true);
+        verify(recommendationRepository).findRecommendedPstSns(anyString(), any());
     }
 
     @Test
@@ -541,7 +560,14 @@ class BoardServiceTest {
 
         // then
         assertThat(result.pstSn()).isEqualTo(pstSn);
+        assertThat(result.recommended()).isNull();
         verify(viewCountService).increaseViewCount(pstSn);
+
+        // 사용자를 알면 이미 추천했는지 싣는다(2026-10-01) — 화면이 409 를 받기 전에 '추천함' 으로 보인다.
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("USR_A"));
+        given(recommendationRepository.existsById(new nuri.business.domain.board.BoardRecommendationId(pstSn, "USR_A")))
+                .willReturn(true);
+        assertThat(boardService.getPostDetail(bbsId, pstSn, false).recommended()).isTrue();
     }
 
     @Test

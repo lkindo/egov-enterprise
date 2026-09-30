@@ -44955,6 +44955,14 @@
             ],
             "format": "int32",
             "description": "답글 단계"
+          },
+          "recommended": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "현재 사용자가 이미 추천했는지(서버 판정, 알 수 없으면 null)",
+            "readOnly": true
           }
         }
       },

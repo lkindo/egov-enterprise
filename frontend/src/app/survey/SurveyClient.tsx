@@ -48,12 +48,18 @@ export default function SurveyClient() {
       accessor: (item: Survey) => {
         const status = getSurveyStatus(item, today);
         return (
-          <Badge
-            variant={status === 'active' ? 'success' : status === 'closed' ? 'secondary' : 'outline'}
-            className="text-xs font-bold"
-          >
-            {SURVEY_STATUS_LABEL[status]}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge
+              variant={status === 'active' ? 'success' : status === 'closed' ? 'secondary' : 'outline'}
+              className="text-xs font-bold"
+            >
+              {SURVEY_STATUS_LABEL[status]}
+            </Badge>
+            {/* [2026-10-01] 이미 응답한 설문을 목록에서 구분한다 — 종전에는 상세를 열어야 알 수 있었다. */}
+            {item.responded === true && (
+              <Badge variant="outline" className="text-xs font-bold">응답 완료</Badge>
+            )}
+          </div>
         );
       }
     },
@@ -97,7 +103,7 @@ export default function SurveyClient() {
         onRetry={() => void refetch()}
         onRowClick={(item) => router.push(`/survey/${item.srvySn}`)}
         rowActionLabel={(item) => (
-          getSurveyStatus(item, today) === 'active'
+          getSurveyStatus(item, today) === 'active' && item.responded !== true
             ? `${item.srvyTtl || `${item.srvySn}번`} 설문 응답 열기`
             : `${item.srvyTtl || `${item.srvySn}번`} 설문 결과 보기`
         )}

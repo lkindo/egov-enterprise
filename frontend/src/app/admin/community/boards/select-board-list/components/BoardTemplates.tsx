@@ -95,18 +95,22 @@ function LikeButton({
   pendingLikePstSn,
 }: Pick<TemplateProps, 'handleLike' | 'pendingLikePstSn'> & { item: BoardPost }) {
   const pending = pendingLikePstSn === item.pstSn;
+  // [2026-10-01] 이미 추천한 글은 '추천함' 으로 보이고 다시 누르지 않는다(서버 판정 recommended).
+  const recommended = item.recommended === true;
   return (
     <Button
       type="button"
       variant="outline"
       size="sm"
       onClick={(e) => handleLike(e, item.pstSn)}
-      disabled={pendingLikePstSn !== null}
+      disabled={pendingLikePstSn !== null || recommended}
       aria-busy={pending || undefined}
-      aria-label={`${item.pstTtl} ${pending ? '추천 처리 중' : '추천'}`}
+      aria-pressed={recommended}
+      aria-label={`${item.pstTtl} ${pending ? '추천 처리 중' : recommended ? '추천함' : '추천'}`}
       className="gap-1.5"
     >
       <ThumbsUp size={14} aria-hidden="true" />
+      {recommended && <span>추천함</span>}
       <span className="tabular-nums">{pending ? '처리 중…' : item.likeCnt || 0}</span>
     </Button>
   );

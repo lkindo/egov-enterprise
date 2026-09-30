@@ -49,6 +49,8 @@ export interface KnowledgeDto {
   evntDt?: string;
   likeCnt?: number;
   commentCnt?: number;
+  /** 현재 사용자가 이미 추천했는지(서버 판정, 모르면 null). */
+  recommended?: boolean | null;
 }
 
 

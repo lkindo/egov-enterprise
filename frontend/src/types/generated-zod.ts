@@ -2501,6 +2501,7 @@ export const BoardDtoSchema = /*#__PURE__*/ (() => z.object({
   fileCnt: z.number().int().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   ansLv: z.number().int().optional().nullable(),
+  recommended: z.boolean().optional().nullable(),
 }))();
 export type BoardDto = z.infer<typeof BoardDtoSchema>;
 
@@ -8671,6 +8672,7 @@ export const BoardDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   fileCnt: z.number().int().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   ansLv: z.number().int().optional().nullable(),
+  recommended: z.boolean().optional().nullable(),
 }))();
 
 export const DashboardResponseRequestSchema = /*#__PURE__*/ (() => z.object({

@@ -9,7 +9,7 @@ export interface Survey {
   srvyTmpltSn: number;
   frstRgtrId?: string;
   crtDt: string;
-  /** 현재 사용자가 이미 응답했는지(응답 전용, 상세 조회에서만 채운다). null 은 판정하지 않음(DIP V8). */
+  /** 현재 사용자가 이미 응답했는지(응답 전용, 목록·상세 모두 서버가 채운다). null 은 판정하지 않음(DIP V8, 2026-10-01 목록). */
   responded?: boolean | null;
 }
 

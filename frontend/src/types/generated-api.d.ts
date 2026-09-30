@@ -8334,6 +8334,8 @@ export interface components {
              * @description 답글 단계
              */
             ansLv?: number | null;
+            /** @description 현재 사용자가 이미 추천했는지(서버 판정, 알 수 없으면 null) */
+            readonly recommended?: boolean | null;
         };
         DashboardResponse: {
             taskList: components["schemas"]["BoardDto"][];

@@ -149,13 +149,17 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       setActiveAction(null);
     }
   };
+  // [2026-10-01] 이미 추천한 글은 '추천함' 으로 보이고 다시 누르지 않는다 — 종전에는 알 수 없어 누를 때마다 409 로 알았다.
+  const [likedNow, setLikedNow] = useState(false);
+  const recommended = article?.recommended === true || likedNow;
   const handleLike = async () => {
-    if (actionPendingRef.current || !bbsId || !hasValidPstSn) return;
+    if (actionPendingRef.current || !bbsId || !hasValidPstSn || recommended) return;
     actionPendingRef.current = true;
     setActiveAction('like');
     setLikeDelta((d) => d + 1);
     try {
       await boardUserService.likePost(bbsId, pstSn);
+      setLikedNow(true);
     } catch (likeError) {
       setLikeDelta((d) => d - 1);
       // 이미 추천했거나(409) 읽을 수 없는 글이면(403·404) 서버가 사유를 말한다(DIP I6 ④).
@@ -337,13 +341,14 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           <Button
             variant="outline"
             onClick={handleLike}
-            disabled={activeAction !== null}
+            disabled={activeAction !== null || recommended}
             aria-busy={activeAction === 'like' || undefined}
-            aria-label={activeAction === 'like' ? '게시글 추천 처리 중' : '게시글 추천'}
+            aria-pressed={recommended}
+            aria-label={activeAction === 'like' ? '게시글 추천 처리 중' : recommended ? '게시글 추천함' : '게시글 추천'}
             size="sm"
             className="gap-1.5"
           >
-            <ThumbsUp size={16} className="text-primary" aria-hidden="true" /> 추천 {(article.likeCnt ?? 0) + likeDelta}
+            <ThumbsUp size={16} className="text-primary" aria-hidden="true" /> {recommended ? '추천함' : '추천'} {(article.likeCnt ?? 0) + likeDelta}
           </Button>
           <Button
             variant="outline"
