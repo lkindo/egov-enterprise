@@ -17,6 +17,7 @@ import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
 import { getPollStatus, POLL_STATUS_LABEL } from '@/lib/poll-status';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
+import { canPermission } from '@/lib/auth/permissions';
 
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
 const DEFAULT_PAGE_SIZE = 10;
@@ -33,6 +34,9 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
         rowActionLabel: (poll: OnlinePollManageVO) => `${poll.pollNm || `${poll.pollSn}번`} 여론조사 관리 열기`,
       }
     : { onRowClick: undefined };
+  // [2026-10-01] 등록 버튼은 등록 권한으로 보인다. 이 목록은 설문 조회 권한만으로 들어올 수 있어, 종전에는 폼을 다 채운
+  //   뒤에야 403 을 만났다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
+  const canCreatePoll = canPermission(user, 'POLL_CREATE');
   // 기준일은 저장 포맷과 동일한 'yyyyMMdd' 문자열로 고정한다.
   const [createOpen, setCreateOpen] = useState(false);
   const todayYmd = useTodayStorageYmd();
@@ -161,9 +165,11 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
             새로고침
           </Button>
           {/* [2026-09-12 §A3-1] 페이지 이동이 아니라 모달이다 — 검색어·페이지가 보존된다. */}
+          {canCreatePoll && (
           <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-2">
             <Plus size={16} aria-hidden="true" /> 여론조사 등록
           </Button>
+          )}
         </>
       }
       filter={

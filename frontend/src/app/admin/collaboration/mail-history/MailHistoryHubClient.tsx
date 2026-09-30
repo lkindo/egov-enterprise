@@ -14,6 +14,8 @@ import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { mailService, type SentMail, MAIL_SEND_RESULT } from '@/services/business/mail/MailService';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 const PAGE_SIZE = 20;
 
@@ -62,6 +64,11 @@ export default function MailHistoryHubClient() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const confirm = useConfirm();
+  // [2026-10-01] 발송·삭제 버튼은 그 동작의 기능 권한으로 보인다. 이 화면은 조회 권한만으로 이력을 볼 수 있어,
+  //   종전에는 신규 발송·다시 보내기·이력 삭제가 모두 보였고 누른 뒤에야 403 을 만났다. 서버 인가는 그대로 집행된다(H3).
+  const { user } = useAuth();
+  const canSendMail = canPermission(user, 'MAIL_SEND');
+  const canDeleteMail = canPermission(user, 'MAIL_DELETE');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mailButtonRefs = useRef(new Map<number, HTMLButtonElement>());
   const deleteRequestRef = useRef(false);
@@ -208,6 +215,7 @@ export default function MailHistoryHubClient() {
             <RefreshCcw aria-hidden="true" className={cn(isFetching && 'animate-spin')} />
             새로고침
           </Button>
+          {canSendMail && (
           <Button
             type="button"
             onClick={() => router.push('/admin/collaboration/mail-send')}
@@ -215,6 +223,7 @@ export default function MailHistoryHubClient() {
             <Plus aria-hidden="true" />
             신규 발송
           </Button>
+          )}
         </>
       )}
       masterTitle="발신 이력"
@@ -336,7 +345,7 @@ export default function MailHistoryHubClient() {
             <X aria-hidden="true" />
             닫기
           </Button>
-          {selectedMail.resendable ? (
+          {selectedMail.resendable && canSendMail ? (
             <Button
               type="button"
               variant="outline"
@@ -350,6 +359,7 @@ export default function MailHistoryHubClient() {
               {resendMutation.isPending ? '다시 보내는 중…' : '다시 보내기'}
             </Button>
           ) : null}
+          {canDeleteMail && (
           <Button
             type="button"
             variant="destructive"
@@ -363,6 +373,7 @@ export default function MailHistoryHubClient() {
             <Trash2 aria-hidden="true" />
             {deleteMutation.isPending ? '삭제 중…' : '이력 삭제'}
           </Button>
+          )}
         </>
       ) : undefined}
       detail={selectedMail ? (

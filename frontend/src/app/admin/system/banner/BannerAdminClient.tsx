@@ -55,6 +55,8 @@ import {
 
 import { BannerDtoSchema, PopupDtoSchema } from '@/types/generated-zod';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 탭과 페이지를 함께 읽는다.
@@ -136,6 +138,18 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
   const { toast } = useToast();
  const confirm = useConfirm();
+ // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다. 이 화면은 조회 권한(BANNER_ADMIN_READ)만으로 들어올 수 있어,
+ //   종전에는 배너·팝업의 등록·수정·삭제가 모두 보였고 폼을 다 채운 뒤에야 403 을 만났다.
+ //   파일 첨부는 업로드 권한(FILE_UPLOAD_ALL)이 따로 있어, 없으면 첨부 컨트롤만 두지 않는다 — 기존 파일은 그대로 유지된다.
+ //   표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
+ const { user } = useAuth();
+ const canCreateBanner = canPermission(user, 'BANNER_CREATE');
+ const canUpdateBanner = canPermission(user, 'BANNER_UPDATE');
+ const canDeleteBanner = canPermission(user, 'BANNER_DELETE');
+ const canCreatePopup = canPermission(user, 'POPUP_CREATE');
+ const canUpdatePopup = canPermission(user, 'POPUP_UPDATE');
+ const canDeletePopup = canPermission(user, 'POPUP_DELETE');
+ const canUploadFile = canPermission(user, 'FILE_UPLOAD_ALL');
 
  /*
   * [P1-7] 탭·페이지를 URL 에 반영한다. activeTab/page 는 URL 파생값이라
@@ -507,14 +521,18 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  },
  className: 'w-32'
  },
- {
+ // 수정·삭제 권한이 하나도 없으면 관리 열을 두지 않는다.
+ ...(canUpdateBanner || canDeleteBanner ? [{
  header: '관리',
  className: 'text-right',
  accessor: (item: Banner) => (
  <div className="flex justify-end gap-2 pr-4">
+ {canUpdateBanner && (
  <Button variant="ghost" size="icon" aria-label={`${item.bnrNm} 배너 수정`} disabled={isAssetWritePending || isModalOpen} className="size-8 rounded-md border border-border bg-muted hover:bg-accent" onClick={() => handleEdit(item)}>
  <Settings size={16} aria-hidden="true" />
  </Button>
+ )}
+ {canDeleteBanner && (
  <Button
  variant="ghost"
  size="icon"
@@ -528,9 +546,10 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
  : <Trash2 size={16} aria-hidden="true" />}
  </Button>
+ )}
  </div>
  )
- }
+ }] : []),
  ];
 
  const popupColumns: Column<Popup>[] = [
@@ -574,14 +593,18 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  },
  className: 'w-32'
  },
- {
+ // 수정·삭제 권한이 하나도 없으면 관리 열을 두지 않는다.
+ ...(canUpdatePopup || canDeletePopup ? [{
  header: '관리',
  className: 'text-right w-32',
  accessor: (item: Popup) => (
  <div className="flex justify-end gap-2 pr-4">
+ {canUpdatePopup && (
  <Button variant="ghost" size="icon" aria-label={`${item.popupTtlNm} 팝업 수정`} disabled={isAssetWritePending || isModalOpen} className="size-8 rounded-md border border-border bg-muted hover:bg-accent" onClick={() => handleEdit(item)}>
  <Settings size={16} aria-hidden="true" />
  </Button>
+ )}
+ {canDeletePopup && (
  <Button
  variant="ghost"
  size="icon"
@@ -595,9 +618,10 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
  : <Trash2 size={16} aria-hidden="true" />}
  </Button>
+ )}
  </div>
  )
- }
+ }] : []),
  ];
 
   return (
@@ -643,9 +667,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
               <Monitor size={14} aria-hidden="true" /> 팝업 설정
             </button>
           </div>
+          {(activeTab === 'banner' ? canCreateBanner : canCreatePopup) && (
           <Button size="sm" onClick={handleCreate} disabled={isAssetWritePending || isModalOpen}>
             <Plus size={16} aria-hidden="true" /> 신규 {activeTab === 'banner' ? '배너' : '팝업'} 등록
           </Button>
+          )}
         </div>
       }
       toolbarActions={
@@ -829,6 +855,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  />
  </div>
  <div className="space-y-4">
+ {canUploadFile && (
  <FormItem className="space-y-1.5 p-0.5">
  <Label className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">미디어 자산 업로드 (Visual Payload)</Label>
  <div className="rounded-md border border-dashed border-border bg-muted/50 p-3 transition-colors hover:bg-muted">
@@ -840,6 +867,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  <p className="mt-1 px-1 text-xs leading-relaxed text-muted-foreground">시스템 표준 규격 이미지를 준수하십시오</p>
  </FormItem>
+ )}
  {(editingItem as Banner)?.atchFileSn && (
  <div className="space-y-2 rounded-md border border-surface-inverse-border bg-surface-inverse p-3 text-surface-inverse-foreground">
  <span className="text-xs text-surface-inverse-foreground/70">기존 파일 식별자</span>
@@ -1050,6 +1078,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  </div>
  <div className="space-y-4">
+ {canUploadFile && (
  <FormItem className="space-y-1.5 p-0.5">
  <Label className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">미디어 자산 업로드 (Visual Payload)</Label>
  <div className="rounded-md border border-dashed border-border bg-muted/50 p-3 transition-colors hover:bg-muted">
@@ -1061,6 +1090,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  <p className="mt-1 px-1 text-xs leading-relaxed text-muted-foreground">시스템 표준 규격 이미지를 준수하십시오</p>
  </FormItem>
+ )}
  {(editingItem as Popup)?.fileUrl && (
  <div className="space-y-2 rounded-md border border-surface-inverse-border bg-surface-inverse p-3 text-surface-inverse-foreground">
  <span className="text-xs text-surface-inverse-foreground/70">기존 파일 식별자</span>

@@ -13,6 +13,12 @@ const mocks = vi.hoisted(() => ({
   removeMany: vi.fn(),
 }));
 
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 모든 쓰기 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const READ_ONLY_PERMISSIONS = ['CLASS_GRP_READ'];
+const FULL_PERMISSIONS = [...READ_ONLY_PERMISSIONS, 'CLASS_GRP_CREATE', 'CLASS_GRP_UPDATE', 'CLASS_GRP_DELETE'];
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
+
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/services/foundation/system/GroupAdminService', () => ({
@@ -118,6 +124,7 @@ function deferred<T>() {
 describe('SecurityGroupClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.permissions = FULL_PERMISSIONS;
     mocks.confirm.mockResolvedValue(true);
     mocks.list.mockResolvedValue({ list: [group, unnamedGroup], page: 1, size: 10, total: 12, totalPage: 2 });
     mocks.removeMany.mockResolvedValue(undefined);
@@ -351,5 +358,31 @@ describe('SecurityGroupClient', () => {
     expect(screen.getByText('관리자 그룹')).toBeVisible();
     expect(screen.getByRole('button', { name: '관리자 그룹 그룹 삭제' })).toBeEnabled();
     expect(screen.getByRole('button', { name: '관리자 그룹 그룹 수정' })).toBeEnabled();
+  });
+
+  /*
+    [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
+    이 화면은 CLASS_GRP_READ 만으로 들어올 수 있어, 종전에는 조회만 맡은 담당자에게도 등록·수정·삭제·일괄 삭제가
+    모두 보였고 폼을 다 채운 뒤에야 403 을 만났다.
+  */
+  it('조회 권한만 있으면 등록·수정·삭제·일괄 삭제를 보이지 않는다 — 목록은 그대로 읽힌다', async () => {
+    auth.permissions = READ_ONLY_PERMISSIONS;
+    renderClient();
+
+    expect(await screen.findByText('관리자 그룹')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /분류 그룹 등록/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: '관리자 그룹 그룹 수정' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '관리자 그룹 그룹 삭제' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '선택 그룹 삭제' })).toBeNull();
+  });
+
+  it('권한은 동작마다 따로 본다 — 수정 권한만 있으면 수정 버튼만 보인다', async () => {
+    auth.permissions = [...READ_ONLY_PERMISSIONS, 'CLASS_GRP_UPDATE'];
+    renderClient();
+
+    expect(await screen.findByRole('button', { name: '관리자 그룹 그룹 수정' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /분류 그룹 등록/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: '관리자 그룹 그룹 삭제' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '선택 그룹 삭제' })).toBeNull();
   });
 });

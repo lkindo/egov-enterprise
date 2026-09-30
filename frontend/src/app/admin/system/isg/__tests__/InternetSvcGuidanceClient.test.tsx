@@ -22,6 +22,13 @@ const mocks = vi.hoisted(() => ({
   toast: vi.fn(),
 }));
 
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 쓰기 권한을 모두 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const READ_ONLY_PERMISSIONS = ['SERVICE_READ'];
+const FULL_PERMISSIONS = [...READ_ONLY_PERMISSIONS, 'SERVICE_CREATE', 'SERVICE_UPDATE', 'SERVICE_DELETE'];
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
+beforeEach(() => { auth.permissions = FULL_PERMISSIONS; });
+
 vi.mock('next/navigation', () => ({
   usePathname: () => '/admin/system/isg',
   useRouter: () => ({ replace: vi.fn() }),
@@ -225,5 +232,37 @@ describe('InternetSvcGuidanceClient', () => {
     renderWithClient(<InternetSvcGuidanceClient initialPage={pageOf(odd)} />);
 
     expect(await screen.findByText('알 수 없음 (X)')).toBeInTheDocument();
+  });
+});
+
+/*
+ * [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
+ * 이 화면은 조회 권한(SERVICE_READ)만으로 들어올 수 있어, 종전에는 조회만 맡은 사람에게도 등록·수정·삭제가 모두 보였고
+ * 누른 뒤에야 403 을 만났다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다.
+ */
+describe('InternetSvcGuidanceClient 쓰기 권한 표시', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getGuidanceList.mockResolvedValue(pageOf(GUIDANCE));
+  });
+
+  it('조회 권한만 있으면 서비스 안내 등록·수정·삭제 버튼을 보이지 않는다', async () => {
+    auth.permissions = READ_ONLY_PERMISSIONS;
+    renderWithClient(<InternetSvcGuidanceClient initialPage={pageOf(GUIDANCE)} />);
+
+    // 목록은 그대로 읽힌다 — 가리는 것은 쓰기 동작뿐이다.
+    expect(await screen.findByText('민원 전자 접수')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '서비스 안내 등록' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '민원 전자 접수 수정' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '민원 전자 접수 삭제' })).not.toBeInTheDocument();
+  });
+
+  it('권한은 동작마다 따로 본다 — 삭제 권한만 있으면 삭제 버튼만 보인다', async () => {
+    auth.permissions = [...READ_ONLY_PERMISSIONS, 'SERVICE_DELETE'];
+    renderWithClient(<InternetSvcGuidanceClient initialPage={pageOf(GUIDANCE)} />);
+
+    expect(await screen.findByRole('button', { name: '민원 전자 접수 삭제' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '민원 전자 접수 수정' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '서비스 안내 등록' })).not.toBeInTheDocument();
   });
 });

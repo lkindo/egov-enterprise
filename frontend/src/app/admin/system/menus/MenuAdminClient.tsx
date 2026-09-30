@@ -72,6 +72,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { flattenTree,  FlattenedItem,  getProjection,  listToTree } from './treeUtils';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { failureMessage } from '@/lib/safe-error-log';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 type MenuFormValues = z.infer<typeof menuSchema>;
 
@@ -124,6 +126,8 @@ interface SortableMenuNodeProps {
     isTabStop: boolean;
     dragDisabled?: boolean;
     isOverlay?: boolean;
+    /** 순서·계층을 바꿀 권한(MENU_UPDATE)이 없으면 끌기 핸들을 두지 않는다 — 저장할 수 없는 변경을 만들지 않는다. */
+    reorderable?: boolean;
 }
 
 const SortableMenuNode = ({ 
@@ -136,7 +140,8 @@ const SortableMenuNode = ({
     hasChildren,
     isTabStop,
     dragDisabled = false,
-    isOverlay = false
+    isOverlay = false,
+    reorderable = true
 }: SortableMenuNodeProps) => {
     const {
         attributes,
@@ -145,7 +150,7 @@ const SortableMenuNode = ({
         transform,
         transition,
         isDragging,
-    } = useSortable({ id: item.menuNo, disabled: dragDisabled });
+    } = useSortable({ id: item.menuNo, disabled: dragDisabled || !reorderable });
 
     const style = {
         transform: isOverlay ? undefined : CSS.Translate.toString(transform),
@@ -176,6 +181,7 @@ const SortableMenuNode = ({
                 isOverlay && "border-primary bg-card",
                 !isOverlay && depth > 0 && "ml-2",
             )}>
+                    {reorderable && (
                     <button
                         type="button"
                         {...attributes}
@@ -187,6 +193,7 @@ const SortableMenuNode = ({
                     >
                         <GripVertical size={16} aria-hidden="true" />
                     </button>
+                    )}
 
                             {hasChildren && (
                                 <button
@@ -253,6 +260,11 @@ export default function MenuAdminClient({
   const router = useRouter();
   const { toast } = useToast();
   const confirm = useConfirm();
+  // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 조회 권한(MENU_READ)만으로 들어와 폼을 채운 뒤에야 403 을 만나지 않게 한다(표시 판정일 뿐 서버 인가는 그대로다). 순서·계층 저장은 MENU_UPDATE 다.
+  const { user } = useAuth();
+  const canCreateMenu = canPermission(user, 'MENU_CREATE');
+  const canUpdateMenu = canPermission(user, 'MENU_UPDATE');
+  const canDeleteMenu = canPermission(user, 'MENU_DELETE');
   
   const initialFlat = useMemo(() => flattenTree(listToTree(initialMenus)), [initialMenus]);
 
@@ -579,11 +591,11 @@ export default function MenuAdminClient({
         title="시스템 메뉴 관리"
         description="메뉴 계층을 선택해 연결 경로와 사용 상태를 확인하고 편집합니다."
         breadcrumbItems={[{ label: '시스템 관리' }, { label: '메뉴 관리' }]}
-        actions={
+        actions={canCreateMenu ? (
           <Button onClick={() => handleOpenCreate(0)} className="gap-2 font-semibold">
             <Plus size={16} aria-hidden="true" /> 신규 메뉴 등록
           </Button>
-        }
+        ) : undefined}
         notice={(menusError || programsError) ? (
           <div role="alert" className="flex flex-col gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
@@ -602,7 +614,9 @@ export default function MenuAdminClient({
           </div>
         ) : undefined}
         masterTitle="네비게이션 트리"
-        masterDescription={`전체 ${flattenedMenus.length.toLocaleString()}개 메뉴 · 그립 핸들로 순서와 상하 관계를 변경합니다.`}
+        masterDescription={canUpdateMenu
+          ? `전체 ${flattenedMenus.length.toLocaleString()}개 메뉴 · 그립 핸들로 순서와 상하 관계를 변경합니다.`
+          : `전체 ${flattenedMenus.length.toLocaleString()}개 메뉴`}
         masterTools={
           <>
             <Button variant="outline" size="sm" aria-label="전체 메뉴 펼치기" onClick={() => {
@@ -617,6 +631,7 @@ export default function MenuAdminClient({
             }}>
               <ChevronsDownUp size={14} aria-hidden="true" />
             </Button>
+            {canUpdateMenu && (
             <Button
               onClick={handleSaveChanges}
               disabled={!hasChanges || !selectedMenu || isSaving || isModalOpen || deletingMenuId !== null}
@@ -627,6 +642,7 @@ export default function MenuAdminClient({
               {isSaving ? <Loader2 className="size-4" /> : <Save size={14} aria-hidden="true" />}
               {isSaving ? '구조 저장 중…' : '구조 저장'}
             </Button>
+            )}
           </>
         }
         master={(
@@ -678,6 +694,7 @@ export default function MenuAdminClient({
                     isExpanded={expandedIds.has(item.menuNo)}
                     hasChildren={flattenedMenus.some(m => m.parentId === item.menuNo)}
                     dragDisabled={Boolean(menuKeyword.trim()) || isSaving || deletingMenuId !== null || isModalSaving}
+                    reorderable={canUpdateMenu}
                   />
                 ))}
               </div>
@@ -712,9 +729,9 @@ export default function MenuAdminClient({
         selectedItemLabel={selectedMenu?.menuNm}
         detailTitle="메뉴 상세"
         detailDescription={selectedMenu ? `메뉴 ID ${selectedMenu.menuNo}` : undefined}
-        detailActions={selectedMenu ? (
+        detailActions={selectedMenu && (canCreateMenu || canUpdateMenu || canDeleteMenu) ? (
           <>
-            {selectedMenu.depth < 2 && (
+            {canCreateMenu && selectedMenu.depth < 2 && (
               <Button
                 variant="outline"
                 size="sm"
@@ -725,6 +742,7 @@ export default function MenuAdminClient({
                 <Plus size={14} aria-hidden="true" /> 하위 메뉴 추가
               </Button>
             )}
+            {canUpdateMenu && (
             <Button
               variant="outline"
               size="sm"
@@ -734,6 +752,8 @@ export default function MenuAdminClient({
             >
               <Settings size={14} aria-hidden="true" /> 메뉴 수정
             </Button>
+            )}
+            {canDeleteMenu && (
             <Button
               variant="destructive"
               size="sm"
@@ -746,6 +766,7 @@ export default function MenuAdminClient({
                 ? <><Loader2 className="size-4" /> 메뉴 삭제 중…</>
                 : <><Trash2 size={14} aria-hidden="true" /> 메뉴 삭제</>}
             </Button>
+            )}
           </>
         ) : undefined}
         detail={selectedMenu ? (

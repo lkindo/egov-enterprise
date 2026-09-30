@@ -5059,6 +5059,7 @@ export const NavigationSchema = /*#__PURE__*/ (() => z.object({
   code: z.string(),
   name: z.string(),
   parentCode: z.string().nullable(),
+  route: z.string().nullable(),
 }))();
 export type Navigation = z.infer<typeof NavigationSchema>;
 
@@ -12277,12 +12278,14 @@ export const NavigationRequestSchema = /*#__PURE__*/ (() => z.object({
   code: z.string(),
   name: z.string(),
   parentCode: z.string().nullable(),
+  route: z.string().nullable(),
 }))();
 
 export const NavigationResponseSchema = /*#__PURE__*/ (() => z.object({
   code: z.string(),
   name: z.string(),
   parentCode: z.string().nullable(),
+  route: z.string().nullable(),
 }))();
 
 export const OperationRequestSchema = /*#__PURE__*/ (() => z.object({

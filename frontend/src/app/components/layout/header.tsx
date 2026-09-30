@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, use } from 'react';
+import React, { useMemo, useRef, useState, use } from 'react';
 import { useTheme } from 'next-themes';
 import {
   Moon,
@@ -39,6 +39,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMenuAuthorizationScope } from '@/hooks/api/use-menu-authorization-scope';
 import { menuService } from '@/services/business/user/MenuService';
 import { MenuInfo } from '@/types/foundation/menu';
+import { openableMenus } from '@/lib/navigation/openable-menus';
 import { HeaderSearchParamSync } from './HeaderSearchParamSync';
 import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
 import { SITE_IDENTITY } from '@/config/site-identity';
@@ -63,6 +64,8 @@ const DOMAIN_ICON_MAP: Record<number, React.ComponentType<{ size?: number; class
   9040401: HeartHandshake, // 참여
   9000000: ShieldCheck, // 통합 관리 센터
 };
+
+const NO_MENUS: MenuInfo[] = [];
 
 export function Header({ 
   initialMenus = [],
@@ -120,13 +123,15 @@ export function Header({
   // 서버 prefetch 가 비어 있으면(토큰 부재·백엔드 장애) 클라이언트가 직접 조회해 GNB 를 복구한다.
   // 기존에는 서버가 준 값을 그대로 쓰기만 해(const menus = resolvedMenus) 복구 수단이 전혀 없었다.
   // Sidebar 와 동일한 queryKey 를 사용하므로 캐시를 공유하며 중복 요청은 발생하지 않는다.
-  const { data: menus = [] } = useQuery({
+  const { data: assignedMenus = NO_MENUS } = useQuery({
     queryKey: ['menus', 'head', ...menuAuthorization.scope],
     queryFn: () => menuService.getHeadMenus(),
     initialData: menuAuthorization.acceptsInitialMenus && resolvedMenus.length > 0 ? resolvedMenus : undefined,
     enabled: menuAuthorization.authenticated,
     staleTime: 5 * 60 * 1000,
   });
+  // [2026-10-01] 배정된 영역 가운데 열 수 있는 메뉴가 남은 것만 보인다(openableMenus 주석). 사이드바와 같은 판정이다.
+  const menus = useMemo(() => openableMenus(assignedMenus, user), [assignedMenus, user]);
 
   const handleLogout = () => void navigate(async (originalRouter) => {
     if (loggingOut.current) return;

@@ -13,6 +13,8 @@ import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { SurveyFormDialog } from '../SurveyFormDialog';
 import { failureMessage } from '@/lib/safe-error-log';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 const POLL_KIND_LABEL: Record<string, string> = {
     '001': '일반 설문',
@@ -41,6 +43,11 @@ export default function SurveyManageDetailClient() {
     const { success, error: toastError } = useToast();
     // 파괴적 액션은 native confirm 대신 useConfirm — 본문에 대상 설문명과 결과 소실을 노출한다.
     const confirm = useConfirm();
+    // [2026-10-01] 수정·삭제 버튼은 그 동작의 기능 권한으로 보인다. 이 상세는 설문 조회 권한만으로 들어올 수 있어,
+    //   종전에는 두 버튼이 모두 보였고 누른 뒤에야 403 을 만났다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
+    const { user } = useAuth();
+    const canUpdatePoll = canPermission(user, 'POLL_UPDATE');
+    const canDeletePoll = canPermission(user, 'POLL_DELETE');
 
     const rawId = routeParams?.id;
     const pollSnParam = Array.isArray(rawId) ? rawId[0] : (rawId ?? '');
@@ -231,6 +238,7 @@ export default function SurveyManageDetailClient() {
 
                             <div className="flex flex-col gap-3 pt-6 sm:flex-row">
                                 {/* [2026-09-12 §A3-1] 페이지 이동이 아니라 모달이므로 button 역할이 옳다. */}
+                                {canUpdatePoll && (
                                 <Button
                                     type="button"
                                     onClick={() => setIsEditing(true)}
@@ -240,6 +248,8 @@ export default function SurveyManageDetailClient() {
                                 >
                                     <Pencil className="w-5 h-5" aria-hidden="true" /> 수정
                                 </Button>
+                                )}
+                                {canDeletePoll && (
                                 <Button
                                     type="button"
                                     variant="outline"
@@ -250,6 +260,7 @@ export default function SurveyManageDetailClient() {
                                 >
                                     <Trash2 className="w-5 h-5" aria-hidden="true" /> {isDeleting ? '삭제 중…' : '설문 삭제'}
                                 </Button>
+                                )}
                             </div>
 
                             {deleteError ? (

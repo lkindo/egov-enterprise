@@ -56,6 +56,8 @@ vi.mock('@/services/business/user/poll/PollUserService', () => ({
 vi.mock('@/app/components/ui/toast', () => ({
   useToast: () => ({ success: mocks.success, error: mocks.error }),
 }));
+// 저장 버튼은 모드의 기능 권한으로 보인다 — 이 계약은 등록·수정 권한을 가진 관리자의 검증 흐름을 본다.
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: ['POLL_CREATE', 'POLL_UPDATE'], authorizationVersion: 'v1' } }) }));
 vi.mock('@/components/ui/calendar', () => ({
   Calendar: ({ onSelect }: { onSelect: (date: Date) => void }) => (
     <button type="button" onClick={() => onSelect(new Date(2026, 7, 26))}>2026년 8월 26일 선택</button>

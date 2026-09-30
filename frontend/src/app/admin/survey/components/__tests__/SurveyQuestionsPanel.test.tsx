@@ -20,6 +20,12 @@ import {
 const confirmMock = vi.hoisted(() => vi.fn());
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => confirmMock }));
 
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 모든 쓰기 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+const FULL_PERMISSIONS = ['SURVEY_CREATE_ALL', 'SURVEY_UPDATE_ALL', 'SURVEY_DELETE_ALL'];
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
+beforeEach(() => { auth.permissions = FULL_PERMISSIONS; });
+
 vi.mock('@/services/foundation/system/SurveyAdminService', () => ({
   surveyAdminService: {
     getSurveyList: vi.fn(),
@@ -1031,5 +1037,66 @@ describe('SurveyQuestionsPanel 전체 치환 왕복의 null 안전', () => {
     expect(srvyArtclSn).toBe(402);
     expect(body).toEqual({ artclCn: '수정된 항목', artclSn: 2, etcAnsYn: 'N' });
     expect(() => parseGeneratedOperationRequest(updateItemOperation, body)).not.toThrow();
+  });
+});
+
+/*
+ * [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
+ * 이 패널은 조회 권한만으로 들어올 수 있어, 종전에는 등록·복제·수정·삭제가 모두 보였고 누른 뒤에야 403 을 만났다.
+ */
+describe('SurveyQuestionsPanel 쓰기 권한 표시', () => {
+  // 아이콘에 aria-hidden 이 없는 두 버튼(문항 추가·항목 추가)은 접근 가능한 이름에 아이콘 이름이 섞여 정규식으로 찾는다.
+  const WRITE_BUTTONS: Record<'create' | 'update' | 'remove', (string | RegExp)[]> = {
+    create: ['설문지 등록', '만족도 조사 복제', /문항 추가/, /항목 추가/],
+    update: ['만족도 조사 제목·기간 수정', '만족하십니까 문항 수정', '예 항목 수정'],
+    remove: ['설문지 삭제', '만족하십니까 문항 삭제', '예 항목 삭제'],
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocked.getSurveyList.mockResolvedValue(SURVEYS as any);
+    mocked.getTemplateList.mockResolvedValue(TEMPLATES as any);
+    mocked.getQuestions.mockResolvedValue([QUESTION_WITH_ITEM] as any);
+  });
+
+  it('쓰기 권한이 없으면 등록·복제·수정·삭제를 보이지 않는다 — 문항과 항목은 그대로 읽힌다', async () => {
+    auth.permissions = [];
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+
+    expect(await screen.findByText('만족하십니까')).toBeInTheDocument();
+    expect(screen.getByText('예')).toBeInTheDocument();
+    for (const name of [...WRITE_BUTTONS.create, ...WRITE_BUTTONS.update, ...WRITE_BUTTONS.remove]) {
+      expect(screen.queryByRole('button', { name }), String(name)).not.toBeInTheDocument();
+    }
+    expect(screen.queryByLabelText('설문지 제목')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('새 문항 내용')).not.toBeInTheDocument();
+  });
+
+  it('권한은 동작마다 따로 본다 — 수정 권한만 있으면 수정 버튼만 보인다', async () => {
+    auth.permissions = ['SURVEY_UPDATE_ALL'];
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+
+    await screen.findByText('만족하십니까');
+    for (const name of WRITE_BUTTONS.update) {
+      expect(screen.getByRole('button', { name }), String(name)).toBeInTheDocument();
+    }
+    for (const name of [...WRITE_BUTTONS.create, ...WRITE_BUTTONS.remove]) {
+      expect(screen.queryByRole('button', { name }), String(name)).not.toBeInTheDocument();
+    }
+  });
+
+  it('모든 쓰기 권한이 있으면 버튼이 모두 보인다 — 위 두 판정이 버튼 이름 오타로 통과한 것이 아니다', async () => {
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+
+    await screen.findByText('만족하십니까');
+    for (const name of [...WRITE_BUTTONS.create, ...WRITE_BUTTONS.update, ...WRITE_BUTTONS.remove]) {
+      expect(screen.getByRole('button', { name }), String(name)).toBeInTheDocument();
+    }
   });
 });

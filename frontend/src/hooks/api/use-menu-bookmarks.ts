@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { menuService } from '@/services/business/user/MenuService';
 import { useToast } from '@/app/components/ui/toast';
+import { failureMessage } from '@/lib/safe-error-log';
 import { useMenuAuthorizationScope } from './use-menu-authorization-scope';
 
 /**
@@ -49,9 +50,7 @@ export function useMenuBookmarkToggle(menuNo: number, menuNm: string) {
     try {
       await mutation.mutateAsync(add);
     } catch (error) {
-      toast(error instanceof Error && error.message
-        ? error.message
-        : `${menuNm} 즐겨찾기를 ${add ? '추가하지' : '빼지'} 못했습니다.`, 'error');
+      toast(failureMessage(error, `${menuNm} 즐겨찾기를 ${add ? '추가하지' : '빼지'} 못했습니다.`), 'error');
     } finally {
       togglePendingRef.current = false;
       setTogglePending(false);

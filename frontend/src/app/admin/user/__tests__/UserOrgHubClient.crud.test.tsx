@@ -36,7 +36,11 @@ const { mockToast, mockConfirm, mockUserFormError, mockDeptFormError, mockPasswo
 }));
 
 // 다른 관리 화면으로 가는 길은 라우트와 같은 판정(canOpenPage)으로 보인다 — 목적지 권한을 가진 관리자로 렌더한다.
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: ['AUTHRT_READ', 'LOGIN_POL_READ', 'POLICY_READ', 'USER_STATUS'], authorizationVersion: 'v1' } }) }));
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 모든 쓰기 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const READ_ONLY_PERMISSIONS = ['AUTHRT_READ', 'LOGIN_POL_READ', 'POLICY_READ'];
+const FULL_PERMISSIONS = [...READ_ONLY_PERMISSIONS, 'USER_CREATE', 'USER_UPDATE', 'USER_PASSWORD', 'USER_STATUS', 'USER_DEPT', 'USER_DELETE', 'DEPT_CREATE', 'DEPT_UPDATE', 'DEPT_DELETE', 'ABSENCE_UPDATE'];
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
   usePathname: () => '/admin/user/manage',
@@ -326,6 +330,7 @@ async function selectFirstRow() {
 describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.permissions = FULL_PERMISSIONS;
     vi.mocked(userAdminService.getUserList).mockResolvedValue(listPage as any);
     vi.mocked(userAdminService.getUser).mockResolvedValue(detailRecord as any);
     vi.mocked(deptAdminService.getDeptList).mockResolvedValue({
@@ -918,5 +923,47 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     await screen.findByRole('button', { name: '비밀번호 초기화' });
     expect(screen.queryByRole('button', { name: '잠금 해제' })).not.toBeInTheDocument();
     expect(screen.queryByText('로그인 잠김')).not.toBeInTheDocument();
+  });
+
+  /*
+   * [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
+   * 이 화면은 USER_READ 만으로 들어올 수 있어, 종전에는 조회만 맡은 담당자에게도 등록·수정·초기화·삭제·일괄 작업이
+   * 모두 보였고 폼을 다 채운 뒤에야 403 을 만났다.
+   */
+  it('쓰기 권한이 없는 조회 담당자에게는 사용자 등록·수정·초기화·삭제·일괄 작업을 보이지 않는다', async () => {
+    auth.permissions = READ_ONLY_PERMISSIONS;
+    vi.mocked(userAdminService.getUser).mockResolvedValue({ ...detailRecord, lckYn: 'Y' } as any);
+    await selectFirstRow();
+
+    // 상세는 그대로 읽힌다 — 가리는 것은 쓰기 동작뿐이다.
+    expect(await screen.findByText('로그인 잠김')).toBeInTheDocument();
+    for (const name of ['사용자 등록', '정보 수정', '비밀번호 초기화', '잠금 해제', '사용자 삭제']) {
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    }
+    for (const label of ['bulk-상태 변경', 'bulk-부서 이동', 'bulk-일괄 삭제']) {
+      expect(screen.queryByText(label)).not.toBeInTheDocument();
+    }
+  });
+
+  it('권한은 동작마다 따로 본다 — 비밀번호 초기화 권한만 있으면 그 버튼만 보인다', async () => {
+    auth.permissions = [...READ_ONLY_PERMISSIONS, 'USER_PASSWORD'];
+    await selectFirstRow();
+
+    expect(await screen.findByRole('button', { name: '비밀번호 초기화' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '정보 수정' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '사용자 삭제' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '사용자 등록' })).not.toBeInTheDocument();
+  });
+
+  it('부서 쓰기 권한이 없으면 부서 등록·수정·삭제·계층 저장과 끌기 핸들을 보이지 않는다', async () => {
+    auth.permissions = READ_ONLY_PERMISSIONS;
+    renderHub('DEPTS');
+
+    fireEvent.click(await screen.findByRole('button', { name: /기획부/ }));
+    expect(screen.queryByRole('button', { name: '부서 등록' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '정보 수정' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '부서 삭제' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /조직 계층 저장/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /순서 이동 핸들/ })).not.toBeInTheDocument();
   });
 });

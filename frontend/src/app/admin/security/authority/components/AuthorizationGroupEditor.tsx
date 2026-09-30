@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { AuthorizationGroupForm } from './AuthorizationGroupForm';
-import { buildNavigationPermissionTree, navigationSelectionGaps, toggleNavigationPermission } from '@/lib/auth/navigation-permission-tree';
+import { buildNavigationPermissionTree, navigationSelectionGaps, selectedMenusWithoutEntryPermission, toggleNavigationPermission } from '@/lib/auth/navigation-permission-tree';
 import { NavigationPermissionTree } from './NavigationPermissionTree';
 
 const RESERVED = new Set(['ROLE_ADMIN', 'ROLE_SYSTEM', 'ROLE_USER', 'ROLE_ANONYMOUS']);
@@ -42,6 +42,8 @@ export function AuthorizationGroupEditor({ snapshot, catalog, refreshing, onRefr
   const complete = hasCompleteCatalog(baseline, catalog);
   const navigationTree = useMemo(() => buildNavigationPermissionTree(catalog.navigation), [catalog.navigation]);
   const navigationGaps = navigationSelectionGaps(navigationTree, selection);
+  // 메뉴는 배정했지만 그 화면에 들어갈 기능권한이 이 그룹에 없는 메뉴 — 저장을 막지 않는 안내다(다른 그룹이 줄 수 있다).
+  const menusWithoutEntry = useMemo(() => selectedMenusWithoutEntryPermission(catalog.navigation, selection), [catalog.navigation, selection]);
   const writable = currentBaseline && complete && !navigationTree.error && !refreshing && !pending && !saved;
   const canGrant = canPermission(user, 'AUTHRT_GRANT');
   const canUpdate = canPermission(user, 'AUTHRT_UPDATE');
@@ -140,6 +142,7 @@ export function AuthorizationGroupEditor({ snapshot, catalog, refreshing, onRefr
         <p className="text-sm text-muted-foreground">메뉴 숨김은 기능권한을 회수하지 않습니다. 기능권한이 있으면 직접 URL로 화면을 열 수 있으며, 실제 조회·변경에는 기능권한과 자료별 접근 조건이 적용됩니다.</p>
         <p className="text-sm text-muted-foreground">상위 메뉴를 해제하면 하위 메뉴도 함께 해제됩니다. 하위 메뉴를 선택하면 상위 메뉴도 함께 선택됩니다. 상위 메뉴만 선택하면 하위 메뉴는 자동으로 선택되지 않습니다.</p>
         {navigationOnly && baseline.code !== 'ROLE_ANONYMOUS' && <p role="alert" className="text-sm text-destructive">메뉴만 선택되어 있고 기능권한이 없습니다. 필요한 업무 영역의 조회 기능을 확인하세요. 권한은 자동으로 추가되지 않습니다.</p>}
+        {!navigationOnly && menusWithoutEntry.length > 0 && baseline.code !== 'ROLE_ANONYMOUS' && <p role="status" className="rounded-md border border-border bg-muted/40 p-3 text-sm">이 그룹의 기능권한만으로는 들어갈 수 없는 화면의 메뉴가 {menusWithoutEntry.length}개 있습니다: {menusWithoutEntry.join(', ')}. 다른 그룹이 그 화면의 조회 기능을 주지 않으면 사용자에게 이 메뉴가 보이지 않습니다. 필요한 조회 기능을 함께 선택하세요.</p>}
         {navigationTree.error && <p role="alert" className="text-sm text-destructive">{navigationTree.error} 저장할 수 없습니다. 메뉴 설정을 확인한 뒤 다시 조회해 주세요.</p>}
         {navigationGaps.length > 0 && <p role="alert" className="text-sm text-destructive">상위 메뉴가 선택되지 않은 메뉴가 있습니다: {navigationGaps.join(', ')}. 상위 메뉴를 선택하거나 해당 하위 메뉴를 해제한 뒤 저장하세요.</p>}
         <NavigationPermissionTree tree={navigationTree} selection={selection} disabled={!writable || metadataDirty || !canGrant} onToggle={toggleNavigation} />

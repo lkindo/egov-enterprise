@@ -47,6 +47,17 @@ const popupValues = {
   stopvewSetupYn: 'N',
 };
 
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 모든 쓰기 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const READ_ONLY_PERMISSIONS = ['BANNER_ADMIN_READ'];
+const FULL_PERMISSIONS = [
+  ...READ_ONLY_PERMISSIONS,
+  'BANNER_CREATE', 'BANNER_UPDATE', 'BANNER_DELETE',
+  'POPUP_CREATE', 'POPUP_UPDATE', 'POPUP_DELETE',
+  'FILE_UPLOAD_ALL',
+];
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mocks.replace }),
   usePathname: () => '/admin/system/banner',
@@ -206,6 +217,7 @@ function deferred<T>() {
 describe('BannerAdminClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.permissions = FULL_PERMISSIONS;
     mocks.query = '';
     mocks.confirm.mockResolvedValue(true);
     mocks.getBanners.mockResolvedValue({ list: [banner], total: 21, totalPage: 2 });
@@ -351,5 +363,52 @@ describe('BannerAdminClient', () => {
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('자산 삭제 처리 중 예외가 발생했습니다.', 'error'));
     expect(editButton).toBeEnabled();
     expect(createButton).toBeEnabled();
+  });
+
+  /*
+   * [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
+   * 이 화면은 BANNER_ADMIN_READ 만으로 들어올 수 있어, 종전에는 조회만 맡은 담당자에게도 배너·팝업의
+   * 등록·수정·삭제가 모두 보였고 폼을 다 채운 뒤에야 403 을 만났다.
+   */
+  it.each([
+    { label: '배너', query: '', row: '메인 배너', names: [/신규 배너 등록/, '메인 배너 배너 수정', '메인 배너 배너 삭제'] },
+    { label: '팝업', query: 'tab=popup&page=1', row: '긴급 공지', names: [/신규 팝업 등록/, '긴급 공지 팝업 수정', '긴급 공지 팝업 삭제'] },
+  ])('조회 권한만 있으면 $label 등록·수정·삭제 버튼을 보이지 않는다 — 목록은 그대로 읽힌다', async ({ query, row, names }) => {
+    auth.permissions = READ_ONLY_PERMISSIONS;
+    renderClient(query);
+
+    expect(await screen.findByText(row)).toBeInTheDocument();
+    for (const name of names) {
+      expect(screen.queryByRole('button', { name })).toBeNull();
+    }
+    // 탭 전환은 쓰기가 아니다 — 그대로 남는다.
+    expect(screen.getByRole('button', { name: /팝업 설정/ })).toBeInTheDocument();
+  });
+
+  it('권한은 자산·동작마다 따로 본다 — 배너 권한은 팝업 탭의 버튼을 열지 않는다', async () => {
+    auth.permissions = [...READ_ONLY_PERMISSIONS, 'BANNER_CREATE', 'BANNER_UPDATE', 'BANNER_DELETE', 'POPUP_UPDATE'];
+    renderClient('tab=popup&page=1');
+
+    expect(await screen.findByRole('button', { name: '긴급 공지 팝업 수정' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /신규 팝업 등록/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: '긴급 공지 팝업 삭제' })).toBeNull();
+  });
+
+  it('업로드 권한이 없으면 파일 첨부 컨트롤만 두지 않는다 — 수정은 기존 파일을 그대로 실어 보낸다', async () => {
+    auth.permissions = FULL_PERMISSIONS.filter((permission) => permission !== 'FILE_UPLOAD_ALL');
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '메인 배너 배너 수정' }));
+    const modal = screen.getByRole('region', { name: '배너 명세 수정' });
+    expect(modal).toHaveTextContent('기존 파일 식별자');
+    expect(screen.queryByRole('button', { name: '테스트 파일 선택' })).toBeNull();
+    expect(modal).not.toHaveTextContent('미디어 자산 업로드');
+
+    fireEvent.click(screen.getByRole('button', { name: /자산 수정/ }));
+    await waitFor(() => expect(mocks.saveBanner).toHaveBeenCalledWith(null, expect.objectContaining({
+      mode: 'edit',
+      data: expect.objectContaining({ atchFileSn: 77, bnrImgNm: 'main.png' }),
+    })));
+    expect(mocks.upload).not.toHaveBeenCalled();
   });
 });

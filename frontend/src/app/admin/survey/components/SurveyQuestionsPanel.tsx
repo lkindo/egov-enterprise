@@ -2,6 +2,8 @@
 
 import { useRef, useState } from 'react';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { surveyAdminService } from '@/services/foundation/system/SurveyAdminService';
@@ -63,6 +65,12 @@ export default function SurveyQuestionsPanel() {
   const queryClient = useQueryClient();
   // 파괴적 액션은 native confirm 대신 useConfirm — 본문에 대상과 소실 범위를 노출한다.
   const confirm = useConfirm();
+  // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다. 이 패널은 조회 권한만으로 들어올 수 있어, 종전에는
+  //   등록·복제·수정·삭제가 모두 보였고 누른 뒤에야 403 을 만났다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
+  const { user } = useAuth();
+  const canCreateSurvey = canPermission(user, 'SURVEY_CREATE_ALL');
+  const canUpdateSurvey = canPermission(user, 'SURVEY_UPDATE_ALL');
+  const canDeleteSurvey = canPermission(user, 'SURVEY_DELETE_ALL');
   const [srvySn, setSrvySn] = useState<number | null>(null);
   /** [2026-09-26 DIP B5 F6] 복제 대화상자를 연 원본 설문. */
   const [copySource, setCopySource] = useState<{ srvySn: number; srvyTtl?: string | null } | null>(null);
@@ -396,6 +404,7 @@ export default function SurveyQuestionsPanel() {
         선택기가 비면 문항·응답자·통계 탭이 전부 죽는데, 사용자는 그 이유를 알 수 없었다.
         createSurvey 는 서버·프런트 서비스에 이미 있었고 아무도 부르지 않았을 뿐이다.
       */}
+      {canCreateSurvey && (
       <form onSubmit={submitSurvey} noValidate className="space-y-3 rounded-lg border border-border p-4">
         <h3 className="text-sm font-bold text-foreground">설문지 등록</h3>
         <FormErrorSummary
@@ -475,6 +484,7 @@ export default function SurveyQuestionsPanel() {
           </p>
         ) : null}
       </form>
+      )}
 
       <div className="flex items-center gap-3">
         <label htmlFor="questions-srvy" className="text-sm font-bold shrink-0">
@@ -507,6 +517,7 @@ export default function SurveyQuestionsPanel() {
           [2026-08-28] 설문지 삭제. deleteSurvey 도 소비자가 0건이었다 — 잘못 만든 설문지를
           지울 방법이 없어 선택기에 영원히 쌓였다. 문항·응답이 함께 사라지므로 확인에서 말한다.
         */}
+        {canUpdateSurvey && (
         <Button
           type="button"
           variant="outline"
@@ -524,6 +535,8 @@ export default function SurveyQuestionsPanel() {
         >
           <Pencil size={14} aria-hidden="true" /> 제목·기간 수정
         </Button>
+        )}
+        {canCreateSurvey && (
         <Button
           type="button"
           variant="outline"
@@ -535,6 +548,8 @@ export default function SurveyQuestionsPanel() {
         >
           <Copy size={14} aria-hidden="true" /> 복제
         </Button>
+        )}
+        {canDeleteSurvey && (
         <Button
           type="button"
           variant="outline"
@@ -546,6 +561,7 @@ export default function SurveyQuestionsPanel() {
         >
           <Trash2 size={14} aria-hidden="true" /> {removeSurvey.isPending ? '삭제 중…' : '설문지 삭제'}
         </Button>
+        )}
       </div>
 
       {editingTarget === 'survey' && selectedSurvey ? (
@@ -641,6 +657,7 @@ export default function SurveyQuestionsPanel() {
         </div>
       ) : (
         <>
+          {canCreateSurvey && (
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -732,6 +749,7 @@ export default function SurveyQuestionsPanel() {
               <p {...questionValidation.messageProps('maxChcCnt')} className="text-xs font-bold text-destructive-emphasis" />
             ) : null}
           </form>
+          )}
 
           {questions.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-12">등록된 문항이 없습니다.</p>
@@ -791,6 +809,7 @@ export default function SurveyQuestionsPanel() {
                         <span className="text-xs font-bold px-2 py-0.5 rounded bg-hub-blue/10 text-hub-blue shrink-0">
                           {q.qstnTypeCd === MULTIPLE_CHOICE ? '객관식' : '주관식'}
                         </span>
+                        {canUpdateSurvey && (
                         <Button
                           variant="ghost"
                           size="icon-sm"
@@ -801,8 +820,10 @@ export default function SurveyQuestionsPanel() {
                         >
                           <Pencil className="h-4 w-4" aria-hidden="true" />
                         </Button>
+                        )}
                       </>
                     )}
+                    {canDeleteSurvey && (
                     <Button
                       variant="ghost"
                       size="icon-sm"
@@ -821,6 +842,7 @@ export default function SurveyQuestionsPanel() {
                         ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                         : <Trash2 className="h-4 w-4" aria-hidden="true" />}
                     </Button>
+                    )}
                   </div>
 
                   <div className="p-4 space-y-2">
@@ -877,6 +899,7 @@ export default function SurveyQuestionsPanel() {
                             ) : (
                               <>
                                 <span className="flex-1 min-w-0 break-words">{item.artclCn}</span>
+                                {canUpdateSurvey && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -887,8 +910,10 @@ export default function SurveyQuestionsPanel() {
                                 >
                                   <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                                 </Button>
+                                )}
                               </>
                             )}
+                            {canDeleteSurvey && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -907,6 +932,7 @@ export default function SurveyQuestionsPanel() {
                                 ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
                                 : <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />}
                             </Button>
+                            )}
                           </li>
                         ))}
                       </ul>
@@ -975,7 +1001,7 @@ export default function SurveyQuestionsPanel() {
                           <p {...itemValidation.messageProps('artclCn')} className="text-xs font-bold text-destructive-emphasis" />
                         ) : null}
                       </form>
-                    ) : (
+                    ) : canCreateSurvey ? (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -993,7 +1019,7 @@ export default function SurveyQuestionsPanel() {
                       >
                         <Plus className="h-3 w-3 mr-1" /> 항목 추가
                       </Button>
-                    )}
+                    ) : null}
                   </div>
                 </li>
               ))}

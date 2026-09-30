@@ -10659,6 +10659,7 @@ export interface components {
             code: string;
             name: string;
             parentCode: string | null;
+            route: string | null;
         };
         Operation: {
             code: string;

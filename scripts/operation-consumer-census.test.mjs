@@ -10,13 +10,16 @@ import { resolve } from 'node:path';
 import {
   analyze,
   analyzeScreenReachability,
+  analyzeWriteAffordance,
   baseOperationId,
   isAliasDuplicate,
   isServiceFile,
   isTestFile,
+  outermostFunctionAt,
   owningMethodAt,
   pathSuffix,
   runCensus,
+  stripTsComments,
 } from './operation-consumer-census.mjs';
 
 const ts = createRequire(resolve('frontend/package.json'))('typescript');
@@ -565,4 +568,236 @@ test('보조 함수는 경로 접미와 springdoc 접미를 정확히 다룬다'
   assert.equal(baseOperationId('getThing_12'), 'getThing');
   assert.equal(baseOperationId('getThing'), 'getThing');
   assert.equal(baseOperationId('get_1Thing'), 'get_1Thing', '접미가 아닌 중간 밑줄은 건드리지 않는다');
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// 축 3 — 쓰기 operation 의 기능 권한을 화면이 표시 판정에 쓰는가 (2026-10-01)
+// ───────────────────────────────────────────────────────────────────────────
+
+/** 쓰기 하나(DELETE /api/v1/things/{id} → THING_DELETE)를 가진 최소 저장소를 만든다. */
+function affordanceFixture(t, files) {
+  const root = mkdtempSync(join(tmpdir(), 'write-affordance-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const write = (relative, lines) => {
+    const file = join(root, relative);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, Array.isArray(lines) ? lines.join('\n') : lines);
+  };
+  write('frontend/src/services/ThingService.ts', [
+    'class ThingService {',
+    '  async getThings() {',
+    '    return this.executeGenerated(getThingsOperation, {});',
+    '  }',
+    '  async deleteThing(id) {',
+    '    return this.executeGenerated(deleteThingOperation, { path: { id } });',
+    '  }',
+    '}',
+    'export const thingService = new ThingService();',
+  ]);
+  for (const [relative, lines] of Object.entries(files)) write(relative, lines);
+  return {
+    root,
+    analyze: (catalog = { pagePermissions: {}, pagePermissionModes: {} }) => analyzeWriteAffordance({
+      boundaries: { records: [
+        { file: 'frontend/src/services/ThingService.ts', line: 3, method: 'get', target: '/api/v1/things', operationId: 'getThings' },
+        { file: 'frontend/src/services/ThingService.ts', line: 6, method: 'delete', target: '/api/v1/things/{id}', operationId: 'deleteThing' },
+      ] },
+      policies: { operationBindings: [
+        { method: 'GET', path: '/api/v1/things', access: 'PERMISSION', permission: 'THING_READ' },
+        { method: 'DELETE', path: '/api/v1/things/{id}', access: 'PERMISSION', permission: 'THING_DELETE' },
+      ] },
+      catalog,
+      repoRoot: root,
+      ts,
+    }),
+  };
+}
+
+const SERVICE_IMPORT = "import { thingService } from '@/services/ThingService';";
+
+test('축 3 — 현재 저장소의 쓰기 권한 표시 부채가 래칫과 정확히 같다', () => {
+  const result = runCensus();
+  assert.deepEqual(result.errors, [], JSON.stringify(result.errors, null, 2));
+  assert.equal(result.summary.ungatedWrites, result.summary.ungatedWriteMax);
+  assert.ok(result.affordance.writeMethods > 100, '쓰기 메서드를 거의 못 찾았다면 판정이 비어 있는 것이다');
+});
+
+test('축 3 — 쓰기를 부르면서 그 권한을 한 번도 보지 않는 화면은 부채로 센다', (t) => {
+  const { analyze } = affordanceFixture(t, {
+    'frontend/src/app/admin/things/page.tsx': 'export default function Page() { return null; }',
+    'frontend/src/app/admin/things/ThingClient.tsx': [
+      SERVICE_IMPORT,
+      'export function ThingClient() {',
+      '  return <button onClick={() => thingService.deleteThing(1)}>삭제</button>;',
+      '}',
+    ],
+  });
+  assert.deepEqual(analyze().ungated.map((entry) => [entry.file, entry.permission]), [
+    ['frontend/src/app/admin/things/ThingClient.tsx', 'THING_DELETE'],
+  ]);
+});
+
+test('축 3 — 조회만 부르는 화면과, 권한을 표시 판정에 쓰는 화면은 부채가 아니다', (t) => {
+  const { analyze } = affordanceFixture(t, {
+    'frontend/src/app/admin/things/ListOnly.tsx': [
+      SERVICE_IMPORT,
+      'export const ListOnly = () => <ul>{String(thingService.getThings())}</ul>;',
+    ],
+    'frontend/src/app/admin/things/Gated.tsx': [
+      SERVICE_IMPORT,
+      "export const Gated = ({ user }) => canPermission(user, 'THING_DELETE')",
+      '  ? <button onClick={() => thingService.deleteThing(1)}>삭제</button> : null;',
+    ],
+  });
+  assert.deepEqual(analyze().ungated, []);
+});
+
+test('축 3 — 다른 서비스의 동명 메서드를 부르는 화면은 세지 않는다', (t) => {
+  const { analyze } = affordanceFixture(t, {
+    'frontend/src/app/admin/other/Other.tsx': [
+      "import { otherService } from '@/services/OtherService';",
+      'export const Other = () => <button onClick={() => otherService.deleteThing(1)}>삭제</button>;',
+    ],
+  });
+  assert.deepEqual(analyze().ungated, []);
+});
+
+test('축 3 — 같은 이름의 메서드가 두 서비스에 있으면 수신자로 가른다', (t) => {
+  // 본인 댓글 삭제와 관리자 댓글 삭제처럼 이름이 같은 쓰기가 있다. 수신자를 보지 않으면 한 호출에 두 권한이 붙는다.
+  const { analyze } = affordanceFixture(t, {
+    'frontend/src/services/ThingAdminService.ts': [
+      'class ThingAdminService {',
+      '  async deleteThing(id) {',
+      '    return this.executeGenerated(deleteThingAdminOperation, { path: { id } });',
+      '  }',
+      '}',
+      'export const thingAdminService = new ThingAdminService();',
+    ],
+    'frontend/src/app/admin/things/Own.tsx': [
+      SERVICE_IMPORT,
+      "import { thingAdminService } from '@/services/ThingAdminService';",
+      'export const Own = () => <><button onClick={() => thingService.deleteThing(1)}>삭제</button>{String(thingAdminService)}</>;',
+    ],
+  });
+  // ThingAdminService 의 쓰기는 경계 기록에 없으므로(권한 없음) 이 화면이 필요로 하는 것은 THING_DELETE 하나다.
+  assert.deepEqual(analyze().ungated.map((entry) => entry.via), ['ThingService.deleteThing']);
+});
+
+test('축 3 — 주석 속의 호출과 권한 코드는 세지 않는다', (t) => {
+  const commentOnlyCall = affordanceFixture(t, {
+    'frontend/src/app/admin/things/History.tsx': [
+      SERVICE_IMPORT,
+      '// 종전에는 thingService.deleteThing() 을 불렀다.',
+      'export const History = () => <ul>{String(thingService.getThings())}</ul>;',
+    ],
+  });
+  assert.deepEqual(commentOnlyCall.analyze().ungated, []);
+
+  // 권한 코드를 주석에만 적어 놓고 버튼은 그대로 보이는 화면은 통과하지 못한다.
+  const commentOnlyGate = affordanceFixture(t, {
+    'frontend/src/app/admin/things/Fake.tsx': [
+      SERVICE_IMPORT,
+      "// canPermission(user, 'THING_DELETE')",
+      'export const Fake = () => <button onClick={() => thingService.deleteThing(1)}>삭제</button>;',
+    ],
+  });
+  assert.equal(commentOnlyGate.analyze().ungated.length, 1);
+
+  assert.equal(stripTsComments('a(); // b()\nc("//x"); /* d() */ e();'), 'a();       \nc("//x");           e();');
+});
+
+test('축 3 — 서버 액션·조회 옵션을 거친 쓰기도 그것을 쓰는 화면에 귀속된다', (t) => {
+  const { analyze } = affordanceFixture(t, {
+    'frontend/src/app/actions/thingActions.ts': [
+      "'use server';",
+      SERVICE_IMPORT,
+      'export async function removeThingAction(id) {',
+      '  await thingService.deleteThing(id);',
+      '}',
+      'export async function listThingsAction() {',
+      '  return thingService.getThings();',
+      '}',
+    ],
+    'frontend/src/app/admin/things/ViaAction.tsx': [
+      "import { removeThingAction } from '@/app/actions/thingActions';",
+      'export const ViaAction = () => <button onClick={() => removeThingAction(1)}>삭제</button>;',
+    ],
+    'frontend/src/app/admin/things/ReadsViaAction.tsx': [
+      "import { listThingsAction } from '@/app/actions/thingActions';",
+      'export const ReadsViaAction = () => <button onClick={() => listThingsAction()}>새로고침</button>;',
+    ],
+  });
+  // 중간 모듈 자신은 버튼을 그리지 않으므로 부채가 아니고, 조회 액션만 쓰는 화면도 아니다.
+  assert.deepEqual(analyze().ungated.map((entry) => [entry.file, entry.permission, entry.via]), [
+    ['frontend/src/app/admin/things/ViaAction.tsx', 'THING_DELETE', 'thingActions.removeThingAction'],
+  ]);
+});
+
+test('축 3 — 대화상자는 그것을 여는 화면이 모두 권한을 볼 때만 통과한다', (t) => {
+  const dialog = [
+    SERVICE_IMPORT,
+    'export const ThingDeleteDialog = () => <button onClick={() => thingService.deleteThing(1)}>삭제</button>;',
+  ];
+  const gatedOpener = [
+    "import { ThingDeleteDialog } from './ThingDeleteDialog';",
+    "export const Opener = ({ user }) => canPermission(user, 'THING_DELETE') ? <ThingDeleteDialog /> : null;",
+  ];
+  const openOpener = [
+    "import { ThingDeleteDialog } from './ThingDeleteDialog';",
+    'export const OtherOpener = () => <ThingDeleteDialog />;',
+  ];
+
+  const allGated = affordanceFixture(t, {
+    'frontend/src/components/things/ThingDeleteDialog.tsx': dialog,
+    'frontend/src/components/things/Opener.tsx': gatedOpener,
+  });
+  assert.deepEqual(allGated.analyze().ungated, []);
+
+  // 여는 화면 가운데 하나라도 권한을 보지 않으면, 그 길로는 버튼이 그대로 보인다.
+  const oneOpen = affordanceFixture(t, {
+    'frontend/src/components/things/ThingDeleteDialog.tsx': dialog,
+    'frontend/src/components/things/Opener.tsx': gatedOpener,
+    'frontend/src/components/things/OtherOpener.tsx': openOpener,
+  });
+  assert.deepEqual(oneOpen.analyze().ungated.map((entry) => entry.file), [
+    'frontend/src/components/things/ThingDeleteDialog.tsx',
+  ]);
+});
+
+test('축 3 — 라우트 진입 권한이 그 권한을 보장하면 버튼을 따로 가릴 필요가 없다', (t) => {
+  const { analyze } = affordanceFixture(t, {
+    'frontend/src/app/admin/things/page.tsx': 'export default function Page() { return null; }',
+    'frontend/src/app/admin/things/ThingClient.tsx': [
+      SERVICE_IMPORT,
+      'export const ThingClient = () => <button onClick={() => thingService.deleteThing(1)}>삭제</button>;',
+    ],
+  });
+  // 요구 권한이 그것 하나뿐이면 들어온 사람은 반드시 가진다.
+  assert.deepEqual(analyze({ pagePermissions: { '/admin/things': ['THING_DELETE'] }, pagePermissionModes: {} }).ungated, []);
+  // 여럿 중 하나(ANY)면 보장이 아니다 — 조회 권한만으로 들어온 사람에게 삭제가 보인다.
+  assert.equal(analyze({ pagePermissions: { '/admin/things': ['THING_READ', 'THING_DELETE'] }, pagePermissionModes: {} }).ungated.length, 1);
+  // ALL 이면 다시 보장이다.
+  assert.deepEqual(analyze({
+    pagePermissions: { '/admin/things': ['THING_READ', 'THING_DELETE'] },
+    pagePermissionModes: { '/admin/things': 'ALL' },
+  }).ungated, []);
+});
+
+test('축 3 — 테스트 파일의 호출은 세지 않고, 가장 바깥 함수가 화면이 부르는 단위다', (t) => {
+  const { analyze } = affordanceFixture(t, {
+    'frontend/src/app/admin/things/__tests__/ThingClient.test.tsx': [
+      SERVICE_IMPORT,
+      'thingService.deleteThing(1);',
+    ],
+  });
+  assert.deepEqual(analyze().ungated, []);
+
+  const source = sourceFileOf([
+    'export const thingMutationOptions = {',
+    '  remove: () => mutationOptions({',
+    '    mutationFn: (id) => thingService.deleteThing(id),',
+    '  }),',
+    '};',
+  ].join('\n'));
+  assert.equal(outermostFunctionAt(ts, source, 3), 'remove');
 });

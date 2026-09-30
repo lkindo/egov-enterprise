@@ -82,6 +82,10 @@ import { HARNESS_TAB_VIEW } from './components/HarnessAtlasPanels';
 import { toDisplayDateTime } from '@/lib/format-date';
 import { LOGIN_LOG_EXPORT_HEADERS } from './log-export-headers';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+/* reusable-base:collaboration:start */
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
+/* reusable-base:collaboration:end */
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. `updateQuery` 호출부가 쓰는 키는 `tab`·`page` 둘뿐이다.
@@ -222,6 +226,10 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 /* reusable-base:collaboration:start */
   const deleteCommentPendingRef = useRef(false);
   const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
+  // [2026-10-01] 댓글 삭제 버튼은 관리자 삭제 대행 권한(COMMENT_DELETE_ALL)으로 보인다. 이 허브는 로그 조회 권한만으로
+  //   들어올 수 있어, 종전에는 확인 모달까지 지난 뒤에야 403 을 만났다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
+  const { user } = useAuth();
+  const canDeleteComment = canPermission(user, 'COMMENT_DELETE_ALL');
 /* reusable-base:collaboration:end */
 
   // [P1-8] 타이핑 한 글자마다 서버 요청이 나가던 문제 → 300ms 디바운스 후에만 조회한다.
@@ -506,7 +514,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             <h4 className="truncate text-[length:var(--font-size-body)] font-medium text-foreground">{c.ansCn}</h4>
             <p className="text-xs text-muted-foreground">{c.wrterNm ?? '작성자 정보 없음'}</p>
           </div>
-          {selectedItemId === c.ansSn && (
+          {selectedItemId === c.ansSn && canDeleteComment && (
             <Button 
                 variant="ghost" 
                 size="icon" 

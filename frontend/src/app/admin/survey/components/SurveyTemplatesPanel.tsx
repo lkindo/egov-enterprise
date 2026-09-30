@@ -2,6 +2,8 @@
 
 import { useRef, useState } from 'react';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { surveyAdminService, SurveyTemplate } from '@/services/foundation/system/SurveyAdminService';
 import { PageResponse } from '@/types/foundation/system';
@@ -24,6 +26,12 @@ import {
  */
 export default function SurveyTemplatesPanel() {
   const queryClient = useQueryClient();
+  // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다. 이 패널은 조회 권한만으로 들어올 수 있어, 종전에는
+  //   추가·수정·삭제가 모두 보였고 누른 뒤에야 403 을 만났다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
+  const { user } = useAuth();
+  const canCreateTemplate = canPermission(user, 'SURVEY_CREATE_ALL');
+  const canUpdateTemplate = canPermission(user, 'SURVEY_UPDATE_ALL');
+  const canDeleteTemplate = canPermission(user, 'SURVEY_DELETE_ALL');
   const [newType, setNewType] = useState('');
   const [newExpln, setNewExpln] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -130,6 +138,8 @@ export default function SurveyTemplatesPanel() {
 
   return (
     <div className="space-y-6">
+      {/* 추가와 수정이 이 폼 하나를 같이 쓴다 — 추가 권한이 없으면 수정 중일 때만 폼을 둔다. */}
+      {(canCreateTemplate || editing) && (
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -202,8 +212,9 @@ export default function SurveyTemplatesPanel() {
           )}
         </div>
       </form>
+      )}
 
-      {error && <p role="alert" className="text-sm text-destructive-emphasis">{error}</p>}
+      {error &&<p role="alert" className="text-sm text-destructive-emphasis">{error}</p>}
 
       {isLoading ? (
         <div className="flex justify-center py-16">
@@ -228,6 +239,7 @@ export default function SurveyTemplatesPanel() {
               <span className="text-xs text-muted-foreground font-mono tabular-nums shrink-0">
                 {t.crtDt ? t.crtDt.substring(0, 10) : ''}
               </span>
+              {canUpdateTemplate && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -240,6 +252,8 @@ export default function SurveyTemplatesPanel() {
                   ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                   : <Pencil className="h-4 w-4" aria-hidden="true" />}
               </Button>
+              )}
+              {canDeleteTemplate && (
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -255,6 +269,7 @@ export default function SurveyTemplatesPanel() {
                   ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                   : <Trash2 className="h-4 w-4" aria-hidden="true" />}
               </Button>
+              )}
             </li>
           ))}
         </ul>

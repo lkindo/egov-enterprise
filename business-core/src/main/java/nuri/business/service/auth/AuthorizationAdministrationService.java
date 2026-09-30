@@ -128,6 +128,12 @@ public class AuthorizationAdministrationService {
         return AuthorizationSnapshotService.digest(PermissionCodes.CATALOG_VERSION + "\n" + target + "\n" + state + "\n" + last);
     }
 
+    /** 메뉴 시드의 자리표시자({@code dir}·{@code #})와 빈 값은 화면 경로가 아니다. */
+    private static String routeOf(String modernRoute) {
+        if (modernRoute == null || modernRoute.isBlank() || "#".equals(modernRoute) || "dir".equalsIgnoreCase(modernRoute)) return null;
+        return modernRoute;
+    }
+
     public Catalog catalog() {
         SecurityUtil.assertPermission("AUTHRT_READ");
         List<Operation> operations = new ArrayList<>();
@@ -136,8 +142,8 @@ public class AuthorizationAdministrationService {
                 operations.add(new Operation(item.path("code").asString(),item.path("domain").asString(),item.path("action").asString(),item.path("name").asString()));
             }
         } catch (IOException | JacksonException ex) { throw new IllegalStateException("Permission catalog unavailable",ex); }
-        var navigation = jdbc.query("SELECT menu_sn::text,menu_nm,CASE WHEN up_menu_sn IS NULL OR up_menu_sn=0 THEN NULL ELSE up_menu_sn::text END FROM tb_menu_info ORDER BY menu_ordr NULLS LAST,menu_sn",
-                (rs,n) -> new Navigation(rs.getString(1),rs.getString(2),rs.getString(3)));
+        var navigation = jdbc.query("SELECT menu_sn::text,menu_nm,CASE WHEN up_menu_sn IS NULL OR up_menu_sn=0 THEN NULL ELSE up_menu_sn::text END,modern_route FROM tb_menu_info ORDER BY menu_ordr NULLS LAST,menu_sn",
+                (rs,n) -> new Navigation(rs.getString(1),rs.getString(2),rs.getString(3),routeOf(rs.getString(4))));
         return new Catalog(List.copyOf(operations),navigation,PermissionCodes.CATALOG_VERSION);
     }
 

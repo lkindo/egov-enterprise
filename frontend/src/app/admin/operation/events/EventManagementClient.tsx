@@ -4,7 +4,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import * as z from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, Plus, Settings, Trash2 } from 'lucide-react';
+import { Eye, Loader2, Plus, Settings, Trash2 } from 'lucide-react';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -125,6 +125,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { omitNulls } from '@/lib/api/omit-nulls';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
@@ -145,6 +147,11 @@ export default function EventManagementClient() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 조회 권한(EVENT_READ)만으로 들어온 사람은 종전에 눌러 본 뒤에야 403 을 만났다(표시 판정일 뿐, 서버 인가는 그대로다).
+  const { user } = useAuth();
+  const canCreateEvent = canPermission(user, 'EVENT_CREATE');
+  const canUpdateEvent = canPermission(user, 'EVENT_UPDATE');
+  const canDeleteEvent = canPermission(user, 'EVENT_DELETE');
 
   // 페이지 번호는 URL 파생값이다(공유·새로고침·뒤로가기 복원).
   // ADR-0009는 URL 사용을 의무화하지 않는다. 이 화면은 검색어를 로컬 상태로 유지한다.
@@ -176,6 +183,8 @@ export default function EventManagementClient() {
    */
   const [editingEvent, setEditingEvent] = useState<EventInfo | null>(null);
   const [isLoadingEvent, setIsLoadingEvent] = useState(false);
+  // 수정 권한 없이 연 행은 조회 전용이다 — 같은 창으로 상세 내용·담당자·준비사항을 읽기만 한다.
+  const isViewOnly = !canUpdateEvent && (editingEvent !== null || isLoadingEvent);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitPendingRef = useRef(false);
   const [deletingEventSn, setDeletingEventSn] = useState<number | null>(null);
@@ -211,6 +220,7 @@ export default function EventManagementClient() {
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
+    if (isViewOnly) { e.preventDefault(); return; }
     e.preventDefault();
     if (submitPendingRef.current) return;
     const validated = validation.validate(form);
@@ -368,10 +378,11 @@ export default function EventManagementClient() {
       ),
       className: 'w-32'
     },
+    // 상세 내용·담당자·준비사항은 목록 열에 없고 이 창으로만 볼 수 있다. 수정 권한이 없으면 같은 창을 조회 전용으로 연다.
     {
       header: '관리',
       className: 'text-right w-32',
-      accessor: (event) => {
+      accessor: (event: EventInfo) => {
         const isDeleting = deletingEventSn === event.evntSn;
         return (
         <div className="flex items-center justify-end gap-1 pr-4">
@@ -380,12 +391,13 @@ export default function EventManagementClient() {
             variant="ghost"
             size="icon"
             disabled={deletingEventSn !== null || submitPendingRef.current}
-            aria-label={`${event.evntNm} 수정`}
+            aria-label={canUpdateEvent ? `${event.evntNm} 수정` : `${event.evntNm} 상세 보기`}
             onClick={() => { void handleOpenEdit(event); }}
             className="rounded-md text-muted-foreground"
           >
-            <Settings size={16} aria-hidden="true" />
+            {canUpdateEvent ? <Settings size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
           </Button>
+          {canDeleteEvent && (
           <Button
             variant="ghost"
             size="icon"
@@ -400,10 +412,11 @@ export default function EventManagementClient() {
               ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
               : <Trash2 size={16} aria-hidden="true" />}
           </Button>
+          )}
         </div>
         );
       }
-    }
+    },
   ];
 
   return (
@@ -414,11 +427,11 @@ export default function EventManagementClient() {
       filterStateKey="operation-events"
       // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.
       totalCount={isError ? undefined : totalItems}
-      actions={
+      actions={canCreateEvent ? (
         <Button size="sm" onClick={handleOpenCreate} className="gap-2">
           <Plus size={16} aria-hidden="true" /> 행사 등록
         </Button>
-      }
+      ) : undefined}
       filter={
         /*
           [2026-08-28] 라벨이 '행사 명칭' 이었지만 서버는 명칭과 상세 내용을 함께 찾는다
@@ -470,11 +483,13 @@ export default function EventManagementClient() {
           <div className="border-b border-border bg-card pb-3 pl-5 pr-10 pt-4">
             <DialogHeader>
               <DialogTitle className="text-base font-semibold text-foreground">
-                {editingEvent ? '행사 정보 수정' : '신규 행사 등록'}
+                {isViewOnly ? '행사 상세' : editingEvent ? '행사 정보 수정' : '신규 행사 등록'}
               </DialogTitle>
               <DialogDescription className="text-[length:var(--font-size-body)] text-muted-foreground">
                 {isLoadingEvent
                   ? '행사 정보를 불러오는 중입니다…'
+                  : isViewOnly
+                    ? '조회 전용입니다. 행사 정보를 수정할 권한이 없습니다.'
                   : editingEvent
                     ? '이 창에서 보이지 않는 값은 그대로 유지됩니다.'
                     : '행사 기본 정보를 입력하십시오.'}
@@ -487,6 +502,8 @@ export default function EventManagementClient() {
               labels={eventValidationLabels}
               onNavigate={validation.focusError}
             />
+            {/* 조회 전용이면 입력을 통째로 잠근다 — 값은 읽히고 바꿀 수는 없다. */}
+            <fieldset disabled={isViewOnly} className="contents">
             <div className="grid grid-cols-2 gap-[var(--form-gap)]">
               <div className="col-span-2 space-y-2">
                 <Label htmlFor="evntNm" className="text-[length:var(--font-size-body)] font-medium text-foreground">
@@ -646,6 +663,7 @@ export default function EventManagementClient() {
                 ) : null}
               </div>
             </div>
+            </fieldset>
             <DialogFooter className="border-t border-border pt-3">
               <Button
                 type="button"
@@ -653,13 +671,15 @@ export default function EventManagementClient() {
                 disabled={isSubmitting || createMutation.isPending}
                 onClick={() => handleCreateModalOpenChange(false)}
 >
-                취소
+                {isViewOnly ? '닫기' : '취소'}
               </Button>
+              {!isViewOnly && (
               <Button type="submit" disabled={isSubmitting || createMutation.isPending} aria-busy={(isSubmitting || createMutation.isPending) || undefined} className="px-6">
                 {isSubmitting || createMutation.isPending || updateMutation.isPending
                   ? (editingEvent ? '저장 중...' : '등록 중...')
                   : (editingEvent ? '변경 사항 저장' : '행사 등록')}
               </Button>
+              )}
             </DialogFooter>
           </form>
         </DialogContent>

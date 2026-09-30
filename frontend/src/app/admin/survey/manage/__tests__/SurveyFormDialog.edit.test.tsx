@@ -39,6 +39,9 @@ vi.mock('@/app/components/ui/toast', () => ({
   useToast: () => ({ success: mocks.success, error: mocks.error }),
 }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
+// 저장 버튼은 모드의 기능 권한으로 보인다 — 기본은 등록·수정 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
 /* Radix Select 는 jsdom 에서 포인터 이벤트를 요구한다 — 렌더 형태만 남기고 상호작용은 보지 않는다. */
 vi.mock('@/components/ui/select', () => ({
   Select: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -83,6 +86,7 @@ function renderEdit(initialValues: SurveyFormInitialValues = RETIRED) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  auth.permissions = ['POLL_CREATE', 'POLL_UPDATE'];
   mocks.updatePoll.mockResolvedValue(undefined);
   mocks.createPoll.mockResolvedValue(undefined);
   mocks.confirm.mockResolvedValue(true);
@@ -140,5 +144,36 @@ describe('설문 수정 모달 — 전체 치환 왕복', () => {
 
     expect(screen.getByLabelText('설문 유형')).toBeInTheDocument();
     expect(screen.queryByLabelText('진행 상태')).toBeNull();
+  });
+});
+
+/*
+ * [2026-10-01] 이 모달은 두 화면이 서로 다른 모드로 연다(목록은 등록, 상세는 수정). 여는 버튼은 각 화면이 가리고,
+ * 저장 버튼은 모달이 모드의 권한으로 보인다 — 등록 권한이 수정 저장을, 수정 권한이 등록 저장을 열지 않는다.
+ */
+describe('설문 모달 — 저장 버튼은 모드의 권한으로 보인다', () => {
+  it('수정 권한이 없으면 수정 모드에 저장 버튼 대신 사유를 보이고, Enter 제출도 보내지 않는다', async () => {
+    auth.permissions = ['POLL_CREATE'];
+    renderEdit();
+
+    expect(screen.queryByTestId('poll-submit-button')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('설문을 수정할 권한이 없습니다.');
+
+    fireEvent.submit(screen.getByTestId('poll-name-input').closest('form')!);
+    await Promise.resolve();
+    expect(mocks.updatePoll).not.toHaveBeenCalled();
+  });
+
+  it('등록 권한이 없으면 등록 모드에 저장 버튼 대신 사유를 보인다', () => {
+    auth.permissions = ['POLL_UPDATE'];
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <SurveyFormDialog isOpen mode="create" onClose={() => {}} onSaved={() => {}} />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.queryByTestId('poll-submit-button')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('설문을 등록할 권한이 없습니다.');
   });
 });

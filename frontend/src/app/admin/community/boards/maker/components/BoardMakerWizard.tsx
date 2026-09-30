@@ -119,6 +119,7 @@ import { BoardMasterDtoSchema, MenuDtoSchema } from '@/types/generated-zod';
 import { boardMasterKeys } from '@/queries/board-master-query-options';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
+import { canPermission } from '@/lib/auth/permissions';
 
 export const boardMakerFormSchema = BoardMasterDtoSchema.extend({
  bbsTtl: BoardMasterDtoSchema.shape.bbsTtl
@@ -188,6 +189,11 @@ export function BoardMakerWizard() {
  const canOpenMenus = canOpenPage(user, '/admin/system/menus');
  const canOpenBoardMasters = canOpenPage(user, '/admin/community/boards/master');
  const canOpenAuthority = canOpenPage(user, '/admin/security/authority');
+ // [2026-10-01] 마지막 제출은 게시판 생성(BBS_MST_CREATE)과 메뉴 등록(MENU_CREATE)을 함께 한다. 메뉴 등록은 건너뛸 수
+ //   있는 단계가 아니어서, 둘 중 하나라도 없으면 제출 버튼 대신 사유를 보인다 — 종전에는 네 단계를 다 채운 뒤 403 을 만났고,
+ //   메뉴 권한만 없으면 게시판만 만들어진 채 멈췄다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
+ const canCreateBoard = canPermission(user, 'BBS_MST_CREATE');
+ const canCreateMenu = canPermission(user, 'MENU_CREATE');
  const [currentStep, setCurrentStep] = useState(1);
  const [isSubmitting, setIsSubmitting] = useState(false);
  const [isSuccess, setIsSuccess] = useState(false);
@@ -787,6 +793,12 @@ export function BoardMakerWizard() {
  <ChevronLeft className="size-4" aria-hidden="true" /> 이전 단계
  </Button>
 
+ {/* 권한이 없으면 첫 단계부터 사유를 보인다 — 네 단계를 다 채운 뒤에 알리지 않는다. */}
+ {!(canCreateBoard && canCreateMenu) ? (
+ <p role="status" className="text-[length:var(--font-size-body)] font-medium text-muted-foreground">
+ {canCreateBoard ? '메뉴를 등록할 권한이 없어 게시판을 만들 수 없습니다.' : '게시판을 만들 권한이 없습니다.'}
+ </p>
+ ) : (
  <Button
  type={currentStep === STEPS.length ? 'submit' : 'button'}
  onClick={currentStep === STEPS.length ? undefined : (event) => {
@@ -814,6 +826,7 @@ export function BoardMakerWizard() {
  </span>
  )}
  </Button>
+ )}
  </CardFooter>
  </form>
  </Card>

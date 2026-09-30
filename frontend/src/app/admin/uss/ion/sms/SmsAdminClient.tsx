@@ -50,6 +50,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
@@ -135,6 +137,10 @@ export default function SmsAdminClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  // [2026-10-01] 작성 버튼은 발송 권한으로 보인다. 이 화면은 조회 권한(SMS_READ)만으로 들어올 수 있어, 종전에는
+  //   메시지를 다 쓴 뒤에야 403 을 만났다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
+  const { user } = useAuth();
+  const canSendSms = canPermission(user, 'SMS_SEND');
 
   const [isSending, setIsSending] = useState(false);
   const sendPendingRef = useRef(false);
@@ -409,9 +415,13 @@ export default function SmsAdminClient({
             <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
               <RefreshCcw size={16} className={cn(isFetching && "animate-spin")} aria-hidden="true" /> 새로고침
             </Button>
+            {canSendSms ? (
             <Button size="sm" onClick={handleOpenSend} className="gap-2">
               <Plus size={16} aria-hidden="true" /> 새 메시지 구성
             </Button>
+            ) : (
+              <p role="status" className="self-center text-xs text-muted-foreground">문자를 보낼 권한이 없습니다.</p>
+            )}
           </>
         }
         filter={

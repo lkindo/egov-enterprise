@@ -38,6 +38,8 @@ import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUti
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { TemplateDtoSchema } from '@/types/generated-zod';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 // [2026-08-29] 생성 DTO 가 이제 길이·필수를 스스로 말한다(백엔드 @Size/@NotBlank 추가).
 // 여기서는 사용자에게 보일 한국어 사유만 덧입힌다 — 제약 자체를 여기서 창작하지 않는다.
@@ -91,6 +93,13 @@ export default function TemplateAdminClient({
 }) {
  const initialTemplates = use(templatesPromise);
  const { toast } = useToast();
+ // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다. 이 화면은 조회 권한(TEMPLATE_READ)만으로 들어올 수 있어,
+ //   종전에는 등록·수정·삭제가 모두 보였고 폼을 다 채운 뒤에야 403 을 만났다.
+ //   표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
+ const { user } = useAuth();
+ const canCreateTemplate = canPermission(user, 'TEMPLATE_CREATE');
+ const canUpdateTemplate = canPermission(user, 'TEMPLATE_UPDATE');
+ const canDeleteTemplate = canPermission(user, 'TEMPLATE_DELETE');
  const [loading, setLoading] = useState(false);
  const [isAdding, setIsAdding] = useState(false);
  const addPendingRef = useRef(false);
@@ -243,13 +252,15 @@ export default function TemplateAdminClient({
  </div>
  )
  },
- {
+ // 수정·삭제 권한이 하나도 없으면 관리 열을 두지 않는다.
+ ...(canUpdateTemplate || canDeleteTemplate ? [{
  header: '관리',
  className: 'text-right w-28',
  accessor: (item: TmplatInfo) => {
  const isDeleting = deletingId === item.tmpltId;
  return (
  <div className="flex items-center justify-end gap-1 pr-2">
+ {canUpdateTemplate && (
  <Button
  variant="ghost"
  size="icon"
@@ -260,6 +271,8 @@ export default function TemplateAdminClient({
  >
  <Pencil size={16} aria-hidden="true" />
  </Button>
+ )}
+ {canDeleteTemplate && (
  <Button
  variant="ghost"
  size="icon"
@@ -273,10 +286,11 @@ export default function TemplateAdminClient({
  ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
  : <Trash2 size={16} aria-hidden="true" />}
  </Button>
+ )}
  </div>
  );
  }
- }
+ }] : []),
  ];
 
  return (
@@ -298,10 +312,12 @@ export default function TemplateAdminClient({
  <RefreshCcw size={16} className={cn(loading && "animate-spin")} aria-hidden="true" />
  새로고침
  </Button>
+ {canCreateTemplate && (
  <Button size="sm" onClick={handleOpenAdd} className="gap-2">
  <Plus size={16} aria-hidden="true" />
  신규 템플릿 등록
  </Button>
+ )}
  </>
  }
  >

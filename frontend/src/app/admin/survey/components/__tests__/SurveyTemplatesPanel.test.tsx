@@ -14,6 +14,11 @@ import { ToastProvider } from '@/app/components/ui/toast';
 const confirmMock = vi.hoisted(() => vi.fn());
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => confirmMock }));
 
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 모든 쓰기 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+const FULL_PERMISSIONS = ['SURVEY_CREATE_ALL', 'SURVEY_UPDATE_ALL', 'SURVEY_DELETE_ALL'];
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
+
 vi.mock('@/services/foundation/system/SurveyAdminService', () => ({
   surveyAdminService: {
     createTemplate: vi.fn(),
@@ -43,6 +48,7 @@ function renderPanel() {
 describe('SurveyTemplatesPanel validation contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.permissions = FULL_PERMISSIONS;
     confirmMock.mockResolvedValue(false);
     mocked.createTemplate.mockResolvedValue(undefined);
     mocked.updateTemplate.mockResolvedValue(undefined);
@@ -257,6 +263,39 @@ describe('SurveyTemplatesPanel validation contract', () => {
     const [, body] = mocked.updateTemplate.mock.calls[0];
     expect(body).toEqual({ srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '수정 설명', srvyTmpltPathNm: '/templates/preserved' });
     expect(() => parseGeneratedOperationRequest(updateTemplateOperation, body)).not.toThrow();
+  });
+
+  /*
+   * [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
+   * 이 패널은 조회 권한만으로 들어올 수 있어, 종전에는 추가·수정·삭제가 모두 보였고 누른 뒤에야 403 을 만났다.
+   */
+  it('쓰기 권한이 없으면 추가 폼과 수정·삭제 버튼을 보이지 않는다 — 목록은 그대로 읽힌다', async () => {
+    auth.permissions = [];
+    mocked.getTemplateList.mockResolvedValue({ list: [{ srvyTmpltSn: 11, srvyTmpltTypeCd: 'OLD', srvyTmpltExpln: '목록 설명' }], total: 1, page: 1, size: 50, totalPage: 1 });
+    renderPanel();
+
+    expect(await screen.findByText('목록 설명')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '템플릿 추가' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('템플릿 유형 코드')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '목록 설명 템플릿 수정' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '목록 설명 템플릿 삭제' })).not.toBeInTheDocument();
+  });
+
+  it('수정 권한만 있으면 추가 폼은 없고, 수정을 시작한 동안에만 폼이 열린다', async () => {
+    auth.permissions = ['SURVEY_UPDATE_ALL'];
+    const user = userEvent.setup();
+    mocked.getTemplateList.mockResolvedValue({ list: [{ srvyTmpltSn: 11, srvyTmpltTypeCd: 'OLD', srvyTmpltExpln: '목록 설명' }], total: 1, page: 1, size: 50, totalPage: 1 });
+    mocked.getSurveyTemplate.mockResolvedValue({ srvyTmpltSn: 11, srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '최신 설명' });
+    renderPanel();
+
+    const edit = await screen.findByRole('button', { name: '목록 설명 템플릿 수정' });
+    expect(screen.queryByRole('button', { name: '템플릿 추가' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '목록 설명 템플릿 삭제' })).not.toBeInTheDocument();
+
+    await user.click(edit);
+    expect(await screen.findByRole('button', { name: '템플릿 수정 저장' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '수정 취소' }));
+    await waitFor(() => expect(screen.queryByLabelText('템플릿 유형 코드')).not.toBeInTheDocument());
   });
 
 });

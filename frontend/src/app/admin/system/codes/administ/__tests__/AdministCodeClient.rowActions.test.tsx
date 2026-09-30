@@ -27,6 +27,11 @@ const mocks = vi.hoisted(() => ({
   updateAdministCode: vi.fn(),
 }));
 
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 모든 쓰기 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const FULL_PERMISSIONS = ['ADMCODE_READ', 'ADMCODE_CREATE', 'ADMCODE_UPDATE', 'ADMCODE_DELETE'];
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
+
 vi.mock('next/dynamic', () => ({
   default: () => function TestModal({
     children,
@@ -107,6 +112,7 @@ function renderClient() {
 describe('AdministCodeClient 정정 경로', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.permissions = FULL_PERMISSIONS;
     mocks.getAdministCodeList.mockResolvedValue({ list: [SEOUL], total: 1, page: 1, size: 10, totalPage: 1 });
     mocks.updateAdministCode.mockResolvedValue(undefined);
     mocks.deleteAdministCode.mockResolvedValue(undefined);
@@ -191,5 +197,29 @@ describe('AdministCodeClient 정정 경로', () => {
       expect.stringContaining('하위 행정구역 코드 3건'),
       'error',
     ));
+  });
+
+  /*
+   * [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
+   * 이 화면은 ADMCODE_READ 만으로 들어올 수 있어, 종전에는 조회만 맡은 담당자에게도 등록·수정·삭제가 모두 보였다.
+   */
+  it('조회 권한만 있으면 신규 등록·수정·삭제를 보이지 않는다', async () => {
+    auth.permissions = ['ADMCODE_READ'];
+    renderClient();
+
+    // 목록은 그대로 읽힌다 — 가리는 것은 쓰기 동작뿐이다.
+    expect(await screen.findByText('서울특별시')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /신규 등록/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '서울특별시 수정' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '서울특별시 삭제' })).not.toBeInTheDocument();
+  });
+
+  it('권한은 동작마다 따로 본다 — 수정 권한만 있으면 수정만 보인다', async () => {
+    auth.permissions = ['ADMCODE_READ', 'ADMCODE_UPDATE'];
+    renderClient();
+
+    expect(await screen.findByRole('button', { name: '서울특별시 수정' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '서울특별시 삭제' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /신규 등록/ })).not.toBeInTheDocument();
   });
 });

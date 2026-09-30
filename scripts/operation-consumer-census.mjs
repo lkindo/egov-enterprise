@@ -33,6 +33,12 @@
  * 대신 <b>단조 감소 래칫</b>(`expected.screenOrphanMax`) 하나로 신규 유입만 막고, 실패 시 전체
  * 목록을 출력해 불투명해지지 않게 한다(status-color-guard 와 같은 설계).
  *
+ * <p><b>축 3 (쓰기 권한 표시)</b> — 2026-10-01: 화면이 부르는 <b>쓰기 operation 의 기능 권한</b>을 그 화면이
+ * 버튼 노출 판정에 쓰는가. 조회 권한만으로 들어온 사람에게 등록·수정·삭제 버튼이 모두 보이면, 폼을 다 채운
+ * 뒤에야 403 을 만난다(관리 화면 6곳의 권한 판정이 0건이었다). 판정은 표시일 뿐 인가가 아니다 — 서버 권한은
+ * 그대로 집행된다(H3). 이 축도 예외 목록 없이 래칫(`expected.ungatedWriteMax`) 하나로 막고, 줄었는데 래칫을
+ * 내리지 않아도 red 다.
+ *
  * [규칙] 모든 operation 은 다음 셋 중 정확히 하나다.
  *   1. consumed      — 프런트 호출부가 있다(generated-api-boundaries 레코드).
  *   2. alias-derived — springdoc 이 다중 `@RequestMapping` 경로 때문에 만든 `_N` 접미 중복이고,
@@ -65,6 +71,8 @@ export const API_DOC_PATH = 'api-docs.json';
 export const BOUNDARY_PATH = join('config', 'governance', 'generated-api-boundaries.json');
 export const LEDGER_PATH = join('config', 'governance', 'operation-consumer-census.json');
 export const FRONTEND_SOURCE_ROOT = join('frontend', 'src');
+export const POLICY_PATH = join('config', 'governance', 'authorization-policies.json');
+export const PERMISSION_CATALOG_PATH = join('config', 'governance', 'permission-catalog.json');
 
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete']);
 
@@ -431,6 +439,237 @@ export function analyzeScreenReachability({ boundaries, repoRoot = DEFAULT_REPO_
   return { orphans, unattributed, methodCount: methods.size };
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// 축 3 — 쓰기 operation 의 기능 권한을 화면이 표시 판정에 쓰는가
+// ───────────────────────────────────────────────────────────────────────────
+
+/** 서비스 쓰기를 감싸는 비화면 모듈(서버 액션·조회 옵션·훅). 화면은 이들의 함수를 거쳐 쓰기를 부른다. */
+export const isIntermediaryFile = (file) => /\/src\/(?:app\/actions|queries|hooks|lib\/hooks)\//u.test(toPosix(file));
+const isUiFile = (file) => /\.tsx$/u.test(file) && /\/src\/(?:app|components)\//u.test(toPosix(file));
+const moduleName = (file) => toPosix(file).split('/').pop().replace(/\.(?:ts|tsx)$/u, '');
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+const importsModule = (source, name) => new RegExp(`from\\s+['"][^'"]*/${escapeRegExp(name)}['"]`, 'u').test(source);
+/** 이 소스가 그 모듈에서 import 한 식별자(기본·이름·별칭). */
+function importedNames(source, name) {
+  const pattern = new RegExp(
+    `import\\s+(?:type\\s+)?(?:([\\w$]+)\\s*,?\\s*)?(?:\\{([^}]*)\\})?\\s*from\\s+['"][^'"]*/${escapeRegExp(name)}['"]`,
+    'gu',
+  );
+  const names = [];
+  for (const match of source.matchAll(pattern)) {
+    if (match[1]) names.push(match[1]);
+    for (const part of (match[2] ?? '').split(',')) {
+      const local = part.trim().replace(/^type\s+/u, '').split(/\s+as\s+/u).pop();
+      if (local) names.push(local);
+    }
+  }
+  return names;
+}
+/**
+ * 그 모듈에서 가져온 식별자로 그 메서드를 부르는가 — `service.method(` 또는, 메서드를 직접 import 했으면 `method(`.
+ * 수신자를 보지 않으면 두 서비스에 같은 이름의 메서드가 있을 때(본인 댓글 삭제·관리자 댓글 삭제) 한 호출에 두 권한을
+ * 모두 붙인다 — 2026-10-01 첫 실측에서 그 오탐이 나왔다.
+ */
+const callsImportedMethod = (source, module, method) => importedNames(source, module).some((local) => (
+  local === method
+    ? new RegExp(`(?<![.\\w$])${escapeRegExp(method)}\\s*\\(`, 'u').test(source)
+    : new RegExp(`(?<![.\\w$])${escapeRegExp(local)}\\.${escapeRegExp(method)}\\s*\\(`, 'u').test(source)
+));
+/** 옵션 객체의 멤버를 넘겨 쓰는 형태(`useMutation(options.create())`·`mutationFn: action`)까지 본다. */
+const mentionsName = (source, name) => new RegExp(`(?<![\\w$])${escapeRegExp(name)}(?![\\w$])`, 'u').test(source);
+
+/**
+ * 주석을 같은 길이의 공백으로 바꾼다(줄 수·열 위치 보존). 문자열·템플릿 리터럴 안은 건드리지 않는다.
+ *
+ * 과거 경위를 적은 주석의 `createPoll()` 이 호출로, 주석 속 권한 코드가 표시 판정으로 세이면 판정이 양쪽으로 틀린다.
+ * JSX 텍스트의 `//`(URL 등)는 주석으로 오인될 수 있으나 그 줄의 나머지만 지워지므로 놓치는 방향이다.
+ */
+export function stripTsComments(source) {
+  let out = '';
+  let state = 'code';
+  for (let i = 0; i < source.length; i += 1) {
+    const ch = source[i];
+    const next = source[i + 1];
+    if (state === 'code') {
+      if (ch === '/' && next === '/') { state = 'line'; out += '  '; i += 1; continue; }
+      if (ch === '/' && next === '*') { state = 'block'; out += '  '; i += 1; continue; }
+      if (ch === "'" || ch === '"' || ch === '`') state = ch;
+      out += ch;
+    } else if (state === 'line') {
+      if (ch === '\n') { state = 'code'; out += ch; } else out += ' ';
+    } else if (state === 'block') {
+      if (ch === '*' && next === '/') { state = 'code'; out += '  '; i += 1; } else out += ch === '\n' ? ch : ' ';
+    } else {
+      // 문자열·템플릿 리터럴: 닫는 따옴표까지 그대로 둔다(이스케이프는 한 글자 건너뛴다).
+      out += ch;
+      if (ch === '\\') { out += next ?? ''; i += 1; } else if (ch === state || (state !== '`' && ch === '\n')) state = 'code';
+    }
+  }
+  return out;
+}
+
+/** 해당 라인을 감싸는 **가장 바깥** 함수형 노드의 이름 — 화면이 부르는 단위다. */
+export function outermostFunctionAt(ts, sourceFile, line) {
+  const position = ts.getPositionOfLineAndCharacter(sourceFile, Math.max(0, line - 1), 0);
+  const lineEnd = sourceFile.getLineEndOfPosition(position);
+  let best = null;
+  const visit = (node) => {
+    const start = node.getStart(sourceFile);
+    const end = node.getEnd();
+    if (start <= lineEnd && position <= end) {
+      const name = functionLikeName(ts, node, sourceFile);
+      if (name && (!best || end - start > best.width)) best = { name, width: end - start };
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return best?.name ?? null;
+}
+
+/** 화면 파일이 놓인 라우트(가장 가까운 page.tsx 의 경로). 공용 컴포넌트면 null. */
+function routeOfUiFile(file, pageDirs) {
+  const posix = toPosix(file);
+  const marker = '/src/app/';
+  const index = posix.indexOf(marker);
+  if (index < 0) return null;
+  const segments = posix.slice(index + marker.length).split('/');
+  segments.pop();
+  while (segments.length >= 0) {
+    const dir = segments.join('/');
+    if (pageDirs.has(dir)) return `/${dir}`.replace(/\/$/u, '') || '/';
+    if (segments.length === 0) break;
+    segments.pop();
+  }
+  return null;
+}
+
+/** 라우트에 들어온 사람이면 반드시 가진 권한인가(ALL 이거나 요구 권한이 그것 하나뿐일 때). */
+function routeGuarantees(route, permission, catalog) {
+  if (!route) return false;
+  const normalize = (value) => value.replace(/\[[^\]/]+\]/gu, '[x]');
+  const entry = Object.entries(catalog.pagePermissions ?? {}).find(([path]) => normalize(path) === normalize(route));
+  if (!entry) return false;
+  const required = entry[1] ?? [];
+  if (!required.includes(permission)) return false;
+  const mode = (catalog.pagePermissionModes ?? {})[entry[0]];
+  return mode === 'ALL' || required.length === 1;
+}
+
+/**
+ * 화면이 부르는 쓰기 operation 의 권한 가운데, 그 화면(또는 그것을 여는 화면 전부)이 한 번도 언급하지 않는 것.
+ *
+ * <p>판정은 축 2 와 같이 <b>의도적으로 관대</b>하다. 권한 코드 문자열이 파일에 있으면 판정에 쓴 것으로 본다 —
+ * 어느 버튼에 걸었는지까지는 보지 않는다. 대화상자처럼 다른 화면이 여는 컴포넌트는, 그것을 import 하는 화면이
+ * 모두 그 권한을 언급하면 통과한다(여는 버튼이 가려진다). 라우트 진입 권한이 그 권한을 보장해도 통과한다.
+ */
+export function analyzeWriteAffordance({ boundaries, policies, catalog, repoRoot = DEFAULT_REPO_ROOT, ts }) {
+  const sourceRoot = resolve(repoRoot, FRONTEND_SOURCE_ROOT);
+  if (!existsSync(sourceRoot)) return { ungated: [], writeMethods: 0 };
+
+  const bindings = new Map();
+  for (const binding of policies.operationBindings ?? []) {
+    if (binding.access === 'PERMISSION' && binding.permission) {
+      bindings.set(`${String(binding.method).toUpperCase()} ${binding.path}`, binding.permission);
+    }
+  }
+
+  const files = listSourceFiles(sourceRoot).filter((file) => !isTestFile(file));
+  const rawSources = new Map(files.map((file) => [file, readFileSync(file, 'utf8')]));
+  // 호출·권한 언급 판정은 주석을 지운 소스로 한다. AST(소유 함수 귀속)는 원문으로 만든다 — 줄 번호가 같다.
+  const sources = new Map([...rawSources].map(([file, text]) => [file, stripTsComments(text)]));
+  const parsed = new Map();
+  const ast = (file) => {
+    if (!parsed.has(file)) parsed.set(file, ts.createSourceFile(file, rawSources.get(file), ts.ScriptTarget.Latest, true));
+    return parsed.get(file);
+  };
+
+  // 1. 서비스의 쓰기 메서드 → 권한
+  const writeMethods = [];
+  for (const record of boundaries.records ?? []) {
+    const relative = toPosix(record.file ?? '');
+    if (!record.operationId || !isServiceFile(relative) || isTestFile(relative)) continue;
+    if (String(record.method).toLowerCase() === 'get') continue;
+    const permission = bindings.get(`${String(record.method).toUpperCase()} ${record.target}`);
+    if (!permission) continue;
+    const absolute = toPosix(resolve(repoRoot, relative));
+    if (!sources.has(absolute)) continue;
+    const owner = owningMethodAt(ts, ast(absolute), record.line);
+    if (!owner) continue;
+    writeMethods.push({ module: moduleName(absolute), name: owner, permission });
+  }
+
+  // 2. 중간 모듈의 함수 → 권한 (그 함수가 부르는 서비스 쓰기의 권한)
+  const wrappers = [];
+  for (const [file, source] of sources) {
+    if (!isIntermediaryFile(file)) continue;
+    const lines = source.split('\n');
+    for (const method of writeMethods) {
+      const locals = importedNames(source, method.module);
+      if (locals.length === 0) continue;
+      lines.forEach((text, index) => {
+        const called = locals.some((local) => (local === method.name
+          ? new RegExp(`(?<![.\\w$])${escapeRegExp(method.name)}\\s*\\(`, 'u').test(text)
+          : new RegExp(`(?<![.\\w$])${escapeRegExp(local)}\\.${escapeRegExp(method.name)}\\s*\\(`, 'u').test(text)));
+        if (!called) return;
+        const owner = outermostFunctionAt(ts, ast(file), index + 1);
+        if (owner) wrappers.push({ module: moduleName(file), name: owner, permission: method.permission });
+      });
+    }
+  }
+
+  // 3. 화면이 필요로 하는 권한
+  const pageDirs = new Set();
+  for (const file of files) {
+    const posix = toPosix(file);
+    const index = posix.indexOf('/src/app/');
+    if (index >= 0 && /\/page\.tsx$/u.test(posix)) {
+      pageDirs.add(posix.slice(index + '/src/app/'.length).replace(/\/?page\.tsx$/u, ''));
+    }
+  }
+  const uiFiles = files.filter((file) => isUiFile(file) && !isIntermediaryFile(file) && !isServiceFile(file));
+  const needs = new Map();
+  for (const file of uiFiles) {
+    const source = sources.get(file);
+    const required = new Map();
+    for (const method of writeMethods) {
+      if (callsImportedMethod(source, method.module, method.name)) {
+        required.set(method.permission, `${method.module}.${method.name}`);
+      }
+    }
+    for (const wrapper of wrappers) {
+      if (importsModule(source, wrapper.module) && mentionsName(source, wrapper.name)) {
+        required.set(wrapper.permission, `${wrapper.module}.${wrapper.name}`);
+      }
+    }
+    if (required.size > 0) needs.set(file, required);
+  }
+
+  const mentions = (file, permission) => new RegExp(`['"\`]${permission}['"\`]`, 'u').test(sources.get(file));
+  const importersOf = (file) => {
+    const name = moduleName(file);
+    return uiFiles.filter((other) => other !== file && importsModule(sources.get(other), name));
+  };
+  const gated = (file, permission, seen = new Set()) => {
+    if (seen.has(file)) return false;
+    seen.add(file);
+    if (mentions(file, permission)) return true;
+    if (routeGuarantees(routeOfUiFile(file, pageDirs), permission, catalog)) return true;
+    const importers = importersOf(file);
+    return importers.length > 0 && importers.every((importer) => gated(importer, permission, seen));
+  };
+
+  const ungated = [];
+  for (const [file, required] of needs) {
+    for (const [permission, via] of required) {
+      if (!gated(file, permission)) {
+        ungated.push({ file: toPosix(file).slice(toPosix(resolve(repoRoot)).length + 1), permission, via });
+      }
+    }
+  }
+  ungated.sort((a, b) => a.file.localeCompare(b.file) || a.permission.localeCompare(b.permission));
+  return { ungated, writeMethods: writeMethods.length };
+}
+
 export function loadJson(repoRoot, relativePath) {
   return JSON.parse(readFileSync(resolve(repoRoot, relativePath), 'utf8'));
 }
@@ -476,6 +715,37 @@ export function runCensus(repoRoot = DEFAULT_REPO_ROOT) {
     });
   }
 
+  // 축 3 — 쓰기 권한 표시 판정.
+  const affordance = analyzeWriteAffordance({
+    boundaries,
+    policies: loadJson(repoRoot, POLICY_PATH),
+    catalog: loadJson(repoRoot, PERMISSION_CATALOG_PATH),
+    repoRoot,
+    ts,
+  });
+  const ungatedMax = ledger.expected?.ungatedWriteMax;
+  if (typeof ungatedMax !== 'number' || !Number.isInteger(ungatedMax) || ungatedMax < 0) {
+    result.errors.push({
+      code: 'INVALID_WRITE_AFFORDANCE_RATCHET',
+      operationId: null,
+      message: 'expected.ungatedWriteMax must be a non-negative integer',
+    });
+  } else if (affordance.ungated.length !== ungatedMax) {
+    const listed = affordance.ungated
+      .map((entry) => `${entry.permission} (${entry.via}) — ${entry.file}`)
+      .join('\n      ');
+    result.errors.push({
+      code: 'WRITE_AFFORDANCE_RATCHET',
+      operationId: null,
+      message: affordance.ungated.length > ungatedMax
+        ? `screens calling a write operation without using its permission for display ${affordance.ungated.length} exceed the frozen maximum ${ungatedMax}\n      ${listed}`
+        : `write-affordance debt dropped to ${affordance.ungated.length}; lower expected.ungatedWriteMax from ${ungatedMax} in the same change`,
+    });
+  }
+  result.summary.ungatedWrites = affordance.ungated.length;
+  result.summary.ungatedWriteMax = ungatedMax ?? null;
+  result.affordance = affordance;
+
   result.summary.serviceMethods = reachability.methodCount;
   result.summary.screenOrphans = reachability.orphans.length;
   result.summary.screenOrphanMax = orphanMax ?? null;
@@ -495,7 +765,8 @@ if (isDirectRun) {
       + `alias-derived=${summary.aliasDerived} ledgered=${summary.ledgered} `
       + `unwired=${summary.unwired}/${summary.unwiredMax}\n`
       + `screen reachability: service methods=${summary.serviceMethods} `
-      + `no-screen-caller=${summary.screenOrphans}/${summary.screenOrphanMax}\n`,
+      + `no-screen-caller=${summary.screenOrphans}/${summary.screenOrphanMax}\n`
+      + `write affordance: ungated=${summary.ungatedWrites}/${summary.ungatedWriteMax}\n`,
     );
   }
   if (result.errors.length > 0) {

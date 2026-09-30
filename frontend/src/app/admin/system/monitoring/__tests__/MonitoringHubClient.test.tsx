@@ -23,6 +23,12 @@ const mocks = vi.hoisted(() => ({
 // query-options 내부 mutationFn까지 내려간 실제 write 호출을 이 alias로 관측한다.
 const deleteCommentMutation = mocks.deleteComment;
 
+// 댓글 삭제 버튼은 관리자 삭제 대행 권한으로 보인다 — 기본은 그 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const READ_ONLY_PERMISSIONS = ['OPS_READ', 'SYS_LOG_READ', 'WEB_LOG_READ', 'LOGIN_LOG_READ'];
+const FULL_PERMISSIONS = [...READ_ONLY_PERMISSIONS, 'COMMENT_DELETE_ALL'];
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mocks.replace }),
   usePathname: () => '/admin/system/monitoring',
@@ -182,6 +188,7 @@ function renderHub(query = '') {
 describe('MonitoringHubClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.permissions = FULL_PERMISSIONS;
     mocks.query = '';
     mocks.confirm.mockResolvedValue(true);
     mocks.audit.mockResolvedValue(page([auditRow]));
@@ -314,6 +321,24 @@ describe('MonitoringHubClient', () => {
     expect(remove).not.toBeDisabled();
     expect(remove).not.toHaveAttribute('aria-busy');
     expect(remove).toHaveAccessibleName('댓글 삭제');
+  });
+
+  /*
+   * [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
+   * 이 허브는 로그 조회 권한만으로 들어올 수 있어, 종전에는 조회만 맡은 담당자에게도 댓글 삭제가 보였고
+   * 확인 모달까지 지난 뒤에야 403 을 만났다. 본인 댓글 삭제 권한은 이 관리자 삭제를 열지 않는다.
+   */
+  it.each([
+    { label: '조회 권한만 있으면', permissions: READ_ONLY_PERMISSIONS },
+    { label: '본인 댓글 삭제 권한만 있어도', permissions: [...READ_ONLY_PERMISSIONS, 'COMMENT_DELETE'] },
+  ])('$label 댓글 삭제 버튼을 보이지 않는다 — 목록과 선택은 그대로다', async ({ permissions }) => {
+    auth.permissions = permissions;
+    renderHub('tab=comments');
+
+    expect(await screen.findByText('삭제할 댓글')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '사용자 의견 관리 44 상세 열기' }));
+    expect(screen.queryByRole('button', { name: '댓글 삭제' })).toBeNull();
+    expect(mocks.confirm).not.toHaveBeenCalled();
   });
 
   it('shows honest actuator failure state and retries health collection', async () => {

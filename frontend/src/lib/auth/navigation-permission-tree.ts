@@ -1,4 +1,6 @@
+import { normalizeInternalRoute } from '@/lib/navigation/internal-route';
 import type { AuthorizationCatalog } from './authorization-management-contract';
+import { canOpenPage } from './page-access';
 
 type Navigation = AuthorizationCatalog['navigation'][number];
 export type NavigationPermissionNode = Navigation & { children: NavigationPermissionNode[] };
@@ -67,4 +69,31 @@ export function toggleNavigationPermission(tree: NavigationPermissionTree, selec
     }
   }
   return next;
+}
+
+/**
+ * 선택한 메뉴 가운데, 선택한 기능권한만으로는 들어갈 수 없는 화면의 메뉴 이름(2026-10-01).
+ *
+ * 메뉴 표시(NAVIGATION)와 화면 진입(OPERATION)은 서로 다른 권한이 판정한다. 메뉴만 배정하고 그 화면의 조회 권한을
+ * 주지 않으면, 사용자에게 그 메뉴는 보이지 않는다(메뉴는 라우트 게이트와 같은 판정으로 보인다). 종전 편집기는
+ * 기능권한이 **하나도 없을 때만** 경고해, 메뉴별 어긋남은 설정하는 사람에게 드러나지 않았다.
+ *
+ * 판정은 라우트 게이트와 같은 함수다. 사용자의 실제 권한은 배정된 그룹의 합집합이므로 이것은 저장을 막는 오류가
+ * 아니라 안내다 — 다른 그룹이 그 권한을 주면 메뉴는 보인다.
+ */
+export function selectedMenusWithoutEntryPermission(
+  navigation: readonly Navigation[],
+  selection: ReadonlySet<string>,
+): string[] {
+  const permissions = [...selection]
+    .filter((key) => key.startsWith('OPERATION:'))
+    .map((key) => key.slice('OPERATION:'.length));
+  const subject = { permissions, authorizationVersion: 'draft' };
+  return navigation
+    .filter((menu) => selection.has(`NAVIGATION:${menu.code}`))
+    .filter((menu) => {
+      const route = normalizeInternalRoute(menu.route);
+      return route !== null && !canOpenPage(subject, route);
+    })
+    .map((menu) => menu.name);
 }

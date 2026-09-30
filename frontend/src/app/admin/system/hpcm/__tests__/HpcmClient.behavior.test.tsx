@@ -14,6 +14,13 @@ const mocks = vi.hoisted(() => ({
   toast: vi.fn(),
 }));
 
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 쓰기 권한을 모두 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const READ_ONLY_PERMISSIONS = ['HELP_READ'];
+const FULL_PERMISSIONS = [...READ_ONLY_PERMISSIONS, 'HELP_CREATE', 'HELP_UPDATE', 'HELP_DELETE'];
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
+beforeEach(() => { auth.permissions = FULL_PERMISSIONS; });
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mocks.replace }),
   usePathname: () => '/admin/system/hpcm',
@@ -342,5 +349,39 @@ describe('도움말 콘텐츠 — 조회 실패', () => {
     const shown = await screen.findByText('도움말 콘텐츠를 불러오지 못했습니다.');
     expect(shown).toHaveAttribute('role', 'alert');
     expect(screen.getByTestId('total-count')).toHaveTextContent('없음');
+  });
+});
+
+/*
+ * [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
+ * 이 화면은 조회 권한(HELP_READ)만으로 들어올 수 있어, 종전에는 조회만 맡은 사람에게도 등록·수정·삭제가 모두 보였고
+ * 누른 뒤에야 403 을 만났다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다.
+ */
+describe('도움말 콘텐츠 — 쓰기 권한 표시', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.list.mockResolvedValue(PAGE);
+  });
+
+  it('조회 권한만 있으면 콘텐츠 등록 버튼과 관리 열을 보이지 않는다', async () => {
+    auth.permissions = READ_ONLY_PERMISSIONS;
+    renderClient({ initialData: { list: [ROW], total: 42 } });
+
+    // 목록은 그대로 읽힌다 — 가리는 것은 쓰기 동작뿐이다.
+    const headers = (await screen.findByTestId('headers')).textContent?.split('|') ?? [];
+    expect(screen.getByText('게시판 삭제 가이드')).toBeInTheDocument();
+    expect(headers).not.toContain('관리');
+    expect(screen.queryByRole('button', { name: '콘텐츠 등록' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '게시판 삭제 가이드 수정' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '게시판 삭제 가이드 삭제' })).not.toBeInTheDocument();
+  });
+
+  it('권한은 동작마다 따로 본다 — 수정 권한만 있으면 수정 버튼만 보인다', async () => {
+    auth.permissions = [...READ_ONLY_PERMISSIONS, 'HELP_UPDATE'];
+    renderClient({ initialData: { list: [ROW], total: 42 } });
+
+    expect(await screen.findByRole('button', { name: '게시판 삭제 가이드 수정' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '게시판 삭제 가이드 삭제' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '콘텐츠 등록' })).not.toBeInTheDocument();
   });
 });

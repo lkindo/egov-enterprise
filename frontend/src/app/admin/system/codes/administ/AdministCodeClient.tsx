@@ -18,6 +18,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { z } from 'zod';
 import { useAppForm } from '@/hooks/useAppForm';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 import {
   Form,
   FormControl,
@@ -80,6 +82,11 @@ export default function AdministCodeClient({
  const deletePendingRef = useRef(false);
  const { toast } = useToast();
  const confirm = useConfirm();
+ // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 조회 권한(ADMCODE_READ)만으로 들어와 폼을 채운 뒤에야 403 을 만나지 않게 한다(표시 판정일 뿐 서버 인가는 그대로다).
+ const { user } = useAuth();
+ const canCreateCode = canPermission(user, 'ADMCODE_CREATE');
+ const canUpdateCode = canPermission(user, 'ADMCODE_UPDATE');
+ const canDeleteCode = canPermission(user, 'ADMCODE_DELETE');
  /** 실제 서버에 제출된 검색어. 입력 중 값은 KeywordFilter 가 소유한다(제출형 검색). */
  const [appliedSearch, setAppliedSearch] = useState('');
  const [pageNumber, setPageNumber] = useState(1);
@@ -250,10 +257,12 @@ export default function AdministCodeClient({
  ),
  className: 'w-24'
  },
- {
+ // 수정·삭제 권한이 하나도 없으면 관리 열을 두지 않는다.
+ ...(canUpdateCode || canDeleteCode ? [{
  header: '관리',
  accessor: (item: AdministCode) => (
  <div className="flex items-center gap-1.5">
+ {canUpdateCode && (
  <Button
  variant="ghost"
  size="sm"
@@ -264,6 +273,8 @@ export default function AdministCodeClient({
  >
  <Pencil size={14} aria-hidden="true" /> 수정
  </Button>
+ )}
+ {canDeleteCode && (
  <Button
  variant="ghost"
  size="sm"
@@ -275,10 +286,11 @@ export default function AdministCodeClient({
  >
  <Trash2 size={14} aria-hidden="true" /> {deletingCode === item.admdstCd ? '삭제 중…' : '삭제'}
  </Button>
+ )}
  </div>
  ),
  className: 'w-40'
- },
+ }] : []),
  ];
 
  return (
@@ -302,9 +314,11 @@ export default function AdministCodeClient({
  <RefreshCcw size={16} aria-hidden="true" />
  새로고침
  </Button>
+ {canCreateCode && (
  <Button size="sm" onClick={() => setIsModalOpen(true)} className="gap-2">
  <Plus size={16} aria-hidden="true" /> 신규 등록
  </Button>
+ )}
  </>
  }
  filter={

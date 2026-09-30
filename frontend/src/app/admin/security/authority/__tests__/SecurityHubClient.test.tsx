@@ -29,15 +29,15 @@ const catalog = {
     { code: 'BOARD_CREATE', name: '게시글 등록', domain: 'BOARD', action: 'CREATE' },
     { code: 'QESTNR_READ', name: '설문 조회', domain: 'QESTNR', action: 'READ' },
   ],
-  navigation: [{ code: 'MENU_1', name: '게시판', parentCode: null }], catalogVersion: 'catalog-v1',
+  navigation: [{ code: 'MENU_1', name: '게시판', parentCode: null, route: null }], catalogVersion: 'catalog-v1',
 };
 const snapshot = { ...groups[0], complete: true, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }, { type: 'NAVIGATION', code: 'MENU_1' }] };
 const treeCatalog = { ...catalog, navigation: [
-  { code: 'ROOT', name: '업무 메뉴', parentCode: null },
-  { code: 'BRANCH', name: '게시판 관리', parentCode: 'ROOT' },
-  { code: 'LEAF', name: '게시글 목록', parentCode: 'BRANCH' },
-  { code: 'SIBLING', name: '통계 메뉴', parentCode: 'ROOT' },
-  { code: 'OTHER', name: '다른 메뉴', parentCode: null },
+  { code: 'ROOT', name: '업무 메뉴', parentCode: null, route: null },
+  { code: 'BRANCH', name: '게시판 관리', parentCode: 'ROOT', route: null },
+  { code: 'LEAF', name: '게시글 목록', parentCode: 'BRANCH', route: null },
+  { code: 'SIBLING', name: '통계 메뉴', parentCode: 'ROOT', route: null },
+  { code: 'OTHER', name: '다른 메뉴', parentCode: null, route: null },
 ] };
 const membership = { userId: 'ESNTL_A', groups: ['CONTENT'], version: 'member-v1', complete: true };
 const page = (list: unknown[], total = list.length) => ({ list, total, page: 1, size: 20, totalPage: Math.ceil(total / 20) });
@@ -407,6 +407,23 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     expect(saveGroupGrants).toHaveBeenCalledWith('CONTENT', { grants: [{ type: 'NAVIGATION', code: 'MENU_1' }], version: 'v1', complete: true });
   });
 
+  it('배정한 메뉴 가운데 이 그룹의 기능권한으로 들어갈 수 없는 화면을 저장 전에 알리고, 저장은 막지 않는다', async () => {
+    // [2026-10-01] 메뉴 표시와 화면 진입은 서로 다른 권한이 판정한다. 종전에는 기능권한이 하나도 없을 때만 경고했다.
+    mocks.getCatalog.mockResolvedValue({ ...catalog, navigation: [{ code: 'MENU_1', name: '메뉴 관리', parentCode: null, route: '/admin/system/menus' }] });
+    await openGroup();
+
+    const hint = screen.getByText(/이 그룹의 기능권한만으로는 들어갈 수 없는 화면의 메뉴가 1개 있습니다: 메뉴 관리/);
+    expect(hint).toHaveAttribute('role', 'status');
+    // 다른 그룹이 그 권한을 줄 수 있으므로 저장을 막는 오류가 아니다.
+    await userEvent.click(screen.getByRole('checkbox', { name: /게시글 등록/ }));
+    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeEnabled();
+  });
+
+  it('메뉴가 여는 화면이 /admin 밖이거나 분류뿐이면 알리지 않는다', async () => {
+    await openGroup();
+    expect(screen.queryByText(/이 그룹의 기능권한만으로는 들어갈 수 없는 화면의 메뉴/)).not.toBeInTheDocument();
+  });
+
   it('접힌 상위 메뉴를 해제해도 모든 하위 선택을 회수하고 기능권한과 다른 메뉴는 보존한다', async () => {
     mocks.getCatalog.mockResolvedValue(treeCatalog);
     mocks.getGroup.mockResolvedValue({ ...snapshot, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }, ...treeCatalog.navigation.map((menu) => ({ type: 'NAVIGATION', code: menu.code }))] });
@@ -488,8 +505,8 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
   });
 
   it.each([
-    [{ code: 'INVALID', name: '없는 상위 메뉴', parentCode: 'MISSING' }],
-    [{ code: 'INVALID', name: '순환 메뉴', parentCode: 'INVALID' }],
+    [{ code: 'INVALID', name: '없는 상위 메뉴', parentCode: 'MISSING', route: null }],
+    [{ code: 'INVALID', name: '순환 메뉴', parentCode: 'INVALID', route: null }],
   ])('손상된 메뉴 계층은 기능·메뉴 변경과 저장을 모두 막는다: %j', async (item) => {
     mocks.getCatalog.mockResolvedValue({ ...catalog, navigation: [item] });
     mocks.getGroup.mockResolvedValue({ ...snapshot, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }] });

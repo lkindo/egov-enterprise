@@ -36,6 +36,8 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 
 import { ExternalHrDtoRequestSchema } from '@/types/generated-zod';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
@@ -120,6 +122,11 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 export default function ExternalHrClient({ initialPage }: { initialPage: PageResponse<ExternalHr> | null }) {
   const queryClient = useQueryClient();
+  // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 조회 권한(EXT_HR_READ)만으로 들어온 사람은 종전에 눌러 본 뒤에야 403 을 만났다(표시 판정일 뿐, 서버 인가는 그대로다).
+  const { user } = useAuth();
+  const canCreateExternalHr = canPermission(user, 'EXT_HR_CREATE');
+  const canUpdateExternalHr = canPermission(user, 'EXT_HR_UPDATE');
+  const canDeleteExternalHr = canPermission(user, 'EXT_HR_DELETE');
 
   /**
    * 소속 행사 선택지. 행사 목록 API 를 그대로 소비한다(신규 API 없음).
@@ -375,15 +382,17 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
       ),
       className: 'w-32 text-right pr-8'
     },
-    {
+    // 수정·삭제 권한이 하나도 없으면 관리 열을 두지 않는다.
+    ...(canUpdateExternalHr || canDeleteExternalHr ? [{
       header: '관리',
       className: 'text-right w-28',
-      accessor: (item) => {
+      accessor: (item: ExternalHr) => {
         const key = rowKey(item);
         const isDeleting = deletingKey === key;
         const label = item.otsdHrNm || item.otsdHrId;
         return (
           <div className="flex items-center justify-end gap-1 pr-2">
+            {canUpdateExternalHr && (
             <Button
               variant="ghost"
               size="icon"
@@ -394,6 +403,8 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
             >
               <Pencil size={16} aria-hidden="true" />
             </Button>
+            )}
+            {canDeleteExternalHr && (
             <Button
               variant="ghost"
               size="icon"
@@ -407,10 +418,11 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                 ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                 : <Trash2 size={16} aria-hidden="true" />}
             </Button>
+            )}
           </div>
         );
       },
-    },
+    }] : []),
   ];
 
   return (
@@ -433,9 +445,11 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
             <RefreshCcw size={16} aria-hidden="true" />
             새로고침
           </Button>
+          {canCreateExternalHr && (
           <Button size="sm" onClick={openCreate} className="gap-2">
             <Plus size={16} aria-hidden="true" /> 인사 등록
           </Button>
+          )}
         </>
       }
       filter={

@@ -43,6 +43,8 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: mocks.refresh }
 vi.mock('@/app/components/layout/DynamicBreadcrumb', () => ({
   DynamicBreadcrumb: () => <nav aria-label="현재 위치" />,
 }));
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 이 파일은 모든 쓰기 권한을 가진 관리자로 렌더한다(표시 판정은 CommonCodeClient.test 가 본다).
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: ['CODE_READ', 'CODE_CREATE', 'CODE_UPDATE', 'CODE_DELETE'], authorizationVersion: 'v1' } }) }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/services/foundation/system/CodeAdminService', () => ({

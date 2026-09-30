@@ -14,6 +14,9 @@ const mocks = vi.hoisted(() => ({
   toast: vi.fn(),
 }));
 
+// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 쓰기 권한을 모두 가진 관리자로 렌더한다.
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: ['EXT_HR_READ', 'REWARD_READ', 'EXT_HR_CREATE', 'EXT_HR_UPDATE', 'EXT_HR_DELETE', 'REWARD_CREATE', 'REWARD_UPDATE', 'REWARD_DELETE'], authorizationVersion: 'v1' } }) }));
+
 vi.mock('next/navigation', () => ({
   usePathname: () => '/admin/operation/external-hr',
   useRouter: () => ({ replace: vi.fn() }),

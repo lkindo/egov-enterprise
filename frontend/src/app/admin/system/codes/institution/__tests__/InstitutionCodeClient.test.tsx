@@ -37,6 +37,10 @@ vi.mock('@/services/foundation/system/CodeAdminService', () => ({
     processInstitutionCodeRecptn: mocks.process,
   },
 }));
+// 처리 완료 버튼은 그 동작의 기능 권한(INST_CODE_IMPORT)으로 보인다 — 기본은 처리 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
+const FULL_PERMISSIONS = ['INST_CODE_READ', 'INST_CODE_IMPORT'];
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/app/components/patterns/work-list-page', () => ({
@@ -89,6 +93,7 @@ const openReceptionTab = async () => {
 describe('기관코드 수신 처리 — 없는 원장 반영을 약속하지 않는다', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.permissions = FULL_PERMISSIONS;
     mocks.getList.mockResolvedValue({ list: [], total: 0, totalPage: 1 });
     mocks.getReceptions.mockResolvedValue({ list: [RECEPTION], total: 1, totalPage: 1 });
     mocks.process.mockResolvedValue(undefined);
@@ -134,11 +139,22 @@ describe('기관코드 수신 처리 — 없는 원장 반영을 약속하지 �
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
     expect(mocks.process).not.toHaveBeenCalled();
   });
+
+  // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 종전에는 조회만 맡은 담당자에게도 처리 완료가 보였고 누르면 403 이었다.
+  it('조회 권한만 있으면 처리 완료 버튼을 보이지 않는다 — 수신 이력과 처리 상태는 그대로 읽힌다', async () => {
+    auth.permissions = ['INST_CODE_READ'];
+    renderClient();
+    await openReceptionTab();
+
+    expect(screen.getByText('대기')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '서울특별시 수신 건 처리 완료로 표시' })).not.toBeInTheDocument();
+  });
 });
 
 describe('기관코드 변경 구분 — 모르는 값을 지어내지 않는다', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.permissions = FULL_PERMISSIONS;
     mocks.getList.mockResolvedValue({ list: [], total: 0, totalPage: 1 });
     mocks.process.mockResolvedValue(undefined);
     mocks.confirm.mockResolvedValue(true);

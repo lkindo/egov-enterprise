@@ -416,7 +416,8 @@ describe('GlobalCommandCenter accessibility contract', () => {
           {
             menuNo: 11,
             menuNm: '안전 하위',
-            modernRoute: '/admin/work-hub/child?view=summary#result',
+            // 등록된 화면이어야 한다 — 라우트 게이트가 거부할 메뉴는 제안하지 않는다(openableMenus).
+            modernRoute: '/admin/collaboration?view=summary#result',
           },
         ],
       },
