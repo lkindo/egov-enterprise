@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM gradle:9.7.1-jdk21@sha256:42476a6a7f47c351b67769e87fcf897a97b07d3859b8a893fb44e8bc8431b02a AS builder
+FROM gradle:9.8.0-jdk21@sha256:3bad8c6f194befc7a1a9d4a6452aed83bdbb5a6d6f6752e5b0acbfeec52961b9 AS builder
 WORKDIR /app
 # Only copy dependency files first for better caching
 COPY gradle /app/gradle
@@ -45,7 +45,7 @@ RUN sed -i 's/\r$//' ./gradlew && chmod +x ./gradlew
 RUN ./gradlew :api-server:bootJar -x test --no-daemon
 
 # Stage 2: Run
-FROM eclipse-temurin:21-jre-alpine-3.23@sha256:42b42237d59d901504348d97b8bc304e6b5f4e12f5cf8f45c4f76fef2427aa84
+FROM eclipse-temurin:21-jre-alpine-3.24@sha256:51ab5e3302e7141ce665ca3ea85e8b5cd648eafbc3c0c90dd79d6537684e4555
 ARG BASELINE_BUILD_SHA
 ARG BASELINE_BUILD_INPUT_TREE_SHA256
 LABEL org.opencontainers.image.revision="${BASELINE_BUILD_SHA}" \
