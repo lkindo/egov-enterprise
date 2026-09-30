@@ -10,8 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Users, ArrowLeft, Save, Trash2, AlertTriangle, Loader2, Phone } from "lucide-react";
-import Link from 'next/link';
+import { Users, Save, Trash2, AlertTriangle, Loader2, Phone } from "lucide-react";
+import { BackToListButton } from '@/app/components/navigation/BackToListButton';
+import { failureMessage } from '@/lib/safe-error-log';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { FormErrorSummary } from '@/components/ui/form';
@@ -25,6 +26,8 @@ import {
 } from '../../address-book-form-validation';
 
 const LIST_PATH = '/admin/collaboration/address-book/select-address-book-list';
+/** 주소록 상세로 들어오는 목록 화면. 여기서 왔으면 '목록으로' 가 뒤로 가서 목록을 되살린다(2026-10-01). */
+const LIST_ORIGINS = [LIST_PATH, '/admin/collaboration'] as const;
 
 /**
  * 주소록 상세/수정 화면.
@@ -185,10 +188,10 @@ const SelectAddressBookDetailClient = () => {
                 <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 text-center">
                     <AlertTriangle className="w-10 h-10 text-rose-500" />
                     <p className="text-sm font-bold text-foreground">주소록 정보를 불러오지 못했습니다.</p>
-                    <p className="text-xs text-muted-foreground">{(error as Error)?.message}</p>
+                    <p className="text-xs text-muted-foreground">{failureMessage(error, '잠시 뒤 다시 시도해 주세요.')}</p>
                     <div className="flex gap-3">
                         <Button variant="outline" onClick={() => { void refetch(); }}>다시 시도</Button>
-                        <Link href={LIST_PATH}><Button variant="ghost">목록으로</Button></Link>
+                        <BackToListButton variant="ghost" fallback={LIST_PATH} origins={LIST_ORIGINS} />
                     </div>
                 </div>
             ) : (
@@ -368,11 +371,12 @@ const SelectAddressBookDetailClient = () => {
                         </CardContent>
 
                         <CardFooter className="flex flex-col md:flex-row justify-center gap-6 py-12 border-t bg-muted/30 mt-10">
-                            <Link href={LIST_PATH}>
-                                <Button type="button" variant="ghost" className="px-10 gap-2 font-bold text-muted-foreground hover:bg-card transition-all rounded-lg">
-                                    <ArrowLeft className="w-5 h-5" /> 목록으로
-                                </Button>
-                            </Link>
+                            <BackToListButton
+                                variant="ghost"
+                                className="px-10 font-bold text-muted-foreground hover:bg-card transition-all rounded-lg"
+                                fallback={LIST_PATH}
+                                origins={LIST_ORIGINS}
+                            />
                             <Button
                                 type="submit"
                                 className="px-16 gap-3 font-bold bg-surface-inverse text-surface-inverse-foreground shadow-2xl hover:bg-primary transition-all active:scale-95 rounded-lg"

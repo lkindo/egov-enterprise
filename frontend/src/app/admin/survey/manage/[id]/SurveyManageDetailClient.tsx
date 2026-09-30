@@ -2,11 +2,12 @@
 
 import { useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { BackToListButton } from '@/app/components/navigation/BackToListButton';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { parseStorageYmd, toDisplayYmd } from "@/lib/format-date";
-import { AlertTriangle, ArrowLeft, Pencil, RefreshCcw, Trash2 } from "lucide-react";
+import { AlertTriangle, Pencil, RefreshCcw, Trash2 } from "lucide-react";
 import { pollUserService } from '@/services/business/user/poll/PollUserService';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useToast } from '@/app/components/ui/toast';
@@ -130,9 +131,12 @@ export default function SurveyManageDetailClient() {
     return (
         <div className="max-w-4xl mx-auto space-y-8">
             <div className="flex items-center justify-between">
-                <Button variant="ghost" onClick={() => router.back()} className="rounded-lg font-bold gap-2">
-                    <ArrowLeft className="w-4 h-4" /> 뒤로가기
-                </Button>
+                <BackToListButton
+                    variant="ghost"
+                    className="rounded-lg font-bold"
+                    fallback="/admin/survey/hub?tab=manage"
+                    origins={['/admin/survey/hub']}
+                />
             </div>
 
             <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-lg bg-card ring-1 ring-border">

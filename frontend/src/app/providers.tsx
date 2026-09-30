@@ -50,6 +50,7 @@ z.setErrorMap((issue) => {
 
 import { UserInfo } from '@/services/foundation/auth/authService';
 import { createAppQueryClient } from '@/lib/query/list-query-defaults';
+import { RouteHistoryRecorder } from '@/app/components/navigation/RouteHistoryRecorder';
 
 export default function Providers({
   children,
@@ -76,6 +77,8 @@ export default function Providers({
 
   return (
     <QueryClientProvider client={queryClient}>
+      {/* 상세 화면의 '목록으로' 가 목록에서 왔는지 판정한다(2026-10-01). */}
+      <RouteHistoryRecorder />
       <MotionConfig reducedMotion="user">
         <ToastProvider>
           <ConfirmProvider>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useReturnToList } from '@/lib/navigation/use-return-to-list';
 import { useQuery } from '@tanstack/react-query';
 import { getQustnrRespondInfoDetail } from '@/lib/api/survey';
 ;
@@ -11,7 +11,8 @@ import { cn } from '@/lib/utils';
 import { failureMessage } from '@/lib/safe-error-log';
 
 export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsSn: number }) {
-    const router = useRouter();
+    // [2026-10-01] 응답 목록에서 왔으면 뒤로 가 조건을 살리고, 딥링크면 응답 목록으로 간다.
+    const returnToList = useReturnToList({ fallback: '/survey/response', origins: ['/survey/response', '/admin/survey/hub'] });
 
     const { data: response, isLoading, isError, error } = useQuery({
         queryKey: ['survey-response-detail', srvyRspnsSn],
@@ -35,7 +36,7 @@ export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsS
                 <h1 className="bg-destructive/10 text-destructive-emphasis p-4 rounded-lg inline-block">
                     {failureMessage(error, '데이터를 불러오지 못했습니다.')}
                 </h1>
-                <Button onClick={() => router.back()}>뒤로 가기</Button>
+                <Button onClick={returnToList}>목록으로</Button>
             </div>
         );
     }
@@ -43,7 +44,7 @@ export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsS
     return (
         <div className="container mx-auto py-8 max-w-4xl space-y-8">
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" aria-label="뒤로 가기" onClick={() => router.back()} className="rounded-lg">
+                <Button variant="ghost" size="icon" aria-label="목록으로" onClick={returnToList} className="rounded-lg">
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <h1 className="text-3xl font-bold tracking-tight">설문 응답 상세</h1>
@@ -113,7 +114,7 @@ export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsS
                         ) : null}
 
                         <div className="flex justify-end gap-3 pt-6 border-t border-dashed">
-                            <Button variant="outline" className="rounded-lg px-8" onClick={() => router.back()}>
+                            <Button variant="outline" className="rounded-lg px-8" onClick={returnToList}>
                                 목록으로
                             </Button>
                         </div>

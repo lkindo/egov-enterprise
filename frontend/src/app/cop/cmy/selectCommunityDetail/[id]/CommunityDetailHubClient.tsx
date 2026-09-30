@@ -7,7 +7,6 @@ import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, UserMinus,  
   Calendar, 
-  ChevronLeft, 
   MessageSquare, 
   Globe, 
   Settings, 
@@ -22,6 +21,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { CommunityVO } from '@/types/business/community';
 import Link from 'next/link';
+import { BackToListButton } from '@/app/components/navigation/BackToListButton';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
@@ -162,11 +162,11 @@ export default function CommunityDetailHubClient({
           breadcrumbs={[{ label: '협업 서비스' }, { label: '커뮤니티 공간', href: '/cop/cmy/selectCommunityList' }, { label: '상세 정보' }]}
           actions={
             <div className="flex items-center gap-2">
-              <Button asChild variant="outline" size="sm">
-                <Link href="/cop/cmy/selectCommunityList">
-                  <ChevronLeft size={16} aria-hidden="true" /> 목록으로 돌아가기
-                </Link>
-              </Button>
+              <BackToListButton
+                size="sm"
+                fallback="/cop/cmy/selectCommunityList"
+                origins={['/cop/cmy/selectCommunityList', '/admin/help']}
+              />
               {membershipStatus === 'REQUESTED' ? (
                 <span role="status" className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-warning/10 px-3 text-xs font-bold text-warning-emphasis">
                   <UserPlus size={16} aria-hidden="true" /> 가입 승인 대기 중
