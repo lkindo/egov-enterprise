@@ -47,6 +47,13 @@ function assertImpactClassification(content) {
   assert.doesNotMatch(step, /--full|refs\/heads\/main|refs\/heads\/master/,
     'integration pushes must use the same impact mapping as PRs');
   assert.doesNotMatch(step, /^ {8}(?:if|continue-on-error):/m);
+  // [2026-09-30] push base 가 자기 main CI 실행을 갖지 못하면 diff 를 믿지 않고 전수로 바꾼다(dropped push event).
+  assert.ok(step.includes('if [ "$GITHUB_EVENT_NAME" = "push" ]; then VERIFY_BASE=(--verify-push-base-run); fi'),
+    'integration pushes must verify that the base commit had its own main CI run');
+  assert.ok(step.includes('"${VERIFY_BASE[@]}" \\'), 'the push base verification flag must reach the classifier');
+  assert.ok(step.includes('GH_TOKEN: ${{ github.token }}'), 'the classifier needs the job token to read runs');
+  assert.match(job, /\n {4}permissions:\r?\n {6}contents: read\r?\n {6}actions: read\r?\n/,
+    'change-scope needs actions:read to confirm the base run');
 }
 
 function assertE2eImageBuild(content) {
@@ -550,6 +557,9 @@ test('integration pushes and PRs share impact mapping with full fallback for unk
     ['--base "$BASE"', '--base HEAD~1'],
     ['--head "${HEAD:-$GITHUB_SHA}"', '--head main'],
     [' --github-output "$GITHUB_OUTPUT"', ' --full --github-output "$GITHUB_OUTPUT"'],
+    ['VERIFY_BASE=(--verify-push-base-run)', 'VERIFY_BASE=()'],
+    ['      actions: read', '      actions: none'],
+    ['GH_TOKEN: ${{ github.token }}', 'GH_TOKEN: '],
   ]) {
     const weakened = mutateWorkflowJob(ciContent, 'change-scope', block => block.replace(before, after));
     assert.throws(() => assertImpactClassification(weakened));
