@@ -33,6 +33,10 @@ jobs:
   change-scope:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # actions:read lets the classifier confirm that the push base had its own main CI run.
+    permissions:
+      contents: read
+      actions: read
     outputs:
       backend: ${{ steps.scope.outputs.backend }}
       migration: ${{ steps.scope.outputs.migration }}
@@ -64,6 +68,7 @@ jobs:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PUSH_BASE_SHA: ${{ github.event.before }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           BASE="$PR_BASE_SHA"
@@ -80,9 +85,14 @@ jobs:
           elif [ "$GITHUB_EVENT_NAME" = "push" ] && ! git merge-base --is-ancestor "$BASE" "${HEAD:-$GITHUB_SHA}"; then
             node scripts/ci-change-scope.mjs --github-output "$GITHUB_OUTPUT"
           else
+            # A push base without its own main CI run (a dropped push event) was never verified;
+            # the classifier then selects the full pipeline instead of trusting the diff.
+            VERIFY_BASE=()
+            if [ "$GITHUB_EVENT_NAME" = "push" ]; then VERIFY_BASE=(--verify-push-base-run); fi
             node scripts/ci-change-scope.mjs \
               --base "$BASE" \
               --head "${HEAD:-$GITHUB_SHA}" \
+              "${VERIFY_BASE[@]}" \
               --github-output "$GITHUB_OUTPUT"
           fi
 

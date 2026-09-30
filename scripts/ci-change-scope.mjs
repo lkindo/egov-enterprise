@@ -336,8 +336,34 @@ export function githubOutputs(result) {
   };
 }
 
+/**
+ * main push 의 변경 범위는 직전 main SHA(event.before)와의 차이다. 그 SHA 가 자기 main CI 실행을 갖지 못하면
+ * (GitHub 가 push 이벤트를 누락한 #795 병합 ac2508c96 처럼) 그 커밋의 변경은 어떤 main 실행에서도 검사되지 않는다.
+ * 그래서 base 에 취소되지 않은 main push 실행이 있음을 Actions API 로 확인하고, 없거나 확인할 수 없으면 false 를
+ * 돌려 전수 검증을 고른다(fail-closed). 진행 중인 실행도 그 커밋을 스스로 검증하므로 있음으로 본다.
+ */
+export async function pushBaseWasVerified({ sha, repository, token, workflow = 'ci.yml', branch = 'main', fetchImpl = globalThis.fetch }) {
+  if (!/^[0-9a-f]{40}$/u.test(sha ?? '') || !/^[\w.-]+\/[\w.-]+$/u.test(repository ?? '') || !token || typeof fetchImpl !== 'function') {
+    return false;
+  }
+  try {
+    const url = `https://api.github.com/repos/${repository}/actions/workflows/${workflow}/runs?head_sha=${sha}&event=push&branch=${branch}&per_page=20`;
+    const response = await fetchImpl(url, {
+      headers: { accept: 'application/vnd.github+json', authorization: `Bearer ${token}`, 'x-github-api-version': '2022-11-28' },
+    });
+    if (!response?.ok) return false;
+    const body = await response.json();
+    const runs = Array.isArray(body?.workflow_runs) ? body.workflow_runs : [];
+    return runs.some(run => run?.head_sha === sha && run?.event === 'push' && run?.head_branch === branch
+      && run?.conclusion !== 'cancelled');
+  } catch {
+    return false;
+  }
+}
+
 function parseArgs(argv) {
-  const options = { files: [], base: '', head: 'HEAD', githubOutput: '', stdin: false, field: '', forceFull: false };
+  const options = { files: [], base: '', head: 'HEAD', githubOutput: '', stdin: false, field: '', forceFull: false,
+    verifyPushBaseRun: false };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (value === '--file') options.files.push(argv[++index] ?? '');
@@ -346,14 +372,25 @@ function parseArgs(argv) {
     else if (value === '--github-output') options.githubOutput = argv[++index] ?? '';
     else if (value === '--stdin') options.stdin = true;
     else if (value === '--full') options.forceFull = true;
+    else if (value === '--verify-push-base-run') options.verifyPushBaseRun = true;
     else if (value === '--field') options.field = argv[++index] ?? '';
     else throw new Error(`unknown argument: ${value}`);
   }
   return options;
 }
 
+/** 검증되지 않은 push base 는 diff 범위를 쓰지 않고 전수로 바꾼다. 판정기를 주입해 CLI 경로를 네트워크 없이 검사한다. */
+export async function applyPushBaseCheck(options, { verify = pushBaseWasVerified, env = process.env } = {}) {
+  if (!options.verifyPushBaseRun) return { ...options, pushBaseVerified: null };
+  const verified = await verify({ sha: options.base, repository: env.GITHUB_REPOSITORY, token: env.GH_TOKEN });
+  return { ...options, forceFull: options.forceFull || !verified, pushBaseVerified: verified };
+}
+
 async function main() {
-  const options = parseArgs(process.argv.slice(2));
+  const options = await applyPushBaseCheck(parseArgs(process.argv.slice(2)));
+  if (options.pushBaseVerified === false) {
+    process.stdout.write(`::notice title=change-scope::push base ${options.base.slice(0, 12)} has no main CI push run (or it could not be confirmed); selecting the full pipeline.\n`);
+  }
   const files = options.files.length > 0
     ? options.files
     : options.stdin

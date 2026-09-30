@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { classifyChangedFiles, githubOutputs } from './ci-change-scope.mjs';
+import { applyPushBaseCheck, classifyChangedFiles, githubOutputs, pushBaseWasVerified } from './ci-change-scope.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -542,4 +542,40 @@ test('pre-push clears Git hook-local repository state before nested repository c
     localEnvClear < operationalGate,
     'Git hook-local state must be cleared before nested npm/pnpm/git repository checks',
   );
+});
+
+// [2026-09-30] main push 의 base 가 자기 main CI 실행을 갖지 못하면 diff 범위를 믿지 않는다(#795 ac2508c96 push 이벤트 누락).
+const SHA = 'a'.repeat(40);
+const jsonResponse = (body, ok = true) => async () => ({ ok, json: async () => body });
+const run = overrides => ({ head_sha: SHA, event: 'push', head_branch: 'main', conclusion: 'success', ...overrides });
+const verify = fetchImpl => pushBaseWasVerified({ sha: SHA, repository: 'lkindo/egov-enterprise', token: 't', fetchImpl });
+
+test('push base with its own main CI run keeps the diff scope', async () => {
+  assert.equal(await verify(jsonResponse({ workflow_runs: [run({})] })), true);
+  assert.equal(await verify(jsonResponse({ workflow_runs: [run({ conclusion: null })] })), true, 'an in-progress run still verifies its commit');
+  assert.equal(await verify(jsonResponse({ workflow_runs: [run({ conclusion: 'failure' })] })), true, 'a red run is a visible verification');
+});
+
+test('missing, cancelled, foreign or unreadable base runs fail closed', async () => {
+  assert.equal(await verify(jsonResponse({ workflow_runs: [] })), false, 'no run at all (dropped push event)');
+  assert.equal(await verify(jsonResponse({ workflow_runs: [run({ conclusion: 'cancelled' })] })), false);
+  assert.equal(await verify(jsonResponse({ workflow_runs: [run({ head_sha: 'b'.repeat(40) })] })), false);
+  assert.equal(await verify(jsonResponse({ workflow_runs: [run({ event: 'pull_request' })] })), false);
+  assert.equal(await verify(jsonResponse({ workflow_runs: [run({ head_branch: 'feature' })] })), false);
+  assert.equal(await verify(jsonResponse({ message: 'rate limited' }, false)), false);
+  assert.equal(await verify(async () => { throw new Error('network'); }), false);
+  assert.equal(await verify(jsonResponse({ unexpected: true })), false);
+  assert.equal(await pushBaseWasVerified({ sha: 'not-a-sha', repository: 'o/r', token: 't', fetchImpl: jsonResponse({ workflow_runs: [run({})] }) }), false);
+  assert.equal(await pushBaseWasVerified({ sha: SHA, repository: 'o/r', token: '', fetchImpl: jsonResponse({ workflow_runs: [run({})] }) }), false, 'no token cannot confirm');
+});
+
+test('an unverified push base forces the full pipeline while a verified one keeps the diff', async () => {
+  const base = { base: SHA, head: 'HEAD', forceFull: false, verifyPushBaseRun: true };
+  const missing = await applyPushBaseCheck(base, { verify: async () => false, env: {} });
+  assert.equal(missing.forceFull, true);
+  assert.equal(classifyChangedFiles(['docs/README.md'], { forceFull: missing.forceFull }).backend, true);
+  const present = await applyPushBaseCheck(base, { verify: async () => true, env: {} });
+  assert.equal(present.forceFull, false);
+  const off = await applyPushBaseCheck({ ...base, verifyPushBaseRun: false }, { verify: async () => { throw new Error('must not be called'); } });
+  assert.equal(off.forceFull, false);
 });
