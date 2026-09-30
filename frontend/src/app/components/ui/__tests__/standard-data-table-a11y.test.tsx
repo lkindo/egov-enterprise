@@ -73,4 +73,15 @@ describe('StandardDataTable 접근성', () => {
     expect(onPageChange).not.toHaveBeenCalled();
     expect(next).toHaveFocus();
   });
+
+  it('다시 불러오는 동안 보이던 행을 스켈레톤으로 바꾸지 않고 표에 aria-busy 만 건다(G15)', () => {
+    const { rerender } = render(<StandardDataTable columns={columns} data={rows} keyField="id" loading />);
+    expect(screen.getByRole('table')).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByText('인사팀')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('불러오는 중');
+
+    rerender(<StandardDataTable columns={columns} data={[]} keyField="id" loading />);
+    const body = screen.getAllByRole('rowgroup')[1];
+    expect(within(body).queryAllByRole('row')).toHaveLength(0);
+  });
 });

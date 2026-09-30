@@ -460,6 +460,12 @@ export function StandardDataTable<T extends object>({
   });
   const leafColumns = table.getAllLeafColumns();
   const tableRows = table.getRowModel().rows;
+  /*
+    [2026-10-01] 스켈레톤은 보일 행이 없을 때만 그린다(카탈로그 G15 직전 결과 유지). 종전에는 페이지를 넘길 때마다
+    이미 보이던 행을 스켈레톤으로 바꿔 표가 깜빡이고 읽던 자리를 잃었다. 다시 불러오는 동안은 표의 aria-busy 와
+    '불러오는 중' 상태 문장이 알린다.
+  */
+  const showSkeleton = Boolean(loading) && tableRows.length === 0;
 
   return (
     <div className={cn("space-y-6", className)}>
@@ -673,7 +679,7 @@ export function StandardDataTable<T extends object>({
               </tr>
             </thead>
             <tbody role="rowgroup" className="divide-y divide-border/40">
-              {loading ? (
+              {showSkeleton ? (
                 Array.from({ length: pagination?.pageSize ?? 5 }).map((_, i) => (
                   // 로딩 스켈레톤은 순수 장식이므로 접근성 트리에서 제외한다(중복 낭독 방지).
                   <tr key={`loading-row-${i}`} className="animate-pulse" aria-hidden="true">

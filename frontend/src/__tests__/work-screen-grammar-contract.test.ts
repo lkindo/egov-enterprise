@@ -191,7 +191,9 @@ function overridesIn(file: string, text: string): ControlHeightOverride[] {
       if (DENSITY_BOUND_TAGS.has(tag) && className && !NON_TEXT_INPUT_TYPES.has(typeText)) {
         const line = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
         for (const token of classStrings(className).join(' ').split(/\s+/)) {
-          if (FIXED_HEIGHT.test(token.split(':').pop() ?? '')) found.push({ file, line, tag, token });
+          // [2026-10-01] 중요 표시(!h-12 · h-12!)도 같은 고정 높이다 — 종전 정규식은 이 형태를 보지 못해 게시판 조회
+          //   조건의 !h-12 가 compact 밀도에서도 48px 로 남았다.
+          if (FIXED_HEIGHT.test((token.split(':').pop() ?? '').replace(/^!|!$/g, ''))) found.push({ file, line, tag, token });
         }
       }
     }
