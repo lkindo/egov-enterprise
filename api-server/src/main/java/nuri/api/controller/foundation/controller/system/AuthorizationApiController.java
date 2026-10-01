@@ -33,6 +33,13 @@ public class AuthorizationApiController {
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#group')")
     public ApiResponse<GroupSnapshot> group(@PathVariable String code) { return ApiResponse.success(service.group(code)); }
 
+    @GetMapping("/groups/{code}/members")
+    @io.swagger.v3.oas.annotations.Operation(operationId="authzGroupMembers", summary="그룹에 배정된 사용자")
+    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#groupMembers')")
+    public ApiResponse<PageResponse<UserChoice>> groupMembers(@PathVariable String code,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size) {
+        return ApiResponse.success(PageResponse.of(service.groupMembers(code,page,size)));
+    }
+
     @PostMapping("/groups")
     @nuri.foundation.core.annotation.SensitiveOperation("권한 그룹 생성")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzCreateGroup")

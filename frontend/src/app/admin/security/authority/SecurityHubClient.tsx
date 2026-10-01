@@ -19,6 +19,8 @@ import { AuthorizationHistory } from './components/AuthorizationHistory';
 import { AuthorizationGroupForm } from './components/AuthorizationGroupForm';
 import { AuthorizationGroupEditor } from './components/AuthorizationGroupEditor';
 import { AuthorizationMembershipEditor } from './components/AuthorizationMembershipEditor';
+import { AuthorizationGroupMembers } from './components/AuthorizationGroupMembers';
+import { clearTargetHandoff, useTargetHandoff } from '@/lib/navigation/target-handoff';
 
 type Tab = 'groups' | 'users' | 'history';
 const PAGE_SIZE = 20;
@@ -32,10 +34,18 @@ export default function SecurityHubClient() {
   const canCreate = canPermission(user, 'AUTHRT_CREATE');
   const canAudit = canPermission(user, 'AUTHRT_AUDIT');
   const scope = ['authorization', user?.id, user?.authorizationVersion];
-  const [selectedTab, setTab] = useState<Tab>('groups');
+  // [2026-10-01] 사용자 상세에서 넘어온 대상(탭 세션 인계, URL 비노출). 탭·대상을 직접 고르기 전까지만 쓴다.
+  const assignTarget = useTargetHandoff('authority-user');
+  const historyTarget = useTargetHandoff('authority-history-user');
+  const [chosenTab, setChosenTab] = useState<Tab | null>(null);
+  const handedTab: Tab | null = assignTarget && canRead ? 'users' : historyTarget && canAudit ? 'history' : null;
+  const selectedTab: Tab = chosenTab ?? handedTab ?? 'groups';
+  const setTab = (next: Tab) => { clearTargetHandoff('authority-user', 'authority-history-user'); setChosenTab(next); };
   const tab = !canRead && canAudit ? 'history' : selectedTab;
   const [selectedGroup, setSelectedGroup] = useState('');
-  const [selectedUser, setSelectedUser] = useState<{ id: string; name: string } | null>(null);
+  const [chosenUser, setChosenUser] = useState<{ id: string; name: string } | null>(null);
+  const selectedUser = chosenUser ?? (chosenTab === null && assignTarget ? { id: assignTarget.id, name: assignTarget.name } : null);
+  const setSelectedUser = (next: { id: string; name: string }) => { clearTargetHandoff('authority-user'); setChosenUser(next); };
   const [creating, setCreating] = useState(false);
   const [pendingCreate, setPendingCreate] = useState(false);
   const createLock = useRef(false);
@@ -82,7 +92,8 @@ export default function SecurityHubClient() {
               catch (error) { toast(extractErrorMessage(error, '그룹을 등록하지 못했습니다.'), 'error'); throw error; }
               finally { createLock.current = false; setPendingCreate(false); }
             }} /></section>
-            : selectedGroup && group.data && catalog.data && !group.isError && !catalog.isError ? <AuthorizationGroupEditor key={`${user?.id}:${user?.authorizationVersion}:${selectedGroup}`} snapshot={group.data} catalog={catalog.data} refreshing={group.isFetching || catalog.isFetching} onRefresh={refresh} onDeleted={() => setSelectedGroup((current) => current === selectedGroup ? '' : current)} />
+            : selectedGroup && group.data && catalog.data && !group.isError && !catalog.isError ? <div className="space-y-6"><AuthorizationGroupEditor key={`${user?.id}:${user?.authorizationVersion}:${selectedGroup}`} snapshot={group.data} catalog={catalog.data} refreshing={group.isFetching || catalog.isFetching} onRefresh={refresh} onDeleted={() => setSelectedGroup((current) => current === selectedGroup ? '' : current)} />
+              <AuthorizationGroupMembers scope={scope} code={selectedGroup} onEditMember={(member) => void navigate(() => { setChosenTab('users'); setSelectedUser(member); })} /></div>
               : <p role="status" className="rounded-lg border border-border p-5">{selectedGroup && (group.isFetching || catalog.isFetching) ? '전체 권한을 불러오는 중입니다…' : '설정할 권한 그룹을 선택하세요.'}</p>}
         </div>
       </div>}
@@ -98,7 +109,7 @@ export default function SecurityHubClient() {
             : <p role="status">{selectedUser && membership.isFetching ? '사용자의 전체 그룹을 불러오는 중입니다…' : '배정할 사용자를 선택하세요.'}</p>}
         </div>
       </div>}
-      {tab === 'history' && canAudit && <AuthorizationHistory />}
+      {tab === 'history' && canAudit && <AuthorizationHistory key={historyTarget?.at ?? 'none'} initialUserId={chosenTab === null ? historyTarget?.loginId ?? '' : ''} />}
     </WorkListPage>
   );
 }

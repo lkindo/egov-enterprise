@@ -224,6 +224,25 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         });
         assertThatThrownBy(() -> service.history(0,20,null,null,null,today.plusDays(1),today))
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode",CommonErrorCode.INVALID_INPUT_VALUE);
+
+        // [2026-10-01] 대상도 로그인 ID 로 찾는다 — 이력의 대상 칸은 esntlId 라 종전에는 화면에서 아는 값으로 0건이었다.
+        jdbc.update("UPDATE tb_user_info SET user_id='dept_user_a' WHERE esntl_id='T_DEPT_USER_A'");
+        try {
+            assertThat(service.history(0,20,"T_MULTI_B","dept_user_a",null,today,today).getTotalElements()).isEqualTo(2);
+            assertThat(service.history(0,20,"T_MULTI_B","T_DEPT_USER_A",null,today,today).getTotalElements()).isEqualTo(2);
+        } finally {
+            jdbc.update("UPDATE tb_user_info SET user_id='T_DEPT_USER_A' WHERE esntl_id='T_DEPT_USER_A'");
+        }
+
+        // [2026-10-01] 그룹 쪽에서 배정된 사용자를 본다. 삭제 거부는 몇 명을 해제해야 하는지 말한다.
+        var members=service.groupMembers("T_MULTI_B",0,100);
+        assertThat(members.getContent()).extracting(member -> member.id()).contains("T_DEPT_USER_B").doesNotContain("T_DEPT_USER_A");
+        assertThat(members.getTotalElements()).isEqualTo(members.getContent().size());
+        assertThatThrownBy(() -> service.groupMembers("T_NO_SUCH_GROUP",0,20))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode",CommonErrorCode.RESOURCE_NOT_FOUND);
+        assertThatThrownBy(() -> service.deleteGroup("T_MULTI_B",service.group("T_MULTI_B").version()))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode",CommonErrorCode.RESOURCE_IN_USE)
+                .hasMessageContaining(members.getTotalElements() + "명이 있어 삭제할 수 없습니다");
     }
 
     private void verifyBatchSnapshotsAndUnknownOperationFailClosed() {

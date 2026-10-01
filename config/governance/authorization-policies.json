@@ -2884,6 +2884,18 @@
       ]
     },
     {
+      "target": "AuthorizationAdministrationService#groupMembers",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "AUTHRT_READ"
+        }
+      ]
+    },
+    {
       "target": "AuthorizationAdministrationService#createGroup",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -6673,6 +6685,13 @@
       "method": "GET",
       "path": "/api/v1/admin/authorization/users",
       "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#users",
+      "access": "PERMISSION",
+      "permission": "AUTHRT_READ"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/authorization/groups/{code}/members",
+      "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#groupMembers",
       "access": "PERMISSION",
       "permission": "AUTHRT_READ"
     },

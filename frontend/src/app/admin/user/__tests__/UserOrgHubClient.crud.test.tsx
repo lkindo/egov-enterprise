@@ -15,6 +15,7 @@
  *      부분수정 계약("" = 지움)에 따라 실제 소속 부서가 지워진다(UserService.updateUser 주석 참조).
  */
 import React, { Suspense } from 'react';
+import userEvent from '@testing-library/user-event';
 import { act, render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -931,6 +932,24 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     await act(async () => { resolveUnlock(); });
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('계정 잠금을 해제했습니다.', 'success'));
     await waitFor(() => expect(vi.mocked(userAdminService.getUser).mock.calls.length).toBeGreaterThan(detailReads));
+  });
+
+  it('상세에서 이 사람을 대상으로 권한 배정·이력·로그인 이력을 연다 — 대상은 URL 이 아니라 탭 세션으로 넘긴다 (2026-10-01)', async () => {
+    auth.permissions = [...FULL_PERMISSIONS, 'AUTHRT_AUDIT', 'LOG_READ'];
+    window.sessionStorage.clear();
+    await selectFirstRow();
+
+    await userEvent.click(await screen.findByRole('button', { name: '이 사용자 권한 배정' }));
+    const handed = JSON.parse(window.sessionStorage.getItem('egov.target-handoff.v1:authority-user') ?? 'null');
+    expect(handed).toMatchObject({ id: listRow.esntlId, loginId: listRow.userId });
+    expect(screen.getByRole('button', { name: '권한 변경 이력' })).toBeInTheDocument();
+    window.sessionStorage.clear();
+  });
+
+  it('권한 감사 권한이 없으면 권한 변경 이력으로 가는 버튼을 두지 않는다', async () => {
+    await selectFirstRow();
+    await screen.findByRole('button', { name: '이 사용자 권한 배정' });
+    expect(screen.queryByRole('button', { name: '권한 변경 이력' })).not.toBeInTheDocument();
   });
 
   it('[DIP B4 P7] 잠기지 않은 계정에는 잠금 해제를 보이지 않는다', async () => {

@@ -241,6 +241,18 @@ describe('dedicated system log clients generated-DTO contracts', () => {
     expect(currentTableProps().keyField).toBe('lgnSn');
   });
 
+  it('사용자 상세에서 넘어오면 그 사람의 로그인 ID 로 조회해 연다(탭 세션 인계, 2026-10-01)', async () => {
+    const { handOffTarget, clearTargetHandoff } = await import('@/lib/navigation/target-handoff');
+    handOffTarget('login-log-user', { id: 'ESNTL_A', loginId: 'alice', name: '앨리스' });
+    try {
+      clientHarness.queryData = pageOf(LOGIN_ROW);
+      render(<SystemLogsLoginClient />);
+      expect((clientHarness.latestQueryOptions as { queryKey: unknown[] }).queryKey).toContain('alice');
+    } finally {
+      clearTargetHandoff('login-log-user');
+    }
+  });
+
   it('LGN 실패 사유 코드는 관리자가 읽을 말로 보이고, 원문은 title 로 남는다 (DIP S6 ⑤)', () => {
     clientHarness.queryData = pageOf({ ...LOGIN_ROW, errorCode: 'POLICY_IP' });
     render(<SystemLogsLoginClient />);

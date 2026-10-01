@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 414,
-    "generatedDescriptorCount": 414
+    "openApiOperationCount": 415,
+    "generatedDescriptorCount": 415
   },
   "target": {
     "generatedPercent": 100,
@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 362,
-    "eligible": 340,
+    "total": 363,
+    "eligible": 341,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 340,
+      "generated": 341,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "8b272d3995d3c72650f8afe0d338983055dbe711508041f5b930c41e53519580",
+  "inventoryHash": "de51830eacbef2e28b912d06c0dafd2cb92a69cec622acd32e0563e51c2d8c30",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -223,7 +223,7 @@
       "file": "frontend/src/app/admin/system/logs/login/SystemLogsLoginClient.tsx",
       "owner": "handleFullExport",
       "ordinal": 1,
-      "line": 94,
+      "line": 100,
       "column": 9,
       "classification": "special",
       "transport": "browser-navigation",
@@ -3400,9 +3400,26 @@
     },
     {
       "file": "frontend/src/services/foundation/system/AuthorizationAdminService.ts",
+      "owner": "AuthorizationAdminService.getGroupMembers",
+      "ordinal": 1,
+      "line": 62,
+      "column": 53,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "get",
+      "target": "/api/v1/admin/authorization/groups/{code}/members",
+      "operationId": "authzGroupMembers",
+      "descriptorName": "authzGroupMembersOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "8d5e6f0deacc430ff5e9"
+    },
+    {
+      "file": "frontend/src/services/foundation/system/AuthorizationAdminService.ts",
       "owner": "AuthorizationAdminService.getHistory",
       "ordinal": 1,
-      "line": 61,
+      "line": 65,
       "column": 55,
       "classification": "generated",
       "transport": "generated-executor",
@@ -3419,7 +3436,7 @@
       "file": "frontend/src/services/foundation/system/AuthorizationAdminService.ts",
       "owner": "AuthorizationAdminService.getDepartments",
       "ordinal": 1,
-      "line": 64,
+      "line": 68,
       "column": 55,
       "classification": "generated",
       "transport": "generated-executor",
@@ -3436,7 +3453,7 @@
       "file": "frontend/src/services/foundation/system/AuthorizationAdminService.ts",
       "owner": "AuthorizationAdminService.getDepartmentMemberships",
       "ordinal": 1,
-      "line": 67,
+      "line": 71,
       "column": 69,
       "classification": "generated",
       "transport": "generated-executor",
@@ -3453,7 +3470,7 @@
       "file": "frontend/src/services/foundation/system/AuthorizationAdminService.ts",
       "owner": "AuthorizationAdminService.updateDepartmentMemberships",
       "ordinal": 1,
-      "line": 73,
+      "line": 77,
       "column": 69,
       "classification": "generated",
       "transport": "generated-executor",

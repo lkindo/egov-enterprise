@@ -270,16 +270,38 @@ export function AbsenceStatusNotice({
   );
 }
 
-/** 사용자 상세의 접근 제어 안내. 권한 부여·회수는 권한 그룹 관리 화면이 소유한다. */
-export function AccessControlLink({ onOpen }: { onOpen: () => void }) {
+/**
+ * 사용자 상세의 접근 제어 안내. 권한 부여·회수는 권한 그룹 관리 화면이 소유한다.
+ * [2026-10-01] 이 사람을 대상으로 연다 — 종전 '권한 설정 열기' 는 대상 없이 그룹 탭을 열어 탭을 바꾸고 같은 사람을
+ * 다시 검색해야 했다. 들어갈 수 없는 화면의 버튼은 호출부가 빼서 넘긴다(라우트 게이트와 같은 판정).
+ */
+export function AccessControlLink({ onOpen, onOpenHistory, onOpenLoginLog }: {
+  onOpen?: () => void;
+  onOpenHistory?: () => void;
+  onOpenLoginLog?: () => void;
+}) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
       <p className="min-w-0 text-[length:var(--font-size-body)] text-muted-foreground">
         사용자별 권한은 <span className="font-medium text-foreground">권한 그룹 관리</span> 화면에서 부여·회수합니다.
       </p>
-      <Button type="button" variant="outline" size="sm" onClick={onOpen} className="shrink-0 gap-1">
-        권한 설정 열기 <ChevronRight size={14} aria-hidden="true" />
-      </Button>
+      <div className="flex shrink-0 flex-wrap gap-2">
+        {onOpen && (
+          <Button type="button" variant="outline" size="sm" onClick={onOpen} className="gap-1">
+            이 사용자 권한 배정 <ChevronRight size={14} aria-hidden="true" />
+          </Button>
+        )}
+        {onOpenHistory && (
+          <Button type="button" variant="outline" size="sm" onClick={onOpenHistory} className="gap-1">
+            권한 변경 이력 <ChevronRight size={14} aria-hidden="true" />
+          </Button>
+        )}
+        {onOpenLoginLog && (
+          <Button type="button" variant="outline" size="sm" onClick={onOpenLoginLog} className="gap-1">
+            로그인 이력 <ChevronRight size={14} aria-hidden="true" />
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

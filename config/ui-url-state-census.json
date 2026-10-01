@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "0971d5ba4797520c5daa46e3ddb35ae878dabef0925bf8e6b8528c9e8571b426"
+    "inventoryHash": "a68b9afa3ce43aba41715af2efa2127481e0abc38db75899cf2e4ac8c35a33c7"
   },
   "summary": {
-    "sourceFileCount": 583,
-    "records": 387,
-    "syntaxOccurrences": 458,
-    "ambiguousRecords": 340,
-    "unverifiedRecords": 387,
+    "sourceFileCount": 585,
+    "records": 388,
+    "syntaxOccurrences": 460,
+    "ambiguousRecords": 341,
+    "unverifiedRecords": 388,
     "exactPopulations": {
       "filesystemRoutes": 118,
       "dynamicRoutePatterns": 11,
@@ -45,7 +45,7 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 55,
-      "navigation-producer": 167,
+      "navigation-producer": 168,
       "page-redirect": 17,
       "query-builder": 21,
       "query-consumer": 54,
@@ -54,7 +54,7 @@
       "url-observer": 8
     },
     "bySurface": {
-      "navigation": 376,
+      "navigation": 377,
       "request-telemetry": 11
     }
   },
@@ -10822,6 +10822,44 @@
       "resolutionStatus": "ambiguous",
       "canonical": {
         "routeCandidate": "/admin/security/authority",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+        "detector": "router-navigation",
+        "occurrenceCount": 2
+      }
+    },
+    {
+      "id": "URL-D26B7E09A5434C",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "router.push",
+      "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "producerFile": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin",
+      "targetCandidate": "/admin/system/logs/login",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/system/logs/login",
         "status": "unverified"
       },
       "authorizationBoundary": {

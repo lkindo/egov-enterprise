@@ -8185,6 +8185,25 @@ export const authzHistoryOperation = /*#__PURE__*/ (() => {
   });
 })();
 
+export const authzGroupMembersOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "authzGroupMembers",
+  method: "get",
+  path: "/api/v1/admin/authorization/groups/{code}/members",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "code": z.string() }).strict(),
+  querySchema: z.object({ "page": z.number().int().optional(), "size": z.number().int().optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => PageResponseUserChoiceResponseSchema),
+  envelopeSchema: ApiResponsePageResponseUserChoiceResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
 export const authzDepartmentsOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
   id: "authzDepartments",

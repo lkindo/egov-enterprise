@@ -4,7 +4,7 @@ import {
   authzCatalogOperation, authzGroupsOperation, authzGroupOperation,
   authzCreateGroupOperation, authzUpdateGroupOperation, authzDeleteGroupOperation,
   authzReplaceGrantsOperation, authzMembershipsOperation, authzReplaceMembershipsOperation,
-  authzUsersOperation, authzHistoryOperation,
+  authzUsersOperation, authzHistoryOperation, authzGroupMembersOperation,
   authzDepartmentsOperation, authzDepartmentMembershipsOperation, authzUpdateDepartmentMembershipsOperation,
 } from '@/types/generated-operations';
 import {
@@ -56,6 +56,10 @@ class AuthorizationAdminService extends AdminService {
   }
   async getUsers(keyword: string, page: number, size = 20) {
     return authorizationUsersPageSchema.parse(await this.executeGenerated(authzUsersOperation, { query: { keyword, page, size } }));
+  }
+  /** 그룹에 배정된 사용자(서버 페이지, 이름 순). */
+  async getGroupMembers(code: string, page: number, size = 20) {
+    return authorizationUsersPageSchema.parse(await this.executeGenerated(authzGroupMembersOperation, { path: { code }, query: { page, size } }));
   }
   async getHistory(page: number, size = 20, filters: AuthorizationHistoryFilters = {}) {
     return authorizationHistoryPageSchema.parse(await this.executeGenerated(authzHistoryOperation, { query: { ...filters, page, size } }));
