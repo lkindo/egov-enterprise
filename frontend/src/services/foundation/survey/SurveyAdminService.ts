@@ -46,6 +46,8 @@ function requireSurvey(item: components['schemas']['SurveyInfoDto']): Survey {
     srvyTmpltSn: item.srvyTmpltSn,
     ...(item.frstRgtrId == null ? {} : { frstRgtrId: item.frstRgtrId }),
     crtDt: item.crtDt ?? '',
+    // [2026-10-01] 서버가 판정한 응답 여부를 버리지 않는다 — 목록의 '응답 완료' 표시가 이 값을 읽는다.
+    ...(typeof item.responded === 'boolean' ? { responded: item.responded } : {}),
   };
 }
 

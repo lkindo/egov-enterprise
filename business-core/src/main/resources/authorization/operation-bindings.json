@@ -2765,6 +2765,13 @@
   },
   {
     "method": "GET",
+    "path": "/api/v1/admin/authorization/groups/{code}/members",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#groupMembers",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "GET",
     "path": "/api/v1/admin/authorization/history",
     "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#history",
     "access": "PERMISSION",

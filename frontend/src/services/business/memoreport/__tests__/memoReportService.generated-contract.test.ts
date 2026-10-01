@@ -97,6 +97,8 @@ describe('memoReportService generated instruction contract', () => {
       // 수정·삭제 capability는 서로 독립적인 서버 판정이며 요청에서 받지 않는다.
       'editable',
       'deletable',
+      // [2026-10-01] 지시 가능 여부도 서버 판정이다(지시 기능 권한 + 수신자·전체 수정 권한).
+      'instructable',
     ] as const;
     type ServerOwnedField = Extract<keyof MemoReportInput, (typeof serverOwnedFields)[number]>;
     expectTypeOf<ServerOwnedField>().toEqualTypeOf<never>();
@@ -113,7 +115,7 @@ describe('memoReportService generated instruction contract', () => {
     );
 
     for (const field of serverOwnedFields) {
-      const values = field === 'editable' || field === 'deletable' ? [true, false] : ['forged-value'];
+      const values = field === 'editable' || field === 'deletable' || field === 'instructable' ? [true, false] : ['forged-value'];
       for (const value of values) {
         const forged = { rptTtl: '보고', rptrId: 'USER', [field]: value };
         await expect(memoReportService.createMemoReport(forged as never))

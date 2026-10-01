@@ -140,6 +140,7 @@ export function WorkListPage({
           <Suspense fallback={<div className="h-[46px]" aria-hidden="true" />}>
             <DynamicBreadcrumb
               customItems={breadcrumbItems?.map(({ label, href }) => ({ name: label, href }))}
+              currentLabel={title}
             />
           </Suspense>
         </div>

@@ -17,10 +17,20 @@ interface BreadcrumbItem {
   href?: string;
 }
 
-export function DynamicBreadcrumb({ customItems = [] }: { customItems?: BreadcrumbItem[] }) {
+/**
+ * 현재 위치 경로.
+ *
+ * [2026-10-01] 메뉴 트리 경로를 기본으로 한다. 종전에는 화면이 넘긴 고정 경로(customItems)가 있으면 메뉴 트리를
+ * 통째로 덮어써, 56개 화면이 '시스템관리'·'운영지원'·'부가서비스' 같은 옛 이름을 누를 수 없는 형태로 보였다 —
+ * 사이드바에서 들어온 위치와 경로가 달랐다. 이제 화면 고정 경로는 ① 메뉴 트리에 없는 화면의 대체값과
+ * ② 메뉴의 하위 화면(상세·등록)일 때 마지막 한 단계로만 쓴다. 메뉴 이름은 운영 중 바뀔 수 있으므로 원천은 늘 서버 트리다.
+ */
+export function DynamicBreadcrumb({ customItems = [], currentLabel }: { customItems?: BreadcrumbItem[]; currentLabel?: string }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [items, setItems] = useState<BreadcrumbItem[]>([]);
+  // 메뉴 트리에서 찾은 경로가 현재 화면 자체(정확 일치)인지, 그 상위 메뉴인지.
+  const [exactMatch, setExactMatch] = useState(false);
 
   useEffect(() => {
     const fetchPath = async () => {
@@ -37,8 +47,12 @@ export function DynamicBreadcrumb({ customItems = [] }: { customItems?: Breadcru
         for (const menu of match?.path ?? []) {
           path.push({ name: menu.menuNm, href: resolveMenuInternalRoute(menu) ?? undefined });
         }
+        const lastHref = path.at(-1)?.href;
+        const lastPath = lastHref ? new URL(lastHref, 'https://egov.invalid').pathname.replace(/\/+$/, '') || '/' : null;
+        const currentPath = (pathname || '').replace(/\/+$/, '') || '/';
 
         setItems(path);
+        setExactMatch(lastPath === currentPath);
       } catch {
         setItems([]);
       }
@@ -47,7 +61,14 @@ export function DynamicBreadcrumb({ customItems = [] }: { customItems?: Breadcru
     fetchPath();
   }, [pathname, searchParams]);
 
-  const finalItems = (customItems.length > 0 ? customItems : items).map(item => ({
+  // 하위 화면의 마지막 한 단계 — 화면 제목이 있으면 그것을, 없으면 화면이 넘긴 경로의 마지막 항목을 쓴다.
+  const lastStep = currentLabel ? { name: currentLabel } : customItems.at(-1);
+  const resolved = items.length === 0
+    ? customItems
+    : exactMatch || !lastStep || lastStep.name === items.at(-1)?.name
+      ? items
+      : [...items, { name: lastStep.name }];
+  const finalItems = resolved.map(item => ({
     ...item,
     href: normalizeInternalRoute(item.href) ?? undefined,
   }));

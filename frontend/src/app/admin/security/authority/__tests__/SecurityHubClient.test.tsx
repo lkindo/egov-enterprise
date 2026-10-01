@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   permissions: [] as string[],
   toast: vi.fn(), confirm: vi.fn(), getCatalog: vi.fn(), getGroups: vi.fn(), getGroup: vi.fn(),
   createGroup: vi.fn(), updateGroup: vi.fn(), deleteGroup: vi.fn(), saveGroupGrants: vi.fn(),
-  getMemberships: vi.fn(), saveUserGroups: vi.fn(), getUsers: vi.fn(), getHistory: vi.fn(),
+  getMemberships: vi.fn(), saveUserGroups: vi.fn(), getUsers: vi.fn(), getHistory: vi.fn(), getGroupMembers: vi.fn(),
 }));
 const { createGroup, updateGroup, deleteGroup, saveGroupGrants, saveUserGroups } = mocks;
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'operator', role: 'ROLE_ADMIN', permissions: mocks.permissions, authorizationVersion: 'auth-v1' } }) }));
@@ -70,6 +70,7 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     mocks.getUsers.mockResolvedValue(page([{ id: 'ESNTL_A', userId: 'login-a', userNm: '사용자 가' }, { id: 'ESNTL_B', userId: 'login-b', userNm: '사용자 나' }]));
     mocks.getMemberships.mockImplementation((id: string) => Promise.resolve(id === 'ESNTL_A' ? membership : { userId: id, groups: ['SURVEY'], version: 'member-b', complete: true }));
     mocks.getHistory.mockResolvedValue(page([]));
+    mocks.getGroupMembers.mockResolvedValue(page([]));
     mocks.confirm.mockResolvedValue(true);
     for (const action of [createGroup, updateGroup, deleteGroup, saveGroupGrants, saveUserGroups]) action.mockResolvedValue(undefined);
   });
@@ -517,4 +518,73 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     expect(saveGroupGrants).not.toHaveBeenCalled();
   });
 
+});
+
+/**
+ * [2026-10-01] 그룹 쪽에서 배정된 사용자를 보고, 사용자 상세에서 넘어온 대상으로 바로 연다(UI/UX 분석 15번).
+ */
+describe('SecurityHub: 그룹 구성원과 대상 인계', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.sessionStorage.clear();
+    mocks.permissions = ['AUTHRT_READ', 'AUTHRT_ASSIGN', 'AUTHRT_AUDIT'];
+    mocks.getCatalog.mockResolvedValue(catalog);
+    mocks.getGroups.mockResolvedValue(groups);
+    mocks.getGroup.mockResolvedValue(snapshot);
+    mocks.getUsers.mockResolvedValue(page([]));
+    mocks.getMemberships.mockResolvedValue(membership);
+    mocks.getHistory.mockResolvedValue(page([]));
+    mocks.getGroupMembers.mockResolvedValue(page([{ id: 'ESNTL_A', userId: 'login-a', userNm: '사용자 가' }], 21));
+  });
+
+  it('그룹 상세에 배정된 사용자 수와 목록을 보이고, 행에서 그 사람의 배정 편집으로 간다', async () => {
+    setup();
+    await userEvent.click(await screen.findByRole('button', { name: /콘텐츠 담당.*CONTENT/ }));
+
+    expect(await screen.findByRole('heading', { name: '배정된 사용자 (21명)' })).toBeInTheDocument();
+    expect(mocks.getGroupMembers).toHaveBeenCalledWith('CONTENT', 0, 20);
+    await userEvent.click(screen.getByRole('button', { name: '사용자 가 배정 편집' }));
+
+    expect(await screen.findByRole('region', { name: '사용자 권한 그룹 배정' })).toBeInTheDocument();
+    expect(mocks.getMemberships).toHaveBeenCalledWith('ESNTL_A');
+    expect(screen.getByRole('button', { name: '사용자 배정' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('사용자 상세에서 넘어온 대상이 있으면 사용자 배정 탭에서 그 사람을 연다', async () => {
+    const { handOffTarget } = await import('@/lib/navigation/target-handoff');
+    handOffTarget('authority-user', { id: 'ESNTL_A', loginId: 'login-a', name: '사용자 가' });
+    setup();
+
+    expect(await screen.findByRole('region', { name: '사용자 권한 그룹 배정' })).toBeInTheDocument();
+    expect(mocks.getMemberships).toHaveBeenCalledWith('ESNTL_A');
+    expect(screen.getByRole('heading', { name: '사용자 가' })).toBeInTheDocument();
+  });
+
+  it('권한 변경 이력으로 넘어오면 그 사람의 로그인 ID 로 조회한 이력을 연다', async () => {
+    const { handOffTarget } = await import('@/lib/navigation/target-handoff');
+    handOffTarget('authority-history-user', { id: 'ESNTL_A', loginId: 'login-a', name: '사용자 가' });
+    setup();
+
+    await waitFor(() => expect(mocks.getHistory).toHaveBeenCalledWith(0, 20, { userId: 'login-a' }));
+    expect(screen.getByRole('textbox', { name: '대상 사용자 로그인 ID' })).toHaveValue('login-a');
+  });
+
+  it('이력은 원시 코드 대신 한국어 라벨과 날짜 형식으로 보인다 — 모르는 코드는 원문으로 남긴다', async () => {
+    mocks.permissions = ['AUTHRT_AUDIT'];
+    mocks.getHistory.mockResolvedValue(page([
+      { id: 1, requestId: 'r', policyVersion: 'p', targetType: 'GROUP_GRANT', changeType: 'ADD', group: 'CONTENT', userId: null, userNm: null,
+        grantType: 'OPERATION', grantCode: 'BOARD_READ', field: 'authrt_grnt_cd', before: null, after: 'BOARD_READ', actorId: 'E0', actorNm: '운영자', createdAt: '2026-10-01T09:10:11.123' },
+      { id: 2, requestId: 'r', policyVersion: 'p', targetType: 'NEW_KIND', changeType: 'UPDATE', group: 'CONTENT', userId: null, userNm: null,
+        grantType: null, grantCode: null, field: 'authrt_nm', before: '가', after: '나', actorId: 'E0', actorNm: '운영자', createdAt: '2026-10-01T09:11:00' },
+    ]));
+    setup();
+
+    const table = within(await screen.findByRole('table', { name: '권한 변경 이력' }));
+    expect(await table.findByText('2026-10-01 09:10:11')).toBeInTheDocument();
+    expect(table.getByText('그룹 권한')).toBeInTheDocument();
+    expect(table.getByText('추가')).toBeInTheDocument();
+    expect(table.getByText('기능 권한 BOARD_READ')).toBeInTheDocument();
+    expect(table.getByText('NEW_KIND')).toBeInTheDocument();
+    expect(table.getByText('그룹 이름')).toBeInTheDocument();
+  });
 });

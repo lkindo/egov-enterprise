@@ -22,7 +22,7 @@ vi.mock('next/link', () => ({
   default: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => <a {...props}>{children}</a>,
 }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { role: 'USER' } }) }));
-vi.mock('@/app/actions/boardActions', () => ({ likeBoardArticle: mocks.likeArticle }));
+vi.mock('@/services/business/user/board/BoardUserService', () => ({ boardUserService: { likePost: mocks.likeArticle } }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/layout/DynamicBreadcrumb', () => ({ DynamicBreadcrumb: () => <nav /> }));
 vi.mock('@/hooks/api/use-board-list', () => ({
@@ -122,7 +122,7 @@ describe('BoardListClient like pending contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getQueryData.mockReturnValue({ list: [] });
-    mocks.likeArticle.mockResolvedValue({ success: true });
+    mocks.likeArticle.mockResolvedValue(5);
   });
 
   it('추천을 동기 선점해 같은 tick sink를 한 번만 호출하고 실패를 안내한 뒤 목록을 유지한다', async () => {
@@ -144,11 +144,13 @@ describe('BoardListClient like pending contract', () => {
     expect(like).toHaveAccessibleName('추천할 게시글 추천 처리 중');
     expect(like).toHaveTextContent('추천 처리 중');
 
-    rejectLike(new Error('추천 서버 오류'));
+    // 실제 transport 실패 형태 — 종전 서버 액션은 이것을 { success: false } 로 삼켜 사유가 보이지 않았다.
+    rejectLike({ response: { status: 409, data: { message: '이미 추천한 게시글입니다.' } } });
 
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('추천 서버 오류', 'error'));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('이미 추천한 게시글입니다.', 'error'));
     expect(like).toBeInTheDocument();
     expect(like).not.toBeDisabled();
     expect(like).not.toHaveAttribute('aria-busy');
   });
+
 });

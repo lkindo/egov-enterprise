@@ -74,5 +74,11 @@ public interface SurveyResultRepository extends JpaRepository<SurveyResult, Long
      */
     boolean existsBySrvySnAndFrstRgtrId(Long srvySn, String frstRgtrId);
 
+    /** 주어진 설문 가운데 이 사용자가 응답한 설문 번호 — 목록 한 페이지의 '응답 완료' 표시를 한 번에 채운다. */
+    @org.springframework.data.jpa.repository.Query(
+            "select distinct r.srvySn from SurveyResult r where r.frstRgtrId = :loginId and r.srvySn in :srvySns")
+    List<Long> findRespondedSurveySns(@org.springframework.data.repository.query.Param("loginId") String loginId,
+            @org.springframework.data.repository.query.Param("srvySns") java.util.Collection<Long> srvySns);
+
     List<SurveyResult> findBySrvySnAndFrstRgtrId(Long srvySn, String frstRgtrId);
 }

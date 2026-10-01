@@ -310,6 +310,21 @@ test('dashboard, notifications and optional address book blocks follow their dom
   assert.doesNotMatch(project('frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx'), /import .*recipientAddressBookSource/);
 });
 
+test('the unread-notes card on the work home needs both the dashboard and the note domains', () => {
+  const file = 'frontend/src/app/UnifiedDashboardClient.tsx';
+  const source = readFileSync(join(root, file), 'utf8');
+  // The card block is owned by dashboard + note. Today dashboard pulls in note through board, so the
+  // card survives with the dashboard; the dual ownership keeps it from dangling if that dependency moves.
+  const withoutDashboard = projectComposerFrontend(file, source, resolveProjectRecipe(recipe(['mail']), catalog));
+  assert.doesNotMatch(withoutDashboard, /UnreadNotesCard/);
+  const withDashboard = projectComposerFrontend(file, source, resolveProjectRecipe(recipe(['dashboard']), catalog));
+  assert.match(withDashboard, /import \{ UnreadNotesCard \}/);
+  assert.match(withDashboard, /<UnreadNotesCard \/>/);
+  const forcedWithoutNote = projectComposerFrontend(file, source, { profile: 'custom', resolvedDomains: ['dashboard', 'board'] });
+  assert.doesNotMatch(forcedWithoutNote, /UnreadNotesCard/);
+  assert.match(forcedWithoutNote, /업무게시판 글/);
+});
+
 test('custom RBAC projection preserves selected assertions and removes only absent surfaces', () => {
   const file = 'api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java';
   const source = readFileSync(join(root, file), 'utf8');

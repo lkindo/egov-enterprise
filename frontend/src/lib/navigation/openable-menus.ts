@@ -39,10 +39,14 @@ function prune(menus: readonly MenuInfo[], subject: MenuAccessSubject): MenuInfo
       continue;
     }
 
+    // [2026-10-01] 하위를 불러왔는데 비어 있고 연결 주소도 없는 분류는 그리지 않는다 — 누르면 아무 데도 가지 않는
+    //   막다른 항목이었다. 주소가 있는데 내부 경로로 해석되지 않는 항목(외부·레거시 주소)은 종전대로 남긴다.
+    const emptyCategory = route === null && !menu.modernRoute && !menu.chkURL;
+
     const hadChildren = menu.children.length > 0;
     const children = prune(menu.children, subject);
     if (!hadChildren) {
-      if (route === null || canOpenOwnRoute) kept.push(menu);
+      if (!emptyCategory && (route === null || canOpenOwnRoute)) kept.push(menu);
     } else if (canOpenOwnRoute) {
       kept.push(children.length === menu.children.length ? menu : { ...menu, children });
     } else if (children.length > 0) {

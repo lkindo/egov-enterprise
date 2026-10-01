@@ -19,13 +19,28 @@ const PAGE_SIZE = 20;
 function personLabel(name: string | null, id: string) {
   return name ? `${name} (${id})` : id;
 }
-export function AuthorizationHistory() {
+
+/*
+ * [2026-10-01] 원시 코드(GROUP_GRANT·ADD 등)와 가공하지 않은 타임스탬프를 사람이 읽는 말로 보인다(공통코드 변경 이력과
+ * 같은 용어). 모르는 코드는 원문으로 남겨 새 코드가 생겨도 사라지지 않게 한다.
+ */
+const TARGET_LABEL: Record<string, string> = { GROUP: '그룹', GROUP_GRANT: '그룹 권한', USER_GROUP: '사용자 배정' };
+const CHANGE_LABEL: Record<string, string> = { ADD: '추가', REMOVE: '제거', UPDATE: '변경' };
+const GRANT_TYPE_LABEL: Record<string, string> = { OPERATION: '기능 권한', NAVIGATION: '메뉴' };
+const FIELD_LABEL: Record<string, string> = { authrt_nm: '그룹 이름', authrt_expln: '그룹 설명' };
+const label = (table: Record<string, string>, code: string | null | undefined) => (code ? table[code] ?? code : '');
+function formatChangedAt(value: string) {
+  return value ? value.substring(0, 19).replace('T', ' ') : '—';
+}
+
+export function AuthorizationHistory({ initialUserId = '' }: { initialUserId?: string } = {}) {
   const { user } = useAuth();
   const canAudit = canPermission(user, 'AUTHRT_AUDIT');
   const scope = ['authorization', user?.id, user?.authorizationVersion];
   const [historyPage, setHistoryPage] = useState(1);
-  const [historyInput, setHistoryInput] = useState({ groupCode: '', userId: '', actorId: '', fromDate: '', toDate: '' });
-  const [historyFilters, setHistoryFilters] = useState<AuthorizationHistoryFilters>({});
+  // 사용자 상세에서 넘어오면 그 사람의 로그인 ID 로 조건을 채워 연다(대상 인계, 2026-10-01).
+  const [historyInput, setHistoryInput] = useState({ groupCode: '', userId: initialUserId, actorId: '', fromDate: '', toDate: '' });
+  const [historyFilters, setHistoryFilters] = useState<AuthorizationHistoryFilters>(initialUserId ? { userId: initialUserId } : {});
   const [historyFilterError, setHistoryFilterError] = useState('');
   const history = useQuery({ queryKey: [...scope, 'history', historyPage, historyFilters], queryFn: () => authorizationAdminService.getHistory(historyPage - 1, PAGE_SIZE, historyFilters), enabled: canAudit, retry: false });
   if (!canAudit) return null;
@@ -38,7 +53,7 @@ export function AuthorizationHistory() {
           setHistoryFilters(Object.fromEntries(Object.entries(historyInput).map(([key, value]) => [key, value.trim()]).filter(([, value]) => value.length > 0)));
         }}>
           <label className="space-y-1 text-sm">그룹 코드<Input maxLength={20} value={historyInput.groupCode} onChange={(event) => setHistoryInput((current) => ({ ...current, groupCode: event.target.value }))} /></label>
-          <label className="space-y-1 text-sm">대상 사용자 고유 ID<Input maxLength={20} value={historyInput.userId} onChange={(event) => setHistoryInput((current) => ({ ...current, userId: event.target.value }))} /></label>
+          <label className="space-y-1 text-sm">대상 사용자 로그인 ID<Input maxLength={20} value={historyInput.userId} onChange={(event) => setHistoryInput((current) => ({ ...current, userId: event.target.value }))} /></label>
           <label className="space-y-1 text-sm">변경자 로그인 ID<Input maxLength={20} value={historyInput.actorId} onChange={(event) => setHistoryInput((current) => ({ ...current, actorId: event.target.value }))} /></label>
           <label className="space-y-1 text-sm">시작일<Input type="date" value={historyInput.fromDate} onChange={(event) => setHistoryInput((current) => ({ ...current, fromDate: event.target.value }))} /></label>
           <label className="space-y-1 text-sm">종료일<Input type="date" value={historyInput.toDate} onChange={(event) => setHistoryInput((current) => ({ ...current, toDate: event.target.value }))} /></label>
@@ -46,7 +61,7 @@ export function AuthorizationHistory() {
           {historyFilterError && <p role="alert" className="text-sm text-destructive">{historyFilterError}</p>}
         </form>
         {history.isPending && <p role="status">변경 이력을 불러오는 중입니다…</p>}
-        <div className="overflow-auto rounded-lg border border-border"><table className="w-full text-left text-sm"><caption className="sr-only">권한 변경 이력</caption><thead className="bg-muted"><tr>{['시각', '대상', '변경', '그룹·사용자', '권한·필드', '변경 전 → 후', '처리자'].map((title) => <th key={title} className="p-3">{title}</th>)}</tr></thead><tbody>{(history.data?.list ?? []).map((change) => <tr key={change.id} className="border-t border-border"><td className="p-3">{change.createdAt}</td><td className="p-3">{change.targetType}</td><td className="p-3">{change.changeType}</td><td className="p-3">{change.group || change.userId ? <>{change.group && <div>{change.group}</div>}{change.userId && <div>{personLabel(change.userNm, change.userId)}</div>}</> : '—'}</td><td className="p-3">{change.grantType ? `${change.grantType}:` : ''}{change.grantCode ?? change.field ?? '—'}</td><td className="max-w-sm whitespace-pre-wrap break-words p-3">{change.before ?? '—'} → {change.after ?? '—'}</td><td className="p-3">{change.actorId ? personLabel(change.actorNm, change.actorId) : '—'}</td></tr>)}</tbody></table></div>
+        <div className="overflow-auto rounded-lg border border-border"><table className="w-full text-left text-sm"><caption className="sr-only">권한 변경 이력</caption><thead className="bg-muted"><tr>{['시각', '대상', '변경', '그룹·사용자', '권한·필드', '변경 전 → 후', '처리자'].map((title) => <th key={title} className="p-3">{title}</th>)}</tr></thead><tbody>{(history.data?.list ?? []).map((change) => <tr key={change.id} className="border-t border-border"><td className="p-3 tabular-nums">{formatChangedAt(change.createdAt)}</td><td className="p-3">{label(TARGET_LABEL, change.targetType)}</td><td className="p-3">{label(CHANGE_LABEL, change.changeType)}</td><td className="p-3">{change.group || change.userId ? <>{change.group && <div>{change.group}</div>}{change.userId && <div>{personLabel(change.userNm, change.userId)}</div>}</> : '—'}</td><td className="p-3">{change.grantType ? `${label(GRANT_TYPE_LABEL, change.grantType)} ` : ''}{change.grantCode ?? (change.field ? label(FIELD_LABEL, change.field) : '—')}</td><td className="max-w-sm whitespace-pre-wrap break-words p-3">{change.before ?? '—'} → {change.after ?? '—'}</td><td className="p-3">{change.actorId ? personLabel(change.actorNm, change.actorId) : '—'}</td></tr>)}</tbody></table></div>
         {history.isSuccess && history.data.list.length === 0 && <p role="status">변경 이력이 없습니다.</p>}
         <PagePagination total={history.data?.total ?? 0} page={historyPage} size={PAGE_SIZE} onPageChange={setHistoryPage} />
       </section>

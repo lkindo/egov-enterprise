@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 /**
  * 게시글 정보 DTO (v5 standardized - Record 버전)
  */
-@Builder
+@Builder(toBuilder = true)
 public record BoardDto(
     @Schema(description = "게시글 ID")
     Long pstSn,
@@ -101,6 +101,13 @@ public record BoardDto(
     //   작성자 이름은 userNm 이 싣는다. 비어 있는 필드가 계약에 있으면 화면이 그것을 읽어 작성자를 '-' 로 그린다.
 
     @Schema(description = "답글 단계", nullable = true, types = {"integer", "null"})
-    Integer ansLv
+    Integer ansLv,
+
+    // [2026-10-01] 현재 사용자가 이 글을 이미 추천했는지 — 종전 화면은 알 수 없어 누를 때마다 409 로 알았다.
+    //   판정할 수 없으면(비로그인·목록 밖 경로) null 이다.
+    @Schema(description = "현재 사용자가 이미 추천했는지(서버 판정, 알 수 없으면 null)", nullable = true,
+            types = {"boolean", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    Boolean recommended
 ) {
 }

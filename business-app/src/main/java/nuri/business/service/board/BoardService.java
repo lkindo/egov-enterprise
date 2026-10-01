@@ -171,9 +171,26 @@ public class BoardService extends BaseAbstractService {
 
                 condition.validateDates();
 
-                return boardRepository.searchArticles(condition, required(pageable, "pageable 는 null 일 수 없습니다"))
+                Page<BoardDto> page = boardRepository.searchArticles(condition, required(pageable, "pageable 는 null 일 수 없습니다"))
                                 .map(boardMapper::toDto);
+                return withRecommendedMarks(page);
 
+        }
+
+        /**
+         * [2026-10-01] 목록의 각 글에 현재 사용자의 추천 여부를 한 번의 조회로 싣는다. 종전 화면은 알 수 없어
+         * 이미 추천한 글에도 추천 버튼이 그대로였고, 누르면 409 로 비로소 알았다. 사용자를 모르면 null 로 둔다.
+         */
+        private Page<BoardDto> withRecommendedMarks(Page<BoardDto> page) {
+                java.util.Optional<String> esntlId = SecurityUtil.getCurrentEsntlId();
+                if (esntlId.isEmpty() || page.isEmpty()) {
+                        return page;
+                }
+                java.util.List<Long> pstSns = page.getContent().stream().map(BoardDto::pstSn)
+                                .filter(java.util.Objects::nonNull).toList();
+                java.util.Set<Long> recommended = pstSns.isEmpty() ? java.util.Set.of()
+                                : new java.util.HashSet<>(recommendationRepository.findRecommendedPstSns(esntlId.get(), pstSns));
+                return page.map(dto -> dto.toBuilder().recommended(recommended.contains(dto.pstSn())).build());
         }
 
         /** 통합 검색이 요구하는 최소 검색어 길이. 담당자 검색({@code UserService})과 같은 값이다. */
@@ -615,7 +632,13 @@ public class BoardService extends BaseAbstractService {
                         viewCountService.increaseViewCount(pstSn);
                 }
 
-                return boardMapper.toDto(detail);
+                BoardDto dto = boardMapper.toDto(detail);
+                // [2026-10-01] 이미 추천했는지 알린다 — 화면이 추천 버튼을 '추천함' 으로 바꿔 409 를 미리 막는다.
+                return dto.toBuilder()
+                                .recommended(SecurityUtil.getCurrentEsntlId()
+                                                .map(id -> recommendationRepository.existsById(new BoardRecommendationId(pstSn, id)))
+                                                .orElse(null))
+                                .build();
         }
 
         /** Q&A 템플릿 게시판 — 해결 상태를 가진 게시판은 이것뿐이다(화면 BoardTemplates 와 같은 판정). */

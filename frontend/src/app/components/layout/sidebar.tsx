@@ -16,6 +16,9 @@ import { NavBookmarkSlot, NavItem, NavQueryScope, RecentMenuRecorder } from './N
 import { NavBookmarkToggle } from './NavBookmarkToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { openableMenus } from '@/lib/navigation/openable-menus';
+import { walkMenuTree } from '@/lib/navigation/active-menu';
+import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
+import { useMenuBookmarks } from '@/hooks/api/use-menu-bookmarks';
 
 const renderNavBookmark = (item: MenuInfo) => <NavBookmarkToggle menuNo={item.menuNo} menuNm={item.menuNm} />;
 import { SITE_IDENTITY } from '@/config/site-identity';
@@ -63,7 +66,7 @@ export function Sidebar({
   }, [isSidebarOpen, setSidebarOpen]);
 
   // initialData가 실제로 있을 때만 주입한다. 빈 배열을 데이터로 확정하면 복구 query가 실행되지 않는다.
-  const { data: assignedTopMenus = NO_MENUS } = useQuery({
+  const { data: assignedTopMenus = NO_MENUS, isError: topMenusFailed, refetch: refetchTopMenus } = useQuery({
     queryKey: ['menus', 'head', ...menuAuthorization.scope],
     queryFn: () => menuService.getHeadMenus(),
     initialData: menuAuthorization.acceptsInitialMenus && resolvedMenus.length > 0 ? resolvedMenus : undefined,
@@ -73,6 +76,17 @@ export function Sidebar({
   // [2026-10-01] 배정된 메뉴 가운데 라우트 게이트가 통과시킬 것만 보인다(openableMenus 주석).
   const topMenus = useMemo(() => openableMenus(assignedTopMenus, user), [assignedTopMenus, user]);
 
+  // [2026-10-01] 즐겨찾기를 사이드바에서도 쓴다 — 종전에는 Ctrl+K 명령 센터 안에만 있었다. 명령 센터와 같이
+  //   지금 열 수 있는 메뉴 트리와 메뉴 번호로 맞춰, 배정이 회수된 메뉴는 보이지 않는다.
+  const { bookmarks } = useMenuBookmarks();
+  const favoriteMenus = useMemo(() => {
+    const byNo = new Map<number, MenuInfo>();
+    for (const { item } of walkMenuTree(topMenus)) byNo.set(item.menuNo, item);
+    return bookmarks
+      .map((bookmark) => byNo.get(bookmark.menuNo))
+      .filter((menu): menu is MenuInfo => !!menu && resolveMenuInternalRoute(menu) !== null);
+  }, [bookmarks, topMenus]);
+
   const effectiveActiveMenuNo = topMenus.some((menu) => menu.menuNo === activeMenuNo)
     ? activeMenuNo : topMenus[0]?.menuNo ?? null;
   const activeTopMenu = topMenus.find((menu) => menu.menuNo === effectiveActiveMenuNo);
@@ -81,7 +95,7 @@ export function Sidebar({
   // 전역 영역 선택은 HeaderSearchParamSync가 현재 URL로 동기화한다.
   // 여기서 첫 영역을 저장하면 같은 commit의 정확한 URL 선택을 덮어쓸 수 있다.
 
-  const { data: assignedMenus = prefetchedLeftMenus, isLoading: loading } = useQuery({
+  const { data: assignedMenus = prefetchedLeftMenus, isLoading: loading, isError: leftMenusFailed, refetch: refetchLeftMenus } = useQuery({
     queryKey: ['menus', 'left', effectiveActiveMenuNo, ...menuAuthorization.scope],
     queryFn: async () => {
       if (!effectiveActiveMenuNo) return [];
@@ -187,6 +201,25 @@ export function Sidebar({
               })}
             </div>
 
+            {favoriteMenus.length > 0 && (
+              <div role="group" aria-labelledby="sidebar-favorites-heading" className="mb-6 space-y-1 border-b border-border/60 pb-5">
+                <p id="sidebar-favorites-heading" className="mb-2 px-2 text-xs font-bold text-muted-foreground">즐겨찾기</p>
+                <ul className="space-y-1">
+                  {favoriteMenus.map((menu) => (
+                    <li key={menu.menuNo}>
+                      <Link
+                        href={resolveMenuInternalRoute(menu) ?? '/'}
+                        onClick={() => setSidebarOpen(false)}
+                        className="flex min-h-[var(--control-h)] items-center rounded-[var(--radius-hub-item)] px-3 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        {menu.menuNm}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="mb-6 flex items-center justify-between px-2">
               <p className="text-xs font-bold tracking-tight text-muted-foreground">전체 메뉴</p>
               {activeTopMenu && (
@@ -204,11 +237,22 @@ export function Sidebar({
                 ))}
               </div>
             ) : menus.length === 0 ? (
+              /* [2026-10-01] 조회 실패와 '배정된 메뉴 없음' 을 같은 문구로 말하지 않는다 — 실패면 다시 시도를 둔다. */
               <div className="space-y-3 p-8 text-center text-muted-foreground">
                 <Database size={32} className="mx-auto" aria-hidden="true" />
-                <p className="text-sm font-bold tracking-tight">
-                  {assignedMenus.length > 0 ? '이 영역에는 열 수 있는 메뉴가 없습니다.' : '메뉴를 불러올 수 없습니다.'}
-                </p>
+                {topMenusFailed || leftMenusFailed ? (
+                  <div role="alert" className="space-y-3">
+                    <p className="text-sm font-bold tracking-tight">메뉴를 불러오지 못했습니다.</p>
+                    <Button type="button" variant="outline" size="sm"
+                      onClick={() => { void refetchTopMenus(); void refetchLeftMenus(); }}>
+                      다시 시도
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-sm font-bold tracking-tight">
+                    {assignedMenus.length > 0 ? '이 영역에는 열 수 있는 메뉴가 없습니다.' : '이 계정에 배정된 메뉴가 없습니다.'}
+                  </p>
+                )}
               </div>
             ) : (
               <NavQueryScope menus={menuTree}>

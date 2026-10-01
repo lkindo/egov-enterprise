@@ -41,6 +41,11 @@ public class MemoReportService {
      * '받은 보고' 라 곧바로 보인다.
      */
     private static final String MEMO_REPORT_ROUTE = "/admin/operation/memo-reports";
+    /**
+     * 보고한 사람에게 보내는 알림의 목적지 — 자기 보고는 '발신함'(tab=MY)에 있다. 쿼리 없는 경로는 기본 탭인
+     * '수신함' 을 열어, 지시가 달린 자기 보고를 찾으려면 탭을 한 번 더 바꿔야 했다(2026-10-01).
+     */
+    private static final String MEMO_REPORT_SENT_ROUTE = MEMO_REPORT_ROUTE + "?tab=MY";
 
     /**
      * 조직 전체 메모보고 목록 — <b>관리자 전용</b>.
@@ -145,7 +150,11 @@ public class MemoReportService {
         dto.setWrterNm(entity.getUserId() == null ? null : names.get(entity.getUserId()));
         dto.setRptrNm(entity.getRptrId() == null ? null : names.get(entity.getRptrId()));
         dto.setEditable(!hasInstruction(entity) && canModify(entity, "MEMO_RPT_UPDATE", "MEMO_RPT_UPDATE_ALL"));
-        dto.setDeletable(canModify(entity, "MEMO_RPT_DELETE", "MEMO_RPT_DELETE_ALL"));
+        // [2026-10-01] 지시가 달린 보고는 작성자가 지우지 못한다 — 수정과 같이 지시가 가리키던 내용이 사라진다.
+        //   전체 삭제 권한자는 정리할 수 있고, 그때는 두 당사자에게 알린다(deleteMemoReport).
+        dto.setDeletable(canModify(entity, "MEMO_RPT_DELETE", "MEMO_RPT_DELETE_ALL")
+                && (!hasInstruction(entity) || nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_DELETE_ALL")));
+        dto.setInstructable(canInstruct(entity));
         return dto;
     }
 
@@ -206,7 +215,7 @@ public class MemoReportService {
         // [2026-09-26 DIP B4 P3] 받은 사람에게 알린다. 자기에게 보낸 보고는 알리지 않는다.
         String recipient = dto.getRptrId();
         if (org.springframework.util.StringUtils.hasText(recipient) && !recipient.equals(userId)) {
-            publishNotification(recipient, "메모 보고가 도착했습니다", titleOf(dto.getRptTtl()));
+            publishNotification(recipient, "메모 보고가 도착했습니다", titleOf(dto.getRptTtl()), MEMO_REPORT_ROUTE);
         }
         return memoRptSn;
     }
@@ -216,12 +225,29 @@ public class MemoReportService {
     }
 
     /** 보고와 알림 의도를 같은 트랜잭션에 저장해 함께 commit/rollback한다. */
-    private void publishNotification(String receiverEsntlId, String title, String content) {
+    private void publishNotification(String receiverEsntlId, String title, String content, String route) {
         eventPublisher.publishEvent(
-                new nuri.foundation.core.event.NotificationRequestedEvent(receiverEsntlId, title, content, MEMO_REPORT_ROUTE));
+                new nuri.foundation.core.event.NotificationRequestedEvent(receiverEsntlId, title, content, route));
     }
 
     /** 지시가 달렸는가. 지시는 그때의 본문을 두고 내린 것이라, 달린 뒤에는 본문을 바꾸지 않는다(P9). */
+    /**
+     * [2026-10-01] 지시를 남길 수 있는가 — 지시 기능 권한과 수신자·전체 수정 권한 규칙(assertRecipientOrAdmin)을
+     * boolean 으로 계산한다. 종전 화면은 기능 권한을 보지 않아, 권한을 회수해도 지시 칸이 남고 저장 때 403 을 만났다.
+     * 표시용 힌트이며 실제 차단은 쓰기 경로가 집행한다.
+     */
+    private boolean canInstruct(MemoReport entity) {
+        if (!nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_INSTRUCT")) {
+            return false;
+        }
+        if (nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE_ALL")) {
+            return true;
+        }
+        return nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
+                .filter(id -> id.equals(entity.getRptrId()))
+                .isPresent();
+    }
+
     private static boolean hasInstruction(MemoReport entity) {
         return org.springframework.util.StringUtils.hasText(entity.getDrctnMttr());
     }
@@ -253,6 +279,20 @@ public class MemoReportService {
         MemoReport entity = memoReportRepository.findById(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "MEMO_RPT_DELETE_ALL"); // [IDOR] 작성자/관리자만 삭제
+        // [2026-10-01] 지시가 달린 보고는 작성자가 지우지 못한다 — 수정 차단(P9)을 삭제로 우회하면 지시와 함께 받은 사람의
+        //   수신함에서도 알림 없이 사라졌다. 전체 삭제 권한자는 정리할 수 있되 두 당사자에게 알린다.
+        if (hasInstruction(entity)) {
+            if (!nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_DELETE_ALL")) {
+                throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
+                        "지시가 달린 보고는 지울 수 없습니다. 지시를 받은 뒤의 기록이라 그대로 둡니다.");
+            }
+            String actor = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
+            for (String party : new LinkedHashSet<>(java.util.Arrays.asList(entity.getUserId(), entity.getRptrId()))) {
+                if (org.springframework.util.StringUtils.hasText(party) && !party.equals(actor)) {
+                    publishNotification(party, "지시가 달린 메모 보고가 삭제되었습니다", titleOf(entity.getRptTtl()), MEMO_REPORT_ROUTE);
+                }
+            }
+        }
         memoReportRepository.delete(entity);
     }
 
@@ -278,13 +318,17 @@ public class MemoReportService {
         MemoReport entity = memoReportRepository.findByIdForUpdate(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertRecipientOrAdmin(entity); // [IDOR] 지시는 보고를 받은 사람·관리자만 남긴다
+        // [2026-10-01] 이미 지시가 있던 보고에 다른 지시를 남기면 '변경' 으로 알린다 — 종전에는 같은 제목의 알림이라
+        //   작성자가 새 지시인지 바뀐 지시인지 구분할 수 없었다.
+        boolean replacing = hasInstruction(entity) && !Objects.equals(entity.getDrctnMttr(), instrCn);
         entity.updateDrctMatter(instrCn, java.time.LocalDateTime.now());
         // [2026-09-26 DIP B4 P3] 보고한 사람에게 지시가 달렸다고 알린다. 지시를 지운 경우와 자기 보고는 알리지 않는다.
         String author = entity.getUserId();
         String actor = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
         if (org.springframework.util.StringUtils.hasText(instrCn)
                 && org.springframework.util.StringUtils.hasText(author) && !author.equals(actor)) {
-            publishNotification(author, "메모 보고에 지시가 달렸습니다", titleOf(entity.getRptTtl()));
+            publishNotification(author, replacing ? "메모 보고의 지시가 변경되었습니다" : "메모 보고에 지시가 달렸습니다",
+                    titleOf(entity.getRptTtl()), MEMO_REPORT_SENT_ROUTE);
         }
     }
 

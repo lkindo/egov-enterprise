@@ -25,7 +25,7 @@ vi.mock('next/link', () => ({
   default: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => <a {...props}>{children}</a>,
 }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { role: 'USER' } }) }));
-vi.mock('@/app/actions/boardActions', () => ({ likeBoardArticle: vi.fn() }));
+vi.mock('@/services/business/user/board/BoardUserService', () => ({ boardUserService: { likePost: vi.fn() } }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 vi.mock('@/app/components/layout/DynamicBreadcrumb', () => ({ DynamicBreadcrumb: () => <nav /> }));
 vi.mock('@/hooks/api/use-board-list', () => ({ useBoardList: mocks.useBoardList }));

@@ -9,6 +9,7 @@ import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { PeriodFilter, EMPTY_PERIOD, periodToParams, hasAppliedPeriod } from '@/app/components/patterns/period-filter';
 import { useRememberedListConditions } from '@/lib/hooks/use-remembered-list-conditions';
+import { clearTargetHandoff, useTargetHandoff } from '@/lib/navigation/target-handoff';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { useToast } from '@/app/components/ui/toast';
@@ -63,7 +64,12 @@ const SystemLogsLoginClient = () => {
       defaultPageSize: DEFAULT_PAGE_SIZE,
       pageSizeOptions: PAGE_SIZE_OPTIONS,
     });
-    const [searchKeyword, setSearchKeyword] = useState('');
+    // [2026-10-01] 사용자 상세에서 넘어오면 그 사람의 로그인 ID 로 조회해 연다(탭 세션 인계, URL 비노출).
+    //   사용자가 조건을 직접 바꾸면 인계를 지운다.
+    const handedUser = useTargetHandoff('login-log-user');
+    const [chosenKeyword, setChosenKeyword] = useState<string | null>(null);
+    const searchKeyword = chosenKeyword ?? handedUser?.loginId ?? '';
+    const setSearchKeyword = (next: string) => { clearTargetHandoff('login-log-user'); setChosenKeyword(next); };
     const { error: toastError } = useToast();
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<LoginLog>>({

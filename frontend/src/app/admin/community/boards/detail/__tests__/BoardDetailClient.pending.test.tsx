@@ -70,8 +70,8 @@ const detailData = {
   fetchError: null,
 };
 
-async function renderDetail() {
-  const dataPromise = Promise.resolve(detailData as any);
+async function renderDetail(articleOverrides: Record<string, unknown> = {}) {
+  const dataPromise = Promise.resolve({ ...detailData, article: { ...detailData.article, ...articleOverrides } } as any);
   let result!: ReturnType<typeof render>;
   await act(async () => {
     result = render(
@@ -189,6 +189,26 @@ describe('BoardDetailClient action pending contract', () => {
 
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('이미 추천한 게시글입니다.', 'error'));
     expect(like).toHaveTextContent('추천 2');
+  });
+
+  it('이미 추천한 글(서버 판정)은 추천함으로 보이고 누를 수 없다 — 409 를 미리 막는다 (2026-10-01)', async () => {
+    await renderDetail({ recommended: true });
+    const like = await screen.findByRole('button', { name: '게시글 추천함' });
+
+    expect(like).toBeDisabled();
+    expect(like).toHaveAttribute('aria-pressed', 'true');
+    expect(like).toHaveTextContent('추천함 2');
+    fireEvent.click(like);
+    expect(mocks.likePost).not.toHaveBeenCalled();
+  });
+
+  it('추천에 성공하면 같은 방문에서 추천함으로 바뀐다 (2026-10-01)', async () => {
+    await renderDetail();
+    fireEvent.click(await screen.findByRole('button', { name: '게시글 추천' }));
+
+    const done = await screen.findByRole('button', { name: '게시글 추천함' });
+    expect(done).toHaveTextContent('추천함 3');
+    expect(done).toBeDisabled();
   });
 
   it('삭제를 confirm 전에 선점하고 실패 뒤 게시글과 충돌 제어를 복구한다', async () => {

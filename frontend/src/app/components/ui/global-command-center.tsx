@@ -16,6 +16,7 @@ import { useShortcut } from './global-shortcut-provider';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCommandMenuData } from '@/hooks/api/use-command-menu-data';
 import { readRecentMenuNos } from '@/lib/navigation/recent-menus';
+import { COMMAND_CENTER_OPEN_EVENT } from '@/lib/navigation/command-center-bridge';
 import { walkMenuTree } from '@/lib/navigation/active-menu';
 import { SEARCH_URL_STATE, parseSearchUrlState, serializeSearchQuery, searchUrlErrorMessage } from '@/lib/navigation/search-url-state';
 import {
@@ -103,6 +104,13 @@ export function GlobalCommandCenter() {
     setIsOpen(false);
     setSearch('');
   }, []);
+
+  // 헤더의 '빠른 이동' 버튼이 보내는 열기 요청(단축키를 모르는 사용자의 입구).
+  useEffect(() => {
+    const open = () => openCommandCenter();
+    window.addEventListener(COMMAND_CENTER_OPEN_EVENT, open);
+    return () => window.removeEventListener(COMMAND_CENTER_OPEN_EVENT, open);
+  }, [openCommandCenter]);
 
   // 1. 단축키 등록 (CMD/Ctrl+K)
   useShortcut('k', true, () => {

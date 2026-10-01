@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, Suspense } from 'react';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -42,10 +43,13 @@ async function renderHome(data: Partial<DashboardData> | null) {
     ...data,
   } as DashboardData);
   await act(async () => {
+    // 업무 홈의 '안 읽은 쪽지' 카드가 쿼리를 쓰므로 앱과 같이 QueryClient 안에서 그린다(2026-10-01).
     render(
-      <Suspense fallback={null}>
-        <UnifiedDashboardClient dataPromise={dataPromise} />
-      </Suspense>,
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <Suspense fallback={null}>
+          <UnifiedDashboardClient dataPromise={dataPromise} />
+        </Suspense>
+      </QueryClientProvider>,
     );
     await dataPromise;
   });

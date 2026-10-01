@@ -208,6 +208,25 @@ class SurveyServiceTest {
     }
 
     @Test
+    @DisplayName("🚨 설문 목록은 현재 사용자의 응답 여부를 한 번의 조회로 싣는다 (2026-10-01)")
+    void getSurveyList_marksResponded() {
+        Pageable pageable = PageRequest.of(0, 10);
+        given(infoRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(
+                SurveyInfo.builder().srvySn(201L).build(), SurveyInfo.builder().srvySn(202L).build())));
+        given(rsltRepository.findRespondedSurveySns("user1", List.of(201L, 202L))).willReturn(List.of(202L));
+
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId).thenReturn(Optional.of("user1"));
+            assertThat(surveyService.getSurveyList(null, pageable).getContent())
+                    .extracting(SurveyInfoDto::getResponded).containsExactly(false, true);
+
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId).thenReturn(Optional.empty());
+            assertThat(surveyService.getSurveyList(null, pageable).getContent())
+                    .extracting(SurveyInfoDto::getResponded).containsOnlyNulls();
+        }
+    }
+
+    @Test
     @DisplayName("설문 정보 목록 조회 - 키워드 있음")
     void getSurveyList_WithKeyword() {
         Pageable pageable = PageRequest.of(0, 10);

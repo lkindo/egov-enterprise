@@ -851,7 +851,7 @@ export const updateMemoReportOperation = /*#__PURE__*/ (() => {
   requestSchema: MemoReportDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"],["editable"],["deletable"]],
+  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"],["editable"],["deletable"],["instructable"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -3647,7 +3647,7 @@ export const createMemoReportOperation = /*#__PURE__*/ (() => {
   requestSchema: MemoReportDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"],["editable"],["deletable"]],
+  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"],["editable"],["deletable"],["instructable"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -8180,6 +8180,25 @@ export const authzHistoryOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseChangeResponseSchema),
   envelopeSchema: ApiResponsePageResponseChangeResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const authzGroupMembersOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "authzGroupMembers",
+  method: "get",
+  path: "/api/v1/admin/authorization/groups/{code}/members",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "code": z.string() }).strict(),
+  querySchema: z.object({ "page": z.number().int().optional(), "size": z.number().int().optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => PageResponseUserChoiceResponseSchema),
+  envelopeSchema: ApiResponsePageResponseUserChoiceResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

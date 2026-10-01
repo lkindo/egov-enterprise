@@ -2,7 +2,8 @@
 
 import React, { useState, use } from 'react';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
-import { likeBoardArticle } from '@/app/actions/boardActions';
+import { boardUserService } from '@/services/business/user/board/BoardUserService';
+import { extractErrorMessage } from '@/app/actions/actionUtils';
 import Link from 'next/link';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useBoardList, type BoardListParams } from '@/hooks/api/use-board-list';
@@ -275,7 +276,9 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: BoardLis
 
  // 낙관적 업데이트를 적용한 좋아요 뮤테이션
  const likeMutation = useMutation({
-  mutationFn: (pstSn: number) => likeBoardArticle(bbsId, pstSn),
+  // [2026-10-01] 상세와 같은 클라이언트 경로로 추천한다. 종전 서버 액션은 실패를 { success: false } 로 삼켜
+  //   onError 가 돌지 않았다 — 숫자가 올랐다가 다시 읽을 때 조용히 되돌아갔고 사유(이미 추천함 등)는 보이지 않았다.
+  mutationFn: (pstSn: number) => boardUserService.likePost(bbsId, pstSn),
   onMutate: async (pstSn: number) => {
   
   // 진행 중인 쿼리 취소
@@ -290,7 +293,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: BoardLis
       return {
         ...old,
         list: old.list.map((item: BoardPost) => 
-          item.pstSn === pstSn ? { ...item, likeCnt: (item.likeCnt || 0) + 1 } : item
+          item.pstSn === pstSn ? { ...item, likeCnt: (item.likeCnt || 0) + 1, recommended: true } : item
         )
       };
     });
@@ -300,7 +303,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: BoardLis
   onError: (err, pstSn, context) => {
   // 실패 시 롤백
   queryClient.setQueryData(queryKey, context?.previousData);
-  toast(err instanceof Error && err.message ? err.message : '추천 처리 중 오류가 발생했습니다.', 'error');
+  toast(extractErrorMessage(err, '추천 처리 중 오류가 발생했습니다.'), 'error');
   },
   onSettled: () => {
   // 최종적으로 서버 데이터와 동기화

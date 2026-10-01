@@ -12,7 +12,6 @@ import {
   createPostWithFilesOperation,
   createPostOperation,
   deletePostOperation,
-  likePostOperation,
   updatePostWithFilesOperation,
   updatePostOperation,
 } from '@/types/generated-operations';
@@ -219,23 +218,3 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
   }
 }
 
-export async function likeBoardArticle(bbsId: string, pstSn: number): Promise<{ success: boolean; count?: number }> {
-  try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('accessToken')?.value;
-    const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-    const response = await executeGeneratedOperation(likePostOperation, {
-      path: { bbsId, pstSn },
-      config: axiosConfig,
-    });
-
-    if (response !== undefined) {
-      return { success: true, count: response };
-    } else {
-      return { success: false };
-    }
-  } catch {
-    return { success: false };
-  }
-}

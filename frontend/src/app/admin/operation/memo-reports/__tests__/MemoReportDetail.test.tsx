@@ -95,7 +95,7 @@ describe('메모보고 열람', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // 수신자(ROW.rptrId) 본인으로 연다 — 지시사항은 수신자·전체 수정 권한자만 남긴다(DIP I7).
-    mocks.user = { role: 'ROLE_ADMIN', esntlId: 'USR_B', permissions: ['MEMO_RPT_READ_ALL'], authorizationVersion: 'v1' };
+    mocks.user = { role: 'ROLE_ADMIN', esntlId: 'USR_B', permissions: ['MEMO_RPT_READ_ALL', 'MEMO_RPT_INSTRUCT'], authorizationVersion: 'v1' };
     const page = { list: [ROW], total: 1 };
     mocks.getReceivedReports.mockResolvedValue(page);
     mocks.getMyReports.mockResolvedValue(page);
@@ -103,6 +103,7 @@ describe('메모보고 열람', () => {
     mocks.getMemoReport.mockResolvedValue({ ...ROW, drctnMttr: '9월까지 검토 바랍니다.', editable: true, deletable: true });
     mocks.updateMemoReport.mockResolvedValue(undefined);
     mocks.deleteMemoReport.mockResolvedValue(undefined);
+    mocks.confirm.mockReset();
     mocks.confirm.mockResolvedValue(true);
   });
 
@@ -165,13 +166,62 @@ describe('메모보고 열람', () => {
   });
 
   it('수신자가 아니어도 전체 수정 권한자는 지시사항을 남길 수 있다 (DIP I7)', async () => {
-    mocks.user = { role: 'ROLE_ADMIN', esntlId: 'USR_ADMIN', permissions: ['MEMO_RPT_READ_ALL', 'MEMO_RPT_UPDATE_ALL'], authorizationVersion: 'v1' };
+    mocks.user = { role: 'ROLE_ADMIN', esntlId: 'USR_ADMIN', permissions: ['MEMO_RPT_READ_ALL', 'MEMO_RPT_UPDATE_ALL', 'MEMO_RPT_INSTRUCT'], authorizationVersion: 'v1' };
     mocks.getMemoReport.mockResolvedValue({ ...ROW, drctnMttr: undefined });
     renderClient();
 
     fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
 
     expect(await screen.findByLabelText('지시사항 남기기', { exact: false })).toBeInTheDocument();
+  });
+
+  it('서버 판정(instructable=false)이 오면 수신자에게도 지시 입력을 보이지 않는다 — 지시 권한을 회수한 경우', async () => {
+    mocks.getMemoReport.mockResolvedValue({ ...ROW, drctnMttr: undefined, instructable: false });
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
+
+    expect(await screen.findByText('등록된 지시사항이 없습니다.')).toBeVisible();
+    expect(screen.queryByLabelText('지시사항 남기기', { exact: false })).not.toBeInTheDocument();
+  });
+
+  it('지시 기능 권한이 없으면 수신자라도 힌트 없는 행에서 지시 입력을 계산해 내지 않는다', async () => {
+    mocks.user = { role: 'ROLE_USER', esntlId: 'USR_B', permissions: ['MEMO_RPT_READ'], authorizationVersion: 'v1' };
+    mocks.getMemoReport.mockResolvedValue({ ...ROW, drctnMttr: undefined });
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
+
+    expect(await screen.findByText('등록된 지시사항이 없습니다.')).toBeVisible();
+    expect(screen.queryByLabelText('지시사항 남기기', { exact: false })).not.toBeInTheDocument();
+  });
+
+  it('이미 있는 지시를 다른 내용으로 바꾸면 먼저 확인하고, 취소하면 보내지 않는다', async () => {
+    mocks.getMemoReport.mockResolvedValue({ ...ROW, drctnMttr: '9월까지 검토 바랍니다.', instructable: true });
+    mocks.confirm.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
+    fireEvent.change(await screen.findByLabelText('지시사항 다시 남기기', { exact: false }), {
+      target: { value: '10월로 미룹니다.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '지시사항 바꾸기' }));
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ title: '지시 바꾸기' })));
+    expect(mocks.updateDrctMatter).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: '지시사항 바꾸기' }));
+    await waitFor(() => expect(mocks.updateDrctMatter).toHaveBeenCalledWith(5, '10월로 미룹니다.'));
+    expect(mocks.toast).toHaveBeenCalledWith('지시사항을 바꿨습니다.', 'success');
+  });
+
+  it('목록에서 지시가 달린 보고를 구분한다', async () => {
+    const page = { list: [{ ...ROW, drctnMttr: '9월까지 검토 바랍니다.' }, { ...ROW, memoRptSn: 6, rptTtl: '4분기 계획', drctnMttr: undefined }], total: 2 };
+    mocks.getReceivedReports.mockResolvedValue(page);
+    renderClient();
+
+    expect(await screen.findByText('지시 있음')).toBeInTheDocument();
+    expect(screen.getAllByText('지시 있음')).toHaveLength(1);
   });
 
   it('빈 지시사항은 보내지 않고 그 사실을 말한다', async () => {

@@ -18,7 +18,8 @@ import {
   KeyRound,
   UserCog,
   CircleDot,
-  Search
+  Search,
+  Compass
 } from 'lucide-react';
 /* reusable-base:demo:start */
 import { Info } from 'lucide-react';
@@ -27,6 +28,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { canOpenPage } from '@/lib/auth/page-access';
 import { useLayout } from '@/contexts/LayoutContext';
+import { requestCommandCenter } from '@/lib/navigation/command-center-bridge';
+import { requestOnboarding } from '@/lib/navigation/onboarding-bridge';
 /* reusable-base:collaboration:start */
 import { HeaderNotifications } from './header-notifications';
 /* reusable-base:collaboration:end */
@@ -233,6 +236,21 @@ export function Header({
         </div>
 
         <div className="flex items-center gap-1 md:gap-2">
+          {/* [2026-10-01] 즐겨찾기·최근 방문이 있는 명령 센터의 보이는 입구 — 종전에는 Ctrl+K 로만 열렸다.
+              좁은 화면(md 미만)에서는 숨긴다 — 320px 에서 헤더가 40px 넘쳐 화면이 가로로 밀렸다(WCAG 1.4.10).
+              그 폭에서는 사이드바 즐겨찾기 묶음과 통합 검색이 같은 길을 준다. */}
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={requestCommandCenter}
+            aria-label="빠른 이동 (Ctrl+K)"
+            aria-keyshortcuts="Control+K"
+            title="빠른 이동 (Ctrl+K)"
+            className="hidden md:inline-flex gap-2 text-muted-foreground"
+          >
+            <Compass size={20} aria-hidden="true" />
+            <span className="hidden lg:inline text-sm font-medium">빠른 이동</span>
+          </Button>
           <Link href="/search" aria-label="통합 검색" title="통합 검색" className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "text-muted-foreground")}><Search size={20} aria-hidden="true" /></Link>
           {/* reusable-base:demo:start */}
           <Link
@@ -309,6 +327,10 @@ export function Header({
                       </Button>
                       <Button variant="ghost" aria-label="추가 인증 관리" className="w-full justify-start text-sm gap-2 font-medium" onClick={() => setMfaOpen(true)}>
                         <ShieldCheck size={14} /> 추가 인증 관리
+                      </Button>
+                      {/* [2026-10-01] 온보딩은 저절로 열리지 않는다 — 여기서 언제든 다시 본다. */}
+                      <Button variant="ghost" aria-label="사용 안내" className="w-full justify-start text-sm gap-2 font-medium" onClick={requestOnboarding}>
+                        <CircleDot size={14} /> 사용 안내
                       </Button>
                       <Button
                         variant="ghost"

@@ -75,6 +75,13 @@ describe('GlobalCommandCenter accessibility contract', () => {
     window.localStorage.clear();
   });
 
+  it('헤더의 빠른 이동 버튼이 보낸 요청으로도 열린다 — 단축키를 몰라도 즐겨찾기에 닿는다 (2026-10-01)', async () => {
+    renderCommandCenter();
+    const { requestCommandCenter } = await import('@/lib/navigation/command-center-bridge');
+    act(() => requestCommandCenter());
+    expect(await screen.findByRole('dialog', { name: '글로벌 커맨드 센터' })).toBeInTheDocument();
+  });
+
   it('열린 명령센터도 메뉴 무효화 시 과거 항목을 감추고 회수된 응답을 반영한다', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     mocks.getHeadMenus.mockResolvedValueOnce([{ menuNo: 88, menuNm: '회수될 메뉴', modernRoute: '/old-menu' }]);

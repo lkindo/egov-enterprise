@@ -108,5 +108,11 @@ public class MemoReportDto {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Boolean deletable;
 
+    /** [2026-10-01] 현재 사용자가 지시를 남길 수 있는지 — 지시 기능 권한과 수신자·전체 수정 권한으로 판정한다. */
+    @Schema(description = "현재 사용자가 지시를 남길 수 있는지(서버 판정)",
+            accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Boolean instructable;
+
     // 수기 from(MemoReport) 은 MemoReportMapper(MapStruct, 프레임워크 표준)로 대체됨.
 }

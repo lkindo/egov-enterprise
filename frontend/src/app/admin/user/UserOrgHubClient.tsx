@@ -86,6 +86,7 @@ import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
 import { canPermission } from '@/lib/auth/permissions';
+import { handOffTarget } from '@/lib/navigation/target-handoff';
 import { failureMessage } from '@/lib/safe-error-log';
 import { DeptPlacementControls } from './DeptPlacementControls';
 import { treeDndAnnouncements, treeDndInstructions } from '@/lib/dnd/tree-dnd-accessibility';
@@ -206,6 +207,10 @@ export default function UserOrgHubClient({
   // 권한 그룹 화면은 이 허브와 권한이 다르다 — 라우트 게이트와 같은 판정으로만 길을 보인다(DIP B4 P1).
   const { user: currentUser } = useAuth();
   const canOpenAuthority = canOpenPage(currentUser, '/admin/security/authority');
+  // [2026-10-01] 사용자 상세에서 이 사람을 대상으로 권한 배정·권한 변경 이력·로그인 이력을 연다(탭 세션 인계).
+  const canOpenLoginLog = canOpenPage(currentUser, '/admin/system/logs/login');
+  const canAssignAuthority = canOpenAuthority && canPermission(currentUser, 'AUTHRT_READ');
+  const canAuditAuthority = canOpenAuthority && canPermission(currentUser, 'AUTHRT_AUDIT');
   // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다. 이 화면은 조회 권한(USER_READ)만으로 들어올 수 있어,
   //   종전에는 헬프데스크 담당자에게도 등록·수정·초기화·삭제·일괄 작업이 모두 보였고 폼을 다 채운 뒤에야 403 을 만났다.
   //   표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
@@ -1440,7 +1445,16 @@ export default function UserOrgHubClient({
                     </DetailFieldList>
                   )}
 
-                  {!isDeptTab && canOpenAuthority && <AccessControlLink onOpen={() => router.push('/admin/security/authority')} />}
+                  {!isDeptTab && displayedUser?.esntlId && (canAssignAuthority || canAuditAuthority || canOpenLoginLog) && (() => {
+                    const target = { id: displayedUser.esntlId, loginId: displayedUser.userId ?? '', name: displayedUser.userNm ?? displayedUser.userId ?? '' };
+                    return (
+                      <AccessControlLink
+                        onOpen={canAssignAuthority ? () => { handOffTarget('authority-user', target); router.push('/admin/security/authority'); } : undefined}
+                        onOpenHistory={canAuditAuthority && target.loginId ? () => { handOffTarget('authority-history-user', target); router.push('/admin/security/authority'); } : undefined}
+                        onOpenLoginLog={canOpenLoginLog && target.loginId ? () => { handOffTarget('login-log-user', target); router.push('/admin/system/logs/login'); } : undefined}
+                      />
+                    );
+                  })()}
                 </DetailScrollArea>
               </section>
             ) : isDeptTab ? (

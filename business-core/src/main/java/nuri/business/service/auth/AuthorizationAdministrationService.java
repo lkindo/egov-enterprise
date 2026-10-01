@@ -72,6 +72,27 @@ public class AuthorizationAdministrationService {
         return new MembershipSnapshot(userId,groups,version(userId,groups.toString()),true);
     }
 
+    /**
+     * [2026-10-01] 그룹에 배정된 사용자를 그룹 쪽에서 본다. 종전에는 사용자별·부서별 두 방향뿐이라
+     * '이 그룹을 가진 사람이 누구냐' 에 답하려면 사람이나 부서를 하나씩 열어야 했고, 구성원이 있는 그룹을
+     * 지우려 해도 해제할 대상을 볼 경로가 없었다. 이름·로그인 ID 순이며 연락처는 싣지 않는다.
+     */
+    public Page<UserChoice> groupMembers(String code, int page, int size) {
+        SecurityUtil.assertPermission("AUTHRT_READ");
+        if (jdbc.queryForObject("SELECT count(*) FROM tb_authrt_info WHERE authrt_cd=?",Long.class,code) == 0) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
+        var pageable = pagination(page,size);
+        var rows = jdbc.query("SELECT u.esntl_id,u.user_id,u.user_nm,u.ognz_id FROM tb_authrt_user_map m"
+                + " JOIN tb_user_info u ON u.esntl_id=m.scrty_dcsn_trgt_id WHERE m.authrt_cd=?"
+                + " ORDER BY u.user_nm,u.user_id LIMIT ? OFFSET ?",
+                (rs,n) -> new UserChoice(rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4)),
+                code,pageable.getPageSize(),pageable.getOffset());
+        Long total = jdbc.queryForObject("SELECT count(*) FROM tb_authrt_user_map m JOIN tb_user_info u"
+                + " ON u.esntl_id=m.scrty_dcsn_trgt_id WHERE m.authrt_cd=?",Long.class,code);
+        return new PageImpl<>(rows,pageable,Objects.requireNonNull(total));
+    }
+
     public List<DepartmentChoice> departments() {
         SecurityUtil.assertPermission("AUTHRT_READ");
         return jdbc.query("SELECT ognz_id,ognz_nm FROM tb_ognz_info ORDER BY ognz_nm,ognz_id",
@@ -188,7 +209,10 @@ public class AuthorizationAdministrationService {
         lockAndAuthorize("AUTHRT_DELETE");
         if (RESERVED.contains(code)) invalid("예약된 그룹은 삭제할 수 없습니다.");
         var before = readGroup(code); requireVersion(before.version(),expectedVersion);
-        if (jdbc.queryForObject("SELECT count(*) FROM tb_authrt_user_map WHERE authrt_cd=?",Long.class,code) != 0) throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE);
+        // [2026-10-01] 거부 사유에 배정 인원을 싣는다 — 종전 409 는 기본 문구뿐이라 몇 명을 해제해야 하는지 알 수 없었다.
+        long assigned = Objects.requireNonNull(jdbc.queryForObject("SELECT count(*) FROM tb_authrt_user_map WHERE authrt_cd=?",Long.class,code));
+        if (assigned != 0) throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
+                "이 그룹에 배정된 사용자 " + assigned + "명이 있어 삭제할 수 없습니다. 구성원 목록에서 배정을 먼저 해제하세요.");
         if (before.grants().stream().anyMatch(AuthorizationAdministrationService::isSensitiveAdministrationGrant)) authorizeProtectedAdministration();
         String id = UUID.randomUUID().toString();
         for (var grant: before.grants()) removeGrant(id,code,grant);
@@ -388,7 +412,9 @@ public class AuthorizationAdministrationService {
         var parameters=new org.springframework.jdbc.core.namedparam.MapSqlParameterSource();
         StringBuilder where=new StringBuilder(" WHERE 1=1");
         if (groupCode!=null && !groupCode.isBlank()) { where.append(" AND h.authrt_cd=:groupCode"); parameters.addValue("groupCode",groupCode); }
-        if (userId!=null && !userId.isBlank()) { where.append(" AND h.scrty_dcsn_trgt_id=:userId"); parameters.addValue("userId",userId); }
+        // [2026-10-01] 대상도 처리자처럼 로그인 ID 로 찾는다 — 종전에는 내부 식별자(esntlId)만 비교해 화면에서 아는 값으로는
+        //   한 건도 찾지 못했다. 이력의 대상 칸은 esntlId 이므로 로그인 ID 는 사용자 표를 거쳐 맞춘다.
+        if (userId!=null && !userId.isBlank()) { where.append(" AND (h.scrty_dcsn_trgt_id=:userId OR h.scrty_dcsn_trgt_id IN (SELECT esntl_id FROM tb_user_info WHERE user_id=:userId))"); parameters.addValue("userId",userId); }
         // [2026-09-26 DIP V9] 변경자는 esntlId(chg_user_idntfr)와 로그인 ID(frst_rgtr_id)로 함께 기록된다. 화면은
         //   '변경자 로그인 ID' 를 받는데 종전 조건은 esntlId 만 비교해 로그인 ID 로는 한 건도 찾지 못했다.
         if (actorId!=null && !actorId.isBlank()) { where.append(" AND (h.frst_rgtr_id=:actorId OR h.chg_user_idntfr=:actorId)"); parameters.addValue("actorId",actorId); }
