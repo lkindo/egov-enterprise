@@ -239,3 +239,10 @@ LCP는 landing navigation, CLS는 문서별 최대 session, 입력 지연은 수
 | 통계·대시보드 | 27 | 21 | 22 | 17 | 87 |
 | 감사·로그·영속 후속 작업 | 28 | 23 | 24 | 18 | 93 |
 | 독립 데이터 이관 | 26 | 23 | 22 | 17 | 88 |
+
+
+푸시 사전 검증에서 기존 frontend reachability 분석기는 lab의 즉시 호출형 `createRequire(__filename)('@playwright/test/package.json')`을 지원하지 못했다. 측정 입력 7개를 수정하지 않고 기존 분석기에 정적 즉시 호출 의존성 수집을 추가했다. 별칭 호출의 기존 검사는 유지하고 동적 인수·추가 인수·외부로 전달되는 factory 및 누락된 로컬 파일은 계속 red로 차단한다. 추가 계약 2건은 기존 분석기에서 실패했고 수정 후 통과했다. 자료는 `red/immediate-create-require-before.log`와 `green/immediate-create-require-after.log`이며, 운영 계약 catalog가 이 기존 테스트 파일을 로컬 훅과 CI에서 실행한다.
+
+같은 사전 검증에서 주소록 서비스의 생성 경계 원장 줄 번호 6개와 URL 원장의 sourceFileCount(598→599)가 오래된 상태인 것도 확인했다. 두 원장을 생성기로 재생성하고 URL 승인 항목을 유지한 채 manifest SHA-256만 재결속했다. 재측정 결과 operation 417개·서비스 메서드 321개·화면 고아 29개·쓰기를 표시하는 권한 부채 45개로 기존 래칫과 일치한다. 귀속 실패는 0개이며 어떤 상한도 높이지 않았다.
+
+게시판을 정적 클라이언트 import로 바꾼 뒤 core 축소 프로필의 기존 승인 라우트에서 첫 cascade 근거가 BoardAdminService에서 BoardUserService로 바뀌었다. 두 서비스 모두 기존 collaboration 제외 pack에 속하므로 승인된 profile·route·소실 개수는 유지하고 해당 행의 대표 근거만 현재 import 경로로 갱신했다. 새 승인 라우트나 예외를 추가하지 않았고, 미승인 소실·근거 이동·이유 없는 승인에 대한 기존 부정 계약도 유지했다.
