@@ -8,8 +8,8 @@
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 19,
-    "secondaryActionBoundaries": 70,
-    "candidateCount": 158
+    "secondaryActionBoundaries": 71,
+    "candidateCount": 159
   },
   "entries": [
     {
@@ -2223,6 +2223,27 @@
         "surveyAdminService.deleteSurvey"
       ],
       "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/components/__tests__/SurveyQuestionsPanel.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx#SurveyQuestionsPanel.handleToggleRelease[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
+      "owner": "SurveyQuestionsPanel",
+      "handler": "handleToggleRelease",
+      "writeSinks": [
+        "releaseSurvey.mutate",
+        "surveyAdminService.updateSurvey"
+      ],
+      "classification": "mutation",
       "status": "compliant",
       "validationMode": "action-only-no-editable-payload",
       "schemaSource": "not-applicable:no-editable-payload",

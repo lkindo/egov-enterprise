@@ -1,5 +1,18 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-10-01 재로그인 복원 경로와 임시 비밀번호 표시에 따른 재검토
+
+SAST-FP-001의 보완 소스인 `frontend/src/proxy.ts`는 인증이 없을 때 `/login` 으로 보내는 `redirect` 값에 경로와
+함께 형식을 맞춘 구조 키(`bbsId`·`pstSn`·`tab`·`page`)만 싣는다(결정 17). 값은 로그인 화면이 같은 출처 경로로만
+해석하며, 자유 입력은 어떤 키로도 실리지 않는다. Origin 검사·Strict·HttpOnly 쿠키·Bearer 전달은 그대로다.
+
+SAST-FP-008의 보완 소스인 `business-core/.../JpaUserAuthAdapter.java`는 인증 주체에 `passwordChangeRequired` 표시
+하나를 싣는다(결정 18). 이 표시는 접근을 좁히기만 한다 — 참이면 `PasswordChangeRequiredGuard` 가 비밀번호 변경 밖의
+API 를 거부한다. SockJS Origin 거부 분기와 토큰 검사는 바뀌지 않았다.
+
+두 보완 소스의 해시만 재결속한다. 예외의 범위·규칙·행·fingerprint·승인일·만료일과 보안 임계값은 유지한다. 근거는
+변경 구문의 재검토이며 CodeQL 실행의 증거가 아니다. CodeQL·required CI 결과는 병합할 커밋에서 확인한다.
+
 ## 2026-09-30 Gradle 라이브러리 패치 상향에 따른 H2 테스트 경계 재검토
 
 SAST-FP-007의 보완 소스인 루트 `build.gradle`과 `foundation/build.gradle`의 버전 숫자만 바뀌었다.

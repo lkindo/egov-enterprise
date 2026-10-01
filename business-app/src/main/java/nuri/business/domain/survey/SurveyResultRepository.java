@@ -19,6 +19,9 @@ public interface SurveyResultRepository extends JpaRepository<SurveyResult, Long
     // [V2_13 결속] 설문/문항/항목 삭제 시 응답 선정리용 파생 삭제
     void deleteBySrvySn(Long srvySn);
 
+    /** [2026-10-01 결정 21] 이 설문에 응답이 있는지 — 응답이 모인 뒤에는 문항·선택 항목을 더하지 않는다. */
+    boolean existsBySrvySn(Long srvySn);
+
     void deleteBySrvyQstnSn(Long srvyQstnSn);
 
     void deleteBySrvyArtclSn(Long srvyArtclSn);

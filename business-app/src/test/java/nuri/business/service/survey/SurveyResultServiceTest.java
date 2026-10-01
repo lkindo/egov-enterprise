@@ -52,17 +52,30 @@ class SurveyResultServiceTest {
                 .srvyArtclSn(sn).srvyQstnSn(qstnSn).srvySn(201L).srvyTmpltSn(101L).artclSn(1L).artclCn(cn).build();
     }
 
-    /** 기간이 열려 있는 설문 — 경계가 넓어 오늘이 언제든 안에 든다. */
+    /** 기간이 열려 있는 공개 설문 — 경계가 넓어 오늘이 언제든 안에 든다. */
     private static SurveyInfo openSurvey() {
-        return SurveyInfo.builder()
-                .srvySn(201L).srvyTtl("만족도 조사").srvyTmpltSn(101L)
-                .srvyBgngYmd("20000101").srvyEndYmd("29991231").build();
+        return surveyWithPeriod("20000101", "29991231");
     }
 
+    /** 공개된 설문(2026-10-01 결정 21 — 작성 중 설문에는 응답하지 않는다). */
     private static SurveyInfo surveyWithPeriod(String bgng, String end) {
-        return SurveyInfo.builder()
+        SurveyInfo survey = SurveyInfo.builder()
                 .srvySn(201L).srvyTtl("만족도 조사").srvyTmpltSn(101L)
                 .srvyBgngYmd(bgng).srvyEndYmd(end).build();
+        survey.changeRelease(true);
+        return survey;
+    }
+
+    @Test
+    @DisplayName("🚨 작성 중인 설문에는 응답하지 않는다 — 없는 설문과 같다 (2026-10-01 결정 21)")
+    void submitResponse_rejectsDraftSurvey() {
+        SurveyInfo draft = SurveyInfo.builder().srvySn(201L).srvyTtl("작성 중").srvyTmpltSn(101L)
+                .srvyBgngYmd("20000101").srvyEndYmd("29991231").build();
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(draft));
+
+        assertThatThrownBy(() -> service.submitResponse(201L, new SurveyResponseSubmitDto(null, java.util.List.of())))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
     }
 
     private static SurveyResultRepository.QuestionRespondentCount respondents(Long qstnSn, long cnt) {

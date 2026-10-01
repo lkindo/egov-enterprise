@@ -6,6 +6,7 @@ import { authService, UserInfo } from '@/services/foundation/auth/authService';
 import { advanceAuthorizationRequestEpoch, AUTHORIZATION_CHANGED_EVENT, markSignedIn, markSignedOut } from '@/lib/auth/authorization-state';
 import type { AuthLoginData } from '@/lib/auth/auth-bff-contract';
 import { loginErrorMessage } from '@/lib/auth/login-error';
+import { announceSession, listenSession } from '@/lib/auth/session-broadcast';
 import {
   purgeBoardDraftStorage,
   purgePersistedBoardDraftStorage,
@@ -119,6 +120,8 @@ export function AuthProvider({
       const userData = await authService.getCurrentUser();
       if (epoch !== requestEpoch.current) throw new Error('Superseded authentication attempt');
       commitUser(userData);
+      // 다른 탭이 이전 사람의 권한 상태를 들고 있지 않게 알린다(결정 17).
+      announceSession({ type: 'signed-in' });
       return result;
     } catch (error) {
       // 요청 제한·서비스 장애만 따로 말하고 나머지는 같은 문구다(DIP D2).
@@ -147,6 +150,7 @@ export function AuthProvider({
       // 게시글 본문은 사용자 귀속 데이터다. 원격 로그아웃 성공 여부와 무관하게 현재 브라우저의
       // scoped/legacy 초안을 함께 지워 다음 로그인 사용자가 복원하지 못하게 한다.
       purgeBoardDraftStorage();
+      announceSession({ type: 'signed-out' });
     }
   }, [commitUser]);
 
@@ -162,16 +166,31 @@ export function AuthProvider({
       invalidateAuthCheck();
       void checkAuth();
     };
+    // [2026-10-01 결정 17] 다른 탭의 로그인·로그아웃을 따른다. 로그아웃은 '만료' 안내 없이 로그인 화면으로 보낸다 —
+    //   사용자가 직접 한 일이다. 다시 로그인했으면 서버에 현재 사용자를 다시 묻는다.
+    const stopListening = listenSession((message) => {
+      if (message.type === 'signed-in') {
+        authorizationChanged();
+        return;
+      }
+      if (!currentUser.current) return;
+      markSignedOut();
+      advanceAuthorizationRequestEpoch();
+      invalidateAuthCheck();
+      commitUser(null);
+      window.location.replace('/login');
+    });
     window.addEventListener('focus', refreshAuthorization);
     window.addEventListener(AUTHORIZATION_CHANGED_EVENT, authorizationChanged);
     document.addEventListener('visibilitychange', refreshAuthorization);
     return () => {
+      stopListening();
       invalidateAuthCheck();
       window.removeEventListener('focus', refreshAuthorization);
       window.removeEventListener(AUTHORIZATION_CHANGED_EVENT, authorizationChanged);
       document.removeEventListener('visibilitychange', refreshAuthorization);
     };
-  }, [checkAuth, invalidateAuthCheck]);
+  }, [checkAuth, commitUser, invalidateAuthCheck]);
 
   return (
     <AuthContext.Provider value={{ user, loading, mfaPending: isMfaPending, login, logout, checkAuth, enterMfaChallenge }}>

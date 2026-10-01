@@ -29,6 +29,9 @@ import type {
   WebLog,
 } from '@/types/foundation/system';
 import { usePageParam, useTabParam } from './use-log-url-state';
+import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { canOpenPage } from '@/lib/auth/page-access';
 
 const logCategories = [
   { id: 'SYS', label: '시스템로그', icon: <Terminal size={20} />, description: '서비스 및 메소드 수행 이력' },
@@ -91,6 +94,7 @@ export default function LogDashboardClient({
   systemLogsPromise: Promise<InitialSystemLogs>;
 }) {
   const initialSystemLogs = use(systemLogsPromise);
+  const { user } = useAuth();
   const [activeCategory, setActiveCategory] = useTabParam<LogCategoryId>(CATEGORY_IDS, 'SYS', {
     paramName: 'cat',
     resetParams: TAB_RESET_PARAMS,
@@ -309,6 +313,17 @@ export default function LogDashboardClient({
           <Button variant="outline" size="sm" onClick={handleFullExport} className="gap-2">
             <FileDown size={16} aria-hidden="true" /> 전체 결과 엑셀 다운로드
           </Button>
+          {/* [2026-10-01 결정 19] 민감 작업 감사 원장·후속 작업 상태는 권한이 따로 있어 들어갈 수 있을 때만 보인다. */}
+          {canOpenPage(user, '/admin/system/logs/audit') && (
+            <Button asChild variant="outline" size="sm">
+              <Link href="/admin/system/logs/audit">민감 작업 감사 원장</Link>
+            </Button>
+          )}
+          {canOpenPage(user, '/admin/system/durable-jobs') && (
+            <Button asChild variant="outline" size="sm">
+              <Link href="/admin/system/durable-jobs">후속 작업 상태</Link>
+            </Button>
+          )}
         </>
       }
       filter={

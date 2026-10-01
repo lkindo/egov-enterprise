@@ -111,6 +111,10 @@
       "description": "시스템 사용자 그룹 관리 API (Admin)"
     },
     {
+      "name": "AuditJournal",
+      "description": "민감 작업 감사 원장 열람"
+    },
+    {
       "name": "Statistics User",
       "description": "통계 사용자 API"
     },
@@ -13694,6 +13698,15 @@
             }
           },
           {
+            "name": "kind",
+            "in": "query",
+            "description": "종류(SATISFACTION 만족도 조사 · POLL 온라인 투표, 비우면 전부)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "description": "Zero-based page index (0..N)",
@@ -25401,6 +25414,99 @@
         }
       }
     },
+    "/api/v1/dept-jobs/{deptTaskSn}/assignee": {
+      "patch": {
+        "tags": [
+          "DeptJob"
+        ],
+        "summary": "부서 업무 담당자 재지정",
+        "description": "담당자만 바꿉니다. 담당자·등록자·전체 수정 권한자가 할 수 있고, 새 담당자는 사용 중 계정이어야 합니다.",
+        "operationId": "reassignDeptJob",
+        "parameters": [
+          {
+            "name": "deptTaskSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeptJobAssigneeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/boards/{bbsId}/posts/{pstSn}/solved": {
       "patch": {
         "tags": [
@@ -34485,6 +34591,122 @@
         }
       }
     },
+    "/api/v1/admin/system/logs/audit": {
+      "get": {
+        "tags": [
+          "AuditJournal"
+        ],
+        "summary": "민감 작업 감사 원장 목록",
+        "description": "최신순이다. 행위자 로그인 ID·작업 이름은 정확히 일치하는 값으로, 기간은 시작·종료를 함께 주어야 거른다.",
+        "operationId": "auditJournalList",
+        "parameters": [
+          {
+            "name": "actorId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "operation",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fromDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "toDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseAuditJournalEntry"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/system/login-policies": {
       "get": {
         "tags": [
@@ -38564,6 +38786,11 @@
             "type": "boolean",
             "description": "현재 사용자가 삭제할 수 있는지(서버 판정)",
             "readOnly": true
+          },
+          "reassignable": {
+            "type": "boolean",
+            "description": "현재 사용자가 담당자를 다시 지정할 수 있는지(서버 판정)",
+            "readOnly": true
           }
         }
       },
@@ -39199,6 +39426,14 @@
             ],
             "description": "현재 사용자의 응답 여부(상세 조회에서만 채운다)",
             "readOnly": true
+          },
+          "rlsYn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "공개 여부(Y 공개 · N 작성 중)",
+            "pattern": "^(?:Y|N)$"
           }
         },
         "required": [
@@ -40651,6 +40886,14 @@
           },
           "deletable": {
             "type": "boolean",
+            "readOnly": true
+          },
+          "pendingMemberCount": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
             "readOnly": true
           },
           "crtDt": {
@@ -42175,6 +42418,14 @@
           "authorizationVersion": {
             "type": "string",
             "readOnly": true
+          },
+          "passwordChangeRequired": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "mfaEnabled": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "required": [
@@ -42750,6 +43001,19 @@
         },
         "required": [
           "drctnMttr"
+        ]
+      },
+      "DeptJobAssigneeRequest": {
+        "type": "object",
+        "properties": {
+          "picId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "picId"
         ]
       },
       "AdminPasswordChangeRequest": {
@@ -46193,6 +46457,9 @@
           },
           "authorizationVersion": {
             "type": "string"
+          },
+          "passwordChangeRequired": {
+            "type": "boolean"
           }
         }
       },
@@ -48126,6 +48393,101 @@
             "items": {
               "$ref": "#/components/schemas/FieldErrorItem"
             }
+          }
+        }
+      },
+      "ApiResponsePageResponseAuditJournalEntry": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResponseAuditJournalEntry"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "AuditJournalEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "operation": {
+            "type": "string"
+          },
+          "actorId": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "clientIp": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "httpStatus": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PageResponseAuditJournalEntry": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditJournalEntry"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPage": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useRef, useState, use } from 'react';
+import React, { useEffect, useMemo, useRef, useState, use } from 'react';
 import { useTheme } from 'next-themes';
 import {
   Moon,
@@ -28,7 +28,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { canOpenPage } from '@/lib/auth/page-access';
 import { useLayout } from '@/contexts/LayoutContext';
-import { requestCommandCenter } from '@/lib/navigation/command-center-bridge';
+import { ACCOUNT_MFA_OPEN_EVENT, requestCommandCenter } from '@/lib/navigation/command-center-bridge';
 import { requestOnboarding } from '@/lib/navigation/onboarding-bridge';
 /* reusable-base:collaboration:start */
 import { HeaderNotifications } from './header-notifications';
@@ -97,6 +97,12 @@ export function Header({
   const [isPasswordOpen, setPasswordOpen] = useState(false);
   const [isMfaOpen, setMfaOpen] = useState(false);
   const [isMfaLocked, setMfaLocked] = useState(false);
+  // [결정 18] 사용자 상세의 '추가 인증 복구 승인' 이 대상을 인계한 뒤 이 대화상자를 연다.
+  useEffect(() => {
+    const open = () => setMfaOpen(true);
+    window.addEventListener(ACCOUNT_MFA_OPEN_EVENT, open);
+    return () => window.removeEventListener(ACCOUNT_MFA_OPEN_EVENT, open);
+  }, []);
   const [isPasswordPending, setPasswordPending] = useState(false);
   /*
     [2026-09-08] 내 프로필 수정. `PUT /users/me` 와 userService.updateMe 도 호출부가 0 이었다 —

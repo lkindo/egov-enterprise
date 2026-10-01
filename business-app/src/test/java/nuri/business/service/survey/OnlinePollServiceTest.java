@@ -125,6 +125,23 @@ class OnlinePollServiceTest {
     }
 
     @Test
+    @DisplayName("🚨 종류 조건은 만족도 조사·온라인 투표를 따로 고르고, 어휘 밖 값은 400 이다 (2026-10-01 결정 21)")
+    void getPollList_byKind() {
+        Pageable pageable = PageRequest.of(0, 10);
+        given(pollManageRepository.findByKind(eq(true), eq(List.of("001", "002")), eq(""), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of(OnlinePollManage.builder().pollSn(1L).pollNm("만족도").build())));
+        given(pollManageRepository.findByKind(eq(false), eq(List.of("001", "002")), eq("투표"), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of()));
+
+        assertThat(onlinePollService.getPollList(null, "SATISFACTION", pageable).getContent()).hasSize(1);
+        assertThat(onlinePollService.getPollList("투표", "POLL", pageable).getContent()).isEmpty();
+        assertThatThrownBy(() -> onlinePollService.getPollList(null, "SURVEY", pageable))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        verify(pollManageRepository, org.mockito.Mockito.never()).findAll(any(Pageable.class));
+    }
+
+    @Test
     @DisplayName("설문 목록 조회 - 빈 키워드")
     void getPollList_EmptyKeyword() {
         Pageable pageable = PageRequest.of(0, 10);

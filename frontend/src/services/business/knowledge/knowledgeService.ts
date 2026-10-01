@@ -51,6 +51,8 @@ export interface KnowledgeDto {
   commentCnt?: number;
   /** 현재 사용자가 이미 추천했는지(서버 판정, 모르면 null). */
   recommended?: boolean | null;
+  /** 게시 종료일(yyyyMMdd). 지난 글은 작성자·전체 열람 권한자에게만 온다(결정 23). */
+  pstEndYmd?: string;
 }
 
 
@@ -84,6 +86,8 @@ class KnowledgeService extends ApiService {
     page?: number;
     size?: number;
     orderBy?: 'date' | 'views';
+    /** Q&A 해결 상태 조건(서버 qnaStatus). '미해결만' 은 OPEN 이다(2026-10-01 결정 20). */
+    qnaStatus?: 'OPEN' | 'SOLVED';
   } = {}): Promise<PageResponse<KnowledgeDto>> {
     let targetBbsId = params.bbsId;
     if (!targetBbsId) {
@@ -105,6 +109,7 @@ class KnowledgeService extends ApiService {
       page: params.page || 0,
       size: params.size || 20,
       orderBy: params.orderBy,
+      ...(params.qnaStatus ? { qnaStatus: params.qnaStatus } : {}),
     };
 
     return this.executeGenerated(getPostsOperation, {

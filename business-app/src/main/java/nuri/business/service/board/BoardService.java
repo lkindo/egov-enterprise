@@ -391,6 +391,19 @@ public class BoardService extends BaseAbstractService {
                 condition.setViewerEsntlId(secretPostAdminOverride
                                 ? null
                                 : SecurityUtil.getCurrentEsntlId().orElse(null));
+                // [2026-10-01 결정 23] 전체 열람 권한자가 아니면 게시 종료일을 집행한다(BoardPredicate).
+                condition.setPostingOpenOn(secretPostAdminOverride ? null : todayYmd());
+        }
+
+        /** 게시 기간 판정의 기준일 — 서비스 전반과 같은 Asia/Seoul 이다. */
+        private static String todayYmd() {
+                return java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))
+                                .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        }
+
+        /** 게시 종료일이 기준일보다 이른가(빈 값은 기한 없음). */
+        private static boolean postingEnded(String pstEndYmd) {
+                return StringUtils.hasText(pstEndYmd) && pstEndYmd.compareTo(todayYmd()) < 0;
         }
 
         @Transactional
@@ -626,6 +639,9 @@ public class BoardService extends BaseAbstractService {
                 if ("Y".equalsIgnoreCase(detail.getScrtYn())) {
                         nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL");
                 }
+                // [2026-10-01 결정 23] 게시 종료일이 지난 글은 작성자·전체 열람 권한자만 연다. 남에게는 없는 글과 같다(404) —
+                //   403 으로 답하면 번호만으로 글의 존재를 알 수 있다.
+                assertPostingVisible(detail);
 
                 // Redis 기반 쓰기 지연 처리
                 if (countView) {
@@ -684,6 +700,20 @@ public class BoardService extends BaseAbstractService {
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
                 if ("Y".equalsIgnoreCase(detail.getScrtYn())) {
                         SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL");
+                }
+                // [2026-10-01 결정 23] 게시가 끝난 글의 댓글·추천도 상세와 같은 사람만 닿는다.
+                assertPostingVisible(detail);
+        }
+
+        /**
+         * [2026-10-01 결정 23] 게시 종료일이 지난 글은 작성자·전체 열람 권한자만 연다. 남에게는 없는 글과 같다(404) —
+         * 403 으로 답하면 번호만으로 글의 존재를 알 수 있다.
+         */
+        private void assertPostingVisible(BoardDetailResult detail) {
+                if (postingEnded(detail.getPstEndYmd())
+                                && !SecurityUtil.hasPermission("BOARD_READ_ALL")
+                                && SecurityUtil.getCurrentEsntlId().filter(id -> id.equals(detail.getUserId())).isEmpty()) {
+                        throw new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND);
                 }
         }
 

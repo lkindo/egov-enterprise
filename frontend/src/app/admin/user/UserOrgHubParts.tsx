@@ -275,10 +275,12 @@ export function AbsenceStatusNotice({
  * [2026-10-01] 이 사람을 대상으로 연다 — 종전 '권한 설정 열기' 는 대상 없이 그룹 탭을 열어 탭을 바꾸고 같은 사람을
  * 다시 검색해야 했다. 들어갈 수 없는 화면의 버튼은 호출부가 빼서 넘긴다(라우트 게이트와 같은 판정).
  */
-export function AccessControlLink({ onOpen, onOpenHistory, onOpenLoginLog }: {
+export function AccessControlLink({ onOpen, onOpenHistory, onOpenLoginLog, onRecoverMfa }: {
   onOpen?: () => void;
   onOpenHistory?: () => void;
   onOpenLoginLog?: () => void;
+  /** 인증앱을 잃은 사용자의 복구 승인 — 계정 메뉴의 추가 인증 관리 대화상자를 이 대상으로 연다(결정 18). */
+  onRecoverMfa?: () => void;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
@@ -299,6 +301,11 @@ export function AccessControlLink({ onOpen, onOpenHistory, onOpenLoginLog }: {
         {onOpenLoginLog && (
           <Button type="button" variant="outline" size="sm" onClick={onOpenLoginLog} className="gap-1">
             로그인 이력 <ChevronRight size={14} aria-hidden="true" />
+          </Button>
+        )}
+        {onRecoverMfa && (
+          <Button type="button" variant="outline" size="sm" onClick={onRecoverMfa} className="gap-1">
+            추가 인증 복구 승인 <ChevronRight size={14} aria-hidden="true" />
           </Button>
         )}
       </div>

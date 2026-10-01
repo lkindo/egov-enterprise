@@ -9,3 +9,13 @@ export const COMMAND_CENTER_OPEN_EVENT = 'egov:open-command-center';
 export function requestCommandCenter() {
   window.dispatchEvent(new Event(COMMAND_CENTER_OPEN_EVENT));
 }
+
+/**
+ * 화면 버튼이 헤더의 '추가 인증 관리' 대화상자를 여는 경로(2026-10-01 결정 18). 사용자 상세의 '추가 인증 복구 승인'
+ * 이 대상을 인계(target-handoff 'mfa-recover-user')한 뒤 이 이벤트를 보낸다 — 복구 승인 양식은 그 대화상자가 소유한다.
+ */
+export const ACCOUNT_MFA_OPEN_EVENT = 'egov:open-account-mfa';
+
+export function requestAccountMfa() {
+  window.dispatchEvent(new Event(ACCOUNT_MFA_OPEN_EVENT));
+}

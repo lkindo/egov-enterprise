@@ -50,6 +50,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { PostingEndedBadge } from '../../components/PostingEndedBadge';
 
 interface TemplateProps {
   list: BoardPost[];
@@ -181,7 +182,7 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendi
             </div>
             <h3 className="line-clamp-2 text-[length:var(--font-size-body)] font-semibold text-foreground">
               <Link href={detailHref(bbsId, item.pstSn)} className="hover:text-primary hover:underline">
-                <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
+                <HighlightText text={item.pstTtl} highlight={querySearchWrd} /><PostingEndedBadge pstEndYmd={item.pstEndYmd} />
               </Link>
             </h3>
             <p className="text-xs text-muted-foreground">
@@ -222,7 +223,7 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLi
             <div className="min-w-0 flex-1 space-y-1">
               <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">
                 <Link href={detailHref(bbsId, item.pstSn)} className="hover:text-primary hover:underline">
-                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
+                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} /><PostingEndedBadge pstEndYmd={item.pstEndYmd} />
                 </Link>
               </h4>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -449,7 +450,7 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
               <Badge variant="outline" className="shrink-0">문서</Badge>
               <h4 className="min-w-0 text-[length:var(--font-size-body)] font-semibold text-foreground">
                 <Link href={detailHref(bbsId, item.pstSn)} className="hover:text-primary hover:underline">
-                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
+                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} /><PostingEndedBadge pstEndYmd={item.pstEndYmd} />
                 </Link>
               </h4>
             </div>
@@ -493,7 +494,7 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendi
               </TableCell>
               <TableCell>
                 <Link href={detailHref(bbsId, item.pstSn)} className="block truncate font-medium text-foreground hover:text-primary hover:underline">
-                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
+                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} /><PostingEndedBadge pstEndYmd={item.pstEndYmd} />
                 </Link>
               </TableCell>
               <TableCell className="text-center text-muted-foreground">

@@ -304,7 +304,10 @@ describe('LoginPage Component', () => {
     ['/%2e%2e//evil.example', SAFE_LANDING],
     ['/.%2e//evil.example', SAFE_LANDING],
     ['/a/..//evil.example', SAFE_LANDING],
-    ['/admin/work-hub?tab=my#pending', '/admin/work-hub'],
+    // [2026-10-01 결정 17] 자리를 가리키는 구조 키만 형식을 맞춰 되살린다. fragment 와 자유 입력은 버린다.
+    ['/admin/work-hub?tab=my#pending', '/admin/work-hub?tab=my'],
+    ['/admin/community/boards/select-board-list?bbsId=B1&searchWrd=%ED%99%8D', '/admin/community/boards/select-board-list?bbsId=B1'],
+    ['/admin/work-hub?tab=%ED%99%8D', '/admin/work-hub'],
   ])('only accepts a canonical same-origin redirect path: %j', (rawRedirect, expected) => {
     expect(resolveInternalRedirect(rawRedirect)).toBe(expected);
   });

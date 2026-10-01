@@ -35,7 +35,10 @@ const dashboardHarness = vi.hoisted(() => ({
   getUserLogs: vi.fn(),
   getWebLogs: vi.fn(),
   requestFullExport: vi.fn(),
+  user: { id: 'admin', name: '관리자', groups: [], permissions: [] as string[], authorizationVersion: 'v1' },
 }));
+
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: dashboardHarness.user }) }));
 
 vi.mock('@/app/components/patterns/full-result-export', () => ({
   requestFullExport: dashboardHarness.requestFullExport,
@@ -216,7 +219,21 @@ describe('integrated log dashboard contracts', () => {
     dashboardHarness.page = 1;
     dashboardHarness.queryData = pageOf(SYSTEM_ROW);
     dashboardHarness.latestQueryOptions = undefined;
+    dashboardHarness.user.permissions = [];
     vi.clearAllMocks();
+  });
+
+  it('감사 원장·후속 작업 상태는 권한이 있을 때만 진입 링크를 보인다 (결정 19)', async () => {
+    await renderDashboard();
+    expect(screen.queryByRole('link', { name: '민감 작업 감사 원장' })).toBeNull();
+    expect(screen.queryByRole('link', { name: '후속 작업 상태' })).toBeNull();
+  });
+
+  it('ADT_LOG_READ·DWORK_READ 가 있으면 두 화면으로 가는 링크를 보인다 (결정 19)', async () => {
+    dashboardHarness.user.permissions = ['ADT_LOG_READ', 'DWORK_READ'];
+    await renderDashboard();
+    expect(screen.getByRole('link', { name: '민감 작업 감사 원장' })).toHaveAttribute('href', '/admin/system/logs/audit');
+    expect(screen.getByRole('link', { name: '후속 작업 상태' })).toHaveAttribute('href', '/admin/system/durable-jobs');
   });
 
   it.each([

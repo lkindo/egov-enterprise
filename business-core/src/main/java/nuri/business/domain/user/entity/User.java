@@ -50,6 +50,13 @@ public class User extends BaseEntity implements Serializable {
 
     private Integer chgPwdCnt;
 
+    /**
+     * 관리자가 초기화해 알려 준 임시 비밀번호인가(2026-10-01 결정 18). 'Y' 면 본인이 비밀번호를 바꾸기 전까지
+     * 비밀번호 변경 밖의 기능을 쓸 수 없다. 관리자도 아는 비밀번호가 계정에 계속 남지 않게 한다.
+     */
+    @Column(name = "tmpr_pswd_yn", nullable = false, length = 1)
+    private String tmprPswdYn = "N";
+
     @Column(length = 1)
     private String lckYn = "N";
 
@@ -198,6 +205,17 @@ public class User extends BaseEntity implements Serializable {
     public void updatePassword(String pswd) {
         this.pswd = Objects.requireNonNull(pswd);
         this.chgPswdLastDt = LocalDateTime.now();
+        this.tmprPswdYn = "N";
+    }
+
+    /** 관리자가 정한 비밀번호로 바꾸고, 본인이 다시 바꿔야 하는 임시 비밀번호로 표시한다(결정 18). */
+    public void issueTemporaryPassword(String pswd) {
+        updatePassword(pswd);
+        this.tmprPswdYn = "Y";
+    }
+
+    public boolean isTemporaryPassword() {
+        return "Y".equals(tmprPswdYn);
     }
 
     /**

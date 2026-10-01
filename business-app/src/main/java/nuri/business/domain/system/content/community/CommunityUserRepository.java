@@ -24,6 +24,18 @@ public interface CommunityUserRepository
 
     Page<CommunityUser> findByIdCmntySnAndMbrSttsCd(Long cmntySn, String mbrSttsCd, Pageable pageable);
 
+    /** [2026-10-01 결정 20] 주어진 커뮤니티마다 한 상태의 회원 수 — 관리 목록 한 페이지를 한 번의 조회로 채운다. */
+    @Query("select cu.id.cmntySn as cmntySn, count(cu) as cnt from CommunityUser cu"
+            + " where cu.mbrSttsCd = :status and cu.id.cmntySn in :cmntySns group by cu.id.cmntySn")
+    List<StatusCount> countByStatusForCommunities(@Param("status") String status,
+            @Param("cmntySns") java.util.Collection<Long> cmntySns);
+
+    interface StatusCount {
+        Long getCmntySn();
+
+        long getCnt();
+    }
+
     // [V2_13 결속] 사용자 삭제 시 커뮤니티 멤버십 정리 (fk_tb_cmnty_user_map_tb_user_info NO ACTION)
     void deleteByIdUserIdIn(List<String> userIds);
 }

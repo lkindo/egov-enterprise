@@ -246,12 +246,13 @@ export const PERMISSION_CODES = [
   "WORK_RPT_UPDATE_ALL",
   "DWORK_READ",
   "DWORK_RETRY",
+  "ADT_LOG_READ",
   "FAQ_EDIT",
   "MFA_RECOVER",
   "NOTICE_EDIT"
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
-export const PERMISSION_CATALOG_VERSION = "8d7bb78e8b7a48d79f74e9aa45fb92a867618d47354c6077c75e79a1ce10e68c";
+export const PERMISSION_CATALOG_VERSION = "431f4c99a56f562c523cbcd92f396eec5db30c4349cbba1f87ba4fbfd7564cdd";
 export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]>> = {
   "/": [],
   "/admin": [
@@ -430,6 +431,9 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
   "/admin/system/common-code/codes": [
     "CODE_READ"
   ],
+  "/admin/system/durable-jobs": [
+    "DWORK_READ"
+  ],
   "/admin/system/hpcm": [
     "HELP_READ"
   ],
@@ -445,6 +449,9 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
     "SYS_LOG_READ",
     "USER_LOG_READ",
     "WEB_LOG_READ"
+  ],
+  "/admin/system/logs/audit": [
+    "ADT_LOG_READ"
   ],
   "/admin/system/logs/login": [
     "LOGIN_LOG_READ"

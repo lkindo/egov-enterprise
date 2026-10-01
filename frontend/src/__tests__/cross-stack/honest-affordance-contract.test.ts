@@ -975,22 +975,25 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     ).toBeLessThan(emptyAt);
   });
 
-  it('게시 기간을 집행하지 않으면서 노출을 제어한다고 말하지 않는다', () => {
+  // [2026-10-01 결정 23] 종료일은 집행하고 시작일은 기록만 한다 — 화면 문구가 그 둘을 그대로 말해야 한다.
+  it('게시 종료일은 집행하고 시작일은 기록만 한다는 사실을 화면이 그대로 말한다', () => {
     const write = stripComments(
       readSrc('app/admin/community/boards/insert-board-article/BoardRegistClient.tsx'),
     );
     expect(write, '작성 화면을 찾지 못했다 — 계약이 vacuous 하다').toContain('pstBgngYmd');
-    expect(write).toContain('노출 여부를 자동으로 바꾸지는 않습니다');
+    expect(write).toContain('종료일이 지나면 일반 사용자의 목록·상세·검색에서 보이지 않습니다');
+    expect(write).toContain('시작일은 기록만 하며 노출을 늦추지 않습니다');
+    expect(write, '집행하는 기간을 집행하지 않는다고 말한다').not.toContain('노출 여부를 자동으로 바꾸지는 않습니다');
 
     const predicate = stripComments(
       readRepo('business-app/src/main/java/nuri/business/domain/board/BoardPredicate.java'),
     );
     expect(predicate, '술어 조립기를 찾지 못했다 — 계약이 vacuous 하다').toContain('searchBoard');
+    expect(predicate, '게시 종료일 조건이 술어에서 사라졌다 — 화면은 집행한다고 말한다.').toContain('pstEndYmd');
     expect(
       predicate,
-      '게시 기간이 술어에 들어왔다 — 집행이 생겼으니 화면 문구를 되살리고 이 계약을 갱신하라.',
+      '게시 시작일이 술어에 들어왔다 — 집행이 생겼으니 화면 문구를 바꾸고 이 계약을 갱신하라.',
     ).not.toContain('pstBgngYmd');
-    expect(predicate).not.toContain('pstEndYmd');
   });
 
   it('감사 타임라인이 죽은 액션과 거짓 시스템 상태를 두지 않는다', () => {

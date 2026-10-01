@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
@@ -62,6 +63,7 @@ class UserServiceTest {
     @Mock private nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots;
     @Mock private nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration;
     @Mock private nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
+    @Mock private nuri.business.domain.auth.mfa.MfaCredentialRepository mfaCredentials;
 
     @InjectMocks
     private UserService userService;
@@ -583,7 +585,8 @@ class UserServiceTest {
             given(passwordEncoder.encode("newpwd")).willReturn("encoded");
 
             userService.updatePasswordByAdmin("user1", "newpwd");
-            verify(user).updatePassword("encoded");
+            // [결정 18] 관리자가 정한 비밀번호는 임시다 — 본인이 바꾸기 전까지 다른 기능을 막는다.
+            verify(user).issueTemporaryPassword("encoded");
             // [DIP B4 P7, D5] 초기화는 잠금도 푼다 — 잠긴 채면 새 비밀번호로도 잠금 시간이 지날 때까지 못 들어온다.
             verify(user).unlockAccount();
             // 관리자 초기화도 이전 자격으로 발급된 refresh token 을 남기지 않는다.
@@ -800,5 +803,36 @@ class UserServiceTest {
         var exact = userService.getDepartmentRecipients("DEPT1");
         assertEquals(max, exact.members().size());
         assertFalse(exact.truncated());
+    }
+
+    @Test
+    @DisplayName("[결정 18] 관리자 초기화는 임시 비밀번호로 표시하고, 본인이 바꾸면 표시가 풀린다")
+    void temporaryPasswordLifecycle() {
+        User user = User.builder().userId("user1").esntlId("USR_ESNTL_1").userNm("대상").pswd("{bcrypt}old").build();
+        assertThat(user.isTemporaryPassword()).as("새 계정은 바꿀 의무가 없다").isFalse();
+
+        user.issueTemporaryPassword("{bcrypt}reset");
+        assertThat(user.isTemporaryPassword()).isTrue();
+
+        user.updatePassword("{bcrypt}mine");
+        assertThat(user.isTemporaryPassword()).as("본인이 바꾸면 더 이상 임시가 아니다").isFalse();
+    }
+
+    @Test
+    @DisplayName("[결정 18] 사용자 상세는 비밀번호 변경 필요와 추가 인증 사용 여부를 싣는다")
+    void detailCarriesPasswordChangeAndMfaState() {
+        User user = User.builder().userId("user1").esntlId("USR_ESNTL_1").userNm("대상").pswd("{bcrypt}old").build();
+        user.issueTemporaryPassword("{bcrypt}reset");
+        given(userRepository.findByUserId("user1")).willReturn(Optional.of(user));
+        given(authorizationSnapshots.load("USR_ESNTL_1")).willReturn(
+                new nuri.business.security.authorization.AuthorizationSnapshotService.Snapshot(List.of(), List.of(), "v1"));
+        nuri.business.domain.auth.mfa.MfaCredential credential = mock(nuri.business.domain.auth.mfa.MfaCredential.class);
+        given(credential.isActive()).willReturn(true);
+        given(mfaCredentials.findBySubject("USR_ESNTL_1")).willReturn(Optional.of(credential));
+
+        UserDto detail = userService.getUserById("user1");
+
+        assertThat(detail.passwordChangeRequired()).isTrue();
+        assertThat(detail.mfaEnabled()).isTrue();
     }
 }

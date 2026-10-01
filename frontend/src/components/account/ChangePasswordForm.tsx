@@ -42,6 +42,8 @@ interface ChangePasswordFormProps {
   onCancel: () => void;
   /** 이 폼의 저장이 진행 중 */
   isPending?: boolean;
+  /** 취소 버튼 문구. 변경을 미룰 수 없는 화면은 취소가 곧 로그아웃이라 그 사실을 말한다(결정 18). */
+  cancelLabel?: string;
 }
 
 /**
@@ -56,7 +58,7 @@ interface ChangePasswordFormProps {
  * <p>현재 비밀번호를 함께 요구하는 것은 서버 계약이다({@code PasswordChangeRequest.oldPassword}
  * 필수) — 세션만 탈취한 공격자가 비밀번호를 바꿔 계정을 잠그는 경로를 막는다.
  */
-export function ChangePasswordForm({ onSubmit, onCancel, isPending = false }: ChangePasswordFormProps) {
+export function ChangePasswordForm({ onSubmit, onCancel, isPending = false, cancelLabel = '취소' }: ChangePasswordFormProps) {
   const { toast } = useToast();
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -191,7 +193,7 @@ export function ChangePasswordForm({ onSubmit, onCancel, isPending = false }: Ch
 
       <div className="flex gap-3 pt-1">
         <Button type="button" variant="outline" className="flex-1" onClick={onCancel} disabled={isBusy}>
-          취소
+          {cancelLabel}
         </Button>
         <Button type="submit" className="flex-[2]" disabled={isBusy} aria-busy={isBusy || undefined}>
           {isBusy ? '변경 중…' : '비밀번호 변경'}

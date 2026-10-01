@@ -32,6 +32,19 @@ public class BoardPredicate {
             builder.and(visiblePosts);
         }
 
+        // [2026-10-01 결정 23] 게시 종료일이 지난 글은 일반 사용자의 목록·검색·통계에서 뺀다. 작성자는 자기 글을 계속
+        //   보고(화면이 '게시 종료' 로 표시), 전체 열람 권한자는 기준일이 비어 이 조건을 받지 않는다.
+        //   종료일은 yyyyMMdd 문자열이라 사전순 비교가 날짜 비교와 같다. 비어 있으면 기한 없음이다.
+        if (StringUtils.hasText(condition.getPostingOpenOn())) {
+            BooleanBuilder posting = new BooleanBuilder(QBoard.board.pstEndYmd.isNull()
+                    .or(QBoard.board.pstEndYmd.eq(""))
+                    .or(QBoard.board.pstEndYmd.goe(condition.getPostingOpenOn())));
+            if (StringUtils.hasText(condition.getViewerEsntlId())) {
+                posting.or(QBoard.board.userId.eq(condition.getViewerEsntlId()));
+            }
+            builder.and(posting);
+        }
+
         if (StringUtils.hasText(condition.getSearchWrd())) {
             String searchWrd = condition.getSearchWrd();
             if ("0".equals(condition.getSearchCnd())) { // Title

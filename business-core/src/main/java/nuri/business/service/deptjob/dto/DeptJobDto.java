@@ -66,4 +66,9 @@ public class DeptJobDto {
     @Schema(description = "현재 사용자가 삭제할 수 있는지(서버 판정)", accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Boolean deletable;
+
+    /** [2026-10-01 결정 22] 담당자를 다시 지정할 수 있는지 — 담당자·등록자·전체 수정 권한자(수정 기능 권한 필요). */
+    @Schema(description = "현재 사용자가 담당자를 다시 지정할 수 있는지(서버 판정)", accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Boolean reassignable;
 }

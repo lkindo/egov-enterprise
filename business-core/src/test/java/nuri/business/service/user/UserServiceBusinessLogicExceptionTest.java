@@ -64,6 +64,7 @@ class UserServiceBusinessLogicExceptionTest {
 
         @Mock private nuri.business.domain.user.repository.DeptManageRepository deptManageRepository;
         @Mock private nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
+        @Mock private nuri.business.domain.auth.mfa.MfaCredentialRepository mfaCredentials;
 
     @InjectMocks
         private UserService userService;

@@ -27,16 +27,16 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "302efe8471101306e60ca2d9c01fdfef7bf461d7b01a2d56335f07bf2f175c35"
+    "inventoryHash": "c0d6568b0c01cc845bc7affa2cb3c4f194d2040e4236b64d6758ee050a187654"
   },
   "summary": {
-    "sourceFileCount": 588,
-    "records": 390,
-    "syntaxOccurrences": 462,
-    "ambiguousRecords": 343,
-    "unverifiedRecords": 390,
+    "sourceFileCount": 597,
+    "records": 397,
+    "syntaxOccurrences": 470,
+    "ambiguousRecords": 350,
+    "unverifiedRecords": 397,
     "exactPopulations": {
-      "filesystemRoutes": 118,
+      "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
       "configRedirects": 13,
       "pageRedirects": 17
@@ -45,16 +45,16 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 55,
-      "navigation-producer": 170,
+      "navigation-producer": 175,
       "page-redirect": 17,
-      "query-builder": 21,
+      "query-builder": 22,
       "query-consumer": 54,
-      "query-producer": 38,
+      "query-producer": 39,
       "request-query-producer": 3,
       "url-observer": 8
     },
     "bySurface": {
-      "navigation": 379,
+      "navigation": 386,
       "request-telemetry": 11
     }
   },
@@ -5339,6 +5339,44 @@
       }
     },
     {
+      "id": "URL-8F19D9E59417E2",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "router.push",
+      "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
+      "producerFile": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/help",
+      "targetCandidate": "/cop/cmy/selectCommunityList",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/cop/cmy/selectCommunityList",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
+        "detector": "router-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-B66F75D1370A41",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -9811,6 +9849,82 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/layout/LayoutManagerClient.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-6CB8C7FF77A2A4",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/admin/system/logs/LogDashboardClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/logs/LogDashboardClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/logs",
+      "targetCandidate": "/admin/system/durable-jobs",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/system/durable-jobs",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/logs/LogDashboardClient.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-FF1023A3A4C62D",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/admin/system/logs/LogDashboardClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/logs/LogDashboardClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/logs",
+      "targetCandidate": "/admin/system/logs/audit",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/system/logs/audit",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/logs/LogDashboardClient.tsx",
         "detector": "href-navigation",
         "occurrenceCount": 1
       }
@@ -15468,6 +15582,45 @@
       }
     },
     {
+      "id": "URL-FF261A3853D59A",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "window.location.replace",
+      "source": "frontend/src/components/account/PasswordChangeGate.tsx",
+      "producerFile": "frontend/src/components/account/PasswordChangeGate.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/login",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/login",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/account/PasswordChangeGate.tsx",
+        "detector": "location-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-F8B804D04DDA40",
       "surface": "navigation",
       "kind": "form-producer",
@@ -16097,6 +16250,45 @@
       }
     },
     {
+      "id": "URL-305DD7186EF5BA",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "window.location.replace",
+      "source": "frontend/src/contexts/AuthContext.tsx",
+      "producerFile": "frontend/src/contexts/AuthContext.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/login",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/login",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/contexts/AuthContext.tsx",
+        "detector": "location-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-498E284C265567",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -16495,6 +16687,95 @@
       "evidence": {
         "source": "frontend/src/lib/api/generated-api-client.ts",
         "detector": "fetch-request",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-18D6E31E2B8C79",
+      "surface": "navigation",
+      "kind": "query-builder",
+      "operation": "construct-query",
+      "source": "frontend/src/lib/auth/login-return-path.ts",
+      "producerFile": "frontend/src/lib/auth/login-return-path.ts",
+      "consumerFile": "frontend/src/lib/auth/login-return-path.ts",
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "A URLSearchParams builder is created; its complete key population needs review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/lib/auth/login-return-path.ts",
+        "detector": "url-search-params-constructor",
+        "occurrenceCount": 2
+      }
+    },
+    {
+      "id": "URL-8E875307DBC53B",
+      "surface": "navigation",
+      "kind": "query-producer",
+      "operation": "set",
+      "source": "frontend/src/lib/auth/login-return-path.ts",
+      "producerFile": "frontend/src/lib/auth/login-return-path.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "<computed>",
+          "dataClass": "unverified",
+          "recommendation": "deny-until-reviewed",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": [
+            "computed-or-aggregate-state"
+          ]
+        }
+      ],
+      "currentBehavior": "URL search parameter is mutated with set().",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-query-key",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/lib/auth/login-return-path.ts",
+        "detector": "url-search-param-method",
         "occurrenceCount": 1
       }
     },

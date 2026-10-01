@@ -62,7 +62,8 @@ class UserServiceAdditionalTest {
         userService = new UserService(userRepository, refreshTokenRepository,
                 loginPolicyRepository, userAbsenceRepository,
                 userLogRepository, deptJobRepository, deptManageRepository, passwordEncoder, eventPublisher,
-                authorizationSnapshots, authorizationAdministration, sensitiveAudit);
+                authorizationSnapshots, authorizationAdministration, sensitiveAudit,
+                org.mockito.Mockito.mock(nuri.business.domain.auth.mfa.MfaCredentialRepository.class));
     }
 
     private User.UserBuilder createBaseUser(String userId) {

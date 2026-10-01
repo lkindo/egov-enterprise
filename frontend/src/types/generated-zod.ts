@@ -287,6 +287,7 @@ export const DeptJobDtoSchema = /*#__PURE__*/ (() => z.object({
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   editable: z.boolean().optional(),
   deletable: z.boolean().optional(),
+  reassignable: z.boolean().optional(),
 }))();
 export type DeptJobDto = z.infer<typeof DeptJobDtoSchema>;
 
@@ -473,6 +474,7 @@ export const SurveyInfoDtoSchema = /*#__PURE__*/ (() => z.object({
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   responded: z.boolean().optional().nullable(),
+  rlsYn: z.string().regex(new RegExp("^(?:Y|N)$")).optional().nullable(),
 }))();
 export type SurveyInfoDto = z.infer<typeof SurveyInfoDtoSchema>;
 
@@ -870,6 +872,7 @@ export const CommunityDtoSchema = /*#__PURE__*/ (() => z.object({
   createdByMe: z.boolean().optional(),
   editable: z.boolean().optional(),
   deletable: z.boolean().optional(),
+  pendingMemberCount: z.number().int().optional().nullable(),
   crtDt: z.string().optional(),
 }))();
 export type CommunityDto = z.infer<typeof CommunityDtoSchema>;
@@ -1394,6 +1397,8 @@ export const UserDtoSchema = /*#__PURE__*/ (() => z.object({
   groups: z.array(z.string()),
   permissions: z.array(z.string()),
   authorizationVersion: z.string(),
+  passwordChangeRequired: z.boolean().optional(),
+  mfaEnabled: z.boolean().optional(),
 }))();
 export type UserDto = z.infer<typeof UserDtoSchema>;
 
@@ -1563,6 +1568,14 @@ export const MemoInstructionRequestSchema = /*#__PURE__*/ (() => z.object({
   drctnMttr: z.string().min(1).max(2000),
 }))();
 export type MemoInstructionRequest = z.infer<typeof MemoInstructionRequestSchema>;
+
+// ==========================================================================
+// DeptJobAssigneeRequest Schema
+// ==========================================================================
+export const DeptJobAssigneeRequestSchema = /*#__PURE__*/ (() => z.object({
+  picId: z.string().min(0).max(20),
+}))();
+export type DeptJobAssigneeRequest = z.infer<typeof DeptJobAssigneeRequestSchema>;
 
 // ==========================================================================
 // AdminPasswordChangeRequest Schema
@@ -2928,6 +2941,7 @@ export const CurrentUserResponseSchema = /*#__PURE__*/ (() => z.object({
   groups: z.array(z.string()).optional(),
   permissions: z.array(z.string()).optional(),
   authorizationVersion: z.string().optional(),
+  passwordChangeRequired: z.boolean().optional(),
 }))();
 export type CurrentUserResponse = z.infer<typeof CurrentUserResponseSchema>;
 
@@ -3766,6 +3780,49 @@ export const ApiResponseLoginLogDtoSchema = /*#__PURE__*/ (() => z.object({
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 }))();
 export type ApiResponseLoginLogDto = z.infer<typeof ApiResponseLoginLogDtoSchema>;
+
+// ==========================================================================
+// ApiResponsePageResponseAuditJournalEntry Schema
+// ==========================================================================
+export const ApiResponsePageResponseAuditJournalEntrySchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseAuditJournalEntrySchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponsePageResponseAuditJournalEntry = z.infer<typeof ApiResponsePageResponseAuditJournalEntrySchema>;
+
+// ==========================================================================
+// AuditJournalEntry Schema
+// ==========================================================================
+export const AuditJournalEntrySchema = /*#__PURE__*/ (() => z.object({
+  id: z.string().optional(),
+  requestId: z.string().optional(),
+  stage: z.string().optional(),
+  operation: z.string().optional(),
+  actorId: z.string().optional(),
+  occurredAt: z.iso.datetime({ offset: true, local: true }).optional(),
+  targetId: z.string().optional(),
+  clientIp: z.string().optional(),
+  description: z.string().optional(),
+  httpStatus: z.number().int().optional(),
+}))();
+export type AuditJournalEntry = z.infer<typeof AuditJournalEntrySchema>;
+
+// ==========================================================================
+// PageResponseAuditJournalEntry Schema
+// ==========================================================================
+export const PageResponseAuditJournalEntrySchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => AuditJournalEntrySchema)).optional(),
+  total: z.number().int().optional(),
+  page: z.number().int().optional(),
+  size: z.number().int().optional(),
+  totalPage: z.number().int().optional(),
+}))();
+export type PageResponseAuditJournalEntry = z.infer<typeof PageResponseAuditJournalEntrySchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseLoginPolicyDto Schema
@@ -5576,6 +5633,7 @@ export const DeptJobDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   editable: z.boolean().optional().nullable(),
   deletable: z.boolean().optional().nullable(),
+  reassignable: z.boolean().optional().nullable(),
 }))();
 
 export const DeptJobBoxDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -5826,6 +5884,7 @@ export const SurveyInfoDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   srvyTmpltSn: z.number().int(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  rlsYn: z.string().regex(new RegExp("^(?:Y|N)$")).optional().nullable(),
 }))();
 
 export const SurveyInfoDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -5840,6 +5899,7 @@ export const SurveyInfoDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   responded: z.boolean().optional().nullable(),
+  rlsYn: z.string().regex(new RegExp("^(?:Y|N)$")).optional().nullable(),
 }))();
 
 export const SurveyTemplateDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -6416,6 +6476,7 @@ export const CommunityDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   createdByMe: z.boolean().optional().nullable(),
   editable: z.boolean().optional().nullable(),
   deletable: z.boolean().optional().nullable(),
+  pendingMemberCount: z.number().int().optional().nullable(),
   crtDt: z.string().optional().nullable(),
 }))();
 
@@ -7119,6 +7180,8 @@ export const UserDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   groups: z.array(z.string().optional().nullable()),
   permissions: z.array(z.string().optional().nullable()),
   authorizationVersion: z.string(),
+  passwordChangeRequired: z.boolean().optional().nullable(),
+  mfaEnabled: z.boolean().optional().nullable(),
 }))();
 
 export const UserAuthorityDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -7345,6 +7408,14 @@ export const MemoInstructionRequestRequestSchema = /*#__PURE__*/ (() => z.object
 
 export const MemoInstructionRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   drctnMttr: z.string().min(1).max(2000),
+}))();
+
+export const DeptJobAssigneeRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  picId: z.string().min(0).max(20),
+}))();
+
+export const DeptJobAssigneeRequestResponseSchema = /*#__PURE__*/ (() => z.object({
+  picId: z.string().min(0).max(20),
 }))();
 
 export const AdminPasswordChangeRequestRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -9257,6 +9328,7 @@ export const CurrentUserResponseRequestSchema = /*#__PURE__*/ (() => z.object({
   groups: z.array(z.string()).optional(),
   permissions: z.array(z.string()).optional(),
   authorizationVersion: z.string().optional(),
+  passwordChangeRequired: z.boolean().optional(),
 }))();
 
 export const CurrentUserResponseResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -9269,6 +9341,7 @@ export const CurrentUserResponseResponseSchema = /*#__PURE__*/ (() => z.object({
   groups: z.array(z.string().optional().nullable()).optional().nullable(),
   permissions: z.array(z.string().optional().nullable()).optional().nullable(),
   authorizationVersion: z.string().optional().nullable(),
+  passwordChangeRequired: z.boolean().optional().nullable(),
 }))();
 
 export const ApiResponseListCommonCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -10445,6 +10518,68 @@ export const ApiResponseLoginLogDtoResponseSchema = /*#__PURE__*/ (() => z.objec
   data: z.lazy(() => LoginLogDtoResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const ApiResponsePageResponseAuditJournalEntryRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseAuditJournalEntryRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponsePageResponseAuditJournalEntryResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseAuditJournalEntryResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const AuditJournalEntryRequestSchema = /*#__PURE__*/ (() => z.object({
+  id: z.string().optional(),
+  requestId: z.string().optional(),
+  stage: z.string().optional(),
+  operation: z.string().optional(),
+  actorId: z.string().optional(),
+  occurredAt: z.iso.datetime({ offset: true, local: true }).optional(),
+  targetId: z.string().optional(),
+  clientIp: z.string().optional(),
+  description: z.string().optional(),
+  httpStatus: z.number().int().optional(),
+}))();
+
+export const AuditJournalEntryResponseSchema = /*#__PURE__*/ (() => z.object({
+  id: z.string().optional().nullable(),
+  requestId: z.string().optional().nullable(),
+  stage: z.string().optional().nullable(),
+  operation: z.string().optional().nullable(),
+  actorId: z.string().optional().nullable(),
+  occurredAt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  targetId: z.string().optional().nullable(),
+  clientIp: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  httpStatus: z.number().int().optional().nullable(),
+}))();
+
+export const PageResponseAuditJournalEntryRequestSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => AuditJournalEntryRequestSchema.strict())).optional(),
+  total: z.number().int().optional(),
+  page: z.number().int().optional(),
+  size: z.number().int().optional(),
+  totalPage: z.number().int().optional(),
+}))();
+
+export const PageResponseAuditJournalEntryResponseSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => AuditJournalEntryResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 }))();
 
 export const ApiResponsePageResponseLoginPolicyDtoRequestSchema = /*#__PURE__*/ (() => z.object({

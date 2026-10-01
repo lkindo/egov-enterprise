@@ -65,7 +65,18 @@ public class CommunityService {
      */
     public Page<CommunityDto> getCommunityList(String searchCnd, String searchWrd,
             @org.jspecify.annotations.NonNull Pageable pageable) {
-        return searchCommunities(searchCnd, searchWrd, pageable, false);
+        Page<CommunityDto> page = searchCommunities(searchCnd, searchWrd, pageable, false);
+        // [2026-10-01 결정 20] 관리 목록에 승인 대기 가입 신청 수를 싣는다 — 종전에는 커뮤니티마다 회원 관리를 열어
+        //   봐야 신청이 있는지 알았다. 한 페이지를 한 번의 집계로 채우고, 신청이 없으면 0 이다.
+        java.util.List<Long> cmntySns = page.getContent().stream().map(CommunityDto::getCmntySn)
+                .filter(java.util.Objects::nonNull).toList();
+        java.util.Map<Long, Long> pending = new java.util.HashMap<>();
+        if (!cmntySns.isEmpty()) {
+            communityUserRepository.countByStatusForCommunities(CommunityMemberStatus.REQUESTED.code(), cmntySns)
+                    .forEach(row -> pending.put(row.getCmntySn(), row.getCnt()));
+        }
+        page.getContent().forEach(dto -> dto.setPendingMemberCount(pending.getOrDefault(dto.getCmntySn(), 0L)));
+        return page;
     }
 
     /**

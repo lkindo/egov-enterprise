@@ -69,6 +69,11 @@ public class DeptJob extends BaseEntity {
         this.atchFileSn = atchFileSn;
     }
 
+    /** 담당자만 바꾼다(2026-10-01 결정 22). 내용·첨부는 건드리지 않는다 — 재지정하는 등록자에게는 수정 권한이 없다. */
+    public void reassign(String picId) {
+        this.picId = picId;
+    }
+
     // ----- [Legacy Getter/Setter & Builder Aliases] -----
     // 레거시 별칭 완전 철폐 (표준화 동기화)
 }

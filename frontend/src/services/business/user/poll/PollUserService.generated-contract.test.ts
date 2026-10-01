@@ -45,6 +45,7 @@ describe('PollUserService generated contract', () => {
       size: 20,
       searchCondition: '0',
       searchKeyword: '만족도',
+      kind: 'SATISFACTION',
     })).resolves.toMatchObject({ list: [poll], total: 1 });
     await expect(pollUserService.getPollDetail(4)).resolves.toEqual(poll);
     await expect(pollUserService.createPoll(poll)).resolves.toBeUndefined();
@@ -55,7 +56,8 @@ describe('PollUserService generated contract', () => {
       .resolves.toBeUndefined();
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'polls', {
-      params: { page: 0, size: 20, keyword: '만족도' },
+      // [결정 21] 종류 조건이 그대로 실린다 — 여론조사·투표 관리 화면이 서로의 항목을 보지 않는다.
+      params: { page: 0, size: 20, keyword: '만족도', kind: 'SATISFACTION' },
     });
     expect(client.getRaw).toHaveBeenNthCalledWith(2, 'polls/4', undefined);
     expect(client.getRaw).toHaveBeenNthCalledWith(3, 'polls/4/items', undefined);

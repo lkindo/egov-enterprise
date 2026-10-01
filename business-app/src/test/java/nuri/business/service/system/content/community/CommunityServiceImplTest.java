@@ -169,6 +169,35 @@ class CommunityServiceImplTest {
         verify(countQuery).fetchOne();
         verify(countQuery, never()).fetch();
         verify(jpaQuery, times(1)).fetch();
+        // 신청이 없는 커뮤니티는 null 이 아니라 0 이다(2026-10-01 결정 20).
+        assertThat(result.getContent().get(0).getPendingMemberCount()).isZero();
+    }
+
+    @Test
+    @DisplayName("🚨 관리 목록은 커뮤니티마다 승인 대기 가입 신청 수를 한 번의 집계로 싣는다 (2026-10-01 결정 20)")
+    void getCommunityList_carriesPendingMemberCount() {
+        given(queryFactory.<Community>selectFrom(any())).willReturn(jpaQuery);
+        given(jpaQuery.where(any(BooleanBuilder.class))).willReturn(jpaQuery);
+        given(jpaQuery.offset(any(Long.class))).willReturn(jpaQuery);
+        given(jpaQuery.limit(any(Long.class))).willReturn(jpaQuery);
+        given(jpaQuery.orderBy(any(OrderSpecifier.class))).willReturn(jpaQuery);
+        given(jpaQuery.fetch()).willReturn(List.of(
+                Community.builder().cmntySn(101L).cmntyNm("A").build(),
+                Community.builder().cmntySn(102L).cmntyNm("B").build()));
+        given(queryFactory.select(org.mockito.ArgumentMatchers.<Expression<Long>>any())).willReturn(countQuery);
+        given(countQuery.from(QCommunity.community)).willReturn(countQuery);
+        given(countQuery.where(any(BooleanBuilder.class))).willReturn(countQuery);
+        given(countQuery.fetchOne()).willReturn(2L);
+        given(communityUserRepository.countByStatusForCommunities("A", List.of(101L, 102L))).willReturn(List.of(
+                new nuri.business.domain.system.content.community.CommunityUserRepository.StatusCount() {
+                    @Override public Long getCmntySn() { return 102L; }
+                    @Override public long getCnt() { return 3L; }
+                }));
+
+        Page<CommunityDto> result = communityService.getCommunityList(null, null, PageRequest.of(0, 10));
+
+        assertThat(result.getContent()).extracting(CommunityDto::getPendingMemberCount).containsExactly(0L, 3L);
+        verify(communityUserRepository, times(1)).countByStatusForCommunities(any(), any());
     }
 
     /*

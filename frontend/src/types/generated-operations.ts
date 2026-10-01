@@ -88,6 +88,7 @@ import {
   ApiResponsePageResponseAddressBookUserDtoResponseSchema,
   ApiResponsePageResponseAddressBookUserSelectionDtoResponseSchema,
   ApiResponsePageResponseAdministCodeDtoResponseSchema,
+  ApiResponsePageResponseAuditJournalEntryResponseSchema,
   ApiResponsePageResponseAuthorGroupProjectionResponseSchema,
   ApiResponsePageResponseAuthorManageDtoResponseSchema,
   ApiResponsePageResponseAuthorRoleProjectionResponseSchema,
@@ -213,6 +214,7 @@ import {
   DepartmentSnapshotResponseSchema,
   DeptAuthorBatchRequestRequestSchema,
   DeptHierarchyItemRequestRequestSchema,
+  DeptJobAssigneeRequestRequestSchema,
   DeptJobBoxDtoRequestSchema,
   DeptJobBoxDtoResponseSchema,
   DeptJobDtoRequestSchema,
@@ -275,6 +277,7 @@ import {
   PageResponseAddressBookUserDtoResponseSchema,
   PageResponseAddressBookUserSelectionDtoResponseSchema,
   PageResponseAdministCodeDtoResponseSchema,
+  PageResponseAuditJournalEntryResponseSchema,
   PageResponseAuthorGroupProjectionResponseSchema,
   PageResponseAuthorManageDtoResponseSchema,
   PageResponseAuthorRoleProjectionResponseSchema,
@@ -1136,7 +1139,7 @@ export const updateDeptJobOperation = /*#__PURE__*/ (() => {
   requestSchema: DeptJobDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["editable"],["deletable"]],
+  requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["editable"],["deletable"],["reassignable"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -3077,7 +3080,7 @@ export const updateCommunityOperation = /*#__PURE__*/ (() => {
   requestSchema: CommunityDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [["createdByMe"],["editable"],["deletable"]],
+  requestForbiddenPaths: [["createdByMe"],["editable"],["deletable"],["pendingMemberCount"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -3472,7 +3475,7 @@ export const getPollsOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "keyword": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "keyword": z.string().optional(), "kind": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseOnlinePollManageDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseOnlinePollManageDtoResponseSchema,
@@ -3978,7 +3981,7 @@ export const createDeptJobOperation = /*#__PURE__*/ (() => {
   requestSchema: DeptJobDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["editable"],["deletable"]],
+  requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["editable"],["deletable"],["reassignable"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -4437,7 +4440,7 @@ export const insertUserOperation = /*#__PURE__*/ (() => {
   requestSchema: UserDtoRequestSchema.strict(),
   responseSchema: z.string(),
   envelopeSchema: ApiResponseStringResponseSchema,
-  requestForbiddenPaths: [["groups"],["permissions"],["authorizationVersion"]],
+  requestForbiddenPaths: [["groups"],["permissions"],["authorizationVersion"],["passwordChangeRequired"],["mfaEnabled"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -5824,7 +5827,7 @@ export const createCommunityOperation = /*#__PURE__*/ (() => {
   requestSchema: CommunityDtoRequestSchema.strict(),
   responseSchema: z.lazy(() => CommunityDtoResponseSchema),
   envelopeSchema: ApiResponseCommunityDtoResponseSchema,
-  requestForbiddenPaths: [["createdByMe"],["editable"],["deletable"]],
+  requestForbiddenPaths: [["createdByMe"],["editable"],["deletable"],["pendingMemberCount"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -5955,6 +5958,25 @@ export const confirmInformalSanction_1Operation = /*#__PURE__*/ (() => {
   pathSchema: z.object({ "informalSanctionId": z.number().int() }).strict(),
   querySchema: z.object({ "confmAt": z.string(), "returnResn": z.string().optional() }).strict(),
   requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const reassignDeptJobOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "reassignDeptJob",
+  method: "patch",
+  path: "/api/v1/dept-jobs/{deptTaskSn}/assignee",
+  requestKind: "json",
+  responseKind: "void",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "deptTaskSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: DeptJobAssigneeRequestRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
@@ -7800,6 +7822,25 @@ export const exportLoginLogsOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: null,
   envelopeSchema: null,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const auditJournalListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "auditJournalList",
+  method: "get",
+  path: "/api/v1/admin/system/logs/audit",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: z.object({ "actorId": z.string().optional(), "operation": z.string().optional(), "fromDate": z.string().optional(), "toDate": z.string().optional(), "page": z.number().int().optional(), "size": z.number().int().optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => PageResponseAuditJournalEntryResponseSchema),
+  envelopeSchema: ApiResponsePageResponseAuditJournalEntryResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

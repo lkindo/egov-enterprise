@@ -92,6 +92,9 @@ function toUserManage(item: UserResponse): UserManage {
     //   상세의 '로그인 잠금 해제' 버튼(B4g)이 잠긴 계정에서도 보이지 않았다 — 화면 테스트는 서비스를 목으로
     //   막아 lckYn 을 직접 넣었으므로 이 손실을 보지 못했다.
     'lckYn',
+    // [2026-10-01 결정 18] 상세 조회만 싣는 비밀번호 변경 필요·추가 인증 사용 여부.
+    'passwordChangeRequired',
+    'mfaEnabled',
   ] as const;
   for (const field of optionalFields) {
     const value = item[field];

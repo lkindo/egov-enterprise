@@ -99,7 +99,8 @@ export default function OnlinePollAdminClient() {
 
  const { data, isLoading, isError, error, refetch } = useQuery({
  queryKey: ['admin-online-polls', page, keyword, pageSize],
- queryFn: () => pollUserService.getPollList({ searchKeyword: keyword, page, size: pageSize }),
+ // [결정 21] 온라인 투표만 — 여론조사는 여론조사 관리 화면이 소유한다.
+ queryFn: () => pollUserService.getPollList({ searchKeyword: keyword, page, size: pageSize, kind: 'POLL' }),
  });
 
  const polls: OnlinePollDto[] = data?.list || [];

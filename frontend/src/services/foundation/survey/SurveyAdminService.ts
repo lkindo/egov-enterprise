@@ -48,6 +48,8 @@ function requireSurvey(item: components['schemas']['SurveyInfoDto']): Survey {
     crtDt: item.crtDt ?? '',
     // [2026-10-01] 서버가 판정한 응답 여부를 버리지 않는다 — 목록의 '응답 완료' 표시가 이 값을 읽는다.
     ...(typeof item.responded === 'boolean' ? { responded: item.responded } : {}),
+    // [결정 21] 작성 중(N)인 설문은 편집 권한자에게만 오며, 목록이 그 사실을 표시한다.
+    ...(typeof item.rlsYn === 'string' ? { rlsYn: item.rlsYn } : {}),
   };
 }
 

@@ -14,7 +14,7 @@
     "Axis 3 is a display check only. Server authorization is unchanged, and a permission literal proves the screen looked at it, not which button it gates."
   ],
   "expected": {
-    "operationCount": 415,
+    "operationCount": 417,
     "unwiredMax": 10,
     "screenOrphanMax": 29,
     "ungatedWriteMax": 45
@@ -142,22 +142,6 @@
       "note": "Authorized authorization simplification routes this workflow to the canonical versioned authorization API. Users may belong to multiple groups; department changes apply ADD/REMOVE deltas and group deletion is an explicit single-group operation. Legacy unversioned/bulk replacement is no longer exposed by the frontend. See docs/02-architecture/authorization-simplification-design.md.",
       "supersededBy": [
         "authzReplaceMemberships"
-      ]
-    },
-    {
-      "operationId": "durableJobList",
-      "category": "non-browser-consumer",
-      "note": "ADR-0025 D12/D14 operator API used through the recovery runbook. Listing requires DWORK_READ; FAILED-only retry requires DWORK_RETRY and a transactional audit receipt. No browser administration screen or automatic account grant is claimed.",
-      "evidence": [
-        "docs/04-operations/durable-work-recovery.md"
-      ]
-    },
-    {
-      "operationId": "durableJobRetry",
-      "category": "non-browser-consumer",
-      "note": "ADR-0025 D12/D14 operator API used through the recovery runbook. Listing requires DWORK_READ; FAILED-only retry requires DWORK_RETRY and a transactional audit receipt. No browser administration screen or automatic account grant is claimed.",
-      "evidence": [
-        "docs/04-operations/durable-work-recovery.md"
       ]
     },
     {

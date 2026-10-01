@@ -69,6 +69,17 @@ public class SecurityUtil {
     }
  
     /**
+     * 현재 인증 주체가 관리자가 초기화한 임시 비밀번호로 로그인했는가(2026-10-01 결정 18). 인증이 없거나 주체가
+     * 표시를 갖지 않으면 false 다 — 이 판정은 접근을 좁히는 데만 쓴다.
+     */
+    public static boolean isPasswordChangeRequired() {
+        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null
+                && authentication.getPrincipal() instanceof nuri.foundation.security.service.CustomUserDetails principal
+                && principal.isPasswordChangeRequired();
+    }
+
+    /**
      * @deprecated 이름과 달리 <b>로그인 ID 가 아니라 esntlId</b> 를 반환한다(정체성 footgun).
      * 의미가 명확한 {@link #getCurrentEsntlId()} 를 사용하라. 하위호환을 위해 위임만 유지한다.
      */

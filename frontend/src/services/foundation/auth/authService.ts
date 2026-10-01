@@ -28,6 +28,11 @@ export interface AuthUser extends AuthorizationState {
  role?: string;
  userSe?: string;
  email?: string;
+ /**
+  * 관리자가 초기화한 임시 비밀번호로 로그인했다(2026-10-01 결정 18). 참이면 서버는 비밀번호 변경 밖의 API 를
+  * 거부하고, 화면은 변경 화면만 보인다(PasswordChangeGate).
+  */
+ passwordChangeRequired?: true;
 }
 
 /** 기존 소비자 호환 별칭. 신규 인증 경계 코드는 AuthUser 의미를 따른다. */
@@ -68,6 +73,7 @@ export function normalizeAuthUser(value: unknown): AuthUser {
  if (role) user.role = role;
  if (userSe) user.userSe = userSe;
  if (email) user.email = email;
+ if (value.passwordChangeRequired === true) user.passwordChangeRequired = true;
  return user;
 }
 

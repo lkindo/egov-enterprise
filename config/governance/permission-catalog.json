@@ -2527,6 +2527,13 @@
       "defaultGroups": []
     },
     {
+      "code": "ADT_LOG_READ",
+      "domain": "ADT_LOG",
+      "action": "READ",
+      "name": "민감 작업 감사 원장 · 조회",
+      "defaultGroups": []
+    },
+    {
       "code": "FAQ_EDIT",
       "domain": "FAQ",
       "action": "EDIT",
@@ -2730,6 +2737,9 @@
     "/admin/system/common-code/codes": [
       "CODE_READ"
     ],
+    "/admin/system/durable-jobs": [
+      "DWORK_READ"
+    ],
     "/admin/system/hpcm": [
       "HELP_READ"
     ],
@@ -2745,6 +2755,9 @@
       "SYS_LOG_READ",
       "USER_LOG_READ",
       "WEB_LOG_READ"
+    ],
+    "/admin/system/logs/audit": [
+      "ADT_LOG_READ"
     ],
     "/admin/system/logs/login": [
       "LOGIN_LOG_READ"

@@ -54,6 +54,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     public void addInterceptors(InterceptorRegistry registry) {
 
+        // 관리자가 초기화한 임시 비밀번호로는 비밀번호 변경 밖의 API 를 쓸 수 없다(2026-10-01 결정 18).
+        registry.addInterceptor(new nuri.api.interceptor.PasswordChangeRequiredGuard())
+                .addPathPatterns("/api/**");
+
         // 형식이 아닌 sort 값을 저장소에 닿기 전에 400 으로 끝낸다(2026-09-24 ZAP API 스캔).
         registry.addInterceptor(new nuri.api.interceptor.SortParameterGuard())
 

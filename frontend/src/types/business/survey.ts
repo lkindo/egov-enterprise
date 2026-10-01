@@ -11,6 +11,8 @@ export interface Survey {
   crtDt: string;
   /** 현재 사용자가 이미 응답했는지(응답 전용, 목록·상세 모두 서버가 채운다). null 은 판정하지 않음(DIP V8, 2026-10-01 목록). */
   responded?: boolean | null;
+  /** 응답자에게 공개했는가('Y' 공개·'N' 작성 중). 새 설문은 작성 중으로 시작한다(2026-10-01 결정 21). */
+  rlsYn?: string | null;
 }
 
 export interface SurveyQuestion {

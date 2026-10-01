@@ -44,11 +44,12 @@ class PollApiControllerTest extends ControllerTestSupport {
                 .pollNm("테스트 설문")
                 .build();
         Page<OnlinePollManageDto> page = new PageImpl<>(List.of(poll));
-        given(pollService.getPollList(anyString(), any(Pageable.class))).willReturn(page);
+        given(pollService.getPollList(anyString(), org.mockito.ArgumentMatchers.eq("POLL"), any(Pageable.class))).willReturn(page);
  
         // When & Then
         mockMvc.perform(get("/api/v1/polls")
                 .param("keyword", "테스트")
+                .param("kind", "POLL")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))

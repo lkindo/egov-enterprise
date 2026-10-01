@@ -27,6 +27,11 @@ public class BoardSearchCondition {
      * 회원 여부를 이미 판정하므로(BoardService.assertCommunityAccess) 이 값을 켜지 않는다.
      */
     private boolean excludeCommunityBoards;
+    /**
+     * [2026-10-01 결정 23] 게시 종료일 집행 기준일(yyyyMMdd, Asia/Seoul). 값이 있으면 종료일이 이 날보다 이른 글은
+     * 작성자 본인(viewerEsntlId) 밖에서 빠진다. 전체 열람 권한자는 null 이라 모든 글을 본다.
+     */
+    private String postingOpenOn;
     // Default constructor for cases where full initialization isn't needed
     // immediately
     public BoardSearchCondition() {

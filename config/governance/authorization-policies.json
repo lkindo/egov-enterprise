@@ -1244,6 +1244,15 @@
       "guardRef": "DeptJobService#assertPicOrAdmin"
     },
     {
+      "method": "PATCH",
+      "path": "/api/v1/dept-jobs/{deptTaskSn}/assignee",
+      "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#reassignDeptJob",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#reassignDeptJob')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "DeptJobService#assertCanReassign"
+    },
+    {
       "method": "POST",
       "path": "/api/v1/files",
       "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
@@ -3279,6 +3288,18 @@
       ]
     },
     {
+      "target": "SensitiveAuditQueryService#search",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "ADT_LOG_READ"
+        }
+      ]
+    },
+    {
       "target": "OnlinePollService#insertPollItem",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -3818,6 +3839,17 @@
       "requiredTokens": [
         "SecurityUtil.hasPermission(\"MEMO_RPT_UPDATE_ALL\")",
         "!esntlId.equals(entity.getRptrId())",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "DeptJobService#assertCanReassign",
+      "source": "business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "isDeptJobAdmin() || isAssignee(deptJob) || isRegistrar(deptJob)",
         "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
       ],
       "forbiddenTokens": []
@@ -5849,6 +5881,13 @@
       "permission": "DEPT_JOB_UPDATE"
     },
     {
+      "method": "PATCH",
+      "path": "/api/v1/dept-jobs/{deptTaskSn}/assignee",
+      "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#reassignDeptJob",
+      "access": "PERMISSION",
+      "permission": "DEPT_JOB_UPDATE"
+    },
+    {
       "method": "POST",
       "path": "/api/v1/files",
       "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
@@ -6862,6 +6901,13 @@
       "handler": "nuri.api.controller.foundation.controller.system.job.DurableJobApiController#retry",
       "access": "PERMISSION",
       "permission": "DWORK_RETRY"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/system/logs/audit",
+      "handler": "nuri.api.controller.foundation.controller.system.log.AuditJournalApiController#getAuditJournal",
+      "access": "PERMISSION",
+      "permission": "ADT_LOG_READ"
     },
     {
       "method": "POST",

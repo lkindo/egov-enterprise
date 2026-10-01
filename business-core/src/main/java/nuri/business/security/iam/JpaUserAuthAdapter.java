@@ -37,6 +37,7 @@ public class JpaUserAuthAdapter implements UserAuthPort {
                 .mfaCredentialVersion(mfa == null ? null : mfa.getCredentialVersion())
                 .mfaRequired((mfa != null && (mfa.isActive() || mfa.requiresEnrollment()))
                         || (mfaSettings.requireProtected() && protectedAccount))
+                .passwordChangeRequired(user.isTemporaryPassword())
                 // 저장 시각은 LocalDateTime.now()(JVM 기본 시간대)이므로 같은 기준으로 되돌린다.
                 .credentialsChangedAt(user.getChgPswdLastDt() == null ? null
                         : user.getChgPswdLastDt().atZone(java.time.ZoneId.systemDefault()).toInstant())

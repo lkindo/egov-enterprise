@@ -13,7 +13,7 @@ import { useMemo, useSyncExternalStore } from 'react';
  * 받는다. 받는 화면은 사용자가 탭·대상을 직접 바꾸면 인계를 지운다. 저장소를 쓸 수 없으면 인계가 없는
  * 것으로 본다 — 그때는 종전처럼 대상 없이 열린다.
  */
-export type HandoffSlot = 'authority-user' | 'authority-history-user' | 'login-log-user';
+export type HandoffSlot = 'authority-user' | 'authority-history-user' | 'login-log-user' | 'mfa-recover-user';
 
 export interface HandoffTarget {
   /** 사용자 고유 식별자(esntlId). */

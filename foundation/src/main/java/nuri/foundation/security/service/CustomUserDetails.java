@@ -51,12 +51,17 @@ public class CustomUserDetails implements UserDetails {
     /** 현재 DB 자격 버전. 등록·복구·비활성화 후 이전 JWT를 거부하는 기준이다. */
     private final String mfaCredentialVersion;
     private final boolean mfaRequired;
+    /**
+     * 관리자가 초기화한 임시 비밀번호로 로그인했는가(2026-10-01 결정 18). 참이면 비밀번호 변경 밖의 API 를
+     * 거부한다(PasswordChangeRequiredGuard).
+     */
+    private final boolean passwordChangeRequired;
 
     private CustomUserDetails(String userId, String esntlId, String userNm, String password,
                               String roleName, String lockAt, String authorCode,
                               List<String> authorityCodes, List<String> groups, List<String> permissions,
                               String authorizationVersion, boolean enabled, java.time.Instant credentialsChangedAt,
-                              String mfaCredentialVersion, boolean mfaRequired) {
+                              String mfaCredentialVersion, boolean mfaRequired, boolean passwordChangeRequired) {
         this.userId = userId;
         this.esntlId = esntlId;
         this.userNm = userNm;
@@ -72,13 +77,14 @@ public class CustomUserDetails implements UserDetails {
         this.credentialsChangedAt = credentialsChangedAt;
         this.mfaCredentialVersion = mfaCredentialVersion;
         this.mfaRequired = mfaRequired;
+        this.passwordChangeRequired = passwordChangeRequired;
     }
 
     /** 하위 호환성을 위한 7개 인자 생성자 (기존 테스트 및 호출부 지원) */
     public CustomUserDetails(String userId, String esntlId, String userNm, String password,
                              String roleName, String lockAt, String authorCode) {
         this(userId, esntlId, userNm, password, roleName, lockAt, authorCode,
-                null, List.of(), List.of(), null, false, null, null, false);
+                null, List.of(), List.of(), null, false, null, null, false, false);
     }
 
     @JsonIgnore

@@ -490,25 +490,21 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
             )}
           </div>
 
-          {/* 게시 기간(기록용) */}
+          {/* 게시 기간 */}
           <div className="space-y-2">
             {/*
-              [2026-08-29 → 2026-09-05 이전] '게시 기간' 은 **기록만 되고 집행되지 않는다.**
-              두 값은 BoardService 가 normalizeYmd 로 컬럼에 넣지만, 목록·상세 가시성을 결정하는 유일한
-              술어 조립기 BoardPredicate 에는 pstBgngYmd·pstEndYmd 가 등장하지 않는다(전 저장소 실측:
-              엔티티 대입·projection·저장 경로뿐, 조건문 0건). 즉 종료일이 지나도 글은 그대로 보인다.
-
-              집행을 켜는 것은 이 화면의 범위가 아니다 — 켜는 순간 이미 기간이 지난 기존 글이 예고 없이
-              사라지므로, 대상 범위와 마이그레이션을 정하는 제품 결정이 선행된다. 그때까지 화면은
-              자기가 하는 일만 말한다(honest-affordance-contract 가 문구와 술어 부재를 함께 고정한다).
+              [2026-10-01 결정 23] 게시 종료일을 집행한다 — 종료일이 지난 글은 일반 사용자의 목록·상세·검색에서
+              보이지 않고, 작성자와 전체 열람 권한자에게는 '게시 종료' 로 보인다(BoardPredicate·BoardService).
+              시작일은 여전히 기록만 하며 노출을 늦추지 않는다. 종전(2026-08-29~)에는 둘 다 기록만 됐고 이 문구가
+              그 사실을 말했다. honest-affordance-contract 가 문구와 술어를 함께 고정한다.
             */}
             <div className="flex items-center gap-2">
               <Calendar size={16} className="shrink-0 text-muted-foreground" aria-hidden="true" />
-              <h2 className="text-[length:var(--font-size-body)] font-semibold text-foreground">게시 기간(기록용)</h2>
+              <h2 className="text-[length:var(--font-size-body)] font-semibold text-foreground">게시 기간</h2>
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              입력한 기간은 게시글에 함께 저장되지만, 노출 여부를 자동으로 바꾸지는 않습니다.
-              종료일이 지나도 글은 계속 보이며, 내리려면 직접 삭제해야 합니다.
+              종료일이 지나면 일반 사용자의 목록·상세·검색에서 보이지 않습니다. 작성자와 게시판 관리자에게는
+              &lsquo;게시 종료&rsquo;로 표시됩니다. 시작일은 기록만 하며 노출을 늦추지 않습니다.
               {pstSn ? ' 비워 두면 기존 값은 그대로 둡니다.' : ''}
             </p>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">

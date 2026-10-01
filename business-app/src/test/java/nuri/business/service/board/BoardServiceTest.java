@@ -214,6 +214,62 @@ class BoardServiceTest {
     }
 
     @Test
+    @DisplayName("🚨 비관리자 목록은 게시 종료일 기준일(오늘, 서울)을 싣고, 전체 열람 권한자는 싣지 않는다 (2026-10-01 결정 23)")
+    void getBoardPosts_bindsPostingOpenOnForNonAdminOnly() {
+        String bbsId = "BBS_01";
+        Pageable pageable = PageRequest.of(0, 10);
+        given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
+        org.mockito.ArgumentCaptor<BoardSearchCondition> captor = org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
+        given(boardRepository.searchArticles(captor.capture(), eq(pageable))).willReturn(Page.empty(pageable));
+        String today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul")).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+
+        boardService.getBoardPosts(bbsId, pageable);
+        assertThat(captor.getValue().getPostingOpenOn()).isEqualTo(today);
+
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")).thenReturn(true);
+        boardService.getBoardPosts(bbsId, pageable);
+        assertThat(captor.getValue().getPostingOpenOn()).isNull();
+    }
+
+    @Test
+    @DisplayName("🚨 게시 종료일이 지난 글은 남에게 404, 작성자·전체 열람 권한자에게는 열린다 (2026-10-01 결정 23)")
+    void getPostDetail_hidesEndedPostingFromOthers() {
+        String yesterday = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul")).minusDays(1)
+                .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        BoardDetailResult ended = BoardDetailResult.builder().pstSn(5L).bbsId("BBS_01").userId("ESNTL_owner")
+                .scrtYn("N").pstEndYmd(yesterday).build();
+        given(boardRepository.findActiveArticleDetail("BBS_01", 5L)).willReturn(Optional.of(ended));
+
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("ESNTL_other"));
+        assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", 5L, false))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+        assertThatThrownBy(() -> boardService.assertCommentAccess("BBS_01", 5L))
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("ESNTL_owner"));
+        assertThat(boardService.getPostDetail("BBS_01", 5L, false).pstSn()).isEqualTo(5L);
+
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("ESNTL_other"));
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")).thenReturn(true);
+        assertThat(boardService.getPostDetail("BBS_01", 5L, false).pstSn()).isEqualTo(5L);
+    }
+
+    @Test
+    @DisplayName("오늘이 종료일인 글과 종료일이 없는 글은 아직 게시 중이다")
+    void getPostDetail_keepsPostingOpenOnEndDateAndWithoutEnd() {
+        String today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul")).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        given(boardRepository.findActiveArticleDetail("BBS_01", 6L)).willReturn(Optional.of(
+                BoardDetailResult.builder().pstSn(6L).bbsId("BBS_01").userId("ESNTL_owner").scrtYn("N").pstEndYmd(today).build()));
+        given(boardRepository.findActiveArticleDetail("BBS_01", 7L)).willReturn(Optional.of(
+                BoardDetailResult.builder().pstSn(7L).bbsId("BBS_01").userId("ESNTL_owner").scrtYn("N").pstEndYmd("").build()));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("ESNTL_other"));
+
+        assertThat(boardService.getPostDetail("BBS_01", 6L, false).pstSn()).isEqualTo(6L);
+        assertThat(boardService.getPostDetail("BBS_01", 7L, false).pstSn()).isEqualTo(7L);
+    }
+
+    @Test
     @DisplayName("범용 목록은 exact ADMIN에게 비밀글 전체 visibility를 허용한다")
     void getBoardPostsAllowsExactAdminSecretVisibility() {
         assertElevatedRoleCanReadAllSecretPosts(AuthorityConstants.ROLE_ADMIN);
