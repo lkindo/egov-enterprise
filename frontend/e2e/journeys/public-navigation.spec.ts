@@ -165,9 +165,16 @@ test.describe('설문 응답 생명주기', () => {
                 expect(selectedAnswers).toHaveLength(2);
                 expect(new Set(selectedAnswers.map(answer => answer.srvyQstnSn)).size).toBe(2);
                 expect(new Set(selectedAnswers.map(answer => answer.srvyArtclSn)).size).toBe(2);
-                // [2026-10-01 결정 21] 새 설문은 작성 중이라 응답자에게 없는 설문과 같다 — 공개한 뒤에만 열린다.
-                const draft = await userContext.request.get(`/api/v1/surveys/${surveyId}`);
-                expect(draft.status(), '작성 중 설문은 응답자에게 보이지 않아야 한다').toBe(404);
+                // [2026-10-01 결정 21] 새 설문은 작성 중이라 응답자 목록에 없다 — 공개한 뒤에만 보인다.
+                // APIRequestContext 는 loopback 에서 Secure 인증 쿠키를 싣지 않으므로 브라우저 안에서 조회한다.
+                const listedTitles = () => userPage.evaluate(async (title) => {
+                    const response = await fetch(`/api/v1/surveys?keyword=${encodeURIComponent(title)}&page=0&size=10`);
+                    const body = await response.json() as { data?: { list?: { srvyTtl: string }[] } };
+                    return { status: response.status, titles: (body.data?.list ?? []).map(survey => survey.srvyTtl) };
+                }, surveyTitle);
+                const draft = await listedTitles();
+                expect(draft.status).toBe(200);
+                expect(draft.titles, '작성 중 설문은 응답자 목록에 보이지 않아야 한다').not.toContain(surveyTitle);
                 const adminMain = adminPage.locator('main#main-content');
                 await adminPage.reload();
                 await adminMain.getByRole('combobox', { name: '설문 선택', exact: true }).selectOption(String(surveyId));
@@ -177,6 +184,7 @@ test.describe('설문 응답 생명주기', () => {
                 await adminPage.getByRole('dialog').getByRole('button', { name: '공개', exact: true }).click();
                 expect((await released).status()).toBe(200);
                 await expect(adminMain.getByRole('button', { name: '공개 중단', exact: true })).toBeVisible();
+                expect((await listedTitles()).titles, '공개한 설문은 응답자 목록에 보여야 한다').toContain(surveyTitle);
                 await userPage.goto(`/survey/${surveyId}`);
                 const main = userPage.locator('main#main-content');
                 await expect(main.getByText(surveyTitle, { exact: true })).toBeVisible();
