@@ -242,7 +242,9 @@ export function Header({
         </div>
 
         <div className="flex items-center gap-1 md:gap-2">
-          {/* [2026-10-01] 즐겨찾기·최근 방문이 있는 명령 센터의 보이는 입구 — 종전에는 Ctrl+K 로만 열렸다. */}
+          {/* [2026-10-01] 즐겨찾기·최근 방문이 있는 명령 센터의 보이는 입구 — 종전에는 Ctrl+K 로만 열렸다.
+              좁은 화면(md 미만)에서는 숨긴다 — 320px 에서 헤더가 40px 넘쳐 화면이 가로로 밀렸다(WCAG 1.4.10).
+              그 폭에서는 사이드바 즐겨찾기 묶음과 통합 검색이 같은 길을 준다. */}
           <Button
             type="button"
             variant="ghost"
@@ -250,7 +252,7 @@ export function Header({
             aria-label="빠른 이동 (Ctrl+K)"
             aria-keyshortcuts="Control+K"
             title="빠른 이동 (Ctrl+K)"
-            className="gap-2 text-muted-foreground"
+            className="hidden md:inline-flex gap-2 text-muted-foreground"
           >
             <Compass size={20} aria-hidden="true" />
             <span className="hidden lg:inline text-sm font-medium">빠른 이동</span>
