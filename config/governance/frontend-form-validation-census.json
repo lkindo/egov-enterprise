@@ -1923,7 +1923,7 @@
       "owner": "BoardListClient",
       "handler": "handleLike",
       "writeSinks": [
-        "likeBoardArticle",
+        "boardUserService.likePost",
         "likeMutation.mutateAsync"
       ],
       "classification": "mutation",
