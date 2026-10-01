@@ -165,6 +165,18 @@ test.describe('설문 응답 생명주기', () => {
                 expect(selectedAnswers).toHaveLength(2);
                 expect(new Set(selectedAnswers.map(answer => answer.srvyQstnSn)).size).toBe(2);
                 expect(new Set(selectedAnswers.map(answer => answer.srvyArtclSn)).size).toBe(2);
+                // [2026-10-01 결정 21] 새 설문은 작성 중이라 응답자에게 없는 설문과 같다 — 공개한 뒤에만 열린다.
+                const draft = await userContext.request.get(`/api/v1/surveys/${surveyId}`);
+                expect(draft.status(), '작성 중 설문은 응답자에게 보이지 않아야 한다').toBe(404);
+                const adminMain = adminPage.locator('main#main-content');
+                await adminPage.reload();
+                await adminMain.getByRole('combobox', { name: '설문 선택', exact: true }).selectOption(String(surveyId));
+                const released = adminPage.waitForResponse(response => new URL(response.url()).pathname === `${SURVEYS}/${surveyId}`
+                    && response.request().method() === 'PUT');
+                await adminMain.getByRole('button', { name: '응답자에게 공개', exact: true }).click();
+                await adminPage.getByRole('dialog').getByRole('button', { name: '공개', exact: true }).click();
+                expect((await released).status()).toBe(200);
+                await expect(adminMain.getByRole('button', { name: '공개 중단', exact: true })).toBeVisible();
                 await userPage.goto(`/survey/${surveyId}`);
                 const main = userPage.locator('main#main-content');
                 await expect(main.getByText(surveyTitle, { exact: true })).toBeVisible();

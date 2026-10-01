@@ -86,7 +86,8 @@ test.describe('Board & Community (Business Flow)', () => {
             await adminPage.getByRole('button', { name: '커뮤니티 관리', exact: true }).click();
             const dialog = adminPage.getByRole('dialog', { name: '커뮤니티 관리', exact: true });
             const pages = (await (await listed).json()).data.totalPage as number;
-            const manageMembers = dialog.getByRole('button', { name: `${communityName} 회원 관리`, exact: true });
+            // [2026-10-01 결정 20] 승인을 기다리는 신청 수가 버튼 이름에 실린다 — 방금 넣은 신청 1건이 보여야 한다.
+            const manageMembers = dialog.getByRole('button', { name: `${communityName} 회원 관리 (가입 신청 1건)`, exact: true });
             await expect(dialog.getByRole('list', { name: '커뮤니티 목록', exact: true })).toBeVisible();
             for (let page = 1; page < pages && await manageMembers.count() === 0; page++) {
                 const next = adminPage.waitForResponse(response => new URL(response.url()).pathname === communities

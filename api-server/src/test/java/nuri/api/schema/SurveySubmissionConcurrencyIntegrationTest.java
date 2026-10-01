@@ -54,12 +54,13 @@ class SurveySubmissionConcurrencyIntegrationTest {
     private List<String> measuredSql = List.of();
     private final List<String> cancellationUsers = new ArrayList<>();
 
+    // [2026-10-01 결정 21] 새 설문은 작성 중(rls_yn='N')으로 시작하고 작성 중 설문 응답은 404 다 — 공개된 설문을 명시한다.
     @BeforeEach
     void prepareSurvey() {
         template = jdbc.queryForObject("INSERT INTO tb_srvy_tmplt DEFAULT VALUES RETURNING srvy_tmplt_sn", Long.class);
         survey = jdbc.queryForObject("""
-                INSERT INTO tb_srvy_info (srvy_ttl, srvy_tmplt_sn, srvy_bgng_ymd, srvy_end_ymd)
-                VALUES ('동시 제출 검증', ?, '20000101', '29991231') RETURNING srvy_sn
+                INSERT INTO tb_srvy_info (srvy_ttl, srvy_tmplt_sn, srvy_bgng_ymd, srvy_end_ymd, rls_yn)
+                VALUES ('동시 제출 검증', ?, '20000101', '29991231', 'Y') RETURNING srvy_sn
                 """, Long.class, template);
         firstQuestion = question(1);
         secondQuestion = question(2);
@@ -203,8 +204,8 @@ class SurveySubmissionConcurrencyIntegrationTest {
         jdbc.update("UPDATE tb_srvy_artcl SET artcl_cn=? WHERE srvy_artcl_sn=? AND srvy_sn=?",
                 "다른 문항의 비공개 선택", thirdArticle, survey);
         foreignSurvey = jdbc.queryForObject("""
-                INSERT INTO tb_srvy_info (srvy_ttl, srvy_tmplt_sn, srvy_bgng_ymd, srvy_end_ymd)
-                VALUES ('소속 혼입 검증', ?, '20000101', '29991231') RETURNING srvy_sn
+                INSERT INTO tb_srvy_info (srvy_ttl, srvy_tmplt_sn, srvy_bgng_ymd, srvy_end_ymd, rls_yn)
+                VALUES ('소속 혼입 검증', ?, '20000101', '29991231', 'Y') RETURNING srvy_sn
                 """, Long.class, template);
         long foreignQuestion = jdbc.queryForObject("""
                 INSERT INTO tb_srvy_qstn (srvy_sn, srvy_tmplt_sn, qstn_sn, qstn_cn, max_chc_cnt)
@@ -287,7 +288,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
         long anchor = responseAnchor(author);
         authenticate(other);
         service.submitResponse(survey, answers(true));
-        foreignSurvey = jdbc.queryForObject("INSERT INTO tb_srvy_info(srvy_ttl,srvy_tmplt_sn) VALUES ('다른 설문',?) RETURNING srvy_sn", Long.class, template);
+        foreignSurvey = jdbc.queryForObject("INSERT INTO tb_srvy_info(srvy_ttl,srvy_tmplt_sn,rls_yn) VALUES ('다른 설문',?,'Y') RETURNING srvy_sn", Long.class, template);
         long foreignQuestion = jdbc.queryForObject("INSERT INTO tb_srvy_qstn(srvy_sn,srvy_tmplt_sn,max_chc_cnt) VALUES (?,?,1) RETURNING srvy_qstn_sn", Long.class, foreignSurvey, template);
         long foreignArticle = jdbc.queryForObject("INSERT INTO tb_srvy_artcl(srvy_sn,srvy_tmplt_sn,srvy_qstn_sn) VALUES (?,?,?) RETURNING srvy_artcl_sn", Long.class, foreignSurvey, template, foreignQuestion);
         jdbc.update("INSERT INTO tb_srvy_rslt(srvy_sn,srvy_tmplt_sn,srvy_qstn_sn,srvy_artcl_sn,frst_rgtr_id) VALUES (?,?,?,?,?)", foreignSurvey, template, foreignQuestion, foreignArticle, author);
