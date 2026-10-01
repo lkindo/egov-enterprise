@@ -59,14 +59,12 @@ async function renderList(tmpltId: string) {
     masterInfo: { bbsId: 'BBS-1', bbsTtl: '행사 게시판', tmpltId },
     fetchError: null,
   };
-  const dataPromise = Promise.resolve(initialData as never);
   await act(async () => {
     render(
       <Suspense fallback={null}>
-        <BoardListClient dataPromise={dataPromise} params={{ bbsId: 'BBS-1' }} />
+        <BoardListClient initialData={initialData as never} params={{ bbsId: 'BBS-1' }} />
       </Suspense>,
     );
-    await dataPromise;
   });
 }
 

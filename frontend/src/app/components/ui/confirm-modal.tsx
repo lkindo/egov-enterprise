@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useMemo } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -45,6 +45,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
  resolverRef.current = resolve;
  });
  }, []);
+ const contextValue = useMemo(() => ({ confirm }), [confirm]);
 
  const settle = (value: boolean) => {
  setIsOpen(false);
@@ -58,7 +59,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
  const handleCancel = () => settle(false);
 
   return (
-    <ConfirmContext.Provider value={{ confirm }}>
+    <ConfirmContext.Provider value={contextValue}>
       {children}
       <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleCancel(); }}>
         {options && (

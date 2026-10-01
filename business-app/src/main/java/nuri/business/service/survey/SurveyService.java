@@ -161,8 +161,7 @@ public class SurveyService {
         if (!tmplatRepository.existsById(Objects.requireNonNull(dto.getSrvyTmpltSn()))) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         }
-        SurveyInfo entity = infoRepository.findById(Objects.requireNonNull(dto.getSrvySn()))
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        SurveyInfo entity = lockSurvey(dto.getSrvySn());
         if (!Objects.equals(entity.getSrvyTmpltSn(), dto.getSrvyTmpltSn())
                 && (qesitmRepository.existsBySrvySn(entity.getSrvySn())
                         || rspdntRepository.existsBySrvySn(entity.getSrvySn()))) {
@@ -187,8 +186,7 @@ public class SurveyService {
      */
     @Transactional
     public Long copySurvey(Long srvySn, nuri.business.service.survey.dto.SurveyCopyRequest request) {
-        SurveyInfo source = infoRepository.findById(Objects.requireNonNull(srvySn))
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        SurveyInfo source = lockSurvey(srvySn);
         validateSurveyDates(request.getSrvyBgngYmd(), request.getSrvyEndYmd());
         SurveyInfo copy = infoRepository.save(Objects.requireNonNull(SurveyInfo.builder()
                 .srvyTtl(request.getSrvyTtl().trim())
@@ -232,7 +230,7 @@ public class SurveyService {
 
     @Transactional
     public void deleteSurvey(Long srvySn) {
-        Objects.requireNonNull(srvySn);
+        lockSurvey(srvySn);
         // [V2_13 결속] 설문 참조 FK(NO ACTION) 하에서 자식→부모 순 연쇄 정리.
         // 기존 V2_6 FK(qstn→info)로 문항 보유 설문 삭제가 409로 파손되던 기왕 부채도 함께 해소.
         rsltRepository.deleteBySrvySn(srvySn);
@@ -269,8 +267,7 @@ public class SurveyService {
 
     @Transactional
     public void insertQuestion(SurveyQuestionDto dto) {
-        SurveyInfo survey = infoRepository.findById(Objects.requireNonNull(dto.getSrvySn()))
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        SurveyInfo survey = lockSurvey(dto.getSrvySn());
         assertNoResponses(survey.getSrvySn());
         // [2026-09-26 DIP B4 P6] 순번은 서버가 매긴다 — 화면이 '문항 수 + 1' 을 보내, 중간 문항을 지운 뒤 추가하면 마지막
         //   문항과 순번이 겹쳤다. 이 설문의 가장 큰 순번 다음을 쓴다.
@@ -292,8 +289,7 @@ public class SurveyService {
 
     @Transactional
     public void updateQuestion(SurveyQuestionDto dto) {
-        SurveyQuestion entity = qesitmRepository.findById(Objects.requireNonNull(dto.getSrvyQstnSn()))
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        SurveyQuestion entity = questionAfterSurveyLock(dto.getSrvyQstnSn());
         // [2026-09-26 DIP B4 P6] 응답이 모인 뒤 문구·유형·선택 수를 바꾸면 이미 받은 응답이 다른 질문에 대한 답이 된다.
         //   순번(배치)만 바꾸는 것은 허용한다.
         boolean meaningChanged = !Objects.equals(entity.getQstnCn(), dto.getQstnCn())
@@ -319,7 +315,7 @@ public class SurveyService {
 
     @Transactional
     public void deleteQuestion(Long srvySn, Long srvyQstnSn) {
-        Objects.requireNonNull(srvySn);
+        lockSurvey(srvySn);
         Objects.requireNonNull(srvyQstnSn);
         SurveyQuestion question = qesitmRepository.findById(srvyQstnSn)
                 .filter(candidate -> srvySn.equals(candidate.getSrvySn()))
@@ -340,8 +336,7 @@ public class SurveyService {
 
     @Transactional
     public void insertItem(SurveyArticleDto dto) {
-        SurveyQuestion question = qesitmRepository.findById(Objects.requireNonNull(dto.getSrvyQstnSn()))
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        SurveyQuestion question = questionAfterSurveyLock(dto.getSrvyQstnSn());
         assertNoResponses(question.getSrvySn());
         iemRepository.save(Objects.requireNonNull(SurveyArticle.builder()
                 .srvyQstnSn(question.getSrvyQstnSn())
@@ -355,8 +350,7 @@ public class SurveyService {
 
     @Transactional
     public void updateItem(SurveyArticleDto dto) {
-        SurveyArticle entity = iemRepository.findById(Objects.requireNonNull(dto.getSrvyArtclSn()))
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        SurveyArticle entity = itemAfterSurveyLock(dto.getSrvyArtclSn());
         // [2026-09-26 DIP B4 P6] 응답이 모인 문항의 선택지 문구를 바꾸면 이미 고른 사람의 답이 다른 뜻이 된다.
         if (!Objects.equals(entity.getArtclCn(), dto.getArtclCn())) {
             assertNotAnswered(rsltRepository.countBySrvyQstnSn(entity.getSrvyQstnSn()), "문항");
@@ -366,11 +360,38 @@ public class SurveyService {
 
     @Transactional
     public void deleteItem(Long srvyArtclSn) {
-        Objects.requireNonNull(srvyArtclSn);
-        assertNoResponses(rsltRepository.countBySrvyArtclSn(srvyArtclSn), "선택 항목");
+        SurveyArticle item = itemAfterSurveyLock(srvyArtclSn);
+        assertNoResponses(rsltRepository.countBySrvyArtclSn(item.getSrvyArtclSn()), "선택 항목");
         // [V2_13 결속] 항목 삭제 시 해당 항목 응답 선정리 (기존 fk_tb_srvy_rslt_tb_srvy_artcl 기왕 부채 해소)
         rsltRepository.deleteBySrvyArtclSn(srvyArtclSn);
         iemRepository.deleteById(srvyArtclSn);
+    }
+
+    /** 제출과 같은 앵커를 먼저 잠근다. 모든 쓰기 경로는 설문 → 자식 순서를 지킨다. */
+    private SurveyInfo lockSurvey(Long srvySn) {
+        return infoRepository.findByIdForSubmission(Objects.requireNonNull(srvySn))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    private SurveyQuestion questionAfterSurveyLock(Long srvyQstnSn) {
+        Long id = Objects.requireNonNull(srvyQstnSn);
+        Long srvySn = infoRepository.findSurveyIdByQuestionId(id)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        lockSurvey(srvySn);
+        // 잠금 대기 중 다른 편집이 커밋됐을 수 있으므로 Entity는 잠금 뒤에 처음 읽는다.
+        return qesitmRepository.findById(id)
+                .filter(question -> srvySn.equals(question.getSrvySn()))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    private SurveyArticle itemAfterSurveyLock(Long srvyArtclSn) {
+        Long id = Objects.requireNonNull(srvyArtclSn);
+        Long srvySn = infoRepository.findSurveyIdByArticleId(id)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        lockSurvey(srvySn);
+        return iemRepository.findById(id)
+                .filter(item -> srvySn.equals(item.getSrvySn()))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
     /**

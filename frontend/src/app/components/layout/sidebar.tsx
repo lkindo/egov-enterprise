@@ -2,6 +2,7 @@
 
 import { use, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Database, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -16,7 +17,7 @@ import { NavBookmarkSlot, NavItem, NavQueryScope, RecentMenuRecorder } from './N
 import { NavBookmarkToggle } from './NavBookmarkToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { openableMenus } from '@/lib/navigation/openable-menus';
-import { walkMenuTree } from '@/lib/navigation/active-menu';
+import { findActiveMenu, walkMenuTree } from '@/lib/navigation/active-menu';
 import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
 import { useMenuBookmarks } from '@/hooks/api/use-menu-bookmarks';
 
@@ -34,6 +35,8 @@ export function Sidebar({
 }) {
   const resolvedMenus = menusPromise ? use(menusPromise) : initialMenus;
   const menuAuthorization = useMenuAuthorizationScope();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const { isSidebarOpen, setSidebarOpen, activeMenuNo, setActiveMenuNo } = useLayout();
   const sidebarRef = useRef<HTMLElement>(null);
@@ -87,8 +90,10 @@ export function Sidebar({
       .filter((menu): menu is MenuInfo => !!menu && resolveMenuInternalRoute(menu) !== null);
   }, [bookmarks, topMenus]);
 
+  // 유효한 사용자 선택을 우선하고, 첫 렌더에서는 현재 URL로 영역을 고른다.
   const effectiveActiveMenuNo = topMenus.some((menu) => menu.menuNo === activeMenuNo)
-    ? activeMenuNo : topMenus[0]?.menuNo ?? null;
+    ? activeMenuNo
+    : findActiveMenu(topMenus, pathname, searchParams)?.topMenuNo ?? topMenus[0]?.menuNo ?? null;
   const activeTopMenu = topMenus.find((menu) => menu.menuNo === effectiveActiveMenuNo);
   const prefetchedLeftMenus = activeTopMenu?.children ?? [];
 

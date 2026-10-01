@@ -121,6 +121,16 @@ jwt:
 # 근거: 개인정보의 안전성 확보조치 기준 제8조. months < 12(법정 최저) 이면 스케줄러가 삭제를 건너뛰어(전량파기 방지)
 #       오설정 사고를 코드로 막는다. 정책 상세: docs/04-operations/log-retention-policy.md.
 nuri:
+  sms:
+    provider: ${NURI_SMS_PROVIDER:none}
+    sens:
+      service-id: ${NURI_SMS_SENS_SERVICE_ID:}
+      access-key: ${NURI_SMS_SENS_ACCESS_KEY:}
+      secret-key: ${NURI_SMS_SENS_SECRET_KEY:}
+      registered-sender: ${NURI_SMS_SENS_REGISTERED_SENDER:}
+      connect-timeout: ${NURI_SMS_CONNECT_TIMEOUT:3s}
+      request-timeout: ${NURI_SMS_REQUEST_TIMEOUT:10s}
+
   # 메일 발신 주소(SMTP From). 화면은 발신자를 입력받지 않으므로 이 설정이 유일한 원천이다.
   # 종전에는 요청 본문의 dsptchPerson 을 그대로 From 으로 썼는데 화면이 그 값을 채우지 않아
   # 항상 null 이었고, SMTP 가 설정된 배포에서 전건이 실패했다(개발 환경은 실제 발송이 없어 성공으로 기록).

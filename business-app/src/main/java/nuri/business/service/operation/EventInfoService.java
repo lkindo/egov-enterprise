@@ -1,5 +1,6 @@
 package nuri.business.service.operation;
 import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.business.security.util.SecurityUtil;
  
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.operation.EventInfo;
@@ -42,6 +43,7 @@ public class EventInfoService {
  
     @Transactional
     public Long createEvent(String userId, EventInfoDto dto) {
+        SecurityUtil.assertPermission("EVENT_CREATE");
         log.info("Creating new event");
         assertApprovalUnchanged(dto, "N", null);
  
@@ -66,6 +68,7 @@ public class EventInfoService {
  
     @Transactional
     public void updateEvent(Long evntSn, String userId, EventInfoDto dto) {
+        SecurityUtil.assertPermission("EVENT_UPDATE");
         log.info("Updating event serial number: {}", evntSn);
         EventInfo eventInfo = eventInfoRepository.findByIdForUpdate(Objects.requireNonNull(evntSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
@@ -111,6 +114,7 @@ public class EventInfoService {
 
     @Transactional
     public void deleteEvent(Long evntSn) {
+        SecurityUtil.assertPermission("EVENT_DELETE");
         log.warn("Deleting event serial number: {}", evntSn);
         EventInfo eventInfo = eventInfoRepository.findById(Objects.requireNonNull(evntSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));

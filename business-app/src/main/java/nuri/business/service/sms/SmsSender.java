@@ -11,9 +11,19 @@ public interface SmsSender {
      * @param recipientPhone the recipient's phone number
      * @param message the message content
      * @param senderPhone the sender's phone number
-     * @return {@code true} only when the real gateway has accepted delivery; simulations/placeholders must return false
+     * @return acceptance remains PENDING; POST never proves final delivery
      */
-    boolean send(String recipientPhone, String message, String senderPhone);
+    SmsGatewayResult send(String recipientPhone, String message, String senderPhone);
+
+    /** Safe read-only reconciliation. Implementations must never resend from this method. */
+    default SmsGatewayResult query(String requestId, String messageId, String recipientPhone) {
+        return SmsGatewayResult.unknown(SmsGatewayResult.Reason.LOOKUP_FAILED);
+    }
+
+    /** Registered deployment sender, used as the form default when a real provider is configured. */
+    default String registeredSender() {
+        return null;
+    }
 
     /**
      * 이 배포에 <b>실제 발송 게이트웨이</b>가 연결돼 있는가.

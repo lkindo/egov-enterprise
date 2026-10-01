@@ -102,7 +102,7 @@ class AddressBookServiceTest {
     void deleteAddressBook_Success() {
         // Given
         AddressBook entity = AddressBook.builder().adbkSn(1L).adbkNm("Name").build();
-        given(addressBookRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(addressBookRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
 
         // When
         addressBookService.deleteAddressBook(1L, "user");
@@ -149,6 +149,7 @@ class AddressBookServiceTest {
         AddressBookDto dto = AddressBookDto.builder().adbkSn(adbkSn).adbkNm("Updated").adbkMan(List.of(newUserDto)).build();
 
         // When
+        prepareEditToken(dto);
         addressBookService.updateAddressBook("user", dto);
 
         // Then
@@ -175,6 +176,7 @@ class AddressBookServiceTest {
         AddressBookDto dto = AddressBookDto.builder()
                 .adbkSn(adbkSn).adbkNm("Renamed").rlsScopeCd("PUB").build();
 
+        prepareEditToken(dto);
         addressBookService.updateAddressBook("user", dto);
 
         assertThat(entity.getAdbkNm()).isEqualTo("Renamed");
@@ -194,6 +196,7 @@ class AddressBookServiceTest {
         AddressBookDto dto = AddressBookDto.builder()
                 .adbkSn(adbkSn).adbkNm("Old").rlsScopeCd("PUB").useYn("N").build();
 
+        prepareEditToken(dto);
         addressBookService.updateAddressBook("user", dto);
 
         assertThat(entity.getUseYn()).isEqualTo("N");
@@ -231,6 +234,7 @@ class AddressBookServiceTest {
         AddressBookDto dto = AddressBookDto.builder()
                 .adbkSn(adbkSn).adbkNm("팀 주소록").adbkMan(List.of(changed)).build();
 
+        prepareEditToken(dto);
         addressBookService.updateAddressBook("user", dto);
 
         assertThat(existing.getNm()).isEqualTo("새 이름");
@@ -257,6 +261,7 @@ class AddressBookServiceTest {
                 nuri.business.service.addressbook.dto.AddressBookUserDto.builder().adbkMbrSn(11L).nm("갑2").build(),
                 nuri.business.service.addressbook.dto.AddressBookUserDto.builder().adbkMbrSn(12L).nm("을2").build())).build();
 
+        prepareEditToken(dto);
         addressBookService.updateAddressBook("user", dto);
 
         assertThat(first.getNm()).isEqualTo("갑2");
@@ -277,17 +282,26 @@ class AddressBookServiceTest {
 
         AddressBookDto foreign = AddressBookDto.builder().adbkSn(adbkSn).adbkNm("팀").adbkMan(List.of(
                 nuri.business.service.addressbook.dto.AddressBookUserDto.builder().adbkMbrSn(999L).nm("남의 구성원").build())).build();
+        prepareEditToken(foreign);
         assertThatThrownBy(() -> addressBookService.updateAddressBook("user", foreign))
                 .isInstanceOf(BusinessException.class).hasMessageContaining("이 주소록의 구성원이 아닙니다");
 
         AddressBookDto duplicate = AddressBookDto.builder().adbkSn(adbkSn).adbkNm("팀").adbkMan(List.of(
                 nuri.business.service.addressbook.dto.AddressBookUserDto.builder().adbkMbrSn(21L).nm("갑1").build(),
                 nuri.business.service.addressbook.dto.AddressBookUserDto.builder().adbkMbrSn(21L).nm("갑2").build())).build();
+        prepareEditToken(duplicate);
         assertThatThrownBy(() -> addressBookService.updateAddressBook("user", duplicate))
                 .isInstanceOf(BusinessException.class).hasMessageContaining("두 번");
 
         verify(addressBookUserRepository, never()).delete(any(nuri.business.domain.addressbook.AddressBookUser.class));
         assertThat(own.getNm()).isEqualTo("갑");
+    }
+
+    private void prepareEditToken(AddressBookDto request) {
+        Optional<AddressBook> current = addressBookRepository.findById(request.getAdbkSn());
+        given(addressBookRepository.findByIdForUpdate(request.getAdbkSn()))
+                .willReturn(current);
+        request.setEditToken(addressBookService.getAddressBook(request.getAdbkSn()).getEditToken());
     }
 
     @Test

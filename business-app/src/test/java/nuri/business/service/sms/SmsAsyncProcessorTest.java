@@ -1,169 +1,307 @@
 package nuri.business.service.sms;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import nuri.business.domain.sms.SmsRecptn;
 import nuri.business.domain.sms.SmsRecptnId;
 import nuri.business.domain.sms.SmsRecptnRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("SmsAsyncProcessor 단위 테스트")
 class SmsAsyncProcessorTest {
+    @Mock SmsSender sender;
+    @Mock SmsRecptnRepository recipients;
+    @Mock ApplicationEventPublisher events;
+    private final SimpleMeterRegistry meters = new SimpleMeterRegistry();
+    private SmsAsyncProcessor processor;
+    private static final String PHONE = "01012345678";
+    private static final long NOW = 1_800_000_000_000L;
 
-    @InjectMocks
-    private SmsAsyncProcessor smsAsyncProcessor;
-
-    @Mock
-    private SmsSender smsSender;
-
-    @Mock
-    private SmsRecptnRepository smsRecptnRepository;
-
-    @Mock
-    private io.micrometer.core.instrument.MeterRegistry meterRegistry;
-
-    @Mock
-    private org.springframework.context.ApplicationEventPublisher eventPublisher;
-
-    @BeforeEach
-    void setUp() {
-        smsAsyncProcessor.setSelf(smsAsyncProcessor);
-        lenient().when(meterRegistry.counter(anyString(), any(String[].class)))
-            .thenReturn(mock(io.micrometer.core.instrument.Counter.class));
+    @BeforeEach void prepare() {
+        processor = new SmsAsyncProcessor(sender, recipients, meters, events);
+        processor.setSelf(processor);
+        processor.setClock(Clock.fixed(Instant.ofEpochMilli(NOW), ZoneOffset.UTC));
     }
 
-    @Test
-    @DisplayName("전환 전 콜백 번호로 정규화된 키의 발송 결과를 기록한다")
-    void updateResult_legacyCallbackFindsCanonicalKey() {
-        SmsRecptn row = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("01012345678").rsltCd("P").build();
-        given(smsRecptnRepository.findById(new SmsRecptnId(1L, "01012345678"))).willReturn(Optional.of(row));
-        smsAsyncProcessor.updateResult(1L, "010-1234-5678", "S", "ok");
+    private SmsRecptn row(long id, String phone, String result, String message) {
+        SmsRecptn row = SmsRecptn.builder().smsTrsmSn(id).rcptnTelno(phone).rsltCd(result).rsltMsg(message).build();
+        when(recipients.findByIdForUpdate(new SmsRecptnId(id, phone))).thenReturn(Optional.of(row));
+        return row;
+    }
+
+    @Test void providerAcceptanceRemainsPendingUntilCompletedReceipt() {
+        SmsRecptn row = row(1L, PHONE, "P", null);
+        when(sender.send(PHONE, "private body", "0212345678")).thenReturn(SmsGatewayResult.accepted("request-1"));
+        assertThat(processor.sendToRecipient(1L, PHONE, "0212345678", "private body"))
+                .isEqualTo(SmsGatewayResult.State.PENDING);
+        assertThat(row.getRsltCd()).isEqualTo("P");
+        assertThat(SmsReceiptState.parse(row.getRsltMsg()).orElseThrow().requestId()).isEqualTo("request-1");
+        verify(sender, never()).query(any(), any(), any());
+        when(sender.query("request-1", null, PHONE)).thenReturn(SmsGatewayResult.delivered("request-1", "message-1"));
+        String claim = processor.prepareReconciliation(1L, PHONE).orElseThrow();
+        processor.reconcileRecipient(1L, PHONE, claim);
         assertThat(row.getRsltCd()).isEqualTo("S");
-        verify(smsRecptnRepository, never()).findById(new SmsRecptnId(1L, "010-1234-5678"));
-        verifyNoInteractions(smsSender);
+        verify(sender, times(1)).send(any(), any(), any());
+        assertThat(meters.get("sms.dispatch.total").tag("result", "pending").counter().count()).isEqualTo(1);
     }
 
-    @Test
-    @DisplayName("전환 전 DB의 하이픈 키도 결과 기록에서 계속 읽는다")
-    void updateResult_fallsBackToLegacyStoredKey() {
-        SmsRecptn row = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("010-1234-5678").rsltCd("P").build();
-        given(smsRecptnRepository.findById(new SmsRecptnId(1L, "01012345678"))).willReturn(Optional.empty());
-        given(smsRecptnRepository.findById(new SmsRecptnId(1L, "010-1234-5678"))).willReturn(Optional.of(row));
-        smsAsyncProcessor.updateResult(1L, "010-1234-5678", "S", "ok");
+    @Test void claimIsWrittenBeforePostAndDuplicateWorkerCannotSendAgain() {
+        SmsRecptn row = row(1L, PHONE, "P", null);
+        when(sender.send(any(), any(), any())).thenAnswer(call -> {
+            assertThat(SmsReceiptState.parse(row.getRsltMsg()).orElseThrow().stage()).isEqualTo(SmsReceiptState.Stage.CLAIMED);
+            assertThat(processor.sendToRecipient(1L, PHONE, "0212345678", "body"))
+                    .isEqualTo(SmsGatewayResult.State.PENDING);
+            return SmsGatewayResult.accepted("request-1");
+        });
+        processor.sendToRecipient(1L, PHONE, "0212345678", "body");
+        processor.sendToRecipient(1L, PHONE, "0212345678", "body");
+        verify(sender, times(1)).send(any(), any(), any());
+        assertThat(row.getRsltCd()).isEqualTo("P");
+    }
+
+    @Test void ambiguousPostExceptionRemainsUnknownAndIsNeverRetriedOrPolled() {
+        SmsRecptn row = row(1L, PHONE, "P", null);
+        when(sender.send(any(), any(), any())).thenThrow(new IllegalStateException("private body " + PHONE));
+        processor.sendToRecipient(1L, PHONE, "0212345678", "body");
+        processor.sendToRecipient(1L, PHONE, "0212345678", "body");
+        assertThat(row.getRsltCd()).isEqualTo("P");
+        assertThat(SmsReceiptState.parse(row.getRsltMsg()).orElseThrow().stage()).isEqualTo(SmsReceiptState.Stage.UNKNOWN);
+        assertThat(processor.prepareReconciliation(1L, PHONE)).isEmpty();
+        assertThat(row.getRsltMsg()).doesNotContain(PHONE, "private body");
+        verify(sender, times(1)).send(any(), any(), any());
+        verify(sender, never()).query(any(), any(), any());
+    }
+
+    @Test void postCannotReportDeliveryWithoutAReadReceipt() {
+        SmsRecptn row = row(1L, PHONE, "P", null);
+        when(sender.send(any(), any(), any())).thenReturn(SmsGatewayResult.delivered("request-1", "message-1"));
+        processor.sendToRecipient(1L, PHONE, "0212345678", "body");
+        assertThat(row.getRsltCd()).isEqualTo("P");
+        assertThat(SmsReceiptState.parse(row.getRsltMsg()).orElseThrow().stage()).isEqualTo(SmsReceiptState.Stage.UNKNOWN);
+    }
+
+    @Test void definitiveRejectionRecordsFailureWithoutPostRetry() {
+        SmsRecptn row = row(1L, PHONE, "P", null);
+        when(sender.send(any(), any(), any())).thenReturn(SmsGatewayResult.rejected(SmsGatewayResult.Reason.PROVIDER_REJECTED));
+        assertThat(processor.sendToRecipient(1L, PHONE, "0212345678", "body")).isEqualTo(SmsGatewayResult.State.REJECTED);
+        assertThat(row.getRsltCd()).isEqualTo("F");
+        processor.sendToRecipient(1L, PHONE, "0212345678", "body");
+        verify(sender, times(1)).send(any(), any(), any());
+    }
+
+    @Test void lookupFailureKeepsReceiptAndOnlyGetCanBeRepeated() {
+        SmsReceiptState initial = SmsReceiptState.claim(NOW).submitted(SmsGatewayResult.accepted("request-1"), NOW);
+        SmsRecptn row = row(1L, PHONE, "P", initial.encode());
+        when(sender.query("request-1", null, PHONE)).thenThrow(new IllegalStateException("provider raw secret"));
+        processor.reconcileRecipient(1L, PHONE, processor.prepareReconciliation(1L, PHONE).orElseThrow());
+        assertThat(row.getRsltCd()).isEqualTo("P");
+        assertThat(SmsReceiptState.parse(row.getRsltMsg()).orElseThrow().requestId()).isEqualTo("request-1");
+        assertThat(processor.prepareReconciliation(1L, PHONE)).isEmpty();
+        processor.setClock(Clock.fixed(Instant.ofEpochMilli(NOW + 60_000), ZoneOffset.UTC));
+        assertThat(processor.prepareReconciliation(1L, PHONE)).isEmpty();
+        processor.setClock(Clock.fixed(Instant.ofEpochMilli(NOW + 90_000), ZoneOffset.UTC));
+        doReturn(SmsGatewayResult.delivered("request-1", "message-1")).when(sender).query("request-1", null, PHONE);
+        processor.reconcileRecipient(1L, PHONE, processor.prepareReconciliation(1L, PHONE).orElseThrow());
         assertThat(row.getRsltCd()).isEqualTo("S");
-        verifyNoInteractions(smsSender);
+        verify(sender, times(2)).query("request-1", null, PHONE);
+        verify(sender, never()).send(any(), any(), any());
     }
 
-    @Test
-    @DisplayName("비동기 SMS 발송 - 성공 (결과 기록은 키 기반 짧은 트랜잭션 경유)")
-    void processSending_Success() {
-        SmsRecptn recptn = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("0101").build();
-        given(smsRecptnRepository.findByIdSmsTrsmSn(1L)).willReturn(List.of(recptn));
-        given(smsRecptnRepository.findById(new SmsRecptnId(1L, "0101"))).willReturn(Optional.of(recptn));
-        given(smsSender.send(anyString(), anyString(), anyString())).willReturn(true);
-
-        smsAsyncProcessor.processSending(1L, "0102", "Hello");
-
-        assertThat(recptn.getRsltCd()).isEqualTo("S");
+    @Test void oneDatabaseRowFailureDoesNotStopHealthyReceiptReconciliation() {
+        SmsRecptn broken = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno(PHONE).rsltCd("P").build();
+        SmsReceiptState state = SmsReceiptState.claim(NOW).submitted(SmsGatewayResult.accepted("request-2"), NOW);
+        SmsRecptn healthy = row(2L, PHONE, "P", state.encode());
+        when(recipients.findPendingDeliveryReceipts(anyString(), anyString(), any()))
+                .thenReturn(List.of(broken, healthy));
+        var spy = spy(processor);
+        spy.setSelf(spy);
+        doThrow(new org.springframework.dao.TransientDataAccessResourceException("private failure"))
+                .when(spy).prepareReconciliation(1L, PHONE);
+        when(sender.query("request-2", null, PHONE)).thenReturn(SmsGatewayResult.delivered("request-2", "message-2"));
+        spy.reconcilePending().join();
+        assertThat(healthy.getRsltCd()).isEqualTo("S");
+        assertThat(broken.getRsltCd()).isEqualTo("P");
+        verify(sender, never()).send(any(), any(), any());
     }
 
-    @Test
-    @DisplayName("비동기 SMS 발송 - 발송 실패")
-    void processSending_SenderFailure() {
-        SmsRecptn recptn = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("0101").build();
-        given(smsRecptnRepository.findByIdSmsTrsmSn(1L)).willReturn(List.of(recptn));
-        given(smsSender.send(anyString(), anyString(), anyString())).willReturn(false);
-
-        smsAsyncProcessor.processSending(1L, "0102", "Hello");
-
-        // 복구는 결과만 반환한다. 최종 F 기록과 정제된 메시지는 실제 프록시 테스트에서 검증한다.
-        assertThat(smsAsyncProcessor.recoverSmsSending(new RuntimeException("Failure"),
-                1L, "0101", "0102", "Hello")).isFalse();
-        verify(smsRecptnRepository, never()).findById(any());
+    @Test void mismatchedReceiptNeverPromotesAnotherRequestIntoSuccess() {
+        SmsReceiptState initial = SmsReceiptState.claim(NOW).submitted(SmsGatewayResult.accepted("request-1"), NOW);
+        SmsRecptn row = row(1L, PHONE, "P", initial.encode());
+        when(sender.query("request-1", null, PHONE)).thenReturn(SmsGatewayResult.delivered("different-request", "message-1"));
+        processor.reconcileRecipient(1L, PHONE, processor.prepareReconciliation(1L, PHONE).orElseThrow());
+        assertThat(row.getRsltCd()).isEqualTo("P");
+        assertThat(SmsReceiptState.parse(row.getRsltMsg()).orElseThrow().reason()).isEqualTo(SmsGatewayResult.Reason.LOOKUP_FAILED);
     }
 
-    @Test
-    @DisplayName("비동기 SMS 발송 - 예외 발생")
-    void processSending_Exception() {
-        SmsRecptn recptn = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("0101").build();
-        given(smsRecptnRepository.findByIdSmsTrsmSn(1L)).willReturn(List.of(recptn));
-        doThrow(new RuntimeException("Error")).when(smsSender).send(anyString(), anyString(), anyString());
-
-        smsAsyncProcessor.processSending(1L, "0102", "Hello");
-
-        assertThat(smsAsyncProcessor.recoverSmsSending(new RuntimeException("Error"),
-                1L, "0101", "0102", "Hello")).isFalse();
-        verify(smsRecptnRepository, never()).findById(any());
+    @Test void crashedClaimAndExpiredReceiptRequireManualReconciliation() {
+        SmsRecptn crashed = row(1L, PHONE, "P", SmsReceiptState.claim(NOW - 120_000).encode());
+        assertThat(processor.prepareReconciliation(1L, PHONE)).isEmpty();
+        assertThat(SmsReceiptState.parse(crashed.getRsltMsg()).orElseThrow().stage()).isEqualTo(SmsReceiptState.Stage.UNKNOWN);
+        SmsReceiptState accepted = SmsReceiptState.claim(NOW - 86_400_000)
+                .submitted(SmsGatewayResult.accepted("request-1"), NOW);
+        SmsRecptn expired = row(2L, PHONE, "P", accepted.encode());
+        assertThat(processor.prepareReconciliation(2L, PHONE)).isEmpty();
+        assertThat(expired.getRsltCd()).isEqualTo("P");
+        assertThat(SmsReceiptState.display("P", expired.getRsltMsg())).contains("자동으로 다시 보내지 않습니다");
+        verifyNoInteractions(sender);
     }
 
-    @Test
-    @DisplayName("실패한 수신자가 있으면 발신자에게 전체·실패 수를 한 번 알린다 — 번호·본문은 싣지 않는다")
-    void failedRecipientsNotifySenderOnce() {
-        SmsRecptn ok = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("01011112222").build();
-        SmsRecptn bad = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("01033334444").build();
-        given(smsRecptnRepository.findByIdSmsTrsmSn(1L)).willReturn(List.of(ok, bad));
-        given(smsSender.send(eq("01011112222"), anyString(), anyString())).willReturn(true);
-        given(smsSender.send(eq("01033334444"), anyString(), anyString())).willReturn(false);
-
-        smsAsyncProcessor.processSending(1L, "0102", "비밀 문구", "SENDER-1");
-
-        var captor = org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
-        verify(eventPublisher, times(1)).publishEvent(captor.capture());
-        var event = captor.getValue();
-        assertThat(event.receiverEsntlId()).isEqualTo("SENDER-1");
-        assertThat(event.title()).isEqualTo("문자 발송 실패");
-        assertThat(event.content()).isEqualTo("문자 2건 중 1건을 보내지 못했습니다. 문자 관리에서 수신자 결과를 확인해 주세요.")
-                .doesNotContain("01033334444").doesNotContain("비밀 문구");
-        assertThat(event.linkUrl()).isEqualTo("/admin/uss/ion/sms");
+    @Test void exhaustedReadBudgetCannotResendOrClaimAnotherPoll() {
+        SmsReceiptState state = new SmsReceiptState(SmsReceiptState.Stage.ACCEPTED, java.util.UUID.randomUUID().toString(),
+                "request-1", "message-1", NOW, NOW, 48, SmsGatewayResult.Reason.LOOKUP_PENDING);
+        SmsRecptn row = row(1L, PHONE, "P", state.encode());
+        assertThat(processor.prepareReconciliation(1L, PHONE)).isEmpty();
+        assertThat(SmsReceiptState.parse(row.getRsltMsg()).orElseThrow().reason()).isEqualTo(SmsGatewayResult.Reason.EXPIRED);
+        verifyNoInteractions(sender);
     }
 
-    @Test
-    @DisplayName("모두 성공했거나 발신자를 모르면 알리지 않는다")
-    void allDeliveredOrUnknownSenderDoesNotNotify() {
-        SmsRecptn ok = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("0101").build();
-        given(smsRecptnRepository.findByIdSmsTrsmSn(1L)).willReturn(List.of(ok));
-        given(smsSender.send(anyString(), anyString(), anyString())).willReturn(true, false);
+    @Test void lastAllowedGetLeaseSurvivesAnotherWorkerAndItsDeliveryResultIsRecorded() {
+        SmsReceiptState state = new SmsReceiptState(SmsReceiptState.Stage.ACCEPTED, java.util.UUID.randomUUID().toString(),
+                "request-1", "message-1", NOW, NOW, 47, SmsGatewayResult.Reason.LOOKUP_PENDING);
+        SmsRecptn row = row(1L, PHONE, "P", state.encode());
+        String lease = processor.prepareReconciliation(1L, PHONE).orElseThrow();
+        assertThat(SmsReceiptState.parse(lease).orElseThrow().polls()).isEqualTo(48);
 
-        smsAsyncProcessor.processSending(1L, "0102", "Hello", "SENDER-1");
-        smsAsyncProcessor.processSending(1L, "0102", "Hello");
+        assertThat(processor.prepareReconciliation(1L, PHONE)).isEmpty();
+        assertThat(SmsReceiptState.parse(row.getRsltMsg()).orElseThrow().stage()).isEqualTo(SmsReceiptState.Stage.ACCEPTED);
+        assertThat(row.getRsltMsg()).isEqualTo(lease);
+        when(sender.query("request-1", "message-1", PHONE))
+                .thenReturn(SmsGatewayResult.delivered("request-1", "message-1"));
+        processor.reconcileRecipient(1L, PHONE, lease);
 
-        verifyNoInteractions(eventPublisher);
+        assertThat(row.getRsltCd()).isEqualTo("S");
+        assertThat(SmsReceiptState.parse(row.getRsltMsg()).orElseThrow().stage()).isEqualTo(SmsReceiptState.Stage.DELIVERED);
+        verify(sender, times(1)).query("request-1", "message-1", PHONE);
+        verify(sender, never()).send(any(), any(), any());
     }
 
-    @Test
-    @DisplayName("결과 기록 - 대상 수신자 부재 시 무예외 no-op")
-    void updateResult_NoEntity() {
-        given(smsRecptnRepository.findById(new SmsRecptnId(9L, "0109"))).willReturn(Optional.empty());
+    @Test void lastAllowedGetLeaseExpiresWithoutStartingA49thPollOrResending() {
+        SmsReceiptState state = new SmsReceiptState(SmsReceiptState.Stage.ACCEPTED, java.util.UUID.randomUUID().toString(),
+                "request-1", "message-1", NOW, NOW, 47, SmsGatewayResult.Reason.LOOKUP_PENDING);
+        SmsRecptn row = row(1L, PHONE, "P", state.encode());
+        String lease = processor.prepareReconciliation(1L, PHONE).orElseThrow();
 
-        smsAsyncProcessor.updateResult(9L, "0109", "S", "Success");
-        // 예외 없이 종료되어야 한다
+        processor.setClock(Clock.fixed(Instant.ofEpochMilli(NOW + 299_999), ZoneOffset.UTC));
+        assertThat(processor.prepareReconciliation(1L, PHONE)).isEmpty();
+        assertThat(SmsReceiptState.parse(row.getRsltMsg()).orElseThrow().stage()).isEqualTo(SmsReceiptState.Stage.ACCEPTED);
+        assertThat(row.getRsltMsg()).isEqualTo(lease);
+
+        processor.setClock(Clock.fixed(Instant.ofEpochMilli(NOW + 300_000), ZoneOffset.UTC));
+        assertThat(processor.prepareReconciliation(1L, PHONE)).isEmpty();
+        SmsReceiptState expired = SmsReceiptState.parse(row.getRsltMsg()).orElseThrow();
+        assertThat(row.getRsltCd()).isEqualTo("P");
+        assertThat(expired.stage()).isEqualTo(SmsReceiptState.Stage.UNKNOWN);
+        assertThat(expired.reason()).isEqualTo(SmsGatewayResult.Reason.EXPIRED);
+        assertThat(expired.polls()).isEqualTo(48);
+        verifyNoInteractions(sender);
     }
 
-    @Test
-    @DisplayName("큐 제출 거부는 아직 대기 중인 수신자만 실패로 전환")
-    void markBatchRejected_onlyPendingRecipients() {
-        SmsRecptn pending = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("0101").rsltCd("P").build();
-        SmsRecptn delivered = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("0102").rsltCd("S").build();
-        given(smsRecptnRepository.findByIdSmsTrsmSn(1L)).willReturn(List.of(pending, delivered));
+    @Test void receiptAgeDeadlineCannotReplaceAnInFlightGetLease() {
+        SmsReceiptState state = SmsReceiptState.claim(NOW - 86_400_000 + 1)
+                .submitted(SmsGatewayResult.accepted("request-1"), NOW);
+        SmsRecptn row = row(1L, PHONE, "P", state.encode());
+        String lease = processor.prepareReconciliation(1L, PHONE).orElseThrow();
 
-        smsAsyncProcessor.markBatchRejected(1L);
+        processor.setClock(Clock.fixed(Instant.ofEpochMilli(NOW + 1000), ZoneOffset.UTC));
+        assertThat(processor.prepareReconciliation(1L, PHONE)).isEmpty();
+        assertThat(SmsReceiptState.parse(row.getRsltMsg()).orElseThrow().stage()).isEqualTo(SmsReceiptState.Stage.ACCEPTED);
+        assertThat(row.getRsltMsg()).isEqualTo(lease);
+        when(sender.query("request-1", null, PHONE)).thenReturn(SmsGatewayResult.delivered("request-1", "message-1"));
+        processor.reconcileRecipient(1L, PHONE, lease);
 
+        assertThat(row.getRsltCd()).isEqualTo("S");
+        verify(sender, times(1)).query("request-1", null, PHONE);
+        verify(sender, never()).send(any(), any(), any());
+    }
+
+    @Test void resultCasPreservesTerminalAndNewAttemptAndDeletedRows() {
+        SmsRecptn delivered = row(1L, PHONE, "S", "completed");
+        processor.updateResult(1L, PHONE, "old-claim", "F", "late-failure");
+        assertThat(delivered.getRsltCd()).isEqualTo("S");
+        SmsRecptn replaced = row(2L, PHONE, "P", "new-claim");
+        processor.updateResult(2L, PHONE, "old-claim", "S", "late-success");
+        assertThat(replaced.getRsltMsg()).isEqualTo("new-claim");
+        when(recipients.findByIdForUpdate(new SmsRecptnId(3L, PHONE))).thenReturn(Optional.empty());
+        processor.updateResult(3L, PHONE, "old-claim", "S", "late-success");
+        verify(recipients, never()).save(any());
+        verifyNoInteractions(sender);
+    }
+
+    @Test void legacyCallbackStillFindsCanonicalAndLegacyStoredKeysUnderLock() {
+        SmsRecptn canonical = row(1L, PHONE, "P", "expected");
+        processor.updateResult(1L, "010-1234-5678", "expected", "S", "ok");
+        assertThat(canonical.getRsltCd()).isEqualTo("S");
+        verify(recipients, never()).findByIdForUpdate(new SmsRecptnId(1L, "010-1234-5678"));
+        when(recipients.findByIdForUpdate(new SmsRecptnId(2L, PHONE))).thenReturn(Optional.empty());
+        SmsRecptn legacy = row(2L, "010-1234-5678", "P", "expected");
+        processor.updateResult(2L, "010-1234-5678", "expected", "S", "ok");
+        assertThat(legacy.getRsltCd()).isEqualTo("S");
+    }
+
+    @Test void queueRejectionDoesNotFailAlreadyClaimedOrAcceptedRecipients() {
+        SmsRecptn pending = row(1L, PHONE, "P", null);
+        SmsRecptn accepted = row(1L, "01000000002", "P", SmsReceiptState.claim(NOW)
+                .submitted(SmsGatewayResult.accepted("request-2"), NOW).encode());
+        SmsRecptn claimed = row(1L, "01000000003", "P", SmsReceiptState.claim(NOW).encode());
+        SmsRecptn delivered = row(1L, "01000000004", "S", "done");
+        when(recipients.findRecipientNumbers(1L)).thenReturn(List.of(PHONE, "01000000002", "01000000003", "01000000004"));
+        processor.markBatchRejected(1L);
         assertThat(pending.getRsltCd()).isEqualTo("F");
         assertThat(pending.getRsltMsg()).isEqualTo("Dispatch queue saturated");
-        assertThat(delivered.getRsltCd()).isEqualTo("S");
+        assertThat(List.of(accepted, claimed, delivered)).extracting(SmsRecptn::getRsltCd).containsExactly("P", "P", "S");
+    }
+
+    @Test void malformedAndImpossibleFutureReceiptsAreQuarantinedAndCannotStarveOtherRows() {
+        SmsRecptn malformed = row(1L, PHONE, "P", SmsReceiptState.PREFIX + "ACCEPTED|private-corruption");
+        assertThat(processor.prepareReconciliation(1L, PHONE)).isEmpty();
+        assertThat(SmsReceiptState.parse(malformed.getRsltMsg()).orElseThrow().stage()).isEqualTo(SmsReceiptState.Stage.UNKNOWN);
+        assertThat(malformed.getRsltMsg()).doesNotContain("private-corruption");
+        SmsReceiptState future = SmsReceiptState.claim(NOW + 86_400_000)
+                .submitted(SmsGatewayResult.accepted("request-future"), NOW + 86_400_000);
+        SmsRecptn row = row(2L, PHONE, "P", future.encode());
+        assertThat(processor.prepareReconciliation(2L, PHONE)).isEmpty();
+        assertThat(SmsReceiptState.parse(row.getRsltMsg()).orElseThrow().stage()).isEqualTo(SmsReceiptState.Stage.UNKNOWN);
+        verifyNoInteractions(sender);
+    }
+
+    @Test void onlyDefiniteFailureNotifiesSenderOnceWithoutPhoneOrBody() {
+        SmsRecptn accepted = row(1L, PHONE, "P", null);
+        SmsRecptn rejected = row(1L, "01000000002", "P", null);
+        when(recipients.findByIdSmsTrsmSn(1L)).thenReturn(List.of(accepted, rejected));
+        when(sender.send(eq(PHONE), any(), any())).thenReturn(SmsGatewayResult.accepted("request-1"));
+        when(sender.send(eq("01000000002"), any(), any())).thenReturn(SmsGatewayResult.rejected(SmsGatewayResult.Reason.PROVIDER_REJECTED));
+        processor.processSending(1L, "0212345678", "private body", "SENDER-1");
+        var captor = org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+        verify(events).publishEvent(captor.capture());
+        assertThat(captor.getValue().content()).contains("2건 중 1건").doesNotContain(PHONE, "01000000002", "private body");
+        assertThat(captor.getValue().linkUrl()).isEqualTo(SmsAsyncProcessor.SMS_ADMIN_PATH);
+    }
+
+    @Test void pendingUnknownAndUnknownSenderDoNotProduceFalseFailureNotices() {
+        SmsRecptn row = row(1L, PHONE, "P", null);
+        when(recipients.findByIdSmsTrsmSn(1L)).thenReturn(List.of(row));
+        when(sender.send(any(), any(), any())).thenReturn(SmsGatewayResult.accepted("request-1"));
+        processor.processSending(1L, "0212345678", "body", "SENDER-1");
+        row.updateResult("P", null);
+        when(sender.send(any(), any(), any())).thenReturn(SmsGatewayResult.unknown(SmsGatewayResult.Reason.UNCONFIRMED));
+        processor.processSending(1L, "0212345678", "body", "SENDER-1");
+        row.updateResult("P", null);
+        when(sender.send(any(), any(), any())).thenReturn(SmsGatewayResult.rejected(SmsGatewayResult.Reason.PROVIDER_REJECTED));
+        processor.processSending(1L, "0212345678", "body");
+        verifyNoInteractions(events);
     }
 }

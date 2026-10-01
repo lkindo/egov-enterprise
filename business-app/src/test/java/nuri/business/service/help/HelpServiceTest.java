@@ -3,8 +3,16 @@ package nuri.business.service.help;
 import nuri.business.domain.help.*;
 import nuri.business.service.help.dto.HpcmDto;
 import nuri.business.service.help.dto.OnlineManualDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.security.service.CustomUserDetails;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -13,9 +21,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,6 +52,69 @@ class HelpServiceTest {
 
     @InjectMocks
     private HelpService helpService;
+
+    @BeforeEach
+    @AfterEach
+    void clearAuthentication() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private static void authorize(String permission) {
+        authenticate(List.of(permission), List.of());
+    }
+
+    private static void authenticate(List<String> permissions, List<String> groups) {
+        var principal = CustomUserDetails.builder().userId("operator").esntlId("OPERATOR")
+                .enabled(true).permissions(permissions).groups(groups).build();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(principal, null, groups.isEmpty()
+                        ? principal.getAuthorities() : groups.stream().map(SimpleGrantedAuthority::new).toList()));
+    }
+
+    static Stream<Arguments> deniedWrites() {
+        return Stream.of("HPCM_CREATE", "HPCM_UPDATE", "HPCM_DELETE", "MANUAL_CREATE", "MANUAL_UPDATE", "MANUAL_DELETE")
+                .flatMap(operation -> Stream.of("NONE", "ANONYMOUS", "USER", "WRONG", "ROLE")
+                        .map(identity -> Arguments.of(operation, identity)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("deniedWrites")
+    void managementWriteRequiresItsExactPermissionBeforeRepositories(String operation, String identity) {
+        String action = operation.substring(operation.lastIndexOf('_') + 1);
+        switch (identity) {
+            case "ANONYMOUS" -> SecurityContextHolder.getContext().setAuthentication(
+                    new AnonymousAuthenticationToken("fixture", "anonymous",
+                            List.of(new SimpleGrantedAuthority("HELP_" + action))));
+            case "USER" -> authenticate(List.of(), List.of());
+            case "WRONG" -> authorize(action.equals("CREATE") ? "HELP_UPDATE" : "HELP_CREATE");
+            case "ROLE" -> authenticate(List.of(), List.of("ROLE_ADMIN", "ROLE_SYSTEM"));
+            default -> SecurityContextHolder.clearContext();
+        }
+        Hpcm foreignHelp = Hpcm.builder().hlpSn(1L).hlpDfn("foreign help").build();
+        foreignHelp.setFrstRgtrId("foreign-writer");
+        OnlineManual foreignManual = OnlineManual.builder().onlnMnlSn(1L).onlnMnlNm("foreign manual").build();
+        foreignManual.setFrstRgtrId("foreign-writer");
+        if (!action.equals("CREATE")) {
+            if (operation.startsWith("HPCM")) {
+                lenient().when(hpcmRepository.findById(1L)).thenReturn(Optional.of(foreignHelp));
+            } else {
+                lenient().when(onlineManualRepository.findById(1L)).thenReturn(Optional.of(foreignManual));
+            }
+        }
+        Runnable write = switch (operation) {
+            case "HPCM_CREATE" -> () -> helpService.createHpcm("foreign-writer", HpcmDto.builder().hlpDfn("new").build());
+            case "HPCM_UPDATE" -> () -> helpService.updateHpcm(1L, "foreign-writer", HpcmDto.builder().hlpDfn("changed").build());
+            case "HPCM_DELETE" -> () -> helpService.deleteHpcm(1L);
+            case "MANUAL_CREATE" -> () -> helpService.createOnlineManual("foreign-writer", OnlineManualDto.builder().onlnMnlNm("new").build());
+            case "MANUAL_UPDATE" -> () -> helpService.updateOnlineManual(1L, "foreign-writer", OnlineManualDto.builder().onlnMnlNm("changed").build());
+            default -> () -> helpService.deleteOnlineManual(1L);
+        };
+        org.assertj.core.api.Assertions.assertThatThrownBy(write::run)
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        verifyNoInteractions(hpcmRepository, onlineManualRepository);
+        assertThat(foreignHelp.getHlpDfn()).isEqualTo("foreign help");
+        assertThat(foreignManual.getOnlnMnlNm()).isEqualTo("foreign manual");
+    }
 
     // --- HPCM (Help) Tests ---
 
@@ -70,6 +146,7 @@ class HelpServiceTest {
     @Test
     @DisplayName("도움말 등록 테스트")
     void createHpcm_Success() {
+        authorize("HELP_CREATE");
         HpcmDto dto = HpcmDto.builder().hlpDfn("New Help").build();
         when(hpcmRepository.save(any(Hpcm.class))).thenReturn(Hpcm.builder().hlpSn(1L).build());
 
@@ -82,19 +159,25 @@ class HelpServiceTest {
     @Test
     @DisplayName("도움말 수정 테스트")
     void updateHpcm_Success() {
+        authorize("HELP_UPDATE");
         Hpcm entity = org.mockito.Mockito.spy(Hpcm.builder().hlpSn(1L).build());
+        entity.setFrstRgtrId("foreign-writer");
         when(hpcmRepository.findById(1L)).thenReturn(Optional.of(entity));
         HpcmDto dto = HpcmDto.builder().hlpDfn("Updated").build();
 
         helpService.updateHpcm(1L, "user", dto);
 
         verify(entity).update(any(), any(), any());
+        assertThat(entity.getHlpDfn()).isEqualTo("Updated");
+        assertThat(entity.getFrstRgtrId()).isEqualTo("foreign-writer");
     }
 
     @Test
     @DisplayName("도움말 삭제 테스트")
     void deleteHpcm_Success() {
+        authorize("HELP_DELETE");
         Hpcm entity = Hpcm.builder().hlpSn(1L).hlpDfn("Def").build();
+        entity.setFrstRgtrId("foreign-writer");
         when(hpcmRepository.findById(1L)).thenReturn(Optional.of(entity));
 
         helpService.deleteHpcm(1L);
@@ -110,6 +193,7 @@ class HelpServiceTest {
     @Test
     @DisplayName("도움말 삭제 - 없는 id 는 404 이고 삭제를 호출하지 않는다")
     void deleteHpcm_NotFound() {
+        authorize("HELP_DELETE");
         when(hpcmRepository.findById(99L)).thenReturn(Optional.empty());
 
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> helpService.deleteHpcm(99L))
@@ -149,6 +233,7 @@ class HelpServiceTest {
     @Test
     @DisplayName("온라인 매뉴얼 등록 테스트")
     void createOnlineManual_Success() {
+        authorize("HELP_CREATE");
         OnlineManualDto dto = OnlineManualDto.builder().onlnMnlNm("Manual").build();
         when(onlineManualRepository.save(any(OnlineManual.class)))
                 .thenReturn(OnlineManual.builder().onlnMnlSn(1L).build());
@@ -162,19 +247,25 @@ class HelpServiceTest {
     @Test
     @DisplayName("온라인 매뉴얼 수정 테스트")
     void updateOnlineManual_Success() {
+        authorize("HELP_UPDATE");
         OnlineManual entity = org.mockito.Mockito.spy(OnlineManual.builder().onlnMnlSn(1L).build());
+        entity.setFrstRgtrId("foreign-writer");
         when(onlineManualRepository.findById(1L)).thenReturn(Optional.of(entity));
         OnlineManualDto dto = OnlineManualDto.builder().onlnMnlNm("Updated").build();
 
         helpService.updateOnlineManual(1L, "user", dto);
 
         verify(entity).update(any(), any(), any(), any());
+        assertThat(entity.getOnlnMnlNm()).isEqualTo("Updated");
+        assertThat(entity.getFrstRgtrId()).isEqualTo("foreign-writer");
     }
 
     @Test
     @DisplayName("온라인 매뉴얼 삭제 테스트")
     void deleteOnlineManual_Success() {
-        OnlineManual entity = org.mockito.Mockito.mock(OnlineManual.class);
+        authorize("HELP_DELETE");
+        OnlineManual entity = OnlineManual.builder().onlnMnlSn(1L).build();
+        entity.setFrstRgtrId("foreign-writer");
         when(onlineManualRepository.findById(1L)).thenReturn(Optional.of(entity));
 
         helpService.deleteOnlineManual(1L);
@@ -186,6 +277,7 @@ class HelpServiceTest {
     @Test
     @DisplayName("온라인 매뉴얼 삭제 - 없는 id 는 404 이고 삭제를 호출하지 않는다")
     void deleteOnlineManual_NotFound() {
+        authorize("HELP_DELETE");
         when(onlineManualRepository.findById(99L)).thenReturn(Optional.empty());
 
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> helpService.deleteOnlineManual(99L))

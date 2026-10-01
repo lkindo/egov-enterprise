@@ -7,11 +7,126 @@ import { createServer } from 'node:http';
 import { randomBytes } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { validateIsolationManifest, assertOwnedDatabase, assertOwnedComposeRuntime, assertIsolatedTarget, validateComposePlan } from './e2e-isolation.mjs';
-import { closedEnvironment, createIsolatedMfaEnvironment, assertNoDotEnv, assertBuildTarget, discoveryArguments } from './run-isolated-e2e.mjs';
+import { closedEnvironment, createIsolatedMfaEnvironment, assertNoDotEnv, assertBuildTarget, discoveryArguments,
+  isEnterpriseTaskLabSelection, createEnterpriseTaskLabBuildReceipt } from './run-isolated-e2e.mjs';
+import { TASKS, TASK_SEEDS, compareEnterpriseTaskRuns } from './compare-enterprise-task-lab.mjs';
+
+function taskComparisonFixture() {
+  const inputs = ['scripts/run-isolated-e2e.mjs', 'scripts/e2e-isolation.mjs', 'scripts/run-isolated-release-smoke.mjs',
+    'scripts/historical-release-fixture.mjs', 'frontend/playwright.enterprise-task-lab.config.ts',
+    'frontend/e2e/enterprise-task-lab/enterprise-task-quality.spec.ts', 'frontend/e2e/helpers/enterprise-task-observation.ts'];
+  const profile = { viewport: { width: 1280, height: 800 }, timezoneId: 'Asia/Seoul', locale: 'ko-KR', colorScheme: 'light',
+    reducedMotion: 'reduce', deviceScaleFactor: 1, serviceWorkers: 'block', cpuRate: 4, rttMs: 150,
+    downloadBytesPerSecond: 200000, uploadBytesPerSecond: 93750, repetitionsPerCache: 3 };
+  const run = side => {
+    const receiptSha256 = side.repeat(64);
+    const receipt = createEnterpriseTaskLabBuildReceipt({ runId: side.repeat(24),
+      source: { revision: 'c'.repeat(40), dirty: true, sourceTreeSha256: side.repeat(64) },
+      inputSha256: Object.fromEntries(inputs.map(file => [file, 'd'.repeat(64)])), backendJarSha256: side.repeat(64),
+      nextBuildId: `synthetic-${side}`, frontendBuildSha256: { 'routes-manifest.json': 'e'.repeat(64), 'build-manifest.json': 'f'.repeat(64) } });
+    const tasks = Object.fromEntries(TASKS.map(task => [task, { schemaVersion: 1, evidenceKind: 'enterprise-task-lab-measurements', task,
+      buildReceiptSha256: receiptSha256, profile: structuredClone(profile), metricScope: { lcp: 'landing-navigation',
+        cls: 'maximum-session-per-document', interaction: 'observed-lab-interactions', action: 'task-action-to-authoritative-readback-proxy' },
+      measurements: ['cold', 'warm'].flatMap(cache => [1, 2, 3].map(iteration => {
+        const cdp = { actualPage: true, cpuApplied: true, networkApplied: true, cacheDisabled: cache === 'cold', cacheHits: cache === 'cold' ? 0 : 2 };
+        const accessibility = { observed: true, violations: [] };
+        const secondaryActors = task === 'approvals' ? 2 : task === 'survey' ? 1 : 0;
+        return { cache, iteration, lcpMs: 1000, cls: 0.01, observedLabInteractionMs: 32, observedInteractionCount: 10,
+          outcome: 'passed', failureStage: null, complete: true, cdp, accessibility,
+          taskActionToAuthoritativeReadbackMs: [{ action: 'create', milliseconds: 1100 }],
+          keyboard: { tabs: 10, enters: 3, escapes: 2, checks: [{ check: 'focus', passed: true }] },
+          runtime: { browserVersion: 'synthetic-1', nodeVersion: 'synthetic-2', playwrightVersion: 'synthetic-3' },
+          fixture: { primaryActor: task === 'survey' ? 'ordinary-user' : 'administrator', secondaryActors, ownedSeedCounts: structuredClone(TASK_SEEDS[task]) },
+          actorPages: Array.from({ length: secondaryActors }, () => ({ cdp: structuredClone(cdp), accessibility: structuredClone(accessibility),
+            observedLabInteractionMs: 32, observedInteractionCount: 5 })) };
+      })) }]));
+    return { receipt, receiptSha256, tasks };
+  };
+  return { before: run('a'), after: run('b') };
+}
+
+test('task comparison checks every real actor, cache sample, build and task instead of trusting cached medians', () => {
+  const fixture = taskComparisonFixture(); const result = compareEnterpriseTaskRuns(fixture.before, fixture.after);
+  assert.equal(result.passed, true); assert.equal(result.rows.length, 14); assert.equal(result.fieldInpMeasured, false);
+  assert.equal(result.operationalValidation, false);
+  const first = value => value.after.tasks['user-management'].measurements[0];
+  for (const mutate of [value => { delete value.after.tasks.schedule; },
+    value => { value.after.tasks.schedule.measurements.pop(); },
+    value => { value.after.tasks.schedule.buildReceiptSha256 = 'a'.repeat(64); },
+    value => { value.after.receipt.inputSha256[Object.keys(value.after.receipt.inputSha256)[0]] = 'f'.repeat(64); },
+    value => { value.after.tasks.schedule.profile.cpuRate = 1; },
+    value => { first(value).runtime.browserVersion = 'other'; }, value => { first(value).fixture.ownedSeedCounts.departments = 2; },
+    value => { first(value).cdp.cpuApplied = false; }, value => { first(value).cdp.cacheHits = 1; },
+    value => { value.after.tasks.schedule.measurements[3].cdp.cacheHits = 0; },
+    value => { first(value).lcpMs = null; }, value => { first(value).observedInteractionCount = 0; },
+    value => { first(value).outcome = 'failed'; }, value => { first(value).keyboard.checks[0].passed = false; },
+    value => { first(value).accessibility.violations.push({ id: 'contrast' }); },
+    value => { value.after.tasks.approvals.measurements[0].actorPages[0].cdp.networkApplied = false; },
+    value => { value.after.tasks.survey.measurements[0].actorPages[0].observedLabInteractionMs = null; },
+    value => { value.after.tasks.survey.measurements[0].actorPages[0].accessibility.observed = false; },
+    value => { for (const sample of value.after.tasks.schedule.measurements) sample.lcpMs = 3000; }]) {
+    const invalid = structuredClone(fixture); mutate(invalid);
+    assert.equal(compareEnterpriseTaskRuns(invalid.before, invalid.after).passed, false);
+  }
+});
+
+test('a partial failing baseline retains landing evidence but never claims a task interaction improvement', () => {
+  const fixture = taskComparisonFixture();
+  for (const sample of fixture.before.tasks['work-report'].measurements) {
+    sample.complete = false; sample.outcome = 'failed'; sample.failureStage = 'workflow';
+  }
+  const result = compareEnterpriseTaskRuns(fixture.before, fixture.after);
+  assert.equal(result.passed, true);
+  for (const row of result.rows.filter(value => value.task === 'work-report')) {
+    assert.equal(row.metrics.lcpMs.comparable, true); assert.equal(row.metrics.observedLabInteractionMs.comparable, false);
+    assert.equal(row.metrics.cls.comparable, false); assert.equal(row.metrics.cls.medianChange, null);
+    assert.equal(row.metrics.observedLabInteractionMs.medianChange, null); assert.equal(row.beforePassed, 0);
+  }
+});
+
+test('enterprise task lab selection cannot narrow, instrument or parallelize its measured population', () => {
+  const selection = ['--config=playwright.enterprise-task-lab.config.ts', '--project=full-suite', '--workers=1'];
+  assert.equal(isEnterpriseTaskLabSelection(selection), true);
+  assert.equal(isEnterpriseTaskLabSelection(['--project=full-suite']), false);
+  for (const invalid of [selection.slice(0, 1), selection.slice(0, 2), [...selection, '--grep=schedule'],
+    [...selection, '--repeat-each=2'], selection.map(value => value === '--workers=1' ? '--workers=2' : value),
+    [...selection, selection[0]]]) assert.throws(() => isEnterpriseTaskLabSelection(invalid), /complete serial selection/u);
+});
+
+test('enterprise task lab build identity binds actual inputs and never claims operational validation', () => {
+  const files = ['scripts/run-isolated-e2e.mjs', 'scripts/e2e-isolation.mjs', 'scripts/run-isolated-release-smoke.mjs',
+    'scripts/historical-release-fixture.mjs', 'frontend/playwright.enterprise-task-lab.config.ts',
+    'frontend/e2e/enterprise-task-lab/enterprise-task-quality.spec.ts', 'frontend/e2e/helpers/enterprise-task-observation.ts'];
+  const fixture = { runId: 'a'.repeat(24), source: { revision: 'b'.repeat(40), dirty: true, sourceTreeSha256: 'c'.repeat(64) },
+    inputSha256: Object.fromEntries(files.map(file => [file, 'd'.repeat(64)])), backendJarSha256: 'e'.repeat(64),
+    nextBuildId: 'actual-build-identity', frontendBuildSha256: { 'routes-manifest.json': 'f'.repeat(64), 'build-manifest.json': '1'.repeat(64) } };
+  const receipt = createEnterpriseTaskLabBuildReceipt(fixture);
+  assert.equal(receipt.evidenceKind, 'enterprise-task-lab-build'); assert.equal(receipt.operationalValidation, false);
+  assert.equal(createEnterpriseTaskLabBuildReceipt({ ...fixture, diagnostic: true }).evidenceKind, 'enterprise-task-lab-diagnostic-build');
+  assert.throws(() => createEnterpriseTaskLabBuildReceipt({ ...fixture, diagnostic: 'true' }), /build identity is incomplete/u);
+  const diagnostic = taskComparisonFixture();
+  diagnostic.before.receipt.evidenceKind = 'enterprise-task-lab-diagnostic-build';
+  for (const data of Object.values(diagnostic.before.tasks)) data.evidenceKind = 'enterprise-task-lab-diagnostic-measurements';
+  const rejected = compareEnterpriseTaskRuns(diagnostic.before, diagnostic.after);
+  assert.equal(rejected.passed, false);
+  assert.ok(rejected.errors.includes('before:build-receipt'));
+  assert.deepEqual(receipt.source, fixture.source); assert.deepEqual(receipt.inputSha256, fixture.inputSha256);
+  assert.equal(receipt.runtime.backendProfile, 'e2e'); assert.equal(receipt.runtime.frontend, 'next-start-production');
+  for (const mutate of [value => { value.runId = 'not-owned'; }, value => { value.source.revision = 'main'; },
+    value => { value.source.dirty = 'true'; }, value => { value.source.sourceTreeSha256 = ''; },
+    value => { delete value.inputSha256[files[0]]; }, value => { value.inputSha256[files[1]] = 'missing'; },
+    value => { value.inputSha256['.env'] = '2'.repeat(64); }, value => { value.backendJarSha256 = ''; },
+    value => { value.nextBuildId = '../foreign'; }, value => { delete value.frontendBuildSha256['build-manifest.json']; },
+    value => { value.frontendBuildSha256['routes-manifest.json'] = 'invalid'; }]) {
+    const invalid = structuredClone(fixture); mutate(invalid);
+    assert.throws(() => createEnterpriseTaskLabBuildReceipt(invalid), /build identity is incomplete/u);
+  }
+});
 import { createSmokeContext, createReleaseSmokePlan, validateReleaseSmokePlan,
   assertOwnedSmokeContainer, captureReleaseSmokeSource, validateSmokeBarrier, validateSmokeImages,
   waitForSmokeHealth, runSmokeStages, createSmokeFailureDiagnostic } from './run-isolated-release-smoke.mjs';
 import { REQUIRED_PRODUCTION_BUILD_INPUT_FILES } from '../frontend/scripts/ui-quality-baseline-core.mjs';
+import { HISTORICAL_RELEASE, HISTORICAL_API_ENTRYPOINT, HISTORICAL_FRONTEND_COMMAND, validateHistoricalImages } from './historical-release-fixture.mjs';
 
 test('smoke source capture rejects an ancestor junction outside the physical repository root', () => {
   const directory = mkdtempSync(path.join(tmpdir(), 'release-source-boundary-'));
@@ -56,6 +171,34 @@ function releaseSmokeFixture() {
   const plan = createReleaseSmokePlan(rendered, context, credentials);
   return { source, images, context, credentials, plan };
 }
+
+test('historical plans have distinct owned databases and cannot relax current image launch checks', () => {
+  const fixture = releaseSmokeFixture();
+  const images = structuredClone(fixture.images);
+  for (const role of ['api', 'frontend']) Object.assign(images[role].Config.Labels, {
+    'org.opencontainers.image.revision': HISTORICAL_RELEASE.revision,
+    'io.egov.ui-quality.build-input-tree-sha256': HISTORICAL_RELEASE.sourceTreeSha256,
+  });
+  images.api.Config.Entrypoint = [...HISTORICAL_API_ENTRYPOINT]; images.frontend.Config.Cmd = [...HISTORICAL_FRONTEND_COMMAND];
+  validateHistoricalImages(images);
+  assert.throws(() => validateSmokeImages(images, { revision: HISTORICAL_RELEASE.revision, dirty: false, sourceTreeSha256: HISTORICAL_RELEASE.sourceTreeSha256 }), /entrypoint|frontend runtime/);
+  const historical = createSmokeContext({ ...fixture.context, phase: 'historical', images });
+  const rollback = createSmokeContext({ ...fixture.context, phase: 'rollback', images });
+  const upgraded = createSmokeContext({ ...fixture.context, phase: 'upgraded' });
+  assert.equal(new Set([historical.database, rollback.database, upgraded.database]).size, 3);
+  for (const context of [historical, rollback, upgraded]) assert.match(context.database, /^authz_e2e_[a-z0-9]{1,40}$/u);
+  for (const mutate of [
+    value => { value.api.Config.Labels['org.opencontainers.image.revision'] = fixture.source.revision; },
+    value => { value.api.Config.Labels['io.egov.ui-quality.build-input-tree-sha256'] = '0'.repeat(64); },
+    value => { value.api.Config.Entrypoint = fixture.images.api.Config.Entrypoint; },
+    value => { value.frontend.Config.Cmd = fixture.images.frontend.Config.Cmd; },
+    value => { value.api.Config.Env.push('SPRING_DATASOURCE_URL=jdbc:postgresql://shared.invalid/real'); },
+    value => { value.api.Config.Env.push('JAVA_OPTS=-javaagent:/tmp/foreign.jar'); },
+  ]) { const changed = structuredClone(images); mutate(changed); assert.throws(() => createSmokeContext({ ...historical, images: changed }), /historical release identity/); }
+  const historicalPlan = createReleaseSmokePlan({ services: Object.fromEntries(Object.entries(fixture.plan.services).filter(([name]) => name !== 'bootstrap')) }, historical, fixture.credentials);
+  const changed = structuredClone(historicalPlan); changed.services.api.environment.DB_URL = `jdbc:postgresql://db:5432/${upgraded.database}`;
+  assert.throws(() => validateReleaseSmokePlan(changed, historical, fixture.credentials), /datasource/);
+});
 
 test('production smoke has a separate owned plan and requires actual dirty source image labels', () => {
   const fixture = releaseSmokeFixture();

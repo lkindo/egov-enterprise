@@ -5,14 +5,18 @@ import nuri.business.service.system.content.community.dto.CommunityDto;
 import nuri.business.service.template.TmplatInfoService;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.security.service.CustomUserDetails;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import javax.sql.DataSource;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -35,8 +39,12 @@ class CommunityTemplateIntegrityIntegrationTest {
         jdbc.update("INSERT INTO tb_tmplt_info(tmplt_id,tmplt_nm,tmplt_se_cd,tmplt_path,use_yn) VALUES (?,?,'TMPT02','metadata-only','Y')", id, id);
     }
     @AfterEach void cleanupOwnRows() {
-        jdbc.update("DELETE FROM tb_cmnty_info WHERE cmnty_nm=?", id);
-        jdbc.update("DELETE FROM tb_tmplt_info WHERE tmplt_id=?", id);
+        try {
+            jdbc.update("DELETE FROM tb_cmnty_info WHERE cmnty_nm=?", id);
+            jdbc.update("DELETE FROM tb_tmplt_info WHERE tmplt_id=?", id);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
     private CommunityDto request(String template) {
         return CommunityDto.builder().cmntyNm(id).cmntyIntroCn("내용").tmpltId(template).useYn("Y").build();
@@ -56,11 +64,11 @@ class CommunityTemplateIntegrityIntegrationTest {
         communities.updateCommunity("fixture", same);
         assertThat(jdbc.queryForObject("SELECT cmnty_intro_cn FROM tb_cmnty_info WHERE cmnty_sn=?", String.class, community)).isEqualTo("정정");
         communities.deleteCommunity(community, "fixture");
-        assertThatThrownBy(() -> templates.deleteTmplatInfo(id)).isInstanceOf(BusinessException.class)
+        assertThatThrownBy(() -> deleteTemplateWithPermission(id)).isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_IN_USE);
         same.setTmpltId(null);
         communities.updateCommunity("fixture", same);
-        templates.deleteTmplatInfo(id);
+        deleteTemplateWithPermission(id);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_tmplt_info WHERE tmplt_id=?", Integer.class, id)).isZero();
     }
 
@@ -123,6 +131,20 @@ class CommunityTemplateIntegrityIntegrationTest {
         }
         assertThat(jdbc.queryForObject("SELECT tmplt_id FROM tb_cmnty_info WHERE cmnty_sn=?", String.class, community)).isNull();
         assertThat(jdbc.queryForObject("SELECT use_yn FROM tb_cmnty_info WHERE cmnty_sn=?", String.class, community)).isEqualTo("N");
-        templates.deleteTmplatInfo(id);
+        deleteTemplateWithPermission(id);
+    }
+
+    private void deleteTemplateWithPermission(String templateId) {
+        var previousContext = SecurityContextHolder.getContext();
+        var context = SecurityContextHolder.createEmptyContext();
+        var principal = CustomUserDetails.builder().userId("template-deleter").esntlId("TEMPLATE_DELETER")
+                .enabled(true).permissions(List.of("TEMPLATE_DELETE")).authorizationVersion("fixture").build();
+        context.setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+        try {
+            SecurityContextHolder.setContext(context);
+            templates.deleteTmplatInfo(templateId);
+        } finally {
+            SecurityContextHolder.setContext(previousContext);
+        }
     }
 }

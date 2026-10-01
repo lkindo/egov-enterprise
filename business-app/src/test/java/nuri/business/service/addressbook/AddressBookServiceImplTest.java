@@ -100,6 +100,8 @@ class AddressBookServiceImplTest {
                 .adbkMan(List.of(AddressBookUserDto.builder().userId("E2").nm("NewUser").build())) // Add new user, remove E1
                 .build();
 
+        given(addressBookRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
+        dto.setEditToken(addressBookService.getAddressBook(1L).getEditToken());
         addressBookService.updateAddressBook("user1", dto);
 
         assertThat(entity.getAdbkNm()).isEqualTo("New");
@@ -111,7 +113,7 @@ class AddressBookServiceImplTest {
     @DisplayName("주소록 삭제 (논리 삭제)")
     void deleteAddressBook() {
         AddressBook entity = AddressBook.builder().adbkSn(1L).adbkNm("Book").useYn("Y").build();
-        given(addressBookRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(addressBookRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
 
         addressBookService.deleteAddressBook(1L, "user1");
 

@@ -366,6 +366,14 @@ class SmsServiceTest {
     }
 
     @Test
+    void deliveryStatusUsesTheProvidersRegisteredSenderRatherThanAnUnrelatedDefault() {
+        when(smsSender.isDeliveryConfigured()).thenReturn(true);
+        when(smsSender.registeredSender()).thenReturn("0212345678");
+        ReflectionTestUtils.setField(smsService, "defaultSenderTel", "0299999999");
+        assertThat(smsService.getDeliveryStatus().defaultSenderTelno()).isEqualTo("0212345678");
+    }
+
+    @Test
     @DisplayName("발송 가능 상태 - 배포에 등록된 발신 번호를 기본값으로 알리고, 없으면 null 이다")
     void deliveryStatus_reportsConfiguredSenderNumber() {
         when(smsSender.isDeliveryConfigured()).thenReturn(false);

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawn, execFileSync } from 'node:child_process';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
-import { mkdirSync, openSync, closeSync, readFileSync, writeFileSync, readdirSync, existsSync, unlinkSync } from 'node:fs';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { lstatSync, realpathSync, mkdirSync, openSync, closeSync, readFileSync, writeFileSync, readdirSync, existsSync, unlinkSync } from 'node:fs';
 import { createServer } from 'node:http';
 import net from 'node:net';
 import path from 'node:path';
@@ -15,6 +15,45 @@ const frontend = path.join(root, 'frontend');
 const require = createRequire(path.join(frontend, 'package.json'));
 const fail = message => new Error(`Isolated E2E: ${message}`);
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
+const LAB_CONFIG = '--config=playwright.enterprise-task-lab.config.ts';
+const LAB_INPUTS = Object.freeze(['scripts/run-isolated-e2e.mjs', 'scripts/e2e-isolation.mjs',
+  'scripts/run-isolated-release-smoke.mjs', 'scripts/historical-release-fixture.mjs',
+  'frontend/playwright.enterprise-task-lab.config.ts', 'frontend/e2e/enterprise-task-lab/enterprise-task-quality.spec.ts',
+  'frontend/e2e/helpers/enterprise-task-observation.ts']);
+
+export function isEnterpriseTaskLabSelection(arguments_) {
+  if (!arguments_.includes(LAB_CONFIG)) return false;
+  const expected = [LAB_CONFIG, '--project=full-suite', '--workers=1'];
+  if (arguments_.length !== expected.length || new Set(arguments_).size !== expected.length
+      || expected.some(argument => !arguments_.includes(argument))) throw fail('enterprise task lab requires its complete serial selection.');
+  return true;
+}
+
+export function createEnterpriseTaskLabBuildReceipt({ runId, source, inputSha256, backendJarSha256, nextBuildId, frontendBuildSha256, diagnostic = false }) {
+  const hashPattern = /^[a-f0-9]{64}$/u;
+  if (typeof diagnostic !== 'boolean' || !/^[a-f0-9]{24}$/u.test(runId ?? '') || !/^[a-f0-9]{40}$/u.test(source?.revision ?? '')
+      || typeof source?.dirty !== 'boolean' || !hashPattern.test(source?.sourceTreeSha256 ?? '')
+      || !hashPattern.test(backendJarSha256 ?? '') || !/^[A-Za-z0-9_-]{1,128}$/u.test(nextBuildId ?? '')
+      || !inputSha256 || Object.keys(inputSha256).length !== LAB_INPUTS.length
+      || LAB_INPUTS.some(file => !hashPattern.test(inputSha256[file] ?? ''))
+      || !frontendBuildSha256 || Object.keys(frontendBuildSha256).length !== 2
+      || ['routes-manifest.json', 'build-manifest.json'].some(file => !hashPattern.test(frontendBuildSha256[file] ?? ''))) {
+    throw fail('enterprise task lab build identity is incomplete.');
+  }
+  return { schemaVersion: 1, evidenceKind: diagnostic ? 'enterprise-task-lab-diagnostic-build' : 'enterprise-task-lab-build', runId,
+    source: { revision: source.revision, dirty: source.dirty, sourceTreeSha256: source.sourceTreeSha256 },
+    inputSha256: Object.fromEntries(LAB_INPUTS.map(file => [file, inputSha256[file]])), backendJarSha256,
+    nextBuildId, frontendBuildSha256, runtime: { backendProfile: 'e2e', frontend: 'next-start-production', database: 'owned-disposable-postgresql-17' },
+    operationalValidation: false };
+}
+
+function safeInputHash(relative) {
+  const target = path.resolve(root, relative); const outside = file => file === '..' || file.startsWith(`..${path.sep}`) || path.isAbsolute(file);
+  if (outside(path.relative(root, target)) || !lstatSync(target).isFile() || lstatSync(target).isSymbolicLink()
+      || outside(path.relative(realpathSync(root), realpathSync(target)))) throw fail('enterprise task lab input escapes its worktree.');
+  return sha256(readFileSync(target));
+}
 
 export function closedEnvironment(source = process.env) {
   return Object.fromEntries(Object.entries(source).filter(([key]) =>
@@ -66,11 +105,22 @@ export function discoveryArguments(selection, fullInventory = false) {
 export async function main(arguments_ = process.argv.slice(2)) {
   const ciCompose = arguments_[0] === '--ci-compose';
   const coverage = arguments_[0] === '--coverage';
+  const enterpriseTaskDiagnostic = arguments_[0] === '--enterprise-task-diagnostic';
   const fullInventory = ciCompose && arguments_[1] === '--full-inventory';
-  const options = ciCompose || coverage ? arguments_.slice(fullInventory ? 2 : 1) : arguments_;
-  if (options.length && options[0] !== '--') throw fail('use [--ci-compose [--full-inventory] | --coverage] -- <Playwright test arguments>.');
+  const options = ciCompose || coverage || enterpriseTaskDiagnostic ? arguments_.slice(fullInventory ? 2 : 1) : arguments_;
+  if (options.length && options[0] !== '--') throw fail('use [--ci-compose [--full-inventory] | --coverage | --enterprise-task-diagnostic] -- <Playwright test arguments>.');
   const testArguments = options.slice(1);
+  const enterpriseTaskLab = isEnterpriseTaskLabSelection(testArguments);
+  if (enterpriseTaskDiagnostic && !enterpriseTaskLab) throw fail('enterprise task diagnostic requires the complete serial task selection.');
+  if (enterpriseTaskLab && (ciCompose || coverage)) throw fail('enterprise task lab requires its own fresh production frontend build.');
   assertNoDotEnv(root); assertNoDotEnv(frontend);
+  const captureSource = enterpriseTaskLab ? (await import('./run-isolated-release-smoke.mjs')).captureReleaseSmokeSource : undefined;
+  const sourceBeforeBuild = captureSource?.();
+  const labInputSha256 = enterpriseTaskLab ? Object.fromEntries(LAB_INPUTS.map(file => [file, safeInputHash(file)])) : undefined;
+  const assertLabInputsUnchanged = () => {
+    if (enterpriseTaskLab && (JSON.stringify(captureSource()) !== JSON.stringify(sourceBeforeBuild)
+        || LAB_INPUTS.some(file => safeInputHash(file) !== labInputSha256[file]))) throw fail('enterprise task lab source changed during the run.');
+  };
   const clean = closedEnvironment();
   const docker = args => execFileSync('docker', args, { env: clean, encoding: 'utf8', windowsHide: true,
     timeout: 30000, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -89,6 +139,7 @@ export async function main(arguments_ = process.argv.slice(2)) {
   let ready = false;
   let aborted = false;
   let verifyRuntime;
+  let backendJarSha256;
   const children = new Set();
   const assertActive = () => { if (aborted) throw fail('run was cancelled.'); };
   const launch = (name, command, args, cwd, environment, outputFile) => {
@@ -168,6 +219,7 @@ export async function main(arguments_ = process.argv.slice(2)) {
         'org.gradle.wrapper.GradleWrapperMain', ':api-server:bootJar', '--no-daemon'], root, clean);
       const jars = readdirSync(path.join(root, 'api-server/build/libs')).filter(name => name.endsWith('.jar') && !name.endsWith('-plain.jar'));
       if (jars.length !== 1) throw fail('exactly one bootJar is required.');
+      if (enterpriseTaskLab) backendJarSha256 = safeInputHash(`api-server/build/libs/${jars[0]}`);
       const password = randomBytes(24).toString('hex');
       assertActive();
       // Only a brand-new container with tmpfs storage; no existing name/volume is reused.
@@ -211,6 +263,18 @@ export async function main(arguments_ = process.argv.slice(2)) {
       await run('frontend-build', process.execPath, coverage ? [path.join(frontend, 'scripts/build-instrumented.js')] : [next, 'build'], frontend, environment);
     }
     assertBuildTarget(JSON.parse(readFileSync(path.join(frontend, '.next/routes-manifest.json'), 'utf8')), apiUrl);
+    if (enterpriseTaskLab) {
+      assertLabInputsUnchanged();
+      const receipt = createEnterpriseTaskLabBuildReceipt({ runId, source: sourceBeforeBuild, inputSha256: labInputSha256, diagnostic: enterpriseTaskDiagnostic,
+        backendJarSha256, nextBuildId: readFileSync(path.join(frontend, '.next/BUILD_ID'), 'utf8').trim(),
+        frontendBuildSha256: Object.fromEntries(['routes-manifest.json', 'build-manifest.json']
+          .map(file => [file, safeInputHash(`frontend/.next/${file}`)])) });
+      environment.E2E_ENTERPRISE_LAB_RECEIPT = path.join(output, 'enterprise-task-lab-build.json');
+      environment.E2E_ENTERPRISE_LAB_OUTPUT_DIR = path.join(output, 'enterprise-task-lab');
+      if (enterpriseTaskDiagnostic) environment.E2E_ENTERPRISE_LAB_DIAGNOSTIC = 'true';
+      mkdirSync(environment.E2E_ENTERPRISE_LAB_OUTPUT_DIR, { mode: 0o700 });
+      writeFileSync(environment.E2E_ENTERPRISE_LAB_RECEIPT, JSON.stringify(receipt, null, 2), { flag: 'wx', mode: 0o600 });
+    }
     web = launch('frontend', process.execPath, [next, 'start', '--hostname', '127.0.0.1', '--port', String(webPort)], frontend, environment);
     await waitReady(`${webUrl}/login`, web);
     control = createServer((request, response) => {
@@ -240,6 +304,7 @@ export async function main(arguments_ = process.argv.slice(2)) {
         `--reporter=${ciCompose ? 'blob,line,json' : 'line,json'}`], frontend,
       { ...environment, PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath });
     } catch (error) { executionFailure = error; }
+    assertLabInputsUnchanged();
     // CI invokes the same result contract explicitly in its required step.
     if (!ciCompose) {
       const inventory = JSON.parse(readFileSync(inventoryPath, 'utf8'));

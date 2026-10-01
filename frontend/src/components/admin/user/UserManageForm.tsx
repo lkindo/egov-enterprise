@@ -116,7 +116,7 @@ export function UserManageForm({
             render={({ field, fieldState }) => (
               <FormItem>
                 <motion.div
-                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
+                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : undefined}
                   transition={{ duration: 0.4 }}
                 >
                   <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1">
@@ -147,7 +147,7 @@ export function UserManageForm({
             render={({ field, fieldState }) => (
               <FormItem>
                 <motion.div
-                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
+                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : undefined}
                   transition={{ duration: 0.4 }}
                 >
                   <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1">
@@ -178,7 +178,7 @@ export function UserManageForm({
             render={({ field, fieldState }) => (
               <FormItem>
                 <motion.div
-                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
+                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : undefined}
                   transition={{ duration: 0.4 }}
                 >
                   <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1">
@@ -206,7 +206,7 @@ export function UserManageForm({
             render={({ field, fieldState }) => (
               <FormItem>
                 <motion.div
-                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
+                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : undefined}
                   transition={{ duration: 0.4 }}
                 >
                   <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1">
@@ -239,7 +239,7 @@ export function UserManageForm({
             render={({ field, fieldState }) => (
               <FormItem>
                 <motion.div
-                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
+                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : undefined}
                   transition={{ duration: 0.4 }}
                 >
                   <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1">
@@ -270,7 +270,7 @@ export function UserManageForm({
           render={({ field, fieldState }) => (
             <FormItem>
               <motion.div
-                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
+                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : undefined}
                   transition={{ duration: 0.4 }}
               >
                 <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1">

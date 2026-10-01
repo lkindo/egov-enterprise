@@ -5,6 +5,7 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.template.Template;
 import nuri.business.domain.template.TemplateRepository;
+import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.template.dto.TemplateDto;
 import nuri.business.service.template.dto.TemplateMapper;
 import nuri.foundation.core.template.TemplateReferenceContributor;
@@ -55,6 +56,7 @@ public class TmplatInfoService extends BaseAbstractService {
 
     @Transactional
     public void insertTmplatInfo(TemplateDto templateDto) {
+        SecurityUtil.assertPermission("TEMPLATE_CREATE");
         required(templateDto, "템플릿 정보는 null 일 수 없습니다");
         String tmpltId = required(templateDto.getTmpltId(), "템플릿 ID 는 null 일 수 없습니다");
         if (templateRepository.existsById(tmpltId)) {
@@ -67,6 +69,7 @@ public class TmplatInfoService extends BaseAbstractService {
     /** 템플릿 수정 — ID 는 바꾸지 않는다(2026-09-05 DEC-OPS-036 — 종전에는 등록·조회만 가능했다, 감사 D11-02). */
     @Transactional
     public TemplateDto updateTmplatInfo(String tmplatId, TemplateDto templateDto) {
+        SecurityUtil.assertPermission("TEMPLATE_UPDATE");
         required(templateDto, "템플릿 정보는 null 일 수 없습니다");
         Template template = templateRepository.findByIdForUpdate(required(tmplatId, "템플릿 ID 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
@@ -82,6 +85,7 @@ public class TmplatInfoService extends BaseAbstractService {
      */
     @Transactional
     public void deleteTmplatInfo(String tmplatId) {
+        SecurityUtil.assertPermission("TEMPLATE_DELETE");
         Template template = templateRepository.findByIdForUpdate(required(tmplatId, "템플릿 ID 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertNotReferenced(template.getTmpltId());

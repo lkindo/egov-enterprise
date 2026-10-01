@@ -27,6 +27,100 @@ function toPosix(value) {
   return value.split(path.sep).join('/');
 }
 
+function syntaxTree(source, label) {
+  const ts = createRequire(path.join(REPO_ROOT, 'frontend/package.json'))('typescript');
+  const tree = ts.createSourceFile(label, source, ts.ScriptTarget.Latest, true);
+  if (tree.parseDiagnostics.length) throw new Error(`${label}: invalid discovery source`);
+  return { ts, tree };
+}
+
+function literalProperties(ts, expression, label) {
+  if (!ts.isObjectLiteralExpression(expression)) throw new Error(`${label}: discovery requires a literal object`);
+  const result = new Map();
+  for (const property of expression.properties) {
+    if (!ts.isPropertyAssignment(property)
+      || !(ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))
+      || result.has(property.name.text)) throw new Error(`${label}: ambiguous discovery properties`);
+    result.set(property.name.text, property.initializer);
+  }
+  return result;
+}
+
+/** Read Playwright's actual project matchers without importing an executable config. */
+function projectMatchers(source, label) {
+  const { ts, tree } = syntaxTree(source, label);
+  const exported = tree.statements.filter(ts.isExportAssignment);
+  const call = exported[0]?.expression;
+  if (exported.length !== 1 || !call || !ts.isCallExpression(call)
+    || !ts.isIdentifier(call.expression) || call.expression.text !== 'defineConfig' || call.arguments.length !== 1) {
+    throw new Error(`${label}: discovery requires one defineConfig export`);
+  }
+  const config = literalProperties(ts, call.arguments[0], label);
+  if (!ts.isStringLiteral(config.get('testDir')) || config.get('testDir').text !== './e2e'
+    || !ts.isArrayLiteralExpression(config.get('projects'))) throw new Error(`${label}: unsupported project discovery`);
+  const names = new Set();
+  return config.get('projects').elements.map(expression => {
+    const project = literalProperties(ts, expression, label);
+    const name = project.get('name'), match = project.get('testMatch');
+    if (!ts.isStringLiteral(name) || names.has(name.text) || !ts.isRegularExpressionLiteral(match)) {
+      throw new Error(`${label}: discovery requires unique named projects with literal regex matchers`);
+    }
+    names.add(name.text);
+    const end = match.text.lastIndexOf('/');
+    const flags = match.text.slice(end + 1);
+    if (/[gy]/u.test(flags)) throw new Error(`${label}: stateful discovery matcher`);
+    return { name: name.text, matcher: new RegExp(match.text.slice(1, end), flags) };
+  });
+}
+
+function manualLabInputs(source) {
+  const { ts, tree } = syntaxTree(source, 'isolated task lab runner');
+  const declarations = tree.statements.filter(ts.isVariableStatement)
+    .flatMap(statement => [...statement.declarationList.declarations]);
+  const get = name => {
+    const found = declarations.filter(declaration => ts.isIdentifier(declaration.name) && declaration.name.text === name);
+    if (found.length !== 1) throw new Error('manual task lab runner registration is missing or ambiguous');
+    return found[0].initializer;
+  };
+  const config = get('LAB_CONFIG'), inputs = get('LAB_INPUTS');
+  if (!ts.isStringLiteral(config) || !ts.isCallExpression(inputs)
+    || inputs.expression.getText(tree) !== 'Object.freeze' || inputs.arguments.length !== 1
+    || !ts.isArrayLiteralExpression(inputs.arguments[0]) || inputs.arguments[0].elements.some(item => !ts.isStringLiteral(item))) {
+    throw new Error('manual task lab runner registration must bind literal collector inputs');
+  }
+  return { config: config.text, inputs: inputs.arguments[0].elements.map(item => item.text) };
+}
+
+/** CI and the manual lab own disjoint specs; unowned files still fail closed. */
+export function partitionPlaywrightSpecs(specs, { defaultConfigSource, manualConfigSource, runnerSource, packageSource,
+  specRoot = SPEC_ROOT }) {
+  const ordinary = projectMatchers(defaultConfigSource, 'default Playwright config');
+  const manual = projectMatchers(manualConfigSource, 'manual task lab config');
+  const registration = manualLabInputs(runnerSource);
+  const configFile = 'frontend/playwright.enterprise-task-lab.config.ts';
+  const command = `node scripts/run-isolated-e2e.mjs -- ${registration.config} --project=full-suite --workers=1`;
+  if (registration.config !== `--config=${path.basename(configFile)}` || !registration.inputs.includes(configFile)
+    || JSON.parse(packageSource).scripts?.['test:e2e:enterprise-task-lab'] !== command) {
+    throw new Error('manual task lab config and serial runner ownership are not bound');
+  }
+  const ciSpecs = [], manualSpecs = [];
+  for (const spec of specs) {
+    const absolute = toPosix(path.resolve(specRoot, spec));
+    const ciOwners = ordinary.filter(project => project.matcher.test(absolute));
+    const manualOwners = manual.filter(project => project.matcher.test(absolute));
+    if (ciOwners.length + manualOwners.length !== 1 || [...ciOwners, ...manualOwners][0].name === 'setup') {
+      throw new Error(`unowned or ambiguous Playwright spec: ${spec}`);
+    }
+    (ciOwners.length ? ciSpecs : manualSpecs).push(spec);
+  }
+  const registeredManualSpecs = registration.inputs.filter(file => file.startsWith('frontend/e2e/') && file.endsWith('.spec.ts'))
+    .map(file => file.slice('frontend/e2e/'.length)).sort();
+  if (!registeredManualSpecs.length || JSON.stringify([...manualSpecs].sort()) !== JSON.stringify(registeredManualSpecs)) {
+    throw new Error('manual task lab spec population differs from its frozen collector inputs');
+  }
+  return { ciSpecs: ciSpecs.sort(), manualSpecs: manualSpecs.sort() };
+}
+
 export function discoverSpecs(specRoot = SPEC_ROOT) {
   const discovered = [];
 
@@ -42,7 +136,15 @@ export function discoverSpecs(specRoot = SPEC_ROOT) {
   }
 
   visit(specRoot);
-  return discovered.sort();
+  // Generic recursive discovery remains useful for fixture roots. Repository
+  // discovery additionally binds every spec to its actual Playwright execution.
+  if (path.resolve(specRoot) !== SPEC_ROOT) return discovered.sort();
+  const read = relative => readRegularFile(path.join(REPO_ROOT, relative), { encoding: 'utf8' });
+  return partitionPlaywrightSpecs(discovered, {
+    defaultConfigSource: read('frontend/playwright.config.ts'),
+    manualConfigSource: read('frontend/playwright.enterprise-task-lab.config.ts'),
+    runnerSource: read('scripts/run-isolated-e2e.mjs'), packageSource: read('package.json'), specRoot,
+  }).ciSpecs;
 }
 
 // Audited route owners. Shared inputs and unrecognized dependencies remain full.

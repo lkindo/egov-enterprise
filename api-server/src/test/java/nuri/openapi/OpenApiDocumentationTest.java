@@ -70,6 +70,26 @@ class OpenApiDocumentationTest {
   }
 
   @Test
+  @DisplayName("주소록 수정은 성공·충돌 응답과 상세 상태 토큰을 함께 문서화한다")
+  void addressBookSnapshotUpdateContract_isDocumented() throws Exception {
+    tools.jackson.databind.JsonNode document = objectMapper.readTree(mockMvc.perform(get("/v3/api-docs"))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
+    tools.jackson.databind.JsonNode responses = document.path("paths")
+        .path("/api/v1/address-books/{adbkSn}").path("put").path("responses");
+    for (String code : java.util.List.of("200", "409")) {
+      assertThat(responses.path(code).path("content").path("application/json").path("schema")
+          .path("$ref").asString()).isEqualTo("#/components/schemas/ApiResponseVoid");
+    }
+    assertThat(responses.path("409").path("description").asString()).contains("C013");
+    tools.jackson.databind.JsonNode token = document.path("components").path("schemas")
+        .path("AddressBookDto").path("properties").path("editToken");
+    assertThat(token.path("minLength").asInt()).isEqualTo(64);
+    assertThat(token.path("maxLength").asInt()).isEqualTo(64);
+    assertThat(token.path("pattern").asString()).isEqualTo("^[a-f0-9]{64}$");
+  }
+
+  @Test
   @DisplayName("서버 URL 과 경로를 이어 붙여도 API 기본 경로가 한 번만 나온다")
   void serverUrls_doNotRepeatThePathPrefix() throws Exception {
     tools.jackson.databind.JsonNode spec = objectMapper.readTree(mockMvc.perform(get("/v3/api-docs"))

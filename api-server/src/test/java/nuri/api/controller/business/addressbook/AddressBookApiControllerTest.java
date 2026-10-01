@@ -94,6 +94,37 @@ class AddressBookApiControllerTest extends ControllerTestSupport {
 
     @Test
     @WithMockCustomUser(username = "testUser", esntlId = "testUser")
+    void updateWithoutMemberListPreservesTheOmissionAndForwardsTheEditToken() throws Exception {
+        String token = "a".repeat(64);
+        mockMvc.perform(put("/api/v1/address-books/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"adbkNm":"이름만 변경", "rlsScopeCd":"PUBLIC", "editToken":"%s"}
+                        """.formatted(token)))
+                .andExpect(status().isOk());
+        var request = org.mockito.ArgumentCaptor.forClass(AddressBookDto.class);
+        org.mockito.Mockito.verify(addressBookService).updateAddressBook(org.mockito.ArgumentMatchers.eq("testUser"), request.capture());
+        assertThat(request.getValue().getAdbkMan()).isNull();
+        assertThat(request.getValue().getEditToken()).isEqualTo(token);
+        assertThat(request.getValue().getAdbkSn()).isEqualTo(1L);
+    }
+
+    @Test
+    @WithMockCustomUser(username = "testUser", esntlId = "testUser")
+    void explicitEmptyMemberListRetainsItsClearAllMeaning() throws Exception {
+        mockMvc.perform(put("/api/v1/address-books/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"adbkNm":"구성원 제거", "rlsScopeCd":"PUBLIC", "editToken":"%s", "adbkMan":[]}
+                        """.formatted("a".repeat(64))))
+                .andExpect(status().isOk());
+        var request = org.mockito.ArgumentCaptor.forClass(AddressBookDto.class);
+        org.mockito.Mockito.verify(addressBookService).updateAddressBook(org.mockito.ArgumentMatchers.eq("testUser"), request.capture());
+        assertThat(request.getValue().getAdbkMan()).isNotNull().isEmpty();
+    }
+
+    @Test
+    @WithMockCustomUser(username = "testUser", esntlId = "testUser")
     @DisplayName("주소록 등록은 중첩 구성원을 검증한다 — 컬럼보다 긴 이메일은 400 (DIP B5 F8)")
     void createAddressBook_RejectsInvalidNestedMember() throws Exception {
         String tooLong = "a".repeat(316) + "@x.kr"; // 321자 — 컬럼(320)보다 한 자 길다

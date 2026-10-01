@@ -36,29 +36,69 @@ groups:
           summary: "로그인 실패(401)가 5분째 분당 20건을 넘습니다"
           description: "요청 제한 로그인 버킷 거절(EgovRateLimitRejectionsSustained, bucket=login)과 함께 오르는지 확인합니다."
 
-      # 정기 첨부 점검(03:15 Asia/Seoul)이 24시간 안에 정상 완료(PASS)를 한 번도 기록하지 못한 상태다.
-      #   outcome 은 PASS·DRIFT·INCOMPLETE·FAILED·REPORT_FAILED 다(AttachmentIntegrityScheduler). 정규식 매처는
-      #   계약이 거부하므로 "PASS 가 없다" 로 나머지 넷을 한 규칙에 담는다 — DRIFT(실제 불일치 발견)도 확인 대상이다.
-      #   ⚠ 한계: 기능이 꺼져 있거나 한 번도 돌지 않으면 시계열 자체가 없어 이 규칙은 침묵한다. 기능을 켠 환경에서는
-      #   시계열 부재를 별도 absent() 규칙으로 감시할지 인수처가 정한다(PD-OPS-001 수신처 결정과 함께).
+      # 항상 등록되는 gauges다. 최초 활성화/PASS anchor는 health.json에 지속되어 재기동이 유예를 초기화하지 않는다.
+      # 비활성 상태의 healthy_age와 last_run_unhealthy는 0이다. DRIFT/FAILED는 별도 즉시 상태 경보가 본다.
       - alert: EgovAttachmentIntegrityNoHealthyRun
-        expr: sum by (application) (increase(nuri_attachment_integrity_runs_total{outcome="PASS"}[26h])) == 0
-        for: 1h
-        labels:
-          severity: warning
-        annotations:
-          summary: "첨부 무결성 점검이 24시간째 정상 완료를 기록하지 못했습니다"
-          description: "최근 결과 JSON(last-complete.json·latest.json)의 outcome 으로 DRIFT·INCOMPLETE·FAILED 중 무엇인지 확인합니다."
-
-      # 내구 작업(알림 전달·첨부 물리 삭제 등)이 재시도 예산 8회를 다 써 FAILED 가 됐다. FAILED 는 스스로 풀리지 않는다 —
-      #   DWORK_RETRY 로 재처리하기 전까지 그 후속 처리는 멈춰 있다(docs/04-operations/durable-work-recovery.md).
-      #   type 은 실행기 유형이다. 카운터는 전이 순간에만 오르므로, 이미 FAILED 로 남아 있는 적체(재기동 전 전이 포함)는
-      #   이 규칙이 보지 않는다 — 적체는 GET /api/v1/admin/system/durable-jobs 로 확인한다.
-      - alert: EgovDurableWorkFailed
-        expr: sum by (application, type) (increase(nuri_durable_work_failed_total[1h])) > 0
+        expr: max by (application) (nuri_attachment_integrity_healthy_age_seconds{}) > 93600
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "내구 작업이 재시도 예산을 다 써 FAILED 가 됐습니다 (type={{ $labels.type }})"
+          summary: "첨부 무결성 점검이 26시간째 정상 완료를 기록하지 못했습니다"
+          description: "미실행도 포함합니다. health.json의 최초 활성화/PASS 시각과 latest.json의 결과를 확인합니다."
+
+      - alert: EgovAttachmentIntegrityDisabled
+        expr: min by (application) (nuri_attachment_integrity_enabled{}) == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "첨부 무결성 정기 점검이 비활성 상태입니다"
+          description: "ATTACHMENT_INTEGRITY_ENABLED 설정과 기관의 점검 정책을 확인합니다."
+
+      - alert: EgovAttachmentIntegrityUnhealthy
+        expr: max by (application) (nuri_attachment_integrity_last_run_unhealthy{}) == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "최근 첨부 무결성 점검이 정상 완료되지 않았습니다"
+          description: "latest.json의 DRIFT·INCOMPLETE·FAILED·REPORT_FAILED와 저장소 상태를 확인합니다."
+
+      - alert: EgovAttachmentIntegrityObservationFailed
+        expr: min by (application) (nuri_attachment_integrity_observation_healthy{} + 1 - nuri_attachment_integrity_enabled{}) == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "첨부 무결성 점검 상태를 지속적으로 기록하거나 복원할 수 없습니다"
+          description: "진단 디렉터리의 읽기·쓰기 권한, 링크, health.json 형식과 디스크 상태를 확인합니다."
+
+      # 전이 카운터 대신 committed DB 상태를 본다. 공유 DB의 복제본 scrape를 더하지 않고 max로 집계한다.
+      # 상태 라벨은 PENDING/RUNNING/RETRY/SUCCEEDED/FAILED 다섯 개이며 업무 유형·작업 식별자는 태그가 아니다.
+      - alert: EgovDurableWorkFailed
+        expr: max by (application) (nuri_durable_work_jobs{status="FAILED"}) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "FAILED 상태의 내구 작업이 남아 있습니다"
           description: "durable-jobs 조회로 대상 작업을 찾고, 저장소·전달 채널 원인을 고친 뒤 DWORK_RETRY 로 재처리합니다."
+
+      - alert: EgovDurableWorkDueBacklog
+        expr: max by (application, status) (nuri_durable_work_oldest_due_age_seconds{status="PENDING"} or nuri_durable_work_oldest_due_age_seconds{status="RETRY"} or nuri_durable_work_oldest_due_age_seconds{status="RUNNING"}) > 900
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "처리 시각이 지난 내구 작업이 15분 이상 대기합니다 (status={{ $labels.status }})"
+          description: "PENDING·RETRY의 예약 시각 또는 RUNNING의 lease 만료 시각을 기준으로 실행기와 전달 채널을 확인합니다."
+
+      - alert: EgovDurableWorkObservationFailed
+        expr: min by (application) (nuri_durable_work_observation_healthy{}) == 0 or max by (application) (nuri_durable_work_observation_age_seconds{}) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "내구 작업 상태 조회가 실패하거나 오래 갱신되지 않았습니다"
+          description: "DB 연결과 읽기 권한, 집계 쿼리 제한 시간, 메트릭 갱신 실행 경로를 확인합니다. 마지막 정상 집계는 유지됩니다."

@@ -10,8 +10,14 @@ import nuri.business.domain.operation.RewardManageRepository;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.operation.dto.RewardManageDto;
 import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.security.service.CustomUserDetails;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -20,8 +26,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,6 +52,59 @@ class RewardManageServiceTest {
     private RewardManageService rewardManageService;
 
     private static final Pageable PAGEABLE = PageRequest.of(0, 10);
+
+    @BeforeEach
+    @AfterEach
+    void clearAuthentication() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private static void authorize(String permission) {
+        authenticate(List.of(permission), List.of());
+    }
+
+    private static void authenticate(List<String> permissions, List<String> groups) {
+        var principal = CustomUserDetails.builder().userId("operator").esntlId("OPERATOR")
+                .enabled(true).permissions(permissions).groups(groups).build();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(principal, null, groups.isEmpty()
+                        ? principal.getAuthorities() : groups.stream().map(SimpleGrantedAuthority::new).toList()));
+    }
+
+    static Stream<Arguments> deniedWrites() {
+        return Stream.of("CREATE", "UPDATE", "DELETE").flatMap(operation ->
+                Stream.of("NONE", "ANONYMOUS", "USER", "WRONG", "ROLE")
+                        .map(identity -> Arguments.of(operation, identity)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("deniedWrites")
+    void managementWriteRequiresItsExactPermissionBeforeDependencies(String operation, String identity) {
+        switch (identity) {
+            case "ANONYMOUS" -> SecurityContextHolder.getContext().setAuthentication(
+                    new AnonymousAuthenticationToken("fixture", "anonymous",
+                            List.of(new SimpleGrantedAuthority("REWARD_" + operation))));
+            case "USER" -> authenticate(List.of(), List.of());
+            case "WRONG" -> authorize(operation.equals("CREATE") ? "REWARD_UPDATE" : "REWARD_CREATE");
+            case "ROLE" -> authenticate(List.of(), List.of("ROLE_ADMIN", "ROLE_SYSTEM"));
+            default -> SecurityContextHolder.clearContext();
+        }
+        RewardManage foreign = RewardManage.builder().rwrdSn(7L).rwrdNm("foreign reward").build();
+        foreign.setFrstRgtrId("foreign-writer");
+        if (!operation.equals("CREATE")) {
+            org.mockito.Mockito.lenient().when(rewardManageRepository.findById(7L)).thenReturn(Optional.of(foreign));
+        }
+        var dto = RewardManageDto.builder().rwardNm("changed").atchFileSn(101L).build();
+        Runnable write = switch (operation) {
+            case "CREATE" -> () -> rewardManageService.createReward(dto);
+            case "UPDATE" -> () -> rewardManageService.updateReward(7L, dto);
+            default -> () -> rewardManageService.deleteReward(7L);
+        };
+        assertThatThrownBy(write::run).isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        org.mockito.Mockito.verifyNoInteractions(rewardManageRepository, attachmentAssignmentPolicy);
+        assertThat(foreign.getRwrdNm()).isEqualTo("foreign reward");
+    }
 
     @Test
     @DisplayName("포상 전체 조회 - 페이징")
@@ -76,6 +140,7 @@ class RewardManageServiceTest {
     @Test
     @DisplayName("포상 등록")
     void createReward_Success() {
+        authorize("REWARD_CREATE");
         // Given
         RewardManageDto dto = RewardManageDto.builder()
                 .rwardNm("New Reward")
@@ -99,6 +164,7 @@ class RewardManageServiceTest {
     @Test
     @DisplayName("🚨 승인·감사 필드는 요청 값을 저장하지 않는다 — 새 포상은 언제나 승인 대기로 시작한다 (DIP I6 ③)")
     void createReward_ignoresClientApprovalFields() {
+        authorize("REWARD_CREATE");
         RewardManageDto dto = RewardManageDto.builder()
                 .rwardNm("포상")
                 .sanctnerId("forged-approver")
@@ -129,6 +195,7 @@ class RewardManageServiceTest {
     @Test
     @DisplayName("포상 등록 - 첨부 할당 거부 시 저장하지 않는다")
     void createReward_deniedAttachmentDoesNotSave() {
+        authorize("REWARD_CREATE");
         RewardManageDto dto = RewardManageDto.builder()
                 .rwardNm("New Reward")
                 .atchFileSn(101L)
@@ -148,8 +215,10 @@ class RewardManageServiceTest {
     @Test
     @DisplayName("포상 수정 — 화면이 편집하는 다섯 필드를 갱신하고 식별자는 유지한다")
     void updateReward_Success() {
+        authorize("REWARD_UPDATE");
         RewardManage entity = RewardManage.builder().rwrdSn(7L).rwrdUserId("U1").rwrdCd("R01")
                 .rwrdYmd("20260101").rwrdNm("Old").cntrbCn("old").build();
+        entity.setFrstRgtrId("foreign-writer");
         given(rewardManageRepository.findById(7L)).willReturn(Optional.of(entity));
         RewardManageDto dto = RewardManageDto.builder().rwrdSn(999L).rwardwnrId("U2").rwardCode("R02")
                 .rwardDe("20260202").rwardNm("New").pblenCn("new").build();
@@ -162,12 +231,15 @@ class RewardManageServiceTest {
         assertThat(result.getRwardDe()).isEqualTo("20260202");
         assertThat(result.getRwardNm()).isEqualTo("New");
         assertThat(result.getPblenCn()).isEqualTo("new");
+        assertThat(result.getFrstRgtrId()).isEqualTo("foreign-writer");
     }
 
     @Test
     @DisplayName("포상 삭제")
     void deleteReward_Success() {
+        authorize("REWARD_DELETE");
         RewardManage entity = RewardManage.builder().rwrdSn(7L).rwrdNm("Old").build();
+        entity.setFrstRgtrId("foreign-writer");
         given(rewardManageRepository.findById(7L)).willReturn(Optional.of(entity));
 
         rewardManageService.deleteReward(7L);
@@ -178,11 +250,14 @@ class RewardManageServiceTest {
     @Test
     @DisplayName("없는 포상의 수정·삭제는 RESOURCE_NOT_FOUND")
     void updateOrDelete_NotFound() {
+        authorize("REWARD_UPDATE");
         given(rewardManageRepository.findById(9L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> rewardManageService.updateReward(9L, RewardManageDto.builder().build()))
-                .isInstanceOf(BusinessException.class);
-        assertThatThrownBy(() -> rewardManageService.deleteReward(9L)).isInstanceOf(BusinessException.class);
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
+        authorize("REWARD_DELETE");
+        assertThatThrownBy(() -> rewardManageService.deleteReward(9L)).isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
         verify(rewardManageRepository, never()).delete(any(RewardManage.class));
     }
 }

@@ -7,6 +7,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheusmetrics.PrometheusConfig;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
@@ -14,6 +20,7 @@ import nuri.business.domain.system.job.DurableJob;
 import nuri.business.domain.system.job.DurableJobRepository;
 import nuri.business.service.system.job.DurableJobAdministrationService;
 import nuri.business.service.system.job.DurableWorkDispatcher;
+import nuri.business.service.system.job.DurableWorkMetrics;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.job.DurableWork;
@@ -202,8 +209,7 @@ class DurableWorkIntegrationTest {
     }
 
     /**
-     * 재시도 예산을 다 쓴 전이만 센다 — RETRY 는 세지 않는다. 경보 규칙(EgovDurableWorkFailed)이 이 노출 이름을 참조하므로
-     * observability-alert-rules 계약이 아래 scrape 문자열을 증거로 대조한다.
+     * 기존 전이 카운터는 유지한다. 영구 FAILED 경보는 아래의 committed queue gauges가 담당한다.
      */
     @Test
     void exhaustedRetryBudgetIsCountedOnceForPrometheus() {
@@ -224,6 +230,108 @@ class DurableWorkIntegrationTest {
         assertThat(prometheus.scrape()).contains("nuri_durable_work_failed_total{type=\"TEST_DELIVERY\"} 1.0");
         assertThat(worker.dispatchOne()).isFalse();
         assertThat(prometheus.scrape()).doesNotContain("nuri_durable_work_failed_total{type=\"TEST_DELIVERY\"} 2.0");
+    }
+
+    @Test
+    void oldCommittedFailuresAndDisabledDispatcherRemainVisibleAfterMetricsRestart() {
+        enqueue();
+        jdbc.update("UPDATE tb_sys_job SET prcs_stts_nm='FAILED',rtry_nmtm=8,job_no=NULL WHERE job_mng_no=?", work.key().toString());
+        var clock = new QueueClock();
+        for (int restart = 0; restart < 2; restart++) {
+            var prometheus = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+            var metrics = new DurableWorkMetrics(repository, prometheus, false, clock);
+            metrics.refresh();
+            double failures = jdbc.queryForObject("SELECT count(*) FROM tb_sys_job WHERE prcs_stts_nm='FAILED'", Long.class);
+            assertThat(failures).isGreaterThanOrEqualTo(1);
+            assertThat(prometheus.get(DurableWorkMetrics.JOBS).tag("status", "FAILED").gauge().value()).isEqualTo(failures);
+            assertThat(prometheus.scrape()).contains("nuri_durable_work_enabled 0.0",
+                    "nuri_durable_work_jobs{status=\"FAILED\"}", "nuri_durable_work_jobs{status=\"PENDING\"}",
+                    "nuri_durable_work_jobs{status=\"RETRY\"}", "nuri_durable_work_jobs{status=\"RUNNING\"}",
+                    "nuri_durable_work_jobs{status=\"SUCCEEDED\"}", "nuri_durable_work_observation_healthy 1.0",
+                    "nuri_durable_work_observation_age_seconds 0.0");
+            assertThat(prometheus.scrape()).doesNotContain("nuri_durable_work_failed_total", work.key().toString(), work.payload());
+            assertThat(prometheus.getMeters().stream().filter(meter -> meter.getId().getName().equals(DurableWorkMetrics.JOBS))
+                    .map(meter -> meter.getId().getTag("status"))).containsExactlyInAnyOrder("PENDING", "RUNNING", "RETRY", "SUCCEEDED", "FAILED");
+            assertThat(prometheus.getMeters().stream().filter(meter -> meter.getId().getName().equals(DurableWorkMetrics.JOBS))
+                    .allMatch(meter -> meter.getId().getTags().size() == 1 && meter.getId().getTags().getFirst().getKey().equals("status"))).isTrue();
+        }
+    }
+
+    @Test
+    void dueGaugesMeasurePendingRetryAndExpiredRunningButExcludeFutureBackoffAndLeases() {
+        enqueue();
+        var clock = new QueueClock();
+        var prometheus = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        var metrics = new DurableWorkMetrics(repository, prometheus, true, clock);
+        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
+        jdbc.update("UPDATE tb_sys_job SET job_prnmnt_dt=? WHERE job_mng_no=?", now.minusMinutes(20), work.key().toString());
+        metrics.refresh();
+        assertThat(prometheus.get(DurableWorkMetrics.OLDEST_DUE_AGE).tag("status", "PENDING").gauge().value()).isGreaterThanOrEqualTo(1200);
+        for (String status : List.of("RETRY", "RUNNING")) {
+            jdbc.update("UPDATE tb_sys_job SET prcs_stts_nm=?,job_no=?,job_prnmnt_dt=? WHERE job_mng_no=?",
+                    status, "RUNNING".equals(status) ? "owned-fixture-lease" : null, now.plusMinutes(2), work.key().toString());
+            metrics.refresh();
+            LocalDateTime oldest = jdbc.queryForObject("SELECT min(job_prnmnt_dt) FROM tb_sys_job WHERE prcs_stts_nm=? AND job_prnmnt_dt<=?",
+                    LocalDateTime.class, status, now);
+            double expected = oldest == null ? 0 : Duration.between(oldest, now).getSeconds();
+            assertThat(prometheus.get(DurableWorkMetrics.OLDEST_DUE_AGE).tag("status", status).gauge().value()).isEqualTo(expected);
+            jdbc.update("UPDATE tb_sys_job SET job_prnmnt_dt=? WHERE job_mng_no=?", now.minusMinutes(20), work.key().toString());
+            metrics.refresh();
+            assertThat(prometheus.get(DurableWorkMetrics.OLDEST_DUE_AGE).tag("status", status).gauge().value()).isGreaterThanOrEqualTo(1200);
+        }
+        assertThat(prometheus.scrape()).contains("nuri_durable_work_oldest_due_age_seconds{status=\"PENDING\"}",
+                "nuri_durable_work_oldest_due_age_seconds{status=\"RETRY\"}", "nuri_durable_work_oldest_due_age_seconds{status=\"RUNNING\"}");
+        assertThat(prometheus.get(DurableWorkMetrics.OLDEST_DUE_AGE).tag("status", "FAILED").gauge().value()).isZero();
+        assertThat(prometheus.get(DurableWorkMetrics.OLDEST_DUE_AGE).tag("status", "SUCCEEDED").gauge().value()).isZero();
+    }
+
+    @Test
+    void expiredLeaseAtMaximumBudgetIsVisibleEvenWithoutFailureCounterTransition() {
+        enqueue();
+        var clock = new QueueClock();
+        jdbc.update("UPDATE tb_sys_job SET prcs_stts_nm='RUNNING',rtry_nmtm=8,job_no='owned-expired-lease',job_prnmnt_dt=? WHERE job_mng_no=?",
+                LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC).minusMinutes(20), work.key().toString());
+        var prometheus = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        var metrics = new DurableWorkMetrics(repository, prometheus, true, clock);
+        metrics.refresh();
+        assertThat(prometheus.get(DurableWorkMetrics.OLDEST_DUE_AGE).tag("status", "RUNNING").gauge().value()).isGreaterThanOrEqualTo(1200);
+        var registry = new StaticListableBeanFactory(Map.of("meterRegistry", prometheus)).getBeanProvider(MeterRegistry.class);
+        assertThat(new DurableWorkDispatcher(repository, List.of(delivery), manager, false, registry).dispatchOne()).isTrue();
+        assertThat(job().getPrcsSttsNm()).isEqualTo("FAILED");
+        assertThat(delivery.calls.get()).isZero();
+        metrics.refresh();
+        assertThat(prometheus.get(DurableWorkMetrics.JOBS).tag("status", "FAILED").gauge().value()).isGreaterThanOrEqualTo(1);
+        assertThat(prometheus.scrape()).doesNotContain("nuri_durable_work_failed_total");
+    }
+
+    @Test
+    void queryFailuresRetainCommittedSnapshotAndScrapesNeverQueryTheDatabase() {
+        enqueue();
+        var clock = new QueueClock();
+        var observed = org.mockito.Mockito.mock(DurableJobRepository.class);
+        org.mockito.Mockito.when(observed.summarizeQueue(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(repository.summarizeQueue(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC)));
+        var prometheus = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        var metrics = new DurableWorkMetrics(observed, prometheus, true, clock);
+        assertThat(prometheus.get(DurableWorkMetrics.OBSERVATION_HEALTHY).gauge().value()).isZero();
+        metrics.refresh();
+        double previous = prometheus.get(DurableWorkMetrics.JOBS).tag("status", "PENDING").gauge().value();
+        assertThat(previous).isGreaterThanOrEqualTo(1);
+        clock.advance(Duration.ofMinutes(5));
+        org.mockito.Mockito.when(observed.summarizeQueue(org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new IllegalStateException("private-db-connection"));
+        metrics.refresh();
+        assertThat(prometheus.get(DurableWorkMetrics.JOBS).tag("status", "PENDING").gauge().value()).isEqualTo(previous);
+        assertThat(prometheus.scrape()).contains("nuri_durable_work_observation_healthy 0.0", "nuri_durable_work_observation_age_seconds 300.0")
+                .doesNotContain("private-db-connection");
+        prometheus.scrape();
+        org.mockito.Mockito.verify(observed, org.mockito.Mockito.times(2)).summarizeQueue(org.mockito.ArgumentMatchers.any());
+        var invalid = org.mockito.Mockito.mock(DurableJobRepository.QueueStateAggregate.class);
+        org.mockito.Mockito.when(invalid.getStatus()).thenReturn("private-unbounded-state");
+        org.mockito.Mockito.doReturn(List.of(invalid)).when(observed).summarizeQueue(org.mockito.ArgumentMatchers.any());
+        metrics.refresh();
+        assertThat(prometheus.get(DurableWorkMetrics.JOBS).tag("status", "PENDING").gauge().value()).isEqualTo(previous);
+        assertThat(prometheus.scrape()).doesNotContain("private-unbounded-state");
     }
 
     @Test
@@ -325,5 +433,13 @@ class DurableWorkIntegrationTest {
             }
             if (fail) throw new IllegalStateException("injected transport failure");
         }
+    }
+
+    private static final class QueueClock extends Clock {
+        private Instant instant = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
+        void advance(Duration duration) { instant = instant.plus(duration); }
+        @Override public ZoneId getZone() { return ZoneOffset.UTC; }
+        @Override public Clock withZone(ZoneId zone) { return this; }
+        @Override public Instant instant() { return instant; }
     }
 }

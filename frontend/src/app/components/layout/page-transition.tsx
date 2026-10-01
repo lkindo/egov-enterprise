@@ -20,7 +20,8 @@ import { usePathname } from 'next/navigation';
  * 종전 e2e 가 초록이던 것은 `.first()` 가 ghost 의 submit 을 눌러 **원본 값을 저장하면서도**
  * 통과하던 false-green 이었다.
  *
- * 진입 애니메이션은 `key={pathname}` 의 remount 만으로 성립하므로 그대로 유지된다.
+ * SSR 본문은 처음부터 보인다. opacity:0 진입 상태는 내려온 업무 화면을 JS 수신·하이드레이션까지 숨겨
+ * 제한된 네트워크의 인증 과업에서 LCP가 지연됐다. pathname remount 경계는 그대로 유지한다.
  * `mode="wait"` 는 동시 마운트는 없애지만 라우트마다 지연이 붙고 "exit subtree 가 새 라우트를
  * 렌더한다"는 성질 자체는 남으므로 채택하지 않는다.
  */
@@ -30,7 +31,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
       key={pathname}
-      initial={{ opacity: 0, y: 10 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{
         duration: 0.15,

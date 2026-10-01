@@ -1,19 +1,29 @@
 package nuri.security;
 
 import java.util.List;
+import java.util.stream.Stream;
+import nuri.business.domain.user.entity.User;
+import nuri.business.domain.user.repository.UserRepository;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.foundation.security.iam.CustomUserDetailsService;
 import nuri.foundation.security.service.CustomUserDetails;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -43,6 +53,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @org.springframework.test.annotation.DirtiesContext
 class RbacAuthorizationMatrixTest {
     @Autowired private MockMvc mockMvc;
+    @Autowired private UserRepository userRepository;
     @MockitoBean private CustomUserDetailsService customUserDetailsService;
     @MockitoBean private JwtTokenProvider jwtTokenProvider;
 
@@ -75,8 +86,91 @@ class RbacAuthorizationMatrixTest {
         var admin = nuri.business.support.AuthorizationTestPrincipal.principal("admin_test", "USR_999", "ADMIN");
         mockMvc.perform(get("/api/v1/admin/unregistered-operation").with(user(admin))).andExpect(status().isForbidden());
     }
+
+    @ParameterizedTest(name = "login policy {0} rejects {1}")
+    @MethodSource("loginPolicyWritesWithoutExactPermission")
+    void loginPolicyWriteRequiresItsExactHttpPermission(HttpMethod method, MissingGrant missing) throws Exception {
+        performDeniedManagementWrite(mockMvc, method,
+                "/api/v1/admin/system/login-policies/rbac_missing",
+                """
+                {"userId":"rbac_missing","ipAddr":"192.0.2.1","lmtYn":"N","otpUseYn":"N"}
+                """, "LOGIN_POL", "LOGIN_POL_READ", missing);
+    }
+
+    static Stream<Arguments> loginPolicyWritesWithoutExactPermission() {
+        return Stream.of(HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE)
+                .flatMap(method -> Stream.of(MissingGrant.values()).map(missing -> Arguments.of(method, missing)));
+    }
+
+    /** A real user and real services are used; no mocked business write can turn a denied request into a pass. */
+    @Test
+    @Transactional
+    void exactLoginPolicyGrantsIndependentlyAllowRealHttpCrud() throws Exception {
+        String loginId = "rbac_policy";
+        userRepository.saveAndFlush(User.builder().esntlId("USR_RBAC_POLICY").userId(loginId)
+                .userNm("RBAC policy fixture").pswd("unused-test-hash").build());
+        String path = "/api/v1/admin/system/login-policies/" + loginId;
+
+        mockMvc.perform(post(path).with(user(explicit(List.of("POLICY_OPERATORS"), List.of("LOGIN_POL_CREATE"))))
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                        {"userId":"body_other","ipAddr":"192.0.2.1","dpcnPrmYn":"Y",
+                         "lmtYn":"N","bgngTm":"09:00","endTm":"18:00","otpUseYn":"N"}
+                        """))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
+        mockMvc.perform(get(path).with(user(explicit(List.of("POLICY_READERS"), List.of("LOGIN_POL_READ")))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.userId").value(loginId))
+                .andExpect(jsonPath("$.data.regYn").value("Y"))
+                .andExpect(jsonPath("$.data.ipAddr").value("192.0.2.1"))
+                .andExpect(jsonPath("$.data.dpcnPrmYn").value("Y"));
+
+        mockMvc.perform(put(path).with(user(explicit("policy_editor", List.of("POLICY_OPERATORS"),
+                        List.of("LOGIN_POL_UPDATE"))))
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                        {"userId":"body_other","ipAddr":"192.0.2.2","lmtYn":"Y",
+                         "bgngTm":"08:00","endTm":"18:00","otpUseYn":"N"}
+                        """))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
+        mockMvc.perform(get(path).with(user(explicit(List.of("POLICY_READERS"), List.of("LOGIN_POL_READ")))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.ipAddr").value("192.0.2.2"))
+                .andExpect(jsonPath("$.data.lmtYn").value("Y"))
+                .andExpect(jsonPath("$.data.dpcnPrmYn").value("Y"));
+
+        mockMvc.perform(delete(path).with(user(explicit("policy_remover", List.of("POLICY_OPERATORS"),
+                        List.of("LOGIN_POL_DELETE")))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
+        mockMvc.perform(get(path).with(user(explicit(List.of("POLICY_READERS"), List.of("LOGIN_POL_READ")))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.regYn").value("N"));
+    }
+
+    enum MissingGrant { ANONYMOUS, NO_GRANTS, READ_ONLY, OTHER_WRITE, GROUP_NAME_ONLY }
+
+    /** Shared HTTP-only helper keeps the core class free of any removable business-app type. */
+    static void performDeniedManagementWrite(MockMvc mvc, HttpMethod method, String path, String body,
+                                             String prefix, String readPermission, MissingGrant missing) throws Exception {
+        var request = request(method, path).contentType(MediaType.APPLICATION_JSON).content(body);
+        if (missing != MissingGrant.ANONYMOUS) {
+            List<String> permissions = switch (missing) {
+                case READ_ONLY -> List.of(readPermission);
+                case OTHER_WRITE -> List.of(prefix + (HttpMethod.POST.equals(method) ? "_UPDATE" : "_CREATE"));
+                default -> List.of();
+            };
+            List<String> groups = missing == MissingGrant.GROUP_NAME_ONLY
+                    ? List.of("ROLE_ADMIN", "ROLE_SYSTEM") : List.of("OPERATIONS_TEAM");
+            request.with(user(explicit(groups, permissions)));
+        }
+        var response = mvc.perform(request)
+                .andExpect(status().is(missing == MissingGrant.ANONYMOUS ? 401 : 403));
+        if (missing != MissingGrant.ANONYMOUS) {
+            response.andExpect(jsonPath("$.code").value("C010"));
+        }
+    }
+
     static CustomUserDetails explicit(List<String> groups, List<String> permissions) {
-        return CustomUserDetails.builder().userId("operator").esntlId("USR_OPERATOR").enabled(true)
+        return explicit("operator", groups, permissions);
+    }
+
+    static CustomUserDetails explicit(String loginId, List<String> groups, List<String> permissions) {
+        return CustomUserDetails.builder().userId(loginId).esntlId("USR_" + loginId).enabled(true)
                 .groups(groups).permissions(permissions).authorizationVersion("fixture").build();
     }
 }

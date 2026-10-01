@@ -87,13 +87,26 @@ test.describe('IDOR (authenticated non-owner)', () => {
             }[])
                 .find((a) => a.adbkNm === adbkNm)?.adbkSn;
             expect(adbkSn, '생성한 주소록을 목록에서 되찾지 못했다').toBeDefined();
+            // 정상 소유자의 저장 경로도 검증한다. 유효한 편집 기준을 넣어 400과 인가 거부를 혼동하지 않는다.
+            const ownerRead = await request.get(`${ADBK_API}/${adbkSn}`, { headers: asVictim });
+            expect(ownerRead.ok()).toBeTruthy();
+            const ownerBook = (await ownerRead.json()).data;
+            expect(ownerBook.editToken).toMatch(/^[0-9a-f]{64}$/);
+            const ownerWrite = await request.put(`${ADBK_API}/${adbkSn}`, {
+                headers: asVictim,
+                data: { adbkNm, rlsScopeCd: 'G', editToken: ownerBook.editToken },
+            });
+            expect(ownerWrite.ok(), '소유자의 최신 편집 기준으로도 저장하지 못했다').toBeTruthy();
+            const currentOwnerRead = await request.get(`${ADBK_API}/${adbkSn}`, { headers: asVictim });
+            expect(currentOwnerRead.ok()).toBeTruthy();
+            const currentOwnerBook = (await currentOwnerRead.json()).data;
             // ── 4) 공격자(B)가 세 경로 모두에서 막혀야 한다
             //    ⚠ 세 개를 함께 보는 이유: 읽기만 막고 쓰기는 뚫린 부분 결함을 놓치지 않기 위해서다.
             const read = await request.get(`${ADBK_API}/${adbkSn}`, { headers: asAttacker });
             expect(read.status(), '남의 주소록 상세가 열렸다 (PII 유출)').toBe(403);
             const write = await request.put(`${ADBK_API}/${adbkSn}`, {
                 headers: asAttacker,
-                data: { adbkNm: `${adbkNm}_HACKED`, rlsScopeCd: 'G', useYn: 'Y' },
+                data: { adbkNm: `${adbkNm}_HACKED`, rlsScopeCd: 'G', editToken: currentOwnerBook.editToken },
             });
             expect(write.status(), '남의 주소록이 수정됐다').toBe(403);
             const del = await request.delete(`${ADBK_API}/${adbkSn}`, { headers: asAttacker });
