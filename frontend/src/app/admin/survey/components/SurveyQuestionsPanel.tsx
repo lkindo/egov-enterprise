@@ -19,7 +19,7 @@ import { Survey, SurveyQuestion } from '@/types/business/survey';
   다르다** — 그래서 TypeScript 는 이 결함을 한 번도 잡지 못했다.
 */
 type SurveyInfoUpdate = Pick<Survey, 'srvyTtl' | 'srvyTmpltSn'>
-  & Partial<Pick<Survey, 'srvyPrps' | 'srvyWrtGdCn' | 'srvyBgngYmd' | 'srvyEndYmd' | 'srvyTrgt'>>;
+  & Partial<Pick<Survey, 'srvyPrps' | 'srvyWrtGdCn' | 'srvyBgngYmd' | 'srvyEndYmd' | 'srvyTrgt' | 'rlsYn'>>;
 type SurveyQuestionUpdate = Pick<SurveyQuestion, 'qstnCn'>
   & Partial<Pick<SurveyQuestion, 'qstnSn' | 'qstnTypeCd' | 'maxChcCnt'>>;
 type SurveyItemUpdate = { artclSn?: number; artclCn: string; etcAnsYn?: string };
@@ -226,6 +226,47 @@ export default function SurveyQuestionsPanel() {
       else setError(extractErrorMessage(mutationError, '설문지 수정에 실패했습니다.'));
     },
   });
+
+  /*
+    [2026-10-01 결정 21] 공개 전환. 새 설문은 작성 중으로 시작해 응답자 목록에 보이지 않는다 — 문항을 다 넣기 전의
+    설문에 응답이 쌓이지 않게 한다. 서버 수정은 전체 치환이라 나머지 필드를 되돌려 싣고 공개 여부만 바꾼다.
+  */
+  const releasePendingRef = useRef(false);
+  const releaseSurvey = useMutation({
+    mutationFn: (payload: { srvySn: number; body: SurveyInfoUpdate }) =>
+      surveyAdminService.updateSurvey(payload.srvySn, payload.body),
+    onSuccess: () => { setError(null); void queryClient.invalidateQueries({ queryKey: surveysKey }); },
+    onError: (mutationError: unknown) => setError(extractErrorMessage(mutationError, '설문지 공개 상태를 바꾸지 못했습니다.')),
+    onSettled: () => { releasePendingRef.current = false; },
+  });
+  const handleToggleRelease = async (survey: Survey) => {
+    if (releasePendingRef.current) return;
+    releasePendingRef.current = true;
+    const releasing = survey.rlsYn === 'N';
+    const ok = await confirm({
+      title: releasing ? '설문지 공개' : '설문지 공개 중단',
+      message: releasing
+        ? `'${survey.srvyTtl}' 설문지를 응답자에게 공개합니다. 공개한 뒤 응답이 모이면 문항을 더하거나 바꿀 수 없습니다.`
+        : `'${survey.srvyTtl}' 설문지를 응답자 목록에서 숨깁니다. 이미 모인 응답은 그대로 남습니다.`,
+      confirmText: releasing ? '공개' : '공개 중단',
+    });
+    if (!ok) { releasePendingRef.current = false; return; }
+    releaseSurvey.mutate({
+      srvySn: survey.srvySn,
+      body: {
+        srvyTtl: survey.srvyTtl,
+        srvyTmpltSn: survey.srvyTmpltSn,
+        ...omitNulls({
+          srvyPrps: survey.srvyPrps,
+          srvyWrtGdCn: survey.srvyWrtGdCn,
+          srvyBgngYmd: survey.srvyBgngYmd,
+          srvyEndYmd: survey.srvyEndYmd,
+          srvyTrgt: survey.srvyTrgt,
+        }),
+        rlsYn: releasing ? 'Y' : 'N',
+      },
+    });
+  };
 
   const questionsKey = ['admin-survey-questions', srvySn];
   const { data: questions = [], isLoading } = useQuery<SurveyQuestion[]>({
@@ -509,7 +550,7 @@ export default function SurveyQuestionsPanel() {
           <option value="">— 설문을 선택하세요 —</option>
           {surveyOptions.map((s) => (
             <option key={s.srvySn} value={s.srvySn}>
-              {s.srvyTtl}
+              {s.srvyTtl}{s.rlsYn === 'N' ? ' (작성 중)' : ''}
             </option>
           ))}
         </select>
@@ -534,6 +575,19 @@ export default function SurveyQuestionsPanel() {
           className="shrink-0"
         >
           <Pencil size={14} aria-hidden="true" /> 제목·기간 수정
+        </Button>
+        )}
+        {canUpdateSurvey && selectedSurvey && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={removeSurvey.isPending || releaseSurvey.isPending || editingTarget !== null}
+          aria-busy={releaseSurvey.isPending || undefined}
+          onClick={() => { void handleToggleRelease(selectedSurvey); }}
+          className="shrink-0"
+        >
+          {selectedSurvey.rlsYn === 'N' ? '응답자에게 공개' : '공개 중단'}
         </Button>
         )}
         {canCreateSurvey && (

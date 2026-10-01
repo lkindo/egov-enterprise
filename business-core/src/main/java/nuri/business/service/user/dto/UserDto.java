@@ -147,7 +147,13 @@ public record UserDto(
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Schema(accessMode = Schema.AccessMode.READ_ONLY, requiredMode = Schema.RequiredMode.REQUIRED) java.util.List<String> permissions,
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    @Schema(accessMode = Schema.AccessMode.READ_ONLY, requiredMode = Schema.RequiredMode.REQUIRED) String authorizationVersion
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY, requiredMode = Schema.RequiredMode.REQUIRED) String authorizationVersion,
+    /** 관리자가 초기화한 임시 비밀번호라 본인이 바꿔야 하는가(2026-10-01 결정 18). 상세 조회만 채운다. */
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY) Boolean passwordChangeRequired,
+    /** 인증앱 추가 인증을 쓰고 있는가(결정 18). 상세 조회만 채우며, 복구 승인 대상인지 화면이 판단한다. */
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY) Boolean mfaEnabled
 ) {
     public UserDto withAuthorization(nuri.business.security.authorization.AuthorizationSnapshotService.Snapshot snapshot) {
         return toBuilder().groups(snapshot.groups()).permissions(snapshot.permissions())
@@ -201,7 +207,7 @@ public record UserDto(
             userSttsCd,
             lckYn,
             crtDt,
-            java.util.List.of(), java.util.List.of(), null
+            java.util.List.of(), java.util.List.of(), null, null, null
         );
     }
 

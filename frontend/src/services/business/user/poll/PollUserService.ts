@@ -29,6 +29,7 @@ export class PollUserService extends ApiService {
         ...(params.page !== undefined ? { page: params.page } : {}),
         ...(params.size !== undefined ? { size: params.size } : {}),
         keyword: params.searchKeyword || '',
+        ...(params.kind ? { kind: params.kind } : {}),
       },
       config,
     }) as Promise<PageResponse<OnlinePollManageDetailVO>>;

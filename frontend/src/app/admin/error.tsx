@@ -4,6 +4,7 @@ import { AlertTriangle, RefreshCcw, Home, ArrowLeft, Bug, Shield } from 'lucide-
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ErrorReference } from '@/app/components/ui/error-reference';
+import { loginReturnPath } from '@/lib/auth/login-return-path';
 
 function statusFrom(value: unknown): number | undefined {
   if (!value || typeof value !== 'object') return undefined;
@@ -72,7 +73,8 @@ export default function AdminError({
                   형제 producer 는 이미 pathname 만 쓴다 — `lib/api/client.ts:208`.
                   이 파일만 비대칭이었다.
                 */
-                window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+                // [2026-10-01 결정 17] 구조 키(게시판·글·탭·쪽)만 형식을 맞춰 되살린다 — 검색어는 여전히 싣지 않는다.
+                window.location.href = `/login?redirect=${encodeURIComponent(loginReturnPath(window.location.pathname, window.location.search))}`;
               }}
             />
             <ActionButton icon={<Home size={18} />} label="메인으로" href="/" />

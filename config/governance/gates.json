@@ -790,6 +790,18 @@
           "source": "api-server/src/test/java/nuri/api/schema/RetiredPostPasswordClearMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-QNA-OPEN-STATUS-NORMALIZE",
+          "source": "api-server/src/test/java/nuri/api/schema/QnaOpenStatusNormalizeMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-SURVEY-RELEASE-FLAG",
+          "source": "api-server/src/test/java/nuri/api/schema/SurveyReleaseFlagMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-TEMPORARY-PASSWORD-FLAG",
+          "source": "api-server/src/test/java/nuri/api/schema/TemporaryPasswordFlagMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-BOARD-POST-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/BoardPostBigintMigrationIntegrationTest.java"
         },
@@ -1944,8 +1956,8 @@
         "flag": "--max-warnings"
       },
       "executionProfile": "EXEC-FRONTEND-LINT",
-      "current": 21,
-      "baseline": 21,
+      "current": 20,
+      "baseline": 20,
       "direction": "maximum",
       "tier": [
         "pre-push",

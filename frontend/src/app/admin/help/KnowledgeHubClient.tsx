@@ -68,6 +68,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  // [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했다.
  const [searchQuery, setSearchQuery] = useState('');
  const [sortBy, setSortBy] = useState<'latest' | 'views'>('latest');
+ // [2026-10-01 결정 20] Q&A 탭에서만 '미해결만'(OPEN) 으로 좁힌다. 답변 대기 값은 V2_116 이 OPEN 하나로 맞췄다.
+ const [unsolvedOnly, setUnsolvedOnly] = useState(false);
  const [pagination, setPagination] = useState({ context: '', page: 1 });
 
  const resolveCategory = (): KnowledgeCategory => {
@@ -88,7 +90,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
 
  // 카테고리는 URL 파생값이다. 상태를 따로 두면 공유·새로고침·뒤로가기에서 복원되지 않는다.
  const activeCategory: KnowledgeCategory = resolveCategory();
- const pageContext = JSON.stringify([activeCategory, searchQuery, sortBy]);
+ const qnaStatus = activeCategory === 'QNA' && unsolvedOnly ? 'OPEN' as const : undefined;
+ const pageContext = JSON.stringify([activeCategory, searchQuery, sortBy, qnaStatus ?? '']);
  const page = pagination.context === pageContext ? pagination.page : 1;
 
  const selectCategory = (next: KnowledgeCategory) => {
@@ -141,7 +144,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  error: articlesError,
  refetch: refetchArticles,
  } = useQuery({
- queryKey: ['knowledge-articles', activeCategory, searchQuery, sortBy, page],
+ queryKey: ['knowledge-articles', activeCategory, searchQuery, sortBy, page, qnaStatus ?? 'ALL'],
  queryFn: () => knowledgeService.getArticles({
  bbsId: currentBbsId,
  category: activeCategory,
@@ -149,7 +152,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  size: PAGE_SIZE,
  orderBy: sortBy === 'views' ? 'views' : 'date',
  searchCnd: searchQuery ? '0' : undefined,
- searchWrd: searchQuery || undefined
+ searchWrd: searchQuery || undefined,
+ qnaStatus,
  }),
  });
 
@@ -166,7 +170,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  // [2026-09-26 DIP B5 F10] 최근 활동은 기본 목록(최신순 1쪽)과 같은 조회다 — 같은 키를 써서 한 번만 요청한다.
  //   종전에는 기본 화면에서 같은 게시판을 두 번 불렀다. 검색·정렬·쪽을 바꿔도 피드는 기본 목록에 머문다.
  const { data: activityData, isError: isActivityError } = useQuery({
- queryKey: ['knowledge-articles', activeCategory, '', 'latest', 1],
+ queryKey: ['knowledge-articles', activeCategory, '', 'latest', 1, 'ALL'],
  queryFn: () => knowledgeService.getArticles({
  bbsId: currentBbsId,
  category: activeCategory,
@@ -248,6 +252,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  actions={
  <>
  {canReadBoardMasters && <Button variant="outline" size="sm" onClick={() => router.push('/admin/community/boards/master')}><Settings2 size={16} aria-hidden="true" /> 게시판 관리</Button>}
+ {/* [2026-10-01 결정 20] 커뮤니티를 찾고 가입하는 목록 화면으로 가는 길 — 메뉴를 바꾸지 않고 이 탭에서 잇는다. */}
+ {activeCategory === 'COMMUNITY' && <Button variant="outline" size="sm" onClick={() => router.push('/cop/cmy/selectCommunityList')}><Users size={16} aria-hidden="true" /> 커뮤니티 목록·가입</Button>}
  {canManageCommunities && activeCategory === 'COMMUNITY' && <Button variant="outline" size="sm" onClick={() => setCommunityManageOpen(true)}><Users size={16} aria-hidden="true" /> 커뮤니티 관리</Button>}
  <Button size="sm" onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${currentBbsId}`)}><Plus size={16} aria-hidden="true" /> 신규 등록</Button>
  </>
@@ -267,6 +273,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <span className="text-[length:var(--font-size-body)] text-muted-foreground">정렬</span>
  <FilterButton active={sortBy === 'latest'} onClick={() => setSortBy('latest')} label="최신순" />
  <FilterButton active={sortBy === 'views'} onClick={() => setSortBy('views')} label="조회순" />
+ {activeCategory === 'QNA' && <FilterButton active={unsolvedOnly} onClick={() => setUnsolvedOnly((value) => !value)} label="미해결만" />}
  </div>
  </KeywordFilter>
  }

@@ -130,9 +130,10 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       evntDt: evntDt || undefined, 
       atchFileSn,
       // [2026-09-25 DIP I3] Q&A 기본 상태·분류는 **등록할 때만** 채운다. 수정 폼은 이 두 값을 보내지 않으므로
-      //   종전처럼 기본값을 채우면 해결된 질문이 제목 오타 하나 고친 뒤 '접수(QA01)' 로 되돌아갔다.
+      //   종전처럼 기본값을 채우면 해결된 질문이 제목 오타 하나 고친 뒤 '접수' 로 되돌아갔다.
       //   서버는 값이 없으면 기존 값을 유지한다(BoardService.updateOwnedPost).
-      qnaSttsCd: qnaSttsCd || (!isEdit && bbsId === QNA_BOARD_ID ? 'QA01' : undefined),
+      //   [2026-10-01 결정 20] 답변 대기 값은 엔티티 기본값과 같은 OPEN 하나다 — 종전 QA01 은 V2_116 이 맞췄다.
+      qnaSttsCd: qnaSttsCd || (!isEdit && bbsId === QNA_BOARD_ID ? 'OPEN' : undefined),
       qnaCatCd: qnaCatCd || (!isEdit && bbsId === QNA_BOARD_ID ? 'CAT01' : undefined),
       // [2026-09-27 DIP B5 F9] 게시글 비밀번호는 폐기 필드다 — 종전에는 '1' 을 채워 보내 평문으로 쌓였다. 보내지 않는다.
       scrtYn: scrtYn === 'Y' ? 'Y' : 'N',

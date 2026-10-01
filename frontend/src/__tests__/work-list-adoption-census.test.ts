@@ -53,7 +53,9 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
 // [2026-09-25 DEC-OPS-130] 42 -> 41: /admin/community/[id] 를 정본 커뮤니티 상세로의 page-redirect 로 통합했다.
 //   그 화면은 이름과 달리 경로의 id 를 읽지 않고 선택한 게시판 글 목록을 보여 줬다(메뉴·인바운드 링크 0).
 //   게시판 글 목록은 게시판 목록 화면이 계속 제공하므로 이행 되돌리기가 아니라 중복 표면 제거다.
-const ADOPTERS = 41;
+// [2026-10-01 결정 19] 41 -> 43: 민감 작업 감사 원장(/admin/system/logs/audit)과 후속 작업 상태(/admin/system/durable-jobs)를
+//   셸로 신설했다. 서버에 원장·작업이 쌓이는데 볼 화면이 없었다 — 이행 되돌리기가 아니라 새 화면이다.
+const ADOPTERS = 43;
 // [하향 2026-09-20] 3 -> 2: 로그인 정책 관리가 StandardDataTable 직접 조립에서 A1 셸 경유로 옮겨갔다.
 const DIRECT_ONLY = 2;
 

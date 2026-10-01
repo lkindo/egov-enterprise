@@ -38,11 +38,27 @@ public class OnlinePollService {
     private final OnlinePollResultRepository pollResultRepository;
     private final OnlinePollArticleMapper onlinePollArticleMapper;
 
+    /** [2026-10-01 결정 21] 만족도 조사의 종류 코드 — 만족도 조사 관리 화면이 등록하는 값이다(001 일반 설문·002 투표). */
+    public static final java.util.List<String> SATISFACTION_KIND_CODES = java.util.List.of("001", "002");
+
     public Page<OnlinePollManageDto> getPollList(String keyword, Pageable pageable) {
+        return getPollList(keyword, null, pageable);
+    }
+
+    /**
+     * 투표 목록. kind 가 SATISFACTION 이면 만족도 조사만, POLL 이면 온라인 투표만, 비면 전부다(2026-10-01 결정 21).
+     * 종전에는 두 관리 화면이 같은 표를 통째로 보여 서로의 항목이 섞였다.
+     */
+    public Page<OnlinePollManageDto> getPollList(String keyword, String kind, Pageable pageable) {
         Objects.requireNonNull(pageable);
         Page<OnlinePollManage> entities;
         String searchKeyword = (keyword == null) ? "" : keyword;
-        if (searchKeyword.isEmpty()) {
+        if (kind != null && !kind.isBlank()) {
+            if (!"SATISFACTION".equals(kind) && !"POLL".equals(kind)) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "종류 조건은 SATISFACTION 또는 POLL 이어야 합니다.");
+            }
+            entities = pollManageRepository.findByKind("SATISFACTION".equals(kind), SATISFACTION_KIND_CODES, searchKeyword, pageable);
+        } else if (searchKeyword.isEmpty()) {
             entities = pollManageRepository.findAll(pageable);
         } else {
             entities = pollManageRepository.findByPollNmContaining(searchKeyword, pageable);

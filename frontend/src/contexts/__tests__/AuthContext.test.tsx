@@ -13,6 +13,18 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AUTHORIZATION_CHANGED_EVENT, isSignedOut, markSignedIn } from '@/lib/auth/authorization-state';
 
+const sessionBroadcast = vi.hoisted(() => ({
+  handler: null as null | ((message: { type: 'signed-out' } | { type: 'signed-in' }) => void),
+  announce: vi.fn(),
+}));
+vi.mock('@/lib/auth/session-broadcast', () => ({
+  announceSession: sessionBroadcast.announce,
+  listenSession: (handler: (message: { type: 'signed-out' } | { type: 'signed-in' }) => void) => {
+    sessionBroadcast.handler = handler;
+    return () => { sessionBroadcast.handler = null; };
+  },
+}));
+
 // Mock the authService
 vi.mock('@/services/foundation/auth/authService', () => ({
   authService: {
@@ -185,6 +197,34 @@ describe('AuthContext', () => {
 
     await act(async () => { await result.current.login({ id: 'test', password: 'password' }); });
     expect(isSignedOut()).toBe(false);
+  });
+
+  it('[결정 17] 로그인·로그아웃을 다른 탭에 알린다', async () => {
+    vi.mocked(authService.getCurrentUser).mockResolvedValue({ id: 'test', name: 'Test', groups: [], permissions: [], authorizationVersion: 'v1' });
+    vi.mocked(authService.login).mockResolvedValue({ role: 'USER' } as never);
+    vi.mocked(authService.logout).mockResolvedValue(undefined);
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await act(async () => { await result.current.login({ id: 'test', password: 'password' }); });
+    expect(sessionBroadcast.announce).toHaveBeenCalledWith({ type: 'signed-in' });
+    await act(async () => { await result.current.logout(); });
+    expect(sessionBroadcast.announce).toHaveBeenLastCalledWith({ type: 'signed-out' });
+  });
+
+  it('[결정 17] 다른 탭이 로그아웃하면 만료 안내 없이 로그인 화면으로 가고, 다시 로그인하면 현재 사용자를 다시 묻는다', async () => {
+    const replace = vi.fn();
+    Object.defineProperty(window, 'location', { configurable: true, value: { ...window.location, replace } });
+    vi.mocked(authService.getCurrentUser).mockResolvedValue({ id: 'test', name: 'Test', groups: [], permissions: [], authorizationVersion: 'v1' });
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.user?.id).toBe('test'));
+
+    vi.mocked(authService.getCurrentUser).mockClear();
+    act(() => sessionBroadcast.handler?.({ type: 'signed-in' }));
+    await waitFor(() => expect(authService.getCurrentUser).toHaveBeenCalled());
+
+    act(() => sessionBroadcast.handler?.({ type: 'signed-out' }));
+    expect(result.current.user).toBeNull();
+    expect(isSignedOut()).toBe(true);
+    expect(replace).toHaveBeenCalledWith('/login');
   });
 
   it('초기화 시 사용자 정보를 조회하여 세션 유지를 확인해야 함', async () => {

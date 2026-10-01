@@ -43,7 +43,7 @@ export interface QNA {
    * [2026-08-28] 종전에는 이 필드를 `ansLv > 0 ? '3' : '1'` 로 **지어냈다**. `ansLv` 는
    * 그 글 자신의 답글 깊이라, 질문 글은 답변이 달려도 영원히 '접수' 로 남고 답변 글 자체가
    * '답변완료' 로 보였다. 게시판 응답에는 실제 상태 컬럼(`qnaSttsCd`)이 이미 실려 온다
-   * (BoardDto — 값 도메인 OPEN/SOLVED, QNA 등록 경로는 QA01 도 쓴다).
+   * (BoardDto — 값 도메인 OPEN/SOLVED. 종전 등록 경로의 QA01 은 V2_116 이 OPEN 으로 맞췄다).
    */
   qnaSttsCd?: string;
   /** 비밀글 여부. 'Y' 면 작성자와 관리자만 열람한다(BoardPredicate). */

@@ -87,6 +87,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
 import { canPermission } from '@/lib/auth/permissions';
 import { handOffTarget } from '@/lib/navigation/target-handoff';
+import { requestAccountMfa } from '@/lib/navigation/command-center-bridge';
 import { failureMessage } from '@/lib/safe-error-log';
 import { DeptPlacementControls } from './DeptPlacementControls';
 import { treeDndAnnouncements, treeDndInstructions } from '@/lib/dnd/tree-dnd-accessibility';
@@ -211,6 +212,8 @@ export default function UserOrgHubClient({
   const canOpenLoginLog = canOpenPage(currentUser, '/admin/system/logs/login');
   const canAssignAuthority = canOpenAuthority && canPermission(currentUser, 'AUTHRT_READ');
   const canAuditAuthority = canOpenAuthority && canPermission(currentUser, 'AUTHRT_AUDIT');
+  // [결정 18] 인증앱을 잃은 사용자의 복구 승인. 승인 자체는 계정 메뉴의 추가 인증 관리가 재인증과 함께 집행한다.
+  const canRecoverMfa = canPermission(currentUser, 'MFA_RECOVER');
   // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다. 이 화면은 조회 권한(USER_READ)만으로 들어올 수 있어,
   //   종전에는 헬프데스크 담당자에게도 등록·수정·초기화·삭제·일괄 작업이 모두 보였고 폼을 다 채운 뒤에야 403 을 만났다.
   //   표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
@@ -1397,6 +1400,12 @@ export default function UserOrgHubClient({
                           로그인 잠김
                         </span>
                       )}
+                      {/* [결정 18] 관리자가 초기화한 임시 비밀번호 — 본인이 바꾸기 전까지 다른 기능을 쓸 수 없다. */}
+                      {!isDeptTab && displayedUser?.passwordChangeRequired && (
+                        <span className="rounded bg-warning/15 px-1.5 py-0.5 text-xs font-semibold text-warning-emphasis">
+                          비밀번호 변경 필요
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-1.5">
@@ -1442,16 +1451,21 @@ export default function UserOrgHubClient({
                       <DetailField label="휴대전화" value={displayedUser?.mblTelno || '미등록'} />
                       <DetailField label="사무실 전화" value={displayedUser?.officeTelno || '미등록'} />
                       <DetailField label="등록일" value={toDisplayYmd(displayedUser?.crtDt?.slice(0, 10))} />
+                      {/* [결정 18] 상세 API 만 싣는다 — 값이 없으면(목록 projection) 칸을 두지 않는다. */}
+                      {displayedUser?.mfaEnabled !== undefined && displayedUser?.mfaEnabled !== null && (
+                        <DetailField label="추가 인증" value={displayedUser.mfaEnabled ? '인증앱 사용 중' : '미등록'} />
+                      )}
                     </DetailFieldList>
                   )}
 
-                  {!isDeptTab && displayedUser?.esntlId && (canAssignAuthority || canAuditAuthority || canOpenLoginLog) && (() => {
+                  {!isDeptTab && displayedUser?.esntlId && (canAssignAuthority || canAuditAuthority || canOpenLoginLog || (canRecoverMfa && displayedUser.mfaEnabled)) && (() => {
                     const target = { id: displayedUser.esntlId, loginId: displayedUser.userId ?? '', name: displayedUser.userNm ?? displayedUser.userId ?? '' };
                     return (
                       <AccessControlLink
                         onOpen={canAssignAuthority ? () => { handOffTarget('authority-user', target); router.push('/admin/security/authority'); } : undefined}
                         onOpenHistory={canAuditAuthority && target.loginId ? () => { handOffTarget('authority-history-user', target); router.push('/admin/security/authority'); } : undefined}
                         onOpenLoginLog={canOpenLoginLog && target.loginId ? () => { handOffTarget('login-log-user', target); router.push('/admin/system/logs/login'); } : undefined}
+                        onRecoverMfa={canRecoverMfa && displayedUser.mfaEnabled ? () => { handOffTarget('mfa-recover-user', target); requestAccountMfa(); } : undefined}
                       />
                     );
                   })()}

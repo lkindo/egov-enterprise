@@ -64,4 +64,12 @@ public class SurveyInfoDto {
     @Schema(description = "현재 사용자의 응답 여부(상세 조회에서만 채운다)", accessMode = Schema.AccessMode.READ_ONLY, nullable = true)
     @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
     private Boolean responded;
+
+    /**
+     * [2026-10-01 결정 21] 공개 여부 — 'Y' 공개, 'N' 작성 중. 등록은 늘 작성 중으로 시작하고(요청 값 무시), 수정은 값이
+     * 있을 때만 바꾸며 비우면 그대로 둔다.
+     */
+    @Schema(description = "공개 여부(Y 공개 · N 작성 중)", nullable = true, types = {"string", "null"})
+    @jakarta.validation.constraints.Pattern(regexp = "^(?:Y|N)$")
+    private String rlsYn;
 }

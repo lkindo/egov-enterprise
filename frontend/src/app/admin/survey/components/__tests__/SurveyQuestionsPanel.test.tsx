@@ -130,6 +130,59 @@ describe('SurveyQuestionsPanel', () => {
     mocked.getQuestions.mockResolvedValue([]);
   });
 
+  it('[결정 21] 작성 중 설문은 선택지에 표시하고, 공개는 확인 뒤 나머지 필드를 되돌려 실어 공개 여부만 바꾼다', async () => {
+    const user = userEvent.setup();
+    mocked.getSurveyList.mockResolvedValue({ ...SURVEYS, list: [{ ...SURVEYS.list[0], rlsYn: 'N' }] } as any);
+    mocked.updateSurvey.mockResolvedValue(undefined);
+    renderPanel();
+    await screen.findByRole('option', { name: '만족도 조사 (작성 중)' });
+    await user.selectOptions(screen.getByLabelText('설문 선택'), '201');
+
+    await user.click(screen.getByRole('button', { name: '응답자에게 공개' }));
+
+    await waitFor(() => expect(mocked.updateSurvey).toHaveBeenCalledTimes(1));
+    expect(confirmMock).toHaveBeenCalledWith(expect.objectContaining({ title: '설문지 공개' }));
+    const body = mocked.updateSurvey.mock.calls[0][1];
+    expect(body).toEqual({
+      srvyTtl: '만족도 조사', srvyTmpltSn: 11, srvyPrps: '서비스 개선', srvyWrtGdCn: '솔직하게 답해 주세요',
+      srvyBgngYmd: '20260901', srvyEndYmd: '20260930', srvyTrgt: '전 직원', rlsYn: 'Y',
+    });
+    expect(() => parseGeneratedOperationRequest(updateSurveyOperation, body)).not.toThrow();
+  });
+
+  it('[결정 21] 공개 전환(handleToggleRelease)은 처리 중 한 번만 보내고 상태를 드러내며, 실패 사유를 보여 준다', async () => {
+    let rejectRelease!: (reason?: unknown) => void;
+    mocked.getSurveyList.mockResolvedValue({ ...SURVEYS, list: [{ ...SURVEYS.list[0], rlsYn: 'N' }] } as any);
+    mocked.updateSurvey.mockReturnValueOnce(new Promise((_resolve, reject) => { rejectRelease = reject; }));
+    renderPanel();
+    await screen.findByRole('option', { name: '만족도 조사 (작성 중)' });
+    fireEvent.change(screen.getByLabelText('설문 선택'), { target: { value: '201' } });
+    fireEvent.click(screen.getByRole('button', { name: '응답자에게 공개' }));
+
+    await waitFor(() => expect(screen.getByRole('button', { name: '응답자에게 공개' })).toBeDisabled());
+    const pending = screen.getByRole('button', { name: '응답자에게 공개' });
+    expect(pending).toBeDisabled();
+    expect(pending).toHaveAttribute('aria-busy', 'true');
+    fireEvent.click(pending);
+    expect(mocked.updateSurvey).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      rejectRelease(new Error('공개할 수 없는 설문입니다.'));
+    });
+    expect(await screen.findByText('공개할 수 없는 설문입니다.')).toBeVisible();
+  });
+
+  it('[결정 21] 공개 중단을 취소하면 아무것도 보내지 않는다', async () => {
+    const user = userEvent.setup();
+    mocked.getSurveyList.mockResolvedValue({ ...SURVEYS, list: [{ ...SURVEYS.list[0], rlsYn: 'Y' }] } as any);
+    confirmMock.mockResolvedValue(false);
+    renderPanel();
+    await selectSurvey(user);
+    await user.click(screen.getByRole('button', { name: '공개 중단' }));
+    await waitFor(() => expect(confirmMock).toHaveBeenCalled());
+    expect(mocked.updateSurvey).not.toHaveBeenCalled();
+  });
+
   it('설문을 고르기 전에는 문항을 조회하지 않는다', async () => {
     renderPanel();
 

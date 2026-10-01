@@ -121,6 +121,17 @@ describe('CommunityManageDialog', () => {
     await waitFor(() => expect(mocks.updateCommunity).toHaveBeenCalledWith(11, expect.objectContaining({ tmpltId: 'TMPL01' })));
   });
 
+  it('[결정 20] 승인을 기다리는 가입 신청 수를 행과 회원 관리 버튼 이름에 보인다', async () => {
+    mocks.getCommunityList.mockResolvedValue({
+      list: [{ ...communities[0], pendingMemberCount: 2 }, communities[1]], total: 2, page: 0, size: 10, totalPage: 1,
+    });
+    renderDialog();
+    const list = await screen.findByRole('list', { name: '커뮤니티 목록' });
+    expect(within(list).getByText('가입 신청 2')).toBeInTheDocument();
+    expect(within(list).getByRole('button', { name: '독서 모임 회원 관리 (가입 신청 2건)' })).toBeInTheDocument();
+    expect(within(list).getByRole('button', { name: '폐쇄된 모임 회원 관리' })).toBeInTheDocument();
+  });
+
   // [2026-09-06 DEC-OPS-043] 행의 '회원 관리' 가 같은 다이얼로그 안에서 회원 패널로 바꿔 끼우고, 돌아오면 목록·폼이 복원된다.
   it('회원 관리 버튼은 그 커뮤니티의 회원 패널을 열고, 돌아오면 목록으로 복원된다', async () => {
     const user = userEvent.setup();

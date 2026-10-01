@@ -32,8 +32,10 @@ public class PollApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.poll.PollApiController#getPolls')")
     public ResponseEntity<ApiResponse<PageResponse<OnlinePollManageDto>>> getPolls(
             @RequestParam(required = false) String keyword,
+            @io.swagger.v3.oas.annotations.Parameter(description = "종류(SATISFACTION 만족도 조사 · POLL 온라인 투표, 비우면 전부)")
+            @RequestParam(required = false) String kind,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<OnlinePollManageDto> page = pollService.getPollList(keyword, pageable);
+        Page<OnlinePollManageDto> page = pollService.getPollList(keyword, kind, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 

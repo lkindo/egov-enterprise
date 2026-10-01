@@ -169,7 +169,8 @@ public class DeptJobService extends BaseAbstractService {
      * 업무함이 없는 업무는 부서를 알 수 없으므로 담당자·관리자만 연다.</p>
      */
     private void assertCanViewDeptJob(DeptJob deptJob) {
-        if (isDeptJobAdmin() || isAssignee(deptJob)) {
+        // [2026-10-01 결정 22] 업무를 맡긴 등록자도 연다 — 다른 부서 사람에게 맡기면 등록자가 자기 업무를 볼 수 없었다.
+        if (isDeptJobAdmin() || isAssignee(deptJob) || isRegistrar(deptJob)) {
             return;
         }
         String myDept = currentDeptId().orElse(null);
@@ -190,6 +191,41 @@ public class DeptJobService extends BaseAbstractService {
             return myLoginId != null && myLoginId.equals(deptJob.getFrstRgtrId());
         }
         return SecurityUtil.getCurrentEsntlId().map(picId::equals).orElse(false);
+    }
+
+    /** 등록자 판정 — 감사 컬럼 frstRgtrId 는 loginId 다. */
+    private boolean isRegistrar(DeptJob deptJob) {
+        String owner = deptJob.getFrstRgtrId();
+        return owner != null && !owner.isBlank()
+                && SecurityUtil.getCurrentLoginId().filter(owner::equals).isPresent();
+    }
+
+    /**
+     * [2026-10-01 결정 22] 담당자를 다시 지정한다. 등록자는 맡긴 업무의 담당자만 바꿀 수 있고 내용 수정·삭제는
+     * 담당자·관리자에게 남는다(DEC-OPS-138 의 쓰기 규칙 유지). 새 담당자는 사용 중 계정이어야 하고 알림을 받는다.
+     */
+    @Transactional
+    public void reassignDeptJob(Long deptTaskSn, String picId) {
+        DeptJob deptJob = deptJobRepository.findById(required(deptTaskSn, "deptTaskSn 은 null 일 수 없습니다"))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        assertCanReassign(deptJob);
+        if (picId == null || picId.isBlank()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "새 담당자를 골라 주세요.");
+        }
+        if (picId.equals(deptJob.getPicId())) {
+            return;
+        }
+        assertActiveAssignee(picId);
+        deptJob.reassign(picId);
+        notifyAssignee(picId, SecurityUtil.getCurrentEsntlId().orElse(null), deptJob);
+    }
+
+    /** 담당자 재지정 인가 — 담당자(공석이면 등록자)·등록자·전체 수정 권한자. */
+    private void assertCanReassign(DeptJob deptJob) {
+        if (isDeptJobAdmin() || isAssignee(deptJob) || isRegistrar(deptJob)) {
+            return;
+        }
+        throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
     }
 
     /** '내 업무' 조건 — 담당자가 나이거나, 담당자가 공석이고 등록자가 나. 신원이 없으면 빈 조건이다. */
@@ -410,6 +446,8 @@ public class DeptJobService extends BaseAbstractService {
         DeptJobDto dto = deptJobMapper.toDto(entity);
         dto.setEditable(canWrite(entity, "DEPT_JOB_UPDATE", "DEPT_JOB_UPDATE_ALL"));
         dto.setDeletable(canWrite(entity, "DEPT_JOB_DELETE", "DEPT_JOB_DELETE_ALL"));
+        dto.setReassignable(SecurityUtil.hasPermission("DEPT_JOB_UPDATE")
+                && (isDeptJobAdmin() || isAssignee(entity) || isRegistrar(entity)));
 
         // [nullable 데이터에 required() 를 걸지 않는다]
         // dept_task_box_sn·dept_id·pic_id 는 모두 물리 스키마상 nullable 이다. 그런데 종전에는

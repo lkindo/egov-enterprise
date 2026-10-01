@@ -259,6 +259,8 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                 const isClosePending = pendingCloseSn === community.cmntySn;
                 const isCurrent = editing?.cmntySn === community.cmntySn;
                 const isOpenState = community.useYn !== 'N';
+                // [2026-10-01 결정 20] 승인을 기다리는 가입 신청 수. 종전에는 회원 관리를 하나씩 열어 봐야 알았다.
+                const pendingMembers = Number(community.pendingMemberCount ?? 0);
                 return (
                   <li
                     key={community.cmntySn}
@@ -273,12 +275,17 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                         >
                           {isOpenState ? '사용' : '사용 안 함'}
                         </span>
+                        {pendingMembers > 0 && (
+                          <span className="shrink-0 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-bold text-warning-emphasis">
+                            가입 신청 {pendingMembers}
+                          </span>
+                        )}
                       </span>
                       <span className="block truncate text-xs text-muted-foreground">
                         {community.cmntyIntrcn || '소개 없음'}
                       </span>
                     </div>
-                    <Button type="button" variant="ghost" size="icon" aria-label={`${community.cmntyNm} 회원 관리`} onClick={() => setMembersOf(community)} disabled={saving}>
+                    <Button type="button" variant="ghost" size="icon" aria-label={`${community.cmntyNm} 회원 관리${pendingMembers > 0 ? ` (가입 신청 ${pendingMembers}건)` : ''}`} onClick={() => setMembersOf(community)} disabled={saving}>
                       <Users size={16} aria-hidden="true" />
                     </Button>
                     {canUpdate && community.editable === true && <Button type="button" variant="ghost" size="icon" aria-label={`${community.cmntyNm} 수정`} onClick={() => startEdit(community)} disabled={saving}>

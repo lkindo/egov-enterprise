@@ -59,6 +59,10 @@ export default function SurveyClient() {
             {item.responded === true && (
               <Badge variant="outline" className="text-xs font-bold">응답 완료</Badge>
             )}
+            {/* [결정 21] 작성 중인 설문은 편집 권한자에게만 보이며, 응답자에게는 아직 보이지 않는다. */}
+            {item.rlsYn === 'N' && (
+              <Badge variant="outline" className="text-xs font-bold">작성 중</Badge>
+            )}
           </div>
         );
       }

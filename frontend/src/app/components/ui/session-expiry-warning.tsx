@@ -5,6 +5,7 @@ import { Shield, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { loginReturnPath } from '@/lib/auth/login-return-path';
 
 /**
  * 세션 만료 경고 컴포넌트
@@ -102,10 +103,14 @@ export function SessionExpiryWarning() {
     setExtendFailure(failureCode === 'SESSION_EXPIRED' ? 'expired' : 'retryable');
   }, [getTokenExpiry]);
 
-  const handleLogout = useCallback(async () => {
+  // 시간이 다 돼 끊긴 경우(expired)와 사용자가 '로그아웃' 을 누른 경우를 나눈다(2026-10-01 결정 17) — 직접 로그아웃한
+  // 사람에게 '세션이 만료되었습니다' 를 말하지 않는다. 만료일 때만 보던 자리를 넘긴다.
+  const handleLogout = useCallback(async (reason: 'expired' | 'manual' = 'expired') => {
     setShowWarning(false);
     await logout();
-    window.location.href = '/login?expired=true';
+    window.location.href = reason === 'manual'
+      ? '/login'
+      : `/login?expired=true&redirect=${encodeURIComponent(loginReturnPath(window.location.pathname, window.location.search))}`;
   }, [logout]);
 
   // ⚠ [2026-09-22] 객체 참조가 아니라 **안정 키**로 비교한다. 렌더 중 파생 패턴은 조건이
@@ -251,7 +256,7 @@ export function SessionExpiryWarning() {
               <Button
                 type="button"
                 ref={extendButtonRef}
-                onClick={handleLogout}
+                onClick={() => void handleLogout('expired')}
                 className="flex-1"
               >
                 다시 로그인
@@ -261,7 +266,7 @@ export function SessionExpiryWarning() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={handleLogout}
+                  onClick={() => void handleLogout('manual')}
                   className="flex-1"
                 >
                   로그아웃

@@ -32,7 +32,8 @@ export default function SurveyStatsClient({ embedded = false }: { embedded?: boo
   // 종전 화면은 사용자 API 를 호출하고 '응답 수' 칸에 리터럴 0 을 찍고 있었다 — 거짓 지표(P1-5).
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin-survey-stats', page, debouncedKeyword],
-    queryFn: () => pollUserService.getPollList({ searchKeyword: debouncedKeyword, page, size: PAGE_SIZE }),
+    // [결정 21] 여론조사 통계는 여론조사(유형 001·002)만 센다.
+    queryFn: () => pollUserService.getPollList({ searchKeyword: debouncedKeyword, page, size: PAGE_SIZE, kind: 'SATISFACTION' }),
   });
 
   const polls: OnlinePollDto[] = data?.list || [];

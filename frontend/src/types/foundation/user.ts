@@ -11,6 +11,10 @@ export interface UserManage {
   userSttsCd?: string; // 목록 projection에는 없으며 상세 응답에서만 제공될 수 있다.
   /** 연속 로그인 실패 잠금 여부('Y' 면 잠김). 상세 응답에서만 온다(DIP B4 P7). */
   lckYn?: string;
+  /** 관리자가 초기화한 임시 비밀번호라 본인이 바꿔야 한다. 상세 응답에서만 온다(결정 18). */
+  passwordChangeRequired?: boolean | null;
+  /** 인증앱 추가 인증 사용 여부. 상세 응답에서만 온다(결정 18). */
+  mfaEnabled?: boolean | null;
   sbscrbDe?: string;
   esntlId?: string;
   mblTelno?: string;

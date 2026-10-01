@@ -36,6 +36,8 @@ public enum CommonErrorCode implements ErrorCode {
     LOGIN_POLICY_LIMITED(HttpStatus.FORBIDDEN, "A006", "Login Policy Restricted (Account Blocked)"),
     LOGIN_POLICY_IP_MISMATCH(HttpStatus.FORBIDDEN, "A007", "Login Policy Restricted (IP Mismatch)"),
     LOGIN_POLICY_TIME_RESTRICTED(HttpStatus.FORBIDDEN, "A008", "Login Policy Restricted (Time Out of Range)"),
+    /** 관리자가 초기화한 임시 비밀번호로는 비밀번호 변경 밖의 기능을 쓸 수 없다(2026-10-01 결정 18). */
+    PASSWORD_CHANGE_REQUIRED(HttpStatus.FORBIDDEN, "A009", "Password Change Required"),
 
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "S001", "Internal Server Error"),
     SERVER_OVERLOAD(HttpStatus.SERVICE_UNAVAILABLE, "S002", "Server Overload"),

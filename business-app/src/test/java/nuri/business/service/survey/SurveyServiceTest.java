@@ -200,7 +200,7 @@ class SurveyServiceTest {
     void getSurveyList_NoKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
         SurveyInfo info = SurveyInfo.builder().srvySn(201L).srvyTtl("Subject").build();
-        given(infoRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(info)));
+        given(infoRepository.findByRlsYn("Y", pageable)).willReturn(new PageImpl<>(List.of(info)));
 
         Page<SurveyInfoDto> result = surveyService.getSurveyList(null, pageable);
 
@@ -211,7 +211,7 @@ class SurveyServiceTest {
     @DisplayName("🚨 설문 목록은 현재 사용자의 응답 여부를 한 번의 조회로 싣는다 (2026-10-01)")
     void getSurveyList_marksResponded() {
         Pageable pageable = PageRequest.of(0, 10);
-        given(infoRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(
+        given(infoRepository.findByRlsYn("Y", pageable)).willReturn(new PageImpl<>(List.of(
                 SurveyInfo.builder().srvySn(201L).build(), SurveyInfo.builder().srvySn(202L).build())));
         given(rsltRepository.findRespondedSurveySns("user1", List.of(201L, 202L))).willReturn(List.of(202L));
 
@@ -227,22 +227,77 @@ class SurveyServiceTest {
     }
 
     @Test
+    @DisplayName("🚨 작성 중인 설문은 응답자 목록·상세에서 빠지고, 설문을 고치는 권한자에게만 보인다 (2026-10-01 결정 21)")
+    void draftSurveyVisibleOnlyToEditors() {
+        Pageable pageable = PageRequest.of(0, 10);
+        SurveyInfo draft = SurveyInfo.builder().srvySn(301L).srvyTtl("작성 중").build();
+        given(infoRepository.findById(301L)).willReturn(Optional.of(draft));
+        given(infoRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(draft)));
+        given(infoRepository.findByRlsYn("Y", pageable)).willReturn(new PageImpl<>(List.of()));
+
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId).thenReturn(Optional.empty());
+            assertThat(surveyService.getSurveyList(null, pageable).getContent()).isEmpty();
+            assertThatThrownBy(() -> surveyService.getSurvey(301L))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
+
+            mocked.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("SURVEY_UPDATE_ALL")).thenReturn(true);
+            assertThat(surveyService.getSurveyList(null, pageable).getContent()).extracting(SurveyInfoDto::getRlsYn).containsExactly("N");
+            assertThat(surveyService.getSurvey(301L).getRlsYn()).isEqualTo("N");
+        }
+    }
+
+    @Test
+    @DisplayName("🚨 공개 여부는 값이 올 때만 바뀐다 — 제목만 고치는 저장은 공개 상태를 되돌리지 않는다 (2026-10-01 결정 21)")
+    void updateSurvey_changesReleaseOnlyWhenGiven() {
+        SurveyInfo entity = SurveyInfo.builder().srvySn(201L).srvyTtl("제목").srvyTmpltSn(101L).build();
+        given(tmplatRepository.existsById(101L)).willReturn(true);
+        given(infoRepository.findById(201L)).willReturn(Optional.of(entity));
+
+        SurveyInfoDto publish = SurveyInfoDto.builder().srvySn(201L).srvyTtl("제목").srvyTmpltSn(101L).rlsYn("Y").build();
+        surveyService.updateSurvey(publish);
+        assertThat(entity.isReleased()).isTrue();
+
+        SurveyInfoDto titleOnly = SurveyInfoDto.builder().srvySn(201L).srvyTtl("새 제목").srvyTmpltSn(101L).build();
+        surveyService.updateSurvey(titleOnly);
+        assertThat(entity.isReleased()).isTrue();
+    }
+
+    @Test
+    @DisplayName("🚨 응답이 있는 설문에는 문항·선택 항목을 더하지 않는다(409) (2026-10-01 결정 21)")
+    void insertQuestionAndItem_rejectedAfterResponses() {
+        given(infoRepository.findById(201L)).willReturn(Optional.of(SurveyInfo.builder().srvySn(201L).srvyTmpltSn(101L).build()));
+        given(qesitmRepository.findById(401L)).willReturn(Optional.of(SurveyQuestion.builder().srvyQstnSn(401L).srvySn(201L).build()));
+        given(rsltRepository.existsBySrvySn(201L)).willReturn(true);
+
+        assertThatThrownBy(() -> surveyService.insertQuestion(SurveyQuestionDto.builder().srvySn(201L).qstnCn("새 문항").build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_IN_USE);
+        assertThatThrownBy(() -> surveyService.insertItem(SurveyArticleDto.builder().srvyQstnSn(401L).artclCn("새 항목").build()))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_IN_USE);
+        verify(qesitmRepository, never()).save(any());
+        verify(iemRepository, never()).save(any());
+    }
+
+    @Test
     @DisplayName("설문 정보 목록 조회 - 키워드 있음")
     void getSurveyList_WithKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
         SurveyInfo info = SurveyInfo.builder().srvySn(201L).srvyTtl("Subject").build();
-        given(infoRepository.findBySrvyTtlContaining(eq("Keyword"), any())).willReturn(new PageImpl<>(List.of(info)));
+        given(infoRepository.findByRlsYnAndSrvyTtlContaining(eq("Y"), eq("Keyword"), any())).willReturn(new PageImpl<>(List.of(info)));
 
         Page<SurveyInfoDto> result = surveyService.getSurveyList("Keyword", pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(infoRepository).findBySrvyTtlContaining(eq("Keyword"), any());
+        verify(infoRepository).findByRlsYnAndSrvyTtlContaining(eq("Y"), eq("Keyword"), any());
     }
 
     @Test
     @DisplayName("설문 정보 상세 조회 - 성공")
     void getSurvey_Success() {
         SurveyInfo info = SurveyInfo.builder().srvySn(201L).build();
+        info.changeRelease(true);
         given(infoRepository.findById(201L)).willReturn(Optional.of(info));
 
         SurveyInfoDto result = surveyService.getSurvey(201L);
@@ -253,7 +308,9 @@ class SurveyServiceTest {
     @Test
     @DisplayName("🚨 설문 상세는 현재 사용자의 응답 여부를 싣는다 — 로그인 ID 축 (DIP V8)")
     void getSurvey_carriesRespondedForViewer() {
-        given(infoRepository.findById(201L)).willReturn(Optional.of(SurveyInfo.builder().srvySn(201L).build()));
+        SurveyInfo released = SurveyInfo.builder().srvySn(201L).build();
+        released.changeRelease(true);
+        given(infoRepository.findById(201L)).willReturn(Optional.of(released));
         given(rsltRepository.existsBySrvySnAndFrstRgtrId(201L, "user1")).willReturn(true);
 
         try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {

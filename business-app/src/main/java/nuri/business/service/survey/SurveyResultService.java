@@ -179,6 +179,10 @@ public class SurveyResultService {
         Objects.requireNonNull(srvySn);
         SurveyInfo survey = infoRepository.findByIdForSubmission(srvySn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [2026-10-01 결정 21] 작성 중인 설문에는 응답하지 않는다 — 없는 설문과 같다.
+        if (!survey.isReleased()) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
         assertWithinPeriod(survey);
 
         String submitter = SecurityUtil.getCurrentLoginId()

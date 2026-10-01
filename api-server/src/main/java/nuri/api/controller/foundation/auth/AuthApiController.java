@@ -101,7 +101,8 @@ public class AuthApiController {
                     userDto.emlAddr(),
                     principal.getGroups(),
                     principal.getPermissions(),
-                    principal.getAuthorizationVersion());
+                    principal.getAuthorizationVersion(),
+                    principal.isPasswordChangeRequired() ? Boolean.TRUE : null);
             return ApiResponse.success(body);
         }
         throw new BusinessException(CommonErrorCode.INVALID_TOKEN);

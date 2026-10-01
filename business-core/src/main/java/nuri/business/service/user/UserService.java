@@ -75,6 +75,7 @@ public class UserService extends BaseAbstractService {
         private final nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots;
         private final nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration;
         private final nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
+        private final nuri.business.domain.auth.mfa.MfaCredentialRepository mfaCredentials;
 
         public UserService(UserRepository userRepository,
                         RefreshTokenRepository refreshTokenRepository, LoginPolicyRepository loginPolicyRepository,
@@ -86,7 +87,8 @@ public class UserService extends BaseAbstractService {
                         ApplicationEventPublisher eventPublisher,
                         nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots,
                         nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration,
-                        nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit) {
+                        nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit,
+                        nuri.business.domain.auth.mfa.MfaCredentialRepository mfaCredentials) {
                 this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
                 this.refreshTokenRepository = required(refreshTokenRepository,
                                 "RefreshTokenRepository 는 null 일 수 없습니다");
@@ -103,6 +105,7 @@ public class UserService extends BaseAbstractService {
                 this.authorizationSnapshots = required(authorizationSnapshots);
                 this.authorizationAdministration = required(authorizationAdministration);
                 this.sensitiveAudit = required(sensitiveAudit);
+                this.mfaCredentials = required(mfaCredentials);
         }
 
         /**
@@ -221,7 +224,12 @@ public class UserService extends BaseAbstractService {
         public UserDto getUserById(@NonNull String id) {
                 User user = userRepository.findByUserId(id).or(() -> userRepository.findById(id))
                         .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
-                return UserDto.from(user).withAuthorization(authorizationSnapshots.load(user.getEsntlId()));
+                // [2026-10-01 결정 18] 상세에 비밀번호 변경 필요와 추가 인증 사용 여부를 싣는다 — 관리자가 초기화 뒤의
+                //   상태와 복구 승인 대상인지를 사용자 상세에서 본다. 인증앱 비밀값·복구 코드는 싣지 않는다.
+                boolean mfaActive = mfaCredentials.findBySubject(user.getEsntlId())
+                        .map(nuri.business.domain.auth.mfa.MfaCredential::isActive).orElse(false);
+                return UserDto.from(user).withAuthorization(authorizationSnapshots.load(user.getEsntlId())).toBuilder()
+                        .passwordChangeRequired(user.isTemporaryPassword()).mfaEnabled(mfaActive).build();
     }
 
         /**
@@ -585,7 +593,8 @@ public class UserService extends BaseAbstractService {
                                 .or(() -> userRepository.findById(userId))
                                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
                 authorizationAdministration.authorizeProtectedAccountChange(user.getEsntlId());
-                user.updatePassword(passwordEncoder.encode(newPassword));
+                // [2026-10-01 결정 18] 관리자가 정해 알려 준 비밀번호는 임시다 — 본인이 바꾸기 전까지 다른 기능을 막는다.
+                user.issueTemporaryPassword(passwordEncoder.encode(newPassword));
                 // [2026-09-26 DIP B4 P7, D5] 초기화는 계정 잠금도 푼다 — 잠긴 채로 새 비밀번호를 알려 주면 잠금 시간이
                 //   지날 때까지 그 비밀번호로도 들어올 수 없다.
                 user.unlockAccount();

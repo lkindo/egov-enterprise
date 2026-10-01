@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { canEnterRegisteredPage, loadPageAuthorization } from '@/lib/auth/page-authorization';
+import { loginReturnPath } from '@/lib/auth/login-return-path';
 
 // ────────────────────────────────────────────────────────────────────────────
 // [보안] JWT 서명 검증 (Edge 런타임 네이티브 Web Crypto, 외부 의존 없음)
@@ -424,7 +425,8 @@ export async function proxy(request: NextRequest) {
   //    유효 세션을 영구 로그아웃시키는 함정이 된다(원본 동작 보존). 실제 무효 토큰은 백엔드 401 로도 처리된다.
   if (!userSubject) {
     const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
+    // [2026-10-01 결정 17] 경로와 자리를 가리키는 구조 키만 넘긴다 — 자유 입력은 /login URL 에 싣지 않는다.
+    loginUrl.searchParams.set('redirect', loginReturnPath(pathname, request.nextUrl.search));
     // 리다이렉트는 문서를 렌더하지 않지만, 헤더 일관성을 위해 CSP 를 함께 싣는다.
     const redirect = withNonce(NextResponse.redirect(loginUrl));
     redirect.headers.set('x-mw-auth', authDiag);

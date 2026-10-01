@@ -40,6 +40,13 @@ public class SurveyInfo extends BaseEntity {
     @Column(nullable = false)
     private Long srvyTmpltSn;
 
+    /**
+     * [2026-10-01 결정 21] 공개 여부(rls_yn). 'N' 은 작성 중이라 응답자에게 보이지 않고, 'Y' 여야 목록·응답이 열린다.
+     * 새 설문은 작성 중으로 시작한다. V2_117 이전 설문은 공개로 옮겼다.
+     */
+    @Column(length = 1, nullable = false)
+    private String rlsYn = "N";
+
     private SurveyInfo(Long srvySn, String srvyTtl, String srvyPrps, String srvyWrtGdCn,
             String srvyBgngYmd, String srvyEndYmd, String srvyTrgt, Long srvyTmpltSn) {
         this.srvySn = srvySn;
@@ -56,6 +63,15 @@ public class SurveyInfo extends BaseEntity {
     public static SurveyInfo create(Long srvySn, String srvyTtl, String srvyPrps, String srvyWrtGdCn,
             String srvyBgngYmd, String srvyEndYmd, String srvyTrgt, Long srvyTmpltSn) {
         return new SurveyInfo(srvySn, srvyTtl, srvyPrps, srvyWrtGdCn, srvyBgngYmd, srvyEndYmd, srvyTrgt, srvyTmpltSn);
+    }
+
+    /** [2026-10-01 결정 21] 공개하거나 작성 중으로 되돌린다. */
+    public void changeRelease(boolean released) {
+        this.rlsYn = released ? "Y" : "N";
+    }
+
+    public boolean isReleased() {
+        return "Y".equals(rlsYn);
     }
 
     public void update(String srvyTtl, String srvyPrps, String srvyWrtGdCn,

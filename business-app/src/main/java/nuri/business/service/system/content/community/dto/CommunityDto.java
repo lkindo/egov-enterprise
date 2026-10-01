@@ -48,6 +48,10 @@ public class CommunityDto {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private boolean deletable;
+    /** [2026-10-01 결정 20] 승인을 기다리는 가입 신청 수 — 관리 목록에만 싣고 사용자 목록에서는 null 이다. */
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY, nullable = true, types = {"integer", "null"})
+    private Long pendingMemberCount;
     // [2026-09-26 DIP V2] 등록자명(frstRegisterNm)은 from() 이 채우지 않아 늘 null 이라 걷었다.
     private String crtDt;
 

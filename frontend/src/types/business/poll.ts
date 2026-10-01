@@ -75,4 +75,9 @@ export interface PollSearchParams {
   size?: number;
   searchCondition?: string;
   searchKeyword?: string;
+  /**
+   * 목록 종류(2026-10-01 결정 21). 여론조사(유형 001·002)와 온라인 투표가 같은 테이블에 있어, 종전에는 두 관리
+   * 화면이 서로의 항목까지 보였다. 비우면 둘 다 나온다(참여 화면).
+   */
+  kind?: 'SATISFACTION' | 'POLL';
 }

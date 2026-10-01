@@ -32,6 +32,7 @@ import SatisfactionSection from '@/components/features/satisfaction/Satisfaction
 
 import { CommentVO } from '@/types/business/comment';
 import { useReturnToList } from '@/lib/navigation/use-return-to-list';
+import { PostingEndedBadge } from '../components/PostingEndedBadge';
 
 /** 게시글 상세로 들어오는 목록 화면들. 여기서 왔으면 뒤로 가서 목록의 조건·스크롤을 살린다. */
 const BOARD_LIST_ORIGINS = ['/admin/community/boards/select-board-list', '/admin/help', '/cop/cmy/selectCommunityDetail/*', '/search', '/admin/community/board'] as const;
@@ -297,6 +298,8 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           <h1 className="text-xl font-bold leading-snug tracking-tight text-foreground">
             {article.pstTtl}
           </h1>
+          {/* [결정 23] 게시 종료일이 지난 글 — 작성자·전체 열람 권한자에게만 보인다. 제목(h1)의 이름은 바꾸지 않는다. */}
+          <PostingEndedBadge pstEndYmd={article.pstEndYmd} />
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center gap-2">

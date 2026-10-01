@@ -3108,6 +3108,26 @@ export interface paths {
         patch: operations["confirmInformalSanction_1"];
         trace?: never;
     };
+    "/api/v1/dept-jobs/{deptTaskSn}/assignee": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 부서 업무 담당자 재지정
+         * @description 담당자만 바꿉니다. 담당자·등록자·전체 수정 권한자가 할 수 있고, 새 담당자는 사용 중 계정이어야 합니다.
+         */
+        patch: operations["reassignDeptJob"];
+        trace?: never;
+    };
     "/api/v1/boards/{bbsId}/posts/{pstSn}/solved": {
         parameters: {
             query?: never;
@@ -4862,6 +4882,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/logs/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 민감 작업 감사 원장 목록
+         * @description 최신순이다. 행위자 로그인 ID·작업 이름은 정확히 일치하는 값으로, 기간은 시작·종료를 함께 주어야 거른다.
+         */
+        get: operations["auditJournalList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/login-policies": {
         parameters: {
             query?: never;
@@ -5803,6 +5843,8 @@ export interface components {
             readonly editable?: boolean;
             /** @description 현재 사용자가 삭제할 수 있는지(서버 판정) */
             readonly deletable?: boolean;
+            /** @description 현재 사용자가 담당자를 다시 지정할 수 있는지(서버 판정) */
+            readonly reassignable?: boolean;
         };
         DeptJobBoxDto: {
             /** Format: int64 */
@@ -6049,6 +6091,8 @@ export interface components {
             crtDt?: string;
             /** @description 현재 사용자의 응답 여부(상세 조회에서만 채운다) */
             readonly responded?: boolean | null;
+            /** @description 공개 여부(Y 공개 · N 작성 중) */
+            rlsYn?: string | null;
         };
         /** @description 설문템플릿 DTO (표준화) */
         SurveyTemplateDto: {
@@ -6672,6 +6716,8 @@ export interface components {
             readonly createdByMe?: boolean;
             readonly editable?: boolean;
             readonly deletable?: boolean;
+            /** Format: int64 */
+            readonly pendingMemberCount?: number | null;
             crtDt?: string;
         };
         ReplaceGroups: {
@@ -7253,6 +7299,8 @@ export interface components {
             readonly groups: string[];
             readonly permissions: string[];
             readonly authorizationVersion: string;
+            readonly passwordChangeRequired?: boolean;
+            readonly mfaEnabled?: boolean;
         };
         /** @description 사용자 권한 정보 DTO */
         UserAuthorityDto: {
@@ -7491,6 +7539,9 @@ export interface components {
         MemoInstructionRequest: {
             /** @description 지시사항 */
             drctnMttr: string;
+        };
+        DeptJobAssigneeRequest: {
+            picId: string;
         };
         /** @description 관리자용 비밀번호 변경 요청 */
         AdminPasswordChangeRequest: {
@@ -8801,6 +8852,7 @@ export interface components {
             groups?: string[];
             permissions?: string[];
             authorizationVersion?: string;
+            passwordChangeRequired?: boolean;
         };
         ApiResponseListCommonCodeDto: {
             success?: boolean;
@@ -9509,6 +9561,42 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        ApiResponsePageResponseAuditJournalEntry: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponseAuditJournalEntry"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        AuditJournalEntry: {
+            id?: string;
+            requestId?: string;
+            stage?: string;
+            operation?: string;
+            actorId?: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            targetId?: string;
+            clientIp?: string;
+            description?: string;
+            /** Format: int32 */
+            httpStatus?: number;
+        };
+        PageResponseAuditJournalEntry: {
+            list?: components["schemas"]["AuditJournalEntry"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            totalPage?: number;
         };
         ApiResponsePageResponseLoginPolicyDto: {
             success?: boolean;
@@ -21480,6 +21568,8 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
+                /** @description 종류(SATISFACTION 만족도 조사 · POLL 온라인 투표, 비우면 전부) */
+                kind?: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */
@@ -29678,6 +29768,77 @@ export interface operations {
             };
         };
     };
+    reassignDeptJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deptTaskSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeptJobAssigneeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     markQuestionSolved: {
         parameters: {
             query?: never;
@@ -35870,6 +36031,69 @@ export interface operations {
                 };
                 content: {
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    auditJournalList: {
+        parameters: {
+            query?: {
+                actorId?: string;
+                operation?: string;
+                fromDate?: string;
+                toDate?: string;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponsePageResponseAuditJournalEntry"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

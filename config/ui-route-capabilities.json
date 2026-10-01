@@ -7123,6 +7123,109 @@
       }
     },
     {
+      "route": "/admin/system/durable-jobs",
+      "source": "frontend/src/app/admin/system/durable-jobs/page.tsx",
+      "sourceShellAccess": "admin-system",
+      "shellAccess": "admin-system",
+      "roles": [
+        "UNVERIFIED"
+      ],
+      "surface": "admin-console",
+      "status": "partial",
+      "dataSource": "admin-durable-jobs-api",
+      "supportedActions": [
+        "paginate",
+        "retry",
+        "view-list"
+      ],
+      "profileOwners": [
+        "UNVERIFIED"
+      ],
+      "directProjectionProfiles": [
+        "collaboration",
+        "core",
+        "demo"
+      ],
+      "journeys": [],
+      "visibleLabel": "후속 작업 상태",
+      "menuExposure": "not-menued",
+      "decisionSafe": false,
+      "routing": {
+        "kind": "page"
+      },
+      "observedPageRedirectCalls": [],
+      "owner": "product/UX + domain owner",
+      "capabilities": [
+        {
+          "id": "durable-job.list",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "admin-durable-jobs-api",
+          "actions": [
+            "paginate",
+            "view-list"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN",
+          "visibleLabel": "후속 작업 목록",
+          "primaryTask": true,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-01",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/job/DurableJobApiController.java",
+            "business-core/src/main/java/nuri/business/service/system/job/DurableJobAdministrationService.java",
+            "frontend/src/app/admin/system/durable-jobs/DurableJobsClient.tsx",
+            "frontend/src/app/admin/system/durable-jobs/__tests__/DurableJobsClient.test.tsx",
+            "frontend/src/app/admin/system/durable-jobs/page.tsx",
+            "frontend/src/services/foundation/system/OperationsRecordAdminService.ts"
+          ]
+        },
+        {
+          "id": "durable-job.retry",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "admin-durable-jobs-api",
+          "actions": [
+            "retry"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN",
+          "visibleLabel": "다시 처리",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-01",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/job/DurableJobApiController.java",
+            "business-core/src/main/java/nuri/business/service/system/job/DurableJobAdministrationService.java",
+            "frontend/src/app/admin/system/durable-jobs/DurableJobsClient.tsx",
+            "frontend/src/app/admin/system/durable-jobs/__tests__/DurableJobsClient.test.tsx",
+            "frontend/src/app/admin/system/durable-jobs/page.tsx",
+            "frontend/src/services/foundation/system/OperationsRecordAdminService.ts"
+          ]
+        }
+      ],
+      "evidence": [
+        "config/reusable-base-profiles.json",
+        "frontend/next.config.ts",
+        "frontend/src/app/admin/system/durable-jobs/page.tsx",
+        "frontend/src/proxy.ts"
+      ],
+      "unverifiedFields": [
+        "journeys",
+        "profileOwners",
+        "roles"
+      ],
+      "review": {
+        "owner": "product/UX + domain owner",
+        "reviewBy": "2026-11-30",
+        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. Added 2026-10-01 (decision 19) with capability states read from code; the page is not menued and is reached from the integrated log screen only when the dedicated permission is held."
+      }
+    },
+    {
       "route": "/admin/system/hpcm",
       "source": "frontend/src/app/admin/system/hpcm/page.tsx",
       "sourceShellAccess": "admin-system",
@@ -7609,6 +7712,86 @@
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
         "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+      }
+    },
+    {
+      "route": "/admin/system/logs/audit",
+      "source": "frontend/src/app/admin/system/logs/audit/page.tsx",
+      "sourceShellAccess": "admin-system",
+      "shellAccess": "admin-system",
+      "roles": [
+        "UNVERIFIED"
+      ],
+      "surface": "admin-console",
+      "status": "partial",
+      "dataSource": "admin-audit-journal-api",
+      "supportedActions": [
+        "filter",
+        "search",
+        "view-list"
+      ],
+      "profileOwners": [
+        "UNVERIFIED"
+      ],
+      "directProjectionProfiles": [
+        "collaboration",
+        "core",
+        "demo"
+      ],
+      "journeys": [],
+      "visibleLabel": "민감 작업 감사 원장",
+      "menuExposure": "not-menued",
+      "decisionSafe": false,
+      "routing": {
+        "kind": "page"
+      },
+      "observedPageRedirectCalls": [],
+      "owner": "product/UX + domain owner",
+      "capabilities": [
+        {
+          "id": "audit-journal.list-search",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "admin-audit-journal-api",
+          "actions": [
+            "filter",
+            "search",
+            "view-list"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN",
+          "visibleLabel": "민감 작업 감사 원장 목록",
+          "primaryTask": true,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-01",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/log/AuditJournalApiController.java",
+            "business-core/src/main/java/nuri/business/service/log/SensitiveAuditQueryService.java",
+            "business-core/src/test/java/nuri/business/service/log/SensitiveAuditQueryServiceTest.java",
+            "frontend/src/app/admin/system/logs/audit/AuditJournalClient.tsx",
+            "frontend/src/app/admin/system/logs/audit/__tests__/AuditJournalClient.test.tsx",
+            "frontend/src/app/admin/system/logs/audit/page.tsx",
+            "frontend/src/services/foundation/system/OperationsRecordAdminService.ts"
+          ]
+        }
+      ],
+      "evidence": [
+        "config/reusable-base-profiles.json",
+        "frontend/next.config.ts",
+        "frontend/src/app/admin/system/logs/audit/page.tsx",
+        "frontend/src/proxy.ts"
+      ],
+      "unverifiedFields": [
+        "journeys",
+        "profileOwners",
+        "roles"
+      ],
+      "review": {
+        "owner": "product/UX + domain owner",
+        "reviewBy": "2026-11-30",
+        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. Added 2026-10-01 (decision 19) with capability states read from code; the page is not menued and is reached from the integrated log screen only when the dedicated permission is held."
       }
     },
     {

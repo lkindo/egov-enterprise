@@ -11,7 +11,7 @@
       "fingerprint": "dec982be271ed34f:1",
       "sourceSha256": "907be49f1f3d1327f0e1ecc20d176f3d6e7b923aeccea5c032ab755a987d1487",
       "expiresOn": "2026-12-08",
-      "reason": "Stateless Bearer API; Strict HttpOnly session cookies and Origin checks; cookie-authenticated SockJS transports separately require exact trusted Origin; legacy CSRF remains enabled. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-09-28: encoded token endpoint aliases now terminate with HTTP 400; existing Origin checks and Bearer forwarding are unchanged.",
+      "reason": "Stateless Bearer API; Strict HttpOnly session cookies and Origin checks; cookie-authenticated SockJS transports separately require exact trusted Origin; legacy CSRF remains enabled. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-09-28: encoded token endpoint aliases now terminate with HTTP 400; existing Origin checks and Bearer forwarding are unchanged. Re-reviewed 2026-10-01: the proxy login redirect now carries only allowlisted structural query keys (bbsId, pstSn, tab, page) validated by pattern; Origin, Strict cookie and Bearer forwarding defenses are unchanged.",
       "id": "SAST-FP-001",
       "supportingSources": [
         {
@@ -32,7 +32,7 @@
         },
         {
           "file": "frontend/src/proxy.ts",
-          "sha256": "ca5b1a8e5e7fd599375c5fae893cc44795e66bf1a2c462964ca42cf3d899be83"
+          "sha256": "6898966744923d41d7757a3c84ca6dabad4928d75fdb40f6a5e7c949aa155b1b"
         },
         {
           "file": "frontend/src/app/api/auth/login/route.ts",
@@ -175,7 +175,7 @@
       "fingerprint": "3bdaa522982a3650:1",
       "sourceSha256": "884972eb7ed63f7e0cb1eec832a0ec3a1aea7686d8d3b5b5412460a438ef7698",
       "expiresOn": "2026-12-08",
-      "reason": "Missing or invalid credentials clear the security context, return HTTP 401 and terminate before the transport chain. Only signature-validated JWTs with fresh enabled account details and a nonblank current authorization version reach the chain; conditional authentication-state inspection does not bypass access control. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged.",
+      "reason": "Missing or invalid credentials clear the security context, return HTTP 401 and terminate before the transport chain. Only signature-validated JWTs with fresh enabled account details and a nonblank current authorization version reach the chain; conditional authentication-state inspection does not bypass access control. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-10-01: the user adapter only adds a passwordChangeRequired flag to the principal, which narrows access (PasswordChangeRequiredGuard); the SockJS Origin denial and token checks are unchanged.",
       "id": "SAST-FP-008",
       "supportingSources": [
         {
@@ -184,7 +184,7 @@
         },
         {
           "file": "business-core/src/main/java/nuri/business/security/iam/JpaUserAuthAdapter.java",
-          "sha256": "127763bbabfe5e882e5e634b09f04f5e6f407c05e878b1ee459f1dbb359fd92a"
+          "sha256": "9b19fbaac045065581f2166abfbb499711a226704bda1427f858d5eebb77fd67"
         },
         {
           "file": "business-core/src/main/java/nuri/business/security/authorization/AuthorizationSnapshotService.java",

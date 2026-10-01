@@ -14,7 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
 import { DeptJobForm, DeptJobFormValues, PRIORITY_LABEL } from '@/components/business/deptJob/DeptJobForm';
-import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
+import { UserPicker } from '@/app/components/ui/user-picker';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { useDirtyCloseGuard } from '@/hooks/useDirtyCloseGuard';
 
@@ -42,7 +43,8 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
     const confirm = useConfirm();
     const [isEditing, setEditing] = React.useState(false);
     const actionPendingRef = React.useRef(false);
-    const [activeAction, setActiveAction] = React.useState<'update' | 'delete' | null>(null);
+    const [activeAction, setActiveAction] = React.useState<'update' | 'delete' | 'reassign' | null>(null);
+    const [isReassignOpen, setReassignOpen] = React.useState(false);
 
     /*
       [미저장 보호] 종전에는 이 화면에 가드가 없었다. 같은 DeptJobForm 을 쓰는 등록 화면
@@ -110,6 +112,28 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
         },
         onError: () => toast.error('삭제에 실패했습니다. 권한이 없거나 이미 삭제된 업무일 수 있습니다.'),
     });
+
+    /*
+      [2026-10-01 결정 22] 등록자는 맡긴 업무의 담당자만 바꾼다(서버 힌트 reassignable). 내용 수정·삭제는 담당자·관리자에게
+      남는다. 담당자 본인·관리자는 수정 폼에서 담당자를 바꾸므로 이 버튼을 따로 두지 않는다.
+    */
+    const handleReassign = async (picId: string, picNm: string) => {
+        if (actionPendingRef.current) return;
+        actionPendingRef.current = true;
+        setActiveAction('reassign');
+        setReassignOpen(false);
+        try {
+            await deptJobUserService.reassignDeptJob(deptTaskSn, picId);
+            toast.success(`담당자를 ${picNm}님으로 바꿨습니다.`);
+            await queryClient.invalidateQueries({ queryKey: ['dept-job', deptTaskSn] });
+            queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
+        } catch (error) {
+            toast.error(extractErrorMessage(error, '담당자를 바꾸지 못했습니다. 권한이 없거나 사용 중이 아닌 사용자일 수 있습니다.'));
+        } finally {
+            actionPendingRef.current = false;
+            setActiveAction(null);
+        }
+    };
 
     const handleDelete = async () => {
         if (actionPendingRef.current) return;
@@ -209,8 +233,21 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
 
                     {/* [2026-09-26 DIP B4 P5] 같은 부서 사람은 업무를 보지만 고칠 수 있는 사람은 담당자·관리자뿐이다.
                         서버 힌트(editable·deletable)로만 버튼을 그린다 — 누를 때마다 403 이 나는 버튼을 보이지 않는다. */}
-                    {!isEditing && (job.editable || job.deletable) && (
+                    {!isEditing && (job.editable || job.deletable || job.reassignable) && (
                         <div className="flex gap-2 shrink-0">
+                            {job.reassignable && !job.editable && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setReassignOpen(true)}
+                                disabled={activeAction !== null}
+                                aria-busy={activeAction === 'reassign' || undefined}
+                                className="font-bold gap-1"
+                            >
+                                <User size={14} />
+                                담당자 바꾸기
+                            </Button>
+                            )}
                             {job.editable && (
                             <Button variant="outline" size="sm" onClick={() => setEditing(true)} disabled={activeAction !== null} className="font-bold gap-1">
                                 <Pencil size={14} />
@@ -273,6 +310,14 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
                 <ArrowLeft size={16} />
                 목록으로
             </Button>
+            {job.reassignable && (
+                <UserPicker
+                    isOpen={isReassignOpen}
+                    onClose={() => setReassignOpen(false)}
+                    title="새 담당자 선택"
+                    onSelect={(picked) => { if (picked.esntlId) void handleReassign(picked.esntlId, picked.userNm ?? ''); }}
+                />
+            )}
         </div>
     );
 }

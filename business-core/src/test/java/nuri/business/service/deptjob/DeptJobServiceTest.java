@@ -347,6 +347,47 @@ class DeptJobServiceTest {
     }
 
     @Test
+    @DisplayName("🚨 업무를 맡긴 등록자는 다른 부서여도 상세를 연다 (2026-10-01 결정 22)")
+    void getDeptJob_registrarAllowed() {
+        authenticateAs("outsider", "ESNTL_OUTSIDER");
+        org.springframework.test.util.ReflectionTestUtils.setField(deptJob, "frstRgtrId", "outsider");
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        mockToDtoDependencies();
+
+        assertEquals(1L, deptJobService.getDeptJob(1L).getDeptTaskSn());
+    }
+
+    @Test
+    @DisplayName("🚨 등록자는 담당자만 다시 지정하고 새 담당자에게 알린다 — 내용은 바꾸지 않는다 (2026-10-01 결정 22)")
+    void reassignDeptJob_registrarChangesAssigneeOnly() {
+        authenticateAs("outsider", "ESNTL_OUTSIDER");
+        org.springframework.test.util.ReflectionTestUtils.setField(deptJob, "frstRgtrId", "outsider");
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        givenActiveAssignee("USER2");
+
+        deptJobService.reassignDeptJob(1L, "USER2");
+
+        assertEquals("USER2", deptJob.getPicId());
+        assertEquals("Test Job", deptJob.getDeptTaskNm());
+        assertEquals("Content", deptJob.getDeptTaskCn());
+        assertEquals(101L, deptJob.getAtchFileSn());
+        verify(eventPublisher, times(1)).publishEvent(any(Object.class));
+    }
+
+    @Test
+    @DisplayName("🔐 담당자도 등록자도 관리자도 아니면 담당자를 바꿀 수 없다 (2026-10-01 결정 22)")
+    void reassignDeptJob_strangerDenied() {
+        authenticateAs("stranger", "ESNTL_STRANGER");
+        org.springframework.test.util.ReflectionTestUtils.setField(deptJob, "frstRgtrId", "someone");
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> deptJobService.reassignDeptJob(1L, "USER2"));
+
+        assertEquals(CommonErrorCode.ACCESS_DENIED, ex.getErrorCode());
+        assertEquals("USER1", deptJob.getPicId());
+    }
+
+    @Test
     @DisplayName("관리자는 어느 부서의 업무 상세든 연다 (DIP I5)")
     void getDeptJob_adminAllowed() {
         authenticateAsAdmin();

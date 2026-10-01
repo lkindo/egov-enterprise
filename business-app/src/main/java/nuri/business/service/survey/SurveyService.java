@@ -90,10 +90,14 @@ public class SurveyService {
 
     // 설문 정보
     public Page<SurveyInfoDto> getSurveyList(String keyword, Pageable pageable) {
-        Page<SurveyInfoDto> page = (keyword == null || keyword.isEmpty())
-                ? infoRepository.findAll(Objects.requireNonNull(pageable)).map(surveyInfoMapper::toDto)
-                : infoRepository.findBySrvyTtlContaining(keyword, Objects.requireNonNull(pageable))
-                        .map(surveyInfoMapper::toDto);
+        // [2026-10-01 결정 21] 작성 중인 설문은 설문을 고치는 사람(SURVEY_UPDATE_ALL)에게만 보인다.
+        boolean editor = canEditSurveys();
+        boolean noKeyword = keyword == null || keyword.isEmpty();
+        Pageable page0 = Objects.requireNonNull(pageable);
+        Page<SurveyInfoDto> page = (editor
+                ? (noKeyword ? infoRepository.findAll(page0) : infoRepository.findBySrvyTtlContaining(keyword, page0))
+                : (noKeyword ? infoRepository.findByRlsYn("Y", page0) : infoRepository.findByRlsYnAndSrvyTtlContaining("Y", keyword, page0)))
+                .map(surveyInfoMapper::toDto);
         markResponded(page.getContent());
         return page;
     }
@@ -113,10 +117,19 @@ public class SurveyService {
         surveys.forEach(dto -> dto.setResponded(responded.contains(dto.getSrvySn())));
     }
 
+    /** [2026-10-01 결정 21] 작성 중인 설문을 볼 수 있는 사람 — 설문을 고치는 권한자. */
+    private static boolean canEditSurveys() {
+        return nuri.business.security.util.SecurityUtil.hasPermission("SURVEY_UPDATE_ALL");
+    }
+
     public SurveyInfoDto getSurvey(Long srvySn) {
-        SurveyInfoDto dto = infoRepository.findById(Objects.requireNonNull(srvySn))
-                .map(surveyInfoMapper::toDto)
+        SurveyInfo survey = infoRepository.findById(Objects.requireNonNull(srvySn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [2026-10-01 결정 21] 작성 중인 설문은 응답자에게 없는 설문과 같다(404).
+        if (!survey.isReleased() && !canEditSurveys()) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
+        SurveyInfoDto dto = surveyInfoMapper.toDto(survey);
         // [2026-09-26 DIP V8] 화면을 열 때 이미 응답했는지 알린다 — 종전에는 다 고르고 제출해야 비로소
         //   '이미 응답한 설문입니다' 로 거부됐다. 판정 축은 제출 중복 검사와 같은 로그인 ID 다.
         dto.setResponded(nuri.business.security.util.SecurityUtil.getCurrentLoginId()
@@ -158,6 +171,10 @@ public class SurveyService {
         }
         entity.update(dto.getSrvyTtl(), dto.getSrvyPrps(), dto.getSrvyWrtGdCn(),
                 dto.getSrvyBgngYmd(), dto.getSrvyEndYmd(), dto.getSrvyTrgt(), dto.getSrvyTmpltSn());
+        // [2026-10-01 결정 21] 공개 여부는 값이 올 때만 바꾼다 — 제목만 고치는 저장이 공개 상태를 되돌리지 않는다.
+        if (dto.getRlsYn() != null) {
+            entity.changeRelease("Y".equals(dto.getRlsYn()));
+        }
     }
 
     /**
@@ -254,6 +271,7 @@ public class SurveyService {
     public void insertQuestion(SurveyQuestionDto dto) {
         SurveyInfo survey = infoRepository.findById(Objects.requireNonNull(dto.getSrvySn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        assertNoResponses(survey.getSrvySn());
         // [2026-09-26 DIP B4 P6] 순번은 서버가 매긴다 — 화면이 '문항 수 + 1' 을 보내, 중간 문항을 지운 뒤 추가하면 마지막
         //   문항과 순번이 겹쳤다. 이 설문의 가장 큰 순번 다음을 쓴다.
         long nextQstnSn = qesitmRepository.findBySrvySnOrderByQstnSnAsc(survey.getSrvySn()).stream()
@@ -324,6 +342,7 @@ public class SurveyService {
     public void insertItem(SurveyArticleDto dto) {
         SurveyQuestion question = qesitmRepository.findById(Objects.requireNonNull(dto.getSrvyQstnSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        assertNoResponses(question.getSrvySn());
         iemRepository.save(Objects.requireNonNull(SurveyArticle.builder()
                 .srvyQstnSn(question.getSrvyQstnSn())
                 .srvySn(question.getSrvySn())
@@ -377,6 +396,17 @@ public class SurveyService {
             if (start.compareTo(end) > 0) {
                 throw new BusinessException("설문 시작일은 종료일보다 빨라야 합니다.", CommonErrorCode.INVALID_INPUT_VALUE);
             }
+        }
+    }
+
+    /**
+     * [2026-10-01 결정 21] 응답이 모인 설문에는 문항·선택 항목을 더하지 않는다. 이미 낸 응답자에게는 새 문항의 답이 없어
+     * 통계의 문항별 응답 수가 어긋나고, 모든 문항에 답해야 제출되는 규칙(DEC-OPS-157)과도 맞지 않는다.
+     */
+    private void assertNoResponses(Long srvySn) {
+        if (srvySn != null && rsltRepository.existsBySrvySn(srvySn)) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
+                    "응답이 있는 설문에는 문항이나 선택 항목을 더할 수 없습니다. 설문을 복제해 새 차수로 만드세요.");
         }
     }
 }

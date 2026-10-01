@@ -169,6 +169,25 @@ public class DeptJobApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
+    @Operation(summary = "부서 업무 담당자 재지정",
+            description = "담당자만 바꿉니다. 담당자·등록자·전체 수정 권한자가 할 수 있고, 새 담당자는 사용 중 계정이어야 합니다.")
+    @PatchMapping("/{deptTaskSn}/assignee")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#reassignDeptJob')")
+    public ResponseEntity<ApiResponse<Void>> reassignDeptJob(
+            @PathVariable Long deptTaskSn,
+            @Valid @RequestBody DeptJobAssigneeRequest request) {
+        deptJobService.reassignDeptJob(deptTaskSn, request.picId());
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /** [2026-10-01 결정 22] 담당자 재지정 요청 — 새 담당자의 사용자 식별자(esntlId)만 받는다. */
+    public record DeptJobAssigneeRequest(
+            @jakarta.validation.constraints.NotBlank
+            @jakarta.validation.constraints.Size(max = 20)
+            @io.swagger.v3.oas.annotations.media.Schema(requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED)
+            String picId) {
+    }
+
     @Operation(summary = "부서 업무 삭제", description = "부서 업무를 삭제합니다. 담당자 본인 또는 관리자만 가능합니다.")
     @DeleteMapping("/{deptTaskSn}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#deleteDeptJob')")

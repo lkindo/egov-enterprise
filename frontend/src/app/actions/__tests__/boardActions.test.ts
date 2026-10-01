@@ -256,7 +256,7 @@ describe('boardActions', () => {
       await saveBoardArticle({}, formData);
 
       const request = vi.mocked(client.requestRaw).mock.calls[0][0] as { data: Record<string, unknown> };
-      expect(request.data.qnaSttsCd).toBe('QA01');
+      expect(request.data.qnaSttsCd).toBe('OPEN');
       expect(request.data.qnaCatCd).toBe('CAT01');
     });
 

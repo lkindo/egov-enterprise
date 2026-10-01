@@ -51,7 +51,8 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin-polls', page, keyword, pageSize],
-    queryFn: () => getPollList({ page, size: pageSize, searchKeyword: keyword }),
+    // [결정 21] 여론조사(유형 001·002)만 — 온라인 투표는 투표 관리 화면이 소유한다.
+    queryFn: () => getPollList({ page, size: pageSize, searchKeyword: keyword, kind: 'SATISFACTION' }),
   });
 
   const polls: OnlinePollManageVO[] = data?.list || [];

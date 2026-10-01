@@ -11,6 +11,7 @@ import { User, Lock, Eye, EyeOff, LogIn, Loader2, ShieldCheck, Zap } from "lucid
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 import { loginErrorMessage } from '@/lib/auth/login-error';
+import { restorableQuery } from '@/lib/auth/login-return-path';
 import { SITE_IDENTITY } from '@/config/site-identity';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
@@ -63,7 +64,8 @@ export function resolveInternalRedirect(rawRedirect: string | null): string {
         const navigationTarget = new URL(canonicalPath, REDIRECT_VALIDATION_ORIGIN);
         if (navigationTarget.origin !== REDIRECT_VALIDATION_ORIGIN) return DEFAULT_POST_LOGIN_PATH;
 
-        return canonicalPath;
+        // [2026-10-01 결정 17] 자리를 가리키는 구조 키(게시판·글·탭·쪽)만 되살린다. 자유 입력은 넘기지 않는다.
+        return `${canonicalPath}${restorableQuery(parsed.searchParams)}`;
     } catch {
         return DEFAULT_POST_LOGIN_PATH;
     }
@@ -86,8 +88,8 @@ function LoginContent() {
 
     const searchParams = useSearchParams();
     // URL parser가 제거하는 제어문자까지 먼저 거부한 뒤, 고정된 검증 origin으로 파싱해
-    // 동일 출처의 canonical pathname만 이동 지점에 전달한다. 로그인 intent에 원래 query/fragment를
-    // 재전파하지 않아 record locator나 자유 입력값이 인증 경계를 넘어 URL에 남는 것을 막는다.
+    // 동일 출처의 canonical pathname만 이동 지점에 전달한다. 원래 query 중 자리를 가리키는 구조 키만
+    // 형식을 맞춰 되살리고(결정 17), 자유 입력값과 fragment 는 인증 경계를 넘기지 않는다.
     const redirectUrl = resolveInternalRedirect(searchParams.get('redirect'));
 
     // [PD-UX-002 Q4] 세션이 끊겨 튕겨 나왔다는 사실을 화면이 말한다.

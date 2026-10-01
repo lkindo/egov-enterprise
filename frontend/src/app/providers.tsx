@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { PasswordChangeGate } from '@/components/account/PasswordChangeGate';
 import { WebSocketProvider } from '@/contexts/websocket-context';
 import { LayoutProvider } from '@/contexts/LayoutContext';
 import { UnsavedChangesProvider } from '@/contexts/UnsavedChangesContext';
@@ -85,6 +86,8 @@ export default function Providers({
             <UnsavedChangesProvider>
             <GlobalShortcutProvider>
               <AuthProvider initialUser={initialUser}>
+                {/* 임시 비밀번호로 로그인하면 앱 대신 변경 화면만 보인다(2026-10-01 결정 18). */}
+                <PasswordChangeGate>
                 <LayoutProvider>
                   <WebSocketProvider>
                     <TooltipProvider delayDuration={0}>
@@ -99,6 +102,7 @@ export default function Providers({
                     </TooltipProvider>
                   </WebSocketProvider>
                 </LayoutProvider>
+                </PasswordChangeGate>
               </AuthProvider>
             </GlobalShortcutProvider>
             </UnsavedChangesProvider>
