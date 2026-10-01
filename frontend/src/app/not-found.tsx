@@ -1,11 +1,17 @@
 'use client';
 
+import { useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { Home, ArrowLeft, Search } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
+const noSubscribe = () => () => {};
+
 export default function NotFound() {
+    // [2026-10-01] 돌아갈 기록이 없으면(새 탭·주소 직접 입력) '이전으로' 를 두지 않는다 — 눌러도 아무 일이 없었다.
+    //   서버 렌더에서는 알 수 없으므로 두지 않고, 브라우저에서 기록이 있을 때만 보인다.
+    const canGoBack = useSyncExternalStore(noSubscribe, () => window.history.length > 1, () => false);
     return (
         <div className="min-h-[80vh] flex items-center justify-center p-6 relative overflow-hidden">
             {/* Background Orbs */}
@@ -30,24 +36,22 @@ export default function NotFound() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-4">
-                    <button
-                        onClick={() => typeof window !== 'undefined' && window.history.back()}
+                <div className={cn('grid gap-4 pt-4', canGoBack ? 'grid-cols-2' : 'grid-cols-1')}>
+                    {canGoBack && <button
+                        type="button"
+                        onClick={() => window.history.back()}
                         className={cn(buttonVariants({ variant: "outline", size: "lg" }), "rounded-lg h-[var(--control-h)] font-bold border-2 gap-2")}
                     >
-                        <ArrowLeft size={18} /> 이전으로
-                    </button>
+                        <ArrowLeft size={18} aria-hidden="true" /> 이전으로
+                    </button>}
                     <Link
                         href="/"
                         className={cn(buttonVariants({ size: "lg" }), "rounded-lg h-11 font-bold shadow-xl shadow-primary/20 gap-2")}
                     >
-                        <Home size={18} /> 홈으로 이동
+                        <Home size={18} aria-hidden="true" /> 홈으로 이동
                     </Link>
                 </div>
 
-                <div className="pt-6 text-xs text-muted-foreground font-bold tracking-tight">
-                    Electronic Government Modernization Project
-                </div>
             </div>
         </div>
     );

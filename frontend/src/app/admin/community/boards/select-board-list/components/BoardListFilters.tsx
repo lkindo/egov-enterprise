@@ -72,11 +72,7 @@ export const BoardListFilters = ({
               onChange={(e) => setSearchWrd(e.target.value)}
               aria-label="검색어 입력"
             />
-            {!searchWrd && (
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-1 px-1.5 py-0.5 rounded border border-border bg-muted text-xs font-bold text-muted-foreground pointer-events-none select-none">
-                <span className="text-xs opacity-100">⌘</span>K
-              </div>
-            )}
+            {/* [2026-10-01] '⌘K' 배지를 걷었다 — 그 단축키는 이 검색칸이 아니라 전역 명령 센터를 연다. */}
             {searchWrd && (
               <button
                 type="button"

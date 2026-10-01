@@ -61,7 +61,7 @@ const FEATURES = {
   routes: ['/admin/collaboration/mail-history', '/admin/collaboration/mail-send'], requirements: ['메일 발송에 사용할 SMTP 설정'] },
   memoreport: { label: '메모 보고', permissions: ['MEMO_RPT'], paths: [
     'src/services/business/memoreport', 'src/app/admin/operation/memo-reports'], routes: ['/admin/operation/memo-reports'] },
-  note: { label: '쪽지', permissions: ['NOTE'], paths: ['src/services/business/user/NoteService.ts', 'src/app/note'],
+  note: { label: '쪽지', permissions: ['NOTE'], paths: ['src/services/business/user/NoteService.ts', 'src/app/note', 'src/app/components/dashboard/UnreadNotesCard.tsx'],
     routes: ['/note'], menuRoutes: ['/admin/collaboration?tab=MESSAGES'] },
   notification: { label: '알림', permissions: ['NOTI'], paths: [
     'src/app/components/layout/header-notifications.tsx', 'src/app/components/ui/app-notification-drawer.tsx',

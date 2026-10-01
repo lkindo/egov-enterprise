@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button';
 import { DashboardTask } from '@/types/foundation/dashboard';
 import { NOTICE_BOARD_ID, TASK_BOARD_ID } from '@/config/board-ids';
 /* reusable-base:collaboration:end */
+/* reusable-base:collaboration:start */
+import { UnreadNotesCard } from '@/app/components/dashboard/UnreadNotesCard';
+/* reusable-base:collaboration:end */
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -177,7 +180,8 @@ export default function UnifiedDashboardClient(
           <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
             안녕하세요, {user.name}님.
             {/* reusable-base:collaboration:start */}
-            {' '}오늘 처리할 업무입니다.
+            {/* [2026-10-01] '오늘 처리할 업무' 는 개인 항목이 결재 대기 하나뿐이라 실제 내용보다 넓었다. */}
+            {' '}확인할 일과 업무 현황입니다.
             {/* reusable-base:collaboration:end */}
           </p>
         </div>
@@ -219,6 +223,9 @@ export default function UnifiedDashboardClient(
           </Link>
         </li>
         {/* reusable-base:demo:end */}
+      {/* reusable-base:collaboration:start */}
+        <UnreadNotesCard />
+      {/* reusable-base:collaboration:end */}
       {/* reusable-base:collaboration:start */}
         {/*
           [2026-08-29] '배정된 업무'·'신규' 두 표현을 걷는다.

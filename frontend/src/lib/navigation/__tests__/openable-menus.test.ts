@@ -80,3 +80,14 @@ describe('openableMenus', () => {
     expect(openableMenus(tree, reader('USER_READ'))).toEqual([]);
   });
 });
+
+describe('openableMenus — 빈 분류 (2026-10-01)', () => {
+  it('하위를 불러왔는데 비어 있고 주소도 없는 분류는 그리지 않는다, 주소가 있는 항목은 남긴다', () => {
+    const subject = { permissions: [], authorizationVersion: 'v1' };
+    const menus = [
+      { menuNo: 1, menuNm: '빈 분류', useYn: 'Y', children: [] },
+      { menuNo: 2, menuNm: '외부 안내', useYn: 'Y', chkURL: 'https://example.invalid/guide', children: [] },
+    ] as never;
+    expect(openableMenus(menus, subject).map((menu) => menu.menuNm)).toEqual(['외부 안내']);
+  });
+});

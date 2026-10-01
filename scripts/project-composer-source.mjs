@@ -87,7 +87,8 @@ export function projectComposerFrontend(file, source, composition) {
   return source.replace(/^[^\n]*reusable-base:([a-z0-9_-]+):start[^\n]*\n[\s\S]*?^[^\n]*reusable-base:\1:end[^\n]*(?:\n|$)/gm, (block, pack) => {
     let owners;
     if (normalized === 'src/app/UnifiedDashboardClient.tsx') {
-      owners = pack === 'collaboration' ? ['dashboard']
+      // 안 읽은 쪽지 카드 블록은 쪽지 기능도 있어야 남는다 — 카드 파일이 쪽지 서비스를 쓴다.
+      owners = pack === 'collaboration' ? (/UnreadNotesCard/.test(block) ? ['dashboard', 'note'] : ['dashboard'])
         : /BannerSlider|PopupManager/.test(block) ? ['system'] : ['dashboard', 'informalsanction'];
     } else if (['src/app/page.tsx', 'src/app/components/dashboard/ActivityFeed.tsx'].includes(normalized)) owners = ['dashboard'];
     else if (normalized === 'src/app/components/layout/header.tsx') owners = pack === 'collaboration' ? ['notification'] : ['help'];

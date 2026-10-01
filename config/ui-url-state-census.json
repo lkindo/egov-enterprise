@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "a68b9afa3ce43aba41715af2efa2127481e0abc38db75899cf2e4ac8c35a33c7"
+    "inventoryHash": "302efe8471101306e60ca2d9c01fdfef7bf461d7b01a2d56335f07bf2f175c35"
   },
   "summary": {
-    "sourceFileCount": 585,
-    "records": 388,
-    "syntaxOccurrences": 460,
-    "ambiguousRecords": 341,
-    "unverifiedRecords": 388,
+    "sourceFileCount": 588,
+    "records": 390,
+    "syntaxOccurrences": 462,
+    "ambiguousRecords": 343,
+    "unverifiedRecords": 390,
     "exactPopulations": {
       "filesystemRoutes": 118,
       "dynamicRoutePatterns": 11,
@@ -45,7 +45,7 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 55,
-      "navigation-producer": 168,
+      "navigation-producer": 170,
       "page-redirect": 17,
       "query-builder": 21,
       "query-consumer": 54,
@@ -54,7 +54,7 @@
       "url-observer": 8
     },
     "bySurface": {
-      "navigation": 377,
+      "navigation": 379,
       "request-telemetry": 11
     }
   },
@@ -12139,6 +12139,45 @@
       }
     },
     {
+      "id": "URL-73687029BAC72A",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/components/dashboard/UnreadNotesCard.tsx",
+      "producerFile": "frontend/src/app/components/dashboard/UnreadNotesCard.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/note",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/note",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/components/dashboard/UnreadNotesCard.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-EBB39683C139B5",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -12668,6 +12707,46 @@
       "resolutionStatus": "ambiguous",
       "canonical": {
         "routeCandidate": "/",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/components/layout/sidebar.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-87D2753385D585",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/components/layout/sidebar.tsx",
+      "producerFile": "frontend/src/app/components/layout/sidebar.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
         "status": "unverified"
       },
       "authorizationBoundary": {
