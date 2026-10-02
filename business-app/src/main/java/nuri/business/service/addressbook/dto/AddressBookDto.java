@@ -20,6 +20,12 @@ public class AddressBookDto {
     @Schema(description = "주소록 일련번호", example = "1")
     private Long adbkSn;
 
+    @Size(min = 64, max = 64)
+    @Pattern(regexp = "^[a-f0-9]{64}$", message = "수정 상태 토큰이 올바르지 않습니다.")
+    @Schema(description = "상세 조회 시 받은 수정 상태 토큰. 수정 시 필수이며 오래된 상태는 409로 거절합니다.",
+            minLength = 64, maxLength = 64)
+    private String editToken;
+
     @NotBlank(message = "주소록 명칭은 필수입니다.")
     @Size(max = 200, message = "주소록 명칭은 200자 이내여야 합니다.")
     @Schema(description = "주소록 명칭", example = "마케팅팀 주소록")
@@ -42,9 +48,8 @@ public class AddressBookDto {
     @Schema(description = "작성자 ID", example = "USRCNFRM_00000000001")
     private String wrterId;
 
-    @Builder.Default
-    @Schema(description = "주소록 내 연락처 목록")
-    private List<@NotNull @Valid AddressBookUserDto> adbkMan = new java.util.ArrayList<>();
+    @Schema(description = "주소록 내 연락처 목록. 수정 시 생략/null은 보존, 명시적인 빈 목록은 전체 제거입니다.")
+    private List<@NotNull @Valid AddressBookUserDto> adbkMan;
 
     @Schema(description = "최초 등록자 ID")
     private String frstRgtrId;

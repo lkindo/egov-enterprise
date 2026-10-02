@@ -8,6 +8,7 @@ import nuri.business.domain.sms.SmsRecptnId;
 import nuri.business.domain.sms.SmsRecptnRepository;
 import nuri.business.service.sms.SmsAsyncProcessor;
 import nuri.business.service.sms.SmsSender;
+import nuri.business.service.sms.SmsGatewayResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -39,14 +40,16 @@ class DispatchRetryBoundaryIntegrationTest {
     @BeforeEach
     void prepare() throws Exception {
         when(mails.findById(anyLong())).thenReturn(Optional.of(SentMail.builder().emlDsptchSn(1L).build()));
-        when(recipients.findById(any())).thenReturn(Optional.of(SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("0101").build()));
+        SmsRecptn recipient = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("0101").rsltCd("P").build();
+        lenient().when(recipients.findById(any())).thenReturn(Optional.of(recipient));
+        when(recipients.findByIdForUpdate(any())).thenReturn(Optional.of(recipient));
         doAnswer(call -> {
             assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
             return null;
         }).when(emailSender).send(anyString(), anyString(), anyString(), anyString());
         when(smsSender.send(anyString(), anyString(), anyString())).thenAnswer(call -> {
             assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
-            return true;
+            return SmsGatewayResult.accepted("request-1");
         });
     }
 
@@ -73,13 +76,14 @@ class DispatchRetryBoundaryIntegrationTest {
     }
 
     @Test
-    void smsCommitRetryDoesNotRepeatSuccessfulDelivery() {
+    void smsRecordCommitRetryDoesNotRepeatAcceptedPost() {
         try (var context = context()) {
             var transactions = context.getBean(FailingCommitManager.class);
-            transactions.failuresRemaining.set(2);
+            failSmsRecordingAfterTheCommittedClaim(transactions, 2);
             context.getBean(SmsAsyncProcessor.class).sendToRecipient(1L, "0101", "0102", "body");
             verify(smsSender, times(1)).send("0101", "body", "0102");
-            assertThat(transactions.commits.get()).isEqualTo(3);
+            assertThat(transactions.commits.get()).isEqualTo(4); // committed claim + three record commits
+            assertThat(recipients.findById(new SmsRecptnId(1L, "0101")).orElseThrow().getRsltCd()).isEqualTo("P");
         }
     }
 
@@ -87,37 +91,72 @@ class DispatchRetryBoundaryIntegrationTest {
     void exhaustedRecordingIsObservableWithoutFalseDeliveryFailureOrResend() throws Exception {
         try (var context = context()) {
             var transactions = context.getBean(FailingCommitManager.class);
-            transactions.failuresRemaining.set(6);
+            transactions.failuresRemaining.set(3);
             context.getBean(MailAsyncProcessor.class).processSending(1L, "title", "body", "from", "to");
+            failSmsRecordingAfterTheCommittedClaim(transactions, 3);
             context.getBean(SmsAsyncProcessor.class).sendToRecipient(1L, "0101", "0102", "body");
             verify(emailSender, times(1)).send(anyString(), anyString(), anyString(), anyString());
             verify(smsSender, times(1)).send("0101", "body", "0102");
             var meters = context.getBean(SimpleMeterRegistry.class);
             for (String kind : new String[]{"mail", "sms"}) {
                 assertThat(meters.get(kind + ".dispatch.recording.failures").counter().count()).isEqualTo(1);
-                assertThat(meters.get(kind + ".dispatch.total").tag("result", "success").counter().count()).isEqualTo(1);
+                assertThat(meters.get(kind + ".dispatch.total").tag("result", kind.equals("sms") ? "pending" : "success").counter().count()).isEqualTo(1);
                 assertThat(meters.find(kind + ".dispatch.total").tag("result", "failure").counter()).isNull();
             }
-            assertThat(transactions.commits.get()).isEqualTo(6);
+            assertThat(transactions.commits.get()).isEqualTo(7);
         }
     }
 
     @Test
-    void deliveryFailuresStillRetryAndRecordFinalFailure() throws Exception {
+    void mailRetriesButDefinitiveSmsRejectDoesNotRepeatPost() throws Exception {
         doThrow(new IllegalStateException("delivery unavailable"))
                 .when(emailSender).send(anyString(), anyString(), anyString(), anyString());
-        when(smsSender.send(anyString(), anyString(), anyString())).thenReturn(false);
+        when(smsSender.send(anyString(), anyString(), anyString())).thenReturn(SmsGatewayResult.rejected(SmsGatewayResult.Reason.PROVIDER_REJECTED));
         try (var context = context()) {
             context.getBean(MailAsyncProcessor.class).processSending(1L, "title", "body", "from", "to");
             context.getBean(SmsAsyncProcessor.class).sendToRecipient(1L, "0101", "0102", "body");
             verify(emailSender, times(3)).send(anyString(), anyString(), anyString(), anyString());
-            verify(smsSender, times(3)).send("0101", "body", "0102");
+            verify(smsSender, times(1)).send("0101", "body", "0102");
             assertThat(mails.findById(1L).orElseThrow().getDsptchRsltCd()).isEqualTo("F");
             assertThat(recipients.findById(new SmsRecptnId(1L, "0101")).orElseThrow().getRsltCd()).isEqualTo("F");
-            assertThat(recipients.findById(new SmsRecptnId(1L, "0101")).orElseThrow().getRsltMsg())
-                    .isEqualTo("Gateway delivery failed");
-            assertThat(context.getBean(FailingCommitManager.class).commits.get()).isEqualTo(2);
+            assertThat(nuri.business.service.sms.SmsReceiptState.display("F", recipients.findById(new SmsRecptnId(1L, "0101")).orElseThrow().getRsltMsg()))
+                    .contains("거절");
+            assertThat(context.getBean(FailingCommitManager.class).commits.get()).isEqualTo(3);
         }
+    }
+
+    @Test
+    void ambiguousSmsPostExceptionCannotTriggerRetryThroughTheRealProxy() {
+        when(smsSender.send(anyString(), anyString(), anyString())).thenThrow(new IllegalStateException("accepted then response lost"));
+        try (var context = context()) {
+            var processor = context.getBean(SmsAsyncProcessor.class);
+            processor.sendToRecipient(1L, "0101", "0102", "body");
+            processor.sendToRecipient(1L, "0101", "0102", "body");
+            verify(smsSender, times(1)).send("0101", "body", "0102");
+            var receipt = nuri.business.service.sms.SmsReceiptState.parse(recipients.findById(new SmsRecptnId(1L, "0101")).orElseThrow().getRsltMsg()).orElseThrow();
+            assertThat(receipt.stage()).isEqualTo(nuri.business.service.sms.SmsReceiptState.Stage.UNKNOWN);
+            assertThat(context.getBean(FailingCommitManager.class).commits.get()).isEqualTo(3);
+        }
+    }
+
+    @Test
+    void failedClaimCommitPreventsAnyExternalPost() {
+        try (var context = context()) {
+            context.getBean(FailingCommitManager.class).failuresRemaining.set(1);
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> context.getBean(SmsAsyncProcessor.class)
+                    .sendToRecipient(1L, "0101", "0102", "body"))
+                    .isInstanceOf(TransientDataAccessResourceException.class);
+            verify(smsSender, never()).send(anyString(), anyString(), anyString());
+        }
+    }
+
+    private void failSmsRecordingAfterTheCommittedClaim(FailingCommitManager transactions, int failures) {
+        when(smsSender.send(anyString(), anyString(), anyString())).thenAnswer(call -> {
+            assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+            assertThat(transactions.commits.get()).isPositive();
+            transactions.failuresRemaining.set(failures);
+            return SmsGatewayResult.accepted("request-1");
+        });
     }
 
     @Configuration
@@ -135,6 +174,16 @@ class DispatchRetryBoundaryIntegrationTest {
         @Bean SimpleMeterRegistry meters() { return new SimpleMeterRegistry(); }
         @Bean FailingCommitManager transactionManager() { return new FailingCommitManager(); }
         @Bean Sleeper sleeper() { return delay -> { }; }
+        /** This fixture proves AOP/fake commit boundaries. Actual PostgreSQL locks have a separate test. */
+        @Bean jakarta.persistence.EntityManagerFactory entityManagerFactory() {
+            var factory = mock(jakarta.persistence.EntityManagerFactory.class);
+            var sessionFactory = mock(org.hibernate.engine.spi.SessionFactoryImplementor.class);
+            var jdbcServices = mock(org.hibernate.engine.jdbc.spi.JdbcServices.class);
+            when(factory.unwrap(org.hibernate.engine.spi.SessionFactoryImplementor.class)).thenReturn(sessionFactory);
+            when(sessionFactory.getJdbcServices()).thenReturn(jdbcServices);
+            when(jdbcServices.getDialect()).thenReturn(new org.hibernate.dialect.H2Dialect());
+            return factory;
+        }
     }
 
     static class FailingCommitManager extends AbstractPlatformTransactionManager {

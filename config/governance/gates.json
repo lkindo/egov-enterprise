@@ -970,6 +970,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/SmsBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-SMS-DELIVERY-STATE",
+          "source": "api-server/src/test/java/nuri/api/schema/SmsDeliveryStateIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-STAMP-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/StampBigintMigrationIntegrationTest.java"
         },
@@ -984,6 +988,10 @@
         {
           "id": "DB-SURVEY-SUBMISSION-CONCURRENCY",
           "source": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java"
+        },
+        {
+          "id": "DB-ADDRESSBOOK-SNAPSHOT-CONCURRENCY",
+          "source": "api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java"
         },
         {
           "id": "DB-MIG-SYS-LOG-BIGINT",

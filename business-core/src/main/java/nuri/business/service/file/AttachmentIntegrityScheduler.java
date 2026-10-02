@@ -20,18 +20,26 @@ public class AttachmentIntegrityScheduler {
     private final AttachmentReferenceIntegrityService references;
     private final AttachmentIntegrityReportStore store;
     private final MeterRegistry metrics;
+    private final AttachmentIntegrityMetrics health;
     private final int maxItems;
     private final AtomicBoolean running = new AtomicBoolean();
 
+    @org.springframework.beans.factory.annotation.Autowired
     public AttachmentIntegrityScheduler(AttachmentIntegrityService files, AttachmentReferenceIntegrityService references,
             AttachmentIntegrityReportStore store, MeterRegistry metrics,
-            @Value("${nuri.attachment.integrity.max-items:50000}") int maxItems) {
+            @Value("${nuri.attachment.integrity.max-items:50000}") int maxItems, AttachmentIntegrityMetrics health) {
         if (maxItems < 1 || maxItems > 1_000_000) throw new IllegalArgumentException("Invalid attachment scan limit");
         this.files = files;
         this.references = references;
         this.store = store;
         this.metrics = metrics;
+        this.health = health;
         this.maxItems = maxItems;
+    }
+
+    public AttachmentIntegrityScheduler(AttachmentIntegrityService files, AttachmentReferenceIntegrityService references,
+            AttachmentIntegrityReportStore store, MeterRegistry metrics, int maxItems) {
+        this(files, references, store, metrics, maxItems, new AttachmentIntegrityMetrics(store, metrics, true));
     }
 
     @Scheduled(cron = "${nuri.attachment.integrity.cron:0 15 3 * * *}", zone = "Asia/Seoul")
@@ -69,6 +77,7 @@ public class AttachmentIntegrityScheduler {
             } catch (Exception writeFailure) {
                 outcome = "REPORT_FAILED";
             }
+            health.recordOutcome(outcome);
             metrics.counter("nuri.attachment.integrity.runs", "outcome", outcome).increment();
             log.info("Attachment integrity scheduled scan outcome={}", outcome);
             running.set(false);

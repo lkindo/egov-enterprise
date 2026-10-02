@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import {
   buildFrontendReachabilityCensus,
   CURRENT_REPOSITORY_ASSERTIONS,
+  parseModuleReferences,
   validateReachabilityAssertions,
 } from './frontend-reachability-census.mjs';
 import {
@@ -57,6 +58,36 @@ function byFile(census, file) {
   assert.ok(entry, `census entry missing: ${file}`);
   return entry;
 }
+
+test('immediate createRequire tracks literal dependencies and rejects dynamic or escaping factories', () => {
+  for (const base of ['__filename', 'import.meta.url']) {
+    const parsed = parseModuleReferences(`const loaded = createRequire(${base})('./target');`);
+    assert.deepEqual(parsed.issues, []);
+    assert.deepEqual(parsed.references, [{ kind: 'create-require', specifier: './target', typeOnly: false, line: 1 }]);
+  }
+  for (const source of [
+    'createRequire(__filename)(target);',
+    "createRequire(__filename)('./target', extra);",
+    'consume(createRequire(__filename));',
+  ]) {
+    assert.ok(parseModuleReferences(source).issues.length > 0, source);
+  }
+});
+
+test('immediate createRequire keeps local dependencies reachable and missing targets red', () => {
+  const root = createFixture({
+    'frontend/e2e/consumer.ts': "import { createRequire } from 'node:module';\nconst loaded = createRequire(__filename)('../src/target');\n",
+    'frontend/src/target.ts': 'export const target = true;\n',
+  });
+  const target = byFile(censusFixture(root), 'frontend/src/target.ts');
+  assert.equal(target.reachability.test, true);
+  assert.equal(target.evidencePaths.test.edges.at(-1).kind, 'create-require');
+  const missingRoot = createFixture({
+    'frontend/e2e/consumer.ts': "createRequire(__filename)('../src/missing');\n",
+    'frontend/src/anchor.ts': 'export const anchor = true;\n',
+  });
+  assert.throws(() => censusFixture(missingRoot), /MISSING_IMPORT_TARGET/);
+});
 
 test('current repository keeps the known live chain and user hub split explicit', () => {
   const census = buildFrontendReachabilityCensus({ repoRoot });
@@ -199,7 +230,8 @@ const APPROVED_TRANSITIVE_ROUTE_LOSSES = [
   { profile: 'core', route: '/admin/community/boards/insert-board-article', configuredPath: 'src/app/actions/boardActions.ts', reason: '게시글 작성은 게시판 서버 액션(collaboration) 소비자다' },
   { profile: 'core', route: '/admin/community/boards/maker', configuredPath: 'src/services/foundation/system/BoardAdminService.ts', reason: '게시판 마법사는 게시판 관리 서비스(collaboration) 소비자다' },
   { profile: 'core', route: '/admin/community/boards/master', configuredPath: 'src/services/foundation/system/BoardAdminService.ts', reason: '게시판 마스터 목록은 게시판 관리 서비스(collaboration) 소비자다' },
-  { profile: 'core', route: '/admin/community/boards/select-board-list', configuredPath: 'src/services/foundation/system/BoardAdminService.ts', reason: '게시판 목록은 게시판 관리 서비스(collaboration) 소비자다' },
+  // Static client import makes the user service the first cascade witness; the approved route/profile is unchanged.
+  { profile: 'core', route: '/admin/community/boards/select-board-list', configuredPath: 'src/services/business/user/board/BoardUserService.ts', reason: '게시판 목록은 게시판 업무 서비스(collaboration) 소비자다' },
   { profile: 'core', route: '/admin/notifications', configuredPath: 'src/services/foundation/system/NotificationAdminService.ts', reason: '알림 센터의 관리자 발송 다이얼로그(DEC-OPS-042)가 알림 관리 서비스(collaboration)를 쓴다' },
   { profile: 'core', route: '/admin/uss/ion/sms', configuredPath: 'src/services/foundation/operation/SmsAdminService.ts', reason: '문자 관리는 문자 서비스(collaboration) 소비자다' },
   { profile: 'core', route: '/cop/sms/selectSmsList', configuredPath: 'src/services/foundation/operation/SmsAdminService.ts', reason: '문자 별칭 페이지는 같은 문자 서비스(collaboration) 소비자다' },

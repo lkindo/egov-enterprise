@@ -1,5 +1,6 @@
 package nuri.business.service.help;
 import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.business.security.util.SecurityUtil;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.help.*;
@@ -42,6 +43,7 @@ public class HelpService {
 
     @Transactional
     public Long createHpcm(String userId, HpcmDto dto) {
+        SecurityUtil.assertPermission("HELP_CREATE");
         Hpcm entity = Hpcm.builder()
                 .hlpSeCd(dto.getHlpSeCd())
                 .hlpDfn(dto.getHlpDfn())
@@ -53,6 +55,7 @@ public class HelpService {
 
     @Transactional
     public void updateHpcm(Long hlpSn, String userId, HpcmDto dto) {
+        SecurityUtil.assertPermission("HELP_UPDATE");
         Hpcm entity = hpcmRepository.findById(Objects.requireNonNull(hlpSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getHlpSeCd(), dto.getHlpDfn(), dto.getHlpExpln());
@@ -65,6 +68,7 @@ public class HelpService {
      */
     @Transactional
     public void deleteHpcm(Long hlpSn) {
+        SecurityUtil.assertPermission("HELP_DELETE");
         Hpcm entity = hpcmRepository.findById(Objects.requireNonNull(hlpSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         hpcmRepository.delete(entity);
@@ -85,6 +89,7 @@ public class HelpService {
 
     @Transactional
     public Long createOnlineManual(String userId, OnlineManualDto dto) {
+        SecurityUtil.assertPermission("HELP_CREATE");
         if (dto == null) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
         }
@@ -102,6 +107,7 @@ public class HelpService {
 
     @Transactional
     public void updateOnlineManual(Long onlnMnlSn, String userId, OnlineManualDto dto) {
+        SecurityUtil.assertPermission("HELP_UPDATE");
         OnlineManual entity = onlineManualRepository.findById(Objects.requireNonNull(onlnMnlSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getOnlnMnlNm(), dto.getOnlnMnlSeCd(), dto.getOnlnMnlDfn(), dto.getOnlnMnlExpln());
@@ -110,6 +116,7 @@ public class HelpService {
     /** 존재 확인 — {@link #deleteHpcm} 과 같은 이유. */
     @Transactional
     public void deleteOnlineManual(Long onlnMnlSn) {
+        SecurityUtil.assertPermission("HELP_DELETE");
         var entity = onlineManualRepository.findById(Objects.requireNonNull(onlnMnlSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         onlineManualRepository.delete(entity);

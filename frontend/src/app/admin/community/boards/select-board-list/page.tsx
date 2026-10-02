@@ -1,17 +1,7 @@
-import { Suspense } from 'react';
 import { Metadata } from 'next';
-import dynamic from 'next/dynamic';
+import { BoardListClient } from './BoardListClient';
 import { getInitialBoardData } from './BoardListServer';
-import { Skeleton } from "@/components/ui/skeleton";
 import { resolveDefaultBoardId } from './BoardListServer';
-
-/** 
- * 클라이언트 컴포넌트를 지연 로딩하여 서버/클라이언트 경계를 명확히 함 
- */
-const BoardListClient = dynamic(() => import('./BoardListClient').then(mod => mod.BoardListClient), {
-  ssr: true,
-  loading: () => <BoardListSkeleton />
-});
 
 export const metadata: Metadata = {
   title: '전체 게시글 - 전자정부 프레임워크',
@@ -42,7 +32,9 @@ export default async function BoardListPage({ searchParams }: { searchParams: Pr
   const startDate = toSingleString(resolvedSearchParams.startDate);
   const endDate = toSingleString(resolvedSearchParams.endDate);
 
-  const dataPromise = getInitialBoardData({
+  // 첫 목록은 서버에서 완성한다. 중첩 Suspense의 숨겨진 결과를 클라이언트가
+  // 드러낼 때까지 제목·설명이 기다리지 않도록, 이미 읽는 데이터를 먼저 전달한다.
+  const initialData = await getInitialBoardData({
     bbsId,
     page,
     searchWrd,
@@ -53,25 +45,9 @@ export default async function BoardListPage({ searchParams }: { searchParams: Pr
   });
 
   return (
-    <Suspense fallback={<BoardListSkeleton />}>
-      <BoardListClient 
-        dataPromise={dataPromise} 
-        params={{ bbsId, page, searchWrd, searchCnd, orderBy, startDate, endDate }} 
-      />
-    </Suspense>
-  );
-}
-
-function BoardListSkeleton() {
-  return (
-    <div className="flex flex-col gap-6 p-6">
-      <h1 className="sr-only">게시판 목록을 불러오는 중</h1>
-      <Skeleton className="h-10 w-48 rounded-lg" />
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <Skeleton className="lg:col-span-2 h-64 rounded-lg" />
-        <Skeleton className="h-64 rounded-lg" />
-      </div>
-      <Skeleton className="h-[600px] w-full rounded-lg" />
-    </div>
+    <BoardListClient
+      initialData={initialData}
+      params={{ bbsId, page, searchWrd, searchCnd, orderBy, startDate, endDate }}
+    />
   );
 }

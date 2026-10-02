@@ -70,6 +70,26 @@ class OpenApiDocumentationTest {
   }
 
   @Test
+  @DisplayName("주소록 수정은 성공·충돌 응답과 상세 상태 토큰을 함께 문서화한다")
+  void addressBookSnapshotUpdateContract_isDocumented() throws Exception {
+    tools.jackson.databind.JsonNode document = objectMapper.readTree(mockMvc.perform(get("/v3/api-docs"))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
+    tools.jackson.databind.JsonNode responses = document.path("paths")
+        .path("/api/v1/address-books/{adbkSn}").path("put").path("responses");
+    for (String code : java.util.List.of("200", "409")) {
+      assertThat(responses.path(code).path("content").path("application/json").path("schema")
+          .path("$ref").asString()).isEqualTo("#/components/schemas/ApiResponseVoid");
+    }
+    assertThat(responses.path("409").path("description").asString()).contains("C013");
+    tools.jackson.databind.JsonNode token = document.path("components").path("schemas")
+        .path("AddressBookDto").path("properties").path("editToken");
+    assertThat(token.path("minLength").asInt()).isEqualTo(64);
+    assertThat(token.path("maxLength").asInt()).isEqualTo(64);
+    assertThat(token.path("pattern").asString()).isEqualTo("^[a-f0-9]{64}$");
+  }
+
+  @Test
   @DisplayName("서버 URL 과 경로를 이어 붙여도 API 기본 경로가 한 번만 나온다")
   void serverUrls_doNotRepeatThePathPrefix() throws Exception {
     tools.jackson.databind.JsonNode spec = objectMapper.readTree(mockMvc.perform(get("/v3/api-docs"))
@@ -468,12 +488,31 @@ class OpenApiDocumentationTest {
    * 구분자·들여쓰기를 맞춘다. Jackson 기본값은 {@code "key" : value}(콜론 앞 공백)이고 배열을
    * 한 줄에 붙이므로 그대로 쓰면 두 포맷터가 매 재생성마다 서로를 덮어쓴다.
    *
-   * <p>키 정렬은 하지 않는다 — springdoc 의 산출 순서를 바꾸면 {@code generated-api.d.ts} 의
-   * 선언 순서까지 흔들려 계약 게이트 3종이 동시에 재생성을 요구한다. 순서 안정성은 별건이다.
+   * <p>JSON.stringify와 같은 정수 인덱스 키 순서만 적용한다. 그 밖의 키는 springdoc의
+   * 산출 순서를 유지해 schema·타입 선언 순서를 불필요하게 바꾸지 않는다.
    */
+  @Test
+  void normalizationMatchesJsonStringifyIntegerKeyOrder() throws Exception {
+    assertThat(normalizeForCommit("{\"responses\":{\"409\":{},\"default\":{},\"400\":{},\"200\":{}},\"schema\":{\"z\":{},\"a\":{}}}"))
+        .isEqualTo("""
+            {
+              "responses": {
+                "200": {},
+                "400": {},
+                "409": {},
+                "default": {}
+              },
+              "schema": {
+                "z": {},
+                "a": {}
+              }
+            }
+            """);
+  }
+
   private static String normalizeForCommit(String rawJson) throws Exception {
     tools.jackson.databind.ObjectMapper mapper = tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build();
-    Object tree = mapper.readValue(rawJson, Object.class);
+    Object tree = normalizeIntegerKeyOrder(mapper.readValue(rawJson, Object.class));
 
     tools.jackson.core.util.DefaultIndenter indenter =
         new tools.jackson.core.util.DefaultIndenter("  ", "\n");
@@ -490,5 +529,28 @@ class OpenApiDocumentationTest {
             .withArrayIndenter(indenter);
 
     return mapper.writer().with(printer).writeValueAsString(tree) + "\n";
+  }
+
+  private static Object normalizeIntegerKeyOrder(Object value) {
+    if (value instanceof java.util.Map<?, ?> map) {
+      var entries = new java.util.ArrayList<>(map.entrySet());
+      entries.sort((left, right) -> {
+        long first = integerKeyIndex(left.getKey().toString());
+        long second = integerKeyIndex(right.getKey().toString());
+        return first >= 0 && second >= 0 ? Long.compare(first, second)
+            : first >= 0 ? -1 : second >= 0 ? 1 : 0;
+      });
+      var normalized = new java.util.LinkedHashMap<String, Object>();
+      entries.forEach(entry -> normalized.put(entry.getKey().toString(), normalizeIntegerKeyOrder(entry.getValue())));
+      return normalized;
+    }
+    if (value instanceof java.util.List<?> list) return list.stream().map(OpenApiDocumentationTest::normalizeIntegerKeyOrder).toList();
+    return value;
+  }
+
+  private static long integerKeyIndex(String key) {
+    if (!key.matches("0|[1-9][0-9]{0,9}")) return -1;
+    long index = Long.parseLong(key);
+    return index < 4_294_967_295L ? index : -1;
   }
 }

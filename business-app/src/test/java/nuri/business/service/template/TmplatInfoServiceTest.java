@@ -6,17 +6,27 @@ import nuri.business.domain.template.TemplateRepository;
 import nuri.business.service.template.dto.TemplateDto;
 import nuri.business.service.template.dto.TemplateMapper;
 import nuri.foundation.core.template.TemplateReferenceContributor;
+import nuri.foundation.security.service.CustomUserDetails;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import nuri.foundation.core.exception.BusinessException;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,8 +54,14 @@ class TmplatInfoServiceTest {
 
     @BeforeEach
     void setUp() {
+        SecurityContextHolder.clearContext();
         MockitoAnnotations.openMocks(this);
         tmplatInfoService = new TmplatInfoService(templateRepository, templateMapper, List.of(boardReferences, additionalReferences));
+    }
+
+    @AfterEach
+    void clearAuthentication() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -80,6 +96,7 @@ class TmplatInfoServiceTest {
     @Test
     @DisplayName("템플릿 등록")
     void insertTmplatInfo() {
+        authenticate("TEMPLATE_CREATE");
         // given
         // [2026-08-29] 종전 fixture 에는 tmpltId 가 없었다. 리포지토리가 mock 이라 NOT NULL PK 를
         //   강제하지 않아 green 이었지만, 운영에서는 같은 요청이 DB 제약 위반으로 죽었다.
@@ -107,6 +124,7 @@ class TmplatInfoServiceTest {
     @Test
     @DisplayName("기존 ID 등록은 수정으로 바뀌지 않고 중복으로 거절한다")
     void insertTmplatInfoRejectsExistingId() {
+        authenticate("TEMPLATE_CREATE");
         when(templateRepository.existsById("TMPLT_EXISTS")).thenReturn(true);
         TemplateDto request = TemplateDto.builder().tmpltId("TMPLT_EXISTS")
                 .tmpltNm("변경 시도").tmpltSeCd("TMPT01").tmpltPath("/changed").useYn("N").build();
@@ -148,6 +166,7 @@ class TmplatInfoServiceTest {
     @Test
     @DisplayName("템플릿 삭제 — 존재하는 대상을 찾아 지운다(종전 deleteById 는 없는 ID 도 조용히 성공했다)")
     void deleteTmplatInfo() {
+        authenticate("TEMPLATE_DELETE");
         Template template = Template.builder().tmpltId("TMPLT_001").tmpltNm("n").tmpltSeCd("TMPT01").tmpltPath("/p").useYn("Y").build();
         when(templateRepository.findByIdForUpdate("TMPLT_001")).thenReturn(Optional.of(template));
 
@@ -161,6 +180,7 @@ class TmplatInfoServiceTest {
     @Test
     @DisplayName("여러 도메인이 참조 중인 템플릿은 RESOURCE_IN_USE(409) 로 거부하고 참조원·건수를 밝힌다")
     void deleteTmplatInfo_blockedWhenReferenced() {
+        authenticate("TEMPLATE_DELETE");
         Template template = Template.builder().tmpltId("TMPLT_001").tmpltNm("n").tmpltSeCd("TMPT01").tmpltPath("/p").useYn("Y").build();
         when(templateRepository.findByIdForUpdate("TMPLT_001")).thenReturn(Optional.of(template));
         when(boardReferences.sourceLabel()).thenReturn("게시판");
@@ -179,6 +199,7 @@ class TmplatInfoServiceTest {
     @Test
     @DisplayName("참조가 하나도 없으면 삭제하고, 참조원이 등록되지 않은 projection 에서도 삭제는 동작한다")
     void deleteTmplatInfo_allowedWithoutReferences() {
+        authenticate("TEMPLATE_DELETE");
         Template template = Template.builder().tmpltId("TMPLT_002").tmpltNm("n").tmpltSeCd("TMPT01").tmpltPath("/p").useYn("Y").build();
         when(templateRepository.findByIdForUpdate("TMPLT_002")).thenReturn(Optional.of(template));
         when(boardReferences.countReferences("TMPLT_002")).thenReturn(0L);
@@ -198,6 +219,7 @@ class TmplatInfoServiceTest {
     @Test
     @DisplayName("템플릿 수정 — ID 는 두고 명칭·구분·경로·사용여부를 갱신한다")
     void updateTmplatInfo() {
+        authenticate("TEMPLATE_UPDATE");
         Template template = Template.builder().tmpltId("TMPLT_001").tmpltNm("Old").tmpltSeCd("TMPT01").tmpltPath("/old").useYn("Y").build();
         when(templateRepository.findByIdForUpdate("TMPLT_001")).thenReturn(Optional.of(template));
         TemplateDto dto = TemplateDto.builder().tmpltId("IGNORED").tmpltNm("New").tmpltSeCd("TMPT02").tmpltPath("/new").useYn("N").build();
@@ -216,9 +238,102 @@ class TmplatInfoServiceTest {
     void updateOrDeleteTmplatInfo_NotFound() {
         when(templateRepository.findByIdForUpdate("NONE")).thenReturn(Optional.empty());
 
+        authenticate("TEMPLATE_UPDATE");
         assertThatThrownBy(() -> tmplatInfoService.updateTmplatInfo("NONE", TemplateDto.builder().tmpltNm("x").build()))
-                .isInstanceOf(BusinessException.class);
-        assertThatThrownBy(() -> tmplatInfoService.deleteTmplatInfo("NONE")).isInstanceOf(BusinessException.class);
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
+        authenticate("TEMPLATE_DELETE");
+        assertThatThrownBy(() -> tmplatInfoService.deleteTmplatInfo("NONE"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
         verify(templateRepository, never()).delete(any(Template.class));
+    }
+
+    @ParameterizedTest(name = "{0} denies {1} before accessing business dependencies")
+    @MethodSource("deniedWrites")
+    void writesRequireTheirExactPermission(String operation, String identity) {
+        authenticateDeniedIdentity(identity, operation);
+        TemplateDto request = TemplateDto.builder().tmpltId("TMPLT_001").tmpltNm("Changed")
+                .tmpltSeCd("TMPT01").tmpltPath("/changed").useYn("Y").build();
+
+        assertDenied(() -> {
+            switch (operation) {
+                case "CREATE" -> tmplatInfoService.insertTmplatInfo(request);
+                case "UPDATE" -> tmplatInfoService.updateTmplatInfo("TMPLT_001", request);
+                case "DELETE" -> tmplatInfoService.deleteTmplatInfo("TMPLT_001");
+                default -> throw new IllegalArgumentException(operation);
+            }
+        });
+
+        verifyNoInteractions(templateRepository, templateMapper, boardReferences, additionalReferences);
+    }
+
+    @Test
+    void foreignCreatorIsManageableOnlyWithTheExactUpdateOrDeleteGrant() {
+        Template existing = Template.builder().tmpltId("TMPLT_001").tmpltNm("Original")
+                .tmpltSeCd("TMPT01").tmpltPath("/original").useYn("Y").build();
+        existing.setFrstRgtrId("foreign-creator");
+        TemplateDto request = TemplateDto.builder().tmpltNm("Changed")
+                .tmpltSeCd("TMPT01").tmpltPath("/changed").useYn("Y").build();
+
+        authenticate();
+        assertDenied(() -> tmplatInfoService.updateTmplatInfo("TMPLT_001", request));
+        assertDenied(() -> tmplatInfoService.deleteTmplatInfo("TMPLT_001"));
+        verifyNoInteractions(templateRepository, templateMapper, boardReferences, additionalReferences);
+        assertThat(existing.getTmpltNm()).isEqualTo("Original");
+
+        authenticate("TEMPLATE_UPDATE");
+        when(templateRepository.findByIdForUpdate("TMPLT_001")).thenReturn(Optional.of(existing));
+        tmplatInfoService.updateTmplatInfo("TMPLT_001", request);
+        assertThat(existing.getTmpltNm()).isEqualTo("Changed");
+        assertThat(existing.getFrstRgtrId()).isEqualTo("foreign-creator");
+
+        authenticate("TEMPLATE_DELETE");
+        tmplatInfoService.deleteTmplatInfo(existing.getTmpltId());
+        verify(templateRepository).delete(existing);
+        verify(boardReferences).countReferences("TMPLT_001");
+        verify(additionalReferences).countReferences("TMPLT_001");
+    }
+
+    private static Stream<Arguments> deniedWrites() {
+        return Stream.of("CREATE", "UPDATE", "DELETE").flatMap(operation ->
+                Stream.of("NO_AUTHENTICATION", "ANONYMOUS", "NO_PERMISSION", "WRONG_OPERATION", "ROLE_ONLY")
+                        .map(identity -> Arguments.of(operation, identity)));
+    }
+
+    private static void authenticateDeniedIdentity(String identity, String operation) {
+        switch (identity) {
+            case "NO_AUTHENTICATION" -> SecurityContextHolder.clearContext();
+            case "ANONYMOUS" -> {
+                var user = principal("TEMPLATE_" + operation);
+                SecurityContextHolder.getContext().setAuthentication(
+                        new AnonymousAuthenticationToken("fixture", user, user.getAuthorities()));
+            }
+            case "NO_PERMISSION" -> authenticate();
+            case "WRONG_OPERATION" -> authenticate("CREATE".equals(operation) ? "TEMPLATE_DELETE" : "TEMPLATE_CREATE");
+            case "ROLE_ONLY" -> {
+                var user = CustomUserDetails.builder().userId("operator").esntlId("ESNTL_operator").enabled(true)
+                        .groups(List.of("ROLE_ADMIN", "ROLE_SYSTEM")).roleName("ADMIN").authorCode("ROLE_ADMIN").build();
+                SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(user, null,
+                        List.of(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("ROLE_SYSTEM"))));
+            }
+            default -> throw new IllegalArgumentException(identity);
+        }
+    }
+
+    private static CustomUserDetails principal(String... permissions) {
+        return CustomUserDetails.builder().userId("operator").esntlId("ESNTL_operator").enabled(true)
+                .permissions(List.of(permissions)).authorizationVersion("fixture").build();
+    }
+
+    private static void authenticate(String... permissions) {
+        var user = principal(permissions);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+    }
+
+    private static void assertDenied(org.assertj.core.api.ThrowableAssert.ThrowingCallable action) {
+        assertThatThrownBy(action).isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
     }
 }

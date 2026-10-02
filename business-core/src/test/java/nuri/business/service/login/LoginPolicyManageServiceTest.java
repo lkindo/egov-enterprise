@@ -5,17 +5,28 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.login.LoginPolicy;
 import nuri.business.domain.login.LoginPolicyRepository;
 import nuri.business.domain.user.entity.User;
+import nuri.business.domain.user.exception.UserErrorCode;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.login.dto.LoginPolicyDto;
 import nuri.business.domain.common.BaseSearchDto;
+import nuri.foundation.security.service.CustomUserDetails;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -40,6 +51,16 @@ class LoginPolicyManageServiceTest {
 
     @InjectMocks
     private LoginPolicyManageService loginPolicyManageService;
+
+    @BeforeEach
+    void clearAuthenticationBeforeTest() {
+        SecurityContextHolder.clearContext();
+    }
+
+    @AfterEach
+    void clearAuthenticationAfterTest() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Test
     @DisplayName("로그인 정책 목록 조회 테스트 - 정책 있음/없음 믹스")
@@ -190,8 +211,10 @@ class LoginPolicyManageServiceTest {
         dto.setBgngTm(start);
         dto.setEndTm(end);
 
+        authenticate("policy-manager", "LOGIN_POL_UPDATE");
         BusinessException update = assertThrows(BusinessException.class, () -> loginPolicyManageService.updateLoginPolicy(dto));
         assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, update.getErrorCode());
+        authenticate("policy-manager", "LOGIN_POL_CREATE");
         BusinessException insert = assertThrows(BusinessException.class, () -> loginPolicyManageService.insertLoginPolicy(dto));
         assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, insert.getErrorCode());
         // 짝 검사는 저장소를 건드리기 전에 끝난다 — 한쪽만 있는 시간창은 조회도 저장도 하지 않는다.
@@ -202,6 +225,7 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("로그인 정책 수정 테스트 - 성공")
     void updateLoginPolicySuccessTest() {
+        authenticate("policy-manager", "LOGIN_POL_UPDATE");
         LoginPolicyDto dto = new LoginPolicyDto();
         dto.setUserId("USER1");
         dto.setIpAddr("2001:0DB8:0000:0000:0000:0000:0000:0001");
@@ -224,6 +248,7 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("수정: 중복 허용 여부가 요청에 없으면 기존 값을 유지한다")
     void updateKeepsDuplicateFlagWhenRequestOmitsIt() {
+        authenticate("policy-manager", "LOGIN_POL_UPDATE");
         LoginPolicyDto dto = new LoginPolicyDto();
         dto.setUserId("USER1");
         dto.setIpAddr("192.168.0.1");
@@ -247,6 +272,7 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("수정: 중복 허용 여부를 명시하면 그 값으로 바뀐다")
     void updateAppliesDuplicateFlagWhenRequestSpecifiesIt() {
+        authenticate("policy-manager", "LOGIN_POL_UPDATE");
         LoginPolicyDto dto = new LoginPolicyDto();
         dto.setUserId("USER1");
         dto.setIpAddr("192.168.0.1");
@@ -265,6 +291,7 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("로그인 정책 등록 테스트")
     void insertLoginPolicyTest() {
+        authenticate("policy-manager", "LOGIN_POL_CREATE");
         // [V2_13] 등록 전 실존 사용자 검증이 추가됨 (fk_tb_login_policy_tb_user_info 선차단)
         User user = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").pswd("pass").build();
         given(userRepository.findByUserId("USER1")).willReturn(Optional.of(user));
@@ -279,6 +306,7 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("등록: 중복 허용 여부가 요청에 없으면 'N' 으로 저장한다(GAP-POLICY-001 종료)")
     void insertDefaultsDuplicateLoginToN() {
+        authenticate("policy-manager", "LOGIN_POL_CREATE");
         // 화면 폼(loginPolicySchema 의 .pick)은 dpcnPrmYn 을 보내지 않는다 — 종전에는 새 행이 NULL 로 시작했고
         // CHECK (dpcn_prm_yn IN ('Y','N'))(V2_24)는 PostgreSQL 규칙상 NULL 을 통과시켜 아무것도 실패하지 않았다.
         User user = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").pswd("pass").build();
@@ -294,6 +322,7 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("등록: 중복 허용 여부를 명시하면 그대로 저장한다")
     void insertKeepsExplicitDuplicateLogin() {
+        authenticate("policy-manager", "LOGIN_POL_CREATE");
         // "항상 'N'" 과잉 교정을 막는 대조군이다.
         User user = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").pswd("pass").build();
         given(userRepository.findByUserId("USER1")).willReturn(Optional.of(user));
@@ -309,12 +338,14 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("로그인 정책 등록 실패 - 존재하지 않는 사용자 (유령 loginId 차단, V2_13 결속)")
     void insertLoginPolicyUserNotFoundTest() {
+        authenticate("policy-manager", "LOGIN_POL_CREATE");
         given(userRepository.findByUserId("ghost")).willReturn(Optional.empty());
         LoginPolicyDto dto = new LoginPolicyDto();
         dto.setUserId("ghost");
 
-        org.junit.jupiter.api.Assertions.assertThrows(nuri.foundation.core.exception.BusinessException.class,
+        BusinessException missingUser = assertThrows(BusinessException.class,
                 () -> loginPolicyManageService.insertLoginPolicy(dto));
+        assertEquals(UserErrorCode.USER_NOT_FOUND, missingUser.getErrorCode());
         verify(loginPolicyRepository, org.mockito.Mockito.never()).save(any(LoginPolicy.class));
     }
 
@@ -581,6 +612,7 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("등록: 최초등록자를 SYSTEM 으로 남기고 저장한다")
     void insertStampsSystemRegistrar() {
+        authenticate("policy-manager", "LOGIN_POL_CREATE");
         User user = User.builder().esntlId("ESNTL01").userId("tester").userNm("테스터").build();
         given(userRepository.findByUserId("tester")).willReturn(Optional.of(user));
         LoginPolicyDto dto = LoginPolicyDto.builder()
@@ -605,8 +637,10 @@ class LoginPolicyManageServiceTest {
     void rejectsEnablingOtpBecauseNoEnrollmentPathExists() {
         LoginPolicyDto enable = LoginPolicyDto.builder().userId("tester").otpUseYn("Y").build();
 
+        authenticate("policy-manager", "LOGIN_POL_CREATE");
         BusinessException onInsert = assertThrows(BusinessException.class,
                 () -> loginPolicyManageService.insertLoginPolicy(enable));
+        authenticate("policy-manager", "LOGIN_POL_UPDATE");
         BusinessException onUpdate = assertThrows(BusinessException.class,
                 () -> loginPolicyManageService.updateLoginPolicy(enable));
 
@@ -618,6 +652,7 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("등록: 유효한 IP 리터럴이 아닌 값은 C001/400으로 거부한다")
     void insertRejectsInvalidIpAddress() {
+        authenticate("policy-manager", "LOGIN_POL_CREATE");
         LoginPolicyDto dto = LoginPolicyDto.builder()
                 .userId("tester")
                 .ipAddr("attacker.example")
@@ -634,6 +669,7 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("수정: 잘못된 IPv6 리터럴은 C001/400으로 거부한다")
     void updateRejectsInvalidIpAddress() {
+        authenticate("policy-manager", "LOGIN_POL_UPDATE");
         LoginPolicyDto dto = LoginPolicyDto.builder()
                 .userId("tester")
                 .ipAddr("2001:db8::zz")
@@ -650,16 +686,20 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("등록: 존재하지 않는 로그인 ID 는 거부한다 (유령 정책 차단)")
     void insertRejectsUnknownLoginId() {
+        authenticate("policy-manager", "LOGIN_POL_CREATE");
         given(userRepository.findByUserId("ghost")).willReturn(Optional.empty());
         LoginPolicyDto dto = LoginPolicyDto.builder().userId("ghost").build();
 
-        assertThrows(BusinessException.class, () -> loginPolicyManageService.insertLoginPolicy(dto));
+        BusinessException missingUser = assertThrows(BusinessException.class,
+                () -> loginPolicyManageService.insertLoginPolicy(dto));
+        assertEquals(UserErrorCode.USER_NOT_FOUND, missingUser.getErrorCode());
         verify(loginPolicyRepository, never()).save(any());
     }
 
     @Test
     @DisplayName("수정: 대상 정책이 없으면 RESOURCE_NOT_FOUND 로 끝난다")
     void updateThrowsWhenPolicyMissing() {
+        authenticate("policy-manager", "LOGIN_POL_UPDATE");
         given(loginPolicyRepository.findById("ghost")).willReturn(Optional.empty());
         LoginPolicyDto dto = LoginPolicyDto.builder().userId("ghost").build();
 
@@ -672,6 +712,7 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("삭제: 사용자 ID 로 실제 삭제를 호출한다")
     void deleteRemovesPolicyById() {
+        authenticate("policy-manager", "LOGIN_POL_DELETE");
         LoginPolicyDto dto = LoginPolicyDto.builder().userId("tester").build();
 
         loginPolicyManageService.deleteLoginPolicy(dto);
@@ -679,6 +720,133 @@ class LoginPolicyManageServiceTest {
         // `removed call to deleteById` 뮤턴트가 여기서 죽는다 —
         // 호출이 사라지면 "삭제했다" 는 응답과 달리 정책이 그대로 남는다.
         verify(loginPolicyRepository).deleteById("tester");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"LOGIN_POL_CREATE", "LOGIN_POL_UPDATE", "LOGIN_POL_DELETE"})
+    @DisplayName("관리 쓰기는 미인증 호출을 저장소 접근 전에 거부한다")
+    void writesDenyMissingAuthentication(String permission) {
+        assertWriteDenied(permission, "policy-target");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"LOGIN_POL_CREATE", "LOGIN_POL_UPDATE", "LOGIN_POL_DELETE"})
+    @DisplayName("관리 쓰기는 정확한 authority가 있어도 익명 토큰을 거부한다")
+    void writesDenyAnonymousAuthentication(String permission) {
+        CustomUserDetails principal = principal("policy-target", permission);
+        SecurityContextHolder.getContext().setAuthentication(new AnonymousAuthenticationToken(
+                "fixture-anonymous", principal, principal.getAuthorities()));
+
+        assertWriteDenied(permission, "policy-target");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"LOGIN_POL_CREATE", "LOGIN_POL_UPDATE", "LOGIN_POL_DELETE"})
+    @DisplayName("자신의 로그인 정책이어도 관리 permission 없이는 쓰기를 허용하지 않는다")
+    void writesDenyPolicyUserWithoutPermission(String permission) {
+        authenticate("policy-target");
+
+        assertWriteDenied(permission, "policy-target");
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "LOGIN_POL_CREATE, LOGIN_POL_UPDATE", "LOGIN_POL_CREATE, LOGIN_POL_DELETE",
+            "LOGIN_POL_CREATE, LOGIN_POL_READ", "LOGIN_POL_UPDATE, LOGIN_POL_CREATE",
+            "LOGIN_POL_UPDATE, LOGIN_POL_DELETE", "LOGIN_POL_UPDATE, LOGIN_POL_READ",
+            "LOGIN_POL_DELETE, LOGIN_POL_CREATE", "LOGIN_POL_DELETE, LOGIN_POL_UPDATE",
+            "LOGIN_POL_DELETE, LOGIN_POL_READ"
+    })
+    @DisplayName("다른 로그인 정책 CRUD permission으로 관리 쓰기를 허용하지 않는다")
+    void writesDenyDifferentOperationPermission(String requiredPermission, String grantedPermission) {
+        authenticate("policy-manager", grantedPermission);
+
+        assertWriteDenied(requiredPermission, "policy-target");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"LOGIN_POL_CREATE", "LOGIN_POL_UPDATE", "LOGIN_POL_DELETE"})
+    @DisplayName("관리 role과 group 표시값만으로 로그인 정책 쓰기를 허용하지 않는다")
+    void writesDenyRoleAndGroupWithoutPermission(String permission) {
+        CustomUserDetails principal = CustomUserDetails.builder()
+                .userId("policy-manager").esntlId("ESNTL_policy-manager").enabled(true)
+                .groups(List.of("ROLE_ADMIN", "ROLE_SYSTEM"))
+                .roleName("ADMIN").authorCode("ROLE_ADMIN")
+                .permissions(List.of()).authorizationVersion("fixture").build();
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                principal, null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN"),
+                        new SimpleGrantedAuthority("ROLE_SYSTEM"))));
+
+        assertWriteDenied(permission, "policy-target");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"LOGIN_POL_UPDATE", "LOGIN_POL_DELETE"})
+    @DisplayName("다른 사용자의 로그인 정책은 무권한 호출이 조회·변경할 수 없다")
+    void foreignUserPolicyWritesDenyMissingPermission(String permission) {
+        authenticate("policy-manager");
+
+        assertWriteDenied(permission, "policy-target");
+    }
+
+    @Test
+    @DisplayName("정확한 수정 permission은 다른 사용자의 로그인 정책 수정을 허용한다")
+    void updateAllowsExactPermissionForAnotherUsersPolicy() {
+        authenticate("policy-manager", "LOGIN_POL_UPDATE");
+        LoginPolicy entity = LoginPolicy.builder().userId("policy-target")
+                .ipAddr("10.0.0.1").dpcnPrmYn("Y").lmtYn("Y").otpUseYn("N").build();
+        given(loginPolicyRepository.findById("policy-target")).willReturn(Optional.of(entity));
+        LoginPolicyDto dto = LoginPolicyDto.builder().userId("policy-target")
+                .ipAddr("192.168.0.1").lmtYn("N").otpUseYn("N").build();
+
+        loginPolicyManageService.updateLoginPolicy(dto);
+
+        assertEquals("policy-target", entity.getUserId());
+        assertEquals("192.168.0.1", entity.getIpAddr());
+        assertEquals("Y", entity.getDpcnPrmYn());
+        assertEquals("N", entity.getLmtYn());
+        assertEquals("N", entity.getOtpUseYn());
+        verify(loginPolicyRepository).findById("policy-target");
+        verifyNoMoreInteractions(loginPolicyRepository);
+        verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    @DisplayName("정확한 삭제 permission은 다른 사용자의 로그인 정책 삭제를 허용한다")
+    void deleteAllowsExactPermissionForAnotherUsersPolicy() {
+        authenticate("policy-manager", "LOGIN_POL_DELETE");
+        LoginPolicyDto dto = LoginPolicyDto.builder().userId("policy-target").build();
+
+        loginPolicyManageService.deleteLoginPolicy(dto);
+
+        verify(loginPolicyRepository).deleteById("policy-target");
+        verifyNoMoreInteractions(loginPolicyRepository);
+        verifyNoInteractions(userRepository);
+    }
+
+    private void assertWriteDenied(String permission, String userId) {
+        LoginPolicyDto dto = LoginPolicyDto.builder().userId(userId).build();
+        BusinessException denied = assertThrows(BusinessException.class, () -> {
+            switch (permission) {
+                case "LOGIN_POL_CREATE" -> loginPolicyManageService.insertLoginPolicy(dto);
+                case "LOGIN_POL_UPDATE" -> loginPolicyManageService.updateLoginPolicy(dto);
+                case "LOGIN_POL_DELETE" -> loginPolicyManageService.deleteLoginPolicy(dto);
+                default -> throw new IllegalArgumentException("Unknown test operation: " + permission);
+            }
+        });
+        assertEquals(CommonErrorCode.ACCESS_DENIED, denied.getErrorCode());
+        verifyNoInteractions(userRepository, loginPolicyRepository);
+    }
+
+    private static void authenticate(String loginId, String... permissions) {
+        CustomUserDetails principal = principal(loginId, permissions);
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                principal, null, principal.getAuthorities()));
+    }
+
+    private static CustomUserDetails principal(String loginId, String... permissions) {
+        return CustomUserDetails.builder().userId(loginId).esntlId("ESNTL_" + loginId).enabled(true)
+                .permissions(List.of(permissions)).authorizationVersion("fixture").build();
     }
 
     // ─────────────────────────────────────────────────────────────────────────

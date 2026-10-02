@@ -14,16 +14,17 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Profile("prod")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "nuri.sms.provider", havingValue = "none", matchIfMissing = true)
 public class UnavailableSmsSender implements SmsSender {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UnavailableSmsSender.class);
 
     @Override
-    public boolean send(String recipientPhone, String message, String senderPhone) {
+    public SmsGatewayResult send(String recipientPhone, String message, String senderPhone) {
         LOGGER.error("[SMS NOT DELIVERED - prod gateway unavailable] recipient={}, sender={}, characters={}",
                 PiiMaskUtil.phone(recipientPhone),
                 PiiMaskUtil.phone(senderPhone),
                 message == null ? 0 : message.length());
-        return false;
+        return SmsGatewayResult.rejected(SmsGatewayResult.Reason.UNCONFIGURED);
     }
 }

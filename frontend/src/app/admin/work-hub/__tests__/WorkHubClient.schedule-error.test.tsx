@@ -317,11 +317,32 @@ describe('WorkHubClient schedule error ownership', () => {
 
     rejectDelete(new Error('보고 삭제 실패'));
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
-      '삭제에 실패했습니다. 작성자 본인 또는 관리자만 삭제할 수 있습니다.',
+      '보고 삭제 실패',
       'error',
     ));
     expect(remove).not.toBeDisabled();
     expect(screen.getByText('삭제 대상 보고')).toBeInTheDocument();
+  });
+
+  it.each([
+    [403, { response: { status: 403, data: { message: '작성자 본인 또는 관리자만 삭제할 수 있습니다.' } } }, '작성자 본인 또는 관리자만 삭제할 수 있습니다.'],
+    [409, { response: { status: 409, data: { message: '보고 상태가 변경되었습니다. 다시 조회해 주세요.' } } }, '보고 상태가 변경되었습니다. 다시 조회해 주세요.'],
+    [500, { isAxiosError: true, message: 'Request failed with status code 500' }, '업무 보고 삭제 중 오류가 발생했습니다.'],
+    ['network', { isAxiosError: true, message: 'Network Error' }, '업무 보고 삭제 중 오류가 발생했습니다.'],
+  ])('보고 삭제 오류 %s는 실제 사유를 표시하고 행·쓰기 잠금을 복구한다', async (_kind, error, message) => {
+    mocks.tab = 'report';
+    mocks.reportRows = [{ rptpSn: 32, rptTtl: '실패 후 보존할 보고' }];
+    mocks.deleteReport.mockRejectedValueOnce(error);
+    const user = userEvent.setup();
+    render(<WorkHubClient defaultTab="report" initialYmd="20260901" />);
+    const remove = screen.getByRole('button', { name: '실패 후 보존할 보고 보고 삭제' });
+    await user.click(remove);
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(message, 'error'));
+    expect(mocks.deleteReport).toHaveBeenCalledTimes(1);
+    expect(mocks.invalidateQueries).not.toHaveBeenCalled();
+    expect(screen.getByText('실패 후 보존할 보고')).toBeInTheDocument();
+    expect(remove).not.toBeDisabled();
+    expect(remove).not.toHaveAttribute('aria-busy', 'true');
   });
 
   it('일정 삭제는 confirm 전에 선점하고 같은 tick 중복 삭제를 막는다', async () => {

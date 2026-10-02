@@ -2,14 +2,21 @@ package nuri.api.schema;
 
 import nuri.business.core.harness.QueryCountInspector;
 import nuri.business.service.survey.SurveyResultService;
+import nuri.business.service.survey.SurveyService;
+import nuri.business.service.survey.dto.SurveyArticleDto;
+import nuri.business.service.survey.dto.SurveyInfoDto;
+import nuri.business.service.survey.dto.SurveyQuestionDto;
 import nuri.business.service.survey.dto.SurveyResponseSubmitDto;
 import nuri.business.service.survey.dto.SurveyResultDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.security.service.CustomUserDetails;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
@@ -29,6 +36,8 @@ import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,6 +47,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles({"test", "tc"})
 class SurveySubmissionConcurrencyIntegrationTest {
     @Autowired private SurveyResultService service;
+    @Autowired private SurveyService editor;
+    @Autowired private EntityManager entityManager;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private DataSource dataSource;
     @Autowired private PlatformTransactionManager transactionManager;
@@ -137,6 +148,197 @@ class SurveySubmissionConcurrencyIntegrationTest {
         authenticate("survey-other-user");
         assertThat(service.submitResponse(survey, answers(false))).isEqualTo(2);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_srvy_rslt WHERE srvy_sn=?", Integer.class, survey)).isEqualTo(4);
+    }
+
+    enum Edit {
+        QUESTION_TEXT, ARTICLE_TEXT, QUESTION_DELETE, ARTICLE_DELETE,
+        QUESTION_ADD, ARTICLE_ADD, UNPUBLISH, SURVEY_DELETE
+    }
+
+    @ParameterizedTest
+    @EnumSource(Edit.class)
+    void submissionFirstSerializesEverySurveyMutation(Edit edit) throws Exception {
+        var applied = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var firstPid = new AtomicInteger();
+        String secondApplication = "survey-edit-after-submit-" + survey;
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var submission = executor.submit(() -> heldAction("survey-submit-leading-" + survey,
+                    () -> { assertThat(service.submitResponse(survey, answers(false))).isEqualTo(2); return "saved"; },
+                    applied, release, firstPid));
+            java.util.concurrent.Future<String> mutation;
+            try {
+                awaitApplied(applied, submission, "선행 제출이 전체 응답을 저장");
+                mutation = executor.submit(() -> transactionAction(secondApplication, () -> edit(edit)));
+                assertWaitingOnSurvey(secondApplication, firstPid.get());
+            } finally {
+                release.countDown();
+            }
+            assertThat(submission.get(20, TimeUnit.SECONDS)).isEqualTo("saved");
+            assertThat(mutation.get(20, TimeUnit.SECONDS)).isEqualTo(
+                    edit == Edit.UNPUBLISH || edit == Edit.SURVEY_DELETE ? "edited" : "rejected:RESOURCE_IN_USE");
+        }
+        if (edit == Edit.SURVEY_DELETE) {
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_srvy_rslt WHERE srvy_sn=?", Integer.class, survey)).isZero();
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_srvy_info WHERE srvy_sn=?", Integer.class, survey)).isZero();
+        } else {
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_srvy_rslt WHERE srvy_sn=?", Integer.class, survey)).isEqualTo(2);
+            assertThat(jdbc.queryForObject("SELECT qstn_cn FROM tb_srvy_qstn WHERE srvy_qstn_sn=?", String.class, firstQuestion))
+                    .isEqualTo("검증 문항");
+            assertThat(jdbc.queryForObject("SELECT artcl_cn FROM tb_srvy_artcl WHERE srvy_artcl_sn=?", String.class, firstArticle))
+                    .isEqualTo("검증 항목");
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(Edit.class)
+    void mutationFirstMakesSubmissionValidateTheCommittedSurvey(Edit edit) throws Exception {
+        var applied = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var firstPid = new AtomicInteger();
+        String secondApplication = "survey-submit-after-edit-" + survey;
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var mutation = executor.submit(() -> heldAction("survey-edit-leading-" + survey,
+                    () -> edit(edit), applied, release, firstPid));
+            java.util.concurrent.Future<String> submission;
+            try {
+                awaitApplied(applied, mutation, "선행 편집이 검증과 변경을 완료");
+                submission = executor.submit(() -> transactionAction(secondApplication, () -> {
+                    assertThat(service.submitResponse(survey, answers(false))).isEqualTo(2);
+                    return "saved";
+                }));
+                assertWaitingOnSurvey(secondApplication, firstPid.get());
+            } finally {
+                release.countDown();
+            }
+            assertThat(mutation.get(20, TimeUnit.SECONDS)).isEqualTo("edited");
+            assertThat(submission.get(20, TimeUnit.SECONDS)).isEqualTo(switch (edit) {
+                case QUESTION_DELETE, ARTICLE_DELETE -> "rejected:INVALID_INPUT_VALUE";
+                case UNPUBLISH, SURVEY_DELETE -> "rejected:RESOURCE_NOT_FOUND";
+                default -> "saved";
+            });
+        }
+        boolean rejected = edit == Edit.QUESTION_DELETE || edit == Edit.ARTICLE_DELETE
+                || edit == Edit.UNPUBLISH || edit == Edit.SURVEY_DELETE;
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_srvy_rslt WHERE srvy_sn=?", Integer.class, survey))
+                .isEqualTo(rejected ? 0 : 2);
+        if (edit == Edit.QUESTION_TEXT) {
+            assertThat(jdbc.queryForObject("SELECT qstn_cn FROM tb_srvy_qstn WHERE srvy_qstn_sn=?", String.class, firstQuestion))
+                    .isEqualTo("수정 문항");
+        } else if (edit == Edit.ARTICLE_TEXT) {
+            assertThat(jdbc.queryForObject("SELECT artcl_cn FROM tb_srvy_artcl WHERE srvy_artcl_sn=?", String.class, firstArticle))
+                    .isEqualTo("수정 선택");
+        }
+    }
+
+    private String edit(Edit edit) {
+        switch (edit) {
+            case QUESTION_TEXT -> editor.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(firstQuestion)
+                    .qstnSn(1L).qstnCn("수정 문항").maxChcCnt(1).build());
+            case ARTICLE_TEXT -> editor.updateItem(SurveyArticleDto.builder().srvyArtclSn(firstArticle)
+                    .artclSn(1L).artclCn("수정 선택").etcAnsYn("N").build());
+            case QUESTION_DELETE -> editor.deleteQuestion(survey, firstQuestion);
+            case ARTICLE_DELETE -> editor.deleteItem(firstArticle);
+            // 선택지가 없는 새 문항은 기존 제출 정책에서 답할 수 있는 문항에 포함되지 않는다.
+            case QUESTION_ADD -> editor.insertQuestion(SurveyQuestionDto.builder().srvySn(survey)
+                    .qstnCn("새 문항").maxChcCnt(1).build());
+            case ARTICLE_ADD -> editor.insertItem(SurveyArticleDto.builder().srvyQstnSn(firstQuestion)
+                    .artclSn(3L).artclCn("새 선택").etcAnsYn("N").build());
+            case UNPUBLISH -> editor.updateSurvey(SurveyInfoDto.builder().srvySn(survey).srvyTmpltSn(template)
+                    .srvyTtl("동시 제출 검증").srvyBgngYmd("20000101").srvyEndYmd("29991231").rlsYn("N").build());
+            // 전체 설문 삭제는 응답을 함께 정리하는 기존 명시적 정책을 보존한다.
+            case SURVEY_DELETE -> editor.deleteSurvey(survey);
+        }
+        return "edited";
+    }
+
+    @Test
+    void waitingEditorLoadsQuestionAfterTheLeadingEditAndSubmissionCommit() throws Exception {
+        var applied = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var firstPid = new AtomicInteger();
+        String secondApplication = "survey-stale-question-" + survey;
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var first = executor.submit(() -> heldAction("survey-edit-and-submit-" + survey, () -> {
+                edit(Edit.QUESTION_TEXT);
+                assertThat(service.submitResponse(survey, answers(false))).isEqualTo(2);
+                return "saved";
+            }, applied, release, firstPid));
+            java.util.concurrent.Future<String> second;
+            try {
+                awaitApplied(applied, first, "선행 문항 변경과 제출을 저장");
+                second = executor.submit(() -> transactionAction(secondApplication, () -> {
+                    editor.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(firstQuestion).qstnSn(8L)
+                            .qstnCn("검증 문항").maxChcCnt(1).build());
+                    return "edited";
+                }));
+                assertWaitingOnSurvey(secondApplication, firstPid.get());
+            } finally {
+                release.countDown();
+            }
+            assertThat(first.get(20, TimeUnit.SECONDS)).isEqualTo("saved");
+            assertThat(second.get(20, TimeUnit.SECONDS)).isEqualTo("rejected:RESOURCE_IN_USE");
+        }
+        assertThat(jdbc.queryForObject("SELECT qstn_cn FROM tb_srvy_qstn WHERE srvy_qstn_sn=?", String.class, firstQuestion))
+                .isEqualTo("수정 문항");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_srvy_rslt WHERE srvy_sn=?", Integer.class, survey)).isEqualTo(2);
+    }
+
+    private String heldAction(String application, Supplier<String> action, CountDownLatch applied,
+                              CountDownLatch release, AtomicInteger backendPid) {
+        return transactionAction(application, () -> {
+            backendPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+            String outcome = action.get();
+            entityManager.flush();
+            applied.countDown();
+            try {
+                assertThat(release.await(20, TimeUnit.SECONDS)).as("후행 요청의 실제 survey 잠금 대기 확인").isTrue();
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Survey concurrency test interrupted", interrupted);
+            }
+            return outcome;
+        });
+    }
+
+    private void awaitApplied(CountDownLatch applied, java.util.concurrent.Future<?> action, String description)
+            throws Exception {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+        while (!applied.await(20, TimeUnit.MILLISECONDS) && System.nanoTime() < deadline) {
+            // 선행 작업 실패를 잠금 대기 시간 초과로 숨기지 않는다.
+            if (action.isDone()) action.get(1, TimeUnit.SECONDS);
+        }
+        assertThat(applied.getCount()).as(description).isZero();
+    }
+
+    private String transactionAction(String application, Supplier<String> action) {
+        authenticate("survey-race-user");
+        try {
+            return new TransactionTemplate(transactionManager).execute(status -> {
+                jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                return action.get();
+            });
+        } catch (BusinessException rejected) {
+            return "rejected:" + rejected.getErrorCode();
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    private void assertWaitingOnSurvey(String application, int blockerPid) throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+        boolean waiting;
+        do {
+            waiting = Boolean.TRUE.equals(jdbc.queryForObject("""
+                    SELECT EXISTS (
+                        SELECT 1 FROM pg_stat_activity
+                        WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'
+                          AND ? = ANY(pg_blocking_pids(pid)) AND lower(query) LIKE '%tb_srvy_info%'
+                    )
+                    """, Boolean.class, application, blockerPid));
+            if (!waiting) Thread.sleep(20);
+        } while (!waiting && System.nanoTime() < deadline);
+        assertThat(waiting).as("후행 트랜잭션은 응답 검사·자식 조회 전에 동일 survey 행에서 대기").isTrue();
     }
 
     @Test

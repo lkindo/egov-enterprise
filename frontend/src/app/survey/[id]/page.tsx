@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { SITE_IDENTITY } from '@/config/site-identity';
+import { getTodayYmd } from '@/lib/date/today-ymd';
+import { surveyAdminService } from '@/services/foundation/survey/SurveyAdminService';
 import SurveyDetailClient from './SurveyDetailClient';
 import { notFound } from 'next/navigation';
 
@@ -15,5 +17,16 @@ export default async function SurveyDetailPage({ params }: { params: Promise<{ i
   const { id } = await params;
   const srvySn = Number(id);
   if (!Number.isSafeInteger(srvySn) || srvySn <= 0) notFound();
-  return <SurveyDetailClient srvySn={srvySn} />;
+  const [survey, questions] = await Promise.allSettled([
+    surveyAdminService.getSurvey(srvySn),
+    surveyAdminService.getQuestions(srvySn),
+  ]);
+  return (
+    <SurveyDetailClient
+      srvySn={srvySn}
+      initialSurvey={survey.status === 'fulfilled' ? survey.value : undefined}
+      initialQuestions={questions.status === 'fulfilled' ? questions.value : undefined}
+      initialTodayYmd={getTodayYmd()}
+    />
+  );
 }

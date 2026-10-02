@@ -3,7 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
+import { addressbookUserService, type AddressBook } from '@/services/business/user/addressbook/AddressbookUserService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -19,6 +19,7 @@ import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import type { NameCard } from '@/types/business/addressbook';
 import { AddressBookMemberDialog } from '../../AddressBookMemberDialog';
+import { AddressBookConflictNotice, isAddressBookConflict } from '../../AddressBookConflictNotice';
 import {
     addressBookEditFormSchema,
     addressBookEditValidationLabels,
@@ -62,19 +63,29 @@ const SelectAddressBookDetailClient = () => {
     });
 
     const [adbkNm, setAdbkNm] = useState('');
-    const [prevAdbkNm, setPrevAdbkNm] = useState(data?.adbkNm);
-    if (data?.adbkNm !== undefined && data.adbkNm !== prevAdbkNm) {
-        setPrevAdbkNm(data.adbkNm);
+    const [editBase, setEditBase] = useState<AddressBook | null>(null);
+    const [conflict, setConflict] = useState<{ kind: 'name' } | { kind: 'remove'; member: NameCard } | null>(null);
+    const [latest, setLatest] = useState<AddressBook | null>(null);
+    const [isReloading, setIsReloading] = useState(false);
+    const reloadPendingRef = useRef(false);
+    const [reloadError, setReloadError] = useState<string | null>(null);
+    // 백그라운드 재조회로 입력이나 편집 기준을 교체하지 않는다. 새 기준은 사용자가 선택한 뒤 쓴다.
+    if (data && data.adbkSn === adbkSn && (!editBase || editBase.adbkSn !== adbkSn)) {
+        setEditBase(data);
         setAdbkNm(data.adbkNm);
+        setConflict(null);
+        setLatest(null);
+        setReloadError(null);
     }
 
     const updateMutation = useMutation({
-        mutationFn: (payload: { adbkNm: string; rlsScopeCd: string }) =>
+        mutationFn: (payload: { adbkNm: string; rlsScopeCd: string; editToken: string }) =>
             // adbkMan 은 전송하지 않는다 — 서버는 adbkMan 이 null 이면 구성원을 건드리지 않고,
             // 빈 배열을 보내면 구성원 전원이 삭제된다.
             addressbookUserService.updateAddressBook(adbkSn, {
                 adbkNm: payload.adbkNm,
                 rlsScopeCd: payload.rlsScopeCd,
+                editToken: payload.editToken,
             }),
         onSuccess: () => {
             toast('주소록이 수정되었습니다.', 'success');
@@ -82,6 +93,12 @@ const SelectAddressBookDetailClient = () => {
             router.push(LIST_PATH);
         },
         onError: (mutationError: unknown) => {
+            if (isAddressBookConflict(mutationError)) {
+                setConflict({ kind: 'name' });
+                setLatest(null);
+                setReloadError(null);
+                return;
+            }
             const fieldErrors = extractFieldErrors(mutationError);
             if (fieldErrors) validation.setFormErrors(fieldErrors);
             else toast(extractErrorMessage(mutationError, '수정에 실패했습니다.'), 'error');
@@ -101,18 +118,22 @@ const SelectAddressBookDetailClient = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (updatePendingRef.current || deletePendingRef.current) return;
+        if (updatePendingRef.current || deletePendingRef.current || memberRemovePendingRef.current || conflict) return;
         const validated = validation.validate({
             adbkNm,
-            rlsScopeCd: data?.rlsScopeCd ?? '',
+            rlsScopeCd: editBase?.rlsScopeCd ?? '',
         });
         if (!validated) return;
+        if (!editBase?.editToken) {
+            toast('주소록의 최신 내용을 다시 불러온 뒤 저장해 주세요.', 'error');
+            return;
+        }
         updatePendingRef.current = true;
-        updateMutation.mutate(validated);
+        updateMutation.mutate({ ...validated, editToken: editBase.editToken });
     };
 
     const handleDelete = async () => {
-        if (deletePendingRef.current || updatePendingRef.current) return;
+        if (deletePendingRef.current || updatePendingRef.current || memberRemovePendingRef.current || conflict) return;
         deletePendingRef.current = true;
         setIsDeletePending(true);
         try {
@@ -142,8 +163,13 @@ const SelectAddressBookDetailClient = () => {
     const memberRemovePendingRef = useRef(false);
     const [removePendingMemberSn, setRemovePendingMemberSn] = useState<number | null>(null);
     const refreshDetail = () => queryClient.invalidateQueries({ queryKey: ['address-book-detail', adbkSn] });
-    const handleRemoveMember = async (member: NameCard) => {
-        if (!data || memberRemovePendingRef.current || updatePendingRef.current || deletePendingRef.current) return;
+    const handleRemoveMember = async (member: NameCard, reapplyBase?: AddressBook) => {
+        const snapshot = reapplyBase ?? data;
+        if (!snapshot || memberRemovePendingRef.current || updatePendingRef.current || deletePendingRef.current || (conflict && !reapplyBase)) return;
+        if (!snapshot.editToken) {
+            toast('주소록의 최신 내용을 다시 불러온 뒤 저장해 주세요.', 'error');
+            return;
+        }
         memberRemovePendingRef.current = true;
         setRemovePendingMemberSn(member.adbkMbrSn ?? null);
         try {
@@ -155,19 +181,72 @@ const SelectAddressBookDetailClient = () => {
             });
             if (!ok) return;
             await addressbookUserService.updateAddressBook(adbkSn, {
-                adbkNm: data.adbkNm,
-                rlsScopeCd: data.rlsScopeCd,
-                adbkMan: (data.adbkMan ?? [])
+                adbkNm: snapshot.adbkNm,
+                rlsScopeCd: snapshot.rlsScopeCd,
+                editToken: snapshot.editToken,
+                adbkMan: (snapshot.adbkMan ?? [])
                     .filter((current) => current.adbkMbrSn !== member.adbkMbrSn)
                     .map(toMemberRequest),
             });
             toast('구성원을 뺐습니다.', 'success');
+            setConflict(null);
+            setLatest(null);
             await refreshDetail();
         } catch (removeError: unknown) {
-            toast(extractErrorMessage(removeError, '구성원을 빼지 못했습니다.'), 'error');
+            if (isAddressBookConflict(removeError)) {
+                setConflict({ kind: 'remove', member });
+                setLatest(null);
+                setReloadError(null);
+            } else {
+                toast(extractErrorMessage(removeError, '구성원을 빼지 못했습니다.'), 'error');
+            }
         } finally {
             memberRemovePendingRef.current = false;
             setRemovePendingMemberSn(null);
+        }
+    };
+
+    const reloadLatest = async () => {
+        if (reloadPendingRef.current) return;
+        reloadPendingRef.current = true;
+        setIsReloading(true);
+        setLatest(null);
+        setReloadError(null);
+        try {
+            setLatest(await addressbookUserService.getAddressBook(adbkSn));
+        } catch (reloadFailure: unknown) {
+            setReloadError(extractErrorMessage(reloadFailure, '최신 내용을 불러오지 못했습니다. 다시 확인해 주세요.'));
+        } finally {
+            reloadPendingRef.current = false;
+            setIsReloading(false);
+        }
+    };
+    const latestRemoveMember = conflict?.kind === 'remove'
+        ? latest?.adbkMan?.find((member) => member.adbkMbrSn === conflict.member.adbkMbrSn)
+        : undefined;
+    const discardChanges = () => {
+        if (!latest) return;
+        if (conflict?.kind === 'name') {
+            setAdbkNm(latest.adbkNm);
+            setEditBase(latest);
+        } else if (adbkNm === editBase?.adbkNm) {
+            setAdbkNm(latest.adbkNm);
+            setEditBase(latest);
+        }
+        queryClient.setQueryData(['address-book-detail', adbkSn], latest);
+        setConflict(null);
+        setLatest(null);
+    };
+    const reapplyChanges = () => {
+        if (!latest?.editToken) return;
+        if (conflict?.kind === 'remove') {
+            if (latestRemoveMember) void handleRemoveMember(latestRemoveMember, latest);
+        } else {
+            setEditBase(latest);
+            queryClient.setQueryData(['address-book-detail', adbkSn], latest);
+            setConflict(null);
+            setLatest(null);
+            toast('내 변경을 최신 내용에 반영했습니다. 확인 후 저장해 주세요.', 'info');
         }
     };
 
@@ -215,7 +294,7 @@ const SelectAddressBookDetailClient = () => {
                                     : `${data?.adbkNm ?? ''} 주소록 삭제`}
                                 aria-busy={isDeletePending}
                                 onClick={() => { void handleDelete(); }}
-                                disabled={isDeletePending || updateMutation.isPending}
+                                disabled={isDeletePending || updateMutation.isPending || removePendingMemberSn !== null || !!conflict}
                                 className="rounded-lg gap-2 shrink-0"
                             >
                                 {isDeletePending
@@ -233,6 +312,32 @@ const SelectAddressBookDetailClient = () => {
                                 labels={addressBookEditValidationLabels}
                                 onNavigate={validation.focusError}
                             />
+                            {conflict ? (
+                                <AddressBookConflictNotice
+                                    isReloading={isReloading}
+                                    isApplying={removePendingMemberSn !== null}
+                                    hasLatest={latest !== null}
+                                    reloadError={reloadError}
+                                    canReapply={!!latest?.editToken && (conflict.kind === 'name' || !!latestRemoveMember) && removePendingMemberSn === null}
+                                    onReload={() => { void reloadLatest(); }}
+                                    onDiscard={discardChanges}
+                                    onReapply={reapplyChanges}
+                                >
+                                    <div className="space-y-2 text-sm text-foreground">
+                                        <p>서버 주소록 명칭: {latest?.adbkNm}</p>
+                                        {conflict.kind === 'name' ? <p>내 입력 명칭: {adbkNm}</p> : (
+                                            <>
+                                                <p>삭제하려던 구성원: {conflict.member.nm}</p>
+                                                {latestRemoveMember ? (
+                                                    <p>서버 구성원: {latestRemoveMember.nm} / {latestRemoveMember.emlAddr || '-'} / {latestRemoveMember.mblTelno || '-'}</p>
+                                                ) : <p>이 구성원은 이미 삭제되었습니다. 최신 내용 보기를 선택해 주세요.</p>}
+                                            </>
+                                        )}
+                                        <p>최신 구성원 {latest?.adbkMan?.length ?? 0}명은 함께 보존합니다.</p>
+                                        <p>최신 구성원: {(latest?.adbkMan ?? []).map((member) => member.nm || '이름 없음').join(', ') || '없음'}</p>
+                                    </div>
+                                </AddressBookConflictNotice>
+                            ) : null}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                 <div className="space-y-3">
                                     <Label htmlFor="adbkNm" className="text-sm font-bold flex items-center gap-2 text-muted-foreground">
@@ -263,7 +368,7 @@ const SelectAddressBookDetailClient = () => {
                                         id="rlsScopeCd"
                                         {...validation.fieldProps('rlsScopeCd')}
                                         className="text-base border-2 border-border bg-muted rounded-lg"
-                                        value={data?.rlsScopeCd ?? ''}
+                                        value={editBase?.rlsScopeCd ?? ''}
                                         readOnly
                                         aria-required="true"
                                     />
@@ -280,7 +385,7 @@ const SelectAddressBookDetailClient = () => {
                                         type="button"
                                         variant="outline"
                                         size="sm"
-                                        disabled={!data || removePendingMemberSn !== null}
+                                        disabled={!data || removePendingMemberSn !== null || updateMutation.isPending || isDeletePending || !!conflict}
                                         onClick={() => setMemberDialog({ member: null })}
                                     >
                                         구성원 추가
@@ -332,7 +437,7 @@ const SelectAddressBookDetailClient = () => {
                                                                     variant="outline"
                                                                     size="sm"
                                                                     aria-label={`${member.nm || '구성원'} 수정`}
-                                                                    disabled={removePendingMemberSn !== null}
+                                                                    disabled={removePendingMemberSn !== null || updateMutation.isPending || isDeletePending || !!conflict}
                                                                     onClick={() => setMemberDialog({ member })}
                                                                 >
                                                                     수정
@@ -343,7 +448,7 @@ const SelectAddressBookDetailClient = () => {
                                                                     size="sm"
                                                                     aria-label={`${member.nm || '구성원'} ${removePendingMemberSn === member.adbkMbrSn ? '삭제 중' : '삭제'}`}
                                                                     aria-busy={removePendingMemberSn === member.adbkMbrSn || undefined}
-                                                                    disabled={removePendingMemberSn !== null || isDeletePending || updateMutation.isPending}
+                                                                    disabled={removePendingMemberSn !== null || isDeletePending || updateMutation.isPending || !!conflict}
                                                                     onClick={() => { void handleRemoveMember(member); }}
                                                                 >
                                                                     삭제
@@ -380,7 +485,7 @@ const SelectAddressBookDetailClient = () => {
                             <Button
                                 type="submit"
                                 className="px-16 gap-3 font-bold bg-surface-inverse text-surface-inverse-foreground shadow-2xl hover:bg-primary transition-all active:scale-95 rounded-lg"
-                                disabled={updateMutation.isPending || isDeletePending}
+                                disabled={updateMutation.isPending || isDeletePending || removePendingMemberSn !== null || !!conflict}
                                 aria-busy={updateMutation.isPending || undefined}
                             >
                                 {updateMutation.isPending ? (

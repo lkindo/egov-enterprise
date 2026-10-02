@@ -27,14 +27,22 @@ export const PATHS = Object.freeze({
   rateLimitTest: 'business-core/src/test/java/nuri/business/security/filter/RateLimitFilterTest.java',
   loginIntegrationTest: 'api-server/src/test/java/nuri/auth/AuthenticationControllerIntegrationTest.java',
   attachmentScheduler: 'business-core/src/main/java/nuri/business/service/file/AttachmentIntegrityScheduler.java',
+  attachmentMetrics: 'business-core/src/main/java/nuri/business/service/file/AttachmentIntegrityMetrics.java',
   attachmentSchedulerTest: 'business-core/src/test/java/nuri/business/service/file/AttachmentIntegritySchedulerTest.java',
   durableDispatcher: 'business-core/src/main/java/nuri/business/service/system/job/DurableWorkDispatcher.java',
+  durableMetrics: 'business-core/src/main/java/nuri/business/service/system/job/DurableWorkMetrics.java',
   durableWorkTest: 'api-server/src/test/java/nuri/api/schema/DurableWorkIntegrationTest.java',
+  promtoolFixtures: 'config/observability/prometheus-alert-rules.test.yml',
+  promtoolRunner: 'scripts/run-prometheus-alert-tests.mjs',
+  packageJson: 'package.json',
+  requiredCi: '.github/workflows/ci.yml',
 });
 
 /** 템플릿이 약속한 경보. 빠지면 red 다(ADR 없이 예시가 사라지는 것을 막는다). */
 export const REQUIRED_ALERTS = Object.freeze(['EgovRateLimitRejectionsSustained', 'EgovLoginFailureSpike',
-  'EgovAttachmentIntegrityNoHealthyRun', 'EgovDurableWorkFailed']);
+  'EgovAttachmentIntegrityNoHealthyRun', 'EgovAttachmentIntegrityDisabled', 'EgovAttachmentIntegrityUnhealthy',
+  'EgovAttachmentIntegrityObservationFailed', 'EgovDurableWorkFailed', 'EgovDurableWorkDueBacklog',
+  'EgovDurableWorkObservationFailed']);
 
 const APPLICATION_TAG_EVIDENCE = [PATHS.applicationYml, 'application: ${spring.application.name'];
 
@@ -53,25 +61,77 @@ export const METRIC_BINDINGS = Object.freeze({
     ],
     labelValues: {},
   },
-  nuri_attachment_integrity_runs_total: {
-    labels: ['application', 'outcome'],
+  nuri_attachment_integrity_enabled: {
+    labels: ['application'],
     evidence: [
       APPLICATION_TAG_EVIDENCE,
-      [PATHS.attachmentScheduler, 'metrics.counter("nuri.attachment.integrity.runs", "outcome", outcome)'],
-      [PATHS.attachmentSchedulerTest, 'nuri_attachment_integrity_runs_total{outcome=\\"PASS\\"} 1.0'],
+      [PATHS.attachmentMetrics, 'ENABLED = "nuri.attachment.integrity.enabled"'],
+      [PATHS.attachmentMetrics, 'Gauge.builder(ENABLED, this'],
+      [PATHS.attachmentSchedulerTest, 'nuri_attachment_integrity_enabled 1.0'],
+      [PATHS.attachmentSchedulerTest, 'nuri_attachment_integrity_enabled 0.0'],
     ],
-    labelValues: {
-      outcome: { PASS: [PATHS.attachmentSchedulerTest, 'nuri_attachment_integrity_runs_total{outcome=\\"PASS\\"} 1.0'] },
-    },
+    labelValues: {},
   },
-  nuri_durable_work_failed_total: {
-    labels: ['application', 'type'],
+  nuri_attachment_integrity_healthy_age_seconds: {
+    labels: ['application'],
     evidence: [
       APPLICATION_TAG_EVIDENCE,
-      [PATHS.durableDispatcher, 'FAILED_METRIC = "nuri.durable.work.failed"'],
-      [PATHS.durableDispatcher, 'TYPE_TAG = "type"'],
-      [PATHS.durableWorkTest, 'nuri_durable_work_failed_total{type=\\"TEST_DELIVERY\\"} 1.0'],
+      [PATHS.attachmentMetrics, 'HEALTHY_AGE = "nuri.attachment.integrity.healthy.age.seconds"'],
+      [PATHS.attachmentMetrics, 'Gauge.builder(HEALTHY_AGE, this'],
+      [PATHS.attachmentSchedulerTest, 'nuri_attachment_integrity_healthy_age_seconds 0.0'],
     ],
+    labelValues: {},
+  },
+  nuri_attachment_integrity_last_run_unhealthy: {
+    labels: ['application'],
+    evidence: [APPLICATION_TAG_EVIDENCE,
+      [PATHS.attachmentMetrics, 'LAST_RUN_UNHEALTHY = "nuri.attachment.integrity.last.run.unhealthy"'],
+      [PATHS.attachmentMetrics, 'Gauge.builder(LAST_RUN_UNHEALTHY, this'],
+      [PATHS.attachmentSchedulerTest, 'nuri_attachment_integrity_last_run_unhealthy 0.0']],
+    labelValues: {},
+  },
+  nuri_attachment_integrity_observation_healthy: {
+    labels: ['application'],
+    evidence: [APPLICATION_TAG_EVIDENCE,
+      [PATHS.attachmentMetrics, 'OBSERVATION_HEALTHY = "nuri.attachment.integrity.observation.healthy"'],
+      [PATHS.attachmentMetrics, 'Gauge.builder(OBSERVATION_HEALTHY, this'],
+      [PATHS.attachmentSchedulerTest, 'nuri_attachment_integrity_observation_healthy 1.0']],
+    labelValues: {},
+  },
+  nuri_durable_work_jobs: {
+    labels: ['application', 'status'],
+    evidence: [APPLICATION_TAG_EVIDENCE,
+      [PATHS.durableMetrics, 'JOBS = "nuri.durable.work.jobs"'],
+      [PATHS.durableMetrics, 'STATUS_TAG = "status"'],
+      [PATHS.durableMetrics, 'Gauge.builder(JOBS, this'],
+      [PATHS.durableMetrics, 'List.of("PENDING", "RUNNING", "RETRY", "SUCCEEDED", "FAILED")'],
+      [PATHS.durableWorkTest, 'nuri_durable_work_jobs{status=\\"FAILED\\"}']],
+    labelValues: { status: Object.fromEntries(['PENDING', 'RUNNING', 'RETRY', 'SUCCEEDED', 'FAILED']
+      .map(status => [status, [PATHS.durableWorkTest, `nuri_durable_work_jobs{status=\\"${status}\\"}`]])) },
+  },
+  nuri_durable_work_oldest_due_age_seconds: {
+    labels: ['application', 'status'],
+    evidence: [APPLICATION_TAG_EVIDENCE,
+      [PATHS.durableMetrics, 'OLDEST_DUE_AGE = "nuri.durable.work.oldest.due.age.seconds"'],
+      [PATHS.durableMetrics, 'Gauge.builder(OLDEST_DUE_AGE, this']],
+    labelValues: { status: Object.fromEntries(['PENDING', 'RETRY', 'RUNNING']
+      .map(status => [status, [PATHS.durableWorkTest, `nuri_durable_work_oldest_due_age_seconds{status=\\"${status}\\"}`]])) },
+  },
+  nuri_durable_work_observation_healthy: {
+    labels: ['application'],
+    evidence: [APPLICATION_TAG_EVIDENCE,
+      [PATHS.durableMetrics, 'OBSERVATION_HEALTHY = "nuri.durable.work.observation.healthy"'],
+      [PATHS.durableMetrics, 'Gauge.builder(OBSERVATION_HEALTHY, this'],
+      [PATHS.durableWorkTest, 'nuri_durable_work_observation_healthy 1.0'],
+      [PATHS.durableWorkTest, 'nuri_durable_work_observation_healthy 0.0']],
+    labelValues: {},
+  },
+  nuri_durable_work_observation_age_seconds: {
+    labels: ['application'],
+    evidence: [APPLICATION_TAG_EVIDENCE,
+      [PATHS.durableMetrics, 'OBSERVATION_AGE = "nuri.durable.work.observation.age.seconds"'],
+      [PATHS.durableMetrics, 'Gauge.builder(OBSERVATION_AGE, this'],
+      [PATHS.durableWorkTest, 'nuri_durable_work_observation_age_seconds 300.0']],
     labelValues: {},
   },
   http_server_requests_seconds_count: {
@@ -258,6 +318,40 @@ export function evaluateAlertRules(files) {
 
   for (const required of REQUIRED_ALERTS) {
     if (!seen.has(required)) errors.push(`${PATHS.rules}: 템플릿 기본 경보 ${required} 가 없습니다.`);
+  }
+  errors.push(...evaluatePromtoolFixtures(files, rules));
+  for (const evidence of [
+    [PATHS.promtoolRunner, "prom/prometheus@sha256:2659f4c2ebb718e7695cb9b25ffa7d6be64db013daba13e05c875451cf51b0d3"],
+    [PATHS.promtoolRunner, "'check', 'rules', '/rules/prometheus-alert-rules.yml'"],
+    [PATHS.promtoolRunner, "'test', 'rules', '/rules/prometheus-alert-rules.test.yml'"],
+    [PATHS.packageJson, '"verify:alerts": "node scripts/run-prometheus-alert-tests.mjs"'],
+    [PATHS.requiredCi, 'run: npm run verify:alerts'],
+  ]) requireEvidence('promtool execution binding', evidence);
+  return errors;
+}
+
+/** Static fixture ownership only; the pinned promtool executes PromQL syntax and timing semantics. */
+export function evaluatePromtoolFixtures(files, rules = parseAlertRules(files[PATHS.rules] ?? '').rules) {
+  const source = files[PATHS.promtoolFixtures];
+  if (source == null) return [`${PATHS.promtoolFixtures}: timed promtool fixtures are missing`];
+  const errors = [];
+  if (!/^rule_files:\r?\n  - "prometheus-alert-rules\.yml"\r?\nevaluation_interval: "1m"/m.test(source)) {
+    errors.push(`${PATHS.promtoolFixtures}: bind the exact current rule file and evaluation interval`);
+  }
+  const checks = [...source.matchAll(/^\s+eval_time: "[0-9a-z]+"\r?\n\s+alertname: "([A-Za-z0-9]+)"\r?\n\s+exp_alerts:( \[\])?/gm)];
+  for (const required of REQUIRED_ALERTS) {
+    if (!checks.some(check => check[1] === required && check[2])
+        || !checks.some(check => check[1] === required && !check[2])) {
+      errors.push(`${PATHS.promtoolFixtures}: ${required} requires both quiet and firing timing assertions`);
+    }
+  }
+  for (const check of checks) if (!rules.some(rule => rule.alert === check[1])) {
+    errors.push(`${PATHS.promtoolFixtures}: unknown alert timing assertion ${check[1]}`);
+  }
+  for (const match of source.matchAll(/^\s+expr: ("[^\r\n]+")\s*$/gm)) {
+    let expr;
+    try { expr = JSON.parse(match[1]); } catch { errors.push(`${PATHS.promtoolFixtures}: invalid quoted expression`); continue; }
+    if (!rules.some(rule => rule.expr === expr)) errors.push(`${PATHS.promtoolFixtures}: query expectation drifted from the current alert expression`);
   }
   return errors;
 }

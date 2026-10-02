@@ -26,7 +26,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class DurableWorkDispatcher {
     /**
      * 재시도 예산을 다 써서 FAILED 로 전이한 작업 수. FAILED 는 DWORK_RETRY 로 재처리하기 전까지 스스로 풀리지 않으므로
-     * 경보의 원천이다(config/observability/prometheus-alert-rules.yml). type 은 등록된 실행기 유형이라 값이 유한하다.
+     * 실행 중 발생한 전이를 세는 진단용 누적 counter다. 재기동 이전 FAILED와 대기 적체의 경보는
+     * DurableWorkMetrics의 영속 DB 상태 gauge를 사용한다. type은 등록된 실행기 유형이라 값이 유한하다.
      */
     public static final String FAILED_METRIC = "nuri.durable.work.failed";
     public static final String TYPE_TAG = "type";
