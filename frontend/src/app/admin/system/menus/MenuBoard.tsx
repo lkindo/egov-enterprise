@@ -351,7 +351,10 @@ function AreaTab({ area, items, selected, count, panelId, tabId, onActivate, onK
       {count > 0 && ' '}
       {count > 0 && (
         <span className="ml-1 rounded bg-warning/15 px-1.5 text-xs font-semibold text-warning-emphasis">
-          {count.toLocaleString()}<span className="sr-only">건 변경</span>
+          {/* 접근 이름은 숨긴 문장 하나로 만든다 — 숫자와 '건 변경' 을 다른 요소로 나누면 Chrome 이 화면 밖(absolute) 요소
+              앞뒤에 공백을 넣어 '1 건 변경' 으로 읽는다(jsdom 은 붙여 읽어 단위 테스트로는 보이지 않았다). */}
+          <span aria-hidden="true">{count.toLocaleString()}</span>
+          <span className="sr-only">{`${count.toLocaleString()}건 변경`}</span>
         </span>
       )}
     </button>

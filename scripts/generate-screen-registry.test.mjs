@@ -307,8 +307,9 @@ function protectedCopyViolations(source, protectedCodes) {
     violations.push(`PROTECTED_PERMISSION_CODES 선언이 ${declarations.length}개다(정확히 1개여야 한다)`);
   } else if (local) {
     const initializer = declarations[0][1].trim();
-    const escaped = local.replace(/\$/gu, '\\$');
-    if (!new RegExp(`^new\\s+Set\\s*(?:<[^<>()]*>)?\\s*\\(\\s*${escaped}\\s*\\)$`, 'u').test(initializer)) {
+    // 식별자로 정규식을 만들지 않는다 — 감싼 식별자를 잡아 문자열로 비교한다.
+    const wrapped = /^new\s+Set\s*(?:<[^<>()]*>)?\s*\(\s*([A-Za-z_$][\w$]*)\s*\)$/u.exec(initializer);
+    if (!wrapped || wrapped[1] !== local) {
       violations.push(`PROTECTED_PERMISSION_CODES 의 초기화식이 생성물 ${local} 만 감싸지 않는다: ${initializer}`);
     }
   }
@@ -367,8 +368,11 @@ test('login policy writes are in no bundle while the server lets them change pro
     const start = service.search(new RegExp(`\\bpublic\\s+void\\s+${method}\\s*\\(`, 'u'));
     assert.ok(start >= 0, `LoginPolicyManageService.${method} not found — re-check the login policy write guard before changing this test`);
     const rest = service.slice(start + 1);
-    const next = rest.search(/\n\s*(?:@\w+[^\n]*\n\s*)*(?:public|private|protected)\s[^;=\n]*\(/u);
-    const body = next < 0 ? rest : rest.slice(0, next);
+    // 다음 메서드 선언 줄에서 자른다(줄 단위 — 중첩 수량자 정규식을 쓰지 않는다). 그 앞 애노테이션 줄이 본문에 남아도
+    // 가드 판정에는 영향이 없다.
+    const lines = rest.split('\n');
+    const next = lines.findIndex((line, index) => index > 0 && /^\s*(?:public|private|protected)\s[^;=]*\(/u.test(line));
+    const body = (next < 0 ? lines : lines.slice(0, next)).join('\n');
     if (/\bauthorizeProtectedAccountChange\s*\(/u.test(body)) continue; // 서버가 보호 계정을 가리면 묶음에 넣어도 된다.
     const holders = ledger.bundles.filter(bundle => bundle.permissions.includes(code)).map(bundle => bundle.id);
     assert.deepEqual(holders, [], `${code} reaches protected accounts without the server guard (${method}); keep it out of bundles`);
