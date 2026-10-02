@@ -44,7 +44,7 @@ class EventApprovalIntegrityIntegrationTest {
     @BeforeEach
     void authenticateOwnFixture() {
         key = "BP" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase(java.util.Locale.ROOT);
-        authenticate();
+        authenticate("EVENT_CREATE");
     }
 
     @AfterEach
@@ -62,6 +62,7 @@ class EventApprovalIntegrityIntegrationTest {
         assertThatThrownBy(() -> events.createEvent(key, EventInfoDto.builder().evntNm(key).evntAprvYn("Y").build()))
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
         jdbc.update("UPDATE tb_event_info SET evnt_aprv_yn='Y',evnt_aprv_ymd='20260901' WHERE evnt_sn=?", event);
+        authenticate("EVENT_UPDATE");
         events.updateEvent(event, key, EventInfoDto.builder().evntNm("정정").build());
         assertThat(events.getEvent(event).getEvntAprvYn()).isEqualTo("Y");
         assertThat(events.getEvent(event).getEvntAprvYmd()).isEqualTo("20260901");
@@ -81,7 +82,7 @@ class EventApprovalIntegrityIntegrationTest {
                 update.executeUpdate();
             }
             var pending = executor.submit(() -> {
-                authenticate();
+                authenticate("EVENT_UPDATE");
                 try {
                     new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
                         jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
@@ -109,9 +110,9 @@ class EventApprovalIntegrityIntegrationTest {
         assertThat(waiting).isEqualTo(1);
     }
 
-    private void authenticate() {
+    private void authenticate(String permission) {
         var principal = CustomUserDetails.builder().userId(key).esntlId(key).enabled(true)
-                .permissions(List.of()).build();
+                .permissions(List.of(permission)).build();
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
     }
 }

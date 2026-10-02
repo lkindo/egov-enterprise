@@ -19,6 +19,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Objects;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -51,6 +57,7 @@ public class AddressBookService {
         AddressBookDto dto = convertToDto(entity);
         List<AddressBookUser> users = addressBookUserRepository.findByAdbkSn(adbkSn);
         dto.setAdbkMan(users.stream().map(this::convertToUserDto).collect(Collectors.toList()));
+        dto.setEditToken(createEditToken(entity, users));
 
         return dto;
     }
@@ -93,9 +100,17 @@ public class AddressBookService {
 
     @Transactional
     public void updateAddressBook(String userId, AddressBookDto dto) {
-        AddressBook entity = addressBookRepository.findById(Objects.requireNonNull(dto.getAdbkSn()))
+        AddressBook entity = addressBookRepository.findByIdForUpdate(Objects.requireNonNull(dto.getAdbkSn()))
                 .orElseThrow(() -> new BusinessException("수정할 주소록이 존재하지 않습니다.", CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "ADBK_UPDATE_ALL"); // [IDOR] 소유자/관리자만 수정(PII)
+
+        // 잠금만으로는 앞선 조회에서 만들어진 오래된 전체 구성원 목록을 판별할 수 없다.
+        // 잠금을 얻은 뒤 현재 상태와 요청의 조회 토큰을 비교하고, 충돌이면 어떤 필드도 바꾸지 않는다.
+        List<AddressBookUser> existingUsers = addressBookUserRepository.findByAdbkSn(dto.getAdbkSn());
+        if (!Objects.equals(createEditToken(entity, existingUsers), dto.getEditToken())) {
+            throw new BusinessException("주소록이 변경되었습니다. 최신 내용을 확인한 뒤 변경을 다시 적용해 주세요.",
+                    CommonErrorCode.CONCURRENT_MODIFICATION);
+        }
 
         // [2026-08-29] useYn 은 생략되면 **기존 값을 보존**한다.
         //   종전에는 dto.getUseYn() 을 그대로 넘겨 null 로 덮었다. 그런데 목록 질의는
@@ -106,9 +121,8 @@ public class AddressBookService {
         //   adbkNm·rlsScopeCd 는 @NotBlank 라 null 이 도달할 수 없어 이 보존이 필요 없다 —
         //   useYn 한 축만 다루고 나머지는 종전 대입 의미를 유지한다.
         String useYn = dto.getUseYn() != null ? dto.getUseYn() : entity.getUseYn();
-        entity.update(dto.getAdbkNm(), dto.getRlsScopeCd(), useYn);
-
         if (dto.getAdbkMan() == null) {
+            entity.update(dto.getAdbkNm(), dto.getRlsScopeCd(), useYn);
             return;
         }
 
@@ -118,7 +132,6 @@ public class AddressBookService {
          * 요청의 adbkMbrSn 이 이 주소록의 구성원이 아니거나 두 번 나오면 무엇을 고칠지 정할 수 없어 400 이다 —
          * 남의 주소록 구성원을 번호로 끌어와 고치는 경로도 이것으로 막힌다.
          */
-        List<AddressBookUser> existingUsers = addressBookUserRepository.findByAdbkSn(dto.getAdbkSn());
         java.util.Map<Long, AddressBookUser> existingById = new java.util.HashMap<>();
         for (AddressBookUser existing : existingUsers) {
             existingById.put(existing.getAdbkMbrSn(), existing);
@@ -136,6 +149,8 @@ public class AddressBookService {
                 throw new BusinessException("같은 구성원이 두 번 들어 있습니다.", CommonErrorCode.INVALID_INPUT_VALUE);
             }
         }
+
+        entity.update(dto.getAdbkNm(), dto.getRlsScopeCd(), useYn);
 
         for (AddressBookUser existing : existingUsers) {
             if (!kept.contains(existing.getAdbkMbrSn())) {
@@ -168,7 +183,7 @@ public class AddressBookService {
 
     @Transactional
     public void deleteAddressBook(Long adbkSn, String userId) {
-        AddressBook entity = addressBookRepository.findById(adbkSn)
+        AddressBook entity = addressBookRepository.findByIdForUpdate(adbkSn)
                 .orElseThrow(() -> new BusinessException("삭제할 주소록이 존재하지 않습니다.", CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "ADBK_DELETE_ALL"); // [IDOR] 소유자/관리자만 삭제(PII)
 
@@ -237,5 +252,30 @@ public class AddressBookService {
                 .ofcTelno(entity.getOfcTelno())
                 .faxNo(entity.getFaxNo())
                 .build();
+    }
+
+    /** 요청의 순서·구분자와 무관한 스냅샷 지문. 목록 조회에는 구성원을 읽거나 토큰을 계산하지 않는다. */
+    private String createEditToken(AddressBook entity, List<AddressBookUser> users) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            addTokenValues(digest, "nuri.addressbook.snapshot.v1", entity.getAdbkSn(), entity.getAdbkNm(),
+                    entity.getRlsScopeCd(), entity.getTrgetOgnzId(), entity.getUseYn(), entity.getWrterId(),
+                    entity.getFrstRgtrId(), entity.getMdfcnDt(), users.size());
+            users.stream().sorted(Comparator.comparing(AddressBookUser::getAdbkMbrSn)).forEach(user ->
+                    addTokenValues(digest, user.getAdbkMbrSn(), user.getUserId(), user.getNm(), user.getEmlAddr(),
+                            user.getHomeTelno(), user.getMblTelno(), user.getOfcTelno(), user.getFaxNo(),
+                            user.getMdfcnDt()));
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException("SHA-256 is required", impossible);
+        }
+    }
+
+    private static void addTokenValues(MessageDigest digest, Object... values) {
+        for (Object value : values) {
+            byte[] bytes = value == null ? null : value.toString().getBytes(StandardCharsets.UTF_8);
+            digest.update(ByteBuffer.allocate(Integer.BYTES).putInt(bytes == null ? -1 : bytes.length).array());
+            if (bytes != null) digest.update(bytes);
+        }
     }
 }

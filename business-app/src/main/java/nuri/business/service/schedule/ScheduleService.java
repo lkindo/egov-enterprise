@@ -86,7 +86,15 @@ public class ScheduleService {
     public ScheduleDto getSchedule(@NonNull Long schdlSn) {
         Schedule entity = scheduleRepository.findById(schdlSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCHEDULE_READ_ALL"); // [IDOR] 소유자/관리자만 조회
+        // 월별·부서 목록과 같은 공개 범위다. 인증된 같은 부서원에게 공유한 일정만 읽게 하며 쓰기 소유권은 유지한다.
+        boolean sharedWithCurrentDepartment = "1".equals(entity.getSchdlSeCd())
+                && nuri.business.security.util.SecurityUtil.getCurrentLoginId()
+                .filter(loginId -> !loginId.isBlank())
+                .filter(loginId -> Objects.equals(entity.getSchdlDeptId(), resolveDeptId(loginId)))
+                .isPresent();
+        if (!sharedWithCurrentDepartment) {
+            nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCHEDULE_READ_ALL");
+        }
         return convertToDto(entity);
     }
 

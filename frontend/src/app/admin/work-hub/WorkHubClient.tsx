@@ -298,8 +298,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       await reportService.deleteReport(item.rptpSn);
       toast('업무 보고가 삭제되었습니다.', 'success');
       await queryClient.invalidateQueries({ queryKey: ['work-reports'] });
-    } catch {
-      toast('삭제에 실패했습니다. 작성자 본인 또는 관리자만 삭제할 수 있습니다.', 'error');
+    } catch (error) {
+      toast(failureMessage(error, '업무 보고 삭제 중 오류가 발생했습니다.'), 'error');
     } finally {
       reportActionPendingRef.current = false;
       setReportAction(null);
@@ -584,6 +584,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
                   day: 'h-12 w-12 text-center p-0',
                   day_button: 'e2e-day-button h-12 w-12 rounded-lg font-bold hover:bg-muted transition-colors',
                   weekday: 'w-12 text-[11px] font-bold uppercase text-muted-foreground',
+                  outside: 'day-outside text-muted-foreground',
                 }}
               />
             </div>

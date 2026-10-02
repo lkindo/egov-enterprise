@@ -60,7 +60,15 @@ public class AddressBookApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "주소록 정보 수정", description = "주소록 명칭, 공개 범위 등 정보를 수정합니다.")
+    @Operation(summary = "주소록 정보 수정", description = "상세 조회에서 받은 editToken으로 현재 상태를 확인한 뒤 수정합니다. 구성원 목록을 생략하면 기존 구성원을 보존합니다.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+                    description = "수정 성공", useReturnTypeSchema = true),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409",
+                    description = "수정 상태 토큰이 없거나 주소록이 먼저 변경됨. 최신 내용을 확인한 뒤 변경 재적용 필요 (code: C013)",
+                    content = @io.swagger.v3.oas.annotations.media.Content(mediaType = "application/json",
+                            schema = @io.swagger.v3.oas.annotations.media.Schema(ref = "#/components/schemas/ApiResponseVoid")))
+    })
     @PutMapping("/{adbkSn}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.addressbook.AddressBookApiController#updateAddressBook')")
     public ResponseEntity<ApiResponse<Void>> updateAddressBook(

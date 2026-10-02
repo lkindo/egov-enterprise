@@ -105,15 +105,13 @@ async function renderList() {
     masterInfo: { bbsTtl: '테스트 게시판', tmpltId: 'TMPLT_LIST' },
     fetchError: null,
   };
-  const dataPromise = Promise.resolve(initialData as any);
   let result!: ReturnType<typeof render>;
   await act(async () => {
     result = render(
       <Suspense fallback={<div>loading</div>}>
-        <BoardListClient dataPromise={dataPromise} params={{ bbsId: 'BBS-1' }} />
+        <BoardListClient initialData={initialData as any} params={{ bbsId: 'BBS-1' }} />
       </Suspense>,
     );
-    await dataPromise;
   });
   return result;
 }

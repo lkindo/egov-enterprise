@@ -9,6 +9,8 @@ import { render, act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { hydrateRoot } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
 import { ScrollToTop } from '../scroll-to-top';
 import { Sidebar } from '../sidebar';
 import { HeaderSearchParamSync } from '../HeaderSearchParamSync';
@@ -19,14 +21,17 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'layout-user', groups: ['USER'], permissions: [], authorizationVersion: 'v1' } }),
 }));
 
-const navigation = vi.hoisted(() => ({ pathname: '/' }));
+const navigation = vi.hoisted(() => ({ pathname: '/', searchParams: new URLSearchParams() }));
 
-beforeEach(() => { navigation.pathname = '/'; });
+beforeEach(() => {
+  navigation.pathname = '/';
+  navigation.searchParams = new URLSearchParams();
+});
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
  usePathname: () => navigation.pathname,
- useSearchParams: () => new URLSearchParams(),
+ useSearchParams: () => navigation.searchParams,
 }));
 
 const sidebarMenus = [
@@ -131,6 +136,59 @@ describe('Layout Components', () => {
 });
 
 describe('Sidebar responsive primary navigation', () => {
+  it.each([
+    {
+      name: '정확한 경로', pathname: '/admin/collaboration', query: '', menus: sidebarMenus,
+      selected: '커뮤니티', visible: '커뮤니티 홈', absent: '업무 홈',
+    },
+    {
+      name: '같은 경로의 메뉴 쿼리', pathname: '/admin/collaboration', query: 'tab=second&page=2',
+      menus: sidebarMenus.map((menu, index) => ({
+        ...menu,
+        children: menu.children!.map((child) => ({
+          ...child, modernRoute: `/admin/collaboration?tab=${index === 0 ? 'first' : 'second'}`,
+        })),
+      })),
+      selected: '커뮤니티', visible: '커뮤니티 홈', absent: '업무 홈',
+    },
+    {
+      name: '미일치 URL의 첫 영역 fallback', pathname: '/unmapped-route', query: '', menus: sidebarMenus,
+      selected: '업무 공간', visible: '업무 홈', absent: '커뮤니티 홈',
+    },
+  ])('$name에 맞는 영역을 SSR부터 선택하고 hydration 후에도 유지한다', async (scenario) => {
+    navigation.pathname = scenario.pathname;
+    navigation.searchParams = new URLSearchParams(scenario.query);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+    });
+    queryClient.setQueryData(['menus', 'bookmarks', 'layout-user', 'v1'], []);
+    const tree = <QueryClientProvider client={queryClient}>
+      <LayoutProvider><Sidebar initialMenus={scenario.menus} /></LayoutProvider>
+    </QueryClientProvider>;
+    const container = document.createElement('div');
+    const onRecoverableError = vi.fn();
+    let root: ReturnType<typeof hydrateRoot> | undefined;
+    try {
+      container.innerHTML = renderToString(tree);
+      document.body.append(container);
+      const assertSelection = () => {
+        const menuTree = within(container).getByRole('navigation', { name: '주 메뉴 탐색' });
+        expect(within(menuTree).getByRole('button', { name: scenario.selected })).toHaveAttribute('aria-pressed', 'true');
+        expect(within(menuTree).getByRole('link', { name: scenario.visible })).toBeInTheDocument();
+        expect(within(menuTree).queryByRole('link', { name: scenario.absent })).not.toBeInTheDocument();
+      };
+      // HeaderSearchParamSync의 effect가 실행되기 전 서버 HTML 자체가 정확해야 한다.
+      assertSelection();
+      await act(async () => { root = hydrateRoot(container, tree, { onRecoverableError }); });
+      assertSelection();
+      expect(onRecoverableError).not.toHaveBeenCalled();
+    } finally {
+      if (root) await act(async () => { root!.unmount(); });
+      container.remove();
+      queryClient.clear();
+    }
+  });
+
   it('정본 URL로 처음 진입할 때 좌측 기본 영역이 상단의 현재 위치 선택을 덮어쓰지 않는다', async () => {
     navigation.pathname = '/admin/collaboration';
     const user = userEvent.setup();

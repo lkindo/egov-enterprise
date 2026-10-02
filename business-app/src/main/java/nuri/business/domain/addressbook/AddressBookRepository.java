@@ -1,6 +1,9 @@
 package nuri.business.domain.addressbook;
 
 import java.util.List;
+import java.util.Optional;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +14,11 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AddressBookRepository extends JpaRepository<AddressBook, Long>, AddressBookRepositoryCustom {
+    /** 상태 토큰 검사부터 구성원 변경 커밋까지 주소록의 모든 수정·사용중지를 직렬화한다. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from AddressBook a where a.adbkSn = :adbkSn")
+    Optional<AddressBook> findByIdForUpdate(@Param("adbkSn") Long adbkSn);
+
     List<AddressBook> findByUseYn(String useYn);
 
     // legacy

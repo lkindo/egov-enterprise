@@ -7,26 +7,38 @@ import nuri.business.domain.system.content.banner.BannerRepository;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.system.content.banner.dto.BannerDto;
 import nuri.business.service.system.content.banner.dto.BannerMapperImpl;
+import nuri.foundation.security.service.CustomUserDetails;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("BannerService 단위 테스트")
@@ -42,11 +54,17 @@ class BannerServiceTest {
 
     @BeforeEach
     void setUp() {
+        SecurityContextHolder.clearContext();
         // MapStruct 가 생성한 실제 매퍼 구현체를 주입하여 실 매핑 동작을 검증한다.
         bannerService = new BannerService(
                 bannerRepository,
                 new BannerMapperImpl(),
                 attachmentAssignmentPolicy);
+    }
+
+    @AfterEach
+    void clearAuthentication() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -117,6 +135,7 @@ class BannerServiceTest {
     @Test
     @DisplayName("배너 생성 - 성공")
     void insertBanner() {
+        authenticate("BANNER_CREATE");
         // given
         BannerDto dto = BannerDto.builder()
                 .bnrNm("New Banner")
@@ -143,6 +162,7 @@ class BannerServiceTest {
     @Test
     @DisplayName("배너 생성 - 첨부 할당 거부 시 저장하지 않는다")
     void insertBanner_deniedAttachmentDoesNotSave() {
+        authenticate("BANNER_CREATE");
         BannerDto dto = BannerDto.builder()
                 .bnrNm("New Banner")
                 .atchFileSn(101L)
@@ -160,6 +180,7 @@ class BannerServiceTest {
     @Test
     @DisplayName("배너 수정 - 성공")
     void updateBanner() {
+        authenticate("BANNER_UPDATE");
         // given
         Banner existingBanner = Banner.builder()
                 .bnrSn(1L)
@@ -189,6 +210,7 @@ class BannerServiceTest {
     @Test
     @DisplayName("배너 수정 - 새 첨부 할당 거부 시 기존 엔티티를 변경하지 않는다")
     void updateBanner_deniedAttachmentDoesNotMutate() {
+        authenticate("BANNER_UPDATE");
         Banner existing = Banner.builder()
                 .bnrSn(1L)
                 .bnrNm("Old Banner")
@@ -208,6 +230,7 @@ class BannerServiceTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> bannerService.updateBanner(request))
                 .isInstanceOf(BusinessException.class);
 
+        verify(attachmentAssignmentPolicy).assertAssignable(101L);
         assertThat(existing.getBnrNm()).isEqualTo("Old Banner");
         assertThat(existing.getLinkUrl()).isEqualTo("https://old.example");
         assertThat(existing.getAtchFileSn()).isEqualTo(100L);
@@ -216,6 +239,7 @@ class BannerServiceTest {
     @Test
     @DisplayName("배너 수정 - 동일 첨부 또는 null 보존은 재할당 검증을 하지 않는다")
     void updateBanner_sameOrOmittedAttachmentSkipsAssignmentCheck() {
+        authenticate("BANNER_UPDATE");
         Banner existing = Banner.builder()
                 .bnrSn(1L)
                 .bnrNm("Old Banner")
@@ -235,17 +259,21 @@ class BannerServiceTest {
     @Test
     @DisplayName("배너 수정 - 실패 (존재하지 않음)")
     void updateBanner_Fail_NotFound() {
+        authenticate("BANNER_UPDATE");
         // given
         BannerDto updateDto = BannerDto.builder().bnrSn(99L).build();
         given(bannerRepository.findById(99L)).willReturn(Optional.empty());
 
         // when & then
-        assertThrows(BusinessException.class, () -> bannerService.updateBanner(updateDto));
+        assertThatThrownBy(() -> bannerService.updateBanner(updateDto))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
     }
 
     @Test
     @DisplayName("배너 삭제 - 성공")
     void deleteBanner() {
+        authenticate("BANNER_DELETE");
         // given
         Long bnrSn = 1L;
 
@@ -273,5 +301,88 @@ class BannerServiceTest {
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getBnrSn()).isEqualTo(1L);
         assertThat(result.get(1).getBnrSn()).isEqualTo(2L);
+    }
+
+    @ParameterizedTest(name = "{0} denies {1} before accessing business dependencies")
+    @MethodSource("deniedWrites")
+    void writesRequireTheirExactPermission(String operation, String identity) {
+        authenticateDeniedIdentity(identity, operation);
+        BannerDto request = BannerDto.builder().bnrSn(1L).bnrNm("Changed").atchFileSn(101L).build();
+
+        assertDenied(() -> {
+            switch (operation) {
+                case "CREATE" -> bannerService.insertBanner(request);
+                case "UPDATE" -> bannerService.updateBanner(request);
+                case "DELETE" -> bannerService.deleteBanner(1L);
+                default -> throw new IllegalArgumentException(operation);
+            }
+        });
+
+        verifyNoInteractions(bannerRepository, attachmentAssignmentPolicy);
+    }
+
+    @Test
+    void foreignCreatorIsManageableOnlyWithTheExactUpdateOrDeleteGrant() {
+        Banner existing = Banner.builder().bnrSn(1L).bnrNm("Original").build();
+        existing.setFrstRgtrId("foreign-creator");
+        BannerDto request = BannerDto.builder().bnrSn(1L).bnrNm("Changed").build();
+
+        authenticate();
+        assertDenied(() -> bannerService.updateBanner(request));
+        assertDenied(() -> bannerService.deleteBanner(1L));
+        verifyNoInteractions(bannerRepository, attachmentAssignmentPolicy);
+        assertThat(existing.getBnrNm()).isEqualTo("Original");
+
+        authenticate("BANNER_UPDATE");
+        given(bannerRepository.findById(1L)).willReturn(Optional.of(existing));
+        bannerService.updateBanner(request);
+        assertThat(existing.getBnrNm()).isEqualTo("Changed");
+        assertThat(existing.getFrstRgtrId()).isEqualTo("foreign-creator");
+
+        authenticate("BANNER_DELETE");
+        bannerService.deleteBanner(existing.getBnrSn());
+        verify(bannerRepository).deleteById(1L);
+    }
+
+    private static Stream<Arguments> deniedWrites() {
+        return Stream.of("CREATE", "UPDATE", "DELETE").flatMap(operation ->
+                Stream.of("NO_AUTHENTICATION", "ANONYMOUS", "NO_PERMISSION", "WRONG_OPERATION", "ROLE_ONLY")
+                        .map(identity -> Arguments.of(operation, identity)));
+    }
+
+    private static void authenticateDeniedIdentity(String identity, String operation) {
+        switch (identity) {
+            case "NO_AUTHENTICATION" -> SecurityContextHolder.clearContext();
+            case "ANONYMOUS" -> {
+                var user = principal("BANNER_" + operation);
+                SecurityContextHolder.getContext().setAuthentication(
+                        new AnonymousAuthenticationToken("fixture", user, user.getAuthorities()));
+            }
+            case "NO_PERMISSION" -> authenticate();
+            case "WRONG_OPERATION" -> authenticate("CREATE".equals(operation) ? "BANNER_DELETE" : "BANNER_CREATE");
+            case "ROLE_ONLY" -> {
+                var user = CustomUserDetails.builder().userId("operator").esntlId("ESNTL_operator").enabled(true)
+                        .groups(List.of("ROLE_ADMIN", "ROLE_SYSTEM")).roleName("ADMIN").authorCode("ROLE_ADMIN").build();
+                SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(user, null,
+                        List.of(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("ROLE_SYSTEM"))));
+            }
+            default -> throw new IllegalArgumentException(identity);
+        }
+    }
+
+    private static CustomUserDetails principal(String... permissions) {
+        return CustomUserDetails.builder().userId("operator").esntlId("ESNTL_operator").enabled(true)
+                .permissions(List.of(permissions)).authorizationVersion("fixture").build();
+    }
+
+    private static void authenticate(String... permissions) {
+        var user = principal(permissions);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+    }
+
+    private static void assertDenied(org.assertj.core.api.ThrowableAssert.ThrowingCallable action) {
+        assertThatThrownBy(action).isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
     }
 }

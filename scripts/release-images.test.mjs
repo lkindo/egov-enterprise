@@ -13,6 +13,165 @@ import { publishReleaseImages, runDocker, scanReleaseImages, validateImageScan, 
 import { runSmokeStages, smokeCommand, rawSmokeRequest, validateEncodedSmokeProbe, validateSmokeTableCounts,
   validateSmokeSessionCookies, validateSmokeManagementBoundary,
   internalSmokeHttp, containerSmokeRequest, INTERNAL_SMOKE_HTTP_SCRIPT, probeDirectApiEncodedPaths } from './run-isolated-release-smoke.mjs';
+import { captureHistoricalRelease, validateHistoricalMigrations, compareHistoricalConstraints, compareHistoricalColumns, runHistoricalSmokeStages, HISTORICAL_RELEASE,
+  HISTORICAL_ARCHIVE_GIT_OPTIONS } from './historical-release-fixture.mjs';
+
+test('historical archive pins LF blob bytes despite a native CRLF Git configuration', () => {
+  const file = 'api-server/src/main/resources/db/migration/V2_84__open_survey_alias_to_authenticated.sql';
+  const expected = smokeCommand('git', ['show', `${HISTORICAL_RELEASE.revision}:${file}`], { binary: true });
+  const archivedFile = options => {
+    const archive = smokeCommand('git', [...options, 'archive', '--format=tar', HISTORICAL_RELEASE.revision, file], { binary: true });
+    for (let offset = 0; offset + 512 <= archive.length;) {
+      const header = archive.subarray(offset, offset + 512);
+      const name = header.subarray(0, 100).toString('utf8').replace(/\0.*$/u, '');
+      const size = Number.parseInt(header.subarray(124, 136).toString('ascii').replace(/\0.*$/u, '').trim(), 8) || 0;
+      assert.ok(Number.isSafeInteger(size) && size >= 0 && offset + 512 + size <= archive.length);
+      if (name === file) return archive.subarray(offset + 512, offset + 512 + size);
+      offset += 512 + Math.ceil(size / 512) * 512;
+    }
+    throw new Error('Fixed SQL absent from historical archive');
+  };
+  assert.deepEqual(archivedFile(['-c', 'core.eol=crlf', ...HISTORICAL_ARCHIVE_GIT_OPTIONS]), expected);
+  assert.notDeepEqual(archivedFile(['-c', 'core.autocrlf=false', '-c', 'core.eol=crlf']), expected);
+});
+
+test('historical source pins the real Git SQL including all three distinct repeatables', () => {
+  const root = resolve(import.meta.dirname, '..');
+  const source = captureHistoricalRelease(root, smokeCommand);
+  assert.equal(source.sourceFiles, 1391);
+  assert.equal(source.sourceTreeSha256, HISTORICAL_RELEASE.sourceTreeSha256);
+  assert.equal(source.migrations.filter(row => row.path.split('/').at(-1).startsWith('R__')).length, 3);
+  for (const changed of [
+    source.migrations.slice(1),
+    [...source.migrations, source.migrations[0]],
+    source.migrations.map(row => row.path.includes('/R__') ? { ...row, sha256: '0'.repeat(64) } : row),
+    source.migrations.map(row => ({ ...row, path: row.path.replace('/db/migration/', '/db/../migration/') })),
+  ]) assert.throws(() => validateHistoricalMigrations(changed), /historical release identity/u);
+});
+
+const originalYnCheck = "CHECK (((use_yn)::text = ANY ((ARRAY['Y'::character varying, 'N'::character varying])::text[])))";
+const restoredYnCheck = "CHECK (((use_yn)::text = ANY (ARRAY[('Y'::character varying)::text, ('N'::character varying)::text])))";
+
+test('historical constraint comparison accepts only the observed PostgreSQL varchar-array restore rewrite', () => {
+  const original = {
+    'tb_adbk_manage:ck_use_yn': originalYnCheck,
+    'tb_inst_cd:ck_abl_yn': "CHECK (((abl_yn)::text = ANY ((ARRAY['0'::character varying, '1'::character varying])::text[])))",
+    'tb_appr_history:ck_status': "CHECK (((status)::text = ANY ((ARRAY['A'::character varying, 'C'::character varying, 'R'::character varying])::text[])))",
+    'tb_adbk_manage:pk_adbk': 'PRIMARY KEY (adbk_sn)',
+    'tb_adbk_info:fk_adbk': 'FOREIGN KEY (adbk_sn) REFERENCES tb_adbk_manage(adbk_sn) ON DELETE CASCADE',
+    'tb_user_info:uk_user': 'UNIQUE (user_id)',
+    'tb_job:ck_tries': 'CHECK ((try_count >= 0))',
+  };
+  const restored = { ...original,
+    'tb_adbk_manage:ck_use_yn': restoredYnCheck,
+    'tb_inst_cd:ck_abl_yn': "CHECK (((abl_yn)::text = ANY (ARRAY[('0'::character varying)::text, ('1'::character varying)::text])))",
+    'tb_appr_history:ck_status': "CHECK (((status)::text = ANY (ARRAY[('A'::character varying)::text, ('C'::character varying)::text, ('R'::character varying)::text])))",
+  };
+  const originalBytes = JSON.stringify(original); const restoredBytes = JSON.stringify(restored);
+  const result = compareHistoricalConstraints(original, restored);
+  assert.deepEqual(result.differences, []); assert.equal(result.normalizedCount, 3);
+  assert.match(result.canonicalSha256, /^[a-f0-9]{64}$/u);
+  assert.deepEqual(compareHistoricalConstraints(Object.fromEntries(Object.entries(original).reverse()),
+    Object.fromEntries(Object.entries(restored).reverse())), result);
+  assert.equal(compareHistoricalConstraints(restored, restored).canonicalSha256, result.canonicalSha256);
+  assert.equal(JSON.stringify(original), originalBytes); assert.equal(JSON.stringify(restored), restoredBytes);
+  assert.equal(compareHistoricalConstraints(original, original).normalizedCount, 0);
+});
+
+test('historical constraint comparison preserves doubled SQL quotes, literal commas, Unicode and the complete NOT VALID suffix', () => {
+  const key = 'tb_fixture:ck_status';
+  const original = "CHECK (((status)::text = ANY ((ARRAY['can''t, edit'::character varying, '승인'::character varying])::text[]))) NOT VALID";
+  const restored = "CHECK (((status)::text = ANY (ARRAY[('can''t, edit'::character varying)::text, ('승인'::character varying)::text]))) NOT VALID";
+  const result = compareHistoricalConstraints({ [key]: original }, { [key]: restored });
+  assert.deepEqual(result.differences, []); assert.equal(result.normalizedCount, 1);
+});
+
+test('historical constraint comparison rejects changed names, values, operators, types and unsupported expressions', () => {
+  const key = 'tb_adbk_manage:ck_use_yn'; const original = { [key]: originalYnCheck };
+  const changed = [
+    ['column', restoredYnCheck.replace('use_yn', 'abl_yn')],
+    ['operator', restoredYnCheck.replace(' = ANY ', ' <> ANY ')],
+    ['quantifier', restoredYnCheck.replace(' = ANY ', ' = ALL ')],
+    ['literal', restoredYnCheck.replace("'N'", "'X'")],
+    ['order', "CHECK (((use_yn)::text = ANY (ARRAY[('N'::character varying)::text, ('Y'::character varying)::text])))"],
+    ['bounded varchar', restoredYnCheck.replaceAll('character varying', 'character varying(1)')],
+    ['different type', restoredYnCheck.replaceAll('character varying', 'text')],
+    ['collation', restoredYnCheck.replace('(use_yn)::text', '(use_yn)::text COLLATE "C"')],
+    ['NOT VALID added', restoredYnCheck + ' NOT VALID'],
+    ['outer parentheses', restoredYnCheck.replace('CHECK (', 'CHECK ((') + ')'],
+    ['extra expression', restoredYnCheck.slice(0, -1) + ' OR true)'],
+    ['format changed', restoredYnCheck.replace('CHECK (', 'CHECK  (')],
+  ];
+  for (const [name, restored] of changed) {
+    const result = compareHistoricalConstraints(original, { [key]: restored });
+    assert.deepEqual(result.differences, [{ key, before: originalYnCheck, restored }], name);
+    assert.equal(result.normalizedCount, 0, name);
+    assert.notEqual(compareHistoricalConstraints({ [key]: restored }, { [key]: restored }).canonicalSha256,
+      compareHistoricalConstraints(original, original).canonicalSha256, name);
+  }
+  for (const [name, before, restored] of [
+    ['bounded original', originalYnCheck.replaceAll('character varying', 'character varying(1)'), restoredYnCheck],
+    ['mixed array', originalYnCheck.replace("'N'::character varying", "'N'::text"), restoredYnCheck],
+    ['nonliteral item', originalYnCheck.replace("'N'::character varying", 'other_column::character varying'), restoredYnCheck],
+    ['escaped-string syntax', originalYnCheck.replace("'Y'", "E'Y'"), restoredYnCheck],
+    ['column expression', originalYnCheck.replace('(use_yn)::text', '(upper(use_yn))::text'), restoredYnCheck],
+    ['original collation', originalYnCheck.replace('(use_yn)::text', '(use_yn)::text COLLATE "C"'), restoredYnCheck],
+    ['NOT VALID removed', originalYnCheck + ' NOT VALID', restoredYnCheck],
+  ]) {
+    assert.deepEqual(compareHistoricalConstraints({ [key]: before }, { [key]: restored }).differences,
+      [{ key, before, restored }], name);
+    assert.deepEqual(compareHistoricalConstraints({ [key]: before }, { [key]: before }).differences, [], name);
+  }
+  const otherKey = 'tb_fixture:pk_fixture'; const otherDefinition = 'PRIMARY KEY (id)';
+  for (const restored of [
+    { [otherKey]: otherDefinition },
+    { ...original, [otherKey]: otherDefinition },
+    { 'tb_adbk_manage:ck_renamed': restoredYnCheck },
+  ]) assert.ok(compareHistoricalConstraints(original, restored).differences.length > 0);
+  for (const invalid of [null, [], {}, new Date(), { [key]: undefined }, { [key]: 1 }, { [key]: '' }]) {
+    assert.throws(() => compareHistoricalConstraints(invalid, original), /constraint metadata invalid/u);
+    assert.throws(() => compareHistoricalConstraints(original, invalid), /constraint metadata invalid/u);
+  }
+});
+
+test('historical columns preserve relative order while dropped physical slots disappear', () => {
+  const row = (name, ordinal) => ['tb_fixture', name, ordinal, 'character varying', 'pg_catalog', 'varchar', null, null,
+    20, null, null, null, 'NO', "'Y'::character varying", 'NO', null, null, null, null, null, null, 'NEVER', null, null, null];
+  const before = [row('first', 3), row('second', 8)]; const restored = [row('first', 1), row('second', 2)];
+  const result = compareHistoricalColumns(before, restored);
+  assert.deepEqual(result.differences, []); assert.equal(result.normalizedOrdinalCount, 2); assert.equal(result.columnsCompared, 2);
+  assert.equal(result.canonicalSha256, compareHistoricalColumns(restored, restored).canonicalSha256);
+  assert.deepEqual(compareHistoricalColumns(before, [...before].reverse()).differences, []);
+  const reordered = [row('first', 2), row('second', 1)];
+  assert.equal(compareHistoricalColumns(before, reordered).differences.length, 2);
+  for (let field = 3; field < 25; field += 1) {
+    const changed = structuredClone(restored); changed[0][field] = `changed-metadata-${field}`;
+    assert.equal(compareHistoricalColumns(before, changed).differences.length, 1, `metadata field ${field}`);
+  }
+  for (const changed of [[restored[0]], [...restored, row('third', 3)], [row('renamed', 1), restored[1]]]) {
+    assert.ok(compareHistoricalColumns(before, changed).differences.length > 0);
+  }
+  for (const invalid of [null, [], [before[0].slice(0, 24)], [row('first', 0)], [before[0], before[0]],
+    [row('first', 1), row('second', 1)]]) assert.throws(() => compareHistoricalColumns(invalid, restored), /column metadata invalid/u);
+});
+
+test('historical lifecycle backs up before upgrade and restores that point before old-code verification', async () => {
+  const stages = ['prepare', 'historical', 'fixture', 'backupBeforeUpgrade', 'upgrade', 'verifyUpgraded', 'rollback', 'verifyRollback', 'cleanup', 'evidence'];
+  const calls = [];
+  await runHistoricalSmokeStages(Object.fromEntries(stages.map(stage => [stage, async () => { calls.push(stage); }])));
+  assert.deepEqual(calls, stages);
+  for (const failAt of stages.filter(stage => !['evidence'].includes(stage))) {
+    const seen = [];
+    const operations = Object.fromEntries(stages.map(stage => [stage, async () => {
+      seen.push(stage); if (stage === failAt) throw new Error('controlled historical failure');
+    }]));
+    await assert.rejects(runHistoricalSmokeStages(operations), /controlled historical failure/);
+    assert.equal(seen.includes('evidence'), false, `success evidence after failed ${failAt}`);
+    assert.equal(seen.includes('cleanup'), true);
+    if (failAt === 'backupBeforeUpgrade') assert.equal(seen.includes('upgrade'), false);
+    if (failAt === 'rollback') assert.equal(seen.includes('verifyRollback'), false);
+  }
+});
 
 test('production smoke requires protected nonempty access and refresh cookies without exposing values', () => {
   const privateValue = 'fixture-private-session';

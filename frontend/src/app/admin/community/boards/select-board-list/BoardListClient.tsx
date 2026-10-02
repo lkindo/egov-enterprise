@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useState } from 'react';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
@@ -84,15 +84,14 @@ export const fromQueryDate = (raw: string | null | undefined): Date | undefined 
   return Number.isFinite(parsed.getTime()) && toQueryDate(parsed) === raw ? parsed : undefined;
 };
 
-import { InitialBoardData } from './BoardListServer';
+import type { InitialBoardData } from './BoardListServer';
 
 export interface BoardListClientProps {
-  dataPromise: Promise<InitialBoardData>;
+  initialData: InitialBoardData;
   params: { bbsId?: string; [key: string]: unknown };
 }
 
-export const BoardListClient = ({ dataPromise, params: initialParams }: BoardListClientProps) => {
- const initialData = use(dataPromise);
+export const BoardListClient = ({ initialData, params: initialParams }: BoardListClientProps) => {
  const searchParams = useSearchParams();
  const pathname = usePathname();
  const { user } = useAuth();

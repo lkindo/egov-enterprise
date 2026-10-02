@@ -43,7 +43,7 @@ public class SmsRecptnDto {
     @Size(max = 20)
     private String esntlId;
 
-    @Schema(description = "결과 코드 (P:대기, S:성공, F:실패)")
+    @Schema(description = "결과 코드 (P:접수·전달 대기 또는 미확정, S:전달 완료, F:명시적 발송·전달 실패)")
     private String rsltCd;
 
     @Schema(description = "결과 메시지")

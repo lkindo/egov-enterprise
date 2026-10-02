@@ -8,6 +8,8 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { closedEnvironment, assertBuildTarget } from './run-isolated-e2e.mjs';
 import { createProductionBuildInputTreeHash } from '../frontend/scripts/ui-quality-baseline-core.mjs';
+import { captureHistoricalRelease, HISTORICAL_RELEASE, HISTORICAL_API_ENTRYPOINT, HISTORICAL_ARCHIVE_GIT_OPTIONS,
+  validateHistoricalImages, validateHistoricalMigrations, compareHistoricalConstraints, compareHistoricalColumns, runHistoricalSmokeStages } from './historical-release-fixture.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ID = /^sha256:[a-f0-9]{64}$/u;
@@ -71,7 +73,7 @@ function environment(entries) {
   return result;
 }
 
-export function validateSmokeImages(images, source) {
+function validateApplicationSmokeImages(images, source) {
   if (!HASH.test(source?.sourceTreeSha256 ?? '') || typeof source.dirty !== 'boolean') throw failure('missing source evidence');
   for (const role of ['api', 'frontend']) {
     const image = images[role];
@@ -89,12 +91,17 @@ export function validateSmokeImages(images, source) {
       || image.Config.User !== 'nextjs' || inherited.NODE_ENV !== 'production'
       || inherited.HOSTNAME !== '0.0.0.0' || inherited.NEXT_TELEMETRY_DISABLED !== '1')) throw failure('unexpected frontend runtime');
   }
+}
+
+export function validateSmokeImages(images, source) {
+  validateApplicationSmokeImages(images, source);
   for (const role of ['db', 'edge']) if (!ID.test(images[role]?.Id ?? '')) throw failure('missing local support image');
 }
 
 export function createSmokeContext({ runId = randomBytes(12).toString('hex'), phase, images, directory, subnet }) {
-  if (!RUN.test(runId) || !['fresh', 'restored'].includes(phase) || !/^10\.203\.[1-9]\d{0,2}\.0\/24$/u.test(subnet)
+  if (!RUN.test(runId) || !['fresh', 'restored', 'historical', 'upgraded', 'rollback'].includes(phase) || !/^10\.203\.[1-9]\d{0,2}\.0\/24$/u.test(subnet)
     || Number(subnet.split('.')[2]) > 254 || !path.isAbsolute(directory)) throw failure('invalid owned context');
+  if (['historical', 'rollback'].includes(phase)) validateHistoricalImages(images);
   const project = `egov-release-smoke-${runId}-${phase}`;
   return { runId, phase, images, directory, subnet, project, createdAt: Date.now(),
     database: `authz_e2e_${runId}${phase}`, network: `${project}-network`, volume: `${project}-attachments`,
@@ -243,7 +250,7 @@ export function assertOwnedSmokeContainer(container, service, context, plan, { r
   } else if (['api', 'bootstrap'].includes(service)) {
     if (container.Mounts?.length !== 1 || container.Mounts[0].Type !== 'volume'
       || container.Mounts[0].Name !== context.volume || container.Mounts[0].Destination !== '/app/storage' || container.Mounts[0].RW !== true
-      || JSON.stringify(container.Config.Entrypoint) !== JSON.stringify(API_ENTRYPOINT)
+      || JSON.stringify(container.Config.Entrypoint) !== JSON.stringify(['historical', 'rollback'].includes(context.phase) ? HISTORICAL_API_ENTRYPOINT : API_ENTRYPOINT)
       || (container.Config.Cmd?.length ?? 0) !== 0) throw failure('API runtime mount or entrypoint mismatch');
   } else if (service === 'frontend' && (container.Mounts?.length ?? 0)) throw failure('unexpected frontend mount');
   else if (service === 'edge') {
@@ -257,7 +264,7 @@ export function assertOwnedSmokeContainer(container, service, context, plan, { r
 }
 
 export function createSmokeFailureDiagnostic({ service, phase, reason, container, logs = '', credentials, logStatus }) {
-  if (!['db', 'bootstrap', 'api', 'frontend', 'edge'].includes(service) || !['fresh', 'restored'].includes(phase)
+  if (!['db', 'bootstrap', 'api', 'frontend', 'edge'].includes(service) || !['fresh', 'restored', 'historical', 'upgraded', 'rollback'].includes(phase)
     || !['not-running', 'unhealthy', 'timeout'].includes(reason)) throw failure('invalid failure diagnostic context');
   let text = typeof logs === 'string' ? logs : '';
   for (const secret of Object.values(credentials ?? {})) {
@@ -511,14 +518,64 @@ export async function runSmokeStages(operations) {
 export async function main(args = process.argv.slice(2)) {
   const source = captureReleaseSmokeSource();
   if (args.length === 1 && args[0] === '--source-info') { console.log(JSON.stringify(source)); return; }
-  if (args.length !== 4 || args[0] !== '--api-image' || args[2] !== '--frontend-image'
-    || !ID.test(args[1]) || !ID.test(args[3])) throw failure('use --api-image sha256:... --frontend-image sha256:...');
+  const buildHistorical = args.length === 1 && args[0] === '--build-historical-images';
+  const buildCurrent = args.length === 1 && args[0] === '--build-current-images';
+  const historical = args.length === 8 && args[4] === '--historical-api-image' && args[6] === '--historical-frontend-image'
+    && ID.test(args[5]) && ID.test(args[7]);
+  if (!buildHistorical && !buildCurrent && (!(args.length === 4 || historical) || args[0] !== '--api-image' || args[2] !== '--frontend-image'
+    || !ID.test(args[1]) || !ID.test(args[3]))) throw failure('use --api-image sha256:... --frontend-image sha256:... [--historical-api-image sha256:... --historical-frontend-image sha256:...]');
   const clean = closedEnvironment();
   const docker = (parameters, options = {}) => smokeCommand('docker', parameters, { env: clean, ...options });
   const currentContext = docker(['context', 'show']);
   const endpoint = docker(['context', 'inspect', currentContext, '--format', '{{.Endpoints.docker.Host}}']);
   if (!/^(?:unix:\/\/|npipe:\/\/)/u.test(endpoint)) throw failure('only a local Docker daemon is permitted');
+  if (buildCurrent) {
+    const parent = path.join(ROOT, '.agent/temp'); mkdirSync(parent, { recursive: true });
+    const output = mkdtempSync(path.join(parent, 'current-release-build-'));
+    const built = {};
+    for (const role of ['api', 'frontend']) {
+      console.log(`Current release: building actual local ${role} sources.`);
+      const iid = path.join(output, `${role}.iid`);
+      docker(['build', '--iidfile', iid, '-f', role === 'api' ? 'api-server/Dockerfile' : 'Dockerfile',
+        '--build-arg', `BASELINE_BUILD_SHA=${source.revision}`, '--build-arg', `BASELINE_BUILD_INPUT_TREE_SHA256=${source.sourceTreeSha256}`,
+        ...(role === 'frontend' ? ['--build-arg', `BACKEND_API_URL=${BACKEND_URL}`, '--build-arg', `NEXT_PUBLIC_API_URL=${BACKEND_URL}`] : []), '.'],
+      { cwd: role === 'api' ? ROOT : path.join(ROOT, 'frontend'), timeout: 1_800_000, maxBuffer: 16 * 1024 * 1024 });
+      const imageId = readFileSync(iid, 'utf8').trim(); if (!ID.test(imageId)) throw failure('current build image identity missing');
+      built[role] = { imageId };
+    }
+    assert.deepEqual(captureReleaseSmokeSource(), source, 'Source changed while current images were building.');
+    const inspected = Object.fromEntries(Object.entries(built).map(([role, value]) => [role, JSON.parse(docker(['image', 'inspect', value.imageId]))[0]]));
+    validateApplicationSmokeImages(inspected, source);
+    privateWrite(path.join(output, 'build.json'), JSON.stringify({ schemaVersion: 1, kind: 'actual-worktree-production-build', source, images: built }, null, 2));
+    console.log(JSON.stringify({ evidence: path.relative(ROOT, path.join(output, 'build.json')), apiImage: built.api.imageId, frontendImage: built.frontend.imageId }));
+    return;
+  }
+  if (buildHistorical) {
+    const fixed = captureHistoricalRelease(ROOT, smokeCommand);
+    const parent = path.join(ROOT, '.agent/temp'); mkdirSync(parent, { recursive: true });
+    const output = mkdtempSync(path.join(parent, 'historical-release-build-'));
+    const built = {};
+    for (const role of ['api', 'frontend']) {
+      console.log(`Historical release: building fixed ${fixed.tag} ${role} archive.`);
+      const archive = smokeCommand('git', [...HISTORICAL_ARCHIVE_GIT_OPTIONS, 'archive', '--format=tar', role === 'api' ? fixed.revision : `${fixed.revision}:frontend`],
+        { binary: true, maxBuffer: 256 * 1024 * 1024 });
+      const iid = path.join(output, `${role}.iid`);
+      docker(['build', '--iidfile', iid, '-f', role === 'api' ? 'api-server/Dockerfile' : 'Dockerfile',
+        '--build-arg', `BASELINE_BUILD_SHA=${fixed.revision}`, '--build-arg', `BASELINE_BUILD_INPUT_TREE_SHA256=${fixed.sourceTreeSha256}`,
+        ...(role === 'frontend' ? ['--build-arg', `BACKEND_API_URL=${BACKEND_URL}`, '--build-arg', `NEXT_PUBLIC_API_URL=${BACKEND_URL}`] : []), '-'],
+        { input: archive, timeout: 1_800_000, maxBuffer: 16 * 1024 * 1024 });
+      const imageId = readFileSync(iid, 'utf8').trim(); if (!ID.test(imageId)) throw failure('historical build image identity missing');
+      built[role] = { imageId, archiveSha256: hash(archive) };
+    }
+    const inspected = Object.fromEntries(Object.entries(built).map(([role, value]) => [role, JSON.parse(docker(['image', 'inspect', value.imageId]))[0]]));
+    validateHistoricalImages(inspected);
+    privateWrite(path.join(output, 'build.json'), JSON.stringify({ schemaVersion: 1, kind: 'fixed-git-archive-historical-build', source: fixed, images: built }, null, 2));
+    console.log(JSON.stringify({ evidence: path.relative(ROOT, path.join(output, 'build.json')), apiImage: built.api.imageId, frontendImage: built.frontend.imageId }));
+    return;
+  }
   const images = { api: JSON.parse(docker(['image', 'inspect', args[1]]))[0], frontend: JSON.parse(docker(['image', 'inspect', args[3]]))[0] };
+  const historicalSource = historical ? captureHistoricalRelease(ROOT, smokeCommand) : null;
+  const oldImages = historical ? { api: JSON.parse(docker(['image', 'inspect', args[5]]))[0], frontend: JSON.parse(docker(['image', 'inspect', args[7]]))[0] } : null;
   const baseSource = readFileSync(path.join(ROOT, 'docker-compose.yml'), 'utf8');
   const prodSource = readFileSync(path.join(ROOT, 'docker-compose.prod.yml'), 'utf8');
   const edgeSource = readFileSync(path.join(ROOT, 'config/edge/default.conf.template'));
@@ -530,6 +587,7 @@ export async function main(args = process.argv.slice(2)) {
   images.db = JSON.parse(docker(['image', 'inspect', supportReference(baseSource, 'db')]))[0];
   images.edge = JSON.parse(docker(['image', 'inspect', supportReference(prodSource, 'edge')]))[0];
   validateSmokeImages(images, source);
+  if (oldImages) { oldImages.db = images.db; oldImages.edge = images.edge; validateHistoricalImages(oldImages); }
   const parent = path.join(ROOT, '.agent/temp'); mkdirSync(parent, { recursive: true });
   const directory = mkdtempSync(path.join(parent, 'egov-release-smoke-'));
   if (!realpathSync(directory).startsWith(realpathSync(parent) + path.sep)) throw failure('unsafe temporary directory');
@@ -556,9 +614,9 @@ export async function main(args = process.argv.slice(2)) {
     throw failure('no unused test subnet');
   };
   const contexts = [];
-  const setup = phase => {
+  const setup = (phase, runtimeImages = images) => {
     const folder = path.join(directory, phase); copySources(folder);
-    const context = createSmokeContext({ runId, phase, images, directory: folder, subnet: chooseSubnet() });
+    const context = createSmokeContext({ runId, phase, images: runtimeImages, directory: folder, subnet: chooseSubnet() });
     const rendered = JSON.parse(docker(['compose', '--project-directory', folder, '--env-file', path.join(folder, 'owned.env'),
       '-f', path.join(folder, 'base.yml'), '-f', path.join(folder, 'prod.yml'), 'config', '--format', 'json']));
     const plan = createReleaseSmokePlan(rendered, context, credentials);
@@ -573,7 +631,7 @@ export async function main(args = process.argv.slice(2)) {
     };
     const sql = statement => {
       const database = inspect('db', true);
-      return docker(['exec', '-i', database.Id, 'psql', '-X', '-v', 'ON_ERROR_STOP=1', '-U', 'smoke', '-d', context.database, '-tAc', statement]);
+      return docker(['exec', '-i', database.Id, 'psql', '-X', '-q', '-v', 'ON_ERROR_STOP=1', '-U', 'smoke', '-d', context.database, '-tAc', statement]);
     };
     const verifyNetwork = () => {
       const network = JSON.parse(docker(['network', 'inspect', context.network]))[0];
@@ -687,7 +745,237 @@ export async function main(args = process.argv.slice(2)) {
       '-C', '/app/storage', restoreBytes ? '-xf' : '-cf', '-', ...(restoreBytes ? [] : ['.'])],
     { binary: true, input: restoreBytes });
   };
+  const cleanup = async () => {
+    // All lifecycle modes share the same inspection before removing exact owned resources.
+    for (const runtime of contexts) {
+      const ids = docker(['ps', '-aq', '--filter', `label=${OWNER}=${runId}`, '--filter', `label=com.docker.compose.project=${runtime.context.project}`]).split(/\s+/u).filter(Boolean);
+      const containers = ids.map(id => JSON.parse(docker(['container', 'inspect', id]))[0]);
+      for (const container of containers) {
+        const service = container.Config?.Labels?.['com.docker.compose.service'];
+        if (!runtime.plan.services[service]) throw failure('cleanup found an unexpected owned service');
+        assertOwnedSmokeContainer(container, service, runtime.context, runtime.plan, { beforeStart: true });
+      }
+      const volumes = docker(['volume', 'ls', '-q', '--filter', `label=${OWNER}=${runId}`, '--filter', `label=com.docker.compose.project=${runtime.context.project}`]).split(/\s+/u).filter(Boolean);
+      for (const name of volumes) { check(name === runtime.context.volume, 'cleanup found unexpected volume'); assertVolume(runtime); }
+      const networks = docker(['network', 'ls', '-q', '--filter', `label=${OWNER}=${runId}`, '--filter', `label=com.docker.compose.project=${runtime.context.project}`]).split(/\s+/u).filter(Boolean);
+      for (const id of networks) { runtime.verifyNetwork(); check(runtime.context.networkId.startsWith(id), 'cleanup network identity changed'); }
+      for (const container of containers) docker(['rm', '--force', container.Id]);
+      for (const name of volumes) docker(['volume', 'rm', name]);
+      for (const _id of networks) docker(['network', 'rm', runtime.context.networkId]);
+    }
+    check(docker(['ps', '-aq', '--filter', `label=${OWNER}=${runId}`]) === ''
+      && docker(['volume', 'ls', '-q', '--filter', `label=${OWNER}=${runId}`]) === ''
+      && docker(['network', 'ls', '-q', '--filter', `label=${OWNER}=${runId}`]) === '', 'owned resources remain after cleanup');
+  };
   const startedAt = Date.now();
+  if (historical) {
+    let previous, upgraded, rollback, snapshotTime, historicalCounts, constraintsHash, coreConstraintsHash, historicalConstraintDefinitions, historicalColumns, columnsHash, cipher, rollbackConstraintComparison, rollbackColumnComparison, rollbackRawColumnsHash, rollbackRawConstraintsHash;
+    let upgradeStartedAt, rollbackStartedAt, upgradeMillis, rollbackMillis;
+    let backupBytes, fileBytes, historicalStorageOwner;
+    const fixture = { users: [`smoke_${runId.slice(0, 10)}a`, `smoke_${runId.slice(0, 10)}b`],
+      password: `Aa1!${randomBytes(18).toString('hex')}`, bookName: `owned recovery ${runId.slice(0, 12)}` };
+    const classes = path.join(directory, 'probe-classes'); mkdirSync(classes);
+    const probe = async (runtime, mode, input) => {
+      runtime.verifyNetwork(); const api = runtime.inspect('api', true);
+      docker(['cp', classes, `${api.Id}:/tmp/recovery-probe`]);
+      const value = docker(['exec', '-i', api.Id, 'java', '-Dloader.path=/tmp/recovery-probe',
+        '-Dloader.main=nuri.recoveryprobe.ReleaseSmokeProbe', '-cp', '/app/app.jar',
+        'org.springframework.boot.loader.launch.PropertiesLauncher', mode], { input });
+      const lines = value.split(/\r?\n/u).filter(line => line.startsWith('EGOV_PROBE='));
+      check(lines.length === 1, 'packaged crypto probe did not return a unique result');
+      return lines[0].slice('EGOV_PROBE='.length);
+    };
+    const request = async (runtime, route, token, data, method = 'GET') => (await containerSmokeRequest(runtime, docker, 'api', route, {
+      method, headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(data ? { 'Content-Type': 'application/json' } : {}) },
+      ...(data ? { body: JSON.stringify(data) } : {}),
+    })).response;
+    const login = async (runtime, userId, password) => {
+      const response = await request(runtime, '/api/v1/auth/login', null, { userId, password }, 'POST');
+      check(response.status === 200, 'historical fixture login failed');
+      const token = (await response.json())?.data?.accessToken;
+      check(typeof token === 'string' && token.length > 0, 'historical fixture token missing'); return token;
+    };
+    const constraintDigest = runtime => hash(runtime.sql("SELECT coalesce(string_agg(n.nspname||'.'||c.relname||':'||x.conname||':'||pg_get_constraintdef(x.oid),E'\\n' ORDER BY n.nspname,c.relname,x.conname),'') FROM pg_constraint x JOIN pg_class c ON c.oid=x.conrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public'"));
+    const constraintDefinitions = runtime => JSON.parse(runtime.sql("SELECT jsonb_object_agg(c.relname||':'||x.conname,pg_get_constraintdef(x.oid)) FROM pg_constraint x JOIN pg_class c ON c.oid=x.conrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public'"));
+    const columnDefinitions = runtime => JSON.parse(runtime.sql("SELECT jsonb_agg(jsonb_build_array(table_name,column_name,ordinal_position,data_type,udt_schema,udt_name,domain_schema,domain_name,character_maximum_length,numeric_precision,numeric_scale,datetime_precision,is_nullable,column_default,is_identity,identity_generation,identity_start,identity_increment,identity_maximum,identity_minimum,identity_cycle,is_generated,generation_expression,collation_schema,collation_name) ORDER BY table_name,ordinal_position) FROM information_schema.columns WHERE table_schema='public'"));
+    const coreConstraintDigest = runtime => hash(runtime.sql("SELECT coalesce(string_agg(c.relname||':'||x.conname||':'||pg_get_constraintdef(x.oid)||':'||x.convalidated::text,E'\\n' ORDER BY c.relname,x.conname),'') FROM pg_constraint x JOIN pg_class c ON c.oid=x.conrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname IN ('tb_adbk_manage','tb_adbk_info','tb_file_master','tb_file_detail') AND x.contype IN ('p','u','f')"));
+    const restoreSnapshot = async runtime => {
+      await runtime.start(['db']);
+      docker(['exec', '-i', runtime.inspect('db', true).Id, 'pg_restore', '--exit-on-error', '--no-owner', '-U', 'smoke', '-d', runtime.context.database], { binary: true, input: backupBytes });
+      runtime.compose(['create', '--no-build', '--pull', 'never', '--no-recreate', 'api']); runtime.verifyNetwork(); runtime.inspect('api', false, true);
+      attachmentTar(runtime, fileBytes);
+    };
+    const verifyFixture = async runtime => {
+      const adminToken = await login(runtime, 'webmaster', credentials.admin);
+      const ownerToken = await login(runtime, fixture.users[0], fixture.password);
+      const otherToken = await login(runtime, fixture.users[1], fixture.password);
+      const book = await request(runtime, `/api/v1/address-books/${fixture.bookId}`, ownerToken);
+      check(book.status === 200, 'restored owner could not read business data');
+      const data = (await book.json()).data;
+      check(data.adbkNm === fixture.bookName && data.useYn === 'Y' && data.adbkMan?.length === 1
+        && data.adbkMan[0].nm === '합성 복구 연락처' && data.adbkMan[0].emlAddr === 'restore@example.invalid'
+        && data.adbkMan[0].mblTelno === '01000000111', 'restored business snapshot differs');
+      check((await request(runtime, `/api/v1/address-books/${fixture.bookId}`, otherToken)).status === 403, 'restored owner privacy changed');
+      check((await request(runtime, '/api/v1/admin/system/users', ownerToken)).status === 403, 'ordinary user gained administrative access');
+      check((await request(runtime, '/api/v1/admin/system/users', adminToken)).status === 200, 'administrative permission was lost');
+      check((await request(runtime, `/api/v1/address-books/${fixture.bookId}`, null)).status === 401, 'anonymous business access changed');
+      const downloaded = await request(runtime, `/api/v1/files/${fixture.fileId}/1`, adminToken);
+      check(downloaded.status === 200 && hash(Buffer.from(await downloaded.arrayBuffer())) === expectedFileHash, 'restored historical attachment differs');
+      check(runtime.sql(`SELECT count(*) FROM tb_file_detail d JOIN tb_file_master m ON m.atch_file_sn=d.atch_file_sn WHERE m.atch_file_sn=${fixture.fileId}`) === '1', 'attachment relation was lost');
+      const encryptedColumn = runtime.context.phase === 'upgraded' ? 'user_enrrno' : 'rrno';
+      const storedCipher = runtime.sql(`SELECT ${encryptedColumn} FROM tb_user_info WHERE user_id='${fixture.users[0]}'`);
+      check(storedCipher === cipher && await probe(runtime, 'verify', storedCipher) === 'verified', 'packaged crypto recovery check failed');
+      check((await containerSmokeRequest(runtime, docker, 'edge', '/login')).response.status === 200, 'historical frontend image failed to serve');
+    };
+    await runHistoricalSmokeStages({
+      prepare: async () => {
+        console.log('Historical release: verifying fixed source and SQL embedded in the actual boot jar.');
+        smokeCommand('javac', ['-d', classes, path.join(ROOT, 'scripts/ReleaseSmokeProbe.java')]);
+        const jar = path.join(directory, 'historical-app.jar');
+        privateWrite(jar, docker(['run', '--rm', '--pull', 'never', '--network', 'none', '--label', `${OWNER}=${runId}`,
+          '--entrypoint', 'cat', oldImages.api.Id, '/app/app.jar'], { binary: true, maxBuffer: 256 * 1024 * 1024 }));
+        const manifestResult = smokeCommand('java', ['-cp', classes, 'nuri.recoveryprobe.ReleaseSmokeProbe', 'manifest', jar]);
+        check(manifestResult.startsWith('EGOV_PROBE='), 'historical boot jar manifest missing');
+        validateHistoricalMigrations(JSON.parse(manifestResult.slice('EGOV_PROBE='.length)));
+        const uid = docker(['run', '--rm', '--pull', 'never', '--network', 'none', '--entrypoint', 'id', oldImages.api.Id, '-u', 'spring']);
+        const gid = docker(['run', '--rm', '--pull', 'never', '--network', 'none', '--entrypoint', 'id', oldImages.api.Id, '-g', 'spring']);
+        check(/^[1-9]\d{0,7}$/u.test(uid) && /^[1-9]\d{0,7}$/u.test(gid), 'historical non-root storage owner is invalid');
+        historicalStorageOwner = `${uid}:${gid}`;
+        for (const imageSet of [oldImages, images]) {
+          const routes = JSON.parse(docker(['run', '--rm', '--pull', 'never', '--network', 'none', '--label', `${OWNER}=${runId}`,
+            '--entrypoint', 'node', imageSet.frontend.Id, '-e', 'process.stdout.write(require("node:fs").readFileSync(".next/routes-manifest.json","utf8"))']));
+          assertBuildTarget(routes, BACKEND_URL);
+        }
+        previous = setup('historical', oldImages); upgraded = setup('upgraded'); rollback = setup('rollback', oldImages);
+      },
+      historical: async () => {
+        console.log('Historical release: starting the original production images on a fresh owned database.');
+        await previous.start(['db']);
+        previous.compose(['create', '--no-build', '--pull', 'never', '--no-recreate', 'api']); previous.verifyNetwork(); previous.inspect('api', false, true);
+        assertVolume(previous);
+        // The old image did not prepare storage. Use the actual old image's non-root UID/GID for this inspected synthetic volume.
+        docker(['run', '--rm', '--pull', 'never', '--network', 'none', '--label', `${OWNER}=${runId}`, '--user', '0',
+          '--mount', `type=volume,source=${previous.context.volume},target=/app/storage`, '--entrypoint', 'chown', images.api.Id, '-R', historicalStorageOwner, '/app/storage']);
+        await previous.start(['api', 'frontend', 'edge']);
+        check(previous.sql("SELECT count(*) FROM flyway_schema_history WHERE script LIKE 'V%.sql' AND success") === '85'
+          && previous.sql("SELECT count(*) FROM flyway_schema_history WHERE script LIKE 'R__%.sql' AND success") === '3'
+          && previous.sql("SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name='tb_user_authrt_map'") === '1', 'historical schema was not the previous release');
+      },
+      fixture: async () => {
+        const adminToken = await login(previous, 'webmaster', credentials.admin);
+        for (const userId of fixture.users) check((await request(previous, '/api/v1/admin/system/users', adminToken,
+          { userId, pswd: fixture.password, userNm: '합성 복구 사용자', role: 'USER' }, 'POST')).status === 200, 'historical synthetic user creation failed');
+        const ownerToken = await login(previous, fixture.users[0], fixture.password);
+        check((await request(previous, '/api/v1/address-books', ownerToken, { adbkNm: fixture.bookName, rlsScopeCd: 'G',
+          adbkMan: [{ userId: fixture.users[0], nm: '합성 복구 연락처', emlAddr: 'restore@example.invalid', mblTelno: '01000000111' }] }, 'POST')).status === 200, 'historical business fixture creation failed');
+        const list = await request(previous, `/api/v1/address-books?searchWrd=${encodeURIComponent(fixture.bookName)}&size=100`, ownerToken);
+        check(list.status === 200, 'historical business fixture readback failed');
+        const rows = (await list.json()).data;
+        fixture.bookId = (rows.list ?? rows.content ?? []).find(row => row.adbkNm === fixture.bookName)?.adbkSn;
+        check(Number.isSafeInteger(fixture.bookId) && fixture.bookId > 0, 'historical business fixture identity missing');
+        const attachment = Buffer.from('fixed historical synthetic attachment\n'); expectedFileHash = hash(attachment);
+        const form = new FormData(); form.append('files', new Blob([attachment], { type: 'text/plain' }), 'restore.txt');
+        const uploaded = (await containerSmokeRequest(previous, docker, 'api', '/api/v1/files', { method: 'POST', headers: { Authorization: `Bearer ${adminToken}` }, body: form })).response;
+        check(uploaded.status === 200, 'historical attachment fixture creation failed'); fixture.fileId = (await uploaded.json()).data;
+        check(Number.isSafeInteger(fixture.fileId) && fixture.fileId > 0, 'historical attachment fixture identity missing');
+        cipher = await probe(previous, 'encrypt'); check(/^[A-Za-z0-9+/=]{1,256}$/u.test(cipher), 'historical cipher is invalid');
+        check(previous.sql(`UPDATE tb_user_info SET rrno='${cipher}' WHERE user_id='${fixture.users[0]}' RETURNING user_id`) === fixture.users[0], 'owned crypto fixture update failed');
+        await verifyFixture(previous);
+      },
+      backupBeforeUpgrade: async () => {
+        console.log('Historical release: stopping writers and capturing the pre-upgrade recovery point.');
+        previous.stop('edge'); previous.stop('frontend'); previous.stop('api');
+        snapshotTime = new Date().toISOString();
+        historicalCounts = validateSmokeTableCounts(JSON.parse(previous.sql(TABLE_COUNTS_SQL))); constraintsHash = constraintDigest(previous);
+        historicalConstraintDefinitions = constraintDefinitions(previous);
+        historicalColumns = columnDefinitions(previous); columnsHash = hash(JSON.stringify(historicalColumns));
+        coreConstraintsHash = coreConstraintDigest(previous);
+        backupBytes = docker(['exec', previous.inspect('db', true).Id, 'pg_dump', '-U', 'smoke', '-d', previous.context.database, '-Fc'], { binary: true });
+        fileBytes = attachmentTar(previous);
+        privateWrite(path.join(directory, 'pre-upgrade.dump'), backupBytes); privateWrite(path.join(directory, 'pre-upgrade-attachments.tar'), fileBytes);
+        // An owned update after the snapshot must not appear in either restored database.
+        check(previous.sql(`UPDATE tb_adbk_manage SET adbk_nm=adbk_nm||' after-backup' WHERE adbk_sn=${fixture.bookId} RETURNING adbk_sn`) === String(fixture.bookId), 'recovery-point control update failed');
+      },
+      upgrade: async () => {
+        console.log('Historical release: restoring the pre-upgrade snapshot and migrating with current code.');
+        upgradeStartedAt = Date.now(); await restoreSnapshot(upgraded);
+        await upgraded.start(['bootstrap']); validateSmokeBarrier(JSON.parse(upgraded.sql(BARRIER_SQL))); upgraded.stop('bootstrap');
+        await upgraded.start(['api', 'frontend', 'edge']);
+      },
+      verifyUpgraded: async () => {
+        check(coreConstraintDigest(upgraded) === coreConstraintsHash, 'upgraded business or attachment constraints differ');
+        await verifyFixture(upgraded); await httpSmoke(upgraded, fixture.fileId);
+        upgradeMillis = Date.now() - upgradeStartedAt;
+        upgraded.stop('edge'); upgraded.stop('frontend'); upgraded.stop('api');
+      },
+      rollback: async () => {
+        console.log('Historical release: restoring the same pre-upgrade snapshot with the original images.');
+        rollbackStartedAt = Date.now(); await restoreSnapshot(rollback);
+        const restoredCounts = validateSmokeTableCounts(JSON.parse(rollback.sql(TABLE_COUNTS_SQL)));
+        const restoredConstraints = constraintDigest(rollback);
+        const restoredDefinitions = constraintDefinitions(rollback);
+        const restoredColumns = columnDefinitions(rollback); const restoredColumnsHash = hash(JSON.stringify(restoredColumns));
+        rollbackColumnComparison = compareHistoricalColumns(historicalColumns, restoredColumns);
+        rollbackRawColumnsHash = restoredColumnsHash;
+        const columnRows = rows => new Map(rows.map(row => [`${row[0]}:${row[1]}`, row]));
+        const originalColumnRows = columnRows(historicalColumns); const restoredColumnRows = columnRows(restoredColumns);
+        const columnDifferences = [...new Set([...originalColumnRows.keys(), ...restoredColumnRows.keys()])]
+          .filter(key => JSON.stringify(originalColumnRows.get(key)) !== JSON.stringify(restoredColumnRows.get(key)))
+          .map(key => ({ key, before: originalColumnRows.get(key), restored: restoredColumnRows.get(key) }));
+        rollbackConstraintComparison = compareHistoricalConstraints(historicalConstraintDefinitions, restoredDefinitions);
+        rollbackRawConstraintsHash = restoredConstraints;
+        const differences = [...new Set([...Object.keys(historicalCounts), ...Object.keys(restoredCounts)])]
+          .filter(table => historicalCounts[table] !== restoredCounts[table])
+          .map(table => ({ table, before: historicalCounts[table], restored: restoredCounts[table] }));
+        privateWrite(path.join(directory, 'rollback-restore-check.json'), JSON.stringify({ differences,
+          originalConstraintsSha256: constraintsHash, restoredConstraintsSha256: restoredConstraints,
+          originalColumnsSha256: columnsHash, restoredColumnsSha256: restoredColumnsHash,
+          canonicalColumnsSha256: rollbackColumnComparison.canonicalSha256,
+          normalizedOrdinalCount: rollbackColumnComparison.normalizedOrdinalCount,
+          remainingColumnDifferences: rollbackColumnComparison.differences,
+          columnDifferences,
+          canonicalConstraintsSha256: rollbackConstraintComparison.canonicalSha256,
+          normalizedConstraintCount: rollbackConstraintComparison.normalizedCount,
+          remainingConstraintDifferences: rollbackConstraintComparison.differences,
+          constraintDifferences: [...new Set([...Object.keys(historicalConstraintDefinitions), ...Object.keys(restoredDefinitions)])]
+            .filter(key => historicalConstraintDefinitions[key] !== restoredDefinitions[key])
+            .map(key => ({ key, before: historicalConstraintDefinitions[key], restored: restoredDefinitions[key] })) }, null, 2));
+        check(differences.length === 0 && rollbackConstraintComparison.differences.length === 0 && rollbackColumnComparison.differences.length === 0, 'pre-upgrade database census, columns or constraints differ');
+        await rollback.start(['api', 'frontend', 'edge']);
+      },
+      verifyRollback: async () => { await verifyFixture(rollback); rollbackMillis = Date.now() - rollbackStartedAt; },
+      cleanup,
+      evidence: async () => {
+        assert.deepEqual(captureReleaseSmokeSource(), source, 'Source changed while historical smoke was running.');
+        const result = { schemaVersion: 1, kind: 'local-isolated-historical-upgrade-rollback', publicationApproved: false,
+          source, historicalSource, images: Object.fromEntries(Object.entries(images).map(([role, image]) => [role, image.Id])),
+          historicalImages: Object.fromEntries(Object.entries(oldImages).map(([role, image]) => [role, image.Id])),
+          historicalStorageOwner,
+          runnerSha256: hash(readFileSync(fileURLToPath(import.meta.url))), fixtureSha256: hash(readFileSync(path.join(ROOT, 'scripts/historical-release-fixture.mjs'))),
+          probeSha256: hash(readFileSync(path.join(ROOT, 'scripts/ReleaseSmokeProbe.java'))),
+          recoveryPoint: { snapshotTime, source: 'writers-stopped-pre-upgrade-backup', syntheticUsers: 2, syntheticBusinessRows: 2,
+            snapshotRowsLost: 0, postSnapshotSyntheticUpdatesExcluded: 1, operationalRpoApproved: false },
+          restoreAndVerificationMillis: { upgraded: upgradeMillis, rollback: rollbackMillis }, operationalRtoApproved: false,
+          checks: ['fixed-git-source', 'actual-embedded-historical-sql', 'previous-production-images', 'pre-upgrade-backup',
+            'business-data', 'attachments-and-relations', 'packaged-crypto-and-wrong-key', 'owner-and-admin-permissions', 'constraints', 'rollback-table-census'],
+          tablesVerified: Object.keys(historicalCounts).length, tableCountsSha256: hash(JSON.stringify(historicalCounts)), constraintsSha256: constraintsHash,
+          upgradedCoreConstraintsSha256: coreConstraintsHash,
+          originalColumnsSha256: columnsHash, rollbackRawColumnsSha256: rollbackRawColumnsHash,
+          rollbackCanonicalColumnsSha256: rollbackColumnComparison.canonicalSha256,
+          rollbackColumnsCompared: rollbackColumnComparison.columnsCompared,
+          rollbackNormalizedOrdinalCount: rollbackColumnComparison.normalizedOrdinalCount,
+          rollbackRawConstraintsSha256: rollbackRawConstraintsHash,
+          rollbackCanonicalConstraintsSha256: rollbackConstraintComparison.canonicalSha256,
+          rollbackConstraintsCompared: Object.keys(historicalConstraintDefinitions).length,
+          rollbackNormalizedConstraintCount: rollbackConstraintComparison.normalizedCount,
+          databaseBackupSha256: hash(backupBytes), attachmentBackupSha256: hash(fileBytes), pathProbes,
+          operationalRecovery: 'not-tested', tlsBrowserFlow: 'not-tested', elapsedMs: Date.now() - startedAt, ownedResourcesRemaining: 0 };
+        privateWrite(path.join(directory, 'result.json'), JSON.stringify(result, null, 2));
+        console.log(`Historical upgrade and rollback passed; bounded evidence: ${path.relative(ROOT, path.join(directory, 'result.json'))}`);
+      },
+    });
+    return;
+  }
   await runSmokeStages({
     prepare: async () => {
       console.log('Release smoke: verifying immutable runtime and owned plans.');
@@ -728,25 +1016,7 @@ export async function main(args = process.argv.slice(2)) {
       await restored.start(['api', 'frontend', 'edge']);
     },
     verifyRestored: async () => { await httpSmoke(restored, fileId); },
-    cleanup: async () => {
-      // Validate every existing resource before any destructive cleanup. Never use down/prune/name wildcards.
-      for (const runtime of contexts) {
-        const ids = docker(['ps', '-aq', '--filter', `label=${OWNER}=${runId}`, '--filter', `label=com.docker.compose.project=${runtime.context.project}`]).split(/\s+/u).filter(Boolean);
-        const containers = ids.map(id => JSON.parse(docker(['container', 'inspect', id]))[0]);
-        for (const container of containers) {
-          const service = container.Config?.Labels?.['com.docker.compose.service'];
-          if (!runtime.plan.services[service]) throw failure('cleanup found an unexpected owned service');
-          assertOwnedSmokeContainer(container, service, runtime.context, runtime.plan, { beforeStart: true });
-        }
-        const volumes = docker(['volume', 'ls', '-q', '--filter', `label=${OWNER}=${runId}`, '--filter', `label=com.docker.compose.project=${runtime.context.project}`]).split(/\s+/u).filter(Boolean);
-        for (const name of volumes) { check(name === runtime.context.volume, 'cleanup found unexpected volume'); assertVolume(runtime); }
-        const networks = docker(['network', 'ls', '-q', '--filter', `label=${OWNER}=${runId}`, '--filter', `label=com.docker.compose.project=${runtime.context.project}`]).split(/\s+/u).filter(Boolean);
-        for (const id of networks) { runtime.verifyNetwork(); check(runtime.context.networkId.startsWith(id), 'cleanup network identity changed'); }
-        for (const container of containers) docker(['rm', '--force', container.Id]);
-        for (const name of volumes) docker(['volume', 'rm', name]);
-        for (const _id of networks) docker(['network', 'rm', runtime.context.networkId]);
-      }
-    },
+    cleanup,
     evidence: async () => {
       assert.deepEqual(captureReleaseSmokeSource(), source, 'Source changed while smoke was running.');
       const evidence = { schemaVersion: 1, kind: 'local-isolated-release-smoke', publicationApproved: false,

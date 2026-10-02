@@ -1,5 +1,6 @@
 package nuri.business.service.operation;
 import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.business.security.util.SecurityUtil;
 import nuri.foundation.core.exception.BusinessException;
 
 import nuri.business.domain.operation.RewardManage;
@@ -44,6 +45,7 @@ public class RewardManageService {
      */
     @Transactional
     public RewardManageDto createReward(RewardManageDto dto) {
+        SecurityUtil.assertPermission("REWARD_CREATE");
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
@@ -66,6 +68,7 @@ public class RewardManageService {
     /** 포상 수정 — 화면이 편집하는 다섯 필드만 갱신한다(2026-09-05 DEC-OPS-036). 승인 필드는 승인 절차가 생길 때 다룬다. */
     @Transactional
     public RewardManageDto updateReward(Long rwrdSn, RewardManageDto dto) {
+        SecurityUtil.assertPermission("REWARD_UPDATE");
         RewardManage reward = findRequired(rwrdSn);
         reward.update(dto.getRwardwnrId(), dto.getRwardCode(), dto.getRwardDe(), dto.getRwardNm(), dto.getPblenCn());
         return convertToDto(reward);
@@ -74,6 +77,7 @@ public class RewardManageService {
     /** 포상 삭제. 없는 대상은 RESOURCE_NOT_FOUND. */
     @Transactional
     public void deleteReward(Long rwrdSn) {
+        SecurityUtil.assertPermission("REWARD_DELETE");
         rewardManageRepository.delete(findRequired(rwrdSn));
     }
 

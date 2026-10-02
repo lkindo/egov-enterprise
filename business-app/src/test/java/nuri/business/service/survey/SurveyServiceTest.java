@@ -253,7 +253,7 @@ class SurveyServiceTest {
     void updateSurvey_changesReleaseOnlyWhenGiven() {
         SurveyInfo entity = SurveyInfo.builder().srvySn(201L).srvyTtl("제목").srvyTmpltSn(101L).build();
         given(tmplatRepository.existsById(101L)).willReturn(true);
-        given(infoRepository.findById(201L)).willReturn(Optional.of(entity));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(entity));
 
         SurveyInfoDto publish = SurveyInfoDto.builder().srvySn(201L).srvyTtl("제목").srvyTmpltSn(101L).rlsYn("Y").build();
         surveyService.updateSurvey(publish);
@@ -267,7 +267,8 @@ class SurveyServiceTest {
     @Test
     @DisplayName("🚨 응답이 있는 설문에는 문항·선택 항목을 더하지 않는다(409) (2026-10-01 결정 21)")
     void insertQuestionAndItem_rejectedAfterResponses() {
-        given(infoRepository.findById(201L)).willReturn(Optional.of(SurveyInfo.builder().srvySn(201L).srvyTmpltSn(101L).build()));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(SurveyInfo.builder().srvySn(201L).srvyTmpltSn(101L).build()));
+        given(infoRepository.findSurveyIdByQuestionId(401L)).willReturn(Optional.of(201L));
         given(qesitmRepository.findById(401L)).willReturn(Optional.of(SurveyQuestion.builder().srvyQstnSn(401L).srvySn(201L).build()));
         given(rsltRepository.existsBySrvySn(201L)).willReturn(true);
 
@@ -371,7 +372,7 @@ class SurveyServiceTest {
                 .srvySn(201L)
                 .srvyTtl("OLD")
                 .build();
-        given(infoRepository.findById(201L)).willReturn(Optional.of(info));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(info));
         given(tmplatRepository.existsById(101L)).willReturn(true);
 
         SurveyInfoDto dto = SurveyInfoDto.builder()
@@ -390,7 +391,7 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 정보 수정 - 자원 없음 예외")
     void updateSurvey_NotFound_ShouldThrowBusinessException() {
-        given(infoRepository.findById(201L)).willReturn(Optional.empty());
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.empty());
         given(tmplatRepository.existsById(101L)).willReturn(true);
 
         SurveyInfoDto dto = SurveyInfoDto.builder().srvySn(201L).srvyTmpltSn(101L).build();
@@ -407,7 +408,7 @@ class SurveyServiceTest {
                 .srvyTmpltSn(101L)
                 .srvyTtl("OLD")
                 .build();
-        given(infoRepository.findById(201L)).willReturn(Optional.of(info));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(info));
         given(tmplatRepository.existsById(102L)).willReturn(true);
         given(qesitmRepository.existsBySrvySn(201L)).willReturn(true);
 
@@ -426,6 +427,7 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 정보 삭제 - 성공")
     void deleteSurvey_Success() {
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(SurveyInfo.builder().srvySn(201L).build()));
         surveyService.deleteSurvey(201L);
         verify(infoRepository, times(1)).deleteById(201L);
     }
@@ -480,7 +482,7 @@ class SurveyServiceTest {
                 .qstnCn("질문")
                 .maxChcCnt(1)
                 .build();
-        given(infoRepository.findById(201L)).willReturn(Optional.of(
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(
                 SurveyInfo.builder().srvySn(201L).srvyTmpltSn(101L).build()));
 
         surveyService.insertQuestion(dto);
@@ -493,9 +495,11 @@ class SurveyServiceTest {
     void updateQuestion_Success() {
         SurveyQuestion question = SurveyQuestion.builder()
                 .srvyQstnSn(301L)
+                .srvySn(201L)
                 .qstnCn("OLD")
                 .build();
         given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+        givenQuestionSurvey(301L);
 
         SurveyQuestionDto dto = SurveyQuestionDto.builder()
                 .srvyQstnSn(301L)
@@ -514,7 +518,7 @@ class SurveyServiceTest {
     @Test
     @DisplayName("[DIP B4 P6] 문항 순번은 서버가 가장 큰 순번 다음으로 매긴다 — 화면이 보낸 '문항 수 + 1' 은 쓰지 않는다")
     void insertQuestion_assignsNextOrder() {
-        given(infoRepository.findById(201L)).willReturn(Optional.of(
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(
                 SurveyInfo.builder().srvySn(201L).srvyTmpltSn(101L).build()));
         given(qesitmRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(
                 SurveyQuestion.builder().srvyQstnSn(1L).srvySn(201L).qstnSn(1L).build(),
@@ -533,8 +537,9 @@ class SurveyServiceTest {
     @DisplayName("[DIP B4 P6] 응답이 모인 문항은 문구·선택 수를 바꿀 수 없고(409) 순번만 바꿀 수 있다")
     void updateQuestion_lockedAfterResponses() {
         SurveyQuestion question = SurveyQuestion.builder()
-                .srvyQstnSn(301L).qstnSn(1L).qstnTypeCd("1").qstnCn("원래 문항").maxChcCnt(null).build();
+                .srvyQstnSn(301L).srvySn(201L).qstnSn(1L).qstnTypeCd("1").qstnCn("원래 문항").maxChcCnt(null).build();
         given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+        givenQuestionSurvey(301L);
         given(rsltRepository.countBySrvyQstnSn(301L)).willReturn(3L);
 
         assertThatThrownBy(() -> surveyService.updateQuestion(SurveyQuestionDto.builder()
@@ -555,8 +560,9 @@ class SurveyServiceTest {
     @Test
     @DisplayName("[DIP B4 P6] 응답이 모인 문항의 선택지 문구는 바꿀 수 없다(409)")
     void updateItem_lockedAfterResponses() {
-        SurveyArticle item = SurveyArticle.builder().srvyArtclSn(401L).srvyQstnSn(301L).artclCn("예").build();
+        SurveyArticle item = SurveyArticle.builder().srvyArtclSn(401L).srvySn(201L).srvyQstnSn(301L).artclCn("예").build();
         given(iemRepository.findById(401L)).willReturn(Optional.of(item));
+        givenItemSurvey(401L);
         given(rsltRepository.countBySrvyQstnSn(301L)).willReturn(2L);
 
         assertThatThrownBy(() -> surveyService.updateItem(SurveyArticleDto.builder()
@@ -569,7 +575,7 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 문항 수정 - 자원 없음 예외")
     void updateQuestion_NotFound_ShouldThrowBusinessException() {
-        given(qesitmRepository.findById(301L)).willReturn(Optional.empty());
+        given(infoRepository.findSurveyIdByQuestionId(301L)).willReturn(Optional.empty());
 
         SurveyQuestionDto dto = SurveyQuestionDto.builder().srvyQstnSn(301L).build();
 
@@ -586,6 +592,7 @@ class SurveyServiceTest {
                 .srvyTmpltSn(101L)
                 .build();
         given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(SurveyInfo.builder().srvySn(201L).build()));
 
         surveyService.deleteQuestion(201L, 301L);
 
@@ -601,6 +608,7 @@ class SurveyServiceTest {
                 .srvyTmpltSn(101L)
                 .build();
         given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(SurveyInfo.builder().srvySn(201L).build()));
 
         assertThatThrownBy(() -> surveyService.deleteQuestion(201L, 301L))
                 .isInstanceOf(BusinessException.class);
@@ -616,6 +624,7 @@ class SurveyServiceTest {
     void deleteQuestion_WithResponses_IsBlocked() {
         SurveyQuestion question = SurveyQuestion.builder().srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L).build();
         given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(SurveyInfo.builder().srvySn(201L).build()));
         given(rsltRepository.countBySrvyQstnSn(301L)).willReturn(3L);
 
         assertThatThrownBy(() -> surveyService.deleteQuestion(201L, 301L))
@@ -629,6 +638,9 @@ class SurveyServiceTest {
     @Test
     @DisplayName("응답이 있는 선택 항목은 삭제하지 않고 응답도 보존한다")
     void deleteItem_WithResponses_IsBlocked() {
+        givenItemSurvey(401L);
+        given(iemRepository.findById(401L)).willReturn(Optional.of(SurveyArticle.builder()
+                .srvyArtclSn(401L).srvySn(201L).srvyQstnSn(301L).build()));
         given(rsltRepository.countBySrvyArtclSn(401L)).willReturn(1L);
 
         assertThatThrownBy(() -> surveyService.deleteItem(401L))
@@ -657,6 +669,7 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 항목 등록 - 성공")
     void insertItem_Success() {
+        givenQuestionSurvey(301L);
         SurveyArticleDto dto = SurveyArticleDto.builder()
                 .srvyQstnSn(301L)
                 .artclSn(3L)
@@ -676,9 +689,11 @@ class SurveyServiceTest {
     void updateItem_Success() {
         SurveyArticle item = SurveyArticle.builder()
                 .srvyArtclSn(401L)
+                .srvySn(201L)
                 .artclCn("OLD")
                 .build();
         given(iemRepository.findById(401L)).willReturn(Optional.of(item));
+        givenItemSurvey(401L);
 
         SurveyArticleDto dto = SurveyArticleDto.builder()
                 .srvyArtclSn(401L)
@@ -697,7 +712,7 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 항목 수정 - 자원 없음 예외")
     void updateItem_NotFound_ShouldThrowBusinessException() {
-        given(iemRepository.findById(401L)).willReturn(Optional.empty());
+        given(infoRepository.findSurveyIdByArticleId(401L)).willReturn(Optional.empty());
 
         SurveyArticleDto dto = SurveyArticleDto.builder().srvyArtclSn(401L).build();
 
@@ -708,6 +723,9 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 항목 삭제 - 성공")
     void deleteItem_Success() {
+        givenItemSurvey(401L);
+        given(iemRepository.findById(401L)).willReturn(Optional.of(SurveyArticle.builder()
+                .srvyArtclSn(401L).srvySn(201L).srvyQstnSn(301L).build()));
         surveyService.deleteItem(401L);
         verify(iemRepository, times(1)).deleteById(401L);
     }
@@ -717,7 +735,7 @@ class SurveyServiceTest {
     void copySurvey_copiesQuestionsAndItemsWithRequestedTitleAndPeriod() {
         SurveyInfo source = SurveyInfo.builder().srvySn(10L).srvyTtl("원본").srvyPrps("목적").srvyWrtGdCn("안내")
                 .srvyBgngYmd("20260901").srvyEndYmd("20260930").srvyTrgt("전 직원").srvyTmpltSn(3L).build();
-        given(infoRepository.findById(10L)).willReturn(Optional.of(source));
+        given(infoRepository.findByIdForSubmission(10L)).willReturn(Optional.of(source));
         given(infoRepository.save(any(SurveyInfo.class))).willAnswer(inv -> {
             SurveyInfo saved = inv.getArgument(0);
             org.springframework.test.util.ReflectionTestUtils.setField(saved, "srvySn", 20L);
@@ -766,16 +784,26 @@ class SurveyServiceTest {
     @Test
     @DisplayName("[DIP B5 F6] 없는 설문은 404, 시작일이 종료일보다 늦은 사본 기간은 400 이고 아무것도 만들지 않는다")
     void copySurvey_rejectsMissingSourceOrReversedPeriod() {
-        given(infoRepository.findById(99L)).willReturn(Optional.empty());
+        given(infoRepository.findByIdForSubmission(99L)).willReturn(Optional.empty());
         assertThatThrownBy(() -> surveyService.copySurvey(99L, nuri.business.service.survey.dto.SurveyCopyRequest.builder()
                 .srvyTtl("사본").srvyBgngYmd("20261001").srvyEndYmd("20261031").build()))
                 .isInstanceOf(BusinessException.class);
 
-        given(infoRepository.findById(10L)).willReturn(Optional.of(SurveyInfo.builder().srvySn(10L).srvyTtl("원본").srvyTmpltSn(3L).build()));
+        given(infoRepository.findByIdForSubmission(10L)).willReturn(Optional.of(SurveyInfo.builder().srvySn(10L).srvyTtl("원본").srvyTmpltSn(3L).build()));
         assertThatThrownBy(() -> surveyService.copySurvey(10L, nuri.business.service.survey.dto.SurveyCopyRequest.builder()
                 .srvyTtl("사본").srvyBgngYmd("20261031").srvyEndYmd("20261001").build()))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("시작일");
         verify(infoRepository, never()).save(any(SurveyInfo.class));
+    }
+
+    private void givenQuestionSurvey(Long questionId) {
+        given(infoRepository.findSurveyIdByQuestionId(questionId)).willReturn(Optional.of(201L));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(SurveyInfo.builder().srvySn(201L).build()));
+    }
+
+    private void givenItemSurvey(Long articleId) {
+        given(infoRepository.findSurveyIdByArticleId(articleId)).willReturn(Optional.of(201L));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(SurveyInfo.builder().srvySn(201L).build()));
     }
 }

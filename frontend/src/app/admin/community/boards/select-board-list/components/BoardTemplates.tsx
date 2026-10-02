@@ -26,8 +26,8 @@
  *   `Link` 와 그 href 형태를 바꾸지 않는다.
  */
 import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import DOMPurify from 'isomorphic-dompurify';
 import { useQuery } from '@tanstack/react-query';
 import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
 import { BoardPost } from '@/types/business/board';
@@ -51,6 +51,15 @@ import {
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { PostingEndedBadge } from '../../components/PostingEndedBadge';
+
+const SanitizedFaqAnswer = dynamic(() => import('./SanitizedFaqAnswer'), {
+  ssr: false,
+  loading: () => (
+    <p className="text-[length:var(--font-size-body)] text-muted-foreground" role="status">
+      답변을 불러오는 중입니다.
+    </p>
+  ),
+});
 
 interface TemplateProps {
   list: BoardPost[];
@@ -402,10 +411,7 @@ const FAQItem = ({ item, bbsId }: { item: BoardPost; bbsId: string }) => {
                   <Button type="button" variant="outline" size="sm" onClick={() => void answer.refetch()}>다시 시도</Button>
                 </div>
               ) : answerHtml ? (
-                <div
-                  className="prose prose-sm max-w-none text-[length:var(--font-size-body)] leading-relaxed text-foreground"
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(answerHtml) }}
-                />
+                <SanitizedFaqAnswer html={answerHtml} />
               ) : (
                 <p className="text-[length:var(--font-size-body)] text-muted-foreground">등록된 답변이 없습니다.</p>
               )}
