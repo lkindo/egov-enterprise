@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useLayoutEffect, use
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useToast } from '@/app/components/ui/toast';
+import { ensurePopstateGate, setPopstateGate } from '@/lib/navigation/popstate-gate';
 
 type EditState = { dirty: boolean; pending?: boolean };
 type Guard = () => EditState;
@@ -12,6 +13,10 @@ type Guard = () => EditState;
 type Navigate = (action: (router: React.ContextType<typeof AppRouterContext>) => void) => Promise<boolean>;
 const Context = createContext<{ register: (guard: Guard) => () => void; navigate: Navigate } | null>(null);
 const HISTORY_POINT = '__egov_edit_navigation';
+
+// [2026-10-03] popstate 판정은 앱 번들보다 먼저 등록되는 문지기를 거친다 — 이유는 popstate-gate.ts 머리 주석.
+//   루트 레이아웃이 nonce 인라인 스크립트로 문지기를 등록하고, 그 레이아웃 밖(테스트 등)에서는 여기서 같은 문지기를 등록한다.
+ensurePopstateGate();
 
 /**
  * Check App Router transitions before they commit. Keep this adapter at the root.
@@ -112,11 +117,11 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
       event.stopImmediatePropagation();
       void navigate(() => router.push(destination.pathname + destination.search + destination.hash));
     };
-    window.addEventListener('popstate', pop, true);
+    const releaseGate = setPopstateGate(pop);
     window.addEventListener('beforeunload', beforeUnload);
     document.addEventListener('click', click, true);
     return () => {
-      window.removeEventListener('popstate', pop, true);
+      releaseGate();
       window.removeEventListener('beforeunload', beforeUnload);
       document.removeEventListener('click', click, true);
       if (history.pushState === trackedPush) history.pushState = push;
