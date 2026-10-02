@@ -212,7 +212,7 @@
 - 기다리는 동안에는 읽기·편집·다음 배치 준비 같은 가벼운 작업을 한다.
 
 ### 6.4 main 최신화 뒤 생성물 재생성
-`npm run merge:main`([스크립트](../../scripts/merge-main-regenerate.mjs), DEC-OPS-178)이 아래 표의 기계적인 부분을 한 번에 한다 — `--no-commit` 으로 main 을 합치고, 공용 메모리 표의 충돌을 행 단위로 합치며(같은 ID 를 양쪽이 고쳤거나 같은 새 ID 를 쓰면 멈춘다), 양쪽이 입력을 바꾼 생성 계약·권한 생성물·경계·URL census(승인 해시 재결속)·Atlas 를 의존 순서대로 다시 만들고 stage 한다. 손으로 풀 충돌이 남으면 목록을 보이고 멈추며, 풀고 `git add` 한 뒤 `npm run merge:main -- --continue` 로 이어 간다. 커밋은 하지 않으므로 `git diff --cached` 로 아래 확인을 한 뒤 직접 커밋한다. `api-docs.json` 추출, 하네스 manifest 의 같은 키 충돌, 메뉴 snapshot 은 무거운 실행이라 스크립트가 하지 않는다.
+`npm run merge:main`([스크립트](../../scripts/merge-main-regenerate.mjs), DEC-OPS-178)이 아래 표의 기계적인 부분을 한 번에 한다 — `--no-commit` 으로 main 을 합치고, 공용 메모리 표의 충돌을 행 단위로 합치며(같은 ID 를 양쪽이 고쳤거나 같은 새 ID 를 쓰면 멈춘다), 양쪽이 입력을 바꾼 생성 계약·권한 생성물·경계 census·화면 목록·URL census(승인 해시 재결속)·Atlas 를 의존 순서대로 다시 만들고 stage 한다. 손으로 풀 충돌이 남으면 목록을 보이고 멈추며, 풀고 `git add` 한 뒤 `npm run merge:main -- --continue` 로 이어 간다. 커밋은 하지 않으므로 `git diff --cached` 로 아래 확인을 한 뒤 직접 커밋한다. `api-docs.json` 추출, 하네스 manifest 의 같은 키 충돌, 메뉴 snapshot 은 무거운 실행이라 스크립트가 하지 않는다.
 
 양쪽이 입력(소스·원장·카탈로그)을 바꾼 생성물은 텍스트 충돌이 없어도 다시 만든다. 충돌한 생성물은 한쪽을 고르거나 손으로 섞지 않는다. 입력의 충돌을 먼저 풀고 아래 순서로 다시 만든 뒤, 결과 diff가 두 쪽 변경의 합과 같은지 확인한다. 합을 넘는 변화(래칫 수치 상승, 새 예외, 새 분류·승인이 필요한 항목)는 재생성으로 받아들이지 않고 원인을 본다(H2).
 
@@ -222,6 +222,7 @@
 | `api-docs.json` | 합친 소스에서 `OpenApiDocumentationTest` 정적 추출로 다시 만든다([API 문서 가이드](api-documentation-guide.md)). `-Dopenapi.export.path`는 절대 경로로 준다(상대 경로는 모듈 디렉터리 기준이다). pre-push는 이 파일과 백엔드 코드의 정합을 보지 않고 CI의 `api-docs-gate`만 보므로, 양쪽이 컨트롤러·DTO를 바꿨으면 로컬에서 추출한다. |
 | 생성 계약(`generated-api.d.ts`·`generated-zod.ts`·`generated-operations.ts`) | `pnpm -C frontend run syncContract`(`codegen:file` → `codegen:zod` → api-docs 정규화) |
 | `config/governance/generated-api-boundaries.json` | `node scripts/generated-boundary-census.mjs --write` |
+| 화면 목록과 권한 묶음(`frontend/src/types/generated-screen-registry.ts`) | 화면·권한 카탈로그·인가 정책(`config/governance/authorization-policies.json`)·권한 묶음 원장(`config/governance/permission-bundles.json`)·화면 용어 원장(`config/frontend-visible-terms.json`, 묶음 문구 검사)·라우트 원장·메뉴 snapshot을 합치고 경계 census를 다시 만든 뒤 `node scripts/generate-screen-registry.mjs`(검사: `--check`). 묶음이 여는 화면은 원장에 적지 않고 화면 목록의 진입 권한으로 계산하므로, 화면·카탈로그만 바뀌어도 묶음 결과가 달라진다 — 재생성으로 맞추고, 묶음이 여는 화면이 없어지는 등 원장 검증이 실패하면 원장을 고친다. 경계 census의 출력을 읽으므로 그 뒤, 이 파일을 읽는 URL census 앞에 만든다. 라벨을 메뉴 snapshot에서 읽으므로, 아래 `config/project-composer-menus.json` 행으로 snapshot을 다시 만들었으면 그 뒤에 한 번 더 실행한다. |
 | operation 수와 GAP-WIRING-001 | `node scripts/operation-consumer-census.mjs --json`의 `operationCount`로 `config/governance/operation-consumer-census.json`의 `expected.operationCount`, `scripts/generated-operations-contract.test.mjs`의 단언, `known-gaps.md` GAP-WIRING-001을 함께 맞춘다. 같은 행의 unwired·화면 고아 수도 합친 결과로 맞추며, 상한을 올려야 하면 사유를 남긴다(H2). |
 | 권한 생성물(`PermissionCodes.java`·`generated-permissions.ts`·`operation-bindings.json` 등) | 원장(`config/governance/permission-catalog.json`·`authorization-policies.json`)을 합친 뒤 `node scripts/generate-permissions.mjs` |
 | `config/ui-url-state-census.json`과 승인 결속 | `node scripts/ui-url-state-census.mjs --write` 뒤 `config/ui-url-state-approval.json`의 해시만 새 census 파일(LF)의 SHA-256으로 다시 결속한다. 승인 항목은 손대지 않는다. |

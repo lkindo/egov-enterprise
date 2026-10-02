@@ -4030,11 +4030,14 @@
       "status": "partial",
       "dataSource": "admin-authorization-api",
       "supportedActions": [
+        "assign",
         "create",
         "delete",
         "edit",
         "filter",
         "paginate",
+        "preview",
+        "revoke",
         "save",
         "search",
         "view-detail",
@@ -4067,6 +4070,7 @@
             "create",
             "delete",
             "edit",
+            "preview",
             "save",
             "search",
             "view-detail",
@@ -4078,16 +4082,28 @@
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-02",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/AuthorizationApiController.java",
             "business-core/src/test/java/nuri/business/service/auth/AuthorizationAdministrationServiceTest.java",
             "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+            "frontend/src/app/admin/security/authority/__tests__/ScreenPermissionTable.test.tsx",
             "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx",
+            "frontend/src/app/admin/security/authority/__tests__/matrix-a5-contract.test.tsx",
+            "frontend/src/app/admin/security/authority/__tests__/screen-permission-model.registry.test.ts",
+            "frontend/src/app/admin/security/authority/__tests__/screen-permission-model.test.ts",
             "frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx",
+            "frontend/src/app/admin/security/authority/components/EntryPermissionFixes.tsx",
+            "frontend/src/app/admin/security/authority/components/MenuPreviewDialog.tsx",
+            "frontend/src/app/admin/security/authority/components/OperationPermissionMatrix.tsx",
+            "frontend/src/app/admin/security/authority/components/ScreenPermissionTable.tsx",
+            "frontend/src/app/admin/security/authority/components/operation-permission-matrix-model.ts",
+            "frontend/src/app/admin/security/authority/components/screen-permission-model.ts",
             "frontend/src/app/admin/security/authority/page.tsx",
-            "frontend/src/services/foundation/system/AuthorizationAdminService.ts"
+            "frontend/src/lib/navigation/menu-screen-resolution.ts",
+            "frontend/src/services/foundation/system/AuthorizationAdminService.ts",
+            "frontend/src/types/generated-screen-registry.ts"
           ]
         },
         {
@@ -4097,6 +4113,7 @@
           "dataSource": "admin-authorization-api",
           "actions": [
             "paginate",
+            "preview",
             "save",
             "search",
             "view-detail"
@@ -4107,13 +4124,14 @@
           "primaryTask": false,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-02",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/AuthorizationApiController.java",
             "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
             "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx",
             "frontend/src/app/admin/security/authority/components/AuthorizationMembershipEditor.tsx",
+            "frontend/src/app/admin/security/authority/components/UserMenuPreviewDialog.tsx",
             "frontend/src/app/admin/security/authority/page.tsx"
           ]
         },
@@ -4133,13 +4151,119 @@
           "primaryTask": false,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-02",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/AuthorizationApiController.java",
             "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx",
             "frontend/src/app/admin/security/authority/components/AuthorizationHistory.tsx",
+            "frontend/src/app/admin/security/authority/components/GroupChangeHistory.tsx",
             "frontend/src/app/admin/security/authority/page.tsx"
+          ]
+        },
+        {
+          "id": "authorization.group-members",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "admin-authorization-api",
+          "actions": [
+            "assign",
+            "paginate",
+            "revoke",
+            "search",
+            "view-list"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "구성원",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-02",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/AuthorizationApiController.java",
+            "frontend/src/app/admin/security/authority/__tests__/AuthorizationGroupMembers.test.tsx",
+            "frontend/src/app/admin/security/authority/__tests__/GroupMemberAddDialog.test.tsx",
+            "frontend/src/app/admin/security/authority/components/AuthorizationGroupMembers.tsx",
+            "frontend/src/app/admin/security/authority/components/GroupMemberAddDialog.tsx",
+            "frontend/src/app/admin/security/authority/components/group-member-queries.ts"
+          ]
+        },
+        {
+          "id": "authorization.group-copy",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "admin-authorization-api",
+          "actions": [
+            "create"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "이 그룹으로 새 그룹 만들기",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-02",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/AuthorizationApiController.java",
+            "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+            "frontend/src/app/admin/security/authority/__tests__/GroupCopyDialog.test.tsx",
+            "frontend/src/app/admin/security/authority/components/GroupCopyDialog.tsx"
+          ]
+        },
+        {
+          "id": "authorization.permission-bundles",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "admin-authorization-api",
+          "actions": [
+            "assign",
+            "preview"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "권한 묶음 적용",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-02",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "config/governance/permission-bundles.json",
+            "frontend/src/app/admin/security/authority/__tests__/PermissionBundleDialog.test.tsx",
+            "frontend/src/app/admin/security/authority/__tests__/permission-bundle-model.test.ts",
+            "frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx",
+            "frontend/src/app/admin/security/authority/components/PermissionBundleDialog.tsx",
+            "frontend/src/app/admin/security/authority/components/permission-bundle-model.ts",
+            "frontend/src/types/generated-screen-registry.ts"
+          ]
+        },
+        {
+          "id": "authorization.group-comparison",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "admin-authorization-api",
+          "actions": [
+            "filter",
+            "view-detail"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "그룹 비교",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-02",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/AuthorizationApiController.java",
+            "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+            "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.bundle-compare.test.tsx",
+            "frontend/src/app/admin/security/authority/__tests__/group-comparison-model.test.ts",
+            "frontend/src/app/admin/security/authority/components/GroupComparison.tsx",
+            "frontend/src/app/admin/security/authority/components/group-comparison-model.ts"
           ]
         }
       ],
@@ -8330,11 +8454,13 @@
       ],
       "surface": "admin-console",
       "status": "partial",
-      "dataSource": "admin-menus-api",
+      "dataSource": "mixed",
       "supportedActions": [
+        "assign",
         "create",
         "delete",
         "edit",
+        "preview",
         "refresh",
         "reorder",
         "save",
@@ -8369,6 +8495,7 @@
             "create",
             "delete",
             "edit",
+            "preview",
             "refresh",
             "search",
             "view-detail",
@@ -8376,19 +8503,28 @@
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "네비게이션 트리 · 메뉴 상세",
+          "visibleLabel": "메뉴 구조 · 메뉴 상세",
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-02",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/MenuApiController.java",
             "api-server/src/test/java/nuri/api/controller/foundation/controller/system/MenuApiControllerTest.java",
-            "frontend/src/app/actions/menuActions.ts",
             "frontend/src/app/admin/system/menus/MenuAdminClient.tsx",
+            "frontend/src/app/admin/system/menus/MenuBoard.tsx",
+            "frontend/src/app/admin/system/menus/MenuInspector.tsx",
+            "frontend/src/app/admin/system/menus/MenuScreenPicker.tsx",
             "frontend/src/app/admin/system/menus/__tests__/MenuAdminClient.test.tsx",
+            "frontend/src/app/admin/system/menus/__tests__/menuBoardModel.test.ts",
+            "frontend/src/app/admin/system/menus/__tests__/menuDraft.test.ts",
+            "frontend/src/app/admin/system/menus/__tests__/menuScreens.test.ts",
+            "frontend/src/app/admin/system/menus/menuBoardModel.ts",
+            "frontend/src/app/admin/system/menus/menuDraft.ts",
+            "frontend/src/app/admin/system/menus/menuScreens.ts",
             "frontend/src/app/admin/system/menus/page.tsx",
+            "frontend/src/lib/navigation/menu-visibility-preview.ts",
             "frontend/src/services/foundation/system/MenuAdminService.ts",
             "frontend/src/services/foundation/system/__tests__/MenuAdminService.test.ts"
           ]
@@ -8404,18 +8540,54 @@
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "구조 저장",
+          "visibleLabel": "변경 저장",
           "primaryTask": false,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-02",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/MenuApiController.java",
-            "frontend/src/app/actions/menuActions.ts",
+            "api-server/src/test/java/nuri/api/controller/foundation/controller/system/MenuApiControllerTest.java",
+            "business-core/src/main/java/nuri/business/service/menu/MenuStructurePlan.java",
             "frontend/src/app/admin/system/menus/MenuAdminClient.tsx",
+            "frontend/src/app/admin/system/menus/MenuChangeList.tsx",
+            "frontend/src/app/admin/system/menus/MenuMoveDialog.tsx",
             "frontend/src/app/admin/system/menus/__tests__/MenuAdminClient.test.tsx",
-            "frontend/src/app/admin/system/menus/page.tsx"
+            "frontend/src/app/admin/system/menus/__tests__/MenuBoard.keyboard-dnd.test.tsx",
+            "frontend/src/app/admin/system/menus/__tests__/menuDraft.test.ts",
+            "frontend/src/app/admin/system/menus/menuDraft.ts",
+            "frontend/src/app/admin/system/menus/page.tsx",
+            "frontend/src/services/foundation/system/MenuAdminService.ts",
+            "frontend/src/services/foundation/system/__tests__/MenuAdminService.test.ts"
+          ]
+        },
+        {
+          "id": "menu.group-visibility",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "admin-authorization-api",
+          "actions": [
+            "assign",
+            "save"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "보이는 그룹",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-02",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/AuthorizationApiController.java",
+            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/MenuApiController.java",
+            "frontend/src/app/admin/system/menus/MenuGroupVisibility.tsx",
+            "frontend/src/app/admin/system/menus/MenuInspector.tsx",
+            "frontend/src/app/admin/system/menus/__tests__/MenuAdminClient.test.tsx",
+            "frontend/src/app/admin/system/menus/__tests__/menuDraft.test.ts",
+            "frontend/src/app/admin/system/menus/menuDraft.ts",
+            "frontend/src/services/foundation/system/AuthorizationAdminService.ts"
           ]
         }
       ],
@@ -8844,11 +9016,14 @@
       ],
       "surface": "admin-console",
       "status": "partial",
-      "dataSource": "admin-programs-api",
+      "dataSource": "mixed",
       "supportedActions": [
         "create",
         "delete",
         "edit",
+        "filter",
+        "navigate",
+        "paginate",
         "search",
         "view-list"
       ],
@@ -8861,7 +9036,7 @@
         "demo"
       ],
       "journeys": [],
-      "visibleLabel": "시스템 프로그램 관리",
+      "visibleLabel": "화면 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
       "routing": {
@@ -8872,6 +9047,42 @@
       ],
       "owner": "product/UX + domain owner",
       "capabilities": [
+        {
+          "id": "program.screen-list",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "admin-menus-api",
+          "actions": [
+            "filter",
+            "navigate",
+            "paginate",
+            "search",
+            "view-list"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "화면 목록",
+          "primaryTask": true,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-02",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/MenuApiController.java",
+            "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
+            "frontend/src/app/admin/system/programs/ScreenListParts.tsx",
+            "frontend/src/app/admin/system/programs/__tests__/ProgramAdminClient.test.tsx",
+            "frontend/src/app/admin/system/programs/__tests__/menuStructureSource.test.ts",
+            "frontend/src/app/admin/system/programs/__tests__/screenList.test.ts",
+            "frontend/src/app/admin/system/programs/menuStructureSource.ts",
+            "frontend/src/app/admin/system/programs/page.tsx",
+            "frontend/src/app/admin/system/programs/programMenuLinks.ts",
+            "frontend/src/app/admin/system/programs/screenList.ts",
+            "frontend/src/app/admin/system/programs/useMenuStructureSource.ts",
+            "frontend/src/lib/navigation/menu-screen-resolution.ts",
+            "frontend/src/types/generated-screen-registry.ts"
+          ]
+        },
         {
           "id": "program.management",
           "status": "partial",
@@ -8886,11 +9097,11 @@
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "시스템 프로그램 목록",
-          "primaryTask": true,
+          "visibleLabel": "이전 프로그램",
+          "primaryTask": false,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-02",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/ProgramApiController.java",

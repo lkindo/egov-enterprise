@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "c0d6568b0c01cc845bc7affa2cb3c4f194d2040e4236b64d6758ee050a187654"
+    "inventoryHash": "5190d0606b4a8d237184f19766d08168813f73a46ee6b17c052975eff03f3001"
   },
   "summary": {
-    "sourceFileCount": 597,
-    "records": 397,
-    "syntaxOccurrences": 470,
-    "ambiguousRecords": 350,
-    "unverifiedRecords": 397,
+    "sourceFileCount": 627,
+    "records": 394,
+    "syntaxOccurrences": 467,
+    "ambiguousRecords": 347,
+    "unverifiedRecords": 394,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -44,8 +44,8 @@
     "byKind": {
       "config-redirect": 13,
       "dynamic-segment": 11,
-      "form-producer": 55,
-      "navigation-producer": 175,
+      "form-producer": 54,
+      "navigation-producer": 173,
       "page-redirect": 17,
       "query-builder": 22,
       "query-consumer": 54,
@@ -54,7 +54,7 @@
       "url-observer": 8
     },
     "bySurface": {
-      "navigation": 386,
+      "navigation": 383,
       "request-telemetry": 11
     }
   },
@@ -6717,120 +6717,6 @@
       }
     },
     {
-      "id": "URL-C7DE728CBD07F2",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx",
-      "producerFile": "frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/security/authority",
-      "targetCandidate": "#group-metadata",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "#group-metadata",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-658D9AAC7D3D93",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx",
-      "producerFile": "frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/security/authority",
-      "targetCandidate": "#group-navigation",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "#group-navigation",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-43B277142C3B82",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx",
-      "producerFile": "frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/security/authority",
-      "targetCandidate": "#group-operations",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "#group-operations",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
       "id": "URL-AEF82EA7630B06",
       "surface": "navigation",
       "kind": "form-producer",
@@ -10193,44 +10079,6 @@
       }
     },
     {
-      "id": "URL-9378BBB706E249",
-      "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "intercepted-submit",
-      "source": "frontend/src/app/admin/system/menus/MenuAdminClient.tsx",
-      "producerFile": "frontend/src/app/admin/system/menus/MenuAdminClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/system/menus",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/system/menus/MenuAdminClient.tsx",
-        "detector": "jsx-form",
-        "occurrenceCount": 1
-      }
-    },
-    {
       "id": "URL-D82E38C26D0AF0",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -10731,6 +10579,44 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/programs/page.tsx",
         "detector": "server-search-param-property",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-D2D99495D6C74E",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "router.push",
+      "source": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/programs",
+      "targetCandidate": "/admin/system/menus",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/system/menus",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
+        "detector": "router-navigation",
         "occurrenceCount": 1
       }
     },

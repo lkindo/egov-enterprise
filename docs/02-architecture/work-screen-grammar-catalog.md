@@ -121,12 +121,14 @@
 ### A2. 마스터-디테일 (Master-Detail)
 
 - **목적:** 좌측에서 항목을 고르고 우측에서 그 항목의 하위 데이터를 편집한다.
-- **골격:** 좌 트리·목록(고정 폭) / 우 상세. 우측 상단에 선택 항목 식별자와 액션.
+- **골격:** 좌 트리·목록(기본은 고정 폭, 아래 '저장 범위와 폭'의 넓은 마스터는 예외) / 우 상세. 우측 상단에 선택 항목 식별자와 액션.
 - **필수:** 선택 상태의 시각·`aria-current` 표시, 미선택 시 우측 안내, 좌측 검색.
-- **금지:** 좌·우를 각각 다른 페이지로 분리해 왕복시키기, 선택 없이 활성인 저장 버튼.
+- **금지:** 좌·우를 각각 다른 페이지로 분리해 왕복시키기, 선택 없이 활성인 상세 저장 버튼(아래 '저장 범위'의 페이지 저장은 예외).
 - **키보드:** 좌측 `↑`/`↓` 이동, `Tab`으로 우측 진입, `Ctrl+S` 저장.
+- **저장 범위와 폭:** 기본 저장은 고른 항목의 상세 편집이라 선택이 있을 때만 실행한다(`saveShortcutScope="detail"`). 마스터 자체가 작업 대상이고 여러 항목의 위치·속성 초안을 한 번에 저장하는 화면은 페이지 저장(`saveShortcutScope="page"`)을 쓴다. 이때 저장 버튼과 `Ctrl+S`는 선택과 무관하되 **저장할 변경이 있을 때만** 활성이고, 저장 전에 변경 목록을 보인다. 이런 화면은 넓은 마스터와 좁은 속성 칸(`masterSize="wide"`)을 쓴다([DEC-OPS-209](../../.agent/memory/decisions.md)). 두 값은 [MasterDetailPage](../../frontend/src/app/components/patterns/master-detail-page.tsx)의 prop이고 기본값은 `detail`·`default`(좁은 목록 + 넓은 상세)다.
 - **합격:** 항목 전환 시 우측이 전체 리로드 없이 갱신 · 선택 상태가 새로고침 후 복원(URL allowlist 범위 내, [IA §5.5](../01-product/information-architecture.md) 준수).
-- **현재 화면:** `/admin/system/common-code`의 STANDARD 탭, `/admin/user/departments`, `/admin/system/menus`, `/admin/collaboration/mail-history`. `/admin/system/codes/administ`·`institution`은 이미 A1 목록이고 `/admin/system/common-code/codes`는 canonical route로 이동하는 alias라 A2 소비자로 세지 않는다.
+- **현재 화면(2026-10-02 확인):** `/admin/system/common-code`의 STANDARD 탭, `/admin/user/departments`, `/admin/system/menus`, `/admin/collaboration/mail-history`, `/approvals`, `/admin/security/dept-authority`(A1 셸 안의 A2 레이아웃). `/admin/system/codes/administ`·`institution`은 이미 A1 목록이고 `/admin/system/common-code/codes`는 canonical route로 이동하는 alias라 A2 소비자로 세지 않는다.
+- **메뉴 관리의 보드(2026-10-02, 관리 콘솔 UX 2단계):** `/admin/system/menus`는 페이지 저장 화면이다. 마스터는 보드다 — 영역(최상위 메뉴) 탭, 2단계 메뉴 카드, 3단계 줄. 영역 머리·카드 머리·줄이 같은 선택 단추 하나(`data-a2-master-item`·`aria-current`)를 쓰고, 끌기는 손잡이로만 한다. 상세는 고른 메뉴의 속성 칸(인스펙터)이다. 위치·새 메뉴·삭제 예정·이름·연결 화면·설명·사용 여부·그룹별 메뉴 표시·진입 권한 추가를 한 초안에 모으고 '변경 저장' 한 번으로 저장한다(`PUT /menus/structure`, 구조 버전 확인). 즉시 저장하는 수정 창은 없다. 자리 바꾸기는 손잡이 끌기·`Alt+↑`/`Alt+↓`·`Ctrl+X`/`Ctrl+V`·상세의 '다른 곳으로 옮기기' 네 경로다. 옮긴 메뉴가 어떤 그룹에서 숨으면 저장 전에 경고하고, 그룹 미리보기로 저장 전 초안의 보이는 메뉴·숨는 메뉴를 확인한다. 연결 화면은 화면 목록의 경로에서 고르고, 이전 프로그램 연결은 상세에 읽기 전용으로만 보인다. [A2 census](../../frontend/src/__tests__/master-detail-adoption-census.test.ts)가 `saveShortcutScope="page"`·`masterSize="wide"`와 선택 단추 하나를 고정한다.
 
 ### A3. 목록 → 편집 폼 (List to Form)
 
@@ -201,7 +203,8 @@
 - **금지:** 확인 없이 실행되는 일괄 액션, 상태를 색으로만 구분하기(색 단독 의미 전달 금지).
 - **키보드:** `Space` 선택 토글 · `Ctrl+A` 전체 선택(현재 페이지 한정 명시) · 일괄 액션 `Enter`.
 - **합격:** 일괄 처리 N건 중 M건 실패가 건별로 보고됨 · 대기 건수가 진입 즉시 보임.
-- **현재 화면(2026-09-11 확인):** `/admin/security/authority`는 그룹 목록 → 선택한 그룹의 기본정보·기능권한·메뉴 트리를 편집하는 A2 구조다. 역할 × 메뉴 격자는 현재 운영 화면의 소비자가 아니다. 남아 있는 [SecurityMatrixVisualizer](../../frontend/src/app/admin/security/authority/components/SecurityMatrixVisualizer.tsx)와 [matrix-a5-contract](../../frontend/src/app/admin/security/authority/__tests__/matrix-a5-contract.test.tsx)는 A5 컴포넌트 수준의 계약이며 현행 권한 관리 전체의 검증으로 세지 않는다. 실제 화면은 [SecurityHubClient 테스트](../../frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx)가 버전 충돌·복수 그룹 배정·메뉴 계층·미저장 이동을 검증한다. [UI/UX 작업 동선](../03-guides/ui-ux-task-flow-optimization.md)을 함께 참고한다.
+- **현재 화면(2026-10-02 확인):** A4 실소비자는 없다(§7 W5 판정). `/admin/security/authority`는 작업 큐가 아니라 A1 셸 안의 권한 그룹 목록 → 선택한 그룹의 **권한 작업대**다. 작업대의 '화면별 권한'·'기능별 권한' 표는 A5 소비자다(§A5). 구성원 탭의 일괄 추가·회수는 선택 체크박스·선택 건수·확인 대화와 서버의 409 거부(바뀐 구성원을 이름으로 밝힘)를 갖지만, 대기 건수 큐가 아니라 그룹 편집의 한 영역이라 A4 소비자로 세지 않는다.
+- **2026-09-11 확인 당시:** `/admin/security/authority`는 그룹 목록 → 선택한 그룹의 기본정보·기능권한·메뉴 트리를 편집하는 A2 구조였다. 역할 × 메뉴 격자는 그때도 운영 화면의 소비자가 아니었다. 당시 남아 있던 [SecurityMatrixVisualizer](https://github.com/lkindo/egov-enterprise/blob/b91157ade/frontend/src/app/admin/security/authority/components/SecurityMatrixVisualizer.tsx)(2026-10-02 관리 콘솔 1단계에서 삭제)와 [matrix-a5-contract](../../frontend/src/app/admin/security/authority/__tests__/matrix-a5-contract.test.tsx)는 A5 컴포넌트 수준의 계약이며 현행 권한 관리 전체의 검증으로 세지 않는다. 실제 화면은 [SecurityHubClient 테스트](../../frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx)가 버전 충돌·복수 그룹 배정·메뉴 계층·미저장 이동을 검증한다. [UI/UX 작업 동선](../03-guides/ui-ux-task-flow-optimization.md)을 함께 참고한다.
 
 ### A5. 권한 매트릭스 (Matrix Grid)
 
@@ -211,7 +214,11 @@
 - **금지:** 저장 없이 즉시 반영되는 체크(감사 추적 불가), 인가 의미가 다른 셀을 같은 위젯으로 뭉뚱그리기(AGENTS H3).
 - **키보드:** 방향키 셀 이동 · `Space` 토글 · `Ctrl+S` 저장.
 - **합격:** 20×20 이상에서 헤더 고정 유지 · 변경 셀 수와 저장 결과 건수 일치.
-- **현재 화면(2026-08-24 판정):** 실제 매트릭스는 `/admin/security/authority` 의 역할 × 메뉴 격자 **하나뿐**이다. `/admin/security/role`·`/admin/security/dept-authority` 는 제목에만 `매트릭스` 가 붙은 목록 화면이라 A1 대상이다. 소비자가 하나면 셸이 재사용을 만들지 못하므로 **셸 대신 스펙을 계약으로 고정**했다([matrix-a5-contract](../../frontend/src/app/admin/security/authority/__tests__/matrix-a5-contract.test.tsx)) — 변경 셀 표시·저장 전 요약·변경 없음 시 저장 불가·격자 방향키 이동·`Ctrl+S`. 이행 중 **저장이 손대지 않은 역할까지 전부 다시 쓰던 결함**을 함께 고쳤다(동시 편집 덮어쓰기 · AGENTS H3).
+- **현재 화면(2026-10-02 확인):** 실소비자는 권한 그룹 작업대(`/admin/security/authority`의 그룹 편집기)의 두 표다. 둘은 같은 권한 초안을 나눠 쓰고 편집기의 '권한 변경 저장' 하나로 저장한다. 셸 없이 [matrix-a5-contract](../../frontend/src/app/admin/security/authority/__tests__/matrix-a5-contract.test.tsx)가 두 표를 각각 고정한다 — 스크롤 상자 안의 행·열 머리글 고정, 넘치는 스크롤 상자를 칸이 모두 잠겨도 키보드로 스크롤할 수 있는 이름 있는 영역으로 두기(WCAG 2.1.1), 표 셀 밀도 토큰(`--cell-px`·`--cell-py`, §4), 바뀐 칸의 표시와 설명, 바뀐 권한 수와 저장 전 요약 수의 일치, 즉시 반영 금지, 방향키 이동과 빈 칸 건너뛰기, `Space` 토글, 변경이 있고 저장이 막히지 않았을 때만 `Ctrl+S`, 보호 권한 표시와 일괄 선택 제외(H3).
+  - **'화면별 권한'(편집기 기본 보기, 두 번째 A5 표):** 메뉴 트리(영역 → 섹션 → 화면) 줄 × 메뉴 표시·화면 진입·등록·수정·삭제·그 밖의 기능 칸이다. 칸의 권한은 화면 목록 생성물([generated-screen-registry](../../frontend/src/types/generated-screen-registry.ts))의 화면별 진입·쓰기·표시 권한에서 온다. 화면 줄의 칸은 권한이 하나면 체크박스, 여럿이면 'k/n' 버튼이 권한별 선택 창을 연다. 영역·섹션 줄의 칸(묶음 칸)은 아래 화면을 한꺼번에 켜고 끄되, **보호 권한·타인 자료 권한(`*_ALL`)·다른 화면의 진입 권한은 일괄 선택에서 뺀다** — 그 권한은 화면 줄의 칸에서 따로 고른다(H3). 화면 검색 중에는 검색 결과에 보이는 화면만 바꾼다. 메뉴 표시 칸은 그 메뉴 자신의 표시다. 하위를 켜면 상위도 켜고 상위를 끄면 하위도 끈다([권한 설계 §4.5](authorization-simplification-design.md#45-메뉴와-api의-관계)). 사용 중인 메뉴로 열리지 않는 화면은 '메뉴에 없는 화면' 묶음에 따로 보인다.
+  - **'기능별 권한':** 업무 영역(행) × 행위(열) 표다. 보호 권한은 표시를 붙이고 줄·분류 일괄 선택에서 뺀다. 열 일괄 선택은 보이는 행에만 적용한다.
+  - 같은 편집기의 '권한 묶음 적용'은 [권한 묶음 원장](../../config/governance/permission-bundles.json)의 묶음 하나를 초안에 더할 뿐 저장하지 않는다. 그룹 비교(허브의 '그룹 비교' 영역)는 두 그룹의 저장된 권한을 같은 두 표 모양으로 나란히 보는 읽기 전용 화면이다.
+- **2026-08-24 판정(역사):** 당시 실제 매트릭스는 `/admin/security/authority` 의 역할 × 메뉴 격자 **하나뿐**이었다. 그 격자는 2026-09-11 확인 때 이미 운영 화면 소비자가 아니었고 2026-10-02 걷었으며, 계약은 위 두 표로 옮겼다. 아래는 당시 기록이다. `/admin/security/role`·`/admin/security/dept-authority` 는 제목에만 `매트릭스` 가 붙은 목록 화면이라 A1 대상이다. 소비자가 하나면 셸이 재사용을 만들지 못하므로 **셸 대신 스펙을 계약으로 고정**했다([matrix-a5-contract](../../frontend/src/app/admin/security/authority/__tests__/matrix-a5-contract.test.tsx)) — 변경 셀 표시·저장 전 요약·변경 없음 시 저장 불가·격자 방향키 이동·`Ctrl+S`. 이행 중 **저장이 손대지 않은 역할까지 전부 다시 쓰던 결함**을 함께 고쳤다(동시 편집 덮어쓰기 · AGENTS H3).
 
 ### A6. 대용량 로그 조회 (Log Query)
 
@@ -244,42 +251,42 @@
 - **합격:** 중단 시 데이터 유실 경고 · 실행 결과가 건별로 보고됨.
 - **현재 화면:** 대량 등록·이관 경로. 현재 저장소에 확립된 사례가 적어 **A8은 파일럿 대상에서 후순위**다.
 
-## 6. 현재 소비 census (2026-08-25 실측)
+## 6. 현재 소비 census (2026-08-25 최초 실측, 2026-10-02 재측정)
 
-`frontend/src/app` 기준, `__tests__`와 `loading.tsx`를 제외한 화면 파일에서 **import 경로**로 센 값이다(문자열 언급이 아니라 실제 소비). 이 정의는 [채택 census 게이트](../../frontend/src/__tests__/work-list-adoption-census.test.ts)와 같으며, 게이트가 값을 동결한다.
+`frontend/src/app` 기준, `__tests__`와 `loading.tsx`를 제외한 `.tsx` 파일(화면 아래 컴포넌트 파일 포함, 공용 표 자신은 제외)에서 **import 경로**로 센 값이다(문자열 언급이 아니라 실제 소비). `sortKey`·`onPageSizeChange`·`bulkActions` 행은 그 prop 을 실제로 넘기는 파일을 센다. A1 셸·직접 조립 행은 [채택 census 게이트](../../frontend/src/__tests__/work-list-adoption-census.test.ts)와, A2 행은 [A2 census](../../frontend/src/__tests__/master-detail-adoption-census.test.ts)와 정의가 같고 게이트가 값을 동결한다. 나머지 행은 같은 정의로 다시 센 기록값이며 게이트가 아니다.
 
-| 항목 | 값 | 의미 |
-|---|---|---|
-| `StandardDataTable` 소비 화면 | 49 | 문법 전달의 모집단 |
-| 그중 `WorkListPage` 셸 경유 | **40**(2026-09-25 **41**) | W3 wave 1~13과 이후 이행 — 되돌리기는 게이트가 red |
-| 그중 셸 없이 직접 조립 | **4**(2026-09-25 **2**) | 신규 유입은 게이트가 red. 남은 건은 전부 이행 대상이 아니다(아래 참조) |
-| `MasterDetailPage`(A2) 소비 | 6 | 별도 exact census 가 고정 |
-| `ReportPage`(A7) 소비 | 2 | 별도 exact census 가 고정 |
-| `sortKey`(열 정렬) 채택 | 9 | G5 — 이행 전 7. **현재 구현은 클라이언트 정렬이라 범위가 현재 페이지다** — 여러 페이지 결과에서는 페이저 요약이 그 범위를 고지한다([계약](../../frontend/src/app/components/ui/__tests__/sort-scope-disclosure.test.tsx)). 서버 정렬 파라미터 도입은 별도 과제(GAP-UI-001) |
-| `onPageSizeChange` 채택 | 28 | A1 **필수**. 이행 전 6 → 14 → 28. 2026-08-25 실측에서 서버 페이징이 있는 A1 화면 15개가 컨트롤을 전달하지 않고 있었다(기능은 표가 처음부터 갖고 있었다) — [census 게이트](../../frontend/src/__tests__/page-size-adoption-census.test.ts)가 제공 여부와 queryKey 결속을 함께 고정한다 |
-| `KeywordFilter` 경유 조회 조건 | 17(2026-09-26 **30**) | G2 — 조회 조건 조립의 단일 경로. 2026-09-26 셸 경유 12화면이 여전히 입력 디바운스로 목록을 조회하던 것을 `조회`/Enter 로 옮겼고, [A1 census](../../frontend/src/__tests__/work-list-adoption-census.test.ts)가 셸 화면의 입력 디바운스 조회를 예외 없이 막는다(DIP C9) |
-| `emptyResultMessage` 경유 빈 상태 | 30 | G15 — 결과 없음/데이터 없음 구분 |
-| `PeriodFilter` 경유 조회 기간 | 6화면 | A6 **필수**. 로그 5화면 + 모니터링 허브 목록 탭. 서버 저장소는 처음부터 기간 조건을 갖고 있었고 화면이 보내지 않았다([계약](../../frontend/src/__tests__/cross-stack/log-period-filter-contract.test.ts)) |
-| `PagePagination` 별도 소비 | 0 | 표가 아닌 페이지 목록도 전부 셸·표 페이저로 수렴했다 |
-| `bulkActions` 채택 | 3 | A4 필수 미이행 |
-| `DataExportExcel` 소비 | 9화면 | A6 필수 부분 이행. 2026-08-26 부터 `scope` 가 필수 prop 이라 **현재 페이지 반출(6)과 결과 전량 반출(3)이 라벨로 구분된다** — 서버측 전량 반출은 로그인 로그만 별도 구현([census](../../frontend/src/__tests__/export-scope-census.test.ts)) |
+| 항목 | 2026-08-25 | 2026-10-02 | 의미 |
+|---|---|---|---|
+| `StandardDataTable` 소비 파일 | 49 | 44 | 문법 전달의 모집단 |
+| `WorkListPage`(A1) 셸 경유 | **40** | **43** | W3 wave 1~13과 이후 이행·신설(2026-09-25 41, 2026-10-01 감사 원장·후속 작업 화면 신설로 43). 셸 경유 화면이 모두 표를 쓰지는 않는다(지식 허브 등). 되돌리기는 게이트가 red |
+| 셸 없이 직접 조립 | **4** | **2** | 신규 유입은 게이트가 red. 남은 2건은 이행 대상이 아니다(아래 참조) |
+| `MasterDetailPage`(A2) 소비 | 6 | 6 | 별도 exact census 가 importer 집합을 고정 — 부서·메뉴·메일 이력·공통코드·결재함·부서별 그룹 배정 |
+| `ReportPage`(A7) 소비 | 2 | 2 | 별도 exact census 가 고정 |
+| `sortKey`(열 정렬) 채택 | 9 | 10 | G5 — 이행 전 7. **현재 구현은 클라이언트 정렬이라 범위가 현재 페이지다** — 여러 페이지 결과에서는 페이저 요약이 그 범위를 고지한다([계약](../../frontend/src/app/components/ui/__tests__/sort-scope-disclosure.test.tsx)). 서버 정렬 파라미터 도입은 별도 과제(GAP-UI-001) |
+| `onPageSizeChange` 채택 | 28 | 34 | A1 **필수**. 이행 전 6 → 14 → 28. 2026-08-25 실측에서 서버 페이징이 있는 A1 화면 15개가 컨트롤을 전달하지 않고 있었다(기능은 표가 처음부터 갖고 있었다) — [census 게이트](../../frontend/src/__tests__/page-size-adoption-census.test.ts)가 제공 여부와 queryKey 결속을 함께 고정한다 |
+| `KeywordFilter` 경유 조회 조건 | 17 | 35 | G2 — 조회 조건 조립의 단일 경로. 2026-09-26 셸 경유 12화면이 여전히 입력 디바운스로 목록을 조회하던 것을 `조회`/Enter 로 옮겼고(그때 30), [A1 census](../../frontend/src/__tests__/work-list-adoption-census.test.ts)가 셸 화면의 입력 디바운스 조회를 예외 없이 막는다(DIP C9). 2026-10-02 권한 작업대의 구성원 추가 창이 더해졌다 |
+| `emptyResultMessage` 경유 빈 상태 | 30 | 39 | G15 — 결과 없음/데이터 없음 구분 |
+| `PeriodFilter` 경유 조회 기간 | 6 | 10 | A6 **필수**. 2026-08-25 에는 로그 5화면 + 모니터링 허브 목록 탭이었고, 이후 로그 통합 조회·민감 작업 감사 원장·통계 허브·결재함이 더해졌다. 서버 저장소는 처음부터 기간 조건을 갖고 있었고 화면이 보내지 않았다([계약](../../frontend/src/__tests__/cross-stack/log-period-filter-contract.test.ts)) |
+| `PagePagination` 별도 소비 | 0 | 13 | 표가 아닌 목록(마스터 목록·이력·선택 창)의 페이저. 2026-08-25 에는 0이었지만 이후 결재함·메일 이력·지식 허브·권한 허브의 사용자 찾기·구성원·변경 이력·구성원 추가 창 등이 쓴다 |
+| `bulkActions` 채택 | 3 | 3 | A4 필수 미이행 |
+| `DataExportExcel` 소비 | 9 | 9 | A6 필수 부분 이행. 2026-08-26 부터 `scope` 가 필수 prop 이라 **현재 페이지 반출(6)과 화면이 들고 있는 결과 전량 반출(3)이 라벨로 구분된다**([census](../../frontend/src/__tests__/export-scope-census.test.ts)). 서버측 전체 결과 반출은 로그 5화면과 로그 통합 조회가 [requestFullExport](../../frontend/src/app/components/patterns/full-result-export.ts)로 따로 제공한다(A6) |
 
-**남은 직접 조립의 성격** — 2026-08-25 모니터링 허브 이행으로 **실제 이행 대상은 0건**이 됐다. 2026-09-20 권한 허브와 로그인 정책이 A1 셸로 옮겨 2026-09-25 현재 남은 것은 SMS 별칭과 공유 컴포넌트 2건이다. 당시 남은 4건은 archetype 이 다르거나(A5 스펙 계약), 라우트가 도달 불가하거나, 화면이 아니다.
+**남은 직접 조립의 성격** — 2026-08-25 모니터링 허브 이행으로 **실제 이행 대상은 0건**이 됐다. 2026-09-20 권한 허브와 로그인 정책이 A1 셸로 옮겨 2026-10-02 현재 남은 것은 SMS 별칭과 공유 컴포넌트 2건이다. 2026-08-25 당시 남은 4건은 archetype 이 다르거나(A5 스펙 계약), 라우트가 도달 불가하거나, 화면이 아니었다 — 아래 표는 그 4건의 당시 판정과 이후 처리다.
 
 | 파일 | 성격 | 판정 |
 |---|---|---|
-| `admin/security/authority/SecurityHubClient.tsx` | 권한 매트릭스(A5) | 셸 없이 **스펙 계약**으로 고정하기로 판정(§5 A5). 2026-09-20 통합 권한 허브가 A1 셸을 경유해 직접 조립에서 빠졌다 |
+| `admin/security/authority/SecurityHubClient.tsx` | 권한 매트릭스(A5) | 셸 없이 **스펙 계약**으로 고정하기로 판정(§5 A5). 2026-09-20 통합 권한 허브가 A1 셸을 경유해 직접 조립에서 빠졌다. 2026-10-02 현재 A5 계약의 대상은 그룹 편집기의 화면별 권한·기능별 권한 표다 |
 | `admin/security/login-policy/LoginPolicyAdminClient.tsx` | ~~도달 불가~~ → **2026-08-27 도달 가능해짐. 이행 대상으로 복귀(미이행)** | 종전에는 [next.config](../../frontend/next.config.ts) 가 이 경로를 모니터링 허브로 보내 렌더되지 않았다. 그런데 그 리다이렉트가 **동작하는 화면(424줄)과 API 5개를 통째로 삼키고 있었고**, 메뉴 9020120 의 `modern_route` 는 이 경로를 정본으로 선언한다(V2_47). 리다이렉트를 제거해 화면을 복원했으므로 제외 사유가 사라졌다 — 2026-09-20 A1 셸로 이행했다 |
 | `cop/sms/selectSmsList/SmsHubClient.tsx` | 같은 이유의 도달 불가 alias | 위와 동일. 정리 여부는 alias 승인 절차가 결정한다 |
 | `components/ui/smart-notification-hub.tsx` | 화면이 아니라 공유 컴포넌트 | 자기 화면 문법을 갖지 않는다. 이행 대상 아님 |
 
 > 정정: 최초 작성 시 적었던 58·7·6·10·4는 파일 안의 **문자열 언급**을 센 값이라 주석만 있는 파일 7건이 섞여 있었다. 위 표는 import 기준 재측정값이며 게이트와 정의가 같다.
 
-**핵심 판정:** 기능은 [standard-data-table.tsx](../../frontend/src/app/components/ui/standard-data-table.tsx)(headless TanStack 기반, 정렬 상태머신·`aria-sort`·페이지당 건수·일괄 액션 보유)에 이미 있고, 이행의 병목은 컴포넌트 개발이 아니라 **화면이 archetype을 선언하도록 만드는 것**이었다. 2026-08-25 기준 archetype 셸 경유는 48화면(A1 40 · A2 6 · A7 2)이고, 셸 없는 직접 조립 4건 중 3건은 이행 대상이 아니다(A5 스펙 계약 1 · 도달 불가 alias 1 · 공유 컴포넌트 1). 나머지 1건(로그인 정책)은 2026-08-27 리다이렉트 제거로 **도달 가능해져 이행 대상으로 복귀**했다(미이행).
+**핵심 판정:** 기능은 [standard-data-table.tsx](../../frontend/src/app/components/ui/standard-data-table.tsx)(headless TanStack 기반, 정렬 상태머신·`aria-sort`·페이지당 건수·일괄 액션 보유)에 이미 있고, 이행의 병목은 컴포넌트 개발이 아니라 **화면이 archetype을 선언하도록 만드는 것**이었다. 2026-08-25 기준 archetype 셸 경유는 48화면(A1 40 · A2 6 · A7 2)이고, 셸 없는 직접 조립 4건 중 3건은 이행 대상이 아니다(A5 스펙 계약 1 · 도달 불가 alias 1 · 공유 컴포넌트 1). 나머지 1건(로그인 정책)은 2026-08-27 리다이렉트 제거로 **도달 가능해져 이행 대상으로 복귀**했고 2026-09-20 A1 셸로 이행했다. 2026-10-02 기준 셸 경유는 A1 43 · A2 6 · A7 2이고(부서별 그룹 배정·사용자 조직 허브는 A1 셸 안에 A2 레이아웃을 함께 써 두 줄에 모두 센다), 셸 없는 직접 조립 2건(도달 불가 alias 1 · 공유 컴포넌트 1)은 이행 대상이 아니다.
 
-로그 클러스터는 5화면 중 4화면(`privacy`·`system`·`user`·`web`)이 이행됐고, `login`은 아래 VRT 보류에 남아 있다. 이행된 4화면이 A6·A1의 참조 구현이다.
+로그 클러스터 5화면(`login`·`privacy`·`system`·`user`·`web`)이 모두 이행됐다. 처음에는 4화면만 이행하고 `login`은 VRT 기준선 때문에 보류했으나, 2026-08-24 기준선을 다시 만들며 함께 이행했다(§7). 이 화면들이 A6·A1의 참조 구현이다.
 
-A2는 [채택 census 게이트](../../frontend/src/__tests__/master-detail-adoption-census.test.ts)가 route→consumer와 importer exact 집합을 별도로 고정한다. 3차 이행 후 소비자는 `/admin/user/departments`·`/admin/system/menus`·`/admin/collaboration/mail-history`·`/admin/system/common-code` STANDARD 4화면이다. `UserOrgHubClient`는 USERS의 직접 표와 DEPTS의 A2를 함께 가지므로 A2 import를 이유로 위 A1 직접 소비를 추가로 낮추지 않는다. 메일 이력은 6열 표를 18–24rem master에 축소하지 않고 제목·상태 중심 compact 목록으로 바꿔 직접 표 소비가 30→29로 내려갔다. 공통코드는 기존 상세 `StandardDataTable`을 보존해 `StandardDataTable` 50·직접 조립 29·`WorkListPage` 21·`PagePagination` 4의 census를 바꾸지 않는다. STANDARD만 전체 `MasterDetailPage`로 이행하고 포털 hero·metrics·진입 motion을 걷어 1280×720에서도 실제 탐색·상세 업무 영역이 보이게 했다. DnD handle과 선택 버튼을 분리하고 검색 중 이동을 비활성화했으며, 물리 스키마가 정렬 순서를 저장하지 않는 계약에 맞춰 분류 자체와 같은 분류 안의 순서 이동은 허용하지 않고 **그룹의 소속 분류 변경만** 저장한다. 선택 항목이 있으면서 소속 분류가 변경된 경우에만 저장하고, 검색 결과에서 사라진 선택은 상세와 함께 해제한다. 허브가 공통 h1·breadcrumb를 먼저 단독 소유하고, STANDARD `MasterDetailPage`와 ADMINIST·INSTITUTION `WorkListPage`는 활성 tabpanel 안에서 h2로 임베드된다. 두 A1의 중복 page header·hero·metrics 래퍼는 제거했고 `/admin/system/common-code/codes` canonical alias는 그대로다. 기존 `groupId` query consumer 1건은 `deny`·`unverified` legacy로 유지하고 새 producer나 local/session storage를 만들지 않았다. 당시 URL 이행과 privacy 승인은 별도 과제로 보류했다. 2026-09-05 ADR-0009가 일반 업무 검색어 정책을 승인했지만 `groupId`는 승인된 검색 key가 아니므로 이 legacy 판정은 유지한다.
+A2는 [채택 census 게이트](../../frontend/src/__tests__/master-detail-adoption-census.test.ts)가 route→consumer와 importer exact 집합을 별도로 고정한다. 3차 이행 후 소비자는 `/admin/user/departments`·`/admin/system/menus`·`/admin/collaboration/mail-history`·`/admin/system/common-code` STANDARD 4화면이다. 이후 결재함(`/approvals`, W5 4차)과 부서별 그룹 배정(`/admin/security/dept-authority`, W3 wave 11)이 더해져 2026-10-02 importer는 6개다. 같은 날 메뉴 관리는 이 셸을 페이지 저장·넓은 마스터로 쓰는 보드형 편집기가 됐다(§5 A2). `UserOrgHubClient`는 USERS의 직접 표와 DEPTS의 A2를 함께 가지므로 A2 import를 이유로 위 A1 직접 소비를 추가로 낮추지 않는다. 메일 이력은 6열 표를 18–24rem master에 축소하지 않고 제목·상태 중심 compact 목록으로 바꿔 직접 표 소비가 30→29로 내려갔다. 공통코드는 기존 상세 `StandardDataTable`을 보존해 `StandardDataTable` 50·직접 조립 29·`WorkListPage` 21·`PagePagination` 4의 census를 바꾸지 않는다. STANDARD만 전체 `MasterDetailPage`로 이행하고 포털 hero·metrics·진입 motion을 걷어 1280×720에서도 실제 탐색·상세 업무 영역이 보이게 했다. DnD handle과 선택 버튼을 분리하고 검색 중 이동을 비활성화했으며, 물리 스키마가 정렬 순서를 저장하지 않는 계약에 맞춰 분류 자체와 같은 분류 안의 순서 이동은 허용하지 않고 **그룹의 소속 분류 변경만** 저장한다. 선택 항목이 있으면서 소속 분류가 변경된 경우에만 저장하고, 검색 결과에서 사라진 선택은 상세와 함께 해제한다. 허브가 공통 h1·breadcrumb를 먼저 단독 소유하고, STANDARD `MasterDetailPage`와 ADMINIST·INSTITUTION `WorkListPage`는 활성 tabpanel 안에서 h2로 임베드된다. 두 A1의 중복 page header·hero·metrics 래퍼는 제거했고 `/admin/system/common-code/codes` canonical alias는 그대로다. 기존 `groupId` query consumer 1건은 `deny`·`unverified` legacy로 유지하고 새 producer나 local/session storage를 만들지 않았다. 당시 URL 이행과 privacy 승인은 별도 과제로 보류했다. 2026-09-05 ADR-0009가 일반 업무 검색어 정책을 승인했지만 `groupId`는 승인된 검색 key가 아니므로 이 legacy 판정은 유지한다.
 
 ## 7. 이행 순서와 소비 계약
 
