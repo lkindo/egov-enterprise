@@ -431,8 +431,10 @@ test.describe('권한 변경과 충돌 제어', () => {
                     const screensTab = editor.getByRole('tab', { name: /^화면별 권한/ });
                     await screensTab.click();
                     const table = editor.getByRole('group', { name: '화면별 권한 선택', exact: true });
-                    const menuCell = (id: number) => table.getByRole('checkbox', { name: new RegExp(` × 메뉴 표시 \\(${id}\\)$`) });
-                    const rowOf = (id: number) => table.getByRole('row').filter({ has: menuCell(id) });
+                    const menuCellName = (id: number) => new RegExp(` × 메뉴 표시 \\(${id}\\)$`);
+                    const menuCell = (id: number) => table.getByRole('checkbox', { name: menuCellName(id) });
+                    // filter({ has }) 의 내부 locator 는 그 줄 안에서 상대로 찾는다 — 편집기·표부터 시작하는 locator 를 넣으면 어떤 줄도 맞지 않는다.
+                    const rowOf = (id: number) => table.getByRole('row').filter({ has: page.getByRole('checkbox', { name: menuCellName(id) }) });
                     const rootCheckbox = menuCell(visibleRoot.id);
                     const leafCheckbox = menuCell(leaf.id);
                     // 처음에는 영역만 펼친다 — 3단계 화면은 그 섹션을 펼쳐야 보인다(진입 권한 문제가 있는 섹션은 펼친 채 시작한다).
