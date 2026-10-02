@@ -217,6 +217,8 @@ describe('app shell accessibility source contract', () => {
     const layout = readAppSource('layout.tsx');
     const boardDetailPage = readAppSource('admin', 'community', 'boards', 'detail', 'page.tsx');
     const boardListPage = readAppSource('admin', 'community', 'boards', 'select-board-list', 'page.tsx');
+    const boardListClient = readAppSource('admin', 'community', 'boards', 'select-board-list', 'BoardListClient.tsx');
+    const adminLoading = readAppSource('admin', 'loading.tsx');
     const statsFallback = readAppSource('admin', 'stats', 'StatsHubFallback.tsx');
     const surveyHub = readAppSource('admin', 'survey', 'hub', 'SurveyHubClient.tsx');
 
@@ -224,7 +226,10 @@ describe('app shell accessibility source contract', () => {
     expect(layout).toContain('애플리케이션을 준비하는 중');
     expect(layout.match(/<h1\b/g)?.length ?? 0).toBeGreaterThanOrEqual(3);
     expect(boardDetailPage).toMatch(/BoardDetailSkeleton[\s\S]*?<h1\b/);
-    expect(boardListPage).toMatch(/BoardListSkeleton[\s\S]*?<h1\b/);
+    expect(boardListPage).not.toMatch(/<Suspense\b/);
+    expect(boardListPage).toMatch(/<BoardListClient\b/);
+    expect(adminLoading).toMatch(/<h1\b[^>]*>관리자 화면을 불러오는 중입니다\.<\/h1>/);
+    expect(boardListClient.match(/<h1\b/g)).toHaveLength(1);
     expect(statsFallback).toMatch(/<h1\b/);
     expect(surveyHub).toContain('<SurveyManageClient embedded />');
     // [2026-09-08 PD-SRVY-001] 응답자 탭을 걷었다 — tb_srvy_rspdnt 는 개인정보를 담는데 응답

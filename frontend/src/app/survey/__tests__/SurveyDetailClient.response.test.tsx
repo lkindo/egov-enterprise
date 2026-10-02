@@ -14,10 +14,13 @@
  */
 
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { submitOperation } from '@/types/generated-operations';
+import type { Survey, SurveyQuestion } from '@/types/business/survey';
 import SurveyDetailClient from '../[id]/SurveyDetailClient';
+import SurveyDetailPage from '../[id]/page';
 
 const mocks = vi.hoisted(() => ({
   getQuestions: vi.fn(),
@@ -25,9 +28,10 @@ const mocks = vi.hoisted(() => ({
   submitAnswers: vi.fn(),
   toast: vi.fn(),
   push: vi.fn(),
+  notFound: vi.fn(() => { throw new Error('NEXT_NOT_FOUND'); }),
 }));
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: mocks.push }) }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: mocks.push }), notFound: mocks.notFound }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/services/foundation/survey/SurveyAdminService', () => ({
   surveyAdminService: {
@@ -38,18 +42,22 @@ vi.mock('@/services/foundation/survey/SurveyAdminService', () => ({
 }));
 
 /** 기간이 넓게 열린 설문 — 오늘이 언제든 안에 든다. */
-const OPEN_SURVEY = {
+const OPEN_SURVEY: Survey = {
   srvySn: 1,
   srvyTtl: '서비스 만족도 조사',
   srvyBgngYmd: '20000101',
   srvyEndYmd: '29991231',
   srvyTmpltSn: 1,
+  srvyPrps: '',
+  srvyWrtGdCn: '',
+  srvyTrgt: '',
+  crtDt: '2026-08-28',
 };
 vi.mock('../components/SurveyStatsPanel', () => ({
   SurveyStatsPanel: () => <div data-testid="survey-stats-panel" />,
 }));
 
-const QUESTIONS = [
+const QUESTIONS: SurveyQuestion[] = [
   {
     srvyQstnSn: 11,
     srvySn: 1,
@@ -92,6 +100,86 @@ describe('설문 응답 제출', () => {
     // 종전에는 제목 자리에 일련번호만 있었다.
     expect(await screen.findByText('서비스 만족도 조사')).toBeInTheDocument();
     expect(screen.getByText('진행중')).toBeInTheDocument();
+  });
+
+  it('서버에서 읽은 제목과 문항은 클라이언트 조회가 끝나기 전 첫 렌더부터 나타난다', () => {
+    mocks.getQuestions.mockReturnValue(new Promise(() => {}));
+    mocks.getSurvey.mockReturnValue(new Promise(() => {}));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <SurveyDetailClient srvySn={1} initialSurvey={OPEN_SURVEY} initialQuestions={QUESTIONS} initialTodayYmd="20261001" />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByText('서비스 만족도 조사')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: '만족' })).toBeEnabled();
+    expect(screen.getByRole('radio', { name: '기타' })).toBeEnabled();
+    expect(screen.queryByText('문항을 불러오는 중입니다…')).not.toBeInTheDocument();
+    expect(screen.queryByText('설문 정보를 불러오는 중입니다.')).not.toBeInTheDocument();
+    expect(mocks.getQuestions).toHaveBeenCalledWith(1);
+    expect(mocks.getSurvey).toHaveBeenCalledWith(1);
+  });
+
+  it('서버의 KST 기준일로 첫 렌더와 수화 후 기간을 판정하고 이미 응답한 seed도 잠근다', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-30T00:00:00Z'));
+    try {
+      mocks.getQuestions.mockReturnValue(new Promise(() => {}));
+      mocks.getSurvey.mockReturnValue(new Promise(() => {}));
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      const survey = { ...OPEN_SURVEY, srvyBgngYmd: '20261001', srvyEndYmd: '20261001', responded: true };
+      const container = document.createElement('div');
+      container.innerHTML = renderToString(
+        <QueryClientProvider client={client}>
+          <SurveyDetailClient srvySn={1} initialSurvey={survey} initialQuestions={QUESTIONS} initialTodayYmd="20261001" />
+        </QueryClientProvider>,
+      );
+      document.body.append(container);
+      // 서버와 브라우저 시각이 달라도 서버가 고정한 기준일은 수화 중에 바뀌지 않는다.
+      vi.setSystemTime(new Date('2026-10-02T00:00:00Z'));
+      const recoverableError = vi.fn();
+      render(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <SurveyDetailClient srvySn={1} initialSurvey={survey} initialQuestions={QUESTIONS} initialTodayYmd="20261001" />
+        </QueryClientProvider>,
+        { container, hydrate: true, onRecoverableError: recoverableError },
+      );
+
+      expect(screen.getByText('진행중')).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: '만족' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: '응답 완료' })).toBeDisabled();
+      expect(screen.getByText(/이미 응답한 설문입니다/)).toBeInTheDocument();
+      expect(screen.queryByText(/아직 시작되지 않은 설문입니다/)).not.toBeInTheDocument();
+      expect(mocks.submitAnswers).not.toHaveBeenCalled();
+      expect(recoverableError).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('seed 이후 문항 재조회 실패도 재시도를 제공하고 선택·기타 입력을 복원한다', async () => {
+    let rejectQuestions!: (error: Error) => void;
+    mocks.getQuestions.mockReturnValueOnce(new Promise((_resolve, reject) => { rejectQuestions = reject; }));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <SurveyDetailClient srvySn={1} initialSurvey={OPEN_SURVEY} initialQuestions={QUESTIONS} initialTodayYmd="20261001" />
+      </QueryClientProvider>,
+    );
+    fireEvent.click(screen.getByRole('radio', { name: '기타' }));
+    fireEvent.change(screen.getByLabelText('기타 답변'), { target: { value: '보존할 답변' } });
+
+    await act(async () => { rejectQuestions(new Error('question refresh failed')); });
+    expect(await screen.findByText('문항을 불러오지 못했습니다.')).toBeInTheDocument();
+    expect(screen.queryByText('이 설문에는 아직 등록된 문항이 없습니다.', { exact: false })).not.toBeInTheDocument();
+    mocks.getQuestions.mockResolvedValue(QUESTIONS);
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+
+    expect(await screen.findByRole('radio', { name: '기타' })).toBeChecked();
+    expect(screen.getByLabelText('기타 답변')).toHaveValue('보존할 답변');
+    expect(screen.getByRole('button', { name: '응답 제출' })).toBeEnabled();
+    expect(mocks.submitAnswers).not.toHaveBeenCalled();
   });
 
   /**
@@ -285,6 +373,75 @@ describe('설문 응답 제출', () => {
   it('결과 통계는 응답 아래에 그대로 남는다 — 같은 경로로 결과를 보러 오는 사용자가 있다', async () => {
     renderClient();
     expect(await screen.findByTestId('survey-stats-panel')).toBeInTheDocument();
+  });
+});
+
+describe('설문 상세 서버 초기 조회', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getSurvey.mockResolvedValue(OPEN_SURVEY);
+    mocks.getQuestions.mockResolvedValue(QUESTIONS);
+  });
+
+  it('같은 경로 ID의 설문·문항을 병렬로 읽고 KST 기준일과 성공 데이터만 넘긴다', async () => {
+    let resolveSurvey!: (survey: Survey) => void;
+    let resolveQuestions!: (questions: SurveyQuestion[]) => void;
+    mocks.getSurvey.mockReturnValueOnce(new Promise<Survey>((resolve) => { resolveSurvey = resolve; }));
+    mocks.getQuestions.mockReturnValueOnce(new Promise<SurveyQuestion[]>((resolve) => { resolveQuestions = resolve; }));
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-30T15:30:00Z'));
+    try {
+      const pending = SurveyDetailPage({ params: Promise.resolve({ id: '1' }) });
+      await Promise.resolve();
+      expect(mocks.getSurvey).toHaveBeenCalledWith(1);
+      expect(mocks.getQuestions).toHaveBeenCalledWith(1);
+      resolveQuestions(QUESTIONS);
+      resolveSurvey(OPEN_SURVEY);
+      const page = await pending;
+
+      expect(page.type).toBe(SurveyDetailClient);
+      expect(page.props).toEqual({ srvySn: 1, initialSurvey: OPEN_SURVEY, initialQuestions: QUESTIONS, initialTodayYmd: '20261001' });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it.each(['survey', 'questions'] as const)('서버 %s 조회 실패는 성공한 다른 seed와 분리하고 클라이언트 재시도에 맡긴다', async (failed) => {
+    if (failed === 'survey') mocks.getSurvey.mockRejectedValueOnce(new Error('server metadata unavailable'));
+    else mocks.getQuestions.mockRejectedValueOnce(new Error('server questions unavailable'));
+
+    const page = await SurveyDetailPage({ params: Promise.resolve({ id: '1' }) });
+    expect(page.props.initialSurvey).toEqual(failed === 'survey' ? undefined : OPEN_SURVEY);
+    expect(page.props.initialQuestions).toEqual(failed === 'questions' ? undefined : QUESTIONS);
+    expect(page.props.srvySn).toBe(1);
+
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    if (failed === 'questions') {
+      mocks.getQuestions.mockRejectedValueOnce(new Error('client questions unavailable'));
+      render(<QueryClientProvider client={client}>{page}</QueryClientProvider>);
+      expect(await screen.findByText('문항을 불러오지 못했습니다.')).toBeInTheDocument();
+      expect(screen.queryByText('이 설문에는 아직 등록된 문항이 없습니다.', { exact: false })).not.toBeInTheDocument();
+      mocks.getQuestions.mockResolvedValue(QUESTIONS);
+      fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+      expect(await screen.findByRole('radio', { name: '만족' })).toBeEnabled();
+    } else {
+      mocks.getSurvey.mockRejectedValueOnce(new Error('client metadata unavailable'));
+      render(<QueryClientProvider client={client}>{page}</QueryClientProvider>);
+      expect(await screen.findByText('설문 정보를 불러오지 못했습니다.')).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: '만족' })).toBeDisabled();
+      expect(mocks.submitAnswers).not.toHaveBeenCalled();
+      mocks.getSurvey.mockResolvedValue(OPEN_SURVEY);
+      await act(async () => { await client.refetchQueries({ queryKey: ['survey', 1] }); });
+      expect(await screen.findByText('서비스 만족도 조사')).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: '만족' })).toBeEnabled();
+    }
+  });
+
+  it.each(['0', '-1', 'NaN', '9007199254740992'])('잘못된 경로 %s는 초기 조회 전 기존 notFound로 거부한다', async (id) => {
+    await expect(SurveyDetailPage({ params: Promise.resolve({ id }) })).rejects.toThrow('NEXT_NOT_FOUND');
+    expect(mocks.notFound).toHaveBeenCalledTimes(1);
+    expect(mocks.getSurvey).not.toHaveBeenCalled();
+    expect(mocks.getQuestions).not.toHaveBeenCalled();
   });
 });
 

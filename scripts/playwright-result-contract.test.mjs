@@ -324,6 +324,11 @@ test('CI CLI independently binds event selection, full discovery, and both compl
   const merge = git('rev-parse', 'HEAD');
   const specs = discoverSpecs();
   for (const spec of specs) write(`frontend/e2e/${spec}`, '// Discovery fixture; no browser or DB execution.\n');
+  write('frontend/e2e/enterprise-task-lab/enterprise-task-quality.spec.ts', '// Separately owned manual lab fixture.\n');
+  for (const file of ['frontend/playwright.config.ts', 'frontend/playwright.enterprise-task-lab.config.ts',
+    'scripts/run-isolated-e2e.mjs', 'package.json']) {
+    write(file, fs.readFileSync(path.resolve(file), 'utf8'));
+  }
   write('frontend/e2e/shard-duration-profile.json', JSON.stringify(loadDurationProfile()));
   for (const script of ['playwright-result-contract.mjs', 'e2e-shard-plan.mjs', 'ci-change-scope.mjs', 'read-regular-file.mjs']) {
     write(`scripts/${script}`, fs.readFileSync(path.resolve('scripts', script), 'utf8'));

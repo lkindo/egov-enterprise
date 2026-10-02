@@ -12,6 +12,7 @@ import {
   durationProfileFreshness,
   loadDurationProfile,
   parseShard,
+  partitionPlaywrightSpecs,
   resolveCiImpactPlan,
   routeBoundaryRisk,
   validateDurationProfile,
@@ -269,6 +270,73 @@ test('duration profile covers every Playwright spec exactly once', () => {
   const profile = loadDurationProfile();
   assert.deepEqual(validateDurationProfile(profile), []);
   assert.deepEqual(Object.keys(profile.durationsMs).sort(), discoverSpecs());
+});
+
+function repositorySpecOwnership() {
+  const read = file => fs.readFileSync(path.resolve(file), 'utf8');
+  return {
+    defaultConfigSource: read('frontend/playwright.config.ts'),
+    manualConfigSource: read('frontend/playwright.enterprise-task-lab.config.ts'),
+    runnerSource: read('scripts/run-isolated-e2e.mjs'),
+    packageSource: read('package.json'),
+  };
+}
+
+test('the default projects retain all measured CI specs while the frozen serial collector owns its manual lab', () => {
+  const ciSpecs = Object.keys(loadDurationProfile().durationsMs).sort();
+  const manualSpec = 'enterprise-task-lab/enterprise-task-quality.spec.ts';
+  const inventory = partitionPlaywrightSpecs([...ciSpecs, manualSpec], repositorySpecOwnership());
+  assert.deepEqual(inventory, { ciSpecs, manualSpecs: [manualSpec] });
+  assert.deepEqual(discoverSpecs(), ciSpecs);
+  assert.equal(ciSpecs.length, 51);
+});
+
+test('new ordinary specs still require measured durations and unowned or ambiguous specs are red', () => {
+  const profile = loadDurationProfile();
+  const specs = [...Object.keys(profile.durationsMs), 'enterprise-task-lab/enterprise-task-quality.spec.ts'];
+  const ownership = repositorySpecOwnership();
+  const ordinary = partitionPlaywrightSpecs([...specs, 'journeys/unmeasured.spec.ts'], ownership);
+  assert.match(validateDurationProfile(profile, ordinary.ciSpecs).join('\n'), /missing duration profile: journeys\/unmeasured\.spec\.ts/u);
+  for (const extra of ['unmapped/new.spec.ts', 'enterprise-task-lab/unregistered.spec.ts']) {
+    assert.throws(() => partitionPlaywrightSpecs([...specs, extra], ownership), /unowned or ambiguous/u);
+  }
+  const overlapping = { ...ownership,
+    defaultConfigSource: ownership.defaultConfigSource.replace('(?:journeys|quality)', '(?:journeys|quality|enterprise-task-lab)') };
+  assert.throws(() => partitionPlaywrightSpecs(specs, overlapping), /unowned or ambiguous/u);
+  const missingQuality = { ...ownership,
+    defaultConfigSource: ownership.defaultConfigSource.replace('(?:journeys|quality)', 'journeys') };
+  assert.throws(() => partitionPlaywrightSpecs(specs, missingQuality), /unowned or ambiguous/u);
+});
+
+test('manual lab population, config and package command must remain bound to the frozen collector inputs', () => {
+  const specs = [...Object.keys(loadDurationProfile().durationsMs), 'enterprise-task-lab/enterprise-task-quality.spec.ts'];
+  const ownership = repositorySpecOwnership();
+  const packageJson = JSON.parse(ownership.packageSource);
+  packageJson.scripts['test:e2e:enterprise-task-lab'] = packageJson.scripts['test:e2e:enterprise-task-lab'].replace('--workers=1', '--workers=2');
+  assert.throws(() => partitionPlaywrightSpecs(specs, { ...ownership, packageSource: JSON.stringify(packageJson) }), /serial runner ownership/u);
+  assert.throws(() => partitionPlaywrightSpecs(specs, { ...ownership,
+    runnerSource: ownership.runnerSource.replace("'--config=playwright.enterprise-task-lab.config.ts'", "'--config=other.config.ts'") }), /serial runner ownership/u);
+  assert.throws(() => partitionPlaywrightSpecs(specs, { ...ownership,
+    runnerSource: ownership.runnerSource.replace("'frontend/e2e/enterprise-task-lab/enterprise-task-quality.spec.ts'", "'frontend/e2e/enterprise-task-lab/other.spec.ts'") }), /frozen collector inputs/u);
+  assert.throws(() => partitionPlaywrightSpecs(specs.filter(spec => !spec.startsWith('enterprise-task-lab/')), ownership), /frozen collector inputs/u);
+  const expanded = { ...ownership,
+    manualConfigSource: ownership.manualConfigSource.replace('enterprise-task-lab\\/enterprise-task-quality\\.spec\\.ts', 'enterprise-task-lab\\/.*\\.spec\\.ts') };
+  assert.throws(() => partitionPlaywrightSpecs([...specs, 'enterprise-task-lab/additional.spec.ts'], expanded), /frozen collector inputs/u);
+});
+
+test('computed, duplicate and stateful project discovery cannot silently narrow the population', () => {
+  const specs = [...Object.keys(loadDurationProfile().durationsMs), 'enterprise-task-lab/enterprise-task-quality.spec.ts'];
+  const ownership = repositorySpecOwnership();
+  const matcher = '/contracts\\/.*\\.spec\\.ts/';
+  for (const [replacement, expected] of [
+    ["new RegExp('contracts')", /literal regex matchers/u],
+    [`${matcher}, testMatch: ${matcher}`, /ambiguous discovery properties/u],
+    [`${matcher}g`, /stateful discovery matcher/u],
+  ]) {
+    assert.ok(ownership.defaultConfigSource.includes(matcher));
+    assert.throws(() => partitionPlaywrightSpecs(specs, { ...ownership,
+      defaultConfigSource: ownership.defaultConfigSource.replace(matcher, replacement) }), expected);
+  }
 });
 
 test('duration profile source commit exists in this repository and is an ancestor of HEAD', () => {

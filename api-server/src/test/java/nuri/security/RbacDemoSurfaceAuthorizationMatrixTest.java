@@ -1,18 +1,27 @@
 package nuri.security;
 
 import java.util.List;
+import java.util.stream.Stream;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.foundation.security.iam.CustomUserDetailsService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -41,6 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @org.springframework.test.annotation.DirtiesContext
 class RbacDemoSurfaceAuthorizationMatrixTest {
     @Autowired private MockMvc mockMvc;
+    @Autowired private ObjectMapper objectMapper;
     @MockitoBean private CustomUserDetailsService customUserDetailsService;
     @MockitoBean private JwtTokenProvider jwtTokenProvider;
     /** 이 참조가 곧 pack 경계다 — stats 는 demo 소유이므로 축소 프로필에서 이 클래스가 함께 사라진다. */
@@ -92,5 +102,116 @@ class RbacDemoSurfaceAuthorizationMatrixTest {
         mockMvc.perform(post("/api/v1/polls").with(user(ordinary))).andExpect(status().isForbidden());
         mockMvc.perform(put("/api/v1/polls/1").with(user(ordinary))).andExpect(status().isForbidden());
         mockMvc.perform(delete("/api/v1/polls/1").with(user(ordinary))).andExpect(status().isForbidden());
+    }
+
+    @ParameterizedTest(name = "{0} {1} rejects {2}")
+    @MethodSource("managementWritesWithoutExactPermission")
+    void managementWriteRequiresItsExactHttpPermission(ManagedSurface surface, HttpMethod method,
+                                                        RbacAuthorizationMatrixTest.MissingGrant missing) throws Exception {
+        String path = HttpMethod.POST.equals(method) ? surface.path()
+                : surface.path() + "/" + (surface.fixedId().isEmpty() ? "9223372036854775807" : surface.fixedId());
+        RbacAuthorizationMatrixTest.performDeniedManagementWrite(mockMvc, method, path, surface.body("RBAC initial"),
+                surface.prefix(), surface.readPermission(), missing);
+    }
+
+    static Stream<Arguments> managementWritesWithoutExactPermission() {
+        return managementSurfaces().flatMap(surface -> Stream.of(HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE)
+                .flatMap(method -> Stream.of(RbacAuthorizationMatrixTest.MissingGrant.values())
+                        .map(missing -> Arguments.of(surface, method, missing))));
+    }
+
+    /** Real CRUD must succeed with one exact operation grant, then a separate read grant observes the persisted result. */
+    @ParameterizedTest(name = "{0} permits real CRUD with separate exact grants")
+    @MethodSource("managementSurfaces")
+    @Transactional
+    void exactManagementGrantsIndependentlyAllowRealHttpCrud(ManagedSurface surface) throws Exception {
+        var creation = mockMvc.perform(post(surface.path())
+                        .with(user(RbacAuthorizationMatrixTest.explicit("http_creator", List.of("CONTENT_OPERATORS"),
+                                List.of(surface.prefix() + "_CREATE"))))
+                        .contentType(MediaType.APPLICATION_JSON).content(surface.body("RBAC initial")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true)).andReturn();
+        String id = surface.fixedId();
+        if (id.isEmpty()) {
+            id = Long.toString(objectMapper.readTree(creation.getResponse().getContentAsString())
+                    .at(surface.responseIdPath()).asLong());
+            org.assertj.core.api.Assertions.assertThat(id).matches("[1-9][0-9]*");
+        }
+        String path = surface.path() + "/" + id;
+        assertStoredName(surface, path, "RBAC initial");
+
+        mockMvc.perform(put(path)
+                        .with(user(RbacAuthorizationMatrixTest.explicit("http_editor", List.of("CONTENT_OPERATORS"),
+                                List.of(surface.prefix() + "_UPDATE"))))
+                        .contentType(MediaType.APPLICATION_JSON).content(surface.body("RBAC updated")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
+        assertStoredName(surface, path, "RBAC updated");
+
+        mockMvc.perform(delete(path)
+                        .with(user(RbacAuthorizationMatrixTest.explicit("http_remover", List.of("CONTENT_OPERATORS"),
+                                List.of(surface.prefix() + "_DELETE")))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
+        var reader = RbacAuthorizationMatrixTest.explicit(List.of("CONTENT_READERS"), List.of(surface.readPermission()));
+        if (surface.prefix().equals("REWARD")) {
+            mockMvc.perform(get(surface.path()).param("name", "RBAC updated").with(user(reader)))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.data.total").value(0));
+        } else {
+            mockMvc.perform(get(path).with(user(reader)))
+                    .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("C007"));
+        }
+    }
+
+    private void assertStoredName(ManagedSurface surface, String path, String name) throws Exception {
+        var reader = RbacAuthorizationMatrixTest.explicit(List.of("CONTENT_READERS"), List.of(surface.readPermission()));
+        if (surface.prefix().equals("REWARD")) {
+            mockMvc.perform(get(surface.path()).param("name", name).with(user(reader)))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.data.total").value(1))
+                    .andExpect(jsonPath("$.data.list[0]." + surface.nameField()).value(name));
+        } else {
+            mockMvc.perform(get(path).with(user(reader)))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.data." + surface.nameField()).value(name));
+        }
+    }
+
+    static Stream<ManagedSurface> managementSurfaces() {
+        return Stream.of(
+                new ManagedSurface("/api/v1/admin/operation/events", "EVENT", "EVENT_READ", "evntNm",
+                        """
+                        {"evntNm":"%s","bizYr":"2026","evntBgngYmd":"20261001",
+                         "evntEndYmd":"20261002","evntUseCnt":1,"evntTypeCd":"EVT01"}
+                        """, "/data", ""),
+                new ManagedSurface("/api/v1/admin/operation/rewards", "REWARD", "REWARD_READ", "rwardNm",
+                        """
+                        {"rwardNm":"%s","rwardwnrId":"rbac_recipient","rwardCode":"TEST",
+                         "rwardDe":"20261001","pblenCn":"RBAC fixture"}
+                        """, "/data/rwrdSn", ""),
+                new ManagedSurface("/api/v1/help/hpcm", "HELP", "HELP_READ", "hlpDfn",
+                        """
+                        {"hlpSeCd":"GNR","hlpDfn":"%s","hlpExpln":"RBAC fixture"}
+                        """, "/data", ""),
+                new ManagedSurface("/api/v1/help/manuals", "HELP", "HELP_READ", "onlnMnlNm",
+                        """
+                        {"onlnMnlNm":"%s","onlnMnlSeCd":"GNR","onlnMnlDfn":"RBAC fixture",
+                         "onlnMnlExpln":"RBAC fixture"}
+                        """, "/data", ""),
+                new ManagedSurface("/api/v1/admin/system/banners", "BANNER", "BANNER_ADMIN_READ", "bnrNm",
+                        """
+                        {"bnrNm":"%s","linkUrl":"https://example.invalid/rbac","sortOrdr":1,"rfltYn":"N"}
+                        """, "/data", ""),
+                new ManagedSurface("/api/v1/admin/system/popups", "POPUP", "POPUP_ADMIN_READ", "popupTtlNm",
+                        """
+                        {"popupTtlNm":"%s","fileUrl":"https://example.invalid/rbac",
+                         "ntceBgnde":"2026-10-01","ntceEndde":"2026-10-02","stopvewSetupYn":"N","ntceYn":"N"}
+                        """, "/data", ""),
+                new ManagedSurface("/api/v1/admin/system/templates", "TEMPLATE", "TEMPLATE_READ", "tmpltNm",
+                        """
+                        {"tmpltId":"RBAC_HTTP_TMPL","tmpltNm":"%s","tmpltPath":"/rbac-fixture",
+                         "tmpltSeCd":"GNR","useYn":"Y"}
+                        """, "", "RBAC_HTTP_TMPL"));
+    }
+
+    record ManagedSurface(String path, String prefix, String readPermission, String nameField, String bodyTemplate,
+                          String responseIdPath, String fixedId) {
+        String body(String name) { return bodyTemplate.formatted(name); }
+        @Override public String toString() { return path; }
     }
 }

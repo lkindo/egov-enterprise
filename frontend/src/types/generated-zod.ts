@@ -1095,6 +1095,7 @@ export type DepartmentSnapshot = z.infer<typeof DepartmentSnapshotSchema>;
 // ==========================================================================
 export const AddressBookDtoSchema = /*#__PURE__*/ (() => z.object({
   adbkSn: z.number().int().optional(),
+  editToken: z.string().min(64).max(64).regex(new RegExp("^[a-f0-9]{64}$")).optional(),
   adbkNm: z.string().min(0).max(200),
   rlsScopeCd: z.string().min(0).max(12),
   trgetOgnzId: z.string().min(0).max(20).optional(),
@@ -6932,6 +6933,7 @@ export const DepartmentSnapshotResponseSchema = /*#__PURE__*/ (() => z.object({
 
 export const AddressBookDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   adbkSn: z.number().int().optional(),
+  editToken: z.string().min(64).max(64).regex(new RegExp("^[a-f0-9]{64}$")).optional(),
   adbkNm: z.string().min(0).max(200),
   rlsScopeCd: z.string().min(0).max(12),
   trgetOgnzId: z.string().min(0).max(20).optional(),
@@ -6946,6 +6948,7 @@ export const AddressBookDtoRequestSchema = /*#__PURE__*/ (() => z.object({
 
 export const AddressBookDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   adbkSn: z.number().int().optional().nullable(),
+  editToken: z.string().min(64).max(64).regex(new RegExp("^[a-f0-9]{64}$")).optional().nullable(),
   adbkNm: z.string().min(0).max(200),
   rlsScopeCd: z.string().min(0).max(12),
   trgetOgnzId: z.string().min(0).max(20).optional().nullable(),

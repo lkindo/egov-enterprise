@@ -17,9 +17,9 @@
 3. `DWORK_RETRY` 권한으로 `POST /api/v1/admin/system/durable-jobs/{jobSn}/retry`를 호출한다. `FAILED` 작업만 가능하며 다른 상태는 거절한다. 업무 재처리 상태 변경과 `DURABLE_WORK_RETRY` 감사 기록이 함께 커밋된다. 감사 저장 실패 시 상태도 바뀌지 않는다.
 4. 새로운 시도의 결과를 다시 조회한다. 권한은 카탈로그에만 등록하며 기본 그룹이나 실계정에 자동 배정하지 않는다.
 
-FAILED 전이는 `nuri_durable_work_failed_total{type=...}` 카운터로 `/actuator/prometheus` 에 노출되고, 경보 예시
-`EgovDurableWorkFailed` 가 이를 본다([관측성 기본값](observability-baseline.md)). 카운터는 전이 순간에만 오르므로
-재기동 전에 이미 FAILED 로 남은 작업은 경보가 아니라 위 1번 조회로 찾는다.
+`EgovDurableWorkFailed`는 committed DB 상태의 `nuri_durable_work_jobs{status="FAILED"}`를 보므로 재기동 전 적체도 탐지한다([관측성 기본값](observability-baseline.md)). 30초 주기의 읽기 집계를 캐시하고 scrape는 DB를 조회하지 않는다. 기존 `nuri_durable_work_failed_total{type=...}` 전이 카운터는 발생 추이의 보조 신호다.
+
+`EgovDurableWorkDueBacklog`는 PENDING·RETRY의 예정 시각과 RUNNING의 만료된 임대를 기준으로 오래된 대기를 본다. 미래 예약·정상 임대는 제외한다. 실행기가 비활성화돼도 상태 조회는 유지되며, DB 조회 실패는 마지막 정상 집계를 보존하고 별도 관측 실패 경보로 알린다.
 
 ## 앱 알림의 보장과 한계
 

@@ -1335,7 +1335,7 @@ export interface paths {
         get: operations["getAddressBook"];
         /**
          * 주소록 정보 수정
-         * @description 주소록 명칭, 공개 범위 등 정보를 수정합니다.
+         * @description 상세 조회에서 받은 editToken으로 현재 상태를 확인한 뒤 수정합니다. 구성원 목록을 생략하면 기존 구성원을 보존합니다.
          */
         put: operations["updateAddressBook"];
         post?: never;
@@ -6925,6 +6925,8 @@ export interface components {
              * @example 1
              */
             adbkSn?: number;
+            /** @description 상세 조회 시 받은 수정 상태 토큰. 수정 시 필수이며 오래된 상태는 409로 거절합니다. */
+            editToken?: string;
             /**
              * @description 주소록 명칭
              * @example 마케팅팀 주소록
@@ -6951,7 +6953,7 @@ export interface components {
              * @example USRCNFRM_00000000001
              */
             wrterId?: string;
-            /** @description 주소록 내 연락처 목록 */
+            /** @description 주소록 내 연락처 목록. 수정 시 생략/null은 보존, 명시적인 빈 목록은 전체 제거입니다. */
             adbkMan?: components["schemas"]["AddressBookUserDto"][];
             /** @description 최초 등록자 ID */
             frstRgtrId?: string;
@@ -7643,7 +7645,7 @@ export interface components {
             rcptnTelno?: string;
             /** @description 수신자 사용자 고유 ID(esntlId). 지정하면 서버가 등록된 휴대전화 번호를 해석한다 */
             esntlId?: string;
-            /** @description 결과 코드 (P:대기, S:성공, F:실패) */
+            /** @description 결과 코드 (P:접수·전달 대기 또는 미확정, S:전달 완료, F:명시적 발송·전달 실패) */
             rsltCd?: string;
             /** @description 결과 메시지 */
             rsltMsg?: string;
@@ -21232,7 +21234,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 수정 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21270,6 +21272,15 @@ export interface operations {
             };
             /** @description 대상을 찾을 수 없음 (code: C003/C007) */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 수정 상태 토큰이 없거나 주소록이 먼저 변경됨. 최신 내용을 확인한 뒤 변경 재적용 필요 (code: C013) */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

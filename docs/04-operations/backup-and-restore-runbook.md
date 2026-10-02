@@ -424,9 +424,63 @@ docker run --rm --network none --user 0:0 --entrypoint sh \
 
 별도의 [`run-isolated-release-smoke.mjs`](../../scripts/run-isolated-release-smoke.mjs)는 로컬의 정확한 API/frontend 이미지 ID와 현재 소스 해시를 검사하고, `prod` API·frontend·edge를 통해 합성 첨부를 올린 뒤 소유한 tmpfs PostgreSQL과 전용 첨부 볼륨을 백업한다. 두 번째 새 DB·볼륨에 `pg_restore`·첨부 tar를 복원하고 동일 이미지의 로그인·세션·첨부 다운로드를 재검사한다. 성공 시에만 두 이미지 ID, source hash와 dirty 여부, 백업 해시, 범위·시간을 임시 `result.json`에 기록한다. 실행 명령과 이미지 준비 계약은 [CI 가이드](../03-guides/cicd-pipeline.md#릴리스-프런트엔드-런타임-인계)에 있다.
 
-이 실행기는 동일 버전 이미지와 합성 데이터의 설치·복구 경로다. ARIA 암호문의 동일/다른 키 검증은 위 Java 구성 요소 테스트가 담당하며, smoke의 로그인·첨부 성공이 그 검증을 대체하지 않는다. v0.1.0 등 과거 배포의 정확한 마이그레이션 이력에서 새 이미지로 전환하는 업그레이드와 구 이미지 rollback은 별도 증거가 필요하다. 폐기용 `e2e` bootstrap의 cutover 증거를 운영 승인·백업 원장으로 사용하지 않으며, 실제 운영 백업·보존·RTO/RPO는 아래 결정 경계를 따른다.
+기본 실행은 동일 버전 이미지와 합성 데이터의 설치·복구 경로다. 과거 릴리스 비교는 같은 실행기의 아래 모드로 수행한다. 폐기용 `e2e` bootstrap의 cutover 증거를 운영 승인·백업 원장으로 사용하지 않으며, 실제 운영 백업·보존·RTO/RPO는 아래 결정 경계를 따른다.
 
-이전 버전 검증의 시작점은 `v0.1.0`의 고정 커밋 `fa2a79386734671b90166e33ec355e4784715773`이다. 이 태그의 versioned SQL 85개(`V2_0`~`V2_84`)는 `0ef8af32f`까지 유지됐지만 repeatable 3개는 달라졌다. 현재 SQL에 target `2.84`만 지정하면 태그 당시 DB를 재현하지 못한다. 재개하려면 태그 원본 SQL·repeatable과 실행 이미지 출처를 고정한 합성 DB, 실제 Flyway 이력·데이터 보존 비교, [권한 전환 절차](authorization-cutover-runbook.md)의 Contract, 업그레이드 전 전체 백업과 구 이미지 복원 검증이 필요하다. 그 전까지 `historicalUpgrade: not-tested`를 유지한다.
+### 이전 릴리스 → 현재 코드 → 이전 릴리스
+
+[`historical-release-fixture.mjs`](../../scripts/historical-release-fixture.mjs)는 `v0.1.0`의 커밋
+`fa2a79386734671b90166e33ec355e4784715773`과 생산 입력 1,391개의 해시, versioned SQL 85개와 repeatable 3개의 원본 바이트를 고정한다.
+현재 SQL에 target `2.84`만 지정하지 않는다. Git archive는 `core.autocrlf=false`·`core.eol=lf`로 생성하며
+당시 Dockerfile을 수정하지 않고 두 이미지를 빌드한다. 실제 구 API JAR에 들어간 SQL 88개의 해시도 기동 전에 원본과 비교한다.
+
+환경 파일이 없는 별도 worktree에서 무거운 실행을 하나씩 수행한다. 이미지 빌드 결과의 실제 ID를 다음 명령에 전달한다.
+
+```powershell
+node scripts/run-isolated-release-smoke.mjs --build-current-images
+node scripts/run-isolated-release-smoke.mjs --build-historical-images
+node scripts/run-isolated-release-smoke.mjs --api-image sha256:<current-api-id> --frontend-image sha256:<current-frontend-id> --historical-api-image sha256:<old-api-id> --historical-frontend-image sha256:<old-frontend-id>
+```
+
+실행기는 소유 라벨·실제 container ID·image ID·DB명·내부 네트워크·mount를 쓰기 전에 확인한다.
+세 DB는 각각 새 tmpfs PostgreSQL이며 호스트 포트를 공개하지 않는다. 원본 구 이미지에는 storage 디렉터리 준비가 없어,
+이미지에서 조회한 비관리자 UID/GID로 **이 실행의 전용 첨부 볼륨만** 초기화한다. 이 보완은 구 이미지 수정이나 운영 볼륨 변경이 아니다.
+
+구 production API로 합성 사용자 2개·개인 주소록과 구성원·첨부를 만든다. 실제 JAR의 ARIA converter로 만든 합성 암호문을 구 `rrno`에 저장하고,
+owner/타인/익명/관리자 권한과 다운로드 해시·첨부 연결·동일 키 복호화·잘못된 키 거부를 확인한다.
+writer를 중지한 **업그레이드 전 DB dump와 첨부 tar 한 세트**를 복구 지점으로 삼는다. 백업 뒤의 합성 변경 1건은 복원 결과에서 제외돼야 한다.
+
+현재 이미지의 폐기용 bootstrap이 [권한 전환 절차](authorization-cutover-runbook.md)의 Contract를 적용한 뒤 production 앱을 기동한다.
+업무 값·첨부·핵심 PK/unique/FK·권한을 비교하고, `rrno`→`user_enrrno`의 암호문 바이트와 실제 packaged converter를 확인한다.
+구 버전 복원은 같은 업그레이드 전 백업과 원본 구 이미지로 별도의 새 DB·볼륨에서 수행한다. 앱 기동 전에 모든 테이블 행수와 제약 정의를 비교하고
+주요 API·첨부·암호화를 다시 확인한다. 현재 스키마 위에 구 JAR만 띄우는 downgrade는 이 절차에 포함되지 않는다.
+
+제약은 이름까지 전수 비교한다. `pg_get_constraintdef`는 원래 DDL이 아니라 재구성한 표현이며,
+dump를 재해석할 때 `varchar` 리터럴 배열 전체의 `text[]` cast가 각 리터럴의 `text` cast로 바뀔 수 있다.
+실행기는 관측한 단순 `열::text = ANY(동일 varchar 리터럴 배열)` CHECK의 이 변환만 허용하고,
+키·열·연산자·리터럴·순서·검증 상태 변경과 다른 표현은 거부한다. 원래·복원한 정의의 해시와
+정규화 건수도 각각 기록하며, 열의 타입·길이·기본값·collation은 별도로 비교한다.
+근거는 [PostgreSQL의 함수 정의](https://www.postgresql.org/docs/17/functions-info.html)와
+[동일한 dump 재해석 사례](https://www.postgresql.org/message-id/1fa24f41862f214b44bcf94556db51c9946d28bd.camel@cybertec.at)다.
+기존 계약 테스트는 값·이름·타입·collation·연산·`NOT VALID` 변경을 red로 확인한다.
+
+열은 이름·상대 순서와 다른 메타데이터를 전수 비교한다. 삭제한 열의 물리적 번호 간격은
+논리 백업에 포함되지 않으므로 visible column의 상대 위치로 비교하며, 원래·복원한 물리 메타데이터
+해시와 번호 변경 건수도 남긴다. 타입·nullable·default·identity·generated·collation 변경은 허용하지 않는다.
+이 경계는 [PostgreSQL의 dropped column 설명](https://www.postgresql.org/docs/17/catalog-pg-attribute.html)과
+[`ordinal_position`의 실제 정의](https://github.com/postgres/postgres/blob/REL_17_STABLE/src/backend/catalog/information_schema.sql)를 따른다.
+
+전 단계와 정확한 소유 자원 정리가 성공해야 `.agent/temp/egov-release-smoke-*/result.json`을 남긴다.
+이 결과에는 source/image/SQL/실행기 해시, 백업 지점, 업그레이드·복원과 API 검증에 걸린 시간, 누락 여부와 잔여 자원 수를 기록한다.
+dump·키·쿠키·사용자 값은 공개 결과에 넣지 않는다. 측정 시간은 작은 합성 데이터의 로컬 관측이며 승인된 운영 RTO/RPO가 아니다.
+
+2026-10-01 실제 실행은 생산 입력 해시 `d8ba32407cac3c9c28709db747c95cffe88b0bd868169255c99e625e5a5e6baf`의
+개선 코드와 원본 `v0.1.0` 이미지를 사용했다. writer 중지 후 복구 지점은 `2026-10-01T10:13:59.308Z`이며,
+업그레이드·API 검증 110.616초, 구 버전 복원·API 검증 71.624초, 전체 282.841초였다.
+롤백 DB의 84개 테이블 행수·940개 열·220개 제약을 비교했고 백업 시점 대비 누락 0행, 전용 runtime 잔여 자원 0개였다.
+57개 CHECK 표기와 367개 물리적 열 번호 변경을 위의 좁은 규칙으로 비교했으며 그 외 차이는 0건이다.
+합성 업무 값·첨부·권한·암호화와 encoded HTTP 경계도 통과했다. 이 실행은 우선순위 4 구현 시점의 로컬 증거이며,
+이후 화면 변경의 검증이나 운영 복구 승인으로 확대하지 않는다. 원본 bounded 결과는
+`.agent/temp/egov-release-smoke-7DH3Tt/result.json`, 로컬 검토용 사본은 `build/goal-evidence/green/historical-upgrade-rollback.json`이다.
 
 ## 4. 주기·보존·RTO/RPO — **미결정**
 

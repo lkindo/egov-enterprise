@@ -61,14 +61,16 @@ public class SmsService {
      * 배포 형상이므로 화면이 조회할 수 있게 노출한다.
      */
     public SmsDeliveryStatusDto getDeliveryStatus() {
+        String registered = smsSender.isDeliveryConfigured() ? smsSender.registeredSender() : null;
+        String sender = registered == null || registered.isBlank() ? defaultSenderTel : registered;
         return new SmsDeliveryStatusDto(
                 smsSender.isDeliveryConfigured(),
                 smsSender.getClass().getSimpleName(),
-                defaultSenderTel == null || defaultSenderTel.isBlank() ? null : defaultSenderTel.trim());
+                sender == null || sender.isBlank() ? null : sender.trim());
     }
 
     public Page<SmsDto> getSmsList(String keyword, Pageable pageable) {
-        log.debug("Fetching SMS list with keyword: {}", keyword);
+        log.debug("Fetching SMS list");
         return getSmsList("1", keyword, pageable); // Default to content search
     }
 

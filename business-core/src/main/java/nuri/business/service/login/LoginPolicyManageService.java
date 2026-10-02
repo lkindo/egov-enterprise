@@ -8,6 +8,7 @@ import nuri.business.domain.login.LoginPolicy;
 import nuri.business.domain.login.LoginPolicyRepository;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
+import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.login.dto.LoginPolicyDto;
 import nuri.business.domain.common.BaseSearchDto;
 import lombok.RequiredArgsConstructor;
@@ -114,6 +115,7 @@ public class LoginPolicyManageService {
 
     @Transactional
     public void insertLoginPolicy(LoginPolicyDto dto) {
+        SecurityUtil.assertPermission("LOGIN_POL_CREATE");
         rejectUnsupportedOtp(dto);
         requireTimePair(dto);
         String canonicalIpAddr = canonicalizeConfiguredIp(dto.getIpAddr());
@@ -151,6 +153,7 @@ public class LoginPolicyManageService {
 
     @Transactional
     public void updateLoginPolicy(LoginPolicyDto dto) {
+        SecurityUtil.assertPermission("LOGIN_POL_UPDATE");
         rejectUnsupportedOtp(dto);
         requireTimePair(dto);
         String canonicalIpAddr = canonicalizeConfiguredIp(dto.getIpAddr());
@@ -178,6 +181,7 @@ public class LoginPolicyManageService {
 
     @Transactional
     public void deleteLoginPolicy(LoginPolicyDto dto) {
+        SecurityUtil.assertPermission("LOGIN_POL_DELETE");
         loginPolicyRepository.deleteById(dto.getUserId());
     }
 

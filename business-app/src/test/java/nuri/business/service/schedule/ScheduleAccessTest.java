@@ -77,6 +77,81 @@ class ScheduleAccessTest {
         verify(repository).findMonthlySchedules("owner", expected, "202609");
     }
 
+    @ParameterizedTest
+    @CsvSource({"DEPT1,DEPT1,true", "DEPT2,DEPT1,false", "'',ORGNZT_0000000000000,true",
+            "DEPT1,ORGNZT_0000000000000,false", "DEPT1,'',false", "DEPT1,,false"})
+    void sharedDetailMatchesMembershipWhileWritesRemainOwnerOnly(String membership, String scheduleDepartment, boolean readable) {
+        SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("colleague", "colleague-internal", "USER"));
+        var schedule = Schedule.builder().schdlSn(2L).schdlNm("shared").schdlPicId("owner")
+                .schdlSeCd("1").schdlDeptId(scheduleDepartment).build();
+        schedule.setFrstRgtrId("owner");
+        when(repository.findById(2L)).thenReturn(Optional.of(schedule));
+        when(users.findByUserId("colleague")).thenReturn(Optional.of(User.builder().userId("colleague").ognzId(membership).build()));
+        if (readable) {
+            when(mapper.toDto(schedule)).thenReturn(ScheduleDto.builder().schdlSn(2L).build());
+            var result = service.getSchedule(2L);
+            assertThat(result.getSchdlSn()).isEqualTo(2L);
+            assertThat(result.getEditable()).isFalse();
+            assertThat(result.getDeletable()).isFalse();
+        } else {
+            assertThatThrownBy(() -> service.getSchedule(2L)).isInstanceOf(BusinessException.class);
+            verifyNoInteractions(mapper);
+        }
+        assertThatThrownBy(() -> service.updateSchedule(2L, "colleague", ScheduleDto.builder().schdlNm("forged").build()))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> service.deleteSchedule(2L, "colleague")).isInstanceOf(BusinessException.class);
+        assertThat(schedule.getSchdlNm()).isEqualTo("shared");
+        verify(repository, never()).delete(any());
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"2"})
+    void sameDepartmentDoesNotExposePrivateOrUnclassifiedDetails(String sharing) {
+        SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("colleague", "colleague-internal", "USER"));
+        var schedule = Schedule.builder().schdlSn(3L).schdlNm("private").schdlSeCd(sharing).schdlDeptId("DEPT1").build();
+        schedule.setFrstRgtrId("owner"); when(repository.findById(3L)).thenReturn(Optional.of(schedule));
+        assertThatThrownBy(() -> service.getSchedule(3L)).isInstanceOf(BusinessException.class);
+        verifyNoInteractions(users, mapper);
+    }
+
+    @Test
+    void missingUserMembershipUsesTheExistingAuthenticatedFallbackForSharedReadOnly() {
+        SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("missing", "missing-internal", "USER"));
+        var schedule = Schedule.builder().schdlSn(4L).schdlSeCd("1").schdlDeptId("ORGNZT_0000000000000").build();
+        schedule.setFrstRgtrId("owner"); when(repository.findById(4L)).thenReturn(Optional.of(schedule));
+        when(mapper.toDto(schedule)).thenReturn(ScheduleDto.builder().schdlSn(4L).build());
+        var result = service.getSchedule(4L);
+        assertThat(result.getEditable()).isFalse(); assertThat(result.getDeletable()).isFalse();
+        assertThatThrownBy(() -> service.deleteSchedule(4L, "missing")).isInstanceOf(BusinessException.class);
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"   "})
+    void absentOrBlankAuthenticatedLoginCannotReadSharedFallbackDepartment(String loginId) {
+        if (loginId != null) SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication(loginId, "blank-internal", "USER"));
+        var schedule = Schedule.builder().schdlSn(5L).schdlSeCd("1").schdlDeptId("ORGNZT_0000000000000").build();
+        schedule.setFrstRgtrId("owner"); when(repository.findById(5L)).thenReturn(Optional.of(schedule));
+        assertThatThrownBy(() -> service.getSchedule(5L)).isInstanceOf(BusinessException.class);
+        verifyNoInteractions(users, mapper);
+    }
+
+    @Test
+    void unauthenticatedTypedPrincipalCannotReadSharedFallbackDepartment() {
+        var principal = nuri.business.support.AuthorizationTestPrincipal.principal("colleague", "colleague-internal", "USER");
+        SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(principal, null));
+        var schedule = Schedule.builder().schdlSn(6L).schdlSeCd("1").schdlDeptId("ORGNZT_0000000000000").build();
+        schedule.setFrstRgtrId("owner"); when(repository.findById(6L)).thenReturn(Optional.of(schedule));
+        assertThatThrownBy(() -> service.getSchedule(6L)).isInstanceOf(BusinessException.class);
+        verifyNoInteractions(users, mapper);
+    }
+
     @Test
     void missingMembershipUsesDefaultDepartment() {
         when(repository.searchDeptSchedules(any(), any(), any(), any())).thenReturn(Page.empty());

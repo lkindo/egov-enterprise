@@ -61,6 +61,14 @@
         {
           "file": "api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java",
           "reason": "collaboration 알림 행과 내구 작업의 동시 저장·재시도·중복 전달 검증이다. core에서는 알림 기능 자체가 없으며 공통 작업 엔진 검증은 DurableWorkIntegrationTest로 유지한다."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java",
+          "reason": "주소록 스냅샷 충돌·부모 잠금·소유자 보호의 실 PostgreSQL 검증이다. addressbook 도메인이 없는 core에서는 대상 서비스와 테이블이 없다."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/api/schema/SmsDeliveryStateIntegrationTest.java",
+          "reason": "SMS 수신 행의 발송 claim·commit 콜백·확정 영수증·중복 발송 방지 검증이다. sms 도메인이 없는 core에서는 대상 서비스와 테이블이 없다."
         }
       ],
       "description": "인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심의 최소 프레임워크"
@@ -112,6 +120,10 @@
         {
           "file": "api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java",
           "reason": "demo 커뮤니티와 템플릿의 신규 연결·비활성화·삭제 경합을 검증한다. 두 기능이 없는 프로필에서는 검증 대상이 없다."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java",
+          "reason": "주소록 스냅샷 충돌·부모 잠금·소유자 보호의 실 PostgreSQL 검증이다. addressbook 도메인이 없는 collaboration에서는 대상 서비스와 테이블이 없다."
         }
       ],
       "description": "core + 게시판 클러스터 + 메일·쪽지·알림·SMS"
@@ -207,7 +219,12 @@
           "notification",
           "scrap",
           "sms"
-        ]
+        ],
+        "domainSupportFiles": {
+          "sms": [
+            "api-server/src/main/java/nuri/api/integration/sms/NaverSensSmsProperties.java"
+          ]
+        }
       },
       "frontend": {
         "removePaths": [

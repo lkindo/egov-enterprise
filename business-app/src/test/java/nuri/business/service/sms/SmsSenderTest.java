@@ -12,8 +12,9 @@ class SmsSenderTest {
     @DisplayName("비운영 스텁은 민감 본문을 전달하지 않으며 성공을 가장하지 않음")
     void send() {
         LoggingSmsSender sender = new LoggingSmsSender();
-        boolean result = sender.send("01012345678", "민감한 인증번호 123456", "0212345678");
-        assertThat(result).isFalse();
+        SmsGatewayResult result = sender.send("01012345678", "민감한 인증번호 123456", "0212345678");
+        assertThat(result.state()).isEqualTo(SmsGatewayResult.State.REJECTED);
+        assertThat(result.reason()).isEqualTo(SmsGatewayResult.Reason.UNCONFIGURED);
 
         Profile profile = LoggingSmsSender.class.getAnnotation(Profile.class);
         assertThat(profile).isNotNull();
@@ -25,7 +26,8 @@ class SmsSenderTest {
     void productionGatewayUnavailable() {
         UnavailableSmsSender sender = new UnavailableSmsSender();
 
-        assertThat(sender.send("01012345678", "민감한 인증번호 123456", "0212345678")).isFalse();
+        assertThat(sender.send("01012345678", "민감한 인증번호 123456", "0212345678").state())
+                .isEqualTo(SmsGatewayResult.State.REJECTED);
 
         Profile profile = UnavailableSmsSender.class.getAnnotation(Profile.class);
         assertThat(profile).isNotNull();
@@ -51,8 +53,29 @@ class SmsSenderTest {
     @Test
     @DisplayName("인터페이스 기본값은 미연결이다 — 선언하지 않은 구현체는 연결됨으로 표시되지 않는다")
     void defaultIsNotConfigured() {
-        SmsSender bareImplementation = (recipient, message, sender) -> false;
+        SmsSender bareImplementation = (recipient, message, sender) -> SmsGatewayResult.rejected(SmsGatewayResult.Reason.UNCONFIGURED);
 
         assertThat(bareImplementation.isDeliveryConfigured()).isFalse();
+    }
+
+    @Test
+    void receiptIdentitiesAndInternalStateNeverReachPublicMessageOrToString() {
+        SmsGatewayResult result = SmsGatewayResult.accepted("private-request-identity");
+        SmsReceiptState state = SmsReceiptState.claim(1_800_000_000_000L).submitted(result, 1_800_000_000_000L);
+        var entity = nuri.business.domain.sms.SmsRecptn.builder().smsTrsmSn(1L)
+                .rcptnTelno("01012345678").rsltCd("P").rsltMsg(state.encode()).build();
+        var dto = new nuri.business.service.sms.dto.SmsRecptnMapperImpl().toDto(entity);
+        assertThat(dto.getRsltCd()).isEqualTo("P");
+        assertThat(dto.getRsltMsg()).contains("전달 결과를 확인").doesNotContain("private-request-identity", state.attempt(), SmsReceiptState.PREFIX);
+        assertThat(result.toString()).doesNotContain("private-request-identity");
+        assertThat(state.toString()).doesNotContain("private-request-identity", state.attempt());
+        assertThat(SmsReceiptState.display("P", SmsReceiptState.PREFIX + "malformed-private-value"))
+                .doesNotContain("malformed-private-value");
+    }
+
+    @Test
+    void unsafeReceiptIdentityIsRejectedWithoutEchoingItsValue() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> SmsGatewayResult.accepted("private\nraw-secret"))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("Invalid SMS receipt identity");
     }
 }

@@ -6,9 +6,15 @@ import nuri.business.domain.system.content.popup.Popup;
 import nuri.business.domain.system.content.popup.PopupDomainRepository;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.system.content.popup.dto.PopupDto;
+import nuri.foundation.security.service.CustomUserDetails;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -16,10 +22,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,6 +51,16 @@ class PopupServiceImplTest {
 
     @InjectMocks
     private PopupService popupService;
+
+    @BeforeEach
+    void clearAuthenticationBefore() {
+        SecurityContextHolder.clearContext();
+    }
+
+    @AfterEach
+    void clearAuthenticationAfter() {
+        SecurityContextHolder.clearContext();
+    }
 
     // ==========================================
     // 1. 팝업 목록 및 상세 조회 테스트
@@ -134,6 +155,7 @@ class PopupServiceImplTest {
     @Test
     @DisplayName("팝업 등록 - 성공")
     void createPopup_Success() {
+        authenticate("POPUP_CREATE");
         // given
         PopupDto dto = PopupDto.builder()
                 .popupTtlNm("Test Popup")
@@ -157,6 +179,7 @@ class PopupServiceImplTest {
     @Test
     @DisplayName("팝업 등록 - canonical 및 legacy 내부 첨부 URL은 정확한 ID를 검증한다")
     void createPopup_internalAttachmentUrlsAreValidated() {
+        authenticate("POPUP_CREATE");
         given(popupRepository.save(any(Popup.class)))
                 .willReturn(Popup.builder().popupSn(1L).build());
 
@@ -176,6 +199,7 @@ class PopupServiceImplTest {
     @Test
     @DisplayName("팝업 등록 - 외부 URL과 일반 내부 자산 경로는 첨부 검증 대상이 아니다")
     void createPopup_nonAttachmentUrlsRemainAllowed() {
+        authenticate("POPUP_CREATE");
         given(popupRepository.save(any(Popup.class)))
                 .willReturn(Popup.builder().popupSn(1L).build());
 
@@ -195,6 +219,7 @@ class PopupServiceImplTest {
     @Test
     @DisplayName("팝업 등록 - 내부 첨부 prefix를 쓴 비정상 URL은 fail-closed한다")
     void createPopup_malformedInternalAttachmentUrlFailsClosed() {
+        authenticate("POPUP_CREATE");
         List<String> malformed = List.of(
                 "/api/v1/files/",
                 "/api/v1/files/0",
@@ -235,11 +260,13 @@ class PopupServiceImplTest {
                         .ntceBgnde(start ? date : "2026-02-01")
                         .ntceEndde(start ? "2026-02-28" : date)
                         .build();
+                authenticate("POPUP_CREATE");
                 assertThatThrownBy(() -> popupService.createPopup("admin", dto))
                         .as("create %s %s", start ? "start" : "end", date)
                         .isInstanceOf(BusinessException.class)
                         .extracting(error -> ((BusinessException) error).getErrorCode())
                         .isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+                authenticate("POPUP_UPDATE");
                 assertThatThrownBy(() -> popupService.updatePopup(1L, "updater", dto))
                         .as("update %s %s", start ? "start" : "end", date)
                         .isInstanceOf(BusinessException.class)
@@ -256,6 +283,7 @@ class PopupServiceImplTest {
     @Test
     @DisplayName("팝업 등록 - 첨부 할당 거부 시 저장하지 않는다")
     void createPopup_deniedAttachmentDoesNotSave() {
+        authenticate("POPUP_CREATE");
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
                 .when(attachmentAssignmentPolicy).assertAssignable(101L);
 
@@ -265,12 +293,14 @@ class PopupServiceImplTest {
                         .build()))
                 .isInstanceOf(BusinessException.class);
 
+        verify(attachmentAssignmentPolicy).assertAssignable(101L);
         verifyNoInteractions(popupRepository);
     }
 
     @Test
     @DisplayName("팝업 수정 - 성공")
     void updatePopup_Success() {
+        authenticate("POPUP_UPDATE");
         // given
         Popup popup = Popup.builder()
                 .popupSn(1L)
@@ -299,6 +329,7 @@ class PopupServiceImplTest {
     @Test
     @DisplayName("팝업 수정 - 같은 첨부 유지와 null 분리는 재할당 검증을 건너뛴다")
     void updatePopup_sameOrDetachedAttachmentSkipsAssignmentCheck() {
+        authenticate("POPUP_UPDATE");
         Popup popup = Popup.builder()
                 .popupSn(1L)
                 .popupTtlNm("OLD")
@@ -322,6 +353,7 @@ class PopupServiceImplTest {
     @Test
     @DisplayName("팝업 수정 - 새 내부 첨부 할당 거부 시 기존 엔티티를 변경하지 않는다")
     void updatePopup_deniedChangedAttachmentDoesNotMutate() {
+        authenticate("POPUP_UPDATE");
         Popup popup = Popup.builder()
                 .popupSn(1L)
                 .popupTtlNm("OLD")
@@ -340,23 +372,27 @@ class PopupServiceImplTest {
         assertThat(popup.getPopupTtlNm()).isEqualTo("OLD");
         assertThat(popup.getFileUrl()).isEqualTo("/api/v1/files/100");
         assertThat(popup.getLastMdfrId()).isNull();
+        verify(attachmentAssignmentPolicy).assertAssignable(101L);
     }
 
     @Test
     @DisplayName("팝업 수정 - 자원 없음 예외")
     void updatePopup_NotFound_ShouldThrowBusinessException() {
+        authenticate("POPUP_UPDATE");
         // given
         given(popupRepository.findById(1L)).willReturn(Optional.empty());
         PopupDto dto = PopupDto.builder().popupTtlNm("NEW").build();
 
         // when & then
         assertThatThrownBy(() -> popupService.updatePopup(1L, "updater", dto))
-                .isInstanceOf(BusinessException.class);
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
     }
 
     @Test
     @DisplayName("팝업 삭제 - 성공")
     void deletePopup_Success() {
+        authenticate("POPUP_DELETE");
         // given
         given(popupRepository.existsById(1L)).willReturn(true);
 
@@ -370,12 +406,14 @@ class PopupServiceImplTest {
     @Test
     @DisplayName("팝업 삭제 - 자원 없음 예외")
     void deletePopup_NotFound_ShouldThrowBusinessException() {
+        authenticate("POPUP_DELETE");
         // given
         given(popupRepository.existsById(1L)).willReturn(false);
 
         // when & then
         assertThatThrownBy(() -> popupService.deletePopup(1L))
-                .isInstanceOf(BusinessException.class);
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
     }
 
     // ==========================================
@@ -396,5 +434,89 @@ class PopupServiceImplTest {
         // then
         assertThat(whitelist).hasSize(2);
         assertThat(whitelist).containsExactly("/page1.html", "/page2.html");
+    }
+
+    @ParameterizedTest(name = "{0} denies {1} before accessing business dependencies")
+    @MethodSource("deniedWrites")
+    void writesRequireTheirExactPermission(String operation, String identity) {
+        authenticateDeniedIdentity(identity, operation);
+        PopupDto request = PopupDto.builder().popupTtlNm("Changed").fileUrl("/api/v1/files/101").build();
+
+        assertDenied(() -> {
+            switch (operation) {
+                case "CREATE" -> popupService.createPopup("operator", request);
+                case "UPDATE" -> popupService.updatePopup(1L, "operator", request);
+                case "DELETE" -> popupService.deletePopup(1L);
+                default -> throw new IllegalArgumentException(operation);
+            }
+        });
+
+        verifyNoInteractions(popupRepository, attachmentAssignmentPolicy);
+    }
+
+    @Test
+    void foreignCreatorIsManageableOnlyWithTheExactUpdateOrDeleteGrant() {
+        Popup existing = Popup.builder().popupSn(1L).popupTtlNm("Original").build();
+        existing.setFrstRgtrId("foreign-creator");
+        PopupDto request = PopupDto.builder().popupTtlNm("Changed").build();
+
+        authenticate();
+        assertDenied(() -> popupService.updatePopup(1L, "operator", request));
+        assertDenied(() -> popupService.deletePopup(1L));
+        verifyNoInteractions(popupRepository, attachmentAssignmentPolicy);
+        assertThat(existing.getPopupTtlNm()).isEqualTo("Original");
+
+        authenticate("POPUP_UPDATE");
+        given(popupRepository.findById(1L)).willReturn(Optional.of(existing));
+        popupService.updatePopup(1L, "operator", request);
+        assertThat(existing.getPopupTtlNm()).isEqualTo("Changed");
+        assertThat(existing.getFrstRgtrId()).isEqualTo("foreign-creator");
+
+        authenticate("POPUP_DELETE");
+        given(popupRepository.existsById(1L)).willReturn(true);
+        popupService.deletePopup(existing.getPopupSn());
+        verify(popupRepository).deleteById(1L);
+    }
+
+    private static Stream<Arguments> deniedWrites() {
+        return Stream.of("CREATE", "UPDATE", "DELETE").flatMap(operation ->
+                Stream.of("NO_AUTHENTICATION", "ANONYMOUS", "NO_PERMISSION", "WRONG_OPERATION", "ROLE_ONLY")
+                        .map(identity -> Arguments.of(operation, identity)));
+    }
+
+    private static void authenticateDeniedIdentity(String identity, String operation) {
+        switch (identity) {
+            case "NO_AUTHENTICATION" -> SecurityContextHolder.clearContext();
+            case "ANONYMOUS" -> {
+                var user = principal("POPUP_" + operation);
+                SecurityContextHolder.getContext().setAuthentication(
+                        new AnonymousAuthenticationToken("fixture", user, user.getAuthorities()));
+            }
+            case "NO_PERMISSION" -> authenticate();
+            case "WRONG_OPERATION" -> authenticate("CREATE".equals(operation) ? "POPUP_DELETE" : "POPUP_CREATE");
+            case "ROLE_ONLY" -> {
+                var user = CustomUserDetails.builder().userId("operator").esntlId("ESNTL_operator").enabled(true)
+                        .groups(List.of("ROLE_ADMIN", "ROLE_SYSTEM")).roleName("ADMIN").authorCode("ROLE_ADMIN").build();
+                SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(user, null,
+                        List.of(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("ROLE_SYSTEM"))));
+            }
+            default -> throw new IllegalArgumentException(identity);
+        }
+    }
+
+    private static CustomUserDetails principal(String... permissions) {
+        return CustomUserDetails.builder().userId("operator").esntlId("ESNTL_operator").enabled(true)
+                .permissions(List.of(permissions)).authorizationVersion("fixture").build();
+    }
+
+    private static void authenticate(String... permissions) {
+        var user = principal(permissions);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+    }
+
+    private static void assertDenied(org.assertj.core.api.ThrowableAssert.ThrowingCallable action) {
+        assertThatThrownBy(action).isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
     }
 }

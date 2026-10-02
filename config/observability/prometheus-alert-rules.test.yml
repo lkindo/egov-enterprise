@@ -1,0 +1,463 @@
+# Synthetic aggregate-only Prometheus time series. No runtime identifiers or data.
+# Check with the pinned Prometheus 2.55.1 promtool; delayed states and clearing are both asserted.
+rule_files:
+  - "prometheus-alert-rules.yml"
+evaluation_interval: "1m"
+tests:
+  -
+    interval: "1m"
+    input_series:
+      -
+        series: "nuri_attachment_integrity_enabled{application=\"never-run\"}"
+        values: "1x1700"
+      -
+        series: "nuri_attachment_integrity_healthy_age_seconds{application=\"never-run\"}"
+        values: "0+60x1700"
+      -
+        series: "nuri_attachment_integrity_last_run_unhealthy{application=\"never-run\"}"
+        values: "0x1700"
+      -
+        series: "nuri_attachment_integrity_observation_healthy{application=\"never-run\"}"
+        values: "1x1700"
+    alert_rule_test:
+      -
+        eval_time: "26h3m"
+        alertname: "EgovAttachmentIntegrityNoHealthyRun"
+        exp_alerts: []
+      -
+        eval_time: "26h6m"
+        alertname: "EgovAttachmentIntegrityNoHealthyRun"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "never-run"
+              severity: "warning"
+            exp_annotations:
+              summary: "첨부 무결성 점검이 26시간째 정상 완료를 기록하지 못했습니다"
+              description: "미실행도 포함합니다. health.json의 최초 활성화/PASS 시각과 latest.json의 결과를 확인합니다."
+  -
+    interval: "1m"
+    input_series:
+      -
+        series: "nuri_attachment_integrity_enabled{application=\"disabled\"}"
+        values: "0x1700"
+      -
+        series: "nuri_attachment_integrity_healthy_age_seconds{application=\"disabled\"}"
+        values: "0x1700"
+      -
+        series: "nuri_attachment_integrity_last_run_unhealthy{application=\"disabled\"}"
+        values: "0x1700"
+      -
+        series: "nuri_attachment_integrity_observation_healthy{application=\"disabled\"}"
+        values: "0x1700"
+    alert_rule_test:
+      -
+        eval_time: "4m"
+        alertname: "EgovAttachmentIntegrityDisabled"
+        exp_alerts: []
+      -
+        eval_time: "5m"
+        alertname: "EgovAttachmentIntegrityDisabled"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "disabled"
+              severity: "warning"
+            exp_annotations:
+              summary: "첨부 무결성 정기 점검이 비활성 상태입니다"
+              description: "ATTACHMENT_INTEGRITY_ENABLED 설정과 기관의 점검 정책을 확인합니다."
+      -
+        eval_time: "6m"
+        alertname: "EgovAttachmentIntegrityObservationFailed"
+        exp_alerts: []
+      -
+        eval_time: "27h"
+        alertname: "EgovAttachmentIntegrityNoHealthyRun"
+        exp_alerts: []
+  -
+    interval: "1m"
+    input_series:
+      -
+        series: "nuri_attachment_integrity_enabled{application=\"first-failure\"}"
+        values: "1x10"
+      -
+        series: "nuri_attachment_integrity_healthy_age_seconds{application=\"first-failure\"}"
+        values: "0+60x10"
+      -
+        series: "nuri_attachment_integrity_last_run_unhealthy{application=\"first-failure\"}"
+        values: "1x10"
+      -
+        series: "nuri_attachment_integrity_observation_healthy{application=\"first-failure\"}"
+        values: "1x10"
+    alert_rule_test:
+      -
+        eval_time: "4m"
+        alertname: "EgovAttachmentIntegrityUnhealthy"
+        exp_alerts: []
+      -
+        eval_time: "5m"
+        alertname: "EgovAttachmentIntegrityUnhealthy"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "first-failure"
+              severity: "warning"
+            exp_annotations:
+              summary: "최근 첨부 무결성 점검이 정상 완료되지 않았습니다"
+              description: "latest.json의 DRIFT·INCOMPLETE·FAILED·REPORT_FAILED와 저장소 상태를 확인합니다."
+      -
+        eval_time: "5m"
+        alertname: "EgovAttachmentIntegrityNoHealthyRun"
+        exp_alerts: []
+  -
+    interval: "1m"
+    input_series:
+      -
+        series: "nuri_attachment_integrity_enabled{application=\"report-failure\"}"
+        values: "1x10"
+      -
+        series: "nuri_attachment_integrity_healthy_age_seconds{application=\"report-failure\"}"
+        values: "0+60x10"
+      -
+        series: "nuri_attachment_integrity_last_run_unhealthy{application=\"report-failure\"}"
+        values: "1x10"
+      -
+        series: "nuri_attachment_integrity_observation_healthy{application=\"report-failure\"}"
+        values: "0x10"
+    alert_rule_test:
+      -
+        eval_time: "5m"
+        alertname: "EgovAttachmentIntegrityUnhealthy"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "report-failure"
+              severity: "warning"
+            exp_annotations:
+              summary: "최근 첨부 무결성 점검이 정상 완료되지 않았습니다"
+              description: "latest.json의 DRIFT·INCOMPLETE·FAILED·REPORT_FAILED와 저장소 상태를 확인합니다."
+      -
+        eval_time: "4m"
+        alertname: "EgovAttachmentIntegrityObservationFailed"
+        exp_alerts: []
+      -
+        eval_time: "5m"
+        alertname: "EgovAttachmentIntegrityObservationFailed"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "report-failure"
+              severity: "warning"
+            exp_annotations:
+              summary: "첨부 무결성 점검 상태를 지속적으로 기록하거나 복원할 수 없습니다"
+              description: "진단 디렉터리의 읽기·쓰기 권한, 링크, health.json 형식과 디스크 상태를 확인합니다."
+  -
+    interval: "1m"
+    input_series:
+      -
+        series: "nuri_attachment_integrity_enabled{application=\"restart\"}"
+        values: "1x10"
+      -
+        series: "nuri_attachment_integrity_healthy_age_seconds{application=\"restart\"}"
+        values: "97200+60x10"
+      -
+        series: "nuri_attachment_integrity_last_run_unhealthy{application=\"restart\"}"
+        values: "0x10"
+      -
+        series: "nuri_attachment_integrity_observation_healthy{application=\"restart\"}"
+        values: "1x10"
+      -
+        series: "nuri_attachment_integrity_runs_total{application=\"restart\",outcome=\"PASS\"}"
+        values: "0x10"
+    alert_rule_test:
+      -
+        eval_time: "4m"
+        alertname: "EgovAttachmentIntegrityNoHealthyRun"
+        exp_alerts: []
+      -
+        eval_time: "5m"
+        alertname: "EgovAttachmentIntegrityNoHealthyRun"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "restart"
+              severity: "warning"
+            exp_annotations:
+              summary: "첨부 무결성 점검이 26시간째 정상 완료를 기록하지 못했습니다"
+              description: "미실행도 포함합니다. health.json의 최초 활성화/PASS 시각과 latest.json의 결과를 확인합니다."
+  -
+    interval: "1m"
+    input_series:
+      -
+        series: "nuri_durable_work_enabled{application=\"old-failed\"}"
+        values: "0x40"
+      -
+        series: "nuri_durable_work_observation_healthy{application=\"old-failed\"}"
+        values: "1x40"
+      -
+        series: "nuri_durable_work_observation_age_seconds{application=\"old-failed\"}"
+        values: "0x40"
+      -
+        series: "nuri_durable_work_jobs{application=\"old-failed\",status=\"FAILED\"}"
+        values: "1x5 0x5"
+    alert_rule_test:
+      -
+        eval_time: "4m"
+        alertname: "EgovDurableWorkFailed"
+        exp_alerts: []
+      -
+        eval_time: "5m"
+        alertname: "EgovDurableWorkFailed"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "old-failed"
+              severity: "warning"
+            exp_annotations:
+              summary: "FAILED 상태의 내구 작업이 남아 있습니다"
+              description: "durable-jobs 조회로 대상 작업을 찾고, 저장소·전달 채널 원인을 고친 뒤 DWORK_RETRY 로 재처리합니다."
+      -
+        eval_time: "6m"
+        alertname: "EgovDurableWorkFailed"
+        exp_alerts: []
+  -
+    interval: "1m"
+    input_series:
+      -
+        series: "nuri_durable_work_enabled{application=\"due-backlog\"}"
+        values: "1x40"
+      -
+        series: "nuri_durable_work_observation_healthy{application=\"due-backlog\"}"
+        values: "1x40"
+      -
+        series: "nuri_durable_work_observation_age_seconds{application=\"due-backlog\"}"
+        values: "0x40"
+      -
+        series: "nuri_durable_work_oldest_due_age_seconds{application=\"due-backlog\",status=\"PENDING\"}"
+        values: "1200x5 0x5"
+      -
+        series: "nuri_durable_work_oldest_due_age_seconds{application=\"due-backlog\",status=\"RETRY\"}"
+        values: "1200x5 0x5"
+      -
+        series: "nuri_durable_work_oldest_due_age_seconds{application=\"due-backlog\",status=\"RUNNING\"}"
+        values: "1200x5 0x5"
+    alert_rule_test:
+      -
+        eval_time: "4m"
+        alertname: "EgovDurableWorkDueBacklog"
+        exp_alerts: []
+      -
+        eval_time: "5m"
+        alertname: "EgovDurableWorkDueBacklog"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "due-backlog"
+              severity: "warning"
+              status: "PENDING"
+            exp_annotations:
+              summary: "처리 시각이 지난 내구 작업이 15분 이상 대기합니다 (status=PENDING)"
+              description: "PENDING·RETRY의 예약 시각 또는 RUNNING의 lease 만료 시각을 기준으로 실행기와 전달 채널을 확인합니다."
+          -
+            exp_labels:
+              application: "due-backlog"
+              severity: "warning"
+              status: "RETRY"
+            exp_annotations:
+              summary: "처리 시각이 지난 내구 작업이 15분 이상 대기합니다 (status=RETRY)"
+              description: "PENDING·RETRY의 예약 시각 또는 RUNNING의 lease 만료 시각을 기준으로 실행기와 전달 채널을 확인합니다."
+          -
+            exp_labels:
+              application: "due-backlog"
+              severity: "warning"
+              status: "RUNNING"
+            exp_annotations:
+              summary: "처리 시각이 지난 내구 작업이 15분 이상 대기합니다 (status=RUNNING)"
+              description: "PENDING·RETRY의 예약 시각 또는 RUNNING의 lease 만료 시각을 기준으로 실행기와 전달 채널을 확인합니다."
+      -
+        eval_time: "6m"
+        alertname: "EgovDurableWorkDueBacklog"
+        exp_alerts: []
+  -
+    interval: "1m"
+    input_series:
+      -
+        series: "nuri_durable_work_enabled{application=\"future-lease\"}"
+        values: "1x40"
+      -
+        series: "nuri_durable_work_observation_healthy{application=\"future-lease\"}"
+        values: "1x40"
+      -
+        series: "nuri_durable_work_observation_age_seconds{application=\"future-lease\"}"
+        values: "0x40"
+      -
+        series: "nuri_durable_work_jobs{application=\"future-lease\",status=\"PENDING\"}"
+        values: "1x40"
+      -
+        series: "nuri_durable_work_oldest_due_age_seconds{application=\"future-lease\",status=\"PENDING\"}"
+        values: "0x40"
+      -
+        series: "nuri_durable_work_jobs{application=\"future-lease\",status=\"RETRY\"}"
+        values: "1x40"
+      -
+        series: "nuri_durable_work_oldest_due_age_seconds{application=\"future-lease\",status=\"RETRY\"}"
+        values: "0x40"
+      -
+        series: "nuri_durable_work_jobs{application=\"future-lease\",status=\"RUNNING\"}"
+        values: "1x40"
+      -
+        series: "nuri_durable_work_oldest_due_age_seconds{application=\"future-lease\",status=\"RUNNING\"}"
+        values: "0x40"
+    alert_rule_test:
+      -
+        eval_time: "30m"
+        alertname: "EgovDurableWorkDueBacklog"
+        exp_alerts: []
+      -
+        eval_time: "30m"
+        alertname: "EgovDurableWorkFailed"
+        exp_alerts: []
+      -
+        eval_time: "30m"
+        alertname: "EgovDurableWorkObservationFailed"
+        exp_alerts: []
+  -
+    interval: "1m"
+    input_series:
+      -
+        series: "nuri_durable_work_enabled{application=\"query-failure\"}"
+        values: "1x40"
+      -
+        series: "nuri_durable_work_observation_healthy{application=\"query-failure\"}"
+        values: "0x40"
+      -
+        series: "nuri_durable_work_observation_age_seconds{application=\"query-failure\"}"
+        values: "0+60x40"
+      -
+        series: "nuri_durable_work_jobs{application=\"query-failure\",status=\"FAILED\"}"
+        values: "2x40"
+    alert_rule_test:
+      -
+        eval_time: "4m"
+        alertname: "EgovDurableWorkObservationFailed"
+        exp_alerts: []
+      -
+        eval_time: "5m"
+        alertname: "EgovDurableWorkObservationFailed"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "query-failure"
+              severity: "warning"
+            exp_annotations:
+              summary: "내구 작업 상태 조회가 실패하거나 오래 갱신되지 않았습니다"
+              description: "DB 연결과 읽기 권한, 집계 쿼리 제한 시간, 메트릭 갱신 실행 경로를 확인합니다. 마지막 정상 집계는 유지됩니다."
+      -
+        eval_time: "5m"
+        alertname: "EgovDurableWorkFailed"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "query-failure"
+              severity: "warning"
+            exp_annotations:
+              summary: "FAILED 상태의 내구 작업이 남아 있습니다"
+              description: "durable-jobs 조회로 대상 작업을 찾고, 저장소·전달 채널 원인을 고친 뒤 DWORK_RETRY 로 재처리합니다."
+  -
+    interval: "1m"
+    input_series:
+      -
+        series: "nuri_durable_work_enabled{application=\"stopped-observation\"}"
+        values: "1x40"
+      -
+        series: "nuri_durable_work_observation_healthy{application=\"stopped-observation\"}"
+        values: "1x40"
+      -
+        series: "nuri_durable_work_observation_age_seconds{application=\"stopped-observation\"}"
+        values: "120x40"
+    alert_rule_test:
+      -
+        eval_time: "4m"
+        alertname: "EgovDurableWorkObservationFailed"
+        exp_alerts: []
+      -
+        eval_time: "5m"
+        alertname: "EgovDurableWorkObservationFailed"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "stopped-observation"
+              severity: "warning"
+            exp_annotations:
+              summary: "내구 작업 상태 조회가 실패하거나 오래 갱신되지 않았습니다"
+              description: "DB 연결과 읽기 권한, 집계 쿼리 제한 시간, 메트릭 갱신 실행 경로를 확인합니다. 마지막 정상 집계는 유지됩니다."
+  -
+    interval: "1m"
+    input_series:
+      -
+        series: "nuri_durable_work_jobs{application=\"replicas\",status=\"FAILED\",instance=\"a\"}"
+        values: "2x10"
+      -
+        series: "nuri_durable_work_jobs{application=\"replicas\",status=\"FAILED\",instance=\"b\"}"
+        values: "2x10"
+    alert_rule_test:
+      -
+        eval_time: "5m"
+        alertname: "EgovDurableWorkFailed"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "replicas"
+              severity: "warning"
+            exp_annotations:
+              summary: "FAILED 상태의 내구 작업이 남아 있습니다"
+              description: "durable-jobs 조회로 대상 작업을 찾고, 저장소·전달 채널 원인을 고친 뒤 DWORK_RETRY 로 재처리합니다."
+    promql_expr_test:
+      -
+        expr: "max by (application) (nuri_durable_work_jobs{status=\"FAILED\"}) > 0"
+        eval_time: "5m"
+        exp_samples:
+          -
+            labels: "{application=\"replicas\"}"
+            value: 2
+  -
+    interval: "1m"
+    input_series:
+      -
+        series: "security_ratelimit_rejected_total{application=\"security\",bucket=\"login\"}"
+        values: "0+300x20"
+      -
+        series: "http_server_requests_seconds_count{application=\"security\",uri=\"/api/v1/auth/login\",status=\"401\"}"
+        values: "0+300x20"
+    alert_rule_test:
+      -
+        eval_time: "9m"
+        alertname: "EgovRateLimitRejectionsSustained"
+        exp_alerts: []
+      -
+        eval_time: "11m"
+        alertname: "EgovRateLimitRejectionsSustained"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "security"
+              severity: "warning"
+              bucket: "login"
+            exp_annotations:
+              summary: "요청 제한(429) 거절이 10분째 분당 30건을 넘습니다 (bucket=login)"
+              description: "api 로그의 [RATE-LIMIT] 줄에서 ip·uri 를 확인해 공격인지 한도 부족인지 판정합니다."
+      -
+        eval_time: "5m"
+        alertname: "EgovLoginFailureSpike"
+        exp_alerts: []
+      -
+        eval_time: "6m"
+        alertname: "EgovLoginFailureSpike"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "security"
+              severity: "warning"
+            exp_annotations:
+              summary: "로그인 실패(401)가 5분째 분당 20건을 넘습니다"
+              description: "요청 제한 로그인 버킷 거절(EgovRateLimitRejectionsSustained, bucket=login)과 함께 오르는지 확인합니다."

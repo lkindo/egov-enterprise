@@ -8,7 +8,8 @@
     "knownLimits": [
       "Static service checks prove required guard statements remain in the registered method, not full Java control-flow reachability.",
       "EXTERNAL Actuator/SockJS declarations are bound to source/runtime policy and HTTP authentication wiring; this is not a full framework transport census or live DB measurement.",
-      "Historical ADMIN policy labels preserve the resource-policy taxonomy. Current access requires exact operation permissions; group names and display role fields do not confer privileges. Existing owner, participant and privacy restrictions remain additional requirements."
+      "Historical ADMIN policy labels preserve the resource-policy taxonomy. Current access requires exact operation permissions; group names and display role fields do not confer privileges. Existing owner, participant and privacy restrictions remain additional requirements.",
+      "ScheduleService#getSchedule keeps its exact owner/SCHEDULE_READ_ALL fallback helper; before that fallback, an authenticated principal may read a shared (schdlSeCd=1) schedule in the department resolved by the server. Private/other-department reads and all writes retain the registered ownership checks."
     ]
   },
   "policyDefinitions": {
@@ -132,7 +133,8 @@
       "handler": "nuri.api.controller.business.operation.EventApiController#createEvent",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventApiController#createEvent')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "EventInfoService#createEvent"
     },
     {
       "method": "POST",
@@ -149,7 +151,8 @@
       "handler": "nuri.api.controller.business.operation.EventApiController#deleteEvent",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventApiController#deleteEvent')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "EventInfoService#deleteEvent"
     },
     {
       "method": "PUT",
@@ -157,7 +160,8 @@
       "handler": "nuri.api.controller.business.operation.EventApiController#updateEvent",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventApiController#updateEvent')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "EventInfoService#updateEvent"
     },
     {
       "method": "POST",
@@ -208,7 +212,8 @@
       "handler": "nuri.api.controller.business.operation.RewardManageApiController#createReward",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.RewardManageApiController#createReward')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "RewardManageService#createReward"
     },
     {
       "method": "DELETE",
@@ -216,7 +221,8 @@
       "handler": "nuri.api.controller.business.operation.RewardManageApiController#deleteReward",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.RewardManageApiController#deleteReward')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "RewardManageService#deleteReward"
     },
     {
       "method": "PUT",
@@ -224,7 +230,8 @@
       "handler": "nuri.api.controller.business.operation.RewardManageApiController#updateReward",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.RewardManageApiController#updateReward')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "RewardManageService#updateReward"
     },
     {
       "method": "POST",
@@ -284,7 +291,8 @@
       "handler": "nuri.api.controller.business.admin.content.banner.BannerApiController#insertBanner",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.banner.BannerApiController#insertBanner')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "BannerService#insertBanner"
     },
     {
       "method": "DELETE",
@@ -292,7 +300,8 @@
       "handler": "nuri.api.controller.business.admin.content.banner.BannerApiController#deleteBanner",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.banner.BannerApiController#deleteBanner')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "BannerService#deleteBanner"
     },
     {
       "method": "PUT",
@@ -300,7 +309,8 @@
       "handler": "nuri.api.controller.business.admin.content.banner.BannerApiController#updateBanner",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.banner.BannerApiController#updateBanner')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "BannerService#updateBanner"
     },
     {
       "method": "POST",
@@ -628,7 +638,8 @@
       "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#deleteLoginPolicy",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#deleteLoginPolicy')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "LoginPolicyManageService#deleteLoginPolicy"
     },
     {
       "method": "POST",
@@ -636,7 +647,8 @@
       "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#insertLoginPolicy",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#insertLoginPolicy')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "LoginPolicyManageService#insertLoginPolicy"
     },
     {
       "method": "PUT",
@@ -644,7 +656,8 @@
       "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#updateLoginPolicy",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#updateLoginPolicy')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "LoginPolicyManageService#updateLoginPolicy"
     },
     {
       "method": "POST",
@@ -714,7 +727,8 @@
       "handler": "nuri.api.controller.business.admin.content.popup.PopupApiController#createPopup",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.popup.PopupApiController#createPopup')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "PopupService#createPopup"
     },
     {
       "method": "DELETE",
@@ -722,7 +736,8 @@
       "handler": "nuri.api.controller.business.admin.content.popup.PopupApiController#deletePopup",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.popup.PopupApiController#deletePopup')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "PopupService#deletePopup"
     },
     {
       "method": "PUT",
@@ -730,7 +745,8 @@
       "handler": "nuri.api.controller.business.admin.content.popup.PopupApiController#updatePopup",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.popup.PopupApiController#updatePopup')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "PopupService#updatePopup"
     },
     {
       "method": "POST",
@@ -898,7 +914,8 @@
       "handler": "nuri.api.controller.foundation.controller.system.template.TemplateApiController#insertTmplatInfo",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.template.TemplateApiController#insertTmplatInfo')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "TmplatInfoService#insertTmplatInfo"
     },
     {
       "method": "DELETE",
@@ -906,7 +923,8 @@
       "handler": "nuri.api.controller.foundation.controller.system.template.TemplateApiController#deleteTmplatInfo",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.template.TemplateApiController#deleteTmplatInfo')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "TmplatInfoService#deleteTmplatInfo"
     },
     {
       "method": "PUT",
@@ -914,7 +932,8 @@
       "handler": "nuri.api.controller.foundation.controller.system.template.TemplateApiController#updateTmplatInfo",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.template.TemplateApiController#updateTmplatInfo')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "TmplatInfoService#updateTmplatInfo"
     },
     {
       "method": "PUT",
@@ -1284,7 +1303,8 @@
       "handler": "nuri.api.controller.business.help.HelpApiController#insertHpcm",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#insertHpcm')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "HelpService#createHpcm"
     },
     {
       "method": "DELETE",
@@ -1292,7 +1312,8 @@
       "handler": "nuri.api.controller.business.help.HelpApiController#deleteHpcm",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#deleteHpcm')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "HelpService#deleteHpcm"
     },
     {
       "method": "PUT",
@@ -1300,7 +1321,8 @@
       "handler": "nuri.api.controller.business.help.HelpApiController#updateHpcm",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#updateHpcm')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "HelpService#updateHpcm"
     },
     {
       "method": "POST",
@@ -1308,7 +1330,8 @@
       "handler": "nuri.api.controller.business.help.HelpApiController#createManual",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#createManual')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "HelpService#createOnlineManual"
     },
     {
       "method": "DELETE",
@@ -1316,7 +1339,8 @@
       "handler": "nuri.api.controller.business.help.HelpApiController#deleteManual",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#deleteManual')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "HelpService#deleteOnlineManual"
     },
     {
       "method": "PUT",
@@ -1324,7 +1348,8 @@
       "handler": "nuri.api.controller.business.help.HelpApiController#updateManual",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#updateManual')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "HelpService#updateOnlineManual"
     },
     {
       "method": "POST",
@@ -2067,6 +2092,42 @@
       ]
     },
     {
+      "target": "BannerService#deleteBanner",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "BANNER_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "BannerService#insertBanner",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "BANNER_CREATE"
+        }
+      ]
+    },
+    {
+      "target": "BannerService#updateBanner",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "BANNER_UPDATE"
+        }
+      ]
+    },
+    {
       "target": "BoardService#assertCommentAccess",
       "policy": "OWNER_OR_ADMIN",
       "mechanisms": [
@@ -2370,6 +2431,42 @@
       }
     },
     {
+      "target": "EventInfoService#createEvent",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "EVENT_CREATE"
+        }
+      ]
+    },
+    {
+      "target": "EventInfoService#deleteEvent",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "EVENT_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "EventInfoService#updateEvent",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "EVENT_UPDATE"
+        }
+      ]
+    },
+    {
       "target": "ExternalHrService#createExternalHr",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -2406,6 +2503,78 @@
       ]
     },
     {
+      "target": "HelpService#createHpcm",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "HELP_CREATE"
+        }
+      ]
+    },
+    {
+      "target": "HelpService#createOnlineManual",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "HELP_CREATE"
+        }
+      ]
+    },
+    {
+      "target": "HelpService#deleteHpcm",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "HELP_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "HelpService#deleteOnlineManual",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "HELP_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "HelpService#updateHpcm",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "HELP_UPDATE"
+        }
+      ]
+    },
+    {
+      "target": "HelpService#updateOnlineManual",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "HELP_UPDATE"
+        }
+      ]
+    },
+    {
       "target": "InformalSanctionService#confirmInformalSanction",
       "policy": "STRICT_OWNER",
       "mechanisms": [
@@ -2435,6 +2604,42 @@
           "helper": "assertOwnerByEsntlId",
           "count": 1,
           "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
+      "target": "LoginPolicyManageService#deleteLoginPolicy",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "LOGIN_POL_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "LoginPolicyManageService#insertLoginPolicy",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "LOGIN_POL_CREATE"
+        }
+      ]
+    },
+    {
+      "target": "LoginPolicyManageService#updateLoginPolicy",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "LOGIN_POL_UPDATE"
         }
       ]
     },
@@ -2638,6 +2843,78 @@
       ]
     },
     {
+      "target": "PopupService#createPopup",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "POPUP_CREATE"
+        }
+      ]
+    },
+    {
+      "target": "PopupService#deletePopup",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "POPUP_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "PopupService#updatePopup",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "POPUP_UPDATE"
+        }
+      ]
+    },
+    {
+      "target": "RewardManageService#createReward",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "REWARD_CREATE"
+        }
+      ]
+    },
+    {
+      "target": "RewardManageService#deleteReward",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "REWARD_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "RewardManageService#updateReward",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "REWARD_UPDATE"
+        }
+      ]
+    },
+    {
       "target": "SatisfactionService#assertCanModify",
       "policy": "OWNER_OR_ADMIN",
       "mechanisms": [
@@ -2740,6 +3017,42 @@
           "count": 1,
           "identityAxis": "LOGIN_ID",
           "permission": "SCRAP_UPDATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "TmplatInfoService#deleteTmplatInfo",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "TEMPLATE_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "TmplatInfoService#insertTmplatInfo",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "TEMPLATE_CREATE"
+        }
+      ]
+    },
+    {
+      "target": "TmplatInfoService#updateTmplatInfo",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "TEMPLATE_UPDATE"
         }
       ]
     },

@@ -31,6 +31,8 @@ const integrityGates = [
   ['api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java', 'operation'],
   ['api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java', 'notification'],
   ['api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java', 'template'],
+  ['api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java', 'addressbook'],
+  ['api-server/src/test/java/nuri/api/schema/SmsDeliveryStateIntegrationTest.java', 'sms'],
 ];
 const gateDomains = owner => Array.isArray(owner) ? owner : [owner];
 const gateSelected = (selected, owner) => gateDomains(owner).every(domain => selected.includes(domain));
@@ -40,6 +42,67 @@ const displayNameSupport = [
   'business-core/src/main/java/nuri/business/service/user/UserDisplayNameLookupService.java',
   'business-core/src/test/java/nuri/business/service/user/UserDisplayNameLookupServiceTest.java',
 ];
+const smsApiSources = [
+  'api-server/src/main/java/nuri/api/integration/sms/NaverSensSmsConfiguration.java',
+  'api-server/src/main/java/nuri/api/integration/sms/NaverSensSmsProperties.java',
+  'api-server/src/main/java/nuri/api/integration/sms/NaverSensSmsSender.java',
+  'api-server/src/test/java/nuri/api/integration/sms/NaverSensSmsSenderTest.java',
+];
+
+test('SMS API support follows the optional domain in the real generator removal plan', () => {
+  assert.deepEqual(manifest.packs.collaboration.backend.domainSupportFiles?.sms, [smsApiSources[1]]);
+  for (const selected of [[], ['sms']]) {
+    const composition = resolveProjectRecipe(recipe(selected), catalog);
+    const profile = composerProfile(manifest, composition);
+    const plan = planJavaRemoval(root, manifest, profile, java);
+    for (const file of smsApiSources) assert.equal(plan.removed.has(join(root, file)), !selected.includes('sms'), `${file}: exact SMS owner`);
+  }
+  for (const [name, profile] of Object.entries(manifest.profiles)) {
+    const plan = planJavaRemoval(root, manifest, profile, java);
+    for (const file of smsApiSources) assert.equal(plan.removed.has(join(root, file)), name === 'core', `${name}: ${file}`);
+  }
+  const unowned = structuredClone(manifest);
+  delete unowned.packs.collaboration.backend.domainSupportFiles.sms;
+  const excluded = composerProfile(unowned, resolveProjectRecipe(recipe([]), catalog));
+  assert.equal(planJavaRemoval(root, unowned, excluded, java).removed.has(join(root, smsApiSources[1])), false,
+    'removing the exact support declaration reproduces the isolated Properties survivor');
+});
+
+test('new management HTTP matrices project every selected surface and reject an unowned addition', () => {
+  const file = 'api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java';
+  const source = readFileSync(join(root, file), 'utf8');
+  const owners = new Map([
+    ['/api/v1/admin/operation/events', 'operation'],
+    ['/api/v1/admin/operation/rewards', 'operation'],
+    ['/api/v1/help/hpcm', 'help'],
+    ['/api/v1/help/manuals', 'help'],
+    ['/api/v1/admin/system/banners', 'system'],
+    ['/api/v1/admin/system/popups', 'system'],
+    ['/api/v1/admin/system/templates', 'template'],
+  ]);
+  const paths = value => [...value.matchAll(/new ManagedSurface\("([^"]+)"/g)].map(match => match[1]);
+  const sharedMethod = (value, name) => value.match(new RegExp(`^(?:    @[^\\r\\n]*\\r?\\n)*    (?:void|static Stream<Arguments>|private void) ${name}\\([\\s\\S]*?^    \\}`, 'm'))?.[0];
+  assert.deepEqual(paths(source), [...owners.keys()], 'the management surface inventory is exact');
+  for (const selected of [['operation'], ['help'], ['system'], ['template'], ['survey'], ['stats'], ['informalsanction'], ['operation', 'help', 'system', 'template']]) {
+    const projected = projectComposerJava(file, source, { resolvedDomains: selected });
+    assert.deepEqual(paths(projected), [...owners].filter(([, owner]) => selected.includes(owner)).map(([path]) => path), `${selected}: absent management APIs must not execute`);
+    if (selected.some(domain => [...owners.values()].includes(domain))) {
+      for (const method of ['managementWriteRequiresItsExactHttpPermission', 'managementWritesWithoutExactPermission', 'exactManagementGrantsIndependentlyAllowRealHttpCrud', 'assertStoredName']) {
+        assert.ok(sharedMethod(source, method), `${method}: shared contract exists`);
+        assert.equal(sharedMethod(projected, method), sharedMethod(source, method), `${selected}: preserve every allowed and denied/readback assertion byte-for-byte`);
+      }
+      assert.match(projected, /Stream\.of\(HttpMethod\.POST, HttpMethod\.PUT, HttpMethod\.DELETE\)/);
+      assert.match(projected, /Stream\.of\(RbacAuthorizationMatrixTest\.MissingGrant\.values\(\)\)/);
+    } else {
+      assert.doesNotMatch(projected, /void managementWriteRequiresItsExactHttpPermission\(/);
+      assert.doesNotMatch(projected, /void exactManagementGrantsIndependentlyAllowRealHttpCrud\(/);
+    }
+    const profile = composerProfile(manifest, { profile: 'custom', packs: ['core', 'demo'], resolvedDomains: selected, frontend: { removePaths: [] } });
+    assert.ok(!profile.acknowledgedRemovedGates.some(row => row.file === file), `${selected}: the selected RBAC surface must retain its gate`);
+    assert.equal(planJavaRemoval(root, manifest, profile, java).removed.has(join(root, file)), false, `${selected}: actual dependency projection must preserve the selected RBAC gate`);
+  }
+  assert.throws(() => projectComposerJava(file, source.replace('/api/v1/help/manuals', '/api/v1/help/new-api'), { resolvedDomains: ['help'] }), /RBAC.*(inventory|owner|contract).*drifted/i);
+});
 
 function supportFixture(t) {
   const base = realpathSync(tmpdir());
@@ -60,7 +123,7 @@ function supportFixture(t) {
     writeFileSync(join(directory, file), source);
   }
   const manifest = { packs: { core: { backend: { appDomains: [] } }, demo: { backend: {
-    appDomains: ['memoreport'], domainSupportFiles: { memoreport: displayNameSupport },
+    appDomains: ['memoreport'], domainSupportFiles: { memoreport: [...displayNameSupport] },
   } } } };
   return { directory, manifest, java: [...sources.keys()].map(file => join(directory, file)) };
 }
@@ -91,6 +154,8 @@ test('domain support rejects unsafe, missing, duplicate and unowned declarations
     ['../outside.java'],
     ['foundation/src/main/java/../../outside.java'],
     ['foundation/src/main/java/nuri/Missing.java'],
+    ['api-server/src/main/java/nuri/api/integration/sms/../../Outside.java'],
+    ['api-server/src/main/java/nuri/api/integration/sms/Missing.java'],
     [displayNameSupport[0], displayNameSupport[0]],
   ]) {
     const changed = structuredClone(manifest);
@@ -102,6 +167,27 @@ test('domain support rejects unsafe, missing, duplicate and unowned declarations
   assert.throws(() => planJavaRemoval(directory, changed, { packs: ['core'] }, java), /support/i);
   changed.packs.demo.backend.appDomains.push('unknown');
   assert.throws(() => planJavaRemoval(directory, changed, { packs: ['core'] }, java), /duplicate domain support/i);
+});
+
+test('API support is removed or survives with its exact consumer and cannot silently disappear', t => {
+  const { directory, manifest, java } = supportFixture(t);
+  const file = 'api-server/src/main/java/nuri/api/integration/memoreport/LocalProperties.java';
+  mkdirSync(dirname(join(directory, file)), { recursive: true });
+  writeFileSync(join(directory, file), 'package nuri.api.integration.memoreport; class LocalProperties {}');
+  manifest.packs.demo.backend.domainSupportFiles.memoreport.push(file);
+  const allJava = [...java, join(directory, file)];
+  assert.ok(planJavaRemoval(directory, manifest, { packs: ['core'] }, allJava).removed.has(join(directory, file)));
+  assert.equal(planJavaRemoval(directory, manifest, { packs: ['core', 'demo'], resolvedDomains: ['memoreport'] }, allJava).removed.size, 0);
+  const output = join(directory, 'output');
+  for (const source of allJava) {
+    const path = relative(directory, source);
+    mkdirSync(dirname(join(output, path)), { recursive: true });
+    writeFileSync(join(output, path), readFileSync(source));
+  }
+  const composition = { profile: 'custom', resolvedDomains: ['memoreport'], frontend: { includedPaths: [], removePaths: [] } };
+  assert.doesNotThrow(() => assertComposerSourceSurvives(directory, output, composition, manifest));
+  rmSync(join(output, file));
+  assert.throws(() => assertComposerSourceSurvives(directory, output, composition, manifest), /Selected capability source was removed: api-server/);
 });
 
 test('selected domain support cannot disappear from a custom artifact', t => {

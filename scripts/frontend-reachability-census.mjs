@@ -632,6 +632,21 @@ export function parseModuleReferences(source, file = '<memory>') {
 
   for (let index = 0; index < tokens.length; index += 1) {
     if (tokens[index].value !== 'createRequire' || tokens[index + 1]?.value !== '(') continue;
+    const factoryClose = findBalanced(tokens, index + 1, '(', ')');
+    if (factoryClose >= 0 && tokens[factoryClose + 1]?.value === '(') {
+      const argument = literalSpecifier(tokens[factoryClose + 2]);
+      if (!argument || tokens[factoryClose + 3]?.value !== ')') {
+        issues.push(dependencyIssue(
+          'UNPARSEABLE_CREATE_REQUIRE_CALL',
+          file,
+          tokens[index],
+          'immediate createRequire argument must be one literal module specifier',
+        ));
+      } else {
+        references.push({ kind: 'create-require', specifier: argument.value, typeOnly: false, line: tokens[index].line });
+      }
+      continue;
+    }
     if (tokens[index - 1]?.value === '=' && tokens[index - 2]?.type === 'identifier') {
       createRequireAliases.add(tokens[index - 2].value);
     } else {

@@ -144,6 +144,8 @@
 | [ui-ux-modernization-user-action-runbook.md](04-operations/ui-ux-modernization-user-action-runbook.md) | 자동화 완료 후 사용자·제품·운영 책임자가 남은 작업을 한 단계씩 검증·승인하는 마감 런북 |
 | [backup-and-restore-runbook.md](04-operations/backup-and-restore-runbook.md) | DB·첨부 실물·암호화 키를 한 세트로 백업/복원하는 절차와 복원 검증 4단계 (주기·RTO/RPO 는 미결정) |
 | [durable-work-recovery.md](04-operations/durable-work-recovery.md) | 후속 작업 상태·시도 한도·감사와 결속한 재처리, 교체 파일 보호와 중단 후 재개 |
+| [sms-provider-operations.md](04-operations/sms-provider-operations.md) | SENS 설정, 접수·최종 전달 구분과 불확실한 발송의 재전송 방지 |
+| [enterprise-improvement-verification.md](04-operations/enterprise-improvement-verification.md) | 5개 개선 우선순위의 구현·격리 검증·red 증거와 같은 평가 기준의 재평가 |
 | [mfa-operations.md](04-operations/mfa-operations.md) | TOTP 등록·로그인·분실 복구, 키 설정·백업, 세션 폐기·감사와 보호계정 단계 적용 경계 |
 | [authorization-cutover-runbook.md](04-operations/authorization-cutover-runbook.md) | 구 writer 중지·백업·V2_98/99·검증·수동 Contract·새 앱 기동 및 복구 경계 |
 | [migration-recovery-runbook.md](04-operations/migration-recovery-runbook.md) | 대상 DB 환경 결속·스키마 허용 목록·실행 증거·부분 적재 재개·백업을 통한 전체 롤백 |
@@ -151,7 +153,7 @@
 | [improvement-validation-2026-09-09.md](04-operations/improvement-validation-2026-09-09.md) | 개선 우선순위 1~6의 검증 범위와 OCI 표준 불일치 적용 검토안 |
 | [crypto-key-rotation.md](04-operations/crypto-key-rotation.md) | 암호화 마스터 키 로테이션·PII 재암호화 런북 |
 | [log-retention-policy.md](04-operations/log-retention-policy.md) | 로그 보존기간·개인정보 파기 정책 |
-| [observability-baseline.md](04-operations/observability-baseline.md) | 관측성 기본값 — 429·로그인 실패 메트릭, JSON 로그 opt-in(`json-logs`), Prometheus 경보 예시와 드리프트 계약 |
+| [observability-baseline.md](04-operations/observability-baseline.md) | 요청·첨부 점검·영속 작업 상태 지표, 9개 경보와 실제 promtool 시간 흐름 검증 |
 | [database-optimization-guide.md](04-operations/database-optimization-guide.md) | DB 최적화 |
 | [performance-optimization-guide.md](04-operations/performance-optimization-guide.md) | 성능 최적화 |
 | [load-test-guide.md](04-operations/load-test-guide.md) | k6 부하 테스트 |

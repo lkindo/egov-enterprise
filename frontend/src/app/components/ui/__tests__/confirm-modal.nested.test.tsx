@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { memo } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 // 전역 테스트 설정이 확인 대화상자를 대역으로 바꾼다 — 이 파일은 실제 구현을 본다.
@@ -50,5 +51,39 @@ describe('ConfirmProvider 중첩 확인', () => {
 
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: '취소' })); });
     expect(results).toEqual([{ label: '첫째', value: false }]);
+  });
+
+  it('확인 상태가 바뀌어도 같은 confirm을 쓰는 memo 소비자를 다시 렌더하지 않는다', async () => {
+    const rendered = vi.fn();
+    const settled: Array<{ label: string; value: boolean }> = [];
+    const Consumer = memo(function Consumer() {
+      const confirm = useConfirm();
+      rendered();
+      const ask = (label: string) => {
+        void confirm({ title: `${label} 확인`, message: `${label} 할까요?` })
+          .then(value => settled.push({ label, value }));
+      };
+      return <>
+        <button type="button" onClick={() => ask('첫째')}>첫째 묻기</button>
+        <button type="button" onClick={() => ask('둘째')}>둘째 묻기</button>
+      </>;
+    });
+    render(<ConfirmProvider><Consumer /></ConfirmProvider>);
+    const initialRenders = rendered.mock.calls.length;
+    expect(initialRenders).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: '첫째 묻기' }));
+    expect(await screen.findByText('첫째 할까요?')).toBeInTheDocument();
+    expect(rendered).toHaveBeenCalledTimes(initialRenders);
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '둘째 묻기', hidden: true })); });
+    expect(await screen.findByText('둘째 할까요?')).toBeInTheDocument();
+    expect(settled).toEqual([{ label: '첫째', value: false }]);
+    expect(rendered).toHaveBeenCalledTimes(initialRenders);
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '확인' })); });
+    expect(settled).toEqual([{ label: '첫째', value: false }, { label: '둘째', value: true }]);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(rendered).toHaveBeenCalledTimes(initialRenders);
   });
 });

@@ -26,6 +26,7 @@ const addressBook = {
   rlsScopeCd: 'PUBLIC',
   wrterId: 'writer01',
   crtDt: '2026-08-31T12:00:00',
+  editToken: 'a'.repeat(64),
   adbkMan: [member],
 };
 
@@ -56,6 +57,7 @@ describe('AddressbookUserService generated contract', () => {
     await expect(addressbookUserService.updateAddressBook(3, {
       adbkNm: '영업1팀',
       rlsScopeCd: 'PUBLIC',
+      editToken: addressBook.editToken,
     })).resolves.toBeUndefined();
     await expect(addressbookUserService.deleteAddressBook(3)).resolves.toBeUndefined();
     await expect(addressbookUserService.searchUserSelections('홍길동')).resolves.toMatchObject({
@@ -79,7 +81,7 @@ describe('AddressbookUserService generated contract', () => {
     expect(client.requestRaw).toHaveBeenNthCalledWith(2, {
       url: 'address-books/3',
       method: 'put',
-      data: { adbkNm: '영업1팀', rlsScopeCd: 'PUBLIC' },
+      data: { adbkNm: '영업1팀', rlsScopeCd: 'PUBLIC', editToken: addressBook.editToken },
     });
     expect(client.requestRaw).toHaveBeenNthCalledWith(3, {
       url: 'address-books/3',

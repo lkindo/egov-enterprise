@@ -61,6 +61,8 @@ export function StandardModal({
 }: StandardModalProps) {
   // [2026-10-01] 폼에 입력이 있으면 Esc·배경·X 닫기 전에 확인한다 — 화면이 따로 배선하지 않아도 모든 모달에 걸린다.
   const { requestClose, trackInput } = useUnsavedCloseGuard({ isOpen, onClose, closeDisabled });
+  const invoker = React.useRef<HTMLElement | null>(null);
+  const titleRef = React.useRef<HTMLHeadingElement | null>(null);
   return (
     <Dialog
       open={isOpen}
@@ -77,6 +79,21 @@ export function StandardModal({
         // Radix 는 DialogTitle 로 aria-labelledby 를 이미 걸지만,
         // 종전 계약(`aria-label={title}`)에 의존하는 호출부/테스트를 위해 유지한다.
         aria-label={title}
+        onOpenAutoFocus={(event) => {
+          // Controlled callers have no DialogTrigger for Radix to restore.
+          invoker.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+          // Announce the form title before its controls, without scanning hidden form fields.
+          if (titleRef.current) {
+            event.preventDefault();
+            titleRef.current.focus({ preventScroll: true });
+          }
+        }}
+        onCloseAutoFocus={(event) => {
+          if (invoker.current?.isConnected) {
+            event.preventDefault();
+            invoker.current.focus({ preventScroll: true });
+          }
+        }}
         onEscapeKeyDown={(event) => {
           if (closeDisabled) event.preventDefault();
         }}
@@ -95,7 +112,7 @@ export function StandardModal({
       >
         {/* Header */}
         <div className="flex h-11 items-center justify-between border-b border-border/50 px-6 shrink-0 bg-card">
-          <DialogTitle className="text-lg font-bold text-foreground tracking-tight">
+          <DialogTitle ref={titleRef} tabIndex={-1} className="text-lg font-bold text-foreground tracking-tight">
             {title}
           </DialogTitle>
           <DialogClose asChild>

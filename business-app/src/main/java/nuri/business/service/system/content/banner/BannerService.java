@@ -4,6 +4,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.system.content.banner.Banner;
 import nuri.business.domain.system.content.banner.BannerRepository;
+import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.system.content.banner.dto.BannerDto;
 import nuri.business.service.system.content.banner.dto.BannerMapper;
@@ -41,6 +42,7 @@ public class BannerService {
 
     @Transactional
     public Long insertBanner(BannerDto dto) {
+        SecurityUtil.assertPermission("BANNER_CREATE");
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
@@ -59,6 +61,7 @@ public class BannerService {
 
     @Transactional
     public void updateBanner(BannerDto dto) {
+        SecurityUtil.assertPermission("BANNER_UPDATE");
         Banner entity = bannerRepository.findById(Objects.requireNonNull(dto.getBnrSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         Long atchFileSn = dto.getAtchFileSn();
@@ -71,6 +74,7 @@ public class BannerService {
 
     @Transactional
     public void deleteBanner(Long bnrSn) {
+        SecurityUtil.assertPermission("BANNER_DELETE");
         bannerRepository.deleteById(Objects.requireNonNull(bnrSn));
     }
 

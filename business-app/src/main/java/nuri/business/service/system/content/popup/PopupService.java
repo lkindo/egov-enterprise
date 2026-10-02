@@ -4,6 +4,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.system.content.popup.Popup;
 import nuri.business.domain.system.content.popup.PopupDomainRepository;
+import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.system.content.popup.dto.PopupDto;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,7 @@ public class PopupService {
 
     @Transactional
     public Long createPopup(String userId, PopupDto dto) {
+        SecurityUtil.assertPermission("POPUP_CREATE");
         Long atchFileSn = parseRequestedAttachmentId(dto.getFileUrl());
         if (atchFileSn != null) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
@@ -78,6 +80,7 @@ public class PopupService {
 
     @Transactional
     public void updatePopup(Long popupSn, String userId, PopupDto dto) {
+        SecurityUtil.assertPermission("POPUP_UPDATE");
         Popup popup = popupRepository.findById(Objects.requireNonNull(popupSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
@@ -98,6 +101,7 @@ public class PopupService {
 
     @Transactional
     public void deletePopup(Long popupSn) {
+        SecurityUtil.assertPermission("POPUP_DELETE");
         if (!popupRepository.existsById(Objects.requireNonNull(popupSn))) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         }

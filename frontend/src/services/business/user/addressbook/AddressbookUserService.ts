@@ -21,6 +21,8 @@ export interface AddressBook {
   wrterId: string;
   crtDt: string;
   adbkMan?: NameCard[];
+  /** 상세를 읽은 시점의 편집 기준. 목록 응답에는 없을 수 있다. */
+  editToken?: string;
 }
 
 export interface AddressBookUserSelection {
@@ -91,7 +93,7 @@ class AddressbookUserService extends UserService {
   /**
    * 주소록 수정
    */
-  async updateAddressBook(adbkSn: number, data: Partial<AddressBook>, config?: AxiosRequestConfig): Promise<void> {
+  async updateAddressBook(adbkSn: number, data: Partial<AddressBook> & { editToken: string }, config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(updateAddressBookOperation, {
       path: { adbkSn },
       body: data as GeneratedOperationRequest<'updateAddressBook'>,

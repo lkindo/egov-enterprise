@@ -248,6 +248,9 @@ jobs:
           UI_QUALITY_INDEX_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: npm run test:operational-contracts
 
+      - name: Verify Prometheus alert firing and recovery
+        run: npm run verify:alerts
+
       # Ordinary review dates are maintenance signals. Invalid input still fails;
       # pending institution approval is checked by the separate adoption command.
       - name: Report governance review freshness

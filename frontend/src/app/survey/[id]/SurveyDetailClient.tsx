@@ -39,7 +39,17 @@ import { SurveyStatsPanel } from '../components/SurveyStatsPanel';
  * <p>통계는 응답 아래에 그대로 남긴다 — 이미 응답한 사용자와 결과를 보러 온 사용자가 같은
  * 경로로 들어오기 때문이다.
  */
-export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
+export default function SurveyDetailClient({
+  srvySn,
+  initialSurvey,
+  initialQuestions,
+  initialTodayYmd,
+}: {
+  srvySn: number;
+  initialSurvey?: Survey;
+  initialQuestions?: SurveyQuestion[];
+  initialTodayYmd?: string;
+}) {
   const router = useRouter();
   const { toast } = useToast();
 
@@ -64,6 +74,7 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
   } = useQuery<SurveyQuestion[]>({
     queryKey: ['survey-questions', srvySn],
     queryFn: () => surveyAdminService.getQuestions(srvySn),
+    initialData: initialQuestions,
   });
 
   /*
@@ -78,10 +89,10 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
   } = useQuery<Survey>({
     queryKey: ['survey', srvySn],
     queryFn: () => surveyAdminService.getSurvey(srvySn),
+    initialData: initialSurvey,
   });
-  // 기준일은 마운트 시점에 한 번 고정한다. 설문 데이터는 클라이언트에서만 도착하므로 이 값이
-  // SSR 마크업에 실리지 않는다(하이드레이션 무관).
-  const [today] = useState(() => todayStorageYmd());
+  // 서버가 전달한 KST 기준일을 첫 렌더와 수화에 함께 사용하고 마운트 동안 고정한다.
+  const [today] = useState(() => initialTodayYmd ?? todayStorageYmd());
   const surveyStatus = survey ? getSurveyStatus(survey, today) : null;
   const availability = survey ? describeSurveyAvailability(survey, today) : null;
   const isOpen = surveyStatus === 'active';

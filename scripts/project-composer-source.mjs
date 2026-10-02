@@ -16,7 +16,7 @@ export function domainSupportFiles(root, manifest) {
         || !Array.isArray(files) || files.length === 0) throw new Error(`Invalid domain support owner: ${pack}/${domain}`);
       for (const file of files) {
         if (typeof file !== 'string'
-          || !/^(?:foundation|business-core)\/src\/(?:main|test)\/java\/(?:[A-Za-z_$][\w$]*\/)+[A-Za-z_$][\w$]*\.java$/u.test(file)
+          || !/^(?:foundation|business-core|api-server)\/src\/(?:main|test)\/java\/(?:[A-Za-z_$][\w$]*\/)+[A-Za-z_$][\w$]*\.java$/u.test(file)
           || owners.has(file)) throw new Error(`Invalid or duplicate domain support file: ${file}`);
         const absolute = resolve(root, file);
         if (!existsSync(absolute) || !statSync(absolute).isFile()) throw new Error(`Missing domain support file: ${file}`);
@@ -47,7 +47,16 @@ export function verifyCompositionDatabaseFiles(migrationDirectory, lock) {
 }
 
 const RBAC = 'api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java';
-const RBAC_DOMAINS = ['survey', 'stats', 'system', 'informalsanction'];
+const MANAGEMENT_RBAC_SURFACES = new Map([
+  ['/api/v1/admin/operation/events', 'operation'],
+  ['/api/v1/admin/operation/rewards', 'operation'],
+  ['/api/v1/help/hpcm', 'help'],
+  ['/api/v1/help/manuals', 'help'],
+  ['/api/v1/admin/system/banners', 'system'],
+  ['/api/v1/admin/system/popups', 'system'],
+  ['/api/v1/admin/system/templates', 'template'],
+]);
+const RBAC_DOMAINS = ['survey', 'stats', 'system', 'informalsanction', 'operation', 'help', 'template'];
 const GATE_OWNERS = {
   'api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java': ['note', 'notification'],
   'api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java': ['memoreport'],
@@ -58,6 +67,8 @@ const GATE_OWNERS = {
   'api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java': ['notification'],
   'api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java': ['board', 'system'],
   'api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java': ['survey'],
+  'api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java': ['addressbook'],
+  'api-server/src/test/java/nuri/api/schema/SmsDeliveryStateIntegrationTest.java': ['sms'],
   'api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java': ['template'],
 };
 
@@ -68,7 +79,7 @@ export function composerProfile(manifest, composition) {
     .filter(([, domains]) => domains.some(domain => !selected.has(domain)))
     .map(([file, domains]) => ({ file, reason: `선택하지 않은 검사 대상 도메인: ${domains.filter(domain => !selected.has(domain)).join(', ')}` }));
   if (!RBAC_DOMAINS.some(domain => selected.has(domain))) acknowledgedRemovedGates.push({
-    file: RBAC, reason: '선택 가능한 RBAC 검사 표면(survey, stats, system, informalsanction)이 모두 제외됨. 필수 core 인가는 기존 별도 매트릭스로 검사한다.',
+    file: RBAC, reason: `선택 가능한 RBAC 검사 표면(${RBAC_DOMAINS.join(', ')})이 모두 제외됨. 필수 core 인가는 기존 별도 매트릭스로 검사한다.`,
   });
   return {
     packs: composition.packs, resolvedDomains: composition.resolvedDomains,
@@ -117,11 +128,39 @@ function removeTest(source, name) {
   return source.slice(0, declaration.index) + source.slice(end);
 }
 
+function projectManagementRbacSurfaces(source, selected) {
+  const inventory = /    static Stream<ManagedSurface> managementSurfaces\(\) \{\r?\n        return Stream\.of\(([\s\S]*?)\);\r?\n    \}/.exec(source);
+  if (!inventory) throw new Error('Management RBAC surface inventory contract drifted');
+  // Constructor records have a fixed textual shape; keep each selected record byte-for-byte,
+  // including its valid request payload and persisted-result assertions in the shared methods.
+  const constructors = [...inventory[1].matchAll(/                new ManagedSurface\("([^"]+)", "[A-Z_]+", "[A-Z_]+", "[A-Za-z][A-Za-z0-9_]*",\r?\n                        """\r?\n[\s\S]*?\r?\n                        """, "[^"]*", "[^"]*"\)/g)];
+  const paths = constructors.map(match => match[1]);
+  const remainder = constructors.reduce((value, match) => value.replace(match[0], ''), inventory[1]);
+  if (JSON.stringify(paths) !== JSON.stringify([...MANAGEMENT_RBAC_SURFACES.keys()])
+      || !/^[\s,]*$/.test(remainder)) throw new Error('Management RBAC surface owner inventory drifted');
+  const retained = constructors.filter(match => selected.has(MANAGEMENT_RBAC_SURFACES.get(match[1])));
+  if (retained.length === constructors.length) return source;
+  if (retained.length) return source.replace(inventory[1], `\n${retained.map(match => match[0]).join(',\n')}`);
+  source = source.replace(inventory[0], '');
+  // A parameterized test with an empty source is an execution error. Remove only the
+  // management-specific methods when every management surface is absent.
+  for (const name of ['managementWriteRequiresItsExactHttpPermission', 'managementWritesWithoutExactPermission',
+    'exactManagementGrantsIndependentlyAllowRealHttpCrud', 'assertStoredName']) {
+    const declaration = new RegExp(`^(?:    @[^\\r\\n]*\\r?\\n)*    (?:void|static Stream<Arguments>|private void) ${name}\\([\\s\\S]*?^    \\}`, 'm').exec(source);
+    if (!declaration) throw new Error(`Management RBAC projection contract drifted: ${name}`);
+    source = source.replace(declaration[0], '');
+  }
+  const record = /^    record ManagedSurface\([\s\S]*?^    \}/m.exec(source);
+  if (!record) throw new Error('Management RBAC projection contract drifted: ManagedSurface');
+  return source.replace(record[0], '');
+}
+
 /** Preserve every assertion for a selected surface in the formerly pack-wide RBAC test. */
 export function projectComposerJava(file, source, profile) {
   if (!profile.resolvedDomains || file.replaceAll('\\', '/') !== RBAC) return source;
   const selected = new Set(profile.resolvedDomains);
   if (!RBAC_DOMAINS.some(domain => selected.has(domain))) return source; // normal declared removal
+  source = projectManagementRbacSurfaces(source, selected);
   if (!selected.has('survey')) for (const method of [
     'adminReadsDemoOwnedAdministrativeSurfaces', 'ordinaryUserCannotReadDemoOwnedAdministrativeSurfaces',
     'anonymousDemoOwnedAdministrativeRequestsRequireAuthentication', 'explicitSurveyReadGrantWorksWithoutAnAdministrativeGroup',
