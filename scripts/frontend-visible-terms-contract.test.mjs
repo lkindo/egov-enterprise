@@ -423,6 +423,30 @@ test('owner decisions close findings only with a real decision reference and the
 });
 
 /*
+  [2026-10-02 관리 콘솔 UX] 화면이 여러 파일로 나뉘면 파일 목록으로 고정한 검사는 새 파일을 보지 못한다 — 메뉴 편집기는
+  MenuAdminClient 하나에서 보드·인스펙터·변경 목록·대화상자로 갈라졌고, 권한 작업대·화면 관리도 새 컴포넌트가 생겼다.
+  그래서 이 세 화면은 디렉터리 단위로 본다(테스트 파일과 __tests__ 는 제외, 화면이 쓰는 .ts 모델도 포함).
+    · 메뉴: '상위 노드'·'그룹 노드' 를 메뉴·상위 메뉴로 바꿨다(DEC-OPS-100). by-authority 는 아래에서 '노드' 전체를 더
+      엄격하게 보므로 하위 디렉터리로 내려가지 않는다.
+    · 권한 작업대: 걷어 낸 역할 × 메뉴 격자가 '권한 매트릭스'·'메뉴 노드' 라고 불렀다(term-matrix·term-node).
+    · 화면 관리: 종전 문서 제목·목록 이름이 '시스템 프로그램 미들웨어'·'시스템 프로그램 관리' 였다.
+*/
+const REPLACED_IN_DIRECTORIES = [
+  {
+    directory: 'frontend/src/app/admin/system/menus', recursive: false, literals: ['상위 노드', '그룹 노드'],
+    anchors: ['MenuAdminClient.tsx', 'MenuBoard.tsx', 'MenuInspector.tsx', 'menuDraft.ts'],
+  },
+  {
+    directory: 'frontend/src/app/admin/security/authority', recursive: true, literals: ['매트릭스', '메뉴 노드'],
+    anchors: ['SecurityHubClient.tsx', 'components/ScreenPermissionTable.tsx', 'components/OperationPermissionMatrix.tsx', 'components/GroupComparison.tsx'],
+  },
+  {
+    directory: 'frontend/src/app/admin/system/programs', recursive: true, literals: ['시스템 프로그램', '미들웨어'],
+    anchors: ['page.tsx', 'ProgramAdminClient.tsx', 'ScreenListParts.tsx', 'screenList.ts'],
+  },
+];
+
+/*
   [2026-09-15 DEC-OPS-100] 기능을 과장하거나 대상을 잘못 부르던 용어를 고친 화면에 같은 말이 되돌아오지 않게 한다.
   인텔리전스·지능형·AI 기반은 검증된 기능 근거가 없는 한 금지(forbidden-unless-source-proven)라 파일 전체에서 막고,
   노드·스트림·매트릭스는 도메인 명사로 바꾼 자리의 문구만 막는다 — 인프라 topology 의 노드는 가이드 §2.2 예외다.
@@ -446,7 +470,6 @@ test('screens fixed for term decisions do not bring the overclaiming or misnamed
     'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx': ['데이터 스트림'],
     'frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx': ['스트림에서'],
     'frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx': ['스트림에서'],
-    'frontend/src/app/admin/system/menus/MenuAdminClient.tsx': ['상위 노드', '그룹 노드'],
     'frontend/src/app/admin/system/menus/by-authority/MenuByAuthorityClient.tsx': ['노드'],
     'frontend/src/app/admin/workflow/WorkflowClient.tsx': ['노드'],
     'frontend/src/app/components/ui/workflow-canvas.tsx': ['노드'],
@@ -458,4 +481,113 @@ test('screens fixed for term decisions do not bring the overclaiming or misnamed
     const text = read(file);
     for (const literal of literals) assert.ok(!text.includes(literal), `${file} brought back "${literal}"`);
   }
+  for (const scope of REPLACED_IN_DIRECTORIES) {
+    const files = screenSources(ROOT, scope.directory, scope);
+    // 디렉터리를 옮기거나 잘못 적으면 검사 대상이 0개가 되어 공허하게 통과한다 — 아는 파일이 목록에 있어야 한다.
+    for (const anchor of scope.anchors) assert.ok(files.includes(`${scope.directory}/${anchor}`), `${scope.directory} scope misses ${anchor}`);
+  }
+  assert.deepEqual(replacedTermViolations(ROOT, REPLACED_IN_DIRECTORIES), []);
+});
+
+/** 디렉터리 아래 화면 소스(.ts·.tsx, 테스트 파일·__tests__ 제외). recursive 가 false 면 하위 디렉터리를 보지 않는다. */
+function screenSources(root, directory, { recursive }) {
+  const files = [];
+  const walk = (relative) => {
+    for (const entry of fs.readdirSync(path.join(root, relative), { withFileTypes: true })) {
+      const child = `${relative}/${entry.name}`;
+      if (entry.isDirectory()) {
+        if (recursive && entry.name !== '__tests__') walk(child);
+      } else if (/\.tsx?$/u.test(entry.name) && !/\.test\.tsx?$/u.test(entry.name)) {
+        files.push(child);
+      }
+    }
+  };
+  walk(directory);
+  return files.sort();
+}
+
+/** 디렉터리 범위의 바꾼 용어가 돌아온 곳(파일·용어). */
+function replacedTermViolations(root, scopes) {
+  const violations = [];
+  for (const scope of scopes) {
+    for (const file of screenSources(root, scope.directory, scope)) {
+      const text = fs.readFileSync(path.join(root, file), 'utf8');
+      for (const literal of scope.literals) if (text.includes(literal)) violations.push(`${file} brought back "${literal}"`);
+    }
+  }
+  return violations;
+}
+
+test('directory-scoped replaced terms catch a new screen file but skip tests and stricter subdirectories', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'visible-terms-scope-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const write = (file, text) => {
+    fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+    fs.writeFileSync(path.join(root, file), text);
+  };
+  const flat = { directory: 'app/menus', recursive: false, literals: ['상위 노드'] };
+  const deep = { directory: 'app/authority', recursive: true, literals: ['매트릭스'] };
+  write('app/menus/MenuAdminClient.tsx', 'export const label = "상위 메뉴";');
+  write('app/authority/SecurityHubClient.tsx', 'export const label = "기능별 권한";');
+  assert.deepEqual(replacedTermViolations(root, [flat, deep]), []);
+
+  // 파일 목록에 없던 새 파일·새 모델로 돌아온 용어를 잡는다.
+  write('app/menus/MenuNewPanel.tsx', 'export const label = "상위 노드 고르기";');
+  write('app/menus/menuNewModel.ts', 'export const hint = "상위 노드";');
+  write('app/authority/components/NewGrid.tsx', 'export const title = "권한 매트릭스";');
+  // 테스트·시험용 틀과, 자기 검사를 따로 가진 하위 디렉터리(평면 범위)는 보지 않는다.
+  write('app/menus/__tests__/MenuNewPanel.test.tsx', '"상위 노드"');
+  write('app/menus/MenuNewPanel.test.tsx', '"상위 노드"');
+  write('app/menus/by-authority/MenuByAuthorityClient.tsx', '"상위 노드"');
+  write('app/authority/__tests__/harness.tsx', '"권한 매트릭스"');
+  assert.deepEqual(replacedTermViolations(root, [flat, deep]), [
+    'app/menus/MenuNewPanel.tsx brought back "상위 노드"',
+    'app/menus/menuNewModel.ts brought back "상위 노드"',
+    'app/authority/components/NewGrid.tsx brought back "매트릭스"',
+  ]);
+});
+
+/*
+  [2026-10-02 관리 콘솔 UX] 권한 이름은 권한 작업대(칸의 이름표·묶음 미리보기·그룹 비교)에 그대로 보이는 화면 문구다.
+  이름이 그 권한이 여는 기능과 다르면 관리자가 엉뚱한 권한을 고른다 — FILE_AUDIT 은 첨부 무결성 점검
+  (GET /admin/files/integrity) 하나만 여는데 이름이 '첨부파일 · 변경 이력 조회' 였다. '이력'을 말하는 권한은
+  이력·로그 경로에만 묶여야 한다. 원천은 카탈로그와 인가 정책의 operationBindings 다(생성기가 둘의 결속을 검사한다).
+*/
+function historyNameViolations(permissions, operationBindings) {
+  const paths = new Map();
+  for (const binding of operationBindings) {
+    if (binding.permission) paths.set(binding.permission, [...(paths.get(binding.permission) ?? []), binding.path]);
+  }
+  const historyPath = /\/(?:history|change-history|logs)(?:\/|$)/u;
+  return permissions
+    .filter((permission) => permission.name.includes('이력'))
+    .filter((permission) => {
+      const bound = paths.get(permission.code) ?? [];
+      return bound.length === 0 || bound.some((target) => !historyPath.test(target));
+    })
+    .map((permission) => `${permission.code} "${permission.name}" → ${(paths.get(permission.code) ?? ['(묶인 경로 없음)']).join(', ')}`);
+}
+
+test('permission names that promise a history only gate history or log endpoints', () => {
+  const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/governance/permission-catalog.json'), 'utf8'));
+  const policy = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/governance/authorization-policies.json'), 'utf8'));
+  // 검사가 공허하지 않다 — 이력을 말하는 권한이 실제로 여럿 있다.
+  assert.ok(catalog.permissions.filter((permission) => permission.name.includes('이력')).length >= 5);
+  assert.deepEqual(historyNameViolations(catalog.permissions, policy.operationBindings), []);
+  assert.equal(catalog.permissions.find((permission) => permission.code === 'FILE_AUDIT')?.name, '첨부파일 · 무결성 점검');
+
+  // 합성 위반: 이력이라 부르면서 이력이 아닌 경로를 열거나, 묶인 경로가 없으면 red 다.
+  const fixture = [
+    { code: 'FILE_AUDIT', name: '첨부파일 · 변경 이력 조회' },
+    { code: 'AUTHRT_AUDIT', name: '권한 관리 · 변경 이력 조회' },
+    { code: 'GHOST_LOG_READ', name: '유령 이력 · 조회' },
+  ];
+  const bindings = [
+    { method: 'GET', path: '/api/v1/admin/files/integrity', permission: 'FILE_AUDIT' },
+    { method: 'GET', path: '/api/v1/admin/authorization/history', permission: 'AUTHRT_AUDIT' },
+  ];
+  assert.deepEqual(historyNameViolations(fixture, bindings), [
+    'FILE_AUDIT "첨부파일 · 변경 이력 조회" → /api/v1/admin/files/integrity',
+    'GHOST_LOG_READ "유령 이력 · 조회" → (묶인 경로 없음)',
+  ]);
 });

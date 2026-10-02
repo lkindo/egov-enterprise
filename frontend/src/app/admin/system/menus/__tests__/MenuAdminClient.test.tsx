@@ -1,528 +1,992 @@
-import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
+import { handOffScreen } from '@/lib/navigation/target-handoff';
 
-const navigation = vi.hoisted(() => ({ searchParams: new URLSearchParams() }));
+/**
+ * [2026-10-02 D1·D2] 보드형 메뉴 구조 편집기 — 영역 탭·카드·줄, 오른쪽 상세(인스펙터), 끌지 않는 옮기기, 찾기, 그룹 미리보기,
+ * 한 번에 저장(메뉴 구조 버전 확인). 1단계의 즉시 저장 수정 창(등록·수정·삭제)과 구조 저장(batch-order)은 걷었다 —
+ * 그 테스트가 지키던 의미(이름 필수·100자, 경로 형식, 중복 실행 차단, 실패 피드백, 권한별 표시, 초안 중 서버 목록 재수신)는
+ * 아래에서 새 경로로 다시 고정한다.
+ */
 const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
-  deleteMenu: vi.fn(),
-  saveMenu: vi.fn(),
   toast: vi.fn(),
-  updateOrders: vi.fn(),
+  save: vi.fn(),
+  reload: vi.fn(),
+  matrix: vi.fn(),
+  refresh: vi.fn(),
 }));
+const auth = vi.hoisted(() => ({ permissions: [] as string[], loading: false }));
+const dnd = vi.hoisted(() => ({ event: null as null | Record<string, unknown> }));
 
-// 1. Mock Next.js config
-vi.mock('next/config', () => ({
-  default: () => ({ publicRuntimeConfig: {}, serverRuntimeConfig: {} }),
-}));
-
-// 2. Mock Lucide Icons - EXPLICITLY AND MANUALLY FOR EVERY ICON IN THIS FILE
-vi.mock('lucide-react', () => {
-    const Icon = (name: string) => {
-        const C = (props: any) => <span {...props} data-testid={`icon-${name.toLowerCase()}`}>{name}</span>;
-        C.displayName = name;
-        return C;
-    };
-    return {
-        Plus: Icon('Plus'),
-        ChevronRight: Icon('ChevronRight'),
-        Settings: Icon('Settings'),
-        Trash2: Icon('Trash2'),
-        FolderTree: Icon('FolderTree'),
-        FileCode: Icon('FileCode'),
-        Save: Icon('Save'),
-        Layers: Icon('Layers'),
-        Link: Icon('Link'),
-        ChevronsDownUp: Icon('ChevronsDownUp'),
-        ChevronsUpDown: Icon('ChevronsUpDown'),
-        Search: Icon('Search'),
-        SearchCode: Icon('SearchCode'),
-        AlertTriangle: Icon('AlertTriangle'),
-        RefreshCcw: Icon('RefreshCcw'),
-        Unlink: Icon('Unlink'),
-        Network: Icon('Network'),
-        Database: Icon('Database'),
-        GripVertical: Icon('GripVertical'),
-        Home: Icon('Home'),
-        Loader2: Icon('Loader2'),
-    };
-});
-
-// 3. Mock Next.js Navigation
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), refresh: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), refresh: mocks.refresh, back: vi.fn() }),
   usePathname: () => '/admin/system/menus',
-  useSearchParams: () => navigation.searchParams,
+  useSearchParams: () => new URLSearchParams(),
 }));
-
-vi.mock('@/services/business/user/MenuService', () => ({
-  menuService: { getHeadMenus: vi.fn().mockResolvedValue([]) },
-}));
-
-vi.mock('@/app/actions/menuActions', () => ({
-  saveMenuAction: mocks.saveMenu,
-  updateMenuOrdersAction: mocks.updateOrders,
-  deleteMenuAction: mocks.deleteMenu,
-}));
-
-// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 모든 쓰기 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
-const FULL_PERMISSIONS = ['MENU_READ', 'MENU_CREATE', 'MENU_UPDATE', 'MENU_DELETE'];
-const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
-
+vi.mock('@/app/components/layout/DynamicBreadcrumb', () => ({ DynamicBreadcrumb: () => <nav aria-label="현재 위치" /> }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
-
-// 4. Mock DND Kit (Nullify for unit tests)
-vi.mock('@dnd-kit/core', () => ({
-    DndContext: ({ children, onDragStart, onDragEnd }: any) => (
-      <div>
-        {children}
-        <button type="button" onClick={() => onDragStart?.({ active: { id: 1 } })}>테스트 메뉴 드래그 시작</button>
-        <button type="button" onClick={() => onDragEnd?.({ active: { id: 1 }, over: { id: 1 } })}>테스트 메뉴 드래그 완료</button>
-      </div>
-    ),
-    PointerSensor: vi.fn(),
-    KeyboardSensor: vi.fn(),
-    useSensor: vi.fn(),
-    useSensors: vi.fn(),
-    DragOverlay: ({ children }: any) => <div>{children}</div>,
-    closestCenter: vi.fn(),
-    MeasuringStrategy: { Always: 1 },
-    defaultDropAnimationSideEffects: vi.fn(),
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 'admin', permissions: auth.permissions, authorizationVersion: 'v1' }, loading: auth.loading }),
 }));
-vi.mock('@dnd-kit/sortable', () => ({
-    SortableContext: ({ children }: any) => <div>{children}</div>,
-    verticalListSortingStrategy: {},
-    useSortable: () => ({ attributes: {}, listeners: {}, setNodeRef: vi.fn(), transform: null, transition: null, isDragging: false }),
-    arrayMove: (array: any) => array,
-    sortableKeyboardCoordinates: vi.fn(),
+vi.mock('@/services/foundation/system/MenuAdminService', () => ({
+  menuAdminService: { saveMenuStructure: mocks.save, getMenuStructure: mocks.reload },
 }));
-vi.mock('@dnd-kit/utilities', () => ({
-    CSS: { Translate: { toString: () => '' } }
-}));
-
-// 5. Mock heavy UI components directly
-vi.mock('@/components/ui/hub/HubHeader', () => ({
-  HubHeader: ({ title, actions }: any) => <div data-testid="hub-header"><h2>{title}</h2>{actions}</div>
-}));
-vi.mock('@/components/ui/hub/HubSectionCard', () => ({
-  HubSectionCard: ({ title, children, action }: any) => <div data-testid="section-card"><h3>{title}</h3>{action}{children}</div>
-}));
-vi.mock('@/app/components/layout/page-header', () => ({
-  PageHeader: ({ title }: any) => <div data-testid="page-header"><h1>{title}</h1></div>
+vi.mock('@/services/foundation/system/AuthorizationAdminService', () => ({
+  authorizationAdminService: { getGrantMatrix: mocks.matrix },
 }));
 vi.mock('@/app/components/ui/standard-modal', () => ({
-  StandardModal: ({ children, footer, isOpen, title, onClose }: any) => isOpen ? (
-    <div data-testid="standard-modal">
+  StandardModal: ({ children, footer, isOpen, title, onClose }: { children: React.ReactNode; footer?: React.ReactNode; isOpen: boolean; title: string; onClose: () => void }) => (isOpen ? (
+    <div data-testid="standard-modal" role="dialog" aria-label={title}>
       <h2>{title}</h2>
       <button type="button" onClick={onClose}>모달 닫기 요청</button>
       {children}
       {footer}
     </div>
-  ) : null
+  ) : null),
+}));
+
+/*
+  dnd-kit 은 jsdom 에서 끌 수 없다 — 끌기 처리기만 부르는 단추를 둔다. 테스트가 dnd.event 에 끄는 메뉴·놓을 곳·위치를 둔다.
+  다중 컨테이너 보드가 쓰는 export(useDraggable·useDroppable·pointerWithin 등)를 모두 둔다.
+*/
+vi.mock('@dnd-kit/core', () => ({
+  DndContext: ({ children, onDragStart, onDragMove, onDragEnd, onDragCancel }: Record<string, (event: unknown) => void> & { children: React.ReactNode }) => (
+    <div>
+      {children}
+      <button type="button" onClick={() => onDragStart?.(dnd.event)}>테스트 끌기 시작</button>
+      <button type="button" onClick={() => onDragMove?.(dnd.event)}>테스트 끌기 이동</button>
+      <button type="button" onClick={() => onDragEnd?.(dnd.event)}>테스트 끌기 놓기</button>
+      <button type="button" onClick={() => onDragCancel?.(dnd.event)}>테스트 끌기 취소</button>
+    </div>
+  ),
+  DragOverlay: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  PointerSensor: vi.fn(),
+  KeyboardSensor: vi.fn(),
+  useSensor: vi.fn(),
+  useSensors: vi.fn(),
+  pointerWithin: vi.fn(() => []),
+  closestCenter: vi.fn(() => []),
+  useDraggable: () => ({ attributes: {}, listeners: {}, setNodeRef: vi.fn(), isDragging: false }),
+  useDroppable: () => ({ setNodeRef: vi.fn(), isOver: false }),
 }));
 
 import MenuAdminClient from '../MenuAdminClient';
 
+const FULL = ['MENU_READ', 'MENU_CREATE', 'MENU_UPDATE', 'MENU_DELETE', 'AUTHRT_READ', 'AUTHRT_GRANT'];
+
+const menu = (menuNo: number, menuNm: string, upMenuSn: number | null, menuOrdr: number, modernRoute: string | null = null) => ({
+  menuNo, menuNm, upMenuSn, menuOrdr, modernRoute, menuExpln: null, useYn: 'Y' as const, prgrmFileNm: null,
+});
+/*
+  업무(1) ─ 결재(2, 섹션) ─ 결재함(3), 권한별 메뉴(4)
+          └ 메뉴 관리(8, 한 줄 카드)
+  관리(5) ─ 시스템(6, 빈 섹션)
+*/
+const MENUS = [
+  menu(1, '업무', null, 1),
+  menu(2, '결재', 1, 1),
+  menu(3, '결재함', 2, 1, '/approvals'),
+  menu(4, '권한별 메뉴', 2, 2, '/admin/system/menus/by-authority'),
+  menu(8, '메뉴 관리', 1, 2, '/admin/system/menus'),
+  menu(5, '관리', null, 2),
+  menu(6, '시스템', 5, 1),
+];
+const nav = (...ids: number[]) => ids.map((id) => ({ type: 'NAVIGATION', code: String(id) }));
+const MATRIX = {
+  catalogVersion: 'c1',
+  groups: [
+    { code: 'ROLE_ADMIN', name: '관리자', description: null, version: 'admin-v1', complete: true, grants: [...nav(1, 2, 3, 4, 8, 5, 6), { type: 'OPERATION', code: 'MENU_READ' }] },
+    { code: 'ROLE_USER', name: '사용자', description: null, version: 'user-v1', complete: true, grants: nav(1, 2, 3) },
+  ],
+};
+const structure = (menus = MENUS, version = 'v1') => ({ version, menus });
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason?: unknown) => void;
-  const promise = new Promise<T>((nextResolve, nextReject) => {
-    resolve = nextResolve;
-    reject = nextReject;
-  });
+  const promise = new Promise<T>((nextResolve, nextReject) => { resolve = nextResolve; reject = nextReject; });
   return { promise, resolve, reject };
 }
 
-describe('MenuAdminClient Component', () => {
-    const mockInitialMenus = [
-      { menuNo: 1, menuNm: 'Main Menu', upperMenuNo: 0, upperMenuId: 0, menuOrdr: 1, progrmFileNm: 'prog1' },
-    ] as any;
-    const mockPrograms = [{ prgrmFileNm: 'prog1', prgrmKornNm: 'Program 1' }];
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    auth.permissions = FULL_PERMISSIONS;
-    mocks.confirm.mockResolvedValue(true);
-    mocks.deleteMenu.mockResolvedValue({ success: true, message: '삭제되었습니다.' });
-    mocks.saveMenu.mockResolvedValue({ success: true, message: '메뉴가 등록되었습니다.' });
-    mocks.updateOrders.mockResolvedValue({ success: true, message: '순서가 저장되었습니다.' });
-  });
-
-  it('renders correctly', async () => {
-    const menusPromise = Promise.resolve({ data: mockInitialMenus, error: null });
-    const programsPromise = Promise.resolve({ data: mockPrograms, error: null });
-    await act(async () => {
-      render(
-        <React.Suspense fallback={<div>Loading...</div>}>
-          <MenuAdminClient menusPromise={menusPromise} programsPromise={programsPromise} />
-        </React.Suspense>
-      );
-    });
-    expect(await screen.findByText('Main Menu')).toBeInTheDocument();
-  });
-
-  it('opens create modal on "신규 메뉴 등록" click', async () => {
-    const menusPromise = Promise.resolve({ data: mockInitialMenus, error: null });
-    const programsPromise = Promise.resolve({ data: mockPrograms, error: null });
-    await act(async () => {
-      render(
-        <React.Suspense fallback={<div>Loading...</div>}>
-          <MenuAdminClient menusPromise={menusPromise} programsPromise={programsPromise} />
-        </React.Suspense>
-      );
-    });
-    const btn = await screen.findByRole('button', { name: '신규 메뉴 등록' });
-    fireEvent.click(btn);
-    expect(await screen.findByText(/신규 메뉴 정의/i)).toBeInTheDocument();
-    const program = screen.getByRole('combobox', { name: '연결 프로그램' });
-    expect(program.tagName).toBe('SELECT');
-    expect(program).toHaveValue('');
-    expect(screen.getByRole('option', { name: '연결 없음' })).toBeInTheDocument();
-    fireEvent.change(program, { target: { value: 'prog1' } });
-    expect(program).toHaveValue('prog1');
-
-  });
-
-  it('selects a menu with aria-current and shows its detail actions', async () => {
-    const menusPromise = Promise.resolve({ data: mockInitialMenus, error: null });
-    const programsPromise = Promise.resolve({ data: mockPrograms, error: null });
-    await act(async () => {
-      render(
-        <React.Suspense fallback={<div>Loading...</div>}>
-          <MenuAdminClient menusPromise={menusPromise} programsPromise={programsPromise} />
-        </React.Suspense>
-      );
-    });
-
-    expect(screen.getByText('메뉴를 선택하세요')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '메뉴 수정' })).toBeNull();
-    expect(screen.getByRole('button', { name: '구조 저장' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Main Menu 순서 이동 핸들' })).toBeInTheDocument();
-
-    const menuButton = screen.getByRole('button', { name: /Main Menu.*ID: 1/i });
-    expect(menuButton).toHaveAttribute('tabindex', '0');
-    fireEvent.click(menuButton);
-
-    expect(menuButton).toHaveAttribute('aria-current', 'true');
-    expect(screen.getByRole('heading', { level: 2, name: 'Main Menu' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '메뉴 수정' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '메뉴 삭제' })).toBeInTheDocument();
-  });
-
-  it('검색으로 선택 행이 숨으면 상세 선택도 해제한다', async () => {
-    const menusPromise = Promise.resolve({
-      data: [
-        ...mockInitialMenus,
-        { menuNo: 2, menuNm: 'Audit Menu', upperMenuNo: 0, upperMenuId: 0, menuOrdr: 2 },
-      ] as any,
-      error: null,
-    });
-    const programsPromise = Promise.resolve({ data: mockPrograms, error: null });
-    await act(async () => {
-      render(
-        <React.Suspense fallback={<div>Loading...</div>}>
-          <MenuAdminClient menusPromise={menusPromise} programsPromise={programsPromise} />
-        </React.Suspense>
-      );
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: /Main Menu.*ID: 1/i }));
-    fireEvent.change(screen.getByRole('textbox', { name: '메뉴 검색' }), { target: { value: 'Audit' } });
-
-    expect(screen.queryByRole('button', { name: /Main Menu.*ID: 1/i })).toBeNull();
-    expect(screen.getByRole('button', { name: /Audit Menu.*ID: 2/i })).toBeInTheDocument();
-    expect(await screen.findByText('메뉴를 선택하세요')).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { level: 2, name: 'Main Menu' })).toBeNull();
-    expect(screen.queryByRole('button', { name: '메뉴 수정' })).toBeNull();
-  });
-
-  async function openCreateForm() {
-    const menusPromise = Promise.resolve({ data: mockInitialMenus, error: null });
-    const programsPromise = Promise.resolve({ data: mockPrograms, error: null });
-    await act(async () => {
-      render(
-        <React.Suspense fallback={<div>Loading...</div>}>
-          <MenuAdminClient menusPromise={menusPromise} programsPromise={programsPromise} />
-        </React.Suspense>
-      );
-    });
-    await userEvent.click(await screen.findByRole('button', { name: '신규 메뉴 등록' }));
-    const modal = await screen.findByTestId('standard-modal');
-    const scope = within(modal);
-    const submit = scope.getByRole('button', { name: /등록 완료/ });
-    return {
-      modal,
-      name: scope.getByRole('textbox', { name: /메뉴 명칭/ }),
-      route: scope.getByRole('textbox', { name: '연결 라우트' }),
-      order: scope.getByRole('spinbutton', { name: /정렬 순서/ }),
-      cancel: scope.getByRole('button', { name: '취소' }),
-      closeRequest: scope.getByRole('button', { name: '모달 닫기 요청' }),
-      form: scope.getByRole('textbox', { name: /메뉴 명칭/ }).closest('form')!,
-      submit,
-    };
-  }
-
-  it('공백 메뉴 명칭을 write sink로 보내지 않고 summary와 첫 오류 이동을 제공한다', async () => {
-    const fields = await openCreateForm();
-    await userEvent.type(fields.name, '   ');
-
-    fireEvent.click(fields.submit);
-
-    expect(mocks.saveMenu).not.toHaveBeenCalled();
-    expect(await screen.findAllByText(/메뉴 명칭.*입력/)).not.toHaveLength(0);
-    expect(document.querySelector('[data-form-error-summary="true"]')).toBeInTheDocument();
-    await waitFor(() => expect(fields.name).toHaveFocus());
-  });
-
-  it('메뉴 명칭 max+1을 차단하고 해당 입력으로 이동한다', async () => {
-    const fields = await openCreateForm();
-    fireEvent.change(fields.name, { target: { value: '가'.repeat(101) } });
-
-    fireEvent.click(fields.submit);
-
-    expect(mocks.saveMenu).not.toHaveBeenCalled();
-    expect(await screen.findAllByText(/100/)).not.toHaveLength(0);
-    expect(document.querySelector('[data-form-error-summary="true"]')).toBeInTheDocument();
-    await waitFor(() => expect(fields.name).toHaveFocus());
-  });
-
-  it('정렬 순서가 정수가 아니면 write sink를 차단한다', async () => {
-    const fields = await openCreateForm();
-    await userEvent.type(fields.name, '정수 순서 메뉴');
-    fireEvent.change(fields.order, { target: { value: '1.5' } });
-
-    fireEvent.click(fields.submit);
-
-    expect(mocks.saveMenu).not.toHaveBeenCalled();
-    expect(await screen.findAllByText(/정수/)).not.toHaveLength(0);
-    await waitFor(() => expect(fields.order).toHaveFocus());
-  });
-
-  it('저장 pending 중 닫기를 막고 rejected 서버 필드 오류 뒤 modal·입력·summary를 보존한다', async () => {
-    const pending = deferred<{ success: boolean; message: string }>();
-    mocks.saveMenu.mockReturnValueOnce(pending.promise);
-    const fields = await openCreateForm();
-    await userEvent.type(fields.name, '보존할 메뉴');
-    await userEvent.type(fields.route, '/admin/preserved');
-
-    expect(fields.submit).toHaveAttribute('type', 'submit');
-    expect(fields.submit).toHaveAttribute('form', fields.form.id);
-    fireEvent.submit(fields.form);
-
-    await waitFor(() => expect(mocks.saveMenu).toHaveBeenCalledTimes(1));
-    expect(fields.submit).toBeDisabled();
-    expect(fields.submit).toHaveAttribute('aria-busy', 'true');
-    expect(fields.submit).toHaveAccessibleName('등록 중...');
-    expect(fields.cancel).toBeDisabled();
-    fireEvent.click(fields.cancel);
-    fireEvent.click(fields.closeRequest);
-    expect(screen.getByTestId('standard-modal')).toBeVisible();
-
-    await act(async () => pending.reject({
-      response: {
-        data: { errors: [{ field: 'menuNm', message: '이미 사용 중인 메뉴 명칭입니다.' }] },
-      },
-    }));
-
-    expect(await screen.findAllByText('이미 사용 중인 메뉴 명칭입니다.')).not.toHaveLength(0);
-    expect(fields.name).toHaveValue('보존할 메뉴');
-    expect(fields.route).toHaveValue('/admin/preserved');
-    expect(document.querySelector('[data-form-error-summary="true"]')).toHaveTextContent('이미 사용 중인 메뉴 명칭입니다.');
-    expect(screen.getByTestId('standard-modal')).toBeVisible();
-    expect(fields.cancel).toBeEnabled();
-    await waitFor(() => expect(fields.name).toHaveFocus());
-  });
-
-  it('일반 서버 오류는 메시지를 안내하고 값을 보존한다', async () => {
-    mocks.saveMenu.mockResolvedValueOnce({ success: false, message: '메뉴 저장 서버에 연결할 수 없습니다.' });
-    const fields = await openCreateForm();
-    await userEvent.type(fields.name, '보존할 메뉴');
-
-    fireEvent.click(fields.submit);
-
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('메뉴 저장 서버에 연결할 수 없습니다.', 'error'));
-    expect(fields.name).toHaveValue('보존할 메뉴');
-  });
-
-  it('저장 pending 중 동기 재제출해도 write sink를 한 번만 호출한다', async () => {
-    let resolveSave!: (value: { success: boolean; message: string }) => void;
-    mocks.saveMenu.mockReturnValueOnce(new Promise((resolve) => { resolveSave = resolve; }));
-    const fields = await openCreateForm();
-    await userEvent.type(fields.name, '중복 방지 메뉴');
-
-    act(() => {
-      fireEvent.click(fields.submit);
-      fireEvent.click(fields.submit);
-    });
-
-    await waitFor(() => expect(mocks.saveMenu).toHaveBeenCalledTimes(1));
-    expect(fields.submit).toBeDisabled();
-    resolveSave({ success: true, message: '메뉴가 등록되었습니다.' });
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('메뉴가 등록되었습니다.', 'success'));
-  });
-
-  it('저장하지 않은 순서 변경이 있는 동안 목록이 다시 읽혀도 덮지 않고, 알린 뒤 취소할 수 있다 (DIP C5)', async () => {
-    // 메뉴 등록·삭제 뒤의 새로고침이 트리를 서버 순서로 다시 그려, 드래그가 사라졌는데 '변경됨' 은 남았다.
-    const programsPromise = Promise.resolve({ data: mockPrograms, error: null });
-    const tree = (menusPromise: Promise<{ data: unknown; error: null }>) => (
-      <React.Suspense fallback={<div>Loading...</div>}>
-        <MenuAdminClient menusPromise={menusPromise as never} programsPromise={programsPromise} />
+type Loaded = { data: ReturnType<typeof structure> | null; error: string | null };
+async function renderClient(options: { menus?: ReturnType<typeof menu>[]; version?: string; error?: string; permissions?: string[] } = {}) {
+  auth.permissions = options.permissions ?? FULL;
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const tree = (loaded: Promise<Loaded>) => (
+    <QueryClientProvider client={client}>
+      <React.Suspense fallback={<p>불러오는 중</p>}>
+        <MenuAdminClient structurePromise={loaded} />
       </React.Suspense>
-    );
-    let view!: ReturnType<typeof render>;
-    await act(async () => { view = render(tree(Promise.resolve({ data: mockInitialMenus, error: null }))); });
-    fireEvent.click(screen.getByRole('button', { name: '테스트 메뉴 드래그 시작' }));
-    fireEvent.click(screen.getByRole('button', { name: '테스트 메뉴 드래그 완료' }));
-    expect(screen.getByRole('button', { name: '구조 저장' })).toBeEnabled();
+    </QueryClientProvider>
+  );
+  const first: Promise<Loaded> = Promise.resolve(options.error
+    ? { data: null, error: options.error }
+    : { data: structure(options.menus ?? MENUS, options.version ?? 'v1'), error: null });
+  let view!: ReturnType<typeof render>;
+  await act(async () => { view = render(tree(first)); });
+  return {
+    client,
+    reload: async (next: Loaded) => { await act(async () => { view.rerender(tree(Promise.resolve(next))); }); },
+  };
+}
 
-    const refreshed = [...mockInitialMenus, { menuNo: 2, menuNm: 'New Menu', upperMenuNo: 0, upperMenuId: 0, menuOrdr: 2 }];
-    await act(async () => { view.rerender(tree(Promise.resolve({ data: refreshed, error: null }))); });
+const rowButton = (name: string) => screen.getByRole('button', { name: new RegExp(`^${name} ID: `) });
+const rowOrder = () => screen.getAllByRole('button', { name: /ID: / }).map((button) => button.getAttribute('data-menu-no'));
+const liveText = () => [...document.querySelectorAll('[aria-live="polite"]')].map((element) => element.textContent).join(' ');
+const saveButton = () => screen.getByRole('button', { name: /^변경 저장/ });
 
-    expect(await screen.findByRole('status')).toHaveTextContent('저장하지 않은 순서 변경이 있는 동안 메뉴 목록이 다시 읽혔습니다');
-    expect(screen.queryByText('New Menu')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '구조 저장' })).toBeEnabled();
+beforeEach(() => {
+  vi.clearAllMocks();
+  auth.loading = false;
+  dnd.event = null;
+  window.sessionStorage.clear();
+  mocks.confirm.mockResolvedValue(true);
+  mocks.matrix.mockResolvedValue(MATRIX);
+  mocks.save.mockResolvedValue(structure(MENUS, 'v2'));
+  mocks.reload.mockResolvedValue(structure(MENUS, 'v3'));
+});
 
-    fireEvent.click(screen.getByRole('button', { name: '변경 취소' }));
-    expect(await screen.findByText('New Menu')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '변경 취소' })).not.toBeInTheDocument();
+describe('보드 — 영역 탭·카드·줄과 선택', () => {
+  it('첫 영역을 열고 섹션 카드의 줄·한 줄 카드·영역 머리를 보이며, 고르기 전에는 상세가 비어 있다', async () => {
+    await renderClient();
+
+    expect(screen.getByRole('heading', { level: 1, name: '시스템 메뉴 관리' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '업무' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: '관리' })).toHaveAttribute('aria-selected', 'false');
+    expect(rowOrder()).toEqual(['1', '2', '3', '4', '8']);
+    expect(screen.getByRole('region', { name: '결재 섹션' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '메뉴 관리 화면' })).toBeInTheDocument();
+    expect(screen.getByText('메뉴를 선택하세요')).toBeInTheDocument();
+    expect(saveButton()).toBeDisabled();
+    // 첫 항목만 탭 순서에 든다(셸의 ↑/↓ 가 나머지를 옮겨 다닌다).
+    expect(rowButton('업무')).toHaveAttribute('tabindex', '0');
+    expect(rowButton('결재함')).toHaveAttribute('tabindex', '-1');
   });
 
-  it('구조 저장은 같은 tick 중복 실행을 막고 pending·실패를 안내한다', async () => {
-    const pending = deferred<{ success: boolean; message: string }>();
-    mocks.updateOrders.mockReturnValueOnce(pending.promise);
-    const menusPromise = Promise.resolve({ data: mockInitialMenus, error: null });
-    const programsPromise = Promise.resolve({ data: mockPrograms, error: null });
-    await act(async () => {
-      render(
-        <React.Suspense fallback={<div>Loading...</div>}>
-          <MenuAdminClient menusPromise={menusPromise} programsPromise={programsPromise} />
-        </React.Suspense>,
-      );
-    });
-    fireEvent.click(screen.getByRole('button', { name: '테스트 메뉴 드래그 시작' }));
-    fireEvent.click(screen.getByRole('button', { name: '테스트 메뉴 드래그 완료' }));
-    const saveButton = screen.getByRole('button', { name: '구조 저장' });
-    expect(saveButton).toBeEnabled();
+  it('줄을 고르면 aria-current 와 상세(위치·이름·보이는 그룹)를 보이고, 다른 영역 탭을 열면 선택을 푼다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('결재함'));
+
+    expect(rowButton('결재함')).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('heading', { level: 2, name: '결재함' })).toBeInTheDocument();
+    expect(screen.getByText('업무 › 결재 › 결재함')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: '메뉴 이름' })).toHaveValue('결재함');
+    expect(await screen.findByRole('checkbox', { name: /사용자 메뉴 표시/ })).toBeChecked();
+
+    fireEvent.click(screen.getByRole('tab', { name: '관리' }));
+    expect(rowOrder()).toEqual(['5', '6']);
+    expect(screen.getByText('메뉴를 선택하세요')).toBeInTheDocument();
+  });
+
+  it('영역 탭은 ←/→ 로 옮겨 다닌다', async () => {
+    await renderClient();
+    const first = screen.getByRole('tab', { name: '업무' });
+    first.focus();
+    fireEvent.keyDown(first, { key: 'ArrowRight' });
+    expect(screen.getByRole('tab', { name: '관리' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: '관리' })).toHaveFocus();
+  });
+});
+
+describe('권한별 표시 — 쓰기 단추는 그 동작의 기능 권한으로 보인다', () => {
+  const WRITE_CONTROLS = ['변경 저장', '영역 추가', '한 칸 위로', '한 칸 아래로', '다른 곳으로 옮기기…', '메뉴 삭제'];
+
+  it('조회 권한만 있으면 저장·추가·옮기기·삭제·끌기 손잡이가 없고 상세는 읽기 전용이다. 그룹 권한은 묻지 않는다', async () => {
+    await renderClient({ permissions: ['MENU_READ'] });
+    fireEvent.click(rowButton('결재함'));
+
+    expect(screen.getByRole('heading', { level: 2, name: '결재함' })).toBeInTheDocument();
+    for (const name of WRITE_CONTROLS) expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /섹션 추가/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /화면 추가/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /끌어서 옮기기$/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: '메뉴 이름' })).not.toBeInTheDocument();
+    expect(rowButton('결재함')).not.toHaveAttribute('aria-keyshortcuts');
+    // Alt+↓·Ctrl+X 도 옮기지 않는다 — 저장할 수 없는 초안을 만들지 않는다.
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    fireEvent.keyDown(rowButton('결재함'), { key: 'x', ctrlKey: true });
+    expect(rowOrder()).toEqual(['1', '2', '3', '4', '8']);
+    expect(screen.queryByText(/잘라 낸 메뉴/)).not.toBeInTheDocument();
+    expect(screen.getByText(/권한 조회 권한이 없습니다/)).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: '그룹 미리보기' })).not.toBeInTheDocument();
+    expect(mocks.matrix).not.toHaveBeenCalled();
+  });
+
+  it('수정 권한만 있으면 저장·옮기기·이름 편집·끌기는 되고, 영역·섹션·화면 추가와 삭제는 없다', async () => {
+    await renderClient({ permissions: ['MENU_READ', 'MENU_UPDATE'] });
+    fireEvent.click(rowButton('결재함'));
+
+    expect(saveButton()).toBeInTheDocument();
+    for (const name of ['한 칸 위로', '한 칸 아래로', '다른 곳으로 옮기기…']) expect(screen.getByRole('button', { name })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '결재함 끌어서 옮기기' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: '메뉴 이름' })).toBeEnabled();
+    expect(rowButton('결재함')).toHaveAttribute('aria-keyshortcuts', 'Alt+ArrowUp Alt+ArrowDown Control+X Control+V');
+    for (const name of ['영역 추가', '메뉴 삭제']) expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /섹션 추가/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /화면 추가/ })).not.toBeInTheDocument();
+  });
+
+  it('등록·삭제 권한이 있으면 영역·섹션·화면 추가와 메뉴 삭제를 보인다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('결재함'));
+    expect(screen.getByRole('button', { name: '영역 추가' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '섹션 추가(업무)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '화면 추가(결재)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '메뉴 삭제' })).toBeEnabled();
+  });
+
+  it('권한 설정 권한이 없으면 그룹 메뉴 표시를 바꾸지 않는다 — 체크는 보이되 잠긴다', async () => {
+    await renderClient({ permissions: ['MENU_READ', 'MENU_UPDATE', 'AUTHRT_READ'] });
+    fireEvent.click(rowButton('결재함'));
+    const checkbox = await screen.findByRole('checkbox', { name: /사용자 메뉴 표시/ });
+    expect(checkbox).toBeDisabled();
+    expect(screen.getByText('메뉴 표시를 바꾸려면 메뉴 수정 권한과 권한 설정 권한이 모두 필요합니다.')).toBeInTheDocument();
+  });
+});
+
+describe('끌지 않는 옮기기 — Alt+↑/↓, 다른 곳으로 옮기기, 잘라내기·붙여넣기', () => {
+  it('Alt+↓ 로 같은 상위 안에서 한 칸 옮기고, 변경 표시·결과 안내를 남긴 뒤 원래 자리로 오면 변경 0 이다', async () => {
+    await renderClient();
+    const row = rowButton('결재함');
+    fireEvent.click(row);
+
+    const altDown = fireEvent.keyDown(row, { key: 'ArrowDown', altKey: true });
+    expect(altDown).toBe(false);
+    expect(rowOrder()).toEqual(['1', '2', '4', '3', '8']);
+    expect(liveText()).toContain('결재함 메뉴를 한 칸 아래로 옮겼습니다(업무 › 결재 아래 2개 중 2번째). 변경 저장을 눌러야 반영됩니다.');
+    // 맞바꾼 두 메뉴 가운데 어느 쪽에 '순서' 를 붙일지는 계산이 정한다 — 하나만 붙는다.
+    expect(screen.getAllByText('순서')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: '변경 1건' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '업무 1건 변경' })).toBeInTheDocument();
+    expect(saveButton()).toBeEnabled();
+    await waitFor(() => expect(rowButton('결재함')).toHaveFocus());
+
+    // 끝에서 거듭 누르면 같은 문장을 새 노드로 다시 말한다(aria-live 가 다시 읽는다).
+    const boundary = '결재함 메뉴는 같은 상위 안에서 더 아래로 옮길 수 없습니다.';
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    const firstNotice = screen.getByText(boundary);
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    const secondNotice = screen.getByText(boundary);
+    expect(secondNotice).not.toBe(firstNotice);
+    expect(firstNotice.isConnected).toBe(false);
+
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowUp', altKey: true });
+    expect(saveButton()).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /^변경 \d+건$/ })).not.toBeInTheDocument();
+  });
+
+  it('다른 곳으로 옮기기 대화상자는 막힌 자리를 이유와 함께 막고, 고른 영역의 섹션 맨 앞으로 옮긴 뒤 그 영역을 연다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('결재'));
+    fireEvent.click(screen.getByRole('button', { name: '다른 곳으로 옮기기…' }));
+    const dialog = within(await screen.findByRole('dialog', { name: '다른 곳으로 옮기기' }));
+    // 하위가 있는 섹션은 다른 섹션 안으로 갈 수 없다.
+    const blocked = dialog.getByRole('button', { name: '관리 › 시스템' });
+    expect(blocked).toBeDisabled();
+    expect(blocked).toHaveAccessibleDescription('하위가 있는 메뉴는 영역 바로 아래에만 둘 수 있습니다.');
+    expect(dialog.getByRole('button', { name: '선택한 위치로 메뉴 옮기기' })).toBeDisabled();
+    expect(dialog.getByRole('button', { name: '업무 · 지금 위치' })).toBeEnabled();
+
+    fireEvent.click(dialog.getByRole('button', { name: '관리' }));
+    fireEvent.click(dialog.getByRole('button', { name: '맨 앞에 두기' }));
+    fireEvent.click(dialog.getByRole('button', { name: '선택한 위치로 메뉴 옮기기' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /^관리/ })).toHaveAttribute('aria-selected', 'true');
+    expect(rowOrder()).toEqual(['5', '2', '3', '4', '6']);
+    expect(liveText()).toContain('결재 메뉴를 관리 맨 앞으로 옮겼습니다.');
+    fireEvent.click(screen.getByRole('button', { name: '변경 1건' }));
+    expect(screen.getByText('결재 — 업무 → 관리')).toBeInTheDocument();
+  });
+
+  it('Ctrl+X 로 잘라 놓을 카드를 고른 뒤 Ctrl+V 로 그 안에 붙이고, Esc 는 잘라내기를 취소한다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('결재함'));
+    fireEvent.keyDown(rowButton('결재함'), { key: 'x', ctrlKey: true });
+    expect(screen.getByText(/잘라 낸 메뉴:/)).toBeInTheDocument();
+    fireEvent.keyDown(rowButton('결재함'), { key: 'Escape' });
+    expect(screen.queryByText(/잘라 낸 메뉴:/)).not.toBeInTheDocument();
+    expect(liveText()).toContain('잘라내기를 취소했습니다.');
+
+    fireEvent.keyDown(rowButton('결재함'), { key: 'x', ctrlKey: true });
+    fireEvent.click(rowButton('메뉴 관리'));
+    fireEvent.keyDown(rowButton('메뉴 관리'), { key: 'v', ctrlKey: true });
+
+    expect(screen.queryByText(/잘라 낸 메뉴:/)).not.toBeInTheDocument();
+    // 한 줄 카드에 줄을 붙이면 그 카드 안 맨 뒤다 — 카드는 섹션이 된다.
+    expect(rowOrder()).toEqual(['1', '2', '4', '8', '3']);
+    expect(screen.getByRole('region', { name: '메뉴 관리 섹션' })).toBeInTheDocument();
+    await waitFor(() => expect(rowButton('결재함')).toHaveFocus());
+  });
+});
+
+describe('끌어 놓기(다중 컨테이너)', () => {
+  const drag = (event: Record<string, unknown>) => {
+    dnd.event = event;
+    fireEvent.click(screen.getByRole('button', { name: '테스트 끌기 시작' }));
+    fireEvent.click(screen.getByRole('button', { name: '테스트 끌기 이동' }));
+  };
+
+  it('줄을 다른 줄의 아래쪽 절반에 놓으면 그 뒤로 간다. 놓아도 토스트를 띄우지 않는다', async () => {
+    await renderClient();
+    drag({ active: { id: 'menu:3', rect: { current: { translated: { top: 30, height: 10 } } } }, over: { id: 'row:4', rect: { top: 20, height: 10 } } });
+    fireEvent.click(screen.getByRole('button', { name: '테스트 끌기 놓기' }));
+
+    expect(rowOrder()).toEqual(['1', '2', '4', '3', '8']);
+    expect(saveButton()).toBeEnabled();
+    expect(mocks.toast).not.toHaveBeenCalled();
+  });
+
+  it('제자리 놓기는 변경이 아니고, 끌기를 취소하면 아무것도 바뀌지 않는다', async () => {
+    await renderClient();
+    drag({ active: { id: 'menu:3' }, over: { id: 'row:4' } });
+    fireEvent.click(screen.getByRole('button', { name: '테스트 끌기 놓기' }));
+    expect(saveButton()).toBeDisabled();
+
+    drag({ active: { id: 'menu:3' }, over: { id: 'section-end:6' } });
+    fireEvent.click(screen.getByRole('button', { name: '테스트 끌기 취소' }));
+    expect(rowOrder()).toEqual(['1', '2', '3', '4', '8']);
+    expect(saveButton()).toBeDisabled();
+  });
+
+  it('놓을 수 없는 자리는 끄는 동안 이유를 보이고, 놓으면 옮기지 않고 이유를 말한다', async () => {
+    await renderClient();
+    drag({ active: { id: 'menu:2' }, over: { id: 'section-end:8' } });
+    expect(screen.getAllByText('하위가 있는 메뉴는 영역 바로 아래에만 둘 수 있습니다.').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: '테스트 끌기 놓기' }));
+
+    expect(rowOrder()).toEqual(['1', '2', '3', '4', '8']);
+    expect(liveText()).toContain('결재 메뉴를 그 자리로 옮길 수 없습니다. 하위가 있는 메뉴는 영역 바로 아래에만 둘 수 있습니다.');
+  });
+
+  it('줄을 카드 머리에 끌면 그 카드 안으로 간다고 표시하고(앞·뒤 선이 아니다), 카드를 카드에 끌면 앞·뒤 선을 그린다', async () => {
+    await renderClient();
+    drag({ active: { id: 'menu:3', rect: { current: { translated: { top: 0, height: 10 } } } }, over: { id: 'card:8', rect: { top: 0, height: 10 } } });
+    const card = rowButton('메뉴 관리').closest('[data-menu-entry]') as HTMLElement;
+    expect(card.className).toMatch(/ring-2/);
+    expect(card.className).toMatch(/ring-primary/);
+    expect(card.querySelector('[data-drop-line]')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '테스트 끌기 취소' }));
+
+    drag({ active: { id: 'menu:8', rect: { current: { translated: { top: 0, height: 10 } } } }, over: { id: 'card:2', rect: { top: 0, height: 10 } } });
+    const section = rowButton('결재').closest('[data-menu-entry]') as HTMLElement;
+    expect(section.querySelector('[data-drop-line="before"]')).not.toBeNull();
+    expect(section.className).not.toMatch(/ring-2/);
+  });
+
+  it('영역 탭에 놓으면 그 영역의 맨 뒤 2단계로 간다', async () => {
+    await renderClient();
+    drag({ active: { id: 'menu:3' }, over: { id: 'area-tab:5' } });
+    fireEvent.click(screen.getByRole('button', { name: '테스트 끌기 놓기' }));
+
+    expect(screen.getByRole('tab', { name: /^관리/ })).toHaveAttribute('aria-selected', 'true');
+    expect(rowOrder()).toEqual(['5', '6', '3']);
+  });
+});
+
+describe('찾기 — 거르지 않고 강조하며 Enter 로 다음 일치', () => {
+  it('일치는 강조하고 나머지는 흐리게 하며, Enter 는 다른 영역의 일치로 탭을 바꿔 고른다. 찾는 중에도 옮길 수 있다', async () => {
+    await renderClient();
+    const search = screen.getByRole('textbox', { name: '메뉴 검색' });
+    fireEvent.change(search, { target: { value: '시스템' } });
+
+    expect(screen.getByText('일치 1개')).toBeInTheDocument();
+    expect(rowOrder()).toEqual(['1', '2', '3', '4', '8']);
+    expect(document.querySelector('[data-search-match="true"]')).toBeNull();
+    // 흐리게는 점선 테두리와 보조 글자색이다 — 줄 전체 불투명도를 낮춰 글자 대비를 떨어뜨리지 않는다.
+    const dimmed = rowButton('결재함').closest('[data-menu-entry]') as HTMLElement;
+    expect(dimmed).toHaveAttribute('data-dimmed', 'true');
+    expect(dimmed.className).not.toMatch(/opacity-/);
+    expect(dimmed.className).toMatch(/border-dashed/);
+    fireEvent.keyDown(search, { key: 'Enter' });
+    expect(screen.getByRole('tab', { name: /^관리/ })).toHaveAttribute('aria-selected', 'true');
+    expect(rowButton('시스템')).toHaveAttribute('aria-current', 'true');
+    expect(rowButton('시스템').closest('[data-search-match="true"]')).not.toBeNull();
+    expect(liveText()).toContain('일치 1개 중 1번째: 시스템');
+
+    fireEvent.change(search, { target: { value: '결재' } });
+    fireEvent.click(screen.getByRole('tab', { name: '업무' }));
+    fireEvent.click(rowButton('결재함'));
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowUp', altKey: true });
+    expect(liveText()).toContain('결재함 메뉴는 같은 상위 안에서 더 위로 옮길 수 없습니다.');
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    expect(saveButton()).toBeEnabled();
+  });
+});
+
+describe('상세 편집 — 초안에 바로 반영하고 검증한다', () => {
+  it('이름을 고치면 수정 표시와 변경 목록이 생기고, 비우면 오류를 보이며 저장을 막는다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('결재함'));
+    const name = screen.getByRole('textbox', { name: '메뉴 이름' });
+    fireEvent.change(name, { target: { value: '내 결재함' } });
+
+    expect(rowButton('내 결재함')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '변경 1건' }));
+    expect(screen.getByText('내 결재함 — 이름 수정')).toBeInTheDocument();
+    expect(saveButton()).toBeEnabled();
+
+    fireEvent.change(name, { target: { value: '   ' } });
+    expect(screen.getAllByText('메뉴 이름을 입력하세요.').length).toBeGreaterThan(0);
+    expect(name).toHaveAttribute('aria-invalid', 'true');
+    expect(saveButton()).toBeDisabled();
+    expect(saveButton()).toHaveAccessibleDescription(/입력 오류 1건을 고쳐야 저장할 수 있습니다/);
+
+    // 이름을 비운 메뉴는 번호로 부른다.
+    fireEvent.click(screen.getByRole('button', { name: 'ID 3 속성 변경 되돌리기' }));
+    expect(screen.getByRole('textbox', { name: '메뉴 이름' })).toHaveValue('결재함');
+    expect(saveButton()).toBeDisabled();
+  });
+
+  it('연결 화면은 화면 목록에서 고르거나 경로를 직접 쓰고, 별칭·형식 오류를 말한다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('결재'));
+    expect(screen.getByText('연결 경로가 없습니다 — 하위 메뉴를 묶는 분류 메뉴입니다.')).toBeInTheDocument();
+    const detail = within(screen.getByTestId('master-detail-detail'));
+    fireEvent.change(detail.getByRole('textbox', { name: '연결할 화면 검색' }), { target: { value: '/admin/system/menus/by-authority' } });
+    fireEvent.click(detail.getByRole('button', { name: /\/admin\/system\/menus\/by-authority$/ }));
+    expect(screen.getByText('/admin/system/menus/by-authority', { selector: 'p' })).toBeInTheDocument();
+    expect(screen.getByText(/진입 권한:/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '경로 직접 입력' }));
+    const route = screen.getByRole('textbox', { name: '연결 경로' });
+    fireEvent.change(route, { target: { value: '/admin/collaboration/address-book' } });
+    expect(screen.getByText(/다른 화면으로 넘어가는 경로입니다: \/admin\/collaboration\/address-book\/select-address-book-list/)).toBeInTheDocument();
+    fireEvent.change(route, { target: { value: '/admin/x?q=홍길동' } });
+    expect(screen.getAllByText(/연결 경로 형식이 올바르지 않습니다/).length).toBeGreaterThan(0);
+    expect(saveButton()).toBeDisabled();
+  });
+
+  it('하위가 있는 메뉴는 삭제를 막고 이유를 말하며, 줄은 삭제 예정으로 표시했다가 취소할 수 있다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('결재'));
+    expect(screen.getByRole('button', { name: '메뉴 삭제' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '메뉴 삭제' })).toHaveAccessibleDescription(/하위 메뉴 2개가 있어 삭제할 수 없습니다/);
+
+    fireEvent.click(rowButton('결재함'));
+    fireEvent.click(screen.getByRole('button', { name: '메뉴 삭제' }));
+    expect(within(rowButton('결재함')).getByText('삭제 예정')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: '메뉴 이름' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '한 칸 위로' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: '삭제 취소' }));
+    expect(saveButton()).toBeDisabled();
+  });
+});
+
+describe('새 메뉴 — 그 자리 맨 끝에 초안으로 만들고 이름 칸으로 간다', () => {
+  it('화면 추가는 섹션 맨 끝에 저장 전 메뉴를 만들고, 그룹에 보이지 않는다는 사실을 말하며, 지울 수 있다', async () => {
+    await renderClient();
+    fireEvent.click(screen.getByRole('button', { name: '화면 추가(결재)' }));
+
+    expect(rowOrder()).toEqual(['1', '2', '3', '4', '-1', '8']);
+    const created = screen.getByRole('button', { name: /^이름 없는 새 메뉴 ID: 저장 전/ });
+    expect(created).toHaveAttribute('aria-current', 'true');
+    expect(within(created).getByText('새 메뉴')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('textbox', { name: '메뉴 이름' })).toHaveFocus());
+    expect(screen.getByText(/새 메뉴는 저장 전에는 어느 그룹에도 보이지 않습니다/)).toBeInTheDocument();
+    // 이름이 없으면 저장할 수 없다.
+    expect(saveButton()).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: '새 메뉴 지우기' }));
+    expect(rowOrder()).toEqual(['1', '2', '3', '4', '8']);
+    expect(saveButton()).toBeDisabled();
+  });
+
+  it('화면 관리의 메뉴에 추가 인계가 있으면 새 메뉴 위치 고르기를 열어 그 경로·이름으로 만들고, 인계를 지운다', async () => {
+    expect(handOffScreen({ route: '/admin/system/menus/by-authority', label: '그룹별 메뉴 현황' })).toBe(true);
+    await renderClient();
+    const dialog = within(await screen.findByRole('dialog', { name: '새 메뉴 위치 고르기' }));
+    expect(dialog.getByText(/그룹별 메뉴 현황 화면\(\/admin\/system\/menus\/by-authority\)을 연결한 새 메뉴를 만들 곳을 고르세요/)).toBeInTheDocument();
+    fireEvent.click(dialog.getByRole('button', { name: '관리 › 시스템' }));
+    fireEvent.click(dialog.getByRole('button', { name: '선택한 위치에 새 메뉴 만들기' }));
+
+    expect(screen.getByRole('tab', { name: /^관리/ })).toHaveAttribute('aria-selected', 'true');
+    expect(rowButton('그룹별 메뉴 현황')).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('textbox', { name: '메뉴 이름' })).toHaveValue('그룹별 메뉴 현황');
+    await waitFor(() => expect(window.sessionStorage.length).toBe(0));
+  });
+
+  it('등록 권한이 없으면 인계를 받아도 대화상자를 열지 않고 이유를 말한다', async () => {
+    handOffScreen({ route: '/admin/system/menus', label: '메뉴 관리' });
+    await renderClient({ permissions: ['MENU_READ', 'MENU_UPDATE'] });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(liveText()).toContain('화면을 메뉴에 추가하려면 메뉴 등록 권한과 메뉴 수정 권한이 모두 필요합니다.');
+  });
+});
+
+describe('보이는 그룹 — 메뉴 표시와 진입 권한(초안)', () => {
+  it('하위를 켜면 상위를 함께 켜고, 진입 권한이 없으면 그 그룹 진입 권한 추가를 둔다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('메뉴 관리'));
+    const userCheck = await screen.findByRole('checkbox', { name: /사용자 메뉴 표시/ });
+    expect(userCheck).not.toBeChecked();
+    fireEvent.click(userCheck);
+    expect(userCheck).toBeChecked();
+    expect(screen.getByText(/진입 권한 없음 — 필요한 권한: .*\(MENU_READ\)/)).toBeInTheDocument();
+    const addEntry = screen.getByRole('button', { name: '사용자 진입 권한 추가' });
+    addEntry.focus();
+    fireEvent.click(addEntry);
+    expect(screen.queryByText(/진입 권한 없음/)).not.toBeInTheDocument();
+    // 누른 단추가 사라지므로 같은 그룹의 메뉴 표시 체크로 포커스를 옮긴다.
+    expect(screen.getByRole('checkbox', { name: /사용자 메뉴 표시/ })).toHaveFocus();
+
+    fireEvent.click(screen.getByRole('tab', { name: /^관리/ }));
+    fireEvent.click(rowButton('시스템'));
+    fireEvent.click(await screen.findByRole('checkbox', { name: /사용자 메뉴 표시/ }));
+    expect(liveText()).toContain('사용자 그룹에 시스템 메뉴 표시를 켰습니다. 상위 메뉴 표시도 함께 켰습니다.');
+    fireEvent.click(screen.getByRole('button', { name: '변경 1건' }));
+    expect(screen.getByText('사용자 그룹 — 메뉴 표시 추가 메뉴 관리, 관리, 시스템 · 기능권한 추가 MENU_READ')).toBeInTheDocument();
+  });
+
+  it('옮긴 메뉴가 어떤 그룹에서 숨겨지면 경고하고 저장을 막으며, 상위 표시 추가로 해결한다', async () => {
+    await renderClient();
+    await screen.findByRole('combobox', { name: '그룹 미리보기' });
+    await waitFor(() => expect(screen.getByRole('combobox', { name: '그룹 미리보기' })).toBeEnabled());
+    fireEvent.click(rowButton('결재함'));
+    fireEvent.click(screen.getByRole('button', { name: '다른 곳으로 옮기기…' }));
+    const dialog = within(await screen.findByRole('dialog', { name: '다른 곳으로 옮기기' }));
+    fireEvent.click(dialog.getByRole('button', { name: '관리 › 시스템' }));
+    fireEvent.click(dialog.getByRole('button', { name: '선택한 위치로 메뉴 옮기기' }));
+
+    const problems = within(screen.getByRole('group', { name: '저장 전에 해결할 문제' }));
+    expect(problems.getByText("'결재함'을(를) 옮기면 사용자 그룹에서 상위 메뉴 '시스템'가 표시되지 않아 숨겨집니다.")).toBeInTheDocument();
+    expect(saveButton()).toBeDisabled();
+    expect(saveButton()).toHaveAccessibleDescription(/메뉴가 숨겨지는 그룹 1건을 해결해야 저장할 수 있습니다/);
+    expect(problems.getByRole('button', { name: '사용자에서 이 메뉴 표시 회수' })).toBeEnabled();
+    const resolve = problems.getByRole('button', { name: '사용자에 상위 메뉴 표시 추가' });
+    resolve.focus();
+    fireEvent.click(resolve);
+
+    expect(screen.queryByRole('group', { name: '저장 전에 해결할 문제' })).not.toBeInTheDocument();
+    expect(saveButton()).toBeEnabled();
+    // 해결 단추는 문제와 함께 사라진다 — 포커스는 문서 밖으로 빠지지 않고 변경 목록 단추로 간다.
+    await waitFor(() => expect(screen.getByRole('button', { name: '변경 2건' })).toHaveFocus());
+  });
+
+  it('새 메뉴의 표시를 켠 뒤 그 그룹이 보지 않는 곳으로 옮기면, 상위도 표시해야 한다고 경고하고 저장을 막는다', async () => {
+    await renderClient();
+    await waitFor(() => expect(screen.getByRole('combobox', { name: '그룹 미리보기' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: '화면 추가(결재)' }));
+    fireEvent.change(screen.getByRole('textbox', { name: '메뉴 이름' }), { target: { value: '새 화면' } });
+    fireEvent.click(await screen.findByRole('checkbox', { name: /사용자 메뉴 표시/ }));
+    fireEvent.click(screen.getByRole('button', { name: '다른 곳으로 옮기기…' }));
+    const dialog = within(await screen.findByRole('dialog', { name: '다른 곳으로 옮기기' }));
+    fireEvent.click(dialog.getByRole('button', { name: '관리 › 시스템' }));
+    fireEvent.click(dialog.getByRole('button', { name: '선택한 위치로 메뉴 옮기기' }));
+
+    // 새 메뉴는 '옮긴 기존 메뉴' 검사에 들지 않는다 — 그래도 서버가 상위 선택 누락으로 거부하므로 저장 전에 막는다.
+    const problems = within(screen.getByRole('group', { name: '저장 전에 해결할 문제' }));
+    expect(problems.getByText("'새 화면'을(를) 사용자 그룹에 표시하려면 지금 상위 메뉴 '시스템'도 그 그룹에 표시해야 합니다.")).toBeInTheDocument();
+    expect(saveButton()).toBeDisabled();
+    fireEvent.click(problems.getByRole('button', { name: '사용자에 상위 메뉴 표시 추가' }));
+    expect(screen.queryByRole('group', { name: '저장 전에 해결할 문제' })).not.toBeInTheDocument();
+    expect(saveButton()).toBeEnabled();
+  });
+
+  it('진입 권한 후보 선택은 그 메뉴의 것이다 — 다른 메뉴를 고르면 그 메뉴에 보이는 후보를 추가한다', async () => {
+    mocks.matrix.mockResolvedValue({ catalogVersion: 'c1', groups: [{ code: 'ROLE_USER', name: '사용자', description: null, version: 'u1', complete: true, grants: nav(1, 2, 3) }] });
+    await renderClient({ menus: [menu(1, '관리', null, 1), menu(2, '로그', 1, 1, '/admin/system/logs'), menu(3, '권한', 1, 2, '/admin/security/authority')] });
+    fireEvent.click(rowButton('로그'));
+    fireEvent.change(await screen.findByRole('combobox', { name: '사용자 진입 권한 선택' }), { target: { value: 'WEB_LOG_READ' } });
+
+    fireEvent.click(rowButton('권한'));
+    const select = await screen.findByRole('combobox', { name: '사용자 진입 권한 선택' }) as HTMLSelectElement;
+    const shown = select.value;
+    expect([...select.options].map((option) => option.value)).toContain(shown);
+    expect(shown).not.toBe('WEB_LOG_READ');
+    fireEvent.click(screen.getByRole('button', { name: '사용자 진입 권한 추가' }));
+    fireEvent.click(screen.getByRole('button', { name: '변경 1건' }));
+    expect(screen.getByText(`사용자 그룹 — 기능권한 추가 ${shown}`)).toBeInTheDocument();
+  });
+
+  it('후보 선택은 메뉴마다 새로 시작한다 — 같은 후보를 가진 다른 메뉴에 앞 메뉴의 선택이 남지 않는다', async () => {
+    mocks.matrix.mockResolvedValue({ catalogVersion: 'c1', groups: [{ code: 'ROLE_USER', name: '사용자', description: null, version: 'u1', complete: true, grants: nav(1, 2, 3) }] });
+    await renderClient({ menus: [menu(1, '관리', null, 1), menu(2, '로그', 1, 1, '/admin/system/logs'), menu(3, '로그 사본', 1, 2, '/admin/system/logs')] });
+    fireEvent.click(rowButton('로그 사본'));
+    const preferred = (await screen.findByRole('combobox', { name: '사용자 진입 권한 선택' }) as HTMLSelectElement).value;
+    fireEvent.click(rowButton('로그'));
+    const first = await screen.findByRole('combobox', { name: '사용자 진입 권한 선택' }) as HTMLSelectElement;
+    const other = [...first.options].map((option) => option.value).find((value) => value !== preferred)!;
+    fireEvent.change(first, { target: { value: other } });
+
+    fireEvent.click(rowButton('로그 사본'));
+    expect((screen.getByRole('combobox', { name: '사용자 진입 권한 선택' }) as HTMLSelectElement).value).toBe(preferred);
+  });
+
+  it('같은 메뉴의 연결 화면을 바꿔 후보가 달라지면 앞서 고른 후보를 버리고 지금 보이는 후보를 추가한다', async () => {
+    mocks.matrix.mockResolvedValue({ catalogVersion: 'c1', groups: [{ code: 'ROLE_USER', name: '사용자', description: null, version: 'u1', complete: true, grants: nav(1, 2) }] });
+    await renderClient({ menus: [menu(1, '관리', null, 1), menu(2, '로그', 1, 1, '/admin/system/logs')] });
+    fireEvent.click(rowButton('로그'));
+    fireEvent.change(await screen.findByRole('combobox', { name: '사용자 진입 권한 선택' }), { target: { value: 'WEB_LOG_READ' } });
+    fireEvent.click(screen.getByRole('button', { name: '경로 직접 입력' }));
+    fireEvent.change(screen.getByRole('textbox', { name: '연결 경로' }), { target: { value: '/admin/security/authority' } });
+
+    const select = screen.getByRole('combobox', { name: '사용자 진입 권한 선택' }) as HTMLSelectElement;
+    const shown = select.value;
+    expect(shown).not.toBe('WEB_LOG_READ');
+    fireEvent.click(screen.getByRole('button', { name: '사용자 진입 권한 추가' }));
+    fireEvent.click(screen.getByRole('button', { name: '변경 2건' }));
+    expect(screen.getByText(`사용자 그룹 — 기능권한 추가 ${shown}`)).toBeInTheDocument();
+  });
+
+  it('그룹 미리보기를 고르면 그 그룹에서 숨는 메뉴를 흐리게 하고 이유를 붙인다', async () => {
+    await renderClient();
+    const select = await screen.findByRole('combobox', { name: '그룹 미리보기' });
+    await waitFor(() => expect(select).toBeEnabled());
+    fireEvent.change(select, { target: { value: 'ROLE_USER' } });
+
+    expect(within(rowButton('메뉴 관리')).getByText('메뉴 표시 없음')).toBeInTheDocument();
+    expect(within(rowButton('권한별 메뉴')).getByText('메뉴 표시 없음')).toBeInTheDocument();
+    expect(within(rowButton('결재함')).queryByText('메뉴 표시 없음')).not.toBeInTheDocument();
+    expect(screen.getByText(/사용자 그룹 미리보기 — 보이는 메뉴 3개, 숨는 메뉴 4개/)).toBeInTheDocument();
+  });
+});
+
+describe('저장 — 한 번에, 버전 확인, 중복 실행 차단', () => {
+  it('변경 저장은 같은 tick 중복 실행을 막고, 요약을 확인한 뒤 저장하며, pending·실패를 안내하고 초안을 지킨다', async () => {
+    const pending = deferred<ReturnType<typeof structure>>();
+    mocks.save.mockReturnValueOnce(pending.promise);
+    await renderClient();
+    await waitFor(() => expect(mocks.matrix).toHaveBeenCalledTimes(1));
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    const button = screen.getByRole('button', { name: '변경 저장' });
+    expect(button).toBeEnabled();
 
     act(() => {
-      saveButton.click();
-      saveButton.click();
+      button.click();
+      button.click();
     });
 
-    await waitFor(() => expect(mocks.updateOrders).toHaveBeenCalledTimes(1));
-    const pendingButton = screen.getByRole('button', { name: '구조 저장 중…' });
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledTimes(1));
+    expect(mocks.confirm).toHaveBeenCalledTimes(1);
+    expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({
+      title: '메뉴 구조 저장',
+      message: '새 메뉴 0개 · 삭제 0개 · 위치 1개 · 속성 0개 · 그룹 배정 0건(그룹 0개)을 저장합니다.',
+      confirmText: '변경 저장',
+    }));
+    expect(mocks.save).toHaveBeenCalledWith({
+      version: 'v1',
+      creations: [],
+      placements: [
+        { ref: '4', parentRef: '2', menuOrdr: 1 },
+        { ref: '3', parentRef: '2', menuOrdr: 2 },
+      ],
+      properties: [],
+      deletions: [],
+      grants: [],
+    }, { suppressErrorToast: true });
+    const pendingButton = screen.getByRole('button', { name: '변경 저장 중…' });
     expect(pendingButton).toBeDisabled();
     expect(pendingButton).toHaveAttribute('aria-busy', 'true');
-    expect(screen.getByRole('button', { name: 'Main Menu 순서 이동 핸들' })).toBeDisabled();
-    const deleteButton = screen.getByRole('button', { name: '메뉴 삭제' });
-    expect(deleteButton).toBeDisabled();
-    fireEvent.click(deleteButton);
-    expect(mocks.deleteMenu).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: '테스트 메뉴 드래그 시작' }));
-    fireEvent.click(screen.getByRole('button', { name: '테스트 메뉴 드래그 완료' }));
-    expect(mocks.toast.mock.calls.filter(
-      ([message, type]) => message === '구조가 업데이트되었습니다.' && type === 'info',
-    )).toHaveLength(1);
-    await act(async () => pending.reject(new Error('orders unavailable')));
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('저장 중 오류 발생', 'error'));
+    // 저장 중에는 끌기·옮기기를 막는다.
+    expect(screen.getByRole('button', { name: '결재함 끌어서 옮기기' })).toBeDisabled();
+
+    await act(async () => pending.reject({ response: { status: 400, data: { message: "메뉴는 3단계까지만 둘 수 있습니다. '결재함'이(가) 4단계가 됩니다." } } }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('변경을 저장하지 못했습니다');
+    expect(alert).toHaveTextContent("메뉴는 3단계까지만 둘 수 있습니다. '결재함'이(가) 4단계가 됩니다.");
+    expect(rowOrder()).toEqual(['1', '2', '4', '3', '8']);
+    expect(saveButton()).toBeEnabled();
   });
 
-  it('🚨 하위 메뉴가 있으면 삭제를 묻지 않고 서버가 거부할 이유를 먼저 알린다 (DIP V9)', async () => {
-    const menus = [
-      { menuNo: 1, menuNm: 'Main Menu', upperMenuNo: 0, upperMenuId: 0, menuOrdr: 1, progrmFileNm: 'prog1' },
-      { menuNo: 2, menuNm: 'Child Menu', upperMenuNo: 1, upperMenuId: 1, menuOrdr: 1, progrmFileNm: 'prog1' },
-    ] as any;
-    await act(async () => {
-      render(
-        <React.Suspense fallback={<div>Loading...</div>}>
-          <MenuAdminClient
-            menusPromise={Promise.resolve({ data: menus, error: null })}
-            programsPromise={Promise.resolve({ data: mockPrograms, error: null })}
-          />
-        </React.Suspense>,
-      );
-    });
-    fireEvent.click(screen.getByRole('button', { name: /Main Menu.*ID: 1/i }));
+  it('저장에 성공하면 응답 구조를 새 기준선으로 삼고, 그룹 권한을 다시 읽고, 화면을 새로 고친다', async () => {
+    const saved = structure([MENUS[0], MENUS[1], MENUS[3], { ...MENUS[2], menuOrdr: 2 }, ...MENUS.slice(4)].map((item) => (
+      item.menuNo === 4 ? { ...item, menuOrdr: 1 } : item)), 'v2');
+    mocks.save.mockResolvedValueOnce(saved);
+    await renderClient();
+    await waitFor(() => expect(mocks.matrix).toHaveBeenCalledTimes(1));
+    fireEvent.click(rowButton('결재함'));
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    fireEvent.click(saveButton());
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('메뉴 구조를 저장했습니다.', 'success'));
+    expect(saveButton()).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /^변경 \d+건$/ })).not.toBeInTheDocument();
+    expect(rowOrder()).toEqual(['1', '2', '4', '3', '8']);
+    expect(rowButton('결재함')).toHaveAttribute('aria-current', 'true');
+    expect(mocks.refresh).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mocks.matrix).toHaveBeenCalledTimes(2));
+  });
+
+  it('확인을 취소하면 저장하지 않는다', async () => {
+    mocks.confirm.mockResolvedValueOnce(false);
+    await renderClient();
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    fireEvent.click(saveButton());
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    expect(mocks.save).not.toHaveBeenCalled();
+    expect(saveButton()).toBeEnabled();
+  });
+
+  it('409 면 초안을 지우지 않고 배너를 보이며, 다시 불러오기는 최신 구조로 바꾼다', async () => {
+    mocks.save.mockRejectedValueOnce({ response: { status: 409, data: { message: '메뉴 구조가 다른 곳에서 바뀌었습니다. 다시 불러온 뒤 저장해 주세요.' } } });
+    mocks.reload.mockResolvedValueOnce(structure([...MENUS, menu(9, '새로 생긴 메뉴', 5, 2)], 'v3'));
+    await renderClient();
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    fireEvent.click(saveButton());
+
+    const banner = await screen.findByRole('alert');
+    expect(banner).toHaveTextContent('다른 곳에서 메뉴 구조나 그룹 권한이 바뀌었습니다');
+    expect(banner).toHaveTextContent('메뉴 구조가 다른 곳에서 바뀌었습니다. 다시 불러온 뒤 저장해 주세요.');
+    expect(banner).toHaveTextContent('다시 불러오면 지금 변경은 사라집니다.');
+    expect(rowOrder()).toEqual(['1', '2', '4', '3', '8']);
+
+    fireEvent.click(within(banner).getByRole('button', { name: '다시 불러오기' }));
+    await waitFor(() => expect(mocks.reload).toHaveBeenCalledWith({ suppressErrorToast: true }));
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+    expect(rowOrder()).toEqual(['1', '2', '3', '4', '8']);
+    expect(saveButton()).toBeDisabled();
+  });
+
+  it('Ctrl/Cmd+S 는 선택과 무관하게 같은 저장을 실행한다(페이지 범위)', async () => {
+    await renderClient();
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    fireEvent.click(screen.getByRole('tab', { name: /^관리/ }));
+    expect(screen.getByText('메뉴를 선택하세요')).toBeInTheDocument();
+
+    const shortcut = fireEvent.keyDown(screen.getByRole('textbox', { name: '메뉴 검색' }), { key: 's', ctrlKey: true });
+    expect(shortcut).toBe(false);
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledTimes(1));
+  });
+
+  it('변경 모두 되돌리기는 확인을 거친다', async () => {
+    await renderClient();
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    fireEvent.click(screen.getByRole('button', { name: '변경 1건' }));
+    mocks.confirm.mockResolvedValueOnce(false);
+    fireEvent.click(screen.getByRole('button', { name: '모두 되돌리기' }));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({
+      title: '변경 모두 되돌리기', confirmText: '모두 되돌리기', variant: 'destructive',
+    })));
+    expect(saveButton()).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: '모두 되돌리기' }));
+    await waitFor(() => expect(saveButton()).toBeDisabled());
+    expect(liveText()).toContain('저장하지 않은 변경을 모두 되돌렸습니다.');
+  });
+});
+
+describe('포커스 — 누른 단추가 사라져도 문서 밖으로 빠지지 않는다', () => {
+  it('새 메뉴의 이름 칸 포커스는 한 번만이다 — 상세가 닫혔다 같은 메뉴로 다시 열려도 이름 칸으로 끌려가지 않는다', async () => {
+    await renderClient();
+    fireEvent.click(screen.getByRole('button', { name: '화면 추가(결재)' }));
+    await waitFor(() => expect(screen.getByRole('textbox', { name: '메뉴 이름' })).toHaveFocus());
+
+    fireEvent.click(screen.getByRole('tab', { name: /^관리/ }));
+    expect(screen.getByText('메뉴를 선택하세요')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: /^업무/ }));
+    const created = screen.getByRole('button', { name: /^이름 없는 새 메뉴 ID: 저장 전/ });
+    created.focus();
+    fireEvent.click(created);
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+    expect(created).toHaveFocus();
+  });
+
+  it('새 메뉴를 지우면 바로 앞 메뉴를 고르고 그 보드 항목으로 포커스를 옮기며, 그 뒤 상세가 다시 열려도 이름 칸으로 끌려가지 않는다', async () => {
+    await renderClient();
+    fireEvent.click(screen.getByRole('button', { name: '화면 추가(결재)' }));
+    await waitFor(() => expect(screen.getByRole('textbox', { name: '메뉴 이름' })).toHaveFocus());
+    fireEvent.click(screen.getByRole('button', { name: '새 메뉴 지우기' }));
+
+    expect(rowOrder()).toEqual(['1', '2', '3', '4', '8']);
+    expect(rowButton('권한별 메뉴')).toHaveAttribute('aria-current', 'true');
+    await waitFor(() => expect(rowButton('권한별 메뉴')).toHaveFocus());
+
+    // 다른 영역 탭에 다녀와 상세를 닫았다 다시 연다 — 지난 포커스 요청을 다시 쓰지 않는다.
+    fireEvent.click(screen.getByRole('tab', { name: '관리' }));
+    expect(screen.getByText('메뉴를 선택하세요')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: '업무' }));
+    rowButton('결재함').focus();
+    fireEvent.click(rowButton('결재함'));
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+    expect(rowButton('결재함')).toHaveFocus();
+  });
+
+  it('삭제 예정 하위가 있는 새 메뉴는 지울 수 없다 — 상세 단추도 초안 연산과 같은 판정으로 막는다', async () => {
+    await renderClient();
+    fireEvent.click(screen.getByRole('button', { name: '섹션 추가(업무)' }));
+    fireEvent.change(screen.getByRole('textbox', { name: '메뉴 이름' }), { target: { value: '새 섹션' } });
+    fireEvent.click(rowButton('메뉴 관리'));
+    fireEvent.click(screen.getByRole('button', { name: '다른 곳으로 옮기기…' }));
+    const dialog = within(await screen.findByRole('dialog', { name: '다른 곳으로 옮기기' }));
+    fireEvent.click(dialog.getByRole('button', { name: '업무 › 새 섹션' }));
+    fireEvent.click(dialog.getByRole('button', { name: '선택한 위치로 메뉴 옮기기' }));
     fireEvent.click(screen.getByRole('button', { name: '메뉴 삭제' }));
 
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
-      expect.stringContaining('하위 메뉴 1건이 있어 삭제할 수 없습니다'), 'error'));
-    expect(mocks.confirm).not.toHaveBeenCalled();
-    expect(mocks.deleteMenu).not.toHaveBeenCalled();
+    fireEvent.click(rowButton('새 섹션'));
+    const remove = screen.getByRole('button', { name: '새 메뉴 지우기' });
+    expect(remove).toBeDisabled();
+    expect(remove).toHaveAccessibleDescription(/하위 메뉴 1개\(삭제 예정 포함\)가 있어 지울 수 없습니다/);
   });
 
-  it('메뉴 삭제는 같은 tick 중복 실행을 막고 rejected 오류를 안내한다', async () => {
-    const pending = deferred<{ success: boolean; message: string }>();
-    mocks.deleteMenu.mockReturnValueOnce(pending.promise);
-    const menusPromise = Promise.resolve({ data: mockInitialMenus, error: null });
-    const programsPromise = Promise.resolve({ data: mockPrograms, error: null });
-    await act(async () => {
-      render(
-        <React.Suspense fallback={<div>Loading...</div>}>
-          <MenuAdminClient menusPromise={menusPromise} programsPromise={programsPromise} />
-        </React.Suspense>,
-      );
-    });
-    fireEvent.click(screen.getByRole('button', { name: /Main Menu.*ID: 1/i }));
-    const deleteButton = screen.getByRole('button', { name: '메뉴 삭제' });
-
-    act(() => {
-      deleteButton.click();
-      deleteButton.click();
-    });
-
-    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(mocks.deleteMenu).toHaveBeenCalledTimes(1));
-    const pendingButton = screen.getByRole('button', { name: '메뉴 삭제 중…' });
-    expect(pendingButton).toBeDisabled();
-    expect(pendingButton).toHaveAttribute('aria-busy', 'true');
-    await act(async () => pending.reject(new Error('delete unavailable')));
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('메뉴 삭제 중 오류가 발생했습니다.', 'error'));
+  it('메뉴 삭제와 삭제 취소는 같은 단추다 — 누른 뒤에도 포커스가 그 단추에 남는다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('결재함'));
+    const button = screen.getByRole('button', { name: '메뉴 삭제' });
+    button.focus();
+    fireEvent.click(button);
+    expect(screen.getByRole('button', { name: '삭제 취소' })).toBe(button);
+    expect(button).toHaveFocus();
+    fireEvent.click(button);
+    expect(screen.getByRole('button', { name: '메뉴 삭제' })).toHaveFocus();
   });
 
-  /*
-   * [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
-   * 이 화면은 MENU_READ 만으로 들어올 수 있어, 종전에는 조회만 맡은 담당자에게도 등록·수정·삭제·구조 저장이 모두 보였다.
-   */
-  async function renderMenus() {
-    await act(async () => {
-      render(
-        <React.Suspense fallback={<div>Loading...</div>}>
-          <MenuAdminClient
-            menusPromise={Promise.resolve({ data: mockInitialMenus, error: null })}
-            programsPromise={Promise.resolve({ data: mockPrograms, error: null })}
-          />
-        </React.Suspense>,
-      );
-    });
-  }
+  it('변경 목록에서 되돌리면 다음 항목의 되돌리기로, 남은 변경이 없으면 보드의 고른 항목으로 포커스가 간다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('결재함'));
+    fireEvent.change(screen.getByRole('textbox', { name: '메뉴 이름' }), { target: { value: '내 결재함' } });
+    fireEvent.keyDown(rowButton('내 결재함'), { key: 'ArrowDown', altKey: true });
+    fireEvent.click(screen.getByRole('button', { name: '변경 2건' }));
 
-  it('조회 권한만 있으면 등록·수정·삭제·구조 저장과 끌기 핸들을 보이지 않는다', async () => {
-    auth.permissions = ['MENU_READ'];
-    await renderMenus();
+    // 맞바꾼 두 메뉴 가운데 '순서' 는 계산이 정한 하나(권한별 메뉴)에 붙는다.
+    const place = screen.getByRole('button', { name: '권한별 메뉴 위치 변경 되돌리기' });
+    place.focus();
+    fireEvent.click(place);
+    await waitFor(() => expect(screen.getByRole('button', { name: '내 결재함 속성 변경 되돌리기' })).toHaveFocus());
 
-    fireEvent.click(screen.getByRole('button', { name: /Main Menu.*ID: 1/i }));
-    // 상세는 그대로 읽힌다 — 가리는 것은 쓰기 동작뿐이다.
-    expect(screen.getByRole('heading', { level: 2, name: 'Main Menu' })).toBeInTheDocument();
-    for (const name of ['신규 메뉴 등록', '하위 메뉴 추가', '메뉴 수정', '메뉴 삭제', '구조 저장', 'Main Menu 순서 이동 핸들']) {
-      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
-    }
-    expect(screen.queryByText(/그립 핸들로 순서와 상하 관계를 변경합니다/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '내 결재함 속성 변경 되돌리기' }));
+    expect(screen.queryByRole('region', { name: '저장하지 않은 변경' })).not.toBeInTheDocument();
+    await waitFor(() => expect(rowButton('결재함')).toHaveFocus());
   });
 
-  it('권한은 동작마다 따로 본다 — 수정 권한만 있으면 메뉴 수정·구조 저장·끌기 핸들만 보인다', async () => {
-    auth.permissions = ['MENU_READ', 'MENU_UPDATE'];
-    await renderMenus();
+  it('입력 오류의 고치기는 첫 오류 칸으로 간다 — 연결 경로 오류면 접어 둔 직접 입력 칸을 열어 그 칸으로 간다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('결재'));
+    fireEvent.click(screen.getByRole('button', { name: '경로 직접 입력' }));
+    fireEvent.change(screen.getByRole('textbox', { name: '연결 경로' }), { target: { value: '/admin/x?q=홍길동' } });
+    fireEvent.click(screen.getByRole('button', { name: '화면 목록에서 고르기' }));
+    expect(screen.queryByRole('textbox', { name: '연결 경로' })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /Main Menu.*ID: 1/i }));
-    expect(screen.getByRole('button', { name: '메뉴 수정' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '구조 저장' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Main Menu 순서 이동 핸들' })).toBeInTheDocument();
-    for (const name of ['신규 메뉴 등록', '하위 메뉴 추가', '메뉴 삭제']) {
-      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
-    }
+    fireEvent.click(screen.getByRole('button', { name: '결재 고치기' }));
+    await waitFor(() => expect(screen.getByRole('textbox', { name: '연결 경로' })).toHaveFocus());
+  });
+});
+
+describe('그룹 권한을 모를 때와 배너 문장', () => {
+  it('그룹 권한 다시 읽기가 실패하면 앞서 읽은 값으로 판정하지 않는다 — 오류로 보이고, 숨김 검사를 못 했다고 말한다', async () => {
+    const view = await renderClient();
+    fireEvent.click(rowButton('결재함'));
+    expect(await screen.findByRole('checkbox', { name: /사용자 메뉴 표시/ })).toBeInTheDocument();
+
+    mocks.matrix.mockRejectedValueOnce(new Error('network'));
+    await act(async () => { await view.client.refetchQueries(); });
+    expect(await screen.findByText('그룹 권한을 불러오지 못했습니다.')).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: /사용자 메뉴 표시/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: '그룹 미리보기' })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: '다른 곳으로 옮기기…' }));
+    const dialog = within(await screen.findByRole('dialog', { name: '다른 곳으로 옮기기' }));
+    fireEvent.click(dialog.getByRole('button', { name: '관리 › 시스템' }));
+    fireEvent.click(dialog.getByRole('button', { name: '선택한 위치로 메뉴 옮기기' }));
+    expect(screen.queryByRole('group', { name: '저장 전에 해결할 문제' })).not.toBeInTheDocument();
+    expect(saveButton()).toHaveAccessibleDescription(/그룹 권한을 불러오지 못해 메뉴가 숨겨지는 그룹을 미리 확인하지 못했습니다/);
+  });
+
+  it('저장 뒤 그룹 권한을 다시 읽는 동안에는 저장 전 권한으로 그룹 메뉴 표시를 보이거나 바꾸지 않는다', async () => {
+    await renderClient();
+    await waitFor(() => expect(mocks.matrix).toHaveBeenCalledTimes(1));
+    fireEvent.click(rowButton('결재함'));
+    expect(await screen.findByRole('checkbox', { name: /사용자 메뉴 표시/ })).toBeInTheDocument();
+    const reread = deferred<typeof MATRIX>();
+    mocks.matrix.mockReturnValueOnce(reread.promise);
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    fireEvent.click(saveButton());
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('메뉴 구조를 저장했습니다.', 'success'));
+
+    expect(await screen.findByText('그룹 권한을 불러오는 중…')).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: /사용자 메뉴 표시/ })).not.toBeInTheDocument();
+    await act(async () => reread.resolve({ ...MATRIX, groups: MATRIX.groups.map((group) => ({ ...group, version: `${group.version}-2` })) }));
+    expect(await screen.findByRole('checkbox', { name: /사용자 메뉴 표시/ })).toBeInTheDocument();
+  });
+
+  it('409 뒤 변경을 모두 되돌리면 배너는 지킬 변경이 없다고 말한다', async () => {
+    mocks.save.mockRejectedValueOnce({ response: { status: 409, data: { message: '메뉴 구조가 다른 곳에서 바뀌었습니다. 다시 불러온 뒤 저장해 주세요.' } } });
+    await renderClient();
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    fireEvent.click(saveButton());
+    expect(await screen.findByRole('alert')).toHaveTextContent('다시 불러오면 지금 변경은 사라집니다.');
+
+    fireEvent.click(screen.getByRole('button', { name: '변경 1건' }));
+    fireEvent.click(screen.getByRole('button', { name: '모두 되돌리기' }));
+    await waitFor(() => expect(saveButton()).toBeDisabled());
+    expect(screen.getByRole('alert')).toHaveTextContent('저장하지 않은 변경은 이제 없습니다. 최신 구조를 보려면 다시 불러오세요.');
+    expect(screen.getByRole('alert')).not.toHaveTextContent('지금 변경은 지우지 않았습니다');
+  });
+
+  it('400 뒤 초안을 바꾸면 거부 문구를 마지막 저장 시도로 말하고, 변경이 없어지면 거둔다', async () => {
+    mocks.save.mockRejectedValueOnce({ response: { status: 400, data: { message: '서버가 거부한 사유입니다.' } } });
+    await renderClient();
+    fireEvent.click(rowButton('결재함'));
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    fireEvent.click(saveButton());
+    expect(await screen.findByRole('alert')).toHaveTextContent('변경을 저장하지 못했습니다');
+
+    fireEvent.change(screen.getByRole('textbox', { name: '메뉴 이름' }), { target: { value: '내 결재함' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('마지막 저장 시도를 서버가 거부했습니다');
+    expect(screen.getByRole('alert')).toHaveTextContent('서버가 거부한 사유입니다.');
+
+    fireEvent.click(screen.getByRole('button', { name: '변경 2건' }));
+    fireEvent.click(screen.getByRole('button', { name: '모두 되돌리기' }));
+    await waitFor(() => expect(saveButton()).toBeDisabled());
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('원래 상위가 삭제 예정인 위치 변경은 되돌리기를 막고 이유를 말한다', async () => {
+    await renderClient();
+    fireEvent.click(screen.getByRole('tab', { name: '관리' }));
+    fireEvent.click(rowButton('시스템'));
+    fireEvent.click(screen.getByRole('button', { name: '다른 곳으로 옮기기…' }));
+    const dialog = within(await screen.findByRole('dialog', { name: '다른 곳으로 옮기기' }));
+    fireEvent.click(dialog.getByRole('button', { name: '업무' }));
+    fireEvent.click(dialog.getByRole('button', { name: '선택한 위치로 메뉴 옮기기' }));
+    fireEvent.click(screen.getByRole('tab', { name: /^관리/ }));
+    fireEvent.click(rowButton('관리'));
+    fireEvent.click(screen.getByRole('button', { name: '메뉴 삭제' }));
+
+    fireEvent.click(screen.getByRole('button', { name: '변경 2건' }));
+    const revert = screen.getByRole('button', { name: '시스템 위치 변경 되돌리기' });
+    expect(revert).toBeDisabled();
+    expect(revert).toHaveAccessibleDescription("원래 상위 메뉴 '관리'이(가) 삭제 예정이라 되돌릴 수 없습니다. 그 메뉴의 삭제를 먼저 취소하세요.");
+  });
+});
+
+describe('서버 구조 재수신(DIP C5)과 조회 실패', () => {
+  it('저장하지 않은 변경이 있는 동안 다른 버전이 다시 읽히면 덮지 않고 알리며, 변경 취소는 최신 구조로 바꾼다', async () => {
+    const view = await renderClient();
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+
+    // 같은 버전(방금 저장한 결과 등)이면 아무 일도 없다.
+    await view.reload({ data: structure(MENUS, 'v1'), error: null });
+    expect(screen.queryByText(/메뉴 구조가 다시 읽혔습니다/)).not.toBeInTheDocument();
+
+    await view.reload({ data: structure([...MENUS, menu(9, '새로 생긴 메뉴', 1, 3, '/admin')], 'v2'), error: null });
+    const banner = screen.getAllByRole('status').find((element) => element.textContent?.includes('메뉴 구조가 다시 읽혔습니다'));
+    expect(banner).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^새로 생긴 메뉴 ID/ })).not.toBeInTheDocument();
+    expect(rowOrder()).toEqual(['1', '2', '4', '3', '8']);
+
+    fireEvent.click(within(banner!).getByRole('button', { name: '변경 취소' }));
+    await waitFor(() => expect(mocks.reload).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(saveButton()).toBeDisabled());
+  });
+
+  it('변경이 없으면 다시 읽힌 구조를 그대로 받는다', async () => {
+    const view = await renderClient();
+    await view.reload({ data: structure([...MENUS, menu(9, '새로 생긴 메뉴', 1, 3, '/admin')], 'v2'), error: null });
+    expect(rowButton('새로 생긴 메뉴')).toBeInTheDocument();
+  });
+
+  it('조회에 실패하면 빈 보드로 위장하지 않고 사유와 다시 불러오기를 보인다', async () => {
+    await renderClient({ error: '메뉴 조회 권한이 없습니다.' });
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent('메뉴 구조를 불러오지 못했습니다');
+    expect(alert).toHaveTextContent('메뉴 조회 권한이 없습니다.');
+    fireEvent.click(within(alert).getByRole('button', { name: '메뉴 구조 다시 불러오기' }));
+    await waitFor(() => expect(rowButton('업무')).toBeInTheDocument());
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

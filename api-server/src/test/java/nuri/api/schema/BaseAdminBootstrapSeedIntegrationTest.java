@@ -89,6 +89,9 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
                 assertThat(singleLong(statement,"SELECT count(*) FROM tb_menu_info WHERE up_menu_sn IS NULL AND modern_route IS NOT NULL")).isZero();
                 assertThat(new TreeSet<>(stringColumn(statement,"SELECT modern_route FROM tb_menu_info WHERE up_menu_sn IS NOT NULL")))
                         .isEqualTo(new TreeSet<>(EXPECTED_LEAF_ROUTES));
+                // V2_119 가 제품 DB 의 같은 메뉴를 '화면 관리' 로 바꾼다. 새 base 도 같은 이름으로 시작해야 한다.
+                assertThat(stringColumn(statement,"SELECT menu_nm FROM tb_menu_info WHERE modern_route='/admin/system/programs'"))
+                        .as("화면 목록 메뉴 이름").containsExactly("화면 관리");
             } else {
                 assertCompositionSeed(statement, compositionExpectation);
                 assertCompositionMutationsRejected(connection, statement, compositionExpectation);

@@ -71,4 +71,17 @@ describe('menu treeUtils', () => {
     expect(getProjection(flattened, 2, 2, 20, 20)).toEqual({ depth: 1, parentId: 1 });
     expect(getProjection(flattened, 2, 2, -40, 20)).toEqual({ depth: 0, parentId: null });
   });
+
+  it('[2026-10-02] projection 은 깊이 상한(하위 높이)과 다음 행 깊이(상위·첫 하위 사이)를 지킨다', () => {
+    // 1, 2 ─ 3: 메뉴 1 을 2 와 3 사이로 끌면 왼쪽으로 끌어도 2 의 하위다.
+    const flattened = flattenTree([menu(1), menu(2, { children: [menu(3)] })]);
+    expect(getProjection(flattened, 1, 2, -100, 20)).toEqual({ depth: 1, parentId: 2 });
+    // 깊이 상한 0 이면 위 범위가 이긴다.
+    expect(getProjection(flattened, 1, 2, 100, 20, 0)).toEqual({ depth: 0, parentId: null });
+  });
+
+  it('[2026-10-02] 같은 정렬 순서는 메뉴 번호로 정해 같은 데이터를 늘 같은 순서로 그린다', () => {
+    const tree = listToTree([menu(9, { menuOrdr: 1 }), menu(3, { menuOrdr: 1 }), menu(5, { menuOrdr: 0 })]);
+    expect(tree.map((node) => node.menuNo)).toEqual([5, 3, 9]);
+  });
 });

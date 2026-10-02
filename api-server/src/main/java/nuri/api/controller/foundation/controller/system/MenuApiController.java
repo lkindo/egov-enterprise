@@ -7,6 +7,8 @@ import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.menu.MenuService;
 import nuri.business.service.menu.dto.MenuCreateDto;
 import nuri.business.service.menu.dto.MenuDto;
+import nuri.business.service.menu.dto.MenuStructureDto.MenuStructure;
+import nuri.business.service.menu.dto.MenuStructureDto.MenuStructureSave;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -79,6 +81,23 @@ public class MenuApiController {
         // 정렬 저장 1회로 전 노드에서 소실됐다. 순서 전용 경로(단일 트랜잭션)로 위임한다.
         menuService.updateMenuOrders(menuList);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(operationId = "getMenuStructure", summary = "메뉴 구조 조회",
+            description = "메뉴 구조 편집기가 쓰는 전체 메뉴와 구조 버전을 캐시를 거치지 않고 조회합니다.")
+    @GetMapping("/structure")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.MenuApiController#getMenuStructure')")
+    public ResponseEntity<ApiResponse<MenuStructure>> getMenuStructure() {
+        return ResponseEntity.ok(ApiResponse.success(menuService.getMenuStructure()));
+    }
+
+    @Operation(operationId = "saveMenuStructure", summary = "메뉴 구조 저장",
+            description = "메뉴 위치·속성·추가·삭제와 그 메뉴의 그룹별 메뉴 표시를 한 번에 저장합니다. 구조 버전이 다르면 409 입니다.")
+    @PutMapping("/structure")
+    @nuri.foundation.core.annotation.SensitiveOperation("메뉴 구조 저장")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.MenuApiController#saveMenuStructure')")
+    public ResponseEntity<ApiResponse<MenuStructure>> saveMenuStructure(@Valid @RequestBody MenuStructureSave request) {
+        return ResponseEntity.ok(ApiResponse.success(menuService.saveMenuStructure(request)));
     }
 
     @Operation(summary = "메뉴 삭제", description = "시스템 메뉴를 삭제합니다.")

@@ -8049,6 +8049,138 @@
         }
       }
     },
+    "/api/v1/admin/system/menus/structure": {
+      "get": {
+        "tags": [
+          "MenuAdmin"
+        ],
+        "summary": "메뉴 구조 조회",
+        "description": "메뉴 구조 편집기가 쓰는 전체 메뉴와 구조 버전을 캐시를 거치지 않고 조회합니다.",
+        "operationId": "getMenuStructure",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMenuStructure"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "MenuAdmin"
+        ],
+        "summary": "메뉴 구조 저장",
+        "description": "메뉴 위치·속성·추가·삭제와 그 메뉴의 그룹별 메뉴 표시를 한 번에 저장합니다. 구조 버전이 다르면 409 입니다.",
+        "operationId": "saveMenuStructure",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MenuStructureSave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMenuStructure"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/system/menus/batch-order": {
       "put": {
         "tags": [
@@ -12306,7 +12438,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
+                  "$ref": "#/components/schemas/ApiResponseGroupSnapshot"
                 }
               }
             }
@@ -12482,7 +12614,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
+                  "$ref": "#/components/schemas/ApiResponseGroupSnapshot"
                 }
               }
             }
@@ -24891,7 +25023,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
+                  "$ref": "#/components/schemas/ApiResponseGroupSnapshot"
                 }
               }
             }
@@ -24918,6 +25050,97 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/authorization/groups/{code}/copies": {
+      "post": {
+        "tags": [
+          "Authorization"
+        ],
+        "summary": "권한 그룹 복제",
+        "operationId": "authzCopyGroup",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyGroup"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseGroupSnapshot"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26226,6 +26449,196 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/authorization/groups/{code}/members": {
+      "get": {
+        "tags": [
+          "Authorization"
+        ],
+        "summary": "그룹에 배정된 사용자",
+        "operationId": "authzGroupMembers",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseUserChoice"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Authorization"
+        ],
+        "summary": "그룹 구성원 일괄 추가·회수",
+        "operationId": "authzChangeGroupMembers",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeGroupMembers"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseGroupMembersChange"
                 }
               }
             }
@@ -36799,50 +37212,20 @@
         }
       }
     },
-    "/api/v1/admin/authorization/groups/{code}/members": {
+    "/api/v1/admin/authorization/grants": {
       "get": {
         "tags": [
           "Authorization"
         ],
-        "summary": "그룹에 배정된 사용자",
-        "operationId": "authzGroupMembers",
-        "parameters": [
-          {
-            "name": "code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 0
-            }
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 20
-            }
-          }
-        ],
+        "summary": "전체 그룹 권한",
+        "operationId": "authzGrantMatrix",
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponsePageResponseUserChoice"
+                  "$ref": "#/components/schemas/ApiResponseGrantMatrix"
                 }
               }
             }
@@ -36869,16 +37252,6 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "대상을 찾을 수 없음 (code: C003/C007)",
             "content": {
               "application/json": {
                 "schema": {
@@ -39803,6 +40176,343 @@
           "menuOrdr"
         ]
       },
+      "MenuCreation": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^new-[1-9][0-9]{0,5}$"
+          },
+          "menuNm": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "modernRoute": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500,
+            "minLength": 0,
+            "pattern": "^$|^(?:/(?:[^\\s?#/\\\\]+/)*[^\\s?#/\\\\]*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$"
+          },
+          "menuExpln": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "useYn": {
+            "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
+          }
+        },
+        "required": [
+          "key",
+          "menuNm",
+          "useYn"
+        ]
+      },
+      "MenuGroupGrantChange": {
+        "type": "object",
+        "properties": {
+          "groupCode": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "groupVersion": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 0
+          },
+          "navigationAdd": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?:[1-9][0-9]{0,18}|new-[1-9][0-9]{0,5})$"
+            },
+            "maxItems": 2000,
+            "minItems": 0
+          },
+          "navigationRemove": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64",
+              "exclusiveMinimum": 0
+            },
+            "maxItems": 2000,
+            "minItems": 0
+          },
+          "operationAdd": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 20,
+              "minLength": 0
+            },
+            "maxItems": 250,
+            "minItems": 0
+          }
+        },
+        "required": [
+          "groupCode",
+          "groupVersion",
+          "navigationAdd",
+          "navigationRemove",
+          "operationAdd"
+        ]
+      },
+      "MenuPlacement": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?:[1-9][0-9]{0,18}|new-[1-9][0-9]{0,5})$"
+          },
+          "parentRef": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^(?:[1-9][0-9]{0,18}|new-[1-9][0-9]{0,5})$"
+          },
+          "menuOrdr": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 9999,
+            "minimum": 1
+          }
+        },
+        "required": [
+          "menuOrdr",
+          "ref"
+        ]
+      },
+      "MenuProperties": {
+        "type": "object",
+        "properties": {
+          "menuNo": {
+            "type": "integer",
+            "format": "int64",
+            "exclusiveMinimum": 0
+          },
+          "menuNm": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "modernRoute": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500,
+            "minLength": 0,
+            "pattern": "^$|^(?:/(?:[^\\s?#/\\\\]+/)*[^\\s?#/\\\\]*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$"
+          },
+          "menuExpln": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "useYn": {
+            "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
+          }
+        },
+        "required": [
+          "menuNm",
+          "menuNo",
+          "useYn"
+        ]
+      },
+      "MenuStructureSave": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 0
+          },
+          "creations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MenuCreation"
+            },
+            "maxItems": 200,
+            "minItems": 0
+          },
+          "placements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MenuPlacement"
+            },
+            "maxItems": 2000,
+            "minItems": 0
+          },
+          "properties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MenuProperties"
+            },
+            "maxItems": 2000,
+            "minItems": 0
+          },
+          "deletions": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64",
+              "exclusiveMinimum": 0
+            },
+            "maxItems": 200,
+            "minItems": 0
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MenuGroupGrantChange"
+            },
+            "maxItems": 100,
+            "minItems": 0
+          }
+        },
+        "required": [
+          "creations",
+          "deletions",
+          "grants",
+          "placements",
+          "properties",
+          "version"
+        ]
+      },
+      "ApiResponseMenuStructure": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/MenuStructure"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "MenuStructure": {
+        "type": "object",
+        "description": "메뉴 구조와 그 버전(메뉴 전체 행의 요약값). 저장할 때 그대로 돌려보낸다.",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "menus": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MenuStructureItem"
+            }
+          }
+        },
+        "required": [
+          "menus",
+          "version"
+        ]
+      },
+      "MenuStructureItem": {
+        "type": "object",
+        "properties": {
+          "menuNo": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "menuNm": {
+            "type": "string"
+          },
+          "upMenuSn": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "menuOrdr": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "modernRoute": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "menuExpln": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "useYn": {
+            "type": "string"
+          },
+          "prgrmFileNm": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "menuExpln",
+          "menuNm",
+          "menuNo",
+          "menuOrdr",
+          "modernRoute",
+          "prgrmFileNm",
+          "upMenuSn",
+          "useYn"
+        ]
+      },
       "LoginPolicyDto": {
         "type": "object",
         "properties": {
@@ -40969,6 +41679,37 @@
           "version"
         ]
       },
+      "ApiResponseGroupSnapshot": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/GroupSnapshot"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
       "Grant": {
         "type": "object",
         "properties": {
@@ -40991,6 +41732,43 @@
         "required": [
           "code",
           "type"
+        ]
+      },
+      "GroupSnapshot": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Grant"
+            }
+          },
+          "version": {
+            "type": "string"
+          },
+          "complete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "complete",
+          "description",
+          "grants",
+          "name",
+          "version"
         ]
       },
       "ReplaceGrants": {
@@ -43005,6 +43783,40 @@
           "name"
         ]
       },
+      "CopyGroup": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0,
+            "pattern": "[A-Z][A-Z0-9_]{0,19}"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "sourceVersion": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "sourceVersion"
+        ]
+      },
       "MemoInstructionRequest": {
         "type": "object",
         "description": "메모보고 지시사항 요청",
@@ -43115,6 +43927,125 @@
         "required": [
           "ognzId",
           "userIds"
+        ]
+      },
+      "ChangeGroupMembers": {
+        "type": "object",
+        "properties": {
+          "add": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 20,
+              "minLength": 0
+            },
+            "maxItems": 500,
+            "minItems": 0
+          },
+          "remove": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 20,
+              "minLength": 0
+            },
+            "maxItems": 500,
+            "minItems": 0
+          },
+          "complete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "add",
+          "remove"
+        ]
+      },
+      "ApiResponseGroupMembersChange": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/GroupMembersChange"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "GroupMembersChange": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "added": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserChoice"
+            }
+          },
+          "removed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserChoice"
+            }
+          },
+          "memberCount": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "added",
+          "code",
+          "memberCount",
+          "removed"
+        ]
+      },
+      "UserChoice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "userNm": {
+            "type": "string"
+          },
+          "departmentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "departmentId",
+          "id",
+          "userId",
+          "userNm"
         ]
       },
       "ApiResponsePageResponseWorkReportDto": {
@@ -51209,32 +52140,6 @@
           }
         }
       },
-      "UserChoice": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "userId": {
-            "type": "string"
-          },
-          "userNm": {
-            "type": "string"
-          },
-          "departmentId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
-        "required": [
-          "departmentId",
-          "id",
-          "userId",
-          "userNm"
-        ]
-      },
       "ApiResponseMembershipSnapshot": {
         "type": "object",
         "properties": {
@@ -51404,6 +52309,13 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "변경 사유(복제 원본 등, 없으면 null)"
           }
         },
         "required": [
@@ -51419,6 +52331,7 @@
           "group",
           "id",
           "policyVersion",
+          "reason",
           "requestId",
           "targetType",
           "userId",
@@ -51503,7 +52416,7 @@
           }
         }
       },
-      "ApiResponseGroupSnapshot": {
+      "ApiResponseGrantMatrix": {
         "type": "object",
         "properties": {
           "success": {
@@ -51520,7 +52433,7 @@
             "type": "string"
           },
           "data": {
-            "$ref": "#/components/schemas/GroupSnapshot"
+            "$ref": "#/components/schemas/GrantMatrix"
           },
           "timestamp": {
             "type": "string",
@@ -51534,41 +52447,22 @@
           }
         }
       },
-      "GroupSnapshot": {
+      "GrantMatrix": {
         "type": "object",
         "properties": {
-          "code": {
+          "catalogVersion": {
             "type": "string"
           },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "grants": {
+          "groups": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Grant"
+              "$ref": "#/components/schemas/GroupSnapshot"
             }
-          },
-          "version": {
-            "type": "string"
-          },
-          "complete": {
-            "type": "boolean"
           }
         },
         "required": [
-          "code",
-          "complete",
-          "description",
-          "grants",
-          "name",
-          "version"
+          "catalogVersion",
+          "groups"
         ]
       },
       "ApiResponseListDepartmentChoice": {
@@ -51696,13 +52590,21 @@
               "string",
               "null"
             ]
+          },
+          "useYn": {
+            "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ]
           }
         },
         "required": [
           "code",
           "name",
           "parentCode",
-          "route"
+          "route",
+          "useYn"
         ]
       },
       "Operation": {

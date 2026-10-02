@@ -88,20 +88,20 @@ const cases: ContractCase[] = [
     render: () => (
       <ProgramForm open onOpenChange={vi.fn()} onSuccess={vi.fn()} />
     ),
-    submitName: /시스템 동기화/,
+    submitName: /프로그램 저장/,
     firstFieldName: /프로그램 파일명/,
     maxLength: '300',
     prepareValid: () => {
       fireEvent.change(screen.getByRole('textbox', { name: /프로그램 파일명/ }), {
         target: { value: 'TEST_PROGRAM' },
       });
-      fireEvent.change(screen.getByRole('textbox', { name: /프로그램 설명/ }), {
+      fireEvent.change(screen.getByRole('textbox', { name: /프로그램 이름/ }), {
         target: { value: '테스트 프로그램' },
       });
     },
     renderValid: () => <ProgramForm open onOpenChange={vi.fn()} onSuccess={vi.fn()} />,
     serverField: 'prgrmKornNm',
-    serverFieldName: /프로그램 설명/,
+    serverFieldName: /프로그램 이름/,
   },
   {
     name: 'DepartmentForm',

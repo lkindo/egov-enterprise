@@ -802,6 +802,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/TemporaryPasswordFlagMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-SCREEN-MENU-RENAME-PROGRAM-RETIREMENT",
+          "source": "api-server/src/test/java/nuri/api/schema/ScreenMenuRenameProgramRetirementMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-BOARD-POST-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/BoardPostBigintMigrationIntegrationTest.java"
         },
@@ -1648,7 +1652,7 @@
             "scope": "business-core-auth",
             "job": "mutation-scope",
             "gradle": ":business-core:pitest",
-            "classes": "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*,nuri.business.service.menu.MenuService,nuri.business.security.iam.EgovAuthenticationProvider,nuri.business.security.filter.RateLimitFilter",
+            "classes": "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*,nuri.business.service.menu.MenuService,nuri.business.service.menu.MenuStructurePlan,nuri.business.security.iam.EgovAuthenticationProvider,nuri.business.security.filter.RateLimitFilter",
             "tests": "nuri.business.*"
           },
           {

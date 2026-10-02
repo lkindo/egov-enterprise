@@ -18,6 +18,7 @@ import { getInitialMenus } from '@/lib/api/menu-loader';
 import { Suspense } from 'react';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
 import { SITE_IDENTITY } from '@/config/site-identity';
+import { POPSTATE_GATE_SCRIPT } from '@/lib/navigation/popstate-gate';
 
 // [2026-10-01] 한글 전체를 담은 가변 글꼴(약 2MB)이라 미리 불러오지 않는다.
 //   인증 업무 실측에서도 2.06MB 전송·13초 다운로드와 뒤늦은 글꼴 전환이 관측됐다.
@@ -140,6 +141,9 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="antialiased font-sans">
+        {/* [2026-10-03] 뒤로 가기 미저장 확인의 문지기 — 앱 번들(Next 라우터의 popstate 처리기)보다 먼저 등록돼야 한다
+            (popstate-gate.ts). 정적 문자열이고 요청 nonce 를 붙인다. */}
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: POPSTATE_GATE_SCRIPT }} />
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

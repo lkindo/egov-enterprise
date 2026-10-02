@@ -64,6 +64,51 @@ class MenuRouteQueryKeyTest {
         return VALIDATOR.validateProperty(dto, "modernRoute");
     }
 
+    /**
+     * [2026-10-02] 메뉴 구조 저장의 새 메뉴·속성 DTO 도 같은 규칙을 지켜야 한다 — 한쪽만 느슨하면 그 경로로 쿼리 키 제한을
+     * 우회할 수 있다. 세 DTO 의 위반 메시지를 모두 모은다(통과면 빈 목록).
+     */
+    private java.util.List<String> violationsOfEveryRouteInput(String modernRoute) {
+        var messages = new java.util.ArrayList<String>();
+        validate(modernRoute).forEach(violation -> messages.add("MenuDto: " + violation.getMessage()));
+        VALIDATOR.validateProperty(new MenuStructureDto.MenuCreation("new-1", "검증용 메뉴", modernRoute, null, "Y"), "modernRoute")
+                .forEach(violation -> messages.add("MenuCreation: " + violation.getMessage()));
+        VALIDATOR.validateProperty(new MenuStructureDto.MenuProperties(1L, "검증용 메뉴", modernRoute, null, "Y"), "modernRoute")
+                .forEach(violation -> messages.add("MenuProperties: " + violation.getMessage()));
+        return messages;
+    }
+
+    @Test
+    @DisplayName("메뉴 구조 저장의 새 메뉴·속성 DTO 는 MenuDto 와 같은 라우트 정규식·문구를 쓴다")
+    void structureDtosShareTheExactRoutePattern() throws NoSuchFieldException {
+        for (Class<?> type : java.util.List.of(MenuDto.class, MenuStructureDto.MenuCreation.class, MenuStructureDto.MenuProperties.class)) {
+            jakarta.validation.constraints.Pattern pattern = type.getDeclaredField("modernRoute")
+                    .getAnnotation(jakarta.validation.constraints.Pattern.class);
+            assertThat(pattern).as(type.getSimpleName()).isNotNull();
+            assertThat(pattern.regexp()).as(type.getSimpleName()).isEqualTo(MenuDto.MODERN_ROUTE_PATTERN);
+            assertThat(pattern.message()).as(type.getSimpleName()).isEqualTo(MenuDto.MODERN_ROUTE_MESSAGE);
+            jakarta.validation.constraints.Size size = type.getDeclaredField("modernRoute")
+                    .getAnnotation(jakarta.validation.constraints.Size.class);
+            assertThat(size.max()).as(type.getSimpleName()).isEqualTo(500);
+        }
+    }
+
+    @ParameterizedTest(name = "구조 저장 허용: {0}")
+    @ValueSource(strings = {"/admin/survey/hub?tab=manage", "/admin/community/boards?bbsId=BBSMSTR_AAAAAAAAAAAA",
+            "egovframework/com/uat/uia/EgovLoginUsr.do", "", "/admin/x/"})
+    @DisplayName("메뉴 구조 저장의 새 메뉴·속성도 현행 라우트 형태를 그대로 통과시킨다")
+    void structureDtosAllowCurrentRoutes(String route) {
+        assertThat(violationsOfEveryRouteInput(route)).isEmpty();
+    }
+
+    @ParameterizedTest(name = "구조 저장 거부: {0}")
+    @ValueSource(strings = {"/admin/x?q=hong", "/admin/x?tab=a&q=hong", "//evil.com", "https://evil.com/x", "/admin/x?"})
+    @DisplayName("메뉴 구조 저장의 새 메뉴·속성도 allowlist 밖 쿼리 키와 경로 모호성을 같은 문구로 거부한다")
+    void structureDtosRejectUnknownQueryKeysWithTheSameMessage(String route) {
+        var messages = violationsOfEveryRouteInput(route);
+        assertThat(messages).hasSize(3).allSatisfy(message -> assertThat(message).contains("tab").contains("bbsId"));
+    }
+
     @ParameterizedTest(name = "허용: {0}")
     @ValueSource(strings = {
             // 시드 76행에서 형태별로 뽑은 실제 값

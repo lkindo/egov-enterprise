@@ -25,7 +25,7 @@
 |---|---|
 | **관례** | ① 코드 카탈로그·정확한 HTTP method/path/handler binding을 원본으로 사용한다. ② 현재 DB 복수 그룹·OPERATION grant로 canonical principal을 만들며, 그룹 이름 자체는 권한이 아니다. ③ HTTP와 각 메서드는 같은 `permissionPolicy`를 사용하고 미등록 경로는 거부한다. ④ 소유자·참여자·비밀글·개인정보 제한은 기능 권한과 별도로 서비스에서 확인한다. 승인된 소유권 우회는 `assertOwnerOrPermission`의 정확한 기능 코드로 표시하며 owner-only에는 적용하지 않는다. ⑤ NAVIGATION은 메뉴 표시이며 API 허용이 아니다. |
 | **근거** | 백엔드 헌법 제8조와 [권한 단순화 설계](../02-architecture/authorization-simplification-design.md), [보안 실행 가이드](security-hardening-playbook.md). |
-| **집행 게이트(있음)** | `SecurityAuthAnnotationLinterTest`는 실제 MVC 집합·handler 가드·등록된 서비스의 정확한 permission 인자를 검사한다. `SecurePathsDeclarationSyncLinterTest`는 원장과 런타임 생성물 및 HTTP 필터 연결을 대조한다. `generate-permissions.test.mjs`는 생성물 freshness와 의도적 불일치 red를 로컬 verify/pre-push/CI operational 경로에서 실행한다. |
+| **집행 게이트(있음)** | `SecurityAuthAnnotationLinterTest`는 실제 MVC 집합·handler 가드·등록된 서비스의 정확한 permission 인자를 검사한다. `SecurePathsDeclarationSyncLinterTest`는 원장과 런타임 생성물 및 HTTP 필터 연결을 대조한다. `generate-permissions.test.mjs`는 생성물 freshness와 의도적 불일치 red를 로컬 verify/pre-push/CI operational 경로에서 실행한다. `generate-screen-registry.test.mjs`는 화면 목록(화면별 진입·쓰기·표시 권한, 화면 표시용이며 인가가 아니다)의 freshness와 별칭 누수·카탈로그 밖 권한 코드 red를 같은 경로에서 실행한다. |
 | **미집행 갭** | 원장·소스 일치는 모든 객체 관계와 실행 분기의 올바름을 증명하지 않는다. 소유자 축, 커뮤니티 승인 회수, 비밀글, SYSTEM 혼합 그룹의 개인정보 배제는 서비스·HTTP 부정 테스트가 필요하다. OCI 전환은 [별도 절차와 운영 증거](../04-operations/authorization-cutover-runbook.md)로 확인한다. |
 
 인가 실행 경로 대조: 2026-09-10.

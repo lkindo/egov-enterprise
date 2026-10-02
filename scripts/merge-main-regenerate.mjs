@@ -70,6 +70,19 @@ export const GENERATORS = [
     command: ['node', ['scripts/generated-boundary-census.mjs', '--write']],
   },
   {
+    // 경계 census 의 출력(generated-api-boundaries.json)을 읽으므로 그 뒤다. 경계 census 는 이 산출물을 읽지 않는다
+    // (호출 지점이 없는 생성 모듈이라 records 가 같다) — 순환이 아니다. 쓰기 귀속이 공용 컴포넌트·서비스를 따라가므로
+    // 입력은 frontend/src 전체다. 권한 묶음(PERMISSION_BUNDLES)도 같은 산출물이라 묶음 원장과 묶음 문구를 검사하는
+    // 화면 용어 원장도 입력이다 — 생성기의 SCREEN_REGISTRY_INPUTS 가 전부 여기 들어 있어야 한다(계약 테스트가 대조한다).
+    id: 'screen-registry',
+    inputs: under('frontend/src/', 'frontend/next.config.ts', 'config/governance/permission-catalog.json',
+      'config/governance/authorization-policies.json', 'config/governance/generated-api-boundaries.json',
+      'config/ui-route-capabilities.json', 'config/project-composer-menus.json', 'config/governance/permission-bundles.json',
+      'config/frontend-visible-terms.json'),
+    outputs: ['frontend/src/types/generated-screen-registry.ts'],
+    command: ['node', ['scripts/generate-screen-registry.mjs']],
+  },
+  {
     id: 'url-state-census',
     inputs: under('frontend/src/', 'frontend/next.config.ts', 'config/ui-route-capabilities.json'),
     outputs: [URL_CENSUS],

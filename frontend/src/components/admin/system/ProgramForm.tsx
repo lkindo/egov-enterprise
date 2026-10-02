@@ -14,22 +14,21 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { 
-  FileCode, 
-  Type, 
-  Link as LinkIcon, 
-  FolderOpen, 
-  Settings2, 
-  Plus, 
-  Pencil, 
-  Save, 
+import {
+  FileCode,
+  Type,
+  Link as LinkIcon,
+  FolderOpen,
+  Settings2,
+  Save,
   Loader2,
-  Trash2 
+  Trash2
 } from 'lucide-react';
 import { ProgrmManage } from '@/types/foundation/system';
 import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { failureMessage } from '@/lib/safe-error-log';
 import { ProgramDtoSchema } from '@/types/generated-zod';
 
 export const programFormSchema = ProgramDtoSchema.extend({
@@ -49,9 +48,21 @@ interface ProgramFormProps {
   onWritePendingChange?: (pending: boolean) => void;
   /** 삭제 권한(PROGRAM_DELETE)이 없으면 수정 폼에 삭제 버튼을 두지 않는다 — 여는 화면이 권한을 판정해 넘긴다. */
   deletable?: boolean;
+  /**
+   * 삭제 확인에 붙일 연결 메뉴 안내. 여는 화면이 연결 메뉴를 알면 메뉴 수·이름을 넘긴다
+   * (서버가 409 로 거부할 것을 화면이 이미 아는데 일반 문구만 보이지 않게). 없으면 일반 안내다.
+   */
+  deleteNotice?: string;
 }
 
-export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChange, deletable = true }: ProgramFormProps) {
+/*
+ * [2026-10-02 D3] 화면에 없는 길을 권하지 않는다 — 메뉴는 화면 경로로 연결하고, 메뉴 관리의 구조 편집은 메뉴의 연결
+ * 프로그램을 바꾸지 않는다(종전 '먼저 메뉴 관리에서 연결을 해제해 주세요' 는 그 길이 사라지며 사실이 아니게 됐다).
+ * 화면 관리의 연결 안내(programDeleteLinkNotice)의 일반 문장과 같다.
+ */
+const DEFAULT_DELETE_NOTICE = '이 프로그램을 연결한 메뉴가 있으면 삭제되지 않습니다.';
+
+export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChange, deletable = true, deleteNotice }: ProgramFormProps) {
   const isEdit = !!data;
   const toast = useToast();
   const confirm = useConfirm();
@@ -94,7 +105,7 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
       onOpenChange(false);
     } catch (error) {
       if (!form.applyServerErrors(error)) {
-        toast.error('저장 중 오류가 발생했습니다.');
+        toast.error(failureMessage(error, '프로그램을 저장하지 못했습니다.'));
       }
     } finally {
       submitLock.current = false;
@@ -114,9 +125,11 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
 
     try {
       const ok = await confirm({
-        title: '프로그램 영구 삭제',
-        message: '프로그램을 영구 삭제합니다. 메뉴 또는 역할에서 사용 중이면 먼저 연결을 해제해 주세요.',
-        variant: 'destructive'
+        title: '프로그램 삭제',
+        // 서버는 이 프로그램을 연결한 메뉴(사용 안 함 포함)가 있으면 삭제를 거부한다(409). 거부 사유는 실패 안내가 그대로 보인다.
+        message: `프로그램을 삭제합니다. ${deleteNotice ?? DEFAULT_DELETE_NOTICE}`,
+        variant: 'destructive',
+        confirmText: '프로그램 삭제'
       });
 
       if (!ok) return;
@@ -125,8 +138,8 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
       toast.success('프로그램이 삭제되었습니다.');
       onSuccess();
       onOpenChange(false);
-    } catch {
-      toast.error('삭제 중 오류가 발생했습니다.');
+    } catch (error) {
+      toast.error(failureMessage(error, '프로그램을 삭제하지 못했습니다.'));
     } finally {
       deletePendingRef.current = false;
       setWritePending(false);
@@ -162,14 +175,13 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 p-4 bg-muted border border-border rounded-xl">
-        <div className="w-10 h-10 bg-surface-inverse text-surface-inverse-foreground rounded-lg flex items-center justify-center shadow-lg">
-          {isEdit ? <Pencil size={18} /> : <Plus size={18} />}
-        </div>
-        <div className="text-left">
-          <h4 className="text-sm font-bold text-foreground leading-none">{isEdit ? '프로그램 로직 수정' : '신규 프로그램 에셋 등록'}</h4>
-          <p className="text-xs font-bold text-muted-foreground mt-1.5">인프라스트럭처의 핵심 프로그램 기능을 {isEdit ? '수정' : '정의'}합니다</p>
-        </div>
+      <div className="rounded-lg border border-border bg-muted px-4 py-3 text-left">
+        <h4 className="text-sm font-semibold text-foreground">{isEdit ? '프로그램 수정' : '프로그램 등록'}</h4>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {isEdit
+            ? '프로그램 파일명은 바꿀 수 없습니다. 이름·URL·저장 경로·설명을 고칩니다.'
+            : '프로그램 파일명은 등록한 뒤 바꿀 수 없습니다.'}
+        </p>
       </div>
 
       <Form {...form}>
@@ -177,10 +189,10 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
           <FormErrorSummary
             labels={{
               prgrmFileNm: '프로그램 파일명',
-              prgrmKornNm: '프로그램 설명',
-              url: '접근 엔드포인트',
-              prgrmStrgPath: '물리 저장소 위치',
-              prgrmExpln: '비즈니스 로직 설명',
+              prgrmKornNm: '프로그램 이름',
+              url: 'URL 또는 API 경로',
+              prgrmStrgPath: '저장 경로',
+              prgrmExpln: '설명',
             }}
             onNavigate={form.focusError}
           />
@@ -194,8 +206,8 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
                   <FileCode size={12} className="text-primary" /> 프로그램 파일명
                 </FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="프로그램파일명" 
+                  <Input
+                    placeholder="예: ProgramList"
                     {...field} 
                     readOnly={isEdit} 
                     maxLength={300}
@@ -215,11 +227,11 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
               render={({ field }) => (
                 <FormItem className="space-y-3">
                   <FormLabel className="text-xs font-bold text-muted-foreground tracking-tight ml-2 flex items-center gap-2">
-                    <Type size={12} className="text-primary" /> 프로그램 설명
+                    <Type size={12} className="text-primary" /> 프로그램 이름
                   </FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="프로그램명" 
+                    <Input
+                      placeholder="예: 프로그램 목록"
                       {...field} 
                       maxLength={100}
                       className="px-6 rounded-lg border-2 border-border bg-muted/50 font-bold text-sm focus:bg-card transition-all shadow-inner"
@@ -236,11 +248,11 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
               render={({ field }) => (
                 <FormItem className="space-y-3">
                   <FormLabel className="text-xs font-bold text-muted-foreground tracking-tight ml-2 flex items-center gap-2">
-                    <LinkIcon size={12} className="text-primary" /> 접근 엔드포인트
+                    <LinkIcon size={12} className="text-primary" /> URL 또는 API 경로
                   </FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="URL" 
+                    <Input
+                      placeholder="/로 시작하는 경로"
                       {...field} 
                       maxLength={1000}
                       className="px-6 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-card transition-all shadow-inner"
@@ -259,11 +271,11 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
             render={({ field }) => (
               <FormItem className="space-y-3">
                 <FormLabel className="text-xs font-bold text-muted-foreground tracking-tight ml-2 flex items-center gap-2">
-                  <FolderOpen size={12} className="text-primary" /> 물리 저장소 위치
+                  <FolderOpen size={12} className="text-primary" /> 저장 경로
                 </FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="저장경로"
+                    placeholder="예: /"
                     {...field}
                     maxLength={1000}
                     className="px-6 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-card transition-all shadow-inner"
@@ -280,11 +292,11 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
             render={({ field }) => (
               <FormItem className="space-y-3">
                 <FormLabel className="text-xs font-bold text-muted-foreground tracking-tight ml-2 flex items-center gap-2">
-                  <Settings2 size={12} className="text-primary" /> 비즈니스 로직 설명
+                  <Settings2 size={12} className="text-primary" /> 설명
                 </FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="프로그램이 제공할 기능의 기술적 명세.."
+                    placeholder="이 프로그램이 하는 일을 적습니다"
                     {...field}
                     maxLength={4000}
                     className="px-6 rounded-lg border-2 border-border bg-muted/50 font-bold text-sm focus:bg-card transition-all shadow-inner"
@@ -301,29 +313,30 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
               variant="outline"
               onClick={requestClose}
               disabled={isWritePending}
-              className="px-10 rounded-lg border border-border text-muted-foreground font-bold text-sm tracking-tight hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all flex-1"
+              className="rounded-lg font-semibold text-sm flex-1"
             >
               취소
             </Button>
-            <Button 
+            <Button
               type="submit"
               disabled={isWritePending}
               aria-busy={isSaving || isSubmitting || undefined}
-              className="px-14 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
+              className="rounded-lg font-semibold text-sm flex items-center gap-2 flex-[2]"
             >
-              <Save size={18} />
-              {isSaving || isSubmitting ? '동기화 중…' : '시스템 동기화'}
+              <Save size={18} aria-hidden="true" />
+              {isSaving || isSubmitting ? '저장 중…' : '프로그램 저장'}
             </Button>
+            {/* 아이콘 전용 버튼의 전경은 전경 전용 토큰(-emphasis)이다. 배경용 destructive 를 글자·아이콘에 쓰면 다크에서 대비가 1.8:1 이다. ghost 변형의 hover 글자색(text-foreground)도 같은 토큰으로 덮는다. */}
             {isEdit && deletable && (
-              <Button 
-                type="button" 
-                variant="ghost" 
+              <Button
+                type="button"
+                variant="ghost"
                 onClick={handleDelete}
                 aria-label={isDeleting ? '프로그램 삭제 중…' : '프로그램 삭제'}
                 aria-busy={isDeleting || undefined}
                 disabled={isWritePending}
                 size="icon"
-                className="rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all flex items-center justify-center"
+                className="rounded-lg text-destructive-emphasis hover:text-destructive-emphasis hover:bg-destructive/10 transition-colors flex items-center justify-center"
               >
                 {isDeleting
                   ? <Loader2 size={20} className="animate-spin" aria-hidden="true" />

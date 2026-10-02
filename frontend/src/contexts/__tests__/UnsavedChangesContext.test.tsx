@@ -122,4 +122,24 @@ describe('unsaved changes: navigation before unmount', () => {
       await waitFor(() => expect(visiblePop).toHaveBeenCalledTimes(1));
     } finally { window.removeEventListener('popstate', visiblePop); }
   });
+
+  /*
+   * [2026-10-03] Next App Router 는 provider 보다 먼저 window 에 popstate 처리기를 등록한다. 가로채기를 provider effect 에서
+   * 등록하면 그 처리기가 먼저 불려 화면을 바꾼 뒤에야 판정이 돌았다(CI e2e: 뒤로 가기가 확인 없이 떠남). 먼저 등록된 처리기도
+   * 변경이 있는 동안에는 불리지 않아야 한다.
+   */
+  it('stops a popstate listener registered before the provider while there are unsaved changes', async () => {
+    const earlierRouter = vi.fn();
+    window.addEventListener('popstate', earlierRouter, true);
+    try {
+      setup();
+      history.pushState({ __NA: true }, '', '/second');
+      edit();
+      history.back();
+      await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+      expect(earlierRouter).not.toHaveBeenCalled();
+      expect(location.pathname).toBe('/second');
+      expect(screen.getByRole('textbox')).toHaveValue('저장 전 내용');
+    } finally { window.removeEventListener('popstate', earlierRouter, true); }
+  });
 });

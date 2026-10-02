@@ -6,6 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import {
+  GENERATORS,
   compareRowIds,
   findConflictMarkers,
   mergeMainAndRegenerate,
@@ -15,6 +16,7 @@ import {
   resolveMemoryTableConflicts,
   urlCensusSha256,
 } from './merge-main-regenerate.mjs';
+import { SCREEN_REGISTRY_INPUTS, SCREEN_REGISTRY_OUTPUT } from './generate-screen-registry.mjs';
 
 const row = (id, text = id) => `| ${id} | accepted | ${text} |`;
 const conflict = ({ ours, base, theirs }) => [
@@ -95,15 +97,31 @@ test('the approval hash is rebound to the canonical census serialization only', 
 test('only generators whose inputs or outputs changed on both sides run, downstream steps follow', () => {
   const ids = files => planRegeneration(files).map(generator => generator.id);
   assert.deepEqual(ids({ ours: ['frontend/src/a.tsx'], theirs: ['frontend/src/b.tsx'] }),
-    ['boundary-census', 'url-state-census', 'atlas']);
+    ['boundary-census', 'screen-registry', 'url-state-census', 'atlas']);
   assert.deepEqual(ids({ ours: ['api-docs.json'], theirs: ['api-docs.json'] }),
-    ['sync-contract', 'boundary-census', 'url-state-census', 'atlas'], 'regenerated contracts feed the censuses');
+    ['sync-contract', 'boundary-census', 'screen-registry', 'url-state-census', 'atlas'], 'regenerated contracts feed the censuses');
   assert.deepEqual(ids({ ours: ['config/governance/permission-catalog.json'], theirs: ['config/governance/authorization-policies.json'] }),
-    ['permissions', 'boundary-census', 'url-state-census', 'atlas'], 'the generated permission module is a frontend source');
+    ['permissions', 'boundary-census', 'screen-registry', 'url-state-census', 'atlas'], 'the generated permission module is a frontend source');
+  assert.deepEqual(ids({ ours: ['config/ui-route-capabilities.json'], theirs: ['config/project-composer-menus.json'] }),
+    ['screen-registry', 'url-state-census', 'atlas'], 'the screen registry is a frontend source the URL census scans');
+  assert.deepEqual(ids({ ours: ['frontend/src/types/generated-screen-registry.ts'], theirs: ['frontend/src/types/generated-screen-registry.ts'] }),
+    ['boundary-census', 'screen-registry', 'url-state-census', 'atlas'], 'a conflicted registry is regenerated, not picked');
   assert.deepEqual(ids({ ours: ['api-docs.json'], theirs: ['docs/a.md'] }), ['atlas'],
     'a contract changed on one side only is already consistent');
   assert.deepEqual(ids({ ours: ['frontend/public/governance_harness_atlas.html'], theirs: ['frontend/public/governance_harness_atlas.html'] }),
     ['atlas']);
+  assert.deepEqual(ids({ ours: ['config/governance/permission-bundles.json'], theirs: ['config/ui-route-capabilities.json'] }),
+    ['screen-registry', 'url-state-census', 'atlas'], 'the permission bundle ledger feeds the screen registry');
+  assert.deepEqual(ids({ ours: ['config/frontend-visible-terms.json'], theirs: ['config/governance/permission-bundles.json'] }),
+    ['screen-registry', 'url-state-census', 'atlas'], 'the visible terms ledger checks the bundle copy the registry writes');
+});
+
+test('the screen-registry step reads every input the generator declares and writes its output', () => {
+  // 생성기에 입력을 더하고 여기를 잊으면, 그 입력만 양쪽이 바꾼 병합에서 화면 목록이 낡은 채 stage 된다.
+  const step = GENERATORS.find(generator => generator.id === 'screen-registry');
+  assert.ok(step, 'the screen-registry step exists');
+  for (const [name, file] of Object.entries(SCREEN_REGISTRY_INPUTS)) assert.ok(step.inputs(file), `${name}: ${file}`);
+  assert.deepEqual(step.outputs, [SCREEN_REGISTRY_OUTPUT]);
 });
 
 // ------------------------------------------------------------------ 실제 git 병합

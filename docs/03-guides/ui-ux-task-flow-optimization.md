@@ -1,6 +1,6 @@
 # UI/UX 작업 동선 개선과 적용 범위
 
-검증 기준일: 2026-09-11. 60개 활성 메뉴 목적지와 공통 화면 소스를 조사한 뒤, 기존 API와 권한 의미를 보존하면서 탐색 누락·입력 손실·중복 생성 위험을 줄이는 변경을 적용했다. 이 문서는 현재 구현의 안내이며 헌법이나 인가 정책을 대체하지 않는다.
+검증 기준일: 2026-09-11(§2.1 관리 콘솔의 메뉴·화면·권한과 §3의 권한 편집 잠금 서술은 2026-10-02). 60개 활성 메뉴 목적지와 공통 화면 소스를 조사한 뒤, 기존 API와 권한 의미를 보존하면서 탐색 누락·입력 손실·중복 생성 위험을 줄이는 변경을 적용했다. 이 문서는 현재 구현의 안내이며 헌법이나 인가 정책을 대체하지 않는다.
 
 ## 1. 화면의 기본 구성
 
@@ -34,7 +34,7 @@ flowchart TD
 | UX04 지식 탐색 | 20건 단위 페이지 이동, 조회순을 서버 전체 정렬로 요청, 검색·정렬 변경 시 첫 페이지 | KnowledgeHubClient·knowledgeService |
 | UX05 편집 손실 | 그룹·사용자 선택, 권한 영역 전환, 메뉴·링크·라우터·브라우저 이동 보호 | UnsavedChangesContext·권한 편집기 |
 | UX06 기안 모달 | 상신 중 StandardModal의 `closeDisabled` 연결 | ApprovalDraftDialog |
-| UX07 권한 화면 | 탐색을 조회 조건에서 분리. 기본정보와 기능/메뉴를 별도 저장 단위로 명시. 영역 바로가기와 하단 저장 영역 | AuthorizationGroupEditor |
+| UX07 권한 화면 | 탐색을 조회 조건에서 분리. 기본정보와 기능/메뉴를 별도 저장 단위로 명시. 하단 저장 영역. 2026-10-02부터 영역 바로가기 대신 작업대 탭(화면별 권한·기능별 권한·구성원·기본 정보·변경 이력)으로 나눈다(§2.1) | AuthorizationGroupEditor |
 | UX08 상단 배치 | 지식·설문의 큰 소개/요약을 줄이고 이용 현황은 본문 뒤 접기 영역으로 이동. 통계의 세로 탐색을 상단으로 이동 | 각 허브와 HubHeader |
 | UX09 홈 진입 | 서버가 제공하는 `bbsId`·`pstSn` 보존, 홈 업무·공지 제목을 상세로 연결. 전체 보기도 해당 게시판으로 연결 | dashboard-data·UnifiedDashboardClient |
 | UX10 관리 홈 | 서비스에 연결되지 않은 InsightBanner의 상단 배치 제거, 사용자·권한·감사 경로 제공, 역할 수를 권한 그룹 수로 표시 | AdminDashboardClient |
@@ -48,6 +48,21 @@ flowchart TD
 | UX18 문서 | A5의 실제 소비자 설명을 현재 권한 그룹 편집기와 구분하고 이 문서를 문서 인덱스·Atlas에 연결 | 업무 화면 문법 카탈로그 |
 
 전체 60개 메뉴는 조사 모집단이다. 모든 메뉴의 CRUD를 새로 구현하거나 모든 화면의 인증된 E2E를 다시 수행했다는 의미가 아니다.
+
+### 2.1 관리 콘솔의 메뉴·화면·권한 (2026-10-02)
+
+관리 콘솔 UX 1~3단계(사용자 결정 D1~D6, [DEC-OPS-208~211](../../.agent/memory/decisions.md))로 메뉴 관리·화면 관리·권한 그룹 관리의 과업 흐름을 다시 짰다. 메뉴 표시(NAVIGATION)와 기능권한(OPERATION)의 독립, 복수 그룹 합집합, 상위 메뉴 선택 규칙 같은 인가 의미는 바꾸지 않았다. 화면의 쓰기 버튼은 그 동작의 기능권한으로 보이고 같은 권한을 서버가 다시 집행한다.
+
+| 화면 | 과업 흐름 | 저장 단위 |
+|---|---|---|
+| 시스템 메뉴 관리(`/admin/system/menus`) | 보드(영역 탭 → 섹션 카드 → 화면 줄)에서 메뉴를 고르고 오른쪽 상세에서 이름·연결 화면·설명·사용 여부·보이는 그룹을 고친다. 연결 화면은 화면 목록의 경로에서 고르거나 직접 입력하고, 이전 프로그램 연결은 읽기 전용으로만 보인다. 자리는 손잡이 끌기·`Alt+↑`/`Alt+↓`·`Ctrl+X`/`Ctrl+V`·상세의 '다른 곳으로 옮기기'로 바꾼다. 그룹 미리보기는 저장 전 초안에서 그 그룹에 보이는 메뉴와 숨는 메뉴(이유 포함)를 보인다. | 모든 변경이 한 초안이고 '변경 저장'(`Ctrl+S`) 한 번이 구조 버전을 확인하며 저장한다. 즉시 저장하는 수정 창은 없다. 변경 목록에서 항목별로 되돌리고, 옮긴 메뉴가 어떤 그룹에서 숨으면 저장 전에 경고와 해결 단추를 보인다. |
+| 화면 관리(`/admin/system/programs`) | '화면 목록' 탭(기본)에서 앱 화면과 그 진입 권한·연결 메뉴를 보고 '메뉴에 없는 화면'·'로그인만 하면 열리는 화면'·'동적 경로'로 거른다. '메뉴에 추가'는 그 화면을 메뉴 관리의 새 메뉴로 넘긴다(탭 세션 인계, URL에 싣지 않는다). '이전 프로그램' 탭은 메뉴가 프로그램으로 화면을 연결하던 때의 원장이다. | 화면 목록은 읽기 전용이다. 메뉴 연결은 메뉴 관리에서 화면 경로로 한다. 이전 프로그램은 종전 폼으로 등록·수정·삭제하며, 메뉴가 연결된 프로그램의 삭제는 서버가 거부한다. |
+| 권한 그룹 관리(`/admin/security/authority`) | 허브 영역은 '그룹 · 기능권한'·'사용자 배정'·'그룹 비교'·'변경 이력'이다. 그룹을 고르면 권한 작업대가 열리고 탭은 '화면별 권한'(기본)·'기능별 권한'·'구성원'·'기본 정보'·'변경 이력'이다. 화면별 권한 표는 메뉴 트리 줄마다 메뉴 표시·화면 진입·등록·수정·삭제·그 밖의 기능을 한 줄에 보인다. '메뉴 미리보기'는 이 초안이면 사이드바에 무엇이 보이고 숨는 메뉴는 왜 숨는지 보이고, '권한 묶음 적용'은 묶음 하나를 초안에 더하며, '이 그룹으로 새 그룹 만들기'는 저장된 권한만 복사한다(구성원은 복사하지 않는다). 사용자 배정의 메뉴 미리보기는 그 사람의 모든 그룹을 합친 사이드바를 보이고 숨는 메뉴마다 고칠 그룹의 줄로 간다. '그룹 비교'는 두 그룹의 저장된 권한을 읽기 전용으로 나란히 본다. | 화면별·기능별 권한은 같은 초안이고 '권한 변경 저장' 하나로 저장한다. 기본 정보는 따로 저장한다. 구성원 탭의 일괄 추가(구성원 추가 창)와 회수(확인 대화)는 바로 저장하는 별도 쓰기이며 그룹 버전을 바꾸지 않는다. |
+
+- 메뉴 이름 '프로그램 관리'를 '화면 관리'로 바꾸는 것은 [V2_119](../../api-server/src/main/resources/db/migration/V2_119__rename_screen_menu_and_retire_legacy_programs.sql)다. 같은 마이그레이션이 마이그레이션에 적은 시드 유래·자동 생성 이전 프로그램 가운데 어떤 메뉴도 참조하지 않는 행만 지운다(도입 기관이 등록한 프로그램은 건드리지 않는다). 공유 OCI DB 적용은 병합과 별개의 승인·백업 절차다.
+- 화면 목록과 권한 묶음은 [화면 목록 생성기](../../scripts/generate-screen-registry.mjs)가 만드는 [생성물](../../frontend/src/types/generated-screen-registry.ts)이다. 화면별 진입·쓰기·표시 권한은 화면 표시용이며 인가가 아니다. 재생성 순서는 [오케스트레이션 프로토콜 §6.4](orchestration-protocol.md#64-main-최신화-뒤-생성물-재생성)를 따른다.
+- 권한 묶음은 [원장](../../config/governance/permission-bundles.json)의 묶음 하나를 초안에 더할 뿐 그룹이 아니며 사용자에게 배정되지 않는다. 저장은 같은 '권한 변경 저장'이 버전·보호 권한·마지막 관리자 보호·감사를 거쳐 한다. 모든 로그인 사용자가 들어갈 수 있는 화면(진입 권한이 비어 있는 화면)의 메뉴는 묶음이 메뉴 표시로 더하지 않는다. 대화상자가 그 사실을 고정 안내로 알리고, 필요하면 화면별 권한 탭에서 메뉴 표시를 고른다.
+- 화면별 권한 표의 영역·섹션 줄 칸(묶음 칸)은 아래 화면을 한꺼번에 켜고 끄지만 보호 권한·타인 자료 권한(`*_ALL`)·다른 화면의 진입 권한은 빼고, 그 권한은 화면 줄의 칸에서 따로 고른다. 두 표의 A5 계약은 [업무 화면 문법 §A5](../02-architecture/work-screen-grammar-catalog.md#a5-권한-매트릭스-matrix-grid)에 있다.
 
 ## 3. 미저장 변경과 저장 중 이동
 
@@ -63,11 +78,11 @@ flowchart LR
   Discard --> Move
 ```
 
-라우터 전이 보호의 정본은 [UnsavedChangesContext](../../frontend/src/contexts/UnsavedChangesContext.tsx)다. 적용된 편집기는 권한 그룹 기본정보·기능/메뉴·사용자 배정, 게시판 생성기, 메일 작성, 설문지/문항/항목, 설문 템플릿, 부서 업무 등록이다. 다른 폼은 이 훅을 등록해야 보호 대상이 된다.
+라우터 전이 보호의 정본은 [UnsavedChangesContext](../../frontend/src/contexts/UnsavedChangesContext.tsx)다. 적용된 편집기는 권한 그룹 기본정보·기능/메뉴·사용자 배정, 메뉴 구조 초안, 게시판 생성기, 메일 작성, 설문지/문항/항목, 설문 템플릿, 부서 업무 등록이다. 다른 폼은 이 훅을 등록해야 보호 대상이 된다.
 
-업무 화면 문법 §A3-1 이행으로 **목록 위 모달**이 된 폼(주소록 등록, 스크랩 등록·수정, 여론조사 등록)은 라우터를 떠나지 않으므로 같은 보호를 [useDirtyCloseGuard](../../frontend/src/hooks/useDirtyCloseGuard.ts)가 제공한다 — 닫기 경로 전부(Esc·배경·X·취소)를 덮고 문구는 라우터 가드와 같다. 저장 중 닫기 차단은 별개로 `StandardModal` 의 `closeDisabled` 가 소유한다.
+업무 화면 문법 §A3-1 이행으로 **목록 위 모달**이 된 폼(주소록 등록, 스크랩 등록·수정, 여론조사 등록)과 고른 사람이 있는 권한 작업대의 구성원 추가 창은 라우터를 떠나지 않으므로 같은 보호를 [useDirtyCloseGuard](../../frontend/src/hooks/useDirtyCloseGuard.ts)가 제공한다 — 닫기 경로 전부(Esc·배경·X·취소)를 덮고 문구는 라우터 가드와 같다. 저장 중 닫기 차단은 별개로 `StandardModal` 의 `closeDisabled` 가 소유한다.
 
-그룹 기본정보와 권한은 같은 버전을 사용하는 별도 서버 쓰기다. 한쪽을 편집하는 동안 다른 쪽 입력을 잠그고, 먼저 저장하거나 취소하도록 안내한다. 이동 확인에서 여러 저장을 자동 실행하지 않는다. 서버 충돌이나 실패 시 입력을 보존하며 최신 정보 적용도 미저장 확인을 거친다. 기능권한과 메뉴표시의 독립성, 상하위 메뉴 선택 규칙, 복수 그룹 권한 합집합은 그대로다.
+그룹 기본정보와 권한은 같은 그룹 버전을 쓰는 별도 서버 쓰기다. 2026-10-02부터 쓰기 응답이 저장 뒤 스냅샷을 돌려주고 구성원 변경은 그룹 버전을 바꾸지 않으므로, 두 편집은 서로를 잠그지 않는다. 한쪽을 저장해도 다른 쪽의 저장하지 않은 변경은 남는다. 저장 응답에 담긴 다른 쪽 값이 그 편집의 기준선과 같으면 새 버전을 이어받고, 다르면 다른 곳에서 바뀐 것이므로 '입력 취소 · 최신 정보 적용'을 요구한다. 쓰기는 한 번에 하나다(2026-09-11 당시에는 한쪽을 편집하는 동안 다른 쪽 입력을 잠갔다). 이동 확인에서 여러 저장을 자동 실행하지 않는다. 서버 충돌이나 실패 시 입력을 보존하며 최신 정보 적용도 미저장 확인을 거친다. 기능권한과 메뉴표시의 독립성, 상하위 메뉴 선택 규칙, 복수 그룹 권한 합집합은 그대로다.
 
 라우터 `push`/`replace`와 내부 링크는 전환 전에 확인한다. 브라우저 뒤로/앞으로는 현재 페이지로 먼저 복원한 뒤 확인하여 거부 시 편집 컴포넌트를 유지한다. Next가 관리하는 history 필드는 보존하고 별도의 위치 숫자만 추가한다. 폼 본문은 history·URL·localStorage에 저장하지 않는다. 새로고침·창 닫기·외부 문서 이동은 브라우저의 `beforeunload` 확인을 사용한다.
 
@@ -113,7 +128,7 @@ flowchart TD
 
 ## 7. 검증과 유지보수
 
-핵심 회귀는 [권한 편집/선택](../../frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx), [게시판 부분 실패](../../frontend/src/app/admin/community/boards/maker/components/__tests__/BoardMakerWizard.validation.test.tsx), [지식 서버 페이지/정렬](../../frontend/src/app/admin/help/__tests__/KnowledgeHubClient.pagination.test.tsx), [설문 선택](../../frontend/src/app/survey/stats/SurveyStatsClient.selection.test.tsx), [기안 pending](../../frontend/src/app/approvals/__tests__/ApprovalDraftDialog.test.tsx), [공개 레이아웃](../../frontend/src/app/components/layout/__tests__/ApplicationFrame.test.tsx)으로 검증한다.
+핵심 회귀는 [권한 편집/선택](../../frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx), [게시판 부분 실패](../../frontend/src/app/admin/community/boards/maker/components/__tests__/BoardMakerWizard.validation.test.tsx), [지식 서버 페이지/정렬](../../frontend/src/app/admin/help/__tests__/KnowledgeHubClient.pagination.test.tsx), [설문 선택](../../frontend/src/app/survey/stats/SurveyStatsClient.selection.test.tsx), [기안 pending](../../frontend/src/app/approvals/__tests__/ApprovalDraftDialog.test.tsx), [공개 레이아웃](../../frontend/src/app/components/layout/__tests__/ApplicationFrame.test.tsx)으로 검증한다. §2.1의 관리 콘솔 화면은 [메뉴 보드 편집기](../../frontend/src/app/admin/system/menus/__tests__/MenuAdminClient.test.tsx)·[메뉴 초안 모델](../../frontend/src/app/admin/system/menus/__tests__/menuDraft.test.ts)·[실제 키보드 끌기](../../frontend/src/app/admin/system/menus/__tests__/MenuBoard.keyboard-dnd.test.tsx), [화면 목록](../../frontend/src/app/admin/system/programs/__tests__/ProgramAdminClient.test.tsx)·[화면 목록 판정](../../frontend/src/app/admin/system/programs/__tests__/screenList.test.ts), [두 권한 표의 A5 계약](../../frontend/src/app/admin/security/authority/__tests__/matrix-a5-contract.test.tsx), [권한 묶음·그룹 비교](../../frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.bundle-compare.test.tsx)가 검증하고, 브라우저 여정은 [메뉴 관리](../../frontend/e2e/journeys/menu-administration.spec.ts)·[권한 관리](../../frontend/e2e/journeys/security-administration.spec.ts)다.
 
 실제 Chromium의 합성 편집 화면에서는 공통 이동 어댑터와 실제 확인 모달을 사용해 Back/Forward 취소·승인, 내부 링크, replace, pending 차단, 같은 화면 hash 이동과 두 단계 Back을 포함한 9개 시나리오를 확인했다. 실제 권한/지식 컴포넌트에 합성 조회 데이터를 제공한 1366px·390px 화면에서도 가로 넘침 없음·제목 1개·헤더 56px·데스크톱 사이드바 256px와 그룹 이동 취소 시 입력 보존을 확인했다. 인증 없는 현재 로그인 화면은 1440×900·1024×768·390×844에서 확인했다. 합성 편집 검증은 OCI의 인증된 권한 수정이나 실제 메일 발송 E2E를 대신하지 않는다.
 

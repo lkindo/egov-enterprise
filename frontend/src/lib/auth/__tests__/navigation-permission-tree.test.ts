@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { buildNavigationPermissionTree, navigationSelectionGaps, selectedMenusWithoutEntryPermission, toggleNavigationPermission } from '../navigation-permission-tree';
+import { buildNavigationPermissionTree, menusMissingEntryPermission, navigationSelectionGaps, selectedMenusWithoutEntryPermission, toggleNavigationPermission } from '../navigation-permission-tree';
 
 const navigation = [
-  { code: 'child-b', name: '두 번째 자식', parentCode: 'root', route: null },
-  { code: 'other', name: '다른 메뉴', parentCode: null, route: null },
-  { code: 'root', name: '상위 메뉴', parentCode: null, route: null },
-  { code: 'child-a', name: '첫 번째 자식', parentCode: 'root', route: null },
-  { code: 'leaf', name: '하위 메뉴', parentCode: 'child-a', route: null },
+  { code: 'child-b', name: '두 번째 자식', parentCode: 'root', route: null, useYn: 'Y' as const },
+  { code: 'other', name: '다른 메뉴', parentCode: null, route: null, useYn: 'Y' as const },
+  { code: 'root', name: '상위 메뉴', parentCode: null, route: null, useYn: 'Y' as const },
+  { code: 'child-a', name: '첫 번째 자식', parentCode: 'root', route: null, useYn: 'Y' as const },
+  { code: 'leaf', name: '하위 메뉴', parentCode: 'child-a', route: null, useYn: 'Y' as const },
 ];
 
 describe('navigation permission hierarchy', () => {
@@ -49,7 +49,7 @@ describe('navigation permission hierarchy', () => {
     [{ code: 'a', name: '순환 A', parentCode: 'b' }, { code: 'b', name: '순환 B', parentCode: 'a' }],
     [{ code: 'a', name: '중복 A', parentCode: null }, { code: 'a', name: '중복 B', parentCode: null }],
   ])('rejects malformed catalogs before rendering or changing a selection: %j', (...items) => {
-    const tree = buildNavigationPermissionTree(items.map((item) => ({ ...item, route: null })));
+    const tree = buildNavigationPermissionTree(items.map((item) => ({ ...item, route: null, useYn: 'Y' as const })));
     expect(tree.error).not.toBeNull();
     expect(tree.roots).toEqual([]);
     expect([...toggleNavigationPermission(tree, new Set(['OPERATION:BOARD_READ']), 'a', true)]).toEqual(['OPERATION:BOARD_READ']);
@@ -61,10 +61,10 @@ describe('navigation permission hierarchy', () => {
    */
   it('선택한 메뉴 가운데 선택한 기능권한으로 들어갈 수 없는 화면의 메뉴를 알린다', () => {
     const menus = [
-      { code: 'area', name: '관리', parentCode: null, route: null },
-      { code: 'users', name: '사용자 관리', parentCode: 'area', route: '/admin/user/manage' },
-      { code: 'menus', name: '메뉴 관리', parentCode: 'area', route: '/admin/system/menus' },
-      { code: 'notes', name: '쪽지', parentCode: null, route: '/note' },
+      { code: 'area', name: '관리', parentCode: null, route: null, useYn: 'Y' as const },
+      { code: 'users', name: '사용자 관리', parentCode: 'area', route: '/admin/user/manage', useYn: 'Y' as const },
+      { code: 'menus', name: '메뉴 관리', parentCode: 'area', route: '/admin/system/menus', useYn: 'Y' as const },
+      { code: 'notes', name: '쪽지', parentCode: null, route: '/note', useYn: 'Y' as const },
     ];
     const allMenus = menus.map((menu) => `NAVIGATION:${menu.code}`);
 
@@ -73,5 +73,41 @@ describe('navigation permission hierarchy', () => {
     expect(selectedMenusWithoutEntryPermission(menus, new Set([...allMenus, 'OPERATION:USER_READ', 'OPERATION:MENU_READ']))).toEqual([]);
     // 선택하지 않은 메뉴는 알리지 않는다.
     expect(selectedMenusWithoutEntryPermission(menus, new Set(['NAVIGATION:notes']))).toEqual([]);
+  });
+
+  /*
+   * [2026-10-02 관리 콘솔 UX 1단계] 경고만으로는 고칠 수 없었다 — 메뉴마다 필요한 권한과 판정 방식(ANY/ALL)을
+   * 라우트 게이트와 같은 등록 원장에서 읽어, 편집기가 '진입 권한 추가'를 초안에 더할 수 있게 한다.
+   */
+  it('진입 권한이 없는 메뉴마다 필요한 권한과 판정 방식을 라우트 게이트 원장에서 돌려준다', () => {
+    const menus = [
+      { code: 'menus', name: '메뉴 관리', parentCode: null, route: '/admin/system/menus?tab=TREE', useYn: 'Y' as const },
+      { code: 'authority', name: '권한 그룹 관리', parentCode: null, route: '/admin/security/authority', useYn: 'Y' as const },
+      { code: 'polls', name: '투표 관리', parentCode: null, route: '/admin/survey/polls', useYn: 'Y' as const },
+      { code: 'ghost', name: '없는 화면', parentCode: null, route: '/admin/unregistered-only-in-test/page', useYn: 'Y' as const },
+      { code: 'area', name: '분류', parentCode: null, route: null, useYn: 'Y' as const },
+      { code: 'notes', name: '쪽지', parentCode: null, route: '/note', useYn: 'Y' as const },
+    ];
+    const selection = new Set([...menus.map((menu) => `NAVIGATION:${menu.code}`), 'OPERATION:POLL_READ']);
+    expect(menusMissingEntryPermission(menus, selection)).toEqual([
+      { code: 'menus', name: '메뉴 관리', route: '/admin/system/menus', required: ['MENU_READ'], mode: 'ANY', fixable: true },
+      { code: 'authority', name: '권한 그룹 관리', route: '/admin/security/authority', required: ['AUTHRT_READ', 'AUTHRT_AUDIT'], mode: 'ANY', fixable: true },
+      // ALL 은 하나만 있어서는 열리지 않는다.
+      { code: 'polls', name: '투표 관리', route: '/admin/survey/polls', required: ['POLL_READ', 'POLL_READ_ALL'], mode: 'ALL', fixable: true },
+      // 등록되지 않은 /admin 경로는 어떤 기능권한으로도 열리지 않는다 — 고칠 수 있다고 말하지 않는다.
+      { code: 'ghost', name: '없는 화면', route: '/admin/unregistered-only-in-test/page', required: [], mode: 'ANY', fixable: false },
+    ]);
+    // 경고 이름 목록과 같은 판정이다.
+    expect(selectedMenusWithoutEntryPermission(menus, selection)).toEqual(['메뉴 관리', '권한 그룹 관리', '투표 관리', '없는 화면']);
+  });
+
+  it('필요한 권한을 모두 더하면 그 메뉴는 목록에서 빠진다', () => {
+    const menus = [
+      { code: 'polls', name: '투표 관리', parentCode: null, route: '/admin/survey/polls', useYn: 'Y' as const },
+      { code: 'authority', name: '권한 그룹 관리', parentCode: null, route: '/admin/security/authority', useYn: 'Y' as const },
+    ];
+    const navigation = menus.map((menu) => `NAVIGATION:${menu.code}`);
+    expect(menusMissingEntryPermission(menus, new Set([...navigation, 'OPERATION:POLL_READ', 'OPERATION:POLL_READ_ALL', 'OPERATION:AUTHRT_AUDIT']))).toEqual([]);
+    expect(menusMissingEntryPermission(menus, new Set([...navigation, 'OPERATION:POLL_READ_ALL', 'OPERATION:AUTHRT_READ'])).map((menu) => menu.code)).toEqual(['polls']);
   });
 });

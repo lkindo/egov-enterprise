@@ -687,6 +687,15 @@
       "guardRef": "MenuService#insertMenuCreatList"
     },
     {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/menus/structure",
+      "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#saveMenuStructure",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.MenuApiController#saveMenuStructure')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "MenuService#saveMenuStructure"
+    },
+    {
       "method": "DELETE",
       "path": "/api/v1/admin/system/menus/{menuNo}",
       "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#deleteMenu",
@@ -1807,6 +1816,22 @@
       "routeGate": "OPERATION_PERMISSION"
     },
     {
+      "method": "PATCH",
+      "path": "/api/v1/admin/authorization/groups/{code}/members",
+      "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#changeGroupMembers",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#changeGroupMembers')",
+      "routeGate": "OPERATION_PERMISSION"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/authorization/groups/{code}/copies",
+      "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#copyGroup",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#copyGroup')",
+      "routeGate": "OPERATION_PERMISSION"
+    },
+    {
       "method": "POST",
       "path": "/api/v1/approvals/{id}/resubmissions",
       "handler": "nuri.api.controller.business.approval.ApprovalApiController#resubmitApproval",
@@ -2740,6 +2765,36 @@
       ]
     },
     {
+      "target": "MenuService#saveMenuStructure",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "MENU_UPDATE"
+        },
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "MENU_CREATE"
+        },
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "MENU_DELETE"
+        },
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "AUTHRT_GRANT"
+        }
+      ]
+    },
+    {
       "target": "NotificationService#dispatchToUsers",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -3386,6 +3441,90 @@
       ]
     },
     {
+      "target": "AuthorizationAdministrationService#changeGroupMembers",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "AUTHRT_ASSIGN"
+        },
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "AUTHRT_READ"
+        }
+      ]
+    },
+    {
+      "target": "AuthorizationAdministrationService#copyGroup",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "AUTHRT_CREATE"
+        },
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "AUTHRT_GRANT"
+        }
+      ]
+    },
+    {
+      "target": "AuthorizationAdministrationService#grantMatrix",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "AUTHRT_READ"
+        }
+      ]
+    },
+    {
+      "target": "AuthorizationAdministrationService#assertGroupVersions",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "AUTHRT_GRANT"
+        }
+      ]
+    },
+    {
+      "target": "AuthorizationAdministrationService#navigationVisibilityConflicts",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "MENU_UPDATE"
+        }
+      ]
+    },
+    {
+      "target": "AuthorizationAdministrationService#applyMenuStructureGrants",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "AUTHRT_GRANT"
+        }
+      ]
+    },
+    {
       "target": "AuthorizationAdministrationService#lockAndAuthorize",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -3402,6 +3541,19 @@
         "callers": {
           "AuthorizationAdministrationService#changeDepartmentGroups": [
             "AUTHRT_ASSIGN"
+          ],
+          "AuthorizationAdministrationService#changeGroupMembers": [
+            "AUTHRT_ASSIGN"
+          ],
+          "AuthorizationAdministrationService#copyGroup": [
+            "AUTHRT_CREATE",
+            "AUTHRT_GRANT"
+          ],
+          "AuthorizationAdministrationService#assertGroupVersions": [
+            "AUTHRT_GRANT"
+          ],
+          "AuthorizationAdministrationService#applyMenuStructureGrants": [
+            "AUTHRT_GRANT"
           ],
           "AuthorizationAdministrationService#createGroup": [
             "AUTHRT_CREATE"
@@ -5326,6 +5478,20 @@
       "permission": "AUTHRT_GRANT"
     },
     {
+      "method": "GET",
+      "path": "/api/v1/admin/system/menus/structure",
+      "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#getMenuStructure",
+      "access": "PERMISSION",
+      "permission": "MENU_READ"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/menus/structure",
+      "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#saveMenuStructure",
+      "access": "PERMISSION",
+      "permission": "MENU_UPDATE"
+    },
+    {
       "method": "DELETE",
       "path": "/api/v1/admin/system/menus/{menuNo}",
       "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#deleteMenu",
@@ -7044,6 +7210,27 @@
       "method": "GET",
       "path": "/api/v1/admin/authorization/groups/{code}/members",
       "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#groupMembers",
+      "access": "PERMISSION",
+      "permission": "AUTHRT_READ"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/authorization/groups/{code}/members",
+      "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#changeGroupMembers",
+      "access": "PERMISSION",
+      "permission": "AUTHRT_ASSIGN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/authorization/groups/{code}/copies",
+      "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#copyGroup",
+      "access": "PERMISSION",
+      "permission": "AUTHRT_CREATE"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/authorization/grants",
+      "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#grantMatrix",
       "access": "PERMISSION",
       "permission": "AUTHRT_READ"
     },

@@ -123,14 +123,18 @@ class InputContractMirrorLinterTest {
     //   enum +1(일괄 상태 코드 P·A·D), 중첩 +3(알림 수신자·설문 답변·메일 수신자 — null 항목이 500 이던 두 곳 포함).
     // [2026-09-26 DIP B5 F8] -1 — AddressBookUserDto.userId 는 서버 소유 읽기 전용이 됐다(작성자 ID 를 구성원 키로 강제하던
     //   필수·길이 계약을 걷음). 보호는 줄지 않는다: 같은 필드가 읽기 전용 표적으로 옮겨 가 요청에서 받지 않음을 검사한다.
-    private static final int MIN_LENGTH_FIELDS = 241;
-    private static final int MIN_ENUM_FIELDS = 16;
-    private static final int MIN_NESTED_VALIDATION_FIELDS = 7;
+    // [2026-10-02 관리 콘솔 UX 2단계] +12 — 그룹 복제(CopyGroup 3), 메뉴 구조 저장의 새 메뉴·속성(MenuCreation·MenuProperties
+    //   각 4: 이름·라우트·설명·사용 여부), 그룹 권한 변경의 그룹 코드(MenuGroupGrantChange 1). enum +2(두 DTO 의 사용 여부 Y·N),
+    //   중첩 +4(MenuStructureSave 의 새 메뉴·위치·속성·그룹 권한 목록).
+    private static final int MIN_LENGTH_FIELDS = 253;
+    private static final int MIN_ENUM_FIELDS = 18;
+    private static final int MIN_NESTED_VALIDATION_FIELDS = 11;
     // [2026-09-06 병합] CommunityDto.cmntyNm·DeptJobBoxDto.deptTaskBoxNm 필수화(+2), SmsRecptnDto.rcptnTelno 해제(-1) → 37.
     // [2026-09-07] +2 (ISG itntSvcNm/itntSvcExpln).
     // [2026-09-22 GAP-CONTRACT-001] +16 (위 12쌍 중 필수 제약을 가진 7개 DTO 의 NotBlank/NotNull 전체).
     // [2026-09-24 GAP-CONTRACT-001] +19 (위 요청 DTO 13개 중 필수 제약을 가진 10개의 NotBlank/NotNull/NotEmpty 전체).
-    private static final int MIN_REQUIRED_FIELDS = 77;
+    // [2026-10-02 관리 콘솔 UX 2단계] 78 → 92(원장 실측과 같게) — CopyGroup 3, MenuGroupGrantChange 5, MenuCreation 3, MenuProperties 3.
+    private static final int MIN_REQUIRED_FIELDS = 92;
     // [2026-09-07] +3 (ISG itntSrvcSn/lastMdfrId/mdfcnDt).
     private static final int MIN_READ_ONLY_FIELDS = 45;
     private static final int MIN_CALENDAR_DATE_FIELDS = 12;

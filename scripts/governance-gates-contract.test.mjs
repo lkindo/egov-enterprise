@@ -701,8 +701,8 @@ test('PIT critical security targets remain in both the existing registry and CI 
 
 test('PIT critical security targets cannot disappear by narrowing both matching catalogs', () => {
   const retained = ['nuri.business.service.auth.*', 'nuri.business.service.login.*', 'nuri.business.security.util.*'];
-  const added = ['nuri.business.service.menu.MenuService', 'nuri.business.security.iam.EgovAuthenticationProvider',
-    'nuri.business.security.filter.RateLimitFilter'];
+  const added = ['nuri.business.service.menu.MenuService', 'nuri.business.service.menu.MenuStructurePlan',
+    'nuri.business.security.iam.EgovAuthenticationProvider', 'nuri.business.security.filter.RateLimitFilter'];
   const survey = 'nuri.business.service.survey.SurveyResultService';
   const scope = classes => [
     { scope: 'business-core-auth', classes: classes.join(',') },

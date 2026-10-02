@@ -12,10 +12,15 @@ import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { AuthorizationEffectivePermissions } from './AuthorizationEffectivePermissions';
+import { UserMenuPreviewDialog } from './UserMenuPreviewDialog';
 
-export function AuthorizationMembershipEditor({ snapshot, groups, refreshing, onRefresh }: {
+export function AuthorizationMembershipEditor({ snapshot, groups, refreshing, onRefresh, userName, onFixMenu }: {
   snapshot: AuthorizationMembership; groups: AuthorizationGroupSummary[];
   refreshing: boolean; onRefresh: () => Promise<unknown>;
+  /** 메뉴 미리보기 제목에 쓰는 사용자 이름. */
+  userName?: string;
+  /** 메뉴 미리보기의 '고치기' — 고칠 그룹의 화면별 권한 줄로 간다(허브 안 상태 전환). */
+  onFixMenu?: (groupCode: string, menuCode: string) => void;
 }) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -23,6 +28,7 @@ export function AuthorizationMembershipEditor({ snapshot, groups, refreshing, on
   const [selection, setSelection] = useState(() => new Set(snapshot.groups));
   const [pending, setPending] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const pendingRef = useRef(false);
   const currentBaseline = baseline.version === snapshot.version;
   const complete = baseline.complete === true && baseline.version.length > 0 && baseline.groups.every((code) => groups.some((group) => group.code === code));
@@ -48,7 +54,7 @@ export function AuthorizationMembershipEditor({ snapshot, groups, refreshing, on
   };
   return (
     <section aria-label="사용자 권한 그룹 배정" className="space-y-4 rounded-lg border border-border bg-card p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold">사용자 권한 그룹</h3><Button type="button" variant="outline" disabled={pending || refreshing} onClick={() => void navigate(reload)}>선택 취소 · 최신 정보 적용</Button></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold">사용자 권한 그룹</h3><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>메뉴 미리보기</Button><Button type="button" variant="outline" disabled={pending || refreshing} onClick={() => void navigate(reload)}>선택 취소 · 최신 정보 적용</Button></div></div>
       <p className="text-sm text-muted-foreground">여러 그룹을 함께 배정할 수 있으며 기능권한을 합산합니다. 사용자 분류 그룹과는 별도입니다.</p>
       {(!currentBaseline || saved) && <p role="status">배정 정보가 변경되었습니다. 최신 정보를 적용한 뒤 다시 편집하세요.</p>}
       {!complete && <p role="alert">전체 그룹 정보를 확인하지 못해 저장할 수 없습니다. 다시 조회해 주세요.</p>}
@@ -60,6 +66,8 @@ export function AuthorizationMembershipEditor({ snapshot, groups, refreshing, on
       {dirty && <p role="status" className="text-sm text-muted-foreground">저장 시 그룹 추가 {[...selection].filter((code) => !baseline.groups.includes(code)).length}개 · 회수 {baseline.groups.filter((code) => !selection.has(code)).length}개. 다른 그룹도 같은 기능을 제공하면 해당 기능권한은 유지됩니다.</p>}
       <AuthorizationEffectivePermissions snapshot={baseline} current={currentBaseline && complete && !saved && !refreshing} />
       {canPermission(user, 'AUTHRT_ASSIGN') && <Button type="button" disabled={!writable || !dirty} aria-busy={pending} onClick={() => void save()}>{pending ? '저장 중…' : '사용자 그룹 저장'}</Button>}
+      {previewOpen && <UserMenuPreviewDialog userName={userName ?? snapshot.userId} groupCodes={[...selection].sort()} groups={groups}
+        onClose={() => setPreviewOpen(false)} onFixMenu={onFixMenu ? (groupCode, menuCode) => { setPreviewOpen(false); onFixMenu(groupCode, menuCode); } : undefined} />}
     </section>
   );
 }

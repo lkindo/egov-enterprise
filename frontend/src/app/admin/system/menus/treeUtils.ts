@@ -76,8 +76,9 @@ export const listToTree = (flatMenus: MenuInfo[]): MenuInfo[] => {
     }
   });
 
-  // 정렬 순서(menuOrdr)에 따라 정렬
-  const sortByOrder = (a: MenuInfo, b: MenuInfo) => (a.menuOrdr || 0) - (b.menuOrdr || 0);
+  // 정렬 순서(menuOrdr)에 따라 정렬한다. [2026-10-02] 동순위는 메뉴 번호로 가른다 — 서버 조회는 동순위의 순서를
+  //   정하지 않아(ORDER BY 에 tiebreaker 없음) 같은 데이터가 매번 다르게 그려지고, 구조 초안의 기준선도 흔들렸다.
+  const sortByOrder = (a: MenuInfo, b: MenuInfo) => (a.menuOrdr || 0) - (b.menuOrdr || 0) || a.menuNo - b.menuNo;
   roots.sort(sortByOrder);
   
   const sortRecursive = (node: MenuInfo) => {
@@ -122,26 +123,35 @@ export const insertItem = (
   return newItems;
 };
 
+/**
+ * 끄는 중의 깊이·상위 투영.
+ *
+ * [2026-10-02] dnd-kit SortableTree 예시와 같은 범위를 쓴다 — 위로는 '이전 행 깊이+1' 과 `depthLimit`(끄는 메뉴의
+ * 하위 높이를 뺀 3단계 상한) 중 작은 값, 아래로는 '다음 행 깊이'(상위와 그 첫 하위 사이를 끊지 않는다)다. 두 범위가
+ * 어긋나면 위 상한이 이긴다. `items` 에는 끄는 메뉴의 하위를 넣지 않는다(하위는 함께 옮겨진다).
+ */
 export const getProjection = (
   items: FlattenedItem[],
   activeId: number,
   overId: number,
   dragOffset: number,
-  indentationWidth: number
+  indentationWidth: number,
+  depthLimit: number = Number.POSITIVE_INFINITY,
 ) => {
   const oldIndex = items.findIndex((m) => m.menuNo === activeId);
   const newIndex = items.findIndex((m) => m.menuNo === overId);
   const newItems = arrayMove(items, oldIndex, newIndex);
-  
+
   const previousItem = newItems[newIndex - 1];
   const dragItem = newItems[newIndex];
-  
+  const nextItem = newItems[newIndex + 1];
+
   // 가로 오프셋에 따른 depth 계산
   const projectedDepth = dragItem.depth + Math.round(dragOffset / indentationWidth);
-  
-  // 유효한 depth 범위 제한 (최상위 ~ 이전 아이템 depth + 1)
-  const minDepth = 0;
-  const maxDepth = previousItem ? previousItem.depth + 1 : 0;
+
+  // 유효한 depth 범위 제한 (다음 행 depth ~ min(이전 행 depth + 1, depthLimit))
+  const maxDepth = Math.max(0, Math.min(previousItem ? previousItem.depth + 1 : 0, depthLimit));
+  const minDepth = Math.min(nextItem ? nextItem.depth : 0, maxDepth);
   const depth = Math.max(minDepth, Math.min(maxDepth, projectedDepth));
   
   // ParentId 결정

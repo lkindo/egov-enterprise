@@ -36,7 +36,9 @@ import {
   ApiResponseDeptManageDtoResponseSchema,
   ApiResponseEventInfoDtoResponseSchema,
   ApiResponseExternalHrDtoResponseSchema,
+  ApiResponseGrantMatrixResponseSchema,
   ApiResponseGroupManageDtoResponseSchema,
+  ApiResponseGroupMembersChangeResponseSchema,
   ApiResponseGroupSnapshotResponseSchema,
   ApiResponseHealthStatusResponseResponseSchema,
   ApiResponseHpcmDtoResponseSchema,
@@ -77,6 +79,7 @@ import {
   ApiResponseMemoReportDtoResponseSchema,
   ApiResponseMenuDtoResponseSchema,
   ApiResponseMenuListResponseResponseSchema,
+  ApiResponseMenuStructureResponseSchema,
   ApiResponseMfaEnrollmentResponseResponseSchema,
   ApiResponseMfaReauthenticationResponseResponseSchema,
   ApiResponseMfaStatusResponseResponseSchema,
@@ -193,6 +196,7 @@ import {
   BulkStatusRequestRequestSchema,
   CatalogResponseSchema,
   ChangeDepartmentGroupsRequestSchema,
+  ChangeGroupMembersRequestSchema,
   CmmnClCodeDtoRequestSchema,
   CmmnClCodeDtoResponseSchema,
   CmmnCodeDtoRequestSchema,
@@ -206,6 +210,7 @@ import {
   CommunityDtoRequestSchema,
   CommunityDtoResponseSchema,
   CommunityMembershipDtoResponseSchema,
+  CopyGroupRequestSchema,
   CreateGroupRequestSchema,
   CurrentUserResponseResponseSchema,
   DashboardResponseResponseSchema,
@@ -226,8 +231,10 @@ import {
   ExternalHrDtoRequestSchema,
   ExternalHrDtoResponseSchema,
   FileDtoResponseSchema,
+  GrantMatrixResponseSchema,
   GroupManageDtoRequestSchema,
   GroupManageDtoResponseSchema,
+  GroupMembersChangeResponseSchema,
   GroupSnapshotResponseSchema,
   GroupSummaryResponseSchema,
   HealthStatusResponseResponseSchema,
@@ -253,6 +260,8 @@ import {
   MenuDtoRequestSchema,
   MenuDtoResponseSchema,
   MenuListResponseResponseSchema,
+  MenuStructureResponseSchema,
+  MenuStructureSaveRequestSchema,
   MfaChallengeRequestRequestSchema,
   MfaCodeRequestRequestSchema,
   MfaEnrollmentResponseResponseSchema,
@@ -2211,6 +2220,44 @@ export const deleteMenuOperation = /*#__PURE__*/ (() => {
   });
 })();
 
+export const getMenuStructureOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getMenuStructure",
+  method: "get",
+  path: "/api/v1/admin/system/menus/structure",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.lazy(() => MenuStructureResponseSchema),
+  envelopeSchema: ApiResponseMenuStructureResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const saveMenuStructureOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "saveMenuStructure",
+  method: "put",
+  path: "/api/v1/admin/system/menus/structure",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: MenuStructureSaveRequestSchema.strict(),
+  responseSchema: z.lazy(() => MenuStructureResponseSchema),
+  envelopeSchema: ApiResponseMenuStructureResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
 export const updateMenuOrderOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
   id: "updateMenuOrder",
@@ -3167,14 +3214,14 @@ export const authzUpdateGroupOperation = /*#__PURE__*/ (() => {
   method: "put",
   path: "/api/v1/admin/authorization/groups/{code}",
   requestKind: "json",
-  responseKind: "void",
+  responseKind: "json",
   requestRequired: true,
   multipartParts: null,
   pathSchema: z.object({ "code": z.string() }).strict(),
   querySchema: null,
   requestSchema: UpdateGroupRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
+  responseSchema: z.lazy(() => GroupSnapshotResponseSchema),
+  envelopeSchema: ApiResponseGroupSnapshotResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
@@ -3205,14 +3252,14 @@ export const authzReplaceGrantsOperation = /*#__PURE__*/ (() => {
   method: "put",
   path: "/api/v1/admin/authorization/groups/{code}/grants",
   requestKind: "json",
-  responseKind: "void",
+  responseKind: "json",
   requestRequired: true,
   multipartParts: null,
   pathSchema: z.object({ "code": z.string() }).strict(),
   querySchema: null,
   requestSchema: ReplaceGrantsRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
+  responseSchema: z.lazy(() => GroupSnapshotResponseSchema),
+  envelopeSchema: ApiResponseGroupSnapshotResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
@@ -5857,14 +5904,33 @@ export const authzCreateGroupOperation = /*#__PURE__*/ (() => {
   method: "post",
   path: "/api/v1/admin/authorization/groups",
   requestKind: "json",
-  responseKind: "void",
+  responseKind: "json",
   requestRequired: true,
   multipartParts: null,
   pathSchema: null,
   querySchema: null,
   requestSchema: CreateGroupRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
+  responseSchema: z.lazy(() => GroupSnapshotResponseSchema),
+  envelopeSchema: ApiResponseGroupSnapshotResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const authzCopyGroupOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "authzCopyGroup",
+  method: "post",
+  path: "/api/v1/admin/authorization/groups/{code}/copies",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "code": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: CopyGroupRequestSchema.strict(),
+  responseSchema: z.lazy(() => GroupSnapshotResponseSchema),
+  envelopeSchema: ApiResponseGroupSnapshotResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
@@ -6150,6 +6216,44 @@ export const approveMemberOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const authzGroupMembersOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "authzGroupMembers",
+  method: "get",
+  path: "/api/v1/admin/authorization/groups/{code}/members",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "code": z.string() }).strict(),
+  querySchema: z.object({ "page": z.number().int().optional(), "size": z.number().int().optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => PageResponseUserChoiceResponseSchema),
+  envelopeSchema: ApiResponsePageResponseUserChoiceResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const authzChangeGroupMembersOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "authzChangeGroupMembers",
+  method: "patch",
+  path: "/api/v1/admin/authorization/groups/{code}/members",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "code": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: ChangeGroupMembersRequestSchema.strict(),
+  responseSchema: z.lazy(() => GroupMembersChangeResponseSchema),
+  envelopeSchema: ApiResponseGroupMembersChangeResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
@@ -8226,20 +8330,20 @@ export const authzHistoryOperation = /*#__PURE__*/ (() => {
   });
 })();
 
-export const authzGroupMembersOperation = /*#__PURE__*/ (() => {
+export const authzGrantMatrixOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
-  id: "authzGroupMembers",
+  id: "authzGrantMatrix",
   method: "get",
-  path: "/api/v1/admin/authorization/groups/{code}/members",
+  path: "/api/v1/admin/authorization/grants",
   requestKind: "none",
   responseKind: "json",
   requestRequired: false,
   multipartParts: null,
-  pathSchema: z.object({ "code": z.string() }).strict(),
-  querySchema: z.object({ "page": z.number().int().optional(), "size": z.number().int().optional() }).strict(),
+  pathSchema: null,
+  querySchema: null,
   requestSchema: null,
-  responseSchema: z.lazy(() => PageResponseUserChoiceResponseSchema),
-  envelopeSchema: ApiResponsePageResponseUserChoiceResponseSchema,
+  responseSchema: z.lazy(() => GrantMatrixResponseSchema),
+  envelopeSchema: ApiResponseGrantMatrixResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

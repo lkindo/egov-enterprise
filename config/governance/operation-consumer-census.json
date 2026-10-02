@@ -14,7 +14,7 @@
     "Axis 3 is a display check only. Server authorization is unchanged, and a permission literal proves the screen looked at it, not which button it gates."
   ],
   "expected": {
-    "operationCount": 417,
+    "operationCount": 422,
     "unwiredMax": 10,
     "screenOrphanMax": 29,
     "ungatedWriteMax": 45
@@ -110,6 +110,14 @@
         "createApproval",
         "confirm",
         "cancelApproval"
+      ]
+    },
+    {
+      "operationId": "deleteMenu",
+      "category": "superseded-surface",
+      "note": "DEC-OPS-208/209: the menu screen saves structure, properties, deletions and group visibility as one versioned draft through saveMenuStructure (PUT /admin/system/menus/structure). The per-menu update, batch reorder and delete endpoints remain for API clients but no screen calls them; the dead frontend service methods were removed so this is a superseded surface, not a missing feature.",
+      "supersededBy": [
+        "saveMenuStructure"
       ]
     },
     {
@@ -423,6 +431,22 @@
         "createApproval",
         "confirm",
         "cancelApproval"
+      ]
+    },
+    {
+      "operationId": "updateMenu",
+      "category": "superseded-surface",
+      "note": "DEC-OPS-208/209: the menu screen saves structure, properties, deletions and group visibility as one versioned draft through saveMenuStructure (PUT /admin/system/menus/structure). The per-menu update, batch reorder and delete endpoints remain for API clients but no screen calls them; the dead frontend service methods were removed so this is a superseded surface, not a missing feature.",
+      "supersededBy": [
+        "saveMenuStructure"
+      ]
+    },
+    {
+      "operationId": "updateMenuOrder",
+      "category": "superseded-surface",
+      "note": "DEC-OPS-208/209: the menu screen saves structure, properties, deletions and group visibility as one versioned draft through saveMenuStructure (PUT /admin/system/menus/structure). The per-menu update, batch reorder and delete endpoints remain for API clients but no screen calls them; the dead frontend service methods were removed so this is a superseded surface, not a missing feature.",
+      "supersededBy": [
+        "saveMenuStructure"
       ]
     },
     {

@@ -40,17 +40,38 @@ public class AuthorizationApiController {
         return ApiResponse.success(PageResponse.of(service.groupMembers(code,page,size)));
     }
 
+    @PatchMapping("/groups/{code}/members")
+    @nuri.foundation.core.annotation.SensitiveOperation("권한 그룹 구성원 변경")
+    @io.swagger.v3.oas.annotations.Operation(operationId="authzChangeGroupMembers", summary="그룹 구성원 일괄 추가·회수")
+    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#changeGroupMembers')")
+    public ApiResponse<GroupMembersChange> changeGroupMembers(@PathVariable String code,@Valid @RequestBody ChangeGroupMembers request) {
+        return ApiResponse.success(service.changeGroupMembers(code,request));
+    }
+
+    @PostMapping("/groups/{code}/copies")
+    @nuri.foundation.core.annotation.SensitiveOperation("권한 그룹 복제")
+    @io.swagger.v3.oas.annotations.Operation(operationId="authzCopyGroup", summary="권한 그룹 복제")
+    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#copyGroup')")
+    public ApiResponse<GroupSnapshot> copyGroup(@PathVariable String code,@Valid @RequestBody CopyGroup request) {
+        return ApiResponse.success(service.copyGroup(code,request));
+    }
+
+    @GetMapping("/grants")
+    @io.swagger.v3.oas.annotations.Operation(operationId="authzGrantMatrix", summary="전체 그룹 권한")
+    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#grantMatrix')")
+    public ApiResponse<GrantMatrix> grantMatrix() { return ApiResponse.success(service.grantMatrix()); }
+
     @PostMapping("/groups")
     @nuri.foundation.core.annotation.SensitiveOperation("권한 그룹 생성")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzCreateGroup")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#createGroup')")
-    public ApiResponse<Void> createGroup(@Valid @RequestBody CreateGroup request) { service.createGroup(request); return ApiResponse.success(null); }
+    public ApiResponse<GroupSnapshot> createGroup(@Valid @RequestBody CreateGroup request) { return ApiResponse.success(service.createGroup(request)); }
 
     @PutMapping("/groups/{code}")
     @nuri.foundation.core.annotation.SensitiveOperation("권한 그룹 변경")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzUpdateGroup")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#updateGroup')")
-    public ApiResponse<Void> updateGroup(@PathVariable String code,@Valid @RequestBody UpdateGroup request) { service.updateGroup(code,request); return ApiResponse.success(null); }
+    public ApiResponse<GroupSnapshot> updateGroup(@PathVariable String code,@Valid @RequestBody UpdateGroup request) { return ApiResponse.success(service.updateGroup(code,request)); }
 
     @DeleteMapping("/groups/{code}")
     @nuri.foundation.core.annotation.SensitiveOperation("권한 그룹 삭제")
@@ -62,7 +83,7 @@ public class AuthorizationApiController {
     @nuri.foundation.core.annotation.SensitiveOperation("그룹 기능 권한 변경")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzReplaceGrants")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#replaceGrants')")
-    public ApiResponse<Void> replaceGrants(@PathVariable String code,@Valid @RequestBody ReplaceGrants request) { service.replaceGrants(code,request); return ApiResponse.success(null); }
+    public ApiResponse<GroupSnapshot> replaceGrants(@PathVariable String code,@Valid @RequestBody ReplaceGrants request) { return ApiResponse.success(service.replaceGrants(code,request)); }
 
     @GetMapping("/users/{userId}/groups")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzMemberships")

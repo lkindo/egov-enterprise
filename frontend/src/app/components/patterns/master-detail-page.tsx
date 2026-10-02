@@ -13,7 +13,8 @@ import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
  * - 좌측 마스터는 데스크톱에서 고정 폭, 좁은 화면에서는 상세 위에 한 번만 렌더된다.
  * - 선택 항목은 소비자가 `data-a2-master-item`과 `aria-current="true"`를 선언한다.
  * - 마스터 항목에 포커스가 있을 때 ↑/↓로 이전·다음 항목을 선택한다.
- * - 저장 가능한 화면은 onSaveShortcut을 넘겨 Ctrl/Cmd+S를 같은 동작에 연결한다.
+ * - 저장 가능한 화면은 onSaveShortcut을 넘겨 Ctrl/Cmd+S를 같은 동작에 연결한다. 기본은 선택된 상세가 있을 때만
+ *   실행하고, 선택과 무관한 저장(구조 저장 등)은 saveShortcutScope="page"로 연다.
  *
  * 선택 식별자의 URL 복원은 화면별 typed allowlist가 소유한다. 셸이 임의 query 이름이나
  * 민감 식별자를 정하면 프론트엔드 헌법 제4조의 화면별 상태 경계를 침범하기 때문이다.
@@ -47,6 +48,17 @@ export interface MasterDetailPageProps {
   /** 화면이 가진 실제 저장 동작. 미지정이면 단축키를 등록하지 않는다. */
   onSaveShortcut?: () => void | Promise<void>;
   saveShortcutDisabled?: boolean;
+  /**
+   * 저장 단축키가 무엇을 저장하는가. 'detail'(기본)은 선택한 항목의 상세 편집이라 선택된 상세가 있을 때만 실행한다.
+   * 'page' 는 선택과 무관한 저장(예: 메뉴 구조 저장 — 여러 항목의 순서·계층 초안)이라 상세가 없어도 실행한다.
+   * 어느 쪽이든 실행 여부는 onSaveShortcut 지정과 saveShortcutDisabled 가 정한다.
+   */
+  saveShortcutScope?: 'detail' | 'page';
+  /**
+   * 마스터와 상세의 폭 배분. 'default'(기본)는 좁은 목록 + 넓은 상세다(목록에서 골라 상세를 편집한다).
+   * 'wide' 는 넓은 마스터 + 좁은 상세다 — 마스터 자체가 작업 대상(예: 메뉴 구조 보드)이고 상세는 고른 항목의 속성 칸이다.
+   */
+  masterSize?: 'default' | 'wide';
   showBreadcrumb?: boolean;
   breadcrumbItems?: { label: string; href?: string }[];
   className?: string;
@@ -224,6 +236,8 @@ export function MasterDetailPage({
   emptyDetailDescription = '왼쪽 목록에서 확인하거나 편집할 항목을 선택하세요.',
   onSaveShortcut,
   saveShortcutDisabled = false,
+  saveShortcutScope = 'detail',
+  masterSize = 'default',
   showBreadcrumb = true,
   breadcrumbItems,
   className,
@@ -242,7 +256,7 @@ export function MasterDetailPage({
       if (
         event.defaultPrevented
         || saveShortcutDisabled
-        || !detail
+        || (saveShortcutScope === 'detail' && !detail)
         || event.altKey
         || event.shiftKey
         || (!event.ctrlKey && !event.metaKey)
@@ -342,7 +356,12 @@ export function MasterDetailPage({
 
       <div
         data-testid="master-detail-layout"
-        className="grid min-h-[32rem] min-w-0 gap-4 lg:h-[min(70vh,48rem)] lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]"
+        className={cn(
+          'grid min-h-[32rem] min-w-0 gap-4 lg:h-[min(70vh,48rem)]',
+          masterSize === 'wide'
+            ? 'lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]'
+            : 'lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]',
+        )}
       >
         <section
           aria-labelledby={masterHeadingId}

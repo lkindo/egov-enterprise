@@ -71,20 +71,24 @@ vi.mock('next/dynamic', () => ({
   },
 }));
 
+// [2026-10-02 D3] 화면 관리(구 프로그램 관리)는 셸의 navigation 슬롯에 탭을 둔다 — 탭을 눌러 '이전 프로그램' 으로 가야
+//   프로그램 폼에 닿으므로 그 슬롯도 그린다(배너·행정 구역 코드 화면은 navigation 을 넘기지 않아 DOM 이 같다).
 vi.mock('@/app/components/patterns/work-list-page', () => ({
   WorkListPage: ({
     actions,
     children,
     filter,
+    navigation,
     title,
     toolbarActions,
   }: {
     actions?: ReactNode;
     children: ReactNode;
     filter?: ReactNode;
+    navigation?: ReactNode;
     title: string;
     toolbarActions?: ReactNode;
-  }) => <main><h1>{title}</h1>{actions}{filter}{toolbarActions}{children}</main>,
+  }) => <main><h1>{title}</h1>{actions}{navigation}{filter}{toolbarActions}{children}</main>,
 }));
 
 vi.mock('@/app/components/patterns/keyword-filter', () => ({
@@ -173,9 +177,15 @@ function fillAdministCodeForm() {
   fillTextBox(/상위 행정 구역 코드/, '1111000000');
 }
 
+/** [2026-10-02 D3] 화면 관리의 기본 탭은 '화면 목록' 이다 — '이전 프로그램' 탭에서 프로그램 등록 폼을 연다. */
+function openProgramCreateForm() {
+  fireEvent.click(screen.getByRole('tab', { name: '이전 프로그램' }));
+  fireEvent.click(screen.getByRole('button', { name: /프로그램 등록/ }));
+}
+
 function fillProgramForm() {
   fillTextBox(/프로그램 파일명/, 'TEST_PROGRAM');
-  fillTextBox(/프로그램 설명/, '테스트 프로그램');
+  fillTextBox(/프로그램 이름/, '테스트 프로그램');
 }
 
 function deferred<T>() {
@@ -464,10 +474,10 @@ describe('system useAppForm consumers', () => {
 
   it('ProgramAdmin의 실제 폼은 invalid summary와 첫 필드 연결을 제공한다', async () => {
     renderWithClient(<ProgramAdminClient initialData={EMPTY_PAGE} searchWrd="" />);
-    fireEvent.click(screen.getByRole('button', { name: /신규 등록/ }));
+    openProgramCreateForm();
     const firstField = screen.getByRole('textbox', { name: /프로그램 파일명/ });
 
-    fireEvent.click(screen.getByRole('button', { name: /시스템 동기화/ }));
+    fireEvent.click(screen.getByRole('button', { name: /프로그램 저장/ }));
 
     await waitFor(() => expect(firstField).toHaveFocus());
     expect(firstField).toHaveAttribute('aria-required', 'true');
@@ -481,9 +491,9 @@ describe('system useAppForm consumers', () => {
     const pending = deferred<Record<string, never>>();
     mocks.createProgram.mockReturnValueOnce(pending.promise);
     renderWithClient(<ProgramAdminClient initialData={EMPTY_PAGE} searchWrd="" />);
-    fireEvent.click(screen.getByRole('button', { name: /신규 등록/ }));
+    openProgramCreateForm();
     fillProgramForm();
-    const submit = screen.getByRole('button', { name: /시스템 동기화/ });
+    const submit = screen.getByRole('button', { name: /프로그램 저장/ });
 
     act(() => {
       submit.click();
@@ -498,10 +508,10 @@ describe('system useAppForm consumers', () => {
     const pending = deferred<Record<string, never>>();
     mocks.createProgram.mockReturnValueOnce(pending.promise);
     renderWithClient(<ProgramAdminClient initialData={EMPTY_PAGE} searchWrd="" />);
-    fireEvent.click(screen.getByRole('button', { name: /신규 등록/ }));
+    openProgramCreateForm();
     fillProgramForm();
     const modal = screen.getByRole('region', { name: '신규 프로그램 등록' });
-    const submit = screen.getByRole('button', { name: /시스템 동기화/ });
+    const submit = screen.getByRole('button', { name: /프로그램 저장/ });
     const cancel = screen.getByRole('button', { name: '취소' });
 
     act(() => {
@@ -522,12 +532,12 @@ describe('system useAppForm consumers', () => {
     expect(screen.getByRole('region', { name: '신규 프로그램 등록' })).toBeVisible();
 
     await act(async () => pending.reject({
-      response: { data: { errors: [{ field: 'prgrmKornNm', message: '이미 사용 중인 프로그램 설명입니다.' }] } },
+      response: { data: { errors: [{ field: 'prgrmKornNm', message: '이미 사용 중인 프로그램 이름입니다.' }] } },
     }));
 
-    expect(await screen.findByText('이미 사용 중인 프로그램 설명입니다.')).toBeVisible();
-    expect(screen.getByRole('textbox', { name: /프로그램 설명/ })).toHaveValue('테스트 프로그램');
-    expect(document.querySelector('[data-form-error-summary="true"]')).toHaveTextContent('이미 사용 중인 프로그램 설명입니다.');
+    expect(await screen.findByText('이미 사용 중인 프로그램 이름입니다.')).toBeVisible();
+    expect(screen.getByRole('textbox', { name: /프로그램 이름/ })).toHaveValue('테스트 프로그램');
+    expect(document.querySelector('[data-form-error-summary="true"]')).toHaveTextContent('이미 사용 중인 프로그램 이름입니다.');
     expect(screen.getByRole('region', { name: '신규 프로그램 등록' })).toBeVisible();
     expect(cancel).toBeEnabled();
   });
@@ -550,9 +560,9 @@ describe('system useAppForm consumers', () => {
         } as any}
       />,
     );
-    const description = screen.getByRole('textbox', { name: /프로그램 설명/ });
-    fireEvent.change(description, { target: { value: '보존할 수정 설명' } });
-    const submit = screen.getByRole('button', { name: /시스템 동기화/ });
+    const nameField = screen.getByRole('textbox', { name: /프로그램 이름/ });
+    fireEvent.change(nameField, { target: { value: '보존할 수정 이름' } });
+    const submit = screen.getByRole('button', { name: /프로그램 저장/ });
     const cancel = screen.getByRole('button', { name: '취소' });
     const deleteButton = screen.getByRole('button', { name: '프로그램 삭제' });
 
@@ -569,11 +579,11 @@ describe('system useAppForm consumers', () => {
     expect(onOpenChange).not.toHaveBeenCalled();
 
     await act(async () => pending.reject({
-      response: { data: { errors: [{ field: 'prgrmKornNm', message: '수정할 수 없는 프로그램 설명입니다.' }] } },
+      response: { data: { errors: [{ field: 'prgrmKornNm', message: '수정할 수 없는 프로그램 이름입니다.' }] } },
     }));
 
-    expect(await screen.findByText('수정할 수 없는 프로그램 설명입니다.')).toBeVisible();
-    expect(description).toHaveValue('보존할 수정 설명');
+    expect(await screen.findByText('수정할 수 없는 프로그램 이름입니다.')).toBeVisible();
+    expect(nameField).toHaveValue('보존할 수정 이름');
     expect(cancel).toBeEnabled();
   });
 
@@ -603,11 +613,12 @@ describe('system useAppForm consumers', () => {
     });
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ confirmText: '프로그램 삭제' }));
     await waitFor(() => expect(mocks.deleteProgram).toHaveBeenCalledTimes(1));
     const pendingButton = screen.getByRole('button', { name: '프로그램 삭제 중…' });
     expect(pendingButton).toBeDisabled();
     expect(pendingButton).toHaveAttribute('aria-busy', 'true');
-    const submitButton = screen.getByRole('button', { name: /시스템 동기화/ });
+    const submitButton = screen.getByRole('button', { name: /프로그램 저장/ });
     const cancelButton = screen.getByRole('button', { name: '취소' });
     expect(submitButton).toBeDisabled();
     expect(cancelButton).toBeDisabled();
@@ -615,9 +626,86 @@ describe('system useAppForm consumers', () => {
     fireEvent.click(cancelButton);
     expect(mocks.updateProgram).not.toHaveBeenCalled();
     expect(onOpenChange).not.toHaveBeenCalled();
-    await act(async () => rejectDelete(new Error('delete failed')));
-    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('삭제 중 오류가 발생했습니다.'));
+    // 서버 문구가 없는 전송 실패는 원문('Request failed …') 대신 과업 이름이 붙은 기본 안내로 알린다(failureMessage).
+    await act(async () => rejectDelete(Object.assign(new Error('Request failed with status code 500'), {
+      isAxiosError: true,
+      response: { status: 500 },
+    })));
+    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('프로그램을 삭제하지 못했습니다.'));
     expect(submitButton).toBeEnabled();
     expect(cancelButton).toBeEnabled();
+  });
+
+  it('ProgramForm 삭제가 연결 메뉴 때문에 거부(409)되면 서버 사유를 그대로 보인다', async () => {
+    mocks.deleteProgram.mockRejectedValueOnce({
+      response: { status: 409, data: { message: '이 프로그램을 연결한 메뉴가 있어 삭제할 수 없습니다: LINKED_PROGRAM' } },
+    });
+    const onSuccess = vi.fn();
+    renderWithClient(
+      <ProgramForm
+        open
+        onOpenChange={vi.fn()}
+        onSuccess={onSuccess}
+        data={{
+          prgrmFileNm: 'LINKED_PROGRAM',
+          prgrmKornNm: '연결된 프로그램',
+          prgrmStrgPath: '/',
+          prgrmExpln: '',
+          url: '/linked',
+        } as any}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '프로그램 삭제' }));
+
+    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith(
+      '이 프로그램을 연결한 메뉴가 있어 삭제할 수 없습니다: LINKED_PROGRAM',
+    ));
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(mocks.toastSuccess).not.toHaveBeenCalled();
+  });
+
+  it('ProgramForm 삭제 확인은 여는 화면이 준 연결 안내를 싣고, 없으면 일반 안내다', async () => {
+    mocks.confirm.mockResolvedValue(false);
+    const programData = {
+      prgrmFileNm: 'NOTICE_PROGRAM',
+      prgrmKornNm: '안내 대상 프로그램',
+      prgrmStrgPath: '/',
+      prgrmExpln: '',
+      url: '/notice',
+    } as any;
+    const { unmount } = renderWithClient(
+      <ProgramForm open onOpenChange={vi.fn()} onSuccess={vi.fn()} data={programData} />,
+    );
+
+    const deleteButton = screen.getByRole('button', { name: '프로그램 삭제' });
+    // 아이콘 전용 버튼의 전경은 전경 전용 토큰이다 — 배경용 destructive 는 다크에서 대비가 1.8:1 이다.
+    expect(deleteButton).toHaveClass('text-destructive-emphasis');
+    expect(deleteButton).not.toHaveClass('text-destructive');
+
+    fireEvent.click(deleteButton);
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    // [2026-10-02 D3] 화면에 없는 길(메뉴 관리에서 연결 해제)을 권하지 않는다 — 메뉴 구조 편집은 메뉴의 연결 프로그램을
+    //   바꾸지 않는다. 일반 안내는 화면 관리의 연결 안내(programDeleteLinkNotice)의 일반 문장과 같다.
+    expect(mocks.confirm.mock.calls[0][0].message).toBe(
+      '프로그램을 삭제합니다. 이 프로그램을 연결한 메뉴가 있으면 삭제되지 않습니다.',
+    );
+    unmount();
+
+    renderWithClient(
+      <ProgramForm
+        open
+        onOpenChange={vi.fn()}
+        onSuccess={vi.fn()}
+        data={programData}
+        deleteNotice="불러온 메뉴 구조 기준으로 메뉴 1개(가 화면)가 이 프로그램을 연결하고 있습니다."
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '프로그램 삭제' }));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(2));
+    expect(mocks.confirm.mock.calls[1][0].message).toBe(
+      '프로그램을 삭제합니다. 불러온 메뉴 구조 기준으로 메뉴 1개(가 화면)가 이 프로그램을 연결하고 있습니다.',
+    );
+    expect(mocks.deleteProgram).not.toHaveBeenCalled();
   });
 });

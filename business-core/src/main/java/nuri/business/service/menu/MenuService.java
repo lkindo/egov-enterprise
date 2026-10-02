@@ -10,6 +10,10 @@ import nuri.business.domain.program.Program;
 import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.menu.dto.MenuCreateDto;
 import nuri.business.service.menu.dto.MenuDto;
+import nuri.business.service.menu.dto.MenuStructureDto.MenuPlacement;
+import nuri.business.service.menu.dto.MenuStructureDto.MenuProperties;
+import nuri.business.service.menu.dto.MenuStructureDto.MenuStructure;
+import nuri.business.service.menu.dto.MenuStructureDto.MenuStructureSave;
 import nuri.business.service.program.dto.ProgramDto;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.security.audit.LoginUserAuditorAware;
@@ -404,6 +408,115 @@ public class MenuService {
     }
 
     private record MenuOrderChange(Long parentId, Integer order) {}
+
+    /**
+     * [2026-10-02 D1] 메뉴 구조 편집기가 읽는 전체 메뉴와 그 버전. 캐시를 거치지 않고 DB 에서 읽는다 — 메뉴 목록 캐시
+     * ({@code allMenuDtos})는 인스턴스마다 따로 10분이라 그 값으로 버전을 만들면 다른 인스턴스에서 저장할 때 409 가 반복된다.
+     */
+    public MenuStructure getMenuStructure() {
+        return MenuStructurePlan.structureOf(menuRepository.findStructureRows());
+    }
+
+    /**
+     * [2026-10-02 D2] 메뉴 위치·속성·추가·삭제와 그 메뉴의 그룹별 메뉴 표시를 한 초안으로 받아 한 번에 저장한다.
+     * <p>순서: 권한 확인 → 형태 검사(400) → 메뉴 전체 잠금(메뉴 → ADMIN 순서) 후 버전 비교(409) → 함께 바꿀 그룹의 버전
+     * 확인(409) → 최종 그래프의 존재·순환·3단계·삭제 뒤 남는 하위 검사(400) → 옮긴 메뉴가 숨겨지는 그룹 검사(400) → 새 메뉴
+     * (부모 먼저)·위치·속성 반영 → 삭제(메뉴 표시 회수 뒤) → 그룹별 권한 → 새 메뉴의 호환 관리자 배정. 하나라도 실패하면 전부 되돌린다.
+     * <p>메뉴 표시와 기능권한은 서로 다른 권한이다(H3). 상위 메뉴 표시를 묵시로 주지 않으며, 옮긴 메뉴의 표시를 가진 그룹이
+     * 새 상위의 표시를 갖지 않으면 사이드바가 그 메뉴를 조용히 버리므로 저장 전에 그룹 이름을 밝혀 거부한다.
+     */
+    @Transactional
+    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    public MenuStructure saveMenuStructure(@NonNull MenuStructureSave request) {
+        SecurityUtil.assertPermission("MENU_UPDATE");
+        if (MenuStructurePlan.hasItems(request.creations())) SecurityUtil.assertPermission("MENU_CREATE");
+        if (MenuStructurePlan.hasItems(request.deletions())) SecurityUtil.assertPermission("MENU_DELETE");
+        if (MenuStructurePlan.hasItems(request.grants())) SecurityUtil.assertPermission("AUTHRT_GRANT");
+        MenuStructurePlan plan = MenuStructurePlan.of(request);
+
+        // 잠금 문장은 시작 시점의 스냅샷으로 결과를 만든다 — 잠금을 기다리는 사이 다른 트랜잭션이 커밋한 새 메뉴는
+        // 그 결과에 없다. 그 행을 빼고 버전·삭제 뒤 남는 하위를 판정하면 409 가 나지 않고, 상위를 지울 때
+        // Menu.children(cascade=ALL) 이 그 새 메뉴까지 조용히 지운다. 그래서 잠금을 쥔 뒤 새 문장으로 다시 읽는다.
+        // 다른 메뉴 생성 경로(단건 등록·구조 저장)도 먼저 전체 행을 잠그므로 이 읽기에서 빠지는 행이 없다.
+        menuRepository.findStructureRowsForUpdate();
+        List<MenuRepository.StructureRow> rows = menuRepository.findStructureRows();
+        if (!MenuStructurePlan.versionOf(rows).equals(request.version())) {
+            throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
+                    "메뉴 구조가 다른 곳에서 바뀌었습니다. 다시 불러온 뒤 저장해 주세요.");
+        }
+        if (plan.hasGrants()) {
+            authorizationAdministrationService.assertGroupVersions(plan.groupVersions());
+        }
+        plan.resolveAgainst(rows);
+        Map<Long, Long> movedParents = plan.movedParents();
+        if (!movedParents.isEmpty()) {
+            var conflicts = authorizationAdministrationService.navigationVisibilityConflicts(movedParents,
+                    plan.navigationAdded(), plan.navigationRemoved(), plan.compatibilityCandidates());
+            if (!conflicts.isEmpty()) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, plan.describeConflicts(conflicts));
+            }
+        }
+
+        Map<String, Long> createdIds = new LinkedHashMap<>();
+        for (var creation : plan.creationsParentFirst()) {
+            Menu menu = Menu.builder()
+                    .menuNm(creation.menuNm())
+                    .upMenuSn(plan.parentOf(creation.key(), createdIds))
+                    .menuOrdr(plan.orderOf(creation.key()))
+                    .menuExpln(creation.menuExpln())
+                    .modernRoute(creation.modernRoute() == null || creation.modernRoute().isBlank() ? null : creation.modernRoute())
+                    .useYn(creation.useYn())
+                    .build();
+            // 감사 필드는 단건 등록(insertMenuManage)과 같게 둔다.
+            menu.setFrstRgtrId("webmaster");
+            menu.setLastMdfrId("webmaster");
+            createdIds.put(creation.key(), menuRepository.save(menu).getMenuSn());
+        }
+        Map<Long, MenuPlacement> placements = plan.existingPlacements();
+        Map<Long, MenuProperties> properties = plan.properties();
+        var touched = new java.util.TreeSet<Long>(placements.keySet());
+        touched.addAll(properties.keySet());
+        Map<Long, Menu> menus = new HashMap<>();
+        if (!touched.isEmpty()) {
+            menuRepository.findAllById(touched).forEach(menu -> menus.put(menu.getMenuSn(), menu));
+        }
+        placements.forEach((id, placement) -> requireMenu(menus, id)
+                .updateOrder(plan.parentOf(id.toString(), createdIds), placement.menuOrdr()));
+        properties.forEach((id, item) -> requireMenu(menus, id)
+                .replaceProperties(item.menuNm(), item.modernRoute(), item.menuExpln(), item.useYn()));
+        menuRepository.flush();
+
+        if (!plan.deletions().isEmpty()) {
+            // 지우기 직전에 새 문장으로 하위를 다시 센다. 삭제는 Menu.children 을 따라 하위까지 지우므로, 판정에서 빠진
+            // 하위가 있으면 조용히 사라진다 — 단건 일괄 삭제(deleteMenuManageList)와 같은 방어다.
+            for (Long id : plan.deletions()) {
+                if (menuRepository.countByUpMenuSnAndMenuSnNotIn(id, plan.deletions()) > 0) {
+                    throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
+                            "메뉴 구조가 다른 곳에서 바뀌었습니다. 다시 불러온 뒤 저장해 주세요.");
+                }
+            }
+            authorizationAdministrationService.removeNavigationGrantsForMenus(plan.deletions());
+            menuRepository.deleteAllById(plan.deletions());
+            menuRepository.flush();
+        }
+        if (plan.hasGrants()) {
+            authorizationAdministrationService.applyMenuStructureGrants(plan.resolvedGrants(createdIds),
+                    plan.compatibilityCandidateIds(createdIds));
+        }
+        for (var creation : plan.creationsParentFirst()) {
+            if (!plan.adminAddsExplicitly(creation.key())) {
+                authorizationAdministrationService.grantNewMenuToCompatibilityAdmin(createdIds.get(creation.key()));
+            }
+        }
+        menuRepository.flush();
+        return MenuStructurePlan.structureOf(menuRepository.findStructureRows());
+    }
+
+    private static Menu requireMenu(Map<Long, Menu> menus, Long id) {
+        Menu menu = menus.get(id);
+        if (menu == null) throw new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND);
+        return menu;
+    }
 
     /** 권한 관리와 동일한 메뉴→ADMIN 잠금 순서. 영속성 컨텍스트 대신 잠근 DB 부모 값을 사용한다. */
     private Map<Long, Long> lockParentGraph() {
