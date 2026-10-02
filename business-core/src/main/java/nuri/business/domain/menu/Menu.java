@@ -151,6 +151,26 @@ public class Menu extends BaseEntity {
     }
 
     /**
+     * [2026-10-02] 메뉴 구조 저장의 속성 치환 — 이름·연결 라우트·설명·사용 여부 네 필드만 통째로 바꾼다.
+     * <p>{@link #update}·{@link #updateWithModernRoute} 를 쓰지 않는 이유: 그 둘은 상위 메뉴와 연결 프로그램을 null 이어도
+     * 덮어쓰고(루트로 이동·프로그램 해제), 서비스가 사용 여부 null 을 'Y' 로 바꿔 넘겨 비활성 메뉴가 다시 켜진다. 여기서는
+     * 위치·순서·연결 프로그램을 건드리지 않는다.
+     * <p>빈 연결 라우트(null·'')는 라우트 없음이다. 라우트가 있던 메뉴를 비우면 빈 문자열로 저장한다 — null 로 두면
+     * 기동 때 도는 {@code MenuService#migrateModernRoutes} 가 연결 프로그램에서 라우트를 다시 채워 비움이 되돌아간다
+     * (단건 수정 경로도 빈 문자열을 저장한다). 이미 비어 있으면(null·'') 그대로 두어 저장만으로 값이 바뀌지 않게 한다.
+     */
+    public void replaceProperties(String menuNm, String modernRoute, String menuExpln, String useYn) {
+        this.menuNm = menuNm;
+        if (modernRoute != null && !modernRoute.isBlank()) {
+            this.modernRoute = modernRoute;
+        } else if (this.modernRoute != null && !this.modernRoute.isBlank()) {
+            this.modernRoute = "";
+        }
+        this.menuExpln = menuExpln;
+        this.useYn = useYn;
+    }
+
+    /**
      * 현대적 라우트 업데이트
      */
     public void updateModernRoute(String modernRoute) {

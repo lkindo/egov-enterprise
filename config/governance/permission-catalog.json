@@ -962,7 +962,7 @@
       "code": "FILE_AUDIT",
       "domain": "FILE",
       "action": "AUDIT",
-      "name": "첨부파일 · 변경 이력 조회",
+      "name": "첨부파일 · 무결성 점검",
       "defaultGroups": [
         "ROLE_ADMIN",
         "ROLE_SYSTEM"

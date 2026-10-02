@@ -817,6 +817,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/menus/structure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 메뉴 구조 조회
+         * @description 메뉴 구조 편집기가 쓰는 전체 메뉴와 구조 버전을 캐시를 거치지 않고 조회합니다.
+         */
+        get: operations["getMenuStructure"];
+        /**
+         * 메뉴 구조 저장
+         * @description 메뉴 위치·속성·추가·삭제와 그 메뉴의 그룹별 메뉴 표시를 한 번에 저장합니다. 구조 버전이 다르면 409 입니다.
+         */
+        put: operations["saveMenuStructure"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/menus/batch-order": {
         parameters: {
             query?: never;
@@ -3024,6 +3048,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/authorization/groups/{code}/copies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 권한 그룹 복제 */
+        post: operations["authzCopyGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/address-books": {
         parameters: {
             query?: never;
@@ -3306,6 +3347,24 @@ export interface paths {
          * @description 가입 신청 상태(REQUESTED)인 사용자를 회원으로 승인합니다. 신청 상태가 아니면 400 입니다.
          */
         patch: operations["approveMember"];
+        trace?: never;
+    };
+    "/api/v1/admin/authorization/groups/{code}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 그룹에 배정된 사용자 */
+        get: operations["authzGroupMembers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** 그룹 구성원 일괄 추가·회수 */
+        patch: operations["authzChangeGroupMembers"];
         trace?: never;
     };
     "/api/v1/users/search": {
@@ -5277,15 +5336,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/authorization/groups/{code}/members": {
+    "/api/v1/admin/authorization/grants": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** 그룹에 배정된 사용자 */
-        get: operations["authzGroupMembers"];
+        /** 전체 그룹 권한 */
+        get: operations["authzGrantMatrix"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6295,6 +6354,73 @@ export interface components {
             /** @description 하위 메뉴 목록 */
             children?: components["schemas"]["MenuDto"][];
         };
+        MenuCreation: {
+            key: string;
+            menuNm: string;
+            modernRoute?: string | null;
+            menuExpln?: string | null;
+            /** @enum {string} */
+            useYn: "Y" | "N";
+        };
+        MenuGroupGrantChange: {
+            groupCode: string;
+            groupVersion: string;
+            navigationAdd: string[];
+            navigationRemove: number[];
+            operationAdd: string[];
+        };
+        MenuPlacement: {
+            ref: string;
+            parentRef?: string | null;
+            /** Format: int32 */
+            menuOrdr: number;
+        };
+        MenuProperties: {
+            /** Format: int64 */
+            menuNo: number;
+            menuNm: string;
+            modernRoute?: string | null;
+            menuExpln?: string | null;
+            /** @enum {string} */
+            useYn: "Y" | "N";
+        };
+        MenuStructureSave: {
+            version: string;
+            creations: components["schemas"]["MenuCreation"][];
+            placements: components["schemas"]["MenuPlacement"][];
+            properties: components["schemas"]["MenuProperties"][];
+            deletions: number[];
+            grants: components["schemas"]["MenuGroupGrantChange"][];
+        };
+        ApiResponseMenuStructure: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["MenuStructure"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 메뉴 구조와 그 버전(메뉴 전체 행의 요약값). 저장할 때 그대로 돌려보낸다. */
+        MenuStructure: {
+            version: string;
+            menus: components["schemas"]["MenuStructureItem"][];
+        };
+        MenuStructureItem: {
+            /** Format: int64 */
+            menuNo: number;
+            menuNm: string;
+            /** Format: int64 */
+            upMenuSn: number | null;
+            /** Format: int32 */
+            menuOrdr: number;
+            modernRoute: string | null;
+            menuExpln: string | null;
+            useYn: string;
+            prgrmFileNm: string | null;
+        };
         LoginPolicyDto: {
             userId: string;
             userNm?: string;
@@ -6730,10 +6856,29 @@ export interface components {
             description?: string | null;
             version: string;
         };
+        ApiResponseGroupSnapshot: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["GroupSnapshot"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
         Grant: {
             /** @enum {string} */
             type: "OPERATION" | "NAVIGATION";
             code: string;
+        };
+        GroupSnapshot: {
+            code: string;
+            name: string;
+            description: string | null;
+            grants: components["schemas"]["Grant"][];
+            version: string;
+            complete: boolean;
         };
         ReplaceGrants: {
             grants: components["schemas"]["Grant"][];
@@ -7535,6 +7680,12 @@ export interface components {
             name: string;
             description?: string | null;
         };
+        CopyGroup: {
+            code: string;
+            name: string;
+            description?: string | null;
+            sourceVersion: string;
+        };
         /** @description 메모보고 지시사항 요청 */
         MemoInstructionRequest: {
             /** @description 지시사항 */
@@ -7564,6 +7715,35 @@ export interface components {
         BulkDeptMoveRequest: {
             userIds: string[];
             ognzId: string;
+        };
+        ChangeGroupMembers: {
+            add: string[];
+            remove: string[];
+            complete?: boolean;
+        };
+        ApiResponseGroupMembersChange: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["GroupMembersChange"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        GroupMembersChange: {
+            code: string;
+            added: components["schemas"]["UserChoice"][];
+            removed: components["schemas"]["UserChoice"][];
+            /** Format: int64 */
+            memberCount: number;
+        };
+        UserChoice: {
+            id: string;
+            userId: string;
+            userNm: string;
+            departmentId: string | null;
         };
         ApiResponsePageResponseWorkReportDto: {
             success?: boolean;
@@ -10645,12 +10825,6 @@ export interface components {
             /** Format: int32 */
             totalPage?: number;
         };
-        UserChoice: {
-            id: string;
-            userId: string;
-            userNm: string;
-            departmentId: string | null;
-        };
         ApiResponseMembershipSnapshot: {
             success?: boolean;
             /** Format: int32 */
@@ -10700,6 +10874,8 @@ export interface components {
             actorNm: string | null;
             /** Format: date-time */
             createdAt: string;
+            /** @description 변경 사유(복제 원본 등, 없으면 null) */
+            reason: string | null;
         };
         PageResponseChange: {
             list?: components["schemas"]["Change"][];
@@ -10729,24 +10905,20 @@ export interface components {
             description?: string;
             version?: string;
         };
-        ApiResponseGroupSnapshot: {
+        ApiResponseGrantMatrix: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["GroupSnapshot"];
+            data?: components["schemas"]["GrantMatrix"];
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        GroupSnapshot: {
-            code: string;
-            name: string;
-            description: string | null;
-            grants: components["schemas"]["Grant"][];
-            version: string;
-            complete: boolean;
+        GrantMatrix: {
+            catalogVersion: string;
+            groups: components["schemas"]["GroupSnapshot"][];
         };
         ApiResponseListDepartmentChoice: {
             success?: boolean;
@@ -10784,6 +10956,8 @@ export interface components {
             name: string;
             parentCode: string | null;
             route: string | null;
+            /** @enum {string} */
+            useYn: "Y" | "N";
         };
         Operation: {
             code: string;
@@ -17097,6 +17271,122 @@ export interface operations {
             };
         };
     };
+    getMenuStructure: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseMenuStructure"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    saveMenuStructure: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuStructureSave"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseMenuStructure"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     updateMenuOrder: {
         parameters: {
             query?: never;
@@ -20530,7 +20820,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseGroupSnapshot"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -20670,7 +20960,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseGroupSnapshot"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -29388,7 +29678,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseGroupSnapshot"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -29411,6 +29701,77 @@ export interface operations {
             };
             /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    authzCopyGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopyGroup"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseGroupSnapshot"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -30400,6 +30761,147 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    authzGroupMembers: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponsePageResponseUserChoice"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    authzChangeGroupMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeGroupMembers"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseGroupMembersChange"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -37427,16 +37929,11 @@ export interface operations {
             };
         };
     };
-    authzGroupMembers: {
+    authzGrantMatrix: {
         parameters: {
-            query?: {
-                page?: number;
-                size?: number;
-            };
+            query?: never;
             header?: never;
-            path: {
-                code: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -37447,7 +37944,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponsePageResponseUserChoice"];
+                    "application/json": components["schemas"]["ApiResponseGrantMatrix"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -37470,15 +37967,6 @@ export interface operations {
             };
             /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
             403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };

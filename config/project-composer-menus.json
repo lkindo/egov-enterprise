@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceMigrationHash": "15a0806a6a34c7048ac971545ac298e8a29c706fb7a357c17ccf9c5bb6c78017",
+  "sourceMigrationHash": "93c3ddd46d8009c44d4848ffd710ff3d38491f4037f126a4dbedca22056c05d9",
   "menus": [
     {
       "menu_sn": 1000000,
@@ -424,7 +424,7 @@
       "menu_sn": 9010230,
       "up_menu_sn": 9010000,
       "menu_ordr": 3,
-      "menu_nm": "프로그램 관리",
+      "menu_nm": "화면 관리",
       "prgrm_file_nm": null,
       "menu_expln": "",
       "modern_route": "/admin/system/programs",
@@ -850,125 +850,5 @@
       "del_yn": "N"
     }
   ],
-  "programs": [
-    {
-      "prgrm_file_nm": "ACTUATOR_ALL",
-      "prgrm_korn_nm": "Actuator 전체",
-      "url": "/actuator/**",
-      "prgrm_strg_path": "/actuator",
-      "prgrm_expln": "URL 인가: 시스템 모니터링 전체"
-    },
-    {
-      "prgrm_file_nm": "ADMIN_ALL",
-      "prgrm_korn_nm": "관리자 전체",
-      "url": "/api/v1/admin/**",
-      "prgrm_strg_path": "/api/v1/admin",
-      "prgrm_expln": "URL 인가: 관리자 전용 API 전체"
-    },
-    {
-      "prgrm_file_nm": "ADMIN_DEPT_ALL",
-      "prgrm_korn_nm": "부서 관리 전체",
-      "url": "/api/v1/admin/system/departments/**",
-      "prgrm_strg_path": "/api/v1/admin/system/departments",
-      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
-    },
-    {
-      "prgrm_file_nm": "ADMIN_DEPT_AUTH_ALL",
-      "prgrm_korn_nm": "부서별 권한 관리 전체",
-      "url": "/api/v1/admin/system/dept-authorities/**",
-      "prgrm_strg_path": "/api/v1/admin/system/dept-authorities",
-      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
-    },
-    {
-      "prgrm_file_nm": "ADMIN_HELP_ALIAS",
-      "prgrm_korn_nm": "도움말 관리 별칭",
-      "url": "/api/v1/help/**",
-      "prgrm_strg_path": "/api/v1/help",
-      "prgrm_expln": "별칭 경로: 도움말 관리 전체"
-    },
-    {
-      "prgrm_file_nm": "ADMIN_HELP_ALL",
-      "prgrm_korn_nm": "도움말 관리 전체",
-      "url": "/api/v1/admin/help/**",
-      "prgrm_strg_path": "/api/v1/admin/help",
-      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
-    },
-    {
-      "prgrm_file_nm": "ADMIN_SURVEY_ALL",
-      "prgrm_korn_nm": "설문 관리 전체",
-      "url": "/api/v1/admin/system/surveys/**",
-      "prgrm_strg_path": "/api/v1/admin/system/surveys",
-      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
-    },
-    {
-      "prgrm_file_nm": "ADMIN_USER_BULK_DEL",
-      "prgrm_korn_nm": "사용자 다중 삭제",
-      "url": "/api/v1/admin/system/users",
-      "prgrm_strg_path": "/api/v1/admin/system/users",
-      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
-    },
-    {
-      "prgrm_file_nm": "ADMIN_USER_CREATE",
-      "prgrm_korn_nm": "사용자 등록",
-      "url": "/api/v1/admin/system/users",
-      "prgrm_strg_path": "/api/v1/admin/system/users",
-      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
-    },
-    {
-      "prgrm_file_nm": "ADMIN_USER_DELETE",
-      "prgrm_korn_nm": "사용자 삭제",
-      "url": "/api/v1/admin/system/users/{userId}",
-      "prgrm_strg_path": "/api/v1/admin/system/users",
-      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
-    },
-    {
-      "prgrm_file_nm": "ADMIN_USER_DEPT",
-      "prgrm_korn_nm": "사용자 부서 일괄 이동",
-      "url": "/api/v1/admin/system/users/dept",
-      "prgrm_strg_path": "/api/v1/admin/system/users",
-      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
-    },
-    {
-      "prgrm_file_nm": "ADMIN_USER_DETAIL",
-      "prgrm_korn_nm": "사용자 상세 조회",
-      "url": "/api/v1/admin/system/users/{userId}",
-      "prgrm_strg_path": "/api/v1/admin/system/users",
-      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
-    },
-    {
-      "prgrm_file_nm": "ADMIN_USER_LIST",
-      "prgrm_korn_nm": "사용자 목록 조회",
-      "url": "/api/v1/admin/system/users",
-      "prgrm_strg_path": "/api/v1/admin/system/users",
-      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
-    },
-    {
-      "prgrm_file_nm": "ADMIN_USER_PWD",
-      "prgrm_korn_nm": "비밀번호 강제 변경",
-      "url": "/api/v1/admin/system/users/{userId}/password",
-      "prgrm_strg_path": "/api/v1/admin/system/users",
-      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
-    },
-    {
-      "prgrm_file_nm": "ADMIN_USER_ROLE",
-      "prgrm_korn_nm": "사용자 권한 일괄 변경",
-      "url": "/api/v1/admin/system/users/role",
-      "prgrm_strg_path": "/api/v1/admin/system/users",
-      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
-    },
-    {
-      "prgrm_file_nm": "ADMIN_USER_STATUS",
-      "prgrm_korn_nm": "사용자 상태 일괄 변경",
-      "url": "/api/v1/admin/system/users/status",
-      "prgrm_strg_path": "/api/v1/admin/system/users",
-      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
-    },
-    {
-      "prgrm_file_nm": "ADMIN_USER_UPDATE",
-      "prgrm_korn_nm": "사용자 수정",
-      "url": "/api/v1/admin/system/users/{userId}",
-      "prgrm_strg_path": "/api/v1/admin/system/users",
-      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
-    }
-  ]
+  "programs": []
 }

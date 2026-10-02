@@ -1056,6 +1056,20 @@
     "permission": "AUTHRT_GRANT"
   },
   {
+    "method": "GET",
+    "path": "/api/v1/admin/system/menus/structure",
+    "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#getMenuStructure",
+    "access": "PERMISSION",
+    "permission": "MENU_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/menus/structure",
+    "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#saveMenuStructure",
+    "access": "PERMISSION",
+    "permission": "MENU_UPDATE"
+  },
+  {
     "method": "DELETE",
     "path": "/api/v1/admin/system/menus/{menuNo}",
     "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#deleteMenu",
@@ -2774,6 +2788,27 @@
     "method": "GET",
     "path": "/api/v1/admin/authorization/groups/{code}/members",
     "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#groupMembers",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/authorization/groups/{code}/members",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#changeGroupMembers",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_ASSIGN"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/authorization/groups/{code}/copies",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#copyGroup",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_CREATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/authorization/grants",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#grantMatrix",
     "access": "PERMISSION",
     "permission": "AUTHRT_READ"
   },

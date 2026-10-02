@@ -13,6 +13,9 @@ import nuri.business.security.authorization.PermissionCodes;
 import nuri.business.service.auth.AuthorizationAdministrationService;
 import nuri.business.service.auth.dto.AuthorizationDto.CreateGroup;
 import nuri.business.service.auth.dto.AuthorizationDto.ChangeDepartmentGroups;
+import nuri.business.service.auth.dto.AuthorizationDto.ChangeGroupMembers;
+import nuri.business.service.auth.dto.AuthorizationDto.CopyGroup;
+import nuri.business.service.auth.dto.AuthorizationDto.UserChoice;
 import nuri.business.service.auth.dto.AuthorizationDto.Grant;
 import nuri.business.service.auth.dto.AuthorizationDto.ReplaceGrants;
 import nuri.business.service.auth.dto.AuthorizationDto.ReplaceGroups;
@@ -99,6 +102,8 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         verifyNavigationHierarchy();
         verifyDepartmentDeltasPreserveOtherGroupsAndRejectStaleRosters();
         verifyBatchSnapshotsAndUnknownOperationFailClosed();
+        verifyGroupMemberDeltaKeepsGroupDraftsCurrent();
+        verifyGroupCopyCarriesGrantsWithProvenanceButNoMembers();
         verifyStalePrincipalCannotWriteAfterDatabaseRevocation();
         verifyAuditFailureRollsBackTheActualServiceMutation();
         verifyExplicitMenuGrantCreationRevocationAndDeletion();
@@ -266,6 +271,104 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
             jdbc.update("DELETE FROM tb_authrt_grnt_map WHERE authrt_cd='T_MULTI_A' AND authrt_type_cd='OPERATION' AND authrt_grnt_cd='UNKNOWN_PERMISSION'");
         }
         assertThat(snapshots.loadAll(loaded.keySet())).isEqualTo(loaded);
+    }
+
+    /**
+     * [2026-10-02] 그룹 쪽 구성원 일괄 변경. 구성원 이력은 사용자 축에만 있어 같은 그룹의 기능권한 초안이 409 가 되지 않는다.
+     * 다른 관리자가 먼저 바꾼 사람은 이름을 밝혀 409 로 전부 거부한다. 끝에서 구성원을 원래대로 되돌린다.
+     */
+    private void verifyGroupMemberDeltaKeepsGroupDraftsCurrent() {
+        var groupBefore=service.group("T_MULTI_B");
+        String membershipBefore=service.memberships("T_BATCH_EMPTY").version();
+        long lastAudit=jdbc.queryForObject("SELECT max(authrt_chg_hstry_sn) FROM tb_authrt_chg_hstry",Long.class);
+        var changed=service.changeGroupMembers("T_MULTI_B",new ChangeGroupMembers(
+                List.of("T_DEPT_USER_A","T_BATCH_EMPTY"),List.of("T_DEPT_USER_B"),true));
+        assertThat(changed.added()).extracting(UserChoice::id).containsExactly("T_BATCH_EMPTY","T_DEPT_USER_A");
+        assertThat(changed.removed()).extracting(UserChoice::id).containsExactly("T_DEPT_USER_B");
+        assertThat(changed.memberCount()).isEqualTo(service.groupMembers("T_MULTI_B",0,100).getTotalElements()).isEqualTo(2);
+        assertThat(service.memberships("T_DEPT_USER_A").groups()).containsExactly("T_MULTI_A","T_MULTI_B");
+        assertThat(service.memberships("T_DEPT_USER_B").groups()).containsExactly("T_MULTI_A");
+        assertThat(service.memberships("T_BATCH_EMPTY").version()).isNotEqualTo(membershipBefore);
+        assertThat(jdbc.queryForObject("SELECT count(DISTINCT dmnd_idntfr) FROM tb_authrt_chg_hstry WHERE authrt_chg_hstry_sn>? "
+                + "AND authrt_cd='T_MULTI_B' AND chg_trgt_type_cd='USER_GROUP'",Long.class,lastAudit)).isEqualTo(1);
+
+        // 구성원 변경 뒤에도 옛 그룹 버전으로 권한 저장이 성공하고, 저장 응답이 새 버전을 준다.
+        assertThat(service.group("T_MULTI_B").version()).isEqualTo(groupBefore.version());
+        var narrowed=service.replaceGrants("T_MULTI_B",new ReplaceGrants(List.of(new Grant("OPERATION","MENU_READ")),groupBefore.version(),true));
+        assertThat(narrowed.grants()).containsExactly(new Grant("OPERATION","MENU_READ"));
+        assertThat(narrowed).isEqualTo(service.group("T_MULTI_B"));
+        // 권한 변경은 여전히 옛 버전을 낡게 만든다.
+        assertThatThrownBy(() -> service.replaceGrants("T_MULTI_B",new ReplaceGrants(groupBefore.grants(),groupBefore.version(),true)))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode",CommonErrorCode.CONCURRENT_MODIFICATION);
+        var restored=service.replaceGrants("T_MULTI_B",new ReplaceGrants(groupBefore.grants(),narrowed.version(),true));
+        assertThat(restored.grants()).containsExactlyElementsOf(groupBefore.grants());
+
+        // 이미 구성원인 사람을 더하거나 구성원이 아닌 사람을 빼면, 그 사람을 밝혀 전부 거부한다.
+        var before=service.groupMembers("T_MULTI_B",0,100).getContent();
+        assertThatThrownBy(() -> service.changeGroupMembers("T_MULTI_B",new ChangeGroupMembers(
+                List.of("T_DEPT_USER_A","T_DEPT_OUTSIDE"),List.of(),true)))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode",CommonErrorCode.CONCURRENT_MODIFICATION)
+                .hasMessageContaining("이미 구성원인 사용자 T_DEPT_USER_A(T_DEPT_USER_A)");
+        assertThatThrownBy(() -> service.changeGroupMembers("T_MULTI_B",new ChangeGroupMembers(
+                List.of(),List.of("T_DEPT_USER_B"),true)))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode",CommonErrorCode.CONCURRENT_MODIFICATION)
+                .hasMessageContaining("구성원이 아닌 사용자 T_DEPT_USER_B(T_DEPT_USER_B)");
+        assertThatThrownBy(() -> service.changeGroupMembers("T_MULTI_B",new ChangeGroupMembers(
+                List.of("T_DEPT_OUTSIDE","T_NOBODY"),List.of(),true)))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode",CommonErrorCode.INVALID_INPUT_VALUE)
+                .hasMessageContaining("존재하지 않는 사용자가 있습니다: T_NOBODY");
+        assertThat(service.groupMembers("T_MULTI_B",0,100).getContent()).isEqualTo(before);
+        assertThat(service.memberships("T_DEPT_OUTSIDE").groups()).containsExactly("T_MULTI_A");
+
+        service.changeGroupMembers("T_MULTI_B",new ChangeGroupMembers(List.of("T_DEPT_USER_B"),List.of("T_DEPT_USER_A","T_BATCH_EMPTY"),true));
+        assertThat(service.memberships("T_DEPT_USER_A").groups()).containsExactly("T_MULTI_A");
+        assertThat(service.memberships("T_DEPT_USER_B").groups()).containsExactly("T_MULTI_A","T_MULTI_B");
+        assertThat(service.memberships("T_BATCH_EMPTY").groups()).isEmpty();
+    }
+
+    /** [2026-10-02] 그룹 복제 — 권한은 옮기고 구성원은 옮기지 않으며, 이력 사유에 원본을 남긴다. 전체 그룹 권한 읽기도 함께 본다. */
+    private void verifyGroupCopyCarriesGrantsWithProvenanceButNoMembers() {
+        var source=service.group("T_MULTI_A");
+        var copy=service.copyGroup("T_MULTI_A",new CopyGroup("T_COPY_A","복제 시험",null,source.version()));
+        assertThat(copy.code()).isEqualTo("T_COPY_A");
+        assertThat(copy.grants()).containsExactlyElementsOf(source.grants());
+        assertThat(service.group("T_MULTI_A")).isEqualTo(source);
+        assertThat(service.groupMembers("T_COPY_A",0,20).getTotalElements()).isZero();
+        assertThat(jdbc.queryForList("SELECT DISTINCT chg_rsn FROM tb_authrt_chg_hstry WHERE authrt_cd='T_COPY_A'",String.class))
+                .containsExactly("복제 원본: T_MULTI_A");
+        assertThat(jdbc.queryForObject("SELECT count(DISTINCT dmnd_idntfr) FROM tb_authrt_chg_hstry WHERE authrt_cd='T_COPY_A'",Long.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_authrt_chg_hstry WHERE authrt_cd='T_COPY_A' "
+                + "AND chg_trgt_type_cd='GROUP_GRANT' AND chg_type_cd='ADD'",Long.class)).isEqualTo(source.grants().size());
+        var today=jdbc.queryForObject("SELECT CURRENT_DATE",java.sql.Date.class).toLocalDate();
+        assertThat(service.history(0,50,"T_COPY_A",null,null,today,today).getContent())
+                .isNotEmpty().allSatisfy(change -> assertThat(change.reason()).isEqualTo("복제 원본: T_MULTI_A"));
+
+        var matrix=service.grantMatrix();
+        assertThat(matrix.catalogVersion()).isEqualTo(PermissionCodes.CATALOG_VERSION);
+        assertThat(matrix.groups()).filteredOn(group -> group.code().equals("T_COPY_A")).singleElement().isEqualTo(service.group("T_COPY_A"));
+        assertThat(matrix.groups()).extracting(group -> group.code())
+                .containsExactlyElementsOf(jdbc.queryForList("SELECT authrt_cd FROM tb_authrt_info ORDER BY authrt_cd",String.class));
+
+        assertThatThrownBy(() -> service.copyGroup("T_MULTI_A",new CopyGroup("T_COPY_B","x",null,"stale")))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode",CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThatThrownBy(() -> service.copyGroup("T_MULTI_A",new CopyGroup("T_MULTI_B","x",null,source.version())))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode",CommonErrorCode.INVALID_INPUT_VALUE);
+        // 원본에 상위 메뉴 없이 하위 메뉴만 보이는 정리되지 않은 표시가 있으면 이름을 밝혀 거부하고 아무것도 만들지 않는다.
+        Long root=jdbc.queryForObject("INSERT INTO tb_menu_info(menu_nm,menu_ordr,use_yn) VALUES('복제 검증 상위',1,'Y') RETURNING menu_sn",Long.class);
+        Long child=jdbc.queryForObject("INSERT INTO tb_menu_info(menu_nm,up_menu_sn,menu_ordr,use_yn) VALUES('복제 검증 하위',?,1,'Y') RETURNING menu_sn",Long.class,root);
+        service.createGroup(new CreateGroup("T_COPY_ORPHAN","정리 안 된 원본",null));
+        jdbc.update("INSERT INTO tb_authrt_grnt_map(authrt_cd,authrt_type_cd,authrt_grnt_cd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
+                + "VALUES('T_COPY_ORPHAN','NAVIGATION',?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')",child.toString());
+        try {
+            assertThatThrownBy(() -> service.copyGroup("T_COPY_ORPHAN",new CopyGroup("T_COPY_C","x",null,service.group("T_COPY_ORPHAN").version())))
+                    .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode",CommonErrorCode.INVALID_INPUT_VALUE)
+                    .hasMessageContaining("'복제 검증 하위'");
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_authrt_info WHERE authrt_cd='T_COPY_C'",Long.class)).isZero();
+        } finally {
+            service.deleteGroup("T_COPY_ORPHAN",service.group("T_COPY_ORPHAN").version());
+            service.deleteGroup("T_COPY_A",service.group("T_COPY_A").version());
+            jdbc.update("DELETE FROM tb_menu_info WHERE menu_sn IN (?,?)",root,child);
+        }
     }
 
     private void verifyStalePrincipalCannotWriteAfterDatabaseRevocation() throws Exception {

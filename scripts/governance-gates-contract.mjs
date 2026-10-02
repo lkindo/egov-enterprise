@@ -265,6 +265,8 @@ export function validateCriticalMutationTargets(scopes) {
   const required = {
     'business-core-auth': [
       'nuri.business.service.menu.MenuService',
+      // 메뉴 구조 저장의 순환·3단계·삭제 뒤 남는 하위·형태 판정이 이 클래스에 있다(MenuService 밖).
+      'nuri.business.service.menu.MenuStructurePlan',
       'nuri.business.security.iam.EgovAuthenticationProvider',
       'nuri.business.security.filter.RateLimitFilter',
     ],

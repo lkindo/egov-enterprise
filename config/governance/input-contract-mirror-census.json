@@ -131,6 +131,32 @@
     },
     {
       "entity": "nuri.business.domain.auth.Authority",
+      "dto": "nuri.business.service.auth.dto.AuthorizationDto$CopyGroup",
+      "fields": [
+        "code",
+        "name",
+        "description"
+      ],
+      "entityFields": {
+        "code": "authrtCd",
+        "name": "authrtNm",
+        "description": "authrtExpln"
+      },
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.auth.Authority",
+      "dto": "nuri.business.service.menu.dto.MenuStructureDto$MenuGroupGrantChange",
+      "fields": [
+        "groupCode"
+      ],
+      "entityFields": {
+        "groupCode": "authrtCd"
+      },
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.auth.Authority",
       "dto": "nuri.business.service.auth.dto.AuthorManageDto",
       "fields": [
         "authrtCd",
@@ -445,6 +471,28 @@
       "pack": "core"
     },
     {
+      "entity": "nuri.business.domain.menu.Menu",
+      "dto": "nuri.business.service.menu.dto.MenuStructureDto$MenuCreation",
+      "fields": [
+        "menuNm",
+        "modernRoute",
+        "menuExpln",
+        "useYn"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.menu.Menu",
+      "dto": "nuri.business.service.menu.dto.MenuStructureDto$MenuProperties",
+      "fields": [
+        "menuNm",
+        "modernRoute",
+        "menuExpln",
+        "useYn"
+      ],
+      "pack": "core"
+    },
+    {
       "entity": "nuri.business.domain.survey.SurveyQuestion",
       "dto": "nuri.business.service.survey.dto.SurveyQuestionDto",
       "fields": [
@@ -676,6 +724,24 @@
       "pack": "core"
     },
     {
+      "dto": "nuri.business.service.menu.dto.MenuStructureDto$MenuCreation",
+      "field": "useYn",
+      "allowedValues": [
+        "Y",
+        "N"
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.menu.dto.MenuStructureDto$MenuProperties",
+      "field": "useYn",
+      "allowedValues": [
+        "Y",
+        "N"
+      ],
+      "pack": "core"
+    },
+    {
       "dto": "nuri.business.service.system.content.banner.dto.BannerDto",
       "field": "rfltYn",
       "allowedValues": [
@@ -817,6 +883,30 @@
       "parent": "nuri.business.service.auth.dto.AuthorizationDto$ReplaceGrants",
       "field": "grants",
       "item": "nuri.business.service.auth.dto.AuthorizationDto$Grant",
+      "pack": "core"
+    },
+    {
+      "parent": "nuri.business.service.menu.dto.MenuStructureDto$MenuStructureSave",
+      "field": "creations",
+      "item": "nuri.business.service.menu.dto.MenuStructureDto$MenuCreation",
+      "pack": "core"
+    },
+    {
+      "parent": "nuri.business.service.menu.dto.MenuStructureDto$MenuStructureSave",
+      "field": "placements",
+      "item": "nuri.business.service.menu.dto.MenuStructureDto$MenuPlacement",
+      "pack": "core"
+    },
+    {
+      "parent": "nuri.business.service.menu.dto.MenuStructureDto$MenuStructureSave",
+      "field": "properties",
+      "item": "nuri.business.service.menu.dto.MenuStructureDto$MenuProperties",
+      "pack": "core"
+    },
+    {
+      "parent": "nuri.business.service.menu.dto.MenuStructureDto$MenuStructureSave",
+      "field": "grants",
+      "item": "nuri.business.service.menu.dto.MenuStructureDto$MenuGroupGrantChange",
       "pack": "core"
     },
     {
@@ -982,6 +1072,100 @@
         },
         {
           "field": "code",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.auth.dto.AuthorizationDto$CopyGroup",
+      "fields": [
+        {
+          "field": "code",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "name",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "sourceVersion",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.menu.dto.MenuStructureDto$MenuGroupGrantChange",
+      "fields": [
+        {
+          "field": "groupCode",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "groupVersion",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "navigationAdd",
+          "constraint": "NotNull",
+          "groups": []
+        },
+        {
+          "field": "navigationRemove",
+          "constraint": "NotNull",
+          "groups": []
+        },
+        {
+          "field": "operationAdd",
+          "constraint": "NotNull",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.menu.dto.MenuStructureDto$MenuCreation",
+      "fields": [
+        {
+          "field": "key",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "menuNm",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "useYn",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.menu.dto.MenuStructureDto$MenuProperties",
+      "fields": [
+        {
+          "field": "menuNo",
+          "constraint": "NotNull",
+          "groups": []
+        },
+        {
+          "field": "menuNm",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "useYn",
           "constraint": "NotBlank",
           "groups": []
         }

@@ -569,6 +569,103 @@ export const MenuDtoSchema = /*#__PURE__*/ (() => z.object({
 export type MenuDto = z.infer<typeof MenuDtoSchema>;
 
 // ==========================================================================
+// MenuCreation Schema
+// ==========================================================================
+export const MenuCreationSchema = /*#__PURE__*/ (() => z.object({
+  key: z.string().min(1).regex(new RegExp("^new-[1-9][0-9]{0,5}$")),
+  menuNm: z.string().min(0).max(100),
+  modernRoute: z.string().min(0).max(500).regex(new RegExp("^$|^(?:/(?:[^\\s?#/\\\\]+/)*[^\\s?#/\\\\]*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$")).optional().nullable(),
+  menuExpln: z.string().min(0).max(4000).optional().nullable(),
+  useYn: z.enum(["Y","N"]),
+}))();
+export type MenuCreation = z.infer<typeof MenuCreationSchema>;
+
+// ==========================================================================
+// MenuGroupGrantChange Schema
+// ==========================================================================
+export const MenuGroupGrantChangeSchema = /*#__PURE__*/ (() => z.object({
+  groupCode: z.string().min(0).max(20),
+  groupVersion: z.string().min(0).max(64),
+  navigationAdd: z.array(z.string().min(1).regex(new RegExp("^(?:[1-9][0-9]{0,18}|new-[1-9][0-9]{0,5})$"))).min(0).max(2000),
+  navigationRemove: z.array(z.number().int()).min(0).max(2000),
+  operationAdd: z.array(z.string().min(0).max(20)).min(0).max(250),
+}))();
+export type MenuGroupGrantChange = z.infer<typeof MenuGroupGrantChangeSchema>;
+
+// ==========================================================================
+// MenuPlacement Schema
+// ==========================================================================
+export const MenuPlacementSchema = /*#__PURE__*/ (() => z.object({
+  ref: z.string().min(1).regex(new RegExp("^(?:[1-9][0-9]{0,18}|new-[1-9][0-9]{0,5})$")),
+  parentRef: z.string().regex(new RegExp("^(?:[1-9][0-9]{0,18}|new-[1-9][0-9]{0,5})$")).optional().nullable(),
+  menuOrdr: z.number().int().min(1).max(9999),
+}))();
+export type MenuPlacement = z.infer<typeof MenuPlacementSchema>;
+
+// ==========================================================================
+// MenuProperties Schema
+// ==========================================================================
+export const MenuPropertiesSchema = /*#__PURE__*/ (() => z.object({
+  menuNo: z.number().int(),
+  menuNm: z.string().min(0).max(100),
+  modernRoute: z.string().min(0).max(500).regex(new RegExp("^$|^(?:/(?:[^\\s?#/\\\\]+/)*[^\\s?#/\\\\]*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$")).optional().nullable(),
+  menuExpln: z.string().min(0).max(4000).optional().nullable(),
+  useYn: z.enum(["Y","N"]),
+}))();
+export type MenuProperties = z.infer<typeof MenuPropertiesSchema>;
+
+// ==========================================================================
+// MenuStructureSave Schema
+// ==========================================================================
+export const MenuStructureSaveSchema = /*#__PURE__*/ (() => z.object({
+  version: z.string().min(0).max(64),
+  creations: z.array(z.lazy(() => MenuCreationSchema)).min(0).max(200),
+  placements: z.array(z.lazy(() => MenuPlacementSchema)).min(0).max(2000),
+  properties: z.array(z.lazy(() => MenuPropertiesSchema)).min(0).max(2000),
+  deletions: z.array(z.number().int()).min(0).max(200),
+  grants: z.array(z.lazy(() => MenuGroupGrantChangeSchema)).min(0).max(100),
+}))();
+export type MenuStructureSave = z.infer<typeof MenuStructureSaveSchema>;
+
+// ==========================================================================
+// ApiResponseMenuStructure Schema
+// ==========================================================================
+export const ApiResponseMenuStructureSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => MenuStructureSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseMenuStructure = z.infer<typeof ApiResponseMenuStructureSchema>;
+
+// ==========================================================================
+// MenuStructure Schema
+// ==========================================================================
+export const MenuStructureSchema = /*#__PURE__*/ (() => z.object({
+  version: z.string(),
+  menus: z.array(z.lazy(() => MenuStructureItemSchema)),
+}))();
+export type MenuStructure = z.infer<typeof MenuStructureSchema>;
+
+// ==========================================================================
+// MenuStructureItem Schema
+// ==========================================================================
+export const MenuStructureItemSchema = /*#__PURE__*/ (() => z.object({
+  menuNo: z.number().int(),
+  menuNm: z.string(),
+  upMenuSn: z.number().int().nullable(),
+  menuOrdr: z.number().int(),
+  modernRoute: z.string().nullable(),
+  menuExpln: z.string().nullable(),
+  useYn: z.string(),
+  prgrmFileNm: z.string().nullable(),
+}))();
+export type MenuStructureItem = z.infer<typeof MenuStructureItemSchema>;
+
+// ==========================================================================
 // LoginPolicyDto Schema
 // ==========================================================================
 export const LoginPolicyDtoSchema = /*#__PURE__*/ (() => z.object({
@@ -898,6 +995,20 @@ export const UpdateGroupSchema = /*#__PURE__*/ (() => z.object({
 export type UpdateGroup = z.infer<typeof UpdateGroupSchema>;
 
 // ==========================================================================
+// ApiResponseGroupSnapshot Schema
+// ==========================================================================
+export const ApiResponseGroupSnapshotSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => GroupSnapshotSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseGroupSnapshot = z.infer<typeof ApiResponseGroupSnapshotSchema>;
+
+// ==========================================================================
 // Grant Schema
 // ==========================================================================
 export const GrantSchema = /*#__PURE__*/ (() => z.object({
@@ -905,6 +1016,19 @@ export const GrantSchema = /*#__PURE__*/ (() => z.object({
   code: z.string().min(0).max(20),
 }))();
 export type Grant = z.infer<typeof GrantSchema>;
+
+// ==========================================================================
+// GroupSnapshot Schema
+// ==========================================================================
+export const GroupSnapshotSchema = /*#__PURE__*/ (() => z.object({
+  code: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  grants: z.array(z.lazy(() => GrantSchema)),
+  version: z.string(),
+  complete: z.boolean(),
+}))();
+export type GroupSnapshot = z.infer<typeof GroupSnapshotSchema>;
 
 // ==========================================================================
 // ReplaceGrants Schema
@@ -1562,6 +1686,17 @@ export const CreateGroupSchema = /*#__PURE__*/ (() => z.object({
 export type CreateGroup = z.infer<typeof CreateGroupSchema>;
 
 // ==========================================================================
+// CopyGroup Schema
+// ==========================================================================
+export const CopyGroupSchema = /*#__PURE__*/ (() => z.object({
+  code: z.string().min(0).max(20).regex(new RegExp("[A-Z][A-Z0-9_]{0,19}")),
+  name: z.string().min(0).max(100),
+  description: z.string().min(0).max(4000).optional().nullable(),
+  sourceVersion: z.string().min(0).max(64),
+}))();
+export type CopyGroup = z.infer<typeof CopyGroupSchema>;
+
+// ==========================================================================
 // MemoInstructionRequest Schema
 // ==========================================================================
 export const MemoInstructionRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -1611,6 +1746,52 @@ export const BulkDeptMoveRequestSchema = /*#__PURE__*/ (() => z.object({
   ognzId: z.string(),
 }))();
 export type BulkDeptMoveRequest = z.infer<typeof BulkDeptMoveRequestSchema>;
+
+// ==========================================================================
+// ChangeGroupMembers Schema
+// ==========================================================================
+export const ChangeGroupMembersSchema = /*#__PURE__*/ (() => z.object({
+  add: z.array(z.string().min(0).max(20)).min(0).max(500),
+  remove: z.array(z.string().min(0).max(20)).min(0).max(500),
+  complete: z.boolean().optional(),
+}))();
+export type ChangeGroupMembers = z.infer<typeof ChangeGroupMembersSchema>;
+
+// ==========================================================================
+// ApiResponseGroupMembersChange Schema
+// ==========================================================================
+export const ApiResponseGroupMembersChangeSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => GroupMembersChangeSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseGroupMembersChange = z.infer<typeof ApiResponseGroupMembersChangeSchema>;
+
+// ==========================================================================
+// GroupMembersChange Schema
+// ==========================================================================
+export const GroupMembersChangeSchema = /*#__PURE__*/ (() => z.object({
+  code: z.string(),
+  added: z.array(z.lazy(() => UserChoiceSchema)),
+  removed: z.array(z.lazy(() => UserChoiceSchema)),
+  memberCount: z.number().int(),
+}))();
+export type GroupMembersChange = z.infer<typeof GroupMembersChangeSchema>;
+
+// ==========================================================================
+// UserChoice Schema
+// ==========================================================================
+export const UserChoiceSchema = /*#__PURE__*/ (() => z.object({
+  id: z.string(),
+  userId: z.string(),
+  userNm: z.string(),
+  departmentId: z.string().nullable(),
+}))();
+export type UserChoice = z.infer<typeof UserChoiceSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseWorkReportDto Schema
@@ -4931,17 +5112,6 @@ export const PageResponseUserChoiceSchema = /*#__PURE__*/ (() => z.object({
 export type PageResponseUserChoice = z.infer<typeof PageResponseUserChoiceSchema>;
 
 // ==========================================================================
-// UserChoice Schema
-// ==========================================================================
-export const UserChoiceSchema = /*#__PURE__*/ (() => z.object({
-  id: z.string(),
-  userId: z.string(),
-  userNm: z.string(),
-  departmentId: z.string().nullable(),
-}))();
-export type UserChoice = z.infer<typeof UserChoiceSchema>;
-
-// ==========================================================================
 // ApiResponseMembershipSnapshot Schema
 // ==========================================================================
 export const ApiResponseMembershipSnapshotSchema = /*#__PURE__*/ (() => z.object({
@@ -5000,6 +5170,7 @@ export const ChangeSchema = /*#__PURE__*/ (() => z.object({
   actorId: z.string().nullable(),
   actorNm: z.string().nullable(),
   createdAt: z.iso.datetime({ offset: true, local: true }),
+  reason: z.string().nullable(),
 }))();
 export type Change = z.infer<typeof ChangeSchema>;
 
@@ -5041,31 +5212,27 @@ export const GroupSummarySchema = /*#__PURE__*/ (() => z.object({
 export type GroupSummary = z.infer<typeof GroupSummarySchema>;
 
 // ==========================================================================
-// ApiResponseGroupSnapshot Schema
+// ApiResponseGrantMatrix Schema
 // ==========================================================================
-export const ApiResponseGroupSnapshotSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponseGrantMatrixSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.lazy(() => GroupSnapshotSchema).optional(),
+  data: z.lazy(() => GrantMatrixSchema).optional(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 }))();
-export type ApiResponseGroupSnapshot = z.infer<typeof ApiResponseGroupSnapshotSchema>;
+export type ApiResponseGrantMatrix = z.infer<typeof ApiResponseGrantMatrixSchema>;
 
 // ==========================================================================
-// GroupSnapshot Schema
+// GrantMatrix Schema
 // ==========================================================================
-export const GroupSnapshotSchema = /*#__PURE__*/ (() => z.object({
-  code: z.string(),
-  name: z.string(),
-  description: z.string().nullable(),
-  grants: z.array(z.lazy(() => GrantSchema)),
-  version: z.string(),
-  complete: z.boolean(),
+export const GrantMatrixSchema = /*#__PURE__*/ (() => z.object({
+  catalogVersion: z.string(),
+  groups: z.array(z.lazy(() => GroupSnapshotSchema)),
 }))();
-export type GroupSnapshot = z.infer<typeof GroupSnapshotSchema>;
+export type GrantMatrix = z.infer<typeof GrantMatrixSchema>;
 
 // ==========================================================================
 // ApiResponseListDepartmentChoice Schema
@@ -5122,6 +5289,7 @@ export const NavigationSchema = /*#__PURE__*/ (() => z.object({
   name: z.string(),
   parentCode: z.string().nullable(),
   route: z.string().nullable(),
+  useYn: z.enum(["Y","N"]),
 }))();
 export type Navigation = z.infer<typeof NavigationSchema>;
 
@@ -6034,6 +6202,136 @@ export const MenuDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   children: z.array(z.lazy((): z.ZodType => MenuDtoResponseSchema)).optional().nullable(),
 }))();
 
+export const MenuCreationRequestSchema = /*#__PURE__*/ (() => z.object({
+  key: z.string().min(1).regex(new RegExp("^new-[1-9][0-9]{0,5}$")),
+  menuNm: z.string().min(0).max(100),
+  modernRoute: z.string().min(0).max(500).regex(new RegExp("^$|^(?:/(?:[^\\s?#/\\\\]+/)*[^\\s?#/\\\\]*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$")).optional().nullable(),
+  menuExpln: z.string().min(0).max(4000).optional().nullable(),
+  useYn: z.enum(["Y","N"]),
+}))();
+
+export const MenuCreationResponseSchema = /*#__PURE__*/ (() => z.object({
+  key: z.string().min(1).regex(new RegExp("^new-[1-9][0-9]{0,5}$")),
+  menuNm: z.string().min(0).max(100),
+  modernRoute: z.string().min(0).max(500).regex(new RegExp("^$|^(?:/(?:[^\\s?#/\\\\]+/)*[^\\s?#/\\\\]*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$")).optional().nullable(),
+  menuExpln: z.string().min(0).max(4000).optional().nullable(),
+  useYn: z.enum(["Y","N"]),
+}))();
+
+export const MenuGroupGrantChangeRequestSchema = /*#__PURE__*/ (() => z.object({
+  groupCode: z.string().min(0).max(20),
+  groupVersion: z.string().min(0).max(64),
+  navigationAdd: z.array(z.string().min(1).regex(new RegExp("^(?:[1-9][0-9]{0,18}|new-[1-9][0-9]{0,5})$"))).min(0).max(2000),
+  navigationRemove: z.array(z.number().int()).min(0).max(2000),
+  operationAdd: z.array(z.string().min(0).max(20)).min(0).max(250),
+}))();
+
+export const MenuGroupGrantChangeResponseSchema = /*#__PURE__*/ (() => z.object({
+  groupCode: z.string().min(0).max(20),
+  groupVersion: z.string().min(0).max(64),
+  navigationAdd: z.array(z.string().min(1).regex(new RegExp("^(?:[1-9][0-9]{0,18}|new-[1-9][0-9]{0,5})$")).optional().nullable()).min(0).max(2000),
+  navigationRemove: z.array(z.number().int().optional().nullable()).min(0).max(2000),
+  operationAdd: z.array(z.string().min(0).max(20).optional().nullable()).min(0).max(250),
+}))();
+
+export const MenuPlacementRequestSchema = /*#__PURE__*/ (() => z.object({
+  ref: z.string().min(1).regex(new RegExp("^(?:[1-9][0-9]{0,18}|new-[1-9][0-9]{0,5})$")),
+  parentRef: z.string().regex(new RegExp("^(?:[1-9][0-9]{0,18}|new-[1-9][0-9]{0,5})$")).optional().nullable(),
+  menuOrdr: z.number().int().min(1).max(9999),
+}))();
+
+export const MenuPlacementResponseSchema = /*#__PURE__*/ (() => z.object({
+  ref: z.string().min(1).regex(new RegExp("^(?:[1-9][0-9]{0,18}|new-[1-9][0-9]{0,5})$")),
+  parentRef: z.string().regex(new RegExp("^(?:[1-9][0-9]{0,18}|new-[1-9][0-9]{0,5})$")).optional().nullable(),
+  menuOrdr: z.number().int().min(1).max(9999),
+}))();
+
+export const MenuPropertiesRequestSchema = /*#__PURE__*/ (() => z.object({
+  menuNo: z.number().int(),
+  menuNm: z.string().min(0).max(100),
+  modernRoute: z.string().min(0).max(500).regex(new RegExp("^$|^(?:/(?:[^\\s?#/\\\\]+/)*[^\\s?#/\\\\]*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$")).optional().nullable(),
+  menuExpln: z.string().min(0).max(4000).optional().nullable(),
+  useYn: z.enum(["Y","N"]),
+}))();
+
+export const MenuPropertiesResponseSchema = /*#__PURE__*/ (() => z.object({
+  menuNo: z.number().int(),
+  menuNm: z.string().min(0).max(100),
+  modernRoute: z.string().min(0).max(500).regex(new RegExp("^$|^(?:/(?:[^\\s?#/\\\\]+/)*[^\\s?#/\\\\]*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$")).optional().nullable(),
+  menuExpln: z.string().min(0).max(4000).optional().nullable(),
+  useYn: z.enum(["Y","N"]),
+}))();
+
+export const MenuStructureSaveRequestSchema = /*#__PURE__*/ (() => z.object({
+  version: z.string().min(0).max(64),
+  creations: z.array(z.lazy(() => MenuCreationRequestSchema.strict())).min(0).max(200),
+  placements: z.array(z.lazy(() => MenuPlacementRequestSchema.strict())).min(0).max(2000),
+  properties: z.array(z.lazy(() => MenuPropertiesRequestSchema.strict())).min(0).max(2000),
+  deletions: z.array(z.number().int()).min(0).max(200),
+  grants: z.array(z.lazy(() => MenuGroupGrantChangeRequestSchema.strict())).min(0).max(100),
+}))();
+
+export const MenuStructureSaveResponseSchema = /*#__PURE__*/ (() => z.object({
+  version: z.string().min(0).max(64),
+  creations: z.array(z.lazy(() => MenuCreationResponseSchema)).min(0).max(200),
+  placements: z.array(z.lazy(() => MenuPlacementResponseSchema)).min(0).max(2000),
+  properties: z.array(z.lazy(() => MenuPropertiesResponseSchema)).min(0).max(2000),
+  deletions: z.array(z.number().int().optional().nullable()).min(0).max(200),
+  grants: z.array(z.lazy(() => MenuGroupGrantChangeResponseSchema)).min(0).max(100),
+}))();
+
+export const ApiResponseMenuStructureRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => MenuStructureRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseMenuStructureResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => MenuStructureResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const MenuStructureRequestSchema = /*#__PURE__*/ (() => z.object({
+  version: z.string(),
+  menus: z.array(z.lazy(() => MenuStructureItemRequestSchema.strict())),
+}))();
+
+export const MenuStructureResponseSchema = /*#__PURE__*/ (() => z.object({
+  version: z.string(),
+  menus: z.array(z.lazy(() => MenuStructureItemResponseSchema)),
+}))();
+
+export const MenuStructureItemRequestSchema = /*#__PURE__*/ (() => z.object({
+  menuNo: z.number().int(),
+  menuNm: z.string(),
+  upMenuSn: z.number().int().nullable(),
+  menuOrdr: z.number().int(),
+  modernRoute: z.string().nullable(),
+  menuExpln: z.string().nullable(),
+  useYn: z.string(),
+  prgrmFileNm: z.string().nullable(),
+}))();
+
+export const MenuStructureItemResponseSchema = /*#__PURE__*/ (() => z.object({
+  menuNo: z.number().int(),
+  menuNm: z.string(),
+  upMenuSn: z.number().int().nullable(),
+  menuOrdr: z.number().int(),
+  modernRoute: z.string().nullable(),
+  menuExpln: z.string().nullable(),
+  useYn: z.string(),
+  prgrmFileNm: z.string().nullable(),
+}))();
+
 export const LoginPolicyDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   userId: z.string().min(0).max(20),
   userNm: z.string().min(0).max(100).optional(),
@@ -6504,6 +6802,26 @@ export const UpdateGroupResponseSchema = /*#__PURE__*/ (() => z.object({
   version: z.string().min(0).max(64),
 }))();
 
+export const ApiResponseGroupSnapshotRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => GroupSnapshotRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseGroupSnapshotResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => GroupSnapshotResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
 export const GrantRequestSchema = /*#__PURE__*/ (() => z.object({
   type: z.enum(["OPERATION","NAVIGATION"]),
   code: z.string().min(0).max(20),
@@ -6512,6 +6830,24 @@ export const GrantRequestSchema = /*#__PURE__*/ (() => z.object({
 export const GrantResponseSchema = /*#__PURE__*/ (() => z.object({
   type: z.enum(["OPERATION","NAVIGATION"]),
   code: z.string().min(0).max(20),
+}))();
+
+export const GroupSnapshotRequestSchema = /*#__PURE__*/ (() => z.object({
+  code: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  grants: z.array(z.lazy(() => GrantRequestSchema.strict())),
+  version: z.string(),
+  complete: z.boolean(),
+}))();
+
+export const GroupSnapshotResponseSchema = /*#__PURE__*/ (() => z.object({
+  code: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  grants: z.array(z.lazy(() => GrantResponseSchema)),
+  version: z.string(),
+  complete: z.boolean(),
 }))();
 
 export const ReplaceGrantsRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -7402,6 +7738,20 @@ export const CreateGroupResponseSchema = /*#__PURE__*/ (() => z.object({
   description: z.string().min(0).max(4000).optional().nullable(),
 }))();
 
+export const CopyGroupRequestSchema = /*#__PURE__*/ (() => z.object({
+  code: z.string().min(0).max(20).regex(new RegExp("[A-Z][A-Z0-9_]{0,19}")),
+  name: z.string().min(0).max(100),
+  description: z.string().min(0).max(4000).optional().nullable(),
+  sourceVersion: z.string().min(0).max(64),
+}))();
+
+export const CopyGroupResponseSchema = /*#__PURE__*/ (() => z.object({
+  code: z.string().min(0).max(20).regex(new RegExp("[A-Z][A-Z0-9_]{0,19}")),
+  name: z.string().min(0).max(100),
+  description: z.string().min(0).max(4000).optional().nullable(),
+  sourceVersion: z.string().min(0).max(64),
+}))();
+
 export const MemoInstructionRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   drctnMttr: z.string().min(1).max(2000),
 }))();
@@ -7454,6 +7804,66 @@ export const BulkDeptMoveRequestRequestSchema = /*#__PURE__*/ (() => z.object({
 export const BulkDeptMoveRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   userIds: z.array(z.string().optional().nullable()).min(1),
   ognzId: z.string(),
+}))();
+
+export const ChangeGroupMembersRequestSchema = /*#__PURE__*/ (() => z.object({
+  add: z.array(z.string().min(0).max(20)).min(0).max(500),
+  remove: z.array(z.string().min(0).max(20)).min(0).max(500),
+  complete: z.boolean().optional(),
+}))();
+
+export const ChangeGroupMembersResponseSchema = /*#__PURE__*/ (() => z.object({
+  add: z.array(z.string().min(0).max(20).optional().nullable()).min(0).max(500),
+  remove: z.array(z.string().min(0).max(20).optional().nullable()).min(0).max(500),
+  complete: z.boolean().optional().nullable(),
+}))();
+
+export const ApiResponseGroupMembersChangeRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => GroupMembersChangeRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseGroupMembersChangeResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => GroupMembersChangeResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const GroupMembersChangeRequestSchema = /*#__PURE__*/ (() => z.object({
+  code: z.string(),
+  added: z.array(z.lazy(() => UserChoiceRequestSchema.strict())),
+  removed: z.array(z.lazy(() => UserChoiceRequestSchema.strict())),
+  memberCount: z.number().int(),
+}))();
+
+export const GroupMembersChangeResponseSchema = /*#__PURE__*/ (() => z.object({
+  code: z.string(),
+  added: z.array(z.lazy(() => UserChoiceResponseSchema)),
+  removed: z.array(z.lazy(() => UserChoiceResponseSchema)),
+  memberCount: z.number().int(),
+}))();
+
+export const UserChoiceRequestSchema = /*#__PURE__*/ (() => z.object({
+  id: z.string(),
+  userId: z.string(),
+  userNm: z.string(),
+  departmentId: z.string().nullable(),
+}))();
+
+export const UserChoiceResponseSchema = /*#__PURE__*/ (() => z.object({
+  id: z.string(),
+  userId: z.string(),
+  userNm: z.string(),
+  departmentId: z.string().nullable(),
 }))();
 
 export const ApiResponsePageResponseWorkReportDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -12162,20 +12572,6 @@ export const PageResponseUserChoiceResponseSchema = /*#__PURE__*/ (() => z.objec
   totalPage: z.number().int().optional().nullable(),
 }))();
 
-export const UserChoiceRequestSchema = /*#__PURE__*/ (() => z.object({
-  id: z.string(),
-  userId: z.string(),
-  userNm: z.string(),
-  departmentId: z.string().nullable(),
-}))();
-
-export const UserChoiceResponseSchema = /*#__PURE__*/ (() => z.object({
-  id: z.string(),
-  userId: z.string(),
-  userNm: z.string(),
-  departmentId: z.string().nullable(),
-}))();
-
 export const ApiResponseMembershipSnapshotRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
@@ -12247,6 +12643,7 @@ export const ChangeRequestSchema = /*#__PURE__*/ (() => z.object({
   actorId: z.string().nullable(),
   actorNm: z.string().nullable(),
   createdAt: z.iso.datetime({ offset: true, local: true }),
+  reason: z.string().nullable(),
 }))();
 
 export const ChangeResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -12266,6 +12663,7 @@ export const ChangeResponseSchema = /*#__PURE__*/ (() => z.object({
   actorId: z.string().nullable(),
   actorNm: z.string().nullable(),
   createdAt: z.iso.datetime({ offset: true, local: true }),
+  reason: z.string().nullable(),
 }))();
 
 export const PageResponseChangeRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -12318,42 +12716,34 @@ export const GroupSummaryResponseSchema = /*#__PURE__*/ (() => z.object({
   version: z.string().optional().nullable(),
 }))();
 
-export const ApiResponseGroupSnapshotRequestSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponseGrantMatrixRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.lazy(() => GroupSnapshotRequestSchema.strict()).optional(),
+  data: z.lazy(() => GrantMatrixRequestSchema.strict()).optional(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
   errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
 }))();
 
-export const ApiResponseGroupSnapshotResponseSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponseGrantMatrixResponseSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional().nullable(),
   status: z.number().int().optional().nullable(),
   code: z.string().optional().nullable(),
   message: z.string().optional().nullable(),
-  data: z.lazy(() => GroupSnapshotResponseSchema).optional().nullable(),
+  data: z.lazy(() => GrantMatrixResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 }))();
 
-export const GroupSnapshotRequestSchema = /*#__PURE__*/ (() => z.object({
-  code: z.string(),
-  name: z.string(),
-  description: z.string().nullable(),
-  grants: z.array(z.lazy(() => GrantRequestSchema.strict())),
-  version: z.string(),
-  complete: z.boolean(),
+export const GrantMatrixRequestSchema = /*#__PURE__*/ (() => z.object({
+  catalogVersion: z.string(),
+  groups: z.array(z.lazy(() => GroupSnapshotRequestSchema.strict())),
 }))();
 
-export const GroupSnapshotResponseSchema = /*#__PURE__*/ (() => z.object({
-  code: z.string(),
-  name: z.string(),
-  description: z.string().nullable(),
-  grants: z.array(z.lazy(() => GrantResponseSchema)),
-  version: z.string(),
-  complete: z.boolean(),
+export const GrantMatrixResponseSchema = /*#__PURE__*/ (() => z.object({
+  catalogVersion: z.string(),
+  groups: z.array(z.lazy(() => GroupSnapshotResponseSchema)),
 }))();
 
 export const ApiResponseListDepartmentChoiceRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -12423,6 +12813,7 @@ export const NavigationRequestSchema = /*#__PURE__*/ (() => z.object({
   name: z.string(),
   parentCode: z.string().nullable(),
   route: z.string().nullable(),
+  useYn: z.enum(["Y","N"]),
 }))();
 
 export const NavigationResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -12430,6 +12821,7 @@ export const NavigationResponseSchema = /*#__PURE__*/ (() => z.object({
   name: z.string(),
   parentCode: z.string().nullable(),
   route: z.string().nullable(),
+  useYn: z.enum(["Y","N"]),
 }))();
 
 export const OperationRequestSchema = /*#__PURE__*/ (() => z.object({

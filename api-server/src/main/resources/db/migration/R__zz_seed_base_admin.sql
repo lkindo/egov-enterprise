@@ -90,7 +90,7 @@ BEGIN
             (915, 910,  5,  '사용자 분류 그룹',   NULL,  NULL,                          '/admin/security/group',            'Y', 'N', 'SYSTEM', NOW()),
             (916, 910,  6,  '메뉴 관리',          NULL,  NULL,                          '/admin/system/menus',              'Y', 'N', 'SYSTEM', NOW()),
             (917, 910,  7,  '그룹별 메뉴 현황',   NULL,  NULL,                          '/admin/system/menus/by-authority', 'Y', 'N', 'SYSTEM', NOW()),
-            (918, 910,  8,  '프로그램 관리',      NULL,  NULL,                          '/admin/system/programs',           'Y', 'N', 'SYSTEM', NOW()),
+            (918, 910,  8,  '화면 관리',          NULL,  NULL,                          '/admin/system/programs',           'Y', 'N', 'SYSTEM', NOW()),
             (919, 910,  9,  '공통코드 관리',      NULL,  NULL,                          '/admin/system/common-code',        'Y', 'N', 'SYSTEM', NOW()),
             (920, 910,  10, '로그 및 감사',       NULL,  NULL,                          '/admin/system/logs',               'Y', 'N', 'SYSTEM', NOW())
         ON CONFLICT (menu_sn) DO NOTHING;

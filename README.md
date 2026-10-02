@@ -64,7 +64,7 @@ egov-enterprise/
 완료율이나 과거 Phase 번호 대신 현재 모듈과 실행 가능한 기능을 기준으로 범위를 설명한다. 미해결 위험과 운영 결정은 [.agent/memory/known-gaps.md](./.agent/memory/known-gaps.md) 및 [pending-decisions.md](./docs/04-operations/pending-decisions.md)에서 확인한다.
 
 ### 핵심 기능군
-- **Administrative Tools**: 공통코드, 메뉴 관리, 프로그램 관리, 로그(시스템/웹/개인정보 등) 관리.
+- **Administrative Tools**: 공통코드, 메뉴 관리, 화면 관리(앱 화면 목록·이전 프로그램), 로그(시스템/웹/개인정보 등) 관리.
 - **Security & IAM**: 권한 관리, 롤 관리, 그룹 관리 등 정교한 RBAC 시스템.
 - **Collaboration Suite**: 공지사항, 갤러리 게시판, 동호회 관리, 주소록.
 - **Operational Support**: 부서/개인 일정 관리, 주간/월간 보고 승인 프로세스, 온라인 설문 참여 및 결과 조회.

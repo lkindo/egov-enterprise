@@ -16,6 +16,18 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(description = "메뉴 정보 DTO")
 public class MenuDto {
+    /**
+     * 연결 라우트 형식 — 아래 {@link #modernRoute} 의 설명이 근거다. [2026-10-02] 메뉴 구조 저장의 요청 DTO
+     * ({@link MenuStructureDto})가 같은 규칙·같은 문구를 쓰도록 상수로 뽑았다. 한쪽만 고치면 쿼리 키 제한을 우회하는 경로가
+     * 생기므로 {@code MenuRouteQueryKeyTest} 가 세 DTO 를 함께 검사한다.
+     */
+    public static final String MODERN_ROUTE_PATTERN =
+            "^$|^(?:/(?:[^\\s?#/\\\\]+/)*[^\\s?#/\\\\]*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)"
+                    + "(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$";
+    public static final String MODERN_ROUTE_MESSAGE =
+            "연결 라우트 형식이 올바르지 않습니다. 절대경로(/로 시작) 또는 레거시 .do 경로여야 하고, "
+                    + "쿼리는 tab·bbsId 키만 쓸 수 있습니다.";
+
     @Schema(description = "시스템 고유 ID", example = "1")
     private Long id;
 
@@ -91,11 +103,7 @@ public class MenuDto {
     //   modern_route NULL), 관리자 화면의 폼은 그 경우 null 이 아니라 ''를 보낸다.
     //   Bean Validation 의 @Pattern 은 null 만 건너뛰고 ''는 검사하므로, 빈 문자열을 별도 분기로
     //   열지 않으면 **폴더 메뉴 저장이 통째로 막힌다**(MenuAdminClient 계약 3건이 이를 잡았다).
-    @Pattern(
-            regexp = "^$|^(?:/(?:[^\\s?#/\\\\]+/)*[^\\s?#/\\\\]*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)"
-                    + "(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$",
-            message = "연결 라우트 형식이 올바르지 않습니다. 절대경로(/로 시작) 또는 레거시 .do 경로여야 하고, "
-                    + "쿼리는 tab·bbsId 키만 쓸 수 있습니다.")
+    @Pattern(regexp = MODERN_ROUTE_PATTERN, message = MODERN_ROUTE_MESSAGE)
     private String modernRoute;
 
     @Schema(description = "생성자 ID", example = "admin")

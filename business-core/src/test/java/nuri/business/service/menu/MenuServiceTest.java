@@ -11,6 +11,15 @@ import nuri.business.domain.menu.MenuRepository;
 import nuri.business.domain.program.Program;
 import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.menu.dto.MenuDto;
+import nuri.business.service.auth.dto.AuthorizationDto.GroupVersion;
+import nuri.business.service.auth.dto.AuthorizationDto.NavigationConflict;
+import nuri.business.service.auth.dto.AuthorizationDto.ResolvedGrantChange;
+import nuri.business.service.menu.dto.MenuStructureDto.MenuCreation;
+import nuri.business.service.menu.dto.MenuStructureDto.MenuGroupGrantChange;
+import nuri.business.service.menu.dto.MenuStructureDto.MenuPlacement;
+import nuri.business.service.menu.dto.MenuStructureDto.MenuProperties;
+import nuri.business.service.menu.dto.MenuStructureDto.MenuStructureItem;
+import nuri.business.service.menu.dto.MenuStructureDto.MenuStructureSave;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -1068,6 +1077,417 @@ class MenuServiceTest {
 
         Map<Long, Long> parentMap = menuService.getMenuParentMapCached();
         assertThat(parentMap).containsEntry(2L, 1L);
+    }
+
+    // ── [2026-10-02 D1·D2] 메뉴 구조 읽기·저장 ─────────────────────────────────────────────────
+
+    private record StructureRowFixture(Long menuSn, Long upMenuSn, Integer menuOrdr, String menuNm, String useYn,
+                                       String modernRoute, String menuExpln, String prgrmFileNm) implements MenuRepository.StructureRow {
+        @Override public Long getMenuSn() { return menuSn; }
+        @Override public Long getUpMenuSn() { return upMenuSn; }
+        @Override public Integer getMenuOrdr() { return menuOrdr; }
+        @Override public String getMenuNm() { return menuNm; }
+        @Override public String getUseYn() { return useYn; }
+        @Override public String getModernRoute() { return modernRoute; }
+        @Override public String getMenuExpln() { return menuExpln; }
+        @Override public String getPrgrmFileNm() { return prgrmFileNm; }
+    }
+
+    private final Map<Long, Menu> structureMenus = new java.util.LinkedHashMap<>();
+    private List<MenuRepository.StructureRow> structureRows = List.of();
+
+    private static StructureRowFixture structureRow(long id, Long parent, int order, String name) {
+        return new StructureRowFixture(id, parent, order, name, "Y", null, null, null);
+    }
+
+    /** 1 Root A ─ 2 Child A1 ─ 3 Leaf A1a, 4 Root B ─ 5 Child B1. 돌려주는 값은 그 구조의 버전이다. */
+    private String givenStructure(StructureRowFixture... extra) {
+        var rows = new ArrayList<MenuRepository.StructureRow>(List.of(structureRow(1, null, 1, "Root A"),
+                structureRow(2, 1L, 1, "Child A1"), structureRow(3, 2L, 1, "Leaf A1a"),
+                structureRow(4, null, 2, "Root B"), structureRow(5, 4L, 1, "Child B1")));
+        rows.addAll(List.of(extra));
+        for (var row : rows) {
+            structureMenus.put(row.getMenuSn(), Menu.builder().menuSn(row.getMenuSn()).upMenuSn(row.getUpMenuSn())
+                    .menuOrdr(row.getMenuOrdr()).menuNm(row.getMenuNm()).useYn(row.getUseYn()).build());
+        }
+        structureRows = List.copyOf(rows);
+        lenient().when(menuRepository.findStructureRowsForUpdate()).thenReturn(rows);
+        lenient().when(menuRepository.findStructureRows()).thenReturn(rows);
+        lenient().when(menuRepository.findAllById(any())).thenAnswer(invocation -> {
+            Iterable<Long> ids = invocation.getArgument(0);
+            var found = new ArrayList<Menu>();
+            ids.forEach(id -> { if (structureMenus.containsKey(id)) found.add(structureMenus.get(id)); });
+            return found;
+        });
+        return MenuStructurePlan.versionOf(rows);
+    }
+
+    private void stubGeneratedMenuIds(long first) {
+        var next = new java.util.concurrent.atomic.AtomicLong(first);
+        when(menuRepository.save(any(Menu.class))).thenAnswer(invocation -> {
+            Menu row = invocation.getArgument(0);
+            org.springframework.test.util.ReflectionTestUtils.setField(row, "menuSn", next.getAndIncrement());
+            return row;
+        });
+    }
+
+    private static MenuStructureSave structureSave(String version, List<MenuCreation> creations, List<MenuPlacement> placements,
+            List<MenuProperties> properties, List<Long> deletions, List<MenuGroupGrantChange> grants) {
+        return new MenuStructureSave(version, creations, placements, properties, deletions, grants);
+    }
+
+    private static MenuStructureSave placementsOnly(String version, MenuPlacement... placements) {
+        return structureSave(version, List.of(), List.of(placements), List.of(), List.of(), List.of());
+    }
+
+    private static void assertInvalidStructure(org.assertj.core.api.ThrowableAssert.ThrowingCallable action, String message) {
+        assertThatThrownBy(action).isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
+                .hasMessageContaining(message);
+    }
+
+    @Test
+    @DisplayName("[D1] 메뉴 구조는 캐시가 아니라 DB 행에서 읽고, 루트 먼저·순서·번호 순으로 싣는다")
+    void structureReadSortsRootsFirstAndNormalizesZeroParents() {
+        var rows = List.<MenuRepository.StructureRow>of(
+                new StructureRowFixture(9L, 0L, 1, "Zero parent root", "N", "", "설명", "dir"),
+                new StructureRowFixture(3L, 1L, 2, "Second child", "Y", "/b", null, null),
+                new StructureRowFixture(2L, 1L, 1, "First child", "Y", "/a?tab=x", null, null),
+                new StructureRowFixture(1L, null, 1, "Root", "Y", null, null, null));
+        when(menuRepository.findStructureRows()).thenReturn(rows);
+
+        var structure = menuService.getMenuStructure();
+
+        assertThat(structure.menus()).extracting(item -> item.menuNo()).containsExactly(1L, 9L, 2L, 3L);
+        assertThat(structure.menus().get(1).upMenuSn()).as("0 상위는 루트다").isNull();
+        assertThat(structure.menus().get(1)).isEqualTo(new MenuStructureItem(9L, "Zero parent root", null, 1, "", "설명", "N", "dir"));
+        assertThat(structure.version()).hasSize(64).isEqualTo(MenuStructurePlan.versionOf(rows));
+        verify(menuRepository, never()).findAllWithPrograms();
+        verify(menuRepository, never()).findStructureRowsForUpdate();
+    }
+
+    @Test
+    @DisplayName("[D1] 구조 버전은 여덟 칸 어디가 바뀌어도 달라지고, null 과 빈 문자열·구분자 위치를 구분한다")
+    void structureVersionCoversEveryColumnUnambiguously() {
+        var base = new StructureRowFixture(1L, null, 1, "a|b", "Y", null, "c", "p");
+        String version = MenuStructurePlan.versionOf(List.of(base));
+        var variants = List.of(
+                new StructureRowFixture(1L, 2L, 1, "a|b", "Y", null, "c", "p"),
+                new StructureRowFixture(1L, null, 2, "a|b", "Y", null, "c", "p"),
+                new StructureRowFixture(1L, null, 1, "a", "Y", null, "c", "p"),
+                new StructureRowFixture(1L, null, 1, "a|b", "N", null, "c", "p"),
+                new StructureRowFixture(1L, null, 1, "a|b", "Y", "", "c", "p"),
+                new StructureRowFixture(1L, null, 1, "a|b", "Y", null, null, "p"),
+                new StructureRowFixture(1L, null, 1, "a|b", "Y", null, "c", null),
+                new StructureRowFixture(1L, null, 1, "a", "Y", "|b", "c", "p"));
+        for (var variant : variants) assertThat(MenuStructurePlan.versionOf(List.of(variant))).isNotEqualTo(version);
+        assertThat(MenuStructurePlan.versionOf(List.of(base))).isEqualTo(version);
+    }
+
+    @Test
+    @DisplayName("[D2] 구조 버전이 다르면 409 이고 메뉴·권한을 바꾸지 않는다")
+    void structureSaveRejectsStaleVersionBeforeAnyChange() {
+        givenStructure();
+        assertThatThrownBy(() -> menuService.saveMenuStructure(placementsOnly("stale", new MenuPlacement("5", "1", 1))))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION)
+                .hasMessageContaining("메뉴 구조가 다른 곳에서 바뀌었습니다");
+        assertThat(structureMenus.get(5L).getUpMenuSn()).isEqualTo(4L);
+        verify(menuRepository, never()).findAllById(any());
+        verify(menuRepository, never()).save(any());
+        verifyNoInteractions(authorizationAdministrationService);
+    }
+
+    @Test
+    @DisplayName("[D2] 버전과 삭제 판정은 잠근 뒤 새로 읽은 행으로 한다 — 잠금을 기다리는 사이 커밋된 새 하위가 있으면 409 이고 지우지 않는다")
+    void structureSaveJudgesRowsReadAfterTheLockNotTheLockingSnapshot() {
+        String version = givenStructure();
+        // 잠금 문장의 결과(시작 시점 스냅샷)에는 없지만, 잠금을 쥔 뒤 새로 읽으면 Root B 아래 새 메뉴 6 이 보인다.
+        var fresh = new ArrayList<>(structureRows);
+        fresh.add(structureRow(6, 4L, 2, "Committed while waiting"));
+        when(menuRepository.findStructureRows()).thenReturn(fresh);
+
+        assertThatThrownBy(() -> menuService.saveMenuStructure(structureSave(version, List.of(), List.of(), List.of(),
+                List.of(4L, 5L), List.of())))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+        var order = inOrder(menuRepository);
+        order.verify(menuRepository).findStructureRowsForUpdate();
+        order.verify(menuRepository).findStructureRows();
+        verify(menuRepository, never()).deleteAllById(any());
+        verifyNoInteractions(authorizationAdministrationService);
+    }
+
+    @Test
+    @DisplayName("[D2] 지우기 직전 새 문장으로 센 하위가 삭제 집합 밖에 있으면 409 이고 지우지 않는다")
+    void structureSaveRecountsChildrenRightBeforeDeleting() {
+        String version = givenStructure();
+        when(menuRepository.countByUpMenuSnAndMenuSnNotIn(4L, List.of(4L, 5L))).thenReturn(1);
+
+        assertThatThrownBy(() -> menuService.saveMenuStructure(structureSave(version, List.of(), List.of(), List.of(),
+                List.of(5L, 4L), List.of())))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION)
+                .hasMessageContaining("메뉴 구조가 다른 곳에서 바뀌었습니다");
+        verify(authorizationAdministrationService, never()).removeNavigationGrantsForMenus(anyList());
+        verify(menuRepository, never()).deleteAllById(any());
+    }
+
+    @Test
+    @DisplayName("[D2] 옮긴 메뉴와 그 하위가 3단계를 넘으면 거부하고, 무관한 기존 위반은 저장을 막지 않는다")
+    void structureSaveEnforcesDepthOnlyForMovedSubtrees() {
+        String version = givenStructure(structureRow(6, 3L, 1, "Legacy depth four"));
+        // 2(하위 3·6 포함)를 5 아래로 옮기면 6 이 5단계가 된다.
+        assertInvalidStructure(() -> menuService.saveMenuStructure(placementsOnly(version, new MenuPlacement("2", "5", 1))),
+                "3단계까지만");
+        // 5 는 하위가 없고, 기존 4단계 메뉴 6 은 이번 요청과 무관하다.
+        menuService.saveMenuStructure(placementsOnly(version, new MenuPlacement("5", "2", 2)));
+        assertThat(structureMenus.get(5L).getUpMenuSn()).isEqualTo(2L);
+        assertThat(structureMenus.get(5L).getMenuOrdr()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("[D2] 최종 그래프에 순환이 생기면 거부한다")
+    void structureSaveRejectsCycles() {
+        String version = givenStructure();
+        assertInvalidStructure(() -> menuService.saveMenuStructure(placementsOnly(version, new MenuPlacement("1", "3", 1))),
+                "상위 메뉴 계층이 올바르지 않습니다");
+        assertInvalidStructure(() -> menuService.saveMenuStructure(placementsOnly(version,
+                new MenuPlacement("1", "4", 1), new MenuPlacement("4", "1", 1))), "상위 메뉴 계층이 올바르지 않습니다");
+        assertInvalidStructure(() -> menuService.saveMenuStructure(placementsOnly(version, new MenuPlacement("99", null, 1))),
+                "존재하지 않는 메뉴입니다: 99");
+        assertThat(structureMenus.get(1L).getUpMenuSn()).isNull();
+        assertThat(structureMenus.get(4L).getUpMenuSn()).isNull();
+    }
+
+    @Test
+    @DisplayName("[D2] 삭제할 메뉴에 최종 그래프의 하위가 남으면 이름을 밝혀 거부하고, 하위를 함께 지우거나 옮기면 허용한다")
+    void structureSaveRejectsDeletionThatLeavesChildren() {
+        String version = givenStructure();
+        assertInvalidStructure(() -> menuService.saveMenuStructure(structureSave(version, List.of(), List.of(), List.of(),
+                List.of(4L), List.of())), "'Root B' 메뉴에 하위 메뉴 'Child B1'");
+        verify(authorizationAdministrationService, never()).removeNavigationGrantsForMenus(anyList());
+
+        menuService.saveMenuStructure(structureSave(version, List.of(), List.of(new MenuPlacement("5", "1", 2)),
+                List.of(), List.of(4L), List.of()));
+        var order = inOrder(menuRepository, authorizationAdministrationService);
+        order.verify(menuRepository).flush();
+        order.verify(authorizationAdministrationService).removeNavigationGrantsForMenus(List.of(4L));
+        order.verify(menuRepository).deleteAllById(List.of(4L));
+        assertThat(structureMenus.get(5L).getUpMenuSn()).isEqualTo(1L);
+
+        menuService.saveMenuStructure(structureSave(version, List.of(), List.of(), List.of(), List.of(5L, 4L), List.of()));
+        verify(authorizationAdministrationService).removeNavigationGrantsForMenus(List.of(4L, 5L));
+        verify(menuRepository).deleteAllById(List.of(4L, 5L));
+    }
+
+    @Test
+    @DisplayName("[D2] 옮긴 메뉴가 어떤 그룹에서 숨겨지면 그룹·메뉴·상위 이름을 밝혀 저장 전에 거부한다")
+    void structureSaveRejectsMovesThatHideMenusFromAGroup() {
+        String version = givenStructure();
+        when(authorizationAdministrationService.navigationVisibilityConflicts(any(), any(), any(), any()))
+                .thenReturn(List.of(new NavigationConflict(5L, 1L, "G_FIELD", "현장 담당")));
+        assertInvalidStructure(() -> menuService.saveMenuStructure(placementsOnly(version, new MenuPlacement("5", "1", 1))),
+                "'Child B1'을(를) 옮기면 현장 담당 그룹에서 상위 메뉴 'Root A'가 표시되지 않아 숨겨집니다");
+        verify(authorizationAdministrationService).navigationVisibilityConflicts(Map.of(5L, 1L), Map.of(), Map.of(), Map.of());
+        assertThat(structureMenus.get(5L).getUpMenuSn()).isEqualTo(4L);
+        verify(menuRepository, never()).flush();
+    }
+
+    @Test
+    @DisplayName("[D2] 속성 저장은 이름·라우트·설명·사용 여부만 바꾸고 상위·순서·연결 프로그램과 미사용 상태를 보존한다")
+    void structurePropertiesReplaceOnlyTheirFourFields() {
+        String version = givenStructure();
+        Menu menu = Menu.builder().menuSn(2L).upMenuSn(1L).menuOrdr(7).menuNm("Child A1").prgrmFileNm("ProgramA")
+                .modernRoute("/old").menuExpln("old").useYn("N").build();
+        structureMenus.put(2L, menu);
+
+        menuService.saveMenuStructure(structureSave(version, List.of(), List.of(),
+                List.of(new MenuProperties(2L, "Renamed", "", null, "N")), List.of(), List.of()));
+
+        assertThat(menu.getMenuNm()).isEqualTo("Renamed");
+        assertThat(menu.getModernRoute()).as("라우트가 있던 메뉴를 비우면 빈 문자열 — null 이면 기동 때 라우트 보강이 다시 채운다").isEmpty();
+        assertThat(menu.getMenuExpln()).isNull();
+        assertThat(menu.getUseYn()).as("미사용 메뉴가 다시 켜지면 안 된다").isEqualTo("N");
+        assertThat(menu.getUpMenuSn()).isEqualTo(1L);
+        assertThat(menu.getMenuOrdr()).isEqualTo(7);
+        assertThat(menu.getPrgrmFileNm()).isEqualTo("ProgramA");
+        verifyNoInteractions(authorizationAdministrationService);
+    }
+
+    @Test
+    @DisplayName("[D2] 이미 비어 있는 라우트(null·빈 문자열)는 빈 값으로 저장해도 그대로 두고, 새 라우트는 그대로 쓴다")
+    void structurePropertiesKeepAnAlreadyEmptyRouteAsItIs() {
+        String version = givenStructure();
+        Menu absent = Menu.builder().menuSn(2L).upMenuSn(1L).menuOrdr(1).menuNm("Child A1").useYn("Y").build();
+        Menu cleared = Menu.builder().menuSn(3L).upMenuSn(2L).menuOrdr(1).menuNm("Leaf A1a").modernRoute("").useYn("Y").build();
+        Menu routed = Menu.builder().menuSn(5L).upMenuSn(4L).menuOrdr(1).menuNm("Child B1").modernRoute("/old").useYn("Y").build();
+        structureMenus.put(2L, absent);
+        structureMenus.put(3L, cleared);
+        structureMenus.put(5L, routed);
+
+        menuService.saveMenuStructure(structureSave(version, List.of(), List.of(), List.of(
+                new MenuProperties(2L, "Child A1", "", null, "Y"), new MenuProperties(3L, "Leaf A1a", null, null, "Y"),
+                new MenuProperties(5L, "Child B1", "/admin/new", null, "Y")), List.of(), List.of()));
+
+        assertThat(absent.getModernRoute()).isNull();
+        assertThat(cleared.getModernRoute()).isEmpty();
+        assertThat(routed.getModernRoute()).isEqualTo("/admin/new");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"MENU_UPDATE", "MENU_CREATE", "MENU_DELETE", "AUTHRT_GRANT"})
+    @DisplayName("[D2] 구조 저장은 요청이 담은 변경 종류의 권한만 추가로 요구하고 없으면 DB 접근 전에 거부한다")
+    void structureSaveRequiresPermissionPerChangeKind(String missing) {
+        usePrincipal(CustomUserDetails.builder().userId("tester").esntlId("TESTER_001").groups(List.of("ROLE_ADMIN"))
+                .permissions(List.of("MENU_CREATE", "MENU_UPDATE", "MENU_DELETE", "AUTHRT_GRANT").stream()
+                        .filter(permission -> !permission.equals(missing)).toList())
+                .enabled(true).build());
+        var creation = new MenuCreation("new-1", "New", null, null, "Y");
+        var full = structureSave("v", List.of(creation), List.of(new MenuPlacement("new-1", null, 9)), List.of(),
+                List.of(5L), List.of(new MenuGroupGrantChange("G_A", "gv", List.of("new-1"), List.of(), List.of())));
+        assertThatThrownBy(() -> menuService.saveMenuStructure(full)).isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        verifyNoInteractions(menuRepository, authorizationAdministrationService);
+
+        if (!"MENU_UPDATE".equals(missing)) {
+            // 그 종류의 변경이 없으면 그 권한은 요구하지 않는다.
+            String version = givenStructure();
+            var without = switch (missing) {
+                case "MENU_CREATE" -> structureSave(version, List.of(), List.of(), List.of(), List.of(5L), List.of());
+                case "MENU_DELETE" -> placementsOnly(version, new MenuPlacement("5", "4", 3));
+                default -> structureSave(version, List.of(creation), List.of(new MenuPlacement("new-1", null, 9)), List.of(),
+                        List.of(5L), List.of());
+            };
+            if ("AUTHRT_GRANT".equals(missing)) stubGeneratedMenuIds(301L);
+            menuService.saveMenuStructure(without);
+            verify(authorizationAdministrationService, never()).applyMenuStructureGrants(anyList(), anyList());
+        }
+    }
+
+    @Test
+    @DisplayName("[D2] 새 메뉴는 부모 먼저 저장하고 키를 번호로 바꿔 위치·그룹 표시·호환 관리자 배정에 쓴다")
+    void structureSaveCreatesParentsFirstAndResolvesKeys() {
+        String version = givenStructure();
+        stubGeneratedMenuIds(101L);
+        var request = structureSave(version,
+                List.of(new MenuCreation("new-2", "New child", "/admin/new-child", "설명", "N"),
+                        new MenuCreation("new-1", "New root", " ", null, "Y")),
+                List.of(new MenuPlacement("new-2", "new-1", 1), new MenuPlacement("new-1", null, 3),
+                        new MenuPlacement("5", "new-1", 2)),
+                List.of(), List.of(),
+                List.of(new MenuGroupGrantChange("G_FIELD", "gv", List.of("new-2", "new-1", "4"), List.of(), List.of("MENU_READ"))));
+
+        menuService.saveMenuStructure(request);
+
+        var saved = ArgumentCaptor.forClass(Menu.class);
+        verify(menuRepository, times(2)).save(saved.capture());
+        assertThat(saved.getAllValues()).extracting(Menu::getMenuNm).containsExactly("New root", "New child");
+        Menu root = saved.getAllValues().get(0);
+        Menu child = saved.getAllValues().get(1);
+        assertThat(root.getUpMenuSn()).isNull();
+        assertThat(root.getMenuOrdr()).isEqualTo(3);
+        assertThat(root.getModernRoute()).isNull();
+        assertThat(root.getFrstRgtrId()).isEqualTo("webmaster");
+        assertThat(child.getUpMenuSn()).isEqualTo(101L);
+        assertThat(child.getModernRoute()).isEqualTo("/admin/new-child");
+        assertThat(child.getUseYn()).isEqualTo("N");
+        assertThat(structureMenus.get(5L).getUpMenuSn()).isEqualTo(101L);
+        assertThat(structureMenus.get(5L).getMenuOrdr()).isEqualTo(2);
+
+        var order = inOrder(menuRepository, authorizationAdministrationService);
+        order.verify(authorizationAdministrationService).assertGroupVersions(List.of(new GroupVersion("G_FIELD", "gv")));
+        // 관리자 그룹을 명시하지 않은 새 메뉴는 호환 배정 후보다 — 숨김 검사는 그 상위(가까운 것부터)를 함께 받는다.
+        order.verify(authorizationAdministrationService).navigationVisibilityConflicts(Map.of(5L, -2L),
+                Map.of("G_FIELD", java.util.Set.of(-1L, -2L, 4L)), Map.of("G_FIELD", java.util.Set.of()),
+                Map.of(-2L, List.of(), -1L, List.of(-2L)));
+        order.verify(menuRepository, times(2)).save(any(Menu.class));
+        order.verify(menuRepository).flush();
+        order.verify(authorizationAdministrationService).applyMenuStructureGrants(List.of(new ResolvedGrantChange("G_FIELD",
+                java.util.Set.of(4L, 101L, 102L), java.util.Set.of(), java.util.Set.of("MENU_READ"))), List.of(101L, 102L));
+        order.verify(authorizationAdministrationService).grantNewMenuToCompatibilityAdmin(101L);
+        order.verify(authorizationAdministrationService).grantNewMenuToCompatibilityAdmin(102L);
+        verify(authorizationAdministrationService, never()).removeNavigationGrantsForMenus(anyList());
+    }
+
+    @Test
+    @DisplayName("[D2] 요청이 관리자 그룹에 새 메뉴 표시를 명시로 주면 그 메뉴의 호환 배정은 다시 하지 않는다")
+    void structureSaveSkipsCompatibilityGrantWhenAdminAddsTheMenuExplicitly() {
+        String version = givenStructure();
+        stubGeneratedMenuIds(201L);
+        menuService.saveMenuStructure(structureSave(version,
+                List.of(new MenuCreation("new-1", "Root", null, null, "Y"), new MenuCreation("new-2", "Child", null, null, "Y")),
+                List.of(new MenuPlacement("new-1", null, 5), new MenuPlacement("new-2", "new-1", 1)),
+                List.of(), List.of(),
+                List.of(new MenuGroupGrantChange("ROLE_ADMIN", "gv", List.of("new-1"), List.of(), List.of()))));
+        verify(authorizationAdministrationService, never()).grantNewMenuToCompatibilityAdmin(201L);
+        verify(authorizationAdministrationService).grantNewMenuToCompatibilityAdmin(202L);
+        verify(authorizationAdministrationService, never()).navigationVisibilityConflicts(any(), any(), any(), any());
+        // 명시한 메뉴는 호환 배정 후보에서 빠진다.
+        verify(authorizationAdministrationService).applyMenuStructureGrants(anyList(), org.mockito.ArgumentMatchers.eq(List.of(202L)));
+    }
+
+    @Test
+    @DisplayName("[D2] 새 폴더를 만들고 기존 메뉴를 그 아래로 옮기면, 숨김 검사는 새 폴더의 호환 관리자 배정 후보를 함께 받는다")
+    void structureSavePassesCompatibilityCandidatesToTheVisibilityCheck() {
+        String version = givenStructure();
+        stubGeneratedMenuIds(401L);
+        menuService.saveMenuStructure(structureSave(version, List.of(new MenuCreation("new-1", "Folder", null, null, "Y")),
+                List.of(new MenuPlacement("new-1", null, 3), new MenuPlacement("5", "new-1", 1)), List.of(), List.of(), List.of()));
+        verify(authorizationAdministrationService).navigationVisibilityConflicts(Map.of(5L, -1L), Map.of(), Map.of(),
+                Map.of(-1L, List.of()));
+        verify(authorizationAdministrationService).grantNewMenuToCompatibilityAdmin(401L);
+        verify(authorizationAdministrationService, never()).applyMenuStructureGrants(anyList(), anyList());
+    }
+
+    @Test
+    @DisplayName("[D2] 저장은 저장 뒤 DB 에서 다시 읽은 구조와 새 버전을 돌려준다")
+    void structureSaveReturnsTheStructureReadBackFromTheDatabase() {
+        String version = givenStructure();
+        var after = List.<MenuRepository.StructureRow>of(structureRow(1, null, 1, "Root A"), structureRow(5, 1L, 2, "Child B1"));
+        when(menuRepository.findStructureRows()).thenReturn(structureRows).thenReturn(after);
+        var result = menuService.saveMenuStructure(structureSave(version, List.of(), List.of(),
+                List.of(new MenuProperties(1L, "Root A", null, null, "Y")), List.of(), List.of()));
+        assertThat(result.version()).isEqualTo(MenuStructurePlan.versionOf(after)).isNotEqualTo(version);
+        assertThat(result.menus()).extracting(item -> item.menuNo()).containsExactly(1L, 5L);
+    }
+
+    @Test
+    @DisplayName("[D2] 형태가 틀린 요청은 DB 를 읽기 전에 사람이 읽을 수 있는 사유로 거부한다")
+    void structureSaveRejectsMalformedRequestsBeforeDatabaseAccess() {
+        var creation = new MenuCreation("new-1", "New", null, null, "Y");
+        var place = new MenuPlacement("new-1", null, 1);
+        var grant = new MenuGroupGrantChange("G_A", "gv", List.of("1"), List.of(), List.of());
+        Map<String, MenuStructureSave> invalid = new java.util.LinkedHashMap<>();
+        invalid.put("바뀐 내용이 없습니다", structureSave("v", List.of(), List.of(), List.of(), List.of(), List.of()));
+        invalid.put("두 번 쓰였습니다", structureSave("v", List.of(creation, creation), List.of(place), List.of(), List.of(), List.of()));
+        invalid.put("위치를 정해 주세요", structureSave("v", List.of(creation), List.of(), List.of(), List.of(), List.of()));
+        invalid.put("위치가 두 번", structureSave("v", List.of(), List.of(new MenuPlacement("5", null, 1), new MenuPlacement("5", "1", 1)),
+                List.of(), List.of(), List.of()));
+        invalid.put("존재하지 않는 새 메뉴 키", structureSave("v", List.of(), List.of(new MenuPlacement("5", "new-9", 1)),
+                List.of(), List.of(), List.of()));
+        invalid.put("속성이 두 번", structureSave("v", List.of(), List.of(), List.of(new MenuProperties(1L, "A", null, null, "Y"),
+                new MenuProperties(1L, "B", null, null, "Y")), List.of(), List.of()));
+        invalid.put("두 번 지정됐습니다", structureSave("v", List.of(), List.of(), List.of(), List.of(3L, 3L), List.of()));
+        invalid.put("삭제할 메뉴 5", structureSave("v", List.of(), List.of(new MenuPlacement("5", null, 1)), List.of(), List.of(5L), List.of()));
+        invalid.put("삭제할 메뉴 4", structureSave("v", List.of(), List.of(new MenuPlacement("5", "4", 1)), List.of(), List.of(4L), List.of()));
+        invalid.put("삭제할 메뉴 2", structureSave("v", List.of(), List.of(), List.of(new MenuProperties(2L, "A", null, null, "Y")),
+                List.of(2L), List.of()));
+        invalid.put("삭제할 메뉴 1", structureSave("v", List.of(), List.of(), List.of(), List.of(1L), List.of(grant)));
+        invalid.put("권한 변경이 두 번", structureSave("v", List.of(), List.of(), List.of(), List.of(), List.of(grant, grant)));
+        invalid.put("바꿀 권한이 없습니다", structureSave("v", List.of(), List.of(), List.of(), List.of(),
+                List.of(new MenuGroupGrantChange("G_A", "gv", List.of(), List.of(), List.of()))));
+        invalid.put("알 수 없는 기능 권한", structureSave("v", List.of(), List.of(), List.of(), List.of(),
+                List.of(new MenuGroupGrantChange("G_A", "gv", List.of(), List.of(), List.of("NOT_REGISTERED")))));
+        invalid.put("공개 메뉴용 그룹", structureSave("v", List.of(), List.of(), List.of(), List.of(),
+                List.of(new MenuGroupGrantChange("ROLE_ANONYMOUS", "gv", List.of(), List.of(), List.of("BOARD_READ")))));
+        invalid.put("추가하면서 회수", structureSave("v", List.of(), List.of(), List.of(), List.of(),
+                List.of(new MenuGroupGrantChange("G_A", "gv", List.of("2"), List.of(2L), List.of()))));
+        invalid.put("메뉴 번호가 너무 큽니다", structureSave("v", List.of(), List.of(new MenuPlacement("9999999999999999999", null, 1)),
+                List.of(), List.of(), List.of()));
+        invalid.put("요청이 올바르지 않습니다", structureSave("v", null, List.of(), List.of(), List.of(), List.of()));
+        invalid.forEach((message, request) -> assertInvalidStructure(() -> menuService.saveMenuStructure(request), message));
+        verifyNoInteractions(menuRepository, authorizationAdministrationService);
     }
 
     @Test

@@ -103,9 +103,15 @@ class ProgramServiceTest {
     @Test
     void refusesSingleAndBatchDeletionOfReferencedProgram() {
         when(programRepository.hasReferences("linked")).thenReturn(true);
-        assertThrows(BusinessException.class, () -> programService.deleteProgrm(
+        var single = assertThrows(BusinessException.class, () -> programService.deleteProgrm(
                 ProgramDto.builder().prgrmFileNm("linked").build()));
-        assertThrows(BusinessException.class, () -> programService.deleteProgrmManageList("free,linked"));
+        var batch = assertThrows(BusinessException.class, () -> programService.deleteProgrmManageList("free,linked"));
+        // 거부 사유는 사실만 말한다 — 화면에 없는 동작(연결 해제)을 지시하지 않고, 여러 건 삭제에서도 걸린 프로그램을 밝힌다.
+        for (var error : List.of(single, batch)) {
+            assertEquals(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_IN_USE, error.getErrorCode());
+            assertEquals("이 프로그램을 연결한 메뉴가 있어 삭제할 수 없습니다: linked", error.getMessage());
+            assertFalse(error.getMessage().contains("해제"), error.getMessage());
+        }
         verify(programRepository, never()).deleteById(anyString());
         verify(programRepository, never()).deleteAllByIdInBatch(any());
     }

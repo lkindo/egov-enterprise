@@ -125,10 +125,17 @@ public class ProgramService {
         programRepository.deleteById(dto.getPrgrmFileNm());
     }
 
+    /**
+     * 메뉴가 이 프로그램을 연결하고 있으면 삭제를 거부한다(409). 연결은 메뉴 사용 여부와 무관하게 센다.
+     *
+     * <p>문구는 사실만 말한다(2026-10-02 관리 콘솔 UX). 메뉴는 이제 화면 경로로 연결하고, 메뉴 구조 저장은 메뉴의 연결
+     * 프로그램을 바꾸지 않으므로 화면에서 연결을 풀 길이 없다 — 종전 '먼저 연결을 해제해 주세요' 는 없는 동작을 지시했다.
+     * 여러 건 삭제({@link #deleteProgrmManageList})도 이 판정을 쓰므로 어느 프로그램이 걸렸는지 파일명을 싣는다.</p>
+     */
     private void assertNotReferenced(String prgrmFileNm) {
         if (programRepository.hasReferences(prgrmFileNm)) {
             throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
-                    "메뉴에서 사용 중인 프로그램입니다. 먼저 연결을 해제해 주세요.");
+                    "이 프로그램을 연결한 메뉴가 있어 삭제할 수 없습니다: " + prgrmFileNm);
         }
     }
 
