@@ -160,6 +160,54 @@ describe('MasterDetailPage — A2 archetype 문법', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
+  it('기본 범위를 명시해도(detail) 상세 없이 저장 단축키를 실행하지 않는다', () => {
+    const onSave = vi.fn();
+    render(
+      <MasterDetailPage
+        title="메뉴 관리"
+        masterTitle="메뉴 목록"
+        master={<button type="button">목록</button>}
+        onSaveShortcut={onSave}
+        saveShortcutScope="detail"
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByRole('button', { name: '목록' }), { key: 's', metaKey: true });
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('선택과 무관한 저장(saveShortcutScope="page")은 상세 없이도 실행하고, 비활성·Alt 조합은 따른다', () => {
+    // [2026-10-02] 메뉴 구조 저장은 여러 메뉴의 순서·계층 초안을 저장한다 — 어떤 메뉴를 골랐는지와 무관하다.
+    const onSave = vi.fn();
+    const { rerender } = render(
+      <MasterDetailPage
+        title="메뉴 관리"
+        masterTitle="메뉴 목록"
+        master={<button type="button">목록</button>}
+        onSaveShortcut={onSave}
+        saveShortcutScope="page"
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByRole('button', { name: '목록' }), { key: 's', ctrlKey: true });
+    expect(onSave).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(screen.getByRole('button', { name: '목록' }), { key: 's', ctrlKey: true, altKey: true });
+    expect(onSave).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <MasterDetailPage
+        title="메뉴 관리"
+        masterTitle="메뉴 목록"
+        master={<button type="button">목록</button>}
+        onSaveShortcut={onSave}
+        saveShortcutScope="page"
+        saveShortcutDisabled
+      />,
+    );
+    fireEvent.keyDown(screen.getByRole('button', { name: '목록' }), { key: 's', ctrlKey: true });
+    expect(onSave).toHaveBeenCalledTimes(1);
+  });
+
   it('선택된 마스터 항목에서 Tab을 누르면 우측 상세의 첫 조작 요소로 이동한다', () => {
     renderPage({
       detailActions: <button type="button">기획부 수정</button>,
@@ -258,6 +306,27 @@ describe('MasterDetailPage — A2 archetype 문법', () => {
     expect(screen.getByTestId('master-detail-layout')).toHaveClass('lg:h-[min(70vh,48rem)]');
     expect(screen.getByTestId('master-detail-master')).toHaveClass('max-h-[60vh]', 'overflow-auto');
     expect(screen.getByTestId('master-detail-detail')).toHaveClass('overflow-auto');
+  });
+
+  it('기본 폭은 좁은 마스터 + 넓은 상세이고, masterSize="wide" 만 넓은 마스터 + 좁은 상세로 바꾼다', () => {
+    // 기본값(지정하지 않음·'default')은 기존 다섯 화면의 의미 그대로다.
+    const { unmount } = renderPage();
+    const defaultLayout = screen.getByTestId('master-detail-layout');
+    expect(defaultLayout).toHaveClass('lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]');
+    expect(defaultLayout).not.toHaveClass('lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]');
+    unmount();
+
+    const explicit = renderPage({ masterSize: 'default' });
+    expect(screen.getByTestId('master-detail-layout')).toHaveClass('lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]');
+    explicit.unmount();
+
+    renderPage({ masterSize: 'wide' });
+    const wide = screen.getByTestId('master-detail-layout');
+    expect(wide).toHaveClass('lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]');
+    expect(wide).not.toHaveClass('lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]');
+    // 높이 제한과 각 영역의 스크롤은 폭과 무관하게 같다.
+    expect(wide).toHaveClass('lg:h-[min(70vh,48rem)]');
+    expect(screen.getByTestId('master-detail-master')).toHaveClass('max-h-[60vh]', 'overflow-auto');
   });
 
   it('상위 허브가 h1을 소유하면 패널과 양쪽 section heading을 한 단계 내린다', () => {

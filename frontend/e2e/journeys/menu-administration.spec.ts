@@ -26,18 +26,57 @@ test.describe('계층 편집', () => {
             console.log('\n>>> Testing Menu Management Tree');
             await page.goto('/admin/system/menus');
             await expect(page.getByRole('heading', { level: 1, name: '시스템 메뉴 관리' })).toBeVisible({ timeout: 20000 });
-            await expect(page.getByText('네비게이션 트리', { exact: true })).toHaveCount(1);
+            // [2026-10-02 D1] 마스터는 보드다 — 영역(최상위 메뉴) 탭 → 2단계 카드 → 3단계 줄.
+            await expect(page.getByText('메뉴 구조', { exact: true })).toHaveCount(1);
             await expect(page.getByRole('textbox', { name: '메뉴 검색' })).toHaveCount(1);
             await expect(page.getByTestId('master-detail-master')).toHaveCount(1);
             await expect(page.getByTestId('master-detail-detail')).toHaveCount(1);
             await expect(page.getByText('메뉴를 선택하세요', { exact: true })).toBeVisible();
+            const areaTabs = page.getByRole('tablist', { name: '메뉴 영역' }).getByRole('tab');
+            await expect(areaTabs.first()).toHaveAttribute('aria-selected', 'true');
             // Check for node elements (ID: prefix)
             const nodes = page.getByText(/ID: \d+/);
             await expect(nodes.first()).toBeVisible({ timeout: 15000 });
             const firstMenu = page.locator('[data-a2-master-item]').first();
             await firstMenu.click();
             await expect(firstMenu).toHaveAttribute('aria-current', 'true');
-            await expect(page.getByRole('button', { name: '메뉴 수정' })).toBeVisible();
+            // 상세는 즉시 저장 수정 창이 아니라 초안에 바로 반영되는 편집 칸이다.
+            await expect(page.getByRole('textbox', { name: '메뉴 이름' })).toBeVisible();
+            // 구조 초안: 끌지 않고 옮긴 결과는 저장 전까지 화면에만 있다. 같은 DB 를 쓰는 다른 shard 가 시드 메뉴 순서에
+            //   기대므로 저장하지 않고 '모두 되돌리기' 로 끝낸다(useUnsavedChanges 도 비운다).
+            const saveStructure = page.getByRole('button', { name: '변경 저장' });
+            await expect(saveStructure).toBeDisabled();
+            await expect(page.getByRole('button', { name: '한 칸 아래로' })).toBeVisible();
+            // '다른 곳으로 옮기기' 대화상자는 열었다 닫아도 아무것도 바꾸지 않는다.
+            await page.getByRole('button', { name: '다른 곳으로 옮기기…' }).click();
+            const moveDialog = page.getByRole('dialog', { name: '다른 곳으로 옮기기' });
+            await expect(moveDialog.getByRole('button', { name: '선택한 위치로 메뉴 옮기기' })).toBeDisabled();
+            await moveDialog.getByRole('button', { name: '옮기기 취소' }).click();
+            await expect(moveDialog).toHaveCount(0);
+            await expect(saveStructure).toBeDisabled();
+            const firstMenuNo = await firstMenu.getAttribute('data-menu-no');
+            const movedMenu = page.locator(`[data-a2-master-item][data-menu-no="${firstMenuNo}"]`);
+            await movedMenu.press('Alt+ArrowDown');
+            const changeToggle = page.getByRole('button', { name: '변경 1건', exact: true });
+            await expect(changeToggle).toBeVisible();
+            await expect(saveStructure).toBeEnabled();
+            // 옮긴 메뉴는 선택과 포커스를 유지한다 — 항목이 자리를 바꿔도 키보드 사용자가 자리를 잃지 않는다.
+            await expect(movedMenu).toHaveAttribute('aria-current', 'true');
+            await expect(movedMenu).toBeFocused();
+            await expect(page.getByRole('tab', { name: /1건 변경$/ })).toBeVisible();
+            await changeToggle.click();
+            await page.getByRole('button', { name: '모두 되돌리기', exact: true }).click();
+            await page.getByRole('dialog').getByRole('button', { name: '모두 되돌리기', exact: true }).click();
+            await expect(changeToggle).toHaveCount(0);
+            await expect(saveStructure).toBeDisabled();
+            await expect(page.locator('[data-a2-master-item]').first()).toHaveAttribute('data-menu-no', firstMenuNo ?? '');
+            // 찾기는 목록을 거르지 않고, Enter 가 일치 메뉴를 골라 그 영역 탭을 연다.
+            const search = page.getByRole('textbox', { name: '메뉴 검색' });
+            await search.fill('권한 그룹 관리');
+            await search.press('Enter');
+            await expect(page.locator('[data-a2-master-item][aria-current="true"]')).toContainText('권한 그룹 관리');
+            await expect(page.getByRole('tab', { name: /^관리 센터/ })).toHaveAttribute('aria-selected', 'true');
+            await search.fill('');
             // [2026-08-10 제거] 'data-driven modern routes' 블록을 걷어낸다. 세 겹으로 무의미했다:
             //   ① 셀렉터가 `a[href^="/admin/"]` 인데 단언이 `href` 가 `/^\/admin\/.+/` 인지 — 즉
             //      **셀렉터가 이미 보장한 것을 다시 묻는 동어반복**이었다(추가로 증명되는 것은

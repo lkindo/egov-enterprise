@@ -44,12 +44,23 @@ describe('A2 master-detail adoption census', () => {
   it('/admin/system/menus가 전체 A2 페이지 셸과 선택 시맨틱을 경유한다', () => {
     const route = source('src/app/admin/system/menus/page.tsx');
     const client = source('src/app/admin/system/menus/MenuAdminClient.tsx');
+    // [2026-10-02 D1] 마스터는 보드(영역 탭 → 카드 → 줄)다. 선택 단위(영역 머리·카드 머리·줄)는 MenuBoard.tsx 의 같은 선택
+    //   단추가 갖고(공통코드 CodeTreeNode 선례 — 노드 파일을 읽는다), 화면이 실제로 그 보드를 쓰는지 함께 본다.
+    const board = source('src/app/admin/system/menus/MenuBoard.tsx');
 
     expect(route).toMatch(/<MenuAdminClient\b/);
     expect(client).toMatch(/<MasterDetailPage\b/);
-    expect(client).toContain('data-a2-master-item');
-    expect(client).toContain("aria-current={isSelected ? 'true' : undefined}");
+    expect(client).toMatch(/import \{[^}]*\bMenuBoard\b[^}]*\} from '\.\/MenuBoard'/);
+    expect(client).toMatch(/<MenuBoard\b/);
+    // `data-a2-master-item-type` 같은 이름도 부분 문자열로 걸리므로 속성 식 전체로 고정한다. 선택 단추는 하나뿐이다 —
+    // 영역 머리·카드·줄이 모두 그 단추를 쓰므로, 다른 곳에 두 번째 선택 표시가 생기면 의미가 갈린다.
+    expect(board.match(/data-a2-master-item=""/g)).toHaveLength(1);
+    expect(board.match(/aria-current=\{isSelected \? 'true' : undefined\}/g)).toHaveLength(1);
     expect(client).toContain('aria-label="메뉴 검색"');
+    // 메뉴 구조 저장은 여러 메뉴의 위치·속성·그룹 배정 초안을 저장한다 — 선택과 무관한 저장이라 셸의 페이지 범위 단축키를 쓴다.
+    expect(client).toContain('saveShortcutScope="page"');
+    // 마스터(보드)가 작업 대상이고 상세는 고른 항목의 속성 칸이다 — 넓은 마스터를 쓴다.
+    expect(client).toContain('masterSize="wide"');
   });
 
   it('/admin/user/departments만 공유 허브의 A2 레이아웃을 활성화한다', () => {
@@ -264,8 +275,15 @@ describe('A2 master-detail adoption census', () => {
   });
 
   it('승인 전 record identifier를 URL이나 브라우저 저장소에 복원하지 않는다', () => {
+    // [2026-10-02] 메뉴 화면을 여러 모듈(트리 행·옮기기·변경 목록·초안 모델)로 나눴다. 가드가 빈 검사가 되지 않도록
+    //   디렉터리의 비테스트 모듈 전체를 읽는다(하위 라우트 by-authority 는 제외). 펼침 상태·구조 초안도 메모리에만 둔다.
+    const menuModules = readdirSync(join(APP_DIR, 'admin', 'system', 'menus'), { withFileTypes: true })
+      .filter((entry) => entry.isFile() && /\.tsx?$/.test(entry.name))
+      .map((entry) => source(`src/app/admin/system/menus/${entry.name}`));
+    expect(menuModules.join('\n')).toContain('export default function MenuAdminClient');
+    expect(menuModules.join('\n')).toContain('export function MenuBoard');
     const consumers = [
-      source('src/app/admin/system/menus/MenuAdminClient.tsx'),
+      ...menuModules,
       source('src/app/admin/user/UserOrgHubClient.tsx'),
       source('src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx'),
       // 조직 권한 일괄 관리도 선택 식별자(ognzId)를 가진 A2 소비자다 — 같은 금지 계약을 받는다.

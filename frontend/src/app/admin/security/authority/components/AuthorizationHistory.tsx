@@ -5,6 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { authorizationAdminService, type AuthorizationHistoryFilters } from '@/services/foundation/system/AuthorizationAdminService';
+import type { authorizationHistoryPageSchema } from '@/lib/auth/authorization-management-contract';
+import type { z } from 'zod';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +18,7 @@ const PAGE_SIZE = 20;
  * [2026-09-26 DIP V9] 이력은 사람을 사용자 고유 ID 로만 보였다. 서버가 싣는 이름을 앞에 두고 식별자는 괄호로 남긴다 —
  * 사용자가 삭제돼 이름이 없으면 식별자만 보인다.
  */
-function personLabel(name: string | null, id: string) {
+export function personLabel(name: string | null, id: string) {
   return name ? `${name} (${id})` : id;
 }
 
@@ -29,8 +31,22 @@ const CHANGE_LABEL: Record<string, string> = { ADD: '추가', REMOVE: '제거', 
 const GRANT_TYPE_LABEL: Record<string, string> = { OPERATION: '기능 권한', NAVIGATION: '메뉴' };
 const FIELD_LABEL: Record<string, string> = { authrt_nm: '그룹 이름', authrt_expln: '그룹 설명' };
 const label = (table: Record<string, string>, code: string | null | undefined) => (code ? table[code] ?? code : '');
-function formatChangedAt(value: string) {
+export function formatChangedAt(value: string) {
   return value ? value.substring(0, 19).replace('T', ' ') : '—';
+}
+
+type AuthorizationChange = z.infer<typeof authorizationHistoryPageSchema>['list'][number];
+
+/**
+ * 변경 한 줄을 사람이 읽는 문장으로(그룹 편집기의 '변경 이력' 탭이 쓴다, 2026-10-02). 예: '그룹 권한 추가: 기능 권한 BOARD_READ',
+ * '사용자 배정 제거: 홍길동 (ESNTL_A)', '그룹 변경: 그룹 이름 (가 → 나)'. 모르는 코드는 원문으로 남긴다.
+ */
+export function describeChange(change: AuthorizationChange): string {
+  const subject = change.targetType === 'USER_GROUP' && change.userId ? personLabel(change.userNm, change.userId)
+    : change.grantCode ? `${label(GRANT_TYPE_LABEL, change.grantType)} ${change.grantCode}`.trim()
+      : change.field ? label(FIELD_LABEL, change.field) : '';
+  const values = change.targetType === 'GROUP' && change.changeType === 'UPDATE' ? ` (${change.before ?? '—'} → ${change.after ?? '—'})` : '';
+  return `${label(TARGET_LABEL, change.targetType)} ${label(CHANGE_LABEL, change.changeType)}${subject ? `: ${subject}` : ''}${values}`;
 }
 
 export function AuthorizationHistory({ initialUserId = '' }: { initialUserId?: string } = {}) {
@@ -61,7 +77,7 @@ export function AuthorizationHistory({ initialUserId = '' }: { initialUserId?: s
           {historyFilterError && <p role="alert" className="text-sm text-destructive">{historyFilterError}</p>}
         </form>
         {history.isPending && <p role="status">변경 이력을 불러오는 중입니다…</p>}
-        <div className="overflow-auto rounded-lg border border-border"><table className="w-full text-left text-sm"><caption className="sr-only">권한 변경 이력</caption><thead className="bg-muted"><tr>{['시각', '대상', '변경', '그룹·사용자', '권한·필드', '변경 전 → 후', '처리자'].map((title) => <th key={title} className="p-3">{title}</th>)}</tr></thead><tbody>{(history.data?.list ?? []).map((change) => <tr key={change.id} className="border-t border-border"><td className="p-3 tabular-nums">{formatChangedAt(change.createdAt)}</td><td className="p-3">{label(TARGET_LABEL, change.targetType)}</td><td className="p-3">{label(CHANGE_LABEL, change.changeType)}</td><td className="p-3">{change.group || change.userId ? <>{change.group && <div>{change.group}</div>}{change.userId && <div>{personLabel(change.userNm, change.userId)}</div>}</> : '—'}</td><td className="p-3">{change.grantType ? `${label(GRANT_TYPE_LABEL, change.grantType)} ` : ''}{change.grantCode ?? (change.field ? label(FIELD_LABEL, change.field) : '—')}</td><td className="max-w-sm whitespace-pre-wrap break-words p-3">{change.before ?? '—'} → {change.after ?? '—'}</td><td className="p-3">{change.actorId ? personLabel(change.actorNm, change.actorId) : '—'}</td></tr>)}</tbody></table></div>
+        <div className="overflow-auto rounded-lg border border-border"><table className="w-full text-left text-sm"><caption className="sr-only">권한 변경 이력</caption><thead className="bg-muted"><tr>{['시각', '대상', '변경', '그룹·사용자', '권한·필드', '변경 전 → 후', '처리자', '사유'].map((title) => <th key={title} className="p-3">{title}</th>)}</tr></thead><tbody>{(history.data?.list ?? []).map((change) => <tr key={change.id} className="border-t border-border"><td className="p-3 tabular-nums">{formatChangedAt(change.createdAt)}</td><td className="p-3">{label(TARGET_LABEL, change.targetType)}</td><td className="p-3">{label(CHANGE_LABEL, change.changeType)}</td><td className="p-3">{change.group || change.userId ? <>{change.group && <div>{change.group}</div>}{change.userId && <div>{personLabel(change.userNm, change.userId)}</div>}</> : '—'}</td><td className="p-3">{change.grantType ? `${label(GRANT_TYPE_LABEL, change.grantType)} ` : ''}{change.grantCode ?? (change.field ? label(FIELD_LABEL, change.field) : '—')}</td><td className="max-w-sm whitespace-pre-wrap break-words p-3">{change.before ?? '—'} → {change.after ?? '—'}</td><td className="p-3">{change.actorId ? personLabel(change.actorNm, change.actorId) : '—'}</td><td className="p-3">{change.reason || '—'}</td></tr>)}</tbody></table></div>
         {history.isSuccess && history.data.list.length === 0 && <p role="status">변경 이력이 없습니다.</p>}
         <PagePagination total={history.data?.total ?? 0} page={historyPage} size={PAGE_SIZE} onPageChange={setHistoryPage} />
       </section>

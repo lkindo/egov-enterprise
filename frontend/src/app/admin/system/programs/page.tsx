@@ -7,9 +7,11 @@ import { Program } from '@/types/foundation/program';
 import { PageResponse } from '@/types/foundation/system';
 import { SITE_IDENTITY } from '@/config/site-identity';
 
+// [2026-10-02 D3] 메뉴명 '프로그램 관리' → '화면 관리'(사용자 사전 승인). 이 화면은 앱 화면 목록(기본 탭)과 이전 프로그램
+//   원장 탭을 함께 본다. 라우트는 그대로다.
 export const metadata = {
-  title: `시스템 프로그램 미들웨어 | ${SITE_IDENTITY.frameworkName}`,
-  description: '시스템 아키텍처 내의 각 프로그램과 엔드포인트를 정의하고 통합 관리합니다.',
+  title: `화면 관리 | ${SITE_IDENTITY.frameworkName}`,
+  description: '앱 화면과 그 진입 권한·연결 메뉴를 보고, 이전 프로그램 원장을 관리합니다.',
 };
 
 const PAGE_SIZE = 10;
@@ -44,6 +46,14 @@ export default async function ProgramAdminPage({
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
+  /*
+    [2026-10-02] 연결 메뉴(메뉴 구조)는 여기서 조회하지 않는다. 이 화면은 PROGRAM_READ 만으로 들어올 수 있는데,
+    서버 컴포넌트에는 권한 판정 도구가 없어 메뉴 조회(MENU_READ)를 늘 보내면 권한 없는 사람이 화면을 열 때마다
+    서버에 403 거부 기록(보안 실패 감사·WARN 로그)이 남는다. 그래서 화면이 MENU_READ 를 확인한 뒤에만 조회한다
+    (useMenuStructureSource). 화면 목록은 앱에 들어 있어(생성된 화면 목록) 조회하지 않는다. 여기서 읽는 것은
+    '이전 프로그램' 탭의 첫 쪽이다.
+  */
+
   // totalPageCount -> totalPage (PageResponse 인터페이스와 일치시켜 타입 오류 해결)
   let initialData: PageResponse<Program> = { list: [], total: 0, page, size: PAGE_SIZE, totalPage: 0 };
   // 조회 실패를 빈 목록으로 삼키면 화면이 "등록된 프로그램 없음"으로 거짓말한다. 사유를 클라이언트로 전달한다.
@@ -70,7 +80,7 @@ export default async function ProgramAdminPage({
     <div className="pb-32">
       <Suspense fallback={
         <div className="animate-pulse space-y-12">
-          <h1 className="sr-only">프로그램 관리를 불러오는 중</h1>
+          <h1 className="sr-only">화면 관리를 불러오는 중</h1>
           <div className="h-11 bg-muted rounded-lg w-1/3" />
           <div className="h-[600px] bg-muted rounded-lg" />
         </div>

@@ -556,15 +556,25 @@ function routeGuarantees(route, permission, catalog) {
 }
 
 /**
- * 화면이 부르는 쓰기 operation 의 권한 가운데, 그 화면(또는 그것을 여는 화면 전부)이 한 번도 언급하지 않는 것.
+ * 화면 파일마다 그 화면이 부르는 <b>쓰기 operation 의 기능 권한</b>을 계산한다(축 3 의 앞부분).
  *
- * <p>판정은 축 2 와 같이 <b>의도적으로 관대</b>하다. 권한 코드 문자열이 파일에 있으면 판정에 쓴 것으로 본다 —
- * 어느 버튼에 걸었는지까지는 보지 않는다. 대화상자처럼 다른 화면이 여는 컴포넌트는, 그것을 import 하는 화면이
- * 모두 그 권한을 언급하면 통과한다(여는 버튼이 가려진다). 라우트 진입 권한이 그 권한을 보장해도 통과한다.
+ * <p>축 3 판정({@link analyzeWriteAffordance})과 화면 목록 생성기(scripts/generate-screen-registry.mjs)가 같은
+ * 계산을 쓴다 — 판정기를 두 벌 두면 둘이 어긋난다. 반환값:
+ * <ul>
+ *   <li>{@code writeMethods} — 서비스 쓰기 메서드 {module, name, permission}</li>
+ *   <li>{@code needs} — {file(저장소 상대 경로), route(가장 가까운 page.tsx 의 경로, app 밖 파일이면 null), permission, via}</li>
+ *   <li>{@code routeOf(file)} · {@code importersOf(file)} · {@code mentions(file, permission)} — 같은 소스 색인 위의 조회
+ *       (모두 저장소 상대 경로를 받고 돌려준다)</li>
+ * </ul>
+ *
+ * <p>한계는 축 2·3 과 같다 — 조회(GET) 권한은 세지 않고, 호출·import 는 이름으로 맞추며(동명 모듈은 겹친다),
+ * 권한 코드 문자열을 언급하면 판정에 쓴 것으로 본다.
  */
-export function analyzeWriteAffordance({ boundaries, policies, catalog, repoRoot = DEFAULT_REPO_ROOT, ts }) {
+export function analyzeWritePermissionNeeds({ boundaries, policies, repoRoot = DEFAULT_REPO_ROOT, ts }) {
   const sourceRoot = resolve(repoRoot, FRONTEND_SOURCE_ROOT);
-  if (!existsSync(sourceRoot)) return { ungated: [], writeMethods: 0 };
+  if (!existsSync(sourceRoot)) {
+    return { writeMethods: [], needs: [], routeOf: () => null, importersOf: () => [], mentions: () => false };
+  }
 
   const bindings = new Map();
   for (const binding of policies.operationBindings ?? []) {
@@ -644,27 +654,53 @@ export function analyzeWriteAffordance({ boundaries, policies, catalog, repoRoot
     if (required.size > 0) needs.set(file, required);
   }
 
-  const mentions = (file, permission) => new RegExp(`['"\`]${permission}['"\`]`, 'u').test(sources.get(file));
-  const importersOf = (file) => {
-    const name = moduleName(file);
-    return uiFiles.filter((other) => other !== file && importsModule(sources.get(other), name));
+  // 밖으로는 저장소 상대 경로만 내보낸다. 안쪽 색인은 절대 경로다.
+  const rootPrefix = toPosix(resolve(repoRoot)).length + 1;
+  const relativeOf = (file) => toPosix(file).slice(rootPrefix);
+  const absoluteOf = new Map(files.map((file) => [relativeOf(file), file]));
+  const absolute = (file) => absoluteOf.get(toPosix(file)) ?? toPosix(resolve(repoRoot, file));
+  const mentions = (file, permission) => {
+    const source = sources.get(absolute(file));
+    return source !== undefined && new RegExp(`['"\`]${permission}['"\`]`, 'u').test(source);
   };
+  const importersOf = (file) => {
+    const target = absolute(file);
+    const name = moduleName(target);
+    return uiFiles.filter((other) => other !== target && importsModule(sources.get(other), name)).map(relativeOf);
+  };
+  const routeOf = (file) => routeOfUiFile(absolute(file), pageDirs);
+
+  const needList = [];
+  for (const [file, required] of needs) {
+    for (const [permission, via] of required) {
+      needList.push({ file: relativeOf(file), route: routeOfUiFile(file, pageDirs), permission, via });
+    }
+  }
+  return { writeMethods, needs: needList, routeOf, importersOf, mentions };
+}
+
+/**
+ * 화면이 부르는 쓰기 operation 의 권한 가운데, 그 화면(또는 그것을 여는 화면 전부)이 한 번도 언급하지 않는 것.
+ *
+ * <p>판정은 축 2 와 같이 <b>의도적으로 관대</b>하다. 권한 코드 문자열이 파일에 있으면 판정에 쓴 것으로 본다 —
+ * 어느 버튼에 걸었는지까지는 보지 않는다. 대화상자처럼 다른 화면이 여는 컴포넌트는, 그것을 import 하는 화면이
+ * 모두 그 권한을 언급하면 통과한다(여는 버튼이 가려진다). 라우트 진입 권한이 그 권한을 보장해도 통과한다.
+ * 화면별 쓰기 권한 계산은 {@link analyzeWritePermissionNeeds} 가 하고, 여기서는 판정만 한다.
+ */
+export function analyzeWriteAffordance({ boundaries, policies, catalog, repoRoot = DEFAULT_REPO_ROOT, ts }) {
+  const { writeMethods, needs, routeOf, importersOf, mentions } = analyzeWritePermissionNeeds({ boundaries, policies, repoRoot, ts });
   const gated = (file, permission, seen = new Set()) => {
     if (seen.has(file)) return false;
     seen.add(file);
     if (mentions(file, permission)) return true;
-    if (routeGuarantees(routeOfUiFile(file, pageDirs), permission, catalog)) return true;
+    if (routeGuarantees(routeOf(file), permission, catalog)) return true;
     const importers = importersOf(file);
     return importers.length > 0 && importers.every((importer) => gated(importer, permission, seen));
   };
 
   const ungated = [];
-  for (const [file, required] of needs) {
-    for (const [permission, via] of required) {
-      if (!gated(file, permission)) {
-        ungated.push({ file: toPosix(file).slice(toPosix(resolve(repoRoot)).length + 1), permission, via });
-      }
-    }
+  for (const { file, permission, via } of needs) {
+    if (!gated(file, permission)) ungated.push({ file, permission, via });
   }
   ungated.sort((a, b) => a.file.localeCompare(b.file) || a.permission.localeCompare(b.permission));
   return { ungated, writeMethods: writeMethods.length };

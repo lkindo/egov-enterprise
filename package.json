@@ -44,6 +44,7 @@
     "atlas:build": "node scripts/build-atlas.mjs",
     "atlas:check": "node scripts/build-atlas.mjs --check",
     "merge:main": "node scripts/merge-main-regenerate.mjs",
+    "screens:generate": "node scripts/generate-screen-registry.mjs",
     "verify:docs": "node scripts/verify.mjs docs",
     "verify:fast": "node scripts/verify.mjs fast",
     "verify:push": "node scripts/verify.mjs push",

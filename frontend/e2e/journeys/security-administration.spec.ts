@@ -60,6 +60,8 @@ test.describe('권한 변경과 충돌 제어', () => {
         code: string;
         name: string;
         parentCode: string | null;
+        route?: string | null;
+        useYn?: string;
     };
     type MenuNode = {
         id: number;
@@ -344,26 +346,36 @@ test.describe('권한 변경과 충돌 제어', () => {
                 const beforeUi = await replaceGrants(request, administrator, groupA, grantsA);
                 await replaceGrants(request, administrator, groupB, grantsB);
                 await test.step('그룹 편집 UI는 검색 밖의 기존 기능권한과 메뉴 선택을 보존한다', async () => {
-                    await page.goto('/admin/security/authority');
+                    // 앱 안에서 들어와야 Back 이 같은 문서 안의 이동이 된다(미저장 확인은 앱 라우터 이동을 가로챈다).
+                    await page.goto('/admin');
+                    await page.getByRole('main').getByRole('link', { name: '권한 그룹 관리', exact: true }).click();
+                    await expect(page).toHaveURL(/\/admin\/security\/authority$/);
                     await expect(page.getByRole('heading', { name: '권한 그룹 관리', exact: true })).toBeVisible();
                     await page.getByRole('textbox', { name: '그룹 검색', exact: true }).fill(groupA);
                     await page.getByRole('region', { name: '권한 그룹 목록', exact: true }).getByRole('button').filter({ hasText: groupA }).click();
                     const editor = page.getByRole('region', { name: `${groupNameA} 권한 설정`, exact: true });
                     await expect(editor).toBeVisible();
+                    // [2026-10-02 2단계] 기본 탭은 '화면별 권한'(메뉴 트리 × 메뉴 표시·화면 진입·등록·수정·삭제·그 밖의 기능)이다.
+                    // 기능권한을 영역 × 행위로 보려면 '기능별 권한' 탭을 연다. 칸의 이름은 '영역 × 행위 (코드)'다.
+                    await expect(editor.getByRole('tab', { name: /^화면별 권한/ })).toHaveAttribute('aria-selected', 'true');
+                    await editor.getByRole('tab', { name: /^기능별 권한/ }).click();
                     await editor.getByRole('textbox', { name: '기능 검색', exact: true }).fill('PROGRAM_READ');
-                    const program = editor.getByRole('row').filter({ has: page.getByText('PROGRAM_READ', { exact: true }) }).getByRole('checkbox');
+                    const program = editor.getByRole('checkbox', { name: /\(PROGRAM_READ\)$/ });
                     await expect(program).not.toBeChecked();
                     await program.check();
-                    // 실제 Next 라우터에서도 hash 이동은 편집을 유지하고,
+                    // 탭 전환은 화면 안 상태라 이탈 확인 없이 편집을 유지하고 URL 도 바꾸지 않는다.
                     // Back/다른 화면 이동을 취소하면 같은 편집기와 선택이 남아야 한다.
-                    await editor.getByRole('link', { name: '메뉴표시', exact: true }).click();
-                    await expect(page).toHaveURL(/\/admin\/security\/authority#group-navigation$/);
+                    await editor.getByRole('tab', { name: /^화면별 권한/ }).click();
+                    await expect(editor.getByRole('group', { name: '화면별 권한 선택', exact: true })).toBeVisible();
+                    await expect(page).toHaveURL(/\/admin\/security\/authority$/);
                     await expect(page.getByRole('dialog', { name: '저장하지 않은 변경' })).toHaveCount(0);
                     await page.evaluate(() => history.back());
                     const discard = page.getByRole('dialog', { name: '저장하지 않은 변경' });
                     await expect(discard).toBeVisible();
                     await discard.getByRole('button', { name: '계속 편집', exact: true }).click();
-                    await expect(page).toHaveURL(/\/admin\/security\/authority#group-navigation$/);
+                    await expect(page).toHaveURL(/\/admin\/security\/authority$/);
+                    await expect(editor.getByRole('tab', { name: /^화면별 권한/ })).toHaveAttribute('aria-selected', 'true');
+                    await editor.getByRole('tab', { name: /^기능별 권한/ }).click();
                     await expect(program).toBeChecked();
                     await page.getByRole('link', { name: '통합 검색', exact: true }).click();
                     await expect(discard).toBeVisible();
@@ -415,27 +427,39 @@ test.describe('권한 변경과 충돌 제어', () => {
                     await page.getByRole('textbox', { name: '그룹 검색', exact: true }).fill(groupA);
                     await page.getByRole('region', { name: '권한 그룹 목록', exact: true }).getByRole('button').filter({ hasText: groupA }).click();
                     const editor = page.getByRole('region', { name: `${groupNameA} 권한 설정`, exact: true });
-                    const tree = editor.getByRole('list', { name: '메뉴 표시 권한', exact: true });
-                    const rootCheckbox = tree.getByRole('checkbox', { name: new RegExp(`${visibleRoot.id}$`) });
-                    const leafCheckbox = tree.getByRole('checkbox', { name: new RegExp(`${leaf.id}$`) });
+                    // [2026-10-02 2단계] 메뉴 표시는 '화면별 권한' 표의 '메뉴 표시' 칸이다. 칸 이름은 '메뉴 × 메뉴 표시 (메뉴 번호)'다.
+                    const screensTab = editor.getByRole('tab', { name: /^화면별 권한/ });
+                    await screensTab.click();
+                    const table = editor.getByRole('group', { name: '화면별 권한 선택', exact: true });
+                    const menuCell = (id: number) => table.getByRole('checkbox', { name: new RegExp(` × 메뉴 표시 \\(${id}\\)$`) });
+                    const rowOf = (id: number) => table.getByRole('row').filter({ has: menuCell(id) });
+                    const rootCheckbox = menuCell(visibleRoot.id);
+                    const leafCheckbox = menuCell(leaf.id);
+                    // 처음에는 영역만 펼친다 — 3단계 화면은 그 섹션을 펼쳐야 보인다(진입 권한 문제가 있는 섹션은 펼친 채 시작한다).
+                    if (leaf !== visibleChild) {
+                        const sectionToggle = rowOf(visibleChild.id).getByRole('button', { name: /하위 메뉴 (펼치기|접기)$/ });
+                        if (await sectionToggle.getAttribute('aria-expanded') === 'false')
+                            await sectionToggle.click();
+                    }
                     await expect(rootCheckbox).not.toBeChecked();
                     await leafCheckbox.check();
                     await expect(rootCheckbox, '하위 선택은 필요한 모든 상위 선택을 함께 추가한다').toBeChecked();
-                    await expect(tree.getByRole('checkbox', { name: new RegExp(`${visibleChild.id}$`) })).toBeChecked();
-                    const collapse = tree.getByRole('button', { name: `${rootMenu.name} 하위 메뉴 접기`, exact: true });
-                    await collapse.click();
-                    await expect(tree.getByRole('button', { name: `${rootMenu.name} 하위 메뉴 펼치기`, exact: true })).toHaveAttribute('aria-expanded', 'false');
+                    await expect(menuCell(visibleChild.id)).toBeChecked();
+                    const rootRow = rowOf(visibleRoot.id);
+                    await rootRow.getByRole('button', { name: `${rootMenu.name} 하위 메뉴 접기`, exact: true }).click();
+                    await expect(rootRow.getByRole('button', { name: `${rootMenu.name} 하위 메뉴 펼치기`, exact: true })).toHaveAttribute('aria-expanded', 'false');
                     await rootCheckbox.uncheck();
-                    await tree.getByRole('button', { name: `${rootMenu.name} 하위 메뉴 펼치기`, exact: true }).click();
+                    await rootRow.getByRole('button', { name: `${rootMenu.name} 하위 메뉴 펼치기`, exact: true }).click();
                     await expect(leafCheckbox, '접혀 있던 하위 선택도 부모와 함께 회수된다').not.toBeChecked();
                     // Leave a parent selected and then revoke it so the persisted change is observable.
                     await leafCheckbox.check();
                     const saveSelected = page.waitForResponse(response => new URL(response.url()).pathname === `${AUTHORIZATION}/groups/${groupA}/grants` && response.request().method() === 'PUT');
                     await editor.getByRole('button', { name: '권한 변경 저장', exact: true }).click();
                     expect((await saveSelected).status()).toBe(200);
-                    await expect(editor.getByRole('button', { name: '입력 취소 · 최신 정보 적용', exact: true })).toBeEnabled();
-                    await editor.getByRole('button', { name: '입력 취소 · 최신 정보 적용', exact: true }).click();
+                    // [A2] 저장 뒤에도 잠기지 않는다 — 응답 스냅샷이 새 기준선이라 '최신 정보 적용' 없이 이어서 편집한다.
+                    await expect(screensTab).toHaveAttribute('aria-selected', 'true');
                     await expect(rootCheckbox).toBeChecked();
+                    await expect(rootCheckbox).toBeEnabled();
                     await rootCheckbox.uncheck();
                     const saveRevoked = page.waitForResponse(response => new URL(response.url()).pathname === `${AUTHORIZATION}/groups/${groupA}/grants` && response.request().method() === 'PUT');
                     await editor.getByRole('button', { name: '권한 변경 저장', exact: true }).click();
@@ -560,6 +584,259 @@ test.describe('권한 변경과 충돌 제어', () => {
                     const cleanupError = new Error(cleanupFailures.join('; '));
                     if (primaryFailure !== undefined)
                         throw new AggregateError([primaryFailure, cleanupError], 'Authorization test and fixture cleanup failed');
+                    throw cleanupError;
+                }
+            }
+        });
+    });
+    /**
+     * [2026-10-02 2단계 D6·A6] 그룹 쪽에서 구성원을 한꺼번에 추가·회수하고, 그룹을 복제한다. 구성원 변경은 그룹 버전을 바꾸지
+     * 않으므로 열려 있던 권한 초안이 그대로 저장된다(S1). 정리는 ROLE_E2E_ 코드 그룹을 구성원 해제 뒤 지운다.
+     */
+    test.describe('그룹 구성원 일괄 변경과 그룹 복제', () => {
+        test.use({ storageState: 'playwright/.auth/admin.json' });
+        type UserChoice = {
+            id: string;
+            userId: string;
+            userNm: string;
+        };
+        type Change = {
+            group: string | null;
+            reason: string | null;
+        };
+        test('구성원 추가·회수는 권한 초안을 흔들지 않고, 복제한 그룹은 원본 권한과 사유를 남긴다', async ({ page, playwright, baseURL }) => {
+            if (!baseURL || !['localhost', '127.0.0.1', '[::1]'].includes(new URL(baseURL).hostname)) {
+                throw new Error('Authorization fixtures require the isolated loopback E2E stack.');
+            }
+            const request = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+            const auth = { Authorization: `Bearer ${getAdminBearerToken()}` };
+            const suffix = randomBytes(4).toString('hex').toUpperCase();
+            const groupCode = `ROLE_E2E_${suffix}`;
+            const copyCode = `ROLE_E2E_${suffix}_C`;
+            const groupName = `E2E 구성원 그룹 ${suffix}`;
+            const copyName = `E2E 복제 그룹 ${suffix}`;
+            const loginId = `e2e_member_${suffix.toLowerCase()}`;
+            const userName = `E2E 구성원 ${suffix}`;
+            const createdGroups: string[] = [];
+            let userCreated = false;
+            let primaryFailure: unknown;
+            const members = async (code: string) => data<{ list: UserChoice[]; total: number }>(
+                await request.get(`${AUTHORIZATION}/groups/${code}/members`, { headers: auth, params: { page: 0, size: 100 } }), '그룹 구성원 조회');
+            try {
+                const createdGroup = await request.post(`${AUTHORIZATION}/groups`, { headers: auth, data: { code: groupCode, name: groupName, description: '구성원 일괄 변경 검증 전용' } });
+                if (createdGroup.ok())
+                    createdGroups.push(groupCode);
+                expect(createdGroup.status(), '전용 그룹 생성').toBe(200);
+                const initial = await replaceGrants(request, auth, groupCode, [{ type: 'OPERATION', code: 'MENU_READ' }]);
+                const createdUser = await request.post(USERS, {
+                    headers: auth, data: { userId: loginId, userNm: userName, pswd: `Member1!${randomBytes(16).toString('hex')}`, role: 'USER' },
+                });
+                userCreated = createdUser.ok();
+                expect(createdUser.status(), '전용 사용자 생성').toBe(200);
+
+                await page.goto('/admin/security/authority');
+                await page.getByRole('textbox', { name: '그룹 검색', exact: true }).fill(groupCode);
+                await page.getByRole('region', { name: '권한 그룹 목록', exact: true }).getByRole('button').filter({ hasText: groupCode }).click();
+                const editor = page.getByRole('region', { name: `${groupName} 권한 설정`, exact: true });
+                await expect(editor).toBeVisible();
+                // 권한 초안을 하나 만들어 둔다 — 구성원을 바꿔도 그대로 남아 같은 버전으로 저장되어야 한다.
+                await editor.getByRole('tab', { name: /^기능별 권한/ }).click();
+                await editor.getByRole('textbox', { name: '기능 검색', exact: true }).fill('PROGRAM_READ');
+                await editor.getByRole('checkbox', { name: /\(PROGRAM_READ\)$/ }).check();
+
+                await editor.getByRole('tab', { name: /^구성원/ }).click();
+                await editor.getByRole('button', { name: '구성원 추가', exact: true }).click();
+                const addDialog = page.getByRole('dialog', { name: `'${groupName}' 구성원 추가`, exact: true });
+                await addDialog.getByRole('textbox', { name: '추가할 사용자 이름·로그인 ID', exact: true }).fill(loginId);
+                await addDialog.getByRole('button', { name: '조회', exact: true }).click();
+                const candidate = addDialog.getByRole('list', { name: '사용자 검색 결과', exact: true }).getByRole('checkbox', { name: `${userName} · ${loginId}`, exact: true });
+                await expect(candidate).toBeEnabled();
+                await candidate.check();
+                const added = page.waitForResponse(response => new URL(response.url()).pathname === `${AUTHORIZATION}/groups/${groupCode}/members` && response.request().method() === 'PATCH');
+                await addDialog.getByRole('button', { name: '1명 추가', exact: true }).click();
+                expect((await added).status(), '구성원 일괄 추가 UI 저장').toBe(200);
+                await expect(addDialog).toHaveCount(0);
+                const afterAdd = await members(groupCode);
+                expect(afterAdd.list.map(member => member.userId)).toEqual([loginId]);
+                expect((await group(request, auth, groupCode)).version, '구성원 변경은 그룹 버전을 바꾸지 않는다').toBe(initial.version);
+
+                await editor.getByRole('checkbox', { name: `${userName} (${loginId}) 선택`, exact: true }).check();
+                await editor.getByRole('button', { name: '선택한 1명 회수', exact: true }).click();
+                const revoked = page.waitForResponse(response => new URL(response.url()).pathname === `${AUTHORIZATION}/groups/${groupCode}/members` && response.request().method() === 'PATCH');
+                const confirmation = page.getByRole('dialog', { name: '구성원 회수', exact: true });
+                await expect(confirmation.getByText(/다른 그룹 배정은 그대로 유지됩니다/)).toBeVisible();
+                await confirmation.getByRole('button', { name: '1명 회수', exact: true }).click();
+                expect((await revoked).status(), '구성원 일괄 회수 UI 저장').toBe(200);
+                expect((await members(groupCode)).list).toEqual([]);
+
+                // 구성원을 두 번 바꿨어도 권한 초안은 남아 있고, 처음 읽은 버전으로 저장된다.
+                await editor.getByRole('tab', { name: /^기능별 권한/ }).click();
+                await expect(editor.getByRole('checkbox', { name: /\(PROGRAM_READ\)$/ })).toBeChecked();
+                const savedGrants = page.waitForResponse(response => new URL(response.url()).pathname === `${AUTHORIZATION}/groups/${groupCode}/grants` && response.request().method() === 'PUT');
+                await editor.getByRole('button', { name: '권한 변경 저장', exact: true }).click();
+                expect((await savedGrants).status(), '구성원 변경 뒤 권한 초안 저장').toBe(200);
+                const source = await group(request, auth, groupCode);
+                expect(source.grants).toEqual(expect.arrayContaining([{ type: 'OPERATION', code: 'MENU_READ' }, { type: 'OPERATION', code: 'PROGRAM_READ' }]));
+
+                await editor.getByRole('button', { name: '이 그룹으로 새 그룹 만들기', exact: true }).click();
+                const copyDialog = page.getByRole('dialog', { name: '이 그룹으로 새 그룹 만들기', exact: true });
+                await copyDialog.getByRole('textbox', { name: '그룹 코드', exact: true }).fill(copyCode);
+                await copyDialog.getByRole('textbox', { name: '그룹명', exact: true }).fill(copyName);
+                const copied = page.waitForResponse(response => new URL(response.url()).pathname === `${AUTHORIZATION}/groups/${groupCode}/copies` && response.request().method() === 'POST');
+                await copyDialog.getByRole('button', { name: '새 그룹 만들기', exact: true }).click();
+                const copyResponse = await copied;
+                if (copyResponse.ok())
+                    createdGroups.push(copyCode);
+                expect(copyResponse.status(), '그룹 복제 UI 저장').toBe(200);
+                await expect(page.getByRole('region', { name: `${copyName} 권한 설정`, exact: true })).toBeVisible();
+                const copy = await group(request, auth, copyCode);
+                expect([...copy.grants].sort((a, b) => a.code.localeCompare(b.code))).toEqual([...source.grants].sort((a, b) => a.code.localeCompare(b.code)));
+                expect((await members(copyCode)).list, '구성원은 복사하지 않는다').toEqual([]);
+                const history = await data<{ list: Change[] }>(await request.get(`${AUTHORIZATION}/history`, { headers: auth, params: { groupCode: copyCode, page: 0, size: 20 } }), '복제 그룹 이력 조회');
+                expect(history.list.some(change => change.reason?.includes(groupCode)), '이력 사유에 복제 원본이 남는다').toBe(true);
+                await page.goto('/');
+            }
+            catch (error) {
+                primaryFailure = error;
+                throw error;
+            }
+            finally {
+                const cleanupFailures: string[] = [];
+                // 구성원을 먼저 해제한다 — 구성원이 남은 그룹은 지울 수 없다(409).
+                for (const code of createdGroups) {
+                    try {
+                        const remaining = await members(code);
+                        if (remaining.list.length > 0) {
+                            const released = await request.patch(`${AUTHORIZATION}/groups/${code}/members`, {
+                                headers: auth, data: { add: [], remove: remaining.list.map(member => member.id), complete: true },
+                            });
+                            if (released.status() !== 200)
+                                cleanupFailures.push(`fixture member cleanup status=${released.status()}`);
+                        }
+                    }
+                    catch {
+                        cleanupFailures.push('fixture member cleanup request failed');
+                    }
+                }
+                if (userCreated) {
+                    try {
+                        const removed = await request.delete(`${USERS}/${loginId}`, { headers: auth });
+                        if (removed.status() !== 200)
+                            cleanupFailures.push(`fixture user cleanup status=${removed.status()}`);
+                    }
+                    catch {
+                        cleanupFailures.push('fixture user cleanup request failed');
+                    }
+                }
+                for (const code of [...createdGroups].reverse()) {
+                    try {
+                        const snapshot = await group(request, auth, code);
+                        const removed = await request.delete(`${AUTHORIZATION}/groups/${code}`, { headers: auth, params: { version: snapshot.version } });
+                        if (removed.status() !== 200)
+                            cleanupFailures.push(`fixture group cleanup status=${removed.status()}`);
+                    }
+                    catch {
+                        cleanupFailures.push('fixture group cleanup request failed');
+                    }
+                }
+                await request.dispose();
+                if (cleanupFailures.length > 0) {
+                    const cleanupError = new Error(cleanupFailures.join('; '));
+                    if (primaryFailure !== undefined)
+                        throw new AggregateError([primaryFailure, cleanupError], 'Group member and copy test and fixture cleanup failed');
+                    throw cleanupError;
+                }
+            }
+        });
+    });
+    /**
+     * [2026-10-02 3단계 G2·G3] 권한 묶음은 저장하지 않은 변경에만 더하고 기존 '권한 변경 저장'이 저장한다 — 더한 메뉴 표시는
+     * 상위 메뉴까지 명시적이다(묵시 배정 없음). 그룹 비교는 읽기 전용이고, 편집 버튼이 그 그룹 편집기의 탭으로 옮긴다.
+     * 정리는 ROLE_E2E_ 코드 그룹을 지운다(구성원을 두지 않는다).
+     */
+    test.describe('권한 묶음 적용과 그룹 비교', () => {
+        test.use({ storageState: 'playwright/.auth/admin.json' });
+        test('묶음을 더해 저장하면 기능권한과 상위 메뉴까지의 메뉴 표시가 저장되고, 비교가 그 그룹의 편집기로 옮긴다', async ({ page, playwright, baseURL }) => {
+            if (!baseURL || !['localhost', '127.0.0.1', '[::1]'].includes(new URL(baseURL).hostname)) {
+                throw new Error('Authorization fixtures require the isolated loopback E2E stack.');
+            }
+            const request = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+            const auth = { Authorization: `Bearer ${getAdminBearerToken()}` };
+            const suffix = randomBytes(4).toString('hex').toUpperCase();
+            const groupCode = `ROLE_E2E_${suffix}_B`;
+            const groupName = `E2E 묶음 그룹 ${suffix}`;
+            let created = false;
+            let primaryFailure: unknown;
+            try {
+                const createdGroup = await request.post(`${AUTHORIZATION}/groups`, { headers: auth, data: { code: groupCode, name: groupName, description: '권한 묶음 적용 검증 전용' } });
+                created = createdGroup.ok();
+                expect(createdGroup.status(), '전용 그룹 생성').toBe(200);
+
+                await page.goto('/admin/security/authority');
+                await page.getByRole('textbox', { name: '그룹 검색', exact: true }).fill(groupCode);
+                await page.getByRole('region', { name: '권한 그룹 목록', exact: true }).getByRole('button').filter({ hasText: groupCode }).click();
+                const editor = page.getByRole('region', { name: `${groupName} 권한 설정`, exact: true });
+                await expect(editor).toBeVisible();
+                await editor.getByRole('button', { name: '권한 묶음 적용', exact: true }).click();
+                const dialog = page.getByRole('dialog', { name: '권한 묶음 적용', exact: true });
+                await dialog.getByRole('radio', { name: '배너·팝업·도움말 관리', exact: true }).check();
+                // 메뉴 표시도 1개 이상 더한다 — 0개를 받아들이면 메뉴 판정이 깨져도 이 검증이 통과한다.
+                await expect(dialog.getByRole('region', { name: '묶음 미리보기', exact: true })).toContainText(/기능권한 추가 [1-9]\d*개\(이미 있음 0개\) · 메뉴 표시 추가 [1-9]\d*개/);
+                await dialog.getByRole('button', { name: '선택한 묶음을 초안에 추가', exact: true }).click();
+                await expect(dialog).toHaveCount(0);
+                // 초안에 더했을 뿐이다 — 저장 전 요약이 늘어난 수를 보인다.
+                await expect(editor.getByText(/^저장 시 권한·메뉴 추가 [1-9]\d*개 · 회수 0개/)).toBeVisible();
+                const saved = page.waitForResponse(response => new URL(response.url()).pathname === `${AUTHORIZATION}/groups/${groupCode}/grants` && response.request().method() === 'PUT');
+                await editor.getByRole('button', { name: '권한 변경 저장', exact: true }).click();
+                expect((await saved).status(), '묶음을 더한 권한 저장').toBe(200);
+
+                const snapshot = await group(request, auth, groupCode);
+                const operations = snapshot.grants.filter(grant => grant.type === 'OPERATION').map(grant => grant.code);
+                expect(operations).toEqual(expect.arrayContaining(['BANNER_READ', 'BANNER_CREATE', 'POPUP_READ', 'HELP_READ']));
+                const catalog = await data<{ navigation: Navigation[] }>(await request.get(`${AUTHORIZATION}/catalog`, { headers: auth }), '권한 카탈로그 조회');
+                const navigation = new Set(snapshot.grants.filter(grant => grant.type === 'NAVIGATION').map(grant => grant.code));
+                // 상위 메뉴 검사는 빈 집합에서도 통과하므로, 묶음 화면(배너 및 팝업 관리)의 메뉴가 실제로 저장됐는지 먼저 확인한다.
+                const bannerMenus = catalog.navigation.filter(entry => entry.route === '/admin/system/banner' && entry.useYn === 'Y');
+                expect(bannerMenus.length, '배너 화면을 여는 사용 중 메뉴가 카탈로그에 있다').toBeGreaterThan(0);
+                expect(bannerMenus.some(entry => navigation.has(entry.code)), '묶음이 배너 화면 메뉴의 메뉴 표시를 저장한다').toBe(true);
+                for (const code of navigation) {
+                    const parent = catalog.navigation.find(entry => entry.code === code)?.parentCode ?? null;
+                    if (parent !== null)
+                        expect(navigation.has(parent), `메뉴 ${code}의 상위 메뉴 ${parent}도 명시적으로 저장된다`).toBe(true);
+                }
+
+                await page.getByRole('button', { name: '그룹 비교', exact: true }).click();
+                const comparison = page.getByRole('region', { name: '그룹 비교', exact: true });
+                await comparison.getByRole('combobox', { name: /^A 그룹/ }).selectOption(groupCode);
+                await comparison.getByRole('combobox', { name: /^B 그룹/ }).selectOption('ROLE_USER');
+                await expect(comparison.getByText(/^A에만 [1-9]\d* · B에만 \d+/)).toBeVisible();
+                await comparison.getByRole('tab', { name: '기능별', exact: true }).click();
+                await comparison.getByRole('button', { name: `${groupName}에서 편집 (배너)`, exact: true }).click();
+                await expect(editor.getByRole('tab', { name: /^기능별 권한/ })).toHaveAttribute('aria-selected', 'true');
+                await page.goto('/');
+            }
+            catch (error) {
+                primaryFailure = error;
+                throw error;
+            }
+            finally {
+                const cleanupFailures: string[] = [];
+                if (created) {
+                    try {
+                        const snapshot = await group(request, auth, groupCode);
+                        const removed = await request.delete(`${AUTHORIZATION}/groups/${groupCode}`, { headers: auth, params: { version: snapshot.version } });
+                        if (removed.status() !== 200)
+                            cleanupFailures.push(`fixture group cleanup status=${removed.status()}`);
+                    }
+                    catch {
+                        cleanupFailures.push('fixture group cleanup request failed');
+                    }
+                }
+                await request.dispose();
+                if (cleanupFailures.length > 0) {
+                    const cleanupError = new Error(cleanupFailures.join('; '));
+                    if (primaryFailure !== undefined)
+                        throw new AggregateError([primaryFailure, cleanupError], 'Permission bundle test and fixture cleanup failed');
                     throw cleanupError;
                 }
             }

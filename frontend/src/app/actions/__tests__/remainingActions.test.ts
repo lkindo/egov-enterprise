@@ -1,5 +1,9 @@
 /**
- * 남은 서버 액션(댓글·메뉴) 테스트.
+ * 남은 서버 액션(댓글) 테스트.
+ *
+ * [2026-10-02 D2] 메뉴 액션(saveMenuAction·updateMenuOrdersAction·deleteMenuAction)은 메뉴 화면이 메뉴 구조 한 번 저장
+ * (menuAdminService.saveMenuStructure)으로 바뀌며 소비처가 없어져 파일째 지웠다. 그 테스트도 함께 걷었다 — 같은 의미(인증·
+ * 실패를 메시지로·재조회)는 MenuAdminClient 저장 테스트가 새 경로로 본다.
  *
  * [2026-08-09 신설] 세 파일 모두 커버리지가 거의 0% 였다(합계 109줄).
  *
@@ -19,9 +23,7 @@ vi.mock('next/config', () => ({
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createComment, deleteComment, updateComment } from '../commentActions';
-import { saveMenuAction, updateMenuOrdersAction, deleteMenuAction } from '../menuActions';
 import { commentService } from '@/services/business/comment/commentService';
-import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
@@ -30,11 +32,6 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('@/services/business/comment/commentService', () => ({
   commentService: {
     createComment: vi.fn(), updateComment: vi.fn(), deleteComment: vi.fn(),
-  },
-}));
-vi.mock('@/services/foundation/system/MenuAdminService', () => ({
-  menuAdminService: {
-    createMenu: vi.fn(), updateMenu: vi.fn(), updateMenuOrder: vi.fn(), deleteMenu: vi.fn(),
   },
 }));
 
@@ -163,78 +160,6 @@ describe('남은 서버 액션', () => {
       await createComment(null, form({ pstSn: '1', bbsId: 'B1', ansCn: '내용' }));
 
       expect(commentService.createComment).toHaveBeenCalledWith(expect.anything(), {});
-    });
-  });
-
-  describe('메뉴', () => {
-    it("mode='create' 는 생성, 'edit' 은 menuNo 로 수정한다", async () => {
-      await saveMenuAction(null, { mode: 'create', data: { menuNm: '신규' } as never });
-      expect(menuAdminService.createMenu).toHaveBeenCalledWith({ menuNm: '신규' }, AUTH);
-      expect(menuAdminService.updateMenu).not.toHaveBeenCalled();
-
-      vi.clearAllMocks();
-      withToken('TOKEN-123');
-
-      await saveMenuAction(null, { mode: 'edit', data: { menuNo: 7, menuNm: '수정' } as never });
-      // 분기가 뒤집히면 수정이 신규 등록이 되어 **메뉴가 중복 노출**된다.
-      expect(menuAdminService.updateMenu).toHaveBeenCalledWith(7, { menuNo: 7, menuNm: '수정' }, AUTH);
-      expect(menuAdminService.createMenu).not.toHaveBeenCalled();
-    });
-
-    it('저장 후 메뉴 목록을 재검증한다', async () => {
-      await saveMenuAction(null, { mode: 'create', data: {} as never });
-
-      // 빠지면 메뉴를 추가했는데 좌측 네비게이션에 나타나지 않는다.
-      expect(revalidatePath).toHaveBeenCalledWith('/admin/system/menus');
-    });
-
-    it('순서 저장은 배열을 그대로 넘기고 재검증한다', async () => {
-      const menus = [{ menuNo: 1 }, { menuNo: 2 }] as never;
-
-      const result = await updateMenuOrdersAction(menus);
-
-      expect(menuAdminService.updateMenuOrder).toHaveBeenCalledWith(menus, AUTH);
-      expect(revalidatePath).toHaveBeenCalledWith('/admin/system/menus');
-      expect(result).toEqual({ success: true, message: '순서가 저장되었습니다.' });
-    });
-
-    it('삭제는 id 를 넘기고 재검증한다', async () => {
-      const result = await deleteMenuAction(null, 7);
-
-      expect(menuAdminService.deleteMenu).toHaveBeenCalledWith(7, AUTH);
-      expect(revalidatePath).toHaveBeenCalledWith('/admin/system/menus');
-      expect(result.success).toBe(true);
-    });
-
-    it('실패는 메시지로 돌려주고 재검증하지 않는다', async () => {
-      vi.mocked(menuAdminService.createMenu).mockRejectedValueOnce({
-        response: { data: { message: '상위 메뉴가 없습니다.' } },
-      });
-
-      const result = await saveMenuAction(null, { mode: 'create', data: {} as never });
-
-      expect(result).toEqual({ success: false, message: '상위 메뉴가 없습니다.' });
-      expect(revalidatePath).not.toHaveBeenCalled();
-    });
-
-    it('메뉴 저장 검증 실패의 구조화된 필드 오류를 클라이언트까지 보존한다', async () => {
-      vi.mocked(menuAdminService.createMenu).mockRejectedValueOnce({
-        response: {
-          data: {
-            message: '입력값을 확인해 주세요.',
-            errors: [{ field: 'menuNm', message: '이미 사용 중인 메뉴 명칭입니다.' }],
-          },
-        },
-      });
-
-      const result = await saveMenuAction(null, { mode: 'create', data: { menuNm: '중복 메뉴' } as never });
-
-      expect(result).toEqual({
-        success: false,
-        message: '입력값을 확인해 주세요.',
-        fieldErrors: { menuNm: '이미 사용 중인 메뉴 명칭입니다.' },
-      });
-      expect(revalidatePath).not.toHaveBeenCalled();
     });
   });
 });
