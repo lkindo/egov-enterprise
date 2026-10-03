@@ -364,7 +364,8 @@ export default function ApprovalHubClient() {
     } else requestAnimationFrame(() => itemButtonRefs.current.get(sanctionKey(item))?.focus());
   };
 
-  const reportDecisionFailure = (error: unknown, actionNm: string) => {
+  /** 처리 실패의 필드 오류·충돌 후속을 반영하고, 화면 안에 보일 사유 문장을 돌려준다. */
+  const decisionFailureMessage = (error: unknown, actionNm: string) => {
     const fieldErrors = extractFieldErrors(error);
     if (fieldErrors) decisionValidation.setFormErrors(fieldErrors);
     // [2026-10-01] 충돌(409)은 먼저 일어난 다른 처리다 — 다른 결재자의 반려, 신청자의 회수, 다른 탭에서의 처리.
@@ -373,9 +374,13 @@ export default function ApprovalHubClient() {
       setNeedsActionReview(true);
       void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
     }
-    setActionError(isConflict(error)
+    return isConflict(error)
       ? `${failureMessage(error, '다른 사용자가 문서를 변경했습니다.')} 입력한 의견은 유지됩니다.`
-      : `${failureMessage(error, `${actionNm} 처리 중 오류가 발생했습니다.`)} 입력한 의견은 유지됩니다.`);
+      : `${failureMessage(error, `${actionNm} 처리 중 오류가 발생했습니다.`)} 입력한 의견은 유지됩니다.`;
+  };
+
+  const reportDecisionFailure = (error: unknown, actionNm: string) => {
+    setActionError(decisionFailureMessage(error, actionNm));
     // 사유는 위 화면 안 안내가 말한다. 토스트는 무엇을 못 했는지만 알린다(실패 1회 = 토스트 1개).
     toast(`결재를 ${actionNm}하지 못했습니다.`, 'error');
   };
@@ -493,7 +498,8 @@ export default function ApprovalHubClient() {
       setActionError('');
       moveAfter(item);
     } catch (error) {
-      reportDecisionFailure(error, '보완 요청');
+      setActionError(decisionFailureMessage(error, '보완 요청'));
+      toast('결재를 보완 요청하지 못했습니다.', 'error');
     } finally {
       pendingActionRef.current = false;
       setPendingAction(null);
@@ -531,6 +537,11 @@ export default function ApprovalHubClient() {
         setActionError(`${succeeded}건은 승인했고 ${failures.length}건은 처리하지 못했습니다. ${failures.join(' ')}`);
         toast(`${failures.length}건을 승인하지 못했습니다.`, 'error');
       }
+    } catch (error) {
+      // 문서별 실패는 위에서 모은다. 여기는 확인 대화상자나 목록 갱신처럼 승인 밖에서 난 실패다 — 고른 문서는 그대로 둔다.
+      void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
+      setActionError(failureMessage(error, '선택한 결재를 승인하지 못했습니다. 최신 상태를 확인한 뒤 다시 시도해 주세요.'));
+      toast('선택한 결재를 승인하지 못했습니다.', 'error');
     } finally {
       pendingActionRef.current = false;
       setPendingAction(null);

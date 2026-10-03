@@ -711,4 +711,74 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     fireEvent.click(screen.getByText('1차 · 최초 문서 · 반려'));
     expect(screen.getByRole('list', { name: '1차 결재선 진행' })).toBeInTheDocument();
   });
+
+  it('여러 건 승인은 한 번만 실행되고 처리 중 잠기며, 실패한 문서를 사유와 함께 밝힌다', async () => {
+    const doc = (sn: number) => ({ ...pendingApproval, ifmlAtrzSn: sn, docTtl: `휴가 ${sn}`, version: sn, canApprove: true });
+    mocks.getPending.mockResolvedValue({ list: [doc(91), doc(92)], total: 2 });
+    // 지역 이름은 census 가 세는 write sink(confirmMutation.mutateAsync)와 같은 이름으로 둔다.
+    const confirmMutation = mocks.confirmMutation;
+    const pending = deferred<void>();
+    confirmMutation.mockReturnValueOnce(pending.promise);
+    renderClient();
+    fireEvent.click(await screen.findByRole('button', { name: '휴가 신청 2건 고르기' }));
+    const bulk = screen.getByRole('button', { name: '선택한 2건 승인' });
+
+    act(() => { fireEvent.click(bulk); fireEvent.click(bulk); });
+
+    await waitFor(() => expect(confirmMutation).toHaveBeenCalledTimes(1));
+    expect(mocks.confirm).toHaveBeenCalledTimes(1);
+    expect(bulk).toBeDisabled();
+    expect(bulk).toHaveAttribute('aria-busy', 'true');
+    await act(async () => { pending.reject(new Error('이미 반려된 결재입니다.')); });
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('1건은 승인했고 1건은 처리하지 못했습니다.');
+    expect(screen.getByRole('alert')).toHaveTextContent('‘휴가 91’: 이미 반려된 결재입니다.');
+    expect(mocks.toast).toHaveBeenCalledWith('1건을 승인하지 못했습니다.', 'error');
+  });
+
+  it('보완 요청은 한 번만 보내고 처리 중 잠기며, 실패하면 의견을 남긴 채 사유를 보인다', async () => {
+    mocks.getDetail.mockImplementation(async (id: number) => ({ ...pendingApproval, ifmlAtrzSn: id, version: 5, canApprove: true, canRequestSupplement: true }));
+    // 지역 이름은 census 가 세는 write sink(supplementMutation.mutateAsync)와 같은 이름으로 둔다.
+    const supplementMutation = mocks.requestSupplement;
+    const pending = deferred<void>();
+    supplementMutation.mockReturnValueOnce(pending.promise);
+    renderClient();
+    const ask = await screen.findByRole('button', { name: '보완 요청' });
+    const reason = screen.getByRole('textbox', { name: '결재 의견 (반려·보완 요청 시 필수)' });
+    fireEvent.change(reason, { target: { value: '금액을 적어 주세요' } });
+
+    act(() => { fireEvent.click(ask); fireEvent.click(ask); });
+
+    await waitFor(() => expect(supplementMutation).toHaveBeenCalledTimes(1));
+    expect(ask).toBeDisabled();
+    expect(ask).toHaveAttribute('aria-busy', 'true');
+    await act(async () => { pending.reject(new Error('이미 열린 보완 요청이 있습니다.')); });
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('이미 열린 보완 요청이 있습니다. 입력한 의견은 유지됩니다.');
+    expect(mocks.toast).toHaveBeenCalledWith('결재를 보완 요청하지 못했습니다.', 'error');
+    expect(reason).toHaveValue('금액을 적어 주세요');
+  });
+
+  it('고쳐서 다시 올리기는 회수를 한 번만 보내고 처리 중 잠기며, 실패하면 사유를 보인다', async () => {
+    mocks.getMyHistory.mockResolvedValue({ list: [{ ...pendingApproval, ifmlAtrzSn: 74 }], total: 1 });
+    // 지역 이름은 census 가 세는 write sink(cancelMutation.mutateAsync)와 같은 이름으로 둔다.
+    const cancelMutation = mocks.cancelDraft;
+    const pending = deferred<void>();
+    cancelMutation.mockReturnValueOnce(pending.promise);
+    renderClient();
+    fireEvent.click(await screen.findByRole('tab', { name: '내가 올린 결재' }));
+    const revise = await screen.findByRole('button', { name: '고쳐서 다시 올리기' });
+
+    act(() => { fireEvent.click(revise); fireEvent.click(revise); });
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ title: '고쳐서 다시 올리기' })));
+    await waitFor(() => expect(cancelMutation).toHaveBeenCalledTimes(1));
+    expect(revise).toBeDisabled();
+    expect(revise).toHaveAttribute('aria-busy', 'true');
+    await act(async () => { pending.reject(new Error('이미 승인이 끝난 결재입니다.')); });
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('이미 승인이 끝난 결재입니다.');
+    expect(mocks.toast).toHaveBeenCalledWith('결재를 회수하지 못했습니다.', 'error');
+    expect(screen.queryByRole('dialog', { name: '새 결재 기안' })).not.toBeInTheDocument();
+  });
 });

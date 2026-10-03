@@ -4,18 +4,17 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ createDraft: vi.fn(), resubmit: vi.fn(), getDetail: vi.fn(), getTaskTypes: vi.fn(), getLineSuggestions: vi.fn(), checkApprovers: vi.fn(), toast: vi.fn(), confirm: vi.fn() }));
+const mocks = vi.hoisted(() => ({ createDraft: vi.fn(), resubmit: vi.fn(), getDetail: vi.fn(), getTaskTypes: vi.fn(), getLineSuggestions: vi.fn(), checkApprovers: vi.fn(), searchAssignableUsers: vi.fn(), toast: vi.fn(), confirm: vi.fn() }));
+// 피커가 찾는 사람들. 홍기안은 기안자 본인이다.
+const PEOPLE = [['BOSS', '김결재'], ['PEER', '이합의'], ['FINAL', '박최종'], ['DRAFTER', '홍기안']].map(([esntlId, userNm]) => ({ esntlId, userNm, deptNm: '기획팀', absent: false }));
+const searchPeople = async (keyword: string) => PEOPLE.filter(person => person.userNm.includes(keyword));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { esntlId: 'DRAFTER' } }) }));
 vi.mock('@/services/business/user/approval/ApprovalUserService', () => ({ approvalUserService: mocks }));
+vi.mock('@/services/business/user/UserSearchService', () => ({ userSearchService: { searchAssignableUsers: mocks.searchAssignableUsers } }));
 vi.mock('@/app/components/ui/standard-modal', () => ({
   StandardModal: ({ isOpen, title, children, closeDisabled, onClose }: { isOpen: boolean; title: string; children: React.ReactNode; closeDisabled?: boolean; onClose: () => void }) => isOpen ? <div role="dialog" aria-label={title}><button disabled={closeDisabled} onClick={onClose}>모달 닫기</button>{children}</div> : null,
-}));
-vi.mock('@/app/components/ui/user-picker', () => ({
-  UserPicker: ({ isOpen, onSelect, onClose }: { isOpen: boolean; onSelect: (user: { esntlId: string; userNm: string }) => void; onClose: () => void }) => isOpen ? <div aria-label="사용자 선택">
-    {[['BOSS', '김결재'], ['PEER', '이합의'], ['FINAL', '박최종'], ['DRAFTER', '나']].map(([esntlId, userNm]) => <button key={esntlId} type="button" onClick={() => { onSelect({ esntlId, userNm }); onClose(); }}>피커에서 {userNm} 선택</button>)}
-  </div> : null,
 }));
 vi.mock('@/components/ui/select', () => {
   const passthrough = ({ children }: { children?: React.ReactNode }) => <>{children}</>;
@@ -39,11 +38,20 @@ async function fillContent() {
   fireEvent.change(screen.getByLabelText('신청일'), { target: { value: '2026-09-16' } });
   fireEvent.click(screen.getByRole('button', { name: '다음' }));
 }
-function pick(stage: number, name: string, adding = false) {
+/** 단계의 피커를 펼쳐 이름으로 찾고, 한 사람을 넣은 뒤 접는다. */
+async function pick(stage: number, name: string, adding = false) {
   fireEvent.click(screen.getByRole('button', { name: `${stage}단계 결재자 ${adding ? '추가' : '선택'}` }));
-  fireEvent.click(screen.getByRole('button', { name: `피커에서 ${name} 선택` }));
+  const picker = await screen.findByRole('group', { name: `${stage}단계 결재자 고르기` });
+  await search(picker, name);
+  fireEvent.click(await within(picker).findByRole('button', { name: new RegExp(`^${name}`) }));
+  fireEvent.click(within(picker).getByRole('button', { name: '다 골랐어요' }));
 }
-async function reviewSingle() { await fillContent(); pick(1, '김결재'); fireEvent.click(screen.getByRole('button', { name: '다음' })); }
+async function search(picker: HTMLElement, name: string) {
+  fireEvent.change(within(picker).getByRole('textbox', { name: '결재자 이름 검색' }), { target: { value: name } });
+  fireEvent.click(within(picker).getByRole('button', { name: '찾기' }));
+  await within(picker).findByText(/명을 찾았습니다|찾는 사람이 없습니다/);
+}
+async function reviewSingle() { await fillContent(); await pick(1, '김결재'); fireEvent.click(screen.getByRole('button', { name: '다음' })); }
 
 describe('ApprovalDraftDialog', () => {
   beforeEach(() => {
@@ -51,6 +59,7 @@ describe('ApprovalDraftDialog', () => {
     mocks.confirm.mockResolvedValue(false);
     mocks.getTaskTypes.mockResolvedValue([{ dtlCd: '01', dtlCdNm: '일반', useYn: 'Y' }, { dtlCd: '99', dtlCdNm: '폐기', useYn: 'N' }]);
     mocks.createDraft.mockResolvedValue(88); mocks.resubmit.mockResolvedValue(88);
+    mocks.searchAssignableUsers.mockImplementation(searchPeople);
     mocks.getLineSuggestions.mockResolvedValue({ lines: [], otherLines: [], recentApprovers: [] }); mocks.checkApprovers.mockResolvedValue([]);
   });
   it('업무 구분이 없으면 사실을 표시하고 상신 흐름을 막는다', async () => {
@@ -81,7 +90,7 @@ describe('ApprovalDraftDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('이 단계의 결재자를 선택해 주세요.');
     expect(mocks.createDraft).not.toHaveBeenCalled();
-    pick(1, '김결재'); fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    await pick(1, '김결재'); fireEvent.click(screen.getByRole('button', { name: '다음' }));
     expect(screen.getByLabelText('상신 결재선 미리보기')).toHaveTextContent('전원 승인 (1명)');
     expect(screen.getByText(/누구든 한 명이 반려하면 문서 전체가 반려/)).toBeInTheDocument();
     expect(mocks.createDraft).not.toHaveBeenCalled();
@@ -90,8 +99,8 @@ describe('ApprovalDraftDialog', () => {
     expect(onCreated).toHaveBeenCalledWith(88); expect(onClose).toHaveBeenCalled();
   });
   it('순차 단계 안의 여러 명과 합의 전원 동의를 미리보기와 요청에 보존한다', async () => {
-    renderDialog(); await fillContent(); pick(1, '김결재'); pick(1, '이합의', true);
-    fireEvent.click(screen.getByRole('button', { name: '다음 단계 추가' })); pick(2, '박최종');
+    renderDialog(); await fillContent(); await pick(1, '김결재'); await pick(1, '이합의', true);
+    fireEvent.click(screen.getByRole('button', { name: '다음 단계 추가' })); await pick(2, '박최종');
     const kinds = screen.getAllByLabelText('단계 유형'); fireEvent.change(kinds[1], { target: { value: 'AGREEMENT' } });
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
     const preview = screen.getByLabelText('상신 결재선 미리보기');
@@ -100,19 +109,55 @@ describe('ApprovalDraftDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
     await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledWith(expect.objectContaining({ stages: [{ kind: 'APPROVAL', approverIds: ['BOSS', 'PEER'] }, { kind: 'AGREEMENT', approverIds: ['FINAL'] }] })));
   });
-  it('중복 사용자와 자기 결재를 추가하지 않고 이유를 알린다', async () => {
-    renderDialog(); await fillContent(); pick(1, '김결재'); pick(1, '김결재', true);
-    expect(screen.getByRole('status')).toHaveTextContent('이미 결재선에 지정된 사람입니다.');
+  it('다른 단계에 있는 사람과 기안자 본인은 피커에서 사유와 함께 고를 수 없다', async () => {
+    renderDialog(); await fillContent(); await pick(1, '김결재');
     expect(within(screen.getByLabelText('1단계 결재자')).getAllByRole('listitem')).toHaveLength(1);
-    pick(1, '나', true);
-    expect(screen.getByRole('status')).toHaveTextContent('자신을 결재자로 지정할 수 없습니다.');
-    fireEvent.click(screen.getByRole('button', { name: '다음 단계 추가' })); pick(2, '김결재');
-    expect(screen.getByRole('status')).toHaveTextContent('이미 결재선에 지정된 사람입니다.');
+    fireEvent.click(screen.getByRole('button', { name: '다음 단계 추가' }));
+    fireEvent.click(screen.getByRole('button', { name: '2단계 결재자 선택' }));
+    const picker = await screen.findByRole('group', { name: '2단계 결재자 고르기' });
+    await search(picker, '김결재');
+    expect(within(picker).getByRole('button', { name: /^김결재.*이미 다른 단계에 있습니다/ })).toBeDisabled();
+    await search(picker, '홍기안');
+    expect(within(picker).getByRole('button', { name: /^홍기안.*본인/ })).toBeDisabled();
     expect(mocks.createDraft).not.toHaveBeenCalled();
   });
+  it('펼친 피커는 여러 명을 차례로 넣고 다시 누르면 빼며, 결재 권한이 없는 사람은 막는다 (2026-10-03)', async () => {
+    mocks.checkApprovers.mockImplementation(async (ids: string[]) => ids.map(id => ({ esntlId: id, eligible: id !== 'FINAL', ineligibleReason: id === 'FINAL' ? 'NO_PERMISSION' : undefined })));
+    mocks.searchAssignableUsers.mockImplementation(async () => PEOPLE);
+    renderDialog(); await fillContent();
+    fireEvent.click(screen.getByRole('button', { name: '1단계 결재자 선택' }));
+    expect(screen.getByRole('button', { name: '1단계 결재자 선택' })).toHaveAttribute('aria-expanded', 'true');
+    const picker = await screen.findByRole('group', { name: '1단계 결재자 고르기' });
+    await search(picker, '결재');
+    await waitFor(() => expect(within(picker).getByRole('button', { name: /^박최종.*결재 권한 없음/ })).toBeDisabled());
+    fireEvent.click(within(picker).getByRole('button', { name: /^김결재/ }));
+    fireEvent.click(within(picker).getByRole('button', { name: /^이합의/ }));
+    expect(within(screen.getByLabelText('1단계 결재자')).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(picker).getByRole('button', { name: /^김결재/ })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(within(picker).getByRole('button', { name: /^김결재/ }));
+    expect(within(screen.getByLabelText('1단계 결재자')).getAllByRole('listitem')).toHaveLength(1);
+    expect(screen.getByText('김결재를 1단계에서 뺐습니다.')).toBeInTheDocument();
+    fireEvent.click(within(picker).getByRole('button', { name: '다 골랐어요' }));
+    expect(screen.queryByRole('group', { name: '1단계 결재자 고르기' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
+    await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledWith(expect.objectContaining({ stages: [{ kind: 'APPROVAL', approverIds: ['PEER'] }] })));
+  });
+  it('피커는 사람 찾기가 실패하면 결과 없음이 아니라 실패라고 말하고, 자격 확인이 실패해도 고르게 둔다', async () => {
+    mocks.searchAssignableUsers.mockRejectedValueOnce(new Error('network'));
+    mocks.checkApprovers.mockRejectedValue(new Error('network'));
+    renderDialog(); await fillContent();
+    fireEvent.click(screen.getByRole('button', { name: '1단계 결재자 선택' }));
+    const picker = await screen.findByRole('group', { name: '1단계 결재자 고르기' });
+    fireEvent.change(within(picker).getByRole('textbox', { name: '결재자 이름 검색' }), { target: { value: '김결재' } });
+    fireEvent.click(within(picker).getByRole('button', { name: '찾기' }));
+    expect(await within(picker).findByText('사용자를 찾지 못했습니다. 잠시 후 다시 시도해 주세요.')).toBeInTheDocument();
+    await search(picker, '김결재');
+    expect(within(picker).getByRole('button', { name: /^김결재/ })).toBeEnabled();
+  });
   it('키보드로 단계 순서를 바꾸고 이동한 카드에 초점을 유지한다', async () => {
-    const user = userEvent.setup(); renderDialog(); await fillContent(); pick(1, '김결재');
-    fireEvent.click(screen.getByRole('button', { name: '다음 단계 추가' })); pick(2, '이합의');
+    const user = userEvent.setup(); renderDialog(); await fillContent(); await pick(1, '김결재');
+    fireEvent.click(screen.getByRole('button', { name: '다음 단계 추가' })); await pick(2, '이합의');
     fireEvent.change(screen.getAllByLabelText('단계 유형')[1], { target: { value: 'AGREEMENT' } });
     screen.getByRole('button', { name: '2단계 위로 이동' }).focus(); await user.keyboard('{Enter}');
     await waitFor(() => expect(screen.getByRole('heading', { name: '1단계 · 합의' })).toHaveFocus());
@@ -210,6 +255,7 @@ describe('ApprovalDraftDialog 기안 보조', () => {
     mocks.confirm.mockResolvedValue(false);
     mocks.getTaskTypes.mockResolvedValue([{ dtlCd: '01', dtlCdNm: '일반', useYn: 'Y', dtlCdExpln: '목적:\n금액:' }, { dtlCd: '99', dtlCdNm: '폐기', useYn: 'N' }]);
     mocks.createDraft.mockResolvedValue(88);
+    mocks.searchAssignableUsers.mockImplementation(searchPeople);
     mocks.getLineSuggestions.mockResolvedValue(suggestionData);
     mocks.checkApprovers.mockImplementation(async (ids: string[]) => ids.map(id => ({ esntlId: id, eligible: true, absent: id === 'FINAL' })));
   });
@@ -233,7 +279,8 @@ describe('ApprovalDraftDialog 기안 보조', () => {
   });
 
   it('결재자가 될 수 없는 사람이 있으면 이름과 사유를 밝히고 상신을 막는다', async () => {
-    mocks.checkApprovers.mockResolvedValue([{ esntlId: 'BOSS', userNm: '김결재', eligible: false, ineligibleReason: 'NO_PERMISSION' }]);
+    // 피커에서 고를 때는 결재자가 될 수 있었는데, 상신 직전에 권한이 회수된 경우다.
+    mocks.checkApprovers.mockResolvedValueOnce([{ esntlId: 'BOSS', eligible: true }]).mockResolvedValue([{ esntlId: 'BOSS', userNm: '김결재', eligible: false, ineligibleReason: 'NO_PERMISSION' }]);
     renderDialog(); await reviewSingle();
     expect(await screen.findByText(/결재자로 지정할 수 없는 사람이 있습니다: 김결재\(결재 권한 없음\)/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '결재 상신' })).toBeDisabled();
@@ -255,7 +302,7 @@ describe('ApprovalDraftDialog 기안 보조', () => {
     expect(screen.getByLabelText('본문 (선택)')).toHaveValue('목적:\n금액:');
     fireEvent.change(screen.getByLabelText('제목 (필수)'), { target: { value: '양식 요청' } });
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
-    pick(1, '김결재'); fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    await pick(1, '김결재'); fireEvent.click(screen.getByRole('button', { name: '다음' }));
     fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
     await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledWith(expect.objectContaining({ taskSeCd: '01', docCn: '목적:\n금액:' })));
     first.unmount();

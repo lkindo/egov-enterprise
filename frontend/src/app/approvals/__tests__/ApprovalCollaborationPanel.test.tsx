@@ -131,4 +131,24 @@ describe('ApprovalCollaborationPanel', () => {
     expect(screen.getByText('본문 수정')).toBeInTheDocument();
     expect(screen.getByText('고치기 전 본문 보기')).toBeInTheDocument();
   });
+
+  it('재알림은 보내는 동안 다시 누를 수 없고, 실패하면 서버가 말한 사유를 보인다', async () => {
+    // 지역 이름은 census 가 세는 write sink(remindMutation.mutateAsync)와 같은 이름으로 둔다.
+    const remindMutation = mocks.remind;
+    const pending = deferred<number>();
+    remindMutation.mockReturnValueOnce(pending.promise);
+    renderPanel({ canRemind: true });
+    const remind = screen.getByRole('button', { name: '차례인 결재자에게 재알림' });
+
+    act(() => { fireEvent.click(remind); fireEvent.click(remind); });
+
+    await waitFor(() => expect(remindMutation).toHaveBeenCalledTimes(1));
+    expect(remind).toBeDisabled();
+    expect(remind).toHaveAttribute('aria-busy', 'true');
+    await act(async () => { pending.reject(new Error('오늘은 이미 재알림을 보냈습니다.')); });
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('오늘은 이미 재알림을 보냈습니다.');
+    expect(mocks.toast).toHaveBeenCalledWith('재알림을 보내지 못했습니다.', 'error');
+    expect(remind).toBeEnabled();
+  });
 });

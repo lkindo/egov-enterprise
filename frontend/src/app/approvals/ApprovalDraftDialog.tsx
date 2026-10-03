@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { ArrowDown, ArrowUp, FileText, History, Plus, RefreshCcw, UserRound, X } from 'lucide-react';
 import { StandardModal } from '@/app/components/ui/standard-modal';
-import { UserPicker } from '@/app/components/ui/user-picker';
+import { ApproverInlinePicker, INELIGIBLE_REASONS } from './ApproverInlinePicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormErrorSummary } from '@/components/ui/form';
@@ -46,14 +46,6 @@ const draftSchema = ApprovalDraftRequestSchema.extend({ ...contentSchema.shape,
 // 화면 편집 상태만 소유한다. API 요청과 응답은 생성 계약을 참조한다.
 type StageEditor = { key: number; kind: ApprovalStageRequest['kind']; users: UserSearchResult[] };
 type LineSuggestion = components['schemas']['ApprovalLineSuggestionDto'];
-
-/** 결재자가 될 수 없는 사유. 상신 때 서버 검사와 같은 판정이다. */
-const INELIGIBLE_REASONS: Record<string, string> = {
-  SELF: '본인',
-  INACTIVE: '사용 중이 아닌 계정',
-  NO_PERMISSION: '결재 권한 없음',
-  NOT_FOUND: '찾을 수 없는 사용자',
-};
 
 /** 마지막으로 고른 업무 구분 — 이 브라우저에만 사용자별로 둔다. 쓸 수 없으면 기억하지 않을 뿐이다. */
 const lastTaskKey = (esntlId?: string) => `approval.lastTaskType.${esntlId ?? 'anonymous'}`;
@@ -215,6 +207,22 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
       // 사전 확인은 도움말이다. 실패해도 상신은 서버가 같은 규칙으로 판정한다.
     }
   };
+  /** 펼친 피커에서 누른 사람을 넣거나 뺀다. 판정은 피커가 미리 막고, 여기서는 한 번 더 확인한다. */
+  const togglePerson = (key: number, index: number, person: UserSearchResult, selected: boolean) => {
+    const id = person.esntlId;
+    if (!id) { setNotice('사용자 식별자를 확인할 수 없어 추가하지 않았습니다.'); return; }
+    if (!selected) {
+      updateStage(key, current => ({ ...current, users: current.users.filter(item => item.esntlId !== id) }));
+      setNotice(`${person.userNm || '선택한 사용자'}를 ${index + 1}단계에서 뺐습니다.`);
+      return;
+    }
+    if (id === user?.esntlId) { setNotice('자신을 결재자로 지정할 수 없습니다.'); return; }
+    if (stages.some(stage => stage.users.some(item => item.esntlId === id))) { setNotice('이미 결재선에 지정된 사람입니다. 다른 사람을 선택해 주세요.'); return; }
+    const target = stages.find(stage => stage.key === key);
+    if (!target || target.users.length >= 10 || totalApprovers >= 50) { setNotice('결재자 지정 한도를 확인해 주세요.'); return; }
+    updateStage(key, current => ({ ...current, users: [...current.users, person] }));
+    setNotice(`${person.userNm || '선택한 사용자'}를 ${index + 1}단계에 추가했습니다.`);
+  };
   const validateStages = () => {
     const ownId = user?.esntlId;
     if (ownId && values.stages.some(stage => stage.approverIds.includes(ownId))) {
@@ -348,7 +356,16 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
                 </div>
                 <div className="space-y-1"><label htmlFor={`approval-stage-kind-${stage.key}`} className="text-sm">단계 유형</label><select id={`approval-stage-kind-${stage.key}`} value={stage.kind} onChange={event => updateStage(stage.key, current => ({ ...current, kind: event.target.value as ApprovalStageRequest['kind'] }))} className="block w-full rounded-md border border-border bg-background p-2 text-sm"><option value="APPROVAL">결재 · 전원 승인</option><option value="AGREEMENT">합의 · 전원 동의</option></select></div>
                 {stage.users.length > 0 ? <ul aria-label={`${index + 1}단계 결재자`} className="space-y-1">{stage.users.map(person => <li key={person.esntlId} className="flex items-center justify-between gap-2 text-sm"><span>{person.userNm || person.esntlId}{person.deptNm ? ` · ${person.deptNm}` : ''}</span><Button type="button" variant="ghost" size="sm" aria-label={`${person.userNm || person.esntlId} 결재선에서 제외`} onClick={() => updateStage(stage.key, current => ({ ...current, users: current.users.filter(item => item.esntlId !== person.esntlId) }))}>제외</Button></li>)}</ul> : <p className="text-sm text-muted-foreground">아직 결재자를 선택하지 않았습니다.</p>}
-                <Button ref={node => { if (node) pickerButtons.current.set(stage.key, node); else pickerButtons.current.delete(stage.key); }} type="button" variant="outline" {...draftValidation.fieldProps(`stages.${index}.approverIds`)} aria-describedby={[draftValidation.fieldProps(`stages.${index}.approverIds`)['aria-describedby'], 'approval-stage-help'].filter(Boolean).join(' ')} disabled={stage.users.length >= 10 || totalApprovers >= 50} onClick={() => { setNotice(''); setPickerStage(stage.key); }}><UserRound aria-hidden="true" />{stage.users.length ? `${index + 1}단계 결재자 추가` : `${index + 1}단계 결재자 선택`}</Button>
+                <Button ref={node => { if (node) pickerButtons.current.set(stage.key, node); else pickerButtons.current.delete(stage.key); }} type="button" variant="outline" {...draftValidation.fieldProps(`stages.${index}.approverIds`)} aria-describedby={[draftValidation.fieldProps(`stages.${index}.approverIds`)['aria-describedby'], 'approval-stage-help'].filter(Boolean).join(' ')} aria-expanded={pickerStage === stage.key} disabled={pickerStage !== stage.key && (stage.users.length >= 10 || totalApprovers >= 50)} onClick={() => { setNotice(''); setPickerStage(current => current === stage.key ? null : stage.key); }}><UserRound aria-hidden="true" />{stage.users.length ? `${index + 1}단계 결재자 추가` : `${index + 1}단계 결재자 선택`}</Button>
+                {pickerStage === stage.key && <ApproverInlinePicker
+                  stageLabel={`${index + 1}단계`}
+                  selectedIds={stage.users.map(person => person.esntlId ?? '')}
+                  otherStageIds={stages.filter(other => other.key !== stage.key).flatMap(other => other.users.map(person => person.esntlId ?? ''))}
+                  selfId={user?.esntlId}
+                  remaining={Math.min(10 - stage.users.length, 50 - totalApprovers)}
+                  onToggle={(person, selected) => togglePerson(stage.key, index, person, selected)}
+                  onClose={() => { const key = stage.key; setPickerStage(null); focusAfterRender(() => pickerButtons.current.get(key)); }}
+                />}
                 {fieldError(`stages.${index}.approverIds`)}
               </li>)}
             </ol>
@@ -367,14 +384,5 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
         </fieldset>
       </form>
     </StandardModal>
-    <UserPicker isOpen={pickerStage !== null} onClose={() => { const key = pickerStage; setPickerStage(null); focusAfterRender(() => key !== null ? pickerButtons.current.get(key) : null); }} title="결재자 검색 및 선택" onSelect={person => {
-      if (!person.esntlId) { setNotice('사용자 식별자를 확인할 수 없어 추가하지 않았습니다.'); return; }
-      if (person.esntlId === user?.esntlId) { setNotice('자신을 결재자로 지정할 수 없습니다.'); return; }
-      if (stages.some(stage => stage.users.some(item => item.esntlId === person.esntlId))) { setNotice('이미 결재선에 지정된 사람입니다. 다른 사람을 선택해 주세요.'); return; }
-      const target = stages.find(stage => stage.key === pickerStage);
-      if (!target || target.users.length >= 10 || totalApprovers >= 50) { setNotice('결재자 지정 한도를 확인해 주세요.'); return; }
-      updateStage(target.key, current => ({ ...current, users: [...current.users, person] }));
-      setNotice(`${person.userNm || '선택한 사용자'}를 ${stages.indexOf(target) + 1}단계에 추가했습니다.`);
-    }} />
   </>;
 }
