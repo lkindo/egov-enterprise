@@ -45,6 +45,8 @@ class InformalSanctionServiceTest {
 
     @Mock
     private nuri.business.domain.informalsanction.InformalSanctionHistoryRepository historyRepository;
+    @org.mockito.Mock
+    private nuri.business.domain.informalsanction.InformalSanctionProcessRepository processRepository;
 
     @Mock
     private jakarta.persistence.EntityManager entityManager;

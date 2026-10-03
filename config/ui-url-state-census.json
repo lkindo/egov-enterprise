@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "5190d0606b4a8d237184f19766d08168813f73a46ee6b17c052975eff03f3001"
+    "inventoryHash": "61514b234be129f2170fd7deb7a6214cc04b9497e01999b0c8cacb4c22882cd5"
   },
   "summary": {
-    "sourceFileCount": 630,
-    "records": 394,
-    "syntaxOccurrences": 467,
-    "ambiguousRecords": 347,
-    "unverifiedRecords": 394,
+    "sourceFileCount": 633,
+    "records": 396,
+    "syntaxOccurrences": 469,
+    "ambiguousRecords": 349,
+    "unverifiedRecords": 396,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -44,8 +44,8 @@
     "byKind": {
       "config-redirect": 13,
       "dynamic-segment": 11,
-      "form-producer": 54,
-      "navigation-producer": 173,
+      "form-producer": 55,
+      "navigation-producer": 174,
       "page-redirect": 17,
       "query-builder": 22,
       "query-consumer": 54,
@@ -54,7 +54,7 @@
       "url-observer": 8
     },
     "bySurface": {
-      "navigation": 383,
+      "navigation": 385,
       "request-telemetry": 11
     }
   },
@@ -11985,6 +11985,45 @@
       }
     },
     {
+      "id": "URL-C50170DECBF6CA",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "implicit-or-computed-method",
+      "source": "frontend/src/app/approvals/ApprovalCollaborationPanel.tsx",
+      "producerFile": "frontend/src/app/approvals/ApprovalCollaborationPanel.tsx",
+      "consumerFile": null,
+      "routePattern": "/approvals",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "form-method-or-interception-unresolved",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/approvals/ApprovalCollaborationPanel.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-1DF2A2530A633C",
       "surface": "navigation",
       "kind": "form-producer",
@@ -12019,6 +12058,45 @@
       "evidence": {
         "source": "frontend/src/app/approvals/ApprovalDraftDialog.tsx",
         "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-C91D3976D3B0BB",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "window.history.replaceState",
+      "source": "frontend/src/app/approvals/ApprovalHubClient.tsx",
+      "producerFile": "frontend/src/app/approvals/ApprovalHubClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/approvals",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/approvals/ApprovalHubClient.tsx",
+        "detector": "history-navigation",
         "occurrenceCount": 1
       }
     },

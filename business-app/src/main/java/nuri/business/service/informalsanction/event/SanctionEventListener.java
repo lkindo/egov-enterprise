@@ -154,7 +154,8 @@ public class SanctionEventListener {
                     "결재 상태 변경",
                     boundChannelContent(String.format("%s가 %s되었습니다.%s",
                             documentLabel(event), statusLabel(event), reasonSuffix(event))),
-                    "/approvals"));
+                    // [2026-10-03 D1] 결과 알림은 내가 올린 결재의 그 문서로 바로 간다.
+                    "/approvals?tab=SUBMITTED&doc=" + event.getInformalSanctionSn()));
     }
 
     /** 제목이 있으면 제목으로, 번호는 결재함 목록에서 찾는 열쇠로 함께 싣는다. 문자·메일 본문은 종전대로 번호만 쓴다. */

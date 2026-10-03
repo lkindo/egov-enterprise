@@ -34,6 +34,12 @@ public interface UserRepositoryCustom {
      */
     java.util.List<nuri.business.service.user.dto.UserSearchDto> findActiveDepartmentMembers(String ognzId, int limit);
 
+    /**
+     * 식별자 목록의 사람을 검색 결과와 같은 최소 필드(이름·부서명·부재)로 돌려준다. 계정 상태로 거르지 않는다 —
+     * 이미 결재선에 있는 사람이 사용 중지돼도 이름은 보여야 한다. 연락처는 싣지 않는다(2026-10-03 결재 동선 개선).
+     */
+    java.util.List<nuri.business.service.user.dto.UserSearchDto> findProfilesByEsntlIds(java.util.Collection<String> esntlIds);
+
     int checkIdDplct(String checkId);
 }
 

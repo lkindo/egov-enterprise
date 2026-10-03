@@ -214,7 +214,7 @@ class SanctionEventListenerTest {
         NotificationRequestedEvent requested = onlyPublished(NotificationRequestedEvent.class);
         assertThat(requested.receiverEsntlId()).isEqualTo("USER_001");
         assertThat(requested.content()).contains("7").contains("승인되었습니다.");
-        assertThat(requested.linkUrl()).isEqualTo("/approvals");
+        assertThat(requested.linkUrl()).isEqualTo("/approvals?tab=SUBMITTED&doc=7");
     }
 
     /**

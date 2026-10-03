@@ -132,6 +132,15 @@ public class InformalSanction extends BaseEntity {
     }
 
     /**
+     * 보완 답변과 함께 본문만 고친다(2026-10-03 D7). 진행 중인 문서만 고칠 수 있고 제목·결재선·차수는 그대로다.
+     * 고치기 전 본문은 서비스가 처리 이력(REVISE)에 남긴다 — 제목은 고치기 전 값을 남길 자리가 없으므로 고치지 않는다.
+     */
+    public void reviseBody(String docCn) {
+        validateRequestedState();
+        this.docCn = docCn;
+    }
+
+    /**
      * 승인 처리
      */
     public void approve() {

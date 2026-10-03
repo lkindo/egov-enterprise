@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 67,
-    "nativeFormFiles": 57,
+    "nativeFormOccurrences": 68,
+    "nativeFormFiles": 58,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 22,
-    "secondaryActionBoundaries": 72,
-    "candidateCount": 162
+    "secondaryActionBoundaries": 76,
+    "candidateCount": 167
   },
   "entries": [
     {
@@ -63,6 +63,33 @@
       ]
     },
     {
+      "key": "formless-write:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+      "owner": "SecurityHubClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "composed-child-form-validation",
+      "schemaSource": "composed:AuthorizationGroupForm",
+      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
+      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
+      "pendingGuard": "composed-child-submit-and-action-locks",
+      "composedChildContracts": [
+        {
+          "actionHandlers": [],
+          "component": "AuthorizationGroupForm",
+          "handler": "inline-action",
+          "writeSinks": [
+            "authorizationAdminService.createGroup"
+          ]
+        }
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx",
+        "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx"
+      ]
+    },
+    {
       "key": "formless-write:frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx#AuthorizationGroupEditor",
       "kind": "formless-write",
       "file": "frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx",
@@ -87,33 +114,6 @@
       "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
       "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
       "pendingGuard": "composed-child-submit-and-action-locks",
-      "testEvidence": [
-        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx",
-        "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx"
-      ]
-    },
-    {
-      "key": "formless-write:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient",
-      "kind": "formless-write",
-      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "owner": "SecurityHubClient",
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "composed-child-form-validation",
-      "schemaSource": "composed:AuthorizationGroupForm",
-      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
-      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
-      "pendingGuard": "composed-child-submit-and-action-locks",
-      "composedChildContracts": [
-        {
-          "actionHandlers": [],
-          "component": "AuthorizationGroupForm",
-          "handler": "inline-action",
-          "writeSinks": [
-            "authorizationAdminService.createGroup"
-          ]
-        }
-      ],
       "testEvidence": [
         "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx",
         "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx"
@@ -193,24 +193,6 @@
       "pendingGuard": "synchronous-submit-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/security/group/__tests__/SecurityGroupClient.test.tsx",
-        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
-      ]
-    },
-    {
-      "key": "native-form:frontend/src/app/admin/survey/manage/SurveyFormDialog.tsx#SurveyFormDialog[1]",
-      "kind": "native-form",
-      "file": "frontend/src/app/admin/survey/manage/SurveyFormDialog.tsx",
-      "owner": "SurveyFormDialog",
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "useManualFormValidation-zod",
-      "schemaSource": "generated-or-derived:pollFormSchema",
-      "errorNavigation": "summary-inline-focus-first-invalid",
-      "serverErrors": "field-errors-mapped-with-value-retention",
-      "pendingGuard": "synchronous-submit-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/survey/manage/__tests__/SurveyManageValidation.test.tsx",
-        "frontend/src/app/admin/survey/manage/__tests__/SurveyFormDialog.edit.test.tsx",
         "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
       ]
     },
@@ -1042,6 +1024,24 @@
       ]
     },
     {
+      "key": "native-form:frontend/src/app/admin/survey/manage/SurveyFormDialog.tsx#SurveyFormDialog[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/survey/manage/SurveyFormDialog.tsx",
+      "owner": "SurveyFormDialog",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:pollFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/manage/__tests__/SurveyManageValidation.test.tsx",
+        "frontend/src/app/admin/survey/manage/__tests__/SurveyFormDialog.edit.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
       "key": "native-form:frontend/src/app/admin/system/banner/BannerAdminClient.tsx#BannerAdminClient[1]",
       "kind": "native-form",
       "file": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
@@ -1229,6 +1229,23 @@
       ]
     },
     {
+      "key": "native-form:frontend/src/app/approvals/ApprovalCollaborationPanel.tsx#ApprovalCollaborationPanel[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/approvals/ApprovalCollaborationPanel.tsx",
+      "owner": "ApprovalCollaborationPanel",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:answerSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/approvals/__tests__/ApprovalCollaborationPanel.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
       "key": "native-form:frontend/src/app/approvals/ApprovalDraftDialog.tsx#ApprovalDraftDialog[1]",
       "kind": "native-form",
       "file": "frontend/src/app/approvals/ApprovalDraftDialog.tsx",
@@ -1409,6 +1426,23 @@
       "testEvidence": []
     },
     {
+      "key": "native-form:frontend/src/components/account/ChangePasswordForm.tsx#ChangePasswordForm[1]",
+      "kind": "native-form",
+      "file": "frontend/src/components/account/ChangePasswordForm.tsx",
+      "owner": "ChangePasswordForm",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:changePasswordSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/account/__tests__/ChangePasswordForm.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
       "key": "native-form:frontend/src/components/account/MfaChallengePanel.tsx#MfaChallengePanel[1]",
       "kind": "native-form",
       "file": "frontend/src/components/account/MfaChallengePanel.tsx",
@@ -1439,23 +1473,6 @@
       "pendingGuard": "synchronous-submit-lock-and-disabled",
       "testEvidence": [
         "frontend/src/components/account/__tests__/MfaSettings.test.tsx",
-        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
-      ]
-    },
-    {
-      "key": "native-form:frontend/src/components/account/ChangePasswordForm.tsx#ChangePasswordForm[1]",
-      "kind": "native-form",
-      "file": "frontend/src/components/account/ChangePasswordForm.tsx",
-      "owner": "ChangePasswordForm",
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "useManualFormValidation-zod",
-      "schemaSource": "generated-or-derived:changePasswordSchema",
-      "errorNavigation": "summary-inline-focus-first-invalid",
-      "serverErrors": "field-errors-mapped-with-value-retention",
-      "pendingGuard": "synchronous-submit-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/components/account/__tests__/ChangePasswordForm.test.tsx",
         "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
       ]
     },
@@ -1672,13 +1689,14 @@
       ]
     },
     {
-      "key": "secondary-action:frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx#SelectAddressBookDetailClient.handleRemoveMember[1]",
+      "key": "secondary-action:frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx#SelectAddressBookDetailClient.handleDelete[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx",
       "owner": "SelectAddressBookDetailClient",
-      "handler": "handleRemoveMember",
+      "handler": "handleDelete",
       "writeSinks": [
-        "addressbookUserService.updateAddressBook"
+        "addressbookUserService.deleteAddressBook",
+        "deleteMutation.mutateAsync"
       ],
       "classification": "destructive",
       "status": "compliant",
@@ -1692,14 +1710,13 @@
       ]
     },
     {
-      "key": "secondary-action:frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx#SelectAddressBookDetailClient.handleDelete[1]",
+      "key": "secondary-action:frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx#SelectAddressBookDetailClient.handleRemoveMember[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx",
       "owner": "SelectAddressBookDetailClient",
-      "handler": "handleDelete",
+      "handler": "handleRemoveMember",
       "writeSinks": [
-        "addressbookUserService.deleteAddressBook",
-        "deleteMutation.mutateAsync"
+        "addressbookUserService.updateAddressBook"
       ],
       "classification": "destructive",
       "status": "compliant",
@@ -1733,16 +1750,16 @@
       ]
     },
     {
-      "key": "secondary-action:frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx#MailHistoryHubClient.handleResend[1]",
+      "key": "secondary-action:frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx#MailHistoryHubClient.handleDelete[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx",
       "owner": "MailHistoryHubClient",
-      "handler": "handleResend",
+      "handler": "handleDelete",
       "writeSinks": [
-        "mailService.resendMail",
-        "resendMutation.mutateAsync"
+        "deleteMutation.mutateAsync",
+        "mailService.deleteMail"
       ],
-      "classification": "mutation",
+      "classification": "destructive",
       "status": "compliant",
       "validationMode": "action-only-no-editable-payload",
       "schemaSource": "not-applicable:no-editable-payload",
@@ -1754,16 +1771,16 @@
       ]
     },
     {
-      "key": "secondary-action:frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx#MailHistoryHubClient.handleDelete[1]",
+      "key": "secondary-action:frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx#MailHistoryHubClient.handleResend[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx",
       "owner": "MailHistoryHubClient",
-      "handler": "handleDelete",
+      "handler": "handleResend",
       "writeSinks": [
-        "deleteMutation.mutateAsync",
-        "mailService.deleteMail"
+        "mailService.resendMail",
+        "resendMutation.mutateAsync"
       ],
-      "classification": "destructive",
+      "classification": "mutation",
       "status": "compliant",
       "validationMode": "action-only-no-editable-payload",
       "schemaSource": "not-applicable:no-editable-payload",
@@ -2816,11 +2833,91 @@
       ]
     },
     {
+      "key": "secondary-action:frontend/src/app/approvals/ApprovalCollaborationPanel.tsx#ApprovalCollaborationPanel.handleRemind[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/approvals/ApprovalCollaborationPanel.tsx",
+      "owner": "ApprovalCollaborationPanel",
+      "handler": "handleRemind",
+      "writeSinks": [
+        "remindMutation.mutateAsync"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/approvals/__tests__/ApprovalCollaborationPanel.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/approvals/ApprovalHubClient.tsx#ApprovalHubClient.handleBulkApprove[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/approvals/ApprovalHubClient.tsx",
+      "owner": "ApprovalHubClient",
+      "handler": "handleBulkApprove",
+      "writeSinks": [
+        "confirmMutation.mutateAsync"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/approvals/__tests__/ApprovalHubClient.actions.test.tsx"
+      ]
+    },
+    {
       "key": "secondary-action:frontend/src/app/approvals/ApprovalHubClient.tsx#ApprovalHubClient.handleCancelDraft[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/approvals/ApprovalHubClient.tsx",
       "owner": "ApprovalHubClient",
       "handler": "handleCancelDraft",
+      "writeSinks": [
+        "cancelMutation.mutateAsync"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/approvals/__tests__/ApprovalHubClient.actions.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/approvals/ApprovalHubClient.tsx#ApprovalHubClient.handleSupplementRequest[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/approvals/ApprovalHubClient.tsx",
+      "owner": "ApprovalHubClient",
+      "handler": "handleSupplementRequest",
+      "writeSinks": [
+        "supplementMutation.mutateAsync"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/approvals/__tests__/ApprovalHubClient.actions.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/approvals/ApprovalHubClient.tsx#ApprovalHubClient.handleWithdrawAndRevise[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/approvals/ApprovalHubClient.tsx",
+      "owner": "ApprovalHubClient",
+      "handler": "handleWithdrawAndRevise",
       "writeSinks": [
         "cancelMutation.mutateAsync"
       ],

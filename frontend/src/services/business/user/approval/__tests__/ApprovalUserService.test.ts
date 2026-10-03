@@ -82,4 +82,36 @@ describe('ApprovalUserService generated contract', () => {
     await expect(approvalUserService.resubmit(42, request)).resolves.toBe(42);
     expect(client.requestRaw).toHaveBeenCalledWith({ url: 'approvals/42/resubmissions', method: 'post', data: request });
   });
+
+  it('[2026-10-03 H4] 버전이 없는 상세(열람만 하는 사람)는 거부하지 않고, 형식이 틀린 버전만 거부한다', async () => {
+    const detail = { ifmlAtrzSn: 9, taskSeCd: '01', aplcntId: 'owner' };
+    client.getRaw.mockResolvedValue(success(detail));
+    client.requestRaw.mockResolvedValue(success(detail));
+    await expect(approvalUserService.getDetail(9)).resolves.toMatchObject({ ifmlAtrzSn: 9 });
+    client.getRaw.mockResolvedValue(success({ ...detail, version: -1 }));
+    client.requestRaw.mockResolvedValue(success({ ...detail, version: -1 }));
+    // 음수 버전은 생성 응답 계약(min 0)이 먼저 거부한다.
+    await expect(approvalUserService.getDetail(9)).rejects.toThrow();
+  });
+
+  it('추적·보완 쓰기는 생성 계약의 경로와 본문으로 보낸다 (2026-10-03)', async () => {
+    client.requestRaw.mockResolvedValueOnce(success(2));
+    await expect(approvalUserService.remind(42)).resolves.toBe(2);
+    expect(client.requestRaw).toHaveBeenLastCalledWith({ url: 'approvals/42/reminders', method: 'post' });
+    await approvalUserService.replaceApprover(42, 'from', 'to', 3);
+    expect(client.requestRaw).toHaveBeenLastCalledWith({ url: 'approvals/42/approvers', method: 'put', data: { fromUserId: 'from', toUserId: 'to', version: 3 } });
+    await approvalUserService.requestSupplement(42, '금액?', 3);
+    expect(client.requestRaw).toHaveBeenLastCalledWith({ url: 'approvals/42/supplement-requests', method: 'post', data: { question: '금액?', version: 3 } });
+    await approvalUserService.answerSupplement(42, { answer: '45만 원', docCn: '고친 본문', version: 4 });
+    expect(client.requestRaw).toHaveBeenLastCalledWith({ url: 'approvals/42/supplement-answers', method: 'post', data: { answer: '45만 원', docCn: '고친 본문', version: 4 } });
+    client.requestRaw.mockResolvedValueOnce(success([{ esntlId: 'a', eligible: true }]));
+    await expect(approvalUserService.checkApprovers(['a'])).resolves.toEqual([{ esntlId: 'a', eligible: true }]);
+    expect(client.requestRaw).toHaveBeenLastCalledWith({ url: 'approvals/approver-checks', method: 'post', data: { approverIds: ['a'] } });
+  });
+
+  it('결재선 제안 응답에 목록이 빠지면 fail-closed 한다', async () => {
+    client.getRaw.mockResolvedValue(success({ lines: [] }));
+    client.requestRaw.mockResolvedValue(success({ lines: [] }));
+    await expect(approvalUserService.getLineSuggestions('01')).rejects.toThrow('결재선 제안 응답이 계약과 일치하지 않습니다.');
+  });
 });

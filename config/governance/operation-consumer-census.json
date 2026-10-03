@@ -14,7 +14,7 @@
     "Axis 3 is a display check only. Server authorization is unchanged, and a permission literal proves the screen looked at it, not which button it gates."
   ],
   "expected": {
-    "operationCount": 422,
+    "operationCount": 428,
     "unwiredMax": 10,
     "screenOrphanMax": 29,
     "ungatedWriteMax": 45

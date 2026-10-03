@@ -157,7 +157,8 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   // 2026-09-26 DIP V5: 387 -> 388. 인증 사용자용 게시판 메타(GET /boards/{bbsId}/meta)를 더했다.
   // 2026-09-26 DIP B4 P2: 388 -> 389. 받은 알림 모두 읽음(POST /notifications/read-all)을 더했다.
   // 2026-09-26 DIP B4 P7: 389 -> 390. 관리자 계정 잠금 해제(PATCH /admin/system/users/{userId}/unlock)를 더했다.
-  assert.equal(operations.length, 422);
+  // 2026-10-03 결재 동선 개선: 422 -> 428. 결재선 제안·결재자 사전 확인·재알림·결재자 바꾸기·보완 요청·보완 답변을 더했다.
+  assert.equal(operations.length, 428);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

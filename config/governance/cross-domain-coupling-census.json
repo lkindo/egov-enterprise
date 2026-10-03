@@ -95,13 +95,37 @@
       "pack": "demo"
     },
     {
+      "file": "informalsanction/ApprovalLineAssistService.java",
+      "owner": "informalsanction",
+      "target": "code",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.code.CommonCodeService",
+        "nuri.business.service.code.dto.CommonCodeDto"
+      ],
+      "pack": "demo"
+    },
+    {
+      "file": "informalsanction/ApprovalLineAssistService.java",
+      "owner": "informalsanction",
+      "target": "user",
+      "module": "business-core",
+      "types": [
+        "nuri.business.domain.user.entity.User",
+        "nuri.business.domain.user.repository.UserRepository",
+        "nuri.business.service.user.dto.UserSearchDto"
+      ],
+      "pack": "demo"
+    },
+    {
       "file": "informalsanction/InformalSanctionService.java",
       "owner": "informalsanction",
       "target": "user",
       "module": "business-core",
       "types": [
         "nuri.business.domain.user.entity.User",
-        "nuri.business.domain.user.repository.UserRepository"
+        "nuri.business.domain.user.repository.UserRepository",
+        "nuri.business.service.user.dto.UserSearchDto"
       ],
       "pack": "demo"
     },

@@ -1841,6 +1841,54 @@
       "guardRef": "InformalSanctionService#resubmitInformalSanction"
     },
     {
+      "method": "POST",
+      "path": "/api/v1/approvals/approver-checks",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#checkApprovers",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#checkApprovers')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "ApprovalLineAssistService#checkApprovers",
+      "handlerRequiredTokens": [
+        "lineAssistService.checkApprovers(userDetails.getEsntlId(),"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/approvals/{id}/reminders",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#remindApprovers",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#remindApprovers')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "InformalSanctionService#remindApprovers"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/approvals/{id}/approvers",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#replaceApprover",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#replaceApprover')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "InformalSanctionService#replaceApprover"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/approvals/{id}/supplement-requests",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#requestSupplement",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#requestSupplement')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "InformalSanctionService#requestSupplement"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/approvals/{id}/supplement-answers",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#answerSupplement",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#answerSupplement')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "InformalSanctionService#answerSupplement"
+    },
+    {
       "method": "PUT",
       "path": "/api/v1/menus/bookmarks/{menuNo}",
       "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#addBookmark",
@@ -3729,6 +3777,28 @@
       ]
     },
     {
+      "target": "ApprovalLineAssistService#checkApprovers",
+      "policy": "STRICT_OWNER",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
+      "target": "ApprovalLineAssistService#getSuggestions",
+      "policy": "STRICT_OWNER",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
       "target": "DurableJobAdministrationService#getJobs",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -3851,6 +3921,50 @@
           "count": 1,
           "identityAxis": "ESNTL_ID",
           "permission": "BOARD_READ_ALL"
+        }
+      ]
+    },
+    {
+      "target": "InformalSanctionService#answerSupplement",
+      "policy": "STRICT_OWNER",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
+      "target": "InformalSanctionService#remindApprovers",
+      "policy": "STRICT_OWNER",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
+      "target": "InformalSanctionService#replaceApprover",
+      "policy": "STRICT_OWNER",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
+      "target": "InformalSanctionService#requestSupplement",
+      "policy": "STRICT_OWNER",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
         }
       ]
     },
@@ -4280,6 +4394,25 @@
     },
     {
       "target": "InformalSanctionService#confirmInformalSanction",
+      "source": "business-app/src/main/java/nuri/business/service/informalsanction/InformalSanctionService.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 2,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentEsntlId()",
+        "detailRepository.findRevision(id, sanction.getAtrzCycl())",
+        "actor.equals(d.getId().getUserId())",
+        "SecurityUtil.assertOwnerByEsntlId(ownLine.getId().getUserId())",
+        "ownLine.status() == ApprovalStatus.WAITING",
+        "ownLine.status() != ApprovalStatus.ACTIVE",
+        "CommonErrorCode.ACCESS_DENIED"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.isAdmin()",
+        "SecurityUtil.isAdminOrSystem()"
+      ]
+    },
+    {
+      "target": "InformalSanctionService#requestSupplement",
       "source": "business-app/src/main/java/nuri/business/service/informalsanction/InformalSanctionService.java",
       "policy": "STRICT_OWNER",
       "denyReferences": 2,
@@ -7518,6 +7651,48 @@
       "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaRecoverAccount",
       "access": "PERMISSION",
       "permission": "MFA_RECOVER"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/approvals/line-suggestions",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#getLineSuggestions",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_CREATE"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/approvals/approver-checks",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#checkApprovers",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_CREATE"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/approvals/{id}/reminders",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#remindApprovers",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_CREATE"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/approvals/{id}/approvers",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#replaceApprover",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_CREATE"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/approvals/{id}/supplement-requests",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#requestSupplement",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_APPROVE"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/approvals/{id}/supplement-answers",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#answerSupplement",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_CREATE"
     }
   ]
 }

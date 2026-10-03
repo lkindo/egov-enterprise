@@ -151,6 +151,25 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
     }
 
     @Override
+    public List<UserSearchDto> findProfilesByEsntlIds(java.util.Collection<String> esntlIds) {
+        // 빈 목록에 in 조건을 붙이지 않는다 — 조건 없는 전체 조회가 되지 않게 먼저 끊는다.
+        if (esntlIds == null || esntlIds.isEmpty()) {
+            return List.of();
+        }
+        return queryFactory
+                .select(Projections.constructor(UserSearchDto.class,
+                        user.esntlId,
+                        user.userNm,
+                        organizationManage.ognzNm,
+                        userAbsence.userAbsnYn.coalesce("N").eq("Y")))
+                .from(user)
+                .leftJoin(organizationManage).on(organizationManage.ognzId.eq(user.ognzId))
+                .leftJoin(userAbsence).on(userAbsence.userId.eq(user.esntlId))
+                .where(user.esntlId.in(esntlIds))
+                .fetch();
+    }
+
+    @Override
     public int checkIdDplct(String checkId) {
         return (int) queryFactory
                 .select(user.count())
