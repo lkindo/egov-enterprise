@@ -1808,7 +1808,7 @@
         "demo"
       ],
       "journeys": [],
-      "visibleLabel": "unverified",
+      "visibleLabel": "게시글 상세",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -1875,8 +1875,7 @@
       "unverifiedFields": [
         "journeys",
         "profileOwners",
-        "roles",
-        "visibleLabel"
+        "roles"
       ],
       "review": {
         "owner": "product/UX + domain owner",
@@ -2254,7 +2253,7 @@
         "demo"
       ],
       "journeys": [],
-      "visibleLabel": "unverified",
+      "visibleLabel": "전체 게시글",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -2330,8 +2329,7 @@
       "unverifiedFields": [
         "journeys",
         "profileOwners",
-        "roles",
-        "visibleLabel"
+        "roles"
       ],
       "review": {
         "owner": "product/UX + domain owner",
@@ -7198,7 +7196,7 @@
         "demo"
       ],
       "journeys": [],
-      "visibleLabel": "unverified",
+      "visibleLabel": "공통코드 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -7237,8 +7235,7 @@
         "profileOwners",
         "roles",
         "status",
-        "supportedActions",
-        "visibleLabel"
+        "supportedActions"
       ],
       "review": {
         "owner": "product/UX + domain owner",
@@ -10318,7 +10315,7 @@
         "demo"
       ],
       "journeys": [],
-      "visibleLabel": "unverified",
+      "visibleLabel": "커뮤니티 상세",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -10415,8 +10412,7 @@
       "unverifiedFields": [
         "journeys",
         "profileOwners",
-        "roles",
-        "visibleLabel"
+        "roles"
       ],
       "review": {
         "owner": "product/UX + domain owner",
@@ -10725,7 +10721,7 @@
         "demo"
       ],
       "journeys": [],
-      "visibleLabel": "unverified",
+      "visibleLabel": "약관 및 정책",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -10769,8 +10765,7 @@
       "unverifiedFields": [
         "journeys",
         "profileOwners",
-        "roles",
-        "visibleLabel"
+        "roles"
       ],
       "review": {
         "owner": "product/UX + domain owner",
@@ -11286,7 +11281,7 @@
         "demo"
       ],
       "journeys": [],
-      "visibleLabel": "unverified",
+      "visibleLabel": "부서 업무 상세",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -11356,8 +11351,7 @@
       "unverifiedFields": [
         "journeys",
         "profileOwners",
-        "roles",
-        "visibleLabel"
+        "roles"
       ],
       "review": {
         "owner": "product/UX + domain owner",

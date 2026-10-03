@@ -6,11 +6,13 @@
 // 메뉴 snapshot(project-composer-menus.json menu_nm), 쓰기 권한(operation-consumer census 축 3 계산).
 //
 // 권한 묶음 — 권한 작업대의 '권한 묶음 적용'이 읽는다. 원천은 config/governance/permission-bundles.json 이고, 묶음이
-// 여는 화면(screens)은 위 화면 목록에서 계산한다: 진입 권한을 이 묶음의 권한이 충족하는(ANY 하나 이상, ALL 전부)
-// 화면의 라우트다. 진입 권한이 빈 화면(누구나 들어가는 화면 — 내 결재함·업무 쪽지함·메일 발송 이력 등)은 묶음 권한을
-// 그 안에서 쓰더라도 screens 에 없다. 그 화면의 메뉴 표시는 묶음이 아니라 따로 배정한다. 묶음은 그룹이 아니다 —
-// 적용은 그룹 권한 초안에 더할 뿐이고 저장·인가는 기존 '권한 변경 저장'이 한다. protected 는 보호 권한
-// (PROTECTED_PERMISSIONS)을 품는다는 뜻이다. 서버는 보호 권한을 그룹에 새로 더하거나 빼는 저장에만 권한 설정과 권한
+// 여는 화면(screens)과 관련 화면(relatedScreens)은 위 화면 목록에서 계산한다. screens 는 진입 권한을 이 묶음의 권한이
+// 충족하는(ANY 하나 이상, ALL 전부) 화면의 라우트다. relatedScreens 는 진입 권한이 빈 화면(누구나 들어가는 화면 — 내
+// 결재함·업무 쪽지함·일정 등) 가운데 이 묶음의 권한을 쓰기('write')로 쓰는 화면이다. 표시('display')만 하는 화면과 쓰기가
+// 없는 화면(통합 검색·설문 참여 목록 등)은 relatedScreens 에 없고, 그 메뉴 표시는 묶음이 아니라 따로 배정한다. 두 목록은
+// 겹치지 않는다. 묶음은 그룹이 아니다 — 적용은 그룹 권한 초안에 더할 뿐이고 저장·인가는 기존 '권한 변경 저장'이 한다.
+// 카탈로그에서 어느 묶음에도 넣지 않은 권한은 원장 excluded 에 사유와 함께 있다(생성기가 전수 분류를 검사한다). protected 는
+// 보호 권한(PROTECTED_PERMISSIONS)을 품는다는 뜻이다. 서버는 보호 권한을 그룹에 새로 더하거나 빼는 저장에만 권한 설정과 권한
 // 배정 권한을 모두 요구한다 — 묶음의 보호 권한을 그룹이 이미 모두 가졌으면 그 저장에는 요구하지 않는다.
 //
 // 한계 — 이 목록을 인가로 쓰지 않는다(서버가 집행한다).
@@ -29,7 +31,8 @@
 //   · 재사용 투영본은 권한 생성물(PAGE_PERMISSIONS)만 다시 만든다. 그 산출물에서 빠진 화면·별칭은 아래에서
 //     PAGE_PERMISSIONS 로 다시 거른다(모든 page 파일은 PAGE_PERMISSIONS 에 정확한 키가 있다). 앱 설정 별칭은 투영본에서도
 //     앱 설정이 그대로 넘기므로, 화면 파일이 없거나 빠졌어도 넘어가는 화면(목적지 경로)이 투영본에 있으면 남는다.
-//     묶음의 화면도 같이 거르고, 여는 화면이 하나도 남지 않은 묶음(그 투영본에 없는 업무의 묶음)은 내지 않는다.
+//     묶음의 화면·관련 화면도 같이 거르고, 여는 화면(screens)이 하나도 남지 않은 묶음(그 투영본에 없는 업무의 묶음)은
+//     내지 않는다 — 관련 화면만 남아도 내지 않는다(생성기가 여는 화면 하나 이상을 요구하는 것과 같은 기준).
 import { PAGE_PERMISSIONS, type PermissionCode } from '@/types/generated-permissions';
 
 export type ScreenPermissionSource = 'entry' | 'write' | 'display';
@@ -53,6 +56,11 @@ export interface PermissionBundle {
   permissions: PermissionCode[];
   /** 진입 권한을 이 묶음이 충족하는 화면의 라우트(진입 권한이 빈 화면 제외), 코드 포인트 순. SCREEN_REGISTRY 의 route 다. */
   screens: string[];
+  /**
+   * 관련 화면 — 진입 권한이 빈 화면(누구나 들어가는 화면) 가운데 이 묶음의 권한을 쓰기('write')로 쓰는 화면의 라우트,
+   * 코드 포인트 순. screens 와 겹치지 않는다. 표시 리터럴('display')은 보지 않는다.
+   */
+  relatedScreens: string[];
 }
 
 const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
@@ -175,8 +183,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
   },
   {
     "route": "/admin/community/boards/detail",
-    "label": null,
-    "labelSource": null,
+    "label": "게시글 상세",
+    "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
     "entry": {"permissions":[],"mode":"ANY"},
@@ -236,8 +244,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
   },
   {
     "route": "/admin/community/boards/select-board-list",
-    "label": null,
-    "labelSource": null,
+    "label": "전체 게시글",
+    "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
     "entry": {"permissions":[],"mode":"ANY"},
@@ -680,8 +688,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
   },
   {
     "route": "/admin/system/common-code/codes",
-    "label": null,
-    "labelSource": null,
+    "label": "공통코드 관리",
+    "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
     "entry": {"permissions":["CODE_READ"],"mode":"ANY"},
@@ -1073,8 +1081,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
   },
   {
     "route": "/cop/cmy/selectCommunityDetail/[id]",
-    "label": null,
-    "labelSource": null,
+    "label": "커뮤니티 상세",
+    "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": true,
     "entry": {"permissions":[],"mode":"ANY"},
@@ -1105,8 +1113,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
   },
   {
     "route": "/help/policies/[type]",
-    "label": null,
-    "labelSource": null,
+    "label": "약관 및 정책",
+    "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": true,
     "entry": {"permissions":[],"mode":"ANY"},
@@ -1163,8 +1171,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
   },
   {
     "route": "/smart-toolkit/dept-job/[id]",
-    "label": null,
-    "labelSource": null,
+    "label": "부서 업무 상세",
+    "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": true,
     "entry": {"permissions":[],"mode":"ANY"},
@@ -1410,6 +1418,32 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
     "screens": [
       "/admin/notifications",
       "/admin/operation/memo-reports"
+    ],
+    "relatedScreens": [
+      "/admin/collaboration",
+      "/admin/collaboration/address-book/select-address-book-detail/[id]",
+      "/admin/collaboration/address-book/select-address-book-list",
+      "/admin/collaboration/mail-history",
+      "/admin/collaboration/mail-send",
+      "/admin/collaboration/scraps",
+      "/admin/collaboration/scraps/selectScrapList",
+      "/admin/community/boards/detail",
+      "/admin/community/boards/insert-board-article",
+      "/admin/community/boards/select-board-list",
+      "/admin/survey/polls/participate",
+      "/admin/work-hub",
+      "/approvals",
+      "/approvals/draft",
+      "/cop/cmy/selectCommunityDetail/[id]",
+      "/help",
+      "/note",
+      "/smart-toolkit/dept-job",
+      "/smart-toolkit/dept-job/[id]",
+      "/smart-toolkit/dept-job/create",
+      "/smart-toolkit/schedule",
+      "/smart-toolkit/schedule/dept",
+      "/smart-toolkit/work-report",
+      "/survey/[id]"
     ]
   },
   {
@@ -1462,6 +1496,13 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/community/templates",
       "/admin/sanctn/forms",
       "/admin/system/comments"
+    ],
+    "relatedScreens": [
+      "/admin/community/boards/detail",
+      "/admin/help",
+      "/admin/help/faq",
+      "/admin/help/qna",
+      "/help"
     ]
   },
   {
@@ -1490,7 +1531,8 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/survey/manage/[id]",
       "/admin/survey/polls",
       "/admin/survey/polls/manage"
-    ]
+    ],
+    "relatedScreens": []
   },
   {
     "id": "event-reward-operations",
@@ -1522,12 +1564,13 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/operation/external-hr",
       "/admin/operation/rewards",
       "/admin/operation/rough-map"
-    ]
+    ],
+    "relatedScreens": []
   },
   {
     "id": "user-organization",
     "name": "사용자·조직 관리",
-    "description": "인사 담당자에게 계정 등록·수정·삭제와 상태 변경, 부서·부재, 사용자 분류 그룹 관리를 맡깁니다(비밀번호 초기화와 추가 인증 복구는 '계정 복구' 묶음에 있습니다).",
+    "description": "인사 담당자에게 계정 등록·수정·삭제와 상태 변경, 부서·부재, 부서 업무함, 사용자 분류 그룹, 로그인 정책(접속 IP·허용 시간·접속 제한) 관리를 맡깁니다(비밀번호 초기화와 추가 인증 복구는 '계정 복구' 묶음에 있습니다).",
     "protected": false,
     "permissions": [
       "ABSENCE_READ",
@@ -1536,10 +1579,18 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "CLASS_GRP_DELETE",
       "CLASS_GRP_READ",
       "CLASS_GRP_UPDATE",
+      "DEPT_BOX_CREATE",
+      "DEPT_BOX_DELETE",
+      "DEPT_BOX_READ",
+      "DEPT_BOX_UPDATE",
       "DEPT_CREATE",
       "DEPT_DELETE",
       "DEPT_READ",
       "DEPT_UPDATE",
+      "LOGIN_POL_CREATE",
+      "LOGIN_POL_DELETE",
+      "LOGIN_POL_READ",
+      "LOGIN_POL_UPDATE",
       "USER_CREATE",
       "USER_DELETE",
       "USER_DEPT",
@@ -1549,9 +1600,17 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
     ],
     "screens": [
       "/admin/security/group",
+      "/admin/security/login-policy",
       "/admin/user/absences",
       "/admin/user/departments",
+      "/admin/user/indvdl-info-policy",
       "/admin/user/manage"
+    ],
+    "relatedScreens": [
+      "/admin/work-hub",
+      "/smart-toolkit/dept-job",
+      "/smart-toolkit/schedule",
+      "/smart-toolkit/work-report"
     ]
   },
   {
@@ -1598,7 +1657,8 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/system/menus",
       "/admin/system/policies",
       "/admin/system/programs"
-    ]
+    ],
+    "relatedScreens": []
   },
   {
     "id": "banner-popup-help",
@@ -1629,7 +1689,8 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/system/banner",
       "/admin/system/hpcm",
       "/admin/uss/olh/online-manual"
-    ]
+    ],
+    "relatedScreens": []
   },
   {
     "id": "messaging-operations",
@@ -1649,12 +1710,15 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
     "screens": [
       "/admin/notifications",
       "/admin/uss/ion/sms"
+    ],
+    "relatedScreens": [
+      "/admin/collaboration/mail-history"
     ]
   },
   {
     "id": "log-audit-viewer",
     "name": "로그·감사 열람",
-    "description": "감사 담당자에게 접속·시스템·사용자·웹·개인정보 로그의 조회와 내보내기, 민감 작업 감사 원장과 권한 변경 이력 조회, 첨부 무결성 점검, 통계·관리자 업무 현황·후속 작업 상태 조회를 맡깁니다.",
+    "description": "감사 담당자에게 접속·시스템·사용자·웹·개인정보 로그의 조회와 내보내기, 민감 작업 감사 원장과 권한 변경 이력 조회, 첨부 무결성 점검, 서버 운영 지표(운영 진단) 조회, 통계·관리자 업무 현황·후속 작업 상태 조회를 맡깁니다.",
     "protected": false,
     "permissions": [
       "ADT_LOG_READ",
@@ -1664,6 +1728,7 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "FILE_AUDIT",
       "LOGIN_LOG_EXPORT",
       "LOGIN_LOG_READ",
+      "OPS_READ",
       "PRIVACY_EXPORT",
       "PRIVACY_READ",
       "STATS_ADMIN_READ",
@@ -1677,6 +1742,7 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
     ],
     "screens": [
       "/admin",
+      "/admin/patterns",
       "/admin/security/authority",
       "/admin/stats",
       "/admin/stats/board",
@@ -1693,6 +1759,64 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/system/logs/user",
       "/admin/system/logs/web",
       "/admin/system/monitoring/hub"
+    ],
+    "relatedScreens": []
+  },
+  {
+    "id": "others-work-data-proxy",
+    "name": "다른 사람 업무 자료 대행",
+    "description": "업무 지원 담당자에게 다른 사람의 주소록·일정·스크랩·부서 업무·업무 보고를 대신 조회하고 고치거나 지우는 일과, 다른 사람의 메모 보고를 대신 조회하고 지우는 일을 맡깁니다(메모 보고의 본문 수정과 지시는 맡기지 않습니다). 남의 메모 보고·업무 보고에 붙은 첨부파일은 작성자 개인 자료라 이 묶음으로도 열 수 없습니다. 작성자 본인이 아니어도 남의 자료를 바꾸거나 지울 수 있으므로 꼭 필요한 담당자에게만 주세요.",
+    "protected": false,
+    "permissions": [
+      "ADBK_DELETE",
+      "ADBK_DELETE_ALL",
+      "ADBK_READ",
+      "ADBK_READ_ALL",
+      "ADBK_UPDATE",
+      "ADBK_UPDATE_ALL",
+      "DEPT_JOB_DELETE",
+      "DEPT_JOB_DELETE_ALL",
+      "DEPT_JOB_READ",
+      "DEPT_JOB_UPDATE",
+      "DEPT_JOB_UPDATE_ALL",
+      "MEMO_RPT_DELETE",
+      "MEMO_RPT_DELETE_ALL",
+      "MEMO_RPT_READ",
+      "MEMO_RPT_READ_ALL",
+      "SCHEDULE_DELETE",
+      "SCHEDULE_DELETE_ALL",
+      "SCHEDULE_READ",
+      "SCHEDULE_READ_ALL",
+      "SCHEDULE_UPDATE",
+      "SCHEDULE_UPDATE_ALL",
+      "SCRAP_DELETE",
+      "SCRAP_DELETE_ALL",
+      "SCRAP_READ",
+      "SCRAP_READ_ALL",
+      "SCRAP_UPDATE",
+      "SCRAP_UPDATE_ALL",
+      "WORK_RPT_DELETE",
+      "WORK_RPT_DELETE_ALL",
+      "WORK_RPT_READ",
+      "WORK_RPT_READ_ALL",
+      "WORK_RPT_UPDATE",
+      "WORK_RPT_UPDATE_ALL"
+    ],
+    "screens": [
+      "/admin/operation/memo-reports"
+    ],
+    "relatedScreens": [
+      "/admin/collaboration",
+      "/admin/collaboration/address-book/select-address-book-detail/[id]",
+      "/admin/collaboration/address-book/select-address-book-list",
+      "/admin/collaboration/scraps",
+      "/admin/collaboration/scraps/selectScrapList",
+      "/admin/work-hub",
+      "/smart-toolkit/dept-job",
+      "/smart-toolkit/dept-job/[id]",
+      "/smart-toolkit/schedule",
+      "/smart-toolkit/schedule/dept",
+      "/smart-toolkit/work-report"
     ]
   },
   {
@@ -1713,7 +1837,8 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/security/authority",
       "/admin/security/dept-authority",
       "/admin/system/menus/by-authority"
-    ]
+    ],
+    "relatedScreens": []
   },
   {
     "id": "account-recovery",
@@ -1728,7 +1853,8 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
     ],
     "screens": [
       "/admin/user/manage"
-    ]
+    ],
+    "relatedScreens": []
   }
 ];
 
@@ -1745,7 +1871,7 @@ const isProjectedAlias = (alias: ScreenAlias): boolean => isProjected(alias.rout
 export const SCREEN_REGISTRY: readonly ScreenRegistryEntry[] = GENERATED_SCREENS.filter(screen => isProjected(screen.route));
 export const SCREEN_ALIASES: readonly ScreenAlias[] = GENERATED_ALIASES.filter(isProjectedAlias);
 export const PERMISSION_BUNDLES: readonly PermissionBundle[] = GENERATED_BUNDLES
-  .map(bundle => ({ ...bundle, screens: bundle.screens.filter(isProjected) }))
+  .map(bundle => ({ ...bundle, screens: bundle.screens.filter(isProjected), relatedScreens: bundle.relatedScreens.filter(isProjected) }))
   .filter(bundle => bundle.screens.length > 0);
 
 /**

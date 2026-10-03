@@ -49,6 +49,10 @@ class LoginPolicyManageServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    /** 보호 계정 가드(GAP-SEC-006). 보호 여부 판정 자체는 AuthorizationAdministrationServiceTest·통합 테스트의 몫이다. */
+    @Mock
+    private ProtectedAccountChangeGuard protectedAccountGuard;
+
     @InjectMocks
     private LoginPolicyManageService loginPolicyManageService;
 
@@ -232,6 +236,7 @@ class LoginPolicyManageServiceTest {
 
         LoginPolicy entity = mock(LoginPolicy.class);
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(entity));
+        givenPolicyUser("USER1");
 
         loginPolicyManageService.updateLoginPolicy(dto);
 
@@ -259,6 +264,7 @@ class LoginPolicyManageServiceTest {
                 .userId("USER1").ipAddr("10.0.0.1").dpcnPrmYn("Y").lmtYn("Y")
                 .bgngTm("0900").endTm("1800").otpUseYn("N").build();
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(entity));
+        givenPolicyUser("USER1");
 
         loginPolicyManageService.updateLoginPolicy(dto);
 
@@ -281,6 +287,7 @@ class LoginPolicyManageServiceTest {
         LoginPolicy entity = LoginPolicy.builder()
                 .userId("USER1").ipAddr("10.0.0.1").dpcnPrmYn("Y").build();
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(entity));
+        givenPolicyUser("USER1");
 
         loginPolicyManageService.updateLoginPolicy(dto);
 
@@ -646,7 +653,7 @@ class LoginPolicyManageServiceTest {
 
         assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, onInsert.getErrorCode());
         assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, onUpdate.getErrorCode());
-        verifyNoInteractions(userRepository, loginPolicyRepository);
+        verifyNoInteractions(userRepository, loginPolicyRepository, protectedAccountGuard);
     }
 
     @Test
@@ -694,6 +701,8 @@ class LoginPolicyManageServiceTest {
                 () -> loginPolicyManageService.insertLoginPolicy(dto));
         assertEquals(UserErrorCode.USER_NOT_FOUND, missingUser.getErrorCode());
         verify(loginPolicyRepository, never()).save(any());
+        // 없는 사용자는 보호 여부를 따질 대상이 없다 — 가드에 닿기 전에 종전 거부(USER_NOT_FOUND)로 끝난다.
+        verifyNoInteractions(protectedAccountGuard);
     }
 
     @Test
@@ -799,6 +808,9 @@ class LoginPolicyManageServiceTest {
         LoginPolicyDto dto = LoginPolicyDto.builder().userId("policy-target")
                 .ipAddr("192.168.0.1").lmtYn("N").otpUseYn("N").build();
 
+        given(userRepository.findByUserId("policy-target")).willReturn(Optional.of(
+                User.builder().userId("policy-target").esntlId("ESNTL_policy-target").userNm("대상").build()));
+
         loginPolicyManageService.updateLoginPolicy(dto);
 
         assertEquals("policy-target", entity.getUserId());
@@ -807,8 +819,17 @@ class LoginPolicyManageServiceTest {
         assertEquals("N", entity.getLmtYn());
         assertEquals("N", entity.getOtpUseYn());
         verify(loginPolicyRepository).findById("policy-target");
+        // [GAP-SEC-006] 마지막 관리자 보호가 바뀐 제한을 JDBC 로 세므로 쓰기를 flush 한다.
+        verify(loginPolicyRepository).flush();
         verifyNoMoreInteractions(loginPolicyRepository);
-        verifyNoInteractions(userRepository);
+        // [GAP-SEC-006] 종전에는 사용자 저장소를 건드리지 않았다. 이제 대상 로그인 ID 를 사용자 식별자로 풀어
+        //   보호 계정 가드를 부른다 — 호출자(ESNTL_policy-manager)가 아니라 대상의 esntlId 로.
+        verify(userRepository).findByUserId("policy-target");
+        verifyNoMoreInteractions(userRepository);
+        verify(protectedAccountGuard).authorizeProtectedAccountChange("ESNTL_policy-target");
+        verify(protectedAccountGuard).managerCount();
+        verify(protectedAccountGuard).protectLastManager(0L);
+        verifyNoMoreInteractions(protectedAccountGuard);
     }
 
     @Test
@@ -816,12 +837,237 @@ class LoginPolicyManageServiceTest {
     void deleteAllowsExactPermissionForAnotherUsersPolicy() {
         authenticate("policy-manager", "LOGIN_POL_DELETE");
         LoginPolicyDto dto = LoginPolicyDto.builder().userId("policy-target").build();
+        given(userRepository.findByUserId("policy-target")).willReturn(Optional.of(
+                User.builder().userId("policy-target").esntlId("ESNTL_policy-target").userNm("대상").build()));
 
         loginPolicyManageService.deleteLoginPolicy(dto);
 
         verify(loginPolicyRepository).deleteById("policy-target");
         verifyNoMoreInteractions(loginPolicyRepository);
-        verifyNoInteractions(userRepository);
+        // [GAP-SEC-006] 대상 사용자가 있으면 그 사용자 식별자로 보호 계정 가드를 부른다. 삭제는 제한을 풀 뿐이라
+        //   활성 권한관리자를 줄이지 않으므로 마지막 관리자 보호(managerCount)는 부르지 않는다.
+        verify(userRepository).findByUserId("policy-target");
+        verifyNoMoreInteractions(userRepository);
+        verify(protectedAccountGuard).authorizeProtectedAccountChange("ESNTL_policy-target");
+        verifyNoMoreInteractions(protectedAccountGuard);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // [GAP-SEC-006, 2026-10-03] 보호 계정 가드.
+    //
+    //   로그인 정책 쓰기는 접속 제한·IP·시간대로 계정의 로그인을 막거나 그 제한을 푼다. 같은 효과의 계정 상태
+    //   변경·잠금 해제·관리자 비밀번호 초기화는 대상이 보호 계정이면 권한 설정·배정을 함께 요구하는데, 로그인 정책
+    //   쓰기에는 그 가드가 없어 LOGIN_POL_UPDATE 만 가진 관리자가 권한관리자의 로그인을 막을 수 있었다.
+    //
+    //   여기서는 서비스가 (1) 대상 로그인 ID 를 사용자 식별자로 풀어 (2) 저장·수정·삭제 **전에** 가드를 부르고
+    //   (3) 가드가 거부하면 아무것도 바꾸지 않는지를 고정한다. 가드는 보호 계정에만 ACCESS_DENIED 를 던지도록
+    //   흉내 낸다 — 실제 DB 권한 합집합으로 보호 여부를 가르는 판정은 ProtectedAccountAdministrationIntegrationTest
+    //   (실 PostgreSQL)가 검증한다.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private static final String PROTECTED_LOGIN = "rights-admin";
+    private static final String PROTECTED_ESNTL = "ESNTL_RIGHTS_ADMIN";
+    private static final String ORDINARY_LOGIN = "ordinary";
+    private static final String ORDINARY_ESNTL = "ESNTL_ORDINARY";
+
+    /** 수정 경로가 보호 여부를 판정하려고 대상 사용자를 찾는다 — 그 사용자를 둔다. esntlId 는 로그인 ID 와 다르게 둔다. */
+    private void givenPolicyUser(String loginId) {
+        given(userRepository.findByUserId(loginId)).willReturn(Optional.of(
+                User.builder().userId(loginId).esntlId("ESNTL_" + loginId).userNm("대상").build()));
+    }
+
+    /** 보호 계정·일반 계정 두 사용자를 두고, 가드는 보호 계정의 esntlId 에만 거부를 던진다(권한 설정·배정이 없는 호출자). */
+    private void givenProtectedAndOrdinaryTargets() {
+        given(userRepository.findByUserId(PROTECTED_LOGIN)).willReturn(Optional.of(
+                User.builder().userId(PROTECTED_LOGIN).esntlId(PROTECTED_ESNTL).userNm("권한관리자").build()));
+        given(userRepository.findByUserId(ORDINARY_LOGIN)).willReturn(Optional.of(
+                User.builder().userId(ORDINARY_LOGIN).esntlId(ORDINARY_ESNTL).userNm("일반 사용자").build()));
+        lenient().doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(protectedAccountGuard).authorizeProtectedAccountChange(PROTECTED_ESNTL);
+    }
+
+    @Test
+    @DisplayName("🔐 등록: 보호 계정 대상이면 가드가 거부하고 정책을 저장하지 않는다 — 일반 계정은 통과한다")
+    void insertGuardsProtectedTargetsOnly() {
+        authenticate("policy-manager", "LOGIN_POL_CREATE");
+        givenProtectedAndOrdinaryTargets();
+
+        BusinessException denied = assertThrows(BusinessException.class, () -> loginPolicyManageService.insertLoginPolicy(
+                LoginPolicyDto.builder().userId(PROTECTED_LOGIN).lmtYn("Y").otpUseYn("N").build()));
+        assertEquals(CommonErrorCode.ACCESS_DENIED, denied.getErrorCode());
+        verify(loginPolicyRepository, never()).save(any());
+
+        loginPolicyManageService.insertLoginPolicy(
+                LoginPolicyDto.builder().userId(ORDINARY_LOGIN).lmtYn("Y").otpUseYn("N").build());
+
+        // 가드는 로그인 ID 도, 호출자 식별자도 아니라 **대상의 esntlId** 로 불린다 — 키를 잘못 넘기면 보호 계정도
+        //   '멤버십 없음' 으로 읽혀 조용히 통과한다(커뮤니티 멤버십에서 확인된 조용한 0건 함정과 같은 모양).
+        var order = inOrder(protectedAccountGuard, loginPolicyRepository);
+        order.verify(protectedAccountGuard).authorizeProtectedAccountChange(ORDINARY_ESNTL);
+        order.verify(loginPolicyRepository).save(argThat((LoginPolicy saved) -> ORDINARY_LOGIN.equals(saved.getUserId())));
+        verify(protectedAccountGuard).authorizeProtectedAccountChange(PROTECTED_ESNTL);
+        // 거부된 보호 계정 등록은 관리자 수를 세기 전에 끝난다 — 통과한 일반 계정 등록만 앞뒤를 센다.
+        verify(protectedAccountGuard, times(1)).managerCount();
+        verify(protectedAccountGuard, times(1)).protectLastManager(0L);
+        verifyNoMoreInteractions(protectedAccountGuard);
+    }
+
+    @Test
+    @DisplayName("🔐 수정: 보호 계정 대상이면 가드가 거부하고 걸린 제한을 바꾸지 않는다 — 일반 계정은 통과한다")
+    void updateGuardsProtectedTargetsOnly() {
+        authenticate("policy-manager", "LOGIN_POL_UPDATE");
+        givenProtectedAndOrdinaryTargets();
+        LoginPolicy protectedPolicy = LoginPolicy.builder().userId(PROTECTED_LOGIN)
+                .ipAddr("10.0.0.1").dpcnPrmYn("N").lmtYn("N").otpUseYn("N").build();
+        given(loginPolicyRepository.findById(PROTECTED_LOGIN)).willReturn(Optional.of(protectedPolicy));
+        LoginPolicy ordinaryPolicy = mock(LoginPolicy.class);
+        given(loginPolicyRepository.findById(ORDINARY_LOGIN)).willReturn(Optional.of(ordinaryPolicy));
+
+        // 접속 제한을 걸어 권한관리자의 로그인을 막으려는 수정이다.
+        BusinessException denied = assertThrows(BusinessException.class, () -> loginPolicyManageService.updateLoginPolicy(
+                LoginPolicyDto.builder().userId(PROTECTED_LOGIN).ipAddr("192.0.2.9").lmtYn("Y").otpUseYn("N").build()));
+        assertEquals(CommonErrorCode.ACCESS_DENIED, denied.getErrorCode());
+        assertEquals("N", protectedPolicy.getLmtYn(), "거부된 수정이 엔티티를 바꾸면 커밋 경로에 따라 제한이 저장된다");
+        assertEquals("10.0.0.1", protectedPolicy.getIpAddr());
+
+        loginPolicyManageService.updateLoginPolicy(
+                LoginPolicyDto.builder().userId(ORDINARY_LOGIN).lmtYn("Y").otpUseYn("N").build());
+
+        var order = inOrder(protectedAccountGuard, ordinaryPolicy);
+        order.verify(protectedAccountGuard).authorizeProtectedAccountChange(ORDINARY_ESNTL);
+        order.verify(ordinaryPolicy).update(any(), any(), eq("Y"), any(), any(), eq("N"));
+        verify(protectedAccountGuard).authorizeProtectedAccountChange(PROTECTED_ESNTL);
+        verify(protectedAccountGuard, times(1)).managerCount();
+        verify(protectedAccountGuard, times(1)).protectLastManager(0L);
+        verifyNoMoreInteractions(protectedAccountGuard);
+    }
+
+    @Test
+    @DisplayName("🔐 삭제: 보호 계정 대상이면 가드가 거부하고 걸린 제한을 지우지 않는다 — 일반 계정은 통과한다")
+    void deleteGuardsProtectedTargetsOnly() {
+        authenticate("policy-manager", "LOGIN_POL_DELETE");
+        givenProtectedAndOrdinaryTargets();
+
+        BusinessException denied = assertThrows(BusinessException.class, () -> loginPolicyManageService.deleteLoginPolicy(
+                LoginPolicyDto.builder().userId(PROTECTED_LOGIN).build()));
+        assertEquals(CommonErrorCode.ACCESS_DENIED, denied.getErrorCode());
+        verify(loginPolicyRepository, never()).deleteById(any());
+
+        loginPolicyManageService.deleteLoginPolicy(LoginPolicyDto.builder().userId(ORDINARY_LOGIN).build());
+
+        var order = inOrder(protectedAccountGuard, loginPolicyRepository);
+        order.verify(protectedAccountGuard).authorizeProtectedAccountChange(ORDINARY_ESNTL);
+        order.verify(loginPolicyRepository).deleteById(ORDINARY_LOGIN);
+        verify(protectedAccountGuard).authorizeProtectedAccountChange(PROTECTED_ESNTL);
+        verifyNoMoreInteractions(protectedAccountGuard);
+    }
+
+    @Test
+    @DisplayName("수정: 정책은 있는데 사용자를 찾지 못하면 보호 여부를 판정할 수 없으므로 바꾸지 않고 거부한다(fail-closed)")
+    void updateRejectsPolicyWhoseUserCannotBeResolved() {
+        authenticate("policy-manager", "LOGIN_POL_UPDATE");
+        LoginPolicy entity = LoginPolicy.builder().userId("orphan").lmtYn("N").otpUseYn("N").build();
+        given(loginPolicyRepository.findById("orphan")).willReturn(Optional.of(entity));
+        given(userRepository.findByUserId("orphan")).willReturn(Optional.empty());
+
+        BusinessException missingUser = assertThrows(BusinessException.class, () -> loginPolicyManageService.updateLoginPolicy(
+                LoginPolicyDto.builder().userId("orphan").lmtYn("Y").otpUseYn("N").build()));
+
+        assertEquals(UserErrorCode.USER_NOT_FOUND, missingUser.getErrorCode());
+        assertEquals("N", entity.getLmtYn());
+        verifyNoInteractions(protectedAccountGuard);
+    }
+
+    @Test
+    @DisplayName("삭제: 없는 사용자의 정책 삭제는 가드 없이 종전처럼 멱등이다 — FK 때문에 지울 행도, 보호할 계정도 없다")
+    void deleteForUnknownUserStaysIdempotentWithoutGuard() {
+        authenticate("policy-manager", "LOGIN_POL_DELETE");
+        given(userRepository.findByUserId("ghost")).willReturn(Optional.empty());
+
+        assertDoesNotThrow(() -> loginPolicyManageService.deleteLoginPolicy(LoginPolicyDto.builder().userId("ghost").build()));
+
+        verify(loginPolicyRepository).deleteById("ghost");
+        verifyNoInteractions(protectedAccountGuard);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // [GAP-SEC-006, 2026-10-03] 마지막 활성 권한관리자 보호.
+    //
+    //   보호 계정 가드는 '누가' 바꿀 수 있는지를 본다. 권한 설정·배정을 가진 사람이라도 마지막 권한관리자(자기 자신 포함)에게
+    //   접속 제한을 걸면 아무도 권한을 관리할 수 없게 된다 — 같은 결과의 계정 상태 변경(updateUsersStatus)은 앞뒤 관리자 수를
+    //   비교해 막는다. 여기서는 서비스가 (1) 가드 뒤·쓰기 전에 관리자 수를 읽고 (2) 쓰기를 flush 한 뒤 (3) 앞뒤를 비교하며
+    //   (4) 거부되면 이 화면의 말로 알리는지를 고정한다. 접속 제한이 관리자 수에서 빠지는지(SQL)는 통합 테스트가 본다.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private static final String LAST_MANAGER_MESSAGE =
+            "마지막 활성 권한관리자의 접속은 제한할 수 없습니다. 다른 권한관리자가 로그인할 수 있게 한 뒤 다시 시도해 주세요.";
+
+    /** 공용 판정은 앞서 관리자가 1명 있었는데 이제 0명이면 권한·그룹 회수 문구로 거부한다 — 그 동작을 흉내 낸다. */
+    private void givenLastManagerWouldBeLost() {
+        given(protectedAccountGuard.managerCount()).willReturn(1L);
+        doThrow(new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "마지막 활성 권한관리자의 기능 권한 또는 그룹을 회수할 수 없습니다."))
+                .when(protectedAccountGuard).protectLastManager(1L);
+    }
+
+    @Test
+    @DisplayName("🔐 등록: 마지막 활성 권한관리자에게 거는 정책은 저장 후 앞뒤 관리자 수를 비교해 거부한다")
+    void insertProtectsTheLastActiveManager() {
+        authenticate("rights-admin", "LOGIN_POL_CREATE");
+        givenPolicyUser("rights-admin");
+        givenLastManagerWouldBeLost();
+
+        BusinessException lastManager = assertThrows(BusinessException.class, () -> loginPolicyManageService.insertLoginPolicy(
+                LoginPolicyDto.builder().userId("rights-admin").lmtYn("Y").otpUseYn("N").build()));
+
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, lastManager.getErrorCode());
+        assertEquals(LAST_MANAGER_MESSAGE, lastManager.getMessage(), "로그인 정책 화면에 권한·그룹 회수 문구를 보이지 않는다");
+        // 관리자 수는 가드(직렬화 잠금) 뒤·쓰기 전에 읽고, JDBC 로 다시 세기 전에 쓰기를 flush 한다 — 순서가 어긋나면
+        //   새 제한이 보이지 않아 '관리자가 그대로' 로 읽힌다. 예외가 트랜잭션을 되돌린다.
+        var order = inOrder(protectedAccountGuard, loginPolicyRepository);
+        order.verify(protectedAccountGuard).authorizeProtectedAccountChange("ESNTL_rights-admin");
+        order.verify(protectedAccountGuard).managerCount();
+        order.verify(loginPolicyRepository).save(any(LoginPolicy.class));
+        order.verify(loginPolicyRepository).flush();
+        order.verify(protectedAccountGuard).protectLastManager(1L);
+    }
+
+    @Test
+    @DisplayName("🔐 수정: 마지막 활성 권한관리자에게 접속 제한을 거는 수정은 앞뒤 관리자 수를 비교해 거부한다")
+    void updateProtectsTheLastActiveManager() {
+        authenticate("rights-admin", "LOGIN_POL_UPDATE");
+        givenPolicyUser("rights-admin");
+        LoginPolicy entity = LoginPolicy.builder().userId("rights-admin").lmtYn("N").otpUseYn("N").build();
+        given(loginPolicyRepository.findById("rights-admin")).willReturn(Optional.of(entity));
+        givenLastManagerWouldBeLost();
+
+        BusinessException lastManager = assertThrows(BusinessException.class, () -> loginPolicyManageService.updateLoginPolicy(
+                LoginPolicyDto.builder().userId("rights-admin").lmtYn("Y").otpUseYn("N").build()));
+
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, lastManager.getErrorCode());
+        assertEquals(LAST_MANAGER_MESSAGE, lastManager.getMessage());
+        var order = inOrder(protectedAccountGuard, loginPolicyRepository);
+        order.verify(protectedAccountGuard).authorizeProtectedAccountChange("ESNTL_rights-admin");
+        order.verify(protectedAccountGuard).managerCount();
+        order.verify(loginPolicyRepository).flush();
+        order.verify(protectedAccountGuard).protectLastManager(1L);
+    }
+
+    @Test
+    @DisplayName("관리자 수 비교가 통과하면(다른 활성 권한관리자가 남는다) 등록·수정은 종전대로 저장된다")
+    void restrictionPassesWhenAnotherActiveManagerRemains() {
+        authenticate("rights-admin", "LOGIN_POL_CREATE", "LOGIN_POL_UPDATE");
+        givenPolicyUser("rights-admin");
+        given(protectedAccountGuard.managerCount()).willReturn(2L);
+
+        assertDoesNotThrow(() -> loginPolicyManageService.insertLoginPolicy(
+                LoginPolicyDto.builder().userId("rights-admin").lmtYn("Y").otpUseYn("N").build()));
+        LoginPolicy entity = LoginPolicy.builder().userId("rights-admin").lmtYn("N").otpUseYn("N").build();
+        given(loginPolicyRepository.findById("rights-admin")).willReturn(Optional.of(entity));
+        assertDoesNotThrow(() -> loginPolicyManageService.updateLoginPolicy(
+                LoginPolicyDto.builder().userId("rights-admin").lmtYn("Y").otpUseYn("N").build()));
+
+        assertEquals("Y", entity.getLmtYn());
+        verify(protectedAccountGuard, times(2)).protectLastManager(2L);
     }
 
     private void assertWriteDenied(String permission, String userId) {
@@ -835,7 +1081,7 @@ class LoginPolicyManageServiceTest {
             }
         });
         assertEquals(CommonErrorCode.ACCESS_DENIED, denied.getErrorCode());
-        verifyNoInteractions(userRepository, loginPolicyRepository);
+        verifyNoInteractions(userRepository, loginPolicyRepository, protectedAccountGuard);
     }
 
     private static void authenticate(String loginId, String... permissions) {

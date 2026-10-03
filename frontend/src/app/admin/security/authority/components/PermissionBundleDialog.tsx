@@ -4,13 +4,27 @@ import { useId, useMemo, useState } from 'react';
 import type { AuthorizationCatalog } from '@/lib/auth/authorization-management-contract';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { Button } from '@/components/ui/button';
-import type { PermissionBundle } from '@/types/generated-screen-registry';
+import { SCREEN_REGISTRY, type PermissionBundle } from '@/types/generated-screen-registry';
 import { previewBundle, type BundlePreview, type BundleScreen } from './permission-bundle-model';
 
 type Navigation = AuthorizationCatalog['navigation'][number];
 
-/** 고정 안내 — 묶음은 진입 권한이 빈 화면의 메뉴를 더하지 않는다(결정 위임 2026-10-02, 선택지 ②). */
-export const OPEN_SCREEN_NOTICE = '모든 로그인 사용자가 들어갈 수 있는 화면(예: 쪽지함·일정)의 메뉴는 묶음이 더하지 않습니다. 필요하면 화면별 권한 탭에서 메뉴 표시를 고르세요.';
+/**
+ * 고정 안내가 예로 드는, 묶음이 메뉴를 더하지 않는 누구나 들어가는 화면. 이름은 지어내지 않고 화면 목록에서 읽으며, 이 판(재사용
+ * 투영본 포함)에 없는 화면은 예에서 뺀다. 세 화면이 진입 권한 없이 들어가고 쓰기가 없어 어느 묶음의 화면·관련 화면에도 없다는
+ * 사실은 실제 화면 목록으로 계약(permission-bundle-model.registry.test.ts)이 확인한다 — 쓰기가 생기면 예가 거짓이 되어 red 다.
+ */
+export const OPEN_SCREEN_EXAMPLE_ROUTES = ['/search', '/survey', '/cop/cmy/selectCommunityList'] as const;
+const OPEN_SCREEN_EXAMPLES = OPEN_SCREEN_EXAMPLE_ROUTES
+  .map((route) => SCREEN_REGISTRY.find((screen) => screen.route === route)?.label)
+  .filter((label): label is string => !!label);
+
+/**
+ * 고정 안내 — 누구나 들어가는 화면 가운데 묶음이 메뉴 표시를 더하는 것은 묶음의 권한으로 등록·수정·삭제 같은 작업을 하는 관련
+ * 화면뿐이다(2026-10-03, 선택지 ① — 생성기의 relatedScreens).
+ */
+export const OPEN_SCREEN_NOTICE = '로그인 사용자 누구나 들어가는 화면은 이 묶음의 권한으로 등록·수정·삭제 같은 작업을 하는 화면(누구나 들어가는 관련 화면)의 메뉴만 더합니다. '
+  + `그 밖의 화면${OPEN_SCREEN_EXAMPLES.length > 0 ? `(예: ${OPEN_SCREEN_EXAMPLES.join('·')})` : ''}의 메뉴는 더하지 않으니, 필요하면 화면별 권한 탭에서 메뉴 표시를 고르세요.`;
 export const PROTECTED_BUNDLE_NOTICE = '보호 권한을 새로 더하는 저장에는 권한 설정과 권한 배정 권한이 모두 필요합니다.';
 export const ALL_PRESENT_REASON = '이 묶음의 기능권한과 메뉴 표시가 이미 모두 이 그룹에 있습니다.';
 
@@ -35,6 +49,22 @@ function screenMenuNote(screen: BundleScreen): string {
     return screen.blockedMenus.map((menu) => `메뉴 '${menu.name}'가 사용 안 함 상위 메뉴 '${menu.unusedAncestor.name}' 아래에 있어 표시되지 않습니다`).join('. ');
   }
   return screen.dynamic ? '목록에서 항목을 골라 여는 화면이라 메뉴가 없습니다' : '이 화면을 여는 사용 중 메뉴가 없어 주소로만 열립니다';
+}
+
+/** 미리보기의 화면 목록 한 묶음 — 권한으로 열리는 화면과 누구나 들어가는 관련 화면을 같은 모양으로 따로 보인다. */
+function BundleScreenList({ title, screens }: { title: string; screens: readonly BundleScreen[] }) {
+  return (
+    <div>
+      <p className="font-medium">{title}</p>
+      <ul className="list-disc space-y-1 pl-5">
+        {screens.map((screen) => (
+          <li key={screen.route}>{screen.label}
+            <span className="text-muted-foreground"> — {screenMenuNote(screen)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 /**
@@ -96,7 +126,7 @@ export function PermissionBundleDialog({ groupName, bundles, selection, saved, n
                       <span id={nameId} className="flex flex-wrap items-center gap-2 font-medium">{bundle.name}
                         {bundle.protected && <>{' '}<span className="rounded border border-warning/40 bg-warning/10 px-1 text-xs font-normal text-foreground">보호 권한 포함</span></>}
                       </span>
-                      <span id={descriptionId} className="block text-sm text-muted-foreground">{bundle.description} · 기능권한 {bundle.permissions.length}개 · 여는 화면 {bundle.screens.length}개</span>
+                      <span id={descriptionId} className="block text-sm text-muted-foreground">{bundle.description} · 기능권한 {bundle.permissions.length}개 · 권한으로 열리는 화면 {bundle.screens.length}개{bundle.relatedScreens.length > 0 && ` · 누구나 들어가는 관련 화면 ${bundle.relatedScreens.length}개`}</span>
                     </span>
                   </label>
                 </li>
@@ -116,16 +146,8 @@ export function PermissionBundleDialog({ groupName, bundles, selection, saved, n
           {preview && <>
             {preview.operationsUnknown.length > 0 && <p className="text-muted-foreground">현재 기능 목록에 없는 권한 {preview.operationsUnknown.length}개({preview.operationsUnknown.join(', ')})는 더하지 않습니다. 다시 조회해 주세요.</p>}
             {preview.navigationError && <p role="alert" className="text-destructive">{preview.navigationError} 메뉴 표시는 더하지 않습니다.</p>}
-            <div>
-              <p className="font-medium">묶음이 여는 화면 {preview.screens.length}개</p>
-              <ul className="list-disc space-y-1 pl-5">
-                {preview.screens.map((screen) => (
-                  <li key={screen.route}>{screen.label}
-                    <span className="text-muted-foreground"> — {screenMenuNote(screen)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <BundleScreenList title={`권한으로 열리는 화면 ${preview.screens.length}개`} screens={preview.screens} />
+            {preview.relatedScreens.length > 0 && <BundleScreenList title={`누구나 들어가는 관련 화면 ${preview.relatedScreens.length}개`} screens={preview.relatedScreens} />}
             {preview.blockedMenus.length > 0 && <div>
               <p className="font-medium">사용 안 함 상위 메뉴 때문에 표시하지 않는 메뉴</p>
               <ul className="list-disc space-y-1 pl-5">

@@ -806,6 +806,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/ScreenMenuRenameProgramRetirementMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-USER-SURVEY-ADMIN-NAVIGATION-RETIREMENT",
+          "source": "api-server/src/test/java/nuri/api/schema/UserSurveyAdminNavigationRetirementMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-BOARD-POST-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/BoardPostBigintMigrationIntegrationTest.java"
         },

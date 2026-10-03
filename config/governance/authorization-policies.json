@@ -4273,7 +4273,8 @@
         "GROUP BY u.esntl_id",
         "HAVING bool_or(g.authrt_grnt_cd='AUTHRT_READ')",
         "AND bool_or(g.authrt_grnt_cd='AUTHRT_GRANT')",
-        "AND bool_or(g.authrt_grnt_cd='AUTHRT_ASSIGN')"
+        "AND bool_or(g.authrt_grnt_cd='AUTHRT_ASSIGN')",
+        "NOT EXISTS (SELECT 1 FROM tb_login_policy p WHERE p.user_id=u.user_id AND p.lmt_yn='Y')"
       ],
       "forbiddenTokens": []
     },
@@ -4415,6 +4416,38 @@
       "requiredTokens": [
         "lockChallenge(proof, Purpose.REAUTH, currentSubject(), clientIp)",
         "locked.challenge().consume(utcNow())"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "LoginPolicyManageService#insertLoginPolicy",
+      "source": "business-core/src/main/java/nuri/business/service/login/LoginPolicyManageService.java",
+      "policy": "ADMIN_OR_SYSTEM",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "protectedAccountGuard.authorizeProtectedAccountChange(target.getEsntlId())",
+        "long managersBefore = protectedAccountGuard.managerCount()"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "LoginPolicyManageService#updateLoginPolicy",
+      "source": "business-core/src/main/java/nuri/business/service/login/LoginPolicyManageService.java",
+      "policy": "ADMIN_OR_SYSTEM",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "protectedAccountGuard.authorizeProtectedAccountChange(target.getEsntlId())",
+        "long managersBefore = protectedAccountGuard.managerCount()"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "LoginPolicyManageService#deleteLoginPolicy",
+      "source": "business-core/src/main/java/nuri/business/service/login/LoginPolicyManageService.java",
+      "policy": "ADMIN_OR_SYSTEM",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "protectedAccountGuard.authorizeProtectedAccountChange(target.getEsntlId())"
       ],
       "forbiddenTokens": []
     }

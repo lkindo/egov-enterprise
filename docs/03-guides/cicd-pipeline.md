@@ -66,7 +66,7 @@ dependency-submission.yml (pull_request, contents:read)
 > **CI와 로컬 피드백의 경계**: pre-commit/pre-push는 빠른 범위별 피드백이며 일부 계약 검사를 선행할 수 있지만 우회 가능하다. required CI 6개가 병합 권위를 소유하며 현재 커밋의 실제 check 상태로 판정한다. `backend-build`·`frontend-build`·`e2e-test`·`mutation-test`·`secure-coding`은 scope가 선택되면 source 성공만, 선택되지 않으면 명시적 skip만 허용하는 안정 aggregate라 docs-only SHA에서도 완료 상태가 남는다.
 > - **계약 드리프트 (HARD, CI FAIL)**: `backend-build` 의 `git diff --exit-code api-docs.json`(커밋된 스펙이 실제 DTO/컨트롤러와 어긋나면 실패) 과 `frontend-build` 의 `codegen:verify`/`codegen:verify:zod`(스펙 대비 생성 타입·Zod 미갱신 시 실패).
 > - **스키마 무결성 (HARD, CI FAIL)**: classifier가 schema 영향으로 판정하면 `Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)`이 Flyway 전량 적용 + Hibernate `ddl-auto:validate`로 물리 정합성을 검증한다. `:foundation:test --no-build-cache`를 재실행하는 `Cache-bypass regression gate (foundation, main only)`는 같은 schema 조건에 더해 `refs/heads/main`에서만 실행한다.
-> - **프론트엔드 정적 품질 (HARD, CI FAIL)**: ESLint error 0건과 `frontend/package.json`의 warning 상한을 함께 강제한다(`pnpm run lint`). 의존성 감사는 `pnpm audit --json` 단일 조회를 정책 evaluator가 판정해 Critical 전체와 운영 의존성 High를 차단하고, 개발 전용 High는 warning으로 남기며 형식·네트워크 오류는 실패 처리한다.
+> - **프론트엔드 정적 품질 (HARD, CI FAIL)**: ESLint error 0건과 `frontend/package.json`의 warning 상한을 함께 강제한다(`pnpm run lint`). 의존성 감사는 `pnpm audit --json` 전체 보고서와 `--prod` 운영 보고서를 정책 evaluator가 함께 판정해 Critical 전체와 운영 의존성 High를 차단하고(pnpm 9 는 finding 에 dev 표시가 없어 운영 여부는 `--prod` 보고서로 정한다), 개발 전용 High는 warning으로 남기며 형식·네트워크 오류는 실패 처리한다.
 > - **변경 영향별 뮤테이션 (HARD, CI FAIL)**: PIT 스코프 14개 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. 제품 10개는 `mutation-scope`, 이관 4개는 `mutation-scope-migration`이 소유하며 독립된 영향 출력으로 선택한다. 이관 출력은 더 이상 온라인 `mutation`의 부분집합이 아니다([ADR-0022](../02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)). `mutation-test`는 소스마다 기대 실행·명시적 skip을 fail-closed로 집계한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
 > - **OWASP Dependency-Check 분리**: 기존 의존성 전수 검사는 별도의 주간·수동 워크플로우(`.github/workflows/dependency-check.yml`)가 담당한다. 모듈 리포트 누락은 실패하지만 scan step 자체는 `continue-on-error`라 취약점 outcome은 PR 차단이 아니며, required 증분 review와 같은 강도로 해석하지 않는다.
 
@@ -224,7 +224,7 @@ pnpm run codegen:verify        # 계약 드리프트 게이트 (spec ↔ 생성 
 pnpm run codegen:verify:zod    # 계약 드리프트 게이트 (spec ↔ Zod)
 pnpm run type-check:e2e        # Next build가 제외하는 E2E 타입
 pnpm run lint                  # ESLint error 규칙 0건 게이트
-node ../scripts/frontend-audit-policy.mjs # pnpm audit JSON 단일 조회·정책 판정
+node ../scripts/frontend-audit-policy.mjs # pnpm audit 전체·--prod JSON 조회·정책 판정
 pnpm run build
 pnpm run bundle:check
 pnpm run test:coverage
@@ -300,7 +300,7 @@ E2E JSON 결과는 [playwright-result-contract.mjs](../../scripts/playwright-res
 | Gradle dependency graph | PR read-only producer → trusted `workflow_run` publisher | write token을 가진 job은 PR 코드를 checkout하거나 실행하지 않는다. |
 | Snapshot readiness | `secret-scan`, backend/migration/frontend 영향 PR | GitHub compare API의 base/head snapshot warning이 사라질 때까지 최대 600초 기다리고, 미완전·비재시도 API 오류·시간 초과를 실패 처리한다. 실패 시 **어느 쪽 SHA가 비었는지 분류하고 해소 명령을 함께 출력**한다. |
 | Dependency review | readiness 성공 뒤 `actions/dependency-review-action` | 새 runtime 의존성의 High 이상을 required `secret-scan`에서 차단한다. |
-| Frontend audit policy | `frontend-scope` | lockfile을 한 번 조회해 Critical 전체·운영 High를 차단하고 개발 High만 warning으로 남긴다. |
+| Frontend audit policy | `frontend-scope` | lockfile을 전체·운영(`--prod`) 두 번 조회해 Critical 전체·운영 High를 차단하고 개발 High만 warning으로 남긴다. |
 
 #### 스냅샷이 없을 때 무엇을 해야 하는가
 

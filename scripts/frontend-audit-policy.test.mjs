@@ -38,6 +38,30 @@ test('missing dependency classification fails closed as production', () => {
   assert.deepEqual(policy.blocking.map(({ id }) => id), ['unknown']);
 });
 
+test('production report decides production when given — pnpm 9 findings carry no dev flag', () => {
+  const full = report({
+    devOnly: advisory('high', [{}]),
+    shipped: advisory('high', [{}]),
+    critical: advisory('critical', [{}]),
+  });
+  const production = report({ shipped: advisory('high', [{}]) });
+  const policy = evaluateAuditReport(full, production);
+  assert.deepEqual(policy.blocking.map(({ id }) => id), ['shipped', 'critical']);
+  assert.deepEqual(policy.advisoryOnly.map(({ id }) => id), ['devOnly']);
+});
+
+test('production report must be well formed and a subset of the full report', () => {
+  const full = report({ one: advisory('high', [{}]) });
+  assert.throws(() => evaluateAuditReport(full, {}), /--prod JSON is missing/);
+  assert.throws(() => evaluateAuditReport(full, report({ ghost: advisory('high', [{}]) })), /full audit did not/);
+});
+
+test('the runner audits production dependencies and passes that report to the evaluator', () => {
+  const source = fs.readFileSync('scripts/frontend-audit-policy.mjs', 'utf8');
+  assert.match(source, /runAudit\(\['--prod'\]/);
+  assert.match(source, /evaluateAuditReport\(report, productionReport\)/);
+});
+
 test('malformed or internally inconsistent reports fail closed', () => {
   assert.throws(() => evaluateAuditReport({}), /missing advisories/);
   assert.throws(() => evaluateAuditReport({

@@ -34,6 +34,25 @@ public class LoginPolicyManageService {
     private final UserRepository userRepository;
 
     /**
+     * 보호 계정 가드(GAP-SEC-006, 2026-10-03).
+     *
+     * <p>로그인 정책 쓰기는 접속 제한(lmtYn)·IP·허용 시간대로 계정의 로그인을 막거나 그 제한을 푼다. 같은 효과의
+     * 계정 상태 변경·잠금 해제·관리자 비밀번호 초기화({@code UserService})는 대상이 보호 계정(권한 설정·배정·비밀번호
+     * 초기화 권한 보유)이면 호출자에게 권한 설정(AUTHRT_GRANT)·권한 배정(AUTHRT_ASSIGN)을 함께 요구하는데, 로그인 정책
+     * 쓰기에는 그 가드가 없어 LOGIN_POL_UPDATE 만 가진 관리자가 권한관리자의 로그인을 막을 수 있었다. 세 쓰기
+     * 메서드가 대상 로그인 ID 를 사용자 식별자(esntlId)로 풀어 같은 가드를 부른다. 판정은 공유 직렬화 잠금 뒤 DB
+     * 권한으로 하므로 호출 트랜잭션이 필요하다(가드가 MANDATORY) — 세 메서드는 모두 {@code @Transactional} 이다.
+     * 구현은 {@code AuthorizationAdministrationService} 이며, 패키지 순환을 피하려고 포트로 받는다({@link ProtectedAccountChangeGuard}).
+     *
+     * <p>등록·수정은 마지막 활성 권한관리자 보호도 함께 지난다(계정 상태 변경과 같은 앞뒤 관리자 수 비교). 보호 계정
+     * 가드는 '누가' 바꿀 수 있는지를, 이 보호는 그 사람이 바꿔도 되는 '결과'인지를 본다 — 권한 설정·배정을 가진 사람도
+     * 마지막 권한관리자(자기 자신 포함)에게 접속 제한(lmtYn='Y')을 걸어 아무도 권한을 관리할 수 없게 만들 수는 없다.
+     * IP·허용 시간대 제한은 그 조건에서는 로그인할 수 있으므로 관리자를 줄이지 않는다(관리자 접속을 사무실 IP 로 묶는
+     * 정상적인 강화 수단이다). 삭제는 제한을 푸는 일이라 관리자를 줄이지 않는다.
+     */
+    private final ProtectedAccountChangeGuard protectedAccountGuard;
+
+    /**
      * 접속 허용 시간창 판정의 기준 시계. 운영에서는 항상 Asia/Seoul 시스템 시계다.
      *
      * <p>[2026-09-13] 종전에는 판정이 {@code LocalTime.now(Asia/Seoul)} 를 직접 불러 테스트가 고정 시각을
@@ -120,8 +139,11 @@ public class LoginPolicyManageService {
         requireTimePair(dto);
         String canonicalIpAddr = canonicalizeConfiguredIp(dto.getIpAddr());
         // [V2_13 결속] fk_tb_login_policy_tb_user_info(user_id UNIQUE 대상) — 유령 loginId 등록 차단
-        userRepository.findByUserId(dto.getUserId())
+        User target = userRepository.findByUserId(dto.getUserId())
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+        // [GAP-SEC-006] 보호 계정에 정책을 거는 것은 그 계정의 로그인을 막는 일이다 — 저장 전에 가린다.
+        protectedAccountGuard.authorizeProtectedAccountChange(target.getEsntlId());
+        long managersBefore = protectedAccountGuard.managerCount();
         LoginPolicy entity = LoginPolicy.builder()
                 .userId(dto.getUserId())
                 .ipAddr(canonicalIpAddr)
@@ -136,6 +158,21 @@ public class LoginPolicyManageService {
                 .build();
         entity.setFrstRgtrId("SYSTEM"); // 시스템 정책 작성자는 SYSTEM 으로 명시 유지(하위 호환)
         loginPolicyRepository.save(entity);
+        keepAnActiveManager(managersBefore);
+    }
+
+    /**
+     * 마지막 활성 권한관리자 보호(GAP-SEC-006). 관리자 수는 JDBC 로 세므로 JPA 쓰기를 먼저 flush 해야 바뀐 제한이 보인다.
+     * 거부 사유는 이 화면의 말로 바꾼다 — 공용 판정의 문구는 권한·그룹 회수를 말한다.
+     */
+    private void keepAnActiveManager(long managersBefore) {
+        loginPolicyRepository.flush();
+        try {
+            protectedAccountGuard.protectLastManager(managersBefore);
+        } catch (BusinessException lastManager) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "마지막 활성 권한관리자의 접속은 제한할 수 없습니다. 다른 권한관리자가 로그인할 수 있게 한 뒤 다시 시도해 주세요.");
+        }
     }
 
     /**
@@ -159,6 +196,12 @@ public class LoginPolicyManageService {
         String canonicalIpAddr = canonicalizeConfiguredIp(dto.getIpAddr());
         LoginPolicy entity = loginPolicyRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [GAP-SEC-006] 정책 행이 있으면 FK(fk_tb_login_policy_tb_user_info)로 사용자도 있다. 그래도 사용자를 찾지 못하면
+        //   보호 계정인지 판정할 수 없으므로 바꾸지 않고 거부한다(fail-closed). 수정은 제한을 걸거나 푸는 일이라 가린다.
+        User target = userRepository.findByUserId(dto.getUserId())
+                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+        protectedAccountGuard.authorizeProtectedAccountChange(target.getEsntlId());
+        long managersBefore = protectedAccountGuard.managerCount();
         /*
           중복 로그인 허용 여부는 요청에 없으면 기존 값을 유지한다(GAP-POLICY-001).
 
@@ -177,11 +220,16 @@ public class LoginPolicyManageService {
         */
         String dpcnPrmYn = dto.getDpcnPrmYn() != null ? dto.getDpcnPrmYn() : entity.getDpcnPrmYn();
         entity.update(canonicalIpAddr, dpcnPrmYn, dto.getLmtYn(), dto.getBgngTm(), dto.getEndTm(), dto.getOtpUseYn());
+        keepAnActiveManager(managersBefore);
     }
 
     @Transactional
     public void deleteLoginPolicy(LoginPolicyDto dto) {
         SecurityUtil.assertPermission("LOGIN_POL_DELETE");
+        // [GAP-SEC-006] 삭제는 보호 계정에 걸린 제한을 푸는 일이다 — 대상 사용자가 있으면 가린다. 사용자가 없으면 FK 때문에
+        //   정책 행도 없어 지울 것이 없으므로 종전의 멱등 삭제(없는 행은 아무 일도 하지 않는다)를 그대로 둔다.
+        userRepository.findByUserId(dto.getUserId())
+                .ifPresent(target -> protectedAccountGuard.authorizeProtectedAccountChange(target.getEsntlId()));
         loginPolicyRepository.deleteById(dto.getUserId());
     }
 

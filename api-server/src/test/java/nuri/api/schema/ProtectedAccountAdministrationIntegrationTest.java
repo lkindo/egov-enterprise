@@ -15,6 +15,8 @@ import nuri.business.service.auth.dto.AuthorizationDto.ChangeDepartmentGroups;
 import nuri.business.service.auth.dto.AuthorizationDto.Grant;
 import nuri.business.service.auth.dto.AuthorizationDto.ReplaceGrants;
 import nuri.business.service.auth.dto.AuthorizationDto.ReplaceGroups;
+import nuri.business.service.login.LoginPolicyManageService;
+import nuri.business.service.login.dto.LoginPolicyDto;
 import nuri.business.service.user.UserService;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
@@ -46,6 +48,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @ActiveProfiles({"test", "tc"})
 class ProtectedAccountAdministrationIntegrationTest {
     @Autowired private UserService users;
+    @Autowired private LoginPolicyManageService loginPolicies;
     @Autowired private AuthorizationAdministrationService administration;
     @Autowired private AuthorizationSnapshotService snapshots;
     @Autowired private RefreshTokenRepository refreshTokens;
@@ -107,6 +110,8 @@ class ProtectedAccountAdministrationIntegrationTest {
         SecurityContextHolder.clearContext();
         if (fixture == null) return;
         jdbc.update("DELETE FROM tb_auth_rfsh_tk WHERE user_id IN (?,?,?)", actor, target, ordinary);
+        // tb_login_policy.user_id 는 로그인 ID 로 tb_user_info 를 참조한다(V2_14 FK) — 사용자보다 먼저 지운다.
+        jdbc.update("DELETE FROM tb_login_policy WHERE user_id IN (?,?,?)", login(actor), login(target), login(ordinary));
         jdbc.update("DELETE FROM tb_authrt_chg_hstry WHERE chg_user_idntfr IN (?,?,?) OR authrt_cd IN (?,?,?)", actor, target, ordinary, actorGroup, extraGroup, targetGroup);
         jdbc.update("DELETE FROM tb_authrt_user_map WHERE scrty_dcsn_trgt_id IN (?,?,?)", actor, target, ordinary);
         jdbc.update("DELETE FROM tb_authrt_grnt_map WHERE authrt_cd IN (?,?,?)", actorGroup, extraGroup, targetGroup);
@@ -176,6 +181,81 @@ class ProtectedAccountAdministrationIntegrationTest {
         users.updateUsersStatus(List.of(login(target)), "C");
         assertThat(jdbc.queryForObject("SELECT user_stts_cd FROM tb_user_info WHERE esntl_id=?", String.class, target)).isEqualTo("C");
         assertThat(refreshTokens.existsById(target)).as("unlock/status keep their existing session semantics").isTrue();
+    }
+
+    /**
+     * GAP-SEC-006: 로그인 정책 쓰기는 접속 제한·IP·시간대로 계정의 로그인을 막거나 푼다. 계정 상태 변경·잠금 해제와
+     * 같은 신뢰 경계를 실제 DB 권한 합집합으로 쓴다 — 정책 권한만으로는 보호 계정에 제한을 걸지도, 걸린 제한을
+     * 바꾸거나 지우지도 못하고, 일반 계정은 종전대로 다룬다.
+     */
+    @Test
+    void loginPolicyWritesUseTheSameProtectedAccountBoundaryWithoutChangingOrdinaryUsers() {
+        setGrants(actorGroup, "LOGIN_POL_CREATE", "LOGIN_POL_UPDATE", "LOGIN_POL_DELETE");
+        denied(() -> loginPolicies.insertLoginPolicy(policy(target, "Y")));
+        assertThat(policyRows(target)).isZero();
+
+        loginPolicies.insertLoginPolicy(policy(ordinary, "Y"));
+        assertThat(restriction(ordinary)).isEqualTo("Y");
+        loginPolicies.updateLoginPolicy(policy(ordinary, "N"));
+        assertThat(restriction(ordinary)).isEqualTo("N");
+        loginPolicies.deleteLoginPolicy(policy(ordinary, null));
+        assertThat(policyRows(ordinary)).isZero();
+
+        // 권한 설정·배정을 함께 가진 동안에만 보호 계정에 제한을 건다(두 권한은 서로 다른 그룹에서 와도 된다).
+        setGrants(extraGroup, "AUTHRT_GRANT", "AUTHRT_ASSIGN");
+        loginPolicies.insertLoginPolicy(policy(target, "Y"));
+        assertThat(restriction(target)).isEqualTo("Y");
+
+        // 그 권한을 회수하면 걸린 제한을 바꾸지도 지우지도 못한다 — 정책 권한은 여전히 principal 에 있다.
+        setGrants(extraGroup, "AUTHRT_GRANT");
+        denied(() -> loginPolicies.updateLoginPolicy(policy(target, "N")));
+        denied(() -> loginPolicies.deleteLoginPolicy(policy(target, null)));
+        assertThat(restriction(target)).isEqualTo("Y");
+        assertThat(policyRows(target)).isEqualTo(1);
+    }
+
+    /**
+     * GAP-SEC-006: 보호 계정 가드를 지나는 사람(권한 설정·배정 보유)이라도 마지막 활성 권한관리자에게 접속 제한을 걸어
+     * 아무도 권한을 관리할 수 없게 만들 수는 없다 — 계정 상태 변경과 같은 앞뒤 관리자 수 비교다. 접속 제한(lmt_yn='Y')은
+     * 비활성화처럼 로그인을 막으므로 관리자 수에서 빠지고, IP 제한은 그 IP 에서는 로그인할 수 있으므로 빠지지 않는다.
+     * 공유 DB 의 시드 관리자를 건드리지 않도록 각 단계는 되돌리는 트랜잭션 안에서 픽스처 밖 사용자를 잠가 둔다.
+     */
+    @Test
+    void loginRestrictionCannotRemoveTheLastActiveManager() {
+        setGrants(actorGroup, "LOGIN_POL_CREATE", "LOGIN_POL_UPDATE", "USER_STATUS", "AUTHRT_READ", "AUTHRT_GRANT", "AUTHRT_ASSIGN");
+
+        // 마지막 활성 권한관리자(자기 자신)에게 접속 제한을 걸 수 없다.
+        withOnlyFixtureUsersActive(() -> {
+            assertThat(administration.managerCount()).as("the actor is the only active manager").isEqualTo(1);
+            assertThatThrownBy(() -> loginPolicies.insertLoginPolicy(policy(actor, "Y")))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
+                    .hasMessageContaining("마지막 활성 권한관리자의 접속은 제한할 수 없습니다");
+        });
+
+        // IP 제한은 관리자를 줄이지 않는다 — 관리자 접속을 사무실 IP 로 묶는 것은 정상적인 강화 수단이다.
+        withOnlyFixtureUsersActive(() -> {
+            loginPolicies.insertLoginPolicy(LoginPolicyDto.builder().userId(login(actor)).ipAddr("192.0.2.10")
+                    .lmtYn("N").otpUseYn("N").build());
+            assertThat(administration.managerCount()).isEqualTo(1);
+            assertThatThrownBy(() -> loginPolicies.updateLoginPolicy(policy(actor, "Y")))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        });
+
+        // 다른 활성 권한관리자가 남으면 제한을 걸 수 있고, 제한된 관리자는 더 이상 관리자로 세지 않는다 — 그래서 남은 한
+        //   명을 비활성화하는 계정 상태 변경도 막힌다(제한된 관리자를 세면 이 비활성화가 통과해 아무도 로그인할 수 없다).
+        withOnlyFixtureUsersActive(() -> {
+            setGrants(targetGroup, "AUTHRT_READ", "AUTHRT_GRANT", "AUTHRT_ASSIGN");
+            assertThat(administration.managerCount()).isEqualTo(2);
+            loginPolicies.insertLoginPolicy(policy(target, "Y"));
+            assertThat(administration.managerCount()).as("a login-restricted manager cannot sign in").isEqualTo(1);
+            assertThatThrownBy(() -> users.updateUsersStatus(List.of(login(actor)), "D"))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        });
+        assertThat(policyRows(actor)).isZero();
+        assertThat(policyRows(target)).isZero();
     }
 
     @Test
@@ -349,7 +429,32 @@ class ProtectedAccountAdministrationIntegrationTest {
                 + "VALUES(?,?,'USR03',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')", id, group);
     }
 
+    /**
+     * 픽스처 밖 사용자(공유 DB 의 시드 관리자 포함)를 잠가 이 픽스처만 활성 권한관리자 후보로 두고 단계를 실행한 뒤 모두
+     * 되돌린다. 단계 안의 서비스 호출은 이 트랜잭션에 참여하므로 그 쓰기도 함께 되돌아간다.
+     */
+    private void withOnlyFixtureUsersActive(Runnable step) {
+        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+            status.setRollbackOnly();
+            jdbc.update("UPDATE tb_user_info SET lck_yn='Y' WHERE esntl_id NOT IN (?,?,?) AND coalesce(lck_yn,'N')<>'Y'",
+                    actor, target, ordinary);
+            step.run();
+        });
+    }
+
     private static String login(String id) { return id + "L"; }
+
+    private static LoginPolicyDto policy(String id, String lmtYn) {
+        return LoginPolicyDto.builder().userId(login(id)).lmtYn(lmtYn).otpUseYn("N").build();
+    }
+
+    private long policyRows(String id) {
+        return jdbc.queryForObject("SELECT count(*) FROM tb_login_policy WHERE user_id=?", Long.class, login(id));
+    }
+
+    private String restriction(String id) {
+        return jdbc.queryForObject("SELECT lmt_yn FROM tb_login_policy WHERE user_id=?", String.class, login(id));
+    }
 
     private String storedPassword(String id) {
         return jdbc.queryForObject("SELECT pswd FROM tb_user_info WHERE esntl_id=?", String.class, id);

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "권한 묶음(역할 템플릿) 원장. 권한 작업대의 '권한 묶음 적용'이 고른 묶음의 기능권한을 그룹 권한 초안에 더한다 — 묶음은 그룹이 아니고 사용자에게 배정되지 않으며, 적용 결과는 같은 '권한 변경 저장'(버전 확인·보호 권한·마지막 관리자 보호·감사)으로만 저장된다. 묶음이 여는 화면은 적지 않는다 — scripts/generate-screen-registry.mjs 가 화면 목록의 진입 권한(ANY·ALL)으로 계산해 frontend/src/types/generated-screen-registry.ts 의 PERMISSION_BUNDLES 로 낸다. protected 는 보호 권한(AUTHRT_GRANT·AUTHRT_ASSIGN·USER_PASSWORD·MFA_RECOVER) 포함 여부와 같아야 하고, *_ALL 권한을 넣으면 카탈로그에 있는 같은 행위의 기본 권한도 넣는다(대행 권한만으로는 화면·API 에 들어가지 못한다). 로그인 정책 쓰기(LOGIN_POL_CREATE·UPDATE·DELETE)는 어느 묶음에도 넣지 않는다 — 서버(LoginPolicyManageService)가 보호 계정을 가리지 않아 권한관리자 계정의 접속을 막거나 그 제한을 풀 수 있다. 같은 효과의 계정 상태 변경(USER_STATUS)은 보호 계정에 권한 설정·권한 배정을 함께 요구한다. 서버에 같은 가드가 생기기 전까지 계약 테스트가 막는다.",
+  "description": "권한 묶음(역할 템플릿) 원장. 권한 작업대의 '권한 묶음 적용'이 고른 묶음의 기능권한을 그룹 권한 초안에 더한다 — 묶음은 그룹이 아니고 사용자에게 배정되지 않으며, 적용 결과는 같은 '권한 변경 저장'(버전 확인·보호 권한·마지막 관리자 보호·감사)으로만 저장된다. 묶음이 여는 화면과 관련 화면은 적지 않는다 — scripts/generate-screen-registry.mjs 가 화면 목록에서 계산해 frontend/src/types/generated-screen-registry.ts 의 PERMISSION_BUNDLES 로 낸다. 여는 화면(screens)은 진입 권한(ANY·ALL)을 묶음이 충족하는 화면이고, 관련 화면(relatedScreens)은 로그인 사용자 누구나 들어가는 화면 가운데 묶음의 권한을 쓰기(등록·수정·삭제 등)로 쓰는 화면이다 — 권한 작업대가 두 화면의 메뉴 표시를 함께 더한다. protected 는 보호 권한(AUTHRT_GRANT·AUTHRT_ASSIGN·USER_PASSWORD·MFA_RECOVER) 포함 여부와 같아야 하고, *_ALL 권한을 넣으면 카탈로그에 있는 같은 행위의 기본 권한도 넣는다(대행 권한만으로는 화면·API 에 들어가지 못한다). 카탈로그의 모든 권한은 어느 묶음에 있거나 excluded 에 사유와 함께 있어야 하고, excluded 의 권한은 어느 묶음에도 넣지 않는다(생성기가 전수 분류를 검사한다). 로그인 정책 쓰기(LOGIN_POL_CREATE·UPDATE·DELETE)는 서버(LoginPolicyManageService)가 보호 계정 대상 쓰기에 권한 설정·권한 배정을 함께 요구할 때만 묶음에 둔다(GAP-SEC-006, 계정 상태 변경 USER_STATUS 와 같은 가드) — 그 가드가 빠지면 계약 테스트가 막는다.",
   "bundles": [
     {
       "id": "basic-work",
@@ -74,12 +74,14 @@
     {
       "id": "user-organization",
       "name": "사용자·조직 관리",
-      "description": "인사 담당자에게 계정 등록·수정·삭제와 상태 변경, 부서·부재, 사용자 분류 그룹 관리를 맡깁니다(비밀번호 초기화와 추가 인증 복구는 '계정 복구' 묶음에 있습니다).",
+      "description": "인사 담당자에게 계정 등록·수정·삭제와 상태 변경, 부서·부재, 부서 업무함, 사용자 분류 그룹, 로그인 정책(접속 IP·허용 시간·접속 제한) 관리를 맡깁니다(비밀번호 초기화와 추가 인증 복구는 '계정 복구' 묶음에 있습니다).",
       "protected": false,
       "permissions": [
         "ABSENCE_READ", "ABSENCE_UPDATE",
         "CLASS_GRP_CREATE", "CLASS_GRP_DELETE", "CLASS_GRP_READ", "CLASS_GRP_UPDATE",
+        "DEPT_BOX_CREATE", "DEPT_BOX_DELETE", "DEPT_BOX_READ", "DEPT_BOX_UPDATE",
         "DEPT_CREATE", "DEPT_DELETE", "DEPT_READ", "DEPT_UPDATE",
+        "LOGIN_POL_CREATE", "LOGIN_POL_DELETE", "LOGIN_POL_READ", "LOGIN_POL_UPDATE",
         "USER_CREATE", "USER_DELETE", "USER_DEPT", "USER_READ", "USER_STATUS", "USER_UPDATE"
       ]
     },
@@ -124,7 +126,7 @@
     {
       "id": "log-audit-viewer",
       "name": "로그·감사 열람",
-      "description": "감사 담당자에게 접속·시스템·사용자·웹·개인정보 로그의 조회와 내보내기, 민감 작업 감사 원장과 권한 변경 이력 조회, 첨부 무결성 점검, 통계·관리자 업무 현황·후속 작업 상태 조회를 맡깁니다.",
+      "description": "감사 담당자에게 접속·시스템·사용자·웹·개인정보 로그의 조회와 내보내기, 민감 작업 감사 원장과 권한 변경 이력 조회, 첨부 무결성 점검, 서버 운영 지표(운영 진단) 조회, 통계·관리자 업무 현황·후속 작업 상태 조회를 맡깁니다.",
       "protected": false,
       "permissions": [
         "ADT_LOG_READ",
@@ -133,11 +135,26 @@
         "DWORK_READ",
         "FILE_AUDIT",
         "LOGIN_LOG_EXPORT", "LOGIN_LOG_READ",
+        "OPS_READ",
         "PRIVACY_EXPORT", "PRIVACY_READ",
         "STATS_ADMIN_READ", "STATS_READ",
         "SYS_LOG_EXPORT", "SYS_LOG_READ",
         "USER_LOG_EXPORT", "USER_LOG_READ",
         "WEB_LOG_EXPORT", "WEB_LOG_READ"
+      ]
+    },
+    {
+      "id": "others-work-data-proxy",
+      "name": "다른 사람 업무 자료 대행",
+      "description": "업무 지원 담당자에게 다른 사람의 주소록·일정·스크랩·부서 업무·업무 보고를 대신 조회하고 고치거나 지우는 일과, 다른 사람의 메모 보고를 대신 조회하고 지우는 일을 맡깁니다(메모 보고의 본문 수정과 지시는 맡기지 않습니다). 남의 메모 보고·업무 보고에 붙은 첨부파일은 작성자 개인 자료라 이 묶음으로도 열 수 없습니다. 작성자 본인이 아니어도 남의 자료를 바꾸거나 지울 수 있으므로 꼭 필요한 담당자에게만 주세요.",
+      "protected": false,
+      "permissions": [
+        "ADBK_DELETE", "ADBK_DELETE_ALL", "ADBK_READ", "ADBK_READ_ALL", "ADBK_UPDATE", "ADBK_UPDATE_ALL",
+        "DEPT_JOB_DELETE", "DEPT_JOB_DELETE_ALL", "DEPT_JOB_READ", "DEPT_JOB_UPDATE", "DEPT_JOB_UPDATE_ALL",
+        "MEMO_RPT_DELETE", "MEMO_RPT_DELETE_ALL", "MEMO_RPT_READ", "MEMO_RPT_READ_ALL",
+        "SCHEDULE_DELETE", "SCHEDULE_DELETE_ALL", "SCHEDULE_READ", "SCHEDULE_READ_ALL", "SCHEDULE_UPDATE", "SCHEDULE_UPDATE_ALL",
+        "SCRAP_DELETE", "SCRAP_DELETE_ALL", "SCRAP_READ", "SCRAP_READ_ALL", "SCRAP_UPDATE", "SCRAP_UPDATE_ALL",
+        "WORK_RPT_DELETE", "WORK_RPT_DELETE_ALL", "WORK_RPT_READ", "WORK_RPT_READ_ALL", "WORK_RPT_UPDATE", "WORK_RPT_UPDATE_ALL"
       ]
     },
     {
@@ -157,6 +174,52 @@
       "permissions": [
         "MFA_RECOVER", "USER_PASSWORD", "USER_READ", "USER_STATUS"
       ]
+    }
+  ],
+  "excluded": [
+    {
+      "code": "DWORK_RETRY",
+      "reason": "실패한 후속 작업(알림 전달·첨부 물리 삭제)을 다시 실행하는 사고 대응 쓰기 권한이다. 운영 문서(docs/04-operations/durable-work-recovery.md)는 이 권한을 기본 그룹이나 실계정에 자동 배정하지 않게 했고, 재처리는 민감 작업 감사 기록을 남긴다 — 원장을 보는 '로그·감사 열람' 묶음에 넣으면 감사하는 사람이 감사받는 작업을 하게 된다(DEC-OPS-202). 필요한 그룹에 기능별 권한 표에서 따로 준다."
+    },
+    {
+      "code": "FILE_DELETE_ALL",
+      "reason": "첨부파일 관리자 삭제 권한이다. FileAccessPolicy.assertDeletable 은 이 권한이 있으면 개인 귀속(PERSONAL) 참조가 없는 모든 첨부 — 남의 게시글(비밀글·회원 전용 커뮤니티 게시판·논리 삭제된 글 포함)·배너·팝업·일정·부서 업무의 첨부와 아직 어디에도 붙지 않은 남의 업로드 — 를 지우게 한다. 반대로 메모 보고·업무 보고·보낸 메일·쪽지·포상 같은 개인 귀속 첨부는 이 권한으로도 지우지 못한다. 여러 업무에 걸친 관리자 권한이라 '다른 사람 업무 자료 대행'(개인 자료 첨부를 열지 못한다)에도 '게시판·커뮤니티 운영'(배너·팝업·일정 첨부까지 지운다)에도 맞지 않는다. 필요한 그룹에 기능별 권한 표에서 따로 준다."
+    },
+    {
+      "code": "FILE_DOWNLOAD_ALL",
+      "reason": "관리 경로(GET /api/v1/admin/{content,operation,system}/files/{atchFileSn}/{fileSn})의 내려받기 진입 권한일 뿐이다. 서비스 판정(FileAccessPolicy.assertReadable)은 이 권한이 아니라 FILE_READ_ALL 로 하므로, 무엇을 내려받는지는 FILE_READ_ALL 과 같고 같은 사유로 묶음으로 맡기지 않는다. 필요한 그룹에 기능별 권한 표에서 FILE_READ_ALL 과 함께 따로 준다."
+    },
+    {
+      "code": "FILE_READ_ALL",
+      "reason": "첨부파일 관리자 열람 권한이다. FileAccessPolicy.assertReadable 은 이 권한이 있으면 개인 귀속(PERSONAL) 참조가 없는 모든 첨부 — 비밀글·회원 전용 커뮤니티 게시판·논리 삭제된 글의 첨부와 아직 어디에도 붙지 않은 남의 업로드 — 를 열어 준다. 반대로 메모 보고·업무 보고·보낸 메일·쪽지·포상 같은 개인 귀속 첨부는 이 권한으로도 열리지 않는다. 그래서 '다른 사람 업무 자료 대행'에 넣으면 대행할 자료의 첨부는 열지 못하면서 게시판 비밀글 첨부를 여는, 묶음 설명과 반대인 권한이 된다. 필요한 그룹에 기능별 권한 표에서 따로 준다."
+    },
+    {
+      "code": "INFORMAL_APPR_ADMIN",
+      "reason": "관리 경로(PATCH /api/v1/admin/system/ism/{id}/confirm)의 진입 권한일 뿐이다. 같은 컨트롤러(InformalSanctionApiController)가 같은 서비스를 부르고, InformalSanctionService 는 결재자 본인만 처리하게 해(assertOwnerByEsntlId) 이 권한으로도 남의 결재를 대신 처리하지 못한다. 이 경로를 부르는 화면도 없다(DEC-OPS-040·053 — 결재 화면은 /approvals). 묶음에 넣으면 할 수 없는 일을 맡긴다고 말하게 된다."
+    },
+    {
+      "code": "INFORMAL_CREATE_ALL",
+      "reason": "관리 경로(POST /api/v1/admin/system/ism)의 진입 권한일 뿐이다. 컨트롤러가 신청자를 인증 주체로 덮어써 남의 이름으로 상신하지 못하고, 이 경로를 부르는 화면도 없다(DEC-OPS-040·053 — 결재 화면은 /approvals). 묶음에 넣으면 할 수 없는 대행을 맡긴다고 말하게 된다."
+    },
+    {
+      "code": "INFORMAL_DELETE_ALL",
+      "reason": "관리 경로(DELETE /api/v1/admin/system/ism/{id})의 진입 권한일 뿐이다. InformalSanctionService 가 신청자 본인만 지우게 해(assertOwnerByEsntlId) 남의 결재를 대신 지우지 못하고, 이 경로를 부르는 화면도 없다(DEC-OPS-040·053). 묶음에 넣으면 할 수 없는 대행을 맡긴다고 말하게 된다."
+    },
+    {
+      "code": "INFORMAL_READ_ALL",
+      "reason": "관리 경로(GET /api/v1/admin/system/ism)의 진입 권한일 뿐이다. 목록·상세 모두 인증 주체가 신청자·결재자인 결재만 돌려줘 남의 결재를 대신 조회하지 못하고, 이 경로를 부르는 화면도 없다(DEC-OPS-040·053). 묶음에 넣으면 할 수 없는 대행을 맡긴다고 말하게 된다."
+    },
+    {
+      "code": "INFORMAL_UPDATE_ALL",
+      "reason": "관리 경로(PUT /api/v1/admin/system/ism/{id})의 진입 권한일 뿐이다. InformalSanctionService 가 신청자 본인만 고치게 해(assertOwnerByEsntlId) 남의 결재를 대신 고치지 못하고, 이 경로를 부르는 화면도 없다(DEC-OPS-040·053). 묶음에 넣으면 할 수 없는 대행을 맡긴다고 말하게 된다."
+    },
+    {
+      "code": "MEMO_RPT_UPDATE_ALL",
+      "reason": "남의 메모 보고 본문을 고치는 대행 권한이지만, 서버(MemoReportService.assertRecipientOrAdmin)는 같은 권한으로 지시 작성도 허용한다. 지시 권한(MEMO_RPT_INSTRUCT)은 일반 사용자 기본 권한('기본 업무' 묶음)이라, 이 권한을 받은 사람은 수신자가 아니어도 모든 메모 보고에 지시를 달거나 바꿀 수 있다. 지시에는 작성자 칸이 없어 보고한 사람에게는 수신자가 내린 지시처럼 보인다 — 지시는 보고를 받은 사람의 행위다(DEC-OPS-138 ⑤·154). 서버가 지시 판정을 이 권한과 분리하기 전에는 묶음으로 맡기지 않는다. 필요한 그룹에 기능별 권한 표에서 따로 준다."
+    },
+    {
+      "code": "WORKFLOW_READ",
+      "reason": "워크플로우 관리 데모 화면(/admin/workflow·/admin/sanctn/workflow)의 진입 권한이다. 두 화면은 서버와 연결되지 않은 정적 목업이고 demo pack 이 소유한다(config/reusable-base-profiles.json) — 업무를 맡기는 묶음의 대상이 아니다."
     }
   ]
 }

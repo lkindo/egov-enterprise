@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { PermissionBundle } from '@/types/generated-screen-registry';
 import type { PermissionCode } from '@/types/generated-permissions';
-import { bundleDraftKeys, previewBundle, withBundle } from '../components/permission-bundle-model';
+import { bundleDraftKeys, previewBundle, unnamedScreenLabel, withBundle } from '../components/permission-bundle-model';
 
 // 메뉴가 여는 화면은 화면 목록에서 온다 — 다른 영역의 화면 소스가 바뀌어도 계약이 흔들리지 않게 고정 목록을 쓴다.
 vi.mock('@/types/generated-screen-registry', async (importOriginal) =>
@@ -34,9 +34,20 @@ function bundleOf(overrides: Partial<PermissionBundle> = {}): PermissionBundle {
     id: 'menu-screen', name: '메뉴·화면 설정', description: '메뉴와 화면 관리를 맡깁니다.', protected: false,
     permissions: ['MENU_READ', 'MENU_UPDATE', 'PROGRAM_READ'] as PermissionCode[],
     screens: ['/admin/system/menus', '/admin/system/programs'],
+    relatedScreens: [],
     ...overrides,
   };
 }
+
+/** 누구나 들어가는 관련 화면(업무 쪽지함)을 여는 메뉴가 다른 영역에 있는 메뉴 트리. */
+const WITH_NOTE: readonly Navigation[] = [
+  ...NAVIGATION,
+  { code: 'WORK', name: '나의 업무', parentCode: null, route: null, useYn: 'Y' },
+  { code: 'COMM', name: '소통', parentCode: 'WORK', route: null, useYn: 'Y' },
+  { code: 'NOTE', name: '쪽지함', parentCode: 'COMM', route: '/note', useYn: 'Y' },
+  { code: 'OLD_WORK', name: '옛 업무', parentCode: null, route: null, useYn: 'N' },
+  { code: 'NOTE_OLD', name: '쪽지함(옛)', parentCode: 'OLD_WORK', route: '/note?tab=old', useYn: 'Y' },
+];
 
 describe('previewBundle', () => {
   it('기능권한을 더할 것·이미 있는 것으로 나누고, 묶음 화면의 메뉴와 상위 메뉴 전부를 카탈로그 순서로 더한다', () => {
@@ -103,6 +114,15 @@ describe('previewBundle', () => {
     expect(detail.screens).toEqual([{ route: '/smart-toolkit/dept-job/[id]', label: '부서 업무 상세', menus: [], blockedMenus: [], dynamic: true }]);
   });
 
+  it('이름이 없는 화면은 경로를 이름처럼 보이지 않고 이름 미확인과 주소로 보인다', () => {
+    // 고정 목록에 없는 화면 — 실제 화면 목록에서 이름이 없는 화면(예: 게시글 상세)과 같은 처지다.
+    const preview = previewBundle(bundleOf({ relatedScreens: ['/admin/community/boards/detail'] }), new Set(), NAVIGATION, CATALOG_CODES);
+    expect(preview.relatedScreens).toEqual([{
+      route: '/admin/community/boards/detail', label: '이름 미확인 화면(주소 /admin/community/boards/detail)', menus: [], blockedMenus: [], dynamic: false,
+    }]);
+    expect(unnamedScreenLabel('/x')).toBe('이름 미확인 화면(주소 /x)');
+  });
+
   it('화면을 여는 사용 중 메뉴가 사용 안 함 상위에 가려 있으면 그 화면에 막힌 메뉴로 싣는다(메뉴가 없는 화면이 아니다)', () => {
     const navigation: Navigation[] = [
       { code: 'OLD', name: '옛 관리', parentCode: null, route: null, useYn: 'N' },
@@ -138,6 +158,42 @@ describe('previewBundle', () => {
     expect(preview.protectedToAdd).toEqual(['MFA_RECOVER']);
     // 저장본에 없는 보호 권한을 새로 더하면 경고 대상이다.
     expect(previewBundle(bundle, draft, NAVIGATION, undefined, new Set(['OPERATION:USER_READ'])).protectedToAdd).toEqual(['USER_PASSWORD', 'MFA_RECOVER']);
+  });
+});
+
+describe('previewBundle — 누구나 들어가는 관련 화면(2026-10-03, 선택지 ①)', () => {
+  const noteBundle = () => bundleOf({ permissions: ['MENU_READ', 'NOTE_SEND'] as PermissionCode[], screens: ['/admin/system/menus'], relatedScreens: ['/note'] });
+
+  it('관련 화면의 메뉴와 그 상위 메뉴 전부도 더하고, 미리보기는 권한으로 열리는 화면과 따로 싣는다', () => {
+    const preview = previewBundle(noteBundle(), new Set(), WITH_NOTE, [...CATALOG_CODES, 'NOTE_SEND']);
+    // 권한으로 열리는 화면(메뉴 관리)과 관련 화면(쪽지함)의 메뉴가 카탈로그 순서로 함께 더해진다.
+    expect(preview.navigationToAdd).toEqual(['AREA', 'SECTION', 'MENUS', 'WORK', 'COMM', 'NOTE']);
+    expect(preview.screens.map((screen) => screen.route)).toEqual(['/admin/system/menus']);
+    expect(preview.relatedScreens).toEqual([
+      { route: '/note', label: '업무 쪽지함', menus: [{ code: 'NOTE', name: '쪽지함' }], dynamic: false,
+        blockedMenus: [{ code: 'NOTE_OLD', name: '쪽지함(옛)', unusedAncestor: { code: 'OLD_WORK', name: '옛 업무' } }] },
+    ]);
+    // 사용 안 함 상위에 가린 관련 화면 메뉴도 더하지 않고 알린다.
+    expect(preview.navigationToAdd).not.toContain('NOTE_OLD');
+    expect(preview.blockedMenus.map((menu) => menu.code)).toContain('NOTE_OLD');
+  });
+
+  it('관련 화면이 없는 묶음은 그 메뉴를 더하지 않는다 — 누구나 들어가는 화면이라는 이유만으로 더하지 않는다', () => {
+    const preview = previewBundle(bundleOf(), new Set(), WITH_NOTE, CATALOG_CODES);
+    expect(preview.relatedScreens).toEqual([]);
+    expect(preview.navigationToAdd).not.toContain('NOTE');
+    expect(preview.navigationToAdd).not.toContain('WORK');
+  });
+
+  it('경로 값을 받는 관련 화면은 메뉴 없이 싣는다', () => {
+    const preview = previewBundle(bundleOf({ relatedScreens: ['/smart-toolkit/dept-job/[id]'] }), new Set(), WITH_NOTE, CATALOG_CODES);
+    expect(preview.relatedScreens).toEqual([{ route: '/smart-toolkit/dept-job/[id]', label: '부서 업무 상세', menus: [], blockedMenus: [], dynamic: true }]);
+  });
+
+  it('초안에 더하면 관련 화면 메뉴까지 들어가고, 다시 더해도 변하지 않는다', () => {
+    const once = withBundle(new Set(), noteBundle(), WITH_NOTE, [...CATALOG_CODES, 'NOTE_SEND']);
+    for (const key of ['NAVIGATION:WORK', 'NAVIGATION:COMM', 'NAVIGATION:NOTE', 'OPERATION:NOTE_SEND']) expect(once.has(key)).toBe(true);
+    expect([...withBundle(once, noteBundle(), WITH_NOTE, [...CATALOG_CODES, 'NOTE_SEND'])].sort()).toEqual([...once].sort());
   });
 });
 
