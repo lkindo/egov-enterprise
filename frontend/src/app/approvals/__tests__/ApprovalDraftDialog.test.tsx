@@ -1,16 +1,19 @@
 import React from 'react';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ createDraft: vi.fn(), resubmit: vi.fn(), getDetail: vi.fn(), getTaskTypes: vi.fn(), getLineSuggestions: vi.fn(), checkApprovers: vi.fn(), searchAssignableUsers: vi.fn(), toast: vi.fn(), confirm: vi.fn() }));
+const mocks = vi.hoisted(() => ({ createDraft: vi.fn(), resubmit: vi.fn(), getDetail: vi.fn(), getTaskTypes: vi.fn(), getLineSuggestions: vi.fn(), checkApprovers: vi.fn(), searchAssignableUsers: vi.fn(), toast: vi.fn(), confirm: vi.fn(),
+  listTemporaryDrafts: vi.fn(), getTemporaryDraft: vi.fn(), createTemporaryDraft: vi.fn(), updateTemporaryDraft: vi.fn(), deleteTemporaryDraft: vi.fn() }));
+// 기안자. 임시저장 동작은 기안 권한(APPROVAL_CREATE)이 있어야 보인다 — 권한을 빼는 시험은 permissions 를 바꾼다.
+const auth = vi.hoisted(() => ({ user: { esntlId: 'DRAFTER', authorizationVersion: 'test-v1', permissions: ['APPROVAL_CREATE'] as string[] } }));
 // 피커가 찾는 사람들. 홍기안은 기안자 본인이다.
 const PEOPLE = [['BOSS', '김결재'], ['PEER', '이합의'], ['FINAL', '박최종'], ['DRAFTER', '홍기안']].map(([esntlId, userNm]) => ({ esntlId, userNm, deptNm: '기획팀', absent: false }));
 const searchPeople = async (keyword: string) => PEOPLE.filter(person => person.userNm.includes(keyword));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { esntlId: 'DRAFTER' } }) }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: auth.user }) }));
 vi.mock('@/services/business/user/approval/ApprovalUserService', () => ({ approvalUserService: mocks }));
 vi.mock('@/services/business/user/UserSearchService', () => ({ userSearchService: { searchAssignableUsers: mocks.searchAssignableUsers } }));
 vi.mock('@/app/components/ui/standard-modal', () => ({
@@ -56,6 +59,8 @@ async function reviewSingle() { await fillContent(); await pick(1, '김결재');
 describe('ApprovalDraftDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.user.permissions = ['APPROVAL_CREATE'];
+    mocks.listTemporaryDrafts.mockResolvedValue([]);
     mocks.confirm.mockResolvedValue(false);
     mocks.getTaskTypes.mockResolvedValue([{ dtlCd: '01', dtlCdNm: '일반', useYn: 'Y' }, { dtlCd: '99', dtlCdNm: '폐기', useYn: 'N' }]);
     mocks.createDraft.mockResolvedValue(88); mocks.resubmit.mockResolvedValue(88);
@@ -252,6 +257,8 @@ describe('ApprovalDraftDialog 기안 보조', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
+    auth.user.permissions = ['APPROVAL_CREATE'];
+    mocks.listTemporaryDrafts.mockResolvedValue([]);
     mocks.confirm.mockResolvedValue(false);
     mocks.getTaskTypes.mockResolvedValue([{ dtlCd: '01', dtlCdNm: '일반', useYn: 'Y', dtlCdExpln: '목적:\n금액:' }, { dtlCd: '99', dtlCdNm: '폐기', useYn: 'N' }]);
     mocks.createDraft.mockResolvedValue(88);
@@ -360,5 +367,367 @@ describe('ApprovalDraftDialog 기안 보조', () => {
     fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
     await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledWith(expect.objectContaining({ docTtl: '지난 출장', stages: [{ kind: 'APPROVAL', approverIds: ['BOSS'] }] })));
     expect(mocks.resubmit).not.toHaveBeenCalled();
+  });
+});
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((done, fail) => { resolve = done; reject = fail; });
+  return { promise, resolve, reject };
+}
+/** 서버 오류 응답 — 409 는 상태가 같아도 코드(C013 버전 충돌·C014 상한)로 길이 갈린다. */
+const serverError = (status: number, code: string, message = '서버 거절') => ({ response: { status, data: { success: false, code, message } } });
+
+/** 2026-10-03 D3 — 기안 서버 임시저장: 저장·이어 쓰기·삭제·충돌. */
+describe('ApprovalDraftDialog 기안 임시저장 (D3)', () => {
+  const SUMMARY = { temporaryDraftSn: 7, taskSeCd: '01', taskSeNm: '일반', docTtl: '출장 준비', approverCount: 2, version: 3, mdfcnDt: '2026-10-03T09:30:00' };
+  const DETAIL = { ...SUMMARY, docCn: '숙박 예산 확인', stages: [{ kind: 'APPROVAL', approvers: [
+    { esntlId: 'BOSS', userNm: '김결재', deptNm: '기획팀', eligible: true },
+    // 사용 중이 아닌 계정은 서버가 이름을 싣지 않는다 — 식별자를 이름 자리에 보이지 않는다.
+    { esntlId: 'GONE', eligible: false, ineligibleReason: 'INACTIVE' },
+  ] }] };
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.localStorage.clear();
+    auth.user.permissions = ['APPROVAL_CREATE'];
+    mocks.confirm.mockResolvedValue(false);
+    mocks.getTaskTypes.mockResolvedValue([{ dtlCd: '01', dtlCdNm: '일반', useYn: 'Y' }]);
+    mocks.createDraft.mockResolvedValue(88);
+    mocks.searchAssignableUsers.mockImplementation(searchPeople);
+    mocks.getLineSuggestions.mockResolvedValue({ lines: [], otherLines: [], recentApprovers: [] });
+    mocks.checkApprovers.mockImplementation(async (ids: string[]) => ids.map(id => ({ esntlId: id, eligible: true })));
+    mocks.listTemporaryDrafts.mockResolvedValue([]);
+    mocks.createTemporaryDraft.mockResolvedValue({ temporaryDraftSn: 7, version: 0, mdfcnDt: '2026-10-03T14:05:12' });
+    mocks.updateTemporaryDraft.mockResolvedValue({ temporaryDraftSn: 7, version: 1, mdfcnDt: '2026-10-03T14:06:40' });
+    mocks.getTemporaryDraft.mockResolvedValue(DETAIL);
+    mocks.deleteTemporaryDraft.mockResolvedValue(undefined);
+  });
+
+  it('기안 임시저장은 저장하는 동안 다시 누를 수 없고 입력을 잠그며, 실패하면 입력을 유지하고 사유를 보인다', async () => {
+    // 지역 이름은 census 가 세는 write sink(saveTemporaryMutation.mutateAsync)와 같은 이름으로 둔다.
+    const saveTemporaryMutation = mocks.createTemporaryDraft;
+    const pending = deferred<unknown>();
+    saveTemporaryMutation.mockReturnValueOnce(pending.promise);
+    const { onClose } = renderDialog(); await screen.findByRole('combobox', { name: '업무 구분' });
+    fireEvent.change(screen.getByLabelText('제목 (필수)'), { target: { value: '쓰다 만 기안' } });
+    const save = screen.getByRole('button', { name: '기안 임시저장' });
+
+    act(() => { fireEvent.click(save); fireEvent.click(save); });
+
+    await waitFor(() => expect(saveTemporaryMutation).toHaveBeenCalledTimes(1));
+    expect(saveTemporaryMutation).toHaveBeenCalledWith({ taskSeCd: '', docTtl: '쓰다 만 기안', docCn: '', stages: [] });
+    expect(save).toBeDisabled();
+    expect(save).toHaveAttribute('aria-busy', 'true');
+    // 저장 중에 고친 내용이 저장된 것으로 표시되지 않도록 입력과 닫기를 잠근다.
+    expect(screen.getByLabelText('제목 (필수)')).toBeDisabled();
+    expect(screen.getByRole('button', { name: '모달 닫기' })).toBeDisabled();
+    await act(async () => { pending.reject(new Error('잠시 후 다시 시도해 주세요.')); });
+
+    expect(await screen.findByText('잠시 후 다시 시도해 주세요.')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('잠시 후 다시 시도해 주세요.');
+    expect(screen.getByLabelText('제목 (필수)')).toHaveValue('쓰다 만 기안');
+    expect(save).toBeEnabled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('결재자가 없는 단계는 빼고 저장하며 저장 전·후에 말하고, 다시 저장하면 받은 버전으로 같은 임시저장을 바꾼다', async () => {
+    const { onClose } = renderDialog(); await fillContent();
+    expect(screen.getByText('결재자가 없는 단계는 임시저장하지 않습니다.')).toBeInTheDocument();
+    await pick(1, '김결재');
+    expect(screen.queryByText('결재자가 없는 단계는 임시저장하지 않습니다.')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '다음 단계 추가' }));
+    expect(screen.getByText('결재자가 없는 단계는 임시저장하지 않습니다.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '기안 임시저장' }));
+    await waitFor(() => expect(mocks.createTemporaryDraft).toHaveBeenCalledWith({
+      taskSeCd: '01', docTtl: '출장 승인 요청', docCn: '출장 일정과 예산을 확인해 주세요.', stages: [{ kind: 'APPROVAL', approverIds: ['BOSS'] }],
+    }));
+    // 신청일(2026-09-16)은 오늘이 아니고 임시저장하지 않는다 — 그 사실을 함께 말한다.
+    expect(await screen.findByText('임시저장했습니다 · 2026-10-03 14:05. 결재자가 없는 단계 1개는 저장하지 않았습니다. 신청일은 저장하지 않습니다 — 이어 쓰면 오늘 날짜로 시작합니다.')).toBeInTheDocument();
+    expect(mocks.toast).toHaveBeenCalledWith(expect.stringContaining('임시저장했습니다'), 'success');
+
+    fireEvent.click(screen.getByRole('button', { name: '이전' }));
+    fireEvent.change(screen.getByLabelText('제목 (필수)'), { target: { value: '출장 승인 요청(수정)' } });
+    fireEvent.click(screen.getByRole('button', { name: '기안 임시저장' }));
+    await waitFor(() => expect(mocks.updateTemporaryDraft).toHaveBeenCalledWith(7, expect.objectContaining({ docTtl: '출장 승인 요청(수정)', version: 0 })));
+    expect(mocks.createTemporaryDraft).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText(/임시저장했습니다 · 2026-10-03 14:06/)).toBeInTheDocument();
+
+    // 오늘이 아닌 신청일은 저장되지 않은 변경으로 남는다 — 저장한 뒤에도 닫을 때 묻는다(신청일이 오늘이면 묻지 않는 것은 위 증거 테스트가 본다).
+    fireEvent.click(screen.getByRole('button', { name: '모달 닫기' }));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('저장할 내용이 하나도 없으면 보내지 않고 그 사실을 말한다', async () => {
+    renderDialog(); await screen.findByRole('combobox', { name: '업무 구분' });
+    fireEvent.click(screen.getByRole('button', { name: '기안 임시저장' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('저장할 내용이 없습니다.');
+    expect(mocks.createTemporaryDraft).not.toHaveBeenCalled();
+  });
+
+  it('창을 열 때 이어 쓸지 묻지 않고, 목록에서 고르면 본문·결재선을 채우며 지금 지정할 수 없는 결재자를 사유와 함께 밝힌다', async () => {
+    mocks.listTemporaryDrafts.mockResolvedValue([SUMMARY, { temporaryDraftSn: 9, version: 0, approverCount: 0, mdfcnDt: '2026-10-02T18:00:00' }]);
+    mocks.checkApprovers.mockImplementation(async (ids: string[]) => ids.map(id => ({ esntlId: id, eligible: id !== 'GONE', ineligibleReason: id === 'GONE' ? 'INACTIVE' : undefined })));
+    renderDialog();
+    expect(await screen.findByRole('heading', { name: '임시저장한 기안 (2/20)' })).toBeInTheDocument();
+    expect(screen.getByText(/제목 없는 기안 · 결재자 0명 · 2026-10-02 18:00/)).toBeInTheDocument();
+    expect(mocks.confirm).not.toHaveBeenCalled();
+    expect(mocks.getTemporaryDraft).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('제목 (필수)')).toHaveValue('');
+
+    fireEvent.click(screen.getByRole('button', { name: '‘출장 준비’ 이어 쓰기' }));
+    await waitFor(() => expect(mocks.getTemporaryDraft).toHaveBeenCalledWith(7));
+    await waitFor(() => expect(screen.getByLabelText('제목 (필수)')).toHaveValue('출장 준비'));
+    expect(screen.getByLabelText('본문 (선택)')).toHaveValue('숙박 예산 확인');
+    expect(screen.getByRole('combobox', { name: '업무 구분' })).toHaveValue('01');
+    expect(screen.getByText(/결재자로 지정할 수 없는 사람이 있습니다: 알 수 없는 사용자\(사용 중이 아닌 계정\)/)).toBeInTheDocument();
+    expect(screen.getByText('지금 이어 쓰는 중')).toBeInTheDocument();
+    expect(mocks.confirm).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    const firstStage = screen.getByRole('list', { name: '1단계 결재자' });
+    expect(firstStage).toHaveTextContent('김결재');
+    expect(firstStage).toHaveTextContent('알 수 없는 사용자');
+    expect(firstStage).not.toHaveTextContent('GONE');
+    // 기존 사전 확인이 상신을 막는다.
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    expect(await screen.findByText(/결재자로 지정할 수 없는 사람이 있습니다: 알 수 없는 사용자\(사용 중이 아닌 계정\)\. ‘이전’/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '결재 상신' })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: '이전' }));
+    fireEvent.click(screen.getByRole('button', { name: '알 수 없는 사용자 결재선에서 제외' }));
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: '결재 상신' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
+    await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledWith(
+      expect.objectContaining({ docTtl: '출장 준비', stages: [{ kind: 'APPROVAL', approverIds: ['BOSS'] }] }),
+      { temporaryDraftSn: 7, version: 3 },
+    ));
+  });
+
+  it('작성 중에 다른 임시저장을 이어 쓰려 하면 바꿀지 묻고, 계속 작성을 고르면 입력을 그대로 둔다', async () => {
+    mocks.listTemporaryDrafts.mockResolvedValue([SUMMARY]);
+    renderDialog(); await screen.findByRole('heading', { name: '임시저장한 기안 (1/20)' });
+    fireEvent.change(screen.getByLabelText('제목 (필수)'), { target: { value: '지금 쓰는 기안' } });
+    fireEvent.click(screen.getByRole('button', { name: '‘출장 준비’ 이어 쓰기' }));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ confirmText: '임시저장으로 바꾸기', cancelText: '계속 작성' })));
+    expect(mocks.getTemporaryDraft).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('제목 (필수)')).toHaveValue('지금 쓰는 기안');
+  });
+
+  it('임시저장 삭제는 확인 뒤 한 번만 지우고, 지우는 동안 다시 누를 수 없으며, 실패하면 사유를 보인다', async () => {
+    // 지역 이름은 census 가 세는 write sink(deleteTemporaryMutation.mutateAsync)와 같은 이름으로 둔다.
+    const deleteTemporaryMutation = mocks.deleteTemporaryDraft;
+    const pending = deferred<void>();
+    deleteTemporaryMutation.mockReturnValueOnce(pending.promise);
+    mocks.listTemporaryDrafts.mockResolvedValue([SUMMARY]);
+    mocks.confirm.mockResolvedValue(true);
+    renderDialog();
+    const remove = await screen.findByRole('button', { name: '‘출장 준비’ 임시저장 삭제' });
+
+    act(() => { fireEvent.click(remove); fireEvent.click(remove); });
+
+    await waitFor(() => expect(deleteTemporaryMutation).toHaveBeenCalledTimes(1));
+    expect(deleteTemporaryMutation).toHaveBeenCalledWith(7);
+    expect(mocks.confirm).toHaveBeenCalledTimes(1);
+    expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ confirmText: '임시저장 삭제', variant: 'destructive' }));
+    expect(remove).toBeDisabled();
+    expect(remove).toHaveAttribute('aria-busy', 'true');
+    await act(async () => { pending.reject(new Error('임시저장을 지울 수 없습니다.')); });
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('임시저장을 지울 수 없습니다.');
+    expect(remove).toBeEnabled();
+  });
+
+  it('삭제를 확인하지 않으면 지우지 않는다', async () => {
+    mocks.listTemporaryDrafts.mockResolvedValue([SUMMARY]);
+    renderDialog();
+    fireEvent.click(await screen.findByRole('button', { name: '‘출장 준비’ 임시저장 삭제' }));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    expect(mocks.deleteTemporaryDraft).not.toHaveBeenCalled();
+  });
+
+  it('이어 쓴 임시저장이 이미 상신·변경되어 상신이 409(C013)이면 갇히지 않고, 연결을 끊으면 새 문서로 상신한다', async () => {
+    mocks.listTemporaryDrafts.mockResolvedValue([SUMMARY]);
+    mocks.getTemporaryDraft.mockResolvedValue({ ...DETAIL, stages: [{ kind: 'APPROVAL', approvers: [{ esntlId: 'BOSS', userNm: '김결재', eligible: true }] }] });
+    mocks.createDraft.mockRejectedValueOnce(serverError(409, 'C013'));
+    renderDialog();
+    fireEvent.click(await screen.findByRole('button', { name: '‘출장 준비’ 이어 쓰기' }));
+    await waitFor(() => expect(screen.getByLabelText('제목 (필수)')).toHaveValue('출장 준비'));
+    fireEvent.click(screen.getByRole('button', { name: '다음' })); fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    fireEvent.click(await screen.findByRole('button', { name: '결재 상신' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('이어 쓴 임시저장이 이미 상신되었거나 다른 곳에서 바뀌었습니다.');
+    expect(screen.getByRole('button', { name: '결재 상신' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '기안 임시저장' })).toBeDisabled();
+    // 편집해도 안내와 선택지는 남는다 — 사라지면 이유 없이 상신이 잠긴다.
+    fireEvent.click(screen.getByRole('button', { name: '이전' }));
+    fireEvent.click(screen.getByRole('button', { name: '다음 단계 추가' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('이어 쓴 임시저장이');
+    fireEvent.click(screen.getByRole('button', { name: '2단계 삭제' }));
+
+    fireEvent.click(screen.getByRole('button', { name: '연결을 끊고 계속 작성' }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    fireEvent.click(await screen.findByRole('button', { name: '결재 상신' }));
+    await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledTimes(2));
+    expect(mocks.createDraft.mock.lastCall).toEqual([expect.objectContaining({ docTtl: '출장 준비' })]);
+  });
+
+  it('임시저장 없는 새 기안의 409 는 최신 문서 확인에 가두지 않고 다시 상신할 수 있다', async () => {
+    mocks.createDraft.mockRejectedValueOnce(serverError(409, 'C008', '같은 요청이 이미 처리되었습니다.'));
+    renderDialog(); await reviewSingle();
+    fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('같은 요청이 이미 처리되었습니다.');
+    expect(screen.queryByRole('button', { name: '최신 문서 확인' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '결재 상신' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
+    await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledTimes(2));
+  });
+
+  it('임시저장 상한(409 C014)은 지우라고 안내하고 버전 충돌로 다루지 않으며, 목록이 가득 차면 저장 버튼을 사유와 함께 막는다', async () => {
+    mocks.createTemporaryDraft.mockRejectedValueOnce(serverError(409, 'C014'));
+    const first = renderDialog(); await screen.findByRole('combobox', { name: '업무 구분' });
+    fireEvent.change(screen.getByLabelText('제목 (필수)'), { target: { value: '스무 번째 넘는 기안' } });
+    fireEvent.click(screen.getByRole('button', { name: '기안 임시저장' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('임시저장은 20건까지 둘 수 있습니다.');
+    expect(alert).toHaveTextContent('쓰지 않는 임시저장을 지운 뒤');
+    expect(alert).not.toHaveTextContent('다른 곳에서');
+    expect(screen.queryByRole('button', { name: '연결을 끊고 계속 작성' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '기안 임시저장' })).toBeEnabled();
+    first.unmount();
+
+    mocks.listTemporaryDrafts.mockResolvedValue(Array.from({ length: 20 }, (_, index) => ({ ...SUMMARY, temporaryDraftSn: index + 1, docTtl: `기안 ${index + 1}` })));
+    renderDialog();
+    expect(await screen.findByRole('heading', { name: '임시저장한 기안 (20/20)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '기안 임시저장' })).toBeDisabled();
+    expect(screen.getByText(/임시저장은 20건까지 둘 수 있습니다\. .*지워야 새로 저장할 수 있습니다\./)).toBeInTheDocument();
+  });
+
+  it('다시 저장이 409(C013)이면 덮어쓰지 않고, 최신 임시저장을 불러온 뒤 그 버전으로 저장한다', async () => {
+    mocks.updateTemporaryDraft.mockRejectedValueOnce(serverError(409, 'C013'));
+    mocks.getTemporaryDraft.mockResolvedValue({ ...DETAIL, version: 5, docTtl: '다른 곳에서 고친 제목', stages: [] });
+    mocks.confirm.mockResolvedValue(true);
+    renderDialog(); await screen.findByRole('combobox', { name: '업무 구분' });
+    fireEvent.change(screen.getByLabelText('제목 (필수)'), { target: { value: '처음 제목' } });
+    fireEvent.click(screen.getByRole('button', { name: '기안 임시저장' }));
+    await waitFor(() => expect(mocks.createTemporaryDraft).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByLabelText('제목 (필수)')).toBeEnabled());
+    fireEvent.change(screen.getByLabelText('제목 (필수)'), { target: { value: '고친 제목' } });
+    fireEvent.click(screen.getByRole('button', { name: '기안 임시저장' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('다른 곳에서 이 임시저장을 고쳤습니다.');
+    expect(screen.getByRole('button', { name: '기안 임시저장' })).toBeDisabled();
+    expect(screen.getByLabelText('제목 (필수)')).toHaveValue('고친 제목');
+
+    fireEvent.click(screen.getByRole('button', { name: '최신 임시저장 불러오기' }));
+    await waitFor(() => expect(screen.getByLabelText('제목 (필수)')).toHaveValue('다른 곳에서 고친 제목'));
+    expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ confirmText: '최신 내용으로 바꾸기' }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '기안 임시저장' }));
+    await waitFor(() => expect(mocks.updateTemporaryDraft).toHaveBeenLastCalledWith(7, expect.objectContaining({ version: 5 })));
+  });
+
+  it('임시저장 목록을 못 읽으면 경고로 끼어들지 않고 상태로 알리며 다시 불러온다', async () => {
+    mocks.listTemporaryDrafts.mockRejectedValueOnce(new Error('network'));
+    renderDialog();
+    expect(await screen.findByText(/임시저장한 기안을 불러오지 못했습니다\./)).toBeInTheDocument();
+    expect(screen.getByText(/임시저장한 기안을 불러오지 못했습니다\./).closest('[role="status"]')).not.toBeNull();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    mocks.listTemporaryDrafts.mockResolvedValue([SUMMARY]);
+    fireEvent.click(screen.getByRole('button', { name: '임시저장 목록 다시 불러오기' }));
+    expect(await screen.findByRole('heading', { name: '임시저장한 기안 (1/20)' })).toBeInTheDocument();
+  });
+
+  it('기억해 둔 업무 구분만으로는 저장할 내용으로 보지 않는다 — 빈 임시저장이 상한을 차지하지 않고, 직접 고르면 저장한다', async () => {
+    mocks.getTaskTypes.mockResolvedValue([{ dtlCd: '01', dtlCdNm: '일반', useYn: 'Y' }, { dtlCd: '02', dtlCdNm: '출장', useYn: 'Y' }]);
+    window.localStorage.setItem('approval.lastTaskType.DRAFTER', '01');
+    renderDialog();
+    await waitFor(() => expect(screen.getByRole('combobox', { name: '업무 구분' })).toHaveValue('01'));
+    fireEvent.click(screen.getByRole('button', { name: '기안 임시저장' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('저장할 내용이 없습니다.');
+    expect(mocks.createTemporaryDraft).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByRole('combobox', { name: '업무 구분' }), { target: { value: '02' } });
+    fireEvent.click(screen.getByRole('button', { name: '기안 임시저장' }));
+    await waitFor(() => expect(mocks.createTemporaryDraft).toHaveBeenCalledWith(expect.objectContaining({ taskSeCd: '02' })));
+  });
+
+  it('복제 기안 창에도 임시저장 목록이 있고, 이어 쓰면 복제한 내용을 바꾸기 전에 묻는다', async () => {
+    mocks.listTemporaryDrafts.mockResolvedValue([SUMMARY]);
+    renderDialog({ template: { ifmlAtrzSn: 50, aplcntId: 'DRAFTER', taskSeCd: '01', docTtl: '복제한 기안', docCn: '복제 본문', stages: [] } });
+    expect(await screen.findByRole('heading', { name: '임시저장한 기안 (1/20)' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '‘출장 준비’ 이어 쓰기' }));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ confirmText: '임시저장으로 바꾸기' })));
+    expect(mocks.getTemporaryDraft).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('제목 (필수)')).toHaveValue('복제한 기안');
+  });
+
+  it('삭제가 실패하면(다른 곳에서 이미 상신·삭제) 사유를 말하고 목록을 다시 읽어 사라진 행을 남기지 않는다', async () => {
+    mocks.listTemporaryDrafts.mockResolvedValueOnce([SUMMARY]).mockResolvedValue([]);
+    mocks.deleteTemporaryDraft.mockRejectedValueOnce(serverError(404, 'C006', '대상을 찾을 수 없습니다.'));
+    mocks.confirm.mockResolvedValue(true);
+    renderDialog();
+    fireEvent.click(await screen.findByRole('button', { name: '‘출장 준비’ 임시저장 삭제' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('임시저장을 찾을 수 없습니다.');
+    await waitFor(() => expect(screen.queryByRole('button', { name: '‘출장 준비’ 임시저장 삭제' })).not.toBeInTheDocument());
+    expect(mocks.listTemporaryDrafts.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('복제 창에서 임시저장을 이어 쓰면 더는 복제한 문서라고 말하지 않는다 — 창 제목과 결재선 안내가 바뀐다', async () => {
+    mocks.listTemporaryDrafts.mockResolvedValue([SUMMARY]);
+    mocks.confirm.mockResolvedValue(true);
+    mocks.getTemporaryDraft.mockResolvedValue({ ...DETAIL, stages: [{ kind: 'APPROVAL', approvers: [{ esntlId: 'BOSS', userNm: '김결재', eligible: true }] }] });
+    renderDialog({ template: { ifmlAtrzSn: 50, aplcntId: 'DRAFTER', taskSeCd: '01', docTtl: '복제한 기안', docCn: '복제 본문', stages: [] } });
+    expect(await screen.findByRole('dialog', { name: '복제해서 새로 기안' })).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: '‘출장 준비’ 이어 쓰기' }));
+    await waitFor(() => expect(screen.getByLabelText('제목 (필수)')).toHaveValue('출장 준비'));
+
+    expect(screen.getByRole('dialog', { name: '새 결재 기안' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    expect(await screen.findByRole('button', { name: /1단계 결재자/ })).toBeInTheDocument();
+    expect(screen.queryByText('복제한 문서의 결재선입니다. 결재자와 순서를 다시 확인해 주세요.')).not.toBeInTheDocument();
+  });
+
+  it('제목이 같은 임시저장은 이어 쓰기·삭제 버튼과 삭제 확인에 저장 시각을 붙여 가른다', async () => {
+    mocks.listTemporaryDrafts.mockResolvedValue([
+      { temporaryDraftSn: 11, docTtl: '', approverCount: 1, version: 0, mdfcnDt: '2026-10-03T09:30:00' },
+      { temporaryDraftSn: 12, docTtl: '  ', approverCount: 0, version: 0, mdfcnDt: '2026-10-02T18:00:00' },
+      SUMMARY,
+    ]);
+    renderDialog();
+    expect(await screen.findByRole('button', { name: '‘제목 없는 기안 · 2026-10-03 09:30’ 이어 쓰기' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '‘제목 없는 기안 · 2026-10-02 18:00’ 이어 쓰기' })).toBeInTheDocument();
+    // 제목이 하나뿐인 임시저장은 종전처럼 제목만 쓴다.
+    expect(screen.getByRole('button', { name: '‘출장 준비’ 이어 쓰기' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '‘제목 없는 기안 · 2026-10-02 18:00’ 임시저장 삭제' }));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({
+      message: expect.stringContaining('‘제목 없는 기안 · 2026-10-02 18:00’ 임시저장을 지웁니다.'),
+    })));
+  });
+
+  it('최종 확인은 신청일도 보인다 — 임시저장이 신청일을 저장하지 않으므로 상신 전에 다시 볼 수 있어야 한다', async () => {
+    renderDialog(); await fillContent(); await pick(1, '김결재');
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    const summary = await screen.findByText('신청일');
+    expect(summary.closest('div')).toHaveTextContent('2026-09-16');
+  });
+
+  it('재상신과 기안 권한이 없는 사람에게는 임시저장을 보이지 않고 목록도 읽지 않는다', async () => {
+    renderDialog({ resubmission: { ifmlAtrzSn: 88, aplcntId: 'DRAFTER', taskSeCd: '01', docTtl: '반려된 문서', version: 7, stages: [] } });
+    await screen.findByRole('combobox', { name: '업무 구분' });
+    expect(screen.queryByRole('button', { name: '기안 임시저장' })).not.toBeInTheDocument();
+    expect(mocks.listTemporaryDrafts).not.toHaveBeenCalled();
+    cleanup();
+
+    auth.user.permissions = [];
+    renderDialog(); await screen.findByRole('combobox', { name: '업무 구분' });
+    expect(screen.queryByRole('button', { name: '기안 임시저장' })).not.toBeInTheDocument();
+    expect(mocks.listTemporaryDrafts).not.toHaveBeenCalled();
   });
 });

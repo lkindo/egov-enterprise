@@ -477,6 +477,17 @@ const callsImportedMethod = (source, module, method) => importedNames(source, mo
 ));
 /** 옵션 객체의 멤버를 넘겨 쓰는 형태(`useMutation(options.create())`·`mutationFn: action`)까지 본다. */
 const mentionsName = (source, name) => new RegExp(`(?<![\\w$])${escapeRegExp(name)}(?![\\w$])`, 'u').test(source);
+/**
+ * import·export 의 모듈 경로를 같은 길이의 공백으로 바꾼다(줄·열 위치 보존). 경로는 식별자가 아니다.
+ *
+ * [2026-10-03 D3] 기안 창이 확인 대화(`@/app/components/ui/confirm-modal`)를 import 하자, 결재 조회 옵션의
+ * `confirm`(승인·반려, APPROVAL_APPROVE) 래퍼 이름이 그 경로 안에서 맞아 승인하지 않는 기안 창이 승인 권한 부채로 세였다.
+ * 이름 맞춤의 관대함은 놓치는 방향이어야 한다 — 경로 문자열로 거짓 부채를 만들지 않는다.
+ */
+const withoutModuleSpecifiers = (source) => source.replace(
+  /(\b(?:from|import)\s*)(['"])([^'"\n]*)\2/gu,
+  (_match, keyword, quote, path) => `${keyword}${quote}${' '.repeat(path.length)}${quote}`,
+);
 
 /**
  * 주석을 같은 길이의 공백으로 바꾼다(줄 수·열 위치 보존). 문자열·템플릿 리터럴 안은 건드리지 않는다.
@@ -646,8 +657,9 @@ export function analyzeWritePermissionNeeds({ boundaries, policies, repoRoot = D
         required.set(method.permission, `${method.module}.${method.name}`);
       }
     }
+    const code = withoutModuleSpecifiers(source);
     for (const wrapper of wrappers) {
-      if (importsModule(source, wrapper.module) && mentionsName(source, wrapper.name)) {
+      if (importsModule(source, wrapper.module) && mentionsName(code, wrapper.name)) {
         required.set(wrapper.permission, `${wrapper.module}.${wrapper.name}`);
       }
     }

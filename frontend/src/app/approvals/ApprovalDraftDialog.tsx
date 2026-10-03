@@ -3,8 +3,9 @@
 import { useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
-import { ArrowDown, ArrowUp, FileText, History, Plus, RefreshCcw, UserRound, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, FileText, History, Plus, RefreshCcw, Save, UserRound, X } from 'lucide-react';
 import { StandardModal } from '@/app/components/ui/standard-modal';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { ApproverInlinePicker, INELIGIBLE_REASONS } from './ApproverInlinePicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,11 +19,20 @@ import { useToast } from '@/app/components/ui/toast';
 import { AbsenceBadge } from '@/app/components/ui/absence-badge';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { getTodayYmd } from '@/lib/date/today-ymd';
+import { canPermission } from '@/lib/auth/permissions';
 import { ApprovalDraftRequestSchema, ApprovalStageRequestSchema } from '@/types/generated-zod';
 import type { UserSearchResult } from '@/services/business/user/UserSearchService';
-import { approvalUserService, type ApprovalStageRequest, type ApproverProfile, type InformalSanctionDto } from '@/services/business/user/approval/ApprovalUserService';
+import {
+  approvalUserService,
+  type ApprovalStageRequest,
+  type ApprovalTemporaryDraft,
+  type ApprovalTemporaryDraftReference,
+  type ApprovalTemporaryDraftSummary,
+  type ApproverProfile,
+  type InformalSanctionDto,
+} from '@/services/business/user/approval/ApprovalUserService';
 import type { components } from '@/types/generated-api';
-import { approvalMutationOptions, approvalQueryOptions } from '@/queries/approval-query-options';
+import { approvalKeys, approvalMutationOptions, approvalQueryOptions } from '@/queries/approval-query-options';
 
 const LABELS = { taskSeCd: '업무 구분', docTtl: '제목', docCn: '본문', reqYmd: '신청일', stages: '결재선' };
 const contentSchema = ApprovalDraftRequestSchema.pick({ taskSeCd: true, docTtl: true, docCn: true, reqYmd: true }).extend({
@@ -68,6 +78,52 @@ function stagesFrom(document?: InformalSanctionDto): StageEditor[] {
 function describeLine(line: LineSuggestion): string {
   return (line.stages ?? []).map((stage, index) => `${index + 1}단계 ${stage.kind === 'AGREEMENT' ? '합의' : '결재'} ${(stage.approvers ?? []).map(person => person.userNm || person.esntlId).join(', ')}`).join(' → ');
 }
+
+/** 한 사람이 둘 수 있는 기안 임시저장 수 — 서버(ApprovalTemporaryDraftService.MAX_DRAFTS)와 같은 값이다. */
+const TEMPORARY_DRAFT_LIMIT = 20;
+/** 이름을 받지 못한 결재자. 식별자를 이름 자리에 보이지 않는다(DEC-OPS-141·193). */
+const UNKNOWN_USER = '알 수 없는 사용자';
+
+/**
+ * 서버 오류 응답의 상태와 오류 코드. 409 는 버전 충돌(C013)·상한(C014)이 같은 상태를 쓰므로 코드로 가른다 —
+ * 상태만 보면 상한에 걸린 새 기안이 '다른 곳에서 바뀌었다' 는 안내에 갇힌다.
+ */
+function responseError(error: unknown): { status?: number; code?: string } {
+  if (typeof error !== 'object' || error === null || !('response' in error)) return {};
+  const response = (error as { response?: { status?: unknown; data?: { code?: unknown } } }).response;
+  return {
+    status: typeof response?.status === 'number' ? response.status : undefined,
+    code: typeof response?.data?.code === 'string' ? response.data.code : undefined,
+  };
+}
+
+/** 서버 일시(시간대 없는 서버 시각)를 yyyy-MM-dd HH:mm 으로 읽는다. 브라우저 시간대로 바꾸지 않는다. */
+function savedAtLabel(value?: string | null): string {
+  const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(value ?? '');
+  return match ? `${match[1]} ${match[2]}` : '';
+}
+
+function temporaryDraftLabel(draft: { docTtl?: string | null }): string {
+  return draft.docTtl?.trim() || '제목 없는 기안';
+}
+
+/**
+ * 목록 행을 부를 이름. 제목이 같은 임시저장('제목 없는 기안' 여러 건 등)이 있으면 저장 시각을 붙여 가른다 — 버튼 이름과
+ * 삭제 확인이 같으면 보조기술 사용자가 어느 임시저장을 지우는지 알 수 없다.
+ */
+function temporaryDraftNames(drafts: readonly ApprovalTemporaryDraftSummary[]): Map<number, string> {
+  const counts = new Map<string, number>();
+  for (const draft of drafts) counts.set(temporaryDraftLabel(draft), (counts.get(temporaryDraftLabel(draft)) ?? 0) + 1);
+  const names = new Map<number, string>();
+  for (const draft of drafts) {
+    if (typeof draft.temporaryDraftSn !== 'number') continue;
+    const label = temporaryDraftLabel(draft);
+    names.set(draft.temporaryDraftSn, (counts.get(label) ?? 0) > 1
+      ? `${label} · ${savedAtLabel(draft.mdfcnDt) || '저장 시각 미확인'}`
+      : label);
+  }
+  return names;
+}
 interface ApprovalDraftDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -80,11 +136,17 @@ interface ApprovalDraftDialogProps {
 export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, template }: ApprovalDraftDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
+  // 확인 대화 함수. 이름을 `confirm` 으로 두지 않는다 — 쓰기 권한 census(축 3)가 이 파일이 import 하는 결재 쿼리 모듈의
+  // `confirm`(승인·반려, APPROVAL_APPROVE)을 이름으로 맞춰, 승인하지 않는 기안 창을 승인 권한이 필요한 화면으로 센다.
+  const askConfirm = useConfirm();
   const queryClient = useQueryClient();
   const [step, setStep] = useState(0);
   const source = resubmission ?? template;
   // 새 기안은 마지막으로 쓴 업무 구분으로 시작한다. 지금 쓸 수 없는 코드면 아래에서 비운다.
   const [taskSeCd, setTaskSeCd] = useState(() => source?.taskSeCd ?? readLastTask(user?.esntlId));
+  // 업무 구분을 사용자가 고르거나 문서·임시저장에서 가져왔는가. 기억해 둔 마지막 업무 구분은 미리 채운 기본값일 뿐이라
+  // 그것만으로 임시저장하면 빈 임시저장이 20건 상한을 차지한다.
+  const [taskChosen, setTaskChosen] = useState(() => Boolean(source?.taskSeCd));
   const [docTtl, setDocTtl] = useState(source?.docTtl ?? '');
   const [docCn, setDocCn] = useState(source?.docCn ?? '');
   const [reqYmd, setReqYmd] = useState(() => getTodayYmd());
@@ -113,6 +175,31 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   const taskTypes = useQuery({ ...approvalQueryOptions.taskTypes(), enabled: isOpen });
   const createMutation = useMutation(approvalMutationOptions.create(queryClient));
   const resubmitMutation = useMutation(approvalMutationOptions.resubmit(queryClient));
+  /*
+   * [2026-10-03 D3] 기안 임시저장. 저장·이어 쓰기·삭제는 기안 권한으로 연다 — 결재함의 '새 결재 기안' 과 같은 판정이다
+   * (표시 판정일 뿐 서버 인가는 그대로다). 재상신은 버전이 있는 기존 문서라 임시저장하지 않는다.
+   * 창을 열 때 임시저장을 이어 쓸지 묻지 않는다 — 목록에서 사용자가 고른다.
+   */
+  const canSaveTemporary = !resubmission && canPermission(user, 'APPROVAL_CREATE');
+  // 복제 기안 창에도 둔다. 상한(20건) 안내와 409(C014) 문구가 이 목록을 가리키므로, 없으면 창을 닫아야 지울 수 있다.
+  const showsTemporaryList = canSaveTemporary;
+  // 이 창이 이어 쓰는 임시저장(번호·읽은 버전). 저장하면 받은 버전으로, 상신하면 서버가 이 버전과 함께 지운다.
+  const [temporaryDraft, setTemporaryDraft] = useState<ApprovalTemporaryDraftReference>();
+  const [temporaryNotice, setTemporaryNotice] = useState('');
+  // 이어 쓰던 임시저장이 다른 곳에서 바뀌었거나 사라졌다 — 사용자가 다시 불러오거나 연결을 끊을 때까지 저장·상신을 막는다.
+  const [temporaryConflict, setTemporaryConflict] = useState(false);
+  const [savingTemporary, setSavingTemporary] = useState(false);
+  const [deletingDraftSn, setDeletingDraftSn] = useState<number | null>(null);
+  const [resumingDraftSn, setResumingDraftSn] = useState<number | null>(null);
+  const temporaryDrafts = useQuery({ ...approvalQueryOptions.temporaryDrafts(), enabled: isOpen && canSaveTemporary });
+  const saveTemporaryMutation = useMutation(approvalMutationOptions.saveTemporary(queryClient));
+  const deleteTemporaryMutation = useMutation(approvalMutationOptions.deleteTemporary(queryClient));
+  const temporaryCount = temporaryDrafts.data?.length ?? 0;
+  const temporaryNames = useMemo(() => temporaryDraftNames(temporaryDrafts.data ?? []), [temporaryDrafts.data]);
+  const temporaryName = (summary: ApprovalTemporaryDraftSummary) =>
+    (typeof summary.temporaryDraftSn === 'number' ? temporaryNames.get(summary.temporaryDraftSn) : undefined) ?? temporaryDraftLabel(summary);
+  // 새로 저장할 자리가 없다. 이어 쓰는 임시저장은 같은 행을 바꾸므로 상한과 관계없다.
+  const temporaryFull = !temporaryDraft && temporaryDrafts.isSuccess && temporaryCount >= TEMPORARY_DRAFT_LIMIT;
   const taskOptions = useMemo(() => (taskTypes.data ?? []).filter(code => code.useYn === 'Y' && code.dtlCd), [taskTypes.data]);
   const hasTaskTypes = taskOptions.length > 0;
   // 기억해 둔 업무 구분이 더는 쓰이지 않으면 고른 것으로 보지 않는다.
@@ -133,7 +220,11 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   const close = useDirtyCloseGuard(edited, onClose);
   useUnsavedChanges(() => ({ dirty: edited && !submittedRef.current, pending: (pendingRef.current || refreshing) && !submittedRef.current }));
   const totalApprovers = stages.reduce((count, stage) => count + stage.users.length, 0);
-  const touch = () => { setEdited(true); if (!needsReview) setServerError(''); };
+  // 결재자가 없는 단계는 임시저장하지 않는다(서버도 받지 않는다). 결재선을 만들기 시작했을 때만 그 사실을 말한다 —
+  // 아직 손대지 않은 기본 단계 하나를 두고 매번 알리지 않는다.
+  const emptyStageCount = stages.filter(stage => stage.users.length === 0).length;
+  const lineStarted = step > 0 || stages.length > 1 || totalApprovers > 0;
+  const touch = () => { setEdited(true); if (!needsReview && !temporaryConflict) setServerError(''); };
   const focusAfterRender = (target: () => HTMLElement | null | undefined) => {
     const origin = document.activeElement;
     requestAnimationFrame(() => {
@@ -238,6 +329,148 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
     updateStage(key, current => ({ ...current, users: [...current.users, person] }));
     setNotice(`${person.userNm || '선택한 사용자'}를 ${index + 1}단계에 추가했습니다.`);
   };
+  /**
+   * 기안 임시저장(D3). 첫 저장은 새로 만들고, 그 뒤로는 받은 버전으로 같은 임시저장을 바꾼다. 결재자가 없는 단계는 빼고
+   * 보내며 화면이 저장 전과 후에 그 사실을 말한다. 저장하는 동안 입력을 잠근다 — 저장 중에 고친 내용을 저장된 것으로
+   * 표시하지 않기 위해서다. 자격(결재 권한·사용 중)은 보지 않는다 — 미완성 기안을 받고, 다시 열 때 지금 자격으로 판정한다.
+   */
+  const handleSaveTemporary = async () => {
+    if (pendingRef.current || !canSaveTemporary || temporaryConflict) return;
+    const savedStages = stages.filter(stage => stage.users.length > 0);
+    if (!(taskChosen && effectiveTask) && !docTtl.trim() && !docCn.trim() && savedStages.length === 0) {
+      setServerError('저장할 내용이 없습니다. 업무 구분·제목·본문·결재선 중 하나는 채워 주세요.');
+      return;
+    }
+    const droppedStages = lineStarted ? stages.length - savedStages.length : 0;
+    const payload = {
+      temporaryDraftSn: temporaryDraft?.temporaryDraftSn,
+      request: {
+        taskSeCd: effectiveTask, docTtl, docCn,
+        stages: savedStages.map(stage => ({ kind: stage.kind, approverIds: stage.users.map(person => person.esntlId ?? '') })),
+        ...(temporaryDraft ? { version: temporaryDraft.version } : {}),
+      },
+    };
+    pendingRef.current = true; setSavingTemporary(true); setServerError('');
+    try {
+      const saved = await saveTemporaryMutation.mutateAsync(payload);
+      setTemporaryDraft({ temporaryDraftSn: saved.temporaryDraftSn, version: saved.version });
+      // 신청일은 임시저장하지 않는다(이어 쓰면 오늘로 시작한다). 오늘이 아닌 신청일은 저장되지 않은 변경이므로 닫을 때 계속 묻는다.
+      const unsavedDate = reqYmd !== getTodayYmd();
+      setEdited(unsavedDate);
+      const savedAt = savedAtLabel(saved.mdfcnDt);
+      setTemporaryNotice(`임시저장했습니다${savedAt ? ` · ${savedAt}` : ''}.${droppedStages > 0 ? ` 결재자가 없는 단계 ${droppedStages}개는 저장하지 않았습니다.` : ''}${unsavedDate ? ' 신청일은 저장하지 않습니다 — 이어 쓰면 오늘 날짜로 시작합니다.' : ''}`);
+      toast('작성 중인 기안을 임시저장했습니다. ‘새 결재 기안’ 에서 이어 쓸 수 있습니다.', 'success');
+    } catch (error: unknown) {
+      const { status, code } = responseError(error);
+      if (status === 409 && code === 'C014') {
+        setServerError(`임시저장은 ${TEMPORARY_DRAFT_LIMIT}건까지 둘 수 있습니다. 입력은 유지됩니다. ‘임시저장한 기안’ 목록에서 쓰지 않는 임시저장을 지운 뒤 다시 저장해 주세요.`);
+      } else if (temporaryDraft && ((status === 409 && code === 'C013') || status === 404)) {
+        setTemporaryConflict(true);
+        setServerError(status === 404
+          ? '이어 쓰던 임시저장을 찾을 수 없습니다. 다른 곳에서 상신했거나 지웠을 수 있습니다. 입력은 유지됩니다. 연결을 끊으면 지금 내용을 새 임시저장으로 저장하거나 새 문서로 상신할 수 있습니다.'
+          : '다른 곳에서 이 임시저장을 고쳤습니다. 입력은 유지됩니다. 최신 임시저장을 불러오거나, 연결을 끊고 지금 내용을 새 임시저장으로 저장해 주세요.');
+      } else {
+        setServerError(extractErrorMessage(error, '기안을 임시저장하지 못했습니다. 입력한 내용은 유지됩니다. 다시 시도해 주세요.'));
+      }
+      void queryClient.invalidateQueries({ queryKey: approvalKeys.temporaryDrafts() });
+    } finally { pendingRef.current = false; setSavingTemporary(false); }
+  };
+  /**
+   * 임시저장을 편집기에 채운다. 결재선은 새 key 로 만들어 단계 카드의 초점·피커 상태가 앞 내용과 섞이지 않게 한다.
+   * 지금 결재자가 될 수 없는 사람은 사유를 밝히고, 최종 확인의 사전 확인이 상신을 막는다. 신청일은 저장하지 않으므로 오늘이다.
+   */
+  const applyTemporaryDraft = (draft: ApprovalTemporaryDraft & ApprovalTemporaryDraftReference) => {
+    const nextStages: StageEditor[] = (draft.stages ?? []).map(stage => {
+      const kind = stage.kind;
+      if (kind !== 'APPROVAL' && kind !== 'AGREEMENT') throw new Error('임시저장의 결재 단계 유형을 확인할 수 없습니다. 다시 불러와 주세요.');
+      return {
+        key: nextKey.current++, kind,
+        users: (stage.approvers ?? []).map(person => ({ esntlId: person.esntlId, userNm: person.userNm || UNKNOWN_USER, deptNm: person.deptNm ?? undefined, absent: person.absent ?? undefined })),
+      };
+    });
+    const blocked = (draft.stages ?? []).flatMap(stage => stage.approvers ?? []).filter(person => person.eligible === false);
+    setTaskSeCd(draft.taskSeCd ?? '');
+    setTaskChosen(Boolean(draft.taskSeCd));
+    setDocTtl(draft.docTtl ?? '');
+    setDocCn(draft.docCn ?? '');
+    setReqYmd(getTodayYmd());
+    setStages(nextStages.length > 0 ? nextStages : [{ key: nextKey.current++, kind: 'APPROVAL', users: [] }]);
+    setTemporaryDraft({ temporaryDraftSn: draft.temporaryDraftSn, version: draft.version });
+    contentValidation.setFormErrors({}, false); draftValidation.setFormErrors({}, false);
+    precheckRef.current += 1; setChecked([]); setBlockedMessage(''); setPickerStage(null);
+    setTemporaryConflict(false); setServerError(''); setNotice(''); setEdited(false);
+    setTemporaryNotice(blocked.length > 0
+      ? `‘${temporaryDraftLabel(draft)}’ 임시저장을 불러왔습니다. 결재자로 지정할 수 없는 사람이 있습니다: ${blocked.map(person => `${person.userNm || UNKNOWN_USER}(${INELIGIBLE_REASONS[person.ineligibleReason ?? ''] ?? '확인 필요'})`).join(', ')}. 결재선에서 빼고 다른 사람을 지정해 주세요.`
+      : `‘${temporaryDraftLabel(draft)}’ 임시저장을 불러왔습니다. 마지막 저장 ${savedAtLabel(draft.mdfcnDt) || '시각 미확인'}. 신청일은 저장하지 않아 오늘로 시작합니다.`);
+    changeStep(0);
+  };
+  /** 상세를 서버에서 다시 읽어 채운다. 없으면(상신했거나 지웠으면) 그 사실을 말하고 연결을 끊는다. */
+  const loadTemporaryDraft = async (temporaryDraftSn: number) => {
+    setResumingDraftSn(temporaryDraftSn);
+    try {
+      applyTemporaryDraft(await queryClient.fetchQuery(approvalQueryOptions.temporaryDraft(temporaryDraftSn)));
+    } catch (error: unknown) {
+      if (responseError(error).status === 404) {
+        if (temporaryDraft?.temporaryDraftSn === temporaryDraftSn) { setTemporaryDraft(undefined); setTemporaryConflict(false); setEdited(true); }
+        setServerError('임시저장을 찾을 수 없습니다. 다른 곳에서 상신했거나 지웠을 수 있습니다. 결재함에서 확인해 주세요. 입력은 유지됩니다.');
+        void queryClient.invalidateQueries({ queryKey: approvalKeys.temporaryDrafts() });
+      } else setServerError(extractErrorMessage(error, '임시저장을 불러오지 못했습니다. 입력은 유지됩니다. 다시 시도해 주세요.'));
+    } finally { setResumingDraftSn(null); }
+  };
+  /** '이어 쓰기'. 작성 중인 내용이 있으면 바꿀지 먼저 묻는다 — 창을 열 때는 묻지 않는다. */
+  const handleResumeTemporary = async (summary: ApprovalTemporaryDraftSummary) => {
+    const temporaryDraftSn = summary.temporaryDraftSn;
+    if (typeof temporaryDraftSn !== 'number' || pendingRef.current || resumingDraftSn !== null) return;
+    // 복제해 연 내용은 손대지 않았어도 사용자가 고른 내용이다 — 임시저장으로 바꾸기 전에 묻는다.
+    if ((edited || (template !== undefined && !temporaryDraft)) && !(await askConfirm({
+      title: '임시저장 이어 쓰기',
+      message: `지금 작성 중인 내용은 저장되지 않고 ‘${temporaryName(summary)}’ 임시저장으로 바뀝니다.`,
+      confirmText: '임시저장으로 바꾸기',
+      cancelText: '계속 작성',
+    }))) return;
+    await loadTemporaryDraft(temporaryDraftSn);
+  };
+  /** 충돌 뒤 '최신 임시저장 불러오기' — 다른 곳에서 고친 내용으로 바꾼다. */
+  const reloadTemporaryDraft = async () => {
+    if (!temporaryDraft || pendingRef.current || resumingDraftSn !== null) return;
+    if (edited && !(await askConfirm({
+      title: '최신 임시저장 불러오기',
+      message: '지금 작성 중인 내용은 저장되지 않고 서버에 있는 최신 임시저장으로 바뀝니다.',
+      confirmText: '최신 내용으로 바꾸기',
+      cancelText: '계속 작성',
+    }))) return;
+    await loadTemporaryDraft(temporaryDraft.temporaryDraftSn);
+  };
+  /** 충돌 뒤 '연결을 끊고 계속 작성' — 지금 내용은 남기고, 다음 저장은 새 임시저장이, 다음 상신은 새 문서가 된다. */
+  const detachTemporaryDraft = () => {
+    setTemporaryDraft(undefined); setTemporaryConflict(false); setServerError(''); setEdited(true);
+    setTemporaryNotice('임시저장과의 연결을 끊었습니다. 다시 임시저장하면 새 임시저장이 되고, 상신하면 새 문서로 올라갑니다.');
+  };
+  /** 임시저장 삭제. 확인을 받고 한 번만 지운다. 이어 쓰던 것을 지우면 입력은 남기고 연결만 끊는다. */
+  const handleDeleteTemporary = async (summary: ApprovalTemporaryDraftSummary) => {
+    const temporaryDraftSn = summary.temporaryDraftSn;
+    if (typeof temporaryDraftSn !== 'number' || pendingRef.current) return;
+    pendingRef.current = true;
+    try {
+      const attached = temporaryDraft?.temporaryDraftSn === temporaryDraftSn;
+      const ok = await askConfirm({
+        title: '임시저장 삭제',
+        message: `‘${temporaryName(summary)}’ 임시저장을 지웁니다. 지운 임시저장은 되살릴 수 없습니다.${attached ? ' 지금 작성 중인 내용은 그대로 남고 임시저장과의 연결만 끊깁니다.' : ''}`,
+        confirmText: '임시저장 삭제',
+        variant: 'destructive',
+      });
+      if (!ok) return;
+      setDeletingDraftSn(temporaryDraftSn);
+      await deleteTemporaryMutation.mutateAsync(temporaryDraftSn);
+      if (attached) { setTemporaryDraft(undefined); setTemporaryConflict(false); setEdited(true); }
+      setTemporaryNotice(`‘${temporaryName(summary)}’ 임시저장을 지웠습니다.`);
+    } catch (error: unknown) {
+      setServerError(responseError(error).status === 404
+        ? '임시저장을 찾을 수 없습니다. 다른 곳에서 상신했거나 이미 지웠을 수 있습니다. 목록을 다시 불러왔습니다.'
+        : extractErrorMessage(error, '임시저장을 지우지 못했습니다. 다시 시도해 주세요.'));
+      void queryClient.invalidateQueries({ queryKey: approvalKeys.temporaryDrafts() });
+    } finally { pendingRef.current = false; setDeletingDraftSn(null); }
+  };
   const validateStages = () => {
     const ownId = user?.esntlId;
     if (ownId && values.stages.some(stage => stage.approverIds.includes(ownId))) {
@@ -258,7 +491,7 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
       void precheckApprovers(request.stages.flatMap(stage => stage.approverIds));
       return;
     }
-    if (blockedMessage) return;
+    if (blockedMessage || temporaryConflict) return;
     pendingRef.current = true; setSubmitting(true); setServerError('');
     try {
       let id: number;
@@ -271,7 +504,7 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
           return;
         }
         id = await resubmitMutation.mutateAsync({ ifmlAtrzSn: originalId, request: { ...request, version } });
-      } else id = await createMutation.mutateAsync(request);
+      } else id = await createMutation.mutateAsync({ request, temporaryDraft });
       setEdited(false);
       submittedRef.current = true;
       rememberTask(user?.esntlId, request.taskSeCd);
@@ -284,11 +517,18 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
         if (isContentError) { setStep(0); contentValidation.setFormErrors(fieldErrors); }
         else { setStep(1); draftValidation.setFormErrors(fieldErrors); }
       }
-      const conflict = typeof error === 'object' && error !== null && 'response' in error
-        && (error as { response?: { status?: number } }).response?.status === 409;
-      if (conflict) setNeedsReview(true);
-      setServerError(conflict ? '문서가 다른 곳에서 변경되었습니다. 입력은 유지됩니다. 최신 문서를 확인한 뒤 다시 상신해 주세요.'
-        : extractErrorMessage(error, '상신하지 못했습니다. 입력한 내용은 유지됩니다. 다시 시도해 주세요.'));
+      // [2026-10-03 D3] 409 는 무엇이 부딪혔는지에 따라 길이 다르다. 재상신은 문서 버전 충돌이라 최신 문서를 확인한다.
+      //   새 기안의 C013 은 이어 쓴 임시저장이 이미 상신되었거나 바뀐 것이다 — 최신 임시저장을 불러오거나 연결을 끊게 한다.
+      //   종전처럼 새 기안에서 needsReview 를 켜면 '최신 문서 확인' 버튼이 없어 상신이 영영 잠긴다.
+      const { status, code } = responseError(error);
+      if (status === 409 && resubmission) {
+        setNeedsReview(true);
+        setServerError('문서가 다른 곳에서 변경되었습니다. 입력은 유지됩니다. 최신 문서를 확인한 뒤 다시 상신해 주세요.');
+      } else if (status === 409 && code === 'C013' && temporaryDraft) {
+        setTemporaryConflict(true);
+        setServerError('이어 쓴 임시저장이 이미 상신되었거나 다른 곳에서 바뀌었습니다. 입력은 유지됩니다. 결재함에서 상신 여부를 확인한 뒤, 최신 임시저장을 불러오거나 연결을 끊고 새 문서로 상신해 주세요.');
+        void queryClient.invalidateQueries({ queryKey: approvalKeys.temporaryDrafts() });
+      } else setServerError(extractErrorMessage(error, '상신하지 못했습니다. 입력한 내용은 유지됩니다. 다시 시도해 주세요.'));
     } finally { pendingRef.current = false; setSubmitting(false); }
   };
   const fieldError = (name: string) => validation.errors[name]
@@ -312,17 +552,41 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   };
 
   return <>
-    <StandardModal isOpen={isOpen} onClose={close} title={resubmission ? '결재 재상신' : template ? '복제해서 새로 기안' : '새 결재 기안'} maxWidth="2xl" closeDisabled={submitting}>
+    <StandardModal isOpen={isOpen} onClose={close} title={resubmission ? '결재 재상신' : template && !temporaryDraft ? '복제해서 새로 기안' : '새 결재 기안'} maxWidth="2xl" closeDisabled={submitting || savingTemporary}>
       <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-5" aria-label="결재 기안 폼">
         <ol aria-label="기안 작성 단계" className="flex flex-wrap gap-3 text-sm">
           {['내용 작성', '결재선', '최종 확인'].map((label, index) => <li key={label} aria-current={step === index ? 'step' : undefined} className={step === index ? 'font-bold text-primary' : 'text-muted-foreground'}>{index + 1}. {label}{index < step ? ' · 완료' : ''}</li>)}
         </ol>
         <h2 ref={headingRef} tabIndex={-1} className="text-lg font-semibold text-foreground focus-visible:outline-ring">{['내용 작성', '결재선 지정', '상신 전 최종 확인'][step]}</h2>
         <FormErrorSummary errors={validation.errors} labels={{ ...LABELS, ...stageLabels }} onNavigate={validation.focusError} />
-        {serverError && <div role="alert" className="space-y-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive-emphasis"><p>{serverError}</p>{needsReview && resubmission && <Button type="button" variant="outline" disabled={refreshing} onClick={() => { void refreshVersion(); }}>{refreshing ? '불러오는 중…' : '최신 문서 확인'}</Button>}</div>}
+        {serverError && <div role="alert" className="space-y-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive-emphasis"><p>{serverError}</p>{needsReview && resubmission && <Button type="button" variant="outline" disabled={refreshing} onClick={() => { void refreshVersion(); }}>{refreshing ? '불러오는 중…' : '최신 문서 확인'}</Button>}{temporaryConflict && temporaryDraft && <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={savingTemporary || resumingDraftSn !== null} onClick={() => { void reloadTemporaryDraft(); }}>{resumingDraftSn !== null ? '불러오는 중…' : '최신 임시저장 불러오기'}</Button><Button type="button" variant="outline" disabled={savingTemporary || resumingDraftSn !== null} onClick={detachTemporaryDraft}>연결을 끊고 계속 작성</Button></div>}</div>}
         {latestDocument && <details className="rounded-md border border-border p-3 text-sm"><summary>서버의 최신 문서 · {latestDocument.atrzCycl}차 · {latestDocument.docTtl}</summary><p className="mt-2 whitespace-pre-wrap break-words">{latestDocument.docCn || '작성한 본문이 없습니다.'}</p><p className="mt-2">결재선: {(latestDocument.stages ?? []).map(stage => `${stage.order}단계 ${stage.kind === 'AGREEMENT' ? '합의' : '결재'}: ${(stage.approvers ?? []).map(person => person.userNm || person.userId).join(', ')}`).join(' → ')}</p></details>}
-        <fieldset disabled={submitting} className="min-w-0 space-y-5">
+        {/* 임시저장·이어 쓰는 동안 입력을 잠근다 — 그 사이 고친 내용이 저장된 것으로 표시되거나 불러온 내용에 덮이지 않게 한다. */}
+        <fieldset disabled={submitting || savingTemporary || resumingDraftSn !== null} className="min-w-0 space-y-5">
           {step === 0 && <>
+            {showsTemporaryList && (temporaryDrafts.isError ? (
+              // 목록을 못 읽은 것을 '임시저장이 없다' 로 보이지 않는다. 기안 작성을 막는 오류가 아니므로 경고(alert)로 끼어들지 않는다.
+              <div role="status" className="space-y-2 rounded-md border border-border p-3 text-sm">
+                <p>임시저장한 기안을 불러오지 못했습니다. 새 기안은 그대로 작성할 수 있습니다.</p>
+                <Button type="button" variant="outline" size="sm" onClick={() => { void temporaryDrafts.refetch(); }}><RefreshCcw aria-hidden="true" /> 임시저장 목록 다시 불러오기</Button>
+              </div>
+            ) : temporaryCount > 0 ? (
+              <section aria-labelledby="approval-temporary-drafts-heading" className="space-y-2 rounded-md border border-border p-3">
+                <h3 id="approval-temporary-drafts-heading" className="text-sm font-semibold">임시저장한 기안 ({temporaryCount}/{TEMPORARY_DRAFT_LIMIT})</h3>
+                <p className="text-xs text-muted-foreground">서버에 보관되어 다른 기기에서도 이어 쓸 수 있습니다. 결재자에게 보이지 않고 알림도 가지 않습니다.</p>
+                <ul className="max-h-48 space-y-1 overflow-y-auto">
+                  {(temporaryDrafts.data ?? []).map(draft => <li key={draft.temporaryDraftSn} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span className="min-w-0 break-words">{temporaryDraftLabel(draft)}{draft.taskSeNm ? ` · ${draft.taskSeNm}` : ''} · 결재자 {draft.approverCount ?? 0}명 · {savedAtLabel(draft.mdfcnDt) || '저장 시각 미확인'}</span>
+                    <span className="flex gap-1">
+                      {draft.temporaryDraftSn === temporaryDraft?.temporaryDraftSn
+                        ? <span className="px-2 text-xs text-muted-foreground">지금 이어 쓰는 중</span>
+                        : <Button type="button" size="sm" variant="outline" aria-label={`‘${temporaryName(draft)}’ 이어 쓰기`} disabled={resumingDraftSn !== null || deletingDraftSn !== null} onClick={() => { void handleResumeTemporary(draft); }}>{resumingDraftSn === draft.temporaryDraftSn ? '불러오는 중…' : '이어 쓰기'}</Button>}
+                      <Button type="button" size="sm" variant="ghost" aria-label={`‘${temporaryName(draft)}’ 임시저장 삭제`} disabled={deletingDraftSn !== null || savingTemporary || resumingDraftSn !== null} aria-busy={deletingDraftSn === draft.temporaryDraftSn || undefined} onClick={() => { void handleDeleteTemporary(draft); }}>{deletingDraftSn === draft.temporaryDraftSn ? '삭제 중…' : '삭제'}</Button>
+                    </span>
+                  </li>)}
+                </ul>
+              </section>
+            ) : null)}
             <div className="space-y-2"><label htmlFor="approval-draft-title" className="text-sm font-semibold">제목 (필수)</label><Input id="approval-draft-title" {...contentValidation.fieldProps('docTtl')} value={docTtl} maxLength={256} onChange={event => { touch(); contentValidation.clearError('docTtl'); setDocTtl(event.target.value); }} placeholder="결재할 내용을 한 문장으로 적어 주세요" />{fieldError('docTtl')}</div>
             <div className="space-y-2"><label htmlFor="approval-draft-content" className="text-sm font-semibold">본문 (선택)</label><textarea id="approval-draft-content" {...contentValidation.fieldProps('docCn')} value={docCn} maxLength={4000} rows={6} onChange={event => { touch(); contentValidation.clearError('docCn'); setDocCn(event.target.value); }} className="w-full rounded-md border border-border bg-background p-3 text-sm focus-visible:outline-2 focus-visible:outline-ring" /><p className="text-xs text-muted-foreground">검토에 필요한 배경과 요청 사항을 적어 주세요. {docCn.length}/4000자</p>{fieldError('docCn')}{taskTemplate && docCn.trim() !== taskTemplate && <Button type="button" variant="outline" size="sm" onClick={() => { touch(); setDocCn(current => current.trim() ? `${current}\n\n${taskTemplate}` : taskTemplate); setNotice('업무 구분의 본문 양식을 넣었습니다.'); }}><FileText aria-hidden="true" /> 업무 양식 넣기</Button>}</div>
             <div className="space-y-2">
@@ -330,14 +594,14 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
               {taskTypes.isLoading ? <p role="status" className="text-sm text-muted-foreground">업무 구분을 불러오는 중입니다.</p>
                 : taskTypes.isError ? <div role="alert" className="space-y-2"><p>업무 구분을 불러오지 못했습니다.</p><Button type="button" variant="outline" onClick={() => { void taskTypes.refetch(); }}><RefreshCcw aria-hidden="true" /> 다시 시도</Button></div>
                 : !hasTaskTypes ? <div role="alert" className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm"><p>등록된 업무 구분이 없어 결재를 올릴 수 없습니다.</p><p className="mt-1 text-muted-foreground">관리자에게 업무 구분 등록을 요청해 주세요.</p></div>
-                : <Select value={effectiveTask} onValueChange={value => { touch(); contentValidation.clearError('taskSeCd'); setTaskSeCd(value); }}><SelectTrigger id="approval-draft-task-type" {...contentValidation.fieldProps('taskSeCd')} className="w-full"><SelectValue placeholder="업무 구분을 선택하세요" /></SelectTrigger><SelectContent>{taskOptions.map(code => <SelectItem key={code.dtlCd} value={code.dtlCd}>{code.dtlCdNm || code.dtlCd}</SelectItem>)}</SelectContent></Select>}
+                : <Select value={effectiveTask} onValueChange={value => { touch(); contentValidation.clearError('taskSeCd'); setTaskSeCd(value); setTaskChosen(true); }}><SelectTrigger id="approval-draft-task-type" {...contentValidation.fieldProps('taskSeCd')} className="w-full"><SelectValue placeholder="업무 구분을 선택하세요" /></SelectTrigger><SelectContent>{taskOptions.map(code => <SelectItem key={code.dtlCd} value={code.dtlCd}>{code.dtlCdNm || code.dtlCd}</SelectItem>)}</SelectContent></Select>}
               {fieldError('taskSeCd')}
             </div>
             <div className="space-y-2"><label htmlFor="approval-draft-req-ymd" className="text-sm font-semibold">신청일</label><Input id="approval-draft-req-ymd" {...contentValidation.fieldProps('reqYmd')} type="date" value={reqYmd.length === 8 ? `${reqYmd.slice(0, 4)}-${reqYmd.slice(4, 6)}-${reqYmd.slice(6, 8)}` : ''} onChange={event => { touch(); contentValidation.clearError('reqYmd'); setReqYmd(event.target.value.replace(/-/g, '')); }} className="max-w-xs" />{fieldError('reqYmd')}</div>
           </>}
           {step === 1 && <>
             {resubmission && <p className="rounded-md bg-muted p-3 text-sm">이전 결재선을 가져왔습니다. 결재자와 순서를 다시 확인해 주세요. 이전 차수는 이력에 보존됩니다.</p>}
-            {template && <p className="rounded-md bg-muted p-3 text-sm">복제한 문서의 결재선입니다. 결재자와 순서를 다시 확인해 주세요.</p>}
+            {template && !temporaryDraft && <p className="rounded-md bg-muted p-3 text-sm">복제한 문서의 결재선입니다. 결재자와 순서를 다시 확인해 주세요.</p>}
             {!resubmission && suggestions.data && (suggestions.data.lines?.length || suggestions.data.otherLines?.length || suggestions.data.recentApprovers?.length) ? (
               <section aria-label="결재선 제안" className="space-y-3 rounded-md border border-border p-3">
                 {[...(suggestions.data.lines ?? []), ...(suggestions.data.otherLines ?? [])].length > 0 && <div className="space-y-2">
@@ -401,12 +665,20 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
           </>}
           {step === 2 && <>
             {blockedMessage && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive-emphasis">{blockedMessage}</p>}
-            <dl className="space-y-3 rounded-md border border-border p-4"><div><dt className="text-sm text-muted-foreground">제목</dt><dd className="break-words font-semibold">{docTtl}</dd></div><div><dt className="text-sm text-muted-foreground">업무 구분</dt><dd>{taskOptions.find(code => code.dtlCd === taskSeCd)?.dtlCdNm || taskSeCd}</dd></div><div><dt className="text-sm text-muted-foreground">본문</dt><dd className="whitespace-pre-wrap break-words text-sm">{docCn || '작성한 본문이 없습니다.'}</dd></div></dl>
+            <dl className="space-y-3 rounded-md border border-border p-4"><div><dt className="text-sm text-muted-foreground">제목</dt><dd className="break-words font-semibold">{docTtl}</dd></div><div><dt className="text-sm text-muted-foreground">업무 구분</dt><dd>{taskOptions.find(code => code.dtlCd === taskSeCd)?.dtlCdNm || taskSeCd}</dd></div><div><dt className="text-sm text-muted-foreground">본문</dt><dd className="whitespace-pre-wrap break-words text-sm">{docCn || '작성한 본문이 없습니다.'}</dd></div><div><dt className="text-sm text-muted-foreground">신청일</dt><dd>{reqYmd.length === 8 ? `${reqYmd.slice(0, 4)}-${reqYmd.slice(4, 6)}-${reqYmd.slice(6, 8)}` : '신청일 미확인'}</dd></div></dl>
             <ol aria-label="상신 결재선 미리보기" className="space-y-2">{stages.map((stage, index) => <li key={stage.key} className="rounded-md border border-border p-3 text-sm"><p className="font-semibold">{index + 1}단계 · {stage.kind === 'AGREEMENT' ? '합의' : '결재'} · 전원 {stage.kind === 'AGREEMENT' ? '동의' : '승인'} ({stage.users.length}명)</p><p className="mt-1 flex flex-wrap items-center gap-1 break-words">{stage.users.map(person => <span key={person.esntlId} className="inline-flex items-center gap-1">{person.userNm || person.esntlId}<AbsenceBadge absent={absentById.get(person.esntlId)} /></span>)}</p></li>)}</ol>
             {[...absentById.values()].some(Boolean) && <p className="text-sm text-muted-foreground">부재 중인 결재자가 있습니다. 처리가 늦어질 수 있으며, 상신한 뒤에도 그 사람을 다른 결재자로 바꿀 수 있습니다.</p>}
             <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">각 단계의 전원이 승인해야 다음 단계가 시작됩니다. 누구든 한 명이 반려하면 문서 전체가 반려되어 남은 결재는 종료됩니다.</p>
           </>}
-          <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-4"><Button type="button" variant="ghost" onClick={close}>취소</Button>{step > 0 && <Button type="button" variant="outline" onClick={goBack}>이전</Button>}<Button type="submit" disabled={!hasTaskTypes || submitting || needsReview || (step === 2 && Boolean(blockedMessage))} aria-busy={submitting || undefined}>{submitting ? '상신 중…' : step === 2 ? resubmission ? '새 차수로 재상신' : '결재 상신' : '다음'}</Button></div>
+          <div className="space-y-2 border-t border-border pt-4">
+            {canSaveTemporary && <div className="space-y-1 text-sm">
+              {/* 저장 결과·불러온 결과를 알린다. role=status 는 결재선 단계의 안내가 쓰므로 여기서는 live region 만 둔다. */}
+              <p aria-live="polite" className="text-foreground">{temporaryNotice}</p>
+              {emptyStageCount > 0 && lineStarted && <p className="text-muted-foreground">결재자가 없는 단계는 임시저장하지 않습니다.</p>}
+              {temporaryFull && <p className="text-muted-foreground">임시저장은 {TEMPORARY_DRAFT_LIMIT}건까지 둘 수 있습니다. 내용 작성 단계의 ‘임시저장한 기안’ 목록에서 쓰지 않는 임시저장을 지워야 새로 저장할 수 있습니다.</p>}
+            </div>}
+            <div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="ghost" onClick={close}>취소</Button>{step > 0 && <Button type="button" variant="outline" onClick={goBack}>이전</Button>}{canSaveTemporary && <Button type="button" variant="outline" disabled={savingTemporary || submitting || temporaryConflict || temporaryFull} aria-busy={savingTemporary || undefined} onClick={() => { void handleSaveTemporary(); }}><Save aria-hidden="true" />{savingTemporary ? '기안 임시저장 중…' : '기안 임시저장'}</Button>}<Button type="submit" disabled={!hasTaskTypes || submitting || needsReview || (step === 2 && (Boolean(blockedMessage) || temporaryConflict))} aria-busy={submitting || undefined}>{submitting ? '상신 중…' : step === 2 ? resubmission ? '새 차수로 재상신' : '결재 상신' : '다음'}</Button></div>
+          </div>
         </fieldset>
       </form>
     </StandardModal>

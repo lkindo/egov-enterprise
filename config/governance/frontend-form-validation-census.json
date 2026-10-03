@@ -8,8 +8,8 @@
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 22,
-    "secondaryActionBoundaries": 76,
-    "candidateCount": 167
+    "secondaryActionBoundaries": 78,
+    "candidateCount": 169
   },
   "entries": [
     {
@@ -2850,6 +2850,51 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/approvals/__tests__/ApprovalCollaborationPanel.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/approvals/ApprovalDraftDialog.tsx#ApprovalDraftDialog.handleDeleteTemporary[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/approvals/ApprovalDraftDialog.tsx",
+      "owner": "ApprovalDraftDialog",
+      "handler": "handleDeleteTemporary",
+      "writeSinks": [
+        "deleteTemporaryMutation.mutateAsync"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/approvals/__tests__/ApprovalDraftDialog.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/approvals/ApprovalDraftDialog.tsx#ApprovalDraftDialog.handleSaveTemporary[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/approvals/ApprovalDraftDialog.tsx",
+      "owner": "ApprovalDraftDialog",
+      "handler": "handleSaveTemporary",
+      "writeSinks": [
+        "saveTemporaryMutation.mutateAsync"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:approval-temporary-draft",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "An unfinished approval draft saves as one owner-only temporary draft: stages without approvers are dropped and said so, the first save creates, later saves replace it with the version they read (C013 on a stale version, C014 at the 20-draft cap), and editing is locked while the save is in flight.",
+      "structuredPayloads": [
+        "payload"
+      ],
+      "testEvidence": [
+        "frontend/src/app/approvals/__tests__/ApprovalDraftDialog.test.tsx",
+        "frontend/src/queries/__tests__/approval-query-options.test.ts"
       ]
     },
     {

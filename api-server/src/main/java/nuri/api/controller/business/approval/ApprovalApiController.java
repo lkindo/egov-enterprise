@@ -27,6 +27,7 @@ public class ApprovalApiController {
 
     private final InformalSanctionService approvalService;
     private final nuri.business.service.informalsanction.ApprovalLineAssistService lineAssistService;
+    private final nuri.business.service.informalsanction.ApprovalTemporaryDraftService temporaryDraftService;
 
     @Operation(summary = "Get Approval Detail", description = "참여한 결재의 내용·단계·처리 이력을 조회합니다. 참여하지 않은 차수는 공개하지 않습니다.")
     @GetMapping("/{id}")
@@ -112,14 +113,27 @@ public class ApprovalApiController {
      * 있었지만 호출부가 0건이었고, 기안 화면은 목업이었다. 결재함의 '새 결재 기안' 이 이 경로를 부른다.
      */
     @Operation(summary = "Create Approval Draft",
-            description = "현재 사용자를 신청자로 결재를 상신합니다. 업무 구분은 /task-types 의 코드여야 하고 결재자는 사용자 검색의 esntlId 입니다.")
+            description = "현재 사용자를 신청자로 결재를 상신합니다. 업무 구분은 /task-types 의 코드여야 하고 결재자는 사용자 검색의 esntlId 입니다. "
+                    + "임시저장을 이어 써서 올리면 temporaryDraftSn·temporaryDraftVersion 을 함께 보냅니다 — 상신과 같은 트랜잭션에서 "
+                    + "그 임시저장을 지우며, 이미 상신했거나 버전이 다르면 409, 둘 중 하나만 보내면 400 입니다. 상신이 실패하면 임시저장은 남습니다.")
     @PostMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#createApproval')")
     public ResponseEntity<ApiResponse<Long>> createApproval(
             @LoginUser CustomUserDetails userDetails,
-            @Valid @RequestBody nuri.api.controller.business.approval.dto.ApprovalDraftRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(approvalService.registerInformalSanction(
-                draftDto(request, userDetails.getEsntlId()), request.getStages())));
+            @Valid @RequestBody nuri.api.controller.business.approval.dto.ApprovalDraftRequest request,
+            @RequestParam(required = false) Long temporaryDraftSn,
+            @RequestParam(required = false) Integer temporaryDraftVersion) {
+        InformalSanctionDto draft = draftDto(request, userDetails.getEsntlId());
+        // [2026-10-03 D3] 임시저장 참조는 상신 요청 본문에 두지 않는다 — 본문을 상속하는 재상신 요청에 새지 않게 쿼리로 받는다.
+        //   둘 중 하나라도 오면 임시저장 서비스가 둘 다 있는지·값이 맞는지 보고, 같은 트랜잭션에서 소비한 뒤 상신한다.
+        //   ⚠ 이 두 파라미터에 제약 어노테이션(@Positive 등)을 달지 않는다 — 하나라도 달리면 Spring 7 이 메서드 검증을 켜고
+        //   본문의 @Valid 검증까지 HandlerMethodValidationException 으로 옮겨, 상신 폼이 받던 필드별 오류(errors[].field)가
+        //   사라진다(2026-10-04 실측). 값 검사는 서비스가 한다.
+        Long id = temporaryDraftSn == null && temporaryDraftVersion == null
+                ? approvalService.registerInformalSanction(draft, request.getStages())
+                : temporaryDraftService.submitWithTemporaryDraft(draft, request.getStages(),
+                        temporaryDraftSn, temporaryDraftVersion);
+        return ResponseEntity.ok(ApiResponse.success(id));
     }
 
     @Operation(summary = "Resubmit Approval", description = "기안자 본인이 반려·회수된 문서를 수정하여 다시 상신합니다. 이전 차수의 내용과 처리는 보존됩니다.")
@@ -178,6 +192,64 @@ public class ApprovalApiController {
             @Valid @RequestBody nuri.api.controller.business.approval.dto.ApproverCheckRequest request) {
         return ResponseEntity.ok(ApiResponse.success(lineAssistService.checkApprovers(userDetails.getEsntlId(),
                 request.getApproverIds())));
+    }
+
+    /**
+     * [2026-10-03 결재 동선 개선 D3] 상신하지 않은 기안의 서버 임시저장. 기안자 본인만 읽고 고치며(관리자 열람 없음),
+     * 남의 번호는 없는 번호와 같이 404 다. 결재 표에 들어가지 않으므로 대기함·알림·통계·결재선 제안에 섞이지 않는다.
+     */
+    @Operation(summary = "List Approval Temporary Drafts",
+            description = "내가 임시저장한 기안 목록입니다(최근에 고친 순, 최대 20건). 본문과 결재선은 싣지 않으며 결재선에 든 사람 수만 돌려줍니다.")
+    @GetMapping("/temporary-drafts")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getApprovalTemporaryDrafts')")
+    public ResponseEntity<ApiResponse<java.util.List<nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftSummaryDto>>> getApprovalTemporaryDrafts(
+            @LoginUser CustomUserDetails userDetails) {
+        return ResponseEntity.ok(ApiResponse.success(temporaryDraftService.getTemporaryDrafts(userDetails.getEsntlId())));
+    }
+
+    @Operation(summary = "Get Approval Temporary Draft",
+            description = "임시저장한 기안 하나를 이어 쓰려고 엽니다. 결재선의 사람마다 지금 결재자로 고를 수 있는지(SELF·INACTIVE·NO_PERMISSION·NOT_FOUND)를 "
+                    + "싣고, 사용 중이 아니거나 없는 계정은 이름을 싣지 않습니다. 내 임시저장이 아니면 404 입니다.")
+    @GetMapping("/temporary-drafts/{temporaryDraftSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getApprovalTemporaryDraft')")
+    public ResponseEntity<ApiResponse<nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftDto>> getApprovalTemporaryDraft(
+            @PathVariable Long temporaryDraftSn, @LoginUser CustomUserDetails userDetails) {
+        return ResponseEntity.ok(ApiResponse.success(
+                temporaryDraftService.getTemporaryDraft(userDetails.getEsntlId(), temporaryDraftSn)));
+    }
+
+    @Operation(summary = "Create Approval Temporary Draft",
+            description = "작성 중인 기안을 임시저장합니다. 업무 구분·제목·본문·결재선 중 하나는 있어야 하고, 결재자가 없는 단계는 받지 않습니다. "
+                    + "결재자 자격은 저장할 때 보지 않습니다. 한 사람이 20건까지 둘 수 있으며 넘으면 409(C014) 입니다. 알림은 나가지 않습니다.")
+    @PostMapping("/temporary-drafts")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#createApprovalTemporaryDraft')")
+    public ResponseEntity<ApiResponse<nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftSummaryDto>> createApprovalTemporaryDraft(
+            @LoginUser CustomUserDetails userDetails,
+            @Valid @RequestBody nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                temporaryDraftService.createTemporaryDraft(userDetails.getEsntlId(), request)));
+    }
+
+    @Operation(summary = "Update Approval Temporary Draft",
+            description = "임시저장한 기안의 내용과 결재선을 통째로 바꿉니다. 읽은 버전(version)이 필수이며 다르면 409(C013) 입니다. "
+                    + "저장할 때마다 버전이 오르고, 응답의 버전으로 다음 저장·상신을 합니다.")
+    @PutMapping("/temporary-drafts/{temporaryDraftSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#updateApprovalTemporaryDraft')")
+    public ResponseEntity<ApiResponse<nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftSummaryDto>> updateApprovalTemporaryDraft(
+            @PathVariable Long temporaryDraftSn, @LoginUser CustomUserDetails userDetails,
+            @Valid @RequestBody nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                temporaryDraftService.updateTemporaryDraft(userDetails.getEsntlId(), temporaryDraftSn, request)));
+    }
+
+    @Operation(summary = "Delete Approval Temporary Draft",
+            description = "임시저장한 기안을 지웁니다. 되살릴 수 없습니다. 내 임시저장이 아니면 404 입니다.")
+    @DeleteMapping("/temporary-drafts/{temporaryDraftSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#deleteApprovalTemporaryDraft')")
+    public ResponseEntity<ApiResponse<Void>> deleteApprovalTemporaryDraft(
+            @PathVariable Long temporaryDraftSn, @LoginUser CustomUserDetails userDetails) {
+        temporaryDraftService.deleteTemporaryDraft(userDetails.getEsntlId(), temporaryDraftSn);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "Remind Current Approvers",

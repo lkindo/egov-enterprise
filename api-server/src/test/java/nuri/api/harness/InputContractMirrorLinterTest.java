@@ -126,9 +126,11 @@ class InputContractMirrorLinterTest {
     // [2026-10-02 관리 콘솔 UX 2단계] +12 — 그룹 복제(CopyGroup 3), 메뉴 구조 저장의 새 메뉴·속성(MenuCreation·MenuProperties
     //   각 4: 이름·라우트·설명·사용 여부), 그룹 권한 변경의 그룹 코드(MenuGroupGrantChange 1). enum +2(두 DTO 의 사용 여부 Y·N),
     //   중첩 +4(MenuStructureSave 의 새 메뉴·위치·속성·그룹 권한 목록).
-    private static final int MIN_LENGTH_FIELDS = 253;
+    // [2026-10-03 결재 동선 개선 D3] +3 — 결재 기안 임시저장 요청(ApprovalTemporaryDraftRequest)의 업무 구분·제목·본문을
+    //   임시저장 표(V2_122)와 대조한다. 중첩 +1(그 요청의 결재 단계 목록). 미완성 기안이라 필수 제약은 없다.
+    private static final int MIN_LENGTH_FIELDS = 256;
     private static final int MIN_ENUM_FIELDS = 18;
-    private static final int MIN_NESTED_VALIDATION_FIELDS = 11;
+    private static final int MIN_NESTED_VALIDATION_FIELDS = 12;
     // [2026-09-06 병합] CommunityDto.cmntyNm·DeptJobBoxDto.deptTaskBoxNm 필수화(+2), SmsRecptnDto.rcptnTelno 해제(-1) → 37.
     // [2026-09-07] +2 (ISG itntSvcNm/itntSvcExpln).
     // [2026-09-22 GAP-CONTRACT-001] +16 (위 12쌍 중 필수 제약을 가진 7개 DTO 의 NotBlank/NotNull 전체).

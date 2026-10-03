@@ -11,6 +11,11 @@ const service = vi.hoisted(() => ({
   getDetail: vi.fn(),
   resubmit: vi.fn(),
   cancelDraft: vi.fn(),
+  listTemporaryDrafts: vi.fn(),
+  getTemporaryDraft: vi.fn(),
+  createTemporaryDraft: vi.fn(),
+  updateTemporaryDraft: vi.fn(),
+  deleteTemporaryDraft: vi.fn(),
 }));
 
 vi.mock('@/services/business/user/approval/ApprovalUserService', () => ({
@@ -91,15 +96,70 @@ describe('approval query ownership', () => {
     service.createDraft.mockResolvedValueOnce(91);
 
     const result = await approvalMutationOptions.create(queryClient).mutationFn?.({
-      taskSeCd: '01',
-      aprvrId: 'BOSS',
-      reqYmd: '20260905',
+      request: { taskSeCd: '01', aprvrId: 'BOSS', reqYmd: '20260905' },
     }, {} as never);
 
     expect(result).toBe(91);
     expect(service.createDraft).toHaveBeenCalledWith({ taskSeCd: '01', aprvrId: 'BOSS', reqYmd: '20260905' });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: approvalKeys.lists() });
     expect(invalidate).not.toHaveBeenCalledWith({ queryKey: approvalKeys.taskTypes() });
+  });
+
+  /**
+   * [2026-10-03 D3] 이어 쓴 임시저장을 상신하면 서버가 그 임시저장을 지운다 — 번호·버전을 넘기고 임시저장 목록도 다시 읽는다.
+   * 임시저장 key 는 문서 상세·목록과 다른 접두에 둔다(임시저장 5번과 문서 5번이 한 캐시를 쓰지 않게).
+   */
+  it('임시저장을 이어 써서 상신하면 번호·버전을 넘기고 임시저장 목록을 다시 읽는다 (D3)', async () => {
+    expect(approvalKeys.temporaryDraft(5)).toEqual(['approvals', 'temporary-drafts', 'detail', 5]);
+    expect(approvalKeys.temporaryDraft(5)).not.toEqual(approvalKeys.detail(5));
+    expect(approvalKeys.temporaryDraftList().slice(0, 2)).not.toEqual(approvalKeys.lists());
+    const queryClient = new QueryClient();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined);
+    service.createDraft.mockResolvedValueOnce(92);
+    const request = { taskSeCd: '01', docTtl: '출장', stages: [{ kind: 'APPROVAL' as const, approverIds: ['BOSS'] }] };
+
+    const result = await approvalMutationOptions.create(queryClient).mutationFn?.({
+      request, temporaryDraft: { temporaryDraftSn: 7, version: 3 },
+    }, {} as never);
+
+    expect(result).toBe(92);
+    expect(service.createDraft).toHaveBeenCalledWith(request, { temporaryDraftSn: 7, version: 3 });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: approvalKeys.temporaryDrafts() });
+  });
+
+  it('임시저장은 번호가 없으면 만들고 있으면 바꾸며, 결재 목록·결재선 제안은 건드리지 않는다 (D3)', async () => {
+    const queryClient = new QueryClient();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined);
+    const request = { docTtl: '쓰는 중' };
+    service.createTemporaryDraft.mockResolvedValueOnce({ temporaryDraftSn: 7, version: 0 });
+    service.updateTemporaryDraft.mockResolvedValueOnce({ temporaryDraftSn: 7, version: 1 });
+    const save = approvalMutationOptions.saveTemporary(queryClient);
+
+    await expect(save.mutationFn?.({ request }, {} as never)).resolves.toEqual({ temporaryDraftSn: 7, version: 0 });
+    await expect(save.mutationFn?.({ temporaryDraftSn: 7, request: { ...request, version: 0 } }, {} as never)).resolves.toEqual({ temporaryDraftSn: 7, version: 1 });
+
+    expect(service.createTemporaryDraft).toHaveBeenCalledWith(request);
+    expect(service.updateTemporaryDraft).toHaveBeenCalledWith(7, { ...request, version: 0 });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: approvalKeys.temporaryDrafts() });
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: approvalKeys.lists() });
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: [...approvalKeys.all, 'line-suggestions'] });
+
+    await approvalMutationOptions.deleteTemporary(queryClient).mutationFn?.(7, {} as never);
+    expect(service.deleteTemporaryDraft).toHaveBeenCalledWith(7);
+  });
+
+  it('임시저장 목록·상세는 결재 도메인 서비스에서 늘 다시 읽고, 목록 실패는 기안 창 안에서 다룬다 (D3)', async () => {
+    service.listTemporaryDrafts.mockResolvedValueOnce([]);
+    service.getTemporaryDraft.mockResolvedValueOnce({ temporaryDraftSn: 7, version: 0 });
+    const list = approvalQueryOptions.temporaryDrafts();
+    const detail = approvalQueryOptions.temporaryDraft(7);
+    await list.queryFn?.({ queryKey: list.queryKey } as never);
+    await detail.queryFn?.({ queryKey: detail.queryKey } as never);
+    expect(service.listTemporaryDrafts).toHaveBeenCalledTimes(1);
+    expect(service.getTemporaryDraft).toHaveBeenCalledWith(7);
+    expect(list.staleTime).toBe(0);
+    expect(detail.staleTime).toBe(0);
+    expect(list.throwOnError).toBe(false);
   });
 
   it('상세와 목록 key를 구분하고 재상신 후 같은 문서의 두 경계를 최신화한다', async () => {

@@ -224,4 +224,132 @@ test.describe('Enterprise Workflow & Productivity', () => {
         // 결재 문서/차수는 삭제 API로 지우지 않는다. 이력 보존 계약을 검증한 합성 데이터이며
         // 일회용 사용자만 fixture.dispose로 정리하고 문서는 격리 E2E DB 수명과 함께 폐기한다.
     });
+    /*
+     * [2026-10-03 D3] 기안 서버 임시저장 — 저장 → 닫기 → 이어 쓰기 → 상신 → 목록에서 사라짐.
+     *
+     * 상신은 이어 쓴 임시저장의 번호·버전을 쿼리로 함께 보내고, 서버가 상신과 같은 트랜잭션에서 그 임시저장을 지운다.
+     *
+     * ⚠ 기안자는 공유 관리자 세션(webmaster)이라 지울 수 없는 계정이다. 남은 임시저장은 1인 20건 상한을 채워 다른 샤드·
+     *   재시도의 기안 흐름을 막으므로, 이 테스트가 만든 임시저장은 실패해도 반드시 지운다 — 실행마다 고유한 제목으로 골라 지운다.
+     */
+    test('Workflow: 기안을 임시저장하고 닫았다가 이어 써서 상신한다', async ({ page, request, approver }) => {
+        const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1').replace(/\/$/, '');
+        const authData = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'playwright', '.auth', 'admin.json'), 'utf-8'));
+        const adminToken: string | undefined = authData.cookies.find((cookie: {
+            name: string;
+            value: string;
+        }) => cookie.name === 'accessToken')?.value;
+        expect(adminToken, '기안자 인증 세션이 있어야 한다').toBeTruthy();
+        const headers = { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' };
+        const taskCode = 'E2ETASK';
+        const taskName = 'E2E 업무';
+        const documentTitle = `E2E 임시저장 기안 ${Date.now()}`;
+        type TemporaryDraftRow = { temporaryDraftSn: number; docTtl?: string; version?: number };
+        const listTemporaryDrafts = async (): Promise<TemporaryDraftRow[]> => {
+            const listed = await request.get(`${API_BASE}/approvals/temporary-drafts`, { headers });
+            expect(listed.ok(), '임시저장 목록을 읽을 수 있어야 한다').toBe(true);
+            return ((await listed.json()).data ?? []) as TemporaryDraftRow[];
+        };
+        try {
+            await request.post(`${API_BASE}/admin/system/codes/detail`, { headers, data: { cdId: 'COM075', dtlCd: taskCode, dtlCdNm: taskName, dtlCdExpln: 'e2e 결재 완주용', useYn: 'Y' } });
+            const meRes = await request.get(`${API_BASE}/users/me`, { headers });
+            expect(meRes.ok()).toBeTruthy();
+            const me: { userNm?: string; esntlId?: string } = (await meRes.json()).data;
+            expect(me.userNm).toBeTruthy();
+            expect(approver.esntlId).not.toBe(me.esntlId);
+
+            await page.goto('/approvals');
+            await expect(page.getByRole('heading', { name: '결재 허브' }).first()).toBeVisible();
+            await page.getByRole('button', { name: '새 결재 기안' }).click();
+            const dialog = page.getByRole('dialog', { name: '새 결재 기안' });
+            await expect(dialog).toBeVisible();
+            await dialog.getByLabel('제목 (필수)').fill(documentTitle);
+            await dialog.getByLabel('본문 (선택)').fill('임시저장 후 이어 쓰는 출장 요청');
+            await dialog.locator('#approval-draft-task-type').click();
+            await page.getByRole('option', { name: taskName }).click();
+            await dialog.getByRole('button', { name: '다음', exact: true }).click();
+            await dialog.getByRole('button', { name: '1단계 결재자 선택', exact: true }).click();
+            const picker = dialog.getByRole('group', { name: '1단계 결재자 고르기' });
+            await picker.getByRole('textbox', { name: '결재자 이름 검색' }).fill(me.userNm!);
+            await picker.getByRole('button', { name: '찾기', exact: true }).click();
+            const candidate = picker.getByRole('button').filter({ has: page.getByText(`ID: ${approver.esntlId}`, { exact: true }) });
+            await expect(candidate).toBeEnabled();
+            await candidate.click();
+            await picker.getByRole('button', { name: '다 골랐어요', exact: true }).click();
+            await expect(picker).toBeHidden();
+
+            // 1) 임시저장 — 결재선까지 서버에 보관된다.
+            const [saved] = await Promise.all([
+                page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/v1/approvals/temporary-drafts'),
+                dialog.getByRole('button', { name: '기안 임시저장', exact: true }).click(),
+            ]);
+            expect(saved.ok()).toBe(true);
+            expect(saved.request().postDataJSON().stages).toEqual([{ kind: 'APPROVAL', approverIds: [approver.esntlId] }]);
+            const savedDraft: { temporaryDraftSn: number; version: number } = (await saved.json()).data;
+            expect(Number.isInteger(savedDraft.temporaryDraftSn) && savedDraft.temporaryDraftSn > 0).toBe(true);
+            await expect(dialog.getByText(/^임시저장했습니다 · /)).toBeVisible();
+
+            // 2) 닫기 — 저장했으므로 버릴 입력을 묻지 않고 바로 닫힌다.
+            await dialog.getByRole('button', { name: '취소', exact: true }).click();
+            await expect(page.getByRole('dialog')).toHaveCount(0);
+
+            // 3) 다시 열면 묻지 않고 빈 기안으로 시작하며, 목록에서 골라 이어 쓴다.
+            const [reopenList] = await Promise.all([
+                page.waitForResponse(response => response.request().method() === 'GET' && new URL(response.url()).pathname === '/api/v1/approvals/temporary-drafts'),
+                page.getByRole('button', { name: '새 결재 기안' }).click(),
+            ]);
+            expect(reopenList.ok()).toBe(true);
+            await expect(dialog).toBeVisible();
+            await expect(dialog.getByLabel('제목 (필수)')).toHaveValue('');
+            const [resumed] = await Promise.all([
+                page.waitForResponse(response => response.request().method() === 'GET' && new URL(response.url()).pathname === `/api/v1/approvals/temporary-drafts/${savedDraft.temporaryDraftSn}`),
+                dialog.getByRole('button', { name: `‘${documentTitle}’ 이어 쓰기`, exact: true }).click(),
+            ]);
+            expect(resumed.ok()).toBe(true);
+            await expect(dialog.getByLabel('제목 (필수)')).toHaveValue(documentTitle);
+            await expect(dialog.getByLabel('본문 (선택)')).toHaveValue('임시저장 후 이어 쓰는 출장 요청');
+            await expect(dialog.getByText('지금 이어 쓰는 중', { exact: true })).toBeVisible();
+            await dialog.getByRole('button', { name: '다음', exact: true }).click();
+            await expect(dialog.getByRole('list', { name: '1단계 결재자' }).getByRole('listitem')).toHaveCount(1);
+            await dialog.getByRole('button', { name: '다음', exact: true }).click();
+            await expect(dialog.getByLabel('상신 결재선 미리보기')).toContainText('1단계 · 결재 · 전원 승인 (1명)');
+
+            // 4) 상신 — 이어 쓴 임시저장의 번호·버전을 함께 보낸다.
+            const submitButton = dialog.getByRole('button', { name: '결재 상신', exact: true });
+            await expect(submitButton).toBeEnabled();
+            const [submitted] = await Promise.all([
+                page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/v1/approvals'),
+                submitButton.click(),
+            ]);
+            expect(submitted.ok()).toBe(true);
+            const submittedUrl = new URL(submitted.url());
+            expect(submittedUrl.searchParams.get('temporaryDraftSn')).toBe(String(savedDraft.temporaryDraftSn));
+            expect(submittedUrl.searchParams.get('temporaryDraftVersion')).toBe(String(savedDraft.version));
+            expect(submitted.request().postDataJSON().stages).toEqual([{ kind: 'APPROVAL', approverIds: [approver.esntlId] }]);
+            await expect(dialog).toBeHidden();
+
+            // 5) 상신한 임시저장은 서버에서도, 기안 창의 목록에서도 사라진다.
+            expect((await listTemporaryDrafts()).some(draft => draft.temporaryDraftSn === savedDraft.temporaryDraftSn)).toBe(false);
+            const [afterList] = await Promise.all([
+                page.waitForResponse(response => response.request().method() === 'GET' && new URL(response.url()).pathname === '/api/v1/approvals/temporary-drafts'),
+                page.getByRole('button', { name: '새 결재 기안' }).click(),
+            ]);
+            expect(((await afterList.json()).data as TemporaryDraftRow[]).some(draft => draft.temporaryDraftSn === savedDraft.temporaryDraftSn)).toBe(false);
+            await expect(dialog).toBeVisible();
+            await expect(dialog.getByRole('button', { name: `‘${documentTitle}’ 이어 쓰기`, exact: true })).toHaveCount(0);
+            await dialog.getByRole('button', { name: '취소', exact: true }).click();
+            await expect(dialog).toBeHidden();
+            // 상신한 문서는 이력 보존 계약상 지우지 않는다(위 완주 테스트와 같다).
+        }
+        finally {
+            // 실패했어도 이 실행이 만든 임시저장은 남기지 않는다 — 공유 관리자 계정의 20건 상한을 지킨다.
+            const listed = await request.get(`${API_BASE}/approvals/temporary-drafts`, { headers });
+            if (listed.ok()) {
+                const leftovers = (((await listed.json()).data ?? []) as TemporaryDraftRow[]).filter(draft => draft.docTtl === documentTitle);
+                for (const draft of leftovers) {
+                    await request.delete(`${API_BASE}/approvals/temporary-drafts/${draft.temporaryDraftSn}`, { headers });
+                }
+            }
+        }
+    });
 });

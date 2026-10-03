@@ -60,8 +60,10 @@ class EntityTableOwnershipLinterTest {
     // V2_110(DIP B5 F11): 공통코드 변경 이력 CommonCodeChange → tb_com_cd_chg_hstry. 77 → 78 / 76 → 77.
     // ADR-0025: MFA 3종, 후속 작업 1종, 불변 민감 감사 1종을 각각 독립 테이블로 추가한다.
     // V2_121(결재 동선 개선): 결재 처리 이력 InformalSanctionProcess → tb_ifml_atrz_prcs_hstry. 83 → 84 / 82 → 83.
-    private static final int EXPECTED_ENTITY_COUNT = 84;
-    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 83;
+    // V2_122(결재 동선 개선 D3): 기안 임시저장 ApprovalTemporaryDraft → tb_ifml_atrz_tmpr_strg, 임시저장 결재선
+    //   ApprovalTemporaryDraftLine → tb_ifml_atrz_tmpr_strg_dtl. 둘 다 수정되므로 감사 4종(BaseEntity)이다. 84 → 86 / 83 → 85.
+    private static final int EXPECTED_ENTITY_COUNT = 86;
+    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 85;
 
     private static final Set<String> AUDIT_COLUMNS = Set.of(
             "frst_rgtr_id", "crt_dt", "last_mdfr_id", "mdfcn_dt");
