@@ -54,6 +54,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class RbacAuthorizationMatrixTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private UserRepository userRepository;
+    @Autowired private nuri.business.domain.auth.AuthorityRepository authorityRepository;
     @MockitoBean private CustomUserDetailsService customUserDetailsService;
     @MockitoBean private JwtTokenProvider jwtTokenProvider;
 
@@ -109,6 +110,11 @@ class RbacAuthorizationMatrixTest {
         String loginId = "rbac_policy";
         userRepository.saveAndFlush(User.builder().esntlId("USR_RBAC_POLICY").userId(loginId)
                 .userNm("RBAC policy fixture").pswd("unused-test-hash").build());
+        // [GAP-SEC-006] 로그인 정책 쓰기는 보호 계정 가드를 지나며 그 가드는 예약 그룹 ROLE_ADMIN 행으로 직렬화한다.
+        //   Flyway 로 만든 DB 에는 늘 있는 행이지만 이 H2 스키마는 엔티티로 만들어 비어 있다 — 운영과 같게 둔다.
+        //   대상(USR_RBAC_POLICY)은 그룹이 없어 보호 계정이 아니므로 정책 권한만으로 통과한다. 이 DB 에는 권한관리자가
+        //   없어 마지막 관리자 보호(앞뒤 관리자 수 비교)도 0 → 0 으로 걸리지 않는다.
+        authorityRepository.saveAndFlush(nuri.business.domain.auth.Authority.create("ROLE_ADMIN", "관리자", null, null));
         String path = "/api/v1/admin/system/login-policies/" + loginId;
 
         mockMvc.perform(post(path).with(user(explicit(List.of("POLICY_OPERATORS"), List.of("LOGIN_POL_CREATE"))))

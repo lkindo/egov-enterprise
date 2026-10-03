@@ -26,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class AuthorizationAdministrationService {
+public class AuthorizationAdministrationService implements nuri.business.service.login.ProtectedAccountChangeGuard {
     private final JdbcTemplate jdbc;
     private static final Set<String> RESERVED = Set.of("ROLE_ADMIN", "ROLE_SYSTEM", "ROLE_USER", "ROLE_ANONYMOUS");
     private static final Set<String> PROTECTED_PERMISSIONS = Set.of("AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD");
@@ -773,6 +773,7 @@ public class AuthorizationAdministrationService {
      * Inactive or locked targets retain protection: their grants, not ability to log in, classify them.
      */
     @Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    @Override
     public void authorizeProtectedAccountChange(String esntlId) {
         lockAdministration();
         boolean protectedAccount = readMemberships(esntlId).groups().stream()
@@ -793,6 +794,12 @@ public class AuthorizationAdministrationService {
         return "OPERATION".equals(grant.type()) && SENSITIVE_ADMINISTRATION_PERMISSIONS.contains(grant.code());
     }
 
+    /**
+     * Active managers are those who can sign in and administer grants now. A login-policy restriction
+     * (lmt_yn='Y', GAP-SEC-006) blocks sign-in exactly like deactivation, so it does not count; IP and
+     * time-window restrictions still allow sign-in under their condition and do.
+     */
+    @Override
     public long managerCount() {
         return Objects.requireNonNull(jdbc.queryForObject("""
                 SELECT count(*) FROM (
@@ -800,12 +807,14 @@ public class AuthorizationAdministrationService {
                   JOIN tb_authrt_user_map m ON m.scrty_dcsn_trgt_id=u.esntl_id
                   JOIN tb_authrt_grnt_map g ON g.authrt_cd=m.authrt_cd AND g.authrt_type_cd='OPERATION'
                   WHERE u.user_stts_cd='P' AND coalesce(u.lck_yn,'N')<>'Y'
+                    AND NOT EXISTS (SELECT 1 FROM tb_login_policy p WHERE p.user_id=u.user_id AND p.lmt_yn='Y')
                   GROUP BY u.esntl_id HAVING bool_or(g.authrt_grnt_cd='AUTHRT_READ')
                     AND bool_or(g.authrt_grnt_cd='AUTHRT_GRANT') AND bool_or(g.authrt_grnt_cd='AUTHRT_ASSIGN')
                 ) managers
                 """,Long.class));
     }
 
+    @Override
     public void protectLastManager(long previous) {
         if (previous>0 && managerCount()==0) invalid("마지막 활성 권한관리자의 기능 권한 또는 그룹을 회수할 수 없습니다.");
     }
