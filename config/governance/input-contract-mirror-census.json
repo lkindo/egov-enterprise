@@ -390,6 +390,16 @@
       "pack": "demo"
     },
     {
+      "entity": "nuri.business.domain.informalsanction.ApprovalTemporaryDraft",
+      "dto": "nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftRequest",
+      "fields": [
+        "taskSeCd",
+        "docTtl",
+        "docCn"
+      ],
+      "pack": "demo"
+    },
+    {
       "entity": "nuri.business.domain.board.Satisfaction",
       "dto": "nuri.business.service.board.dto.SatisfactionDto",
       "fields": [
@@ -928,6 +938,12 @@
       "pack": "demo"
     },
     {
+      "parent": "nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftRequest",
+      "field": "stages",
+      "item": "nuri.business.service.informalsanction.dto.ApprovalStageRequest",
+      "pack": "demo"
+    },
+    {
       "parent": "nuri.business.service.notification.dto.NotificationDispatchRequest",
       "field": "recipients",
       "item": "nuri.business.service.notification.dto.NotificationDispatchRequest$Recipient",
@@ -1449,6 +1465,11 @@
           "groups": []
         }
       ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftRequest",
+      "fields": [],
       "pack": "demo"
     },
     {

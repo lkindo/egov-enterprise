@@ -49,7 +49,10 @@ class ApprovalWorkflowIntegrationTest {
     private static final String FIRST = "WF_FIRST";
     private static final String SECOND = "WF_SECOND";
     private static final String FINAL = "WF_FINAL";
+    /** 임시저장 기안자 — 임시저장은 사용자 행에 FK 로 묶이므로 이 사람만 실제 tb_user_info 행을 둔다(테스트가 넣고 지운다). */
+    private static final String DRAFTER = "WF_DRAFTER";
     @Autowired private InformalSanctionService service;
+    @Autowired private nuri.business.service.informalsanction.ApprovalTemporaryDraftService drafts;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private DataSource dataSource;
     @Autowired private PlatformTransactionManager transactionManager;
@@ -84,6 +87,10 @@ class ApprovalWorkflowIntegrationTest {
             jdbc.update("DELETE FROM tb_ifml_atrz_info WHERE ifml_atrz_sn=?", id);
         }
         ownDocuments.clear();
+        jdbc.update("DELETE FROM tb_ifml_atrz_tmpr_strg_dtl WHERE ifml_atrz_tmpr_strg_sn IN "
+                + "(SELECT ifml_atrz_tmpr_strg_sn FROM tb_ifml_atrz_tmpr_strg WHERE aplcnt_id=?)", DRAFTER);
+        jdbc.update("DELETE FROM tb_ifml_atrz_tmpr_strg WHERE aplcnt_id=?", DRAFTER);
+        jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", DRAFTER);
     }
 
     @Test
@@ -286,6 +293,115 @@ class ApprovalWorkflowIntegrationTest {
         assertThat(service.getPendingApprovalList(FIRST, nuri.business.service.informalsanction.ApprovalListFilter.of(
                 "할인 1000", null, null, null), PageRequest.of(0, 50)).getContent())
                 .extracting(InformalSanctionDto::getIfmlAtrzSn).containsExactly(other);
+    }
+
+    /**
+     * [2026-10-03 D3] 서버 임시저장 왕복. 실제 PostgreSQL 에서 — 같은 결재선을 다시 저장해도 기본 키가 부딪히지 않고(지운
+     * 뒤 넣는다), 결재선만 바뀐 저장도 버전이 오르며, 읽은 버전이 다르면 409 다. 상신은 임시저장을 같은 트랜잭션에서
+     * 소비한다 — 상신 검사가 실패하면 되돌아가 임시저장이 남고, 성공하면 결재선까지 사라진다.
+     */
+    @Test
+    void temporaryDraftRoundTripsAndIsConsumedOnlyBySuccessfulSubmission() {
+        seedDrafter();
+        authenticate(DRAFTER);
+        var line = List.of(stage(ApprovalStageKind.AGREEMENT, FIRST, SECOND), stage(ApprovalStageKind.APPROVAL, FINAL));
+        var saved = drafts.createTemporaryDraft(DRAFTER, draftRequest("쓰다 만 기안", line, null));
+        long sn = saved.temporaryDraftSn();
+        assertThat(saved.version()).isZero();
+        assertThat(saved.approverCount()).isEqualTo(3);
+        assertThat(saved.taskSeNm()).isEqualTo("검토");
+        assertThat(saved.mdfcnDt()).isNotNull();
+
+        var sameLine = drafts.updateTemporaryDraft(DRAFTER, sn, draftRequest("쓰다 만 기안(고침)", line, saved.version()));
+        assertThat(sameLine.version()).as("같은 결재선을 다시 넣어도 기본 키가 부딪히지 않는다").isGreaterThan(saved.version());
+        var lineOnly = drafts.updateTemporaryDraft(DRAFTER, sn,
+                draftRequest("쓰다 만 기안(고침)", List.of(stage(ApprovalStageKind.APPROVAL, FINAL)), sameLine.version()));
+        assertThat(lineOnly.version()).as("결재선만 바뀌어도 버전이 오른다").isGreaterThan(sameLine.version());
+        assertThatThrownBy(() -> drafts.updateTemporaryDraft(DRAFTER, sn, draftRequest("옛 화면", line, saved.version())))
+                .isInstanceOf(BusinessException.class).extracting("errorCode")
+                .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION);
+
+        var opened = drafts.getTemporaryDraft(DRAFTER, sn);
+        assertThat(opened.docTtl()).isEqualTo("쓰다 만 기안(고침)");
+        assertThat(opened.version()).isEqualTo(lineOnly.version());
+        assertThat(opened.stages()).singleElement().satisfies(stage -> {
+            assertThat(stage.kind()).isEqualTo(ApprovalStageKind.APPROVAL);
+            assertThat(stage.approvers()).extracting(a -> a.esntlId(), a -> a.eligible()).containsExactly(
+                    org.assertj.core.groups.Tuple.tuple(FINAL, true));
+        });
+        assertThat(drafts.getTemporaryDrafts(DRAFTER)).extracting(d -> d.temporaryDraftSn()).containsExactly(sn);
+        authenticate(OWNER);
+        assertThatThrownBy(() -> drafts.getTemporaryDraft(OWNER, sn)).isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+
+        authenticate(DRAFTER);
+        var document = InformalSanctionDto.builder().aplcntId(DRAFTER).taskSeCd("WF").reqYmd("20261003")
+                .docTtl("쓰다 만 기안(고침)").docCn("본문").build();
+        int approvals = countApprovals();
+        assertThatThrownBy(() -> drafts.submitWithTemporaryDraft(document,
+                List.of(stage(ApprovalStageKind.APPROVAL, FINAL)), sn, saved.version()))
+                .isInstanceOf(BusinessException.class).extracting("errorCode")
+                .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThatThrownBy(() -> drafts.submitWithTemporaryDraft(document,
+                List.of(stage(ApprovalStageKind.APPROVAL, "WF_NOPERM")), sn, lineOnly.version()))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("결재 권한");
+        assertThat(countApprovals()).isEqualTo(approvals);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_ifml_atrz_tmpr_strg_dtl WHERE ifml_atrz_tmpr_strg_sn=?",
+                Integer.class, sn)).as("상신이 실패하면 임시저장과 결재선이 되살아난다").isEqualTo(1);
+
+        long id = drafts.submitWithTemporaryDraft(document, List.of(stage(ApprovalStageKind.APPROVAL, FINAL)), sn,
+                lineOnly.version());
+        ownDocuments.add(id);
+        assertThat(service.getInformalSanction(id, DRAFTER).getDocTtl()).isEqualTo("쓰다 만 기안(고침)");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_ifml_atrz_tmpr_strg WHERE ifml_atrz_tmpr_strg_sn=?",
+                Integer.class, sn)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_ifml_atrz_tmpr_strg_dtl WHERE ifml_atrz_tmpr_strg_sn=?",
+                Integer.class, sn)).isZero();
+        assertThatThrownBy(() -> drafts.submitWithTemporaryDraft(document, List.of(stage(ApprovalStageKind.APPROVAL, FINAL)),
+                sn, lineOnly.version())).as("같은 임시저장으로 두 번 올리지 않는다").isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThat(drafts.getTemporaryDrafts(DRAFTER)).isEmpty();
+    }
+
+    /** 지운 임시저장은 결재선까지 사라지고, 같은 번호로 다시 지우면 404 다. */
+    @Test
+    void deletingTemporaryDraftRemovesItsLine() {
+        seedDrafter();
+        authenticate(DRAFTER);
+        long sn = drafts.createTemporaryDraft(DRAFTER,
+                draftRequest(null, List.of(stage(ApprovalStageKind.APPROVAL, FIRST, SECOND)), null)).temporaryDraftSn();
+
+        drafts.deleteTemporaryDraft(DRAFTER, sn);
+
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_ifml_atrz_tmpr_strg_dtl WHERE ifml_atrz_tmpr_strg_sn=?",
+                Integer.class, sn)).isZero();
+        assertThatThrownBy(() -> drafts.deleteTemporaryDraft(DRAFTER, sn)).isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+    }
+
+    private void seedDrafter() {
+        jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
+                + "VALUES(?,?,'draft fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))",
+                DRAFTER, DRAFTER.toLowerCase(java.util.Locale.ROOT));
+        // 사용자 저장소는 이 클래스에서 목이다 — 잠금 조회는 실제 행이 있다는 것만 돌려준다(행 잠금 자체는 즐겨찾기 동시성 시험이 본다).
+        when(users.findByEsntlIdForUpdate(DRAFTER)).thenReturn(java.util.Optional.of(
+                User.builder().esntlId(DRAFTER).userId(DRAFTER).userNm(DRAFTER).userSttsCd("P").build()));
+        when(users.findProfilesByEsntlIds(any())).thenAnswer(call -> {
+            List<nuri.business.service.user.dto.UserSearchDto> result = new ArrayList<>();
+            java.util.Collection<String> ids = call.getArgument(0);
+            for (String id : ids) result.add(new nuri.business.service.user.dto.UserSearchDto(id, id, "부서", false));
+            return result;
+        });
+    }
+
+    private static nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftRequest draftRequest(
+            String title, List<ApprovalStageRequest> stages, Integer version) {
+        return nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftRequest.builder()
+                .taskSeCd("WF").docTtl(title).stages(stages).version(version).build();
+    }
+
+    private int countApprovals() {
+        return jdbc.queryForObject("SELECT count(*) FROM tb_ifml_atrz_info WHERE aplcnt_id=?", Integer.class, DRAFTER);
     }
 
     private long createDocument(String title, String requestYmd) {

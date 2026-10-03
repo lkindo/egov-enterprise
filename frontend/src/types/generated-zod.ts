@@ -411,6 +411,55 @@ export const ApproverReplaceRequestSchema = /*#__PURE__*/ (() => z.object({
 export type ApproverReplaceRequest = z.infer<typeof ApproverReplaceRequestSchema>;
 
 // ==========================================================================
+// ApprovalStageRequest Schema
+// ==========================================================================
+export const ApprovalStageRequestSchema = /*#__PURE__*/ (() => z.object({
+  kind: z.enum(["APPROVAL","AGREEMENT"]),
+  approverIds: z.array(z.string().min(0).max(20)).min(1).max(10),
+}))();
+export type ApprovalStageRequest = z.infer<typeof ApprovalStageRequestSchema>;
+
+// ==========================================================================
+// ApprovalTemporaryDraftRequest Schema
+// ==========================================================================
+export const ApprovalTemporaryDraftRequestSchema = /*#__PURE__*/ (() => z.object({
+  taskSeCd: z.string().min(0).max(12).optional(),
+  docTtl: z.string().min(0).max(256).optional(),
+  docCn: z.string().min(0).max(4000).optional(),
+  stages: z.array(z.lazy(() => ApprovalStageRequestSchema)).min(0).max(10).optional(),
+  version: z.number().int().min(0).optional(),
+}))();
+export type ApprovalTemporaryDraftRequest = z.infer<typeof ApprovalTemporaryDraftRequestSchema>;
+
+// ==========================================================================
+// ApiResponseApprovalTemporaryDraftSummaryDto Schema
+// ==========================================================================
+export const ApiResponseApprovalTemporaryDraftSummaryDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => ApprovalTemporaryDraftSummaryDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseApprovalTemporaryDraftSummaryDto = z.infer<typeof ApiResponseApprovalTemporaryDraftSummaryDtoSchema>;
+
+// ==========================================================================
+// ApprovalTemporaryDraftSummaryDto Schema
+// ==========================================================================
+export const ApprovalTemporaryDraftSummaryDtoSchema = /*#__PURE__*/ (() => z.object({
+  temporaryDraftSn: z.number().int().optional(),
+  taskSeCd: z.string().optional(),
+  taskSeNm: z.string().optional(),
+  docTtl: z.string().optional(),
+  approverCount: z.number().int().optional(),
+  version: z.number().int().optional(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+export type ApprovalTemporaryDraftSummaryDto = z.infer<typeof ApprovalTemporaryDraftSummaryDtoSchema>;
+
+// ==========================================================================
 // UserProfileUpdateRequest Schema
 // ==========================================================================
 export const UserProfileUpdateRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -1505,15 +1554,6 @@ export const ApprovalDraftRequestSchema = /*#__PURE__*/ (() => z.object({
   reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional(),
 }))();
 export type ApprovalDraftRequest = z.infer<typeof ApprovalDraftRequestSchema>;
-
-// ==========================================================================
-// ApprovalStageRequest Schema
-// ==========================================================================
-export const ApprovalStageRequestSchema = /*#__PURE__*/ (() => z.object({
-  kind: z.enum(["APPROVAL","AGREEMENT"]),
-  approverIds: z.array(z.string().min(0).max(20)).min(1).max(10),
-}))();
-export type ApprovalStageRequest = z.infer<typeof ApprovalStageRequestSchema>;
 
 // ==========================================================================
 // ApprovalSupplementRequest Schema
@@ -3226,6 +3266,58 @@ export const CurrentUserResponseSchema = /*#__PURE__*/ (() => z.object({
 export type CurrentUserResponse = z.infer<typeof CurrentUserResponseSchema>;
 
 // ==========================================================================
+// ApiResponseListApprovalTemporaryDraftSummaryDto Schema
+// ==========================================================================
+export const ApiResponseListApprovalTemporaryDraftSummaryDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => ApprovalTemporaryDraftSummaryDtoSchema)).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseListApprovalTemporaryDraftSummaryDto = z.infer<typeof ApiResponseListApprovalTemporaryDraftSummaryDtoSchema>;
+
+// ==========================================================================
+// ApiResponseApprovalTemporaryDraftDto Schema
+// ==========================================================================
+export const ApiResponseApprovalTemporaryDraftDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => ApprovalTemporaryDraftDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseApprovalTemporaryDraftDto = z.infer<typeof ApiResponseApprovalTemporaryDraftDtoSchema>;
+
+// ==========================================================================
+// ApprovalLineStageDto Schema
+// ==========================================================================
+export const ApprovalLineStageDtoSchema = /*#__PURE__*/ (() => z.object({
+  kind: z.enum(["APPROVAL","AGREEMENT"]).optional(),
+  approvers: z.array(z.lazy(() => ApproverProfileDtoSchema)).optional(),
+}))();
+export type ApprovalLineStageDto = z.infer<typeof ApprovalLineStageDtoSchema>;
+
+// ==========================================================================
+// ApprovalTemporaryDraftDto Schema
+// ==========================================================================
+export const ApprovalTemporaryDraftDtoSchema = /*#__PURE__*/ (() => z.object({
+  temporaryDraftSn: z.number().int().optional(),
+  taskSeCd: z.string().optional(),
+  taskSeNm: z.string().optional(),
+  docTtl: z.string().optional(),
+  docCn: z.string().optional(),
+  stages: z.array(z.lazy(() => ApprovalLineStageDtoSchema)).optional(),
+  version: z.number().int().optional(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+export type ApprovalTemporaryDraftDto = z.infer<typeof ApprovalTemporaryDraftDtoSchema>;
+
+// ==========================================================================
 // ApiResponseListCommonCodeDto Schema
 // ==========================================================================
 export const ApiResponseListCommonCodeDtoSchema = /*#__PURE__*/ (() => z.object({
@@ -3264,15 +3356,6 @@ export const ApiResponseApprovalSuggestionsDtoSchema = /*#__PURE__*/ (() => z.ob
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 }))();
 export type ApiResponseApprovalSuggestionsDto = z.infer<typeof ApiResponseApprovalSuggestionsDtoSchema>;
-
-// ==========================================================================
-// ApprovalLineStageDto Schema
-// ==========================================================================
-export const ApprovalLineStageDtoSchema = /*#__PURE__*/ (() => z.object({
-  kind: z.enum(["APPROVAL","AGREEMENT"]).optional(),
-  approvers: z.array(z.lazy(() => ApproverProfileDtoSchema)).optional(),
-}))();
-export type ApprovalLineStageDto = z.infer<typeof ApprovalLineStageDtoSchema>;
 
 // ==========================================================================
 // ApprovalLineSuggestionDto Schema
@@ -6111,6 +6194,72 @@ export const ApproverReplaceRequestResponseSchema = /*#__PURE__*/ (() => z.objec
   version: z.number().int().min(0),
 }))();
 
+export const ApprovalStageRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  kind: z.enum(["APPROVAL","AGREEMENT"]),
+  approverIds: z.array(z.string().min(0).max(20)).min(1).max(10),
+}))();
+
+export const ApprovalStageRequestResponseSchema = /*#__PURE__*/ (() => z.object({
+  kind: z.enum(["APPROVAL","AGREEMENT"]),
+  approverIds: z.array(z.string().min(0).max(20).optional().nullable()).min(1).max(10),
+}))();
+
+export const ApprovalTemporaryDraftRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  taskSeCd: z.string().min(0).max(12).optional(),
+  docTtl: z.string().min(0).max(256).optional(),
+  docCn: z.string().min(0).max(4000).optional(),
+  stages: z.array(z.lazy(() => ApprovalStageRequestRequestSchema.strict())).min(0).max(10).optional(),
+  version: z.number().int().min(0).optional(),
+}))();
+
+export const ApprovalTemporaryDraftRequestResponseSchema = /*#__PURE__*/ (() => z.object({
+  taskSeCd: z.string().min(0).max(12).optional().nullable(),
+  docTtl: z.string().min(0).max(256).optional().nullable(),
+  docCn: z.string().min(0).max(4000).optional().nullable(),
+  stages: z.array(z.lazy(() => ApprovalStageRequestResponseSchema)).min(0).max(10).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
+}))();
+
+export const ApiResponseApprovalTemporaryDraftSummaryDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => ApprovalTemporaryDraftSummaryDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseApprovalTemporaryDraftSummaryDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => ApprovalTemporaryDraftSummaryDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const ApprovalTemporaryDraftSummaryDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  temporaryDraftSn: z.number().int().optional(),
+  taskSeCd: z.string().optional(),
+  taskSeNm: z.string().optional(),
+  docTtl: z.string().optional(),
+  approverCount: z.number().int().optional(),
+  version: z.number().int().optional(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+
+export const ApprovalTemporaryDraftSummaryDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  temporaryDraftSn: z.number().int().optional().nullable(),
+  taskSeCd: z.string().optional().nullable(),
+  taskSeNm: z.string().optional().nullable(),
+  docTtl: z.string().optional().nullable(),
+  approverCount: z.number().int().optional().nullable(),
+  version: z.number().int().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+}))();
+
 export const UserProfileUpdateRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   userNm: z.string().min(1).regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   emplNo: z.string().min(0).max(20).optional(),
@@ -7630,16 +7779,6 @@ export const ApprovalDraftRequestResponseSchema = /*#__PURE__*/ (() => z.object(
   docCn: z.string().min(0).max(4000).optional().nullable(),
   stages: z.array(z.lazy(() => ApprovalStageRequestResponseSchema)).min(1).max(10).optional().nullable(),
   reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional().nullable(),
-}))();
-
-export const ApprovalStageRequestRequestSchema = /*#__PURE__*/ (() => z.object({
-  kind: z.enum(["APPROVAL","AGREEMENT"]),
-  approverIds: z.array(z.string().min(0).max(20)).min(1).max(10),
-}))();
-
-export const ApprovalStageRequestResponseSchema = /*#__PURE__*/ (() => z.object({
-  kind: z.enum(["APPROVAL","AGREEMENT"]),
-  approverIds: z.array(z.string().min(0).max(20).optional().nullable()).min(1).max(10),
 }))();
 
 export const ApprovalSupplementRequestRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -10032,6 +10171,78 @@ export const CurrentUserResponseResponseSchema = /*#__PURE__*/ (() => z.object({
   passwordChangeRequired: z.boolean().optional().nullable(),
 }))();
 
+export const ApiResponseListApprovalTemporaryDraftSummaryDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => ApprovalTemporaryDraftSummaryDtoRequestSchema.strict())).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseListApprovalTemporaryDraftSummaryDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => ApprovalTemporaryDraftSummaryDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const ApiResponseApprovalTemporaryDraftDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => ApprovalTemporaryDraftDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseApprovalTemporaryDraftDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => ApprovalTemporaryDraftDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const ApprovalLineStageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  kind: z.enum(["APPROVAL","AGREEMENT"]).optional(),
+  approvers: z.array(z.lazy(() => ApproverProfileDtoRequestSchema.strict())).optional(),
+}))();
+
+export const ApprovalLineStageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  kind: z.enum(["APPROVAL","AGREEMENT"]).optional().nullable(),
+  approvers: z.array(z.lazy(() => ApproverProfileDtoResponseSchema)).optional().nullable(),
+}))();
+
+export const ApprovalTemporaryDraftDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  temporaryDraftSn: z.number().int().optional(),
+  taskSeCd: z.string().optional(),
+  taskSeNm: z.string().optional(),
+  docTtl: z.string().optional(),
+  docCn: z.string().optional(),
+  stages: z.array(z.lazy(() => ApprovalLineStageDtoRequestSchema.strict())).optional(),
+  version: z.number().int().optional(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+
+export const ApprovalTemporaryDraftDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  temporaryDraftSn: z.number().int().optional().nullable(),
+  taskSeCd: z.string().optional().nullable(),
+  taskSeNm: z.string().optional().nullable(),
+  docTtl: z.string().optional().nullable(),
+  docCn: z.string().optional().nullable(),
+  stages: z.array(z.lazy(() => ApprovalLineStageDtoResponseSchema)).optional().nullable(),
+  version: z.number().int().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+}))();
+
 export const ApiResponseListCommonCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
@@ -10086,16 +10297,6 @@ export const ApiResponseApprovalSuggestionsDtoResponseSchema = /*#__PURE__*/ (()
   data: z.lazy(() => ApprovalSuggestionsDtoResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
-}))();
-
-export const ApprovalLineStageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  kind: z.enum(["APPROVAL","AGREEMENT"]).optional(),
-  approvers: z.array(z.lazy(() => ApproverProfileDtoRequestSchema.strict())).optional(),
-}))();
-
-export const ApprovalLineStageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  kind: z.enum(["APPROVAL","AGREEMENT"]).optional().nullable(),
-  approvers: z.array(z.lazy(() => ApproverProfileDtoResponseSchema)).optional().nullable(),
 }))();
 
 export const ApprovalLineSuggestionDtoRequestSchema = /*#__PURE__*/ (() => z.object({

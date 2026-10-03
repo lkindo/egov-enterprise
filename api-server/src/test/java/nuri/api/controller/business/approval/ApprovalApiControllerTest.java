@@ -25,6 +25,9 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
     @MockitoBean
     private nuri.business.service.informalsanction.ApprovalLineAssistService lineAssistService;
 
+    @MockitoBean
+    private nuri.business.service.informalsanction.ApprovalTemporaryDraftService temporaryDraftService;
+
     @Test
     @WithMockCustomUser
     @DisplayName("승인은 C 상태 코드로 요청할 수 있다")
@@ -351,6 +354,142 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
         verify(approvalService).replaceApprover(7L, "A", "B", 3);
         verify(approvalService).requestSupplement(7L, "금액을 적어 주세요", 3);
         verify(approvalService).answerSupplement(7L, "45만 원", "고친 본문", 4);
+    }
+
+    /**
+     * [2026-10-03 D3] 임시저장은 인증 주체 본인의 것만 다룬다 — 경로의 번호와 본문은 그대로 넘기되 기안자는 언제나
+     * 로그인한 사람의 esntlId 다.
+     */
+    @Test
+    @WithMockCustomUser(username = "drafter", esntlId = "DRAFTER_ESNTL")
+    @DisplayName("임시저장 목록·열기·저장·고치기·지우기는 현재 사용자의 esntlId 로 부른다")
+    void temporaryDraftEndpointsUseCurrentUser() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/approvals/temporary-drafts"))
+                .andExpect(status().isOk());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/approvals/temporary-drafts/5"))
+                .andExpect(status().isOk());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals/temporary-drafts")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"docTtl":"쓰다 만 기안","stages":[{"kind":"AGREEMENT","approverIds":["A","B"]}]}
+                                """))
+                .andExpect(status().isOk());
+        mockMvc.perform(put("/api/v1/approvals/temporary-drafts/5").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"taskSeCd":"01","docCn":"이어서 쓴 본문","version":2}
+                                """))
+                .andExpect(status().isOk());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/approvals/temporary-drafts/5")
+                        .with(csrf()))
+                .andExpect(status().isOk());
+
+        verify(temporaryDraftService).getTemporaryDrafts("DRAFTER_ESNTL");
+        verify(temporaryDraftService).getTemporaryDraft("DRAFTER_ESNTL", 5L);
+        var created = org.mockito.ArgumentCaptor.forClass(
+                nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftRequest.class);
+        verify(temporaryDraftService).createTemporaryDraft(org.mockito.ArgumentMatchers.eq("DRAFTER_ESNTL"), created.capture());
+        org.assertj.core.api.Assertions.assertThat(created.getValue().getDocTtl()).isEqualTo("쓰다 만 기안");
+        org.assertj.core.api.Assertions.assertThat(created.getValue().getStages()).singleElement()
+                .satisfies(stage -> org.assertj.core.api.Assertions.assertThat(stage.approverIds()).containsExactly("A", "B"));
+        var updated = org.mockito.ArgumentCaptor.forClass(
+                nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftRequest.class);
+        verify(temporaryDraftService).updateTemporaryDraft(org.mockito.ArgumentMatchers.eq("DRAFTER_ESNTL"),
+                org.mockito.ArgumentMatchers.eq(5L), updated.capture());
+        org.assertj.core.api.Assertions.assertThat(updated.getValue().getVersion()).isEqualTo(2);
+        org.assertj.core.api.Assertions.assertThat(updated.getValue().getDocCn()).isEqualTo("이어서 쓴 본문");
+        verify(temporaryDraftService).deleteTemporaryDraft("DRAFTER_ESNTL", 5L);
+        verifyNoInteractions(approvalService);
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("임시저장 요청도 길이·결재선 형식·버전 하한을 서비스 전에 400 으로 막는다(결재자가 없는 단계 포함)")
+    void rejectsMalformedTemporaryDraftBeforeService() throws Exception {
+        String[][] cases = {
+                {"POST", "/api/v1/approvals/temporary-drafts", "{\"taskSeCd\":\"1234567890123\"}"},
+                {"POST", "/api/v1/approvals/temporary-drafts", "{\"docTtl\":\"" + "가".repeat(257) + "\"}"},
+                {"POST", "/api/v1/approvals/temporary-drafts", "{\"docCn\":\"" + "가".repeat(4001) + "\"}"},
+                {"POST", "/api/v1/approvals/temporary-drafts", "{\"stages\":[{\"kind\":\"APPROVAL\",\"approverIds\":[]}]}"},
+                {"POST", "/api/v1/approvals/temporary-drafts", "{\"stages\":[null]}"},
+                {"PUT", "/api/v1/approvals/temporary-drafts/5", "{\"docTtl\":\"제목\",\"version\":-1}"},
+        };
+        for (String[] c : cases) {
+            var request = "PUT".equals(c[0]) ? put(c[1]) : org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(c[1]);
+            mockMvc.perform(request.with(csrf()).contentType(MediaType.APPLICATION_JSON).content(c[2]))
+                    .andExpect(status().isBadRequest());
+        }
+        verifyNoInteractions(temporaryDraftService);
+    }
+
+    /**
+     * [2026-10-03 D3] 임시저장을 이어 써서 올리는 상신은 임시저장 서비스가 같은 트랜잭션에서 소비한다. 참조가 하나만 와도
+     * 조용히 무시하지 않고 그 서비스로 보낸다 — 둘 다 있는지는 서비스가 400 으로 판정한다.
+     */
+    @Test
+    @WithMockCustomUser(username = "drafter", esntlId = "DRAFTER_ESNTL")
+    @DisplayName("상신에 임시저장 번호·버전이 오면 임시저장을 소비하는 상신으로 보내고 일반 상신은 부르지 않는다")
+    void createApprovalWithTemporaryDraftDelegatesToConsumingSubmit() throws Exception {
+        org.mockito.BDDMockito.given(temporaryDraftService.submitWithTemporaryDraft(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+                .willReturn(42L);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals")
+                        .queryParam("temporaryDraftSn", "7").queryParam("temporaryDraftVersion", "3")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"taskSeCd\":\"01\",\"aprvrId\":\"BOSS_ESNTL\"}"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.data").value(42));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals")
+                        .queryParam("temporaryDraftSn", "8")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"taskSeCd\":\"01\",\"aprvrId\":\"BOSS_ESNTL\"}"))
+                .andExpect(status().isOk());
+
+        var dto = org.mockito.ArgumentCaptor.forClass(nuri.business.service.informalsanction.dto.InformalSanctionDto.class);
+        verify(temporaryDraftService).submitWithTemporaryDraft(dto.capture(), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.eq(7L), org.mockito.ArgumentMatchers.eq(3));
+        org.assertj.core.api.Assertions.assertThat(dto.getValue().getAplcntId()).isEqualTo("DRAFTER_ESNTL");
+        verify(temporaryDraftService).submitWithTemporaryDraft(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.eq(8L), org.mockito.ArgumentMatchers.isNull());
+        verifyNoInteractions(approvalService);
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("임시저장 번호가 0 이하이거나 버전이 음수면 400 — 값 검사는 임시저장 서비스가 하고 결재는 올리지 않는다")
+    void rejectsInvalidTemporaryDraftReference() throws Exception {
+        // 값 검사는 임시저장 서비스가 한다(서비스 단위 테스트가 0·음수를 400 으로 고정한다). 컨트롤러는 그대로 넘긴다 —
+        //   파라미터에 제약 어노테이션을 달면 본문 필드 오류가 사라지기 때문이다(아래 테스트).
+        org.mockito.Mockito.when(temporaryDraftService.submitWithTemporaryDraft(
+                        org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                        org.mockito.ArgumentMatchers.eq(0L), org.mockito.ArgumentMatchers.eq(1)))
+                .thenThrow(new nuri.foundation.core.exception.BusinessException(
+                        nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE, "임시저장 번호와 버전이 올바르지 않습니다."));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals")
+                        .queryParam("temporaryDraftSn", "0").queryParam("temporaryDraftVersion", "1")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"taskSeCd\":\"01\",\"aprvrId\":\"BOSS\"}"))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(approvalService);
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("상신 본문의 검증 오류는 임시저장 참조가 있든 없든 필드별 오류로 온다 — 화면이 해당 칸에 오류를 붙인다")
+    void createApprovalBodyErrorsCarryFieldErrors() throws Exception {
+        for (boolean withDraft : new boolean[]{false, true}) {
+            var request = org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals")
+                    .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"taskSeCd\":\"\",\"docTtl\":\"제목\"}");
+            if (withDraft) request = request.queryParam("temporaryDraftSn", "7").queryParam("temporaryDraftVersion", "2");
+            mockMvc.perform(request)
+                    .andExpect(status().isBadRequest())
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.errors[*].field",
+                            org.hamcrest.Matchers.hasItem("taskSeCd")))
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.errors[*].field",
+                            org.hamcrest.Matchers.hasItem("approvalLinePresent")));
+        }
+        verifyNoInteractions(approvalService, temporaryDraftService);
     }
 
     @Test

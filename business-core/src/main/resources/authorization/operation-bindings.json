@@ -3105,5 +3105,40 @@
     "handler": "nuri.api.controller.business.approval.ApprovalApiController#answerSupplement",
     "access": "PERMISSION",
     "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/approvals/temporary-drafts",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#getApprovalTemporaryDrafts",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/approvals/temporary-drafts/{temporaryDraftSn}",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#getApprovalTemporaryDraft",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/approvals/temporary-drafts",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#createApprovalTemporaryDraft",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/approvals/temporary-drafts/{temporaryDraftSn}",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#updateApprovalTemporaryDraft",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/approvals/temporary-drafts/{temporaryDraftSn}",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#deleteApprovalTemporaryDraft",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
   }
 ]

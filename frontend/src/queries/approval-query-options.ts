@@ -8,6 +8,8 @@ import {
   type ApprovalDraftRequest,
   type ApprovalResubmissionRequest,
   type ApprovalSupplementAnswer,
+  type ApprovalTemporaryDraftReference,
+  type ApprovalTemporaryDraftRequest,
   type SanctionStatusCode,
 } from '@/services/business/user/approval/ApprovalUserService';
 
@@ -51,7 +53,26 @@ export const approvalKeys = {
   suggestions: (taskSeCd: string) => [...approvalKeys.all, 'line-suggestions', taskSeCd] as const,
   details: () => [...approvalKeys.all, 'detail'] as const,
   detail: (id: number) => [...approvalKeys.details(), id] as const,
+  /**
+   * 기안 임시저장(D3). 'detail'·'list' 접두 밖에 둔다 — 임시저장 번호는 문서 번호와 다른 순번이라 같은 접두에 두면
+   * 임시저장 5번과 문서 5번이 한 캐시를 쓰고, 목록 무효화가 임시저장까지 건드린다.
+   */
+  temporaryDrafts: () => [...approvalKeys.all, 'temporary-drafts'] as const,
+  temporaryDraftList: () => [...approvalKeys.temporaryDrafts(), 'list'] as const,
+  temporaryDraft: (temporaryDraftSn: number) => [...approvalKeys.temporaryDrafts(), 'detail', temporaryDraftSn] as const,
 };
+
+/** 상신할 내용과, 이어 쓴 임시저장이 있으면 그 번호·버전. */
+export interface ApprovalCreateInput {
+  request: ApprovalDraftRequest;
+  temporaryDraft?: ApprovalTemporaryDraftReference;
+}
+
+/** 임시저장. 번호가 없으면 새로 만들고, 있으면 그 버전으로 바꾼다. */
+export interface ApprovalTemporarySaveInput {
+  temporaryDraftSn?: number;
+  request: ApprovalTemporaryDraftRequest;
+}
 
 function listByTab(tab: ApprovalTab, params: ApprovalListParams) {
   switch (tab) {
@@ -88,6 +109,22 @@ export const approvalQueryOptions = {
     queryFn: () => approvalUserService.getLineSuggestions(taskSeCd || undefined),
     staleTime: 60 * 1000,
   }),
+  /**
+   * 내 임시저장 목록. 다른 화면·기기에서 저장한 것이 보이도록 창을 열 때마다 다시 읽는다(최대 20건이라 가볍다).
+   * 실패는 기안 창 안에서 안내하고 다시 시도한다 — 목록 하나 때문에 기안 창 전체를 오류 화면으로 바꾸지 않는다.
+   */
+  temporaryDrafts: () => queryOptions({
+    queryKey: approvalKeys.temporaryDraftList(),
+    queryFn: () => approvalUserService.listTemporaryDrafts(),
+    staleTime: 0,
+    throwOnError: false,
+  }),
+  /** 이어 쓰기 상세. 방금 다른 곳에서 고친 내용을 옛 캐시로 덮어 열지 않도록 늘 다시 읽는다. */
+  temporaryDraft: (temporaryDraftSn: number) => queryOptions({
+    queryKey: approvalKeys.temporaryDraft(temporaryDraftSn),
+    queryFn: () => approvalUserService.getTemporaryDraft(temporaryDraftSn),
+    staleTime: 0,
+  }),
 };
 
 /** 처리 이력·결재선·차례가 바뀌는 쓰기 뒤에는 그 문서와 모든 목록을 다시 읽는다. */
@@ -104,13 +141,35 @@ export const approvalMutationOptions = {
       await queryClient.invalidateQueries({ queryKey: approvalKeys.detail(ifmlAtrzSn) });
     },
   }),
-  /** 기안 상신. 성공하면 목록 factory key 만 무효화한다(업무 구분 캐시는 그대로). */
+  /**
+   * 기안 상신. 성공하면 목록 factory key 만 무효화한다(업무 구분 캐시는 그대로).
+   * [2026-10-03 D3] 이어 쓴 임시저장은 서버가 상신과 함께 지우므로 임시저장 목록도 다시 읽는다.
+   */
   create: (queryClient: QueryClient) => mutationOptions({
-    mutationFn: async (request: ApprovalDraftRequest) => {
-      const ifmlAtrzSn = await approvalUserService.createDraft(request);
+    mutationFn: async ({ request, temporaryDraft }: ApprovalCreateInput) => {
+      const ifmlAtrzSn = temporaryDraft
+        ? await approvalUserService.createDraft(request, temporaryDraft)
+        : await approvalUserService.createDraft(request);
       await queryClient.invalidateQueries({ queryKey: approvalKeys.lists() });
       await queryClient.invalidateQueries({ queryKey: [...approvalKeys.all, 'line-suggestions'] });
+      await queryClient.invalidateQueries({ queryKey: approvalKeys.temporaryDrafts() });
       return ifmlAtrzSn;
+    },
+  }),
+  /** 임시저장은 결재 목록·결재선 제안에 섞이지 않는다 — 임시저장 key 만 다시 읽는다. */
+  saveTemporary: (queryClient: QueryClient) => mutationOptions({
+    mutationFn: async ({ temporaryDraftSn, request }: ApprovalTemporarySaveInput) => {
+      const saved = temporaryDraftSn === undefined
+        ? await approvalUserService.createTemporaryDraft(request)
+        : await approvalUserService.updateTemporaryDraft(temporaryDraftSn, request);
+      await queryClient.invalidateQueries({ queryKey: approvalKeys.temporaryDrafts() });
+      return saved;
+    },
+  }),
+  deleteTemporary: (queryClient: QueryClient) => mutationOptions({
+    mutationFn: async (temporaryDraftSn: number) => {
+      await approvalUserService.deleteTemporaryDraft(temporaryDraftSn);
+      await queryClient.invalidateQueries({ queryKey: approvalKeys.temporaryDrafts() });
     },
   }),
   /** 회수 후에도 같은 문서의 상세와 차수 이력을 최신화한다. */

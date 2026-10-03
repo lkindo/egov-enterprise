@@ -6,6 +6,7 @@ import {
   ApprovalResubmissionRequestSchema,
   ApprovalSupplementAnswerRequestSchema,
   ApprovalSupplementRequestSchema,
+  ApprovalTemporaryDraftRequestSchema,
   ApproverCheckRequestSchema,
   ApproverReplaceRequestSchema,
 } from '@/types/generated-zod';
@@ -27,6 +28,11 @@ import {
   replaceApproverOperation,
   requestSupplementOperation,
   answerSupplementOperation,
+  getApprovalTemporaryDraftsOperation,
+  getApprovalTemporaryDraftOperation,
+  createApprovalTemporaryDraftOperation,
+  updateApprovalTemporaryDraftOperation,
+  deleteApprovalTemporaryDraftOperation,
 } from '@/types/generated-operations';
 
 /** 기안 시 고르는 업무 구분 — 서버가 COM075 에서 내려주는 공통코드 행. */
@@ -39,6 +45,23 @@ export type ApprovalStageRequest = components['schemas']['ApprovalStageRequest']
 export type ApprovalSuggestions = components['schemas']['ApprovalSuggestionsDto'];
 export type ApproverProfile = components['schemas']['ApproverProfileDto'];
 export type ApprovalSupplementAnswer = components['schemas']['ApprovalSupplementAnswerRequest'];
+/**
+ * 기안 임시저장(2026-10-03 D3). 서버에 기안자 본인 것만 20건까지 둔다 — 브라우저 저장소에는 본문을 두지 않는다.
+ * 요청은 미완성 기안을 받으므로 업무 구분·제목이 비어도 되지만, 결재자가 없는 단계는 받지 않는다.
+ */
+export type ApprovalTemporaryDraftRequest = components['schemas']['ApprovalTemporaryDraftRequest'];
+/** 목록 한 줄 — 본문과 결재선은 싣지 않는다. '이어 쓰기' 가 상세를 따로 읽는다. */
+export type ApprovalTemporaryDraftSummary = components['schemas']['ApprovalTemporaryDraftSummaryDto'];
+/** 이어 쓰기 상세. 결재선 사람마다 지금 자격(사전 확인과 같은 판정)이 함께 온다. */
+export type ApprovalTemporaryDraft = components['schemas']['ApprovalTemporaryDraftDto'];
+/** 상신할 때 함께 보내는 임시저장 — 서버가 상신과 같은 트랜잭션에서 번호·기안자·버전이 맞는 행을 지운다. */
+export interface ApprovalTemporaryDraftReference {
+  temporaryDraftSn: number;
+  version: number;
+}
+/** 저장·이어 쓰기 응답. 번호와 버전이 있는 것을 확인한 뒤에만 돌려준다 — 없으면 다음 저장이 남의 변경을 덮는다. */
+export type SavedApprovalTemporaryDraft = ApprovalTemporaryDraftSummary & ApprovalTemporaryDraftReference;
+export type ResumedApprovalTemporaryDraft = ApprovalTemporaryDraft & ApprovalTemporaryDraftReference;
 
 /**
  * 결재함(사용자) 서비스.
@@ -156,10 +179,15 @@ class ApprovalUserService extends UserService {
    *
    * [2026-09-05] 종전에는 이 도메인에 상신 경로가 UI 어디에도 없었다 — `IsmAdminService.createInfrmlSanctn`
    * 은 호출부 0건이었고, 기안 화면은 목업이었다. 결재함의 '새 결재 기안' 다이얼로그가 이 메서드를 부른다.
+   *
+   * [2026-10-03 D3] 임시저장을 이어 써서 올리면 그 번호와 읽은 버전을 쿼리로 함께 보낸다. 서버는 상신 앞에서 그 임시저장을
+   * 지우고, 이미 상신되었거나 다른 곳에서 바뀌었으면 409(C013)로 거부한다 — 본문에는 싣지 않는다(재상신 요청에 새지 않게).
    */
-  async createDraft(request: ApprovalDraftRequest): Promise<number> {
+  async createDraft(request: ApprovalDraftRequest, temporaryDraft?: ApprovalTemporaryDraftReference): Promise<number> {
     const body = ApprovalDraftRequestSchema.parse(request);
-    const response = await this.executeGenerated(createApprovalOperation, { body });
+    const response = await this.executeGenerated(createApprovalOperation, temporaryDraft
+      ? { body, query: { temporaryDraftSn: temporaryDraft.temporaryDraftSn, temporaryDraftVersion: temporaryDraft.version } }
+      : { body });
     if (typeof response !== 'number') {
       throw new Error('결재 상신 응답이 문서 번호 계약과 일치하지 않습니다.');
     }
@@ -256,6 +284,68 @@ class ApprovalUserService extends UserService {
       body: ApprovalSupplementAnswerRequestSchema.parse(answer),
     });
   }
+
+  /** 내 임시저장 목록 — 최근에 고친 순서, 최대 20건. 페이지가 아니라 배열이다(한 번에 다 읽는다). */
+  async listTemporaryDrafts(): Promise<ApprovalTemporaryDraftSummary[]> {
+    const response = await this.executeGenerated(getApprovalTemporaryDraftsOperation, { config: QUIET });
+    if (!Array.isArray(response)) throw new Error('임시저장 목록 응답이 목록 계약과 일치하지 않습니다.');
+    return response;
+  }
+
+  /** '이어 쓰기' — 본문과 결재선, 그리고 결재선 사람마다 지금 자격을 읽는다. */
+  async getTemporaryDraft(temporaryDraftSn: number): Promise<ResumedApprovalTemporaryDraft> {
+    const response = await this.executeGenerated(getApprovalTemporaryDraftOperation, { path: { temporaryDraftSn }, config: QUIET });
+    if (response.temporaryDraftSn !== temporaryDraftSn) throw new Error('임시저장 응답이 요청한 임시저장과 일치하지 않습니다.');
+    requireDraftVersion(response.version);
+    return { ...response, temporaryDraftSn, version: response.version };
+  }
+
+  /** 첫 저장. 저장한 번호와 버전을 돌려준다 — 화면은 그 버전으로 다음 저장·상신을 한다. */
+  async createTemporaryDraft(request: ApprovalTemporaryDraftRequest): Promise<SavedApprovalTemporaryDraft> {
+    const response = await this.executeGenerated(createApprovalTemporaryDraftOperation, {
+      body: ApprovalTemporaryDraftRequestSchema.parse(request),
+      config: QUIET,
+    });
+    return requireSavedTemporaryDraft(response);
+  }
+
+  /** 다시 저장 — 내용과 결재선을 통째로 바꾼다. 요청의 버전이 서버와 다르면 409(C013)다. */
+  async updateTemporaryDraft(temporaryDraftSn: number, request: ApprovalTemporaryDraftRequest): Promise<SavedApprovalTemporaryDraft> {
+    const response = await this.executeGenerated(updateApprovalTemporaryDraftOperation, {
+      path: { temporaryDraftSn },
+      body: ApprovalTemporaryDraftRequestSchema.parse(request),
+      config: QUIET,
+    });
+    if (response.temporaryDraftSn !== temporaryDraftSn) throw new Error('임시저장 응답이 요청한 임시저장과 일치하지 않습니다.');
+    return requireSavedTemporaryDraft(response);
+  }
+
+  /** 임시저장 삭제. 결재선 행은 서버가 함께 지운다. */
+  async deleteTemporaryDraft(temporaryDraftSn: number): Promise<void> {
+    return this.executeGenerated(deleteApprovalTemporaryDraftOperation, { path: { temporaryDraftSn }, config: QUIET });
+  }
+}
+
+/**
+ * 임시저장 요청의 실패는 기안 창이 화면 안에서 알린다(목록은 상태 문구, 저장·이어 쓰기·삭제는 오류 안내). 전역 오류 토스트를
+ * 겹쳐 띄우지 않도록 선언한다(DEC-OPS-184).
+ */
+const QUIET = { suppressErrorToast: true } as const;
+
+/** 버전은 다음 저장·상신의 낙관적 잠금 값이다. 비거나 형식이 틀리면 덮어쓰기를 막을 수 없으므로 받지 않는다. */
+function requireDraftVersion(version: unknown): asserts version is number {
+  if (typeof version !== 'number' || !Number.isInteger(version) || version < 0) {
+    throw new Error('임시저장 버전을 확인할 수 없습니다. 목록을 다시 불러와 주세요.');
+  }
+}
+
+function requireSavedTemporaryDraft(response: ApprovalTemporaryDraftSummary): SavedApprovalTemporaryDraft {
+  const temporaryDraftSn = response.temporaryDraftSn;
+  if (typeof temporaryDraftSn !== 'number' || !Number.isInteger(temporaryDraftSn)) {
+    throw new Error('임시저장 응답이 번호 계약과 일치하지 않습니다.');
+  }
+  requireDraftVersion(response.version);
+  return { ...response, temporaryDraftSn, version: response.version };
 }
 
 export const approvalUserService = new ApprovalUserService();

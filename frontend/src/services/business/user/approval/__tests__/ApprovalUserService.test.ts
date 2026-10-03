@@ -114,4 +114,62 @@ describe('ApprovalUserService generated contract', () => {
     client.requestRaw.mockResolvedValue(success({ lines: [] }));
     await expect(approvalUserService.getLineSuggestions('01')).rejects.toThrow('결재선 제안 응답이 계약과 일치하지 않습니다.');
   });
+
+  /**
+   * [2026-10-03 D3] 이어 쓴 임시저장은 상신 본문이 아니라 쿼리로 보낸다 — 본문에 실으면 재상신 요청 스키마로 샌다.
+   * 서버는 이 번호·버전이 맞는 행을 상신과 같은 트랜잭션에서 지운다.
+   */
+  it('임시저장을 이어 써서 상신하면 번호와 버전을 쿼리로 함께 보내고, 그렇지 않으면 보내지 않는다 (D3)', async () => {
+    const request = { taskSeCd: '01', docTtl: '출장', stages: [{ kind: 'APPROVAL' as const, approverIds: ['BOSS'] }] };
+    client.requestRaw.mockResolvedValueOnce(success(91));
+    await expect(approvalUserService.createDraft(request, { temporaryDraftSn: 7, version: 3 })).resolves.toBe(91);
+    expect(client.requestRaw).toHaveBeenLastCalledWith({
+      url: 'approvals', method: 'post', data: request, params: { temporaryDraftSn: 7, temporaryDraftVersion: 3 },
+    });
+    client.requestRaw.mockResolvedValueOnce(success(92));
+    await expect(approvalUserService.createDraft(request)).resolves.toBe(92);
+    expect(client.requestRaw.mock.lastCall?.[0].params).toEqual({});
+  });
+
+  it('임시저장 목록·상세·저장·삭제는 생성 계약의 경로로 보내고, 실패는 기안 창이 알리므로 전역 오류 토스트를 끄며, 결재자가 없는 단계를 전송 전에 거부한다 (D3)', async () => {
+    const QUIET = { suppressErrorToast: true };
+    const summary = { temporaryDraftSn: 7, taskSeCd: '01', taskSeNm: '일반', docTtl: '출장', approverCount: 1, version: 0, mdfcnDt: '2026-10-03T14:05:12' };
+    client.getRaw.mockResolvedValueOnce(success([summary]));
+    await expect(approvalUserService.listTemporaryDrafts()).resolves.toEqual([summary]);
+    expect(client.getRaw).toHaveBeenLastCalledWith('approvals/temporary-drafts', QUIET);
+
+    client.getRaw.mockResolvedValueOnce(success({ ...summary, docCn: '본문', stages: [{ kind: 'APPROVAL', approvers: [{ esntlId: 'BOSS', eligible: true }] }] }));
+    await expect(approvalUserService.getTemporaryDraft(7)).resolves.toMatchObject({ temporaryDraftSn: 7, version: 0, docCn: '본문' });
+    expect(client.getRaw).toHaveBeenLastCalledWith('approvals/temporary-drafts/7', QUIET);
+
+    const request = { taskSeCd: '01', docTtl: '출장', docCn: '', stages: [{ kind: 'APPROVAL' as const, approverIds: ['BOSS'] }] };
+    client.requestRaw.mockResolvedValueOnce(success(summary));
+    await expect(approvalUserService.createTemporaryDraft(request)).resolves.toMatchObject({ temporaryDraftSn: 7, version: 0 });
+    expect(client.requestRaw).toHaveBeenLastCalledWith({ url: 'approvals/temporary-drafts', method: 'post', data: request, ...QUIET });
+
+    client.requestRaw.mockResolvedValueOnce(success({ ...summary, version: 1 }));
+    await expect(approvalUserService.updateTemporaryDraft(7, { ...request, version: 0 })).resolves.toMatchObject({ version: 1 });
+    expect(client.requestRaw).toHaveBeenLastCalledWith({ url: 'approvals/temporary-drafts/7', method: 'put', data: { ...request, version: 0 }, ...QUIET });
+
+    client.requestRaw.mockResolvedValueOnce(success(null));
+    await approvalUserService.deleteTemporaryDraft(7);
+    expect(client.requestRaw).toHaveBeenLastCalledWith({ url: 'approvals/temporary-drafts/7', method: 'delete', ...QUIET });
+
+    // 결재자가 없는 단계는 서버도 받지 않는다 — 화면이 빼고 보내야 하며, 빼지 않으면 전송 전에 막힌다.
+    client.requestRaw.mockClear();
+    await expect(approvalUserService.createTemporaryDraft({ docTtl: '쓰는 중', stages: [{ kind: 'APPROVAL', approverIds: [] }] })).rejects.toThrow();
+    expect(client.requestRaw).not.toHaveBeenCalled();
+  });
+
+  it('임시저장 응답에 버전이 없거나 다른 임시저장이 오면 받지 않는다 — 다음 저장이 남의 변경을 덮지 않게 한다 (D3)', async () => {
+    client.requestRaw.mockResolvedValueOnce(success({ temporaryDraftSn: 7 }));
+    await expect(approvalUserService.createTemporaryDraft({ docTtl: '쓰는 중' })).rejects.toThrow('임시저장 버전을 확인할 수 없습니다.');
+    client.requestRaw.mockResolvedValueOnce(success({ temporaryDraftSn: 8, version: 1 }));
+    await expect(approvalUserService.updateTemporaryDraft(7, { docTtl: '쓰는 중', version: 0 })).rejects.toThrow('임시저장 응답이 요청한 임시저장과 일치하지 않습니다.');
+    client.getRaw.mockResolvedValueOnce(success({ temporaryDraftSn: 7, docTtl: '쓰는 중' }));
+    await expect(approvalUserService.getTemporaryDraft(7)).rejects.toThrow('임시저장 버전을 확인할 수 없습니다.');
+    // 목록이 배열이 아니면 생성 응답 계약이 먼저 거부한다.
+    client.getRaw.mockResolvedValueOnce(success({ temporaryDraftSn: 7 }));
+    await expect(approvalUserService.listTemporaryDrafts()).rejects.toThrow();
+  });
 });

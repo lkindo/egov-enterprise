@@ -14,6 +14,8 @@ import {
   ApiResponseAddressBookDtoResponseSchema,
   ApiResponseAdministCodeDtoResponseSchema,
   ApiResponseApprovalSuggestionsDtoResponseSchema,
+  ApiResponseApprovalTemporaryDraftDtoResponseSchema,
+  ApiResponseApprovalTemporaryDraftSummaryDtoResponseSchema,
   ApiResponseAttachmentIntegrityReportResponseSchema,
   ApiResponseAuthorManageDtoResponseSchema,
   ApiResponseBannerDtoResponseSchema,
@@ -47,6 +49,7 @@ import {
   ApiResponseInstitutionCodeDtoResponseSchema,
   ApiResponseIntegerResponseSchema,
   ApiResponseInternetSvcGuidanceDtoResponseSchema,
+  ApiResponseListApprovalTemporaryDraftSummaryDtoResponseSchema,
   ApiResponseListApproverProfileDtoResponseSchema,
   ApiResponseListBannerDtoResponseSchema,
   ApiResponseListBannerPublicResponseResponseSchema,
@@ -181,6 +184,9 @@ import {
   ApprovalSuggestionsDtoResponseSchema,
   ApprovalSupplementAnswerRequestRequestSchema,
   ApprovalSupplementRequestRequestSchema,
+  ApprovalTemporaryDraftDtoResponseSchema,
+  ApprovalTemporaryDraftRequestRequestSchema,
+  ApprovalTemporaryDraftSummaryDtoResponseSchema,
   ApproverCheckRequestRequestSchema,
   ApproverProfileDtoResponseSchema,
   ApproverReplaceRequestRequestSchema,
@@ -1423,6 +1429,63 @@ export const replaceApproverOperation = /*#__PURE__*/ (() => {
   pathSchema: z.object({ "id": z.number().int() }).strict(),
   querySchema: null,
   requestSchema: ApproverReplaceRequestRequestSchema.strict(),
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const getApprovalTemporaryDraftOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getApprovalTemporaryDraft",
+  method: "get",
+  path: "/api/v1/approvals/temporary-drafts/{temporaryDraftSn}",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "temporaryDraftSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.lazy(() => ApprovalTemporaryDraftDtoResponseSchema),
+  envelopeSchema: ApiResponseApprovalTemporaryDraftDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const updateApprovalTemporaryDraftOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "updateApprovalTemporaryDraft",
+  method: "put",
+  path: "/api/v1/approvals/temporary-drafts/{temporaryDraftSn}",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "temporaryDraftSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: ApprovalTemporaryDraftRequestRequestSchema.strict(),
+  responseSchema: z.lazy(() => ApprovalTemporaryDraftSummaryDtoResponseSchema),
+  envelopeSchema: ApiResponseApprovalTemporaryDraftSummaryDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const deleteApprovalTemporaryDraftOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "deleteApprovalTemporaryDraft",
+  method: "delete",
+  path: "/api/v1/approvals/temporary-drafts/{temporaryDraftSn}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "temporaryDraftSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
@@ -4453,7 +4516,7 @@ export const createApprovalOperation = /*#__PURE__*/ (() => {
   requestRequired: true,
   multipartParts: null,
   pathSchema: null,
-  querySchema: null,
+  querySchema: z.object({ "temporaryDraftSn": z.number().int().optional(), "temporaryDraftVersion": z.number().int().optional() }).strict(),
   requestSchema: ApprovalDraftRequestRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
@@ -4533,6 +4596,44 @@ export const remindApproversOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseIntegerResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const getApprovalTemporaryDraftsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getApprovalTemporaryDrafts",
+  method: "get",
+  path: "/api/v1/approvals/temporary-drafts",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.array(z.lazy(() => ApprovalTemporaryDraftSummaryDtoResponseSchema)),
+  envelopeSchema: ApiResponseListApprovalTemporaryDraftSummaryDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const createApprovalTemporaryDraftOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "createApprovalTemporaryDraft",
+  method: "post",
+  path: "/api/v1/approvals/temporary-drafts",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: ApprovalTemporaryDraftRequestRequestSchema.strict(),
+  responseSchema: z.lazy(() => ApprovalTemporaryDraftSummaryDtoResponseSchema),
+  envelopeSchema: ApiResponseApprovalTemporaryDraftSummaryDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

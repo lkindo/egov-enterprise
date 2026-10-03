@@ -733,6 +733,40 @@ test('축 3 — 서버 액션·조회 옵션을 거친 쓰기도 그것을 쓰�
   ]);
 });
 
+test('축 3 — 조회 옵션 래퍼와 이름이 같은 모듈 경로를 import 해도 그 래퍼를 부른 것으로 세지 않는다 (2026-10-03)', (t) => {
+  const options = [
+    SERVICE_IMPORT,
+    'export const thingMutationOptions = {',
+    '  confirm: () => mutationOptions({',
+    '    mutationFn: (id) => thingService.deleteThing(id),',
+    '  }),',
+    '};',
+  ];
+  // 확인 대화 모듈의 경로(confirm-modal)에 래퍼 이름(confirm)이 들어 있을 뿐, 이 화면은 그 래퍼를 쓰지 않는다.
+  const pathOnly = affordanceFixture(t, {
+    'frontend/src/queries/thing-query-options.ts': options,
+    'frontend/src/app/admin/things/Draft.tsx': [
+      "import { thingMutationOptions } from '@/queries/thing-query-options';",
+      "import { useConfirm } from '@/app/components/ui/confirm-modal';",
+      'export const Draft = () => <ul>{String(thingMutationOptions) + String(useConfirm)}</ul>;',
+    ],
+  });
+  assert.deepEqual(pathOnly.analyze().ungated, []);
+
+  // 대조군 — 래퍼를 실제로 쓰면 여전히 부채다.
+  const used = affordanceFixture(t, {
+    'frontend/src/queries/thing-query-options.ts': options,
+    'frontend/src/app/admin/things/Uses.tsx': [
+      "import { thingMutationOptions } from '@/queries/thing-query-options';",
+      "import { useConfirm } from '@/app/components/ui/confirm-modal';",
+      'export const Uses = () => <button onClick={() => useMutation(thingMutationOptions.confirm())}>{String(useConfirm)}</button>;',
+    ],
+  });
+  assert.deepEqual(used.analyze().ungated.map((entry) => [entry.file, entry.permission, entry.via]), [
+    ['frontend/src/app/admin/things/Uses.tsx', 'THING_DELETE', 'thing-query-options.confirm'],
+  ]);
+});
+
 test('축 3 — 대화상자는 그것을 여는 화면이 모두 권한을 볼 때만 통과한다', (t) => {
   const dialog = [
     SERVICE_IMPORT,

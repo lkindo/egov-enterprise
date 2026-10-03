@@ -1037,7 +1037,11 @@
       "handler": "nuri.api.controller.business.approval.ApprovalApiController#createApproval",
       "policy": "AUTHENTICATED",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#createApproval')",
-      "routeGate": "OPERATION_PERMISSION"
+      "routeGate": "OPERATION_PERMISSION",
+      "handlerRequiredTokens": [
+        "draftDto(request, userDetails.getEsntlId())",
+        "temporaryDraftService.submitWithTemporaryDraft(draft, request.getStages(),"
+      ]
     },
     {
       "method": "DELETE",
@@ -1887,6 +1891,42 @@
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#answerSupplement')",
       "routeGate": "OPERATION_PERMISSION",
       "guardRef": "InformalSanctionService#answerSupplement"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/approvals/temporary-drafts",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#createApprovalTemporaryDraft",
+      "policy": "STRICT_SELF",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#createApprovalTemporaryDraft')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "ApprovalTemporaryDraftService#createTemporaryDraft",
+      "handlerRequiredTokens": [
+        "temporaryDraftService.createTemporaryDraft(userDetails.getEsntlId(), request)"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/approvals/temporary-drafts/{temporaryDraftSn}",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#updateApprovalTemporaryDraft",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#updateApprovalTemporaryDraft')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "ApprovalTemporaryDraftService#lockOwnedDraft",
+      "handlerRequiredTokens": [
+        "temporaryDraftService.updateTemporaryDraft(userDetails.getEsntlId(), temporaryDraftSn, request)"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/approvals/temporary-drafts/{temporaryDraftSn}",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#deleteApprovalTemporaryDraft",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#deleteApprovalTemporaryDraft')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "ApprovalTemporaryDraftService#lockOwnedDraft",
+      "handlerRequiredTokens": [
+        "temporaryDraftService.deleteTemporaryDraft(userDetails.getEsntlId(), temporaryDraftSn)"
+      ]
     },
     {
       "method": "PUT",
@@ -3799,6 +3839,17 @@
       ]
     },
     {
+      "target": "ApprovalTemporaryDraftService#assertApplicant",
+      "policy": "STRICT_OWNER",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
       "target": "DurableJobAdministrationService#getJobs",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -4499,6 +4550,87 @@
       "denyReferences": 0,
       "requiredTokens": [
         "new BkmkMenu.BkmkMenuId(Objects.requireNonNull(menuNo), Objects.requireNonNull(esntlId))"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin",
+        "SecurityUtil.hasPermission(",
+        "assertOwnerOrPermission"
+      ]
+    },
+    {
+      "target": "ApprovalTemporaryDraftService#getTemporaryDrafts",
+      "source": "business-app/src/main/java/nuri/business/service/informalsanction/ApprovalTemporaryDraftService.java",
+      "policy": "STRICT_SELF",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "assertApplicant(applicant);",
+        "draftRepository.findTop20ByAplcntIdOrderByMdfcnDtDescIfmlAtrzTmprStrgSnDesc(applicant)"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin",
+        "SecurityUtil.hasPermission(",
+        "assertOwnerOrPermission"
+      ]
+    },
+    {
+      "target": "ApprovalTemporaryDraftService#getTemporaryDraft",
+      "source": "business-app/src/main/java/nuri/business/service/informalsanction/ApprovalTemporaryDraftService.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "assertApplicant(applicant);",
+        "findByIfmlAtrzTmprStrgSnAndAplcntId(Objects.requireNonNull(temporaryDraftSn), applicant)",
+        "lineAssistService.checkApprovers(applicant, approverIds)"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin",
+        "SecurityUtil.hasPermission(",
+        "assertOwnerOrPermission"
+      ]
+    },
+    {
+      "target": "ApprovalTemporaryDraftService#createTemporaryDraft",
+      "source": "business-app/src/main/java/nuri/business/service/informalsanction/ApprovalTemporaryDraftService.java",
+      "policy": "STRICT_SELF",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "lockDraftOwner(applicant);",
+        "ApprovalTemporaryDraft.create(applicant,"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin",
+        "SecurityUtil.hasPermission(",
+        "assertOwnerOrPermission"
+      ]
+    },
+    {
+      "target": "ApprovalTemporaryDraftService#lockOwnedDraft",
+      "source": "business-app/src/main/java/nuri/business/service/informalsanction/ApprovalTemporaryDraftService.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "assertApplicant(applicant);",
+        "draftRepository.findOwnedForUpdate(Objects.requireNonNull(temporaryDraftSn), applicant)"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin",
+        "SecurityUtil.hasPermission(",
+        "assertOwnerOrPermission"
+      ]
+    },
+    {
+      "target": "ApprovalTemporaryDraftService#consumeForSubmit",
+      "source": "business-app/src/main/java/nuri/business/service/informalsanction/ApprovalTemporaryDraftService.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "assertApplicant(applicant);",
+        "draftRepository.deleteOwnedVersion(temporaryDraftSn, applicant, temporaryDraftVersion) == 0"
       ],
       "forbiddenTokens": [
         "SecurityUtil.hasRole(",
@@ -7691,6 +7823,41 @@
       "method": "POST",
       "path": "/api/v1/approvals/{id}/supplement-answers",
       "handler": "nuri.api.controller.business.approval.ApprovalApiController#answerSupplement",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_CREATE"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/approvals/temporary-drafts",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#getApprovalTemporaryDrafts",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_CREATE"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/approvals/temporary-drafts/{temporaryDraftSn}",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#getApprovalTemporaryDraft",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_CREATE"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/approvals/temporary-drafts",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#createApprovalTemporaryDraft",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_CREATE"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/approvals/temporary-drafts/{temporaryDraftSn}",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#updateApprovalTemporaryDraft",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_CREATE"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/approvals/temporary-drafts/{temporaryDraftSn}",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#deleteApprovalTemporaryDraft",
       "access": "PERMISSION",
       "permission": "APPROVAL_CREATE"
     }
