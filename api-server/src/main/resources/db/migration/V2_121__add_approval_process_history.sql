@@ -1,4 +1,4 @@
--- V2_121: 약식결재 처리 이력(2026-10-03 결재 동선 개선 D6·D7).
+-- V2_121: 비공식결재(약식 결재) 처리 이력(2026-10-03 결재 동선 개선 D6·D7).
 -- 기안자의 결재자 교체·재알림, 결재자의 보완 요청, 기안자의 보완 답변·본문 수정을 추가만 하는 이력으로 남긴다.
 -- 문서·결재선 테이블은 바꾸지 않는다(Expand 전용). 보완 요청이 열려 있는지는 이 이력과 결재선 상태로 계산한다.
 -- 처리한 사람은 두 축으로 남긴다 — frst_rgtr_id 는 공통 감사 계약대로 로그인 ID 이고(백엔드 헌법 제8조 3항, V2_98 FRST_RGTR_ID),
@@ -33,9 +33,9 @@ CREATE TABLE tb_ifml_atrz_prcs_hstry (
 CREATE INDEX ix_tb_ifml_atrz_prcs_hstry_atrz
     ON tb_ifml_atrz_prcs_hstry (ifml_atrz_sn, atrz_cycl, ifml_atrz_prcs_hstry_sn);
 
-COMMENT ON TABLE tb_ifml_atrz_prcs_hstry IS '약식결재처리이력';
-COMMENT ON COLUMN tb_ifml_atrz_prcs_hstry.ifml_atrz_prcs_hstry_sn IS '약식결재처리이력일련번호';
-COMMENT ON COLUMN tb_ifml_atrz_prcs_hstry.ifml_atrz_sn IS '약식결재일련번호';
+COMMENT ON TABLE tb_ifml_atrz_prcs_hstry IS '비공식결재처리이력';
+COMMENT ON COLUMN tb_ifml_atrz_prcs_hstry.ifml_atrz_prcs_hstry_sn IS '비공식결재처리이력일련번호';
+COMMENT ON COLUMN tb_ifml_atrz_prcs_hstry.ifml_atrz_sn IS '비공식결재일련번호';
 COMMENT ON COLUMN tb_ifml_atrz_prcs_hstry.atrz_cycl IS '결재차수';
 COMMENT ON COLUMN tb_ifml_atrz_prcs_hstry.prcs_type_cd IS '처리유형코드 (REPLACE 결재자교체·ASK 보완요청·ANSWER 보완답변·REVISE 본문수정·REMIND 재알림)';
 COMMENT ON COLUMN tb_ifml_atrz_prcs_hstry.trgt_user_id IS '대상사용자ID (교체된 결재자·보완 요청을 받은 기안자·답변을 받은 결재자, esntlId)';
