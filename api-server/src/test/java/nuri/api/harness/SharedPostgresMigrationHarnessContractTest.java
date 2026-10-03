@@ -46,7 +46,8 @@ class SharedPostgresMigrationHarnessContractTest {
     // V2_109: 기존 게시판의 댓글·만족도 설정을 실제 동작대로 켜는 검증을 추가한다.
     // V2_111: 폐기된 게시글 비밀번호 값만 비우는 검증을 추가한다.
     // V2_119: 화면 관리 메뉴 개명과 시드 유래 미참조 이전 프로그램만 지우는 검증을 추가한다.
-    private static final int EXPECTED_MIGRATION_TEST_COUNT = 54;
+    // V2_120: ROLE_USER 의 들어갈 수 없는 설문·투표 관리 메뉴 배정만 지우는 검증을 추가한다.
+    private static final int EXPECTED_MIGRATION_TEST_COUNT = 55;
 
     @Test
     @DisplayName("격리 database 이름은 병렬 클래스마다 고유하고 PostgreSQL 식별자 한도 안에서 안전하다")
@@ -120,7 +121,7 @@ class SharedPostgresMigrationHarnessContractTest {
     }
 
     @Test
-    @DisplayName("54개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")
+    @DisplayName("55개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")
     void migrationTestsUseSharedPostgresSupport() throws IOException {
         List<Path> migrationTests = HarnessSourceIndex.javaSources(schemaSourceRoot()).stream()
                 .filter(SharedPostgresMigrationHarnessContractTest::isMigrationTest)
