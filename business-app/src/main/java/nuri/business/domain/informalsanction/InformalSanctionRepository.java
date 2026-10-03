@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Lock;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -54,6 +55,9 @@ public interface InformalSanctionRepository extends JpaRepository<InformalSancti
     Optional<InformalSanction> findByIdAndParticipant(
             @Param("id") Long id,
             @Param("participantId") String participantId);
+
+    /** 결재선 제안의 원천 — 내가 올린 최근 문서(2026-10-03). 수가 적어 페이지 대신 상한으로 자른다. */
+    List<InformalSanction> findTop40ByAplcntIdOrderByIfmlAtrzSnDesc(String aplcntId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from InformalSanction s where s.ifmlAtrzSn = :id")

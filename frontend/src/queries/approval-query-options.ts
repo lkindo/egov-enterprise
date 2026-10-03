@@ -7,6 +7,7 @@ import {
   approvalUserService,
   type ApprovalDraftRequest,
   type ApprovalResubmissionRequest,
+  type ApprovalSupplementAnswer,
   type SanctionStatusCode,
 } from '@/services/business/user/approval/ApprovalUserService';
 
@@ -47,6 +48,7 @@ export const approvalKeys = {
     [...approvalKeys.lists(), tab, params] as const
   ),
   taskTypes: () => [...approvalKeys.all, 'task-types'] as const,
+  suggestions: (taskSeCd: string) => [...approvalKeys.all, 'line-suggestions', taskSeCd] as const,
   details: () => [...approvalKeys.all, 'detail'] as const,
   detail: (id: number) => [...approvalKeys.details(), id] as const,
 };
@@ -80,7 +82,19 @@ export const approvalQueryOptions = {
     queryFn: () => approvalUserService.getTaskTypes(),
     staleTime: 5 * 60 * 1000,
   }),
+  /** 결재선 제안은 내가 상신해야 바뀐다 — 상신하면 함께 무효화한다. */
+  suggestions: (taskSeCd: string) => queryOptions({
+    queryKey: approvalKeys.suggestions(taskSeCd),
+    queryFn: () => approvalUserService.getLineSuggestions(taskSeCd || undefined),
+    staleTime: 60 * 1000,
+  }),
 };
+
+/** 처리 이력·결재선·차례가 바뀌는 쓰기 뒤에는 그 문서와 모든 목록을 다시 읽는다. */
+async function refreshDocument(queryClient: QueryClient, ifmlAtrzSn: number) {
+  await queryClient.invalidateQueries({ queryKey: approvalKeys.lists() });
+  await queryClient.invalidateQueries({ queryKey: approvalKeys.detail(ifmlAtrzSn) });
+}
 
 export const approvalMutationOptions = {
   confirm: (queryClient: QueryClient) => mutationOptions({
@@ -95,6 +109,7 @@ export const approvalMutationOptions = {
     mutationFn: async (request: ApprovalDraftRequest) => {
       const ifmlAtrzSn = await approvalUserService.createDraft(request);
       await queryClient.invalidateQueries({ queryKey: approvalKeys.lists() });
+      await queryClient.invalidateQueries({ queryKey: [...approvalKeys.all, 'line-suggestions'] });
       return ifmlAtrzSn;
     },
   }),
@@ -112,6 +127,31 @@ export const approvalMutationOptions = {
       await queryClient.invalidateQueries({ queryKey: approvalKeys.lists() });
       await queryClient.invalidateQueries({ queryKey: approvalKeys.detail(ifmlAtrzSn) });
       return id;
+    },
+  }),
+  remind: (queryClient: QueryClient) => mutationOptions({
+    mutationFn: async ({ ifmlAtrzSn }: { ifmlAtrzSn: number }) => {
+      const notified = await approvalUserService.remind(ifmlAtrzSn);
+      await refreshDocument(queryClient, ifmlAtrzSn);
+      return notified;
+    },
+  }),
+  replaceApprover: (queryClient: QueryClient) => mutationOptions({
+    mutationFn: async ({ ifmlAtrzSn, fromUserId, toUserId, version }: { ifmlAtrzSn: number; fromUserId: string; toUserId: string; version: number }) => {
+      await approvalUserService.replaceApprover(ifmlAtrzSn, fromUserId, toUserId, version);
+      await refreshDocument(queryClient, ifmlAtrzSn);
+    },
+  }),
+  requestSupplement: (queryClient: QueryClient) => mutationOptions({
+    mutationFn: async ({ ifmlAtrzSn, question, version }: { ifmlAtrzSn: number; question: string; version: number }) => {
+      await approvalUserService.requestSupplement(ifmlAtrzSn, question, version);
+      await refreshDocument(queryClient, ifmlAtrzSn);
+    },
+  }),
+  answerSupplement: (queryClient: QueryClient) => mutationOptions({
+    mutationFn: async ({ ifmlAtrzSn, answer }: { ifmlAtrzSn: number; answer: ApprovalSupplementAnswer }) => {
+      await approvalUserService.answerSupplement(ifmlAtrzSn, answer);
+      await refreshDocument(queryClient, ifmlAtrzSn);
     },
   }),
 };

@@ -69,6 +69,8 @@ class InformalSanctionWorkflowServiceTest {
     @Mock private InformalSanctionRepository informalSanctionRepository;
     @Mock private InformalSanctionDetailRepository detailRepository;
     @Mock private InformalSanctionHistoryRepository historyRepository;
+    @org.mockito.Mock
+    private nuri.business.domain.informalsanction.InformalSanctionProcessRepository processRepository;
     @Mock private CommonCodeService commonCodeService;
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private UserRepository userRepository;

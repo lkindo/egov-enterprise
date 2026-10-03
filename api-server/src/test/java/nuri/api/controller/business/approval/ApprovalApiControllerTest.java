@@ -22,6 +22,9 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
     @MockitoBean
     private InformalSanctionService approvalService;
 
+    @MockitoBean
+    private nuri.business.service.informalsanction.ApprovalLineAssistService lineAssistService;
+
     @Test
     @WithMockCustomUser
     @DisplayName("승인은 C 상태 코드로 요청할 수 있다")
@@ -268,5 +271,85 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                         .content("{\"taskSeCd\":\"01\",\"aprvrId\":\"BOSS\"}"))
                 .andExpect(status().isBadRequest());
         verifyNoInteractions(approvalService);
+    }
+
+    @Test
+    @WithMockCustomUser(username = "owner", esntlId = "OWNER_ESNTL")
+    @DisplayName("결재선 제안과 결재자 사전 확인은 요청한 사람 본인의 식별자로 부른다")
+    void lineAssistUsesCurrentUser() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/approvals/line-suggestions").param("taskSeCd", "T1"))
+                .andExpect(status().isOk());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals/approver-checks")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"approverIds":["A1","B2"]}
+                                """))
+                .andExpect(status().isOk());
+
+        verify(lineAssistService).getSuggestions("OWNER_ESNTL", "T1");
+        verify(lineAssistService).checkApprovers("OWNER_ESNTL", java.util.List.of("A1", "B2"));
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("사전 확인 목록이 비었거나 빈 식별자를 담으면 서비스 전에 400")
+    void rejectsEmptyApproverChecks() throws Exception {
+        for (String body : new String[]{"{}", "{\"approverIds\":[]}", "{\"approverIds\":[\" \"]}"}) {
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals/approver-checks")
+                            .with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isBadRequest());
+        }
+        verifyNoInteractions(lineAssistService);
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("결재자 바꾸기·보완 요청·보완 답변은 버전과 필수 값이 있어야 서비스로 간다")
+    void collaborationWritesRequireVersionAndText() throws Exception {
+        String[][] cases = {
+                {"PUT", "/api/v1/approvals/7/approvers", "{\"fromUserId\":\"A\",\"toUserId\":\"B\"}"},
+                {"PUT", "/api/v1/approvals/7/approvers", "{\"fromUserId\":\"A\",\"version\":1}"},
+                {"POST", "/api/v1/approvals/7/supplement-requests", "{\"question\":\" \",\"version\":1}"},
+                {"POST", "/api/v1/approvals/7/supplement-requests", "{\"question\":\"" + "가".repeat(4001) + "\",\"version\":1}"},
+                {"POST", "/api/v1/approvals/7/supplement-answers", "{\"answer\":\"\",\"version\":1}"},
+                {"POST", "/api/v1/approvals/7/supplement-answers", "{\"answer\":\"답\"}"},
+        };
+        for (String[] c : cases) {
+            var request = "PUT".equals(c[0]) ? put(c[1]) : org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(c[1]);
+            mockMvc.perform(request.with(csrf()).contentType(MediaType.APPLICATION_JSON).content(c[2]))
+                    .andExpect(status().isBadRequest());
+        }
+        verifyNoInteractions(approvalService);
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("재알림·결재자 바꾸기·보완 요청·보완 답변은 경로의 문서 번호와 본문 값을 그대로 넘긴다")
+    void collaborationWritesDelegate() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals/7/reminders").with(csrf()))
+                .andExpect(status().isOk());
+        mockMvc.perform(put("/api/v1/approvals/7/approvers").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"fromUserId":"A","toUserId":"B","version":3}
+                                """))
+                .andExpect(status().isOk());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals/7/supplement-requests")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"question":"금액을 적어 주세요","version":3}
+                                """))
+                .andExpect(status().isOk());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals/7/supplement-answers")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"answer":"45만 원","docCn":"고친 본문","version":4}
+                                """))
+                .andExpect(status().isOk());
+
+        verify(approvalService).remindApprovers(7L);
+        verify(approvalService).replaceApprover(7L, "A", "B", 3);
+        verify(approvalService).requestSupplement(7L, "금액을 적어 주세요", 3);
+        verify(approvalService).answerSupplement(7L, "45만 원", null, "고친 본문", 4);
     }
 }

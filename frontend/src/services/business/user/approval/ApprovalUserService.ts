@@ -1,6 +1,14 @@
 import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
-import { ApprovalConfirmRequestSchema, ApprovalDraftRequestSchema, ApprovalResubmissionRequestSchema } from '@/types/generated-zod';
+import {
+  ApprovalConfirmRequestSchema,
+  ApprovalDraftRequestSchema,
+  ApprovalResubmissionRequestSchema,
+  ApprovalSupplementAnswerRequestSchema,
+  ApprovalSupplementRequestSchema,
+  ApproverCheckRequestSchema,
+  ApproverReplaceRequestSchema,
+} from '@/types/generated-zod';
 import { z } from 'zod';
 import type { components } from '@/types/generated-api';
 import {
@@ -13,6 +21,12 @@ import {
   getTaskTypesOperation,
   getApprovalDetailOperation,
   resubmitApprovalOperation,
+  getLineSuggestionsOperation,
+  checkApproversOperation,
+  remindApproversOperation,
+  replaceApproverOperation,
+  requestSupplementOperation,
+  answerSupplementOperation,
 } from '@/types/generated-operations';
 
 /** 기안 시 고르는 업무 구분 — 서버가 COM075 에서 내려주는 공통코드 행. */
@@ -21,6 +35,10 @@ export type ApprovalTaskType = components['schemas']['CommonCodeDto'];
 export type ApprovalDraftRequest = components['schemas']['ApprovalDraftRequest'];
 export type ApprovalResubmissionRequest = components['schemas']['ApprovalResubmissionRequest'];
 export type ApprovalStageRequest = components['schemas']['ApprovalStageRequest'];
+/** 기안 화면의 결재선 제안(내가 올린 결재에서 찾은 결재선·최근 결재자). */
+export type ApprovalSuggestions = components['schemas']['ApprovalSuggestionsDto'];
+export type ApproverProfile = components['schemas']['ApproverProfileDto'];
+export type ApprovalSupplementAnswer = components['schemas']['ApprovalSupplementAnswerRequest'];
 
 /**
  * 결재함(사용자) 서비스.
@@ -112,7 +130,12 @@ class ApprovalUserService extends UserService {
   async getDetail(ifmlAtrzSn: number): Promise<InformalSanctionDto> {
     const response = await this.executeGenerated(getApprovalDetailOperation, { path: { id: ifmlAtrzSn } });
     if (response.ifmlAtrzSn !== ifmlAtrzSn) throw new Error('상세 응답이 요청한 문서와 일치하지 않습니다.');
-    if (typeof response.version !== 'number' || !Number.isInteger(response.version) || response.version < 0) throw new Error('문서 버전을 확인할 수 없습니다. 상세를 다시 불러와 주세요.');
+    // [2026-10-03] 버전은 쓰기를 할 수 있는 참여자에게만 의미가 있다. 이미 끝난 문서를 보는 사람에게는 비어 올 수 있어
+    //   종전처럼 비었다고 던지면 열람만 하려던 사람이 상세를 볼 수 없었다. 값이 있는데 형식이 틀린 경우만 거부한다.
+    if (response.version !== undefined && response.version !== null
+      && (typeof response.version !== 'number' || !Number.isInteger(response.version) || response.version < 0)) {
+      throw new Error('문서 버전을 확인할 수 없습니다. 상세를 다시 불러와 주세요.');
+    }
     return response;
   }
 
@@ -185,6 +208,53 @@ class ApprovalUserService extends UserService {
     });
     if (typeof response !== 'number') throw new Error('재상신 응답이 문서 번호 계약과 일치하지 않습니다.');
     return response;
+  }
+
+  /** 기안 화면의 결재선 제안. 업무 구분을 주면 그 업무에서 쓴 결재선을 먼저 준다. */
+  async getLineSuggestions(taskSeCd?: string): Promise<ApprovalSuggestions> {
+    const response = await this.executeGenerated(getLineSuggestionsOperation, taskSeCd ? { query: { taskSeCd } } : {});
+    if (!Array.isArray(response.lines) || !Array.isArray(response.otherLines) || !Array.isArray(response.recentApprovers)) {
+      throw new Error('결재선 제안 응답이 계약과 일치하지 않습니다.');
+    }
+    return response;
+  }
+
+  /** 고른 사람이 결재자가 될 수 있는지 상신 전에 확인한다. 판정은 상신 때 서버 검사와 같다. */
+  async checkApprovers(approverIds: string[]): Promise<ApproverProfile[]> {
+    const response = await this.executeGenerated(checkApproversOperation, { body: ApproverCheckRequestSchema.parse({ approverIds }) });
+    if (!Array.isArray(response)) throw new Error('결재자 확인 응답이 목록 계약과 일치하지 않습니다.');
+    return response;
+  }
+
+  /** 지금 차례인 결재자에게 다시 알린다(하루 한 번). 알린 사람 수를 돌려준다. */
+  async remind(ifmlAtrzSn: number): Promise<number> {
+    const response = await this.executeGenerated(remindApproversOperation, { path: { id: ifmlAtrzSn } });
+    if (typeof response !== 'number') throw new Error('재알림 응답이 계약과 일치하지 않습니다.');
+    return response;
+  }
+
+  /** 아직 처리하지 않은 결재자를 다른 사람으로 바꾼다. 앞서 처리한 결재는 그대로다. */
+  async replaceApprover(ifmlAtrzSn: number, fromUserId: string, toUserId: string, version: number): Promise<void> {
+    return this.executeGenerated(replaceApproverOperation, {
+      path: { id: ifmlAtrzSn },
+      body: ApproverReplaceRequestSchema.parse({ fromUserId, toUserId, version }),
+    });
+  }
+
+  /** 차례인 결재자가 기안자에게 보완을 요청한다. 문서는 진행 중으로 남는다. */
+  async requestSupplement(ifmlAtrzSn: number, question: string, version: number): Promise<void> {
+    return this.executeGenerated(requestSupplementOperation, {
+      path: { id: ifmlAtrzSn },
+      body: ApprovalSupplementRequestSchema.parse({ question, version }),
+    });
+  }
+
+  /** 기안자가 보완 요청에 답한다. 본문을 함께 고칠 수 있고 앞서 한 승인은 유지된다. */
+  async answerSupplement(ifmlAtrzSn: number, answer: ApprovalSupplementAnswer): Promise<void> {
+    return this.executeGenerated(answerSupplementOperation, {
+      path: { id: ifmlAtrzSn },
+      body: ApprovalSupplementAnswerRequestSchema.parse(answer),
+    });
   }
 }
 

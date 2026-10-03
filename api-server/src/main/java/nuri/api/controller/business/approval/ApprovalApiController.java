@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class ApprovalApiController {
 
     private final InformalSanctionService approvalService;
+    private final nuri.business.service.informalsanction.ApprovalLineAssistService lineAssistService;
 
     @Operation(summary = "Get Approval Detail", description = "참여한 결재의 내용·단계·처리 이력을 조회합니다. 참여하지 않은 차수는 공개하지 않습니다.")
     @GetMapping("/{id}")
@@ -151,6 +152,73 @@ public class ApprovalApiController {
     public ResponseEntity<ApiResponse<Void>> cancelApproval(@PathVariable Long id,
             @RequestParam(required = false) @jakarta.validation.constraints.Min(0) Integer version) {
         approvalService.deleteInformalSanction(id, version);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /** [2026-10-03 결재 동선 개선 B안] 내가 올린 결재에서 다시 쓴 결재선과 최근 결재자를 제안한다. */
+    @Operation(summary = "Get Approval Line Suggestions",
+            description = "내가 올린 결재에서 업무 구분(taskSeCd)별로 다시 쓴 결재선(많이 쓴 순 최대 3개), 다른 업무 구분의 결재선, "
+                    + "최근 결재자(최대 8명)를 돌려줍니다. 사람마다 결재자로 고를 수 있는지(본인·사용 중·결재 권한)와 부재 여부를 싣습니다.")
+    @GetMapping("/line-suggestions")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getLineSuggestions')")
+    public ResponseEntity<ApiResponse<nuri.business.service.informalsanction.dto.ApprovalSuggestionsDto>> getLineSuggestions(
+            @LoginUser CustomUserDetails userDetails,
+            @RequestParam(required = false) @jakarta.validation.constraints.Size(max = 12) String taskSeCd) {
+        return ResponseEntity.ok(ApiResponse.success(lineAssistService.getSuggestions(userDetails.getEsntlId(), taskSeCd)));
+    }
+
+    /** 고르려는 사람이 결재자가 될 수 있는지 상신 전에 알려 준다. 판정은 상신 때 서버 검사와 같다. */
+    @Operation(summary = "Check Approver Eligibility",
+            description = "사람마다 결재자로 고를 수 있는지 돌려줍니다(SELF·INACTIVE·NO_PERMISSION·NOT_FOUND). "
+                    + "사용 중이 아니거나 없는 계정은 이름을 싣지 않습니다. 최대 50명입니다.")
+    @PostMapping("/approver-checks")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#checkApprovers')")
+    public ResponseEntity<ApiResponse<java.util.List<nuri.business.service.informalsanction.dto.ApproverProfileDto>>> checkApprovers(
+            @LoginUser CustomUserDetails userDetails,
+            @Valid @RequestBody nuri.api.controller.business.approval.dto.ApproverCheckRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(lineAssistService.checkApprovers(userDetails.getEsntlId(),
+                request.getApproverIds())));
+    }
+
+    @Operation(summary = "Remind Current Approvers",
+            description = "기안자가 지금 차례인 결재자에게 재알림을 보냅니다. 같은 차수에서 하루에 한 번이며, 오늘 이미 보냈으면 409 입니다. "
+                    + "알림을 받은 사람 수를 돌려줍니다.")
+    @PostMapping("/{id}/reminders")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#remindApprovers')")
+    public ResponseEntity<ApiResponse<Integer>> remindApprovers(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(approvalService.remindApprovers(id)));
+    }
+
+    @Operation(summary = "Replace Approver",
+            description = "기안자가 아직 처리하지 않은 결재자를 다른 사람으로 바꿉니다. 앞 단계 승인은 그대로이고, 새 결재자는 상신 때와 같은 "
+                    + "검사(본인·사용 중·결재 권한·중복)를 지나야 합니다. 이미 처리한 결재자이거나 버전이 다르면 409 입니다.")
+    @PutMapping("/{id}/approvers")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#replaceApprover')")
+    public ResponseEntity<ApiResponse<Void>> replaceApprover(@PathVariable Long id,
+            @Valid @RequestBody nuri.api.controller.business.approval.dto.ApproverReplaceRequest request) {
+        approvalService.replaceApprover(id, request.getFromUserId(), request.getToUserId(), request.getVersion());
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "Request Supplement",
+            description = "결재자가 반려하지 않고 기안자에게 보완을 요청합니다. 문서는 진행 중으로 남고 요청한 결재자의 차례도 그대로입니다. "
+                    + "이미 열린 보완 요청이 있으면 409 입니다.")
+    @PostMapping("/{id}/supplement-requests")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#requestSupplement')")
+    public ResponseEntity<ApiResponse<Void>> requestSupplement(@PathVariable Long id,
+            @Valid @RequestBody nuri.api.controller.business.approval.dto.ApprovalSupplementRequest request) {
+        approvalService.requestSupplement(id, request.getQuestion(), request.getVersion());
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "Answer Supplement",
+            description = "기안자가 열린 보완 요청에 답합니다. 제목·본문을 보내면 함께 고치며, 고치기 전 본문은 처리 이력에 남고 앞서 승인한 "
+                    + "사람에게 알림이 갑니다(승인은 유지). 답한 뒤 요청한 결재자 차례로 돌아갑니다.")
+    @PostMapping("/{id}/supplement-answers")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#answerSupplement')")
+    public ResponseEntity<ApiResponse<Void>> answerSupplement(@PathVariable Long id,
+            @Valid @RequestBody nuri.api.controller.business.approval.dto.ApprovalSupplementAnswerRequest request) {
+        approvalService.answerSupplement(id, request.getAnswer(), request.getDocTtl(), request.getDocCn(), request.getVersion());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

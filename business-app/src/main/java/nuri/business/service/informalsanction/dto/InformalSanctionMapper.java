@@ -25,5 +25,13 @@ public interface InformalSanctionMapper {
     @Mapping(target = "canApprove", ignore = true)
     @Mapping(target = "canWithdraw", ignore = true)
     @Mapping(target = "canResubmit", ignore = true)
+    @Mapping(target = "currentStageSince", ignore = true)
+    @Mapping(target = "openSupplement", ignore = true)
+    @Mapping(target = "processHistory", ignore = true)
+    @Mapping(target = "canRemind", ignore = true)
+    @Mapping(target = "remindedToday", ignore = true)
+    @Mapping(target = "canReplaceApprover", ignore = true)
+    @Mapping(target = "canRequestSupplement", ignore = true)
+    @Mapping(target = "canAnswerSupplement", ignore = true)
     InformalSanctionDto toDto(InformalSanction entity);
 }

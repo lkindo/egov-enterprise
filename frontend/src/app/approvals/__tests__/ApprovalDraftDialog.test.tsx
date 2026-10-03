@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ createDraft: vi.fn(), resubmit: vi.fn(), getDetail: vi.fn(), getTaskTypes: vi.fn(), toast: vi.fn(), confirm: vi.fn() }));
+const mocks = vi.hoisted(() => ({ createDraft: vi.fn(), resubmit: vi.fn(), getDetail: vi.fn(), getTaskTypes: vi.fn(), getLineSuggestions: vi.fn(), checkApprovers: vi.fn(), toast: vi.fn(), confirm: vi.fn() }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { esntlId: 'DRAFTER' } }) }));
@@ -51,6 +51,7 @@ describe('ApprovalDraftDialog', () => {
     mocks.confirm.mockResolvedValue(false);
     mocks.getTaskTypes.mockResolvedValue([{ dtlCd: '01', dtlCdNm: '일반', useYn: 'Y' }, { dtlCd: '99', dtlCdNm: '폐기', useYn: 'N' }]);
     mocks.createDraft.mockResolvedValue(88); mocks.resubmit.mockResolvedValue(88);
+    mocks.getLineSuggestions.mockResolvedValue({ lines: [], otherLines: [], recentApprovers: [] }); mocks.checkApprovers.mockResolvedValue([]);
   });
   it('업무 구분이 없으면 사실을 표시하고 상신 흐름을 막는다', async () => {
     mocks.getTaskTypes.mockResolvedValue([]); renderDialog();
@@ -187,5 +188,100 @@ describe('ApprovalDraftDialog', () => {
     expect(screen.getByText(/최신 문서를 불러왔습니다/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '다음' })); fireEvent.click(screen.getByRole('button', { name: '새 차수로 재상신' }));
     await waitFor(() => expect(mocks.resubmit).toHaveBeenLastCalledWith(88, expect.objectContaining({ version: 8, docCn: '내가 작성한 내용' })));
+  });
+});
+
+/** 2026-10-03 결재 동선 개선 — 기안을 빠르게: 내가 썼던 결재선·최근 결재자·업무 양식·마지막 업무 구분·복제·사전 확인. */
+describe('ApprovalDraftDialog 기안 보조', () => {
+  const suggestionData = {
+    lines: [{ taskSeCd: '01', taskSeNm: '일반', useCount: 3, lastReqYmd: '20260930', stages: [
+      { kind: 'APPROVAL', approvers: [{ esntlId: 'BOSS', userNm: '김결재', eligible: true }] },
+      { kind: 'AGREEMENT', approvers: [{ esntlId: 'PEER', userNm: '이합의', eligible: true }] },
+    ] }],
+    otherLines: [],
+    recentApprovers: [
+      { esntlId: 'FINAL', userNm: '박최종', eligible: true, absent: true },
+      { esntlId: 'GONE', userNm: '퇴사자', eligible: false, ineligibleReason: 'INACTIVE' },
+    ],
+  };
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.localStorage.clear();
+    mocks.confirm.mockResolvedValue(false);
+    mocks.getTaskTypes.mockResolvedValue([{ dtlCd: '01', dtlCdNm: '일반', useYn: 'Y', dtlCdExpln: '목적:\n금액:' }, { dtlCd: '99', dtlCdNm: '폐기', useYn: 'N' }]);
+    mocks.createDraft.mockResolvedValue(88);
+    mocks.getLineSuggestions.mockResolvedValue(suggestionData);
+    mocks.checkApprovers.mockImplementation(async (ids: string[]) => ids.map(id => ({ esntlId: id, eligible: true, absent: id === 'FINAL' })));
+  });
+
+  it('내가 썼던 결재선을 가져오고 최근 결재자를 더해 상신하며, 부재 중인 결재자를 미리 알린다', async () => {
+    renderDialog(); await fillContent();
+    await waitFor(() => expect(mocks.getLineSuggestions).toHaveBeenCalledWith('01'));
+    fireEvent.click(await screen.findByRole('button', { name: /일반 결재선 가져오기/ }));
+    expect(screen.getByRole('list', { name: '2단계 결재자' })).toHaveTextContent('이합의');
+    expect(screen.getByRole('button', { name: /퇴사자 결재자로 더하기 \(사용 중이 아닌 계정\)/ })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: '박최종 결재자로 더하기' }));
+    expect(screen.getByRole('list', { name: '2단계 결재자' })).toHaveTextContent('박최종');
+
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    await waitFor(() => expect(mocks.checkApprovers).toHaveBeenCalledWith(['BOSS', 'PEER', 'FINAL']));
+    expect(await screen.findByText(/부재 중인 결재자가 있습니다/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
+    await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledWith(expect.objectContaining({
+      stages: [{ kind: 'APPROVAL', approverIds: ['BOSS'] }, { kind: 'AGREEMENT', approverIds: ['PEER', 'FINAL'] }],
+    })));
+  });
+
+  it('결재자가 될 수 없는 사람이 있으면 이름과 사유를 밝히고 상신을 막는다', async () => {
+    mocks.checkApprovers.mockResolvedValue([{ esntlId: 'BOSS', userNm: '김결재', eligible: false, ineligibleReason: 'NO_PERMISSION' }]);
+    renderDialog(); await reviewSingle();
+    expect(await screen.findByText(/결재자로 지정할 수 없는 사람이 있습니다: 김결재\(결재 권한 없음\)/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '결재 상신' })).toBeDisabled();
+    fireEvent.submit(screen.getByRole('form', { name: '결재 기안 폼' }));
+    expect(mocks.createDraft).not.toHaveBeenCalled();
+  });
+
+  it('사전 확인이 실패해도 상신은 막지 않는다 — 서버가 상신 때 같은 규칙으로 다시 본다', async () => {
+    mocks.checkApprovers.mockRejectedValue(new Error('network'));
+    renderDialog(); await reviewSingle();
+    fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
+    await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledTimes(1));
+  });
+
+  it('업무 구분의 본문 양식을 넣고, 상신하면 그 업무 구분을 다음 기안에 기억한다', async () => {
+    const first = renderDialog();
+    fireEvent.change(await screen.findByRole('combobox', { name: '업무 구분' }), { target: { value: '01' } });
+    fireEvent.click(screen.getByRole('button', { name: '업무 양식 넣기' }));
+    expect(screen.getByLabelText('본문 (선택)')).toHaveValue('목적:\n금액:');
+    fireEvent.change(screen.getByLabelText('제목 (필수)'), { target: { value: '양식 요청' } });
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    pick(1, '김결재'); fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
+    await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledWith(expect.objectContaining({ taskSeCd: '01', docCn: '목적:\n금액:' })));
+    first.unmount();
+
+    renderDialog();
+    expect(await screen.findByRole('combobox', { name: '업무 구분' })).toHaveValue('01');
+  });
+
+  it('기억한 업무 구분이 더는 쓰이지 않으면 고르지 않은 상태로 시작한다', async () => {
+    window.localStorage.setItem('approval.lastTaskType.DRAFTER', '99');
+    renderDialog();
+    expect(await screen.findByRole('combobox', { name: '업무 구분' })).toHaveValue('');
+  });
+
+  it('복제해서 새로 기안하면 내용과 결재선을 가져오되 새 문서로 상신한다', async () => {
+    const template = { ifmlAtrzSn: 5, taskSeCd: '01', aplcntId: 'DRAFTER', docTtl: '지난 출장', docCn: '지난 본문', version: 9,
+      stages: [{ order: 1, kind: 'APPROVAL', status: 'APPROVED', approvers: [{ userId: 'BOSS', userNm: '김결재', status: 'APPROVED' }] }] };
+    renderDialog({ template: template as never });
+    expect(screen.getByRole('dialog', { name: '복제해서 새로 기안' })).toBeInTheDocument();
+    expect(screen.getByLabelText('제목 (필수)')).toHaveValue('지난 출장');
+    await screen.findByRole('combobox', { name: '업무 구분' });
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    expect(await screen.findByText(/복제한 문서의 결재선입니다/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
+    await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledWith(expect.objectContaining({ docTtl: '지난 출장', stages: [{ kind: 'APPROVAL', approverIds: ['BOSS'] }] })));
+    expect(mocks.resubmit).not.toHaveBeenCalled();
   });
 });

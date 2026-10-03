@@ -154,9 +154,11 @@ test.describe('Enterprise Workflow & Productivity', () => {
         await expect(item(finalPage, documentTitle)).toHaveCount(0);
         await item(firstPage, documentTitle).getByRole('button').click();
         await expect(firstPage.getByRole('list', { name: '결재선 진행', exact: true })).toContainText('내 차례');
+        // 단건 승인은 확인 대화상자 대신 10초 동안 되돌릴 수 있다 — '지금 처리' 로 기다리지 않고 보낸다.
         await firstPage.getByRole('button', { name: '결재 승인', exact: true }).click();
-        await firstPage.getByRole('dialog').getByRole('button', { name: '확인', exact: true }).click();
-        await expect(firstPage.getByText('성공적으로 승인되었습니다.')).toBeVisible();
+        await expect(firstPage.getByRole('button', { name: '되돌리기' })).toBeVisible();
+        await firstPage.getByRole('button', { name: '지금 처리' }).click();
+        await expect(firstPage.getByText(`‘${documentTitle}’ 승인했습니다.`)).toBeVisible();
         await firstPage.getByRole('tab', { name: '내가 처리한 결재' }).click();
         await expect(item(firstPage, documentTitle)).toBeVisible();
         // 단계 승인만으로 문서 전체가 승인된 것처럼 보이면 red다.
@@ -165,7 +167,7 @@ test.describe('Enterprise Workflow & Productivity', () => {
         await finalPage.reload();
         await item(finalPage, documentTitle).getByRole('button').click();
         await expect(finalPage.getByRole('button', { name: '합의 동의', exact: true })).toBeVisible();
-        await finalPage.getByRole('textbox', { name: '결재 의견 (반려 시 필수)' }).fill('예산 근거 보완 필요');
+        await finalPage.getByRole('textbox', { name: '결재 의견 (반려·보완 요청 시 필수)' }).fill('예산 근거 보완 필요');
         await finalPage.getByRole('button', { name: '결재 반려', exact: true }).click();
         await expect(finalPage.getByRole('dialog')).toContainText('남은 모든 결재는 종료');
         await finalPage.getByRole('dialog').getByRole('button', { name: '확인', exact: true }).click();
@@ -197,13 +199,13 @@ test.describe('Enterprise Workflow & Productivity', () => {
         await firstPage.getByRole('tab', { name: '대기 중인 결재' }).click();
         await item(firstPage, revisedTitle).getByRole('button').click();
         await firstPage.getByRole('button', { name: '결재 승인', exact: true }).click();
-        await firstPage.getByRole('dialog').getByRole('button', { name: '확인', exact: true }).click();
-        await expect(firstPage.getByText('성공적으로 승인되었습니다.')).toBeVisible();
+        await firstPage.getByRole('button', { name: '지금 처리' }).click();
+        await expect(firstPage.getByText(`‘${revisedTitle}’ 승인했습니다.`)).toBeVisible();
         await finalPage.reload();
         await item(finalPage, revisedTitle).getByRole('button').click();
         await finalPage.getByRole('button', { name: '합의 동의', exact: true }).click();
-        await finalPage.getByRole('dialog').getByRole('button', { name: '확인', exact: true }).click();
-        await expect(finalPage.getByText('성공적으로 동의되었습니다.')).toBeVisible();
+        await finalPage.getByRole('button', { name: '지금 처리' }).click();
+        await expect(finalPage.getByText(`‘${revisedTitle}’ 동의했습니다.`)).toBeVisible();
         await finalPage.getByRole('tab', { name: '내가 처리한 결재' }).click();
         await expect(item(finalPage, revisedTitle).getByText('승인 완료', { exact: true })).toBeVisible();
         await page.reload();
@@ -211,6 +213,10 @@ test.describe('Enterprise Workflow & Productivity', () => {
         await expect(item(page, revisedTitle).getByText('승인 완료', { exact: true })).toBeVisible();
         await expect(page.locator('text=결재 상신이 완료되었습니다')).toHaveCount(0);
         await expect(page).toHaveURL(/\/approvals$/);
+        // 알림 링크는 탭과 문서 번호로 그 문서를 바로 연다(2026-10-03 D1).
+        await page.goto(`/approvals?tab=SUBMITTED&doc=${approvalId}`);
+        await expect(page.getByRole('tab', { name: '내가 올린 결재' })).toHaveAttribute('aria-selected', 'true');
+        await expect(page.getByLabel('문서 내용')).toContainText(revisedTitle);
         // 결재 문서/차수는 삭제 API로 지우지 않는다. 이력 보존 계약을 검증한 합성 데이터이며
         // 일회용 사용자만 fixture.dispose로 정리하고 문서는 격리 E2E DB 수명과 함께 폐기한다.
     });

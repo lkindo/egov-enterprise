@@ -13,6 +13,7 @@ import {
   AdministCodeDtoResponseSchema,
   ApiResponseAddressBookDtoResponseSchema,
   ApiResponseAdministCodeDtoResponseSchema,
+  ApiResponseApprovalSuggestionsDtoResponseSchema,
   ApiResponseAttachmentIntegrityReportResponseSchema,
   ApiResponseAuthorManageDtoResponseSchema,
   ApiResponseBannerDtoResponseSchema,
@@ -46,6 +47,7 @@ import {
   ApiResponseInstitutionCodeDtoResponseSchema,
   ApiResponseIntegerResponseSchema,
   ApiResponseInternetSvcGuidanceDtoResponseSchema,
+  ApiResponseListApproverProfileDtoResponseSchema,
   ApiResponseListBannerDtoResponseSchema,
   ApiResponseListBannerPublicResponseResponseSchema,
   ApiResponseListBoardSearchItemResponseResponseSchema,
@@ -176,6 +178,12 @@ import {
   ApprovalConfirmRequestRequestSchema,
   ApprovalDraftRequestRequestSchema,
   ApprovalResubmissionRequestRequestSchema,
+  ApprovalSuggestionsDtoResponseSchema,
+  ApprovalSupplementAnswerRequestRequestSchema,
+  ApprovalSupplementRequestRequestSchema,
+  ApproverCheckRequestRequestSchema,
+  ApproverProfileDtoResponseSchema,
+  ApproverReplaceRequestRequestSchema,
   AttachmentIntegrityReportResponseSchema,
   AuthorManageDtoRequestSchema,
   AuthorManageDtoResponseSchema,
@@ -1396,6 +1404,25 @@ export const confirmOperation = /*#__PURE__*/ (() => {
   pathSchema: z.object({ "id": z.number().int() }).strict(),
   querySchema: null,
   requestSchema: ApprovalConfirmRequestRequestSchema.strict(),
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const replaceApproverOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "replaceApprover",
+  method: "put",
+  path: "/api/v1/approvals/{id}/approvers",
+  requestKind: "json",
+  responseKind: "void",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "id": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: ApproverReplaceRequestRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
@@ -4435,6 +4462,44 @@ export const createApprovalOperation = /*#__PURE__*/ (() => {
   });
 })();
 
+export const requestSupplementOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "requestSupplement",
+  method: "post",
+  path: "/api/v1/approvals/{id}/supplement-requests",
+  requestKind: "json",
+  responseKind: "void",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "id": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: ApprovalSupplementRequestRequestSchema.strict(),
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const answerSupplementOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "answerSupplement",
+  method: "post",
+  path: "/api/v1/approvals/{id}/supplement-answers",
+  requestKind: "json",
+  responseKind: "void",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "id": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: ApprovalSupplementAnswerRequestRequestSchema.strict(),
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
 export const resubmitApprovalOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
   id: "resubmitApproval",
@@ -4449,6 +4514,44 @@ export const resubmitApprovalOperation = /*#__PURE__*/ (() => {
   requestSchema: ApprovalResubmissionRequestRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const remindApproversOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "remindApprovers",
+  method: "post",
+  path: "/api/v1/approvals/{id}/reminders",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "id": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseIntegerResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const checkApproversOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "checkApprovers",
+  method: "post",
+  path: "/api/v1/approvals/approver-checks",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: ApproverCheckRequestRequestSchema.strict(),
+  responseSchema: z.array(z.lazy(() => ApproverProfileDtoResponseSchema)),
+  envelopeSchema: ApiResponseListApproverProfileDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
@@ -7432,6 +7535,25 @@ export const getMyHistoryOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseInformalSanctionDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseInformalSanctionDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const getLineSuggestionsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getLineSuggestions",
+  method: "get",
+  path: "/api/v1/approvals/line-suggestions",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: z.object({ "taskSeCd": z.string().min(0).max(12).optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => ApprovalSuggestionsDtoResponseSchema),
+  envelopeSchema: ApiResponseApprovalSuggestionsDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

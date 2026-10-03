@@ -59,8 +59,9 @@ class EntityTableOwnershipLinterTest {
     // V2_107(DIP I6 ④): 게시글 추천 이력 BoardRecommendation → tb_bbs_rcmdtn_hstry. 76 → 77 / 75 → 76.
     // V2_110(DIP B5 F11): 공통코드 변경 이력 CommonCodeChange → tb_com_cd_chg_hstry. 77 → 78 / 76 → 77.
     // ADR-0025: MFA 3종, 후속 작업 1종, 불변 민감 감사 1종을 각각 독립 테이블로 추가한다.
-    private static final int EXPECTED_ENTITY_COUNT = 83;
-    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 82;
+    // V2_121(결재 동선 개선): 결재 처리 이력 InformalSanctionProcess → tb_ifml_atrz_prcs_hstry. 83 → 84 / 82 → 83.
+    private static final int EXPECTED_ENTITY_COUNT = 84;
+    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 83;
 
     private static final Set<String> AUDIT_COLUMNS = Set.of(
             "frst_rgtr_id", "crt_dt", "last_mdfr_id", "mdfcn_dt");
@@ -68,6 +69,7 @@ class EntityTableOwnershipLinterTest {
     private static final Map<String,String> INSERT_ONLY_AUDIT_ENTITIES = Map.of(
             "nuri.business.domain.auth.AuthorizationChange", "tb_authrt_chg_hstry",
             "nuri.business.domain.code.CommonCodeChange", "tb_com_cd_chg_hstry",
+            "nuri.business.domain.informalsanction.InformalSanctionProcess", "tb_ifml_atrz_prcs_hstry",
             "nuri.business.domain.log.SensitiveAuditLog", "tb_sys_adt_log");
 
     /** 물리 감사 4컬럼은 있었지만 BaseEntity 상속이 빠졌던 쓰기 모델과 해당 저장소. */

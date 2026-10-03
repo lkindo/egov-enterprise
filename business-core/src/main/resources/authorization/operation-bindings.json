@@ -3063,5 +3063,47 @@
     "handler": "nuri.api.controller.foundation.auth.MfaApiController#mfaRecoverAccount",
     "access": "PERMISSION",
     "permission": "MFA_RECOVER"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/approvals/line-suggestions",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#getLineSuggestions",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/approvals/approver-checks",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#checkApprovers",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/approvals/{id}/reminders",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#remindApprovers",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/approvals/{id}/approvers",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#replaceApprover",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/approvals/{id}/supplement-requests",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#requestSupplement",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_APPROVE"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/approvals/{id}/supplement-answers",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#answerSupplement",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
   }
 ]

@@ -181,8 +181,23 @@ export const ApprovalApproverDtoSchema = /*#__PURE__*/ (() => z.object({
   status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional(),
   opinion: z.string().optional(),
   decidedAt: z.iso.datetime({ offset: true, local: true }).optional(),
+  absent: z.boolean().optional(),
 }))();
 export type ApprovalApproverDto = z.infer<typeof ApprovalApproverDtoSchema>;
+
+// ==========================================================================
+// ApprovalProcessDto Schema
+// ==========================================================================
+export const ApprovalProcessDtoSchema = /*#__PURE__*/ (() => z.object({
+  type: z.enum(["REPLACE","ASK","ANSWER","REVISE","REMIND"]).optional(),
+  atrzCycl: z.number().int().optional(),
+  actorNm: z.string().optional(),
+  targetNm: z.string().optional(),
+  beforeNm: z.string().optional(),
+  content: z.string().optional(),
+  at: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+export type ApprovalProcessDto = z.infer<typeof ApprovalProcessDtoSchema>;
 
 // ==========================================================================
 // ApprovalRevisionDto Schema
@@ -208,6 +223,17 @@ export const ApprovalStageDtoSchema = /*#__PURE__*/ (() => z.object({
   approvers: z.array(z.lazy(() => ApprovalApproverDtoSchema)).optional(),
 }))();
 export type ApprovalStageDto = z.infer<typeof ApprovalStageDtoSchema>;
+
+// ==========================================================================
+// ApprovalSupplementDto Schema
+// ==========================================================================
+export const ApprovalSupplementDtoSchema = /*#__PURE__*/ (() => z.object({
+  askedBy: z.string().optional(),
+  askedByNm: z.string().optional(),
+  question: z.string().optional(),
+  askedAt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+export type ApprovalSupplementDto = z.infer<typeof ApprovalSupplementDtoSchema>;
 
 // ==========================================================================
 // InformalSanctionDto Schema
@@ -236,6 +262,14 @@ export const InformalSanctionDtoSchema = /*#__PURE__*/ (() => z.object({
   canApprove: z.boolean().optional(),
   canWithdraw: z.boolean().optional(),
   canResubmit: z.boolean().optional(),
+  currentStageSince: z.iso.datetime({ offset: true, local: true }).optional(),
+  openSupplement: z.lazy(() => ApprovalSupplementDtoSchema).optional(),
+  processHistory: z.array(z.lazy(() => ApprovalProcessDtoSchema)).optional(),
+  canRemind: z.boolean().optional(),
+  remindedToday: z.boolean().optional(),
+  canReplaceApprover: z.boolean().optional(),
+  canRequestSupplement: z.boolean().optional(),
+  canAnswerSupplement: z.boolean().optional(),
 }))();
 export type InformalSanctionDto = z.infer<typeof InformalSanctionDtoSchema>;
 
@@ -365,6 +399,16 @@ export const ApprovalConfirmRequestSchema = /*#__PURE__*/ (() => z.object({
   version: z.number().int().min(0).optional(),
 }))();
 export type ApprovalConfirmRequest = z.infer<typeof ApprovalConfirmRequestSchema>;
+
+// ==========================================================================
+// ApproverReplaceRequest Schema
+// ==========================================================================
+export const ApproverReplaceRequestSchema = /*#__PURE__*/ (() => z.object({
+  fromUserId: z.string().min(0).max(20),
+  toUserId: z.string().min(0).max(20),
+  version: z.number().int().min(0),
+}))();
+export type ApproverReplaceRequest = z.infer<typeof ApproverReplaceRequestSchema>;
 
 // ==========================================================================
 // UserProfileUpdateRequest Schema
@@ -1472,6 +1516,26 @@ export const ApprovalStageRequestSchema = /*#__PURE__*/ (() => z.object({
 export type ApprovalStageRequest = z.infer<typeof ApprovalStageRequestSchema>;
 
 // ==========================================================================
+// ApprovalSupplementRequest Schema
+// ==========================================================================
+export const ApprovalSupplementRequestSchema = /*#__PURE__*/ (() => z.object({
+  question: z.string().min(0).max(4000),
+  version: z.number().int().min(0),
+}))();
+export type ApprovalSupplementRequest = z.infer<typeof ApprovalSupplementRequestSchema>;
+
+// ==========================================================================
+// ApprovalSupplementAnswerRequest Schema
+// ==========================================================================
+export const ApprovalSupplementAnswerRequestSchema = /*#__PURE__*/ (() => z.object({
+  answer: z.string().min(0).max(4000),
+  docTtl: z.string().min(0).max(256).optional(),
+  docCn: z.string().min(0).max(4000).optional(),
+  version: z.number().int().min(0),
+}))();
+export type ApprovalSupplementAnswerRequest = z.infer<typeof ApprovalSupplementAnswerRequestSchema>;
+
+// ==========================================================================
 // ApprovalResubmissionRequest Schema
 // ==========================================================================
 export const ApprovalResubmissionRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -1484,6 +1548,41 @@ export const ApprovalResubmissionRequestSchema = /*#__PURE__*/ (() => z.object({
   version: z.number().int().min(0),
 }))();
 export type ApprovalResubmissionRequest = z.infer<typeof ApprovalResubmissionRequestSchema>;
+
+// ==========================================================================
+// ApproverCheckRequest Schema
+// ==========================================================================
+export const ApproverCheckRequestSchema = /*#__PURE__*/ (() => z.object({
+  approverIds: z.array(z.string().min(0).max(20)).min(1).max(50),
+}))();
+export type ApproverCheckRequest = z.infer<typeof ApproverCheckRequestSchema>;
+
+// ==========================================================================
+// ApiResponseListApproverProfileDto Schema
+// ==========================================================================
+export const ApiResponseListApproverProfileDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => ApproverProfileDtoSchema)).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseListApproverProfileDto = z.infer<typeof ApiResponseListApproverProfileDtoSchema>;
+
+// ==========================================================================
+// ApproverProfileDto Schema
+// ==========================================================================
+export const ApproverProfileDtoSchema = /*#__PURE__*/ (() => z.object({
+  esntlId: z.string().optional(),
+  userNm: z.string().optional(),
+  deptNm: z.string().optional(),
+  absent: z.boolean().optional(),
+  eligible: z.boolean().optional(),
+  ineligibleReason: z.string().optional(),
+}))();
+export type ApproverProfileDto = z.infer<typeof ApproverProfileDtoSchema>;
 
 // ==========================================================================
 // UserDto Schema
@@ -3152,6 +3251,51 @@ export const CommonCodeDtoSchema = /*#__PURE__*/ (() => z.object({
   useYn: z.string().min(0).max(1),
 }))();
 export type CommonCodeDto = z.infer<typeof CommonCodeDtoSchema>;
+
+// ==========================================================================
+// ApiResponseApprovalSuggestionsDto Schema
+// ==========================================================================
+export const ApiResponseApprovalSuggestionsDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => ApprovalSuggestionsDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseApprovalSuggestionsDto = z.infer<typeof ApiResponseApprovalSuggestionsDtoSchema>;
+
+// ==========================================================================
+// ApprovalLineStageDto Schema
+// ==========================================================================
+export const ApprovalLineStageDtoSchema = /*#__PURE__*/ (() => z.object({
+  kind: z.enum(["APPROVAL","AGREEMENT"]).optional(),
+  approvers: z.array(z.lazy(() => ApproverProfileDtoSchema)).optional(),
+}))();
+export type ApprovalLineStageDto = z.infer<typeof ApprovalLineStageDtoSchema>;
+
+// ==========================================================================
+// ApprovalLineSuggestionDto Schema
+// ==========================================================================
+export const ApprovalLineSuggestionDtoSchema = /*#__PURE__*/ (() => z.object({
+  taskSeCd: z.string().optional(),
+  taskSeNm: z.string().optional(),
+  useCount: z.number().int().optional(),
+  lastReqYmd: z.string().optional(),
+  stages: z.array(z.lazy(() => ApprovalLineStageDtoSchema)).optional(),
+}))();
+export type ApprovalLineSuggestionDto = z.infer<typeof ApprovalLineSuggestionDtoSchema>;
+
+// ==========================================================================
+// ApprovalSuggestionsDto Schema
+// ==========================================================================
+export const ApprovalSuggestionsDtoSchema = /*#__PURE__*/ (() => z.object({
+  lines: z.array(z.lazy(() => ApprovalLineSuggestionDtoSchema)).optional(),
+  otherLines: z.array(z.lazy(() => ApprovalLineSuggestionDtoSchema)).optional(),
+  recentApprovers: z.array(z.lazy(() => ApproverProfileDtoSchema)).optional(),
+}))();
+export type ApprovalSuggestionsDto = z.infer<typeof ApprovalSuggestionsDtoSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseUserDto Schema
@@ -5641,6 +5785,7 @@ export const ApprovalApproverDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional(),
   opinion: z.string().optional(),
   decidedAt: z.iso.datetime({ offset: true, local: true }).optional(),
+  absent: z.boolean().optional(),
 }))();
 
 export const ApprovalApproverDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -5649,6 +5794,27 @@ export const ApprovalApproverDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional().nullable(),
   opinion: z.string().optional().nullable(),
   decidedAt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  absent: z.boolean().optional().nullable(),
+}))();
+
+export const ApprovalProcessDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  type: z.enum(["REPLACE","ASK","ANSWER","REVISE","REMIND"]).optional(),
+  atrzCycl: z.number().int().optional(),
+  actorNm: z.string().optional(),
+  targetNm: z.string().optional(),
+  beforeNm: z.string().optional(),
+  content: z.string().optional(),
+  at: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+
+export const ApprovalProcessDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  type: z.enum(["REPLACE","ASK","ANSWER","REVISE","REMIND"]).optional().nullable(),
+  atrzCycl: z.number().int().optional().nullable(),
+  actorNm: z.string().optional().nullable(),
+  targetNm: z.string().optional().nullable(),
+  beforeNm: z.string().optional().nullable(),
+  content: z.string().optional().nullable(),
+  at: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 }))();
 
 export const ApprovalRevisionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -5685,6 +5851,20 @@ export const ApprovalStageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   approvers: z.array(z.lazy(() => ApprovalApproverDtoResponseSchema)).optional().nullable(),
 }))();
 
+export const ApprovalSupplementDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  askedBy: z.string().optional(),
+  askedByNm: z.string().optional(),
+  question: z.string().optional(),
+  askedAt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+
+export const ApprovalSupplementDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  askedBy: z.string().optional().nullable(),
+  askedByNm: z.string().optional().nullable(),
+  question: z.string().optional().nullable(),
+  askedAt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+}))();
+
 export const InformalSanctionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   ifmlAtrzSn: z.number().int().optional(),
   taskSeCd: z.string().min(0).max(12),
@@ -5709,6 +5889,14 @@ export const InformalSanctionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   canApprove: z.boolean().optional(),
   canWithdraw: z.boolean().optional(),
   canResubmit: z.boolean().optional(),
+  currentStageSince: z.iso.datetime({ offset: true, local: true }).optional(),
+  openSupplement: z.lazy(() => ApprovalSupplementDtoRequestSchema.strict()).optional(),
+  processHistory: z.array(z.lazy(() => ApprovalProcessDtoRequestSchema.strict())).optional(),
+  canRemind: z.boolean().optional(),
+  remindedToday: z.boolean().optional(),
+  canReplaceApprover: z.boolean().optional(),
+  canRequestSupplement: z.boolean().optional(),
+  canAnswerSupplement: z.boolean().optional(),
 }))();
 
 export const InformalSanctionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -5735,6 +5923,14 @@ export const InformalSanctionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   canApprove: z.boolean().optional().nullable(),
   canWithdraw: z.boolean().optional().nullable(),
   canResubmit: z.boolean().optional().nullable(),
+  currentStageSince: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  openSupplement: z.lazy(() => ApprovalSupplementDtoResponseSchema).optional().nullable(),
+  processHistory: z.array(z.lazy(() => ApprovalProcessDtoResponseSchema)).optional().nullable(),
+  canRemind: z.boolean().optional().nullable(),
+  remindedToday: z.boolean().optional().nullable(),
+  canReplaceApprover: z.boolean().optional().nullable(),
+  canRequestSupplement: z.boolean().optional().nullable(),
+  canAnswerSupplement: z.boolean().optional().nullable(),
 }))();
 
 export const OnlineManualDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -5902,6 +6098,18 @@ export const ApprovalConfirmRequestResponseSchema = /*#__PURE__*/ (() => z.objec
   status: z.enum(["C","R"]),
   reason: z.string().min(0).max(4000).optional().nullable(),
   version: z.number().int().min(0).optional().nullable(),
+}))();
+
+export const ApproverReplaceRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  fromUserId: z.string().min(0).max(20),
+  toUserId: z.string().min(0).max(20),
+  version: z.number().int().min(0),
+}))();
+
+export const ApproverReplaceRequestResponseSchema = /*#__PURE__*/ (() => z.object({
+  fromUserId: z.string().min(0).max(20),
+  toUserId: z.string().min(0).max(20),
+  version: z.number().int().min(0),
 }))();
 
 export const UserProfileUpdateRequestRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -7435,6 +7643,30 @@ export const ApprovalStageRequestResponseSchema = /*#__PURE__*/ (() => z.object(
   approverIds: z.array(z.string().min(0).max(20).optional().nullable()).min(1).max(10),
 }))();
 
+export const ApprovalSupplementRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  question: z.string().min(0).max(4000),
+  version: z.number().int().min(0),
+}))();
+
+export const ApprovalSupplementRequestResponseSchema = /*#__PURE__*/ (() => z.object({
+  question: z.string().min(0).max(4000),
+  version: z.number().int().min(0),
+}))();
+
+export const ApprovalSupplementAnswerRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  answer: z.string().min(0).max(4000),
+  docTtl: z.string().min(0).max(256).optional(),
+  docCn: z.string().min(0).max(4000).optional(),
+  version: z.number().int().min(0),
+}))();
+
+export const ApprovalSupplementAnswerRequestResponseSchema = /*#__PURE__*/ (() => z.object({
+  answer: z.string().min(0).max(4000),
+  docTtl: z.string().min(0).max(256).optional().nullable(),
+  docCn: z.string().min(0).max(4000).optional().nullable(),
+  version: z.number().int().min(0),
+}))();
+
 export const ApprovalResubmissionRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   taskSeCd: z.string().min(0).max(12),
   aprvrId: z.string().min(0).max(20).optional(),
@@ -7453,6 +7685,52 @@ export const ApprovalResubmissionRequestResponseSchema = /*#__PURE__*/ (() => z.
   stages: z.array(z.lazy(() => ApprovalStageRequestResponseSchema)).min(1).max(10).optional().nullable(),
   reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional().nullable(),
   version: z.number().int().min(0),
+}))();
+
+export const ApproverCheckRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  approverIds: z.array(z.string().min(0).max(20)).min(1).max(50),
+}))();
+
+export const ApproverCheckRequestResponseSchema = /*#__PURE__*/ (() => z.object({
+  approverIds: z.array(z.string().min(0).max(20).optional().nullable()).min(1).max(50),
+}))();
+
+export const ApiResponseListApproverProfileDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => ApproverProfileDtoRequestSchema.strict())).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseListApproverProfileDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => ApproverProfileDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const ApproverProfileDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  esntlId: z.string().optional(),
+  userNm: z.string().optional(),
+  deptNm: z.string().optional(),
+  absent: z.boolean().optional(),
+  eligible: z.boolean().optional(),
+  ineligibleReason: z.string().optional(),
+}))();
+
+export const ApproverProfileDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  esntlId: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  deptNm: z.string().optional().nullable(),
+  absent: z.boolean().optional().nullable(),
+  eligible: z.boolean().optional().nullable(),
+  ineligibleReason: z.string().optional().nullable(),
 }))();
 
 export const UserDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -9791,6 +10069,64 @@ export const CommonCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   dtlCdNm: z.string().min(0).max(100),
   dtlCdExpln: z.string().min(0).max(4000).optional().nullable(),
   useYn: z.string().min(0).max(1),
+}))();
+
+export const ApiResponseApprovalSuggestionsDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => ApprovalSuggestionsDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseApprovalSuggestionsDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => ApprovalSuggestionsDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const ApprovalLineStageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  kind: z.enum(["APPROVAL","AGREEMENT"]).optional(),
+  approvers: z.array(z.lazy(() => ApproverProfileDtoRequestSchema.strict())).optional(),
+}))();
+
+export const ApprovalLineStageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  kind: z.enum(["APPROVAL","AGREEMENT"]).optional().nullable(),
+  approvers: z.array(z.lazy(() => ApproverProfileDtoResponseSchema)).optional().nullable(),
+}))();
+
+export const ApprovalLineSuggestionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  taskSeCd: z.string().optional(),
+  taskSeNm: z.string().optional(),
+  useCount: z.number().int().optional(),
+  lastReqYmd: z.string().optional(),
+  stages: z.array(z.lazy(() => ApprovalLineStageDtoRequestSchema.strict())).optional(),
+}))();
+
+export const ApprovalLineSuggestionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  taskSeCd: z.string().optional().nullable(),
+  taskSeNm: z.string().optional().nullable(),
+  useCount: z.number().int().optional().nullable(),
+  lastReqYmd: z.string().optional().nullable(),
+  stages: z.array(z.lazy(() => ApprovalLineStageDtoResponseSchema)).optional().nullable(),
+}))();
+
+export const ApprovalSuggestionsDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  lines: z.array(z.lazy(() => ApprovalLineSuggestionDtoRequestSchema.strict())).optional(),
+  otherLines: z.array(z.lazy(() => ApprovalLineSuggestionDtoRequestSchema.strict())).optional(),
+  recentApprovers: z.array(z.lazy(() => ApproverProfileDtoRequestSchema.strict())).optional(),
+}))();
+
+export const ApprovalSuggestionsDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  lines: z.array(z.lazy(() => ApprovalLineSuggestionDtoResponseSchema)).optional().nullable(),
+  otherLines: z.array(z.lazy(() => ApprovalLineSuggestionDtoResponseSchema)).optional().nullable(),
+  recentApprovers: z.array(z.lazy(() => ApproverProfileDtoResponseSchema)).optional().nullable(),
 }))();
 
 export const ApiResponsePageResponseUserDtoRequestSchema = /*#__PURE__*/ (() => z.object({

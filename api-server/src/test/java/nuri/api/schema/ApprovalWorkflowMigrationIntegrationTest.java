@@ -52,6 +52,26 @@ class ApprovalWorkflowMigrationIntegrationTest extends SharedPostgresMigrationTe
                     INSERT INTO tb_ifml_atrz_dtl(ifml_atrz_sn,atrz_cycl,atrz_seq,user_id,aprv_yn)
                     VALUES (-1,1,1,'WF_APPROVER','A')
                     """)).isInstanceOf(SQLException.class).hasMessageContaining("foreign key");
+
+            // V2_121: 처리 이력은 결재 차수에 묶이고, 유형마다 필요한 값이 있어야 들어간다.
+            String revision = "(SELECT ifml_atrz_sn FROM tb_ifml_atrz_info WHERE aplcnt_id='WF_APPLICANT' AND aprv_yn='A')";
+            assertThat(statement.executeUpdate("""
+                    INSERT INTO tb_ifml_atrz_prcs_hstry(ifml_atrz_sn,atrz_cycl,prcs_type_cd,trgt_user_id,bfr_user_id,frst_rgtr_id,crt_dt)
+                    VALUES (%s,1,'REPLACE','WF_NEW','WF_APPROVER','WF_APPLICANT',CURRENT_TIMESTAMP),
+                           (%s,1,'REMIND',NULL,NULL,'WF_APPLICANT',CURRENT_TIMESTAMP)
+                    """.formatted(revision, revision))).isEqualTo(2);
+            assertThatThrownBy(() -> statement.executeUpdate("""
+                    INSERT INTO tb_ifml_atrz_prcs_hstry(ifml_atrz_sn,atrz_cycl,prcs_type_cd,frst_rgtr_id,crt_dt)
+                    VALUES (%s,1,'ASK','WF_APPROVER',CURRENT_TIMESTAMP)
+                    """.formatted(revision))).isInstanceOf(SQLException.class).hasMessageContaining("ck_tb_ifml_atrz_prcs_hstry_shape");
+            assertThatThrownBy(() -> statement.executeUpdate("""
+                    INSERT INTO tb_ifml_atrz_prcs_hstry(ifml_atrz_sn,atrz_cycl,prcs_type_cd,prcs_cn,frst_rgtr_id,crt_dt)
+                    VALUES (%s,1,'DELEGATE','x','WF_APPROVER',CURRENT_TIMESTAMP)
+                    """.formatted(revision))).isInstanceOf(SQLException.class).hasMessageContaining("ck_tb_ifml_atrz_prcs_hstry_prcs_type_cd");
+            assertThatThrownBy(() -> statement.executeUpdate("""
+                    INSERT INTO tb_ifml_atrz_prcs_hstry(ifml_atrz_sn,atrz_cycl,prcs_type_cd,frst_rgtr_id,crt_dt)
+                    VALUES (%s,2,'REMIND','WF_APPLICANT',CURRENT_TIMESTAMP)
+                    """.formatted(revision))).isInstanceOf(SQLException.class).hasMessageContaining("foreign key");
         }
     }
 }

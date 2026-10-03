@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -39,6 +40,7 @@ public class InformalSanctionService {
     private final UserRepository userRepository;
     private final InformalSanctionDetailRepository detailRepository;
     private final InformalSanctionHistoryRepository historyRepository;
+    private final InformalSanctionProcessRepository processRepository;
     private final EntityManager entityManager;
 
     static final String TASK_TYPE_CODE_GROUP = "COM075";
@@ -108,8 +110,9 @@ public class InformalSanctionService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         List<InformalSanctionDetail> lines = detailRepository.findForDocuments(List.of(id));
         List<InformalSanctionHistory> history = historyRepository.findForDocuments(List.of(id));
-        return toParticipantDto(sanction, participantId, lines, history,
-                userNames(List.of(sanction), lines), taskTypeNames(), true);
+        List<InformalSanctionProcess> processes = processRepository.findForDocuments(List.of(id));
+        return toParticipantDto(sanction, participantId, lines, history, processes,
+                userNames(List.of(sanction), lines, processes), absentUsers(lines), taskTypeNames(), true);
     }
 
     /** 기존 단일 aprvrId 요청은 한 단계의 승인으로 유지한다. */
@@ -270,6 +273,180 @@ public class InformalSanctionService {
         confirmInformalSanction(id, aprvYn, opinion, null);
     }
 
+    /**
+     * [2026-10-03 결재 동선 개선] 기안자가 지금 차례인 결재자에게 재알림을 보낸다. 같은 차수에서 하루 한 번이다 —
+     * 기록이 처리 이력에 남아 다음 날까지 다시 보내지 않는다. 문서 상태와 버전은 바꾸지 않는다.
+     */
+    @Transactional
+    public int remindApprovers(Long id) {
+        InformalSanction sanction = lock(id);
+        SecurityUtil.assertOwnerByEsntlId(sanction.getAplcntId());
+        assertInProgress(sanction, "재알림");
+        if (cycleProcesses(sanction).stream().anyMatch(InformalSanctionService::remindedToday)) {
+            throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE,
+                    "오늘은 이미 재알림을 보냈습니다. 내일 다시 보낼 수 있습니다.");
+        }
+        List<String> receivers = detailRepository.findRevision(id, sanction.getAtrzCycl()).stream()
+                .filter(d -> d.status() == ApprovalStatus.ACTIVE).map(d -> d.getId().getUserId()).sorted().toList();
+        if (receivers.isEmpty()) throw new BusinessException(CommonErrorCode.INVALID_STATE, "재알림을 받을 결재자가 없습니다.");
+        processRepository.save(InformalSanctionProcess.record(sanction, ApprovalProcessType.REMIND,
+                sanction.getAplcntId(), null, null, null, LocalDateTime.now()));
+        java.util.UUID eventId = java.util.UUID.randomUUID();
+        receivers.forEach(receiver -> eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, receiver,
+                "결재 재알림", documentLabel(sanction) + "를 기다리고 있습니다. 확인해 주세요.", pendingLink(id))));
+        return receivers.size();
+    }
+
+    /**
+     * [2026-10-03 D6] 기안자가 아직 처리하지 않은 결재자를 다른 사람으로 바꾼다. 앞 단계 승인과 같은 단계 다른 사람의
+     * 결정은 그대로다. 대결·위임이 아니다 — 새 결재자가 자기 이름으로 결재하며, 바꾼 기록은 처리 이력에 남는다.
+     * 새 결재자는 상신 때와 같은 검사(본인·사용 중·결재 권한·중복)를 지나야 한다.
+     */
+    @Transactional
+    public void replaceApprover(Long id, String fromUserId, String toUserId, Integer expectedVersion) {
+        InformalSanction sanction = lock(id);
+        SecurityUtil.assertOwnerByEsntlId(sanction.getAplcntId());
+        assertInProgress(sanction, "결재자 변경");
+        assertVersion(sanction, expectedVersion);
+        List<InformalSanctionDetail> lines = detailRepository.findRevision(id, sanction.getAtrzCycl());
+        InformalSanctionDetail previous = lines.stream().filter(d -> d.getId().getUserId().equals(fromUserId)).findFirst()
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND,
+                        "결재선에 없는 사람입니다. 최신 상태를 확인해 주세요."));
+        if (previous.status() != ApprovalStatus.WAITING && previous.status() != ApprovalStatus.ACTIVE) {
+            throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
+                    "이미 처리한 결재자는 바꿀 수 없습니다. 최신 상태를 확인해 주세요.");
+        }
+        if (lines.stream().anyMatch(d -> d.getId().getUserId().equals(toUserId))) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "이미 결재선에 있는 사람입니다.");
+        }
+        validateStages(sanction.getAplcntId(), List.of(new ApprovalStageRequest(previous.kind(), List.of(toUserId))));
+        boolean wasActive = previous.status() == ApprovalStatus.ACTIVE;
+        InformalSanctionDetail replacement = previous.reassignTo(toUserId);
+        detailRepository.delete(previous);
+        detailRepository.flush();
+        detailRepository.save(replacement);
+        String representative = lines.stream().map(d -> d == previous ? replacement : d)
+                .filter(d -> d.status() == ApprovalStatus.ACTIVE).map(d -> d.getId().getUserId()).sorted().findFirst()
+                .orElse(sanction.getAprvrId());
+        if (representative.equals(sanction.getAprvrId())) {
+            entityManager.lock(sanction, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
+        } else {
+            sanction.selectRepresentativeApprover(representative);
+        }
+        processRepository.save(InformalSanctionProcess.record(sanction, ApprovalProcessType.REPLACE,
+                sanction.getAplcntId(), toUserId, fromUserId, null, LocalDateTime.now()));
+        java.util.UUID eventId = java.util.UUID.randomUUID();
+        eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, fromUserId, "결재선에서 빠졌습니다",
+                documentLabel(sanction) + "의 결재자를 기안자가 다른 사람으로 바꿨습니다. 처리할 필요가 없습니다.", "/approvals"));
+        if (wasActive) {
+            eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, toUserId, "결재 순서 도래",
+                    documentLabel(sanction) + "를 확인해 주세요.", pendingLink(id)));
+        }
+    }
+
+    /**
+     * [2026-10-03 D7] 결재자가 반려하지 않고 기안자에게 보완을 요청한다. 문서는 진행 중으로 남고 요청한 결재자의
+     * 차례도 그대로다. 기안자가 답하면 같은 결재자 차례로 돌아오며 앞 단계 승인은 유지된다. 한 번에 하나만 열린다.
+     */
+    @Transactional
+    public void requestSupplement(Long id, String question, Integer expectedVersion) {
+        InformalSanction sanction = lock(id);
+        String actor = SecurityUtil.getCurrentEsntlId()
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
+        List<InformalSanctionDetail> lines = detailRepository.findRevision(id, sanction.getAtrzCycl());
+        InformalSanctionDetail ownLine = lines.stream().filter(d -> actor.equals(d.getId().getUserId()))
+                .findFirst().orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
+        SecurityUtil.assertOwnerByEsntlId(ownLine.getId().getUserId());
+        assertInProgress(sanction, "보완 요청");
+        if (ownLine.status() == ApprovalStatus.WAITING) {
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED, "아직 결재 차례가 아닙니다. 앞 단계의 결재가 끝나면 알림이 옵니다.");
+        }
+        if (ownLine.status() != ApprovalStatus.ACTIVE) {
+            throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
+                    "이미 처리한 결재입니다. 최신 상태를 확인해 주세요.");
+        }
+        assertVersion(sanction, expectedVersion);
+        String text = requiredText(question, "보완 요청 내용을 적어 주세요.");
+        if (openSupplement(lines, cycleProcesses(sanction)) != null) {
+            throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
+                    "이미 보완 요청 중인 문서입니다. 기안자의 답을 기다려 주세요.");
+        }
+        processRepository.save(InformalSanctionProcess.record(sanction, ApprovalProcessType.ASK, actor,
+                sanction.getAplcntId(), null, text, LocalDateTime.now()));
+        entityManager.lock(sanction, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
+        eventPublisher.publishEvent(new NotificationRequestedEvent(java.util.UUID.randomUUID(), sanction.getAplcntId(),
+                "보완 요청이 왔습니다", documentLabel(sanction)
+                        + "에 결재자가 보완을 요청했습니다. 결재함에서 요청 내용을 확인하고 답해 주세요.", submittedLink(id)));
+    }
+
+    /**
+     * [2026-10-03 D7] 기안자가 열린 보완 요청에 답한다. 제목·본문을 함께 고칠 수 있으며, 고치면 고치기 전 본문을 처리
+     * 이력(REVISE)에 남기고 앞서 승인한 사람에게 알린다 — 승인은 그대로 유지된다(D7 규칙).
+     */
+    @Transactional
+    public void answerSupplement(Long id, String answer, String docTtl, String docCn, Integer expectedVersion) {
+        InformalSanction sanction = lock(id);
+        SecurityUtil.assertOwnerByEsntlId(sanction.getAplcntId());
+        assertInProgress(sanction, "보완 답변");
+        assertVersion(sanction, expectedVersion);
+        List<InformalSanctionDetail> lines = detailRepository.findRevision(id, sanction.getAtrzCycl());
+        InformalSanctionProcess ask = openSupplement(lines, cycleProcesses(sanction));
+        if (ask == null) {
+            throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION, "답할 보완 요청이 없습니다. 최신 상태를 확인해 주세요.");
+        }
+        String text = requiredText(answer, "보완 요청에 대한 답을 적어 주세요.");
+        String title = docTtl == null ? sanction.getDocTtl() : docTtl.trim();
+        String content = docCn == null ? sanction.getDocCn() : docCn;
+        if (title == null || title.isBlank() || title.length() > 256 || content != null && content.length() > 4000) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "제목은 1~256자, 본문은 4000자 이내로 적어 주세요.");
+        }
+        boolean revised = !Objects.equals(title, sanction.getDocTtl()) || !Objects.equals(content, sanction.getDocCn());
+        LocalDateTime now = LocalDateTime.now();
+        String before = sanction.getDocCn();
+        processRepository.save(InformalSanctionProcess.record(sanction, ApprovalProcessType.ANSWER,
+                sanction.getAplcntId(), ask.getFrstRgtrId(), null, text, now));
+        if (revised) {
+            processRepository.save(InformalSanctionProcess.record(sanction, ApprovalProcessType.REVISE,
+                    sanction.getAplcntId(), null, null, before == null || before.isBlank() ? "(본문 없음)" : before, now));
+            sanction.reviseContent(title, content);
+            currentHistory(sanction).reviseContent(sanction);
+        } else {
+            entityManager.lock(sanction, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
+        }
+        java.util.UUID eventId = java.util.UUID.randomUUID();
+        eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, ask.getFrstRgtrId(), "보완 답변이 왔습니다",
+                documentLabel(sanction) + "에 기안자가 답했습니다. 내용을 확인하고 결재해 주세요.", pendingLink(id)));
+        if (revised) {
+            lines.stream().filter(d -> d.status() == ApprovalStatus.APPROVED).map(d -> d.getId().getUserId())
+                    .distinct().sorted().forEach(receiver -> eventPublisher.publishEvent(new NotificationRequestedEvent(
+                            eventId, receiver, "결재한 문서의 내용이 바뀌었습니다", documentLabel(sanction)
+                                    + "의 내용을 기안자가 보완했습니다. 앞서 한 승인은 그대로입니다.", processedLink(id))));
+        }
+    }
+
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Seoul");
+
+    /**
+     * 재알림의 '하루' 는 한국 날짜다. 기록 시각은 다른 이력과 같이 JVM 시계로 남으므로 그 순간을 한국 날짜로 옮겨 비교한다 —
+     * 서버가 UTC 면 JVM 날짜는 한국 오전 9시에 바뀌어, 같은 날 두 번 보내거나 다음 날 보내지 못한다.
+     */
+    private static boolean remindedToday(InformalSanctionProcess process) {
+        return process.getPrcsTypeCd() == ApprovalProcessType.REMIND
+                && process.getCrtDt().atZone(ZoneId.systemDefault()).withZoneSameInstant(BUSINESS_ZONE).toLocalDate()
+                        .equals(LocalDate.now(BUSINESS_ZONE));
+    }
+
+    private List<InformalSanctionProcess> cycleProcesses(InformalSanction sanction) {
+        return processRepository.findForDocuments(List.of(sanction.getIfmlAtrzSn())).stream()
+                .filter(p -> p.getAtrzCycl().compareTo(sanction.getAtrzCycl()) == 0).toList();
+    }
+
+    private static String requiredText(String value, String message) {
+        String text = value == null ? "" : value.trim();
+        if (text.isEmpty() || text.length() > 4000) throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, message);
+        return text;
+    }
+
     private InformalSanction lock(Long id) {
         return informalSanctionRepository.findByIdForUpdate(Objects.requireNonNull(id))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
@@ -288,6 +465,16 @@ public class InformalSanctionService {
         throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
                 reason + " " + action + "할 수 없습니다. 최신 상태를 확인해 주세요.");
     }
+
+    /**
+     * [2026-10-03 D1] 결재 알림은 문서로 바로 간다 — 결재함이 탭과 문서 번호만 읽는다(구조 키, 자유 입력 아님).
+     * 처리할 필요가 없는 알림(회수·병렬 반려·결재선에서 빠짐)은 종전대로 결재함으로만 간다.
+     */
+    static String pendingLink(Long id) { return "/approvals?tab=PENDING&doc=" + id; }
+
+    static String submittedLink(Long id) { return "/approvals?tab=SUBMITTED&doc=" + id; }
+
+    static String processedLink(Long id) { return "/approvals?tab=PROCESSED&doc=" + id; }
 
     /** 알림 본문에서 문서를 가리키는 말. 제목이 있으면 제목으로, 번호는 결재함 목록에서 찾는 열쇠로 함께 싣는다. */
     static String documentLabel(InformalSanction sanction) {
@@ -330,7 +517,7 @@ public class InformalSanctionService {
         java.util.UUID eventId = java.util.UUID.randomUUID();
         receivers.stream().sorted().forEach(receiver -> eventPublisher.publishEvent(
                 new NotificationRequestedEvent(eventId, receiver, "결재 순서 도래",
-                        documentLabel(sanction) + "를 확인해 주세요.", "/approvals")));
+                        documentLabel(sanction) + "를 확인해 주세요.", pendingLink(sanction.getIfmlAtrzSn()))));
     }
 
     private void publishFinalStatus(InformalSanction sanction, String actor, String opinion) {
@@ -441,20 +628,40 @@ public class InformalSanctionService {
         List<Long> ids = page.stream().map(InformalSanction::getIfmlAtrzSn).toList();
         List<InformalSanctionDetail> lines = detailRepository.findVisibleForDocuments(ids, actor);
         List<InformalSanctionHistory> history = historyRepository.findVisibleForDocuments(ids, actor);
-        Map<String, String> users = userNames(page.getContent(), lines);
+        List<InformalSanctionProcess> processes = processRepository.findForDocuments(ids);
+        Map<String, String> users = userNames(page.getContent(), lines, processes);
+        Set<String> absent = absentUsers(lines);
         Map<String, String> tasks = taskTypeNames();
         Map<Long, List<InformalSanctionDetail>> byDocument = lines.stream().collect(Collectors.groupingBy(d -> d.getId().getIfmlAtrzSn()));
         Map<Long, List<InformalSanctionHistory>> revisions = history.stream().collect(Collectors.groupingBy(h -> h.getId().getIfmlAtrzSn()));
+        Map<Long, List<InformalSanctionProcess>> processByDocument = processes.stream().collect(Collectors.groupingBy(InformalSanctionProcess::getIfmlAtrzSn));
         return page.map(s -> toParticipantDto(s, actor, byDocument.getOrDefault(s.getIfmlAtrzSn(), List.of()),
-                revisions.getOrDefault(s.getIfmlAtrzSn(), List.of()), users, tasks, false));
+                revisions.getOrDefault(s.getIfmlAtrzSn(), List.of()), processByDocument.getOrDefault(s.getIfmlAtrzSn(), List.of()),
+                users, absent, tasks, false));
     }
 
-    private Map<String, String> userNames(List<InformalSanction> sanctions, List<InformalSanctionDetail> lines) {
+    private Map<String, String> userNames(List<InformalSanction> sanctions, List<InformalSanctionDetail> lines,
+                                          List<InformalSanctionProcess> processes) {
         Set<String> ids = new HashSet<>();
         sanctions.forEach(s -> { if (s.getAplcntId() != null) ids.add(s.getAplcntId()); });
         lines.forEach(d -> ids.add(d.getId().getUserId()));
+        // 결재선에서 빠진 사람도 처리 이력에는 이름으로 남아야 한다.
+        processes.forEach(p -> {
+            ids.add(p.getFrstRgtrId());
+            if (p.getTrgtUserId() != null) ids.add(p.getTrgtUserId());
+            if (p.getBfrUserId() != null) ids.add(p.getBfrUserId());
+        });
         return userRepository.findAllById(ids).stream().collect(Collectors.toMap(User::getEsntlId,
                 u -> u.getUserNm() == null ? "" : u.getUserNm(), (first, second) -> first));
+    }
+
+    /** [2026-10-03] 결재선에 있는 사람 중 부재 중인 사람. 결재선을 보는 사람이 늦어질 차례를 미리 안다. */
+    private Set<String> absentUsers(List<InformalSanctionDetail> lines) {
+        Set<String> ids = lines.stream().map(d -> d.getId().getUserId()).collect(Collectors.toSet());
+        if (ids.isEmpty()) return Set.of();
+        return userRepository.findProfilesByEsntlIds(ids).stream()
+                .filter(profile -> Boolean.TRUE.equals(profile.absent()))
+                .map(nuri.business.service.user.dto.UserSearchDto::esntlId).collect(Collectors.toSet());
     }
 
     private Map<String, String> taskTypeNames() {
@@ -465,7 +672,8 @@ public class InformalSanctionService {
 
     private InformalSanctionDto toParticipantDto(InformalSanction sanction, String actor,
             List<InformalSanctionDetail> lines, List<InformalSanctionHistory> revisions,
-            Map<String, String> users, Map<String, String> tasks, boolean includeHistory) {
+            List<InformalSanctionProcess> processes, Map<String, String> users, Set<String> absent,
+            Map<String, String> tasks, boolean includeHistory) {
         boolean owner = actor.equals(sanction.getAplcntId());
         Set<BigDecimal> allowed = lines.stream().filter(d -> actor.equals(d.getId().getUserId()))
                 .map(d -> d.getId().getAtrzCycl()).collect(Collectors.toSet());
@@ -492,7 +700,7 @@ public class InformalSanctionService {
         dto.setAprvrNm(users.getOrDefault(dto.getAprvrId(), ""));
         List<InformalSanctionDetail> visibleLines = lines.stream()
                 .filter(d -> d.getId().getAtrzCycl().compareTo(visibleCycle) == 0).toList();
-        dto.setStages(stageDtos(visibleLines, users));
+        dto.setStages(stageDtos(visibleLines, users, absent));
         // 힌트는 서버가 그 요청을 실제로 받아 줄 때만 참이다 — 참여 조건뿐 아니라 그 동작의 기능 권한도 본다.
         // 권한을 회수한 그룹에게 버튼이 남으면 누른 뒤에야 403 을 만난다.
         dto.setCanApprove(current && "A".equals(sanction.getAprvYn()) && SecurityUtil.hasPermission(APPROVE_PERMISSION)
@@ -506,12 +714,68 @@ public class InformalSanctionService {
                 .sorted(Comparator.comparing((InformalSanctionHistory h) -> h.getId().getAtrzCycl()).reversed())
                 .map(h -> new ApprovalRevisionDto(h.getId().getAtrzCycl().intValueExact(), h.getDocTtl(), h.getDocCn(),
                         h.getAprvYn(), h.getReqYmd(), h.getAtrzDt(), stageDtos(lines.stream()
-                                .filter(d -> d.getId().getAtrzCycl().compareTo(h.getId().getAtrzCycl()) == 0).toList(), users)))
+                                .filter(d -> d.getId().getAtrzCycl().compareTo(h.getId().getAtrzCycl()) == 0).toList(), users, absent)))
+                .toList() : List.of());
+        // [2026-10-03 결재 동선 개선] 진행 중인 현재 차수에만 붙는 힌트 — 지금 단계 시작 시각, 열린 보완 요청, 기안자의
+        //   재알림·결재자 바꾸기·보완 답변, 결재자의 보완 요청. 서버가 받아 줄 때만 참이다(아래 쓰기 메서드와 같은 판정).
+        boolean inProgress = current && "A".equals(sanction.getAprvYn());
+        List<InformalSanctionProcess> cycleProcesses = processes.stream()
+                .filter(p -> p.getAtrzCycl().compareTo(sanction.getAtrzCycl()) == 0).toList();
+        InformalSanctionProcess openAsk = inProgress ? openSupplement(visibleLines, cycleProcesses) : null;
+        dto.setOpenSupplement(openAsk == null ? null : new ApprovalSupplementDto(openAsk.getFrstRgtrId(),
+                users.getOrDefault(openAsk.getFrstRgtrId(), ""), openAsk.getPrcsCn(), openAsk.getCrtDt()));
+        dto.setCurrentStageSince(inProgress ? stageSince(visibleLines, revisions, sanction) : null);
+        boolean drafter = inProgress && owner && SecurityUtil.hasPermission(DRAFT_PERMISSION);
+        boolean remindedToday = cycleProcesses.stream().anyMatch(InformalSanctionService::remindedToday);
+        dto.setRemindedToday(inProgress && owner && remindedToday);
+        dto.setCanRemind(drafter && !remindedToday);
+        dto.setCanReplaceApprover(drafter && visibleLines.stream()
+                .anyMatch(d -> d.status() == ApprovalStatus.WAITING || d.status() == ApprovalStatus.ACTIVE));
+        dto.setCanAnswerSupplement(drafter && openAsk != null);
+        dto.setCanRequestSupplement(dto.isCanApprove() && openAsk == null);
+        dto.setProcessHistory(includeHistory ? processes.stream().filter(p -> allowed.contains(p.getAtrzCycl()))
+                .map(p -> new ApprovalProcessDto(p.getPrcsTypeCd(), p.getAtrzCycl().intValueExact(),
+                        users.getOrDefault(p.getFrstRgtrId(), ""),
+                        p.getTrgtUserId() == null ? null : users.getOrDefault(p.getTrgtUserId(), ""),
+                        p.getBfrUserId() == null ? null : users.getOrDefault(p.getBfrUserId(), ""),
+                        p.getPrcsCn(), p.getCrtDt()))
                 .toList() : List.of());
         return dto;
     }
 
-    private static List<ApprovalStageDto> stageDtos(List<InformalSanctionDetail> lines, Map<String, String> users) {
+    /**
+     * 보완 요청이 열려 있는가 — 같은 차수의 마지막 ASK 뒤에 ANSWER 가 없고, 요청한 결재자가 아직 차례일 때다.
+     * 요청한 사람이 승인·반려했거나 결재선에서 빠지면 요청은 닫힌다.
+     */
+    private static InformalSanctionProcess openSupplement(List<InformalSanctionDetail> currentLines,
+                                                          List<InformalSanctionProcess> cycleProcesses) {
+        InformalSanctionProcess lastAsk = null;
+        for (InformalSanctionProcess process : cycleProcesses) {
+            if (process.getPrcsTypeCd() == ApprovalProcessType.ASK) lastAsk = process;
+            else if (process.getPrcsTypeCd() == ApprovalProcessType.ANSWER) lastAsk = null;
+        }
+        if (lastAsk == null) return null;
+        String asker = lastAsk.getFrstRgtrId();
+        return currentLines.stream().anyMatch(d -> asker.equals(d.getId().getUserId()) && d.status() == ApprovalStatus.ACTIVE)
+                ? lastAsk : null;
+    }
+
+    /** 지금 단계가 시작된 시각 — 앞 단계의 마지막 결정 시각, 첫 단계면 이 차수를 올린 시각. */
+    private static LocalDateTime stageSince(List<InformalSanctionDetail> lines, List<InformalSanctionHistory> revisions,
+                                            InformalSanction sanction) {
+        Optional<BigDecimal> activeStage = lines.stream().filter(d -> d.status() == ApprovalStatus.ACTIVE)
+                .map(d -> d.getId().getAtrzSeq()).min(BigDecimal::compareTo);
+        if (activeStage.isEmpty()) return null;
+        Optional<LocalDateTime> previous = lines.stream()
+                .filter(d -> d.getId().getAtrzSeq().compareTo(activeStage.get()) < 0)
+                .map(InformalSanctionDetail::getAtrzDt).filter(Objects::nonNull).max(Comparator.naturalOrder());
+        if (previous.isPresent()) return previous.get();
+        return revisions.stream().filter(h -> h.getId().getAtrzCycl().compareTo(sanction.getAtrzCycl()) == 0)
+                .map(InformalSanctionHistory::getCrtDt).filter(Objects::nonNull).findFirst().orElse(null);
+    }
+
+    private static List<ApprovalStageDto> stageDtos(List<InformalSanctionDetail> lines, Map<String, String> users,
+                                                    Set<String> absent) {
         Map<BigDecimal, List<InformalSanctionDetail>> stages = lines.stream().collect(Collectors.groupingBy(
                 d -> d.getId().getAtrzSeq(), TreeMap::new, Collectors.toList()));
         return stages.entrySet().stream().map(entry -> {
@@ -525,7 +789,8 @@ public class InformalSanctionService {
             else status = ApprovalStatus.WAITING;
             return new ApprovalStageDto(entry.getKey().intValueExact(), group.getFirst().kind(), status,
                     group.stream().map(d -> new ApprovalApproverDto(d.getId().getUserId(),
-                            users.getOrDefault(d.getId().getUserId(), ""), d.status(), d.getAtrzOpnnCn(), d.getAtrzDt())).toList());
+                            users.getOrDefault(d.getId().getUserId(), ""), d.status(), d.getAtrzOpnnCn(), d.getAtrzDt(),
+                            absent.contains(d.getId().getUserId()))).toList());
         }).toList();
     }
 }
