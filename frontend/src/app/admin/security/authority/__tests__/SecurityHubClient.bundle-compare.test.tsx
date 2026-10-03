@@ -33,10 +33,11 @@ vi.mock('@/types/generated-screen-registry', async (importOriginal) => {
   const bundle: PermissionBundle = {
     id: 'menu-screen', name: '메뉴·화면 설정', description: '메뉴와 화면 관리를 맡깁니다.', protected: false,
     permissions: ['MENU_READ', 'MENU_UPDATE', 'PROGRAM_READ'] as PermissionCode[], screens: ['/admin/system/menus', '/admin/system/programs'],
+    relatedScreens: [],
   };
   const recovery: PermissionBundle = {
     id: 'account-recovery', name: '계정 복구', description: '비밀번호 초기화를 맡깁니다.', protected: true,
-    permissions: ['USER_PASSWORD', 'USER_READ'] as PermissionCode[], screens: ['/admin/user/manage'],
+    permissions: ['USER_PASSWORD', 'USER_READ'] as PermissionCode[], screens: ['/admin/user/manage'], relatedScreens: [],
   };
   return { ...fixture.withFixtureScreenRegistry(await importOriginal()), PERMISSION_BUNDLES: [bundle, recovery] };
 });

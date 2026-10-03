@@ -172,6 +172,12 @@ const JSON_FILES = {
       permissions: ['THING_UPDATE_ALL', 'THING_READ', 'THING_UPDATE'] },
     { id: 'thing-security', name: '사물 보안', description: '보안 책임자에게 사물 권한 설정을 맡깁니다.', protected: true,
       permissions: ['THING_READ', 'AUTHRT_GRANT'] },
+  ],
+  // 카탈로그 전수 분류 — 어느 묶음에도 없는 권한은 사유와 함께 여기 있다.
+  excluded: [
+    { code: 'THING_CREATE', reason: '시험용 — 사물 등록은 묶음으로 맡기지 않는다.' },
+    { code: 'THING_DELETE', reason: '시험용 — 사물 삭제는 묶음으로 맡기지 않는다.' },
+    { code: 'THING_EXPORT', reason: '시험용 — 사물 내보내기는 묶음으로 맡기지 않는다.' },
   ] },
   // 화면 용어 원장(config/frontend-visible-terms.json)의 terms 모양. 묶음 문구 검사는 이 원장을 읽는다(사본 없음).
   [SCREEN_REGISTRY_INPUTS.visibleTerms]: { terms: [
@@ -239,10 +245,111 @@ test('the committed permission bundles follow the ledger, open real screens, and
       assert.ok(entry.mode === 'ALL' ? held.length === entry.permissions.length : held.length > 0, `${bundle.id}: ${route}`);
     }
     assert.equal(bundle.protected, bundle.permissions.some(code => PROTECTED_PERMISSIONS.includes(code)), bundle.id);
+    // 관련 화면도 원천에서 다시 판정한다 — 진입 권한이 빈 화면 가운데 이 묶음의 권한을 쓰기로 쓰는 화면 전부, 그것만.
+    const related = artifact.screens.filter(screen => screen.entry.permissions.length === 0
+      && screen.permissions.some(row => row.source === 'write' && bundle.permissions.includes(row.code))).map(screen => screen.route).sort();
+    assert.deepEqual([...bundle.relatedScreens].sort(), related, `${bundle.id} relatedScreens`);
+    assert.equal(bundle.relatedScreens.some(route => bundle.screens.includes(route)), false, `${bundle.id}: related and gated screens are disjoint`);
   }
   // '기본 업무'는 일반 사용자 그룹의 기본 권한과 같은 집합이라고 말한다 — 카탈로그 기본 배정이 바뀌면 함께 바꾼다.
   const userDefaults = catalog.permissions.filter(row => row.defaultGroups.includes('ROLE_USER')).map(row => row.code).sort();
   assert.deepEqual(artifact.bundles.find(bundle => bundle.id === 'basic-work')?.permissions, userDefaults);
+  // 누구나 들어가는 쪽지함·일정은 '기본 업무'의 관련 화면이다 — 묶음이 그 메뉴 표시를 더한다(2026-10-03, 선택지 ①).
+  for (const route of ['/note', '/smart-toolkit/schedule']) {
+    assert.ok(artifact.bundles.find(bundle => bundle.id === 'basic-work')?.relatedScreens.includes(route), `basic-work relates ${route}`);
+  }
+  // 전수 분류 — 카탈로그의 모든 권한은 어느 묶음에 있거나 사유와 함께 excluded 에 있고, 둘 다인 권한은 없다.
+  const bundled = new Set(ledger.bundles.flatMap(bundle => bundle.permissions));
+  const excluded = ledger.excluded.map(entry => entry.code);
+  assert.deepEqual(catalog.permissions.map(row => row.code).filter(code => !bundled.has(code) && !excluded.includes(code)), []);
+  assert.deepEqual(excluded.filter(code => bundled.has(code)), []);
+  for (const entry of ledger.excluded) assert.ok(typeof entry.reason === 'string' && entry.reason.trim().length > 20, `${entry.code} has a reason`);
+});
+
+/** 주석을 지운 저장소 Java 소스. 사실 단언이 주석 속 사본(주석 처리한 가드 등)으로 통과하지 않게 한다. */
+function javaCode(file) {
+  return codeWithoutComments(fs.readFileSync(path.join(root, file), 'utf8')).code;
+}
+
+test('excluded permissions stay excluded only while the facts their reasons cite still hold', () => {
+  const ledger = JSON.parse(fs.readFileSync(path.join(root, SCREEN_REGISTRY_INPUTS.bundles), 'utf8'));
+  const catalog = JSON.parse(fs.readFileSync(path.join(root, SCREEN_REGISTRY_INPUTS.catalog), 'utf8'));
+  const excluded = new Set(ledger.excluded.map(entry => entry.code));
+  // ① 진입 권한일 뿐인 코드 — 약식 결재의 관리 경로 권한(INFORMAL_*_ALL·INFORMAL_APPR_ADMIN)과 첨부 관리 경로의 내려받기
+  //    권한(FILE_DOWNLOAD_ALL). 어떤 서버 판정도 이 코드를 보지 않아 경로에 들어가는 문만 연다 — 그래서 묶음에서 뺐다.
+  //    컨트롤러(api-server)·서비스·인가 소스가 이 코드로 판정하기 시작하면(진짜 대행이 생기면) 다시 분류해야 한다.
+  const entryOnly = [...excluded].filter(code => code.startsWith('INFORMAL_') || code === 'FILE_DOWNLOAD_ALL').sort();
+  assert.deepEqual(entryOnly,
+    ['FILE_DOWNLOAD_ALL', 'INFORMAL_APPR_ADMIN', 'INFORMAL_CREATE_ALL', 'INFORMAL_DELETE_ALL', 'INFORMAL_READ_ALL', 'INFORMAL_UPDATE_ALL']);
+  const javaRoots = ['api-server/src/main/java', 'business-app/src/main/java', 'business-core/src/main/java', 'foundation/src/main/java'];
+  const javaFiles = javaRoots.flatMap(dir => {
+    const found = [];
+    const walk = current => {
+      for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+        const target = path.join(current, entry.name);
+        if (entry.isDirectory()) walk(target);
+        else if (entry.name.endsWith('.java') && entry.name !== 'PermissionCodes.java') found.push(target);
+      }
+    };
+    walk(path.join(root, dir));
+    assert.ok(found.length > 0, `${dir} has Java sources`);
+    return found;
+  });
+  assert.ok(javaFiles.length > 100, 'the service sources were found');
+  // 사유가 인용한 컨트롤러(신청자 덮어쓰기·목록 거르기)도 판정 대상이다 — 컨트롤러 분기로 남의 결재를 돌려주는 경로를 놓치지 않는다.
+  assert.ok(javaFiles.some(file => file.endsWith(`${path.sep}InformalSanctionApiController.java`)), 'the approval controller is scanned');
+  for (const file of javaFiles) {
+    const literals = codeWithoutComments(fs.readFileSync(file, 'utf8')).strings;
+    const hits = entryOnly.filter(code => literals.some(literal => new RegExp(`(?<![A-Z0-9_])${code}(?![A-Z0-9_])`, 'u').test(literal)));
+    assert.deepEqual(hits, [], `${path.relative(root, file)} now judges ${hits.join(', ')} — re-classify the excluded entry-only permissions`);
+  }
+  // 약식 결재 — 서비스는 신청자 본인만 고치고·지우고·다시 올리게 하고 결재자 본인만 처리하게 한다. 컨트롤러는 신청자를
+  // 인증 주체로 덮어쓰고, 목록·상세를 인증 주체 기준으로 거른다. 사유가 인용한 이 사실들이 하나라도 바뀌면 다시 분류한다.
+  const sanctionService = javaCode('business-app/src/main/java/nuri/business/service/informalsanction/InformalSanctionService.java');
+  assert.match(sanctionService, /SecurityUtil\.assertOwnerByEsntlId\(sanction\.getAplcntId\(\)\)/u, 'update/delete/resubmit stay applicant-only');
+  assert.match(sanctionService, /SecurityUtil\.assertOwnerByEsntlId\(ownLine\.getId\(\)\.getUserId\(\)\)/u, 'confirmation stays approver-only');
+  const sanctionController = javaCode('api-server/src/main/java/nuri/api/controller/business/approval/InformalSanctionApiController.java');
+  assert.match(sanctionController, /dto\.setAplcntId\(userDetails\.getEsntlId\(\)\);/u, 'registration overwrites the applicant with the principal');
+  assert.match(sanctionController, /\.getInformalSanctionList\(userDetails\.getEsntlId\(\), pageable\)/u, 'the list is filtered by the principal');
+  assert.match(sanctionController, /\.getReceivedInformalSanctionList\(userDetails\.getEsntlId\(\), pageable\)/u, 'the received list is filtered by the principal');
+  assert.match(sanctionController, /\.getInformalSanction\(ifmlAtrzSn, userDetails\.getEsntlId\(\)\)/u, 'the detail is filtered by the principal');
+  // ② 첨부 관리자 권한(FILE_READ_ALL·FILE_DELETE_ALL) — 관리자 판정은 개인 귀속 참조만 보고 공유 술어(비밀글·회원 전용·논리
+  //    삭제)를 보지 않으며, 메모 보고·업무 보고 첨부는 개인 귀속이라 열리지 않는다. 그래서 '다른 사람 업무 자료 대행'에 넣으면
+  //    대행할 자료의 첨부는 못 열고 게시판 비밀글 첨부를 연다. 판정이 업무 자료에 맞게 좁아지면 다시 분류한다.
+  const filePolicy = javaCode('business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java');
+  for (const code of ['FILE_READ_ALL', 'FILE_DELETE_ALL']) {
+    assert.ok(excluded.has(code), `${code} is excluded`);
+    assert.match(filePolicy, new RegExp(
+      `boolean admin = SecurityUtil\\.hasPermission\\("${code}"\\);\\s*if \\(admin && !grants\\.personalReference\\(\\)\\) \\{\\s*return;`, 'u'),
+    `${code} opens every non-personal attachment regardless of the shared predicate`);
+  }
+  const attachmentSources = javaCode('business-core/src/main/java/nuri/business/service/file/AttachmentSource.java');
+  for (const source of ['MEMO_REPORT', 'WORK_REPORT']) {
+    assert.match(attachmentSources, new RegExp(`\\b${source}\\("tb_[a-z_]+", Sensitivity\\.PERSONAL\\b`, 'u'), `${source} attachments are personal`);
+  }
+  const proxy = ledger.bundles.find(bundle => bundle.id === 'others-work-data-proxy');
+  assert.ok(proxy, 'the work data proxy bundle exists');
+  assert.equal(proxy.permissions.some(code => /^FILE_/u.test(code)), false, 'the proxy bundle grants no attachment permission');
+  assert.match(proxy.description, /메모 보고·업무 보고에 붙은 첨부파일은 작성자 개인 자료라 이 묶음으로도 열 수 없습니다/u);
+  // ③ 메모 보고 전체 수정(MEMO_RPT_UPDATE_ALL) — 서버가 같은 권한으로 지시 작성도 허용하고(assertRecipientOrAdmin), 지시
+  //    권한은 일반 사용자 기본 권한이며, 지시에는 작성자 칸이 없다. 서버가 지시 판정을 분리하면 다시 분류한다.
+  assert.ok(excluded.has('MEMO_RPT_UPDATE_ALL'));
+  const memoService = javaCode('business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java');
+  assert.match(memoService,
+    /private void assertRecipientOrAdmin\(MemoReport entity\) \{\s*if \([\w.]*SecurityUtil\.hasPermission\("MEMO_RPT_UPDATE_ALL"\)\) \{\s*return;/u,
+    'the full update permission passes the instruction guard');
+  assert.match(memoService, /public void updateDrctMatter\([^)]*\) \{[^}]*assertRecipientOrAdmin\(entity\);/u, 'instructions use that guard');
+  assert.match(javaCode('business-app/src/main/java/nuri/business/domain/memoreport/MemoReport.java'),
+    /public void updateDrctMatter\(String drctnMttr, LocalDateTime drctnMttrRegDt\)/u, 'an instruction records no author');
+  assert.ok(catalog.permissions.find(row => row.code === 'MEMO_RPT_INSTRUCT')?.defaultGroups.includes('ROLE_USER'), 'instructing is a user default');
+  assert.ok(ledger.bundles.find(bundle => bundle.id === 'basic-work')?.permissions.includes('MEMO_RPT_INSTRUCT'));
+  assert.match(proxy.description, /메모 보고의 본문 수정과 지시는 맡기지 않습니다/u);
+  // 워크플로우 데모 화면은 demo pack 이 소유한다 — 업무 화면이 되면(소유가 바뀌면) 다시 분류한다.
+  assert.ok(excluded.has('WORKFLOW_READ'));
+  const { packs } = JSON.parse(fs.readFileSync(path.join(root, 'config/reusable-base-profiles.json'), 'utf8'));
+  const demo = JSON.stringify((Array.isArray(packs) ? packs : Object.entries(packs).map(([id, pack]) => ({ id, ...pack })))
+    .find(pack => pack.id === 'demo') ?? null);
+  for (const route of ['"src/app/admin/workflow"', '"src/app/admin/sanctn"']) assert.ok(demo.includes(route), `${route} is demo-owned`);
 });
 
 test('the protected permission set is the server\'s sensitive administration set', () => {
@@ -356,27 +463,65 @@ test('the protected set binding rejects literal copies even when the generated i
   assert.deepEqual(check(header), ['PROTECTED_PERMISSION_CODES 선언이 0개다(정확히 1개여야 한다)']);
 });
 
-test('login policy writes are in no bundle while the server lets them change protected accounts', () => {
-  // 로그인 정책 쓰기는 접속 제한(lmtYn)·IP·시간대로 계정의 로그인을 막거나 그 제한을 푼다. 같은 효과의 계정 상태
-  // 변경(USER_STATUS)은 보호 계정(권한관리자)에 권한 설정·권한 배정을 함께 요구하지만(authorizeProtectedAccountChange),
-  // 로그인 정책 쓰기에는 그 가드가 없다 — 묶음에 넣으면 보호 표시 없이 권한관리자의 접속을 막는 권한을 나눠 준다(H3).
-  const service = fs.readFileSync(path.join(root,
-    'business-core/src/main/java/nuri/business/service/login/LoginPolicyManageService.java'), 'utf8');
-  const writes = { LOGIN_POL_CREATE: 'insertLoginPolicy', LOGIN_POL_UPDATE: 'updateLoginPolicy', LOGIN_POL_DELETE: 'deleteLoginPolicy' };
-  const ledger = JSON.parse(fs.readFileSync(path.join(root, SCREEN_REGISTRY_INPUTS.bundles), 'utf8'));
-  for (const [code, method] of Object.entries(writes)) {
-    const start = service.search(new RegExp(`\\bpublic\\s+void\\s+${method}\\s*\\(`, 'u'));
-    assert.ok(start >= 0, `LoginPolicyManageService.${method} not found — re-check the login policy write guard before changing this test`);
-    const rest = service.slice(start + 1);
+const LOGIN_POLICY_WRITES = { LOGIN_POL_CREATE: 'insertLoginPolicy', LOGIN_POL_UPDATE: 'updateLoginPolicy', LOGIN_POL_DELETE: 'deleteLoginPolicy' };
+
+/**
+ * 로그인 정책 쓰기 권한이 서버 보호 계정 가드 없이 묶음에 들어갔는지 판정한다(위반 문장 목록 — 비면 통과).
+ * 주석을 지우고 문자열 리터럴을 비운 코드에서 쓰기 메서드 본문을 잘라 가드 호출(authorizeProtectedAccountChange)을 찾는다 —
+ * 주석으로 막은 가드 호출이나 문자열 속 이름은 가드가 아니다(종전 계약은 원문을 읽어 그것을 통과시켰다). 메서드를 찾지
+ * 못해도 위반이다.
+ */
+function loginPolicyGuardViolations(source, bundles) {
+  const code = codeWithoutComments(source).code.replace(/"(?:[^"\\\n]|\\.)*"/gu, '""');
+  const violations = [];
+  for (const [permission, method] of Object.entries(LOGIN_POLICY_WRITES)) {
+    const start = code.search(new RegExp(`\\bpublic\\s+void\\s+${method}\\s*\\(`, 'u'));
+    if (start < 0) {
+      violations.push(`LoginPolicyManageService.${method} not found — re-check the login policy write guard before changing this test`);
+      continue;
+    }
     // 다음 메서드 선언 줄에서 자른다(줄 단위 — 중첩 수량자 정규식을 쓰지 않는다). 그 앞 애노테이션 줄이 본문에 남아도
     // 가드 판정에는 영향이 없다.
-    const lines = rest.split('\n');
+    const lines = code.slice(start + 1).split('\n');
     const next = lines.findIndex((line, index) => index > 0 && /^\s*(?:public|private|protected)\s[^;=]*\(/u.test(line));
     const body = (next < 0 ? lines : lines.slice(0, next)).join('\n');
     if (/\bauthorizeProtectedAccountChange\s*\(/u.test(body)) continue; // 서버가 보호 계정을 가리면 묶음에 넣어도 된다.
-    const holders = ledger.bundles.filter(bundle => bundle.permissions.includes(code)).map(bundle => bundle.id);
-    assert.deepEqual(holders, [], `${code} reaches protected accounts without the server guard (${method}); keep it out of bundles`);
+    const holders = bundles.filter(bundle => bundle.permissions.includes(permission)).map(bundle => bundle.id);
+    if (holders.length > 0) {
+      violations.push(`${permission} reaches protected accounts without the server guard (${method}); keep it out of bundles (${holders.join(', ')})`);
+    }
   }
+  return violations;
+}
+
+test('login policy writes are in a bundle only while the server guards protected accounts in each write', () => {
+  // 로그인 정책 쓰기는 접속 제한(lmtYn)·IP·시간대로 계정의 로그인을 막거나 그 제한을 푼다. 같은 효과의 계정 상태
+  // 변경(USER_STATUS)은 보호 계정(권한관리자)에 권한 설정·권한 배정을 함께 요구한다(authorizeProtectedAccountChange).
+  // 로그인 정책 쓰기도 세 메서드 모두 그 가드를 부를 때만 묶음에 둔다 — 가드 없이 묶음에 넣으면 보호 표시 없이
+  // 권한관리자의 접속을 막는 권한을 나눠 준다(H3, GAP-SEC-006).
+  const service = fs.readFileSync(path.join(root,
+    'business-core/src/main/java/nuri/business/service/login/LoginPolicyManageService.java'), 'utf8');
+  const ledger = JSON.parse(fs.readFileSync(path.join(root, SCREEN_REGISTRY_INPUTS.bundles), 'utf8'));
+  assert.deepEqual(loginPolicyGuardViolations(service, ledger.bundles), []);
+});
+
+test('the login policy guard binding ignores guard calls that are commented out', () => {
+  const bundles = [{ id: 'user-organization', permissions: Object.keys(LOGIN_POLICY_WRITES) }];
+  const method = (name, body) => `    @Transactional\n    public void ${name}(LoginPolicyDto dto) {\n${body}    }\n`;
+  const guarded = '        protectedAccountGuard.authorizeProtectedAccountChange(target.getEsntlId());\n';
+  const service = bodies => `public class LoginPolicyManageService {\n${Object.values(LOGIN_POLICY_WRITES).map((name, index) => method(name, bodies[index])).join('\n')}}\n`;
+
+  assert.deepEqual(loginPolicyGuardViolations(service([guarded, guarded, guarded]), bundles), []);
+  // 가드가 없는 쓰기, 줄 주석·블록 주석으로 막은 가드, 문자열 속 가드 이름은 모두 가드가 아니다.
+  const missing = loginPolicyGuardViolations(service([guarded, '        policyRepository.save(entity);\n', guarded]), bundles);
+  assert.deepEqual(missing, ['LOGIN_POL_UPDATE reaches protected accounts without the server guard (updateLoginPolicy); keep it out of bundles (user-organization)']);
+  assert.equal(loginPolicyGuardViolations(service([`        // ${guarded.trim()}\n`, guarded, guarded]), bundles).length, 1);
+  assert.equal(loginPolicyGuardViolations(service([guarded, guarded, `        /* ${guarded.trim()} */\n`]), bundles).length, 1);
+  assert.equal(loginPolicyGuardViolations(service([guarded, '        log.info("authorizeProtectedAccountChange(x)");\n', guarded]), bundles).length, 1);
+  // 묶음에 없는 쓰기 권한은 가드가 없어도 위반이 아니고, 쓰기 메서드를 찾지 못하면 위반이다.
+  assert.deepEqual(loginPolicyGuardViolations(service(['', '', '']), [{ id: 'other', permissions: ['USER_READ'] }]), []);
+  assert.match(loginPolicyGuardViolations(service([guarded, guarded, guarded]).replace('deleteLoginPolicy', 'removeLoginPolicy'), bundles)[0],
+    /LoginPolicyManageService\.deleteLoginPolicy not found/u);
 });
 
 test('bundle copy is checked against every replaced, forbidden or audience-only term of the visible terms ledger', () => {
@@ -561,16 +706,47 @@ const GATED = ['/admin', '/admin/hub/alpha', '/admin/hub/beta', '/admin/things']
 test('permission bundles keep ledger order, sort their permissions, and open the gated screens their permissions satisfy', t => {
   const { dir } = fixture(t);
   const registry = buildScreenRegistry(dir);
-  // 진입 권한이 빈 화면('/', '/admin/things/[id]')은 누구나 들어가므로 묶음이 여는 화면이 아니다.
+  // 진입 권한이 빈 화면('/', '/admin/things/[id]')은 누구나 들어가므로 묶음이 여는 화면이 아니다. 업무 홈('/')은
+  // THING_READ 를 표시('display')로만 쓰므로 관련 화면도 아니다.
   assert.deepEqual(registry.bundles, [
     { id: 'thing-viewer', name: '사물 조회', description: '사물 담당자에게 사물 조회를 맡깁니다.', protected: false,
-      permissions: ['THING_READ'], screens: GATED },
+      permissions: ['THING_READ'], screens: GATED, relatedScreens: [] },
     { id: 'thing-editor', name: '사물 편집', description: '사물 담당자에게 다른 사람의 사물까지 고치는 일을 맡깁니다.', protected: false,
-      permissions: ['THING_READ', 'THING_UPDATE', 'THING_UPDATE_ALL'], screens: GATED },
+      permissions: ['THING_READ', 'THING_UPDATE', 'THING_UPDATE_ALL'], screens: GATED, relatedScreens: [] },
     { id: 'thing-security', name: '사물 보안', description: '보안 책임자에게 사물 권한 설정을 맡깁니다.', protected: true,
-      permissions: ['AUTHRT_GRANT', 'THING_READ'], screens: GATED },
+      permissions: ['AUTHRT_GRANT', 'THING_READ'], screens: GATED, relatedScreens: [] },
   ]);
   assert.deepEqual(readScreenRegistryArtifact(registry.text).bundles, registry.bundles);
+  assert.deepEqual(validateScreenRegistry(readScreenRegistryArtifact(registry.text), dir), []);
+});
+
+/** 업무 홈이 사물 등록 대화상자를 연다 — 등록(THING_CREATE)은 쓰기, 조회(THING_READ)는 표시로만 쓴다. */
+function relatedFixture(t) {
+  const current = fixture(t);
+  current.write('frontend/src/app/HomeClient.tsx', [
+    "import { ThingCreateDialog } from '@/components/things/ThingCreateDialog';",
+    "export function HomeClient({ user }) { return canPermission(user, 'THING_READ') ? <ThingCreateDialog /> : null; }",
+  ].join('\n'));
+  current.mutate(SCREEN_REGISTRY_INPUTS.bundles, ledger => {
+    ledger.excluded = ledger.excluded.filter(entry => entry.code !== 'THING_CREATE');
+    ledger.bundles.push({ id: 'thing-creator', name: '사물 등록', description: '사물 담당자에게 사물 등록을 맡깁니다.', protected: false,
+      permissions: ['THING_READ', 'THING_CREATE'] });
+  });
+  return current;
+}
+
+test('a bundle relates the open screens that write with its permissions; display mentions and gated screens are not related', t => {
+  const { dir } = relatedFixture(t);
+  const registry = buildScreenRegistry(dir);
+  assert.deepEqual(byRoute(registry, '/').permissions.map(row => `${row.code}:${row.source}`), ['THING_CREATE:write', 'THING_READ:display']);
+  const bundles = Object.fromEntries(registry.bundles.map(bundle => [bundle.id, bundle]));
+  // 업무 홈은 진입 권한이 비었고 사물 등록을 쓰기로 쓴다 — 등록 묶음의 관련 화면이다. 그 화면이 THING_READ 를 표시로만 쓰는
+  // 것은 관련 근거가 아니다(조회 묶음에는 관련 화면이 없다).
+  assert.deepEqual(bundles['thing-creator'].relatedScreens, ['/']);
+  assert.deepEqual(bundles['thing-viewer'].relatedScreens, []);
+  // 진입 권한이 있는 화면(/admin/things 도 THING_CREATE 를 쓴다)은 관련 화면이 아니라 여는 화면에만 있다.
+  assert.deepEqual(bundles['thing-creator'].screens, GATED);
+  assert.equal(bundles['thing-creator'].relatedScreens.some(route => GATED.includes(route)), false);
   assert.deepEqual(validateScreenRegistry(readScreenRegistryArtifact(registry.text), dir), []);
 });
 
@@ -628,7 +804,25 @@ test('invalid permission bundle ledgers are red', t => {
       ledger => { bundle(ledger, 'thing-viewer').protected = true; }],
     ['delegated permission without its base', /thing-editor grants THING_UPDATE_ALL without its base permission THING_UPDATE/u,
       ledger => { bundle(ledger, 'thing-editor').permissions = ['THING_READ', 'THING_UPDATE_ALL']; }],
-    ['bundle that opens no screen', /thing-viewer opens no screen/u, ledger => { bundle(ledger, 'thing-viewer').permissions = ['THING_EXPORT']; }],
+    ['bundle that opens no screen', /thing-viewer opens no screen/u, ledger => { bundle(ledger, 'thing-viewer').permissions = ['THING_UPDATE']; }],
+    // 전수 분류 — 카탈로그의 모든 권한은 어느 묶음에 있거나 사유와 함께 excluded 에 있다.
+    ['excluded list missing', /must declare excluded/u, ledger => { delete ledger.excluded; }],
+    ['excluded list not an array', /must declare excluded/u, ledger => { ledger.excluded = { THING_CREATE: '이유' }; }],
+    ['excluded entry not an object', /Excluded permission #1 must be an object/u, ledger => { ledger.excluded[0] = 'THING_CREATE'; }],
+    ['unknown excluded field', /Excluded permission THING_CREATE has unknown fields: note/u, ledger => { ledger.excluded[0].note = '메모'; }],
+    ['excluded code outside the catalog', /Unknown permission code in excluded permissions: "THING_ARCHIVE"/u,
+      ledger => { ledger.excluded.push({ code: 'THING_ARCHIVE', reason: '없는 권한' }); }],
+    ['excluded code listed twice', /Excluded permissions list a permission twice: THING_CREATE/u,
+      ledger => { ledger.excluded.push({ ...ledger.excluded[0] }); }],
+    ['excluded without a reason', /Excluded permission THING_CREATE must declare a reason/u, ledger => { delete ledger.excluded[0].reason; }],
+    ['excluded with a blank reason', /Excluded permission THING_DELETE must declare a reason/u, ledger => { ledger.excluded[1].reason = '  '; }],
+    ['excluded with a padded reason', /Excluded permission THING_DELETE must declare a reason/u, ledger => { ledger.excluded[1].reason = ' 이유'; }],
+    ['excluded and bundled at once', /Permission THING_READ is excluded but listed in permission bundle thing-viewer/u,
+      ledger => { ledger.excluded.push({ code: 'THING_READ', reason: '빼려던 권한' }); }],
+    ['catalog permission in no bundle and not excluded', /in no permission bundle and not excluded: THING_EXPORT$/u,
+      ledger => { ledger.excluded = ledger.excluded.filter(entry => entry.code !== 'THING_EXPORT'); }],
+    ['several unclassified permissions are all named', /in no permission bundle and not excluded: THING_CREATE, THING_DELETE, THING_EXPORT$/u,
+      ledger => { ledger.excluded = []; }],
     ['same permission set in another order', /thing-security and thing-security-copy grant the same permissions/u,
       ledger => { ledger.bundles.push({ ...bundle(ledger, 'thing-security'), id: 'thing-security-copy', name: '사물 보안 사본',
         permissions: [...bundle(ledger, 'thing-security').permissions].reverse() }); }],
@@ -699,9 +893,15 @@ test('a changed bundle ledger makes the artifact stale, and a hand-edited bundle
   assert.match(errors(edit(bundle => ({ ...bundle, permissions: ['THING_GHOST'] }))), /thing-viewer uses a permission outside the catalog: THING_GHOST/u);
   assert.match(errors(edit(bundle => ({ ...bundle, protected: true }))), /differ from the bundle ledger/u);
   assert.match(errors({ screens: artifact.screens, aliases: artifact.aliases }), /does not declare permission bundles/u);
+  // 관련 화면을 손으로 고쳐도 원천과 다르다 — 별칭을 넣으면 화면이 아니라는 이유까지 말한다.
+  assert.match(errors(edit(bundle => ({ ...bundle, relatedScreens: ['/admin/old'] }))),
+    /thing-viewer relates a route that is not a screen: \/admin\/old[\s\S]*differ from the bundle ledger/u);
+  assert.match(errors(edit(bundle => ({ ...bundle, relatedScreens: ['/'] }))), /differ from the bundle ledger/u);
   // 원장이 깨지면 산출물 검증도 그 이유를 말한다.
-  mutate(SCREEN_REGISTRY_INPUTS.bundles, ledger => { ledger.bundles[0].permissions = ['THING_EXPORT']; });
+  mutate(SCREEN_REGISTRY_INPUTS.bundles, ledger => { ledger.bundles[0].permissions = ['THING_UPDATE']; });
   assert.match(errors(artifact), /bundle ledger is invalid: Permission bundle thing-viewer opens no screen/u);
+  mutate(SCREEN_REGISTRY_INPUTS.bundles, ledger => { ledger.bundles[0].permissions = ['THING_READ']; ledger.excluded.pop(); });
+  assert.match(errors(artifact), /bundle ledger is invalid: Catalog permissions are in no permission bundle and not excluded: THING_EXPORT/u);
 });
 
 test('the same inputs produce byte-identical output on every run and in LF or CRLF checkouts', t => {
@@ -965,14 +1165,18 @@ test('an app redirect alias owns its path before a dynamic screen sibling and st
 });
 
 test('PERMISSION_BUNDLES keeps every bundle in the full repository and drops projected-away screens and empty bundles', async t => {
-  const { dir, mutate } = fixture(t);
-  // 사물 조회 묶음은 /admin/things 하나만 열고, 내보내기 묶음은 다른 세 화면을 연다.
+  const { dir, mutate, write } = fixture(t);
+  // 사물 조회 묶음은 /admin/things 하나만 열고, 내보내기 묶음은 다른 세 화면을 연다. 내보내기 묶음은 사물 등록도 맡아,
+  // 등록 대화상자를 여는 누구나 들어가는 상세 화면(/admin/things/[id])이 관련 화면이다.
+  write('frontend/src/app/admin/things/[id]/page.tsx',
+    "import { ThingCreateDialog } from '@/components/things/ThingCreateDialog';\nexport default function Page() { return <ThingCreateDialog />; }\n");
   mutate(SCREEN_REGISTRY_INPUTS.catalog, catalog => {
     for (const route of ['/admin', '/admin/hub/alpha', '/admin/hub/beta']) catalog.pagePermissions[route] = ['THING_EXPORT'];
   });
   mutate(SCREEN_REGISTRY_INPUTS.bundles, ledger => {
+    ledger.excluded = ledger.excluded.filter(entry => !['THING_CREATE', 'THING_EXPORT'].includes(entry.code));
     ledger.bundles.push({ id: 'thing-exporter', name: '사물 내보내기', description: '사물 담당자에게 사물 내보내기를 맡깁니다.',
-      protected: false, permissions: ['THING_EXPORT'] });
+      protected: false, permissions: ['THING_EXPORT', 'THING_CREATE'] });
   });
   const registry = buildScreenRegistry(dir);
   const pagePermissions = JSON.parse(fs.readFileSync(path.join(dir, SCREEN_REGISTRY_INPUTS.catalog), 'utf8')).pagePermissions;
@@ -982,12 +1186,29 @@ test('PERMISSION_BUNDLES keeps every bundle in the full repository and drops pro
   // 화면이 보호 권한 사본을 두지 않도록 산출물이 생성기의 집합(서버와 대조됨)을 그대로 내보낸다.
   assert.deepEqual(full.PROTECTED_PERMISSIONS, [...PROTECTED_PERMISSIONS].sort());
 
+  assert.deepEqual(full.PERMISSION_BUNDLES.find(bundle => bundle.id === 'thing-exporter').relatedScreens, ['/admin/things/[id]']);
+
   // 투영본에서 /admin/things 와 /admin 이 빠지면 묶음의 화면에서도 빠지고, 여는 화면이 남지 않은 묶음은 내지 않는다.
   const projected = Object.fromEntries(Object.entries(pagePermissions).filter(([route]) => !['/admin/things', '/admin'].includes(route)));
   const reduced = await loadRuntime(t, registry, projected);
-  assert.deepEqual(reduced.PERMISSION_BUNDLES.map(bundle => [bundle.id, bundle.screens]),
-    [['thing-exporter', ['/admin/hub/alpha', '/admin/hub/beta']]]);
+  assert.deepEqual(reduced.PERMISSION_BUNDLES.map(bundle => [bundle.id, bundle.screens, bundle.relatedScreens]),
+    [['thing-exporter', ['/admin/hub/alpha', '/admin/hub/beta'], ['/admin/things/[id]']]]);
+  // 관련 화면도 투영본에서 빠진 화면은 거른다 — 여는 화면이 남으면 묶음은 남는다.
+  const withoutDetail = Object.fromEntries(Object.entries(projected).filter(([route]) => route !== '/admin/things/[id]'));
+  const detailGone = await loadRuntime(t, registry, withoutDetail);
+  assert.deepEqual(detailGone.PERMISSION_BUNDLES.map(bundle => [bundle.id, bundle.screens, bundle.relatedScreens]),
+    [['thing-exporter', ['/admin/hub/alpha', '/admin/hub/beta'], []]]);
   assert.equal(registry.bundles.length, 4, 'the generated list itself is not projected');
+});
+
+test('a bundle whose gated screens are all projected away is dropped even when related screens remain', async t => {
+  const { dir } = relatedFixture(t);
+  const registry = buildScreenRegistry(dir);
+  const pagePermissions = JSON.parse(fs.readFileSync(path.join(dir, SCREEN_REGISTRY_INPUTS.catalog), 'utf8')).pagePermissions;
+  // 진입 권한이 있는 화면을 모두 빼고 누구나 들어가는 업무 홈만 남긴다 — 그 투영본에는 이 묶음이 맡길 업무가 없다.
+  const homeOnly = Object.fromEntries(Object.entries(pagePermissions).filter(([route]) => !GATED.includes(route)));
+  const reduced = await loadRuntime(t, registry, homeOnly);
+  assert.deepEqual(reduced.PERMISSION_BUNDLES, []);
 });
 
 // ---------------------------------------------------------------- 실행 경로(H5)

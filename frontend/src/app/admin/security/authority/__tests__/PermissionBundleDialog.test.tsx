@@ -25,12 +25,22 @@ const NAVIGATION = [
 const OPERATION_CODES = ['MENU_READ', 'MENU_UPDATE', 'PROGRAM_READ', 'USER_READ', 'USER_PASSWORD'];
 const MENU_BUNDLE: PermissionBundle = {
   id: 'menu-screen', name: '메뉴·화면 설정', description: '메뉴와 화면 관리를 맡깁니다.', protected: false,
-  permissions: ['MENU_READ', 'MENU_UPDATE', 'PROGRAM_READ'] as PermissionCode[], screens: ['/admin/system/menus', '/admin/system/programs'],
+  permissions: ['MENU_READ', 'MENU_UPDATE', 'PROGRAM_READ'] as PermissionCode[], screens: ['/admin/system/menus', '/admin/system/programs'], relatedScreens: [],
 };
 const RECOVERY_BUNDLE: PermissionBundle = {
   id: 'account-recovery', name: '계정 복구', description: '비밀번호 초기화를 맡깁니다.', protected: true,
-  permissions: ['USER_PASSWORD', 'USER_READ'] as PermissionCode[], screens: ['/admin/user/manage'],
+  permissions: ['USER_PASSWORD', 'USER_READ'] as PermissionCode[], screens: ['/admin/user/manage'], relatedScreens: [],
 };
+/** 누구나 들어가는 관련 화면(업무 쪽지함)이 있는 묶음. */
+const NOTE_BUNDLE: PermissionBundle = {
+  id: 'note-work', name: '쪽지 업무', description: '사용자 조회와 쪽지 보내기를 맡깁니다.', protected: false,
+  permissions: ['USER_READ', 'NOTE_SEND'] as PermissionCode[], screens: ['/admin/user/manage'], relatedScreens: ['/note', '/smart-toolkit/dept-job/[id]'],
+};
+const NOTE_NAVIGATION = [
+  ...NAVIGATION,
+  { code: 'WORK', name: '나의 업무', parentCode: null, route: null, useYn: 'Y' as const },
+  { code: 'NOTE', name: '쪽지함', parentCode: 'WORK', route: '/note', useYn: 'Y' as const },
+];
 
 function renderDialog(overrides: Partial<Parameters<typeof PermissionBundleDialog>[0]> = {}) {
   const selection: ReadonlySet<string> = overrides.selection ?? new Set(['OPERATION:MENU_READ']);
@@ -49,7 +59,8 @@ describe('권한 묶음 적용 대화상자', () => {
     renderDialog();
     const dialog = screen.getByRole('dialog', { name: '권한 묶음 적용' });
     const menu = within(dialog).getByRole('radio', { name: /메뉴·화면 설정/ });
-    expect(menu).toHaveAccessibleDescription('메뉴와 화면 관리를 맡깁니다. · 기능권한 3개 · 여는 화면 2개');
+    // 관련 화면이 없는 묶음은 그 수를 말하지 않는다.
+    expect(menu).toHaveAccessibleDescription('메뉴와 화면 관리를 맡깁니다. · 기능권한 3개 · 권한으로 열리는 화면 2개');
     // 이름은 묶음 이름(과 보호 표시)이고 설명은 따로 읽힌다 — 같은 문장을 두 번 읽지 않는다.
     expect(menu).toHaveAccessibleName('메뉴·화면 설정');
     expect(within(dialog).getByRole('radio', { name: '계정 복구 보호 권한 포함' })).toBeInTheDocument();
@@ -65,7 +76,9 @@ describe('권한 묶음 적용 대화상자', () => {
     await userEvent.click(screen.getByRole('radio', { name: /메뉴·화면 설정/ }));
     const preview = screen.getByRole('region', { name: '묶음 미리보기' });
     expect(preview).toHaveTextContent('기능권한 추가 2개(이미 있음 1개) · 메뉴 표시 추가 4개');
-    expect(preview).toHaveTextContent('묶음이 여는 화면 2개');
+    expect(preview).toHaveTextContent('권한으로 열리는 화면 2개');
+    // 관련 화면이 없으면 그 목록을 두지 않는다.
+    expect(preview).not.toHaveTextContent('누구나 들어가는 관련 화면 ');
     expect(preview).toHaveTextContent('메뉴 관리 — 메뉴: 메뉴 관리');
     expect(preview).toHaveTextContent('화면 관리 — 메뉴: 화면 관리');
     expect(preview).toHaveTextContent('사용 안 함 상위 메뉴 때문에 표시하지 않는 메뉴');
@@ -140,7 +153,7 @@ describe('권한 묶음 적용 대화상자', () => {
     const live = preview.querySelectorAll('[aria-live]');
     expect(live).toHaveLength(1);
     expect(live[0]).toHaveTextContent('기능권한 추가 2개(이미 있음 1개) · 메뉴 표시 추가 4개');
-    expect(live[0]).not.toHaveTextContent('묶음이 여는 화면');
+    expect(live[0]).not.toHaveTextContent('권한으로 열리는 화면');
     expect(live[0]).not.toHaveTextContent(OPEN_SCREEN_NOTICE);
   });
 
@@ -159,6 +172,25 @@ describe('권한 묶음 적용 대화상자', () => {
     const preview = screen.getByRole('region', { name: '묶음 미리보기' });
     expect(preview).toHaveTextContent('권한 그룹 관리 — 이 화면을 여는 사용 중 메뉴가 없어 주소로만 열립니다');
     expect(preview).toHaveTextContent('부서 업무 상세 — 목록에서 항목을 골라 여는 화면이라 메뉴가 없습니다');
+  });
+
+  it('누구나 들어가는 관련 화면은 권한으로 열리는 화면과 따로 보이고, 그 메뉴 표시도 더할 수에 센다', async () => {
+    renderDialog({ bundles: [NOTE_BUNDLE], navigation: NOTE_NAVIGATION, operationCodes: [...OPERATION_CODES, 'NOTE_SEND'], selection: new Set() });
+    const radio = screen.getByRole('radio', { name: '쪽지 업무' });
+    expect(radio).toHaveAccessibleDescription('사용자 조회와 쪽지 보내기를 맡깁니다. · 기능권한 2개 · 권한으로 열리는 화면 1개 · 누구나 들어가는 관련 화면 2개');
+    await userEvent.click(radio);
+    const preview = screen.getByRole('region', { name: '묶음 미리보기' });
+    // 사용자 관리(AREA·USERS)와 쪽지함(WORK·NOTE) — 관련 화면의 메뉴와 상위 메뉴까지 센다.
+    expect(preview).toHaveTextContent('기능권한 추가 2개(이미 있음 0개) · 메뉴 표시 추가 4개');
+    expect(preview).toHaveTextContent('권한으로 열리는 화면 1개');
+    expect(preview).toHaveTextContent('계정 및 사용자 관리 — 메뉴: 사용자 관리');
+    expect(preview).toHaveTextContent('누구나 들어가는 관련 화면 2개');
+    expect(preview).toHaveTextContent('업무 쪽지함 — 메뉴: 쪽지함');
+    expect(preview).toHaveTextContent('부서 업무 상세 — 목록에서 항목을 골라 여는 화면이라 메뉴가 없습니다');
+    // 안내는 관련 화면을 더한다는 사실과, 그 밖의 누구나 들어가는 화면은 더하지 않는다는 사실을 함께 말한다.
+    expect(preview).toHaveTextContent(OPEN_SCREEN_NOTICE);
+    expect(OPEN_SCREEN_NOTICE).toContain('관련 화면)의 메뉴만 더합니다');
+    expect(OPEN_SCREEN_NOTICE).not.toContain('메뉴는 묶음이 더하지 않습니다');
   });
 
   it('취소는 닫기만 한다', async () => {

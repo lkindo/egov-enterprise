@@ -28,8 +28,12 @@
  *   · shellAccess — 라우트 원장(config/ui-route-capabilities.json) 값.
  *   · 권한 묶음 — config/governance/permission-bundles.json(관리 콘솔 3단계 D5). 묶음이 여는 화면은 원장에 적지 않고
  *     위 화면 목록에서 계산한다: 진입 권한이 빈 화면을 빼고, 진입 권한을 이 묶음이 충족하는(ANY 하나 이상, ALL 전부)
- *     화면이다. 묶음은 그룹이 아니다 — 권한 작업대가 고른 묶음의 기능권한을 그룹 초안에 더할 뿐이고, 저장은 같은
- *     '권한 변경 저장'(버전 확인·보호 권한·마지막 관리자 보호·감사)이 한다. 이 생성기가 원장을 검증한다(buildPermissionBundles).
+ *     화면이다(screens). 진입 권한이 빈 화면(로그인 사용자 누구나 들어가는 화면) 가운데 이 묶음의 권한을 쓰기('write')로
+ *     쓰는 화면은 관련 화면(relatedScreens)이다 — 권한 작업대가 그 메뉴 표시도 더한다(2026-10-03, 선택지 ①). 표시 리터럴
+ *     ('display')은 어느 버튼에 걸었는지 모르는 언급이라 보지 않는다(엉뚱한 메뉴가 붙는다 — 2026-10-02 검토). 카탈로그의
+ *     모든 권한은 어느 묶음에 있거나 원장 excluded 에 사유와 함께 있어야 한다. 묶음은 그룹이 아니다 — 권한 작업대가 고른
+ *     묶음의 기능권한을 그룹 초안에 더할 뿐이고, 저장은 같은 '권한 변경 저장'(버전 확인·보호 권한·마지막 관리자 보호·감사)이
+ *     한다. 이 생성기가 원장을 검증한다(buildPermissionBundles).
  *     묶음의 이름·설명이 쓰면 안 되는 용어는 화면 용어 원장(config/frontend-visible-terms.json terms)에서 읽는다 — 사본을
  *     두지 않는다(replacedTermFinder).
  *
@@ -69,8 +73,9 @@ export const SCREEN_REGISTRY_INPUTS = Object.freeze({
  * 같은 집합을 PROTECTED_PERMISSIONS 로 내보낸다 — 화면은 사본을 두지 않고 그것을 읽는다.
  */
 export const PROTECTED_PERMISSIONS = Object.freeze(['AUTHRT_ASSIGN', 'AUTHRT_GRANT', 'MFA_RECOVER', 'USER_PASSWORD']);
-const BUNDLE_LEDGER_FIELDS = ['schemaVersion', 'description', 'bundles'];
+const BUNDLE_LEDGER_FIELDS = ['schemaVersion', 'description', 'bundles', 'excluded'];
 const BUNDLE_FIELDS = ['id', 'name', 'description', 'protected', 'permissions'];
+const EXCLUDED_FIELDS = ['code', 'reason'];
 const BUNDLE_ID = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u;
 /**
  * 화면 용어 원장의 결정 중 묶음의 이름·설명이 쓰면 안 되는 것. 바꾸라는 결정(replace-*)과 금지(forbidden-*)에 더해,
@@ -197,6 +202,16 @@ function grantsScreenEntry(granted, entry) {
 }
 
 /**
+ * 권한 집합이 누구나 들어가는 화면(진입 권한이 빈 화면)의 관련 권한인가 — 그 화면이 이 집합의 권한을 쓰기('write')로 쓴다.
+ * 표시 리터럴('display')은 보지 않는다: canPermission 리터럴은 어느 버튼에 걸었는지 모르는 언급이라, 그것으로 고르면 묶음과
+ * 무관한 메뉴가 붙는다(2026-10-02 검토). 진입 권한이 있는 화면은 grantsScreenEntry 가 다룬다(두 판정은 겹치지 않는다).
+ */
+function relatesToOpenScreen(granted, screen) {
+  if ((screen.entry?.permissions ?? []).length > 0) return false;
+  return (screen.permissions ?? []).some(row => row.source === 'write' && granted.has(row.code));
+}
+
+/**
  * 화면 용어 원장(config/frontend-visible-terms.json)에서 묶음 문구가 쓰면 안 되는 용어를 읽어 찾는 함수를 만든다.
  * 영문 용어는 대소문자를 가리지 않고 단어 경계로, 한글 용어는 부분 문자열로 찾는다(한글에는 \b 가 없다). 원장이
  * 깨졌거나 거를 용어가 하나도 없으면 실패한다 — 검사가 조용히 비면 사본을 두던 때보다 약해진다.
@@ -236,9 +251,14 @@ export function replacedTermFinder(termsLedger) {
  *   · *_ALL(대행) 권한을 넣으면 카탈로그에 있는 같은 행위의 기본 권한도 넣는다 — 대행 권한은 기본 권한 위에 얹는
  *     판정이라(예: BOARD_UPDATE_ALL 은 BOARD_UPDATE 엔드포인트 안의 서비스 판정) 혼자서는 화면·API 에 들어가지 못한다.
  *   · 묶음마다 여는 화면이 하나 이상이다.
- * 반환하는 permissions·screens 는 코드 포인트 순이다(원장 순서와 무관한 결정적 산출물).
+ *   · 전수 분류 — 카탈로그의 모든 권한은 어느 묶음에 있거나 excluded 에 있다. excluded 항목은 {code, reason} 이고(사유
+ *     필수), 코드는 카탈로그에 있으며 한 번만 나오고 어느 묶음에도 없다. 새 권한이 카탈로그에 생기면 묶음에 넣을지 뺄지를
+ *     정해야 생성이 통과한다 — 아무 묶음에도 없는 권한이 조용히 쌓이지 않게 한다.
+ * 묶음마다 관련 화면(relatesToOpenScreen — 누구나 들어가는 화면 중 이 묶음의 권한을 쓰기로 쓰는 화면)도 계산한다.
+ * 반환하는 permissions·screens·relatedScreens 는 코드 포인트 순이다(원장 순서와 무관한 결정적 산출물).
+ * @param catalogCodes 카탈로그의 권한 코드 전부(전수 분류의 기준).
  */
-export function buildPermissionBundles(ledger, { screens, isKnown, findReplacedTerm }) {
+export function buildPermissionBundles(ledger, { screens, catalogCodes, findReplacedTerm }) {
   if (typeof findReplacedTerm !== 'function') throw new Error('Permission bundle validation requires the visible terms ledger');
   if (!isPlainObject(ledger)) throw new Error('Permission bundle ledger must be an object');
   const extraLedgerFields = Object.keys(ledger).filter(field => !BUNDLE_LEDGER_FIELDS.includes(field));
@@ -248,11 +268,33 @@ export function buildPermissionBundles(ledger, { screens, isKnown, findReplacedT
     throw new Error('Permission bundle ledger description must be a non-empty string when present');
   }
   if (!Array.isArray(ledger.bundles) || ledger.bundles.length === 0) throw new Error('Permission bundle ledger must declare bundles');
+  const catalog = new Set(catalogCodes);
+  if (catalog.size === 0) throw new Error('Permission bundle validation requires the catalog permission codes');
+  const isKnown = code => catalog.has(code);
+
+  if (!Array.isArray(ledger.excluded)) {
+    throw new Error('Permission bundle ledger must declare excluded (catalog permissions in no bundle, each with a reason)');
+  }
+  const excluded = new Set();
+  for (const [index, entry] of ledger.excluded.entries()) {
+    if (!isPlainObject(entry)) throw new Error(`Excluded permission #${index + 1} must be an object`);
+    const where = typeof entry.code === 'string' && entry.code !== '' ? entry.code : `#${index + 1}`;
+    const extraFields = Object.keys(entry).filter(field => !EXCLUDED_FIELDS.includes(field));
+    if (extraFields.length > 0) throw new Error(`Excluded permission ${where} has unknown fields: ${extraFields.join(', ')}`);
+    if (typeof entry.code !== 'string' || !isKnown(entry.code)) {
+      throw new Error(`Unknown permission code in excluded permissions: ${JSON.stringify(entry.code)}`);
+    }
+    if (excluded.has(entry.code)) throw new Error(`Excluded permissions list a permission twice: ${entry.code}`);
+    if (typeof entry.reason !== 'string' || entry.reason.trim() === '' || entry.reason !== entry.reason.trim()) {
+      throw new Error(`Excluded permission ${entry.code} must declare a reason without surrounding spaces`);
+    }
+    excluded.add(entry.code);
+  }
 
   const ids = new Set();
   const names = new Set();
   const signatures = new Map();
-  return ledger.bundles.map((bundle, index) => {
+  const bundles = ledger.bundles.map((bundle, index) => {
     if (!isPlainObject(bundle)) throw new Error(`Permission bundle #${index + 1} must be an object`);
     const where = typeof bundle.id === 'string' && bundle.id !== '' ? bundle.id : `#${index + 1}`;
     const extraFields = Object.keys(bundle).filter(field => !BUNDLE_FIELDS.includes(field));
@@ -280,6 +322,7 @@ export function buildPermissionBundles(ledger, { screens, isKnown, findReplacedT
     for (const code of bundle.permissions) {
       if (typeof code !== 'string' || !isKnown(code)) throw new Error(`Unknown permission code in permission bundle ${bundle.id}: ${code}`);
       if (granted.has(code)) throw new Error(`Permission bundle ${bundle.id} lists a permission twice: ${code}`);
+      if (excluded.has(code)) throw new Error(`Permission ${code} is excluded but listed in permission bundle ${bundle.id}`);
       granted.add(code);
     }
     const heldProtected = PROTECTED_PERMISSIONS.filter(code => granted.has(code));
@@ -303,8 +346,18 @@ export function buildPermissionBundles(ledger, { screens, isKnown, findReplacedT
     signatures.set(signature, bundle.id);
     const opened = screens.filter(screen => grantsScreenEntry(granted, screen.entry)).map(screen => screen.route).sort(byCodePoint);
     if (opened.length === 0) throw new Error(`Permission bundle ${bundle.id} opens no screen (no screen's entry permissions are satisfied)`);
-    return { id: bundle.id, name: bundle.name, description: bundle.description, protected: bundle.protected, permissions, screens: opened };
+    const related = screens.filter(screen => relatesToOpenScreen(granted, screen)).map(screen => screen.route).sort(byCodePoint);
+    return {
+      id: bundle.id, name: bundle.name, description: bundle.description, protected: bundle.protected, permissions,
+      screens: opened, relatedScreens: related,
+    };
   });
+  const bundled = new Set(bundles.flatMap(bundle => bundle.permissions));
+  const unclassified = [...catalog].filter(code => !bundled.has(code) && !excluded.has(code)).sort(byCodePoint);
+  if (unclassified.length > 0) {
+    throw new Error(`Catalog permissions are in no permission bundle and not excluded: ${unclassified.join(', ')}`);
+  }
+  return bundles;
 }
 
 export function buildScreenRegistry(root = repoRoot) {
@@ -466,7 +519,7 @@ export function buildScreenRegistry(root = repoRoot) {
   });
   aliases.sort((left, right) => byCodePoint(left.route, right.route));
   const bundles = buildPermissionBundles(bundleLedger, {
-    screens: registry, isKnown: code => typeof actions.get(code) === 'string', findReplacedTerm,
+    screens: registry, catalogCodes: [...actions.keys()].filter(code => typeof actions.get(code) === 'string'), findReplacedTerm,
   });
   return { screens: registry, aliases, bundles, text: renderScreenRegistry(registry, aliases, bundles) };
 }
@@ -488,7 +541,8 @@ function renderBundle(bundle) {
     `    "description": ${JSON.stringify(bundle.description)},`,
     `    "protected": ${JSON.stringify(bundle.protected)},`,
     `    "permissions": ${renderStringList(bundle.permissions)},`,
-    `    "screens": ${renderStringList(bundle.screens)}`,
+    `    "screens": ${renderStringList(bundle.screens)},`,
+    `    "relatedScreens": ${renderStringList(bundle.relatedScreens)}`,
     '  }',
   ].join('\n');
 }
@@ -519,11 +573,13 @@ export function renderScreenRegistry(screens, aliases, bundles) {
 // 메뉴 snapshot(project-composer-menus.json menu_nm), 쓰기 권한(operation-consumer census 축 3 계산).
 //
 // 권한 묶음 — 권한 작업대의 '권한 묶음 적용'이 읽는다. 원천은 config/governance/permission-bundles.json 이고, 묶음이
-// 여는 화면(screens)은 위 화면 목록에서 계산한다: 진입 권한을 이 묶음의 권한이 충족하는(ANY 하나 이상, ALL 전부)
-// 화면의 라우트다. 진입 권한이 빈 화면(누구나 들어가는 화면 — 내 결재함·업무 쪽지함·메일 발송 이력 등)은 묶음 권한을
-// 그 안에서 쓰더라도 screens 에 없다. 그 화면의 메뉴 표시는 묶음이 아니라 따로 배정한다. 묶음은 그룹이 아니다 —
-// 적용은 그룹 권한 초안에 더할 뿐이고 저장·인가는 기존 '권한 변경 저장'이 한다. protected 는 보호 권한
-// (PROTECTED_PERMISSIONS)을 품는다는 뜻이다. 서버는 보호 권한을 그룹에 새로 더하거나 빼는 저장에만 권한 설정과 권한
+// 여는 화면(screens)과 관련 화면(relatedScreens)은 위 화면 목록에서 계산한다. screens 는 진입 권한을 이 묶음의 권한이
+// 충족하는(ANY 하나 이상, ALL 전부) 화면의 라우트다. relatedScreens 는 진입 권한이 빈 화면(누구나 들어가는 화면 — 내
+// 결재함·업무 쪽지함·일정 등) 가운데 이 묶음의 권한을 쓰기('write')로 쓰는 화면이다. 표시('display')만 하는 화면과 쓰기가
+// 없는 화면(통합 검색·설문 참여 목록 등)은 relatedScreens 에 없고, 그 메뉴 표시는 묶음이 아니라 따로 배정한다. 두 목록은
+// 겹치지 않는다. 묶음은 그룹이 아니다 — 적용은 그룹 권한 초안에 더할 뿐이고 저장·인가는 기존 '권한 변경 저장'이 한다.
+// 카탈로그에서 어느 묶음에도 넣지 않은 권한은 원장 excluded 에 사유와 함께 있다(생성기가 전수 분류를 검사한다). protected 는
+// 보호 권한(PROTECTED_PERMISSIONS)을 품는다는 뜻이다. 서버는 보호 권한을 그룹에 새로 더하거나 빼는 저장에만 권한 설정과 권한
 // 배정 권한을 모두 요구한다 — 묶음의 보호 권한을 그룹이 이미 모두 가졌으면 그 저장에는 요구하지 않는다.
 //
 // 한계 — 이 목록을 인가로 쓰지 않는다(서버가 집행한다).
@@ -542,7 +598,8 @@ export function renderScreenRegistry(screens, aliases, bundles) {
 //   · 재사용 투영본은 권한 생성물(PAGE_PERMISSIONS)만 다시 만든다. 그 산출물에서 빠진 화면·별칭은 아래에서
 //     PAGE_PERMISSIONS 로 다시 거른다(모든 page 파일은 PAGE_PERMISSIONS 에 정확한 키가 있다). 앱 설정 별칭은 투영본에서도
 //     앱 설정이 그대로 넘기므로, 화면 파일이 없거나 빠졌어도 넘어가는 화면(목적지 경로)이 투영본에 있으면 남는다.
-//     묶음의 화면도 같이 거르고, 여는 화면이 하나도 남지 않은 묶음(그 투영본에 없는 업무의 묶음)은 내지 않는다.
+//     묶음의 화면·관련 화면도 같이 거르고, 여는 화면(screens)이 하나도 남지 않은 묶음(그 투영본에 없는 업무의 묶음)은
+//     내지 않는다 — 관련 화면만 남아도 내지 않는다(생성기가 여는 화면 하나 이상을 요구하는 것과 같은 기준).
 import { PAGE_PERMISSIONS, type PermissionCode } from '@/types/generated-permissions';
 
 export type ScreenPermissionSource = 'entry' | 'write' | 'display';
@@ -566,6 +623,11 @@ export interface PermissionBundle {
   permissions: PermissionCode[];
   /** 진입 권한을 이 묶음이 충족하는 화면의 라우트(진입 권한이 빈 화면 제외), 코드 포인트 순. SCREEN_REGISTRY 의 route 다. */
   screens: string[];
+  /**
+   * 관련 화면 — 진입 권한이 빈 화면(누구나 들어가는 화면) 가운데 이 묶음의 권한을 쓰기('write')로 쓰는 화면의 라우트,
+   * 코드 포인트 순. screens 와 겹치지 않는다. 표시 리터럴('display')은 보지 않는다.
+   */
+  relatedScreens: string[];
 }
 
 const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = ${renderArray(screens.map(renderScreen))};
@@ -587,7 +649,7 @@ const isProjectedAlias = (alias: ScreenAlias): boolean => isProjected(alias.rout
 export const SCREEN_REGISTRY: readonly ScreenRegistryEntry[] = GENERATED_SCREENS.filter(screen => isProjected(screen.route));
 export const SCREEN_ALIASES: readonly ScreenAlias[] = GENERATED_ALIASES.filter(isProjectedAlias);
 export const PERMISSION_BUNDLES: readonly PermissionBundle[] = GENERATED_BUNDLES
-  .map(bundle => ({ ...bundle, screens: bundle.screens.filter(isProjected) }))
+  .map(bundle => ({ ...bundle, screens: bundle.screens.filter(isProjected), relatedScreens: bundle.relatedScreens.filter(isProjected) }))
   .filter(bundle => bundle.screens.length > 0);
 
 /**
@@ -646,8 +708,8 @@ export function readScreenRegistryArtifact(text) {
 /**
  * 산출물이 지켜야 하는 불변식. 생성기 자신을 믿지 않고 원천에서 다시 센다 — 화면 수는 page 파일 중 라우팅이 page 인
  * 수와 같고, 별칭은 넘기는 page 파일과 화면 파일이 없는 앱 설정 리다이렉트이며, 화면과 별칭은 겹치지 않고, 모든 권한
- * 코드가 카탈로그에 있다. 권한 묶음은 원장을 산출물의 화면으로 다시 계산한 결과와 같다(묶음의 화면은 산출물의 화면이고,
- * 권한·보호 표시는 원장과 같다).
+ * 코드가 카탈로그에 있다. 권한 묶음은 원장을 산출물의 화면으로 다시 계산한 결과와 같다(묶음의 화면·관련 화면은 산출물의
+ * 화면이고, 권한·보호 표시는 원장과 같으며, 카탈로그 전수 분류가 성립한다).
  */
 export function validateScreenRegistry({ screens, aliases, bundles }, root = repoRoot) {
   const errors = [];
@@ -695,10 +757,13 @@ export function validateScreenRegistry({ screens, aliases, bundles }, root = rep
       for (const route of bundle.screens ?? []) {
         if (!screenSet.has(route)) errors.push(`bundle ${bundle.id} opens a route that is not a screen: ${route}`);
       }
+      for (const route of bundle.relatedScreens ?? []) {
+        if (!screenSet.has(route)) errors.push(`bundle ${bundle.id} relates a route that is not a screen: ${route}`);
+      }
     }
     try {
       const expected = buildPermissionBundles(readJson(root, SCREEN_REGISTRY_INPUTS.bundles), {
-        screens, isKnown: code => codes.has(code),
+        screens, catalogCodes: codes,
         findReplacedTerm: replacedTermFinder(readJson(root, SCREEN_REGISTRY_INPUTS.visibleTerms)),
       });
       if (JSON.stringify(expected) !== JSON.stringify(bundles)) errors.push('permission bundles differ from the bundle ledger');

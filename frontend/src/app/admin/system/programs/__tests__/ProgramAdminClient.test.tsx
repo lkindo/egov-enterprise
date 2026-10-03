@@ -318,12 +318,14 @@ describe('ProgramAdminClient Component', () => {
       const dynamic = SCREEN_REGISTRY.filter((entry) => entry.dynamic);
       expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent(`총 ${dynamic.length}건`);
       expect(within(cell('/smart-toolkit/dept-job/[id]', '구분')).getByText('동적 경로')).toBeInTheDocument();
-      // 이름이 없는 화면은 지어내지 않는다.
-      expect(cell('/smart-toolkit/dept-job/[id]', '화면 이름')).toHaveTextContent('이름 미확인');
+      // 동적 경로도 등록된 이름으로 보인다(라우트 원장의 페이지 제목). 이름이 없으면 지어내지 않고 '이름 미확인' 으로 보이는
+      // 규칙은 screenList.test 가 합성 화면으로 고정한다(2026-10-03 실제 생성물의 이름 미확인 화면은 0개가 됐다).
+      expect(cell('/smart-toolkit/dept-job/[id]', '화면 이름')).toHaveTextContent('부서 업무 상세');
 
       fireEvent.change(screen.getByRole('combobox', { name: '구분' }), { target: { value: 'login-only' } });
       const loginOnly = SCREEN_REGISTRY.filter((entry) => entry.entry.permissions.length === 0 && entry.shellAccess !== 'public');
       expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent(`총 ${loginOnly.length}건`);
+
     });
 
     it('메뉴 조회 권한이 없으면 연결 메뉴를 묻지 않고, 메뉴에 없는 화면으로 거를 수 없다고 말한다', async () => {
@@ -528,14 +530,16 @@ describe('ProgramAdminClient Component', () => {
       expect(window.location.search).toBe('');
     });
 
-    it('이름이 없는 화면은 이름 없이 넘긴다(메뉴 관리가 이름을 묻는다)', () => {
+    // [2026-10-03] 이름을 지어내지 않고 등록된 이름(없으면 null)을 그대로 넘긴다. 이름이 null 인 인계는 target-handoff.test 가,
+    //   이름 없는 화면의 표시는 screenList.test 가 합성 값으로 고정한다(실제 생성물의 이름 미확인 화면은 0개가 됐다).
+    it('메뉴에 추가는 화면의 등록된 이름을 지어내지 않고 그대로 넘긴다', () => {
       auth.permissions = [...FULL_PERMISSIONS, ...MENU_MANAGER];
       renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-      const unnamed = SCREEN_REGISTRY.find((entry) => entry.label === null && !entry.dynamic);
-      expect(unnamed).toBeDefined();
-      searchScreens(unnamed!.route);
-      fireEvent.click(within(cell(unnamed!.route, '관리')).getByRole('button', { name: `메뉴에 추가: 이름 미확인 (${unnamed!.route})` }));
-      expect(JSON.parse(window.sessionStorage.getItem(HANDOFF_KEY) ?? 'null')).toMatchObject({ route: unnamed!.route, label: null });
+      const entry = SCREEN_REGISTRY.find((candidate) => candidate.route === '/admin/system/programs');
+      expect(entry?.label).toBe('화면 관리');
+      searchScreens(entry!.route);
+      fireEvent.click(within(cell(entry!.route, '관리')).getByRole('button', { name: `메뉴에 추가: 화면 관리 (${entry!.route})` }));
+      expect(JSON.parse(window.sessionStorage.getItem(HANDOFF_KEY) ?? 'null')).toMatchObject({ route: entry!.route, label: entry!.label });
     });
 
     it('화면을 넘기지 못하면 이동하지 않고 그 사실을 알린다', () => {
