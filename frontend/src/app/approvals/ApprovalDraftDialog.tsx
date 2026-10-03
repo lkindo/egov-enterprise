@@ -104,6 +104,8 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   const [blockedMessage, setBlockedMessage] = useState('');
   const pendingRef = useRef(false);
   const submittedRef = useRef(false);
+  // 사전 확인 요청 번호 — 늦게 도착한 앞 확인이 고친 결재선의 결과를 덮지 않게 한다(피커의 검색과 같은 방식).
+  const precheckRef = useRef(0);
   const formRef = useRef<HTMLFormElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const pickerButtons = useRef(new Map<number, HTMLButtonElement>());
@@ -193,11 +195,15 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   /**
    * 최종 확인 단계로 넘어가면서 결재자가 될 수 있는지 서버에 묻는다(상신 때 검사와 같은 판정). 기다리게 하지 않는다 —
    * 결과가 오면 부재 표시를 붙이고, 될 수 없는 사람이 있으면 상신을 막는다. 확인하지 못하면 막지 않는다(상신 때 서버가 다시 본다).
+   *
+   * [2026-10-03] 마지막 요청의 결과만 받는다. 종전에는 '이전' 으로 돌아가 결재선을 고친 뒤 다시 넘어오면, 늦게 도착한
+   * 앞 확인이 이미 뺀 사람을 들어 상신을 막았다.
    */
   const precheckApprovers = async (ids: string[]) => {
+    const request = ++precheckRef.current;
     try {
       const profiles = await approvalUserService.checkApprovers(ids);
-      if (!Array.isArray(profiles)) return;
+      if (request !== precheckRef.current || !Array.isArray(profiles)) return;
       setChecked(profiles);
       const blocked = profiles.filter(profile => !profile.eligible);
       if (blocked.length === 0) return;
@@ -206,6 +212,15 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
     } catch {
       // 사전 확인은 도움말이다. 실패해도 상신은 서버가 같은 규칙으로 판정한다.
     }
+  };
+  /** 이전 단계로. 최종 확인을 떠나면 진행 중인 사전 확인과 그 결과를 버린다 — 결재선을 고치면 다시 확인한다. */
+  const goBack = () => {
+    if (step === 2) {
+      precheckRef.current += 1;
+      setChecked([]);
+      setBlockedMessage('');
+    }
+    changeStep(step - 1);
   };
   /** 펼친 피커에서 누른 사람을 넣거나 뺀다. 판정은 피커가 미리 막고, 여기서는 한 번 더 확인한다. */
   const togglePerson = (key: number, index: number, person: UserSearchResult, selected: boolean) => {
@@ -337,11 +352,22 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
                 {(suggestions.data.recentApprovers ?? []).length > 0 && <div className="space-y-2">
                   <h3 className="text-sm font-semibold">최근 결재자 · 누르면 마지막 단계에 더합니다</h3>
                   <ul className="flex flex-wrap gap-2">
+                    {/* [2026-10-03] 지정할 수 없는 사람은 누를 수 없는 버튼 대신 사유를 보이는 글로 둔다. 사유가 aria-label 에만
+                        있어 화면에는 보이지 않았고, aria-label 이 '부재 중' 표시까지 덮었다. */}
                     {(suggestions.data.recentApprovers ?? []).map(person => <li key={person.esntlId}>
-                      <Button type="button" size="sm" variant="ghost" disabled={!person.eligible} aria-label={`${person.userNm || person.esntlId} 결재자로 더하기${person.eligible ? '' : ` (${INELIGIBLE_REASONS[person.ineligibleReason ?? ''] ?? '지정 불가'})`}`} onClick={() => addRecent(person)}>
-                        {person.userNm || person.esntlId}{person.deptNm ? ` · ${person.deptNm}` : ''}
-                        <AbsenceBadge absent={person.absent} />
-                      </Button>
+                      {person.eligible ? (
+                        <Button type="button" size="sm" variant="ghost" onClick={() => addRecent(person)}>
+                          {person.userNm || person.esntlId}{person.deptNm ? ` · ${person.deptNm}` : ''}
+                          {person.absent ? <>{' '}<AbsenceBadge absent /></> : null}
+                          {' '}<span className="sr-only">결재자로 더하기</span>
+                        </Button>
+                      ) : (
+                        <span className="inline-flex items-center gap-2 rounded-md border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground">
+                          {person.userNm || person.esntlId}{person.deptNm ? ` · ${person.deptNm}` : ''}
+                          {person.absent ? <>{' '}<AbsenceBadge absent /></> : null}
+                          <span>· 지정할 수 없음({INELIGIBLE_REASONS[person.ineligibleReason ?? ''] ?? '확인 필요'})</span>
+                        </span>
+                      )}
                     </li>)}
                   </ul>
                 </div>}
@@ -380,7 +406,7 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
             {[...absentById.values()].some(Boolean) && <p className="text-sm text-muted-foreground">부재 중인 결재자가 있습니다. 처리가 늦어질 수 있으며, 상신한 뒤에도 그 사람을 다른 결재자로 바꿀 수 있습니다.</p>}
             <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">각 단계의 전원이 승인해야 다음 단계가 시작됩니다. 누구든 한 명이 반려하면 문서 전체가 반려되어 남은 결재는 종료됩니다.</p>
           </>}
-          <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-4"><Button type="button" variant="ghost" onClick={close}>취소</Button>{step > 0 && <Button type="button" variant="outline" onClick={() => changeStep(step - 1)}>이전</Button>}<Button type="submit" disabled={!hasTaskTypes || submitting || needsReview || (step === 2 && Boolean(blockedMessage))} aria-busy={submitting || undefined}>{submitting ? '상신 중…' : step === 2 ? resubmission ? '새 차수로 재상신' : '결재 상신' : '다음'}</Button></div>
+          <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-4"><Button type="button" variant="ghost" onClick={close}>취소</Button>{step > 0 && <Button type="button" variant="outline" onClick={goBack}>이전</Button>}<Button type="submit" disabled={!hasTaskTypes || submitting || needsReview || (step === 2 && Boolean(blockedMessage))} aria-busy={submitting || undefined}>{submitting ? '상신 중…' : step === 2 ? resubmission ? '새 차수로 재상신' : '결재 상신' : '다음'}</Button></div>
         </fieldset>
       </form>
     </StandardModal>

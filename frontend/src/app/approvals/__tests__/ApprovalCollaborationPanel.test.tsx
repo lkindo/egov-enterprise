@@ -105,8 +105,16 @@ describe('ApprovalCollaborationPanel', () => {
     expect(mocks.toast).toHaveBeenCalledWith('지금 차례인 1명에게 다시 알렸습니다.', 'success');
     unmount();
 
-    renderPanel({ canRemind: true, remindedToday: true });
-    expect(screen.getByRole('button', { name: '오늘 재알림함' })).toBeDisabled();
+    // [2026-10-03 F13·F15] 서버는 오늘 보냈으면 canRemind 를 끄고 remindedToday 를 켠다(InformalSanctionService:
+    //   canRemind = drafter && !remindedToday). 종전 fixture(canRemind:true + remindedToday:true)는 서버가 보낼 수 없는
+    //   조합이라, 실제 조합에서 버튼과 안내가 통째로 사라지는 결함을 가렸다.
+    renderPanel({ canRemind: false, remindedToday: true });
+    const reminded = screen.getByRole('button', { name: '오늘 재알림함' });
+    expect(reminded).toHaveAttribute('aria-disabled', 'true');
+    expect(reminded).toHaveAccessibleDescription(/오늘 이미 재알림을 보냈습니다.*내일 다시 보낼 수 있습니다/);
+    expect(screen.getByText(/오늘 이미 재알림을 보냈습니다/)).toBeVisible();
+    fireEvent.click(reminded);
+    expect(mocks.remind).toHaveBeenCalledTimes(1);
   });
 
   it('아직 처리하지 않은 결재자를 바꾸면 확인 뒤 버전과 함께 보낸다 — 부재 중인 사람이 표시된다', async () => {
@@ -117,6 +125,53 @@ describe('ApprovalCollaborationPanel', () => {
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ title: '결재자 바꾸기' })));
     await waitFor(() => expect(mocks.replaceApprover).toHaveBeenCalledWith(7, 'boss', 'NEW', 3));
+  });
+
+  it('아직 차례가 아닌 결재자를 바꾸면 새 결재자에게는 차례가 되면 알린다고 말한다 — 두 사람 모두에게 바로 알린다고 하지 않는다 (F16)', async () => {
+    // 서버 replaceApprover 는 빠지는 사람에게는 늘, 새 결재자에게는 바꾼 자리가 ACTIVE 일 때만 바로 알린다.
+    renderPanel({ canReplaceApprover: true, stages: [
+      { order: 1, kind: 'APPROVAL', status: 'ACTIVE', approvers: [{ userId: 'boss', userNm: '부장', status: 'ACTIVE' }] },
+      { order: 2, kind: 'APPROVAL', status: 'WAITING', approvers: [{ userId: 'chief', userNm: '본부장', status: 'WAITING' }] },
+    ] });
+    fireEvent.click(screen.getByRole('button', { name: '본부장 결재자 바꾸기' }));
+    fireEvent.click(screen.getByRole('button', { name: '새결재자 고르기' }));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    const waitingMessage = mocks.confirm.mock.calls[0][0].message as string;
+    expect(waitingMessage).not.toContain('두 사람 모두에게');
+    expect(waitingMessage).toContain('새결재자에게는 그 단계 차례가 되면 알립니다');
+    await waitFor(() => expect(mocks.replaceApprover).toHaveBeenCalledWith(7, 'chief', 'NEW', 3));
+
+    fireEvent.click(screen.getByRole('button', { name: '부장 결재자 바꾸기' }));
+    fireEvent.click(screen.getByRole('button', { name: '새결재자 고르기' }));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(2));
+    expect(mocks.confirm.mock.calls[1][0].message).toContain('새결재자에게는 지금 차례라고 알립니다');
+  });
+
+  it('본문도 고치기를 체크했지만 본문을 고치지 않았으면 본문을 보냈다고 말하지 않는다 (F23)', async () => {
+    renderPanel({ canAnswerSupplement: true, openSupplement: { askedBy: 'boss', question: '금액?' } });
+    fireEvent.change(screen.getByRole('textbox', { name: /보완 답변/ }), { target: { value: '45만 원입니다' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: '본문도 고치기' }));
+    fireEvent.click(screen.getByRole('button', { name: '보완 답변 보내기' }));
+
+    await waitFor(() => expect(mocks.answerSupplement).toHaveBeenCalledWith(7, { answer: '45만 원입니다', version: 3 }));
+    expect(mocks.toast).toHaveBeenCalledWith('보완 답변을 보냈습니다. 본문은 고친 내용이 없어 그대로 두었습니다.', 'success');
+    expect(mocks.toast).not.toHaveBeenCalledWith(expect.stringContaining('고친 본문을 보냈습니다'), 'success');
+  });
+
+  it('보완 답변·결재자 바꾸기가 끝나면 포커스를 남는 제목으로 옮긴다 — 문서 처음으로 빠지지 않는다 (F24)', async () => {
+    renderPanel({
+      canAnswerSupplement: true, canReplaceApprover: true, openSupplement: { askedBy: 'boss', question: '금액?' },
+      processHistory: [{ type: 'ASK', actorNm: '부장', content: '금액?', at: '2026-10-02T09:00:00' }],
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: /보완 답변/ }), { target: { value: '답' } });
+    fireEvent.click(screen.getByRole('button', { name: '보완 답변 보내기' }));
+    await waitFor(() => expect(screen.getByRole('heading', { name: '처리 기록' })).toHaveFocus());
+
+    (document.activeElement as HTMLElement).blur();
+    fireEvent.click(screen.getByRole('button', { name: '부장 결재자 바꾸기' }));
+    fireEvent.click(screen.getByRole('button', { name: '새결재자 고르기' }));
+    await waitFor(() => expect(mocks.replaceApprover).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByRole('heading', { name: '결재 진행 관리' })).toHaveFocus());
   });
 
   it('기안 권한이 없으면 서버 힌트가 참이어도 쓰기 버튼을 보이지 않고 처리 기록만 보인다', () => {
@@ -150,5 +205,19 @@ describe('ApprovalCollaborationPanel', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('오늘은 이미 재알림을 보냈습니다.');
     expect(mocks.toast).toHaveBeenCalledWith('재알림을 보내지 못했습니다.', 'error');
     expect(remind).toBeEnabled();
+  });
+
+  it('본문도 고치기를 풀었다가 다시 켜면 버린 수정이 아니라 지금 본문에서 시작한다 — 버린 수정이 고친 본문으로 가지 않는다', async () => {
+    renderPanel({ canAnswerSupplement: true, openSupplement: { askedBy: 'boss', question: '금액?' } });
+    const revise = screen.getByRole('checkbox', { name: '본문도 고치기' });
+    fireEvent.click(revise);
+    fireEvent.change(screen.getByRole('textbox', { name: /고친 본문/ }), { target: { value: '버릴 수정' } });
+    fireEvent.click(revise);
+    fireEvent.click(revise);
+
+    expect(screen.getByRole('textbox', { name: /고친 본문/ })).toHaveValue('원래 본문');
+    fireEvent.change(screen.getByRole('textbox', { name: /보완 답변/ }), { target: { value: '답' } });
+    fireEvent.click(screen.getByRole('button', { name: '보완 답변 보내기' }));
+    await waitFor(() => expect(mocks.answerSupplement).toHaveBeenCalledWith(7, { answer: '답', version: 3 }));
   });
 });

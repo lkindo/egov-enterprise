@@ -1,6 +1,9 @@
 -- V2_121: 약식결재 처리 이력(2026-10-03 결재 동선 개선 D6·D7).
 -- 기안자의 결재자 교체·재알림, 결재자의 보완 요청, 기안자의 보완 답변·본문 수정을 추가만 하는 이력으로 남긴다.
 -- 문서·결재선 테이블은 바꾸지 않는다(Expand 전용). 보완 요청이 열려 있는지는 이 이력과 결재선 상태로 계산한다.
+-- 처리한 사람은 두 축으로 남긴다 — frst_rgtr_id 는 공통 감사 계약대로 로그인 ID 이고(백엔드 헌법 제8조 3항, V2_98 FRST_RGTR_ID),
+-- 결재선·보완 요청자 대조와 이름 표시에 쓰는 esntlId 는 chg_user_idntfr(V2_98 CHG_USER_IDNTFR)에 따로 둔다.
+-- 공통코드 변경 이력(V2_110)과 같은 형태다. 처리 이력은 늘 사용자 본인의 요청에서 남으므로 둘 다 비울 수 없다.
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '60s';
 
@@ -13,6 +16,7 @@ CREATE TABLE tb_ifml_atrz_prcs_hstry (
     trgt_user_id varchar(20),
     bfr_user_id varchar(20),
     prcs_cn varchar(4000),
+    chg_user_idntfr varchar(20) NOT NULL,
     frst_rgtr_id varchar(20) NOT NULL,
     crt_dt timestamp without time zone NOT NULL,
     CONSTRAINT pk_tb_ifml_atrz_prcs_hstry PRIMARY KEY (ifml_atrz_prcs_hstry_sn),
@@ -37,5 +41,6 @@ COMMENT ON COLUMN tb_ifml_atrz_prcs_hstry.prcs_type_cd IS '처리유형코드 (R
 COMMENT ON COLUMN tb_ifml_atrz_prcs_hstry.trgt_user_id IS '대상사용자ID (교체된 결재자·보완 요청을 받은 기안자·답변을 받은 결재자, esntlId)';
 COMMENT ON COLUMN tb_ifml_atrz_prcs_hstry.bfr_user_id IS '변경전사용자ID (교체 전 결재자, esntlId)';
 COMMENT ON COLUMN tb_ifml_atrz_prcs_hstry.prcs_cn IS '처리내용 (보완 요청·답변, 본문 수정이면 고치기 전 본문)';
-COMMENT ON COLUMN tb_ifml_atrz_prcs_hstry.frst_rgtr_id IS '최초등록자ID (처리한 사람, esntlId)';
+COMMENT ON COLUMN tb_ifml_atrz_prcs_hstry.chg_user_idntfr IS '변경사용자식별자 (처리자 esntlId 감사 사본)';
+COMMENT ON COLUMN tb_ifml_atrz_prcs_hstry.frst_rgtr_id IS '최초등록자ID (처리자, 공통 감사 loginId)';
 COMMENT ON COLUMN tb_ifml_atrz_prcs_hstry.crt_dt IS '생성일시';

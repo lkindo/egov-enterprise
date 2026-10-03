@@ -7,8 +7,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * [2026-10-03 D7] 기안자가 열린 보완 요청에 답한다. 제목·본문을 보내면 함께 고친다(보내지 않으면 그대로).
+ * [2026-10-03 D7] 기안자가 열린 보완 요청에 답한다. 본문을 보내면 함께 고친다(보내지 않으면 그대로).
  * 고치면 고치기 전 본문이 처리 이력에 남고 앞서 승인한 사람에게 알림이 간다.
+ *
+ * <p>제목은 받지 않는다 — 앞서 승인한 사람이 본 제목을 남길 자리가 없어, 바꾸면 승인한 내용의 증거가 사라진다.
+ * 제목을 바꾸려면 회수 후 재상신한다. 모르는 필드는 역직렬화에서 400 으로 거부된다(fail-on-unknown-properties).
  */
 @Schema(description = "보완 답변")
 public class ApprovalSupplementAnswerRequest {
@@ -17,10 +20,6 @@ public class ApprovalSupplementAnswerRequest {
     @NotBlank
     @Size(max = 4000)
     private String answer;
-
-    @Schema(description = "고친 제목(보내지 않으면 그대로)", maxLength = 256)
-    @Size(max = 256)
-    private String docTtl;
 
     @Schema(description = "고친 본문(보내지 않으면 그대로)", maxLength = 4000)
     @Size(max = 4000)
@@ -33,8 +32,6 @@ public class ApprovalSupplementAnswerRequest {
 
     public String getAnswer() { return answer; }
     public void setAnswer(String answer) { this.answer = answer; }
-    public String getDocTtl() { return docTtl; }
-    public void setDocTtl(String docTtl) { this.docTtl = docTtl; }
     public String getDocCn() { return docCn; }
     public void setDocCn(String docCn) { this.docCn = docCn; }
     public Integer getVersion() { return version; }

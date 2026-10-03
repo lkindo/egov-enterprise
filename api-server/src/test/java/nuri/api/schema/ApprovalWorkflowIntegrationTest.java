@@ -78,6 +78,7 @@ class ApprovalWorkflowIntegrationTest {
     void removeOnlyOwnDocuments() {
         SecurityContextHolder.clearContext();
         for (long id : ownDocuments) {
+            jdbc.update("DELETE FROM tb_ifml_atrz_prcs_hstry WHERE ifml_atrz_sn=?", id);
             jdbc.update("DELETE FROM tb_ifml_atrz_dtl WHERE ifml_atrz_sn=?", id);
             jdbc.update("DELETE FROM tb_ifml_atrz_hstry WHERE ifml_atrz_sn=?", id);
             jdbc.update("DELETE FROM tb_ifml_atrz_info WHERE ifml_atrz_sn=?", id);
@@ -221,6 +222,39 @@ class ApprovalWorkflowIntegrationTest {
         }
     }
 
+    /**
+     * [2026-10-03 D7] 처리 이력은 행위자를 두 축으로 남긴다 — 대조·이름 표시는 esntlId(chg_user_idntfr), 감사 컬럼은
+     * 로그인 ID(frst_rgtr_id). 로그인 ID 와 esntlId 를 다르게 둬야 축을 섞은 매핑이 드러난다.
+     */
+    @Test
+    void supplementHistoryKeepsEsntlIdForMatchingAndLoginIdForAuditOnPostgres() {
+        long id = create(List.of(stage(ApprovalStageKind.APPROVAL, FIRST)));
+        authenticate(FIRST, "wf_first_login");
+        service.requestSupplement(id, "금액을 적어 주세요", null);
+        authenticate(OWNER, "wf_owner_login");
+        var asked = service.getInformalSanction(id, OWNER);
+        assertThat(asked.getOpenSupplement()).isNotNull();
+        assertThat(asked.getOpenSupplement().askedBy()).isEqualTo(FIRST);
+        assertThat(asked.isCanAnswerSupplement()).isTrue();
+
+        service.answerSupplement(id, "45만 원입니다", "최초 문서 내용\n교육비: 45만 원", asked.getVersion());
+
+        assertThat(jdbc.queryForList("""
+                SELECT prcs_type_cd, chg_user_idntfr, frst_rgtr_id, trgt_user_id FROM tb_ifml_atrz_prcs_hstry
+                WHERE ifml_atrz_sn=? ORDER BY ifml_atrz_prcs_hstry_sn
+                """, id)).extracting(row -> List.of(row.get("prcs_type_cd"), row.get("chg_user_idntfr"),
+                        row.get("frst_rgtr_id"), String.valueOf(row.get("trgt_user_id"))))
+                .containsExactly(List.of("ASK", FIRST, "wf_first_login", OWNER),
+                        List.of("ANSWER", OWNER, "wf_owner_login", FIRST),
+                        List.of("REVISE", OWNER, "wf_owner_login", "null"));
+        var answered = service.getInformalSanction(id, OWNER);
+        assertThat(answered.getOpenSupplement()).isNull();
+        assertThat(answered.getDocTtl()).isEqualTo("검토 요청");
+        assertThat(answered.getDocCn()).isEqualTo("최초 문서 내용\n교육비: 45만 원");
+        assertThat(answered.getProcessHistory()).extracting(row -> row.actorNm())
+                .containsExactly(FIRST, OWNER, OWNER);
+    }
+
     @Test
     void listFiltersApplyTitleDateAndStatusOnPostgres() {
         long discount = createDocument("할인 100% 요청", "20260910");
@@ -279,7 +313,11 @@ class ApprovalWorkflowIntegrationTest {
     }
 
     private static void authenticate(String id) {
-        var principal = CustomUserDetails.builder().userId(id).esntlId(id).enabled(true).build();
+        authenticate(id, id);
+    }
+
+    private static void authenticate(String id, String loginId) {
+        var principal = CustomUserDetails.builder().userId(loginId).esntlId(id).enabled(true).build();
         // 처리·회수·재상신 힌트는 그 동작의 기능 권한도 본다 — 참여자는 결재 권한을 가진 일반 사용자다.
         var authorities = java.util.stream.Stream.of("APPROVAL_READ", "APPROVAL_CREATE", "APPROVAL_APPROVE", "APPROVAL_CANCEL")
                 .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new).toList();

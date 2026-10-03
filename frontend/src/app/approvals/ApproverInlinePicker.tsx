@@ -144,6 +144,8 @@ export function ApproverInlinePicker({ stageLabel, selectedIds, otherStageIds, s
                   <span className="font-semibold text-foreground">{person.userNm || '이름 없음'}</span>
                   <span className="text-xs text-muted-foreground">{person.deptNm || '소속 부서 없음'}</span>
                   <AbsenceBadge absent={person.absent} />
+                  {/* 이름이 같은 사람을 가른다. 종전 피커는 마우스를 올릴 때만 보여 키보드로는 구분할 수 없었다. */}
+                  {person.esntlId && <span className="font-mono text-xs text-muted-foreground">ID: {person.esntlId}</span>}
                   {reason && <span className="text-xs text-muted-foreground">· {reason}</span>}
                   {selected && <Check aria-hidden="true" className="ml-auto size-4 text-primary" />}
                 </button>

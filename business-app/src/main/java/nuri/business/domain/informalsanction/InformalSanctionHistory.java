@@ -43,9 +43,8 @@ public class InformalSanctionHistory extends BaseEntity {
         return history;
     }
 
-    /** 진행 중인 차수의 내용을 문서와 맞춘다(보완 답변으로 고친 경우). 결과 필드는 건드리지 않는다. */
-    public void reviseContent(InformalSanction sanction) {
-        this.docTtl = sanction.getDocTtl();
+    /** 진행 중인 차수의 본문을 문서와 맞춘다(보완 답변으로 고친 경우). 제목과 결과 필드는 건드리지 않는다. */
+    public void reviseBody(InformalSanction sanction) {
         this.docCn = sanction.getDocCn();
     }
 

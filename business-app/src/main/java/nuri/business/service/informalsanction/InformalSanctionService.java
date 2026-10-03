@@ -201,8 +201,9 @@ public class InformalSanctionService {
         String actor = SecurityUtil.getCurrentEsntlId()
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
         List<InformalSanctionDetail> lines = detailRepository.findRevision(id, sanction.getAtrzCycl());
-        InformalSanctionDetail ownLine = lines.stream().filter(d -> actor.equals(d.getId().getUserId()))
-                .findFirst().orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
+        Optional<InformalSanctionDetail> found = lines.stream().filter(d -> actor.equals(d.getId().getUserId())).findFirst();
+        if (found.isEmpty()) assertNotReplacedOut(sanction, actor);
+        InformalSanctionDetail ownLine = found.orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
         SecurityUtil.assertOwnerByEsntlId(ownLine.getId().getUserId());
         /*
          * [2026-10-01] 이미 끝난 문서·이미 처리한 라인은 입력 오류가 아니라 **먼저 일어난 다른 처리와의 충돌**이다.
@@ -289,8 +290,7 @@ public class InformalSanctionService {
         List<String> receivers = detailRepository.findRevision(id, sanction.getAtrzCycl()).stream()
                 .filter(d -> d.status() == ApprovalStatus.ACTIVE).map(d -> d.getId().getUserId()).sorted().toList();
         if (receivers.isEmpty()) throw new BusinessException(CommonErrorCode.INVALID_STATE, "재알림을 받을 결재자가 없습니다.");
-        processRepository.save(InformalSanctionProcess.record(sanction, ApprovalProcessType.REMIND,
-                sanction.getAplcntId(), null, null, null, LocalDateTime.now()));
+        recordProcess(sanction, ApprovalProcessType.REMIND, sanction.getAplcntId(), null, null, null, LocalDateTime.now());
         java.util.UUID eventId = java.util.UUID.randomUUID();
         receivers.forEach(receiver -> eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, receiver,
                 "결재 재알림", documentLabel(sanction) + "를 기다리고 있습니다. 확인해 주세요.", pendingLink(id))));
@@ -333,8 +333,8 @@ public class InformalSanctionService {
         } else {
             sanction.selectRepresentativeApprover(representative);
         }
-        processRepository.save(InformalSanctionProcess.record(sanction, ApprovalProcessType.REPLACE,
-                sanction.getAplcntId(), toUserId, fromUserId, null, LocalDateTime.now()));
+        recordProcess(sanction, ApprovalProcessType.REPLACE, sanction.getAplcntId(), toUserId, fromUserId, null,
+                LocalDateTime.now());
         java.util.UUID eventId = java.util.UUID.randomUUID();
         eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, fromUserId, "결재선에서 빠졌습니다",
                 documentLabel(sanction) + "의 결재자를 기안자가 다른 사람으로 바꿨습니다. 처리할 필요가 없습니다.", "/approvals"));
@@ -354,8 +354,9 @@ public class InformalSanctionService {
         String actor = SecurityUtil.getCurrentEsntlId()
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
         List<InformalSanctionDetail> lines = detailRepository.findRevision(id, sanction.getAtrzCycl());
-        InformalSanctionDetail ownLine = lines.stream().filter(d -> actor.equals(d.getId().getUserId()))
-                .findFirst().orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
+        Optional<InformalSanctionDetail> found = lines.stream().filter(d -> actor.equals(d.getId().getUserId())).findFirst();
+        if (found.isEmpty()) assertNotReplacedOut(sanction, actor);
+        InformalSanctionDetail ownLine = found.orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
         SecurityUtil.assertOwnerByEsntlId(ownLine.getId().getUserId());
         assertInProgress(sanction, "보완 요청");
         if (ownLine.status() == ApprovalStatus.WAITING) {
@@ -371,8 +372,7 @@ public class InformalSanctionService {
             throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
                     "이미 보완 요청 중인 문서입니다. 기안자의 답을 기다려 주세요.");
         }
-        processRepository.save(InformalSanctionProcess.record(sanction, ApprovalProcessType.ASK, actor,
-                sanction.getAplcntId(), null, text, LocalDateTime.now()));
+        recordProcess(sanction, ApprovalProcessType.ASK, actor, sanction.getAplcntId(), null, text, LocalDateTime.now());
         entityManager.lock(sanction, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
         eventPublisher.publishEvent(new NotificationRequestedEvent(java.util.UUID.randomUUID(), sanction.getAplcntId(),
                 "보완 요청이 왔습니다", documentLabel(sanction)
@@ -380,11 +380,15 @@ public class InformalSanctionService {
     }
 
     /**
-     * [2026-10-03 D7] 기안자가 열린 보완 요청에 답한다. 제목·본문을 함께 고칠 수 있으며, 고치면 고치기 전 본문을 처리
+     * [2026-10-03 D7] 기안자가 열린 보완 요청에 답한다. 본문을 함께 고칠 수 있으며, 고치면 고치기 전 본문을 처리
      * 이력(REVISE)에 남기고 앞서 승인한 사람에게 알린다 — 승인은 그대로 유지된다(D7 규칙).
+     *
+     * <p>제목은 고치지 않는다. 앞서 승인한 사람이 본 제목을 남길 자리가 처리 이력에 없어, 제목을 바꾸면 승인한 내용의
+     * 증거가 사라진다. 저장된 제목은 검사하지도 않는다 — 제목 없이 올라온 문서(V2_101 이전 문서·제목을 비운 기안)도
+     * 보완 답변을 할 수 있어야 한다. 제목을 바꾸려면 회수 후 재상신한다.
      */
     @Transactional
-    public void answerSupplement(Long id, String answer, String docTtl, String docCn, Integer expectedVersion) {
+    public void answerSupplement(Long id, String answer, String docCn, Integer expectedVersion) {
         InformalSanction sanction = lock(id);
         SecurityUtil.assertOwnerByEsntlId(sanction.getAplcntId());
         assertInProgress(sanction, "보완 답변");
@@ -395,26 +399,24 @@ public class InformalSanctionService {
             throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION, "답할 보완 요청이 없습니다. 최신 상태를 확인해 주세요.");
         }
         String text = requiredText(answer, "보완 요청에 대한 답을 적어 주세요.");
-        String title = docTtl == null ? sanction.getDocTtl() : docTtl.trim();
         String content = docCn == null ? sanction.getDocCn() : docCn;
-        if (title == null || title.isBlank() || title.length() > 256 || content != null && content.length() > 4000) {
-            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "제목은 1~256자, 본문은 4000자 이내로 적어 주세요.");
+        if (content != null && content.length() > 4000) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "본문은 4000자 이내로 적어 주세요.");
         }
-        boolean revised = !Objects.equals(title, sanction.getDocTtl()) || !Objects.equals(content, sanction.getDocCn());
+        boolean revised = !Objects.equals(content, sanction.getDocCn());
         LocalDateTime now = LocalDateTime.now();
         String before = sanction.getDocCn();
-        processRepository.save(InformalSanctionProcess.record(sanction, ApprovalProcessType.ANSWER,
-                sanction.getAplcntId(), ask.getFrstRgtrId(), null, text, now));
+        recordProcess(sanction, ApprovalProcessType.ANSWER, sanction.getAplcntId(), ask.getChgUserIdntfr(), null, text, now);
         if (revised) {
-            processRepository.save(InformalSanctionProcess.record(sanction, ApprovalProcessType.REVISE,
-                    sanction.getAplcntId(), null, null, before == null || before.isBlank() ? "(본문 없음)" : before, now));
-            sanction.reviseContent(title, content);
-            currentHistory(sanction).reviseContent(sanction);
+            recordProcess(sanction, ApprovalProcessType.REVISE, sanction.getAplcntId(), null, null,
+                    before == null || before.isBlank() ? "(본문 없음)" : before, now);
+            sanction.reviseBody(content);
+            currentHistory(sanction).reviseBody(sanction);
         } else {
             entityManager.lock(sanction, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
         }
         java.util.UUID eventId = java.util.UUID.randomUUID();
-        eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, ask.getFrstRgtrId(), "보완 답변이 왔습니다",
+        eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, ask.getChgUserIdntfr(), "보완 답변이 왔습니다",
                 documentLabel(sanction) + "에 기안자가 답했습니다. 내용을 확인하고 결재해 주세요.", pendingLink(id)));
         if (revised) {
             lines.stream().filter(d -> d.status() == ApprovalStatus.APPROVED).map(d -> d.getId().getUserId())
@@ -439,6 +441,38 @@ public class InformalSanctionService {
     private List<InformalSanctionProcess> cycleProcesses(InformalSanction sanction) {
         return processRepository.findForDocuments(List.of(sanction.getIfmlAtrzSn())).stream()
                 .filter(p -> p.getAtrzCycl().compareTo(sanction.getAtrzCycl()) == 0).toList();
+    }
+
+    /**
+     * 처리 이력 한 건을 남긴다. 행위자는 esntlId 로 대조하고, 감사 컬럼(frst_rgtr_id)에는 공통 계약대로 지금 요청한 사람의
+     * 로그인 ID 를 싣는다(백엔드 헌법 제8조 3항) — 처리 이력은 늘 그 행위자 본인의 요청 안에서 남는다.
+     */
+    private void recordProcess(InformalSanction sanction, ApprovalProcessType type, String actor, String targetUserId,
+                               String beforeUserId, String content, LocalDateTime at) {
+        processRepository.save(InformalSanctionProcess.record(sanction, type, actor, currentLoginId(), targetUserId,
+                beforeUserId, content, at));
+    }
+
+    /** 로그인 ID 를 알 수 없으면 'SYSTEM' 으로 채우지 않고 거부한다 — 누가 했는지 모르는 처리 이력을 남기지 않는다. */
+    private static String currentLoginId() {
+        return SecurityUtil.getCurrentLoginId().filter(loginId -> !loginId.isBlank())
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED,
+                        "로그인 정보를 확인할 수 없어 처리하지 못했습니다. 다시 로그인해 주세요."));
+    }
+
+    /**
+     * [2026-10-03 D6] 기안자가 결재자를 바꾸면 빠진 사람의 라인은 지워진다. 그 사람이 열어 둔 화면이나 되돌리기 대기열에서
+     * 처리하면 자기 라인이 없어 403 이 되는데, 화면은 409 만 충돌로 보고 목록을 다시 읽는다 — 권한 오류로 보이고 문서가
+     * 대기함에 남는다. 이 차수에서 그 사람을 바꾼 기록(REPLACE 의 변경 전 사람)이 있을 때만 409 로 사유를 말한다.
+     * 결재선에 있던 적이 없는 사람은 호출한 쪽이 그대로 403 으로 거부한다(문서 상태를 알리지 않는다, H3).
+     */
+    private void assertNotReplacedOut(InformalSanction sanction, String actor) {
+        boolean replacedOut = cycleProcesses(sanction).stream().anyMatch(p ->
+                p.getPrcsTypeCd() == ApprovalProcessType.REPLACE && actor.equals(p.getBfrUserId()));
+        if (replacedOut) {
+            throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
+                    "기안자가 결재자를 바꿔 이 결재선에서 빠졌습니다. 최신 상태를 확인해 주세요.");
+        }
     }
 
     private static String requiredText(String value, String message) {
@@ -647,7 +681,7 @@ public class InformalSanctionService {
         lines.forEach(d -> ids.add(d.getId().getUserId()));
         // 결재선에서 빠진 사람도 처리 이력에는 이름으로 남아야 한다.
         processes.forEach(p -> {
-            ids.add(p.getFrstRgtrId());
+            ids.add(p.getChgUserIdntfr());
             if (p.getTrgtUserId() != null) ids.add(p.getTrgtUserId());
             if (p.getBfrUserId() != null) ids.add(p.getBfrUserId());
         });
@@ -722,8 +756,8 @@ public class InformalSanctionService {
         List<InformalSanctionProcess> cycleProcesses = processes.stream()
                 .filter(p -> p.getAtrzCycl().compareTo(sanction.getAtrzCycl()) == 0).toList();
         InformalSanctionProcess openAsk = inProgress ? openSupplement(visibleLines, cycleProcesses) : null;
-        dto.setOpenSupplement(openAsk == null ? null : new ApprovalSupplementDto(openAsk.getFrstRgtrId(),
-                users.getOrDefault(openAsk.getFrstRgtrId(), ""), openAsk.getPrcsCn(), openAsk.getCrtDt()));
+        dto.setOpenSupplement(openAsk == null ? null : new ApprovalSupplementDto(openAsk.getChgUserIdntfr(),
+                users.getOrDefault(openAsk.getChgUserIdntfr(), ""), openAsk.getPrcsCn(), openAsk.getCrtDt()));
         dto.setCurrentStageSince(inProgress ? stageSince(visibleLines, revisions, sanction) : null);
         boolean drafter = inProgress && owner && SecurityUtil.hasPermission(DRAFT_PERMISSION);
         boolean remindedToday = cycleProcesses.stream().anyMatch(InformalSanctionService::remindedToday);
@@ -735,7 +769,7 @@ public class InformalSanctionService {
         dto.setCanRequestSupplement(dto.isCanApprove() && openAsk == null);
         dto.setProcessHistory(includeHistory ? processes.stream().filter(p -> allowed.contains(p.getAtrzCycl()))
                 .map(p -> new ApprovalProcessDto(p.getPrcsTypeCd(), p.getAtrzCycl().intValueExact(),
-                        users.getOrDefault(p.getFrstRgtrId(), ""),
+                        users.getOrDefault(p.getChgUserIdntfr(), ""),
                         p.getTrgtUserId() == null ? null : users.getOrDefault(p.getTrgtUserId(), ""),
                         p.getBfrUserId() == null ? null : users.getOrDefault(p.getBfrUserId(), ""),
                         p.getPrcsCn(), p.getCrtDt()))
@@ -745,7 +779,8 @@ public class InformalSanctionService {
 
     /**
      * 보완 요청이 열려 있는가 — 같은 차수의 마지막 ASK 뒤에 ANSWER 가 없고, 요청한 결재자가 아직 차례일 때다.
-     * 요청한 사람이 승인·반려했거나 결재선에서 빠지면 요청은 닫힌다.
+     * 요청한 사람이 승인·반려했거나 결재선에서 빠지면 요청은 닫힌다. 결재선에서 빠지면(REPLACE 의 변경 전 사람) 그
+     * 요청은 영영 닫힌다 — 기안자가 같은 사람을 다시 넣어도 앞 자리의 요청이 되살아나지 않는다.
      */
     private static InformalSanctionProcess openSupplement(List<InformalSanctionDetail> currentLines,
                                                           List<InformalSanctionProcess> cycleProcesses) {
@@ -753,9 +788,11 @@ public class InformalSanctionService {
         for (InformalSanctionProcess process : cycleProcesses) {
             if (process.getPrcsTypeCd() == ApprovalProcessType.ASK) lastAsk = process;
             else if (process.getPrcsTypeCd() == ApprovalProcessType.ANSWER) lastAsk = null;
+            else if (process.getPrcsTypeCd() == ApprovalProcessType.REPLACE && lastAsk != null
+                    && lastAsk.getChgUserIdntfr().equals(process.getBfrUserId())) lastAsk = null;
         }
         if (lastAsk == null) return null;
-        String asker = lastAsk.getFrstRgtrId();
+        String asker = lastAsk.getChgUserIdntfr();
         return currentLines.stream().anyMatch(d -> asker.equals(d.getId().getUserId()) && d.status() == ApprovalStatus.ACTIVE)
                 ? lastAsk : null;
     }

@@ -212,13 +212,14 @@ public class ApprovalApiController {
     }
 
     @Operation(summary = "Answer Supplement",
-            description = "기안자가 열린 보완 요청에 답합니다. 제목·본문을 보내면 함께 고치며, 고치기 전 본문은 처리 이력에 남고 앞서 승인한 "
-                    + "사람에게 알림이 갑니다(승인은 유지). 답한 뒤 요청한 결재자 차례로 돌아갑니다.")
+            description = "기안자가 열린 보완 요청에 답합니다. 본문을 보내면 함께 고치며, 고치기 전 본문은 처리 이력에 남고 앞서 승인한 "
+                    + "사람에게 알림이 갑니다(승인은 유지). 제목은 고칠 수 없습니다(바꾸려면 회수 후 재상신). "
+                    + "답한 뒤 요청한 결재자 차례로 돌아갑니다.")
     @PostMapping("/{id}/supplement-answers")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#answerSupplement')")
     public ResponseEntity<ApiResponse<Void>> answerSupplement(@PathVariable Long id,
             @Valid @RequestBody nuri.api.controller.business.approval.dto.ApprovalSupplementAnswerRequest request) {
-        approvalService.answerSupplement(id, request.getAnswer(), request.getDocTtl(), request.getDocCn(), request.getVersion());
+        approvalService.answerSupplement(id, request.getAnswer(), request.getDocCn(), request.getVersion());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

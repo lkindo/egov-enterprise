@@ -91,12 +91,22 @@ class ApprovalCollaborationServiceTest {
 
     private void actor(String userId) {
         security.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
+        // 처리 이력의 감사 컬럼은 로그인 ID 다 — esntlId 와 다른 값을 둬야 두 축을 섞으면 드러난다.
+        security.when(SecurityUtil::getCurrentLoginId).thenReturn(Optional.of(loginId(userId)));
+    }
+
+    private static String loginId(String userId) {
+        return "login-" + userId;
     }
 
     private InformalSanction header(String status) {
+        return header(status, "원래 제목");
+    }
+
+    private InformalSanction header(String status, String title) {
         InformalSanction document = InformalSanction.builder().ifmlAtrzSn(7L)
                 .aplcntId("owner").aprvrId("first").taskSeCd("TASK").reqYmd("20260916")
-                .docTtl("원래 제목").docCn("원래 본문").aprvYn(status).build();
+                .docTtl(title).docCn("원래 본문").aprvYn(status).build();
         ReflectionTestUtils.setField(document, "version", 3);
         return document;
     }
@@ -124,7 +134,16 @@ class ApprovalCollaborationServiceTest {
 
     private InformalSanctionProcess process(InformalSanction document, ApprovalProcessType type, String actorId,
                                             String content, LocalDateTime at) {
-        InformalSanctionProcess row = InformalSanctionProcess.record(document, type, actorId, null, null, content, at);
+        InformalSanctionProcess row = InformalSanctionProcess.record(document, type, actorId, loginId(actorId), null, null,
+                content, at);
+        ReflectionTestUtils.setField(row, "ifmlAtrzPrcsHstrySn", (long) at.getSecond() + at.getMinute() * 60L);
+        return row;
+    }
+
+    /** 기안자가 결재자 from 을 to 로 바꾼 기록. */
+    private InformalSanctionProcess replaced(InformalSanction document, String from, String to, LocalDateTime at) {
+        InformalSanctionProcess row = InformalSanctionProcess.record(document, ApprovalProcessType.REPLACE, "owner",
+                loginId("owner"), to, from, null, at);
         ReflectionTestUtils.setField(row, "ifmlAtrzPrcsHstrySn", (long) at.getSecond() + at.getMinute() * 60L);
         return row;
     }
@@ -276,7 +295,9 @@ class ApprovalCollaborationServiceTest {
 
         InformalSanctionProcess recorded = savedProcess();
         assertThat(recorded.getPrcsTypeCd()).isEqualTo(ApprovalProcessType.ASK);
-        assertThat(recorded.getFrstRgtrId()).isEqualTo("first");
+        // 행위자는 두 축이다 — 대조·이름 표시는 esntlId, 감사 컬럼은 공통 계약대로 로그인 ID(헌법 제8조 3항).
+        assertThat(recorded.getChgUserIdntfr()).isEqualTo("first");
+        assertThat(recorded.getFrstRgtrId()).isEqualTo(loginId("first"));
         assertThat(recorded.getPrcsCn()).isEqualTo("교육비 금액을 적어 주세요");
         assertThat(document.getAprvYn()).isEqualTo("A");
         verify(entityManager).lock(document, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
@@ -309,7 +330,7 @@ class ApprovalCollaborationServiceTest {
         writable(document, List.of(line(1, "first", ApprovalStatus.APPROVED), line(2, "second", ApprovalStatus.ACTIVE)));
         processes(process(document, ApprovalProcessType.ASK, "first", "질문", LocalDateTime.now()));
 
-        assertThatThrownBy(() -> service.answerSupplement(7L, "답", null, null, 3)).isInstanceOf(BusinessException.class)
+        assertThatThrownBy(() -> service.answerSupplement(7L, "답", null, 3)).isInstanceOf(BusinessException.class)
                 .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(CommonErrorCode.CONCURRENT_MODIFICATION));
     }
 
@@ -321,15 +342,24 @@ class ApprovalCollaborationServiceTest {
         InformalSanctionHistory history = writable(document, List.of(approved, line(2, "second", ApprovalStatus.ACTIVE)));
         processes(process(document, ApprovalProcessType.ASK, "second", "금액을 적어 주세요", LocalDateTime.now()));
 
-        service.answerSupplement(7L, "45만 원, 부서 부담입니다", null, "원래 본문\n교육비: 45만 원", 3);
+        service.answerSupplement(7L, "45만 원, 부서 부담입니다", "원래 본문\n교육비: 45만 원", 3);
 
         ArgumentCaptor<InformalSanctionProcess> saved = ArgumentCaptor.forClass(InformalSanctionProcess.class);
         verify(processRepository, org.mockito.Mockito.times(2)).save(saved.capture());
         assertThat(saved.getAllValues()).extracting(InformalSanctionProcess::getPrcsTypeCd, InformalSanctionProcess::getPrcsCn)
                 .containsExactly(org.assertj.core.groups.Tuple.tuple(ApprovalProcessType.ANSWER, "45만 원, 부서 부담입니다"),
                         org.assertj.core.groups.Tuple.tuple(ApprovalProcessType.REVISE, "원래 본문"));
+        // 답변은 요청한 결재자(esntlId)에게 가고, 감사 컬럼에는 답한 기안자의 로그인 ID 가 남는다.
+        assertThat(saved.getAllValues().getFirst()).satisfies(answer -> {
+            assertThat(answer.getTrgtUserId()).isEqualTo("second");
+            assertThat(answer.getChgUserIdntfr()).isEqualTo("owner");
+            assertThat(answer.getFrstRgtrId()).isEqualTo(loginId("owner"));
+        });
         assertThat(document.getDocCn()).isEqualTo("원래 본문\n교육비: 45만 원");
         assertThat(history.getDocCn()).isEqualTo("원래 본문\n교육비: 45만 원");
+        // 제목은 고치지 않는다 — 앞서 승인한 사람이 본 제목을 남길 자리가 처리 이력에 없다(D7).
+        assertThat(document.getDocTtl()).isEqualTo("원래 제목");
+        assertThat(history.getDocTtl()).isEqualTo("원래 제목");
         assertThat(approved.status()).isEqualTo(ApprovalStatus.APPROVED);
         assertThat(notifications()).extracting(NotificationRequestedEvent::receiverEsntlId, NotificationRequestedEvent::linkUrl)
                 .containsExactly(org.assertj.core.groups.Tuple.tuple("second", "/approvals?tab=PENDING&doc=7"),
@@ -348,18 +378,119 @@ class ApprovalCollaborationServiceTest {
         InformalSanctionProcess ask = process(document, ApprovalProcessType.ASK, "second", "금액을 적어 주세요", LocalDateTime.now());
         given(processRepository.findForDocuments(List.of(7L))).willReturn(List.of(ask));
         given(userRepository.findProfilesByEsntlIds(any())).willReturn(List.of(new UserSearchDto("second", "둘째", "기획팀", true)));
+        given(userRepository.findAllById(any())).willReturn(List.of(User.builder().esntlId("second")
+                .userId(loginId("second")).userNm("둘째").pswd("{bcrypt}x").userSttsCd("P").build()));
 
         InformalSanctionDto dto = service.getInformalSanction(7L, "owner");
 
         assertThat(dto.getOpenSupplement()).isNotNull();
+        // 요청자 대조·이름은 esntlId 축이다 — 감사 컬럼(로그인 ID)으로 찾으면 요청이 닫힌 것처럼 보이고 이름이 빈다.
         assertThat(dto.getOpenSupplement().askedBy()).isEqualTo("second");
+        assertThat(dto.getOpenSupplement().askedByNm()).isEqualTo("둘째");
         assertThat(dto.getCurrentStageSince()).isEqualTo(LocalDateTime.of(2026, 9, 30, 10, 0));
         assertThat(dto.getStages().get(1).approvers().getFirst().absent()).isTrue();
         assertThat(dto.isCanAnswerSupplement()).isTrue();
         assertThat(dto.isCanRemind()).isTrue();
         assertThat(dto.isCanReplaceApprover()).isTrue();
         assertThat(dto.isCanRequestSupplement()).isFalse();
-        assertThat(dto.getProcessHistory()).singleElement()
-                .satisfies(row -> assertThat(row.type()).isEqualTo(ApprovalProcessType.ASK));
+        assertThat(dto.getProcessHistory()).singleElement().satisfies(row -> {
+            assertThat(row.type()).isEqualTo(ApprovalProcessType.ASK);
+            assertThat(row.actorNm()).isEqualTo("둘째");
+        });
+    }
+
+    @Test
+    @DisplayName("처리 이력의 감사 컬럼은 로그인 ID 다 — 로그인 ID 를 알 수 없으면 기록하지 않고 거부한다")
+    void processHistoryRequiresLoginId() {
+        InformalSanction document = header("A");
+        writable(document, List.of(line(1, "first", ApprovalStatus.ACTIVE)));
+        processes();
+        actor("first");
+        security.when(SecurityUtil::getCurrentLoginId).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.requestSupplement(7L, "질문", 3)).isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(CommonErrorCode.UNAUTHORIZED));
+        verify(processRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("제목 없이 올라온 문서도 보완 답변을 할 수 있다 — 저장된 제목은 검사하지 않고 그대로 둔다")
+    void answerWorksForDocumentWithoutTitle() {
+        InformalSanction document = header("A", null);
+        InformalSanctionHistory history = writable(document, List.of(line(1, "first", ApprovalStatus.ACTIVE)));
+        processes(process(document, ApprovalProcessType.ASK, "first", "금액을 적어 주세요", LocalDateTime.now()));
+
+        service.answerSupplement(7L, "45만 원입니다", "원래 본문\n교육비: 45만 원", 3);
+
+        assertThat(savedProcess().getPrcsTypeCd()).isEqualTo(ApprovalProcessType.ANSWER);
+        assertThat(document.getDocTtl()).isNull();
+        assertThat(history.getDocTtl()).isNull();
+        assertThat(document.getDocCn()).isEqualTo("원래 본문\n교육비: 45만 원");
+        assertThat(notifications()).singleElement().satisfies(event -> {
+            assertThat(event.receiverEsntlId()).isEqualTo("first");
+            assertThat(event.content()).startsWith("결재(번호 7)");
+        });
+    }
+
+    @Test
+    @DisplayName("보완 답변의 본문은 4000자까지다 — 넘으면 아무것도 남기지 않고 400")
+    void answerRejectsTooLongBody() {
+        InformalSanction document = header("A");
+        writable(document, List.of(line(1, "first", ApprovalStatus.ACTIVE)));
+        processes(process(document, ApprovalProcessType.ASK, "first", "금액을 적어 주세요", LocalDateTime.now()));
+
+        assertThatThrownBy(() -> service.answerSupplement(7L, "답", "가".repeat(4001), 3)).isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE));
+        verify(processRepository, never()).save(any());
+        assertThat(document.getDocCn()).isEqualTo("원래 본문");
+    }
+
+    @Test
+    @DisplayName("요청한 결재자를 바꿨다가 다시 넣어도 앞 자리의 보완 요청은 닫힌 채다")
+    void replacedOutAskerReAddedDoesNotReviveSupplement() {
+        InformalSanction document = header("A");
+        writable(document, List.of(line(1, "first", ApprovalStatus.ACTIVE)));
+        LocalDateTime at = LocalDateTime.of(2026, 10, 3, 9, 0);
+        processes(process(document, ApprovalProcessType.ASK, "first", "금액을 적어 주세요", at),
+                replaced(document, "first", "fourth", at.plusSeconds(1)),
+                replaced(document, "fourth", "first", at.plusSeconds(2)));
+
+        // 기안자에게는 답할 요청이 없다 — 앞 자리의 질문에 답하게 하지 않는다.
+        assertThatThrownBy(() -> service.answerSupplement(7L, "답", null, 3)).isInstanceOf(BusinessException.class)
+                .hasMessageContaining("답할 보완 요청이 없습니다")
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(CommonErrorCode.CONCURRENT_MODIFICATION));
+        // 다시 들어온 결재자는 새로 보완을 요청할 수 있다.
+        actor("first");
+        service.requestSupplement(7L, "새 질문", 3);
+        assertThat(savedProcess()).satisfies(row -> {
+            assertThat(row.getPrcsTypeCd()).isEqualTo(ApprovalProcessType.ASK);
+            assertThat(row.getPrcsCn()).isEqualTo("새 질문");
+        });
+    }
+
+    @Test
+    @DisplayName("결재선에서 빠진 결재자가 늦게 처리하면 403 이 아니라 사유를 밝힌 409 다 — 결재선에 없던 사람은 그대로 403")
+    void replacedOutApproverGetsConflictWithReason() {
+        InformalSanction document = header("A");
+        writable(document, List.of(line(1, "fourth", ApprovalStatus.ACTIVE)));
+        processes(replaced(document, "first", "fourth", LocalDateTime.of(2026, 10, 3, 9, 0)));
+        String reason = "기안자가 결재자를 바꿔 이 결재선에서 빠졌습니다. 최신 상태를 확인해 주세요.";
+
+        actor("first");
+        assertThatThrownBy(() -> service.confirmInformalSanction(7L, "C", null, 3)).isInstanceOf(BusinessException.class)
+                .hasMessage(reason)
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(CommonErrorCode.CONCURRENT_MODIFICATION));
+        assertThatThrownBy(() -> service.requestSupplement(7L, "질문", 3)).isInstanceOf(BusinessException.class)
+                .hasMessage(reason)
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(CommonErrorCode.CONCURRENT_MODIFICATION));
+
+        // 결재선에 있던 적이 없는 사람에게는 문서가 어떻게 됐는지 알리지 않는다(H3).
+        actor("stranger");
+        assertThatThrownBy(() -> service.confirmInformalSanction(7L, "C", null, 3)).isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(CommonErrorCode.ACCESS_DENIED));
+        assertThatThrownBy(() -> service.requestSupplement(7L, "질문", 3)).isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(CommonErrorCode.ACCESS_DENIED));
+        verify(processRepository, never()).save(any());
+        assertThat(document.getAprvYn()).isEqualTo("A");
     }
 }

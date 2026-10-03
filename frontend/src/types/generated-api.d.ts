@@ -2214,7 +2214,7 @@ export interface paths {
         put?: never;
         /**
          * Answer Supplement
-         * @description 기안자가 열린 보완 요청에 답합니다. 제목·본문을 보내면 함께 고치며, 고치기 전 본문은 처리 이력에 남고 앞서 승인한 사람에게 알림이 갑니다(승인은 유지). 답한 뒤 요청한 결재자 차례로 돌아갑니다.
+         * @description 기안자가 열린 보완 요청에 답합니다. 본문을 보내면 함께 고치며, 고치기 전 본문은 처리 이력에 남고 앞서 승인한 사람에게 알림이 갑니다(승인은 유지). 제목은 고칠 수 없습니다(바꾸려면 회수 후 재상신). 답한 뒤 요청한 결재자 차례로 돌아갑니다.
          */
         post: operations["answerSupplement"];
         delete?: never;
@@ -7566,8 +7566,6 @@ export interface components {
         ApprovalSupplementAnswerRequest: {
             /** @description 보완 요청에 대한 답 */
             answer: string;
-            /** @description 고친 제목(보내지 않으면 그대로) */
-            docTtl?: string;
             /** @description 고친 본문(보내지 않으면 그대로) */
             docCn?: string;
             /**

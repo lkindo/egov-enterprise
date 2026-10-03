@@ -265,8 +265,11 @@ describe('ApprovalDraftDialog 기안 보조', () => {
     await waitFor(() => expect(mocks.getLineSuggestions).toHaveBeenCalledWith('01'));
     fireEvent.click(await screen.findByRole('button', { name: /일반 결재선 가져오기/ }));
     expect(screen.getByRole('list', { name: '2단계 결재자' })).toHaveTextContent('이합의');
-    expect(screen.getByRole('button', { name: /퇴사자 결재자로 더하기 \(사용 중이 아닌 계정\)/ })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: '박최종 결재자로 더하기' }));
+    // [2026-10-03 F22] 지정할 수 없는 사유는 화면에 보인다(종전에는 aria-label 에만 있었다). 누를 수 없는 사람은 버튼이 아니다.
+    expect(screen.getByText('· 지정할 수 없음(사용 중이 아닌 계정)')).toBeVisible();
+    expect(screen.queryByRole('button', { name: /퇴사자/ })).not.toBeInTheDocument();
+    // 이름에 부재 표시가 함께 실린다 — 종전 aria-label 은 '부재 중' 을 덮었다.
+    fireEvent.click(screen.getByRole('button', { name: '박최종 부재 중 결재자로 더하기' }));
     expect(screen.getByRole('list', { name: '2단계 결재자' })).toHaveTextContent('박최종');
 
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
@@ -286,6 +289,33 @@ describe('ApprovalDraftDialog 기안 보조', () => {
     expect(screen.getByRole('button', { name: '결재 상신' })).toBeDisabled();
     fireEvent.submit(screen.getByRole('form', { name: '결재 기안 폼' }));
     expect(mocks.createDraft).not.toHaveBeenCalled();
+  });
+
+  it('결재선을 고친 뒤 늦게 도착한 앞 사전 확인은 고친 결재선의 상신을 막지 않는다 (F7)', async () => {
+    // 피커도 같은 확인을 부른다 — 최종 확인으로 넘어갈 때의 첫 사전 확인만 붙잡아 늦게 돌려준다.
+    let holdNext = false;
+    let resolveFirst!: (profiles: unknown) => void;
+    mocks.checkApprovers.mockImplementation((ids: string[]) => {
+      if (holdNext) { holdNext = false; return new Promise((resolve) => { resolveFirst = resolve; }); }
+      return Promise.resolve(ids.map(id => ({ esntlId: id, eligible: true })));
+    });
+    renderDialog(); await fillContent(); await pick(1, '김결재');
+    holdNext = true;
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    await waitFor(() => expect(resolveFirst).toBeTypeOf('function'));
+
+    // 확인을 기다리는 사이 이전으로 돌아가 김결재를 빼고 이합의를 넣는다.
+    fireEvent.click(screen.getByRole('button', { name: '이전' }));
+    fireEvent.click(screen.getByRole('button', { name: '김결재 결재선에서 제외' }));
+    await pick(1, '이합의');
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    await waitFor(() => expect(mocks.checkApprovers).toHaveBeenCalledWith(['PEER']));
+
+    await act(async () => { resolveFirst([{ esntlId: 'BOSS', userNm: '김결재', eligible: false, ineligibleReason: 'NO_PERMISSION' }]); });
+    expect(screen.queryByText(/결재자로 지정할 수 없는 사람이 있습니다/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '결재 상신' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
+    await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledWith(expect.objectContaining({ stages: [{ kind: 'APPROVAL', approverIds: ['PEER'] }] })));
   });
 
   it('사전 확인이 실패해도 상신은 막지 않는다 — 서버가 상신 때 같은 규칙으로 다시 본다', async () => {

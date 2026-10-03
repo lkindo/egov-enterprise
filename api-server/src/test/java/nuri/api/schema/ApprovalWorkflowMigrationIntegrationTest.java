@@ -53,25 +53,47 @@ class ApprovalWorkflowMigrationIntegrationTest extends SharedPostgresMigrationTe
                     VALUES (-1,1,1,'WF_APPROVER','A')
                     """)).isInstanceOf(SQLException.class).hasMessageContaining("foreign key");
 
-            // V2_121: 처리 이력은 결재 차수에 묶이고, 유형마다 필요한 값이 있어야 들어간다.
-            String revision = "(SELECT ifml_atrz_sn FROM tb_ifml_atrz_info WHERE aplcnt_id='WF_APPLICANT' AND aprv_yn='A')";
+            // V2_121: 처리 이력은 결재 차수에 묶이고, 유형마다 필요한 값이 있어야 들어간다. 처리한 사람은 두 축이다 —
+            //   chg_user_idntfr 는 esntlId, frst_rgtr_id 는 공통 감사 계약의 로그인 ID 이며 둘 다 비울 수 없다.
+            // 진행 중(A) 문서는 둘이다 — 상태가 NULL 이던 행도 V2_101 이 A 로 옮긴다. 하나만 골라 차수 1 에 묶는다.
+            String revision = "(SELECT min(ifml_atrz_sn) FROM tb_ifml_atrz_info WHERE aplcnt_id='WF_APPLICANT' AND aprv_yn='A')";
             assertThat(statement.executeUpdate("""
-                    INSERT INTO tb_ifml_atrz_prcs_hstry(ifml_atrz_sn,atrz_cycl,prcs_type_cd,trgt_user_id,bfr_user_id,frst_rgtr_id,crt_dt)
-                    VALUES (%s,1,'REPLACE','WF_NEW','WF_APPROVER','WF_APPLICANT',CURRENT_TIMESTAMP),
-                           (%s,1,'REMIND',NULL,NULL,'WF_APPLICANT',CURRENT_TIMESTAMP)
+                    INSERT INTO tb_ifml_atrz_prcs_hstry(ifml_atrz_sn,atrz_cycl,prcs_type_cd,trgt_user_id,bfr_user_id,
+                                                        chg_user_idntfr,frst_rgtr_id,crt_dt)
+                    VALUES (%s,1,'REPLACE','WF_NEW','WF_APPROVER','WF_APPLICANT','wf_applicant',CURRENT_TIMESTAMP),
+                           (%s,1,'REMIND',NULL,NULL,'WF_APPLICANT','wf_applicant',CURRENT_TIMESTAMP)
                     """.formatted(revision, revision))).isEqualTo(2);
             assertThatThrownBy(() -> statement.executeUpdate("""
                     INSERT INTO tb_ifml_atrz_prcs_hstry(ifml_atrz_sn,atrz_cycl,prcs_type_cd,frst_rgtr_id,crt_dt)
-                    VALUES (%s,1,'ASK','WF_APPROVER',CURRENT_TIMESTAMP)
+                    VALUES (%s,1,'REMIND','wf_applicant',CURRENT_TIMESTAMP)
+                    """.formatted(revision))).isInstanceOf(SQLException.class).hasMessageContaining("chg_user_idntfr");
+            assertThatThrownBy(() -> statement.executeUpdate("""
+                    INSERT INTO tb_ifml_atrz_prcs_hstry(ifml_atrz_sn,atrz_cycl,prcs_type_cd,chg_user_idntfr,crt_dt)
+                    VALUES (%s,1,'REMIND','WF_APPLICANT',CURRENT_TIMESTAMP)
+                    """.formatted(revision))).isInstanceOf(SQLException.class).hasMessageContaining("frst_rgtr_id");
+            assertThatThrownBy(() -> statement.executeUpdate("""
+                    INSERT INTO tb_ifml_atrz_prcs_hstry(ifml_atrz_sn,atrz_cycl,prcs_type_cd,chg_user_idntfr,frst_rgtr_id,crt_dt)
+                    VALUES (%s,1,'ASK','WF_APPROVER','wf_approver',CURRENT_TIMESTAMP)
                     """.formatted(revision))).isInstanceOf(SQLException.class).hasMessageContaining("ck_tb_ifml_atrz_prcs_hstry_shape");
             assertThatThrownBy(() -> statement.executeUpdate("""
-                    INSERT INTO tb_ifml_atrz_prcs_hstry(ifml_atrz_sn,atrz_cycl,prcs_type_cd,prcs_cn,frst_rgtr_id,crt_dt)
-                    VALUES (%s,1,'DELEGATE','x','WF_APPROVER',CURRENT_TIMESTAMP)
+                    INSERT INTO tb_ifml_atrz_prcs_hstry(ifml_atrz_sn,atrz_cycl,prcs_type_cd,prcs_cn,chg_user_idntfr,frst_rgtr_id,crt_dt)
+                    VALUES (%s,1,'DELEGATE','x','WF_APPROVER','wf_approver',CURRENT_TIMESTAMP)
                     """.formatted(revision))).isInstanceOf(SQLException.class).hasMessageContaining("ck_tb_ifml_atrz_prcs_hstry_prcs_type_cd");
             assertThatThrownBy(() -> statement.executeUpdate("""
-                    INSERT INTO tb_ifml_atrz_prcs_hstry(ifml_atrz_sn,atrz_cycl,prcs_type_cd,frst_rgtr_id,crt_dt)
-                    VALUES (%s,2,'REMIND','WF_APPLICANT',CURRENT_TIMESTAMP)
+                    INSERT INTO tb_ifml_atrz_prcs_hstry(ifml_atrz_sn,atrz_cycl,prcs_type_cd,chg_user_idntfr,frst_rgtr_id,crt_dt)
+                    VALUES (%s,2,'REMIND','WF_APPLICANT','wf_applicant',CURRENT_TIMESTAMP)
                     """.formatted(revision))).isInstanceOf(SQLException.class).hasMessageContaining("foreign key");
+            try (var comments = statement.executeQuery("""
+                    SELECT col_description('tb_ifml_atrz_prcs_hstry'::regclass, a.attnum)
+                    FROM pg_attribute a
+                    WHERE a.attrelid='tb_ifml_atrz_prcs_hstry'::regclass AND a.attname IN ('chg_user_idntfr','frst_rgtr_id')
+                    ORDER BY a.attname
+                    """)) {
+                assertThat(comments.next()).isTrue();
+                assertThat(comments.getString(1)).contains("esntlId");
+                assertThat(comments.next()).isTrue();
+                assertThat(comments.getString(1)).contains("loginId");
+            }
         }
     }
 }

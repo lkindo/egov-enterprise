@@ -1529,7 +1529,6 @@ export type ApprovalSupplementRequest = z.infer<typeof ApprovalSupplementRequest
 // ==========================================================================
 export const ApprovalSupplementAnswerRequestSchema = /*#__PURE__*/ (() => z.object({
   answer: z.string().min(0).max(4000),
-  docTtl: z.string().min(0).max(256).optional(),
   docCn: z.string().min(0).max(4000).optional(),
   version: z.number().int().min(0),
 }))();
@@ -7655,14 +7654,12 @@ export const ApprovalSupplementRequestResponseSchema = /*#__PURE__*/ (() => z.ob
 
 export const ApprovalSupplementAnswerRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   answer: z.string().min(0).max(4000),
-  docTtl: z.string().min(0).max(256).optional(),
   docCn: z.string().min(0).max(4000).optional(),
   version: z.number().int().min(0),
 }))();
 
 export const ApprovalSupplementAnswerRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   answer: z.string().min(0).max(4000),
-  docTtl: z.string().min(0).max(256).optional().nullable(),
   docCn: z.string().min(0).max(4000).optional().nullable(),
   version: z.number().int().min(0),
 }))();

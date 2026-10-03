@@ -350,6 +350,26 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
         verify(approvalService).remindApprovers(7L);
         verify(approvalService).replaceApprover(7L, "A", "B", 3);
         verify(approvalService).requestSupplement(7L, "금액을 적어 주세요", 3);
-        verify(approvalService).answerSupplement(7L, "45만 원", null, "고친 본문", 4);
+        verify(approvalService).answerSupplement(7L, "45만 원", "고친 본문", 4);
+    }
+
+    @Test
+    @DisplayName("보완 답변은 제목을 받지 않는다 — 운영 변환기 설정에서 docTtl 은 모르는 필드로 거부된다")
+    void supplementAnswerContractHasNoTitle() {
+        // 운영 application.yml 과 같은 선택(Jackson 2 기본값 + fail-on-unknown-properties). 테스트 yml 은 이 값을 두지 않아
+        // MockMvc 로는 운영의 400 을 재현할 수 없으므로 요청 DTO 의 역직렬화 계약을 직접 본다.
+        tools.jackson.databind.json.JsonMapper mapper = tools.jackson.databind.json.JsonMapper.builder()
+                .configureForJackson2()
+                .enable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
+        var accepted = mapper.readValue("""
+                {"answer":"45만 원","docCn":"고친 본문","version":4}
+                """, nuri.api.controller.business.approval.dto.ApprovalSupplementAnswerRequest.class);
+        org.assertj.core.api.Assertions.assertThat(accepted.getDocCn()).isEqualTo("고친 본문");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> mapper.readValue("""
+                        {"answer":"45만 원","docTtl":"바꾼 제목","version":4}
+                        """, nuri.api.controller.business.approval.dto.ApprovalSupplementAnswerRequest.class))
+                .isInstanceOf(tools.jackson.databind.exc.UnrecognizedPropertyException.class)
+                .hasMessageContaining("docTtl");
     }
 }

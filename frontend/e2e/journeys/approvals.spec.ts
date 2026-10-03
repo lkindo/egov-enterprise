@@ -111,12 +111,16 @@ test.describe('Enterprise Workflow & Productivity', () => {
         await page.getByRole('option', { name: taskName }).click();
         await dialog.getByRole('button', { name: '다음', exact: true }).click();
         const pickActor = async (stage: number, actor: ApprovalActor) => {
+            // [2026-10-03 DEC-OPS-218] 결재자는 단계 안에 펼친 피커에서 고른다. 임시 결재자는 이름이 같아 ID 로 가른다.
             await dialog.getByRole('button', { name: `${stage}단계 결재자 선택`, exact: true }).click();
-            const picker = page.getByRole('dialog', { name: '결재자 검색 및 선택' });
-            await picker.getByLabel('사용자 검색어 입력').fill(me.userNm!);
-            await picker.getByRole('button', { name: '검색', exact: true }).click();
-            const matches = picker.getByRole('button', { name: `사용자 선택: ${me.userNm}`, exact: true });
-            await matches.filter({ has: page.getByText(`ID: ${actor.esntlId}`, { exact: true }) }).click();
+            const picker = dialog.getByRole('group', { name: `${stage}단계 결재자 고르기` });
+            await picker.getByRole('textbox', { name: '결재자 이름 검색' }).fill(me.userNm!);
+            await picker.getByRole('button', { name: '찾기', exact: true }).click();
+            const candidate = picker.getByRole('button').filter({ has: page.getByText(`ID: ${actor.esntlId}`, { exact: true }) });
+            await expect(candidate).toBeEnabled();
+            await candidate.click();
+            await expect(candidate).toHaveAttribute('aria-pressed', 'true');
+            await picker.getByRole('button', { name: '다 골랐어요', exact: true }).click();
             await expect(picker).toBeHidden();
         };
         await pickActor(1, approver);

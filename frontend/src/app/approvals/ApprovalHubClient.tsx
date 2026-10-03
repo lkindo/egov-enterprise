@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,7 @@ import {
 } from '@/queries/approval-query-options';
 import { canPermission } from '@/lib/auth/permissions';
 import { failureMessage } from '@/lib/safe-error-log';
+import { getTodayYmd } from '@/lib/date/today-ymd';
 
 const EMPTY_APPROVALS: InformalSanctionDto[] = [];
 const NO_QUEUED: number[] = [];
@@ -107,7 +108,8 @@ const approvalDecisionSchema = ApprovalConfirmRequestSchema
   });
 
 /**
- * 알림이 여는 주소(2026-10-03 D1). 탭과 문서 번호만 읽고 그 밖의 값은 버린다 — 이 화면은 URL 에 아무것도 쓰지 않는다.
+ * 알림이 여는 주소(2026-10-03 D1). 탭과 문서 번호만 읽고 그 밖의 값은 버린다. 이 화면이 URL 에 쓰는 것은 연 링크를
+ * 지우는 일뿐이다(링크 효과 참고) — 상태 값은 싣지 않는다.
  * 서버 알림이 `?tab=PENDING&doc=N` 처럼 보내며, 형식이 틀리면 기본 화면으로 연다.
  */
 function linkedTab(value: string | null): ApprovalTab | null {
@@ -150,14 +152,48 @@ function documentLabel(item: InformalSanctionDto): string {
   return item.docTtl || `#${item.ifmlAtrzSn}`;
 }
 
-/** 지금 차례인 사람과 그 단계가 시작된 뒤 지난 날(진행 중인 문서만). */
+/**
+ * 서버 일시의 한국 날짜(yyyyMMdd). 시간대 표기가 없는 값은 서버 시각(Asia/Seoul) 그대로이므로 날짜 부분을 읽는다.
+ * 브라우저 시간대로 해석하지 않는다 — 해외·UTC 환경에서 날짜가 하루 밀린다.
+ */
+function seoulYmd(value: string): string | null {
+  if (/T[\d:.]+(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)) {
+    const time = Date.parse(value);
+    return Number.isNaN(time) ? null : getTodayYmd(new Date(time));
+  }
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  return match ? `${match[1]}${match[2]}${match[3]}` : null;
+}
+
+/** 두 yyyyMMdd 사이의 달력 날 수. */
+function calendarDaysBetween(from: string, to: string): number {
+  const utc = (ymd: string) => Date.UTC(Number(ymd.slice(0, 4)), Number(ymd.slice(4, 6)) - 1, Number(ymd.slice(6, 8)));
+  return Math.round((utc(to) - utc(from)) / 86_400_000);
+}
+
+/**
+ * 지금 차례인 사람과 그 단계가 시작된 뒤 지난 날(진행 중인 문서만).
+ *
+ * [2026-10-03] '오늘 차례가 됨' 은 한국 달력 날짜로 판정한다 — 재알림의 '하루' 와 같은 기준이다. 종전에는 경과
+ * 24시간으로 세어 어제 저녁 차례가 된 문서를 오늘 아침에도 '오늘' 이라고 했다.
+ */
 function currentTurn(item: InformalSanctionDto, now: number) {
   if (item.aprvYn !== SANCTION_STATUS.REQUESTED) return null;
   const stage = item.stages?.find(entry => entry.status === 'ACTIVE');
   const waiting = (stage?.approvers ?? []).filter(person => person.status === 'ACTIVE');
-  const since = item.currentStageSince ? Date.parse(item.currentStageSince) : Number.NaN;
-  const days = Number.isNaN(since) ? null : Math.max(0, Math.floor((now - since) / 86_400_000));
+  const since = item.currentStageSince ? seoulYmd(item.currentStageSince) : null;
+  const days = since === null ? null : Math.max(0, calendarDaysBetween(since, getTodayYmd(new Date(now))));
   return { waiting, days };
+}
+
+/** 처리 동사에 목적격 조사를 붙인다 — '승인을', '동의를'. */
+function withObjectParticle(actionNm: string): string {
+  return actionNm === '동의' ? '동의를' : `${actionNm}을`;
+}
+
+/** 이 단계가 합의(전원 동의) 단계인가 — 처리 동사를 '승인' 대신 '동의' 로 부른다. */
+function isAgreementStage(item: InformalSanctionDto): boolean {
+  return item.stages?.find(stage => stage.status === 'ACTIVE')?.kind === 'AGREEMENT';
 }
 
 function isConflict(error: unknown): boolean {
@@ -168,6 +204,19 @@ function isConflict(error: unknown): boolean {
 function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+}
+
+/** 화면 위에 대화상자(기안·확인·사람 고르기·명령 센터)가 열려 있는가. Radix 는 키 이벤트의 전파를 막지 않는다. */
+function hasOpenDialog(): boolean {
+  return document.querySelector('[role="dialog"], [role="alertdialog"], [aria-modal="true"]') !== null;
+}
+
+/** 되돌리기 대기열에 오른 승인 — 배너가 부를 문서 이름과, 되돌리거나 실패했을 때 되살릴 의견을 문서별로 둔다. */
+interface QueuedApproval {
+  title: string;
+  actionNm: string;
+  item: InformalSanctionDto;
+  reason?: string;
 }
 
 /**
@@ -189,6 +238,7 @@ export default function ApprovalHubClient() {
   const confirm = useConfirm();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const tabParam = linkedTab(searchParams?.get('tab') ?? null);
   const docParam = linkedDocument(searchParams?.get('doc') ?? null);
@@ -204,29 +254,41 @@ export default function ApprovalHubClient() {
   // 알림으로 연 문서. 목록의 현재 페이지에 없어도 상세를 연다.
   const [linkedId, setLinkedId] = useState<string | null>(docParam);
   const [appliedLink, setAppliedLink] = useState(`${tabParam}|${docParam}`);
-  if (appliedLink !== `${tabParam}|${docParam}`) {
-    // 같은 화면에서 다른 알림을 눌렀을 때. 렌더 중 상태 조정이라 effect 로 한 번 더 그리지 않는다.
-    setAppliedLink(`${tabParam}|${docParam}`);
-    if (tabParam) setActiveTab(tabParam);
-    if (docParam) { setSelectedItemId(docParam); setLinkedId(docParam); setPage(1); }
-  }
   const [isDraftOpen, setDraftOpen] = useState(false);
   const [resubmission, setResubmission] = useState<InformalSanctionDto | undefined>();
   const [draftTemplate, setDraftTemplate] = useState<InformalSanctionDto | undefined>();
   const [rejectReason, setRejectReason] = useState('');
   const [opinionDocument, setOpinionDocument] = useState<InformalSanctionDto | null>(null);
+  if (appliedLink !== `${tabParam}|${docParam}`) {
+    // 같은 화면에서 다른 알림을 눌렀을 때. 렌더 중 상태 조정이라 effect 로 한 번 더 그리지 않는다.
+    setAppliedLink(`${tabParam}|${docParam}`);
+    if (tabParam) setActiveTab(tabParam);
+    if (docParam) { setSelectedItemId(docParam); setLinkedId(docParam); setPage(1); }
+    // 작성 중 의견이 있었다면 이동 전에 '변경 버리고 이동' 을 이미 확인받았다. 의견을 그대로 두면 그 문서가 계속
+    // 선택되어 링크 문서가 열리지 않는다.
+    if (tabParam || docParam) { setRejectReason(''); setOpinionDocument(null); }
+  }
   const [pendingAction, setPendingAction] = useState<SanctionStatusCode | 'CANCEL' | 'ASK' | 'BULK' | 'REVISE' | null>(null);
   const [committingIds, setCommittingIds] = useState<number[]>([]);
   const [actionError, setActionError] = useState('');
   const [needsActionReview, setNeedsActionReview] = useState(false);
   const [bulkSelected, setBulkSelected] = useState<string[]>([]);
   const [focusMode, setFocusMode] = useState(false);
+  // 집중 모드는 대기함의 도구다. 탭을 옮기면(탭 전환·상신 직후·알림 링크) 끈다 — 토글 버튼도 대기함에만 있다.
+  if (focusMode && activeTab !== 'PENDING') setFocusMode(false);
   const [announcement, setAnnouncement] = useState('');
   const [now] = useState(() => Date.now());
+  const [queuedDocs, setQueuedDocs] = useState<Record<number, QueuedApproval>>({});
+  // 되돌리거나 실패한 승인의 의견 — 다른 문서에 의견을 쓰는 중이라 덮지 않고 맡아 두었다가, 그 문서를 다시 열 때 채운다.
+  const [parkedOpinions, setParkedOpinions] = useState<Record<string, string>>({});
+  // 처리 예정 영역 밖에서 끝난 승인의 실패 — 지금 보고 있는 다른 문서의 상세에 붙이지 않는다.
+  const [queueNotice, setQueueNotice] = useState('');
   const pendingActionRef = useRef(false);
   const itemButtonRefs = useRef(new Map<string, HTMLButtonElement>());
+  const queueButtonRefs = useRef(new Map<number, HTMLButtonElement>());
   const rejectReasonRef = useRef<HTMLTextAreaElement>(null);
-  const queuedTitles = useRef(new Map<number, string>());
+  // 집중 모드에서 R·Q 로 의견 칸에 들어왔을 때 Ctrl+Enter 로 마칠 동작.
+  const focusIntent = useRef<'REJECT' | 'ASK' | null>(null);
   const queued = useSyncExternalStore(subscribeApprovalCommits, pendingApprovalCommits, () => NO_QUEUED);
   const decisionValidation = useManualFormValidation(approvalDecisionSchema, {
     focusTargets: { reason: () => rejectReasonRef.current },
@@ -242,6 +304,21 @@ export default function ApprovalHubClient() {
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [queued.length]);
+  /*
+    알림 링크는 연 뒤 주소에서 지운다. 주소가 그대로면 같은 링크(예: 같은 문서의 재알림)를 다시 눌러도 주소가 바뀌지
+    않아 아무 일도 일어나지 않았다 — 다른 탭·문서로 옮겨 가 있었어도 그 자리에 머물렀다. 처음 연 뒤의 링크는
+    그 문서와 목록을 다시 읽는다(알림이 왔다는 것은 무언가 바뀌었다는 뜻이다).
+    useRouter 는 미저장 변경 보호를 거쳐 작성 중 의견이 있으면 이동 확인을 한 번 더 띄운다 — 주소만 고치는 history API 를
+    쓴다(App Router 가 useSearchParams 와 맞춘다).
+  */
+  const linkRunRef = useRef(false);
+  useEffect(() => {
+    const first = !linkRunRef.current;
+    linkRunRef.current = true;
+    if (!tabParam && !docParam) return;
+    if (!first) void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
+    window.history.replaceState(null, '', pathname || '/approvals');
+  }, [tabParam, docParam, pathname, queryClient]);
 
   const listFilters = {
     ...(keyword ? { keyword } : {}),
@@ -249,7 +326,7 @@ export default function ApprovalHubClient() {
     ...(activeTab !== 'PENDING' && statusFilter ? { status: statusFilter } : {}),
   };
   const hasListFilter = Object.keys(listFilters).length > 0;
-  const { data: approvalData, isLoading, isFetching, error: approvalsError, refetch: refetchApprovals } = useQuery(
+  const { data: approvalData, dataUpdatedAt, isLoading, isFetching, error: approvalsError, refetch: refetchApprovals } = useQuery(
     approvalQueryOptions.list(activeTab, { page: page - 1, size: PAGE_SIZE, ...listFilters }),
   );
   // 대기 탭의 건수 배지 — 조건과 무관한 전체 대기 건수다. 처리하면 목록 무효화와 함께 다시 읽힌다.
@@ -282,7 +359,7 @@ export default function ApprovalHubClient() {
   });
   const selectedListItem = useMemo(() => {
     // 목록의 순서나 처리 상태가 새로고침되어도 작성 중 의견을 다른 문서로 옮기지 않는다.
-    if (rejectReason.length && opinionDocument) return list.find(item => sanctionKey(item) === sanctionKey(opinionDocument)) ?? opinionDocument;
+    if (rejectReason.trim() && opinionDocument) return list.find(item => sanctionKey(item) === sanctionKey(opinionDocument)) ?? opinionDocument;
     const found = list.find(item => sanctionKey(item) === selectedItemId);
     if (found) return found;
     // 알림으로 연 문서는 목록의 이 페이지에 없어도 상세를 불러온다.
@@ -298,12 +375,38 @@ export default function ApprovalHubClient() {
     revision => revision.atrzCycl !== undefined && revision.atrzCycl < (selectedItem?.atrzCycl ?? 1),
   );
   const hasVisibleSelection = list.some(item => sanctionKey(item) === selectedItemId);
+  // 단계가 시작된 날을 목록을 읽은 시각 기준으로 센다 — 화면을 오래 열어 두어도 다시 읽으면 날짜가 따라온다.
+  const turnReference = dataUpdatedAt || now;
+
+  // 맡아 둔 의견은 그 문서를 다시 고를 때 한 번 채운다. 고르는 순간에만 보므로, 채운 뒤 지운 글을 다시 채우지 않는다.
+  const parkedKey = selectedListItem ? sanctionKey(selectedListItem) : '';
+  const [parkCheckedKey, setParkCheckedKey] = useState('');
+  if (parkedKey !== parkCheckedKey) {
+    setParkCheckedKey(parkedKey);
+    const parked = parkedOpinions[parkedKey];
+    if (parked !== undefined && selectedListItem && !rejectReason.trim()) {
+      setParkedOpinions((current) => {
+        const next = { ...current };
+        delete next[parkedKey];
+        return next;
+      });
+      setOpinionDocument(selectedListItem);
+      setRejectReason(parked);
+    }
+  }
+
+  // 되돌리기 대기열의 승인은 누른 순간이 아니라 10초 뒤에 끝난다. 그때의 탭·목록·작성 중 의견을 읽도록 ref 로 둔다.
+  const live = useRef({ activeTab, list, draft: '', draftKey: '' });
+  useLayoutEffect(() => {
+    live.current = { activeTab, list, draft: rejectReason, draftKey: opinionDocument ? sanctionKey(opinionDocument) : '' };
+  });
 
   const resetDecision = () => {
     setRejectReason('');
     decisionValidation.setFormErrors({}, false);
     setActionError('');
     setNeedsActionReview(false);
+    focusIntent.current = null;
   };
 
   /** 조건이 바뀌면 1페이지로 돌아가고 선택을 푼다 — 작성 중인 반려 사유가 있으면 탭 전환과 같은 확인을 거친다. */
@@ -385,9 +488,52 @@ export default function ApprovalHubClient() {
     toast(`결재를 ${actionNm}하지 못했습니다.`, 'error');
   };
 
+  const forgetQueued = (id: number) => setQueuedDocs((current) => {
+    const next = { ...current };
+    delete next[id];
+    return next;
+  });
+
+  /**
+   * 되돌렸거나 보내지 못한 승인의 의견을 그 문서로 되살린다.
+   * - 그 문서가 지금 대기함 목록에 있고 다른 문서에 쓰는 의견이 없으면: 그 문서를 열고 의견을 채운다(restored).
+   * - 다른 문서에 의견을 쓰는 중이거나 그 문서가 지금 목록에 없으면: 쓰는 글을 덮지 않고 의견을 맡아 둔다(parked).
+   *   그 문서를 다시 고르면 채운다.
+   */
+  const settleOpinion = (item: InformalSanctionDto, reason: string | undefined): 'restored' | 'parked' | 'kept' => {
+    const key = sanctionKey(item);
+    const { activeTab: currentTab, list: currentList, draft, draftKey } = live.current;
+    const listed = currentTab === 'PENDING' && currentList.some(entry => sanctionKey(entry) === key);
+    const otherDraft = draft.trim() !== '' && draftKey !== key;
+    if (!listed || otherDraft) {
+      if (!reason || draftKey === key) return 'kept';
+      setParkedOpinions(current => ({ ...current, [key]: reason }));
+      return 'parked';
+    }
+    setSelectedItemId(key);
+    // 같은 문서에 새로 쓰기 시작한 글이 있으면 그 글이 더 최근의 뜻이다 — 덮지 않는다.
+    if (reason && !draft.trim()) {
+      setOpinionDocument(item);
+      setRejectReason(reason);
+    }
+    return 'restored';
+  };
+
+  /** 처리 예정 행이 사라진 뒤 포커스를 둘 곳 — 남은 대기열의 다음 행, 없으면 지금 고른 문서. */
+  const focusAfterQueueRow = (id: number) => {
+    const index = queued.indexOf(id);
+    const rest = queued.filter(entry => entry !== id);
+    const next = rest[Math.min(Math.max(index, 0), rest.length - 1)];
+    const fallbackKey = selectedKey;
+    requestAnimationFrame(() => {
+      const target = (next !== undefined ? queueButtonRefs.current.get(next) : undefined) ?? itemButtonRefs.current.get(fallbackKey);
+      target?.focus();
+    });
+  };
+
   /**
    * 승인 — 확인 대화상자 없이 되돌리기 대기열에 올린다. 10초 안에 되돌리지 않으면 서버로 보낸다.
-   * 의견은 그 순간의 값으로 묶어 두고 입력란은 다음 문서를 위해 비운다.
+   * 의견은 그 순간의 값으로 묶어 두고 입력란은 다음 문서를 위해 비운다. 되돌리거나 실패하면 그 의견을 되살린다.
    */
   const scheduleApprove = (item: InformalSanctionDto, actionNm: string, reason: string | undefined) => {
     const id = item.ifmlAtrzSn;
@@ -400,31 +546,53 @@ export default function ApprovalHubClient() {
         await confirmMutation.mutateAsync({ ifmlAtrzSn: id, status: SANCTION_STATUS.APPROVED, reason, version });
         toast(`‘${title}’ ${actionNm}했습니다.`, 'success');
       } catch (error) {
-        setSelectedItemId(String(id));
-        setOpinionDocument(item);
-        if (reason) setRejectReason(reason);
-        reportDecisionFailure(error, actionNm);
+        // 10초 사이 사용자가 다른 문서에 의견을 쓰고 있을 수 있다 — 그 글을 덮거나 실패 안내를 그 문서에 붙이지 않는다.
+        const outcome = settleOpinion(item, reason);
+        if (outcome === 'restored') {
+          reportDecisionFailure(error, actionNm);
+        } else {
+          if (isConflict(error)) void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
+          setQueueNotice(`‘${title}’ ${actionNm}하지 못했습니다. ${failureMessage(error, `${actionNm} 처리 중 오류가 발생했습니다.`)}${
+            outcome === 'parked' ? ' 작성 중인 의견은 그대로 두었고, 이 문서에 적었던 의견은 문서를 다시 열면 채웁니다.' : ''}`);
+          toast(`결재를 ${actionNm}하지 못했습니다.`, 'error');
+        }
       } finally {
-        queuedTitles.current.delete(id);
+        forgetQueued(id);
         setCommittingIds(current => current.filter(entry => entry !== id));
       }
     });
     if (!accepted) return;
-    queuedTitles.current.set(id, title);
+    setQueuedDocs(current => ({ ...current, [id]: { title, actionNm, item, reason } }));
+    // 단건으로 처리한 문서는 여러 건 승인의 선택에서 뺀다 — 되돌려도 다시 고른 것으로 남지 않는다.
+    setBulkSelected(current => current.filter(entry => entry !== String(id)));
     setRejectReason('');
     setActionError('');
+    setQueueNotice('');
     decisionValidation.setFormErrors({}, false);
-    setAnnouncement(`‘${title}’ ${actionNm}을 ${APPROVAL_UNDO_MS / 1000}초 뒤 처리합니다. 되돌리려면 되돌리기를 누르세요.`);
+    setAnnouncement(`‘${title}’ ${withObjectParticle(actionNm)} ${APPROVAL_UNDO_MS / 1000}초 뒤 처리합니다. 되돌리려면 되돌리기를 누르세요.`);
     moveAfter(item);
   };
 
   const undoApprove = (id: number) => {
     if (!cancelApprovalCommit(id)) return;
-    const title = queuedTitles.current.get(id) ?? `#${id}`;
-    queuedTitles.current.delete(id);
-    setSelectedItemId(String(id));
-    setAnnouncement(`‘${title}’ 처리를 되돌렸습니다. 문서는 그대로 대기 중입니다.`);
-    requestAnimationFrame(() => itemButtonRefs.current.get(String(id))?.focus());
+    const entry = queuedDocs[id];
+    forgetQueued(id);
+    const title = entry?.title ?? `#${id}`;
+    const outcome = entry ? settleOpinion(entry.item, entry.reason) : 'kept';
+    if (outcome === 'restored') {
+      setAnnouncement(`‘${title}’ 처리를 되돌렸습니다. 문서는 그대로 대기 중입니다.${entry?.reason ? ' 적었던 의견을 다시 채웠습니다.' : ''}`);
+      requestAnimationFrame(() => itemButtonRefs.current.get(String(id))?.focus());
+      return;
+    }
+    setAnnouncement(`‘${title}’ 처리를 되돌렸습니다. 문서는 그대로 대기 중입니다.${
+      outcome === 'parked' ? ' 작성 중인 의견을 덮지 않도록, 이 문서에 적었던 의견은 문서를 다시 열면 채웁니다.' : ''}`);
+    focusAfterQueueRow(id);
+  };
+
+  /** ‘지금 처리’ — 기다리지 않고 보낸다. 그 행은 바로 사라지므로 포커스를 남은 행이나 고른 문서로 옮긴다. */
+  const commitNow = (id: number) => {
+    focusAfterQueueRow(id);
+    void commitApprovalNow(id);
   };
 
   const handleAction = async (
@@ -432,7 +600,7 @@ export default function ApprovalHubClient() {
     aprvYn: Extract<SanctionStatusCode, 'C' | 'R'>,
   ) => {
     const isReject = aprvYn === SANCTION_STATUS.REJECTED;
-    const actionNm = isReject ? '반려' : item.stages?.find(stage => stage.status === 'ACTIVE')?.kind === 'AGREEMENT' ? '동의' : '승인';
+    const actionNm = isReject ? '반려' : isAgreementStage(item) ? '동의' : '승인';
 
     if (item.ifmlAtrzSn === undefined) {
       toast('문서 번호를 확인할 수 없어 처리할 수 없습니다.', 'error');
@@ -494,6 +662,8 @@ export default function ApprovalHubClient() {
     try {
       await supplementMutation.mutateAsync({ ifmlAtrzSn: item.ifmlAtrzSn, question, version: item.version });
       toast('보완을 요청했습니다. 기안자가 답하면 알림이 옵니다.', 'success');
+      // 답을 기다리는 문서는 여러 건 승인에서 뺀다 — 답을 받기 전에 승인되지 않게 한다.
+      setBulkSelected(current => current.filter(entry => entry !== sanctionKey(item)));
       setRejectReason('');
       setActionError('');
       moveAfter(item);
@@ -506,21 +676,33 @@ export default function ApprovalHubClient() {
     }
   };
 
-  /** 고른 여러 건을 한 번 확인한 뒤 차례로 승인한다. 일부가 실패하면 실패한 문서와 사유를 밝힌다. */
-  const handleBulkApprove = async () => {
-    const targets = list.filter(item => bulkSelected.includes(sanctionKey(item)) && item.ifmlAtrzSn !== undefined);
+  /**
+   * 고른 여러 건을 한 번 확인한 뒤 차례로 승인한다. 일부가 실패하면 실패한 문서와 사유를 밝힌다.
+   *
+   * [2026-10-03] 보내는 문서(targets)는 **지금 승인할 수 있는 것**(bulkEligible)과 고른 것의 교집합이다. 종전에는 고른
+   * 목록을 그대로 써서, 단건 승인으로 이미 되돌리기 대기열에 오른 문서·보완 요청을 보낸 문서·승인 힌트가 꺼진 문서까지
+   * 다시 보냈다(대기열의 '되돌리기' 가 이미 승인된 문서를 되돌렸다고 말했다). 확인 문구의 건수도 이 교집합이다.
+   */
+  const handleBulkApprove = async (targets: InformalSanctionDto[]) => {
     if (targets.length === 0 || pendingActionRef.current) return;
     pendingActionRef.current = true;
     setPendingAction('BULK');
     try {
+      const agreements = targets.filter(isAgreementStage).length;
       const ok = await confirm({
         title: '선택한 결재 승인',
-        message: `선택한 ${targets.length}건을 의견 없이 승인합니다. 각 문서의 다음 단계 결재자에게 차례가 넘어갑니다.`,
+        message: `선택한 ${targets.length}건을 의견 없이 승인합니다${agreements > 0 ? `(합의 단계 ${agreements}건은 동의)` : ''}. `
+          + '각 문서는 결재선에 따라 다음 단계로 넘어가거나, 같은 단계의 다른 결재자를 기다리거나, 마지막 단계면 완료됩니다.',
         confirmText: `${targets.length}건 승인`,
       });
       if (!ok) return;
       const failures: string[] = [];
       for (const item of targets) {
+        // 확인을 기다리는 사이 단건 승인 대기열에 오른 문서는 보내지 않는다 — 두 번 보내지 않는다.
+        if (pendingApprovalCommits().includes(item.ifmlAtrzSn as number)) {
+          failures.push(`‘${documentLabel(item)}’: 이미 처리 예정에 올라 있어 보내지 않았습니다.`);
+          continue;
+        }
         try {
           await confirmMutation.mutateAsync({ ifmlAtrzSn: item.ifmlAtrzSn as number, status: SANCTION_STATUS.APPROVED, version: item.version });
         } catch (error) {
@@ -529,12 +711,14 @@ export default function ApprovalHubClient() {
       }
       setBulkSelected([]);
       const succeeded = targets.length - failures.length;
+      // 합의 단계가 섞이면 '승인' 하나로 부르지 않는다.
+      const doneNm = agreements > 0 ? '처리' : '승인';
       if (failures.length === 0) {
-        toast(`${succeeded}건을 승인했습니다.`, 'success');
+        toast(`${succeeded}건을 ${doneNm}했습니다.`, 'success');
         setActionError('');
       } else {
         void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
-        setActionError(`${succeeded}건은 승인했고 ${failures.length}건은 처리하지 못했습니다. ${failures.join(' ')}`);
+        setActionError(`${succeeded}건은 ${doneNm}했고 ${failures.length}건은 처리하지 못했습니다. ${failures.join(' ')}`);
         toast(`${failures.length}건을 승인하지 못했습니다.`, 'error');
       }
     } catch (error) {
@@ -663,9 +847,10 @@ export default function ApprovalHubClient() {
     rejectReasonFieldProps['aria-describedby'],
   ].filter(Boolean).join(' ');
 
-  // 여러 건 승인 — 대기함에서 서버가 승인할 수 있다고 한 문서만, 보완 요청이 열려 있지 않고 대기열에 없는 것만.
+  // 여러 건 승인 — 대기함에서 서버가 승인할 수 있다고 한 문서만, 보완 요청이 열려 있지 않고 대기열에 없으며 보내는 중도 아닌 것만.
   const bulkEligible = activeTab === 'PENDING' && canApprovePermission
-    ? list.filter(item => item.canApprove && !item.openSupplement && item.ifmlAtrzSn !== undefined && !queued.includes(item.ifmlAtrzSn))
+    ? list.filter(item => item.canApprove && !item.openSupplement && item.ifmlAtrzSn !== undefined
+      && !queued.includes(item.ifmlAtrzSn) && !committingIds.includes(item.ifmlAtrzSn))
     : EMPTY_APPROVALS;
   const taskGroups = useMemo(() => {
     const groups = new Map<string, { label: string; keys: string[] }>();
@@ -677,11 +862,35 @@ export default function ApprovalHubClient() {
     });
     return [...groups.values()].filter(group => group.keys.length > 1);
   }, [bulkEligible]);
-  const visibleBulkSelected = bulkSelected.filter(key => bulkEligible.some(item => sanctionKey(item) === key));
+  const bulkTargets = bulkEligible.filter(item => bulkSelected.includes(sanctionKey(item)));
+  const visibleBulkSelected = bulkTargets.map(sanctionKey);
 
   // 집중 모드 — 키보드만으로 목록을 오가며 처리한다. 최신 상태를 읽도록 처리기를 ref 로 둔다.
   const keyHandler = useRef<(event: KeyboardEvent) => void>(() => undefined);
   const handleFocusKey = (event: KeyboardEvent) => {
+    // 대화상자(기안·확인·사람 고르기)가 열려 있으면 키는 그 대화상자의 것이다. 종전에는 기안 대화상자 안에서 누른 A 가
+    //   뒤에 가려진 문서를 승인 대기열에 올렸다.
+    if (isDraftOpen || hasOpenDialog()) return;
+    // 의견 칸에서는 글자를 단축키로 보지 않는다. Esc 는 집중 모드를 끝내지 않고 목록으로 돌아가며,
+    //   Ctrl+Enter(맥은 ⌘+Enter)는 R·Q 로 시작한 반려·보완 요청을 마친다 — 칸 안에서 R 을 다시 누르면 글자가 된다.
+    if (event.target === rejectReasonRef.current) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        focusIntent.current = null;
+        itemButtonRefs.current.get(selectedKey)?.focus();
+        setAnnouncement('목록으로 돌아왔습니다. 집중 모드는 계속됩니다.');
+        return;
+      }
+      if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && focusIntent.current) {
+        event.preventDefault();
+        const intent = focusIntent.current;
+        if (!selectedItem || !canDecide || decisionDisabled) return;
+        focusIntent.current = null;
+        if (intent === 'REJECT') void handleAction(selectedItem, SANCTION_STATUS.REJECTED);
+        else if (canAsk) void handleSupplementRequest(selectedItem);
+      }
+      return;
+    }
     if (event.key === 'Escape') {
       setFocusMode(false);
       setAnnouncement('집중 모드를 끝냈습니다.');
@@ -702,13 +911,20 @@ export default function ApprovalHubClient() {
     if (key === 'a') { event.preventDefault(); void handleAction(selectedItem, SANCTION_STATUS.APPROVED); }
     else if (key === 'r' || key === 'q') {
       event.preventDefault();
+      if (key === 'q' && !canAsk) {
+        setAnnouncement('이 문서에는 지금 보완을 요청할 수 없습니다.');
+        return;
+      }
       if (!rejectReason.trim()) {
+        focusIntent.current = key === 'r' ? 'REJECT' : 'ASK';
         rejectReasonRef.current?.focus();
-        setAnnouncement(key === 'r' ? '반려 사유를 적은 뒤 다시 R 을 누르세요.' : '보완 요청 내용을 적은 뒤 다시 Q 를 누르세요.');
+        setAnnouncement(key === 'r'
+          ? '반려 사유를 적은 뒤 Ctrl+Enter 를 누르면 반려합니다. Esc 를 누르면 목록으로 돌아갑니다.'
+          : '보완 요청 내용을 적은 뒤 Ctrl+Enter 를 누르면 보냅니다. Esc 를 누르면 목록으로 돌아갑니다.');
         return;
       }
       if (key === 'r') void handleAction(selectedItem, SANCTION_STATUS.REJECTED);
-      else if (canAsk) void handleSupplementRequest(selectedItem);
+      else void handleSupplementRequest(selectedItem);
     }
   };
   useLayoutEffect(() => { keyHandler.current = handleFocusKey; });
@@ -740,7 +956,7 @@ export default function ApprovalHubClient() {
           {activeTab === 'PENDING' && canApprovePermission && (
             <Button type="button" variant={focusMode ? 'default' : 'outline'} aria-pressed={focusMode} onClick={() => {
               setFocusMode(current => !current);
-              setAnnouncement(focusMode ? '집중 모드를 끝냈습니다.' : '집중 모드입니다. J·K 로 문서를 옮기고 A 승인, R 반려, Q 보완 요청, Esc 로 끝냅니다.');
+              setAnnouncement(focusMode ? '집중 모드를 끝냈습니다.' : '집중 모드입니다. J·K 로 문서를 옮기고 A 승인, R 반려, Q 보완 요청(의견을 적고 Ctrl+Enter), Esc 로 끝냅니다.');
             }}>
               <Keyboard aria-hidden="true" /> 집중 모드
             </Button>
@@ -791,24 +1007,47 @@ export default function ApprovalHubClient() {
         </div>
         {focusMode && (
           <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-            집중 모드 · J 다음 문서 · K 이전 문서 · A 승인(10초 안에 되돌리기) · R 반려 · Q 보완 요청 · Esc 끝내기
+            집중 모드 · J 다음 문서 · K 이전 문서 · A 승인(10초 안에 되돌리기) · R 반려 · Q 보완 요청(의견을 적고 Ctrl+Enter, 의견 칸의 Esc 는 목록으로) · Esc 끝내기
           </p>
         )}
         <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
-        {queued.length > 0 && (
-          <div className="space-y-2 rounded-md border border-primary/40 bg-primary/10 p-3" aria-label="처리 예정">
-            {queued.map(id => (
-              <div key={id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                <span>‘{(() => { const item = list.find(entry => entry.ifmlAtrzSn === id); return item ? documentLabel(item) : `#${id}`; })()}’ 을 {APPROVAL_UNDO_MS / 1000}초 뒤 처리합니다.</span>
-                <span className="flex gap-2">
-                  <Button type="button" size="sm" variant="outline" onClick={() => undoApprove(id)}>
-                    <Undo2 aria-hidden="true" /> 되돌리기
-                  </Button>
-                  <Button type="button" size="sm" onClick={() => { void commitApprovalNow(id); }}>지금 처리</Button>
-                </span>
-              </div>
-            ))}
+        {queueNotice && (
+          <div role="alert" className="flex flex-wrap items-start justify-between gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm">
+            <p>{queueNotice}</p>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setQueueNotice('')}>안내 닫기</Button>
           </div>
+        )}
+        {queued.length > 0 && (
+          <section className="space-y-2 rounded-md border border-primary/40 bg-primary/10 p-3" aria-label="처리 예정">
+            {queued.map((id) => {
+              // 이름은 대기열에 올릴 때 기억해 둔다 — 페이지·탭을 옮겨 목록에 없어도 '#번호' 로 바뀌지 않는다.
+              const entry = queuedDocs[id];
+              const listed = list.find(item => item.ifmlAtrzSn === id);
+              const title = entry?.title ?? (listed ? documentLabel(listed) : `#${id}`);
+              const actionNm = entry?.actionNm ?? '승인';
+              return (
+                <div key={id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                  <span>‘{title}’ {withObjectParticle(actionNm)} {APPROVAL_UNDO_MS / 1000}초 뒤 처리합니다.</span>
+                  <span className="flex gap-2">
+                    <Button
+                      ref={(node) => {
+                        if (node) queueButtonRefs.current.set(id, node);
+                        else queueButtonRefs.current.delete(id);
+                      }}
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      aria-label={`‘${title}’ ${actionNm} 되돌리기`}
+                      onClick={() => undoApprove(id)}
+                    >
+                      <Undo2 aria-hidden="true" /> 되돌리기
+                    </Button>
+                    <Button type="button" size="sm" aria-label={`‘${title}’ ${actionNm} 지금 처리`} onClick={() => commitNow(id)}>지금 처리</Button>
+                  </span>
+                </div>
+              );
+            })}
+          </section>
         )}
         </div>
       )}
@@ -848,7 +1087,7 @@ export default function ApprovalHubClient() {
             )}
           </KeywordFilter>
           {bulkEligible.length > 1 && (
-            <div className="space-y-2 rounded-md border border-border p-3" aria-label="여러 건 승인">
+            <section className="space-y-2 rounded-md border border-border p-3" aria-label="여러 건 승인">
               <div className="flex flex-wrap items-center gap-2">
                 {taskGroups.map(group => (
                   <Button key={group.label} type="button" size="sm" variant="outline" disabled={isActionPending}
@@ -862,10 +1101,10 @@ export default function ApprovalHubClient() {
               </div>
               <Button type="button" size="sm" disabled={visibleBulkSelected.length === 0 || isActionPending}
                 aria-busy={pendingAction === 'BULK' || undefined}
-                onClick={() => { void handleBulkApprove(); }}>
+                onClick={() => { void handleBulkApprove(bulkTargets); }}>
                 <Check aria-hidden="true" /> 선택한 {visibleBulkSelected.length}건 승인
               </Button>
-            </div>
+            </section>
           )}
           {isLoading ? (
             <div role="status" className="rounded-md border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
@@ -893,7 +1132,7 @@ export default function ApprovalHubClient() {
                 const key = sanctionKey(item);
                 // ⚠ 종전에는 undefined === undefined 라 **전 행이 동시에 선택 상태**로 렌더됐다.
                 const isSelected = Boolean(key) && selectedKey === key;
-                const turn = currentTurn(item, now);
+                const turn = currentTurn(item, turnReference);
                 const isQueued = item.ifmlAtrzSn !== undefined && queued.includes(item.ifmlAtrzSn);
                 const bulkable = bulkEligible.some(entry => sanctionKey(entry) === key);
                 return (
@@ -1093,7 +1332,9 @@ export default function ApprovalHubClient() {
           </div>
           {detailQuery.data && (
             <ApprovalCollaborationPanel
-              key={`${selectedKey}-${detailQuery.data.version ?? ''}`}
+              // 문서와 차수가 바뀔 때만 새로 그린다. 버전으로 다시 그리면 결재자를 바꾸거나 다른 결재자가 처리할 때마다
+              //   작성 중인 보완 답변·고친 본문이 사라지고 포커스가 문서 처음으로 빠졌다. 패널은 매번 최신 버전을 읽는다.
+              key={`${selectedKey}-${detailQuery.data.atrzCycl ?? ''}`}
               document={detailQuery.data}
               canWrite={canDraft}
               disabled={isActionPending || !detailFresh}
