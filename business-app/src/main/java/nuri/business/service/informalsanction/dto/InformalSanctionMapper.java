@@ -33,5 +33,8 @@ public interface InformalSanctionMapper {
     @Mapping(target = "canReplaceApprover", ignore = true)
     @Mapping(target = "canRequestSupplement", ignore = true)
     @Mapping(target = "canAnswerSupplement", ignore = true)
+    @Mapping(target = "references", ignore = true)
+    @Mapping(target = "referenceViewer", ignore = true)
+    @Mapping(target = "canAddReference", ignore = true)
     InformalSanctionDto toDto(InformalSanction entity);
 }

@@ -19,12 +19,13 @@ import {
  * - `PENDING`   — 결재자 본인에게 온 대기 건(`/approvals/pending`)
  * - `SUBMITTED` — 내가 올린 결재(신청자 기준, `/approvals/my`)
  * - `PROCESSED` — 결재자 본인이 승인·반려한 건(`/approvals/processed`)
+ * - `REFERENCED` — 내가 참조자로 지정된 건(`/approvals/referenced`, 2026-10-04 D4). 읽기만 하며 모든 상태가 남는다
  *
  * [2026-09-05] 종전 탭 `HISTORY` 는 라벨이 '결재 처리 이력' 이면서 `/approvals/my`(신청자 기준)를
  * 불렀다 — 결재자가 처리한 문서는 어디에서도 다시 볼 수 없었고, 신청자는 자기 신청서를 엉뚱한 이름의
  * 탭에서 찾아야 했다. 탭 이름을 실제 질의 축에 맞추고 처리한 결재를 별도 탭으로 분리한다.
  */
-export type ApprovalTab = 'PENDING' | 'SUBMITTED' | 'PROCESSED';
+export type ApprovalTab = 'PENDING' | 'SUBMITTED' | 'PROCESSED' | 'REFERENCED';
 
 export interface ApprovalListParams {
   page?: number;
@@ -32,7 +33,7 @@ export interface ApprovalListParams {
   keyword?: string;
   fromYmd?: string;
   toYmd?: string;
-  /** 대기 탭에서는 쓰지 않는다(대기함은 늘 대기 문서다). */
+  /** 대기 탭에서는 쓰지 않는다(대기함은 늘 대기 문서다). 참조된 결재 탭에서는 문서의 지금 상태다. */
   status?: SanctionStatusCode;
 }
 
@@ -85,6 +86,13 @@ function listByTab(tab: ApprovalTab, params: ApprovalListParams) {
       return approvalUserService.getMyHistory(params);
     case 'PROCESSED':
       return approvalUserService.getProcessed(params);
+    case 'REFERENCED':
+      return approvalUserService.getReferenced(params);
+    default: {
+      // 탭을 더하고 여기를 빠뜨리면 목록이 조용히 비지 않고 컴파일에서 막힌다.
+      const unhandled: never = tab;
+      throw new Error(`알 수 없는 결재함 탭입니다: ${String(unhandled)}`);
+    }
   }
 }
 
@@ -193,6 +201,16 @@ export const approvalMutationOptions = {
       const notified = await approvalUserService.remind(ifmlAtrzSn);
       await refreshDocument(queryClient, ifmlAtrzSn);
       return notified;
+    },
+  }),
+  /**
+   * 지금 차례인 결재자의 참조자 추가(D4). 참조자 목록과 버전이 바뀌므로 그 문서와 목록을 다시 읽는다. 새로 지정한 사람 수를 돌려준다.
+   */
+  addReferences: (queryClient: QueryClient) => mutationOptions({
+    mutationFn: async ({ ifmlAtrzSn, references, version }: { ifmlAtrzSn: number; references: string[]; version: number }) => {
+      const added = await approvalUserService.addReferences(ifmlAtrzSn, references, version);
+      await refreshDocument(queryClient, ifmlAtrzSn);
+      return added;
     },
   }),
   replaceApprover: (queryClient: QueryClient) => mutationOptions({

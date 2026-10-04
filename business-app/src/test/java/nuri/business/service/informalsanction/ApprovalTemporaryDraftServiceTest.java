@@ -5,6 +5,9 @@ import nuri.business.domain.informalsanction.ApprovalTemporaryDraft;
 import nuri.business.domain.informalsanction.ApprovalTemporaryDraftLine;
 import nuri.business.domain.informalsanction.ApprovalTemporaryDraftLineId;
 import nuri.business.domain.informalsanction.ApprovalTemporaryDraftLineRepository;
+import nuri.business.domain.informalsanction.ApprovalTemporaryDraftReference;
+import nuri.business.domain.informalsanction.ApprovalTemporaryDraftReferenceId;
+import nuri.business.domain.informalsanction.ApprovalTemporaryDraftReferenceRepository;
 import nuri.business.domain.informalsanction.ApprovalTemporaryDraftRepository;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
@@ -72,6 +75,7 @@ class ApprovalTemporaryDraftServiceTest {
 
     @Mock private ApprovalTemporaryDraftRepository draftRepository;
     @Mock private ApprovalTemporaryDraftLineRepository lineRepository;
+    @Mock private ApprovalTemporaryDraftReferenceRepository referenceRepository;
     @Mock private UserRepository userRepository;
     @Mock private ApprovalLineAssistService lineAssistService;
     @Mock private InformalSanctionService informalSanctionService;
@@ -105,6 +109,10 @@ class ApprovalTemporaryDraftServiceTest {
         return ApprovalTemporaryDraftLine.create(new ApprovalTemporaryDraftLineId(sn, BigDecimal.valueOf(seq), userId), kind);
     }
 
+    private static ApprovalTemporaryDraftReference reference(long sn, String userId) {
+        return ApprovalTemporaryDraftReference.create(new ApprovalTemporaryDraftReferenceId(sn, userId));
+    }
+
     private static ApprovalStageRequest stage(ApprovalStageKind kind, String... approvers) {
         return new ApprovalStageRequest(kind, Arrays.asList(approvers));
     }
@@ -112,6 +120,18 @@ class ApprovalTemporaryDraftServiceTest {
     private static ApprovalTemporaryDraftRequest request(String task, String title, String body,
                                                          List<ApprovalStageRequest> stages) {
         return ApprovalTemporaryDraftRequest.builder().taskSeCd(task).docTtl(title).docCn(body).stages(stages).build();
+    }
+
+    private static ApprovalTemporaryDraftRequest withReferences(List<ApprovalStageRequest> stages, String... references) {
+        return ApprovalTemporaryDraftRequest.builder().docTtl("제목").stages(stages)
+                .references(Arrays.asList(references)).build();
+    }
+
+    /** 결재자 판정과 참조자 판정을 함께 실은 사전 확인 결과. */
+    private static ApproverProfileDto profile(String id, String name, String reason, String referenceReason) {
+        boolean known = !"NOT_FOUND".equals(reason) && !"INACTIVE".equals(reason);
+        return new ApproverProfileDto(id, known ? name : null, known ? "부서" : null, false, reason == null, reason,
+                referenceReason == null, referenceReason);
     }
 
     private void taskTypes(CommonCodeDto... codes) {
@@ -174,7 +194,7 @@ class ApprovalTemporaryDraftServiceTest {
         given(draftRepository.findTop20ByAplcntIdOrderByMdfcnDtDescIfmlAtrzTmprStrgSnDesc(OWNER)).willReturn(List.of());
 
         assertThat(service.getTemporaryDrafts(OWNER)).isEmpty();
-        verifyNoInteractions(lineRepository, informalSanctionService);
+        verifyNoInteractions(lineRepository, referenceRepository, informalSanctionService);
     }
 
     @Test
@@ -210,9 +230,9 @@ class ApprovalTemporaryDraftServiceTest {
                 line(7, 1, "a", ApprovalStageKind.AGREEMENT), line(7, 1, "off", ApprovalStageKind.AGREEMENT),
                 line(7, 2, "boss", ApprovalStageKind.APPROVAL)));
         given(lineAssistService.checkApprovers(OWNER, List.of("a", "off", "boss"))).willReturn(List.of(
-                new ApproverProfileDto("a", "가", "부서", false, true, null),
-                new ApproverProfileDto("off", null, null, false, false, "INACTIVE"),
-                new ApproverProfileDto("boss", "다", "부서", true, true, null)));
+                new ApproverProfileDto("a", "가", "부서", false, true, null, true, null),
+                new ApproverProfileDto("off", null, null, false, false, "INACTIVE", false, "INACTIVE"),
+                new ApproverProfileDto("boss", "다", "부서", true, true, null, true, null)));
         taskTypes(new CommonCodeDto("COM075", "T1", "출장", null, "Y"));
 
         ApprovalTemporaryDraftDto result = service.getTemporaryDraft(OWNER, 7L);
@@ -286,7 +306,7 @@ class ApprovalTemporaryDraftServiceTest {
                         l -> l.getId().getUserId(), ApprovalTemporaryDraftLine::getAcrdYn)
                 .containsExactly(tuple(11L, BigDecimal.ONE, "a", "Y"), tuple(11L, BigDecimal.ONE, "owner", "Y"),
                         tuple(11L, BigDecimal.valueOf(2), "boss", "N"));
-        assertThat(result).isEqualTo(new ApprovalTemporaryDraftSummaryDto(11L, "T1", "출장", null, 3, 0, null));
+        assertThat(result).isEqualTo(new ApprovalTemporaryDraftSummaryDto(11L, "T1", "출장", null, 3, 0, 0, null));
         verifyNoInteractions(lineAssistService);
     }
 
@@ -554,14 +574,16 @@ class ApprovalTemporaryDraftServiceTest {
     void submitConsumesDraftBeforeRegistering() {
         InformalSanctionDto dto = InformalSanctionDto.builder().aplcntId(OWNER).taskSeCd("T1").build();
         List<ApprovalStageRequest> stages = List.of(stage(ApprovalStageKind.APPROVAL, "boss"));
+        List<String> references = List.of("cc");
         given(draftRepository.deleteOwnedVersion(7L, OWNER, 3)).willReturn(1);
-        given(informalSanctionService.registerInformalSanction(dto, stages)).willReturn(42L);
+        given(informalSanctionService.registerInformalSanction(dto, stages, references)).willReturn(42L);
 
-        assertThat(service.submitWithTemporaryDraft(dto, stages, 7L, 3)).isEqualTo(42L);
+        assertThat(service.submitWithTemporaryDraft(dto, stages, references, 7L, 3)).isEqualTo(42L);
 
         InOrder order = inOrder(draftRepository, informalSanctionService);
         order.verify(draftRepository).deleteOwnedVersion(7L, OWNER, 3);
-        order.verify(informalSanctionService).registerInformalSanction(dto, stages);
+        // [D4] 참조자는 상신 요청의 것을 상신 검사로 넘긴다 — 임시저장 참조자는 임시저장과 함께 지워진다.
+        order.verify(informalSanctionService).registerInformalSanction(dto, stages, references);
     }
 
     @Test
@@ -570,7 +592,7 @@ class ApprovalTemporaryDraftServiceTest {
         InformalSanctionDto dto = InformalSanctionDto.builder().aplcntId(OWNER).taskSeCd("T1").build();
         given(draftRepository.deleteOwnedVersion(7L, OWNER, 3)).willReturn(0);
 
-        BusinessException rejected = rejection(() -> service.submitWithTemporaryDraft(dto, List.of(), 7L, 3));
+        BusinessException rejected = rejection(() -> service.submitWithTemporaryDraft(dto, List.of(), null, 7L, 3));
 
         assertThat(rejected.getErrorCode()).isEqualTo(CommonErrorCode.CONCURRENT_MODIFICATION);
         verifyNoInteractions(informalSanctionService);
@@ -581,9 +603,9 @@ class ApprovalTemporaryDraftServiceTest {
     void submitRequiresBothDraftReferences() {
         InformalSanctionDto dto = InformalSanctionDto.builder().aplcntId(OWNER).taskSeCd("T1").build();
 
-        assertThat(rejection(() -> service.submitWithTemporaryDraft(dto, List.of(), 7L, null)).getErrorCode())
+        assertThat(rejection(() -> service.submitWithTemporaryDraft(dto, List.of(), null, 7L, null)).getErrorCode())
                 .isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
-        assertThat(rejection(() -> service.submitWithTemporaryDraft(dto, List.of(), null, 3)).getErrorCode())
+        assertThat(rejection(() -> service.submitWithTemporaryDraft(dto, List.of(), null, null, 3)).getErrorCode())
                 .isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
         verify(draftRepository, never()).deleteOwnedVersion(any(), any(), any());
         verifyNoInteractions(informalSanctionService);
@@ -595,7 +617,7 @@ class ApprovalTemporaryDraftServiceTest {
         InformalSanctionDto dto = InformalSanctionDto.builder().aplcntId(OWNER).taskSeCd("T1").build();
 
         for (long[] reference : new long[][]{{0L, 1L}, {-3L, 1L}, {7L, -1L}}) {
-            assertThat(rejection(() -> service.submitWithTemporaryDraft(dto, List.of(), reference[0], (int) reference[1]))
+            assertThat(rejection(() -> service.submitWithTemporaryDraft(dto, List.of(), null, reference[0], (int) reference[1]))
                     .getErrorCode()).isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
         }
         verify(draftRepository, never()).deleteOwnedVersion(any(), any(), any());
@@ -607,10 +629,176 @@ class ApprovalTemporaryDraftServiceTest {
     void submitIsSelfOnly() {
         InformalSanctionDto dto = InformalSanctionDto.builder().aplcntId("someone").taskSeCd("T1").build();
 
-        assertThat(rejection(() -> service.submitWithTemporaryDraft(dto, List.of(), 7L, 3)).getErrorCode())
+        assertThat(rejection(() -> service.submitWithTemporaryDraft(dto, List.of(), null, 7L, 3)).getErrorCode())
                 .isEqualTo(CommonErrorCode.ACCESS_DENIED);
         verify(draftRepository, never()).deleteOwnedVersion(anyLong(), anyString(), anyInt());
-        verify(informalSanctionService, never()).registerInformalSanction(any(), anyList());
+        verify(informalSanctionService, never()).registerInformalSanction(any(), anyList(), any());
+    }
+
+    // ── [2026-10-04 D4] 임시저장 참조자 ───────────────────────────────────────────────────────────────────────
+
+    /** 저장소가 번호를 매긴 것처럼 — 참조자 행의 기본 키가 임시저장 번호를 요구한다. */
+    private static ApprovalTemporaryDraft numbered(ApprovalTemporaryDraft draft) {
+        ReflectionTestUtils.setField(draft, "ifmlAtrzTmprStrgSn", 2L);
+        return draft;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<ApprovalTemporaryDraftReference> savedReferences(InOrder order) {
+        ArgumentCaptor<List<ApprovalTemporaryDraftReference>> references = ArgumentCaptor.forClass((Class) List.class);
+        order.verify(referenceRepository).saveAll(references.capture());
+        return references.getValue();
+    }
+
+    @Test
+    @DisplayName("참조자도 결재선 뒤에 저장하고 목록 줄의 참조자 수로 돌려준다 — 자격 확인·알림은 하지 않는다")
+    void createSavesReferencesWithLine() {
+        ownerRowExists();
+        given(draftRepository.save(any())).willAnswer(call -> {
+            ApprovalTemporaryDraft saved = call.getArgument(0);
+            ReflectionTestUtils.setField(saved, "ifmlAtrzTmprStrgSn", 11L);
+            return saved;
+        });
+        given(informalSanctionService.getTaskTypes()).willReturn(List.of());
+
+        ApprovalTemporaryDraftSummaryDto result = service.createTemporaryDraft(OWNER,
+                withReferences(List.of(stage(ApprovalStageKind.APPROVAL, "boss")), "cc2", "cc1", "owner"));
+
+        InOrder order = inOrder(lineRepository, referenceRepository);
+        assertThat(savedLines(order)).extracting(l -> l.getId().getUserId()).containsExactly("boss");
+        assertThat(savedReferences(order)).extracting(r -> r.getId().getIfmlAtrzTmprStrgSn(), r -> r.getId().getUserId())
+                .as("요청 순서대로, 기안자 본인도 형식만 보고 받는다(자격은 다시 열 때·상신 때 판정)")
+                .containsExactly(tuple(11L, "cc2"), tuple(11L, "cc1"), tuple(11L, "owner"));
+        assertThat(result.referenceCount()).isEqualTo(3);
+        assertThat(result.approverCount()).isEqualTo(1);
+        verifyNoInteractions(lineAssistService);
+    }
+
+    @Test
+    @DisplayName("참조자만 있어도 저장할 내용이다")
+    void referencesAloneAreWorthSaving() {
+        ownerRowExists();
+        given(draftRepository.save(any())).willAnswer(call -> numbered(call.getArgument(0)));
+        given(informalSanctionService.getTaskTypes()).willReturn(List.of());
+        ApprovalTemporaryDraftRequest onlyReferences = ApprovalTemporaryDraftRequest.builder()
+                .references(List.of("cc")).build();
+
+        assertThat(service.createTemporaryDraft(OWNER, onlyReferences).referenceCount()).isEqualTo(1);
+    }
+
+    static Stream<List<String>> malformedReferences() {
+        List<String> twentyOne = IntStream.rangeClosed(1, 21).mapToObj(i -> "r" + i).toList();
+        return Stream.of(twentyOne, Collections.singletonList(null), List.of(" "), List.of("x".repeat(21)),
+                List.of(" cc"), List.of("cc", "cc"), List.of("boss"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("malformedReferences")
+    @DisplayName("참조자 형식(20명·빈 값·20자·공백·중복·결재선과 겹침)을 어기면 입력 오류다")
+    void rejectsMalformedReferences(List<String> references) {
+        ownerRowExists();
+
+        assertThat(rejection(() -> service.createTemporaryDraft(OWNER, withReferences(
+                List.of(stage(ApprovalStageKind.APPROVAL, "boss")), references.toArray(String[]::new)))).getErrorCode())
+                .isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+        verify(draftRepository, never()).save(any());
+        verifyNoInteractions(referenceRepository);
+    }
+
+    @Test
+    @DisplayName("결재선과 겹치는 참조자는 사유로 말한다")
+    void overlappingReferenceReasonIsExplicit() {
+        ownerRowExists();
+
+        assertThat(rejection(() -> service.createTemporaryDraft(OWNER, withReferences(
+                List.of(stage(ApprovalStageKind.APPROVAL, "boss")), "boss"))).getMessage())
+                .contains("결재선에 있는 사람은 참조자로 저장할 수 없습니다");
+    }
+
+    @Test
+    @DisplayName("참조자 20명·20자 식별자는 받는다")
+    void acceptsReferencesAtTheLimit() {
+        ownerRowExists();
+        given(draftRepository.save(any())).willAnswer(call -> numbered(call.getArgument(0)));
+        given(informalSanctionService.getTaskTypes()).willReturn(List.of());
+        String[] twenty = IntStream.range(0, 20).mapToObj(i -> i == 0 ? "y".repeat(20) : "r" + i).toArray(String[]::new);
+
+        assertThat(service.createTemporaryDraft(OWNER, withReferences(null, twenty)).referenceCount()).isEqualTo(20);
+    }
+
+    @Test
+    @DisplayName("고치기는 참조자도 지운 뒤 다시 넣는다(같은 사람이어도 기본 키가 부딪히지 않게 삭제가 먼저다)")
+    void updateReplacesReferences() {
+        given(draftRepository.findOwnedForUpdate(7L, OWNER)).willReturn(Optional.of(draft(7, "T1", "제목", null, 3)));
+        given(informalSanctionService.getTaskTypes()).willReturn(List.of());
+        ApprovalTemporaryDraftRequest changed = withReferences(null, "cc");
+        changed.setVersion(3);
+
+        ApprovalTemporaryDraftSummaryDto result = service.updateTemporaryDraft(OWNER, 7L, changed);
+
+        InOrder order = inOrder(referenceRepository, draftRepository);
+        order.verify(referenceRepository).deleteForDraft(7L);
+        assertThat(savedReferences(order)).extracting(r -> r.getId().getUserId()).containsExactly("cc");
+        order.verify(draftRepository).flush();
+        assertThat(result.referenceCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("버전이 다르면 참조자도 그대로다")
+    void staleUpdateLeavesReferences() {
+        given(draftRepository.findOwnedForUpdate(7L, OWNER)).willReturn(Optional.of(draft(7, "T1", "제목", null, 3)));
+        ApprovalTemporaryDraftRequest stale = withReferences(null, "cc");
+        stale.setVersion(2);
+
+        assertThat(rejection(() -> service.updateTemporaryDraft(OWNER, 7L, stale)).getErrorCode())
+                .isEqualTo(CommonErrorCode.CONCURRENT_MODIFICATION);
+        verifyNoInteractions(referenceRepository);
+    }
+
+    @Test
+    @DisplayName("목록 줄은 임시저장마다 참조자 수를 센다")
+    void listCountsReferences() {
+        given(draftRepository.findTop20ByAplcntIdOrderByMdfcnDtDescIfmlAtrzTmprStrgSnDesc(OWNER)).willReturn(List.of(
+                draft(7, null, "제목", null, 0), draft(5, null, "다른 제목", null, 0)));
+        given(referenceRepository.findForDrafts(List.of(7L, 5L))).willReturn(List.of(
+                reference(7, "a"), reference(7, "b"), reference(5, "a")));
+        given(informalSanctionService.getTaskTypes()).willReturn(List.of());
+
+        assertThat(service.getTemporaryDrafts(OWNER)).extracting(ApprovalTemporaryDraftSummaryDto::referenceCount)
+                .containsExactly(2, 1);
+    }
+
+    @Test
+    @DisplayName("이어 쓰기는 참조자마다 지금 참조 자격을 사전 확인으로 판정해 싣는다")
+    void opensDraftWithReferenceEligibility() {
+        given(draftRepository.findByIfmlAtrzTmprStrgSnAndAplcntId(7L, OWNER))
+                .willReturn(Optional.of(draft(7, null, "제목", null, 1)));
+        given(lineRepository.findForDrafts(List.of(7L))).willReturn(List.of());
+        given(lineAssistService.checkApprovers(OWNER, List.of())).willReturn(List.of());
+        given(referenceRepository.findForDrafts(List.of(7L))).willReturn(List.of(reference(7, "cc"), reference(7, "gone")));
+        given(lineAssistService.checkApprovers(OWNER, List.of("cc", "gone"))).willReturn(List.of(
+                profile("cc", "참조", "NO_PERMISSION", null), profile("gone", "x", "NOT_FOUND", "NOT_FOUND")));
+        given(informalSanctionService.getTaskTypes()).willReturn(List.of());
+
+        ApprovalTemporaryDraftDto result = service.getTemporaryDraft(OWNER, 7L);
+
+        assertThat(result.references()).extracting(ApproverProfileDto::esntlId, ApproverProfileDto::userNm,
+                        ApproverProfileDto::referenceEligible, ApproverProfileDto::referenceIneligibleReason)
+                .as("결재 권한이 없어도 참조자는 될 수 있고, 없는 계정은 이름 없이 사유만 싣는다")
+                .containsExactly(tuple("cc", "참조", true, null), tuple("gone", null, false, "NOT_FOUND"));
+    }
+
+    @Test
+    @DisplayName("참조자가 없는 임시저장은 참조 자격을 확인하지 않는다")
+    void opensDraftWithoutReferencesSkipsReferenceCheck() {
+        given(draftRepository.findByIfmlAtrzTmprStrgSnAndAplcntId(7L, OWNER))
+                .willReturn(Optional.of(draft(7, null, "제목", null, 1)));
+        given(lineRepository.findForDrafts(List.of(7L))).willReturn(List.of(line(7, 1, "boss", ApprovalStageKind.APPROVAL)));
+        given(lineAssistService.checkApprovers(OWNER, List.of("boss"))).willReturn(List.of(profile("boss", "결재", null, null)));
+        given(informalSanctionService.getTaskTypes()).willReturn(List.of());
+
+        assertThat(service.getTemporaryDraft(OWNER, 7L).references()).isEmpty();
+        verify(lineAssistService, never()).checkApprovers(OWNER, List.of());
     }
 
     @Test

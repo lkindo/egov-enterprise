@@ -731,3 +731,269 @@ describe('ApprovalDraftDialog 기안 임시저장 (D3)', () => {
     expect(mocks.listTemporaryDrafts).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * 2026-10-04 D4 — 참조자. 결재하지 않고 읽기만 하는 사람을 상신·재상신·복제·임시저장에 함께 지정한다.
+ * 참조자는 결재 권한이 아니라 결재 조회 권한·사용 중 여부로 고르고(서버의 referenceEligible), 같은 차수 결재선과 겹칠 수 없다.
+ */
+describe('ApprovalDraftDialog 참조자 (D4)', () => {
+  // 최참조는 결재 권한이 없지만 결재 조회 권한이 있다. 정참조는 결재 조회 권한이 없다. 구참조는 이전 차수에 이미 지정된 참조자다.
+  const REFEREE_PEOPLE = [...PEOPLE, ...[['READER', '최참조'], ['NOREAD', '정참조'], ['OLDREF', '구참조']].map(([esntlId, userNm]) => ({ esntlId, userNm, deptNm: '총무팀', absent: false }))];
+  const profile = (id: string) => ({
+    esntlId: id, eligible: id !== 'READER', ineligibleReason: id === 'READER' ? 'NO_PERMISSION' : undefined,
+    referenceEligible: id !== 'NOREAD', referenceIneligibleReason: id === 'NOREAD' ? 'NO_READ_PERMISSION' : undefined,
+  });
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.localStorage.clear();
+    auth.user.permissions = ['APPROVAL_CREATE'];
+    mocks.listTemporaryDrafts.mockResolvedValue([]);
+    mocks.confirm.mockResolvedValue(false);
+    mocks.getTaskTypes.mockResolvedValue([{ dtlCd: '01', dtlCdNm: '일반', useYn: 'Y' }]);
+    mocks.createDraft.mockResolvedValue(88); mocks.resubmit.mockResolvedValue(88);
+    mocks.searchAssignableUsers.mockImplementation(async (keyword: string) => REFEREE_PEOPLE.filter(person => person.userNm.includes(keyword)));
+    mocks.getLineSuggestions.mockResolvedValue({ lines: [], otherLines: [], recentApprovers: [] });
+    mocks.checkApprovers.mockImplementation(async (ids: string[]) => ids.map(profile));
+    mocks.createTemporaryDraft.mockResolvedValue({ temporaryDraftSn: 7, version: 0, mdfcnDt: '2026-10-04T10:00:00' });
+  });
+  async function searchReferee(picker: HTMLElement, name: string) {
+    fireEvent.change(within(picker).getByRole('textbox', { name: '참조자 이름 검색' }), { target: { value: name } });
+    fireEvent.click(within(picker).getByRole('button', { name: '찾기' }));
+    await within(picker).findByText(/명을 찾았습니다|찾는 사람이 없습니다/);
+  }
+  /** 참조자 피커를 펼쳐 한 사람을 넣고 접는다. */
+  async function pickReferee(name: string) {
+    fireEvent.click(screen.getByRole('button', { name: /^참조자 (선택|추가)$/ }));
+    const picker = await screen.findByRole('group', { name: '참조자 고르기' });
+    await searchReferee(picker, name);
+    const candidate = await within(picker).findByRole('button', { name: new RegExp(`^${name}`) });
+    await waitFor(() => expect(candidate).toBeEnabled());
+    fireEvent.click(candidate);
+    fireEvent.click(within(picker).getByRole('button', { name: '다 골랐어요' }));
+  }
+
+  it('참조자는 결재 권한이 아니라 결재 조회 권한으로 고르고, 결재선에 든 사람과 본인은 사유와 함께 막으며, 상신 본문에 실린다', async () => {
+    renderDialog(); await fillContent(); await pick(1, '김결재');
+    fireEvent.click(screen.getByRole('button', { name: '참조자 선택' }));
+    expect(screen.getByRole('button', { name: '참조자 선택' })).toHaveAttribute('aria-expanded', 'true');
+    const picker = await screen.findByRole('group', { name: '참조자 고르기' });
+    await searchReferee(picker, '참조');
+    // 결재 조회 권한이 없으면 사유와 함께 막는다. 그 판정이 온 뒤에도 결재 권한만 없는 사람은 고를 수 있다.
+    await waitFor(() => expect(within(picker).getByRole('button', { name: /^정참조.*결재 조회 권한 없음/ })).toBeDisabled());
+    expect(within(picker).getByRole('button', { name: /^최참조/ })).toBeEnabled();
+    expect(within(picker).getByRole('button', { name: /^최참조/ })).not.toHaveTextContent('결재 권한 없음');
+    await searchReferee(picker, '김결재');
+    expect(within(picker).getByRole('button', { name: /^김결재.*결재선에 있습니다/ })).toBeDisabled();
+    await searchReferee(picker, '홍기안');
+    expect(within(picker).getByRole('button', { name: /^홍기안.*본인/ })).toBeDisabled();
+    await searchReferee(picker, '최참조');
+    fireEvent.click(await within(picker).findByRole('button', { name: /^최참조/ }));
+    expect(within(screen.getByRole('list', { name: '참조자' })).getByText(/최참조/)).toBeInTheDocument();
+    expect(screen.getByText('참조자 1/20명')).toBeInTheDocument();
+    fireEvent.click(within(picker).getByRole('button', { name: '다 골랐어요' }));
+
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    const preview = screen.getByRole('region', { name: '상신 참조자 미리보기' });
+    expect(preview).toHaveTextContent('참조자 · 읽기만 함 (1명)');
+    expect(preview).toHaveTextContent('이번 차수 지정: 최참조');
+    expect(screen.getByText(/지정은 되돌릴 수 없으며, 참조자는 문서가 반려·회수되어도, 다음 차수에도/)).toBeInTheDocument();
+    await waitFor(() => expect(mocks.checkApprovers).toHaveBeenCalledWith(['READER']));
+    fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
+    await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledWith({
+      taskSeCd: '01', docTtl: '출장 승인 요청', docCn: '출장 일정과 예산을 확인해 주세요.', reqYmd: '20260916',
+      stages: [{ kind: 'APPROVAL', approverIds: ['BOSS'] }], references: ['READER'],
+    }));
+  });
+
+  it('참조자로 고른 사람은 결재선 피커에서 막고, 가져온 결재선에 든 참조자는 참조자에서 빼며 그 사실을 알린다', async () => {
+    mocks.getLineSuggestions.mockResolvedValue({ lines: [{ taskSeCd: '01', taskSeNm: '일반', useCount: 2, stages: [
+      { kind: 'APPROVAL', approvers: [{ esntlId: 'BOSS', userNm: '김결재', eligible: true }, { esntlId: 'PEER', userNm: '이합의', eligible: true }] },
+    ] }], otherLines: [], recentApprovers: [] });
+    renderDialog(); await fillContent();
+    await pickReferee('이합의');
+    fireEvent.click(screen.getByRole('button', { name: '1단계 결재자 선택' }));
+    const linePicker = await screen.findByRole('group', { name: '1단계 결재자 고르기' });
+    await search(linePicker, '이합의');
+    expect(within(linePicker).getByRole('button', { name: /^이합의.*참조자로 지정되어 있습니다/ })).toBeDisabled();
+    fireEvent.click(within(linePicker).getByRole('button', { name: '다 골랐어요' }));
+
+    fireEvent.click(await screen.findByRole('button', { name: /일반 결재선 가져오기/ }));
+    expect(screen.getByRole('list', { name: '1단계 결재자' })).toHaveTextContent('이합의');
+    expect(screen.queryByRole('list', { name: '참조자' })).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('결재선에 든 이합의는 참조자에서 뺐습니다.');
+  });
+
+  it('최종 확인에서 지정할 수 없게 된 참조자가 있으면 이름과 사유를 밝히고 상신을 막는다', async () => {
+    // 고를 때는 참조자가 될 수 있었는데 상신 직전에 결재 조회 권한이 회수된 경우다.
+    let revoked = false;
+    mocks.checkApprovers.mockImplementation(async (ids: string[]) => ids.map(id => (revoked && id === 'READER'
+      ? { ...profile(id), userNm: '최참조', referenceEligible: false, referenceIneligibleReason: 'NO_READ_PERMISSION' }
+      : profile(id))));
+    renderDialog(); await fillContent(); await pick(1, '김결재'); await pickReferee('최참조');
+    revoked = true;
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    expect(await screen.findByText(/참조자로 지정할 수 없는 사람이 있습니다: 최참조\(결재 조회 권한 없음\)\. ‘이전’ 으로 돌아가 참조자에서 빼 주세요\./)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '결재 상신' })).toBeDisabled();
+    fireEvent.submit(screen.getByRole('form', { name: '결재 기안 폼' }));
+    expect(mocks.createDraft).not.toHaveBeenCalled();
+
+    // 참조자에서 빼면 다시 확인하고 상신할 수 있다.
+    fireEvent.click(screen.getByRole('button', { name: '이전' }));
+    fireEvent.click(screen.getByRole('button', { name: '최참조 참조자에서 제외' }));
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: '결재 상신' })).toBeEnabled());
+  });
+
+  it('서버의 참조자 칸 오류는 결재선 단계에 남는다 — 내용 작성 단계로 튀지 않는다', async () => {
+    mocks.createDraft.mockRejectedValueOnce({ response: { status: 400, data: { errors: [{ field: 'references', message: '참조자는 최대 20명입니다.' }] } } });
+    renderDialog(); await fillContent(); await pick(1, '김결재'); await pickReferee('최참조');
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
+    expect(await screen.findByRole('heading', { name: '결재선 지정' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '내용 작성' })).not.toBeInTheDocument();
+    expect(screen.getAllByText('참조자는 최대 20명입니다.').length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: '참조자 추가' })).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('임시저장은 참조자를 함께 저장하고, 이어 쓰면 참조자를 채우며 지금 지정할 수 없는 참조자를 사유와 함께 밝힌다', async () => {
+    renderDialog(); await fillContent(); await pick(1, '김결재'); await pickReferee('최참조');
+    fireEvent.click(screen.getByRole('button', { name: '기안 임시저장' }));
+    await waitFor(() => expect(mocks.createTemporaryDraft).toHaveBeenCalledWith({
+      taskSeCd: '01', docTtl: '출장 승인 요청', docCn: '출장 일정과 예산을 확인해 주세요.',
+      stages: [{ kind: 'APPROVAL', approverIds: ['BOSS'] }], references: ['READER'],
+    }));
+    cleanup();
+
+    const summary = { temporaryDraftSn: 9, taskSeCd: '01', docTtl: '참조 있는 기안', approverCount: 1, referenceCount: 2, version: 4, mdfcnDt: '2026-10-04T09:00:00' };
+    mocks.listTemporaryDrafts.mockResolvedValue([summary]);
+    mocks.getTemporaryDraft.mockResolvedValue({ ...summary, docCn: '', stages: [{ kind: 'APPROVAL', approvers: [{ esntlId: 'BOSS', userNm: '김결재', eligible: true }] }],
+      // 사용 중이 아닌 계정은 서버가 이름을 싣지 않는다.
+      references: [{ esntlId: 'READER', userNm: '최참조', eligible: false, referenceEligible: true }, { esntlId: 'GONE', eligible: false, referenceEligible: false, referenceIneligibleReason: 'INACTIVE' }] });
+    renderDialog();
+    expect(await screen.findByText(/참조 있는 기안 · 결재자 1명 · 참조자 2명 · 2026-10-04 09:00/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '‘참조 있는 기안’ 이어 쓰기' }));
+    expect(await screen.findByText(/참조자로 지정할 수 없는 사람이 있습니다: 알 수 없는 사용자\(사용 중이 아닌 계정\)\. 참조자에서 빼 주세요\./)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    const referees = screen.getByRole('list', { name: '참조자' });
+    expect(referees).toHaveTextContent('최참조');
+    expect(referees).toHaveTextContent('알 수 없는 사용자');
+    expect(referees).not.toHaveTextContent('GONE');
+  });
+
+  it('이어 쓴 임시저장의 참조자가 본인이거나 결재선과 겹치면 결재선 단계에서 막는다 — 피커를 거치지 않은 참조자도 같은 규칙이다', async () => {
+    const summary = { temporaryDraftSn: 9, taskSeCd: '01', docTtl: '겹치는 기안', approverCount: 1, referenceCount: 1, version: 4, mdfcnDt: '2026-10-04T09:00:00' };
+    const stages = [{ kind: 'APPROVAL', approvers: [{ esntlId: 'BOSS', userNm: '김결재', eligible: true }] }];
+    mocks.listTemporaryDrafts.mockResolvedValue([summary]);
+    mocks.getTemporaryDraft.mockResolvedValue({ ...summary, docCn: '', stages, references: [{ esntlId: 'DRAFTER', userNm: '홍기안', referenceEligible: false, referenceIneligibleReason: 'SELF' }] });
+    const first = renderDialog();
+    fireEvent.click(await screen.findByRole('button', { name: '‘겹치는 기안’ 이어 쓰기' }));
+    await waitFor(() => expect(screen.getByLabelText('제목 (필수)')).toHaveValue('겹치는 기안'));
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('자신을 참조자로 지정할 수 없습니다.');
+    expect(screen.getByRole('heading', { name: '결재선 지정' })).toBeInTheDocument();
+    first.unmount();
+
+    mocks.getTemporaryDraft.mockResolvedValue({ ...summary, docCn: '', stages, references: [{ esntlId: 'BOSS', userNm: '김결재', referenceEligible: true }] });
+    renderDialog();
+    fireEvent.click(await screen.findByRole('button', { name: '‘겹치는 기안’ 이어 쓰기' }));
+    await waitFor(() => expect(screen.getByLabelText('제목 (필수)')).toHaveValue('겹치는 기안'));
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('결재선에 있는 사람은 참조자로 지정할 수 없습니다.');
+    expect(screen.getByRole('heading', { name: '결재선 지정' })).toBeInTheDocument();
+    expect(mocks.createDraft).not.toHaveBeenCalled();
+  });
+
+  it('재상신은 이전 참조자를 미리 채우지 않고 다시 지정하게 하며, 빼도 계속 읽는다고 말한다 — 한 명이라도 지정하면 그 차수에는 결재자가 참조자를 더할 수 없다', async () => {
+    // 2차를 고쳐 3차로 올린다. 구참조는 2차에, 초참조는 1차에만 지정됐다(참조는 차수마다 기록된다).
+    const resubmission = { ifmlAtrzSn: 88, aplcntId: 'DRAFTER', taskSeCd: '01', docTtl: '반려된 문서', docCn: '', version: 7, aprvYn: 'R', atrzCycl: 2,
+      stages: [{ order: 1, kind: 'APPROVAL' as const, status: 'REJECTED' as const, approvers: [{ userId: 'BOSS', userNm: '김결재', status: 'REJECTED' as const }] }],
+      references: [
+        { userId: 'OLDREF', userNm: '구참조', deptNm: '총무팀', atrzCycl: 2, designator: 'DRAFTER' as const },
+        { userId: 'EARLY', userNm: '초참조', deptNm: '총무팀', atrzCycl: 1, designator: 'DRAFTER' as const },
+      ] };
+    const first = renderDialog({ resubmission });
+    await screen.findByRole('combobox', { name: '업무 구분' }); fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    // 미리 채우면 기안자가 고르지 않았는데도 '기안자가 지정한 차수' 가 되어 결재자가 참조자를 더할 수 없게 된다(D4 규칙 3).
+    expect(screen.queryByRole('list', { name: '참조자' })).not.toBeInTheDocument();
+    expect(screen.getByText('이번 차수에 지정할 참조자가 없습니다.')).toBeInTheDocument();
+    expect(screen.getByText(/이번 차수에 참조자를 한 명이라도 지정하면 이 차수에는 결재자가 참조자를 더할 수 없습니다\./)).toBeInTheDocument();
+    const earlier = screen.getByRole('list', { name: '계속 읽는 이전 참조자' });
+    expect(earlier).toHaveTextContent('구참조 · 총무팀 · 2차 지정');
+    expect(earlier).toHaveTextContent('초참조 · 총무팀 · 1차 지정');
+    expect(screen.getByText('참조자 2/20명 · 이번 차수 0명')).toBeInTheDocument();
+
+    // 다시 지정했다가 빼면 열람을 회수하는 것처럼 말하지 않는다 — 이전 참조자 목록으로 돌아간다.
+    fireEvent.click(screen.getByRole('button', { name: '구참조 이번 차수 참조자로 다시 지정' }));
+    expect(screen.getByRole('list', { name: '참조자' })).toHaveTextContent('구참조');
+    fireEvent.click(screen.getByRole('button', { name: '구참조 참조자에서 제외' }));
+    expect(screen.getByRole('status')).toHaveTextContent('구참조를 이번 차수 참조자에서 뺐습니다. 이미 참조된 사람이라 이 문서는 계속 읽습니다.');
+    expect(screen.getByRole('list', { name: '계속 읽는 이전 참조자' })).toHaveTextContent('구참조');
+    fireEvent.click(screen.getByRole('button', { name: '초참조 이번 차수 참조자로 다시 지정' }));
+    await pickReferee('최참조');
+    expect(screen.getByText('참조자 3/20명 · 이번 차수 2명')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    const preview = screen.getByRole('region', { name: '상신 참조자 미리보기' });
+    expect(preview).toHaveTextContent('참조자 · 읽기만 함 (3명)');
+    expect(preview).toHaveTextContent('계속 읽는 이전 참조자: 구참조');
+    fireEvent.click(screen.getByRole('button', { name: '새 차수로 재상신' }));
+    await waitFor(() => expect(mocks.resubmit).toHaveBeenCalledWith(88, expect.objectContaining({ references: ['EARLY', 'READER'], version: 7 })));
+    first.unmount();
+
+    // 문서에 이미 20명이 참조돼 있으면 처음 지정하는 사람은 더할 수 없지만, 이전 참조자를 다시 지정하는 것은 자리를 더 차지하지 않는다.
+    renderDialog({ resubmission: { ...resubmission, references: Array.from({ length: 20 }, (_, index) => ({ userId: `R${index}`, userNm: `참조${index}`, atrzCycl: 1 })) } });
+    await screen.findByRole('combobox', { name: '업무 구분' }); fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    expect(screen.getByText('참조자 20/20명 · 이번 차수 0명')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '참조자 선택' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: '참조0 이번 차수 참조자로 다시 지정' }));
+    expect(screen.getByRole('list', { name: '참조자' })).toHaveTextContent('참조0');
+    expect(screen.getByText('참조자 20/20명 · 이번 차수 1명')).toBeInTheDocument();
+    cleanup();
+
+    // 피커에서도 같다 — 마지막 자리를 채운 뒤에도 이미 참조된 사람은 고를 수 있고, 처음 참조되는 사람은 막힌다.
+    const eighteen = Array.from({ length: 18 }, (_, index) => ({ userId: `R${index}`, userNm: `참조${index}`, atrzCycl: 1 }));
+    renderDialog({ resubmission: { ...resubmission, references: [{ userId: 'OLDREF', userNm: '구참조', atrzCycl: 1 }, ...eighteen] } });
+    await screen.findByRole('combobox', { name: '업무 구분' }); fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    fireEvent.click(screen.getByRole('button', { name: '참조자 선택' }));
+    const fullPicker = await screen.findByRole('group', { name: '참조자 고르기' });
+    await searchReferee(fullPicker, '최참조');
+    const newcomer = await within(fullPicker).findByRole('button', { name: /^최참조/ });
+    await waitFor(() => expect(newcomer).toBeEnabled());
+    fireEvent.click(newcomer);
+    expect(screen.getByText('참조자 20/20명 · 이번 차수 1명')).toBeInTheDocument();
+    await searchReferee(fullPicker, '이합의');
+    expect(within(fullPicker).getByRole('button', { name: /^이합의.*지정 한도에 도달했습니다/ })).toBeDisabled();
+    await searchReferee(fullPicker, '구참조');
+    await waitFor(() => expect(within(fullPicker).getByRole('button', { name: /^구참조/ })).toBeEnabled());
+  });
+
+  it('복제한 문서의 참조자가 모두 결재선·본인과 겹쳐 하나도 가져오지 못하면 가져왔다고 말하지 않는다', async () => {
+    const template = { ifmlAtrzSn: 5, taskSeCd: '01', aplcntId: 'DRAFTER', docTtl: '지난 출장', docCn: '지난 본문',
+      stages: [{ order: 1, kind: 'APPROVAL', status: 'APPROVED', approvers: [{ userId: 'BOSS', userNm: '김결재', status: 'APPROVED' }] }],
+      references: [{ userId: 'BOSS', userNm: '김결재', atrzCycl: 1 }, { userId: 'DRAFTER', userNm: '홍기안', atrzCycl: 1 }] };
+    renderDialog({ template: template as never });
+    await screen.findByRole('combobox', { name: '업무 구분' });
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    expect(screen.queryByText(/복제한 문서의 참조자/)).not.toBeInTheDocument();
+    expect(screen.getByText('참조자를 지정하지 않았습니다.')).toBeInTheDocument();
+  });
+
+  it('복제하면 참조자를 결재선처럼 가져오되 복제한 결재선에 든 사람과 본인은 빼고, 상신 본문에 싣는다', async () => {
+    const template = { ifmlAtrzSn: 5, taskSeCd: '01', aplcntId: 'DRAFTER', docTtl: '지난 출장', docCn: '지난 본문',
+      stages: [{ order: 1, kind: 'APPROVAL', status: 'APPROVED', approvers: [{ userId: 'BOSS', userNm: '김결재', status: 'APPROVED' }] }],
+      references: [{ userId: 'READER', userNm: '최참조', atrzCycl: 1 }, { userId: 'BOSS', userNm: '김결재', atrzCycl: 1 }, { userId: 'DRAFTER', userNm: '홍기안', atrzCycl: 1 }] };
+    renderDialog({ template: template as never });
+    await screen.findByRole('combobox', { name: '업무 구분' });
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    // 원 문서 참조자 셋 중 결재선(BOSS)·본인(DRAFTER)을 빼고 실제로 가져온 1명만 말한다.
+    expect(screen.getByText('복제한 문서의 참조자 1명을 가져왔습니다. 참조자는 상신할 때 다시 확인합니다.')).toBeInTheDocument();
+    const referees = screen.getByRole('list', { name: '참조자' });
+    expect(within(referees).getAllByRole('listitem')).toHaveLength(1);
+    expect(referees).toHaveTextContent('최참조');
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
+    await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledWith(expect.objectContaining({ stages: [{ kind: 'APPROVAL', approverIds: ['BOSS'] }], references: ['READER'] })));
+  });
+});

@@ -97,7 +97,137 @@ class ApprovalWorkflowMigrationIntegrationTest extends SharedPostgresMigrationTe
             }
 
             assertTemporaryDraftSchema(statement);
+            assertReferenceSchema(statement, revision);
         }
+    }
+
+    /**
+     * V2_123(2026-10-04 D4 개정 1): 결재 참조자. 지정은 차수 단위로 한 행이고(같은 차수의 재지정은 기본 키가 막는다), 같은 사람을
+     * 다른 차수에 다시 지정하면 새 행이다. 지정 차수는 실제 결재 차수 이력에 묶인다. 참조자에는 사용자 FK 가 없다 — 문서 기록이라
+     * 사용자를 지워도 남고, 지정된 적이 있는 사람을 지울 때 막히지 않는다. 지정한 사람은 두 축(esntlId·로그인 ID)이며 비울 수
+     * 없다. 임시저장 참조자는 임시저장·사용자와 함께 지워진다.
+     */
+    private void assertReferenceSchema(Statement statement, String revision) throws SQLException {
+        assertThat(statement.executeUpdate("""
+                INSERT INTO tb_ifml_atrz_rfpr(ifml_atrz_sn,user_id,atrz_cycl,chg_user_idntfr,frst_rgtr_id,crt_dt)
+                VALUES (%s,'WF_REF',1,'WF_APPLICANT','wf_applicant',CURRENT_TIMESTAMP),
+                       (%s,'WF_NOBODY',1,'WF_APPROVER','wf_approver',CURRENT_TIMESTAMP)
+                """.formatted(revision, revision))).as("참조자에는 사용자 FK 가 없다").isEqualTo(2);
+        assertThatThrownBy(() -> statement.executeUpdate("""
+                INSERT INTO tb_ifml_atrz_rfpr(ifml_atrz_sn,user_id,atrz_cycl,chg_user_idntfr,frst_rgtr_id,crt_dt)
+                VALUES (%s,'WF_REF',1,'WF_APPLICANT','wf_applicant',CURRENT_TIMESTAMP)
+                """.formatted(revision))).as("한 사람은 한 차수에 한 번만 지정된다")
+                .isInstanceOf(SQLException.class).hasMessageContaining("pk_tb_ifml_atrz_rfpr");
+        assertThatThrownBy(() -> statement.executeUpdate("""
+                INSERT INTO tb_ifml_atrz_rfpr(ifml_atrz_sn,user_id,atrz_cycl,chg_user_idntfr,frst_rgtr_id,crt_dt)
+                VALUES (%s,'WF_REF2',2,'WF_APPLICANT','wf_applicant',CURRENT_TIMESTAMP)
+                """.formatted(revision))).as("지정 차수는 실제 결재 차수여야 한다")
+                .isInstanceOf(SQLException.class).hasMessageContaining("foreign key");
+        // [개정 1] 지정은 차수 단위다 — 다음 차수가 생기면 이전 차수 참조자를 그 차수로 다시 지정할 수 있다(새 행). 문서 단위
+        //   기본 키면 다시 지정한 사람이 첫 차수에만 남아 '지금 차수의 참조자'(최종 결과 알림·겸직 금지)를 가를 수 없다.
+        statement.executeUpdate("""
+                INSERT INTO tb_ifml_atrz_hstry(ifml_atrz_sn,atrz_cycl,task_se_cd,aprv_yn) VALUES (%s,2,'WF_TEST','A')
+                """.formatted(revision));
+        assertThat(statement.executeUpdate("""
+                INSERT INTO tb_ifml_atrz_rfpr(ifml_atrz_sn,user_id,atrz_cycl,chg_user_idntfr,frst_rgtr_id,crt_dt)
+                VALUES (%s,'WF_REF',2,'WF_APPLICANT','wf_applicant',CURRENT_TIMESTAMP)
+                """.formatted(revision))).as("같은 사람도 다른 차수에 다시 지정하면 새 행이다").isEqualTo(1);
+        assertThat(count(statement, "tb_ifml_atrz_rfpr WHERE ifml_atrz_sn=" + revision + " AND user_id='WF_REF'")).isEqualTo(2);
+        assertThatThrownBy(() -> statement.executeUpdate("""
+                INSERT INTO tb_ifml_atrz_rfpr(ifml_atrz_sn,user_id,atrz_cycl,chg_user_idntfr,frst_rgtr_id,crt_dt)
+                VALUES (%s,'WF_REF',2,'WF_APPROVER','wf_approver',CURRENT_TIMESTAMP)
+                """.formatted(revision))).as("같은 차수에는 지정한 사람이 달라도 한 행이다")
+                .isInstanceOf(SQLException.class).hasMessageContaining("pk_tb_ifml_atrz_rfpr");
+        try (var pk = statement.executeQuery(
+                "SELECT indexdef FROM pg_indexes WHERE indexname='pk_tb_ifml_atrz_rfpr'")) {
+            assertThat(pk.next()).isTrue();
+            assertThat(pk.getString(1)).as("문서별 조회(목록·상세)가 기본 키 앞부분을 쓴다")
+                    .contains("(ifml_atrz_sn, atrz_cycl, user_id)");
+        }
+        for (String[] missing : new String[][]{
+                {"atrz_cycl", "NULL", "'WF_APPLICANT'", "'wf_applicant'"},
+                {"chg_user_idntfr", "1", "NULL", "'wf_applicant'"},
+                {"frst_rgtr_id", "1", "'WF_APPLICANT'", "NULL"}}) {
+            assertThatThrownBy(() -> statement.executeUpdate("""
+                    INSERT INTO tb_ifml_atrz_rfpr(ifml_atrz_sn,user_id,atrz_cycl,chg_user_idntfr,frst_rgtr_id,crt_dt)
+                    VALUES (%s,'WF_REF3',%s,%s,%s,CURRENT_TIMESTAMP)
+                    """.formatted(revision, missing[1], missing[2], missing[3])))
+                    .isInstanceOf(SQLException.class).hasMessageContaining(missing[0]);
+        }
+
+        // 지정된 적이 있는 사람을 지워도 막히지 않고, 참조 행은 문서 기록으로 남는다.
+        statement.executeUpdate("""
+                INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd)
+                VALUES ('WF_REFUSER','wf_refuser','reference fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))
+                """);
+        statement.executeUpdate("""
+                INSERT INTO tb_ifml_atrz_rfpr(ifml_atrz_sn,user_id,atrz_cycl,chg_user_idntfr,frst_rgtr_id,crt_dt)
+                VALUES (%s,'WF_REFUSER',1,'WF_APPLICANT','wf_applicant',CURRENT_TIMESTAMP)
+                """.formatted(revision));
+        assertThat(statement.executeUpdate("DELETE FROM tb_user_info WHERE esntl_id='WF_REFUSER'")).isEqualTo(1);
+        assertThat(count(statement, "tb_ifml_atrz_rfpr WHERE user_id='WF_REFUSER'")).isEqualTo(1);
+
+        try (var index = statement.executeQuery(
+                "SELECT indexdef FROM pg_indexes WHERE indexname='ix_tb_ifml_atrz_rfpr_user_id'")) {
+            assertThat(index.next()).isTrue();
+            assertThat(index.getString(1)).as("'참조된 결재' 목록의 EXISTS 는 참조자부터 찾는다")
+                    .contains("(user_id, ifml_atrz_sn)");
+        }
+
+        // 임시저장 참조자: 사람에는 FK 가 없고, 임시저장·사용자 행과 함께 지워진다(상신 때의 한 문장 삭제가 막히지 않는다).
+        long draft = insertDraft(statement, "WF_DRAFTER");
+        assertThat(statement.executeUpdate("""
+                INSERT INTO tb_ifml_atrz_tmpr_strg_rfpr(ifml_atrz_tmpr_strg_sn,user_id,crt_dt,mdfcn_dt)
+                VALUES (%d,'WF_NOBODY',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+                """.formatted(draft))).isEqualTo(1);
+        assertThatThrownBy(() -> statement.executeUpdate("""
+                INSERT INTO tb_ifml_atrz_tmpr_strg_rfpr(ifml_atrz_tmpr_strg_sn,user_id,crt_dt,mdfcn_dt)
+                VALUES (%d,'WF_NOBODY',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+                """.formatted(draft))).isInstanceOf(SQLException.class).hasMessageContaining("pk_tb_ifml_atrz_tmpr_strg_rfpr");
+        assertThatThrownBy(() -> statement.executeUpdate("""
+                INSERT INTO tb_ifml_atrz_tmpr_strg_rfpr(ifml_atrz_tmpr_strg_sn,user_id,crt_dt,mdfcn_dt)
+                VALUES (-1,'WF_NOBODY',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+                """)).isInstanceOf(SQLException.class).hasMessageContaining("foreign key");
+        statement.executeUpdate("DELETE FROM tb_ifml_atrz_tmpr_strg WHERE ifml_atrz_tmpr_strg_sn=" + draft);
+        assertThat(count(statement, "tb_ifml_atrz_tmpr_strg_rfpr WHERE ifml_atrz_tmpr_strg_sn=" + draft)).isZero();
+        statement.executeUpdate("""
+                INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd)
+                VALUES ('WF_REFLEAVER','wf_refleaver','reference fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))
+                """);
+        long leaving = insertDraft(statement, "WF_REFLEAVER");
+        statement.executeUpdate("""
+                INSERT INTO tb_ifml_atrz_tmpr_strg_rfpr(ifml_atrz_tmpr_strg_sn,user_id,crt_dt,mdfcn_dt)
+                VALUES (%d,'WF_REF',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+                """.formatted(leaving));
+        statement.executeUpdate("DELETE FROM tb_user_info WHERE esntl_id='WF_REFLEAVER'");
+        assertThat(count(statement, "tb_ifml_atrz_tmpr_strg_rfpr WHERE ifml_atrz_tmpr_strg_sn=" + leaving)).isZero();
+
+        try (var comments = statement.executeQuery("""
+                SELECT c.relname || '.' || a.attname, col_description(c.oid, a.attnum)
+                FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid
+                WHERE c.relname IN ('tb_ifml_atrz_rfpr','tb_ifml_atrz_tmpr_strg_rfpr')
+                  AND a.attname IN ('user_id','chg_user_idntfr','frst_rgtr_id')
+                ORDER BY 1
+                """)) {
+            java.util.Map<String, String> byColumn = new java.util.LinkedHashMap<>();
+            while (comments.next()) byColumn.put(comments.getString(1), comments.getString(2));
+            assertThat(byColumn).hasSize(5);
+            assertThat(byColumn.get("tb_ifml_atrz_rfpr.user_id")).contains("esntlId");
+            assertThat(byColumn.get("tb_ifml_atrz_rfpr.chg_user_idntfr")).contains("esntlId");
+            assertThat(byColumn.get("tb_ifml_atrz_rfpr.frst_rgtr_id")).contains("loginId");
+            assertThat(byColumn.get("tb_ifml_atrz_tmpr_strg_rfpr.user_id")).contains("esntlId");
+            assertThat(byColumn.get("tb_ifml_atrz_tmpr_strg_rfpr.frst_rgtr_id")).contains("loginId");
+        }
+        for (String[] table : new String[][]{{"tb_ifml_atrz_rfpr", "비공식결재참조자"},
+                {"tb_ifml_atrz_tmpr_strg_rfpr", "비공식결재임시저장참조자"}}) {
+            try (var comment = statement.executeQuery(
+                    "SELECT obj_description('" + table[0] + "'::regclass, 'pg_class')")) {
+                assertThat(comment.next()).isTrue();
+                assertThat(comment.getString(1)).startsWith(table[1]);
+            }
+        }
+        // 새 용어는 없다 — 열은 모두 등록된 용어다(참조자 열은 결재선과 같은 사용자아이디).
+        assertThat(count(statement, "meta_standard_terms WHERE eng_abbr LIKE 'RFPR%' AND eng_abbr <> 'RFPR_NM'")).isZero();
     }
 
     /**

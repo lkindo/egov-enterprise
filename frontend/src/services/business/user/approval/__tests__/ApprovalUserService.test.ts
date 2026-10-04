@@ -161,6 +161,53 @@ describe('ApprovalUserService generated contract', () => {
     expect(client.requestRaw).not.toHaveBeenCalled();
   });
 
+  /**
+   * [2026-10-04 D4] '참조된 결재' 는 다른 탭과 같은 조건으로 자기 경로(/approvals/referenced)를 부른다. 결재자의 참조자 추가는
+   * 버전을 함께 보내고, 실패는 상세의 참조자 영역이 화면 안에서 알리므로 전역 오류 토스트를 끈다(DEC-OPS-184).
+   */
+  it('참조된 결재는 자기 경로로 조건을 보내고 페이지 계약이 깨지면 받지 않는다 (D4)', async () => {
+    const page = { list: [{ ifmlAtrzSn: 5, taskSeCd: '01', aplcntId: 'drafter', referenceViewer: true }], total: 1, page: 0, size: 20, totalPage: 1 };
+    client.getRaw.mockResolvedValueOnce(success(page));
+    await expect(approvalUserService.getReferenced({ page: 0, size: 20, keyword: '출장', status: 'R' })).resolves.toMatchObject({ total: 1 });
+    expect(client.getRaw).toHaveBeenLastCalledWith('approvals/referenced', { params: { page: 0, size: 20, keyword: '출장', status: 'R' } });
+
+    client.getRaw.mockResolvedValueOnce(success({ list: [] }));
+    await expect(approvalUserService.getReferenced({ page: 0 })).rejects.toThrow('결재 페이지 응답이 필수 계약과 일치하지 않습니다.');
+  });
+
+  it('상신·재상신·임시저장 본문의 참조자는 생성 스키마를 지나도 지워지지 않는다 (D4)', async () => {
+    // 생성 스키마는 strict 가 아니라 모르는 키를 조용히 지운다 — 참조자가 계약에 있어야 본문에 남는다.
+    const stages = [{ kind: 'APPROVAL' as const, approverIds: ['BOSS'] }];
+    client.requestRaw.mockResolvedValueOnce(success(91));
+    await approvalUserService.createDraft({ taskSeCd: '01', docTtl: '출장', stages, references: ['REF'] });
+    expect(client.requestRaw.mock.lastCall?.[0].data).toEqual({ taskSeCd: '01', docTtl: '출장', stages, references: ['REF'] });
+    client.requestRaw.mockResolvedValueOnce(success(91));
+    await approvalUserService.resubmit(91, { taskSeCd: '01', docTtl: '출장', stages, references: ['REF'], version: 2 });
+    expect(client.requestRaw.mock.lastCall?.[0].data).toEqual({ taskSeCd: '01', docTtl: '출장', stages, references: ['REF'], version: 2 });
+    client.requestRaw.mockResolvedValueOnce(success({ temporaryDraftSn: 7, version: 0 }));
+    await approvalUserService.createTemporaryDraft({ docTtl: '쓰는 중', stages, references: ['REF'] });
+    expect(client.requestRaw.mock.lastCall?.[0].data).toEqual({ docTtl: '쓰는 중', stages, references: ['REF'] });
+    // 21명은 계약(최대 20명)이 전송 전에 막는다.
+    client.requestRaw.mockClear();
+    await expect(approvalUserService.createDraft({ taskSeCd: '01', docTtl: '출장', stages, references: Array.from({ length: 21 }, (_, index) => `R${index}`) })).rejects.toThrow();
+    expect(client.requestRaw).not.toHaveBeenCalled();
+  });
+
+  it('결재자의 참조자 추가는 참조자와 버전을 생성 계약 본문으로 보내고, 전역 오류 토스트를 끄며, 빈 목록은 보내지 않는다 (D4)', async () => {
+    client.requestRaw.mockResolvedValueOnce(success(2));
+    await expect(approvalUserService.addReferences(42, ['REF1', 'REF2'], 3)).resolves.toBe(2);
+    expect(client.requestRaw).toHaveBeenLastCalledWith({
+      url: 'approvals/42/references', method: 'post', data: { references: ['REF1', 'REF2'], version: 3 }, suppressErrorToast: true,
+    });
+
+    client.requestRaw.mockResolvedValueOnce(success(null));
+    await expect(approvalUserService.addReferences(42, ['REF1'], 3)).rejects.toThrow();
+
+    client.requestRaw.mockClear();
+    await expect(approvalUserService.addReferences(42, [], 3)).rejects.toThrow();
+    expect(client.requestRaw).not.toHaveBeenCalled();
+  });
+
   it('임시저장 응답에 버전이 없거나 다른 임시저장이 오면 받지 않는다 — 다음 저장이 남의 변경을 덮지 않게 한다 (D3)', async () => {
     client.requestRaw.mockResolvedValueOnce(success({ temporaryDraftSn: 7 }));
     await expect(approvalUserService.createTemporaryDraft({ docTtl: '쓰는 중' })).rejects.toThrow('임시저장 버전을 확인할 수 없습니다.');

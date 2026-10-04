@@ -49,9 +49,25 @@ public interface InformalSanctionRepository extends JpaRepository<InformalSancti
             @Param("keyword") String keyword, @Param("fromYmd") String fromYmd, @Param("toYmd") String toYmd,
             @Param("status") String status, Pageable pageable);
 
+    /**
+     * '참조된 결재'(2026-10-04 D4) — 내가 참조자로 지정된 문서. 참조는 추가만 하므로 문서의 상태·차수와 관계없이 남는다.
+     * 대기함·처리함과 달리 결재선 표를 보지 않는다(참조자는 결재하지 않는다).
+     */
+    @Query("select s from InformalSanction s where exists (select r.id from InformalSanctionReference r "
+            + "where r.id.ifmlAtrzSn = s.ifmlAtrzSn and r.id.userId = :userId)" + LIST_FILTER)
+    Page<InformalSanction> findReferenced(@Param("userId") String userId,
+            @Param("keyword") String keyword, @Param("fromYmd") String fromYmd, @Param("toYmd") String toYmd,
+            @Param("status") String status, Pageable pageable);
+
+    /**
+     * 상세 열람의 관문 — 신청자, 어느 차수든 결재선에 든 사람, 참조자(2026-10-04 D4)만 문서를 찾는다. 참조자는 차수·상태 조건 없이
+     * 통과한다(한 번 지정되면 그 문서를 계속 읽는다). 그 밖의 사람에게는 문서가 없는 것과 같다(404, 존재를 드러내지 않는다).
+     */
     @Query("SELECT s FROM InformalSanction s WHERE s.ifmlAtrzSn = :id "
             + "AND (s.aplcntId = :participantId OR EXISTS (SELECT d.id FROM InformalSanctionDetail d "
-            + "WHERE d.id.ifmlAtrzSn = s.ifmlAtrzSn AND d.id.userId = :participantId))")
+            + "WHERE d.id.ifmlAtrzSn = s.ifmlAtrzSn AND d.id.userId = :participantId) "
+            + "OR EXISTS (SELECT r.id FROM InformalSanctionReference r "
+            + "WHERE r.id.ifmlAtrzSn = s.ifmlAtrzSn AND r.id.userId = :participantId))")
     Optional<InformalSanction> findByIdAndParticipant(
             @Param("id") Long id,
             @Param("participantId") String participantId);

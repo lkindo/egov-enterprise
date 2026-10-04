@@ -7,6 +7,8 @@ const service = vi.hoisted(() => ({
   getMyHistory: vi.fn(),
   getPending: vi.fn(),
   getProcessed: vi.fn(),
+  getReferenced: vi.fn(),
+  addReferences: vi.fn(),
   getTaskTypes: vi.fn(),
   getDetail: vi.fn(),
   resubmit: vi.fn(),
@@ -64,6 +66,38 @@ describe('approval query ownership', () => {
     expect(service.getPending).toHaveBeenCalledWith({ page: 0, size: 50 });
     expect(service.getMyHistory).toHaveBeenCalledWith({ page: 1, size: 20 });
     expect(service.getProcessed).toHaveBeenCalledWith({ page: 2, size: 20 });
+  });
+
+  /**
+   * [2026-10-04 D4] '참조된 결재' 탭은 참조 축(/approvals/referenced)을 부르고 상태 조건을 그대로 넘긴다 — 대기함처럼 상태를
+   * 떼지 않는다(참조된 결재의 상태 조건은 문서의 지금 상태다). 다른 탭의 key 와 섞이지 않는다.
+   */
+  it('참조된 결재 탭은 참조 축 service 를 조건 그대로 부르고 다른 탭과 key 가 겹치지 않는다 (D4)', async () => {
+    service.getReferenced.mockResolvedValueOnce({ list: [], total: 0 });
+    const params = { page: 1, size: 20, keyword: '출장', status: 'C' as const };
+    const referenced = approvalQueryOptions.list('REFERENCED', params);
+    expect(referenced.queryKey).toEqual(['approvals', 'list', 'REFERENCED', params]);
+    expect(referenced.queryKey).not.toEqual(approvalKeys.list('PROCESSED', params));
+    await referenced.queryFn?.({ queryKey: referenced.queryKey } as never);
+    expect(service.getReferenced).toHaveBeenCalledWith(params);
+    expect(service.getProcessed).not.toHaveBeenCalled();
+    expect(service.getPending).not.toHaveBeenCalled();
+  });
+
+  it('결재자의 참조자 추가는 버전과 함께 보내고 그 문서와 목록을 다시 읽으며 새로 지정한 수를 돌려준다 (D4)', async () => {
+    const queryClient = new QueryClient();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined);
+    service.addReferences.mockResolvedValueOnce(2);
+
+    const added = await approvalMutationOptions.addReferences(queryClient).mutationFn?.({
+      ifmlAtrzSn: 31, references: ['REF1', 'REF2'], version: 4,
+    }, {} as never);
+
+    expect(added).toBe(2);
+    expect(service.addReferences).toHaveBeenCalledWith(31, ['REF1', 'REF2'], 4);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: approvalKeys.lists() });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: approvalKeys.detail(31) });
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: approvalKeys.all });
   });
 
   it('업무 구분 선택지는 결재 도메인 서비스에서 읽는다', async () => {

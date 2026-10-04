@@ -2202,7 +2202,7 @@ export interface paths {
         put?: never;
         /**
          * Create Approval Draft
-         * @description 현재 사용자를 신청자로 결재를 상신합니다. 업무 구분은 /task-types 의 코드여야 하고 결재자는 사용자 검색의 esntlId 입니다. 임시저장을 이어 써서 올리면 temporaryDraftSn·temporaryDraftVersion 을 함께 보냅니다 — 상신과 같은 트랜잭션에서 그 임시저장을 지우며, 이미 상신했거나 버전이 다르면 409, 둘 중 하나만 보내면 400 입니다. 상신이 실패하면 임시저장은 남습니다.
+         * @description 현재 사용자를 신청자로 결재를 상신합니다. 업무 구분은 /task-types 의 코드여야 하고 결재자는 사용자 검색의 esntlId 입니다. 임시저장을 이어 써서 올리면 temporaryDraftSn·temporaryDraftVersion 을 함께 보냅니다 — 상신과 같은 트랜잭션에서 그 임시저장을 지우며, 이미 상신했거나 버전이 다르면 409, 둘 중 하나만 보내면 400 입니다. 상신이 실패하면 임시저장은 남습니다. 참조자(references)를 함께 지정할 수 있습니다 — 사용 중이고 결재 조회 권한이 있는 사람만, 결재선과 겹치지 않게 20명까지이며 지정된 사람은 알림을 받고 그 문서를 계속 읽습니다(되돌릴 수 없습니다).
          */
         post: operations["createApproval"];
         delete?: never;
@@ -2262,7 +2262,7 @@ export interface paths {
         put?: never;
         /**
          * Resubmit Approval
-         * @description 기안자 본인이 반려·회수된 문서를 수정하여 다시 상신합니다. 이전 차수의 내용과 처리는 보존됩니다.
+         * @description 기안자 본인이 반려·회수된 문서를 수정하여 다시 상신합니다. 이전 차수의 내용과 처리는 보존됩니다. 참조자(references)를 지정할 수 있습니다 — 보낸 사람은 새 차수의 참조자가 되고(이전 차수 참조자를 다시 보내면 알림 없이 이 차수의 지정이 됩니다), 빼도 그 사람은 이전 차수의 지정으로 계속 읽습니다(참조는 추가만 합니다).
          */
         post: operations["resubmitApproval"];
         delete?: never;
@@ -2285,6 +2285,26 @@ export interface paths {
          * @description 기안자가 지금 차례인 결재자에게 재알림을 보냅니다. 같은 차수에서 하루에 한 번이며, 오늘 이미 보냈으면 409 입니다. 알림을 받은 사람 수를 돌려줍니다.
          */
         post: operations["remindApprovers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/approvals/{id}/references": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Approval References
+         * @description 지금 차례인 결재자가 참조자를 더합니다. 아직 차례가 아니면 403, 이미 처리했거나 기안자가 이 차수에 참조자를 지정했거나 문서가 진행 중이 아니거나 버전이 다르면 409 입니다. 사용 중이고 결재 조회 권한이 있는 사람만, 결재선과 겹치지 않게 한 문서에 서로 다른 사람 20명까지이며 이 차수에 이미 참조자인 사람은 무시합니다. 지금 차수에 새로 지정한 사람 수를 돌려주고, 이 문서에 처음 참조되는 사람에게 알림이 갑니다. 되돌릴 수 없습니다.
+         */
+        post: operations["addReferences"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4527,7 +4547,7 @@ export interface paths {
         };
         /**
          * Get Approval Detail
-         * @description 참여한 결재의 내용·단계·처리 이력을 조회합니다. 참여하지 않은 차수는 공개하지 않습니다.
+         * @description 참여한 결재의 내용·단계·처리 이력을 조회합니다. 결재자는 참여한 차수만 보고, 기안자와 참조자는 모든 차수를 봅니다(참조자는 한 번 지정되면 반려·회수·승인 뒤에도, 재상신에서 빠져도 계속 읽습니다). 참조자 목록(references)은 보는 사람이 볼 수 있는 가장 높은 차수까지 지정된 사람을 사람마다 한 줄(그 사람에게 보이는 가장 최근 지정)로 싣고, 참조자에게는 처리 힌트가 모두 거짓입니다. 신청자·결재선·참조자가 아니면 404 입니다.
          */
         get: operations["getApprovalDetail"];
         put?: never;
@@ -4554,6 +4574,26 @@ export interface paths {
          * @description 기안 시 고르는 업무 구분(공통코드 COM075 의 사용 중 상세코드)입니다. 등록된 코드가 없으면 빈 목록입니다.
          */
         get: operations["getTaskTypes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/approvals/referenced": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Approvals I Was Referenced On
+         * @description 내가 참조자로 지정된 결재를 조회합니다(모든 상태). 참조자는 읽기만 하며 처리 힌트는 모두 거짓입니다. 제목 검색어·요청일 기간·문서의 지금 상태(status: A 대기·C 승인·R 반려·W 회수)로 좁힐 수 있습니다.
+         */
+        get: operations["getReferenced"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5944,6 +5984,17 @@ export interface components {
             /** Format: date-time */
             at?: string;
         };
+        ApprovalReferenceDto: {
+            userId?: string;
+            userNm?: string;
+            deptNm?: string;
+            /** Format: int32 */
+            atrzCycl?: number;
+            /** @enum {string} */
+            designator?: "DRAFTER" | "APPROVER";
+            /** Format: date-time */
+            designatedAt?: string;
+        };
         ApprovalRevisionDto: {
             /** Format: int32 */
             atrzCycl?: number;
@@ -6031,6 +6082,12 @@ export interface components {
             canReplaceApprover?: boolean;
             canRequestSupplement?: boolean;
             canAnswerSupplement?: boolean;
+            /** @description 참조자(상세만). 보는 사람이 볼 수 있는 가장 높은 차수까지 지정된 사람을 사람마다 한 줄로 싣는다 */
+            readonly references?: components["schemas"]["ApprovalReferenceDto"][];
+            /** @description 보는 사람이 이 문서의 참조자인가 */
+            readonly referenceViewer?: boolean;
+            /** @description 지금 차례인 결재자가 참조자를 더할 수 있는가 */
+            readonly canAddReference?: boolean;
         };
         /** @description 온라인 메뉴얼 DTO */
         OnlineManualDto: {
@@ -6222,6 +6279,8 @@ export interface components {
             docCn?: string;
             /** @description 진행 순서대로 나열한 결재 단계(최대 10단계). 결재자가 없는 단계는 보낼 수 없다 */
             stages?: components["schemas"]["ApprovalStageRequest"][];
+            /** @description 참조자 esntlId 목록(최대 20명, 2026-10-04 D4). 결재선과 겹칠 수 없고, 자격은 다시 열 때 판정한다 */
+            references?: string[];
             /**
              * Format: int32
              * @description 고치려는 임시저장의 버전. 수정할 때만 필요하며 다르면 409 다
@@ -6247,6 +6306,8 @@ export interface components {
             docTtl?: string;
             /** Format: int32 */
             approverCount?: number;
+            /** Format: int32 */
+            referenceCount?: number;
             /** Format: int32 */
             version?: number;
             /** Format: date-time */
@@ -7641,6 +7702,8 @@ export interface components {
             docCn?: string;
             /** @description 진행 순서대로 나열한 결재 단계. 생략하면 aprvrId의 단일 결재로 처리합니다. */
             stages?: components["schemas"]["ApprovalStageRequest"][];
+            /** @description 참조자 esntlId 목록(최대 20명). 사용 중이고 결재 조회 권한이 있는 사람만 지정할 수 있고, 같은 차수의 결재선과 겹칠 수 없습니다. 보낸 사람은 이 차수의 참조자가 되며(이전 차수 참조자를 다시 보내도 같다) 한 문서에 서로 다른 사람 누적 20명까지입니다. */
+            references?: string[];
             /** @description 신청 일자(yyyyMMdd). 비우면 서버가 오늘(Asia/Seoul)로 채운다 */
             reqYmd?: string;
         };
@@ -7678,11 +7741,23 @@ export interface components {
             docCn?: string;
             /** @description 진행 순서대로 나열한 결재 단계. 생략하면 aprvrId의 단일 결재로 처리합니다. */
             stages?: components["schemas"]["ApprovalStageRequest"][];
+            /** @description 참조자 esntlId 목록(최대 20명). 사용 중이고 결재 조회 권한이 있는 사람만 지정할 수 있고, 같은 차수의 결재선과 겹칠 수 없습니다. 보낸 사람은 이 차수의 참조자가 되며(이전 차수 참조자를 다시 보내도 같다) 한 문서에 서로 다른 사람 누적 20명까지입니다. */
+            references?: string[];
             /** @description 신청 일자(yyyyMMdd). 비우면 서버가 오늘(Asia/Seoul)로 채운다 */
             reqYmd?: string;
             /**
              * Format: int32
              * @description 수정 화면에서 조회한 문서 버전
+             */
+            version: number;
+        };
+        /** @description 결재 참조자 추가 요청 — 지금 차례인 결재자만 보낼 수 있다 */
+        ApprovalReferenceAddRequest: {
+            /** @description 더할 참조자 esntlId 목록(1~20명). 이 차수에 이미 참조자인 사람은 무시하고, 이전 차수 참조자는 이 차수의 지정이 된다 */
+            references: string[];
+            /**
+             * Format: int32
+             * @description 상세 조회 시 받은 문서 버전. 다르면 409 다
              */
             version: number;
         };
@@ -7709,6 +7784,8 @@ export interface components {
             absent?: boolean;
             eligible?: boolean;
             ineligibleReason?: string;
+            referenceEligible?: boolean;
+            referenceIneligibleReason?: string;
         };
         UserDto: {
             userId: string;
@@ -9370,6 +9447,7 @@ export interface components {
             docTtl?: string;
             docCn?: string;
             stages?: components["schemas"]["ApprovalLineStageDto"][];
+            references?: components["schemas"]["ApproverProfileDto"][];
             /** Format: int32 */
             version?: number;
             /** Format: date-time */
@@ -25675,6 +25753,77 @@ export interface operations {
             };
         };
     };
+    addReferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalReferenceAddRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseInteger"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     getApprovalTemporaryDrafts: {
         parameters: {
             query?: never;
@@ -35703,6 +35852,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseListCommonCodeDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getReferenced: {
+        parameters: {
+            query?: {
+                keyword?: string;
+                fromYmd?: string;
+                toYmd?: string;
+                status?: string;
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponsePageResponseInformalSanctionDto"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

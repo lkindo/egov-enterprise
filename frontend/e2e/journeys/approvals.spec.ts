@@ -8,6 +8,7 @@ type ApprovalActor = Awaited<ReturnType<typeof createVisualAdmin>>;
 const test = baseTest.extend<{
     approver: ApprovalActor;
     finalApprover: ApprovalActor;
+    referee: ApprovalActor;
 }>({
     approver: async ({ playwright, baseURL }, use) => {
         const fixtureRequest = await playwright.request.newContext({
@@ -27,6 +28,22 @@ const test = baseTest.extend<{
         }
     },
     finalApprover: async ({ playwright, baseURL }, use) => {
+        const fixtureRequest = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+        try {
+            const actor = await createVisualAdmin(fixtureRequest, baseURL!);
+            try {
+                await use(actor);
+            }
+            finally {
+                await actor.dispose();
+            }
+        }
+        finally {
+            await fixtureRequest.dispose();
+        }
+    },
+    // [2026-10-04 D4] 결재하지 않고 읽기만 하는 참조자. 결재선과 다른 세 번째 계정이다(참조자는 같은 차수 결재선에 들 수 없다).
+    referee: async ({ playwright, baseURL }, use) => {
         const fixtureRequest = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
         try {
             const actor = await createVisualAdmin(fixtureRequest, baseURL!);
@@ -343,6 +360,143 @@ test.describe('Enterprise Workflow & Productivity', () => {
         }
         finally {
             // 실패했어도 이 실행이 만든 임시저장은 남기지 않는다 — 공유 관리자 계정의 20건 상한을 지킨다.
+            const listed = await request.get(`${API_BASE}/approvals/temporary-drafts`, { headers });
+            if (listed.ok()) {
+                const leftovers = (((await listed.json()).data ?? []) as TemporaryDraftRow[]).filter(draft => draft.docTtl === documentTitle);
+                for (const draft of leftovers) {
+                    await request.delete(`${API_BASE}/approvals/temporary-drafts/${draft.temporaryDraftSn}`, { headers });
+                }
+            }
+        }
+    });
+    /*
+     * [2026-10-04 D4] 참조자 — 기안자가 세 번째 계정을 참조자로 지정해 상신하면, 그 계정은 '참조된 결재' 탭에서 문서를 읽기만 하고
+     * (처리 버튼 없음) 최종 결과 뒤에도 계속 읽는다. 참조자는 결재 대기가 아니라 대기함에는 섞이지 않는다.
+     *
+     * 참조자도 임시저장에 실리는지 함께 본다 — 임시저장 뒤 같은 창에서 상신하면 서버가 그 임시저장을 지운다. 실패해도 이 실행이
+     * 만든 임시저장은 반드시 지운다(공유 관리자 계정의 20건 상한, 위 임시저장 테스트와 같은 이유). 결재 문서는 이력 보존 계약상 지우지 않는다.
+     *
+     * ⚠ createVisualAdmin 은 관리자 그룹이라 결재 권한도 가진다. '결재 권한 없이도 참조자가 될 수 있다' 는 서비스·통합 테스트가 맡는다.
+     */
+    test('Workflow: 참조자로 지정된 사람은 참조된 결재 탭에서 읽기만 하고 최종 결과 뒤에도 읽는다', async ({ page, request, approver, referee, actorPage }) => {
+        const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1').replace(/\/$/, '');
+        const authData = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'playwright', '.auth', 'admin.json'), 'utf-8'));
+        const adminToken: string | undefined = authData.cookies.find((cookie: {
+            name: string;
+            value: string;
+        }) => cookie.name === 'accessToken')?.value;
+        expect(adminToken, '기안자 인증 세션이 있어야 한다').toBeTruthy();
+        const headers = { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' };
+        const taskCode = 'E2ETASK';
+        const taskName = 'E2E 업무';
+        const documentTitle = `E2E 참조 결재 ${Date.now()}`;
+        type TemporaryDraftRow = { temporaryDraftSn: number; docTtl?: string };
+        try {
+            await request.post(`${API_BASE}/admin/system/codes/detail`, { headers, data: { cdId: 'COM075', dtlCd: taskCode, dtlCdNm: taskName, dtlCdExpln: 'e2e 결재 완주용', useYn: 'Y' } });
+            const meRes = await request.get(`${API_BASE}/users/me`, { headers });
+            expect(meRes.ok()).toBeTruthy();
+            const me: { userNm?: string; esntlId?: string } = (await meRes.json()).data;
+            expect(me.userNm).toBeTruthy();
+            expect(new Set([me.esntlId, approver.esntlId, referee.esntlId]).size).toBe(3);
+
+            await page.goto('/approvals');
+            await expect(page.getByRole('heading', { name: '결재 허브' }).first()).toBeVisible();
+            await page.getByRole('button', { name: '새 결재 기안' }).click();
+            const dialog = page.getByRole('dialog', { name: '새 결재 기안' });
+            await expect(dialog).toBeVisible();
+            await dialog.getByLabel('제목 (필수)').fill(documentTitle);
+            await dialog.getByLabel('본문 (선택)').fill('참조자가 읽을 출장 요청');
+            await dialog.locator('#approval-draft-task-type').click();
+            await page.getByRole('option', { name: taskName }).click();
+            await dialog.getByRole('button', { name: '다음', exact: true }).click();
+            // 결재자와 참조자는 같은 이름의 일회용 계정이라 ID 로 가른다.
+            await dialog.getByRole('button', { name: '1단계 결재자 선택', exact: true }).click();
+            const linePicker = dialog.getByRole('group', { name: '1단계 결재자 고르기' });
+            await linePicker.getByRole('textbox', { name: '결재자 이름 검색' }).fill(me.userNm!);
+            await linePicker.getByRole('button', { name: '찾기', exact: true }).click();
+            const approverCandidate = linePicker.getByRole('button').filter({ has: page.getByText(`ID: ${approver.esntlId}`, { exact: true }) });
+            await expect(approverCandidate).toBeEnabled();
+            await approverCandidate.click();
+            await linePicker.getByRole('button', { name: '다 골랐어요', exact: true }).click();
+            await expect(linePicker).toBeHidden();
+
+            await dialog.getByRole('button', { name: '참조자 선택', exact: true }).click();
+            const refereePicker = dialog.getByRole('group', { name: '참조자 고르기' });
+            await refereePicker.getByRole('textbox', { name: '참조자 이름 검색' }).fill(me.userNm!);
+            await refereePicker.getByRole('button', { name: '찾기', exact: true }).click();
+            // 결재선에 든 사람은 참조자로 고를 수 없다.
+            await expect(refereePicker.getByRole('button').filter({ has: page.getByText(`ID: ${approver.esntlId}`, { exact: true }) })).toBeDisabled();
+            const refereeCandidate = refereePicker.getByRole('button').filter({ has: page.getByText(`ID: ${referee.esntlId}`, { exact: true }) });
+            await expect(refereeCandidate).toBeEnabled();
+            await refereeCandidate.click();
+            await expect(refereeCandidate).toHaveAttribute('aria-pressed', 'true');
+            await refereePicker.getByRole('button', { name: '다 골랐어요', exact: true }).click();
+            await expect(refereePicker).toBeHidden();
+            await expect(dialog.getByRole('list', { name: '참조자', exact: true }).getByRole('listitem')).toHaveCount(1);
+
+            // 임시저장에도 참조자가 실린다.
+            const [saved] = await Promise.all([
+                page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/v1/approvals/temporary-drafts'),
+                dialog.getByRole('button', { name: '기안 임시저장', exact: true }).click(),
+            ]);
+            expect(saved.ok()).toBe(true);
+            expect(saved.request().postDataJSON().references).toEqual([referee.esntlId]);
+            await expect(dialog.getByText(/^임시저장했습니다 · /)).toBeVisible();
+
+            await dialog.getByRole('button', { name: '다음', exact: true }).click();
+            await expect(dialog.getByRole('region', { name: '상신 참조자 미리보기' })).toContainText('참조자 · 읽기만 함 (1명)');
+            await expect(dialog.getByText(/지정은 되돌릴 수 없으며/)).toBeVisible();
+            const submitButton = dialog.getByRole('button', { name: '결재 상신', exact: true });
+            await expect(submitButton).toBeEnabled();
+            const [submitted] = await Promise.all([
+                page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/v1/approvals'),
+                submitButton.click(),
+            ]);
+            expect(submitted.ok()).toBe(true);
+            expect(submitted.request().postDataJSON().references).toEqual([referee.esntlId]);
+            expect(submitted.request().postDataJSON().stages).toEqual([{ kind: 'APPROVAL', approverIds: [approver.esntlId] }]);
+            const approvalId: number = (await submitted.json()).data;
+            expect(Number.isInteger(approvalId) && approvalId > 0).toBe(true);
+            await expect(dialog).toBeHidden();
+
+            const item = (actorPage: typeof page) => actorPage.getByTestId('approval-item').filter({ has: actorPage.getByRole('button', { name: `${documentTitle} #${approvalId} 상세 열기`, exact: true }) });
+            // 참조자는 처리 힌트가 모두 거짓이다 — 서버가 판정한다.
+            const asReferee = await request.get(`${API_BASE}/approvals/${approvalId}`, { headers: referee.authorization });
+            expect(asReferee.ok()).toBe(true);
+            const refereeView = (await asReferee.json()).data;
+            expect(refereeView.referenceViewer).toBe(true);
+            expect(refereeView.canApprove).toBe(false);
+
+            const { page: refereePage } = await actorPage({ storageState: referee.storageState });
+            await refereePage.goto('/approvals');
+            // 참조는 결재 대기가 아니다 — 대기함에는 없다.
+            await expect(refereePage.getByText('대기 중인 결재가 없습니다.', { exact: true })).toBeVisible();
+            await refereePage.getByRole('tab', { name: '참조된 결재' }).click();
+            await expect(item(refereePage).getByText('참조', { exact: true })).toBeVisible();
+            await expect(item(refereePage).getByText('대기 중', { exact: true })).toBeVisible();
+            await item(refereePage).getByRole('button').click();
+            await expect(refereePage.getByLabel('문서 내용')).toContainText('참조자가 읽을 출장 요청');
+            await expect(refereePage.getByText('참조로 받은 문서입니다. 읽기만 할 수 있으며, 문서가 승인·반려·회수되어도 계속 읽을 수 있습니다.')).toBeVisible();
+            for (const name of ['결재 승인', '결재 반려', '보완 요청', '결재 회수', '참조자 추가']) {
+                await expect(refereePage.getByRole('button', { name, exact: true })).toHaveCount(0);
+            }
+
+            // 결재자가 최종 승인한다.
+            const { page: approverPage } = await actorPage({ storageState: approver.storageState });
+            await approverPage.goto('/approvals');
+            await item(approverPage).getByRole('button').click();
+            await approverPage.getByRole('button', { name: '결재 승인', exact: true }).click();
+            await approverPage.getByRole('button', { name: '지금 처리' }).click();
+            await expect(approverPage.getByText(`‘${documentTitle}’ 승인했습니다.`)).toBeVisible();
+
+            // 최종 결과 뒤에도 참조자는 읽는다 — 알림 링크와 같은 주소로 연다.
+            await refereePage.goto(`/approvals?tab=REFERENCED&doc=${approvalId}`);
+            await expect(refereePage.getByRole('tab', { name: '참조된 결재' })).toHaveAttribute('aria-selected', 'true');
+            await expect(item(refereePage).getByText('승인 완료', { exact: true })).toBeVisible();
+            await expect(refereePage.getByLabel('문서 내용')).toContainText('참조자가 읽을 출장 요청');
+            await expect(refereePage.getByRole('button', { name: '결재 승인', exact: true })).toHaveCount(0);
+        }
+        finally {
             const listed = await request.get(`${API_BASE}/approvals/temporary-drafts`, { headers });
             if (listed.ok()) {
                 const leftovers = (((await listed.json()).data ?? []) as TemporaryDraftRow[]).filter(draft => draft.docTtl === documentTitle);

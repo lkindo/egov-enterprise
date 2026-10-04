@@ -150,7 +150,7 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
     @DisplayName("기안은 현재 사용자를 신청자로 고정하고 빈 신청일은 서버가 8자리로 채운다")
     void createsDraftBoundToCurrentUser() throws Exception {
         org.mockito.BDDMockito.given(approvalService.registerInformalSanction(
-                        org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.isNull()))
+                        org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull()))
                 .willReturn(42L);
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals")
@@ -165,7 +165,7 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
 
         org.mockito.ArgumentCaptor<nuri.business.service.informalsanction.dto.InformalSanctionDto> captor =
                 org.mockito.ArgumentCaptor.forClass(nuri.business.service.informalsanction.dto.InformalSanctionDto.class);
-        verify(approvalService).registerInformalSanction(captor.capture(), org.mockito.ArgumentMatchers.isNull());
+        verify(approvalService).registerInformalSanction(captor.capture(), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull());
         org.assertj.core.api.Assertions.assertThat(captor.getValue().getAplcntId()).isEqualTo("DRAFTER_ESNTL");
         org.assertj.core.api.Assertions.assertThat(captor.getValue().getAprvrId()).isEqualTo("BOSS_ESNTL");
         org.assertj.core.api.Assertions.assertThat(captor.getValue().getTaskSeCd()).isEqualTo("01");
@@ -234,7 +234,7 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
         @SuppressWarnings("unchecked")
         var stages = (org.mockito.ArgumentCaptor<java.util.List<nuri.business.service.informalsanction.dto.ApprovalStageRequest>>)
                 (org.mockito.ArgumentCaptor<?>) org.mockito.ArgumentCaptor.forClass(java.util.List.class);
-        verify(approvalService).registerInformalSanction(dto.capture(), stages.capture());
+        verify(approvalService).registerInformalSanction(dto.capture(), stages.capture(), org.mockito.ArgumentMatchers.isNull());
         org.assertj.core.api.Assertions.assertThat(dto.getValue().getDocTtl()).isEqualTo("검토 요청");
         org.assertj.core.api.Assertions.assertThat(dto.getValue().getAplcntId()).isEqualTo("DRAFTER_ESNTL");
         org.assertj.core.api.Assertions.assertThat(stages.getValue()).hasSize(2);
@@ -430,7 +430,7 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
     @DisplayName("상신에 임시저장 번호·버전이 오면 임시저장을 소비하는 상신으로 보내고 일반 상신은 부르지 않는다")
     void createApprovalWithTemporaryDraftDelegatesToConsumingSubmit() throws Exception {
         org.mockito.BDDMockito.given(temporaryDraftService.submitWithTemporaryDraft(org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
                 .willReturn(42L);
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals")
@@ -446,11 +446,11 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk());
 
         var dto = org.mockito.ArgumentCaptor.forClass(nuri.business.service.informalsanction.dto.InformalSanctionDto.class);
-        verify(temporaryDraftService).submitWithTemporaryDraft(dto.capture(), org.mockito.ArgumentMatchers.isNull(),
+        verify(temporaryDraftService).submitWithTemporaryDraft(dto.capture(), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(),
                 org.mockito.ArgumentMatchers.eq(7L), org.mockito.ArgumentMatchers.eq(3));
         org.assertj.core.api.Assertions.assertThat(dto.getValue().getAplcntId()).isEqualTo("DRAFTER_ESNTL");
         verify(temporaryDraftService).submitWithTemporaryDraft(org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.eq(8L), org.mockito.ArgumentMatchers.isNull());
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.eq(8L), org.mockito.ArgumentMatchers.isNull());
         verifyNoInteractions(approvalService);
     }
 
@@ -461,7 +461,7 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
         // 값 검사는 임시저장 서비스가 한다(서비스 단위 테스트가 0·음수를 400 으로 고정한다). 컨트롤러는 그대로 넘긴다 —
         //   파라미터에 제약 어노테이션을 달면 본문 필드 오류가 사라지기 때문이다(아래 테스트).
         org.mockito.Mockito.when(temporaryDraftService.submitWithTemporaryDraft(
-                        org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                        org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
                         org.mockito.ArgumentMatchers.eq(0L), org.mockito.ArgumentMatchers.eq(1)))
                 .thenThrow(new nuri.foundation.core.exception.BusinessException(
                         nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE, "임시저장 번호와 버전이 올바르지 않습니다."));
@@ -490,6 +490,164 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                             org.hamcrest.Matchers.hasItem("approvalLinePresent")));
         }
         verifyNoInteractions(approvalService, temporaryDraftService);
+    }
+
+    // ── [2026-10-04 D4] 참조자 ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @WithMockCustomUser(username = "cc", esntlId = "CC_ESNTL")
+    @DisplayName("참조된 결재 목록은 현재 사용자의 esntlId 와 해석한 조건으로 referenced 조회를 부르고, 해석할 수 없으면 400 이다")
+    void listsReferencedApprovalsForCurrentUser() throws Exception {
+        org.mockito.BDDMockito.given(approvalService.getReferencedApprovalList(
+                        org.mockito.ArgumentMatchers.eq("CC_ESNTL"), org.mockito.ArgumentMatchers.any(),
+                        org.mockito.ArgumentMatchers.any()))
+                .willReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/approvals/referenced")
+                        .param("keyword", "출장").param("fromYmd", "2026-10-01").param("toYmd", "2026-10-31").param("status", "R"))
+                .andExpect(status().isOk());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/approvals/referenced")
+                        .param("status", "X"))
+                .andExpect(status().isBadRequest());
+
+        verify(approvalService).getReferencedApprovalList(
+                org.mockito.ArgumentMatchers.eq("CC_ESNTL"),
+                org.mockito.ArgumentMatchers.eq(nuri.business.service.informalsanction.ApprovalListFilter.of(
+                        "출장", "2026-10-01", "2026-10-31", "R")),
+                org.mockito.ArgumentMatchers.any());
+        org.mockito.Mockito.verify(approvalService, org.mockito.Mockito.never()).getProcessedApprovalList(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @WithMockCustomUser(username = "drafter", esntlId = "DRAFTER_ESNTL")
+    @DisplayName("상신·재상신 본문의 참조자는 그대로 서비스로 간다")
+    void draftAndResubmissionCarryReferences() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
+                            {"taskSeCd":"01","stages":[{"kind":"APPROVAL","approverIds":["BOSS"]}],"references":["CC1","CC2"]}
+                            """))
+                .andExpect(status().isOk());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals")
+                        .queryParam("temporaryDraftSn", "7").queryParam("temporaryDraftVersion", "3")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
+                            {"taskSeCd":"01","aprvrId":"BOSS","references":["CC3"]}
+                            """))
+                .andExpect(status().isOk());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals/9/resubmissions")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
+                            {"taskSeCd":"01","aprvrId":"BOSS","version":2,"references":["CC4"]}
+                            """))
+                .andExpect(status().isOk());
+
+        verify(approvalService).registerInformalSanction(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(java.util.List.of("CC1", "CC2")));
+        verify(temporaryDraftService).submitWithTemporaryDraft(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.eq(java.util.List.of("CC3")),
+                org.mockito.ArgumentMatchers.eq(7L), org.mockito.ArgumentMatchers.eq(3));
+        verify(approvalService).resubmitInformalSanction(org.mockito.ArgumentMatchers.eq(9L),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(2), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.eq(java.util.List.of("CC4")));
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("참조자 목록 형식(20명·빈 값·20자)이 틀리면 임시저장 참조가 있든 없든 서비스 전에 400 이고 필드별 오류로 온다")
+    void malformedReferencesCarryFieldErrors() throws Exception {
+        String twentyOne = java.util.stream.IntStream.rangeClosed(1, 21).mapToObj(i -> "\"R" + i + "\"")
+                .collect(java.util.stream.Collectors.joining(",", "[", "]"));
+        for (String references : new String[]{twentyOne, "[\"\"]", "[\"" + "x".repeat(21) + "\"]"}) {
+            for (boolean withDraft : new boolean[]{false, true}) {
+                var request = org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"taskSeCd\":\"01\",\"aprvrId\":\"BOSS\",\"references\":" + references + "}");
+                if (withDraft) request = request.queryParam("temporaryDraftSn", "7").queryParam("temporaryDraftVersion", "2");
+                mockMvc.perform(request)
+                        .andExpect(status().isBadRequest())
+                        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.errors[*].field",
+                                org.hamcrest.Matchers.hasItem(org.hamcrest.Matchers.startsWith("references"))));
+            }
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals/9/resubmissions")
+                            .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"taskSeCd\":\"01\",\"aprvrId\":\"BOSS\",\"version\":2,\"references\":" + references + "}"))
+                    .andExpect(status().isBadRequest());
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals/temporary-drafts")
+                            .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"docTtl\":\"제목\",\"references\":" + references + "}"))
+                    .andExpect(status().isBadRequest());
+        }
+        verifyNoInteractions(approvalService, temporaryDraftService);
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("결재자의 참조자 추가는 경로의 문서 번호·참조자·버전을 그대로 넘기고 새로 지정한 수를 돌려준다")
+    void addReferencesDelegates() throws Exception {
+        org.mockito.BDDMockito.given(approvalService.addReferences(7L, java.util.List.of("CC1", "CC2"), 4)).willReturn(2);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals/7/references")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"references":["CC1","CC2"],"version":4}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.data").value(2));
+
+        verify(approvalService).addReferences(7L, java.util.List.of("CC1", "CC2"), 4);
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("참조자 추가는 버전과 1~20명의 참조자가 있어야 서비스로 가고, 아니면 필드별 오류로 400 이다")
+    void addReferencesRequiresVersionAndReferences() throws Exception {
+        String twentyOne = java.util.stream.IntStream.rangeClosed(1, 21).mapToObj(i -> "\"R" + i + "\"")
+                .collect(java.util.stream.Collectors.joining(",", "[", "]"));
+        String[][] cases = {
+                {"{\"references\":[\"CC\"]}", "version"},
+                {"{\"references\":[\"CC\"],\"version\":-1}", "version"},
+                {"{\"version\":1}", "references"},
+                {"{\"references\":[],\"version\":1}", "references"},
+                {"{\"references\":" + twentyOne + ",\"version\":1}", "references"},
+                {"{\"references\":[\" \"],\"version\":1}", "references"},
+                {"{\"references\":[\"" + "x".repeat(21) + "\"],\"version\":1}", "references"},
+        };
+        for (String[] c : cases) {
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals/7/references")
+                            .with(csrf()).contentType(MediaType.APPLICATION_JSON).content(c[0]))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.errors[*].field",
+                            org.hamcrest.Matchers.hasItem(org.hamcrest.Matchers.startsWith(c[1]))));
+        }
+        verifyNoInteractions(approvalService);
+    }
+
+    @Test
+    @WithMockCustomUser(username = "drafter", esntlId = "DRAFTER_ESNTL")
+    @DisplayName("임시저장 본문의 참조자도 그대로 서비스로 간다")
+    void temporaryDraftCarriesReferences() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals/temporary-drafts")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"docTtl":"쓰다 만 기안","references":["CC1"]}
+                                """))
+                .andExpect(status().isOk());
+
+        var created = org.mockito.ArgumentCaptor.forClass(
+                nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftRequest.class);
+        verify(temporaryDraftService).createTemporaryDraft(org.mockito.ArgumentMatchers.eq("DRAFTER_ESNTL"), created.capture());
+        org.assertj.core.api.Assertions.assertThat(created.getValue().getReferences()).containsExactly("CC1");
+    }
+
+    @Test
+    @DisplayName("응답 전용 참조자 필드는 레거시 등록 본문(InformalSanctionDto)으로 들어오지 않는다")
+    void legacyBodyCannotCarryReferences() {
+        // 앱의 변환기 설정(Boot 매퍼)으로 읽는다 — 레거시 등록 핸들러가 이 매퍼로 본문을 바인딩한다.
+        var dto = objectMapper.readValue("""
+                {"taskSeCd":"01","aplcntId":"A","references":[{"userId":"CC"}],"canAddReference":true,"referenceViewer":true}
+                """, nuri.business.service.informalsanction.dto.InformalSanctionDto.class);
+        org.assertj.core.api.Assertions.assertThat(dto.getReferences()).isNull();
+        org.assertj.core.api.Assertions.assertThat(dto.isCanAddReference()).isFalse();
+        org.assertj.core.api.Assertions.assertThat(dto.isReferenceViewer()).isFalse();
     }
 
     @Test

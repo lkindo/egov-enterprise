@@ -62,8 +62,10 @@ class EntityTableOwnershipLinterTest {
     // V2_121(결재 동선 개선): 결재 처리 이력 InformalSanctionProcess → tb_ifml_atrz_prcs_hstry. 83 → 84 / 82 → 83.
     // V2_122(결재 동선 개선 D3): 기안 임시저장 ApprovalTemporaryDraft → tb_ifml_atrz_tmpr_strg, 임시저장 결재선
     //   ApprovalTemporaryDraftLine → tb_ifml_atrz_tmpr_strg_dtl. 둘 다 수정되므로 감사 4종(BaseEntity)이다. 84 → 86 / 83 → 85.
-    private static final int EXPECTED_ENTITY_COUNT = 86;
-    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 85;
+    // V2_123(결재 동선 개선 D4): 결재 참조자 InformalSanctionReference → tb_ifml_atrz_rfpr(추가만 하는 insert 감사 2종),
+    //   임시저장 참조자 ApprovalTemporaryDraftReference → tb_ifml_atrz_tmpr_strg_rfpr(지운 뒤 다시 넣는 감사 4종). 86 → 88 / 85 → 87.
+    private static final int EXPECTED_ENTITY_COUNT = 88;
+    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 87;
 
     private static final Set<String> AUDIT_COLUMNS = Set.of(
             "frst_rgtr_id", "crt_dt", "last_mdfr_id", "mdfcn_dt");
@@ -72,6 +74,7 @@ class EntityTableOwnershipLinterTest {
             "nuri.business.domain.auth.AuthorizationChange", "tb_authrt_chg_hstry",
             "nuri.business.domain.code.CommonCodeChange", "tb_com_cd_chg_hstry",
             "nuri.business.domain.informalsanction.InformalSanctionProcess", "tb_ifml_atrz_prcs_hstry",
+            "nuri.business.domain.informalsanction.InformalSanctionReference", "tb_ifml_atrz_rfpr",
             "nuri.business.domain.log.SensitiveAuditLog", "tb_sys_adt_log");
 
     /** 물리 감사 4컬럼은 있었지만 BaseEntity 상속이 빠졌던 쓰기 모델과 해당 저장소. */
@@ -147,7 +150,7 @@ class EntityTableOwnershipLinterTest {
     }
 
     @Test
-    @DisplayName("감사 컬럼: 쓰기 모델 감사 4개와 불변 이력(권한·공통코드·민감 작업) insert 감사 2개가 물리 스키마와 일치한다")
+    @DisplayName("감사 컬럼: 쓰기 모델 감사 4개와 불변 이력(권한·공통코드·결재 처리·결재 참조·민감 작업) insert 감사 2개가 물리 스키마와 일치한다")
     void auditColumnMappingsMatchFlywayPhysicalColumns() throws IOException {
         EntityInventory inventory = scanEntities();
         Map<String, Map<String, String>> schema =
@@ -228,6 +231,12 @@ class EntityTableOwnershipLinterTest {
         assertThat(auditShapeViolation(sensitive,"tb_sys_adt_log",insert,false)).isNotNull();
         assertThat(auditShapeViolation(sensitive,"tb_other",insert,true)).isNotNull();
         assertThat(auditShapeViolation(sensitive,"tb_sys_adt_log",Set.of("crt_dt"),true)).isNotNull();
+        // V2_123 결재 참조자 — 추가만 하므로 @Immutable 과 insert 감사 2종이어야 하고, 수정 감사를 달면 위반이다.
+        String reference="nuri.business.domain.informalsanction.InformalSanctionReference";
+        assertThat(auditShapeViolation(reference,"tb_ifml_atrz_rfpr",insert,true)).isNull();
+        assertThat(auditShapeViolation(reference,"tb_ifml_atrz_rfpr",insert,false)).isNotNull();
+        assertThat(auditShapeViolation(reference,"tb_ifml_atrz_rfpr",AUDIT_COLUMNS,true)).isNotNull();
+        assertThat(auditShapeViolation(reference,"tb_ifml_atrz_tmpr_strg_rfpr",insert,true)).isNotNull();
     }
 
     @Test

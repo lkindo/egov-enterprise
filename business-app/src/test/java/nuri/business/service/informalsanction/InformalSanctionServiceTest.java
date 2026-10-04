@@ -47,6 +47,9 @@ class InformalSanctionServiceTest {
     private nuri.business.domain.informalsanction.InformalSanctionHistoryRepository historyRepository;
     @org.mockito.Mock
     private nuri.business.domain.informalsanction.InformalSanctionProcessRepository processRepository;
+    /** [D4] 참조자 저장소 — 없으면 @InjectMocks 가 null 을 넣어 열람·목록 경로가 NPE 로 끝난다. */
+    @org.mockito.Mock
+    private nuri.business.domain.informalsanction.InformalSanctionReferenceRepository referenceRepository;
 
     @Mock
     private jakarta.persistence.EntityManager entityManager;

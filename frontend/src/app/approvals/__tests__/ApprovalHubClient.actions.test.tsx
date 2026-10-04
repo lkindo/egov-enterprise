@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   getMyHistory: vi.fn(),
   getPending: vi.fn(),
   getProcessed: vi.fn(),
+  getReferenced: vi.fn(),
+  addReferences: vi.fn(),
   getTaskTypes: vi.fn(),
   getDetail: vi.fn(),
   requestSupplement: vi.fn(),
@@ -80,6 +82,8 @@ vi.mock('@/services/business/user/approval/ApprovalUserService', () => ({
     getMyHistory: mocks.getMyHistory,
     getPending: mocks.getPending,
     getProcessed: mocks.getProcessed,
+    getReferenced: mocks.getReferenced,
+    addReferences: mocks.addReferences,
     getTaskTypes: mocks.getTaskTypes,
     getDetail: mocks.getDetail,
     requestSupplement: mocks.requestSupplement,
@@ -1102,5 +1106,117 @@ describe('ApprovalHubClient 결재 동선 검토 수정', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: '둘째 문서 #72 상세 열기' })).toHaveAttribute('aria-current', 'true'));
     expect(screen.getByRole('textbox', { name: OPINION })).toHaveValue('');
+  });
+});
+
+/**
+ * 2026-10-04 D4 — 참조자. '참조된 결재' 탭은 참조 축 API 를 부르고, 참조자가 연 문서는 읽기만 한다. 처리 버튼은 서버 힌트로만
+ * 판단한다(참조자에게는 모두 거짓이다). 알림 링크 `?tab=REFERENCED&doc=N` 이 그 탭의 문서를 연다.
+ */
+describe('ApprovalHubClient 참조된 결재 (D4)', () => {
+  const referenced = {
+    ifmlAtrzSn: 55, aplcntId: 'drafter', aplcntNm: '기안자', aprvYn: 'R', reqYmd: '20261001', taskSeCd: 'TRIP', taskSeNm: '출장',
+    docTtl: '참조로 받은 출장 결재', atrzCycl: 2, referenceViewer: true,
+  };
+  // 참조자가 보는 상세 — 쓰기 힌트는 서버가 모두 끈다. 참조자는 이전 차수 이력까지 읽는다.
+  const referencedDetail = {
+    ...referenced, canApprove: false, canWithdraw: false, canResubmit: false, canRemind: false, canReplaceApprover: false,
+    canRequestSupplement: false, canAnswerSupplement: false, canAddReference: false,
+    references: [{ userId: 'approver', userNm: '나참조', deptNm: '총무팀', atrzCycl: 1, designator: 'DRAFTER' }],
+    history: [
+      { atrzCycl: 1, docTtl: '참조로 받은 출장 결재', docCn: '1차 본문', aprvYn: 'R', stages: [] },
+      { atrzCycl: 2, docTtl: '참조로 받은 출장 결재', docCn: '2차 본문', aprvYn: 'R', stages: [] },
+    ],
+  };
+  beforeEach(() => {
+    vi.clearAllMocks();
+    openLink('');
+    auth.permissions = FULL_PERMISSIONS;
+    mocks.confirm.mockResolvedValue(true);
+    mocks.getTaskTypes.mockResolvedValue([]);
+    mocks.getPending.mockResolvedValue({ list: [pendingApproval], total: 1 });
+    mocks.getMyHistory.mockResolvedValue({ list: [], total: 0 });
+    mocks.getProcessed.mockResolvedValue({ list: [], total: 0 });
+    mocks.getReferenced.mockResolvedValue({ list: [referenced], total: 1 });
+    mocks.getDetail.mockImplementation(async (id: number) => (id === 55
+      ? referencedDetail
+      : { ...pendingApproval, ifmlAtrzSn: id, version: 2, canApprove: true, canAddReference: true, references: [] }));
+  });
+
+  it('참조된 결재 탭은 참조 축 목록을 다른 탭과 같은 조건으로 부르고, 행에 참조 표시를 붙인다', async () => {
+    renderClient();
+    await screen.findByText('휴가 신청');
+    fireEvent.click(screen.getByRole('tab', { name: '참조된 결재' }));
+    const list = await screen.findByRole('list', { name: '참조된 결재 목록' });
+    expect(mocks.getReferenced).toHaveBeenCalledWith({ page: 0, size: 20 });
+    expect(within(list).getByText('참조')).toBeInTheDocument();
+    expect(within(list).getByText('반려됨')).toBeInTheDocument();
+    // 상태 조건은 문서의 지금 상태다 — 대기함처럼 떼지 않는다.
+    fireEvent.change(screen.getByLabelText('문서 상태'), { target: { value: 'C' } });
+    await waitFor(() => expect(mocks.getReferenced).toHaveBeenCalledWith(expect.objectContaining({ page: 0, size: 20, status: 'C' })));
+    // 참조는 결재 대기가 아니다 — 대기 건수와 대기함 목록에는 섞이지 않는다.
+    expect(mocks.getPending).not.toHaveBeenCalledWith(expect.objectContaining({ status: 'C' }));
+  });
+
+  it('참조된 결재가 없으면 그 사실과 어떻게 생기는지를 말한다', async () => {
+    mocks.getReferenced.mockResolvedValue({ list: [], total: 0 });
+    renderClient();
+    await screen.findByText('휴가 신청');
+    fireEvent.click(screen.getByRole('tab', { name: '참조된 결재' }));
+    expect(await screen.findByText('참조된 결재가 없습니다. 다른 사람이 나를 참조자로 지정하면 여기에서 읽을 수 있습니다.')).toBeInTheDocument();
+  });
+
+  it('알림 링크 ?tab=REFERENCED 로 그 탭과 문서를 연다 — 대기함 아래에 열지 않는다', async () => {
+    openLink('tab=REFERENCED&doc=55');
+    renderClient();
+    await waitFor(() => expect(screen.getByRole('tab', { name: '참조된 결재' })).toHaveAttribute('aria-selected', 'true'));
+    await waitFor(() => expect(mocks.getReferenced).toHaveBeenCalledWith({ page: 0, size: 20 }));
+    expect(mocks.getPending).not.toHaveBeenCalledWith(expect.objectContaining({ size: 20 }));
+    await waitFor(() => expect(mocks.getDetail).toHaveBeenCalledWith(55));
+    expect(await screen.findByRole('heading', { name: '참조로 받은 출장 결재 · 2차' })).toBeInTheDocument();
+  });
+
+  it('참조자가 연 문서는 읽기만 한다 — 결재 권한이 있어도 처리 버튼이 없고, 참조자 목록과 이전 차수 이력을 읽는다', async () => {
+    openLink('tab=REFERENCED&doc=55');
+    renderClient();
+    expect(await screen.findByText('참조로 받은 문서입니다. 읽기만 할 수 있으며, 문서가 승인·반려·회수되어도 계속 읽을 수 있습니다.')).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: '참조자 목록' })).toHaveTextContent('나참조');
+    expect(screen.getByRole('region', { name: '이전 차수 이력' })).toHaveTextContent('1차 · 참조로 받은 출장 결재 · 반려');
+    for (const name of ['결재 승인', '결재 반려', '보완 요청', '결재 회수', '고쳐서 다시 올리기', '수정 후 재상신', '복제해서 새로 기안', '참조자 추가']) {
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    }
+    expect(screen.queryByRole('textbox', { name: '결재 의견 (반려·보완 요청 시 필수)' })).not.toBeInTheDocument();
+  });
+
+  it('이전 차수 참조자가 이 차수 결재자가 되면 읽기 전용이라고 말하지 않고 대기함에 참조 표시도 붙이지 않는다 — 처리할 차례가 있다', async () => {
+    // 개정 1: 참조는 차수마다 기록되고, 이전 차수 참조자는 다음 차수 결재자가 될 수 있다. 서버는 referenceViewer 와 처리 힌트를 함께 준다.
+    mocks.getPending.mockResolvedValue({ list: [{ ...pendingApproval, referenceViewer: true, canApprove: true }], total: 1 });
+    mocks.getDetail.mockImplementation(async (id: number) => ({ ...pendingApproval, ifmlAtrzSn: id, version: 2, referenceViewer: true, canApprove: true, canRequestSupplement: true, references: [] }));
+    renderClient();
+    expect(await screen.findByRole('button', { name: '결재 승인' })).toBeInTheDocument();
+    expect(screen.queryByText(/참조로 받은 문서입니다/)).not.toBeInTheDocument();
+    expect(within(screen.getByRole('list', { name: '대기 중인 결재 목록' })).queryByText('참조')).not.toBeInTheDocument();
+  });
+
+  it('이전 차수 참조자가 이 차수의 다음 단계 결재자(아직 차례 전)이면 참조된 결재 탭에서 열어도 읽기 전용이라고 말하지 않는다', async () => {
+    // 1차 참조자였던 나(approver)를 기안자가 2차 결재선 2단계에 넣었다. 1단계가 진행 중이라 내 차례는 아직이다(WAITING).
+    const waitingLine = [
+      { order: 1, kind: 'APPROVAL', status: 'ACTIVE', approvers: [{ userId: 'boss', userNm: '부장', status: 'ACTIVE' }] },
+      { order: 2, kind: 'APPROVAL', status: 'WAITING', approvers: [{ userId: 'approver', userNm: '나참조', status: 'WAITING' }] },
+    ];
+    mocks.getReferenced.mockResolvedValue({ list: [{ ...referenced, aprvYn: 'A', stages: waitingLine }], total: 1 });
+    mocks.getDetail.mockImplementation(async () => ({ ...referencedDetail, aprvYn: 'A', stages: waitingLine }));
+    openLink('tab=REFERENCED&doc=55');
+    renderClient();
+    expect(await screen.findByRole('heading', { name: '참조로 받은 출장 결재 · 2차' })).toBeInTheDocument();
+    expect(screen.queryByText(/참조로 받은 문서입니다/)).not.toBeInTheDocument();
+    expect(within(screen.getByRole('list', { name: '참조된 결재 목록' })).queryByText('참조')).not.toBeInTheDocument();
+  });
+
+  it('참조자가 아닌 결재자에게는 읽기 전용 안내를 보이지 않고, 서버가 허락하면 참조자 추가를 상세에 둔다', async () => {
+    renderClient();
+    expect(await screen.findByRole('button', { name: '결재 승인' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '참조자 추가' })).toBeInTheDocument();
+    expect(screen.queryByText(/참조로 받은 문서입니다/)).not.toBeInTheDocument();
   });
 });

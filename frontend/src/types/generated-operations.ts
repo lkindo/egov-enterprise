@@ -180,6 +180,7 @@ import {
   ApiResponseWorkReportDtoResponseSchema,
   ApprovalConfirmRequestRequestSchema,
   ApprovalDraftRequestRequestSchema,
+  ApprovalReferenceAddRequestRequestSchema,
   ApprovalResubmissionRequestRequestSchema,
   ApprovalSuggestionsDtoResponseSchema,
   ApprovalSupplementAnswerRequestRequestSchema,
@@ -934,7 +935,7 @@ export const updateInformalSanctionOperation = /*#__PURE__*/ (() => {
   requestSchema: InformalSanctionDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["references"],["referenceViewer"],["canAddReference"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -991,7 +992,7 @@ export const updateInformalSanction_1Operation = /*#__PURE__*/ (() => {
   requestSchema: InformalSanctionDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["references"],["referenceViewer"],["canAddReference"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -3882,7 +3883,7 @@ export const registerInformalSanctionOperation = /*#__PURE__*/ (() => {
   requestSchema: InformalSanctionDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["references"],["referenceViewer"],["canAddReference"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -3920,7 +3921,7 @@ export const registerInformalSanction_1Operation = /*#__PURE__*/ (() => {
   requestSchema: InformalSanctionDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["references"],["referenceViewer"],["canAddReference"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -4594,6 +4595,25 @@ export const remindApproversOperation = /*#__PURE__*/ (() => {
   pathSchema: z.object({ "id": z.number().int() }).strict(),
   querySchema: null,
   requestSchema: null,
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseIntegerResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const addReferencesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "addReferences",
+  method: "post",
+  path: "/api/v1/approvals/{id}/references",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "id": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: ApprovalReferenceAddRequestRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseIntegerResponseSchema,
   requestForbiddenPaths: [],
@@ -7579,6 +7599,25 @@ export const getTaskTypesOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: z.array(z.lazy(() => CommonCodeDtoResponseSchema)),
   envelopeSchema: ApiResponseListCommonCodeDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const getReferencedOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getReferenced",
+  method: "get",
+  path: "/api/v1/approvals/referenced",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: z.object({ "keyword": z.string().optional(), "fromYmd": z.string().optional(), "toYmd": z.string().optional(), "status": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => PageResponseInformalSanctionDtoResponseSchema),
+  envelopeSchema: ApiResponsePageResponseInformalSanctionDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

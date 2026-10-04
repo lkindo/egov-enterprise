@@ -40,6 +40,17 @@ public class ApprovalDraftRequest {
     @Size(min = 1, max = 10)
     private List<@jakarta.validation.constraints.NotNull @Valid ApprovalStageRequest> stages;
 
+    /**
+     * [2026-10-04 D4 개정 1] 참조자. 재상신 요청이 이 클래스를 상속하므로 재상신에서도 지정한다. 보낸 사람은 모두 이 차수의
+     * 참조자가 된다 — 이전 차수 참조자를 다시 보내면 이 차수의 지정이 되고(알림은 다시 가지 않는다), 빼도 그 사람은 이전 차수의
+     * 지정으로 계속 읽는다(참조는 추가만 한다). 자격·결재선 겹침·문서 누적 20명은 서비스가 본다.
+     */
+    @Schema(description = "참조자 esntlId 목록(최대 20명). 사용 중이고 결재 조회 권한이 있는 사람만 지정할 수 있고, 같은 차수의 "
+            + "결재선과 겹칠 수 없습니다. 보낸 사람은 이 차수의 참조자가 되며(이전 차수 참조자를 다시 보내도 같다) 한 문서에 서로 다른 "
+            + "사람 누적 20명까지입니다.")
+    @Size(max = 20)
+    private List<@NotBlank @Size(max = 20) String> references;
+
     @Schema(description = "신청 일자(yyyyMMdd). 비우면 서버가 오늘(Asia/Seoul)로 채운다", pattern = "^\\d{8}$")
     @Pattern(regexp = "^\\d{8}$")
     private String reqYmd;
@@ -74,6 +85,8 @@ public class ApprovalDraftRequest {
     public void setDocCn(String docCn) { this.docCn = docCn; }
     public List<ApprovalStageRequest> getStages() { return stages; }
     public void setStages(List<ApprovalStageRequest> stages) { this.stages = stages; }
+    public List<String> getReferences() { return references; }
+    public void setReferences(List<String> references) { this.references = references; }
 
     @jakarta.validation.constraints.AssertTrue(message = "결재자를 지정하거나 결재선을 구성해 주세요.")
     @com.fasterxml.jackson.annotation.JsonIgnore

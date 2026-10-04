@@ -29,7 +29,11 @@ public class ApprovalApiController {
     private final nuri.business.service.informalsanction.ApprovalLineAssistService lineAssistService;
     private final nuri.business.service.informalsanction.ApprovalTemporaryDraftService temporaryDraftService;
 
-    @Operation(summary = "Get Approval Detail", description = "참여한 결재의 내용·단계·처리 이력을 조회합니다. 참여하지 않은 차수는 공개하지 않습니다.")
+    @Operation(summary = "Get Approval Detail", description = "참여한 결재의 내용·단계·처리 이력을 조회합니다. 결재자는 참여한 차수만 보고, "
+            + "기안자와 참조자는 모든 차수를 봅니다(참조자는 한 번 지정되면 반려·회수·승인 뒤에도, 재상신에서 빠져도 계속 읽습니다). "
+            + "참조자 목록(references)은 보는 사람이 볼 수 있는 가장 높은 차수까지 지정된 사람을 사람마다 한 줄(그 사람에게 보이는 "
+            + "가장 최근 지정)로 싣고, 참조자에게는 처리 힌트가 모두 거짓입니다. "
+            + "신청자·결재선·참조자가 아니면 404 입니다.")
     @GetMapping("/{id}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getApprovalDetail')")
     public ResponseEntity<ApiResponse<InformalSanctionDto>> getApprovalDetail(
@@ -98,6 +102,27 @@ public class ApprovalApiController {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
+    /**
+     * [2026-10-04 D4] 참조된 결재 — 내가 참조자로 지정된 문서. 참조는 추가만 하므로 문서가 반려·회수·승인돼도, 재상신에서
+     * 빠져도 남는다. 참조자는 결재하지 않으므로 대기함·처리함·대기 건수에 섞이지 않는다.
+     */
+    @Operation(summary = "Get Approvals I Was Referenced On",
+            description = "내가 참조자로 지정된 결재를 조회합니다(모든 상태). 참조자는 읽기만 하며 처리 힌트는 모두 거짓입니다. "
+                    + "제목 검색어·요청일 기간·문서의 지금 상태(status: A 대기·C 승인·R 반려·W 회수)로 좁힐 수 있습니다.")
+    @GetMapping("/referenced")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getReferenced')")
+    public ResponseEntity<ApiResponse<PageResponse<InformalSanctionDto>>> getReferenced(
+            @LoginUser CustomUserDetails userDetails,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String keyword,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String fromYmd,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String toYmd,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String status,
+            @org.springframework.data.web.PageableDefault(sort = "ifmlAtrzSn", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
+        Page<InformalSanctionDto> result = approvalService.getReferencedApprovalList(userDetails.getEsntlId(),
+                ApprovalListFilter.of(keyword, fromYmd, toYmd, status), pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
+    }
+
     @Operation(summary = "Get Approval Task Types",
             description = "기안 시 고르는 업무 구분(공통코드 COM075 의 사용 중 상세코드)입니다. 등록된 코드가 없으면 빈 목록입니다.")
     @GetMapping("/task-types")
@@ -115,7 +140,9 @@ public class ApprovalApiController {
     @Operation(summary = "Create Approval Draft",
             description = "현재 사용자를 신청자로 결재를 상신합니다. 업무 구분은 /task-types 의 코드여야 하고 결재자는 사용자 검색의 esntlId 입니다. "
                     + "임시저장을 이어 써서 올리면 temporaryDraftSn·temporaryDraftVersion 을 함께 보냅니다 — 상신과 같은 트랜잭션에서 "
-                    + "그 임시저장을 지우며, 이미 상신했거나 버전이 다르면 409, 둘 중 하나만 보내면 400 입니다. 상신이 실패하면 임시저장은 남습니다.")
+                    + "그 임시저장을 지우며, 이미 상신했거나 버전이 다르면 409, 둘 중 하나만 보내면 400 입니다. 상신이 실패하면 임시저장은 남습니다. "
+                    + "참조자(references)를 함께 지정할 수 있습니다 — 사용 중이고 결재 조회 권한이 있는 사람만, 결재선과 겹치지 않게 20명까지이며 "
+                    + "지정된 사람은 알림을 받고 그 문서를 계속 읽습니다(되돌릴 수 없습니다).")
     @PostMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#createApproval')")
     public ResponseEntity<ApiResponse<Long>> createApproval(
@@ -130,21 +157,41 @@ public class ApprovalApiController {
         //   본문의 @Valid 검증까지 HandlerMethodValidationException 으로 옮겨, 상신 폼이 받던 필드별 오류(errors[].field)가
         //   사라진다(2026-10-04 실측). 값 검사는 서비스가 한다.
         Long id = temporaryDraftSn == null && temporaryDraftVersion == null
-                ? approvalService.registerInformalSanction(draft, request.getStages())
-                : temporaryDraftService.submitWithTemporaryDraft(draft, request.getStages(),
+                ? approvalService.registerInformalSanction(draft, request.getStages(), request.getReferences())
+                : temporaryDraftService.submitWithTemporaryDraft(draft, request.getStages(), request.getReferences(),
                         temporaryDraftSn, temporaryDraftVersion);
         return ResponseEntity.ok(ApiResponse.success(id));
     }
 
-    @Operation(summary = "Resubmit Approval", description = "기안자 본인이 반려·회수된 문서를 수정하여 다시 상신합니다. 이전 차수의 내용과 처리는 보존됩니다.")
+    @Operation(summary = "Resubmit Approval", description = "기안자 본인이 반려·회수된 문서를 수정하여 다시 상신합니다. 이전 차수의 내용과 처리는 보존됩니다. "
+            + "참조자(references)를 지정할 수 있습니다 — 보낸 사람은 새 차수의 참조자가 되고(이전 차수 참조자를 다시 보내면 알림 없이 이 "
+            + "차수의 지정이 됩니다), 빼도 그 사람은 이전 차수의 지정으로 계속 읽습니다(참조는 추가만 합니다).")
     @PostMapping("/{id}/resubmissions")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#resubmitApproval')")
     public ResponseEntity<ApiResponse<Long>> resubmitApproval(
             @PathVariable Long id, @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody ApprovalResubmissionRequest request) {
         approvalService.resubmitInformalSanction(id, draftDto(request, userDetails.getEsntlId()),
-                request.getVersion(), request.getStages());
+                request.getVersion(), request.getStages(), request.getReferences());
         return ResponseEntity.ok(ApiResponse.success(id));
+    }
+
+    /**
+     * [2026-10-04 D4] 지금 차례인 결재자가 참조자를 더한다. 기안자가 이 차수에 참조자를 지정하지 않았을 때만이며, 되돌릴 수
+     * 없으므로 읽은 버전이 필수다. 경로 변수에 제약 어노테이션을 달지 않는다 — 본문 필드 오류(errors[].field)가 메서드 검증으로
+     * 옮겨 사라진다(Spring 7, 상신 핸들러의 주석과 같은 이유).
+     */
+    @Operation(summary = "Add Approval References",
+            description = "지금 차례인 결재자가 참조자를 더합니다. 아직 차례가 아니면 403, 이미 처리했거나 기안자가 이 차수에 참조자를 지정했거나 "
+                    + "문서가 진행 중이 아니거나 버전이 다르면 409 입니다. 사용 중이고 결재 조회 권한이 있는 사람만, 결재선과 겹치지 않게 한 문서에 "
+                    + "서로 다른 사람 20명까지이며 이 차수에 이미 참조자인 사람은 무시합니다. 지금 차수에 새로 지정한 사람 수를 돌려주고, 이 "
+                    + "문서에 처음 참조되는 사람에게 알림이 갑니다. 되돌릴 수 없습니다.")
+    @PostMapping("/{id}/references")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#addReferences')")
+    public ResponseEntity<ApiResponse<Integer>> addReferences(@PathVariable Long id,
+            @Valid @RequestBody nuri.business.service.informalsanction.dto.ApprovalReferenceAddRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                approvalService.addReferences(id, request.getReferences(), request.getVersion())));
     }
 
     @Operation(summary = "Confirm Approval (Approve/Reject)")

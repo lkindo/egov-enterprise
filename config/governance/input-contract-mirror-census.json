@@ -1918,6 +1918,15 @@
         "userId"
       ],
       "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.informalsanction.dto.InformalSanctionDto",
+      "fields": [
+        "references",
+        "referenceViewer",
+        "canAddReference"
+      ],
+      "pack": "demo"
     }
   ],
   "calendarDateBindings": [
