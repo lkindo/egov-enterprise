@@ -14,7 +14,7 @@
     "Axis 3 is a display check only. Server authorization is unchanged, and a permission literal proves the screen looked at it, not which button it gates."
   ],
   "expected": {
-    "operationCount": 433,
+    "operationCount": 435,
     "unwiredMax": 10,
     "screenOrphanMax": 29,
     "ungatedWriteMax": 45
@@ -187,7 +187,7 @@
     {
       "operationId": "getInformalSanction",
       "category": "superseded-surface",
-      "note": "InformalSanctionApiController serves this domain at /api/v1/informal-sanctions (aliased at /api/v1/admin/system/ism). DEC-OPS-040 consolidated the ISM screen into /approvals, which calls ApprovalApiController instead; DEC-OPS-053 then removed the dead IsmAdminService. Both controllers wrap the same InformalSanctionService, so this is a superseded surface, not a missing feature. Neither controller is a subset of the other (approvals adds processed/task-types, ISM keeps detail/update), so retiring it is a backend design decision — see GAP-WIRING-001.",
+      "note": "InformalSanctionApiController serves this domain at /api/v1/informal-sanctions (aliased at /api/v1/admin/system/ism). DEC-OPS-040 consolidated the ISM screen into /approvals, which calls ApprovalApiController instead; DEC-OPS-053 then removed the dead IsmAdminService. Both controllers wrap the same InformalSanctionService, so this is a superseded surface, not a missing feature. Neither controller is a subset of the other (approvals adds processed/task-types, ISM keeps detail/update), so retiring it is a backend design decision — see GAP-WIRING-001. Since approval references (D4, V2_123) the shared read gate (InformalSanctionRepository#findByIdAndParticipant) also admits a document's references, so this legacy detail path opens to them too — the same service decision, not a widened permission (INFORMAL_READ still gates the route).",
       "supersededBy": [
         "getPending",
         "getMyHistory",

@@ -5,6 +5,9 @@ import nuri.business.domain.informalsanction.ApprovalTemporaryDraft;
 import nuri.business.domain.informalsanction.ApprovalTemporaryDraftLine;
 import nuri.business.domain.informalsanction.ApprovalTemporaryDraftLineId;
 import nuri.business.domain.informalsanction.ApprovalTemporaryDraftLineRepository;
+import nuri.business.domain.informalsanction.ApprovalTemporaryDraftReference;
+import nuri.business.domain.informalsanction.ApprovalTemporaryDraftReferenceId;
+import nuri.business.domain.informalsanction.ApprovalTemporaryDraftReferenceRepository;
 import nuri.business.domain.informalsanction.ApprovalTemporaryDraftRepository;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.security.util.SecurityUtil;
@@ -24,6 +27,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -46,6 +50,9 @@ import java.util.stream.Collectors;
  *
  * <p>상신은 임시저장을 같은 트랜잭션에서 소비한다 — 상신 <b>앞에</b> 번호·기안자·버전이 모두 맞는 행만 지우고, 지운 행이
  * 없으면 409 로 거부한다. 상신이 실패하면 트랜잭션이 되돌아가 임시저장도 되살아난다.
+ *
+ * <p>[2026-10-04 D4] 참조자도 함께 저장한다. 결재선과 같이 형식(20명·중복·결재선과 겹침)만 보고, 자격(사용 중·결재 조회 권한)은
+ * 다시 열 때 지금 기준으로 판정하며 같은 공개 수준을 지킨다. 상신하면 참조자가 상신 검사를 다시 지난다.
  */
 @Service
 @RequiredArgsConstructor
@@ -57,32 +64,40 @@ public class ApprovalTemporaryDraftService {
     private static final int MAX_STAGES = 10;
     private static final int MAX_STAGE_APPROVERS = 10;
     private static final int MAX_APPROVERS = 50;
+    /** 참조자 상한 — 상신 검사의 문서당 상한({@link InformalSanctionService#MAX_REFERENCES})과 같다. */
+    private static final int MAX_REFERENCES = InformalSanctionService.MAX_REFERENCES;
 
     private final ApprovalTemporaryDraftRepository draftRepository;
     private final ApprovalTemporaryDraftLineRepository lineRepository;
+    private final ApprovalTemporaryDraftReferenceRepository referenceRepository;
     private final UserRepository userRepository;
     private final ApprovalLineAssistService lineAssistService;
     private final InformalSanctionService informalSanctionService;
 
     /** 형식을 확인하고 빈 문자열을 비운 저장 내용. */
-    private record Content(String taskSeCd, String docTtl, String docCn, List<ApprovalStageRequest> stages) {
+    private record Content(String taskSeCd, String docTtl, String docCn, List<ApprovalStageRequest> stages,
+                           List<String> references) {
         int approverCount() {
             return stages.stream().mapToInt(stage -> stage.approverIds().size()).sum();
         }
     }
 
-    /** 내 임시저장 목록 — 최근에 고친 순서, 최대 20건. 본문·결재선은 싣지 않는다. */
+    /** 내 임시저장 목록 — 최근에 고친 순서, 최대 20건. 본문·결재선·참조자는 싣지 않고 사람 수만 싣는다. */
     public List<ApprovalTemporaryDraftSummaryDto> getTemporaryDrafts(String applicant) {
         assertApplicant(applicant);
         List<ApprovalTemporaryDraft> drafts =
                 draftRepository.findTop20ByAplcntIdOrderByMdfcnDtDescIfmlAtrzTmprStrgSnDesc(applicant);
         if (drafts.isEmpty()) return List.of();
-        Map<Long, Long> approverCounts = lineRepository.findForDrafts(
-                        drafts.stream().map(ApprovalTemporaryDraft::getIfmlAtrzTmprStrgSn).toList()).stream()
+        List<Long> sns = drafts.stream().map(ApprovalTemporaryDraft::getIfmlAtrzTmprStrgSn).toList();
+        Map<Long, Long> approverCounts = lineRepository.findForDrafts(sns).stream()
                 .collect(Collectors.groupingBy(line -> line.getId().getIfmlAtrzTmprStrgSn(), Collectors.counting()));
+        Map<Long, Long> referenceCounts = referenceRepository.findForDrafts(sns).stream()
+                .collect(Collectors.groupingBy(reference -> reference.getId().getIfmlAtrzTmprStrgSn(),
+                        Collectors.counting()));
         Map<String, String> tasks = taskTypeNames();
         return drafts.stream().map(draft -> summary(draft,
-                approverCounts.getOrDefault(draft.getIfmlAtrzTmprStrgSn(), 0L).intValue(), tasks)).toList();
+                approverCounts.getOrDefault(draft.getIfmlAtrzTmprStrgSn(), 0L).intValue(),
+                referenceCounts.getOrDefault(draft.getIfmlAtrzTmprStrgSn(), 0L).intValue(), tasks)).toList();
     }
 
     /** '이어 쓰기' — 본문과 결재선을 지금 자격과 함께 돌려준다. */
@@ -101,9 +116,14 @@ public class ApprovalTemporaryDraftService {
         List<ApprovalLineStageDto> stageDtos = stages.values().stream().map(group -> new ApprovalLineStageDto(
                 group.getFirst().kind(), group.stream().map(line -> profiles.get(line.getId().getUserId())).toList()))
                 .toList();
+        // [D4] 참조자도 같은 사전 확인으로 판정한다 — 참조 자격(referenceEligible)을 쓰고, 비활성 계정의 이름은 싣지 않는다.
+        List<String> referenceIds = referenceRepository.findForDrafts(List.of(draft.getIfmlAtrzTmprStrgSn())).stream()
+                .map(reference -> reference.getId().getUserId()).toList();
+        List<ApproverProfileDto> references = referenceIds.isEmpty() ? List.of()
+                : lineAssistService.checkApprovers(applicant, referenceIds);
         return new ApprovalTemporaryDraftDto(draft.getIfmlAtrzTmprStrgSn(), draft.getTaskSeCd(),
                 taskTypeNames().getOrDefault(draft.getTaskSeCd(), ""), draft.getDocTtl(), draft.getDocCn(), stageDtos,
-                draft.getVersion(), draft.getMdfcnDt());
+                references, draft.getVersion(), draft.getMdfcnDt());
     }
 
     @Transactional
@@ -117,7 +137,8 @@ public class ApprovalTemporaryDraftService {
         ApprovalTemporaryDraft draft = draftRepository.save(
                 ApprovalTemporaryDraft.create(applicant, content.taskSeCd(), content.docTtl(), content.docCn()));
         lineRepository.saveAll(lines(draft.getIfmlAtrzTmprStrgSn(), content.stages()));
-        return summary(draft, content.approverCount(), taskTypeNames());
+        referenceRepository.saveAll(references(draft.getIfmlAtrzTmprStrgSn(), content.references()));
+        return summary(draft, content.approverCount(), content.references().size(), taskTypeNames());
     }
 
     /**
@@ -140,9 +161,11 @@ public class ApprovalTemporaryDraftService {
         draft.revise(content.taskSeCd(), content.docTtl(), content.docCn());
         lineRepository.deleteForDraft(draft.getIfmlAtrzTmprStrgSn());
         lineRepository.saveAll(lines(draft.getIfmlAtrzTmprStrgSn(), content.stages()));
+        referenceRepository.deleteForDraft(draft.getIfmlAtrzTmprStrgSn());
+        referenceRepository.saveAll(references(draft.getIfmlAtrzTmprStrgSn(), content.references()));
         // 올라간 버전과 수정 시각을 응답에 싣는다 — 화면은 이 버전으로 다음 저장·상신을 한다.
         draftRepository.flush();
-        return summary(draft, content.approverCount(), taskTypeNames());
+        return summary(draft, content.approverCount(), content.references().size(), taskTypeNames());
     }
 
     /** 결재선 행은 FK(ON DELETE CASCADE)가 함께 지운다. */
@@ -153,13 +176,13 @@ public class ApprovalTemporaryDraftService {
 
     /**
      * 임시저장을 소비하며 상신한다. 기안자는 상신 문서의 신청자(컨트롤러가 인증 주체로 채운다)이며, 소비가 상신보다 먼저다 —
-     * 상신 검사가 실패하면 트랜잭션이 되돌아가 임시저장이 남는다.
+     * 상신 검사가 실패하면 트랜잭션이 되돌아가 임시저장이 남는다. 참조자는 상신 요청의 것을 쓴다(임시저장 참조자는 함께 지워진다).
      */
     @Transactional
     public Long submitWithTemporaryDraft(InformalSanctionDto dto, List<ApprovalStageRequest> stages,
-                                         Long temporaryDraftSn, Integer temporaryDraftVersion) {
+                                         List<String> references, Long temporaryDraftSn, Integer temporaryDraftVersion) {
         consumeForSubmit(Objects.requireNonNull(dto).getAplcntId(), temporaryDraftSn, temporaryDraftVersion);
-        return informalSanctionService.registerInformalSanction(dto, stages);
+        return informalSanctionService.registerInformalSanction(dto, stages, references);
     }
 
     private void consumeForSubmit(String applicant, Long temporaryDraftSn, Integer temporaryDraftVersion) {
@@ -214,11 +237,40 @@ public class ApprovalTemporaryDraftService {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
         }
         List<ApprovalStageRequest> stages = stages(request.getStages());
-        if (taskSeCd == null && docTtl == null && docCn == null && stages.isEmpty()) {
+        List<String> references = references(request.getReferences(), stages);
+        if (taskSeCd == null && docTtl == null && docCn == null && stages.isEmpty() && references.isEmpty()) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                    "저장할 내용이 없습니다. 업무 구분·제목·본문·결재선 중 하나는 채워 주세요.");
+                    "저장할 내용이 없습니다. 업무 구분·제목·본문·결재선·참조자 중 하나는 채워 주세요.");
         }
-        return new Content(taskSeCd, docTtl, docCn, stages);
+        return new Content(taskSeCd, docTtl, docCn, stages, references);
+    }
+
+    /**
+     * [2026-10-04 D4] 참조자의 형식만 본다 — 20명·빈 값·길이·중복, 그리고 결재선과 겹치지 않는가(한 사람이 결재자이면서
+     * 참조자일 수는 없다). 사람의 자격(본인·사용 중·결재 조회 권한)은 상신 때 서버가 보고, 다시 열 때 사전 확인이 보여 준다.
+     */
+    private static List<String> references(List<String> requests, List<ApprovalStageRequest> stages) {
+        if (requests == null || requests.isEmpty()) return List.of();
+        if (requests.size() > MAX_REFERENCES) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "참조자는 " + MAX_REFERENCES + "명까지 저장할 수 있습니다.");
+        }
+        Set<String> approvers = new HashSet<>();
+        stages.forEach(stage -> approvers.addAll(stage.approverIds()));
+        Set<String> references = new LinkedHashSet<>();
+        for (String user : requests) {
+            if (user == null || user.isBlank() || user.length() > 20 || !user.equals(user.trim())) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "참조자를 지정해 주세요.");
+            }
+            if (!references.add(user)) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "같은 참조자를 중복 지정할 수 없습니다.");
+            }
+            if (approvers.contains(user)) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "결재선에 있는 사람은 참조자로 저장할 수 없습니다.");
+            }
+        }
+        return List.copyOf(references);
     }
 
     /**
@@ -267,11 +319,16 @@ public class ApprovalTemporaryDraftService {
         return lines;
     }
 
+    private static List<ApprovalTemporaryDraftReference> references(Long temporaryDraftSn, List<String> userIds) {
+        return userIds.stream().map(userId -> ApprovalTemporaryDraftReference.create(
+                new ApprovalTemporaryDraftReferenceId(temporaryDraftSn, userId))).toList();
+    }
+
     private static ApprovalTemporaryDraftSummaryDto summary(ApprovalTemporaryDraft draft, int approverCount,
-                                                            Map<String, String> tasks) {
+                                                            int referenceCount, Map<String, String> tasks) {
         return new ApprovalTemporaryDraftSummaryDto(draft.getIfmlAtrzTmprStrgSn(), draft.getTaskSeCd(),
-                tasks.getOrDefault(draft.getTaskSeCd(), ""), draft.getDocTtl(), approverCount, draft.getVersion(),
-                draft.getMdfcnDt());
+                tasks.getOrDefault(draft.getTaskSeCd(), ""), draft.getDocTtl(), approverCount, referenceCount,
+                draft.getVersion(), draft.getMdfcnDt());
     }
 
     /** 업무 구분 이름. 상신 화면과 같은 공통코드(COM075)를 같은 도메인 서비스로 읽는다. 지금 쓰지 않는 코드는 이름이 없다. */

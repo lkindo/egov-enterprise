@@ -17986,7 +17986,7 @@
           "Approval"
         ],
         "summary": "Create Approval Draft",
-        "description": "현재 사용자를 신청자로 결재를 상신합니다. 업무 구분은 /task-types 의 코드여야 하고 결재자는 사용자 검색의 esntlId 입니다. 임시저장을 이어 써서 올리면 temporaryDraftSn·temporaryDraftVersion 을 함께 보냅니다 — 상신과 같은 트랜잭션에서 그 임시저장을 지우며, 이미 상신했거나 버전이 다르면 409, 둘 중 하나만 보내면 400 입니다. 상신이 실패하면 임시저장은 남습니다.",
+        "description": "현재 사용자를 신청자로 결재를 상신합니다. 업무 구분은 /task-types 의 코드여야 하고 결재자는 사용자 검색의 esntlId 입니다. 임시저장을 이어 써서 올리면 temporaryDraftSn·temporaryDraftVersion 을 함께 보냅니다 — 상신과 같은 트랜잭션에서 그 임시저장을 지우며, 이미 상신했거나 버전이 다르면 409, 둘 중 하나만 보내면 400 입니다. 상신이 실패하면 임시저장은 남습니다. 참조자(references)를 함께 지정할 수 있습니다 — 사용 중이고 결재 조회 권한이 있는 사람만, 결재선과 겹치지 않게 20명까지이며 지정된 사람은 알림을 받고 그 문서를 계속 읽습니다(되돌릴 수 없습니다).",
         "operationId": "createApproval",
         "parameters": [
           {
@@ -18264,7 +18264,7 @@
           "Approval"
         ],
         "summary": "Resubmit Approval",
-        "description": "기안자 본인이 반려·회수된 문서를 수정하여 다시 상신합니다. 이전 차수의 내용과 처리는 보존됩니다.",
+        "description": "기안자 본인이 반려·회수된 문서를 수정하여 다시 상신합니다. 이전 차수의 내용과 처리는 보존됩니다. 참조자(references)를 지정할 수 있습니다 — 보낸 사람은 새 차수의 참조자가 되고(이전 차수 참조자를 다시 보내면 알림 없이 이 차수의 지정이 됩니다), 빼도 그 사람은 이전 차수의 지정으로 계속 읽습니다(참조는 추가만 합니다).",
         "operationId": "resubmitApproval",
         "parameters": [
           {
@@ -18370,6 +18370,99 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseInteger"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals/{id}/references": {
+      "post": {
+        "tags": [
+          "Approval"
+        ],
+        "summary": "Add Approval References",
+        "description": "지금 차례인 결재자가 참조자를 더합니다. 아직 차례가 아니면 403, 이미 처리했거나 기안자가 이 차수에 참조자를 지정했거나 문서가 진행 중이 아니거나 버전이 다르면 409 입니다. 사용 중이고 결재 조회 권한이 있는 사람만, 결재선과 겹치지 않게 한 문서에 서로 다른 사람 20명까지이며 이 차수에 이미 참조자인 사람은 무시합니다. 지금 차수에 새로 지정한 사람 수를 돌려주고, 이 문서에 처음 참조되는 사람에게 알림이 갑니다. 되돌릴 수 없습니다.",
+        "operationId": "addReferences",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalReferenceAddRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -32228,7 +32321,7 @@
           "Approval"
         ],
         "summary": "Get Approval Detail",
-        "description": "참여한 결재의 내용·단계·처리 이력을 조회합니다. 참여하지 않은 차수는 공개하지 않습니다.",
+        "description": "참여한 결재의 내용·단계·처리 이력을 조회합니다. 결재자는 참여한 차수만 보고, 기안자와 참조자는 모든 차수를 봅니다(참조자는 한 번 지정되면 반려·회수·승인 뒤에도, 재상신에서 빠져도 계속 읽습니다). 참조자 목록(references)은 보는 사람이 볼 수 있는 가장 높은 차수까지 지정된 사람을 사람마다 한 줄(그 사람에게 보이는 가장 최근 지정)로 싣고, 참조자에게는 처리 힌트가 모두 거짓입니다. 신청자·결재선·참조자가 아니면 404 입니다.",
         "operationId": "getApprovalDetail",
         "parameters": [
           {
@@ -32411,6 +32504,139 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseListCommonCodeDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals/referenced": {
+      "get": {
+        "tags": [
+          "Approval"
+        ],
+        "summary": "Get Approvals I Was Referenced On",
+        "description": "내가 참조자로 지정된 결재를 조회합니다(모든 상태). 참조자는 읽기만 하며 처리 힌트는 모두 거짓입니다. 제목 검색어·요청일 기간·문서의 지금 상태(status: A 대기·C 승인·R 반려·W 회수)로 좁힐 수 있습니다.",
+        "operationId": "getReferenced",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fromYmd",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "toYmd",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Zero-based page index (0..N)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "The size of the page to be returned",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "default": [
+                "ifmlAtrzSn,DESC"
+              ],
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseInformalSanctionDto"
                 }
               }
             }
@@ -39736,6 +39962,35 @@
           }
         }
       },
+      "ApprovalReferenceDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "userNm": {
+            "type": "string"
+          },
+          "deptNm": {
+            "type": "string"
+          },
+          "atrzCycl": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "designator": {
+            "type": "string",
+            "enum": [
+              "DRAFTER",
+              "APPROVER"
+            ]
+          },
+          "designatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "ApprovalRevisionDto": {
         "type": "object",
         "properties": {
@@ -39960,6 +40215,24 @@
           },
           "canAnswerSupplement": {
             "type": "boolean"
+          },
+          "references": {
+            "type": "array",
+            "description": "참조자(상세만). 보는 사람이 볼 수 있는 가장 높은 차수까지 지정된 사람을 사람마다 한 줄로 싣는다",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalReferenceDto"
+            },
+            "readOnly": true
+          },
+          "referenceViewer": {
+            "type": "boolean",
+            "description": "보는 사람이 이 문서의 참조자인가",
+            "readOnly": true
+          },
+          "canAddReference": {
+            "type": "boolean",
+            "description": "지금 차례인 결재자가 참조자를 더할 수 있는가",
+            "readOnly": true
           }
         },
         "required": [
@@ -40533,6 +40806,17 @@
             "maxItems": 10,
             "minItems": 0
           },
+          "references": {
+            "type": "array",
+            "description": "참조자 esntlId 목록(최대 20명, 2026-10-04 D4). 결재선과 겹칠 수 없고, 자격은 다시 열 때 판정한다",
+            "items": {
+              "type": "string",
+              "maxLength": 20,
+              "minLength": 0
+            },
+            "maxItems": 20,
+            "minItems": 0
+          },
           "version": {
             "type": "integer",
             "format": "int32",
@@ -40589,6 +40873,10 @@
             "type": "string"
           },
           "approverCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "referenceCount": {
             "type": "integer",
             "format": "int32"
           },
@@ -44106,6 +44394,17 @@
             "maxItems": 10,
             "minItems": 1
           },
+          "references": {
+            "type": "array",
+            "description": "참조자 esntlId 목록(최대 20명). 사용 중이고 결재 조회 권한이 있는 사람만 지정할 수 있고, 같은 차수의 결재선과 겹칠 수 없습니다. 보낸 사람은 이 차수의 참조자가 되며(이전 차수 참조자를 다시 보내도 같다) 한 문서에 서로 다른 사람 누적 20명까지입니다.",
+            "items": {
+              "type": "string",
+              "maxLength": 20,
+              "minLength": 0
+            },
+            "maxItems": 20,
+            "minItems": 0
+          },
           "reqYmd": {
             "type": "string",
             "description": "신청 일자(yyyyMMdd). 비우면 서버가 오늘(Asia/Seoul)로 채운다",
@@ -44203,6 +44502,17 @@
             "maxItems": 10,
             "minItems": 1
           },
+          "references": {
+            "type": "array",
+            "description": "참조자 esntlId 목록(최대 20명). 사용 중이고 결재 조회 권한이 있는 사람만 지정할 수 있고, 같은 차수의 결재선과 겹칠 수 없습니다. 보낸 사람은 이 차수의 참조자가 되며(이전 차수 참조자를 다시 보내도 같다) 한 문서에 서로 다른 사람 누적 20명까지입니다.",
+            "items": {
+              "type": "string",
+              "maxLength": 20,
+              "minLength": 0
+            },
+            "maxItems": 20,
+            "minItems": 0
+          },
           "reqYmd": {
             "type": "string",
             "description": "신청 일자(yyyyMMdd). 비우면 서버가 오늘(Asia/Seoul)로 채운다",
@@ -44217,6 +44527,33 @@
         },
         "required": [
           "taskSeCd",
+          "version"
+        ]
+      },
+      "ApprovalReferenceAddRequest": {
+        "type": "object",
+        "description": "결재 참조자 추가 요청 — 지금 차례인 결재자만 보낼 수 있다",
+        "properties": {
+          "references": {
+            "type": "array",
+            "description": "더할 참조자 esntlId 목록(1~20명). 이 차수에 이미 참조자인 사람은 무시하고, 이전 차수 참조자는 이 차수의 지정이 된다",
+            "items": {
+              "type": "string",
+              "maxLength": 20,
+              "minLength": 0
+            },
+            "maxItems": 20,
+            "minItems": 1
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "상세 조회 시 받은 문서 버전. 다르면 409 다",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "references",
           "version"
         ]
       },
@@ -44293,6 +44630,12 @@
             "type": "boolean"
           },
           "ineligibleReason": {
+            "type": "string"
+          },
+          "referenceEligible": {
+            "type": "boolean"
+          },
+          "referenceIneligibleReason": {
             "type": "string"
           }
         }
@@ -48772,6 +49115,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ApprovalLineStageDto"
+            }
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApproverProfileDto"
             }
           },
           "version": {

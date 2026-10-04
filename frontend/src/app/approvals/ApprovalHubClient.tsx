@@ -31,6 +31,7 @@ import { emptyResultMessage } from '@/app/components/patterns/empty-result-messa
 import { ApprovalStepper } from './ApprovalStepper';
 import { ApprovalDraftDialog } from './ApprovalDraftDialog';
 import { ApprovalCollaborationPanel } from './ApprovalCollaborationPanel';
+import { ApprovalReferencePanel } from './ApprovalReferencePanel';
 import {
   APPROVAL_UNDO_MS,
   cancelApprovalCommit,
@@ -82,12 +83,15 @@ const TAB_LABELS: Record<ApprovalTab, string> = {
   PENDING: '대기 중인 결재',
   SUBMITTED: '내가 올린 결재',
   PROCESSED: '내가 처리한 결재',
+  // [2026-10-04 D4] 내가 참조자로 지정된 결재 — 읽기만 한다. 대기 건수·차례에는 섞이지 않는다.
+  REFERENCED: '참조된 결재',
 };
 
 const EMPTY_MESSAGES: Record<ApprovalTab, string> = {
   PENDING: '대기 중인 결재가 없습니다.',
   SUBMITTED: '올린 결재가 없습니다. 오른쪽 위 \'새 결재 기안\' 으로 상신할 수 있습니다.',
   PROCESSED: '승인하거나 반려한 결재가 없습니다.',
+  REFERENCED: '참조된 결재가 없습니다. 다른 사람이 나를 참조자로 지정하면 여기에서 읽을 수 있습니다.',
 };
 
 const APPROVAL_DECISION_LABELS = {
@@ -111,9 +115,10 @@ const approvalDecisionSchema = ApprovalConfirmRequestSchema
  * 알림이 여는 주소(2026-10-03 D1). 탭과 문서 번호만 읽고 그 밖의 값은 버린다. 이 화면이 URL 에 쓰는 것은 연 링크를
  * 지우는 일뿐이다(링크 효과 참고) — 상태 값은 싣지 않는다.
  * 서버 알림이 `?tab=PENDING&doc=N` 처럼 보내며, 형식이 틀리면 기본 화면으로 연다.
+ * 참조자 지정·최종 결과 알림은 `?tab=REFERENCED&doc=N` 이다(D4) — 빠뜨리면 참조 문서가 대기함 아래에 열린다.
  */
 function linkedTab(value: string | null): ApprovalTab | null {
-  return value === 'PENDING' || value === 'SUBMITTED' || value === 'PROCESSED' ? value : null;
+  return value === 'PENDING' || value === 'SUBMITTED' || value === 'PROCESSED' || value === 'REFERENCED' ? value : null;
 }
 
 function linkedDocument(value: string | null): string | null {
@@ -194,6 +199,15 @@ function withObjectParticle(actionNm: string): string {
 /** 이 단계가 합의(전원 동의) 단계인가 — 처리 동사를 '승인' 대신 '동의' 로 부른다. */
 function isAgreementStage(item: InformalSanctionDto): boolean {
   return item.stages?.find(stage => stage.status === 'ACTIVE')?.kind === 'AGREEMENT';
+}
+
+/**
+ * 보는 사람이 이 문서의 보이는 결재선에 있는가(차례가 온 사람·아직 차례 전인 사람 모두). 이전 차수 참조자가 이 차수 결재자가 되면
+ * 서버는 referenceViewer 를 참으로 주지만, 그 사람에게 문서는 '참조로 받은 읽기 전용' 이 아니라 결재할 문서다(D4 개정 1).
+ */
+function onVisibleLine(item: InformalSanctionDto, esntlId: string | undefined): boolean {
+  if (!esntlId) return false;
+  return (item.stages ?? []).some(stage => (stage.approvers ?? []).some(person => person.userId === esntlId));
 }
 
 function isConflict(error: unknown): boolean {
@@ -939,7 +953,7 @@ export default function ApprovalHubClient() {
     <>
     <MasterDetailPage
       title="결재 허브"
-      description="결재를 올리고, 나에게 온 결재를 승인·반려하며, 올린 결재와 처리한 결재를 조회합니다."
+      description="결재를 올리고, 나에게 온 결재를 승인·반려하며, 올린 결재·처리한 결재·참조로 받은 결재를 조회합니다."
       breadcrumbItems={[{ label: '업무지원' }, { label: '전자결재' }]}
       actions={(
         <>
@@ -1174,7 +1188,12 @@ export default function ApprovalHubClient() {
                         <span className="min-w-0 break-words text-sm font-semibold text-foreground">
                           {item.docTtl || item.taskSeNm || item.taskSeCd || '일반 결재'}
                         </span>
-                        {isQueued ? <Badge variant="secondary" className="shrink-0 text-xs font-bold">처리 예정</Badge> : <ApprovalStatusBadge aprvYn={item.aprvYn} />}
+                        <span className="flex shrink-0 items-center gap-1">
+                          {/* 참조로 받은 문서다 — 서버 판정(referenceViewer)으로만 표시한다. 이전 차수 참조자가 이 차수 결재자가 되면
+                              처리할 차례가 있는 문서이므로 '참조' 로 부르지 않는다(처리 힌트가 있으면 결재 문서다). */}
+                          {item.referenceViewer && !item.canApprove && !item.canRequestSupplement && !onVisibleLine(item, user?.esntlId) && <Badge variant="outline" className="shrink-0 text-xs font-bold">참조</Badge>}
+                          {isQueued ? <Badge variant="secondary" className="shrink-0 text-xs font-bold">처리 예정</Badge> : <ApprovalStatusBadge aprvYn={item.aprvYn} />}
+                        </span>
                       </span>
                       {item.stages?.length ? (() => {
                         const current = item.stages.find(stage => stage.status === 'ACTIVE' || stage.status === 'REJECTED') ?? item.stages[item.stages.length - 1];
@@ -1232,6 +1251,13 @@ export default function ApprovalHubClient() {
           {detailQuery.isPending && <p role="status" className="text-sm text-muted-foreground">문서 상세를 불러오는 중입니다.</p>}
           {detailQuery.isError && <div role="alert" className="space-y-2 rounded-md border border-destructive/30 p-3"><p>문서 상세를 불러오지 못했습니다. 목록은 유지됩니다.</p><Button type="button" variant="outline" onClick={() => { void detailQuery.refetch(); }}>상세 다시 시도</Button></div>}
           {!hasListedDocument && rejectReason.length > 0 && <p role="status" className="rounded-md bg-warning/10 p-3 text-sm">작성한 의견이 있는 문서가 현재 목록에 없습니다. 입력은 이 문서에 보존했습니다. 최신 상태를 확인하거나 다른 문서를 선택해 주세요.</p>}
+          {/* [2026-10-04 D4] 참조자는 읽기만 한다. 처리 버튼은 서버 힌트가 모두 거짓이라 생기지 않고, 이 안내도 서버 판정으로만 보인다.
+              이전 차수 참조자가 이 차수 결재자가 됐으면 처리할 수 있으므로 '읽기만' 이라고 말하지 않는다. */}
+          {detailQuery.data?.referenceViewer && !detailQuery.data.canApprove && !detailQuery.data.canRequestSupplement && !onVisibleLine(detailQuery.data, user?.esntlId) && (
+            <p className="rounded-md border border-border bg-muted/40 p-3 text-sm text-foreground">
+              참조로 받은 문서입니다. 읽기만 할 수 있으며, 문서가 승인·반려·회수되어도 계속 읽을 수 있습니다.
+            </p>
+          )}
           {actionError && <div role="alert" className="space-y-2 rounded-md border border-destructive/30 p-3"><p>{actionError}</p><Button type="button" variant="outline" disabled={detailQuery.isFetching || isActionPending} onClick={() => { void detailQuery.refetch().then(result => { if (!result.isError) setNeedsActionReview(false); }); }}>최신 문서 확인</Button></div>}
 
           {(canDecide || rejectReason.length > 0) && (
@@ -1348,6 +1374,14 @@ export default function ApprovalHubClient() {
             <h3 className="mb-3 text-[length:var(--font-size-body)] font-semibold text-foreground">결재 진행 상태</h3>
             <ApprovalStepper steps={workflowSteps} stages={selectedItem.stages} currentUserId={user?.esntlId} />
           </section>
+          {detailQuery.data && (
+            <ApprovalReferencePanel
+              // 문서와 차수가 바뀔 때만 새로 그린다 — 참조자를 더해 버전이 올라가도 고르던 사람과 안내가 남는다.
+              key={`${selectedKey}-${detailQuery.data.atrzCycl ?? ''}`}
+              document={detailQuery.data}
+              disabled={isActionPending || !detailFresh || selectedQueued || !hasListedDocument}
+            />
+          )}
 
           <dl className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-md border border-border p-4">

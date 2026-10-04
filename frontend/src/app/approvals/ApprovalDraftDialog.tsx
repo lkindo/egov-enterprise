@@ -3,10 +3,10 @@
 import { useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
-import { ArrowDown, ArrowUp, FileText, History, Plus, RefreshCcw, Save, UserRound, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, FileText, History, Plus, RefreshCcw, Save, UserPlus, UserRound, X } from 'lucide-react';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { ApproverInlinePicker, INELIGIBLE_REASONS } from './ApproverInlinePicker';
+import { ApproverInlinePicker, INELIGIBLE_REASONS, REFERENCE_INELIGIBLE_REASONS } from './ApproverInlinePicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormErrorSummary } from '@/components/ui/form';
@@ -24,6 +24,7 @@ import { ApprovalDraftRequestSchema, ApprovalStageRequestSchema } from '@/types/
 import type { UserSearchResult } from '@/services/business/user/UserSearchService';
 import {
   approvalUserService,
+  type ApprovalReferee,
   type ApprovalStageRequest,
   type ApprovalTemporaryDraft,
   type ApprovalTemporaryDraftReference,
@@ -34,7 +35,11 @@ import {
 import type { components } from '@/types/generated-api';
 import { approvalKeys, approvalMutationOptions, approvalQueryOptions } from '@/queries/approval-query-options';
 
-const LABELS = { taskSeCd: '업무 구분', docTtl: '제목', docCn: '본문', reqYmd: '신청일', stages: '결재선' };
+const LABELS = { taskSeCd: '업무 구분', docTtl: '제목', docCn: '본문', reqYmd: '신청일', stages: '결재선', references: '참조자' };
+/** 결재선 단계(step 1)의 칸 — 결재선과 참조자. 서버 필드 오류가 이 칸이면 내용 작성 단계로 보내지 않는다. */
+function isLineField(key: string): boolean {
+  return key === 'stages' || key.startsWith('stages.') || key.startsWith('stages[') || key === 'references' || key.startsWith('references');
+}
 const contentSchema = ApprovalDraftRequestSchema.pick({ taskSeCd: true, docTtl: true, docCn: true, reqYmd: true }).extend({
   taskSeCd: z.string().trim().min(1, '업무 구분을 선택해 주세요.').max(12),
   docTtl: z.string().trim().min(1, '제목을 입력해 주세요.').max(256, '제목은 256자 이내로 입력해 주세요.'),
@@ -47,10 +52,16 @@ const stageSchema = ApprovalStageRequestSchema.extend({
 });
 const draftSchema = ApprovalDraftRequestSchema.extend({ ...contentSchema.shape,
   stages: z.array(stageSchema).min(1, '결재 단계를 추가해 주세요.').max(10, '결재는 최대 10단계입니다.'),
+  // [2026-10-04 D4] 참조자. 지정했을 때만 보낸다 — 빈 목록과 같은 뜻이다(서버도 없음을 빈 목록으로 본다).
+  references: z.array(z.string().trim().min(1).max(20)).max(20, '참조자는 최대 20명입니다.').optional(),
 }).superRefine((request, context) => {
   const ids = request.stages.flatMap(stage => stage.approverIds);
   if (ids.length > 50) context.addIssue({ code: 'custom', path: ['stages'], message: '전체 결재자는 최대 50명입니다.' });
   if (new Set(ids).size !== ids.length) context.addIssue({ code: 'custom', path: ['stages'], message: '같은 사람을 결재선에 중복 지정할 수 없습니다.' });
+  const references = request.references ?? [];
+  if (new Set(references).size !== references.length) context.addIssue({ code: 'custom', path: ['references'], message: '같은 사람을 참조자로 중복 지정할 수 없습니다.' });
+  // 한 사람이 같은 차수에 결재자이면서 참조자일 수 없다 — 서버도 400 으로 거부한다.
+  if (references.some(id => ids.includes(id))) context.addIssue({ code: 'custom', path: ['references'], message: '결재선에 있는 사람은 참조자로 지정할 수 없습니다.' });
 });
 
 // 화면 편집 상태만 소유한다. API 요청과 응답은 생성 계약을 참조한다.
@@ -75,12 +86,32 @@ function stagesFrom(document?: InformalSanctionDto): StageEditor[] {
   });
 }
 
+/**
+ * 재상신·복제로 가져오는 참조자(D4) — 결재선처럼 원 문서의 <b>그 차수</b>에 지정된 참조자를 가져오고, 상신 때 서버가 다시 검사한다.
+ * 참조는 차수마다 기록되므로 다시 보내면 새 차수의 지정이 된다(그 차수의 최종 결과 알림을 받는다). 더 이전 차수에만 지정된
+ * 사람은 앞 차수에서 이미 다시 지정하지 않은 것이라 가져오지 않는다 — 그래도 문서는 계속 읽는다.
+ * 원 문서 결재선에 든 사람과 본인은 뺀다(한 사람이 같은 차수에 결재자이면서 참조자일 수 없다).
+ */
+function refereesFrom(document: InformalSanctionDto | undefined, selfId: string | undefined): UserSearchResult[] {
+  const lineIds = new Set((document?.stages ?? []).flatMap(stage => (stage.approvers ?? []).map(person => person.userId)));
+  const cycle = document?.atrzCycl ?? 1;
+  const seen = new Set<string>();
+  return (document?.references ?? []).filter((person): person is ApprovalReferee & { userId: string } => {
+    const id = person.userId;
+    if (!id || id === selfId || lineIds.has(id) || seen.has(id) || (person.atrzCycl ?? cycle) !== cycle) return false;
+    seen.add(id);
+    return true;
+  }).map(person => ({ esntlId: person.userId, userNm: person.userNm || UNKNOWN_USER, deptNm: person.deptNm ?? undefined }));
+}
+
 function describeLine(line: LineSuggestion): string {
   return (line.stages ?? []).map((stage, index) => `${index + 1}단계 ${stage.kind === 'AGREEMENT' ? '합의' : '결재'} ${(stage.approvers ?? []).map(person => person.userNm || person.esntlId).join(', ')}`).join(' → ');
 }
 
 /** 한 사람이 둘 수 있는 기안 임시저장 수 — 서버(ApprovalTemporaryDraftService.MAX_DRAFTS)와 같은 값이다. */
 const TEMPORARY_DRAFT_LIMIT = 20;
+/** 한 문서의 참조자 상한 — 서버(InformalSanctionService.MAX_REFERENCES)와 같은 값이다. 문서에 누적된 서로 다른 사람 수다. */
+const REFERENCE_LIMIT = 20;
 /** 이름을 받지 못한 결재자. 식별자를 이름 자리에 보이지 않는다(DEC-OPS-141·193). */
 const UNKNOWN_USER = '알 수 없는 사용자';
 
@@ -153,10 +184,28 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   const [stages, setStages] = useState<StageEditor[]>(() => stagesFrom(source));
   const nextKey = useRef(stages.length);
   const [pickerStage, setPickerStage] = useState<number | null>(null);
+  /*
+   * [2026-10-04 D4] 이 차수에 지정할 참조자. 결재하지 않고 문서를 읽기만 하는 사람이다. 재상신·복제하면 원 문서 그 차수의 참조자를
+   * 결재선처럼 가져온다. 참조는 지울 수 없어, 재상신에서 이 목록에서 빼도 이미 참조된 사람은 문서를 계속 읽는다 — 이번 차수의
+   * 최종 결과 알림만 받지 않는다.
+   */
+  // 재상신은 이전 차수 참조자를 미리 채우지 않는다 — 이번 차수에 한 명이라도 지정하면 그 차수에는 결재자가 참조자를 더할 수 없으므로
+  // (D4 규칙 3) 기안자가 '계속 읽는 이전 참조자' 목록에서 직접 다시 지정하게 한다. 복제는 새 문서라 원 문서 참조자를 가져온다.
+  const [referees, setReferees] = useState<UserSearchResult[]>(() => (resubmission ? [] : refereesFrom(template, user?.esntlId)));
+  // 복제로 실제로 가져온 참조자 수 — 원 문서에 참조자가 있어도 결재선·본인과 겹쳐 하나도 못 가져올 수 있다.
+  const [carriedRefereeCount] = useState(() => (resubmission ? 0 : refereesFrom(template, user?.esntlId).length));
+  const [refereePickerOpen, setRefereePickerOpen] = useState(false);
+  const refereePickerButton = useRef<HTMLButtonElement>(null);
   const [notice, setNotice] = useState('');
   const [serverError, setServerError] = useState('');
   const [needsReview, setNeedsReview] = useState(false);
   const [latestDocument, setLatestDocument] = useState<InformalSanctionDto>();
+  // 재상신에서 이 문서에 이미 참조된 사람(어느 차수든). 충돌 뒤 최신 문서를 불러왔으면 그 문서의 참조자다. 이 사람들은 문서를 계속 읽고,
+  // 문서당 20명은 이 사람들과 새로 지정할 사람을 합친 서로 다른 사람 수다.
+  const existingReferees = useMemo<ApprovalReferee[]>(
+    () => (resubmission ? (latestDocument ?? resubmission).references ?? [] : []),
+    [resubmission, latestDocument],
+  );
   const [expectedVersion, setExpectedVersion] = useState(resubmission?.version);
   const [refreshing, setRefreshing] = useState(false);
   const [edited, setEdited] = useState(false);
@@ -164,6 +213,8 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   const [checked, setChecked] = useState<ApproverProfile[]>([]);
   // 사전 확인에서 결재자가 될 수 없다고 나온 사람이 있으면 상신을 막고 결재선을 고치게 한다.
   const [blockedMessage, setBlockedMessage] = useState('');
+  // 참조자도 같은 사전 확인으로 본다(사용 중·결재 조회 권한). 지정할 수 없는 사람이 있으면 상신을 막고 참조자를 고치게 한다.
+  const [refereeBlockedMessage, setRefereeBlockedMessage] = useState('');
   const pendingRef = useRef(false);
   const submittedRef = useRef(false);
   // 사전 확인 요청 번호 — 늦게 도착한 앞 확인이 고친 결재선의 결과를 덮지 않게 한다(피커의 검색과 같은 방식).
@@ -208,13 +259,24 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   const suggestions = useQuery({ ...approvalQueryOptions.suggestions(effectiveTask), enabled: isOpen && step === 1 && !resubmission });
   const absentById = new Map(checked.map(profile => [profile.esntlId, Boolean(profile.absent)]));
   const content = { taskSeCd: effectiveTask, docTtl, docCn, reqYmd };
-  const values = { ...content, stages: stages.map(stage => ({ kind: stage.kind, approverIds: stage.users.map(person => person.esntlId ?? '') })) };
+  const refereeIds = referees.map(person => person.esntlId ?? '');
+  const lineIds = stages.flatMap(stage => stage.users.map(person => person.esntlId ?? ''));
+  const existingRefereeIds = existingReferees.map(person => person.userId ?? '');
+  // 문서에 누적된 서로 다른 참조자 수 — 이미 참조된 사람을 이번 차수에 다시 지정해도 늘지 않는다.
+  const refereeTotal = new Set([...existingRefereeIds, ...refereeIds]).size;
+  // 이미 참조됐지만 이번 차수에는 지정하지 않은 사람(재상신). 계속 읽고, 다시 지정하면 이번 차수의 결과 알림도 받는다.
+  const earlierReferees = existingReferees.filter(person => person.userId && !refereeIds.includes(person.userId));
+  const values = {
+    ...content,
+    stages: stages.map(stage => ({ kind: stage.kind, approverIds: stage.users.map(person => person.esntlId ?? '') })),
+    ...(refereeIds.length > 0 ? { references: refereeIds } : {}),
+  };
   const stageLabels = Object.fromEntries(stages.map((_, index) => [`stages.${index}.approverIds`, `${index + 1}단계 결재자`]));
   const stageFocus = Object.fromEntries(stages.map((stage, index) => [`stages.${index}.approverIds`, () => pickerButtons.current.get(stage.key) ?? null]));
   const contentValidation = useManualFormValidation(contentSchema, { form: () => formRef.current, labels: LABELS });
   const draftValidation = useManualFormValidation(draftSchema, {
     form: () => formRef.current, labels: { ...LABELS, ...stageLabels },
-    focusTargets: { ...stageFocus, stages: () => pickerButtons.current.get(stages[0]?.key) ?? null },
+    focusTargets: { ...stageFocus, stages: () => pickerButtons.current.get(stages[0]?.key) ?? null, references: () => refereePickerButton.current },
   });
   const validation = step === 0 ? contentValidation : draftValidation;
   const close = useDirtyCloseGuard(edited, onClose);
@@ -272,13 +334,19 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
     }));
     if (next.length === 0) return;
     setStages(next);
-    setNotice(`결재선을 가져왔습니다: ${describeLine(line)}`);
+    // 가져온 결재선에 참조자로 고른 사람이 있으면 참조자에서 뺀다 — 한 사람이 결재자이면서 참조자일 수 없다. 조용히 빼지 않고 말한다.
+    const nextIds = new Set(next.flatMap(stage => stage.users.map(person => person.esntlId ?? '')));
+    const moved = referees.filter(person => nextIds.has(person.esntlId ?? ''));
+    if (moved.length > 0) setReferees(current => current.filter(person => !nextIds.has(person.esntlId ?? '')));
+    setNotice(`결재선을 가져왔습니다: ${describeLine(line)}${moved.length > 0
+      ? ` 결재선에 든 ${moved.map(person => person.userNm || UNKNOWN_USER).join(', ')}는 참조자에서 뺐습니다.` : ''}`);
   };
   /** 최근 결재자를 마지막 단계에 더한다. */
   const addRecent = (person: ApproverProfile) => {
     const target = stages[stages.length - 1];
     if (!person.esntlId || !target) return;
     if (stages.some(stage => stage.users.some(item => item.esntlId === person.esntlId))) { setNotice('이미 결재선에 지정된 사람입니다.'); return; }
+    if (refereeIds.includes(person.esntlId)) { setNotice('참조자로 지정한 사람입니다. 참조자에서 뺀 뒤 결재선에 넣어 주세요.'); return; }
     if (target.users.length >= 10 || totalApprovers >= 50) { setNotice('결재자 지정 한도를 확인해 주세요.'); return; }
     updateStage(target.key, current => ({ ...current, users: [...current.users, { esntlId: person.esntlId, userNm: person.userNm, deptNm: person.deptNm }] }));
     setNotice(`${person.userNm || '선택한 사용자'}를 ${stages.length}단계에 추가했습니다.`);
@@ -290,8 +358,9 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
    * [2026-10-03] 마지막 요청의 결과만 받는다. 종전에는 '이전' 으로 돌아가 결재선을 고친 뒤 다시 넘어오면, 늦게 도착한
    * 앞 확인이 이미 뺀 사람을 들어 상신을 막았다.
    */
-  const precheckApprovers = async (ids: string[]) => {
+  const precheckApprovers = async (ids: string[], refereeCheckIds: readonly string[] = []) => {
     const request = ++precheckRef.current;
+    void precheckReferees(refereeCheckIds, request);
     try {
       const profiles = await approvalUserService.checkApprovers(ids);
       if (request !== precheckRef.current || !Array.isArray(profiles)) return;
@@ -304,12 +373,30 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
       // 사전 확인은 도움말이다. 실패해도 상신은 서버가 같은 규칙으로 판정한다.
     }
   };
+  /**
+   * 새로 지정할 참조자도 상신 때 검사와 같은 판정(사용 중·결재 조회 권한)으로 미리 본다(D4). 복제·임시저장으로 가져온 참조자는
+   * 그사이 사용 중지됐거나 권한을 잃었을 수 있다. 결재선 확인과 같은 요청 번호를 써서 늦게 온 앞 확인을 버린다.
+   */
+  const precheckReferees = async (ids: readonly string[], request: number) => {
+    if (ids.length === 0) return;
+    try {
+      const profiles = await approvalUserService.checkApprovers([...ids]);
+      if (request !== precheckRef.current || !Array.isArray(profiles)) return;
+      const blocked = profiles.filter(profile => !profile.referenceEligible);
+      if (blocked.length === 0) return;
+      const names = new Map(referees.map(person => [person.esntlId, person.userNm]));
+      setRefereeBlockedMessage(`참조자로 지정할 수 없는 사람이 있습니다: ${blocked.map(profile => `${profile.userNm || names.get(profile.esntlId) || UNKNOWN_USER}(${REFERENCE_INELIGIBLE_REASONS[profile.referenceIneligibleReason ?? ''] ?? '확인 필요'})`).join(', ')}. ‘이전’ 으로 돌아가 참조자에서 빼 주세요.`);
+    } catch {
+      // 결재선 확인과 같다 — 도움말이며 상신 때 서버가 다시 본다.
+    }
+  };
   /** 이전 단계로. 최종 확인을 떠나면 진행 중인 사전 확인과 그 결과를 버린다 — 결재선을 고치면 다시 확인한다. */
   const goBack = () => {
     if (step === 2) {
       precheckRef.current += 1;
       setChecked([]);
       setBlockedMessage('');
+      setRefereeBlockedMessage('');
     }
     changeStep(step - 1);
   };
@@ -324,10 +411,35 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
     }
     if (id === user?.esntlId) { setNotice('자신을 결재자로 지정할 수 없습니다.'); return; }
     if (stages.some(stage => stage.users.some(item => item.esntlId === id))) { setNotice('이미 결재선에 지정된 사람입니다. 다른 사람을 선택해 주세요.'); return; }
+    if (refereeIds.includes(id)) { setNotice('참조자로 지정한 사람입니다. 참조자에서 뺀 뒤 결재선에 넣어 주세요.'); return; }
     const target = stages.find(stage => stage.key === key);
     if (!target || target.users.length >= 10 || totalApprovers >= 50) { setNotice('결재자 지정 한도를 확인해 주세요.'); return; }
     updateStage(key, current => ({ ...current, users: [...current.users, person] }));
     setNotice(`${person.userNm || '선택한 사용자'}를 ${index + 1}단계에 추가했습니다.`);
+  };
+  /**
+   * 참조자 피커에서 누른 사람을 넣거나 뺀다(D4). 본인·결재선에 든 사람·이미 이 문서의 참조자인 사람은 넣지 않고, 문서당 20명을
+   * 넘기지 않는다. 판정은 피커가 미리 막고 여기서 한 번 더 본다 — 자격(사용 중·결재 조회 권한)은 피커와 최종 확인이 서버에 묻는다.
+   */
+  const toggleReferee = (person: UserSearchResult, selected: boolean) => {
+    const id = person.esntlId;
+    if (!id) { setNotice('사용자 식별자를 확인할 수 없어 추가하지 않았습니다.'); return; }
+    if (!selected) {
+      touch(); draftValidation.setFormErrors({}, false);
+      setReferees(current => current.filter(item => item.esntlId !== id));
+      // 이미 참조된 사람은 빼도 문서를 계속 읽는다 — 그 사실을 말한다(빼기가 열람 회수를 약속하지 않게).
+      setNotice(existingRefereeIds.includes(id)
+        ? `${person.userNm || '선택한 사용자'}를 이번 차수 참조자에서 뺐습니다. 이미 참조된 사람이라 이 문서는 계속 읽습니다.`
+        : `${person.userNm || '선택한 사용자'}를 참조자에서 뺐습니다.`);
+      return;
+    }
+    if (id === user?.esntlId) { setNotice('자신을 참조자로 지정할 수 없습니다.'); return; }
+    if (lineIds.includes(id)) { setNotice('결재선에 있는 사람은 참조자로 지정할 수 없습니다.'); return; }
+    if (refereeIds.includes(id)) { setNotice('이미 이번 차수의 참조자입니다.'); return; }
+    if (!existingRefereeIds.includes(id) && refereeTotal >= REFERENCE_LIMIT) { setNotice(`참조자는 한 문서에 ${REFERENCE_LIMIT}명까지 지정할 수 있습니다.`); return; }
+    touch(); draftValidation.setFormErrors({}, false);
+    setReferees(current => [...current, person]);
+    setNotice(`${person.userNm || '선택한 사용자'}를 참조자로 넣었습니다.`);
   };
   /**
    * 기안 임시저장(D3). 첫 저장은 새로 만들고, 그 뒤로는 받은 버전으로 같은 임시저장을 바꾼다. 결재자가 없는 단계는 빼고
@@ -337,16 +449,18 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   const handleSaveTemporary = async () => {
     if (pendingRef.current || !canSaveTemporary || temporaryConflict) return;
     const savedStages = stages.filter(stage => stage.users.length > 0);
-    if (!(taskChosen && effectiveTask) && !docTtl.trim() && !docCn.trim() && savedStages.length === 0) {
-      setServerError('저장할 내용이 없습니다. 업무 구분·제목·본문·결재선 중 하나는 채워 주세요.');
+    if (!(taskChosen && effectiveTask) && !docTtl.trim() && !docCn.trim() && savedStages.length === 0 && referees.length === 0) {
+      setServerError('저장할 내용이 없습니다. 업무 구분·제목·본문·결재선·참조자 중 하나는 채워 주세요.');
       return;
     }
     const droppedStages = lineStarted ? stages.length - savedStages.length : 0;
+    // 참조자도 함께 저장한다(D4). 다시 저장은 통째로 바꾸므로, 참조자를 다 뺐으면 보내지 않는 것이 비우는 것이다.
     const payload = {
       temporaryDraftSn: temporaryDraft?.temporaryDraftSn,
       request: {
         taskSeCd: effectiveTask, docTtl, docCn,
         stages: savedStages.map(stage => ({ kind: stage.kind, approverIds: stage.users.map(person => person.esntlId ?? '') })),
+        ...(refereeIds.length > 0 ? { references: refereeIds } : {}),
         ...(temporaryDraft ? { version: temporaryDraft.version } : {}),
       },
     };
@@ -389,19 +503,29 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
       };
     });
     const blocked = (draft.stages ?? []).flatMap(stage => stage.approvers ?? []).filter(person => person.eligible === false);
+    // 참조자도 지금 자격(사용 중·결재 조회 권한)과 함께 온다(D4). 지정할 수 없는 사람은 이름 대신 사유를 밝힌다.
+    const nextReferees: UserSearchResult[] = (draft.references ?? []).filter(person => person.esntlId)
+      .map(person => ({ esntlId: person.esntlId, userNm: person.userNm || UNKNOWN_USER, deptNm: person.deptNm ?? undefined, absent: person.absent ?? undefined }));
+    const blockedReferees = (draft.references ?? []).filter(person => person.referenceEligible === false);
     setTaskSeCd(draft.taskSeCd ?? '');
     setTaskChosen(Boolean(draft.taskSeCd));
     setDocTtl(draft.docTtl ?? '');
     setDocCn(draft.docCn ?? '');
     setReqYmd(getTodayYmd());
     setStages(nextStages.length > 0 ? nextStages : [{ key: nextKey.current++, kind: 'APPROVAL', users: [] }]);
+    setReferees(nextReferees);
     setTemporaryDraft({ temporaryDraftSn: draft.temporaryDraftSn, version: draft.version });
     contentValidation.setFormErrors({}, false); draftValidation.setFormErrors({}, false);
-    precheckRef.current += 1; setChecked([]); setBlockedMessage(''); setPickerStage(null);
+    precheckRef.current += 1; setChecked([]); setBlockedMessage(''); setRefereeBlockedMessage(''); setPickerStage(null); setRefereePickerOpen(false);
     setTemporaryConflict(false); setServerError(''); setNotice(''); setEdited(false);
+    const blockedRefereeNotice = blockedReferees.length > 0
+      ? ` 참조자로 지정할 수 없는 사람이 있습니다: ${blockedReferees.map(person => `${person.userNm || UNKNOWN_USER}(${REFERENCE_INELIGIBLE_REASONS[person.referenceIneligibleReason ?? ''] ?? '확인 필요'})`).join(', ')}. 참조자에서 빼 주세요.`
+      : '';
     setTemporaryNotice(blocked.length > 0
-      ? `‘${temporaryDraftLabel(draft)}’ 임시저장을 불러왔습니다. 결재자로 지정할 수 없는 사람이 있습니다: ${blocked.map(person => `${person.userNm || UNKNOWN_USER}(${INELIGIBLE_REASONS[person.ineligibleReason ?? ''] ?? '확인 필요'})`).join(', ')}. 결재선에서 빼고 다른 사람을 지정해 주세요.`
-      : `‘${temporaryDraftLabel(draft)}’ 임시저장을 불러왔습니다. 마지막 저장 ${savedAtLabel(draft.mdfcnDt) || '시각 미확인'}. 신청일은 저장하지 않아 오늘로 시작합니다.`);
+      ? `‘${temporaryDraftLabel(draft)}’ 임시저장을 불러왔습니다. 결재자로 지정할 수 없는 사람이 있습니다: ${blocked.map(person => `${person.userNm || UNKNOWN_USER}(${INELIGIBLE_REASONS[person.ineligibleReason ?? ''] ?? '확인 필요'})`).join(', ')}. 결재선에서 빼고 다른 사람을 지정해 주세요.${blockedRefereeNotice}`
+      : blockedReferees.length > 0
+        ? `‘${temporaryDraftLabel(draft)}’ 임시저장을 불러왔습니다.${blockedRefereeNotice}`
+        : `‘${temporaryDraftLabel(draft)}’ 임시저장을 불러왔습니다. 마지막 저장 ${savedAtLabel(draft.mdfcnDt) || '시각 미확인'}. 신청일은 저장하지 않아 오늘로 시작합니다.`);
     changeStep(0);
   };
   /** 상세를 서버에서 다시 읽어 채운다. 없으면(상신했거나 지웠으면) 그 사실을 말하고 연결을 끊는다. */
@@ -477,6 +601,15 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
       draftValidation.setFormErrors({ stages: '자신을 결재자로 지정할 수 없습니다.' });
       return null;
     }
+    if (ownId && refereeIds.includes(ownId)) {
+      draftValidation.setFormErrors({ references: '자신을 참조자로 지정할 수 없습니다.' });
+      return null;
+    }
+    // 이미 참조된 사람(재상신)도 자리를 차지한다 — 문서당 서로 다른 사람 20명이다.
+    if (refereeTotal > REFERENCE_LIMIT) {
+      draftValidation.setFormErrors({ references: `참조자는 한 문서에 ${REFERENCE_LIMIT}명까지 지정할 수 있습니다. 이미 ${existingRefereeIds.length}명이 참조돼 있습니다.` });
+      return null;
+    }
     return draftValidation.validate(values);
   };
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -486,12 +619,12 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
     const request = validateStages();
     if (!request) return;
     if (step === 1) {
-      setChecked([]); setBlockedMessage('');
+      setChecked([]); setBlockedMessage(''); setRefereeBlockedMessage('');
       changeStep(2);
-      void precheckApprovers(request.stages.flatMap(stage => stage.approverIds));
+      void precheckApprovers(request.stages.flatMap(stage => stage.approverIds), request.references ?? []);
       return;
     }
-    if (blockedMessage || temporaryConflict) return;
+    if (blockedMessage || refereeBlockedMessage || temporaryConflict) return;
     pendingRef.current = true; setSubmitting(true); setServerError('');
     try {
       let id: number;
@@ -513,7 +646,8 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
     } catch (error: unknown) {
       const fieldErrors = extractFieldErrors(error);
       if (fieldErrors) {
-        const isContentError = Object.keys(fieldErrors).some(key => key in LABELS && key !== 'stages');
+        // 결재선·참조자 칸의 오류는 결재선 단계에 남긴다 — 내용 작성 단계로 보내면 오류 칸이 보이지 않는다.
+        const isContentError = Object.keys(fieldErrors).some(key => key in LABELS && !isLineField(key));
         if (isContentError) { setStep(0); contentValidation.setFormErrors(fieldErrors); }
         else { setStep(1); draftValidation.setFormErrors(fieldErrors); }
       }
@@ -560,7 +694,7 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
         <h2 ref={headingRef} tabIndex={-1} className="text-lg font-semibold text-foreground focus-visible:outline-ring">{['내용 작성', '결재선 지정', '상신 전 최종 확인'][step]}</h2>
         <FormErrorSummary errors={validation.errors} labels={{ ...LABELS, ...stageLabels }} onNavigate={validation.focusError} />
         {serverError && <div role="alert" className="space-y-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive-emphasis"><p>{serverError}</p>{needsReview && resubmission && <Button type="button" variant="outline" disabled={refreshing} onClick={() => { void refreshVersion(); }}>{refreshing ? '불러오는 중…' : '최신 문서 확인'}</Button>}{temporaryConflict && temporaryDraft && <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={savingTemporary || resumingDraftSn !== null} onClick={() => { void reloadTemporaryDraft(); }}>{resumingDraftSn !== null ? '불러오는 중…' : '최신 임시저장 불러오기'}</Button><Button type="button" variant="outline" disabled={savingTemporary || resumingDraftSn !== null} onClick={detachTemporaryDraft}>연결을 끊고 계속 작성</Button></div>}</div>}
-        {latestDocument && <details className="rounded-md border border-border p-3 text-sm"><summary>서버의 최신 문서 · {latestDocument.atrzCycl}차 · {latestDocument.docTtl}</summary><p className="mt-2 whitespace-pre-wrap break-words">{latestDocument.docCn || '작성한 본문이 없습니다.'}</p><p className="mt-2">결재선: {(latestDocument.stages ?? []).map(stage => `${stage.order}단계 ${stage.kind === 'AGREEMENT' ? '합의' : '결재'}: ${(stage.approvers ?? []).map(person => person.userNm || person.userId).join(', ')}`).join(' → ')}</p></details>}
+        {latestDocument && <details className="rounded-md border border-border p-3 text-sm"><summary>서버의 최신 문서 · {latestDocument.atrzCycl}차 · {latestDocument.docTtl}</summary><p className="mt-2 whitespace-pre-wrap break-words">{latestDocument.docCn || '작성한 본문이 없습니다.'}</p><p className="mt-2">결재선: {(latestDocument.stages ?? []).map(stage => `${stage.order}단계 ${stage.kind === 'AGREEMENT' ? '합의' : '결재'}: ${(stage.approvers ?? []).map(person => person.userNm || person.userId).join(', ')}`).join(' → ')}</p>{(latestDocument.references?.length ?? 0) > 0 && <p className="mt-2">참조자: {(latestDocument.references ?? []).map(person => person.userNm || UNKNOWN_USER).join(', ')}</p>}</details>}
         {/* 임시저장·이어 쓰는 동안 입력을 잠근다 — 그 사이 고친 내용이 저장된 것으로 표시되거나 불러온 내용에 덮이지 않게 한다. */}
         <fieldset disabled={submitting || savingTemporary || resumingDraftSn !== null} className="min-w-0 space-y-5">
           {step === 0 && <>
@@ -576,7 +710,7 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
                 <p className="text-xs text-muted-foreground">서버에 보관되어 다른 기기에서도 이어 쓸 수 있습니다. 결재자에게 보이지 않고 알림도 가지 않습니다.</p>
                 <ul className="max-h-48 space-y-1 overflow-y-auto">
                   {(temporaryDrafts.data ?? []).map(draft => <li key={draft.temporaryDraftSn} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                    <span className="min-w-0 break-words">{temporaryDraftLabel(draft)}{draft.taskSeNm ? ` · ${draft.taskSeNm}` : ''} · 결재자 {draft.approverCount ?? 0}명 · {savedAtLabel(draft.mdfcnDt) || '저장 시각 미확인'}</span>
+                    <span className="min-w-0 break-words">{temporaryDraftLabel(draft)}{draft.taskSeNm ? ` · ${draft.taskSeNm}` : ''} · 결재자 {draft.approverCount ?? 0}명{draft.referenceCount ? ` · 참조자 ${draft.referenceCount}명` : ''} · {savedAtLabel(draft.mdfcnDt) || '저장 시각 미확인'}</span>
                     <span className="flex gap-1">
                       {draft.temporaryDraftSn === temporaryDraft?.temporaryDraftSn
                         ? <span className="px-2 text-xs text-muted-foreground">지금 이어 쓰는 중</span>
@@ -651,6 +785,7 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
                   stageLabel={`${index + 1}단계`}
                   selectedIds={stage.users.map(person => person.esntlId ?? '')}
                   otherStageIds={stages.filter(other => other.key !== stage.key).flatMap(other => other.users.map(person => person.esntlId ?? ''))}
+                  blockedReasons={new Map(refereeIds.map(id => [id, '참조자로 지정되어 있습니다']))}
                   selfId={user?.esntlId}
                   remaining={Math.min(10 - stage.users.length, 50 - totalApprovers)}
                   onToggle={(person, selected) => togglePerson(stage.key, index, person, selected)}
@@ -661,13 +796,50 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
             </ol>
             {fieldError('stages')}
             <Button type="button" variant="outline" disabled={stages.length >= 10 || totalApprovers >= 50} onClick={() => { touch(); const key = nextKey.current++; setStages(current => [...current, { key, kind: 'APPROVAL', users: [] }]); focusAfterRender(() => stageHeadings.current.get(key)); }}><Plus aria-hidden="true" /> 다음 단계 추가</Button>
-            <p className="text-sm text-muted-foreground">{stages.length}/10단계 · {totalApprovers}/50명</p><p role="status" aria-live="polite" className="text-sm text-foreground">{notice}</p>
+            <p className="text-sm text-muted-foreground">{stages.length}/10단계 · {totalApprovers}/50명</p>
+            {/* [2026-10-04 D4] 참조자 — 결재하지 않고 읽기만 하는 사람. 결재선 피커와 같은 펼친 피커를 쓰되, 결재 권한이 아니라 결재 조회
+                권한·사용 중 여부로 고르고 결재선에 든 사람은 고를 수 없다. */}
+            <section aria-labelledby="approval-referees-heading" className="space-y-3 rounded-md border border-border p-4">
+              <h3 id="approval-referees-heading" className="font-semibold">참조자 (선택)</h3>
+              <p id="approval-referee-help" className="text-sm text-muted-foreground">참조자는 결재하지 않고 문서를 읽기만 합니다. 지정하면 알림이 가고, 문서가 승인·반려·회수되어도 계속 읽을 수 있으며 지정은 되돌릴 수 없습니다. 결재 조회 권한이 있는 사용 중인 사람을 결재선과 겹치지 않게 한 문서에 {REFERENCE_LIMIT}명까지 지정할 수 있습니다.</p>
+              <p className="text-sm text-muted-foreground">이번 차수에 참조자를 한 명이라도 지정하면 이 차수에는 결재자가 참조자를 더할 수 없습니다. 지정하지 않으면 지금 차례인 결재자가 더할 수 있습니다.</p>
+              {template && !temporaryDraft && carriedRefereeCount > 0 && <p className="text-sm">복제한 문서의 참조자 {carriedRefereeCount}명을 가져왔습니다. 참조자는 상신할 때 다시 확인합니다.</p>}
+              {referees.length > 0
+                ? <ul aria-label="참조자" className="space-y-1">{referees.map(person => <li key={person.esntlId} className="flex items-center justify-between gap-2 text-sm"><span className="inline-flex flex-wrap items-center gap-1">{person.userNm || UNKNOWN_USER}{person.deptNm ? ` · ${person.deptNm}` : ''}<AbsenceBadge absent={person.absent} /></span><Button type="button" variant="ghost" size="sm" aria-label={`${person.userNm || UNKNOWN_USER} 참조자에서 제외`} onClick={() => toggleReferee(person, false)}>제외</Button></li>)}</ul>
+                : <p className="text-sm text-muted-foreground">{resubmission ? '이번 차수에 지정할 참조자가 없습니다.' : '참조자를 지정하지 않았습니다.'}</p>}
+              {earlierReferees.length > 0 && <div className="space-y-1 rounded-md border border-dashed border-border p-3 text-sm">
+                <p>이번 차수에 지정하지 않았지만 이 문서를 계속 읽는 참조자입니다. 다시 지정하면 이번 차수의 최종 결과 알림도 받습니다.</p>
+                <ul aria-label="계속 읽는 이전 참조자" className="space-y-1">{earlierReferees.map(person => <li key={person.userId} className="flex items-center justify-between gap-2"><span>{person.userNm || UNKNOWN_USER}{person.deptNm ? ` · ${person.deptNm}` : ''}{person.atrzCycl ? ` · ${person.atrzCycl}차 지정` : ''}</span><Button type="button" variant="ghost" size="sm" aria-label={`${person.userNm || UNKNOWN_USER} 이번 차수 참조자로 다시 지정`} disabled={lineIds.includes(person.userId ?? '')} onClick={() => toggleReferee({ esntlId: person.userId, userNm: person.userNm || UNKNOWN_USER, deptNm: person.deptNm ?? undefined }, true)}>다시 지정</Button></li>)}</ul>
+              </div>}
+              <Button ref={refereePickerButton} type="button" variant="outline" {...draftValidation.fieldProps('references')} aria-describedby={[draftValidation.fieldProps('references')['aria-describedby'], 'approval-referee-help'].filter(Boolean).join(' ')} aria-expanded={refereePickerOpen} disabled={!refereePickerOpen && refereeTotal >= REFERENCE_LIMIT} onClick={() => { setNotice(''); setRefereePickerOpen(current => !current); }}><UserPlus aria-hidden="true" />{referees.length ? '참조자 추가' : '참조자 선택'}</Button>
+              {refereePickerOpen && <ApproverInlinePicker
+                variant="reference"
+                stageLabel="참조자"
+                selectedIds={refereeIds}
+                blockedReasons={new Map(lineIds.map(id => [id, '결재선에 있습니다'] as const))}
+                selfId={user?.esntlId}
+                remaining={REFERENCE_LIMIT - refereeTotal}
+                uncountedIds={existingRefereeIds}
+                onToggle={toggleReferee}
+                onClose={() => { setRefereePickerOpen(false); focusAfterRender(() => refereePickerButton.current); }}
+              />}
+              <p className="text-sm text-muted-foreground">참조자 {refereeTotal}/{REFERENCE_LIMIT}명{earlierReferees.length > 0 ? ` · 이번 차수 ${referees.length}명` : ''}</p>
+              {fieldError('references')}
+            </section>
+            <p role="status" aria-live="polite" className="text-sm text-foreground">{notice}</p>
           </>}
           {step === 2 && <>
             {blockedMessage && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive-emphasis">{blockedMessage}</p>}
+            {refereeBlockedMessage && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive-emphasis">{refereeBlockedMessage}</p>}
             <dl className="space-y-3 rounded-md border border-border p-4"><div><dt className="text-sm text-muted-foreground">제목</dt><dd className="break-words font-semibold">{docTtl}</dd></div><div><dt className="text-sm text-muted-foreground">업무 구분</dt><dd>{taskOptions.find(code => code.dtlCd === taskSeCd)?.dtlCdNm || taskSeCd}</dd></div><div><dt className="text-sm text-muted-foreground">본문</dt><dd className="whitespace-pre-wrap break-words text-sm">{docCn || '작성한 본문이 없습니다.'}</dd></div><div><dt className="text-sm text-muted-foreground">신청일</dt><dd>{reqYmd.length === 8 ? `${reqYmd.slice(0, 4)}-${reqYmd.slice(4, 6)}-${reqYmd.slice(6, 8)}` : '신청일 미확인'}</dd></div></dl>
             <ol aria-label="상신 결재선 미리보기" className="space-y-2">{stages.map((stage, index) => <li key={stage.key} className="rounded-md border border-border p-3 text-sm"><p className="font-semibold">{index + 1}단계 · {stage.kind === 'AGREEMENT' ? '합의' : '결재'} · 전원 {stage.kind === 'AGREEMENT' ? '동의' : '승인'} ({stage.users.length}명)</p><p className="mt-1 flex flex-wrap items-center gap-1 break-words">{stage.users.map(person => <span key={person.esntlId} className="inline-flex items-center gap-1">{person.userNm || person.esntlId}<AbsenceBadge absent={absentById.get(person.esntlId)} /></span>)}</p></li>)}</ol>
             {[...absentById.values()].some(Boolean) && <p className="text-sm text-muted-foreground">부재 중인 결재자가 있습니다. 처리가 늦어질 수 있으며, 상신한 뒤에도 그 사람을 다른 결재자로 바꿀 수 있습니다.</p>}
+            {refereeTotal > 0 && <section aria-label="상신 참조자 미리보기" className="space-y-1 rounded-md border border-border p-3 text-sm">
+              <p className="font-semibold">참조자 · 읽기만 함 ({refereeTotal}명)</p>
+              {referees.length > 0 && <p className="flex flex-wrap items-center gap-1 break-words">이번 차수 지정: {referees.map(person => <span key={person.esntlId} className="inline-flex items-center gap-1">{person.userNm || UNKNOWN_USER}<AbsenceBadge absent={person.absent} /></span>)}</p>}
+              {earlierReferees.length > 0 && <p className="break-words text-muted-foreground">계속 읽는 이전 참조자: {earlierReferees.map(person => person.userNm || UNKNOWN_USER).join(', ')}</p>}
+            </section>}
+            {referees.length > 0 && <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">이번 차수에 지정한 참조자는 이 차수가 최종 승인·반려되면 알림을 받고, 이 문서에 처음 지정되는 사람은 상신할 때도 알림을 받습니다. 지정은 되돌릴 수 없으며, 참조자는 문서가 반려·회수되어도, 다음 차수에도 결재 의견과 처리 이력을 포함한 이 문서의 모든 내용을 계속 읽습니다.</p>}
             <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">각 단계의 전원이 승인해야 다음 단계가 시작됩니다. 누구든 한 명이 반려하면 문서 전체가 반려되어 남은 결재는 종료됩니다.</p>
           </>}
           <div className="space-y-2 border-t border-border pt-4">
@@ -677,7 +849,7 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
               {emptyStageCount > 0 && lineStarted && <p className="text-muted-foreground">결재자가 없는 단계는 임시저장하지 않습니다.</p>}
               {temporaryFull && <p className="text-muted-foreground">임시저장은 {TEMPORARY_DRAFT_LIMIT}건까지 둘 수 있습니다. 내용 작성 단계의 ‘임시저장한 기안’ 목록에서 쓰지 않는 임시저장을 지워야 새로 저장할 수 있습니다.</p>}
             </div>}
-            <div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="ghost" onClick={close}>취소</Button>{step > 0 && <Button type="button" variant="outline" onClick={goBack}>이전</Button>}{canSaveTemporary && <Button type="button" variant="outline" disabled={savingTemporary || submitting || temporaryConflict || temporaryFull} aria-busy={savingTemporary || undefined} onClick={() => { void handleSaveTemporary(); }}><Save aria-hidden="true" />{savingTemporary ? '기안 임시저장 중…' : '기안 임시저장'}</Button>}<Button type="submit" disabled={!hasTaskTypes || submitting || needsReview || (step === 2 && (Boolean(blockedMessage) || temporaryConflict))} aria-busy={submitting || undefined}>{submitting ? '상신 중…' : step === 2 ? resubmission ? '새 차수로 재상신' : '결재 상신' : '다음'}</Button></div>
+            <div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="ghost" onClick={close}>취소</Button>{step > 0 && <Button type="button" variant="outline" onClick={goBack}>이전</Button>}{canSaveTemporary && <Button type="button" variant="outline" disabled={savingTemporary || submitting || temporaryConflict || temporaryFull} aria-busy={savingTemporary || undefined} onClick={() => { void handleSaveTemporary(); }}><Save aria-hidden="true" />{savingTemporary ? '기안 임시저장 중…' : '기안 임시저장'}</Button>}<Button type="submit" disabled={!hasTaskTypes || submitting || needsReview || (step === 2 && (Boolean(blockedMessage) || Boolean(refereeBlockedMessage) || temporaryConflict))} aria-busy={submitting || undefined}>{submitting ? '상신 중…' : step === 2 ? resubmission ? '새 차수로 재상신' : '결재 상신' : '다음'}</Button></div>
           </div>
         </fieldset>
       </form>

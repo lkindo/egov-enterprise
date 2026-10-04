@@ -8,7 +8,9 @@ import java.time.LocalDateTime;
  *
  * @param taskSeNm 업무 구분 이름. 지금 쓰지 않는 코드면 빈 문자열이다
  * @param approverCount 결재선에 든 사람 수
+ * @param referenceCount 참조자 수(2026-10-04 D4)
  */
 public record ApprovalTemporaryDraftSummaryDto(Long temporaryDraftSn, String taskSeCd, String taskSeNm, String docTtl,
-                                               int approverCount, Integer version, LocalDateTime mdfcnDt) {
+                                               int approverCount, int referenceCount, Integer version,
+                                               LocalDateTime mdfcnDt) {
 }

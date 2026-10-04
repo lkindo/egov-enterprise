@@ -3,6 +3,7 @@ package nuri.business.service.informalsanction.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -44,6 +45,10 @@ public class ApprovalTemporaryDraftRequest {
     @Schema(description = "진행 순서대로 나열한 결재 단계(최대 10단계). 결재자가 없는 단계는 보낼 수 없다")
     @Size(max = 10)
     private List<@NotNull @Valid ApprovalStageRequest> stages;
+
+    @Schema(description = "참조자 esntlId 목록(최대 20명, 2026-10-04 D4). 결재선과 겹칠 수 없고, 자격은 다시 열 때 판정한다")
+    @Size(max = 20)
+    private List<@NotBlank @Size(max = 20) String> references;
 
     @Schema(description = "고치려는 임시저장의 버전. 수정할 때만 필요하며 다르면 409 다")
     @Min(0)

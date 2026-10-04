@@ -139,6 +139,9 @@ describe('A2 master-detail adoption census', () => {
     expect(client).toContain("PROCESSED: '내가 처리한 결재'");
     expect(queries).toMatch(/case 'SUBMITTED':\s*return approvalUserService\.getMyHistory\(params\)/);
     expect(queries).toMatch(/case 'PROCESSED':\s*return approvalUserService\.getProcessed\(params\)/);
+    // [2026-10-04 D4] 참조된 결재 탭도 자기 축(/approvals/referenced)을 부른다.
+    expect(client).toContain("REFERENCED: '참조된 결재'");
+    expect(queries).toMatch(/case 'REFERENCED':\s*return approvalUserService\.getReferenced\(params\)/);
   });
 
   it('/admin/system/common-code의 STANDARD만 전체 A2 페이지 셸을 사용하고 두 A1 탭은 보존한다', () => {

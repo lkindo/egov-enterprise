@@ -409,8 +409,10 @@
           "tb_ifml_atrz_hstry",
           "tb_ifml_atrz_info",
           "tb_ifml_atrz_prcs_hstry",
+          "tb_ifml_atrz_rfpr",
           "tb_ifml_atrz_tmpr_strg",
           "tb_ifml_atrz_tmpr_strg_dtl",
+          "tb_ifml_atrz_tmpr_strg_rfpr",
           "tb_intrn_svc",
           "tb_memo_rpt_info",
           "tb_onln_mnl_info",
@@ -468,9 +470,9 @@
     }
   ],
   "databaseSnapshot": {
-    "source": "isolated PostgreSQL 17/public; repository migrations through V2_122 and explicit authorization Contract; physical inventory measured by the composer DB generator (not OCI deployment state); MFA sequences are standalone, durable-work, sensitive-audit, approval-process and approval-temporary-draft sequences are table-owned",
-    "checkedAt": "2026-10-03T15:29:52.503Z",
-    "physicalTableCountExcludingFlyway": 90,
+    "source": "isolated PostgreSQL 17/public; repository migrations through V2_123 and explicit authorization Contract; physical inventory measured by the composer DB generator (not OCI deployment state); MFA sequences are standalone, durable-work, sensitive-audit, approval-process and approval-temporary-draft sequences are table-owned",
+    "checkedAt": "2026-10-04T05:53:32.948Z",
+    "physicalTableCountExcludingFlyway": 92,
     "physicalSequenceCount": 57,
     "physicalStandaloneSequenceCount": 6,
     "metaRows": {

@@ -1,5 +1,6 @@
 package nuri.business.service.informalsanction.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -99,5 +100,26 @@ public class InformalSanctionDto {
     private boolean canRequestSupplement;
     /** [D7] 기안자가 열린 보완 요청에 답할 수 있다. */
     private boolean canAnswerSupplement;
+
+    /*
+     * [2026-10-04 D4] 참조자. 아래 셋은 응답 전용이다 — 이 DTO 는 레거시 등록(POST /informal-sanctions)의 요청 본문이기도 해서,
+     * 요청으로 들어온 값은 바인딩하지 않는다(참조자는 상신·재상신 요청과 결재자 추가 요청으로만 받는다).
+     */
+    /**
+     * 이 문서의 참조자 중 보는 사람이 볼 수 있는 가장 높은 차수까지 지정된 사람 — 사람마다 한 줄, 그 사람에게 보이는 가장 최근
+     * 지정(상세만, 목록은 빈 목록).
+     */
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(description = "참조자(상세만). 보는 사람이 볼 수 있는 가장 높은 차수까지 지정된 사람을 사람마다 한 줄로 싣는다",
+            accessMode = Schema.AccessMode.READ_ONLY)
+    private List<ApprovalReferenceDto> references;
+    /** 보는 사람이 이 문서의 참조자다 — 화면이 '참조로 받은 문서·읽기만' 을 서버 판정으로 말한다. */
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(description = "보는 사람이 이 문서의 참조자인가", accessMode = Schema.AccessMode.READ_ONLY)
+    private boolean referenceViewer;
+    /** 지금 차례인 결재자가 참조자를 더할 수 있다(기안자가 이 차수에 아무도 지정하지 않았고 20명이 차지 않았을 때). */
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(description = "지금 차례인 결재자가 참조자를 더할 수 있는가", accessMode = Schema.AccessMode.READ_ONLY)
+    private boolean canAddReference;
 }
 

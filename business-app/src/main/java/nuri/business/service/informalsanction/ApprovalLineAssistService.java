@@ -50,9 +50,12 @@ import java.util.stream.Collectors;
 public class ApprovalLineAssistService {
 
     static final String APPROVE_PERMISSION = "APPROVAL_APPROVE";
+    static final String READ_PERMISSION = "APPROVAL_READ";
     static final String SELF = "SELF";
     static final String INACTIVE = "INACTIVE";
     static final String NO_PERMISSION = "NO_PERMISSION";
+    /** 참조자로 고를 수 없는 사유 — 결재 조회 권한(APPROVAL_READ)이 없다(2026-10-04 D4). */
+    static final String NO_READ_PERMISSION = "NO_READ_PERMISSION";
     static final String NOT_FOUND = "NOT_FOUND";
     private static final int MAX_LINES = 3;
     private static final int MAX_OTHER_LINES = 3;
@@ -132,8 +135,8 @@ public class ApprovalLineAssistService {
     }
 
     /**
-     * 고르려는 사람이 결재자가 될 수 있는지 알려 준다. 사용 중이 아니거나 없는 계정은 이름을 돌려주지 않는다 —
-     * 식별자만으로 비활성 계정의 이름을 알아내는 경로가 되지 않게 한다.
+     * 고르려는 사람이 결재자가 될 수 있는지, 참조자가 될 수 있는지(2026-10-04 D4) 알려 준다. 사용 중이 아니거나 없는 계정은
+     * 이름을 돌려주지 않는다 — 식별자만으로 비활성 계정의 이름을 알아내는 경로가 되지 않게 한다.
      */
     public List<ApproverProfileDto> checkApprovers(String applicant, List<String> approverIds) {
         requireApplicant(applicant);
@@ -164,23 +167,28 @@ public class ApprovalLineAssistService {
                 .collect(Collectors.toMap(User::getEsntlId, u -> u.getUserSttsCd() == null ? "" : u.getUserSttsCd(),
                         (first, second) -> first));
         Set<String> approvers = new HashSet<>(userRepository.findActiveEsntlIdsHoldingPermission(APPROVE_PERMISSION));
+        // [2026-10-04 D4] 참조자는 결재 권한이 아니라 결재 조회 권한으로 판정한다(지정해도 읽을 수 없는 사람을 막는다).
+        Set<String> readers = new HashSet<>(userRepository.findActiveEsntlIdsHoldingPermission(READ_PERMISSION));
         Map<String, ApproverProfileDto> result = new LinkedHashMap<>();
         for (String id : ids) {
             UserSearchDto profile = found.get(id);
             String status = statuses.get(id);
             if (profile == null || status == null) {
-                result.put(id, new ApproverProfileDto(id, null, null, false, false, NOT_FOUND));
+                result.put(id, new ApproverProfileDto(id, null, null, false, false, NOT_FOUND, false, NOT_FOUND));
                 continue;
             }
             boolean absent = Boolean.TRUE.equals(profile.absent());
             if (!"P".equals(status)) {
                 result.put(id, revealInactiveNames
-                        ? new ApproverProfileDto(id, profile.userNm(), profile.deptNm(), absent, false, INACTIVE)
-                        : new ApproverProfileDto(id, null, null, false, false, INACTIVE));
+                        ? new ApproverProfileDto(id, profile.userNm(), profile.deptNm(), absent, false, INACTIVE,
+                                false, INACTIVE)
+                        : new ApproverProfileDto(id, null, null, false, false, INACTIVE, false, INACTIVE));
                 continue;
             }
             String reason = id.equals(applicant) ? SELF : approvers.contains(id) ? null : NO_PERMISSION;
-            result.put(id, new ApproverProfileDto(id, profile.userNm(), profile.deptNm(), absent, reason == null, reason));
+            String referenceReason = id.equals(applicant) ? SELF : readers.contains(id) ? null : NO_READ_PERMISSION;
+            result.put(id, new ApproverProfileDto(id, profile.userNm(), profile.deptNm(), absent, reason == null, reason,
+                    referenceReason == null, referenceReason));
         }
         return result;
     }

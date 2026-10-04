@@ -14,6 +14,7 @@ import nuri.business.domain.informalsanction.InformalSanctionHistoryId;
 import nuri.business.domain.informalsanction.InformalSanctionHistoryRepository;
 import nuri.business.domain.informalsanction.InformalSanctionProcess;
 import nuri.business.domain.informalsanction.InformalSanctionProcessRepository;
+import nuri.business.domain.informalsanction.InformalSanctionReferenceRepository;
 import nuri.business.domain.informalsanction.InformalSanctionRepository;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
@@ -67,6 +68,7 @@ class ApprovalCollaborationServiceTest {
     @Mock private InformalSanctionDetailRepository detailRepository;
     @Mock private InformalSanctionHistoryRepository historyRepository;
     @Mock private InformalSanctionProcessRepository processRepository;
+    @Mock private InformalSanctionReferenceRepository referenceRepository;
     @Mock private CommonCodeService commonCodeService;
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private UserRepository userRepository;

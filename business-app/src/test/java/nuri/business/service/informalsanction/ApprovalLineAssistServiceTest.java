@@ -88,6 +88,9 @@ class ApprovalLineAssistServiceTest {
         lenient().when(userRepository.findAllById(any())).thenReturn(rows);
         lenient().when(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE"))
                 .thenReturn(Arrays.stream(active).filter(id -> !id.equals("noperm")).toList());
+        // [D4] 참조자는 결재 조회 권한으로 판정한다 — noread 만 그 권한이 없다.
+        lenient().when(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_READ"))
+                .thenReturn(Arrays.stream(active).filter(id -> !id.equals("noread")).toList());
     }
 
     @Test
@@ -147,6 +150,43 @@ class ApprovalLineAssistServiceTest {
                         tuple("noperm", false, "NO_PERMISSION", "이름-noperm"),
                         tuple("off1", false, "INACTIVE", null),
                         tuple("ghost", false, "NOT_FOUND", null));
+    }
+
+    /**
+     * [2026-10-04 D4] 같은 확인 API 가 참조자 판정도 함께 싣는다 — 참조자는 결재 권한이 아니라 결재 조회 권한과 사용 중 여부로
+     * 고른다. 결재 권한이 없어도 참조자는 될 수 있고, 조회 권한이 없으면 결재자가 될 수 있어도 참조자는 될 수 없다.
+     */
+    @Test
+    @DisplayName("사전 확인은 참조자 판정(본인·조회 권한 없음·사용 중 아님·없음)을 결재자 판정과 따로 싣는다")
+    void checkReportsReferenceEligibilitySeparately() {
+        users("a", "owner", "noperm", "noread", "off1");
+
+        List<ApproverProfileDto> result = service.checkApprovers("owner",
+                List.of("a", "owner", "noperm", "noread", "off1", "ghost"));
+
+        assertThat(result).extracting(ApproverProfileDto::esntlId, ApproverProfileDto::eligible,
+                        ApproverProfileDto::referenceEligible, ApproverProfileDto::referenceIneligibleReason)
+                .containsExactly(tuple("a", true, true, null),
+                        tuple("owner", false, false, "SELF"),
+                        tuple("noperm", false, true, null),
+                        tuple("noread", true, false, "NO_READ_PERMISSION"),
+                        tuple("off1", false, false, "INACTIVE"),
+                        tuple("ghost", false, false, "NOT_FOUND"));
+    }
+
+    @Test
+    @DisplayName("결재선 제안의 비활성 계정은 이름을 보이되 참조자로도 고를 수 없다")
+    void suggestionInactiveProfileIsNotReferenceEligible() {
+        given(sanctionRepository.findTop40ByAplcntIdOrderByIfmlAtrzSnDesc("owner")).willReturn(List.of(document(1, "T1", "20260901")));
+        given(detailRepository.findForDocuments(any())).willReturn(List.of(line(1, 1, "off1")));
+        users("off1");
+        given(commonCodeService.getCodesByGroup("COM075")).willReturn(List.of());
+
+        assertThat(service.getSuggestions("owner", null).recentApprovers()).singleElement().satisfies(profile -> {
+            assertThat(profile.userNm()).isEqualTo("이름-off1");
+            assertThat(profile.referenceEligible()).isFalse();
+            assertThat(profile.referenceIneligibleReason()).isEqualTo("INACTIVE");
+        });
     }
 
     @Test

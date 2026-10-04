@@ -7,9 +7,9 @@
     "nativeFormFiles": 58,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
-    "formlessWriteBoundaries": 22,
-    "secondaryActionBoundaries": 78,
-    "candidateCount": 169
+    "formlessWriteBoundaries": 23,
+    "secondaryActionBoundaries": 79,
+    "candidateCount": 171
   },
   "entries": [
     {
@@ -379,6 +379,22 @@
       "testEvidence": [
         "frontend/src/app/approvals/__tests__/ApprovalHubClient.actions.test.tsx",
         "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/approvals/ApprovalReferencePanel.tsx#ApprovalReferencePanel",
+      "kind": "formless-write",
+      "file": "frontend/src/app/approvals/ApprovalReferencePanel.tsx",
+      "owner": "ApprovalReferencePanel",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/approvals/__tests__/ApprovalReferencePanel.test.tsx"
       ]
     },
     {
@@ -2888,7 +2904,7 @@
       "errorNavigation": "structured-state-action-feedback",
       "serverErrors": "action-error-feedback-preserves-state",
       "pendingGuard": "action-pending-lock-and-disabled",
-      "stateInvariant": "An unfinished approval draft saves as one owner-only temporary draft: stages without approvers are dropped and said so, the first save creates, later saves replace it with the version they read (C013 on a stale version, C014 at the 20-draft cap), and editing is locked while the save is in flight.",
+      "stateInvariant": "An unfinished approval draft saves as one owner-only temporary draft: stages without approvers are dropped and said so, references are saved with it (sent only when there are any, so removing them all clears them), the first save creates, later saves replace it with the version they read (C013 on a stale version, C014 at the 20-draft cap), and editing is locked while the save is in flight.",
       "structuredPayloads": [
         "payload"
       ],
@@ -2976,6 +2992,31 @@
       "testEvidence": [
         "frontend/src/app/approvals/__tests__/ApprovalHubClient.actions.test.tsx"
       ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/approvals/ApprovalReferencePanel.tsx#ApprovalReferencePanel.handleAddReferences[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/approvals/ApprovalReferencePanel.tsx",
+      "owner": "ApprovalReferencePanel",
+      "handler": "handleAddReferences",
+      "writeSinks": [
+        "addReferencesMutation.mutateAsync"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:approval-reference-addition",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/approvals/__tests__/ApprovalReferencePanel.test.tsx",
+        "frontend/src/queries/__tests__/approval-query-options.test.ts"
+      ],
+      "structuredPayloads": [
+        "{ ifmlAtrzSn, references: pickedIds, version }"
+      ],
+      "stateInvariant": "The approver whose turn it is adds only chosen people who are not the drafter, not on the current cycle line and not already references of this cycle (an earlier-cycle reference may be designated again without taking another of the 20 document slots), after a named irreversible confirmation, with the version read from the detail; a 409 is shown with the server reason, the picks are kept and the document and lists are reloaded."
     },
     {
       "key": "secondary-action:frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx#CommunityDetailHubClient.handleJoin[1]",

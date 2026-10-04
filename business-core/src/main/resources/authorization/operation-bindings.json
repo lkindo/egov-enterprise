@@ -1596,6 +1596,13 @@
   },
   {
     "method": "GET",
+    "path": "/api/v1/approvals/referenced",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#getReferenced",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_READ"
+  },
+  {
+    "method": "GET",
     "path": "/api/v1/approvals/task-types",
     "handler": "nuri.api.controller.business.approval.ApprovalApiController#getTaskTypes",
     "access": "PERMISSION",
@@ -3105,6 +3112,13 @@
     "handler": "nuri.api.controller.business.approval.ApprovalApiController#answerSupplement",
     "access": "PERMISSION",
     "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/approvals/{id}/references",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#addReferences",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_APPROVE"
   },
   {
     "method": "GET",

@@ -3,6 +3,7 @@ import { PageResponse } from '@/types/foundation/system';
 import {
   ApprovalConfirmRequestSchema,
   ApprovalDraftRequestSchema,
+  ApprovalReferenceAddRequestSchema,
   ApprovalResubmissionRequestSchema,
   ApprovalSupplementAnswerRequestSchema,
   ApprovalSupplementRequestSchema,
@@ -19,6 +20,7 @@ import {
   getMyHistoryOperation,
   getPendingOperation,
   getProcessedOperation,
+  getReferencedOperation,
   getTaskTypesOperation,
   getApprovalDetailOperation,
   resubmitApprovalOperation,
@@ -33,6 +35,7 @@ import {
   createApprovalTemporaryDraftOperation,
   updateApprovalTemporaryDraftOperation,
   deleteApprovalTemporaryDraftOperation,
+  addReferencesOperation,
 } from '@/types/generated-operations';
 
 /** 기안 시 고르는 업무 구분 — 서버가 COM075 에서 내려주는 공통코드 행. */
@@ -44,6 +47,11 @@ export type ApprovalStageRequest = components['schemas']['ApprovalStageRequest']
 /** 기안 화면의 결재선 제안(내가 올린 결재에서 찾은 결재선·최근 결재자). */
 export type ApprovalSuggestions = components['schemas']['ApprovalSuggestionsDto'];
 export type ApproverProfile = components['schemas']['ApproverProfileDto'];
+/**
+ * 결재 문서의 참조자 한 사람(2026-10-04 D4, 상세만). 서버 DTO 이름은 ApprovalReferenceDto 지만 이 파일의 'Reference' 는
+ * 이미 임시저장 포인터({@link ApprovalTemporaryDraftReference})라 참조자는 Referee 로 부른다. 이름·부서만 싣고 연락처는 없다.
+ */
+export type ApprovalReferee = components['schemas']['ApprovalReferenceDto'];
 export type ApprovalSupplementAnswer = components['schemas']['ApprovalSupplementAnswerRequest'];
 /**
  * 기안 임시저장(2026-10-03 D3). 서버에 기안자 본인 것만 20건까지 둔다 — 브라우저 저장소에는 본문을 두지 않는다.
@@ -147,6 +155,15 @@ class ApprovalUserService extends UserService {
   /** 결재자 본인이 이미 승인·반려한 결재. 대기 건은 섞이지 않는다. */
   async getProcessed(params: ApprovalListQueryWithStatus): Promise<PageResponse<InformalSanctionDto>> {
     const response = await this.executeGenerated(getProcessedOperation, { query: params });
+    return requireApprovalPage(response);
+  }
+
+  /**
+   * 참조된 결재(2026-10-04 D4) — 내가 참조자로 지정된 문서. 참조는 추가만 하므로 문서가 반려·회수·승인돼도, 재상신에서 빠져도
+   * 남는다. 상태 조건은 문서의 지금 상태다. 참조자는 결재하지 않으므로 대기함·처리함·대기 건수에 섞이지 않는다.
+   */
+  async getReferenced(params: ApprovalListQueryWithStatus): Promise<PageResponse<InformalSanctionDto>> {
+    const response = await this.executeGenerated(getReferencedOperation, { query: params });
     return requireApprovalPage(response);
   }
 
@@ -261,6 +278,21 @@ class ApprovalUserService extends UserService {
     return response;
   }
 
+  /**
+   * 지금 차례인 결재자가 참조자를 더한다(2026-10-04 D4). 기안자가 이 차수에 참조자를 지정하지 않았을 때만 서버가 받는다 —
+   * 지정했으면 409, 차례가 아니면 403 이다. 되돌릴 수 없으므로 상세에서 읽은 버전이 필수다. 새로 지정한 사람 수를 돌려준다
+   * (모두 이미 참조자였으면 0). 실패는 상세의 참조자 영역이 화면 안에서 알린다.
+   */
+  async addReferences(ifmlAtrzSn: number, references: string[], version: number): Promise<number> {
+    const response = await this.executeGenerated(addReferencesOperation, {
+      path: { id: ifmlAtrzSn },
+      body: ApprovalReferenceAddRequestSchema.parse({ references, version }),
+      config: QUIET,
+    });
+    if (typeof response !== 'number') throw new Error('참조자 추가 응답이 계약과 일치하지 않습니다.');
+    return response;
+  }
+
   /** 아직 처리하지 않은 결재자를 다른 사람으로 바꾼다. 앞서 처리한 결재는 그대로다. */
   async replaceApprover(ifmlAtrzSn: number, fromUserId: string, toUserId: string, version: number): Promise<void> {
     return this.executeGenerated(replaceApproverOperation, {
@@ -328,7 +360,7 @@ class ApprovalUserService extends UserService {
 
 /**
  * 임시저장 요청의 실패는 기안 창이 화면 안에서 알린다(목록은 상태 문구, 저장·이어 쓰기·삭제는 오류 안내). 전역 오류 토스트를
- * 겹쳐 띄우지 않도록 선언한다(DEC-OPS-184).
+ * 겹쳐 띄우지 않도록 선언한다(DEC-OPS-184). 결재자의 참조자 추가(D4)도 상세의 참조자 영역이 사유를 보이므로 같다.
  */
 const QUIET = { suppressErrorToast: true } as const;
 
