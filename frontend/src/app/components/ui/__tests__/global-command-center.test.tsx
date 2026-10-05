@@ -404,7 +404,7 @@ describe('GlobalCommandCenter accessibility contract', () => {
     consoleError.mockRestore();
   });
 
-  it('검증된 modernRoute 또는 legacy chkURL만 명령 항목으로 렌더하고 이동한다', async () => {
+  it('검증된 modernRoute(레거시 .do 경로 포함)만 명령 항목으로 렌더하고 이동한다 — chkURL 은 목적지가 아니다', async () => {
     const user = userEvent.setup();
     mocks.getHeadMenus.mockResolvedValue([
       {
@@ -437,8 +437,14 @@ describe('GlobalCommandCenter accessibility contract', () => {
       {
         menuNo: 3,
         menuNm: '레거시 메뉴',
+        modernRoute: 'legacy/selectMenu.do?menuNo=3#result',
+      },
+      {
+        // [2026-10-05] 경로가 없으면 chkURL 이 레거시 .do 여도 제안하지 않는다(서버는 '#' 만 보낸다).
+        menuNo: 4,
+        menuNm: '경로 없는 메뉴',
         modernRoute: '',
-        chkURL: 'legacy/selectMenu.do?menuNo=3#result',
+        chkURL: 'legacy/selectMenu.do?menuNo=4',
       },
     ]);
     renderCommandCenter();
@@ -452,6 +458,7 @@ describe('GlobalCommandCenter accessibility contract', () => {
     expect(mocks.getLeftMenus).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: '위험 modern 메뉴' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /인코딩 우회 메뉴/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: '경로 없는 메뉴' })).not.toBeInTheDocument();
 
     await user.click(safeModern);
     expect(mocks.push).toHaveBeenCalledWith('/admin/work-hub?tab=job#calendar');

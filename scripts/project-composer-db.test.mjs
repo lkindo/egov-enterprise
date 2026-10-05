@@ -156,30 +156,29 @@ test('pg_dump literal-array cast distribution is equivalent while enum/operator 
   }
 });
 
-const menu = (menu_sn, up_menu_sn, modern_route, prgrm_file_nm = null) => ({
-  menu_sn, up_menu_sn, modern_route, prgrm_file_nm, menu_ordr: menu_sn, menu_nm: `Menu ${menu_sn}`,
+const menu = (menu_sn, up_menu_sn, modern_route, menu_nm = `Menu ${menu_sn}`) => ({
+  menu_sn, up_menu_sn, modern_route, menu_ordr: menu_sn, menu_nm,
   menu_expln: null, use_yn: 'Y', del_yn: 'N',
 });
-const menus = [menu(100, null, '/excluded-parent'), menu(101, 100, '/admin/user/manage', 'USER_LIST'),
+const menus = [menu(100, null, '/excluded-parent'), menu(101, 100, '/admin/user/manage', "Users' list"),
   menu(102, 100, '/admin/help?tab=FAQ'), menu(103, 100, '/admin/help?tab=COMMUNITY'), menu(200, null, '/excluded-leaf')];
-const programs = [{ prgrm_file_nm: 'USER_LIST', prgrm_korn_nm: "Users' list", url: '/api/v1/admin/users', prgrm_strg_path: null, prgrm_expln: null }];
 
-test('menu projection includes ancestor-only folders and exact query scopes, and preserves program FK rows', () => {
-  const result = projectCompositionMenus({ menus, programs, menuRoutes: ['/admin/user/manage', '/admin/help?tab=FAQ'] });
+test('menu projection includes ancestor-only folders and exact query scopes', () => {
+  const result = projectCompositionMenus({ menus, menuRoutes: ['/admin/user/manage', '/admin/help?tab=FAQ'] });
   assert.deepEqual(result.menus.map(row => row.menu_sn), [100, 101, 102]);
   assert.equal(result.menus[0].modern_route, null);
-  assert.deepEqual(result.programs, programs);
-  assert.throws(() => projectCompositionMenus({ menus, programs: [], menuRoutes: ['/admin/user/manage'] }), /program is missing/);
-  assert.throws(() => projectCompositionMenus({ menus: menus.filter(row => row.menu_sn !== 100), programs, menuRoutes: ['/admin/user/manage'] }), /missing or disabled parent/);
-  assert.throws(() => projectCompositionMenus({ menus: [menu(100, 101, null), menu(101, 100, '/selected')], programs, menuRoutes: ['/selected'] }), /cycle/);
-  assert.throws(() => projectCompositionMenus({ menus, programs, menuRoutes: [] }), /no usable menu/);
-  assert.throws(() => projectCompositionMenus({ menus, programs, menuRoutes: ['https://external.test/'] }), /Invalid menu route/);
+  // [2026-10-05] 레거시 연결 프로그램은 앱이 읽지 않으므로 투영이 싣지 않는다(GAP-PROGRAM-001).
+  assert.deepEqual(Object.keys(result), ['menus']);
+  assert.throws(() => projectCompositionMenus({ menus: menus.filter(row => row.menu_sn !== 100), menuRoutes: ['/admin/user/manage'] }), /missing or disabled parent/);
+  assert.throws(() => projectCompositionMenus({ menus: [menu(100, 101, null), menu(101, 100, '/selected')], menuRoutes: ['/selected'] }), /cycle/);
+  assert.throws(() => projectCompositionMenus({ menus, menuRoutes: [] }), /no usable menu/);
+  assert.throws(() => projectCompositionMenus({ menus, menuRoutes: ['https://external.test/'] }), /Invalid menu route/);
 });
 
 test('selected seed keeps fresh-bootstrap and revocation guards while separating NAVIGATION and OPERATION', () => {
   const bootstrapSql = readFileSync(new URL('../api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql', import.meta.url), 'utf8');
   const permissionCatalog = JSON.parse(readFileSync(new URL('../config/governance/permission-catalog.json', import.meta.url), 'utf8'));
-  const projection = projectCompositionMenus({ menus, programs, menuRoutes: ['/admin/user/manage'] });
+  const projection = projectCompositionMenus({ menus, menuRoutes: ['/admin/user/manage'] });
   const options = { bootstrapSql, projection, permissionCatalog,
     permissionCodes: ['AUTHRT_GRANT', 'AUTHRT_ASSIGN', 'USER_READ', 'DWORK_READ', 'DWORK_RETRY', 'MFA_RECOVER', 'NOTICE_EDIT', 'FAQ_EDIT'] };
   const sql = buildCompositionAdminSeed(options);
@@ -192,7 +191,10 @@ test('selected seed keeps fresh-bootstrap and revocation guards while separating
   assert.match(sql, /'ROLE_ADMIN','NAVIGATION'/);
   assert.match(sql, /'OPERATION',seed\.permission_code/);
   assert.match(sql, /Users'' list/);
-  assert.ok(sql.includes('/api/v1/admin/users'));
+  // [2026-10-05] 생성물 메뉴 시드는 레거시 연결 프로그램 열·프로그램 원장 행을 싣지 않는다(GAP-PROGRAM-001).
+  //   (부트스트랩 SQL 의 구 모델 분기 — 구 매핑 표가 있을 때만 도는 URL 인가 anchor — 는 Contract 단계에서 걷는다.)
+  assert.match(sql, /INSERT INTO tb_menu_info\n\s+\(menu_sn,up_menu_sn,menu_ordr,menu_nm,menu_expln,modern_route,use_yn,del_yn,/);
+  assert.doesNotMatch(sql, /\/api\/v1\/admin\/users/);
   assert.doesNotMatch(sql, /'NOTE_SEND'|'SURVEY_READ'|'USER_DELETE'/);
   assert.doesNotMatch(sql, /'DWORK_READ'|'DWORK_RETRY'|'MFA_RECOVER'|'NOTICE_EDIT'|'FAQ_EDIT'/);
   assert.doesNotMatch(sql, /menu_sn BETWEEN 910 AND 920/);

@@ -117,8 +117,8 @@ function canonicalRoute(route) {
 }
 
 /** Menu/program rows originate exclusively from the checked-in migrations applied to an empty DB. */
-export function projectCompositionMenus({ menus, programs, menuRoutes }) {
-  if (!Array.isArray(menus) || !Array.isArray(programs) || !Array.isArray(menuRoutes)) fail('Canonical menu route ownership is required.');
+export function projectCompositionMenus({ menus, menuRoutes }) {
+  if (!Array.isArray(menus) || !Array.isArray(menuRoutes)) fail('Canonical menu route ownership is required.');
   const allowed = new Set(menuRoutes.map(canonicalRoute));
   const byId = new Map();
   for (const menu of menus) {
@@ -139,21 +139,18 @@ export function projectCompositionMenus({ menus, programs, menuRoutes }) {
   }
   const selectedMenus = menus.filter(row => selected.has(row.menu_sn)).map(row => ({ ...row,
     // A retained ancestor is structural; do not preserve its excluded clickable feature.
-    ...(!row.modern_route || allowed.has(canonicalRoute(row.modern_route)) ? {} : { modern_route: null, prgrm_file_nm: null }),
+    ...(!row.modern_route || allowed.has(canonicalRoute(row.modern_route)) ? {} : { modern_route: null }),
   })).sort((a, b) => a.menu_sn - b.menu_sn);
   if (!selectedMenus.length) fail('Selected composition has no usable menu seed.');
-  const programNames = new Set(selectedMenus.map(row => row.prgrm_file_nm).filter(Boolean));
-  const selectedPrograms = programs.filter(row => programNames.has(row.prgrm_file_nm)).sort((a, b) => a.prgrm_file_nm.localeCompare(b.prgrm_file_nm));
-  if (new Set(selectedPrograms.map(row => row.prgrm_file_nm)).size !== selectedPrograms.length) fail('Duplicate menu program definition.');
-  for (const name of programNames) if (!selectedPrograms.some(row => row.prgrm_file_nm === name)) fail(`Selected menu program is missing: ${name}`);
-  return { menus: selectedMenus, programs: selectedPrograms };
+  // [2026-10-05] 레거시 연결 프로그램(prgrm_file_nm)·프로그램 원장은 앱이 읽지 않으므로 생성물 시드에 싣지 않는다(GAP-PROGRAM-001).
+  return { menus: selectedMenus };
 }
 
 /** Retain the reviewed first-bootstrap/revocation guards, replacing only the three seed inventories. */
 export function buildCompositionAdminSeed({ bootstrapSql, projection, permissionCodes, permissionCatalog }) {
   // Match generate-permissions.mjs regeneration on every checkout platform.
   bootstrapSql = bootstrapSql.replace(/\r\n/g, '\n');
-  const { menus, programs } = projection;
+  const { menus } = projection;
   if (!menus.length || !Array.isArray(permissionCodes) || !Array.isArray(permissionCatalog?.permissions)) fail('Invalid composition seed plan.');
   const selectedPermissions = new Set(permissionCodes);
   const permissions = permissionCatalog.permissions.filter(row => selectedPermissions.has(row.code));
@@ -169,13 +166,12 @@ export function buildCompositionAdminSeed({ bootstrapSql, projection, permission
   const menuBlock = /        INSERT INTO tb_menu_info\s+\(menu_sn, up_menu_sn,[\s\S]*?ON CONFLICT \(menu_sn\) DO NOTHING;/g;
   if ([...sql.matchAll(menuBlock)].length !== 1) fail('Reviewed bootstrap menu inventory is missing or ambiguous.');
   const audit = "'SYSTEM',CURRENT_TIMESTAMP,'SYSTEM',CURRENT_TIMESTAMP";
-  const programsSql = programs.length ? `        INSERT INTO tb_prgrm_lst\n            (prgrm_file_nm,prgrm_korn_nm,url,prgrm_strg_path,prgrm_expln,frst_rgtr_id,crt_dt,last_mdfr_id,mdfcn_dt)\n        VALUES\n${programs.map(row => `            (${['prgrm_file_nm', 'prgrm_korn_nm', 'url', 'prgrm_strg_path', 'prgrm_expln'].map(key => literal(row[key])).join(',')},${audit})`).join(',\n')}\n        ON CONFLICT (prgrm_file_nm) DO NOTHING;\n\n` : '';
-  const menusSql = `        INSERT INTO tb_menu_info\n            (menu_sn,up_menu_sn,menu_ordr,menu_nm,prgrm_file_nm,menu_expln,modern_route,use_yn,del_yn,frst_rgtr_id,crt_dt,last_mdfr_id,mdfcn_dt)\n        VALUES\n${menus.map(row => `            (${row.menu_sn},${row.up_menu_sn ?? 'NULL'},${row.menu_ordr},${['menu_nm', 'prgrm_file_nm', 'menu_expln', 'modern_route', 'use_yn', 'del_yn'].map(key => literal(row[key])).join(',')},${audit})`).join(',\n')}\n        ON CONFLICT (menu_sn) DO NOTHING;`;
-  sql = sql.replace(menuBlock, programsSql + menusSql);
+  const menusSql = `        INSERT INTO tb_menu_info\n            (menu_sn,up_menu_sn,menu_ordr,menu_nm,menu_expln,modern_route,use_yn,del_yn,frst_rgtr_id,crt_dt,last_mdfr_id,mdfcn_dt)\n        VALUES\n${menus.map(row => `            (${row.menu_sn},${row.up_menu_sn ?? 'NULL'},${row.menu_ordr},${['menu_nm', 'menu_expln', 'modern_route', 'use_yn', 'del_yn'].map(key => literal(row[key])).join(',')},${audit})`).join(',\n')}\n        ON CONFLICT (menu_sn) DO NOTHING;`;
+  sql = sql.replace(menuBlock, menusSql);
   const menuIdPredicate = `menu_sn IN (${menus.map(row => row.menu_sn).join(',')})`;
   if ((sql.match(/menu_sn BETWEEN 910 AND 920/g) ?? []).length !== 2) fail('Reviewed bootstrap NAVIGATION inventory predicates drifted.');
   sql = sql.replaceAll('menu_sn BETWEEN 910 AND 920', menuIdPredicate);
   // Modern menu IDs come from the final migration inventory, which has already retired the role alias.
   sql = sql.replace('DELETE FROM tb_menu_info WHERE menu_sn = 914;', '-- Historical role alias is absent from the projected menu inventory.');
-  return `-- Composer seed: checked-in migration menu/program inventory and selected source-owned OPERATION defaults.\n${sql}`;
+  return `-- Composer seed: checked-in migration menu inventory and selected source-owned OPERATION defaults.\n${sql}`;
 }

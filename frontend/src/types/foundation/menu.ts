@@ -7,8 +7,7 @@ export interface MenuInfo {
  menuExpln?: string;
  relImgPath?: string;
  relImgNm?: string;
- prgrmFileNm?: string;
- chkURL?: string; // Derived from program URL
+ chkURL?: string; // modernRoute, or '#' when the menu has none (not a destination of its own)
  modernRoute?: string;
  useYn?: 'Y' | 'N';
  children?: MenuInfo[];

@@ -94,6 +94,18 @@ class ZeroDowntimeMigrationLinterTest {
             "ZDM-2026-0039|api-server/src/main/resources/db/migration/V2_96__contract_institution_times_and_encrypted_rrno.sql|api-server/src/main/resources/db/migration/V2_95__fence_institution_times_and_menu_program_refs.sql",
             "ZDM-2026-0040|api-server/src/main/resources/db/migration/V2_96__contract_institution_times_and_encrypted_rrno.sql|api-server/src/main/resources/db/migration/V2_94__expand_program_keys_and_encrypted_rrno.sql");
 
+    /**
+     * 사용자가 관측 기간 없이 승인한 Contract waiver 다(DEC-OPS-233, 2026-10-05 — "이번만 내 승인하에 규칙을 무시하고
+     * 진행해"). 템플릿 프로젝트라 선행 Expand 와 같은 릴리스에 싣는다. 운영 중인 도입 기관은 승계하지 않는다.
+     *
+     * <p>정책 완화가 아니라 <b>이름 붙은 한 건의 예외</b>다. {@code id|대상|expandMigration} 조합이 정확히 일치할 때만
+     * 면제한다 — 다른 Contract 는 종전대로 릴리스 기록과 7일 관측을 요구한다. 선행 Expand 의 실재·버전 선후 검사는 그대로다.
+     */
+    private static final Set<String> USER_APPROVED_SAME_RELEASE_CONTRACTS = Set.of(
+            "ZDM-2026-0041|api-server/src/main/resources/db/migration/V2_127__drop_retired_program_ledger_and_personal_page_contents.sql|api-server/src/main/resources/db/migration/V2_126__backfill_menu_routes_from_legacy_program_names.sql",
+            "ZDM-2026-0042|api-server/src/main/resources/db/migration/V2_127__drop_retired_program_ledger_and_personal_page_contents.sql|api-server/src/main/resources/db/migration/V2_124__retire_program_permission_grants.sql",
+            "ZDM-2026-0043|api-server/src/main/resources/db/migration/V2_127__drop_retired_program_ledger_and_personal_page_contents.sql|api-server/src/main/resources/db/migration/V2_125__retire_my_page_menu.sql");
+
     private static final Pattern FORBIDDEN_DROP = Pattern.compile(
             "(?is)\\bALTER\\s+TABLE\\s+\\S+\\s+DROP\\s+(?:COLUMN\\s+)?(?!CONSTRAINT\\b)\\w+");
     private static final Pattern FORBIDDEN_ALTER_TYPE = Pattern.compile(
@@ -1338,6 +1350,9 @@ class ZeroDowntimeMigrationLinterTest {
         String id = entry.path("id").asString("");
         if (PRE_POLICY_CONTRACT_WAIVERS.contains(id + "|" + waivedPath + "|" + expandPath)) {
             return; // 정책 시행 전 동결분 — 소급 승인이 아니다.
+        }
+        if (USER_APPROVED_SAME_RELEASE_CONTRACTS.contains(id + "|" + waivedPath + "|" + expandPath)) {
+            return; // 사용자가 이 한 건만 관측 기간 없이 승인했다(DEC-OPS-233).
         }
 
         JsonNode release = entry.path("expandRelease");

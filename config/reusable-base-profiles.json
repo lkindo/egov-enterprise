@@ -186,7 +186,6 @@
           "tb_dept_task_info",
           "tb_file_detail",
           "tb_file_master",
-          "tb_indv_pg_conts",
           "tb_inst_cd",
           "tb_inst_cd_rcptn_log",
           "tb_login_log",
@@ -194,7 +193,6 @@
           "tb_menu_info",
           "tb_ognz_info",
           "tb_plcy_manage",
-          "tb_prgrm_lst",
           "tb_privacy_log",
           "tb_stmp_info",
           "tb_sys_adt_log",
@@ -470,10 +468,10 @@
     }
   ],
   "databaseSnapshot": {
-    "source": "isolated PostgreSQL 17/public; repository migrations through V2_123 and explicit authorization Contract; physical inventory measured by the composer DB generator (not OCI deployment state); MFA sequences are standalone, durable-work, sensitive-audit, approval-process and approval-temporary-draft sequences are table-owned",
-    "checkedAt": "2026-10-04T05:53:32.948Z",
-    "physicalTableCountExcludingFlyway": 92,
-    "physicalSequenceCount": 57,
+    "source": "isolated PostgreSQL 17/public; repository migrations through V2_127 and explicit authorization Contract; physical inventory measured by the composer DB generator (not OCI deployment state); MFA sequences are standalone, durable-work, sensitive-audit, approval-process and approval-temporary-draft sequences are table-owned",
+    "checkedAt": "2026-10-05T11:18:06.296Z",
+    "physicalTableCountExcludingFlyway": 90,
+    "physicalSequenceCount": 56,
     "physicalStandaloneSequenceCount": 6,
     "metaRows": {
       "meta_standard_words": 3387,

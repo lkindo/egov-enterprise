@@ -6562,8 +6562,6 @@ export interface components {
              * @example 시스템관리
              */
             menuNm: string;
-            /** @description 연결 프로그램 파일 명칭(퇴역). 응답은 남은 레거시 값을 그대로 싣는다. 요청에 비어 있지 않은 값을 보내면 400 이고, 단건 메뉴 수정에 성공하면 남은 연결은 지워진다. */
-            prgrmFileNm?: string;
             /**
              * Format: int64
              * @description 상위 메뉴 번호
@@ -6685,7 +6683,6 @@ export interface components {
             modernRoute: string | null;
             menuExpln: string | null;
             useYn: string;
-            prgrmFileNm: string | null;
         };
         LoginPolicyDto: {
             userId: string;

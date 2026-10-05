@@ -20,7 +20,6 @@ const LEGACY_DOT_DO_PATH = /^(?:[a-z0-9._~-]+\/)*[a-z0-9._~-]+\.do$/i;
 
 export interface MenuRouteSource {
   modernRoute?: string | null;
-  chkURL?: string | null;
 }
 
 function hasDotSegment(pathname: string): boolean {
@@ -73,49 +72,18 @@ export function normalizeInternalRoute(rawRoute?: string | null): string | null 
 }
 
 /**
- * Preserve the existing `modernRoute || chkURL` precedence as one auditable
- * decision. An invalid, non-empty modernRoute must not silently fall through to
- * a different legacy destination.
+ * The screen route a menu navigates to. Only `modernRoute` is a destination; an invalid,
+ * non-empty route is rejected rather than replaced by a different legacy destination.
  *
- * [2026-09-04 · PD-UX-002 Q3] The `chkURL` fallback is now restricted to legacy
- * `.do` endpoints — the only shape it was ever designed for.
+ * [2026-09-04 · PD-UX-002 Q3] The `chkURL` fallback was narrowed to legacy `.do` endpoints —
+ * `chkURL` used to be `tb_prgrm_lst.url` under an alias, and that column held authorization
+ * path patterns (`/api/v1/admin/**`, `/actuator/**`), not navigation destinations.
  *
- * `chkURL` is not a screen route. It is `tb_prgrm_lst.url` under an alias
- * (`MenuRepositoryImpl` selects `program.url.as("chkURL")`), and that column holds
- * **authorization path patterns**, not navigation destinations.
- *
- * Production (OCI) measurement, 2026-09-04, read-only: of 18 rows, **0 are legacy
- * `.do` endpoints**, 16 are API paths and 11 carry wildcards or templates
- * (`/api/v1/admin/**`, `/actuator/**`, `/api/v1/admin/system/users/{userId}`).
- * So the shape this fallback was designed for no longer exists in the data — what
- * remained was only a way for authorization patterns to leak into user URLs.
- *
- * Those pass `normalizeInternalRoute` — it only rejects foreign origins and path
- * ambiguity, and an absolute API path is neither. So a menu with an empty
- * `modernRoute` and a linked program would have navigated the user to an API
- * pattern (verified: the resolver returned `/api/v1/admin/**` verbatim).
- *
- * That path is not currently reachable — in production all 14 menus with a null
- * `modern_route` carry the `dir` placeholder, which this module rejects outright,
- * and none of them joins to a program URL (measured: 0) — so this is a latent
- * hazard rather than a live defect. Narrowing it costs nothing: no test asserts an
- * absolute-path `chkURL` is used as a destination, and the legacy `.do` behaviour
- * the tests do pin is preserved.
- *
- * [2026-10-04 프로그램 목록 퇴역] The server no longer reads `tb_prgrm_lst`: `chkURL` is now
- * the menu's `modernRoute`, a route inferred from the legacy file name, `#` or `/` — never a
- * program URL, so the `.do` branch below is unreachable from current data. Removing the
- * fallback goes with dropping the table and column (a separately approved release).
+ * [2026-10-05] The fallback is gone. The server no longer reads the program ledger or the menu's
+ * legacy file name: `chkURL` is the menu's `modernRoute` or `#` (V2_126 filled the routes the
+ * file name used to infer), so it never names a destination of its own. Do not bring a `chkURL`
+ * fallback back — give the menu a `modernRoute` instead.
  */
 export function resolveMenuInternalRoute(source: MenuRouteSource): string | null {
-  if (source.modernRoute) return normalizeInternalRoute(source.modernRoute);
-  if (!source.chkURL) return null;
-
-  const pathEnd = source.chkURL.search(/[?#]/);
-  const rawPath = pathEnd === -1 ? source.chkURL : source.chkURL.slice(0, pathEnd);
-  // Accept both `legacy/menu.do` and `/legacy/menu.do`; reject anything that is
-  // not a legacy endpoint — API patterns and wildcards land here.
-  if (!LEGACY_DOT_DO_PATH.test(rawPath.replace(/^\//, ''))) return null;
-
-  return normalizeInternalRoute(source.chkURL);
+  return source.modernRoute ? normalizeInternalRoute(source.modernRoute) : null;
 }

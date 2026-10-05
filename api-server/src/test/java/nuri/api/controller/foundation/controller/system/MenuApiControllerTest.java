@@ -129,7 +129,7 @@ class MenuApiControllerTest extends BaseControllerTest {
     @DisplayName("[D1] 메뉴 구조 조회는 서비스의 구조와 버전을 그대로 싣는다")
     void testGetMenuStructure() throws Exception {
         when(menuService.getMenuStructure()).thenReturn(new MenuStructureDto.MenuStructure("v1", List.of(
-                new MenuStructureDto.MenuStructureItem(1L, "Root", null, 1, null, null, "Y", null))));
+                new MenuStructureDto.MenuStructureItem(1L, "Root", null, 1, null, null, "Y"))));
         mockMvc.perform(get("/api/v1/admin/system/menus/structure"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.version").value("v1"))

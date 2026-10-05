@@ -125,27 +125,8 @@ class MenuServiceTest {
         SecurityContextHolder.clearContext();
     }
 
-    @Test
-    @DisplayName("시작 라우트 보강 - 레거시 파일명으로만 추정하고, 추정할 수 없는 메뉴와 폴더는 그대로 둔다")
-    void startupRouteMigrationInfersOnlyFromLegacyFileName() {
-        // [2026-10-04 프로그램 목록 퇴역] LegacyQuestion 은 종전에 프로그램 원장의 레거시 URL 로 /admin/help/faq 를 얻었다.
-        // 원장 조회를 걷었으므로 이제 이름으로 추정할 수 없는 메뉴는 채우지 않는다.
-        Menu legacy = Menu.builder().menuSn(1L).prgrmFileNm("LegacyQuestion").build();
-        Menu byName = Menu.builder().menuSn(2L).prgrmFileNm("BoardManage").build();
-        Menu folder = Menu.builder().menuSn(4L).build();
-        when(menuRepository.findAllWithoutModernRoute()).thenReturn(List.of(legacy, byName, folder));
-
-        assertThatCode(menuService::migrateModernRoutes).doesNotThrowAnyException();
-
-        verify(menuRepository).fillModernRouteIfUnchanged(eq(2L), eq("BoardManage"), eq("/admin/community/boards"),
-                any(java.time.LocalDateTime.class), eq("tester"));
-        assertThat(byName.getModernRoute()).as("조회 스냅샷은 직접 변경하지 않는다").isNull();
-        assertThat(legacy.getModernRoute()).isNull();
-        assertThat(folder.getModernRoute()).isNull();
-        verify(menuRepository, never()).save(any(Menu.class));
-        verify(menuRepository, never()).fillModernRouteIfUnchanged(eq(1L), any(), any(), any(), any());
-        verify(menuRepository, never()).fillModernRouteIfUnchanged(eq(4L), any(), any(), any(), any());
-    }
+    // [2026-10-05] 기동 때 레거시 파일명으로 경로를 채우던 일은 V2_126 이 SQL 로 한다 — 그 추정 규칙(16개 이름과 우선순위)은
+    //   LegacyMenuRouteBackfillMigrationIntegrationTest 가 검증한다.
 
     @Test
     @DisplayName("getMenuHierarchy - ADMIN도 명시적으로 부여된 NAVIGATION만 조회")
@@ -335,10 +316,10 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("calculateUrl - progrmFileNm이 dir/인 경우 # 반환")
-    void calculateUrl_Dir() {
-        // given
-        Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("dir").build();
+    @DisplayName("calculateUrl - 경로(modernRoute)가 없으면 이동할 곳이 없다는 # 다")
+    void calculateUrl_NoRoute() {
+        // given — [2026-10-05] 레거시 파일명으로 추정하지 않는다(V2_126 이 경로를 미리 채웠다).
+        Menu menu = Menu.builder().menuSn(1L).build();
         when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
 
         // when
@@ -660,12 +641,11 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("insertMenuManage - 빈 연결 프로그램은 연결 없음이고 메뉴 번호는 DB에서 생성한다")
-    void insertMenuManage_BlankProgramMeansNoLinkAndDbGeneratesId() {
+    @DisplayName("insertMenuManage - 메뉴 번호는 DB에서 생성한다")
+    void insertMenuManage_DbGeneratesId() {
         MenuDto dto = MenuDto.builder()
                 .menuNo(9_999_999L)
                 .menuNm("테스트 메뉴")
-                .prgrmFileNm("")
                 .modernRoute("/test/new-menu")
                 .build();
 
@@ -676,54 +656,11 @@ class MenuServiceTest {
         assertThat(menuCaptor.getValue().getMenuSn())
                 .as("create payload의 수동 menuNo는 무시하고 DB IDENTITY가 번호를 부여해야 한다")
                 .isEqualTo(101L);
-        assertThat(menuCaptor.getValue().getPrgrmFileNm()).as("빈 문자열을 그대로 저장하면 외래 키 위반이다").isNull();
         verify(authorizationAdministrationService).grantNewMenuToCompatibilityAdmin(101L);
     }
 
-    /**
-     * [2026-10-04 프로그램 목록 퇴역] 원장을 채우는 화면·API 를 걷었으므로 메뉴를 프로그램에 새로 연결하지 않는다.
-     * 종전에는 원장에 있는 프로그램이면 연결을 허용했다 — 그 분기를 되살리면 이 테스트가 실패한다.
-     */
-    @ParameterizedTest
-    @ValueSource(strings = {"EgovBBSMaster", " Legacy "})
-    void rejectsProgramLinkOnCreateAndUpdate(String prgrmFileNm) {
-        MenuDto dto = MenuDto.builder().menuNo(1L).menuNm("메뉴")
-                .prgrmFileNm(prgrmFileNm).modernRoute("/test").build();
-        Menu menu = hierarchyNode(1L, null);
-        givenParentGraph(menu);
-
-        assertThatThrownBy(() -> menuService.insertMenuManage(dto)).isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
-                .hasMessageContaining("연결 프로그램을 지정할 수 없습니다");
-        assertThatThrownBy(() -> menuService.updateMenuManage(dto)).isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
-                .hasMessageContaining("연결 프로그램을 지정할 수 없습니다");
-
-        assertThat(menu.getMenuNm()).isEqualTo("original");
-        assertThat(menu.getPrgrmFileNm()).isNull();
-        assertThat(menu.getModernRoute()).isNull();
-        assertThat(menu.getUpMenuSn()).isNull();
-        assertThat(menu.getMenuOrdr()).isEqualTo(1);
-        verify(menuRepository, never()).save(any());
-        verifyNoInteractions(authorizationAdministrationService);
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"", "  "})
-    @DisplayName("updateMenuManage - 연결 프로그램 없이 저장하면 남아 있던 레거시 연결을 걷는다")
-    void updateWithoutProgramClearsLegacyLink(String blank) {
-        Menu menu = Menu.builder().menuSn(1L).menuNm("original").menuOrdr(1).prgrmFileNm("EgovLegacy").build();
-        givenParentGraph(menu);
-
-        menuService.updateMenuManage(MenuDto.builder().menuNo(1L).menuNm("renamed").prgrmFileNm(blank).build());
-        assertThat(menu.getMenuNm()).isEqualTo("renamed");
-        assertThat(menu.getPrgrmFileNm()).as("레거시 연결은 값 없이 저장해 걷는다").isNull();
-
-        Menu other = Menu.builder().menuSn(2L).menuNm("other").menuOrdr(1).prgrmFileNm("EgovLegacy").build();
-        givenParentGraph(other);
-        menuService.updateMenuManage(MenuDto.builder().menuNo(2L).menuNm("other").build());
-        assertThat(other.getPrgrmFileNm()).as("필드를 보내지 않아도 연결은 남지 않는다").isNull();
-    }
+    // [2026-10-05] 요청·응답에서 연결 프로그램 필드를 걷었다(MenuDto 는 모르는 필드를 무시한다). 메뉴를 프로그램에 연결하는
+    //   경로 자체가 없으므로 종전의 거부(400)·해제 테스트도 걷었다.
 
     @ParameterizedTest
     @ValueSource(strings = {"update", "order", "delete", "deleteList"})
@@ -769,7 +706,6 @@ class MenuServiceTest {
         menuService.insertMenuManage(MenuDto.builder().menuNm("독립 메뉴").modernRoute("/test").build());
         ArgumentCaptor<Menu> captured = ArgumentCaptor.forClass(Menu.class);
         verify(menuRepository).save(captured.capture());
-        assertThat(captured.getValue().getPrgrmFileNm()).isNull();
         assertThat(captured.getValue().getModernRoute()).isEqualTo("/test");
     }
 
@@ -783,7 +719,7 @@ class MenuServiceTest {
         
         menuService.updateMenuManage(dto);
         
-        verify(menu).updateWithModernRoute(eq("Updated"), any(), any(), any(), any(), any(), any(), any(), any());
+        verify(menu).updateWithModernRoute(eq("Updated"), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -869,40 +805,20 @@ class MenuServiceTest {
     }
     
     @Test
-    @DisplayName("getAllMenus - 경로가 없으면 레거시 파일명으로 추정하고, 추정할 수 없으면 / 를 싣는다")
-    void getAllMenus_calculateUrlFromLegacyFileName() {
-        Menu inferred = Menu.builder().menuSn(1L).prgrmFileNm("EgovMenuList").build();
-        Menu unknown = Menu.builder().menuSn(2L).prgrmFileNm("Prog").build();
-        when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenReturn(List.of(inferred, unknown));
+    @DisplayName("getAllMenus - chkURL 은 경로이고, 경로가 없거나 비어 있으면 # 다")
+    void getAllMenus_chkUrlIsRouteOrHash() {
+        Menu routed = Menu.builder().menuSn(1L).modernRoute("/admin/system/menus").build();
+        Menu none = Menu.builder().menuSn(2L).build();
+        Menu cleared = Menu.builder().menuSn(3L).modernRoute("").build();
+        when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenReturn(List.of(routed, none, cleared));
 
         List<MenuDto> menus = menuService.getAllMenus();
-        assertThat(menus).extracting(MenuDto::getChkURL).containsExactly("/admin/system/menus", "/");
-        assertThat(menus).extracting(MenuDto::getPrgrmFileNm).containsExactly("EgovMenuList", "Prog");
-        // 관리 목록도 같은 저장소 순서와 경로 계산을 쓴다(종전에는 둘 다 프로그램 원장을 조인해 읽었다).
+        assertThat(menus).extracting(MenuDto::getChkURL).containsExactly("/admin/system/menus", "#", "#");
+        // 관리 목록도 같은 저장소 순서와 경로 계산을 쓴다.
         assertThat(menuService.selectMenuManageList(new nuri.business.domain.common.BaseSearchDto()))
                 .extracting(MenuDto::getMenuNo, MenuDto::getChkURL)
-                .containsExactly(org.assertj.core.groups.Tuple.tuple(1L, "/admin/system/menus"), org.assertj.core.groups.Tuple.tuple(2L, "/"));
-    }
-
-    @Test
-    @DisplayName("calculateUrl - 프로그램 원장을 읽지 않는다: 추정할 수 없는 레거시 파일명은 / 다")
-    void calculateUrl_UnknownLegacyFileName() {
-        // [2026-10-04 프로그램 목록 퇴역] 종전에는 원장의 URL('/'→'#', '/x'→'/x')을 썼다. 원장에 그 프로그램이 없을 때의 값을 유지한다.
-        Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("Prog").build();
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
-
-        MenuDto result = menuService.selectMenuManage(1L);
-        assertThat(result.getChkURL()).isEqualTo("/");
-    }
-    
-    @Test
-    @DisplayName("calculateUrl - prgrmFileNm이 / 인 경우")
-    void calculateUrl_PrgrmFileNmRoot() {
-        Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("/").build();
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
-        
-        MenuDto result = menuService.selectMenuManage(1L);
-        assertThat(result.getChkURL()).isEqualTo("#"); 
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(1L, "/admin/system/menus"),
+                        org.assertj.core.groups.Tuple.tuple(2L, "#"), org.assertj.core.groups.Tuple.tuple(3L, "#"));
     }
 
     @Test
@@ -1011,7 +927,7 @@ class MenuServiceTest {
     // ── [2026-10-02 D1·D2] 메뉴 구조 읽기·저장 ─────────────────────────────────────────────────
 
     private record StructureRowFixture(Long menuSn, Long upMenuSn, Integer menuOrdr, String menuNm, String useYn,
-                                       String modernRoute, String menuExpln, String prgrmFileNm) implements MenuRepository.StructureRow {
+                                       String modernRoute, String menuExpln) implements MenuRepository.StructureRow {
         @Override public Long getMenuSn() { return menuSn; }
         @Override public Long getUpMenuSn() { return upMenuSn; }
         @Override public Integer getMenuOrdr() { return menuOrdr; }
@@ -1019,14 +935,13 @@ class MenuServiceTest {
         @Override public String getUseYn() { return useYn; }
         @Override public String getModernRoute() { return modernRoute; }
         @Override public String getMenuExpln() { return menuExpln; }
-        @Override public String getPrgrmFileNm() { return prgrmFileNm; }
     }
 
     private final Map<Long, Menu> structureMenus = new java.util.LinkedHashMap<>();
     private List<MenuRepository.StructureRow> structureRows = List.of();
 
     private static StructureRowFixture structureRow(long id, Long parent, int order, String name) {
-        return new StructureRowFixture(id, parent, order, name, "Y", null, null, null);
+        return new StructureRowFixture(id, parent, order, name, "Y", null, null);
     }
 
     /** 1 Root A ─ 2 Child A1 ─ 3 Leaf A1a, 4 Root B ─ 5 Child B1. 돌려주는 값은 그 구조의 버전이다. */
@@ -1079,36 +994,36 @@ class MenuServiceTest {
     @DisplayName("[D1] 메뉴 구조는 캐시가 아니라 DB 행에서 읽고, 루트 먼저·순서·번호 순으로 싣는다")
     void structureReadSortsRootsFirstAndNormalizesZeroParents() {
         var rows = List.<MenuRepository.StructureRow>of(
-                new StructureRowFixture(9L, 0L, 1, "Zero parent root", "N", "", "설명", "dir"),
-                new StructureRowFixture(3L, 1L, 2, "Second child", "Y", "/b", null, null),
-                new StructureRowFixture(2L, 1L, 1, "First child", "Y", "/a?tab=x", null, null),
-                new StructureRowFixture(1L, null, 1, "Root", "Y", null, null, null));
+                new StructureRowFixture(9L, 0L, 1, "Zero parent root", "N", "", "설명"),
+                new StructureRowFixture(3L, 1L, 2, "Second child", "Y", "/b", null),
+                new StructureRowFixture(2L, 1L, 1, "First child", "Y", "/a?tab=x", null),
+                new StructureRowFixture(1L, null, 1, "Root", "Y", null, null));
         when(menuRepository.findStructureRows()).thenReturn(rows);
 
         var structure = menuService.getMenuStructure();
 
         assertThat(structure.menus()).extracting(item -> item.menuNo()).containsExactly(1L, 9L, 2L, 3L);
         assertThat(structure.menus().get(1).upMenuSn()).as("0 상위는 루트다").isNull();
-        assertThat(structure.menus().get(1)).isEqualTo(new MenuStructureItem(9L, "Zero parent root", null, 1, "", "설명", "N", "dir"));
+        assertThat(structure.menus().get(1)).isEqualTo(new MenuStructureItem(9L, "Zero parent root", null, 1, "", "설명", "N"));
         assertThat(structure.version()).hasSize(64).isEqualTo(MenuStructurePlan.versionOf(rows));
         verify(menuRepository, never()).findAllByOrderByUpMenuSnAscMenuOrdrAsc();
         verify(menuRepository, never()).findStructureRowsForUpdate();
     }
 
     @Test
-    @DisplayName("[D1] 구조 버전은 여덟 칸 어디가 바뀌어도 달라지고, null 과 빈 문자열·구분자 위치를 구분한다")
+    @DisplayName("[D1] 구조 버전은 일곱 칸 어디가 바뀌어도 달라지고, null 과 빈 문자열·구분자 위치를 구분한다")
     void structureVersionCoversEveryColumnUnambiguously() {
-        var base = new StructureRowFixture(1L, null, 1, "a|b", "Y", null, "c", "p");
+        var base = new StructureRowFixture(1L, null, 1, "a|b", "Y", null, "c");
         String version = MenuStructurePlan.versionOf(List.of(base));
         var variants = List.of(
-                new StructureRowFixture(1L, 2L, 1, "a|b", "Y", null, "c", "p"),
-                new StructureRowFixture(1L, null, 2, "a|b", "Y", null, "c", "p"),
-                new StructureRowFixture(1L, null, 1, "a", "Y", null, "c", "p"),
-                new StructureRowFixture(1L, null, 1, "a|b", "N", null, "c", "p"),
-                new StructureRowFixture(1L, null, 1, "a|b", "Y", "", "c", "p"),
-                new StructureRowFixture(1L, null, 1, "a|b", "Y", null, null, "p"),
-                new StructureRowFixture(1L, null, 1, "a|b", "Y", null, "c", null),
-                new StructureRowFixture(1L, null, 1, "a", "Y", "|b", "c", "p"));
+                new StructureRowFixture(1L, 2L, 1, "a|b", "Y", null, "c"),
+                new StructureRowFixture(1L, null, 2, "a|b", "Y", null, "c"),
+                new StructureRowFixture(1L, null, 1, "a", "Y", null, "c"),
+                new StructureRowFixture(1L, null, 1, "a|b", "N", null, "c"),
+                new StructureRowFixture(1L, null, 1, "a|b", "Y", "", "c"),
+                new StructureRowFixture(1L, null, 1, "a|b", "Y", null, null),
+                new StructureRowFixture(1L, null, 1, "a|b", "Y", null, ""),
+                new StructureRowFixture(1L, null, 1, "a", "Y", "|b", "c"));
         for (var variant : variants) assertThat(MenuStructurePlan.versionOf(List.of(variant))).isNotEqualTo(version);
         assertThat(MenuStructurePlan.versionOf(List.of(base))).isEqualTo(version);
     }
@@ -1224,10 +1139,10 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("[D2] 속성 저장은 이름·라우트·설명·사용 여부만 바꾸고 상위·순서·연결 프로그램과 미사용 상태를 보존한다")
+    @DisplayName("[D2] 속성 저장은 이름·라우트·설명·사용 여부만 바꾸고 상위·순서와 미사용 상태를 보존한다")
     void structurePropertiesReplaceOnlyTheirFourFields() {
         String version = givenStructure();
-        Menu menu = Menu.builder().menuSn(2L).upMenuSn(1L).menuOrdr(7).menuNm("Child A1").prgrmFileNm("ProgramA")
+        Menu menu = Menu.builder().menuSn(2L).upMenuSn(1L).menuOrdr(7).menuNm("Child A1")
                 .modernRoute("/old").menuExpln("old").useYn("N").build();
         structureMenus.put(2L, menu);
 
@@ -1235,12 +1150,11 @@ class MenuServiceTest {
                 List.of(new MenuProperties(2L, "Renamed", "", null, "N")), List.of(), List.of()));
 
         assertThat(menu.getMenuNm()).isEqualTo("Renamed");
-        assertThat(menu.getModernRoute()).as("라우트가 있던 메뉴를 비우면 빈 문자열 — null 이면 기동 때 라우트 보강이 다시 채운다").isEmpty();
+        assertThat(menu.getModernRoute()).as("라우트가 있던 메뉴를 비우면 빈 문자열 — null 은 아직 채우지 않은 경로다").isEmpty();
         assertThat(menu.getMenuExpln()).isNull();
         assertThat(menu.getUseYn()).as("미사용 메뉴가 다시 켜지면 안 된다").isEqualTo("N");
         assertThat(menu.getUpMenuSn()).isEqualTo(1L);
         assertThat(menu.getMenuOrdr()).isEqualTo(7);
-        assertThat(menu.getPrgrmFileNm()).isEqualTo("ProgramA");
         verifyNoInteractions(authorizationAdministrationService);
     }
 

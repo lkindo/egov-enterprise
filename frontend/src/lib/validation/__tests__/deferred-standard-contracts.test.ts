@@ -6,11 +6,11 @@ import {
 } from '@/types/generated-zod';
 
 describe('보류 표준 설계의 생성 API 계약', () => {
-  // [2026-10-04 프로그램 목록 퇴역] ProgramDto 를 걷었다. 메뉴의 연결 프로그램 컬럼(300자)은 DB 에 남으므로 그 길이 계약은 남긴다.
-  it('메뉴의 연결 프로그램은 300자를 허용하고 301자는 거부한다', () => {
-    const schema = MenuDtoSchema.shape.prgrmFileNm;
-    expect(schema.safeParse('가'.repeat(300)).success).toBe(true);
-    expect(schema.safeParse('가'.repeat(301)).success).toBe(false);
+  // [2026-10-04 프로그램 목록 퇴역] ProgramDto 를 걷었다.
+  // [2026-10-05] 앱이 메뉴의 연결 프로그램 컬럼을 더 이상 매핑하지 않아 요청·응답에서 그 필드를 걷었다(GAP-PROGRAM-001).
+  //   필드가 다시 생기면 메뉴를 이미 퇴역한 프로그램 원장에 잇는 경로가 열린다.
+  it('메뉴 계약에는 연결 프로그램 필드가 없다', () => {
+    expect(Object.keys(MenuDtoSchema.shape)).not.toContain('prgrmFileNm');
   });
 
   it('기관코드와 수신 로그는 유효한 HHmmss를 같은 규칙으로 검증한다', () => {

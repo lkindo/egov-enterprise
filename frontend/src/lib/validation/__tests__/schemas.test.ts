@@ -98,7 +98,6 @@ describe('Standardized Validation Schemas', () => {
       const validData = {
         menuNo: '1001',
         menuNm: 'Dashboard',
-        prgrmFileNm: 'DashboardSvc.js',
         menuOrdr: 1,
       };
       const result = menuSchema.safeParse(validData);
@@ -109,7 +108,6 @@ describe('Standardized Validation Schemas', () => {
       const dataWithStingOrder = {
         menuNo: '1001',
         menuNm: 'Dashboard',
-        prgrmFileNm: 'DashboardSvc.js',
         menuOrdr: '10',
       };
       const result = menuSchema.safeParse(dataWithStingOrder);

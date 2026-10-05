@@ -157,7 +157,6 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
          menuNm: m.menuNm,
          upperMenuId: m.upMenuSn,
          menuOrdr: m.menuOrdr,
-         prgrmFileNm: m.prgrmFileNm,
        })),
    ),
    [allMenus, assignedMenuSns],

@@ -42,8 +42,7 @@ public final class MenuStructureDto {
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) Integer menuOrdr,
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED, nullable = true, types = {"string", "null"}) String modernRoute,
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED, nullable = true, types = {"string", "null"}) String menuExpln,
-            @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String useYn,
-            @Schema(requiredMode = Schema.RequiredMode.REQUIRED, nullable = true, types = {"string", "null"}) String prgrmFileNm) {}
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String useYn) {}
 
     /**
      * 저장 요청. 모든 목록은 비어 있을 수 있지만 다섯 목록이 모두 비면 바뀐 것이 없어 거부한다. {@code version} 은

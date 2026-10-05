@@ -401,16 +401,17 @@ final class MenuStructurePlan {
     }
 
     /**
-     * 메뉴 구조 버전 — 메뉴 전체 행(번호 순)의 번호·상위·순서·이름·사용 여부·연결 라우트·설명·연결 프로그램 요약값.
+     * 메뉴 구조 버전 — 메뉴 전체 행(번호 순)의 번호·상위·순서·이름·사용 여부·연결 라우트·설명 요약값.
+     * [2026-10-05] 앱이 읽지 않는 레거시 연결 프로그램을 빼며 형식 표지를 v2 로 올렸다.
      * 값마다 길이를 앞에 붙여 구분자가 값 안에 있어도 서로 다른 상태가 같은 문자열이 되지 않게 한다.
      */
     static String versionOf(List<MenuRepository.StructureRow> rows) {
-        var text = new StringBuilder("menu-structure-v1");
+        var text = new StringBuilder("menu-structure-v2");
         rows.stream().sorted(Comparator.comparing(MenuRepository.StructureRow::getMenuSn)).forEach(row -> text.append('\n')
                 .append(token(row.getMenuSn())).append('|').append(token(row.getUpMenuSn())).append('|')
                 .append(token(row.getMenuOrdr())).append('|').append(token(row.getMenuNm())).append('|')
                 .append(token(row.getUseYn())).append('|').append(token(row.getModernRoute())).append('|')
-                .append(token(row.getMenuExpln())).append('|').append(token(row.getPrgrmFileNm())));
+                .append(token(row.getMenuExpln())));
         return AuthorizationSnapshotService.digest(text.toString());
     }
 
@@ -423,7 +424,7 @@ final class MenuStructurePlan {
     static MenuStructure structureOf(List<MenuRepository.StructureRow> rows) {
         var items = rows.stream().map(row -> new MenuStructureItem(row.getMenuSn(), row.getMenuNm(),
                         normalizeParent(row.getUpMenuSn()), row.getMenuOrdr(), row.getModernRoute(), row.getMenuExpln(),
-                        row.getUseYn(), row.getPrgrmFileNm()))
+                        row.getUseYn()))
                 .sorted(Comparator.comparing(MenuStructureItem::upMenuSn, Comparator.nullsFirst(Comparator.naturalOrder()))
                         .thenComparing(MenuStructureItem::menuOrdr, Comparator.nullsLast(Comparator.naturalOrder()))
                         .thenComparing(MenuStructureItem::menuNo))

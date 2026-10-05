@@ -240,8 +240,8 @@ describe('Header account navigation authorization', () => {
       [menuWithRoute({
         menuNo: 7777778,
         menuNm: '레거시 메뉴',
-        modernRoute: '',
-        chkURL: 'legacy/selectMenu.do?menuNo=7#result',
+        // [2026-10-05] chkURL 은 목적지가 아니다 — 레거시 .do 경로는 메뉴 경로(modernRoute)로 온다.
+        modernRoute: 'legacy/selectMenu.do?menuNo=7#result',
       })],
     );
 

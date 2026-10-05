@@ -10,11 +10,10 @@ import { assertProjectComposerMenusMatch, COMPOSER_MENU_SNAPSHOT_PATH, loadProje
 
 const inventory = {
   menus: [
-    { menu_sn: 10, up_menu_sn: null, menu_ordr: 1, menu_nm: '관리 센터', prgrm_file_nm: null, menu_expln: null, modern_route: null, use_yn: 'Y', del_yn: 'N' },
-    { menu_sn: 11, up_menu_sn: 10, menu_ordr: 2, menu_nm: '선택한 기능', prgrm_file_nm: 'FEATURE', menu_expln: null, modern_route: '/admin/help?tab=FAQ', use_yn: 'Y', del_yn: 'N' },
-    { menu_sn: 12, up_menu_sn: 10, menu_ordr: 3, menu_nm: '제외한 기능', prgrm_file_nm: 'FEATURE', menu_expln: null, modern_route: '/admin/help?tab=COMMUNITY', use_yn: 'Y', del_yn: 'N' },
+    { menu_sn: 10, up_menu_sn: null, menu_ordr: 1, menu_nm: '관리 센터', menu_expln: null, modern_route: null, use_yn: 'Y', del_yn: 'N' },
+    { menu_sn: 11, up_menu_sn: 10, menu_ordr: 2, menu_nm: '선택한 기능', menu_expln: null, modern_route: '/admin/help?tab=FAQ', use_yn: 'Y', del_yn: 'N' },
+    { menu_sn: 12, up_menu_sn: 10, menu_ordr: 3, menu_nm: '제외한 기능', menu_expln: null, modern_route: '/admin/help?tab=COMMUNITY', use_yn: 'Y', del_yn: 'N' },
   ],
-  programs: [{ prgrm_file_nm: 'FEATURE', prgrm_korn_nm: '기능', url: '/api/v1/features', prgrm_strg_path: null, prgrm_expln: null }],
 };
 
 function fixture() {
@@ -72,12 +71,16 @@ test('stale snapshots fail for changed migrations, seeds, or Contract while CRLF
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
-test('invalid menu/program identities and missing parents cannot become a trusted preview', () => {
+test('invalid menu identities, missing parents and the retired v1 shape cannot become a trusted preview', () => {
   const hash = 'a'.repeat(64);
+  const valid = { schemaVersion: 2, sourceMigrationHash: hash, ...structuredClone(inventory) };
+  assert.doesNotThrow(() => validateProjectComposerMenus(valid, hash));
   for (const mutate of [value => value.menus.push(value.menus[0]), value => value.menus.shift(),
-    value => { value.programs = []; }, value => { value.menus[0].menu_sn = "10);DROP"; },
-    value => { value.menus[1].menu_ordr = '2'; }]) {
-    const snapshot = { schemaVersion: 1, sourceMigrationHash: hash, ...structuredClone(inventory) };
+    value => { value.menus = []; }, value => { value.menus[0].menu_sn = "10);DROP"; },
+    value => { value.menus[1].menu_ordr = '2'; }, value => { value.menus[1].modern_route = 5; },
+    // [2026-10-05] v1 은 레거시 연결 프로그램(prgrm_file_nm·programs)을 실었다 — 형식이 바뀌었으므로 거부한다.
+    value => { value.schemaVersion = 1; }]) {
+    const snapshot = structuredClone(valid);
     mutate(snapshot);
     assert.throws(() => validateProjectComposerMenus(snapshot, hash));
   }

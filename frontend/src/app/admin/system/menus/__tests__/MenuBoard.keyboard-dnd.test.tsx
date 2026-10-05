@@ -32,7 +32,7 @@ vi.mock('@/services/foundation/system/AuthorizationAdminService', () => ({
 import MenuAdminClient from '../MenuAdminClient';
 
 const menu = (menuNo: number, menuNm: string, upMenuSn: number | null, menuOrdr: number, modernRoute: string | null = null) => ({
-  menuNo, menuNm, upMenuSn, menuOrdr, modernRoute, menuExpln: null, useYn: 'Y' as const, prgrmFileNm: null,
+  menuNo, menuNm, upMenuSn, menuOrdr, modernRoute, menuExpln: null, useYn: 'Y' as const,
 });
 /*
   빈 영역(9) — 하위가 없어 삭제 예정으로 표시할 수 있다(키보드 센서는 위치 좌표가 없어 첫 놓을 곳인 그 영역 탭을 고른다).

@@ -116,7 +116,6 @@ function structureMenu(menuNo: number, menuNm: string, fields: { modernRoute?: s
     modernRoute: fields.modernRoute ?? null,
     menuExpln: null,
     useYn: fields.useYn ?? 'Y',
-    prgrmFileNm: null,
   };
 }
 

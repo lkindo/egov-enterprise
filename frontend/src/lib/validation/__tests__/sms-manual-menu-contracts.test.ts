@@ -43,7 +43,6 @@ describe('SMS, manual, and menu write-boundary contracts', () => {
     const valid = {
       menuNm: '메뉴',
       menuOrdr: 1,
-      prgrmFileNm: 'Program.tsx',
       modernRoute: '/admin/menu',
       menuExpln: '설명',
       useYn: 'Y' as const,
@@ -51,8 +50,6 @@ describe('SMS, manual, and menu write-boundary contracts', () => {
     expect(menuSchema.safeParse(valid).success).toBe(true);
     expect(menuSchema.safeParse({ ...valid, menuNm: '   ' }).success).toBe(false);
     expect(menuSchema.safeParse({ ...valid, menuNm: '가'.repeat(101) }).success).toBe(false);
-    expect(menuSchema.safeParse({ ...valid, prgrmFileNm: 'a'.repeat(300) }).success).toBe(true);
-    expect(menuSchema.safeParse({ ...valid, prgrmFileNm: 'a'.repeat(301) }).success).toBe(false);
     expect(menuSchema.safeParse({ ...valid, modernRoute: 'a'.repeat(501) }).success).toBe(false);
     expect(menuSchema.safeParse({ ...valid, menuExpln: '가'.repeat(4001) }).success).toBe(false);
     expect(menuSchema.safeParse({ ...valid, menuOrdr: 1.5 }).success).toBe(false);

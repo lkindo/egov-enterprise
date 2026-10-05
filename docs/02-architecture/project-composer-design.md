@@ -132,9 +132,9 @@ flowchart TD
 
 선택 기능의 메뉴, 프로그램 연결, 부모 계층, NAVIGATION, OPERATION을 같은 해석 결과에서 생성한다. 필요한 부모 메뉴는 포함하고 빈 분류는 정리한다. query를 사용하는 목적지와 redirect도 확인한다. 기능 선택이 owner-only 또는 수신자·결재자 제한을 완화해서는 안 된다.
 
-기존 profile 경로는 [관리자 초기화 시드](../../api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql)의 동작을 보존한다. composition 경로는 체크인된 migration을 새 전용 DB에 적용한 최종 메뉴·프로그램을 선택하며, 원래 시드의 최초 초기화·권한 회수 보호 조건을 유지한다. 부모만 필요한 메뉴는 목적지를 제거해 구조로 남긴다. OPERATION은 선택 기능의 코드와 원본 default group만 포함한다. 운영 DB의 현재 메뉴와 사용자별 권한·업무 데이터를 새 프로젝트의 기본값으로 덤프하지 않는다.
+기존 profile 경로는 [관리자 초기화 시드](../../api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql)의 동작을 보존한다. composition 경로는 체크인된 migration을 새 전용 DB에 적용한 최종 메뉴를 선택하며, 원래 시드의 최초 초기화·권한 회수 보호 조건을 유지한다. 부모만 필요한 메뉴는 목적지를 제거해 구조로 남긴다. OPERATION은 선택 기능의 코드와 원본 default group만 포함한다. 운영 DB의 현재 메뉴와 사용자별 권한·업무 데이터를 새 프로젝트의 기본값으로 덤프하지 않는다.
 
-[메뉴 snapshot](../../config/project-composer-menus.json)은 DB 없이 계획을 보여주기 위한 **파생 자료**다. 정본은 원본 migration·seed·Contract SQL이다. [메뉴 preview](../../scripts/project-composer-menu-preview.mjs)는 SQL 입력 해시가 달라지면 거부하고, 실제 DB 생성은 migration으로 만든 전체 메뉴·프로그램과 snapshot을 다시 대조한다. 화면 route 수를 메뉴 수로 표시하지 않는다. snapshot 갱신은 [사용 가이드](../03-guides/project-composer-guide.md#메뉴-미리보기-자료-갱신)의 전용 일회용 컨테이너 절차를 따른다.
+[메뉴 snapshot](../../config/project-composer-menus.json)은 DB 없이 계획을 보여주기 위한 **파생 자료**다. 정본은 원본 migration·seed·Contract SQL이다. [메뉴 preview](../../scripts/project-composer-menu-preview.mjs)는 SQL 입력 해시가 달라지면 거부하고, 실제 DB 생성은 migration으로 만든 전체 메뉴와 snapshot을 다시 대조한다(레거시 연결 프로그램·프로그램 원장은 앱이 읽지 않아 싣지 않는다). 화면 route 수를 메뉴 수로 표시하지 않는다. snapshot 갱신은 [사용 가이드](../03-guides/project-composer-guide.md#메뉴-미리보기-자료-갱신)의 전용 일회용 컨테이너 절차를 따른다.
 
 PostgreSQL은 기존 migration을 적용한 일회용 DB에서 스키마를 투영하고 빈 DB에 재적용하는 경로를 유지한다. FK·인덱스·제약·sequence·기본값·표준 메타·관리자 부트스트랩을 검증한다. ORM Entity로 DDL을 다시 만드는 방식은 현재 물리 계약을 대체하지 않는다. DB나 Entity 변경에 들어갈 때는 DB 헌법과 H1에 따라 live schema·표준 메타를 먼저 조회한다.
 

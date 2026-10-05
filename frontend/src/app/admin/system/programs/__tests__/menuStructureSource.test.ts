@@ -7,7 +7,7 @@ import { menuStructureFailure, menuStructureSource } from '../menuStructureSourc
  * 로그인 정보를 확인하는 중에는 아직 모른다. (1단계 programMenuLinkSource·programMenuLinkFailure 의 판정을 옮겼다.)
  */
 const MENUS = [
-  { menuNo: 4, menuNm: '화면 관리', upMenuSn: null, menuOrdr: 1, modernRoute: '/admin/system/programs', menuExpln: null, useYn: 'Y' as const, prgrmFileNm: null },
+  { menuNo: 4, menuNm: '화면 관리', upMenuSn: null, menuOrdr: 1, modernRoute: '/admin/system/programs', menuExpln: null, useYn: 'Y' as const },
 ];
 
 describe('menuStructureFailure', () => {

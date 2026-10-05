@@ -15,7 +15,7 @@ import { buildMenuTree } from '../MenuByAuthorityClient';
 import type { MenuByAuthority } from '@/types/foundation/security';
 
 const menu = (menuNo: number, menuNm: string, upperMenuId: number | null | undefined) =>
-  ({ menuNo, menuNm, upperMenuId, menuOrdr: 1, prgrmFileNm: '' } as unknown as MenuByAuthority);
+  ({ menuNo, menuNm, upperMenuId, menuOrdr: 1 } as unknown as MenuByAuthority);
 
 describe('buildMenuTree', () => {
   it('상위 메뉴가 NULL 인 최상위를 루트로 잡는다(서버가 실제로 보내는 형태)', () => {
