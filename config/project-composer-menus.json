@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceMigrationHash": "57667d4436fdf2aaa6fc5e886e003795f49371af168ccf69bf5e7f0157cdc92b",
+  "sourceMigrationHash": "158acc2efc1316ba7843cd5ea08a34a4852e340e8bee7a107fb0189b95fe169e",
   "menus": [
     {
       "menu_sn": 1000000,
@@ -264,17 +264,6 @@
       "menu_expln": "",
       "modern_route": null,
       "use_yn": "Y",
-      "del_yn": "N"
-    },
-    {
-      "menu_sn": 2030100,
-      "up_menu_sn": 2030000,
-      "menu_ordr": 5,
-      "menu_nm": "마이페이지관리",
-      "prgrm_file_nm": null,
-      "menu_expln": "",
-      "modern_route": "/admin/workspace/my-page",
-      "use_yn": "N",
       "del_yn": "N"
     },
     {

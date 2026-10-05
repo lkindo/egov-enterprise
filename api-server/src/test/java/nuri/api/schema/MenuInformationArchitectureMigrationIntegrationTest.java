@@ -87,7 +87,8 @@ class MenuInformationArchitectureMigrationIntegrationTest extends SharedPostgres
         flyway(null).migrate();
         try (Connection connection=openConnection(); Statement statement=connection.createStatement()) {
             assertThat(number(statement,"SELECT count(*) FROM flyway_schema_history WHERE version='2.100' AND success")).isEqualTo(1);
-            assertThat(number(statement,"SELECT count(*) FROM tb_menu_info")).isEqualTo(77);
+            // 최신까지 올리면 V2_125 가 V2_88 이 끈 마이페이지 관리 메뉴(2030100) 한 행을 지운다(DEC-OPS-229). 활성 수는 그대로다.
+            assertThat(number(statement,"SELECT count(*) FROM tb_menu_info")).isEqualTo(77-1);
             assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE use_yn='Y'")).isEqualTo(71);
             assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE up_menu_sn IS NULL")).isEqualTo(4);
             assertThat(number(statement,"WITH RECURSIVE tree AS (SELECT menu_sn,1 AS depth FROM tb_menu_info WHERE up_menu_sn IS NULL "
@@ -97,22 +98,25 @@ class MenuInformationArchitectureMigrationIntegrationTest extends SharedPostgres
                     + "(9020220,9040200,9030800,9040400,1030000,1050000,1060000,2020000,9030100)")).isZero();
             assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE menu_nm IN ('참여','통계') "
                     + "AND menu_sn>"+originalMaximum)).isEqualTo(2);
+            // V2_100 이 사용 안 함으로 남긴 6행 중 2030100 은 V2_125 가 지웠다. 나머지 5행은 그대로 꺼져 있다.
             assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE menu_sn IN "
-                    + "(2010400,2010600,2030100,9010500,9030200,9010300) AND use_yn='N'")).isEqualTo(6);
+                    + "(2010400,2010600,9010500,9030200,9010300) AND use_yn='N'")).isEqualTo(5);
+            assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE menu_sn=2030100")).isZero();
             assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE menu_sn=2010000 "
                     + "AND modern_route='/admin/survey/hub?tab=manage' AND up_menu_sn=9000000")).isEqualTo(1);
             assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE menu_sn=9030110 "
                     + "AND modern_route='/admin/help?tab=COMMUNITY'")).isEqualTo(1);
             assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE menu_sn=9020130 "
                     + "AND modern_route='/admin/system/policies'")).isEqualTo(1);
-            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_cd='ROLE_ADMIN'")).isEqualTo(77);
+            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_cd='ROLE_ADMIN'")).isEqualTo(77-1);
             assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_cd='ROLE_USER'")).isEqualTo(25-6);
             // 최신까지 올리면 V2_104 가 퇴역한 NETWORK_* 기능 권한 8행을 지우고 REMOVE 이력 8행을 남긴다(DEC-OPS-129).
             //   V2_120 이 ROLE_USER 의 들어갈 수 없는 설문·투표 관리 메뉴 5행과 비게 된 관리 센터 1행을 지우고 REMOVE 이력 6행을 남긴다.
             //   V2_124 가 퇴역한 PROGRAM_* 기능 권한 8행(ROLE_ADMIN·ROLE_SYSTEM × 4)을 지우고 REMOVE 이력 8행을 남긴다.
+            //   V2_125 가 지운 마이페이지 관리 메뉴의 ROLE_ADMIN 메뉴 배정 1행에 REMOVE 이력 1행을 남긴다.
             //   V2_100 자신의 효과(NAV 추가 4·제거 13)는 아래 식별자별 단언이 그대로 본다.
             assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'")).isEqualTo(566-8-8);
-            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_chg_hstry")).isEqualTo(auditsBefore+17+8+6+8);
+            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_chg_hstry")).isEqualTo(auditsBefore+17+8+6+8+1);
             assertThat(number(statement,"SELECT count(*) FROM tb_authrt_chg_hstry WHERE dmnd_idntfr='migration:2.100' "
                     + "AND chg_type_cd='ADD' AND authrt_type_cd='NAVIGATION'")).isEqualTo(4);
             assertThat(number(statement,"SELECT count(*) FROM tb_authrt_chg_hstry WHERE dmnd_idntfr='migration:2.100' "
@@ -121,7 +125,7 @@ class MenuInformationArchitectureMigrationIntegrationTest extends SharedPostgres
                     + "WHERE dmnd_idntfr='migration:2.100'")).isEqualTo(1);
             assertThat(digest(statement,"tb_authrt_info","")).isEqualTo(before.get("tb_authrt_info"));
             assertThat(digest(statement,"tb_authrt_user_map","")).isEqualTo(before.get("tb_authrt_user_map"));
-            assertThat(digest(statement,"tb_authrt_chg_hstry","WHERE dmnd_idntfr NOT IN ('migration:2.100','migration:2.104','migration:2.120','migration:2.124')"))
+            assertThat(digest(statement,"tb_authrt_chg_hstry","WHERE dmnd_idntfr NOT IN ('migration:2.100','migration:2.104','migration:2.120','migration:2.124','migration:2.125')"))
                     .isEqualTo(before.get("tb_authrt_chg_hstry"));
         }
         var after=snapshot();
