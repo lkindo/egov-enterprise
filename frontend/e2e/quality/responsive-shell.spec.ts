@@ -124,25 +124,38 @@ test.describe('Quality & Resilience', () => {
 
     /**
      * [2026-10-05] 넓은 화면 사이드바 접기(카탈로그 §4 '사이드바 접기') — 위와 같이 구조 사실만 본다.
-     *   ① 접으면 사이드바 상자가 화면에서 사라지고(display:none — 탭 순서·접근성 트리에서도 빠진다) 본문 왼쪽 여백이 0 이 되며
-     *      가로로 넘치지 않는다. 단위 테스트(jsdom)는 CSS 를 적용하지 않아 이 사실을 보지 못한다.
+     *   ① 접으면 사이드바 상자가 화면에서 사라지고(display:none — 탭 순서·접근성 트리에서도 빠진다) 그 자리에 폭 48px 의 접힘
+     *      막대가 남으며, 본문 왼쪽 여백은 막대 폭이 되고 가로로 넘치지 않는다. 단위 테스트(jsdom)는 CSS 를 적용하지 않아 이
+     *      사실을 보지 못한다.
      *   ② 새로고침해도 접힌 채다 — 그리기 전 복원 스크립트가 <html data-sidebar-collapsed> 를 되살린다.
      *   ③ 1280px(주메뉴가 있는 폭)에서는 경로 없는 영역의 '메뉴 보기' 단추가 사이드바를 다시 편다. 1024px 에는 주메뉴가 없어
      *      머리글의 접기·펼치기 단추로 편다.
+     *   ④ [DEC-OPS-227] 사이드바 맨 위의 글자 단추 '사이드바 접기'로 접고 막대의 '사이드바 펼치기'(키보드)로 펴며, 포커스가
+     *      사라지는 단추에서 상대 단추로 넘어간다(2.4.3). 펼친 상태에서는 막대가 화면에 없다.
+     *   ⑤ 인쇄 매체에서는 접힌 화면에 막대도 그 여백도 남지 않는다(접힘 블록 안의 인쇄 규칙).
+     *   ⑥ 접힘을 기억한 채 좁은 화면(lg 미만)으로 가면 막대·여백이 없고 서랍이 그대로 동작하며, 넓은 화면용 '사이드바 접기'는
+     *      서랍에 보이지 않는다. 다시 넓히면 접힌 채로 돌아온다.
+     *   막대는 화면에 없을 때도 DOM 에는 하나 있어야 한다 — toBeHidden 은 요소가 없어도 통과하므로 toHaveCount(1) 을 먼저 둔다.
      */
     test.describe('Wide-screen sidebar collapse (카탈로그 §4)', () => {
         test.use({ storageState: 'playwright/.auth/admin.json' });
         const HEADING = { level: 1, name: '관리자 업무 현황', exact: true } as const;
+        /** 접힘 막대 폭(--app-sidebar-rail-width 3rem)과 펼친 사이드바 폭(--app-sidebar-width 16rem). */
+        const RAIL_WIDTH = '48px';
+        const SIDEBAR_WIDTH = '256px';
         for (const vp of [{ width: 1024, height: 800, gnb: false }, { width: 1280, height: 800, gnb: true }]) {
-            test(`${vp.width}px: 접으면 사이드바가 빠지고 본문이 그 폭을 쓰며 새로고침해도 유지된다`, async ({ page }) => {
+            test(`${vp.width}px: 접으면 사이드바가 빠지고 막대가 남으며 새로고침해도 유지된다`, async ({ page }) => {
                 await page.setViewportSize({ width: vp.width, height: vp.height });
                 await page.goto('/admin');
                 const main = page.locator('main#main-content');
                 await expect(main.getByRole('heading', HEADING)).toBeVisible({ timeout: 30000 });
                 const sidebar = page.locator('aside#primary-sidebar');
+                const rail = page.locator('aside[data-app-sidebar-rail]');
                 const toggle = page.getByRole('button', { name: '사이드바 접기·펼치기' });
                 await expect(toggle).toHaveAttribute('aria-controls', 'primary-sidebar');
                 await expect(sidebar).toBeVisible();
+                await expect(rail).toHaveCount(1);
+                await expect(rail, '펼친 상태에서는 막대가 화면에 없어야 한다').toBeHidden();
 
                 // 하이드레이션 전 클릭은 처리기가 없어 무시된다 — 펼친 상태일 때만 누르고, 접힘이 반영될 때까지 다시 시도한다.
                 await expect(async () => {
@@ -150,14 +163,27 @@ test.describe('Quality & Resilience', () => {
                     await expect(toggle).toHaveAttribute('aria-expanded', 'false', { timeout: 2000 });
                 }).toPass({ timeout: 15000 });
                 await expect.poll(() => sidebar.boundingBox(), { message: '접은 사이드바가 화면에 남아 있다' }).toBeNull();
-                await expect(main).toHaveCSS('padding-left', '0px');
+                await expect(rail.getByRole('button', { name: '사이드바 펼치기' })).toBeVisible();
+                // 막대 단추는 아이콘만이 아니라 글자 '펼치기'도 보인다(찾기 쉬움 — DEC-OPS-227).
+                await expect(rail.getByText('펼치기', { exact: true })).toBeVisible();
+                await expect.poll(async () => (await rail.boundingBox())?.width ?? null).toBe(48);
+                await expect(main).toHaveCSS('padding-left', RAIL_WIDTH);
                 const overflowX = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
                 expect(overflowX, `${vp.width}px 에서 접힌 화면이 가로로 넘친다`).toBeLessThanOrEqual(1);
+
+                // 인쇄에서는 막대도 그 자리(본문 여백)도 남지 않는다 — 접힘 블록 안의 인쇄 규칙(globals.css).
+                await page.emulateMedia({ media: 'print' });
+                await expect(rail, '인쇄에 접힘 막대가 남는다').toBeHidden();
+                await expect(main).toHaveCSS('padding-left', '0px');
+                await page.emulateMedia({ media: 'screen' });
+                await expect(rail).toBeVisible();
+                await expect(main).toHaveCSS('padding-left', RAIL_WIDTH);
 
                 await page.reload();
                 await expect(main.getByRole('heading', HEADING)).toBeVisible({ timeout: 30000 });
                 expect(await page.evaluate(() => document.documentElement.getAttribute('data-sidebar-collapsed'))).toBe('true');
                 await expect.poll(() => sidebar.boundingBox(), { message: '새로고침 뒤 사이드바가 다시 나타났다' }).toBeNull();
+                await expect(rail, '새로고침 뒤 막대가 사라졌다').toBeVisible();
                 await expect(toggle).toHaveAttribute('aria-expanded', 'false', { timeout: 15000 });
 
                 if (vp.gnb) {
@@ -172,8 +198,91 @@ test.describe('Quality & Resilience', () => {
                 }
                 await expect(toggle).toHaveAttribute('aria-expanded', 'true');
                 await expect(sidebar).toBeVisible();
-                await expect(main).toHaveCSS('padding-left', '256px');
+                await expect(rail).toBeHidden();
+                await expect(main).toHaveCSS('padding-left', SIDEBAR_WIDTH);
+            });
+
+            test(`${vp.width}px: 사이드바 맨 위 '사이드바 접기'와 막대의 '사이드바 펼치기'로 접고 펴며 포커스가 따라간다`, async ({ page }) => {
+                await page.setViewportSize({ width: vp.width, height: vp.height });
+                await page.goto('/admin');
+                const main = page.locator('main#main-content');
+                await expect(main.getByRole('heading', HEADING)).toBeVisible({ timeout: 30000 });
+                const sidebar = page.locator('aside#primary-sidebar');
+                const rail = page.locator('aside[data-app-sidebar-rail]');
+                const collapse = sidebar.getByRole('button', { name: '사이드바 접기', exact: true });
+                const expand = rail.getByRole('button', { name: '사이드바 펼치기', exact: true });
+                const collapsedAttribute = () => page.evaluate(() => document.documentElement.getAttribute('data-sidebar-collapsed'));
+                await expect(collapse).toBeVisible();
+                await expect(collapse).toHaveText('사이드바 접기');
+                await expect(collapse).toHaveAttribute('aria-controls', 'primary-sidebar');
+                await expect(rail).toHaveCount(1);
+                await expect(rail).toBeHidden();
+
+                // 하이드레이션 전 클릭은 무시된다 — 아직 펼친 상태일 때만 누르고 접힘이 반영될 때까지 다시 시도한다.
+                await expect(async () => {
+                    if ((await collapsedAttribute()) !== 'true') await collapse.click();
+                    await expect.poll(collapsedAttribute, { timeout: 2000 }).toBe('true');
+                }).toPass({ timeout: 15000 });
+                await expect.poll(() => sidebar.boundingBox(), { message: '접은 사이드바가 화면에 남아 있다' }).toBeNull();
+                await expect(expand).toBeVisible();
+                await expect(expand).toHaveAttribute('aria-expanded', 'false');
+                // 누른 '접기'는 사라졌다 — 포커스가 문서 처음으로 떨어지지 않고 막대의 펼치기로 넘어간다.
+                await expect(expand).toBeFocused();
+                await expect(main).toHaveCSS('padding-left', RAIL_WIDTH);
+                const overflowX = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+                expect(overflowX, `${vp.width}px 에서 접힌 화면이 가로로 넘친다`).toBeLessThanOrEqual(1);
+
+                await page.keyboard.press('Enter');
+                await expect.poll(collapsedAttribute).toBeNull();
+                await expect(sidebar).toBeVisible();
+                await expect(rail).toBeHidden();
+                await expect(collapse).toBeFocused();
+                await expect(page.getByRole('button', { name: '사이드바 접기·펼치기' })).toHaveAttribute('aria-expanded', 'true');
+                await expect(main).toHaveCSS('padding-left', SIDEBAR_WIDTH);
             });
         }
+
+        test('접힘을 기억한 채 좁은 화면(768px)으로 가면 막대·여백 없이 서랍이 그대로 동작한다', async ({ page }) => {
+            await page.setViewportSize({ width: 1280, height: 800 });
+            await page.goto('/admin');
+            const main = page.locator('main#main-content');
+            await expect(main.getByRole('heading', HEADING)).toBeVisible({ timeout: 30000 });
+            const sidebar = page.locator('aside#primary-sidebar');
+            const rail = page.locator('aside[data-app-sidebar-rail]');
+            // 역할 로케이터는 display:none 요소를 세지 않는다 — 서랍에서 DOM 에 하나 있는지는 숨은 요소까지 세어 확인한다.
+            const collapseInDom = sidebar.getByRole('button', { name: '사이드바 접기', exact: true, includeHidden: true });
+            const toggle = page.getByRole('button', { name: '사이드바 접기·펼치기' });
+            await expect(async () => {
+                if ((await toggle.getAttribute('aria-expanded')) === 'true') await toggle.click();
+                await expect(toggle).toHaveAttribute('aria-expanded', 'false', { timeout: 2000 });
+            }).toPass({ timeout: 15000 });
+            await expect(rail).toBeVisible();
+
+            // 기억(속성)은 남지만 접힘 규칙은 lg 이상에서만 적용된다 — 막대는 숨고 본문 여백은 0 이며 서랍은 닫혀 있다.
+            await page.setViewportSize({ width: 768, height: 1024 });
+            expect(await page.evaluate(() => document.documentElement.getAttribute('data-sidebar-collapsed'))).toBe('true');
+            await expect(rail).toHaveCount(1);
+            await expect(rail, '좁은 화면에 접힘 막대가 남는다').toBeHidden();
+            await expect(main).toHaveCSS('padding-left', '0px');
+            await expect(sidebar).toBeHidden();
+
+            await page.getByRole('button', { name: '주 메뉴 열기' }).click();
+            await expect(sidebar).toBeVisible();
+            // 서랍에는 위쪽 '사이드바 닫기'가 있다 — 넓은 화면용 '사이드바 접기'는 보이지 않는다.
+            await expect(sidebar.getByRole('button', { name: '사이드바 닫기' })).toBeVisible();
+            await expect(collapseInDom).toHaveCount(1);
+            await expect(collapseInDom).toBeHidden();
+            await expect(rail).toBeHidden();
+            const overflowX = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+            expect(overflowX, '768px 서랍이 가로로 넘친다').toBeLessThanOrEqual(1);
+
+            // 서랍을 닫고 다시 넓히면 기억한 대로 접힌 채다.
+            await page.keyboard.press('Escape');
+            await expect(sidebar).toBeHidden();
+            await page.setViewportSize({ width: 1280, height: 800 });
+            await expect(rail).toBeVisible();
+            await expect.poll(() => sidebar.boundingBox(), { message: '다시 넓힌 화면에 접은 사이드바가 나타났다' }).toBeNull();
+            await expect(main).toHaveCSS('padding-left', RAIL_WIDTH);
+        });
     });
 });
