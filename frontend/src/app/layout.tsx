@@ -6,7 +6,6 @@ import Providers from './providers';
 import { ApplicationFrame } from './components/layout/ApplicationFrame';
 import { Header } from './components/layout/header';
 import { Sidebar } from './components/layout/sidebar';
-import { SidebarRail } from './components/layout/sidebar-rail';
 import { Footer } from './components/layout/footer';
 import { Inter, Outfit } from 'next/font/google';
 import localFont from 'next/font/local';
@@ -67,9 +66,11 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <ApplicationFrame
       header={<Suspense fallback={<div className="h-[var(--app-header-height)] border-b border-border bg-card" />}><Header menusPromise={menusPromise} /></Suspense>}
-      // [2026-10-05 DEC-OPS-227] 접힘 막대는 사이드바의 Suspense 밖에 둔다 — 메뉴를 읽는 동안에도 펼치기 단추가 있다.
-      //   sidebar 자리라 공개 화면(로그인)에서는 사이드바와 함께 마운트되지 않는다(ApplicationFrame).
-      sidebar={<><Suspense fallback={<aside data-app-sidebar="" className="fixed left-0 top-[var(--app-header-height)] hidden h-[calc(100dvh-var(--app-header-height))] w-[var(--app-sidebar-width)] border-r bg-card lg:block" />}><Sidebar menusPromise={menusPromise} /></Suspense><SidebarRail /></>}
+      // [2026-10-05 DEC-OPS-228] 자리표시도 data-app-sidebar 를 단다 — 접힌 채 새로고침하면 globals.css 가 이것도 좁은 띠로 줄여
+      //   메뉴가 오기 전후로 본문 여백·경계선이 튀지 않는다. 경계선 단추는 사이드바(Suspense 안)에만 둔다 — 자리표시는 서버가
+      //   메뉴를 스트리밍하는 짧은 동안만 보이고 그 동안은 펼쳐도 보일 메뉴가 없다. 자리표시에 단추를 두면 메뉴가 도착해 자리표시가
+      //   사이드바로 바뀌는 순간 그 단추가 DOM 에서 사라져, 거기 있던 포커스가 문서 처음으로 떨어진다(2.4.3).
+      sidebar={<Suspense fallback={<aside data-app-sidebar="" className="fixed left-0 top-[var(--app-header-height)] hidden h-[calc(100dvh-var(--app-header-height))] w-[var(--app-sidebar-width)] border-r bg-card lg:block" />}><Sidebar menusPromise={menusPromise} /></Suspense>}
       footer={<Footer />}
     >
       <PageTransition>

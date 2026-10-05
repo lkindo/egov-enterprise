@@ -23,7 +23,7 @@ describe('public and application layouts', () => {
     expect(screen.getByRole('complementary')).toBeVisible();
     expect(screen.getAllByRole('main')).toHaveLength(1);
     // [2026-10-05] 사이드바 자리는 --app-sidebar-inset 으로 비워 둔다. 기본값은 사이드바 폭(--app-sidebar-width)과 같고,
-    //   넓은 화면에서 사이드바를 접으면 globals.css 가 접힘 막대 폭으로 돌린다 — 폭 토큰을 직접 쓰면 접어도 사이드바 폭이 남는다.
+    //   넓은 화면에서 사이드바를 접으면 globals.css 가 남는 띠 폭(--app-sidebar-rail-width)으로 돌린다 — 폭 토큰을 직접 쓰면 접어도 사이드바 폭이 남는다.
     expect(screen.getByRole('main')).toHaveClass('lg:pl-[var(--app-sidebar-inset)]');
     expect(screen.getByRole('main')).not.toHaveClass('lg:pl-[var(--app-sidebar-width)]');
   });
