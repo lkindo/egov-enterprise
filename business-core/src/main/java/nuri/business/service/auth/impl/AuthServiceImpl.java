@@ -1,9 +1,7 @@
 package nuri.business.service.auth.impl;
 import nuri.foundation.core.exception.CommonErrorCode;
-import nuri.business.domain.user.exception.UserErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.business.domain.user.repository.UserRepository;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.domain.auth.RefreshTokenDigest;
@@ -33,12 +31,10 @@ public class AuthServiceImpl implements AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
-    private final UserRepository userRepository;
     private final UserDetailsService userDetailsService;
     private final nuri.business.domain.auth.RefreshTokenRepository refreshTokenRepository;
     private final nuri.business.service.login.LoginPolicyManageService loginPolicyManageService;
     private final nuri.business.domain.login.LoginPolicyRepository loginPolicyRepository;
-    private final nuri.business.service.auth.OtpService otpService;
     /** [W1-E2] 로그인 감사 기록. 이 배선 전까지 tb_login_log 는 영구히 비어 있었다. */
     private final nuri.business.service.log.LogService logService;
     private final nuri.business.service.auth.mfa.MfaService mfaService;

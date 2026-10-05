@@ -9,7 +9,6 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import nuri.business.domain.login.LoginPolicy;
 import nuri.business.domain.login.LoginPolicyRepository;
-import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.auth.LoginFailureReason;
 import nuri.business.service.auth.LoginRejectedException;
@@ -127,9 +126,9 @@ class AuthServiceImplTest {
                 "refresh-expiry-test-key-material-only-not-a-deployment-secret-01234567890123456789");
         org.springframework.test.util.ReflectionTestUtils.setField(realProvider, "refreshTokenValidityInMilliseconds", validityMs);
         org.springframework.test.util.ReflectionTestUtils.invokeMethod(realProvider, "init");
-        AuthServiceImpl service = new AuthServiceImpl(authenticationManager, realProvider, userRepository,
+        AuthServiceImpl service = new AuthServiceImpl(authenticationManager, realProvider,
                 userDetailsService, refreshTokenRepository, loginPolicyManageService, loginPolicyRepository,
-                otpService, logService, mfaService);
+                logService, mfaService);
         if (relogin) {
             given(refreshTokenRepository.findById(ESNTL_ID)).willReturn(Optional.of(RefreshToken.builder()
                     .userId(ESNTL_ID).rfshTkn("old-digest")
@@ -644,11 +643,4 @@ class AuthServiceImplTest {
                 .exprtnDt(Instant.now().plus(Duration.ofDays(3))).build();
     }
 
-    private static User userWithSecret() {
-        User user = org.mockito.Mockito.mock(User.class);
-        given(user.getOtpSecret()).willReturn("USER-OTP-SECRET");
-        given(user.getEsntlId()).willReturn(ESNTL_ID);
-        given(user.getRole()).willReturn(nuri.business.domain.user.entity.Role.USER);
-        return user;
-    }
 }

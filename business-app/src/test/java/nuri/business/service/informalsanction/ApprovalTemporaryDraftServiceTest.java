@@ -310,9 +310,8 @@ class ApprovalTemporaryDraftServiceTest {
         verifyNoInteractions(lineAssistService);
     }
 
-    @SuppressWarnings("unchecked")
     private List<ApprovalTemporaryDraftLine> savedLines(InOrder order) {
-        ArgumentCaptor<List<ApprovalTemporaryDraftLine>> lines = ArgumentCaptor.forClass((Class) List.class);
+        ArgumentCaptor<List<ApprovalTemporaryDraftLine>> lines = ArgumentCaptor.captor();
         order.verify(lineRepository).saveAll(lines.capture());
         return lines.getValue();
     }
@@ -643,9 +642,8 @@ class ApprovalTemporaryDraftServiceTest {
         return draft;
     }
 
-    @SuppressWarnings("unchecked")
     private List<ApprovalTemporaryDraftReference> savedReferences(InOrder order) {
-        ArgumentCaptor<List<ApprovalTemporaryDraftReference>> references = ArgumentCaptor.forClass((Class) List.class);
+        ArgumentCaptor<List<ApprovalTemporaryDraftReference>> references = ArgumentCaptor.captor();
         order.verify(referenceRepository).saveAll(references.capture());
         return references.getValue();
     }

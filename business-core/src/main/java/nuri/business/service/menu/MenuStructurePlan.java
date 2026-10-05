@@ -63,11 +63,11 @@ final class MenuStructurePlan {
     static MenuStructurePlan of(MenuStructureSave request) {
         if (request.version() == null || request.creations() == null || request.placements() == null
                 || request.properties() == null || request.deletions() == null || request.grants() == null) {
-            invalid("메뉴 구조 저장 요청이 올바르지 않습니다. 다시 불러온 뒤 저장해 주세요.");
+            throw invalid("메뉴 구조 저장 요청이 올바르지 않습니다. 다시 불러온 뒤 저장해 주세요.");
         }
         if (request.creations().isEmpty() && request.placements().isEmpty() && request.properties().isEmpty()
                 && request.deletions().isEmpty() && request.grants().isEmpty()) {
-            invalid("바뀐 내용이 없습니다.");
+            throw invalid("바뀐 내용이 없습니다.");
         }
         var plan = new MenuStructurePlan();
         plan.readCreations(request.creations());
@@ -83,10 +83,10 @@ final class MenuStructurePlan {
         for (MenuCreation creation : items) {
             if (creation == null || creation.key() == null || !creation.key().matches("new-[1-9][0-9]{0,5}")
                     || blank(creation.menuNm()) || !"Y".equals(creation.useYn()) && !"N".equals(creation.useYn())) {
-                invalid("새 메뉴 항목이 올바르지 않습니다.");
+                throw invalid("새 메뉴 항목이 올바르지 않습니다.");
             }
             if (creations.putIfAbsent(creation.key(), creation) != null) {
-                invalid("새 메뉴 키 '" + creation.key() + "'이(가) 두 번 쓰였습니다.");
+                throw invalid("새 메뉴 키 '" + creation.key() + "'이(가) 두 번 쓰였습니다.");
             }
             tempIds.put(creation.key(), -(long) tempIds.size() - 1);
         }
@@ -95,17 +95,17 @@ final class MenuStructurePlan {
     private void readPlacements(List<MenuPlacement> items) {
         for (MenuPlacement placement : items) {
             if (placement == null || placement.ref() == null || placement.menuOrdr() == null) {
-                invalid("메뉴 위치 항목이 올바르지 않습니다.");
+                throw invalid("메뉴 위치 항목이 올바르지 않습니다.");
             }
             requireRef(placement.ref());
             if (placement.parentRef() != null) requireRef(placement.parentRef());
-            if (placement.ref().equals(placement.parentRef())) invalid(HIERARCHY_MESSAGE);
+            if (placement.ref().equals(placement.parentRef())) throw invalid(HIERARCHY_MESSAGE);
             if (placements.putIfAbsent(placement.ref(), placement) != null) {
-                invalid("메뉴 '" + placement.ref() + "'의 위치가 두 번 지정됐습니다.");
+                throw invalid("메뉴 '" + placement.ref() + "'의 위치가 두 번 지정됐습니다.");
             }
         }
         creations.forEach((key, creation) -> {
-            if (!placements.containsKey(key)) invalid("새 메뉴 '" + creation.menuNm() + "'의 위치를 정해 주세요.");
+            if (!placements.containsKey(key)) throw invalid("새 메뉴 '" + creation.menuNm() + "'의 위치를 정해 주세요.");
         });
     }
 
@@ -113,18 +113,18 @@ final class MenuStructurePlan {
         for (MenuProperties item : items) {
             if (item == null || item.menuNo() == null || item.menuNo() < 1 || blank(item.menuNm())
                     || !"Y".equals(item.useYn()) && !"N".equals(item.useYn())) {
-                invalid("메뉴 속성 항목이 올바르지 않습니다.");
+                throw invalid("메뉴 속성 항목이 올바르지 않습니다.");
             }
             if (properties.putIfAbsent(item.menuNo(), item) != null) {
-                invalid("메뉴 " + item.menuNo() + "의 속성이 두 번 지정됐습니다.");
+                throw invalid("메뉴 " + item.menuNo() + "의 속성이 두 번 지정됐습니다.");
             }
         }
     }
 
     private void readDeletions(List<Long> items) {
         for (Long id : items) {
-            if (id == null || id < 1) invalid("삭제할 메뉴 번호가 올바르지 않습니다.");
-            if (!deletions.add(id)) invalid("삭제할 메뉴 " + id + "이(가) 두 번 지정됐습니다.");
+            if (id == null || id < 1) throw invalid("삭제할 메뉴 번호가 올바르지 않습니다.");
+            if (!deletions.add(id)) throw invalid("삭제할 메뉴 " + id + "이(가) 두 번 지정됐습니다.");
         }
     }
 
@@ -132,30 +132,30 @@ final class MenuStructurePlan {
         for (MenuGroupGrantChange change : items) {
             if (change == null || blank(change.groupCode()) || blank(change.groupVersion()) || change.navigationAdd() == null
                     || change.navigationRemove() == null || change.operationAdd() == null) {
-                invalid("그룹 권한 변경 항목이 올바르지 않습니다.");
+                throw invalid("그룹 권한 변경 항목이 올바르지 않습니다.");
             }
             String code = change.groupCode();
-            if (grants.putIfAbsent(code, change) != null) invalid("그룹 '" + code + "'의 권한 변경이 두 번 지정됐습니다.");
+            if (grants.putIfAbsent(code, change) != null) throw invalid("그룹 '" + code + "'의 권한 변경이 두 번 지정됐습니다.");
             if (change.navigationAdd().isEmpty() && change.navigationRemove().isEmpty() && change.operationAdd().isEmpty()) {
-                invalid("그룹 '" + code + "'에 바꿀 권한이 없습니다.");
+                throw invalid("그룹 '" + code + "'에 바꿀 권한이 없습니다.");
             }
             var added = new HashSet<String>();
             for (String ref : change.navigationAdd()) {
                 requireRef(ref);
-                if (!added.add(ref)) invalid("그룹 '" + code + "'에 같은 메뉴 표시가 두 번 지정됐습니다.");
+                if (!added.add(ref)) throw invalid("그룹 '" + code + "'에 같은 메뉴 표시가 두 번 지정됐습니다.");
             }
             var removed = new HashSet<Long>();
             for (Long id : change.navigationRemove()) {
-                if (id == null || id < 1) invalid("회수할 메뉴 번호가 올바르지 않습니다.");
-                if (!removed.add(id)) invalid("그룹 '" + code + "'에 같은 메뉴 표시 회수가 두 번 지정됐습니다.");
-                if (added.contains(id.toString())) invalid("그룹 '" + code + "'에 같은 메뉴의 표시를 추가하면서 회수할 수 없습니다.");
+                if (id == null || id < 1) throw invalid("회수할 메뉴 번호가 올바르지 않습니다.");
+                if (!removed.add(id)) throw invalid("그룹 '" + code + "'에 같은 메뉴 표시 회수가 두 번 지정됐습니다.");
+                if (added.contains(id.toString())) throw invalid("그룹 '" + code + "'에 같은 메뉴의 표시를 추가하면서 회수할 수 없습니다.");
             }
             var operations = new HashSet<String>();
             for (String operation : change.operationAdd()) {
-                if (operation == null || !PermissionCodes.ALL.contains(operation)) invalid("알 수 없는 기능 권한입니다: " + operation);
-                if (!operations.add(operation)) invalid("그룹 '" + code + "'에 같은 기능 권한이 두 번 지정됐습니다.");
+                if (operation == null || !PermissionCodes.ALL.contains(operation)) throw invalid("알 수 없는 기능 권한입니다: " + operation);
+                if (!operations.add(operation)) throw invalid("그룹 '" + code + "'에 같은 기능 권한이 두 번 지정됐습니다.");
             }
-            if ("ROLE_ANONYMOUS".equals(code) && !operations.isEmpty()) invalid("공개 메뉴용 그룹에는 기능 권한을 줄 수 없습니다.");
+            if ("ROLE_ANONYMOUS".equals(code) && !operations.isEmpty()) throw invalid("공개 메뉴용 그룹에는 기능 권한을 줄 수 없습니다.");
         }
     }
 
@@ -167,7 +167,7 @@ final class MenuStructurePlan {
                     || properties.containsKey(id)
                     || grants.values().stream().anyMatch(change -> change.navigationAdd().contains(ref)
                             || change.navigationRemove().contains(id));
-            if (touched) invalid("삭제할 메뉴 " + id + "을(를) 함께 옮기거나 고치거나 그 메뉴 표시를 바꿀 수 없습니다.");
+            if (touched) throw invalid("삭제할 메뉴 " + id + "을(를) 함께 옮기거나 고치거나 그 메뉴 표시를 바꿀 수 없습니다.");
         }
     }
 
@@ -201,7 +201,7 @@ final class MenuStructurePlan {
         deletions.forEach(finalParents::remove);
         finalParents.forEach((child, parent) -> {
             if (parent != null && deletions.contains(parent)) {
-                invalid("'" + name(parent) + "' 메뉴에 하위 메뉴 '" + name(child) + "'이(가) 남아 있어 삭제할 수 없습니다. "
+                throw invalid("'" + name(parent) + "' 메뉴에 하위 메뉴 '" + name(child) + "'이(가) 남아 있어 삭제할 수 없습니다. "
                         + "하위 메뉴를 먼저 옮기거나 함께 삭제해 주세요.");
             }
         });
@@ -220,7 +220,7 @@ final class MenuStructurePlan {
             if (!visited.add(node)) continue;
             int depth = depth(node);
             if (depth > MAX_DEPTH) {
-                invalid("메뉴는 " + MAX_DEPTH + "단계까지만 둘 수 있습니다. '" + name(node) + "'이(가) " + depth + "단계가 됩니다.");
+                throw invalid("메뉴는 " + MAX_DEPTH + "단계까지만 둘 수 있습니다. '" + name(node) + "'이(가) " + depth + "단계가 됩니다.");
             }
             queue.addAll(children.getOrDefault(node, List.of()));
         }
@@ -233,7 +233,7 @@ final class MenuStructurePlan {
         var visited = new HashSet<Long>();
         Long current = start;
         while (current != null) {
-            if (!visited.add(current) || !finalParents.containsKey(current)) invalid(HIERARCHY_MESSAGE);
+            if (!visited.add(current) || !finalParents.containsKey(current)) throw invalid(HIERARCHY_MESSAGE);
             current = finalParents.get(current);
         }
     }
@@ -379,20 +379,20 @@ final class MenuStructurePlan {
     }
 
     private void requireRef(String ref) {
-        if (ref == null || !ref.matches("[1-9][0-9]{0,18}|new-[1-9][0-9]{0,5}")) invalid("메뉴 참조가 올바르지 않습니다: " + ref);
+        if (ref == null || !ref.matches("[1-9][0-9]{0,18}|new-[1-9][0-9]{0,5}")) throw invalid("메뉴 참조가 올바르지 않습니다: " + ref);
         if (ref.startsWith(NEW_PREFIX)) {
-            if (!creations.containsKey(ref)) invalid("존재하지 않는 새 메뉴 키입니다: " + ref);
+            if (!creations.containsKey(ref)) throw invalid("존재하지 않는 새 메뉴 키입니다: " + ref);
             return;
         }
         try {
             Long.parseLong(ref);
         } catch (NumberFormatException tooLarge) {
-            invalid("메뉴 번호가 너무 큽니다: " + ref);
+            throw invalid("메뉴 번호가 너무 큽니다: " + ref);
         }
     }
 
     private static void requireExisting(String ref, Map<Long, Long> current) {
-        if (!ref.startsWith(NEW_PREFIX) && !current.containsKey(Long.valueOf(ref))) invalid("존재하지 않는 메뉴입니다: " + ref);
+        if (!ref.startsWith(NEW_PREFIX) && !current.containsKey(Long.valueOf(ref))) throw invalid("존재하지 않는 메뉴입니다: " + ref);
     }
 
     /** 0·null 상위는 루트다(V2_13). */
@@ -436,7 +436,7 @@ final class MenuStructurePlan {
         return value == null || value.isBlank();
     }
 
-    private static void invalid(String message) {
-        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, message);
+    private static BusinessException invalid(String message) {
+        return new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, message);
     }
 }

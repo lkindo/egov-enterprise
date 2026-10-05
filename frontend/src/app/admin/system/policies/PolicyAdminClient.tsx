@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { policyAdminService, SystemPolicy } from '@/services/foundation/system/PolicyAdminService';
@@ -75,6 +75,7 @@ export default function PolicyAdminClient() {
  const { toast } = useToast();
  const [policies, setPolicies] = useState<SystemPolicy[]>([]);
  const [loading, setLoading] = useState(true);
+ const policyRequestRef = useRef(0);
  // 조회 실패를 "등록된 정책 없음"으로 위장하지 않기 위해 실패 사유를 목록 영역에 그대로 노출한다.
  const [error, setError] = useState<Error | null>(null);
  const [selectedPolicy, setSelectedPolicy] = useState<SystemPolicy | null>(null);
@@ -94,22 +95,26 @@ export default function PolicyAdminClient() {
  });
 
   const fetchPolicies = useCallback(async () => {
+    const requestId = ++policyRequestRef.current;
     setLoading(true);
     setError(null);
     try {
       const data = await policyAdminService.getPolicies();
+      if (requestId !== policyRequestRef.current) return;
       setPolicies(data);
     } catch (err) {
+      if (requestId !== policyRequestRef.current) return;
       setError(toError(err));
       setPolicies([]);
       toast('정책 목록을 불러오는 데 실패했습니다.', 'error');
     } finally {
-      setLoading(false);
+      if (requestId === policyRequestRef.current) setLoading(false);
     }
   }, [toast]);
 
   useEffect(() => {
     void fetchPolicies();
+    return () => { policyRequestRef.current += 1; };
   }, [fetchPolicies]);
 
  const handleEdit = (policy: SystemPolicy) => {
@@ -247,7 +252,7 @@ export default function PolicyAdminClient() {
  </div>
 
  <Form {...form}>
- <form onSubmit={form.handleSubmit(onFormSubmit)} noValidate>
+ <form onSubmit={(event) => { void form.handleSubmit(onFormSubmit)(event); }} noValidate>
  <div className="space-y-[var(--form-gap)] bg-card px-5 py-4 custom-scrollbar text-left">
  <FormErrorSummary labels={POLICY_FORM_LABELS} onNavigate={form.focusError} />
  {!selectedPolicy && <ShadcnFormField

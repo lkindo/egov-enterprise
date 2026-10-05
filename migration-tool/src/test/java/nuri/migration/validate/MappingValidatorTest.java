@@ -1,5 +1,6 @@
 package nuri.migration.validate;
 
+import nuri.migration.model.MappingLoader;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.IdStrategy;
@@ -84,6 +85,44 @@ class MappingValidatorTest {
 
     private static ColumnMapping col(String source, String target) {
         return new ColumnMapping(source, target, null, null, null, null, null);
+    }
+
+    @Test
+    @DisplayName("YAML의 null 테이블 항목은 해당 위치의 검증 오류로 거절한다")
+    void nullTableEntryFromYamlIsValidationError() {
+        MappingSpec mapping = new MappingLoader(ignored -> null).loadContent("""
+                tables:
+                  - source: legacy_user
+                    target: tb_user_info
+                    columns:
+                      - { source: user_id, target: user_id }
+                  - null
+                """);
+
+        ValidationResult result = withSchema().validate(mapping);
+
+        assertThat(result.ok()).isFalse();
+        assertThat(result.errors()).containsExactly("tables[1]: 테이블 매핑 항목은 null일 수 없습니다");
+        assertThat(result.warnings()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("YAML의 null 컬럼 항목은 해당 위치의 검증 오류로 거절한다")
+    void nullColumnEntryFromYamlIsValidationError() {
+        MappingSpec mapping = new MappingLoader(ignored -> null).loadContent("""
+                tables:
+                  - source: legacy_user
+                    target: tb_user_info
+                    columns:
+                      - { source: user_id, target: user_id }
+                      - null
+                """);
+
+        ValidationResult result = withSchema().validate(mapping);
+
+        assertThat(result.ok()).isFalse();
+        assertThat(result.errors()).containsExactly("tables[0].columns[1]: 컬럼 매핑 항목은 null일 수 없습니다");
+        assertThat(result.warnings()).isEmpty();
     }
 
     private static JdbcTemplate orderingMetadataJdbc() throws Exception {
