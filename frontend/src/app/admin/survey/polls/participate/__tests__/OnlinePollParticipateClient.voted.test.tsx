@@ -200,4 +200,50 @@ describe('투표 참여 화면의 참여 여부 (DIP V7)', () => {
     expect(screen.getByText('집계 결과')).toBeInTheDocument();
     expect(mocks.participatePoll).toHaveBeenCalledTimes(1);
   });
+
+  it('같은 투표 재선택과 제출 완료 순서에 관계없이 최신 공개 집계를 표시한다', async () => {
+    const hiddenItems = [{ pollSn: 1, pollArtclSn: 11, pollArtclNm: '점심 첫 항목', pollIemCo: null }];
+    const revealedItems = [{ ...hiddenItems[0], pollIemCo: 4 }];
+    const laterItems = [{ ...hiddenItems[0], pollIemCo: 5 }];
+
+    for (const refreshFirst of [false, true]) {
+      vi.clearAllMocks();
+      const submission = deferred<void>();
+      const reselectedItems = deferred<typeof hiddenItems>();
+      const voteRefresh = deferred<typeof revealedItems>();
+      mocks.getPollList.mockResolvedValue({ list: [{ ...activePoll, pollSn: 1, pollNm: '점심 메뉴', hasVoted: false }] });
+      mocks.getPollItemList.mockResolvedValueOnce(hiddenItems)
+        .mockReturnValueOnce(reselectedItems.promise)
+        .mockReturnValueOnce(voteRefresh.promise)
+        .mockResolvedValueOnce(laterItems);
+      mocks.participatePoll.mockReturnValueOnce(submission.promise);
+      const view = render(<OnlinePollParticipateClient />);
+      fireEvent.click(await screen.findByRole('button', { name: /점심 메뉴/ }));
+      fireEvent.click(await screen.findByRole('button', { name: '점심 첫 항목' }));
+      fireEvent.click(screen.getByRole('button', { name: /투표 제출하기/ }));
+      await waitFor(() => expect(mocks.participatePoll).toHaveBeenCalledTimes(1));
+
+      fireEvent.click(screen.getByRole('button', { name: '목록으로' }));
+      fireEvent.click(await screen.findByRole('button', { name: /점심 메뉴/ }));
+      await waitFor(() => expect(mocks.getPollItemList).toHaveBeenCalledTimes(2));
+      if (!refreshFirst) await act(async () => { reselectedItems.resolve(hiddenItems); });
+      await act(async () => { submission.resolve(undefined); });
+      await waitFor(() => expect(mocks.getPollItemList).toHaveBeenCalledTimes(3));
+      await act(async () => { voteRefresh.resolve(revealedItems); });
+      if (refreshFirst) await act(async () => { reselectedItems.resolve(hiddenItems); });
+
+      expect(screen.getByText('참여 완료')).toBeInTheDocument();
+      expect(screen.getByText('집계 결과')).toBeInTheDocument();
+      expect(screen.getByText('4표')).toBeInTheDocument();
+      expect(screen.queryByText('집계 비공개')).toBeNull();
+      expect(screen.queryByRole('button', { name: /투표 제출하기/ })).toBeNull();
+
+      fireEvent.click(screen.getByRole('button', { name: '목록으로' }));
+      fireEvent.click(await screen.findByRole('button', { name: /점심 메뉴/ }));
+      expect(await screen.findByText('5표')).toBeInTheDocument();
+      expect(screen.queryByText('4표')).toBeNull();
+      expect(mocks.participatePoll).toHaveBeenCalledTimes(1);
+      view.unmount();
+    }
+  });
 });

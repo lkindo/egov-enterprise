@@ -365,6 +365,8 @@ pnpm -C frontend exec playwright install --with-deps chromium
 
 [governance gate registry](../../config/governance/gates.json)는 논리 규칙을 한 거대 테스트로 합치는 파일이 아니라, 안정적인 rule ID와 발견 selector·실행 task·CI context·red proof를 연결하는 운영 인덱스다. 현재 registry는 governance JUnit 38개·ArchUnit 10개·schema-validation 49개, runner catalog 7개, execution profile 7개, quality population 3개와 quality ratchet 15개를 관리한다(2026-09-10 실측 — 정확한 현재 수는 이 문서가 아니라 registry 계약 실행 출력이 정본이다). [Node 계약](../../scripts/governance-gates-contract.mjs)이 실제 source census와 소비자 설정을 exact-match하고, JaCoCo·Vitest·PIT의 측정 population까지 동결하므로 registry/source 한쪽에만 있는 ghost gate나 include 축소·exclude 확대에 의한 분모 축소 통과는 실패한다.
 
+2026-10-06 미사용 인증 주입을 정리하면서 생산 호출이 없는 구형 `OtpService` wrapper를 제거했다. 생성 부작용은 라이브러리 초기화뿐이며, 실제 인증은 `legacyOtpRequired → MfaService → TotpVerifier` 경로를 사용한다. 삭제된 구현만 호출하던 전용 테스트 5건은 함께 퇴역시키고, 현재 OTP 생성·정상 및 오답 거부·재사용 방지·등록 URI는 [TotpVerifierTest](../../foundation/src/test/java/nuri/foundation/security/mfa/TotpVerifierTest.java), [MfaServiceTest](../../business-core/src/test/java/nuri/business/service/auth/mfa/MfaServiceTest.java), [MfaFlowIntegrationTest](../../api-server/src/test/java/nuri/api/schema/MfaFlowIntegrationTest.java)로 검증한다. Auth 테스트의 주입되지 않는 OTP mock 검증은 실제 MFA 호출 검증으로 대체했다. 삭제된 서비스의 readOnly 예외만 축소하고, 하네스 baseline은 실제 메타 게이트 산출값과 대조해 해당 예외 항목과 판정 소스 해시만 갱신한다. 현재 인증 구현과 googleauth 의존성은 유지한다.
+
 | 계층 | 발견 계약 | 실행 경로 |
 |---|---|---|
 | Governance JUnit | 클래스 `@Tag("governance-harness")` | `:api-server:harnessTest` |

@@ -78,9 +78,7 @@ class ServiceReadOnlyTransactionalLinterTest {
             // DB 미접근 — 파일 IO 전용. Repository·EntityManager 주입이 0 이라 트랜잭션을 열 대상이 없다.
             "LocalFileStorageService",
 
-            // DB 미접근 — 필드가 GoogleAuthenticator 하나뿐이고 전 메서드가 라이브러리 호출이다.
-            //    (2026-09-03 정정: 종전 주석은 이 클래스를 '쓰기 전용/카운터' 로 분류했으나 사실이 아니다.)
-            "OtpService",
+            // [2026-10-06] 생산 호출이 없는 OtpService는 MFA의 TotpVerifier로 대체되어 구현과 예외를 제거했다.
 
             // 비-DB 실시간 카운터 — 방송 주기에 AtomicInteger 를 읽고, 알림 건수만 리포지토리로 센다.
             "RealTimeDashboardService"

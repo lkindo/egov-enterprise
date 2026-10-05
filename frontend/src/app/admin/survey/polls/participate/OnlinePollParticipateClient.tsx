@@ -32,8 +32,10 @@ export default function OnlinePollParticipateClient() {
   const [viewMode, setViewMode] = useState<'list' | 'vote' | 'result'>('list');
   const listRequestRef = useRef(0);
   const selectionRequestRef = useRef(0);
+  const selectedPollSnRef = useRef<number | undefined>(undefined);
   const lifecycleRef = useRef(0);
   const completedPollsRef = useRef(new Set<number>());
+  const completedPollItemsRef = useRef(new Map<number, { requestId: number; items: OnlinePollItemVO[] }>());
   // 저장 포맷과 같은 'yyyyMMdd' 8자 기준일.
   const todayStr = useTodayStorageYmd();
 
@@ -64,19 +66,23 @@ export default function OnlinePollParticipateClient() {
     return () => {
       listRequestRef.current += 1;
       selectionRequestRef.current += 1;
+      selectedPollSnRef.current = undefined;
       lifecycleRef.current += 1;
     };
   }, [fetchPolls]);
 
  const handleSelectPoll = async (poll: OnlinePollManageDetailVO) => {
  const requestId = ++selectionRequestRef.current;
+ selectedPollSnRef.current = poll.pollSn;
  setLoading(true);
  try {
  const items = await pollUserService.getPollItemList(poll.pollSn!);
  if (requestId !== selectionRequestRef.current) return;
  // 선택 요청 중 제출이 완료됐으면, 요청 시작 때 캡처한 미참여 상태로 되돌리지 않는다.
  const resolvedPoll = { ...poll, hasVoted: poll.hasVoted || (poll.pollSn !== undefined && completedPollsRef.current.has(poll.pollSn)) };
- setPollItems(items || []);
+ const completedItems = poll.pollSn !== undefined ? completedPollItemsRef.current.get(poll.pollSn) : undefined;
+ // 제출 후 조회보다 먼저 시작한 선택 응답은 당시의 비공개 집계로 되돌리지 않는다.
+ setPollItems(completedItems && completedItems.requestId >= requestId ? completedItems.items : items || []);
  setSelectedPoll(resolvedPoll);
  setSelectedItemSn(null);
 
@@ -115,13 +121,16 @@ export default function OnlinePollParticipateClient() {
  });
  if (lifecycle !== lifecycleRef.current) return;
  toast.success('투표가 성공적으로 반영되었습니다.');
- // 제출한 투표의 참여 사실은 목록에 남기고, 상세 갱신은 아직 같은 선택일 때만 반영한다.
+ // 제출한 투표의 참여 사실은 목록에 남기고, 집계는 현재 선택한 같은 투표에만 반영한다.
  markVoted(selectedPoll.pollSn);
  // Refresh items to show new counts
+ const refreshRequestId = selectionRequestRef.current;
  const updatedItems = await pollUserService.getPollItemList(selectedPoll.pollSn!);
- if (lifecycle !== lifecycleRef.current || selectionRequestId !== selectionRequestRef.current) return;
+ if (lifecycle !== lifecycleRef.current) return;
+ if (selectedPoll.pollSn !== undefined) completedPollItemsRef.current.set(selectedPoll.pollSn, { requestId: refreshRequestId, items: updatedItems });
+ if (selectedPollSnRef.current !== selectedPoll.pollSn || refreshRequestId !== selectionRequestRef.current) return;
  setPollItems(updatedItems);
- setViewMode('result');
+ if (selectionRequestId === selectionRequestRef.current) setViewMode('result');
   } catch (error: unknown) {
     if (lifecycle !== lifecycleRef.current) return;
     const msg = (error && typeof error === 'object' && 'response' in error)
@@ -252,6 +261,7 @@ export default function OnlinePollParticipateClient() {
  variant="ghost" 
  onClick={() => {
    selectionRequestRef.current += 1;
+   selectedPollSnRef.current = undefined;
    setViewMode('list');
  }}
  className="h-[var(--control-h)] px-4 rounded-lg text-[length:var(--font-size-body)] font-medium border border-border"
