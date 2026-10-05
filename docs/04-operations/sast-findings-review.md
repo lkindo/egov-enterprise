@@ -1,5 +1,19 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-10-06 감사 코드 미사용 import 정리에 따른 재검토
+
+SAST-FP-003의 탐지 소스 `OperationalAuditInterceptor.java`에서 사용하지 않는
+`nuri.foundation.core.annotation.PrivacyAccess` import 한 줄을 제거했다. 변경 전 소스에서 이 줄만 제거하면
+현재 소스와 LF 정규화 바이트가 모두 일치한다. 기존 `resolveLoginId(authentication)` 호출은 내용 그대로
+101행에서 100행으로 이동했다. API 감사 범위 필터, 인증 주체 해석과 감사 기록의 동작은 바뀌지 않았다.
+
+해당 항목의 소스 해시와 동일 구문의 위치만 재결속한다. 승인 6건의 범위·규칙·fingerprint·승인일·만료일과
+보안 임계값은 유지한다. 변경 전 소스 해시 불일치로 기존 SAST 계약 3건이 실패했고, 재결속 후 같은 SAST 계약
+17건이 모두 통과했다.
+근거는 변경 구문과 기존 방어의 재검토이며 새 CodeQL 실행의 증거가 아니다. 현재 소스 결속과 미등록 탐지·
+소스 및 방어 변조·만료 거부는 기존 SAST 계약으로 확인하고, 실제 탐지 위치·fingerprint·건수는 병합할 커밋의
+required `secure-coding` CI에서 확인한다.
+
 ## 2026-10-01 재로그인 복원 경로와 임시 비밀번호 표시에 따른 재검토
 
 SAST-FP-001의 보완 소스인 `frontend/src/proxy.ts`는 인증이 없을 때 `/login` 으로 보내는 `redirect` 값에 경로와
