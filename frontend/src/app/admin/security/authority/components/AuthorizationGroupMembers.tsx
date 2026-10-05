@@ -31,6 +31,8 @@ const PAGE_SIZE = 20;
  * 고른 사람은 페이지를 넘겨도 남고, '고른 사람' 목록에서 한 명씩 풀 수 있다 — 다른 곳에서 이미 빠져 목록에 없는 사람을
  * 골라 둔 채 409 로 거부되면, 목록에는 그 사람의 체크박스가 없으므로 여기서 풀어야 다시 보낼 수 있다. 마지막 페이지의
  * 구성원을 모두 회수하면 그 페이지는 비므로 남은 마지막 페이지로 돌아간다(DEC-OPS-147 ④).
+ *
+ * [2026-10-05 한 화면 압축] 구성원 줄은 한 줄(이름 · 로그인 ID · 부서, 낮은 패딩)이다 — 종전 두 줄·p-3 로 약 61px 였다.
  */
 export function AuthorizationGroupMembers({ code, name, anonymous, protectedGrants, onEditMember }: {
   code: string;
@@ -100,19 +102,19 @@ export function AuthorizationGroupMembers({ code, name, anonymous, protectedGran
   };
 
   return (
-    <section aria-labelledby="authz-group-members-title" className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 id="authz-group-members-title" className="font-semibold">
+    <section aria-labelledby="authz-group-members-title" className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 id="authz-group-members-title" className="text-sm font-semibold">
           배정된 사용자{typeof total === 'number' ? ` (${total}명)` : ''}
         </h3>
         {editable && <div className="flex flex-wrap gap-2">
-          {!anonymous && <Button type="button" variant="outline" disabled={revokePending} onClick={() => setAddOpen(true)}>구성원 추가</Button>}
-          <Button type="button" variant="destructive" disabled={chosen.size === 0 || revokePending} aria-busy={revokePending} onClick={() => void revokeSelected()}>
+          {!anonymous && <Button type="button" variant="outline" size="sm" disabled={revokePending} onClick={() => setAddOpen(true)}>구성원 추가</Button>}
+          <Button type="button" variant="destructive" size="sm" disabled={chosen.size === 0 || revokePending} aria-busy={revokePending} onClick={() => void revokeSelected()}>
             선택한 {chosen.size}명 회수
           </Button>
         </div>}
       </div>
-      <p className="text-sm text-muted-foreground">구성원을 추가하거나 회수해도 이 그룹의 권한과 저장하지 않은 권한 변경은 그대로입니다. 사용자의 다른 그룹 배정은 바뀌지 않습니다.</p>
+      <p className="text-xs text-muted-foreground">구성원을 추가하거나 회수해도 이 그룹의 권한과 저장하지 않은 권한 변경은 그대로입니다. 사용자의 다른 그룹 배정은 바뀌지 않습니다.</p>
       {canAssign && blockedByProtection && <p role="status" className="text-sm text-muted-foreground">이 그룹에는 보호 권한이 있어 구성원을 바꾸려면 권한 설정 권한도 필요합니다.</p>}
       {editable && anonymous && <p role="status" className="text-sm text-muted-foreground">공개 메뉴 그룹은 로그인 사용자에게 배정할 수 없습니다. 기존 배정은 회수할 수 있습니다.</p>}
       {members.isPending && <p role="status">배정된 사용자를 불러오는 중입니다…</p>}
@@ -127,17 +129,18 @@ export function AuthorizationGroupMembers({ code, name, anonymous, protectedGran
       {members.isSuccess && members.data.list.length > 0 && (
         <ul aria-label="배정된 사용자 목록" className="divide-y divide-border rounded-md border border-border">
           {members.data.list.map((member) => (
-            <li key={member.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
-              <span className="flex min-w-0 items-center gap-3">
+            <li key={member.id} className="flex items-center justify-between gap-3 px-3 py-1">
+              <span className="flex min-w-0 items-center gap-2">
                 {editable && <Checkbox aria-label={`${member.userNm} (${member.userId}) 선택`} checked={chosen.has(member.id)} disabled={revokePending}
                   onCheckedChange={(checked) => toggle(member, checked === true)} />}
-                <span className="min-w-0">
-                  {member.userNm}
-                  <span className="ml-2 text-sm text-muted-foreground">{member.userId}</span>
-                  <span className="block text-xs text-muted-foreground">{departmentName(member.departmentId)}</span>
+                <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-sm">
+                  <span className="font-medium">{member.userNm}</span>
+                  <span className="text-xs text-muted-foreground">{member.userId}</span>
+                  <span aria-hidden="true" className="text-xs text-muted-foreground">·</span>
+                  <span className="text-xs text-muted-foreground">{departmentName(member.departmentId)}</span>
                 </span>
               </span>
-              <Button type="button" variant="outline" size="sm" className="shrink-0"
+              <Button type="button" variant="outline" size="xs" className="shrink-0"
                 onClick={() => onEditMember({ id: member.id, name: member.userNm })}
                 aria-label={`${member.userNm} 배정 편집`}>
                 배정 편집

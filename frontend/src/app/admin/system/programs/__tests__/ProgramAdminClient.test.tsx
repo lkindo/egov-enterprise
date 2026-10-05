@@ -6,10 +6,7 @@ import { createAppQueryClient } from '@/lib/query/list-query-defaults';
 import { SCREEN_ALIASES, SCREEN_REGISTRY } from '@/types/generated-screen-registry';
 
 const mocks = vi.hoisted(() => ({
-  confirm: vi.fn(),
-  deleteProgram: vi.fn(),
   getMenuStructure: vi.fn(),
-  getProgramList: vi.fn(),
   push: vi.fn(),
   toast: vi.fn(),
   toastError: vi.fn(),
@@ -47,64 +44,57 @@ vi.mock('@/components/ui/hub/HubSectionCard', () => ({
 vi.mock('@/app/components/layout/page-header', () => ({
   PageHeader: ({ title }: any) => <div data-testid="page-header"><h1>{title}</h1></div>
 }));
-vi.mock('@/app/components/ui/standard-modal', () => ({
-  StandardModal: ({ children, isOpen, title, footer }: any) => isOpen ? (
-    <div data-testid="standard-modal">
-      <h2>{title}</h2>
-      {children}
-      <div data-testid="modal-footer">{footer}</div>
-    </div>
-  ) : null
-}));
-// 행 액션(수정·삭제·메뉴에 추가)의 표시 판정과 연결 메뉴 칸을 보려면 컬럼 accessor 를 실제로 렌더해야 한다.
-// 표마다 이름(accessibleLabel)을 붙이고, 빈 문구와 쪽 이동을 그대로 드러낸다.
+// 행 동작(메뉴에 추가)의 표시 판정과 연결 메뉴 칸을 보려면 컬럼 accessor 를 실제로 렌더해야 한다.
+// 표마다 이름(accessibleLabel)을 붙이고, 빈 문구·불러오는 중·쪽 이동·페이지당 건수·밀도 prop 을 그대로 드러낸다.
 vi.mock('@/app/components/ui/standard-data-table', () => ({
-  StandardDataTable: ({ data, columns, keyField, accessibleLabel, emptyMessage, pagination }: any) => (
-    <div data-testid="data-table" data-table-label={accessibleLabel}>
+  StandardDataTable: ({ data, columns, keyField, accessibleLabel, emptyMessage, pagination, loading, rowDensity, fillHeight }: any) => (
+    <div
+      data-testid="data-table"
+      data-table-label={accessibleLabel}
+      data-row-density={rowDensity}
+      data-fill-height={fillHeight ? 'true' : undefined}
+      data-loading={loading ? 'true' : undefined}
+    >
       <span data-testid={`${accessibleLabel}-count`}>{data?.length || 0} items</span>
-      {(data || []).length === 0 && <p>{emptyMessage}</p>}
+      {(data || []).length === 0 && (loading ? <p>{`${accessibleLabel}을(를) 불러오는 중…`}</p> : <p>{emptyMessage}</p>)}
       {(data || []).map((row: any) => (
         <div key={row[keyField]} data-row={row[keyField]}>
-          {columns.map((column: any) => <span key={column.header} data-column={column.header}>{column.accessor(row)}</span>)}
+          {columns.map((column: any) => (
+            <span key={column.header} data-column={column.header} data-sortable={column.sortKey ? 'true' : undefined}>
+              {column.accessor(row)}
+            </span>
+          ))}
         </div>
       ))}
       {pagination && (
         <>
           <span data-testid={`${accessibleLabel}-page`}>{`${pagination.currentPage}/${pagination.totalPages}`}</span>
+          <span data-testid={`${accessibleLabel}-page-size`}>{pagination.pageSize}</span>
           <button type="button" onClick={() => pagination.onPageChange(pagination.currentPage + 1)}>{`${accessibleLabel} 다음 쪽`}</button>
+          {pagination.onPageSizeChange && (
+            <button type="button" onClick={() => pagination.onPageSizeChange(20)}>{`${accessibleLabel} 20개씩`}</button>
+          )}
         </>
       )}
     </div>
   )
 }));
-vi.mock('@/components/ui/tooltip', () => ({
-  Tooltip: ({ children }: any) => <>{children}</>,
-  TooltipTrigger: ({ children }: any) => <>{children}</>,
-  TooltipContent: () => null,
-}));
 vi.mock('@/app/components/ui/toast', () => ({
   useToast: () => ({ toast: mocks.toast, error: mocks.toastError, success: mocks.toastSuccess }),
 }));
-vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
-vi.mock('@/services/foundation/system/ProgramAdminService', () => ({
-  programAdminService: {
-    deleteProgram: (...args: unknown[]) => mocks.deleteProgram(...args),
-    getProgramList: (...args: unknown[]) => mocks.getProgramList(...args),
-  },
-}));
-// [2026-10-02 D3] 연결 메뉴는 화면이 MENU_READ 를 확인한 뒤 메뉴 구조 조회 한 번으로 잇는다(두 탭이 나눠 쓴다).
+// [2026-10-02 D3] 연결 메뉴는 화면이 MENU_READ 를 확인한 뒤 메뉴 구조 조회 한 번으로 잇는다.
 vi.mock('@/services/foundation/system/MenuAdminService', () => ({
   menuAdminService: { getMenuStructure: (...args: unknown[]) => mocks.getMenuStructure(...args) },
 }));
 
-// 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 모든 쓰기 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
-// 메뉴 조회 권한(MENU_READ)은 연결 메뉴 열 테스트만 더한다.
-const FULL_PERMISSIONS = ['PROGRAM_READ', 'PROGRAM_CREATE', 'PROGRAM_UPDATE', 'PROGRAM_DELETE'];
+// [2026-10-04 프로그램 목록 퇴역] 이 화면의 진입 권한은 MENU_READ 다. 그래도 연결 메뉴 칸이 '메뉴 조회 권한 없음' 을 말하는
+// 분기(useMenuStructureSource)를 그대로 고정하려고 기본은 메뉴 조회 권한이 없는 상태로 렌더하고, 연결 메뉴 테스트만 더한다.
+const BASE_PERMISSIONS: string[] = [];
 const MENU_MANAGER = ['MENU_READ', 'MENU_CREATE', 'MENU_UPDATE'];
-const auth = vi.hoisted(() => ({ permissions: [] as string[], signedIn: true, loading: false }));
+const auth = vi.hoisted(() => ({ permissions: [] as string[], signedIn: true, loading: false, version: 'v1' }));
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
-    user: auth.signedIn ? { id: 'admin', permissions: auth.permissions, authorizationVersion: 'v1' } : null,
+    user: auth.signedIn ? { id: 'admin', permissions: auth.permissions, authorizationVersion: auth.version } : null,
     loading: auth.loading,
   }),
 }));
@@ -117,7 +107,7 @@ function renderClient(node: ReactElement) {
 }
 
 /** 메뉴 구조 한 줄(서버 응답을 서비스가 정리한 모양). */
-function structureMenu(menuNo: number, menuNm: string, fields: { modernRoute?: string | null; prgrmFileNm?: string | null; useYn?: 'Y' | 'N' } = {}) {
+function structureMenu(menuNo: number, menuNm: string, fields: { modernRoute?: string | null; useYn?: 'Y' | 'N' } = {}) {
   return {
     menuNo,
     menuNm,
@@ -126,13 +116,23 @@ function structureMenu(menuNo: number, menuNm: string, fields: { modernRoute?: s
     modernRoute: fields.modernRoute ?? null,
     menuExpln: null,
     useYn: fields.useYn ?? 'Y',
-    prgrmFileNm: fields.prgrmFileNm ?? null,
+    prgrmFileNm: null,
   };
 }
 
 function structure(menus: ReturnType<typeof structureMenu>[]) {
   return { version: 'v-structure', menus };
 }
+
+/** 동적 경로가 아닌 화면 중 except 를 뺀 모두를 사용 중인 메뉴에 건다. */
+function structureCoveringAllBut(...except: string[]) {
+  return structure(
+    SCREEN_REGISTRY.filter((entry) => !except.includes(entry.route) && !entry.dynamic)
+      .map((entry, index) => structureMenu(index + 1, `메뉴 ${index + 1}`, { modernRoute: entry.route })),
+  );
+}
+
+const STATIC_SCREENS = SCREEN_REGISTRY.filter((entry) => !entry.dynamic);
 
 function row(key: string): HTMLElement {
   const found = Array.from(document.querySelectorAll<HTMLElement>('[data-row]')).find((element) => element.getAttribute('data-row') === key);
@@ -146,39 +146,37 @@ function cell(key: string, column: string): HTMLElement {
   return found;
 }
 
-function linkCell(prgrmFileNm: string): HTMLElement {
-  return cell(prgrmFileNm, '연결 메뉴');
-}
-
-/** '이전 프로그램' 탭으로 간다(1단계 표·폼). 탭 전환은 화면 안 상태라 주소를 바꾸지 않는다. */
-function openProgramsTab() {
-  fireEvent.click(screen.getByRole('tab', { name: '이전 프로그램' }));
-  expect(screen.getByRole('tab', { name: '이전 프로그램' })).toHaveAttribute('aria-selected', 'true');
+/** 검색어 칸 — 라벨은 보기마다 실제로 거르는 칸을 말하므로(화면 이름 · 경로 / 경로 · 넘어가는 곳) 조회 조건 폼으로 찾는다. */
+function searchBox(): HTMLElement {
+  return within(screen.getByRole('search')).getByRole('textbox');
 }
 
 function searchScreens(keyword: string) {
-  fireEvent.change(screen.getByRole('textbox', { name: '화면 이름 · 경로' }), { target: { value: keyword } });
+  fireEvent.change(searchBox(), { target: { value: keyword } });
   fireEvent.click(screen.getByRole('button', { name: '조회' }));
 }
 
-describe('ProgramAdminClient Component', () => {
-  const mockInitialData = {
-    list: [
-      { prgrmFileNm: 'PROG_1', prgrmKornNm: '프로그램_하나', url: '/url/1', prgrmStrgPath: '/path/1', prgrmExpln: 'Desc 1' },
-    ],
-    total: 1
-  } as any;
+/** 보기 단추(결과 도구 줄). 접근 이름은 '이름 건수' 다. */
+function chip(label: string): HTMLElement {
+  const group = screen.getByRole('group', { name: '화면 목록 보기' });
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return within(group).getByRole('button', { name: new RegExp(`^${escaped} `) });
+}
 
+function table(): HTMLElement {
+  return screen.getByTestId('data-table');
+}
+
+describe('ProgramAdminClient Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // clearAllMocks 는 '한 번만' 응답(mock*Once)을 지우지 않는다 — 실패한 테스트가 남긴 응답이 다음 테스트로 새지 않게 비운다.
     Object.values(mocks).forEach((mock) => mock.mockReset());
-    auth.permissions = FULL_PERMISSIONS;
+    auth.permissions = BASE_PERMISSIONS;
     auth.signedIn = true;
     auth.loading = false;
-    mocks.confirm.mockResolvedValue(true);
+    auth.version = 'v1';
     mocks.getMenuStructure.mockResolvedValue(structure([]));
-    mocks.getProgramList.mockResolvedValue({ list: [], total: 0, page: 1, size: 10, totalPage: 1 });
     window.sessionStorage.clear();
   });
 
@@ -187,92 +185,63 @@ describe('ProgramAdminClient Component', () => {
   });
 
   it('renders correctly', () => {
-    renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
+    renderClient(<ProgramAdminClient />);
     // [2026-08-24 A1 이행] HubHeader 대신 WorkListPage 셸이 제목과 결과 툴바를 소유한다.
-    // [2026-10-02 D3] 메뉴명이 '화면 관리' 로 바뀌었다(사용자 사전 승인). h1 은 셸 하나다 — 탭마다 다시 그리지 않는다.
+    // [2026-10-02 D3] 메뉴명이 '화면 관리' 로 바뀌었다(사용자 사전 승인). h1 은 셸 하나다.
     expect(screen.getByRole('heading', { level: 1, name: '화면 관리' })).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     expect(screen.getByTestId('work-list-toolbar')).toBeInTheDocument();
-    openProgramsTab();
-    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
   /*
-   * [2026-10-02 D3] 화면 관리는 '화면 목록'(기본)과 '이전 프로그램' 두 탭이다. 탭 상태는 화면 안 상태라 주소에 싣지 않는다.
+   * [2026-10-05 한 화면 압축] fill 셸 — 페이지는 스크롤하지 않고 표 하나가 남은 높이를 채운다. 행은 업무 표 행 토큰(밀도 계약의
+   * 허용 목록에 등재)이다. 표 위 세 문장 설명은 걷고 제목 옆 '집계 기준' 도움말(키보드·터치로 열리는 펼침)로 옮겼다.
    */
-  describe('탭', () => {
-    it('기본 탭은 화면 목록이고 패널이 활성 탭을 가리킨다', () => {
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-      const screensTab = screen.getByRole('tab', { name: '화면 목록' });
-      expect(screensTab).toHaveAttribute('aria-selected', 'true');
-      expect(screen.getByRole('tab', { name: '이전 프로그램' })).toHaveAttribute('aria-selected', 'false');
-      const panel = screen.getByRole('tabpanel');
-      expect(panel).toHaveAttribute('aria-labelledby', screensTab.id);
-      expect(screensTab).toHaveAttribute('aria-controls', panel.id);
-      expect(within(panel).getByTestId('data-table')).toHaveAttribute('data-table-label', '화면 목록');
-      // 이전 프로그램의 쓰기 버튼은 그 탭에서만 보인다.
-      expect(screen.queryByRole('button', { name: /프로그램 등록/ })).not.toBeInTheDocument();
-    });
+  it('fill 셸과 업무 표 밀도로 그리고, 설명은 제목 옆 집계 기준 도움말 하나다', async () => {
+    renderClient(<ProgramAdminClient />);
+    expect(screen.getByTestId('work-list-page')).toHaveAttribute('data-work-fill');
+    expect(table()).toHaveAttribute('data-row-density', 'work');
+    expect(table()).toHaveAttribute('data-fill-height', 'true');
+    // 표 위 설명 문단은 없다.
+    expect(screen.queryByText(/앱에 있는 화면과 그 화면에 들어가는 데 필요한 권한/)).not.toBeInTheDocument();
+    // 도움말 단추는 제목과 같은 머리(header) 안에 있다 — 조회 조건·결과 위에 줄을 더 쓰지 않는다.
+    const trigger = screen.getByRole('button', { name: '집계 기준' });
+    expect(trigger.closest('header')).not.toBeNull();
+    // 닫혀 있으면 내용이 없다(겹쳐 뜨는 상자다).
+    expect(screen.queryByRole('dialog', { name: '집계 기준' })).not.toBeInTheDocument();
+    // [2026-10-05 반박 리뷰 — 통합 단계에서 테스트를 구현에 맞췄다] 처음 구현은 네이티브 details 라 요약을 다시 누를 때만
+    //   닫혀 겹친 상자가 조회·보기 단추를 가렸다(WCAG 2.4.11). 지금은 공용 Popover 다 — 누르면 열리고 Esc 로 닫히며 포커스가
+    //   단추로 돌아온다. details 로 되돌리면 이 단언이 실패한다.
+    fireEvent.click(trigger);
+    const help = await screen.findByRole('dialog', { name: '집계 기준' });
+    expect(help).toHaveTextContent('메뉴에 없는 화면은 사용 중인 메뉴로 열리지 않는 화면입니다');
+    expect(help).toHaveTextContent('‘모두’는 적힌 권한이 모두 있어야');
+    expect(help).toHaveTextContent('화면이 아니므로 메뉴에 추가하지 않습니다');
+    expect(help).toHaveTextContent('메뉴 ID 와 함께 봅니다');
+    fireEvent.keyDown(help, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: '집계 기준' })).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
 
-    it('방향키로 탭을 옮기고, 탭을 바꿔도 주소는 그대로다', () => {
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-      const before = window.location.href;
-      const screensTab = screen.getByRole('tab', { name: '화면 목록' });
-      screensTab.focus();
-      fireEvent.keyDown(screensTab, { key: 'ArrowRight' });
+  /*
+   * [2026-10-04 프로그램 목록 퇴역] '이전 프로그램' 탭·표·등록 폼과 그 탭의 `?page=` 주소 동기화를 걷었다. 화면 관리는
+   * 화면 목록 하나다 — 탭 목록도 탭 패널도 없고, 쪽을 넘겨도 주소를 바꾸지 않는다. 탭을 되살리면 이 테스트가 실패한다.
+   * [2026-10-05] 기본 페이지당 건수가 100 이라 화면 목록 전체가 한 쪽이다 — 쪽을 넘기려면 건수를 줄인다.
+   */
+  it('탭 없이 화면 목록 하나만 보이고, 쪽을 넘겨도 주소는 그대로다', () => {
+    window.history.replaceState(null, '', '/admin/system/programs');
+    renderClient(<ProgramAdminClient />);
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+    expect(screen.queryByRole('tabpanel')).not.toBeInTheDocument();
+    expect(screen.getAllByTestId('data-table').map((element) => element.getAttribute('data-table-label'))).toEqual(['화면 목록']);
+    expect(screen.queryByText(/이전 프로그램/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /프로그램 등록/ })).not.toBeInTheDocument();
 
-      const programsTab = screen.getByRole('tab', { name: '이전 프로그램' });
-      expect(programsTab).toHaveAttribute('aria-selected', 'true');
-      expect(programsTab).toHaveFocus();
-      expect(programsTab).toHaveAttribute('tabindex', '0');
-      expect(screen.getByRole('tab', { name: '화면 목록' })).toHaveAttribute('tabindex', '-1');
-      expect(within(screen.getByRole('tabpanel')).getByTestId('data-table')).toHaveAttribute('data-table-label', '이전 프로그램 목록');
-      expect(window.location.href).toBe(before);
-
-      fireEvent.keyDown(programsTab, { key: 'Home' });
-      expect(screen.getByRole('tab', { name: '화면 목록' })).toHaveAttribute('aria-selected', 'true');
-    });
-
-    /*
-     * `?page=` 는 이전 프로그램 탭의 목록만 쓴다(공유·새로고침 복원). 화면 목록의 쪽 이동과 탭 상태는 주소에 싣지 않는다.
-     */
-    it('쪽 번호는 이전 프로그램 탭에서만 주소에 싣는다', async () => {
-      window.history.replaceState(null, '', '/admin/system/programs');
-      mocks.getProgramList.mockResolvedValue({ list: [], total: 30, page: 2, size: 10, totalPage: 3 });
-      try {
-        renderClient(<ProgramAdminClient initialData={{ ...mockInitialData, total: 30, totalPage: 3 }} searchWrd="" />);
-        fireEvent.click(screen.getByRole('button', { name: '화면 목록 다음 쪽' }));
-        expect(screen.getByTestId('화면 목록-page')).toHaveTextContent(/^2\//);
-        expect(window.location.search).toBe('');
-
-        openProgramsTab();
-        fireEvent.click(screen.getByRole('button', { name: '이전 프로그램 목록 다음 쪽' }));
-        await waitFor(() => expect(mocks.getProgramList).toHaveBeenCalledWith(expect.objectContaining({ page: 1 })));
-        await waitFor(() => expect(window.location.search).toBe('?page=2'));
-
-        // 화면 목록으로 돌아가 쪽을 넘겨도 이전 프로그램의 쪽 번호를 바꾸지 않는다.
-        fireEvent.click(screen.getByRole('tab', { name: '화면 목록' }));
-        fireEvent.click(screen.getByRole('button', { name: '화면 목록 다음 쪽' }));
-        expect(screen.getByTestId('화면 목록-page')).toHaveTextContent(/^3\//);
-        expect(window.location.search).toBe('?page=2');
-      } finally {
-        window.history.replaceState(null, '', '/admin/system/programs');
-      }
-    });
-
-    it('탭을 오가도 이전 프로그램의 검색어는 남고, 두 탭의 검색 입력은 섞이지 않는다', async () => {
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-      fireEvent.change(screen.getByRole('textbox', { name: '화면 이름 · 경로' }), { target: { value: '입력만 한 화면 검색어' } });
-      openProgramsTab();
-      expect(screen.getByRole('textbox', { name: '프로그램명 · 파일명' })).toHaveValue('');
-      fireEvent.change(screen.getByRole('textbox', { name: '프로그램명 · 파일명' }), { target: { value: 'PROG' } });
-      fireEvent.click(screen.getByRole('button', { name: '조회' }));
-      await waitFor(() => expect(mocks.getProgramList).toHaveBeenCalledWith(expect.objectContaining({ searchKeyword: 'PROG', page: 0 })));
-
-      fireEvent.click(screen.getByRole('tab', { name: '화면 목록' }));
-      openProgramsTab();
-      expect(screen.getByRole('textbox', { name: '프로그램명 · 파일명' })).toHaveValue('PROG');
-    });
+    fireEvent.click(screen.getByRole('button', { name: '화면 목록 20개씩' }));
+    fireEvent.click(screen.getByRole('button', { name: '화면 목록 다음 쪽' }));
+    expect(screen.getByTestId('화면 목록-page')).toHaveTextContent(/^2\//);
+    expect(window.location.search).toBe('');
   });
 
   /*
@@ -281,112 +250,265 @@ describe('ProgramAdminClient Component', () => {
   describe('화면 목록', () => {
     const LISTED = SCREEN_REGISTRY.length;
 
-    it('화면 목록 전체를 세고 첫 쪽을 보인다(진입 권한은 이름과 열리는 조건으로)', () => {
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
+    it('화면 목록 전체를 한 쪽에 세고(기본 100개씩), 진입 권한은 이름 칩과 코드로 보인다', () => {
+      renderClient(<ProgramAdminClient />);
+      // 메뉴 조회 권한이 없으면 처음 보기는 전체다.
+      expect(chip('전체')).toHaveAttribute('aria-pressed', 'true');
       expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent(`총 ${LISTED.toLocaleString()}건`);
-      expect(screen.getByTestId('화면 목록-count')).toHaveTextContent('20 items');
-      expect(screen.getByTestId('화면 목록-page')).toHaveTextContent(`1/${Math.ceil(LISTED / 20)}`);
+      expect(LISTED).toBeLessThanOrEqual(100);
+      expect(screen.getByTestId('화면 목록-count')).toHaveTextContent(`${LISTED} items`);
+      expect(screen.getByTestId('화면 목록-page')).toHaveTextContent('1/1');
+      expect(screen.getByTestId('화면 목록-page-size')).toHaveTextContent('100');
 
       searchScreens('/admin/system/programs');
       expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 1건');
       expect(cell('/admin/system/programs', '화면 이름')).toHaveTextContent('화면 관리');
-      expect(cell('/admin/system/programs', '진입 권한')).toHaveTextContent('프로그램 · 조회(PROGRAM_READ)');
+      // [2026-10-04 프로그램 목록 퇴역] 진입 권한이 PROGRAM_READ 에서 MENU_READ 로 바뀌었다.
+      // [2026-10-05 한 줄 행] 칩에는 이름이, 코드는 보조기술용 글자로 있다.
+      // [2026-10-05 반박 리뷰] 코드는 이 화면에서 생략하는 내부 표기라 hover 전용 title 을 두지 않는다(헌법 제16조 3항 — 포커스를
+      //   받지 않는 칩의 title 은 키보드·터치 사용자에게 같은 길이 없다). 이름이 코드와 일대일인 것은 screenList.test 가 고정한다.
+      const entryChip = cell('/admin/system/programs', '진입 권한').querySelector('[data-permission-code="MENU_READ"]');
+      expect(entryChip).not.toHaveAttribute('title');
+      expect(cell('/admin/system/programs', '진입 권한').querySelector('[title]')).toBeNull();
+      expect(entryChip).toHaveTextContent('메뉴 · 조회 (MENU_READ)');
+      expect(within(entryChip as HTMLElement).getByText('(MENU_READ)', { exact: false })).toHaveClass('sr-only');
+      // 경로는 생략하지 않는다(헌법 제16조 2항) — 이름·경로 열은 정렬할 수 있다(G5).
+      expect(cell('/admin/system/programs', '경로')).toHaveTextContent('/admin/system/programs');
+      expect(cell('/admin/system/programs', '경로')).toHaveAttribute('data-sortable', 'true');
+      expect(cell('/admin/system/programs', '화면 이름')).toHaveAttribute('data-sortable', 'true');
+    });
+
+    it('진입 권한이 둘 이상이면 모두·하나 표지를 칩 앞에 두고 그 뜻을 보조기술에 말한다', () => {
+      renderClient(<ProgramAdminClient />);
+      searchScreens('/admin/security/authority');
+      const any = cell('/admin/security/authority', '진입 권한');
+      expect(within(any).getByText('하나라도 있으면 열림:')).toHaveClass('sr-only');
+      expect(within(any).getByText('하나')).toHaveAttribute('aria-hidden', 'true');
+      expect(within(any).getByText('하나').parentElement).toHaveAttribute('title', '하나라도 있으면 열림');
+      /*
+       * [2026-10-05 반박 리뷰 — 통합 단계에서 테스트를 구현에 맞췄다] 권한이 둘 이상인 칸은 칩을 늘어놓지 않고 '표지 · 첫 칩 ·
+       * 외 N개' 한 줄 요약과 펼침이다 — 칩을 늘어놓으면 권한 넷인 화면이 칸 안에서 두세 줄로 접혔다. 나머지 권한은 hover 전용
+       * title 이 아니라 펼침(키보드·터치로 열린다)에 이름과 코드로 있다(헌법 제16조 2항). 칩을 다시 늘어놓으면 칩 수 단언이,
+       * 펼침을 걷으면 목록 단언이 실패한다.
+       */
+      expect(any.querySelectorAll('[data-permission-code]')).toHaveLength(1);
+      const details = any.querySelector<HTMLDetailsElement>('details[data-entry-details]');
+      expect(details).not.toBeNull();
+      expect(details!.querySelector('summary')).toHaveTextContent('외 1개');
+      expect(Array.from(details!.querySelectorAll('[data-entry-permission]')).map((item) => item.getAttribute('data-entry-permission')))
+        .toEqual(['AUTHRT_READ', 'AUTHRT_AUDIT']);
+      expect(details!.querySelector('[data-entry-permission="AUTHRT_AUDIT"]')).toHaveTextContent('(AUTHRT_AUDIT)');
+
+      searchScreens('/admin/survey/polls/manage');
+      const all = cell('/admin/survey/polls/manage', '진입 권한');
+      expect(within(all).getByText('모두')).toBeInTheDocument();
+      expect(within(all).getByText('모두 있어야 열림:')).toHaveClass('sr-only');
     });
 
     it('검색어는 이름·경로로 거르고, 결과가 없으면 검색 결과가 없다고 말한다(G15)', () => {
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
+      renderClient(<ProgramAdminClient />);
       searchScreens('없는-화면-검색어');
       expect(screen.getByTestId('화면 목록-count')).toHaveTextContent('0 items');
       expect(screen.getByText('"없는-화면-검색어"에 대한 검색 결과가 없습니다.')).toBeInTheDocument();
       expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 0건');
+      // 단추 건수도 검색어를 적용한 수다.
+      expect(chip('전체')).toHaveAccessibleName('전체 0');
 
       fireEvent.click(screen.getByRole('button', { name: '초기화' }));
       expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent(`총 ${LISTED.toLocaleString()}건`);
     });
 
     it('조회하면 첫 쪽으로 돌아간다', () => {
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
+      renderClient(<ProgramAdminClient />);
+      fireEvent.click(screen.getByRole('button', { name: '화면 목록 20개씩' }));
       fireEvent.click(screen.getByRole('button', { name: '화면 목록 다음 쪽' }));
       expect(screen.getByTestId('화면 목록-page')).toHaveTextContent(`2/${Math.ceil(LISTED / 20)}`);
       searchScreens('admin');
       expect(screen.getByTestId('화면 목록-page')).toHaveTextContent(/^1\//);
     });
 
-    it('구분으로 동적 경로·로그인만 하면 열리는 화면을 거르고 배지로 말한다', () => {
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-      fireEvent.change(screen.getByRole('combobox', { name: '구분' }), { target: { value: 'dynamic' } });
+    it('단추로 동적 경로·로그인만 하면 열리는 화면을 거르고 단추에 그 건수를 붙인다', () => {
+      renderClient(<ProgramAdminClient />);
       const dynamic = SCREEN_REGISTRY.filter((entry) => entry.dynamic);
+      expect(chip('동적 경로')).toHaveAccessibleName(`동적 경로 ${dynamic.length}`);
+      fireEvent.click(chip('동적 경로'));
+      expect(chip('동적 경로')).toHaveAttribute('aria-pressed', 'true');
+      expect(chip('전체')).toHaveAttribute('aria-pressed', 'false');
       expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent(`총 ${dynamic.length}건`);
       expect(within(cell('/smart-toolkit/dept-job/[id]', '구분')).getByText('동적 경로')).toBeInTheDocument();
       // 동적 경로도 등록된 이름으로 보인다(라우트 원장의 페이지 제목). 이름이 없으면 지어내지 않고 '이름 미확인' 으로 보이는
       // 규칙은 screenList.test 가 합성 화면으로 고정한다(2026-10-03 실제 생성물의 이름 미확인 화면은 0개가 됐다).
       expect(cell('/smart-toolkit/dept-job/[id]', '화면 이름')).toHaveTextContent('부서 업무 상세');
 
-      fireEvent.change(screen.getByRole('combobox', { name: '구분' }), { target: { value: 'login-only' } });
       const loginOnly = SCREEN_REGISTRY.filter((entry) => entry.entry.permissions.length === 0 && entry.shellAccess !== 'public');
+      expect(chip('로그인만 하면 열리는 화면')).toHaveAccessibleName(`로그인만 하면 열리는 화면 ${loginOnly.length}`);
+      fireEvent.click(chip('로그인만 하면 열리는 화면'));
       expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent(`총 ${loginOnly.length}건`);
-
     });
 
-    it('메뉴 조회 권한이 없으면 연결 메뉴를 묻지 않고, 메뉴에 없는 화면으로 거를 수 없다고 말한다', async () => {
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
+    it('메뉴 조회 권한이 없으면 연결 메뉴를 묻지 않고, 메뉴 관련 단추는 건수 대신 그 이유를 말한다', async () => {
+      renderClient(<ProgramAdminClient />);
       searchScreens('/admin/system/programs');
       expect(cell('/admin/system/programs', '연결 메뉴')).toHaveTextContent('메뉴 조회 권한 없음');
       // '메뉴 없음' 배지는 메뉴 구조를 알 때만 붙는다.
       expect(cell('/admin/system/programs', '구분')).not.toHaveTextContent('메뉴 없음');
-      const kind = screen.getByRole('combobox', { name: '구분' });
-      expect(within(kind).getByRole('option', { name: '메뉴에 없는 화면' })).toBeDisabled();
-      expect(kind).toHaveAccessibleDescription('메뉴 조회 권한이 없어 메뉴에 없는 화면으로 거를 수 없습니다.');
+      for (const label of ['메뉴에 없는 화면', '메뉴에 연결된 화면']) {
+        const blocked = chip(label);
+        expect(blocked).toHaveAccessibleName(`${label} 건수 모름`);
+        expect(blocked).toHaveAttribute('aria-disabled', 'true');
+        expect(blocked).toHaveAccessibleDescription('메뉴 조회 권한이 없어 메뉴에 연결된 화면과 메뉴에 없는 화면을 셀 수 없습니다.');
+        // 막힌 단추는 눌러도 보기를 바꾸지 않는다.
+        fireEvent.click(blocked);
+        expect(blocked).toHaveAttribute('aria-pressed', 'false');
+      }
+      // 권한 없음은 화면에 보이는 문장으로도 말한다.
+      expect(screen.getByText('메뉴 조회 권한이 없어 메뉴에 연결된 화면과 메뉴에 없는 화면을 셀 수 없습니다.')).not.toHaveClass('sr-only');
+      expect(chip('전체')).toHaveAttribute('aria-pressed', 'true');
       await act(async () => { await Promise.resolve(); });
       expect(mocks.getMenuStructure).not.toHaveBeenCalled();
     });
 
-    it('메뉴 경로가 여는 화면으로 연결 메뉴를 세고, 별칭을 가리키는 메뉴는 넘어간 화면으로 센다', async () => {
-      auth.permissions = [...FULL_PERMISSIONS, 'MENU_READ'];
+    /*
+     * [2026-10-05] 처음 보기는 메뉴 구조를 불러오면 '메뉴에 없는 화면' 이다. 불러오는 동안 빈 표를 그리지 않는다 — 빈 표는
+     * '메뉴에 없는 화면이 없다' 로 읽힌다. 표는 불러오는 중이고 건수는 아직 말하지 않으며, 다른 보기는 바로 고를 수 있다.
+     */
+    it('메뉴 구조를 불러오는 동안 빈 표 대신 불러오는 중을 보이고, 불러오면 메뉴에 없는 화면으로 시작한다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
+      let resolveMenus!: (value: unknown) => void;
+      mocks.getMenuStructure.mockReturnValueOnce(new Promise((resolve) => { resolveMenus = resolve; }));
+      renderClient(<ProgramAdminClient />);
+
+      expect(table()).toHaveAttribute('data-loading', 'true');
+      expect(screen.getByText('화면 목록을(를) 불러오는 중…')).toBeInTheDocument();
+      expect(screen.queryByText('선택한 구분에 해당하는 화면이 없습니다.')).not.toBeInTheDocument();
+      expect(screen.queryByText(/거를 수 없습니다/)).not.toBeInTheDocument();
+      expect(screen.getByTestId('work-list-toolbar')).not.toHaveTextContent('총');
+      // [2026-10-05 반박 리뷰] 처음 보기를 정하기 전에는 어떤 단추도 눌림이 아니다 — 곧 정해질 보기를 미리 눌림으로 두면 조회가
+      //   실패해 '전체' 로 정해질 때 눌림 상태가 말없이 뒤집힌다('…처음 보기는 전체' 테스트가 실패하면 그때 전체를 누른다).
+      for (const option of ['전체', '메뉴에 연결된 화면', '메뉴에 없는 화면', '로그인만 하면 열리는 화면', '동적 경로', '넘어가는 경로']) {
+        expect(chip(option)).toHaveAttribute('aria-pressed', 'false');
+      }
+      expect(chip('메뉴에 없는 화면')).toHaveAccessibleName('메뉴에 없는 화면 건수 모름');
+      // 불러오는 중이라는 이유는 표가 보이므로 보조기술용으로만 둔다.
+      expect(chip('메뉴에 연결된 화면')).toHaveAttribute('aria-disabled', 'true');
+      expect(chip('메뉴에 연결된 화면')).toHaveAccessibleDescription('메뉴 구조를 불러오는 중이라 메뉴에 연결된 화면과 메뉴에 없는 화면을 아직 셀 수 없습니다.');
+      expect(screen.getByText('메뉴 구조를 불러오는 중이라 메뉴에 연결된 화면과 메뉴에 없는 화면을 아직 셀 수 없습니다.')).toHaveClass('sr-only');
+
+      await act(async () => resolveMenus(structureCoveringAllBut('/admin/system/menus')));
+      await waitFor(() => expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 1건'));
+      expect(table()).not.toHaveAttribute('data-loading');
+      expect(chip('메뉴에 없는 화면')).toHaveAttribute('aria-pressed', 'true');
+      expect(chip('메뉴에 없는 화면')).toHaveAccessibleName('메뉴에 없는 화면 1');
+      expect(chip('메뉴에 연결된 화면')).toHaveAccessibleName(`메뉴에 연결된 화면 ${STATIC_SCREENS.length - 1}`);
+      expect(chip('메뉴에 연결된 화면')).not.toHaveAttribute('aria-disabled');
+      expect(chip('메뉴에 연결된 화면')).not.toHaveAttribute('aria-describedby');
+      expect(within(cell('/admin/system/menus', '구분')).getByText('메뉴 없음')).toBeInTheDocument();
+    });
+
+    it('메뉴를 불러오는 동안 다른 보기를 고르면 바로 보이고, 연결 칸은 연결 없음이 아니라 불러오는 중이다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
+      let resolveMenus!: (value: unknown) => void;
+      mocks.getMenuStructure.mockReturnValueOnce(new Promise((resolve) => { resolveMenus = resolve; }));
+      renderClient(<ProgramAdminClient />);
+      fireEvent.click(chip('전체'));
+      expect(table()).not.toHaveAttribute('data-loading');
+      searchScreens('/admin/system/programs');
+
+      const loading = within(cell('/admin/system/programs', '연결 메뉴')).getByText('연결 메뉴를 불러오는 중…');
+      expect(loading).toHaveAttribute('aria-busy', 'true');
+      expect(cell('/admin/system/programs', '연결 메뉴')).not.toHaveTextContent('연결 없음');
+
+      await act(async () => resolveMenus(structure([structureMenu(30, '화면 관리', { modernRoute: '/admin/system/programs' })])));
+      expect(await within(cell('/admin/system/programs', '연결 메뉴')).findByText('화면 관리')).toBeInTheDocument();
+      // 고른 보기는 처음 보기로 바뀌지 않는다.
+      expect(chip('전체')).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('로그인 정보를 확인하는 중이면 권한 없음으로 단정하지 않는다', () => {
+      auth.signedIn = false;
+      auth.loading = true;
+      renderClient(<ProgramAdminClient />);
+      expect(table()).toHaveAttribute('data-loading', 'true');
+      fireEvent.click(chip('전체'));
+      searchScreens('/admin/system/programs');
+
+      expect(within(cell('/admin/system/programs', '연결 메뉴')).getByText('연결 메뉴를 불러오는 중…')).toBeInTheDocument();
+      expect(cell('/admin/system/programs', '연결 메뉴')).not.toHaveTextContent('메뉴 조회 권한 없음');
+      expect(mocks.getMenuStructure).not.toHaveBeenCalled();
+    });
+
+    it('메뉴 조회가 403 이면 0건으로 위장하지 않고 권한 없음을 말하며 다시 불러오기를 두지 않는다(처음 보기는 전체)', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
+      mocks.getMenuStructure.mockRejectedValue({ response: { status: 403, data: { message: '권한이 없습니다.' } } });
+      renderClient(<ProgramAdminClient />);
+      await waitFor(() => expect(chip('전체')).toHaveAttribute('aria-pressed', 'true'));
+      searchScreens('/admin/system/programs');
+
+      expect(await within(cell('/admin/system/programs', '연결 메뉴')).findByText('메뉴 조회 권한 없음')).toBeInTheDocument();
+      expect(cell('/admin/system/programs', '연결 메뉴')).not.toHaveTextContent('연결 없음');
+      // 권한 없음은 다시 불러와도 같은 답이다 — 다시 불러오기를 두지 않는다.
+      expect(screen.queryByRole('button', { name: '연결 메뉴 다시 불러오기' })).not.toBeInTheDocument();
+    });
+
+    it('메뉴 경로가 여는 화면으로 연결 메뉴를 세고(사용 중인 메뉴 먼저 한 줄), 별칭을 가리키는 메뉴는 넘어간 화면으로 센다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
       mocks.getMenuStructure.mockResolvedValue(structure([
         structureMenu(30, '화면 관리', { modernRoute: '/admin/system/programs' }),
         structureMenu(31, '옛 화면 관리', { modernRoute: '/admin/system/programs?tab=x', useYn: 'N' }),
         structureMenu(40, '주소록', { modernRoute: '/admin/collaboration/address-book' }),
       ]));
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
+      renderClient(<ProgramAdminClient />);
+      await waitFor(() => expect(chip('메뉴에 연결된 화면')).toHaveAccessibleName('메뉴에 연결된 화면 2'));
+      fireEvent.click(chip('메뉴에 연결된 화면'));
+      expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 2건');
       searchScreens('/admin/system/programs');
 
       const links = cell('/admin/system/programs', '연결 메뉴');
-      expect(await within(links).findByText('연결 메뉴 2개')).toBeInTheDocument();
-      expect(within(links).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
-        '옛 화면 관리(ID: 31)· 사용 안 함',
+      const summary = links.querySelector('summary');
+      expect(summary).toHaveTextContent('화면 관리 외 1개');
+      expect(within(links).getAllByRole('listitem', { hidden: true }).map((item) => item.textContent)).toEqual([
         '화면 관리(ID: 30)',
+        '옛 화면 관리(ID: 31)· 사용 안 함',
       ]);
       expect(mocks.getMenuStructure).toHaveBeenCalledTimes(1);
       expect(mocks.getMenuStructure).toHaveBeenCalledWith({ suppressErrorToast: true });
 
       searchScreens('select-address-book-list');
       const addressBook = cell('/admin/collaboration/address-book/select-address-book-list', '연결 메뉴');
-      expect(within(addressBook).getByText('연결 메뉴 1개')).toBeInTheDocument();
+      expect(addressBook.querySelector('summary')).toHaveTextContent('주소록');
       expect(addressBook).toHaveTextContent('/admin/collaboration/address-book 경유');
       expect(cell('/admin/collaboration/address-book/select-address-book-list', '구분')).not.toHaveTextContent('메뉴 없음');
     });
 
-    it('메뉴에 없는 화면으로 거르면 연결 메뉴가 없는 화면만 남고 메뉴 없음 배지가 붙는다(동적 경로 화면은 들지 않는다)', async () => {
-      auth.permissions = [...FULL_PERMISSIONS, 'MENU_READ'];
-      mocks.getMenuStructure.mockResolvedValue(structure(
-        SCREEN_REGISTRY.filter((entry) => entry.route !== '/admin/system/menus' && !entry.dynamic)
-          .map((entry, index) => structureMenu(index + 1, `메뉴 ${index + 1}`, { modernRoute: entry.route })),
-      ));
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-      const kind = screen.getByRole('combobox', { name: '구분' });
-      await waitFor(() => expect(within(kind).getByRole('option', { name: '메뉴에 없는 화면' })).toBeEnabled());
-      // 메뉴 구조를 불러왔으면 선택지를 막지 않으니 안내도 없다.
-      expect(kind).not.toHaveAttribute('aria-describedby');
-      fireEvent.change(kind, { target: { value: 'no-menu' } });
+    it('사용 중인 메뉴 하나가 직접 여는 화면의 연결 칸은 펼침 없이 이름 한 줄이다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
+      mocks.getMenuStructure.mockResolvedValue(structure([structureMenu(30, '화면 관리', { modernRoute: '/admin/system/programs' })]));
+      renderClient(<ProgramAdminClient />);
+      await waitFor(() => expect(chip('메뉴에 연결된 화면')).toHaveAccessibleName('메뉴에 연결된 화면 1'));
+      fireEvent.click(chip('메뉴에 연결된 화면'));
+      const links = cell('/admin/system/programs', '연결 메뉴');
+      expect(links).toHaveTextContent(/^화면 관리/);
+      expect(links.querySelector('details')).toBeNull();
+      // 펼침이 없는 칸에도 메뉴 ID 가 보조기술용 글자로 남는다. [2026-10-05 반박 리뷰] hover 전용 title 은 두지 않는다 — 포커스를
+      //   받지 않는 칸의 title 은 키보드·터치 사용자에게 같은 길이 없다(헌법 제16조 3항). 이 칸은 메뉴가 하나라 이름만으로 그
+      //   메뉴를 가리킨다. 메뉴가 여럿이거나 사용 안 함·다른 경로를 거치면 펼침이 ID 를 보인다('집계 기준' 도움말과 같은 서술).
+      expect(within(links).getByText('(메뉴 ID: 30)', { exact: false })).toHaveClass('sr-only');
+      expect(links.querySelector('[title]')).toBeNull();
+    });
+
+    it('메뉴에 없는 화면 보기는 연결 메뉴가 없는 화면만 남고 메뉴 없음 배지가 붙는다(동적 경로 화면은 들지 않는다)', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
+      mocks.getMenuStructure.mockResolvedValue(structureCoveringAllBut('/admin/system/menus'));
+      renderClient(<ProgramAdminClient />);
+      await waitFor(() => expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 1건'));
+      expect(chip('메뉴에 없는 화면')).toHaveAttribute('aria-pressed', 'true');
 
       // 동적 경로 화면은 어떤 메뉴도 열지 않지만 메뉴에 둘 수 없는 화면이라 세지 않는다.
       expect(SCREEN_REGISTRY.some((entry) => entry.dynamic)).toBe(true);
-      expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 1건');
       expect(within(cell('/admin/system/menus', '구분')).getByText('메뉴 없음')).toBeInTheDocument();
       expect(cell('/admin/system/menus', '연결 메뉴')).toHaveTextContent('연결 없음');
 
-      fireEvent.change(kind, { target: { value: 'dynamic' } });
+      fireEvent.click(chip('동적 경로'));
       expect(cell('/smart-toolkit/dept-job/[id]', '연결 메뉴')).toHaveTextContent('연결 없음');
       expect(cell('/smart-toolkit/dept-job/[id]', '구분')).not.toHaveTextContent('메뉴 없음');
     });
@@ -396,7 +518,7 @@ describe('ProgramAdminClient Component', () => {
      * 화면은 연결 칸에 그 메뉴를 보이되 메뉴 없음으로 센다(사이드바에 보이지 않는다).
      */
     it('사용 안 함 메뉴만 가리키는 화면은 연결을 보이되 메뉴에 없는 화면으로 센다', async () => {
-      auth.permissions = [...FULL_PERMISSIONS, 'MENU_READ'];
+      auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
       mocks.getMenuStructure.mockResolvedValue(structure(
         SCREEN_REGISTRY.filter((entry) => entry.route !== '/admin/system/menus' && !entry.dynamic)
           .map((entry, index) => structureMenu(index + 1, `메뉴 ${index + 1}`, {
@@ -404,78 +526,168 @@ describe('ProgramAdminClient Component', () => {
             useYn: entry.route === '/admin/system/programs' ? 'N' : 'Y',
           })),
       ));
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-      const kind = screen.getByRole('combobox', { name: '구분' });
-      await waitFor(() => expect(within(kind).getByRole('option', { name: '메뉴에 없는 화면' })).toBeEnabled());
-      fireEvent.change(kind, { target: { value: 'no-menu' } });
+      renderClient(<ProgramAdminClient />);
+      await waitFor(() => expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 2건'));
 
-      expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 2건');
       expect(within(cell('/admin/system/programs', '구분')).getByText('메뉴 없음')).toBeInTheDocument();
-      expect(cell('/admin/system/programs', '연결 메뉴')).toHaveTextContent('연결 메뉴 1개(모두 사용 안 함)');
-      expect(cell('/admin/system/programs', '연결 메뉴')).toHaveTextContent('사용 안 함');
+      expect(cell('/admin/system/programs', '연결 메뉴').querySelector('summary')).toHaveTextContent(/\(사용 안 함\)$/);
+      expect(cell('/admin/system/programs', '연결 메뉴')).toHaveTextContent('· 사용 안 함');
       expect(within(cell('/admin/system/menus', '구분')).getByText('메뉴 없음')).toBeInTheDocument();
+      // 두 단추는 동적 경로가 아닌 화면을 정확히 나눈다.
+      expect(chip('메뉴에 연결된 화면')).toHaveAccessibleName(`메뉴에 연결된 화면 ${STATIC_SCREENS.length - 2}`);
     });
 
-    it('메뉴 구조를 불러오는 동안 메뉴에 없는 화면 선택지를 막고 그 이유를 말한다(G10)', async () => {
-      auth.permissions = [...FULL_PERMISSIONS, 'MENU_READ'];
-      let resolveMenus!: (value: unknown) => void;
-      mocks.getMenuStructure.mockReturnValueOnce(new Promise((resolve) => { resolveMenus = resolve; }));
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-      const kind = screen.getByRole('combobox', { name: '구분' });
-      expect(within(kind).getByRole('option', { name: '메뉴에 없는 화면' })).toBeDisabled();
-      expect(kind).toHaveAccessibleDescription('메뉴 구조를 불러오는 중이라 아직 메뉴에 없는 화면으로 거를 수 없습니다.');
-
-      await act(async () => resolveMenus(structure([])));
-      await waitFor(() => expect(within(kind).getByRole('option', { name: '메뉴에 없는 화면' })).toBeEnabled());
-      expect(kind).not.toHaveAttribute('aria-describedby');
-    });
-
-    it('메뉴 구조를 불러오지 못하면 0건으로 위장하지 않고 실패를 말하며 다시 불러올 수 있다', async () => {
-      auth.permissions = [...FULL_PERMISSIONS, 'MENU_READ'];
+    it('메뉴 구조를 불러오지 못하면 0건으로 위장하지 않고 실패를 말하며 다시 불러올 수 있다(처음 보기는 전체)', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
       mocks.getMenuStructure.mockRejectedValueOnce({ response: { status: 500 } });
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
+      renderClient(<ProgramAdminClient />);
+      await waitFor(() => expect(chip('전체')).toHaveAttribute('aria-pressed', 'true'));
       searchScreens('/admin/system/programs');
 
       const failed = await within(cell('/admin/system/programs', '연결 메뉴')).findByText('메뉴를 불러오지 못함');
       expect(failed).toHaveClass('text-destructive-emphasis');
       expect(screen.getByText('화면 목록은 표시했지만 연결 메뉴를 불러오지 못했습니다.')).toBeInTheDocument();
+      expect(chip('메뉴에 없는 화면')).toHaveAccessibleDescription('메뉴 구조를 불러오지 못해 메뉴에 연결된 화면과 메뉴에 없는 화면을 셀 수 없습니다.');
 
       mocks.getMenuStructure.mockResolvedValueOnce(structure([structureMenu(30, '화면 관리', { modernRoute: '/admin/system/programs' })]));
       fireEvent.click(screen.getByRole('button', { name: '연결 메뉴 다시 불러오기' }));
-      expect(await within(cell('/admin/system/programs', '연결 메뉴')).findByText('연결 메뉴 1개')).toBeInTheDocument();
+      expect(await within(cell('/admin/system/programs', '연결 메뉴')).findByText('화면 관리')).toBeInTheDocument();
       expect(mocks.getMenuStructure).toHaveBeenCalledTimes(2);
+      // 처음 보기는 한 번 정하면 그대로다 — 다시 불러왔다고 보기가 바뀌지 않는다.
+      expect(chip('전체')).toHaveAttribute('aria-pressed', 'true');
     });
 
-    it('메뉴에 없는 화면을 고른 채 메뉴 구조를 모르게 되면 전체를 메뉴 없음으로 말하지 않고 그 이유를 빈 상태로 말한다', async () => {
-      auth.permissions = [...FULL_PERMISSIONS, 'MENU_READ'];
+    /*
+     * [2026-10-05 반박 리뷰 — WCAG 2.4.3] 받은 데이터 없이 실패한 뒤 다시 불러오면 조회 상태가 'pending' 으로 돌아간다. 종전에는
+     * 그 순간 출처가 '불러오는 중' 이 되어 실패 안내와 단추가 함께 사라지고 포커스가 문서 맨 앞으로 갔다(disabled·aria-busy 는 한
+     * 번도 보이지 않았다). 다시 불러오는 동안 안내와 단추는 남고(aria-disabled·aria-busy, 포커스 유지), 중복 요청을 막으며, 불러오면
+     * 포커스가 눌린 보기 단추로 간다. 실패를 유지하는 배선(useMenuStructureSource)이나 포커스 이동을 되돌리면 이 테스트가 실패한다.
+     */
+    it('다시 불러오는 동안 안내와 단추가 남아 포커스를 지키고, 불러오면 포커스가 눌린 보기 단추로 간다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
+      mocks.getMenuStructure.mockRejectedValueOnce({ response: { status: 500 } });
+      renderClient(<ProgramAdminClient />);
+      const retry = await screen.findByRole('button', { name: '연결 메뉴 다시 불러오기' });
+      expect(chip('전체')).toHaveAttribute('aria-pressed', 'true');
+
+      let resolveMenus!: (value: unknown) => void;
+      mocks.getMenuStructure.mockReturnValueOnce(new Promise((resolve) => { resolveMenus = resolve; }));
+      retry.focus();
+      await act(async () => { fireEvent.click(retry); });
+
+      const pending = screen.getByRole('button', { name: '연결 메뉴 다시 불러오기' });
+      expect(pending).toBe(retry);
+      expect(pending).toHaveFocus();
+      expect(pending).toHaveAttribute('aria-busy', 'true');
+      expect(pending).toHaveAttribute('aria-disabled', 'true');
+      expect(pending).not.toBeDisabled();
+      expect(screen.getByText('화면 목록은 표시했지만 연결 메뉴를 불러오지 못했습니다.')).toBeInTheDocument();
+      // 다시 불러오는 중이라는 이유로 연결 칸이 '불러오는 중' 으로 바뀌지도 않는다(실패를 그대로 둔다).
+      expect(cell('/admin/system/programs', '연결 메뉴')).toHaveTextContent('메뉴를 불러오지 못함');
+      // 다시 눌러도 요청을 더 보내지 않는다.
+      fireEvent.click(pending);
+      expect(mocks.getMenuStructure).toHaveBeenCalledTimes(2);
+
+      await act(async () => resolveMenus(structure([structureMenu(30, '화면 관리', { modernRoute: '/admin/system/programs' })])));
+      await waitFor(() => expect(screen.queryByRole('button', { name: '연결 메뉴 다시 불러오기' })).not.toBeInTheDocument());
+      await waitFor(() => expect(chip('전체')).toHaveFocus());
+      expect(cell('/admin/system/programs', '연결 메뉴')).toHaveTextContent('화면 관리');
+    });
+
+    it('다시 불러오기가 또 실패하면 안내와 단추가 그대로 남고 포커스도 단추에 남는다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
+      mocks.getMenuStructure.mockRejectedValueOnce({ response: { status: 500 } }).mockRejectedValueOnce({ response: { status: 500 } });
+      renderClient(<ProgramAdminClient />);
+      const retry = await screen.findByRole('button', { name: '연결 메뉴 다시 불러오기' });
+      retry.focus();
+      await act(async () => { fireEvent.click(retry); });
+      await waitFor(() => expect(mocks.getMenuStructure).toHaveBeenCalledTimes(2));
+      await waitFor(() => expect(retry).not.toHaveAttribute('aria-busy'));
+      expect(screen.getByRole('button', { name: '연결 메뉴 다시 불러오기' })).toBe(retry);
+      expect(retry).toHaveFocus();
+      expect(retry).not.toHaveAttribute('aria-disabled');
+    });
+
+    /*
+     * [2026-10-05 반박 리뷰] 초기화는 처음 보기도 지금의 메뉴 구조로 다시 정한다. 첫 조회가 실패해 '전체' 로 시작한 뒤 다시
+     * 불러왔다면 초기화가 '메뉴에 없는 화면' 으로 돌아간다(기억해 둔 처음 보기를 그대로 쓰면 '전체' 로 돌아갔다).
+     */
+    it('첫 조회가 실패해 전체로 시작해도, 다시 불러온 뒤 초기화하면 메뉴에 없는 화면으로 돌아간다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
+      mocks.getMenuStructure
+        .mockRejectedValueOnce({ response: { status: 500 } })
+        .mockResolvedValueOnce(structureCoveringAllBut('/admin/system/menus'));
+      renderClient(<ProgramAdminClient />);
+      fireEvent.click(await screen.findByRole('button', { name: '연결 메뉴 다시 불러오기' }));
+      await waitFor(() => expect(chip('메뉴에 없는 화면')).toHaveAccessibleName('메뉴에 없는 화면 1'));
+      // 다시 불러왔다고 보기를 바꾸지 않는다.
+      expect(chip('전체')).toHaveAttribute('aria-pressed', 'true');
+
+      fireEvent.click(screen.getByRole('button', { name: '초기화' }));
+      expect(chip('메뉴에 없는 화면')).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 1건');
+    });
+
+    /*
+     * [2026-10-05 반박 리뷰] 처음 보기를 정한 뒤 권한 버전이 바뀌어 메뉴 구조를 다시 불러오는 동안, 메뉴 구조가 필요한 보기를
+     * 보고 있으면 표는 빈 표('…아직 거를 수 없습니다')가 아니라 불러오는 중이다(tableLoading 의 두 번째 조건).
+     */
+    it('처음 보기를 정한 뒤 권한 버전이 바뀌어 다시 불러오는 동안 메뉴에 없는 화면 표는 빈 표가 아니라 불러오는 중이다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
+      mocks.getMenuStructure.mockResolvedValueOnce(structureCoveringAllBut('/admin/system/menus'));
+      const client = createAppQueryClient();
+      const view = render(<QueryClientProvider client={client}><ProgramAdminClient /></QueryClientProvider>);
+      await waitFor(() => expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 1건'));
+      expect(chip('메뉴에 없는 화면')).toHaveAttribute('aria-pressed', 'true');
+
+      let resolveMenus!: (value: unknown) => void;
+      mocks.getMenuStructure.mockReturnValueOnce(new Promise((resolve) => { resolveMenus = resolve; }));
+      auth.version = 'v2';
+      view.rerender(<QueryClientProvider client={client}><ProgramAdminClient /></QueryClientProvider>);
+
+      await waitFor(() => expect(mocks.getMenuStructure).toHaveBeenCalledTimes(2));
+      expect(table()).toHaveAttribute('data-loading', 'true');
+      expect(screen.getByText('화면 목록을(를) 불러오는 중…')).toBeInTheDocument();
+      expect(screen.queryByText(/거를 수 없습니다/)).not.toBeInTheDocument();
+      expect(chip('메뉴에 없는 화면')).toHaveAttribute('aria-pressed', 'true');
+
+      await act(async () => resolveMenus(structureCoveringAllBut('/admin/system/menus', '/admin/help')));
+      await waitFor(() => expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 2건'));
+      expect(table()).not.toHaveAttribute('data-loading');
+    });
+
+    /*
+     * 처음 보기('메뉴에 없는 화면')를 기억한다. 기억하지 않으면 백그라운드 재조회가 실패하는 순간 보기가 말없이 '전체' 로
+     * 바뀐다. 메뉴 구조를 모르게 되면 전체를 메뉴 없음으로도, 0건으로도 말하지 않고 그 이유를 빈 상태로 말한다.
+     */
+    it('메뉴에 없는 화면을 보는 채 메뉴 구조를 모르게 되면 보기를 그대로 두고 그 이유를 빈 상태로 말한다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
       mocks.getMenuStructure.mockResolvedValueOnce(structure([])).mockRejectedValueOnce({ response: { status: 500 } });
       const client = createAppQueryClient();
-      render(<QueryClientProvider client={client}><ProgramAdminClient initialData={mockInitialData} searchWrd="" /></QueryClientProvider>);
-      const kind = screen.getByRole('combobox', { name: '구분' });
-      await waitFor(() => expect(within(kind).getByRole('option', { name: '메뉴에 없는 화면' })).toBeEnabled());
-      fireEvent.change(kind, { target: { value: 'no-menu' } });
+      render(<QueryClientProvider client={client}><ProgramAdminClient /></QueryClientProvider>);
       // 메뉴가 하나도 없으면 동적 경로가 아닌 모든 화면이 메뉴에 없다.
-      const staticScreens = SCREEN_REGISTRY.filter((entry) => !entry.dynamic);
-      expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent(`총 ${staticScreens.length.toLocaleString()}건`);
+      await waitFor(() => expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent(`총 ${STATIC_SCREENS.length.toLocaleString()}건`));
+      expect(chip('메뉴에 없는 화면')).toHaveAttribute('aria-pressed', 'true');
 
       // 백그라운드 재조회가 실패하면 어떤 화면이 메뉴에 없는지 모른다.
       await act(async () => { await client.refetchQueries(); });
       expect(await screen.findByText('메뉴 구조를 불러오지 못해 메뉴에 없는 화면을 거를 수 없습니다. 연결 메뉴를 다시 불러와 주세요.')).toBeInTheDocument();
       // 모르는 것을 0건이라고 말하지 않는다.
       expect(screen.getByTestId('work-list-toolbar')).not.toHaveTextContent('총');
-      // 고른 구분은 그대로 둔다(선택지를 숨겨 값이 사라지지 않게).
-      expect(kind).toHaveValue('no-menu');
+      // 고른(처음) 보기는 그대로 둔다 — 단추가 막혀 보기가 사라지지 않게 눌린 단추는 막지 않는다.
+      expect(chip('메뉴에 없는 화면')).toHaveAttribute('aria-pressed', 'true');
+      expect(chip('메뉴에 없는 화면')).not.toHaveAttribute('aria-disabled');
+      expect(chip('메뉴에 연결된 화면')).toHaveAttribute('aria-disabled', 'true');
     });
 
     it('거른 결과가 지금 쪽보다 짧아지면 마지막 쪽을 보인다(빈 쪽에 갇히지 않는다)', async () => {
-      auth.permissions = [...FULL_PERMISSIONS, 'MENU_READ'];
+      auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
       const covered = SCREEN_REGISTRY.slice(2).map((entry, index) => structureMenu(index + 1, `메뉴 ${index + 1}`, { modernRoute: entry.route }));
       mocks.getMenuStructure.mockResolvedValueOnce(structure([])).mockResolvedValueOnce(structure(covered));
       const client = createAppQueryClient();
-      render(<QueryClientProvider client={client}><ProgramAdminClient initialData={mockInitialData} searchWrd="" /></QueryClientProvider>);
-      const kind = screen.getByRole('combobox', { name: '구분' });
-      await waitFor(() => expect(within(kind).getByRole('option', { name: '메뉴에 없는 화면' })).toBeEnabled());
-      fireEvent.change(kind, { target: { value: 'no-menu' } });
+      render(<QueryClientProvider client={client}><ProgramAdminClient /></QueryClientProvider>);
+      await waitFor(() => expect(chip('메뉴에 없는 화면')).toHaveAccessibleName(`메뉴에 없는 화면 ${STATIC_SCREENS.length}`));
+      fireEvent.click(screen.getByRole('button', { name: '화면 목록 20개씩' }));
       fireEvent.click(screen.getByRole('button', { name: '화면 목록 다음 쪽' }));
       fireEvent.click(screen.getByRole('button', { name: '화면 목록 다음 쪽' }));
       expect(screen.getByTestId('화면 목록-page')).toHaveTextContent(/^3\//);
@@ -487,39 +699,123 @@ describe('ProgramAdminClient Component', () => {
       expect(screen.getByTestId('화면 목록-count')).toHaveTextContent('2 items');
     });
 
-    it('다른 화면으로 넘어가는 경로는 링크하지 않고 목적지와 넘기는 곳만 보인다', () => {
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-      const aliases = screen.getByRole('region', { name: `다른 화면으로 넘어가는 경로 ${SCREEN_ALIASES.length}개` });
-      expect(within(aliases).getAllByRole('listitem')).toHaveLength(SCREEN_ALIASES.length);
-      expect(within(aliases).queryAllByRole('link')).toHaveLength(0);
-      expect(within(aliases).getByText('/admin/system/ism').closest('li')).toHaveTextContent('/approvals');
+    it('초기화하면 검색어를 비우고 처음 보기로 돌아간다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
+      mocks.getMenuStructure.mockResolvedValue(structureCoveringAllBut('/admin/system/menus'));
+      renderClient(<ProgramAdminClient />);
+      await waitFor(() => expect(chip('메뉴에 없는 화면')).toHaveAttribute('aria-pressed', 'true'));
+      fireEvent.click(chip('전체'));
+      searchScreens('admin');
+      expect(chip('전체')).toHaveAttribute('aria-pressed', 'true');
+
+      fireEvent.click(screen.getByRole('button', { name: '초기화' }));
+      expect(chip('메뉴에 없는 화면')).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 1건');
+    });
+
+    /*
+     * [2026-10-05] 메뉴 관리에서 '메뉴에 추가' 로 저장하고 돌아오면 방금 넣은 화면이 '메뉴 없음' 으로 남지 않아야 한다 —
+     * 화면을 열 때마다 메뉴 구조를 다시 읽는다(전역 staleTime 60초 안이어도). 같은 QueryClient 로 다시 마운트해 본다.
+     */
+    /*
+     * [2026-10-05 반박 리뷰] 다시 연 직후, 새 조회 응답이 오기 전에는 지난 방문의 결과를 쓰지 않는다 — 쓰면 방금 메뉴에 넣은
+     * 화면이 그동안 '메뉴에 추가' 를 단 채 보인다. 화면 연결(awaitingFreshResult)을 되돌리면 이 테스트가 실패한다.
+     */
+    it('다시 연 직후 새 조회 응답 전에는 지난 결과로 메뉴에 추가를 두지 않고 표는 불러오는 중이다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, ...MENU_MANAGER];
+      mocks.getMenuStructure.mockResolvedValueOnce(structureCoveringAllBut('/admin/system/programs'));
+      const client = createAppQueryClient();
+      const first = render(<QueryClientProvider client={client}><ProgramAdminClient /></QueryClientProvider>);
+      await waitFor(() => expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 1건'));
+      expect(within(cell('/admin/system/programs', '관리')).getByRole('button', { name: /^메뉴에 추가/ })).toBeInTheDocument();
+      first.unmount();
+
+      let resolveMenus!: (value: unknown) => void;
+      mocks.getMenuStructure.mockReturnValueOnce(new Promise((resolve) => { resolveMenus = resolve; }));
+      render(<QueryClientProvider client={client}><ProgramAdminClient /></QueryClientProvider>);
+      expect(screen.queryAllByRole('button', { name: /^메뉴에 추가/ })).toHaveLength(0);
+      expect(table()).toHaveAttribute('data-loading', 'true');
+      expect(screen.getByTestId('work-list-toolbar')).not.toHaveTextContent('총');
+
+      await act(async () => resolveMenus(structureCoveringAllBut('/admin/system/programs', '/admin/help')));
+      await waitFor(() => expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 2건'));
+      expect(table()).not.toHaveAttribute('data-loading');
+    });
+
+    it('화면을 다시 열면 캐시가 신선해도 메뉴 구조를 다시 읽어 방금 메뉴에 넣은 화면을 메뉴 없음으로 두지 않는다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
+      mocks.getMenuStructure.mockResolvedValueOnce(structureCoveringAllBut('/admin/system/menus', '/admin/help'));
+      const client = createAppQueryClient();
+      const first = render(<QueryClientProvider client={client}><ProgramAdminClient /></QueryClientProvider>);
+      await waitFor(() => expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 2건'));
+      first.unmount();
+
+      // 메뉴 관리에서 /admin/help 를 메뉴에 넣고 저장한 뒤 돌아온다.
+      mocks.getMenuStructure.mockResolvedValueOnce(structureCoveringAllBut('/admin/system/menus'));
+      render(<QueryClientProvider client={client}><ProgramAdminClient /></QueryClientProvider>);
+      await waitFor(() => expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 1건'));
+      expect(mocks.getMenuStructure).toHaveBeenCalledTimes(2);
+      expect(() => row('/admin/help')).toThrow();
+    });
+
+    /*
+     * [2026-10-05 시안 복원] 다른 화면으로 넘어가는 경로(별칭)는 표 아래에 늘 펼쳐 두지 않고 '넘어가는 경로' 단추를 고를 때
+     * 표 자리에 보인다. 링크하지 않고 목적지와 넘기는 곳만 보인다.
+     */
+    it('넘어가는 경로는 그 단추를 고를 때만 표 자리에 보이고, 링크하지 않고 목적지와 넘기는 곳만 보인다', () => {
+      renderClient(<ProgramAdminClient />);
+      // 검색어 칸은 지금 보기에서 실제로 거르는 칸을 말한다(2026-10-05 반박 리뷰 — 넘어가는 경로에는 이름이 없다).
+      expect(searchBox()).toHaveAccessibleName('화면 이름 · 경로');
+      expect(searchBox()).toHaveAttribute('placeholder', '화면 이름 또는 경로로 검색');
+      expect(screen.queryByRole('region', { name: /다른 화면으로 넘어가는 경로/ })).not.toBeInTheDocument();
+      expect(screen.getAllByTestId('data-table').map((element) => element.getAttribute('data-table-label'))).toEqual(['화면 목록']);
+      expect(chip('넘어가는 경로')).toHaveAccessibleName(`넘어가는 경로 ${SCREEN_ALIASES.length}`);
+
+      fireEvent.click(chip('넘어가는 경로'));
+      expect(searchBox()).toHaveAccessibleName('경로 · 넘어가는 곳');
+      expect(searchBox()).toHaveAttribute('placeholder', '경로 또는 넘어가는 곳으로 검색');
+      expect(screen.getAllByTestId('data-table').map((element) => element.getAttribute('data-table-label'))).toEqual(['다른 화면으로 넘어가는 경로']);
+      expect(table()).toHaveAttribute('data-row-density', 'work');
+      expect(table()).toHaveAttribute('data-fill-height', 'true');
+      expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent(`총 ${SCREEN_ALIASES.length}건`);
+      expect(screen.getByTestId('다른 화면으로 넘어가는 경로-count')).toHaveTextContent(`${SCREEN_ALIASES.length} items`);
+      expect(within(table()).queryAllByRole('link')).toHaveLength(0);
+      expect(cell('/admin/system/ism', '넘어가는 곳')).toHaveTextContent('/approvals');
+      expect(cell('/admin/system/ism', '넘기는 곳')).toHaveTextContent('화면 파일이 넘김');
       // 넘겨받는 동적 값은 생성 목록의 자리표시자(${id})가 아니라 화면 경로와 같은 표기로 보인다.
-      const community = within(aliases).getByText('/admin/community/[id]').closest('li');
-      expect(community).toHaveTextContent('/cop/cmy/selectCommunityDetail/[id]');
-      expect(within(aliases).queryByText(/\$\{/)).not.toBeInTheDocument();
+      expect(cell('/admin/community/[id]', '넘어가는 곳')).toHaveTextContent('/cop/cmy/selectCommunityDetail/[id]');
+      expect(within(table()).queryByText(/\$\{/)).not.toBeInTheDocument();
 
       searchScreens('approvals');
-      expect(screen.getByRole('region', { name: /다른 화면으로 넘어가는 경로 \d+ \/ \d+개/ })).toBeInTheDocument();
-      expect(within(screen.getByRole('region', { name: /다른 화면으로 넘어가는 경로/ })).getAllByRole('listitem').length)
+      expect(Number(screen.getByTestId('다른 화면으로 넘어가는 경로-count').textContent?.split(' ')[0]))
         .toBeLessThan(SCREEN_ALIASES.length);
+      expect(chip('넘어가는 경로')).toHaveAttribute('aria-pressed', 'true');
     });
   });
 
   /*
    * [2026-10-02 D3] 행 동작 '메뉴에 추가' — 메뉴를 만들고(MENU_CREATE) 구조를 저장할 수 있고(MENU_UPDATE) 메뉴 관리에
    * 들어갈 수 있는(라우트 게이트와 같은 판정) 사람에게만 보인다. 화면 인계(이 탭의 sessionStorage, URL 비노출) 뒤 이동한다.
+   * [2026-10-05] 메뉴에 없는 화면 행에만, 작은(24px) 단추로 둔다.
    */
   describe('메뉴에 추가', () => {
     const HANDOFF_KEY = 'egov.screen-handoff.v1:menu-add-screen';
 
-    it('메뉴를 만들 수 있으면 동적이 아닌 화면에만 보이고, 누르면 화면을 넘긴 뒤 메뉴 관리로 간다', () => {
-      auth.permissions = [...FULL_PERMISSIONS, ...MENU_MANAGER];
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-      searchScreens('/smart-toolkit/dept-job');
+    it('메뉴를 만들 수 있으면 메뉴에 없는 화면 행에만 작은 단추로 보이고, 누르면 화면을 넘긴 뒤 메뉴 관리로 간다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, ...MENU_MANAGER];
+      mocks.getMenuStructure.mockResolvedValue(structureCoveringAllBut('/admin/system/programs'));
+      renderClient(<ProgramAdminClient />);
+      await waitFor(() => expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 1건'));
+      fireEvent.click(chip('전체'));
+      // 사용 중인 메뉴가 여는 화면에는 두지 않는다(같은 화면의 메뉴를 하나 더 만들라는 권유가 된다).
+      expect(within(cell('/admin/system/menus', '관리')).queryByRole('button')).not.toBeInTheDocument();
+      // 동적 경로 화면에는 두지 않는다.
       expect(within(cell('/smart-toolkit/dept-job/[id]', '관리')).queryByRole('button')).not.toBeInTheDocument();
 
-      searchScreens('/admin/system/programs');
-      fireEvent.click(within(cell('/admin/system/programs', '관리')).getByRole('button', { name: '메뉴에 추가: 화면 관리 (/admin/system/programs)' }));
+      const add = within(cell('/admin/system/programs', '관리')).getByRole('button', { name: '메뉴에 추가: 화면 관리 (/admin/system/programs)' });
+      expect(add).toHaveAttribute('data-size', 'xs');
+      expect(add).toHaveClass('h-6');
+      fireEvent.click(add);
 
       const stored = JSON.parse(window.sessionStorage.getItem(HANDOFF_KEY) ?? 'null');
       expect(stored).toMatchObject({ route: '/admin/system/programs', label: '화면 관리' });
@@ -530,292 +826,89 @@ describe('ProgramAdminClient Component', () => {
       expect(window.location.search).toBe('');
     });
 
+    it('메뉴 구조를 모르면 어떤 화면에도 메뉴에 추가를 두지 않는다(메뉴에 없다고 말할 수 없다)', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, ...MENU_MANAGER];
+      mocks.getMenuStructure.mockRejectedValue({ response: { status: 500 } });
+      renderClient(<ProgramAdminClient />);
+      // [2026-10-05 반박 리뷰 — 통합 단계에서 테스트를 구현에 맞췄다] 메뉴를 만들 수 있는 사람에게는 '메뉴에 추가' 가 왜 사라졌는지도 말한다.
+      await waitFor(() => expect(screen.getByText('화면 목록은 표시했지만 연결 메뉴를 불러오지 못했습니다. 메뉴에 추가는 연결 메뉴를 불러온 뒤에 쓸 수 있습니다.')).toBeInTheDocument());
+      expect(screen.getByTestId('화면 목록-count')).toHaveTextContent(`${SCREEN_REGISTRY.length} items`);
+      expect(screen.queryByRole('button', { name: /^메뉴에 추가/ })).not.toBeInTheDocument();
+    });
+
     // [2026-10-03] 이름을 지어내지 않고 등록된 이름(없으면 null)을 그대로 넘긴다. 이름이 null 인 인계는 target-handoff.test 가,
     //   이름 없는 화면의 표시는 screenList.test 가 합성 값으로 고정한다(실제 생성물의 이름 미확인 화면은 0개가 됐다).
-    it('메뉴에 추가는 화면의 등록된 이름을 지어내지 않고 그대로 넘긴다', () => {
-      auth.permissions = [...FULL_PERMISSIONS, ...MENU_MANAGER];
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
+    it('메뉴에 추가는 화면의 등록된 이름을 지어내지 않고 그대로 넘긴다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, ...MENU_MANAGER];
+      renderClient(<ProgramAdminClient />);
       const entry = SCREEN_REGISTRY.find((candidate) => candidate.route === '/admin/system/programs');
       expect(entry?.label).toBe('화면 관리');
+      await waitFor(() => expect(chip('메뉴에 없는 화면')).toHaveAttribute('aria-pressed', 'true'));
       searchScreens(entry!.route);
       fireEvent.click(within(cell(entry!.route, '관리')).getByRole('button', { name: `메뉴에 추가: 화면 관리 (${entry!.route})` }));
       expect(JSON.parse(window.sessionStorage.getItem(HANDOFF_KEY) ?? 'null')).toMatchObject({ route: entry!.route, label: entry!.label });
     });
 
-    it('화면을 넘기지 못하면 이동하지 않고 그 사실을 알린다', () => {
-      auth.permissions = [...FULL_PERMISSIONS, ...MENU_MANAGER];
-      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('QuotaExceededError'); });
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
+    it('화면을 넘기지 못하면 이동하지 않고 그 사실을 알린다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, ...MENU_MANAGER];
+      renderClient(<ProgramAdminClient />);
+      await waitFor(() => expect(chip('메뉴에 없는 화면')).toHaveAttribute('aria-pressed', 'true'));
       searchScreens('/admin/system/programs');
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('QuotaExceededError'); });
       fireEvent.click(within(cell('/admin/system/programs', '관리')).getByRole('button', { name: /메뉴에 추가/ }));
 
       expect(mocks.push).not.toHaveBeenCalled();
       expect(mocks.toast).toHaveBeenCalledWith('화면을 메뉴 관리로 넘기지 못했습니다. 메뉴 관리에서 화면을 직접 추가해 주세요.', 'error');
     });
 
+    /*
+     * [2026-10-05 반박 리뷰] '관리' 열은 단추가 놓일 수 있는 보기(전체·메뉴에 없는 화면·로그인만 하면 열리는 화면)에만 둔다 —
+     * 메뉴에 연결된 화면 보기는 모든 행이 사용 중인 메뉴를 갖고, 동적 경로 보기는 메뉴에 둘 수 없는 화면만 보인다.
+     */
+    it('메뉴를 만들 수 있어도 메뉴에 연결된 화면·동적 경로 보기에는 빈 관리 열을 두지 않는다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, ...MENU_MANAGER];
+      mocks.getMenuStructure.mockResolvedValue(structureCoveringAllBut('/admin/system/programs'));
+      renderClient(<ProgramAdminClient />);
+      await waitFor(() => expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 1건'));
+      const manageCells = () => document.querySelectorAll('[data-column="관리"]').length;
+      expect(manageCells()).toBeGreaterThan(0);
+
+      fireEvent.click(chip('메뉴에 연결된 화면'));
+      expect(screen.getByTestId('화면 목록-count')).not.toHaveTextContent(/^0 /);
+      expect(manageCells()).toBe(0);
+      fireEvent.click(chip('동적 경로'));
+      expect(screen.getByTestId('화면 목록-count')).not.toHaveTextContent(/^0 /);
+      expect(manageCells()).toBe(0);
+      fireEvent.click(chip('로그인만 하면 열리는 화면'));
+      expect(manageCells()).toBeGreaterThan(0);
+      fireEvent.click(chip('전체'));
+      expect(manageCells()).toBeGreaterThan(0);
+    });
+
+    it('연결 메뉴를 불러오지 못했을 때 메뉴에 추가가 원래 없는 보기에서는 그 단추가 사라졌다고 말하지 않는다', async () => {
+      auth.permissions = [...BASE_PERMISSIONS, ...MENU_MANAGER];
+      mocks.getMenuStructure.mockRejectedValue({ response: { status: 500 } });
+      renderClient(<ProgramAdminClient />);
+      const ADD_SENTENCE = '메뉴에 추가는 연결 메뉴를 불러온 뒤에 쓸 수 있습니다.';
+      const notice = () => screen.getByText(/연결 메뉴를 불러오지 못했습니다/);
+      await waitFor(() => expect(notice()).toHaveTextContent(ADD_SENTENCE));
+      fireEvent.click(chip('동적 경로'));
+      expect(notice()).not.toHaveTextContent(ADD_SENTENCE);
+      fireEvent.click(chip('로그인만 하면 열리는 화면'));
+      expect(notice()).toHaveTextContent(ADD_SENTENCE);
+    });
+
     it.each([
       ['메뉴 등록 권한이 없으면', ['MENU_READ', 'MENU_UPDATE']],
       ['구조 저장 권한이 없으면', ['MENU_READ', 'MENU_CREATE']],
       ['메뉴 관리에 들어갈 수 없으면(MENU_READ 없음)', ['MENU_CREATE', 'MENU_UPDATE']],
-    ])('%s 메뉴에 추가를 보이지 않는다', (_label, menuPermissions) => {
-      auth.permissions = [...FULL_PERMISSIONS, ...menuPermissions];
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
+    ])('%s 메뉴에 추가를 보이지 않는다', async (_label, menuPermissions) => {
+      auth.permissions = [...BASE_PERMISSIONS, ...menuPermissions];
+      renderClient(<ProgramAdminClient />);
+      await waitFor(() => expect(table()).not.toHaveAttribute('data-loading'));
       searchScreens('/admin/system/programs');
       expect(screen.queryByRole('button', { name: /메뉴에 추가/ })).not.toBeInTheDocument();
       expect(row('/admin/system/programs').querySelector('[data-column="관리"]')).toBeNull();
-    });
-  });
-
-  describe('이전 프로그램', () => {
-    it('opens registration modal', async () => {
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-      openProgramsTab();
-      fireEvent.click(screen.getByRole('button', { name: /프로그램 등록/ }));
-
-      await waitFor(() => {
-        expect(screen.getByTestId('standard-modal')).toBeInTheDocument();
-        expect(screen.getByText(/신규 프로그램 등록/i)).toBeInTheDocument();
-      });
-    });
-
-    it('목록이 비면 이전 프로그램이 없고 메뉴는 화면 경로로 연결한다고 말한다', () => {
-      renderClient(<ProgramAdminClient initialData={{ list: [], total: 0 } as any} searchWrd="" />);
-      openProgramsTab();
-      expect(screen.getByText('등록된 이전 프로그램이 없습니다. 메뉴는 화면 목록의 경로로 연결합니다.')).toBeInTheDocument();
-    });
-
-    /*
-     * [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
-     * 이 화면은 PROGRAM_READ 만으로 들어올 수 있어, 종전에는 조회만 맡은 담당자에게도 등록·수정·삭제가 모두 보였다.
-     */
-    it('모든 쓰기 권한이 있으면 프로그램 등록과 행의 수정·삭제가 보인다', () => {
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-      openProgramsTab();
-      expect(screen.getByRole('button', { name: /프로그램 등록/ })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: '프로그램_하나 프로그램 수정' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: '프로그램_하나 프로그램 삭제' })).toBeInTheDocument();
-    });
-
-    it('조회 권한만 있으면 프로그램 등록·수정·삭제를 보이지 않는다', () => {
-      auth.permissions = ['PROGRAM_READ'];
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-      openProgramsTab();
-
-      // 목록은 그대로 읽힌다 — 가리는 것은 쓰기 동작뿐이다.
-      expect(screen.getByText('프로그램_하나')).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /프로그램 등록/ })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: '프로그램_하나 프로그램 수정' })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: '프로그램_하나 프로그램 삭제' })).not.toBeInTheDocument();
-    });
-
-    it('수정 권한만 있으면 수정 폼 안의 삭제 버튼도 보이지 않는다', async () => {
-      auth.permissions = ['PROGRAM_READ', 'PROGRAM_UPDATE'];
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-      openProgramsTab();
-      expect(screen.queryByRole('button', { name: '프로그램_하나 프로그램 삭제' })).not.toBeInTheDocument();
-
-      fireEvent.click(screen.getByRole('button', { name: '프로그램_하나 프로그램 수정' }));
-      expect(await screen.findByText('프로그램 정보 수정')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /프로그램 저장/ })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: '프로그램 삭제' })).not.toBeInTheDocument();
-    });
-
-    it('삭제 권한까지 있으면 수정 폼에 삭제 버튼이 보인다', async () => {
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-      openProgramsTab();
-      fireEvent.click(screen.getByRole('button', { name: '프로그램_하나 프로그램 수정' }));
-      expect(await screen.findByRole('button', { name: '프로그램 삭제' })).toBeInTheDocument();
-    });
-
-    /*
-     * [2026-10-02] 연결 메뉴 열 — 서버 API 를 바꾸지 않고 메뉴 구조 조회의 prgrmFileNm 과 잇는다(화면 목록과 같은 조회 한 번).
-     * 세는 규칙은 서버 삭제 거부(409)와 같다: 사용 안 함 메뉴도 센다. 메뉴를 불러오는 중이거나 조회가 거부·실패하면
-     * 0건('연결 없음')으로 위장하지 않는다. MENU_READ 가 없으면 조회를 보내지 않는다(서버에 403 거부 기록을 남기지 않는다).
-     */
-    describe('연결 메뉴 열', () => {
-      const LINKED_MENUS = structure([
-        structureMenu(30, '프로그램 목록', { prgrmFileNm: 'PROG_1' }),
-        structureMenu(31, '옛 프로그램 목록', { prgrmFileNm: 'PROG_1', useYn: 'N' }),
-        structureMenu(40, '다른 화면', { prgrmFileNm: 'PROG_2' }),
-        structureMenu(1, '시스템관리', { prgrmFileNm: '' }),
-      ]);
-
-      beforeEach(() => {
-        auth.permissions = [...FULL_PERMISSIONS, 'MENU_READ'];
-      });
-
-      it('이 프로그램을 연결한 메뉴 수와 이름을 보이고, 사용 안 함 메뉴도 센다', async () => {
-        mocks.getMenuStructure.mockResolvedValue(LINKED_MENUS);
-        renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-        openProgramsTab();
-
-        const linked = linkCell('PROG_1');
-        expect(await within(linked).findByText('연결 메뉴 2개')).toBeInTheDocument();
-        const items = within(linked).getAllByRole('listitem');
-        expect(items.map((item) => item.textContent)).toEqual([
-          '옛 프로그램 목록(ID: 31)· 사용 안 함',
-          '프로그램 목록(ID: 30)',
-        ]);
-        expect(within(linked).queryByText('다른 화면')).not.toBeInTheDocument();
-        // 실패는 칸이 알린다 — 전역 실패 토스트까지 띄우지 않도록 조용한 요청으로 보낸다. 두 탭이 같은 조회 한 번을 쓴다.
-        expect(mocks.getMenuStructure).toHaveBeenCalledTimes(1);
-        expect(mocks.getMenuStructure).toHaveBeenCalledWith({ suppressErrorToast: true });
-      });
-
-      it('연결한 메뉴가 없으면 연결 없음이다', async () => {
-        renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-        openProgramsTab();
-        expect(await within(linkCell('PROG_1')).findByText('연결 없음')).toBeInTheDocument();
-      });
-
-      it('메뉴를 불러오는 동안은 연결 없음이 아니라 불러오는 중이다', async () => {
-        let resolveMenus!: (value: unknown) => void;
-        mocks.getMenuStructure.mockReturnValueOnce(new Promise((resolve) => { resolveMenus = resolve; }));
-        renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-        openProgramsTab();
-
-        const loading = within(linkCell('PROG_1')).getByText('연결 메뉴를 불러오는 중…');
-        expect(loading).toHaveAttribute('aria-busy', 'true');
-        expect(within(linkCell('PROG_1')).queryByText('연결 없음')).not.toBeInTheDocument();
-
-        await act(async () => resolveMenus(LINKED_MENUS));
-        expect(await within(linkCell('PROG_1')).findByText('연결 메뉴 2개')).toBeInTheDocument();
-      });
-
-      it('메뉴 조회 권한(MENU_READ)이 없으면 조회를 보내지 않고 권한 없음을 말한다', async () => {
-        auth.permissions = FULL_PERMISSIONS;
-        mocks.getMenuStructure.mockResolvedValue(LINKED_MENUS);
-        renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-        openProgramsTab();
-
-        const linked = linkCell('PROG_1');
-        expect(within(linked).getByText('메뉴 조회 권한 없음')).toBeInTheDocument();
-        expect(within(linked).queryByText('연결 없음')).not.toBeInTheDocument();
-        await act(async () => { await Promise.resolve(); });
-        expect(mocks.getMenuStructure).not.toHaveBeenCalled();
-      });
-
-      it('로그인 정보를 확인하는 중이면 권한 없음으로 단정하지 않는다', () => {
-        auth.signedIn = false;
-        auth.loading = true;
-        renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-        openProgramsTab();
-
-        expect(within(linkCell('PROG_1')).getByText('연결 메뉴를 불러오는 중…')).toBeInTheDocument();
-        expect(within(linkCell('PROG_1')).queryByText('메뉴 조회 권한 없음')).not.toBeInTheDocument();
-        expect(mocks.getMenuStructure).not.toHaveBeenCalled();
-      });
-
-      it('메뉴 조회가 403 이면 0건으로 위장하지 않고 권한 없음을 말한다', async () => {
-        mocks.getMenuStructure.mockRejectedValue({ response: { status: 403, data: { message: '권한이 없습니다.' } } });
-        renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-        openProgramsTab();
-
-        const linked = linkCell('PROG_1');
-        expect(await within(linked).findByText('메뉴 조회 권한 없음')).toBeInTheDocument();
-        expect(within(linked).queryByText('연결 없음')).not.toBeInTheDocument();
-        // 권한 없음은 다시 불러와도 같은 답이다 — 다시 불러오기를 두지 않는다.
-        expect(screen.queryByRole('button', { name: '연결 메뉴 다시 불러오기' })).not.toBeInTheDocument();
-      });
-
-      it('메뉴를 불러오지 못하면 목록은 그대로 두고 실패를 말하며 다시 불러올 수 있다', async () => {
-        mocks.getMenuStructure.mockRejectedValueOnce({ response: { status: 500 } });
-        renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-        openProgramsTab();
-
-        const failed = await within(linkCell('PROG_1')).findByText('메뉴를 불러오지 못함');
-        // 실패 문구는 전경 전용 토큰이다 — 배경용 destructive 는 다크에서 대비가 1.8:1 이다.
-        expect(failed).toHaveClass('text-destructive-emphasis');
-        expect(failed).not.toHaveClass('text-destructive');
-        expect(within(linkCell('PROG_1')).queryByText('연결 없음')).not.toBeInTheDocument();
-        // 화면 전체 오류로 올라가지 않는다 — 프로그램 목록은 그대로 읽힌다.
-        expect(screen.getByText('프로그램_하나')).toBeInTheDocument();
-        expect(screen.getByText('프로그램 목록은 표시했지만 연결 메뉴를 불러오지 못했습니다.')).toBeInTheDocument();
-        expect(mocks.getMenuStructure).toHaveBeenCalledTimes(1);
-
-        mocks.getMenuStructure.mockResolvedValueOnce(LINKED_MENUS);
-        fireEvent.click(screen.getByRole('button', { name: '연결 메뉴 다시 불러오기' }));
-
-        expect(await within(linkCell('PROG_1')).findByText('연결 메뉴 2개')).toBeInTheDocument();
-        expect(mocks.getMenuStructure).toHaveBeenCalledTimes(2);
-        expect(screen.queryByText('프로그램 목록은 표시했지만 연결 메뉴를 불러오지 못했습니다.')).not.toBeInTheDocument();
-      });
-
-      it('프로그램 목록도 실패했으면 "목록은 표시했지만" 이라고 말하지 않는다', async () => {
-        mocks.getMenuStructure.mockRejectedValueOnce({ response: { status: 500 } });
-        // 표 모형은 오류와 무관하게 행을 그린다 — 연결 칸이 실패로 바뀐 것을 확인한 뒤 안내가 없는지 본다.
-        renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" initialError="프로그램 목록을 불러오지 못했습니다." />);
-        openProgramsTab();
-
-        expect(await within(linkCell('PROG_1')).findByText('메뉴를 불러오지 못함')).toBeInTheDocument();
-        expect(screen.queryByText('프로그램 목록은 표시했지만 연결 메뉴를 불러오지 못했습니다.')).not.toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: '연결 메뉴 다시 불러오기' })).not.toBeInTheDocument();
-      });
-
-      /*
-       * 카탈로그 G10 — 명령은 레코드 상태를 반영한다. 연결이 확인된 행의 삭제는 서버가 409 로 거부할 것을 화면이 이미
-       * 안다. 버튼은 막지 않되(화면을 연 시점의 메뉴 구조다) 확인 문구가 연결 메뉴 수·이름을 밝힌다.
-       */
-      it('연결이 확인된 행의 삭제 확인은 연결 메뉴 수와 이름을 밝힌다', async () => {
-        mocks.getMenuStructure.mockResolvedValue(LINKED_MENUS);
-        mocks.confirm.mockResolvedValueOnce(false);
-        renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-        openProgramsTab();
-        await within(linkCell('PROG_1')).findByText('연결 메뉴 2개');
-
-        fireEvent.click(screen.getByRole('button', { name: '프로그램_하나 프로그램 삭제' }));
-
-        await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-        expect(mocks.confirm.mock.calls[0][0].message).toContain('메뉴 2개(옛 프로그램 목록, 프로그램 목록)가 이 프로그램을 연결하고 있습니다.');
-        expect(mocks.deleteProgram).not.toHaveBeenCalled();
-      });
-
-      it('수정 폼의 삭제 확인도 같은 연결 안내를 싣는다', async () => {
-        mocks.getMenuStructure.mockResolvedValue(LINKED_MENUS);
-        mocks.confirm.mockResolvedValueOnce(false);
-        renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-        openProgramsTab();
-        await within(linkCell('PROG_1')).findByText('연결 메뉴 2개');
-
-        fireEvent.click(screen.getByRole('button', { name: '프로그램_하나 프로그램 수정' }));
-        fireEvent.click(await screen.findByRole('button', { name: '프로그램 삭제' }));
-
-        await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-        expect(mocks.confirm.mock.calls[0][0].message).toContain('메뉴 2개(옛 프로그램 목록, 프로그램 목록)가 이 프로그램을 연결하고 있습니다.');
-        expect(mocks.deleteProgram).not.toHaveBeenCalled();
-      });
-    });
-
-    it('행 삭제는 같은 tick 중복 실행을 막고 pending·서버 거부 사유를 안내한다', async () => {
-      let rejectDelete!: (reason?: unknown) => void;
-      mocks.deleteProgram.mockReturnValueOnce(new Promise((_, reject) => { rejectDelete = reject; }));
-      renderClient(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-      openProgramsTab();
-      const deleteButton = screen.getByRole('button', { name: '프로그램_하나 프로그램 삭제' });
-
-      act(() => {
-        deleteButton.click();
-        deleteButton.click();
-      });
-
-      await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-      expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ confirmText: '프로그램 삭제' }));
-      await waitFor(() => expect(mocks.deleteProgram).toHaveBeenCalledTimes(1));
-      expect(mocks.deleteProgram).toHaveBeenCalledWith('PROG_1');
-      const pendingButton = screen.getByRole('button', { name: '프로그램_하나 프로그램 삭제 중…' });
-      expect(pendingButton).toBeDisabled();
-      expect(pendingButton).toHaveAttribute('aria-busy', 'true');
-
-      // 연결 메뉴가 있으면 서버가 409 로 거부한다 — 그 사유가 사용자에게 그대로 닿아야 한다.
-      await act(async () => rejectDelete({
-        response: { status: 409, data: { message: '이 프로그램을 연결한 메뉴가 있어 삭제할 수 없습니다: PROG_1' } },
-      }));
-      await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
-        '이 프로그램을 연결한 메뉴가 있어 삭제할 수 없습니다: PROG_1',
-        'error',
-      ));
-      expect(screen.getByRole('button', { name: '프로그램_하나 프로그램 삭제' })).toBeEnabled();
-      expect(mocks.getProgramList).not.toHaveBeenCalled();
     });
   });
 });

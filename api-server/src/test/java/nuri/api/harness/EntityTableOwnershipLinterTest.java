@@ -64,8 +64,11 @@ class EntityTableOwnershipLinterTest {
     //   ApprovalTemporaryDraftLine → tb_ifml_atrz_tmpr_strg_dtl. 둘 다 수정되므로 감사 4종(BaseEntity)이다. 84 → 86 / 83 → 85.
     // V2_123(결재 동선 개선 D4): 결재 참조자 InformalSanctionReference → tb_ifml_atrz_rfpr(추가만 하는 insert 감사 2종),
     //   임시저장 참조자 ApprovalTemporaryDraftReference → tb_ifml_atrz_tmpr_strg_rfpr(지운 뒤 다시 넣는 감사 4종). 86 → 88 / 85 → 87.
-    private static final int EXPECTED_ENTITY_COUNT = 88;
-    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 87;
+    // [2026-10-04 프로그램 목록 퇴역] Program 엔티티(tb_prgrm_lst)를 걷었다. 88 → 87 / 87 → 86. 화면·API·서비스를 걷으며
+    //   엔티티를 쓰는 코드가 남지 않았다. ⚠ **물리 테이블 tb_prgrm_lst 와 tb_menu_info.prgrm_file_nm·외래 키는 남는다** —
+    //   테이블 처분은 다음 릴리스의 별도 승인 경계다(tb_indv_pg_conts 선례). 매핑 없는 테이블이 하나 더 생긴 상태다.
+    private static final int EXPECTED_ENTITY_COUNT = 87;
+    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 86;
 
     private static final Set<String> AUDIT_COLUMNS = Set.of(
             "frst_rgtr_id", "crt_dt", "last_mdfr_id", "mdfcn_dt");

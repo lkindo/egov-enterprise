@@ -1147,41 +1147,6 @@
     "permission": "POPUP_UPDATE"
   },
   {
-    "method": "GET",
-    "path": "/api/v1/admin/system/programs",
-    "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#getProgramList",
-    "access": "PERMISSION",
-    "permission": "PROGRAM_READ"
-  },
-  {
-    "method": "POST",
-    "path": "/api/v1/admin/system/programs",
-    "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#createProgram",
-    "access": "PERMISSION",
-    "permission": "PROGRAM_CREATE"
-  },
-  {
-    "method": "DELETE",
-    "path": "/api/v1/admin/system/programs/{progrmFileNm}",
-    "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#deleteProgram",
-    "access": "PERMISSION",
-    "permission": "PROGRAM_DELETE"
-  },
-  {
-    "method": "GET",
-    "path": "/api/v1/admin/system/programs/{progrmFileNm}",
-    "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#getProgram",
-    "access": "PERMISSION",
-    "permission": "PROGRAM_READ"
-  },
-  {
-    "method": "PUT",
-    "path": "/api/v1/admin/system/programs/{progrmFileNm}",
-    "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#updateProgram",
-    "access": "PERMISSION",
-    "permission": "PROGRAM_UPDATE"
-  },
-  {
     "method": "DELETE",
     "path": "/api/v1/admin/system/roles",
     "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#deleteRoles",

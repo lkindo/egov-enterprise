@@ -134,7 +134,6 @@ import {
   ApiResponsePageResponseOnlinePollManageDtoResponseSchema,
   ApiResponsePageResponsePopupDtoResponseSchema,
   ApiResponsePageResponsePrivacyLogDtoResponseSchema,
-  ApiResponsePageResponseProgramDtoResponseSchema,
   ApiResponsePageResponsePublicFaqListItemResponseResponseSchema,
   ApiResponsePageResponseRewardManageDtoResponseSchema,
   ApiResponsePageResponseRoleManageDtoResponseSchema,
@@ -155,7 +154,6 @@ import {
   ApiResponsePolicyResponseSchema,
   ApiResponsePopupDtoResponseSchema,
   ApiResponsePopupPublicResponseResponseSchema,
-  ApiResponseProgramDtoResponseSchema,
   ApiResponsePublicFaqDetailResponseResponseSchema,
   ApiResponseRewardManageDtoResponseSchema,
   ApiResponseRoleManageDtoResponseSchema,
@@ -339,7 +337,6 @@ import {
   PageResponseOnlinePollManageDtoResponseSchema,
   PageResponsePopupDtoResponseSchema,
   PageResponsePrivacyLogDtoResponseSchema,
-  PageResponseProgramDtoResponseSchema,
   PageResponsePublicFaqListItemResponseResponseSchema,
   PageResponseRewardManageDtoResponseSchema,
   PageResponseRoleManageDtoResponseSchema,
@@ -363,8 +360,6 @@ import {
   PopupDtoRequestSchema,
   PopupDtoResponseSchema,
   PopupPublicResponseResponseSchema,
-  ProgramDtoRequestSchema,
-  ProgramDtoResponseSchema,
   PublicFaqDetailResponseResponseSchema,
   ReplaceGrantsRequestSchema,
   ReplaceGroupsRequestSchema,
@@ -2074,63 +2069,6 @@ export const deleteRoleOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "roleCode": z.string() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const getProgramOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "getProgram",
-  method: "get",
-  path: "/api/v1/admin/system/programs/{progrmFileNm}",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "progrmFileNm": z.string() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: z.lazy(() => ProgramDtoResponseSchema),
-  envelopeSchema: ApiResponseProgramDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const updateProgramOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "updateProgram",
-  method: "put",
-  path: "/api/v1/admin/system/programs/{progrmFileNm}",
-  requestKind: "json",
-  responseKind: "void",
-  requestRequired: true,
-  multipartParts: null,
-  pathSchema: z.object({ "progrmFileNm": z.string() }).strict(),
-  querySchema: null,
-  requestSchema: ProgramDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const deleteProgramOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "deleteProgram",
-  method: "delete",
-  path: "/api/v1/admin/system/programs/{progrmFileNm}",
-  requestKind: "none",
-  responseKind: "void",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "progrmFileNm": z.string() }).strict(),
   querySchema: null,
   requestSchema: null,
   responseSchema: null,
@@ -5184,44 +5122,6 @@ export const deleteRolesOperation = /*#__PURE__*/ (() => {
   pathSchema: null,
   querySchema: null,
   requestSchema: z.array(z.string()),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const getProgramListOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "getProgramList",
-  method: "get",
-  path: "/api/v1/admin/system/programs",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "pageIndex": z.number().int().min(1).optional(), "pageUnit": z.number().int().min(1).max(100).optional(), "pageSize": z.number().int().optional(), "firstIndex": z.number().int().optional(), "lastIndex": z.number().int().optional(), "recordCountPerPage": z.number().int().optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
-  requestSchema: null,
-  responseSchema: z.lazy(() => PageResponseProgramDtoResponseSchema),
-  envelopeSchema: ApiResponsePageResponseProgramDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const createProgramOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "createProgram",
-  method: "post",
-  path: "/api/v1/admin/system/programs",
-  requestKind: "json",
-  responseKind: "void",
-  requestRequired: true,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: null,
-  requestSchema: ProgramDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],

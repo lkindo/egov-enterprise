@@ -19,7 +19,7 @@
 | `tb_menu_crt_dtl` | 현재 그룹별 메뉴 노출 | 그룹 권한 매핑의 NAVIGATION 유형으로 이관 후 제거 |
 | `tb_role_hierarchy` | 현재 SYSTEM→ADMIN→USER 상속 | 실제 실행 경로별 권한을 명시적으로 펼친 후 제거 |
 | `tb_menu_info` | 메뉴 트리·노출 상태·화면 경로 | 유지 |
-| `tb_prgrm_lst` | 프로그램 관리·메뉴의 선택적 프로그램 참조 | 유지; URL 인가 기능만 분리 |
+| `tb_prgrm_lst` | 프로그램 관리·메뉴의 선택적 프로그램 참조 | 유지; URL 인가 기능만 분리. 2026-10-04 프로그램 목록 화면·API·권한 코드를 퇴역했다(물리 테이블·메뉴 참조 컬럼은 다음 릴리스의 별도 승인까지 남는다) |
 | `tb_authrt_group_info` | 사용자 분류 그룹 | 유지; 권한그룹과 명칭·화면 설명을 구분 |
 
 **개수의 분모**: 현재 인가 관련 7개를 핵심 3개로 줄이고 감사 1개를 추가한다. 이번 조사 대상 10개 중 비인가 기능 3개까지 포함하면 **10개 → 7개**다. 사용자·조직·토큰·업무 관계·일반 로그 테이블은 별도로 존속한다. 이행 중 구·신 구조가 공존하는 기간에는 테이블 수가 일시적으로 증가한다.
@@ -209,7 +209,7 @@ flowchart TD
 - 전환 시 ADMIN 84건, USER 27건의 노출 관계를 NAVIGATION으로 보존한다. 활성 상태·삭제 필터·트리의 부모 유무·경로 해석을 기존 조회 결과와 비교한다. 실제 조회 결과는 111행 자체가 아니다.
 - 신규 메뉴 생성 시 호환 ADMIN 그룹의 NAVIGATION 배정은 같은 트랜잭션에서 처리한다. 루트 메뉴는 기존 자동 배정을 유지하되, 자식 메뉴는 ADMIN에 모든 조상 메뉴의 NAVIGATION이 이미 있을 때만 배정한다. 조상 중 하나라도 해제되어 있으면 새 자식도 자동 배정하지 않으며, 새 메뉴 생성으로 숨겨 둔 부모를 다시 허용하지 않는다.
 - SYSTEM에는 현재 메뉴 계층 확장이 적용되지 않으므로 ADMIN 메뉴를 일괄 복사하지 않는다. 단독 SYSTEM과 ADMIN+SYSTEM 조합을 각각 검증한다.
-- 그룹 편집의 메뉴 표시는 실제 부모·자식 계층으로 제공한다. **부모 해제는 모든 후손을 해제하고, 자식 선택은 모든 조상을 함께 선택한다. 부모 선택만으로 자식을 자동 부여하지 않는다.** 펼치기·접기는 화면 표시만 바꾸며 배정에는 영향을 주지 않는다. 이 조작은 NAVIGATION만 변경하고 OPERATION 선택을 보존한다.
+- 그룹 편집의 메뉴 표시는 실제 부모·자식 계층으로 제공한다. **부모 해제는 모든 후손을 해제하고, 자식 선택은 모든 조상을 함께 선택한다. 부모 선택만으로 자식을 자동 부여하지 않는다.** 펼치기·접기는 화면 표시만 바꾸며 배정에는 영향을 주지 않는다. 이 조작은 NAVIGATION만 변경하고 OPERATION 선택을 보존한다. 2026-10-05부터 화면별 권한 표의 영역·섹션 줄 메뉴 표시 칸은 이 규칙의 예외인 명시적 일괄 조작이다 — 사용자가 그 줄의 칸을 누르면 그 아래 메뉴 전체를 켜고(조상도 함께, 검색·거르기 중에는 보이는 메뉴만) 끄면 아래 전체를 끈다. 화면 줄의 메뉴 표시와 다른 화면(메뉴 미리보기·묶음 적용)의 부모 선택은 여전히 자식을 자동 부여하지 않는다. 이 일괄도 NAVIGATION만 바꾸고 OPERATION·보호 권한·서버의 계층 검증은 그대로다([DEC-OPS-225](../../.agent/memory/decisions.md)).
 - 서버도 전체 저장 요청의 메뉴 계층을 검증한다. 기존 부모를 명시적으로 회수한 요청에는 남아 있는 후손 배정도 제거한다. 그 외에 조상이 빠진 자식만 배정하려는 요청, 없는 메뉴, 순환 계층은 거부하며 조상 권한을 임의로 추가하지 않는다. 기존 메뉴 전용 저장 경로도 OPERATION을 보존한다. 구현 원본은 [계층 선택 함수](../../frontend/src/lib/auth/navigation-permission-tree.ts)와 [권한 관리 서비스](../../business-core/src/main/java/nuri/business/service/auth/AuthorizationAdministrationService.java)다.
 - NAVIGATION 배정과 메뉴 삭제는 양쪽 모두 같은 메뉴 행을 정해진 ID 순서로 잠근 뒤 존재를 재검증한다. 존재 조회 후 다른 트랜잭션이 메뉴를 삭제하는 경합을 방지하고, bulk도 같은 잠금 규칙을 따른다. 메뉴 삭제 시 배정 정리와 변경 이력을 같은 트랜잭션에 기록한다. 프로그램 삭제의 메뉴 FK/참조 거부는 [ADR-0014](decisions/ADR-0014-deferred-standard-design-alignment.md)를 보존한다.
 
@@ -300,7 +300,7 @@ flowchart LR
 | 권한 관리 | Authority Management, Role Management, User-Authority Mapping, Department-Authority Mapping, Authority-Role Mapping | 그룹 편집·기능 배정·사용자 배정·이력 조회를 구분 (`AUTHRT_ASSIGN` 등) |
 | 사용자·조직 | User 관리, Department Management, User Group Management, User Absence | 사용자 조회/등록/수정/삭제/정지/비밀번호 초기화, 조직 편집·분류; 개인 부재 관리 별도 |
 | 코드·기관 | Common Code, Administrative Code, Institution Code, ExternalHr | 조회·코드 편집·수신/연계 실행을 구분; 외부 인증 계약 유지 |
-| 메뉴·프로그램 | MenuAdmin, Menu, ProgramAdmin | 메뉴/프로그램 편집과 일반 메뉴 조회, NAVIGATION 배정을 구분 |
+| 메뉴·프로그램 | MenuAdmin, Menu, ProgramAdmin(2026-10-04 퇴역) | 메뉴/프로그램 편집과 일반 메뉴 조회, NAVIGATION 배정을 구분 |
 | 게시판·커뮤니티 | Board, BoardMaster, Community, Community User | 글 열람/작성/수정/삭제·게시판 설정·회원 승인·운영; 비밀글/회원 조건 보존 |
 | 댓글·만족도 | comment-api-controller, Admin - Comment, Satisfaction | 자기 작성·수정·삭제와 운영자 관리 기능 분리 |
 | 도움말 | Help | 읽기·콘텐츠 편집·별칭 경로 정합 |
@@ -336,8 +336,8 @@ HTTP GET을 전부 하나의 조회 권한으로 합치거나 POST를 전부 등
 | HTTP·메서드 | `ApiSecurityConfig`, 대체 `SecurityConfig`, `DbUrlAuthorizationManager`, `DbRoleHierarchy`, `RoleHierarchyConfig`, 애노테이션 | 단일 기능 평가기로 연결; 경로/메서드/alias별 정책; hierarchy 종료 |
 | 업무 정책 | `SecurityUtil` 호출부, owner/participant/credential/manual/query guards | 도메인 관리 기능으로 제한하되 엄격한 자기/소유 조건 유지 |
 | 메뉴 | `MenuService`, `MenuRepository*`, `MenuAuthority*`, `MenuWithAuthDto`, 메뉴 생성권한 API | NAVIGATION 이관, 단일 서브쿼리 종료, 캐시 키/무효화 변경 |
-| 레거시 표현 | `MenuIntegrationService`, `GlobalMenuAdvice` | 프로그램 URL·메뉴 소비 경로와 실제 적용 대상 확인 |
-| 프로그램 | `ProgramService`, `ProgramRepository` | URL 인가 cache evict·role-map 삭제 참조만 종료, 메뉴 참조는 유지 |
+| 레거시 표현 | `MenuIntegrationService`, `GlobalMenuAdvice` | 프로그램 URL·메뉴 소비 경로와 실제 적용 대상 확인. main 에서 도달할 수 없어 2026-10-04 프로그램 목록 퇴역 때 걷었다 |
+| 프로그램 | `ProgramService`, `ProgramRepository` | URL 인가 cache evict·role-map 삭제 참조만 종료, 메뉴 참조는 유지. 2026-10-04 프로그램 목록 퇴역으로 서비스·엔티티를 걷었다(메뉴의 참조 컬럼은 단순 문자열로 남는다) |
 | 프론트 인증 | `authService.ts`, `auth-context`, `use-user.ts`, `proxy.ts`, 로그인/refresh/logout/me BFF 및 서버 액션 | 단일 role 제거, allowlist 정규화에 배열 계약 추가, 권한 갱신 |
 | 프론트 관리 | `SecurityHubClient`, `SecurityRoleClient`, `SecurityDeptAuthorityClient`, `AuthorForm`, 사용자 관리 화면·서비스 | 두 주 관리 흐름, 복수 선택, 영향 미리보기, 충돌 처리 |
 | 프론트 행동 | `administrative-role.ts` 및 게시판·지식허브·알림·업무보고·댓글·만족도·헤더·work-hub 소비자 | 실제 기능 기반 표시; owner 조건과 조합 |

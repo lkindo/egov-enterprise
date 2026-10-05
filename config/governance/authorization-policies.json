@@ -749,30 +749,6 @@
       "guardRef": "PopupService#updatePopup"
     },
     {
-      "method": "POST",
-      "path": "/api/v1/admin/system/programs",
-      "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#createProgram",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.ProgramApiController#createProgram')",
-      "routeGate": "OPERATION_PERMISSION"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/programs/{progrmFileNm}",
-      "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#deleteProgram",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.ProgramApiController#deleteProgram')",
-      "routeGate": "OPERATION_PERMISSION"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/admin/system/programs/{progrmFileNm}",
-      "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#updateProgram",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.ProgramApiController#updateProgram')",
-      "routeGate": "OPERATION_PERMISSION"
-    },
-    {
       "method": "DELETE",
       "path": "/api/v1/admin/system/roles",
       "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#deleteRoles",
@@ -3708,54 +3684,6 @@
       }
     },
     {
-      "target": "ProgramService#insertProgrm",
-      "policy": "ADMIN_OR_SYSTEM",
-      "mechanisms": [
-        {
-          "helper": "assertPermission",
-          "count": 1,
-          "identityAxis": "PERMISSION",
-          "permission": "PROGRAM_CREATE"
-        }
-      ]
-    },
-    {
-      "target": "ProgramService#updateProgrm",
-      "policy": "ADMIN_OR_SYSTEM",
-      "mechanisms": [
-        {
-          "helper": "assertPermission",
-          "count": 1,
-          "identityAxis": "PERMISSION",
-          "permission": "PROGRAM_UPDATE"
-        }
-      ]
-    },
-    {
-      "target": "ProgramService#deleteProgrm",
-      "policy": "ADMIN_OR_SYSTEM",
-      "mechanisms": [
-        {
-          "helper": "assertPermission",
-          "count": 1,
-          "identityAxis": "PERMISSION",
-          "permission": "PROGRAM_DELETE"
-        }
-      ]
-    },
-    {
-      "target": "ProgramService#deleteProgrmManageList",
-      "policy": "ADMIN_OR_SYSTEM",
-      "mechanisms": [
-        {
-          "helper": "assertPermission",
-          "count": 1,
-          "identityAxis": "PERMISSION",
-          "permission": "PROGRAM_DELETE"
-        }
-      ]
-    },
-    {
       "target": "UserAuthorityManageService#saveUserAuthorities",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -5907,41 +5835,6 @@
       "handler": "nuri.api.controller.business.admin.content.popup.PopupApiController#updatePopup",
       "access": "PERMISSION",
       "permission": "POPUP_UPDATE"
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/admin/system/programs",
-      "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#getProgramList",
-      "access": "PERMISSION",
-      "permission": "PROGRAM_READ"
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/admin/system/programs",
-      "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#createProgram",
-      "access": "PERMISSION",
-      "permission": "PROGRAM_CREATE"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/programs/{progrmFileNm}",
-      "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#deleteProgram",
-      "access": "PERMISSION",
-      "permission": "PROGRAM_DELETE"
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/admin/system/programs/{progrmFileNm}",
-      "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#getProgram",
-      "access": "PERMISSION",
-      "permission": "PROGRAM_READ"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/admin/system/programs/{progrmFileNm}",
-      "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#updateProgram",
-      "access": "PERMISSION",
-      "permission": "PROGRAM_UPDATE"
     },
     {
       "method": "DELETE",

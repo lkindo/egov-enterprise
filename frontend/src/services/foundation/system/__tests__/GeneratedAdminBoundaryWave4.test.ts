@@ -11,7 +11,6 @@ import { boardAdminService, type BoardMaster } from '../BoardAdminService';
 import { hpcmAdminService } from '../HpcmAdminService';
 import { loginPolicyAdminService } from '../LoginPolicyAdminService';
 import { popupAdminService } from '../PopupAdminService';
-import { programAdminService } from '../ProgramAdminService';
 
 const successEnvelope = (data: unknown) => ({
   success: true,
@@ -35,7 +34,6 @@ describe('generated admin boundary wave 4', () => {
     vi.clearAllMocks();
     client.getRaw.mockImplementation((url: string) => {
       if (url.endsWith('/deletable')) return Promise.resolve(successEnvelope(false));
-      if (url.includes('programs/')) return Promise.resolve(successEnvelope({ prgrmFileNm: 'menu.do' }));
       if (url.includes('popups/')) return Promise.resolve(successEnvelope(popup));
       if (url.includes('help/hpcm/')) return Promise.resolve(successEnvelope(hpcm));
       if (url.includes('login-policies/')) {
@@ -57,13 +55,8 @@ describe('generated admin boundary wave 4', () => {
     });
   });
 
-  it('OpenAPI 충돌 3개를 제외한 26개 경계를 generated transport로 실행한다', async () => {
-    await programAdminService.getProgramList({ page: 1, size: 20, searchWrd: '메뉴' });
-    await programAdminService.getProgram('menu.do');
-    await programAdminService.createProgram({ prgrmFileNm: 'menu.do' });
-    await programAdminService.updateProgram('menu.do', { prgrmKornNm: '메뉴' });
-    await programAdminService.deleteProgram('menu.do');
-
+  // [2026-10-04 프로그램 목록 퇴역] 26 → 21: 프로그램 API 5개(목록·상세 GET 2, 등록·수정·삭제 3)와 ProgramAdminService 를 걷었다.
+  it('OpenAPI 충돌 3개를 제외한 21개 경계를 generated transport로 실행한다', async () => {
     await popupAdminService.getPopupList({ page: 0, size: 10, searchWrd: '점검' });
     await popupAdminService.getPopup(2);
     await popupAdminService.createPopup(popup);
@@ -92,11 +85,9 @@ describe('generated admin boundary wave 4', () => {
     // [2026-09-06 DEC-OPS-041] 12/22 → 10/20: 중복 관리 컨트롤러(/admin/system/polls)와 OnlinePollAdminService 가 제거됐다
     //   (목록·상세 GET 2, 등록·투표 POST 2). 투표 관리 화면은 /api/v1/polls(PollUserService, business 경계 테스트)를 쓴다.
     // [DEC-OPS-129] 10/20 → 9/17: 네트워크 모니터링 퇴역(목록 GET 1, 등록·수정·삭제 3).
-    expect(client.getRaw).toHaveBeenCalledTimes(9);
-    expect(client.requestRaw).toHaveBeenCalledTimes(17);
-    expect(client.getRaw).toHaveBeenCalledWith('admin/system/programs', {
-      params: { pageIndex: 2, pageUnit: 20, searchKeyword: '메뉴' },
-    });
+    // [2026-10-04 프로그램 목록 퇴역] 9/17 → 7/14: 프로그램 목록 퇴역(목록·상세 GET 2, 등록·수정·삭제 3).
+    expect(client.getRaw).toHaveBeenCalledTimes(7);
+    expect(client.requestRaw).toHaveBeenCalledTimes(14);
     expect(client.getRaw).toHaveBeenCalledWith('admin/system/login-policies', {
       params: { pageIndex: 1, pageUnit: 20, searchKeyword: '홍길동' },
     });

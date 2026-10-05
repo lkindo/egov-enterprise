@@ -34,8 +34,25 @@ test.describe('계층 편집', () => {
             await expect(page.getByText('메뉴를 선택하세요', { exact: true })).toBeVisible();
             const areaTabs = page.getByRole('tablist', { name: '메뉴 영역' }).getByRole('tab');
             await expect(areaTabs.first()).toHaveAttribute('aria-selected', 'true');
-            // Check for node elements (ID: prefix)
-            const nodes = page.getByText(/ID: \d+/);
+            // [2026-10-05 2차 리뷰] 흔한 노트북 해상도(사이드바 펼침)에서 보드 첫 줄이 마스터 칸 안에 보인다 — 칸 머리·탭 줄·상태
+            //   줄만 남고 보드가 0줄이던 회귀(Chromium 실측 1366×768·1280×720)를 배치로 잰다. click·toBeVisible 은 자동 스크롤과
+            //   상자 존재만 보므로 이 회귀를 잡지 못했다. 마지막 크기는 이 여정의 기본 크기(1280×720)라 아래 단계는 그대로다.
+            for (const viewport of [{ width: 1366, height: 768 }, { width: 1280, height: 720 }]) {
+                await page.setViewportSize(viewport);
+                await page.evaluate(() => window.scrollTo(0, 0));
+                const pane = page.getByTestId('master-detail-master');
+                const firstLine = page.locator('[data-menu-board-scroll] section[data-menu-card] [data-a2-master-item]').first();
+                await expect(firstLine).toBeVisible();
+                const paneBox = await pane.boundingBox();
+                const lineBox = await firstLine.boundingBox();
+                expect(paneBox, `${viewport.width}x${viewport.height} 마스터 칸`).not.toBeNull();
+                expect(lineBox, `${viewport.width}x${viewport.height} 보드 첫 줄`).not.toBeNull();
+                expect(lineBox!.y, '보드 첫 줄이 마스터 칸 위로 벗어났다').toBeGreaterThanOrEqual(paneBox!.y);
+                expect(lineBox!.y + lineBox!.height, '보드 첫 줄이 마스터 칸 아래로 밀려났다').toBeLessThanOrEqual(paneBox!.y + paneBox!.height);
+                expect(lineBox!.y + lineBox!.height, '보드 첫 줄이 화면 아래로 밀려났다').toBeLessThanOrEqual(viewport.height);
+            }
+            // [2026-10-05] 보드 줄은 한 줄이다 — 'ID: n' 은 화면 글자가 아니라 줄의 접근 이름에 있다(번호·경로는 title 과 상세).
+            const nodes = page.getByRole('button', { name: / ID: \d+/ });
             await expect(nodes.first()).toBeVisible({ timeout: 15000 });
             const firstMenu = page.locator('[data-a2-master-item]').first();
             await firstMenu.click();
@@ -67,7 +84,9 @@ test.describe('계층 편집', () => {
             await changeToggle.click();
             await page.getByRole('button', { name: '모두 되돌리기', exact: true }).click();
             await page.getByRole('dialog').getByRole('button', { name: '모두 되돌리기', exact: true }).click();
-            await expect(changeToggle).toHaveCount(0);
+            // '변경 n건' 단추는 늘 그려 도구 줄 폭을 고정한다 — 되돌린 뒤에는 사라지는 것이 아니라 '변경 0건' 으로 막힌다
+            //   (2차 리뷰: 종전 단언 toHaveCount(0) 은 이름만 바뀌어 통과해 무엇을 확인하는지 흐렸다).
+            await expect(page.getByRole('button', { name: '변경 0건', exact: true })).toBeDisabled();
             await expect(saveStructure).toBeDisabled();
             await expect(page.locator('[data-a2-master-item]').first()).toHaveAttribute('data-menu-no', firstMenuNo ?? '');
             // 찾기는 목록을 거르지 않고, Enter 가 일치 메뉴를 골라 그 영역 탭을 연다.

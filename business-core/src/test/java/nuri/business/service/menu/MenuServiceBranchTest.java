@@ -2,8 +2,6 @@ package nuri.business.service.menu;
 
 import nuri.business.domain.menu.Menu;
 import nuri.business.domain.menu.MenuRepository;
-import nuri.business.domain.program.Program;
-import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.menu.dto.MenuDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,30 +25,8 @@ class MenuServiceBranchTest {
     @Mock
     private MenuRepository menuRepository;
 
-    @Mock
-    private ProgramRepository programRepository;
-
-    @Test
-    @DisplayName("calculateUrl - 다양한 레거시 URL 패턴 추론 테스트")
-    void calculateUrl_LegacyPatterns() {
-        // 1. /uss/olh/faq/ -> /admin/help/faq
-        verifyLegacyUrl("/uss/olh/faq/FaqList.do", "/admin/help/faq");
-        
-        // 2. /sec/gmt/ -> /admin/security/group
-        verifyLegacyUrl("/sec/gmt/GroupList.do", "/admin/security/group");
-        
-        // 3. /sec/ram/ -> /admin/security/role
-        verifyLegacyUrl("/sec/ram/RoleList.do", "/admin/security/role");
-        
-        // 4. /sym/ccm/ -> /admin/system/common-code
-        verifyLegacyUrl("/sym/ccm/CommonCode.do", "/admin/system/common-code");
-        
-        // 5. /uss/olp/qtm/ -> /admin/survey/templates
-        verifyLegacyUrl("/uss/olp/qtm/TmplatList.do", "/admin/survey/templates");
-        
-        // 6. /uss/olp/qmc/ -> /admin/survey/manage
-        verifyLegacyUrl("/uss/olp/qmc/QestnrList.do", "/admin/survey/manage");
-    }
+    // [2026-10-04 프로그램 목록 퇴역] 프로그램 원장의 레거시 URL(/uss/olh/faq/ 등)로 경로를 추정하던 분기와 그 테스트를 걷었다.
+    // 원장을 읽는 코드가 없으므로 남는 추정은 아래 레거시 파일명 기반뿐이다.
 
     @Test
     @DisplayName("calculateUrl - 현대적 프로그램명 기반 추론 테스트")
@@ -71,17 +47,6 @@ class MenuServiceBranchTest {
         verifyProgramName("ProgramList", "/admin/system/programs");
         verifyProgramName("MenuCreat", "/admin/system/menus/by-authority");
         verifyProgramName("MenuList", "/admin/system/menus");
-    }
-
-    private void verifyLegacyUrl(String legacyUrl, String expectedModernRoute) {
-        Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("LegacyProg").build();
-        Program program = Program.builder().prgrmFileNm("LegacyProg").url(legacyUrl).build();
-        
-        given(menuRepository.findById(1L)).willReturn(Optional.of(menu));
-        given(programRepository.findById("LegacyProg")).willReturn(Optional.of(program));
-        
-        MenuDto dto = menuService.selectMenuManage(1L);
-        assertThat(dto.getChkURL()).isEqualTo(expectedModernRoute);
     }
 
     private void verifyProgramName(String progName, String expectedModernRoute) {

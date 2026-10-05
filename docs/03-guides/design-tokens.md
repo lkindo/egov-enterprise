@@ -148,6 +148,7 @@ pnpm -C frontend exec vitest run \
 - **comfortable**: 오버라이드가 전혀 없다 — 밀도·구조 토큰(`--control-h`·`--cell-py`·`--page-max-w`·`--filter-pad`·`--filter-control-h` 등)은 프로필 CSS 선언값 그대로이며, `UI_DENSITY` 미설정 배포는 렌더링이 1px도 변하지 않는다.
 - **compact**: [globals.css](../../frontend/src/app/globals.css)의 `:root[data-density="compact"]` 블록 **한 곳**이 같은 토큰을 고밀도 값으로 덮어쓴다. 이 블록은 의도적으로 **무레이어**다 — 프로필 선언은 전부 `@layer base` 안이라, 무레이어 규칙이 특이성·순서와 무관하게 두 프로필 × 라이트·다크 4개 블록을 전부 이긴다. 밀도는 컬러 모드에도 불변이므로 다크 재선언이 필요 없다.
 - **프로필 파일에 밀도 오버라이드를 넣지 않는다**: 밀도는 어느 브랜드에서도 같은 커스텀 프로퍼티를 같은 값으로 덮으므로, 프로필별 복제는 드리프트만 만든다.
+- **업무 표 행 토큰(2026-10-05)**: `--work-cell-px`·`--work-cell-py`는 조밀한 업무 그리드 전용이다. 기본값은 프로필 4블록, `compact` 값은 위 블록이 정하고, 토큰을 읽는 컴포넌트와 공용 표를 `rowDensity="work"`로 쓰는 화면은 허용 목록에 사유와 함께 등재한다. 규칙과 등재 기준은 [업무 화면 문법 카탈로그 §4](../02-architecture/work-screen-grammar-catalog.md#4-밀도-계약)가 정본이다.
 
 배선·토큰 전수·무레이어·import 후행은 theme-token-contract가 강제한다. 검증: `pnpm -C frontend exec vitest run src/__tests__/theme-token-contract.test.ts src/lib/theme/__tests__/density.test.ts`.
 

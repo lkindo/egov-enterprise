@@ -469,8 +469,10 @@ class MenuHierarchyIntegrityIntegrationTest {
 
         runStartupRouteMigrationAfterSnapshot(() -> {
             service.updateMenuOrders(List.of(order(id(0), null), order(id(1), id(0))));
-            service.updateMenuManage(MenuDto.builder().menuNo(id(0)).prgrmFileNm(program)
-                    .menuNm(fixtureId + "edited").menuOrdr(7).build());
+            // [2026-10-04 프로그램 목록 퇴역] 단건 수정은 연결 프로그램을 늘 비운다. 레거시 연결을 남긴 채 이름만 바꾸려고
+            // 연결 프로그램을 건드리지 않는 구조 저장으로 고친다.
+            service.saveMenuStructure(new MenuStructureSave(service.getMenuStructure().version(), List.of(), List.of(),
+                    List.of(new MenuProperties(id(0), fixtureId + "edited", "", null, "Y")), List.of(), List.of()));
             assertThat(parent(id(0))).isNull();
             assertThat(parent(id(1))).isEqualTo(id(0));
         });
@@ -479,7 +481,7 @@ class MenuHierarchyIntegrityIntegrationTest {
         assertThat(parent(id(1))).isEqualTo(id(0));
         Map<String, Object> updated = menuRow(id(0));
         assertThat(updated).containsEntry("modern_route", "/admin/community/boards")
-                .containsEntry("menu_nm", fixtureId + "edited").containsEntry("menu_ordr", 7)
+                .containsEntry("menu_nm", fixtureId + "edited").containsEntry("menu_ordr", 2)
                 .containsEntry("prgrm_file_nm", program).containsEntry("frst_rgtr_id", fixtureId)
                 .containsEntry("last_mdfr_id", "SYSTEM");
         assertThat(updated.get("mdfcn_dt")).isNotNull();
@@ -494,8 +496,10 @@ class MenuHierarchyIntegrityIntegrationTest {
         var committed = new AtomicReference<Map<String, Object>>();
 
         runStartupRouteMigrationAfterSnapshot(() -> {
-            service.updateMenuManage(MenuDto.builder().menuNo(id(0)).prgrmFileNm(program)
+            service.updateMenuManage(MenuDto.builder().menuNo(id(0))
                     .menuNm(fixtureId + "edited").menuOrdr(9).upMenuSn(id(1)).modernRoute(route).build());
+            // [2026-10-04 프로그램 목록 퇴역] 단건 수정은 연결 프로그램을 늘 비운다. 경로 보호만 보려고 레거시 연결을 SQL 로 되돌린다.
+            jdbc.update("UPDATE tb_menu_info SET prgrm_file_nm=? WHERE menu_sn=?", program, id(0));
             committed.set(menuRow(id(0)));
         });
 
@@ -514,8 +518,13 @@ class MenuHierarchyIntegrityIntegrationTest {
         var committed = new AtomicReference<Map<String, Object>>();
 
         runStartupRouteMigrationAfterSnapshot(() -> {
-            service.updateMenuManage(MenuDto.builder().menuNo(id(0)).prgrmFileNm(replacementProgram)
+            // [2026-10-04 프로그램 목록 퇴역] 단건 수정은 새 연결을 거부하고 값 없이 저장하면 연결을 걷는다(해제).
+            // 바뀐 연결은 레거시 데이터 경로(SQL)로만 생기므로 SQL 로 재현한다.
+            service.updateMenuManage(MenuDto.builder().menuNo(id(0))
                     .menuNm(fixtureId + "edited").menuOrdr(9).upMenuSn(id(1)).build());
+            if (replacementProgram != null) {
+                jdbc.update("UPDATE tb_menu_info SET prgrm_file_nm=? WHERE menu_sn=?", replacementProgram, id(0));
+            }
             committed.set(menuRow(id(0)));
         });
 
@@ -523,6 +532,22 @@ class MenuHierarchyIntegrityIntegrationTest {
                 .isEqualTo(committed.get());
         assertThat(menuRow(id(0))).containsEntry("prgrm_file_nm", replacementProgram)
                 .containsEntry("modern_route", null);
+    }
+
+    @Test
+    @DisplayName("[2026-10-04] 원장에 있는 프로그램이어도 단건 수정은 새 연결을 거부하고, 값 없이 저장하면 레거시 연결을 걷는다")
+    void singleWriteRejectsProgramLinkAndClearsLegacyLink() {
+        String program = seedProgram("BoardManage");
+        assertThatThrownBy(() -> service.updateMenuManage(MenuDto.builder().menuNo(id(0)).prgrmFileNm(program)
+                .menuNm(fixtureId + "linked").menuOrdr(1).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThat(menuRow(id(0))).as("거부한 요청은 아무것도 바꾸지 않는다")
+                .containsEntry("prgrm_file_nm", null).containsEntry("menu_nm", fixtureId + "0");
+
+        jdbc.update("UPDATE tb_menu_info SET prgrm_file_nm=? WHERE menu_sn=?", program, id(0));
+        service.updateMenuManage(MenuDto.builder().menuNo(id(0)).prgrmFileNm("").menuNm(fixtureId + "0").menuOrdr(1).build());
+        assertThat(menuRow(id(0))).as("퇴역 전에 남은 레거시 연결을 걷는 경로").containsEntry("prgrm_file_nm", null);
     }
 
     private String seedProgram(String name) {

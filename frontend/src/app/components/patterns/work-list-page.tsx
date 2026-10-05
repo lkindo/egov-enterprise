@@ -4,6 +4,7 @@ import React, { Suspense, useCallback, useEffect, useId, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
+import { WORK_FILL_CONTENT_CLASS, WORK_FILL_ROOT_CLASS } from './work-fill';
 
 /**
  * A1 — 조회형 목록(Work List) archetype 셸.
@@ -72,6 +73,22 @@ export interface WorkListPageProps {
    * 메뉴 SSOT 로 해석되지 않는 경로에서만 쓴다 — 지정하면 자동 해석 결과를 덮어쓴다.
    */
   breadcrumbItems?: { label: string; href?: string }[];
+  /**
+   * [2026-10-05] 업무면 fill 셸(카탈로그 §4 'fill 셸'). true 이면 넓고 높은 화면(globals.css 의 `work-fill` 변형 —
+   * 폭 lg 이상 · 높이 600px 이상 · screen)에서 셸 루트가 화면에 맞는 높이의 세로 flex 가 되고, children 을 감싼 콘텐츠
+   * 영역(`work-list-content`)이 남은 높이를 받는다. 자식은 그 안에서 주 스크롤 영역 하나를 둔다(예: StandardDataTable
+   * `fillHeight`). 조건 밖에서는 지금처럼 쌓이고 높이 제한이 없다. 기본값 false 는 감싸는 div 도 만들지 않아 DOM 이 그대로다.
+   * 창이 낮아 콘텐츠 영역이 바닥값(12rem)보다 작아지면 셸이 늘어나 페이지가 스크롤하고, 자식이 세로 flex 사슬을 끊으면 콘텐츠
+   * 영역이 스스로 스크롤한다 — 어느 쪽이든 내용이 푸터를 덮지 않는다(work-fill.ts). 루트는 `data-work-fill` 표지를 달아, 같은
+   * 조건에서 화면 아래 푸터를 숨기고 그 몫(5rem)만큼 셸을 늘린다(globals.css).
+   */
+  fill?: boolean;
+  /**
+   * [2026-10-05] 결과 툴바에 보일 것이 없을 때(총 건수도 툴바 동작도 없을 때) 툴바를 **시각적으로만** 숨긴다(sr-only).
+   * 총 건수 live region 은 DOM 에 그대로 남아(아래 '항상 렌더' 계약) 건수가 생기면 다시 보이고 바뀐 값을 알린다.
+   * 건수를 내지 않는 업무 화면이 빈 줄(24px)과 간격을 쓰지 않게 하는 opt-in 이다. 기본 false 는 지금처럼 빈 줄을 둔다.
+   */
+  hideEmptyToolbar?: boolean;
   className?: string;
 }
 
@@ -88,6 +105,9 @@ function readStoredOpen(key: string | undefined): boolean | null {
   }
 }
 
+/** fill 콘텐츠 영역은 세로 flex 다 — 자식 하나(예: StandardDataTable `fillHeight`)가 다시 남은 높이를 받는다. */
+const WORK_LIST_CONTENT_FLEX_CLASS = 'work-fill:flex work-fill:flex-col';
+
 export function WorkListPage({
   title,
   headingLevel = 1,
@@ -103,9 +123,13 @@ export function WorkListPage({
   children,
   showBreadcrumb = true,
   breadcrumbItems,
+  fill = false,
+  hideEmptyToolbar = false,
   className,
 }: WorkListPageProps) {
   const filterHeadingId = useId();
+  const toolbarEmpty = typeof totalCount !== 'number' && !toolbarActions;
+  const toolbarVisuallyHidden = hideEmptyToolbar && toolbarEmpty;
   const filterRef = useRef<HTMLDetailsElement>(null);
   const PageHeading = headingLevel === 1 ? 'h1' : 'h2';
   const FilterHeading = headingLevel === 1 ? 'h2' : 'h3';
@@ -132,7 +156,11 @@ export function WorkListPage({
   );
 
   return (
-    <div data-testid="work-list-page" className={cn('space-y-4', className)}>
+    <div
+      data-testid="work-list-page"
+      data-work-fill={fill ? '' : undefined}
+      className={cn('space-y-4', fill && WORK_FILL_ROOT_CLASS, className)}
+    >
       {showBreadcrumb && (
         // DynamicBreadcrumb 는 useSearchParams 를 쓰므로 Suspense 경계가 필수다(PageHeader 와 동일 이유).
         // 자체 mb-4 는 이 셸의 space-y-4 와 겹쳐 이중 여백이 되므로 상쇄한다.
@@ -187,12 +215,16 @@ export function WorkListPage({
         결과 툴바(G3). role="group" 은 스크린리더가 "결과 도구" 묶음으로 인식하게 하되
         toolbar role 이 요구하는 방향키 로빙 포커스 계약은 지지 않는다.
         총 건수는 조회 때마다 갱신되므로 live region 을 조건부로 마운트하지 않고 항상 둔다.
+        hideEmptyToolbar 는 보일 것이 없을 때 이 줄을 시각적으로만 숨긴다(sr-only) — 마운트는 그대로라 live region 계약이 유지된다.
+        숨긴 동안에는 group 역할·이름도 떼어 낸다 — 내용 없는 '결과 도구' 묶음이 화면낭독기에 빈 정지점으로 남지 않게 한다(반박 리뷰 반영).
       */}
       <div
-        role="group"
-        aria-label="결과 도구"
+        role={toolbarVisuallyHidden ? undefined : 'group'}
+        aria-label={toolbarVisuallyHidden ? undefined : '결과 도구'}
         data-testid="work-list-toolbar"
-        className="flex min-h-6 flex-wrap items-center justify-between gap-2"
+        className={toolbarVisuallyHidden
+          ? 'sr-only'
+          : 'flex min-h-6 flex-wrap items-center justify-between gap-2'}
       >
         <p aria-live="polite" className="text-[length:var(--font-size-body)] text-muted-foreground">
           {typeof totalCount === 'number' && (
@@ -204,7 +236,9 @@ export function WorkListPage({
         {toolbarActions && <div className="flex flex-wrap items-center gap-2">{toolbarActions}</div>}
       </div>
 
-      {children}
+      {fill ? (
+        <div data-testid="work-list-content" className={cn(WORK_FILL_CONTENT_CLASS, WORK_LIST_CONTENT_FLEX_CLASS)}>{children}</div>
+      ) : children}
     </div>
   );
 }

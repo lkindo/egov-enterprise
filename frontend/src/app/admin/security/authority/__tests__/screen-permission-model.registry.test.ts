@@ -3,8 +3,8 @@ import { buildNavigationPermissionTree } from '@/lib/auth/navigation-permission-
 import { resolveMenuScreen, screensWithoutMenu } from '@/lib/navigation/menu-screen-resolution';
 import { PERMISSION_CODES } from '@/types/generated-permissions';
 import { SCREEN_ALIASES, SCREEN_REGISTRY } from '@/types/generated-screen-registry';
-import { buildScreenPermissionModel, menuRowKey, SCREEN_CODE_COLUMNS, UNMATCHED_GROUP_KEY } from '../components/screen-permission-model';
-import { isProtectedPermission } from '../components/operation-permission-matrix-model';
+import { aggregateCell, buildScreenPermissionModel, menuRowKey, rowsUnder, SCREEN_CODE_COLUMNS, UNMATCHED_GROUP_KEY } from '../components/screen-permission-model';
+import { isOthersDataPermission, isProtectedPermission } from '../components/operation-permission-matrix-model';
 
 /**
  * '화면별 권한' 표 모델과 실제 생성물(화면 목록·별칭·진입 원장)의 정합(2026-10-02, 관리 콘솔 UX 2단계 D3·D4).
@@ -63,5 +63,35 @@ describe('화면별 권한 표 모델 — 실제 화면 목록과의 정합', ()
         }
       }
     }
+  });
+
+  /*
+   * [2026-10-05 H3 정합] 영역·섹션 줄의 '화면 진입' 묶음 칸도 다른 묶음 칸과 같은 제외 규칙이다 — 실제 진입 원장 전체에서, 묶음 칸 한
+   * 번이 더하거나 끄는 권한에 보호·타인 자료 권한(…_ALL)이 없고, 그런 권한이 있어야 들어가는 화면은 직접 고를 화면(manual)으로 남는다.
+   * 실제 원장에는 '모두 있어야 열림' 투표 관리(POLL_READ + POLL_READ_ALL)와 COMMENT_READ_ALL 하나로 열리는 댓글 관리 같은 화면이 있다.
+   */
+  it('모든 화면을 한 영역에 두어도 화면 진입 묶음 칸은 보호·타인 자료 권한을 더하거나 끄지 않는다', () => {
+    const screens = SCREEN_REGISTRY.filter((screen) => !screen.dynamic);
+    const navigation = [
+      { code: 'AREA', name: '영역', parentCode: null, route: null, useYn: 'Y' as const },
+      ...screens.map((screen, index) => ({ code: `M${index}`, name: screen.label ?? screen.route, parentCode: 'AREA', route: screen.route, useYn: 'Y' as const })),
+    ];
+    const built = buildScreenPermissionModel(buildNavigationPermissionTree(navigation), operationCodes);
+    const under = rowsUnder(built, built.byKey.get(menuRowKey('AREA'))!);
+    const gated = under.filter((row) => row.entry?.state === 'gated');
+    const excluded = (code: string) => isProtectedPermission(code) || isOthersDataPermission(code);
+    const needsExcluded = (row: (typeof gated)[number]) => (row.entry!.mode === 'ALL'
+      ? row.entry!.codes.some(excluded) : row.entry!.codes.every(excluded));
+    const added = aggregateCell(under, 'entry', new Set(), true)!;
+    expect(added.plan.mode).toBe('select');
+    expect(added.plan.keys.filter((key) => excluded(key.slice('OPERATION:'.length)))).toEqual([]);
+    expect(new Set(added.manual.map((row) => row.key))).toEqual(new Set(gated.filter(needsExcluded).map((row) => row.key)));
+    expect(added.manual.length, '빠지는 화면이 하나도 없으면 이 정합은 빈 검사다').toBeGreaterThan(0);
+    expect(added.total + added.manual.length).toBe(gated.length);
+    // 모든 진입 권한이 켜져 있어도 끄는 동작은 보호·타인 자료 권한을 남긴다.
+    const everything = new Set(gated.flatMap((row) => row.entry!.codes).map((code) => `OPERATION:${code}`));
+    const cleared = aggregateCell(under, 'entry', everything, true)!;
+    expect(cleared.plan.mode).toBe('clear');
+    expect(cleared.plan.keys.filter((key) => excluded(key.slice('OPERATION:'.length)))).toEqual([]);
   });
 });

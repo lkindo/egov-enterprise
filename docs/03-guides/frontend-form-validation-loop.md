@@ -66,4 +66,4 @@ pnpm -C frontend run lint
 
 2026-08-26 AST 기준선은 native form 47개(45 files), member form 1개, formless write 21개, secondary action 52개, 총 121개다. 정본은 census manifest와 실제 audit 출력이며 이 숫자는 detector·manifest 변경과 같은 변경 세트에서만 갱신한다.
 
-현재 noncompliant 경계는 0개다. `ProgramAdminClient`, `WorkHubClient`, `DeptJobDetailClient`, `DeptJobCreateClient` composition과 `WorkHubClient.handleDeleteSchedule`은 exact sink·pending·실패·상호 잠금 행동 증거까지 등록되어 있다. 비활성 쓰기 예외는 현재 0건이다 — 유일했던 네트워크 관리 화면은 DEC-OPS-129로 퇴역했다.
+현재 noncompliant 경계는 0개다. `WorkHubClient`, `DeptJobDetailClient`, `DeptJobCreateClient` composition과 `WorkHubClient.handleDeleteSchedule`은 exact sink·pending·실패·상호 잠금 행동 증거까지 등록되어 있다. 비활성 쓰기 예외는 현재 0건이다 — 유일했던 네트워크 관리 화면은 DEC-OPS-129로 퇴역했다. 화면 관리의 이전 프로그램 폼(`ProgramForm`)과 그 composition 은 2026-10-04 프로그램 목록 퇴역으로 걷었다.

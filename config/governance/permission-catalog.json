@@ -1774,46 +1774,6 @@
       ]
     },
     {
-      "code": "PROGRAM_CREATE",
-      "domain": "PROGRAM",
-      "action": "CREATE",
-      "name": "프로그램 · 등록",
-      "defaultGroups": [
-        "ROLE_ADMIN",
-        "ROLE_SYSTEM"
-      ]
-    },
-    {
-      "code": "PROGRAM_DELETE",
-      "domain": "PROGRAM",
-      "action": "DELETE",
-      "name": "프로그램 · 삭제",
-      "defaultGroups": [
-        "ROLE_ADMIN",
-        "ROLE_SYSTEM"
-      ]
-    },
-    {
-      "code": "PROGRAM_READ",
-      "domain": "PROGRAM",
-      "action": "READ",
-      "name": "프로그램 · 조회",
-      "defaultGroups": [
-        "ROLE_ADMIN",
-        "ROLE_SYSTEM"
-      ]
-    },
-    {
-      "code": "PROGRAM_UPDATE",
-      "domain": "PROGRAM",
-      "action": "UPDATE",
-      "name": "프로그램 · 수정",
-      "defaultGroups": [
-        "ROLE_ADMIN",
-        "ROLE_SYSTEM"
-      ]
-    },
-    {
       "code": "REWARD_CREATE",
       "domain": "REWARD",
       "action": "CREATE",
@@ -2796,7 +2756,7 @@
       "POLICY_READ"
     ],
     "/admin/system/programs": [
-      "PROGRAM_READ"
+      "MENU_READ"
     ],
     "/admin/user/absences": [
       "ABSENCE_READ"

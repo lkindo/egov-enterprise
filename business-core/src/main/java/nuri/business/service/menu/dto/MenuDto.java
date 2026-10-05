@@ -39,7 +39,8 @@ public class MenuDto {
     @NotBlank
     private String menuNm;
 
-    @Schema(description = "프로그램 파일 명칭", example = "EgovMain")
+    @Schema(description = "연결 프로그램 파일 명칭(퇴역). 응답은 남은 레거시 값을 그대로 싣는다. 요청에 비어 있지 않은 값을 "
+            + "보내면 400 이고, 단건 메뉴 수정에 성공하면 남은 연결은 지워진다.")
     @Size(max = 300)
     private String prgrmFileNm;
 

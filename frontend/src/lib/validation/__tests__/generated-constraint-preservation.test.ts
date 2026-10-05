@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { administCodeSchema } from '@/app/admin/system/codes/administ/AdministCodeClient';
 import { bannerSchema, popupSchema } from '@/app/admin/system/banner/BannerAdminClient';
 import { authorizationGroupFormSchema } from '@/lib/auth/authorization-management-contract';
-import { programFormSchema } from '@/components/admin/system/ProgramForm';
 import { createUserSchema, userSchema } from '@/components/admin/user/UserManageForm';
 import {
   manualSchema,
@@ -23,28 +22,7 @@ describe('generated DTO constraints stay attached to form schemas', () => {
     }).success).toBe(false);
   });
 
-  it.each([
-    ['prgrmFileNm', 301],
-    ['prgrmStrgPath', 1001],
-    ['prgrmKornNm', 101],
-    ['url', 1001],
-  ] as const)('keeps the generated %s max length', (field, length) => {
-    const validProgram = {
-      prgrmFileNm: 'Program.tsx',
-      prgrmStrgPath: '/admin/program',
-      prgrmKornNm: '프로그램',
-      url: '/admin/program',
-    };
-
-    expect(programFormSchema.safeParse({
-      ...validProgram,
-      [field]: 'a'.repeat(length - 1),
-    }).success).toBe(true);
-    expect(programFormSchema.safeParse({
-      ...validProgram,
-      [field]: 'a'.repeat(length),
-    }).success).toBe(false);
-  });
+  // [2026-10-04 프로그램 목록 퇴역] ProgramForm(programFormSchema)과 ProgramDto 를 걷어 그 길이 보존 사례도 걷었다(대상 소멸).
 
   it('keeps user id, name, contact, organization, and password constraints', () => {
     const validUser = { userId: 'user_1', userNm: '홍길동', pswd: '' };

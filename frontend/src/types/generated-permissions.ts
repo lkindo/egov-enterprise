@@ -172,10 +172,6 @@ export const PERMISSION_CODES = [
   "POPUP_UPDATE",
   "PRIVACY_EXPORT",
   "PRIVACY_READ",
-  "PROGRAM_CREATE",
-  "PROGRAM_DELETE",
-  "PROGRAM_READ",
-  "PROGRAM_UPDATE",
   "REWARD_CREATE",
   "REWARD_DELETE",
   "REWARD_DELETE_ALL",
@@ -252,7 +248,7 @@ export const PERMISSION_CODES = [
   "NOTICE_EDIT"
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
-export const PERMISSION_CATALOG_VERSION = "f8b99f839029e988a26cc679ee60ee97778bdc116dc513e682dffc46795e1a2a";
+export const PERMISSION_CATALOG_VERSION = "2b7eac07ccdf5c02a41091659f36fa8838266e4f9c6905c0484825cb37005991";
 export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]>> = {
   "/": [],
   "/admin": [
@@ -490,7 +486,7 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
     "POLICY_READ"
   ],
   "/admin/system/programs": [
-    "PROGRAM_READ"
+    "MENU_READ"
   ],
   "/admin/user/absences": [
     "ABSENCE_READ"

@@ -1,6 +1,5 @@
 package nuri.business.domain.menu;
 
-import nuri.business.domain.program.Program;
 import nuri.business.support.PersistenceTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,12 +21,7 @@ class MenuPersistenceTest extends PersistenceTestSupport {
     @Test
     @DisplayName("메뉴 정보 CRUD 테스트")
     void menuCrud() {
-        // given
-        entityManager.persist(Program.builder()
-                .prgrmFileNm("file.do")
-                .prgrmKornNm("테스트 프로그램")
-                .url("/test/menu")
-                .build());
+        // given — [2026-10-04 프로그램 목록 퇴역] 프로그램 엔티티와 메뉴의 연관을 걷었다. 연결 프로그램 컬럼은 단순 문자열이다.
         Menu menu = Menu.builder()
                 .menuNm("테스트 메뉴")
                 .menuOrdr(1)
@@ -45,7 +39,7 @@ class MenuPersistenceTest extends PersistenceTestSupport {
         assertThat(saved.getMenuNm()).isEqualTo("테스트 메뉴");
 
         // when: Update
-        saved.update("수정된 메뉴", "file.do", 0L, 2, "Menu DC", "path", "image.png", "Y");
+        saved.update("수정된 메뉴", null, 0L, 2, "Menu DC", "path", "image.png", "Y");
         menuRepository.save(saved);
         menuRepository.flush();
         entityManager.clear();
@@ -54,8 +48,8 @@ class MenuPersistenceTest extends PersistenceTestSupport {
         Menu updated = menuRepository.findById(menuSn).orElseThrow();
         assertThat(updated.getMenuNm()).isEqualTo("수정된 메뉴");
         assertThat(updated.getMenuOrdr()).isEqualTo(2);
-        assertThat(updated.getPrgrmFileNm()).isEqualTo("file.do");
-        assertThat(updated.getProgram().getPrgrmKornNm()).isEqualTo("테스트 프로그램");
+        assertThat(updated.getPrgrmFileNm()).isNull();
+        assertThat(updated.getMenuExpln()).isEqualTo("Menu DC");
     }
 
     @Test

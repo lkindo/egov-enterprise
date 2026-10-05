@@ -132,8 +132,11 @@ export function Sidebar({
         )}
       </AnimatePresence>
 
+      {/* [2026-10-05] data-app-sidebar — 넓은 화면에서 머리글의 '사이드바 접기'로 접으면 globals.css 가 이 표지로 숨긴다
+          (display:none 이라 탭 순서·접근성 트리에서도 빠진다). lg 미만 서랍은 이 표지와 무관하다. */}
       <aside
         id="primary-sidebar"
+        data-app-sidebar=""
         ref={sidebarRef}
         aria-label="주 메뉴"
         className={cn(
@@ -143,7 +146,7 @@ export function Sidebar({
             : 'invisible -translate-x-full lg:visible lg:translate-x-0',
         )}
       >
-        <div className="flex h-full flex-col overflow-y-auto px-5 py-8 no-scrollbar">
+        <div className="relative flex h-full flex-col overflow-y-auto px-5 py-8 no-scrollbar">
           <div className="mb-10 flex items-center justify-between px-2 lg:hidden">
             <Link
               href="/"

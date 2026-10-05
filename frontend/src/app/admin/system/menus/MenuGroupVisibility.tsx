@@ -9,11 +9,22 @@ import { groupGrants, menuRef, navigationKey, type MenuDraft, type MenuGroup } f
 
 export type GroupMatrixState = 'no-permission' | 'loading' | 'error' | 'ready';
 
+/** 한 그룹에서 이 메뉴가 사이드바에 실제로 보이는가(그룹 미리보기와 같은 판정). 판정할 수 없으면(삭제 예정 등) null. */
+export interface GroupMenuVerdict {
+  visible: boolean;
+  /** 숨는 이유 문구(보이면 null). */
+  reason: string | null;
+}
+
 /**
  * [2026-10-02 D1·D2] 고른 메뉴를 어느 그룹이 보는가 — 그룹마다 '메뉴 표시' 체크(AUTHRT_GRANT). 하위를 켜면 상위를 명시적으로
  * 함께 켜고, 상위를 끄면 하위도 끈다(권한 편집기의 메뉴 표시 규칙과 같다). 메뉴 표시가 있는데 그 그룹의 기능권한으로 화면에
  * 들어갈 수 없으면 '{그룹} 진입 권한 추가'(1단계와 같은 ANY/ALL 처리)를 둔다. 모두 초안에만 반영되고 '변경 저장' 으로 저장된다.
  * 메뉴 표시와 기능권한은 다른 권한이다(H3) — 메뉴 표시를 켜도 기능권한은 생기지 않는다.
+ *
+ * [2026-10-05] 그룹마다 저장 전 초안 기준의 실제 결과 칩('보임' 또는 숨는 이유)을 체크 줄 오른쪽에 둔다. 판정은 보드의 그룹
+ * 미리보기와 같은 previewMenuVisibility 다(부르는 쪽이 verdictOf 로 넘긴다) — 메뉴 표시를 켜도 상위가 숨었거나 진입 권한이
+ * 없으면 보이지 않는다는 사실을 체크 상태와 따로 말한다.
  *
  * 후보 선택(choices)은 그 메뉴의 것이다 — 부르는 쪽이 메뉴마다 key 를 바꿔 새로 그린다. 그래도 고른 값이 지금 후보에 없으면
  * (같은 메뉴의 연결 화면을 바꾼 경우) 고른 값을 버리고 기본 후보를 쓴다 — 화면에 보이는 후보와 다른 권한을 넣지 않는다(H3).
@@ -32,6 +43,7 @@ export function MenuGroupVisibility({
   onRetry,
   onToggle,
   onAddOperations,
+  verdictOf,
 }: {
   menuNo: number;
   name: string;
@@ -47,6 +59,8 @@ export function MenuGroupVisibility({
   onRetry: () => void;
   onToggle: (groupCode: string, checked: boolean) => void;
   onAddOperations: (groupCode: string, codes: readonly string[]) => void;
+  /** 그 그룹에서 이 메뉴의 실제 결과(없으면 칩을 그리지 않는다). */
+  verdictOf?: (groupCode: string) => GroupMenuVerdict | null;
 }) {
   const baseId = useId();
   const [choices, setChoices] = useState<Record<string, string>>({});
@@ -111,6 +125,7 @@ export function MenuGroupVisibility({
           const chosen = choices[group.code];
           const choice = fix?.kind === 'choose' ? (chosen !== undefined && fix.candidates.includes(chosen) ? chosen : fix.preferred) : null;
           const codesToAdd = fix?.kind === 'auto' ? fix.codes : choice !== null ? [choice] : [];
+          const verdict = deleted ? null : verdictOf?.(group.code) ?? null;
           return (
             <li key={group.code} className="space-y-1 rounded-md border border-border px-2 py-1.5">
               <div className="flex flex-wrap items-center gap-2">
@@ -129,6 +144,16 @@ export function MenuGroupVisibility({
                 {changed && (
                   <span className="rounded bg-primary/10 px-1.5 text-xs font-semibold text-primary">
                     <span className="sr-only">저장 전 </span>{checked ? '표시 켬' : '표시 끔'}
+                  </span>
+                )}
+                {verdict && (
+                  <span
+                    data-group-verdict={verdict.visible ? 'visible' : 'hidden'}
+                    className={verdict.visible
+                      ? 'ml-auto rounded bg-success/15 px-1.5 text-xs font-semibold text-success-emphasis'
+                      : 'ml-auto rounded border border-border px-1.5 text-xs text-muted-foreground'}
+                  >
+                    <span className="sr-only">{group.name} 그룹 사이드바에서 </span>{verdict.visible ? '보임' : verdict.reason}
                   </span>
                 )}
               </div>

@@ -4,26 +4,16 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthorizationGroupForm } from '@/app/admin/security/authority/components/AuthorizationGroupForm';
-import { ProgramForm } from '@/components/admin/system/ProgramForm';
 import { DepartmentForm } from '@/components/admin/user/DepartmentForm';
 import { UserManageForm } from '@/components/admin/user/UserManageForm';
 import { DeptJobForm } from '@/components/business/deptJob/DeptJobForm';
 import { ReportCreateForm, reportFormSchema } from '@/components/business/report/ReportCreateForm';
 import { WorkReportDtoRequestSchema } from '@/types/generated-zod';
 
+// [2026-10-04 프로그램 목록 퇴역] ProgramForm 과 ProgramAdminService 를 걷어 그 공용 폼 계약 사례도 함께 걷었다(대상 소멸).
 const mocks = vi.hoisted(() => ({
-  createProgram: vi.fn(),
   getDeptJobBoxes: vi.fn(),
   searchAssignableUsers: vi.fn(),
-  updateProgram: vi.fn(),
-}));
-
-vi.mock('@/services/foundation/system/ProgramAdminService', () => ({
-  programAdminService: {
-    createProgram: (...args: unknown[]) => mocks.createProgram(...args),
-    deleteProgram: vi.fn(),
-    updateProgram: (...args: unknown[]) => mocks.updateProgram(...args),
-  },
 }));
 
 vi.mock('@/services/business/user/deptJob/DeptJobUserService', () => ({
@@ -82,26 +72,6 @@ const cases: ContractCase[] = [
     ),
     serverField: 'name',
     serverFieldName: /그룹명/,
-  },
-  {
-    name: 'ProgramForm',
-    render: () => (
-      <ProgramForm open onOpenChange={vi.fn()} onSuccess={vi.fn()} />
-    ),
-    submitName: /프로그램 저장/,
-    firstFieldName: /프로그램 파일명/,
-    maxLength: '300',
-    prepareValid: () => {
-      fireEvent.change(screen.getByRole('textbox', { name: /프로그램 파일명/ }), {
-        target: { value: 'TEST_PROGRAM' },
-      });
-      fireEvent.change(screen.getByRole('textbox', { name: /프로그램 이름/ }), {
-        target: { value: '테스트 프로그램' },
-      });
-    },
-    renderValid: () => <ProgramForm open onOpenChange={vi.fn()} onSuccess={vi.fn()} />,
-    serverField: 'prgrmKornNm',
-    serverFieldName: /프로그램 이름/,
   },
   {
     name: 'DepartmentForm',
@@ -216,7 +186,6 @@ describe('shared useAppForm visual validation contract', () => {
     expect(summary).toHaveTextContent(/입력 오류/);
     expect(summary?.querySelector('button')).not.toBeNull();
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(mocks.createProgram).not.toHaveBeenCalled();
   });
 
   it.each(cases)('$name: server field 오류를 inline summary와 해당 field로 연결한다', async (entry) => {
@@ -226,7 +195,6 @@ describe('shared useAppForm visual validation contract', () => {
       response: { data: { errors: [{ field: entry.serverField, message }] } },
     };
     const onSubmit = vi.fn().mockRejectedValue(error);
-    if (entry.name === 'ProgramForm') mocks.createProgram.mockRejectedValueOnce(error);
     renderWithClient(entry.renderValid(onSubmit));
     entry.prepareValid?.();
     const target = screen.getByRole('textbox', { name: entry.serverFieldName });
@@ -237,14 +205,10 @@ describe('shared useAppForm visual validation contract', () => {
     await waitFor(() => expect(target).toHaveFocus());
     expect(target).toHaveAttribute('aria-invalid', 'true');
     expect(document.querySelector('[data-form-error-summary="true"] button')).not.toBeNull();
-    if (entry.name === 'ProgramForm') {
-      expect(mocks.createProgram).toHaveBeenCalledTimes(1);
-    } else {
-      expect(onSubmit).toHaveBeenCalledTimes(1);
-    }
+    expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
-  it.each(cases.filter((entry) => entry.name !== 'ProgramForm'))(
+  it.each(cases)(
     '$name: 저장 중 같은 tick의 중복 submit을 한 번만 전송하고 버튼을 잠근다',
     async (entry) => {
       const pending = deferred();

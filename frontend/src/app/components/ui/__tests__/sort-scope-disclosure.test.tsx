@@ -70,4 +70,39 @@ describe('정렬 범위 고지', () => {
 
     expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
   });
+
+  /*
+   * [2026-10-05] 정렬 단추의 title 도 같은 사실을 말한다. 종전에는 쪽 수와 무관하게 늘 '현재 페이지의 행만 정렬합니다' 였다 —
+   * 한 쪽짜리 목록(화면 관리 100개씩 등)에서 페이저 고지가 말하지 않는 반대 사실을 hover 가 말했다. 쪽 수를 모르는 표
+   * (pagination 미지정 — 바깥 페이저가 서버 쪽을 넘기는 소비자)는 종전대로 둔다.
+   */
+  const SORT_TITLE = '현재 페이지의 행만 정렬합니다';
+
+  it('정렬 단추는 여러 페이지면 현재 페이지만 정렬한다고 말하고, 한 페이지면 그렇게 말하지 않는다', () => {
+    const { unmount } = render(
+      <StandardDataTable<Row>
+        columns={sortableColumns}
+        data={rows}
+        keyField="id"
+        pagination={{ currentPage: 1, totalPages: 3, totalCount: 25, pageSize: 10, onPageChange: () => {} }}
+      />,
+    );
+    expect(screen.getByRole('button', { name: '이름' })).toHaveAttribute('title', SORT_TITLE);
+    unmount();
+
+    render(
+      <StandardDataTable<Row>
+        columns={sortableColumns}
+        data={rows}
+        keyField="id"
+        pagination={{ currentPage: 1, totalPages: 1, totalCount: 2, pageSize: 10, onPageChange: () => {} }}
+      />,
+    );
+    expect(screen.getByRole('button', { name: '이름' })).not.toHaveAttribute('title');
+  });
+
+  it('쪽 수를 모르는 표(pagination 미지정)는 정렬 범위를 종전대로 현재 페이지라고 말한다', () => {
+    render(<StandardDataTable<Row> columns={sortableColumns} data={rows} keyField="id" />);
+    expect(screen.getByRole('button', { name: '이름' })).toHaveAttribute('title', SORT_TITLE);
+  });
 });

@@ -461,4 +461,97 @@ describe('StandardDataTable', () => {
     expect(screen.getByRole('status')).toHaveTextContent('사용자 목록을(를) 불러오는 중…');
     expect(container.querySelector('table')).toHaveAttribute('aria-busy', 'true');
   });
+
+  /*
+    [2026-10-05] 남은 높이 채움(fillHeight)과 업무 표 행 밀도(rowDensity="work")는 opt-in 이다. 기본은 700px 상자·--cell-*
+    패딩·넉넉한 페이저 그대로여야 하고(다른 목록 화면과 시각 회귀 기준선), opt-in 은 그 기본을 지우지 않고 조건 안에서만 덮는다.
+  */
+  describe('업무면 opt-in (fillHeight · rowDensity)', () => {
+    const scrollRegion = (container: HTMLElement) =>
+      container.querySelector<HTMLElement>('[data-slot="standard-data-table-scroll-region"]')!;
+    const pagination = { currentPage: 1, totalPages: 2, onPageChange: vi.fn(), totalCount: 30, pageSize: 20 };
+
+    it('기본은 700px 상자·--cell-* 패딩·기존 페이저 여백이고 fill·work 클래스가 없다', () => {
+      const { container } = renderTable({ pagination, onRowClick: vi.fn(), rowActionLabel: '상세 열기' });
+      const region = scrollRegion(container);
+
+      expect(region).toHaveClass('relative', 'max-h-[700px]', 'overflow-auto');
+      expect(region.className).not.toMatch(/work-fill:|print:/);
+      expect(container.firstElementChild).toHaveClass('space-y-6');
+      expect(container.firstElementChild!.className).not.toMatch(/work-fill:/);
+      for (const cell of [...container.querySelectorAll('th'), ...container.querySelectorAll('td')]) {
+        expect(cell.className).toContain('px-[var(--cell-px)] py-[var(--cell-py)]');
+        expect(cell.className).not.toContain('--work-cell-');
+      }
+      expect(screen.getByRole('navigation', { name: '페이지 탐색' }).parentElement).toHaveClass('pt-8', 'pb-4');
+    });
+
+    it('fillHeight 는 조건 안에서 700px 상자 대신 부모의 남은 높이를 채우고 고정 머리글을 유지한다', () => {
+      const { container } = renderTable({ fillHeight: true });
+      const region = scrollRegion(container);
+
+      expect(container.firstElementChild).toHaveClass('work-fill:flex', 'work-fill:flex-col', 'work-fill:flex-1', 'work-fill:min-h-0');
+      expect(region).toHaveClass(
+        'relative', 'overflow-auto', 'max-h-[700px]',
+        'work-fill:max-h-[var(--work-fill-height)]', 'work-fill:min-h-[6rem]', 'work-fill:flex-1',
+        'print:max-h-none', 'print:overflow-visible',
+      );
+      // 조건 안에서도 상한을 지우지 않는다 — 부모 사슬이 끊기면 내용 높이로 커져 안쪽 스크롤·고정 머리글이 사라진다.
+      expect(region).not.toHaveClass('work-fill:max-h-none');
+      expect(container.querySelector('table')).toHaveClass('table-sticky-header');
+      // 고정 머리글 밑으로 포커스한 행이 숨지 않게 스크롤 여백을 둔다(WCAG 2.2 2.4.11). 업무 밀도는 머리글이 낮다.
+      //   조건(work-fill) 안에서만 — 조건 밖은 기본 표와 같다.
+      expect(region).toHaveClass('work-fill:scroll-pt-16');
+      expect(region.className).not.toMatch(/(?:^|\s)scroll-pt-/);
+    });
+
+    it('fillHeight 업무 밀도는 낮은 머리글에 맞춘 스크롤 여백을 쓰고, 기본 표는 스크롤 여백을 두지 않는다', () => {
+      const { container, unmount } = renderTable({ fillHeight: true, rowDensity: 'work' });
+      expect(scrollRegion(container)).toHaveClass('work-fill:scroll-pt-10');
+      expect(scrollRegion(container)).not.toHaveClass('work-fill:scroll-pt-16');
+      unmount();
+
+      const plain = renderTable();
+      expect(scrollRegion(plain.container).className).not.toMatch(/scroll-pt-/);
+    });
+
+    it('fillHeight 는 stickyHeader 를 끈 표를 조건 안에서만 세로로 스크롤하게 하고, 조건 밖은 기본과 같다', () => {
+      const { container } = renderTable({ fillHeight: true, stickyHeader: false });
+      const region = scrollRegion(container);
+
+      // 조건 밖: 기본 비고정 표와 같다(높이 제한 없이 페이지가 스크롤한다).
+      expect(region).toHaveClass('overflow-x-auto', 'overflow-y-hidden');
+      expect(region).not.toHaveClass('max-h-[700px]');
+      // 조건 안: 세로 스크롤을 켜고 셸 높이 상한 안에서 남은 높이를 채운다.
+      expect(region).toHaveClass('work-fill:overflow-y-auto', 'work-fill:flex-1', 'work-fill:max-h-[var(--work-fill-height)]');
+    });
+
+    it('rowDensity="work" 는 머리글·본문·선택·행 작업 칸 모두 업무 표 행 토큰을 쓰고 페이저 여백을 줄인다', () => {
+      const { container } = renderTable({
+        rowDensity: 'work',
+        enableSelection: true,
+        pagination,
+        onRowClick: vi.fn(),
+        rowActionLabel: '상세 열기',
+      });
+
+      const cells = [...container.querySelectorAll('th'), ...container.querySelectorAll('td')];
+      expect(cells.length).toBeGreaterThan(6);
+      for (const cell of cells) {
+        expect(cell.className).toContain('px-[var(--work-cell-px)] py-[var(--work-cell-py)]');
+        expect(cell.className).not.toContain('--cell-py');
+      }
+      expect(container.firstElementChild).toHaveClass('space-y-3');
+      expect(screen.getByRole('navigation', { name: '페이지 탐색' }).parentElement).toHaveClass('pt-1');
+      expect(screen.getByRole('navigation', { name: '페이지 탐색' }).parentElement).not.toHaveClass('pt-8');
+    });
+
+    it('rowDensity="work" 는 불러오는 동안의 자리표시 행도 같은 패딩을 쓴다', () => {
+      const { container } = renderTable({ rowDensity: 'work', data: [], loading: true, enableSelection: true });
+
+      const placeholders = container.querySelectorAll('td[role="presentation"]');
+      expect(placeholders.length).toBeGreaterThan(0);
+      for (const cell of placeholders) expect(cell.className).toContain('py-[var(--work-cell-py)]');
+    });
+  });
 });

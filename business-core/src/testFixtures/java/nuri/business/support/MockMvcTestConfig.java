@@ -35,20 +35,6 @@ public class MockMvcTestConfig implements WebMvcConfigurer {
         return new PageableHandlerMethodArgumentResolver();
     }
 
-    @Bean
-    public nuri.business.service.menu.MenuIntegrationService menuIntegrationService() {
-        nuri.business.service.menu.MenuIntegrationService mock = org.mockito.Mockito.mock(nuri.business.service.menu.MenuIntegrationService.class);
-        // Default context mock to prevent null pointer exceptions
-        nuri.business.service.menu.dto.MenuUIContext defaultContext = org.mockito.Mockito.mock(nuri.business.service.menu.dto.MenuUIContext.class);
-        org.mockito.Mockito.when(mock.processMenuContext(
-            org.mockito.Mockito.anyString(),
-            org.mockito.Mockito.any(),
-            org.mockito.Mockito.anyString(),
-            org.mockito.Mockito.any()
-        )).thenReturn(defaultContext);
-        return mock;
-    }
-
     /**
      * [W1-J1 회귀 봉합 — 2026-08-03] {@code ClientIpResolver} 를 슬라이스 컨텍스트에 공급한다.
      *

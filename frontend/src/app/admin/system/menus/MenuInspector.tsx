@@ -18,7 +18,7 @@ import {
   type MenuPropertyPatch,
 } from './menuDraft';
 import { MenuScreenPicker, RouteFacts } from './MenuScreenPicker';
-import { MenuGroupVisibility, type GroupMatrixState } from './MenuGroupVisibility';
+import { MenuGroupVisibility, type GroupMatrixState, type GroupMenuVerdict } from './MenuGroupVisibility';
 
 /** 상세의 어느 칸으로 포커스를 옮길지 — 새 메뉴를 만든 직후(이름), 입력 오류의 '고치기'(그 오류 칸). */
 export type MenuFocusField = 'menuNm' | 'modernRoute' | 'menuExpln';
@@ -36,6 +36,11 @@ export interface MenuFocusRequest {
 /**
  * [2026-10-02 D1·D2] 보드 오른쪽 칸 — 고른 메뉴의 위치·속성·보이는 그룹·삭제. 모든 편집은 초안에 바로 반영되고 '변경 저장'
  * 한 번으로 저장된다(즉시 저장하는 수정 창은 없다). 쓰기 동작은 이 파일에 없다 — 콜백만 부른다.
+ *
+ * [2026-10-05] 배치는 위치(경로·단계 + 옮기기 단추 한 줄) → 이 메뉴가 보이는 그룹 → 속성 → 삭제(맨 아래)다. 종전에는 속성
+ * 편집기(늘 펼친 화면 목록 포함)가 위에 있어 '보이는 그룹' 이 상세 스크롤 아래로 밀렸다. 옮기기 단추는 보이는 글자를 줄이고
+ * 접근 이름(한 칸 위로·한 칸 아래로·다른 곳으로 옮기기…)은 그대로 둔다 — 보이는 글자가 이름 안에 들어 있다(WCAG 2.5.3).
+ * 키보드로 옮기는 법은 보드 위 '키보드로 옮기는 법' 도움말이 맡는다.
  */
 export interface MenuInspectorProps {
   item: FlattenedItem;
@@ -44,6 +49,8 @@ export interface MenuInspectorProps {
   errors: MenuFieldErrors;
   groups: readonly MenuGroup[];
   groupState: GroupMatrixState;
+  /** 그룹마다 이 메뉴의 실제 결과(저장 전 초안 기준 사이드바 보임/숨는 이유). */
+  verdictOf?: (groupCode: string) => GroupMenuVerdict | null;
   /** 순서·위치·속성을 바꿀 수 있는가(MENU_UPDATE). */
   editable: boolean;
   /** 새 메뉴를 만들 수 있는가(MENU_CREATE·MENU_UPDATE) — 새 메뉴 지우기에 쓴다. */
@@ -56,7 +63,11 @@ export interface MenuInspectorProps {
   /** 포커스 요청(이 메뉴의 것일 때만 따른다). */
   focusRequest: MenuFocusRequest | null;
   onFocusHandled: () => void;
-  onEdit: (patch: MenuPropertyPatch) => void;
+  /**
+   * 초안의 속성을 바꾼다. typing 은 글자를 이어 넣는 칸(이름·설명·경로 직접 입력)이다 — 이어 친 글자를 '직전 변경 되돌리기' 한
+   * 단계로 묶는다. 화면 목록에서 고르기·연결 해제·사용 여부는 누를 때마다 한 단계다.
+   */
+  onEdit: (patch: MenuPropertyPatch, typing?: boolean) => void;
   onShift: (direction: -1 | 1) => void;
   onOpenMove: () => void;
   onDelete: () => void;
@@ -69,7 +80,7 @@ export interface MenuInspectorProps {
 
 export function MenuInspector(props: MenuInspectorProps) {
   const {
-    item, draft, errors, groups, groupState, editable, creatable, deletable, groupsEditable, locked, focusRequest, onFocusHandled,
+    item, draft, errors, groups, groupState, verdictOf, editable, creatable, deletable, groupsEditable, locked, focusRequest, onFocusHandled,
     onEdit, onShift, onOpenMove, onDelete, onUndelete, onRemoveNew, onRetryGroups, onToggleNavigation, onAddOperations,
   } = props;
   const baseId = useId();
@@ -90,6 +101,7 @@ export function MenuInspector(props: MenuInspectorProps) {
   const route = (item.modernRoute ?? '').trim() || null;
   const deleteReasonId = `${baseId}-delete-reason`;
   const placementReasonId = `${baseId}-placement-reason`;
+  const useNoteId = `${baseId}-use-note`;
 
   // 새 메뉴를 만든 직후 이름 칸, 입력 오류의 '고치기' 면 그 오류 칸으로 간다. 대화상자에서 만들었으면 대화상자가 닫히며
   // 포커스를 여는 단추로 되돌리므로 그 다음 차례(타이머)에 옮긴다. 옮긴 뒤 요청을 지운다(한 번만 쓴다).
@@ -103,37 +115,54 @@ export function MenuInspector(props: MenuInspectorProps) {
     return () => window.clearTimeout(timer);
   }, [ownRequest, onFocusHandled]);
 
+  const placementDescribedBy = deleted ? placementReasonId : undefined;
+
   return (
-    <div className="space-y-5">
-      <section aria-labelledby={`${baseId}-place`} className="space-y-2">
+    <div className="space-y-4">
+      <section aria-labelledby={`${baseId}-place`} className="space-y-1.5">
         <h3 id={`${baseId}-place`} className="text-xs font-semibold text-muted-foreground">위치</h3>
         <p className="text-sm text-foreground">{path}</p>
-        <p className="text-xs text-muted-foreground">
-          {item.depth + 1}단계 · {isNew ? 'ID: 저장 전' : `ID: ${item.menuNo}`}
-          {item.prgrmFileNm ? ` · 이전 프로그램 연결: ${item.prgrmFileNm}` : ''}
-        </p>
-        {editable && (
-          <>
-            {deleted && <p id={placementReasonId} className="text-xs text-muted-foreground">삭제 예정 메뉴는 옮길 수 없습니다. 삭제를 먼저 취소하세요.</p>}
-            <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="mr-auto text-xs text-muted-foreground">{item.depth + 1}단계</span>
+          {editable && (
+            <>
               <Button type="button" size="sm" variant="outline" disabled={deleted || locked}
-                aria-describedby={deleted ? placementReasonId : undefined} onClick={() => onShift(-1)}>
-                <ArrowUp aria-hidden="true" />한 칸 위로
+                aria-label="한 칸 위로" aria-describedby={placementDescribedBy} onClick={() => onShift(-1)}>
+                <ArrowUp aria-hidden="true" />위로
               </Button>
               <Button type="button" size="sm" variant="outline" disabled={deleted || locked}
-                aria-describedby={deleted ? placementReasonId : undefined} onClick={() => onShift(1)}>
-                <ArrowDown aria-hidden="true" />한 칸 아래로
+                aria-label="한 칸 아래로" aria-describedby={placementDescribedBy} onClick={() => onShift(1)}>
+                <ArrowDown aria-hidden="true" />아래로
               </Button>
               <Button type="button" size="sm" variant="outline" disabled={deleted || locked}
-                aria-describedby={deleted ? placementReasonId : undefined} onClick={onOpenMove}>
-                <MoveRight aria-hidden="true" />다른 곳으로 옮기기…
+                aria-label="다른 곳으로 옮기기…" aria-describedby={placementDescribedBy} onClick={onOpenMove}>
+                <MoveRight aria-hidden="true" />옮기기…
               </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              보드에서 손잡이를 끌거나, 항목에서 Alt+↑·Alt+↓(한 칸), Ctrl+X 로 잘라 놓을 곳을 고른 뒤 Ctrl+V 로도 옮길 수 있습니다.
-            </p>
-          </>
-        )}
+            </>
+          )}
+        </div>
+        {editable && deleted && <p id={placementReasonId} className="text-xs text-muted-foreground">삭제 예정 메뉴는 옮길 수 없습니다. 삭제를 먼저 취소하세요.</p>}
+      </section>
+
+      <section aria-labelledby={`${baseId}-groups`} className="space-y-1.5">
+        <h3 id={`${baseId}-groups`} className="text-xs font-semibold text-muted-foreground">이 메뉴가 보이는 그룹</h3>
+        <MenuGroupVisibility
+          key={item.menuNo}
+          menuNo={item.menuNo}
+          name={menuLabel(draft.items, item.menuNo)}
+          route={route}
+          isNew={isNew}
+          deleted={deleted}
+          groups={groups}
+          draft={draft}
+          state={groupState}
+          editable={groupsEditable}
+          locked={locked}
+          onRetry={onRetryGroups}
+          onToggle={onToggleNavigation}
+          onAddOperations={onAddOperations}
+          verdictOf={verdictOf}
+        />
       </section>
 
       <section aria-labelledby={`${baseId}-props`} className="space-y-3">
@@ -149,7 +178,7 @@ export function MenuInspector(props: MenuInspectorProps) {
                 maxLength={MENU_LIMITS.name}
                 aria-invalid={errors.menuNm ? true : undefined}
                 aria-describedby={errors.menuNm ? `${baseId}-name-error` : undefined}
-                onChange={(event) => onEdit({ menuNm: event.target.value })}
+                onChange={(event) => onEdit({ menuNm: event.target.value }, true)}
               />
               {errors.menuNm && <p id={`${baseId}-name-error`} className="text-xs text-destructive-emphasis">{errors.menuNm}</p>}
             </div>
@@ -158,7 +187,7 @@ export function MenuInspector(props: MenuInspectorProps) {
               route={item.modernRoute ?? null}
               editable
               error={errors.modernRoute}
-              onChange={(next) => onEdit({ modernRoute: next })}
+              onChange={(next, typing) => onEdit({ modernRoute: next }, typing)}
               routeInputRef={routeRef}
               directRequest={ownRequest?.field === 'modernRoute' ? ownRequest.seq : 0}
             />
@@ -171,21 +200,24 @@ export function MenuInspector(props: MenuInspectorProps) {
                 rows={2}
                 aria-invalid={errors.menuExpln ? true : undefined}
                 aria-describedby={errors.menuExpln ? `${baseId}-expln-error` : undefined}
-                onChange={(event) => onEdit({ menuExpln: event.target.value })}
+                onChange={(event) => onEdit({ menuExpln: event.target.value }, true)}
               />
               {errors.menuExpln && <p id={`${baseId}-expln-error`} className="text-xs text-destructive-emphasis">{errors.menuExpln}</p>}
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                id={`${baseId}-use`}
-                type="checkbox"
-                aria-labelledby={`${baseId}-use-label`}
-                className="size-4 accent-primary"
-                checked={item.useYn !== 'N'}
-                onChange={(event) => onEdit({ useYn: event.target.checked ? 'Y' : 'N' })}
-              />
-              <label id={`${baseId}-use-label`} htmlFor={`${baseId}-use`} className="text-sm text-foreground">메뉴 사용</label>
-              <span className="text-xs text-muted-foreground">끄면 모든 그룹의 사이드바에서 이 메뉴와 하위 메뉴가 숨겨집니다.</span>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <input
+                  id={`${baseId}-use`}
+                  type="checkbox"
+                  aria-labelledby={`${baseId}-use-label`}
+                  aria-describedby={useNoteId}
+                  className="size-4 accent-primary"
+                  checked={item.useYn !== 'N'}
+                  onChange={(event) => onEdit({ useYn: event.target.checked ? 'Y' : 'N' })}
+                />
+                <label id={`${baseId}-use-label`} htmlFor={`${baseId}-use`} className="text-sm text-foreground">메뉴 사용</label>
+              </div>
+              <p id={useNoteId} className="pl-6 text-xs text-muted-foreground">끄면 모든 그룹의 사이드바에서 이 메뉴와 하위 메뉴가 숨겨집니다.</p>
             </div>
           </>
         ) : (
@@ -211,28 +243,8 @@ export function MenuInspector(props: MenuInspectorProps) {
         )}
       </section>
 
-      <section aria-labelledby={`${baseId}-groups`} className="space-y-2">
-        <h3 id={`${baseId}-groups`} className="text-xs font-semibold text-muted-foreground">보이는 그룹</h3>
-        <MenuGroupVisibility
-          key={item.menuNo}
-          menuNo={item.menuNo}
-          name={menuLabel(draft.items, item.menuNo)}
-          route={route}
-          isNew={isNew}
-          deleted={deleted}
-          groups={groups}
-          draft={draft}
-          state={groupState}
-          editable={groupsEditable}
-          locked={locked}
-          onRetry={onRetryGroups}
-          onToggle={onToggleNavigation}
-          onAddOperations={onAddOperations}
-        />
-      </section>
-
       {(isNew ? creatable : deletable) && (
-        <section aria-labelledby={`${baseId}-delete`} className="space-y-2">
+        <section aria-labelledby={`${baseId}-delete`} className="space-y-2 border-t border-border pt-3">
           <h3 id={`${baseId}-delete`} className="text-xs font-semibold text-muted-foreground">삭제</h3>
           {/*
             삭제·삭제 취소는 같은 자리의 같은 단추다(이름과 동작만 바뀐다) — 단추를 갈아 끼우면 누른 단추가 사라져 포커스가

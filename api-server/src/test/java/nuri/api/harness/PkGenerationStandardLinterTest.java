@@ -192,7 +192,8 @@ class PkGenerationStandardLinterTest {
             // 승인된 권한 단순화: RoleInfo는 Contract로 퇴역하고 UserAuthority는
             // V2_98 tb_authrt_user_map의 (사용자,그룹) 복합 조인 키로 전환한다.
             // OCI 원본 보존 및 PostgreSQL Expand/Contract/FK 회귀로 검증; 감사 PK는 IDENTITY.
-            "Program", "RefreshToken",
+            // 2026-10-04 프로그램 목록 퇴역: "Program" 엔티티를 걷어 목록에서 뺐다. 대상이 사라진 것이라 완화가 아니다(Faq 선례).
+            "RefreshToken",
             "SystemPolicy", "Template",
             "User", "UserAbsence"
     ));

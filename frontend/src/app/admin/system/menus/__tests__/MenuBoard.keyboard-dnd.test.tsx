@@ -96,7 +96,7 @@ describe('키보드 끌기(실제 dnd-kit)', () => {
   it('새 메뉴를 만들었다 지운 뒤에도, 끌기를 시작하면(항목을 고르면) 포커스는 끌기 손잡이에 남는다', async () => {
     await renderClient();
     fireEvent.click(screen.getByRole('tab', { name: /^업무/ }));
-    fireEvent.click(screen.getByRole('button', { name: '화면 추가(결재)' }));
+    fireEvent.click(screen.getByRole('button', { name: '결재 아래 화면 추가' }));
     await tick();
     fireEvent.click(screen.getByRole('button', { name: '새 메뉴 지우기' }));
     await tick();

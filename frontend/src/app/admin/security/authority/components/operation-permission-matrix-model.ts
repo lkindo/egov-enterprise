@@ -35,6 +35,12 @@ export const PROTECTED_PERMISSION_CODES: ReadonlySet<string> = new Set<string>(P
 export const isProtectedPermission = (code: string): boolean => PROTECTED_PERMISSION_CODES.has(code);
 export const operationKey = (code: string): string => `OPERATION:${code}`;
 
+/**
+ * 타인 자료 권한(…_ALL — 타인 자료 조회·수정·삭제, 관리자 등록 등). 본인 자료 권한과 인가 의미가 달라 한 번에 여러 메뉴를
+ * 고치는 일괄 동작에 섞지 않는다(H3). 권한 코드는 `영역_행위` 이고 타인 자료 행위는 모두 `_ALL` 로 끝난다.
+ */
+export const isOthersDataPermission = (code: string): boolean => /_ALL$/.test(code);
+
 export interface MatrixRow {
   domain: string;
   label: string;
@@ -184,6 +190,16 @@ export function planEntryFixes(missing: readonly MenuMissingEntryPermission[], c
     if (candidates.length === 1) return { kind: 'auto', menu, codes: candidates };
     return { kind: 'choose', menu, candidates, preferred: candidates.find((code) => code.endsWith('_READ')) ?? candidates[0] };
   });
+}
+
+/**
+ * 여러 메뉴를 한 번에 고치는 일괄 동작(섹션 줄의 '진입 권한 추가'·표 위의 '진입 권한 모두 추가')이 다룰 수 있는 고치기인가
+ * (2026-10-05 반박 리뷰 반영). 더할 권한이 정해져 있고(auto) 보호 권한·타인 자료 권한이 하나도 없어야 한다 — 영역·섹션 줄의 묶음
+ * 칸과 같은 제외 규칙이다(H3). 그렇지 않은 메뉴는 화면 줄의 '권한 추가'에서 사람이 하나씩 고른다.
+ * 예: '모두 있어야 열림' 투표 관리(POLL_READ + POLL_READ_ALL), 타인 댓글 관리(COMMENT_READ_ALL)는 일괄에서 빠진다.
+ */
+export function isBulkEntryFix(fix: EntryFix): fix is Extract<EntryFix, { kind: 'auto' }> {
+  return fix.kind === 'auto' && fix.codes.every((code) => !isProtectedPermission(code) && !isOthersDataPermission(code));
 }
 
 /** Ctrl/Cmd+S. Alt·Shift 조합은 다른 단축키에 남긴다. */

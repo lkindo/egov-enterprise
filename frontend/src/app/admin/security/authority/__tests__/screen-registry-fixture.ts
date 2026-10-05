@@ -41,13 +41,15 @@ export const FIXTURE_SCREENS: readonly ScreenRegistryEntry[] = [
   screenOf('/admin/survey/polls', '투표 관리', ['POLL_READ', 'POLL_READ_ALL'], 'ALL', [
     ['POLL_CREATE', 'CREATE', 'write'], ['POLL_READ', 'READ', 'entry'], ['POLL_READ_ALL', 'READ_ALL', 'entry'],
   ]),
+  // [2026-10-04 프로그램 목록 퇴역] 종전 이 자리의 '화면 관리'(진입 PROGRAM_READ) 줄을 실재 화면·코드로 바꿨다 — 화면 관리의
+  //   진입 권한이 MENU_READ 가 되어 메뉴 관리와 같아졌으므로, '다른 화면과 겹치지 않는 진입 권한' 을 가진 메뉴 밖 화면이 필요하다.
+  screenOf('/admin/system/codes/administ', '행정 표준코드 관리', ['ADMCODE_READ'], 'ANY', [
+    ['ADMCODE_CREATE', 'CREATE', 'write'], ['ADMCODE_DELETE', 'DELETE', 'write'], ['ADMCODE_READ', 'READ', 'entry'],
+    ['ADMCODE_UPDATE', 'UPDATE', 'write'],
+  ]),
   screenOf('/admin/system/menus', '메뉴 관리', ['MENU_READ'], 'ANY', [
     ['MENU_CREATE', 'CREATE', 'display'], ['MENU_DELETE', 'DELETE', 'display'], ['MENU_READ', 'READ', 'entry'],
     ['MENU_UPDATE', 'UPDATE', 'display'],
-  ]),
-  screenOf('/admin/system/programs', '화면 관리', ['PROGRAM_READ'], 'ANY', [
-    ['MENU_READ', 'READ', 'display'], ['PROGRAM_CREATE', 'CREATE', 'write'], ['PROGRAM_DELETE', 'DELETE', 'write'],
-    ['PROGRAM_READ', 'READ', 'entry'], ['PROGRAM_UPDATE', 'UPDATE', 'write'],
   ]),
   screenOf('/admin/user/manage', '계정 및 사용자 관리', ['USER_READ'], 'ANY', [
     ['ABSENCE_UPDATE', 'UPDATE', 'write'], ['AUTHRT_AUDIT', 'AUDIT', 'display'], ['AUTHRT_READ', 'READ', 'display'],

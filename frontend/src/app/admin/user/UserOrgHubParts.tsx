@@ -426,7 +426,9 @@ export function DetailScrollArea({ children }: { children: React.ReactNode }) {
   return (
     <div
       {...scrollRegionProps}
-      className="min-h-0 flex-1 space-y-3 overflow-y-auto p-[var(--filter-pad)] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+      // [2026-10-05] relative — 안쪽 sr-only(절대 위치) 요소가 이 상자에 잘리지 않고 문서 높이를 늘리지 않게 한다
+      //   (scroll-region-containment 계약).
+      className="relative min-h-0 flex-1 space-y-3 overflow-y-auto p-[var(--filter-pad)] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
     >
       {children}
     </div>

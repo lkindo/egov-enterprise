@@ -103,7 +103,8 @@ class PageableConstructionLinterTest {
                     + "(?:nuri\\.business\\.domain\\.common\\.)?BaseSearchDto\\b");
 
     // 2026-09-25 DEC-OPS-129: 28 -> 27. 퇴역한 네트워크 모니터링 조회(getStatus)가 쓰던 바인딩이 함께 사라졌다.
-    private static final int EXPECTED_BASE_SEARCH_MODEL_ATTRIBUTES = 27;
+    // 2026-10-04 프로그램 목록 퇴역: 27 -> 26. 걷은 프로그램 목록 조회(ProgramApiController#getProgramList)의 바인딩이다.
+    private static final int EXPECTED_BASE_SEARCH_MODEL_ATTRIBUTES = 26;
 
     @Test
     @DisplayName("red proof: import/FQN/static-import PageRequest 우회와 직접 getter 를 모두 탐지한다")

@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
-import { AlertTriangle, ChevronRight, Undo2 } from 'lucide-react';
+import { useEffect, useRef, type RefObject } from 'react';
+import { AlertTriangle, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 /** 저장하지 않은 변경 한 건. 되돌리기는 그 변경만 기준선으로 돌린다. */
 export interface MenuChangeEntry {
@@ -34,16 +33,22 @@ export interface MenuChangeError {
 
 /**
  * [2026-10-02 D2] 저장하지 않은 변경 목록 — 위치·속성·새 메뉴·삭제·그룹 배정. 변경은 기준선 대비 계산값이라 항목마다 따로
- * 되돌릴 수 있다. 저장을 막는 문제(숨겨지는 메뉴·입력 오류)는 접지 않고 늘 보인다. 그 이유 문장(`noteId`)을 '변경 저장' 이
- * aria-describedby 로 가리킨다.
+ * 되돌릴 수 있다. 저장을 막는 문제(숨겨지는 메뉴·입력 오류)는 목록 맨 위에 둔다. 저장 상태 문장(`noteId`)을 '변경 저장' 이
+ * aria-describedby 로 가리킨다 — 목록이 닫혀 있어도 그 문장은 DOM 에 남아 설명으로 읽힌다.
+ *
+ * [2026-10-05] 여닫기는 도구 막대의 '변경 n건' 단추(부르는 쪽)가 맡는다 — 종전에는 첫 변경이 생기면 이 상자가 저절로 나타나
+ * 보드를 밀었다. [2026-10-05 2차 리뷰] 저장을 막는 문제가 생겨도 저절로 펼치지 않는다(부르는 쪽 changesOpen).
  *
  * 되돌리기·해결 단추는 누르면 그 항목과 함께 사라진다. 포커스가 문서 밖으로 빠지지 않게, 같은 목록의 다음(없으면 앞) 항목의
- * 단추로 옮기고, 목록에 남은 것이 없으면 '변경 n건' 단추로, 그것도 없으면 onFocusLost 로 부르는 쪽에 맡긴다.
+ * 단추로 옮기고, 목록에 남은 것이 없으면 '변경 n건' 단추(toggleRef)로, 그것도 없으면 onFocusLost 로 부르는 쪽에 맡긴다.
  */
 export function MenuChangeList({
   entries,
   conflicts,
   errors,
+  open,
+  panelId,
+  toggleRef,
   noteId,
   note,
   disabled = false,
@@ -54,6 +59,12 @@ export function MenuChangeList({
   entries: readonly MenuChangeEntry[];
   conflicts: readonly MenuChangeConflict[];
   errors: readonly MenuChangeError[];
+  /** 목록을 보이는가(부르는 쪽의 '변경 n건' 단추가 정한다). */
+  open: boolean;
+  /** '변경 n건' 단추의 aria-controls 대상. */
+  panelId: string;
+  /** '변경 n건' 단추 — 목록이 비면 포커스를 이리로 옮긴다. */
+  toggleRef: RefObject<HTMLButtonElement | null>;
   noteId: string;
   /** 저장 상태를 말하는 한 문장(무엇이 저장을 막는가). */
   note: string;
@@ -64,10 +75,7 @@ export function MenuChangeList({
   /** 누른 단추가 사라지고 이 목록 안에 옮길 곳이 없을 때 부른다. */
   onFocusLost?: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const listId = useId();
   const sectionRef = useRef<HTMLElement | null>(null);
-  const toggleRef = useRef<HTMLButtonElement | null>(null);
   const pendingFocusRef = useRef<{ zone: 'entry' | 'conflict'; index: number } | null>(null);
   useEffect(() => {
     const pending = pendingFocusRef.current;
@@ -78,30 +86,23 @@ export function MenuChangeList({
     const selector = pending.zone === 'entry' ? '[data-change-revert]' : '[data-conflict-first-action]';
     const candidates = [...(sectionRef.current?.querySelectorAll<HTMLButtonElement>(selector) ?? [])].filter((button) => !button.disabled);
     const target = candidates[Math.min(pending.index, candidates.length - 1)] ?? toggleRef.current;
-    if (target && !target.disabled) target.focus();
+    if (target && !target.disabled && target.isConnected) target.focus();
     else onFocusLost?.();
   });
   if (entries.length + conflicts.length + errors.length === 0) return null;
 
   return (
-    <section ref={sectionRef} aria-label="저장하지 않은 변경" className="space-y-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p id={noteId} className="min-w-0 flex-1 text-foreground">{note}</p>
-        {entries.length > 0 && (
-          <Button
-            ref={toggleRef}
-            type="button"
-            size="sm"
-            variant="outline"
-            aria-expanded={expanded}
-            aria-controls={listId}
-            onClick={() => setExpanded((value) => !value)}
-          >
-            <ChevronRight aria-hidden="true" className={cn('transition-transform', expanded && 'rotate-90')} />
-            변경 {entries.length.toLocaleString()}건
-          </Button>
-        )}
-      </div>
+    <section
+      ref={sectionRef}
+      id={panelId}
+      hidden={!open}
+      aria-label="저장하지 않은 변경"
+      // 펼쳐도 높이 10rem(fill 조건에서는 마스터 칸의 40% 와 10rem 중 작은 값) 안에서 스스로 스크롤한다 — 변경이 많아도 보드를
+      // 화면 밖으로 밀어내지 않는다(2차 리뷰). 스크롤 상자이므로 안쪽 sr-only 를 가두는 relative 를 둔다(scroll-region-containment).
+      // 안의 단추로 키보드 스크롤이 된다.
+      className="relative max-h-40 shrink-0 space-y-2 overflow-y-auto rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs work-fill:max-h-[min(10rem,40%)]"
+    >
+      <p id={noteId} className="text-foreground">{note}</p>
 
       {conflicts.length > 0 && (
         <div role="group" aria-label="저장 전에 해결할 문제" className="space-y-1">
@@ -147,10 +148,10 @@ export function MenuChangeList({
       )}
 
       {entries.length > 0 && (
-        <div id={listId} hidden={!expanded} className="space-y-2">
-          <ul className="space-y-1">
+        <div className="space-y-2">
+          <ul aria-label="변경 항목" className="space-y-1">
             {entries.map((entry, entryIndex) => {
-              const reasonId = `${listId}-${entry.id}`;
+              const reasonId = `${panelId}-${entry.id}`;
               return (
                 <li key={entry.id} className="flex flex-wrap items-center justify-between gap-2 rounded bg-card px-2 py-1">
                   <span className="min-w-0 break-words text-foreground">{entry.text}</span>
@@ -159,7 +160,6 @@ export function MenuChangeList({
                     size="sm"
                     variant="ghost"
                     disabled={disabled || Boolean(entry.revertBlockedReason)}
-                    title={entry.revertBlockedReason}
                     aria-describedby={entry.revertBlockedReason ? reasonId : undefined}
                     aria-label={entry.revertLabel}
                     data-change-revert=""

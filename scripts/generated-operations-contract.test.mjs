@@ -161,7 +161,8 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   // 2026-10-03 결재 동선 개선 D3: 428 -> 433. 결재 기안 임시저장 목록·열기·저장·고치기·지우기를 더했다.
   // 2026-10-04 결재 동선 개선 D4: 433 -> 435. 참조된 결재 목록(GET /approvals/referenced)과 결재자의 참조자 추가
   //   (POST /approvals/{id}/references)를 더했다.
-  assert.equal(operations.length, 435);
+  // 2026-10-04 프로그램 목록 퇴역: 435 -> 430. 프로그램 API 5개(목록·상세·등록·수정·삭제)를 걷었다.
+  assert.equal(operations.length, 430);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

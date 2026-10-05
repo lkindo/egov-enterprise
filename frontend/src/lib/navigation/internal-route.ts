@@ -101,6 +101,11 @@ export function normalizeInternalRoute(rawRoute?: string | null): string | null 
  * hazard rather than a live defect. Narrowing it costs nothing: no test asserts an
  * absolute-path `chkURL` is used as a destination, and the legacy `.do` behaviour
  * the tests do pin is preserved.
+ *
+ * [2026-10-04 프로그램 목록 퇴역] The server no longer reads `tb_prgrm_lst`: `chkURL` is now
+ * the menu's `modernRoute`, a route inferred from the legacy file name, `#` or `/` — never a
+ * program URL, so the `.do` branch below is unreachable from current data. Removing the
+ * fallback goes with dropping the table and column (a separately approved release).
  */
 export function resolveMenuInternalRoute(source: MenuRouteSource): string | null {
   if (source.modernRoute) return normalizeInternalRoute(source.modernRoute);

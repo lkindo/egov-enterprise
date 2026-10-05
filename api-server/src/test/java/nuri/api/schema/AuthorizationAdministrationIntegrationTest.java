@@ -118,14 +118,15 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
                 + "WHERE authrt_cd='T_MULTI_A' AND chg_artcl_nm='authrt_expln'",Integer.class)).isEqualTo(4000);
         long menu=jdbc.queryForObject("SELECT min(menu_sn) FROM tb_menu_info WHERE up_menu_sn IS NULL OR up_menu_sn=0",Long.class);
         List<Grant> a=List.of(new Grant("OPERATION","MENU_READ"),new Grant("NAVIGATION",Long.toString(menu)));
-        List<Grant> b=List.of(new Grant("OPERATION","MENU_READ"),new Grant("OPERATION","PROGRAM_READ"));
+        // [2026-10-04 프로그램 목록 퇴역] 두 번째 그룹의 다른 기능 권한 예시를 PROGRAM_READ 에서 ADMCODE_READ 로 옮겼다(권한 스냅샷은 코드 이름순이다).
+        List<Grant> b=List.of(new Grant("OPERATION","MENU_READ"),new Grant("OPERATION","ADMCODE_READ"));
         replaceGrants("T_MULTI_A",a);
         replaceGrants("T_MULTI_B",b);
         insertUser("T_MULTI_USER");
         replaceGroups("T_MULTI_USER",List.of("T_MULTI_A","T_MULTI_B"));
         var assigned=snapshots.load("T_MULTI_USER");
         assertThat(assigned.groups()).containsExactly("T_MULTI_A","T_MULTI_B");
-        assertThat(assigned.permissions()).containsExactly("MENU_READ","PROGRAM_READ");
+        assertThat(assigned.permissions()).containsExactly("ADMCODE_READ","MENU_READ");
         assertThat(assigned.permissions()).doesNotContain(Long.toString(menu),"ROLE_USER");
 
         var complete=service.memberships("T_MULTI_USER");
@@ -155,7 +156,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode",CommonErrorCode.INVALID_INPUT_VALUE);
 
         replaceGroups("T_MULTI_USER",List.of("T_MULTI_B"));
-        assertThat(snapshots.load("T_MULTI_USER").permissions()).containsExactly("MENU_READ","PROGRAM_READ");
+        assertThat(snapshots.load("T_MULTI_USER").permissions()).containsExactly("ADMCODE_READ","MENU_READ");
         assertThat(snapshots.load("T_MULTI_USER").authorizationVersion()).isNotEqualTo(assigned.authorizationVersion());
         assertThatThrownBy(() -> service.replaceMemberships("T_MULTI_USER",new ReplaceGroups(List.of(),complete.version(),true)))
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode",CommonErrorCode.CONCURRENT_MODIFICATION);
@@ -257,7 +258,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         assertThat(loaded.get("T_DEPT_USER_A").groups()).containsExactly("T_MULTI_A");
         assertThat(loaded.get("T_DEPT_USER_A").permissions()).containsExactly("MENU_READ");
         assertThat(loaded.get("T_DEPT_USER_B").groups()).containsExactly("T_MULTI_A","T_MULTI_B");
-        assertThat(loaded.get("T_DEPT_USER_B").permissions()).containsExactly("MENU_READ","PROGRAM_READ");
+        assertThat(loaded.get("T_DEPT_USER_B").permissions()).containsExactly("ADMCODE_READ","MENU_READ");
         assertThat(loaded.get("T_BATCH_EMPTY").groups()).isEmpty();
         assertThat(loaded.get("T_BATCH_EMPTY").permissions()).isEmpty();
         assertThat(snapshots.loadAll(List.of())).isEmpty();
@@ -488,7 +489,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
 
         replaceGrants(group,complete);
         jdbc.update("UPDATE tb_menu_info SET use_yn='N' WHERE menu_sn=?",root);
-        List<Grant> withAnotherOperation=List.of(operation,new Grant("OPERATION","PROGRAM_READ"),parentGrant,childGrant,leafGrant);
+        List<Grant> withAnotherOperation=List.of(operation,new Grant("OPERATION","ADMCODE_READ"),parentGrant,childGrant,leafGrant);
         replaceGrants(group,withAnotherOperation);
         assertThat(service.group(group).grants()).containsExactlyInAnyOrderElementsOf(withAnotherOperation);
         assertThat(jdbc.queryForObject("SELECT use_yn FROM tb_menu_info WHERE menu_sn=?",String.class,root)).isEqualTo("N");

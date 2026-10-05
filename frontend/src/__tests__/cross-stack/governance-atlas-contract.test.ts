@@ -197,6 +197,10 @@ describe('Governance Atlas rendered source and interaction contract', () => {
     expect(current.facts.waiverFileCount).toBe(markers.filter(Boolean).length);
   });
 
+  // [2026-10-05 통합 검증] 별칭 13개 × 접두 3개 = 39번 해시 이동마다 실제 렌더러가 패널을 다시 그리는 CPU 시험이다. 단언은 그대로이고
+  // 시간 예산만 같은 파일의 beforeAll 과 같은 30초로 둔다. 실측: 단독 4.7초, 전체 vitest(병렬 jsdom 파일과 겹침)에서 14.9초(통과,
+  // 전역 15초 제한까지 65ms) → 15.4·16.4초(실패). 같은 실행에서 이 파일 전체 시간은 52.0초 → 53.4초로 거의 같아 Atlas 입력 증가가 아닌
+  // 동시 실행 경합이다. 멈춤(hang)은 여전히 30초에서 실패한다.
   it('keeps exactly ten navigable topics and preserves all thirteen old panel URLs', () => {
     expect([...document.querySelectorAll('section.atlas-panel')].map(panel => panel.id)).toEqual(PANELS.map(id => `content-${id}`));
     expect([...document.querySelectorAll<HTMLElement>('nav a[data-panel]')].map(link => link.dataset.panel)).toEqual(PANELS);
@@ -210,7 +214,7 @@ describe('Governance Atlas rendered source and interaction contract', () => {
     }
     navigate('not-a-panel');
     expect(document.body.dataset.activePanel).toBe('start');
-  });
+  }, 30000);
 
   it('resolves direct diagram links to their containing topic and keeps the skip link on the current topic', () => {
     for (const [anchor, panel] of Object.entries({ 'migration-flow': 'data', 'identity-axes': 'flows', 'field-change-flow': 'data', 'backup-flow': 'operations' })) {

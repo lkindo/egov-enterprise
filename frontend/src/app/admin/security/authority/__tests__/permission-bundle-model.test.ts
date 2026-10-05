@@ -20,20 +20,20 @@ const NAVIGATION: readonly Navigation[] = [
   { code: 'AREA', name: '관리', parentCode: null, route: null, useYn: 'Y' },
   { code: 'SECTION', name: '시스템', parentCode: 'AREA', route: null, useYn: 'Y' },
   { code: 'MENUS', name: '메뉴 관리', parentCode: 'SECTION', route: '/admin/system/menus', useYn: 'Y' },
-  { code: 'PROGRAMS', name: '화면 관리', parentCode: 'SECTION', route: '/admin/system/programs', useYn: 'Y' },
+  { code: 'ADMCODES', name: '행정 표준코드 관리', parentCode: 'SECTION', route: '/admin/system/codes/administ', useYn: 'Y' },
   { code: 'HIDDEN', name: '옛 시스템', parentCode: 'AREA', route: null, useYn: 'N' },
   { code: 'MENUS_COPY', name: '메뉴 관리(옛)', parentCode: 'HIDDEN', route: '/admin/system/menus?tab=old', useYn: 'Y' },
   { code: 'OLD_MENUS', name: '쓰지 않는 메뉴 관리', parentCode: 'AREA', route: '/admin/system/menus', useYn: 'N' },
   { code: 'USERS', name: '사용자 관리', parentCode: 'AREA', route: '/admin/user/manage', useYn: 'Y' },
   { code: 'OTHER', name: '다른 영역', parentCode: null, route: null, useYn: 'Y' },
 ];
-const CATALOG_CODES = ['MENU_READ', 'MENU_UPDATE', 'PROGRAM_READ', 'PROGRAM_UPDATE', 'USER_READ'];
+const CATALOG_CODES = ['MENU_READ', 'MENU_UPDATE', 'ADMCODE_READ', 'ADMCODE_UPDATE', 'USER_READ'];
 
 function bundleOf(overrides: Partial<PermissionBundle> = {}): PermissionBundle {
   return {
     id: 'menu-screen', name: '메뉴·화면 설정', description: '메뉴와 화면 관리를 맡깁니다.', protected: false,
-    permissions: ['MENU_READ', 'MENU_UPDATE', 'PROGRAM_READ'] as PermissionCode[],
-    screens: ['/admin/system/menus', '/admin/system/programs'],
+    permissions: ['MENU_READ', 'MENU_UPDATE', 'ADMCODE_READ'] as PermissionCode[],
+    screens: ['/admin/system/menus', '/admin/system/codes/administ'],
     relatedScreens: [],
     ...overrides,
   };
@@ -52,19 +52,19 @@ const WITH_NOTE: readonly Navigation[] = [
 describe('previewBundle', () => {
   it('기능권한을 더할 것·이미 있는 것으로 나누고, 묶음 화면의 메뉴와 상위 메뉴 전부를 카탈로그 순서로 더한다', () => {
     const preview = previewBundle(bundleOf(), new Set(['OPERATION:MENU_READ']), NAVIGATION, CATALOG_CODES);
-    expect(preview.operationsToAdd).toEqual(['MENU_UPDATE', 'PROGRAM_READ']);
+    expect(preview.operationsToAdd).toEqual(['MENU_UPDATE', 'ADMCODE_READ']);
     expect(preview.operationsPresent).toEqual(['MENU_READ']);
     expect(preview.operationsUnknown).toEqual([]);
     // 상위 메뉴(AREA·SECTION)도 명시적으로 더한다 — 묵시 배정을 하지 않는다.
-    expect(preview.navigationToAdd).toEqual(['AREA', 'SECTION', 'MENUS', 'PROGRAMS']);
+    expect(preview.navigationToAdd).toEqual(['AREA', 'SECTION', 'MENUS', 'ADMCODES']);
     expect(preview.screens).toEqual([
       { route: '/admin/system/menus', label: '메뉴 관리', menus: [{ code: 'MENUS', name: '메뉴 관리' }], dynamic: false,
         blockedMenus: [{ code: 'MENUS_COPY', name: '메뉴 관리(옛)', unusedAncestor: { code: 'HIDDEN', name: '옛 시스템' } }] },
-      { route: '/admin/system/programs', label: '화면 관리', menus: [{ code: 'PROGRAMS', name: '화면 관리' }], dynamic: false, blockedMenus: [] },
+      { route: '/admin/system/codes/administ', label: '행정 표준코드 관리', menus: [{ code: 'ADMCODES', name: '행정 표준코드 관리' }], dynamic: false, blockedMenus: [] },
     ]);
     expect(bundleDraftKeys(preview)).toEqual([
-      'OPERATION:MENU_UPDATE', 'OPERATION:PROGRAM_READ',
-      'NAVIGATION:AREA', 'NAVIGATION:SECTION', 'NAVIGATION:MENUS', 'NAVIGATION:PROGRAMS',
+      'OPERATION:MENU_UPDATE', 'OPERATION:ADMCODE_READ',
+      'NAVIGATION:AREA', 'NAVIGATION:SECTION', 'NAVIGATION:MENUS', 'NAVIGATION:ADMCODES',
     ]);
   });
 
@@ -85,13 +85,13 @@ describe('previewBundle', () => {
 
   it('이미 초안에 있는 메뉴 표시는 세지 않는다 — 비어 있던 상위만 더한다', () => {
     const preview = previewBundle(bundleOf(), new Set(['NAVIGATION:AREA', 'NAVIGATION:MENUS']), NAVIGATION, CATALOG_CODES);
-    expect(preview.navigationToAdd).toEqual(['SECTION', 'PROGRAMS']);
+    expect(preview.navigationToAdd).toEqual(['SECTION', 'ADMCODES']);
   });
 
   it('현재 기능 목록에 없는 권한은 더하지 않고 따로 알린다(저장 본문에서 빠지는 코드를 더한 것처럼 보이지 않게)', () => {
     const preview = previewBundle(bundleOf(), new Set(), NAVIGATION, ['MENU_READ', 'MENU_UPDATE']);
     expect(preview.operationsToAdd).toEqual(['MENU_READ', 'MENU_UPDATE']);
-    expect(preview.operationsUnknown).toEqual(['PROGRAM_READ']);
+    expect(preview.operationsUnknown).toEqual(['ADMCODE_READ']);
   });
 
   it('별칭 메뉴는 넘기는 화면으로 센다(화면별 권한 표·화면 관리와 같은 공용 판정)', () => {
@@ -126,12 +126,12 @@ describe('previewBundle', () => {
   it('화면을 여는 사용 중 메뉴가 사용 안 함 상위에 가려 있으면 그 화면에 막힌 메뉴로 싣는다(메뉴가 없는 화면이 아니다)', () => {
     const navigation: Navigation[] = [
       { code: 'OLD', name: '옛 관리', parentCode: null, route: null, useYn: 'N' },
-      { code: 'PROGRAMS_OLD', name: '화면 관리(옛)', parentCode: 'OLD', route: '/admin/system/programs', useYn: 'Y' },
+      { code: 'ADMCODES_OLD', name: '행정 표준코드 관리(옛)', parentCode: 'OLD', route: '/admin/system/codes/administ', useYn: 'Y' },
     ];
-    const preview = previewBundle(bundleOf({ screens: ['/admin/system/programs'] }), new Set(), navigation, CATALOG_CODES);
+    const preview = previewBundle(bundleOf({ screens: ['/admin/system/codes/administ'] }), new Set(), navigation, CATALOG_CODES);
     expect(preview.navigationToAdd).toEqual([]);
     expect(preview.screens[0]).toMatchObject({
-      menus: [], blockedMenus: [{ code: 'PROGRAMS_OLD', name: '화면 관리(옛)', unusedAncestor: { code: 'OLD', name: '옛 관리' } }],
+      menus: [], blockedMenus: [{ code: 'ADMCODES_OLD', name: '행정 표준코드 관리(옛)', unusedAncestor: { code: 'OLD', name: '옛 관리' } }],
     });
   });
 
@@ -140,7 +140,7 @@ describe('previewBundle', () => {
     const preview = previewBundle(bundleOf(), new Set(), broken, CATALOG_CODES);
     expect(preview.navigationError).toMatch(/중복된 메뉴/);
     expect(preview.navigationToAdd).toEqual([]);
-    expect(preview.operationsToAdd).toEqual(['MENU_READ', 'MENU_UPDATE', 'PROGRAM_READ']);
+    expect(preview.operationsToAdd).toEqual(['MENU_READ', 'MENU_UPDATE', 'ADMCODE_READ']);
   });
 
   it('보호 권한 가운데 새로 더하는 것만 따로 센다', () => {
@@ -204,7 +204,7 @@ describe('withBundle', () => {
     const twice = withBundle(once, bundleOf(), NAVIGATION, CATALOG_CODES);
     expect([...twice].sort()).toEqual([...once].sort());
     for (const key of start) expect(once.has(key)).toBe(true);
-    // 기능권한 3개 + 메뉴 표시 4개(관리·시스템·메뉴 관리·화면 관리).
+    // 기능권한 3개 + 메뉴 표시 4개(관리·시스템·메뉴 관리·행정 표준코드 관리).
     expect(once.size).toBe(start.size + 7);
     // 원래 집합은 바꾸지 않는다(새 초안을 돌려준다).
     expect(start.size).toBe(3);
