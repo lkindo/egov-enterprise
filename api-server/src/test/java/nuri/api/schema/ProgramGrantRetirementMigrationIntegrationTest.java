@@ -79,7 +79,8 @@ class ProgramGrantRetirementMigrationIntegrationTest extends SharedPostgresMigra
             auditsBefore = count(statement, "SELECT count(*) FROM tb_authrt_chg_hstry");
         }
 
-        assertThatThrownBy(() -> flyway(null).migrate())
+        // 대상 버전을 2.124 로 고정한다 — 아래 이력 총수 단언이 V2_124 의 효과만 세도록, 뒤 버전(V2_125 의 메뉴 배정 이력)을 섞지 않는다.
+        assertThatThrownBy(() -> flyway(MigrationVersion.fromVersion("2.124")).migrate())
                 .as("원장 URL 로만 경로를 얻던 말단 메뉴가 있으면 멈추고, 그 메뉴만 밝힌다")
                 .hasStackTraceContaining("retired program URL")
                 .hasStackTraceContaining(stranded + ":" + LEGACY_PROGRAM)
@@ -98,7 +99,7 @@ class ProgramGrantRetirementMigrationIntegrationTest extends SharedPostgresMigra
         }
 
         // 잃는 것이 없는 다섯 메뉴는 그대로 둔 채 적용된다 — 가드가 넓어지면 여기서 멈춘다.
-        flyway(null).migrate();
+        flyway(MigrationVersion.fromVersion("2.124")).migrate();
 
         try (var connection = openConnection(); var statement = connection.createStatement()) {
             assertThat(count(statement, "SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_grnt_cd IN " + PROGRAM_CODES))

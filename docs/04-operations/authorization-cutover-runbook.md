@@ -93,6 +93,60 @@ SELECT 'ops:<YYYY-MM-DD>:program-grant-recleanup', '<CATALOG_VERSION>', 'GROUP_G
 COMMIT;
 ```
 
+## 마이페이지 관리 메뉴 퇴역(V2_125)
+
+[V2_125](../../api-server/src/main/resources/db/migration/V2_125__retire_my_page_menu.sql)는 V2_88이 꺼 둔 메뉴 `2030100`(마이페이지관리, 경로 `/admin/workspace/my-page`) 행을 지운다(DEC-OPS-229). 그 화면은 2026-09-08 결정(DEC-OPS-070)으로 걷혀 없다. 함께 다음을 지운다.
+
+- 모든 그룹의 그 메뉴 배정(`NAVIGATION`): 지운 배정마다 `GROUP_GRANT`/`REMOVE` 이력을 남긴다.
+- 그 메뉴의 즐겨찾기(`tb_bkmk_menu_mng_rslt`): 사용하지 않는 메뉴라 앱으로는 만들 수 없어 보통 없다. 이력은 남지 않는다.
+
+빈 테이블 `tb_indv_pg_conts`는 남긴다(스키마 변경은 별도 승인).
+
+지우는 행은 다음 세 조건을 모두 갖춘 행뿐이다. 하나라도 다르면 도입 기관이 그 행을 다시 켜거나 다른 화면으로 바꿔 쓰는 것으로 보고 행·배정·즐겨찾기를 모두 그대로 둔다. 멈추지 않고 건너뛴다.
+
+- 경로가 정확히 `/admin/workspace/my-page`다.
+- `use_yn = 'N'`이다.
+- 하위 메뉴가 없다.
+
+행이 이미 없으면 아무것도 하지 않는다. 앱 코드는 바뀌지 않으므로 배포 순서 제약은 없다. 다만 앱이 떠 있는 동안 적용하면 메뉴 구조 버전과 배정이 지워진 그룹의 버전이 바뀐다(DEC-OPS-208). 그때 열려 있던 메뉴 관리 초안이나 그 그룹의 권한 편집은 저장할 때 버전 충돌(409)로 거부될 수 있다. 다시 불러온 뒤 저장한다.
+
+**적용 전 읽기 확인.** 병합본에서 꺼낸 마이그레이션 폴더만 쓴다. 첫 질의가 위 세 조건을 갖춘 한 행이면 지워지고, 둘째 질의의 행 수만큼 이력이 남는다. 셋째 질의는 지워질 즐겨찾기다. 마지막 두 질의는 지워질 메뉴 행과 즐겨찾기의 모든 열을 남긴다. 그 출력을 적용 기록(별도 DEC)에 붙인다 — 백업 다음으로 되살릴 때 쓰는 원본이다.
+
+```sql
+SELECT menu.menu_sn, menu.up_menu_sn, menu.menu_nm, menu.modern_route, menu.use_yn, menu.del_yn,
+       (SELECT count(*) FROM tb_menu_info child WHERE child.up_menu_sn = menu.menu_sn) AS child_count
+  FROM tb_menu_info menu
+ WHERE menu.menu_sn = 2030100;
+
+SELECT authrt_cd, authrt_type_cd, authrt_grnt_cd FROM tb_authrt_grnt_map
+ WHERE authrt_type_cd = 'NAVIGATION' AND authrt_grnt_cd = '2030100';
+
+SELECT menu_id, user_id FROM tb_bkmk_menu_mng_rslt WHERE menu_id = 2030100;
+
+SELECT to_jsonb(menu) FROM tb_menu_info menu WHERE menu.menu_sn = 2030100;
+
+SELECT to_jsonb(bookmark) FROM tb_bkmk_menu_mng_rslt bookmark WHERE bookmark.menu_id = 2030100;
+```
+
+**적용 후 읽기 확인.** 위 세 질의가 모두 0행이고, 다음 질의가 적용 전 둘째 질의의 행 수와 같아야 한다. 메뉴 전체 수는 하나 줄고 활성 메뉴 수는 그대로다.
+
+건너뛰어도 Flyway는 성공으로만 기록한다. 첫 질의의 행이 남아 있으면 가드가 건너뛴 것이다. 그 행의 경로·`use_yn`·하위 수를 적용 전 출력과 대조해 세 조건 중 무엇이 달랐는지 확인한다. 그때 배정·즐겨찾기가 그대로이고 `migration:2.125` 이력이 0행인 것이 정상이다. 조건이 모두 맞는데 행이 남았으면 이상이므로 멈추고 조사한다.
+
+```sql
+SELECT authrt_cd, authrt_grnt_cd, chg_rsn FROM tb_authrt_chg_hstry
+ WHERE dmnd_idntfr = 'migration:2.125' AND chg_type_cd = 'REMOVE';
+
+SELECT count(*) AS menus, count(*) FILTER (WHERE use_yn = 'Y') AS active_menus FROM tb_menu_info;
+```
+
+**되돌릴 때.** 메뉴 행과 즐겨찾기에는 감사 표가 없다. 원본은 적용 직전 pg_dump 백업이고, 그다음은 적용 기록에 붙인 `to_jsonb` 출력이다.
+
+- 메뉴 행: 백업이나 기록한 출력이 둘 다 없으면 새 base의 값으로만 다시 만들 수 있다 — `menu_sn 2030100`, `up_menu_sn 2030000`, `menu_ordr 5`, `menu_nm '마이페이지관리'`, `menu_expln ''`, `modern_route '/admin/workspace/my-page'`, `use_yn 'N'`, `del_yn 'N'`. 이 값은 이 변경 전 리비전의 [메뉴 snapshot](https://github.com/lkindo/egov-enterprise/blob/119b12a08/config/project-composer-menus.json)(새 DB에 마이그레이션을 돌려 만든 값)이며 이 변경이 그 항목을 지웠다. 대상 DB의 원래 행과 다를 수 있다 — `route_mdfcn_yn`·`rel_img_nm`·`rel_img_path`와 감사 열(등록·수정자와 일시)은 담지 않고, 메뉴 관리에서 바꾼 순서·설명도 알 수 없다.
+- 즐겨찾기: 백업이나 기록한 출력 없이는 되살릴 수 없다.
+- 배정: `migration:2.125` 이력의 `authrt_cd`와 `authrt_type_cd` `'NAVIGATION'`, `authrt_grnt_cd`로 넣고, 그 배정마다 `GROUP_GRANT`/`ADD` 이력을 남긴다.
+
+V2_125는 이미 적용되었으므로 되살린 행은 다시 지워지지 않는다.
+
 ## 2026-09-11 OCI 메뉴 재편 적용 결과
 
 사용자가 승인한 [ADR-0017](../02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md)의 메뉴 재편을 2026-09-11 13:09 KST에 적용했다. 실행 전 OCI에서 V2_99, 구 6개 테이블 부재와 기존 Contract 감사 1건을 확인했다. 이번 실행은 이미 완료된 Contract나 계정 활성화를 반복하지 않았다.
