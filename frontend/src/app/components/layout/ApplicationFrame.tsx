@@ -17,7 +17,7 @@ export function ApplicationFrame({ children, header, sidebar, footer }: {
         {!publicPage && sidebar}
         <main id="main-content" data-sidebar-modal-background="main" tabIndex={-1}
           className={publicPage ? 'flex min-w-0 flex-1 flex-col outline-none' : 'min-w-0 flex-1 outline-none lg:pl-[var(--app-sidebar-inset)] scroll-mt-[var(--app-header-height)]'}>
-          {/* [2026-10-05] 왼쪽 여백은 --app-sidebar-inset(기본 = 사이드바 폭, 넓은 화면에서 접으면 0)이고, 최소 높이에서 빼는 푸터 몫은
+          {/* [2026-10-05] 왼쪽 여백은 --app-sidebar-inset(기본 = 사이드바 폭, 넓은 화면에서 접으면 접힘 막대 폭)이고, 최소 높이에서 빼는 푸터 몫은
               --app-footer-reserve(5rem)다. 업무면 fill 셸의 높이(--work-fill-height)가 같은 두 값을 쓴다 — globals.css. */}
           <div className={publicPage ? 'flex flex-1 items-center justify-center p-4' : 'mx-auto min-h-[calc(100dvh-var(--app-header-height)-var(--app-footer-reserve))] max-w-[var(--page-max-w)] p-[var(--page-pad)] md:p-[var(--page-pad-md)] lg:p-[var(--page-pad-lg)]'}>
             <div className="w-full min-w-0">{children}</div>

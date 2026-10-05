@@ -3,7 +3,7 @@
 import { use, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Database, X } from 'lucide-react';
+import { Database, PanelLeftClose, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,8 @@ import { openableMenus } from '@/lib/navigation/openable-menus';
 import { findActiveMenu, walkMenuTree } from '@/lib/navigation/active-menu';
 import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
 import { useMenuBookmarks } from '@/hooks/api/use-menu-bookmarks';
+import { collapseSidebarAndFocusRail } from '@/lib/layout/use-sidebar-collapsed';
+import { SIDEBAR_COLLAPSE_BUTTON_ID, SIDEBAR_COLLAPSE_LABEL } from '@/lib/layout/sidebar-collapse-script';
 
 const renderNavBookmark = (item: MenuInfo) => <NavBookmarkToggle menuNo={item.menuNo} menuNm={item.menuNm} />;
 import { SITE_IDENTITY } from '@/config/site-identity';
@@ -132,8 +134,9 @@ export function Sidebar({
         )}
       </AnimatePresence>
 
-      {/* [2026-10-05] data-app-sidebar — 넓은 화면에서 머리글의 '사이드바 접기'로 접으면 globals.css 가 이 표지로 숨긴다
-          (display:none 이라 탭 순서·접근성 트리에서도 빠진다). lg 미만 서랍은 이 표지와 무관하다. */}
+      {/* [2026-10-05] data-app-sidebar — 넓은 화면에서 머리글 단추나 아래 '사이드바 접기'로 접으면 globals.css 가 이 표지로 숨기고
+          (display:none 이라 탭 순서·접근성 트리에서도 빠진다) 그 자리에 접힘 막대(sidebar-rail.tsx)를 보인다.
+          lg 미만 서랍은 이 표지와 무관하다. */}
       <aside
         id="primary-sidebar"
         data-app-sidebar=""
@@ -175,6 +178,28 @@ export function Sidebar({
               className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary"
             >
               <X size={20} className="text-muted-foreground" />
+            </Button>
+          </div>
+
+          {/* [2026-10-05 DEC-OPS-227] 넓은 화면(lg 이상)의 '사이드바 접기' — 머리글 맨 왼쪽 아이콘 하나로는 접기를 찾지 못했다
+              (사용자 보고). 그래서 글자가 보이는 단추를 사이드바 맨 위에 둔다. 메뉴 탐색 랜드마크 밖이고 서비스 영역·즐겨찾기보다
+              앞이라 즐겨찾기가 많아도 첫 화면 아래로 밀리지 않는다. 보이는 글자가 곧 접근 이름이다(2.5.3).
+              누르면 접히고 이 단추는 display:none 이 되므로 포커스는 접힘 막대의 '사이드바 펼치기'로 간다(2.4.3).
+              lg 미만의 서랍에는 위쪽 '사이드바 닫기'가 있어 이 줄은 보이지 않는다(CSS 만, 단일 DOM).
+              단추는 사이드바가 보일 때만 보이므로 aria-expanded 는 늘 true 다. */}
+          <div className="mb-4 hidden justify-end px-2 lg:flex">
+            <Button
+              id={SIDEBAR_COLLAPSE_BUTTON_ID}
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={collapseSidebarAndFocusRail}
+              aria-expanded={true}
+              aria-controls="primary-sidebar"
+              className="gap-1.5 px-2.5 text-xs font-semibold"
+            >
+              <PanelLeftClose aria-hidden="true" />
+              {SIDEBAR_COLLAPSE_LABEL}
             </Button>
           </div>
 

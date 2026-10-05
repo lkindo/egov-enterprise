@@ -82,7 +82,7 @@ describe('app shell accessibility source contract', () => {
     //   ① 복원 스크립트는 요청 nonce 를 달고 본문(ThemeProvider)보다 먼저 실행돼야 첫 화면이 펼쳤다가 접히지 않는다.
     //   ② 숨김 규칙은 lg 이상 미디어쿼리 안에만 있다 — lg 미만 서랍형 사이드바는 이 표지와 무관해야 한다.
     //   ③ 사이드바와 Suspense 자리표시 둘 다 표지를 달아야 한다 — 자리표시만 남으면 접힌 화면에 빈 띠가 생긴다.
-    //   ④ 본문 여백은 폭 토큰이 아니라 inset 토큰이다 — 폭을 직접 쓰면 접어도 빈 자리가 남는다.
+    //   ④ 본문 여백은 폭 토큰이 아니라 inset 토큰이다 — 폭을 직접 쓰면 접어도 사이드바 폭의 빈 자리가 남는다.
     const layout = readAppSource('layout.tsx');
     const sidebar = readAppSource('components', 'layout', 'sidebar.tsx');
     const frame = readAppSource('components', 'layout', 'ApplicationFrame.tsx');
@@ -97,8 +97,19 @@ describe('app shell accessibility source contract', () => {
     expect(frame).not.toContain('lg:pl-[var(--app-sidebar-width)]');
 
     const media = globals.match(/@media \(min-width: 64rem\) \{([\s\S]*?)\n\}/)?.[1] ?? '';
-    expect(media).toMatch(/:root\[data-sidebar-collapsed="true"\]\s*\{\s*--app-sidebar-inset:\s*0px;\s*\}/);
+    // [2026-10-05 DEC-OPS-227] 접으면 본문 여백은 0 이 아니라 접힘 막대 폭이다 — 막대가 그 자리를 쓴다.
+    expect(media).toMatch(/:root\[data-sidebar-collapsed="true"\]\s*\{\s*--app-sidebar-inset:\s*var\(--app-sidebar-rail-width\);\s*\}/);
     expect(media).toMatch(/:root\[data-sidebar-collapsed="true"\] \[data-app-sidebar\]\s*\{\s*display:\s*none;\s*\}/);
+    expect(media).toMatch(/:root\[data-sidebar-collapsed="true"\] \[data-app-sidebar-rail\]\s*\{\s*display:\s*flex;\s*\}/);
+    // 인쇄에서는 막대도 그 자리도 남기지 않는다 — 같은 블록 끝의 인쇄 규칙이 같은 선택자로 위 두 규칙을 뒤집는다.
+    //   본문에 print:pl-0 을 붙이면 펼친 상태의 넓은 인쇄에서 사이드바가 본문을 덮으므로 접힘 조건 안에서만 비운다.
+    const print = media.match(/@media print \{([\s\S]*?)\n {2}\}/)?.[1] ?? '';
+    expect(print).toMatch(/:root\[data-sidebar-collapsed="true"\]\s*\{\s*--app-sidebar-inset:\s*0px;\s*\}/);
+    expect(print).toMatch(/:root\[data-sidebar-collapsed="true"\] \[data-app-sidebar-rail\]\s*\{\s*display:\s*none;\s*\}/);
+    expect(print.match(/\{/g)).toHaveLength(2);
+    expect(media.indexOf('@media print')).toBeGreaterThan(media.search(/\[data-app-sidebar-rail\]\s*\{\s*display:\s*flex/));
+    // 블록 안의 규칙은 이 셋과 인쇄 규칙 둘뿐이다 — 다른 것을 숨기거나 보이는 규칙이 슬며시 늘지 않는다.
+    expect(media.match(/\{/g)).toHaveLength(6);
     // 미디어쿼리 밖에는 접힘 규칙이 없다(서랍형 보존). 예외는 머리글 토글의 아이콘을 고르는 표현 변형 하나뿐이다 —
     //   그 변형은 아무것도 숨기지 않고(배치 무관) lg 이상에서만 보이는 토글 안에서만 쓴다(아래 소비처 검사).
     const variantRule = '@custom-variant sidebar-collapsed (:root[data-sidebar-collapsed="true"] &);';
@@ -109,6 +120,35 @@ describe('app shell accessibility source contract', () => {
       .map((file) => relative(SRC_DIR, file).split(sep).join('/'))
       .sort();
     expect(variantConsumers, 'sidebar-collapsed: 변형은 머리글 토글 아이콘 전용이다').toEqual(['app/components/layout/header.tsx']);
+  });
+
+  it('접힘 막대는 사이드바 Suspense 밖에서 기본 숨김으로 그리고, 접힘(lg 이상)일 때만 CSS 가 보인다', () => {
+    // [2026-10-05 DEC-OPS-227] 머리글 아이콘 하나로는 접기를 찾지 못했다는 사용자 보고로 둔 막대다.
+    //   ① 레이아웃이 sidebar 자리(공개 화면에서는 마운트되지 않는다)에, 사이드바의 Suspense 뒤에 둔다 — 메뉴를 읽는 동안에도
+    //      펼치기 단추가 있다. Suspense 안에 두면 접힌 첫 화면에 펼치기 단추가 늦게 나타난다.
+    //   ② 막대는 기본 `hidden` 이다 — 보이는 일은 globals.css 의 lg 이상 접힘 규칙 하나만 한다(뷰포트로 렌더를 가르지 않는다, ADR-0006).
+    //      `hidden` 이 빠지면 펼친 화면·좁은 화면에 막대가 겹쳐 보인다.
+    //   ③ 인쇄 숨김은 막대 클래스가 아니라 globals.css 접힘 블록의 인쇄 규칙이 맡는다(위 테스트) — 보이고 숨는 규칙을 한 곳에 둔다.
+    //   ④ 막대 폭 토큰은 :root 에 하나 있고, 막대와 여백이 같은 토큰을 쓴다.
+    const layout = readAppSource('layout.tsx');
+    const rail = readAppSource('components', 'layout', 'sidebar-rail.tsx');
+    const globals = readAppSource('globals.css').replace(/\/\*[\s\S]*?\*\//g, '');
+
+    expect(layout).toMatch(/sidebar=\{<><Suspense\b[\s\S]*?<\/Suspense><SidebarRail \/><\/>\}/);
+    expect(layout.match(/<SidebarRail\b/g)).toHaveLength(1);
+
+    const railTag = rail.match(/<aside\b[\s\S]*?>/)?.[0] ?? '';
+    expect(railTag).toContain('data-app-sidebar-rail=""');
+    const railClasses = railTag.match(/className="([^"]+)"/)?.[1].split(/\s+/) ?? [];
+    expect(railClasses).toEqual(expect.arrayContaining([
+      'hidden', 'fixed', 'left-0', 'top-[var(--app-header-height)]', 'w-[var(--app-sidebar-rail-width)]',
+    ]));
+    // 폭·인쇄 조건으로 스스로 보이거나 숨으면 안 된다 — 그 일은 접힘 규칙만 한다.
+    expect(railClasses.filter((name) => /^(?:sm|md|lg|xl|2xl|print):/.test(name))).toEqual([]);
+    expect(globals.match(/--app-sidebar-rail-width:\s*3rem;/g)).toHaveLength(1);
+    // 막대를 보이는 규칙은 lg 이상 접힘 블록 밖에 없다.
+    const media = globals.match(/@media \(min-width: 64rem\) \{([\s\S]*?)\n\}/)?.[1] ?? '';
+    expect(globals.replace(media, '').match(/data-app-sidebar-rail/g)).toBeNull();
   });
 
   it('fill 화면에서 숨는 푸터의 링크는 같은 조건(lg 이상)에서 보이는 머리글 링크로도 닿고, 같은 pack 과 함께 남는다', () => {

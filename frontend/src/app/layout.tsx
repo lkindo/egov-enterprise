@@ -6,6 +6,7 @@ import Providers from './providers';
 import { ApplicationFrame } from './components/layout/ApplicationFrame';
 import { Header } from './components/layout/header';
 import { Sidebar } from './components/layout/sidebar';
+import { SidebarRail } from './components/layout/sidebar-rail';
 import { Footer } from './components/layout/footer';
 import { Inter, Outfit } from 'next/font/google';
 import localFont from 'next/font/local';
@@ -66,7 +67,9 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <ApplicationFrame
       header={<Suspense fallback={<div className="h-[var(--app-header-height)] border-b border-border bg-card" />}><Header menusPromise={menusPromise} /></Suspense>}
-      sidebar={<Suspense fallback={<aside data-app-sidebar="" className="fixed left-0 top-[var(--app-header-height)] hidden h-[calc(100dvh-var(--app-header-height))] w-[var(--app-sidebar-width)] border-r bg-card lg:block" />}><Sidebar menusPromise={menusPromise} /></Suspense>}
+      // [2026-10-05 DEC-OPS-227] 접힘 막대는 사이드바의 Suspense 밖에 둔다 — 메뉴를 읽는 동안에도 펼치기 단추가 있다.
+      //   sidebar 자리라 공개 화면(로그인)에서는 사이드바와 함께 마운트되지 않는다(ApplicationFrame).
+      sidebar={<><Suspense fallback={<aside data-app-sidebar="" className="fixed left-0 top-[var(--app-header-height)] hidden h-[calc(100dvh-var(--app-header-height))] w-[var(--app-sidebar-width)] border-r bg-card lg:block" />}><Sidebar menusPromise={menusPromise} /></Suspense><SidebarRail /></>}
       footer={<Footer />}
     >
       <PageTransition>
