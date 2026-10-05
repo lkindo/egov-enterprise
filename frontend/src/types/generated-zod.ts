@@ -652,7 +652,6 @@ export const MenuDtoSchema = /*#__PURE__*/ (() => z.object({
   id: z.number().int().optional(),
   menuNo: z.number().int().optional(),
   menuNm: z.string().min(0).max(100),
-  prgrmFileNm: z.string().min(0).max(300).optional(),
   upMenuSn: z.number().int().optional(),
   upperMenuId: z.number().int().optional(),
   menuOrdr: z.number().int(),
@@ -760,7 +759,6 @@ export const MenuStructureItemSchema = /*#__PURE__*/ (() => z.object({
   modernRoute: z.string().nullable(),
   menuExpln: z.string().nullable(),
   useYn: z.string(),
-  prgrmFileNm: z.string().nullable(),
 }))();
 export type MenuStructureItem = z.infer<typeof MenuStructureItemSchema>;
 
@@ -6516,7 +6514,6 @@ export const MenuDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   id: z.number().int().optional(),
   menuNo: z.number().int().optional(),
   menuNm: z.string().min(0).max(100),
-  prgrmFileNm: z.string().min(0).max(300).optional(),
   upMenuSn: z.number().int().optional(),
   upperMenuId: z.number().int().optional(),
   menuOrdr: z.number().int(),
@@ -6534,7 +6531,6 @@ export const MenuDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   id: z.number().int().optional().nullable(),
   menuNo: z.number().int().optional().nullable(),
   menuNm: z.string().min(0).max(100),
-  prgrmFileNm: z.string().min(0).max(300).optional().nullable(),
   upMenuSn: z.number().int().optional().nullable(),
   upperMenuId: z.number().int().optional().nullable(),
   menuOrdr: z.number().int(),
@@ -6664,7 +6660,6 @@ export const MenuStructureItemRequestSchema = /*#__PURE__*/ (() => z.object({
   modernRoute: z.string().nullable(),
   menuExpln: z.string().nullable(),
   useYn: z.string(),
-  prgrmFileNm: z.string().nullable(),
 }))();
 
 export const MenuStructureItemResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -6675,7 +6670,6 @@ export const MenuStructureItemResponseSchema = /*#__PURE__*/ (() => z.object({
   modernRoute: z.string().nullable(),
   menuExpln: z.string().nullable(),
   useYn: z.string(),
-  prgrmFileNm: z.string().nullable(),
 }))();
 
 export const LoginPolicyDtoRequestSchema = /*#__PURE__*/ (() => z.object({

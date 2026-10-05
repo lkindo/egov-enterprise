@@ -19,7 +19,6 @@ import {
 export interface Menu {
   menuNo: number;
   menuNm: string;
-  prgrmFileNm: string;
   upMenuSn: number;
   menuOrdr: number;
   menuExpln?: string;

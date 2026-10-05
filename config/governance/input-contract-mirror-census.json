@@ -460,7 +460,6 @@
       "dto": "nuri.business.service.menu.dto.MenuDto",
       "fields": [
         "menuNm",
-        "prgrmFileNm",
         "menuExpln",
         "relImgPath",
         "relImgNm",

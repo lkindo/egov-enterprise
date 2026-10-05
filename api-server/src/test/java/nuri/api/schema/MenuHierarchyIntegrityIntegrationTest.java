@@ -1,8 +1,6 @@
 package nuri.api.schema;
 
 import jakarta.persistence.EntityManager;
-import nuri.business.domain.menu.Menu;
-import nuri.business.domain.menu.MenuRepository;
 import nuri.business.service.auth.AuthorizationAdministrationService;
 import nuri.business.service.auth.dto.AuthorizationDto.Grant;
 import nuri.business.service.auth.dto.AuthorizationDto.ReplaceGrants;
@@ -29,8 +27,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.test.util.AopTestUtils;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -39,7 +35,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -47,8 +42,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mockingDetails;
 
 /** 최종 메뉴 그래프와 동시 parent 변경을 실제 PostgreSQL 행 잠금으로 검증한다. */
 @Tag("schema-validation")
@@ -61,11 +54,9 @@ class MenuHierarchyIntegrityIntegrationTest {
     @Autowired private JdbcTemplate jdbc;
     @Autowired private EntityManager entityManager;
     @Autowired private PlatformTransactionManager transactionManager;
-    @MockitoSpyBean private MenuRepository menuRepository;
 
     private String fixtureId;
     private final List<Long> ownMenus = new ArrayList<>();
-    private final List<String> ownPrograms = new ArrayList<>();
 
     @BeforeEach
     void seedOnlyDisposableDatabaseMenus() {
@@ -97,8 +88,6 @@ class MenuHierarchyIntegrityIntegrationTest {
                 id(0), id(1), id(2), id(3), fixtureId + "%");
         jdbc.update("DELETE FROM tb_menu_info WHERE menu_sn IN (?,?,?,?) OR menu_nm LIKE ?",
                 id(0), id(1), id(2), id(3), fixtureId + "%");
-        ownPrograms.forEach(program -> jdbc.update("DELETE FROM tb_prgrm_lst WHERE prgrm_file_nm=?", program));
-        ownPrograms.clear();
         ownMenus.clear();
         ownGroups.clear();
         ownUsers.clear();
@@ -322,18 +311,13 @@ class MenuHierarchyIntegrityIntegrationTest {
     }
 
     @Test
-    @DisplayName("라우트가 있던 메뉴의 라우트를 구조 저장으로 비우면 기동 때 라우트 보강이 다시 채우지 않는다")
-    void clearedRouteStaysClearedAcrossStartupRouteMigration() throws Exception {
-        String program = seedProgram("BoardManage");
-        jdbc.update("UPDATE tb_menu_info SET prgrm_file_nm=?,modern_route='/admin/route-to-clear' WHERE menu_sn=?", program, id(0));
+    @DisplayName("라우트가 있던 메뉴의 라우트를 구조 저장으로 비우면 NULL 이 아니라 빈 문자열로 남는다")
+    void clearedRouteStaysEmpty() {
+        jdbc.update("UPDATE tb_menu_info SET modern_route='/admin/route-to-clear' WHERE menu_sn=?", id(0));
         service.saveMenuStructure(new MenuStructureSave(service.getMenuStructure().version(), List.of(), List.of(),
                 List.of(new MenuProperties(id(0), fixtureId + "0", "", null, "Y")), List.of(), List.of()));
+        // [2026-10-05] 빈 문자열은 관리자가 비운 경로다 — V2_126 의 경로 보강은 NULL 만 채웠다.
         assertThat(menuRow(id(0))).containsEntry("modern_route", "");
-
-        runStartupRouteMigrationAfterSnapshot(() -> { });
-
-        assertThat(menuRow(id(0))).as("비운 라우트가 연결 프로그램에서 다시 채워지면 안 된다").containsEntry("modern_route", "")
-                .containsEntry("prgrm_file_nm", program);
     }
 
     private List<String> adminNavigation(Long... menus) {
@@ -461,138 +445,8 @@ class MenuHierarchyIntegrityIntegrationTest {
         assertThat(parent(id(1))).isNull();
     }
 
-    @Test
-    @DisplayName("시작 시 라우트 보강은 오래된 메뉴 부모를 저장해 정상 계층을 순환으로 되돌리지 않는다")
-    void startupRouteMigrationDoesNotRestoreStaleParentAfterHierarchyMove() throws Exception {
-        String program = seedProgram("BoardManage");
-        jdbc.update("UPDATE tb_menu_info SET prgrm_file_nm=?,up_menu_sn=? WHERE menu_sn=?", program, id(1), id(0));
-
-        runStartupRouteMigrationAfterSnapshot(() -> {
-            service.updateMenuOrders(List.of(order(id(0), null), order(id(1), id(0))));
-            // [2026-10-04 프로그램 목록 퇴역] 단건 수정은 연결 프로그램을 늘 비운다. 레거시 연결을 남긴 채 이름만 바꾸려고
-            // 연결 프로그램을 건드리지 않는 구조 저장으로 고친다.
-            service.saveMenuStructure(new MenuStructureSave(service.getMenuStructure().version(), List.of(), List.of(),
-                    List.of(new MenuProperties(id(0), fixtureId + "edited", "", null, "Y")), List.of(), List.of()));
-            assertThat(parent(id(0))).isNull();
-            assertThat(parent(id(1))).isEqualTo(id(0));
-        });
-
-        assertThat(parent(id(0))).as("라우트 보강이 이미 커밋된 부모 변경을 되돌리면 안 된다").isNull();
-        assertThat(parent(id(1))).isEqualTo(id(0));
-        Map<String, Object> updated = menuRow(id(0));
-        assertThat(updated).containsEntry("modern_route", "/admin/community/boards")
-                .containsEntry("menu_nm", fixtureId + "edited").containsEntry("menu_ordr", 2)
-                .containsEntry("prgrm_file_nm", program).containsEntry("frst_rgtr_id", fixtureId)
-                .containsEntry("last_mdfr_id", "SYSTEM");
-        assertThat(updated.get("mdfcn_dt")).isNotNull();
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"", "/admin/explicit-route"})
-    @DisplayName("시작 시 라우트 보강은 조회 후 저장된 명시 경로나 빈 문자열을 덮어쓰지 않는다")
-    void startupRouteMigrationPreservesConcurrentExplicitOrEmptyRoute(String route) throws Exception {
-        String program = seedProgram("BoardManage");
-        jdbc.update("UPDATE tb_menu_info SET prgrm_file_nm=? WHERE menu_sn=?", program, id(0));
-        var committed = new AtomicReference<Map<String, Object>>();
-
-        runStartupRouteMigrationAfterSnapshot(() -> {
-            service.updateMenuManage(MenuDto.builder().menuNo(id(0))
-                    .menuNm(fixtureId + "edited").menuOrdr(9).upMenuSn(id(1)).modernRoute(route).build());
-            // [2026-10-04 프로그램 목록 퇴역] 단건 수정은 연결 프로그램을 늘 비운다. 경로 보호만 보려고 레거시 연결을 SQL 로 되돌린다.
-            jdbc.update("UPDATE tb_menu_info SET prgrm_file_nm=? WHERE menu_sn=?", program, id(0));
-            committed.set(menuRow(id(0)));
-        });
-
-        assertThat(menuRow(id(0))).as("관리자가 저장한 경로·내용·감사필드를 모두 보존한다")
-                .isEqualTo(committed.get());
-        assertThat(menuRow(id(0))).containsEntry("modern_route", route);
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    @DisplayName("시작 시 라우트 보강은 프로그램 연결 변경·해제 후 이전 프로그램의 경로를 넣지 않는다")
-    void startupRouteMigrationPreservesConcurrentProgramChange(boolean unlink) throws Exception {
-        String originalProgram = seedProgram("BoardManage");
-        String replacementProgram = unlink ? null : seedProgram("MenuList");
-        jdbc.update("UPDATE tb_menu_info SET prgrm_file_nm=? WHERE menu_sn=?", originalProgram, id(0));
-        var committed = new AtomicReference<Map<String, Object>>();
-
-        runStartupRouteMigrationAfterSnapshot(() -> {
-            // [2026-10-04 프로그램 목록 퇴역] 단건 수정은 새 연결을 거부하고 값 없이 저장하면 연결을 걷는다(해제).
-            // 바뀐 연결은 레거시 데이터 경로(SQL)로만 생기므로 SQL 로 재현한다.
-            service.updateMenuManage(MenuDto.builder().menuNo(id(0))
-                    .menuNm(fixtureId + "edited").menuOrdr(9).upMenuSn(id(1)).build());
-            if (replacementProgram != null) {
-                jdbc.update("UPDATE tb_menu_info SET prgrm_file_nm=? WHERE menu_sn=?", replacementProgram, id(0));
-            }
-            committed.set(menuRow(id(0)));
-        });
-
-        assertThat(menuRow(id(0))).as("새 프로그램 연결과 감사필드를 보존하며 과거 경로를 보강하지 않는다")
-                .isEqualTo(committed.get());
-        assertThat(menuRow(id(0))).containsEntry("prgrm_file_nm", replacementProgram)
-                .containsEntry("modern_route", null);
-    }
-
-    @Test
-    @DisplayName("[2026-10-04] 원장에 있는 프로그램이어도 단건 수정은 새 연결을 거부하고, 값 없이 저장하면 레거시 연결을 걷는다")
-    void singleWriteRejectsProgramLinkAndClearsLegacyLink() {
-        String program = seedProgram("BoardManage");
-        assertThatThrownBy(() -> service.updateMenuManage(MenuDto.builder().menuNo(id(0)).prgrmFileNm(program)
-                .menuNm(fixtureId + "linked").menuOrdr(1).build()))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
-        assertThat(menuRow(id(0))).as("거부한 요청은 아무것도 바꾸지 않는다")
-                .containsEntry("prgrm_file_nm", null).containsEntry("menu_nm", fixtureId + "0");
-
-        jdbc.update("UPDATE tb_menu_info SET prgrm_file_nm=? WHERE menu_sn=?", program, id(0));
-        service.updateMenuManage(MenuDto.builder().menuNo(id(0)).prgrmFileNm("").menuNm(fixtureId + "0").menuOrdr(1).build());
-        assertThat(menuRow(id(0))).as("퇴역 전에 남은 레거시 연결을 걷는 경로").containsEntry("prgrm_file_nm", null);
-    }
-
-    private String seedProgram(String name) {
-        String program = fixtureId + name;
-        jdbc.update("INSERT INTO tb_prgrm_lst(prgrm_file_nm,url) VALUES (?,?)", program, "/admin/community/boards");
-        ownPrograms.add(program);
-        return program;
-    }
-
     private Map<String, Object> menuRow(long menuId) {
         return jdbc.queryForMap("SELECT * FROM tb_menu_info WHERE menu_sn=?", menuId);
-    }
-
-    private void runStartupRouteMigrationAfterSnapshot(Runnable concurrentWrite) throws Exception {
-        var snapshotRead = new CountDownLatch(1);
-        var continueMigration = new CountDownLatch(1);
-        // Spring spies JDK repository proxies with a delegating default answer. The query method
-        // is abstract, so invocation.callRealMethod() would never reach the real Spring Data query.
-        var repositoryDelegate = mockingDetails(menuRepository).getMockCreationSettings().getDefaultAnswer();
-        doAnswer(invocation -> {
-            @SuppressWarnings("unchecked")
-            List<Menu> snapshot = (List<Menu>) repositoryDelegate.answer(invocation);
-            // Keep the real database snapshot, but restrict this startup rehearsal to its own fixtures.
-            List<Menu> ownSnapshot = snapshot.stream().filter(menu -> ownMenus.contains(menu.getMenuSn())).toList();
-            snapshotRead.countDown();
-            if (!continueMigration.await(10, TimeUnit.SECONDS)) {
-                throw new IllegalStateException("Menu route migration barrier was not released");
-            }
-            return ownSnapshot;
-        }).when(menuRepository).findAllWithoutModernRoute();
-
-        try (var executor = Executors.newSingleThreadExecutor()) {
-            // @PostConstruct runs on the target before the service transaction proxy is available.
-            MenuService startupTarget = AopTestUtils.getUltimateTargetObject(service);
-            Future<?> migration = executor.submit(startupTarget::migrateModernRoutes);
-            try {
-                assertThat(snapshotRead.await(5, TimeUnit.SECONDS)).as("실제 메뉴 조회 후의 경합 지점").isTrue();
-                concurrentWrite.run();
-            } finally {
-                continueMigration.countDown();
-                // Surface worker failures even when the snapshot barrier was never reached.
-                migration.get(10, TimeUnit.SECONDS);
-            }
-        }
-
     }
 
     private void awaitRealMenuLock(String applicationName, Integer blockerPid, Future<?> contender) {

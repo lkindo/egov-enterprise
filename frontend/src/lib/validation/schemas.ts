@@ -79,11 +79,6 @@ export const menuSchema = MenuDtoSchema.extend({
     .min(-2147483648, '정렬 순서는 -2147483648 이상이어야 합니다.')
     .max(2147483647, '정렬 순서는 2147483647 이하여야 합니다.')
     .pipe(MenuDtoSchema.shape.menuOrdr),
-  prgrmFileNm: z.string()
-    .trim()
-    .max(300, '연결 프로그램은 최대 300자까지 입력할 수 있습니다.')
-    .pipe(MenuDtoSchema.shape.prgrmFileNm.unwrap())
-    .optional(),
   menuExpln: z.string()
     .trim()
     .max(4000, '메뉴 설명은 최대 4000자까지 입력할 수 있습니다.')

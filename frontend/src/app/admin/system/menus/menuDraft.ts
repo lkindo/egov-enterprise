@@ -298,7 +298,6 @@ export function structureItems(menus: readonly MenuStructureItem[]): FlattenedIt
     modernRoute: menu.modernRoute ?? undefined,
     menuExpln: menu.menuExpln ?? undefined,
     useYn: menu.useYn === 'Y' ? 'Y' : 'N',
-    prgrmFileNm: menu.prgrmFileNm ?? undefined,
   }))));
 }
 

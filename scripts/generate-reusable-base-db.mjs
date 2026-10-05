@@ -482,13 +482,12 @@ async function main() {
       .map((sequence) => sequence.name)
       .sort();
 
-    let migratedMenus, migratedPrograms;
+    let migratedMenus;
     if (composition || args.writeMenuSnapshot) {
+      // [2026-10-05] 레거시 연결 프로그램 컬럼·원장은 읽지 않는다(GAP-PROGRAM-001).
       migratedMenus = JSON.parse(psql(args.container, user, workingDb, `SELECT COALESCE(json_agg(row_to_json(m) ORDER BY m.menu_sn),'[]'::json)::text
-        FROM (SELECT menu_sn,up_menu_sn,menu_ordr,menu_nm,prgrm_file_nm,menu_expln,modern_route,use_yn,del_yn FROM public.tb_menu_info) m`));
-      migratedPrograms = JSON.parse(psql(args.container, user, workingDb, `SELECT COALESCE(json_agg(row_to_json(p) ORDER BY p.prgrm_file_nm),'[]'::json)::text
-        FROM (SELECT prgrm_file_nm,prgrm_korn_nm,url,prgrm_strg_path,prgrm_expln FROM public.tb_prgrm_lst) p`));
-      if (composition && !args.writeMenuSnapshot) assertProjectComposerMenusMatch(ROOT, { menus: migratedMenus, programs: migratedPrograms });
+        FROM (SELECT menu_sn,up_menu_sn,menu_ordr,menu_nm,menu_expln,modern_route,use_yn,del_yn FROM public.tb_menu_info) m`));
+      if (composition && !args.writeMenuSnapshot) assertProjectComposerMenusMatch(ROOT, { menus: migratedMenus });
     }
     let selectedSchema, menuProjection, compositionAdminSeed;
     if (composition) {
@@ -501,7 +500,7 @@ async function main() {
           fail(`Composition source metadata differs from the checked-in snapshot: ${table}`);
         }
       }
-      menuProjection = projectCompositionMenus({ menus: migratedMenus, programs: migratedPrograms, menuRoutes: composition.menuRoutes });
+      menuProjection = projectCompositionMenus({ menus: migratedMenus, menuRoutes: composition.menuRoutes });
       compositionAdminSeed = buildCompositionAdminSeed({
         bootstrapSql: readFileSync(join(ROOT, 'api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql'), 'utf8'),
         projection: menuProjection, permissionCodes: composition.permissionCodes,
@@ -646,7 +645,7 @@ async function main() {
       ]));
       writeFileSync(join(output, 'profile-lock.json'), `${JSON.stringify(lock, null, 2)}\n`, 'utf8');
     }
-    if (args.writeMenuSnapshot) writeProjectComposerMenuSnapshot(ROOT, { menus: migratedMenus, programs: migratedPrograms });
+    if (args.writeMenuSnapshot) writeProjectComposerMenuSnapshot(ROOT, { menus: migratedMenus });
     console.log(`[base-db] PASS: ${relative(ROOT, output).split(sep).join('/')}`);
   } finally {
     if (verifyCreated) dropTemporaryDatabase(args.container, user, verifyDb);

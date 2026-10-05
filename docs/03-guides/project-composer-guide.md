@@ -98,7 +98,7 @@ node scripts/verify-project-composer.mjs --layout single-module
 
 ## 메뉴 미리보기 자료 갱신
 
-[메뉴 snapshot](../../config/project-composer-menus.json)은 SQL을 실행하지 않고 계획 화면에 실제 메뉴 이름·부모·목적지를 표시하기 위한 파생 자료다. 정본은 체크인된 migration·seed·authorization Contract SQL이며, snapshot을 손으로 고쳐 메뉴를 변경하지 않는다. [검증기](../../scripts/project-composer-menu-preview.mjs)는 입력 SQL의 파일명·내용 해시를 확인하고 달라졌으면 계획을 거부한다. DB 생성 시에도 원본 migration으로 만든 실제 메뉴·프로그램과 snapshot 전체를 다시 대조한다. 프런트엔드 화면 route 수와 메뉴 수는 다를 수 있다.
+[메뉴 snapshot](../../config/project-composer-menus.json)은 SQL을 실행하지 않고 계획 화면에 실제 메뉴 이름·부모·목적지를 표시하기 위한 파생 자료다. 정본은 체크인된 migration·seed·authorization Contract SQL이며, snapshot을 손으로 고쳐 메뉴를 변경하지 않는다. [검증기](../../scripts/project-composer-menu-preview.mjs)는 입력 SQL의 파일명·내용 해시를 확인하고 달라졌으면 계획을 거부한다. DB 생성 시에도 원본 migration으로 만든 실제 메뉴와 snapshot 전체를 다시 대조한다. 레거시 연결 프로그램(prgrm_file_nm)과 프로그램 원장은 앱이 읽지 않아 snapshot 에 싣지 않는다(형식 2). 프런트엔드 화면 route 수와 메뉴 수는 다를 수 있다.
 
 원본 SQL에 정당한 메뉴 변경을 적용한 뒤에는 **이번 갱신 작업만을 위해 새로 만든 일회용 PostgreSQL 17 컨테이너**에서 아래 명령을 실행한다. 포트 공개·공유 볼륨 없이 고유 이름과 소유권 표식을 붙이고, 자격증명은 명령 인자나 파일에 쓰지 않고 임시 환경으로 전달한다. 준비 상태를 확인한 후 PowerShell 변수 `$composerContainerName`에는 해당 컨테이너 이름, `$composerRunId`에는 이번 작업의 새 식별자를 사용한다. 운영·공유·기존 업무 DB 컨테이너는 지정하지 않는다.
 
@@ -108,7 +108,7 @@ node scripts/generate-reusable-base-db.mjs --profile demo --write-menu-snapshot 
 
 명령은 컨테이너 안의 새 임시 DB에 전체 migration을 적용하고, 생성 SQL을 또 다른 빈 DB에 재적용하여 검증한 뒤에만 `config/project-composer-menus.json`을 갱신한다. 두 임시 DB는 생성기가 정리한다. 전용 컨테이너는 생성 시 확보한 정확한 ID와 소유권 표식이 일치하는지 확인한 뒤 이 작업의 소유자가 정리한다. 위 두 허용 옵션은 체크아웃 수정분·비릴리스 상태에서 로컬 자료를 갱신하기 위한 것이며 결과를 공식 릴리스로 바꾸지 않는다.
 
-갱신한 SQL·snapshot diff를 함께 검토하고 다음 계약 검사를 실행한다. fixture 테스트는 SQL 변경 뒤의 오래된 snapshot과 잘못된 메뉴·프로그램 관계가 거부되는지도 확인한다.
+갱신한 SQL·snapshot diff를 함께 검토하고 다음 계약 검사를 실행한다. fixture 테스트는 SQL 변경 뒤의 오래된 snapshot과 잘못된 메뉴 관계와 퇴역한 형식 1 snapshot 이 거부되는지도 확인한다.
 
 ```bash
 node --test scripts/project-composer-menu-preview.test.mjs scripts/project-composer-db.test.mjs

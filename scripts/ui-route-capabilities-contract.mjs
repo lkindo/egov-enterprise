@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { detectProjection } from './pack-tagged-registry.mjs';
+
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = path.resolve(path.dirname(SCRIPT_PATH), '..');
 const MANIFEST_PATH = path.join(ROOT, 'config', 'ui-route-capabilities.json');
@@ -131,18 +133,6 @@ const KNOWN_ROUTE_CAPABILITIES = {
       id: 'absence.user-list-proxy', status: 'partial', dataSource: 'admin-users-api', actions: ['view-users', 'search-users'],
       unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: '전체 사용자 목록(부재자 아님)', primaryTask: false,
       evidenceLevel: 'E2', evidence: ['frontend/src/app/admin/user/absences/page.tsx', 'frontend/src/app/admin/user/UserOrgHubClient.tsx'],
-    },
-  ],
-  '/admin/workspace/my-page': [
-    {
-      id: 'workspace.contents', status: 'partial', candidateStatus: 'live', dataSource: 'mypage-contents-api', actions: ['list', 'local-search', 'toggle-status', 'reload'],
-      unsupportedVisibleActions: ['sync', 'item-options'], actorScope: 'ADMIN|SYSTEM', visibleLabel: '마이페이지 콘텐츠 관리', primaryTask: true,
-      evidenceLevel: 'E3', evidence: ['frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx', 'frontend/e2e/journeys/global-search.spec.ts'],
-    },
-    {
-      id: 'workspace.usage-security', status: 'demo', dataSource: 'hardcoded-metrics', actions: [],
-      unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: 'HIGH / SAFE', primaryTask: false,
-      evidenceLevel: 'E1', evidence: ['frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx'],
     },
   ],
   '/admin/community/boards/detail': [
@@ -970,6 +960,33 @@ export function validateRouteCapabilities(manifest, repository) {
 
   for (const route of expectedByRoute.keys()) {
     if (!actualByRoute.has(route)) errors.push(`manifest is missing filesystem route: ${route}`);
+  }
+  /*
+   * [2026-10-05] 동결 목록에서 원장 쪽으로도 대조한다. 위의 대조는 원장의 화면마다 동결 항목을 찾으므로,
+   * 원장에서 사라진 화면의 동결 항목은 아무것도 지키지 않으면서 신호 없이 남는다.
+   * 실제로 2026-09-08 걷은 마이페이지 화면의 항목이 한 달 가까이 남아 있었다.
+   *
+   * 원장에 없어도 되는 경우는 하나다 — 화면 파일도 없고, 어떤 프로필의 투영이 pack 제거 경로로
+   * 그 화면을 걷는 경우(축소 프로필에서 빠진 demo 화면)다. 모든 프로필이 남기는 화면이면
+   * 투영으로 사라질 수 없으므로 동결 항목이 낡은 것이다.
+   *
+   * 투영본의 manifest 는 자기 프로필과 포함된 pack 만 남겨 빠진 pack 의 제거 경로를 모른다. 그래서 투영본에서는
+   * 화면 파일이 없는 것만으로 투영이 걷은 화면으로 본다 — 원본 저장소에서 이 검사가 모든 동결 화면의 원장 행을
+   * 이미 요구했기 때문이다. 투영본 판별은 표지 하나가 아니라 생성기가 쓰는 구조까지 본다(detectProjection).
+   */
+  const profileManifest = repository?.profileManifest;
+  let projection = false;
+  try {
+    projection = profileManifest ? detectProjection(profileManifest).projection : false;
+  } catch (error) {
+    errors.push(error.message);
+  }
+  const profileCount = Object.keys(profileManifest?.profiles ?? {}).length;
+  for (const route of Object.keys(KNOWN_ROUTE_CAPABILITIES)) {
+    if (actualByRoute.has(route)) continue;
+    const removedByProjection = !expectedByRoute.has(route) && profileManifest && (projection
+      || directProjectionProfiles(`frontend/src/app${route}/page.tsx`, profileManifest).length < profileCount);
+    if (!removedByProjection) errors.push(`frozen capability expectation has no ledger route: ${route}`);
   }
 
   const expectedExternalAliases = [...repository.configRedirects.redirects.entries()]

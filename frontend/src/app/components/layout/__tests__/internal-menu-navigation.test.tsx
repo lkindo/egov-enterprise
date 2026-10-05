@@ -99,12 +99,12 @@ describe('menu metadata navigation boundary', () => {
   });
 
   it('relative legacy .do와 안전한 query/hash는 내부 링크로 보존한다', async () => {
+    // [2026-10-05] chkURL 은 목적지가 아니다 — 레거시 .do 경로는 메뉴 경로(modernRoute)로 온다.
     render(
       <NavItem
         item={menu({
           menuNm: '레거시 메뉴',
-          modernRoute: '',
-          chkURL: 'legacy/selectMenu.do?menuNo=1#result',
+          modernRoute: 'legacy/selectMenu.do?menuNo=1#result',
         })}
       />,
     );

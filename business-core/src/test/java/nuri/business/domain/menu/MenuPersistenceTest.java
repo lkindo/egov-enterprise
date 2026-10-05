@@ -39,7 +39,7 @@ class MenuPersistenceTest extends PersistenceTestSupport {
         assertThat(saved.getMenuNm()).isEqualTo("테스트 메뉴");
 
         // when: Update
-        saved.update("수정된 메뉴", null, 0L, 2, "Menu DC", "path", "image.png", "Y");
+        saved.update("수정된 메뉴", 0L, 2, "Menu DC", "path", "image.png", "Y");
         menuRepository.save(saved);
         menuRepository.flush();
         entityManager.clear();
@@ -48,7 +48,6 @@ class MenuPersistenceTest extends PersistenceTestSupport {
         Menu updated = menuRepository.findById(menuSn).orElseThrow();
         assertThat(updated.getMenuNm()).isEqualTo("수정된 메뉴");
         assertThat(updated.getMenuOrdr()).isEqualTo(2);
-        assertThat(updated.getPrgrmFileNm()).isNull();
         assertThat(updated.getMenuExpln()).isEqualTo("Menu DC");
     }
 

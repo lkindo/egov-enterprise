@@ -384,6 +384,49 @@ test('empty, missing, and duplicate route populations fail closed', () => {
     new RegExp(`manifest is missing filesystem route: ${removed.route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
   );
 
+  // 동결 목록에만 남은 화면은 아무것도 지키지 않는다 — 원장에서 빠지면 동결 항목도 함께 빠져야 한다.
+  const unfrozen = structuredClone(analysis.manifest);
+  unfrozen.routes = unfrozen.routes.filter(({ route }) => route !== '/approvals/draft');
+  assert.match(
+    validateRouteCapabilities(unfrozen, repository).errors.join('\n'),
+    /frozen capability expectation has no ledger route: \/approvals\/draft/,
+  );
+  assert.doesNotMatch(
+    validateRouteCapabilities(analysis.manifest, repository).errors.join('\n'),
+    /frozen capability expectation has no ledger route/,
+  );
+  // 화면 파일까지 걷어도 모든 프로필이 남기던 화면이면 투영 생략이 아니다 — 동결 항목이 낡은 것이다
+  // (2026-09-08 걷은 마이페이지 화면의 항목이 이 모양으로 남아 있었다).
+  const retired = structuredClone(analysis.manifest);
+  retired.routes = retired.routes.filter(({ route }) => route !== '/admin/user/absences');
+  const retiredRepository = structuredClone(repository);
+  retiredRepository.pages = retiredRepository.pages.filter(({ route }) => route !== '/admin/user/absences');
+  delete retiredRepository.proxy.pagePermissions['/admin/user/absences'];
+  assert.match(
+    validateRouteCapabilities(retired, retiredRepository).errors.join('\n'),
+    /frozen capability expectation has no ledger route: \/admin\/user\/absences/,
+  );
+  // [2026-10-05] 투영본 manifest 는 자기 프로필과 포함된 pack 만 남겨 빠진 pack 의 제거 경로를 모른다. 생성기가 쓰는
+  // 구조(프로필 하나·그 프로필의 pack 만)일 때는 파일이 없는 동결 화면을 투영이 걷은 화면으로 본다.
+  const coreProfile = retiredRepository.profileManifest.profiles.core;
+  const projectedRepository = structuredClone(retiredRepository);
+  projectedRepository.profileManifest = {
+    ...projectedRepository.profileManifest,
+    sourcePolicy: { ...projectedRepository.profileManifest.sourcePolicy, generatedProfile: 'core' },
+    profiles: { core: coreProfile },
+    packs: Object.fromEntries(coreProfile.packs.map(pack => [pack, projectedRepository.profileManifest.packs[pack]])),
+  };
+  assert.doesNotMatch(
+    validateRouteCapabilities(retired, projectedRepository).errors.join('\n'),
+    /frozen capability expectation has no ledger route/,
+  );
+  // 원본 저장소 manifest 에 표지만 넣으면 투영 모드로 바뀌지 않고 오류이며, 낡은 동결 항목도 그대로 red 다.
+  const spoofedRepository = structuredClone(retiredRepository);
+  spoofedRepository.profileManifest.sourcePolicy = { ...spoofedRepository.profileManifest.sourcePolicy, generatedProfile: 'core' };
+  const spoofedErrors = validateRouteCapabilities(retired, spoofedRepository).errors.join('\n');
+  assert.match(spoofedErrors, /생성기 투영 구조가 아니다/);
+  assert.match(spoofedErrors, /frozen capability expectation has no ledger route: \/admin\/user\/absences/);
+
   const duplicate = structuredClone(analysis.manifest);
   duplicate.routes.push(structuredClone(duplicate.routes[0]));
   assert.match(

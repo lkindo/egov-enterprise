@@ -49,7 +49,7 @@ class SharedPostgresMigrationHarnessContractTest {
     // V2_120: ROLE_USER 의 들어갈 수 없는 설문·투표 관리 메뉴 배정만 지우는 검증을 추가한다.
     // V2_124: 퇴역한 프로그램 목록 권한 배정의 삭제·이력과 갈 곳 잃는 말단 메뉴 가드 검증을 추가한다.
     // V2_125: 꺼진 마이페이지 관리 메뉴 행·배정·즐겨찾기 삭제와 이력, 도입 기관이 쓰는 행을 남기는 가드 검증을 추가한다.
-    private static final int EXPECTED_MIGRATION_TEST_COUNT = 57;
+    private static final int EXPECTED_MIGRATION_TEST_COUNT = 59;
 
     @Test
     @DisplayName("격리 database 이름은 병렬 클래스마다 고유하고 PostgreSQL 식별자 한도 안에서 안전하다")
@@ -123,7 +123,7 @@ class SharedPostgresMigrationHarnessContractTest {
     }
 
     @Test
-    @DisplayName("57개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")
+    @DisplayName("59개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")
     void migrationTestsUseSharedPostgresSupport() throws IOException {
         List<Path> migrationTests = HarnessSourceIndex.javaSources(schemaSourceRoot()).stream()
                 .filter(SharedPostgresMigrationHarnessContractTest::isMigrationTest)

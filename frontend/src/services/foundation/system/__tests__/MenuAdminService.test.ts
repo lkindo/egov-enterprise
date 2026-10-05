@@ -54,7 +54,7 @@ describe('MenuAdminService', () => {
 describe('MenuAdminService — 메뉴 구조', () => {
   const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
   const row = (menuNo: number, extra: Record<string, unknown> = {}) => ({
-    menuNo, menuNm: `메뉴${menuNo}`, upMenuSn: null, menuOrdr: menuNo, modernRoute: null, menuExpln: null, useYn: 'Y', prgrmFileNm: null, ...extra,
+    menuNo, menuNm: `메뉴${menuNo}`, upMenuSn: null, menuOrdr: menuNo, modernRoute: null, menuExpln: null, useYn: 'Y', ...extra,
   });
   const structure = { version: 's1', menus: [row(1), row(2, { upMenuSn: 1, modernRoute: '', useYn: 'N' }), row(3, { upMenuSn: 0, modernRoute: '/note', useYn: 'X' })] };
   const save: MenuStructureSave = {

@@ -54,12 +54,15 @@ BEGIN
 
     END IF;
 
-    -- ── 2. URL 인가 anchor — 신규 base(tb_prgrm_lst 공백)에서만 ─────────────────────
+    -- ── 2. URL 인가 anchor — 구 모델 신규 base(tb_prgrm_lst 공백)에서만 ─────────────────────
     -- DbUrlAuthorizationManager 의 fail-closed 를 푸는 최소 매핑이다. V2_11 의
     -- ADMIN_ALL/ACTUATOR_ALL 과 동일 URL·동일 롤(ROLE_ADMIN/ROLE_SYSTEM)만 부여한다 —
     -- 별칭 경로(V2_84 에서 제거된 부류)는 재도입하지 않는다(H3: 최소 권한 보존).
+    -- [2026-10-05] V2_127 이 tb_prgrm_lst 를 지운다. 표가 있을 때만(과거 Flyway target 검증) 읽는다 —
+    -- 실행하지 않는 분기는 plan 되지 않는다.
+    IF to_regclass('public.tb_prgrm_lst') IS NOT NULL AND to_regclass('public.tb_role_prgrm_map') IS NOT NULL THEN
     SELECT NOT EXISTS (SELECT 1 FROM tb_prgrm_lst) INTO fresh_programs;
-    IF fresh_programs AND to_regclass('public.tb_role_prgrm_map') IS NOT NULL THEN
+    IF fresh_programs THEN
         INSERT INTO tb_prgrm_lst
             (prgrm_file_nm, prgrm_korn_nm, url, prgrm_strg_path, prgrm_expln, crt_dt, mdfcn_dt, frst_rgtr_id, last_mdfr_id)
         VALUES
@@ -74,25 +77,26 @@ BEGIN
             ('ROLE_SYSTEM', 'ACTUATOR_ALL')
         ON CONFLICT (role_id, prgrm_file_nm) DO NOTHING;
     END IF;
+    END IF;
 
     -- ── 3. 최소 관리자 메뉴 트리 — 신규 base(tb_menu_info 공백)에서만 ────────────────
     -- 모든 modern_route 는 core pack 잔존 화면이다(백엔드: foundation/business-core 소유).
     SELECT NOT EXISTS (SELECT 1 FROM tb_menu_info) INTO fresh_menus;
     IF fresh_menus AND (legacy_model OR fresh_authorization) THEN
         INSERT INTO tb_menu_info
-            (menu_sn, up_menu_sn, menu_ordr, menu_nm, prgrm_file_nm, menu_expln, modern_route, use_yn, del_yn, frst_rgtr_id, crt_dt)
+            (menu_sn, up_menu_sn, menu_ordr, menu_nm, menu_expln, modern_route, use_yn, del_yn, frst_rgtr_id, crt_dt)
         VALUES
-            (910, NULL, 1,  '관리 센터',          NULL, 'base 부트스트랩 관리자 메뉴', NULL,                               'Y', 'N', 'SYSTEM', NOW()),
-            (911, 910,  1,  '사용자 관리',        NULL,  NULL,                          '/admin/user/manage',               'Y', 'N', 'SYSTEM', NOW()),
-            (912, 910,  2,  '부서 및 조직 관리',  NULL,  NULL,                          '/admin/user/departments',          'Y', 'N', 'SYSTEM', NOW()),
-            (913, 910,  3,  '권한 그룹 관리',     NULL,  NULL,                          '/admin/security/authority',        'Y', 'N', 'SYSTEM', NOW()),
-            (914, 910,  4,  '롤 관리',            NULL,  NULL,                          '/admin/security/role',             'Y', 'N', 'SYSTEM', NOW()),
-            (915, 910,  5,  '사용자 분류 그룹',   NULL,  NULL,                          '/admin/security/group',            'Y', 'N', 'SYSTEM', NOW()),
-            (916, 910,  6,  '메뉴 관리',          NULL,  NULL,                          '/admin/system/menus',              'Y', 'N', 'SYSTEM', NOW()),
-            (917, 910,  7,  '그룹별 메뉴 현황',   NULL,  NULL,                          '/admin/system/menus/by-authority', 'Y', 'N', 'SYSTEM', NOW()),
-            (918, 910,  8,  '화면 관리',          NULL,  NULL,                          '/admin/system/programs',           'Y', 'N', 'SYSTEM', NOW()),
-            (919, 910,  9,  '공통코드 관리',      NULL,  NULL,                          '/admin/system/common-code',        'Y', 'N', 'SYSTEM', NOW()),
-            (920, 910,  10, '로그 및 감사',       NULL,  NULL,                          '/admin/system/logs',               'Y', 'N', 'SYSTEM', NOW())
+            (910, NULL, 1,  '관리 센터',          'base 부트스트랩 관리자 메뉴', NULL,                               'Y', 'N', 'SYSTEM', NOW()),
+            (911, 910,  1,  '사용자 관리',        NULL,                          '/admin/user/manage',               'Y', 'N', 'SYSTEM', NOW()),
+            (912, 910,  2,  '부서 및 조직 관리',  NULL,                          '/admin/user/departments',          'Y', 'N', 'SYSTEM', NOW()),
+            (913, 910,  3,  '권한 그룹 관리',     NULL,                          '/admin/security/authority',        'Y', 'N', 'SYSTEM', NOW()),
+            (914, 910,  4,  '롤 관리',            NULL,                          '/admin/security/role',             'Y', 'N', 'SYSTEM', NOW()),
+            (915, 910,  5,  '사용자 분류 그룹',   NULL,                          '/admin/security/group',            'Y', 'N', 'SYSTEM', NOW()),
+            (916, 910,  6,  '메뉴 관리',          NULL,                          '/admin/system/menus',              'Y', 'N', 'SYSTEM', NOW()),
+            (917, 910,  7,  '그룹별 메뉴 현황',   NULL,                          '/admin/system/menus/by-authority', 'Y', 'N', 'SYSTEM', NOW()),
+            (918, 910,  8,  '화면 관리',          NULL,                          '/admin/system/programs',           'Y', 'N', 'SYSTEM', NOW()),
+            (919, 910,  9,  '공통코드 관리',      NULL,                          '/admin/system/common-code',        'Y', 'N', 'SYSTEM', NOW()),
+            (920, 910,  10, '로그 및 감사',       NULL,                          '/admin/system/logs',               'Y', 'N', 'SYSTEM', NOW())
         ON CONFLICT (menu_sn) DO NOTHING;
 
         IF legacy_model THEN

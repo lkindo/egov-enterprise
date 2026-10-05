@@ -85,13 +85,13 @@ describe('형제 목록 모델', () => {
 
   it('메뉴 구조 응답을 선순회 목록으로 편다 — null 상위는 최상위, 상위가 없는 메뉴도 최상위로 남긴다', () => {
     const items = structureItems([
-      { menuNo: 2, menuNm: '둘', upMenuSn: 1, menuOrdr: 1, modernRoute: '/admin/a', menuExpln: null, useYn: 'Y', prgrmFileNm: 'old.do' },
-      { menuNo: 1, menuNm: '하나', upMenuSn: null, menuOrdr: 1, modernRoute: null, menuExpln: '설명', useYn: 'N', prgrmFileNm: null },
-      { menuNo: 9, menuNm: '고아', upMenuSn: 77, menuOrdr: 2, modernRoute: null, menuExpln: null, useYn: 'Y', prgrmFileNm: null },
+      { menuNo: 2, menuNm: '둘', upMenuSn: 1, menuOrdr: 1, modernRoute: '/admin/a', menuExpln: null, useYn: 'Y' },
+      { menuNo: 1, menuNm: '하나', upMenuSn: null, menuOrdr: 1, modernRoute: null, menuExpln: '설명', useYn: 'N' },
+      { menuNo: 9, menuNm: '고아', upMenuSn: 77, menuOrdr: 2, modernRoute: null, menuExpln: null, useYn: 'Y' },
     ]);
     expect(shape(items)).toEqual([[1, null, 0], [2, 1, 1], [9, null, 0]]);
     expect(items[0]).toMatchObject({ menuExpln: '설명', useYn: 'N', modernRoute: undefined });
-    expect(items[1]).toMatchObject({ modernRoute: '/admin/a', prgrmFileNm: 'old.do' });
+    expect(items[1]).toMatchObject({ modernRoute: '/admin/a' });
   });
 
   it('새 메뉴는 음수 번호로 두고 저장 요청에서는 new-n 키다', () => {

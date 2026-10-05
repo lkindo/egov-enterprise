@@ -147,6 +147,47 @@ SELECT count(*) AS menus, count(*) FILTER (WHERE use_yn = 'Y') AS active_menus F
 
 V2_125는 이미 적용되었으므로 되살린 행은 다시 지워지지 않는다.
 
+## 프로그램 원장과 빈 마이페이지 콘텐츠 테이블 폐기(V2_126, V2_127)
+
+이 변경부터 앱은 `tb_menu_info.prgrm_file_nm` 을 매핑하지 않는다. 메뉴 요청·응답과 구조 버전에서도 연결 프로그램 필드를 걷었다.
+
+- **V2_126 — 경로 보강.** 종전 앱은 기동할 때마다 경로(`modern_route`)가 NULL 인 메뉴에 레거시 파일명으로 추정한 경로를 채웠다. [V2_126](../../api-server/src/main/resources/db/migration/V2_126__backfill_menu_routes_from_legacy_program_names.sql)이 같은 규칙으로 그 일을 한 번 한다.
+  - 규칙: 16개 이름, 위에서부터 처음 맞는 것, 대소문자 구분 부분 일치.
+  - 빈 문자열(`''`)은 관리자가 비운 경로라 채우지 않는다.
+  - 채운 행의 수정자는 `SYSTEM` 이다.
+  - 경로가 없는 메뉴의 `chkURL` 은 종전에 추정하지 못하면 `/` 였고 이제 `#` 이다. 화면은 경로가 없으면 이동하지 않으므로 보이는 동작은 같다.
+- **V2_127 — 구조 삭제.** [V2_127](../../api-server/src/main/resources/db/migration/V2_127__drop_retired_program_ledger_and_personal_page_contents.sql)이 다음을 지운다.
+  - 메뉴의 `prgrm_file_nm` 컬럼과 외래 키 `fk_tb_menu_info_tb_prgrm_lst`
+  - 프로그램 원장 `tb_prgrm_lst`
+  - 빈 마이페이지 콘텐츠 테이블 `tb_indv_pg_conts` 와 그 identity sequence
+  - `tb_indv_pg_conts` 에 행이 있으면 멈추고 아무것도 바꾸지 않는다.
+  - 구 매핑 표 `tb_role_prgrm_map` 이 남은 DB 면 그 외래 키 때문에 실패하고 전체가 롤백된다(CASCADE 없음).
+
+**관측 기간 예외(DEC-OPS-233).** 템플릿 프로젝트라 사용자 승인으로 Expand(앱의 매핑 해제·V2_126)와 Contract(V2_127)를 한 릴리스에 싣는다. 무중단 린터의 사용자 승인 예외 목록이 이 한 건만 고정한다. 운영 중인 도입 기관은 이 예외를 승계하지 않는다. 앱을 먼저 배포하고 구버전 인스턴스가 사라진 것을 확인한 뒤 V2_127 을 적용한다.
+
+**적용 전 읽기 확인.** 다음 출력을 남긴다. 첫 질의는 V2_126 이 채울 메뉴이고 되돌리는 원본이다. 둘째 질의는 두 테이블의 행 수이며, `tb_indv_pg_conts` 가 0이 아니면 V2_127 이 멈춘다.
+
+```sql
+SELECT menu_sn, menu_nm, prgrm_file_nm, use_yn, last_mdfr_id, mdfcn_dt
+  FROM tb_menu_info
+ WHERE modern_route IS NULL AND prgrm_file_nm IS NOT NULL
+ ORDER BY menu_sn;
+
+SELECT (SELECT count(*) FROM tb_prgrm_lst) AS programs, (SELECT count(*) FROM tb_indv_pg_conts) AS personal_contents;
+```
+
+**적용 뒤 확인.** 두 테이블과 컬럼·외래 키가 없어야 한다. 파일명으로 추정하지 못해 경로가 없는 사용 중 말단 메뉴가 있다면, 화면 관리의 화면 목록에서 경로를 정해 메뉴 관리로 넣는다.
+
+```sql
+SELECT to_regclass('public.tb_prgrm_lst') AS programs, to_regclass('public.tb_indv_pg_conts') AS personal_contents,
+       (SELECT count(*) FROM information_schema.columns
+         WHERE table_schema = 'public' AND table_name = 'tb_menu_info' AND column_name = 'prgrm_file_nm') AS program_column;
+```
+
+**되돌릴 때.** 지운 구조와 행의 원본은 적용 직전 백업이다. V2_126 이 채운 경로만 되돌리려면 적용 전 출력의 `menu_sn` 에 대해 `modern_route` 를 NULL 로 되돌린다. 구 버전 앱은 지운 컬럼을 매핑하므로 V2_127 뒤에는 그 앱으로 롤백할 수 없다. 백업 복원이 함께 필요하다.
+
+**남긴 것.** 이관 대상 카탈로그 `db_columns.json` 은 이미 지운 다른 테이블도 담고 있는 코드젠 스냅샷이라 이번에 고치지 않았다.
+
 ## 2026-09-11 OCI 메뉴 재편 적용 결과
 
 사용자가 승인한 [ADR-0017](../02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md)의 메뉴 재편을 2026-09-11 13:09 KST에 적용했다. 실행 전 OCI에서 V2_99, 구 6개 테이블 부재와 기존 Contract 감사 1건을 확인했다. 이번 실행은 이미 완료된 Contract나 계정 활성화를 반복하지 않았다.

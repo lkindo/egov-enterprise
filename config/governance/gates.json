@@ -946,6 +946,14 @@
           "source": "api-server/src/test/java/nuri/api/schema/MyPageMenuRetirementMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-LEGACY-MENU-ROUTE-BACKFILL",
+          "source": "api-server/src/test/java/nuri/api/schema/LegacyMenuRouteBackfillMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-RETIRED-PROGRAM-LEDGER-DROP",
+          "source": "api-server/src/test/java/nuri/api/schema/RetiredProgramLedgerDropMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-AUTH-REFRESH-TOKEN-ROTATION-CONCURRENCY",
           "source": "api-server/src/test/java/nuri/api/schema/RefreshTokenRotationConcurrencyIntegrationTest.java"
         },

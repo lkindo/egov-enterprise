@@ -32,7 +32,8 @@ class MyPageContentBigintMigrationIntegrationTest extends SharedPostgresMigratio
                     """);
         }
 
-        migrateThroughAuthorizationCutover();
+        // [2026-10-05] V2_127 이 이 테이블을 지운다. 행이 있으면 V2_127 이 멈추므로 그 직전까지만 올린다.
+        AuthorizationCutoverTestSupport.migrate(flyway(MigrationVersion.fromVersion("2.126")));
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {

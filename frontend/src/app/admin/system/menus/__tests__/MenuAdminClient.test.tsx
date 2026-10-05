@@ -79,7 +79,7 @@ import MenuAdminClient from '../MenuAdminClient';
 const FULL = ['MENU_READ', 'MENU_CREATE', 'MENU_UPDATE', 'MENU_DELETE', 'AUTHRT_READ', 'AUTHRT_GRANT'];
 
 const menu = (menuNo: number, menuNm: string, upMenuSn: number | null, menuOrdr: number, modernRoute: string | null = null) => ({
-  menuNo, menuNm, upMenuSn, menuOrdr, modernRoute, menuExpln: null, useYn: 'Y' as const, prgrmFileNm: null,
+  menuNo, menuNm, upMenuSn, menuOrdr, modernRoute, menuExpln: null, useYn: 'Y' as const,
 });
 /*
   업무(1) ─ 결재(2, 섹션) ─ 결재함(3), 권한별 메뉴(4)

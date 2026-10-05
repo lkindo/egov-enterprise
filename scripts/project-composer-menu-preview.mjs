@@ -5,8 +5,10 @@ import { projectCompositionMenus } from './project-composer-db.mjs';
 
 export const COMPOSER_MENU_SNAPSHOT_PATH = 'config/project-composer-menus.json';
 const MIGRATION_ROOT = 'api-server/src/main/resources/db/migration';
-const MENU_FIELDS = ['menu_sn', 'up_menu_sn', 'menu_ordr', 'menu_nm', 'prgrm_file_nm', 'menu_expln', 'modern_route', 'use_yn', 'del_yn'];
-const PROGRAM_FIELDS = ['prgrm_file_nm', 'prgrm_korn_nm', 'url', 'prgrm_strg_path', 'prgrm_expln'];
+// [2026-10-05] 레거시 연결 프로그램(prgrm_file_nm)과 프로그램 원장(tb_prgrm_lst)은 앱이 읽지 않아 snapshot 에서 뺐다
+//   (GAP-PROGRAM-001). 형식이 바뀌었으므로 schemaVersion 은 2 다.
+const SNAPSHOT_SCHEMA_VERSION = 2;
+const MENU_FIELDS = ['menu_sn', 'up_menu_sn', 'menu_ordr', 'menu_nm', 'menu_expln', 'modern_route', 'use_yn', 'del_yn'];
 const fail = message => { throw new Error(`Composer menu snapshot: ${message}`); };
 
 /** Include every SQL input executed to construct the empty-DB menu inventory. */
@@ -20,39 +22,31 @@ export function projectMenuSourceHash(root) {
   return hash.digest('hex');
 }
 
-function normalizeInventory({ menus, programs }) {
-  if (!Array.isArray(menus) || !Array.isArray(programs) || !menus.length) fail('menu/program inventory is missing');
+function normalizeInventory({ menus }) {
+  if (!Array.isArray(menus) || !menus.length) fail('menu inventory is missing');
   const normalizedMenus = menus.map(row => {
     if (!row || !MENU_FIELDS.every(field => Object.hasOwn(row, field)) || !Number.isSafeInteger(row.menu_sn) || row.menu_sn <= 0
       || (row.up_menu_sn !== null && (!Number.isSafeInteger(row.up_menu_sn) || row.up_menu_sn < 0))
       || !Number.isSafeInteger(row.menu_ordr) || typeof row.menu_nm !== 'string' || !row.menu_nm.trim()
       || !['Y', 'N'].includes(row.use_yn) || !['Y', 'N'].includes(row.del_yn)
-      || ['prgrm_file_nm', 'menu_expln', 'modern_route'].some(field => row[field] !== null && typeof row[field] !== 'string')) {
+      || ['menu_expln', 'modern_route'].some(field => row[field] !== null && typeof row[field] !== 'string')) {
       fail('invalid menu definition');
     }
     return Object.fromEntries(MENU_FIELDS.map(field => [field, row[field]]));
   }).sort((left, right) => left.menu_sn - right.menu_sn);
-  const normalizedPrograms = programs.map(row => {
-    if (!row || !PROGRAM_FIELDS.every(field => Object.hasOwn(row, field))
-      || typeof row.prgrm_file_nm !== 'string' || !row.prgrm_file_nm
-      || PROGRAM_FIELDS.some(field => row[field] !== null && typeof row[field] !== 'string')) fail('invalid program definition');
-    return Object.fromEntries(PROGRAM_FIELDS.map(field => [field, row[field]]));
-  }).sort((left, right) => left.prgrm_file_nm.localeCompare(right.prgrm_file_nm));
   const menuIds = new Set(normalizedMenus.map(row => row.menu_sn));
-  const programNames = new Set(normalizedPrograms.map(row => row.prgrm_file_nm));
-  if (menuIds.size !== normalizedMenus.length || programNames.size !== normalizedPrograms.length) fail('duplicate menu/program identity');
+  if (menuIds.size !== normalizedMenus.length) fail('duplicate menu identity');
   for (const menu of normalizedMenus) {
     if (menu.up_menu_sn && !menuIds.has(menu.up_menu_sn)) fail(`missing parent for menu ${menu.menu_sn}`);
-    if (menu.prgrm_file_nm && !programNames.has(menu.prgrm_file_nm)) fail(`missing program for menu ${menu.menu_sn}`);
   }
-  return { menus: normalizedMenus, programs: normalizedPrograms };
+  return { menus: normalizedMenus };
 }
 
 export function validateProjectComposerMenus(snapshot, expectedSourceHash) {
-  if (!snapshot || snapshot.schemaVersion !== 1 || !/^[a-f0-9]{64}$/.test(expectedSourceHash)
+  if (!snapshot || snapshot.schemaVersion !== SNAPSHOT_SCHEMA_VERSION || !/^[a-f0-9]{64}$/.test(expectedSourceHash)
     || snapshot.sourceMigrationHash !== expectedSourceHash) fail('stale migration hash; refresh from an owned migrated database');
   const inventory = normalizeInventory(snapshot);
-  return { schemaVersion: 1, sourceMigrationHash: expectedSourceHash, ...inventory };
+  return { schemaVersion: SNAPSHOT_SCHEMA_VERSION, sourceMigrationHash: expectedSourceHash, ...inventory };
 }
 
 export function loadProjectComposerMenus(root) {
@@ -62,22 +56,22 @@ export function loadProjectComposerMenus(root) {
 export function assertProjectComposerMenusMatch(root, inventory) {
   const snapshot = loadProjectComposerMenus(root);
   const actual = normalizeInventory(inventory);
-  if (JSON.stringify({ menus: snapshot.menus, programs: snapshot.programs }) !== JSON.stringify(actual)) {
-    fail('checked-in preview differs from the actual migrated menu/program inventory');
+  if (JSON.stringify({ menus: snapshot.menus }) !== JSON.stringify(actual)) {
+    fail('checked-in preview differs from the actual migrated menu inventory');
   }
   return snapshot;
 }
 
 /** Only the generator's owned, migrated database supplies inventory to this explicit refresh. */
 export function writeProjectComposerMenuSnapshot(root, inventory) {
-  const snapshot = { schemaVersion: 1, sourceMigrationHash: projectMenuSourceHash(root), ...normalizeInventory(inventory) };
+  const snapshot = { schemaVersion: SNAPSHOT_SCHEMA_VERSION, sourceMigrationHash: projectMenuSourceHash(root), ...normalizeInventory(inventory) };
   writeFileSync(join(root, COMPOSER_MENU_SNAPSHOT_PATH), `${JSON.stringify(snapshot, null, 2)}\n`, 'utf8');
   return snapshot;
 }
 
 export function projectComposerMenuPreview(root, composition) {
   const snapshot = loadProjectComposerMenus(root);
-  return projectCompositionMenus({ ...snapshot, menuRoutes: composition.menuRoutes }).menus.map(menu => ({
+  return projectCompositionMenus({ menus: snapshot.menus, menuRoutes: composition.menuRoutes }).menus.map(menu => ({
     id: menu.menu_sn, label: menu.menu_nm, parent: menu.up_menu_sn || null, path: menu.modern_route,
   }));
 }

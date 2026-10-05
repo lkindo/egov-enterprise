@@ -178,7 +178,7 @@ export function analyzeMenuCensus(menus, snapshot) {
 
 function main() {
   const output = execFileSync(process.execPath, [join(ROOT, '.agent', 'scripts', 'db-bridge.js'),
-    'SELECT menu_sn, up_menu_sn, menu_nm, modern_route, prgrm_file_nm, use_yn, del_yn FROM tb_menu_info ORDER BY menu_sn', '--json'],
+    'SELECT menu_sn, up_menu_sn, menu_nm, modern_route, use_yn, del_yn FROM tb_menu_info ORDER BY menu_sn', '--json'],
   { encoding: 'utf8', cwd: ROOT, maxBuffer: 32 * 1024 * 1024 });
   const result = analyzeMenuCensus(parseMenuRows(output), inspectMenuRoutes());
   if (process.argv.includes('--json')) console.log(JSON.stringify(result, null, 2));

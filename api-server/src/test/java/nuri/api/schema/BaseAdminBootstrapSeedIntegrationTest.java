@@ -71,7 +71,7 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
             // 이 클래스 소유 disposable DB에서만 schema-only baseline의 빈 데이터를 재현한다.
             // 운영 Contract는 데이터를 비우지 않으며, 이 fixture 작업은 배포 코드에 존재하지 않는다.
             statement.execute("TRUNCATE tb_authrt_grnt_map,tb_authrt_user_map,tb_authrt_chg_hstry,"
-                    + "tb_menu_info,tb_prgrm_lst,tb_authrt_info,tb_user_info RESTART IDENTITY CASCADE");
+                    + "tb_menu_info,tb_authrt_info,tb_user_info RESTART IDENTITY CASCADE");
             statement.execute(frameworkSeedSql);
             assertThat(singleLong(statement,"SELECT count(*) FROM tb_authrt_info")).isEqualTo(2);
             assertThat(singleLong(statement,"SELECT count(*) FROM tb_authrt_user_map "
@@ -218,7 +218,7 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
                 }
                 assertThat(process.exitValue()).as("Composer bootstrap provenance verification failed").isZero();
                 JsonNode expected = JsonMapper.builder().configureForJackson2().build().readTree(output.toFile());
-                for (String key : List.of("menus", "programs", "operationGrants", "navigationGrants", "removePaths")) {
+                for (String key : List.of("menus", "operationGrants", "navigationGrants", "removePaths")) {
                     assertThat(expected.path(key).isArray()).as("Missing composer bootstrap expectation: %s", key).isTrue();
                 }
                 assertThat(expected.path("menus")).isNotEmpty();
@@ -253,10 +253,8 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
     }
 
     private void assertCompositionSeed(Statement statement, JsonNode expected) throws Exception {
-        assertJsonRows(statement, "SELECT menu_sn,up_menu_sn,menu_ordr,menu_nm,prgrm_file_nm,menu_expln,"
+        assertJsonRows(statement, "SELECT menu_sn,up_menu_sn,menu_ordr,menu_nm,menu_expln,"
                 + "modern_route,use_yn,del_yn FROM tb_menu_info", expected.path("menus"), "selected menu hierarchy and destinations");
-        assertJsonRows(statement, "SELECT prgrm_file_nm,prgrm_korn_nm,url,prgrm_strg_path,prgrm_expln FROM tb_prgrm_lst",
-                expected.path("programs"), "selected program references");
         assertJsonRows(statement, "SELECT authrt_cd,authrt_grnt_cd FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION'",
                 expected.path("navigationGrants"), "exact selected NAVIGATION grants");
         assertOperationGrants(statement, expected.path("operationGrants"));
@@ -366,7 +364,7 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
         Map<String, Long> counts = new LinkedHashMap<>();
         for (String table : List.of(
                 "tb_authrt_info", "tb_authrt_user_map", "tb_authrt_grnt_map", "tb_authrt_chg_hstry",
-                "tb_user_info", "tb_com_clsf_cd", "tb_prgrm_lst", "tb_menu_info")) {
+                "tb_user_info", "tb_com_clsf_cd", "tb_menu_info")) {
             counts.put(table, singleLong(statement, "SELECT count(*) FROM " + table));
         }
         return counts;

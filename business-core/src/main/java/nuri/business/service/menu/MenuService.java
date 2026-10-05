@@ -13,7 +13,6 @@ import nuri.business.service.menu.dto.MenuStructureDto.MenuProperties;
 import nuri.business.service.menu.dto.MenuStructureDto.MenuStructure;
 import nuri.business.service.menu.dto.MenuStructureDto.MenuStructureSave;
 import nuri.business.security.util.SecurityUtil;
-import nuri.business.security.audit.LoginUserAuditorAware;
 import nuri.business.service.auth.AuthorizationAdministrationService;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.security.service.CustomUserDetails;
@@ -38,7 +37,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import jakarta.annotation.PostConstruct;
 
 /**
  * 메뉴 관리 서비스
@@ -53,37 +51,14 @@ public class MenuService {
     private final MenuRepository menuRepository;
     private final NavigationGrantRepository navigationGrantRepository;
     private final AuthorizationAdministrationService authorizationAdministrationService;
-    private final LoginUserAuditorAware loginUserAuditorAware;
     /**
      * [2026-09-26 DIP B5 F10] 같은 빈 안에서 {@link #getAllMenusCached} 를 부르면 프록시를 거치지 않아 캐시가 적용되지 않는다.
      * 사이드바 트리는 이 공급자로 프록시를 거쳐 캐시를 읽는다. 없으면(단위 테스트) 저장소를 직접 읽는다.
      */
     private final org.springframework.beans.factory.ObjectProvider<MenuService> selfProvider;
 
-    /**
-     * 기동할 때 경로(modern_route)가 아직 없는 메뉴에 레거시 파일명으로 추정한 경로를 채운다.
-     * <p>[2026-10-04 프로그램 목록 퇴역] 종전에는 파일명 추정이 실패하면 프로그램 원장(tb_prgrm_lst) URL 의 레거시 접두로 한 번 더
-     * 추정했다. 원장 화면과 API 를 걷으며 그 분기도 걷었다. 그 분기로만 경로를 얻던 사용 중 말단 메뉴가 있는 DB 는 V2_124 가
-     * 적용 단계에서 멈춘다. 이관 도구로 메뉴를 넣을 때는 modern_route 를 채우고 prgrm_file_nm 은 비운다.
-     */
-    @PostConstruct
-    @Transactional
-    public void migrateModernRoutes() {
-        List<Menu> menus = menuRepository.findAllWithoutModernRoute();
-        if (menus.isEmpty()) return;
-        log.info(">>> [MenuService] Migrating {} legacy menus to modern_route...", menus.size());
-
-        for (Menu m : menus) {
-            String route = inferModernRoute(m.getPrgrmFileNm());
-            if (route != null) {
-                // @PostConstruct precedes the service transaction proxy; the repository owns this transaction.
-                // Use the same audit identity as JPA, while updating no other values from this old snapshot.
-                menuRepository.fillModernRouteIfUnchanged(m.getMenuSn(), m.getPrgrmFileNm(), route,
-                        java.time.LocalDateTime.now(), loginUserAuditorAware.getCurrentAuditor().orElse("SYSTEM"));
-            }
-        }
-        log.info(">>> [MenuService] modern_route migration completed.");
-    }
+    // [2026-10-05] 기동 때 경로가 없는 메뉴에 레거시 파일명으로 추정한 경로를 채우던 일은 V2_126 이 SQL 로 한 번 한다.
+    //   그 컬럼(prgrm_file_nm)은 V2_127 이 지웠다(DEC-OPS-231).
 
     /**
      * 현재 그룹의 NAVIGATION 권한으로 메뉴 계층을 조회한다. 권한 회수를 숨기는 장기 캐시는 두지 않는다.
@@ -140,7 +115,6 @@ public class MenuService {
                     .id(menu.getMenuSn())
                     .menuNo(menu.getMenuSn())
                     .menuNm(menu.getMenuNm())
-                    .prgrmFileNm(menu.getPrgrmFileNm())
                     .upMenuSn(menu.getUpMenuSn())
                     .upperMenuId(menu.getUpMenuSn())
                     .menuOrdr(menu.getMenuOrdr())
@@ -276,7 +250,6 @@ public class MenuService {
         Map<Long, Long> parents = lockParentGraph();
         Long parentId = normalizeUpMenuSn(vo.getUpMenuSn());
         assertAcyclicParentPath(parentId, parents);
-        assertNoProgramLink(vo.getPrgrmFileNm());
 
         Menu menu = Menu.builder()
                 .menuNm(vo.getMenuNm())
@@ -305,11 +278,9 @@ public class MenuService {
         Menu menu = menuRepository.findById(menuNo)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
         // Menu.update 는 null-safe 병합이다 — 전달되지 않은(null) 값은 기존 값을 유지하고, 빈 문자열이면 비운다.
-        // 연결 프로그램만은 예외로 늘 비운다. 퇴역 전에 남은 레거시 연결은 이 경로(값 없이 저장)로 걷는다.
-        assertNoProgramLink(vo.getPrgrmFileNm());
         Long parentId = normalizeUpMenuSn(vo.getUpMenuSn());
         validateParentChanges(parents, Collections.singletonMap(menuNo, parentId));
-        menu.updateWithModernRoute(vo.getMenuNm(), null,
+        menu.updateWithModernRoute(vo.getMenuNm(),
                 parentId,
                 vo.getMenuOrdr(),
                 vo.getMenuExpln(),
@@ -514,18 +485,6 @@ public class MenuService {
         return (upMenuSn != null && upMenuSn == 0L) ? null : upMenuSn;
     }
 
-    /**
-     * [2026-10-04 프로그램 목록 퇴역] 메뉴를 이전 프로그램에 새로 연결하지 않는다. 비어 있지 않은 값은 400 으로 거부하고,
-     * 비어 있으면(null·빈 문자열) 연결 없음이다. 원장(tb_prgrm_lst)과 메뉴의 외래 키는 DB 에 남지만 원장을 채우는 화면·API 가
-     * 없으므로, 값을 받으면 빈 원장 때문에 외래 키 위반(DB 오류)으로 끝나거나 아무 효과 없는 연결만 남는다.
-     */
-    private static void assertNoProgramLink(String prgrmFileNm) {
-        if (prgrmFileNm != null && !prgrmFileNm.isBlank()) {
-            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                    "메뉴에는 연결 프로그램을 지정할 수 없습니다. 연결 프로그램 값을 비워 주세요.");
-        }
-    }
-
 
     @Transactional
     @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos" }, allEntries = true)
@@ -631,7 +590,6 @@ public class MenuService {
                 .id(menu.getMenuSn())
                 .menuNo(menu.getMenuSn())
                 .menuNm(menu.getMenuNm())
-                .prgrmFileNm(menu.getPrgrmFileNm())
                 .upMenuSn(menu.getUpMenuSn())
                 .upperMenuId(menu.getUpMenuSn())
                 .menuOrdr(menu.getMenuOrdr())
@@ -645,61 +603,13 @@ public class MenuService {
 
 
     /**
-     * 메뉴 응답의 chkURL. 경로(modern_route)가 우선이고, 없으면 레거시 파일명으로 추정한다.
-     * <p>[2026-10-04 프로그램 목록 퇴역] 종전에는 마지막으로 프로그램 원장의 URL 을 읽었다. 원장을 걷었으므로 추정할 수 없으면
-     * 종전에 원장에 그 프로그램이 없을 때 돌려주던 값({@code "/"})을 그대로 돌려준다.
+     * 메뉴 응답의 chkURL. 경로(modern_route)가 있으면 그 경로이고, 없으면 이동할 곳이 없다는 뜻의 {@code "#"} 이다.
+     * <p>[2026-10-05] 종전에는 경로가 없으면 레거시 파일명(prgrm_file_nm)으로 추정했고, 추정할 수 없으면 {@code "/"} 를
+     * 돌려줬다. 추정으로 얻던 경로는 V2_126 이 modern_route 에 미리 채웠고, 앱은 그 컬럼을 더 이상 읽지 않는다.
+     * 화면은 경로가 없으면 chkURL 로 이동하지 않는다({@code resolveMenuInternalRoute}).
      */
     private String calculateUrl(Menu menu) {
-        if (menu.getModernRoute() != null && !menu.getModernRoute().isEmpty()) {
-            return menu.getModernRoute();
-        }
-
-        String progrmFileNm = menu.getPrgrmFileNm();
-        if (progrmFileNm == null || "dir".equals(progrmFileNm) || "/".equals(progrmFileNm)) {
-            return "#";
-        }
-
-        String inferred = inferModernRoute(progrmFileNm);
-        return inferred != null ? inferred : "/";
-    }
-
-    private String inferModernRoute(String progrmFileNm) {
-        if (progrmFileNm == null)
-            return null;
-
-        if (progrmFileNm.contains("BoardManage"))
-            return "/admin/community/boards";
-        if (progrmFileNm.contains("BBSMaster"))
-            return "/admin/community";
-        if (progrmFileNm.contains("CmmCode"))
-            return "/admin/system/common-code";
-        if (progrmFileNm.contains("GroupList"))
-            return "/admin/security/group";
-        if (progrmFileNm.contains("RoleList"))
-            return "/admin/security/role";
-        if (progrmFileNm.contains("AuthorGroup"))
-            return "/admin/security/authority";
-        if (progrmFileNm.contains("QustnrManage"))
-            return "/admin/survey/manage";
-        if (progrmFileNm.contains("QustnrTmplat"))
-            return "/admin/survey/templates";
-        if (progrmFileNm.contains("AdbkList"))
-            return "/admin/collaboration/address-book";
-        if (progrmFileNm.contains("FaqList"))
-            return "/admin/help/faq";
-        if (progrmFileNm.contains("CnsltList"))
-            return "/admin/help/qna";
-        if (progrmFileNm.contains("MainImage"))
-            return "/admin/system/banner";
-        if (progrmFileNm.contains("FileMng"))
-            return "/admin/system/files";
-        if (progrmFileNm.contains("ProgramList"))
-            return "/admin/system/programs";
-        if (progrmFileNm.contains("MenuCreat"))
-            return "/admin/system/menus/by-authority";
-        if (progrmFileNm.contains("MenuList"))
-            return "/admin/system/menus";
-
-        return null;
+        String modernRoute = menu.getModernRoute();
+        return modernRoute != null && !modernRoute.isEmpty() ? modernRoute : "#";
     }
 }

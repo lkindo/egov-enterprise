@@ -45,7 +45,7 @@ function screen(route: string): ScreenRegistryEntry {
 }
 
 function menu(menuNo: number, menuNm: string, modernRoute: string | null, useYn: 'Y' | 'N' = 'Y'): MenuStructureItem {
-  return { menuNo, menuNm, upMenuSn: null, menuOrdr: menuNo, modernRoute, menuExpln: null, useYn, prgrmFileNm: null };
+  return { menuNo, menuNm, upMenuSn: null, menuOrdr: menuNo, modernRoute, menuExpln: null, useYn };
 }
 
 describe('listedScreens', () => {

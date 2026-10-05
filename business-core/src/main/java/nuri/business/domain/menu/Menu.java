@@ -27,12 +27,7 @@ public class Menu extends BaseEntity {
     @Column(nullable = false, length = 100)
     private String menuNm;
 
-    /**
-     * 레거시 연결 프로그램 파일명. [2026-10-04 프로그램 목록 퇴역] 프로그램 원장(tb_prgrm_lst) 엔티티와 그 연관을 걷었다.
-     * 컬럼과 외래 키(fk_tb_menu_info_tb_prgrm_lst)는 DB 에 남으므로 단순 문자열로만 매핑한다 — 새 값은 서비스가 거부한다.
-     */
-    @Column(name = "prgrm_file_nm", length = 300)
-    private String prgrmFileNm;
+    // [2026-10-05] 레거시 연결 프로그램 컬럼(prgrm_file_nm)은 V2_127 이 외래 키·프로그램 원장과 함께 지웠다(DEC-OPS-231).
 
     @Column(name = "up_menu_sn")
     private Long upMenuSn;
@@ -75,11 +70,10 @@ public class Menu extends BaseEntity {
      * 팩토리(create)에서만 위임 호출한다.
      * (@Builder.Default 재현: useYn 은 null 병합으로 기본값 "Y" 유지, children 은 필드 초기화로 빈 리스트 유지)
      */
-    private Menu(Long menuSn, String menuNm, String prgrmFileNm, Long upMenuSn, Integer menuOrdr,
+    private Menu(Long menuSn, String menuNm, Long upMenuSn, Integer menuOrdr,
                  String menuExpln, String relImgPath, String relImgNm, String modernRoute, String useYn) {
         this.menuSn = menuSn;
         this.menuNm = menuNm;
-        this.prgrmFileNm = prgrmFileNm;
         this.upMenuSn = upMenuSn;
         this.menuOrdr = menuOrdr;
         this.menuExpln = menuExpln;
@@ -95,9 +89,9 @@ public class Menu extends BaseEntity {
      * 기존 Menu.builder()...build() 호출부와 동일하게 동작한다.
      */
     @Builder
-    public static Menu create(Long menuSn, String menuNm, String prgrmFileNm, Long upMenuSn, Integer menuOrdr,
+    public static Menu create(Long menuSn, String menuNm, Long upMenuSn, Integer menuOrdr,
                               String menuExpln, String relImgPath, String relImgNm, String modernRoute, String useYn) {
-        return new Menu(menuSn, menuNm, prgrmFileNm, upMenuSn, menuOrdr, menuExpln, relImgPath, relImgNm,
+        return new Menu(menuSn, menuNm, upMenuSn, menuOrdr, menuExpln, relImgPath, relImgNm,
                 modernRoute, useYn);
     }
 
@@ -106,16 +100,14 @@ public class Menu extends BaseEntity {
      * <p>
      * 병합 규칙 — 부분(partial) 페이로드로 인한 무음 데이터 소실을 막기 위한 것이다.
      * <ul>
-     *   <li>{@code upMenuSn}, {@code prgrmFileNm} : 전달값을 그대로 반영한다.
-     *       null 자체가 "루트로 이동" / "연결 프로그램 없음"이라는 유효한 의미를 갖기 때문이다.</li>
+     *   <li>{@code upMenuSn} : 전달값을 그대로 반영한다. null 자체가 "루트로 이동"이라는 유효한 의미를 갖기 때문이다.</li>
      *   <li>그 외 값 필드 : null 이면 <b>기존 값을 유지</b>한다. 값을 비우려면 null 이 아니라 빈 문자열을 전달한다.
      *       (화면에 노출되지 않는 menuExpln/relImgPath/relImgNm 이 수정 1회로 조용히 null 이 되던 문제 차단)</li>
      * </ul>
      */
-    public void update(String menuNm, String prgrmFileNm, Long upMenuSn, Integer menuOrdr, String menuExpln,
+    public void update(String menuNm, Long upMenuSn, Integer menuOrdr, String menuExpln,
                        String relImgPath, String relImgNm, String useYn) {
         this.upMenuSn = upMenuSn;
-        this.prgrmFileNm = prgrmFileNm;
         if (menuNm != null) {
             this.menuNm = menuNm;
         }
@@ -151,12 +143,11 @@ public class Menu extends BaseEntity {
 
     /**
      * [2026-10-02] 메뉴 구조 저장의 속성 치환 — 이름·연결 라우트·설명·사용 여부 네 필드만 통째로 바꾼다.
-     * <p>{@link #update}·{@link #updateWithModernRoute} 를 쓰지 않는 이유: 그 둘은 상위 메뉴와 연결 프로그램을 null 이어도
-     * 덮어쓰고(루트로 이동·프로그램 해제), 서비스가 사용 여부 null 을 'Y' 로 바꿔 넘겨 비활성 메뉴가 다시 켜진다. 여기서는
-     * 위치·순서·연결 프로그램을 건드리지 않는다.
-     * <p>빈 연결 라우트(null·'')는 라우트 없음이다. 라우트가 있던 메뉴를 비우면 빈 문자열로 저장한다 — null 로 두면
-     * 기동 때 도는 {@code MenuService#migrateModernRoutes} 가 연결 프로그램에서 라우트를 다시 채워 비움이 되돌아간다
-     * (단건 수정 경로도 빈 문자열을 저장한다). 이미 비어 있으면(null·'') 그대로 두어 저장만으로 값이 바뀌지 않게 한다.
+     * <p>{@link #update}·{@link #updateWithModernRoute} 를 쓰지 않는 이유: 그 둘은 상위 메뉴를 null 이어도 덮어쓰고(루트로
+     * 이동), 서비스가 사용 여부 null 을 'Y' 로 바꿔 넘겨 비활성 메뉴가 다시 켜진다. 여기서는 위치·순서를 건드리지 않는다.
+     * <p>빈 연결 라우트(null·'')는 라우트 없음이다. 라우트가 있던 메뉴를 비우면 빈 문자열로 저장한다 — null 은 "아직 채우지
+     * 않은 경로" 라서, V2_126 이전 앱(기동 때 레거시 파일명으로 경로를 다시 채웠다)이 함께 떠 있는 동안 비움이 되돌아갈 수
+     * 있다(단건 수정 경로도 빈 문자열을 저장한다). 이미 비어 있으면(null·'') 그대로 두어 저장만으로 값이 바뀌지 않게 한다.
      */
     public void replaceProperties(String menuNm, String modernRoute, String menuExpln, String useYn) {
         this.menuNm = menuNm;
@@ -180,9 +171,9 @@ public class Menu extends BaseEntity {
      * 메뉴 정보 수정 (modern_route 포함).
      * modernRoute 역시 {@link #update} 와 동일한 병합 규칙(null=유지, 빈 문자열=비움)을 따른다.
      */
-    public void updateWithModernRoute(String menuNm, String prgrmFileNm, Long upMenuSn, Integer menuOrdr,
+    public void updateWithModernRoute(String menuNm, Long upMenuSn, Integer menuOrdr,
                                        String menuExpln, String relImgPath, String relImgNm, String modernRoute, String useYn) {
-        this.update(menuNm, prgrmFileNm, upMenuSn, menuOrdr, menuExpln, relImgPath, relImgNm, useYn);
+        this.update(menuNm, upMenuSn, menuOrdr, menuExpln, relImgPath, relImgNm, useYn);
         if (modernRoute != null) {
             this.modernRoute = modernRoute;
         }

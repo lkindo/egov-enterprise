@@ -130,7 +130,9 @@ class InputContractMirrorLinterTest {
     //   임시저장 표(V2_122)와 대조한다. 중첩 +1(그 요청의 결재 단계 목록). 미완성 기안이라 필수 제약은 없다.
     // [2026-10-04 프로그램 목록 퇴역] 256 -> 251. ProgramDto 길이 5필드(파일명·저장 경로·한글명·URL·설명)가 빠졌다 — 그 DTO 와
     //   프로그램 API 를 걷었기 때문이다. 검증 약화가 아니라 검증 대상의 소멸이다(H2 아님). 테이블은 남지만 쓰는 경로가 없다.
-    private static final int MIN_LENGTH_FIELDS = 251;
+    // [2026-10-05 프로그램 원장 참조 퇴역] 251 -> 250. MenuDto.prgrmFileNm 이 빠졌다 — 앱이 그 컬럼을 더 이상 매핑하지 않아
+    //   요청·응답에서 필드를 걷었다(GAP-PROGRAM-001). 같은 이유로 검증 대상의 소멸이다.
+    private static final int MIN_LENGTH_FIELDS = 250;
     private static final int MIN_ENUM_FIELDS = 18;
     private static final int MIN_NESTED_VALIDATION_FIELDS = 12;
     // [2026-09-06 병합] CommunityDto.cmntyNm·DeptJobBoxDto.deptTaskBoxNm 필수화(+2), SmsRecptnDto.rcptnTelno 해제(-1) → 37.
