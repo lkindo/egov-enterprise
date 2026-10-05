@@ -58,6 +58,22 @@ public class MappingValidator {
     public ValidationResult validate(MappingSpec spec) {
         List<String> errors = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
+        for (int tableIndex = 0; tableIndex < spec.tables().size(); tableIndex++) {
+            MappingSpec.TableMapping table = spec.tables().get(tableIndex);
+            if (table == null) {
+                errors.add("tables[" + tableIndex + "]: 테이블 매핑 항목은 null일 수 없습니다");
+                continue;
+            }
+            for (int columnIndex = 0; columnIndex < table.columns().size(); columnIndex++) {
+                if (table.columns().get(columnIndex) == null) {
+                    errors.add("tables[" + tableIndex + "].columns[" + columnIndex
+                            + "]: 컬럼 매핑 항목은 null일 수 없습니다");
+                }
+            }
+        }
+        if (!errors.isEmpty()) {
+            return new ValidationResult(errors, warnings);
+        }
         Set<String> targetColumns = loadTargetColumns(errors);
         Map<String, MappingSpec.TableMapping> sourceTables = new LinkedHashMap<>();
         for (MappingSpec.TableMapping t : spec.tables()) {

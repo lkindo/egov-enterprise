@@ -230,9 +230,8 @@ class ApprovalReferenceServiceTest {
         return notifications().stream().filter(event -> title.equals(event.title())).toList();
     }
 
-    @SuppressWarnings("unchecked")
     private List<InformalSanctionReference> savedReferences() {
-        ArgumentCaptor<List<InformalSanctionReference>> saved = ArgumentCaptor.forClass((Class) List.class);
+        ArgumentCaptor<List<InformalSanctionReference>> saved = ArgumentCaptor.captor();
         verify(referenceRepository).saveAll(saved.capture());
         return saved.getValue();
     }

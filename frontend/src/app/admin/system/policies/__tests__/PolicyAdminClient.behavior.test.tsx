@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PolicyAdminClient from '../PolicyAdminClient';
 
@@ -55,6 +55,13 @@ const policy = {
   plcyCn: '<p>기존 정책 내용</p>',
 };
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((nextResolve, nextReject) => { resolve = nextResolve; reject = nextReject; });
+  return { promise, resolve, reject };
+}
+
 describe('PolicyAdminClient validation behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -78,6 +85,40 @@ describe('PolicyAdminClient validation behavior', () => {
     }));
     expect(mocks.update).not.toHaveBeenCalled();
     expect(await screen.findByRole('button', { name: '개인정보 처리방침 정책 수정' })).toBeVisible();
+  });
+
+  it('저장 후 새 목록이 보이면 늦은 최초 조회가 그 목록을 덮어쓰지 않는다', async () => {
+    const initialRequest = deferred<Array<typeof policy>>();
+    const savedPolicy = { ...policy, plcyTtl: '저장된 최신 정책', plcyCn: '<p>저장된 최신 본문</p>' };
+    mocks.getPolicies.mockReturnValueOnce(initialRequest.promise).mockResolvedValueOnce([savedPolicy]);
+    render(<PolicyAdminClient />);
+    await waitFor(() => expect(mocks.getPolicies).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByRole('button', { name: '새 정책 등록' }));
+    fireEvent.change(screen.getByRole('textbox', { name: /^정책 유형 코드/ }), { target: { value: 'PRIVACY' } });
+    fireEvent.change(screen.getByRole('textbox', { name: /^정책 제목/ }), { target: { value: savedPolicy.plcyTtl } });
+    fireEvent.change(screen.getByRole('textbox', { name: /^정책 내용/ }), { target: { value: savedPolicy.plcyCn } });
+    fireEvent.click(screen.getByRole('button', { name: '정책 등록하기' }));
+    await waitFor(() => expect(mocks.getPolicies).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole('button', { name: '저장된 최신 정책 정책 수정' })).toBeVisible();
+
+    await act(async () => { initialRequest.resolve([policy]); });
+
+    expect(screen.getByRole('button', { name: '저장된 최신 정책 정책 수정' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: '개인정보 처리방침 정책 수정' })).toBeNull();
+    expect(mocks.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('화면을 떠난 뒤 이전 정책 조회가 실패해도 오류 알림을 띄우지 않는다', async () => {
+    const request = deferred<Array<typeof policy>>();
+    mocks.getPolicies.mockReturnValueOnce(request.promise);
+    const view = render(<PolicyAdminClient />);
+    await waitFor(() => expect(mocks.getPolicies).toHaveBeenCalledTimes(1));
+
+    view.unmount();
+    await act(async () => { request.reject(new Error('late failure')); });
+
+    expect(mocks.toast).not.toHaveBeenCalled();
   });
 
   it('새 유형의 형식 오류를 막고 중복 응답 뒤 입력을 보존한다', async () => {

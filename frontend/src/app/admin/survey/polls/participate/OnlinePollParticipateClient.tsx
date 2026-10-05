@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { pollUserService } from '@/services/business/user/poll/PollUserService';
 import { OnlinePollManageDetailVO, OnlinePollItemVO } from '@/types/business/poll';
@@ -30,10 +30,17 @@ export default function OnlinePollParticipateClient() {
   const [loading, setLoading] = useState(true);
   const [isVoting, setIsVoting] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'vote' | 'result'>('list');
+  const listRequestRef = useRef(0);
+  const selectionRequestRef = useRef(0);
+  const selectedPollSnRef = useRef<number | undefined>(undefined);
+  const lifecycleRef = useRef(0);
+  const completedPollsRef = useRef(new Set<number>());
+  const completedPollItemsRef = useRef(new Map<number, { requestId: number; items: OnlinePollItemVO[] }>());
   // 저장 포맷과 같은 'yyyyMMdd' 8자 기준일.
   const todayStr = useTodayStorageYmd();
 
  const fetchPolls = useCallback(async () => {
+   const requestId = ++listRequestRef.current;
    setLoading(true);
  // [2026-08-29] 조회 실패를 '없음'으로 그리지 않는다.
  //   종전 catch 는 토스트만 띄우고 polls 를 [] 로 둔 채 로딩을 내렸다. 실패 상태를 남기는
@@ -42,50 +49,69 @@ export default function OnlinePollParticipateClient() {
  setLoadError(null);
  try {
  const res = await pollUserService.getPollList({ page: 0, size: 100 });
+ if (requestId !== listRequestRef.current) return;
  // Support both Spring Data JPA Page (content) and legacy list format
  setPolls(res.list || []);
   } catch {
+  if (requestId !== listRequestRef.current) return;
   setLoadError('투표 목록을 불러오지 못했습니다.');
   toast.error('투표 목록을 불러오지 못했습니다.');
   } finally {
-  setLoading(false);
+  if (requestId === listRequestRef.current) setLoading(false);
   }
   }, [toast]);
 
   useEffect(() => {
     void fetchPolls();
+    return () => {
+      listRequestRef.current += 1;
+      selectionRequestRef.current += 1;
+      selectedPollSnRef.current = undefined;
+      lifecycleRef.current += 1;
+    };
   }, [fetchPolls]);
 
  const handleSelectPoll = async (poll: OnlinePollManageDetailVO) => {
+ const requestId = ++selectionRequestRef.current;
+ selectedPollSnRef.current = poll.pollSn;
  setLoading(true);
  try {
  const items = await pollUserService.getPollItemList(poll.pollSn!);
- setPollItems(items || []);
- setSelectedPoll(poll);
+ if (requestId !== selectionRequestRef.current) return;
+ // 선택 요청 중 제출이 완료됐으면, 요청 시작 때 캡처한 미참여 상태로 되돌리지 않는다.
+ const resolvedPoll = { ...poll, hasVoted: poll.hasVoted || (poll.pollSn !== undefined && completedPollsRef.current.has(poll.pollSn)) };
+ const completedItems = poll.pollSn !== undefined ? completedPollItemsRef.current.get(poll.pollSn) : undefined;
+ // 제출 후 조회보다 먼저 시작한 선택 응답은 당시의 비공개 집계로 되돌리지 않는다.
+ setPollItems(completedItems && completedItems.requestId >= requestId ? completedItems.items : items || []);
+ setSelectedPoll(resolvedPoll);
  setSelectedItemSn(null);
 
  // 기간 밖이거나 판정 불가(손상 값)면 투표를 열지 않고 결과만 보여준다.
  // [2026-09-26 DIP V7] 이미 참여했으면 결과로 연다 — 종전에는 다시 투표 화면을 열었다가 제출 때 거부됐다.
- if (!poll.hasVoted && isPollActive(poll.pollBgngYmd, poll.pollEndYmd, todayStr, poll.pollDsuseYn)) {
+ if (!resolvedPoll.hasVoted && isPollActive(poll.pollBgngYmd, poll.pollEndYmd, todayStr, poll.pollDsuseYn)) {
  setViewMode('vote');
  } else {
  setViewMode('result');
  }
  } catch {
+ if (requestId !== selectionRequestRef.current) return;
  toast.error('투표 상세 정보를 불러오지 못했습니다.');
  } finally {
- setLoading(false);
+ if (requestId === selectionRequestRef.current) setLoading(false);
  }
  };
 
  /** 목록 카드와 열린 투표에 참여 완료를 반영한다. 다시 목록으로 돌아가도 같은 투표를 또 열지 않게 한다. */
  const markVoted = (pollSn: number | undefined) => {
+ if (pollSn !== undefined) completedPollsRef.current.add(pollSn);
  setPolls((current) => current.map((poll) => (poll.pollSn === pollSn ? { ...poll, hasVoted: true } : poll)));
  setSelectedPoll((current) => (current && current.pollSn === pollSn ? { ...current, hasVoted: true } : current));
  };
 
  const handleVote = async () => {
  if (!selectedPoll || !selectedItemSn) return;
+ const selectionRequestId = selectionRequestRef.current;
+ const lifecycle = lifecycleRef.current;
 
  setIsVoting(true);
  try {
@@ -93,25 +119,36 @@ export default function OnlinePollParticipateClient() {
  pollSn: selectedPoll.pollSn!,
  pollArtclSn: selectedItemSn
  });
+ if (lifecycle !== lifecycleRef.current) return;
  toast.success('투표가 성공적으로 반영되었습니다.');
+ // 제출한 투표의 참여 사실은 목록에 남기고, 집계는 현재 선택한 같은 투표에만 반영한다.
  markVoted(selectedPoll.pollSn);
  // Refresh items to show new counts
+ const refreshRequestId = selectionRequestRef.current;
  const updatedItems = await pollUserService.getPollItemList(selectedPoll.pollSn!);
+ if (lifecycle !== lifecycleRef.current) return;
+ if (selectedPoll.pollSn !== undefined) completedPollItemsRef.current.set(selectedPoll.pollSn, { requestId: refreshRequestId, items: updatedItems });
+ if (selectedPollSnRef.current !== selectedPoll.pollSn || refreshRequestId !== selectionRequestRef.current) return;
  setPollItems(updatedItems);
- setViewMode('result');
+ if (selectionRequestId === selectionRequestRef.current) setViewMode('result');
   } catch (error: unknown) {
+    if (lifecycle !== lifecycleRef.current) return;
     const msg = (error && typeof error === 'object' && 'response' in error)
       ? (error as { response?: { data?: { message?: string } } }).response?.data?.message || '투표 처리 중 오류가 발생했습니다.'
       : '투표 처리 중 오류가 발생했습니다.';
-    toast.error(msg);
     if (msg.includes('이미 참여')) {
       markVoted(selectedPoll.pollSn);
-      setViewMode('result');
     }
+    if (selectionRequestId !== selectionRequestRef.current) return;
+    toast.error(msg);
+    if (msg.includes('이미 참여')) setViewMode('result');
   } finally {
- setIsVoting(false);
+ if (lifecycle === lifecycleRef.current) setIsVoting(false);
  }
  };
+
+ // 항목 갱신의 응답 순서와 무관하게 참여가 확인된 상세 화면은 결과로만 표시한다.
+ const detailMode = selectedPoll?.hasVoted || viewMode === 'result' ? 'result' : 'vote';
 
  if (loading && viewMode === 'list') {
  return (
@@ -196,7 +233,7 @@ export default function OnlinePollParticipateClient() {
  <div className="p-4 space-y-4">
  <div className="space-y-2">
  <label className="text-[length:var(--font-size-body)] font-semibold text-muted-foreground ml-1 block mb-2">
- {viewMode === 'vote' ? '항목을 선택하세요' : '집계 결과'}
+ {detailMode === 'vote' ? '항목을 선택하세요' : '집계 결과'}
  </label>
  
  <div className="space-y-2">
@@ -210,8 +247,8 @@ export default function OnlinePollParticipateClient() {
  countsHidden={pollItems.some((i) => i.pollIemCo == null)}
  totalVotes={pollItems.reduce((sum, i) => sum + (i.pollIemCo || 0), 0)}
  isSelected={selectedItemSn === item.pollArtclSn}
- onSelect={() => viewMode === 'vote' && setSelectedItemSn(item.pollArtclSn!)}
- mode={viewMode}
+ onSelect={() => detailMode === 'vote' && setSelectedItemSn(item.pollArtclSn!)}
+ mode={detailMode}
  index={idx}
  testId={`poll-item-${idx}`}
  />
@@ -222,12 +259,16 @@ export default function OnlinePollParticipateClient() {
  <div className="flex gap-2 pt-2">
  <Button 
  variant="ghost" 
- onClick={() => setViewMode('list')}
+ onClick={() => {
+   selectionRequestRef.current += 1;
+   selectedPollSnRef.current = undefined;
+   setViewMode('list');
+ }}
  className="h-[var(--control-h)] px-4 rounded-lg text-[length:var(--font-size-body)] font-medium border border-border"
  >
  목록으로
  </Button>
- {viewMode === 'vote' && (
+ {detailMode === 'vote' && (
  <Button 
  disabled={!selectedItemSn || isVoting}
  onClick={handleVote}

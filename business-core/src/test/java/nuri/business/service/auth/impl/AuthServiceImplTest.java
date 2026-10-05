@@ -9,11 +9,9 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import nuri.business.domain.login.LoginPolicy;
 import nuri.business.domain.login.LoginPolicyRepository;
-import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.auth.LoginFailureReason;
 import nuri.business.service.auth.LoginRejectedException;
-import nuri.business.service.auth.OtpService;
 import nuri.business.service.auth.dto.LoginRequest;
 import nuri.business.service.auth.dto.TokenResponse;
 import nuri.business.service.log.LogService;
@@ -46,6 +44,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -89,7 +88,6 @@ class AuthServiceImplTest {
     @Mock private RefreshTokenRepository refreshTokenRepository;
     @Mock private LoginPolicyManageService loginPolicyManageService;
     @Mock private LoginPolicyRepository loginPolicyRepository;
-    @Mock private OtpService otpService;
     @Mock private LogService logService;
     @Mock private nuri.business.service.auth.mfa.MfaService mfaService;
     @Mock private Authentication authentication;
@@ -127,9 +125,9 @@ class AuthServiceImplTest {
                 "refresh-expiry-test-key-material-only-not-a-deployment-secret-01234567890123456789");
         org.springframework.test.util.ReflectionTestUtils.setField(realProvider, "refreshTokenValidityInMilliseconds", validityMs);
         org.springframework.test.util.ReflectionTestUtils.invokeMethod(realProvider, "init");
-        AuthServiceImpl service = new AuthServiceImpl(authenticationManager, realProvider, userRepository,
+        AuthServiceImpl service = new AuthServiceImpl(authenticationManager, realProvider,
                 userDetailsService, refreshTokenRepository, loginPolicyManageService, loginPolicyRepository,
-                otpService, logService, mfaService);
+                logService, mfaService);
         if (relogin) {
             given(refreshTokenRepository.findById(ESNTL_ID)).willReturn(Optional.of(RefreshToken.builder()
                     .userId(ESNTL_ID).rfshTkn("old-digest")
@@ -265,7 +263,7 @@ class AuthServiceImplTest {
             TokenResponse response = authService.login(loginRequest(654321), CLIENT_IP);
             assertThat(response.getAuthenticationStage()).isEqualTo("MFA_REQUIRED");
             assertThat(response.getAccessToken()).isNull();
-            verify(otpService, never()).verifyCode(anyString(), org.mockito.ArgumentMatchers.anyInt());
+            verify(mfaService).beginLogin(same((CustomUserDetails) authentication.getPrincipal()), eq(true));
             verify(refreshTokenRepository, never()).save(any());
         }
 
@@ -298,7 +296,7 @@ class AuthServiceImplTest {
             given(mfaService.beginLogin(any(), eq(false))).willReturn(new nuri.business.service.auth.mfa.MfaResults.Challenge(
                     "MFA_REQUIRED", "active-credential-proof", Instant.now().plusSeconds(300)));
             assertThat(authService.login(loginRequest(null), CLIENT_IP).getAuthenticationStage()).isEqualTo("MFA_REQUIRED");
-            verify(otpService, never()).verifyCode(anyString(), org.mockito.ArgumentMatchers.anyInt());
+            verify(mfaService).beginLogin(same((CustomUserDetails) authentication.getPrincipal()), eq(false));
             verify(refreshTokenRepository, never()).save(any());
         }
 
@@ -644,11 +642,4 @@ class AuthServiceImplTest {
                 .exprtnDt(Instant.now().plus(Duration.ofDays(3))).build();
     }
 
-    private static User userWithSecret() {
-        User user = org.mockito.Mockito.mock(User.class);
-        given(user.getOtpSecret()).willReturn("USER-OTP-SECRET");
-        given(user.getEsntlId()).willReturn(ESNTL_ID);
-        given(user.getRole()).willReturn(nuri.business.domain.user.entity.Role.USER);
-        return user;
-    }
 }

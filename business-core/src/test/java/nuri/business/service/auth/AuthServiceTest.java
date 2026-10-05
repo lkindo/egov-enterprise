@@ -56,9 +56,6 @@ class AuthServiceTest {
     private nuri.business.domain.login.LoginPolicyRepository loginPolicyRepository;
 
     @Mock
-    private nuri.business.service.auth.OtpService otpService;
-
-    @Mock
     private MfaService mfaService;
 
     @Mock
@@ -258,7 +255,7 @@ class AuthServiceTest {
 
         assertRestrictedChallenge(response, "ENROLLMENT_REQUIRED", "registration-challenge-fixture");
         verify(mfaService).beginLogin(same((CustomUserDetails) auth.getPrincipal()), eq(true));
-        verifyNoInteractions(otpService, jwtTokenProvider, refreshTokenRepository);
+        verifyNoInteractions(jwtTokenProvider, refreshTokenRepository);
         verify(logService, never()).logLogin(anyString(), anyString(), anyString(), eq("N"), any());
     }
 
@@ -281,10 +278,11 @@ class AuthServiceTest {
         TokenResponse response = authService.login(request, "127.0.0.1");
 
         assertRestrictedChallenge(response, "MFA_REQUIRED", "verification-challenge-fixture");
+        verify(mfaService).beginLogin(same((CustomUserDetails) auth.getPrincipal()), eq(true));
         assertSame(rejection, assertThrows(MfaRejectedException.class, () ->
                 authService.verifyMfaLogin(response.getMfaChallenge(), "000001", null, "127.0.0.1")));
         verify(mfaService).verifyLogin("verification-challenge-fixture", "000001", null, "127.0.0.1");
-        verifyNoInteractions(otpService, jwtTokenProvider, refreshTokenRepository, userDetailsService);
+        verifyNoInteractions(jwtTokenProvider, refreshTokenRepository, userDetailsService);
     }
 
     @Test
@@ -334,6 +332,7 @@ class AuthServiceTest {
         assertEquals("AUTHENTICATED", response.getAuthenticationStage());
         assertEquals("mfa-access-fixture", response.getAccessToken());
         assertEquals("mfa-refresh-fixture", response.getRefreshToken());
+        verify(mfaService).verifyLogin("completion-challenge-fixture", "000001", null, "127.0.0.1");
         verify(userDetailsService).loadUserByUsername(esntlId);
         verify(userDetailsService, never()).loadUserByUsername(loginId);
         verify(loginPolicyManageService).validateLoginPolicy(loginId, "127.0.0.1");
@@ -343,7 +342,7 @@ class AuthServiceTest {
         verify(jwtTokenProvider, never()).createRefreshToken(anyString());
         verify(refreshTokenRepository).save(argThat(token -> esntlId.equals(token.getUserId())
                 && nuri.business.domain.auth.RefreshTokenDigest.of("mfa-refresh-fixture").equals(token.getRfshTkn())));
-        verifyNoInteractions(otpService, userRepository);
+        verifyNoInteractions(userRepository);
     }
 
     @Test

@@ -1,6 +1,5 @@
 package nuri.api.interceptor;
 
-import nuri.foundation.core.annotation.PrivacyAccess;
 import nuri.foundation.core.event.AuditEvent;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.foundation.security.net.ClientIpResolver;

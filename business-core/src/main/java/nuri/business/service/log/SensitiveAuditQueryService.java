@@ -47,8 +47,8 @@ public class SensitiveAuditQueryService {
         }
         QSensitiveAuditLog log = QSensitiveAuditLog.sensitiveAuditLog;
         BooleanBuilder where = new BooleanBuilder();
-        if (StringUtils.hasText(actorId)) where.and(log.frstRgtrId.eq(actorId.trim()));
-        if (StringUtils.hasText(operation)) where.and(log.jobNm.eq(operation.trim()));
+        if (actorId != null && StringUtils.hasText(actorId)) where.and(log.frstRgtrId.eq(actorId.trim()));
+        if (operation != null && StringUtils.hasText(operation)) where.and(log.jobNm.eq(operation.trim()));
         boolean hasFrom = StringUtils.hasText(fromDate);
         boolean hasTo = StringUtils.hasText(toDate);
         if (hasFrom != hasTo) {
