@@ -1,8 +1,21 @@
-import { APIRequestContext,APIResponse } from '@playwright/test';
+import { APIRequestContext,APIResponse,type Locator } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
 import { expect,test } from '../fixtures/browser-test';
 import { collectPageCoverage } from '../fixtures/page-observation';
 import { getAdminBearerToken } from '../utils/admin-token';
+/**
+ * [2026-10-05 반박 리뷰 반영 — blocker 회귀 방지] 단추 중심의 맨 위 요소가 단추 자신(또는 그 안)인가. 창이 낮을 때(기본 뷰포트
+ * 1280×720 포함) 권한 표 상자가 편집기 안에서 넘쳐 저장 막대를 덮으면 클릭이 표 칸에 떨어진다('td intercepts pointer events').
+ * 클릭이 시간 초과로 끝나기 전에 무엇이 덮었는지 이름 붙여 말한다.
+ */
+async function expectUncovered(button: Locator, label: string) {
+    await button.scrollIntoViewIfNeeded();
+    await expect.poll(() => button.evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+        return hit === null ? 'null' : element.contains(hit) ? 'button' : `${hit.tagName.toLowerCase()}${hit.id ? `#${hit.id}` : ''}`;
+    }), label).toBe('button');
+}
 test.describe('사용자와 권한 관리', () => {
     test.describe('Admin System (Core Management)', () => {
         test.use({ storageState: 'playwright/.auth/admin.json' });
@@ -29,7 +42,9 @@ test.describe('권한 변경과 충돌 제어', () => {
     const AUTHORIZATION = '/api/v1/admin/authorization';
     const USERS = '/api/v1/admin/system/users';
     const MENUS = '/api/v1/admin/system/menus';
-    const PROGRAMS = '/api/v1/admin/system/programs';
+    // [2026-10-04 프로그램 목록 퇴역] 합집합·회수 탐침을 프로그램 목록 조회(PROGRAM_READ)에서 행정 코드 조회(ADMCODE_READ)로
+    //   옮겼다. 둘 다 ROLE_USER 에 없는 단일 READ 권한 하나로만 열리는 조회다(권한 원장 defaultGroups: ADMIN·SYSTEM).
+    const ADMCODES = '/api/v1/admin/system/codes/administ';
     type Headers = Record<string, string>;
     type Grant = {
         type: 'OPERATION' | 'NAVIGATION';
@@ -342,7 +357,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                 if (!menu)
                     throw new Error('The migrated menu catalog is empty.');
                 const grantsA: Grant[] = [{ type: 'OPERATION', code: 'MENU_READ' }, { type: 'NAVIGATION', code: menu }];
-                const grantsB: Grant[] = [{ type: 'OPERATION', code: 'MENU_READ' }, { type: 'OPERATION', code: 'PROGRAM_READ' }];
+                const grantsB: Grant[] = [{ type: 'OPERATION', code: 'MENU_READ' }, { type: 'OPERATION', code: 'ADMCODE_READ' }];
                 const beforeUi = await replaceGrants(request, administrator, groupA, grantsA);
                 await replaceGrants(request, administrator, groupB, grantsB);
                 await test.step('그룹 편집 UI는 검색 밖의 기존 기능권한과 메뉴 선택을 보존한다', async () => {
@@ -351,6 +366,10 @@ test.describe('권한 변경과 충돌 제어', () => {
                     await page.getByRole('main').getByRole('link', { name: '권한 그룹 관리', exact: true }).click();
                     await expect(page).toHaveURL(/\/admin\/security\/authority$/);
                     await expect(page.getByRole('heading', { name: '권한 그룹 관리', exact: true })).toBeVisible();
+                    // [2026-10-05] 처음 들어오면 첫 그룹의 작업대가 바로 열린다 — 그룹을 고르기 전에도 화면별 권한 표가 보인다.
+                    const firstEditor = page.getByRole('region', { name: /권한 설정$/ });
+                    await expect(firstEditor).toBeVisible();
+                    await expect(firstEditor.getByRole('group', { name: '화면별 권한 선택', exact: true })).toBeVisible();
                     await page.getByRole('textbox', { name: '그룹 검색', exact: true }).fill(groupA);
                     await page.getByRole('region', { name: '권한 그룹 목록', exact: true }).getByRole('button').filter({ hasText: groupA }).click();
                     const editor = page.getByRole('region', { name: `${groupNameA} 권한 설정`, exact: true });
@@ -359,10 +378,10 @@ test.describe('권한 변경과 충돌 제어', () => {
                     // 기능권한을 영역 × 행위로 보려면 '기능별 권한' 탭을 연다. 칸의 이름은 '영역 × 행위 (코드)'다.
                     await expect(editor.getByRole('tab', { name: /^화면별 권한/ })).toHaveAttribute('aria-selected', 'true');
                     await editor.getByRole('tab', { name: /^기능별 권한/ }).click();
-                    await editor.getByRole('textbox', { name: '기능 검색', exact: true }).fill('PROGRAM_READ');
-                    const program = editor.getByRole('checkbox', { name: /\(PROGRAM_READ\)$/ });
-                    await expect(program).not.toBeChecked();
-                    await program.check();
+                    await editor.getByRole('textbox', { name: '기능 검색', exact: true }).fill('ADMCODE_READ');
+                    const admcode = editor.getByRole('checkbox', { name: /\(ADMCODE_READ\)$/ });
+                    await expect(admcode).not.toBeChecked();
+                    await admcode.check();
                     // 탭 전환은 화면 안 상태라 이탈 확인 없이 편집을 유지하고 URL 도 바꾸지 않는다.
                     // Back/다른 화면 이동을 취소하면 같은 편집기와 선택이 남아야 한다.
                     await editor.getByRole('tab', { name: /^화면별 권한/ }).click();
@@ -376,17 +395,18 @@ test.describe('권한 변경과 충돌 제어', () => {
                     await expect(page).toHaveURL(/\/admin\/security\/authority$/);
                     await expect(editor.getByRole('tab', { name: /^화면별 권한/ })).toHaveAttribute('aria-selected', 'true');
                     await editor.getByRole('tab', { name: /^기능별 권한/ }).click();
-                    await expect(program).toBeChecked();
+                    await expect(admcode).toBeChecked();
                     await page.getByRole('link', { name: '통합 검색', exact: true }).click();
                     await expect(discard).toBeVisible();
                     await discard.getByRole('button', { name: '계속 편집', exact: true }).click();
-                    await expect(program).toBeChecked();
+                    await expect(admcode).toBeChecked();
                     const saved = page.waitForResponse(response => new URL(response.url()).pathname === `${AUTHORIZATION}/groups/${groupA}/grants`
                         && response.request().method() === 'PUT');
+                    await expectUncovered(editor.getByRole('button', { name: '권한 변경 저장', exact: true }), '기능별 권한 탭의 저장 단추를 표 상자가 덮지 않는다');
                     await editor.getByRole('button', { name: '권한 변경 저장', exact: true }).click();
                     expect((await saved).status(), '그룹 편집 UI 저장').toBe(200);
                     const afterUi = await group(request, administrator, groupA);
-                    expect(afterUi.grants).toEqual(expect.arrayContaining([...grantsA, { type: 'OPERATION', code: 'PROGRAM_READ' }]));
+                    expect(afterUi.grants).toEqual(expect.arrayContaining([...grantsA, { type: 'OPERATION', code: 'ADMCODE_READ' }]));
                     expect(afterUi.grants).toHaveLength(3);
                     const stale = await request.put(`${AUTHORIZATION}/groups/${groupA}/grants`, {
                         headers: administrator, data: { grants: [], version: beforeUi.version, complete: true },
@@ -400,10 +420,10 @@ test.describe('권한 변경과 충돌 제어', () => {
                 expect(combined.groups).toEqual([groupA, groupB]);
                 const union = await current();
                 expect(union.groups).toEqual([groupA, groupB]);
-                expect(union.permissions).toEqual(['MENU_READ', 'PROGRAM_READ']);
+                expect(union.permissions).toEqual(['ADMCODE_READ', 'MENU_READ']);
                 expect(union.authorizationVersion).not.toBe(initial.authorizationVersion);
                 expect((await request.get(MENUS, { headers: user })).status()).toBe(200);
-                expect((await request.get(PROGRAMS, { headers: user })).status()).toBe(200);
+                expect((await request.get(ADMCODES, { headers: user })).status()).toBe(200);
                 expect((await request.get(`${AUTHORIZATION}/groups`, { headers: user })).status(), '업무 그룹은 권한관리 조회 불가').toBe(403);
                 const protectedGroup = await group(request, administrator, groupA);
                 expect((await request.put(`${AUTHORIZATION}/groups/${groupA}/grants`, {
@@ -443,26 +463,39 @@ test.describe('권한 변경과 충돌 제어', () => {
                         if (await sectionToggle.getAttribute('aria-expanded') === 'false')
                             await sectionToggle.click();
                     }
-                    await expect(rootCheckbox).not.toBeChecked();
+                    // [2026-10-05 사용자 승인] 영역·섹션 줄의 메뉴 표시 칸은 그 아래 메뉴의 집계이고, 누르면 아래 메뉴 전체를 켜고 끈다.
+                    // 그래서 상위 줄의 상태는 켜짐(true)·일부(mixed)·꺼짐(false) 가운데 하나로 본다(aria-checked).
+                    await expect(rootCheckbox).toHaveAttribute('aria-checked', 'false');
                     await leafCheckbox.check();
-                    await expect(rootCheckbox, '하위 선택은 필요한 모든 상위 선택을 함께 추가한다').toBeChecked();
-                    await expect(menuCell(visibleChild.id)).toBeChecked();
+                    await expect(rootCheckbox, '하위 선택은 필요한 모든 상위 선택을 함께 추가한다').not.toHaveAttribute('aria-checked', 'false');
+                    await expect(menuCell(visibleChild.id)).not.toHaveAttribute('aria-checked', 'false');
                     const rootRow = rowOf(visibleRoot.id);
                     await rootRow.getByRole('button', { name: `${rootMenu.name} 하위 메뉴 접기`, exact: true }).click();
                     await expect(rootRow.getByRole('button', { name: `${rootMenu.name} 하위 메뉴 펼치기`, exact: true })).toHaveAttribute('aria-expanded', 'false');
-                    await rootCheckbox.uncheck();
+                    // 일부만 켜진 영역 줄은 한 번 누르면 아래 전체를 켜고, 다시 누르면 아래 전체를 끈다.
+                    if (await rootCheckbox.getAttribute('aria-checked') !== 'true')
+                        await rootCheckbox.click();
+                    await expect(rootCheckbox).toHaveAttribute('aria-checked', 'true');
+                    await rootCheckbox.click();
+                    await expect(rootCheckbox).toHaveAttribute('aria-checked', 'false');
                     await rootRow.getByRole('button', { name: `${rootMenu.name} 하위 메뉴 펼치기`, exact: true }).click();
                     await expect(leafCheckbox, '접혀 있던 하위 선택도 부모와 함께 회수된다').not.toBeChecked();
-                    // Leave a parent selected and then revoke it so the persisted change is observable.
+                    // Leave a leaf (and so its ancestors) selected and then revoke it so the persisted change is observable.
                     await leafCheckbox.check();
                     const saveSelected = page.waitForResponse(response => new URL(response.url()).pathname === `${AUTHORIZATION}/groups/${groupA}/grants` && response.request().method() === 'PUT');
+                    await expectUncovered(editor.getByRole('button', { name: '권한 변경 저장', exact: true }), '화면별 권한 탭의 저장 단추를 표 상자가 덮지 않는다');
                     await editor.getByRole('button', { name: '권한 변경 저장', exact: true }).click();
                     expect((await saveSelected).status()).toBe(200);
+                    const withNavigation = (await group(request, administrator, groupA)).grants.filter(grant => grant.type === 'NAVIGATION').map(grant => grant.code);
+                    expect(withNavigation, '하위만 켜도 모든 상위가 명시적으로 저장된다').toEqual(expect.arrayContaining([String(visibleRoot.id), String(visibleChild.id), String(leaf.id)]));
                     // [A2] 저장 뒤에도 잠기지 않는다 — 응답 스냅샷이 새 기준선이라 '최신 정보 적용' 없이 이어서 편집한다.
                     await expect(screensTab).toHaveAttribute('aria-selected', 'true');
-                    await expect(rootCheckbox).toBeChecked();
+                    await expect(rootCheckbox).not.toHaveAttribute('aria-checked', 'false');
                     await expect(rootCheckbox).toBeEnabled();
-                    await rootCheckbox.uncheck();
+                    if (await rootCheckbox.getAttribute('aria-checked') !== 'true')
+                        await rootCheckbox.click();
+                    await rootCheckbox.click();
+                    await expect(rootCheckbox).toHaveAttribute('aria-checked', 'false');
                     const saveRevoked = page.waitForResponse(response => new URL(response.url()).pathname === `${AUTHORIZATION}/groups/${groupA}/grants` && response.request().method() === 'PUT');
                     await editor.getByRole('button', { name: '권한 변경 저장', exact: true }).click();
                     expect((await saveRevoked).status()).toBe(200);
@@ -530,17 +563,17 @@ test.describe('권한 변경과 충돌 제어', () => {
                     await replaceGrants(request, administrator, groupA, grantsA);
                 });
                 // The same login token is reused throughout: every request must load current grants.
-                await replaceGrants(request, administrator, groupB, [{ type: 'OPERATION', code: 'PROGRAM_READ' }]);
-                expect((await current()).permissions).toEqual(['MENU_READ', 'PROGRAM_READ']);
+                await replaceGrants(request, administrator, groupB, [{ type: 'OPERATION', code: 'ADMCODE_READ' }]);
+                expect((await current()).permissions).toEqual(['ADMCODE_READ', 'MENU_READ']);
                 expect((await request.get(MENUS, { headers: user })).status(), 'A에 남은 공유 조회 권한 보존').toBe(200);
                 const onlyB = await replaceGroups(request, administrator, esntlId, [groupB]);
                 expect(onlyB.groups).toEqual([groupB]);
-                expect((await current()).permissions).toEqual(['PROGRAM_READ']);
+                expect((await current()).permissions).toEqual(['ADMCODE_READ']);
                 expect((await request.get(MENUS, { headers: user })).status(), 'A 회수는 다음 요청부터 반영').toBe(403);
                 const revokedPage = await request.get('/admin/system/menus', { headers: { Cookie: `accessToken=${token}` }, maxRedirects: 0 });
                 expect(revokedPage.status(), '기능권한 회수 후 같은 토큰으로 직접 URL 진입도 거절한다').toBe(307);
                 expect(new URL(revokedPage.headers().location, baseURL).searchParams.get('auth_error')).toBe('unauthorized');
-                expect((await request.get(PROGRAMS, { headers: user })).status(), '다른 그룹 B의 권한 보존').toBe(200);
+                expect((await request.get(ADMCODES, { headers: user })).status(), '다른 그룹 B의 권한 보존').toBe(200);
                 const staleMembership = await request.put(`${AUTHORIZATION}/users/${esntlId}/groups`, {
                     headers: administrator, data: { groups: [], version: combined.version, complete: true },
                 });
@@ -550,7 +583,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                 const empty = await current();
                 expect(empty.groups).toEqual([]);
                 expect(empty.permissions).toEqual([]);
-                expect((await request.get(PROGRAMS, { headers: user })).status(), '완전 회수 후 USER 권한이 암묵적으로 복구되지 않음').toBe(403);
+                expect((await request.get(ADMCODES, { headers: user })).status(), '완전 회수 후 USER 권한이 암묵적으로 복구되지 않음').toBe(403);
             }
             catch (error) {
                 primaryFailure = error;
@@ -643,8 +676,8 @@ test.describe('권한 변경과 충돌 제어', () => {
                 await expect(editor).toBeVisible();
                 // 권한 초안을 하나 만들어 둔다 — 구성원을 바꿔도 그대로 남아 같은 버전으로 저장되어야 한다.
                 await editor.getByRole('tab', { name: /^기능별 권한/ }).click();
-                await editor.getByRole('textbox', { name: '기능 검색', exact: true }).fill('PROGRAM_READ');
-                await editor.getByRole('checkbox', { name: /\(PROGRAM_READ\)$/ }).check();
+                await editor.getByRole('textbox', { name: '기능 검색', exact: true }).fill('ADMCODE_READ');
+                await editor.getByRole('checkbox', { name: /\(ADMCODE_READ\)$/ }).check();
 
                 await editor.getByRole('tab', { name: /^구성원/ }).click();
                 await editor.getByRole('button', { name: '구성원 추가', exact: true }).click();
@@ -673,14 +706,16 @@ test.describe('권한 변경과 충돌 제어', () => {
 
                 // 구성원을 두 번 바꿨어도 권한 초안은 남아 있고, 처음 읽은 버전으로 저장된다.
                 await editor.getByRole('tab', { name: /^기능별 권한/ }).click();
-                await expect(editor.getByRole('checkbox', { name: /\(PROGRAM_READ\)$/ })).toBeChecked();
+                await expect(editor.getByRole('checkbox', { name: /\(ADMCODE_READ\)$/ })).toBeChecked();
                 const savedGrants = page.waitForResponse(response => new URL(response.url()).pathname === `${AUTHORIZATION}/groups/${groupCode}/grants` && response.request().method() === 'PUT');
                 await editor.getByRole('button', { name: '권한 변경 저장', exact: true }).click();
                 expect((await savedGrants).status(), '구성원 변경 뒤 권한 초안 저장').toBe(200);
                 const source = await group(request, auth, groupCode);
-                expect(source.grants).toEqual(expect.arrayContaining([{ type: 'OPERATION', code: 'MENU_READ' }, { type: 'OPERATION', code: 'PROGRAM_READ' }]));
+                expect(source.grants).toEqual(expect.arrayContaining([{ type: 'OPERATION', code: 'MENU_READ' }, { type: 'OPERATION', code: 'ADMCODE_READ' }]));
 
-                await editor.getByRole('button', { name: '이 그룹으로 새 그룹 만들기', exact: true }).click();
+                // [2026-10-05] 편집기 머리를 한 줄로 줄이며 복제를 '더보기' 안으로 옮겼다(팝오버는 문서 끝에 그려져 편집기 밖에서 찾는다).
+                await editor.getByRole('button', { name: '더보기', exact: true }).click();
+                await page.getByRole('dialog', { name: `${groupName} 더보기`, exact: true }).getByRole('button', { name: '이 그룹으로 새 그룹 만들기', exact: true }).click();
                 const copyDialog = page.getByRole('dialog', { name: '이 그룹으로 새 그룹 만들기', exact: true });
                 await copyDialog.getByRole('textbox', { name: '그룹 코드', exact: true }).fill(copyCode);
                 await copyDialog.getByRole('textbox', { name: '그룹명', exact: true }).fill(copyName);
@@ -787,7 +822,8 @@ test.describe('권한 변경과 충돌 제어', () => {
                 await dialog.getByRole('button', { name: '선택한 묶음을 초안에 추가', exact: true }).click();
                 await expect(dialog).toHaveCount(0);
                 // 초안에 더했을 뿐이다 — 저장 전 요약이 늘어난 수를 보인다.
-                await expect(editor.getByText(/^저장 시 권한·메뉴 추가 [1-9]\d*개 · 회수 0개/)).toBeVisible();
+                // [2026-10-05] 저장 막대는 늘 보이는 한 줄 요약이다.
+                await expect(editor.getByText(/^저장 전 변경: 추가 [1-9]\d* · 회수 0$/)).toBeVisible();
                 const saved = page.waitForResponse(response => new URL(response.url()).pathname === `${AUTHORIZATION}/groups/${groupCode}/grants` && response.request().method() === 'PUT');
                 await editor.getByRole('button', { name: '권한 변경 저장', exact: true }).click();
                 expect((await saved).status(), '묶음을 더한 권한 저장').toBe(200);

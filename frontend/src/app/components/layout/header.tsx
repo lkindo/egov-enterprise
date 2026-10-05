@@ -19,7 +19,9 @@ import {
   UserCog,
   CircleDot,
   Search,
-  Compass
+  Compass,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 /* reusable-base:demo:start */
 import { Info } from 'lucide-react';
@@ -28,6 +30,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { canOpenPage } from '@/lib/auth/page-access';
 import { useLayout } from '@/contexts/LayoutContext';
+import { setSidebarCollapsed, useSidebarCollapsed } from '@/lib/layout/use-sidebar-collapsed';
+import { SIDEBAR_TOGGLE_LABEL } from '@/lib/layout/sidebar-collapse-script';
 import { ACCOUNT_MFA_OPEN_EVENT, requestCommandCenter } from '@/lib/navigation/command-center-bridge';
 import { requestOnboarding } from '@/lib/navigation/onboarding-bridge';
 /* reusable-base:collaboration:start */
@@ -87,6 +91,8 @@ export function Header({
   // 라우트 게이트와 같은 판정(DIP B4 P1).
   const canReadMenus = canOpenPage(user, '/admin/system/menus');
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
+  // [2026-10-05] 넓은 화면의 사이드바 접힘(이 브라우저에 기억). 서랍형(lg 미만)의 열림 상태와는 별개다.
+  const { collapsed: isSidebarCollapsed, toggle: toggleSidebarCollapsed } = useSidebarCollapsed();
   /*
     [2026-09-08] 본인 비밀번호 변경. 서버(PUT /users/me/password)와 userService.changePassword 는
     있었는데 호출부가 0 이었다 — DEC-OPS-032 가 관리자 초기화만 열었고, 정작 사용자가 자기
@@ -178,6 +184,27 @@ export function Header({
           {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
         </Button>
 
+        {/* [2026-10-05] 넓은 화면(lg 이상)의 사이드바 접기·펼치기. 접으면 사이드바가 탭 순서에서도 빠지고 본문이 그 폭을 쓴다
+            (globals.css). 서랍형인 lg 미만에서는 위 '주 메뉴 열기' 단추가 같은 사이드바를 맡고 이 단추는 보이지 않는다(CSS 만으로
+            전환, 단일 DOM). 접힌 상태에서도 본문 바로가기·머리글을 Tab 으로 지나기·빠른 이동(Ctrl+K)으로 이동할 수 있고, 이 단추로
+            다시 편다. xl 이상에서는 아래 주메뉴의 '메뉴 보기' 단추도 사이드바를 다시 펼친다(하위 메뉴가 사이드바에만 있다).
+            이름은 고정하고 상태는 aria-expanded 하나로만 알린다(이름까지 바꾸면 상태를 두 번 말한다 — APG disclosure).
+            아이콘은 둘 다 그리고 <html data-sidebar-collapsed> 로 CSS 가 하나만 보인다 — 새로고침 직후 하이드레이션 전에도 맞다. */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="hidden lg:inline-flex text-muted-foreground mr-1"
+          onClick={toggleSidebarCollapsed}
+          aria-label={SIDEBAR_TOGGLE_LABEL}
+          aria-expanded={!isSidebarCollapsed}
+          aria-controls="primary-sidebar"
+          title={SIDEBAR_TOGGLE_LABEL}
+        >
+          <PanelLeftClose size={20} aria-hidden="true" data-sidebar-icon="collapse" className="sidebar-collapsed:hidden" />
+          <PanelLeftOpen size={20} aria-hidden="true" data-sidebar-icon="expand" className="hidden sidebar-collapsed:block" />
+        </Button>
+
         <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-80 shrink-0">
           <div className="w-10 h-10 bg-surface-inverse rounded-[var(--radius-hub-item)] flex items-center justify-center shadow-lg">
             <span className="text-surface-inverse-foreground font-bold text-lg">{SITE_IDENTITY.logoMark}</span>
@@ -231,7 +258,12 @@ export function Header({
                   aria-disabled={!canBrowseChildren ? 'true' : undefined}
                   aria-label={canBrowseChildren ? `${menu.menuNm} 메뉴 보기` : `${menu.menuNm} 이동 불가`}
                   aria-pressed={canBrowseChildren ? isActive : undefined}
-                  onClick={canBrowseChildren ? () => setActiveMenuNo(menu.menuNo) : undefined}
+                  onClick={canBrowseChildren ? () => {
+                    setActiveMenuNo(menu.menuNo);
+                    // [2026-10-05] 이 단추는 사이드바의 하위 메뉴만 바꾼다 — 사이드바가 접혀 있으면 눌러도 보이는 변화가 없는
+                    //   죽은 단추가 되므로 함께 편다(G10). 경로가 있는 영역(Link)은 화면으로 이동하므로 접힘을 그대로 둔다.
+                    if (isSidebarCollapsed) setSidebarCollapsed(false);
+                  } : undefined}
                   className={cn(itemClassName, !canBrowseChildren && 'cursor-not-allowed opacity-50')}
                 >
                   {itemContent}

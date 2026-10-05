@@ -26,13 +26,14 @@ vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'operat
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/services/foundation/system/AuthorizationAdminService', () => ({ authorizationAdminService: mocks }));
-vi.mock('@/app/components/patterns/work-list-page', () => ({ WorkListPage: ({ title, actions, children }: { title: string; actions: ReactNode; children: ReactNode }) => <main><h1>{title}</h1>{actions}{children}</main> }));
+// [2026-10-05] 영역 단추는 셸의 navigation 슬롯에 있다 — 모의 셸도 그 슬롯을 그린다.
+vi.mock('@/app/components/patterns/work-list-page', () => ({ WorkListPage: ({ title, actions, navigation, children }: { title: string; actions: ReactNode; navigation?: ReactNode; children: ReactNode }) => <main><h1>{title}</h1>{actions}{navigation}{children}</main> }));
 // 묶음과 화면 목록은 고정한다 — 원장·화면 소스가 바뀌어도 이 계약이 흔들리지 않게.
 vi.mock('@/types/generated-screen-registry', async (importOriginal) => {
   const fixture = await import('./screen-registry-fixture');
   const bundle: PermissionBundle = {
     id: 'menu-screen', name: '메뉴·화면 설정', description: '메뉴와 화면 관리를 맡깁니다.', protected: false,
-    permissions: ['MENU_READ', 'MENU_UPDATE', 'PROGRAM_READ'] as PermissionCode[], screens: ['/admin/system/menus', '/admin/system/programs'],
+    permissions: ['MENU_READ', 'MENU_UPDATE', 'ADMCODE_READ'] as PermissionCode[], screens: ['/admin/system/menus', '/admin/system/codes/administ'],
     relatedScreens: [],
   };
   const recovery: PermissionBundle = {
@@ -57,13 +58,13 @@ const catalog = {
     { code: 'BOARD_READ', name: '게시글 조회', domain: 'BOARD', action: 'READ' },
     { code: 'MENU_READ', name: '메뉴 조회', domain: 'MENU', action: 'READ' },
     { code: 'MENU_UPDATE', name: '메뉴 수정', domain: 'MENU', action: 'UPDATE' },
-    { code: 'PROGRAM_READ', name: '화면 조회', domain: 'PROGRAM', action: 'READ' },
+    { code: 'ADMCODE_READ', name: '행정 코드 조회', domain: 'ADMCODE', action: 'READ' },
   ],
   navigation: [
     { code: 'AREA', name: '관리', parentCode: null, route: null, useYn: 'Y' },
     { code: 'SECTION', name: '시스템', parentCode: 'AREA', route: null, useYn: 'Y' },
     { code: 'MENUS', name: '메뉴 관리', parentCode: 'SECTION', route: '/admin/system/menus', useYn: 'Y' },
-    { code: 'PROGRAMS', name: '화면 관리', parentCode: 'SECTION', route: '/admin/system/programs', useYn: 'Y' },
+    { code: 'ADMCODES', name: '행정 표준코드 관리', parentCode: 'SECTION', route: '/admin/system/codes/administ', useYn: 'Y' },
   ],
   catalogVersion: 'catalog-v1',
 };
@@ -127,7 +128,8 @@ describe('권한 묶음 적용(G2)', () => {
     // 초안에 더했을 뿐 저장하지 않았다.
     expect(mocks.saveGroupGrants).not.toHaveBeenCalled();
     expect(mocks.toast).toHaveBeenCalledWith(expect.stringContaining("'권한 변경 저장'을 눌러야 반영됩니다"), 'info');
-    expect(within(editor).getByText('저장 시 권한·메뉴 추가 5개 · 회수 0개. 이 그룹을 배정받은 사용자에게 적용되며 다른 그룹이 제공하는 같은 권한은 유지됩니다.')).toBeInTheDocument();
+    // [2026-10-05] 저장 막대의 요약은 한 줄이다 — 적용 범위 설명은 '변경 내용 보기' 창에 있다.
+    expect(within(editor).getByText(/^저장 전 변경:/)).toHaveTextContent('저장 전 변경: 추가 5 · 회수 0');
     expect(within(editor).getByRole('tab', { name: '화면별 권한 5건 변경' })).toBeInTheDocument();
     expect(within(editor).getByRole('tab', { name: '기능별 권한 2건 변경' })).toBeInTheDocument();
 
@@ -142,8 +144,8 @@ describe('권한 묶음 적용(G2)', () => {
     await waitFor(() => expect(mocks.saveGroupGrants).toHaveBeenCalledTimes(1));
     expect(mocks.saveGroupGrants).toHaveBeenCalledWith('CONTENT', {
       grants: [
-        { type: 'OPERATION', code: 'BOARD_READ' }, { type: 'OPERATION', code: 'MENU_READ' }, { type: 'OPERATION', code: 'MENU_UPDATE' }, { type: 'OPERATION', code: 'PROGRAM_READ' },
-        { type: 'NAVIGATION', code: 'AREA' }, { type: 'NAVIGATION', code: 'SECTION' }, { type: 'NAVIGATION', code: 'MENUS' }, { type: 'NAVIGATION', code: 'PROGRAMS' },
+        { type: 'OPERATION', code: 'BOARD_READ' }, { type: 'OPERATION', code: 'MENU_READ' }, { type: 'OPERATION', code: 'MENU_UPDATE' }, { type: 'OPERATION', code: 'ADMCODE_READ' },
+        { type: 'NAVIGATION', code: 'AREA' }, { type: 'NAVIGATION', code: 'SECTION' }, { type: 'NAVIGATION', code: 'MENUS' }, { type: 'NAVIGATION', code: 'ADMCODES' },
       ],
       version: 'c1', complete: true,
     });
@@ -214,9 +216,9 @@ describe('그룹 비교(G3)', () => {
 
   it('차이만 보기는 다른 줄과 그 상위만 남기고, 같은 그룹을 고르면 안내만 한다', async () => {
     const section = await openComparison();
-    expect(within(section).getByRole('row', { name: /^화면 관리/ })).toBeInTheDocument();
+    expect(within(section).getByRole('row', { name: /^행정 표준코드 관리/ })).toBeInTheDocument();
     await userEvent.click(within(section).getByRole('checkbox', { name: '차이만 보기' }));
-    expect(within(section).queryByRole('row', { name: /^화면 관리/ })).toBeNull();
+    expect(within(section).queryByRole('row', { name: /^행정 표준코드 관리/ })).toBeNull();
     expect(within(section).getByRole('row', { name: /^관리/ })).toBeInTheDocument();
     await userEvent.selectOptions(within(section).getByRole('combobox', { name: 'B 그룹' }), 'CONTENT');
     expect(within(section).getByText('서로 다른 두 그룹을 고르세요.')).toBeInTheDocument();

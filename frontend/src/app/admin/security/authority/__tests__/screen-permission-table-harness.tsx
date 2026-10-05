@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { buildNavigationPermissionTree, menusMissingEntryPermission, toggleNavigationPermission } from '@/lib/auth/navigation-permission-tree';
 import { grantSets, menuPreviewMenusFromCatalog, previewMenuVisibility } from '@/lib/navigation/menu-visibility-preview';
 import { ScreenPermissionTable } from '../components/ScreenPermissionTable';
-import { buildScreenPermissionModel } from '../components/screen-permission-model';
+import { buildScreenPermissionModel, toggleNavigationSubtree } from '../components/screen-permission-model';
 import { useEntryPermissionFixes } from '../components/EntryPermissionFixes';
 import type { MatrixOperation } from '../components/operation-permission-matrix-model';
 
@@ -34,7 +34,7 @@ export const HARNESS_OPERATIONS: readonly MatrixOperation[] = [
   { code: 'POLL_CREATE', domain: 'POLL', action: 'CREATE', name: '투표 등록' },
   { code: 'AUTHRT_READ', domain: 'AUTHRT', action: 'READ', name: '권한 조회' },
   { code: 'AUTHRT_AUDIT', domain: 'AUTHRT', action: 'AUDIT', name: '권한 감사' },
-  { code: 'PROGRAM_READ', domain: 'PROGRAM', action: 'READ', name: '화면 조회' },
+  { code: 'ADMCODE_READ', domain: 'ADMCODE', action: 'READ', name: '행정 코드 조회' },
 ];
 
 export const HARNESS_NAVIGATION: readonly HarnessNavigation[] = [
@@ -49,7 +49,7 @@ export const HARNESS_NAVIGATION: readonly HarnessNavigation[] = [
 
 export function ScreenTableHarness({
   initial, navigation = HARNESS_NAVIGATION, operations = HARNESS_OPERATIONS, editable = true, disabled = false, allowAdd = true,
-  onSaveShortcut, saveShortcutDisabled = false, focusRequest = null,
+  onSaveShortcut, saveShortcutDisabled = false, focusRequest = null, fill = false,
 }: {
   initial: readonly string[];
   navigation?: readonly HarnessNavigation[];
@@ -60,6 +60,7 @@ export function ScreenTableHarness({
   onSaveShortcut?: () => void;
   saveShortcutDisabled?: boolean;
   focusRequest?: { menuCode: string; nonce: number } | null;
+  fill?: boolean;
 }) {
   const tree = useMemo(() => buildNavigationPermissionTree(navigation), [navigation]);
   const model = useMemo(() => buildScreenPermissionModel(tree, operations.map((operation) => operation.code)), [tree, operations]);
@@ -90,6 +91,8 @@ export function ScreenTableHarness({
       <ScreenPermissionTable model={model} operations={operations} selection={selection} baseline={baseline} preview={preview}
         editable={editable} disabled={disabled} allowAdd={allowAdd} onChangeOperations={changeOperations}
         onToggleNavigation={(code, checked) => setSelection((previous) => toggleNavigationPermission(tree, previous, code, checked))}
+        onToggleNavigationSubtree={(root, codes, checked) => setSelection((previous) => toggleNavigationSubtree(tree, previous, root, codes, checked))}
+        fill={fill}
         entryFixes={entryFixes} problemMenuCodes={problemMenuCodes} focusRequest={focusRequest}
         onSaveShortcut={onSaveShortcut} saveShortcutDisabled={saveShortcutDisabled} unsavedChangeCount={changed} />
     </>

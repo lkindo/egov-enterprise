@@ -27,6 +27,7 @@ import { ErrorStateDisplay, EmptyStateDisplay } from './status-displays';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { useOverflowRegion } from '@/components/ui/table';
 import { usePageClamp } from '@/lib/hooks/use-page-clamp';
+import { WORK_FILL_REGION_CLASS, WORK_FILL_SCROLL_CLASS } from '@/app/components/patterns/work-fill';
 
 export interface Column<T> {
   header: string;
@@ -137,7 +138,29 @@ interface StandardDataTableBaseProps<T> {
   };
   stickyHeader?: boolean;
   rowTestId?: string;
+  /**
+   * [2026-10-05] 남은 높이 채움(opt-in, 카탈로그 §4 'fill 셸'). true 이면 업무면 fill 조건(globals.css `work-fill` — 폭 lg
+   * 이상 · 높이 600px 이상 · screen)에서 표 스크롤 상자가 `max-h-[700px]` 대신 부모가 준 남은 높이를 채운다. 부모는 세로
+   * flex 여야 한다(WorkListPage `fill` 의 콘텐츠 영역, MasterDetailPage `fill` 의 칸 등). 고정 머리글(stickyHeader)과
+   * 넘칠 때만 붙는 이름 있는 스크롤 영역은 그대로다. 조건 안의 상한은 셸 높이(--work-fill-height)라 부모 사슬이 끊겨도 상자
+   * 안에서 스크롤한다. 조건 밖에서는 기본과 같고(stickyHeader 면 700px 상자, 아니면 높이 제한 없음), 인쇄에서는 높이 제한 없이
+   * 펼친다. 기본값 false 는 DOM·클래스가 한 글자도 달라지지 않는다.
+   */
+  fillHeight?: boolean;
+  /**
+   * [2026-10-05] 행 밀도(opt-in). 'work' 는 업무 표 행 토큰(--work-cell-px/py, 한 줄 행 ≈ 33px · compact ≈ 29px)을 써서
+   * 권한 매트릭스·화면 목록처럼 조밀한 업무 그리드를 만든다. 표 아래 페이저 여백도 줄인다. 기본 'default' 는 --cell-px/py
+   * 그대로다. ⚠ 이 prop 은 호출부가 고르므로 화면별 밀도 선택 경로가 될 수 있다 — 'work' 를 쓰는 곳은 업무 그리드 허용 목록
+   * (work-screen-grammar-contract, 사유 필수)에 등재돼야 하며 목록 밖의 소비는 red 다(카탈로그 §4 '업무 표 행 토큰').
+   */
+  rowDensity?: 'default' | 'work';
 }
+
+/** 행 밀도별 셀 패딩. 완전한 리터럴로 둔다(Tailwind 소스 스캔). */
+const CELL_PAD_CLASS = {
+  default: 'px-[var(--cell-px)] py-[var(--cell-py)]',
+  work: 'px-[var(--work-cell-px)] py-[var(--work-cell-py)]',
+} as const;
 
 export type RowActionLabel<T> = string | ((item: T, index: number) => string);
 
@@ -168,6 +191,7 @@ interface DataRowProps<T extends object> {
   rowActionLabel?: string;
   rowTestId?: string;
   selectionLabel: string;
+  cellPadClass: string;
 }
 
 function renderCell<T extends object>(column: Column<T>, item: T, index: number): React.ReactNode {
@@ -206,6 +230,7 @@ function DataRowComponent<T extends object>({
   rowActionLabel,
   rowTestId,
   selectionLabel,
+  cellPadClass,
 }: DataRowProps<T>) {
   if (!item) return null;
 
@@ -219,7 +244,7 @@ function DataRowComponent<T extends object>({
       )}
     >
       {enableSelection && (
-        <td role="cell" className="px-[var(--cell-px)] py-[var(--cell-py)] text-center" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+        <td role="cell" className={`${cellPadClass} text-center`} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
           <Checkbox
             checked={isSelected}
             onCheckedChange={onToggle}
@@ -235,7 +260,7 @@ function DataRowComponent<T extends object>({
           // 문자열 header 만 라벨로 쓴다(ReactNode header 는 CSS content 로 표현할 수 없다).
           data-label={typeof column.header === 'string' ? column.header : undefined}
           className={cn(
-            "px-[var(--cell-px)] py-[var(--cell-py)] text-sm font-medium text-foreground/80 tracking-tight transition-colors group-hover:text-foreground",
+            `${cellPadClass} text-sm font-medium text-foreground/80 tracking-tight transition-colors group-hover:text-foreground`,
             column.className
           )}
         >
@@ -245,7 +270,7 @@ function DataRowComponent<T extends object>({
         </td>
       ))}
       {onRowClick && (
-        <td role="cell" className="px-[var(--cell-px)] py-[var(--cell-py)] text-right">
+        <td role="cell" className={`${cellPadClass} text-right`}>
           <Button
             type="button"
             variant="ghost"
@@ -285,9 +310,12 @@ export function StandardDataTable<T extends object>({
   pagination,
   search,
   stickyHeader = true,
-  rowTestId
+  rowTestId,
+  fillHeight = false,
+  rowDensity = 'default',
 }: StandardDataTableProps<T>) {
 
+  const cellPadClass = CELL_PAD_CLASS[rowDensity];
   const keyField = (keyFieldProp ?? ('id' as keyof T)) as keyof T;
 
   const [searchKeyword, setSearchKeyword] = useState(search?.value ?? "");
@@ -441,6 +469,14 @@ export function StandardDataTable<T extends object>({
   const sortScopeIsPageOnly = columns.some((column) => column.sortKey !== undefined)
     && pagination !== undefined
     && pagination.totalPages > 1;
+  /*
+   * 정렬 단추의 title. [2026-10-05] 쪽이 하나뿐이라고 알면(pagination.totalPages ≤ 1) 정렬은 목록 전체에 걸리므로 '현재 페이지의
+   * 행만 정렬합니다' 라고 말하지 않는다 — 종전에는 쪽 수와 무관하게 늘 그렇게 말해 페이저 고지(sortScopeIsPageOnly)와 반대 사실을
+   * 말했다. 쪽 수를 모르는 표(pagination 미지정 — 바깥 페이저가 서버 쪽을 넘기는 소비자가 있다)는 종전대로 둔다.
+   */
+  const sortButtonTitle = pagination !== undefined && pagination.totalPages <= 1
+    ? undefined
+    : '현재 페이지의 행만 정렬합니다';
 
   const desktopScrollRegionProps = useOverflowRegion<HTMLDivElement>(`${accessibleLabel} 스크롤 영역`);
 
@@ -468,7 +504,12 @@ export function StandardDataTable<T extends object>({
   const showSkeleton = Boolean(loading) && tableRows.length === 0;
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn(
+      rowDensity === 'work' ? "space-y-3" : "space-y-6",
+      // 남은 높이 채움: 이 루트가 부모의 남은 높이를 받고(세로 flex), 아래 스크롤 상자가 다시 그 남은 높이를 받는다.
+      fillHeight && WORK_FILL_REGION_CLASS,
+      className,
+    )}>
       {/* Search Bar integration if provided */}
       {search && (
         <form onSubmit={handleSearchSubmit} role="search" className="relative group max-w-md">
@@ -560,7 +601,14 @@ export function StandardDataTable<T extends object>({
           md 미만 카드 표현은 globals.css 의 `.standard-data-table-responsive` 규칙이 담당한다. */}
       <div className={cn(
         "block w-full rounded-md border border-border bg-card relative outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
-        stickyHeader ? "max-h-[700px] overflow-auto" : "overflow-x-auto overflow-y-hidden"
+        stickyHeader ? "max-h-[700px] overflow-auto" : "overflow-x-auto overflow-y-hidden",
+        // 남은 높이 채움은 조건(work-fill) 안에서만 바뀐다 — 조건 밖은 기본과 같다(stickyHeader 를 끈 표는 지금처럼 높이 제한
+        //   없이 페이지가 스크롤한다). 조건 안에서는 남은 높이를 채우려 세로 스크롤을 켜고, 상한은 셸 높이다(WORK_FILL_SCROLL_CLASS).
+        fillHeight && !stickyHeader && 'work-fill:overflow-y-auto',
+        fillHeight && WORK_FILL_SCROLL_CLASS,
+        // 고정 머리글 밑으로 포커스한 행이 숨지 않게 상자 안 스크롤 여백을 머리글 높이만큼 둔다(WCAG 2.2 2.4.11).
+        //   fill 셸에서는 페이지가 스크롤하지 않아 주 스크롤이 이 상자 하나다. 조건 밖의 동작은 기본과 같게 둔다.
+        fillHeight && stickyHeader && (rowDensity === 'work' ? 'work-fill:scroll-pt-10' : 'work-fill:scroll-pt-16'),
       )}
         data-slot="standard-data-table-scroll-region"
         {...desktopScrollRegionProps}
@@ -620,7 +668,7 @@ export function StandardDataTable<T extends object>({
             <thead role="rowgroup" className="relative z-20">
               <tr role="row" className="bg-muted/80 backdrop-blur-xl border-b-2 border-border/80">
                 {enableSelection && (
-                  <th className="px-[var(--cell-px)] py-[var(--cell-py)] w-16 text-center" scope="col" aria-label="전체 항목 선택">
+                  <th className={`${cellPadClass} w-16 text-center`} scope="col" aria-label="전체 항목 선택">
                     <Checkbox
                       checked={headerChecked}
                       onCheckedChange={toggleAll}
@@ -636,7 +684,7 @@ export function StandardDataTable<T extends object>({
                     <th
                       key={`header-${idx}`}
                       className={cn(
-                        "px-[var(--cell-px)] py-[var(--cell-py)] font-semibold text-foreground text-xs whitespace-nowrap",
+                        `${cellPadClass} font-semibold text-foreground text-xs whitespace-nowrap`,
                         column.className
                       )}
                       scope="col"
@@ -650,8 +698,8 @@ export function StandardDataTable<T extends object>({
                         <button
                           type="button"
                           onClick={tanColumn.getToggleSortingHandler()}
-                          // 서버 페이지네이션은 그대로다 — 정렬 범위를 정직하게 문서화한다.
-                          title="현재 페이지의 행만 정렬합니다"
+                          // 서버 페이지네이션은 그대로다 — 정렬 범위를 정직하게 문서화한다(쪽이 하나면 말하지 않는다).
+                          title={sortButtonTitle}
                           className="flex items-center gap-2 font-semibold text-foreground transition-colors hover:text-primary outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           {column.header}
@@ -672,7 +720,7 @@ export function StandardDataTable<T extends object>({
                   );
                 })}
                 {onRowClick && (
-                  <th className="px-[var(--cell-px)] py-[var(--cell-py)] text-right" scope="col">
+                  <th className={`${cellPadClass} text-right`} scope="col">
                     <span className="sr-only">행 작업</span>
                   </th>
                 )}
@@ -685,16 +733,16 @@ export function StandardDataTable<T extends object>({
                   <tr key={`loading-row-${i}`} className="animate-pulse" aria-hidden="true">
                     {/* control-has-associated-label 은 빈 td 를 컨트롤로 오판한다. 이 행은 aria-hidden 장식이라 라벨 대상이 아니다. */}
                     {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-                    {enableSelection ? <td role="presentation" className="px-[var(--cell-px)] py-[var(--cell-py)] text-center"><div className="w-5 h-5 bg-muted rounded m-auto opacity-50" /></td> : null}
+                    {enableSelection ? <td role="presentation" className={`${cellPadClass} text-center`}><div className="w-5 h-5 bg-muted rounded m-auto opacity-50" /></td> : null}
                     {columns.map((_, j) => (
                       // eslint-disable-next-line jsx-a11y/control-has-associated-label
-                      <td key={`loading-cell-${j}`} role="presentation" className="px-[var(--cell-px)] py-[var(--cell-py)]">
+                      <td key={`loading-cell-${j}`} role="presentation" className={cellPadClass}>
                         <div className="h-4 bg-muted/40 rounded-lg w-3/4" />
                       </td>
                     ))}
                     {onRowClick ? (
                       // eslint-disable-next-line jsx-a11y/control-has-associated-label
-                      <td role="presentation" className="px-[var(--cell-px)] py-[var(--cell-py)]"><div className="h-8 w-20 bg-muted/40 rounded-lg ml-auto" /></td>
+                      <td role="presentation" className={cellPadClass}><div className="h-8 w-20 bg-muted/40 rounded-lg ml-auto" /></td>
                     ) : null}
                   </tr>
                 ))
@@ -729,6 +777,7 @@ export function StandardDataTable<T extends object>({
                       rowActionLabel={resolveRowActionLabel(rowActionLabel, item, displayIdx)}
                       rowTestId={rowTestId}
                       selectionLabel={selectionLabel ? selectionLabel(item, displayIdx) : defaultSelectionLabel(columns, item, displayIdx)}
+                      cellPadClass={cellPadClass}
                     />
                   );
                 })
@@ -740,7 +789,9 @@ export function StandardDataTable<T extends object>({
 
       {/* Pagination Controls — 총 건수·페이지 번호 노출 (PagePagination 과 동일한 윈도우 규칙) */}
       {pagination && (pagination.totalPages > 1 || pagination.totalCount !== undefined || pagination.onPageSizeChange !== undefined) && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 pb-4">
+        <div className={rowDensity === 'work'
+          ? "flex flex-col sm:flex-row items-center justify-between gap-2 pt-1"
+          : "flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 pb-4"}>
           {(() => {
             const summary = (
               <>

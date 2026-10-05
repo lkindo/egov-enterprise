@@ -308,3 +308,131 @@ describe('A3 unsaved-close protection for form modals', () => {
     expect(modal).toMatch(/onInputCapture=\{trackInput\}/);
   });
 });
+
+/**
+ * [2026-10-05] 업무 표 행 토큰(--work-cell-px/py)의 소비 경계 — 카탈로그 §4 '업무 표 행 토큰'.
+ *
+ * 헌법 제2조 2항은 밀도를 배포 단위 전역 한 곳에서만 정하고 라우트별로 배정하지 않는다. 업무 표 토큰은 그 축과 별개로
+ * "조밀한 업무 그리드(권한 매트릭스·화면 목록·메뉴 보드)" 라는 **컴포넌트의 표현**이다. 그런데 `StandardDataTable` 의
+ * `rowDensity` 는 호출부가 고르는 prop 이라, 막지 않으면 아무 목록 화면이 'work' 를 붙여 화면별 밀도 선택 경로가 된다
+ * (반박 리뷰 major 5). 그래서 소비를 두 겹으로 고정한다.
+ *
+ *   ① `--work-cell-*` 를 읽는 TS 소스는 아래 `WORK_TABLE_TOKEN_OWNERS` 에 사유와 함께 등재한 업무 그리드 컴포넌트(행 패딩을
+ *      정의하는 공용 표, 메뉴 보드, 권한 작업대의 두 매트릭스와 두 변경 이력 표(편집기 탭·허브 영역))뿐이다 — 화면 파일(라우트)이 토큰을 직접 집어 쓰지 않는다.
+ *      (2026-10-05 통합: 처음에는 공용 표 하나뿐이었고 소비 화면 작업이 그리드 컴포넌트를 등재하며 이 문장을 사실에 맞췄다.)
+ *   ② `rowDensity` 를 'default' 가 아닌 값으로 넘기는 호출부는 아래 허용 목록과 **exact** 일치해야 한다. 목록의 각 항목은
+ *      그 화면의 표가 왜 업무 그리드인지 사유를 갖는다. 목록 밖 소비는 red, 목록에 있는데 소비가 사라져도 red 다.
+ *
+ * 등재 기준(카탈로그 §4): 한 행이 한 줄 사실(이름·코드·상태·짧은 값)이고, 사용자가 많은 행을 훑어 비교·대조하며, 행 안에서
+ * 여러 칸을 조작하는 업무 그리드. 일반 조회 목록(A1 결과 표)은 등재하지 않는다 — 그 밀도는 배포 전역 data-density 가 정한다.
+ */
+/** 토큰을 직접 읽는 업무 그리드 컴포넌트 → 사유. 라우트(화면 파일)가 아니라 그리드 컴포넌트만 등재한다. */
+const WORK_TABLE_TOKEN_OWNERS: Readonly<Record<string, string>> = {
+  'app/components/ui/standard-data-table.tsx': '공용 표 — rowDensity="work" 변형이 셀 패딩을 정의한다(그 변형을 쓰는 화면은 아래 목록).',
+  'app/admin/system/menus/MenuBoard.tsx':
+    '메뉴 구조 보드 — 영역 하나의 메뉴 수십 개를 이름·배지의 한 줄 줄로 다단 카드에 펼쳐 훑고, 줄마다 끌기·선택·옮기기를 하는 '
+    + '업무 그리드다(카탈로그 §4 업무 표의 예시 \'메뉴 보드\'). 줄 상하 패딩만 --work-cell-py 로 받는다(손잡이 24px).',
+  'app/admin/security/authority/components/ScreenPermissionTable.tsx':
+    '권한 작업대 \'화면별 권한\' 매트릭스(A5) — 메뉴 트리 줄마다 이름 한 줄과 메뉴 표시·진입·등록·수정·삭제·그 밖의 기능 칸을 '
+    + '나란히 훑고 칸을 조작하는 업무 그리드다(카탈로그 §4 업무 표의 예시 \'권한 매트릭스\', A5 계약이 칸 패딩을 고정).',
+  'app/admin/security/authority/components/OperationPermissionMatrix.tsx':
+    '권한 작업대 \'기능별 권한\' 매트릭스(A5) — 업무 영역 줄 × 행위 칸을 훑고 조작하는 업무 그리드다(화면별 권한 표와 같은 행 높이).',
+  'app/admin/security/authority/components/GroupChangeHistory.tsx':
+    '권한 작업대의 \'변경 이력\' 탭 표 — 같은 작업대의 두 매트릭스 사이에서 탭만 바꿔 오가는 fill 영역 안 표라 행 높이를 맞춘다'
+    + '(2026-10-05 사용자 승인 압축안). 일반 A1 조회 목록이 아니라 작업대의 한 영역이다.',
+  'app/admin/security/authority/components/AuthorizationHistory.tsx':
+    '권한 관리 허브의 \'변경 이력\' 영역 표 — 편집기 \'변경 이력\' 탭(위 GroupChangeHistory)과 같은 감사 이력을 그룹·사용자·처리자·기간 '
+    + '조건으로 넓혀 찾는 표다. 한 행이 한 변경 사실(시각·대상·변경·권한·처리자)이고 많은 행을 대조하며, 같은 허브의 fill 영역(그룹 · '
+    + '기능권한)과 영역 단추만 바꿔 오가므로 두 이력 표의 행 높이를 맞춘다(2026-10-05 사용자 승인 압축안 2차, 종전 고정 p-3 은 '
+    + '65~92px 행). 결과 한 건을 골라 여는 A1 조회 목록이 아니다.',
+};
+/** StandardDataTable 을 rowDensity="work" 로 쓰는 화면 파일 → 업무 그리드인 사유. */
+const WORK_TABLE_ROW_DENSITY_CONSUMERS: Readonly<Record<string, string>> = {
+  'app/admin/system/programs/ProgramAdminClient.tsx':
+    '화면 관리의 화면 목록·넘어가는 경로 — 앱 화면 원장 전체(약 90행)를 이름·경로·진입 권한 칩·연결 메뉴·구분의 한 줄 사실로 '
+    + '훑어 메뉴 연결을 대조하고 메뉴에 없는 화면을 메뉴에 넣는 업무 그리드다(카탈로그 §4 업무 표의 예시 \'화면 목록\'). '
+    + '조건으로 좁혀 한 건을 고르는 일반 조회 결과가 아니다.',
+};
+
+/** rowDensity 에 기본이 아닌 값을 넘기는 JSX 속성과 객체 속성 자리를 찾는다(값이 식이면 판정할 수 없으므로 소비로 센다). */
+function workRowDensitySites(file: string, text: string): number[] {
+  const lines: number[] = [];
+  const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const isDefaultLiteral = (node: ts.Node | undefined): boolean => {
+    if (!node) return false;
+    if (ts.isJsxExpression(node)) return isDefaultLiteral(node.expression);
+    return (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) && node.text === 'default';
+  };
+  const visit = (node: ts.Node): void => {
+    if (ts.isJsxAttribute(node) && node.name.getText(source) === 'rowDensity' && !isDefaultLiteral(node.initializer)) {
+      lines.push(source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1);
+    }
+    if (ts.isPropertyAssignment(node) && node.name.getText(source) === 'rowDensity' && !isDefaultLiteral(node.initializer)) {
+      lines.push(source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return lines;
+}
+
+function productionSources(dir: string, acc: string[] = []): string[] {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name !== '__tests__' && entry.name !== 'node_modules') productionSources(full, acc);
+    } else if (/\.tsx?$/.test(entry.name) && !/\.(test|spec)\.tsx?$/.test(entry.name)) {
+      acc.push(full);
+    }
+  }
+  return acc;
+}
+
+describe('Work-table row tokens ↔ component binding contract', () => {
+  const sources = productionSources(SRC_DIR).map((full) => ({
+    file: relative(SRC_DIR, full).split(sep).join('/'),
+    text: readFileSync(full, 'utf8'),
+  }));
+
+  it('only registered work-grid components read --work-cell-* (screens never pick the token directly)', () => {
+    const readers = sources.filter(({ text }) => text.includes('--work-cell-')).map(({ file }) => file).sort();
+    expect(readers, `업무 표 행 토큰을 직접 읽는 소스는 업무 그리드 컴포넌트로 사유와 함께 등재한다:\n${readers.join('\n')}`)
+      .toEqual(Object.keys(WORK_TABLE_TOKEN_OWNERS).sort());
+    for (const [file, reason] of Object.entries(WORK_TABLE_TOKEN_OWNERS)) {
+      expect(reason.trim().length, `${file} 의 등재 사유가 비었습니다`).toBeGreaterThan(10);
+    }
+  });
+
+  it('keeps rowDensity="work" consumers exactly equal to the registered work grids', () => {
+    const consumers = sources
+      .filter(({ file }) => !(file in WORK_TABLE_TOKEN_OWNERS))
+      .filter(({ text }) => text.includes('rowDensity'))
+      .flatMap(({ file, text }) => workRowDensitySites(file, text).map((line) => ({ file, line })));
+    const consumerFiles = [...new Set(consumers.map(({ file }) => file))].sort();
+    expect(
+      consumerFiles,
+      `rowDensity 를 기본이 아닌 값으로 넘기는 화면은 업무 그리드 허용 목록에 사유와 함께 등재한다(카탈로그 §4):\n${
+        consumers.map(({ file, line }) => `${file}:${line}`).join('\n')}`,
+    ).toEqual(Object.keys(WORK_TABLE_ROW_DENSITY_CONSUMERS).sort());
+    for (const [file, reason] of Object.entries(WORK_TABLE_ROW_DENSITY_CONSUMERS)) {
+      expect(reason.trim().length, `${file} 의 등재 사유가 비었습니다`).toBeGreaterThan(10);
+    }
+  });
+
+  it('detects literal and expression values, and ignores the default literal and comments', () => {
+    const fixture = [
+      '// <StandardDataTable rowDensity="work" /> 는 주석이다',
+      'export const A = () => <StandardDataTable rowDensity="work" columns={[]} data={[]} />;',
+      'export const B = () => <StandardDataTable rowDensity="default" columns={[]} data={[]} />;',
+      'export const C = (d: "work" | "default") => <StandardDataTable rowDensity={d} columns={[]} data={[]} />;',
+      'export const props = { rowDensity: \'work\' as const };',
+    ].join('\n');
+    expect(workRowDensitySites('fixture.tsx', fixture)).toEqual([2, 4, 5]);
+  });
+
+  it('documents the binding rule and this allowlist in the catalog', () => {
+    expect(CATALOG_MD).toContain('WORK_TABLE_TOKEN_OWNERS');
+    expect(CATALOG_MD).toContain('WORK_TABLE_ROW_DENSITY_CONSUMERS');
+    expect(CATALOG_MD).toMatch(/업무 표 행 토큰/);
+  });
+});

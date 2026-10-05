@@ -78,15 +78,6 @@ export interface CmmnDetailCode {
 
 // Menu
 
-// Program
-export interface ProgrmManage {
-  prgrmFileNm: string;
-  prgrmStrgPath: string;
-  prgrmKornNm: string;
-  prgrmExpln: string;
-  url: string;
-}
-
 // Log
 
 /** API 생성 계약을 로그 DTO의 단일 진실 공급원으로 사용한다. */

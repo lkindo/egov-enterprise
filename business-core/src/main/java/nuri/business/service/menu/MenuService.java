@@ -6,15 +6,12 @@ import nuri.business.domain.auth.MenuAuthorityProjection;
 import nuri.business.domain.menu.Menu;
 import nuri.business.domain.menu.MenuRepository;
 import nuri.business.domain.menu.NavigationGrantRepository;
-import nuri.business.domain.program.Program;
-import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.menu.dto.MenuCreateDto;
 import nuri.business.service.menu.dto.MenuDto;
 import nuri.business.service.menu.dto.MenuStructureDto.MenuPlacement;
 import nuri.business.service.menu.dto.MenuStructureDto.MenuProperties;
 import nuri.business.service.menu.dto.MenuStructureDto.MenuStructure;
 import nuri.business.service.menu.dto.MenuStructureDto.MenuStructureSave;
-import nuri.business.service.program.dto.ProgramDto;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.security.audit.LoginUserAuditorAware;
 import nuri.business.service.auth.AuthorizationAdministrationService;
@@ -38,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -55,17 +51,21 @@ public class MenuService {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MenuService.class);
 
     private final MenuRepository menuRepository;
-    private final ProgramRepository programRepository;
     private final NavigationGrantRepository navigationGrantRepository;
     private final AuthorizationAdministrationService authorizationAdministrationService;
     private final LoginUserAuditorAware loginUserAuditorAware;
-    private final nuri.business.service.program.dto.ProgramMapper programMapper;
     /**
      * [2026-09-26 DIP B5 F10] 같은 빈 안에서 {@link #getAllMenusCached} 를 부르면 프록시를 거치지 않아 캐시가 적용되지 않는다.
      * 사이드바 트리는 이 공급자로 프록시를 거쳐 캐시를 읽는다. 없으면(단위 테스트) 저장소를 직접 읽는다.
      */
     private final org.springframework.beans.factory.ObjectProvider<MenuService> selfProvider;
 
+    /**
+     * 기동할 때 경로(modern_route)가 아직 없는 메뉴에 레거시 파일명으로 추정한 경로를 채운다.
+     * <p>[2026-10-04 프로그램 목록 퇴역] 종전에는 파일명 추정이 실패하면 프로그램 원장(tb_prgrm_lst) URL 의 레거시 접두로 한 번 더
+     * 추정했다. 원장 화면과 API 를 걷으며 그 분기도 걷었다. 그 분기로만 경로를 얻던 사용 중 말단 메뉴가 있는 DB 는 V2_124 가
+     * 적용 단계에서 멈춘다. 이관 도구로 메뉴를 넣을 때는 modern_route 를 채우고 prgrm_file_nm 은 비운다.
+     */
     @PostConstruct
     @Transactional
     public void migrateModernRoutes() {
@@ -73,16 +73,8 @@ public class MenuService {
         if (menus.isEmpty()) return;
         log.info(">>> [MenuService] Migrating {} legacy menus to modern_route...", menus.size());
 
-        List<Program> programs = programRepository.findAll();
-        Map<String, String> legacyUrlMap = programs.stream()
-            .filter(prog -> prog.getUrl() != null)
-            .collect(Collectors.toMap(prog -> prog.getPrgrmFileNm(), prog -> prog.getUrl(), (a, b) -> a));
-
         for (Menu m : menus) {
             String route = inferModernRoute(m.getPrgrmFileNm());
-            if (route == null) {
-                route = inferFromLegacyUrl(legacyUrlMap.get(m.getPrgrmFileNm()));
-            }
             if (route != null) {
                 // @PostConstruct precedes the service transaction proxy; the repository owns this transaction.
                 // Use the same audit identity as JPA, while updating no other values from this old snapshot.
@@ -134,11 +126,6 @@ public class MenuService {
                 .filter(m -> allowedMenuIds.contains(m.getMenuSn()) && "Y".equals(m.getUseYn()))
                 .collect(Collectors.toList());
 
-        List<Program> programs = programRepository.findAll();
-        Map<String, Program> programMap = programs.stream()
-                .filter(p -> p.getPrgrmFileNm() != null)
-                .collect(Collectors.toMap(p -> p.getPrgrmFileNm(), Function.identity(), (a, b) -> a));
-
         Map<Long, MenuDto> dtoMap = new LinkedHashMap<>();
         List<MenuDto> rootNodes = new ArrayList<>();
 
@@ -147,7 +134,7 @@ public class MenuService {
         // 단일 패스로 조립하면 자식이 부모보다 먼저 처리돼 dtoMap.containsKey(부모)=false로 자식이 유실된다(→ getSubMenus=0, 사이드바 파손).
         // 2-pass로 조립 순서에 비의존하게 만든다.
         for (Menu menu : filteredMenus) {
-            String url = calculateUrl(menu, programMap);
+            String url = calculateUrl(menu);
 
             MenuDto dto = MenuDto.builder()
                     .id(menu.getMenuSn())
@@ -216,40 +203,8 @@ public class MenuService {
 
     @Cacheable(value = "allMenuDtos")
     public List<MenuDto> getAllMenus() {
-        List<nuri.business.service.menu.dto.MenuWithProgramDto> menuWithProgramResults = menuRepository.findAllWithPrograms();
-        List<MenuDto> result = new ArrayList<>();
-
-        for (nuri.business.service.menu.dto.MenuWithProgramDto menuResult : menuWithProgramResults) {
-            Menu menu = menuResult.menu();
-            Program program = menuResult.program();
-
-            String url = calculateUrl(menu,
-                    program != null ? java.util.Collections.singletonMap(program.getPrgrmFileNm(), program) : null);
-
-            MenuDto dto = MenuDto.builder()
-                    .id(menu.getMenuSn())
-                    .menuNo(menu.getMenuSn())
-                    .menuNm(menu.getMenuNm())
-                    .prgrmFileNm(menu.getPrgrmFileNm())
-                    .upMenuSn(menu.getUpMenuSn())
-                    .upperMenuId(menu.getUpMenuSn())
-                    .menuOrdr(menu.getMenuOrdr())
-                    .chkURL(url)
-                    .modernRoute(menu.getModernRoute())
-                    .relImgPath(menu.getRelImgPath())
-                    .relImgNm(menu.getRelImgNm())
-                    .useYn(menu.getUseYn())
-                    .build();
-
-            result.add(dto);
-        }
-        return result;
-    }
-
-
-    public List<ProgramDto> getAllPrograms() {
-        return programRepository.findAll().stream()
-                .map(programMapper::toDto)
+        return menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc().stream()
+                .map(this::toManageDto)
                 .collect(Collectors.toList());
     }
 
@@ -296,14 +251,14 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void insertMenuCreatList(String authorCode, String checkedMenuNos) {
         throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                 "권한 전체 목록과 버전을 다시 조회한 뒤 통합 권한 화면에서 저장해 주세요.");
     }
 
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void insertMenuCreatList(String authorCode, String checkedMenuNos, String expectedVersion) {
         SecurityUtil.assertPermission("AUTHRT_GRANT");
         if (expectedVersion == null || expectedVersion.isBlank()) {
@@ -315,20 +270,16 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void insertMenuManage(@NonNull MenuDto vo) {
         SecurityUtil.assertPermission("MENU_CREATE");
         Map<Long, Long> parents = lockParentGraph();
         Long parentId = normalizeUpMenuSn(vo.getUpMenuSn());
         assertAcyclicParentPath(parentId, parents);
-        // FE 가 "연결 프로그램 없음"을 빈 문자열로 보내므로 null 로 정규화한다.
-        String prgrmFileNm = normalizePrgrmFileNm(vo.getPrgrmFileNm());
-
-        assertProgramExists(prgrmFileNm);
+        assertNoProgramLink(vo.getPrgrmFileNm());
 
         Menu menu = Menu.builder()
                 .menuNm(vo.getMenuNm())
-                .prgrmFileNm(prgrmFileNm)
                 .upMenuSn(parentId)
                 .menuOrdr(vo.getMenuOrdr())
                 .menuExpln(vo.getMenuExpln())
@@ -346,7 +297,7 @@ public class MenuService {
 
 
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void updateMenuManage(@NonNull MenuDto vo) {
         SecurityUtil.assertPermission("MENU_UPDATE");
         Map<Long, Long> parents = lockParentGraph();
@@ -354,11 +305,11 @@ public class MenuService {
         Menu menu = menuRepository.findById(menuNo)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
         // Menu.update 는 null-safe 병합이다 — 전달되지 않은(null) 값은 기존 값을 유지하고, 빈 문자열이면 비운다.
-        String prgrmFileNm = normalizePrgrmFileNm(vo.getPrgrmFileNm());
-        assertProgramExists(prgrmFileNm);
+        // 연결 프로그램만은 예외로 늘 비운다. 퇴역 전에 남은 레거시 연결은 이 경로(값 없이 저장)로 걷는다.
+        assertNoProgramLink(vo.getPrgrmFileNm());
         Long parentId = normalizeUpMenuSn(vo.getUpMenuSn());
         validateParentChanges(parents, Collections.singletonMap(menuNo, parentId));
-        menu.updateWithModernRoute(vo.getMenuNm(), prgrmFileNm,
+        menu.updateWithModernRoute(vo.getMenuNm(), null,
                 parentId,
                 vo.getMenuOrdr(),
                 vo.getMenuExpln(),
@@ -373,7 +324,7 @@ public class MenuService {
      * 정렬 저장은 상위메뉴/순서만 건드리도록 전용 경로로 분리한다.
      */
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void updateMenuOrders(@NonNull List<MenuDto> menuList) {
         SecurityUtil.assertPermission("MENU_UPDATE");
         Map<Long, MenuOrderChange> changes = new LinkedHashMap<>();
@@ -426,7 +377,7 @@ public class MenuService {
      * 새 상위의 표시를 갖지 않으면 사이드바가 그 메뉴를 조용히 버리므로 저장 전에 그룹 이름을 밝혀 거부한다.
      */
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public MenuStructure saveMenuStructure(@NonNull MenuStructureSave request) {
         SecurityUtil.assertPermission("MENU_UPDATE");
         if (MenuStructurePlan.hasItems(request.creations())) SecurityUtil.assertPermission("MENU_CREATE");
@@ -563,23 +514,21 @@ public class MenuService {
         return (upMenuSn != null && upMenuSn == 0L) ? null : upMenuSn;
     }
 
-    private void assertProgramExists(String prgrmFileNm) {
-        if (prgrmFileNm != null && !programRepository.existsById(prgrmFileNm)) {
-            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                    "등록된 프로그램을 선택하거나 연결 프로그램을 비워 주세요.");
-        }
-    }
-
     /**
-     * 프로그램 미연결(빈 문자열) → null 정규화. FE 셀렉트의 "연결 없음" 선택이 빈 문자열로 오기 때문이다.
+     * [2026-10-04 프로그램 목록 퇴역] 메뉴를 이전 프로그램에 새로 연결하지 않는다. 비어 있지 않은 값은 400 으로 거부하고,
+     * 비어 있으면(null·빈 문자열) 연결 없음이다. 원장(tb_prgrm_lst)과 메뉴의 외래 키는 DB 에 남지만 원장을 채우는 화면·API 가
+     * 없으므로, 값을 받으면 빈 원장 때문에 외래 키 위반(DB 오류)으로 끝나거나 아무 효과 없는 연결만 남는다.
      */
-    private static String normalizePrgrmFileNm(String prgrmFileNm) {
-        return (prgrmFileNm == null || prgrmFileNm.isBlank()) ? null : prgrmFileNm;
+    private static void assertNoProgramLink(String prgrmFileNm) {
+        if (prgrmFileNm != null && !prgrmFileNm.isBlank()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "메뉴에는 연결 프로그램을 지정할 수 없습니다. 연결 프로그램 값을 비워 주세요.");
+        }
     }
 
 
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void deleteMenuManage(@NonNull MenuDto vo) {
         SecurityUtil.assertPermission("MENU_DELETE");
         Long menuNo = Objects.requireNonNull(vo.getMenuNo());
@@ -594,7 +543,7 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void deleteMenuManageList(String checkedMenuNoForDel) {
         SecurityUtil.assertPermission("MENU_DELETE");
         List<Long> ids = parseMenuIds(checkedMenuNoForDel);
@@ -636,55 +585,6 @@ public class MenuService {
         }
     }
 
-    @Cacheable(value = "rootMenuIdByUrl", key = "#url", unless = "#result == null")
-    public Long getRootMenuIdByUrl(String url) {
-        String progrmFileNm = getProgrmFileNmByUrl(url);
-        if (progrmFileNm == null)
-            return null;
-        return getRootMenuIdByProgrmFileNm(progrmFileNm);
-    }
-
-    public String getProgrmFileNmByUrl(String url) {
-        if (url == null || url.isEmpty())
-            return null;
-        return programRepository.findByUrl(Objects.requireNonNull(url))
-                .map(p -> p.getPrgrmFileNm())
-                .orElse(null);
-    }
-
-
-    public Long getRootMenuIdByProgrmFileNm(String progrmFileNm) {
-        if (progrmFileNm == null)
-            return null;
-        Menu currentMenu = menuRepository.findByPrgrmFileNm(Objects.requireNonNull(progrmFileNm)).orElse(null);
-        if (currentMenu == null)
-            return null;
-
-        List<Menu> allMenus = menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc();
-        Map<Long, Long> parentMap = new HashMap<>();
-        for (Menu m : allMenus) {
-            parentMap.put(m.getMenuSn(), m.getUpMenuSn());
-        }
-
-        Long currentId = currentMenu.getMenuSn();
-        Long upperId = currentMenu.getUpMenuSn();
-        Set<Long> visited = new java.util.HashSet<>();
-        visited.add(currentId);
-
-        while (upperId != null && upperId != 0) {
-            if (!visited.add(upperId)) {
-                return null;
-            }
-            if (!parentMap.containsKey(upperId))
-                break;
-            Long nextUpperId = parentMap.get(upperId);
-            currentId = upperId;
-            upperId = nextUpperId;
-        }
-        return currentId;
-    }
-
-
     public List<MenuDto> getSubMenus(Long menuNo) {
         List<MenuDto> fullHierarchy = getMenuHierarchy();
         if (menuNo == null || menuNo <= 0) return fullHierarchy;
@@ -708,30 +608,9 @@ public class MenuService {
     }
 
     public List<MenuDto> selectMenuManageList(@NonNull BaseSearchDto searchVO) {
-        List<nuri.business.service.menu.dto.MenuWithProgramDto> menuWithProgramResults = menuRepository.findAllWithPrograms();
-
-        return menuWithProgramResults.stream().map(menuResult -> {
-            Menu menu = menuResult.menu();
-            Program program = menuResult.program();
-
-            String url = calculateUrl(menu,
-                    program != null ? java.util.Collections.singletonMap(program.getPrgrmFileNm(), program) : null);
-
-            return MenuDto.builder()
-                    .id(menu.getMenuSn())
-                    .menuNo(menu.getMenuSn())
-                    .menuNm(menu.getMenuNm())
-                    .prgrmFileNm(menu.getPrgrmFileNm())
-                    .upMenuSn(menu.getUpMenuSn())
-                    .upperMenuId(menu.getUpMenuSn())
-                    .menuOrdr(menu.getMenuOrdr())
-                    .chkURL(url)
-                    .modernRoute(menu.getModernRoute())
-                    .relImgPath(menu.getRelImgPath())
-                    .relImgNm(menu.getRelImgNm())
-                    .useYn(menu.getUseYn())
-                    .build();
-        }).collect(Collectors.toList());
+        return menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc().stream()
+                .map(this::toManageDto)
+                .collect(Collectors.toList());
     }
 
 
@@ -742,8 +621,11 @@ public class MenuService {
     public MenuDto selectMenuManage(Long menuNo) {
         Menu menu = menuRepository.findById(Objects.requireNonNull(menuNo))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
+        return toManageDto(menu);
+    }
 
-        String url = calculateUrl(menu, null);
+    private MenuDto toManageDto(Menu menu) {
+        String url = calculateUrl(menu);
 
         return MenuDto.builder()
                 .id(menu.getMenuSn())
@@ -762,7 +644,12 @@ public class MenuService {
     }
 
 
-    private String calculateUrl(Menu menu, Map<String, Program> programMap) {
+    /**
+     * 메뉴 응답의 chkURL. 경로(modern_route)가 우선이고, 없으면 레거시 파일명으로 추정한다.
+     * <p>[2026-10-04 프로그램 목록 퇴역] 종전에는 마지막으로 프로그램 원장의 URL 을 읽었다. 원장을 걷었으므로 추정할 수 없으면
+     * 종전에 원장에 그 프로그램이 없을 때 돌려주던 값({@code "/"})을 그대로 돌려준다.
+     */
+    private String calculateUrl(Menu menu) {
         if (menu.getModernRoute() != null && !menu.getModernRoute().isEmpty()) {
             return menu.getModernRoute();
         }
@@ -773,35 +660,7 @@ public class MenuService {
         }
 
         String inferred = inferModernRoute(progrmFileNm);
-        if (inferred != null) {
-            return inferred;
-        }
-
-        Program program = null;
-        if (programMap != null) {
-            program = programMap.get(progrmFileNm);
-        } else {
-            program = programRepository.findById(progrmFileNm).orElse(null);
-        }
-
-        String finalUrl = "/";
-        if (program != null && program.getUrl() != null) {
-            String legacyUrl = program.getUrl();
-            if (legacyUrl.contains(".do")) {
-                String inferredFromLegacy = inferFromLegacyUrl(legacyUrl);
-                finalUrl = inferredFromLegacy != null ? inferredFromLegacy : "#";
-            } else {
-                finalUrl = "/".equals(legacyUrl) ? "#" : legacyUrl;
-            }
-        }
-
-        // Final safety check: remove any remaining .do or legacy paths
-        if (finalUrl.contains(".do")) {
-            log.warn(">>> [MenuService] Unhandled legacy URL detected: {}", finalUrl);
-            return "#";
-        }
-
-        return finalUrl;
+        return inferred != null ? inferred : "/";
     }
 
     private String inferModernRoute(String progrmFileNm) {
@@ -840,28 +699,6 @@ public class MenuService {
             return "/admin/system/menus/by-authority";
         if (progrmFileNm.contains("MenuList"))
             return "/admin/system/menus";
-
-        return null;
-    }
-
-    private String inferFromLegacyUrl(String legacyUrl) {
-        if (legacyUrl == null)
-            return null;
-
-        if (legacyUrl.contains("/uss/olh/qna/"))
-            return "/admin/help/qna";
-        if (legacyUrl.contains("/uss/olh/faq/"))
-            return "/admin/help/faq";
-        if (legacyUrl.contains("/sec/gmt/"))
-            return "/admin/security/group";
-        if (legacyUrl.contains("/sec/ram/"))
-            return "/admin/security/role";
-        if (legacyUrl.contains("/sym/ccm/"))
-            return "/admin/system/common-code";
-        if (legacyUrl.contains("/uss/olp/qtm/"))
-            return "/admin/survey/templates";
-        if (legacyUrl.contains("/uss/olp/qmc/"))
-            return "/admin/survey/manage";
 
         return null;
     }

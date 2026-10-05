@@ -35,7 +35,7 @@ export function AuthorizationEffectivePermissions({ snapshot, current }: { snaps
       <p className="text-sm text-muted-foreground">저장된 배정을 합산한 조회 결과입니다. 아직 저장하지 않은 선택은 반영되지 않으며 본인 자료·공개 범위 등 서버의 자료별 조건은 계속 적용됩니다.</p>
       {!current || query.isError ? <p role="alert">최신 전체 권한을 확인하지 못했습니다. 배정 정보를 새로 조회해 주세요.</p>
         : query.isFetching ? <p role="status">제공 그룹을 확인하는 중입니다…</p>
-          : query.data && <div className="max-h-80 overflow-auto"><table className="w-full text-left text-sm"><caption className="sr-only">기능권한별 제공 그룹</caption><thead><tr><th className="p-2">기능권한</th><th className="p-2">제공 그룹</th></tr></thead><tbody>{query.data.map((operation) => <tr key={operation.code} className="border-t border-border"><td className="p-2">{operation.name}<span className="block text-xs text-muted-foreground">{operation.code}</span></td><td className="p-2">{operation.providers.join(', ')}</td></tr>)}</tbody></table>{query.data.length === 0 && <p role="status">저장된 기능권한이 없습니다.</p>}</div>}
+          : query.data && <div className="relative max-h-80 overflow-auto"><table className="w-full text-left text-sm"><caption className="sr-only">기능권한별 제공 그룹</caption><thead><tr><th className="p-2">기능권한</th><th className="p-2">제공 그룹</th></tr></thead><tbody>{query.data.map((operation) => <tr key={operation.code} className="border-t border-border"><td className="p-2">{operation.name}<span className="block text-xs text-muted-foreground">{operation.code}</span></td><td className="p-2">{operation.providers.join(', ')}</td></tr>)}</tbody></table>{query.data.length === 0 && <p role="status">저장된 기능권한이 없습니다.</p>}</div>}
     </>}
   </section>;
 }

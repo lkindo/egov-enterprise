@@ -59,8 +59,6 @@ public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositor
 
     Optional<Menu> findFirstByUpMenuSnOrderByMenuOrdrAsc(Long upMenuSn);
 
-    Optional<Menu> findByPrgrmFileNm(String prgrmFileNm);
-
     @org.springframework.data.jpa.repository.Query("SELECT m FROM Menu m WHERE m.menuNm LIKE %:searchKeyword% OR m.prgrmFileNm LIKE %:searchKeyword%")
     org.springframework.data.domain.Page<Menu> searchByKeyword(
             @org.springframework.data.repository.query.Param("searchKeyword") String searchKeyword,
@@ -123,16 +121,5 @@ public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositor
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT m FROM Menu m WHERE m.menuSn IN :menuIds ORDER BY m.menuSn ASC")
     List<Menu> findForUpdateByMenuSnIn(@Param("menuIds") List<Long> menuIds);
-
-    /**
-     * [성능 최적화] 메뉴와 프로그램 정보를 한 번에 조회 (N+1 방지)
-     */
-    @Query("""
-                SELECT new nuri.business.service.menu.dto.MenuWithProgramDto(m, p)
-                FROM Menu m
-                LEFT JOIN Program p ON m.prgrmFileNm = p.prgrmFileNm
-                ORDER BY m.upMenuSn ASC, m.menuOrdr ASC
-            """)
-    List<nuri.business.service.menu.dto.MenuWithProgramDto> findAllWithPrograms();
 }
 

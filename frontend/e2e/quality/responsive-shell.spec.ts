@@ -121,4 +121,59 @@ test.describe('Quality & Resilience', () => {
             });
         }
     });
+
+    /**
+     * [2026-10-05] 넓은 화면 사이드바 접기(카탈로그 §4 '사이드바 접기') — 위와 같이 구조 사실만 본다.
+     *   ① 접으면 사이드바 상자가 화면에서 사라지고(display:none — 탭 순서·접근성 트리에서도 빠진다) 본문 왼쪽 여백이 0 이 되며
+     *      가로로 넘치지 않는다. 단위 테스트(jsdom)는 CSS 를 적용하지 않아 이 사실을 보지 못한다.
+     *   ② 새로고침해도 접힌 채다 — 그리기 전 복원 스크립트가 <html data-sidebar-collapsed> 를 되살린다.
+     *   ③ 1280px(주메뉴가 있는 폭)에서는 경로 없는 영역의 '메뉴 보기' 단추가 사이드바를 다시 편다. 1024px 에는 주메뉴가 없어
+     *      머리글의 접기·펼치기 단추로 편다.
+     */
+    test.describe('Wide-screen sidebar collapse (카탈로그 §4)', () => {
+        test.use({ storageState: 'playwright/.auth/admin.json' });
+        const HEADING = { level: 1, name: '관리자 업무 현황', exact: true } as const;
+        for (const vp of [{ width: 1024, height: 800, gnb: false }, { width: 1280, height: 800, gnb: true }]) {
+            test(`${vp.width}px: 접으면 사이드바가 빠지고 본문이 그 폭을 쓰며 새로고침해도 유지된다`, async ({ page }) => {
+                await page.setViewportSize({ width: vp.width, height: vp.height });
+                await page.goto('/admin');
+                const main = page.locator('main#main-content');
+                await expect(main.getByRole('heading', HEADING)).toBeVisible({ timeout: 30000 });
+                const sidebar = page.locator('aside#primary-sidebar');
+                const toggle = page.getByRole('button', { name: '사이드바 접기·펼치기' });
+                await expect(toggle).toHaveAttribute('aria-controls', 'primary-sidebar');
+                await expect(sidebar).toBeVisible();
+
+                // 하이드레이션 전 클릭은 처리기가 없어 무시된다 — 펼친 상태일 때만 누르고, 접힘이 반영될 때까지 다시 시도한다.
+                await expect(async () => {
+                    if ((await toggle.getAttribute('aria-expanded')) === 'true') await toggle.click();
+                    await expect(toggle).toHaveAttribute('aria-expanded', 'false', { timeout: 2000 });
+                }).toPass({ timeout: 15000 });
+                await expect.poll(() => sidebar.boundingBox(), { message: '접은 사이드바가 화면에 남아 있다' }).toBeNull();
+                await expect(main).toHaveCSS('padding-left', '0px');
+                const overflowX = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+                expect(overflowX, `${vp.width}px 에서 접힌 화면이 가로로 넘친다`).toBeLessThanOrEqual(1);
+
+                await page.reload();
+                await expect(main.getByRole('heading', HEADING)).toBeVisible({ timeout: 30000 });
+                expect(await page.evaluate(() => document.documentElement.getAttribute('data-sidebar-collapsed'))).toBe('true');
+                await expect.poll(() => sidebar.boundingBox(), { message: '새로고침 뒤 사이드바가 다시 나타났다' }).toBeNull();
+                await expect(toggle).toHaveAttribute('aria-expanded', 'false', { timeout: 15000 });
+
+                if (vp.gnb) {
+                    const browse = page
+                        .getByRole('navigation', { name: '주메뉴 네비게이션' })
+                        .getByRole('button', { name: /메뉴 보기$/ })
+                        .first();
+                    await browse.click();
+                }
+                else {
+                    await toggle.click();
+                }
+                await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+                await expect(sidebar).toBeVisible();
+                await expect(main).toHaveCSS('padding-left', '256px');
+            });
+        }
+    });
 });

@@ -65,6 +65,24 @@ function withOverflow(run: () => void) {
   }
 }
 
+/**
+ * [2026-10-05 반박 리뷰 반영] 칸의 설명(aria-describedby) 대상은 접히는 '이 표 읽는 법'(details) 밖에 있어야 한다. Chromium 은 닫힌
+ * details 안을 가리키는 설명을 접근성 트리에서 비운다(CDP 실측) — 보호 권한 설명을 그 안으로 옮기자 기본 상태에서 화면낭독기가 '보호
+ * 권한이라 일괄 선택에서 빠진다'는 사실을 듣지 못했다. jsdom 은 details 접힘을 모델링하지 않아 toHaveAccessibleDescription 이 계속
+ * 통과했으므로(거짓 초록) 대상의 위치를 직접 본다. 하나라도 검사해야 빈 검사가 아니다.
+ */
+function expectDescriptionsOutsideDetails(container: HTMLElement) {
+  const described = [...container.querySelectorAll<HTMLElement>('[aria-describedby]')];
+  expect(described.length).toBeGreaterThan(0);
+  for (const element of described) {
+    for (const id of (element.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean)) {
+      const target = document.getElementById(id);
+      expect(target, `${element.getAttribute('aria-label') ?? element.tagName} 의 설명 ${id} 가 없습니다`).not.toBeNull();
+      expect(target!.closest('details'), `${element.getAttribute('aria-label') ?? element.tagName} 의 설명이 접히는 details 안에 있습니다`).toBeNull();
+    }
+  }
+}
+
 function renderMatrix(overrides: Partial<OperationPermissionMatrixProps> = {}) {
   const props: OperationPermissionMatrixProps = {
     operations: OPERATIONS,
@@ -93,14 +111,25 @@ function StatefulMatrix({ initial, allowAdd = true, onSaveShortcut }: { initial:
     })} />;
 }
 
+/**
+ * [2026-10-05 한 화면 압축, 사용자 승인] 두 표는 편집기의 업무면 fill 셸 안에서 fill 변형을 쓴다 — 넓고 높은 화면(work-fill 조건)에서
+ * 남은 높이를 채우고, 조건 밖에서는 종전 70vh 상자다. 칸이 고정 머리글·첫 열 밑에 가리지 않게 스크롤 여백(scroll-padding)을
+ * 둔다(WCAG 2.4.11). 머리 고정·이름 있는 스크롤 영역·방향키·Space·보호 표시 계약은 그대로다.
+ * 칸 패딩은 표 셀 밀도 토큰(--cell-px/py) 대신 업무 표 행 토큰(--work-cell-px/py, 카탈로그 §4 '업무 표 행 토큰')이다 — 기본
+ * comfortable 에서 한 줄이 약 77px(기능별 약 109px)였다. 화면별 밀도 선택이 아니라 배포 전역 data-density 를 따르는 컴포넌트
+ * 표현이며, 토큰을 읽는 컴포넌트는 work-screen-grammar-contract 의 WORK_TABLE_TOKEN_OWNERS 에 사유와 함께 등재돼 있다.
+ */
+const BOX_CLASSES = ['max-h-[min(70vh,48rem)]', 'overflow-auto', 'work-fill:flex-1', 'work-fill:max-h-[var(--work-fill-height)]'];
+
 describe('기능별 권한 표 — A5 계약', () => {
-  it('행·열 머리글을 스크롤 상자 안에서 고정하고 384px 상자를 쓰지 않는다', () => {
-    renderMatrix();
+  it('행·열 머리글을 스크롤 상자 안에서 고정하고, fill 상자에 고정 머리글·첫 열만큼 스크롤 여백을 둔다(384px 상자 금지)', () => {
+    renderMatrix({ fill: true });
     const table = screen.getByRole('table');
     const box = table.parentElement!;
-    expect(box.className).toContain('max-h-[min(70vh,48rem)]');
-    expect(box.className).toContain('overflow-auto');
+    expect(box.className.split(/\s+/)).toEqual(expect.arrayContaining([...BOX_CLASSES, 'scroll-pt-10', 'scroll-pl-[11rem]']));
     expect(box.className).not.toContain('max-h-96');
+    // 고정 첫 열의 폭이 스크롤 여백과 같다 — 다르면 칸이 첫 열 밑에 가린 채 멈춘다.
+    expect(within(table).getAllByRole('columnheader')[0].className).toContain('w-[11rem]');
 
     for (const header of within(table).getAllByRole('columnheader')) {
       expect(header.className).toMatch(/\bsticky\b/);
@@ -115,16 +144,29 @@ describe('기능별 권한 표 — A5 계약', () => {
     }
   });
 
-  it('머리글과 칸의 패딩은 표 셀 밀도 토큰을 써 compact 밀도가 이 표에도 닿는다(카탈로그 §4)', () => {
+  it('머리글과 칸의 패딩은 업무 표 행 토큰을 써 배포 밀도(data-density)가 이 표에도 닿는다(카탈로그 §4)', () => {
     renderMatrix();
     const table = screen.getByRole('table');
     const cells = [...within(table).getAllByRole('columnheader'), ...within(table).getAllByRole('rowheader').filter((header) => header.getAttribute('scope') === 'row'), ...within(table).getAllByRole('cell')];
     expect(cells.length).toBeGreaterThan(10);
     for (const element of cells) {
-      expect(element.className).toContain('px-[var(--cell-px)]');
-      expect(element.className).toContain('py-[var(--cell-py)]');
+      expect(element.className).toContain('px-[var(--work-cell-px)]');
+      expect(element.className).toContain('py-[var(--work-cell-py)]');
       expect(element.className).not.toMatch(/(^|\s)p-\d/);
     }
+  });
+
+  it('행 일괄 선택은 좁은 전체 열의 24px 버튼이다 — 행 머리는 한 줄이고, 버튼 이름이 보호 권한 제외를 말한다', () => {
+    renderMatrix();
+    const header = screen.getByRole('rowheader', { name: '게시글' });
+    expect(within(header).queryByRole('button')).toBeNull();
+    const row = header.closest('tr')!;
+    const all = within(row).getByRole('button', { name: '게시글 전체 선택(보호 권한 제외)' });
+    expect(all).toHaveTextContent('선택');
+    expect(all).toHaveAttribute('data-size', 'xs');
+    expect(all.closest('td')).not.toBeNull();
+    // 열 머리의 일괄 버튼도 이름표와 한 줄이다.
+    expect(within(screen.getByRole('columnheader', { name: '조회' })).getByRole('button', { name: '조회 전체 선택(보호 권한 제외)' })).toHaveAttribute('data-size', 'xs');
   });
 
   it('칸의 접근 이름은 영역 × 행위 (코드)이고, 없는 권한 칸은 비운다', () => {
@@ -223,20 +265,21 @@ describe('기능별 권한 표 — A5 계약', () => {
 
   it('보호 권한은 표시를 붙이고 줄·분류 일괄 선택에서 뺀다(H3)', async () => {
     const user = userEvent.setup();
-    render(<StatefulMatrix initial={[]} />);
+    const view = render(<StatefulMatrix initial={[]} />);
     expect(cell(/AUTHRT_GRANT/)).toHaveAccessibleDescription(/보호 표시가 붙은 권한/);
+    expectDescriptionsOutsideDetails(view.container);
     expect(cell(/AUTHRT_READ/)).not.toHaveAccessibleDescription(/보호 표시가 붙은 권한/);
 
-    await user.click(screen.getByRole('button', { name: '권한 관리 전체 선택' }));
+    await user.click(screen.getByRole('button', { name: '권한 관리 전체 선택(보호 권한 제외)' }));
     expect(cell(/AUTHRT_READ/)).toBeChecked();
     expect(cell(/AUTHRT_AUDIT/)).toBeChecked();
     expect(cell(/AUTHRT_GRANT/)).not.toBeChecked();
     expect(cell(/AUTHRT_ASSIGN/)).not.toBeChecked();
     // 비보호 칸이 모두 켜졌으므로 같은 버튼이 해제로 바뀐다.
-    await user.click(screen.getByRole('button', { name: '권한 관리 전체 해제' }));
+    await user.click(screen.getByRole('button', { name: '권한 관리 전체 해제(보호 권한 제외)' }));
     expect(cell(/AUTHRT_READ/)).not.toBeChecked();
 
-    await user.click(screen.getByRole('button', { name: '사용자·조직·권한 전체 선택' }));
+    await user.click(screen.getByRole('button', { name: '사용자·조직·권한 전체 선택(보호 권한 제외)' }));
     expect(cell(/AUTHRT_AUDIT/)).toBeChecked();
     expect(cell(/AUTHRT_GRANT/)).not.toBeChecked();
     // 보호 권한은 칸마다 따로 고를 수 있다.
@@ -247,9 +290,16 @@ describe('기능별 권한 표 — A5 계약', () => {
   it('열 일괄 선택은 보이는 행에만 적용하고, 모두 켜져 있으면 해제한다', async () => {
     const user = userEvent.setup();
     render(<StatefulMatrix initial={['BOARD_READ']} />);
+    // [2026-10-05 반박 리뷰 반영] 도구 줄을 한 줄로 — 거르지 않을 때는 결과 수를 보이지 않고(표시 수 = 전체 수), '보호' 표시의 뜻은
+    // '이 표 읽는 법' 안에 있다.
+    expect(screen.queryByText(/표시 \d+ \/ 전체/)).toBeNull();
+    expect(screen.queryByText('일괄 선택 제외')).toBeNull();
+    expect(within(screen.getByText('이 표 읽는 법').closest('details')!).getByText(/보호 표시가 붙은 권한은/)).toBeInTheDocument();
     await user.type(screen.getByRole('textbox', { name: '기능 검색' }), '메뉴');
-    expect(screen.getByText('표시 1 / 전체 4개 영역 · 검색 결과 밖의 선택도 유지됩니다.')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '조회 전체 선택' }));
+    // [2026-10-05] 도구 줄을 한 줄로 줄이며 '검색 결과 밖의 선택도 유지됩니다'는 '이 표 읽는 법'으로 옮겼다(DOM 에 남는다).
+    expect(screen.getByText('표시 1 / 전체 4개 영역')).toBeInTheDocument();
+    expect(screen.getByText(/기능 검색·업무 분류 밖의 선택도 유지됩니다/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '조회 전체 선택(보호 권한 제외)' }));
     expect(cell(/MENU_READ/)).toBeChecked();
     await user.clear(screen.getByRole('textbox', { name: '기능 검색' }));
     // 검색 밖의 영역은 건드리지 않는다.
@@ -257,9 +307,9 @@ describe('기능별 권한 표 — A5 계약', () => {
     expect(cell(/QESTNR_READ/)).not.toBeChecked();
     expect(cell(/BOARD_READ\)/)).toBeChecked();
 
-    await user.click(screen.getByRole('button', { name: '조회 전체 선택' }));
+    await user.click(screen.getByRole('button', { name: '조회 전체 선택(보호 권한 제외)' }));
     for (const code of ['BOARD_READ', 'AUTHRT_READ', 'MENU_READ', 'QESTNR_READ']) expect(cell(new RegExp(`${code}\\)`))).toBeChecked();
-    await user.click(screen.getByRole('button', { name: '조회 전체 해제' }));
+    await user.click(screen.getByRole('button', { name: '조회 전체 해제(보호 권한 제외)' }));
     for (const code of ['BOARD_READ', 'AUTHRT_READ', 'MENU_READ', 'QESTNR_READ']) expect(cell(new RegExp(`${code}\\)`))).not.toBeChecked();
   });
 
@@ -279,14 +329,15 @@ describe('기능별 권한 표 — A5 계약', () => {
     render(<StatefulMatrix initial={['BOARD_READ']} allowAdd={false} />);
     expect(cell(/BOARD_CREATE/)).toBeDisabled();
     expect(cell(/BOARD_READ\)/)).toBeEnabled();
-    await user.click(screen.getByRole('button', { name: '게시글 전체 해제' }));
+    await user.click(screen.getByRole('button', { name: '게시글 전체 해제(보호 권한 제외)' }));
     expect(cell(/BOARD_READ\)/)).not.toBeChecked();
-    expect(screen.getByRole('button', { name: '게시글 전체 선택' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '게시글 전체 선택(보호 권한 제외)' })).toBeDisabled();
   });
 
   it('권한 설정 권한이 없으면 일괄 버튼을 두지 않고 칸을 잠근다', () => {
     renderMatrix({ editable: false });
-    expect(screen.queryByRole('button', { name: /전체 (선택|해제)$/ })).not.toBeInTheDocument();
+    // 이름 끝이 '(보호 권한 제외)'라 끝 고정($)을 두면 늘 맞지 않아 빈 검사가 된다.
+    expect(screen.queryByRole('button', { name: /전체 (선택|해제)/ })).not.toBeInTheDocument();
     for (const checkbox of screen.getAllByRole('checkbox')) expect(checkbox).toBeDisabled();
   });
 
@@ -321,12 +372,12 @@ describe('화면별 권한 표 — A5 계약', () => {
   const table = () => within(screen.getByRole('group', { name: '화면별 권한 선택' })).getByRole('table');
   const cell = (name: string | RegExp) => screen.getByRole('checkbox', { name });
 
-  it('행·열 머리글을 스크롤 상자 안에서 고정하고, 머리글과 칸은 표 셀 밀도 토큰을 쓴다', () => {
-    render(<ScreenTableHarness initial={[]} />);
+  it('행·열 머리글을 fill 스크롤 상자 안에서 고정하고(스크롤 여백 포함), 머리글과 칸은 업무 표 행 토큰을 쓴다', () => {
+    render(<ScreenTableHarness initial={[]} fill />);
     const box = table().parentElement!;
-    expect(box.className).toContain('max-h-[min(70vh,48rem)]');
-    expect(box.className).toContain('overflow-auto');
+    expect(box.className.split(/\s+/)).toEqual(expect.arrayContaining([...BOX_CLASSES, 'scroll-pt-8', 'scroll-pl-[15rem]']));
     expect(box.className).not.toContain('max-h-96');
+    expect(within(table()).getAllByRole('columnheader')[0].className).toContain('w-[15rem]');
     for (const header of within(table()).getAllByRole('columnheader')) {
       expect(header.className).toMatch(/\bsticky\b/);
       expect(header.className).toMatch(/\btop-0\b/);
@@ -338,8 +389,8 @@ describe('화면별 권한 표 — A5 계약', () => {
       expect(header.className).toMatch(/\bleft-0\b/);
     }
     for (const element of [...within(table()).getAllByRole('columnheader'), ...rowHeaders, ...within(table()).getAllByRole('cell')]) {
-      expect(element.className).toContain('px-[var(--cell-px)]');
-      expect(element.className).toContain('py-[var(--cell-py)]');
+      expect(element.className).toContain('px-[var(--work-cell-px)]');
+      expect(element.className).toContain('py-[var(--work-cell-py)]');
       expect(element.className).not.toMatch(/(^|\s)p-\d/);
     }
   });
@@ -451,6 +502,8 @@ describe('화면별 권한 표 — A5 계약', () => {
     expect(within(picker).getByText('비밀번호 초기화 (USER_PASSWORD)').parentElement).toHaveTextContent('보호');
     const password = within(picker).getByRole('checkbox', { name: /USER_PASSWORD/ });
     expect(password).toHaveAccessibleDescription(/보호 표시가 붙은 권한/);
+    // 고르는 창(포털)까지 문서 전체를 본다.
+    expectDescriptionsOutsideDetails(document.body);
     await user.click(password);
     expect(selectionOf(view.container)).toContain('OPERATION:USER_PASSWORD');
     // 고르는 창 안의 칸도 바뀐 사실을 설명으로 싣는다.
@@ -470,7 +523,8 @@ describe('화면별 권한 표 — A5 계약', () => {
     expect(trigger).toHaveAccessibleDescription(/저장하지 않은 변경/);
     // 하나짜리 칸은 권한 이름을, 묶음 칸은 범위를 설명으로 싣는다.
     expect(cell('투표 관리 × 등록 (POLL_CREATE)')).toHaveAccessibleDescription('투표 등록');
-    expect(cell('관리 × 화면 진입')).toHaveAccessibleDescription(/아래 화면 4개 중 1개 · 보호 권한 제외/);
+    // [2026-10-05 H3 정합] 화면 진입 묶음 칸은 타인 자료 권한이 필요한 투표 관리를 수에서 빼고 '직접 고르기'로 센다(종전 '화면 4개 중 1개 · 보호 권한 제외').
+    expect(cell('관리 × 화면 진입')).toHaveAccessibleDescription(/아래 화면 3개 중 1개 · 보호 권한·타인 자료 권한 제외 · 직접 고르기 1/);
   });
 
   it('넘치는 표 상자는 칸이 모두 잠겨도 키보드로 스크롤할 수 있는 이름 있는 영역이다 — 메뉴를 늦게 읽어도(WCAG 2.1.1)', () => {

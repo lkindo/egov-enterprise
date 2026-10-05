@@ -1,12 +1,12 @@
 import { canOpenPage } from '@/lib/auth/page-access';
 import { registeredPageEntry } from '@/lib/auth/page-authorization';
-import type { NavigationPermissionNode, NavigationPermissionTree } from '@/lib/auth/navigation-permission-tree';
+import { toggleNavigationPermission, type NavigationPermissionNode, type NavigationPermissionTree } from '@/lib/auth/navigation-permission-tree';
 import { normalizeInternalRoute } from '@/lib/navigation/internal-route';
 import { resolveMenuScreen, screensWithoutMenu } from '@/lib/navigation/menu-screen-resolution';
 import { MENU_HIDDEN_REASON_LABELS, menuPreviewKey, type MenuVisibilityPreview } from '@/lib/navigation/menu-visibility-preview';
 import { PAGE_PERMISSION_MODES } from '@/types/generated-permissions';
 import { SCREEN_REGISTRY, type ScreenRegistryEntry } from '@/types/generated-screen-registry';
-import { isProtectedPermission, operationKey, planBulkToggle, type BulkTogglePlan } from './operation-permission-matrix-model';
+import { isBulkEntryFix, isOthersDataPermission, isProtectedPermission, operationKey, planBulkToggle, type BulkTogglePlan, type EntryFix } from './operation-permission-matrix-model';
 
 /**
  * '화면별 권한' 표(메뉴 트리 × 메뉴 표시·화면 진입·등록·수정·삭제·그 밖의 기능)의 순수 모델(2026-10-02, 관리 콘솔 UX 2단계 D4).
@@ -29,7 +29,8 @@ import { isProtectedPermission, operationKey, planBulkToggle, type BulkTogglePla
  *
  * 영역·섹션 줄의 일괄 칸은 인가 의미가 다른 권한을 한 동작으로 묶지 않는다(H3): 보호 권한, 타인 자료 권한(행위가
  * …_ALL), 다른 화면에 들어가는 진입 권한은 일괄 선택에서 빠지고 화면 줄의 칸에서 따로 고른다. '수정' 한 번이 타인
- * 자료 수정을, '그 밖의 기능' 한 번이 다른 관리 화면 진입을 알리지 않고 주지 않게 한다.
+ * 자료 수정을, '그 밖의 기능' 한 번이 다른 관리 화면 진입을 알리지 않고 주지 않게 한다. '화면 진입' 묶음 칸도 같다
+ * (2026-10-05) — 보호·타인 자료 진입 권한이 필요한 화면은 묶음 칸에서 빠지고 화면 줄에서 직접 고른다(aggregateCell).
  */
 
 export type ScreenColumnKey = 'navigation' | 'entry' | 'create' | 'update' | 'delete' | 'other';
@@ -272,12 +273,34 @@ export function preferredEntryCode(codes: readonly string[]): string | null {
   return candidates.find((code) => code.endsWith('_READ')) ?? candidates[0] ?? null;
 }
 
+/**
+ * 영역·섹션 줄의 '화면 진입' 묶음 칸이 다룰 수 있는 진입 권한인가 — 보호 권한과 타인 자료 권한(…_ALL)이 아니어야 한다.
+ * 등록·수정·삭제·그 밖의 기능 묶음 칸(bulkCodes)과 섹션 '진입 권한 추가'(isBulkEntryFix)와 같은 제외 규칙이다(H3).
+ */
+const isBulkEntryCode = (code: string): boolean => !isProtectedPermission(code) && !isOthersDataPermission(code);
+
+/**
+ * 묶음 칸의 '화면 진입'으로 다룰 수 있는 화면인가(2026-10-05, H3 정합). ANY 는 일괄 대상 진입 권한이 하나라도 있어야 하고
+ * (그중 조회를 먼저 권한다), ALL 은 모든 진입 권한이 일괄 대상이어야 한다 — 하나라도 보호·타인 자료 권한이면 묶음 칸으로는
+ * 열 수도 닫을 수도 없으므로 화면 줄에서 사람이 고른다('직접 고르기'). 예: '모두 있어야 열림' 투표 관리(POLL_READ +
+ * POLL_READ_ALL), 타인 댓글 관리(COMMENT_READ_ALL 하나).
+ */
+export function isBulkEntryScreen(entry: ScreenEntry): boolean {
+  if (entry.state !== 'gated') return false;
+  return entry.mode === 'ALL' ? entry.codes.every(isBulkEntryCode) : entry.codes.some(isBulkEntryCode);
+}
+
 export interface AggregateCell {
-  /** n — 화면 진입은 진입 권한이 있는 화면 수, 나머지는 보호 권한을 뺀 고유 코드 수. */
+  /** n — 화면 진입은 묶음 칸이 다루는 화면(isBulkEntryScreen) 수, 나머지는 일괄 코드(bulkCodes)의 고유 수. */
   total: number;
-  /** k — 화면 진입은 들어갈 수 있는 화면 수, 나머지는 켜진 코드 수. */
+  /** k — 화면 진입은 그 가운데 들어갈 수 있는 화면 수, 나머지는 켜진 코드 수. */
   selected: number;
   plan: BulkTogglePlan;
+  /**
+   * 화면 진입만: 진입 권한이 있지만 보호·타인 자료 권한이 필요해 묶음 칸에서 빠진 줄 — 화면 줄의 칸에서 직접 고른다. 나머지 칸은
+   * 빠지는 단위가 화면이 아니라 코드라 늘 빈 목록이다(칸 설명이 제외 규칙을 말한다).
+   */
+  manual: readonly ScreenRow[];
 }
 
 /**
@@ -285,8 +308,12 @@ export interface AggregateCell {
  * rows 는 다룰 줄이다 — 화면 검색 중이면 표가 검색 결과에 보이는 줄로 좁혀 넘긴다(보이지 않는 화면을 바꾸지 않는다).
  *  · 등록·수정·삭제·그 밖의 기능: 아래 화면들의 그 칸 일괄 코드(bulkCodes, 고유) — 보호 권한·타인 자료 권한·다른 화면의
  *    진입 권한은 빠진다. 모두 켜져 있으면 끄고, 아니면 켠다.
- *  · 화면 진입: 아래 화면 가운데 진입 권한이 있는 화면. 모두 들어갈 수 있으면 그 진입 권한을 끄고, 아니면 들어갈 수 없는
- *    화면마다 필요한 만큼만 더한다 — ANY 는 권하는 코드 하나(조회 우선), ALL 은 모두. 후보를 전부 더해 넘치게 주지 않는다.
+ *  · 화면 진입: 아래 화면 가운데 묶음 칸이 다룰 수 있는 화면(isBulkEntryScreen). 모두 들어갈 수 있으면 그 화면들의 일괄 대상
+ *    진입 권한을 끄고, 아니면 들어갈 수 없는 화면마다 필요한 만큼만 더한다 — ANY 는 일괄 대상 후보 가운데 권하는 코드 하나
+ *    (조회 우선), ALL 은 모두. 후보를 전부 더해 넘치게 주지 않는다. 보호·타인 자료 권한은 더하지도 끄지도 않는다 — 그런 권한이
+ *    필요한 화면은 manual 로 세어 화면 줄에서 고르게 한다(2026-10-05 H3 정합: 종전에는 '모두 있어야 열림' 투표 관리의
+ *    POLL_READ_ALL, 타인 댓글 관리의 COMMENT_READ_ALL 을 이 칸 한 번으로 더하고, 끌 때도 함께 껐다). 이미 들어갈 수 있는 화면에는
+ *    더하지 않는다 — 타인 자료 권한으로 들어가는 화면에 본인 권한을 덧붙여 넓히지 않는다.
  *  · 추가가 막힌 그룹(공개 메뉴 그룹)은 끌 수만 있다.
  */
 export function aggregateCell(
@@ -298,29 +325,29 @@ export function aggregateCell(
   if (column === 'entry') {
     const gated = rows.filter((row) => row.entry?.state === 'gated');
     if (gated.length === 0) return null;
-    const satisfied = gated.filter((row) => entrySatisfied(row.entry!, selection));
-    const selectedCodes = [...new Set(gated.flatMap((row) => row.entry!.codes))]
-      .filter((code) => !isProtectedPermission(code) && selection.has(operationKey(code)));
-    if (satisfied.length === gated.length) {
-      return { total: gated.length, selected: satisfied.length, plan: selectedCodes.length > 0 ? { mode: 'clear', keys: selectedCodes.map(operationKey) } : { mode: null, keys: [] } };
-    }
-    if (!allowAdd) {
-      return { total: gated.length, selected: satisfied.length, plan: selectedCodes.length > 0 ? { mode: 'clear', keys: selectedCodes.map(operationKey) } : { mode: null, keys: [] } };
-    }
+    const bulk = gated.filter((row) => isBulkEntryScreen(row.entry!));
+    const manual = gated.filter((row) => !isBulkEntryScreen(row.entry!));
+    const idle: BulkTogglePlan = { mode: null, keys: [] };
+    if (bulk.length === 0) return { total: 0, selected: 0, plan: idle, manual };
+    const satisfied = bulk.filter((row) => entrySatisfied(row.entry!, selection));
+    const selectedCodes = [...new Set(bulk.flatMap((row) => row.entry!.codes))]
+      .filter((code) => isBulkEntryCode(code) && selection.has(operationKey(code)));
+    const clear: BulkTogglePlan = selectedCodes.length > 0 ? { mode: 'clear', keys: selectedCodes.map(operationKey) } : idle;
+    if (satisfied.length === bulk.length || !allowAdd) return { total: bulk.length, selected: satisfied.length, plan: clear, manual };
     const add = new Set<string>();
-    for (const row of gated) {
+    for (const row of bulk) {
       if (entrySatisfied(row.entry!, selection)) continue;
       const codes = row.entry!.mode === 'ALL'
-        ? row.entry!.codes.filter((code) => !isProtectedPermission(code))
-        : [preferredEntryCode(row.entry!.codes)].filter((code): code is string => code !== null);
+        ? row.entry!.codes
+        : [preferredEntryCode(row.entry!.codes.filter(isBulkEntryCode))].filter((code): code is string => code !== null);
       for (const code of codes) if (!selection.has(operationKey(code))) add.add(operationKey(code));
     }
-    return { total: gated.length, selected: satisfied.length, plan: add.size > 0 ? { mode: 'select', keys: [...add] } : { mode: null, keys: [] } };
+    return { total: bulk.length, selected: satisfied.length, plan: add.size > 0 ? { mode: 'select', keys: [...add] } : idle, manual };
   }
   const codes = [...new Set(rows.flatMap((row) => row.bulkCodes[column]))];
   if (codes.length === 0) return null;
   const plan = planBulkToggle(codes.map((code) => ({ code, domain: '', action: '', name: '' })), selection, allowAdd);
-  return { total: codes.length, selected: codes.filter((code) => selection.has(operationKey(code))).length, plan };
+  return { total: codes.length, selected: codes.filter((code) => selection.has(operationKey(code))).length, plan, manual: [] };
 }
 
 /** 칸이 다루는 코드(자기 화면 칸). */
@@ -383,18 +410,133 @@ export function screenRowMatches(row: ScreenRow, query: string): boolean {
 }
 
 /**
- * 보일 줄. 검색어가 없으면 모든 상위가 펼쳐진 줄이다. 검색어가 있으면 맞는 줄과 그 상위를 보인다(접힘과 무관하게) —
- * 검색 결과 밖의 선택은 그대로 둔다(보이지 않을 뿐 초안에 남는다).
+ * 보일 줄. 검색어도 거르기(include)도 없으면 모든 상위가 펼쳐진 줄이다. 검색어나 거르기가 있으면 둘 다 맞는 줄과 그 상위를
+ * 보인다(접힘과 무관하게) — 검색·거르기 밖의 선택은 그대로 둔다(보이지 않을 뿐 초안에 남는다).
+ * include 는 '문제 줄만'·'바뀐 줄만'이 누른 때 고정한 줄 키 집합이다(null 이면 거르지 않는다).
  */
-export function visibleScreenRows(model: ScreenPermissionModel, expanded: ReadonlySet<string>, query: string): ScreenRow[] {
-  if (query.trim()) {
+export function visibleScreenRows(
+  model: ScreenPermissionModel,
+  expanded: ReadonlySet<string>,
+  query: string,
+  include: ReadonlySet<string> | null = null,
+): ScreenRow[] {
+  if (query.trim() || include) {
     const keep = new Set<string>();
     for (const row of model.rows) {
-      if (!screenRowMatches(row, query)) continue;
+      if (!screenRowMatches(row, query) || (include && !include.has(row.key))) continue;
       keep.add(row.key);
       for (const key of ancestorKeys(model, row.key)) keep.add(key);
     }
     return model.rows.filter((row) => keep.has(row.key));
   }
   return model.rows.filter((row) => ancestorKeys(model, row.key).every((key) => expanded.has(key)));
+}
+
+/* ── 2026-10-05 '한 화면' 압축: 영역·섹션 줄의 메뉴 표시 일괄, 섹션 상태, 줄 거르기 ─────────────────────────────── */
+
+/**
+ * 줄과 그 아래 메뉴 줄의 메뉴 번호(앞선 순회 순서). '메뉴에 없는 화면' 줄은 메뉴가 아니라 빠진다.
+ * visibleKeys 가 있으면(검색·거르기 중) 줄 자신과 보이는 줄만 — 보이지 않는 메뉴를 켜지 않는다.
+ */
+export function navigationCodesUnder(model: ScreenPermissionModel, row: ScreenRow, visibleKeys?: ReadonlySet<string>): string[] {
+  return rowsUnder(model, row)
+    .filter((entry) => entry.kind === 'menu' && entry.menuCode !== null && (!visibleKeys || entry === row || visibleKeys.has(entry.key)))
+    .map((entry) => entry.menuCode!);
+}
+
+/**
+ * 영역·섹션 줄의 '메뉴 표시' 칸 — 그 아래 메뉴 전체를 켜고 끈다(시안 의미, 2026-10-05 사용자 승인). 메뉴 표시의 상하위 규칙은
+ * 그대로 지킨다(편집기의 toggleNavigationPermission 과 같은 규칙):
+ *  · 켤 때: codes(줄 자신과 보이는 하위 메뉴) 각각을 그 상위와 함께 켠다 — 상위가 빠진 하위(저장을 막는 상위 누락)가 생기지 않는다.
+ *  · 끌 때: 줄 자신과 그 아래 **전체**를 끈다 — 검색·거르기로 보이지 않는 하위도 함께다. 상위가 꺼진 하위는 어차피 보이지 않고
+ *    남겨 두면 상위 누락으로 저장이 막히므로, 화면 줄의 메뉴 표시를 끌 때와 같은 결과다.
+ * 기능권한(OPERATION)은 건드리지 않는다 — 메뉴 표시와 기능권한은 다른 권한이다(H3).
+ */
+export function toggleNavigationSubtree(
+  tree: NavigationPermissionTree,
+  selection: ReadonlySet<string>,
+  rootCode: string,
+  codes: readonly string[],
+  checked: boolean,
+): Set<string> {
+  if (!checked) return toggleNavigationPermission(tree, selection, rootCode, false);
+  let next = new Set(selection);
+  for (const code of codes) next = toggleNavigationPermission(tree, next, code, true);
+  return next;
+}
+
+/** 줄 자신의 칸이 기준선과 다른가 — 메뉴 표시와 자기 화면의 진입·등록·수정·삭제·그 밖의 기능 권한. */
+export function rowChanged(row: ScreenRow, selection: ReadonlySet<string>, baseline: ReadonlySet<string>): boolean {
+  const keys = [
+    ...(row.menuCode ? [`NAVIGATION:${row.menuCode}`] : []),
+    ...(row.entry?.state === 'gated' ? row.entry.codes : []).map(operationKey),
+    ...SCREEN_CODE_COLUMNS.flatMap((column) => row.codes[column]).map(operationKey),
+  ];
+  return keys.some((key) => selection.has(key) !== baseline.has(key));
+}
+
+/**
+ * 고칠 일이 있는 메뉴 줄인가 — 메뉴 표시를 줬는데 숨거나(상태 'problem'), 진입 권한이 없어 고치기가 붙은 메뉴.
+ * '메뉴에 없는 화면'은 메뉴가 아니라 문제로 세지 않는다.
+ */
+export function rowHasProblem(
+  row: ScreenRow,
+  preview: MenuVisibilityPreview,
+  selection: ReadonlySet<string>,
+  fixMenuCodes: ReadonlySet<string>,
+): boolean {
+  if (row.kind !== 'menu' || !row.menuCode) return false;
+  return fixMenuCodes.has(row.menuCode) || screenRowStatus(row, preview, selection)?.tone === 'problem';
+}
+
+export interface SectionStatus {
+  /** 경로가 있는 메뉴(줄 자신 포함) 수. */
+  total: number;
+  /** 그 가운데 이 그룹의 초안으로 사이드바에 보이는 수. */
+  visible: number;
+  /** 그 가운데 고칠 일이 있는 수(메뉴 표시를 줬는데 숨거나 진입 권한이 없음). */
+  warnings: number;
+  /** 섹션 단위 '진입 권한 추가'로 바로 고칠 수 있는 메뉴(정해진 권한이고 보호·타인 자료 권한이 없는 'auto'). */
+  autoMenus: string[];
+  /** 그 메뉴들에 더할 기능권한 코드(중복 없음). 후보를 사람이 골라야 하거나 보호·타인 자료 권한이 필요한 메뉴는 빠진다. */
+  autoCodes: string[];
+  /** 진입 권한을 화면 줄에서 직접 골라야 하는 메뉴 — 후보가 여럿(choose)이거나, 정해진 권한에 보호·타인 자료 권한이 있다. */
+  manualMenus: string[];
+}
+
+/**
+ * 영역·섹션 줄의 상태 칸 — '보임 n/m · 경고 n' 과 그 섹션의 자동 가능한 진입 권한(시안 의미). rows 는 그 줄과 아래 줄이다
+ * (검색·거르기 중이면 보이는 줄만 — 묶음 칸과 같은 범위). 섹션 단위 추가는 영역·섹션 줄의 묶음 칸과 같은 제외 규칙을 따른다
+ * (2026-10-05 반박 리뷰 반영, H3): 후보가 여럿인 메뉴(choose)와, 정해진 권한에 보호 권한·타인 자료 권한(…_ALL)이 있는 메뉴는
+ * 빠지고 manualMenus 로 센다 — 화면 줄의 '권한 추가'에서 사람이 고른다. 한 번의 클릭이 타인 자료 권한을 알리지 않고 주지 않게 한다.
+ */
+export function sectionStatus(
+  rows: readonly ScreenRow[],
+  preview: MenuVisibilityPreview,
+  selection: ReadonlySet<string>,
+  fixByMenu: ReadonlyMap<string, EntryFix>,
+): SectionStatus {
+  const screens = rows.filter((row) => row.kind === 'menu' && row.menuCode !== null && row.route !== null);
+  const fixMenuCodes = new Set(fixByMenu.keys());
+  const autoMenus: string[] = [];
+  const manualMenus: string[] = [];
+  const autoCodes = new Set<string>();
+  for (const row of screens) {
+    const fix = fixByMenu.get(row.menuCode!);
+    if (!fix || fix.kind === 'unfixable') continue;
+    if (!isBulkEntryFix(fix)) {
+      manualMenus.push(row.menuCode!);
+      continue;
+    }
+    autoMenus.push(row.menuCode!);
+    for (const code of fix.codes) autoCodes.add(code);
+  }
+  return {
+    total: screens.length,
+    visible: screens.filter((row) => screenRowStatus(row, preview, selection)?.tone === 'ok').length,
+    warnings: screens.filter((row) => rowHasProblem(row, preview, selection, fixMenuCodes)).length,
+    autoMenus,
+    autoCodes: [...autoCodes],
+    manualMenus,
+  };
 }

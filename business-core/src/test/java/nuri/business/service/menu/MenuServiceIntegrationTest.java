@@ -5,8 +5,6 @@ import nuri.business.domain.auth.AuthorityGrant;
 import org.springframework.jdbc.core.JdbcTemplate;
 import nuri.business.domain.menu.Menu;
 import nuri.business.domain.menu.MenuRepository;
-import nuri.business.domain.program.Program;
-import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.menu.dto.MenuDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,8 +32,6 @@ class MenuServiceIntegrationTest {
     @Autowired
     private MenuRepository menuRepository;
     @Autowired
-    private ProgramRepository programRepository;
-    @Autowired
     private JdbcTemplate jdbc;
     @Autowired
     private jakarta.persistence.EntityManager entityManager;
@@ -57,7 +53,6 @@ class MenuServiceIntegrationTest {
         
         jdbc.update("DELETE FROM tb_authrt_grnt_map");
         menuRepository.deleteAll();
-        programRepository.deleteAll();
         entityManager.flush();
         entityManager.clear();
     }
@@ -67,13 +62,6 @@ class MenuServiceIntegrationTest {
     @DisplayName("명시적 ADMIN 메뉴 권한과 권한 회수 즉시 반영")
     void testGetMenuHierarchyAndImmediateRevocation() {
         // Given
-        Program program = Program.builder()
-                .prgrmFileNm("PROG_01")
-                .url("/test/prog1")
-                .prgrmKornNm("테스트프로그램")
-                .build();
-        programRepository.save(program);
-
         Menu root = Menu.builder()
                 .menuNm("ROOT")
                 .menuOrdr(1)
@@ -84,7 +72,6 @@ class MenuServiceIntegrationTest {
 
         Menu child = Menu.builder()
                 .menuNm("CHILD")
-                .prgrmFileNm("PROG_01")
                 .upMenuSn(root.getMenuSn())
                 .menuOrdr(1)
                 .menuExpln("DESC")
@@ -117,9 +104,5 @@ class MenuServiceIntegrationTest {
         assertThat(menuRepository.searchMenus("ROOT", pageable)).isNotNull();
         assertThat(menuRepository.searchMenus(null, pageable)).isNotNull();
         assertThat(menuRepository.searchMenus("", pageable)).isNotNull();
-
-        // selectMainMenuHead, selectMainMenuLeft 커버리지
-        assertThat(menuRepository.selectMainMenuHead("test_user_uniqId")).isNotNull();
-        assertThat(menuRepository.selectMainMenuLeft("test_user_uniqId")).isNotNull();
     }
 }

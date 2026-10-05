@@ -567,7 +567,7 @@ function renderScreen(screen) {
 export function renderScreenRegistry(screens, aliases, bundles) {
   return `${HEADER}
 //
-// 화면 목록 — 메뉴 편집기의 연결 화면, 권한 편집기의 화면별 권한 표, 프로그램 관리의 화면 목록이 읽는다.
+// 화면 목록 — 메뉴 편집기의 연결 화면, 권한 편집기의 화면별 권한 표, 화면 관리의 화면 목록이 읽는다.
 // 원천: 화면 파일(frontend/src/app/**/page.tsx 중 라우팅이 page 인 것), 진입 권한(permission-catalog.json
 // pagePermissions·pagePermissionModes), 라우트 원장(ui-route-capabilities.json shellAccess·visibleLabel),
 // 메뉴 snapshot(project-composer-menus.json menu_nm), 쓰기 권한(operation-consumer census 축 3 계산).

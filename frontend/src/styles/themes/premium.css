@@ -123,6 +123,11 @@
        배포가 줄어들므로 전용 토큰으로 분리한다 — comfortable 3rem 등가, compact 는
        globals.css 오버라이드(D1). */
     --filter-control-h: 3rem;    /* h-12 */
+    /* [2026-10-05] 업무 표 행 토큰 — 권한 매트릭스·화면 목록·메뉴 보드처럼 조밀한 업무 그리드가 opt-in 으로만
+       쓴다(StandardDataTable rowDensity="work" 등). 라우트가 아니라 컴포넌트에 묶이므로 라우트별 밀도 금지
+       (카탈로그 §4)와 충돌하지 않는다. 기존 표의 --cell-px/py 는 그대로다. 한 줄 행 ≈ 33px. */
+    --work-cell-px: 0.75rem;     /* px-3 */
+    --work-cell-py: 0.375rem;    /* py-1.5 */
   }
 
   .dark,
@@ -188,6 +193,8 @@
     --radius-control: 0.5rem;
     --filter-pad: 2rem;
     --filter-control-h: 3rem;
+    --work-cell-px: 0.75rem;
+    --work-cell-py: 0.375rem;
 
     /* Slate overrides removed to restore default Tailwind dark mode values */
   }

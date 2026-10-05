@@ -44,7 +44,7 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyP
  *       (인증/코드/메뉴/프로그램/조직/사용자/그룹/부서직무/로그인/로그/마이페이지 및 공용 커널
  *       {@code common})은 재사용 시에도 <b>절대 삭제되지 않는 코어</b>이므로, 이들을 <b>타깃</b>으로 하는
  *       참조는 전부 허용한다. (코어↔코어 결합 및 업무→코어 결합을 모두 커버. 실측 위반:
- *       auth→code, auth→menu, board→code, log→code, menu→auth, menu→program(Menu.program),
+ *       auth→code, auth→menu, board→code, log→code, menu→auth, menu→program(Menu.program — 2026-10-04 퇴역),
  *       user→common(RrnoEncryptionConverter), user→organization(OrganizationManage) — QueryDSL
  *       Q타입 조인 및 엔티티 참조 포함.) 업무 도메인이 <b>다른 업무 도메인</b>을 참조하는 경우는 여기에
  *       해당하지 않으므로 여전히 탐지된다.</li>
@@ -84,7 +84,8 @@ public class DomainIsolationTest {
             "nuri.business.domain.menu..",
             "nuri.business.domain.mypage..",
             "nuri.business.domain.organization..",
-            "nuri.business.domain.program..",
+            // 2026-10-04 프로그램 목록 퇴역: nuri.business.domain.program 패키지(Program 엔티티)를 걷었다.
+            //   허용 대상이 사라진 것이라 완화가 아니다. 남겨 두면 같은 이름의 패키지를 새로 만들 때 검사 없이 허용된다.
             "nuri.business.domain.user.."
     };
 

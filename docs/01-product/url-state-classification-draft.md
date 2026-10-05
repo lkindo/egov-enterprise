@@ -286,7 +286,7 @@ census 상 'producer 는 있는데 consumer 0' 인 URL 키는 이제 `<form-fiel
 - [OperationalAuditInterceptor.java:83](../../api-server/src/main/java/nuri/api/interceptor/OperationalAuditInterceptor.java) 이 쓰는 것은 `request.getRequestURI()` 로, 서블릿 규격상 **쿼리스트링을 제외한 경로**다.
 - 같은 메서드 :84-86 이 `/api/` 로 시작하지 않는 요청을 early return 으로 버린다 → **Next.js 화면 URL 은 애초에 적재 대상이 아니다.**
 - [WebAuditLogListener.java:80-82](../../business-core/src/main/java/nuri/business/service/log/WebAuditLogListener.java) 가 그 값을 그대로 `url` 컬럼에 넣는다.
-- 백엔드 전체에서 `getQueryString()` 을 호출하는 곳은 [GlobalMenuAdvice.java:22](../../api-server/src/main/java/nuri/api/advice/GlobalMenuAdvice.java) 하나뿐이고 영속화하지 않는다(`build/` 아래 사본은 생성물).
+- 백엔드 전체에서 `getQueryString()` 을 호출하는 곳은 자격 증명 이름의 쿼리를 거부하는 [CredentialRequestTargetFilter.java](../../foundation/src/main/java/nuri/foundation/security/filter/CredentialRequestTargetFilter.java) 뿐이고 영속화하지 않는다(`build/` 아래 사본은 생성물). 이 초안을 쓸 때 그 자리에 있던 레거시 JSP 메뉴 문맥(`GlobalMenuAdvice`)은 도달할 수 없는 코드였고 2026-10-04 프로그램 목록 퇴역 때 걷었다.
 
 **결과**: 이 census 대상 전체의 URL 잔존 위험은 "우리 DB 에 쌓인다"가 아니라 **"브라우저 히스토리·다운로드 관리자·공유 링크·저장소 밖 프록시 로그에 쌓인다"**로 다시 세워야 한다. 그대로 두면 검색어류의 위험을 실제보다 높게, export 축의 위험을 낮게 평가한다.
 

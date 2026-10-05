@@ -109,9 +109,10 @@ class MenuInformationArchitectureMigrationIntegrationTest extends SharedPostgres
             assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_cd='ROLE_USER'")).isEqualTo(25-6);
             // 최신까지 올리면 V2_104 가 퇴역한 NETWORK_* 기능 권한 8행을 지우고 REMOVE 이력 8행을 남긴다(DEC-OPS-129).
             //   V2_120 이 ROLE_USER 의 들어갈 수 없는 설문·투표 관리 메뉴 5행과 비게 된 관리 센터 1행을 지우고 REMOVE 이력 6행을 남긴다.
+            //   V2_124 가 퇴역한 PROGRAM_* 기능 권한 8행(ROLE_ADMIN·ROLE_SYSTEM × 4)을 지우고 REMOVE 이력 8행을 남긴다.
             //   V2_100 자신의 효과(NAV 추가 4·제거 13)는 아래 식별자별 단언이 그대로 본다.
-            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'")).isEqualTo(566-8);
-            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_chg_hstry")).isEqualTo(auditsBefore+17+8+6);
+            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'")).isEqualTo(566-8-8);
+            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_chg_hstry")).isEqualTo(auditsBefore+17+8+6+8);
             assertThat(number(statement,"SELECT count(*) FROM tb_authrt_chg_hstry WHERE dmnd_idntfr='migration:2.100' "
                     + "AND chg_type_cd='ADD' AND authrt_type_cd='NAVIGATION'")).isEqualTo(4);
             assertThat(number(statement,"SELECT count(*) FROM tb_authrt_chg_hstry WHERE dmnd_idntfr='migration:2.100' "
@@ -120,7 +121,7 @@ class MenuInformationArchitectureMigrationIntegrationTest extends SharedPostgres
                     + "WHERE dmnd_idntfr='migration:2.100'")).isEqualTo(1);
             assertThat(digest(statement,"tb_authrt_info","")).isEqualTo(before.get("tb_authrt_info"));
             assertThat(digest(statement,"tb_authrt_user_map","")).isEqualTo(before.get("tb_authrt_user_map"));
-            assertThat(digest(statement,"tb_authrt_chg_hstry","WHERE dmnd_idntfr NOT IN ('migration:2.100','migration:2.104','migration:2.120')"))
+            assertThat(digest(statement,"tb_authrt_chg_hstry","WHERE dmnd_idntfr NOT IN ('migration:2.100','migration:2.104','migration:2.120','migration:2.124')"))
                     .isEqualTo(before.get("tb_authrt_chg_hstry"));
         }
         var after=snapshot();

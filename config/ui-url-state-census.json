@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "61514b234be129f2170fd7deb7a6214cc04b9497e01999b0c8cacb4c22882cd5"
+    "inventoryHash": "f356c3ef41edd2992997fc6623186912e0ff554fd5b83101cfb0842f0dc8223e"
   },
   "summary": {
     "sourceFileCount": 634,
-    "records": 396,
-    "syntaxOccurrences": 469,
-    "ambiguousRecords": 349,
-    "unverifiedRecords": 396,
+    "records": 389,
+    "syntaxOccurrences": 462,
+    "ambiguousRecords": 342,
+    "unverifiedRecords": 389,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -44,18 +44,18 @@
     "byKind": {
       "config-redirect": 13,
       "dynamic-segment": 11,
-      "form-producer": 55,
-      "navigation-producer": 174,
+      "form-producer": 54,
+      "navigation-producer": 172,
       "page-redirect": 17,
       "query-builder": 22,
-      "query-consumer": 54,
-      "query-producer": 39,
+      "query-consumer": 53,
+      "query-producer": 37,
       "request-query-producer": 3,
-      "url-observer": 8
+      "url-observer": 7
     },
     "bySurface": {
-      "navigation": 385,
-      "request-telemetry": 11
+      "navigation": 379,
+      "request-telemetry": 10
     }
   },
   "requiredNegativeCases": [
@@ -10479,110 +10479,6 @@
       }
     },
     {
-      "id": "URL-FBC9602D88DF5D",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "redirect",
-      "source": "frontend/src/app/admin/system/programs/page.tsx",
-      "producerFile": "frontend/src/app/admin/system/programs/page.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/system/programs",
-      "targetCandidate": "/login?expired=true&redirect=/admin/system/programs",
-      "stateItems": [
-        {
-          "name": "expired",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        },
-        {
-          "name": "redirect",
-          "dataClass": "unverified",
-          "recommendation": "deny",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "raw-login-intent-signal"
-          ]
-        }
-      ],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/login",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/system/programs/page.tsx",
-        "detector": "server-redirect-call",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-2E18C10352F4E3",
-      "surface": "navigation",
-      "kind": "query-consumer",
-      "operation": "read",
-      "source": "frontend/src/app/admin/system/programs/page.tsx",
-      "producerFile": null,
-      "consumerFile": "frontend/src/app/admin/system/programs/page.tsx",
-      "routePattern": "/admin/system/programs",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "page",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "Server page reads a named URL search parameter property.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/system/programs/page.tsx",
-        "detector": "server-search-param-property",
-        "occurrenceCount": 1
-      }
-    },
-    {
       "id": "URL-D2D99495D6C74E",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -10617,189 +10513,6 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
         "detector": "router-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-537753629B008C",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "window.history.replaceState",
-      "source": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
-      "producerFile": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/system/programs",
-      "targetCandidate": "[computed][computed]",
-      "stateItems": [],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "[computed][computed]",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
-        "detector": "history-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-E5AFEB00DF4CE5",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "delete",
-      "source": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
-      "producerFile": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/system/programs",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "page",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with delete().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-EBCFCAEFE56586",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "set",
-      "source": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
-      "producerFile": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/system/programs",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "page",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with set().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-9B28DFD27EC36D",
-      "surface": "request-telemetry",
-      "kind": "url-observer",
-      "operation": "read",
-      "source": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
-      "producerFile": null,
-      "consumerFile": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
-      "routePattern": "/admin/system/programs",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "<raw-url-or-component>",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
-        }
-      ],
-      "currentBehavior": "Runtime reads location.href; propagation into logs or telemetry requires data-flow review.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved",
-        "url-observation-purpose-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
-        "detector": "url-observer",
         "occurrenceCount": 1
       }
     },
@@ -15619,45 +15332,6 @@
       },
       "evidence": {
         "source": "frontend/src/components/account/ProfileEditForm.tsx",
-        "detector": "jsx-form",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-7290C773D4AD24",
-      "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "intercepted-submit",
-      "source": "frontend/src/components/admin/system/ProgramForm.tsx",
-      "producerFile": "frontend/src/components/admin/system/ProgramForm.tsx",
-      "consumerFile": null,
-      "routePattern": "unresolved",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/components/admin/system/ProgramForm.tsx",
         "detector": "jsx-form",
         "occurrenceCount": 1
       }

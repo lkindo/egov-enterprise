@@ -238,9 +238,9 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  ? <Folder size={14} aria-hidden="true" className="shrink-0 text-muted-foreground" />
  : <File size={14} aria-hidden="true" className="shrink-0 text-muted-foreground" />}
  <span className="min-w-0 truncate text-[length:var(--font-size-body)] text-foreground">{menu.menuNm}</span>
- {/* 종전에는 프로그램 경로와 메뉴 번호가 hover 에서만 보였다 — 조회 화면에서 숨길 값이 아니다. */}
+ {/* 종전에는 메뉴 번호가 hover 에서만 보였다 — 조회 화면에서 숨길 값이 아니다.
+     2026-10-04 프로그램 목록 퇴역으로 모든 줄이 같은 값('미연결')이던 연결 프로그램 열을 걷었다. */}
  <span className="ml-auto flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
- <span className="hidden font-mono sm:inline">{menu.prgrmFileNm || '프로그램 미연결'}</span>
  <span className="tabular-nums">{menu.menuNo}</span>
  </span>
  </div>

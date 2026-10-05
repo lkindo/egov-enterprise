@@ -14,7 +14,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class StandardTextInputValidationTest {
     static Stream<Arguments> limits() {
         return Stream.of(
-                Arguments.of(nuri.business.service.program.dto.ProgramDto.class,"prgrmFileNm",300),
                 Arguments.of(nuri.business.service.menu.dto.MenuDto.class,"prgrmFileNm",300),
                 Arguments.of(nuri.business.service.addressbook.dto.AddressBookDto.class,"adbkNm",200),
                 Arguments.of(nuri.business.service.board.dto.BoardSaveRequest.class,"pstTtl",256),

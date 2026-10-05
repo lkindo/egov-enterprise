@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>[규칙 1] 요청 처리 컨트롤러({@code @RestController} / {@code @Controller})는
  * {@code nuri.api.controller} 하위에만 선언한다.
  * {@code @RestControllerAdvice} / {@code @ControllerAdvice} 는 요청 매핑을 갖지 않는 횡단 관심사이므로
- * 대상이 아니다(실측: {@code nuri.api.advice.GlobalMenuAdvice} 가 여기 해당).
+ * 대상이 아니다(실측: 2026-10-04 퇴역 전의 {@code nuri.api.advice.GlobalMenuAdvice} 가 여기 해당했다).
  *
  * <p>[규칙 2] api-server 의 {@code nuri} 직속 패키지 루트 census 를 동결한다.
  * 새 루트가 생기면 실패한다 — 루트가 늘어나는 것 자체가 위 사각지대를 넓히는 행위이기 때문이다.

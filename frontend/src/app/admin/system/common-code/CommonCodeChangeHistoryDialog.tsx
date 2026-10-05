@@ -74,7 +74,7 @@ export function CommonCodeChangeHistoryDialog({
         )}
         {history.isSuccess && rows.length === 0 && <p role="status">남은 변경 이력이 없습니다.</p>}
         {rows.length > 0 && (
-          <div className="overflow-auto rounded-lg border border-border">
+          <div className="relative overflow-auto rounded-lg border border-border">
             <table className="w-full text-left text-sm">
               <caption className="sr-only">{`${target.name} 변경 이력`}</caption>
               <thead className="bg-muted">

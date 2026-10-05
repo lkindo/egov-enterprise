@@ -20,7 +20,9 @@ vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'operat
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/services/foundation/system/AuthorizationAdminService', () => ({ authorizationAdminService: mocks }));
-vi.mock('@/app/components/patterns/work-list-page', () => ({ WorkListPage: ({ title, actions, filter, children }: { title: string; actions: ReactNode; filter: ReactNode; children: ReactNode }) => <main><h1>{title}</h1>{actions}{filter}{children}</main> }));
+// [2026-10-05] 영역 단추는 셸의 navigation 슬롯에 있다 — 모의 셸도 그 슬롯을 그린다(빠뜨리면 영역 단추가 사라져 영역 전환 시험이 빈 검사가 된다).
+// fill 은 셸 루트의 data-work-fill 표지로 옮긴다(실제 셸과 같은 표지) — 영역마다 업무면 fill 셸을 쓰는지 본다(2026-10-05 과제 B).
+vi.mock('@/app/components/patterns/work-list-page', () => ({ WorkListPage: ({ title, actions, navigation, filter, children, fill }: { title: string; actions: ReactNode; navigation?: ReactNode; filter: ReactNode; children: ReactNode; fill?: boolean }) => <main data-work-fill={fill ? '' : undefined}><h1>{title}</h1>{actions}{navigation}{filter}{children}</main> }));
 // 전역 설정(vitest.setup.ts)은 탭을 children 통과 mock 으로 바꾼다. 편집기는 비활성 탭을 숨기는 것이 계약이므로 실제 탭을 쓴다.
 vi.unmock('@/components/ui/tabs');
 
@@ -107,6 +109,10 @@ async function openMembership() {
   await userEvent.click(await screen.findByRole('button', { name: '사용자 가 · login-a' }));
   await screen.findByRole('region', { name: '사용자 권한 그룹 배정' });
   return view;
+}
+/** [2026-10-05] 편집기 머리의 '더보기'를 연다 — '이 그룹으로 새 그룹 만들기'·'입력 취소 · 최신 정보 적용'은 그 안에 있다. */
+async function openMore() {
+  await userEvent.click(screen.getByRole('button', { name: '더보기' }));
 }
 /** 다시 읽기(재조회)가 끝나 편집할 수 있을 때까지 기다린다. */
 async function untilEditable(name: RegExp) {
@@ -241,8 +247,12 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     fireEvent.change(screen.getByRole('textbox', { name: '그룹명' }), { target: { value: '콘텐츠 운영' } });
     await userEvent.click(screen.getByRole('button', { name: '그룹 정보 저장' }));
     expect(await screen.findByText(/다른 곳에서 변경되어 화면별 권한·기능별 권한을 저장할 수 없습니다/)).toHaveAttribute('role', 'status');
-    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeDisabled();
+    // [2026-10-05] 저장 막대는 화면별·기능별 권한 탭에만 있다 — 기본 정보 탭에는 '권한 변경 저장'이 없다(어느 저장이 무엇을 저장하는지 탭으로 가른다).
+    expect(screen.queryByRole('button', { name: '권한 변경 저장', hidden: true })).not.toBeInTheDocument();
     await openTab('기능별 권한');
+    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toHaveAttribute('aria-disabled', 'true');
+    // 막힌 이유를 버튼 옆에 글자로 말한다.
+    expect(screen.getByText('최신 정보를 적용해야 저장할 수 있습니다.')).toBeVisible();
     // 초안은 지우지 않는다(무엇을 하려 했는지 보이게).
     expect(screen.getByRole('checkbox', { name: BOARD_CREATE })).toBeChecked();
     // 기본 정보는 응답이 새 기준선이라 계속 편집할 수 있다.
@@ -269,7 +279,7 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     await openTab('기능별 권한');
     await untilEditable(QESTNR_READ);
     await userEvent.click(screen.getByRole('checkbox', { name: QESTNR_READ }));
-    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '권한 변경 저장' })).not.toHaveAttribute('aria-disabled');
   });
 
   it('미저장 그룹명과 사용자 배정도 선택 전환에서 보호한다', async () => {
@@ -302,11 +312,16 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
       expect(screen.queryByRole('button', { name, hidden: true })).not.toBeInTheDocument();
     }
     expect(screen.queryByRole('button', { name: /명 회수$/, hidden: true })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /전체 (선택|해제)$/, hidden: true })).not.toBeInTheDocument();
+    // [2026-10-05] 일괄 버튼 이름은 '… 전체 선택(보호 권한 제외)'다 — 끝 고정($)을 두면 늘 맞지 않아 빈 검사가 된다.
+    expect(screen.queryByRole('button', { name: /전체 (선택|해제)/, hidden: true })).not.toBeInTheDocument();
     await openTab('화면별 권한');
     expect(screen.getByRole('checkbox', { name: menuCell('게시판', 'MENU_1') })).toBeDisabled();
     // 읽기 전용이어도 메뉴 미리보기는 볼 수 있다.
     expect(screen.getByRole('button', { name: '메뉴 미리보기' })).toBeEnabled();
+    // 저장 막대 대신 조회만 할 수 있다고 말한다. '더보기'를 열어도 복제는 없다(닫힌 채 세면 늘 없어 빈 검사가 된다).
+    expect(screen.getByText('권한 설정 권한이 없어 조회만 할 수 있습니다.')).toBeVisible();
+    await openMore();
+    expect(screen.queryByRole('button', { name: '이 그룹으로 새 그룹 만들기' })).not.toBeInTheDocument();
   });
 
   it('기능 검색 밖의 기존 기능·메뉴 선택을 전체 교체에 보존한다', async () => {
@@ -326,8 +341,9 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     expect(saveGroupGrants).not.toHaveBeenCalled();
     const panel = screen.getByRole('tabpanel', { name: /^기능별 권한/ });
     expect(panel.querySelectorAll('[data-changed="true"]')).toHaveLength(2);
-    expect(screen.getByText(/저장 시 권한·메뉴 추가 1개 · 회수 1개/)).toHaveAttribute('role', 'status');
-    expect(screen.getByText(/이 표에서 바꾼 칸 2개/)).toBeInTheDocument();
+    // [2026-10-05] 저장 막대의 요약은 늘 보이는 한 줄이다(알림은 표 도구 줄의 바꾼 칸 수가 맡는다 — 같은 변화를 두 번 읽지 않게).
+    expect(screen.getByText(/저장 전 변경: 추가/)).toHaveTextContent('저장 전 변경: 추가 1 · 회수 1');
+    expect(screen.getByText(/이 표에서 바꾼 칸 2개/)).toHaveAttribute('aria-live', 'polite');
     screen.getByRole('checkbox', { name: BOARD_CREATE }).focus();
     await userEvent.keyboard('{Control>}s{/Control}');
     expect(saveGroupGrants).toHaveBeenCalledTimes(1);
@@ -339,16 +355,16 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     await openGroup('기능별 권한');
     const save = screen.getByRole('button', { name: '권한 변경 저장' });
     expect(screen.getByRole('checkbox', { name: BOARD_CREATE })).toBeEnabled();
-    expect(save).toBeDisabled();
+    expect(save).toHaveAttribute('aria-disabled', 'true');
     await userEvent.click(screen.getByRole('checkbox', { name: BOARD_CREATE }));
-    expect(save).toBeEnabled();
+    expect(save).not.toHaveAttribute('aria-disabled');
     await userEvent.click(screen.getByRole('checkbox', { name: BOARD_CREATE }));
-    expect(save).toBeDisabled();
+    expect(save).toHaveAttribute('aria-disabled', 'true');
     await openTab('화면별 권한');
     await userEvent.click(screen.getByRole('checkbox', { name: menuCell('게시판', 'MENU_1') }));
-    expect(save).toBeEnabled();
+    expect(save).not.toHaveAttribute('aria-disabled');
     await userEvent.click(screen.getByRole('checkbox', { name: menuCell('게시판', 'MENU_1') }));
-    expect(save).toBeDisabled();
+    expect(save).toHaveAttribute('aria-disabled', 'true');
     expect(saveGroupGrants).not.toHaveBeenCalled();
   });
 
@@ -371,7 +387,7 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
       { code: 'AUTHRT_READ', name: '권한 조회', domain: 'AUTHRT', action: 'READ' },
       { code: 'AUTHRT_GRANT', name: '권한 설정', domain: 'AUTHRT', action: 'GRANT' }] });
     await openGroup('기능별 권한');
-    await userEvent.click(screen.getByRole('button', { name: '권한 관리 전체 선택' }));
+    await userEvent.click(screen.getByRole('button', { name: '권한 관리 전체 선택(보호 권한 제외)' }));
     expect(screen.getByRole('checkbox', { name: /\(AUTHRT_READ\)$/ })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: /\(AUTHRT_GRANT\)$/ })).not.toBeChecked();
     expect(saveGroupGrants).not.toHaveBeenCalled();
@@ -388,10 +404,14 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     await openTab('기능별 권한');
     expect(screen.getByRole('checkbox', { name: BOARD_CREATE })).toBeDisabled();
     expect(screen.getByRole('checkbox', { name: BOARD_READ })).toBeEnabled();
-    await userEvent.click(screen.getByRole('button', { name: '게시글 전체 해제' }));
+    await userEvent.click(screen.getByRole('button', { name: '게시글 전체 해제(보호 권한 제외)' }));
     expect(screen.getByRole('checkbox', { name: BOARD_READ })).not.toBeChecked();
-    expect(screen.getByRole('button', { name: '게시글 전체 선택' })).toBeDisabled();
-    for (const name of ['이 그룹으로 새 그룹 만들기', '구성원 추가']) expect(screen.queryByRole('button', { name, hidden: true })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '게시글 전체 선택(보호 권한 제외)' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: '구성원 추가', hidden: true })).not.toBeInTheDocument();
+    // 복제는 '더보기' 안에 있다 — 열어도 공개 메뉴 그룹에는 없다(닫힌 채 세면 늘 없어 빈 검사가 된다).
+    await openMore();
+    expect(screen.getByRole('button', { name: '입력 취소 · 최신 정보 적용' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '이 그룹으로 새 그룹 만들기' })).not.toBeInTheDocument();
   });
 
   it('완료되지 않은 배정 조회는 선택과 저장을 막는다', async () => {
@@ -399,14 +419,14 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     await openGroup('기능별 권한');
     expect(screen.getByText(/전체 권한 또는 현재 기능 목록/)).toHaveAttribute('role', 'alert');
     expect(screen.getByRole('checkbox', { name: BOARD_CREATE })).toBeDisabled();
-    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toHaveAttribute('aria-disabled', 'true');
     expect(saveGroupGrants).not.toHaveBeenCalled();
   });
 
   it('카탈로그에 없는 기존 권한은 조용히 제거하지 않고 저장을 막는다', async () => {
     putGroup({ ...snapshot, grants: [...snapshot.grants, { type: 'OPERATION', code: 'REMOVED_CODE' }] });
     await openGroup();
-    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toHaveAttribute('aria-disabled', 'true');
     expect(saveGroupGrants).not.toHaveBeenCalled();
   });
 
@@ -414,7 +434,7 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     const view = await openGroup('기능별 권한');
     await userEvent.click(screen.getByRole('checkbox', { name: BOARD_CREATE }));
     act(() => view.client.setQueryData(['authorization', 'operator', 'auth-v1', 'group', 'CONTENT'], { ...snapshot, version: 'v2', grants: [] }));
-    await waitFor(() => expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeDisabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: '권한 변경 저장' })).toHaveAttribute('aria-disabled', 'true'));
     expect(screen.getByRole('checkbox', { name: BOARD_CREATE })).toBeChecked();
     await userEvent.click(screen.getByRole('button', { name: '입력 취소 · 최신 정보 적용' }));
     expect(screen.getByRole('checkbox', { name: BOARD_CREATE })).not.toBeChecked();
@@ -432,11 +452,12 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     act(() => { fireEvent.click(save); fireEvent.click(save); });
     expect(saveGroupGrants).toHaveBeenCalledTimes(1);
     expect(save).toHaveAttribute('aria-busy', 'true');
-    expect(save).toBeDisabled();
+    expect(save).toHaveAttribute('aria-disabled', 'true');
     expect(updateGroup).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: '그룹 삭제' })).toBeDisabled();
+    // '그룹 삭제'는 기본 정보 탭의 위험 영역에 있다(숨은 탭이라 접근성 트리 밖) — 저장하는 동안 잠긴다.
+    expect(screen.getByRole('button', { name: '그룹 삭제', hidden: true })).toBeDisabled();
     act(() => rejectWrite(new Error('다른 관리자가 변경했습니다.')));
-    await waitFor(() => expect(save).not.toBeDisabled());
+    await waitFor(() => expect(save).not.toHaveAttribute('aria-disabled'));
     expect(mocks.toast).toHaveBeenCalledWith('다른 관리자가 변경했습니다.', 'error');
     expect(screen.getByRole('checkbox', { name: BOARD_CREATE })).toBeChecked();
   });
@@ -520,11 +541,14 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     expect(submit).toBeDisabled();
     expect(submit).toHaveAttribute('aria-busy', 'true');
     // 쓰기는 한 번에 하나다 — 그룹 정보를 저장하는 동안 권한 저장·삭제·칸은 잠긴다.
-    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '그룹 삭제' })).toBeDisabled();
+    await openTab('기능별 권한');
+    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByText('다른 저장이 끝난 뒤 저장할 수 있습니다.')).toBeVisible();
     expect(saveGroupGrants).not.toHaveBeenCalled();
     expect(deleteGroup).not.toHaveBeenCalled();
     act(() => rejectWrite(new Error('변경 충돌입니다.')));
+    await openTab('기본 정보');
     await waitFor(() => expect(submit).not.toBeDisabled());
     expect(screen.getByRole('textbox', { name: '그룹명' })).toHaveValue('콘텐츠 운영');
     expect(mocks.toast).toHaveBeenCalledWith('변경 충돌입니다.', 'error');
@@ -567,7 +591,11 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
 
   it('할당된 사용자가 있으면 그룹 삭제 실패를 알리고 선택을 유지한다', async () => {
     deleteGroup.mockRejectedValue(new Error('사용 중인 자원입니다.'));
+    // [2026-10-05] '그룹 삭제'는 저장 막대가 아니라 기본 정보 탭 아래 위험 영역에 있다.
     await openGroup();
+    expect(screen.queryByRole('button', { name: '그룹 삭제' })).not.toBeInTheDocument();
+    await openTab('기본 정보');
+    expect(within(screen.getByRole('region', { name: '되돌릴 수 없는 작업' })).getByRole('button', { name: '그룹 삭제' })).toBeVisible();
     await userEvent.click(screen.getByRole('button', { name: '그룹 삭제' }));
     expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('먼저 사용자 할당을 해제') }));
     await waitFor(() => expect(deleteGroup).toHaveBeenCalledWith('CONTENT', 'v1'));
@@ -708,7 +736,7 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     // 다른 그룹이 그 권한을 줄 수 있으므로 저장을 막는 오류가 아니다.
     await openTab('기능별 권한');
     await userEvent.click(screen.getByRole('checkbox', { name: BOARD_CREATE }));
-    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '권한 변경 저장' })).not.toHaveAttribute('aria-disabled');
   });
 
   it('메뉴가 여는 화면이 /admin 밖이거나 분류뿐이면 알리지 않는다', async () => {
@@ -724,13 +752,13 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     ...catalog,
     operations: [...catalog.operations,
       { code: 'MENU_READ', name: '메뉴 조회', domain: 'MENU', action: 'READ' },
-      { code: 'PROGRAM_READ', name: '프로그램 조회', domain: 'PROGRAM', action: 'READ' },
+      { code: 'ADMCODE_READ', name: '행정 코드 조회', domain: 'ADMCODE', action: 'READ' },
       { code: 'AUTHRT_READ', name: '권한 조회', domain: 'AUTHRT', action: 'READ' },
       { code: 'AUTHRT_AUDIT', name: '권한 감사', domain: 'AUTHRT', action: 'AUDIT' }],
     navigation: [
       { code: 'MENU_1', name: '게시판', parentCode: null, route: null, useYn: 'Y' },
       { code: 'MENUS', name: '메뉴 관리', parentCode: null, route: '/admin/system/menus', useYn: 'Y' },
-      { code: 'PROGRAMS', name: '프로그램 관리', parentCode: null, route: '/admin/system/programs', useYn: 'Y' },
+      { code: 'ADMCODES', name: '행정 표준코드 관리', parentCode: null, route: '/admin/system/codes/administ', useYn: 'Y' },
       { code: 'AUTHORITY', name: '권한 그룹 관리', parentCode: null, route: '/admin/security/authority', useYn: 'Y' },
       { code: 'GHOST', name: '없는 화면', parentCode: null, route: '/admin/unregistered-only-in-test/page', useYn: 'Y' },
     ],
@@ -743,12 +771,18 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     await openGroup();
     expect(screen.getByText(/들어갈 수 없는 화면의 메뉴가 4개 있습니다/)).toHaveAttribute('role', 'status');
     expect(screen.getByText(/등록되지 않은 화면이라 기능권한으로 열 수 없습니다/)).toBeVisible();
-    expect(screen.queryByRole('button', { name: '없는 화면 진입 권한 추가' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^없는 화면 진입 권한 추가/ })).not.toBeInTheDocument();
 
     const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus');
-    await userEvent.click(screen.getByRole('button', { name: '메뉴 관리 진입 권한 추가' }));
+    // [2026-10-05] 상태 칸의 버튼은 짧은 '+ 권한 이름'이다 — 더할 권한을 누르기 전에 글자로 본다(반박 리뷰 반영: 종전 '권한 추가'는
+    // 더할 권한을 title·설명에만 두었다). 접근 이름은 메뉴와 같은 권한 이름을 싣고, 코드까지 담은 필요한 권한 문장은 설명이다.
+    const add = screen.getByRole('button', { name: '메뉴 관리 진입 권한 추가: 메뉴 조회' });
+    expect(add).toHaveTextContent('메뉴 조회');
+    expect(add).not.toHaveTextContent('권한 추가');
+    expect(add).toHaveAccessibleDescription('필요한 권한: 메뉴 × 조회 (MENU_READ)');
+    await userEvent.click(add);
     expect(saveGroupGrants).not.toHaveBeenCalled();
-    expect(screen.queryByRole('button', { name: '메뉴 관리 진입 권한 추가' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^메뉴 관리 진입 권한 추가/ })).not.toBeInTheDocument();
     // 누른 버튼은 사라진다 — 포커스는 표 밖으로 가지 않고 같은 줄의 화면 진입 칸에 남고, 결과 문장은 알림 영역이 읽어 준다.
     await waitFor(() => expect(screen.getByRole('checkbox', { name: '메뉴 관리 × 화면 진입 (MENU_READ)' })).toHaveFocus());
     const notice = screen.getByText(/메뉴 관리 진입 권한\(MENU_READ\)을 추가했습니다/);
@@ -760,11 +794,11 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     // 같은 초안이라 화면별 권한 표의 칸도 켜지고, 상태는 '보임'이 된다.
     expect(screen.getByRole('checkbox', { name: '메뉴 관리 × 화면 진입 (MENU_READ)' })).toBeChecked();
 
-    // 후보가 여럿인 화면은 조회를 먼저 권하되 사람이 고른다.
-    const choice = screen.getByRole('combobox', { name: '권한 그룹 관리 진입 권한 선택' });
-    expect(choice).toHaveValue('AUTHRT_READ');
-    await userEvent.selectOptions(choice, 'AUTHRT_AUDIT');
-    await userEvent.click(screen.getByRole('button', { name: '권한 그룹 관리 진입 권한 추가' }));
+    // 후보가 여럿인 화면은 '권한 추가'가 고르는 창을 연다 — 조회를 '권장'으로 먼저 보이되 사람이 고른다.
+    await userEvent.click(screen.getByRole('button', { name: '권한 그룹 관리 진입 권한 추가: 후보 2개 중 고르기' }));
+    const picker = await screen.findByRole('dialog', { name: '권한 그룹 관리 진입 권한 고르기' });
+    expect(within(picker).getByRole('button', { name: /AUTHRT_READ/ })).toHaveTextContent('· 권장');
+    await userEvent.click(within(picker).getByRole('button', { name: /AUTHRT_AUDIT/ }));
 
     await userEvent.click(screen.getByRole('button', { name: '권한 변경 저장' }));
     expect(saveGroupGrants).toHaveBeenCalledWith('CONTENT', {
@@ -779,7 +813,7 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     putGroup(entrySnapshot);
     await openGroup();
     const added = /메뉴 관리 진입 권한\(MENU_READ\)을 추가했습니다/;
-    await userEvent.click(screen.getByRole('button', { name: '메뉴 관리 진입 권한 추가' }));
+    await userEvent.click(screen.getByRole('button', { name: /^메뉴 관리 진입 권한 추가/ }));
     expect(screen.getByText(added)).toBeVisible();
 
     // 추가한 칸을 끄면 '추가했습니다'는 더는 사실이 아니다.
@@ -787,10 +821,10 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     await userEvent.click(screen.getByRole('checkbox', { name: /\(MENU_READ\)$/ }));
     await openTab('화면별 권한');
     expect(screen.queryByText(added)).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '메뉴 관리 진입 권한 추가' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^메뉴 관리 진입 권한 추가/ })).toBeInTheDocument();
 
     // 다시 추가한 뒤 저장하면 '저장하세요'도 더는 사실이 아니다.
-    await userEvent.click(screen.getByRole('button', { name: '메뉴 관리 진입 권한 추가' }));
+    await userEvent.click(screen.getByRole('button', { name: /^메뉴 관리 진입 권한 추가/ }));
     expect(screen.getByText(added)).toBeVisible();
     await userEvent.click(screen.getByRole('button', { name: '권한 변경 저장' }));
     expect(saveGroupGrants).toHaveBeenCalledTimes(1);
@@ -798,26 +832,63 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     // [A2] 저장 뒤 편집 불가 잠금은 없다 — 응답 스냅샷이 새 기준선이다.
     expect(screen.queryByText(/다른 곳에서 변경되어/)).not.toBeInTheDocument();
     await untilEditable(menuCell('게시판', 'MENU_1'));
-    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toHaveAttribute('aria-disabled', 'true');
     await userEvent.click(screen.getByRole('checkbox', { name: menuCell('게시판', 'MENU_1') }));
-    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '권한 변경 저장' })).not.toHaveAttribute('aria-disabled');
   });
 
   it('진입 권한 모두 추가는 정해진 권한만 더하고 후보가 여럿인 메뉴는 뺀다고 말한다', async () => {
     mocks.getCatalog.mockResolvedValue(entryCatalog);
     putGroup(entrySnapshot);
     await openGroup();
-    expect(screen.getByText(/후보가 여럿인 메뉴 1개는 모두 추가에서 빠집니다/)).toBeVisible();
+    expect(screen.getByText(/후보가 여럿이거나 보호·타인 자료 권한이 필요한 메뉴 1개는 모두 추가에서 빠집니다/)).toBeVisible();
     await userEvent.click(screen.getByRole('button', { name: '진입 권한 모두 추가' }));
     // 표 위의 '모두 추가'를 누르면 그 버튼이 사라지므로 포커스를 바로 옆 결과 문장으로 옮긴다.
     await waitFor(() => expect(screen.getByText(/메뉴 2개의 진입 권한을 추가했습니다/)).toHaveFocus());
-    expect(screen.queryByRole('button', { name: '메뉴 관리 진입 권한 추가' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '프로그램 관리 진입 권한 추가' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '권한 그룹 관리 진입 권한 추가' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^메뉴 관리 진입 권한 추가/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^행정 표준코드 관리 진입 권한 추가/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^권한 그룹 관리 진입 권한 추가/ })).toBeInTheDocument();
     await openTab('기능별 권한');
     expect(screen.getByRole('checkbox', { name: /\(MENU_READ\)$/ })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: /\(PROGRAM_READ\)$/ })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /\(ADMCODE_READ\)$/ })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: /\(AUTHRT_READ\)$/ })).not.toBeChecked();
+    expect(saveGroupGrants).not.toHaveBeenCalled();
+  });
+
+  /*
+   * [2026-10-05 반박 리뷰 반영, H3] '모두 추가'는 영역·섹션 줄의 묶음 칸과 같은 제외 규칙을 따른다 — 정해진 권한이라도 타인 자료
+   * 권한(…_ALL)이나 보호 권한이 필요한 메뉴는 빼고 화면 줄에서 고르게 한다. 종전에는 '모두 있어야 열림' 투표 관리(POLL_READ +
+   * POLL_READ_ALL)와 댓글 관리(COMMENT_READ_ALL)를 한 번에 초안에 넣었다.
+   */
+  it('진입 권한 모두 추가는 타인 자료 권한이 필요한 메뉴를 빼고, 그 메뉴는 화면 줄에서 고르게 한다', async () => {
+    mocks.getCatalog.mockResolvedValue({
+      ...catalog,
+      operations: [...catalog.operations,
+        { code: 'MENU_READ', name: '메뉴 조회', domain: 'MENU', action: 'READ' },
+        { code: 'ADMCODE_READ', name: '행정 코드 조회', domain: 'ADMCODE', action: 'READ' },
+        { code: 'POLL_READ', name: '투표 조회', domain: 'POLL', action: 'READ' },
+        { code: 'POLL_READ_ALL', name: '타인 투표 조회', domain: 'POLL', action: 'READ_ALL' },
+        { code: 'COMMENT_READ_ALL', name: '타인 댓글 조회', domain: 'COMMENT', action: 'READ_ALL' }],
+      navigation: [
+        { code: 'MENU_1', name: '게시판', parentCode: null, route: null, useYn: 'Y' },
+        { code: 'MENUS', name: '메뉴 관리', parentCode: null, route: '/admin/system/menus', useYn: 'Y' },
+        { code: 'ADMCODES', name: '행정 표준코드 관리', parentCode: null, route: '/admin/system/codes/administ', useYn: 'Y' },
+        { code: 'POLLS', name: '투표 관리', parentCode: null, route: '/admin/survey/polls', useYn: 'Y' },
+        { code: 'COMMENTS', name: '댓글 관리', parentCode: null, route: '/admin/system/comments', useYn: 'Y' },
+      ],
+    });
+    putGroup({ ...snapshot, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }, ...['MENU_1', 'MENUS', 'ADMCODES', 'POLLS', 'COMMENTS'].map((code) => ({ type: 'NAVIGATION', code }))] });
+    await openGroup();
+    expect(screen.getByText(/후보가 여럿이거나 보호·타인 자료 권한이 필요한 메뉴 2개는 모두 추가에서 빠집니다/)).toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: '진입 권한 모두 추가' }));
+    await openTab('기능별 권한');
+    expect(screen.getByRole('checkbox', { name: /\(MENU_READ\)$/ })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /\(ADMCODE_READ\)$/ })).toBeChecked();
+    for (const code of ['POLL_READ', 'POLL_READ_ALL', 'COMMENT_READ_ALL']) expect(screen.getByRole('checkbox', { name: new RegExp(`\\(${code}\\)$`) })).not.toBeChecked();
+    // 빠진 메뉴는 화면 줄의 단추가 더할 권한을 글자로 보인 채 남는다 — 사람이 그 화면 하나를 골라 더한다.
+    await openTab('화면별 권한');
+    expect(screen.getByRole('button', { name: '투표 관리 진입 권한 추가: 투표 조회, 타인 투표 조회' })).toHaveTextContent('투표 조회, 타인 투표 조회');
+    expect(screen.getByRole('button', { name: '댓글 관리 진입 권한 추가: 타인 댓글 조회' })).toHaveTextContent('타인 댓글 조회');
     expect(saveGroupGrants).not.toHaveBeenCalled();
   });
 
@@ -827,8 +898,10 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     putGroup(entrySnapshot);
     await openGroup();
     expect(screen.getByText(/들어갈 수 없는 화면의 메뉴가 4개 있습니다/)).toBeVisible();
-    expect(screen.queryByRole('button', { name: /진입 권한 (모두 )?추가$/, hidden: true })).not.toBeInTheDocument();
-    expect(screen.queryByRole('combobox', { name: /진입 권한 선택$/, hidden: true })).not.toBeInTheDocument();
+    // [2026-10-05] 버튼 이름 뒤에 권한 이름이 붙으므로 끝 고정($) 없이 찾는다(끝 고정이면 늘 맞지 않아 빈 검사가 된다).
+    expect(screen.queryByRole('button', { name: /진입 권한 (모두 )?추가/, hidden: true })).not.toBeInTheDocument();
+    // 고칠 수 없는 대신 무엇이 필요한지는 글자로 보인다.
+    expect(screen.getByText('필요: 메뉴 조회')).toBeVisible();
   });
 
   it('기본 정보를 편집하는 동안에도 진입 권한을 더할 수 있고, 저장하는 동안에는 잠긴다', async () => {
@@ -838,12 +911,12 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     await openGroup('기본 정보');
     fireEvent.change(screen.getByRole('textbox', { name: '그룹명' }), { target: { value: '편집 중 그룹' } });
     await openTab('화면별 권한');
-    expect(screen.getByRole('button', { name: '메뉴 관리 진입 권한 추가' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /^메뉴 관리 진입 권한 추가/ })).toBeEnabled();
     expect(screen.getByRole('button', { name: '진입 권한 모두 추가' })).toBeEnabled();
     await openTab('기본 정보');
     await userEvent.click(screen.getByRole('button', { name: '그룹 정보 저장' }));
     await openTab('화면별 권한');
-    expect(screen.getByRole('button', { name: '메뉴 관리 진입 권한 추가' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^메뉴 관리 진입 권한 추가/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: '진입 권한 모두 추가' })).toBeDisabled();
   });
 
@@ -876,21 +949,41 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     await userEvent.click(screen.getByRole('button', { name: '게시판 관리 하위 메뉴 펼치기' }));
     screen.getByRole('checkbox', { name: menuCell('게시글 목록', 'LEAF') }).focus();
     await userEvent.keyboard('[Space]');
-    for (const [name, code] of [['업무 메뉴', 'ROOT'], ['게시판 관리', 'BRANCH'], ['게시글 목록', 'LEAF']]) expect(screen.getByRole('checkbox', { name: menuCell(name, code) })).toBeChecked();
+    // [2026-10-05] 영역·섹션 줄의 메뉴 표시 칸은 아래 메뉴의 집계다 — 형제(통계 메뉴)가 꺼져 있어 업무 메뉴는 일부 선택이다.
+    expect(screen.getByRole('checkbox', { name: menuCell('업무 메뉴', 'ROOT') })).toBePartiallyChecked();
+    for (const [name, code] of [['게시판 관리', 'BRANCH'], ['게시글 목록', 'LEAF']]) expect(screen.getByRole('checkbox', { name: menuCell(name, code) })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: menuCell('통계 메뉴', 'SIBLING') })).not.toBeChecked();
     await userEvent.click(screen.getByRole('button', { name: '권한 변경 저장' }));
     expect(saveGroupGrants).toHaveBeenCalledWith('CONTENT', { grants: [{ type: 'OPERATION', code: 'BOARD_READ' }, ...['ROOT', 'BRANCH', 'LEAF'].map((code) => ({ type: 'NAVIGATION', code }))], version: 'v1', complete: true });
   });
 
-  it('상위 메뉴만 선택하면 하위 메뉴는 자동 선택되지 않는다', async () => {
+  /*
+   * [2026-10-05 사용자 승인 — 시안 의미] 영역·섹션 줄의 메뉴 표시 칸은 그 아래 메뉴 전체를 켜고 끈다. 종전에는 그 메뉴 자신만 켜
+   * ('상위 메뉴만 선택하면 하위 메뉴는 자동 선택되지 않는다') 섹션을 운영하게 하려면 하위 화면마다 메뉴 표시를 따로 켜야 했다.
+   * 기능권한은 건드리지 않는다(메뉴 표시와 기능권한은 다른 권한, H3).
+   */
+  it('영역 줄의 메뉴 표시는 그 아래 메뉴 전체를 켜고 끄며 기능권한과 다른 영역은 건드리지 않는다', async () => {
     mocks.getCatalog.mockResolvedValue(treeCatalog);
     putGroup({ ...snapshot, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }] });
     await openGroup();
-    await userEvent.click(screen.getByRole('checkbox', { name: menuCell('업무 메뉴', 'ROOT') }));
-    expect(screen.getByRole('checkbox', { name: menuCell('게시판 관리', 'BRANCH') })).not.toBeChecked();
+    const root = screen.getByRole('checkbox', { name: menuCell('업무 메뉴', 'ROOT') });
+    expect(root).toHaveAccessibleDescription(/아래 메뉴 4개 중 0개 표시/);
+    await userEvent.click(root);
+    expect(root).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: menuCell('게시판 관리', 'BRANCH') })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: menuCell('통계 메뉴', 'SIBLING') })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: menuCell('다른 메뉴', 'OTHER') })).not.toBeChecked();
     await userEvent.click(screen.getByRole('button', { name: '게시판 관리 하위 메뉴 펼치기' }));
-    expect(screen.getByRole('checkbox', { name: menuCell('게시글 목록', 'LEAF') })).not.toBeChecked();
-    expect(screen.getByText(/상위 메뉴만 선택하면 하위 메뉴는 자동으로 선택되지 않습니다/)).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: menuCell('게시글 목록', 'LEAF') })).toBeChecked();
+    expect(screen.getByText(/영역·섹션 줄의 메뉴 표시 칸은 그 아래 메뉴 전체를 한 번에 켜고 끕니다/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '권한 변경 저장' }));
+    expect(saveGroupGrants).toHaveBeenLastCalledWith('CONTENT', { grants: [{ type: 'OPERATION', code: 'BOARD_READ' }, ...['ROOT', 'BRANCH', 'LEAF', 'SIBLING'].map((code) => ({ type: 'NAVIGATION', code }))], version: 'v1', complete: true });
+    // 다시 누르면 그 아래 전체를 끈다.
+    await untilEditable(menuCell('업무 메뉴', 'ROOT'));
+    await userEvent.click(screen.getByRole('checkbox', { name: menuCell('업무 메뉴', 'ROOT') }));
+    for (const [name, code] of [['업무 메뉴', 'ROOT'], ['게시판 관리', 'BRANCH'], ['게시글 목록', 'LEAF'], ['통계 메뉴', 'SIBLING']]) {
+      expect(screen.getByRole('checkbox', { name: menuCell(name, code) })).not.toBeChecked();
+    }
   });
 
   it.each(['parent', 'child'])('기존 상위 누락은 자동 수정하지 않고 저장을 막되 %s 선택 수정으로 복구할 수 있다', async (repair) => {
@@ -903,12 +996,14 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     expect(gapReason).toBeVisible();
     expect(gapReason).toHaveTextContent(/'화면별 권한' 탭의 '메뉴 표시' 칸에서/);
     await userEvent.click(screen.getByRole('checkbox', { name: BOARD_CREATE }));
-    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toHaveAttribute('aria-disabled', 'true');
     expect(gapReason).toBeVisible();
     await openTab('화면별 권한');
     await userEvent.click(screen.getByRole('button', { name: '게시판 관리 하위 메뉴 펼치기' }));
     expect(screen.getByRole('checkbox', { name: menuCell('게시글 목록', 'LEAF') })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: menuCell('업무 메뉴', 'ROOT') })).not.toBeChecked();
+    // 영역 줄의 칸은 아래 메뉴의 집계다 — 게시글 목록만 켜져 있어 일부 선택이고, 업무 메뉴 자신은 표시 안 함이라고 설명한다.
+    expect(screen.getByRole('checkbox', { name: menuCell('업무 메뉴', 'ROOT') })).toBePartiallyChecked();
+    expect(screen.getByRole('checkbox', { name: menuCell('업무 메뉴', 'ROOT') })).toHaveAccessibleDescription(/이 메뉴 표시 안 함/);
     expect(gapReason).toBeVisible();
     await userEvent.click(screen.getByRole('checkbox', { name: repair === 'parent' ? menuCell('게시판 관리', 'BRANCH') : menuCell('게시글 목록', 'LEAF') }));
     expect(screen.queryByText(/상위 메뉴가 선택되지 않은 메뉴가 있습니다/)).not.toBeInTheDocument();
@@ -923,8 +1018,10 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     putGroup({ ...snapshot, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }] });
     await openGroup();
     const table = within(screen.getByRole('group', { name: '화면별 권한 선택' })).getByRole('table');
-    // 384px 상자가 아니라 A5 의 고정 머리글 스크롤 상자다.
-    expect(table.parentElement!.className).toContain('max-h-[min(70vh,48rem)]');
+    // 384px 상자가 아니라 A5 의 고정 머리글 스크롤 상자다. [2026-10-05] 편집기는 fill 변형을 쓴다 — 넓고 높은 화면에서는 남은
+    // 높이를 채우고(work-fill:flex-1), 조건 밖에서는 70vh 상자다. 칸이 고정 머리글·첫 열 밑에 가리지 않게 스크롤 여백을 둔다.
+    const box = table.parentElement!.className.split(/\s+/);
+    expect(box).toEqual(expect.arrayContaining(['max-h-[min(70vh,48rem)]', 'overflow-auto', 'work-fill:flex-1', 'work-fill:max-h-[var(--work-fill-height)]', 'scroll-pt-8', 'scroll-pl-[15rem]']));
     for (const checkbox of within(table).getAllByRole('checkbox')) expect(checkbox).toBeDisabled();
     await userEvent.click(screen.getByRole('button', { name: '업무 메뉴 하위 메뉴 접기' }));
     await userEvent.click(screen.getByRole('button', { name: '업무 메뉴 하위 메뉴 펼치기' }));
@@ -942,7 +1039,7 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     await userEvent.click(screen.getByRole('button', { name: '게시판 관리 하위 메뉴 펼치기' }));
     await userEvent.click(screen.getByRole('checkbox', { name: menuCell('게시글 목록', 'LEAF') }));
     act(() => view.client.setQueryData(['authorization', 'operator', 'auth-v1', 'group', 'CONTENT'], { ...original, version: 'v2' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeDisabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: '권한 변경 저장' })).toHaveAttribute('aria-disabled', 'true'));
     expect(screen.getByRole('checkbox', { name: menuCell('게시글 목록', 'LEAF') })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: menuCell('게시글 목록', 'LEAF') })).toBeDisabled();
     expect(saveGroupGrants).not.toHaveBeenCalled();
@@ -958,7 +1055,7 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     // 기본 탭에서 칸을 그릴 수 없으므로 그 이유도 기본 탭에서 보여야 한다.
     expect(screen.getByText(/메뉴 설정을 확인한 뒤 다시 조회해 주세요/)).toHaveAttribute('role', 'alert');
     expect(screen.getByText(/메뉴 설정을 확인한 뒤 다시 조회해 주세요/)).toBeVisible();
-    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toHaveAttribute('aria-disabled', 'true');
     await openTab('기능별 권한');
     expect(screen.getByRole('checkbox', { name: BOARD_CREATE })).toBeDisabled();
     expect(screen.getByText(/메뉴 설정을 확인한 뒤 다시 조회해 주세요/)).toBeVisible();
@@ -1004,6 +1101,39 @@ describe('SecurityHub: 그룹 구성원과 대상 인계', () => {
     expect(screen.getByRole('heading', { name: '사용자 가' })).toBeInTheDocument();
   });
 
+  /*
+   * [2026-10-05 한 화면 압축 2차, 과제 B] 허브 '변경 이력' 영역은 업무면 fill 셸이다 — 표가 늘어 페이지가 970~2,042px 스크롤하던 것을,
+   * 조건·쪽 넘김은 제자리에 두고 표 상자만 남은 높이 안에서 스크롤하게 했다. 행은 편집기 이력 탭과 같은 업무 표 행 토큰이다.
+   * 사용자 배정·그룹 비교는 실측에서 넘치지 않아 종전처럼 쌓인다.
+   */
+  it('변경 이력 영역은 fill 셸이고 이력 표는 남은 높이를 받는 이름 있는 스크롤 상자 안에 있다 — 사용자 배정·그룹 비교는 쌓인다', async () => {
+    mocks.getHistory.mockResolvedValue(page([
+      { id: 1, targetType: 'USER_GROUP', changeType: 'ADD', group: 'CONTENT', userId: 'ESNTL_A', userNm: '홍길동', grantType: null, grantCode: null, field: 'membership', before: null, after: 'CONTENT', actorId: 'ESNTL_OP', actorNm: '운영자', createdAt: '2026-09-10T10:00:00' },
+    ]));
+    const view = setup();
+    const shell = () => view.container.querySelector('main')!;
+    expect(shell()).toHaveAttribute('data-work-fill');
+    await userEvent.click(screen.getByRole('button', { name: '변경 이력' }));
+    const table = await screen.findByRole('table', { name: '권한 변경 이력' });
+    expect(shell()).toHaveAttribute('data-work-fill');
+    // 영역 → 표 상자까지 남은 높이를 넘겨받는 사슬이다(표 상자는 PermissionScrollRegion 의 fill 변형).
+    expect(screen.getByRole('region', { name: '권한 변경 이력' })).toHaveClass('work-fill:flex-1', 'work-fill:min-h-0', 'work-fill:flex-col');
+    expect(table.parentElement).toHaveClass('relative', 'overflow-auto', 'work-fill:flex-1');
+    expect(table.querySelector('thead')).toHaveClass('sticky', 'top-0');
+    // 칸은 업무 표 행 토큰이고, 그룹과 사용자는 한 칸 안에 잇는다(종전처럼 블록 두 줄로 쌓지 않는다). 짧은 사실은 낱말 안에서 꺾지 않는다.
+    const cells = within(table).getAllByRole('cell');
+    for (const cell of cells) expect(cell).toHaveClass('py-[var(--work-cell-py)]');
+    const person = within(table).getByText('홍길동 (ESNTL_A)');
+    expect(person.tagName).toBe('SPAN');
+    expect(person.closest('td')).toHaveTextContent('CONTENT · 홍길동 (ESNTL_A)');
+    expect(person.closest('td')).toHaveClass('break-keep');
+    expect(within(table).getByText('운영자 (ESNTL_OP)')).toHaveClass('break-keep');
+    await userEvent.click(screen.getByRole('button', { name: '사용자 배정' }));
+    expect(shell()).not.toHaveAttribute('data-work-fill');
+    await userEvent.click(screen.getByRole('button', { name: '그룹 비교' }));
+    expect(shell()).not.toHaveAttribute('data-work-fill');
+  });
+
   it('권한 변경 이력으로 넘어오면 그 사람의 로그인 ID 로 조회한 이력을 연다', async () => {
     const { handOffTarget } = await import('@/lib/navigation/target-handoff');
     handOffTarget('authority-history-user', { id: 'ESNTL_A', loginId: 'login-a', name: '사용자 가' });
@@ -1044,6 +1174,8 @@ describe('SecurityHub: 그룹 복제·변경 이력·메뉴 미리보기', () =>
 
   it('편집기 머리의 이 그룹으로 새 그룹 만들기는 원본 버전과 함께 복제하고 새 그룹을 연다', async () => {
     await openGroup();
+    // [2026-10-05] 머리를 한 줄로 줄이며 '더보기' 안으로 옮겼다.
+    await openMore();
     await userEvent.click(screen.getByRole('button', { name: '이 그룹으로 새 그룹 만들기' }));
     const dialog = await screen.findByRole('dialog', { name: '이 그룹으로 새 그룹 만들기' });
     expect(within(dialog).getByText(/기능권한 1개 · 메뉴 표시 1개/)).toBeInTheDocument();
@@ -1082,6 +1214,7 @@ describe('SecurityHub: 그룹 복제·변경 이력·메뉴 미리보기', () =>
     await screen.findByRole('region', { name: '콘텐츠 담당 권한 설정' });
     expect(screen.queryByRole('dialog', { name: '이 그룹으로 새 그룹 만들기' })).not.toBeInTheDocument();
     // 복제는 다시 누르면 열린다.
+    await openMore();
     await userEvent.click(screen.getByRole('button', { name: '이 그룹으로 새 그룹 만들기' }));
     expect(await screen.findByRole('dialog', { name: '이 그룹으로 새 그룹 만들기' })).toBeInTheDocument();
   });
@@ -1113,6 +1246,7 @@ describe('SecurityHub: 그룹 복제·변경 이력·메뉴 미리보기', () =>
     putGroup({ ...snapshot, grants: [...snapshot.grants, { type: 'OPERATION', code: 'AUTHRT_GRANT' }] });
     mocks.getCatalog.mockResolvedValue({ ...catalog, operations: [...catalog.operations, { code: 'AUTHRT_GRANT', name: '권한 설정', domain: 'AUTHRT', action: 'GRANT' }] });
     await openGroup();
+    await openMore();
     await userEvent.click(screen.getByRole('button', { name: '이 그룹으로 새 그룹 만들기' }));
     const dialog = await screen.findByRole('dialog', { name: '이 그룹으로 새 그룹 만들기' });
     expect(within(dialog).getByText(/권한 설정과 권한 배정 권한이 모두 필요합니다/)).toBeInTheDocument();
@@ -1190,5 +1324,217 @@ describe('SecurityHub: 그룹 복제·변경 이력·메뉴 미리보기', () =>
     // URL·브라우저 저장소에 대상을 싣지 않는다.
     expect(window.location.search).toBe('');
     expect(window.sessionStorage.length).toBe(0);
+  });
+});
+
+/**
+ * [2026-10-05 한 화면 압축, 사용자 승인] 첫 진입 자동 선택, 그룹 단추의 저장된 수·저장하지 않은 변경 수, 저장 막대(보이는 탭·요약·
+ * 변경 목록·권한만 되돌리기), '더보기', 기본 정보 탭의 위험 영역.
+ */
+describe('SecurityHub: 한 화면 작업대', () => {
+  beforeEach(resetMocks);
+
+  it('처음 들어오면 첫 그룹을 골라 작업대를 연다 — URL·브라우저 저장소는 바꾸지 않는다', async () => {
+    setup();
+    expect(await screen.findByRole('region', { name: '콘텐츠 담당 권한 설정' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /콘텐츠 담당.*CONTENT/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByText('설정할 권한 그룹을 선택하세요.')).not.toBeInTheDocument();
+    expect(mocks.getGroup).toHaveBeenCalledWith('CONTENT');
+    expect(mocks.confirm).not.toHaveBeenCalled();
+    expect(window.location.search).toBe('');
+    expect(window.sessionStorage.length).toBe(0);
+  });
+
+  it('자동 선택은 처음 한 번뿐이다 — 고른 그룹을 지운 뒤에는 다시 고르지 않는다', async () => {
+    await openGroup('기본 정보');
+    await userEvent.click(screen.getByRole('button', { name: '그룹 삭제' }));
+    await waitFor(() => expect(deleteGroup).toHaveBeenCalledWith('CONTENT', 'v1'));
+    expect(await screen.findByText('설정할 권한 그룹을 선택하세요.')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /권한 설정$/ })).not.toBeInTheDocument();
+  });
+
+  it('그룹 단추는 저장된 메뉴·기능 수(전체 그룹 권한 조회)와 지금 편집 중인 그룹의 저장하지 않은 변경 수를 보인다', async () => {
+    await openGroup('기능별 권한');
+    const content = screen.getByRole('button', { name: /콘텐츠 담당.*CONTENT/ });
+    await waitFor(() => expect(content).toHaveTextContent('CONTENT · 메뉴 1 · 기능 1'));
+    expect(screen.getByRole('button', { name: /설문 담당.*SURVEY/ })).toHaveTextContent('SURVEY · 메뉴 0 · 기능 0');
+    expect(content).not.toHaveTextContent('변경');
+    await userEvent.click(screen.getByRole('checkbox', { name: BOARD_CREATE }));
+    await userEvent.click(screen.getByRole('checkbox', { name: QESTNR_READ }));
+    expect(content).toHaveTextContent('변경 2');
+    // 다른 그룹 단추에는 붙지 않는다.
+    expect(screen.getByRole('button', { name: /설문 담당.*SURVEY/ })).not.toHaveTextContent('변경');
+    // 되돌리면 사라진다.
+    await userEvent.click(screen.getByRole('checkbox', { name: BOARD_CREATE }));
+    await userEvent.click(screen.getByRole('checkbox', { name: QESTNR_READ }));
+    expect(content).not.toHaveTextContent('변경');
+  });
+
+  it('저장이 끝나 막힌 권한 변경 저장 단추도 포커스를 잃지 않고, 막힌 동안 눌러도 저장하지 않는다', async () => {
+    let resolveWrite: () => void = () => undefined;
+    saveGroupGrants.mockImplementation((code: string, body: { grants: Grant[] }) => new Promise((resolve) => {
+      resolveWrite = () => resolve(commit(code, { grants: body.grants }));
+    }));
+    await openGroup('기능별 권한');
+    await userEvent.click(screen.getByRole('checkbox', { name: BOARD_CREATE }));
+    const save = screen.getByRole('button', { name: '권한 변경 저장' });
+    await userEvent.click(save);
+    // 저장하는 동안은 disabled + aria-busy 다(쓰기 잠금 계약). 브라우저는 disabled 가 된 포커스 요소에서 포커스를 body 로 보낼 수 있다 —
+    // jsdom 은 그러지 않고 disabled 단추의 blur 도 무시하므로, 잠깐 둔 단추를 거쳐 포커스를 body 로 보내 흉내 낸다.
+    expect(save).toBeDisabled();
+    expect(save).toHaveAttribute('aria-busy', 'true');
+    act(() => {
+      const probe = document.createElement('button');
+      document.body.append(probe);
+      probe.focus();
+      probe.blur();
+      probe.remove();
+    });
+    expect(document.body).toHaveFocus();
+    await act(async () => { resolveWrite(); });
+    await waitFor(() => expect(save).toHaveAttribute('aria-busy', 'false'));
+    // 저장이 끝난 단추는 막혀도 disabled 가 아니라 aria-disabled 이고(2.4.3), 저장하는 동안 잃은 포커스를 되돌려 받는다.
+    expect(save).toHaveAttribute('aria-disabled', 'true');
+    expect(save).not.toBeDisabled();
+    await waitFor(() => expect(save).toHaveFocus());
+    await userEvent.click(save);
+    expect(saveGroupGrants).toHaveBeenCalledTimes(1);
+  });
+
+  it('그룹을 바꾸면 버린 변경 수가 새 그룹 단추에 한 번도 그려지지 않는다', async () => {
+    await openGroup('기능별 권한');
+    await userEvent.click(screen.getByRole('checkbox', { name: BOARD_CREATE }));
+    expect(screen.getByRole('button', { name: /콘텐츠 담당.*CONTENT/ })).toHaveTextContent('변경 1');
+    const survey = screen.getByRole('button', { name: /설문 담당.*SURVEY/ });
+    // 중간 그림까지 본다 — 종전에는 새 그룹 단추가 먼저 '변경 1'로 그려지고 앞 편집기의 정리가 그 뒤에 0 으로 지웠다(최종 상태만 보면 놓친다).
+    const added: string[] = [];
+    const observer = new MutationObserver((records) => {
+      for (const record of records) for (const node of record.addedNodes) added.push(node.textContent ?? '');
+    });
+    observer.observe(survey, { childList: true, subtree: true, characterData: true });
+    await userEvent.click(survey);
+    await screen.findByRole('region', { name: '설문 담당 권한 설정' });
+    await waitFor(() => expect(survey).toHaveAttribute('aria-pressed', 'true'));
+    observer.disconnect();
+    expect(mocks.confirm).toHaveBeenCalled();
+    expect(added.filter((text) => /변경 \d/.test(text))).toEqual([]);
+    expect(survey).not.toHaveTextContent('변경');
+  });
+
+  /*
+   * [2026-10-05 반박 리뷰 반영 — blocker] 창이 낮으면 표 상자의 바닥값(6rem)이 남은 높이보다 커지는데, 편집기·탭·탭 내용이 모두
+   * min-h-0 + overflow visible 이라 표 상자가 탭 밖으로 넘쳐 '권한 변경 저장'을 덮었다(구조 재현: 1280×720 에서 저장 단추 중심의
+   * elementFromPoint 가 표 칸). jsdom 은 배치를 재지 않으므로 넘침을 가두는 클래스를 고정하고, 실제 배치는 e2e 의 저장 단추 hit-test
+   * (security-administration)와 구조 재현 측정이 본다.
+   */
+  it('화면별·기능별 권한 탭 내용은 넘침을 가두는 스크롤 상자이고, 탭 묶음은 바닥값을 지켜 저장 막대를 덮지 않는다', async () => {
+    await openGroup();
+    for (const name of ['화면별 권한', '기능별 권한'] as const) {
+      await openTab(name);
+      const panel = screen.getByRole('tabpanel', { name: new RegExp(`^${name}`) });
+      expect(panel.className.split(/\s+/)).toEqual(expect.arrayContaining(['relative', 'work-fill:overflow-y-auto', 'work-fill:min-h-0', 'work-fill:-m-1', 'work-fill:p-1']));
+      // 저장 막대는 탭 묶음 밖(뒤)의 형제다 — 탭 내용이 넘쳐도 그 상자 안에서 스크롤할 뿐 막대 위로 나오지 않는다.
+      const tabs = panel.closest('[data-slot="tabs"]')!;
+      expect(tabs.className.split(/\s+/)).toEqual(expect.arrayContaining(['work-fill:min-h-[5rem]', 'work-fill:flex-1']));
+      expect(tabs.className).not.toMatch(/work-fill:min-h-0/);
+      const save = screen.getByRole('button', { name: '권한 변경 저장' });
+      expect(tabs.contains(save)).toBe(false);
+      expect(tabs.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+
+  it('긴 그룹명은 줄바꿈해 편집기 밖으로 가로로 넘치지 않는다', async () => {
+    await openGroup();
+    const heading = within(screen.getByRole('region', { name: '콘텐츠 담당 권한 설정' })).getByRole('heading', { level: 2, name: '콘텐츠 담당' });
+    expect(heading).toHaveClass('break-words', 'min-w-0');
+    expect(heading).not.toHaveClass('shrink-0');
+  });
+
+  it('그룹 목록 스크롤 상자는 가장자리 포커스 링이 잘리지 않게 안쪽 여백을 둔다', async () => {
+    await openGroup();
+    const list = screen.getByRole('button', { name: /콘텐츠 담당.*CONTENT/ }).closest('ul')!;
+    expect(list.className.split(/\s+/)).toEqual(expect.arrayContaining(['work-fill:overflow-y-auto', 'work-fill:-m-1', 'work-fill:p-1', 'relative']));
+  });
+
+  it('저장 막대는 화면별·기능별 권한 탭에만 있고, 구성원·기본 정보·변경 이력 탭에는 없다', async () => {
+    await openGroup();
+    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByText('변경 없음')).toBeVisible();
+    await openTab('기능별 권한');
+    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeInTheDocument();
+    for (const tab of ['구성원', '기본 정보', '변경 이력'] as const) {
+      await openTab(tab);
+      expect(screen.queryByRole('button', { name: '권한 변경 저장', hidden: true })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: '권한 변경 되돌리기', hidden: true })).not.toBeInTheDocument();
+    }
+  });
+
+  it('변경 내용 보기는 추가·회수할 권한과 메뉴를 이름으로 보인다', async () => {
+    await openGroup('기능별 권한');
+    expect(screen.getByRole('button', { name: '변경 내용 보기' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('checkbox', { name: BOARD_CREATE }));
+    await userEvent.click(screen.getByRole('checkbox', { name: BOARD_READ }));
+    expect(screen.getByText(/^저장 전 변경:/)).toHaveTextContent('저장 전 변경: 추가 1 · 회수 1');
+    await userEvent.click(screen.getByRole('button', { name: '변경 내용 보기' }));
+    const list = await screen.findByRole('dialog', { name: '저장하지 않은 권한 변경' });
+    expect(within(within(list).getByRole('region', { name: '추가 1개' })).getByRole('listitem')).toHaveTextContent('게시글 등록 (BOARD_CREATE)');
+    expect(within(within(list).getByRole('region', { name: '회수 1개' })).getByRole('listitem')).toHaveTextContent('게시글 조회 (BOARD_READ)');
+    expect(within(list).getByText(/다른 그룹이 제공하는 같은 권한은 유지됩니다/)).toBeInTheDocument();
+    expect(saveGroupGrants).not.toHaveBeenCalled();
+  });
+
+  it('권한 변경 되돌리기는 확인 뒤 권한 초안만 되돌리고 기본 정보 입력은 남긴다 — 취소하면 그대로다', async () => {
+    await openGroup('기본 정보');
+    fireEvent.change(screen.getByRole('textbox', { name: '그룹명' }), { target: { value: '편집 중 그룹' } });
+    await openTab('화면별 권한');
+    await userEvent.click(screen.getByRole('checkbox', { name: menuCell('게시판', 'MENU_1') }));
+    await openTab('기능별 권한');
+    await userEvent.click(screen.getByRole('checkbox', { name: BOARD_CREATE }));
+    mocks.confirm.mockResolvedValueOnce(false);
+    await userEvent.click(screen.getByRole('button', { name: '권한 변경 되돌리기' }));
+    expect(mocks.confirm).toHaveBeenLastCalledWith(expect.objectContaining({ message: expect.stringContaining('권한 변경 2건(추가 1 · 회수 1)') }));
+    expect(screen.getByRole('checkbox', { name: BOARD_CREATE })).toBeChecked();
+    await userEvent.click(screen.getByRole('button', { name: '권한 변경 되돌리기' }));
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: BOARD_CREATE })).not.toBeChecked());
+    expect(screen.getByText('변경 없음')).toBeVisible();
+    // [2026-10-05 반박 리뷰 반영] 되돌린 뒤 단추는 막히지만 disabled 가 아니라 aria-disabled 다 — 확인 대화상자가 닫히며 돌아온 포커스가
+    // body 로 떨어지지 않는다(2.4.3). 결과는 저장 막대의 알림 영역이 읽고, 막힌 단추를 다시 눌러도 아무 일이 없다.
+    const revert = screen.getByRole('button', { name: '권한 변경 되돌리기' });
+    expect(revert).toHaveAttribute('aria-disabled', 'true');
+    expect(revert).not.toBeDisabled();
+    expect(revert).toHaveFocus();
+    expect(screen.getByText('저장하지 않은 권한 변경 2건을 되돌렸습니다. 변경 없음.')).toHaveAttribute('role', 'status');
+    mocks.confirm.mockClear();
+    await userEvent.click(revert);
+    expect(mocks.confirm).not.toHaveBeenCalled();
+    // 다시 바꾸기 시작하면 '되돌렸습니다'는 더는 사실이 아니다.
+    await userEvent.click(screen.getByRole('checkbox', { name: BOARD_CREATE }));
+    expect(screen.queryByText(/되돌렸습니다/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('checkbox', { name: BOARD_CREATE }));
+    await openTab('화면별 권한');
+    expect(screen.getByRole('checkbox', { name: menuCell('게시판', 'MENU_1') })).toBeChecked();
+    await openTab('기본 정보');
+    expect(screen.getByRole('textbox', { name: '그룹명' })).toHaveValue('편집 중 그룹');
+    expect(saveGroupGrants).not.toHaveBeenCalled();
+    expect(updateGroup).not.toHaveBeenCalled();
+  });
+
+  it('더보기는 복제와 입력 취소 · 최신 정보 적용을 담고, 그룹 삭제는 기본 정보 탭의 위험 영역에만 있다', async () => {
+    await openGroup('기능별 권한');
+    await userEvent.click(screen.getByRole('checkbox', { name: BOARD_CREATE }));
+    // 머리에는 작은 단추 둘과 더보기뿐이다.
+    expect(screen.queryByRole('button', { name: '이 그룹으로 새 그룹 만들기' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '그룹 삭제' })).not.toBeInTheDocument();
+    await openMore();
+    const more = await screen.findByRole('dialog', { name: '콘텐츠 담당 더보기' });
+    expect(within(more).getAllByRole('button').map((button) => button.textContent)).toEqual(['이 그룹으로 새 그룹 만들기', '입력 취소 · 최신 정보 적용']);
+    // 저장하지 않은 변경이 있으면 입력 취소는 이탈 확인을 거친다 — 취소하면 남는다.
+    mocks.confirm.mockResolvedValueOnce(false);
+    await userEvent.click(within(more).getByRole('button', { name: '입력 취소 · 최신 정보 적용' }));
+    expect(mocks.confirm).toHaveBeenCalled();
+    expect(screen.getByRole('checkbox', { name: BOARD_CREATE })).toBeChecked();
+    await openTab('기본 정보');
+    const danger = screen.getByRole('region', { name: '되돌릴 수 없는 작업' });
+    expect(within(danger).getByRole('button', { name: '그룹 삭제' })).toBeEnabled();
   });
 });

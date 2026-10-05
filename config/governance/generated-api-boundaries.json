@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 435,
-    "generatedDescriptorCount": 435
+    "openApiOperationCount": 430,
+    "generatedDescriptorCount": 430
   },
   "target": {
     "generatedPercent": 100,
@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 382,
-    "eligible": 360,
+    "total": 377,
+    "eligible": 355,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 360,
+      "generated": 355,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "63703c24cda10d1be4ca5fb730afa84ad0ab81e483b380ee0fa1134d2ca9f8a6",
+  "inventoryHash": "18fb4d49f50c004c5e37aa55aa515bb79af50b7863479b36660f0a7e091f0270",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -5522,91 +5522,6 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "fa0921a4bc655612c260"
-    },
-    {
-      "file": "frontend/src/services/foundation/system/ProgramAdminService.ts",
-      "owner": "ProgramAdminService.getProgramList",
-      "ordinal": 1,
-      "line": 33,
-      "column": 9,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "get",
-      "target": "/api/v1/admin/system/programs",
-      "operationId": "getProgramList",
-      "descriptorName": "getProgramListOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "69226dc3dbddaa52f5d4"
-    },
-    {
-      "file": "frontend/src/services/foundation/system/ProgramAdminService.ts",
-      "owner": "ProgramAdminService.getProgram",
-      "ordinal": 1,
-      "line": 46,
-      "column": 9,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "get",
-      "target": "/api/v1/admin/system/programs/{progrmFileNm}",
-      "operationId": "getProgram",
-      "descriptorName": "getProgramOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "b01d2020451663bb5150"
-    },
-    {
-      "file": "frontend/src/services/foundation/system/ProgramAdminService.ts",
-      "owner": "ProgramAdminService.createProgram",
-      "ordinal": 1,
-      "line": 54,
-      "column": 9,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "post",
-      "target": "/api/v1/admin/system/programs",
-      "operationId": "createProgram",
-      "descriptorName": "createProgramOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "e6ddbdd77f213e1a7535"
-    },
-    {
-      "file": "frontend/src/services/foundation/system/ProgramAdminService.ts",
-      "owner": "ProgramAdminService.updateProgram",
-      "ordinal": 1,
-      "line": 62,
-      "column": 9,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "put",
-      "target": "/api/v1/admin/system/programs/{progrmFileNm}",
-      "operationId": "updateProgram",
-      "descriptorName": "updateProgramOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "9401b99b89a29ba006d2"
-    },
-    {
-      "file": "frontend/src/services/foundation/system/ProgramAdminService.ts",
-      "owner": "ProgramAdminService.deleteProgram",
-      "ordinal": 1,
-      "line": 72,
-      "column": 9,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "delete",
-      "target": "/api/v1/admin/system/programs/{progrmFileNm}",
-      "operationId": "deleteProgram",
-      "descriptorName": "deleteProgramOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "a8a873c94f353c2a0d16"
     },
     {
       "file": "frontend/src/services/foundation/system/StatsAdminService.ts",

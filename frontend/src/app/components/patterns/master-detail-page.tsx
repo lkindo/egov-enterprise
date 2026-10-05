@@ -3,6 +3,12 @@
 import React, { Suspense, useId, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
+import {
+  WORK_FILL_CONTENT_CLASS,
+  WORK_FILL_PANE_CHAIN_CLASS,
+  WORK_FILL_PANE_PRINT_CLASS,
+  WORK_FILL_ROOT_CLASS,
+} from './work-fill';
 
 /**
  * A2 — 마스터-디테일(Master-Detail) archetype 셸.
@@ -59,12 +65,63 @@ export interface MasterDetailPageProps {
    * 'wide' 는 넓은 마스터 + 좁은 상세다 — 마스터 자체가 작업 대상(예: 메뉴 구조 보드)이고 상세는 고른 항목의 속성 칸이다.
    */
   masterSize?: 'default' | 'wide';
+  /**
+   * [2026-10-05] 업무면 fill 셸(카탈로그 §4 'fill 셸'). true 이면 넓고 높은 화면(globals.css 의 `work-fill` 변형 —
+   * 폭 lg 이상 · 높이 600px 이상 · screen)에서 셸 루트가 화면에 맞는 높이(`--work-fill-height`)의 세로 flex 가 되고,
+   * 마스터·상세 작업 영역이 남은 높이를 채운다(70vh 대신). 페이지는 스크롤하지 않고 마스터·상세 칸이 각자 스크롤한다.
+   * 그 조건 밖에서는 기본(false)과 같은 배치·높이이고, 인쇄에서는 높이 제한 없이 펼친다. 기본값은 false — 다른 화면과
+   * 시각 회귀 기준선을 바꾸지 않는다. 쓰는 화면은 셸 아래에 다른 블록·하단 여백(pb-*)을 두지 않는다.
+   * 창이 낮아 작업 영역이 바닥값(A2 는 22rem — 아래 WORK_FILL_LAYOUT_CLASS)보다 작아지면 셸이 늘어나 페이지가 스크롤한다
+   * (푸터를 덮지 않는다 — work-fill.ts). 조건 안에서는 머리·칸 여백도 줄인다(WORK_FILL_PANE_* — 칸 도구는 줄바꿈하지 않는다).
+   * 루트는 `data-work-fill` 표지를 달아, 같은 조건에서 화면 아래 푸터를 숨기고 그 몫(5rem)만큼 셸을 늘린다(globals.css).
+   */
+  fill?: boolean;
+  /**
+   * [2026-10-05] fill 셸에서 마스터 칸이 직계 자식에게 남은 높이를 넘긴다(칸이 세로 flex 가 된다). 칸 안에 표·권한 상자처럼
+   * 자기 스크롤 영역을 가진 내용을 둘 때 쓴다 — 직계 자식은 `WORK_FILL_REGION_CLASS`(중간 고리)이거나 fill 스크롤 상자여야
+   * 한다. 칸의 스크롤은 그대로 두어 사슬이 끊겨도 칸이 스크롤한다. `fill` 이 false 면 아무 일도 하지 않는다.
+   */
+  masterFillChild?: boolean;
+  /** [2026-10-05] masterFillChild 와 같다 — 상세 칸. */
+  detailFillChild?: boolean;
   showBreadcrumb?: boolean;
   breadcrumbItems?: { label: string; href?: string }[];
   className?: string;
 }
 
 const MASTER_ITEM_SELECTOR = '[data-a2-master-item]:not([disabled])';
+
+/**
+ * fill 셸에서 마스터·상세 작업 영역이 남은 높이를 받는다 — 기본의 `lg:h-[min(70vh,48rem)]`·`min-h-[32rem]` 을 work-fill 조건
+ * 안에서만 덮는다(조건 밖은 기본과 같다). 남은 높이·안전판은 공용 작업 영역 클래스가 정하고(WORK_FILL_CONTENT_CLASS), 여기서는
+ * 기본 높이를 풀고 바닥값을 A2 에 맞게 올린다. 인쇄에서는 높이를 풀어 두 칸을 펼친다.
+ *
+ * [2026-10-05 리뷰 반영] 바닥값은 공용 12rem 이 아니라 22rem 이다. A2 의 두 칸은 머리(제목·도구)와 칸 여백을 먼저 쓰므로
+ * 12rem 이면 마스터가 머리만 남고 목록이 한 줄도 보이지 않았다(Chromium 실측: 1366×768 사이드바 펼침에서 메뉴 보드 0줄).
+ * 이보다 낮은 창에서는 셸이 늘어나 페이지가 스크롤한다. fill 화면은 푸터를 숨기고 푸터 몫이 0 이므로(globals.css) 늘어난 몫이
+ * 아래 패딩 자리를 넘으면 곧 페이지 스크롤이 된다 — 대신 같은 창에서 셸이 5rem 더 높아 이 바닥값에 닿는 창 높이가 그만큼 낮다.
+ */
+const WORK_FILL_LAYOUT_CLASS = 'work-fill:h-auto work-fill:min-h-[22rem] print:h-auto';
+
+/**
+ * [2026-10-05 리뷰 반영] fill 셸의 머리와 칸 여백 — 조건 안에서만 줄인다(조건 밖은 기본과 같다).
+ * - 쌓는 간격 16px → 12px, 페이지 설명은 제목과 같은 줄(들어가지 않으면 다음 줄로 내린다).
+ * - 칸 머리: 위아래 8px·좌우 12px(기본 `--filter-pad` 32px 가 칸마다 위아래 64px 를 썼다). 칸 제목 옆에 칸 설명을 둔다.
+ * - 칸 도구 줄은 줄바꿈하지 않는다 — 제목 옆에 들어가면 제목 옆, 아니면 제목 아래 한 줄이다. 들어가는지는 도구의 최소 폭으로
+ *   정해지므로(도구가 고정 폭을 쓰는 것은 소비 화면 몫이다) 상태에 따라 오르내리지 않는다.
+ * - 칸 내용: 12px.
+ * - 넓은 마스터('wide')의 상세 칸은 18~22rem 이다 — 칸 여백이 줄어 상세 내용 폭은 기본(26rem − 64px)과 거의 같고, 남는 폭은
+ *   작업 대상인 마스터가 받는다.
+ * 모두 `work-fill:` 변형이다(조건 밖·인쇄의 기본 배치를 바꾸지 않는다 — work-fill-shell-contract 와 같은 규칙).
+ */
+const WORK_FILL_STACK_CLASS = 'work-fill:space-y-3';
+const WORK_FILL_TITLE_ROW_CLASS = 'work-fill:flex work-fill:flex-wrap work-fill:items-baseline work-fill:gap-x-3';
+const WORK_FILL_INLINE_DESCRIPTION_CLASS = 'work-fill:mt-0';
+const WORK_FILL_PANE_HEAD_CLASS = 'work-fill:px-3 work-fill:py-2';
+const WORK_FILL_PANE_HEAD_ROW_CLASS = 'work-fill:items-center work-fill:gap-x-3 work-fill:gap-y-1.5';
+const WORK_FILL_PANE_TOOLS_CLASS = 'work-fill:grow work-fill:flex-nowrap work-fill:justify-end';
+const WORK_FILL_PANE_BODY_CLASS = 'work-fill:p-3';
+const WORK_FILL_WIDE_TRACK_CLASS = 'work-fill:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]';
 
 /**
  * [2026-09-26 DIP C8] 좁은 화면에서는 상세가 목록 아래에 쌓인다. 항목을 누르면 상세로 스크롤하고 포커스를 옮긴다 —
@@ -238,6 +295,9 @@ export function MasterDetailPage({
   saveShortcutDisabled = false,
   saveShortcutScope = 'detail',
   masterSize = 'default',
+  fill = false,
+  masterFillChild = false,
+  detailFillChild = false,
   showBreadcrumb = true,
   breadcrumbItems,
   className,
@@ -326,8 +386,9 @@ export function MasterDetailPage({
   return (
     <div
       data-testid="master-detail-page"
+      data-work-fill={fill ? '' : undefined}
       onKeyDownCapture={handlePageKeyDown}
-      className={cn('space-y-4', className)}
+      className={cn('space-y-4', fill && WORK_FILL_ROOT_CLASS, fill && WORK_FILL_STACK_CLASS, className)}
     >
       {showBreadcrumb && (
         <div className="[&>nav]:mb-0">
@@ -341,10 +402,12 @@ export function MasterDetailPage({
       )}
 
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
+        <div className={cn('min-w-0', fill && WORK_FILL_TITLE_ROW_CLASS)}>
           <PageHeading className="text-xl font-bold tracking-tight text-foreground">{title}</PageHeading>
           {description && (
-            <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">{description}</p>
+            <p className={cn('mt-1 text-[length:var(--font-size-body)] text-muted-foreground', fill && WORK_FILL_INLINE_DESCRIPTION_CLASS)}>
+              {description}
+            </p>
           )}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -361,23 +424,30 @@ export function MasterDetailPage({
           masterSize === 'wide'
             ? 'lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]'
             : 'lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]',
+          fill && WORK_FILL_CONTENT_CLASS,
+          fill && WORK_FILL_LAYOUT_CLASS,
+          fill && masterSize === 'wide' && WORK_FILL_WIDE_TRACK_CLASS,
         )}
       >
         <section
           aria-labelledby={masterHeadingId}
           className="flex min-h-0 min-w-0 flex-col rounded-md border border-border bg-card"
         >
-          <header className="border-b border-border p-[var(--filter-pad)]">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0">
+          <header className={cn('border-b border-border p-[var(--filter-pad)]', fill && WORK_FILL_PANE_HEAD_CLASS)}>
+            <div className={cn('flex flex-wrap items-start justify-between gap-2', fill && WORK_FILL_PANE_HEAD_ROW_CLASS)}>
+              <div className={cn('min-w-0', fill && WORK_FILL_TITLE_ROW_CLASS)}>
                 <SectionHeading id={masterHeadingId} className="text-sm font-semibold text-foreground">{masterTitle}</SectionHeading>
                 {masterDescription && (
-                  <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
+                  <p className={cn('mt-1 text-[length:var(--font-size-body)] text-muted-foreground', fill && WORK_FILL_INLINE_DESCRIPTION_CLASS)}>
                     {masterDescription}
                   </p>
                 )}
               </div>
-              {masterTools && <div className="flex flex-wrap items-center gap-2">{masterTools}</div>}
+              {masterTools && (
+                <div data-master-tools="" className={cn('flex flex-wrap items-center gap-2', fill && WORK_FILL_PANE_TOOLS_CLASS)}>
+                  {masterTools}
+                </div>
+              )}
             </div>
           </header>
           <div
@@ -387,7 +457,12 @@ export function MasterDetailPage({
             onKeyDown={handleMasterKeyDown}
             onClick={handleMasterClick}
             data-testid="master-detail-master"
-            className="max-h-[60vh] min-h-0 flex-1 overflow-auto p-[var(--filter-pad)] lg:max-h-none"
+            className={cn(
+              'relative max-h-[60vh] min-h-0 flex-1 overflow-auto p-[var(--filter-pad)] lg:max-h-none',
+              fill && WORK_FILL_PANE_BODY_CLASS,
+              fill && WORK_FILL_PANE_PRINT_CLASS,
+              fill && masterFillChild && WORK_FILL_PANE_CHAIN_CLASS,
+            )}
           >
             {master}
           </div>
@@ -398,14 +473,14 @@ export function MasterDetailPage({
           aria-labelledby={detailHeadingId}
           className="flex min-h-0 min-w-0 flex-col rounded-md border border-border bg-card"
         >
-          <header className="border-b border-border p-[var(--filter-pad)]">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0">
+          <header className={cn('border-b border-border p-[var(--filter-pad)]', fill && WORK_FILL_PANE_HEAD_CLASS)}>
+            <div className={cn('flex flex-wrap items-start justify-between gap-2', fill && WORK_FILL_PANE_HEAD_ROW_CLASS)}>
+              <div className={cn('min-w-0', fill && WORK_FILL_TITLE_ROW_CLASS)}>
                 <SectionHeading id={detailHeadingId} className="text-sm font-semibold text-foreground">
                   {selectedItemLabel ?? detailTitle}
                 </SectionHeading>
                 {detailDescription && (
-                  <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
+                  <p className={cn('mt-1 text-[length:var(--font-size-body)] text-muted-foreground', fill && WORK_FILL_INLINE_DESCRIPTION_CLASS)}>
                     {detailDescription}
                   </p>
                 )}
@@ -421,7 +496,12 @@ export function MasterDetailPage({
             tabIndex={-1}
             data-a2-detail
             data-testid="master-detail-detail"
-            className="min-h-0 flex-1 overflow-auto p-[var(--filter-pad)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
+            className={cn(
+              'relative min-h-0 flex-1 overflow-auto p-[var(--filter-pad)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring',
+              fill && WORK_FILL_PANE_BODY_CLASS,
+              fill && WORK_FILL_PANE_PRINT_CLASS,
+              fill && detailFillChild && WORK_FILL_PANE_CHAIN_CLASS,
+            )}
           >
             {detail ?? (
               <div role="status" className="flex min-h-56 flex-col items-center justify-center p-6 text-center">

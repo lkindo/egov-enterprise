@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 /**
  * 데모 게시판 인스턴스 ID 설정({@code nuri.boards.*}) 바인딩.
  *
- * <p>종전에는 {@code business-core}의 {@code MenuIntegrationService}가 데모 시드
+ * <p>종전에는 {@code business-core}의 {@code MenuIntegrationService}(2026-10-04 퇴역)가 데모 시드
  * ({@code R__seed_demo.sql})의 {@code BBSMSTR_*} 인스턴스 ID를 직접 하드코딩해, 재사용 코어가
  * 특정 제품의 시드 데이터에 결합돼 있었다. 이 클래스는 그 결합을 설정으로 역전한다.
  *
@@ -25,10 +25,10 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "nuri.boards")
 public class BoardIdProperties {
 
-    /** 공지사항 게시판 ID — 레거시 {@code .do} 메뉴 매핑({@code EgovInfoNotice}) 판별에 사용. */
+    /** 공지사항 게시판 ID — 업무 홈 공지 카드와 공지 편집 권한(NOTICE_EDIT) 판별에 사용. */
     private String noticeId = "BBSMSTR_AAAAAAAAAAAA";
 
-    /** 업무 게시판 ID — 레거시 {@code .do} 메뉴 매핑({@code EgovInfoWork}) 판별에 사용. */
+    /** 업무 게시판 ID — 업무 홈 업무 게시판 카드에 사용. */
     private String taskId = "BBSMSTR_CCCCCCCCCCCC";
 
     /** FAQ 통합 게시판 ID — 데모 시드에서는 공지 게시판과 같은 인스턴스로 통합돼 있다. */

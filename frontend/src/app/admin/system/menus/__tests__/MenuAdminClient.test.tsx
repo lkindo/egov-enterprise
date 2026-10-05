@@ -135,6 +135,9 @@ async function renderClient(options: { menus?: ReturnType<typeof menu>[]; versio
 }
 
 const rowButton = (name: string) => screen.getByRole('button', { name: new RegExp(`^${name} ID: `) });
+/** 영역 탭 — 접근 이름이 '{영역} ' 으로 시작한다(뒤에 하위 수·보임 수·일치 수와 변경 수가 붙는다). */
+const areaTab = (name: string) => screen.getByRole('tab', { name: new RegExp(`^${name} `) });
+const undoButton = () => screen.getByRole('button', { name: '직전 변경 되돌리기' });
 const rowOrder = () => screen.getAllByRole('button', { name: /ID: / }).map((button) => button.getAttribute('data-menu-no'));
 const liveText = () => [...document.querySelectorAll('[aria-live="polite"]')].map((element) => element.textContent).join(' ');
 const saveButton = () => screen.getByRole('button', { name: /^변경 저장/ });
@@ -155,8 +158,8 @@ describe('보드 — 영역 탭·카드·줄과 선택', () => {
     await renderClient();
 
     expect(screen.getByRole('heading', { level: 1, name: '시스템 메뉴 관리' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: '업무' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('tab', { name: '관리' })).toHaveAttribute('aria-selected', 'false');
+    expect(areaTab('업무')).toHaveAttribute('aria-selected', 'true');
+    expect(areaTab('관리')).toHaveAttribute('aria-selected', 'false');
     expect(rowOrder()).toEqual(['1', '2', '3', '4', '8']);
     expect(screen.getByRole('region', { name: '결재 섹션' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: '메뉴 관리 화면' })).toBeInTheDocument();
@@ -177,18 +180,18 @@ describe('보드 — 영역 탭·카드·줄과 선택', () => {
     expect(screen.getByRole('textbox', { name: '메뉴 이름' })).toHaveValue('결재함');
     expect(await screen.findByRole('checkbox', { name: /사용자 메뉴 표시/ })).toBeChecked();
 
-    fireEvent.click(screen.getByRole('tab', { name: '관리' }));
+    fireEvent.click(areaTab('관리'));
     expect(rowOrder()).toEqual(['5', '6']);
     expect(screen.getByText('메뉴를 선택하세요')).toBeInTheDocument();
   });
 
   it('영역 탭은 ←/→ 로 옮겨 다닌다', async () => {
     await renderClient();
-    const first = screen.getByRole('tab', { name: '업무' });
+    const first = areaTab('업무');
     first.focus();
     fireEvent.keyDown(first, { key: 'ArrowRight' });
-    expect(screen.getByRole('tab', { name: '관리' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('tab', { name: '관리' })).toHaveFocus();
+    expect(areaTab('관리')).toHaveAttribute('aria-selected', 'true');
+    expect(areaTab('관리')).toHaveFocus();
   });
 });
 
@@ -235,7 +238,7 @@ describe('권한별 표시 — 쓰기 단추는 그 동작의 기능 권한으�
     fireEvent.click(rowButton('결재함'));
     expect(screen.getByRole('button', { name: '영역 추가' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '섹션 추가(업무)' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '화면 추가(결재)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '결재 아래 화면 추가' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '메뉴 삭제' })).toBeEnabled();
   });
 
@@ -261,7 +264,8 @@ describe('끌지 않는 옮기기 — Alt+↑/↓, 다른 곳으로 옮기기, �
     // 맞바꾼 두 메뉴 가운데 어느 쪽에 '순서' 를 붙일지는 계산이 정한다 — 하나만 붙는다.
     expect(screen.getAllByText('순서')).toHaveLength(1);
     expect(screen.getByRole('button', { name: '변경 1건' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: '업무 1건 변경' })).toBeInTheDocument();
+    // [2026-10-05 2차 리뷰] 탭의 접근 이름은 보이는 글자('업무 4')로 시작한다(WCAG 2.5.3).
+    expect(screen.getByRole('tab', { name: '업무 4개 하위 메뉴 1건 변경' })).toBeInTheDocument();
     expect(saveButton()).toBeEnabled();
     await waitFor(() => expect(rowButton('결재함')).toHaveFocus());
 
@@ -276,7 +280,9 @@ describe('끌지 않는 옮기기 — Alt+↑/↓, 다른 곳으로 옮기기, �
 
     fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowUp', altKey: true });
     expect(saveButton()).toBeDisabled();
-    expect(screen.queryByRole('button', { name: /^변경 \d+건$/ })).not.toBeInTheDocument();
+    // [2026-10-05 반박 리뷰 — 통합 단계에서 테스트를 구현에 맞췄다] '변경 n건' 단추는 늘 그려 도구 줄 폭을 고정한다(첫 변경에서
+    //   단추가 새로 생기며 도구 줄이 줄바꿈되어 보드가 밀렸다). 변경이 없으면 '변경 0건' 으로 막힌다.
+    expect(screen.getByRole('button', { name: '변경 0건' })).toBeDisabled();
   });
 
   it('다른 곳으로 옮기기 대화상자는 막힌 자리를 이유와 함께 막고, 고른 영역의 섹션 맨 앞으로 옮긴 뒤 그 영역을 연다', async () => {
@@ -299,7 +305,12 @@ describe('끌지 않는 옮기기 — Alt+↑/↓, 다른 곳으로 옮기기, �
     expect(screen.getByRole('tab', { name: /^관리/ })).toHaveAttribute('aria-selected', 'true');
     expect(rowOrder()).toEqual(['5', '2', '3', '4', '6']);
     expect(liveText()).toContain('결재 메뉴를 관리 맨 앞으로 옮겼습니다.');
-    fireEvent.click(screen.getByRole('button', { name: '변경 1건' }));
+    // 다른 영역으로 옮긴 결재는 어떤 그룹에서 숨는다(저장을 막는 문제). 그 수는 '변경 n건' 단추 모서리 배지로 읽힌다.
+    // [2026-10-05 2차 리뷰] 변경 목록은 저절로 펼치지 않는다(보드를 밀었다) — 결과 안내가 그 사실을 함께 말하고, 단추로 연다.
+    expect(liveText()).toContain("그 결과 메뉴가 숨겨지는 그룹이 1건 생겨 저장할 수 없습니다 — '변경' 목록에서 해결하세요.");
+    const toggle = screen.getByRole('button', { name: '변경 1건 저장 전 해결 1건' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(toggle);
     expect(screen.getByText('결재 — 업무 → 관리')).toBeInTheDocument();
   });
 
@@ -389,32 +400,76 @@ describe('끌어 놓기(다중 컨테이너)', () => {
 });
 
 describe('찾기 — 거르지 않고 강조하며 Enter 로 다음 일치', () => {
-  it('일치는 강조하고 나머지는 흐리게 하며, Enter 는 다른 영역의 일치로 탭을 바꿔 고른다. 찾는 중에도 옮길 수 있다', async () => {
+  it('일치는 강조하고 나머지는 흐리게 하며, Enter 는 일치 메뉴를 고른다. 찾는 중에도 옮길 수 있다', async () => {
     await renderClient();
     const search = screen.getByRole('textbox', { name: '메뉴 검색' });
-    fireEvent.change(search, { target: { value: '시스템' } });
+    fireEvent.change(search, { target: { value: '결재함' } });
 
     expect(screen.getByText('일치 1개')).toBeInTheDocument();
+    // 지금 영역(업무)에 일치가 있으면 탭을 바꾸지 않는다.
+    expect(areaTab('업무')).toHaveAttribute('aria-selected', 'true');
     expect(rowOrder()).toEqual(['1', '2', '3', '4', '8']);
-    expect(document.querySelector('[data-search-match="true"]')).toBeNull();
-    // 흐리게는 점선 테두리와 보조 글자색이다 — 줄 전체 불투명도를 낮춰 글자 대비를 떨어뜨리지 않는다.
-    const dimmed = rowButton('결재함').closest('[data-menu-entry]') as HTMLElement;
+    expect(rowButton('결재함').closest('[data-search-match="true"]')).not.toBeNull();
+    // 흐리게는 점선 외곽선과 보조 글자색이다 — 줄 전체 불투명도를 낮춰 글자 대비를 떨어뜨리지 않는다. [2026-10-05 2차 리뷰]
+    //   테두리를 높이를 더하지 않는 안쪽 외곽선으로 바꿨다(줄 높이 34px → 32px).
+    const dimmed = rowButton('권한별 메뉴').closest('[data-menu-entry]') as HTMLElement;
     expect(dimmed).toHaveAttribute('data-dimmed', 'true');
     expect(dimmed.className).not.toMatch(/opacity-/);
-    expect(dimmed.className).toMatch(/border-dashed/);
+    expect(dimmed.className).toMatch(/outline-dashed/);
     fireEvent.keyDown(search, { key: 'Enter' });
-    expect(screen.getByRole('tab', { name: /^관리/ })).toHaveAttribute('aria-selected', 'true');
-    expect(rowButton('시스템')).toHaveAttribute('aria-current', 'true');
-    expect(rowButton('시스템').closest('[data-search-match="true"]')).not.toBeNull();
-    expect(liveText()).toContain('일치 1개 중 1번째: 시스템');
+    expect(rowButton('결재함')).toHaveAttribute('aria-current', 'true');
+    expect(liveText()).toContain('일치 1개 중 1번째: 결재함');
 
     fireEvent.change(search, { target: { value: '결재' } });
-    fireEvent.click(screen.getByRole('tab', { name: '업무' }));
     fireEvent.click(rowButton('결재함'));
     fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowUp', altKey: true });
     expect(liveText()).toContain('결재함 메뉴는 같은 상위 안에서 더 위로 옮길 수 없습니다.');
     fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
     expect(saveButton()).toBeEnabled();
+  });
+
+  it('입력만으로, 지금 영역에 일치가 없고 다른 영역에 있으면 첫 일치 영역을 연다(시안). 지금 영역에 있으면 그대로 둔다', async () => {
+    await renderClient();
+    const search = screen.getByRole('textbox', { name: '메뉴 검색' });
+    fireEvent.click(rowButton('결재함'));
+
+    fireEvent.change(search, { target: { value: '시스템' } });
+    expect(areaTab('관리')).toHaveAttribute('aria-selected', 'true');
+    expect(rowOrder()).toEqual(['5', '6']);
+    expect(rowButton('시스템').closest('[data-search-match="true"]')).not.toBeNull();
+    expect(liveText()).toContain('찾는 메뉴가 있는 관리 영역을 열었습니다.');
+    // 다른 영역을 열면 그 영역에 없는 선택은 푼다(탭을 누른 것과 같다).
+    expect(screen.getByText('메뉴를 선택하세요')).toBeInTheDocument();
+
+    // '관' 은 지금 영역(관리)에도 있다 — 그대로 둔다.
+    fireEvent.change(search, { target: { value: '관' } });
+    expect(areaTab('관리')).toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.change(search, { target: { value: '결재' } });
+    expect(areaTab('업무')).toHaveAttribute('aria-selected', 'true');
+
+    // 어디에도 없으면 탭을 바꾸지 않는다.
+    fireEvent.change(search, { target: { value: '없는 메뉴' } });
+    expect(areaTab('업무')).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('영역 탭은 하위 메뉴 수를, 찾는 중에는 영역마다 일치 수를, 그룹 미리보기 중에는 보이는 수/하위 수를 보인다', async () => {
+    await renderClient();
+    // [2026-10-05 2차 리뷰] 이름은 보이는 글자로 시작하고 설명이 뒤에 붙는다(WCAG 2.5.3 — 종전 '업무 하위 메뉴 4개').
+    expect(screen.getByRole('tab', { name: '업무 4개 하위 메뉴' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '관리 1개 하위 메뉴' })).toBeInTheDocument();
+
+    const select = await screen.findByRole('combobox', { name: '그룹 미리보기' });
+    await waitFor(() => expect(select).toBeEnabled());
+    fireEvent.change(select, { target: { value: 'ROLE_USER' } });
+    // 사용자 그룹: 업무 아래 결재·결재함만 보인다(권한별 메뉴·메뉴 관리는 메뉴 표시 없음). 관리는 영역부터 숨는다.
+    expect(screen.getByRole('tab', { name: '업무 2/4(보이는 메뉴 2개, 하위 메뉴 4개)' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '관리 0/1(보이는 메뉴 0개, 하위 메뉴 1개)' })).toBeInTheDocument();
+    expect(areaTab('업무').querySelector('[data-area-count]')?.textContent).toContain('2/4');
+
+    fireEvent.change(screen.getByRole('textbox', { name: '메뉴 검색' }), { target: { value: '결재' } });
+    expect(screen.getByRole('tab', { name: '업무 2개 찾기 일치' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '관리 0개 찾기 일치' })).toBeInTheDocument();
   });
 });
 
@@ -447,10 +502,19 @@ describe('상세 편집 — 초안에 바로 반영하고 검증한다', () => {
     fireEvent.click(rowButton('결재'));
     expect(screen.getByText('연결 경로가 없습니다 — 하위 메뉴를 묶는 분류 메뉴입니다.')).toBeInTheDocument();
     const detail = within(screen.getByTestId('master-detail-detail'));
+    // [2026-10-05] 화면 목록은 평소 접혀 있다 — '연결 화면 바꾸기' 를 눌러야 검색 칸과 목록이 펼쳐진다.
+    expect(detail.queryByRole('textbox', { name: '연결할 화면 검색' })).not.toBeInTheDocument();
+    const change = detail.getByRole('button', { name: '연결 화면 바꾸기' });
+    expect(change).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(change);
+    expect(change).toHaveAttribute('aria-expanded', 'true');
     fireEvent.change(detail.getByRole('textbox', { name: '연결할 화면 검색' }), { target: { value: '/admin/system/menus/by-authority' } });
     fireEvent.click(detail.getByRole('button', { name: /\/admin\/system\/menus\/by-authority$/ }));
     expect(screen.getByText('/admin/system/menus/by-authority', { selector: 'p' })).toBeInTheDocument();
     expect(screen.getByText(/진입 권한:/)).toBeInTheDocument();
+    // 고르면 목록을 접고 포커스를 '바꾸기' 로 돌린다(누른 항목이 사라져 포커스가 문서 밖으로 빠지지 않게).
+    expect(detail.queryByRole('textbox', { name: '연결할 화면 검색' })).not.toBeInTheDocument();
+    await waitFor(() => expect(detail.getByRole('button', { name: '연결 화면 바꾸기' })).toHaveFocus());
 
     fireEvent.click(screen.getByRole('button', { name: '경로 직접 입력' }));
     const route = screen.getByRole('textbox', { name: '연결 경로' });
@@ -480,7 +544,7 @@ describe('상세 편집 — 초안에 바로 반영하고 검증한다', () => {
 describe('새 메뉴 — 그 자리 맨 끝에 초안으로 만들고 이름 칸으로 간다', () => {
   it('화면 추가는 섹션 맨 끝에 저장 전 메뉴를 만들고, 그룹에 보이지 않는다는 사실을 말하며, 지울 수 있다', async () => {
     await renderClient();
-    fireEvent.click(screen.getByRole('button', { name: '화면 추가(결재)' }));
+    fireEvent.click(screen.getByRole('button', { name: '결재 아래 화면 추가' }));
 
     expect(rowOrder()).toEqual(['1', '2', '3', '4', '-1', '8']);
     const created = screen.getByRole('button', { name: /^이름 없는 새 메뉴 ID: 저장 전/ });
@@ -504,7 +568,7 @@ describe('새 메뉴 — 그 자리 맨 끝에 초안으로 만들고 이름 칸
     fireEvent.click(dialog.getByRole('button', { name: '관리 › 시스템' }));
     fireEvent.click(dialog.getByRole('button', { name: '선택한 위치에 새 메뉴 만들기' }));
 
-    expect(screen.getByRole('tab', { name: /^관리/ })).toHaveAttribute('aria-selected', 'true');
+    expect(areaTab('관리')).toHaveAttribute('aria-selected', 'true');
     expect(rowButton('그룹별 메뉴 현황')).toHaveAttribute('aria-current', 'true');
     expect(screen.getByRole('textbox', { name: '메뉴 이름' })).toHaveValue('그룹별 메뉴 현황');
     await waitFor(() => expect(window.sessionStorage.length).toBe(0));
@@ -552,6 +616,10 @@ describe('보이는 그룹 — 메뉴 표시와 진입 권한(초안)', () => {
     fireEvent.click(dialog.getByRole('button', { name: '관리 › 시스템' }));
     fireEvent.click(dialog.getByRole('button', { name: '선택한 위치로 메뉴 옮기기' }));
 
+    // [2026-10-05 2차 리뷰] 목록은 저절로 펼치지 않는다 — 결과 안내와 단추 배지가 알리고, 단추로 연다.
+    expect(liveText()).toContain('그 결과 메뉴가 숨겨지는 그룹이 1건 생겨 저장할 수 없습니다');
+    expect(screen.queryByRole('group', { name: '저장 전에 해결할 문제' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '변경 1건 저장 전 해결 1건' }));
     const problems = within(screen.getByRole('group', { name: '저장 전에 해결할 문제' }));
     expect(problems.getByText("'결재함'을(를) 옮기면 사용자 그룹에서 상위 메뉴 '시스템'가 표시되지 않아 숨겨집니다.")).toBeInTheDocument();
     expect(saveButton()).toBeDisabled();
@@ -570,7 +638,7 @@ describe('보이는 그룹 — 메뉴 표시와 진입 권한(초안)', () => {
   it('새 메뉴의 표시를 켠 뒤 그 그룹이 보지 않는 곳으로 옮기면, 상위도 표시해야 한다고 경고하고 저장을 막는다', async () => {
     await renderClient();
     await waitFor(() => expect(screen.getByRole('combobox', { name: '그룹 미리보기' })).toBeEnabled());
-    fireEvent.click(screen.getByRole('button', { name: '화면 추가(결재)' }));
+    fireEvent.click(screen.getByRole('button', { name: '결재 아래 화면 추가' }));
     fireEvent.change(screen.getByRole('textbox', { name: '메뉴 이름' }), { target: { value: '새 화면' } });
     fireEvent.click(await screen.findByRole('checkbox', { name: /사용자 메뉴 표시/ }));
     fireEvent.click(screen.getByRole('button', { name: '다른 곳으로 옮기기…' }));
@@ -579,6 +647,8 @@ describe('보이는 그룹 — 메뉴 표시와 진입 권한(초안)', () => {
     fireEvent.click(dialog.getByRole('button', { name: '선택한 위치로 메뉴 옮기기' }));
 
     // 새 메뉴는 '옮긴 기존 메뉴' 검사에 들지 않는다 — 그래도 서버가 상위 선택 누락으로 거부하므로 저장 전에 막는다.
+    expect(liveText()).toContain('그 결과 메뉴가 숨겨지는 그룹이 1건 생겨 저장할 수 없습니다');
+    fireEvent.click(screen.getByRole('button', { name: /^변경 \d+건 저장 전 해결 1건$/ }));
     const problems = within(screen.getByRole('group', { name: '저장 전에 해결할 문제' }));
     expect(problems.getByText("'새 화면'을(를) 사용자 그룹에 표시하려면 지금 상위 메뉴 '시스템'도 그 그룹에 표시해야 합니다.")).toBeInTheDocument();
     expect(saveButton()).toBeDisabled();
@@ -642,7 +712,9 @@ describe('보이는 그룹 — 메뉴 표시와 진입 권한(초안)', () => {
     expect(within(rowButton('메뉴 관리')).getByText('메뉴 표시 없음')).toBeInTheDocument();
     expect(within(rowButton('권한별 메뉴')).getByText('메뉴 표시 없음')).toBeInTheDocument();
     expect(within(rowButton('결재함')).queryByText('메뉴 표시 없음')).not.toBeInTheDocument();
-    expect(screen.getByText(/사용자 그룹 미리보기 — 보이는 메뉴 3개, 숨는 메뉴 4개/)).toBeInTheDocument();
+    // 요약은 탭 줄 아래 상태 줄에 둔다(종전에는 보드 위 두 줄 문장이 보드를 밀었다).
+    expect(screen.getByText(/사용자 그룹 미리보기 — 저장 전 초안 기준 보이는 메뉴 3개, 숨는 메뉴 4개/)).toBeInTheDocument();
+    expect(screen.getByText('사용자 · 보임 3 · 숨김 4')).toBeInTheDocument();
   });
 });
 
@@ -702,15 +774,35 @@ describe('저장 — 한 번에, 버전 확인, 중복 실행 차단', () => {
     await waitFor(() => expect(mocks.matrix).toHaveBeenCalledTimes(1));
     fireEvent.click(rowButton('결재함'));
     fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    expect(undoButton()).not.toHaveAttribute('aria-disabled');
     fireEvent.click(saveButton());
 
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('메뉴 구조를 저장했습니다.', 'success'));
     expect(saveButton()).toBeDisabled();
-    expect(screen.queryByRole('button', { name: /^변경 \d+건$/ })).not.toBeInTheDocument();
+    // 저장하면 되돌리기 이력도 비운다 — 쌓인 초안은 옛 기준선의 것이다. 되돌리기는 disabled 가 아니라 aria-disabled 다(포커스를
+    // 잃지 않는다 — 반박 리뷰). '변경 n건' 은 늘 그리며 변경이 없으면 막힌다.
+    expect(undoButton()).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: '변경 0건' })).toBeDisabled();
     expect(rowOrder()).toEqual(['1', '2', '4', '3', '8']);
     expect(rowButton('결재함')).toHaveAttribute('aria-current', 'true');
     expect(mocks.refresh).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(mocks.matrix).toHaveBeenCalledTimes(2));
+  });
+
+  it('저장 확인 대화상자는 요약 문장과 함께 저장할 변경 목록을 보인다', async () => {
+    mocks.confirm.mockResolvedValueOnce(false);
+    await renderClient();
+    fireEvent.click(rowButton('결재함'));
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    fireEvent.change(screen.getByRole('textbox', { name: '메뉴 이름' }), { target: { value: '내 결재함' } });
+    fireEvent.click(saveButton());
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+
+    const options = mocks.confirm.mock.calls[0][0] as { detailsLabel?: string; details?: React.ReactNode };
+    expect(options.detailsLabel).toBe('저장할 변경 목록');
+    const details = render(<>{options.details}</>);
+    const items = within(details.container).getAllByRole('listitem').map((item) => item.textContent);
+    expect(items).toEqual(['권한별 메뉴 — 순서 변경(업무 › 결재)', '내 결재함 — 이름 수정']);
   });
 
   it('확인을 취소하면 저장하지 않는다', async () => {
@@ -773,12 +865,12 @@ describe('저장 — 한 번에, 버전 확인, 중복 실행 차단', () => {
 describe('포커스 — 누른 단추가 사라져도 문서 밖으로 빠지지 않는다', () => {
   it('새 메뉴의 이름 칸 포커스는 한 번만이다 — 상세가 닫혔다 같은 메뉴로 다시 열려도 이름 칸으로 끌려가지 않는다', async () => {
     await renderClient();
-    fireEvent.click(screen.getByRole('button', { name: '화면 추가(결재)' }));
+    fireEvent.click(screen.getByRole('button', { name: '결재 아래 화면 추가' }));
     await waitFor(() => expect(screen.getByRole('textbox', { name: '메뉴 이름' })).toHaveFocus());
 
-    fireEvent.click(screen.getByRole('tab', { name: /^관리/ }));
+    fireEvent.click(areaTab('관리'));
     expect(screen.getByText('메뉴를 선택하세요')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: /^업무/ }));
+    fireEvent.click(areaTab('업무'));
     const created = screen.getByRole('button', { name: /^이름 없는 새 메뉴 ID: 저장 전/ });
     created.focus();
     fireEvent.click(created);
@@ -788,7 +880,7 @@ describe('포커스 — 누른 단추가 사라져도 문서 밖으로 빠지지
 
   it('새 메뉴를 지우면 바로 앞 메뉴를 고르고 그 보드 항목으로 포커스를 옮기며, 그 뒤 상세가 다시 열려도 이름 칸으로 끌려가지 않는다', async () => {
     await renderClient();
-    fireEvent.click(screen.getByRole('button', { name: '화면 추가(결재)' }));
+    fireEvent.click(screen.getByRole('button', { name: '결재 아래 화면 추가' }));
     await waitFor(() => expect(screen.getByRole('textbox', { name: '메뉴 이름' })).toHaveFocus());
     fireEvent.click(screen.getByRole('button', { name: '새 메뉴 지우기' }));
 
@@ -797,9 +889,9 @@ describe('포커스 — 누른 단추가 사라져도 문서 밖으로 빠지지
     await waitFor(() => expect(rowButton('권한별 메뉴')).toHaveFocus());
 
     // 다른 영역 탭에 다녀와 상세를 닫았다 다시 연다 — 지난 포커스 요청을 다시 쓰지 않는다.
-    fireEvent.click(screen.getByRole('tab', { name: '관리' }));
+    fireEvent.click(areaTab('관리'));
     expect(screen.getByText('메뉴를 선택하세요')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: '업무' }));
+    fireEvent.click(areaTab('업무'));
     rowButton('결재함').focus();
     fireEvent.click(rowButton('결재함'));
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
@@ -861,6 +953,8 @@ describe('포커스 — 누른 단추가 사라져도 문서 밖으로 빠지지
     fireEvent.click(screen.getByRole('button', { name: '화면 목록에서 고르기' }));
     expect(screen.queryByRole('textbox', { name: '연결 경로' })).not.toBeInTheDocument();
 
+    // 입력 오류는 변경 목록 안에 있다(목록은 저절로 펼치지 않는다 — '변경 n건' 단추로 연다).
+    fireEvent.click(screen.getByRole('button', { name: '변경 1건 저장 전 해결 1건' }));
     fireEvent.click(screen.getByRole('button', { name: '결재 고치기' }));
     await waitFor(() => expect(screen.getByRole('textbox', { name: '연결 경로' })).toHaveFocus());
   });
@@ -937,7 +1031,7 @@ describe('그룹 권한을 모를 때와 배너 문장', () => {
 
   it('원래 상위가 삭제 예정인 위치 변경은 되돌리기를 막고 이유를 말한다', async () => {
     await renderClient();
-    fireEvent.click(screen.getByRole('tab', { name: '관리' }));
+    fireEvent.click(areaTab('관리'));
     fireEvent.click(rowButton('시스템'));
     fireEvent.click(screen.getByRole('button', { name: '다른 곳으로 옮기기…' }));
     const dialog = within(await screen.findByRole('dialog', { name: '다른 곳으로 옮기기' }));
@@ -951,6 +1045,340 @@ describe('그룹 권한을 모를 때와 배너 문장', () => {
     const revert = screen.getByRole('button', { name: '시스템 위치 변경 되돌리기' });
     expect(revert).toBeDisabled();
     expect(revert).toHaveAccessibleDescription("원래 상위 메뉴 '관리'이(가) 삭제 예정이라 되돌릴 수 없습니다. 그 메뉴의 삭제를 먼저 취소하세요.");
+  });
+});
+
+describe('시안 밀도 — 한 줄 줄·카드 순번·변경 목록 여닫기·되돌리기·그룹별 결과', () => {
+  it('줄은 한 줄이다 — ID 는 접근 이름에만, 번호·연결 경로는 title 에 두고 보드에 경로 글자를 그리지 않는다', async () => {
+    await renderClient();
+    const row = rowButton('결재함');
+    expect(row).toHaveAccessibleName('결재함 ID: 3');
+    expect(row).toHaveAttribute('title', 'ID: 3 · /approvals');
+    // 'ID: 3' 은 sr-only 안에만 있다 — 보이는 글자로 그리지 않는다.
+    expect(within(row).getByText('ID: 3')).toHaveClass('sr-only');
+    const master = within(screen.getByTestId('master-detail-master'));
+    expect(master.queryByText('/approvals')).not.toBeInTheDocument();
+    // 고른 줄의 상세는 번호와 연결 경로를 늘 보인다(헌법 제16조 2항 — hover 에만 두지 않는다).
+    fireEvent.click(row);
+    expect(screen.getByText('메뉴 ID 3')).toBeInTheDocument();
+    expect(within(screen.getByTestId('master-detail-detail')).getByText('/approvals', { selector: 'p' })).toBeInTheDocument();
+  });
+
+  it('카드 머리는 순번과 하위 수를 보이고, 화면 추가는 카드 머리의 + 단추다. 하위 없는 화면 카드는 한 줄 카드다', async () => {
+    await renderClient();
+    const section = screen.getByRole('region', { name: '결재 섹션' });
+    expect(within(section).getByText('1', { selector: '[data-seq]' })).toBeInTheDocument();
+    expect(section.querySelector('[data-child-count]')).toHaveTextContent('하위 2개');
+    const add = within(section).getByRole('button', { name: '결재 아래 화면 추가' });
+    expect(add.closest('[data-menu-entry="card"]')).not.toBeNull();
+    const screenCard = screen.getByRole('region', { name: '메뉴 관리 화면' });
+    expect(within(screenCard).getByText('2', { selector: '[data-seq]' })).toBeInTheDocument();
+    expect(screenCard.querySelector('ul')).toBeNull();
+    expect(screenCard.querySelector('[data-child-count]')).toBeNull();
+    // [2026-10-05 2차 리뷰] 섹션 추가·영역 추가는 영역 머리 줄 오른쪽에 있다 — 탭 줄에 두면 좁은 창에서 탭 줄이 두세 줄로 접혀
+    //   보드를 밀었다(Chromium 실측 1366 폭 77px·1280 폭 113px). 탭 줄에는 영역 탭만 있다.
+    const tablistRow = screen.getByRole('tablist', { name: '메뉴 영역' }).parentElement as HTMLElement;
+    expect(within(tablistRow).queryAllByRole('button')).toHaveLength(0);
+    const areaHead = screen.getByRole('button', { name: /^업무 ID: 1$/ }).closest('[data-menu-entry="area"]') as HTMLElement;
+    expect(within(areaHead).getByRole('button', { name: '섹션 추가(업무)' })).toBeInTheDocument();
+    expect(within(areaHead).getByRole('button', { name: '영역 추가' })).toBeInTheDocument();
+  });
+
+  it('변경 목록은 저절로 펼치지 않는다 — 첫 변경도, 저장을 막는 문제가 생겨도 단추 배지와 변경 저장의 설명이 알리고 단추로 연다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('결재함'));
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+
+    const toggle = screen.getByRole('button', { name: '변경 1건' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('region', { name: '저장하지 않은 변경' })).not.toBeInTheDocument();
+    // 닫혀 있어도 저장 상태 문장은 '변경 저장' 의 설명으로 남는다.
+    expect(saveButton()).toHaveAccessibleDescription(/저장하지 않은 변경이 있습니다/);
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('region', { name: '저장하지 않은 변경' })).toBeInTheDocument();
+    fireEvent.click(toggle);
+    expect(screen.queryByRole('region', { name: '저장하지 않은 변경' })).not.toBeInTheDocument();
+
+    // [2026-10-05 2차 리뷰] 저장을 막는 문제(이름 비움)가 생겨도 목록은 닫힌 채다 — 저절로 펼친 목록이 보드 위에서 보드를 밀어
+    //   방금 다룬 줄이 시야 밖으로 나갔다(Chromium 실측 1920×950 보이는 항목 12→0). 문제의 수는 단추 모서리 배지로 읽히고,
+    //   '변경 저장' 의 설명이 무엇이 저장을 막는지 말한다.
+    fireEvent.change(screen.getByRole('textbox', { name: '메뉴 이름' }), { target: { value: ' ' } });
+    const blockedToggle = screen.getByRole('button', { name: '변경 2건 저장 전 해결 1건' });
+    expect(blockedToggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('region', { name: '저장하지 않은 변경' })).not.toBeInTheDocument();
+    expect(within(blockedToggle).getByText('저장 전 해결 1건')).toHaveClass('sr-only');
+    expect(saveButton()).toHaveAccessibleDescription(/입력 오류 1건을 고쳐야 저장할 수 있습니다/);
+    fireEvent.click(blockedToggle);
+    expect(within(screen.getByRole('list', { name: '입력 오류' })).getByText(/메뉴 이름을 입력하세요/)).toBeInTheDocument();
+    // 사용자가 연 목록은 문제가 풀려도 닫히지 않는다(사용자가 닫는다).
+    fireEvent.change(screen.getByRole('textbox', { name: '메뉴 이름' }), { target: { value: '결재함' } });
+    expect(screen.getByRole('button', { name: '변경 1건' })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('region', { name: '저장하지 않은 변경' })).toBeInTheDocument();
+  });
+
+  it('저장을 막는 문제의 배지는 단추 폭에 들지 않는다 — 단추 모서리에 겹쳐 그려 도구 줄이 접히지 않는다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('결재함'));
+    fireEvent.change(screen.getByRole('textbox', { name: '메뉴 이름' }), { target: { value: ' ' } });
+    const toggle = screen.getByRole('button', { name: '변경 1건 저장 전 해결 1건' });
+    const badge = toggle.querySelector('[data-blocking-badge]') as HTMLElement;
+    // jsdom 은 배치를 재지 않는다 — 폭에 들지 않게 하는 클래스 성질(겹쳐 그리기)을 고정한다. 단추는 그 기준(relative)이다.
+    expect(badge).toHaveClass('absolute');
+    expect(toggle).toHaveClass('relative', 'min-w-[7rem]');
+  });
+
+  it('되돌리기 단추와 Ctrl+Z 는 직전 변경을 한 단계씩 되돌리고, 이어서 입력한 이름은 한 단계다. 입력 칸의 Ctrl+Z 는 가로채지 않는다', async () => {
+    await renderClient();
+    expect(undoButton()).toHaveAttribute('aria-disabled', 'true');
+    expect(undoButton()).toHaveAttribute('aria-keyshortcuts', 'Control+Z');
+    fireEvent.click(rowButton('결재함'));
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    expect(rowOrder()).toEqual(['1', '2', '4', '3', '8']);
+
+    const name = screen.getByRole('textbox', { name: '메뉴 이름' });
+    fireEvent.change(name, { target: { value: '내' } });
+    fireEvent.change(name, { target: { value: '내 결재' } });
+    fireEvent.change(name, { target: { value: '내 결재함' } });
+    // 이름 칸에서는 브라우저의 입력 되돌리기에 맡긴다(기본 동작을 막지 않고 초안도 그대로다).
+    expect(fireEvent.keyDown(name, { key: 'z', ctrlKey: true })).toBe(true);
+    expect(name).toHaveValue('내 결재함');
+
+    fireEvent.click(undoButton());
+    expect(screen.getByRole('textbox', { name: '메뉴 이름' })).toHaveValue('결재함');
+    expect(liveText()).toContain('직전 변경(결재함 이름 수정)을 되돌렸습니다.');
+    expect(rowOrder()).toEqual(['1', '2', '4', '3', '8']);
+
+    expect(fireEvent.keyDown(rowButton('결재함'), { key: 'z', ctrlKey: true })).toBe(false);
+    expect(rowOrder()).toEqual(['1', '2', '3', '4', '8']);
+    expect(liveText()).toContain('직전 변경(결재함 한 칸 아래로)을 되돌렸습니다.');
+    expect(saveButton()).toBeDisabled();
+    // 마지막 단계를 되돌리면 막히지만 disabled 가 아니라 aria-disabled 라 단추에 둔 포커스가 문서 밖으로 빠지지 않는다(WCAG
+    // 2.4.3, 반박 리뷰). 막힌 채 누르면 되돌릴 것이 없다고 말한다.
+    expect(undoButton()).toHaveAttribute('aria-disabled', 'true');
+    expect(undoButton()).not.toBeDisabled();
+    undoButton().focus();
+    fireEvent.click(undoButton());
+    expect(undoButton()).toHaveFocus();
+    expect(liveText()).toContain('되돌릴 변경이 없습니다.');
+  });
+
+  it('옮기기를 되돌리면 고른 메뉴의 원래 영역을 연다. 모두 되돌리기도 되돌리기로 다시 살릴 수 있다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('결재'));
+    fireEvent.click(screen.getByRole('button', { name: '다른 곳으로 옮기기…' }));
+    const dialog = within(await screen.findByRole('dialog', { name: '다른 곳으로 옮기기' }));
+    fireEvent.click(dialog.getByRole('button', { name: '관리' }));
+    fireEvent.click(dialog.getByRole('button', { name: '선택한 위치로 메뉴 옮기기' }));
+    expect(areaTab('관리')).toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.click(undoButton());
+    expect(areaTab('업무')).toHaveAttribute('aria-selected', 'true');
+    expect(rowButton('결재')).toHaveAttribute('aria-current', 'true');
+    expect(rowOrder()).toEqual(['1', '2', '3', '4', '8']);
+
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    fireEvent.click(screen.getByRole('button', { name: '변경 1건' }));
+    fireEvent.click(screen.getByRole('button', { name: '모두 되돌리기' }));
+    await waitFor(() => expect(saveButton()).toBeDisabled());
+    fireEvent.click(undoButton());
+    expect(saveButton()).toBeEnabled();
+    expect(rowOrder()).toEqual(['1', '2', '4', '3', '8']);
+  });
+
+  it('상세는 위치 → 이 메뉴가 보이는 그룹 → 속성 → 삭제 순서이고, 그룹마다 저장 전 초안 기준 실제 결과(보임·숨는 이유)를 보인다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('메뉴 관리'));
+    const detail = within(screen.getByTestId('master-detail-detail'));
+    expect(detail.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent))
+      .toEqual(['위치', '이 메뉴가 보이는 그룹', '메뉴 속성', '삭제']);
+
+    const userRow = (await screen.findByRole('checkbox', { name: /사용자 메뉴 표시/ })).closest('li') as HTMLElement;
+    const adminRow = screen.getByRole('checkbox', { name: /관리자 메뉴 표시/ }).closest('li') as HTMLElement;
+    expect(within(adminRow).getByText('보임')).toBeInTheDocument();
+    expect(within(userRow).getByText('메뉴 표시 없음')).toBeInTheDocument();
+    expect(userRow.querySelector('[data-group-verdict]')).toHaveTextContent('사용자 그룹 사이드바에서 메뉴 표시 없음');
+
+    // 메뉴 표시를 켜도 진입 권한이 없으면 숨는다 — 체크 상태와 실제 결과를 따로 말한다.
+    fireEvent.click(within(userRow).getByRole('checkbox'));
+    expect(within(userRow).getByText('진입 권한 없음')).toBeInTheDocument();
+    fireEvent.click(within(userRow).getByRole('button', { name: '사용자 진입 권한 추가' }));
+    expect(within(userRow).getByText('보임')).toBeInTheDocument();
+  });
+});
+
+describe('2차 리뷰 — 변이가 살아남던 동작을 고정한다', () => {
+  it('끄는 동안에는 되돌리기 단추·Ctrl+Z 가 초안을 바꾸지 않고 이유를 말한다 — 끌기를 마치면 다시 되돌린다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('결재함'));
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    expect(rowOrder()).toEqual(['1', '2', '4', '3', '8']);
+
+    // 끄는 메뉴를 만든 단계를 되돌리면 끄는 메뉴가 사라지거나 놓을 자리 판정이 어긋난다(초안 무결성).
+    dnd.event = { active: { id: 'menu:4' }, over: null };
+    fireEvent.click(screen.getByRole('button', { name: '테스트 끌기 시작' }));
+    fireEvent.click(undoButton());
+    expect(rowOrder()).toEqual(['1', '2', '4', '3', '8']);
+    expect(liveText()).toContain('끌기를 마치거나 취소한 뒤 되돌리세요.');
+    // Ctrl+Z 는 가로채지 않는다(기본 동작을 막지 않고 초안도 그대로다).
+    expect(fireEvent.keyDown(rowButton('결재함'), { key: 'z', ctrlKey: true })).toBe(true);
+    expect(rowOrder()).toEqual(['1', '2', '4', '3', '8']);
+
+    fireEvent.click(screen.getByRole('button', { name: '테스트 끌기 취소' }));
+    fireEvent.click(undoButton());
+    expect(rowOrder()).toEqual(['1', '2', '3', '4', '8']);
+  });
+
+  it('한글 조합 중에는 영역을 저절로 바꾸지 않고 Enter 도 고르지 않는다 — 조합이 끝나면 한 번 연다', async () => {
+    await renderClient();
+    const search = screen.getByRole('textbox', { name: '메뉴 검색' });
+    fireEvent.compositionStart(search);
+    fireEvent.change(search, { target: { value: '시스' } });
+    fireEvent.change(search, { target: { value: '시스템' } });
+    expect(areaTab('업무')).toHaveAttribute('aria-selected', 'true');
+    fireEvent.keyDown(search, { key: 'Enter' });
+    expect(document.querySelector('[data-a2-master-item][aria-current="true"]')).toBeNull();
+
+    fireEvent.compositionEnd(search);
+    expect(areaTab('관리')).toHaveAttribute('aria-selected', 'true');
+    expect(liveText()).toContain('찾는 메뉴가 있는 관리 영역을 열었습니다.');
+  });
+
+  it('화면 목록에서 고르기는 누를 때마다 한 단계다 — A 를 고른 뒤 B 를 고르고 되돌리면 A 다', async () => {
+    await renderClient();
+    fireEvent.click(rowButton('결재'));
+    const detail = within(screen.getByTestId('master-detail-detail'));
+    const pick = (route: RegExp) => {
+      fireEvent.click(detail.getByRole('button', { name: '연결 화면 바꾸기' }));
+      fireEvent.change(detail.getByRole('textbox', { name: '연결할 화면 검색' }), { target: { value: '/admin/system/menus' } });
+      fireEvent.click(detail.getByRole('button', { name: route }));
+    };
+    pick(/\/admin\/system\/menus\/by-authority$/);
+    pick(/\/admin\/system\/menus$/);
+    expect(detail.getByText('/admin/system/menus', { selector: 'p' })).toBeInTheDocument();
+
+    fireEvent.click(undoButton());
+    expect(detail.getByText('/admin/system/menus/by-authority', { selector: 'p' })).toBeInTheDocument();
+    fireEvent.click(undoButton());
+    expect(detail.getByText('연결 없음', { selector: 'p' })).toBeInTheDocument();
+  });
+
+  it('다른 메뉴를 골랐다 돌아와 같은 칸을 다시 치면 따로 되돌린다 — 이어 입력 묶음은 메뉴를 바꾸면 끝난다', async () => {
+    await renderClient();
+    const name = () => screen.getByRole('textbox', { name: '메뉴 이름' });
+    fireEvent.click(rowButton('결재함'));
+    fireEvent.change(name(), { target: { value: '결재함 1' } });
+    fireEvent.click(rowButton('권한별 메뉴'));
+    fireEvent.click(rowButton('결재함 1'));
+    fireEvent.change(name(), { target: { value: '결재함 12' } });
+
+    fireEvent.click(undoButton());
+    expect(name()).toHaveValue('결재함 1');
+    fireEvent.click(undoButton());
+    expect(name()).toHaveValue('결재함');
+  });
+
+  it('다시 불러오면 되돌리기 이력을 비운다 — 쌓인 초안은 옛 기준선의 것이다', async () => {
+    mocks.save.mockRejectedValueOnce({ response: { status: 409, data: { message: '다른 곳에서 바뀌었습니다.' } } });
+    await renderClient();
+    fireEvent.click(rowButton('결재함'));
+    fireEvent.keyDown(rowButton('결재함'), { key: 'ArrowDown', altKey: true });
+    expect(undoButton()).not.toHaveAttribute('aria-disabled');
+    fireEvent.click(saveButton());
+    const reload = await screen.findByRole('button', { name: '다시 불러오기' });
+    fireEvent.click(reload);
+    await waitFor(() => expect(mocks.reload).toHaveBeenCalled());
+    await waitFor(() => expect(undoButton()).toHaveAttribute('aria-disabled', 'true'));
+    fireEvent.click(undoButton());
+    expect(liveText()).toContain('되돌릴 변경이 없습니다.');
+    expect(rowOrder()).toEqual(['1', '2', '3', '4', '8']);
+  });
+
+  it('끌기 손잡이는 탭 순서에 하나만 든다 — 고른 줄의 손잡이(영역 머리에는 손잡이가 없다)', async () => {
+    await renderClient();
+    const tabbable = () => screen.getAllByRole('button', { name: /끌어서 옮기기$/ })
+      .filter((handle) => handle.tabIndex === 0)
+      .map((handle) => handle.getAttribute('aria-label'));
+    expect(tabbable()).toEqual([]);
+    fireEvent.click(rowButton('결재함'));
+    expect(tabbable()).toEqual(['결재함 끌어서 옮기기']);
+    fireEvent.click(rowButton('메뉴 관리'));
+    expect(tabbable()).toEqual(['메뉴 관리 끌어서 옮기기']);
+  });
+
+  it('줄의 설명은 연결 경로다 — title 이 설명이 되어 이름의 ID 를 두 번 읽지 않는다', async () => {
+    await renderClient();
+    expect(rowButton('결재함')).toHaveAccessibleDescription('연결 경로 /approvals');
+    expect(rowButton('결재')).toHaveAccessibleDescription('연결 경로 없음');
+  });
+
+  it('빈 섹션은 안내 줄 전체가 섹션 끝 놓을 곳이고, 놓을 곳은 끄는 동안에도 높이를 바꾸지 않는다', async () => {
+    await renderClient();
+    fireEvent.click(areaTab('관리'));
+    const zone = screen.getByText('하위 메뉴가 없습니다.');
+    expect(zone).toHaveAttribute('data-drop-zone', 'section-end:6');
+    const sizeTokens = (element: Element) => element.className.split(/\s+/)
+      .filter((token) => /^-?(?:h|min-h|max-h|size|p[xytblr]?|m[xytblr]?|leading|text-(?:xs|sm|base|lg))(?:-|$)/.test(token.split(':').pop() ?? ''));
+    const before = sizeTokens(zone);
+    const areaEndBefore = sizeTokens(document.querySelector('[data-drop-zone="area-end:5"]') as HTMLElement);
+
+    dnd.event = { active: { id: 'menu:6' }, over: null };
+    fireEvent.click(screen.getByRole('button', { name: '테스트 끌기 시작' }));
+    const during = screen.getByText('하위 메뉴가 없습니다.');
+    // 끄는 동안에는 외곽선·배경만 바뀐다.
+    expect(during.className).toMatch(/border-border/);
+    expect(sizeTokens(during)).toEqual(before);
+    expect(sizeTokens(document.querySelector('[data-drop-zone="area-end:5"]') as HTMLElement)).toEqual(areaEndBefore);
+  });
+});
+
+describe('보드 배치 계약 — jsdom 은 배치를 재지 않는다, Chromium 실측이 의존하는 클래스 성질을 고정한다', () => {
+  it('보드만 스크롤한다 — 탭 줄(탭만)·보드 스크롤 상자·상태 줄(맨 아래) 순서이고, 마스터 칸에서 보드까지 높이 사슬이 이어진다', async () => {
+    await renderClient();
+    const master = screen.getByTestId('master-detail-master');
+    const board = master.querySelector('[data-menu-board]') as HTMLElement;
+    const scroll = screen.getByRole('tabpanel');
+    const status = master.querySelector('[data-menu-status]') as HTMLElement;
+    const tabRow = screen.getByRole('tablist', { name: '메뉴 영역' }).parentElement as HTMLElement;
+
+    // 사슬: 칸(세로 flex) → 마스터 묶음(중간 고리) → 보드(중간 고리) → 보드 스크롤 상자(남은 높이·스스로 스크롤).
+    const chain = ['work-fill:flex', 'work-fill:min-h-0', 'work-fill:flex-1', 'work-fill:flex-col'];
+    expect(master).toHaveClass('work-fill:flex', 'work-fill:flex-col');
+    expect(master.firstElementChild).toHaveClass(...chain);
+    expect(board).toHaveClass(...chain);
+    expect(scroll).toHaveAttribute('data-menu-board-scroll');
+    expect(scroll).toHaveClass('relative', 'work-fill:min-h-0', 'work-fill:flex-1', 'work-fill:overflow-y-auto');
+    // 탭 줄과 상태 줄은 보드 스크롤 밖이다 — 상태 줄은 보드 뒤(아래)에 있어 길어져도 보드의 위쪽을 밀지 않는다.
+    expect(Array.from(board.children)).toEqual([tabRow, scroll, status]);
+    expect(scroll.contains(status)).toBe(false);
+    expect(within(tabRow).queryAllByRole('button')).toHaveLength(0);
+    // 상태 줄은 두 줄 높이를 미리 잡지 않는다(맨 아래라 필요 없다).
+    expect(status.className).not.toMatch(/min-h-/);
+  });
+
+  it('카드는 CSS 다단으로 쌓이고(렌더 분기 없음), 줄은 행 토큰 높이의 한 줄이며 좁으면 배지를 다음 줄로 내린다', async () => {
+    await renderClient();
+    const columns = document.querySelector('[data-menu-columns]') as HTMLElement;
+    expect(columns).toHaveClass('columns-[14.5rem]');
+    expect(columns.className).not.toMatch(/\bgrid\b/);
+    for (const card of document.querySelectorAll('section[data-menu-card]')) expect(card).toHaveClass('break-inside-avoid');
+
+    const row = rowButton('결재함');
+    expect(row).toHaveClass('flex-wrap', 'py-[var(--work-cell-py)]');
+    expect(row.className).not.toMatch(/\b(?:flex-nowrap|overflow-hidden)\b/);
+    // 줄 상자의 테두리는 높이를 더하지 않는 안쪽 외곽선이다(테두리면 위아래 2px 가 더해져 34px 였다).
+    const entry = row.closest('[data-menu-entry]') as HTMLElement;
+    expect(entry).toHaveClass('outline-1', '-outline-offset-1');
+    expect(entry.className.split(/\s+/).filter((token) => /^border(?:-|$)/.test(token))).toEqual([]);
+    // 손잡이는 밀도와 무관한 24px(2.5.8 최소 타깃).
+    expect(screen.getByRole('button', { name: '결재함 끌어서 옮기기' })).toHaveClass('size-6');
+  });
+
+  it('영역 탭의 개수 칸은 미리보기의 보임/전체 자리를 늘 잡아 두어 탭 폭이 상태에 따라 바뀌지 않는다', async () => {
+    await renderClient();
+    const counts = document.querySelectorAll('[data-area-count]');
+    expect(counts.length).toBeGreaterThan(0);
+    for (const count of counts) expect(count).toHaveClass('inline-block', 'min-w-[5ch]', 'tabular-nums');
   });
 });
 

@@ -48,6 +48,51 @@ Flyway는 모든 versioned SQL 뒤에 repeatable을 실행한다. 빈 DB의 초�
 
 재사용 base 생성기는 직접 만든 `test_reusable_base_*` DB에서 V2_99까지와 초기 데이터를 적용하고, 실제 Contract를 리허설한 뒤 후속 versioned SQL을 적용한다. 검증된 최종 스키마만 덤프한다. 축약 base는 전체 제품 메뉴를 이식하지 않고 10개 기반 메뉴(중복 롤 제외, 그룹별 메뉴 현황 유지)를 초기화한다. SQL 실행 성공을 기록한 임시 리허설 원장은 덤프 전에 제거하며 실제 Flyway 이력이나 운영 배포 증거로 취급하지 않는다. 새 빈 base에는 그룹·명시 OPERATION/NAVIGATION·초기 회원 배정과 감사가 초기화된다. 빈 base의 repeatable bootstrap 자체는 구 테이블을 제거하지 않으며, 권한 변경 이력이 있는 DB에서는 초기 권한을 재부여하지 않는다. `sq_authrt_chg_hstry_sn`은 감사 테이블에 소유된 identity 시퀀스이므로 생성기의 standalone 시퀀스 목록에 중복 등록하지 않는다.
 
+## 프로그램 목록 퇴역(V2_124)
+
+[V2_124](../../api-server/src/main/resources/db/migration/V2_124__retire_program_permission_grants.sql)는 퇴역한 기능 권한 `PROGRAM_CREATE`·`PROGRAM_READ`·`PROGRAM_UPDATE`·`PROGRAM_DELETE`의 배정을 지우고, 지운 행마다 `GROUP_GRANT`/`REMOVE` 이력을 남긴다. 프로그램 원장(`tb_prgrm_lst`)과 메뉴의 `prgrm_file_nm`·외래 키는 남는다(지우는 일은 다음 릴리스의 별도 승인). 앱과 V2_124는 함께 배포한다. 새 권한 원장으로 기동한 앱에 `PROGRAM_*` 배정이 남아 있으면 권한 스냅샷이 원장에 없는 코드를 만나 그 그룹 구성원의 인증을 fail-closed로 막는다.
+
+**적용 전 읽기 확인.** 병합본에서 꺼낸 마이그레이션 폴더만 쓴다. 다음 두 질의를 읽기로 실행한다. 첫 질의의 행 수만큼 이력이 남고, 둘째 질의는 0행이어야 한다.
+
+```sql
+SELECT authrt_cd, authrt_grnt_cd FROM tb_authrt_grnt_map
+ WHERE authrt_type_cd = 'OPERATION'
+   AND authrt_grnt_cd IN ('PROGRAM_CREATE', 'PROGRAM_DELETE', 'PROGRAM_READ', 'PROGRAM_UPDATE');
+
+SELECT menu.menu_sn, menu.menu_nm, menu.prgrm_file_nm, program.url
+  FROM tb_menu_info menu
+  JOIN tb_prgrm_lst program ON program.prgrm_file_nm = menu.prgrm_file_nm
+ WHERE menu.use_yn = 'Y'
+   AND nullif(btrim(menu.modern_route), '') IS NULL
+   AND NOT EXISTS (SELECT 1 FROM tb_menu_info child WHERE child.up_menu_sn = menu.menu_sn)
+   AND menu.prgrm_file_nm !~ '(BoardManage|BBSMaster|CmmCode|GroupList|RoleList|AuthorGroup|QustnrManage|QustnrTmplat|AdbkList|FaqList|CnsltList|MainImage|FileMng|ProgramList|MenuCreat|MenuList)'
+   AND program.url ~ '(/uss/olh/qna/|/uss/olh/faq/|/sec/gmt/|/sec/ram/|/sym/ccm/|/uss/olp/qtm/|/uss/olp/qmc/)';
+```
+
+**가드가 멈췄을 때.** 오류 `Leaf menus without modern_route got their route only from a retired program URL: <menu_sn>:<prgrm_file_nm>, …`가 나면 V2_124 전체가 롤백되어 아무것도 바뀌지 않는다. 적힌 메뉴는 종전 앱이 기동할 때 원장 URL의 레거시 접두로 화면 경로를 채우던 사용 중 말단 메뉴다. 새 앱은 원장을 읽지 않으므로 그 경로를 채울 수 없다. 메뉴마다 화면 관리의 화면 목록에 있는 경로를 정해 `modern_route`에 넣고 다시 배포한다. 구 앱이 떠 있으면 메뉴 관리 화면에서, 아니면 승인된 SQL로 넣는다. 가드를 우회하거나 V2_124를 고치지 않는다.
+
+**이관 도구로 메뉴를 넣을 때.** `modern_route`를 채우고 `prgrm_file_nm`은 비운다. 이관 대상 카탈로그(`db_columns.json`)에는 `tb_prgrm_lst`가 아직 남아 있다. 그러나 앱은 그 원장을 읽지 않고, 위 가드는 V2_124를 적용할 때 한 번만 돈다.
+
+**롤백 뒤 다시 배포할 때.** 구 버전 앱으로 되돌리면 그 앱은 화면 관리 진입에 `PROGRAM_READ`를 요구한다. 그동안 권한 관리 화면에서 `PROGRAM_*`가 다시 배정될 수 있다. V2_124는 이미 적용되어 새 버전을 다시 배포해도 다시 돌지 않는다. 재배포 전에 위 첫 질의로 확인하고, 행이 있으면 아래를 실행한다. `<CATALOG_VERSION>`은 새 앱의 `PermissionCodes.CATALOG_VERSION`이다.
+
+```sql
+BEGIN;
+LOCK TABLE tb_authrt_grnt_map, tb_authrt_chg_hstry IN SHARE ROW EXCLUSIVE MODE;
+WITH removed AS (
+    DELETE FROM tb_authrt_grnt_map
+     WHERE authrt_type_cd = 'OPERATION'
+       AND authrt_grnt_cd IN ('PROGRAM_CREATE', 'PROGRAM_DELETE', 'PROGRAM_READ', 'PROGRAM_UPDATE')
+    RETURNING authrt_cd, authrt_grnt_cd
+)
+INSERT INTO tb_authrt_chg_hstry(dmnd_idntfr, plcy_ver_no, chg_trgt_type_cd, chg_type_cd, authrt_cd,
+    authrt_type_cd, authrt_grnt_cd, chg_artcl_nm, chg_bfr_cn, chg_aftr_cn, chg_rsn, frst_rgtr_id, crt_dt)
+SELECT 'ops:<YYYY-MM-DD>:program-grant-recleanup', '<CATALOG_VERSION>', 'GROUP_GRANT', 'REMOVE', authrt_cd,
+       'OPERATION', authrt_grnt_cd, 'grant', authrt_grnt_cd, NULL,
+       '롤백 뒤 다시 들어온 퇴역 프로그램 권한 재삭제', 'SYSTEM', CURRENT_TIMESTAMP
+  FROM removed;
+COMMIT;
+```
+
 ## 2026-09-11 OCI 메뉴 재편 적용 결과
 
 사용자가 승인한 [ADR-0017](../02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md)의 메뉴 재편을 2026-09-11 13:09 KST에 적용했다. 실행 전 OCI에서 V2_99, 구 6개 테이블 부재와 기존 Contract 감사 1건을 확인했다. 이번 실행은 이미 완료된 Contract나 계정 활성화를 반복하지 않았다.

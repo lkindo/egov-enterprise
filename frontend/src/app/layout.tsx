@@ -19,6 +19,7 @@ import { Suspense } from 'react';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
 import { SITE_IDENTITY } from '@/config/site-identity';
 import { POPSTATE_GATE_SCRIPT } from '@/lib/navigation/popstate-gate';
+import { SIDEBAR_COLLAPSE_SCRIPT } from '@/lib/layout/sidebar-collapse-script';
 
 // [2026-10-01] 한글 전체를 담은 가변 글꼴(약 2MB)이라 미리 불러오지 않는다.
 //   인증 업무 실측에서도 2.06MB 전송·13초 다운로드와 뒤늦은 글꼴 전환이 관측됐다.
@@ -65,7 +66,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <ApplicationFrame
       header={<Suspense fallback={<div className="h-[var(--app-header-height)] border-b border-border bg-card" />}><Header menusPromise={menusPromise} /></Suspense>}
-      sidebar={<Suspense fallback={<aside className="fixed left-0 top-[var(--app-header-height)] hidden h-[calc(100dvh-var(--app-header-height))] w-[var(--app-sidebar-width)] border-r bg-card lg:block" />}><Sidebar menusPromise={menusPromise} /></Suspense>}
+      sidebar={<Suspense fallback={<aside data-app-sidebar="" className="fixed left-0 top-[var(--app-header-height)] hidden h-[calc(100dvh-var(--app-header-height))] w-[var(--app-sidebar-width)] border-r bg-card lg:block" />}><Sidebar menusPromise={menusPromise} /></Suspense>}
       footer={<Footer />}
     >
       <PageTransition>
@@ -144,6 +145,9 @@ export default async function RootLayout({
         {/* [2026-10-03] 뒤로 가기 미저장 확인의 문지기 — 앱 번들(Next 라우터의 popstate 처리기)보다 먼저 등록돼야 한다
             (popstate-gate.ts). 정적 문자열이고 요청 nonce 를 붙인다. */}
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: POPSTATE_GATE_SCRIPT }} />
+        {/* [2026-10-05] 넓은 화면 사이드바 접힘을 그리기 전에 되살린다 — 본문보다 먼저 실행돼야 첫 화면이 펼쳤다가 접히지
+            않는다(sidebar-collapse-script.ts). 정적 문자열이고 요청 nonce 를 붙인다. */}
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: SIDEBAR_COLLAPSE_SCRIPT }} />
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

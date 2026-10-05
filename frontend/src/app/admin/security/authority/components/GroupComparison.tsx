@@ -36,14 +36,19 @@ const CELL_CLASS = 'border-b border-border px-[var(--cell-px)] py-[var(--cell-py
 const HEAD_CLASS = 'sticky top-0 z-20 whitespace-nowrap border-b border-border bg-muted px-[var(--cell-px)] py-[var(--cell-py)] text-center text-xs font-semibold';
 const DIFFERS_CLASS = 'bg-primary/10 font-medium';
 const SELECT_CLASS = 'block h-[var(--control-h)] min-w-[14rem] rounded-md border border-input bg-background px-3';
-const SCROLL_CLASS = 'max-h-[min(70vh,48rem)] overflow-auto rounded-md border border-border';
+const SCROLL_CLASS = 'relative max-h-[min(70vh,48rem)] overflow-auto rounded-md border border-border';
 
 /**
  * 비교 표의 스크롤 상자. 넘치면 키보드로 스크롤할 수 있게 이름 있는 영역이 된다(WCAG 2.1.1, axe scrollable-region-focusable) —
  * 조회 권한만 가진 사람에게는 상자 안에 포커스할 요소(편집 버튼)가 없다. 상자가 두 그룹을 고른 뒤에야 마운트되므로 훅을 상자와
  * 같은 컴포넌트에 둔다(늦게 마운트되는 상자에 허브 쪽 훅을 걸면 속성이 붙지 않는다).
+ *
+ * [2026-10-05] 상자는 `relative` 다 — 안쪽 sr-only(position:absolute) 요소가 상자에 잘리지 않고 문서 높이를 늘리는 빈 스크롤을
+ * 막는다(PermissionScrollRegion 과 같은 결함·같은 수리). 스크롤 영역 위치 지정 계약(scroll-region-containment)이 렌더로 고정한다.
+ *   export 는 그 계약이 상자만 따로 렌더하기 위한 것이다 — 비교 표 전체는 두 그룹의 권한 조회를 거쳐야 상자가 마운트돼, 렌더
+ *   계약이 쿼리 모의에 묶이지 않게 했다. 화면 코드는 이 상자를 직접 쓰지 않는다(GroupComparison 안에서만 쓴다).
  */
-function ComparisonScrollRegion({ label, children }: { label: string; children: ReactNode }) {
+export function ComparisonScrollRegion({ label, children }: { label: string; children: ReactNode }) {
   const regionProps = useOverflowRegion<HTMLDivElement>(label);
   return <div {...regionProps} className={SCROLL_CLASS}>{children}</div>;
 }

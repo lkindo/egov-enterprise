@@ -4,8 +4,6 @@ import nuri.business.TestApplication;
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import nuri.business.service.menu.MenuIntegrationService;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -43,7 +41,4 @@ public abstract class ControllerTestSupport {
 
     @Autowired
     protected ObjectMapper objectMapper;
-
-    @MockitoBean
-    protected MenuIntegrationService menuIntegrationService;
 }

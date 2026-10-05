@@ -27,13 +27,12 @@ public class Menu extends BaseEntity {
     @Column(nullable = false, length = 100)
     private String menuNm;
 
+    /**
+     * 레거시 연결 프로그램 파일명. [2026-10-04 프로그램 목록 퇴역] 프로그램 원장(tb_prgrm_lst) 엔티티와 그 연관을 걷었다.
+     * 컬럼과 외래 키(fk_tb_menu_info_tb_prgrm_lst)는 DB 에 남으므로 단순 문자열로만 매핑한다 — 새 값은 서비스가 거부한다.
+     */
     @Column(name = "prgrm_file_nm", length = 300)
     private String prgrmFileNm;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "prgrm_file_nm", referencedColumnName = "prgrm_file_nm", insertable = false, updatable = false,
-        foreignKey = @ForeignKey(name = "fk_tb_menu_info_tb_prgrm_lst"))
-    private nuri.business.domain.program.Program program;
 
     @Column(name = "up_menu_sn")
     private Long upMenuSn;

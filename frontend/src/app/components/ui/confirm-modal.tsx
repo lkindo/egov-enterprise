@@ -10,6 +10,13 @@ interface ConfirmOptions {
  confirmText?: string;
  cancelText?: string;
  variant?: 'default' | 'destructive';
+ /**
+  * [2026-10-05] 확인할 내용의 목록(예: 저장할 변경 항목). 설명 문장 아래 높이 제한 스크롤 상자에 보인다 — 길면 상자 안에서
+  * 스크롤하고 키보드로도 스크롤할 수 있다(tabIndex 0, 이름 있는 영역). 설명(message)은 한 문장 요약으로 둔다.
+  */
+ details?: React.ReactNode;
+ /** details 상자의 접근 이름(기본 '자세한 내용'). */
+ detailsLabel?: string;
 }
 
 interface ConfirmContextType {
@@ -29,6 +36,12 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
  const resolverRef = useRef<((value: boolean) => void) | null>(null);
  // 다이얼로그를 연 요소(invoker)를 기억했다가 닫힐 때 포커스를 되돌린다 (DialogTrigger 부재 보완)
  const triggerRef = useRef<HTMLElement | null>(null);
+ /*
+ * [2026-10-05] 처음 포커스는 언제나 '취소' 다. details 상자는 키보드로 스크롤하도록 탭 순서에 들지만(tabIndex 0) 처음
+ * 포커스를 받지 않는다 — Radix 는 첫 탭 대상에 포커스를 두므로, 두지 않으면 details 를 넘긴 확인창만 처음 포커스가 상자로
+ * 바뀐다(Enter 가 확정·취소 어느 것도 누르지 않는다). details 가 없을 때는 종전에도 '취소' 가 첫 탭 대상이었다.
+ */
+ const cancelRef = useRef<HTMLButtonElement | null>(null);
 
  const confirm = useCallback((opts: ConfirmOptions) => {
  const previous = resolverRef.current;
@@ -66,6 +79,11 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
           <DialogContent
             showCloseButton={false}
             className="max-w-md p-6"
+            onOpenAutoFocus={(e) => {
+              if (!cancelRef.current) return;
+              e.preventDefault();
+              cancelRef.current.focus();
+            }}
             onCloseAutoFocus={(e) => { e.preventDefault(); triggerRef.current?.focus?.(); }}
           >
             <DialogHeader className="flex flex-row items-start gap-4 text-left">
@@ -83,8 +101,21 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
               </div>
             </DialogHeader>
 
+            {options.details && (
+              <div
+                role="region"
+                aria-label={options.detailsLabel ?? '자세한 내용'}
+                tabIndex={0}
+                data-confirm-details=""
+                className="relative mt-4 max-h-60 overflow-y-auto rounded-md border border-border bg-muted/30 p-3 focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                {options.details}
+              </div>
+            )}
+
             <DialogFooter className="mt-8 flex justify-end gap-3 sm:flex-row flex-col-reverse">
               <button
+                ref={cancelRef}
                 onClick={handleCancel}
                 className="px-4 py-2 text-sm font-semibold border border-border bg-background text-foreground rounded-md hover:bg-accent transition-colors"
               >

@@ -354,18 +354,6 @@
       "pack": "collaboration"
     },
     {
-      "entity": "nuri.business.domain.program.Program",
-      "dto": "nuri.business.service.program.dto.ProgramDto",
-      "fields": [
-        "prgrmFileNm",
-        "prgrmStrgPath",
-        "prgrmKornNm",
-        "url",
-        "prgrmExpln"
-      ],
-      "pack": "core"
-    },
-    {
       "entity": "nuri.business.domain.informalsanction.InformalSanction",
       "dto": "nuri.api.controller.business.approval.dto.ApprovalDraftRequest",
       "fields": [
@@ -1431,19 +1419,6 @@
         }
       ],
       "pack": "collaboration"
-    },
-    {
-      "dto": "nuri.business.service.program.dto.ProgramDto",
-      "fields": [
-        {
-          "field": "prgrmFileNm",
-          "constraint": "NotBlank",
-          "groups": [
-            "nuri.business.service.program.dto.ProgramDto$OnCreate"
-          ]
-        }
-      ],
-      "pack": "core"
     },
     {
       "dto": "nuri.api.controller.business.approval.dto.ApprovalDraftRequest",

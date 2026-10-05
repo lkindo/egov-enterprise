@@ -150,4 +150,88 @@ describe('WorkListPage — A1 archetype 문법', () => {
 
     expect(screen.queryByTestId('work-list-navigation')).toBeNull();
   });
+
+  /*
+    [2026-10-05] 업무면 fill 셸(카탈로그 §4). 기본(prop 없음)은 DOM 이 한 글자도 달라지지 않아야 한다 — 콘텐츠를 감싸는 div 도
+    만들지 않는다. fill 은 work-fill 조건 안에서만 루트를 화면 높이의 세로 flex 로 만들고, children 을 감싼 콘텐츠 영역이
+    남은 높이를 받는다. G1 순서(헤더 → 조회조건 → 툴바 → 콘텐츠)는 두 변형이 같다.
+  */
+  describe('업무면 fill 셸', () => {
+    it('기본은 콘텐츠를 감싸지 않고 fill 클래스·표지를 갖지 않는다', () => {
+      renderPage();
+      const root = screen.getByTestId('work-list-page');
+
+      expect(screen.queryByTestId('work-list-content')).toBeNull();
+      expect(screen.getByTestId('result-table').parentElement).toBe(root);
+      // 표지는 fill 화면의 푸터 숨김 근거다(globals.css :has) — 기본 셸이 표지를 달면 일반 화면의 푸터가 넓은 화면에서 사라진다.
+      expect(root).not.toHaveAttribute('data-work-fill');
+      expect(root.className).not.toMatch(/work-fill:/);
+    });
+
+    it('fill 이면 루트가 화면 높이의 세로 flex 가 되고 콘텐츠 영역이 남은 높이를 받는다', () => {
+      renderPage({ fill: true });
+      const root = screen.getByTestId('work-list-page');
+      const content = screen.getByTestId('work-list-content');
+
+      expect(root).toHaveAttribute('data-work-fill');
+      // 루트는 최소 높이(창이 낮으면 늘어나 페이지가 스크롤한다), 콘텐츠 영역은 기준 0px 로 남은 높이만 받고 바닥값·안전판을 둔다.
+      expect(root).toHaveClass('work-fill:flex', 'work-fill:flex-col', 'work-fill:min-h-[var(--work-fill-height)]');
+      expect(root.className).not.toMatch(/work-fill:h-\[/);
+      expect(content).toHaveClass(
+        'work-fill:flex', 'work-fill:flex-col', 'work-fill:flex-[1_1_0px]', 'work-fill:min-h-[12rem]',
+        'work-fill:relative', 'work-fill:overflow-y-auto', 'work-fill:-m-1', 'work-fill:p-1',
+      );
+      expect(content.parentElement).toBe(root);
+      expect(content).toContainElement(screen.getByTestId('result-table'));
+      expect(precedes(screen.getByTestId('work-list-toolbar'), content)).toBe(true);
+    });
+  });
+
+  /*
+    [2026-10-05] 건수가 없는 업무면은 빈 결과 툴바 줄을 시각적으로만 숨길 수 있다(opt-in). 툴바와 live region 은 DOM 에 남아
+    위 'live region 은 값이 없어도 유지된다' 계약을 지킨다 — 마운트를 조건부로 바꾸면 건수가 처음 생길 때 낭독되지 않는다.
+  */
+  describe('hideEmptyToolbar', () => {
+    it('기본은 건수가 없어도 툴바 줄을 보인다', () => {
+      renderPage({ totalCount: undefined });
+
+      expect(screen.getByTestId('work-list-toolbar')).not.toHaveClass('sr-only');
+      expect(screen.getByTestId('work-list-toolbar')).toHaveClass('min-h-6');
+    });
+
+    it('보일 것이 없으면 툴바를 sr-only 로 숨기되 live region 은 남긴다', () => {
+      const { container } = renderPage({ totalCount: undefined, hideEmptyToolbar: true });
+      const toolbar = screen.getByTestId('work-list-toolbar');
+
+      expect(toolbar).toHaveClass('sr-only');
+      expect(toolbar).not.toHaveClass('min-h-6');
+      // [2026-10-05 반박 리뷰 반영] 숨긴 툴바는 group 역할·이름을 떼어 낸다 — 내용 없는 '결과 도구' 묶음이 화면낭독기에 빈 정지점으로
+      // 남지 않게 한다(종전 단언은 숨긴 동안에도 role=group 을 요구했다). 건수 live region 은 그대로 남는다.
+      expect(toolbar).not.toHaveAttribute('role');
+      expect(toolbar).not.toHaveAttribute('aria-label');
+      expect(screen.queryByRole('group', { name: '결과 도구' })).toBeNull();
+      expect(container.querySelector('[aria-live="polite"]')).not.toBeNull();
+    });
+
+    it('건수나 툴바 동작이 생기면 다시 보인다', () => {
+      const { rerender } = renderPage({ totalCount: undefined, hideEmptyToolbar: true });
+      rerender(
+        <WorkListPage title="업무 요청 목록" totalCount={3} hideEmptyToolbar>
+          <table data-testid="result-table"><caption>결과</caption><tbody><tr><td>행</td></tr></tbody></table>
+        </WorkListPage>,
+      );
+      expect(screen.getByTestId('work-list-toolbar')).not.toHaveClass('sr-only');
+      expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 3건');
+      // 다시 보이면 '결과 도구' 묶음도 돌아온다.
+      expect(screen.getByRole('group', { name: '결과 도구' })).toBe(screen.getByTestId('work-list-toolbar'));
+
+      rerender(
+        <WorkListPage title="업무 요청 목록" hideEmptyToolbar toolbarActions={<button type="button">내보내기</button>}>
+          <table data-testid="result-table"><caption>결과</caption><tbody><tr><td>행</td></tr></tbody></table>
+        </WorkListPage>,
+      );
+      expect(screen.getByTestId('work-list-toolbar')).not.toHaveClass('sr-only');
+      expect(screen.getByRole('button', { name: '내보내기' })).toBeVisible();
+    });
+  });
 });

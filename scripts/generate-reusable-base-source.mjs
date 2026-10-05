@@ -832,12 +832,12 @@ export function adaptGeneratedHarness(output) {
     */
     {
       path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness', 'SharedPostgresMigrationHarnessContractTest.java'),
-      from: 'private static final int EXPECTED_MIGRATION_TEST_COUNT = 55;',
+      from: 'private static final int EXPECTED_MIGRATION_TEST_COUNT = 56;',
       to: 'private static final int EXPECTED_MIGRATION_TEST_COUNT = 0;',
     },
     {
       path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness', 'SharedPostgresMigrationHarnessContractTest.java'),
-      from: '@DisplayName("55개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")',
+      from: '@DisplayName("56개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")',
       to: '@DisplayName("migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")',
     },
     /*

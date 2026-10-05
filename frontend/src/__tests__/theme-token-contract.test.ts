@@ -167,6 +167,9 @@ describe('브랜드 프로필 토큰 계약', () => {
       '--page-pad-lg',
       '--filter-pad',
       '--filter-control-h',
+      // [2026-10-05] 업무 표 행 토큰 — 조밀한 업무 그리드가 컴포넌트 단위로 opt-in 한다(카탈로그 §4 '업무 표').
+      '--work-cell-px',
+      '--work-cell-py',
     ];
 
     it('density resolver 가 존재하고 DENSITIES 단일 원본에서 allowlist-else-default 로 판정한다', () => {
@@ -250,6 +253,18 @@ describe('브랜드 프로필 토큰 계약', () => {
           occurrences.length,
           `${file} 에 --filter-control-h: 3rem 선언이 라이트·다크 2곳 모두 필요합니다.`,
         ).toBeGreaterThanOrEqual(2);
+      }
+    });
+
+    it('업무 표 행 토큰 기본값(--work-cell-px 0.75rem · --work-cell-py 0.375rem)이 모든 프로필의 라이트·다크 블록에 정확히 선언된다', () => {
+      // [2026-10-05] 업무 표(권한 매트릭스·화면 목록·메뉴 보드)는 기본 배포에서도 한 줄 행 ≈ 33px 를 쓴다(카탈로그 §4).
+      // 블록 하나라도 빠지면 그 모드에서 토큰이 미정의가 되어 패딩이 0 으로 떨어진다 — 다크에서만 행이 붙는 조용한 파손이다.
+      // 값도 고정한다: 바꾸면 카탈로그의 행 높이 서술과 업무 화면의 세로 예산이 함께 거짓이 된다.
+      for (const file of themeFiles) {
+        const css = readFileSync(join(THEMES_DIR, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+        expect(css.match(/--work-cell-px:\s*0\.75rem;/g) ?? [], `${file} 의 --work-cell-px 기본값`).toHaveLength(2);
+        expect(css.match(/--work-cell-py:\s*0\.375rem;/g) ?? [], `${file} 의 --work-cell-py 기본값`).toHaveLength(2);
+        expect(css.match(/--work-cell-p[xy]\s*:/g) ?? [], `${file} 의 업무 표 토큰 선언 수`).toHaveLength(4);
       }
     });
   });

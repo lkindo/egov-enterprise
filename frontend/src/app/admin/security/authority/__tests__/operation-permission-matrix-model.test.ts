@@ -4,6 +4,8 @@ import { PROTECTED_PERMISSIONS } from '@/types/generated-screen-registry';
 import {
   buildOperationMatrix,
   changedOperationKeys,
+  isBulkEntryFix,
+  isOthersDataPermission,
   isSaveShortcut,
   matrixRowMatches,
   nextCellPosition,
@@ -123,14 +125,34 @@ describe('진입 권한 고치기 계획', () => {
   });
 
   it('등록되지 않은 화면이나 현재 기능 목록에 없는 권한은 고친 것처럼 보이게 하지 않는다', () => {
-    // PROGRAM_READ 는 라우트 원장에는 있지만 이 시나리오의 서버 기능 목록(catalog)에는 없다 — 배포 어긋남을 흉내 낸다.
+    // ADMCODE_READ 는 라우트 원장에는 있지만 이 시나리오의 서버 기능 목록(catalog)에는 없다 — 배포 어긋남을 흉내 낸다.
     const fixes = planEntryFixes([
       menu({ code: 'a', fixable: false }),
-      menu({ code: 'b', required: ['PROGRAM_READ'] }),
-      menu({ code: 'c', required: ['POLL_READ', 'PROGRAM_READ'], mode: 'ALL' }),
-      menu({ code: 'd', required: ['PROGRAM_READ', 'MENU_READ'] }),
+      menu({ code: 'b', required: ['ADMCODE_READ'] }),
+      menu({ code: 'c', required: ['POLL_READ', 'ADMCODE_READ'], mode: 'ALL' }),
+      menu({ code: 'd', required: ['ADMCODE_READ', 'MENU_READ'] }),
     ], catalog);
     expect(fixes.map((fix) => fix.kind)).toEqual(['unfixable', 'unfixable', 'unfixable', 'auto']);
     expect(fixes[3]).toEqual(expect.objectContaining({ codes: ['MENU_READ'] }));
+  });
+
+  /*
+   * [2026-10-05 반박 리뷰 반영, H3] 여러 메뉴를 한 번에 고치는 일괄 동작(섹션 줄 '진입 권한 추가'·표 위 '진입 권한 모두 추가')은
+   * 영역·섹션 줄의 묶음 칸과 같은 제외 규칙을 따른다 — 정해진 권한이라도 보호 권한·타인 자료 권한(…_ALL)이 있으면 뺀다.
+   */
+  it('일괄로 고칠 수 있는 고치기는 정해진 권한이고 보호·타인 자료 권한이 없는 것뿐이다', () => {
+    expect(isOthersDataPermission('POLL_READ_ALL')).toBe(true);
+    expect(isOthersDataPermission('COMMENT_READ_ALL')).toBe(true);
+    expect(isOthersDataPermission('POLL_READ')).toBe(false);
+    const protectedCode = PROTECTED_PERMISSIONS[0];
+    const fixes = planEntryFixes([
+      menu({ code: 'a', required: ['MENU_READ'] }),
+      menu({ code: 'b', required: ['POLL_READ', 'POLL_READ_ALL'], mode: 'ALL' }),
+      menu({ code: 'c', required: ['AUTHRT_AUDIT', 'AUTHRT_READ'] }),
+      menu({ code: 'd', fixable: false }),
+      menu({ code: 'e', required: [protectedCode] }),
+    ], new Set([...catalog, protectedCode]));
+    expect(fixes.map((fix) => fix.kind)).toEqual(['auto', 'auto', 'choose', 'unfixable', 'auto']);
+    expect(fixes.map(isBulkEntryFix)).toEqual([true, false, false, false, false]);
   });
 });

@@ -17,15 +17,15 @@ const NAVIGATION = [
   { code: 'AREA', name: '관리', parentCode: null, route: null, useYn: 'Y' as const },
   { code: 'SECTION', name: '시스템', parentCode: 'AREA', route: null, useYn: 'Y' as const },
   { code: 'MENUS', name: '메뉴 관리', parentCode: 'SECTION', route: '/admin/system/menus', useYn: 'Y' as const },
-  { code: 'PROGRAMS', name: '화면 관리', parentCode: 'SECTION', route: '/admin/system/programs', useYn: 'Y' as const },
+  { code: 'ADMCODES', name: '행정 표준코드 관리', parentCode: 'SECTION', route: '/admin/system/codes/administ', useYn: 'Y' as const },
   { code: 'HIDDEN', name: '옛 시스템', parentCode: 'AREA', route: null, useYn: 'N' as const },
   { code: 'MENUS_COPY', name: '메뉴 관리(옛)', parentCode: 'HIDDEN', route: '/admin/system/menus?tab=old', useYn: 'Y' as const },
   { code: 'USERS', name: '사용자 관리', parentCode: 'AREA', route: '/admin/user/manage', useYn: 'Y' as const },
 ];
-const OPERATION_CODES = ['MENU_READ', 'MENU_UPDATE', 'PROGRAM_READ', 'USER_READ', 'USER_PASSWORD'];
+const OPERATION_CODES = ['MENU_READ', 'MENU_UPDATE', 'ADMCODE_READ', 'USER_READ', 'USER_PASSWORD'];
 const MENU_BUNDLE: PermissionBundle = {
   id: 'menu-screen', name: '메뉴·화면 설정', description: '메뉴와 화면 관리를 맡깁니다.', protected: false,
-  permissions: ['MENU_READ', 'MENU_UPDATE', 'PROGRAM_READ'] as PermissionCode[], screens: ['/admin/system/menus', '/admin/system/programs'], relatedScreens: [],
+  permissions: ['MENU_READ', 'MENU_UPDATE', 'ADMCODE_READ'] as PermissionCode[], screens: ['/admin/system/menus', '/admin/system/codes/administ'], relatedScreens: [],
 };
 const RECOVERY_BUNDLE: PermissionBundle = {
   id: 'account-recovery', name: '계정 복구', description: '비밀번호 초기화를 맡깁니다.', protected: true,
@@ -80,7 +80,7 @@ describe('권한 묶음 적용 대화상자', () => {
     // 관련 화면이 없으면 그 목록을 두지 않는다.
     expect(preview).not.toHaveTextContent('누구나 들어가는 관련 화면 ');
     expect(preview).toHaveTextContent('메뉴 관리 — 메뉴: 메뉴 관리');
-    expect(preview).toHaveTextContent('화면 관리 — 메뉴: 화면 관리');
+    expect(preview).toHaveTextContent('행정 표준코드 관리 — 메뉴: 행정 표준코드 관리');
     expect(preview).toHaveTextContent('사용 안 함 상위 메뉴 때문에 표시하지 않는 메뉴');
     expect(preview).toHaveTextContent("메뉴 관리(옛) (상위 메뉴 '옛 시스템' 사용 안 함)");
     expect(preview).toHaveTextContent(OPEN_SCREEN_NOTICE);
@@ -134,14 +134,14 @@ describe('권한 묶음 적용 대화상자', () => {
   it('메뉴가 사용 안 함 상위에 가려 더할 것이 없으면 그 사실을 말하고, 그 화면을 메뉴 없는 화면이라 하지 않는다', async () => {
     const navigation = [
       { code: 'OLD', name: '옛 관리', parentCode: null, route: null, useYn: 'N' as const },
-      { code: 'PROGRAMS_OLD', name: '화면 관리(옛)', parentCode: 'OLD', route: '/admin/system/programs', useYn: 'Y' as const },
+      { code: 'ADMCODES_OLD', name: '행정 표준코드 관리(옛)', parentCode: 'OLD', route: '/admin/system/codes/administ', useYn: 'Y' as const },
     ];
-    const bundle: PermissionBundle = { ...MENU_BUNDLE, id: 'programs', name: '화면 관리 묶음', permissions: ['PROGRAM_READ'] as PermissionCode[], screens: ['/admin/system/programs'] };
-    renderDialog({ bundles: [bundle], navigation, selection: new Set(['OPERATION:PROGRAM_READ']) });
-    await userEvent.click(screen.getByRole('radio', { name: '화면 관리 묶음' }));
+    const bundle: PermissionBundle = { ...MENU_BUNDLE, id: 'admcodes', name: '행정 표준코드 관리 묶음', permissions: ['ADMCODE_READ'] as PermissionCode[], screens: ['/admin/system/codes/administ'] };
+    renderDialog({ bundles: [bundle], navigation, selection: new Set(['OPERATION:ADMCODE_READ']) });
+    await userEvent.click(screen.getByRole('radio', { name: '행정 표준코드 관리 묶음' }));
     expect(addButton()).toHaveAccessibleDescription('더할 수 있는 항목이 없습니다. 묶음이 더하지 않는 항목이 있습니다: 사용 안 함 상위 메뉴에 가린 메뉴.');
     const preview = screen.getByRole('region', { name: '묶음 미리보기' });
-    expect(preview).toHaveTextContent("화면 관리 — 메뉴 '화면 관리(옛)'가 사용 안 함 상위 메뉴 '옛 관리' 아래에 있어 표시되지 않습니다");
+    expect(preview).toHaveTextContent("행정 표준코드 관리 — 메뉴 '행정 표준코드 관리(옛)'가 사용 안 함 상위 메뉴 '옛 관리' 아래에 있어 표시되지 않습니다");
     expect(preview).not.toHaveTextContent('주소로만 열립니다');
   });
 

@@ -617,18 +617,6 @@ export const RoleManageDtoSchema = /*#__PURE__*/ (() => z.object({
 export type RoleManageDto = z.infer<typeof RoleManageDtoSchema>;
 
 // ==========================================================================
-// ProgramDto Schema
-// ==========================================================================
-export const ProgramDtoSchema = /*#__PURE__*/ (() => z.object({
-  prgrmFileNm: z.string().min(0).max(300),
-  prgrmStrgPath: z.string().min(0).max(1000).optional(),
-  prgrmKornNm: z.string().min(0).max(100).optional(),
-  url: z.string().min(0).max(1000).optional(),
-  prgrmExpln: z.string().min(0).max(4000).optional(),
-}))();
-export type ProgramDto = z.infer<typeof ProgramDtoSchema>;
-
-// ==========================================================================
 // PopupDto Schema
 // ==========================================================================
 export const PopupDtoSchema = /*#__PURE__*/ (() => z.object({
@@ -3759,46 +3747,6 @@ export const ApiResponseRoleManageDtoSchema = /*#__PURE__*/ (() => z.object({
 export type ApiResponseRoleManageDto = z.infer<typeof ApiResponseRoleManageDtoSchema>;
 
 // ==========================================================================
-// ApiResponsePageResponseProgramDto Schema
-// ==========================================================================
-export const ApiResponsePageResponseProgramDtoSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseProgramDtoSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-}))();
-export type ApiResponsePageResponseProgramDto = z.infer<typeof ApiResponsePageResponseProgramDtoSchema>;
-
-// ==========================================================================
-// PageResponseProgramDto Schema
-// ==========================================================================
-export const PageResponseProgramDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => ProgramDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
-}))();
-export type PageResponseProgramDto = z.infer<typeof PageResponseProgramDtoSchema>;
-
-// ==========================================================================
-// ApiResponseProgramDto Schema
-// ==========================================================================
-export const ApiResponseProgramDtoSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => ProgramDtoSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-}))();
-export type ApiResponseProgramDto = z.infer<typeof ApiResponseProgramDtoSchema>;
-
-// ==========================================================================
 // ApiResponsePageResponsePopupDto Schema
 // ==========================================================================
 export const ApiResponsePageResponsePopupDtoSchema = /*#__PURE__*/ (() => z.object({
@@ -6520,22 +6468,6 @@ export const RoleManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   roleTypeCd: z.string().min(0).max(12).optional().nullable(),
   roleSort: z.string().optional().nullable(),
   crtDt: z.string().optional().nullable(),
-}))();
-
-export const ProgramDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  prgrmFileNm: z.string().min(0).max(300),
-  prgrmStrgPath: z.string().min(0).max(1000).optional(),
-  prgrmKornNm: z.string().min(0).max(100).optional(),
-  url: z.string().min(0).max(1000).optional(),
-  prgrmExpln: z.string().min(0).max(4000).optional(),
-}))();
-
-export const ProgramDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  prgrmFileNm: z.string().min(0).max(300),
-  prgrmStrgPath: z.string().min(0).max(1000).optional().nullable(),
-  prgrmKornNm: z.string().min(0).max(100).optional().nullable(),
-  url: z.string().min(0).max(1000).optional().nullable(),
-  prgrmExpln: z.string().min(0).max(4000).optional().nullable(),
 }))();
 
 export const PopupDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -10886,62 +10818,6 @@ export const ApiResponseRoleManageDtoResponseSchema = /*#__PURE__*/ (() => z.obj
   code: z.string().optional().nullable(),
   message: z.string().optional().nullable(),
   data: z.lazy(() => RoleManageDtoResponseSchema).optional().nullable(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
-}))();
-
-export const ApiResponsePageResponseProgramDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseProgramDtoRequestSchema.strict()).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
-}))();
-
-export const ApiResponsePageResponseProgramDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional().nullable(),
-  status: z.number().int().optional().nullable(),
-  code: z.string().optional().nullable(),
-  message: z.string().optional().nullable(),
-  data: z.lazy(() => PageResponseProgramDtoResponseSchema).optional().nullable(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
-}))();
-
-export const PageResponseProgramDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => ProgramDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
-}))();
-
-export const PageResponseProgramDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => ProgramDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
-}))();
-
-export const ApiResponseProgramDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => ProgramDtoRequestSchema.strict()).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
-}))();
-
-export const ApiResponseProgramDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional().nullable(),
-  status: z.number().int().optional().nullable(),
-  code: z.string().optional().nullable(),
-  message: z.string().optional().nullable(),
-  data: z.lazy(() => ProgramDtoResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 }))();

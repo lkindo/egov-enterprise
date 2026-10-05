@@ -8,8 +8,6 @@ import nuri.business.security.audit.LoginUserAuditorAware;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.domain.menu.Menu;
 import nuri.business.domain.menu.MenuRepository;
-import nuri.business.domain.program.Program;
-import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.menu.dto.MenuDto;
 import nuri.business.service.auth.dto.AuthorizationDto.GroupVersion;
 import nuri.business.service.auth.dto.AuthorizationDto.NavigationConflict;
@@ -41,14 +39,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("MenuService 단위 테스트")
@@ -58,9 +54,6 @@ class MenuServiceTest {
     private MenuRepository menuRepository;
 
     @Mock
-    private ProgramRepository programRepository;
-
-    @Mock
     private NavigationGrantRepository navigationGrantRepository;
 
     @Mock
@@ -68,9 +61,6 @@ class MenuServiceTest {
 
     @Spy
     private LoginUserAuditorAware loginUserAuditorAware = new LoginUserAuditorAware();
-
-    @Mock
-    private nuri.business.service.program.dto.ProgramMapper programMapper;
 
     /** 기본은 빈 공급자(getIfAvailable = null) — 저장소를 직접 읽는 경로다. */
     @Mock
@@ -136,30 +126,24 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("시작 라우트 보강 - null URL 프로그램이 정상 추론을 막지 않고 연결 없는 메뉴는 유지한다")
-    void startupRouteMigrationAllowsNullProgramUrlWithoutBlockingOtherMenus() {
+    @DisplayName("시작 라우트 보강 - 레거시 파일명으로만 추정하고, 추정할 수 없는 메뉴와 폴더는 그대로 둔다")
+    void startupRouteMigrationInfersOnlyFromLegacyFileName() {
+        // [2026-10-04 프로그램 목록 퇴역] LegacyQuestion 은 종전에 프로그램 원장의 레거시 URL 로 /admin/help/faq 를 얻었다.
+        // 원장 조회를 걷었으므로 이제 이름으로 추정할 수 없는 메뉴는 채우지 않는다.
         Menu legacy = Menu.builder().menuSn(1L).prgrmFileNm("LegacyQuestion").build();
         Menu byName = Menu.builder().menuSn(2L).prgrmFileNm("BoardManage").build();
-        Menu unknown = Menu.builder().menuSn(3L).prgrmFileNm("UnknownRoute").build();
         Menu folder = Menu.builder().menuSn(4L).build();
-        when(menuRepository.findAllWithoutModernRoute()).thenReturn(List.of(legacy, byName, unknown, folder));
-        when(programRepository.findAll()).thenReturn(List.of(
-                Program.builder().prgrmFileNm("LegacyQuestion").url("/uss/olh/faq/EgovFaqListInqire.do").build(),
-                Program.builder().prgrmFileNm("BoardManage").url(null).build(),
-                Program.builder().prgrmFileNm("UnknownRoute").url(null).build()));
+        when(menuRepository.findAllWithoutModernRoute()).thenReturn(List.of(legacy, byName, folder));
 
         assertThatCode(menuService::migrateModernRoutes).doesNotThrowAnyException();
 
-        verify(menuRepository).fillModernRouteIfUnchanged(eq(1L), eq("LegacyQuestion"), eq("/admin/help/faq"),
-                any(java.time.LocalDateTime.class), eq("tester"));
         verify(menuRepository).fillModernRouteIfUnchanged(eq(2L), eq("BoardManage"), eq("/admin/community/boards"),
                 any(java.time.LocalDateTime.class), eq("tester"));
-        assertThat(legacy.getModernRoute()).as("조회 스냅샷은 직접 변경하지 않는다").isNull();
-        assertThat(byName.getModernRoute()).isNull();
-        assertThat(unknown.getModernRoute()).isNull();
+        assertThat(byName.getModernRoute()).as("조회 스냅샷은 직접 변경하지 않는다").isNull();
+        assertThat(legacy.getModernRoute()).isNull();
         assertThat(folder.getModernRoute()).isNull();
         verify(menuRepository, never()).save(any(Menu.class));
-        verify(menuRepository, never()).fillModernRouteIfUnchanged(eq(3L), any(), any(), any(), any());
+        verify(menuRepository, never()).fillModernRouteIfUnchanged(eq(1L), any(), any(), any(), any());
         verify(menuRepository, never()).fillModernRouteIfUnchanged(eq(4L), any(), any(), any(), any());
     }
 
@@ -177,7 +161,6 @@ class MenuServiceTest {
         results.add(new MenuGrantFixture(menu2, "ROLE_ADMIN"));
         
         stubNavigation(results);
-        when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         // when
         List<MenuDto> hierarchy = menuService.getMenuHierarchy();
@@ -197,7 +180,6 @@ class MenuServiceTest {
         when(proxy.getAllMenusCached()).thenReturn(List.of(menu));
         when(navigationGrantRepository.findAllowedMenuIds(List.of("ROLE_ADMIN")))
                 .thenReturn(java.util.Set.of(1L)).thenReturn(java.util.Set.of());
-        when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         assertThat(menuService.getMenuHierarchy()).hasSize(1);
         assertThat(menuService.getMenuHierarchy()).isEmpty();
@@ -307,7 +289,6 @@ class MenuServiceTest {
         List<MenuGrantFixture> results = new ArrayList<>();
         results.add(new MenuGrantFixture(menu1, auth));
         stubNavigation(results);
-        when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         // when
         List<MenuDto> hierarchy = menuService.getMenuHierarchy();
@@ -330,7 +311,6 @@ class MenuServiceTest {
         results.add(new MenuGrantFixture(menuInactive, "ROLE_ADMIN"));
         
         stubNavigation(results);
-        when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         // when
         List<MenuDto> hierarchy = menuService.getMenuHierarchy();
@@ -401,24 +381,6 @@ class MenuServiceTest {
         assertThatThrownBy(() -> menuService.updateMenuManage(dto))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ENTITY_NOT_FOUND);
-    }
-
-    @Test
-    @DisplayName("getRootIdByProgrmFileNm - 최상위 메뉴 ID 찾기")
-    void getRootIdByProgrmFileNm() {
-        // given
-        Menu menu3 = Menu.builder().menuSn(3L).upMenuSn(2L).prgrmFileNm("Prog3").build();
-        Menu menu2 = Menu.builder().menuSn(2L).upMenuSn(1L).build();
-        Menu menu1 = Menu.builder().menuSn(1L).upMenuSn(0L).build();
-
-        when(menuRepository.findByPrgrmFileNm("Prog3")).thenReturn(Optional.of(menu3));
-        when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenReturn(List.of(menu1, menu2, menu3));
-
-        // when
-        Long rootId = menuService.getRootMenuIdByProgrmFileNm("Prog3");
-
-        // then
-        assertThat(rootId).isEqualTo(1L);
     }
 
     @Test
@@ -560,27 +522,6 @@ class MenuServiceTest {
         assertThat(node.getMenuOrdr()).isEqualTo(3);
     }
 
-    @Test
-    void hierarchyReadSupportsFourLevels() {
-        Menu leaf = hierarchyNode(4L, 3L);
-        when(menuRepository.findByPrgrmFileNm("deep")).thenReturn(Optional.of(leaf));
-        when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenReturn(List.of(
-                hierarchyNode(1L, null), hierarchyNode(2L, 1L), hierarchyNode(3L, 2L), leaf));
-
-        assertThat(menuService.getRootMenuIdByProgrmFileNm("deep")).isEqualTo(1L);
-    }
-
-    @Test
-    void hierarchyReadCycleTerminatesWithoutInventingARoot() {
-        Menu first = hierarchyNode(1L, 2L);
-        when(menuRepository.findByPrgrmFileNm("cycle")).thenReturn(Optional.of(first));
-        when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenReturn(List.of(first, hierarchyNode(2L, 1L)));
-
-        // 旧 구현의 로컬 while은 interrupt를 확인하지 않는다. red는 이 메서드만 별도 JVM에서 실행한다.
-        assertTimeoutPreemptively(Duration.ofMillis(300),
-                () -> assertThat(menuService.getRootMenuIdByProgrmFileNm("cycle")).isNull());
-    }
-
     private record ParentLinkFixture(Long menuSn, Long upMenuSn) implements MenuRepository.ParentLink {
         @Override public Long getMenuSn() { return menuSn; }
         @Override public Long getUpMenuSn() { return upMenuSn; }
@@ -642,7 +583,6 @@ class MenuServiceTest {
         results.add(new MenuGrantFixture(menu2, null)); // 권한 없음
 
         stubNavigation(results);
-        when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         List<MenuDto> hierarchy = menuService.getMenuHierarchy();
         assertThat(hierarchy).hasSize(1);
@@ -663,7 +603,6 @@ class MenuServiceTest {
         results.add(new MenuGrantFixture(menu1, auth));
         
         stubNavigation(results);
-        when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         List<MenuDto> hierarchy = menuService.getSubMenus(1L);
         assertThat(hierarchy).hasSize(1);
@@ -678,13 +617,6 @@ class MenuServiceTest {
         
         assertThat(menuService.getAllMenusCached()).hasSize(1);
         assertThat(menuService.getMenuParentMapCached()).containsKey(1L);
-        
-        when(programRepository.findAll()).thenReturn(Collections.emptyList());
-        assertThat(menuService.getAllPrograms()).isEmpty();
-
-        List<nuri.business.service.menu.dto.MenuWithProgramDto> results = new ArrayList<>();
-        results.add(new nuri.business.service.menu.dto.MenuWithProgramDto(menu, null));
-        when(menuRepository.findAllWithPrograms()).thenReturn(results);
         assertThat(menuService.getAllMenus()).hasSize(1);
     }
 
@@ -728,39 +660,44 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("insertMenuManage - 등록된 프로그램만 연결하고 메뉴 번호는 DB에서 생성한다")
-    void insertMenuManage_LinksExistingProgram() {
+    @DisplayName("insertMenuManage - 빈 연결 프로그램은 연결 없음이고 메뉴 번호는 DB에서 생성한다")
+    void insertMenuManage_BlankProgramMeansNoLinkAndDbGeneratesId() {
         MenuDto dto = MenuDto.builder()
                 .menuNo(9_999_999L)
                 .menuNm("테스트 메뉴")
-                .prgrmFileNm("NewProgram")
-                .modernRoute("/test/new-program")
+                .prgrmFileNm("")
+                .modernRoute("/test/new-menu")
                 .build();
-        
-        when(programRepository.existsById("NewProgram")).thenReturn(true);
+
         stubGeneratedMenuId(101L);
         menuService.insertMenuManage(dto);
-        verify(programRepository).existsById("NewProgram");
-        verify(programRepository, never()).save(any(Program.class));
         ArgumentCaptor<Menu> menuCaptor = ArgumentCaptor.forClass(Menu.class);
         verify(menuRepository).save(menuCaptor.capture());
         assertThat(menuCaptor.getValue().getMenuSn())
                 .as("create payload의 수동 menuNo는 무시하고 DB IDENTITY가 번호를 부여해야 한다")
                 .isEqualTo(101L);
+        assertThat(menuCaptor.getValue().getPrgrmFileNm()).as("빈 문자열을 그대로 저장하면 외래 키 위반이다").isNull();
         verify(authorizationAdministrationService).grantNewMenuToCompatibilityAdmin(101L);
     }
 
-    @Test
-    void rejectsUnknownProgramOnCreateAndUpdate() {
+    /**
+     * [2026-10-04 프로그램 목록 퇴역] 원장을 채우는 화면·API 를 걷었으므로 메뉴를 프로그램에 새로 연결하지 않는다.
+     * 종전에는 원장에 있는 프로그램이면 연결을 허용했다 — 그 분기를 되살리면 이 테스트가 실패한다.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"EgovBBSMaster", " Legacy "})
+    void rejectsProgramLinkOnCreateAndUpdate(String prgrmFileNm) {
         MenuDto dto = MenuDto.builder().menuNo(1L).menuNm("메뉴")
-                .prgrmFileNm("missing").modernRoute("/test").build();
+                .prgrmFileNm(prgrmFileNm).modernRoute("/test").build();
         Menu menu = hierarchyNode(1L, null);
         givenParentGraph(menu);
 
         assertThatThrownBy(() -> menuService.insertMenuManage(dto)).isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
+                .hasMessageContaining("연결 프로그램을 지정할 수 없습니다");
         assertThatThrownBy(() -> menuService.updateMenuManage(dto)).isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
+                .hasMessageContaining("연결 프로그램을 지정할 수 없습니다");
 
         assertThat(menu.getMenuNm()).isEqualTo("original");
         assertThat(menu.getPrgrmFileNm()).isNull();
@@ -768,8 +705,24 @@ class MenuServiceTest {
         assertThat(menu.getUpMenuSn()).isNull();
         assertThat(menu.getMenuOrdr()).isEqualTo(1);
         verify(menuRepository, never()).save(any());
-        verify(programRepository, never()).save(any());
         verifyNoInteractions(authorizationAdministrationService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "  "})
+    @DisplayName("updateMenuManage - 연결 프로그램 없이 저장하면 남아 있던 레거시 연결을 걷는다")
+    void updateWithoutProgramClearsLegacyLink(String blank) {
+        Menu menu = Menu.builder().menuSn(1L).menuNm("original").menuOrdr(1).prgrmFileNm("EgovLegacy").build();
+        givenParentGraph(menu);
+
+        menuService.updateMenuManage(MenuDto.builder().menuNo(1L).menuNm("renamed").prgrmFileNm(blank).build());
+        assertThat(menu.getMenuNm()).isEqualTo("renamed");
+        assertThat(menu.getPrgrmFileNm()).as("레거시 연결은 값 없이 저장해 걷는다").isNull();
+
+        Menu other = Menu.builder().menuSn(2L).menuNm("other").menuOrdr(1).prgrmFileNm("EgovLegacy").build();
+        givenParentGraph(other);
+        menuService.updateMenuManage(MenuDto.builder().menuNo(2L).menuNm("other").build());
+        assertThat(other.getPrgrmFileNm()).as("필드를 보내지 않아도 연결은 남지 않는다").isNull();
     }
 
     @ParameterizedTest
@@ -806,7 +759,7 @@ class MenuServiceTest {
             assertThat(menu.getUpMenuSn()).isNull();
             assertThat(menu.getMenuOrdr()).isEqualTo(1);
         }
-        verifyNoInteractions(menuRepository, programRepository, authorizationAdministrationService,
+        verifyNoInteractions(menuRepository, authorizationAdministrationService,
                 navigationGrantRepository);
     }
 
@@ -818,7 +771,6 @@ class MenuServiceTest {
         verify(menuRepository).save(captured.capture());
         assertThat(captured.getValue().getPrgrmFileNm()).isNull();
         assertThat(captured.getValue().getModernRoute()).isEqualTo("/test");
-        verifyNoInteractions(programRepository);
     }
 
     @Test
@@ -852,19 +804,6 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("getRootMenuIdByUrl - 엣지 케이스 테스트")
-    void getRootMenuIdByUrl_Edges() {
-        assertThat(menuService.getRootMenuIdByUrl(null)).isNull();
-        
-        when(programRepository.findByUrl("/test")).thenReturn(Optional.empty());
-        assertThat(menuService.getRootMenuIdByUrl("/test")).isNull();
-        
-        assertThat(menuService.getRootMenuIdByProgrmFileNm(null)).isNull();
-        when(menuRepository.findByPrgrmFileNm("NotFound")).thenReturn(Optional.empty());
-        assertThat(menuService.getRootMenuIdByProgrmFileNm("NotFound")).isNull();
-    }
-
-    @Test
     @DisplayName("buildMenuTree - 루트 메뉴 필터링 엣지 케이스")
     void buildMenuTree_RootMenuFilteringEdges() {
         useGroup("ROLE_ADMIN");
@@ -883,7 +822,6 @@ class MenuServiceTest {
         results.add(new MenuGrantFixture(menuOrphan, "ROLE_ADMIN"));
 
         stubNavigation(results);
-        when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         List<MenuDto> hierarchy = menuService.getMenuHierarchy();
         // 자동 BIGINT는 7자리 상한과 무관하다. High-ID, Null Upper, Zero Upper가 모두 루트다.
@@ -912,7 +850,6 @@ class MenuServiceTest {
         results.add(new MenuGrantFixture(menuSubChild, authSubChild));
         
         stubNavigation(results);
-        when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         List<MenuDto> hierarchy = menuService.getSubMenus(1L);
         assertThat(hierarchy).hasSize(1);
@@ -932,34 +869,30 @@ class MenuServiceTest {
     }
     
     @Test
-    @DisplayName("getAllMenus - calculateUrl에서 programMap 사용 테스트")
-    void getAllMenus_calculateUrlWithProgramMap() {
-        Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("Prog").build();
-        Program program = Program.builder().prgrmFileNm("Prog").url("/new/url").build();
-        
-        List<nuri.business.service.menu.dto.MenuWithProgramDto> results = new ArrayList<>();
-        results.add(new nuri.business.service.menu.dto.MenuWithProgramDto(menu, program));
-        
-        when(menuRepository.findAllWithPrograms()).thenReturn(results);
-        
-        List<MenuDto> menus = menuService.getAllMenus();
-        assertThat(menus).hasSize(1);
-        assertThat(menus.get(0).getChkURL()).isEqualTo("/new/url");
-    }
-    
+    @DisplayName("getAllMenus - 경로가 없으면 레거시 파일명으로 추정하고, 추정할 수 없으면 / 를 싣는다")
+    void getAllMenus_calculateUrlFromLegacyFileName() {
+        Menu inferred = Menu.builder().menuSn(1L).prgrmFileNm("EgovMenuList").build();
+        Menu unknown = Menu.builder().menuSn(2L).prgrmFileNm("Prog").build();
+        when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenReturn(List.of(inferred, unknown));
 
-    
+        List<MenuDto> menus = menuService.getAllMenus();
+        assertThat(menus).extracting(MenuDto::getChkURL).containsExactly("/admin/system/menus", "/");
+        assertThat(menus).extracting(MenuDto::getPrgrmFileNm).containsExactly("EgovMenuList", "Prog");
+        // 관리 목록도 같은 저장소 순서와 경로 계산을 쓴다(종전에는 둘 다 프로그램 원장을 조인해 읽었다).
+        assertThat(menuService.selectMenuManageList(new nuri.business.domain.common.BaseSearchDto()))
+                .extracting(MenuDto::getMenuNo, MenuDto::getChkURL)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(1L, "/admin/system/menus"), org.assertj.core.groups.Tuple.tuple(2L, "/"));
+    }
+
     @Test
-    @DisplayName("calculateUrl - url이 / 인 경우")
-    void calculateUrl_RootUrl() {
+    @DisplayName("calculateUrl - 프로그램 원장을 읽지 않는다: 추정할 수 없는 레거시 파일명은 / 다")
+    void calculateUrl_UnknownLegacyFileName() {
+        // [2026-10-04 프로그램 목록 퇴역] 종전에는 원장의 URL('/'→'#', '/x'→'/x')을 썼다. 원장에 그 프로그램이 없을 때의 값을 유지한다.
         Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("Prog").build();
-        Program program = Program.builder().prgrmFileNm("Prog").url("/").build();
-        
         when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
-        when(programRepository.findById("Prog")).thenReturn(Optional.of(program));
-        
+
         MenuDto result = menuService.selectMenuManage(1L);
-        assertThat(result.getChkURL()).isEqualTo("#"); 
+        assertThat(result.getChkURL()).isEqualTo("/");
     }
     
     @Test
@@ -1001,7 +934,6 @@ class MenuServiceTest {
         List<MenuGrantFixture> results = new ArrayList<>();
         results.add(new MenuGrantFixture(menu1, "ROLE_ADMIN"));
         stubNavigation(results);
-        when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         assertThat(menuService.getSubMenus(null)).hasSize(1);
         assertThat(menuService.getSubMenus(0L)).hasSize(1);
@@ -1017,7 +949,6 @@ class MenuServiceTest {
         List<MenuGrantFixture> results = new ArrayList<>();
         results.add(new MenuGrantFixture(menu1, "ROLE_ADMIN"));
         stubNavigation(results);
-        when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         assertThat(menuService.getSubMenus(999L)).isEmpty();
     }
@@ -1031,7 +962,6 @@ class MenuServiceTest {
         List<MenuGrantFixture> results = new ArrayList<>();
         results.add(new MenuGrantFixture(menu1, "ROLE_ADMIN"));
         stubNavigation(results);
-        when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         List<MenuDto> subMenus = menuService.getSubMenus(1L);
         assertThat(subMenus).isEmpty(); // getChildren이 null 이면 new ArrayList<>() 반환
@@ -1057,11 +987,10 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("전체 메뉴 및 프로그램 정보 목록 조회")
+    @DisplayName("전체 메뉴 목록 조회 - 경로가 있으면 경로를 싣는다")
     void getAllMenus() {
-        Menu menu = Menu.builder().menuSn(1L).menuNm("M1").prgrmFileNm("P1").build();
-        Program program = Program.builder().prgrmFileNm("P1").url("/p1").build();
-        when(menuRepository.findAllWithPrograms()).thenReturn(List.of(new nuri.business.service.menu.dto.MenuWithProgramDto(menu, program)));
+        Menu menu = Menu.builder().menuSn(1L).menuNm("M1").modernRoute("/p1").build();
+        when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenReturn(List.of(menu));
 
         List<MenuDto> result = menuService.getAllMenus();
         assertThat(result).hasSize(1);
@@ -1162,7 +1091,7 @@ class MenuServiceTest {
         assertThat(structure.menus().get(1).upMenuSn()).as("0 상위는 루트다").isNull();
         assertThat(structure.menus().get(1)).isEqualTo(new MenuStructureItem(9L, "Zero parent root", null, 1, "", "설명", "N", "dir"));
         assertThat(structure.version()).hasSize(64).isEqualTo(MenuStructurePlan.versionOf(rows));
-        verify(menuRepository, never()).findAllWithPrograms();
+        verify(menuRepository, never()).findAllByOrderByUpMenuSnAscMenuOrdrAsc();
         verify(menuRepository, never()).findStructureRowsForUpdate();
     }
 

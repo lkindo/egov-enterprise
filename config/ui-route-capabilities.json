@@ -4068,6 +4068,7 @@
             "create",
             "delete",
             "edit",
+            "filter",
             "preview",
             "save",
             "search",
@@ -4080,7 +4081,7 @@
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-10-02",
+          "lastVerifiedAt": "2026-10-05",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/AuthorizationApiController.java",
@@ -9013,15 +9014,13 @@
       ],
       "surface": "admin-console",
       "status": "partial",
-      "dataSource": "mixed",
+      "dataSource": "admin-menus-api",
       "supportedActions": [
-        "create",
-        "delete",
-        "edit",
         "filter",
         "navigate",
         "paginate",
         "search",
+        "sort",
         "view-list"
       ],
       "profileOwners": [
@@ -9039,9 +9038,7 @@
       "routing": {
         "kind": "page"
       },
-      "observedPageRedirectCalls": [
-        "/login?expired=true&redirect=/admin/system/programs"
-      ],
+      "observedPageRedirectCalls": [],
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
@@ -9054,6 +9051,7 @@
             "navigate",
             "paginate",
             "search",
+            "sort",
             "view-list"
           ],
           "unsupportedVisibleActions": [],
@@ -9062,7 +9060,7 @@
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-10-02",
+          "lastVerifiedAt": "2026-10-05",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/MenuApiController.java",
@@ -9073,41 +9071,10 @@
             "frontend/src/app/admin/system/programs/__tests__/screenList.test.ts",
             "frontend/src/app/admin/system/programs/menuStructureSource.ts",
             "frontend/src/app/admin/system/programs/page.tsx",
-            "frontend/src/app/admin/system/programs/programMenuLinks.ts",
             "frontend/src/app/admin/system/programs/screenList.ts",
             "frontend/src/app/admin/system/programs/useMenuStructureSource.ts",
             "frontend/src/lib/navigation/menu-screen-resolution.ts",
             "frontend/src/types/generated-screen-registry.ts"
-          ]
-        },
-        {
-          "id": "program.management",
-          "status": "partial",
-          "candidateStatus": "live",
-          "dataSource": "admin-programs-api",
-          "actions": [
-            "create",
-            "delete",
-            "edit",
-            "search",
-            "view-list"
-          ],
-          "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "이전 프로그램",
-          "primaryTask": false,
-          "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-10-02",
-          "owner": "product/UX + domain owner",
-          "evidence": [
-            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/ProgramApiController.java",
-            "api-server/src/test/java/nuri/api/controller/foundation/controller/system/ProgramApiControllerTest.java",
-            "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
-            "frontend/src/app/admin/system/programs/__tests__/ProgramAdminClient.test.tsx",
-            "frontend/src/app/admin/system/programs/page.tsx",
-            "frontend/src/components/admin/system/ProgramForm.tsx",
-            "frontend/src/services/foundation/system/ProgramAdminService.ts"
           ]
         }
       ],
