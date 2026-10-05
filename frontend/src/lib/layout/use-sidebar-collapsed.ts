@@ -1,20 +1,16 @@
 'use client';
 
 import { useCallback, useSyncExternalStore } from 'react';
-import {
-  SIDEBAR_COLLAPSE_BUTTON_ID,
-  SIDEBAR_COLLAPSED_ATTRIBUTE,
-  SIDEBAR_COLLAPSED_STORAGE_KEY,
-  SIDEBAR_RAIL_EXPAND_BUTTON_ID,
-} from './sidebar-collapse-script';
+import { SIDEBAR_COLLAPSED_ATTRIBUTE, SIDEBAR_COLLAPSED_STORAGE_KEY } from './sidebar-collapse-script';
 
 /**
  * 넓은 화면의 사이드바 접힘 상태(2026-10-05). 정본은 `<html data-sidebar-collapsed>` 속성이다 — 루트 레이아웃의 인라인
  * 스크립트가 그리기 전에 이 브라우저의 기억을 속성으로 되살리고, 토글은 속성과 저장소를 함께 바꾼다. 저장소를 쓸 수 없어도
  * 속성은 바뀌므로 이번 화면에서는 접기·펼치기가 그대로 동작한다(다음 방문에 기억하지 못할 뿐이다).
  *
- * 화면 표현(사이드바 숨김·접힘 막대·본문 여백)은 CSS 가 속성으로 정한다. 이 훅은 머리글 단추의 aria-expanded 만 맞춘다 — 서버 렌더와
- * 하이드레이션은 펼침(서버 스냅샷 false)으로 그리고, 하이드레이션 직후 속성 값으로 다시 그린다(useSyncExternalStore).
+ * 화면 표현(사이드바 상자를 좁은 띠로 줄임·안쪽 내용 숨김·본문 여백)은 CSS 가 속성으로 정한다. 이 훅은 경계선 단추의
+ * aria-expanded·툴팁과 머리글 '메뉴 보기'의 펼치기 판단만 맞춘다 — 서버 렌더와 하이드레이션은 펼침(서버 스냅샷 false)으로
+ * 그리고, 하이드레이션 직후 속성 값으로 다시 그린다(useSyncExternalStore).
  * 뷰포트로 렌더를 가르지 않는다(ADR-0006) — 사용자가 고른 표시 설정을 읽을 뿐이다.
  *
  * 다른 탭과는 맞추지 않는다(storage 이벤트를 구독하지 않는다) — 탭마다 사이드바를 따로 접어 두는 것이 자연스러운 개인 편의
@@ -49,29 +45,6 @@ export function setSidebarCollapsed(collapsed: boolean): void {
     // 기억하지 못해도 이번 화면의 접기·펼치기는 그대로 동작한다.
   }
   listeners.forEach((listener) => listener());
-}
-
-/**
- * [2026-10-05 DEC-OPS-227] 사이드바 안 '사이드바 접기'와 접힘 막대의 '사이드바 펼치기'는 누르는 순간 자기 자신이
- * display:none 이 된다 — 그대로 두면 포커스가 문서 처음으로 떨어진다(2.4.3). 그래서 상대 단추로 포커스를 넘긴다. 속성을
- * 먼저 바꾸므로 상대 단추는 이미 보인다. 상대가 아직 없거나(사이드바가 메뉴를 읽는 중) 그려지지 않으면(표시 규칙이 어긋난
- * 경우 — focus() 가 조용히 실패한다) 본문으로 보낸다. checkVisibility 가 없는 환경은 보인다고 본다.
- * 머리글 단추와 '메뉴 보기'는 자리를 지키므로 이 함수들을 쓰지 않는다.
- */
-function moveFocusTo(id: string): void {
-  const target = document.getElementById(id);
-  const rendered = target !== null && target.checkVisibility?.() !== false;
-  (rendered ? target : document.getElementById('main-content'))?.focus();
-}
-
-export function collapseSidebarAndFocusRail(): void {
-  setSidebarCollapsed(true);
-  moveFocusTo(SIDEBAR_RAIL_EXPAND_BUTTON_ID);
-}
-
-export function expandSidebarAndFocusCollapse(): void {
-  setSidebarCollapsed(false);
-  moveFocusTo(SIDEBAR_COLLAPSE_BUTTON_ID);
 }
 
 export function useSidebarCollapsed(): { collapsed: boolean; toggle: () => void } {

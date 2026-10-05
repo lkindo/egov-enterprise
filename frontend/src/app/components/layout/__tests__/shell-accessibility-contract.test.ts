@@ -77,12 +77,14 @@ describe('app shell accessibility source contract', () => {
     expect(sidebar).toContain('id="primary-sidebar"');
   });
 
-  it('넓은 화면 사이드바 접기는 그리기 전에 복원되고 CSS 로만 숨기며 사이드바 자리표시까지 함께 숨긴다', () => {
-    // [2026-10-05] 접힘의 화면 표현은 전부 CSS 다 — JS 로 aside 를 언마운트하거나 뷰포트를 재지 않는다(ADR-0006).
+  it('넓은 화면 사이드바 접기는 그리기 전에 복원되고 CSS 로만 상자를 띠로 줄이며 사이드바 자리표시까지 함께 줄인다', () => {
+    // [2026-10-05 DEC-OPS-228] 접힘의 화면 표현은 전부 CSS 다 — JS 로 aside 를 언마운트하거나 뷰포트를 재지 않는다(ADR-0006).
     //   ① 복원 스크립트는 요청 nonce 를 달고 본문(ThemeProvider)보다 먼저 실행돼야 첫 화면이 펼쳤다가 접히지 않는다.
-    //   ② 숨김 규칙은 lg 이상 미디어쿼리 안에만 있다 — lg 미만 서랍형 사이드바는 이 표지와 무관해야 한다.
-    //   ③ 사이드바와 Suspense 자리표시 둘 다 표지를 달아야 한다 — 자리표시만 남으면 접힌 화면에 빈 띠가 생긴다.
+    //   ② 접힘 규칙은 lg 이상 미디어쿼리 안에만 있다 — lg 미만 서랍형 사이드바는 이 표지와 무관해야 한다.
+    //   ③ 사이드바와 Suspense 자리표시 둘 다 표지를 달아야 한다 — 자리표시만 남으면 접힌 첫 화면에 사이드바 폭의 빈 띠가 생긴다.
     //   ④ 본문 여백은 폭 토큰이 아니라 inset 토큰이다 — 폭을 직접 쓰면 접어도 사이드바 폭의 빈 자리가 남는다.
+    //   ⑤ 접으면 사이드바 상자(랜드마크)는 남아 띠 폭이 되고 안쪽 내용 컨테이너만 숨는다 — 상자를 display:none 으로 없애면
+    //      그 안의 경계선 단추도 사라져 포커스가 떨어지고 펼칠 길이 없어진다.
     const layout = readAppSource('layout.tsx');
     const sidebar = readAppSource('components', 'layout', 'sidebar.tsx');
     const frame = readAppSource('components', 'layout', 'ApplicationFrame.tsx');
@@ -93,62 +95,78 @@ describe('app shell accessibility source contract', () => {
     expect(layout.indexOf(scriptTag)).toBeLessThan(layout.indexOf('<ThemeProvider'));
     expect(layout).toMatch(/<aside data-app-sidebar=""[^>]*lg:block/);
     expect(sidebar).toMatch(/<aside\s+id="primary-sidebar"\s+data-app-sidebar=""/);
+    expect(sidebar).toMatch(/<div\s+id=\{SIDEBAR_CONTENT_ID\}\s+data-app-sidebar-content=""/);
     expect(frame).toContain('lg:pl-[var(--app-sidebar-inset)]');
     expect(frame).not.toContain('lg:pl-[var(--app-sidebar-width)]');
 
     const media = globals.match(/@media \(min-width: 64rem\) \{([\s\S]*?)\n\}/)?.[1] ?? '';
-    // [2026-10-05 DEC-OPS-227] 접으면 본문 여백은 0 이 아니라 접힘 막대 폭이다 — 막대가 그 자리를 쓴다.
+    // 접으면 본문 여백은 0 이 아니라 띠 폭이다 — 띠(줄어든 사이드바 상자)가 그 자리를 쓴다.
     expect(media).toMatch(/:root\[data-sidebar-collapsed="true"\]\s*\{\s*--app-sidebar-inset:\s*var\(--app-sidebar-rail-width\);\s*\}/);
-    expect(media).toMatch(/:root\[data-sidebar-collapsed="true"\] \[data-app-sidebar\]\s*\{\s*display:\s*none;\s*\}/);
-    expect(media).toMatch(/:root\[data-sidebar-collapsed="true"\] \[data-app-sidebar-rail\]\s*\{\s*display:\s*flex;\s*\}/);
-    // 인쇄에서는 막대도 그 자리도 남기지 않는다 — 같은 블록 끝의 인쇄 규칙이 같은 선택자로 위 두 규칙을 뒤집는다.
+    expect(media).toMatch(/:root\[data-sidebar-collapsed="true"\] \[data-app-sidebar\]\s*\{\s*width:\s*var\(--app-sidebar-rail-width\);\s*\}/);
+    expect(media).toMatch(/:root\[data-sidebar-collapsed="true"\] \[data-app-sidebar-content\]\s*\{\s*display:\s*none;\s*\}/);
+    // 화면(screen)에서 사이드바 상자를 없애는 규칙은 없다 — 인쇄 규칙 밖에서 [data-app-sidebar] 를 display:none 으로 두면 ⑤가 깨진다.
+    const screenRules = media.slice(0, media.indexOf('@media print'));
+    expect(media.indexOf('@media print')).toBeGreaterThan(-1);
+    expect(screenRules).not.toMatch(/\[data-app-sidebar\]\s*\{[^}]*display:\s*none/);
+    expect(screenRules).not.toMatch(/data-app-sidebar-edge-toggle/);
+    // 인쇄에서는 경계선 단추를 늘 숨기고, 접힌 화면에는 띠도 그 자리도 남기지 않는다 — 같은 블록 끝의 인쇄 규칙이 뒤에서 이긴다.
     //   본문에 print:pl-0 을 붙이면 펼친 상태의 넓은 인쇄에서 사이드바가 본문을 덮으므로 접힘 조건 안에서만 비운다.
     const print = media.match(/@media print \{([\s\S]*?)\n {2}\}/)?.[1] ?? '';
+    expect(print).toMatch(/(?:^|\n)\s*\[data-app-sidebar-edge-toggle\]\s*\{\s*display:\s*none;\s*\}/);
     expect(print).toMatch(/:root\[data-sidebar-collapsed="true"\]\s*\{\s*--app-sidebar-inset:\s*0px;\s*\}/);
-    expect(print).toMatch(/:root\[data-sidebar-collapsed="true"\] \[data-app-sidebar-rail\]\s*\{\s*display:\s*none;\s*\}/);
-    expect(print.match(/\{/g)).toHaveLength(2);
-    expect(media.indexOf('@media print')).toBeGreaterThan(media.search(/\[data-app-sidebar-rail\]\s*\{\s*display:\s*flex/));
-    // 블록 안의 규칙은 이 셋과 인쇄 규칙 둘뿐이다 — 다른 것을 숨기거나 보이는 규칙이 슬며시 늘지 않는다.
-    expect(media.match(/\{/g)).toHaveLength(6);
-    // 미디어쿼리 밖에는 접힘 규칙이 없다(서랍형 보존). 예외는 머리글 토글의 아이콘을 고르는 표현 변형 하나뿐이다 —
-    //   그 변형은 아무것도 숨기지 않고(배치 무관) lg 이상에서만 보이는 토글 안에서만 쓴다(아래 소비처 검사).
+    expect(print).toMatch(/:root\[data-sidebar-collapsed="true"\] \[data-app-sidebar\]\s*\{\s*display:\s*none;\s*\}/);
+    expect(print.match(/\{/g)).toHaveLength(3);
+    expect(media.indexOf('@media print')).toBeGreaterThan(media.search(/\[data-app-sidebar-content\]\s*\{\s*display:\s*none/));
+    // 블록 안의 규칙은 이 셋과 인쇄 규칙 셋뿐이다 — 다른 것을 숨기거나 보이는 규칙이 슬며시 늘지 않는다.
+    expect(media.match(/\{/g)).toHaveLength(7);
+    // 미디어쿼리 밖에는 접힘 규칙이 없다(서랍형 보존). 예외는 경계선 단추의 아이콘을 고르는 표현 변형 하나뿐이다 —
+    //   그 변형은 아무것도 숨기지 않고(배치 무관) lg 이상에서만 보이는 단추 안에서만 쓴다(아래 소비처 검사).
     const variantRule = '@custom-variant sidebar-collapsed (:root[data-sidebar-collapsed="true"] &);';
     expect(globals.split(variantRule)).toHaveLength(2);
     expect(globals.replace(media, '').replace(variantRule, '').match(/data-sidebar-collapsed/g)).toBeNull();
+    expect(globals.replace(media, '').match(/data-app-sidebar-(?:content|edge-toggle)/g)).toBeNull();
     const variantConsumers = listSourceFiles(SRC_DIR)
       .filter((file) => /sidebar-collapsed:/.test(readFileSync(file, 'utf8')))
       .map((file) => relative(SRC_DIR, file).split(sep).join('/'))
       .sort();
-    expect(variantConsumers, 'sidebar-collapsed: 변형은 머리글 토글 아이콘 전용이다').toEqual(['app/components/layout/header.tsx']);
+    expect(variantConsumers, 'sidebar-collapsed: 변형은 경계선 단추 아이콘 전용이다')
+      .toEqual(['app/components/layout/sidebar-edge-toggle.tsx']);
   });
 
-  it('접힘 막대는 사이드바 Suspense 밖에서 기본 숨김으로 그리고, 접힘(lg 이상)일 때만 CSS 가 보인다', () => {
-    // [2026-10-05 DEC-OPS-227] 머리글 아이콘 하나로는 접기를 찾지 못했다는 사용자 보고로 둔 막대다.
-    //   ① 레이아웃이 sidebar 자리(공개 화면에서는 마운트되지 않는다)에, 사이드바의 Suspense 뒤에 둔다 — 메뉴를 읽는 동안에도
-    //      펼치기 단추가 있다. Suspense 안에 두면 접힌 첫 화면에 펼치기 단추가 늦게 나타난다.
-    //   ② 막대는 기본 `hidden` 이다 — 보이는 일은 globals.css 의 lg 이상 접힘 규칙 하나만 한다(뷰포트로 렌더를 가르지 않는다, ADR-0006).
-    //      `hidden` 이 빠지면 펼친 화면·좁은 화면에 막대가 겹쳐 보인다.
-    //   ③ 인쇄 숨김은 막대 클래스가 아니라 globals.css 접힘 블록의 인쇄 규칙이 맡는다(위 테스트) — 보이고 숨는 규칙을 한 곳에 둔다.
-    //   ④ 막대 폭 토큰은 :root 에 하나 있고, 막대와 여백이 같은 토큰을 쓴다.
+  it('접기·펼치기 단추는 사이드바 경계선의 하나뿐이고, 사이드바 상자 안·내용 컨테이너 밖에 늘 있다', () => {
+    // [2026-10-05 DEC-OPS-228] 사용자 결정 — 머리글 로고 옆 아이콘·사이드바 맨 위 글자 단추·접힘 막대를 걷고 경계선의 원형
+    //   아이콘 단추 하나만 남긴다.
+    //   ① 단추는 사이드바 상자(aside '주 메뉴', 랜드마크) 안에서 안쪽 내용 컨테이너보다 앞·밖에 그린다 — 접어도 사라지지 않는다.
+    //   ② 머리글에는 접기 단추가 없다(같은 기능의 단추가 둘이 되지 않는다). '메뉴 보기'가 접힌 사이드바를 펴는 일은 남는다.
+    //   ③ 띠 폭 토큰은 :root 에 하나 있고(1.25rem), 띠(줄어든 상자)와 본문 여백이 같은 토큰을 쓴다.
+    //   ④ 사이드바 상자는 overflow 를 자르지 않는다 — 단추가 경계선 밖으로 반쯤 나간다(스크롤은 안쪽 컨테이너가 한다).
+    const sidebar = readAppSource('components', 'layout', 'sidebar.tsx');
+    const header = readAppSource('components', 'layout', 'header.tsx');
     const layout = readAppSource('layout.tsx');
-    const rail = readAppSource('components', 'layout', 'sidebar-rail.tsx');
+    const toggle = readAppSource('components', 'layout', 'sidebar-edge-toggle.tsx');
     const globals = readAppSource('globals.css').replace(/\/\*[\s\S]*?\*\//g, '');
 
-    expect(layout).toMatch(/sidebar=\{<><Suspense\b[\s\S]*?<\/Suspense><SidebarRail \/><\/>\}/);
-    expect(layout.match(/<SidebarRail\b/g)).toHaveLength(1);
+    const asideStart = sidebar.search(/<aside\s+id="primary-sidebar"/);
+    expect(asideStart).toBeGreaterThan(-1);
+    const aside = sidebar.slice(asideStart, sidebar.indexOf('</aside>', asideStart));
+    expect(sidebar.match(/<SidebarEdgeToggle\b/g)).toHaveLength(1);
+    expect(aside.indexOf('<SidebarEdgeToggle />')).toBeGreaterThan(-1);
+    expect(aside.indexOf('<SidebarEdgeToggle />')).toBeLessThan(aside.indexOf('data-app-sidebar-content'));
+    const asideClasses = aside.match(/className=\{cn\(\s*'([^']+)'/)?.[1].split(/\s+/) ?? [];
+    expect(asideClasses).toContain('fixed');
+    expect(asideClasses.filter((name) => /overflow/.test(name))).toEqual([]);
 
-    const railTag = rail.match(/<aside\b[\s\S]*?>/)?.[0] ?? '';
-    expect(railTag).toContain('data-app-sidebar-rail=""');
-    const railClasses = railTag.match(/className="([^"]+)"/)?.[1].split(/\s+/) ?? [];
-    expect(railClasses).toEqual(expect.arrayContaining([
-      'hidden', 'fixed', 'left-0', 'top-[var(--app-header-height)]', 'w-[var(--app-sidebar-rail-width)]',
-    ]));
-    // 폭·인쇄 조건으로 스스로 보이거나 숨으면 안 된다 — 그 일은 접힘 규칙만 한다.
-    expect(railClasses.filter((name) => /^(?:sm|md|lg|xl|2xl|print):/.test(name))).toEqual([]);
-    expect(globals.match(/--app-sidebar-rail-width:\s*3rem;/g)).toHaveLength(1);
-    // 막대를 보이는 규칙은 lg 이상 접힘 블록 밖에 없다.
-    const media = globals.match(/@media \(min-width: 64rem\) \{([\s\S]*?)\n\}/)?.[1] ?? '';
-    expect(globals.replace(media, '').match(/data-app-sidebar-rail/g)).toBeNull();
+    expect(toggle).toContain('data-app-sidebar-edge-toggle=""');
+    expect(toggle).toContain('aria-label={SIDEBAR_TOGGLE_LABEL}');
+    expect(toggle).toContain('aria-controls={SIDEBAR_CONTENT_ID}');
+    expect(header).not.toMatch(/SIDEBAR_TOGGLE_LABEL|PanelLeft|SidebarEdgeToggle/);
+    expect(header).toContain('if (isSidebarCollapsed) setSidebarCollapsed(false);');
+    expect(layout).not.toMatch(/SidebarRail|SidebarEdgeToggle/);
+    expect(listSourceFiles(SRC_DIR).filter((file) => /SidebarRail|data-app-sidebar-rail/.test(readFileSync(file, 'utf8'))))
+      .toEqual([]);
+
+    expect(globals.match(/--app-sidebar-rail-width:\s*1\.25rem;/g)).toHaveLength(1);
+    expect(globals.match(/--app-sidebar-rail-width:/g)).toHaveLength(1);
   });
 
   it('fill 화면에서 숨는 푸터의 링크는 같은 조건(lg 이상)에서 보이는 머리글 링크로도 닿고, 같은 pack 과 함께 남는다', () => {
