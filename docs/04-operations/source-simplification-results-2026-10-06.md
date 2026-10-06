@@ -45,7 +45,7 @@ Seroval은 Solid의 기존 `~1.5.4` 범위를 넘어가므로 실제 소비 경�
 
 ## 날짜 입력 호환성
 
-| 입력 | 도메인 update/resubmit | 결재 등록 service | 결재 목록 filter |
+| 입력 | 도메인 수정(MemoReport.update)·재상신(resubmit) | 결재 등록 service | 결재 목록 filter |
 |---|---|---|---|
 | null·빈 문자열 | 허용·원문 유지 | 오늘 yyyyMMdd | null |
 | 공백만 | 거부 | 오늘 yyyyMMdd | null |
@@ -53,6 +53,7 @@ Seroval은 Solid의 기존 `~1.5.4` 범위를 넘어가므로 실제 소비 경�
 | 정상 yyyy-MM-dd | 허용·원문 유지 | yyyyMMdd | yyyyMMdd |
 | 날짜 앞뒤 공백 | 거부 | 거부 | trim 후 검사 |
 | 중복/어긋난 하이픈·0000년·없는 날짜·비ASCII 숫자 | 거부 | 거부 | 거부 |
+| 오프셋 접미사(`20261006Z`, `2026-10-06+0900`) | 거부 | 거부 | 거부(종전에는 접미사를 지운 날짜로 수용, 2026-10-07 재검증에서 기록) |
 
 중복 구분자와 0000년 거부는 의도적인 검증 강화다. DTO의 기존 `Ymd.OPTIONAL_PATTERN`은 바꾸지 않았다. live `information_schema`에서 req_ymd/memo_rpt_ymd가 nullable VARCHAR(8)임을 확인했다. 기존 Entity의 ISO 원문 호환과 DB 길이의 차이는 이번에 저장 계약 변경으로 확대하지 않았다. REQ_YMD의 연월일C8 표준을 조회했고 MEMO_RPT_YMD의 정확한 용어 행은 없었다.
 

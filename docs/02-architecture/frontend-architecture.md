@@ -39,8 +39,8 @@ flowchart LR
 - **Lazy Loading**: route JavaScript, 최초 표시, CLS, 접근 가능한 대체 표현을 측정해 지연 로딩 여부와 SSR 사용을 결정한다. `ssr: false`를 고중량 컴포넌트의 무조건적 기본값으로 두지 않는다.
 
 ### 3. Service Layer & Data Fetching
-- **ApiService**: 모든 통신은 `ApiService`를 상속받은 전용 서비스 클래스를 통합니다.
-    - **자동 매핑**: 프론트엔드 `page`(0-based) -> 백엔드 `pageIndex`(1-based) 자동 변환 처리.
+- **생성 operation 경계**: HTTP method·경로·query·응답 검증은 생성 operation descriptor(`types/generated-operations`)가 소유한다. 통신은 `lib/api/generated-api-client.ts` 의 `executeGeneratedOperation` 을 거치며, 서비스 클래스는 `ApiService.executeGenerated`(multipart 는 `executeGeneratedMultipart`)로 이를 위임한다.
+    - **페이지 별칭**: 0-based `page` 와 `pageIndex`·`pageUnit` 등 입력 별칭은 공통 자동 변환 없이 각 서비스의 query 변환 함수(예: `services/core/admin-page-query.ts` 의 `toAdminPageQuery`)가 명시적으로 정규화한다.
 - **Server-owned read**: 클라이언트 캐시가 불필요한 표시 데이터는 server-only service/RSC가 소유할 수 있다.
 - **Interactive server state**: mutation, background refresh, client cache가 필요한 데이터는 도메인 가까이에 typed TanStack `queryOptions`와 key hierarchy를 둔다. 중앙 거대 query-key registry를 만들지 않는다.
 - **Initial critical data**: prefetch/hydration과 client fetch는 TTFB, 최초 데이터 표시, loading 노출, 중복 요청, route JS와 cache recovery를 representative route에서 비교한 뒤 선택한다. 임의 개수 quota는 없다.
