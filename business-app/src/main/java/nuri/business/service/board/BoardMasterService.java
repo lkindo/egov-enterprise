@@ -269,19 +269,6 @@ public class BoardMasterService extends BaseAbstractService {
         return distinctBbsIds.stream().map(mastersById::get).toList();
     }
 
-    // --- Added back for test compatibility ---
-    public boolean canUseSatisfaction(String bbsId) {
-        return boardMasterRepository.findById(bbsId)
-                .map(m -> "Y".equals(m.getStsfdgYn()))
-                .orElse(false);
-    }
-
-    public boolean canUseComment(String bbsId) {
-        return boardMasterRepository.findById(bbsId)
-                .map(m -> "Y".equals(m.getAnsYn()))
-                .orElse(false);
-    }
-
     private BoardMasterDto toDto(BoardMasterSearchResult projection) {
         return BoardMasterDto.builder()
                 .bbsId(projection.getBbsId())

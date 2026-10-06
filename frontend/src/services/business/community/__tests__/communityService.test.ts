@@ -7,11 +7,7 @@ const client = vi.hoisted(() => ({
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
-import {
-  communityService,
-  getCommunity,
-  getCommunityList,
-} from '../communityService';
+import { communityService } from '../communityService';
 import { communityUserService } from '@/services/business/user/community/CommunityUserService';
 
 const success = <T,>(data: T) => ({
@@ -135,18 +131,5 @@ describe('communityService generated contract', () => {
     client.getRaw.mockRejectedValueOnce(failure);
 
     await expect(communityService.getCommunity(1)).rejects.toBe(failure);
-  });
-
-  it('named export는 singleton에 바인딩된 채 generated 경계를 사용한다', async () => {
-    const detail = { cmntySn: 1, cmntyNm: '운영', cmntyIntroCn: '소개', useYn: 'N' as const };
-    client.getRaw
-      .mockResolvedValueOnce(success(emptyPage))
-      .mockResolvedValueOnce(success(detail));
-
-    await getCommunityList({ page: 0 });
-    await getCommunity(1);
-
-    expect(client.getRaw).toHaveBeenNthCalledWith(1, 'communities', { params: { page: 0 } });
-    expect(client.getRaw).toHaveBeenNthCalledWith(2, 'communities/1', undefined);
   });
 });

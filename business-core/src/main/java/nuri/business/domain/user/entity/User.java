@@ -319,10 +319,6 @@ public class User extends BaseEntity implements Serializable {
                 emplNo, ofcpsNm, role, bizrNo, jurirNo, cmpnyNm, rprsvNm, indutyCd, entSeCd, userSttsCd, sbscrbYmd);
     }
 
-    public void changeRole(Role role) {
-        this.role = role;
-    }
-
     /**
      * 계정을 잠근다. <b>잠금 시각(lckLastPnttm)을 반드시 함께 기록</b>한다.
      *
@@ -359,13 +355,5 @@ public class User extends BaseEntity implements Serializable {
     // 근거: 가변 자연키는 fk_tb_login_policy_tb_user_info(user_id UNIQUE 대상) 등 loginId 계층 참조를
     // 파손시킬 수 있다. 프로덕션 호출 0건 데드코드였음(테스트 1곳은 빌더 직접 구성으로 전환).
     // 로그인 ID 변경이 제품 요구로 필요해지면 Expand-and-Contract + 참조 재키잉 설계로 재도입할 것.
-
-    public void changeUserTypeCd(String userTypeCd) {
-        this.userTypeCd = userTypeCd;
-    }
-
-    public void changeOfficeTelno(String officeTelno) {
-        this.officeTelno = officeTelno;
-    }
 }
 

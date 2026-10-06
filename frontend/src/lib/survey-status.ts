@@ -50,15 +50,6 @@ export function getSurveyStatus(survey: SurveyPeriod, today?: string): SurveySta
   return 'active'; // 시작일·종료일 당일 포함
 }
 
-/** 오늘 응답할 수 있는가. 판정 불가('unknown')는 닫힘이다. */
-export function isSurveyActive(survey: SurveyPeriod, today?: string): boolean {
-  return getSurveyStatus(survey, today) === 'active';
-}
-
-export function getSurveyStatusLabel(survey: SurveyPeriod, today?: string): string {
-  return SURVEY_STATUS_LABEL[getSurveyStatus(survey, today)];
-}
-
 /** 'yyyyMMdd' → 'yyyy-MM-dd'. 8자가 아니면 원문을 돌려준다. */
 export function displaySurveyYmd(value: string | null | undefined): string {
   if (!isStorageYmd(value)) return value ?? '';

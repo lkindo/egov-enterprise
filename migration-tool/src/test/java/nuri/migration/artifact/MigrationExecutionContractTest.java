@@ -75,7 +75,7 @@ class MigrationExecutionContractTest {
                         "nuri/migration/keymap/KeyMapRegistry.class",
                         "nuri/migration/state/MigrationStateStore.class",
                         "nuri/migration/identity/JdbcTypedValueCodec.class",
-                        "nuri/migration/postgres/PostgresSqlBuilder.class",
+                        "nuri/migration/postgres/PostgresTargetSchemaFingerprinter.class",
                         "nuri/migration/state/RowChecksum.class");
         assertThat(first.digest()).matches("[0-9a-f]{64}");
         assertThat(second.digest()).isEqualTo(first.digest());

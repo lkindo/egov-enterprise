@@ -84,14 +84,4 @@ public class HibernatePerformanceConfig {
             log.warn("   @BatchSize 또는 JOIN FETCH 를 고려해보세요.");
         }
     }
-
-    /**
-     * 통계 초기화 (필요시 수동 호출)
-     */
-    public void resetStatistics() {
-        if (statistics != null) {
-            statistics.clear();
-            log.info("Hibernate statistics 이 초기화되었습니다.");
-        }
-    }
 }

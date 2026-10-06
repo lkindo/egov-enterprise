@@ -11,18 +11,11 @@ class ConstantsTest {
     @Test
     @DisplayName("모든 공개 상수 그룹을 로드할 수 있다")
     void loadsEveryPublicConstantGroup() {
-        assertThat(new Constants.Cache()).isNotNull();
-        assertThat(new Constants.System()).isNotNull();
+        // 중첩 클래스의 암시적 public 생성자는 JaCoCo 가 걸러 주지 않는다 —
+        //   foundation 클래스별 라인 커버리지 규칙을 맞추려면 인스턴스를 한 번 만든다.
         assertThat(new Constants.User()).isNotNull();
-        assertThat(new Constants.Board()).isNotNull();
-        assertThat(new Constants.File()).isNotNull();
-        assertThat(new Constants.Security()).isNotNull();
 
-        assertThat(Constants.Cache.USERS_CACHE).isEqualTo("users");
-        assertThat(Constants.System.DEFAULT_PAGE_SIZE).isEqualTo("10");
-        assertThat(Constants.User.DEFAULT_ROLE).isEqualTo("USER");
-        assertThat(Constants.Board.NOTICE_BOARD_TYPE).isEqualTo("NOTICE");
-        assertThat(Constants.File.MAX_FILE_SIZE).isEqualTo(10L * 1024 * 1024);
-        assertThat(Constants.Security.JWT_PREFIX).isEqualTo("Bearer ");
+        assertThat(Constants.User.USER_PREFIX).isEqualTo("USR_");
+        assertThat(Constants.User.SYSTEM_ADMIN_ESNTL_ID).isEqualTo("USRCNFRM_00000000001");
     }
 }

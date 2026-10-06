@@ -122,7 +122,7 @@ class SentMailRepositoryTest {
     @Test
     @DisplayName("발송 메일 검색 테스트 - 제목 (1)")
     void searchSentMails_Subject() {
-        Page<SentMail> result = sentMailRepository.searchSentMails(null, "1", "Subject", PageRequest.of(0, 10));
+        Page<SentMail> result = sentMailRepository.searchSentMails(null, "1", "Subject", null, PageRequest.of(0, 10));
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getEmlTtl()).contains("Subject");
     }
@@ -130,7 +130,7 @@ class SentMailRepositoryTest {
     @Test
     @DisplayName("발송 메일 검색 테스트 - 내용 (2)")
     void searchSentMails_Content() {
-        Page<SentMail> result = sentMailRepository.searchSentMails(null, "2", "Special", PageRequest.of(0, 10));
+        Page<SentMail> result = sentMailRepository.searchSentMails(null, "2", "Special", null, PageRequest.of(0, 10));
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getEmlCn()).contains("Special");
     }
@@ -138,7 +138,7 @@ class SentMailRepositoryTest {
     @Test
     @DisplayName("발송 메일 검색 테스트 - 발신자 (3)")
     void searchSentMails_Sender() {
-        Page<SentMail> result = sentMailRepository.searchSentMails(null, "3", "Manager", PageRequest.of(0, 10));
+        Page<SentMail> result = sentMailRepository.searchSentMails(null, "3", "Manager", null, PageRequest.of(0, 10));
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getSndptyNm()).isEqualTo("Manager");
     }
@@ -146,7 +146,7 @@ class SentMailRepositoryTest {
     @Test
     @DisplayName("발송 메일 검색 테스트 - 검색어 없음")
     void searchSentMails_NoKeyword() {
-        Page<SentMail> result = sentMailRepository.searchSentMails(null, "1", "", PageRequest.of(0, 10));
+        Page<SentMail> result = sentMailRepository.searchSentMails(null, "1", "", null, PageRequest.of(0, 10));
         assertThat(result.getContent()).hasSize(2);
     }
 
@@ -156,12 +156,12 @@ class SentMailRepositoryTest {
         // 발신자 스코프(senderLoginId)를 주면 frstRgtrId 가 일치하는 건만 나와야 한다.
         // 존재하지 않는 발신자로 조회했는데 결과가 있다면 스코프 조건이 무력화된 것이다.
         // (이 단언이 없으면 senderEq() 를 지워도 나머지 테스트가 전부 통과해 IDOR 회귀를 놓친다)
-        Page<SentMail> others = sentMailRepository.searchSentMails("nobody-else", "1", "", PageRequest.of(0, 10));
+        Page<SentMail> others = sentMailRepository.searchSentMails("nobody-else", "1", "", null, PageRequest.of(0, 10));
         assertThat(others.getContent()).isEmpty();
         assertThat(others.getTotalElements()).isZero();
 
         // 스코프가 null(관리자 전건)일 때만 전건이 보인다 — 대조군
-        Page<SentMail> all = sentMailRepository.searchSentMails(null, "1", "", PageRequest.of(0, 10));
+        Page<SentMail> all = sentMailRepository.searchSentMails(null, "1", "", null, PageRequest.of(0, 10));
         assertThat(all.getContent()).hasSize(2);
     }
 

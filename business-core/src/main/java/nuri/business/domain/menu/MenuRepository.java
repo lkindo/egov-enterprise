@@ -1,15 +1,13 @@
 package nuri.business.domain.menu;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
-public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositoryCustom {
+public interface MenuRepository extends JpaRepository<Menu, Long> {
     interface ParentLink {
         Long getMenuSn();
         Long getUpMenuSn();
@@ -57,38 +55,10 @@ public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositor
 
     List<Menu> findAllByOrderByUpMenuSnAscMenuOrdrAsc();
 
-    List<Menu> findByUpMenuSnOrderByMenuOrdrAsc(Long upMenuSn);
-
-    Optional<Menu> findFirstByUpMenuSnOrderByMenuOrdrAsc(Long upMenuSn);
-
-    @org.springframework.data.jpa.repository.Query("SELECT m FROM Menu m WHERE m.menuNm LIKE %:searchKeyword%")
-    org.springframework.data.domain.Page<Menu> searchByKeyword(
-            @org.springframework.data.repository.query.Param("searchKeyword") String searchKeyword,
-            org.springframework.data.domain.Pageable pageable);
-
     int countByUpMenuSn(Long upMenuSn);
 
     // [V2_13 결속] 일괄 삭제 시 "삭제 집합 밖의 자식" 존재 검사 (자기참조 FK 가드)
     int countByUpMenuSnAndMenuSnNotIn(Long upMenuSn, java.util.Collection<Long> menuSns);
-
-    /**
-     * modern_route 로 메뉴 조회
-     */
-    @Query("SELECT m FROM Menu m WHERE m.modernRoute = :modernRoute")
-    Optional<Menu> findByModernRoute(@Param("modernRoute") String modernRoute);
-
-    /**
-     * modern_route 가 설정된 메뉴 수 조회
-     */
-    @Query("SELECT COUNT(m) FROM Menu m WHERE m.modernRoute IS NOT NULL")
-    long countWithModernRoute();
-
-    /**
-     * modern_route 일괄 업데이트 (배치용)
-     */
-    @Modifying(clearAutomatically = true)
-    @Query("UPDATE Menu m SET m.modernRoute = :modernRoute WHERE m.menuSn IN :menuIds")
-    int bulkUpdateModernRoute(@Param("menuIds") List<Long> menuIds, @Param("modernRoute") String modernRoute);
 
     /** 권한 변경 서비스와 동일하게 메뉴 번호 오름차순으로 삭제 대상 행을 잠근다. */
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)

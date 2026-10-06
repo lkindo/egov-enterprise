@@ -1,7 +1,7 @@
 /**
  * 데모 게시판 인스턴스 ID 상수 (Frontend SSOT)
- * - 데모 시드(api-server R__seed_demo.sql, sql/seed_knowledge_boards.sql)가 정의하는
- *   BBSMSTR_* 인스턴스 ID의 프론트엔드 단일 정의처다. 백엔드 설정 nuri.boards.*
+ * - 데모 시드(api-server R__seed_demo.sql)와 데모 데이터가 쓰는 BBSMSTR_* 인스턴스 ID의
+ *   프론트엔드 단일 정의처다. 백엔드 설정 nuri.boards.*
  *   (api-server application.yml)의 데모 값과 동일하다.
  * - 값 자체는 데모 데이터의 정의이므로 여기서 바꾸지 않는다. 다른 제품은 이 모듈만
  *   자기 게시판 ID로 교체한다.
@@ -16,8 +16,9 @@ export const NOTICE_BOARD_ID = 'BBSMSTR_AAAAAAAAAAAA';
  * 자유게시판 / 지식 허브 시드의 FAQ 게시판.
  *
  * ⚠ **Flyway 시드(R__seed_demo.sql)의 VALUES 에 없다** — 그 파일 주석이 "라이브에도 존재하지
- *   않는다"고 직접 적어 두었다. 선택형 스크립트 sql/seed_knowledge_boards.sql 을 실행한 설치에만
- *   존재한다. 사용자에게 보이는 **게시판 선택지에 이 상수를 쓰지 말 것** — 고르는 순간 목록 조회가
+ *   않는다"고 직접 적어 두었다. 이 게시판을 만드는 시드·스크립트는 없다(옛 선택형 스크립트
+ *   sql/seed_knowledge_boards.sql 은 존재하지 않는 테이블에 INSERT 해 어떤 설치에서도 성공할 수
+ *   없었다). 사용자에게 보이는 **게시판 선택지에 이 상수를 쓰지 말 것** — 고르는 순간 목록 조회가
  *   실패하고 그 게시판으로 글을 쓰면 등록이 거부된다(2026-08-28 실측으로 세 화면에서 제거).
  *   선택지는 useBoardOptions()로 게시판 마스터에서 채운다.
  */
@@ -53,7 +54,7 @@ export const LEGACY_DEFAULT_BOARD_ID = 'BBSMSTR_000000000001';
 export const HELP_FAQ_BOARD_ID = NOTICE_BOARD_ID;
 
 /**
- * knowledgeService 축 FAQ 게시판 — sql/seed_knowledge_boards.sql 의 FAQ 게시판(BBBB).
+ * knowledgeService 축 FAQ 게시판(BBBB). 이 게시판을 만드는 시드·스크립트는 없다(FREE_BOARD_ID 참조).
  * help 축(AAAA)과 인스턴스가 다르다는 기존 불일치를 값 그대로 보존한다(H4).
  */
 export const KNOWLEDGE_FAQ_BOARD_ID = FREE_BOARD_ID;

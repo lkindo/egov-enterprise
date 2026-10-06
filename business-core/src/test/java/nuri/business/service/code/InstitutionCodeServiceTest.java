@@ -133,7 +133,6 @@ class InstitutionCodeServiceTest {
         assertThat(name.getValue()).isEqualTo("서울");
         assertThat(code.getValue()).isEqualTo("서울");
         assertThat(pageable.getValue().getPageSize()).isEqualTo(10);
-        verify(institutionCodeRecptnLogRepository, never()).findByAllInstNmContaining(any(), any());
     }
 
     @Test

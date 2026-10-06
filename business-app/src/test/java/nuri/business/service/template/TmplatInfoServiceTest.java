@@ -138,20 +138,6 @@ class TmplatInfoServiceTest {
     }
 
     @Test
-    @DisplayName("템플릿 타입별 목록 조회")
-    void selectTmplatInfoListByType() {
-        // given
-        when(templateRepository.findByTmpltSeCd("TYPE01")).thenReturn(Collections.emptyList());
-
-        // when
-        List<TemplateDto> result = tmplatInfoService.selectTmplatInfoListByType("TYPE01");
-
-        // then
-        assertThat(result).isEmpty();
-        verify(templateRepository, times(1)).findByTmpltSeCd("TYPE01");
-    }
-
-    @Test
     @DisplayName("템플릿 상세 조회 실패 - 존재하지 않음")
     void selectTmplatInfoDetailFail() {
         // given

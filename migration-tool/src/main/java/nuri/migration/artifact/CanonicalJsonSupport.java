@@ -44,14 +44,6 @@ final class CanonicalJsonSupport {
         return MAPPER.valueToTree(value);
     }
 
-    static JsonNode parseTree(String json) {
-        try {
-            return MAPPER.readTree(json);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("JSON artifact 파싱 실패", exception);
-        }
-    }
-
     static <T> T read(String json, Class<T> type) {
         try {
             return MAPPER.readValue(json, type);

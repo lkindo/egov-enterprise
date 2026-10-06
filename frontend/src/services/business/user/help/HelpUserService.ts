@@ -1,5 +1,4 @@
 import { htmlToSemanticPlainText } from '@/lib/html-to-text';
-export { htmlToSemanticPlainText } from '@/lib/html-to-text';
 import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import type { components } from '@/types/generated-api';

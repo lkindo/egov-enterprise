@@ -1,5 +1,5 @@
 import { ApiService } from '@/services/core/ApiService';
-import type { PageResponse } from '@/types/modernization';
+import type { PageResponse } from '@/types/foundation/system';
 import type { AxiosRequestConfig } from 'axios';
 import type { components, operations } from '@/types/generated-api';
 import {

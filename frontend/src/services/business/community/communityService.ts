@@ -35,6 +35,3 @@ class CommunityService extends ApiService {
 }
 
 export const communityService = new CommunityService();
-
-export const getCommunityList = communityService.getCommunityList.bind(communityService);
-export const getCommunity = communityService.getCommunity.bind(communityService);

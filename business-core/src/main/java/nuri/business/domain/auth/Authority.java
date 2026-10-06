@@ -40,12 +40,6 @@ public class Authority extends BaseEntity implements java.io.Serializable {
         return new Authority(authrtCd, authrtNm, authrtExpln, authrtCrtYmd);
     }
 
-    public static Authority createRaw(String authrtCd, String authrtNm, String authrtExpln, String authrtCrtYmd) {
-        Authority auth = new Authority(authrtCd, authrtNm, authrtExpln, null);
-        auth.authrtCrtYmd = authrtCrtYmd;
-        return auth;
-    }
-
     private static String defaultDate() {
         return java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
     }

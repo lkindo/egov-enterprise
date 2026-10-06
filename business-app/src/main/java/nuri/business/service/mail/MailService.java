@@ -472,13 +472,6 @@ public class MailService {
     }
 
     @Transactional
-    public void updateMailResult(Long emlDsptchSn, String resultCode) {
-        SentMail sentMail = sentMailRepository.findById(Objects.requireNonNull(emlDsptchSn))
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        sentMail.updateResult(resultCode);
-    }
-
-    @Transactional
     public void deleteMail(Long emlDsptchSn) {
         SentMail sentMail = sentMailRepository.findById(Objects.requireNonNull(emlDsptchSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));

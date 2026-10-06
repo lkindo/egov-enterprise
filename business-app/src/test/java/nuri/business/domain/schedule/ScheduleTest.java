@@ -36,10 +36,6 @@ class ScheduleTest {
         assertEquals("Place", schdl2.getSchdlPlcNm());
         assertEquals("Imprt1", schdl2.getSchdlImprtCd());
 
-        // Setter 동작 및 IpAddr 등 변경 검증
-        schdl2.setSchdlIpAddr("192.168.0.1");
-        assertEquals("192.168.0.1", schdl2.getSchdlIpAddr());
-
         // 3. SuperBuilder 검증 및 Legacy Alias 검증
         Schedule schdl3 = Schedule.builder()
                 .schdlSn(3L)

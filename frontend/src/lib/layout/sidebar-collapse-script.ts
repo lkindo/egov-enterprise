@@ -14,8 +14,6 @@
  */
 export const SIDEBAR_COLLAPSED_STORAGE_KEY = 'egov.sidebar-collapsed.v1';
 export const SIDEBAR_COLLAPSED_ATTRIBUTE = 'data-sidebar-collapsed';
-/** 사이드바 `<aside>` 와 그 Suspense 자리표시가 함께 다는 표지 — 접힘 CSS 가 이 표지로 상자를 좁은 띠로 줄인다. */
-export const APP_SIDEBAR_MARKER = 'data-app-sidebar';
 /**
  * 경계선 토글 단추의 고정 접근 이름. 상태(펼침·접힘)는 aria-expanded 로만 알린다 — 이름까지 바꾸면 스크린리더가 상태를 두 번
  * 말한다(APG disclosure). 음성 제어 사용자가 어느 쪽 동사로 불러도 이름 일부가 맞도록 두 동작을 모두 담는다.

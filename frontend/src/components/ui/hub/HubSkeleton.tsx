@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 
 export function HubListSkeleton() {
   return (
@@ -17,42 +17,6 @@ export function HubListSkeleton() {
         </div>
       ))}
     </div>
-  );
-}
-
-export function HubDetailSkeleton() {
-  return (
-    <Card className="h-full rounded-[2.5rem] border-none bg-card shadow-xl overflow-hidden flex flex-col">
-      <CardHeader className="p-10 lg:p-14 border-b border-border space-y-8">
-        <div className="space-y-4">
-          <Skeleton className="h-5 w-24 rounded-lg" />
-          <Skeleton className="h-10 w-3/4" />
-        </div>
-        <div className="bg-muted/50 rounded-lg p-10 h-32 flex items-center justify-center">
-            <Skeleton className="w-full h-4" />
-        </div>
-      </CardHeader>
-      <CardContent className="p-10 lg:p-14 space-y-12 flex-1">
-        <div className="grid grid-cols-2 gap-12">
-          <div className="space-y-4">
-            <Skeleton className="w-10 h-10 rounded-lg" />
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-3 w-24" />
-          </div>
-          <div className="space-y-4">
-            <Skeleton className="w-10 h-10 rounded-lg" />
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-3 w-24" />
-          </div>
-        </div>
-        <div className="space-y-4 pt-4">
-          <Skeleton className="h-3 w-20" />
-          <div className="p-10 bg-muted/50 rounded-lg h-48">
-            <Skeleton className="h-full w-full opacity-50" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 

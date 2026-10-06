@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 
@@ -33,26 +32,6 @@ class LogManageServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-    }
-
-    @Test
-    @DisplayName("시스템 로그 삽입")
-    void logInsertSysLog() {
-        // given
-        SysLogDto dto = SysLogDto.builder()
-                .sysLogSn(999L)
-                .dmndId("REQ_001")
-                .prcsSeCd("REQ")
-                .build();
-
-        // when
-        logManageService.logInsertSysLog(dto);
-
-        // then
-        ArgumentCaptor<SysLog> captor = ArgumentCaptor.forClass(SysLog.class);
-        verify(sysLogRepository, times(1)).save(captor.capture());
-        assertThat(captor.getValue().getSysLogSn()).isNull();
-        assertThat(captor.getValue().getDmndId()).isEqualTo("REQ_001");
     }
 
     @Test

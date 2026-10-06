@@ -115,8 +115,4 @@ public class Schedule extends BaseEntity implements Serializable {
         this.schdlPicId = schdlPicId;
         this.reptSeCd = reptSeCd;
     }
-
-    public void setSchdlIpAddr(String schdlIpAddr) {
-        this.schdlIpAddr = schdlIpAddr;
-    }
 }

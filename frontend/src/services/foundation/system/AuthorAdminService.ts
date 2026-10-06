@@ -15,9 +15,6 @@ import {
  */
 export type AuthorMenuAssignment = components['schemas']['MenuCreateDto'];
 
-/** 롤 한 건 + 이 권한에 할당됐는지(regYn). 생성 계약을 그대로 쓴다. */
-export type AuthorRoleProjection = components['schemas']['AuthorRoleProjection'];
-
 export type AuthorInfo = components['schemas']['AuthorManageDto'];
 type AuthorListQuery = NonNullable<operations['getAuthors']['parameters']['query']>;
 

@@ -16,9 +16,4 @@ public interface SatisfactionRepository extends JpaRepository<Satisfaction, Long
 
     @Query("SELECT AVG(s.dgstfnScr) FROM Satisfaction s WHERE s.pstSn = :pstSn AND s.bbsId = :bbsId AND s.useYn = 'Y'")
     Double getAverageSatisfaction(@Param("pstSn") Long pstSn, @Param("bbsId") String bbsId);
-
-    // legacy
-    default List<Satisfaction> findByArticleIdAndBoardIdAndUseAt(Long articleId, String boardId, String useAt) {
-        return findByPstSnAndBbsIdAndUseYn(articleId, boardId, useAt);
-    }
 }

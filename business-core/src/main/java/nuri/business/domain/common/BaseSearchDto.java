@@ -61,14 +61,6 @@ public class BaseSearchDto implements Serializable {
 
     /** 검색 범위 종료일/값 */
     private String searchKeywordTo = "";
-    
-    /**
-     * 페이지 번호에 따른 오프셋 계산 유틸리티
-     */
-    public void calculatePagination() {
-        this.firstIndex = (pageIndex - 1) * recordCountPerPage;
-        this.lastIndex = pageIndex * recordCountPerPage;
-    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Spring Data 페이징 변환

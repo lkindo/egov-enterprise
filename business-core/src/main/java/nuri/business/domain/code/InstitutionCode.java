@@ -115,11 +115,4 @@ public class InstitutionCode extends BaseEntity {
         this.sortOrdr = sortOrdr;
         this.frstRgtrId = frstRgtrId;
     }
- 
-    public void softDelete(String ablYmd, String chgYmd, String chgTm) {
-        this.ablYn = "1";
-        this.ablYmd = ablYmd;
-        this.chgYmd = chgYmd;
-        this.chgTm = chgTm;
-    }
 }

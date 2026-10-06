@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildNavigationPermissionTree, menusMissingEntryPermission, navigationSelectionGaps, selectedMenusWithoutEntryPermission, toggleNavigationPermission } from '../navigation-permission-tree';
+import { buildNavigationPermissionTree, menusMissingEntryPermission, navigationSelectionGaps, toggleNavigationPermission } from '../navigation-permission-tree';
 
 const navigation = [
   { code: 'child-b', name: '두 번째 자식', parentCode: 'root', route: null, useYn: 'Y' as const },
@@ -67,12 +67,13 @@ describe('navigation permission hierarchy', () => {
       { code: 'notes', name: '쪽지', parentCode: null, route: '/note', useYn: 'Y' as const },
     ];
     const allMenus = menus.map((menu) => `NAVIGATION:${menu.code}`);
+    const missingNames = (selection: ReadonlySet<string>) => menusMissingEntryPermission(menus, selection).map((menu) => menu.name);
 
     // 사용자 조회 권한만 있으면 메뉴 관리 화면에는 들어갈 수 없다. 분류와 /admin 밖 화면은 대상이 아니다.
-    expect(selectedMenusWithoutEntryPermission(menus, new Set([...allMenus, 'OPERATION:USER_READ']))).toEqual(['메뉴 관리']);
-    expect(selectedMenusWithoutEntryPermission(menus, new Set([...allMenus, 'OPERATION:USER_READ', 'OPERATION:MENU_READ']))).toEqual([]);
+    expect(missingNames(new Set([...allMenus, 'OPERATION:USER_READ']))).toEqual(['메뉴 관리']);
+    expect(missingNames(new Set([...allMenus, 'OPERATION:USER_READ', 'OPERATION:MENU_READ']))).toEqual([]);
     // 선택하지 않은 메뉴는 알리지 않는다.
-    expect(selectedMenusWithoutEntryPermission(menus, new Set(['NAVIGATION:notes']))).toEqual([]);
+    expect(missingNames(new Set(['NAVIGATION:notes']))).toEqual([]);
   });
 
   /*
@@ -97,8 +98,6 @@ describe('navigation permission hierarchy', () => {
       // 등록되지 않은 /admin 경로는 어떤 기능권한으로도 열리지 않는다 — 고칠 수 있다고 말하지 않는다.
       { code: 'ghost', name: '없는 화면', route: '/admin/unregistered-only-in-test/page', required: [], mode: 'ANY', fixable: false },
     ]);
-    // 경고 이름 목록과 같은 판정이다.
-    expect(selectedMenusWithoutEntryPermission(menus, selection)).toEqual(['메뉴 관리', '권한 그룹 관리', '투표 관리', '없는 화면']);
   });
 
   it('필요한 권한을 모두 더하면 그 메뉴는 목록에서 빠진다', () => {

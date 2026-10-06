@@ -61,17 +61,4 @@ class InstitutionCodeTest {
         assertEquals(1L, code.getSortOrdr());
         assertEquals("admin", code.getFrstRgtrId());
     }
-
-    @Test
-    @DisplayName("softDelete 메서드 테스트")
-    void testSoftDelete() {
-        InstitutionCode code = InstitutionCode.builder().instCd("I1").build();
-        
-        code.softDelete("20221231", "20220101", "140000");
-        
-        assertEquals("1", code.getAblYn());
-        assertEquals("20221231", code.getAblYmd());
-        assertEquals("20220101", code.getChgYmd());
-        assertEquals("140000", code.getChgTm());
-    }
 }

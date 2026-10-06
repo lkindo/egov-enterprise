@@ -81,27 +81,21 @@
     --surface-inverse-border: 215 27.9% 27%;     /* slate-700 (다크 서피스 경계) */
 
     --radius: 0.5rem;
-    --surface-sunken: 210 40% 98%;
-    --surface-raised: 0 0% 100%;
 
     /* --- Core Design Tokens (Project-wide) --- */
     --font-size-hub-title: 1.875rem;    /* 3xl */
     --font-size-hub-subtitle: 0.8125rem; /* 13px */
     --font-weight-hub-title: 900;       /* black */
     --letter-spacing-hub: -0.05em;      /* tracking-tighter */
-    --letter-spacing-label: -0.025em;   /* wide label tracking (normalized to tight) */
     
     --radius-hub-section: 1rem;         /* Hub main section cards (Normalized) */
     --radius-hub-widget: 0.75rem;       /* Hub mini widgets (Normalized) */
     --radius-hub-item: 0.5rem;          /* Hub list items / Summaries (Normalized) */
 
-    --gap-base: 1rem;
     --gap-hub-section: 3rem;            /* Spacing between major sections (48px) */
     --gap-hub-widget: 1.5rem;           /* Spacing between widgets (24px) */
     
     --shadow-hub-premium: 0 32px 64px -16px rgba(0, 0, 0, 0.08);
-    --color-premium-slate: 222.2 47.4% 11.2%; /* slate-900 equivalent */
-    --color-premium-emerald: 142.1 76.2% 36.3%; /* emerald-600 equivalent */
 
     /* --- 밀도·구조 토큰 (D2, Phase 1 — 표면 선언만) ---
        값은 전부 현행 화면의 실사용값과 등가(h-9·h-8·px-6·py-5·text-sm·gap-4·
@@ -119,9 +113,9 @@
     --page-pad-lg: 4rem;         /* lg:p-16 축 */
     --radius-control: 0.5rem;    /* rounded-lg */
     --filter-pad: 2rem;          /* p-8 */
-    /* StandardSearchFilter 컨트롤 높이(종전 h-12). --control-h(2.25rem)로 옮기면 기본
-       배포가 줄어들므로 전용 토큰으로 분리한다 — comfortable 3rem 등가, compact 는
-       globals.css 오버라이드(D1). */
+    /* 조회조건 바 컨트롤 높이(종전 h-12 — 게시판 목록 조회 조건·지식 허브·권한별 메뉴 선택 등).
+       --control-h(2.25rem)로 옮기면 기본 배포가 줄어들므로 전용 토큰으로 분리한다 —
+       comfortable 3rem 등가, compact 는 globals.css 오버라이드(D1). */
     --filter-control-h: 3rem;    /* h-12 */
     /* [2026-10-05] 업무 표 행 토큰 — 권한 매트릭스·화면 목록·메뉴 보드처럼 조밀한 업무 그리드가 opt-in 으로만
        쓴다(StandardDataTable rowDensity="work" 등). 라우트가 아니라 컴포넌트에 묶이므로 라우트별 밀도 금지
@@ -175,9 +169,6 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 47.4% 11.2%;
     --popover-foreground: 210 40% 98%;
-
-    --surface-sunken: 0 0% 0%;
-    --surface-raised: 222.2 47.4% 15%;
 
     /* 밀도·구조 토큰 — 라이트와 동일(밀도는 모드 불변) */
     --control-h: 2.25rem;

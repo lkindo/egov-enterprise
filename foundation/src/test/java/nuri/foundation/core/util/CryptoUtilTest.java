@@ -159,57 +159,6 @@ class CryptoUtilTest {
     }
 
     @Nested
-    @DisplayName("특수 목적 암호화 메서드 테스트")
-    class SpecialEncryptTests {
-
-        @Test
-        @DisplayName("encryptSession - 세션 ID 와 함께 암호화")
-        void testEncryptSession() {
-            // Given
-            String data = "userData";
-            String sessionId = "SESSION123";
-            String expectedTarget = sessionId + "|" + data;
-            byte[] encryptedBytes = "encryptedSession".getBytes(StandardCharsets.UTF_8);
-
-            when(cryptoService.encrypt(any(byte[].class), eq("ARIA"))).thenReturn(encryptedBytes);
-
-            // When
-            String result = CryptoUtil.encryptSession(data, sessionId);
-
-            // Then
-            assertNotNull(result);
-            verify(cryptoService, times(1)).encrypt(eq(expectedTarget.getBytes(StandardCharsets.UTF_8)), eq("ARIA"));
-        }
-
-        @Test
-        @DisplayName("encryptSession - null 데이터에 대해 대시(-) 반환")
-        void testEncryptSession_NullData() {
-            // When
-            String result = CryptoUtil.encryptSession(null, "SESSION123");
-
-            // Then
-            assertEquals("-", result);
-            verify(cryptoService, never()).encrypt(any(byte[].class), anyString());
-        }
-
-        @Test
-        @DisplayName("encryptId - ID 암호화")
-        void testEncryptId() {
-            // Given
-            String userId = "user123";
-            byte[] encryptedBytes = "encryptedId".getBytes(StandardCharsets.UTF_8);
-            when(cryptoService.encrypt(any(byte[].class), eq("ARIA"))).thenReturn(encryptedBytes);
-
-            // When
-            String result = CryptoUtil.encryptId(userId);
-
-            // Then
-            assertNotNull(result);
-            verify(cryptoService, times(1)).encrypt(any(byte[].class), eq("ARIA"));
-        }
-    }
-
-    @Nested
     @DisplayName("예외 상황 테스트")
     class ExceptionTests {
 
@@ -250,8 +199,7 @@ class CryptoUtilTest {
     //     키를 아는 누구나 복호화할 수 있고, 사고 후에도 "경고가 없었다" 는 기록만 남는다.
     //   · encrypt 의 **초기화 가드**(L49) — 뒤집히면 미초기화 상태에서 NPE 가 나거나,
     //     반대로 정상 상태를 미초기화로 오판해 전 암호화가 막힌다.
-    //   · encryptSession/encryptId 의 **반환값**(L67·L74) — 조용히 빈 문자열이 되면
-    //     암호문 자리에 ""가 저장된다(복호화 시점에야 드러난다).
+    //   (세 번째 축이던 encryptSession/encryptId 래퍼는 소비처가 없어 2026-10-07 에 걷었다.)
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
@@ -325,44 +273,6 @@ class CryptoUtilTest {
                 // 뒤 테스트가 영향받지 않도록 정상 키로 되돌린다(static 상태).
                 new CryptoUtil().setAlgorithmKey("ARIA");
             }
-        }
-    }
-
-    @Nested
-    @DisplayName("레거시 래퍼")
-    class LegacyWrappers {
-
-        @Test
-        @DisplayName("encryptSession 은 세션ID 를 앞에 붙여 암호화한다")
-        void encryptSessionPrefixesSessionId() {
-            when(cryptoService.encrypt(any(byte[].class), anyString()))
-                    .thenAnswer(inv -> inv.getArgument(0));
-
-            String result = CryptoUtil.encryptSession("payload", "SESSION-1");
-
-            // 빈 문자열을 돌려주는 뮤턴트가 여기서 죽는다 — 암호문 자리에 "" 가 저장되면
-            //   복호화 시점에야 드러나고 그때는 원본이 없다.
-            assertThat(result).isNotEmpty();
-            byte[] decoded = java.util.Base64.getDecoder().decode(result);
-            assertThat(new String(decoded, java.nio.charset.StandardCharsets.UTF_8))
-                    .isEqualTo("SESSION-1|payload");
-        }
-
-        @Test
-        @DisplayName("encryptSession 은 데이터가 없으면 '-' 를 돌려준다")
-        void encryptSessionReturnsDashForNull() {
-            assertThat(CryptoUtil.encryptSession(null, "SESSION-1")).isEqualTo("-");
-        }
-
-        @Test
-        @DisplayName("encryptId 는 encrypt 와 같은 결과를 돌려준다")
-        void encryptIdDelegatesToEncrypt() {
-            when(cryptoService.encrypt(any(byte[].class), anyString()))
-                    .thenAnswer(inv -> inv.getArgument(0));
-
-            String viaId = CryptoUtil.encryptId("USR_001");
-
-            assertThat(viaId).isNotEmpty().isEqualTo(CryptoUtil.encrypt("USR_001"));
         }
     }
 }

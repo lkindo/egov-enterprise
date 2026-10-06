@@ -28,4 +28,3 @@ export const mfaBrowserRequests = {
 } as const;
 export type MfaStatus = z.infer<typeof mfaStatusSchema>;
 export type MfaEnrollment = z.infer<typeof mfaEnrollmentSchema>;
-export type MfaVerifyRequest = z.infer<typeof mfaVerifyRequestSchema>;

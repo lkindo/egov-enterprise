@@ -8,7 +8,7 @@ import {
 describe('apiClientTestDouble', () => {
   beforeEach(() => resetApiClientTestDouble());
 
-  it('실제 client의 공개 HTTP 메서드 표면을 한 곳에서 제공한다', () => {
+  it('HTTP 메서드별 어댑터를 한 곳에서 제공한다', () => {
     expect(Object.keys(apiClientTestDouble)).toEqual(API_CLIENT_METHODS);
   });
 

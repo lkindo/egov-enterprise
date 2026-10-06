@@ -662,7 +662,7 @@ class MenuServiceTest {
     //   경로 자체가 없으므로 종전의 거부(400)·해제 테스트도 걷었다.
 
     @ParameterizedTest
-    @ValueSource(strings = {"update", "order", "delete", "deleteList"})
+    @ValueSource(strings = {"update", "order", "delete"})
     @DisplayName("메뉴 쓰기는 해당 권한이 없으면 전체 요청을 거부하고 메뉴·배정을 바꾸지 않는다")
     void menuWritesRejectMissingOperationPermissionBeforeAnyChange(String operation) {
         String requiredPermission = operation.startsWith("delete") ? "MENU_DELETE" : "MENU_UPDATE";
@@ -683,7 +683,6 @@ class MenuServiceTest {
                     .menuNm("must not change").upMenuSn(2L).menuOrdr(9).build());
             case "order" -> () -> menuService.updateMenuOrders(List.of(order(1L, 2L, 9), order(2L, null, 8)));
             case "delete" -> () -> menuService.deleteMenuManage(MenuDto.builder().menuNo(1L).build());
-            case "deleteList" -> () -> menuService.deleteMenuManageList("1,2");
             default -> throw new IllegalArgumentException(operation);
         };
 
@@ -722,17 +721,12 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("deleteMenuManageList - 체크된 번호 삭제")
-    void deleteMenuManageList_Valid() {
+    @DisplayName("deleteMenuManage - 단건 삭제는 메뉴 배정을 정리한 뒤 지운다")
+    void deleteMenuManage_Valid() {
         when(menuRepository.findForUpdateByMenuSnIn(anyList())).thenAnswer(invocation -> {
             List<Long> requested = invocation.getArgument(0);
             return requested.stream().map(id -> Menu.builder().menuSn(id).build()).toList();
         });
-        menuService.deleteMenuManageList("1,2,,3"); // 빈 값 포함
-        verify(menuRepository).deleteAllById(List.of(1L, 2L, 3L));
-        verify(authorizationAdministrationService).removeNavigationGrantsForMenus(List.of(1L, 2L, 3L));
-        
-        menuService.deleteMenuManageList(null); // 조기 리턴 분기
         menuService.deleteMenuManage(MenuDto.builder().menuNo(1L).build());
         verify(menuRepository).deleteById(1L);
         verify(authorizationAdministrationService).removeNavigationGrantsForMenus(List.of(1L));
@@ -883,16 +877,6 @@ class MenuServiceTest {
     }
 
 
-
-    @Test
-    @DisplayName("deleteMenuManageList - null 이나 비어있는 문자열 처리")
-    void deleteMenuManageList_Empty() {
-        menuService.deleteMenuManageList(null);
-        menuService.deleteMenuManageList("");
-        menuService.deleteMenuManageList("   ");
-        
-        verify(menuRepository, never()).deleteAllById(any());
-    }
 
     @Test
     @DisplayName("insertMenuCreatList - split 후 trim 처리 빈문자열 무시")

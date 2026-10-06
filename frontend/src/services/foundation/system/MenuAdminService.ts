@@ -64,10 +64,6 @@ export type MenuStructure = z.infer<typeof menuStructureSchema>;
 export type MenuStructureItem = z.infer<typeof menuStructureItemSchema>;
 /** 저장 요청(PUT /menus/structure). 바뀐 부모의 형제 전체 1..n, 바뀐 기존 메뉴의 속성 네 칸 전체, 삭제, 그룹별 메뉴 표시 변경. */
 export type MenuStructureSave = GeneratedOperationRequest<'saveMenuStructure'>;
-export type MenuCreation = MenuStructureSave['creations'][number];
-export type MenuPlacement = MenuStructureSave['placements'][number];
-export type MenuProperties = MenuStructureSave['properties'][number];
-export type MenuGroupGrantChange = MenuStructureSave['grants'][number];
 
 const MENU_QUERY_KEYS = [
   'searchCondition',

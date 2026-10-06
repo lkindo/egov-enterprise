@@ -146,8 +146,8 @@ public class AttachmentIntegrityService {
      * V2_72 이전에 저장된 첨부의 디렉터리 이름은 현재 번호와 무관하다. 숫자로 읽히지 않는
      * 디렉터리는 <b>모른다고 보고</b>한다 — 모르는 것을 고아라고 부르면 사람이 지운다.
      *
-     * <p>빈 디렉터리는 정상이다. {@code FileService.deleteFiles} 는 파일만 지우고 디렉터리는
-     * 남긴다. 그래서 판정 단위는 디렉터리가 아니라 <b>파일</b>이다.
+     * <p>빈 디렉터리는 정상이다. 첨부 삭제({@code FileService.deleteFile} 와 그 내구 삭제 작업)는
+     * 파일만 지우고 디렉터리는 남긴다. 그래서 판정 단위는 디렉터리가 아니라 <b>파일</b>이다.
      */
     private OrphanCensus censusOrphans(ScanBudget budget) {
         String root = describeRoot();

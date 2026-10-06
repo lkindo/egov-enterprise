@@ -41,10 +41,6 @@ public class OnlinePollService {
     /** [2026-10-01 결정 21] 만족도 조사의 종류 코드 — 만족도 조사 관리 화면이 등록하는 값이다(001 일반 설문·002 투표). */
     public static final java.util.List<String> SATISFACTION_KIND_CODES = java.util.List.of("001", "002");
 
-    public Page<OnlinePollManageDto> getPollList(String keyword, Pageable pageable) {
-        return getPollList(keyword, null, pageable);
-    }
-
     /**
      * 투표 목록. kind 가 SATISFACTION 이면 만족도 조사만, POLL 이면 온라인 투표만, 비면 전부다(2026-10-01 결정 21).
      * 종전에는 두 관리 화면이 같은 표를 통째로 보여 서로의 항목이 섞였다.
@@ -324,55 +320,6 @@ public class OnlinePollService {
     private static String today() {
         return java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))
                 .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
-    }
-
-    @Transactional
-    public void insertPollItem(OnlinePollArticleDto dto) {
-        nuri.business.security.util.SecurityUtil.assertPermission("POLL_UPDATE");
-        assertManagementReadPermissions();
-        OnlinePollManage pollManage = pollManageRepository.findById(dto.getPollSn())
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-
-        OnlinePollArticle item = OnlinePollArticle.builder()
-                .pollManage(pollManage)
-                .pollArtclNm(dto.getPollArtclNm().length() > 100 ? dto.getPollArtclNm().substring(0, 100) : dto.getPollArtclNm())
-                .build();
-        
-        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse("SYSTEM");
-        if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
-        item.setFrstRgtrId(currentUserId);
-        
-        pollItemRepository.save(Objects.requireNonNull(item));
-    }
-
-    @Transactional
-    public void updatePollItem(OnlinePollArticleDto dto) {
-        nuri.business.security.util.SecurityUtil.assertPermission("POLL_UPDATE");
-        assertManagementReadPermissions();
-        OnlinePollArticle entity = pollItemRepository.findById(Objects.requireNonNull(dto.getPollArtclSn()))
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getPollArtclNm().length() > 100 ? dto.getPollArtclNm().substring(0, 100) : dto.getPollArtclNm());
-        
-        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse("SYSTEM");
-        if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
-        entity.setLastMdfrId(currentUserId);
-    }
-
-    @Transactional
-    public void deletePollItem(Long pollArtclSn) {
-        nuri.business.security.util.SecurityUtil.assertPermission("POLL_DELETE");
-        assertManagementReadPermissions();
-        Objects.requireNonNull(pollArtclSn);
-        // [2026-09-14 DEC-OPS-095] 투표가 있는 항목을 지우면 그 투표가 경고 없이 사라지고 결과가 조작된다.
-        //   설문 문항·항목 삭제와 같은 기준으로 막는다. 투표째 정리하려면 투표 전체를 삭제한다.
-        long votes = pollResultRepository.countByPollArtclSn(pollArtclSn);
-        if (votes > 0) {
-            throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
-                    "투표 " + votes + "건이 있는 항목은 삭제할 수 없습니다. 투표를 통째로 정리하려면 투표를 삭제하세요.");
-        }
-        // [V2_13 결속] 해당 항목 투표 결과 선정리 (fk_tb_onln_poll_rslt_tb_onln_poll_artcl NO ACTION)
-        pollResultRepository.deleteByPollArtclSn(pollArtclSn);
-        pollItemRepository.deleteById(pollArtclSn);
     }
 
     @Transactional

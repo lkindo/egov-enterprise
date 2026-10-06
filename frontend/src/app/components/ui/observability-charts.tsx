@@ -19,25 +19,10 @@ import { PieChart,
   CartesianGrid, 
   ResponsiveContainer,
   type ResponsiveContainerProps } from 'recharts';
-import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
-
-/**
- * Recharts는 grid/axis 색을 SVG presentation attribute로 방출하므로 `var()`가 해석되지 않는다.
- * 테마별 구체 색상을 반환해 라이트/다크 모두에서 확실히 렌더되도록 한다. (theme-02)
- */
-export function useChartColors() {
-  const { resolvedTheme } = useTheme();
-  const dark = resolvedTheme === 'dark';
-  return {
-    grid: dark ? '#334155' : '#e2e8f0',        // slate-700 / slate-200
-    tick: dark ? '#94a3b8' : '#475569',        // slate-400 / slate-600
-    muted: dark ? '#1e293b' : '#f1f5f9',       // slate-800 / slate-100
-    tooltipBg: dark ? '#1e293b' : '#ffffff',
-    tooltipBorder: dark ? '#334155' : '#e2e8f0',
-    tooltipText: dark ? '#e2e8f0' : '#1e293b',
-  };
-}
+// Recharts 는 grid/axis 색을 SVG presentation attribute 로 방출해 `var()` 가 해석되지 않는다 — 차트 색은
+// 디자인 토큰을 런타임에 읽는 SSOT 훅에서 받는다(브랜드 프로필·라이트/다크를 함께 따른다).
+import { useChartColors } from '@/lib/hooks/useChartColors';
 
 /**
  * Recharts의 'width(-1)' 경고를 방지하기 위해 컨테이너 크기가 0보다 클 때만 렌더링하는 안전한 래퍼

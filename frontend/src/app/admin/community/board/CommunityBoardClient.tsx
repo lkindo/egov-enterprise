@@ -280,7 +280,7 @@ export default function CommunityBoardClient() {
           </div>
           <div className="h-10 bg-muted rounded-lg w-28" />
         </div>
-        {/* StandardSearchFilter 1:1 스켈레톤 */}
+        {/* 조회 조건(검색어·게시판 선택) 영역 스켈레톤 */}
         <div className="h-16 bg-muted/80 rounded-xl border border-border" />
         {/* StandardDataTable 1:1 스켈레톤 */}
         <div className="space-y-3">

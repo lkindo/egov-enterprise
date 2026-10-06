@@ -7,8 +7,9 @@
  *
  * 이 자리는 저장소의 모든 API 호출이 지나가는 목이다. 여기서 조용히 틀어질 수 있는 것:
  *
- *   ① `success:false` 응답을 예외로 바꾸지 않으면 → **오류 본문이 정상 데이터로 흘러간다.**
- *      화면은 빈 목록·null 필드를 그리고, 사용자는 "데이터가 없다" 고 읽는다.
+ *   ① 계정이 바뀐 뒤 도착한 이전 요청의 응답이나 로그아웃 뒤 남은 조회를 막지 않으면
+ *      → 이전 사용자의 결과가 화면에 섞이거나 401·재발급으로 번진다.
+ *      (`success:false` envelope 의 예외 변환은 생성 API 경계가 소유한다 — generated-operation.test.ts.)
  *   ② 로그인 화면의 401 에 재발급을 걸면 → **401 → 재발급 → 401 무한 루프**.
  *   ③ 재발급 요청의 `baseURL:''` 이 빠지면 → `/api/v1/api/auth/reissue` 로 나가 404/401,
  *      **세션 재발급 자체가 죽는다**(소스 주석이 명시한 함정이다).
@@ -87,7 +88,7 @@ describe('API 클라이언트 인터셉터', () => {
     }
   });
 
-  describe('응답 본문 처리 (extractData)', () => {
+  describe('응답 본문 처리', () => {
     it('계정 변경 전 요청의 늦은 성공 응답과 재시도는 차단한다', async () => {
       const { captured, instance } = await loadClient();
       const { advanceAuthorizationRequestEpoch } = await import('@/lib/auth/authorization-state');
@@ -125,39 +126,11 @@ describe('API 클라이언트 인터셉터', () => {
       await expect(client.requestRaw({ url: '/x', method: 'get' })).resolves.toEqual(envelope);
     });
 
-    it('success:false 는 예외로 바꾼다 — 오류 본문이 데이터로 흘러가면 안 된다', async () => {
-      const { client, instance } = await loadClient();
-      instance.get.mockResolvedValueOnce({
-        data: { success: false, code: 'C001', message: '권한이 없습니다.', data: null },
-      });
-
-      // 이 변환이 사라지면 화면은 null 을 정상 데이터로 그리고 사용자는 원인을 못 본다.
-      await expect(client.get('/x')).rejects.toThrow('권한이 없습니다.');
-    });
-
-    it('success:false 인데 message 가 없으면 기본 문구로 던진다', async () => {
-      const { client, instance } = await loadClient();
-      instance.post.mockResolvedValueOnce({ data: { success: false, code: 'C001', data: null } });
-
-      await expect(client.post('/x', {})).rejects.toThrow('요청 처리 중 오류가 발생했습니다.');
-    });
-
-    it('success:true 는 래퍼를 벗겨 data 만 돌려준다', async () => {
-      const { client, instance } = await loadClient();
-      instance.post.mockResolvedValueOnce({
-        data: { success: true, code: 'S001', message: 'ok', data: { id: 7 } },
-      });
-
-      await expect(client.post('/x', {})).resolves.toEqual({ id: 7 });
-    });
-
-    it('ApiResponse 래퍼가 아닌 본문은 그대로 돌려준다', async () => {
-      const { client, instance } = await loadClient();
-      instance.get.mockResolvedValueOnce({ data: [1, 2, 3] });
-
-      // 래퍼를 쓰지 않는 엔드포인트(파일 다운로드 등)를 깨뜨리지 않아야 한다.
-      await expect(client.get('/raw')).resolves.toEqual([1, 2, 3]);
-    });
+    /*
+      success:false envelope 의 예외 변환과 래퍼 해제는 구형 client.get/post 의 extractData 가
+      맡았으나, 그 메서드들은 운영 호출자가 0이 되어 걷었다. 지금 그 계약은 생성 API 경계
+      (generated-operation.ts 의 성공 envelope 검증)가 소유하고 generated-operation.test.ts 가 검증한다.
+    */
   });
 
   describe('401 재발급 흐름', () => {

@@ -48,5 +48,3 @@ export interface UserSearchResult {
 }
 
 export const userSearchService = new UserSearchService();
-
-export const searchAssignableUsers = userSearchService.searchAssignableUsers.bind(userSearchService);

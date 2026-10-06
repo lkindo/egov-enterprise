@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   describeSurveyAvailability,
   getSurveyStatus,
-  isSurveyActive,
 } from '../survey-status';
 
 /**
@@ -31,7 +30,7 @@ describe('survey-status', () => {
 
   it('값이 있는데 8자리 날짜가 아니면 판정 불가이고, 판정 불가는 개방이 아니다', () => {
     expect(getSurveyStatus({ srvyBgngYmd: '2026-09-', srvyEndYmd: '20260930' }, today)).toBe('unknown');
-    expect(isSurveyActive({ srvyBgngYmd: '2026-09-', srvyEndYmd: '20260930' }, today)).toBe(false);
+    expect(getSurveyStatus({ srvyBgngYmd: '2026-09-', srvyEndYmd: '20260930' }, today) === 'active').toBe(false);
   });
 
   it('안내 문구는 상태별로 다르고 진행중이면 없다', () => {

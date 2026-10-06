@@ -30,21 +30,6 @@ class InformalSanctionTest {
     }
 
     @Test
-    @DisplayName("InformalSanction 수정 테스트")
-    void updateTest() {
-        InformalSanction sanction = InformalSanction.builder()
-                .taskSeCd("001")
-                .aprvYn(SanctionStatus.REQUESTED.getCode())
-                .build();
-
-        sanction.update("002", "20240201", "admin2");
-
-        assertThat(sanction.getTaskSeCd()).isEqualTo("002");
-        assertThat(sanction.getReqYmd()).isEqualTo("20240201");
-        assertThat(sanction.getAprvrId()).isEqualTo("admin2");
-    }
-
-    @Test
     @DisplayName("InformalSanction 승인 및 반려 테스트")
     void sanctionActionTest() {
         // given
@@ -69,12 +54,8 @@ class InformalSanctionTest {
     }
 
     @Test
-    void updateAndResubmitPreserveCompatibleDateInput() {
+    void resubmitPreservesCompatibleDateInput() {
         for (String value : new String[] {null, "", "20000229", "2000-02-29"}) {
-            InformalSanction editable = InformalSanction.builder().aprvYn(SanctionStatus.REQUESTED.getCode()).build();
-            editable.update("TASK", value, "approver");
-            assertThat(editable.getReqYmd()).isEqualTo(value);
-
             InformalSanction rejected = InformalSanction.builder().aprvYn(SanctionStatus.REJECTED.getCode()).build();
             rejected.resubmit("TASK", value, "Title", "Body", "approver");
             assertThat(rejected.getReqYmd()).isEqualTo(value);
@@ -82,17 +63,9 @@ class InformalSanctionTest {
     }
 
     @Test
-    void invalidDateCannotMutateAnUpdateOrStartANewRevision() {
+    void invalidDateCannotStartANewRevision() {
         for (String value : new String[] {"20260229", "1900-02-29", "2026-04-31", "00000101", "0000-01-01",
                 "2026--09-10", "202-609-10", "20260910-", " ", " 20260910"}) {
-            InformalSanction editable = InformalSanction.builder().aprvYn(SanctionStatus.REQUESTED.getCode())
-                    .taskSeCd("OLD").reqYmd("20260901").aprvrId("first").build();
-            assertThatThrownBy(() -> editable.update("NEW", value, "second"))
-                    .as(value).isInstanceOf(BusinessException.class);
-            assertThat(editable.getTaskSeCd()).isEqualTo("OLD");
-            assertThat(editable.getReqYmd()).isEqualTo("20260901");
-            assertThat(editable.getAprvrId()).isEqualTo("first");
-
             InformalSanction rejected = InformalSanction.builder().aprvYn(SanctionStatus.REJECTED.getCode())
                     .reqYmd("20260901").docCn("Original").build();
             assertThatThrownBy(() -> rejected.resubmit("NEW", value, "Title", "Replacement", "second"))

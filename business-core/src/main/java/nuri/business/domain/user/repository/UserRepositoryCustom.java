@@ -5,8 +5,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface UserRepositoryCustom {
-    Page<User> searchUsers(String sbscrbSttus, String searchCondition, String searchKeyword, Pageable pageable);
-
     Page<nuri.business.service.user.dto.UserDto> getPagedUserList(String searchKeyword,
             UserListFilter filter, Pageable pageable);
 
@@ -39,7 +37,5 @@ public interface UserRepositoryCustom {
      * 이미 결재선에 있는 사람이 사용 중지돼도 이름은 보여야 한다. 연락처는 싣지 않는다(2026-10-03 결재 동선 개선).
      */
     java.util.List<nuri.business.service.user.dto.UserSearchDto> findProfilesByEsntlIds(java.util.Collection<String> esntlIds);
-
-    int checkIdDplct(String checkId);
 }
 

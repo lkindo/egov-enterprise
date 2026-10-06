@@ -40,11 +40,6 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
                         nativeQuery = true)
         Long findMaxAnsSn(@Param("bbsId") String bbsId, @Param("sortOrdr") Long sortOrdr);
 
-        @Query("SELECT b FROM Board b WHERE b.pstSn = :pstSn")
-        Optional<Board> findByPstSn(@Param("pstSn") Long pstSn);
-
-        long countByBbsIdAndUseYn(String bbsId, String useYn);
-
         /**
          * 날짜별 게시글 등록 건수.
          *
@@ -94,16 +89,6 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
          */
         @Query(value = "SELECT DISTINCT bbs_id FROM tb_bbs_item WHERE bbs_id IN (:bbsIds)", nativeQuery = true)
         List<String> findBbsIdsHavingAnyArticles(@Param("bbsIds") List<String> bbsIds);
-
-        @Query("SELECT COALESCE(SUM(b.inqCnt), 0L) FROM Board b WHERE b.bbsId = :bbsId AND b.useYn = :useYn")
-        long sumInqCntByBbsIdAndUseYn(@Param("bbsId") String bbsId, @Param("useYn") String useYn);
-
-        @Query("SELECT b.userNm FROM Board b WHERE b.bbsId = :bbsId AND b.useYn = :useYn GROUP BY b.userNm ORDER BY COUNT(b) DESC LIMIT 1")
-        String findTopContributorByBbsIdAndUseYn(@Param("bbsId") String bbsId, @Param("useYn") String useYn);
-
-        @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
-        @Query("SELECT b FROM Board b WHERE b.pstSn = :pstSn")
-        Optional<Board> findByPstSnWithPessimisticLock(@Param("pstSn") Long pstSn);
 
         /**
          * 좋아요 수 원자 증가. [W1-17 배선 완료]

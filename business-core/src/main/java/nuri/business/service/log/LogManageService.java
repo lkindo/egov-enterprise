@@ -17,43 +17,13 @@ import nuri.business.domain.common.BaseSearchDto;
 import org.jspecify.annotations.NonNull;
 
 @Service
-@Transactional(readOnly = true) // 조회 기본 read-only; 쓰기(logInsertSysLog)는 메서드 @Transactional 이 오버라이드
+@Transactional(readOnly = true) // 조회 전용 — tb_sys_log 쓰기는 SystemErrorLogListener 가 맡는다
 public class LogManageService extends BaseAbstractService {
 
     private final SysLogRepository sysLogRepository;
 
     public LogManageService(SysLogRepository sysLogRepository) {
         this.sysLogRepository = required(sysLogRepository, "SysLogRepository 는 null 일 수 없습니다");
-    }
-
-    @Transactional
-    public void logInsertSysLog(@NonNull SysLogDto dto) {
-        SysLog entity = SysLog.builder()
-                .dmndId(dto.getDmndId())
-                .srvcNm(dto.getSrvcNm())
-                .mthdNm(dto.getMethodNm())
-                .prcsSeCd(dto.getPrcsSeCd())
-                .prcsTm(parsePrcsTm(dto.getPrcsTm()))
-                .dmndUserId(dto.getDmndUserId())
-                .dmndUserIpAddr(dto.getRqesterIp())
-                .ocrnYmd(dto.getOcrnYmd())
-                .build();
-        sysLogRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
-    }
-
-    /**
-     * [V2_16] DTO(API 계약: String 유지) ↔ 엔티티(bigint 통일) 경계 변환.
-     * 처리 소요시간(ms) — 비숫자 입력은 로그 유틸 특성상 무음 null 처리(로깅 실패가 본 요청을 파손하지 않도록).
-     */
-    private static Long parsePrcsTm(String prcsTm) {
-        if (prcsTm == null || prcsTm.isBlank()) {
-            return null;
-        }
-        try {
-            return Long.valueOf(prcsTm.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
     }
 
     public List<SysLogDto> selectSysLogList(@NonNull BaseSearchDto searchVO) {

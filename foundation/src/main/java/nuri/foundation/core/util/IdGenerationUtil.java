@@ -111,11 +111,4 @@ public final class IdGenerationUtil {
     public static String generateUserId() {
         return generateId(Constants.User.USER_PREFIX, Constants.User.UUID_LENGTH);
     }
-
-    /**
-     * 일반 회원용 고유 ID(EsntlId)를 생성합니다.
-     */
-    public static String generateMberId() {
-        return generateId(Constants.User.MBER_PREFIX, Constants.User.ESNTL_ID_UUID_LENGTH);
-    }
 }

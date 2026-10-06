@@ -81,28 +81,6 @@ class CommonCodeServiceTest {
     }
 
     @Test
-    @DisplayName("코드 생성 테스트 - 성공")
-    void createCodeSuccessTest() {
-        CommonCodeSaveRequest request = new CommonCodeSaveRequest("GRP1", "CODE1", "코드명1", "설명", "Y");
-        given(commonCodeRepository.findById(any())).willReturn(Optional.empty());
-        given(commonCodeRepository.save(any(CommonCode.class))).willAnswer(invocation -> invocation.getArgument(0));
-
-        CommonCodeDto result = commonCodeService.createCode(request);
-
-        assertNotNull(result);
-        assertEquals("CODE1", result.dtlCd());
-    }
-
-    @Test
-    @DisplayName("코드 생성 테스트 - 중복 오류")
-    void createCodeDuplicateTest() {
-        CommonCodeSaveRequest request = new CommonCodeSaveRequest("GRP1", "CODE1", "코드명1", "설명", "Y");
-        given(commonCodeRepository.findById(any())).willReturn(Optional.of(mock(CommonCode.class)));
-
-        assertThrows(BusinessException.class, () -> commonCodeService.createCode(request));
-    }
-
-    @Test
     @DisplayName("공통분류코드 목록 조회 테스트")
     void selectCmmnClCodeListTest() {
         BaseSearchDto searchVO = new BaseSearchDto();

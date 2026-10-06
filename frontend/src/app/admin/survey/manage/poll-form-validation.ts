@@ -41,8 +41,6 @@ function validatePollDateRange(
 
 export const pollFormSchema = pollFormFieldsSchema.superRefine(validatePollDateRange);
 
-export type PollFormValues = z.output<typeof pollFormSchema>;
-
 const pollArticleFormSchema = OnlinePollArticleDtoSchema.extend({
   pollArtclNm: OnlinePollArticleDtoSchema.shape.pollArtclNm.trim()
     .min(1, '선택 항목 내용을 입력해 주세요.'),

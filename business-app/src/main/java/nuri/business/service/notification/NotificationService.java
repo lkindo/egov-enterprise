@@ -118,15 +118,6 @@ public class NotificationService {
     }
 
     @Transactional
-    public void updateNotification(Long notiSn, String userId, NotificationDto dto) {
-        requireUserId(userId);
-        log.info("Updating notification ID: {}", notiSn);
-        Notification entity = findOwnedNotification(notiSn, userId)
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getNotiTtlNm(), dto.getNotiCn(), dto.getNotiDt(), dto.getNotiIvlVal());
-    }
-
-    @Transactional
     public void deleteNotification(Long notiSn, String userId) {
         requireUserId(userId);
         log.info("Deleting notification ID: {}", notiSn);

@@ -26,14 +26,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 그 저장소는 프로덕션 호출부가 0건인 죽은 코드였고 별건으로 삭제했다.
  * 해당 테스트도 함께 걷어냈다 — 지워진 코드를 지키는 테스트는 유지 비용만 남긴다.
  *
- * <p>[2026-08-09 신설] 기존 {@code UserRepositoryTest} 는 조건별로
- * {@code assertThat(result.getContent()).isNotEmpty()} 만 확인했다.
- * 이 단언은 <b>필터를 통째로 없앤 뮤턴트도 통과시킨다</b> —
- * 조건이 사라지면 전체가 나오고, 전체에는 매칭 행도 들어 있으니 여전히 non-empty 다.
- * 그래서 검색조건 뮤턴트가 그대로 살아남았다.
- *
  * <p>여기서는 매칭 1건 + <b>비매칭 1건</b>을 넣고 <b>비매칭이 빠지는지</b>를 본다.
  * "찾아지는가" 가 아니라 "안 찾아져야 할 것이 안 찾아지는가" 를 물어야 필터를 검증하는 것이다.
+ *
+ * <p>[2026-10-07] 관리자 사용자 검색({@code searchUsers}, 레거시 검색조건 코드·단일 role 필터)은
+ * 운영 호출자가 0건이어서 걷었고, 그 조건 빌더를 지키던 중첩 테스트도 함께 걷었다.
  *
  * <p>{@code searchAssignableUsers} 는 별도로 다룬다. 이 메서드는 일반 사용자에게 열려 있고,
  * 소스 주석이 <b>계정 열거 방어</b>를 명시적으로 설계 의도로 적어 두었는데
@@ -67,63 +64,6 @@ class UserSearchConditionTest extends PersistenceTestSupport {
 
         em.flush();
         em.clear();
-    }
-
-    // ── 관리자 사용자 검색 ─────────────────────────────────────────────────────
-
-    @Nested
-    @DisplayName("사용자 목록 검색조건")
-    class UserSearch {
-
-        @Test
-        @DisplayName("조건별로 서로 다른 컬럼을 본다 — 비매칭이 실제로 빠진다")
-        void eachConditionFiltersItsOwnColumn() {
-            // 검색어를 해당 컬럼에만 존재하는 값으로 골라, 조건 분기 뒤바뀜까지 잡는다.
-            assertThat(userIds("USER_ID", "kim01")).containsExactly("kim01");
-            assertThat(userIds("0", "kim01")).containsExactly("kim01");
-            assertThat(userIds("USER_NM", "김일치")).containsExactly("kim01");
-            assertThat(userIds("1", "김일치")).containsExactly("kim01");
-            assertThat(userIds("OFFM_TELNO", "1111")).containsExactly("kim01");
-            assertThat(userIds("OFFICE_TELNO", "1111")).containsExactly("kim01");
-        }
-
-        @Test
-        @DisplayName("조건이 다르면 같은 검색어로도 잡히지 않는다")
-        void conditionSelectsTheColumnNotJustAnyColumn() {
-            // "김일치" 는 userNm 에만 있다 — 조건 USER_ID 로는 0건이어야 한다.
-            // 조건을 무시하고 아무 컬럼이나 보는 뮤턴트는 여기서 죽는다.
-            assertThat(userIds("USER_ID", "김일치")).isEmpty();
-            // "kim01" 은 userId 에만 있다 — 조건 USER_NM 으로는 0건이어야 한다.
-            assertThat(userIds("USER_NM", "kim01")).isEmpty();
-        }
-
-        @Test
-        @DisplayName("검색어가 비면 조건 없이 전체를 돌려준다 (관리자 전용 화면의 현행 거동)")
-        void blankKeywordReturnsEverything() {
-            assertThat(userIds("USER_ID", null)).containsExactlyInAnyOrder("kim01", "park99");
-            assertThat(userIds("USER_ID", "  ")).containsExactlyInAnyOrder("kim01", "park99");
-        }
-
-        @Test
-        @DisplayName("가입상태 조건은 권한(Role)으로 좁히고, 0·미지정·잘못된 값은 필터 없음이다")
-        void statusConditionFiltersByRole() {
-            assertThat(userIdsWithStatus("ADMIN")).containsExactly("park99");
-            assertThat(userIdsWithStatus("USER")).containsExactly("kim01");
-            // "0"(전체)·빈값·열거에 없는 값은 조건을 걸지 않는다 — 예외로 죽지 않아야 한다.
-            assertThat(userIdsWithStatus("0")).hasSize(2);
-            assertThat(userIdsWithStatus(null)).hasSize(2);
-            assertThat(userIdsWithStatus("NOT_A_ROLE")).hasSize(2);
-        }
-
-        private List<String> userIds(String condition, String keyword) {
-            return userRepository.searchUsers(null, condition, keyword, PAGE)
-                    .getContent().stream().map(User::getUserId).toList();
-        }
-
-        private List<String> userIdsWithStatus(String status) {
-            return userRepository.searchUsers(status, "USER_ID", null, PAGE)
-                    .getContent().stream().map(User::getUserId).toList();
-        }
     }
 
     // ── 담당자 지정 검색 (열거 방어) ────────────────────────────────────────────

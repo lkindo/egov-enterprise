@@ -243,7 +243,7 @@ describe('브랜드 프로필 토큰 계약', () => {
     });
 
     it('--filter-control-h 기본값(3rem = 종전 h-12)이 모든 프로필의 라이트·다크 블록에 선언된다', () => {
-      // comfortable 기본 무변경 계약: StandardSearchFilter 의 h-12(3rem) 컨트롤은 --control-h(2.25rem)로
+      // comfortable 기본 무변경 계약: 조회조건 바(게시판 목록 조회 조건 등)의 h-12(3rem) 컨트롤은 --control-h(2.25rem)로
       // 옮기면 기본 배포가 줄어들므로 전용 토큰 --filter-control-h 를 3rem 으로 따로 갖는다.
       // 밀도는 모드 불변이라 다크 블록에도 같은 값을 재선언한다(다른 밀도 토큰과 동일 규칙).
       for (const file of themeFiles) {

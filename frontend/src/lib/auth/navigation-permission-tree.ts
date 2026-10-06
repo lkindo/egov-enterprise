@@ -73,23 +73,6 @@ export function toggleNavigationPermission(tree: NavigationPermissionTree, selec
   return next;
 }
 
-/**
- * 선택한 메뉴 가운데, 선택한 기능권한만으로는 들어갈 수 없는 화면의 메뉴 이름(2026-10-01).
- *
- * 메뉴 표시(NAVIGATION)와 화면 진입(OPERATION)은 서로 다른 권한이 판정한다. 메뉴만 배정하고 그 화면의 조회 권한을
- * 주지 않으면, 사용자에게 그 메뉴는 보이지 않는다(메뉴는 라우트 게이트와 같은 판정으로 보인다). 종전 편집기는
- * 기능권한이 **하나도 없을 때만** 경고해, 메뉴별 어긋남은 설정하는 사람에게 드러나지 않았다.
- *
- * 판정은 라우트 게이트와 같은 함수다. 사용자의 실제 권한은 배정된 그룹의 합집합이므로 이것은 저장을 막는 오류가
- * 아니라 안내다 — 다른 그룹이 그 권한을 주면 메뉴는 보인다.
- */
-export function selectedMenusWithoutEntryPermission(
-  navigation: readonly Navigation[],
-  selection: ReadonlySet<string>,
-): string[] {
-  return menusMissingEntryPermission(navigation, selection).map((menu) => menu.name);
-}
-
 /** 진입 권한이 없는 메뉴 하나와, 그 화면을 열려면 필요한 기능권한. */
 export interface MenuMissingEntryPermission {
   code: string;
@@ -105,9 +88,18 @@ export interface MenuMissingEntryPermission {
 }
 
 /**
- * {@link selectedMenusWithoutEntryPermission} 의 판정 그대로, 메뉴마다 무엇을 더하면 들어갈 수 있는지까지 돌려준다
- * (2026-10-02, 관리 콘솔 UX 1단계). 편집기는 이것으로 '진입 권한 추가'를 초안에 더한다 — 저장은 여전히
- * '권한 변경 저장' 하나이며, 이 함수는 아무것도 자동으로 추가하지 않는다.
+ * 선택한 메뉴 가운데, 선택한 기능권한만으로는 들어갈 수 없는 화면의 메뉴와 그 화면을 열려면 필요한 기능권한(2026-10-01).
+ *
+ * 메뉴 표시(NAVIGATION)와 화면 진입(OPERATION)은 서로 다른 권한이 판정한다. 메뉴만 배정하고 그 화면의 조회 권한을
+ * 주지 않으면, 사용자에게 그 메뉴는 보이지 않는다(메뉴는 라우트 게이트와 같은 판정으로 보인다). 종전 편집기는
+ * 기능권한이 **하나도 없을 때만** 경고해, 메뉴별 어긋남은 설정하는 사람에게 드러나지 않았다.
+ *
+ * 판정은 라우트 게이트와 같은 함수다. 사용자의 실제 권한은 배정된 그룹의 합집합이므로 이것은 저장을 막는 오류가
+ * 아니라 안내다 — 다른 그룹이 그 권한을 주면 메뉴는 보인다.
+ *
+ * 메뉴마다 무엇을 더하면 들어갈 수 있는지까지 돌려준다(2026-10-02, 관리 콘솔 UX 1단계). 편집기는 이것으로
+ * '진입 권한 추가'를 초안에 더한다 — 저장은 여전히 '권한 변경 저장' 하나이며, 이 함수는 아무것도 자동으로
+ * 추가하지 않는다.
  *
  * 필요한 권한과 판정 방식은 라우트 게이트가 쓰는 등록 원장(registeredPageEntry·PAGE_PERMISSION_MODES)에서 읽는다.
  * 동적 경로는 등록 항목의 키로 판정 방식을 찾아야 하므로 registeredPagePermissions 대신 항목 자체를 쓴다.

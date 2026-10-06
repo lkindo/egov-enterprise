@@ -57,8 +57,6 @@
     --surface-inverse-foreground: 210 10% 96.1%; /* #F4F5F6 gray-5 */
     --surface-inverse-muted: 207.7 9.1% 72%; /* #B1B8BE gray-30 */
     --surface-inverse-border: 212.3 8.5% 30%; /* #464C53 gray-70 */
-    --surface-sunken: 210 10% 96.1%; /* #F4F5F6 gray-5 */
-    --surface-raised: 0 0% 100%; /* #FFFFFF gray-0 */
 
     /* 비색상 토큰 — premium 과 동일(형상·타이포 프로필 분화는 STYLE-SHAPE/TYPOGRAPHY 보류 범위) */
     --radius: 0.5rem;
@@ -66,16 +64,12 @@
     --font-size-hub-subtitle: 0.8125rem;
     --font-weight-hub-title: 900;
     --letter-spacing-hub: -0.05em;
-    --letter-spacing-label: -0.025em;
     --radius-hub-section: 1rem;
     --radius-hub-widget: 0.75rem;
     --radius-hub-item: 0.5rem;
-    --gap-base: 1rem;
     --gap-hub-section: 3rem;
     --gap-hub-widget: 1.5rem;
     --shadow-hub-premium: 0 32px 64px -16px rgba(0, 0, 0, 0.08);
-    --color-premium-slate: 222.2 47.4% 11.2%;
-    --color-premium-emerald: 142.1 76.2% 36.3%;
 
     /* 밀도·구조 토큰 (D2, Phase 1) — premium 과 동일한 현행 등가값(밀도 프로필 분화는 후속 범위) */
     --control-h: 2.25rem;
@@ -90,7 +84,7 @@
     --page-pad-lg: 4rem;
     --radius-control: 0.5rem;
     --filter-pad: 2rem;
-    --filter-control-h: 3rem; /* StandardSearchFilter 컨트롤(종전 h-12) — premium 과 동일 등가값 */
+    --filter-control-h: 3rem; /* 조회조건 바 컨트롤(종전 h-12) — premium 과 동일 등가값 */
     --work-cell-px: 0.75rem;  /* 업무 표 행 토큰(컴포넌트 opt-in) — premium 과 동일 */
     --work-cell-py: 0.375rem;
   }
@@ -124,8 +118,6 @@
     --card-foreground: 210 10% 96.1%; /* #F4F5F6 gray-5 */
     --popover: 210 9.1% 12.9%; /* #1E2124 gray-90 */
     --popover-foreground: 210 10% 96.1%; /* #F4F5F6 gray-5 */
-    --surface-sunken: 0 0% 0%; /* #000000 gray-100 */
-    --surface-raised: 222 8.9% 22%; /* #33363D gray-80 */
 
     /* 밀도·구조 토큰 — 라이트와 동일(밀도는 모드 불변) */
     --control-h: 2.25rem;

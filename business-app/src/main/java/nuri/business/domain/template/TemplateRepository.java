@@ -1,10 +1,7 @@
 package nuri.business.domain.template;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import java.util.List;
 
 /**
  * 템플릿 정보 리포지토리
@@ -15,14 +12,4 @@ public interface TemplateRepository extends JpaRepository<Template, String>, Tem
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @org.springframework.data.jpa.repository.Query("SELECT t FROM Template t WHERE t.tmpltId = :id")
     java.util.Optional<Template> findByIdForUpdate(@org.springframework.data.repository.query.Param("id") String id);
-
-    Page<Template> findByTmpltNmContaining(String tmpltNm, Pageable pageable);
-
-    Page<Template> findByTmpltSeCd(String tmpltSeCd, Pageable pageable);
-
-    List<Template> findByTmpltSeCd(String tmpltSeCd);
-
-    List<Template> findByUseYn(String useYn);
-
-    List<Template> findByTmpltSeCdAndUseYn(String tmpltSeCd, String useYn);
 }

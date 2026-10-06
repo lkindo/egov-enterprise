@@ -819,7 +819,7 @@ class BoardRepositoryTest {
     }
 
     @Test
-    @DisplayName("기본 search 및 findByIdCustom 테스트")
+    @DisplayName("기본 search 테스트")
     void otherCustomMethodsTest() {
         // Given
         Board article = Board.builder()
@@ -827,16 +827,11 @@ class BoardRepositoryTest {
                 .pstTtl("Topic")
                 .useYn("Y")
                 .build();
-        Board saved = boardRepository.save(article);
+        boardRepository.save(article);
         em.flush();
         em.clear();
 
-        // 1. findByIdCustom
-        Optional<Board> found = boardRepository.findByIdCustom(saved.getPstSn());
-        assertThat(found).isPresent();
-        assertThat(found.get().getPstTtl()).isEqualTo("Topic");
-
-        // 2. search (returning Board entities)
+        // search (returning Board entities)
         BoardSearchCondition condition = new BoardSearchCondition();
         condition.setBbsId(testMaster.getBbsId());
         Page<Board> results = boardRepository.search(condition, PageRequest.of(0, 10));

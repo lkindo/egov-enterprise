@@ -3466,18 +3466,6 @@
       ]
     },
     {
-      "target": "MenuService#deleteMenuManageList",
-      "policy": "ADMIN_OR_SYSTEM",
-      "mechanisms": [
-        {
-          "helper": "assertPermission",
-          "count": 1,
-          "identityAxis": "PERMISSION",
-          "permission": "MENU_DELETE"
-        }
-      ]
-    },
-    {
       "target": "AuthorizationAdministrationService#departments",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -3819,42 +3807,6 @@
           "count": 1,
           "identityAxis": "PERMISSION",
           "permission": "ADT_LOG_READ"
-        }
-      ]
-    },
-    {
-      "target": "OnlinePollService#insertPollItem",
-      "policy": "ADMIN_OR_SYSTEM",
-      "mechanisms": [
-        {
-          "helper": "assertPermission",
-          "count": 1,
-          "identityAxis": "PERMISSION",
-          "permission": "POLL_UPDATE"
-        }
-      ]
-    },
-    {
-      "target": "OnlinePollService#updatePollItem",
-      "policy": "ADMIN_OR_SYSTEM",
-      "mechanisms": [
-        {
-          "helper": "assertPermission",
-          "count": 1,
-          "identityAxis": "PERMISSION",
-          "permission": "POLL_UPDATE"
-        }
-      ]
-    },
-    {
-      "target": "OnlinePollService#deletePollItem",
-      "policy": "ADMIN_OR_SYSTEM",
-      "mechanisms": [
-        {
-          "helper": "assertPermission",
-          "count": 1,
-          "identityAxis": "PERMISSION",
-          "permission": "POLL_DELETE"
         }
       ]
     },

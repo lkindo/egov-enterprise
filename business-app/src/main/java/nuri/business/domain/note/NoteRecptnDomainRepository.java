@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import java.util.Optional;
 
 /**
  * 수신쪽지 Repository
@@ -47,11 +46,5 @@ public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, Lo
 
     /** 특정 쪽지(note)를 참조하는 수신 사본 수(info 물리삭제 안전성 판정용). */
     long countByNoteNoteSn(Long noteSn);
-
-    @Query(value = "SELECT r FROM NoteRecptn r JOIN FETCH r.note n WHERE r.rcvrId = :rcvrId",
-           countQuery = "SELECT count(r) FROM NoteRecptn r WHERE r.rcvrId = :rcvrId")
-    Page<NoteRecptn> findByRcvrId(@Param("rcvrId") String rcvrId, Pageable pageable);
-
-    Optional<NoteRecptn> findByNoteNoteSnAndRcvrId(Long noteSn, String rcvrId);
 
 }

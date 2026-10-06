@@ -18,18 +18,19 @@ import {
  WorkReportDtoSchema,
 } from '@/types/generated-zod';
 
+// raw transport 가 envelope 를 만들기 전에 거치는 어댑터. 테스트는 method 별 호출을 여기서 단언한다.
+const transport = vi.hoisted(() => ({
+ get: vi.fn(),
+ post: vi.fn(),
+ put: vi.fn(),
+ remove: vi.fn(),
+}));
+
 vi.mock('@/lib/api/client', () => {
- const get = vi.fn();
- const post = vi.fn();
- const put = vi.fn();
- const remove = vi.fn();
+ const { get, post, put, remove } = transport;
 
  return {
  default: {
- get,
- post,
- put,
- delete: remove,
  getRaw: vi.fn(async (url: string, config?: unknown) => {
  const result = await get(url, config);
  return { success: true, code: 'S000', message: '성공', data: result ?? {} };
@@ -168,12 +169,12 @@ describe('Demo user services', () => {
  });
 
  it('reportService uses the numeric report serial number in resource paths', async () => {
- vi.mocked(client.get).mockResolvedValueOnce({ rptpSn: 23, rptTtl: '기존 보고' });
+ transport.get.mockResolvedValueOnce({ rptpSn: 23, rptTtl: '기존 보고' });
  await reportService.getReport(23);
- expect(client.get).toHaveBeenCalledWith('work-reports/23', undefined);
+ expect(transport.get).toHaveBeenCalledWith('work-reports/23', undefined);
  await reportService.updateReport(23, { rptTtl: '수정 보고' });
- expect(client.put).toHaveBeenCalledWith('work-reports/23', { rptTtl: '수정 보고' }, undefined);
+ expect(transport.put).toHaveBeenCalledWith('work-reports/23', { rptTtl: '수정 보고' }, undefined);
  await reportService.deleteReport(23);
- expect(client.delete).toHaveBeenCalledWith('work-reports/23', undefined);
+ expect(transport.remove).toHaveBeenCalledWith('work-reports/23', undefined);
  });
 });

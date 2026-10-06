@@ -8,7 +8,6 @@ import nuri.business.domain.code.CommonCode;
 import nuri.business.domain.code.CommonCodeRepository;
 import nuri.business.service.code.dto.CommonCodeDto;
 import nuri.business.service.code.dto.CommonCodeMapper;
-import nuri.business.service.code.dto.CommonCodeSaveRequest;
 import nuri.business.security.util.SecurityUtil;
 
 import org.springframework.cache.annotation.CacheEvict;
@@ -112,34 +111,6 @@ public class CommonCodeService extends BaseAbstractService {
                                 .collect(Collectors.toList());
         }
 
-        @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('CODE_CREATE')")
-        @Transactional
-        @CacheEvict(value = "commonCodes", allEntries = true)
-        public CommonCodeDto createCode(@NonNull CommonCodeSaveRequest request) {
-
-                log.info("Creating common code: {}/{}", request.cdId(), request.dtlCd());
-
-                if (commonCodeRepository
-                                .findById(new nuri.business.domain.code.CommonCodeId(
-                                                request.cdId(),
-                                                request.dtlCd()))
-                                .isPresent()) {
-                        throw new BusinessException(CodeErrorCode.DUPLICATE_CODE);
-                }
-
-                CommonCode code = CommonCode.builder()
-                                .cdId(required(request.cdId(), "request.cdId() 는 null 일 수 없습니다"))
-                                .dtlCd(required(request.dtlCd(), "request.dtlCd() 는 null 일 수 없습니다"))
-                                .dtlCdNm(required(request.dtlCdNm(), "request.dtlCdNm() 는 null 일 수 없습니다"))
-                                .dtlCdExpln(request.dtlCdExpln())
-                                .useYn(request.useYn())
-                                .build();
-
-                CommonCode saved = commonCodeRepository.save(required(code, "code 는 null 일 수 없습니다"));
-                recordChange("DTL", "ADD", null, saved.getCdId(), saved.getDtlCd(), "상세 코드 등록", null,
-                                codeSummary(saved.getDtlCdNm(), saved.getDtlCdExpln(), saved.getUseYn()));
-                return commonCodeMapper.toDto(saved);
-        }
         // --- 공통분류코드 (CmmnClCode) ---
 
         public List<CmmnClCodeDto> selectCmmnClCodeList(@NonNull BaseSearchDto searchVO) {

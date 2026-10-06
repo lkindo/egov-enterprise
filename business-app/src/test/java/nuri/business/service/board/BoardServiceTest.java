@@ -151,7 +151,7 @@ class BoardServiceTest {
         given(boardRepository.searchArticles(captor.capture(), eq(pageable)))
                 .willReturn(new PageImpl<BoardSearchResult>(Collections.emptyList()));
 
-        boardService.getBoardPosts(bbsId, "0", "공지", "views", "2026-01-01", "2026-12-31", "R", "CAT1", pageable);
+        boardService.getBoardPosts(bbsId, "0", "공지", "views", "2026-01-01", "2026-12-31", "R", "CAT1", null, pageable);
 
         // 한 항목이라도 전달이 끊기면 사용자가 건 필터가 조용히 무시된 채 전체 목록이 반환된다.
         BoardSearchCondition cond = captor.getValue();
@@ -311,7 +311,7 @@ class BoardServiceTest {
 
         // 검증이 빠지면 항상 0건이 반환돼 "글이 없다" 는 오해를 유발한다.
         assertThatThrownBy(() -> boardService.getBoardPosts(
-                bbsId, null, null, null, "2026-12-31", "2026-01-01", null, null, pageable))
+                bbsId, null, null, null, "2026-12-31", "2026-01-01", null, null, null, pageable))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
 
@@ -332,7 +332,7 @@ class BoardServiceTest {
                 .willReturn(new PageImpl<>(Collections.singletonList(
                         BoardSearchResult.builder().pstSn(1L).build())));
 
-        Page<BoardDto> result = boardService.getBoardPosts(bbsId, "0", "공지", pageable);
+        Page<BoardDto> result = boardService.getBoardPosts(bbsId, "0", "공지", null, null, null, null, null, null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(captor.getValue().getSearchWrd()).isEqualTo("공지");
@@ -469,7 +469,8 @@ class BoardServiceTest {
 
     private Board persistWithGeneratedPstSn(Board board) {
         if (board.getPstSn() == null) {
-            board.changePstSn(1L);
+            // IDENTITY PK 는 JPA 가 채우므로 엔티티에 변경자가 없다 — 저장소 목이 그 역할을 흉내 낸다.
+            org.springframework.test.util.ReflectionTestUtils.setField(board, "pstSn", 1L);
         }
         return board;
     }
@@ -1015,8 +1016,6 @@ class BoardServiceTest {
         // then
         assertThat(result).isEqualTo(1);
         verify(boardRepository, times(1)).incrementLikeCntAtomic(pstSn);
-        // 행 락을 잡지 않는다 — 같은 글의 좋아요가 더 이상 직렬화되지 않는다.
-        verify(boardRepository, never()).findByPstSnWithPessimisticLock(any(Long.class));
     }
 
     @Test
@@ -1086,7 +1085,7 @@ class BoardServiceTest {
         given(boardRepository.searchArticles(any(), any())).willReturn(Page.empty());
 
         // when
-        boardService.getBoardPosts(bbsId, "0", "word", "regDate", "2023-01-01", "2023-12-31", null, null, pageable);
+        boardService.getBoardPosts(bbsId, "0", "word", "regDate", "2023-01-01", "2023-12-31", null, null, null, pageable);
 
         // then
         verify(boardRepository)
@@ -1111,7 +1110,7 @@ class BoardServiceTest {
         given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(master));
 
         BusinessException thrown = assertThrows(BusinessException.class, () -> boardService.getBoardPosts(
-                bbsId, "0", "word", "regDate", "invalid-date", "invalid-date", null, null, pageable));
+                bbsId, "0", "word", "regDate", "invalid-date", "invalid-date", null, null, null, pageable));
 
         assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, thrown.getErrorCode());
         assertTrue(thrown.getMessage().contains("yyyy-MM-dd"), "형식을 알려 주지 않으면 고칠 수 없다");
@@ -1128,7 +1127,7 @@ class BoardServiceTest {
         given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(master));
         given(boardRepository.searchArticles(any(), any())).willReturn(Page.empty());
 
-        boardService.getBoardPosts(bbsId, "0", "", "regDate", "2026-08-01", "2026-08-31", null, null, pageable);
+        boardService.getBoardPosts(bbsId, "0", "", "regDate", "2026-08-01", "2026-08-31", null, null, null, pageable);
 
         verify(boardRepository).searchArticles(argThat(cond ->
                 cond.getStartDate() != null

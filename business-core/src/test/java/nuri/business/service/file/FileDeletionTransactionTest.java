@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -101,43 +100,15 @@ class FileDeletionTransactionTest {
     }
 
     @Test
-    void bulkRollbackAlsoPreservesAllPhysicalFiles() {
-        when(masters.findById(123L)).thenReturn(Optional.of(master));
-        when(details.findByFileMaster(master)).thenReturn(List.of(detail));
-        transaction.executeWithoutResult(status -> {
-            try {
-                service.deleteFiles(123L);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-            status.setRollbackOnly();
-        });
-        assertThat(file).hasContent("preserve on rollback");
-    }
-
-    @Test
-    void intentPersistenceFailureRollsBackInsteadOfDroppingPhysicalDeletion() throws IOException {
-        Path otherFile = file.resolveSibling("other.txt");
-        Files.writeString(otherFile, "other attachment");
-        FileDetail other = FileDetail.builder().fileMaster(master).atchFileSeq(2)
-                .strgFileNm("other.txt").fileStrgPath("general/123").build();
-        ReflectionTestUtils.setField(other, "id", java.util.UUID.randomUUID());
-        when(masters.findById(123L)).thenReturn(Optional.of(master));
-        when(details.findByFileMaster(master)).thenReturn(List.of(detail, other));
+    void intentPersistenceFailureRollsBackInsteadOfDroppingPhysicalDeletion() {
         doThrow(new IllegalStateException("injected intent persistence failure"))
                 .when(work).enqueue(any());
 
-        assertThatThrownBy(() -> transaction.executeWithoutResult(status -> {
-            try {
-                service.deleteFiles(123L);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        })).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> transaction.executeWithoutResult(status -> deleteOne()))
+                .isInstanceOf(IllegalStateException.class);
 
-        verify(masters).delete(master);
+        verify(details).delete(detail);
         assertThat(file).exists();
-        assertThat(otherFile).exists();
     }
 
     private void deleteOne() {

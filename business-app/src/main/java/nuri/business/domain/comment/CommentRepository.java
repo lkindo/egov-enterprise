@@ -24,8 +24,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @Query("SELECT c FROM Comment c WHERE c.bbsId = :bbsId AND c.pstSn = :pstSn AND c.useYn = 'Y'")
     Page<Comment> findByBbsIdAndPstSn(@Param("bbsId") String bbsId, @Param("pstSn") Long pstSn, Pageable pageable);
 
-    Page<Comment> findByAnsCnContaining(String ansCn, Pageable pageable);
-
     // [2026-09-25 DIP I6 ⑥] 관리자 댓글 관리 목록. 게시판·글을 고르지 않은 전체 목록을 위해
     //   필터 조합마다 파생 쿼리를 둔다 — 위 findByBbsIdAndPstSn 에 null 을 넘기면 `bbs_id = NULL`
     //   이 되어 늘 0건이었다. `:p IS NULL OR ...` JPQL 대신 조합별 쿼리를 쓰는 것은 PostgreSQL 이

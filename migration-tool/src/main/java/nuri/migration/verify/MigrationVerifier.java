@@ -9,6 +9,7 @@ import nuri.migration.identity.TypedValue;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.IdentityComponentSpec;
 import nuri.migration.source.SourceIntrospector;
+import nuri.migration.state.KeyDiagnostics;
 import nuri.migration.state.MigrationStateStore;
 import nuri.migration.state.RowChecksum;
 import nuri.migration.verify.MigrationReport.Status;

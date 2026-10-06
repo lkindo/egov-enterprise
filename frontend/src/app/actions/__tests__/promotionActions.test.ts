@@ -30,9 +30,6 @@ vi.mock('next/headers', () => ({ cookies: vi.fn() }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('@/lib/api/client', () => ({
   default: {
-    post: vi.fn(),
-    put: vi.fn(),
-    delete: vi.fn(),
     getRaw: vi.fn(),
     requestRaw: vi.fn(),
   },
@@ -93,7 +90,6 @@ describe('promotionActions', () => {
         data,
         ...AUTH,
       });
-      expect(client.post).not.toHaveBeenCalled();
       expect(result).toEqual({ success: true, message: '배너가 등록되었습니다.' });
     });
 
@@ -109,7 +105,6 @@ describe('promotionActions', () => {
         data,
         ...AUTH,
       });
-      expect(client.put).not.toHaveBeenCalled();
       expect(result.message).toBe('배너가 수정되었습니다.');
     });
 
@@ -215,7 +210,6 @@ describe('promotionActions', () => {
         data: POPUP,
         ...AUTH,
       });
-      expect(client.put).not.toHaveBeenCalled();
     });
 
     it('팝업 저장도 공개 경로를 재검증한다', async () => {

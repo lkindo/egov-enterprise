@@ -73,12 +73,5 @@ public class Notification extends BaseEntity {
         this.readYn = "Y";
     }
 
-    public void update(String notiTtlNm, String notiCn, LocalDateTime notiDt, String notiIvlVal) {
-        this.notiTtlNm = notiTtlNm;
-        this.notiCn = notiCn;
-        this.notiDt = notiDt;
-        this.notiIvlVal = notiIvlVal;
-    }
-
     // 레거시 별칭 완전 철폐 (표준화 동기화)
 }

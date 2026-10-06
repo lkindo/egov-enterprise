@@ -53,17 +53,4 @@ public final class PiiMaskUtil {
         }
         return digits.substring(0, 3) + "****" + digits.substring(digits.length() - 4);
     }
-
-    /**
-     * 자유 텍스트(메일 본문·SMS 내용 등)는 <b>내용을 남기지 않고 길이만</b> 남긴다.
-     *
-     * <p>본문에는 비밀번호 재발급 링크·인증 코드·알림 전문이 실릴 수 있어 부분 노출도 위험하다.
-     * 길이는 "빈 본문이 나갔는가"를 판별하는 데 충분하다.
-     */
-    public static String contentSummary(String value) {
-        if (value == null) {
-            return "(null)";
-        }
-        return "(" + value.length() + " chars)";
-    }
 }

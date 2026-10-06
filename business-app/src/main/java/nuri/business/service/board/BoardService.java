@@ -113,21 +113,7 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional(readOnly = true)
         public Page<BoardDto> getBoardPosts(@NonNull String bbsId, @NonNull Pageable pageable) {
-                return getBoardPosts(bbsId, "0", "", null, null, null, null, null, pageable);
-        }
-
-        @Transactional(readOnly = true)
-        public Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
-                        @NonNull Pageable pageable) {
-                return getBoardPosts(bbsId, searchCnd, searchWrd, null, null, null, null, null, pageable);
-        }
-
-        @Transactional(readOnly = true)
-        public Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
-                        String orderBy, String startDate, String endDate, String qnaStatus, String qnaCategory,
-                        @NonNull Pageable pageable) {
-                return getBoardPosts(bbsId, searchCnd, searchWrd, orderBy, startDate, endDate, qnaStatus,
-                                qnaCategory, null, pageable);
+                return getBoardPosts(bbsId, "0", "", null, null, null, null, null, null, pageable);
         }
 
         /**

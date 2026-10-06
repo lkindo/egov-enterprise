@@ -25,7 +25,6 @@ public interface SurveyInfoRepository extends JpaRepository<SurveyInfo, Long> {
     @Query("select a.srvySn from SurveyArticle a where a.srvyArtclSn = :srvyArtclSn")
     Optional<Long> findSurveyIdByArticleId(@Param("srvyArtclSn") Long srvyArtclSn);
 
-    Optional<SurveyInfo> findBySrvySn(Long srvySn);
     Page<SurveyInfo> findBySrvyTtlContaining(String keyword, Pageable pageable);
 
     /** [2026-10-01 결정 21] 응답자 목록 — 공개된 설문만. */

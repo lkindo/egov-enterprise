@@ -119,20 +119,6 @@ public class FileService extends BaseAbstractService {
     }
 
     /**
-     * 파일 삭제 (전체)
-     */
-    @Transactional
-    public void deleteFiles(Long atchFileSn) throws IOException {
-        FileMaster master = fileMasterRepository.findById(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"))
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-
-        accessPolicy.assertDeletable(master);
-        List<FileDetail> details = fileDetailRepository.findByFileMaster(required(master, "master 는 null 일 수 없습니다"));
-        fileMasterRepository.delete(required(master, "master 는 null 일 수 없습니다"));
-        details.forEach(this::scheduleStoredFileDeletion);
-    }
-
-    /**
      * 파일 삭제 (단건)
      */
     @Transactional

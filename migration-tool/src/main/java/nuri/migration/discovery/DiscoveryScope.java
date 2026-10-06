@@ -113,12 +113,6 @@ public record DiscoveryScope(
                 && includeSystemObjects == currentRequest.includeSystemObjects();
     }
 
-    public void requireExact(String currentAdapterId, DiscoveryRequest currentRequest) {
-        if (!matches(currentAdapterId, currentRequest)) {
-            throw new IllegalArgumentException("discovery scope exact match 실패");
-        }
-    }
-
     private static List<String> canonicalText(List<String> source, String field) {
         Objects.requireNonNull(source, field);
         LinkedHashSet<String> unique = new LinkedHashSet<>();

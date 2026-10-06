@@ -8,7 +8,7 @@ import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { manualAdminService, ManualDto } from '@/services/foundation/user/ManualAdminService';
-import { PageResponse } from '@/types/modernization';
+import { PageResponse } from '@/types/foundation/system';
 import { Plus,
   RefreshCcw,
   FileText,

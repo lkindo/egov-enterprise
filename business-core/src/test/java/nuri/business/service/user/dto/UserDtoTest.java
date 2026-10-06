@@ -6,6 +6,7 @@ import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.entity.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("UserDto 및 UserResponse 매핑 테스트")
@@ -17,7 +18,8 @@ class UserDtoTest {
         assertNull(UserDto.from(null));
         
         User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").build();
-        user.changeRole(null);
+        // 빌더는 null role 을 USER 로 바꾸므로 레거시 null 행은 필드를 직접 비워 흉내 낸다.
+        ReflectionTestUtils.setField(user, "role", null);
         UserDto dto = UserDto.from(user);
         assertNotNull(dto);
         assertEquals("user1", dto.userId());
@@ -52,7 +54,8 @@ class UserDtoTest {
     @DisplayName("from with authority - null authority, user without role")
     void testFromWithAuthority_NullAuthority_NullRole() {
         User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").build();
-        user.changeRole(null);
+        // 빌더는 null role 을 USER 로 바꾸므로 레거시 null 행은 필드를 직접 비워 흉내 낸다.
+        ReflectionTestUtils.setField(user, "role", null);
         UserDto dto = UserDto.from(user, null);
         assertNotNull(dto);
         assertNull(dto.role(), "미배정 상태는 USER로 승격하지 않는다");

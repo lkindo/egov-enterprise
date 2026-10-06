@@ -1,20 +1,13 @@
 package egovframework.com.utl.sim.service;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.security.MessageDigest;
 import org.apache.commons.codec.binary.Base64;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
- * Base64 인코딩/디코딩 방식을 이용한 데이터를 암호화/복호화하는 Business Interface class
+ * 전자정부 표준프레임워크 레거시 비밀번호 해시(SHA-256, 사용자 ID 를 salt 로 앞에 붙임)를 계산한다.
+ *
+ * <p>남은 소비처는 레거시 해시 계정의 로그인 검증({@code EgovPasswordEncoder})뿐이다.
+ * 해시 형식(기본 문자셋 바이트·{@code md.update(id)} 순서·Base64)은 기존 저장값과의 호환 계약이므로 바꾸지 않는다.</p>
  *
  * @author 공통서비스 개발팀
  * @since 2009.01.19
@@ -28,177 +21,11 @@ import org.slf4j.LoggerFactory;
  *  -------    --------    ---------------------------
  *   2009.01.19  박지욱             최초 생성
  *   2011.08.31  JJY            경량환경 템플릿 커스터마이징버전 생성
+ *   2026.10.07  -              레거시 비밀번호 해시 외 미사용 멤버(Base64 파일 변환·무염 해시 등) 제거
  *
  *      </pre>
  */
 public class EgovFileScrty {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(EgovFileScrty.class);
-
-	// 파일구분자
-	static final char FILE_SEPARATOR = File.separatorChar;
-	// 버퍼사이즈
-	static final int BUFFER_SIZE = 1024;
-
-	/**
-	 * ⚠ [보안] 이름과 달리 실제 암호화가 아니라 <b>Base64 인코딩</b>만 수행한다(기밀성 없음).
-	 * 민감 파일의 실제 암호화가 필요하면 인증형 암호(AES-GCM 등)를 사용할 것.
-	 * @deprecated 이름 오해 방지 — 인코딩 용도로만 사용하고, 암호화가 필요하면 별도 구현 사용.
-	 */
-	@Deprecated
-	public static boolean encryptFile(String source, String target) throws Exception {
-
-
-		boolean result = false;
-
-		String sourceFile = source.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR);
-		String targetFile = target.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR);
-		File srcFile = new File(sourceFile);
-
-		BufferedInputStream input = null;
-		BufferedOutputStream output = null;
-
-		byte[] buffer = new byte[BUFFER_SIZE];
-
-		try {
-			if (srcFile.exists() && srcFile.isFile()) {
-
-				input = new BufferedInputStream(new FileInputStream(srcFile));
-				output = new BufferedOutputStream(new FileOutputStream(targetFile));
-
-				int length = 0;
-				while ((length = input.read(buffer)) >= 0) {
-					byte[] data = new byte[length];
-					System.arraycopy(buffer, 0, data, 0, length);
-					output.write(encodeBinary(data).getBytes());
-					output.write(System.getProperty("line.separator").getBytes());
-				}
-
-				result = true;
-			}
-		} finally {
-			if (input != null) {
-				try {
-					input.close();
-				} catch (IOException ignore) {
-					LOGGER.debug("IGNORE: {}", ignore);
-				}
-			}
-			if (output != null) {
-				try {
-					output.close();
-				} catch (IOException ignore) {
-					LOGGER.debug("IGNORE: {}", ignore);
-				}
-			}
-		}
-		return result;
-	}
-
-	/**
-	 * ⚠ [보안] 이름과 달리 실제 복호화가 아니라 <b>Base64 디코딩</b>만 수행한다(기밀성 없음).
-	 * @deprecated encryptFile의 짝. 실제 파일 암호화가 필요하면 인증형 암호를 사용할 것.
-	 */
-	@Deprecated
-	public static boolean decryptFile(String source, String target) throws Exception {
-
-		// 복호화 결과
-		boolean result = false;
-
-		String sourceFile = source.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR);
-		String targetFile = target.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR);
-		File srcFile = new File(sourceFile);
-
-		BufferedReader input = null;
-		BufferedOutputStream output = null;
-
-		// byte[] buffer = new byte[BUFFER_SIZE];
-		String line = null;
-
-		try {
-			if (srcFile.exists() && srcFile.isFile()) {
-
-				input = new BufferedReader(new InputStreamReader(new FileInputStream(srcFile)));
-				output = new BufferedOutputStream(new FileOutputStream(targetFile));
-
-				while ((line = input.readLine()) != null) {
-					byte[] data = line.getBytes();
-					output.write(decodeBinary(new String(data)));
-				}
-
-				result = true;
-			}
-		} finally {
-			if (input != null) {
-				try {
-					input.close();
-				} catch (IOException ignore) {
-					LOGGER.debug("IGNORE: {}", ignore);
-				}
-			}
-			if (output != null) {
-				try {
-					output.close();
-				} catch (IOException ignore) {
-					LOGGER.debug("IGNORE: {}", ignore);
-				}
-			}
-		}
-		return result;
-	}
-
-	public static String encodeBinary(byte[] data) throws Exception {
-		if (data == null) {
-			return "";
-		}
-
-		return new String(Base64.encodeBase64(data));
-	}
-
-	public static String encode(String data) throws Exception {
-		return encodeBinary(data.getBytes());
-	}
-
-	public static byte[] decodeBinary(String data) throws Exception {
-		return Base64.decodeBase64(data.getBytes());
-	}
-
-	public static String decode(String data) throws Exception {
-		return new String(decodeBinary(data));
-	}
-
-	@Deprecated
-	public static String encryptPassword(String data) throws Exception {
-
-		if (data == null) {
-			return "";
-		}
-
-		byte[] plainText = null; // 평문
-		byte[] hashValue = null; // 해시값
-		plainText = data.getBytes();
-
-		MessageDigest md = MessageDigest.getInstance("SHA-256");
-
-
-		/*
-		 *
-		 * SecureRandom ng = new SecureRandom();
-		 * byte[] randomBytes = new byte[16];
-		 * ng.nextBytes(randomBytes);
-		 *
-		 * md.reset();
-		 * md.update(randomBytes);
-		 *
-		 */
-		hashValue = md.digest(plainText);
-
-		/*
-		 * BASE64Encoder encoder = new BASE64Encoder();
-		 * return encoder.encode(hashValue);
-		 */
-		return new String(Base64.encodeBase64(hashValue));
-	}
 
 	public static String encryptPassword(String password, String id) throws Exception {
 
@@ -216,35 +43,5 @@ public class EgovFileScrty {
 		hashValue = md.digest(password.getBytes());
 
 		return new String(Base64.encodeBase64(hashValue));
-	}
-
-	public static String encryptPassword(String data, byte[] salt) throws Exception {
-
-		if (data == null) {
-			return "";
-		}
-
-		byte[] hashValue = null; // 해시값
-
-		MessageDigest md = MessageDigest.getInstance("SHA-256");
-
-		md.reset();
-		md.update(salt);
-
-		hashValue = md.digest(data.getBytes());
-
-		return new String(Base64.encodeBase64(hashValue));
-	}
-
-	public static boolean checkPassword(String data, String encoded, byte[] salt) throws Exception {
-		byte[] hashValue = null; // 해시값
-
-		MessageDigest md = MessageDigest.getInstance("SHA-256");
-
-		md.reset();
-		md.update(salt);
-		hashValue = md.digest(data.getBytes());
-
-		return MessageDigest.isEqual(hashValue, Base64.decodeBase64(encoded.getBytes()));
 	}
 }

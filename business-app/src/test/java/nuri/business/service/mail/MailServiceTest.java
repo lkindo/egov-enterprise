@@ -525,17 +525,6 @@ class MailServiceTest {
     }
 
     @Test
-    @DisplayName("메일 결과 업데이트")
-    void updateMailResult() {
-        SentMail mail = SentMail.builder().emlDsptchSn(1L).dsptchRsltCd("P").build();
-        given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
-
-        mailService.updateMailResult(1L, "S");
-
-        assertThat(mail.getDsptchRsltCd()).isEqualTo("S");
-    }
-
-    @Test
     @DisplayName("메일 삭제")
     void deleteMail() {
         SentMail mail = SentMail.builder().emlDsptchSn(1L).build();
@@ -556,9 +545,7 @@ class MailServiceTest {
         mailService.getSentMailList("key", pageable);
 
         // 키워드 전용 오버로드도 스코프가 적용되는 경로(searchSentMails)로 위임되어야 한다.
-        // findBySjContaining 으로 되돌아가면 발신자 스코프가 무력화된다.
         verify(sentMailRepository).searchSentMails(isNull(), eq("1"), eq("key"), isNull(), eq(pageable));
-        verify(sentMailRepository, never()).findBySjContaining(anyString(), any(Pageable.class));
     }
 
     @Test
@@ -640,14 +627,6 @@ class MailServiceTest {
     void sentMailDto_FromNull() {
         SentMailDto result = SentMailDto.from(null);
         assertThat(result).isNull();
-    }
-
-    @Test
-    @DisplayName("메일 결과 업데이트 - 데이터 없음")
-    void updateMailResult_NotFound() {
-        given(sentMailRepository.findById(anyLong())).willReturn(Optional.empty());
-        assertThatThrownBy(() -> mailService.updateMailResult(999L, "F"))
-                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
     }
 
     @Test

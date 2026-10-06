@@ -23,12 +23,6 @@ public class AddressBook extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long adbkSn;
 
-    public void addAddressBookUser(AddressBookUser user) {
-        this.addressBookUsers.add(user);
-        // 빌더 호환 등으로 연관 관계 세팅
-        // (AddressBookUser 내 getAddressBook() 혹은 리플렉션/롬복 대응)
-    }
-
     @Column(length = 200, nullable = false)
     private String adbkNm;
 

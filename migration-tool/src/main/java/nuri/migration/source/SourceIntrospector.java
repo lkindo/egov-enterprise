@@ -5,10 +5,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/** 소스 DB {@code information_schema} 를 조회해 {@link SourceCatalog} 를 만든다(읽기 전용). */
+/**
+ * 매핑의 {@link DbConfig} 로 JdbcTemplate 을 만들고, 동적 SQL 에 들어갈 식별자를 위생 검사한다.
+ *
+ * <p>[2026-10-07] Phase 4b 골격의 {@code introspect}(스키마 무한정 information_schema 조회 + count)와
+ * 그 결과 타입 {@code SourceCatalog} 는 ADR-0008 adapter discovery 로 대체된 뒤 소비처가 없어 걷었다.</p>
+ */
 @Component
 public class SourceIntrospector {
 
@@ -19,25 +21,6 @@ public class SourceIntrospector {
             ds.setDriverClassName(cfg.driver());
         }
         return new JdbcTemplate(ds);
-    }
-
-    public SourceCatalog introspect(DbConfig cfg, List<String> tableNames) {
-        JdbcTemplate jt = jdbc(cfg);
-        List<SourceCatalog.SourceTable> tables = new ArrayList<>();
-        for (String table : tableNames) {
-            List<SourceCatalog.SourceColumn> cols = jt.query(
-                    "SELECT column_name, data_type, is_nullable FROM information_schema.columns "
-                            + "WHERE lower(table_name) = lower(?) ORDER BY ordinal_position",
-                    (rs, i) -> new SourceCatalog.SourceColumn(
-                            rs.getString("column_name"),
-                            rs.getString("data_type"),
-                            "YES".equalsIgnoreCase(rs.getString("is_nullable"))),
-                    table);
-            Long measured = jt.queryForObject("SELECT count(*) FROM " + ident(table), Long.class);
-            long count = measured == null ? 0L : measured;
-            tables.add(new SourceCatalog.SourceTable(table, cols, count));
-        }
-        return new SourceCatalog(tables);
     }
 
     /** 단일 식별자 위생(식별자 문자만 허용) — 동적 SQL 인젝션 방지. */

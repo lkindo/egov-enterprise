@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DiscoveryScopeTest {
 
@@ -58,8 +57,5 @@ class DiscoveryScopeTest {
                 expected.catalogs(), expected.schemas(), Set.of(ObjectKind.TABLE), false))).isFalse();
         assertThat(scope.matches("postgresql-pg-catalog", new DiscoveryRequest(
                 expected.catalogs(), expected.schemas(), expected.objectKinds(), true))).isFalse();
-        assertThatThrownBy(() -> scope.requireExact("jdbc-metadata", expected))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("scope");
     }
 }

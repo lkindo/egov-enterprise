@@ -12,18 +12,19 @@ import { scrapService } from '../ScrapService';
 import { mailService } from '../../mail/MailService';
 import { boardUserService } from '../board/BoardUserService';
 
+// raw transport 가 envelope 를 만들기 전에 거치는 어댑터. 테스트는 method 별 호출을 여기서 단언한다.
+const transport = vi.hoisted(() => ({
+ get: vi.fn(),
+ post: vi.fn(),
+ put: vi.fn(),
+ remove: vi.fn(),
+}));
+
 vi.mock('@/lib/api/client', () => {
- const get = vi.fn();
- const post = vi.fn();
- const put = vi.fn();
- const remove = vi.fn();
+ const { get, post, put, remove } = transport;
 
  return {
  default: {
- get,
- post,
- put,
- delete: remove,
  getRaw: vi.fn(async (url: string, config?: unknown) => {
  const result = await get(url, config);
  const fallback = url.endsWith('/received') || url.endsWith('/sent') || url === 'scraps'
@@ -114,26 +115,26 @@ describe('Collaboration user services', () => {
 
  it('noteService calls correct endpoints', async () => {
  await noteService.getReceivedNotes({ page: 0 });
- expect(client.get).toHaveBeenCalledWith('notes/received', expect.any(Object));
+ expect(transport.get).toHaveBeenCalledWith('notes/received', expect.any(Object));
  await noteService.getNote(31, { type: 'received', relationSn: 41 });
- expect(client.get).toHaveBeenCalledWith('notes/31', { params: { type: 'received', relationSn: 41 } });
+ expect(transport.get).toHaveBeenCalledWith('notes/31', { params: { type: 'received', relationSn: 41 } });
  await noteService.deleteNote(41, { type: 'received' });
- expect(client.delete).toHaveBeenCalledWith('notes/41', { params: { type: 'received' } });
+ expect(transport.remove).toHaveBeenCalledWith('notes/41', { params: { type: 'received' } });
  });
 
  it('scrapService calls correct endpoints', async () => {
- vi.mocked(client.get).mockResolvedValueOnce({ list: [], total: 0, page: 0, size: 10, totalPage: 0 });
+ transport.get.mockResolvedValueOnce({ list: [], total: 0, page: 0, size: 10, totalPage: 0 });
  await scrapService.getMyScraps({ pageIndex: 1, pageUnit: 10 });
- expect(client.get).toHaveBeenCalledWith('scraps', expect.any(Object));
+ expect(transport.get).toHaveBeenCalledWith('scraps', expect.any(Object));
  await scrapService.deleteScrap(7);
- expect(client.delete).toHaveBeenCalledWith('scraps/7', undefined);
+ expect(transport.remove).toHaveBeenCalledWith('scraps/7', undefined);
  });
 
  it('mailService uses the numeric dispatch serial number in resource paths', async () => {
  await mailService.getSentMail(17);
- expect(client.get).toHaveBeenCalledWith('mails/17', undefined);
+ expect(transport.get).toHaveBeenCalledWith('mails/17', undefined);
  await mailService.deleteMail(17);
- expect(client.delete).toHaveBeenCalledWith('mails/17', undefined);
+ expect(transport.remove).toHaveBeenCalledWith('mails/17', undefined);
  });
 
  it('BoardUserService should call correct endpoints', async () => {

@@ -30,28 +30,4 @@ class BoardEntityTest {
         board.delete();
         assertThat(board.getUseYn()).isEqualTo("N");
     }
-
-    @Test
-    @DisplayName("조회수 증가 테스트")
-    void increaseInqCntTest() {
-        Board board = Board.builder().inqCnt(10).build();
-        board.increaseInqCnt();
-        assertThat(board.getInqCnt()).isEqualTo(11);
-        
-        Board boardNull = Board.builder().inqCnt(null).build();
-        boardNull.increaseInqCnt();
-        assertThat(boardNull.getInqCnt()).isEqualTo(1);
-    }
-
-    @Test
-    @DisplayName("카운트 업데이트 테스트")
-    void countUpdateTest() {
-        Board board = Board.builder().cmntCnt(0).fileCnt(0).build();
-        
-        board.changeCmntCnt(5);
-        assertThat(board.getCmntCnt()).isEqualTo(5);
-        
-        board.changeFileCnt(3);
-        assertThat(board.getFileCnt()).isEqualTo(3);
-    }
 }

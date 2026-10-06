@@ -1,48 +1,4 @@
 import React from 'react';
-import { cn } from "@/lib/utils";
-
-interface StandardFormProps {
-  children: React.ReactNode;
-  onSubmit?: (e: React.FormEvent) => void;
-  action?: React.FormHTMLAttributes<HTMLFormElement>['action'];
-  className?: string;
-  title?: string;
-  description?: string;
-  footer?: React.ReactNode;
-}
-
-export function StandardForm({
-  children,
-  onSubmit,
-  action,
-  className,
-  title,
-  description,
-  footer
-}: StandardFormProps) {
-  return (
-    <div className={cn("bg-card border border-border rounded-lg shadow-sm overflow-hidden", className)}>
-      {(title || description) && (
-        <div className="px-6 py-4 border-b border-border/50 bg-muted/20">
-          {title ? <h3 className="text-base font-bold text-foreground tracking-tight">{title}</h3> : null}
-          {description ? <p className="text-xs font-medium text-muted-foreground mt-1 leading-relaxed">{description}</p> : null}
-        </div>
-      )}
-
-      <form onSubmit={onSubmit} action={action} className="p-6 space-y-4">
-        <div className="grid gap-5">
-          {children}
-        </div>
-
-        {footer && (
-          <div className="pt-6 border-t border-border/50 flex justify-end gap-2">
-            {footer}
-          </div>
-        )}
-      </form>
-    </div>
-  );
-}
 
 /**
  * Helper for form fields

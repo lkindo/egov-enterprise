@@ -42,12 +42,6 @@ public class TmplatInfoService extends BaseAbstractService {
                 .collect(Collectors.toList());
     }
 
-    public List<TemplateDto> selectTmplatInfoListByType(String seCode) {
-        return templateRepository.findByTmpltSeCd(seCode).stream()
-                .map(templateMapper::toDto)
-                .collect(Collectors.toList());
-    }
-
     public TemplateDto selectTmplatInfoDetail(String tmplatId) {
         Template template = templateRepository.findById(required(tmplatId, "템플릿 ID 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));

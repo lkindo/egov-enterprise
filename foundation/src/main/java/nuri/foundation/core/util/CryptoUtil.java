@@ -79,23 +79,6 @@ public class CryptoUtil implements ApplicationContextAware {
     }
 
     /**
-     * Encrypt Session interaction (Legacy support for egovc:encryptSession)
-     */
-    public static String encryptSession(String data, String sessionId) {
-        if (data == null)
-            return "-";
-        String target = sessionId + "|" + data;
-        return encrypt(target);
-    }
-
-    /**
-     * Encrypt ID (Legacy support for egovc:encryptId)
-     */
-    public static String encryptId(String data) {
-        return encrypt(data);
-    }
-
-    /**
      * Decrypt Data using ARIA algorithm
      */
     public static String decrypt(String encryptedData) {

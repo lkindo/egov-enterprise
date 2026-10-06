@@ -3,7 +3,6 @@ import { treeDndAnnouncements } from '@/lib/dnd/tree-dnd-accessibility';
 import type { FlattenedItem } from './treeUtils';
 import {
   ancestorIds,
-  descendantIds,
   menuLabel,
   moveBlock,
   parentKeyOf,
@@ -236,9 +235,4 @@ export function nextSearchMatch(matches: readonly number[], selected: number | n
   if (matches.length === 0) return null;
   const at = selected === null ? -1 : matches.indexOf(selected);
   return matches[(at + 1) % matches.length];
-}
-
-/** 메뉴와 그 하위(자기 포함). 잘라내기 표시·끌기 중 숨김에 쓴다. */
-export function blockIds(items: readonly FlattenedItem[], menuNo: number): Set<number> {
-  return new Set([menuNo, ...descendantIds(items, menuNo)]);
 }

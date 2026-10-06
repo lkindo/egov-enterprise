@@ -49,5 +49,3 @@ export function StatsHubFallback() {
     </>
   );
 }
-
-export default StatsHubFallback;

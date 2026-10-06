@@ -27,6 +27,4 @@ public interface BoardRepositoryCustom {
     Optional<BoardDetailResult> findArticleDetailIncludingDeleted(@NonNull String bbsId, @NonNull Long pstSn);
 
     Optional<BoardDetailResult> findPublicArticleDetail(@NonNull String bbsId, @NonNull Long pstSn);
-
-    Optional<Board> findByIdCustom(@NonNull Long pstSn);
 }

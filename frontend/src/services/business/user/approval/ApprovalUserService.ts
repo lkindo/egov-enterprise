@@ -85,7 +85,6 @@ export type ResumedApprovalTemporaryDraft = ApprovalTemporaryDraft & ApprovalTem
 export type { InformalSanctionDto } from './informal-sanction-vocabulary';
 export {
   SANCTION_STATUS,
-  isSanctionPending,
   type SanctionStatusCode,
 } from './informal-sanction-vocabulary';
 

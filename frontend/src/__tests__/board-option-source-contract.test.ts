@@ -15,8 +15,9 @@
  * 시드에 없는 상수를 선택지·기본값으로 쓰지 않는다. 값 하나를 지우는 것으로는 재발을 막지
  * 못한다 — 다음 화면이 같은 상수를 다시 하드코딩하면 그만이기 때문이다.
  *
- * 값 자체(`board-ids.ts`)는 데모 시드의 정의이므로 여기서 바꾸지 않는다. 선택형 스크립트
- * `sql/seed_knowledge_boards.sql` 을 실행한 설치에는 BBBB 가 실제로 존재한다.
+ * 값 자체(`board-ids.ts`)는 데모 시드의 정의이므로 여기서 바꾸지 않는다. BBBB 를 만드는 시드·스크립트는
+ * 없다 — 옛 선택형 스크립트 `sql/seed_knowledge_boards.sql` 은 존재하지 않는 테이블에 INSERT 해
+ * 어떤 설치에서도 성공할 수 없었다.
  */
 
 import { describe, expect, it } from 'vitest';

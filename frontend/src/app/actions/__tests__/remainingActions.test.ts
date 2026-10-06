@@ -82,7 +82,7 @@ describe('남은 서버 액션', () => {
     it('본문 없이 성공한 응답도 성공으로 본다 — 실패로 오독하면 사용자가 다시 눌러 중복된다', async () => {
       // [2026-08-09 정정] 종전에는 `if (response)` 로 판정해 백엔드가 본문 없이 성공하면
       //   null 이 되어 **성공을 실패로 보고**했다. 사용자는 다시 누르고, 댓글이 두 개 달렸다.
-      //   client 는 실패 시 반드시 예외를 던지므로(인터셉터 reject + extractData throw),
+      //   client 는 실패 시 반드시 예외를 던지므로(인터셉터 reject + 생성 API 경계의 envelope 검증 throw),
       //   await 다음 줄에 도달했다면 이미 성공이다.
       vi.mocked(commentService.createComment).mockResolvedValueOnce(1);
 
