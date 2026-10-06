@@ -85,7 +85,9 @@ try {
   await waitUntil(() => { docker(['exec', name, 'pg_isready', '-U', 'drill', '-d', databaseName]); return true; });
   const port = JSON.parse(docker(['inspect', '--format', '{{json .NetworkSettings.Ports}}', name]))['5432/tcp'][0].HostPort;
   const args = path.join(output, 'readiness-java.args');
-  writeFileSync(args, `-cp\n"${classpath.replaceAll('\\', '/')}"\nnuri.ApiServerApplication\n`);
+  // 메인 클래스를 '\n' 바로 뒤에 붙여 쓰지 않는다 — rename-project.ps1 은 식별자 문자 바로 뒤의 구명칭을 바꾸지 않는다.
+  const mainClass = 'nuri.ApiServerApplication';
+  writeFileSync(args, `-cp\n"${classpath.replaceAll('\\', '/')}"\n${mainClass}\n`);
   const inheritedEnvironment = Object.fromEntries(Object.entries(process.env)
     .filter(([key]) => !/^(SPRING_|DB_|NURI_|GLOBALS_|JWT_|ALGORITHM_|MAIL_|SMS_|MANAGEMENT_)/i.test(key)));
   const environment = {

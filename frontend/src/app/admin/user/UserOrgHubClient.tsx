@@ -477,6 +477,7 @@ export default function UserOrgHubClient({
   const deptKeyword = activeTab === 'DEPTS' ? searchKeyword : '';
   const {
     isDeptsLoading,
+    isDeptsPlaceholder,
     isDeptsError,
     deptsError,
     refetchDepts,
@@ -1319,11 +1320,18 @@ export default function UserOrgHubClient({
                               document.body
                           )}
                       </DndContext>
+                      {/* 이전 검색어가 0건이었으면 새 검색어의 응답이 오기 전에도 행이 비어 있다 — 그때 새 검색어에 대해
+                          '없습니다' 라고 말하지 않고 조회 중임을 알린다(G15, DEC-OPS-195 ③의 갱신 중 상태 문장). */}
                       {flattenedDepts.length === 0 && !isDeptsLoading && (
-                          <p className="py-10 text-center text-[length:var(--font-size-body)] text-muted-foreground">
-                            {deptKeyword
-                              ? `'${deptKeyword}' 에 해당하는 부서가 없습니다.`
-                              : '등록된 부서가 없습니다. 오른쪽 위 부서 등록으로 첫 부서를 만듭니다.'}
+                          <p
+                            className="py-10 text-center text-[length:var(--font-size-body)] text-muted-foreground"
+                            {...(isDeptsPlaceholder ? { role: 'status' } : {})}
+                          >
+                            {isDeptsPlaceholder
+                              ? '부서를 불러오는 중…'
+                              : deptKeyword
+                                ? `'${deptKeyword}' 에 해당하는 부서가 없습니다.`
+                                : '등록된 부서가 없습니다. 오른쪽 위 부서 등록으로 첫 부서를 만듭니다.'}
                           </p>
                       )}
                     </>

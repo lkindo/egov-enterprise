@@ -20,7 +20,7 @@ base 저장소의 게이트 다수는 "현재 실측값과 정확히 같아야 �
 
 ## 2. 재동결 대상 목록 (현존 게이트 실측)
 
-아래 7개 축은 이 런북이 다루는 기준선 재동결 범위다. 기관 운영 검토와 승인은
+아래 8개 축은 이 런북이 다루는 기준선 재동결 범위다. 기관 운영 검토와 승인은
 [ADR-0018 검토 수명 가이드](../03-guides/governance-review-lifecycle.md)에 따라 별도로 수행한다.
 
 | # | 축 | 동결 위치 | 재동결 방법 |
@@ -32,6 +32,7 @@ base 저장소의 게이트 다수는 "현재 실측값과 정확히 같아야 �
 | 5 | 브랜드 프로필 키 패리티 | [theme-token-contract.test.ts](../../frontend/src/__tests__/theme-token-contract.test.ts) | 프로필 CSS·allowlist 3방향 패리티 충족 (§6) |
 | 6 | e2e shard 시간 프로필 | [frontend/e2e/shard-duration-profile.json](../../frontend/e2e/shard-duration-profile.json) | 자기 CI 성공 run 실측으로 재작성 (§7) |
 | 7 | 컨트롤 고정 높이 덮어쓰기 | [work-screen-grammar-contract.test.ts](../../frontend/src/__tests__/work-screen-grammar-contract.test.ts) 의 `CONTROL_HEIGHT_OVERRIDES` 파일별 수 | red 실측 → 파일별 수 갱신 (§3) |
+| 8 | 메시지 번들 계약 | [MessageBundleContractTest](../../foundation/src/test/java/nuri/foundation/core/config/MessageBundleContractTest.java) 의 `MIN_ERROR_CODES`·`MIN_BEAN_VALIDATION_REFS` 하한과 고아 키 단언 | 축소 프로필은 빠진 pack 의 ErrorCode·요청 DTO 가 사라져 하한이 미달하고, 그 ErrorCode 의 번들 키가 고아로 남는다(core 실측: ErrorCode 36·Bean Validation 참조 7, 게시판 B001~B006 고아). 고아 키는 지우고 하한은 제품 실측으로 다시 정한다 — 하한을 낮추는 이유를 커밋에 남긴다 |
 
 마지막으로 required checks 결속(§8)을 adopter 자신의 원격 저장소에 다시 건다.
 
@@ -120,7 +121,7 @@ adopter 절차:
 
 ## 9. 실행 순서 요약과 완료 기준
 
-1. §3 색 guard 2종·컨트롤 높이 동결 → §4 URL census → §5 gates.json → §6 프로필 패리티 → §7 shard 프로필 순으로 로컬 재동결.
+1. §3 색 guard 2종·컨트롤 높이 동결 → §4 URL census → §5 gates.json → §6 프로필 패리티 → §7 shard 프로필 → 메시지 번들 계약(§2 표 8번) 순으로 로컬 재동결.
 2. 각 항목은 "red 실측 → 재생성/갱신 → green 재실행" 을 개별 커밋으로 남긴다.
 3. 생성물 통합 검증은 `npm run verify` 또는 `verify:push`·`verify:fast`·`verify:full`로 실행하며 이 별칭은 모두 보수적으로 `full`에 연결된다. `verify:docs`는 `contracts`, `verify:be`는 `backend`, `verify:fe`는 `frontend`다. 공통 활성 계약은 각 범위에서 먼저 실행한다. `base:*`·`verify:e2e`·`verify:ops` 별칭은 생성물에서 제거되므로, 마지막 원격 검증은 §8에서 기관이 연결한 절차를 따른다.
 4. **완료 기준**: 전 게이트 green + 재동결 diff 가 항목별 사유와 함께 PR 리뷰로 승인됨. 게이트 비활성화·예외 목록 확대로 green 을 만든 항목이 0건이어야 한다.

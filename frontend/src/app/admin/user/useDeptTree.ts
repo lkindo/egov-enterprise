@@ -36,7 +36,10 @@ export function useDeptTree({
   /** 드래그를 시작한 부서를 선택 상태로 만든다(선택은 허브가 소유한다). */
   onDragSelect: (ognzId: string) => void;
 }) {
-  const { data: deptsData, isLoading: isDeptsLoading, isError: isDeptsError, error: deptsError, refetch: refetchDepts } = useQuery({
+  const {
+    data: deptsData, isLoading: isDeptsLoading, isError: isDeptsError, error: deptsError, refetch: refetchDepts,
+    isPlaceholderData: isDeptsPlaceholder,
+  } = useQuery({
     queryKey: ['admin-depts', 'tree', deptKeyword],
     // 트리와 부서 선택은 전량 API를 공유한다. 검색 결과에서 빠진 부모의 보호 의미는 아래에서 유지한다.
     queryFn: () => deptAdminService.getDeptTree(deptKeyword),
@@ -216,12 +219,15 @@ export function useDeptTree({
 
   return {
     isDeptsLoading,
+    /** 새 검색어의 응답을 기다리며 이전 트리를 보여 주는 중이다 — 보이는 행은 새 검색어의 결과가 아니다. */
+    isDeptsPlaceholder,
     isDeptsError,
     deptsError,
     refetchDepts,
     departments,
-    // 전량 응답의 행 수다. 아직 응답이 없으면 undefined로 두어 조회 중을 0건으로 위장하지 않는다.
-    deptTotal: deptsData?.length,
+    // 전량 응답의 행 수다. 아직 응답이 없거나 이전 검색어의 트리를 보여 주는 중이면 undefined 로 둔다 —
+    // 조회 중을 0건으로, 이전 결과의 수를 새 검색어의 수로 위장하지 않는다.
+    deptTotal: isDeptsPlaceholder ? undefined : deptsData?.length,
     flattenedDepts,
     activeDeptId,
     hasDeptChanges,

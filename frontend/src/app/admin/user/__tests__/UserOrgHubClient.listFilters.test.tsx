@@ -9,7 +9,7 @@
  *   5) 부서 상세는 직속 소속 인원 수와 앞 20명의 이름을 보이고, 나머지는 '외 N명' 으로 말한다.
  */
 import React, { Suspense } from 'react';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -259,6 +259,34 @@ describe('UserOrgHubClient — 사용자 목록 조건·열·부서 소속 인�
 
     await waitFor(() => expect(userAdminService.getUserList).toHaveBeenCalledWith({ page: 0, size: 20, ognzId: 'ORG_B' }));
     expect(await screen.findByText(/^22명 — 구성원1, .*구성원20 외 2명$/)).toBeInTheDocument();
+  });
+
+  it('0건 검색 뒤 다음 검색어의 응답을 기다리는 동안 새 검색어에 대해 없다고 말하지 않는다', async () => {
+    // 부서 트리는 검색어가 바뀌는 동안 이전 결과를 유지한다(DEC-OPS-147 C1). 이전 결과가 0건이면 그 빈 목록이
+    // 새 검색어의 결과처럼 보이므로, 응답 전에는 조회 중임을 알린다(G15).
+    let resolveNext: (value: typeof DEPTS) => void = () => {};
+    vi.mocked(deptAdminService.getDeptTree).mockImplementation(async (keyword?: string) => {
+      if (keyword === '없는부서') return [];
+      if (keyword === '기획') return new Promise((resolve) => { resolveNext = resolve; });
+      return DEPTS;
+    });
+    const user = userEvent.setup();
+    renderHub('DEPTS');
+    await screen.findByText('기획팀');
+
+    const search = screen.getByRole('textbox', { name: '부서 검색' });
+    await user.type(search, '없는부서{Enter}');
+    expect(await screen.findByText("'없는부서' 에 해당하는 부서가 없습니다.")).toBeInTheDocument();
+
+    await user.clear(search);
+    await user.type(search, '기획{Enter}');
+    await waitFor(() => expect(deptAdminService.getDeptTree).toHaveBeenCalledWith('기획'));
+    expect(await screen.findByText('부서를 불러오는 중…')).toHaveAttribute('role', 'status');
+    expect(screen.queryByText("'기획' 에 해당하는 부서가 없습니다.")).not.toBeInTheDocument();
+
+    await act(async () => { resolveNext(DEPTS); });
+    expect(await screen.findByText('기획팀')).toBeInTheDocument();
+    expect(screen.queryByText('부서를 불러오는 중…')).not.toBeInTheDocument();
   });
 
   it('소속 인원이 없으면 없음, 조회에 실패하면 불러오지 못했다고 말한다', async () => {

@@ -109,14 +109,19 @@ class SchemaValidationIntegrationTest {
     /** db_columns.json 항목 하나 — 저장 형식은 {table_name, column_name} 배열이다(MappingValidator 계약). */
     private static final Pattern CATALOG_ENTRY = Pattern.compile(
             "\\{\\s*\"table_name\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"column_name\"\\s*:\\s*\"([^\"]+)\"\\s*\\}");
+    /*
+      재생성 스위치. 패키지 이름을 넣지 않는다 — 넣으면 rename-project.ps1 이 코드의 키는 바꾸고 '-D' 바로 뒤에 붙은
+      안내 문구의 키는 바꾸지 않아, 이름을 바꾼 프로젝트에서 안내대로 실행해도 파일이 다시 써지지 않는다.
+    */
+    private static final String WRITE_PROPERTY = "dbColumns.write";
     private static final String REGENERATE = "./gradlew :api-server:schemaValidationTest "
-            + "--tests '*SchemaValidationIntegrationTest' -Dnuri.dbColumns.write=true";
+            + "--tests '*SchemaValidationIntegrationTest' -D" + WRITE_PROPERTY + "=true";
 
     /**
      * [2026-10-07] 이관 도구의 표준 스키마 카탈로그({@code db_columns.json})는 MappingValidator 가 매핑 타깃의
      * 실재를 판정하는 기준이다. 종전에는 다시 만드는 생성기가 없어 2026-08-19 이후 양방향으로 낡았다 —
      * 인가·결재 표 17개가 없어 그 표로의 매핑이 검증 단계에서 거부됐고, 지운 표는 남아 있었다.
-     * 이 테스트가 Flyway 전량 적용 스키마(public 기본 테이블 전체)와 대조하고, {@code -Dnuri.dbColumns.write=true}
+     * 이 테스트가 Flyway 전량 적용 스키마(public 기본 테이블 전체)와 대조하고, {@code -DdbColumns.write=true}
      * 일 때만 같은 질의 결과로 파일을 다시 쓴다(손으로 고치지 않는다).
      *
      * <p>재사용 base 투영본은 원본 카탈로그를 그대로 복사하고 스키마는 프로필에 따라 표가 빠지거나(축소)
@@ -139,7 +144,7 @@ class SchemaValidationIntegrationTest {
         assertThat(actual).as("information_schema 질의가 비었다 — 대조가 vacuous 하다").isNotEmpty();
 
         Path catalog = repoRoot().resolve("db_columns.json");
-        if (Boolean.getBoolean("nuri.dbColumns.write")) {
+        if (Boolean.getBoolean(WRITE_PROPERTY)) {
             Files.writeString(catalog, render(actual), StandardCharsets.UTF_8);
         }
         Map<String, Set<String>> expected = new TreeMap<>();

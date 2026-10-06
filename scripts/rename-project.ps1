@@ -74,9 +74,11 @@ function Test-ExcludedPath([string]$fullName) {
 $newPkgDot = $NewPackage
 $oldPkgSlash = $OldPackage.Replace(".", "/")
 $newPkgSlash = $NewPackage.Replace(".", "/")
+$oldPkgSnake = $OldPackage.Replace(".", "_")
 $newPkgSnake = $NewPackage.Replace(".", "_")
 $pkgSlashToken = '(?<![A-Za-z0-9_$])' + [regex]::Escape($oldPkgSlash) + '(?=/)'
-$pkgSnakeToken = '(?<![A-Za-z0-9_$])' + [regex]::Escape($OldPackage) + '(?=_)'
+# 다단계 구명칭(두 번째 실행의 com.mycompany 등)은 지표 이름에서 com_mycompany_ 형태다.
+$pkgSnakeToken = '(?<![A-Za-z0-9_$])' + [regex]::Escape($oldPkgSnake) + '(?=_)'
 $pkgDotToken = '(?<![A-Za-z0-9_$])' + [regex]::Escape($OldPackage) + '(?![A-Za-z0-9_$/])'
 $oldProjectNamePattern = [regex]::Escape($OldProjectName)
 
@@ -93,10 +95,16 @@ $files = Get-ChildItem -Path $RepoRoot -Include $includePatterns -Recurse -File 
     Where-Object { -not (Test-ExcludedPath $_.FullName) }
 
 $replacedCount = 0
+# 식별자 문자 바로 뒤에 붙은 구명칭('new'·정규식 '\b'·문자열 '\n'·'-D' 바로 뒤 등)은 위 규칙이 바꾸지 않는다.
+# 소스가 구명칭을 따로 된 토큰으로 써야 한다 — 남은 것을 숨기지 않고 끝에 보고한다.
+$gluedToken = '(?<=[A-Za-z0-9_$])(?:' + [regex]::Escape($OldPackage) + '|' + [regex]::Escape($oldPkgSnake) + ')(?=[./_])'
+$gluedResiduals = @()
 
 foreach ($file in $files) {
     $original = [System.IO.File]::ReadAllText($file.FullName)
     $content = Convert-RenamedContent $original
+    $glued = [regex]::Matches($content, $gluedToken).Count
+    if ($glued -gt 0) { $gluedResiduals += "$($file.FullName) ($glued)" }
 
     if ($content -cne $original) {
         $replacedCount++
@@ -144,5 +152,9 @@ if ($DryRun) {
     Write-Host "Files to modify (dry run): $replacedCount / Package dirs to move: $movedDirCount" -ForegroundColor Green
 } else {
     Write-Host "Modified files: $replacedCount / Moved package dirs: $movedDirCount" -ForegroundColor Green
+}
+if ($gluedResiduals.Count -gt 0) {
+    Write-Host "[WARN] 식별자 문자 바로 뒤에 붙어 바뀌지 않은 구명칭 '$OldPackage' 이 남았습니다. 소스를 고쳐 다시 실행하세요:" -ForegroundColor Yellow
+    $gluedResiduals | ForEach-Object { Write-Host "  $_" -ForegroundColor Yellow }
 }
 Write-Host "=============================================" -ForegroundColor Cyan
