@@ -53,10 +53,10 @@ type SurveyTab = (typeof SURVEY_TABS)[number];
 const DEFAULT_TAB: SurveyTab = 'manage';
 const TAB_TITLE: Record<SurveyTab, string> = { manage: '여론조사 관리', questions: '설문지·문항 관리', templates: '설문 템플릿 관리', stats: '여론조사 통계' };
 const TAB_DESCRIPTION: Record<SurveyTab, string> = {
- manage: '여론조사를 조회하고 등록합니다. 여기서 등록하는 조사는 네 단계 만족도 응답으로 고정되며, 문항을 직접 구성하려면 설문지·문항 관리를 이용하세요.',
- questions: '템플릿을 선택해 설문지를 만든 뒤 문항과 선택 항목을 구성합니다.',
- templates: '문항형 설문지에서 사용할 템플릿을 관리합니다.',
- stats: '여론조사 응답 수와 기간별 상태를 확인합니다. 문항형 설문 결과는 아래 진행 순서의 결과 확인에서 조회하세요.',
+  manage: '여론조사를 조회하고 등록합니다. 여기서 등록하는 조사는 네 단계 만족도 응답으로 고정되며, 문항을 직접 구성하려면 설문지·문항 관리를 이용하세요.',
+  questions: '템플릿을 선택해 설문지를 만든 뒤 문항과 선택 항목을 구성합니다.',
+  templates: '문항형 설문지에서 사용할 템플릿을 관리합니다.',
+  stats: '여론조사 응답 수와 기간별 상태를 확인합니다. 문항형 설문 결과는 아래 진행 순서의 결과 확인에서 조회하세요.',
 };
 
 /**
@@ -65,9 +65,9 @@ const TAB_DESCRIPTION: Record<SurveyTab, string> = {
  * 들어오는 북마크·딥링크가 여기서 모두 흡수된다.
  */
 function resolveTab(raw: string | null): SurveyTab {
- if (!raw) return DEFAULT_TAB;
- if ((SURVEY_TABS as readonly string[]).includes(raw)) return raw as SurveyTab;
- return DEFAULT_TAB;
+  if (!raw) return DEFAULT_TAB;
+  if ((SURVEY_TABS as readonly string[]).includes(raw)) return raw as SurveyTab;
+  return DEFAULT_TAB;
 }
 
 /**
@@ -76,195 +76,195 @@ function resolveTab(raw: string | null): SurveyTab {
  * 값이 없으면 0 이 아니라 `null` 을 돌려, "조회 실패/미제공"과 "실제 0건"을 화면에서 구분한다.
  */
 function toCount(value: unknown): number | null {
- return typeof value === 'number' && Number.isFinite(value) ? value : null;
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 export function SurveyHubClient() {
- // 투표 관리는 설문과 권한이 다르다(POLL_READ_ALL) — 라우트 게이트와 같은 판정으로만 길을 보인다(DIP B4 P1).
- const { user } = useAuth();
- const canOpenPolls = canOpenPage(user, '/admin/survey/polls');
- const router = useRouter();
- const searchParams = useSearchParams();
- const currentTab = resolveTab(searchParams.get('tab'));
+  // 투표 관리는 설문과 권한이 다르다(POLL_READ_ALL) — 라우트 게이트와 같은 판정으로만 길을 보인다(DIP B4 P1).
+  const { user } = useAuth();
+  const canOpenPolls = canOpenPage(user, '/admin/survey/polls');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentTab = resolveTab(searchParams.get('tab'));
 
- // 1. Data Fetching — 실패를 '0건'으로 위장하지 않도록 isError/refetch 까지 구조분해한다(P1-1).
- const {
-   data: surveyData,
-   isLoading: isSurveyLoading,
-   isError: isSurveyError,
-   refetch: refetchSurveys,
- } = useQuery({
-   queryKey: ['admin-surveys-all'],
-   queryFn: () => surveyAdminService.getSurveyList({ pageIndex: 1, recordCountPerPage: 1 }),
- });
+  // 1. Data Fetching — 실패를 '0건'으로 위장하지 않도록 isError/refetch 까지 구조분해한다(P1-1).
+  const {
+    data: surveyData,
+    isLoading: isSurveyLoading,
+    isError: isSurveyError,
+    refetch: refetchSurveys,
+  } = useQuery({
+    queryKey: ['admin-surveys-all'],
+    queryFn: () => surveyAdminService.getSurveyList({ pageIndex: 1, recordCountPerPage: 1 }),
+  });
 
- const {
-   data: statsData,
-   isLoading: isStatsLoading,
-   isError: isStatsError,
-   refetch: refetchStats,
- } = useQuery({
-   queryKey: ['admin-stats-summary'],
-   queryFn: () => statsAdminService.getSummary(),
- });
+  const {
+    data: statsData,
+    isLoading: isStatsLoading,
+    isError: isStatsError,
+    refetch: refetchStats,
+  } = useQuery({
+    queryKey: ['admin-stats-summary'],
+    queryFn: () => statsAdminService.getSummary(),
+  });
 
- const totalSurveys = toCount(surveyData?.total);
- const totalUsers = toCount(statsData?.totalUsers);
- const todayConnects = toCount(statsData?.todayConnects);
+  const totalSurveys = toCount(surveyData?.total);
+  const totalUsers = toCount(statsData?.totalUsers);
+  const todayConnects = toCount(statsData?.todayConnects);
 
- const hasError = isSurveyError || isStatsError;
- const isLoading = isSurveyLoading || isStatsLoading;
+  const hasError = isSurveyError || isStatsError;
+  const isLoading = isSurveyLoading || isStatsLoading;
 
- const retryFailed = () => {
-   if (isSurveyError) void refetchSurveys();
-   if (isStatsError) void refetchStats();
- };
+  const retryFailed = () => {
+    if (isSurveyError) void refetchSurveys();
+    if (isStatsError) void refetchStats();
+  };
 
- // 탭은 URL 파생값이다(P1-7). replace 를 쓰는 이유: 탭 전환마다 히스토리가 쌓이면
- // 뒤로가기가 탭 왕복에 갇힌다. 공유·새로고침 복원은 replace 로도 그대로 동작한다.
- const onTabChange = (value: string) => {
- const params = pickAllowedParams(searchParams, HUB_PARAM_KEYS);
- params.set('tab', value);
- router.replace(`/admin/survey/hub?${params.toString()}`, { scroll: false });
- };
+  // 탭은 URL 파생값이다(P1-7). replace 를 쓰는 이유: 탭 전환마다 히스토리가 쌓이면
+  // 뒤로가기가 탭 왕복에 갇힌다. 공유·새로고침 복원은 replace 로도 그대로 동작한다.
+  const onTabChange = (value: string) => {
+    const params = pickAllowedParams(searchParams, HUB_PARAM_KEYS);
+    params.set('tab', value);
+    router.replace(`/admin/survey/hub?${params.toString()}`, { scroll: false });
+  };
 
- return (
- <motion.div
- initial="hidden"
- animate="visible"
- variants={hubContainerVariants}
- className="space-y-6 pb-8"
- >
- <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-   <div><h1 className="text-2xl font-bold tracking-tight">{TAB_TITLE[currentTab]}</h1><p className="mt-2 text-sm text-muted-foreground">{TAB_DESCRIPTION[currentTab]}</p></div>
-   {/*
+  return (
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={hubContainerVariants}
+      className="space-y-6 pb-8"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div><h1 className="text-2xl font-bold tracking-tight">{TAB_TITLE[currentTab]}</h1><p className="mt-2 text-sm text-muted-foreground">{TAB_DESCRIPTION[currentTab]}</p></div>
+        {/*
      [2026-09-12 §A3-1] 종전 이 자리의 '만족도 조사 등록' 버튼을 걷는다.
      `/admin/survey/manage/create` 는 목록으로 보내는 page-redirect 가 됐고
      `/admin/survey/manage` 는 next.config 가 다시 이 허브로 되돌린다 — 즉 누르면
      아무 일도 없었던 것처럼 제자리로 돌아오는 죽은 어포던스였다(G10).
      등록은 manage 탭이 embed 하는 목록의 `SurveyFormDialog` 모달이 단독으로 소유한다.
    */}
- </div>
- <nav aria-label="문항형 설문 진행 순서" className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
-   <span className="font-medium">문항형 설문:</span>
-   <Link href="/admin/survey/hub?tab=templates" className="text-primary underline">1. 템플릿 준비</Link><span aria-hidden="true">→</span>
-   <Link href="/admin/survey/hub?tab=questions" className="text-primary underline">2. 설문지·문항 구성</Link><span aria-hidden="true">→</span>
-   <Link href="/survey" className="text-primary underline">3. 설문 참여</Link><span aria-hidden="true">→</span>
-   <Link href="/survey/stats" className="text-primary underline">4. 결과 확인</Link>
- </nav>
- {/* 3. Navigation Matrix */}
- <motion.div variants={hubItemVariants} className="px-2">
- <Tabs value={currentTab} onValueChange={onTabChange} className="space-y-4">
- <div className="hub-glass-premium p-2 rounded-lg border-2 border-border/50 shadow-xl inline-flex w-full md:w-auto overflow-x-auto scrollbar-hide">
- <TabsList className="bg-transparent gap-2 h-auto p-0 border-none">
- <TabTrigger value="manage" icon={LayoutGrid} label="여론조사 관리" />
- <TabTrigger value="questions" icon={ListChecks} label="설문지·문항" />
- <TabTrigger value="templates" icon={LayoutTemplate} label="템플릿" />
- <TabTrigger value="stats" icon={BarChart3} label="결과 통계" />
- </TabsList>
- </div>
- {/* [2026-09-06 DEC-OPS-041] 온라인 투표(항목 하나 고르기)는 문항형 설문조사와 다른 제품이라 허브 탭이 아니라
+      </div>
+      <nav aria-label="문항형 설문 진행 순서" className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
+        <span className="font-medium">문항형 설문:</span>
+        <Link href="/admin/survey/hub?tab=templates" className="text-primary underline">1. 템플릿 준비</Link><span aria-hidden="true">→</span>
+        <Link href="/admin/survey/hub?tab=questions" className="text-primary underline">2. 설문지·문항 구성</Link><span aria-hidden="true">→</span>
+        <Link href="/survey" className="text-primary underline">3. 설문 참여</Link><span aria-hidden="true">→</span>
+        <Link href="/survey/stats" className="text-primary underline">4. 결과 확인</Link>
+      </nav>
+      {/* 3. Navigation Matrix */}
+      <motion.div variants={hubItemVariants} className="px-2">
+        <Tabs value={currentTab} onValueChange={onTabChange} className="space-y-4">
+          <div className="hub-glass-premium p-2 rounded-lg border-2 border-border/50 shadow-xl inline-flex w-full md:w-auto overflow-x-auto scrollbar-hide">
+            <TabsList className="bg-transparent gap-2 h-auto p-0 border-none">
+              <TabTrigger value="manage" icon={LayoutGrid} label="여론조사 관리" />
+              <TabTrigger value="questions" icon={ListChecks} label="설문지·문항" />
+              <TabTrigger value="templates" icon={LayoutTemplate} label="템플릿" />
+              <TabTrigger value="stats" icon={BarChart3} label="결과 통계" />
+            </TabsList>
+          </div>
+          {/* [2026-09-06 DEC-OPS-041] 온라인 투표(항목 하나 고르기)는 문항형 설문조사와 다른 제품이라 허브 탭이 아니라
      별도 화면으로 안내한다(감사 D12-02 — 종전에는 허브 어디에도 투표로 가는 길이 없었다). */}
- {canOpenPolls && (
- <Link
-   href="/admin/survey/polls"
-   className="inline-flex items-center gap-2 px-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
- >
-   <Vote size={16} aria-hidden="true" /> 온라인 투표 관리로 이동
- </Link>
- )}
+          {canOpenPolls && (
+            <Link
+              href="/admin/survey/polls"
+              className="inline-flex items-center gap-2 px-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              <Vote size={16} aria-hidden="true" /> 온라인 투표 관리로 이동
+            </Link>
+          )}
 
- <div className="mt-4">
- <AnimatePresence mode="wait">
- <motion.div
- key={currentTab}
- initial={{ opacity: 0, y: 20 }}
- animate={{ opacity: 1, y: 0 }}
- exit={{ opacity: 0, y: -20 }}
- transition={{ duration: 0.4, ease: "circOut" }}
- >
- <TabsContent value="manage" className="m-0 focus-visible:outline-none">
- <SurveyManageClient embedded />
- </TabsContent>
+          <div className="mt-4">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentTab}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4, ease: "circOut" }}
+              >
+                <TabsContent value="manage" className="m-0 focus-visible:outline-none">
+                  <SurveyManageClient embedded />
+                </TabsContent>
 
- <TabsContent value="questions" className="m-0 focus-visible:outline-none">
- <SurveyQuestionsPanel />
- </TabsContent>
+                <TabsContent value="questions" className="m-0 focus-visible:outline-none">
+                  <SurveyQuestionsPanel />
+                </TabsContent>
 
- <TabsContent value="templates" className="m-0 focus-visible:outline-none">
- <SurveyTemplatesPanel />
- </TabsContent>
+                <TabsContent value="templates" className="m-0 focus-visible:outline-none">
+                  <SurveyTemplatesPanel />
+                </TabsContent>
 
 
- <TabsContent value="stats" className="m-0 focus-visible:outline-none">
- <SurveyStatsClient embedded />
- </TabsContent>
- </motion.div>
- </AnimatePresence>
- </div>
- </Tabs>
- </motion.div>
- <details className="rounded-lg border p-4 space-y-4"><summary className="cursor-pointer font-medium">설문지 및 서비스 이용 현황{hasError ? ' — 일부 조회 실패' : ''}</summary>
- {/* 2. 지표 — 조회 실패 시 0 을 보여주지 않고 실패 사실을 드러낸다(P1-1) */}
- {hasError && (
-   <motion.div
-     variants={hubItemVariants}
-     role="alert"
-     className="mx-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border-2 border-rose-500/20 bg-rose-500/5 px-6 py-5"
-   >
-     <div className="flex items-start gap-3">
-       <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-       <div className="space-y-1">
-         <p className="text-sm font-bold text-foreground">요약 지표를 불러오지 못했습니다.</p>
-         <p className="text-xs font-medium text-muted-foreground">
-           {isSurveyError && isStatsError
-             ? '설문 건수와 접속 요약을 모두 조회하지 못했습니다.'
-             : isSurveyError
-               ? '설문 건수를 조회하지 못했습니다.'
-               : '접속 요약을 조회하지 못했습니다.'} 아래 목록은 별도로 조회됩니다.
-         </p>
-       </div>
-     </div>
-     <Button variant="outline" onClick={retryFailed} className="px-6 rounded-lg font-bold text-xs gap-2 shrink-0">
-       <RefreshCcw size={14} /> 다시 시도
-     </Button>
-   </motion.div>
- )}
+                <TabsContent value="stats" className="m-0 focus-visible:outline-none">
+                  <SurveyStatsClient embedded />
+                </TabsContent>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </Tabs>
+      </motion.div>
+      <details className="rounded-lg border p-4 space-y-4"><summary className="cursor-pointer font-medium">설문지 및 서비스 이용 현황{hasError ? ' — 일부 조회 실패' : ''}</summary>
+        {/* 2. 지표 — 조회 실패 시 0 을 보여주지 않고 실패 사실을 드러낸다(P1-1) */}
+        {hasError && (
+          <motion.div
+            variants={hubItemVariants}
+            role="alert"
+            className="mx-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border-2 border-rose-500/20 bg-rose-500/5 px-6 py-5"
+          >
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-foreground">요약 지표를 불러오지 못했습니다.</p>
+                <p className="text-xs font-medium text-muted-foreground">
+                  {isSurveyError && isStatsError
+                    ? '설문 건수와 접속 요약을 모두 조회하지 못했습니다.'
+                    : isSurveyError
+                      ? '설문 건수를 조회하지 못했습니다.'
+                      : '접속 요약을 조회하지 못했습니다.'} 아래 목록은 별도로 조회됩니다.
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" onClick={retryFailed} className="px-6 rounded-lg font-bold text-xs gap-2 shrink-0">
+              <RefreshCcw size={14} /> 다시 시도
+            </Button>
+          </motion.div>
+        )}
 
- <motion.div variants={hubItemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6 px-2">
- {isLoading ? (
-   <>
-     <MetricCardSkeleton />
-     <MetricCardSkeleton />
-     <MetricCardSkeleton />
-   </>
- ) : (
-   <>
-     {/* 값의 출처를 라벨과 일치시킨다 — 종전 'Global Response'/'Daily Active' 는 각각
+        <motion.div variants={hubItemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6 px-2">
+          {isLoading ? (
+            <>
+              <MetricCardSkeleton />
+              <MetricCardSkeleton />
+              <MetricCardSkeleton />
+            </>
+          ) : (
+            <>
+              {/* 값의 출처를 라벨과 일치시킨다 — 종전 'Global Response'/'Daily Active' 는 각각
          총 사용자 수·오늘 접속 수를 다른 의미로 표기한 거짓 지표였다(P1-5).
          근거가 없던 'Insight Score 88/100' 카드와 +12.4%/+2.1% 증감 배지는 삭제했다. */}
-     <MetricCard label="등록된 설문지" value={totalSurveys} unit="건" icon={Layers} color="rose" />
-     <MetricCard label="총 사용자" value={totalUsers} unit="명" icon={Users} color="primary" />
-     <MetricCard label="오늘 접속" value={todayConnects} unit="회" icon={Activity} color="emerald" />
-   </>
- )}
- </motion.div>
+              <MetricCard label="등록된 설문지" value={totalSurveys} unit="건" icon={Layers} color="rose" />
+              <MetricCard label="총 사용자" value={totalUsers} unit="명" icon={Users} color="primary" />
+              <MetricCard label="오늘 접속" value={todayConnects} unit="회" icon={Activity} color="emerald" />
+            </>
+          )}
+        </motion.div>
 
 
- </details>
- </motion.div>
- );
+      </details>
+    </motion.div>
+  );
 }
 
 function TabTrigger({ value, icon: Icon, label }: { value: string, icon: React.ElementType, label: string }) {
- return (
- <TabsTrigger
- value={value}
- className="data-[state=active]:bg-surface-inverse data-[state=active]:text-surface-inverse-foreground data-[state=active]:shadow-2xl rounded-lg h-11 px-4 font-bold text-xs tracking-tight gap-3 transition-all border border-transparent data-[state=active]:border-surface-inverse-border hover:bg-muted"
- >
- <Icon size={16} /> {label}
- </TabsTrigger>
- );
+  return (
+    <TabsTrigger
+      value={value}
+      className="data-[state=active]:bg-surface-inverse data-[state=active]:text-surface-inverse-foreground data-[state=active]:shadow-2xl rounded-lg h-11 px-4 font-bold text-xs tracking-tight gap-3 transition-all border border-transparent data-[state=active]:border-surface-inverse-border hover:bg-muted"
+    >
+      <Icon size={16} /> {label}
+    </TabsTrigger>
+  );
 }
 
 /**
@@ -272,41 +272,41 @@ function TabTrigger({ value, icon: Icon, label }: { value: string, icon: React.E
  * 증감 배지(trend)는 산출 근거가 없어 제거했다(P1-5).
  */
 function MetricCard({
- label,
- value,
- unit,
- icon: Icon,
- color,
+  label,
+  value,
+  unit,
+  icon: Icon,
+  color,
 }: {
- label: string;
- value: number | null;
- unit?: string;
- icon: React.ElementType;
- color: 'rose' | 'emerald' | 'primary';
+  label: string;
+  value: number | null;
+  unit?: string;
+  icon: React.ElementType;
+  color: 'rose' | 'emerald' | 'primary';
 }) {
- const colorMap: Record<string, string> = {
- rose: "text-rose-500 bg-rose-500/5 border-rose-500/10",
- emerald: "text-emerald-500 bg-emerald-500/5 border-emerald-500/10",
- primary: "text-primary bg-primary/5 border-primary/10"
- };
+  const colorMap: Record<string, string> = {
+    rose: "text-rose-500 bg-rose-500/5 border-rose-500/10",
+    emerald: "text-emerald-500 bg-emerald-500/5 border-emerald-500/10",
+    primary: "text-primary bg-primary/5 border-primary/10"
+  };
 
- return (
- <div className="hub-glass-premium p-8 rounded-lg border-2 border-border/50 flex flex-col gap-4 group hover:ring-[20px] hover:ring-border/30 transition-all shadow-sm">
- <div className="flex items-center justify-between">
- <span className="text-xs font-bold text-muted-foreground tracking-tight">{label}</span>
- <div className={cn("p-2 rounded-lg border", colorMap[color])}>
- <Icon size={14} />
- </div>
- </div>
- <div className="space-y-1">
- <h3 className="text-3xl font-bold tracking-tighter text-foreground tabular-nums flex items-baseline gap-1.5">
- {value === null ? '—' : value.toLocaleString()}
- {value !== null && unit && <span className="text-xs font-bold text-muted-foreground">{unit}</span>}
- </h3>
- <div className="h-[1px] w-full bg-muted" />
- </div>
- </div>
- );
+  return (
+    <div className="hub-glass-premium p-8 rounded-lg border-2 border-border/50 flex flex-col gap-4 group hover:ring-[20px] hover:ring-border/30 transition-all shadow-sm">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-bold text-muted-foreground tracking-tight">{label}</span>
+        <div className={cn("p-2 rounded-lg border", colorMap[color])}>
+          <Icon size={14} />
+        </div>
+      </div>
+      <div className="space-y-1">
+        <h3 className="text-3xl font-bold tracking-tighter text-foreground tabular-nums flex items-baseline gap-1.5">
+          {value === null ? '—' : value.toLocaleString()}
+          {value !== null && unit && <span className="text-xs font-bold text-muted-foreground">{unit}</span>}
+        </h3>
+        <div className="h-[1px] w-full bg-muted" />
+      </div>
+    </div>
+  );
 }
 
 function MetricCardSkeleton() {

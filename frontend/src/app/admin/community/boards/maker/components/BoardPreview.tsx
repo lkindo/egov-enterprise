@@ -1,23 +1,25 @@
 import { cn } from '@/lib/utils';
-import { Search,  
- MessageSquare,  
- Eye,  
- Clock,  
- ChevronRight,  
- MoreHorizontal, 
- ThumbsUp, 
- Share2, 
- CheckCircle2, 
- User, 
- ChevronDown, 
- Book } from 'lucide-react';
+import {
+  Search,
+  MessageSquare,
+  Eye,
+  Clock,
+  ChevronRight,
+  MoreHorizontal,
+  ThumbsUp,
+  Share2,
+  CheckCircle2,
+  User,
+  ChevronDown,
+  Book
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 
 interface PreviewProps {
- tmpltId: string;
- bbsTtl: string;
- bbsExpln: string;
+  tmpltId: string;
+  bbsTtl: string;
+  bbsExpln: string;
 }
 
 /**
@@ -31,281 +33,281 @@ interface PreviewProps {
 type PreviewPost = (typeof MOCK_POSTS)[number];
 
 const MOCK_POSTS = [
- // [2026-09-03] `content` 를 채운 이유: FAQ 레이아웃(FaqLayout)이 첫 항목의 답변 본문으로
- //   `post.content` 를 렌더하는데 그 필드가 없어 **답변 상자가 늘 비어 있었다**.
- //   `posts: any[]` 라 타입 검사가 이 누락을 못 봤고, 미리보기는 FAQ 템플릿을
- //   '답변이 보이지 않는 템플릿' 으로 잘못 보여 주고 있었다.
- { id: 1, title: '전자정부 표준프레임워크 4.x 업데이트 가이드라인', author: '관리자', date: '2024-05-20', views: 1240, comments: 45, content: '4.x 는 Java 21 과 Spring Boot 3 계열을 기준으로 합니다. 3.x 설정은 그대로 쓸 수 없으므로 마이그레이션 가이드의 호환성 표를 먼저 확인해 주세요.' },
- { id: 2, title: '리액트 서버 컴포넌트(RSC) 도입 시 주의사항 및 모범 사례', author: '기술혁신팀', date: '2024-05-19', views: 856, comments: 23, content: '서버 컴포넌트에서는 브라우저 전용 API 를 쓸 수 없습니다. 상태가 필요한 구간만 클라이언트 컴포넌트로 분리하세요.' },
- { id: 3, title: 'MSA 환경에서의 분산 트랜잭션 처리 전략 (Saga 패턴)', author: '플랫폼실', date: '2024-05-18', views: 2301, comments: 67, content: '2단계 커밋 대신 보상 트랜잭션으로 일관성을 맞춥니다. 각 단계는 실패 시 되돌릴 수 있어야 합니다.' },
+  // [2026-09-03] `content` 를 채운 이유: FAQ 레이아웃(FaqLayout)이 첫 항목의 답변 본문으로
+  //   `post.content` 를 렌더하는데 그 필드가 없어 **답변 상자가 늘 비어 있었다**.
+  //   `posts: any[]` 라 타입 검사가 이 누락을 못 봤고, 미리보기는 FAQ 템플릿을
+  //   '답변이 보이지 않는 템플릿' 으로 잘못 보여 주고 있었다.
+  { id: 1, title: '전자정부 표준프레임워크 4.x 업데이트 가이드라인', author: '관리자', date: '2024-05-20', views: 1240, comments: 45, content: '4.x 는 Java 21 과 Spring Boot 3 계열을 기준으로 합니다. 3.x 설정은 그대로 쓸 수 없으므로 마이그레이션 가이드의 호환성 표를 먼저 확인해 주세요.' },
+  { id: 2, title: '리액트 서버 컴포넌트(RSC) 도입 시 주의사항 및 모범 사례', author: '기술혁신팀', date: '2024-05-19', views: 856, comments: 23, content: '서버 컴포넌트에서는 브라우저 전용 API 를 쓸 수 없습니다. 상태가 필요한 구간만 클라이언트 컴포넌트로 분리하세요.' },
+  { id: 3, title: 'MSA 환경에서의 분산 트랜잭션 처리 전략 (Saga 패턴)', author: '플랫폼실', date: '2024-05-18', views: 2301, comments: 67, content: '2단계 커밋 대신 보상 트랜잭션으로 일관성을 맞춥니다. 각 단계는 실패 시 되돌릴 수 있어야 합니다.' },
 ];
 
 export function BoardPreview({ tmpltId, bbsTtl, bbsExpln }: PreviewProps) {
- return (
- <div className="relative flex h-full w-full flex-col overflow-hidden rounded-md border border-border bg-muted">
- {/* Browser Bar */}
- <div className="flex h-9 items-center gap-2 bg-surface-inverse px-3">
- <div className="size-2 rounded-full bg-surface-inverse-foreground/40" aria-hidden="true" />
- <div className="size-2 rounded-full bg-surface-inverse-foreground/40" aria-hidden="true" />
- <div className="size-2 rounded-full bg-surface-inverse-foreground/40" aria-hidden="true" />
- <div className="ml-2 flex h-6 flex-1 items-center rounded bg-surface-inverse-foreground/10 px-3">
- <span className="truncate text-xs text-surface-inverse-muted">HTTP://EGOV.PRIME/BOARD/{bbsTtl || 'UNNAMED'}</span>
- </div>
- </div>
+  return (
+    <div className="relative flex h-full w-full flex-col overflow-hidden rounded-md border border-border bg-muted">
+      {/* Browser Bar */}
+      <div className="flex h-9 items-center gap-2 bg-surface-inverse px-3">
+        <div className="size-2 rounded-full bg-surface-inverse-foreground/40" aria-hidden="true" />
+        <div className="size-2 rounded-full bg-surface-inverse-foreground/40" aria-hidden="true" />
+        <div className="size-2 rounded-full bg-surface-inverse-foreground/40" aria-hidden="true" />
+        <div className="ml-2 flex h-6 flex-1 items-center rounded bg-surface-inverse-foreground/10 px-3">
+          <span className="truncate text-xs text-surface-inverse-muted">HTTP://EGOV.PRIME/BOARD/{bbsTtl || 'UNNAMED'}</span>
+        </div>
+      </div>
 
- <div className="flex-1 space-y-4 overflow-auto bg-card p-4">
- {/* Board Header */}
- <div className="space-y-2 border-b border-border pb-4">
- <div className="flex justify-between items-end">
- <div className="space-y-2">
- <h2 className="text-xl font-bold tracking-tight text-foreground">{bbsTtl || 'PREVIEW_BOARD'}</h2>
- <p className="text-[length:var(--font-size-body)] text-muted-foreground">{bbsExpln || 'Board description placeholder...'}</p>
- </div>
- <div className="flex gap-2">
- <div className="w-10 h-10 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground"><Search size={18} strokeWidth={3} /></div>
- <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs tracking-tighter">WRITE</div>
- </div>
- </div>
- </div>
+      <div className="flex-1 space-y-4 overflow-auto bg-card p-4">
+        {/* Board Header */}
+        <div className="space-y-2 border-b border-border pb-4">
+          <div className="flex justify-between items-end">
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold tracking-tight text-foreground">{bbsTtl || 'PREVIEW_BOARD'}</h2>
+              <p className="text-[length:var(--font-size-body)] text-muted-foreground">{bbsExpln || 'Board description placeholder...'}</p>
+            </div>
+            <div className="flex gap-2">
+              <div className="w-10 h-10 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground"><Search size={18} strokeWidth={3} /></div>
+              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs tracking-tighter">WRITE</div>
+            </div>
+          </div>
+        </div>
 
- {/* Dynamic Content based on Template */}
- {tmpltId === 'TMPLT_HUB' && <HubLayout posts={MOCK_POSTS} />}
- {tmpltId === 'TMPLT_LIST' && <ListLayout posts={MOCK_POSTS} />}
- {tmpltId === 'TMPLT_GALLERY' && <GalleryLayout posts={MOCK_POSTS} />}
- {tmpltId === 'TMPLT_QNA' && <QnaLayout posts={MOCK_POSTS} />}
- {tmpltId === 'TMPLT_CALENDAR' && <CalendarLayout />}
- {tmpltId === 'TMPLT_FAQ' && <FaqLayout posts={MOCK_POSTS} />}
- {tmpltId === 'TMPLT_WIKI' && <WikiLayout posts={MOCK_POSTS} />}
- </div>
+        {/* Dynamic Content based on Template */}
+        {tmpltId === 'TMPLT_HUB' && <HubLayout posts={MOCK_POSTS} />}
+        {tmpltId === 'TMPLT_LIST' && <ListLayout posts={MOCK_POSTS} />}
+        {tmpltId === 'TMPLT_GALLERY' && <GalleryLayout posts={MOCK_POSTS} />}
+        {tmpltId === 'TMPLT_QNA' && <QnaLayout posts={MOCK_POSTS} />}
+        {tmpltId === 'TMPLT_CALENDAR' && <CalendarLayout />}
+        {tmpltId === 'TMPLT_FAQ' && <FaqLayout posts={MOCK_POSTS} />}
+        {tmpltId === 'TMPLT_WIKI' && <WikiLayout posts={MOCK_POSTS} />}
+      </div>
 
- <div className="h-10 bg-muted flex items-center justify-center border-t border-border">
- <span className="text-xs font-bold text-muted-foreground tracking-tight">예시 데이터로 그린 레이아웃 미리보기입니다</span>
- </div>
- </div>
- );
+      <div className="h-10 bg-muted flex items-center justify-center border-t border-border">
+        <span className="text-xs font-bold text-muted-foreground tracking-tight">예시 데이터로 그린 레이아웃 미리보기입니다</span>
+      </div>
+    </div>
+  );
 }
 
 function HubLayout({ posts }: { posts: PreviewPost[] }) {
- return (
- <div className="space-y-8">
- <div className="grid grid-cols-2 gap-6">
- <div className="col-span-2 p-8 bg-surface-inverse rounded-lg text-surface-inverse-foreground relative overflow-hidden group">
- <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-primary/20 blur-3xl rounded-lg" />
- <div className="relative z-10 space-y-4">
- <span className="text-xs text-surface-inverse-muted">FEATURED_KNOWLEDGE</span>
- <h3 className="text-2xl font-bold tracking-tight leading-tight">{posts[0].title}</h3>
- <div className="flex items-center gap-6 mt-6">
- <div className="flex items-center gap-2">
- <span className="text-xs font-bold text-surface-inverse-muted">BY</span>
- <span className="text-xs font-bold">{posts[0].author}</span>
- </div>
- <div className="flex items-center gap-2 text-surface-inverse-muted">
- <Clock size={12} />
- <span className="text-xs font-bold">1 hour ago</span>
- </div>
- </div>
- </div>
- </div>
- </div>
- <div className="grid grid-cols-2 gap-6">
- {posts.slice(1).map(post => (
- <div key={post.id} className="p-6 bg-muted rounded-lg border-2 border-border space-y-4 hover:border-foreground transition-all">
- <h4 className="font-bold text-foreground text-sm leading-snug truncate-2">{post.title}</h4>
- <div className="flex justify-between items-center pt-2">
- <div className="flex gap-4">
- <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs"><Eye size={12} /> {post.views}</div>
- <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs"><MessageSquare size={12} /> {post.comments}</div>
- </div>
- <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center text-muted-foreground">
- <ChevronRight size={14} />
- </div>
- </div>
- </div>
- ))}
- </div>
- </div>
- );
+  return (
+    <div className="space-y-8">
+      <div className="grid grid-cols-2 gap-6">
+        <div className="col-span-2 p-8 bg-surface-inverse rounded-lg text-surface-inverse-foreground relative overflow-hidden group">
+          <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-primary/20 blur-3xl rounded-lg" />
+          <div className="relative z-10 space-y-4">
+            <span className="text-xs text-surface-inverse-muted">FEATURED_KNOWLEDGE</span>
+            <h3 className="text-2xl font-bold tracking-tight leading-tight">{posts[0].title}</h3>
+            <div className="flex items-center gap-6 mt-6">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-surface-inverse-muted">BY</span>
+                <span className="text-xs font-bold">{posts[0].author}</span>
+              </div>
+              <div className="flex items-center gap-2 text-surface-inverse-muted">
+                <Clock size={12} />
+                <span className="text-xs font-bold">1 hour ago</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-6">
+        {posts.slice(1).map(post => (
+          <div key={post.id} className="p-6 bg-muted rounded-lg border-2 border-border space-y-4 hover:border-foreground transition-all">
+            <h4 className="font-bold text-foreground text-sm leading-snug truncate-2">{post.title}</h4>
+            <div className="flex justify-between items-center pt-2">
+              <div className="flex gap-4">
+                <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs"><Eye size={12} /> {post.views}</div>
+                <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs"><MessageSquare size={12} /> {post.comments}</div>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center text-muted-foreground">
+                <ChevronRight size={14} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function ListLayout({ posts }: { posts: PreviewPost[] }) {
- return (
- <div className="space-y-2">
- {posts.map(post => (
- <div key={post.id} className="flex items-center justify-between p-6 border-b-2 border-border hover:bg-muted transition-all group">
- <div className="flex-1 flex items-center gap-8">
- <span className="text-xs font-bold text-muted-foreground w-10">0{post.id}</span>
- <div className="flex-1">
- <h4 className="text-sm font-bold text-foreground tracking-tight group-hover:text-primary transition-colors">{post.title}</h4>
- <div className="flex items-center gap-4 mt-1">
- <span className="text-xs font-bold text-muted-foreground">{post.author}</span>
- <span className="text-xs font-medium text-muted-foreground underline decoration-border">#Enterprise</span>
- </div>
- </div>
- </div>
- <div className="flex items-center gap-8">
- <div className="text-right">
- <p className="text-xs font-bold text-muted-foreground">{post.date}</p>
- <p className="text-xs font-bold text-muted-foreground">PUBLIC_CONTENT</p>
- </div>
- <MoreHorizontal size={16} className="text-muted-foreground" />
- </div>
- </div>
- ))}
- </div>
- );
+  return (
+    <div className="space-y-2">
+      {posts.map(post => (
+        <div key={post.id} className="flex items-center justify-between p-6 border-b-2 border-border hover:bg-muted transition-all group">
+          <div className="flex-1 flex items-center gap-8">
+            <span className="text-xs font-bold text-muted-foreground w-10">0{post.id}</span>
+            <div className="flex-1">
+              <h4 className="text-sm font-bold text-foreground tracking-tight group-hover:text-primary transition-colors">{post.title}</h4>
+              <div className="flex items-center gap-4 mt-1">
+                <span className="text-xs font-bold text-muted-foreground">{post.author}</span>
+                <span className="text-xs font-medium text-muted-foreground underline decoration-border">#Enterprise</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-8">
+            <div className="text-right">
+              <p className="text-xs font-bold text-muted-foreground">{post.date}</p>
+              <p className="text-xs font-bold text-muted-foreground">PUBLIC_CONTENT</p>
+            </div>
+            <MoreHorizontal size={16} className="text-muted-foreground" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function GalleryLayout({ posts }: { posts: PreviewPost[] }) {
- return (
- <div className="grid grid-cols-1 gap-8">
- {posts.map(post => (
- <div key={post.id} className="group overflow-hidden rounded-md border border-border bg-card transition-colors hover:border-primary">
- <div className="h-48 overflow-hidden relative">
- {/*
+  return (
+    <div className="grid grid-cols-1 gap-8">
+      {posts.map(post => (
+        <div key={post.id} className="group overflow-hidden rounded-md border border-border bg-card transition-colors hover:border-primary">
+          <div className="h-48 overflow-hidden relative">
+            {/*
    [2026-08-29] 예시 이미지(unsplash) 제거. 미리보기의 목적은 레이아웃 확인이지 사진이
    아니고, 관리자 화면이 외부 호스트로 나갈 이유가 없다.
  */}
- <div aria-hidden="true" className="absolute inset-0 bg-muted" />
- <div className="absolute right-2 top-2 rounded bg-surface-inverse/90 px-2 py-0.5 text-xs text-surface-inverse-foreground">INSIGHT</div>
- </div>
- <div className="p-8 space-y-6">
- <h4 className="text-xl font-bold text-foreground tracking-tighter leading-snug">{post.title}</h4>
- <div className="flex items-center justify-between pt-4 border-t border-border">
- <div className="flex items-center gap-3">
- <div className="w-8 h-8 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground font-bold text-xs ">OP</div>
- <span className="text-xs font-bold text-foreground">{post.author}</span>
- </div>
- <div className="flex gap-4">
- <Share2 size={14} className="text-muted-foreground" />
- <ThumbsUp size={14} className="text-muted-foreground" />
- </div>
- </div>
- </div>
- </div>
- ))}
- </div>
- );
+            <div aria-hidden="true" className="absolute inset-0 bg-muted" />
+            <div className="absolute right-2 top-2 rounded bg-surface-inverse/90 px-2 py-0.5 text-xs text-surface-inverse-foreground">INSIGHT</div>
+          </div>
+          <div className="p-8 space-y-6">
+            <h4 className="text-xl font-bold text-foreground tracking-tighter leading-snug">{post.title}</h4>
+            <div className="flex items-center justify-between pt-4 border-t border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground font-bold text-xs ">OP</div>
+                <span className="text-xs font-bold text-foreground">{post.author}</span>
+              </div>
+              <div className="flex gap-4">
+                <Share2 size={14} className="text-muted-foreground" />
+                <ThumbsUp size={14} className="text-muted-foreground" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function QnaLayout({ posts }: { posts: PreviewPost[] }) {
- return (
- <div className="space-y-4">
- {posts.map((post, idx) => (
- <div key={post.id} className="group flex gap-3 rounded-md border border-border bg-card p-3 transition-colors hover:border-primary">
- <div className="flex flex-col items-center gap-1 min-w-[60px]">
- <div className={cn(
- "flex size-9 items-center justify-center rounded-md border text-base font-semibold",
- idx === 0 ? "border-success/40 bg-success/15 text-foreground" : "border-border bg-muted text-muted-foreground"
- )}>
- {idx === 0 ? <CheckCircle2 size={18} aria-hidden="true" /> : '?' }
- </div>
- <span className="text-xs text-muted-foreground">{idx === 0 ? 'Solved' : 'Open'}</span>
- </div>
- <div className="flex-1 space-y-2">
- <div className="flex items-center gap-3">
- <Badge className="bg-muted text-muted-foreground hover:bg-muted border-none text-xs font-bold">TECH_SUPPORT</Badge>
- <span className="text-xs font-bold text-muted-foreground">{post.date}</span>
- </div>
- <h4 className="text-[length:var(--font-size-body)] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">{post.title}</h4>
- <div className="flex items-center gap-4 text-muted-foreground font-bold text-xs">
- <span className="flex items-center gap-1"><User size={12} /> {post.author}</span>
- <span className="flex items-center gap-1"><MessageSquare size={12} /> {post.comments} Answers</span>
- </div>
- </div>
- </div>
- ))}
- </div>
- );
+  return (
+    <div className="space-y-4">
+      {posts.map((post, idx) => (
+        <div key={post.id} className="group flex gap-3 rounded-md border border-border bg-card p-3 transition-colors hover:border-primary">
+          <div className="flex flex-col items-center gap-1 min-w-[60px]">
+            <div className={cn(
+              "flex size-9 items-center justify-center rounded-md border text-base font-semibold",
+              idx === 0 ? "border-success/40 bg-success/15 text-foreground" : "border-border bg-muted text-muted-foreground"
+            )}>
+              {idx === 0 ? <CheckCircle2 size={18} aria-hidden="true" /> : '?'}
+            </div>
+            <span className="text-xs text-muted-foreground">{idx === 0 ? 'Solved' : 'Open'}</span>
+          </div>
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-3">
+              <Badge className="bg-muted text-muted-foreground hover:bg-muted border-none text-xs font-bold">TECH_SUPPORT</Badge>
+              <span className="text-xs font-bold text-muted-foreground">{post.date}</span>
+            </div>
+            <h4 className="text-[length:var(--font-size-body)] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">{post.title}</h4>
+            <div className="flex items-center gap-4 text-muted-foreground font-bold text-xs">
+              <span className="flex items-center gap-1"><User size={12} /> {post.author}</span>
+              <span className="flex items-center gap-1"><MessageSquare size={12} /> {post.comments} Answers</span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function FaqLayout({ posts }: { posts: PreviewPost[] }) {
- return (
- <div className="space-y-4">
- {posts.slice(0, 3).map((post, idx) => (
- <Card key={idx} className="border-2 border-border overflow-hidden rounded-lg hover:border-hub-purple transition-all group">
- <div className="p-6 flex items-center justify-between">
- <div className="flex items-center gap-6">
- <div className={cn(
- "w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl transition-all",
- idx === 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
- )}>
- Q
- </div>
- <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">{post.title}</h4>
- </div>
- <ChevronDown className="w-6 h-6 text-muted-foreground" />
- </div>
- {idx === 0 && (
- <div className="px-24 pb-10">
- <div className="p-8 bg-muted rounded-lg border-l-8 border-hub-purple text-muted-foreground font-medium leading-relaxed">
- {post.content}
- </div>
- </div>
- )}
- </Card>
- ))}
- </div>
- );
+  return (
+    <div className="space-y-4">
+      {posts.slice(0, 3).map((post, idx) => (
+        <Card key={idx} className="border-2 border-border overflow-hidden rounded-lg hover:border-hub-purple transition-all group">
+          <div className="p-6 flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className={cn(
+                "w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl transition-all",
+                idx === 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              )}>
+                Q
+              </div>
+              <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">{post.title}</h4>
+            </div>
+            <ChevronDown className="w-6 h-6 text-muted-foreground" />
+          </div>
+          {idx === 0 && (
+            <div className="px-24 pb-10">
+              <div className="p-8 bg-muted rounded-lg border-l-8 border-hub-purple text-muted-foreground font-medium leading-relaxed">
+                {post.content}
+              </div>
+            </div>
+          )}
+        </Card>
+      ))}
+    </div>
+  );
 }
 
 function WikiLayout({ posts }: { posts: PreviewPost[] }) {
- return (
- <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
- {posts.map((post, idx) => (
- <Card key={idx} className="group overflow-hidden rounded-md border border-border transition-colors hover:border-primary">
- <div className="flex">
- <div className="w-16 bg-muted flex items-center justify-center shrink-0 border-r border-border group-hover:bg-surface-inverse group-hover:text-surface-inverse-foreground transition-colors">
- <Book size={24} className="opacity-40" />
- </div>
- <div className="p-8 space-y-4">
- <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground transition-colors group-hover:text-primary">{post.title}</h4>
- <p className="text-xs text-muted-foreground">Last modified by {post.author}</p>
- </div>
- </div>
- </Card>
- ))}
- </div>
- );
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {posts.map((post, idx) => (
+        <Card key={idx} className="group overflow-hidden rounded-md border border-border transition-colors hover:border-primary">
+          <div className="flex">
+            <div className="w-16 bg-muted flex items-center justify-center shrink-0 border-r border-border group-hover:bg-surface-inverse group-hover:text-surface-inverse-foreground transition-colors">
+              <Book size={24} className="opacity-40" />
+            </div>
+            <div className="p-8 space-y-4">
+              <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground transition-colors group-hover:text-primary">{post.title}</h4>
+              <p className="text-xs text-muted-foreground">Last modified by {post.author}</p>
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
 }
 
 function CalendarLayout() {
- const days = Array.from({ length: 35 }, (_, i) => i + 1 - 3); // Simple offset for preview
- return (
- <div className="space-y-6">
- <div className="flex justify-between items-center bg-muted p-6 rounded-lg border-2 border-border">
- <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">May 2024</h4>
- <div className="flex gap-2">
- <div className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground"><ChevronRight className="rotate-180" size={16} /></div>
- <div className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground"><ChevronRight size={16} /></div>
- </div>
- </div>
- <div className="grid grid-cols-7 gap-2">
- {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
- <div key={d} className="pb-1 text-center text-xs text-muted-foreground">{d}</div>
- ))}
- {days.map((day, i) => (
- <div key={i} className={cn(
- "h-24 p-2 border-2 border-border rounded-lg transition-all relative group overflow-hidden",
- day === 20 ? "bg-primary/5 border-primary/20" : "bg-card",
- day <= 0 || day > 31 ? "opacity-10" : "hover:border-foreground"
- )}>
- <span className={cn("text-xs font-bold", day === 20 ? "text-primary" : "text-muted-foreground")}>
- {day > 0 && day <= 31 ? day : ''}
- </span>
- {day === 20 && (
- <div className="mt-2 p-1.5 bg-primary text-primary-foreground text-xs font-bold leading-tight rounded-sm shadow-lg shadow-primary/20">
- EGOV_TECH_SEMINAR_4.0
- </div>
- )}
- {day === 21 && (
- <div className="mt-1 p-1.5 bg-surface-inverse text-surface-inverse-foreground text-xs font-bold leading-tight rounded-sm">
- MAINTENANCE_LOG
- </div>
- )}
- </div>
- ))}
- </div>
- </div>
- );
+  const days = Array.from({ length: 35 }, (_, i) => i + 1 - 3); // Simple offset for preview
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center bg-muted p-6 rounded-lg border-2 border-border">
+        <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">May 2024</h4>
+        <div className="flex gap-2">
+          <div className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground"><ChevronRight className="rotate-180" size={16} /></div>
+          <div className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground"><ChevronRight size={16} /></div>
+        </div>
+      </div>
+      <div className="grid grid-cols-7 gap-2">
+        {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
+          <div key={d} className="pb-1 text-center text-xs text-muted-foreground">{d}</div>
+        ))}
+        {days.map((day, i) => (
+          <div key={i} className={cn(
+            "h-24 p-2 border-2 border-border rounded-lg transition-all relative group overflow-hidden",
+            day === 20 ? "bg-primary/5 border-primary/20" : "bg-card",
+            day <= 0 || day > 31 ? "opacity-10" : "hover:border-foreground"
+          )}>
+            <span className={cn("text-xs font-bold", day === 20 ? "text-primary" : "text-muted-foreground")}>
+              {day > 0 && day <= 31 ? day : ''}
+            </span>
+            {day === 20 && (
+              <div className="mt-2 p-1.5 bg-primary text-primary-foreground text-xs font-bold leading-tight rounded-sm shadow-lg shadow-primary/20">
+                EGOV_TECH_SEMINAR_4.0
+              </div>
+            )}
+            {day === 21 && (
+              <div className="mt-1 p-1.5 bg-surface-inverse text-surface-inverse-foreground text-xs font-bold leading-tight rounded-sm">
+                MAINTENANCE_LOG
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 

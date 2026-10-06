@@ -3,19 +3,21 @@
 import React, { useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Plus,
- Library, BookOpen, MessageCircleQuestion,
- TrendingUp, Users, History,
- User, Eye, Settings2, AlertTriangle, RefreshCcw, ChevronRight } from 'lucide-react';
+import {
+  Plus,
+  Library, BookOpen, MessageCircleQuestion,
+  TrendingUp, Users, History,
+  User, Eye, Settings2, AlertTriangle, RefreshCcw, ChevronRight
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { knowledgeService, toKnowledgeActivities, type KnowledgeDto, type KnowledgeActivityItem } from '@/services/business/knowledge/knowledgeService';
 import {
- COMMUNITY_BOARD_ID,
- HELP_FAQ_BOARD_ID,
- NOTICE_BOARD_ID,
- QNA_BOARD_ID,
- WIKI_BOARD_ID,
+  COMMUNITY_BOARD_ID,
+  HELP_FAQ_BOARD_ID,
+  NOTICE_BOARD_ID,
+  QNA_BOARD_ID,
+  WIKI_BOARD_ID,
 } from '@/config/board-ids';
 import { canPermission } from '@/lib/auth/permissions';
 import { canOpenPage } from '@/lib/auth/page-access';
@@ -43,337 +45,337 @@ const HUB_PARAM_KEYS = ['tab'] as const;
 type KnowledgeCategory = 'WIKI' | 'FAQ' | 'QNA' | 'COMMUNITY';
 
 const CATEGORY_LABEL: Record<KnowledgeCategory, string> = {
- WIKI: '위키',
- FAQ: '자주 묻는 질문',
- QNA: '질의응답(Q&A)',
- COMMUNITY: '커뮤니티',
+  WIKI: '위키',
+  FAQ: '자주 묻는 질문',
+  QNA: '질의응답(Q&A)',
+  COMMUNITY: '커뮤니티',
 };
 
 const PAGE_SIZE = 20;
 
 export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: KnowledgeCategory }) {
- const router = useRouter();
- const pathname = usePathname();
- const searchParams = useSearchParams();
- const { user } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
 
- // [2026-08-28] 리터럴 비교는 SYSTEM·ROLE_SYSTEM 을 빠뜨려 **권한 있는 관리자에게 기능이
- //   사라진다**. proxy 의 /admin 게이트는 4종을 전부 통과시키므로, 라우트는 열어 주는데
- //   화면만 막히는 비대칭이 된다 — DEC-OPS-023 ②가 계약으로 막으려던 형태다.
- // [2026-09-26 DIP B4 P1] 다른 화면으로 가는 버튼은 라우트 게이트와 같은 판정(canOpenPage)을 쓴다.
- const canReadBoardMasters = canOpenPage(user, '/admin/community/boards/master');
- const canManageCommunities = canPermission(user, 'COMMUNITY_READ_ALL');
- // [2026-09-06 DEC-OPS-037] 커뮤니티 생성·수정·폐쇄(감사 D07-01). 관리자이고 커뮤니티 탭일 때만 버튼을 그린다.
- const [communityManageOpen, setCommunityManageOpen] = useState(false);
- // [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했다.
- const [searchQuery, setSearchQuery] = useState('');
- const [sortBy, setSortBy] = useState<'latest' | 'views'>('latest');
- // [2026-10-01 결정 20] Q&A 탭에서만 '미해결만'(OPEN) 으로 좁힌다. 답변 대기 값은 V2_116 이 OPEN 하나로 맞췄다.
- const [unsolvedOnly, setUnsolvedOnly] = useState(false);
- const [pagination, setPagination] = useState({ context: '', page: 1 });
+  // [2026-08-28] 리터럴 비교는 SYSTEM·ROLE_SYSTEM 을 빠뜨려 **권한 있는 관리자에게 기능이
+  //   사라진다**. proxy 의 /admin 게이트는 4종을 전부 통과시키므로, 라우트는 열어 주는데
+  //   화면만 막히는 비대칭이 된다 — DEC-OPS-023 ②가 계약으로 막으려던 형태다.
+  // [2026-09-26 DIP B4 P1] 다른 화면으로 가는 버튼은 라우트 게이트와 같은 판정(canOpenPage)을 쓴다.
+  const canReadBoardMasters = canOpenPage(user, '/admin/community/boards/master');
+  const canManageCommunities = canPermission(user, 'COMMUNITY_READ_ALL');
+  // [2026-09-06 DEC-OPS-037] 커뮤니티 생성·수정·폐쇄(감사 D07-01). 관리자이고 커뮤니티 탭일 때만 버튼을 그린다.
+  const [communityManageOpen, setCommunityManageOpen] = useState(false);
+  // [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했다.
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'latest' | 'views'>('latest');
+  // [2026-10-01 결정 20] Q&A 탭에서만 '미해결만'(OPEN) 으로 좁힌다. 답변 대기 값은 V2_116 이 OPEN 하나로 맞췄다.
+  const [unsolvedOnly, setUnsolvedOnly] = useState(false);
+  const [pagination, setPagination] = useState({ context: '', page: 1 });
 
- const resolveCategory = (): KnowledgeCategory => {
- const bbsId = searchParams.get('bbsId');
- if (bbsId === COMMUNITY_BOARD_ID) return 'COMMUNITY';
- if (bbsId === HELP_FAQ_BOARD_ID) return 'FAQ';
- if (bbsId === QNA_BOARD_ID) return 'QNA';
- if (bbsId === WIKI_BOARD_ID) return 'WIKI';
+  const resolveCategory = (): KnowledgeCategory => {
+    const bbsId = searchParams.get('bbsId');
+    if (bbsId === COMMUNITY_BOARD_ID) return 'COMMUNITY';
+    if (bbsId === HELP_FAQ_BOARD_ID) return 'FAQ';
+    if (bbsId === QNA_BOARD_ID) return 'QNA';
+    if (bbsId === WIKI_BOARD_ID) return 'WIKI';
 
- // 메뉴(tb_menu_info)가 위키·FAQ·Q&A 를 모두 /admin/help/faq?tab=* 로 보내는데
- // 이 값을 읽지 않아 서로 다른 3개 메뉴가 전부 FAQ 화면으로 착지했다.
- const tab = searchParams.get('tab')?.toUpperCase();
- if (tab === 'WIKI' || tab === 'FAQ' || tab === 'QNA' || tab === 'COMMUNITY') {
- return tab;
- }
- return defaultTab || 'WIKI';
- };
+    // 메뉴(tb_menu_info)가 위키·FAQ·Q&A 를 모두 /admin/help/faq?tab=* 로 보내는데
+    // 이 값을 읽지 않아 서로 다른 3개 메뉴가 전부 FAQ 화면으로 착지했다.
+    const tab = searchParams.get('tab')?.toUpperCase();
+    if (tab === 'WIKI' || tab === 'FAQ' || tab === 'QNA' || tab === 'COMMUNITY') {
+      return tab;
+    }
+    return defaultTab || 'WIKI';
+  };
 
- // 카테고리는 URL 파생값이다. 상태를 따로 두면 공유·새로고침·뒤로가기에서 복원되지 않는다.
- const activeCategory: KnowledgeCategory = resolveCategory();
- const qnaStatus = activeCategory === 'QNA' && unsolvedOnly ? 'OPEN' as const : undefined;
- const pageContext = JSON.stringify([activeCategory, searchQuery, sortBy, qnaStatus ?? '']);
- const page = pagination.context === pageContext ? pagination.page : 1;
+  // 카테고리는 URL 파생값이다. 상태를 따로 두면 공유·새로고침·뒤로가기에서 복원되지 않는다.
+  const activeCategory: KnowledgeCategory = resolveCategory();
+  const qnaStatus = activeCategory === 'QNA' && unsolvedOnly ? 'OPEN' as const : undefined;
+  const pageContext = JSON.stringify([activeCategory, searchQuery, sortBy, qnaStatus ?? '']);
+  const page = pagination.context === pageContext ? pagination.page : 1;
 
- const selectCategory = (next: KnowledgeCategory) => {
- const params = pickAllowedParams(searchParams, HUB_PARAM_KEYS);
- params.set('tab', next);
- // bbsId 로 진입했어도 카테고리를 바꾸면 버린다 — tab 이 우선 해석되지만 둘이 함께 남으면 링크가 혼란스럽다.
- //   allowlist 에 bbsId 가 없으므로 재조립 단계에서 이미 빠진다(종전 delete 와 같은 결과).
- router.replace(`${pathname}?${params.toString()}`, { scroll: false });
- };
+  const selectCategory = (next: KnowledgeCategory) => {
+    const params = pickAllowedParams(searchParams, HUB_PARAM_KEYS);
+    params.set('tab', next);
+    // bbsId 로 진입했어도 카테고리를 바꾸면 버린다 — tab 이 우선 해석되지만 둘이 함께 남으면 링크가 혼란스럽다.
+    //   allowlist 에 bbsId 가 없으므로 재조립 단계에서 이미 빠진다(종전 delete 와 같은 결과).
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
- const currentBbsId = React.useMemo(() => {
- if (activeCategory === 'COMMUNITY') return COMMUNITY_BOARD_ID;
- if (activeCategory === 'FAQ') return HELP_FAQ_BOARD_ID;
- if (activeCategory === 'QNA') return QNA_BOARD_ID;
- if (activeCategory === 'WIKI') return WIKI_BOARD_ID;
- /*
-  * 종전 폴백 KNOWLEDGE_FALLBACK_BOARD_ID('BBSMSTR_NNNNNNNNNNNN')는 Flyway 시드에도
-  * sql/seed_knowledge_boards.sql 에도 없다(전량 grep 실측 — 등장처가 테스트 목뿐이다).
-  * DEFAULT/NOTICE 라는 주석의 의도대로 실재하는 공지 게시판을 쓴다.
+  const currentBbsId = React.useMemo(() => {
+    if (activeCategory === 'COMMUNITY') return COMMUNITY_BOARD_ID;
+    if (activeCategory === 'FAQ') return HELP_FAQ_BOARD_ID;
+    if (activeCategory === 'QNA') return QNA_BOARD_ID;
+    if (activeCategory === 'WIKI') return WIKI_BOARD_ID;
+    /*
+     * 종전 폴백 KNOWLEDGE_FALLBACK_BOARD_ID('BBSMSTR_NNNNNNNNNNNN')는 Flyway 시드에도
+     * sql/seed_knowledge_boards.sql 에도 없다(전량 grep 실측 — 등장처가 테스트 목뿐이다).
+     * DEFAULT/NOTICE 라는 주석의 의도대로 실재하는 공지 게시판을 쓴다.
+     */
+    return NOTICE_BOARD_ID; // DEFAULT/NOTICE
+  }, [activeCategory]);
+
+  /*
+    [2026-08-29] 비관리자의 WIKI·FAQ 차단(isAccessRestricted)을 제거했다.
+
+    그 차단은 **집행자가 없는 인가 주장**이었다. 서버의 게시판 읽기 판정은 게시판 종류를 가리지
+    않는 기능 권한(BOARD_READ — 기본 배정상 ROLE_USER 포함)뿐이고 WIKI·FAQ 를 관리자에게만 여는
+    판정은 없으며, 같은 사용자가 같은 데이터를 세 경로로 이미 받는다 — ① 이 화면의 인기 문서·
+    최근 활동 ② /admin/community/board 의 게시판 선택기(비관리자 폴백 목록이 WIKI 게시판을
+    '일정 게시판' 으로 **의도적으로 포함**한다: use-board-options.ts) ③ GET /boards/{bbsId} 직접 호출.
+
+    그래서 화면은 "접근 권한 없음 · 관리자에게 권한을 요청하십시오" 라고 말하면서 바로 옆에서
+    그 게시판의 제목·조회수·작성자를 보여 주고 상세까지 열어 줬다. 요청할 권한도 없다.
+
+    벽을 화면 전체로 넓히는 쪽은 택하지 않았다 — 보호는 그대로 0인데 제품이 명시적으로 부여한
+    접근을 화면에서만 빼앗기 때문이다. 이 파일은 /admin/help·faq·qna 와 /admin/community 네
+    라우트를 렌더하고, 그중 /admin/community 는 일반 사용자의 정상 착지 화면이다.
+
+    실제 board ACL 이 서버에 생기면 그때 정직한 차단을 만든다(authorization-claim-honesty 계약이
+    서버 상태가 바뀌는 순간 재판정을 요구하며 red 가 된다).
   */
- return NOTICE_BOARD_ID; // DEFAULT/NOTICE
- }, [activeCategory]);
 
- /*
-   [2026-08-29] 비관리자의 WIKI·FAQ 차단(isAccessRestricted)을 제거했다.
+  // --- Data Fetching ---
+  const {
+    data: articlesData,
+    isLoading,
+    isFetching,
+    isError: isArticlesError,
+    error: articlesError,
+    refetch: refetchArticles,
+  } = useQuery({
+    queryKey: ['knowledge-articles', activeCategory, searchQuery, sortBy, page, qnaStatus ?? 'ALL'],
+    queryFn: () => knowledgeService.getArticles({
+      bbsId: currentBbsId,
+      category: activeCategory,
+      page: page - 1,
+      size: PAGE_SIZE,
+      orderBy: sortBy === 'views' ? 'views' : 'date',
+      searchCnd: searchQuery ? '0' : undefined,
+      searchWrd: searchQuery || undefined,
+      qnaStatus,
+    }),
+  });
 
-   그 차단은 **집행자가 없는 인가 주장**이었다. 서버의 게시판 읽기 판정은 게시판 종류를 가리지
-   않는 기능 권한(BOARD_READ — 기본 배정상 ROLE_USER 포함)뿐이고 WIKI·FAQ 를 관리자에게만 여는
-   판정은 없으며, 같은 사용자가 같은 데이터를 세 경로로 이미 받는다 — ① 이 화면의 인기 문서·
-   최근 활동 ② /admin/community/board 의 게시판 선택기(비관리자 폴백 목록이 WIKI 게시판을
-   '일정 게시판' 으로 **의도적으로 포함**한다: use-board-options.ts) ③ GET /boards/{bbsId} 직접 호출.
+  const { data: hotData, isError: isHotError } = useQuery({
+    queryKey: ['hot-articles', activeCategory],
+    queryFn: () => knowledgeService.getHotArticles(currentBbsId),
+  });
 
-   그래서 화면은 "접근 권한 없음 · 관리자에게 권한을 요청하십시오" 라고 말하면서 바로 옆에서
-   그 게시판의 제목·조회수·작성자를 보여 주고 상세까지 열어 줬다. 요청할 권한도 없다.
+  const { data: statsData, isError: isStatsError, isLoading: isStatsLoading } = useQuery({
+    queryKey: ['knowledge-stats', activeCategory],
+    queryFn: () => knowledgeService.getStats(currentBbsId),
+  });
 
-   벽을 화면 전체로 넓히는 쪽은 택하지 않았다 — 보호는 그대로 0인데 제품이 명시적으로 부여한
-   접근을 화면에서만 빼앗기 때문이다. 이 파일은 /admin/help·faq·qna 와 /admin/community 네
-   라우트를 렌더하고, 그중 /admin/community 는 일반 사용자의 정상 착지 화면이다.
+  // [2026-09-26 DIP B5 F10] 최근 활동은 기본 목록(최신순 1쪽)과 같은 조회다 — 같은 키를 써서 한 번만 요청한다.
+  //   종전에는 기본 화면에서 같은 게시판을 두 번 불렀다. 검색·정렬·쪽을 바꿔도 피드는 기본 목록에 머문다.
+  const { data: activityData, isError: isActivityError } = useQuery({
+    queryKey: ['knowledge-articles', activeCategory, '', 'latest', 1, 'ALL'],
+    queryFn: () => knowledgeService.getArticles({
+      bbsId: currentBbsId,
+      category: activeCategory,
+      page: 0,
+      size: PAGE_SIZE,
+      orderBy: 'date',
+      searchCnd: undefined,
+      searchWrd: undefined,
+    }),
+    select: (res) => toKnowledgeActivities(res.list ?? []),
+  });
 
-   실제 board ACL 이 서버에 생기면 그때 정직한 차단을 만든다(authorization-claim-honesty 계약이
-   서버 상태가 바뀌는 순간 재판정을 요구하며 red 가 된다).
- */
+  const displayItems: KnowledgeDto[] = articlesData?.list || [];
 
- // --- Data Fetching ---
- const {
- data: articlesData,
- isLoading,
- isFetching,
- isError: isArticlesError,
- error: articlesError,
- refetch: refetchArticles,
- } = useQuery({
- queryKey: ['knowledge-articles', activeCategory, searchQuery, sortBy, page, qnaStatus ?? 'ALL'],
- queryFn: () => knowledgeService.getArticles({
- bbsId: currentBbsId,
- category: activeCategory,
- page: page - 1,
- size: PAGE_SIZE,
- orderBy: sortBy === 'views' ? 'views' : 'date',
- searchCnd: searchQuery ? '0' : undefined,
- searchWrd: searchQuery || undefined,
- qnaStatus,
- }),
- });
+  const hotItems: KnowledgeDto[] = hotData?.list || [];
+  const isSearching = isFetching;
 
- const { data: hotData, isError: isHotError } = useQuery({
- queryKey: ['hot-articles', activeCategory],
- queryFn: () => knowledgeService.getHotArticles(currentBbsId),
- });
+  const openArticle = React.useCallback((item: KnowledgeDto) => {
+    router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&pstSn=${item.pstSn}`);
+  }, [router, currentBbsId]);
 
- const { data: statsData, isError: isStatsError, isLoading: isStatsLoading } = useQuery({
- queryKey: ['knowledge-stats', activeCategory],
- queryFn: () => knowledgeService.getStats(currentBbsId),
- });
+  /*
+   * 열 구성. Q&A 에만 상태 열이 붙는다 — 다른 카테고리에는 저장할 상태 컬럼 자체가 없어
+   * 열을 만들면 빈 칸이 '상태 없음' 이 아니라 '상태 모름' 으로 읽힌다(StatusBadge 주석 참조).
+   */
+  const columns: Column<KnowledgeDto>[] = [
+    {
+      header: '제목',
+      className: 'w-full max-w-0',
+      accessor: (item: KnowledgeDto) => (
+        <button
+          type="button"
+          onClick={() => openArticle(item)}
+          aria-label={`${item.pstTtl} 상세 보기`}
+          className="block w-full truncate text-left font-medium text-foreground hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          {item.pstTtl}
+        </button>
+      ),
+    },
+    ...(activeCategory === 'QNA'
+      ? ([{
+        header: '상태',
+        className: 'whitespace-nowrap',
+        accessor: (item: KnowledgeDto) => <StatusBadge status={item.qnaSttsCd} type={activeCategory} />,
+      }] satisfies Column<KnowledgeDto>[])
+      : ([] satisfies Column<KnowledgeDto>[])),
+    {
+      header: '작성자',
+      className: 'whitespace-nowrap',
+      accessor: (item: KnowledgeDto) => (
+        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+          <User size={12} aria-hidden="true" />
+          <span className="max-w-[10rem] truncate">{item.userNm || '-'}</span>
+        </span>
+      ),
+    },
+    {
+      header: '등록일',
+      className: 'whitespace-nowrap tabular-nums text-muted-foreground',
+      // [2026-09-26 DIP V2] 서버가 싣는 작성 일시(crtDt)의 날짜 부분이다. 종전에는 보내지 않는 필드를 읽어 늘 '-' 였다.
+      accessor: (item: KnowledgeDto) => item.crtDt?.slice(0, 10) || '-',
+    },
+    {
+      header: '조회수',
+      className: 'whitespace-nowrap text-right tabular-nums',
+      accessor: (item: KnowledgeDto) => (item.inqCnt || 0).toLocaleString(),
+    },
+  ];
 
- // [2026-09-26 DIP B5 F10] 최근 활동은 기본 목록(최신순 1쪽)과 같은 조회다 — 같은 키를 써서 한 번만 요청한다.
- //   종전에는 기본 화면에서 같은 게시판을 두 번 불렀다. 검색·정렬·쪽을 바꿔도 피드는 기본 목록에 머문다.
- const { data: activityData, isError: isActivityError } = useQuery({
- queryKey: ['knowledge-articles', activeCategory, '', 'latest', 1, 'ALL'],
- queryFn: () => knowledgeService.getArticles({
- bbsId: currentBbsId,
- category: activeCategory,
- page: 0,
- size: PAGE_SIZE,
- orderBy: 'date',
- searchCnd: undefined,
- searchWrd: undefined,
- }),
- select: (res) => toKnowledgeActivities(res.list ?? []),
- });
+  return (
+    <>
+      <WorkListPage
+        title={CATEGORY_LABEL[activeCategory]}
+        description="문서를 검색하고 필요한 내용을 확인하세요."
+        filterStateKey="knowledge-hub"
+        // 조회 실패 시에는 총계를 말하지 않는다 — '총 0건' 은 "없다" 라는 사실 주장이 된다.
+        totalCount={isArticlesError ? undefined : articlesData?.total}
+        actions={
+          <>
+            {canReadBoardMasters && <Button variant="outline" size="sm" onClick={() => router.push('/admin/community/boards/master')}><Settings2 size={16} aria-hidden="true" /> 게시판 관리</Button>}
+            {/* [2026-10-01 결정 20] 커뮤니티를 찾고 가입하는 목록 화면으로 가는 길 — 메뉴를 바꾸지 않고 이 탭에서 잇는다. */}
+            {activeCategory === 'COMMUNITY' && <Button variant="outline" size="sm" onClick={() => router.push('/cop/cmy/selectCommunityList')}><Users size={16} aria-hidden="true" /> 커뮤니티 목록·가입</Button>}
+            {canManageCommunities && activeCategory === 'COMMUNITY' && <Button variant="outline" size="sm" onClick={() => setCommunityManageOpen(true)}><Users size={16} aria-hidden="true" /> 커뮤니티 관리</Button>}
+            <Button size="sm" onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${currentBbsId}`)}><Plus size={16} aria-hidden="true" /> 신규 등록</Button>
+          </>
+        }
+        navigation={
+          <div role="tablist" aria-label="지식 카테고리" className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+            {/* 건수는 집계 API 가 없어 표기하지 않는다(종전 142/28/567/12 는 하드코딩이었다). */}
+            <CategoryTab title="위키" desc="기술 사양" icon={Library} active={activeCategory === 'WIKI'} onClick={() => selectCategory('WIKI')} />
+            <CategoryTab title="자주 묻는 질문" desc="빠른 답변" icon={BookOpen} active={activeCategory === 'FAQ'} onClick={() => selectCategory('FAQ')} />
+            <CategoryTab title="질의응답(Q&A)" desc="질문과 답변" icon={MessageCircleQuestion} active={activeCategory === 'QNA'} onClick={() => selectCategory('QNA')} />
+            <CategoryTab title="커뮤니티" desc="활성 게시판" icon={Users} active={activeCategory === 'COMMUNITY'} onClick={() => selectCategory('COMMUNITY')} />
+          </div>
+        }
+        filter={
+          <KeywordFilter label="지식 검색어" placeholder="제목 검색..." value={searchQuery} onSearch={setSearchQuery}>
+            <div className="flex flex-wrap items-center gap-2" aria-label="문서 정렬">
+              <span className="text-[length:var(--font-size-body)] text-muted-foreground">정렬</span>
+              <FilterButton active={sortBy === 'latest'} onClick={() => setSortBy('latest')} label="최신순" />
+              <FilterButton active={sortBy === 'views'} onClick={() => setSortBy('views')} label="조회순" />
+              {activeCategory === 'QNA' && <FilterButton active={unsolvedOnly} onClick={() => setUnsolvedOnly((value) => !value)} label="미해결만" />}
+            </div>
+          </KeywordFilter>
+        }
+        toolbarActions={
+          <div className="flex items-center gap-2">
+            <span role="status" className="text-[length:var(--font-size-body)] text-muted-foreground">
+              {isArticlesError ? '조회 실패' : isSearching ? '검색 중…' : ''}
+            </span>
+            <Button variant="outline" size="sm" aria-label="지식 문서 목록 새로고침" onClick={() => void refetchArticles()}>
+              <RefreshCcw size={14} aria-hidden="true" /> 새로고침
+            </Button>
+          </div>
+        }
+      >
+        <div id="knowledge-stream-panel" className="space-y-3">
+          {isArticlesError ? (
+            // 조회 실패를 '데이터 없음'으로 위장하지 않는다.
+            <div role="alert" className="flex flex-col items-center justify-center gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-8">
+              <AlertTriangle size={24} className="text-destructive-emphasis" aria-hidden="true" />
+              <p className="text-[length:var(--font-size-body)] font-semibold text-foreground">지식 목록을 불러오지 못했습니다.</p>
+              {/* [2026-09-15 DEC-OPS-100] axios 전송 오류 원문은 보이지 않는다 — 서버가 준 문장이나, axios 오류가 아닌 오류의 문장만 덧붙인다. */}
+              {userFacingErrorMessage(articlesError) ? (
+                <p className="text-xs text-muted-foreground">{userFacingErrorMessage(articlesError)}</p>
+              ) : null}
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => void refetchArticles()}>
+                <RefreshCcw size={14} aria-hidden="true" /> 다시 시도
+              </Button>
+            </div>
+          ) : (
+            <>
+              <StandardDataTable<KnowledgeDto>
+                columns={columns}
+                data={displayItems}
+                keyField="pstSn"
+                loading={isLoading}
+                accessibleLabel={`${CATEGORY_LABEL[activeCategory]} 문서 목록`}
+                emptyMessage={emptyResultMessage(searchQuery, '등록된 지식 문서가 없습니다.')}
+              />
+              <PagePagination total={articlesData?.total ?? 0} page={page} size={PAGE_SIZE} onPageChange={(next) => setPagination({ context: pageContext, page: next })} />
+            </>
+          )}
+        </div>
 
- const displayItems: KnowledgeDto[] = articlesData?.list || [];
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <AsideSection title="인기 문서" description="조회수가 높은 문서" icon={TrendingUp}>
+            {isHotError ? (
+              <p role="alert" className="py-6 text-center text-[length:var(--font-size-body)] text-destructive-emphasis">인기 문서를 불러오지 못했습니다.</p>
+            ) : hotItems.length === 0 ? (
+              <p className="py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">표시할 문서가 없습니다.</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {hotItems.map((item, idx) => (
+                  <li key={item.pstSn}>
+                    <button
+                      type="button"
+                      onClick={() => openArticle(item)}
+                      aria-label={`${item.pstTtl} 상세 보기`}
+                      className="group flex w-full items-center gap-3 px-1 py-1.5 text-left hover:bg-muted"
+                    >
+                      <span data-testid="hot-article-rank" className="w-5 shrink-0 text-right text-[length:var(--font-size-body)] font-semibold tabular-nums text-muted-foreground">{idx + 1}</span>
+                      <span className="min-w-0 flex-1 truncate text-[length:var(--font-size-body)] text-foreground group-hover:text-primary">{item.pstTtl}</span>
+                      <span className="inline-flex shrink-0 items-center gap-1 text-xs tabular-nums text-muted-foreground">
+                        <Eye size={12} aria-hidden="true" />{(item.inqCnt || 0).toLocaleString()}
+                      </span>
+                      <ChevronRight size={14} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </AsideSection>
 
- const hotItems: KnowledgeDto[] = hotData?.list || [];
- const isSearching = isFetching;
+          <AsideSection title="최근 활동" description="최근 등록된 문서 흐름" icon={History}>
+            {isActivityError ? (
+              <p role={isArticlesError ? undefined : 'alert'} className="py-6 text-center text-[length:var(--font-size-body)] text-destructive-emphasis">{/* 최근 활동은 기본 목록과 같은 조회라, 목록이 이미 실패를 알렸으면 같은 실패를 한 번 더 알리지 않는다. */}최근 활동을 불러오지 못했습니다.</p>
+            ) : (activityData || []).length === 0 ? (
+              <p className="py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">표시할 활동이 없습니다.</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {(activityData || []).slice(0, 5).map((activity: KnowledgeActivityItem) => (
+                  <li key={activity.id} className="px-1 py-1.5">
+                    <p className="truncate text-[length:var(--font-size-body)] text-foreground">{activity.title}</p>
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="truncate">{activity.user}</span>
+                      <span aria-hidden="true">·</span>
+                      <span className="tabular-nums">{activity.time}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </AsideSection>
+        </div>
 
- const openArticle = React.useCallback((item: KnowledgeDto) => {
- router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&pstSn=${item.pstSn}`);
- }, [router, currentBbsId]);
-
- /*
-  * 열 구성. Q&A 에만 상태 열이 붙는다 — 다른 카테고리에는 저장할 상태 컬럼 자체가 없어
-  * 열을 만들면 빈 칸이 '상태 없음' 이 아니라 '상태 모름' 으로 읽힌다(StatusBadge 주석 참조).
-  */
- const columns: Column<KnowledgeDto>[] = [
- {
- header: '제목',
- className: 'w-full max-w-0',
- accessor: (item: KnowledgeDto) => (
- <button
- type="button"
- onClick={() => openArticle(item)}
- aria-label={`${item.pstTtl} 상세 보기`}
- className="block w-full truncate text-left font-medium text-foreground hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
- >
- {item.pstTtl}
- </button>
- ),
- },
- ...(activeCategory === 'QNA'
- ? ([{
- header: '상태',
- className: 'whitespace-nowrap',
- accessor: (item: KnowledgeDto) => <StatusBadge status={item.qnaSttsCd} type={activeCategory} />,
- }] satisfies Column<KnowledgeDto>[])
- : ([] satisfies Column<KnowledgeDto>[])),
- {
- header: '작성자',
- className: 'whitespace-nowrap',
- accessor: (item: KnowledgeDto) => (
- <span className="inline-flex items-center gap-1.5 text-muted-foreground">
- <User size={12} aria-hidden="true" />
- <span className="max-w-[10rem] truncate">{item.userNm || '-'}</span>
- </span>
- ),
- },
- {
- header: '등록일',
- className: 'whitespace-nowrap tabular-nums text-muted-foreground',
- // [2026-09-26 DIP V2] 서버가 싣는 작성 일시(crtDt)의 날짜 부분이다. 종전에는 보내지 않는 필드를 읽어 늘 '-' 였다.
- accessor: (item: KnowledgeDto) => item.crtDt?.slice(0, 10) || '-',
- },
- {
- header: '조회수',
- className: 'whitespace-nowrap text-right tabular-nums',
- accessor: (item: KnowledgeDto) => (item.inqCnt || 0).toLocaleString(),
- },
- ];
-
- return (
- <>
- <WorkListPage
- title={CATEGORY_LABEL[activeCategory]}
- description="문서를 검색하고 필요한 내용을 확인하세요."
- filterStateKey="knowledge-hub"
- // 조회 실패 시에는 총계를 말하지 않는다 — '총 0건' 은 "없다" 라는 사실 주장이 된다.
- totalCount={isArticlesError ? undefined : articlesData?.total}
- actions={
- <>
- {canReadBoardMasters && <Button variant="outline" size="sm" onClick={() => router.push('/admin/community/boards/master')}><Settings2 size={16} aria-hidden="true" /> 게시판 관리</Button>}
- {/* [2026-10-01 결정 20] 커뮤니티를 찾고 가입하는 목록 화면으로 가는 길 — 메뉴를 바꾸지 않고 이 탭에서 잇는다. */}
- {activeCategory === 'COMMUNITY' && <Button variant="outline" size="sm" onClick={() => router.push('/cop/cmy/selectCommunityList')}><Users size={16} aria-hidden="true" /> 커뮤니티 목록·가입</Button>}
- {canManageCommunities && activeCategory === 'COMMUNITY' && <Button variant="outline" size="sm" onClick={() => setCommunityManageOpen(true)}><Users size={16} aria-hidden="true" /> 커뮤니티 관리</Button>}
- <Button size="sm" onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${currentBbsId}`)}><Plus size={16} aria-hidden="true" /> 신규 등록</Button>
- </>
- }
- navigation={
- <div role="tablist" aria-label="지식 카테고리" className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
- {/* 건수는 집계 API 가 없어 표기하지 않는다(종전 142/28/567/12 는 하드코딩이었다). */}
- <CategoryTab title="위키" desc="기술 사양" icon={Library} active={activeCategory === 'WIKI'} onClick={() => selectCategory('WIKI')} />
- <CategoryTab title="자주 묻는 질문" desc="빠른 답변" icon={BookOpen} active={activeCategory === 'FAQ'} onClick={() => selectCategory('FAQ')} />
- <CategoryTab title="질의응답(Q&A)" desc="질문과 답변" icon={MessageCircleQuestion} active={activeCategory === 'QNA'} onClick={() => selectCategory('QNA')} />
- <CategoryTab title="커뮤니티" desc="활성 게시판" icon={Users} active={activeCategory === 'COMMUNITY'} onClick={() => selectCategory('COMMUNITY')} />
- </div>
- }
- filter={
- <KeywordFilter label="지식 검색어" placeholder="제목 검색..." value={searchQuery} onSearch={setSearchQuery}>
- <div className="flex flex-wrap items-center gap-2" aria-label="문서 정렬">
- <span className="text-[length:var(--font-size-body)] text-muted-foreground">정렬</span>
- <FilterButton active={sortBy === 'latest'} onClick={() => setSortBy('latest')} label="최신순" />
- <FilterButton active={sortBy === 'views'} onClick={() => setSortBy('views')} label="조회순" />
- {activeCategory === 'QNA' && <FilterButton active={unsolvedOnly} onClick={() => setUnsolvedOnly((value) => !value)} label="미해결만" />}
- </div>
- </KeywordFilter>
- }
- toolbarActions={
- <div className="flex items-center gap-2">
- <span role="status" className="text-[length:var(--font-size-body)] text-muted-foreground">
- {isArticlesError ? '조회 실패' : isSearching ? '검색 중…' : ''}
- </span>
- <Button variant="outline" size="sm" aria-label="지식 문서 목록 새로고침" onClick={() => void refetchArticles()}>
- <RefreshCcw size={14} aria-hidden="true" /> 새로고침
- </Button>
- </div>
- }
- >
- <div id="knowledge-stream-panel" className="space-y-3">
- {isArticlesError ? (
- // 조회 실패를 '데이터 없음'으로 위장하지 않는다.
- <div role="alert" className="flex flex-col items-center justify-center gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-8">
- <AlertTriangle size={24} className="text-destructive-emphasis" aria-hidden="true" />
- <p className="text-[length:var(--font-size-body)] font-semibold text-foreground">지식 목록을 불러오지 못했습니다.</p>
- {/* [2026-09-15 DEC-OPS-100] axios 전송 오류 원문은 보이지 않는다 — 서버가 준 문장이나, axios 오류가 아닌 오류의 문장만 덧붙인다. */}
- {userFacingErrorMessage(articlesError) ? (
- <p className="text-xs text-muted-foreground">{userFacingErrorMessage(articlesError)}</p>
- ) : null}
- <Button variant="outline" size="sm" className="gap-2" onClick={() => void refetchArticles()}>
- <RefreshCcw size={14} aria-hidden="true" /> 다시 시도
- </Button>
- </div>
- ) : (
- <>
- <StandardDataTable<KnowledgeDto>
- columns={columns}
- data={displayItems}
- keyField="pstSn"
- loading={isLoading}
- accessibleLabel={`${CATEGORY_LABEL[activeCategory]} 문서 목록`}
- emptyMessage={emptyResultMessage(searchQuery, '등록된 지식 문서가 없습니다.')}
- />
- <PagePagination total={articlesData?.total ?? 0} page={page} size={PAGE_SIZE} onPageChange={(next) => setPagination({ context: pageContext, page: next })} />
- </>
- )}
- </div>
-
- <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
- <AsideSection title="인기 문서" description="조회수가 높은 문서" icon={TrendingUp}>
- {isHotError ? (
- <p role="alert" className="py-6 text-center text-[length:var(--font-size-body)] text-destructive-emphasis">인기 문서를 불러오지 못했습니다.</p>
- ) : hotItems.length === 0 ? (
- <p className="py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">표시할 문서가 없습니다.</p>
- ) : (
- <ul className="divide-y divide-border">
- {hotItems.map((item, idx) => (
- <li key={item.pstSn}>
- <button
- type="button"
- onClick={() => openArticle(item)}
- aria-label={`${item.pstTtl} 상세 보기`}
- className="group flex w-full items-center gap-3 px-1 py-1.5 text-left hover:bg-muted"
- >
- <span data-testid="hot-article-rank" className="w-5 shrink-0 text-right text-[length:var(--font-size-body)] font-semibold tabular-nums text-muted-foreground">{idx + 1}</span>
- <span className="min-w-0 flex-1 truncate text-[length:var(--font-size-body)] text-foreground group-hover:text-primary">{item.pstTtl}</span>
- <span className="inline-flex shrink-0 items-center gap-1 text-xs tabular-nums text-muted-foreground">
- <Eye size={12} aria-hidden="true" />{(item.inqCnt || 0).toLocaleString()}
- </span>
- <ChevronRight size={14} className="shrink-0 text-muted-foreground" aria-hidden="true" />
- </button>
- </li>
- ))}
- </ul>
- )}
- </AsideSection>
-
- <AsideSection title="최근 활동" description="최근 등록된 문서 흐름" icon={History}>
- {isActivityError ? (
- <p role={isArticlesError ? undefined : 'alert'} className="py-6 text-center text-[length:var(--font-size-body)] text-destructive-emphasis">{/* 최근 활동은 기본 목록과 같은 조회라, 목록이 이미 실패를 알렸으면 같은 실패를 한 번 더 알리지 않는다. */}최근 활동을 불러오지 못했습니다.</p>
- ) : (activityData || []).length === 0 ? (
- <p className="py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">표시할 활동이 없습니다.</p>
- ) : (
- <ul className="divide-y divide-border">
- {(activityData || []).slice(0, 5).map((activity: KnowledgeActivityItem) => (
- <li key={activity.id} className="px-1 py-1.5">
- <p className="truncate text-[length:var(--font-size-body)] text-foreground">{activity.title}</p>
- <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
- <span className="truncate">{activity.user}</span>
- <span aria-hidden="true">·</span>
- <span className="tabular-nums">{activity.time}</span>
- </div>
- </li>
- ))}
- </ul>
- )}
- </AsideSection>
- </div>
-
- <details className="rounded-md border border-border bg-card">
- <summary className="cursor-pointer px-[var(--filter-pad)] py-2 text-[length:var(--font-size-body)] font-semibold">게시판 이용 현황</summary>
- {/* 백엔드 /boards/{bbsId}/stats 실측값만 표기한다.
+        <details className="rounded-md border border-border bg-card">
+          <summary className="cursor-pointer px-[var(--filter-pad)] py-2 text-[length:var(--font-size-body)] font-semibold">게시판 이용 현황</summary>
+          {/* 백엔드 /boards/{bbsId}/stats 실측값만 표기한다.
    종전의 '+12% Critical' 류 증감 배지는 산출 근거가 없어 제거했다. */}
- <div className="grid grid-cols-1 gap-2 border-t border-border p-[var(--filter-pad)] sm:grid-cols-3">
- {/*
+          <div className="grid grid-cols-1 gap-2 border-t border-border p-[var(--filter-pad)] sm:grid-cols-3">
+            {/*
    [2026-08-29] '지식 지수 NN/100 · 게시판 활성도 지표' 를 걷고 실제로 센 값을 보여 준다.
    그 점수는 측정값이 아니라 게시글 수에 상수를 더한 것이다 —
    BoardService.getBoardStats: `int intelligenceScore = (int) Math.min(100,
@@ -384,49 +386,49 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
    [2026-09-23] 그 서버 필드(intelligenceScore)도 응답 계약에서 걷었다 — 이 칸이 유일한 소비처였고
    2026-08-29 이후 아무도 읽지 않았다. 지어낸 점수를 계약에 남겨 두면 다음 소비자가 측정값으로 읽는다.
  */}
- <StatsCard
- label="게시글 수"
- value={statsCardValue(statsData?.totalArticles, isStatsError, isStatsLoading)}
- desc="이 게시판에 등록된 글"
- />
- <StatsCard
- label="누적 조회수"
- value={statsCardValue(statsData?.totalViews, isStatsError, isStatsLoading)}
- desc="이 게시판의 전체 조회수"
- />
- <StatsCard
- label="최다 기여자"
- value={isStatsError ? '조회 실패' : isStatsLoading ? '불러오는 중…' : (statsData?.topContributor || '-')}
- desc="게시글 등록이 가장 많은 사용자"
- />
- </div>
- </details>
- </WorkListPage>
+            <StatsCard
+              label="게시글 수"
+              value={statsCardValue(statsData?.totalArticles, isStatsError, isStatsLoading)}
+              desc="이 게시판에 등록된 글"
+            />
+            <StatsCard
+              label="누적 조회수"
+              value={statsCardValue(statsData?.totalViews, isStatsError, isStatsLoading)}
+              desc="이 게시판의 전체 조회수"
+            />
+            <StatsCard
+              label="최다 기여자"
+              value={isStatsError ? '조회 실패' : isStatsLoading ? '불러오는 중…' : (statsData?.topContributor || '-')}
+              desc="게시글 등록이 가장 많은 사용자"
+            />
+          </div>
+        </details>
+      </WorkListPage>
 
- {/* 열릴 때만 마운트한다 — 닫으면 폼·선택 상태가 함께 버려지고, 다이얼로그의 조회 훅이 허브 렌더에 끼지 않는다. */}
- {canManageCommunities && communityManageOpen && (
- <CommunityManageDialog isOpen onClose={() => setCommunityManageOpen(false)} />
- )}
- </>
- );
+      {/* 열릴 때만 마운트한다 — 닫으면 폼·선택 상태가 함께 버려지고, 다이얼로그의 조회 훅이 허브 렌더에 끼지 않는다. */}
+      {canManageCommunities && communityManageOpen && (
+        <CommunityManageDialog isOpen onClose={() => setCommunityManageOpen(false)} />
+      )}
+    </>
+  );
 }
 
 function FilterButton({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
- return (
- <button
- type="button"
- onClick={onClick}
- aria-pressed={active}
- className={cn(
- "h-[var(--filter-control-h)] rounded-md border px-3 text-[length:var(--font-size-body)] transition-colors",
- active
- ? "border-primary bg-primary text-primary-foreground"
- : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
- )}
- >
- {label}
- </button>
- );
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "h-[var(--filter-control-h)] rounded-md border px-3 text-[length:var(--font-size-body)] transition-colors",
+        active
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+      )}
+    >
+      {label}
+    </button>
+  );
 }
 
 /**
@@ -434,20 +436,20 @@ function FilterButton({ active, onClick, label }: { active: boolean; onClick: ()
  * 0 을 쓰지 않는다 — 종전에는 불러오는 동안 "게시글 수 0" 이 보였다.
  */
 function statsCardValue(value: number | null | undefined, isError: boolean, isLoading: boolean): string {
- if (isError) return '조회 실패';
- if (isLoading) return '불러오는 중…';
- return typeof value === 'number' ? value.toLocaleString() : '-';
+  if (isError) return '조회 실패';
+  if (isLoading) return '불러오는 중…';
+  return typeof value === 'number' ? value.toLocaleString() : '-';
 }
 
 function StatsCard({ label, value, desc }: { label: string, value: string, desc: string }) {
- return (
- <div data-testid="board-stat-card" className="rounded-md border border-border bg-muted/40 px-3 py-2">
- <p className="text-xs text-muted-foreground">{label}</p>
- {/* 통계 수치는 제목이 아니다. */}
- <p className="text-lg font-semibold tabular-nums text-foreground">{value}</p>
- <p className="text-xs text-muted-foreground">{desc}</p>
- </div>
- );
+  return (
+    <div data-testid="board-stat-card" className="rounded-md border border-border bg-muted/40 px-3 py-2">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      {/* 통계 수치는 제목이 아니다. */}
+      <p className="text-lg font-semibold tabular-nums text-foreground">{value}</p>
+      <p className="text-xs text-muted-foreground">{desc}</p>
+    </div>
+  );
 }
 
 /**
@@ -468,67 +470,67 @@ function StatsCard({ label, value, desc }: { label: string, value: string, desc:
  * 지어내지 않으려면 배지를 붙이지 않는 것이 맞다 — 상태 축이 생기면 그때 되살린다.
  */
 function StatusBadge({ status, type }: { status?: string, type: KnowledgeCategory }) {
- if (type !== 'QNA') return null;
+  if (type !== 'QNA') return null;
 
- const isSolved = isQnaSolved(status);
- return (
- <span className={cn(
- "inline-flex items-center rounded border px-1.5 py-0.5 text-xs",
- isSolved ? "border-success/40 bg-success/15 text-foreground" : "border-warning/40 bg-warning/15 text-foreground"
- )}>
- {isSolved ? '해결됨' : '답변 대기'}
- </span>
- );
+  const isSolved = isQnaSolved(status);
+  return (
+    <span className={cn(
+      "inline-flex items-center rounded border px-1.5 py-0.5 text-xs",
+      isSolved ? "border-success/40 bg-success/15 text-foreground" : "border-warning/40 bg-warning/15 text-foreground"
+    )}>
+      {isSolved ? '해결됨' : '답변 대기'}
+    </span>
+  );
 }
 
 function CategoryTab({ title, desc, icon: Icon, active, onClick }: {
- title: string;
- desc: string;
- icon: React.ElementType;
- active: boolean;
- onClick: () => void;
+  title: string;
+  desc: string;
+  icon: React.ElementType;
+  active: boolean;
+  onClick: () => void;
 }) {
- return (
- <button
- type="button"
- role="tab"
- aria-selected={active}
- aria-controls="knowledge-stream-panel"
- onClick={onClick}
- className={cn(
- "flex min-w-0 items-center gap-2 rounded-md border px-3 py-2 text-left transition-colors",
- active
- ? "border-primary bg-primary/5"
- : "border-border bg-card hover:border-primary"
- )}
- >
- <Icon size={16} aria-hidden="true" className={cn("shrink-0", active ? "text-primary" : "text-muted-foreground")} />
- <span className="min-w-0">
- {/* 탭 이름이지 절 제목이 아니다. 탭 안의 h3 는 h1 뒤 단계를 건너뛰어 heading-order 위반이었다(axe). */}
- <span className="block truncate text-[length:var(--font-size-body)] font-semibold text-foreground">{title}</span>
- <span className="block truncate text-xs text-muted-foreground">{desc}</span>
- </span>
- </button>
- );
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      aria-controls="knowledge-stream-panel"
+      onClick={onClick}
+      className={cn(
+        "flex min-w-0 items-center gap-2 rounded-md border px-3 py-2 text-left transition-colors",
+        active
+          ? "border-primary bg-primary/5"
+          : "border-border bg-card hover:border-primary"
+      )}
+    >
+      <Icon size={16} aria-hidden="true" className={cn("shrink-0", active ? "text-primary" : "text-muted-foreground")} />
+      <span className="min-w-0">
+        {/* 탭 이름이지 절 제목이 아니다. 탭 안의 h3 는 h1 뒤 단계를 건너뛰어 heading-order 위반이었다(axe). */}
+        <span className="block truncate text-[length:var(--font-size-body)] font-semibold text-foreground">{title}</span>
+        <span className="block truncate text-xs text-muted-foreground">{desc}</span>
+      </span>
+    </button>
+  );
 }
 
 function AsideSection({ title, description, icon: Icon, children }: {
- title: string;
- description: string;
- icon: React.ElementType;
- children: React.ReactNode;
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
 }) {
- return (
- <section className="rounded-md border border-border bg-card p-3">
- <div className="mb-2 flex items-center gap-2 border-b border-border pb-2">
- <Icon size={16} className="shrink-0 text-muted-foreground" aria-hidden="true" />
- <div className="min-w-0">
- {/* 화면 h1 바로 아래 절이다 — 제목 계층은 h1 → 절(h2) → 문서 제목(h3). */}
- <h2 className="truncate text-[length:var(--font-size-body)] font-semibold text-foreground">{title}</h2>
- <p className="truncate text-xs text-muted-foreground">{description}</p>
- </div>
- </div>
- {children}
- </section>
- );
+  return (
+    <section className="rounded-md border border-border bg-card p-3">
+      <div className="mb-2 flex items-center gap-2 border-b border-border pb-2">
+        <Icon size={16} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+        <div className="min-w-0">
+          {/* 화면 h1 바로 아래 절이다 — 제목 계층은 h1 → 절(h2) → 문서 제목(h3). */}
+          <h2 className="truncate text-[length:var(--font-size-body)] font-semibold text-foreground">{title}</h2>
+          <p className="truncate text-xs text-muted-foreground">{description}</p>
+        </div>
+      </div>
+      {children}
+    </section>
+  );
 }

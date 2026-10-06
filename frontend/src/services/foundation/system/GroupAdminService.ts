@@ -5,76 +5,76 @@ import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { GroupManage } from '@/types/foundation/security';
 import type { operations } from '@/types/generated-api';
 import {
- createGroupOperation,
- deleteGroupOperation,
- deleteGroupsOperation,
- getGroupOperation,
- getGroupsOperation,
- type GeneratedOperationRequest,
- updateGroupOperation,
+  createGroupOperation,
+  deleteGroupOperation,
+  deleteGroupsOperation,
+  getGroupOperation,
+  getGroupsOperation,
+  type GeneratedOperationRequest,
+  updateGroupOperation,
 } from '@/types/generated-operations';
 
 type GroupInfo = GroupManage;
 type GroupListQuery = NonNullable<operations['getGroups']['parameters']['query']>;
 
 function toGroupListQuery(params?: SearchParams): GroupListQuery {
- if (!params) return {};
- return {
- ...(params.pageIndex !== undefined
- ? { pageIndex: params.pageIndex }
- : params.page !== undefined
- ? { pageIndex: params.page + 1 }
- : params.pageNo !== undefined
- ? { pageIndex: params.pageNo }
- : {}),
- searchKeyword: params.searchKeyword || params.searchWrd || '',
- };
+  if (!params) return {};
+  return {
+    ...(params.pageIndex !== undefined
+      ? { pageIndex: params.pageIndex }
+      : params.page !== undefined
+        ? { pageIndex: params.page + 1 }
+        : params.pageNo !== undefined
+          ? { pageIndex: params.pageNo }
+          : {}),
+    searchKeyword: params.searchKeyword || params.searchWrd || '',
+  };
 }
 
 /**
  * 그룹 관리 서비스 (Admin)
  */
 class GroupAdminService extends ApiService {
- /** 그룹 목록 조회 */
- async getGroupList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<GroupInfo>> {
- const response = await this.executeGenerated(getGroupsOperation, {
- query: toGroupListQuery(params),
- config,
- });
- return requirePageResponse(response as PageResponse<GroupInfo>, '그룹');
- }
+  /** 그룹 목록 조회 */
+  async getGroupList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<GroupInfo>> {
+    const response = await this.executeGenerated(getGroupsOperation, {
+      query: toGroupListQuery(params),
+      config,
+    });
+    return requirePageResponse(response as PageResponse<GroupInfo>, '그룹');
+  }
 
- /** 그룹 상세 조회 */
- async getGroup(groupId: string, config?: AxiosRequestConfig): Promise<GroupInfo> {
- return this.executeGenerated(getGroupOperation, { path: { groupId }, config }) as Promise<GroupInfo>;
- }
+  /** 그룹 상세 조회 */
+  async getGroup(groupId: string, config?: AxiosRequestConfig): Promise<GroupInfo> {
+    return this.executeGenerated(getGroupOperation, { path: { groupId }, config }) as Promise<GroupInfo>;
+  }
 
- /** 그룹 등록 */
- async createGroup(data: Partial<GroupInfo>, config?: AxiosRequestConfig): Promise<void> {
- return this.executeGenerated(createGroupOperation, {
- body: data as GeneratedOperationRequest<'createGroup'>,
- config,
- });
- }
+  /** 그룹 등록 */
+  async createGroup(data: Partial<GroupInfo>, config?: AxiosRequestConfig): Promise<void> {
+    return this.executeGenerated(createGroupOperation, {
+      body: data as GeneratedOperationRequest<'createGroup'>,
+      config,
+    });
+  }
 
- /** 그룹 수정 */
- async updateGroup(groupId: string, data: Partial<GroupInfo>, config?: AxiosRequestConfig): Promise<void> {
- return this.executeGenerated(updateGroupOperation, {
- path: { groupId },
- body: data as GeneratedOperationRequest<'updateGroup'>,
- config,
- });
- }
+  /** 그룹 수정 */
+  async updateGroup(groupId: string, data: Partial<GroupInfo>, config?: AxiosRequestConfig): Promise<void> {
+    return this.executeGenerated(updateGroupOperation, {
+      path: { groupId },
+      body: data as GeneratedOperationRequest<'updateGroup'>,
+      config,
+    });
+  }
 
- /** 그룹 삭제 */
- async deleteGroup(groupId: string, config?: AxiosRequestConfig): Promise<void> {
- return this.executeGenerated(deleteGroupOperation, { path: { groupId }, config });
- }
+  /** 그룹 삭제 */
+  async deleteGroup(groupId: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.executeGenerated(deleteGroupOperation, { path: { groupId }, config });
+  }
 
- /** 그룹 다중 삭제 */
- async deleteGroups(groupIds: string[], config?: AxiosRequestConfig): Promise<void> {
- return this.executeGenerated(deleteGroupsOperation, { body: groupIds, config });
- }
+  /** 그룹 다중 삭제 */
+  async deleteGroups(groupIds: string[], config?: AxiosRequestConfig): Promise<void> {
+    return this.executeGenerated(deleteGroupsOperation, { body: groupIds, config });
+  }
 }
 
 export const groupAdminService = new GroupAdminService();
