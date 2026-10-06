@@ -19,10 +19,6 @@ export type AttachmentIntegrityReport = components['schemas']['AttachmentIntegri
  * 배경에서 30초마다 저장소를 두드리면 진단이 부하가 된다.
  */
 class AttachmentIntegrityAdminService extends AdminService {
-  constructor() {
-    super('integrity', 'files');
-  }
-
   async scan(): Promise<AttachmentIntegrityReport> {
     return this.executeGenerated(scanOperation, {});
   }

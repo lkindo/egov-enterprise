@@ -158,10 +158,6 @@ function requireUserPage(
 
 /** 사용자 관리 서비스 (Admin) */
 class UserAdminService extends AdminService {
-  constructor() {
-    super('/users');
-  }
-
   /** 사용자 목록 조회 (페이징) */
   async getUserList(params?: UserSearchParams | SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<UserManage>> {
     const response = await this.executeGenerated(getUsersOperation, {

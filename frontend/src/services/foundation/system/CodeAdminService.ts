@@ -263,10 +263,6 @@ function toInstitutionReception(
  * 코드 관리 서비스(Admin)
  */
 class CodeAdminService extends AdminService {
-    constructor() {
-        super('/codes');
-    }
-
     // --- 분류코드 (Classification Code) ---
     async getClCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<CmmnClCode>> {
         const response = await this.executeGenerated(getClCodeListOperation, {

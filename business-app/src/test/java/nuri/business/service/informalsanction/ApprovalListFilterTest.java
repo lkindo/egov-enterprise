@@ -28,7 +28,7 @@ class ApprovalListFilterTest {
     @Test
     @DisplayName("기간은 yyyy-MM-dd·yyyyMMdd 둘 다 받아 yyyyMMdd 로 맞춘다")
     void datesAreCompacted() {
-        ApprovalListFilter filter = ApprovalListFilter.of(null, "2026-09-01", "20260930", null);
+        ApprovalListFilter filter = ApprovalListFilter.of(null, " 2026-09-01 ", " 20260930 ", null);
         assertThat(filter.fromYmd()).isEqualTo("20260901");
         assertThat(filter.toYmd()).isEqualTo("20260930");
     }
@@ -38,6 +38,11 @@ class ApprovalListFilterTest {
     void rejectsInvalidConditions() {
         assertInvalid(() -> ApprovalListFilter.of(null, "2026-09-30", "2026-09-01", null));
         assertInvalid(() -> ApprovalListFilter.of(null, "2026-02-30", null, null));
+        for (String value : new String[] {"00000101", "0000-01-01", "1900-02-29", "2026--09-10",
+                "202-609-10", "20260910-"}) {
+            assertInvalid(() -> ApprovalListFilter.of(null, value, null, null));
+            assertInvalid(() -> ApprovalListFilter.of(null, null, value, null));
+        }
         assertInvalid(() -> ApprovalListFilter.of(null, null, null, "X"));
         assertInvalid(() -> ApprovalListFilter.of("가".repeat(ApprovalListFilter.KEYWORD_MAX + 1), null, null, null));
     }

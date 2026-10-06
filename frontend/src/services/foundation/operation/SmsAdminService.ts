@@ -43,10 +43,6 @@ function requireSmsPage(
 }
 
 class SmsAdminService extends ApiService {
-  constructor() {
-    super('/admin/operation/sms');
-  }
-
   /** SMS 발송 내역 조회 */
   async getSmsList(params: SmsSearchParams = {}, config?: AxiosRequestConfig): Promise<PageResponse<SmsDto>> {
     const response = await this.executeGenerated(getSmsListOperation, { query: params, config });

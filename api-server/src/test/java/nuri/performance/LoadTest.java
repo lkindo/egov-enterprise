@@ -56,7 +56,6 @@ class LoadTest {
         .esntlId("USR001")
         .build();
 
-    when(userService.getUserList()).thenReturn(List.of(defaultUser));
     when(userService.getUserById(anyString())).thenReturn(defaultUser);
 
     Page<UserDto> page = new PageImpl<>(

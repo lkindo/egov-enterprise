@@ -134,10 +134,6 @@ export interface ApprovalListQueryWithStatus extends ApprovalListQuery {
 }
 
 class ApprovalUserService extends UserService {
-  constructor() {
-    super('/approvals');
-  }
-
   async getPending(params: ApprovalListQuery): Promise<PageResponse<InformalSanctionDto>> {
     const response = await this.executeGenerated(getPendingOperation, { query: params });
     return requireApprovalPage(response);

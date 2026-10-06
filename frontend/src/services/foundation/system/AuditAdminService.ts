@@ -53,10 +53,6 @@ function requireAuditPage(
  * 감사 로그 관리 서비스 (Admin)
  */
 class AuditAdminService extends AdminService {
-  constructor() {
-    super('/logs/system');
-  }
-
   /**
    * 감사 로그 목록 조회.
    *

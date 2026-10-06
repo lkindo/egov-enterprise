@@ -20,10 +20,6 @@ import {
 export type TmplatInfo = components['schemas']['TemplateDto'];
 
 class TemplateAdminService extends AdminService {
-  constructor() {
-    super('/templates');
-  }
-
   /** 템플릿목록 조회 */
   async getTemplateList(config?: AxiosRequestConfig) {
     return this.executeGenerated(selectTmplatInfoListOperation, { config });

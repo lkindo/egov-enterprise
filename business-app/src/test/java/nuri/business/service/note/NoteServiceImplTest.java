@@ -76,7 +76,7 @@ class NoteServiceImplTest {
         NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngSn(1L).build();
         Page<NoteTrnsmit> page = new PageImpl<>(List.of(trnsmit));
 
-        given(noteTrnsmitRepository.searchNoteTrnsmits(any(), eq(searchWrd), eq(userId), eq(pageable))).willReturn(page);
+        given(noteTrnsmitRepository.searchNoteTrnsmits(eq(searchWrd), eq(userId), eq(pageable))).willReturn(page);
 
         /*
          * [2026-08-29] 수신자를 함께 싣는지 확인한다.
@@ -111,7 +111,7 @@ class NoteServiceImplTest {
     void getReceivedNotes_fillsSenderName() {
         NoteTrnsmit dsptch = NoteTrnsmit.builder().noteSndngSn(5L).sndrId("ESNTL_SENDER").build();
         NoteRecptn recptn = NoteRecptn.builder().noteRcptnSn(1L).noteDsptch(dsptch).rcvrId("me").openYn("N").build();
-        given(noteRecptnRepository.searchNoteRecptns(any(), any(), eq("me"), any())).willReturn(new PageImpl<>(List.of(recptn)));
+        given(noteRecptnRepository.searchNoteRecptns(any(), eq("me"), any())).willReturn(new PageImpl<>(List.of(recptn)));
         given(userRepository.findByEsntlIdIn(List.of("ESNTL_SENDER"))).willReturn(List.of(user("ESNTL_SENDER", "홍발신")));
 
         Page<NoteDto> result = noteService.getReceivedNotes("me", null, PageRequest.of(0, 10));
@@ -125,7 +125,7 @@ class NoteServiceImplTest {
     void sentNotes_carryRecipientNamesAndReadState() {
         NoteTrnsmit dsptch = NoteTrnsmit.builder().noteSndngSn(1L).sndrId("me")
                 .note(Note.builder().noteSn(9L).noteTtl("t").build()).build();
-        given(noteTrnsmitRepository.searchNoteTrnsmits(any(), any(), eq("me"), any())).willReturn(new PageImpl<>(List.of(dsptch)));
+        given(noteTrnsmitRepository.searchNoteTrnsmits(any(), eq("me"), any())).willReturn(new PageImpl<>(List.of(dsptch)));
         given(noteTrnsmitRepository.findById(1L)).willReturn(Optional.of(dsptch));
         List<NoteRecptn> recptns = List.of(
                 NoteRecptn.builder().noteRcptnSn(11L).noteDsptch(dsptch).rcvrId("R1").openYn("Y").rcptnSeCd("1").build(),
@@ -173,7 +173,7 @@ class NoteServiceImplTest {
         NoteRecptn recptn = NoteRecptn.builder().noteRcptnSn(1L).build();
         Page<NoteRecptn> page = new PageImpl<>(List.of(recptn));
 
-        given(noteRecptnRepository.searchNoteRecptns(any(), eq(searchWrd), eq(userId), eq(pageable))).willReturn(page);
+        given(noteRecptnRepository.searchNoteRecptns(eq(searchWrd), eq(userId), eq(pageable))).willReturn(page);
 
         // when
         Page<NoteDto> result = noteService.getReceivedNotes(userId, searchWrd, pageable);
@@ -193,11 +193,11 @@ class NoteServiceImplTest {
     @DisplayName("수신·발신 목록 질의는 최신순 ORDER BY 를 명시한다")
     void listQueries_declareDeterministicOrdering() throws NoSuchMethodException {
         String received = nuri.business.domain.note.NoteRecptnDomainRepository.class
-                .getMethod("searchNoteRecptns", String.class, String.class, String.class,
+                .getMethod("searchNoteRecptns", String.class, String.class,
                         org.springframework.data.domain.Pageable.class)
                 .getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
         String sent = nuri.business.domain.note.NoteTrnsmitDomainRepository.class
-                .getMethod("searchNoteTrnsmits", String.class, String.class, String.class,
+                .getMethod("searchNoteTrnsmits", String.class, String.class,
                         org.springframework.data.domain.Pageable.class)
                 .getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
 

@@ -164,7 +164,7 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
                 if (schema == null
                         || !request.acceptsCatalog(catalog)
                         || !request.acceptsSchema(schema)
-                        || (!request.includeSystemObjects() && isSystemSchema(schema))) {
+                        || (!request.includeSystemObjects() && SystemSchemas.isSystem(schema))) {
                     continue;
                 }
                 accumulator.add(object(
@@ -198,7 +198,7 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
                         || !request.acceptsCatalog(catalog)
                         || !request.acceptsSchema(schema)
                         || (!request.includeSystemObjects()
-                        && (isSystemSchema(schema) || isSystemTableType(nativeType)))) {
+                        && (SystemSchemas.isSystem(schema) || isSystemTableType(nativeType)))) {
                     continue;
                 }
                 ObjectKind kind = tableKind(nativeType);
@@ -715,7 +715,7 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
         if (routineName == null
                 || !request.acceptsCatalog(catalog)
                 || !request.acceptsSchema(schema)
-                || (!request.includeSystemObjects() && isSystemSchema(schema))) {
+                || (!request.includeSystemObjects() && SystemSchemas.isSystem(schema))) {
             return;
         }
         String identityName = specificName == null || specificName.isBlank() ? routineName : specificName;
@@ -746,7 +746,7 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
                 if (name == null
                         || !request.acceptsCatalog(catalog)
                         || !request.acceptsSchema(schema)
-                        || (!request.includeSystemObjects() && isSystemSchema(schema))) {
+                        || (!request.includeSystemObjects() && SystemSchemas.isSystem(schema))) {
                     continue;
                 }
                 accumulator.add(object(
@@ -894,21 +894,6 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
 
     private static boolean isSystemTableType(String nativeType) {
         return nativeType != null && nativeType.toUpperCase(Locale.ROOT).contains("SYSTEM");
-    }
-
-    private static boolean isSystemSchema(String schema) {
-        if (schema == null) {
-            return false;
-        }
-        String normalized = schema.toUpperCase(Locale.ROOT);
-        return normalized.equals("INFORMATION_SCHEMA")
-                || normalized.equals("PG_CATALOG")
-                || normalized.startsWith("PG_TOAST")
-                || normalized.startsWith("PG_TEMP")
-                || normalized.equals("SYS")
-                || normalized.equals("SYSTEM")
-                || normalized.equals("MYSQL")
-                || normalized.equals("PERFORMANCE_SCHEMA");
     }
 
     private static Set<ObjectKind> tableDependentKinds(DiscoveryRequest request) {

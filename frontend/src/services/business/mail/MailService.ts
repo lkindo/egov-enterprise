@@ -39,10 +39,6 @@ export const MAIL_SEND_RESULT = {
 } as const;
 
 class MailService extends ApiService {
-  constructor() {
-    super('/mails');
-  }
-
   /**
    * 발신 메일 목록 조회
    */

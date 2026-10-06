@@ -28,25 +28,11 @@ public interface NoteTrnsmitDomainRepository extends JpaRepository<NoteTrnsmit, 
     // [2026-09-02] ORDER BY 를 명시한다(수신함과 같은 이유 — 종전엔 DB 임의 순서였다).
     @Query(value = "SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.sndrId = :dsptchUserId AND (:searchWrd IS NULL OR n.noteTtl LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%) AND t.delYn = 'N' ORDER BY t.noteSndngSn DESC",
            countQuery = "SELECT count(t) FROM NoteTrnsmit t WHERE t.sndrId = :dsptchUserId AND (:searchWrd IS NULL OR t.note.noteTtl LIKE %:searchWrd% OR t.note.noteCn LIKE %:searchWrd%) AND t.delYn = 'N'")
-    Page<NoteTrnsmit> searchNoteTrnsmits(@Param("searchCondition") String searchCondition, @Param("searchWrd") String searchWrd,
+    Page<NoteTrnsmit> searchNoteTrnsmits(@Param("searchWrd") String searchWrd,
             @Param("dsptchUserId") String dsptchUserId, Pageable pageable);
-
-    // legacy
-    default Page<NoteTrnsmit> searchSentNotes(String dsptchUserId, String searchWrd, Pageable pageable) {
-        return searchNoteTrnsmits(null, searchWrd, dsptchUserId, pageable);
-    }
 
     @Query(value = "SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.sndrId = :sndrId AND t.delYn = 'N'",
            countQuery = "SELECT count(t) FROM NoteTrnsmit t WHERE t.sndrId = :sndrId AND t.delYn = 'N'")
     Page<NoteTrnsmit> findBySndrId(@Param("sndrId") String sndrId, Pageable pageable);
 
-    @Deprecated
-    default Page<NoteTrnsmit> findByDsptchUserId(String dsptchUserId, Pageable pageable) {
-        return findBySndrId(dsptchUserId, pageable);
-    }
-    
-    // legacy
-    default Page<NoteTrnsmit> findByTrnsmiterId(String dsptchUserId, Pageable pageable) {
-        return findBySndrId(dsptchUserId, pageable);
-    }
 }

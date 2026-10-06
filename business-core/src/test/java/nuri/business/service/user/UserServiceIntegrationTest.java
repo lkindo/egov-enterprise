@@ -19,9 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * UserService 통합 테스트
- * - N+1 쿼리 해결 검증
- * - 권한 매핑 검증
- * - 캐싱 동작 검증
+ * - 페이지 목록 및 검색 결과 검증
  */
 @IntegrationTest
 class UserServiceIntegrationTest {
@@ -47,8 +45,8 @@ class UserServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("사용자 목록 조회 - N+1 쿼리 해결 검증")
-    void getUserList_NPlusOneResolved() {
+    @DisplayName("사용자 목록 페이지에 등록된 사용자를 반환한다")
+    void getPagedUserList_returnsRegisteredUsers() {
         // Given: 사용자 및 권한 설정
         createUser("user1", "사용자1", "ROLE_ADMIN");
         createUser("user2", "사용자2", "ROLE_USER");
@@ -57,10 +55,11 @@ class UserServiceIntegrationTest {
         entityManager.clear();
 
         // When
-        List<UserDto> users = userService.getUserList();
+        List<UserDto> users = userService.getPagedUserList(null, UserListFilter.NONE,
+                org.springframework.data.domain.PageRequest.of(0, 10)).getContent();
 
         // Then
-        assertThat(users).isNotEmpty();
+        assertThat(users).extracting(UserDto::userId).containsExactlyInAnyOrder("user1", "user2");
     }
 
     @Test

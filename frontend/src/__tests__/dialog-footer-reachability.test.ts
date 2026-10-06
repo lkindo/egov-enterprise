@@ -34,14 +34,10 @@ const SRC = join(__dirname, '..');
  *    내부 카드의 둥근 모서리를 위한 것이다.
  *  - `cop/sms/selectSmsList`: `next.config.ts` 리다이렉트로 **도달 불가**한 별칭 화면이다
  *    (DEC-OPS-023 ① — 도달 불가 화면은 이행 대상이 아니다). 도달 가능해지면 함께 고친다.
- *  - `components/ui/command.tsx`: shadcn 원시 컴포넌트(CommandDialog). 내부 `CommandList` 가
- *    `max-h-[300px] overflow-y-auto` 로 **자체 스크롤**을 가지므로 바깥에서 잘려도 도달 불가가
- *    되지 않는다. 폼·푸터를 담는 용도가 아니다.
  */
 const ALLOWED_CLIPPING = [
   'app/components/ui/session-expiry-warning.tsx',
   'app/cop/sms/selectSmsList/SmsHubClient.tsx',
-  'components/ui/command.tsx',
 ];
 
 const HEIGHT_BOUND = /max-h-\[[^\]]+\]|max-h-screen|max-h-full/;

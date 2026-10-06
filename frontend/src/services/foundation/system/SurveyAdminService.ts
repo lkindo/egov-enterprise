@@ -76,10 +76,6 @@ function toSurveyPageQuery(params?: SearchParams): SurveyPageQuery {
  * 설문 관리 서비스 (Admin)
  */
 class SurveyAdminService extends AdminService {
-  constructor() {
-    super('/surveys');
-  }
-
   /** 설문 목록 조회 */
   async getSurveyList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SurveyInfo>> {
     const response = await this.executeGenerated(getSurveysOperation, {

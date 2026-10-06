@@ -14,19 +14,9 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { deptAdminService, Department } from '@/services/foundation/system/DeptAdminService';
-import { PageResponse } from '@/types/foundation/system';
 import { flattenDeptTree, listToDeptTree, getDeptProjection, reparentFlattened, shiftFlattened, FlattenedDept } from './departments/treeUtils';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { INDENTATION_WIDTH } from './UserOrgHubParts';
-
-/**
- * 부서 목록 조회 크기.
- * 조직도(D&D 트리)와 '부서 이동' 모달의 대상 선택은 계층 전체가 있어야 성립한다 — 페이징과 상극이다.
- * 서버는 Spring Pageable(page/size, 0-based)을 그대로 받으므로 충분히 큰 size 로 전량을 끌어온다.
- * (종전 size:10 → 11번째 부서부터 트리에서도 모달에서도 보이지 않았다.)
- */
-const DEPT_LIST_SIZE = 1000;
-const DEPT_PAGE = 1;
 
 /**
  * 사용자·조직 허브의 부서 조회와 조직도 드래그 상태.
@@ -41,31 +31,19 @@ export function useDeptTree({
 }: {
   /** 부서 탭에서만 검색어를 태운다 — 호출부가 결정한다. */
   deptKeyword: string;
-  initialDepts: PageResponse<Department> | null;
+  initialDepts: Department[] | null;
   enabled: boolean;
   /** 드래그를 시작한 부서를 선택 상태로 만든다(선택은 허브가 소유한다). */
   onDragSelect: (ognzId: string) => void;
 }) {
-  /**
-   * 서버 프리페치(page.tsx)는 size=10 으로 잘린 목록일 수 있다. 잘린 시드를 initialData 로 쓰면
-   * 전역 staleTime(60s) 동안 재조회가 일어나지 않아 10건 절단이 그대로 유지된다.
-   * 전량(total)을 담고 있을 때만 시드로 채택한다.
-   */
-  const initialDeptsSeed = useMemo(() => {
-    const list = initialDepts?.list;
-    const total = initialDepts?.total;
-    return Array.isArray(list) && typeof total === 'number' && list.length >= total ? (initialDepts ?? undefined) : undefined;
-  }, [initialDepts]);
-
   const { data: deptsData, isLoading: isDeptsLoading, isError: isDeptsError, error: deptsError, refetch: refetchDepts } = useQuery({
-    queryKey: ['admin-depts', deptKeyword, DEPT_PAGE],
-    // 서버는 keyword + Spring Pageable(page/size, 0-based)을 읽는다. 종전의 {pageNo, searchKeyword}는
-    // ApiService 매핑 대상이 아니라 그대로 전달돼 무시됐고, 검색어가 서버에 닿지 않았다.
-    queryFn: () => deptAdminService.getDeptList({ keyword: deptKeyword, page: DEPT_PAGE - 1, size: DEPT_LIST_SIZE }),
+    queryKey: ['admin-depts', 'tree', deptKeyword],
+    // 트리와 부서 선택은 전량 API를 공유한다. 검색 결과에서 빠진 부모의 보호 의미는 아래에서 유지한다.
+    queryFn: () => deptAdminService.getDeptTree(deptKeyword),
     // 부서 탭뿐 아니라 '부서 이동' 모달·사용자 등록/수정 폼(소속 부서 선택)에서도 목록이 필요하다.
     // 종전에는 DEPTS 탭에서만 조회해 USERS 탭의 모달이 항상 빈 상자였다.
     enabled,
-    initialData: !deptKeyword ? initialDeptsSeed : undefined
+    initialData: !deptKeyword ? (initialDepts ?? undefined) : undefined
   });
 
   // D&D States for Depts
@@ -96,8 +74,7 @@ export function useDeptTree({
   );
 
   const departments = useMemo(() => {
-    const list = deptsData?.list;
-    return (Array.isArray(list) ? list.filter(Boolean) : []) as Department[];
+    return (deptsData ?? []).filter(Boolean);
   }, [deptsData]);
 
   // 평탄화는 탭과 무관하게 수행한다. 종전에는 DEPTS 탭 조건이 걸려 있어 USERS 탭의
@@ -233,15 +210,8 @@ export function useDeptTree({
     deptsError,
     refetchDepts,
     departments,
-    /**
-     * 서버가 말한 조회 결과 수.
-     *
-     * ⚠ 결과 툴바의 총 건수를 `flattenedDepts.length` 로 세면 안 된다 — 그 값은 effect 파생이라
-     *   SSR 과 첫 클라이언트 렌더에서 항상 0 이고, 검색어가 바뀌어 재조회가 도는 동안에도 0 으로
-     *   떨어진다. 화면은 데이터가 있는데 "총 0건" 이라고 말하게 된다. 조회 중에는 `undefined` 를
-     *   내어 아무 수치도 주장하지 않는 편이 옳다(사용자 목록의 `usersData?.total` 과 같은 규칙).
-     */
-    deptTotal: deptsData?.total,
+    // 전량 응답의 행 수다. 아직 응답이 없으면 undefined로 두어 조회 중을 0건으로 위장하지 않는다.
+    deptTotal: deptsData?.length,
     flattenedDepts,
     activeDeptId,
     hasDeptChanges,

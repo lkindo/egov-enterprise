@@ -65,11 +65,15 @@ describe('A2 master-detail adoption census', () => {
 
   it('/admin/user/departments만 공유 허브의 A2 레이아웃을 활성화한다', () => {
     const route = source('src/app/admin/user/departments/page.tsx');
+    const page = source('src/app/admin/user/UserOrgHubPage.tsx');
     const client = source('src/app/admin/user/UserOrgHubClient.tsx');
     // [2026-09-14] 부서 노드는 UserOrgHubParts.tsx 로 분리했다. 선택 시맨틱은 그 파일에, 사용은 허브에 있어야 한다.
     const parts = source('src/app/admin/user/UserOrgHubParts.tsx');
 
-    expect(route).toMatch(/<UserOrgHubClient[\s\S]*defaultTab="DEPTS"/);
+    expect(route).toMatch(/import UserOrgHubPage from '\.\.\/UserOrgHubPage'/);
+    expect(route).toMatch(/<UserOrgHubPage\b[^>]*tab="DEPTS"/);
+    expect(page).toMatch(/import UserOrgHubClient from '\.\/UserOrgHubClient'/);
+    expect(page).toMatch(/<UserOrgHubClient\b[^>]*defaultTab=\{tab\}/);
     expect(client).toMatch(/<MasterDetailLayout[\s\S]*active=\{activeTab === 'DEPTS'\}/);
     expect(client).toMatch(/import \{[^}]*\bSortableDeptNode\b[^}]*\} from '\.\/UserOrgHubParts'/);
     expect(client).toMatch(/<SortableDeptNode\b/);

@@ -13,10 +13,6 @@ export type PolicyUpdateRequest = components['schemas']['PolicyUpdateRequest'];
 
 /** 시스템정책 관리 서비스(Admin). */
 class PolicyAdminService extends AdminService {
-  constructor() {
-    super('/policies');
-  }
-
   async getPolicies(config?: AxiosRequestConfig): Promise<SystemPolicy[]> {
     return this.executeGenerated(getPoliciesOperation, { config });
   }

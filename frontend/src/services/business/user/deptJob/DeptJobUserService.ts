@@ -26,10 +26,6 @@ import {
  * 백엔드 DeptJobApiController 연동 (/api/v1/dept-jobs)
  */
 class DeptJobUserService extends UserService {
-  constructor() {
-    super('/dept-jobs');
-  }
-
   /**
    * 부서 업무함 목록 조회
    */
@@ -198,16 +194,3 @@ class DeptJobUserService extends UserService {
 }
 
 export const deptJobUserService = new DeptJobUserService();
-
-// Individual function exports for legacy/functional styles
-export const getDeptJobBoxes = deptJobUserService.getDeptJobBoxes.bind(deptJobUserService);
-export const getDeptJobBox = deptJobUserService.getDeptJobBox.bind(deptJobUserService);
-export const createDeptJobBox = deptJobUserService.createDeptJobBox.bind(deptJobUserService);
-export const updateDeptJobBox = deptJobUserService.updateDeptJobBox.bind(deptJobUserService);
-export const deleteDeptJobBox = deptJobUserService.deleteDeptJobBox.bind(deptJobUserService);
-
-export const getDeptJobList = deptJobUserService.getDeptJobList.bind(deptJobUserService);
-export const getDeptJob = deptJobUserService.getDeptJob.bind(deptJobUserService);
-export const createDeptJob = deptJobUserService.createDeptJob.bind(deptJobUserService);
-export const updateDeptJob = deptJobUserService.updateDeptJob.bind(deptJobUserService);
-export const deleteDeptJob = deptJobUserService.deleteDeptJob.bind(deptJobUserService);

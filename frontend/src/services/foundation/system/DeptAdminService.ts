@@ -1,11 +1,8 @@
 import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
-import { PageResponse, SearchParams } from '@/types/foundation/system';
-import type { operations } from '@/types/generated-api';
 import {
   deleteDeptOperation,
   getDeptOperation,
-  getDeptsOperation,
   getDeptTreeOperation,
   insertDeptOperation,
   type GeneratedOperationRequest,
@@ -23,63 +20,8 @@ export interface Department {
   sortOrdr?: number;
 }
 
-type DeptListQuery = NonNullable<operations['getDepts']['parameters']['query']>;
-
-function toDeptListQuery(params?: SearchParams): DeptListQuery {
-  if (!params) return {};
-  const rawSort = params.sort;
-  return {
-    ...(params.keyword === undefined ? {} : { keyword: params.keyword }),
-    ...(params.pageIndex !== undefined
-      ? { page: Math.max(0, params.pageIndex - 1) }
-      : params.page !== undefined
-        ? { page: params.page }
-        : params.pageNo !== undefined
-          ? { page: Math.max(0, params.pageNo - 1) }
-          : {}),
-    ...(params.size !== undefined
-      ? { size: params.size }
-      : params.pageUnit !== undefined
-        ? { size: params.pageUnit }
-        : params.pageSize !== undefined
-          ? { size: params.pageSize as number }
-          : params.recordCountPerPage !== undefined
-            ? { size: params.recordCountPerPage as number }
-            : {}),
-    ...(rawSort === undefined ? {} : { sort: rawSort as string[] }),
-  };
-}
-
-function requireDeptPage(
-  response: { list?: Department[]; total?: number; page?: number; size?: number; totalPage?: number },
-): PageResponse<Department> {
-  if (
-    !Array.isArray(response.list)
-    || typeof response.total !== 'number'
-    || typeof response.page !== 'number'
-    || typeof response.size !== 'number'
-    || typeof response.totalPage !== 'number'
-  ) {
-    throw new Error('부서 페이지 응답이 필수 계약과 일치하지 않습니다.');
-  }
-  return response as PageResponse<Department>;
-}
-
 /** 부서(조직) 관리 API 클라이언트 — /api/v1/admin/system/departments */
 class DeptAdminService extends AdminService {
-  constructor() {
-    super('/departments');
-  }
-
-  /** 부서 목록 조회 (페이징) */
-  async getDeptList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Department>> {
-    const response = await this.executeGenerated(getDeptsOperation, {
-      query: toDeptListQuery(params),
-      config,
-    });
-    return requireDeptPage(response as PageResponse<Department>);
-  }
-
   /**
    * 조직도(트리) 전용 전량 조회 — `/tree` 엔드포인트를 사용한다.
    * 페이징 파라미터 없이 서버가 Pageable.unpaged() 로 전량을 반환하므로,

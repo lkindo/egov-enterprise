@@ -31,6 +31,9 @@ const HARDENED_SOURCES = [...new Set([
   'frontend/src/app/admin/system/policies/PolicyAdminClient.tsx',
   'frontend/src/app/admin/system/programs/page.tsx',
   'frontend/src/app/admin/user/UserOrgHubClient.tsx',
+  'frontend/src/app/admin/user/UserOrgHubPage.tsx',
+  'frontend/src/app/admin/user/UserBulkActionDialogs.tsx',
+  'frontend/src/app/admin/user/load-user-org-prefetch.ts',
   'frontend/src/app/admin/user/absences/page.tsx',
   'frontend/src/app/admin/user/departments/page.tsx',
   'frontend/src/app/admin/user/indvdl-info-policy/page.tsx',
@@ -98,7 +101,7 @@ test('new top-level server action sources are discovered without an allow-list u
 });
 
 test('validation production sources are discovered and the boundary anchor cannot disappear', () => {
-  assert.ok(VALIDATION_SOURCES.includes('frontend/src/lib/validations/common.ts'));
+  assert.ok(VALIDATION_SOURCES.includes('frontend/src/lib/validations/password-policy.ts'));
   assert.equal(
     VALIDATION_SOURCES.length,
     readdirSync(VALIDATION_SOURCE_DIRECTORY, { withFileTypes: true })

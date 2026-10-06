@@ -185,6 +185,14 @@
       ]
     },
     {
+      "operationId": "getDepts",
+      "category": "superseded-surface",
+      "note": "The user/organization hub now consumes getDeptTree for the complete department hierarchy, replacing the paged getDepts client that imposed a 1,000-row cap. DeptApiController delegates both operations to DeptManageService.getDeptManageList; getDeptTree uses Pageable.unpaged() with the same keyword filter. The unused frontend getDeptList wrapper is retired, while the paged HTTP API remains compatible for external callers. See docs/04-operations/source-simplification-results-2026-10-06.md.",
+      "supersededBy": [
+        "getDeptTree"
+      ]
+    },
+    {
       "operationId": "getInformalSanction",
       "category": "superseded-surface",
       "note": "InformalSanctionApiController serves this domain at /api/v1/informal-sanctions (aliased at /api/v1/admin/system/ism). DEC-OPS-040 consolidated the ISM screen into /approvals, which calls ApprovalApiController instead; DEC-OPS-053 then removed the dead IsmAdminService. Both controllers wrap the same InformalSanctionService, so this is a superseded surface, not a missing feature. Neither controller is a subset of the other (approvals adds processed/task-types, ISM keeps detail/update), so retiring it is a backend design decision — see GAP-WIRING-001. Since approval references (D4, V2_123) the shared read gate (InformalSanctionRepository#findByIdAndParticipant) also admits a document's references, so this legacy detail path opens to them too — the same service decision, not a widened permission (INFORMAL_READ still gates the route).",

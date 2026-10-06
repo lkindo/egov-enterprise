@@ -22,7 +22,6 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
  */
 const SEARCH_COMPONENTS = [
   'components/patterns/keyword-filter',
-  'components/ui/standard-search-filter',
 ];
 
 /** 공용 컴포넌트를 쓰지 않고 자체 입력으로 검색하는 화면. 발견하면 여기에 추가한다. */

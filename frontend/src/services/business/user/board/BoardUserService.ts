@@ -31,10 +31,6 @@ export interface BoardSearchResultItem {
 }
 
 class BoardUserService extends UserService {
-  constructor() {
-    super('/boards');
-  }
-
   /**
    * 활성 게시판 전체에서 게시글 **제목**을 검색한다(통합 검색 전용).
    *

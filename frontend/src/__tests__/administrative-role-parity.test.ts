@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isAdministrativeRole } from '@/lib/auth/administrative-role';
 import { canPermission } from '@/lib/auth/permissions';
 
 const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -74,14 +73,6 @@ describe('관리자 판정 parity', () => {
     expect(canPermission({ permissions: ['BBS_MST_CREATE'], authorizationVersion: 'v1' }, 'BBS_MST_CREATE')).toBe(true);
   });
 
-  it('authority id 형태(ROLE_ADMIN)와 대소문자 흔들림을 모두 인정한다', () => {
-    expect(isAdministrativeRole('ROLE_ADMIN')).toBe(true);
-    expect(isAdministrativeRole('ADMIN')).toBe(true);
-    expect(isAdministrativeRole('role_system')).toBe(true);
-    expect(isAdministrativeRole('USER')).toBe(false);
-    expect(isAdministrativeRole(undefined)).toBe(false);
-  });
-
   it('관리자 전용 화면 액션이 단일 리터럴 비교로 되돌아가지 않는다', () => {
     // 되돌아가면 e2e 가 잡기 전까지 "관리자에게 버튼이 없다"가 정상처럼 보인다.
     const client = readFileSync(
@@ -115,8 +106,7 @@ describe('관리자 판정 parity', () => {
           continue;
         }
         if (!/\.tsx?$/.test(entry.name)) continue;
-        // 판정 SSOT 자신과 라우트 게이트는 값 집합을 정의하는 곳이라 제외한다.
-        if (full.endsWith(join('lib', 'auth', 'administrative-role.ts'))) continue;
+        // 라우트 게이트는 별도 현재 권한 계약으로 검사한다.
         if (full.endsWith(join('src', 'proxy.ts'))) continue;
 
         scanned += 1;

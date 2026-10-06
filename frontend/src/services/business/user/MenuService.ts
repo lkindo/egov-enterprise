@@ -10,10 +10,6 @@ import {
 } from '@/types/generated-operations';
 
 class MenuService extends ApiService {
-  constructor() {
-    super('/menus');
-  }
-
   /**
    * GNB(Head) 메뉴 목록 조회
    */

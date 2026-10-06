@@ -76,10 +76,6 @@ function requireAuthorPage<T>(
  * 권한 그룹 관리 서비스 (Admin)
  */
 class AuthorAdminService extends AdminService {
-  constructor() {
-    super('/authorities');
-  }
-
   /** 권한 그룹 목록 조회 */
   async getAuthorList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<AuthorInfo>> {
     const response = await this.executeGenerated(getAuthorsOperation, {

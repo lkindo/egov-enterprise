@@ -26,10 +26,6 @@ export const ABSENT = 'Y';
 export const PRESENT = 'N';
 
 class UserAbsenceAdminService extends ApiService {
-  constructor() {
-    super('/admin/system/user-absences');
-  }
-
   /**
    * 부재 기록이 있는 사용자만 돌아온다 — 기록이 없는 사용자는 목록에 없으며 그것이 '정상' 이다.
    * 한 번 부재였다가 복귀한 사용자는 `userAbsnYn='N'` 행으로 남는다.

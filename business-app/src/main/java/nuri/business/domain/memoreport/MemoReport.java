@@ -1,6 +1,7 @@
 package nuri.business.domain.memoreport;
 
 import nuri.foundation.domain.common.BaseEntity;
+import nuri.foundation.core.validation.Ymd;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -64,7 +65,7 @@ public class MemoReport extends BaseEntity {
 
     public void update(String rptTtl, String memoRptYmd, String userId, String rptrId,
                       String rptCn, Long atchFileSn) {
-        validateDateFormat(memoRptYmd);
+        Ymd.validateCompatible(memoRptYmd);
         this.rptTtl = rptTtl;
         this.memoRptYmd = memoRptYmd;
         this.userId = userId;
@@ -83,21 +84,4 @@ public class MemoReport extends BaseEntity {
     }
 
 
-
-    private void validateDateFormat(String ymd) {
-        if (ymd == null || ymd.isEmpty()) {
-            return;
-        }
-        String cleanYmd = ymd.replace("-", "");
-        if (cleanYmd.length() != 8) {
-            throw new nuri.foundation.core.exception.BusinessException(
-                "날짜 형식은 8자리 YYYYMMDD 또는 YYYY-MM-DD 여야 합니다.", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
-        }
-        try {
-            java.time.format.DateTimeFormatter.BASIC_ISO_DATE.parse(cleanYmd);
-        } catch (Exception e) {
-            throw new nuri.foundation.core.exception.BusinessException(
-                "유효하지 않은 날짜 형식입니다: " + ymd, nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
-        }
-    }
 }

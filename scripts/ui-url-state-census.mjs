@@ -28,6 +28,12 @@ import {
   sep,
 } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import {
+  canStartRegexAfterValue as canStartRegex,
+  readRegexLiteral as readRegex,
+  skipBlockComment,
+  skipLineComment,
+} from './source-lexing.mjs';
 
 import {
   expectedRouting,
@@ -134,16 +140,6 @@ function readQuoted(source, start, quote) {
   return { closed: false, end: source.length, value };
 }
 
-function skipLineComment(source, start) {
-  const end = source.indexOf('\n', start + 2);
-  return end < 0 ? source.length : end;
-}
-
-function skipBlockComment(source, start) {
-  const end = source.indexOf('*/', start + 2);
-  return end < 0 ? -1 : end + 2;
-}
-
 function readTemplate(source, start) {
   let expressionDepth = 0;
   let interpolated = false;
@@ -210,29 +206,6 @@ function readTemplate(source, start) {
     if (!/\s/.test(char)) previousExpressionToken = char;
   }
   return { closed: false, end: source.length, interpolated, value: '' };
-}
-
-function canStartRegex(previous) {
-  return previous === undefined
-    || ['(', '[', '{', ',', ';', ':', '=', '!', '?', '&', '|', '+', '-', '*', '%', '^', '~', '=>'].includes(previous)
-    || ['return', 'throw', 'case', 'delete', 'void', 'typeof', 'instanceof', 'in', 'of', 'yield', 'await'].includes(previous);
-}
-
-function readRegex(source, start) {
-  let inClass = false;
-  for (let index = start + 1; index < source.length; index += 1) {
-    const char = source[index];
-    if (char === '\n' || char === '\r') return undefined;
-    if (char === '\\') index += 1;
-    else if (char === '[') inClass = true;
-    else if (char === ']') inClass = false;
-    else if (char === '/' && !inClass) {
-      let end = index + 1;
-      while (/[A-Za-z]/.test(source[end] ?? '')) end += 1;
-      return { end };
-    }
-  }
-  return undefined;
 }
 
 /** Minimal JS/TS/JSX lexer for URL syntax. Comments and string/regex decoys are not executable tokens. */

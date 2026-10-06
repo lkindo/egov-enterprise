@@ -52,10 +52,6 @@ function requireOperationPage<T>(
 
 /** 운영지원(외부인사·포상) 관리자 서비스. */
 class OperationAdminService extends ApiService {
-  constructor() {
-    super('/admin/operation');
-  }
-
   async getExternalHrList(
     params: OperationSearchParams = {},
     config?: AxiosRequestConfig,

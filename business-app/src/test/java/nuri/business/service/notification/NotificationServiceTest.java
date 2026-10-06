@@ -13,7 +13,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -194,17 +193,6 @@ class NotificationServiceTest {
         notificationService.deleteNotification(1L, "user123");
 
         verify(notificationRepository).delete(entity);
-    }
-
-    @Test
-    @Disabled("페이지네이션 버전으로 변경됨")
-    @DisplayName("활성 알림 목록 조회 - 성공")
-    void getActiveNotifications_success() {
-        when(notificationRepository.findAll()).thenReturn(List.of(createMockEntity(1L)));
-
-        List<NotificationDto> result = notificationService.getActiveNotificationsAll();
-
-        assertEquals(1, result.size());
     }
 
     @Test

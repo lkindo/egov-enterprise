@@ -31,6 +31,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -46,7 +47,9 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -62,6 +65,7 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("다단계 결재 처리·권한·차수·동기 알림 의도 계약")
@@ -152,6 +156,50 @@ class InformalSanctionWorkflowServiceTest {
     private void knownTask() {
         given(commonCodeService.getCodesByGroup("COM075"))
                 .willReturn(List.of(new CommonCodeDto("COM075", "TASK", "검증 업무", null, "Y")));
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {" ", "\t", "20000229", "2000-02-29"})
+    @DisplayName("상신 날짜는 빈 값이면 오늘이고 정상 ISO 입력은 8자리로 저장한다")
+    void registrationKeepsDefaultDateAndCompactsCompatibleInput(String date) {
+        knownTask();
+        activeUsers("first");
+        given(informalSanctionRepository.save(any(InformalSanction.class))).willAnswer(invocation -> {
+            InformalSanction saved = invocation.getArgument(0);
+            ReflectionTestUtils.setField(saved, "ifmlAtrzSn", 7L);
+            return saved;
+        });
+        InformalSanctionDto request = draft();
+        request.setReqYmd(date);
+        String before = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+
+        service.registerInformalSanction(request, List.of(stage(ApprovalStageKind.APPROVAL, "first")));
+
+        String after = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        ArgumentCaptor<InformalSanction> saved = ArgumentCaptor.forClass(InformalSanction.class);
+        verify(informalSanctionRepository).save(saved.capture());
+        if (date == null || date.isBlank()) assertThat(saved.getValue().getReqYmd()).isIn(before, after);
+        else assertThat(saved.getValue().getReqYmd()).isEqualTo("20000229");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"20260229", "1900-02-29", "2026-04-31", "00000101", "0000-01-01",
+            "2026--09-10", "202-609-10", "20260910-", " 20260910", "2026-09-10 "})
+    @DisplayName("상신은 잘못된 날짜나 공백으로 감싼 날짜를 저장 전에 거부한다")
+    void registrationRejectsMalformedDatesWithoutSaving(String date) {
+        knownTask();
+        activeUsers("first");
+        InformalSanctionDto request = draft();
+        request.setReqYmd(date);
+
+        assertThatThrownBy(() -> service.registerInformalSanction(request,
+                List.of(stage(ApprovalStageKind.APPROVAL, "first"))))
+                .isInstanceOfSatisfying(BusinessException.class, exception -> {
+                    assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+                    assertThat(exception.getMessage()).isEqualTo("유효한 신청 일자를 지정해 주세요.");
+                });
+        verifyNoInteractions(informalSanctionRepository, detailRepository, historyRepository, eventPublisher);
     }
 
     private <T> List<T> events(Class<T> type) {
@@ -674,6 +722,16 @@ class InformalSanctionWorkflowServiceTest {
         assertThat(result.getHistory()).extracting(revision -> revision.atrzCycl()).containsExactly(1);
         assertThat(result.getStages().get(0).approvers()).extracting(approver -> approver.userId())
                 .containsExactly("first");
+        verify(informalSanctionRepository).findByIdAndParticipant(7L, "first");
+        verify(detailRepository).findForDocuments(List.of(7L));
+        verify(historyRepository).findForDocuments(List.of(7L));
+        verify(processRepository).findForDocuments(List.of(7L));
+        verify(referenceRepository).findForDocuments(List.of(7L));
+        verify(userRepository).findAllById(java.util.Set.of("owner", "first", "second"));
+        verify(userRepository).findProfilesByEsntlIds(java.util.Set.of("first", "second"));
+        verify(commonCodeService).getCodesByGroup("COM075");
+        verifyNoMoreInteractions(informalSanctionRepository, detailRepository, historyRepository, processRepository,
+                referenceRepository, userRepository, commonCodeService);
     }
 
     @Test
@@ -794,7 +852,13 @@ class InformalSanctionWorkflowServiceTest {
         verify(historyRepository).findVisibleForDocuments(List.of(7L, 9L), "first");
         verify(detailRepository, never()).findForDocuments(any());
         verify(historyRepository, never()).findForDocuments(any());
+        verify(informalSanctionRepository).findByAprvrId("first", pageable);
+        verify(processRepository).findForDocuments(List.of(7L, 9L));
+        verify(referenceRepository).findForDocuments(List.of(7L, 9L));
         verify(userRepository).findAllById(java.util.Set.of("owner", "first"));
+        verify(userRepository).findProfilesByEsntlIds(java.util.Set.of("first"));
         verify(commonCodeService).getCodesByGroup("COM075");
+        verifyNoMoreInteractions(informalSanctionRepository, detailRepository, historyRepository, processRepository,
+                referenceRepository, userRepository, commonCodeService);
     }
 }

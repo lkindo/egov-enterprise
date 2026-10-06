@@ -160,10 +160,6 @@ function requireSurveyPage(
 
 /** 설문 관리 서비스 (Admin). */
 class SurveyAdminService extends ApiService {
-  constructor() {
-    super('/surveys');
-  }
-
   async getSurveys(
     params: SurveySearchParams,
     config?: AxiosRequestConfig,

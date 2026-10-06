@@ -21,15 +21,11 @@ import org.springframework.jdbc.core.StatementCreatorUtils;
 import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -208,12 +204,12 @@ public class MigrationVerifier {
                     long matches = matched == null ? 0 : matched.count();
                     if (matched == null || matches != 1) {
                         return new ScopedVerification(checkpoints.size(),
-                                "run scoped parity 불일치: targetDigest=" + keyDigest(checkpoint.targetKey())
+                                "run scoped parity 불일치: targetDigest=" + KeyDiagnostics.digest(checkpoint.targetKey())
                                         + " 행수=" + matches);
                     }
                     if (!matched.checksum().equals(checkpoint.rowChecksum())) {
                         return new ScopedVerification(checkpoints.size(),
-                                "run scoped checksum 불일치: sourceDigest=" + keyDigest(checkpoint.sourceKey()));
+                                "run scoped checksum 불일치: sourceDigest=" + KeyDiagnostics.digest(checkpoint.sourceKey()));
                     }
                 }
             } catch (RuntimeException e) {
@@ -290,12 +286,12 @@ public class MigrationVerifier {
                     long matches = matched == null ? 0 : matched.count();
                     if (matched == null || matches != 1) {
                         return new ScopedVerification(checkpoints.size(),
-                                "run scoped parity 불일치: targetDigest=" + keyDigest(checkpoint.targetKey())
+                                "run scoped parity 불일치: targetDigest=" + KeyDiagnostics.digest(checkpoint.targetKey())
                                         + " 행수=" + matches);
                     }
                     if (!matched.checksum().equals(checkpoint.rowChecksum())) {
                         return new ScopedVerification(checkpoints.size(),
-                                "run scoped checksum 불일치: sourceDigest=" + keyDigest(checkpoint.sourceKey()));
+                                "run scoped checksum 불일치: sourceDigest=" + KeyDiagnostics.digest(checkpoint.sourceKey()));
                     }
                 }
             } catch (RuntimeException e) {
@@ -468,18 +464,6 @@ public class MigrationVerifier {
             return c == null ? 0L : c;
         } catch (RuntimeException e) {
             return -1L; // 호출자는 대조 불가를 FAIL로 판정한다.
-        }
-    }
-
-    private static String keyDigest(String key) {
-        if (key == null) {
-            return "<null>";
-        }
-        try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-                    .digest(key.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException impossible) {
-            throw new IllegalStateException("SHA-256 is unavailable", impossible);
         }
     }
 

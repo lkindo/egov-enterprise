@@ -799,6 +799,83 @@ class AuthorizationAdministrationServiceTest {
     }
 
     @Test
+    void groupSnapshotsUseThreeReadsAtBothSmallAndLargeSizes() {
+        for (int added : List.of(0, 20)) {
+            for (int i = 0; i < added; i++) {
+                db.groups.put("EXTRA_" + i, new GroupData("Extra " + i, null, List.of(NAV_ONE, READ)));
+            }
+            db.calls.clear();
+            var matrix = service.grantMatrix();
+            assertThat(db.calls).hasSize(3);
+            assertThat(matrix.groups()).hasSize(4 + added)
+                    .allSatisfy(group -> assertThat(group).isEqualTo(service.group(group.code())));
+
+            db.calls.clear();
+            var summaries = service.groups();
+            assertThat(db.calls).hasSize(3);
+            assertThat(summaries).containsExactlyElementsOf(matrix.groups().stream()
+                    .map(group -> new GroupSummary(group.code(), group.name(), group.description(), group.version())).toList());
+        }
+    }
+
+    @Test
+    void departmentSnapshotsUseFourReadsAndKeepIndividualVersions() {
+        db.auditLog.add(new AuditRow("USER_GROUP", "G_B", "U_1"));
+        for (int added : List.of(0, 20)) {
+            for (int i = 0; i < added; i++) {
+                String id = "EXTRA_" + i;
+                db.users.put(id, List.of("login_" + i, "User " + i, "D_1"));
+                db.memberships.put(id, i % 2 == 0 ? List.of("G_A", "G_B") : List.of());
+            }
+            db.calls.clear();
+            var department = service.departmentMemberships("D_1");
+            assertThat(db.calls).hasSize(4);
+            assertThat(department.complete()).isTrue();
+            assertThat(department.users()).hasSize(2 + added).allSatisfy(member -> {
+                var individual = service.memberships(member.userId());
+                assertThat(member.groups()).isEqualTo(individual.groups());
+                assertThat(member.version()).isEqualTo(individual.version());
+                assertThat(member.complete()).isTrue();
+            });
+            assertThat(department.users()).extracting(DepartmentMember::userId).isSorted();
+        }
+    }
+
+    @Test
+    void emptySnapshotsSkipUnneededBatchReadsAndMissingDepartmentsStillFail() {
+        db.groups.clear();
+        var matrix = service.grantMatrix();
+        assertThat(matrix.groups()).isEmpty();
+        assertThat(matrix.catalogVersion()).isEqualTo(PermissionCodes.CATALOG_VERSION);
+        assertThat(db.calls).hasSize(1);
+
+        db.calls.clear();
+        db.users.clear();
+        var department = service.departmentMemberships("D_1");
+        assertThat(department.users()).isEmpty();
+        assertThat(department.complete()).isTrue();
+        assertThat(department.version()).isEqualTo(nuri.business.security.authorization.AuthorizationSnapshotService.digest(
+                PermissionCodes.CATALOG_VERSION + "\nD_1\n[]"));
+        assertThat(db.calls).hasSize(2);
+
+        db.calls.clear();
+        error(CommonErrorCode.RESOURCE_NOT_FOUND, () -> service.departmentMemberships("MISSING"));
+        assertThat(db.calls).hasSize(1);
+    }
+
+    @Test
+    void batchedGroupVersionsIgnoreMembershipHistoryAndKeepGrantAbaHistory() {
+        var before = service.grantMatrix();
+        db.auditLog.add(new AuditRow("USER_GROUP", "G_A", "U_1"));
+        assertThat(service.grantMatrix()).isEqualTo(before);
+        db.auditLog.add(new AuditRow("GROUP_GRANT", "G_A", null));
+        var after = service.grantMatrix();
+        assertThat(after.groups().getFirst().grants()).isEqualTo(before.groups().getFirst().grants());
+        assertThat(after.groups().getFirst().version()).isNotEqualTo(before.groups().getFirst().version());
+        assertThat(after.groups().getFirst()).isEqualTo(service.group("G_A"));
+    }
+
+    @Test
     void menuStructureGroupVersionsAreCheckedUnderTheMenuThenAdminLocks() {
         service.assertGroupVersions(List.of(new GroupVersion("G_B", service.group("G_B").version()),
                 new GroupVersion("G_A", service.group("G_A").version())));
@@ -1047,7 +1124,26 @@ class AuthorizationAdministrationServiceTest {
             }
             if (method.equals("query") && args[1] instanceof RowMapper<?> mapper) {
                 List<Object[]> rows;
-                if (sql.contains("FROM tb_user_info WHERE esntl_id IN (")) {
+                if (sql.equals("SELECT authrt_cd,authrt_nm,authrt_expln FROM tb_authrt_info ORDER BY authrt_cd")) {
+                    rows = groups.entrySet().stream().map(entry -> new Object[]{
+                            entry.getKey(), entry.getValue().name(), entry.getValue().description()}).toList();
+                } else if (sql.startsWith("SELECT authrt_cd,authrt_type_cd,authrt_grnt_cd FROM tb_authrt_grnt_map ORDER BY")) {
+                    rows = groups.entrySet().stream().flatMap(entry -> entry.getValue().grants().stream().sorted()
+                            .map(grant -> new Object[]{entry.getKey(), grant.type(), grant.code()})).toList();
+                } else if (sql.equals("SELECT authrt_cd,max(authrt_chg_hstry_sn) FROM tb_authrt_chg_hstry WHERE chg_trgt_type_cd<>'USER_GROUP' GROUP BY authrt_cd")) {
+                    rows = groups.keySet().stream().map(code -> new Object[]{code,
+                            lastAudit(row -> code.equals(row.group()) && !"USER_GROUP".equals(row.target()))}).toList();
+                } else if (sql.startsWith("SELECT m.scrty_dcsn_trgt_id,m.authrt_cd FROM tb_authrt_user_map m")) {
+                    rows = users.entrySet().stream().filter(entry -> entry.getValue().get(2).equals(parameters.getFirst()))
+                            .flatMap(entry -> memberships.getOrDefault(entry.getKey(), List.of()).stream().sorted()
+                                    .map(group -> new Object[]{entry.getKey(), group})).toList();
+                } else if (sql.startsWith("SELECT h.scrty_dcsn_trgt_id,max(h.authrt_chg_hstry_sn) FROM tb_authrt_chg_hstry h")) {
+                    rows = users.entrySet().stream().filter(entry -> entry.getValue().get(2).equals(parameters.getFirst()))
+                            .map(entry -> new Object[]{entry.getKey(), lastAudit(row -> entry.getKey().equals(row.user()))}).toList();
+                } else if (sql.equals("SELECT esntl_id,user_id,user_nm FROM tb_user_info WHERE ognz_id=? ORDER BY esntl_id")) {
+                    rows = users.entrySet().stream().filter(entry -> entry.getValue().get(2).equals(parameters.getFirst()))
+                            .map(entry -> new Object[]{entry.getKey(), entry.getValue().get(0), entry.getValue().get(1)}).toList();
+                } else if (sql.contains("FROM tb_user_info WHERE esntl_id IN (")) {
                     rows = parameters.stream().filter(users::containsKey).map(id -> {
                         var user = users.get(id);
                         return new Object[]{id, user.get(0), user.get(1), user.get(2)};

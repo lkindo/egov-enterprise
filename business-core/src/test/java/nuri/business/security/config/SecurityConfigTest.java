@@ -1,20 +1,40 @@
 package nuri.business.security.config;
 
-import org.junit.jupiter.api.DisplayName;
+import nuri.foundation.security.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
-/**
- * Security 설정 테스트
- * Note: SecurityConfig는 @Profile("!test")에서만 활성화되므로 테스트 시에는 별도의 설정이 필요할 수 있습니다.
- */
-@DisplayName("SecurityConfig 테스트")
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+
 class SecurityConfigTest {
+    private final PasswordEncoder encoder = new SecurityConfig(mock(JwtTokenProvider.class)).passwordEncoder();
 
-        @Test
-        @DisplayName("SecurityConfig 단순 통과 테스트")
-        void testAlwaysPasses() {
-                // SecurityConfig는 @Profile("!test")에서만 활성화되므로 기본 테스트에서는 단순 통과 처리
-                assertTrue(true, "Test should always pass");
+    @Test
+    void storesBcryptAndRejectsWrongPassword() {
+        String encoded = encoder.encode("isolated-password-fixture");
+
+        assertThat(encoded).startsWith("{bcrypt}$2a$10$");
+        assertThat(encoder.matches("isolated-password-fixture", encoded)).isTrue();
+        assertThat(encoder.matches("wrong-password-fixture", encoded)).isFalse();
+        assertThat(encoder.upgradeEncoding(encoded)).isFalse();
+    }
+
+    @Test
+    void requestsUpgradeForOlderBcryptCost() {
+        String encoded = "{bcrypt}" + new BCryptPasswordEncoder(4).encode("isolated-password-fixture");
+
+        assertThat(encoder.matches("isolated-password-fixture", encoded)).isTrue();
+        assertThat(encoder.upgradeEncoding(encoded)).isTrue();
+    }
+
+    @Test
+    void doesNotEnablePlaintextOrLegacyShaAsADelegatedEncoder() {
+        for (String stored : new String[] { "{noop}fixture", "{egov}fixture", "unprefixed-fixture" }) {
+            assertThatThrownBy(() -> encoder.matches("fixture", stored))
+                    .isInstanceOf(IllegalArgumentException.class);
         }
+    }
 }

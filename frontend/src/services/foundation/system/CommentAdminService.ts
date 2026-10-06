@@ -46,10 +46,6 @@ function withoutConfigParams(config?: AxiosRequestConfig): AxiosRequestConfig | 
  * 따라서 AdminService 조립 규칙에 기대지 않고 ApiService 를 직접 상속해 경로를 확정한다.
  */
 class CommentAdminService extends ApiService {
-  constructor() {
-    super('admin/comments');
-  }
-
   /**
    * 전체 댓글 목록 조회.
    * 공개 API의 searchWrd 별칭은 OpenAPI가 정의한 searchKeyword 쿼리로 정규화한다.

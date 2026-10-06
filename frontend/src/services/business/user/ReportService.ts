@@ -21,10 +21,6 @@ export type WorkReportInput = z.input<typeof WorkReportDtoRequestSchema>;
  * 보고 관리 서비스 (User)
  */
 class ReportService extends ApiService {
-  constructor() {
-    super('/work-reports');
-  }
-
   /**
    * 보고 목록 조회
    */

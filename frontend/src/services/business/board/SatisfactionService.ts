@@ -17,10 +17,6 @@ export type Satisfaction = components['schemas']['SatisfactionDto'];
 export type SatisfactionAverage = components['schemas']['SatisfactionAverageResponse'];
 
 class SatisfactionService extends ApiService {
-  constructor() {
-    super('/boards');
-  }
-
   /** 사용 중(use_yn='Y') 만족도 목록. */
   list = async (bbsId: string, pstSn: number): Promise<Satisfaction[]> => {
     const response = await this.executeGenerated(getListOperation, {

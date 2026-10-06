@@ -181,7 +181,6 @@ services:
       # 브랜드 프로필·밀도 축(DEC-OPS-015, docs/03-guides/design-tokens.md). 미설정이면 기본 프로필·comfortable.
       BRAND_THEME:
       UI_DENSITY:
-      LOG_LEVEL:
       # BACKEND_ACTUATOR_URL 은 전달하지 않는다 — 현재 호출 경로(클라이언트 조회 → /actuator rewrite)에서 읽히지 않고,
       #   운영의 actuator 404 는 관리 포트 분리(W1-12)의 의도된 형상이다. 9090 연결은 next.config 가 금지한 권한 완화다.
 

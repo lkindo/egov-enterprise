@@ -16,10 +16,6 @@ type NoteDto = components['schemas']['NoteDto'];
 export type Note = NoteDto & Required<Pick<NoteDto, 'noteSn'>>;
 
 class NoteService extends ApiService {
- constructor() {
- super('/notes');
- }
-
  /**
  * 받은 쪽지 목록 조회
  */

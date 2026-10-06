@@ -64,12 +64,8 @@ class LoginPolicyRepositoryTest extends PersistenceTestSupport {
                 .build();
         loginPolicyRepository.save(policy);
 
-        LoginPolicySearchCondition condition = new LoginPolicySearchCondition();
-        condition.setSearchCondition("1"); // Name search
-        condition.setSearchKeyword("홍길동");
-
         // when
-        Page<LoginPolicySearchResult> result = loginPolicyRepository.searchLoginPolicies(condition.getSearchKeyword(), PageRequest.of(0, 10));
+        Page<LoginPolicySearchResult> result = loginPolicyRepository.searchLoginPolicies("홍길동", PageRequest.of(0, 10));
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -109,10 +105,8 @@ class LoginPolicyRepositoryTest extends PersistenceTestSupport {
                 .build();
         userRepository.save(user1);
 
-        LoginPolicySearchCondition condition = new LoginPolicySearchCondition();
-
         // when
-        Page<LoginPolicySearchResult> result = loginPolicyRepository.searchLoginPolicies(condition.getSearchKeyword(), PageRequest.of(0, 10));
+        Page<LoginPolicySearchResult> result = loginPolicyRepository.searchLoginPolicies(null, PageRequest.of(0, 10));
 
         // then
         assertThat(result.getContent()).anyMatch(r -> r.getUserId().equals("tester02") && r.getRegYn().equals("N"));

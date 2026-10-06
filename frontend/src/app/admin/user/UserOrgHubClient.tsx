@@ -40,7 +40,6 @@ import { ErrorStateDisplay } from '@/app/components/ui/status-displays';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { toDisplayYmd } from '@/lib/format-date';
-import { PageResponse } from '@/types/foundation/system';
 import { saveDeptHierarchyAction } from '@/app/actions/deptActions';
 import {
   bulkUpdateUserStatusAction,
@@ -69,7 +68,6 @@ import { createPortal } from 'react-dom';
 import {
   AbsenceStatusNotice,
   AccessControlLink,
-  BulkSelectionSummary,
   DetailField,
   DetailFieldList,
   DetailScrollArea,
@@ -82,6 +80,8 @@ import {
   UserStatusBadge,
 } from './UserOrgHubParts';
 import { useDeptTree } from './useDeptTree';
+import { BulkUserStatusDialog, BulkUserDepartmentDialog } from './UserBulkActionDialogs';
+import type { UserOrgPrefetch, UserOrgTab } from './user-org-prefetch';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
@@ -115,8 +115,6 @@ type UserOrgWriteOperation =
 
 
 
-
-type UserOrgTab = 'USERS' | 'DEPTS' | 'ABSENCES' | 'POLICIES';
 
 /**
  * 이 허브의 탭은 곧 라우트다(감사 P1-7). 탭 전환을 로컬 state 로만 처리하면
@@ -160,15 +158,6 @@ const USER_DELETE_CONSEQUENCE = '작성한 게시글·댓글·주소록은 시�
 
 const USER_PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
-/**
- * 서버 프리페치 결과. 실패 시 page.tsx 는 빈 목록이 아니라 `null` 을 넘긴다 —
- * 빈 목록을 시드로 쓰면 화면이 "데이터 0건"이라고 거짓말하기 때문이다(감사 P1-1).
- * null 이면 시드를 포기하고 클라이언트 쿼리가 즉시 재조회하여 실패를 그대로 노출한다.
- */
-export type UserOrgPrefetch<T> = PageResponse<T> | null;
-
-
-
 /** 소속 부서 표시 — 이름이 있으면 이름(ID), 목록에 없으면 ID 원문, 없으면 '미지정'. */
 function departmentLabel(ognzId: string | null | undefined, departments: ReadonlyArray<{ ognzId?: string | null; ognzNm?: string | null }> | null | undefined): string {
   if (!ognzId) return '미지정';
@@ -192,10 +181,8 @@ export default function UserOrgHubClient({
   defaultTab = 'USERS',
   usersPromise,
   deptsPromise
-}: {
+}: UserOrgPrefetch & {
   defaultTab?: UserOrgTab;
-  usersPromise: Promise<UserOrgPrefetch<UserManage>>;
-  deptsPromise: Promise<UserOrgPrefetch<Department>>;
 }) {
   const initialUsers = use(usersPromise);
   const initialDepts = use(deptsPromise);
@@ -1545,51 +1532,16 @@ export default function UserOrgHubClient({
         />
       </StandardModal>
 
-      {/* Bulk Status Modal */}
-      <StandardModal
+      <BulkUserStatusDialog
         isOpen={isBulkStatusModalOpen}
+        users={selectedBulkItems}
+        isSaving={isSaving}
         onClose={handleCloseBulkStatusModal}
-        title="사용자 상태 일괄 변경"
-        maxWidth="sm"
-      >
-        <div className="space-y-4">
-          <BulkSelectionSummary users={selectedBulkItems} />
-
-          <div className="space-y-2">
-            {/* 폼 컨트롤이 아니라 버튼 그룹이므로 <label> 이 아니라 radiogroup 으로 이름을 붙인다(감사 P2). */}
-            <p id="bulk-status-label" className="text-[length:var(--font-size-body)] font-semibold text-foreground">변경할 상태 선택</p>
-            <div role="radiogroup" aria-labelledby="bulk-status-label" className="grid grid-cols-1 gap-1.5">
-              {([
-                { code: 'P', label: '정상', dot: 'bg-success' },
-                { code: 'A', label: '승인 대기', dot: 'bg-warning' },
-                { code: 'D', label: '비활성', dot: 'bg-muted-foreground' }
-              ] satisfies { code: UserStatusCode; label: string; dot: string }[]).map(s => (
-                <button
-                  key={s.code}
-                  type="button"
-                  role="radio"
-                  aria-checked={targetStatus === s.code}
-                  disabled={isSaving}
-                  onClick={() => setTargetStatus(s.code)}
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left transition-colors",
-                    targetStatus === s.code ? "border-primary bg-primary/5" : "border-border bg-card hover:bg-muted"
-                  )}
-                >
-                  <span className={cn("size-2 shrink-0 rounded-full", s.dot)} aria-hidden="true" />
-                  <span className="text-[length:var(--font-size-body)] font-medium text-foreground">{s.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
+        status={targetStatus}
+        onStatusChange={setTargetStatus}
+        footer={
           <div className="flex justify-end gap-2 border-t border-border pt-3">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isSaving}
-              onClick={handleCloseBulkStatusModal}
-            >
+            <Button type="button" variant="outline" disabled={isSaving} onClick={handleCloseBulkStatusModal}>
               취소
             </Button>
             <Button
@@ -1603,58 +1555,20 @@ export default function UserOrgHubClient({
               ) : '상태 일괄 적용'}
             </Button>
           </div>
-        </div>
-      </StandardModal>
-
-      {/* Bulk Move Modal */}
-      <StandardModal
+        }
+      />
+      <BulkUserDepartmentDialog
         isOpen={isBulkMoveModalOpen}
+        users={selectedBulkItems}
+        isSaving={isSaving}
         onClose={handleCloseBulkMoveModal}
-        title="부서 일괄 이동"
-        maxWidth="md"
-      >
-        <div className="space-y-4">
-          <BulkSelectionSummary users={selectedBulkItems} />
-
-          <div className="space-y-2">
-            <p id="bulk-dept-label" className="text-[length:var(--font-size-body)] font-semibold text-foreground">이동할 대상 부서 선택</p>
-            <div role="radiogroup" aria-labelledby="bulk-dept-label" className="max-h-[320px] overflow-y-auto rounded-md border border-border bg-muted/20 p-2">
-              {flattenedDepts.length === 0 && (
-                <p className="py-8 text-center text-[length:var(--font-size-body)] text-muted-foreground">
-                  {isDeptsLoading ? '부서 목록을 불러오는 중입니다...' : '이동할 수 있는 부서가 없습니다.'}
-                </p>
-              )}
-              {flattenedDepts.map((node) => (
-                <div
-                  key={node.ognzId}
-                  style={{ paddingLeft: `${node.depth * 16}px` }}
-                >
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={targetDeptId === node.ognzId}
-                    disabled={isSaving}
-                    onClick={() => setTargetDeptId(node.ognzId || '')}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left transition-colors",
-                      targetDeptId === node.ognzId ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
-                    )}
-                  >
-                    <span className="min-w-0 truncate text-[length:var(--font-size-body)]">{node.ognzNm}</span>
-                    <span className="ml-auto shrink-0 text-xs tabular-nums opacity-70">{node.ognzId}</span>
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
+        departments={flattenedDepts}
+        isLoading={isDeptsLoading}
+        departmentId={targetDeptId}
+        onDepartmentChange={setTargetDeptId}
+        footer={
           <div className="flex justify-end gap-2 border-t border-border pt-3">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isSaving}
-              onClick={handleCloseBulkMoveModal}
-            >
+            <Button type="button" variant="outline" disabled={isSaving} onClick={handleCloseBulkMoveModal}>
               취소
             </Button>
             <Button
@@ -1668,8 +1582,8 @@ export default function UserOrgHubClient({
               ) : '부서 이동 실행'}
             </Button>
           </div>
-        </div>
-      </StandardModal>
+        }
+      />
     </WorkListPage>
   );
 }

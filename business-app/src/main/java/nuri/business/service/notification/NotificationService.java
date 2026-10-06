@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Propagation;
 import tools.jackson.databind.ObjectMapper;
 import java.util.Objects;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -134,20 +133,6 @@ public class NotificationService {
         Notification owned = findOwnedNotification(notiSn, userId)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         notificationRepository.delete(owned);
-    }
-
-    public Page<NotificationDto> getActiveNotifications(Pageable pageable) {
-        log.debug("Fetching active notifications with pagination");
-        return notificationRepository.findAll(pageable)
-                .map(notificationMapper::toDto);
-    }
-
-    public List<NotificationDto> getActiveNotificationsAll() {
-        // [경고] 대량 데이터 조회 - 배치 작업 등 특수한 경우에만 사용
-        log.warn("Fetching ALL notifications without pagination - use with caution");
-        return notificationRepository.findAll().stream()
-                .map(notificationMapper::toDto)
-                .collect(Collectors.toList());
     }
 
     public long getUnreadCount(String userId) {

@@ -128,6 +128,16 @@
       "pack": "demo"
     },
     {
+      "file": "informalsanction/InformalSanctionReadAssembler.java",
+      "owner": "informalsanction",
+      "target": "user",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.user.dto.UserSearchDto"
+      ],
+      "pack": "demo"
+    },
+    {
       "file": "informalsanction/InformalSanctionService.java",
       "owner": "informalsanction",
       "target": "user",
@@ -293,16 +303,6 @@
       "types": [
         "nuri.business.service.file.AttachmentSource",
         "nuri.business.service.file.AttachmentSourceContributor"
-      ],
-      "pack": "demo"
-    },
-    {
-      "file": "schedule/ScheduleService.java",
-      "owner": "schedule",
-      "target": "common",
-      "module": "business-core",
-      "types": [
-        "nuri.business.domain.common.BaseSearchDto"
       ],
       "pack": "demo"
     },

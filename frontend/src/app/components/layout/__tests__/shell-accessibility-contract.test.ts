@@ -458,11 +458,6 @@ describe('app shell accessibility source contract', () => {
       ['admin', 'system', 'menus', 'by-authority', 'page.tsx'],
       ['admin', 'system', 'menus', 'page.tsx'],
       ['admin', 'system', 'programs', 'page.tsx'],
-      ['admin', 'user', 'absences', 'page.tsx'],
-      ['admin', 'user', 'departments', 'page.tsx'],
-      ['admin', 'user', 'indvdl-info-policy', 'page.tsx'],
-      ['admin', 'user', 'login-policy', 'page.tsx'],
-      ['admin', 'user', 'manage', 'page.tsx'],
       ['admin', 'uss', 'ion', 'sms', 'page.tsx'],
       ['admin', 'uss', 'olh', 'online-manual', 'page.tsx'],
     ];
@@ -470,6 +465,25 @@ describe('app shell accessibility source contract', () => {
     for (const pathParts of routeFallbackSources) {
       expect(readAppSource(...pathParts), pathParts.join('/')).toMatch(/<h1\b/);
     }
+
+    // 사용자·조직 5개 route는 fallback을 공유한다. 경로별 제목 전달과 실제 h1 렌더를 함께 지킨다.
+    const userOrgFallbackTitles = [
+      ['absences', '부재 상태를 불러오는 중'],
+      ['departments', '부서 관리를 불러오는 중'],
+      ['indvdl-info-policy', '개인정보 정책을 불러오는 중'],
+      ['login-policy', '사용자 로그인 정책을 불러오는 중'],
+      ['manage', '사용자 관리를 불러오는 중'],
+    ];
+    for (const [route, title] of userOrgFallbackTitles) {
+      const page = readAppSource('admin', 'user', route, 'page.tsx');
+      expect(page, `admin/user/${route}/page.tsx`).toContain("import UserOrgHubPage from '../UserOrgHubPage'");
+      expect(page, `admin/user/${route}/page.tsx`).toMatch(
+        new RegExp(`<UserOrgHubPage\\b[^>]*loadingTitle="${title}"`),
+      );
+    }
+    expect(readAppSource('admin', 'user', 'UserOrgHubPage.tsx')).toMatch(
+      /<Suspense\s+fallback\s*=\s*\{[\s\S]*?<h1\b[^>]*>\{loadingTitle\}<\/h1>/,
+    );
 
     expect(readAppSource('admin', 'system', 'monitoring', 'MonitoringHubSkeleton.tsx')).toMatch(/<h1\b/);
   });

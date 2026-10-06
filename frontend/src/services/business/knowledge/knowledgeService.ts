@@ -71,10 +71,6 @@ class KnowledgeService extends ApiService {
     WIKI: WIKI_BOARD_ID,
   };
 
-  constructor() {
-    super('/boards');
-  }
-
   /**
    * 게시물 목록 조회 (지식 카테고리 기반)
    */

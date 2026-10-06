@@ -47,13 +47,13 @@ class NoteServiceTest {
     void getReceivedNotes() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        given(noteRecptnRepository.searchNoteRecptns(any(), anyString(), anyString(), any())).willReturn(new PageImpl<>(List.of()));
+        given(noteRecptnRepository.searchNoteRecptns(anyString(), anyString(), any())).willReturn(new PageImpl<>(List.of()));
 
         // when
         noteService.getReceivedNotes("user1", "word", pageable);
 
         // then
-        verify(noteRecptnRepository).searchNoteRecptns(any(), eq("word"), eq("user1"), eq(pageable));
+        verify(noteRecptnRepository).searchNoteRecptns(eq("word"), eq("user1"), eq(pageable));
     }
 
     @Test
@@ -61,12 +61,12 @@ class NoteServiceTest {
     void getSentNotes() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        given(noteTrnsmitRepository.searchNoteTrnsmits(any(), anyString(), anyString(), any())).willReturn(new PageImpl<>(List.of()));
+        given(noteTrnsmitRepository.searchNoteTrnsmits(anyString(), anyString(), any())).willReturn(new PageImpl<>(List.of()));
 
         // when
         noteService.getSentNotes("user1", "word", pageable);
 
         // then
-        verify(noteTrnsmitRepository).searchNoteTrnsmits(any(), eq("word"), eq("user1"), eq(pageable));
+        verify(noteTrnsmitRepository).searchNoteTrnsmits(eq("word"), eq("user1"), eq(pageable));
     }
 }

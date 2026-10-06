@@ -27,13 +27,11 @@ import nuri.migration.state.RowChecksum;
 import nuri.migration.transform.CodeMapper;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.transform.TypeConverter;
+import nuri.migration.verify.KeyDiagnostics;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -42,7 +40,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -416,7 +413,7 @@ public class EtlExecutor {
                 insertCols,
                 returningCols,
                 buildInsertSql(t.target(), insertCols, returningCols));
-        long[] c = {0, 0, 0}; // read, transformed, written
+        TableCounts counts = new TableCounts();
         boolean sourceSessionFailed = false;
 
         Connection targetConn = null;
@@ -429,10 +426,10 @@ public class EtlExecutor {
             preMintSelfReferences(sourceConnection, targetConn, t, reg);
             if (t.effectiveOrderKeys().isEmpty()) {
                 streamUnorderedDryRun(sourceConnection, spec, t, writePlan, reg, state,
-                        targetConn, c, errors);
+                        targetConn, counts, errors);
             } else {
                 readKeysetPages(sourceConnection, spec, t, writePlan, reg, state,
-                        targetConn, c, errors);
+                        targetConn, counts, errors);
             }
         } catch (SQLException failure) {
             sourceSessionFailed = true;
@@ -446,9 +443,9 @@ public class EtlExecutor {
         } finally {
             safeClose(targetConn);
         }
-        long durableWritten = state == null ? c[2] : state.count(t.source());
+        long durableWritten = state == null ? counts.written : state.count(t.source());
         return new TableExecution(
-                new TableResult(t.source(), t.target(), c[0], c[1], durableWritten, errors),
+                new TableResult(t.source(), t.target(), counts.read, counts.transformed, durableWritten, errors),
                 sourceSessionFailed);
     }
 
@@ -496,7 +493,7 @@ public class EtlExecutor {
     private void streamUnorderedDryRun(Connection source, MappingSpec spec, TableMapping table,
                                        WritePlan writePlan,
                                        KeyMapRegistry registry, MigrationStateStore state,
-                                       Connection target, long[] counts, List<String> errors) throws SQLException {
+                                       Connection target, TableCounts counts, List<String> errors) throws SQLException {
         String sql = buildSourcePageSql(table, false);
         boolean boundedVariableValues = "Microsoft SQL Server".equals(source.getMetaData().getDatabaseProductName());
         try (PreparedStatement statement = SourceReadStatements.prepare(source, sql)) {
@@ -505,7 +502,7 @@ public class EtlExecutor {
                 List<Map<String, Object>> chunk = new ArrayList<>(CHUNK);
                 long retainedBytes = 0;
                 while (result.next()) {
-                    counts[0]++;
+                    counts.read++;
                     Map<String, Object> row = readRow(result, labels, boundedVariableValues);
                     chunk.add(row);
                     retainedBytes += rowBytes(row);
@@ -527,7 +524,7 @@ public class EtlExecutor {
     private void readKeysetPages(Connection source, MappingSpec spec, TableMapping table,
                                  WritePlan writePlan,
                                  KeyMapRegistry registry, MigrationStateStore state,
-                                 Connection target, long[] counts, List<String> errors) throws SQLException {
+                                 Connection target, TableCounts counts, List<String> errors) throws SQLException {
         List<Object> cursor = null;
         Set<String> seenSourceKeys = new HashSet<>();
         Set<String> seenOrderDigests = new HashSet<>();
@@ -537,12 +534,12 @@ public class EtlExecutor {
             hasMore = page.hasMore();
             List<Map<String, Object>> accepted = new ArrayList<>(page.rows().size());
             for (Map<String, Object> row : page.rows()) {
-                counts[0]++;
+                counts.read++;
                 String sourceKey = sourceKey(row, table);
                 if (!seenSourceKeys.add(sourceKey)) {
                     throw new SQLException(
                             "중복 source identity(" + table.source() + "): sourceDigest="
-                                    + keyDigest(sourceKey));
+                                    + KeyDiagnostics.digest(sourceKey));
                 }
                 String orderDigest = orderDigest(row, table);
                 if (!seenOrderDigests.add(orderDigest)) {
@@ -568,6 +565,12 @@ public class EtlExecutor {
     private record SourcePage(List<Map<String, Object>> rows, boolean hasMore) {}
 
     private record TableExecution(TableResult result, boolean sourceSessionFailed) {}
+
+    private static final class TableCounts {
+        private long read;
+        private long transformed;
+        private long written;
+    }
 
     private record WritePlan(
             List<String> targetColumns,
@@ -699,7 +702,7 @@ public class EtlExecutor {
                 String legacyKey = raw.toString();
                 if (!seen.add(legacyKey)) {
                     throw new SQLException(table.source() + ": 자기참조 sourceKey 중복: digest="
-                            + keyDigest(legacyKey));
+                            + KeyDiagnostics.digest(legacyKey));
                 }
                 registry.mintOrGet(table.source(), legacyKey, id.generator());
             }
@@ -726,9 +729,9 @@ public class EtlExecutor {
     private void processChunk(List<Map<String, Object>> chunk, MappingSpec spec, TableMapping t,
                               WritePlan writePlan, KeyMapRegistry reg,
                               MigrationStateStore state, Connection targetConn,
-                              long[] c, List<String> errors) {
+                              TableCounts counts, List<String> errors) {
         if (isTargetGenerated(t)) {
-            processGeneratedRows(chunk, spec, t, writePlan, reg, state, targetConn, c, errors);
+            processGeneratedRows(chunk, spec, t, writePlan, reg, state, targetConn, counts, errors);
             return;
         }
         Checkpoint chunkCheckpoint = reg.checkpoint();
@@ -737,7 +740,7 @@ public class EtlExecutor {
             Checkpoint rowCheckpoint = reg.checkpoint();
             try {
                 Map<String, Object> out = transformRow(row, spec, t, reg);
-                c[1]++;
+                counts.transformed++;
                 CheckpointEntry checkpoint = null;
                 if (state != null) {
                     checkpoint = checkpoint(row, out, t, writePlan.targetColumns());
@@ -747,7 +750,7 @@ public class EtlExecutor {
                                 && reg.checkpoint().pendingSize() > rowCheckpoint.pendingSize()) {
                             errors.add("resume checkpoint/keymap missing for durable typed identity("
                                     + t.source() + ", sourceDigest="
-                                    + keyDigest(checkpoint.sourceKey()) + ")");
+                                    + KeyDiagnostics.digest(checkpoint.sourceKey()) + ")");
                             reg.rollback(rowCheckpoint);
                             continue;
                         }
@@ -755,7 +758,7 @@ public class EtlExecutor {
                                 || !durable.targetKey().equals(checkpoint.targetKey())
                                 || !durable.targetTable().equalsIgnoreCase(checkpoint.targetTable())) {
                             errors.add("resume checkpoint/source checksum 불일치(" + t.source()
-                                    + ", sourceDigest=" + keyDigest(checkpoint.sourceKey()) + ")");
+                                    + ", sourceDigest=" + KeyDiagnostics.digest(checkpoint.sourceKey()) + ")");
                         }
                         reg.rollback(rowCheckpoint);
                         continue;
@@ -776,7 +779,7 @@ public class EtlExecutor {
             reg.accept(chunkCheckpoint);
             return;
         }
-        c[2] += writeChunkAtomically(
+        counts.written += writeChunkAtomically(
                 targetConn, writePlan.insertSql(), batch, spec, t, writePlan, reg, state,
                 chunkCheckpoint, errors);
     }
@@ -793,7 +796,7 @@ public class EtlExecutor {
             KeyMapRegistry registry,
             MigrationStateStore state,
             Connection connection,
-            long[] counts,
+            TableCounts counts,
             List<String> errors
     ) {
         if (connection == null) {
@@ -801,7 +804,7 @@ public class EtlExecutor {
                 Checkpoint checkpoint = registry.checkpoint();
                 try {
                     transformRow(row, spec, table, registry);
-                    counts[1]++;
+                    counts.transformed++;
                 } catch (RuntimeException ignored) {
                     errors.add("행 변환 실패(" + table.source() + "): ROW_TRANSFORM_FAILED");
                 } finally {
@@ -819,8 +822,8 @@ public class EtlExecutor {
             TypedKeyTuple sourceIdentity;
             try {
                 transformed = transformRow(row, spec, table, registry);
-                sourceIdentity = tupleFromSource(row, table.identity().sourceComponents());
-                counts[1]++;
+                sourceIdentity = tupleFromValues(row, table.identity().sourceComponents());
+                counts.transformed++;
                 String encodedSource = TypedKeyEncoding.encode(
                         sourceIdentity, 256, "tb_migration_checkpoint.source_key");
                 CheckpointEntry durable = state.find(table.source(), encodedSource);
@@ -833,13 +836,13 @@ public class EtlExecutor {
                     TypedKeyTuple mappedTarget = registry.translate(table.source(), sourceIdentity);
                     if (mappedTarget == null) {
                         errors.add("resume checkpoint/keymap missing for durable generated identity("
-                                + table.source() + ", sourceDigest=" + keyDigest(encodedSource) + ")");
+                                + table.source() + ", sourceDigest=" + KeyDiagnostics.digest(encodedSource) + ")");
                         registry.rollback(rowCheckpoint);
                         continue;
                     }
                     if (!mappedTarget.equals(durableTarget)) {
                         errors.add("resume checkpoint/keymap mismatch for durable generated identity("
-                                + table.source() + ", sourceDigest=" + keyDigest(encodedSource) + ")");
+                                + table.source() + ", sourceDigest=" + KeyDiagnostics.digest(encodedSource) + ")");
                         registry.rollback(rowCheckpoint);
                         continue;
                     }
@@ -850,7 +853,7 @@ public class EtlExecutor {
                             || !durable.targetKey().equals(expected.targetKey())
                             || !durable.targetTable().equalsIgnoreCase(expected.targetTable())) {
                         errors.add("resume checkpoint/source checksum 불일치(" + table.source()
-                                + ", sourceDigest=" + keyDigest(encodedSource) + ")");
+                                + ", sourceDigest=" + KeyDiagnostics.digest(encodedSource) + ")");
                     }
                     registry.rollback(rowCheckpoint);
                     continue;
@@ -882,7 +885,7 @@ public class EtlExecutor {
             }
             commitAndAccept(connection, registry, rowCheckpoint, state,
                     List.of(durableCheckpoint), table.target());
-            counts[2]++;
+            counts.written++;
         }
     }
 
@@ -916,9 +919,9 @@ public class EtlExecutor {
         if (table.identity() != null) {
             return CheckpointEntry.typed(
                     table.source(),
-                    tupleFromSource(source, table.identity().sourceComponents()),
+                    tupleFromValues(source, table.identity().sourceComponents()),
                     table.target(),
-                    tupleFromTarget(transformed, table.identity().targetComponents()),
+                    tupleFromValues(transformed, table.identity().targetComponents()),
                     RowChecksum.calculate(targetColumns, transformed));
         }
         String sourceKey = sourceKey(source, table);
@@ -933,7 +936,7 @@ public class EtlExecutor {
     private String sourceKey(Map<String, Object> source, TableMapping table) {
         if (table.identity() != null) {
             return TypedKeyEncoding.encode(
-                    tupleFromSource(source, table.identity().sourceComponents()),
+                    tupleFromValues(source, table.identity().sourceComponents()),
                     256,
                     "tb_migration_checkpoint.source_key");
         }
@@ -1025,7 +1028,7 @@ public class EtlExecutor {
         if (identity == null || identity.policy() == TargetIdentityPolicy.TARGET_GENERATED) {
             return;
         }
-        TypedKeyTuple sourceTuple = tupleFromSource(source, identity.sourceComponents());
+        TypedKeyTuple sourceTuple = tupleFromValues(source, identity.sourceComponents());
         if (identity.policy() == TargetIdentityPolicy.PRESERVE) {
             for (int i = 0; i < identity.sourceComponents().size(); i++) {
                 TypedValue sourceValue = identityCodec.encode(
@@ -1037,7 +1040,7 @@ public class EtlExecutor {
                         sourceValue.jdbcValue());
             }
         }
-        TypedKeyTuple targetTuple = tupleFromTarget(target, identity.targetComponents());
+        TypedKeyTuple targetTuple = tupleFromValues(target, identity.targetComponents());
         registry.register(table.source(), sourceTuple, targetTuple);
     }
 
@@ -1066,7 +1069,7 @@ public class EtlExecutor {
                 throw new IllegalStateException("복합 FK partial-null은 허용되지 않습니다: "
                         + foreignKey.parentSource());
             }
-            TypedKeyTuple sourceTuple = tupleFromSource(source, foreignKey.sourceComponents());
+            TypedKeyTuple sourceTuple = tupleFromValues(source, foreignKey.sourceComponents());
             TypedKeyTuple translated = registry.translate(foreignKey.parentSource(), sourceTuple);
             if (translated == null) {
                 throw new IllegalStateException("복합 FK 고아: 부모 '" + foreignKey.parentSource()
@@ -1089,26 +1092,14 @@ public class EtlExecutor {
         }
     }
 
-    private TypedKeyTuple tupleFromSource(
-            Map<String, Object> source,
+    private TypedKeyTuple tupleFromValues(
+            Map<String, Object> row,
             List<IdentityComponentSpec> components
     ) {
         List<TypedValue> values = new ArrayList<>(components.size());
         for (IdentityComponentSpec component : components) {
             values.add(identityCodec.encode(
-                    component.type(), valueIgnoreCase(source, component.column())));
-        }
-        return TypedKeyTuple.of(values.toArray(TypedValue[]::new));
-    }
-
-    private TypedKeyTuple tupleFromTarget(
-            Map<String, Object> target,
-            List<IdentityComponentSpec> components
-    ) {
-        List<TypedValue> values = new ArrayList<>(components.size());
-        for (IdentityComponentSpec component : components) {
-            values.add(identityCodec.encode(
-                    component.type(), valueIgnoreCase(target, component.column())));
+                    component.type(), valueIgnoreCase(row, component.column())));
         }
         return TypedKeyTuple.of(values.toArray(TypedValue[]::new));
     }
@@ -1375,18 +1366,6 @@ public class EtlExecutor {
     private static boolean isTargetGenerated(TableMapping table) {
         return table.identity() != null
                 && table.identity().policy() == TargetIdentityPolicy.TARGET_GENERATED;
-    }
-
-    private static String keyDigest(String key) {
-        if (key == null) {
-            return "<null>";
-        }
-        try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-                    .digest(key.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException impossible) {
-            throw new IllegalStateException("SHA-256 is unavailable", impossible);
-        }
     }
 
     private static void addColumn(List<String> columns, String candidate) {

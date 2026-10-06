@@ -35,8 +35,8 @@ public class AuthorizationAdministrationService implements nuri.business.service
 
     public List<GroupSummary> groups() {
         SecurityUtil.assertPermission("AUTHRT_READ");
-        return jdbc.queryForList("SELECT authrt_cd FROM tb_authrt_info ORDER BY authrt_cd", String.class)
-                .stream().map(this::readGroup).map(g -> new GroupSummary(g.code(), g.name(), g.description(), g.version())).toList();
+        return readGroups().stream()
+                .map(g -> new GroupSummary(g.code(), g.name(), g.description(), g.version())).toList();
     }
 
     public GroupSnapshot group(String code) {
@@ -57,6 +57,29 @@ public class AuthorizationAdministrationService implements nuri.business.service
     private List<Grant> readGrants(String code) {
         return jdbc.query("SELECT authrt_type_cd,authrt_grnt_cd FROM tb_authrt_grnt_map WHERE authrt_cd=? ORDER BY authrt_type_cd,authrt_grnt_cd",
                 (rs,n) -> new Grant(rs.getString(1),rs.getString(2)),code);
+    }
+
+    /** Read the same ordered grants and audit version as readGroup without one query set per group. */
+    private List<GroupSnapshot> readGroups() {
+        var groups = jdbc.query("SELECT authrt_cd,authrt_nm,authrt_expln FROM tb_authrt_info ORDER BY authrt_cd",
+                (rs,n) -> new GroupSummary(rs.getString(1),rs.getString(2),rs.getString(3),null));
+        if (groups.isEmpty()) return List.of();
+
+        Map<String,List<Grant>> grantsByGroup = new HashMap<>();
+        jdbc.query("SELECT authrt_cd,authrt_type_cd,authrt_grnt_cd FROM tb_authrt_grnt_map ORDER BY authrt_cd,authrt_type_cd,authrt_grnt_cd",
+                (rs,n) -> Map.entry(rs.getString(1),new Grant(rs.getString(2),rs.getString(3))))
+                .forEach(row -> grantsByGroup.computeIfAbsent(row.getKey(), ignored -> new ArrayList<>()).add(row.getValue()));
+        Map<String,Long> lastByGroup = new HashMap<>();
+        jdbc.query("SELECT authrt_cd,max(authrt_chg_hstry_sn) FROM tb_authrt_chg_hstry WHERE chg_trgt_type_cd<>'USER_GROUP' GROUP BY authrt_cd",
+                (rs,n) -> Map.entry(rs.getString(1),rs.getLong(2)))
+                .forEach(row -> lastByGroup.put(row.getKey(),row.getValue()));
+
+        return groups.stream().map(group -> {
+            var grants = grantsByGroup.getOrDefault(group.code(),List.of());
+            String state = Objects.toString(group.name(), "") + "\n" + Objects.toString(group.description(), "") + "\n" + grants;
+            return new GroupSnapshot(group.code(),group.name(),group.description(),grants,
+                    versionDigest(group.code(),state,lastByGroup.getOrDefault(group.code(),0L)),true);
+        }).toList();
     }
 
     public MembershipSnapshot memberships(String userId) {
@@ -111,9 +134,23 @@ public class AuthorizationAdministrationService implements nuri.business.service
         }
         var users=jdbc.query("SELECT esntl_id,user_id,user_nm FROM tb_user_info WHERE ognz_id=? ORDER BY esntl_id",
                 (rs,n) -> new UserChoice(rs.getString(1),rs.getString(2),rs.getString(3),departmentId),departmentId);
+        Map<String,List<String>> groupsByUser = new HashMap<>();
+        Map<String,Long> lastByUser = new HashMap<>();
+        if (!users.isEmpty()) {
+            jdbc.query("SELECT m.scrty_dcsn_trgt_id,m.authrt_cd FROM tb_authrt_user_map m"
+                    + " JOIN tb_user_info u ON u.esntl_id=m.scrty_dcsn_trgt_id WHERE u.ognz_id=?"
+                    + " ORDER BY m.scrty_dcsn_trgt_id,m.authrt_cd",
+                    (rs,n) -> Map.entry(rs.getString(1),rs.getString(2)),departmentId)
+                    .forEach(row -> groupsByUser.computeIfAbsent(row.getKey(), ignored -> new ArrayList<>()).add(row.getValue()));
+            jdbc.query("SELECT h.scrty_dcsn_trgt_id,max(h.authrt_chg_hstry_sn) FROM tb_authrt_chg_hstry h"
+                    + " JOIN tb_user_info u ON u.esntl_id=h.scrty_dcsn_trgt_id WHERE u.ognz_id=? GROUP BY h.scrty_dcsn_trgt_id",
+                    (rs,n) -> Map.entry(rs.getString(1),rs.getLong(2)),departmentId)
+                    .forEach(row -> lastByUser.put(row.getKey(),row.getValue()));
+        }
         var members=users.stream().map(user -> {
-            var membership=readMemberships(user.id());
-            return new DepartmentMember(user.id(),user.userId(),user.userNm(),membership.groups(),membership.version(),true);
+            var groups = groupsByUser.getOrDefault(user.id(),List.of());
+            String version = versionDigest(user.id(),groups.toString(),lastByUser.getOrDefault(user.id(),0L));
+            return new DepartmentMember(user.id(),user.userId(),user.userNm(),groups,version,true);
         }).toList();
         String digest=AuthorizationSnapshotService.digest(PermissionCodes.CATALOG_VERSION+"\n"+departmentId+"\n"+members);
         return new DepartmentSnapshot(departmentId,members,digest,true);
@@ -291,9 +328,7 @@ public class AuthorizationAdministrationService implements nuri.business.service
     @Transactional(isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ, readOnly=true)
     public GrantMatrix grantMatrix() {
         SecurityUtil.assertPermission("AUTHRT_READ");
-        var groups = jdbc.queryForList("SELECT authrt_cd FROM tb_authrt_info ORDER BY authrt_cd", String.class)
-                .stream().map(this::readGroup).toList();
-        return new GrantMatrix(PermissionCodes.CATALOG_VERSION,groups);
+        return new GrantMatrix(PermissionCodes.CATALOG_VERSION,readGroups());
     }
 
     @Transactional

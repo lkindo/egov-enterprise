@@ -123,12 +123,6 @@ public class PopupService {
         }
     }
 
-    public List<String> getPopupWhiteList() {
-        return popupRepository.findAll().stream()
-                .map(p -> p.getFileUrl())
-                .collect(Collectors.toList());
-    }
-
     /**
      * 요청 URL이 파일 API를 가리키면 첨부 ID를 반환한다. 파일 API prefix를 사용하면서 두 정식
      * 형식 중 어느 것에도 정확히 일치하지 않는 값은 일반 URL로 흘려보내지 않고 거부한다.

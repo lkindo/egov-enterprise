@@ -5,20 +5,16 @@ import nuri.foundation.security.filter.OriginValidationFilter;
 import nuri.foundation.security.jwt.JwtAuthenticationFilter;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.security.service.EgovPasswordEncoder;
+import nuri.business.security.service.PasswordEncoders;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import java.util.HashMap;
-import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
@@ -28,19 +24,13 @@ import java.util.Map;
 public class SecurityConfig {
         private final JwtTokenProvider jwtTokenProvider;
 
-        public SecurityConfig(@org.springframework.context.annotation.Lazy JwtTokenProvider jwtTokenProvider,
-                        Environment environment) {
+        public SecurityConfig(@org.springframework.context.annotation.Lazy JwtTokenProvider jwtTokenProvider) {
                 this.jwtTokenProvider = jwtTokenProvider;
         }
 
         @Bean
         public PasswordEncoder passwordEncoder() {
-                // 신규 비번=BCrypt. 옛 SHA-256 은 EgovAuthenticationProvider 가 검증 후 로그인 시 BCrypt 로 재해싱 마이그레이션.
-                // (구 NoOp("egov") 항목 제거 — 도달 불가 死항목이자 OWASP footgun)
-                String encodingId = "bcrypt";
-                Map<String, PasswordEncoder> encoders = new HashMap<>();
-                encoders.put("bcrypt", new BCryptPasswordEncoder());
-                return new DelegatingPasswordEncoder(encodingId, encoders);
+                return PasswordEncoders.create();
         }
 
         @Bean

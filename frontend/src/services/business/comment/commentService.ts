@@ -27,10 +27,6 @@ const CommentViewSchema = CommentDtoSchema.extend({
  * 댓글 서비스 (Enterprise v5 Standard)
  */
 class CommentService extends ApiService {
-  constructor() {
-    super('comments');
-  }
-
   /** 댓글 목록 조회 */
   async getComments(params: CommentSearchParams, config?: AxiosRequestConfig): Promise<PageResponse<CommentVO>> {
     const response = await this.executeGenerated(getCommentsOperation, { query: params, config });

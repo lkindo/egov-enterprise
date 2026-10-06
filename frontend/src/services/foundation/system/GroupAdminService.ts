@@ -49,10 +49,6 @@ function requireGroupPage(
  * 그룹 관리님쒕퉬님(Admin)
  */
 class GroupAdminService extends AdminService {
- constructor() {
- super('/groups');
- }
-
  /** 그룹 목록 조회 */
  async getGroupList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<GroupInfo>> {
  const response = await this.executeGenerated(getGroupsOperation, {

@@ -133,7 +133,7 @@ vi.mock('@/services/foundation/system/UserAdminService', () => ({
   userAdminService: { getUserList: vi.fn(), getUser: vi.fn() },
 }));
 vi.mock('@/services/foundation/system/DeptAdminService', () => ({
-  deptAdminService: { getDeptList: vi.fn() },
+  deptAdminService: { getDeptTree: vi.fn() },
 }));
 vi.mock('@/services/foundation/system/UserAbsenceAdminService', async (importOriginal) => {
   // ABSENT/PRESENT 상수는 실제 모듈 값을 그대로 쓴다 — 테스트가 어휘를 따로 지어내면
@@ -204,7 +204,7 @@ describe('UserOrgHubClient 부재 관리 배선', () => {
     vi.clearAllMocks();
     vi.mocked(userAdminService.getUserList).mockResolvedValue(listPage as never);
     vi.mocked(userAdminService.getUser).mockResolvedValue(ABSENT_USER as never);
-    vi.mocked(deptAdminService.getDeptList).mockResolvedValue({ list: [], total: 0, page: 1, size: 10, totalPage: 0 } as never);
+    vi.mocked(deptAdminService.getDeptTree).mockResolvedValue([]);
     // 서버는 '기록이 있는 사용자' 만 돌려준다 — 박무기록은 아예 없다.
     vi.mocked(userAbsenceAdminService.getAbsences).mockResolvedValue([
       { userId: 'E-ABSENT', userAbsnYn: 'Y' },

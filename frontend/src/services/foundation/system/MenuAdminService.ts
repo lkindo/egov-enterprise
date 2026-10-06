@@ -150,10 +150,6 @@ function toMenuRequest(data: Partial<Menu>): MenuWire {
  * 메뉴 관리 서비스 (Admin)
  */
 class MenuAdminService extends AdminService {
-  constructor() {
-    super('/menus');
-  }
-
   /** 메뉴 목록 조회 */
   async getMenuList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Menu>> {
     const response = await this.executeGenerated(getMenuListOperation, {

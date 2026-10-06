@@ -21,7 +21,7 @@ public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, Lo
     //   같은 결과가 새로고침마다 다른 순서로 올 수 있었다. 일련번호는 IDENTITY 라 최신순과 같다.
     @Query(value = "SELECT r FROM NoteRecptn r JOIN FETCH r.note n LEFT JOIN FETCH r.noteDsptch d WHERE r.rcvrId = :rcverId AND r.delYn = 'N' AND (:searchWrd IS NULL OR n.noteTtl LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%) ORDER BY r.noteRcptnSn DESC",
            countQuery = "SELECT count(r) FROM NoteRecptn r WHERE r.rcvrId = :rcverId AND r.delYn = 'N' AND (:searchWrd IS NULL OR r.note.noteTtl LIKE %:searchWrd% OR r.note.noteCn LIKE %:searchWrd%)")
-    Page<NoteRecptn> searchNoteRecptns(@Param("searchCondition") String searchCondition, @Param("searchWrd") String searchWrd,
+    Page<NoteRecptn> searchNoteRecptns(@Param("searchWrd") String searchWrd,
             @Param("rcverId") String rcverId, Pageable pageable);
 
     // ── [V2_21 물리 수거 GC 지원] ──
@@ -48,24 +48,10 @@ public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, Lo
     /** 특정 쪽지(note)를 참조하는 수신 사본 수(info 물리삭제 안전성 판정용). */
     long countByNoteNoteSn(Long noteSn);
 
-    // legacy
-    default Page<NoteRecptn> searchReceivedNotes(String rcverId, String searchWrd, Pageable pageable) {
-        return searchNoteRecptns(null, searchWrd, rcverId, pageable);
-    }
-
     @Query(value = "SELECT r FROM NoteRecptn r JOIN FETCH r.note n WHERE r.rcvrId = :rcvrId",
            countQuery = "SELECT count(r) FROM NoteRecptn r WHERE r.rcvrId = :rcvrId")
     Page<NoteRecptn> findByRcvrId(@Param("rcvrId") String rcvrId, Pageable pageable);
 
-    @Deprecated
-    default Page<NoteRecptn> findByRcverId(String rcverId, Pageable pageable) {
-        return findByRcvrId(rcverId, pageable);
-    }
-
     Optional<NoteRecptn> findByNoteNoteSnAndRcvrId(Long noteSn, String rcvrId);
 
-    @Deprecated
-    default Optional<NoteRecptn> findByNoteNoteSnAndRcverId(Long noteSn, String rcverId) {
-        return findByNoteNoteSnAndRcvrId(noteSn, rcverId);
-    }
 }
