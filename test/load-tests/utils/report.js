@@ -17,7 +17,7 @@
  */
 
 import { textSummary as k6TextSummary } from 'https://jslib.k6.io/k6-summary/0.1.0/index.js';
-import { htmlReport } from 'https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js';
+import { htmlReport } from 'https://raw.githubusercontent.com/benc-uk/k6-reporter/25058f7861695cb4fe6e0ecf6415ea489c489005/dist/bundle.js';
 
 /**
  * HTML 리포트 생성 옵션
