@@ -54,17 +54,15 @@ describe('generated system boundary wave 3', () => {
     ]);
   });
 
-  it('DeptAdminService의 7개 경계를 operation descriptor로 실행한다', async () => {
+  it('DeptAdminService의 6개 경계를 operation descriptor로 실행한다', async () => {
     const dept = { ognzId: 'ORG_001', ognzNm: '개발부' };
     client.getRaw
-      .mockResolvedValueOnce(envelope(page([dept])))
       .mockResolvedValueOnce(envelope([dept]))
       .mockResolvedValueOnce(envelope(dept));
     client.requestRaw
       .mockResolvedValueOnce(envelope('ORG_002'))
       .mockResolvedValue(envelope(undefined));
 
-    await deptAdminService.getDeptList({ keyword: '개발', page: 0, size: 20 });
     await deptAdminService.getDeptTree('개발');
     await deptAdminService.getDept('ORG_001');
     await deptAdminService.createDept({ ognzNm: '신설부' });
@@ -73,7 +71,6 @@ describe('generated system boundary wave 3', () => {
     await deptAdminService.deleteDept('ORG_001');
 
     expect(client.getRaw.mock.calls.map(([url]) => url)).toEqual([
-      'admin/system/departments',
       'admin/system/departments/tree',
       'admin/system/departments/ORG_001',
     ]);

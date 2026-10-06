@@ -2,7 +2,7 @@
 
 기준: [전체 조사 보고서](source-simplification-audit-2026-10-06.md), 커밋 `e0066946cb55c2135d9df3a66baa739f6ba8211b`. 사용자의 “권장 순서대로 작업 진행” 지시에 따른 소스 정비와 로컬 검증 결과다. 일반 정비는 L1, 권한·보안 설정·공유 입력 계약은 L2로 검토한다. 운영 DB는 변경하지 않았다.
 
-조사한 29개 항목의 정비와 아래 로컬 검증을 완료했다. 운영 Java·TS/TSX는 같은 측정 기준으로 **1,867줄 감소**했다. 부서·그룹 권한 목록은 데이터 규모가 늘어도 조회를 각각 **4회·3회**로 유지하며, 조직도·부서 선택의 1,000건 상한과 정책 탭의 불필요한 초기 조회를 제거했다. 큰 파일의 전면 재작성은 하지 않고 확인된 책임 단위만 추출했다.
+조사한 29개 항목의 정비와 아래 로컬 검증을 완료했다. 운영 Java·TS/TSX는 같은 측정 기준으로 **1,905줄 감소**했다. 부서·그룹 권한 목록은 데이터 규모가 늘어도 조회를 각각 **4회·3회**로 유지하며, 조직도·부서 선택의 1,000건 상한과 정책 탭의 불필요한 초기 조회를 제거했다. 큰 파일의 전면 재작성은 하지 않고 확인된 책임 단위만 추출했다.
 
 ## 변경 범위
 
@@ -25,7 +25,7 @@
 | TL-05~08 | 시스템 schema 판정, lexer 기초 함수 4개, typed tuple 생성, 진단용 key digest를 각각 동일 의미 범위에서 공유 |
 | TL-09 | ETL 위치 기반 long 배열을 이름 있는 read/transformed/written 카운터로 변경. commit/rollback·keymap/checkpoint 경계 유지 |
 
-`winston`·`@types/winston`·`cmdk`는 삭제된 logger/command UI 외 소비자가 없어 package/lock에서 함께 제거했다. 다른 의존성 버전은 바꾸지 않았다. 대형 서비스·거버넌스 도구의 전면 분해, blanket Stream/catch/import 치환, 과거 Flyway 삭제는 조사 보고서의 제외 판단을 유지한다.
+`winston`·`@types/winston`·`cmdk`는 삭제된 logger/command UI 외 소비자가 없어 package/lock에서 함께 제거했다. 소비자가 사라진 Compose의 `LOG_LEVEL` 전달도 제거했다. 다른 의존성 버전은 바꾸지 않았다. 대형 서비스·거버넌스 도구의 전면 분해, blanket Stream/catch/import 치환, 과거 Flyway 삭제는 조사 보고서의 제외 판단을 유지한다.
 
 ## 날짜 입력 호환성
 
@@ -42,7 +42,7 @@
 
 ## 검사 의미 보존
 
-- 삭제된 소스에만 해당하는 예외·원장 행을 정리한다. 생성 API 경계는 377개(생성 355·특수 22), adoption 100%로 동일하다.
+- 삭제된 소스에만 해당하는 예외·원장 행을 정리한다. 전량 부서 조회로 대체된 미사용 `getDeptList` 래퍼를 제거해 생성 API 경계는 377→376개(생성 354·특수 22), adoption 100%다. 페이징 HTTP API `getDepts`는 유지하고 기존 `superseded-surface` 분류로 실제 소비 중인 `getDeptTree`와 연결한다. 두 API는 같은 서비스의 paged/unpaged 조회이며, 화면 미도달 상한 28과 미연결 상한 10은 유지한다.
 - 폼 census는 퇴역 검색 폼 1개만 감소한다. 일괄 상태/부서 변경은 원래 검사 경계를 유지한다.
 - URL census는 생성기로 다시 만들고 기존 승인 선택을 유지한 채 evidence 해시를 재결속한다.
 - 보안 예외 6건의 수·규칙·fingerprint·만료일은 그대로다. 두 설정의 필터·인가 본문을 대조한 후 소스 해시와 현재 행만 갱신했다. [보안 재검토](sast-findings-review.md)를 참조한다.
@@ -59,7 +59,7 @@
 | 첫 정비 Java compileJava/compileTestJava | 성공 |
 | BE 미사용/조회 정리 영향 | core 114·app 86·API LoadTest 2·첨부 harness 5, 실패/skip 0 |
 | FE 첫 정비 | 10파일 93테스트 통과 |
-| 최종 FE 전체 테스트·커버리지 | **450파일 4,277테스트 통과**, 실패/skip/todo 0. 문장 83.64%·분기 78.31%·함수 79.84%·행 85.80%; 기존 71/63/64/73 하한 유지 |
+| FE 전체 테스트·커버리지 | **450파일 4,277테스트 통과**, 실패/skip/todo 0. 문장 83.64%·분기 78.31%·함수 79.84%·행 85.80%; 기존 71/63/64/73 하한 유지. 후속 미사용 부서 래퍼 정리 전의 전수 결과 |
 | 조직도·SSR·사용자 허브 | 7파일 59테스트 통과; 최종 footer는 아래 실제 브라우저 CRUD·계약 검사로 추가 검증 |
 | FE 타입·lint | 앱/E2E tsc 통과, lint 0 error/기존 20 warning. 추가 접근성 계약 파일 lint 0 warning |
 | 이관 discovery·typed identity·resume·verification·artifact | 영향 Gradle 테스트 성공 |
@@ -67,6 +67,7 @@
 | Ymd·YmdRange | 영향 Gradle 테스트 성공 |
 | 최종 Java compile·영향 테스트 | compileJava/compileTestJava 성공; core 156·app 298·API 25, 실패/skip 0 |
 | 푸시 전 모듈 check | foundation·business-core·business-app `check` 성공. 전수 3,029개 중 3,028개 통과, 실패 0, 기존 비활성 `SchemaDumper.dumpCleanSchema` 1개 skip. foundation 클래스별 커버리지 검증 및 세 모듈 JaCoCo 보고서 생성 성공 |
+| 푸시 전 잔여 소비자 정리 | Compose 환경변수 계약 18개, API 소비·생성 경계 계약 58개, 부서·배너·생성 경계·1,000건 초과 트리 영향 Vitest 4파일 64개 통과. 미사용 부서 래퍼의 공통 pagination·요청 설정 검증을 실제 소비 경로로 이관 |
 | 실제 PostgreSQL 인가·스키마 | 통합 테스트 2개 통과. 고정 쿼리 수·응답 동등성·ABA·schema validation 확인 |
 | 백엔드 전체 거버넌스 harness | 38클래스 137테스트 통과, 실패/skip 0. 시크릿 검사에는 도구 누락·합성 리터럴 red fixture 포함 |
 | 생성 API·Zod·operation 계약 | 재생성 후 Git diff 없음 |
@@ -91,13 +92,13 @@
 | 지표 | 정비 전 | 정비 후 | 변화 |
 |---|---:|---:|---:|
 | 운영 Java LOC | 75,435 | 75,229 | -206 |
-| 운영 TS/TSX LOC | 93,960 | 92,299 | -1,661 |
-| 운영 합계 LOC | 169,395 | 167,528 | **-1,867** |
+| 운영 TS/TSX LOC | 93,960 | 92,261 | -1,699 |
+| 운영 합계 LOC | 169,395 | 167,490 | **-1,905** |
 | FE 운영 파일 | 627 | 618 | -9 |
 | FE 중복 8줄 윈도우 | 194 | 147 | -47 |
 | BE 운영 중복 8줄 윈도우 | 187 | 176 | -11 |
 
-600줄 초과 운영 파일은 FE 22개·BE 10개로 동일하다. client directive 파일 LOC는 64,770→64,455줄로 줄었지만 비율은 68.9→69.8%다. 운영 분모 감소에 따른 비율 변화이며 번들 크기나 런타임 비용의 측정이 아니다. 중복 창은 겹칠 수 있으므로 중복 LOC로 환산하지 않는다.
+600줄 초과 운영 파일은 FE 22개·BE 10개로 동일하다. client directive 파일 LOC는 64,770→64,455줄로 줄었지만 비율은 68.9→69.9%다. 운영 분모 감소에 따른 비율 변화이며 번들 크기나 런타임 비용의 측정이 아니다. 중복 창은 겹칠 수 있으므로 중복 LOC로 환산하지 않는다.
 
 재측정은 `node scripts/code-census.mjs --baseline <새-json-경로>`와 `--diff <동일-정의-json>`으로 한다. 기존 파일 덮어쓰기와 정의가 다른 snapshot 비교는 거부한다.
 

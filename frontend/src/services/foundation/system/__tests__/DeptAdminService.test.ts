@@ -1,49 +1,10 @@
 /**
- * DeptAdminService 계약 테스트 (Contract Test)
- *
- * ── 왜 필요한가 ──────────────────────────────────────────────────────────────
- * `src/services/foundation/system/DeptAdminService.ts` 는 조직(부서) 관리의 유일한 API 진입점이며,
- * 사용자 관리·근태·보안 정책·조직도 편집 등 **7개 이상의 화면이 이 한 클래스에 물려 있다**
- * (실측: absences / departments / indvdl-info-policy / login-policy / manage / UserOrgHubClient /
- * SecurityDeptAuthorityClient). 그런데도 커버리지 0% 였다. 메서드 본문이 한 줄씩이라 "테스트할 게
- * 없다"고 보이지만, 아래 항목들은 **틀어져도 컴파일·타입 검사를 모두 통과한 채 런타임에서만 조용히
- * 깨진다**.
- *
- * 1) URL 조합 — `AdminService('/departments')` 는 `ApiService` 생성자에서 선행 슬래시가 제거되고
- *    `admin/{category}/` 접두가 붙어 최종 `admin/system/departments` 가 된다(category 기본값 'system').
- *    백엔드 `DeptApiController` 의 `@RequestMapping("/api/v1/admin/system/departments")` 와 맞물리는
- *    지점이며, 접두가 한 글자만 어긋나도 전 메서드가 동시에 404 가 된다. 선행 슬래시가 되살아나면
- *    axios `baseURL`('/api/v1') 의 경로 세그먼트가 통째로 날아가 절대 경로로 해석된다.
- *
- * 2) 페이징 파라미터 변환 — `ApiService.get` 이 `page`(0-based) → `pageIndex`(1-based, +1),
- *    `size` → `recordCountPerPage` 로 변환해 백엔드 `BaseSearchDto` 규약에 맞춘다. UserOrgHubClient 가
- *    `page: deptPage - 1` 로 0-based 를 넘기므로 이 +1 이 사라지거나 두 번 적용되면 부서 목록이 한
- *    페이지씩 밀리거나 첫 페이지가 통째로 빈다. 타입은 그대로라 tsc 로는 절대 잡히지 않는다.
- *
- * 3) 검색어 축 — 이 서비스는 형제 서비스(SurveyAdminService 등)와 달리 `searchKeyword → keyword`
- *    승격을 **하지 않는다**. 백엔드가 `@RequestParam(required=false) String keyword` 단일 축으로
- *    받고 모든 호출부도 `keyword` 를 직접 넘기기 때문이다. 여기에 승격 로직이 끼어들면 두 키가
- *    동시에 나가며 서버 바인딩이 흔들린다.
- *
- * 4) 트리 전용 경로 — 조직도는 `/tree` 로 나가야 서버가 `Pageable.unpaged()` 로 전량을 준다(D-11).
- *    이 경로가 목록 경로로 되돌아가면 기본 size=10 이 걸려 **11번째 부서부터 조직도에서 사라지고**,
- *    그 상태로 계층을 저장하면 sortOrdr 가 어긋난 채 영속된다 — 되돌리기 어려운 사고다.
- *
- * 5) 경로 변수 치환 — `updateDept`/`deleteDept` 는 인자 `deptId` 가 경로를 결정한다. 본문에 실린
- *    ognzId 를 따라가도록 바뀌면 **다른 부서를 고치거나 지운다**. 특히 `updateDeptHierarchy` 의
- *    `/batch-hierarchy` 는 **경로 변수가 아니라 리터럴 세그먼트**라서, `/{deptId}` 규칙과 뒤섞이면
- *    "batch-hierarchy 라는 부서" 를 수정하는 요청이 되어 버린다.
- *
- * 6) config 전달 — 호출부가 넘긴 AxiosRequestConfig(timeout·AbortSignal·Authorization 헤더)가
- *    유실되면 화면 이탈 시 요청 취소가 안 되고, SSR 서버 액션(`saveDeptHierarchyAction`)의 Bearer
- *    토큰이 빠져 401 이 된다. 유실돼도 브라우저 경로에서는 요청이 성공하므로 아무도 눈치채지 못한다.
- *
- * 따라서 본 테스트는 "호출됐다"가 아니라 **어떤 URL·파라미터·본문·config 로 나가는지**를 고정한다.
- * 프로덕션 코드는 수정하지 않는다(관측만 한다).
+ * 부서 관리자 API의 생성 operation 경계를 검증한다.
+ * 조직도·부서 선택은 /tree 전량 조회를 사용하며 페이지 상한을 두지 않는다.
+ * 경로 변수, 본문, SSR 인증 헤더·취소 신호와 계층 저장 timeout을 보존해야 한다.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PageResponse } from '@/types/foundation/system';
 
 // client 모듈 전체를 대체한다 — axios 인스턴스/인터셉터를 로드하지 않기 위해 hoisted 로 선언한다.
 const client = vi.hoisted(() => ({
@@ -59,18 +20,12 @@ vi.mock('@/lib/api/client', () => ({ default: client }));
 
 import { deptAdminService, type Department } from '../DeptAdminService';
 
-/**
- * 이 서비스의 모든 요청이 공유하는 접두.
- * `AdminService('/departments')` + category 기본값 'system' → `admin/system/departments`
- * (선행 슬래시 없음 — ApiService 생성자가 제거한다).
- */
+/** 생성 operation이 사용하는 부서 API 접두. */
 const BASE = 'admin/system/departments';
 
 const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
-const emptyPage = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
 
 function generatedDeptFallback(url: string): unknown {
-  if (url === BASE) return emptyPage;
   if (url === `${BASE}/tree`) return [];
   return { ognzId: 'ORG_001', ognzNm: '부서' };
 }
@@ -92,137 +47,6 @@ describe('DeptAdminService — 부서(조직) 관리자 API 계약', () => {
         result = await client.delete(url, data === undefined ? forwardedConfig : { ...config, data });
       }
       return envelope(result ?? (method === 'post' ? 'ORG_001' : undefined));
-    });
-  });
-
-  describe('부서 목록 조회 (getDeptList)', () => {
-    it('페이지·크기 별칭이 겹쳐도 기존 우선순위와 정렬 조건을 보존한다', async () => {
-      const params = {
-        pageIndex: 3, page: 8, pageNo: 9,
-        size: 15, pageUnit: 20, pageSize: 30, recordCountPerPage: 40,
-        keyword: '개발', sort: ['ognzNm,asc'],
-      };
-      const before = structuredClone(params);
-
-      await deptAdminService.getDeptList(params);
-
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { keyword: '개발', page: 2, size: 15, sort: ['ognzNm,asc'] },
-      });
-      expect(params).toStrictEqual(before);
-    });
-
-    it('목록은 admin/system/departments 로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {
-      await deptAdminService.getDeptList();
-
-      // path 인자로 빈 문자열('')을 넘기므로 basePath 그대로가 최종 경로다.
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
-      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: {} });
-    });
-
-    it('params 를 생략하면 params: undefined 가 그대로 전달된다 — 빈 객체로 바꿔치지 않는다', async () => {
-      // 빈 객체({})로 바꾸면 axios 가 `?` 만 붙은 URL 을 만들 수 있고, 무엇보다
-      // 아래 페이징 정규화 분기(config?.params 가 truthy 일 때만 동작)의 전제가 달라진다.
-      await deptAdminService.getDeptList(undefined);
-
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
-    });
-
-    it('첫 페이지(page 0)는 생성 Pageable 계약의 page 0으로 유지된다', async () => {
-      await deptAdminService.getDeptList({ page: 0 });
-
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0 },
-      });
-    });
-
-    it('page 3·size 20 은 생성 Pageable 계약의 두 키만 전달된다', async () => {
-      await deptAdminService.getDeptList({ page: 3, size: 20 });
-
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 3, size: 20 },
-      });
-    });
-
-    it('호출부가 pageIndex 를 직접 지정하면 page 기반 변환이 이를 덮어쓰지 않는다', async () => {
-      // page 9 였다면 변환 결과는 pageIndex 10 이겠지만, 명시값 1 이 그대로 유지돼야 한다.
-      await deptAdminService.getDeptList({ page: 9, pageIndex: 1 });
-
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0 },
-      });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { page: 9, pageIndex: 10 },
-      });
-    });
-
-    it('pageSize 만 오면 생성 Pageable 계약의 size 로 변환한다', async () => {
-      await deptAdminService.getDeptList({ pageSize: 25 });
-
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { size: 25 },
-      });
-    });
-
-    it('실제 화면이 쓰는 { keyword, page: 0, size: 1000 } 조합을 그대로 보존한다', async () => {
-      // admin/user/* 5개 페이지가 공통으로 쓰는 호출 형태다(전량 로딩용 size=1000).
-      await deptAdminService.getDeptList({ keyword: '', page: 0, size: 1000 });
-
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { keyword: '', page: 0, size: 1000 },
-      });
-    });
-
-    it('keyword 는 가공 없이 그대로 실린다 — 백엔드 @RequestParam("keyword") 와 1:1 이다', async () => {
-      await deptAdminService.getDeptList({ keyword: '인사' });
-
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { keyword: '인사' } });
-    });
-
-    it('searchKeyword 를 keyword 로 승격하지 않는다 — 부서 목록은 keyword 단일 축이다', async () => {
-      // 형제 서비스(SurveyAdminService)는 승격하지만 이 서비스는 하지 않는다.
-      // 승격 로직이 잘못 이식되면 keyword 와 searchKeyword 가 동시에 나가 서버 바인딩이 흔들린다.
-      await deptAdminService.getDeptList({ searchKeyword: '인사' });
-
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { keyword: '인사' } });
-    });
-
-    it('목록 조회 시 호출부의 timeout·signal 이 params 와 함께 보존된다', async () => {
-      const { signal } = new AbortController();
-
-      await deptAdminService.getDeptList({ page: 0 }, { timeout: 3000, signal });
-
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        timeout: 3000,
-        signal,
-        params: { page: 0 },
-      });
-    });
-
-    it('SSR 호출부가 넘기는 Authorization 헤더가 유실되지 않는다', async () => {
-      // 서버 컴포넌트(admin/user/*/page.tsx)는 쿠키에서 뽑은 Bearer 토큰을 config 로 넘긴다.
-      const headers = { Authorization: 'Bearer test-token' };
-
-      await deptAdminService.getDeptList({ keyword: '' }, { headers });
-
-      expect(client.get).toHaveBeenCalledWith(BASE, { headers, params: { keyword: '' } });
-    });
-
-    it('목록 응답은 재포장 없이 클라이언트 결과를 그대로 반환한다', async () => {
-      const page: PageResponse<Department> = {
-        list: [
-          { ognzId: 'ORG_001', ognzNm: '경영지원부', ognzExpln: '총무·회계', sortOrdr: 1 },
-          { ognzId: 'ORG_002', ognzNm: '인사팀', upOgnzId: 'ORG_001', sortOrdr: 2 },
-        ],
-        total: 2,
-        page: 1,
-        size: 10,
-        totalPage: 1,
-      };
-      client.get.mockResolvedValueOnce(page);
-
-      await expect(deptAdminService.getDeptList()).resolves.toBe(page);
     });
   });
 
@@ -255,6 +79,17 @@ describe('DeptAdminService — 부서(조직) 관리자 API 계약', () => {
       await deptAdminService.getDeptTree(undefined, { signal });
 
       expect(client.get).toHaveBeenCalledWith(`${BASE}/tree`, { signal, params: {} });
+    });
+
+    it('검색어와 함께 SSR 인증 헤더·timeout·취소 신호를 보존한다', async () => {
+      const { signal } = new AbortController();
+      const headers = { Authorization: 'Bearer test-token' };
+
+      await deptAdminService.getDeptTree('인사', { headers, timeout: 3000, signal });
+
+      expect(client.get).toHaveBeenCalledWith(`${BASE}/tree`, {
+        headers, timeout: 3000, signal, params: { keyword: '인사' },
+      });
     });
 
     it('트리 응답은 PageResponse 로 감싸지 않은 배열 그대로 반환된다', async () => {
@@ -429,13 +264,11 @@ describe('DeptAdminService — 부서(조직) 관리자 API 계약', () => {
   });
 
   describe('경로 격리', () => {
-    it('조회 3종의 경로는 서로 겹치지 않는다 — 트리가 목록으로 흡수되면 조직도가 10건에서 잘린다', async () => {
-      await deptAdminService.getDeptList();
+    it('트리와 단건 조회 경로를 구분하고 페이징 목록 경로를 호출하지 않는다', async () => {
       await deptAdminService.getDeptTree('인사');
       await deptAdminService.getDept('ORG_001');
 
       expect(client.get.mock.calls.map((call) => call[0])).toEqual([
-        'admin/system/departments',
         'admin/system/departments/tree',
         'admin/system/departments/ORG_001',
       ]);
@@ -453,7 +286,6 @@ describe('DeptAdminService — 부서(조직) 관리자 API 계약', () => {
 
     it('모든 요청 경로는 admin/system/departments 접두를 벗어나지 않고 선행 슬래시도 갖지 않는다', async () => {
       // 선행 슬래시가 붙으면 axios baseURL('/api/v1')의 경로 세그먼트가 통째로 날아간다(절대 경로 해석).
-      await deptAdminService.getDeptList({ page: 0 });
       await deptAdminService.getDeptTree('인사');
       await deptAdminService.getDept('ORG_001');
       await deptAdminService.createDept({ ognzNm: '신설팀' });
@@ -465,7 +297,7 @@ describe('DeptAdminService — 부서(조직) 관리자 API 계약', () => {
         fn.mock.calls.map((call) => String(call[0]))
       );
 
-      expect(paths).toHaveLength(7);
+      expect(paths).toHaveLength(6);
       paths.forEach((path) => {
         expect(path.startsWith(BASE)).toBe(true);
         expect(path.startsWith('/')).toBe(false);

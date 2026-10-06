@@ -1,6 +1,6 @@
 import type { SearchParams } from '@/types/foundation/system';
 
-/** 배너·부서·관리자 커뮤니티의 기존 페이지 별칭 우선순위를 유지한다. */
+/** 배너·관리자 커뮤니티의 기존 페이지 별칭 우선순위를 유지한다. */
 export function toAdminPageQuery(params: SearchParams): {
   page?: number;
   size?: number;

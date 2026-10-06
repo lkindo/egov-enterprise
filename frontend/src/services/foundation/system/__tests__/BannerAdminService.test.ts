@@ -93,6 +93,22 @@ describe('BannerAdminService — 배너 관리자 API 계약', () => {
   });
 
   describe('배너 목록 조회(getBannerList)', () => {
+    it('페이지·크기 별칭이 겹쳐도 기존 우선순위와 정렬 조건을 보존한다', async () => {
+      const params = {
+        pageIndex: 3, page: 8, pageNo: 9,
+        size: 15, pageUnit: 20, pageSize: 30, recordCountPerPage: 40,
+        keyword: '메인', sort: ['bnrNm,asc'],
+      };
+      const before = structuredClone(params);
+
+      await bannerAdminService.getBannerList(params);
+
+      expect(client.get).toHaveBeenCalledWith(BASE, {
+        params: { keyword: '메인', page: 2, size: 15, sort: ['bnrNm,asc'] },
+      });
+      expect(params).toStrictEqual(before);
+    });
+
     it('목록은 admin/system/banners 로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {
       await bannerAdminService.getBannerList();
 
