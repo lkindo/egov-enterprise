@@ -31,7 +31,7 @@
 | 3 | `05901f3fb` | 메서드 단위 미사용 코드를 걷는다. 이 영역은 클래스 단위 `UnreachableServiceLinter` 가 보지 않는다. 대표 항목은 다음과 같다. ① 없는 `LOGIN_ID` 컬럼을 쓰던 native 통계 3개 ② 감사·마지막 관리자 보호를 우회하는 일괄 배정 삭제 ③ 구조 버전을 우회하는 메뉴 라우트 일괄 갱신 ④ 라우트 없던 투표 항목 CRUD ⑤ eGov 레거시 유틸 ⑥ 미사용 Globals 키 14개 ⑦ 구형 client CRUD·고아 컴포넌트·소비자 없는 CSS 토큰. `KeyDiagnostics` 를 옮겨 etl↔verify 순환도 없앴다. |
 | 4 | `fe0740657` | 소비처 없는 프런트 의존성 8개와, 그 하위 트리만 쓰거나 이미 소비처가 없던 override 10개를 걷는다(감사 정책 통과, 비차단 권고 3→2). 어떤 해석 경로도 읽지 않던 메시지 키 13쌍을 걷고, 번들 키가 ErrorCode·handler·Bean Validation 중 하나에 참조돼야 한다는 역방향 단언을 더한다. 이관 카탈로그 `db_columns.json` 은 Flyway 적용 스키마에서 다시 만들고 스키마 검증이 대조한다. 실행할 수 없던 도구와 평문 덤프를 만드는 `db-dump.js` 를 퇴역한다. `rename-project.ps1` 의 대소문자 무시 치환이 `NURI_*` 환경변수를 망가뜨리던 것도 고친다. |
 | 5 | `3a768d501` | 중복 구현을 모은다. ① 권한 관리의 그룹·구성원 버전 조립을 단건·일괄 경로가 공유한다(SQL·digest 입력은 바이트 단위로 같다). 버전을 버리던 세 경로는 그룹 목록만 읽어, 사용자마다 돌던 인덱스 없는 이력 스캔이 사라진다. ② 사용자 조회 7벌·게시판 조회 5벌을 헬퍼로 모은다. ③ 프런트 페이지 응답 검사 17벌은 `page-response.ts` 로, 409 판정 6벌은 `isConflictError` 로 모은다. ④ 이관 도구의 ClassLoader 전환과 grant 철자 판정을 공유한다. |
-| 6 | `4866e6dbe`·`c7425e4c6` | 이번에 고친 화면의 react import 를 한 줄로 합친다. 들여쓰기가 무너진 TS·TSX 31개를 TypeScript 포매터로 다시 맞추고 BOM 2개를 걷는다. 파일마다 전후 토큰 열이 같음을 확인했고, `git diff -w` 의 비공백 차이는 BOM 두 건뿐이다. |
+| 6 | `4866e6dbe`·`c7425e4c6` | 이번에 고친 공통코드·사용자 허브 화면의 react import 를 한 줄로 합친다. 업무 홈도 합쳤다가 되돌렸다 — `use` import 는 collaboration pack 마커 안에 있어야 core 투영에서 함께 빠진다(DEC-OPS-088). 합친 뒤 core·커스텀 투영의 tsc 가 미사용 import(TS6133)로 실패한 것을 CI 의 재사용 base 잡이 잡았다. 들여쓰기가 무너진 TS·TSX 31개를 TypeScript 포매터로 다시 맞추고 BOM 2개를 걷는다. 파일마다 전후 토큰 열이 같음을 확인했고, `git diff -w` 의 비공백 차이는 BOM 두 건뿐이다. |
 
 뒤이은 커밋은 위 변경을 생성물과 기준선에 반영한다. `87cb0aaf6` 은 OpenAPI 문서와 생성 타입을 다시 만들고, `f91da11ae` 는 하네스 기준선 manifest 를 다시 동결한다. 다시 동결한 manifest 의 여섯 줄은 모두 위 커밋이 만든 의도된 변경이다.
 

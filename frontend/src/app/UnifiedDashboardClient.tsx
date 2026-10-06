@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, use } from 'react';
+import { useEffect } from 'react';
 /* reusable-base:collaboration:start */
+import { use } from 'react';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
