@@ -12,10 +12,10 @@ import { WORK_FILL_REGION_CLASS } from '@/app/components/patterns/work-fill';
 import {
   isProtectedPermission,
   isSaveShortcut,
-  nextCellPosition,
   operationKey,
   type MatrixOperation,
 } from './operation-permission-matrix-model';
+import { focusAdjacentA5Cell } from './a5-cell-navigation';
 import {
   aggregateCell,
   ancestorKeys,
@@ -245,19 +245,7 @@ export function ScreenPermissionTable({
   const rowKeyOf = (target: EventTarget | null): string | null => (target instanceof Element
     ? target.closest<HTMLElement>('tr[data-screen-row-key]')?.dataset.screenRowKey ?? null : null);
 
-  const handleTableKeyDown = (event: KeyboardEvent<HTMLTableElement>) => {
-    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-    const target = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('[data-a5-cell]') : null;
-    if (!target || !tableRef.current) return;
-    const current = { row: Number(target.dataset.rowIndex), col: Number(target.dataset.colIndex) };
-    if (Number.isNaN(current.row) || Number.isNaN(current.col)) return;
-    const cells = [...tableRef.current.querySelectorAll<HTMLElement>('[data-a5-cell]:not(:disabled)')];
-    const next = nextCellPosition(cells.map((cell) => ({ row: Number(cell.dataset.rowIndex), col: Number(cell.dataset.colIndex) })), current, event.key);
-    const element = next && cells.find((cell) => Number(cell.dataset.rowIndex) === next.row && Number(cell.dataset.colIndex) === next.col);
-    if (!element) return;
-    event.preventDefault();
-    element.focus();
-  };
+  const handleTableKeyDown = (event: KeyboardEvent<HTMLTableElement>) => focusAdjacentA5Cell(event, tableRef.current);
 
   const handleSaveKey = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!isSaveShortcut(event) || !onSaveShortcut || saveShortcutDisabled || unsavedChangeCount === 0) return;

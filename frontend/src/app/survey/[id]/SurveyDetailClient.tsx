@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
-import { surveyAdminService } from '@/services/foundation/survey/SurveyAdminService';
+import { surveyParticipationService } from '@/services/foundation/survey/SurveyParticipationService';
 import type { Survey, SurveyQuestion, SurveyResponseSubmit } from '@/types/business/survey';
 import { todayStorageYmd } from '@/lib/format-date';
 import {
@@ -74,7 +74,7 @@ export default function SurveyDetailClient({
     refetch,
   } = useQuery<SurveyQuestion[]>({
     queryKey: ['survey-questions', srvySn],
-    queryFn: () => surveyAdminService.getQuestions(srvySn),
+    queryFn: () => surveyParticipationService.getQuestions(srvySn),
     initialData: initialQuestions,
   });
 
@@ -89,7 +89,7 @@ export default function SurveyDetailClient({
     isError: isSurveyError,
   } = useQuery<Survey>({
     queryKey: ['survey', srvySn],
-    queryFn: () => surveyAdminService.getSurvey(srvySn),
+    queryFn: () => surveyParticipationService.getSurvey(srvySn),
     initialData: initialSurvey,
   });
   // 서버가 전달한 KST 기준일을 첫 렌더와 수화에 함께 사용하고 마운트 동안 고정한다.
@@ -163,7 +163,7 @@ export default function SurveyDetailClient({
         }),
       };
 
-      await surveyAdminService.submitAnswers(srvySn, payload);
+      await surveyParticipationService.submitAnswers(srvySn, payload);
       setIsSubmitted(true);
       // 제출한 응답이 바로 아래 통계에 반영되게 한다 — 종전에는 캐시된 통계가 제출 전 값으로 남았다.
       void queryClient.invalidateQueries({ queryKey: ['survey-stats', srvySn] });

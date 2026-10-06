@@ -15,7 +15,6 @@ import { ShieldCheck, UserMinus,
   Info } from 'lucide-react';
 ;
 ;
-import { communityService } from '@/services/business/community/communityService';
 import { communityUserService } from '@/services/business/user/community/CommunityUserService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -46,7 +45,7 @@ export default function CommunityDetailHubClient({
 
   const { data: community } = useQuery({
     queryKey: ['community', cmntySn],
-    queryFn: () => communityService.getCommunity(cmntySn),
+    queryFn: () => communityUserService.getCommunity(cmntySn),
     initialData: initialData
   });
 

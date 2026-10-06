@@ -1,4 +1,5 @@
 import { ApiService } from '@/services/core/ApiService';
+import { copyPageResponse } from '@/services/core/page-response';
 import type { PageResponse } from '@/types/foundation/system';
 import type { AxiosRequestConfig } from 'axios';
 import type { z } from 'zod';
@@ -29,27 +30,6 @@ export type Reward = components['schemas']['RewardManageDto'];
 /** Spring Pageable의 0-based page를 그대로 받는 exact query. */
 export type OperationSearchParams = NonNullable<operations['getAllExternalHr']['parameters']['query']>;
 
-function requireOperationPage<T>(
-  response: { list?: T[]; total?: number; page?: number; size?: number; totalPage?: number },
-): PageResponse<T> {
-  if (
-    !Array.isArray(response.list)
-    || typeof response.total !== 'number'
-    || typeof response.page !== 'number'
-    || typeof response.size !== 'number'
-    || typeof response.totalPage !== 'number'
-  ) {
-    throw new Error('운영지원 페이지 응답이 필수 계약과 일치하지 않습니다.');
-  }
-  return {
-    list: response.list,
-    total: response.total,
-    page: response.page,
-    size: response.size,
-    totalPage: response.totalPage,
-  };
-}
-
 /** 운영지원(외부인사·포상) 관리자 서비스. */
 class OperationAdminService extends ApiService {
   async getExternalHrList(
@@ -57,7 +37,7 @@ class OperationAdminService extends ApiService {
     config?: AxiosRequestConfig,
   ): Promise<PageResponse<ExternalHr>> {
     const response = await this.executeGenerated(getAllExternalHrOperation, { query: params, config });
-    return requireOperationPage(response);
+    return copyPageResponse<ExternalHr>(response, '운영지원');
   }
 
   async createExternalHr(data: ExternalHrCreateInput, config?: AxiosRequestConfig): Promise<ExternalHr> {
@@ -69,7 +49,7 @@ class OperationAdminService extends ApiService {
     config?: AxiosRequestConfig,
   ): Promise<PageResponse<Reward>> {
     const response = await this.executeGenerated(getAllRewardsOperation, { query: params, config });
-    return requireOperationPage(response);
+    return copyPageResponse<Reward>(response, '운영지원');
   }
 
   async createReward(data: Reward, config?: AxiosRequestConfig): Promise<Reward> {

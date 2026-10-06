@@ -1,5 +1,5 @@
 import { htmlToSemanticPlainText } from '@/lib/html-to-text';
-import { UserService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import type { components } from '@/types/generated-api';
 import {
@@ -58,7 +58,7 @@ export function isQnaSolved(qnaSttsCd?: string): boolean {
  * 도움말 데이터 서비스 (User)
  * - Q&A, FAQ 기능을 통합 게시판(BBS) 엔진으로 연결
  */
-class HelpUserService extends UserService {
+class HelpUserService extends ApiService {
   /** FAQ 목록 조회 (전용 ID: BBSMSTR_AAAAAAAAAAAA) */
   async getFaqs(params: { keyword?: string; page?: number; size?: number }, config?: AxiosRequestConfig): Promise<PageResponse<FAQ>> {
     const response = await this.executeGenerated(getPublicFaqsOperation, {

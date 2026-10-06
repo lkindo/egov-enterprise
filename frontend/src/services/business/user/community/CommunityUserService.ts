@@ -1,4 +1,4 @@
-import { UserService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { CommunityVO, CommunitySearchParams } from '@/types/business/community';
 import type { components } from '@/types/generated-api';
@@ -30,14 +30,14 @@ export type CommunityBoard = {
 };
 
 /**
- * 커뮤니티 사용자 서비스
- * path: /api/v1/communities
+ * 커뮤니티 사용자 서비스 — 목록·상세·멤버십·귀속 게시판·가입·탈퇴의 유일한 사용자측 경로다.
+ * path: /api/v1/communities (CommunityUserApiController). 관리자 경로는 CommunityAdminService 다.
  */
-class CommunityUserService extends UserService {
+class CommunityUserService extends ApiService {
     /**
      * 커뮤니티 목록 조회
      */
-    async getCommunityList(params: CommunitySearchParams): Promise<PageResponse<CommunityVO>> {
+    async getCommunityList(params: CommunitySearchParams = {}): Promise<PageResponse<CommunityVO>> {
         const response = await this.executeGenerated(getCommunities_1Operation, {
             query: toCommunityListQuery(params),
         });

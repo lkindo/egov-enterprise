@@ -42,6 +42,18 @@ export function getHttpStatus(error: unknown): number {
   return 0;
 }
 
+/**
+ * 서버가 동시 변경(409)으로 거부했는가 — 화면은 다시 읽고 서버 사유를 보인다.
+ *
+ * ⚠ {@link getHttpStatus} 와 달리 `response.status` 만 본다. 결재·메뉴·권한 화면의 충돌 처리는 axios 응답에만
+ *   반응해 왔고, 평탄화된 `status`/`statusCode` 까지 넓히면 판정이 바뀐다.
+ */
+export function isConflictError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const response = (error as { response?: unknown }).response;
+  return typeof response === 'object' && response !== null && (response as { status?: unknown }).status === 409;
+}
+
 /** 같은 목록 계열(query key 첫 요소)에 화면이 이미 그린 페이지가 있는가. */
 function hasRenderedPageSibling(client: QueryClient, query: Query): boolean {
   const family = query.queryKey[0];

@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 66,
-    "nativeFormFiles": 56,
+    "nativeFormOccurrences": 65,
+    "nativeFormFiles": 55,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 22,
     "secondaryActionBoundaries": 77,
-    "candidateCount": 166
+    "candidateCount": 165
   },
   "entries": [
     {
@@ -1296,20 +1296,6 @@
       "kind": "native-form",
       "file": "frontend/src/app/components/ui/standard-data-table.tsx",
       "owner": "StandardDataTable",
-      "classification": "primitive",
-      "status": "compliant",
-      "validationMode": "not-applicable",
-      "schemaSource": "not-applicable",
-      "errorNavigation": "not-applicable",
-      "serverErrors": "not-applicable",
-      "pendingGuard": "not-applicable",
-      "testEvidence": []
-    },
-    {
-      "key": "native-form:frontend/src/app/components/ui/standard-form.tsx#StandardForm[1]",
-      "kind": "native-form",
-      "file": "frontend/src/app/components/ui/standard-form.tsx",
-      "owner": "StandardForm",
       "classification": "primitive",
       "status": "compliant",
       "validationMode": "not-applicable",
@@ -3046,7 +3032,7 @@
       "owner": "SurveyDetailClient",
       "handler": "handleSubmit",
       "writeSinks": [
-        "surveyAdminService.submitAnswers"
+        "surveyParticipationService.submitAnswers"
       ],
       "classification": "mutation",
       "status": "compliant",

@@ -9,6 +9,7 @@ import { notifyAuthorizationChanged } from '@/lib/auth/authorization-state';
 import type { AuthorizationUserChoice } from '@/lib/auth/authorization-management-contract';
 import { usePageClamp } from '@/lib/hooks/use-page-clamp';
 import { failureMessage } from '@/lib/safe-error-log';
+import { isConflictError } from '@/lib/query/list-query-defaults';
 import { authorizationAdminService } from '@/services/foundation/system/AuthorizationAdminService';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -17,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { PagePagination } from '@/components/common/PagePagination';
 import { GroupMemberAddDialog } from './GroupMemberAddDialog';
-import { invalidateMembershipQueries, isConflict } from './group-member-queries';
+import { invalidateMembershipQueries } from './group-member-queries';
 
 const PAGE_SIZE = 20;
 
@@ -94,7 +95,7 @@ export function AuthorizationGroupMembers({ code, name, anonymous, protectedGran
       toast(failureMessage(error, '구성원을 회수하지 못했습니다. 구성원 목록을 다시 확인해 주세요.'), 'error');
       // 다른 곳에서 구성원이 바뀌었으면 목록을 다시 읽는다. 선택은 남긴다 — 무엇을 하려 했는지 보이고, 이미 빠진 사람은
       // 서버 문구가 밝히므로 '회수할 사람' 목록에서 풀고 다시 보낸다.
-      if (isConflict(error)) await invalidateMembershipQueries(queryClient);
+      if (isConflictError(error)) await invalidateMembershipQueries(queryClient);
     } finally {
       revokeRequestRef.current = false;
       setRevokePending(false);

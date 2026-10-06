@@ -201,7 +201,7 @@ public class InformalSanctionService {
         sanction.withdraw();
         lines.forEach(InformalSanctionDetail::cancel);
         history.updateResult(sanction);
-        java.util.UUID eventId = java.util.UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
         activeApprovers.stream().sorted().forEach(receiver -> eventPublisher.publishEvent(
                 new NotificationRequestedEvent(eventId, receiver, "결재가 회수되었습니다",
                         documentLabel(sanction) + "를 신청자가 회수했습니다. 처리할 필요가 없습니다.", "/approvals")));
@@ -286,7 +286,7 @@ public class InformalSanctionService {
             lines.forEach(InformalSanctionDetail::cancel);
             history.updateResult(sanction);
             publishFinalStatus(sanction, actor, opinion, lines);
-            java.util.UUID eventId = java.util.UUID.randomUUID();
+            UUID eventId = UUID.randomUUID();
             otherActiveApprovers.forEach(receiver -> eventPublisher.publishEvent(
                     new NotificationRequestedEvent(eventId, receiver, "결재가 반려되었습니다",
                             documentLabel(sanction) + "를 다른 결재자가 반려했습니다. 처리할 필요가 없습니다.", "/approvals")));
@@ -342,7 +342,7 @@ public class InformalSanctionService {
                 .filter(d -> d.status() == ApprovalStatus.ACTIVE).map(d -> d.getId().getUserId()).sorted().toList();
         if (receivers.isEmpty()) throw new BusinessException(CommonErrorCode.INVALID_STATE, "재알림을 받을 결재자가 없습니다.");
         recordProcess(sanction, ApprovalProcessType.REMIND, sanction.getAplcntId(), null, null, null, LocalDateTime.now());
-        java.util.UUID eventId = java.util.UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
         receivers.forEach(receiver -> eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, receiver,
                 "결재 재알림", documentLabel(sanction) + "를 기다리고 있습니다. 확인해 주세요.", pendingLink(id))));
         return receivers.size();
@@ -393,7 +393,7 @@ public class InformalSanctionService {
         }
         recordProcess(sanction, ApprovalProcessType.REPLACE, sanction.getAplcntId(), toUserId, fromUserId, null,
                 LocalDateTime.now());
-        java.util.UUID eventId = java.util.UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
         eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, fromUserId, "결재선에서 빠졌습니다",
                 documentLabel(sanction) + "의 결재자를 기안자가 다른 사람으로 바꿨습니다. 처리할 필요가 없습니다.", "/approvals"));
         if (wasActive) {
@@ -432,7 +432,7 @@ public class InformalSanctionService {
         }
         recordProcess(sanction, ApprovalProcessType.ASK, actor, sanction.getAplcntId(), null, text, LocalDateTime.now());
         entityManager.lock(sanction, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
-        eventPublisher.publishEvent(new NotificationRequestedEvent(java.util.UUID.randomUUID(), sanction.getAplcntId(),
+        eventPublisher.publishEvent(new NotificationRequestedEvent(UUID.randomUUID(), sanction.getAplcntId(),
                 "보완 요청이 왔습니다", documentLabel(sanction)
                         + "에 결재자가 보완을 요청했습니다. 결재함에서 요청 내용을 확인하고 답해 주세요.", submittedLink(id)));
     }
@@ -473,7 +473,7 @@ public class InformalSanctionService {
         } else {
             entityManager.lock(sanction, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
         }
-        java.util.UUID eventId = java.util.UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
         eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, ask.getChgUserIdntfr(), "보완 답변이 왔습니다",
                 documentLabel(sanction) + "에 기안자가 답했습니다. 내용을 확인하고 결재해 주세요.", pendingLink(id)));
         if (revised) {
@@ -678,7 +678,7 @@ public class InformalSanctionService {
     private void publishStageAvailable(InformalSanction sanction, List<InformalSanctionDetail> lines) {
         List<String> receivers = lines.stream().filter(d -> d.status() == ApprovalStatus.ACTIVE)
                 .map(d -> d.getId().getUserId()).toList();
-        java.util.UUID eventId = java.util.UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
         receivers.stream().sorted().forEach(receiver -> eventPublisher.publishEvent(
                 new NotificationRequestedEvent(eventId, receiver, "결재 순서 도래",
                         documentLabel(sanction) + "를 확인해 주세요.", pendingLink(sanction.getIfmlAtrzSn()))));
@@ -719,7 +719,7 @@ public class InformalSanctionService {
         String title = approved ? "결재가 완료되었습니다" : "결재가 반려되었습니다";
         String content = documentLabel(sanction) + (approved ? "가 최종 승인되었습니다." : "가 반려되었습니다.")
                 + " 참조로 받은 문서입니다.";
-        java.util.UUID eventId = java.util.UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
         receivers.forEach(receiver -> eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, receiver,
                 title, content, referencedLink(sanction.getIfmlAtrzSn()))));
     }
@@ -822,7 +822,7 @@ public class InformalSanctionService {
         referenceRepository.saveAll(plan.users().stream()
                 .map(userId -> InformalSanctionReference.designate(sanction, userId, designatorId, loginId, now))
                 .toList());
-        java.util.UUID eventId = java.util.UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
         plan.firstTime().forEach(receiver -> eventPublisher.publishEvent(new NotificationRequestedEvent(eventId,
                 receiver, "참조로 지정되었습니다", documentLabel(sanction)
                         + "를 참조로 받았습니다. 결재함의 '참조된 결재' 에서 읽을 수 있습니다.",

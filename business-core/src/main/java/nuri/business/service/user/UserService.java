@@ -31,6 +31,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -185,8 +186,7 @@ public class UserService extends BaseAbstractService {
          * 사용자 상세 조회
          */
         public UserDto getUserById(@NonNull String id) {
-                User user = userRepository.findByUserId(id).or(() -> userRepository.findById(id))
-                        .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+                User user = findByLoginIdOrEsntlIdOrThrow(id);
                 // [2026-10-01 결정 18] 상세에 비밀번호 변경 필요와 추가 인증 사용 여부를 싣는다 — 관리자가 초기화 뒤의
                 //   상태와 복구 승인 대상인지를 사용자 상세에서 본다. 인증앱 비밀값·복구 코드는 싣지 않는다.
                 boolean mfaActive = mfaCredentials.findBySubject(user.getEsntlId())
@@ -194,6 +194,23 @@ public class UserService extends BaseAbstractService {
                 return UserDto.from(user).withAuthorization(authorizationSnapshots.load(user.getEsntlId())).toBuilder()
                         .passwordChangeRequired(user.isTemporaryPassword()).mfaEnabled(mfaActive).build();
     }
+
+        /**
+         * 관리 경로의 사용자 식별자 해석 — 로그인 ID 로 먼저 찾고, 없으면 내부 식별자(esntlId)로 찾는다.
+         *
+         * <p>조회만 한다. 인가 판정은 각 호출 메서드가 자기 순서대로 이 조회의 앞이나 뒤에서 한다(H3).
+         * 인증 제공자의 로그인 ID 전용 해석(DEC-OPS-179)과는 다른 경로이고, 새 로그인 ID 의 esntlId 충돌을
+         * 거부하는 {@link #assertLoginIdAvailable} 와도 의미가 다르다.
+         */
+        private Optional<User> findByLoginIdOrEsntlId(String id) {
+                return userRepository.findByUserId(id).or(() -> userRepository.findById(id));
+        }
+
+        /** {@link #findByLoginIdOrEsntlId} 로 찾지 못하면 {@code USER_NOT_FOUND} 다. */
+        private User findByLoginIdOrEsntlIdOrThrow(String id) {
+                return findByLoginIdOrEsntlId(id)
+                                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+        }
 
         /**
          * 사용자 등록 (비밀번호 암호화 적용)
@@ -277,9 +294,7 @@ public class UserService extends BaseAbstractService {
         @Transactional
         public void updateUser(@NonNull String userId, @NonNull UserDto userDto) {
                 authorizationAdministration.lockAdministration();
-                User user = userRepository.findByUserId(userId)
-                                .or(() -> userRepository.findById(userId))
-                                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+                User user = findByLoginIdOrEsntlIdOrThrow(userId);
 
                 // [보안] 본인 또는 관리자만 수정 가능
                 nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(user.getEsntlId(), "USER_UPDATE");
@@ -353,9 +368,7 @@ public class UserService extends BaseAbstractService {
          */
         @Transactional
         public void changePassword(@NonNull String userId, @NonNull String oldPassword, @NonNull String newPassword) {
-                User user = userRepository.findByUserId(userId)
-                                .or(() -> userRepository.findById(userId))
-                                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+                User user = findByLoginIdOrEsntlIdOrThrow(userId);
 
 
                 if (!passwordEncoder.matches(oldPassword, user.getPswd())) {
@@ -406,9 +419,7 @@ public class UserService extends BaseAbstractService {
                 // [보안] 관리자 권한 확인
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_DELETE");
 
-                User user = userRepository.findByUserId(userId)
-                                .or(() -> userRepository.findById(userId))
-                                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+                User user = findByLoginIdOrEsntlIdOrThrow(userId);
 
                 cleanupDependentsAndDelete(List.of(user));
         }
@@ -523,7 +534,7 @@ public class UserService extends BaseAbstractService {
                 // loginId → esntlId 순으로 해석해 실제 사용자를 확정한 뒤, 종속 정리를 거쳐 삭제한다.
                 // (존재하지 않는 ID 는 멱등 삭제 의미론으로 건너뛰고 경고만 남긴다)
                 List<User> users = userIds.stream()
-                                .map(id -> userRepository.findByUserId(id).or(() -> userRepository.findById(id)))
+                                .map(this::findByLoginIdOrEsntlId)
                                 .flatMap(opt -> opt.stream())
                                 .collect(Collectors.toList());
                 if (users.size() < userIds.size()) {
@@ -548,9 +559,7 @@ public class UserService extends BaseAbstractService {
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_PASSWORD");
                 authorizationAdministration.lockAndAuthorize("USER_PASSWORD");
 
-                User user = userRepository.findByUserId(userId)
-                                .or(() -> userRepository.findById(userId))
-                                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+                User user = findByLoginIdOrEsntlIdOrThrow(userId);
                 authorizationAdministration.authorizeProtectedAccountChange(user.getEsntlId());
                 // [2026-10-01 결정 18] 관리자가 정해 알려 준 비밀번호는 임시다 — 본인이 바꾸기 전까지 다른 기능을 막는다.
                 user.issueTemporaryPassword(passwordEncoder.encode(newPassword));
@@ -569,9 +578,7 @@ public class UserService extends BaseAbstractService {
         public void unlockUser(@NonNull String userId) {
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_STATUS");
                 authorizationAdministration.lockAndAuthorize("USER_STATUS");
-                User user = userRepository.findByUserId(userId)
-                                .or(() -> userRepository.findById(userId))
-                                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+                User user = findByLoginIdOrEsntlIdOrThrow(userId);
                 authorizationAdministration.authorizeProtectedAccountChange(user.getEsntlId());
                 user.unlockAccount();
         }

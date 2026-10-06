@@ -7,7 +7,6 @@ const client = vi.hoisted(() => ({
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
-import { communityService } from '../communityService';
 import { communityUserService } from '@/services/business/user/community/CommunityUserService';
 
 const success = <T,>(data: T) => ({
@@ -19,7 +18,7 @@ const success = <T,>(data: T) => ({
 
 const emptyPage = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
 
-describe('communityService generated contract', () => {
+describe('communityUserService 목록·상세 generated contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     client.getRaw.mockResolvedValue(success(emptyPage));
@@ -31,15 +30,15 @@ describe('communityService generated contract', () => {
       .mockResolvedValueOnce(success(emptyPage))
       .mockResolvedValueOnce(success(detail));
 
-    await communityService.getCommunityList();
-    await expect(communityService.getCommunity(7)).resolves.toStrictEqual(detail);
+    await communityUserService.getCommunityList();
+    await expect(communityUserService.getCommunity(7)).resolves.toStrictEqual(detail);
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'communities', { params: {} });
     expect(client.getRaw).toHaveBeenNthCalledWith(2, 'communities/7', undefined);
   });
 
   it('0-based page와 size는 OpenAPI Pageable 축으로 그대로 전달한다', async () => {
-    await communityService.getCommunityList({ page: 2, size: 15 });
+    await communityUserService.getCommunityList({ page: 2, size: 15 });
 
     expect(client.getRaw).toHaveBeenCalledWith('communities', {
       params: { page: 2, size: 15 },
@@ -47,7 +46,6 @@ describe('communityService generated contract', () => {
   });
 
   it.each([
-    ['communityService', communityService],
     ['communityUserService', communityUserService],
   ] as const)('%s는 같은 목록 계약에서 page와 명시 검색 키를 우선한다', async (_name, service) => {
     const params = {
@@ -68,8 +66,8 @@ describe('communityService generated contract', () => {
   });
 
   it('1-based legacy pageIndex/pageNo와 pageUnit/pageSize를 명시적으로 변환한다', async () => {
-    await communityService.getCommunityList({ pageIndex: 3, pageUnit: 20 });
-    await communityService.getCommunityList({ pageNo: 4, pageSize: 30 });
+    await communityUserService.getCommunityList({ pageIndex: 3, pageUnit: 20 });
+    await communityUserService.getCommunityList({ pageNo: 4, pageSize: 30 });
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'communities', {
       params: { page: 2, size: 20 },
@@ -80,8 +78,8 @@ describe('communityService generated contract', () => {
   });
 
   it('정확한 searchCnd/searchWrd와 공개 legacy 별칭을 같은 generated query로 정규화한다', async () => {
-    await communityService.getCommunityList({ searchCnd: '0', searchWrd: '개발' });
-    await communityService.getCommunityList({ searchCondition: '1', searchKeyword: '홍길동' });
+    await communityUserService.getCommunityList({ searchCnd: '0', searchWrd: '개발' });
+    await communityUserService.getCommunityList({ searchCondition: '1', searchKeyword: '홍길동' });
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'communities', {
       params: { searchCnd: '0', searchWrd: '개발' },
@@ -92,7 +90,7 @@ describe('communityService generated contract', () => {
   });
 
   it('OpenAPI에 없는 useYn은 요청 경계에 흘리지 않는다', async () => {
-    await communityService.getCommunityList({ page: 0, useYn: 'Y' });
+    await communityUserService.getCommunityList({ page: 0, useYn: 'Y' });
 
     expect(client.getRaw).toHaveBeenCalledWith('communities', { params: { page: 0 } });
   });
@@ -100,7 +98,7 @@ describe('communityService generated contract', () => {
   it('페이지 필수 필드가 빠진 응답은 fail-closed한다', async () => {
     client.getRaw.mockResolvedValueOnce(success({ list: [] }));
 
-    await expect(communityService.getCommunityList()).rejects.toThrow(
+    await expect(communityUserService.getCommunityList()).rejects.toThrow(
       '커뮤니티 페이지 응답이 필수 계약과 일치하지 않습니다.',
     );
   });
@@ -121,7 +119,7 @@ describe('communityService generated contract', () => {
   it('상세 응답의 generated enum이 어긋나면 거부한다', async () => {
     client.getRaw.mockResolvedValueOnce(success({ cmntySn: 7, useYn: 'INVALID' }));
 
-    await expect(communityService.getCommunity(7)).rejects.toThrow(
+    await expect(communityUserService.getCommunity(7)).rejects.toThrow(
       '생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.',
     );
   });
@@ -130,6 +128,6 @@ describe('communityService generated contract', () => {
     const failure = new Error('조회 권한이 없습니다.');
     client.getRaw.mockRejectedValueOnce(failure);
 
-    await expect(communityService.getCommunity(1)).rejects.toBe(failure);
+    await expect(communityUserService.getCommunity(1)).rejects.toBe(failure);
   });
 });

@@ -1,5 +1,5 @@
 import { AxiosRequestConfig } from 'axios';
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import {
   deleteDeptOperation,
   getDeptOperation,
@@ -21,7 +21,7 @@ export interface Department {
 }
 
 /** 부서(조직) 관리 API 클라이언트 — /api/v1/admin/system/departments */
-class DeptAdminService extends AdminService {
+class DeptAdminService extends ApiService {
   /**
    * 조직도(트리) 전용 전량 조회 — `/tree` 엔드포인트를 사용한다.
    * 페이징 파라미터 없이 서버가 Pageable.unpaged() 로 전량을 반환하므로,

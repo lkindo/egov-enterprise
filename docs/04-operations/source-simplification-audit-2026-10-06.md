@@ -148,7 +148,7 @@ Git 추적 파일 **3,547개**를 목록화했다. Java·TS/TSX·JS/MJS/MTS·CSS
 
 ### FE-05 · P2 · 커뮤니티 query·응답 검증의 동일 복제 — 정적 확증
 
-[communityService.ts](../../frontend/src/services/business/community/communityService.ts) 10·37행과 [CommunityUserService.ts](../../frontend/src/services/business/user/community/CommunityUserService.ts) 33·60행은 같은 `getCommunities_1Operation`의 query 변환과 필수 페이지 필드 검사를 복제한다. 두 서비스 모두 실제 소비자가 있다.
+[communityService.ts (정비 전)](https://github.com/lkindo/egov-enterprise/blob/e0066946cb55c2135d9df3a66baa739f6ba8211b/frontend/src/services/business/community/communityService.ts) 10·37행과 [CommunityUserService.ts](../../frontend/src/services/business/user/community/CommunityUserService.ts) 33·60행은 같은 `getCommunities_1Operation`의 query 변환과 필수 페이지 필드 검사를 복제한다. 두 서비스 모두 실제 소비자가 있다.
 
 - 정비: 커뮤니티 내부의 작은 mapper/validator를 공유한다. 사용자 서비스의 가입·탈퇴·멤버십 기능은 별도로 유지한다.
 - 검증: `communityService`/`DemoUserServices` 테스트, 여러 페이지·크기·검색 별칭의 우선순위, 불완전 응답 거부. 페이지 검사를 단순 중복이라고 삭제하지 않는다.

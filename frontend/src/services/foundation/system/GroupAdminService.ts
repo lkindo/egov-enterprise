@@ -1,5 +1,6 @@
-﻿import { AxiosRequestConfig } from 'axios';
-import { AdminService } from '@/services/core/ApiService';
+import { AxiosRequestConfig } from 'axios';
+import { ApiService } from '@/services/core/ApiService';
+import { requirePageResponse } from '@/services/core/page-response';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { GroupManage } from '@/types/foundation/security';
 import type { operations } from '@/types/generated-api';
@@ -30,32 +31,17 @@ function toGroupListQuery(params?: SearchParams): GroupListQuery {
  };
 }
 
-function requireGroupPage(
- response: { list?: GroupInfo[]; total?: number; page?: number; size?: number; totalPage?: number },
-): PageResponse<GroupInfo> {
- if (
- !Array.isArray(response.list)
- || typeof response.total !== 'number'
- || typeof response.page !== 'number'
- || typeof response.size !== 'number'
- || typeof response.totalPage !== 'number'
- ) {
- throw new Error('그룹 페이지 응답이 필수 계약과 일치하지 않습니다.');
- }
- return response as PageResponse<GroupInfo>;
-}
-
 /**
- * 그룹 관리님쒕퉬님(Admin)
+ * 그룹 관리 서비스 (Admin)
  */
-class GroupAdminService extends AdminService {
+class GroupAdminService extends ApiService {
  /** 그룹 목록 조회 */
  async getGroupList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<GroupInfo>> {
  const response = await this.executeGenerated(getGroupsOperation, {
  query: toGroupListQuery(params),
  config,
  });
- return requireGroupPage(response as PageResponse<GroupInfo>);
+ return requirePageResponse(response as PageResponse<GroupInfo>, '그룹');
  }
 
  /** 그룹 상세 조회 */
@@ -80,12 +66,12 @@ class GroupAdminService extends AdminService {
  });
  }
 
- /** 그룹 님젣 */
+ /** 그룹 삭제 */
  async deleteGroup(groupId: string, config?: AxiosRequestConfig): Promise<void> {
  return this.executeGenerated(deleteGroupOperation, { path: { groupId }, config });
  }
 
- /** 그룹 ㅼ쨷 님젣 */
+ /** 그룹 다중 삭제 */
  async deleteGroups(groupIds: string[], config?: AxiosRequestConfig): Promise<void> {
  return this.executeGenerated(deleteGroupsOperation, { body: groupIds, config });
  }

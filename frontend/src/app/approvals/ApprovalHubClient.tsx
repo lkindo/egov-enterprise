@@ -49,6 +49,7 @@ import {
 } from '@/queries/approval-query-options';
 import { canPermission } from '@/lib/auth/permissions';
 import { failureMessage } from '@/lib/safe-error-log';
+import { isConflictError } from '@/lib/query/list-query-defaults';
 import { getTodayYmd } from '@/lib/date/today-ymd';
 
 const EMPTY_APPROVALS: InformalSanctionDto[] = [];
@@ -210,9 +211,13 @@ function onVisibleLine(item: InformalSanctionDto, esntlId: string | undefined): 
   return (item.stages ?? []).some(stage => (stage.approvers ?? []).some(person => person.userId === esntlId));
 }
 
-function isConflict(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'response' in error
-    && (error as { response?: { status?: number } }).response?.status === 409;
+/**
+ * 참조로 받은 읽기 전용 문서인가 — 서버 판정(referenceViewer)으로만 본다. 이전 차수 참조자가 이 차수 결재자가 되면 처리할
+ * 차례가 있는 문서이므로 참조로 부르지 않는다(처리 힌트가 있거나 보이는 결재선에 있으면 결재 문서다). 목록 배지와 상세 안내가
+ * 같은 판정을 쓴다.
+ */
+function isReadOnlyReference(item: InformalSanctionDto, esntlId: string | undefined): boolean {
+  return Boolean(item.referenceViewer) && !item.canApprove && !item.canRequestSupplement && !onVisibleLine(item, esntlId);
 }
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -487,11 +492,11 @@ export default function ApprovalHubClient() {
     if (fieldErrors) decisionValidation.setFormErrors(fieldErrors);
     // [2026-10-01] 충돌(409)은 먼저 일어난 다른 처리다 — 다른 결재자의 반려, 신청자의 회수, 다른 탭에서의 처리.
     //   서버가 무슨 일이 있었는지 말하므로 그 문구를 그대로 보이고, 목록·상세를 다시 읽어 사라진 문서를 걷는다.
-    if (isConflict(error)) {
+    if (isConflictError(error)) {
       setNeedsActionReview(true);
       void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
     }
-    return isConflict(error)
+    return isConflictError(error)
       ? `${failureMessage(error, '다른 사용자가 문서를 변경했습니다.')} 입력한 의견은 유지됩니다.`
       : `${failureMessage(error, `${actionNm} 처리 중 오류가 발생했습니다.`)} 입력한 의견은 유지됩니다.`;
   };
@@ -565,7 +570,7 @@ export default function ApprovalHubClient() {
         if (outcome === 'restored') {
           reportDecisionFailure(error, actionNm);
         } else {
-          if (isConflict(error)) void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
+          if (isConflictError(error)) void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
           setQueueNotice(`‘${title}’ ${actionNm}하지 못했습니다. ${failureMessage(error, `${actionNm} 처리 중 오류가 발생했습니다.`)}${
             outcome === 'parked' ? ' 작성 중인 의견은 그대로 두었고, 이 문서에 적었던 의견은 문서를 다시 열면 채웁니다.' : ''}`);
           toast(`결재를 ${actionNm}하지 못했습니다.`, 'error');
@@ -765,7 +770,7 @@ export default function ApprovalHubClient() {
       setActionError('');
     } catch (error) {
       // 회수하려는 사이에 결재가 끝났을 수 있다 — 서버가 말한 사유를 보이고 최신 상태를 다시 읽는다.
-      if (isConflict(error)) void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
+      if (isConflictError(error)) void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
       setActionError(failureMessage(error, '문서를 회수하지 못했습니다. 최신 상태를 확인한 뒤 다시 시도해 주세요.'));
       toast('결재를 회수하지 못했습니다.', 'error');
     } finally {
@@ -797,7 +802,7 @@ export default function ApprovalHubClient() {
       setResubmission(latest);
       setDraftOpen(true);
     } catch (error) {
-      if (isConflict(error)) void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
+      if (isConflictError(error)) void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
       setActionError(failureMessage(error, '문서를 회수하지 못했습니다. 최신 상태를 확인한 뒤 다시 시도해 주세요.'));
       toast('결재를 회수하지 못했습니다.', 'error');
     } finally {
@@ -852,7 +857,7 @@ export default function ApprovalHubClient() {
   const canClone = canDraft && Boolean(detailQuery.data) && detailQuery.data?.aplcntId === user?.esntlId && Boolean(detailQuery.data?.stages?.length);
   // 기안 권한이 없으면 없는 버튼을 가리키지 않는다.
   const emptyMessage = activeTab === 'SUBMITTED' && !canDraft ? '올린 결재가 없습니다.' : EMPTY_MESSAGES[activeTab];
-  const isAgreement = selectedItem?.stages?.find(stage => stage.status === 'ACTIVE')?.kind === 'AGREEMENT';
+  const isAgreement = selectedItem ? isAgreementStage(selectedItem) : false;
   const isActionPending = pendingAction !== null;
   const decisionDisabled = isActionPending || selectedQueued;
   const rejectReasonFieldProps = decisionValidation.fieldProps('reason');
@@ -862,10 +867,11 @@ export default function ApprovalHubClient() {
   ].filter(Boolean).join(' ');
 
   // 여러 건 승인 — 대기함에서 서버가 승인할 수 있다고 한 문서만, 보완 요청이 열려 있지 않고 대기열에 없으며 보내는 중도 아닌 것만.
-  const bulkEligible = activeTab === 'PENDING' && canApprovePermission
+  //   의존값(목록·대기열 스냅샷·보내는 중 상태)은 바뀔 때만 새 배열이 되므로, 메모해 두어야 아래 taskGroups 메모가 실제로 캐시된다.
+  const bulkEligible = useMemo(() => (activeTab === 'PENDING' && canApprovePermission
     ? list.filter(item => item.canApprove && !item.openSupplement && item.ifmlAtrzSn !== undefined
       && !queued.includes(item.ifmlAtrzSn) && !committingIds.includes(item.ifmlAtrzSn))
-    : EMPTY_APPROVALS;
+    : EMPTY_APPROVALS), [activeTab, canApprovePermission, list, queued, committingIds]);
   const taskGroups = useMemo(() => {
     const groups = new Map<string, { label: string; keys: string[] }>();
     bulkEligible.forEach((item) => {
@@ -1191,7 +1197,7 @@ export default function ApprovalHubClient() {
                         <span className="flex shrink-0 items-center gap-1">
                           {/* 참조로 받은 문서다 — 서버 판정(referenceViewer)으로만 표시한다. 이전 차수 참조자가 이 차수 결재자가 되면
                               처리할 차례가 있는 문서이므로 '참조' 로 부르지 않는다(처리 힌트가 있으면 결재 문서다). */}
-                          {item.referenceViewer && !item.canApprove && !item.canRequestSupplement && !onVisibleLine(item, user?.esntlId) && <Badge variant="outline" className="shrink-0 text-xs font-bold">참조</Badge>}
+                          {isReadOnlyReference(item, user?.esntlId) && <Badge variant="outline" className="shrink-0 text-xs font-bold">참조</Badge>}
                           {isQueued ? <Badge variant="secondary" className="shrink-0 text-xs font-bold">처리 예정</Badge> : <ApprovalStatusBadge aprvYn={item.aprvYn} />}
                         </span>
                       </span>
@@ -1253,7 +1259,7 @@ export default function ApprovalHubClient() {
           {!hasListedDocument && rejectReason.length > 0 && <p role="status" className="rounded-md bg-warning/10 p-3 text-sm">작성한 의견이 있는 문서가 현재 목록에 없습니다. 입력은 이 문서에 보존했습니다. 최신 상태를 확인하거나 다른 문서를 선택해 주세요.</p>}
           {/* [2026-10-04 D4] 참조자는 읽기만 한다. 처리 버튼은 서버 힌트가 모두 거짓이라 생기지 않고, 이 안내도 서버 판정으로만 보인다.
               이전 차수 참조자가 이 차수 결재자가 됐으면 처리할 수 있으므로 '읽기만' 이라고 말하지 않는다. */}
-          {detailQuery.data?.referenceViewer && !detailQuery.data.canApprove && !detailQuery.data.canRequestSupplement && !onVisibleLine(detailQuery.data, user?.esntlId) && (
+          {detailQuery.data && isReadOnlyReference(detailQuery.data, user?.esntlId) && (
             <p className="rounded-md border border-border bg-muted/40 p-3 text-sm text-foreground">
               참조로 받은 문서입니다. 읽기만 할 수 있으며, 문서가 승인·반려·회수되어도 계속 읽을 수 있습니다.
             </p>
@@ -1419,7 +1425,7 @@ export default function ApprovalHubClient() {
           {previousRevisions.length ? <section aria-label="이전 차수 이력" className="space-y-3">
             <h3 className="font-semibold">이전 차수 이력</h3>
             {previousRevisions.map(revision => <details key={revision.atrzCycl} className="rounded-md border border-border p-4">
-              <summary className="cursor-pointer font-semibold">{revision.atrzCycl}차 · {revision.docTtl || '제목 없음'} · {revision.aprvYn === 'R' ? '반려' : revision.aprvYn === 'W' ? '회수' : revision.aprvYn === 'C' ? '승인 완료' : '대기'}</summary>
+              <summary className="cursor-pointer font-semibold">{revision.atrzCycl}차 · {revision.docTtl || '제목 없음'} · {revision.aprvYn === SANCTION_STATUS.REJECTED ? '반려' : revision.aprvYn === SANCTION_STATUS.WITHDRAWN ? '회수' : revision.aprvYn === SANCTION_STATUS.APPROVED ? '승인 완료' : '대기'}</summary>
               <p className="my-3 whitespace-pre-wrap break-words text-sm">{revision.docCn || '작성한 본문이 없습니다.'}</p>
               <ApprovalStepper stages={revision.stages} currentUserId={user?.esntlId} accessibleLabel={`${revision.atrzCycl}차 결재선 진행`} />
             </details>)}

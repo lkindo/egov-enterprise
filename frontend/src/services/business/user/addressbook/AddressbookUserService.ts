@@ -1,4 +1,4 @@
-import { UserService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
@@ -34,7 +34,7 @@ export interface AddressBookUserSelection {
 /**
  * 주소록 관리 서비스 (Addressbook Service)
  */
-class AddressbookUserService extends UserService {
+class AddressbookUserService extends ApiService {
   /**
    * 주소록 목록 조회
    */

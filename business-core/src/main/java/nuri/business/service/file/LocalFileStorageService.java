@@ -348,7 +348,7 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public void deleteAll() {
         // Files.walk 의 Stream 은 열린 디렉터리 핸들(FD)을 백킹으로 하므로 try-with-resources 로 반드시 close.
-        try (java.util.stream.Stream<java.nio.file.Path> walk = Files.walk(rootLocation)) {
+        try (Stream<Path> walk = Files.walk(rootLocation)) {
             walk.sorted((a, b) -> b.compareTo(a))
                     .forEach(path -> {
                         try {

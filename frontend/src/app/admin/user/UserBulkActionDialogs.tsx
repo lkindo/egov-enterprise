@@ -6,13 +6,14 @@ import { cn } from '@/lib/utils';
 import type { UserManage } from '@/types/foundation/user';
 import type { UserStatusCode } from '@/services/foundation/system/UserAdminService';
 import type { FlattenedDept } from './departments/treeUtils';
-import { BulkSelectionSummary } from './UserOrgHubParts';
+import { BulkSelectionSummary, USER_STATUS_LABELS } from './UserOrgHubParts';
 
+/** 표시 라벨은 목록 배지·상태 필터와 같은 USER_STATUS_LABELS 한 곳에서 읽고, 여기서는 점 색만 둔다. */
 const USER_STATUSES = [
-  { code: 'P', label: '정상', dot: 'bg-success' },
-  { code: 'A', label: '승인 대기', dot: 'bg-warning' },
-  { code: 'D', label: '비활성', dot: 'bg-muted-foreground' },
-] satisfies { code: UserStatusCode; label: string; dot: string }[];
+  { code: 'P', dot: 'bg-success' },
+  { code: 'A', dot: 'bg-warning' },
+  { code: 'D', dot: 'bg-muted-foreground' },
+] satisfies { code: UserStatusCode; dot: string }[];
 
 interface BulkDialogProps {
   isOpen: boolean;
@@ -33,9 +34,10 @@ export function BulkUserStatusDialog({
       <div className="space-y-4">
         <BulkSelectionSummary users={users} />
         <div className="space-y-2">
+          {/* 폼 컨트롤이 아니라 버튼 그룹이므로 <label> 이 아니라 radiogroup 으로 이름을 붙인다(감사 P2). */}
           <p id="bulk-status-label" className="text-[length:var(--font-size-body)] font-semibold text-foreground">변경할 상태 선택</p>
           <div role="radiogroup" aria-labelledby="bulk-status-label" className="grid grid-cols-1 gap-1.5">
-            {USER_STATUSES.map(({ code, label, dot }) => (
+            {USER_STATUSES.map(({ code, dot }) => (
               <button
                 key={code}
                 type="button"
@@ -49,7 +51,7 @@ export function BulkUserStatusDialog({
                 )}
               >
                 <span className={cn('size-2 shrink-0 rounded-full', dot)} aria-hidden="true" />
-                <span className="text-[length:var(--font-size-body)] font-medium text-foreground">{label}</span>
+                <span className="text-[length:var(--font-size-body)] font-medium text-foreground">{USER_STATUS_LABELS[code].label}</span>
               </button>
             ))}
           </div>

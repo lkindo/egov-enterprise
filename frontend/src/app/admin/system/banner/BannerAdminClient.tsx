@@ -2,7 +2,8 @@
 
 import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
 import { popupPostingState, POPUP_POSTING_LABEL } from '@/lib/popup-status';
-import React, { useState, useCallback, useRef, useSyncExternalStore } from 'react';
+import { isStorageYmd } from '@/lib/format-date';
+import React, { useState, useCallback, useRef } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -84,13 +85,53 @@ const popupNumberSchema = (
 const isoDateSchema = (generatedField: z.ZodOptional<z.ZodString>) => generatedField.unwrap()
  .min(1, '게시 일자를 입력하세요.')
  .regex(/^\d{4}-\d{2}-\d{2}$/, '게시 일자는 YYYY-MM-DD 형식이어야 합니다.')
- .refine((value) => {
- const [year, month, day] = value.split('-').map(Number);
- const parsed = new Date(Date.UTC(year, month - 1, day));
- return parsed.getUTCFullYear() === year
- && parsed.getUTCMonth() === month - 1
- && parsed.getUTCDate() === day;
- }, '유효한 게시 일자를 입력하세요.');
+ // 달력 실재 판정은 날짜 표기 단일 관문(lib/format-date)의 isStorageYmd 를 쓴다.
+ .refine((value) => isStorageYmd(value.replace(/-/g, '')), '유효한 게시 일자를 입력하세요.');
+
+/** 게시 일자 입력 마스크 — 숫자만 남겨 YYYY-MM-DD 로 끼워 넣는다. 숫자가 8자리를 넘으면 null(그 입력은 무시한다). */
+function maskIsoDateTyping(raw: string): string | null {
+ const digits = raw.replace(/\D/g, '');
+ if (digits.length > 8) return null;
+ if (digits.length > 6) return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
+ if (digits.length > 4) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+ return digits;
+}
+
+/** 팝업 좌표·크기 입력의 상한 — 생성 계약이 이 값들을 12자 문자열(max(12))로 받는다. */
+const POPUP_NUMBER_MAX = 999999999999;
+
+/** 숫자 입력칸 공통 속성 — 빈 칸은 undefined 로 두어 스키마가 필수 오류를 말하게 한다. `{...field}` 뒤에 펼친다. */
+function numberInputProps(
+ field: { value?: unknown; onChange: (value: number | undefined) => void },
+ min: number,
+ max?: number,
+) {
+ return {
+ value: (field.value ?? '') as number | string,
+ type: 'number',
+ min,
+ max,
+ onChange: (event: React.ChangeEvent<HTMLInputElement>) => field.onChange(event.target.value === '' ? undefined : Number(event.target.value)),
+ className: 'rounded-lg font-bold shadow-inner',
+ };
+}
+
+/** 배너·팝업 폼이 같은 모양으로 쓰는 미디어 1건 업로드 칸. */
+function AssetUploadField({ onFilesChange }: { onFilesChange: (files: File[]) => void }) {
+ return (
+ <FormItem className="space-y-1.5 p-0.5">
+ <Label className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">미디어 자산 업로드 (Visual Payload)</Label>
+ <div className="rounded-md border border-dashed border-border bg-muted/50 p-3 transition-colors hover:bg-muted">
+ <StandardFileUploader onFilesChange={onFilesChange} maxFiles={1} />
+ <div className="mt-2 flex items-center justify-center gap-2 text-muted-foreground">
+ <UploadCloud size={16} aria-hidden="true" />
+ <span className="text-center text-xs">여기로 파일을 드래그하여 업로드</span>
+ </div>
+ </div>
+ <p className="mt-1 px-1 text-xs leading-relaxed text-muted-foreground">시스템 표준 규격 이미지를 준수하십시오</p>
+ </FormItem>
+ );
+}
 
 export const popupSchema = PopupDtoSchema.extend({
  popupTtlNm: PopupDtoSchema.shape.popupTtlNm.min(1),
@@ -122,20 +163,35 @@ interface BannerAdminClientProps {
  initialPopups: Popup[];
 }
 
-/** 화면 페이지 크기. 서버는 Spring Pageable 의 size 를 그대로 수용한다(@PageableDefault size=10 은 미지정 시 기본값). */
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
 const DEFAULT_PAGE_SIZE = 20;
 
-const noopSubscribe = () => () => {};
-let cachedClientNow: Date | null = null;
-function getClientNow(): Date | null {
-  if (!cachedClientNow) cachedClientNow = new Date();
-  return cachedClientNow;
-}
+/** 배너 폼 기본값 — 첫 렌더의 defaultValues 와 모달을 열 때의 reset 이 같은 값을 쓴다. */
+const BANNER_FORM_DEFAULTS: BannerFormValues = {
+ bnrNm: '',
+ linkUrl: '',
+ sortOrdr: 0,
+ rfltYn: 'Y',
+ bnrExpln: ''
+};
+
+/**
+ * 팝업 폼 기본값 — 첫 렌더의 defaultValues 와 모달을 열 때의 reset 이 같은 값을 쓴다.
+ * 세로 높이는 신규 등록 화면이 실제로 보여 온 300 이다(종전 defaultValues 의 400 은 열 때 reset 이 덮어 보이지 않았다).
+ */
+const POPUP_FORM_DEFAULTS: PopupFormValues = {
+ popupTtlNm: '',
+ ntceBgnde: '',
+ ntceEndde: '',
+ popupWdthPstn: 0,
+ popupVrtcPstn: 0,
+ popupWdthSz: 400,
+ popupVrtcSz: 300,
+ ntceYn: 'Y',
+ stopvewSetupYn: 'Y'
+};
 
 export default function BannerAdminClient({ initialBanners, initialPopups }: BannerAdminClientProps) {
-  const now = useSyncExternalStore(noopSubscribe, getClientNow, () => null);
-
   const { toast } = useToast();
  const confirm = useConfirm();
  // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다. 이 화면은 조회 권한(BANNER_ADMIN_READ)만으로 들어올 수 있어,
@@ -187,27 +243,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  const [deletingAssetKey, setDeletingAssetKey] = useState<string | null>(null);
 
  const bannerForm = useAppForm<typeof bannerSchema, BannerFormValues>(bannerSchema, {
- defaultValues: {
- bnrNm: '',
- linkUrl: '',
- sortOrdr: 0,
- rfltYn: 'Y',
- bnrExpln: ''
- }
+ defaultValues: BANNER_FORM_DEFAULTS
  });
 
  const popupForm = useAppForm<typeof popupSchema, PopupFormValues>(popupSchema, {
- defaultValues: {
- popupTtlNm: '',
- ntceBgnde: '',
- ntceEndde: '',
- popupWdthPstn: 0,
- popupVrtcPstn: 0,
- popupWdthSz: 400,
- popupVrtcSz: 400,
- ntceYn: 'Y',
- stopvewSetupYn: 'Y'
- }
+ defaultValues: POPUP_FORM_DEFAULTS
  });
  const isAssetSubmitting = activeTab === 'banner'
  ? bannerForm.formState.isSubmitting
@@ -221,25 +261,27 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  if (isModalOpen) {
  if (activeTab === 'banner') {
  const item = editingItem as Banner;
+ const fallback = BANNER_FORM_DEFAULTS;
  resetBannerForm({
- bnrNm: item?.bnrNm || '',
- linkUrl: item?.linkUrl || '',
- sortOrdr: item?.sortOrdr || 0,
- rfltYn: (item?.rfltYn as 'Y' | 'N') || 'Y',
- bnrExpln: item?.bnrExpln || ''
+ bnrNm: item?.bnrNm || fallback.bnrNm,
+ linkUrl: item?.linkUrl || fallback.linkUrl,
+ sortOrdr: item?.sortOrdr || fallback.sortOrdr,
+ rfltYn: (item?.rfltYn as 'Y' | 'N') || fallback.rfltYn,
+ bnrExpln: item?.bnrExpln || fallback.bnrExpln
  });
  } else {
  const item = editingItem as Popup;
+ const fallback = POPUP_FORM_DEFAULTS;
  resetPopupForm({
- popupTtlNm: item?.popupTtlNm || '',
- ntceBgnde: item?.ntceBgnde || '',
- ntceEndde: item?.ntceEndde || '',
- popupWdthPstn: item?.popupWdthPstn ? Number(item.popupWdthPstn) : 0,
- popupVrtcPstn: item?.popupVrtcPstn ? Number(item.popupVrtcPstn) : 0,
- popupWdthSz: item?.popupWdthSz ? Number(item.popupWdthSz) : 400,
- popupVrtcSz: item?.popupVrtcSz ? Number(item.popupVrtcSz) : 300,
- ntceYn: (item?.ntceYn as 'Y' | 'N') || 'Y',
- stopvewSetupYn: (item?.stopvewSetupYn as 'Y' | 'N') || 'Y'
+ popupTtlNm: item?.popupTtlNm || fallback.popupTtlNm,
+ ntceBgnde: item?.ntceBgnde || fallback.ntceBgnde,
+ ntceEndde: item?.ntceEndde || fallback.ntceEndde,
+ popupWdthPstn: item?.popupWdthPstn ? Number(item.popupWdthPstn) : fallback.popupWdthPstn,
+ popupVrtcPstn: item?.popupVrtcPstn ? Number(item.popupVrtcPstn) : fallback.popupVrtcPstn,
+ popupWdthSz: item?.popupWdthSz ? Number(item.popupWdthSz) : fallback.popupWdthSz,
+ popupVrtcSz: item?.popupVrtcSz ? Number(item.popupVrtcSz) : fallback.popupVrtcSz,
+ ntceYn: (item?.ntceYn as 'Y' | 'N') || fallback.ntceYn,
+ stopvewSetupYn: (item?.stopvewSetupYn as 'Y' | 'N') || fallback.stopvewSetupYn
  });
  }
  }
@@ -515,8 +557,9 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  },
  {
  header: '게시 상태',
- accessor: (item: Banner | Popup) => {
- const isLive = 'rfltYn' in item ? item.rfltYn === 'Y' : item.ntceYn === 'Y';
+ accessor: (item: Banner) => {
+ // 팝업은 자기 열(게시 여부)을 쓴다 — 이 열은 배너의 반영 여부만 본다.
+ const isLive = item.rfltYn === 'Y';
  return <HubStatusBadge status={isLive ? '게시 중' : '대기 중'} variant={isLive ? 'success' : 'secondary'} />;
  },
  className: 'w-32'
@@ -680,9 +723,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
         <span className="text-[length:var(--font-size-body)] text-muted-foreground">
           배너 <span className="font-bold text-foreground">{bannerError ? '조회 실패' : bannerTotal}</span> ·
           팝업 <span className="font-bold text-foreground">{popupError ? '조회 실패' : popupTotal}</span>
-          {activeTab === 'popup' && now && (
+          {/* 게시 예정 수는 '게시 여부' 열과 같은 판정(popupPostingState)·같은 오늘(todayYmd)로 센다.
+              오늘을 모르는 서버 렌더에서는 요약을 두지 않는다. */}
+          {activeTab === 'popup' && todayYmd !== '' && (
             <> · 현재 페이지 게시 예정 <span className="font-bold text-foreground">
-              {popups.filter((item) => new Date(item.ntceBgnde) > now).length}
+              {popups.filter((item) => popupPostingState(item, todayYmd) === 'scheduled').length}
             </span>건</>
           )}
         </span>
@@ -804,14 +849,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">노출 순서 Priority</FormLabel>
  <FormControl>
- <Input
- {...field}
- value={field.value ?? ''}
- type="number"
- min={0}
- onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
- className="rounded-lg font-bold shadow-inner"
- />
+ <Input {...field} {...numberInputProps(field, 0)} />
  </FormControl>
  <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
@@ -855,19 +893,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  />
  </div>
  <div className="space-y-4">
- {canUploadFile && (
- <FormItem className="space-y-1.5 p-0.5">
- <Label className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">미디어 자산 업로드 (Visual Payload)</Label>
- <div className="rounded-md border border-dashed border-border bg-muted/50 p-3 transition-colors hover:bg-muted">
- <StandardFileUploader onFilesChange={(f) => setFormFiles(f)} maxFiles={1} />
- <div className="mt-2 flex items-center justify-center gap-2 text-muted-foreground">
- <UploadCloud size={16} aria-hidden="true" />
- <span className="text-center text-xs">여기로 파일을 드래그하여 업로드</span>
- </div>
- </div>
- <p className="mt-1 px-1 text-xs leading-relaxed text-muted-foreground">시스템 표준 규격 이미지를 준수하십시오</p>
- </FormItem>
- )}
+ {canUploadFile && <AssetUploadField onFilesChange={(f) => setFormFiles(f)} />}
  {(editingItem as Banner)?.atchFileSn && (
  <div className="space-y-2 rounded-md border border-surface-inverse-border bg-surface-inverse p-3 text-surface-inverse-foreground">
  <span className="text-xs text-surface-inverse-foreground/70">기존 파일 식별자</span>
@@ -932,16 +958,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  inputMode="numeric"
  placeholder="YYYY-MM-DD"
  onChange={(e) => {
- const value = e.target.value.replace(/\D/g, '');
- if (value.length <= 8) {
- let formatted = value;
- if (value.length > 4 && value.length <= 6) {
- formatted = `${value.slice(0, 4)}-${value.slice(4)}`;
- } else if (value.length > 6) {
- formatted = `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6)}`;
- }
- field.onChange(formatted);
- }
+ const masked = maskIsoDateTyping(e.target.value);
+ if (masked !== null) field.onChange(masked);
  }}
  className="rounded-lg text-xs font-bold shadow-sm" 
  />
@@ -965,16 +983,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  inputMode="numeric"
  placeholder="YYYY-MM-DD"
  onChange={(e) => {
- const value = e.target.value.replace(/\D/g, '');
- if (value.length <= 8) {
- let formatted = value;
- if (value.length > 4 && value.length <= 6) {
- formatted = `${value.slice(0, 4)}-${value.slice(4)}`;
- } else if (value.length > 6) {
- formatted = `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6)}`;
- }
- field.onChange(formatted);
- }
+ const masked = maskIsoDateTyping(e.target.value);
+ if (masked !== null) field.onChange(masked);
  }}
  className="rounded-lg text-xs font-bold shadow-sm" 
  />
@@ -993,15 +1003,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">가로 좌표 (X_Pivot)</FormLabel>
  <FormControl>
- <Input
- {...field}
- value={field.value ?? ''}
- type="number"
- min={0}
- max={999999999999}
- onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
- className="rounded-lg font-bold shadow-inner"
- />
+ <Input {...field} {...numberInputProps(field, 0, POPUP_NUMBER_MAX)} />
  </FormControl>
  <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
@@ -1015,15 +1017,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">세로 좌표 (Y_Pivot)</FormLabel>
  <FormControl>
- <Input
- {...field}
- value={field.value ?? ''}
- type="number"
- min={0}
- max={999999999999}
- onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
- className="rounded-lg font-bold shadow-inner"
- />
+ <Input {...field} {...numberInputProps(field, 0, POPUP_NUMBER_MAX)} />
  </FormControl>
  <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
@@ -1039,15 +1033,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">가로 폭 (W_Res)</FormLabel>
  <FormControl>
- <Input
- {...field}
- value={field.value ?? ''}
- type="number"
- min={100}
- max={999999999999}
- onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
- className="rounded-lg font-bold shadow-inner"
- />
+ <Input {...field} {...numberInputProps(field, 100, POPUP_NUMBER_MAX)} />
  </FormControl>
  <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
@@ -1061,15 +1047,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">세로 높이 (H_Res)</FormLabel>
  <FormControl>
- <Input
- {...field}
- value={field.value ?? ''}
- type="number"
- min={100}
- max={999999999999}
- onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
- className="rounded-lg font-bold shadow-inner"
- />
+ <Input {...field} {...numberInputProps(field, 100, POPUP_NUMBER_MAX)} />
  </FormControl>
  <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
@@ -1078,19 +1056,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  </div>
  <div className="space-y-4">
- {canUploadFile && (
- <FormItem className="space-y-1.5 p-0.5">
- <Label className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">미디어 자산 업로드 (Visual Payload)</Label>
- <div className="rounded-md border border-dashed border-border bg-muted/50 p-3 transition-colors hover:bg-muted">
- <StandardFileUploader onFilesChange={(f) => setFormFiles(f)} maxFiles={1} />
- <div className="mt-2 flex items-center justify-center gap-2 text-muted-foreground">
- <UploadCloud size={16} aria-hidden="true" />
- <span className="text-center text-xs">여기로 파일을 드래그하여 업로드</span>
- </div>
- </div>
- <p className="mt-1 px-1 text-xs leading-relaxed text-muted-foreground">시스템 표준 규격 이미지를 준수하십시오</p>
- </FormItem>
- )}
+ {canUploadFile && <AssetUploadField onFilesChange={(f) => setFormFiles(f)} />}
  {(editingItem as Popup)?.fileUrl && (
  <div className="space-y-2 rounded-md border border-surface-inverse-border bg-surface-inverse p-3 text-surface-inverse-foreground">
  <span className="text-xs text-surface-inverse-foreground/70">기존 파일 식별자</span>

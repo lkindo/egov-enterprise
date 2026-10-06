@@ -1,5 +1,5 @@
 import { AxiosRequestConfig } from 'axios';
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import type { components } from '@/types/generated-api';
 import {
   deleteTmplatInfoOperation,
@@ -19,7 +19,7 @@ import {
  */
 export type TmplatInfo = components['schemas']['TemplateDto'];
 
-class TemplateAdminService extends AdminService {
+class TemplateAdminService extends ApiService {
   /** 템플릿목록 조회 */
   async getTemplateList(config?: AxiosRequestConfig) {
     return this.executeGenerated(selectTmplatInfoListOperation, { config });

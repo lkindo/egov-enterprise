@@ -1,4 +1,4 @@
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { AxiosRequestConfig } from 'axios';
 import { uploadFiles_1Operation } from '@/types/generated-operations';
 
@@ -6,7 +6,7 @@ import { uploadFiles_1Operation } from '@/types/generated-operations';
 /**
  * 파일 관리 서비스 (Admin)
  */
-class FileAdminService extends AdminService {
+class FileAdminService extends ApiService {
  /*
   * 목록 조회(getFiles)·삭제(deleteFile) 메서드는 두지 않는다 (2026-08-05 제거).
   *

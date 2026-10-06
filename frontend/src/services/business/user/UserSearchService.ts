@@ -1,4 +1,4 @@
-import { UserService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { AxiosRequestConfig } from 'axios';
 import { searchAssignableUsersOperation } from '@/types/generated-operations';
 
@@ -10,7 +10,7 @@ import { searchAssignableUsersOperation } from '@/types/generated-operations';
  *   그쪽은 주소·연락처·이메일까지 담은 전체 인적사항이라 일반 사용자 화면에서 쓰면 안 된다.
  *   담당자 선택처럼 "사람을 고르기만" 하는 화면은 반드시 이 서비스를 쓴다.
  */
-class UserSearchService extends UserService {
+class UserSearchService extends ApiService {
   /**
    * 담당자 검색. 성명 부분일치로 조회한다.
    *

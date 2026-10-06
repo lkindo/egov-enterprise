@@ -388,6 +388,9 @@ class AuthorizationAdministrationServiceTest {
                 new ChangeDepartmentGroups(List.of("U_1", "U_1"), "G_C", "ADD", version, true),
                 new ChangeDepartmentGroups(List.of("OUTSIDE"), "G_C", "ADD", version, true));
         for (var request : invalid) error(CommonErrorCode.INVALID_INPUT_VALUE, () -> service.changeDepartmentGroups("D_1", request));
+        // 그룹 존재 확인은 공개 메뉴용 그룹 검사보다 먼저다 — 없는 그룹은 그 이름이어도 404 다.
+        error(CommonErrorCode.RESOURCE_NOT_FOUND, () -> service.changeDepartmentGroups("D_1", new ChangeDepartmentGroups(List.of("U_1"), "MISSING", "ADD", version, true)));
+        error(CommonErrorCode.RESOURCE_NOT_FOUND, () -> service.changeDepartmentGroups("D_1", new ChangeDepartmentGroups(List.of("U_1"), "ROLE_ANONYMOUS", "ADD", version, true)));
         db.groups.put("ROLE_ANONYMOUS", new GroupData("Anonymous", null, List.of()));
         error(CommonErrorCode.INVALID_INPUT_VALUE, () -> service.changeDepartmentGroups("D_1", new ChangeDepartmentGroups(List.of("U_1"), "ROLE_ANONYMOUS", "ADD", version, true)));
         error(CommonErrorCode.CONCURRENT_MODIFICATION, () -> service.changeDepartmentGroups("D_1", new ChangeDepartmentGroups(List.of("U_1"), "G_C", "ADD", "stale", true)));

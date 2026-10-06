@@ -1,5 +1,5 @@
 import { AxiosRequestConfig } from 'axios';
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import type { GeneratedOperationRequest } from '@/types/generated-operations';
 import {
@@ -26,7 +26,7 @@ export interface LoginPolicy {
 /**
  * 로그인 정책 관리 서비스 (Admin)
  */
-class LoginPolicyAdminService extends AdminService {
+class LoginPolicyAdminService extends ApiService {
   /** 로그인 정책 목록 조회 */
   async getLoginPolicyList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<LoginPolicy>> {
     const pageIndex = params?.pageIndex

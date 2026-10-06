@@ -40,4 +40,9 @@ describe('Button', () => {
     expect(screen.getByRole('button')).toBeDisabled();
     expect(screen.getByTestId('icon-loader2')).toBeDefined();
   });
+
+  it('keeps the loading lock even when disabled={false} is passed explicitly', () => {
+    render(<Button isLoading disabled={false}>로딩 중</Button>);
+    expect(screen.getByRole('button')).toBeDisabled();
+  });
 });

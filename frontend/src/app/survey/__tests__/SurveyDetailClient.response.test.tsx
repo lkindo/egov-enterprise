@@ -34,8 +34,8 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: mocks.push }), notFound: mocks.notFound }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
-vi.mock('@/services/foundation/survey/SurveyAdminService', () => ({
-  surveyAdminService: {
+vi.mock('@/services/foundation/survey/SurveyParticipationService', () => ({
+  surveyParticipationService: {
     getQuestions: mocks.getQuestions,
     getSurvey: mocks.getSurvey,
     submitAnswers: mocks.submitAnswers,

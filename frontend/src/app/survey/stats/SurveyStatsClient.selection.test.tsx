@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SurveyStatsClient from './SurveyStatsClient';
 const mocks = vi.hoisted(() => ({ push: vi.fn(), getSurveys: vi.fn(), search: '' }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: mocks.push }), useSearchParams: () => new URLSearchParams(mocks.search) }));
-vi.mock('@/services/foundation/survey/SurveyAdminService', () => ({ surveyAdminService: { getSurveys: mocks.getSurveys } }));
+vi.mock('@/services/foundation/survey/SurveyParticipationService', () => ({ surveyParticipationService: { getSurveys: mocks.getSurveys } }));
 vi.mock('@/lib/hooks/use-debounced-value', () => ({ useDebouncedValue: (value: string) => value }));
 vi.mock('../components/SurveyStatsPanel', () => ({ SurveyStatsPanel: ({ srvySn }: { srvySn: number | null }) => <p>조회 대상: {srvySn ?? '미선택'}</p> }));
 function setup() {return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><SurveyStatsClient /></QueryClientProvider>);}

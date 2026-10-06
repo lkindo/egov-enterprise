@@ -1,17 +1,16 @@
 import type { AxiosRequestConfig } from 'axios';
 import { ApiService } from '@/services/core/ApiService';
+import { copyPageResponse } from '@/services/core/page-response';
 import type {
   Survey,
   SurveyAnswer,
   SurveyQuestion,
   SurveyResponseSubmit,
-  SurveyResultStats,
 } from '@/types/business/survey';
 import type { PageResponse } from '@/types/foundation/system';
 import type { components, operations } from '@/types/generated-api';
 import {
   getQuestions_1Operation,
-  getStatsOperation,
   getSurvey_1Operation,
   getSurveys_1Operation,
   submitOperation,
@@ -109,63 +108,18 @@ function requireSurveyQuestion(item: components['schemas']['SurveyQuestionDto'])
   };
 }
 
-function requireSurveyStats(item: components['schemas']['SurveyStatsDto']): SurveyResultStats {
-  if (
-    typeof item.srvyQstnSn !== 'number'
-    || typeof item.qstnCn !== 'string'
-    || typeof item.qstnTypeCd !== 'string'
-    || typeof item.srvyArtclSn !== 'number'
-    || typeof item.count !== 'number'
-    || typeof item.percentage !== 'number'
-  ) {
-    throw new Error('설문 통계 응답이 필수 계약과 일치하지 않습니다.');
-  }
-  return {
-    srvyQstnSn: item.srvyQstnSn,
-    qstnCn: item.qstnCn,
-    qstnTypeCd: item.qstnTypeCd,
-    srvyArtclSn: item.srvyArtclSn,
-    ...(item.artclCn === undefined ? {} : { artclCn: item.artclCn }),
-    count: item.count,
-    percentage: item.percentage,
-  };
-}
-
-function requireSurveyPage(
-  response: {
-    list?: components['schemas']['SurveyInfoDto'][];
-    total?: number;
-    page?: number;
-    size?: number;
-    totalPage?: number;
-  },
-): PageResponse<Survey> {
-  if (
-    !Array.isArray(response.list)
-    || typeof response.total !== 'number'
-    || typeof response.page !== 'number'
-    || typeof response.size !== 'number'
-    || typeof response.totalPage !== 'number'
-  ) {
-    throw new Error('설문 페이지 응답이 필수 계약과 일치하지 않습니다.');
-  }
-  return {
-    list: response.list.map(requireSurvey),
-    total: response.total,
-    page: response.page,
-    size: response.size,
-    totalPage: response.totalPage,
-  };
-}
-
-/** 설문 관리 서비스 (Admin). */
-class SurveyAdminService extends ApiService {
+/**
+ * 설문 참여 서비스 — 응답자 화면(`/survey`)이 설문 목록·상세·문항을 읽고 응답을 제출한다.
+ * 설문·문항·템플릿을 고치는 관리 서비스는 `foundation/system/SurveyAdminService` 다. 결과 통계는
+ * `lib/api/survey` 의 `getSurveyStats` 가 소유한다.
+ */
+class SurveyParticipationService extends ApiService {
   async getSurveys(
     params: SurveySearchParams,
     config?: AxiosRequestConfig,
   ): Promise<PageResponse<Survey>> {
     const response = await this.executeGenerated(getSurveys_1Operation, { query: params, config });
-    return requireSurveyPage(response);
+    return copyPageResponse(response, '설문', requireSurvey);
   }
 
   async getSurvey(srvySn: number, config?: AxiosRequestConfig): Promise<Survey> {
@@ -185,11 +139,6 @@ class SurveyAdminService extends ApiService {
   ): Promise<number> {
     return this.executeGenerated(submitOperation, { path: { srvySn }, body: payload, config });
   }
-
-  async getStats(srvySn: number, config?: AxiosRequestConfig): Promise<SurveyResultStats[]> {
-    const response = await this.executeGenerated(getStatsOperation, { path: { srvySn }, config });
-    return response.map(requireSurveyStats);
-  }
 }
 
-export const surveyAdminService = new SurveyAdminService();
+export const surveyParticipationService = new SurveyParticipationService();

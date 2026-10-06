@@ -1,5 +1,5 @@
 import { AxiosRequestConfig } from 'axios';
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import {
   getBbsStatsOperation,
   getConnectStats_1Operation,
@@ -44,7 +44,7 @@ function toDateRange(params?: DateRange & { statsKind?: string }): DateRange {
   };
 }
 
-class StatsAdminService extends AdminService {
+class StatsAdminService extends ApiService {
   /** 요약 통계 조회 */
   async getSummary(config?: AxiosRequestConfig): Promise<Record<string, unknown>> {
     const response = await this.executeGenerated(getSummaryOperation, { config });

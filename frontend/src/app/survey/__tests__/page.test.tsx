@@ -10,8 +10,8 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-vi.mock('@/services/foundation/survey/SurveyAdminService', () => ({
-  surveyAdminService: { getSurveys: mocks.getSurveys },
+vi.mock('@/services/foundation/survey/SurveyParticipationService', () => ({
+  surveyParticipationService: { getSurveys: mocks.getSurveys },
 }));
 vi.mock('@/app/components/layout/DynamicBreadcrumb', () => ({ DynamicBreadcrumb: () => null }));
 

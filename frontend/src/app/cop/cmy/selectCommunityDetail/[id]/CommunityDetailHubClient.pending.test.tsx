@@ -33,9 +33,9 @@ vi.mock('@/components/ui/hub/HubSectionCard', () => ({
   HubSectionCard: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
 }));
 vi.mock('@/components/ui/tooltip', () => ({ TooltipProvider: ({ children }: { children: React.ReactNode }) => children }));
-vi.mock('@/services/business/community/communityService', () => ({ communityService: { getCommunity: vi.fn() } }));
 vi.mock('@/services/business/user/community/CommunityUserService', () => ({
   communityUserService: {
+    getCommunity: vi.fn(),
     joinCommunity: mocks.joinCommunity,
     leaveCommunity: mocks.leaveCommunity,
     getMyMembership: mocks.getMyMembership,

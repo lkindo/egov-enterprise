@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { RefreshCcw, Calendar, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { communityService } from '@/services/business/community/communityService';
+import { communityUserService } from '@/services/business/user/community/CommunityUserService';
 import { CommunityVO } from '@/types/business/community';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -42,7 +42,7 @@ export default function CommunityHubClient({
      * 두 값 모두 서버에 닿지 않았다 — 페이지를 넘겨도 같은 목록이 오고, 검색어는 무시됐다.
      * 서버가 이름 검색을 `searchCnd === '0'` 분기로만 지원하므로 그 값을 함께 보낸다.
      */
-    queryFn: () => communityService.getCommunityList({
+    queryFn: () => communityUserService.getCommunityList({
       page: page - 1,
       size: pageSize,
       searchCnd: '0',

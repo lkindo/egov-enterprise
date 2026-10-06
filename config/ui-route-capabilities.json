@@ -10313,7 +10313,7 @@
             "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.pending.test.tsx",
             "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx",
             "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/page.tsx",
-            "frontend/src/services/business/community/communityService.ts"
+            "frontend/src/services/business/user/community/CommunityUserService.ts"
           ]
         },
         {
@@ -10448,7 +10448,7 @@
             "frontend/src/app/cop/cmy/selectCommunityList/CommunityHubClient.tsx",
             "frontend/src/app/cop/cmy/selectCommunityList/page.tsx",
             "frontend/src/services/business/community/__tests__/communityService.test.ts",
-            "frontend/src/services/business/community/communityService.ts"
+            "frontend/src/services/business/user/community/CommunityUserService.ts"
           ]
         },
         {
@@ -12059,7 +12059,7 @@
             "frontend/src/app/survey/__tests__/page.test.tsx",
             "frontend/src/app/survey/page.tsx",
             "frontend/src/queries/survey-query-options.ts",
-            "frontend/src/services/foundation/survey/SurveyAdminService.ts"
+            "frontend/src/services/foundation/survey/SurveyParticipationService.ts"
           ]
         }
       ],
@@ -12136,7 +12136,7 @@
             "frontend/src/app/survey/[id]/SurveyDetailClient.tsx",
             "frontend/src/app/survey/[id]/page.tsx",
             "frontend/src/app/survey/__tests__/SurveyDetailClient.response.test.tsx",
-            "frontend/src/services/foundation/survey/SurveyAdminService.ts"
+            "frontend/src/services/foundation/survey/SurveyParticipationService.ts"
           ]
         },
         {
@@ -12444,7 +12444,7 @@
             "frontend/src/app/survey/stats/SurveyStatsClient.selection.test.tsx",
             "frontend/src/app/survey/stats/SurveyStatsClient.tsx",
             "frontend/src/app/survey/stats/page.tsx",
-            "frontend/src/services/foundation/survey/SurveyAdminService.ts"
+            "frontend/src/services/foundation/survey/SurveyParticipationService.ts"
           ]
         }
       ],

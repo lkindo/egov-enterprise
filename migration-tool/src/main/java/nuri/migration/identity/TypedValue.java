@@ -211,7 +211,7 @@ public final class TypedValue {
                 }
                 case DECIMAL -> new BigDecimal(text);
                 case TEXT -> text;
-                case UUID -> java.util.UUID.fromString(text);
+                case UUID -> UUID.fromString(text);
                 case DATE -> LocalDate.parse(text, DateTimeFormatter.ISO_LOCAL_DATE);
                 case TIME -> LocalTime.parse(text, DateTimeFormatter.ISO_LOCAL_TIME);
                 case LOCAL_TIMESTAMP -> LocalDateTime.parse(text, DateTimeFormatter.ISO_LOCAL_DATE_TIME);

@@ -531,7 +531,7 @@ public class MenuService {
     }
 
     private List<MenuDto> findSubTree(List<MenuDto> nodes, Long targetMenuNo) {
-        if (nodes == null) return java.util.Collections.emptyList();
+        if (nodes == null) return Collections.emptyList();
         for (MenuDto node : nodes) {
             if (node.getId().equals(targetMenuNo)) {
                 return node.getChildren();
@@ -543,7 +543,7 @@ public class MenuService {
                 }
             }
         }
-        return java.util.Collections.emptyList();
+        return Collections.emptyList();
     }
 
     public List<MenuDto> selectMenuManageList(@NonNull BaseSearchDto searchVO) {

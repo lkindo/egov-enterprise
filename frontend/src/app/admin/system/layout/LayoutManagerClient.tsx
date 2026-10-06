@@ -144,6 +144,34 @@ function buildTokenVars(config: ThemeConfig): Record<string, string> {
 
 const TOKEN_KEYS = Object.keys(buildTokenVars(DEFAULT_THEME_CONFIG));
 
+/*
+  브라우저 저장소는 사생활 모드·저장소 차단에서 예외를 던진다(PopupManager 의 DIP V9 기록과 같은 이유).
+  이 화면의 저장은 편의 기능이므로, 저장소를 쓸 수 없으면 토큰은 이번 화면에서만 적용되고 저장·복원만 잃는다.
+*/
+function readSavedThemeConfig(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeSavedThemeConfig(config: ThemeConfig) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+  } catch {
+    // 저장하지 못하면 이번 화면에서만 적용된다.
+  }
+}
+
+function clearSavedThemeConfig() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // 저장소를 쓸 수 없으면 지울 것도 없다.
+  }
+}
+
 /** localStorage 등 외부 입력을 신뢰하지 않고 안전한 형태로 정규화한다. */
 function normalizeConfig(raw: unknown): ThemeConfig {
   const input = (raw ?? {}) as Partial<ThemeConfig>;
@@ -205,13 +233,13 @@ export default function LayoutManagerClient() {
     Object.entries(buildTokenVars(config)).forEach(([key, value]) => {
       root.style.setProperty(key, value);
     });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    writeSavedThemeConfig(config);
   }, []);
 
   // 초기 로드 시 저장된 설정을 폼 상태로만 복원한다.
   // (전역 복원은 앱 전역 테마 프로바이더의 책임이며 현재 미구현 — 이 화면 진입만으로 전역 토큰을 바꾸지 않는다.)
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = readSavedThemeConfig();
     if (!saved) return;
     try {
       setThemeConfig(normalizeConfig(JSON.parse(saved)));
@@ -232,7 +260,7 @@ export default function LayoutManagerClient() {
   const handleThemeReset = () => {
     const root = document.documentElement;
     TOKEN_KEYS.forEach((key) => root.style.removeProperty(key));
-    localStorage.removeItem(STORAGE_KEY);
+    clearSavedThemeConfig();
     setThemeConfig(DEFAULT_THEME_CONFIG);
     toast('디자인 토큰을 기본값(globals.css)으로 되돌렸습니다.', 'success');
   };

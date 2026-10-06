@@ -56,8 +56,9 @@ const Button = React.forwardRef<
  data-size={size}
  className={cn(buttonVariants({ variant, size, className }))}
  ref={ref}
- disabled={isLoading || props.disabled}
  {...props}
+ // 로딩 중 잠금은 호출자가 넘긴 disabled(false 포함)가 덮지 못하도록 펼침 뒤에 둔다.
+ disabled={isLoading || props.disabled}
  >
  {asChild ? (
  children

@@ -78,6 +78,16 @@ import {
 import { CodeClusterFields, CodeDetailFields, CodeGroupFields } from './CodeFormFields';
 import { CommonCodeChangeHistoryDialog, type CodeChangeHistoryTarget } from './CommonCodeChangeHistoryDialog';
 
+/** 새 상세 코드 폼의 기본값 — 폼 생성과 등록 모달 열기가 같은 값을 쓴다. */
+const DETAIL_FORM_DEFAULTS: z.infer<typeof codeDetailFormSchema> = {
+ dtlCd: '',
+ dtlCdNm: '',
+ useYn: 'Y',
+ dtlCdExpln: ''
+};
+/** 새 코드 분류 폼의 기본값 — 폼 생성과 분류 등록 열기가 같은 값을 쓴다. */
+const CLUSTER_FORM_DEFAULTS: z.infer<typeof codeClusterFormSchema> = { clsfCd: '', clsfCdNm: '', clsfCdExpln: '', useYn: 'Y' };
+
 interface CommonCodeClientProps {
  clCodes: CmmnClCode[];
  groups: CmmnCode[];
@@ -145,12 +155,7 @@ export default function CommonCodeClient({
   typeof codeDetailFormSchema,
   z.infer<typeof codeDetailFormSchema>
  >(codeDetailFormSchema, {
- defaultValues: {
- dtlCd: '',
- dtlCdNm: '',
- useYn: 'Y',
- dtlCdExpln: ''
- }
+ defaultValues: DETAIL_FORM_DEFAULTS
  });
  const resetForm = form.reset;
  const isDetailFormPending = isDetailSaving || form.formState.isSubmitting;
@@ -161,7 +166,7 @@ export default function CommonCodeClient({
   typeof codeClusterFormSchema,
   z.infer<typeof codeClusterFormSchema>
  >(codeClusterFormSchema, {
- defaultValues: { clsfCd: '', clsfCdNm: '', clsfCdExpln: '', useYn: 'Y' }
+ defaultValues: CLUSTER_FORM_DEFAULTS
  });
  const groupForm = useAppForm<
   typeof codeGroupFormSchema,
@@ -183,12 +188,7 @@ export default function CommonCodeClient({
  dtlCdExpln: editingDetail.dtlCdExpln || ''
  });
  } else {
- resetForm({
- dtlCd: '',
- dtlCdNm: '',
- useYn: 'Y',
- dtlCdExpln: ''
- });
+ resetForm(DETAIL_FORM_DEFAULTS);
  }
  }
  }, [editingDetail, isModalOpen, resetForm]);
@@ -411,12 +411,12 @@ export default function CommonCodeClient({
  setActiveId(null);
  };
 
- /** 선택된 분류에 속한 코드 그룹 수. 미사용 전환 고지에 쓴다. */
+ /** 선택된 분류에 속한 코드 그룹 수. 미사용 전환 고지와 분류 상세의 '포함 그룹' 수에 쓴다. */
  const groupCountOf = (clsfCd: string) =>
   flattenedNodes.filter((node) => node.type === 'group' && node.parentId === clsfCd).length;
 
  const openCreateCluster = () => {
- clusterForm.reset({ clsfCd: '', clsfCdNm: '', clsfCdExpln: '', useYn: 'Y' });
+ clusterForm.reset(CLUSTER_FORM_DEFAULTS);
  setStructureModal({ kind: 'cluster', mode: 'create' });
  };
 
@@ -536,10 +536,9 @@ export default function CommonCodeClient({
  return;
  }
  structureSubmitAttemptRef.current = true;
- const activeForm = structureModal?.kind === 'cluster' ? clusterForm : groupForm;
  const handler = structureModal?.kind === 'cluster'
- ? activeForm.handleSubmit(onSubmitCluster as never, () => { structureSubmitAttemptRef.current = false; })
- : activeForm.handleSubmit(onSubmitGroup as never, () => { structureSubmitAttemptRef.current = false; });
+ ? clusterForm.handleSubmit(onSubmitCluster, () => { structureSubmitAttemptRef.current = false; })
+ : groupForm.handleSubmit(onSubmitGroup, () => { structureSubmitAttemptRef.current = false; });
  void handler(event).catch(() => {
  structureSubmitAttemptRef.current = false;
  structureSavePendingRef.current = false;
@@ -1083,7 +1082,7 @@ export default function CommonCodeClient({
  <div>
  <dt className="text-xs text-muted-foreground">포함 그룹</dt>
  <dd className="mt-1 text-sm font-semibold text-foreground">
- {flattenedNodes.filter((node) => node.type === 'group' && node.parentId === selectedNode.id).length}개
+ {groupCountOf(selectedNode.id)}개
  </dd>
  </div>
  </dl>
