@@ -71,7 +71,7 @@ class AttachmentIntegrityApiControllerTest extends ControllerTestSupport {
     /** Storage inspection requires its own operation grant at both HTTP and method boundaries. */
     @Test
     @DisplayName("저장소 점검은 FILE_AUDIT 메서드 인가를 유지한다")
-    void scanKeepsAdminOrSystemMethodSecurity() throws NoSuchMethodException {
+    void scanRequiresFileAuditPermission() throws NoSuchMethodException {
         nuri.security.support.MethodPermissionContract.assertOperation(
                 AttachmentIntegrityApiController.class.getMethod("scan"), "FILE_AUDIT", false);
     }

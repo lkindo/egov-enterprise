@@ -102,7 +102,7 @@ public class UserApiController {
      * 담당자 한 명 고르자고 전 직원 개인정보를 여는 꼴이 되기 때문이다.
      *
      * <p>대신 <b>최소 정보만</b>({@link UserSearchDto} — esntlId·성명·부서명) 돌려주는 전용 창구를 둔다.
-     * 인가는 {@code @Authenticated}(로그인 사용자)이고, 인명부 전량 수집은
+     * 인가는 로그인 사용자 전체(operation binding {@code AUTHENTICATED})이고, 인명부 전량 수집은
      * 검색어 최소 길이·건수 상한·offset 부재로 서비스 레이어에서 막는다
      * ({@code UserService#searchAssignableUsers}).
      *

@@ -153,7 +153,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  /*
    [2026-08-29] '공개 범위' 가 아니라 '공개 범위(미적용)' 이다.
    이 값은 저장만 되고 접근을 바꾸지 않는다 — 목록 질의는 소유자(wrterId)로만 스코핑하고
-   상세는 assertOwnerOrAdmin 으로 막는다. 서버가 이 값을 예외로 쓰지 않는 것은 의도된
+   상세는 assertOwnerOrPermission(소유자 또는 ADBK_READ_ALL)으로 막는다. 서버가 이 값을 예외로 쓰지 않는 것은 의도된
    결정이며 사유도 코드에 남아 있다(코드값이 'P'/'G'/'PUBLIC'/'COMPANY' 로 혼재해
    표준화되지 않았고, 상세만 열면 열거 취약점이 된다 — AddressBookService.getAddressBook).
    '공개' 라고 적힌 값을 보고 조직에 공유됐다고 믿으면 반대 방향으로도 위험하다.

@@ -48,7 +48,7 @@ class AuthenticationBypassTest extends BaseSecurityTest {
     /** provider 가 유효하다고 판정할 토큰. 값 자체에 의미는 없다 — stubbing 이 판정을 정의한다. */
     private static final String VALID_TOKEN = "valid.jwt.token";
 
-    /** 보호된 실존 엔드포인트(@Authenticated). 매핑이 실재하는지 확인하고 골랐다. */
+    /** 보호된 실존 엔드포인트(로그인 사용자 전용 — operation binding AUTHENTICATED). 매핑이 실재하는지 확인하고 골랐다. */
     private static final String PROTECTED_PATH = "/api/v1/users/me";
 
     /** 관리자 전용 실존 엔드포인트. SecurityTestConfig 가 /api/v1/admin/** 에 hasRole(ADMIN) 을 건다. */

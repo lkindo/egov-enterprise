@@ -26,17 +26,21 @@ import java.util.List;
  * 그래서 {@code SurveySubmissionApiController} 의 {@code @Authenticated} 제출 엔드포인트가
  * 핸들러에 도달하기 전에 403 으로 죽었다 — 애노테이션 의미와 실행 의미가 어긋난 상태(GAP-AUTH-001).
  *
- * <p>제품 결정에 따라 별칭 URL 게이트를 제거(V2_84 + secure-paths 3개 선언)하고, 인가를
- * <b>메서드 레벨로 명시</b>한다:
+ * <p>제품 결정에 따라 별칭 경로의 읽기를 일반 사용자에게 열었다(V2_84). 지금 인가는 경로·핸들러별
+ * operation binding 이다:
  * <ul>
- *   <li>{@code @Authenticated}: 목록·상세·문항 조회 — 일반 사용자가 설문에 응답하기 위한 최소 읽기 집합</li>
- *   <li>{@code @AdminOrSystem}: 템플릿 전체와 설문·문항·항목의 생성/수정/삭제 — 관리 기능</li>
+ *   <li>{@code SURVEY_READ}: 별칭 경로({@code /api/v1/surveys/**})의 목록·상세·문항 조회와 템플릿 상세 —
+ *       일반 사용자가 설문에 응답하기 위한 최소 읽기 집합(기본 그룹에 ROLE_USER 포함)</li>
+ *   <li>{@code SURVEY_READ_ALL}: 정식 관리 경로({@code /api/v1/admin/system/surveys/**})의 조회와 별칭의 템플릿 목록</li>
+ *   <li>{@code SURVEY_CREATE_ALL}·{@code SURVEY_UPDATE_ALL}·{@code SURVEY_DELETE_ALL}: 두 경로 모두에서
+ *       템플릿과 설문·문항·항목의 생성/수정/삭제·복제 — 관리 기능</li>
  * </ul>
- * 정식 관리 경로({@code /api/v1/admin/system/surveys/**})의 URL 게이트는 그대로라 관리 UI 는
- * 이중(URL+메서드) 방어를 유지하며, 별칭 경로는 메서드 인가가 단독 방어선이므로
- * <b>여기서 애노테이션을 지우는 것은 인가 제거</b>다(SecurityAuthAnnotationLinterTest 가 동결).
+ * HTTP 계층({@code OperationAuthorizationManager})이 요청 경로의 binding 을, 메서드 계층
+ * ({@code @PreAuthorize("@permissionPolicy.allowed(...)")})이 같은 핸들러의 binding 을 집행한다.
+ * <b>여기서 메서드 인가를 지우면 안 된다</b> — {@code SecurityAuthAnnotationLinterTest} 가 모든 핸들러에
+ * 자기 binding 을 가리키는 {@code @PreAuthorize} 를 요구한다.
  */
-@Tag(name = "Survey", description = "설문 관리 API (관리는 ADMIN/SYSTEM, 열람은 인증 사용자)")
+@Tag(name = "Survey", description = "설문 관리 API (관리는 SURVEY_*_ALL 권한, 열람은 SURVEY_READ 권한)")
 @RestController("systemSurveyApiController")
 @RequestMapping({"/api/v1/admin/system/surveys", "/api/v1/surveys"})
 @RequiredArgsConstructor

@@ -28,7 +28,7 @@ import static org.mockito.Mockito.verify;
 @DisplayName("ScrapService 테스트")
 class ScrapServiceTest {
 
-    // 소유권 가드(SecurityUtil.assertOwnerOrAdmin)를 no-op 처리 — 소유권 로직은 SecurityUtilTest 가 검증.
+    // 소유권 가드(SecurityUtil.assertOwnerOrPermission)를 no-op 처리 — 소유권 로직은 SecurityUtilTest 가 검증.
     // (가드 배선은 이 mock 제거 시 ACCESS_DENIED 로 실패함으로써 증명됨)
     private org.mockito.MockedStatic<nuri.business.security.util.SecurityUtil> __secUtilMock;
     @org.junit.jupiter.api.BeforeEach

@@ -6,7 +6,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import nuri.business.domain.board.*;
 import nuri.business.domain.board.exception.BoardErrorCode;
-import nuri.business.security.AuthorityConstants;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardMapperImpl;
 import nuri.business.service.board.dto.BoardSaveRequest;
@@ -269,33 +268,11 @@ class BoardServiceTest {
         assertThat(boardService.getPostDetail("BBS_01", 7L, false).pstSn()).isEqualTo(7L);
     }
 
+    /** 판정은 그룹 이름이 아니라 조회 대행 권한(BOARD_READ_ALL) 하나로 한다 — 기본 그룹 ROLE_ADMIN·ROLE_SYSTEM. */
     @Test
-    @DisplayName("범용 목록은 exact ADMIN에게 비밀글 전체 visibility를 허용한다")
-    void getBoardPostsAllowsExactAdminSecretVisibility() {
-        assertElevatedRoleCanReadAllSecretPosts(AuthorityConstants.ROLE_ADMIN);
-    }
-
-    @Test
-    @DisplayName("범용 목록은 exact SYSTEM에게 비밀글 전체 visibility를 허용한다")
-    void getBoardPostsAllowsExactSystemSecretVisibility() {
-        assertElevatedRoleCanReadAllSecretPosts(AuthorityConstants.ROLE_SYSTEM);
-    }
-
-    @Test
-    @DisplayName("범용 목록은 비활성 게시판 master를 repository 조회 전에 거부한다")
-    void getBoardPostsRejectsInactiveBoardMaster() {
-        String bbsId = "BBS_INACTIVE";
-        given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(
-                BoardMaster.builder().bbsId(bbsId).useYn("N").build()));
-
-        assertThatThrownBy(() -> boardService.getBoardPosts(bbsId, PageRequest.of(0, 10)))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.BOARD_NOT_FOUND);
-        verify(boardRepository, never()).searchArticles(any(), any());
-    }
-
-    private void assertElevatedRoleCanReadAllSecretPosts(String role) {
-        String bbsId = "BBS_" + role;
+    @DisplayName("범용 목록은 BOARD_READ_ALL 보유자에게 비밀글 전체 visibility를 허용한다")
+    void getBoardPostsAllowsSecretVisibilityForBoardReadAll() {
+        String bbsId = "BBS_READ_ALL";
         Pageable pageable = PageRequest.of(0, 10);
         given(boardMasterRepository.findById(bbsId))
                 .willReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
@@ -309,6 +286,19 @@ class BoardServiceTest {
         boardService.getBoardPosts(bbsId, pageable);
 
         assertThat(captor.getValue().isSecretPostAdminOverride()).isTrue();
+    }
+
+    @Test
+    @DisplayName("범용 목록은 비활성 게시판 master를 repository 조회 전에 거부한다")
+    void getBoardPostsRejectsInactiveBoardMaster() {
+        String bbsId = "BBS_INACTIVE";
+        given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(
+                BoardMaster.builder().bbsId(bbsId).useYn("N").build()));
+
+        assertThatThrownBy(() -> boardService.getBoardPosts(bbsId, PageRequest.of(0, 10)))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.BOARD_NOT_FOUND);
+        verify(boardRepository, never()).searchArticles(any(), any());
     }
 
     @Test

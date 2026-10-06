@@ -108,8 +108,9 @@ export function DeptJobListSection({
   const jobActionPendingRef = React.useRef(false);
   const confirm = useConfirm();
   const { user } = useAuth();
-  // [2026-09-06 DEC-OPS-037] 업무함 CRUD 는 서버가 @AdminOrSystem 이다. 표시 판정은 라우트 게이트와 같은 역할 집합
-  //   (DEC-OPS-023 ②)을 쓴다 — 표시일 뿐 인가가 아니며, 관리자가 아니면 버튼 자체를 그리지 않는다(죽은 버튼 금지, G10).
+  // [2026-09-06 DEC-OPS-037] '업무함 관리' 버튼은 업무함 조회 권한(DEPT_BOX_READ) 보유자에게 보인다 — 기본 배정상
+  //   ROLE_USER 도 이 권한을 가지므로 일반 사용자에게도 보인다. 다이얼로그 안의 등록·수정·삭제 버튼은 각 쓰기
+  //   권한(DEPT_BOX_CREATE·UPDATE·DELETE)으로 가리고, 서버도 같은 권한을 집행한다. 표시 판정일 뿐 인가가 아니다(H3).
   const canManageBoxes = canPermission(user, 'DEPT_BOX_READ');
   const [boxManageOpen, setBoxManageOpen] = useState(false);
   const { toast } = useToast();
@@ -127,7 +128,8 @@ export function DeptJobListSection({
 
   // ⚠ 종전에는 getDeptJobBoxes(업무'함')를 조회했다. 그런데 이 화면의 '업무 등록' 버튼은
   //   부서 업무(DeptJob)를 만든다 — 서로 다른 엔티티라, 등록한 업무가 목록에 영원히 나타나지 않았다.
-  //   업무함은 부서 단위 구조물이고 CRUD 가 관리자 전용(@AdminOrSystem)이라 이 목록의 대상이 아니다.
+  //   업무함은 부서 단위 구조물이고 '업무함 관리' 다이얼로그가 따로 다루므로(쓰기는 DEPT_BOX_CREATE·UPDATE·DELETE
+  //   권한) 이 목록의 대상이 아니다.
   const {
     data: jobData,
     isLoading: isJobLoading,

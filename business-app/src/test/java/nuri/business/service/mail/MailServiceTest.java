@@ -85,7 +85,7 @@ class MailServiceTest {
     private void asUser(String loginId) {
         securityUtil.when(() -> SecurityUtil.hasPermission("MAIL_READ_ALL")).thenReturn(false);
         securityUtil.when(SecurityUtil::getCurrentLoginId).thenReturn(Optional.of(loginId));
-        // 실제 가드는 assertOwnerOrAdmin 이 담당한다 — 소유자 불일치 시 예외를 던지도록 재현
+        // 실제 가드는 assertOwnerOrPermission 이 담당한다 — 소유자 불일치 시 예외를 던지도록 재현
         securityUtil.when(() -> SecurityUtil.assertOwnerOrPermission(anyString(), anyString()))
                 .thenAnswer(inv -> {
                     if (!loginId.equals(inv.getArgument(0))) {

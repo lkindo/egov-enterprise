@@ -21,10 +21,11 @@ import org.springframework.web.bind.annotation.*;
  * {@code /surveys/responses} 로 두면 숫자 경로와 의미상 충돌하기 쉽다. Spring 은 리터럴을
  * 우선하므로 동작은 하지만, 읽는 사람에게 함정이라 경로 자체를 분리했다.
  *
- * <p><b>목록·조회는 {@code @AdminOrSystem}, 삭제만 {@code @AdminOnly}</b>.
+ * <p><b>목록·조회는 {@code SURVEY_RSP_READ}, 삭제·제출 취소는 {@code SURVEY_RSP_DELETE}</b> 로 권한을 나눈다.
  * 응답 내용에는 신상 정보가 없어(신상은 {@code tb_srvy_rspdnt} 쪽이다) 열람은 시스템 운영
  * 등급으로 충분하다. 그러나 <b>삭제는 되돌릴 수 없는 데이터 파괴</b>이고 설문 결과의 신뢰성에
- * 직결되므로 한 단계 좁힌다 — 열람과 파괴를 같은 등급에 두지 않는다.
+ * 직결되므로 별도 권한으로 둔다 — 열람과 파괴를 같은 권한에 묶지 않는다. 기본 그룹은 둘 다
+ * ROLE_ADMIN·ROLE_SYSTEM 이지만 열람만 주고 삭제는 주지 않는 배정이 가능하다.
  */
 @Tag(name = "SurveyResponseAdmin", description = "설문 응답 관리 API (Admin)")
 @RestController("surveyResponseAdminApiController")

@@ -47,7 +47,7 @@ class UserLogApiControllerTest {
     /** Permission is explicit; the SYSTEM privacy exclusion does not apply to activity counters. */
     @Test
     @DisplayName("사용자 활동 로그는 명시적 조회 권한으로 허용하고 무권한 그룹은 거부한다")
-    void userLogListMustBeAdminOrSystem() throws Exception {
+    void userLogListRequiresUserLogRead() throws Exception {
         nuri.security.support.MethodPermissionContract.assertOperation(UserLogApiController.class
                 .getDeclaredMethod("getUserLogList", nuri.business.domain.common.BaseSearchDto.class), "USER_LOG_READ", false);
     }

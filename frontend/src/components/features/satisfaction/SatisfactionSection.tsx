@@ -26,7 +26,8 @@ import { failureMessage } from '@/lib/safe-error-log';
  * <p>백엔드는 D-8(#302)에서 배선됐으나 화면이 없어 <b>"API 는 있고 화면이 없는"</b> 상태였다.
  * 이 컴포넌트가 그 짝을 맞춘다.
  *
- * <p>수정·삭제는 백엔드가 소유자/관리자를 판정한다(`assertCanModify`) — 화면은 권한을 추측하지
+ * <p>수정·삭제는 백엔드가 소유자 또는 대행 권한(SATISFY_UPDATE_ALL·SATISFY_DELETE_ALL)을 판정한다
+ * (`assertCanModify`) — 화면은 권한을 추측하지
  * 않고 버튼을 항상 노출한 뒤 <b>서버 판정 결과를 그대로 보여준다</b>. 화면에서 권한을 흉내내면
  * 서버 규칙과 갈라지고, 그 불일치는 조용히 누적된다.
  *
@@ -44,18 +45,19 @@ export default function SatisfactionSection({ bbsId, pstSn, acceptsNewRatings = 
   const { user } = useAuth();
   const confirm = useConfirm();
   /*
-    [2026-09-08] 관리자 대리 삭제 경로.
+    [2026-09-08] 대리 삭제 경로.
 
     두 삭제 API 는 결과가 같지만 판정이 다르다 — 일반 삭제의 `assertCanModify` 는 **작성자
-    (frstRgtrId)가 비어 있으면 관리자도 거부**하고, 대리 삭제는 `assertAdmin` 만 본다. 즉
-    ADR-0011 이전의 익명 평가처럼 작성자 정보가 없는 행은 대리 삭제로만 지울 수 있는데 그
-    화면이 없었다(operation-consumer-census 축 1 이 `moderate` 를 소비 0 으로 지목).
+    (frstRgtrId)가 비어 있으면 대행 권한(SATISFY_DELETE_ALL)이 있어도 거부**하고, 대리 삭제는
+    운영 관리 권한(SATISFY_MODERATE)만 본다. 즉 ADR-0011 이전의 익명 평가처럼 작성자 정보가
+    없는 행은 대리 삭제로만 지울 수 있는데 그 화면이 없었다(operation-consumer-census 축 1 이
+    `moderate` 를 소비 0 으로 지목).
 
-    역할 판정은 라우트 게이트와 같은 집합을 쓴다(DEC-OPS-023 ②). 이것은 **표시가 아니라 경로
-    선택**이며 실패 모드가 안전하다 — 관리자를 일반 사용자로 잘못 보면 자기 평가는 그대로
-    지워지고 레거시 행만 못 지운다. 반대 방향은 서버가 @AdminOnly 로 막는다.
+    판정은 대리 삭제 API 의 권한(SATISFY_MODERATE)을 그대로 쓴다. 이것은 **표시가 아니라 경로
+    선택**이며 실패 모드가 안전하다 — 권한 보유자를 아닌 것으로 잘못 보면 자기 평가는 그대로
+    지워지고 레거시 행만 못 지운다. 반대 방향은 서버가 같은 권한으로 막는다(HTTP·메서드 계층).
   */
-  const isAdmin = canPermission(user, 'SATISFY_MODERATE');
+  const canModerate = canPermission(user, 'SATISFY_MODERATE');
   const [score, setScore] = useState(0);
   const [content, setContent] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -110,14 +112,14 @@ export default function SatisfactionSection({ bbsId, pstSn, acceptsNewRatings = 
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (dgstfnSn: number) => (isAdmin
+    mutationFn: (dgstfnSn: number) => (canModerate
       ? satisfactionService.moderate(bbsId, pstSn, dgstfnSn)
       : satisfactionService.remove(bbsId, pstSn, dgstfnSn)),
     onSuccess: () => {
       setError(null);
       invalidate();
     },
-    // 서버가 소유자/관리자 판정에 실패하면 403 이다. 그 사실을 그대로 알린다.
+    // 서버가 소유자·권한 판정에 실패하면 403 이다. 그 사실을 그대로 알린다.
     onError: (e) => setError(failureMessage(e, '삭제 권한이 없습니다.')),
     onSettled: () => {
       deletePendingRef.current = false;
@@ -156,8 +158,8 @@ export default function SatisfactionSection({ bbsId, pstSn, acceptsNewRatings = 
     setDeletingSatisfactionId(dgstfnSn);
     setError(null);
     try {
-      // 관리자는 남의 평가도 지울 수 있으므로 대상을 밝히고 확인을 받는다.
-      if (isAdmin) {
+      // 대리 삭제 권한 보유자는 남의 평가도 지울 수 있으므로 대상을 밝히고 확인을 받는다.
+      if (canModerate) {
         const ok = await confirm({
           title: '만족도 삭제',
           message: `${authorName} 님의 만족도를 삭제합니다. 되돌릴 수 없습니다.`,

@@ -23,8 +23,8 @@ import java.lang.annotation.Target;
  *       프로파일을 고쳐도 이 축 때문에 운영 체인이 끝내 로드되지 않는다.</li>
  * </ol>
  *
- * <p>그 결과 {@code @EnableMethodSecurity} 선언 2곳이 모두 배제되어 {@code @PreAuthorize}·
- * {@code @AdminOnly} 도 집행되지 않는다. 즉 그 컨텍스트의 MockMvc 테스트는 인증·인가에 대해
+ * <p>그 결과 {@code @EnableMethodSecurity} 선언 2곳이 모두 배제되어 메서드의 {@code @PreAuthorize}
+ * 도 집행되지 않는다. 즉 그 컨텍스트의 MockMvc 테스트는 인증·인가에 대해
  * <b>아무것도 증명하지 못한다</b> — 자격증명 없이 {@code /api/v1/admin/**} 를 호출해 200 을 받는 것이
  * 정상처럼 보이는 상태였다.
  *

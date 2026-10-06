@@ -343,7 +343,7 @@ public class BoardService extends BaseAbstractService {
                 if (cmntySn == null) {
                         return;
                 }
-                // 관리자는 다른 열람 경로와 같은 이유로 통과한다(운영·감사). role hierarchy 로 SYSTEM 포함.
+                // 조회 대행 권한(BOARD_READ_ALL) 보유자는 다른 열람 경로와 같은 이유로 통과한다(운영·감사).
                 if (SecurityUtil.hasPermission("BOARD_READ_ALL")) {
                         return;
                 }
@@ -626,7 +626,7 @@ public class BoardService extends BaseAbstractService {
                 // 확대 범위는 정확히 "관리자 × 논리 삭제 게시글" 하나이며 나머지 방어선은 그대로다:
                 //   · 아래 비밀글 소유권 가드는 삭제 여부와 무관하게 계속 적용된다.
                 //   · 비활성 게시판(BoardMaster.useYn='N')은 완화하지 않는다 — 별개 결정이다.
-                //   · hasRole("ADMIN") 은 role hierarchy 로 SYSTEM 을 포함한다(백엔드 헌법 제8조 2항).
+                //   · '관리자' 판정은 조회 대행 권한 BOARD_READ_ALL 보유 여부다(기본 그룹 ROLE_ADMIN·ROLE_SYSTEM).
                 BoardDetailResult detail = boardRepository.findActiveArticleDetail(bbsId, pstSn)
                                 .or(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")
                                                 ? boardRepository.findArticleDetailIncludingDeleted(bbsId, pstSn)
@@ -837,7 +837,7 @@ public class BoardService extends BaseAbstractService {
         private Board findOwnedPost(String bbsId, Long pstSn) {
                 Board board = findPostInBoard(bbsId, pstSn);
 
-                // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrAdminByEsntlId 기준 비교)
+                // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrPermissionByEsntlId 기준 비교)
                 nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_UPDATE_ALL");
                 return board;
         }
@@ -935,7 +935,7 @@ public class BoardService extends BaseAbstractService {
                 assertCommunityAccess(required(bbsId, "bbsId 는 null 일 수 없습니다")); // [2026-09-08 PD-CMTY-001]
                 Board board = findPostInBoard(bbsId, pstSn);
 
-                // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrAdminByEsntlId 기준 비교)
+                // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrPermissionByEsntlId 기준 비교)
                 nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_DELETE_ALL");
 
                 board.delete();

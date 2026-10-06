@@ -48,7 +48,8 @@ class DeptJobBoxServiceTest {
                 .deptId("DEPT1")
                 .sortOrdr(1L)
                 .build();
-        // 쓰기 경로는 SecurityUtil.assertAdmin(ADMIN/SYSTEM) 2차 가드를 통과해야 하므로 ADMIN 컨텍스트를 심는다.
+        // 쓰기 경로는 SecurityUtil.assertPermission(DEPT_BOX_*) 2차 가드를 통과해야 하므로 그 권한을 기본 배정받는
+        // ROLE_ADMIN 컨텍스트를 심는다.
         setAuthorities("ROLE_ADMIN");
     }
 
@@ -180,7 +181,7 @@ class DeptJobBoxServiceTest {
         verify(deptJobBoxRepository, never()).deleteById(anyLong());
     }
 
-    // ── 서비스 2차 가드(assertAdmin): 비관리자(USER)의 쓰기는 ACCESS_DENIED 로 차단, 저장소는 미접촉 ──
+    // ── 서비스 2차 가드(assertPermission DEPT_BOX_*): 비관리자(USER)의 쓰기는 ACCESS_DENIED 로 차단, 저장소는 미접촉 ──
     @Test
     @DisplayName("부서함 생성 - 비관리자 차단")
     void createDeptJobBox_deniedForNonAdmin() {

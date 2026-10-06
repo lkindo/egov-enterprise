@@ -93,7 +93,7 @@ public class NotificationService {
      * <p>수신자는 esntlId 로 받고 코어 사용자 도메인({@link UserContactService})이 존재를 확인한다 — 하나라도 없으면
      * RESOURCE_NOT_FOUND 로 <b>전체를 거부</b>한다(부분 발송 금지, 메일·문자와 같은 규칙). 생성은 개인 알림과 같은
      * 경로({@link #createNotification})를 지나므로 알림·의도 원자 저장과 worker 개인 큐 전달 규칙도 같다.
-     * 컨트롤러의 {@code @AdminOrSystem} 과 별개로 서비스에서 ADMIN/SYSTEM 을 다시 확인한다(백엔드 헌법 제8조).
+     * 컨트롤러 operation binding({@code NOTI_DISPATCH})과 별개로 서비스에서 같은 권한을 다시 확인한다(백엔드 헌법 제8조).
      *
      * @return 만든 알림 수(중복 수신자는 한 번만)
      */

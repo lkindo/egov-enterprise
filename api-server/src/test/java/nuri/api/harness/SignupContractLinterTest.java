@@ -38,8 +38,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  *   <li><b>권한 상수 고정</b> — {@code UserService.signup()} <u>본문 안에서</u> 권한이 요청값으로부터
  *       오면 안 된다. {@code Role.valueOf(} · {@code <요청파라미터>.getRole…(} 가 나타나거나,
  *       엔티티 빌더의 {@code .role(...)} 인자가 {@link #REQUIRED_SIGNUP_ROLE} 이 아니면 위반이다.
- *       같은 파일의 {@code registerUser()} 는 {@code SecurityUtil.assertAdmin()} 이 걸린 관리자 경로라
- *       {@code Role.valueOf} 사용이 정당하므로, <b>메서드 본문을 중괄호 균형으로 잘라내어</b> 판정한다.</li>
+ *       같은 파일의 {@code registerUser()} 는 {@code SecurityUtil.assertPermission("USER_CREATE")} 가 걸린
+ *       별도 관리자 경로라 이 규칙으로 판정하지 않으므로, <b>메서드 본문을 중괄호 균형으로 잘라내어</b> 판정한다.</li>
  * </ol>
  *
  * <p>[게이트 무결성] 대상 파일 부재·클래스 본문 추출 실패·메서드 본문 추출 실패·필드 0건·권한 고정 지점
@@ -223,9 +223,9 @@ class SignupContractLinterTest {
             sb.append("🚨 미인증 공개 요청 DTO 에 권한/역할성 필드가 생겼습니다 — 특권 상승 경로입니다:\n");
             privilegeHits.forEach(f -> sb.append("   ").append(DTO_PATH).append(" : ").append(f).append("\n"));
             sb.append("   → 2026-08-01 에 삭제한 UserSignupRequest.role 과 동일한 결함입니다. 이 필드가 있으면\n");
-            sb.append("     인증 없는 요청 1건으로 ROLE_ADMIN 자가 발급이 가능합니다.\n");
-            sb.append("     권한 부여는 SecurityUtil.assertAdmin() 이 걸린 UserService.registerUser()\n");
-            sb.append("     (POST /api/v1/admin/system/users) 경로에서만 하십시오.\n");
+            sb.append("     요청 1건으로 ROLE_ADMIN 을 발급하는 경로가 됩니다.\n");
+            sb.append("     추가 그룹은 버전 검증된 권한 배정 API(AUTHRT_ASSIGN)로만 부여하십시오 — USER_CREATE 권한 경로인\n");
+            sb.append("     UserService.registerUser()(POST /api/v1/admin/system/users)도 신규 사용자를 USER 로만 만듭니다.\n");
             sb.append("     @JsonIgnore·주석 처리로 대체하지 마십시오 — 필드가 남아 있으면 빌더·매핑으로 되살아납니다.\n");
         }
         if (!addedFields.isEmpty()) {

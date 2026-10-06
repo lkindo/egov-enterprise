@@ -32,8 +32,9 @@ import { SurveyStatsPanel } from '../components/SurveyStatsPanel';
  * 하나도 없었다.</b> 즉 응답을 제출할 화면이 제품 어디에도 없었다.
  *
  * <p>필요한 것은 전부 이미 있었다 — 문항 조회 `GET /api/v1/surveys/{srvySn}/questions` 와
- * 제출 `POST /api/v1/surveys/{srvySn}/responses` 가 둘 다 {@code @Authenticated} 로 열려 있고
- * (DEC-OPS-010), 서버가 문항·항목 소속 검증과 중복 제출 차단까지 수행한다. 프런트 서비스의
+ * 제출 `POST /api/v1/surveys/{srvySn}/responses` 가 일반 사용자에게 열려 있고(DEC-OPS-010 — 지금은
+ * 기능 권한 SURVEY_READ·SURVEY_SUBMIT, 기본 배정상 ROLE_USER 포함), 서버가 문항·항목 소속 검증과
+ * 중복 제출 차단까지 수행한다. 프런트 서비스의
  * 제출 경로만 존재하지 않는 `/respond` 를 가리키고 있었고 호출부가 0건이라 아무도 몰랐다.
  *
  * <p>통계는 응답 아래에 그대로 남긴다 — 이미 응답한 사용자와 결과를 보러 온 사용자가 같은

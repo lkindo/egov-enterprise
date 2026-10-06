@@ -118,9 +118,9 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  /*
    [2026-08-29] 비관리자의 WIKI·FAQ 차단(isAccessRestricted)을 제거했다.
 
-   그 차단은 **집행자가 없는 인가 주장**이었다. 서버는 게시판 읽기에 역할 게이트가 한 겹도
-   없고(BoardApiController 는 클래스 레벨 @Authenticated 뿐, secure-paths 에 /api/v1/boards
-   없음), 같은 사용자가 같은 데이터를 세 경로로 이미 받는다 — ① 이 화면의 인기 문서·
+   그 차단은 **집행자가 없는 인가 주장**이었다. 서버의 게시판 읽기 판정은 게시판 종류를 가리지
+   않는 기능 권한(BOARD_READ — 기본 배정상 ROLE_USER 포함)뿐이고 WIKI·FAQ 를 관리자에게만 여는
+   판정은 없으며, 같은 사용자가 같은 데이터를 세 경로로 이미 받는다 — ① 이 화면의 인기 문서·
    최근 활동 ② /admin/community/board 의 게시판 선택기(비관리자 폴백 목록이 WIKI 게시판을
    '일정 게시판' 으로 **의도적으로 포함**한다: use-board-options.ts) ③ GET /boards/{bbsId} 직접 호출.
 

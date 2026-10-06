@@ -206,7 +206,8 @@ export default function MemoReportManagementClient() {
   /*
     [2026-09-08 PD-RPT-001] 수정·삭제 배선.
 
-    서버는 완비돼 있었지만(`assertOwnerOrAdmin(frstRgtrId)`) **화면이 "내가 고칠 수 있는가" 를
+    서버는 완비돼 있었지만(`assertOwnerOrPermission(frstRgtrId, MEMO_RPT_UPDATE_ALL·MEMO_RPT_DELETE_ALL)`)
+    **화면이 "내가 고칠 수 있는가" 를
     판정할 정보를 받지 못했다** — 그 인가는 loginId 축인데 응답 DTO 에 그 필드가 없고, 같은
     도메인의 열람 인가는 esntlId 축(userId·rptrId)이라 두 축이 다르다.
 

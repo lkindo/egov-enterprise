@@ -4,8 +4,9 @@
  * ── 무엇이 틀려 있었나 ──────────────────────────────────────────────────────────
  * 1. **문의를 남길 방법이 없었다.** '새로운 문의 작성' 버튼은 `disabled` 에 onClick 도 대상
  *    라우트도 없는 死버튼이었다(카탈로그 G10). 그런데 경로는 위아래로 다 열려 있었다 —
- *    `helpUserService.createQna` 가 이미 있었고 `POST /api/v1/boards/posts` 는 클래스 레벨
- *    `@Authenticated` 라 로그인 사용자면 누구나 쓸 수 있다. 화면만 연결돼 있지 않았다.
+ *    `helpUserService.createQna` 가 이미 있었고 `POST /api/v1/boards/posts` 는 게시글 등록 권한
+ *    (BOARD_CREATE — 기본 배정상 ROLE_USER 포함)이라 일반 사용자도 쓸 수 있다. 화면만 연결돼
+ *    있지 않았다.
  *
  * 2. **상태를 지어냈다.** `qnaProcessSttusCode` 를 `ansLv > 0 ? '3' : '1'` 로 파생했는데
  *    `ansLv` 는 그 글 자신의 답글 깊이다. 질문 글은 답변이 달려도 영원히 '접수' 로 남고,

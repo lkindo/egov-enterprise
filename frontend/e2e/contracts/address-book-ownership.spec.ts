@@ -27,12 +27,13 @@ function readAccessToken(authFile: string): string {
 //   즉 "인증된 사용자가 남의 리소스에 손댈 수 있는가" 는 지금까지 **한 번도 검증된 적이 없다.**
 //
 // [대상 선정] 주소록을 고른 이유는 서비스 코드가 스스로 IDOR 를 명시한 유일한 곳이기 때문이다:
-//     AddressBookService: assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 수정(PII)
+//     AddressBookService: assertOwnerOrPermission(entity.getFrstRgtrId(), "ADBK_UPDATE_ALL"); // [IDOR] 소유자/관리자만 수정(PII)
 //   PII 를 담는 자원이라 유출 시 피해가 크고, 상세·수정·삭제 세 경로에 가드가 걸려 있어
 //   "읽기만 막고 쓰기는 뚫린" 류의 부분 결함까지 한 번에 잡을 수 있다.
 //
 // [왜 세 번째 계정을 만드는가] 저장소에 준비된 계정은 webmaster(관리자)·TEST1(일반) 둘뿐이다.
-//   관리자는 설계상 남의 자원에 접근할 수 있으므로(assertOwnerOr**Admin**) IDOR 검증에 쓸 수 없다.
+//   관리자는 대행 권한(ADBK_*_ALL — 기본 배정상 ROLE_ADMIN·ROLE_SYSTEM)으로 남의 자원에 접근할 수 있으므로
+//   (assertOwnerOr**Permission**) IDOR 검증에 쓸 수 없다.
 //   **비관리자 두 명**이 필요하므로 공격자 계정을 만들고 finally 에서 회수한다.
 test.describe('IDOR (authenticated non-owner)', () => {
     // storageState 를 지정하지 않는다 — 세 주체(관리자·피해자·공격자)의 토큰을 요청마다

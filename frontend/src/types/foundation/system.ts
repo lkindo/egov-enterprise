@@ -100,8 +100,9 @@ export type UserLog = components['schemas']['UserLogDto'];
 export type WebLog = components['schemas']['WebLogDto'];
 
 /**
- * 개인정보 조회 로그. **이 로그의 내용 자체가 개인정보**라 열람은 ADMIN 전용이다
- * (`PrivacyLogApiController` 는 `@AdminOnly`).
+ * 개인정보 조회 로그. **이 로그의 내용 자체가 개인정보**라 열람 범위가 다른 로그보다 좁다 —
+ * `PrivacyLogApiController` 는 `PRIVACY_READ`·`PRIVACY_EXPORT` 권한(기본 그룹 `ROLE_ADMIN`)이 필요하고,
+ * `ROLE_SYSTEM` 은 다른 그룹이 권한을 줘도 강제 제외한다(`excludedGroups`, 2026-08-05 사용자 결정).
  *
  * ⚠ 2026-08-05 정정 — 종전 선언(`logId`·`trgetId`·`trgetClCode`·`trgetNm`·`processSeCode`·
  * `creatDt`·`rqesterId`)은 백엔드 실물과 전부 어긋나 있었다.

@@ -105,8 +105,8 @@ export default function InstitutionCodeClient({
   *
   * [2026-08-28] 종전 문구는 '기관코드 원장에 반영합니다' 였다. **서버는 원장을 건드리지
   * 않는다** — `InstitutionCodeService.updateInstitutionCodeRecptn` 은 수신 로그 행의
-  * `procSe` 만 완료로 바꾸고, 원장(`tb_inst_cd`)에 쓰는 `institutionCodeRepository.save`
-  * 는 저장소 전체에서 관리자 수기 등록(`insertInstitutionCode`) 한 곳에서만 호출된다.
+  * `procSe` 만 완료로 바꾼다. 원장(`tb_inst_cd`)에 쓰는 경로는 애플리케이션에 없다 — 원장 행은
+  * DB 직접 적재로만 들어온다(2026-10-07 배선된 적 없던 원장 쓰기 메서드를 걷었다).
   *
   * 그래서 이 버튼은 "반영했다"고 말하면서 원장을 그대로 두고 대기 신호만 지웠다 — 400 으로
   * 큰 소리를 내며 실패하던 것이 **조용한 성공**으로 바뀐 형태다. 실제 동작(수신 건을 처리

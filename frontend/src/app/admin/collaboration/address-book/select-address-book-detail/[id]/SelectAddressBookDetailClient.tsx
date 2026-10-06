@@ -37,8 +37,9 @@ const LIST_ORIGINS = [LIST_PATH, '/admin/collaboration'] as const;
  * 빈 "신규 등록" 폼을 렌더하고 POST 를 보내 **목록에서 항목을 열 때마다 중복 주소록이 생성**됐다
  * (게다가 `rlsScopeCd` 미전송으로 400 이 되던 상태). 이제 실제 상세를 조회해 수정/삭제한다.
  *
- * 상세 조회 API 에는 소유자 가드(`AddressBookService.getAddressBook` 의 `assertOwnerOrAdmin`)가
- * 적용되어 있으므로 타인의 주소록은 서버에서 차단된다(감사 F-3 선행 조치 완료 상태).
+ * 상세 조회 API 에는 소유자 가드(`AddressBookService.getAddressBook` 의 `assertOwnerOrPermission`
+ * — 소유자 또는 조회 대행 권한 ADBK_READ_ALL)가 적용되어 있으므로 타인의 주소록은 서버에서
+ * 차단된다(감사 F-3 선행 조치 완료 상태).
  */
 const SelectAddressBookDetailClient = () => {
     const router = useRouter();

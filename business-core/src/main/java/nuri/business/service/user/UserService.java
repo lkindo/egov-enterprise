@@ -140,7 +140,7 @@ public class UserService extends BaseAbstractService {
          *       연락처·이메일·주소·생년월일은 담기지 않는다.</li>
          * </ol>
          *
-         * <p>서비스 레이어 인가 재검증(백엔드 헌법 제8조): 컨트롤러의 {@code @Authenticated} 와 짝을 이뤄
+         * <p>서비스 레이어 인가 재검증(백엔드 헌법 제8조): 컨트롤러 operation binding({@code AUTHENTICATED})과 짝을 이뤄
          * 인증 주체 존재를 여기서 다시 확인한다. 컨트롤러를 우회해 이 서비스를 호출하는 경로
          * (배치·내부 호출 등)가 생기더라도 익명 컨텍스트에서는 인명부가 나가지 않도록 하는 이중 방어다.</p>
          *
@@ -491,7 +491,7 @@ public class UserService extends BaseAbstractService {
                                 .sbscrbYmd(todaySignupYmd())
                                 .pswdHint(request.getPswdHint())
                                 .pswdCrans(request.getPswdCrans())
-                                // [보안] 공개 엔드포인트이므로 권한을 요청에서 받지 않고 USER 로 고정한다.
+                                // [보안] 권한을 요청에서 받지 않고 USER 로 고정한다(호출자는 USER_CREATE 권한자다 — DEC-OPS-135).
                                 //   관리자 등록도 USER 그룹으로 생성하며 추가 그룹은 버전 검증된 배정 API로 부여한다.
                                 .role(Role.USER)
                                 .build();

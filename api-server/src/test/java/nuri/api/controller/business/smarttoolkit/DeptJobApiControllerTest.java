@@ -135,8 +135,9 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     }
 
     // 참고: 비관리자 쓰기 차단(403)의 실집행 검증은 두 곳에 있다.
-    //  ① 존재: SecurityAuthAnnotationLinterTest 가 이 컨트롤러 쓰기 3본의 @PreAuthorize 를 정적 오딧(allow-list 졸업).
-    //  ② 집행: 서비스 2차 가드(SecurityUtil.assertAdmin)의 ACCESS_DENIED 는 DeptJobBoxServiceTest 네거티브가 검증.
+    //  ① 존재: SecurityAuthAnnotationLinterTest 가 이 컨트롤러 쓰기 3본의 @PreAuthorize 가 자기 operation binding
+    //     (DEPT_BOX_CREATE/UPDATE/DELETE)을 가리키는지 정적 오딧(allow-list 졸업).
+    //  ② 집행: 서비스 2차 가드(SecurityUtil.assertPermission)의 ACCESS_DENIED 는 DeptJobBoxServiceTest 네거티브가 검증.
     // @WebMvcTest 슬라이스는 메서드 시큐리티 미적용(코드베이스 관례: 통합 RBAC 매트릭스가 집행 담당)이라
     // 여기서는 해피패스(ADMIN)만 둔다.
 

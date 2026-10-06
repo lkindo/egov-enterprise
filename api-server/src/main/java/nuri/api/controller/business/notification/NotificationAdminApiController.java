@@ -20,7 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>{@code POST /api/v1/notifications} 는 로그인한 본인의 알림을 만드는 개인 API 라 관리자가 다른 사용자에게 보낼
  * 경로가 없었다(종전 화면의 '발송' 은 서버에 아무것도 보내지 않는 데모였고 DEC-OPS-038 이 걷었다). 이 컨트롤러는
- * {@code /api/v1/admin/**} URL 게이트와 메서드 인가를 함께 지나고, 서비스가 다시 ADMIN/SYSTEM 을 확인한다.
+ * 발송 권한 {@code NOTI_DISPATCH} 의 operation binding 을 HTTP·메서드 계층에서 함께 지나고, 서비스가
+ * {@code SecurityUtil.assertPermission("NOTI_DISPATCH")} 로 다시 확인한다.
  */
 @Tag(name = "Notification", description = "알림 관리 API")
 @RestController

@@ -63,39 +63,6 @@ class InstitutionCodeTest {
     }
 
     @Test
-    @DisplayName("update 메서드 테스트")
-    void testUpdate() {
-        InstitutionCode code = InstitutionCode.builder().instCd("I1").build();
-        
-        code.update("N_ALL", "N_LOW", "N_ABBR", "1", "2", 5, "T2", "U2", "R2",
-                "L2", "M2", "S2", "T_NEW", "F_NEW", "20210101", "20211231", "1",
-                "20210505", "130000", "20210101", 2L, "user");
-
-        assertEquals("N_ALL", code.getAllInstNm());
-        assertEquals("N_LOW", code.getLwstInstNm());
-        assertEquals("N_ABBR", code.getInstAbbrNm());
-        assertEquals("1", code.getOdr());
-        assertEquals("2", code.getOrd());
-        assertEquals(5, code.getInstCycl());
-        assertEquals("T2", code.getTopInstCd());
-        assertEquals("U2", code.getUprInstCd());
-        assertEquals("R2", code.getReprsInstCd());
-        assertEquals("L2", code.getInstTypeLclsf());
-        assertEquals("M2", code.getInstTypeMclsf());
-        assertEquals("S2", code.getInstTypeSclsf());
-        assertEquals("T_NEW", code.getTelno());
-        assertEquals("F_NEW", code.getFaxNo());
-        assertEquals("20210101", code.getCrtYmd());
-        assertEquals("20211231", code.getAblYmd());
-        assertEquals("1", code.getAblYn());
-        assertEquals("20210505", code.getChgYmd());
-        assertEquals("130000", code.getChgTm());
-        assertEquals("20210101", code.getCrtrYmd());
-        assertEquals(2L, code.getSortOrdr());
-        assertEquals("user", code.getLastMdfrId());
-    }
-
-    @Test
     @DisplayName("softDelete 메서드 테스트")
     void testSoftDelete() {
         InstitutionCode code = InstitutionCode.builder().instCd("I1").build();
