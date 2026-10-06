@@ -67,6 +67,29 @@ describe('useDeptTree — 앱 QueryClient 목록 규칙', () => {
     expect(result.current.flattenedDepts).toHaveLength(3);
   });
 
+  it('이전 트리를 보여 주는 동안에는 새 검색어의 결과라고 말하지 않는다(C1 보조)', async () => {
+    // 0건 검색 뒤 다음 검색어를 조회하면 응답 전까지 빈 이전 결과가 남는다. 그때 건수를 0 으로, 빈 결과를
+    // 새 검색어의 '없습니다' 로 말하지 않도록 훅이 자리 표시 상태를 알린다.
+    let resolveNext: (value: Department[]) => void = () => {};
+    vi.mocked(deptAdminService.getDeptTree)
+      .mockResolvedValueOnce([])
+      .mockReturnValueOnce(new Promise<Department[]>((resolve) => { resolveNext = resolve; }));
+    const { result, rerender } = renderTree(TREE, '없는부서');
+    await waitFor(() => expect(result.current.deptTotal).toBe(0));
+    expect(result.current.isDeptsPlaceholder).toBe(false);
+
+    rerender({ keyword: '가팀' });
+
+    await waitFor(() => expect(deptAdminService.getDeptTree).toHaveBeenCalledWith('가팀'));
+    expect(result.current.isDeptsPlaceholder).toBe(true);
+    expect(result.current.deptTotal).toBeUndefined();
+
+    await act(async () => { resolveNext([TREE[1]]); });
+
+    await waitFor(() => expect(result.current.isDeptsPlaceholder).toBe(false));
+    expect(result.current.deptTotal).toBe(1);
+  });
+
   it('검색 조회의 5xx 는 인라인 오류로 남기고 저장하지 않은 계층 편집을 지킨다(C2)', async () => {
     vi.mocked(deptAdminService.getDeptTree).mockRejectedValue(serverError());
     const { result, rerender, caught } = renderTree(TREE);
