@@ -31,8 +31,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import React from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAppForm } from '@/hooks/useAppForm';
 import { Form, FormErrorSummary } from '@/components/ui/form';
@@ -122,10 +121,10 @@ export default function CommonCodeClient({
  const [isPickerOpen, setIsPickerOpen] = useState(false);
  const [isModalOpen, setIsOpen] = useState(false);
  const [isSaving, setIsSaving] = useState(false);
- const hierarchySavePendingRef = React.useRef(false);
- const detailSubmitAttemptRef = React.useRef(false);
- const detailSavePendingRef = React.useRef(false);
- const detailDeletePendingRef = React.useRef(false);
+ const hierarchySavePendingRef = useRef(false);
+ const detailSubmitAttemptRef = useRef(false);
+ const detailSavePendingRef = useRef(false);
+ const detailDeletePendingRef = useRef(false);
  const [isDetailSaving, setIsDetailSaving] = useState(false);
  const [deletingDetailKey, setDeletingDetailKey] = useState<string | null>(null);
  const [editingDetail, setEditingDetail] = useState<CmmnDetailCode | null>(null);
@@ -142,14 +141,14 @@ export default function CommonCodeClient({
   { kind: 'cluster' | 'group'; mode: 'create' | 'edit' } | null
  >(null);
  const [isStructureSaving, setIsStructureSaving] = useState(false);
- const structureSubmitAttemptRef = React.useRef(false);
- const structureSavePendingRef = React.useRef(false);
+ const structureSubmitAttemptRef = useRef(false);
+ const structureSavePendingRef = useRef(false);
  
  // D&D States
  const [flattenedNodes, setFlattenedNodes] = useState<FlattenedCodeNode[]>([]);
  const [activeId, setActiveId] = useState<string | null>(null);
  const [hasExplorerChanges, setHasExplorerChanges] = useState(false);
- const hierarchyRevisionRef = React.useRef(0);
+ const hierarchyRevisionRef = useRef(0);
 
  const form = useAppForm<
   typeof codeDetailFormSchema,
@@ -193,7 +192,7 @@ export default function CommonCodeClient({
  }
  }, [editingDetail, isModalOpen, resetForm]);
 
- const initialClusters = React.useMemo(() => {
+ const initialClusters = useMemo(() => {
  const compareId = (left: string | undefined, right: string | undefined) => {
  const safeLeft = left ?? '';
  const safeRight = right ?? '';
@@ -219,11 +218,11 @@ export default function CommonCodeClient({
  })) as DomainCluster[];
  }, [clCodes, groups]);
 
- const hierarchySignature = React.useMemo(
+ const hierarchySignature = useMemo(
  () => JSON.stringify(initialClusters),
  [initialClusters],
  );
- const hierarchySeedSignatureRef = React.useRef<string | undefined>(undefined);
+ const hierarchySeedSignatureRef = useRef<string | undefined>(undefined);
 
  useEffect(() => {
  const previousSignature = hierarchySeedSignatureRef.current;
@@ -242,9 +241,9 @@ export default function CommonCodeClient({
  const [selectedGroup, setSelectedGroup] = useState<GroupCode | null>(null);
  // [2026-09-27 DIP B5 F11] 변경 이력 대화상자 — 열릴 때만 마운트한다.
  const [historyTarget, setHistoryTarget] = useState<CodeChangeHistoryTarget | null>(null);
- const previousSelectedGroupIdRef = React.useRef<string | null | undefined>(undefined);
- const selectedGroupSeedResolvedRef = React.useRef(false);
- const selectedGroupSeedHierarchyRef = React.useRef<string | undefined>(undefined);
+ const previousSelectedGroupIdRef = useRef<string | null | undefined>(undefined);
+ const selectedGroupSeedResolvedRef = useRef(false);
+ const selectedGroupSeedHierarchyRef = useRef<string | undefined>(undefined);
 
  const selectNode = (node: FlattenedCodeNode) => {
  if (node.type === 'cluster') {
@@ -303,7 +302,7 @@ export default function CommonCodeClient({
  useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
  );
 
- const dndAnnouncements = React.useMemo<Announcements>(() => {
+ const dndAnnouncements = useMemo<Announcements>(() => {
  const findNode = (id: string | number) => flattenedNodes.find((node) => node.id === String(id));
  const clusterName = (clusterId: string | null) => (
  flattenedNodes.find((node) => node.type === 'cluster' && node.id === clusterId)?.name ?? '알 수 없는'
@@ -673,7 +672,7 @@ export default function CommonCodeClient({
  ]);
 
  // Filtered Nodes
- const visibleNodes = React.useMemo(
+ const visibleNodes = useMemo(
  () => filterCodeNodes(flattenedNodes, searchQuery),
  [flattenedNodes, searchQuery],
  );

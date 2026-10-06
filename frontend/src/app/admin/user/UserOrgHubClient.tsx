@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, use, useRef } from 'react';
+import { useState, useMemo, use, useRef, useTransition, useCallback, useId } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
@@ -188,7 +188,7 @@ export default function UserOrgHubClient({
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const confirm = useConfirm();
-  const [isPending, startTransition] = React.useTransition();
+  const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState<UserOrgTab>(defaultTab);
   const router = useRouter();
   // 권한 그룹 화면은 이 허브와 권한이 다르다 — 라우트 게이트와 같은 판정으로만 길을 보인다(DIP B4 P1).
@@ -245,7 +245,7 @@ export default function UserOrgHubClient({
     setActiveTab(defaultTab);
   }
 
-  const goToPage = React.useCallback((page: number) => {
+  const goToPage = useCallback((page: number) => {
     setUserPage(page);
     const next = pickAllowedParams(searchParams, LIST_PARAM_KEYS);
     if (page <= 1) next.delete('page');
@@ -255,7 +255,7 @@ export default function UserOrgHubClient({
   }, [pathname, router, searchParams]);
 
   /** 탭 = 라우트. 현재 라우트가 가리키는 탭이면 이동하지 않는다(로그인정책/개인정보정책 공용 탭). */
-  const handleTabChange = React.useCallback((tab: UserOrgTab) => {
+  const handleTabChange = useCallback((tab: UserOrgTab) => {
     startTransition(() => {
       setActiveTab(tab);
       setSelectedItemId(null);
@@ -370,7 +370,7 @@ export default function UserOrgHubClient({
   const [userFilters, setUserFilters] = useState<UserListFilters>(EMPTY_USER_FILTERS);
   const appliedUserFilters = activeTab === 'USERS' ? userFilters : EMPTY_USER_FILTERS;
   const hasUserFilter = Boolean(appliedUserFilters.userSttsCd || appliedUserFilters.ognzId || appliedUserFilters.lckYn);
-  const userFilterId = React.useId();
+  const userFilterId = useId();
   // 조건이 바뀌면 1페이지로 돌아간다 — 검색어와 같은 규칙(감사 P1-8).
   const applyUserFilter = (patch: Partial<UserListFilters>) => {
     setUserFilters((prev) => ({ ...prev, ...patch }));
@@ -398,7 +398,7 @@ export default function UserOrgHubClient({
   }, [usersData]);
 
   /** 페이지당 건수를 바꾸면 현재 페이지 번호가 의미를 잃으므로 1페이지로 되돌린다. */
-  const handlePageSizeChange = React.useCallback((size: number) => {
+  const handlePageSizeChange = useCallback((size: number) => {
     setUserPageSize(size);
     goToPage(1);
   }, [goToPage]);
