@@ -29,8 +29,7 @@
     "types": [
       "vitest/globals",
       "@testing-library/jest-dom",
-      "node",
-      "pg"
+      "node"
     ],
     "paths": {
       "@/*": [
@@ -49,7 +48,6 @@
   "exclude": [
     "node_modules",
     "scripts",
-    "skills",
     "vitest.config.mts",
     "vitest.setup.ts",
     "e2e"

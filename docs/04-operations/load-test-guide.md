@@ -137,8 +137,11 @@ DB pause/unpause를 실행하고 같은 토큰의 복구를 확인한다. 운영
 
 ## 현재 한계
 
-- `login-test.js`, `post-create-test.js` 등 개별 legacy 시나리오는 통합 시나리오와 API 필드·경로가 다를 수 있다.
-  현재 계약을 다시 검증하기 전에는 공식 증적으로 사용하지 않는다.
+- 공식 주간 실행은 `load-levels.js` 하나다. `dashboard-test.js`·`users-list-test.js`·`mixed-workload.js`는
+  같은 응답 계약(`response-contracts.mjs`)을 쓰는 수동 시나리오이고, 주간 workflow의 증적이 아니다.
+  2026-10-07 현재 API와 맞지 않던 legacy 시나리오(`/login`·`body.token`·`/version` 등 이전 경로를 쓰던
+  `login-test.js`·`simple-login-test.js`·`post-create-test.js`·`create-test-user.js`·`scripts/basic-test.js`·`k6.config.js`)는
+  거짓 green 을 낼 수 있어 걷었다.
 - 통합 시나리오는 고정된 혼합 비율과 테스트 게시판 ID를 사용한다. 다른 workload를 대표한다고 가정하지 않는다.
 - k6는 브라우저 렌더링 성능을 재지 않는다. 프론트 런타임은 [Lighthouse workflow](../../.github/workflows/lighthouse.yml)를 본다.
 

@@ -47,7 +47,7 @@ git clone <this-repo> my-platform && cd my-platform
 ./gradlew clean compileJava compileTestJava
 ```
 
-> `rename-project.ps1`은 `nuri.*` 패키지·`group`·`rootProject.name`·로깅/메트릭 태그를 일괄 치환한다. 치환 대상 확장자는 구명칭을 실제 포함하는 tracked 파일의 `git ls-files` census 로 도출했고(`.mjs`·`.sql`·`.html`·`.ps1`·`.sh`·`.py`·`.toml`·`.imports`·`CODEOWNERS` 포함), `node_modules`·`.git`·`build` 류는 경로 세그먼트 필터로 재귀에서 실제 제외된다. **반드시 `-DryRun` 선확인** 후 실행하고, 완료 후 컴파일로 검증한다.
+> `rename-project.ps1`은 `nuri.*` 패키지·`group`·`rootProject.name`·로깅/메트릭 태그를 일괄 치환한다. 치환은 대소문자를 구분해 소문자 구명칭만 바꾸고, 뒤에 오는 문자로 형태를 고른다(`nuri/`→경로, `nuri_`→Prometheus 지표 이름, 그 밖→패키지·설정 키). 대문자 `NURI_*` 환경변수 이름은 바꾸지 않는다. 치환 대상 확장자는 구명칭을 실제 포함하는 tracked 파일의 `git ls-files` census 로 도출했고(`.mjs`·`.sql`·`.html`·`.ps1`·`.sh`·`.py`·`.toml`·`.imports`·`CODEOWNERS` 포함), `node_modules`·`.git`·`build` 류는 경로 세그먼트 필터로 재귀에서 실제 제외된다. **반드시 `-DryRun` 선확인** 후 실행하고, 완료 후 컴파일로 검증한다. 컴파일 통과만으로 끝나지 않는다 — 패키지 줄이 바뀌면 소스 해시에 결속된 원장이 어긋난다. `./gradlew :api-server:harnessTest` 결과로 [하네스 baseline manifest](../../api-server/src/test/resources/harness/baseline-manifest.properties)를 다시 동결하고, [SAST 예외 원장](../../config/security/false-positive-review.json)의 `file` 경로와 `sourceSha256` 을 재검토한 뒤 `npm run verify` 로 확인한다. 이름만 다른 새 제품이 목적이면 이 스크립트 대신 [재사용 Base 생성기](./reusable-base-guide.md)로 새 소스를 만드는 경로도 있다.
 
 ---
 

@@ -11,9 +11,10 @@ endif
 
 # 2. Common Gradle options to resolve OS dependency problems
 # - file.encoding=UTF-8: Preemptively solve character encoding breakage on Windows
-# - user.timezone=Asia/Seoul: Ensure consistent timezone testing matching KST
+# - 테스트 JVM 시간대는 build.gradle 이 UTC 로 고정한다(CI 패리티). KST 가 필요하면 -Dtest.timezone=Asia/Seoul 을 넘긴다.
+#   (-Duser.timezone 은 build.gradle 이 같은 키를 덮어써 효과가 없다.)
 # - warning-mode fail: Gradle 10에서 제거될 API의 재유입을 즉시 차단
-TEST_OPTS = -Dfile.encoding=UTF-8 -Duser.timezone=Asia/Seoul
+TEST_OPTS = -Dfile.encoding=UTF-8
 GRADLE_CLI_ARGS = --warning-mode fail --console=plain
 
 bootstrap:

@@ -137,9 +137,11 @@ tasks.register('schemaValidationTest', Test) {
         environment 'DOCKER_HOST', dockerHost
     }
 
-    // Docker Engine 29 는 MinAPIVersion=1.44 인데 Testcontainers 1.20.4(docker-java)가 협상하는
+    // Docker Engine 29 는 MinAPIVersion=1.44 인데 도입 당시 Testcontainers 1.20.4(docker-java)가 협상하는
     // 기본 API 는 그보다 낮아 데몬이 400 을 돌려준다 — "Could not find a valid Docker environment" 로만
     // 보여서 원인이 드러나지 않는다(2026-07-26 실측: `docker version` 은 정상인데 컨테이너만 못 띄움).
+    // 현재 버전은 gradle/libs.versions.toml 의 testcontainers(2.0.x)다. 2.0.x 에서도 이 우회가 필요한지는
+    // Windows Docker Desktop 에서 우회 없이 schemaValidationTest 를 돌려 판정한 뒤 정한다(2026-10-07 미측정).
     def apiVersion = System.getenv('DOCKER_API_VERSION') ?: (isWindows ? '1.44' : null)
     if (apiVersion) {
         environment 'DOCKER_API_VERSION', apiVersion
