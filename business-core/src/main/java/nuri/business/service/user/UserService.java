@@ -442,7 +442,7 @@ public class UserService extends BaseAbstractService {
                 authorizationAdministration.lockAndAuthorize("USER_DELETE");
                 // 관리 전역 잠금 다음 사용자 행부터 잠가 MFA 완료·비밀번호 변경의 사용자→refresh 순서를 지킨다.
                 // refresh를 먼저 지우면 사용자 행을 보유한 MFA 요청과 서로 기다릴 수 있다.
-                esntlIds.stream().distinct().sorted().forEach(userRepository::findByEsntlIdForUpdate);
+                esntlIds.stream().distinct().sorted().forEach(userRepository::lockForDeletion);
                 authorizationAdministration.removeDeletedUsers(esntlIds);
                 // [P2 키 규약] tb_auth_rfsh_tk 는 esntlId 단일 키잉 — 발급/로그아웃/재발급 전 경로가
                 // esntlId 기준임을 실측 확인했고, 레거시 loginId 키 행은 V2_18 이 정리한다(생성 경로 없음).

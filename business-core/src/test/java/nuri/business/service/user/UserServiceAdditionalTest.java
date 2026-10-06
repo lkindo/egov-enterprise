@@ -295,11 +295,12 @@ class UserServiceAdditionalTest {
             verify(eventPublisher).publishEvent(eventCaptor.capture());
             assertThat(eventCaptor.getValue().esntlIds()).containsExactly("ESNTL_" + userId);
             verify(userRepository).deleteAllInBatch(java.util.List.of(user));
-            var order = inOrder(authorizationAdministration, userRepository, refreshTokenRepository);
+            var order = inOrder(authorizationAdministration, userRepository, refreshTokenRepository, userLogRepository);
             order.verify(authorizationAdministration).lockAndAuthorize("USER_DELETE");
-            order.verify(userRepository).findByEsntlIdForUpdate("ESNTL_" + userId);
+            order.verify(userRepository).lockForDeletion("ESNTL_" + userId);
             order.verify(authorizationAdministration).removeDeletedUsers(java.util.List.of("ESNTL_" + userId));
             order.verify(refreshTokenRepository).deleteAllByEsntlIdIn(java.util.List.of("ESNTL_" + userId));
+            order.verify(userLogRepository).deleteByDmndUserIdIn(java.util.List.of("ESNTL_" + userId));
             order.verify(userRepository).deleteAllInBatch(java.util.List.of(user));
         }
     }
@@ -359,12 +360,13 @@ class UserServiceAdditionalTest {
             verify(authorizationAdministration).removeDeletedUsers(java.util.List.of("ESNTL_loginB", "ESNTL_loginA"));
             verify(userRepository).deleteAllInBatch(java.util.List.of(userB, userA));
             verify(eventPublisher).publishEvent(any(nuri.business.service.user.event.UserDeletionEvent.class));
-            var order = inOrder(authorizationAdministration, userRepository, refreshTokenRepository);
+            var order = inOrder(authorizationAdministration, userRepository, refreshTokenRepository, userLogRepository);
             order.verify(authorizationAdministration).lockAndAuthorize("USER_DELETE");
-            order.verify(userRepository).findByEsntlIdForUpdate("ESNTL_loginA");
-            order.verify(userRepository).findByEsntlIdForUpdate("ESNTL_loginB");
+            order.verify(userRepository).lockForDeletion("ESNTL_loginA");
+            order.verify(userRepository).lockForDeletion("ESNTL_loginB");
             order.verify(authorizationAdministration).removeDeletedUsers(java.util.List.of("ESNTL_loginB", "ESNTL_loginA"));
             order.verify(refreshTokenRepository).deleteAllByEsntlIdIn(java.util.List.of("ESNTL_loginB", "ESNTL_loginA"));
+            order.verify(userLogRepository).deleteByDmndUserIdIn(java.util.List.of("ESNTL_loginB", "ESNTL_loginA"));
             order.verify(userRepository).deleteAllInBatch(java.util.List.of(userB, userA));
         }
     }

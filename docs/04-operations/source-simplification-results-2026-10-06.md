@@ -2,7 +2,7 @@
 
 기준: [전체 조사 보고서](source-simplification-audit-2026-10-06.md), 커밋 `e0066946cb55c2135d9df3a66baa739f6ba8211b`. 사용자의 “권장 순서대로 작업 진행” 지시에 따른 소스 정비와 로컬 검증 결과다. 일반 정비는 L1, 권한·보안 설정·공유 입력 계약은 L2로 검토한다. 운영 DB는 변경하지 않았다.
 
-조사한 29개 항목의 정비와 아래 로컬 검증을 완료했다. 운영 Java·TS/TSX는 같은 측정 기준으로 **1,905줄 감소**했다. 부서·그룹 권한 목록은 데이터 규모가 늘어도 조회를 각각 **4회·3회**로 유지하며, 조직도·부서 선택의 1,000건 상한과 정책 탭의 불필요한 초기 조회를 제거했다. 큰 파일의 전면 재작성은 하지 않고 확인된 책임 단위만 추출했다.
+조사한 29개 항목의 정비와 아래 로컬 검증을 완료했다. 운영 Java·TS/TSX는 같은 측정 기준으로 **1,901줄 감소**했다. 부서·그룹 권한 목록은 데이터 규모가 늘어도 조회를 각각 **4회·3회**로 유지하며, 조직도·부서 선택의 1,000건 상한과 정책 탭의 불필요한 초기 조회를 제거했다. 큰 파일의 전면 재작성은 하지 않고 확인된 책임 단위만 추출했다.
 
 ## 변경 범위
 
@@ -36,6 +36,12 @@
 | proxy-addr | 2.0.7 → 2.0.8 | [IP 신뢰 판정 권고](https://github.com/jshttp/proxy-addr/security/advisories/GHSA-jqcg-44mw-7w3h) |
 
 Seroval은 Solid의 기존 `~1.5.4` 범위를 넘어가므로 실제 소비 경로의 공개 진입점으로 Solid SSR과 JSON 왕복을 실행해 호환성을 확인했다. 감사 정책은 차단 0건으로 통과했고, 비차단 권고 3건(개발 전용 high 1·moderate 2)은 남아 있다.
+
+## 사용자 삭제와 활동 집계의 경합
+
+원격 E2E의 권한 회수 검증은 통과했으나, 테스트 사용자 정리에서 C008/409가 발생했다. 해당 시각의 서버 제약 로그는 보존되지 않아 CI의 정확한 제약명은 확정하지 못했다. 조사 중 Hibernate의 PostgreSQL `PESSIMISTIC_WRITE`가 `FOR NO KEY UPDATE`를 사용하므로 활동 로그 정리 후 새 FK 행이 들어올 수 있음을 확인했다. 실제 PostgreSQL의 두 연결로 후행 활동 UPSERT 후 사용자 DELETE가 `23503`과 `fk_tb_user_log_tb_user_info`로 실패하는 경합을 재현했다.
+
+삭제 경로에만 명시적 `FOR UPDATE`를 적용해 종속 정리 중 새 FK 참조를 차단한다. 기존 MFA·상태 변경용 잠금은 유지한다. L2 감사에서 백엔드 헌법 제1~3조의 계층·엔티티 경계, 제8조의 권한 재검증, 제9조의 트랜잭션 범위가 보존됨을 확인했다. 관리 전역 잠금→정렬된 사용자 잠금→종속 정리→삭제 순서도 유지한다. 운영 DB는 `information_schema`와 FK 정의를 읽기 전용으로 확인했으며 Entity·DDL·인가 정책은 변경하지 않았다.
 
 ## 날짜 입력 호환성
 
@@ -78,7 +84,8 @@ Seroval은 Solid의 기존 `~1.5.4` 범위를 넘어가므로 실제 소비 경�
 | 최종 Java compile·영향 테스트 | compileJava/compileTestJava 성공; core 156·app 298·API 25, 실패/skip 0 |
 | 푸시 전 모듈 check | foundation·business-core·business-app `check` 성공. 전수 3,029개 중 3,028개 통과, 실패 0, 기존 비활성 `SchemaDumper.dumpCleanSchema` 1개 skip. foundation 클래스별 커버리지 검증 및 세 모듈 JaCoCo 보고서 생성 성공 |
 | 푸시 전 잔여 소비자 정리 | Compose 환경변수 계약 18개, API 소비·생성 경계 계약 58개, 부서·배너·생성 경계·1,000건 초과 트리 영향 Vitest 4파일 64개 통과. 미사용 부서 래퍼의 공통 pagination·요청 설정 검증을 실제 소비 경로로 이관 |
-| 보안 패치 후 빌드·감사 | 최종 소스를 격리 worktree에 동기화하고 frozen lockfile 설치·Next production build·bundle 검사 성공. JS gzip 2,045,506B / 2,250,000B(여유 9.1% 경고), CSS 30,887B / 40,000B. 의존성 감사 정책 및 실제 소비 경로의 Solid SSR·Seroval JSON 왕복 통과 |
+| 보안 패치 후 빌드·감사 | 보안 패치 시점 소스를 격리 worktree에 동기화하고 frozen lockfile 설치·Next production build·bundle 검사 성공. JS gzip 2,045,506B / 2,250,000B(여유 9.1% 경고), CSS 30,887B / 40,000B. 의존성 감사 정책 및 실제 소비 경로의 Solid SSR·Seroval JSON 왕복 통과 |
+| 사용자 삭제 경합 보강 | PostgreSQL 활동 집계·삭제 잠금 4개 및 사용자 서비스 5클래스 78개 통과, 실패/skip 0. 전체 Java compileJava·compileTestJava 성공. 실제 삭제 SQL을 약한 잠금으로 변이하면 후행 INSERT 차단 검사가 실패하고, 원복 후 4개 통과. 진단·변이 근거는 `build/reports/ci-e2e-audit-37463273064/`에 보존 |
 | 실제 PostgreSQL 인가·스키마 | 통합 테스트 2개 통과. 고정 쿼리 수·응답 동등성·ABA·schema validation 확인 |
 | 백엔드 전체 거버넌스 harness | 38클래스 137테스트 통과, 실패/skip 0. 시크릿 검사에는 도구 누락·합성 리터럴 red fixture 포함 |
 | 생성 API·Zod·operation 계약 | 재생성 후 Git diff 없음 |
@@ -102,9 +109,9 @@ Seroval은 Solid의 기존 `~1.5.4` 범위를 넘어가므로 실제 소비 경�
 
 | 지표 | 정비 전 | 정비 후 | 변화 |
 |---|---:|---:|---:|
-| 운영 Java LOC | 75,435 | 75,229 | -206 |
+| 운영 Java LOC | 75,435 | 75,233 | -202 |
 | 운영 TS/TSX LOC | 93,960 | 92,261 | -1,699 |
-| 운영 합계 LOC | 169,395 | 167,490 | **-1,905** |
+| 운영 합계 LOC | 169,395 | 167,494 | **-1,901** |
 | FE 운영 파일 | 627 | 618 | -9 |
 | FE 중복 8줄 윈도우 | 194 | 147 | -47 |
 | BE 운영 중복 8줄 윈도우 | 187 | 176 | -11 |
@@ -113,6 +120,6 @@ Seroval은 Solid의 기존 `~1.5.4` 범위를 넘어가므로 실제 소비 경�
 
 재측정은 `node scripts/code-census.mjs --baseline <새-json-경로>`와 `--diff <동일-정의-json>`으로 한다. 기존 파일 덮어쓰기와 정의가 다른 snapshot 비교는 거부한다.
 
-로컬 브라우저는 후속 미사용 래퍼 정리·보안 패치 전의 소스를 별도 검증 worktree `D:/project/egov-enterprise-audit-verify-20261006`로 복사하고 임시 PostgreSQL·새 보안 키로 구동한 결과다. 실행 증거는 해당 worktree의 `build/isolated-e2e/a0993f42d4a6cf004f637ca5`에 있다. 임시 DB와 테스트 서비스는 정상 정리됐고, 기존 환경 파일과 실행 중인 서비스는 변경하지 않았다. 후속 보안 패치의 빌드에는 같은 worktree에 갱신한 소스·잠금 파일을 사용했다.
+로컬 브라우저는 후속 미사용 래퍼 정리·보안 패치·삭제 잠금 보강 전의 소스를 별도 검증 worktree로 복사하고 임시 PostgreSQL·새 보안 키로 구동한 결과다. 후속 보안 패치의 빌드에는 같은 worktree에 갱신한 소스·잠금 파일을 사용했다. 해당 worktree는 요청에 따라 커밋 보존 여부 확인 후 등록을 제거했다. 실행 증거는 본 저장소의 `build/reports/source-simplification-verification-worktree-20261006/isolated-e2e/a0993f42d4a6cf004f637ca5`로 복사하고 파일 해시 일치를 확인했다. 임시 DB와 테스트 서비스는 정상 정리됐고, 기존 환경 파일과 실행 중인 서비스는 변경하지 않았다.
 
 새 버전의 이관 도구는 실행 fingerprint가 달라지므로 기존 plan 승인을 재사용하지 않고 정상 plan/validate 승인 절차를 다시 거쳐야 한다. 운영 부하·지연 시간·원격 required CI는 이 로컬 작업에서 완료했다고 간주하지 않는다.

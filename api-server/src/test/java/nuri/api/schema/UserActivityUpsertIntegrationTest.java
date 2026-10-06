@@ -22,13 +22,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * 누적을 리셋하지 않는지를 하나도 검증하지 못한다</b> — 목만 있는 검증은 초록이면서 운영에서
  * 첫 요청에 죽는다. 이 프로젝트의 감사에서 반복 지적된 함정이라 실 DB 로 고정한다.
  *
- * <p>검증 축 넷:
+ * <p>검증 축 다섯:
  * <ol>
  *   <li>충돌 대상 제약 {@code pk_tb_user_log} 가 실제로 존재한다</li>
  *   <li>같은 키를 두 번 쓰면 행이 하나이고 카운터가 <b>더해진다</b></li>
  *   <li>기존 카운터가 NULL 이어도 누적이 리셋되지 않는다({@code COALESCE} 축)</li>
  *   <li>없는 사용자로는 쓸 수 없다({@code fk_tb_user_log_tb_user_info}) — 집계가 미인증 요청을
  *       배제해야 하는 이유가 스키마에 실재함을 증명한다</li>
+ *   <li>삭제용 사용자 잠금은 종속 활동 로그 정리 이후 새 FK 참조 생성을 막는다</li>
  * </ol>
  */
 @Tag("schema-validation")
@@ -105,6 +106,46 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
             assertThatThrownBy(() -> upsert(connection, "ANONYMOUS", 0, 0, 1, 0, 0, 0))
                     .isInstanceOf(SQLException.class)
                     .hasMessageContaining("fk_tb_user_log_tb_user_info");
+        }
+    }
+
+    @Test
+    @DisplayName("사용자 삭제 잠금은 종속 로그 정리 이후 새 활동 FK 적재를 차단한다")
+    void deletionLockBlocksLateActivityInsert() throws SQLException, ReflectiveOperationException {
+        migrateThroughAuthorizationCutover();
+
+        var deletionQuery = nuri.business.domain.user.repository.UserRepository.class
+                .getMethod("lockForDeletion", String.class)
+                .getAnnotation(org.springframework.data.jpa.repository.Query.class);
+        assertThat(deletionQuery).isNotNull();
+        assertThat(deletionQuery.nativeQuery()).isTrue();
+
+        try (Connection deleting = openConnection();
+             Connection logging = openConnection();
+             Statement deletingStatement = deleting.createStatement();
+             Statement loggingStatement = logging.createStatement()) {
+            String esntlId = seedUser(deleting, "USRACT_DELETE", "actdelete");
+            loggingStatement.execute("SET lock_timeout = '300ms'");
+            deleting.setAutoCommit(false);
+            try {
+                try (PreparedStatement lock = deleting.prepareStatement(
+                        deletionQuery.value().replace(":esntlId", "?"))) {
+                    lock.setString(1, esntlId);
+                    try (ResultSet row = lock.executeQuery()) {
+                        assertThat(row.next()).isTrue();
+                    }
+                }
+                deletingStatement.executeUpdate("DELETE FROM tb_user_log WHERE dmnd_user_id='%s'".formatted(esntlId));
+
+                assertThatThrownBy(() -> upsert(logging, esntlId, 0, 0, 1, 0, 0, 0))
+                        .isInstanceOfSatisfying(SQLException.class,
+                                failure -> assertThat(failure.getSQLState()).isEqualTo("55P03"));
+                assertThat(deletingStatement.executeUpdate(
+                        "DELETE FROM tb_user_info WHERE esntl_id='%s'".formatted(esntlId))).isEqualTo(1);
+                deleting.commit();
+            } finally {
+                deleting.rollback();
+            }
         }
     }
 

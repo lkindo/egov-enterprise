@@ -22,6 +22,10 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     @Query("SELECT u FROM User u WHERE u.esntlId = :esntlId")
     Optional<User> findByEsntlIdForUpdate(@Param("esntlId") String esntlId);
 
+    /** 종속 행 정리 중 새 FK 참조를 막는다. PostgreSQL의 JPA 쓰기 잠금(NO KEY UPDATE)으로는 부족하다. */
+    @Query(value = "SELECT esntl_id FROM tb_user_info WHERE esntl_id = :esntlId FOR UPDATE", nativeQuery = true)
+    Optional<String> lockForDeletion(@Param("esntlId") String esntlId);
+
     /** 로그인 ID로 기록된 과거 제출을 현재 사용자에 결속하는 동안 삭제/재생성을 막는다. */
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT u FROM User u WHERE u.userId = :userId")
