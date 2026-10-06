@@ -65,11 +65,16 @@ test.describe('계층 편집', () => {
             await expect(saveStructure).toBeDisabled();
             await expect(page.getByRole('button', { name: '한 칸 아래로' })).toBeVisible();
             // '다른 곳으로 옮기기' 대화상자는 열었다 닫아도 아무것도 바꾸지 않는다.
-            await page.getByRole('button', { name: '다른 곳으로 옮기기…' }).click();
+            const moveOpener = page.getByRole('button', { name: '다른 곳으로 옮기기…' });
+            await moveOpener.click();
             const moveDialog = page.getByRole('dialog', { name: '다른 곳으로 옮기기' });
             await expect(moveDialog.getByRole('button', { name: '선택한 위치로 메뉴 옮기기' })).toBeDisabled();
             await moveDialog.getByRole('button', { name: '옮기기 취소' }).click();
             await expect(moveDialog).toHaveCount(0);
+            // [2026-10-07] 닫힌 대화상자는 대화상자를 내린 뒤 다음 차례(Radix FocusScope 의 setTimeout)에 여는 단추로
+            //   포커스를 되돌린다. 그 복귀를 기다리지 않고 아래 Alt+ArrowDown 을 누르면, 늦게 도착한 복귀가 옮긴 메뉴의
+            //   포커스를 가져가 toBeFocused 가 흔들렸다(main CI run 37530322956 첫 시도 실패·재시도 통과, 닫힘 25ms 뒤 키 입력).
+            await expect(moveOpener).toBeFocused();
             await expect(saveStructure).toBeDisabled();
             const firstMenuNo = await firstMenu.getAttribute('data-menu-no');
             const movedMenu = page.locator(`[data-a2-master-item][data-menu-no="${firstMenuNo}"]`);
