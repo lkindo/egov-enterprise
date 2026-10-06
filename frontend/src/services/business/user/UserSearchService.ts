@@ -11,10 +11,6 @@ import { searchAssignableUsersOperation } from '@/types/generated-operations';
  *   담당자 선택처럼 "사람을 고르기만" 하는 화면은 반드시 이 서비스를 쓴다.
  */
 class UserSearchService extends UserService {
-  constructor() {
-    super('/users');
-  }
-
   /**
    * 담당자 검색. 성명 부분일치로 조회한다.
    *

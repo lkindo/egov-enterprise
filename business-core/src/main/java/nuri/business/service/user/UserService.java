@@ -31,7 +31,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -109,28 +108,6 @@ public class UserService extends BaseAbstractService {
         }
 
         /**
-         * 사용자 목록 조회 (N+1 쿼리 개선 버전)
-         */
-        public List<UserDto> getUserList() {
-                // [성능 개선] 단일 쿼리로 사용자와 권한 정보를 함께 조회 (N+1 방지)
-                List<Object[]> results = userRepository.findAllWithAuthorities();
-
-                // 사용자와 권한 매핑
-                Map<String, User> userMap = new java.util.LinkedHashMap<>();
-
-                for (Object[] result : results) {
-                        User user = (User) result[0];
-
-                        userMap.put(user.getEsntlId(), user);
-                }
-
-                var snapshots=authorizationSnapshots.loadAll(userMap.keySet());
-                return userMap.values().stream()
-                                .map(user -> UserDto.from(user).withAuthorization(snapshots.get(user.getEsntlId())))
-                                .collect(Collectors.toList());
-        }
-
-        /**
          * 사용자 목록 페이지 조회 구현
          */
         public Page<UserDto> getPagedUserList(String searchKeyword, UserListFilter filter, @NonNull Pageable pageable) {
@@ -202,20 +179,6 @@ public class UserService extends BaseAbstractService {
                 List<UserSearchDto> rows = userRepository.findActiveDepartmentMembers(ognzId, DEPARTMENT_RECIPIENT_MAX + 1);
                 boolean truncated = rows.size() > DEPARTMENT_RECIPIENT_MAX;
                 return new DepartmentRecipientsDto(truncated ? List.copyOf(rows.subList(0, DEPARTMENT_RECIPIENT_MAX)) : rows, truncated);
-        }
-
-        /**
-         * 사용자 목록 페이지 조회 (검색어 없음)
-         */
-        public Page<UserDto> getUserPage(@NonNull Pageable pageable) {
-                return getPagedUserList(null, UserListFilter.NONE, pageable);
-        }
-
-        /**
-         * 사용자 목록 페이지 조회 (기본 페이징 적용)
-         */
-        public Page<UserDto> searchUserPage(String searchKeyword) {
-                return getPagedUserList(searchKeyword, UserListFilter.NONE, org.springframework.data.domain.PageRequest.of(0, 10));
         }
 
         /**
@@ -442,10 +405,6 @@ public class UserService extends BaseAbstractService {
         public void deleteUser(@NonNull String userId) {
                 // [보안] 관리자 권한 확인
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_DELETE");
-
-                if (!userRepository.findByUserId(userId).isPresent() && !userRepository.existsById(userId)) {
-                        throw new BusinessException(UserErrorCode.USER_NOT_FOUND);
-                }
 
                 User user = userRepository.findByUserId(userId)
                                 .or(() -> userRepository.findById(userId))

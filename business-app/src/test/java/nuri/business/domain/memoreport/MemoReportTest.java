@@ -82,6 +82,18 @@ class MemoReportTest {
     }
 
     @Test
+    void invalidCalendarOrSeparatorsCannotPartiallyUpdateReport() {
+        for (String value : new String[] {"20260229", "1900-02-29", "2026-04-31", "00000101", "0000-01-01",
+                "2026--09-10", "202-609-10", "20260910-", " ", " 20260910"}) {
+            MemoReport report = MemoReport.builder().rptTtl("Original").memoRptYmd("20260901").build();
+            assertThatThrownBy(() -> report.update("Replacement", value, "U", "R", "C", 101L))
+                    .as(value).isInstanceOf(BusinessException.class);
+            assertThat(report.getRptTtl()).isEqualTo("Original");
+            assertThat(report.getMemoRptYmd()).isEqualTo("20260901");
+        }
+    }
+
+    @Test
     @DisplayName("MemoReport updateDrctMatter - LocalDateTime 설정 검증 (V2_18 timestamp 동기화)")
     void updateDrctMatterTest() {
         MemoReport report = MemoReport.builder().build();

@@ -11,10 +11,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useDeptTree } from '../useDeptTree';
 import type { Department } from '@/services/foundation/system/DeptAdminService';
-import type { PageResponse } from '@/types/foundation/system';
 
 vi.mock('@/services/foundation/system/DeptAdminService', () => ({
-  deptAdminService: { getDeptList: vi.fn() },
+  deptAdminService: { getDeptTree: vi.fn() },
 }));
 
 const ROOT: Department = { ognzId: 'ROOT', ognzNm: '본부' };
@@ -22,7 +21,7 @@ const A: Department = { ognzId: 'A', ognzNm: '가팀', upOgnzId: 'ROOT' };
 const B: Department = { ognzId: 'B', ognzNm: '나팀', upOgnzId: 'ROOT' };
 const C: Department = { ognzId: 'C', ognzNm: '다팀', upOgnzId: 'ROOT' };
 
-const page = (list: Department[]): PageResponse<Department> => ({ list, total: list.length, page: 1, size: 1000, totalPage: 1 });
+const INITIAL_DEPTS = [ROOT, A, B];
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -34,9 +33,9 @@ const order = (items: readonly { ognzId?: string }[]) => items.map((item) => ite
 
 async function renderWithReorder() {
   const { deptAdminService } = await import('@/services/foundation/system/DeptAdminService');
-  vi.mocked(deptAdminService.getDeptList).mockResolvedValue(page([ROOT, A, B]));
+  vi.mocked(deptAdminService.getDeptTree).mockResolvedValue(INITIAL_DEPTS);
   const view = renderHook(
-    () => useDeptTree({ deptKeyword: '', initialDepts: page([ROOT, A, B]), enabled: true, onDragSelect: () => {} }),
+    () => useDeptTree({ deptKeyword: '', initialDepts: INITIAL_DEPTS, enabled: true, onDragSelect: () => {} }),
     { wrapper },
   );
   await waitFor(() => expect(view.result.current.flattenedDepts).toHaveLength(3));
@@ -53,7 +52,7 @@ describe('useDeptTree — 저장하지 않은 드래그와 재조회 (DIP C5)', 
 
   it('변경이 있는 동안 다시 조회해도 드래그한 순서를 지키고, 목록이 바뀌었다고 알린다', async () => {
     const { view, deptAdminService } = await renderWithReorder();
-    vi.mocked(deptAdminService.getDeptList).mockResolvedValue(page([ROOT, A, B, C]));
+    vi.mocked(deptAdminService.getDeptTree).mockResolvedValue([ROOT, A, B, C]);
 
     await act(async () => { await view.result.current.refetchDepts(); });
 
@@ -64,7 +63,7 @@ describe('useDeptTree — 저장하지 않은 드래그와 재조회 (DIP C5)', 
 
   it('변경을 취소하면 최신 목록으로 돌아가고 기준선도 그 목록이 된다', async () => {
     const { view, deptAdminService } = await renderWithReorder();
-    vi.mocked(deptAdminService.getDeptList).mockResolvedValue(page([ROOT, A, B, C]));
+    vi.mocked(deptAdminService.getDeptTree).mockResolvedValue([ROOT, A, B, C]);
     await act(async () => { await view.result.current.refetchDepts(); });
     await waitFor(() => expect(view.result.current.deptListChangedWhileEditing).toBe(true));
 

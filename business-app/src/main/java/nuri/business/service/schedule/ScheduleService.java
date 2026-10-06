@@ -1,7 +1,6 @@
 package nuri.business.service.schedule;
 import nuri.foundation.core.exception.CommonErrorCode;
 
-import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.domain.schedule.Schedule;
 import nuri.business.domain.schedule.ScheduleRepository;
 import nuri.business.domain.user.repository.UserRepository;
@@ -165,10 +164,6 @@ public class ScheduleService {
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCHEDULE_DELETE_ALL");
 
         scheduleRepository.delete(entity);
-    }
-
-    public List<java.util.Map<String, Object>> selectEmpLyrPopup(@NonNull BaseSearchDto searchVO) {
-        return java.util.Collections.emptyList();
     }
 
     private ScheduleDto convertToDto(Schedule entity) {

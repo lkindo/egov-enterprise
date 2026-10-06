@@ -1,5 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
+import { toAdminPageQuery } from '@/services/core/admin-page-query';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import type { components, operations } from '@/types/generated-api';
 import {
@@ -91,27 +92,10 @@ type CommunityListQuery = NonNullable<operations['getCommunities']['parameters']
 
 function toCommunityListQuery(params?: SearchParams): CommunityListQuery {
   if (!params) return { searchCnd: '', searchWrd: '' };
-  const rawSort = params.sort;
   return {
     searchCnd: params.searchCondition || '',
     searchWrd: params.searchKeyword || params.searchWrd || '',
-    ...(params.pageIndex !== undefined
-      ? { page: Math.max(0, params.pageIndex - 1) }
-      : params.page !== undefined
-        ? { page: params.page }
-        : params.pageNo !== undefined
-          ? { page: Math.max(0, params.pageNo - 1) }
-          : {}),
-    ...(params.size !== undefined
-      ? { size: params.size }
-      : params.pageUnit !== undefined
-        ? { size: params.pageUnit }
-        : params.pageSize !== undefined
-          ? { size: params.pageSize as number }
-          : params.recordCountPerPage !== undefined
-            ? { size: params.recordCountPerPage as number }
-            : {}),
-    ...(rawSort === undefined ? {} : { sort: rawSort as string[] }),
+    ...toAdminPageQuery(params),
   };
 }
 
@@ -176,10 +160,6 @@ function requireCommunityPage(
  * 커뮤니티 관리 서비스 (Admin)
  */
 class CommunityAdminService extends AdminService {
-  constructor() {
-    super('/community', 'content');
-  }
-
   /** 커뮤니티 목록 조회 */
   async getCommunityList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Community>> {
     const response = await this.executeGenerated(getCommunitiesOperation, {

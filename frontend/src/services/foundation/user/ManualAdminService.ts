@@ -72,10 +72,6 @@ function requireManualPage(
 
 /** 백엔드 HelpApiController(`/api/v1/help/manuals`)와 연동하는 매뉴얼 관리 서비스. */
 class ManualAdminService extends ApiService {
-  constructor() {
-    super('/help');
-  }
-
   async getManualList(
     params: ManualSearchParams = {},
     config?: AxiosRequestConfig,

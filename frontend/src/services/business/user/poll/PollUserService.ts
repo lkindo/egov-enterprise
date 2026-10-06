@@ -18,10 +18,6 @@ import {
  * 백엔드 PollApiController 연동 (/api/v1/polls)
  */
 export class PollUserService extends ApiService {
-  constructor() {
-    super('polls');
-  }
-
   /** 설문 목록 조회 */
   async getPollList(params: PollSearchParams, config?: AxiosRequestConfig): Promise<PageResponse<OnlinePollManageDetailVO>> {
     return this.executeGenerated(getPollsOperation, {

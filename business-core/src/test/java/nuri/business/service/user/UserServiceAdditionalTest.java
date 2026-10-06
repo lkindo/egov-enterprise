@@ -312,8 +312,6 @@ class UserServiceAdditionalTest {
                     nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             // Given
             String userId = "nonexistent";
-            when(userRepository.existsById(userId)).thenReturn(false);
-
             // When & Then
             assertThatThrownBy(() -> userService.deleteUser(userId))
                     .isInstanceOf(BusinessException.class)

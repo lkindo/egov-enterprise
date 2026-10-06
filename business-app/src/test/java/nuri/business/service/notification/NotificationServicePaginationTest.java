@@ -47,10 +47,10 @@ class NotificationServicePaginationTest extends BusinessIntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("Get active notifications with pagination")
-    void getActiveNotifications_WithPagination() {
+    @DisplayName("수신자 알림 목록의 첫 페이지와 전체 페이지 수를 반환한다")
+    void getNotificationList_WithPagination() {
         Pageable pageable = PageRequest.of(0, 10);
-        Page<NotificationDto> result = notificationService.getActiveNotifications(pageable);
+        Page<NotificationDto> result = notificationService.getNotificationList("testUser", null, null, pageable);
         assertThat(result.getTotalElements()).isEqualTo(25);
         assertThat(result.getTotalPages()).isEqualTo(3);
         assertThat(result.getNumber()).isEqualTo(0);
@@ -58,20 +58,13 @@ class NotificationServicePaginationTest extends BusinessIntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("Get active notifications second page")
-    void getActiveNotifications_SecondPage() {
+    @DisplayName("수신자 알림 목록의 두 번째 페이지를 반환한다")
+    void getNotificationList_SecondPage() {
         Pageable pageable = PageRequest.of(1, 10);
-        Page<NotificationDto> result = notificationService.getActiveNotifications(pageable);
+        Page<NotificationDto> result = notificationService.getNotificationList("testUser", null, null, pageable);
         assertThat(result.getNumber()).isEqualTo(1);
         assertThat(result.getContent()).hasSize(10);
         assertThat(result.getTotalPages()).isEqualTo(3);
-    }
-
-    @Test
-    @DisplayName("Get all active notifications")
-    void getActiveNotificationsAll() {
-        List<NotificationDto> result = notificationService.getActiveNotificationsAll();
-        assertThat(result).hasSize(25);
     }
 
     @Test

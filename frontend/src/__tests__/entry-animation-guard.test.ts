@@ -43,8 +43,6 @@ const ALLOWED: Record<string, string> = {
   // ── [2026-09-22] 정규식 확장으로 처음 보이게 된 3건 ────────────────────────
   //   신규 위반이 아니라 종전 정규식이 구조적으로 못 보던 것들이다. 셋 다 위 docblock 이
   //   이미 열어 둔 범주(오버레이 등장·상태 전환·지연시킬 데이터 없음)에 정확히 해당한다.
-  'src/app/components/ui/standard-search-filter.tsx':
-    '사용자가 눌러 펼친 필터 패널 — 조회 결과가 아니라 입력 영역의 열림 신호',
   'src/app/components/ui/smart-onboarding-hub.tsx':
     '온보딩 다이얼로그의 단계 교체 — 오버레이 안의 전환 신호',
   'src/app/not-found.tsx':

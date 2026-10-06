@@ -12,6 +12,7 @@ import {
   getCommunity,
   getCommunityList,
 } from '../communityService';
+import { communityUserService } from '@/services/business/user/community/CommunityUserService';
 
 const success = <T,>(data: T) => ({
   success: true as const,
@@ -47,6 +48,27 @@ describe('communityService generated contract', () => {
     expect(client.getRaw).toHaveBeenCalledWith('communities', {
       params: { page: 2, size: 15 },
     });
+  });
+
+  it.each([
+    ['communityService', communityService],
+    ['communityUserService', communityUserService],
+  ] as const)('%s는 같은 목록 계약에서 page와 명시 검색 키를 우선한다', async (_name, service) => {
+    const params = {
+      page: 2, pageIndex: 8, pageNo: 9,
+      size: 15, pageUnit: 20, pageSize: 30,
+      searchCnd: '0', searchCondition: '1',
+      searchWrd: '개발', searchKeyword: '운영',
+      sort: ['cmntyNm,asc'],
+    };
+    const before = structuredClone(params);
+
+    await service.getCommunityList(params);
+
+    expect(client.getRaw).toHaveBeenCalledWith('communities', {
+      params: { page: 2, size: 15, searchCnd: '0', searchWrd: '개발', sort: ['cmntyNm,asc'] },
+    });
+    expect(params).toStrictEqual(before);
   });
 
   it('1-based legacy pageIndex/pageNo와 pageUnit/pageSize를 명시적으로 변환한다', async () => {
@@ -86,6 +108,19 @@ describe('communityService generated contract', () => {
       '커뮤니티 페이지 응답이 필수 계약과 일치하지 않습니다.',
     );
   });
+
+  it.each(['list', 'total', 'page', 'size', 'totalPage'] as const)(
+    '사용자 서비스도 %s가 없는 페이지를 빈 결과로 위장하지 않는다',
+    async (field) => {
+      const incomplete: Partial<typeof emptyPage> = { ...emptyPage };
+      delete incomplete[field];
+      client.getRaw.mockResolvedValueOnce(success(incomplete));
+
+      await expect(communityUserService.getCommunityList({})).rejects.toThrow(
+        '커뮤니티 페이지 응답이 필수 계약과 일치하지 않습니다.',
+      );
+    },
+  );
 
   it('상세 응답의 generated enum이 어긋나면 거부한다', async () => {
     client.getRaw.mockResolvedValueOnce(success({ cmntySn: 7, useYn: 'INVALID' }));

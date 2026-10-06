@@ -17,10 +17,6 @@ import {
  * 백엔드 ScheduleApiController (business-suite)와 연동
  */
 class DeptScheduleService extends ApiService {
-  constructor() {
-    super('/schedules');
-  }
-
   /**
    * 부서 일정 목록 조회
    * @param params 검색 파라미터

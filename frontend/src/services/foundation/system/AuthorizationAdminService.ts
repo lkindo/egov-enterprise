@@ -33,7 +33,6 @@ function requireGroupSnapshot(value: unknown, code: string, verb: string): Autho
 }
 
 class AuthorizationAdminService extends AdminService {
-  constructor() { super('/authorization'); }
   async getCatalog(config?: AxiosRequestConfig) {
     return authorizationCatalogSchema.parse(await this.executeGenerated(authzCatalogOperation, { config }));
   }

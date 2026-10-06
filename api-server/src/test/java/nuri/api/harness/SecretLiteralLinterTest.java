@@ -20,6 +20,9 @@ import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 🔐 시크릿 리터럴 재유입 차단 게이트 — 배포 스크립트·운영 설정의 "조용한 dev 키 주입" 회귀 방지.
@@ -97,6 +100,9 @@ class SecretLiteralLinterTest {
     /** 스캔 대상 경로 — 배포 스크립트, 에이전트 DB 도구와 운영 형상 파일 2종. */
     private static final String SCRIPTS_DIR = "scripts";
     private static final String AGENT_SCRIPTS_DIR = ".agent/scripts";
+    /** DB에 연결하는 실제 도구가 스캔에서 빠지면 무관한 JS 파일 수로 보충할 수 없다. */
+    private static final Set<String> REQUIRED_AGENT_DB_SCRIPTS = Set.of(
+            ".agent/scripts/db-bridge.js", ".agent/scripts/db-dump.js");
     private static final String APP_PROD_YML = "api-server/src/main/resources/application-prod.yml";
     private static final String APP_E2E_YML = "api-server/src/main/resources/application-e2e.yml";
     private static final String APP_LOCAL_YML = "api-server/src/main/resources/application-local.yml";
@@ -204,13 +210,7 @@ class SecretLiteralLinterTest {
                     .filter(path -> path.getFileName().toString().endsWith(".js"))
                     .sorted()
                     .forEach(agentJavaScripts::add);
-        if (agentJavaScripts.size() < 8) {
-            fail("게이트 무결성 파손: .agent/scripts JavaScript 스캔 결과(" + agentJavaScripts.size()
-                    + ")가 예상 하한(8) 미만 — 경로/확장자 필터 파손 의심.");
-        }
-        for (Path script : agentJavaScripts) {
-            auditAgentJavaScript(root, script, violations);
-        }
+        auditAgentJavaScripts(root, agentJavaScripts, violations);
 
         // ── 3) 운영 배포 설정 2종 + 외부 연결 가능 E2E DB 설정 ─────────────────────────
         Path appProd = root.resolve(APP_PROD_YML);
@@ -277,6 +277,58 @@ class SecretLiteralLinterTest {
         assertFalse(auditLocalDbConfigIfPresent(cleanRoot, missingLocalConfig, new ArrayList<>()));
     }
 
+    @Test
+    @DisplayName("DB 도구 각각의 스캔 누락은 무관한 JS 8개나 같은 이름의 하위 파일로 보충해도 red다")
+    void agentJavaScriptPopulationRequiresEachConnectionTool(@TempDir Path root) throws IOException {
+        List<Path> required = List.of(writeAgentJavaScript(root, "db-bridge.js", "// fixture\n"),
+                writeAgentJavaScript(root, "db-dump.js", "// fixture\n"));
+        List<Path> scripts = new ArrayList<>(required);
+        for (int i = 0; i < 8; i++) scripts.add(writeAgentJavaScript(root, "unrelated-" + i + ".js", "// fixture\n"));
+        List<String> violations = new ArrayList<>();
+        auditAgentJavaScripts(root, scripts, violations);
+        assertTrue(violations.isEmpty());
+
+        for (Path omitted : required) {
+            List<Path> incomplete = new ArrayList<>(scripts);
+            incomplete.remove(omitted);
+            incomplete.add(writeAgentJavaScript(root, "nested/" + omitted.getFileName(), "// fixture\n"));
+            AssertionError error = assertThrows(AssertionError.class,
+                    () -> auditAgentJavaScripts(root, incomplete, new ArrayList<>()));
+            assertTrue(error.getMessage().contains(rel(root, omitted)));
+        }
+    }
+
+    @Test
+    @DisplayName("필수 DB 도구와 추가 JS 모두 DB 환경변수 폴백·설정 리터럴을 탐지한다")
+    void agentDbSecretDetectionCoversRequiredAndAdditionalJavaScripts(@TempDir Path root) throws IOException {
+        List<Path> scripts = List.of(writeAgentJavaScript(root, "db-bridge.js", "// fixture\n"),
+                writeAgentJavaScript(root, "db-dump.js", "// fixture\n"),
+                writeAgentJavaScript(root, "additional-tool.js", "// fixture\n"));
+        // 실제 접속정보를 쓰지 않는 합성 위반이다.
+        StringBuilder invalid = new StringBuilder();
+        for (String name : List.of("DB_HOST", "DB_NAME", "DB_USERNAME", "DB_PASSWORD")) {
+            invalid.append("const example = process.env.").append(name).append(" || 'fixture';\n");
+        }
+        for (String field : List.of("host", "database", "user", "password")) {
+            invalid.append(field).append(": 'fixture',\n");
+        }
+        for (Path script : scripts) {
+            Files.writeString(script, invalid, StandardCharsets.UTF_8);
+            List<String> violations = new ArrayList<>();
+            auditAgentJavaScripts(root, scripts, violations);
+            assertEquals(8, violations.size());
+            assertTrue(violations.stream().allMatch(violation -> violation.startsWith("File [" + rel(root, script) + ":")));
+            Files.writeString(script, "// fixture\n", StandardCharsets.UTF_8);
+        }
+    }
+
+    private static Path writeAgentJavaScript(Path root, String fileName, String content) throws IOException {
+        Path script = root.resolve(AGENT_SCRIPTS_DIR).resolve(fileName);
+        Files.createDirectories(script.getParent());
+        Files.writeString(script, content, StandardCharsets.UTF_8);
+        return script;
+    }
+
     // ---- 1) 배포 스크립트 -----------------------------------------------------------
 
     private void auditScript(Path root, Path script, List<String> violations) throws IOException {
@@ -317,6 +369,15 @@ class SecretLiteralLinterTest {
             // (c) ${NAME:-기본값} — 미설정 시 조용한 dev 값 대체(W0-04 의 본질)
             collectPosixDefaults(line, name, i + 1, violations);
         }
+    }
+
+    private void auditAgentJavaScripts(Path root, List<Path> scripts, List<String> violations) throws IOException {
+        Set<String> missing = new TreeSet<>(REQUIRED_AGENT_DB_SCRIPTS);
+        scripts.forEach(script -> missing.remove(rel(root, script)));
+        if (!missing.isEmpty()) {
+            fail("게이트 무결성 파손: .agent/scripts DB 연결 도구가 JavaScript 스캔에서 누락되었습니다: " + missing);
+        }
+        for (Path script : scripts) auditAgentJavaScript(root, script, violations);
     }
 
     private void auditAgentJavaScript(Path root, Path script, List<String> violations) throws IOException {

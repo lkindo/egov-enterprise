@@ -13,10 +13,6 @@ import { changePasswordOperation, getMeOperation, updateMeOperation } from '@/ty
 type SelfProfileUpdate = components['schemas']['UserSelfProfileUpdateRequest'];
 
 class UserService extends ApiService {
-  constructor() {
-    super('/users/me');
-  }
-
   /** 내 정보 조회 */
   async getMe(): Promise<UserDto> {
     return this.executeGenerated(getMeOperation, {}) as Promise<UserDto>;

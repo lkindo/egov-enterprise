@@ -36,17 +36,6 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     @Query("SELECT u FROM User u")
     List<User> findAllWithRole();
 
-    /**
-     * [성능 최적화] 사용자와 권한 정보를 한 번에 조회 (N+1 방지)
-     */
-    @Query("""
-                SELECT u, ua
-                FROM User u
-                LEFT JOIN UserAuthority ua ON u.esntlId = ua.scrtyDcsnTrgtId
-                ORDER BY u.esntlId
-            """)
-    List<Object[]> findAllWithAuthorities();
-
     @NonNull
     Optional<User> findById(@NonNull @Param("esntlId") String esntlId);
 

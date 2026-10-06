@@ -96,6 +96,22 @@ describe('DeptAdminService — 부서(조직) 관리자 API 계약', () => {
   });
 
   describe('부서 목록 조회 (getDeptList)', () => {
+    it('페이지·크기 별칭이 겹쳐도 기존 우선순위와 정렬 조건을 보존한다', async () => {
+      const params = {
+        pageIndex: 3, page: 8, pageNo: 9,
+        size: 15, pageUnit: 20, pageSize: 30, recordCountPerPage: 40,
+        keyword: '개발', sort: ['ognzNm,asc'],
+      };
+      const before = structuredClone(params);
+
+      await deptAdminService.getDeptList(params);
+
+      expect(client.get).toHaveBeenCalledWith(BASE, {
+        params: { keyword: '개발', page: 2, size: 15, sort: ['ognzNm,asc'] },
+      });
+      expect(params).toStrictEqual(before);
+    });
+
     it('목록은 admin/system/departments 로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {
       await deptAdminService.getDeptList();
 

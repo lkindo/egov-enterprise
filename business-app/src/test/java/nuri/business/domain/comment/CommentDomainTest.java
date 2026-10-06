@@ -1,6 +1,5 @@
 package nuri.business.domain.comment;
 
-import com.querydsl.core.types.dsl.Expressions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,14 +26,4 @@ class CommentDomainTest {
         assertEquals("N", comment.getUseYn());
     }
 
-    @Test
-    @DisplayName("CommentPredicate 정적 메서드 테스트")
-    void commentPredicate_test() {
-        // Just call them to cover the lines
-        assertNotNull(CommentPredicate.bbsIdEq("BBS1"));
-        assertNotNull(CommentPredicate.pstSnEq(10L));
-        assertNotNull(CommentPredicate.pstSnEq(10L));
-        assertNotNull(CommentPredicate.bbsIdAndPstSnEq("BBS1", 10L));
-        assertNotNull(CommentPredicate.bbsIdAndPstSnEq(Expressions.asString("BBS1"), QComment.comment.pstSn));
-    }
 }

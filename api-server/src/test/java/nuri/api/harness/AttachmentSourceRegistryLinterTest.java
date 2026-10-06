@@ -159,8 +159,6 @@ class AttachmentSourceRegistryLinterTest {
                             "popupRepository.save(")),
             entry("business-app/src/main/java/nuri/business/service/system/content/popup/PopupService.java#updatePopup",
                     guarded("attachmentAssignmentPolicy.assertAssignable(requestedAtchFileSn)", "popup.update(")),
-            entry("business-app/src/main/java/nuri/business/service/system/content/popup/PopupService.java#getPopupWhiteList",
-                    readOnly()),
             entry("business-app/src/main/java/nuri/business/service/system/content/popup/dto/PopupDto.java#from",
                     readOnly()));
 

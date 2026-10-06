@@ -1,6 +1,7 @@
 package nuri.business.domain.informalsanction;
 
 import nuri.foundation.domain.common.BaseEntity;
+import nuri.foundation.core.validation.Ymd;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -111,7 +112,7 @@ public class InformalSanction extends BaseEntity {
         if (atrzCycl.compareTo(BigDecimal.valueOf(9_999_999)) >= 0) {
             throw new nuri.foundation.core.exception.BusinessException(nuri.foundation.core.exception.CommonErrorCode.INVALID_STATE);
         }
-        validateDateFormat(reqYmd);
+        Ymd.validateCompatible(reqYmd);
         this.taskSeCd = taskSeCd;
         this.reqYmd = reqYmd;
         this.docTtl = docTtl;
@@ -125,7 +126,7 @@ public class InformalSanction extends BaseEntity {
 
     public void update(String taskSeCd, String reqYmd, String aprvrId) {
         validateRequestedState();
-        validateDateFormat(reqYmd);
+        Ymd.validateCompatible(reqYmd);
         this.taskSeCd = taskSeCd;
         this.reqYmd = reqYmd;
         this.aprvrId = aprvrId;
@@ -172,21 +173,4 @@ public class InformalSanction extends BaseEntity {
         }
     }
 
-
-    private void validateDateFormat(String ymd) {
-        if (ymd == null || ymd.isEmpty()) {
-            return; // null 또는 빈 문자열 허용 (레거시 대응)
-        }
-        String cleanYmd = ymd.replace("-", "");
-        if (cleanYmd.length() != 8) {
-            throw new nuri.foundation.core.exception.BusinessException(
-                "날짜 형식은 8자리 YYYYMMDD 또는 YYYY-MM-DD 여야 합니다.", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
-        }
-        try {
-            java.time.format.DateTimeFormatter.BASIC_ISO_DATE.parse(cleanYmd);
-        } catch (Exception e) {
-            throw new nuri.foundation.core.exception.BusinessException(
-                "유효하지 않은 날짜 형식입니다: " + ymd, nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
-        }
-    }
 }

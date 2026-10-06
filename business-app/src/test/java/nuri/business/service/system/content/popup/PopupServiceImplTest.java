@@ -416,26 +416,6 @@ class PopupServiceImplTest {
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
     }
 
-    // ==========================================
-    // 3. 화이트리스트 추출 테스트
-    // ==========================================
-
-    @Test
-    @DisplayName("팝업 화이트리스트 추출")
-    void getPopupWhiteList_ShouldReturnUrls() {
-        // given
-        Popup p1 = Popup.builder().popupSn(1L).fileUrl("/page1.html").build();
-        Popup p2 = Popup.builder().popupSn(2L).fileUrl("/page2.html").build();
-        given(popupRepository.findAll()).willReturn(List.of(p1, p2));
-
-        // when
-        List<String> whitelist = popupService.getPopupWhiteList();
-
-        // then
-        assertThat(whitelist).hasSize(2);
-        assertThat(whitelist).containsExactly("/page1.html", "/page2.html");
-    }
-
     @ParameterizedTest(name = "{0} denies {1} before accessing business dependencies")
     @MethodSource("deniedWrites")
     void writesRequireTheirExactPermission(String operation, String identity) {

@@ -119,7 +119,7 @@ pnpm -C frontend exec tsc --noEmit        # 프론트엔드 타입 무결성
 ```
 
 > `delete-domain.ps1`은 [재사용 프로필 manifest](../../config/reusable-base-profiles.json)를 SSOT 로 소비한다. manifest 에 없는 도메인명은 즉시 에러이고, `clusters`(예: `informalsanction`→`operation`, `board`→`comment`·`scrap`·`dashboard`)는 자동 동반 삭제된다. 삭제 후에는 잔존 Java 참조와 `tb_menu_info` 잔존 시드 라우트 후보를 경고로 출력하므로, 메뉴 정리는 후속 versioned migration 으로 수행한다. frontend 경로는 manifest 가 pack 단위(`frontend.removePaths`)로만 소유하므로 pack 도메인 전체를 지정할 때만 일괄 삭제되며, 그 외 화면 제거는 [재사용 Base 가이드](./reusable-base-guide.md)의 projection 을 사용한다. 삭제 대상 후보(`business-app`)와 필수 유지(`business-core`)의 분류는 [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md)이 정본이며, 수동 삭제 후에는 반드시 `clean compileJava compileTestJava`로 회귀 확인한다.
-> FE 라우트는 문자열 URL 참조를 타입 검사만으로 모두 잡을 수 없으므로 `frontend/src/config/project-modules.ts` 매니페스트도 함께 정리한다.
+> FE 라우트는 문자열 URL 참조를 타입 검사만으로 모두 잡을 수 없으므로 [재사용 Base 가이드](./reusable-base-guide.md)의 projection·도달성 검사로 메뉴와 화면의 잔존 참조를 함께 확인한다.
 
 ### 5.2 신규 도메인 추가(스캐폴드)
 

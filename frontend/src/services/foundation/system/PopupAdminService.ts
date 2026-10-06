@@ -15,10 +15,6 @@ import {
  * 팝업李관리님쒕퉬님(Admin)
  */
 class PopupAdminService extends AdminService {
-  constructor() {
-    super('/popups', 'system');
-  }
-
   /** 팝업李목록 조회 */
   async getPopupList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Popup>> {
     const sort = Array.isArray(params?.sort)

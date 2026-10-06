@@ -25,10 +25,6 @@ interface FileVO {
  * 백엔드 FileApiController 연동 (/api/v1/files)
  */
 class FileService extends ApiService {
-  constructor() {
-    super('files');
-  }
-
   /**
    * 파일 업로드
    * @param files 업로드할 파일 리스트

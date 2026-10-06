@@ -1,4 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
+import { toAdminPageQuery } from '@/services/core/admin-page-query';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { Banner } from '@/types/foundation/banner';
 import { AxiosRequestConfig } from 'axios';
@@ -17,26 +18,9 @@ type BannerListQuery = NonNullable<operations['getBanners']['parameters']['query
 
 function toBannerListQuery(params?: SearchParams): BannerListQuery {
  if (!params) return { keyword: '' };
- const rawSort = params.sort;
  return {
  keyword: params.keyword || params.searchKeyword || params.searchWrd || '',
- ...(params.pageIndex !== undefined
- ? { page: Math.max(0, params.pageIndex - 1) }
- : params.page !== undefined
- ? { page: params.page }
- : params.pageNo !== undefined
- ? { page: Math.max(0, params.pageNo - 1) }
- : {}),
- ...(params.size !== undefined
- ? { size: params.size }
- : params.pageUnit !== undefined
- ? { size: params.pageUnit }
- : params.pageSize !== undefined
- ? { size: params.pageSize as number }
- : params.recordCountPerPage !== undefined
- ? { size: params.recordCountPerPage as number }
- : {}),
- ...(rawSort === undefined ? {} : { sort: rawSort as string[] }),
+ ...toAdminPageQuery(params),
  };
 }
 
@@ -59,10 +43,6 @@ function requireBannerPage(
  * 배너 관리님쒕퉬님(Admin)
  */
 class BannerAdminService extends AdminService {
- constructor() {
- super('/banners', 'system');
- }
-
  /** 배너 목록 조회 */
  async getBannerList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Banner>> {
  const response = await this.executeGenerated(getBannersOperation, {

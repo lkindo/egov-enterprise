@@ -57,10 +57,6 @@ function requireGuidancePage(
  * 이 서비스가 그 마지막 한 겹이다.
  */
 class InternetSvcGuidanceAdminService extends ApiService {
-  constructor() {
-    super('/admin/system/isg');
-  }
-
   async getGuidanceList(
     params: InternetSvcGuidanceSearchParams = {},
     config?: AxiosRequestConfig,

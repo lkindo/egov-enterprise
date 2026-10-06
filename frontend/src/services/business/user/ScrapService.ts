@@ -22,10 +22,6 @@ export type ScrapListParams = Required<
 >;
 
 class ScrapService extends ApiService {
-  constructor() {
-    super('/scraps');
-  }
-
   /**
    * 나의 스크랩목록 조회
    */

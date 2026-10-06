@@ -50,7 +50,7 @@ public class NoteService {
 
     public Page<NoteDto> getReceivedNotes(String userId, String searchWrd, Pageable pageable) {
         Page<NoteRecptn> page = noteRecptnRepository
-                .searchNoteRecptns(null, searchWrd, userId, Objects.requireNonNull(pageable));
+                .searchNoteRecptns(searchWrd, userId, Objects.requireNonNull(pageable));
         Map<String, String> names = userNames(page.getContent().stream()
                 .map(r -> r.getNoteDsptch() != null ? r.getNoteDsptch().getSndrId() : null)
                 .toList());
@@ -79,7 +79,7 @@ public class NoteService {
      */
     public Page<NoteDto> getSentNotes(String userId, String searchWrd, Pageable pageable) {
         Page<NoteTrnsmit> page = noteTrnsmitRepository
-                .searchNoteTrnsmits(null, searchWrd, userId, Objects.requireNonNull(pageable));
+                .searchNoteTrnsmits(searchWrd, userId, Objects.requireNonNull(pageable));
         if (page.isEmpty()) {
             return page.map(this::convertToDto);
         }

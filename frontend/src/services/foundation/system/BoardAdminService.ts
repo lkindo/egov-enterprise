@@ -40,10 +40,6 @@ const BoardMasterBatchDeleteBoundarySchema = BoardMasterBatchDeleteRequestSchema
  */
 
 class BoardAdminService extends AdminService {
-    constructor() {
-        super('/board-masters');
-    }
-
     /** 게시판 목록 조회 */
     async getBoardMasterList(params: BoardMasterListParams = {}, config?: AxiosRequestConfig): Promise<PageResponse<BoardMasterSummary>> {
         const response = await this.executeGenerated(getBoardMasterListOperation, {

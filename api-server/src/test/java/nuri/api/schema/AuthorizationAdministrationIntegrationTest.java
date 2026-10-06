@@ -1,12 +1,18 @@
 package nuri.api.schema;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import javax.sql.DataSource;
 import nuri.business.security.authorization.AuthorizationSnapshotService;
 import nuri.business.security.authorization.PermissionCodes;
@@ -49,6 +55,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
     private AuthorizationAdministrationService service;
     private AuthorizationSnapshotService snapshots;
     private TransactionTemplate transaction;
+    private final AtomicInteger selectCount = new AtomicInteger();
 
     @AfterEach
     void clearAuthentication() {
@@ -61,7 +68,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         try (Connection connection=openConnection()) {
         }
         DataSource source=new AbstractDataSource() {
-            @Override public Connection getConnection() throws SQLException { return openConnection(); }
+            @Override public Connection getConnection() throws SQLException { return countSql(openConnection(),Connection.class,null); }
             @Override public Connection getConnection(String username,String password) throws SQLException {
                 throw new java.sql.SQLFeatureNotSupportedException("Test datasource uses its isolated database credentials");
             }
@@ -104,6 +111,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         verifyBatchSnapshotsAndUnknownOperationFailClosed();
         verifyGroupMemberDeltaKeepsGroupDraftsCurrent();
         verifyGroupCopyCarriesGrantsWithProvenanceButNoMembers();
+        verifyBoundedSnapshotReadsAndIndividualVersions();
         verifyStalePrincipalCannotWriteAfterDatabaseRevocation();
         verifyAuditFailureRollsBackTheActualServiceMutation();
         verifyExplicitMenuGrantCreationRevocationAndDeletion();
@@ -623,6 +631,103 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         assertThat(service.managerCount()).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_authrt_chg_hstry WHERE chg_type_cd='REMOVE' "
                 + "AND scrty_dcsn_trgt_id IN ('T_MANAGER_USER_A','T_MANAGER_USER_B')",Long.class)).isEqualTo(1);
+    }
+
+    /** Counts actual JDBC execution, including both plain and prepared statements, against PostgreSQL. */
+    private <T> T countSql(T delegate, Class<T> contract, String preparedSql) {
+        return contract.cast(Proxy.newProxyInstance(contract.getClassLoader(),new Class<?>[]{contract},(proxy,method,args) -> {
+            if (method.getName().equals("equals")) return proxy == args[0];
+            if (method.getName().equals("hashCode")) return System.identityHashCode(proxy);
+            try {
+                Object result = method.invoke(delegate,args);
+                String sql = preparedSql != null ? preparedSql
+                        : args != null && args.length > 0 && args[0] instanceof String text ? text : null;
+                if (method.getName().startsWith("execute") && sql != null
+                        && sql.stripLeading().regionMatches(true,0,"SELECT",0,6)) selectCount.incrementAndGet();
+                if (result instanceof PreparedStatement statement) return countSql(statement,PreparedStatement.class,(String) args[0]);
+                if (result instanceof Statement statement) return countSql(statement,Statement.class,null);
+                return result;
+            } catch (InvocationTargetException failure) {
+                throw failure.getCause();
+            }
+        }));
+    }
+
+    private <T> T withSelectCount(int expected, Supplier<T> query) {
+        selectCount.set(0);
+        T result = query.get();
+        assertThat(selectCount.get()).as("actual JDBC SELECT executions").isEqualTo(expected);
+        return result;
+    }
+
+    private void verifyBoundedSnapshotReadsAndIndividualVersions() {
+        jdbc.update("INSERT INTO tb_ognz_info(ognz_id,ognz_nm) VALUES('T_READ_DEPT','조회 시험')");
+        var empty = withSelectCount(2,() -> service.departmentMemberships("T_READ_DEPT"));
+        assertThat(empty.users()).isEmpty();
+        assertThat(empty.complete()).isTrue();
+        assertThat(empty.version()).isEqualTo(AuthorizationSnapshotService.digest(
+                PermissionCodes.CATALOG_VERSION + "\nT_READ_DEPT\n[]"));
+
+        service.createGroup(new CreateGroup("T_READ_GROUP","조회 시험",null));
+        int originalGroupCount = service.grantMatrix().groups().size();
+        for (int population : List.of(1,25)) {
+            for (int i = population == 1 ? 0 : 1; i < population; i++) {
+                String id = "T_READ_USER_" + i;
+                insertUser(id);
+                jdbc.update("UPDATE tb_user_info SET ognz_id='T_READ_DEPT' WHERE esntl_id=?",id);
+                if (i % 2 == 0) replaceGroups(id,List.of("T_READ_GROUP","T_MULTI_A"));
+                if (i > 0) {
+                    // These groups deliberately have neither grants nor audit rows (the zero-version suffix case).
+                    jdbc.update("INSERT INTO tb_authrt_info(authrt_cd,authrt_nm) VALUES(?,?)","T_READ_GROUP_" + i,"조회 " + i);
+                }
+            }
+
+            var department = withSelectCount(4,() -> service.departmentMemberships("T_READ_DEPT"));
+            assertThat(department.complete()).isTrue();
+            assertThat(department.users()).hasSize(population).allSatisfy(member -> {
+                var individual = service.memberships(member.userId());
+                assertThat(member.groups()).isEqualTo(individual.groups());
+                assertThat(member.version()).isEqualTo(individual.version());
+                assertThat(member.complete()).isTrue();
+            });
+            assertThat(department.users()).extracting(member -> member.userId()).containsExactlyElementsOf(
+                    jdbc.queryForList("SELECT esntl_id FROM tb_user_info WHERE ognz_id='T_READ_DEPT' ORDER BY esntl_id",String.class));
+            assertThat(department.version()).isEqualTo(AuthorizationSnapshotService.digest(
+                    PermissionCodes.CATALOG_VERSION + "\nT_READ_DEPT\n" + department.users()));
+
+            var matrix = withSelectCount(3,service::grantMatrix);
+            assertThat(matrix.catalogVersion()).isEqualTo(PermissionCodes.CATALOG_VERSION);
+            assertThat(matrix.groups()).hasSize(originalGroupCount + population - 1)
+                    .allSatisfy(group -> assertThat(group).isEqualTo(service.group(group.code())));
+            var summaries = withSelectCount(3,service::groups);
+            assertThat(summaries).containsExactlyElementsOf(matrix.groups().stream().map(group ->
+                    new nuri.business.service.auth.dto.AuthorizationDto.GroupSummary(
+                            group.code(),group.name(),group.description(),group.version())).toList());
+        }
+
+        var departmentBeforeAba = service.departmentMemberships("T_READ_DEPT");
+        var groupBeforeMembershipChange = service.group("T_READ_GROUP");
+        replaceGroups("T_READ_USER_0",List.of("T_MULTI_A"));
+        replaceGroups("T_READ_USER_0",List.of("T_READ_GROUP","T_MULTI_A"));
+        var departmentAfterAba = withSelectCount(4,() -> service.departmentMemberships("T_READ_DEPT"));
+        assertThat(departmentAfterAba.users()).extracting(member -> member.groups())
+                .containsExactlyElementsOf(departmentBeforeAba.users().stream().map(member -> member.groups()).toList());
+        assertThat(departmentAfterAba.version()).isNotEqualTo(departmentBeforeAba.version());
+        assertThat(departmentAfterAba.users()).filteredOn(member -> member.userId().equals("T_READ_USER_0"))
+                .singleElement().satisfies(member -> assertThat(member.version()).isEqualTo(service.memberships(member.userId()).version()));
+        var matrixAfterMembershipChange = withSelectCount(3,service::grantMatrix);
+        assertThat(matrixAfterMembershipChange.groups()).filteredOn(group -> group.code().equals("T_READ_GROUP"))
+                .singleElement().isEqualTo(groupBeforeMembershipChange);
+
+        replaceGrants("T_READ_GROUP",List.of(new Grant("OPERATION","BOARD_READ")));
+        replaceGrants("T_READ_GROUP",List.of());
+        var matrixAfterGrantAba = withSelectCount(3,service::grantMatrix);
+        assertThat(matrixAfterGrantAba.groups()).filteredOn(group -> group.code().equals("T_READ_GROUP"))
+                .singleElement().satisfies(group -> {
+                    assertThat(group.grants()).isEqualTo(groupBeforeMembershipChange.grants());
+                    assertThat(group.version()).isNotEqualTo(groupBeforeMembershipChange.version());
+                    assertThat(group).isEqualTo(service.group(group.code()));
+                });
     }
 
     private void insertUser(String id) {

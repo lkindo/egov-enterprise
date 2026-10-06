@@ -119,13 +119,6 @@ class UserRepositoryTest extends PersistenceTestSupport {
     }
 
     @Test
-    @DisplayName("권한 정보를 포함한 모든 사용자 조회")
-    void findAllWithAuthorities() {
-        List<Object[]> result = userRepository.findAllWithAuthorities();
-        assertThat(result).isNotEmpty();
-    }
-
-    @Test
     @DisplayName("getPagedUserList - 키워드 없음")
     void getPagedUserList_NoKeyword() {
         var result = userRepository.getPagedUserList(null, UserListFilter.NONE, PageRequest.of(0, 10));

@@ -258,7 +258,7 @@ vi.mock('@/components/admin/user/AdminPasswordResetForm', () => ({
 }));
 vi.mock('@/services/foundation/system/DeptAdminService', () => ({
   deptAdminService: {
-    getDeptList: vi.fn(),
+    getDeptTree: vi.fn(),
     createDept: vi.fn(),
     updateDept: vi.fn(),
     deleteDept: vi.fn(),
@@ -334,13 +334,10 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     auth.permissions = FULL_PERMISSIONS;
     vi.mocked(userAdminService.getUserList).mockResolvedValue(listPage as any);
     vi.mocked(userAdminService.getUser).mockResolvedValue(detailRecord as any);
-    vi.mocked(deptAdminService.getDeptList).mockResolvedValue({
-      list: [
-        { ognzId: 'D-100', ognzNm: '기획부', upOgnzId: null },
-        { ognzId: 'D-200', ognzNm: '개발부', upOgnzId: null },
-      ],
-      total: 2,
-    } as any);
+    vi.mocked(deptAdminService.getDeptTree).mockResolvedValue([
+      { ognzId: 'D-100', ognzNm: '기획부' },
+      { ognzId: 'D-200', ognzNm: '개발부' },
+    ]);
   });
 
   it('부서 route에만 A2 선택·방향키·상세 진입 계약을 적용한다', async () => {

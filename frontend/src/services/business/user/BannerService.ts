@@ -10,10 +10,6 @@ import { getReflectedBannersOperation } from '@/types/generated-operations';
  * 일반 사용자 대시보드에서 403 없이 활성 배너를 받는다. (팝업의 PopupUserService와 동일 패턴)
  */
 class BannerUserService extends UserService {
-  constructor() {
-    super('/banners');
-  }
-
   /** 메인화면 노출 배너 목록 */
   async getReflectedBanners(config?: AxiosRequestConfig): Promise<PublicBanner[]> {
     const response = await this.executeGenerated(getReflectedBannersOperation, { config });

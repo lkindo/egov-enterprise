@@ -25,6 +25,12 @@ import {
   sep,
 } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import {
+  canStartRegexAfterValue,
+  readRegexLiteral,
+  skipBlockComment,
+  skipLineComment,
+} from './source-lexing.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const DEFAULT_REPO_ROOT = resolve(dirname(SCRIPT_PATH), '..');
@@ -229,16 +235,6 @@ function readQuoted(source, start, quote) {
   return { end: source.length, value, closed: false };
 }
 
-function skipLineComment(source, start) {
-  const end = source.indexOf('\n', start + 2);
-  return end < 0 ? source.length : end;
-}
-
-function skipBlockComment(source, start) {
-  const close = source.indexOf('*/', start + 2);
-  return close < 0 ? -1 : close + 2;
-}
-
 function readTemplate(source, start) {
   let expressionDepth = 0;
   let interpolated = false;
@@ -315,32 +311,6 @@ function readTemplate(source, start) {
   }
 
   return { end: source.length, value: '', closed: false, interpolated };
-}
-
-function canStartRegexAfterValue(previous) {
-  return previous === undefined
-    || ['(', '[', '{', ',', ';', ':', '=', '!', '?', '&', '|', '+', '-', '*', '%', '^', '~', '=>'].includes(previous)
-    || ['return', 'throw', 'case', 'delete', 'void', 'typeof', 'instanceof', 'in', 'of', 'yield', 'await'].includes(previous);
-}
-
-function readRegexLiteral(source, start) {
-  let inCharacterClass = false;
-  for (let index = start + 1; index < source.length; index += 1) {
-    const char = source[index];
-    if (char === '\n' || char === '\r') return undefined;
-    if (char === '\\') {
-      index += 1;
-      continue;
-    }
-    if (char === '[') inCharacterClass = true;
-    else if (char === ']') inCharacterClass = false;
-    else if (char === '/' && !inCharacterClass) {
-      let end = index + 1;
-      while (end < source.length && /[A-Za-z]/.test(source[end])) end += 1;
-      return { end };
-    }
-  }
-  return undefined;
 }
 
 /**

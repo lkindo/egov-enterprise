@@ -14,10 +14,6 @@ export type NotificationDispatchInput = GeneratedOperationRequest<'dispatchNotif
  * 존재를 확인한 뒤 사람마다 알림 행을 만든다. 응답은 만든 건수다.
  */
 class NotificationAdminService extends ApiService {
-  constructor() {
-    super('admin/notifications');
-  }
-
   async dispatch(input: NotificationDispatchInput, config?: AxiosRequestConfig): Promise<number> {
     return this.executeGenerated(dispatchNotificationsOperation, { body: input, config }) as Promise<number>;
   }

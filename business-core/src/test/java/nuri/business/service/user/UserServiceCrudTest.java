@@ -146,18 +146,6 @@ class UserServiceCrudTest {
   }
 
   @Test
-  @DisplayName("사용자 목록 조회 성공")
-  void getUserList_success() {
-    when(userRepository.findAllWithAuthorities()).thenReturn(java.util.Collections.singletonList(new Object[]{mockUser, null}));
-    when(authorizationSnapshots.loadAll(any())).thenReturn(java.util.Map.of("USR_1234567890123456",new nuri.business.security.authorization.AuthorizationSnapshotService.Snapshot(List.of("ROLE_USER"),List.of(),"version")));
-
-    List<UserDto> result = userService.getUserList();
-
-    assertThat(result).isNotNull().hasSize(1);
-    assertThat(result.get(0).userId()).isEqualTo("testUser");
-  }
-
-  @Test
   @DisplayName("페이지별 사용자 목록 조회 성공")
   void getPagedUserList_success() {
     UserDto userDto = UserDto.builder().userId("testUser").userNm("테스트사용자").esntlId("USR_1234567890123456").build();
@@ -165,7 +153,7 @@ class UserServiceCrudTest {
     when(userRepository.getPagedUserList(any(), any(), any())).thenReturn(page);
     when(authorizationSnapshots.loadAll(any())).thenReturn(java.util.Map.of("USR_1234567890123456",new nuri.business.security.authorization.AuthorizationSnapshotService.Snapshot(List.of("ROLE_USER"),List.of(),"version")));
 
-    Page<UserDto> result = userService.getUserPage(PageRequest.of(0, 10));
+    Page<UserDto> result = userService.getPagedUserList(null, nuri.business.domain.user.repository.UserListFilter.NONE, PageRequest.of(0, 10));
 
     assertThat(result).isNotNull().hasSize(1);
     assertThat(result.getContent().get(0).userId()).isEqualTo("testUser");

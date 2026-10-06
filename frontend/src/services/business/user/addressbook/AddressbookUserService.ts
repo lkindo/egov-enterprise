@@ -35,10 +35,6 @@ export interface AddressBookUserSelection {
  * 주소록 관리 서비스 (Addressbook Service)
  */
 class AddressbookUserService extends UserService {
-  constructor() {
-    super('/address-books');
-  }
-
   /**
    * 주소록 목록 조회
    */

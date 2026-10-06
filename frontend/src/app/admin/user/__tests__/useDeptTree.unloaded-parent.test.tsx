@@ -17,17 +17,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDeptTree } from '../useDeptTree';
 import type { Department } from '@/services/foundation/system/DeptAdminService';
 import type { FlattenedDept } from '../departments/treeUtils';
-import type { PageResponse } from '@/types/foundation/system';
 
 vi.mock('@/services/foundation/system/DeptAdminService', () => ({
-  deptAdminService: { getDeptList: vi.fn() },
+  deptAdminService: { getDeptTree: vi.fn() },
 }));
 
 const ROOT: Department = { ognzId: 'ROOT', ognzNm: '본부' };
 /** 상위(MISSING)가 조회 결과에 없다 — 검색으로 좁혔을 때 실제로 일어나는 모양이다. */
 const ORPHAN: Department = { ognzId: 'ORPHAN', ognzNm: '외부팀', upOgnzId: 'MISSING' };
 
-const seed: PageResponse<Department> = { list: [ROOT, ORPHAN], total: 2, page: 1, size: 1000, totalPage: 1 };
+const seed: Department[] = [ROOT, ORPHAN];
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -47,7 +46,7 @@ const findNode = (items: readonly FlattenedDept[], id: string): FlattenedDept =>
 describe('useDeptTree — 상위를 모르는 부서의 드래그', () => {
   beforeEach(async () => {
     const { deptAdminService } = await import('@/services/foundation/system/DeptAdminService');
-    vi.mocked(deptAdminService.getDeptList).mockResolvedValue(seed);
+    vi.mocked(deptAdminService.getDeptTree).mockResolvedValue(seed);
   });
 
   it('끌지 않으면 표시가 남아 저장이 상위를 건드리지 않는다', async () => {
@@ -99,13 +98,12 @@ describe('useDeptTree — 상위를 모르는 부서의 드래그', () => {
   });
 
   it('끈 부서만 표시가 풀린다 — 함께 있던 다른 부서는 그대로다', async () => {
-    const withSecondOrphan: PageResponse<Department> = {
+    const withSecondOrphan: Department[] = [
       ...seed,
-      list: [ROOT, ORPHAN, { ognzId: 'OTHER', ognzNm: '기타팀', upOgnzId: 'ALSO_MISSING' }],
-      total: 3,
-    };
+      { ognzId: 'OTHER', ognzNm: '기타팀', upOgnzId: 'ALSO_MISSING' },
+    ];
     const { deptAdminService } = await import('@/services/foundation/system/DeptAdminService');
-    vi.mocked(deptAdminService.getDeptList).mockResolvedValue(withSecondOrphan);
+    vi.mocked(deptAdminService.getDeptTree).mockResolvedValue(withSecondOrphan);
 
     const { result } = renderHook(
       () => useDeptTree({ deptKeyword: '', initialDepts: withSecondOrphan, enabled: true, onDragSelect: () => {} }),

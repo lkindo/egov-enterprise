@@ -19,10 +19,6 @@ export interface Hpcm {
 }
 
 class HpcmAdminService extends ApiService {
-  constructor() {
-    super('help/hpcm'); // /api/v1/help/hpcm
-  }
-
   /** 도움말 목록 조회 */
   async getHpcmList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Hpcm>> {
     const sort = Array.isArray(params?.sort)

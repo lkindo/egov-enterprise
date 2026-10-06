@@ -24,13 +24,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import nuri.business.security.service.EgovPasswordEncoder;
-import java.util.HashMap;
+import nuri.business.security.service.PasswordEncoders;
 import java.util.List;
-import java.util.Map;
 
 @Configuration
 @Profile("!mock-security & !mock-security-test & (default | local | dev | prod | security-test | e2e | test)")
@@ -83,10 +80,7 @@ public class ApiSecurityConfig {
 
         @Bean
         public PasswordEncoder passwordEncoder() {
-                String encodingId = "bcrypt";
-                Map<String, PasswordEncoder> encoders = new HashMap<>();
-                encoders.put("bcrypt", new BCryptPasswordEncoder());
-                return new DelegatingPasswordEncoder(encodingId, encoders);
+                return PasswordEncoders.create();
         }
 
         @Bean

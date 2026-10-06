@@ -75,6 +75,21 @@ public class ApiSecurityConfigTest extends ControllerTestSupport {
     }
 
     @Test
+    @DisplayName("API와 core fallback의 신규 암호가 서로 검증되고 평문은 거부된다")
+    void apiAndCorePasswordPoliciesRemainCompatible() {
+        PasswordEncoder fallback = new nuri.business.security.config.SecurityConfig(jwtTokenProvider).passwordEncoder();
+        String apiHash = passwordEncoder.encode("isolated-password-fixture");
+        String coreHash = fallback.encode("isolated-password-fixture");
+
+        assertThat(apiHash).startsWith("{bcrypt}$2a$10$");
+        assertThat(fallback.matches("isolated-password-fixture", apiHash)).isTrue();
+        assertThat(passwordEncoder.matches("isolated-password-fixture", coreHash)).isTrue();
+        assertThat(passwordEncoder.matches("wrong-password-fixture", coreHash)).isFalse();
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> passwordEncoder.matches("fixture", "{noop}fixture"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     @DisplayName("공개 API 엔드포인트 - 인증 없이 접근 가능")
     void publicEndpointsTest() throws Exception {
         // [A-1] 종전에는 not(401)/not(403) 뿐이라 서버가 500 을 뱉어도 "공개 접근 가능" 으로 통과했다.

@@ -45,10 +45,6 @@ function toDateRange(params?: DateRange & { statsKind?: string }): DateRange {
 }
 
 class StatsAdminService extends AdminService {
-  constructor() {
-    super('/statistics');
-  }
-
   /** 요약 통계 조회 */
   async getSummary(config?: AxiosRequestConfig): Promise<Record<string, unknown>> {
     const response = await this.executeGenerated(getSummaryOperation, { config });

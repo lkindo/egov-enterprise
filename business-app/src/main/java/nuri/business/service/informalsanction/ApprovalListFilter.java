@@ -1,12 +1,10 @@
 package nuri.business.service.informalsanction;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.Set;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.core.validation.Ymd;
 
 /**
  * 결재 목록 조회 조건(2026-09-26 DIP B5 F4) — 제목 검색어·요청일 기간·문서 상태.
@@ -46,9 +44,8 @@ public record ApprovalListFilter(String keywordPattern, String fromYmd, String t
     private static String compactDate(String value) {
         if (value == null || value.isBlank()) return null;
         try {
-            return LocalDate.parse(value.trim().replace("-", ""), DateTimeFormatter.BASIC_ISO_DATE)
-                    .format(DateTimeFormatter.BASIC_ISO_DATE);
-        } catch (DateTimeParseException e) {
+            return Ymd.compact(value.trim());
+        } catch (BusinessException e) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "조회 기간은 yyyy-MM-dd 형식으로 입력해 주세요.");
         }
     }

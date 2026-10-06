@@ -1,5 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
+import { toAdminPageQuery } from '@/services/core/admin-page-query';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import type { operations } from '@/types/generated-api';
 import {
@@ -27,26 +28,9 @@ type DeptListQuery = NonNullable<operations['getDepts']['parameters']['query']>;
 
 function toDeptListQuery(params?: SearchParams): DeptListQuery {
   if (!params) return {};
-  const rawSort = params.sort;
   return {
     ...(params.keyword === undefined ? {} : { keyword: params.keyword }),
-    ...(params.pageIndex !== undefined
-      ? { page: Math.max(0, params.pageIndex - 1) }
-      : params.page !== undefined
-        ? { page: params.page }
-        : params.pageNo !== undefined
-          ? { page: Math.max(0, params.pageNo - 1) }
-          : {}),
-    ...(params.size !== undefined
-      ? { size: params.size }
-      : params.pageUnit !== undefined
-        ? { size: params.pageUnit }
-        : params.pageSize !== undefined
-          ? { size: params.pageSize as number }
-          : params.recordCountPerPage !== undefined
-            ? { size: params.recordCountPerPage as number }
-            : {}),
-    ...(rawSort === undefined ? {} : { sort: rawSort as string[] }),
+    ...toAdminPageQuery(params),
   };
 }
 
@@ -67,10 +51,6 @@ function requireDeptPage(
 
 /** 부서(조직) 관리 API 클라이언트 — /api/v1/admin/system/departments */
 class DeptAdminService extends AdminService {
-  constructor() {
-    super('/departments');
-  }
-
   /** 부서 목록 조회 (페이징) */
   async getDeptList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Department>> {
     const response = await this.executeGenerated(getDeptsOperation, {

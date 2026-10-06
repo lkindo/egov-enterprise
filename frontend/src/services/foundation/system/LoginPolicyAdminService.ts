@@ -27,10 +27,6 @@ export interface LoginPolicy {
  * 로그인 정책 관리 서비스 (Admin)
  */
 class LoginPolicyAdminService extends AdminService {
-  constructor() {
-    super('/login-policies');
-  }
-
   /** 로그인 정책 목록 조회 */
   async getLoginPolicyList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<LoginPolicy>> {
     const pageIndex = params?.pageIndex

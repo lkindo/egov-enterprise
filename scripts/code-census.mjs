@@ -9,23 +9,34 @@
  * 사용법:
  *   node scripts/code-census.mjs              # 사람이 읽는 표
  *   node scripts/code-census.mjs --json       # 기계 판독용
- *   node scripts/code-census.mjs --baseline   # 현재 값을 기준선으로 저장
- *   node scripts/code-census.mjs --diff       # 저장된 기준선 대비 델타
+ *   node scripts/code-census.mjs --baseline <file> # 명시한 파일에 비교용 snapshot 저장
+ *   node scripts/code-census.mjs --diff <file>     # 같은 측정 정의의 snapshot과 비교
  *
- * 기준선: .gemini/tasks/code-census-baseline.json
+ * 운영·테스트·생성물은 별도 모집단이다. 이 관측 도구는 품질 게이트나 현재 상태 원장이 아니다.
  */
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join, relative, resolve, sep } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { skipBlockComment, skipLineComment } from './source-lexing.mjs';
 
 const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
-const BASELINE_PATH = join(ROOT, '.gemini', 'tasks', 'code-census-baseline.json');
+export const MEASUREMENT_VERSION = 2;
 
 const BE_MODULES = ['foundation', 'business-core', 'business-app', 'api-server', 'migration-tool'];
 /** 스캔에서 제외한다 — 자동 산출물·의존성·빌드 결과는 최적화 대상이 아니다. */
 const SKIP_DIRS = new Set(['build', 'node_modules', '.git', '.next', '.gradle', 'coverage', 'test-results', 'playwright-report']);
-/** generated 파일은 codegen 이 소유한다. 손대면 codegen:verify 가 red 가 되고 그게 정상이다. */
-const GENERATED = /generated-api\.d\.ts$|generated-zod\.ts$|generated-operations\.ts$/;
+const normalize = (path) => path.split(sep).join('/');
+const isTest = (path) => /(?:^|\/)(?:__tests__|test|test-utils|mocks)\//.test(normalize(path))
+  || /\.(?:test|spec|stories|story)\.[cm]?[jt]sx?$/.test(path);
+
+// 이름만 generated-*인 수작성 transport는 제외하지 않는다.
+function isGenerated(path, source) {
+  if (/\/types\/generated-[^/]+$/.test(normalize(path))) return true;
+  const content = path.endsWith('.java') ? source.replace(/^\s*package [\w.]+;\s*/, '') : source;
+  const header = content.match(/^\s*(?:(?:\/\/[^\r\n]*(?:\r?\n|$)|\/\*[\s\S]*?\*\/)\s*)+/)?.[0] ?? '';
+  return /\bGenerated (?:by|from)\b|@generated\b|AUTO[- ]GENERATED/i.test(header);
+}
+const linesOf = (source) => source === '' ? [] : source.replace(/\r\n/g, '\n').replace(/\n$/, '').split('\n');
 
 function walk(dir, filter, out = []) {
   if (!existsSync(dir)) return out;
@@ -40,13 +51,55 @@ function walk(dir, filter, out = []) {
 }
 
 const isJava = (p) => p.endsWith('.java');
-const isTsx = (p) => (p.endsWith('.ts') || p.endsWith('.tsx')) && !GENERATED.test(p);
+const isTsx = (p) => p.endsWith('.ts') || p.endsWith('.tsx');
+
+/** Only a standalone string in the initial directive prologue is a client directive. */
+export function hasUseClientDirective(source) {
+  let index = source.charCodeAt(0) === 0xFEFF ? 1 : 0;
+  const skipTrivia = () => {
+    while (index < source.length) {
+      if (/\s/.test(source[index])) index += 1;
+      else if (source.startsWith('//', index)) index = skipLineComment(source, index);
+      else if (source.startsWith('/*', index)) {
+        const end = skipBlockComment(source, index);
+        if (end < 0) { index = source.length; return; }
+        index = end;
+      } else return;
+    }
+  };
+  while (index < source.length) {
+    skipTrivia();
+    const quote = source[index];
+    if (quote !== "'" && quote !== '"') return false;
+    const start = ++index;
+    // Skip escapes in preceding directives; only the literal spelling marks this file.
+    while (index < source.length && source[index] !== quote) {
+      if (/[\r\n\u2028\u2029]/.test(source[index])) return false;
+      if (source[index] === '\\') {
+        index += source[index + 1] === '\r' && source[index + 2] === '\n' ? 3 : 2;
+      } else index += 1;
+    }
+    if (index >= source.length) return false;
+    const value = source.slice(start, index++);
+    const end = index;
+    skipTrivia();
+    if (source[index] === ';') index += 1;
+    else if (index < source.length) {
+      // A newline does not terminate a string followed by a call/member/operator.
+      if (!/[\r\n\u2028\u2029]/.test(source.slice(end, index))
+        || (!/^(?:\+\+|--)/.test(source.slice(index)) && /^[([.`+*/%?&|^<>=,:-]/.test(source.slice(index)))
+        || /^(?:in|instanceof)\b/.test(source.slice(index))) return false;
+    }
+    if (value === 'use client') return true;
+  }
+  return false;
+}
 
 /** 주석·빈 줄을 분리해 센다. 주석 총량은 감축 목표가 아니라 관측 지표다. */
 function classify(files) {
   let total = 0, comment = 0, blank = 0;
   for (const f of files) {
-    for (const line of readFileSync(f, 'utf8').split('\n')) {
+    for (const line of linesOf(readFileSync(f, 'utf8'))) {
       total++;
       const t = line.trim();
       if (!t) blank++;
@@ -81,58 +134,78 @@ function duplication(files) {
   return { windows, files: involved.size };
 }
 
-function census() {
-  const beMain = BE_MODULES.flatMap((m) => walk(join(ROOT, m, 'src', 'main'), isJava));
+export function census(root = ROOT) {
+  const beAll = BE_MODULES.flatMap((m) => walk(join(root, m, 'src', 'main'), isJava));
+  const beGenerated = beAll.filter((f) => isGenerated(f, readFileSync(f, 'utf8')));
+  const generatedBackend = new Set(beGenerated);
+  const beMain = beAll.filter((f) => !generatedBackend.has(f));
   const beTest = BE_MODULES.flatMap((m) => [
-    ...walk(join(ROOT, m, 'src', 'test'), isJava),
-    ...walk(join(ROOT, m, 'src', 'testFixtures'), isJava),
+    ...walk(join(root, m, 'src', 'test'), isJava),
+    ...walk(join(root, m, 'src', 'testFixtures'), isJava),
   ]);
-  const feAll = walk(join(ROOT, 'frontend', 'src'), isTsx);
-  const feClient = feAll.filter((f) => f.endsWith('.tsx') && readFileSync(f, 'utf8').includes("'use client'"));
+  const feAll = walk(join(root, 'frontend', 'src'), isTsx);
+  const feTest = feAll.filter(isTest);
+  const feGenerated = feAll.filter((f) => !isTest(f) && isGenerated(f, readFileSync(f, 'utf8')));
+  const nonProduction = new Set([...feTest, ...feGenerated]);
+  const feMain = feAll.filter((f) => !nonProduction.has(f));
+  const feClient = feMain.filter((f) => hasUseClientDirective(readFileSync(f, 'utf8')));
 
   const beMainC = classify(beMain);
   const beTestC = classify(beTest);
-  const feC = classify(feAll);
+  const feC = classify(feMain);
   const feClientLoc = classify(feClient).loc;
 
-  // 600줄 초과 파일 — 코드 리뷰 정확성의 직접 저해 요인 (§1.3 성공 기준)
+  // 큰 파일은 검토 후보일 뿐, 길이 자체가 결함이나 성능을 뜻하지 않는다.
   const oversized = (files) => files
-    .map((f) => ({ file: relative(ROOT, f).split(sep).join('/'), loc: readFileSync(f, 'utf8').split('\n').length }))
+    .map((f) => ({ file: normalize(relative(root, f)), loc: linesOf(readFileSync(f, 'utf8')).length }))
     .filter((x) => x.loc > 600)
     .sort((a, b) => b.loc - a.loc);
 
+  const scale = {
+    beMain: beMainC,
+    beTest: beTestC,
+    beGenerated: classify(beGenerated),
+    frontend: { ...feC, clientFiles: feClient.length, clientLoc: feClientLoc },
+    frontendTest: classify(feTest),
+    frontendGenerated: classify(feGenerated),
+  };
   return {
-    scale: {
-      beMain: beMainC,
-      beTest: beTestC,
-      frontend: { ...feC, clientFiles: feClient.length, clientLoc: feClientLoc },
-      totalLoc: beMainC.loc + beTestC.loc + feC.loc,
+    measurementVersion: MEASUREMENT_VERSION,
+    definitions: {
+      lines: 'Physical lines including comments and blanks; final newline does not add a line.',
+      frontend: 'TS/TSX excluding tests, stories, mocks, test-utils and generated sources.',
+      generated: 'types/generated-* or a Generated by/from, @generated, AUTO-GENERATED header.',
+      clientRatio: 'Direct client-directive file LOC / production TS/TSX LOC; not bundle or runtime cost.',
+      duplication: 'Overlapping normalized 8-line windows across production files; not duplicate LOC.',
     },
-    // §1.3 목표 지표
+    scale: { ...scale, totalLoc: Object.values(scale).reduce((sum, group) => sum + group.loc, 0) },
     targets: {
-      oversizedFe: oversized(feAll).length,
+      oversizedFe: oversized(feMain).length,
       oversizedBe: oversized(beMain).length,
-      clientRatio: +(feClientLoc / feC.loc * 100).toFixed(1),
-      dupFe: duplication(feAll.filter((f) => f.endsWith('.tsx'))),
+      clientRatio: feC.loc ? +(feClientLoc / feC.loc * 100).toFixed(1) : 0,
+      dupFe: duplication(feMain),
       dupBeMain: duplication(beMain),
       dupBeTest: duplication(beTest),
     },
-    oversizedFiles: [...oversized(feAll), ...oversized(beMain)],
+    oversizedFiles: [...oversized(feMain), ...oversized(beMain)],
   };
 }
 
 function table(c) {
   const { scale, targets } = c;
-  const pct = (n, d) => `${(n / d * 100).toFixed(1)}%`;
+  const pct = (n, d) => `${(d ? n / d * 100 : 0).toFixed(1)}%`;
   console.log('\n=== 규모 ===');
   console.log(`BE main    : ${scale.beMain.files} 파일  ${scale.beMain.loc} LOC  (주석 ${pct(scale.beMain.comment, scale.beMain.loc)})`);
   console.log(`BE test    : ${scale.beTest.files} 파일  ${scale.beTest.loc} LOC  (주석 ${pct(scale.beTest.comment, scale.beTest.loc)})`);
-  console.log(`FE src     : ${scale.frontend.files} 파일  ${scale.frontend.loc} LOC  (주석 ${pct(scale.frontend.comment, scale.frontend.loc)})`);
+  console.log(`BE 생성    : ${scale.beGenerated.files} 파일  ${scale.beGenerated.loc} LOC`);
+  console.log(`FE 운영    : ${scale.frontend.files} 파일  ${scale.frontend.loc} LOC  (주석 ${pct(scale.frontend.comment, scale.frontend.loc)})`);
+  console.log(`FE 테스트  : ${scale.frontendTest.files} 파일  ${scale.frontendTest.loc} LOC (테스트 지원 코드 포함)`);
+  console.log(`FE 생성    : ${scale.frontendGenerated.files} 파일  ${scale.frontendGenerated.loc} LOC`);
   console.log(`합계       : ${scale.totalLoc} LOC`);
-  console.log('\n=== §1.3 목표 지표 (낮을수록 좋음) ===');
-  console.log(`600줄 초과 파일      : FE ${targets.oversizedFe} / BE ${targets.oversizedBe}   [목표 FE≤3 · BE 0]`);
-  console.log(`FE 클라이언트 LOC 비중: ${targets.clientRatio}%  (${scale.frontend.clientFiles} 파일)   [목표 ≤45%]`);
-  console.log(`교차 중복 8줄 윈도우  : FE ${targets.dupFe.windows} / BE main ${targets.dupBeMain.windows} / BE test ${targets.dupBeTest.windows}   [목표 각 50% 이하]`);
+  console.log(`\n=== 관측 지표 (측정 정의 v${c.measurementVersion}; 품질 판정 아님) ===`);
+  console.log(`운영 600줄 초과 파일 : FE ${targets.oversizedFe} / BE ${targets.oversizedBe}`);
+  console.log(`client directive LOC : ${targets.clientRatio}%  (${scale.frontend.clientFiles} 파일; 번들 비율 아님)`);
+  console.log(`교차 중복 8줄 윈도우 : FE ${targets.dupFe.windows} / BE main ${targets.dupBeMain.windows} / BE test ${targets.dupBeTest.windows}`);
   if (c.oversizedFiles.length) {
     console.log('\n--- 600줄 초과 파일 ---');
     for (const x of c.oversizedFiles) console.log(`  ${String(x.loc).padStart(5)}  ${x.file}`);
@@ -148,27 +221,49 @@ function flatten(o, prefix = '', out = {}) {
   return out;
 }
 
-const args = process.argv.slice(2);
-const result = census();
+export function comparison(base, current) {
+  if (base.measurementVersion !== current.measurementVersion
+    || JSON.stringify(base.definitions) !== JSON.stringify(current.definitions)) {
+    throw new Error('측정 정의가 다른 snapshot은 비교할 수 없습니다. 이전 결과를 보존하고 새 기준을 별도로 만드세요.');
+  }
+  const before = flatten(base);
+  const now = flatten(current);
+  if (Object.keys(before).length !== Object.keys(now).length
+    || Object.keys(now).some((key) => !Number.isFinite(before[key]) || !Number.isFinite(now[key]))) {
+    throw new Error('측정 항목이 누락되었거나 유효한 수치가 아닌 snapshot은 비교할 수 없습니다.');
+  }
+  return Object.keys(now).filter((key) => key !== 'measurementVersion')
+    .map((key) => ({ key, before: before[key], after: now[key], delta: now[key] - before[key] }))
+    .filter(({ delta }) => delta !== 0);
+}
 
-if (args.includes('--baseline')) {
-  writeFileSync(BASELINE_PATH, JSON.stringify(result, null, 2) + '\n');
-  console.log(`기준선 저장: ${relative(ROOT, BASELINE_PATH)}`);
-  table(result);
-} else if (args.includes('--diff')) {
-  if (!existsSync(BASELINE_PATH)) {
-    console.error('기준선이 없다. 먼저 --baseline 으로 저장할 것.');
-    process.exit(1);
+function runCli(args) {
+  const [mode, snapshot] = args;
+  if (mode && !['--baseline', '--diff', '--json'].includes(mode)) throw new Error(`Unknown option: ${mode}`);
+  if ((mode === '--baseline' || mode === '--diff') && (!snapshot || snapshot.startsWith('--'))) {
+    throw new Error(`${mode}에는 비교용 파일 경로가 필요합니다.`);
   }
-  const base = flatten(JSON.parse(readFileSync(BASELINE_PATH, 'utf8')));
-  const now = flatten(result);
-  console.log('\n=== 기준선 대비 델타 ===');
-  for (const k of Object.keys(now)) {
-    const d = now[k] - (base[k] ?? 0);
-    if (d !== 0) console.log(`  ${d > 0 ? '+' : ''}${d}\t${k}  (${base[k] ?? 0} → ${now[k]})`);
+  if (args.length > (mode === '--baseline' || mode === '--diff' ? 2 : 1)) throw new Error('Unexpected arguments');
+  const result = census();
+  if (mode === '--baseline') {
+    writeFileSync(resolve(snapshot), JSON.stringify(result, null, 2) + '\n', { flag: 'wx' });
+    console.log(`비교 snapshot 저장: ${snapshot}`);
+    table(result);
+  } else if (mode === '--diff') {
+    const delta = comparison(JSON.parse(readFileSync(resolve(snapshot), 'utf8')), result);
+    console.log('\n=== 기준선 대비 델타 ===');
+    for (const { key, before, after, delta: change } of delta) {
+      console.log(`  ${change > 0 ? '+' : ''}${change}\t${key}  (${before} → ${after})`);
+    }
+  } else if (mode === '--json') console.log(JSON.stringify(result, null, 2));
+  else table(result);
+}
+
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
+  try {
+    runCli(process.argv.slice(2));
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 1;
   }
-} else if (args.includes('--json')) {
-  console.log(JSON.stringify(result, null, 2));
-} else {
-  table(result);
 }

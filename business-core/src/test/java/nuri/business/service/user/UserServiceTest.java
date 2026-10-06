@@ -2,7 +2,6 @@ package nuri.business.service.user;
 
 import nuri.business.domain.user.repository.UserListFilter;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.user.dto.UserDto;
@@ -16,7 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -69,30 +67,26 @@ class UserServiceTest {
     private UserService userService;
 
     @Test
-    @DisplayName("사용자 목록 조회 테스트")
-    void getUserListTest() {
-        User user = User.builder()
+    @DisplayName("사용자 목록 페이지의 권한 snapshot을 일괄 조회한다")
+    void getPagedUserListLoadsAuthorization() {
+        UserDto user = UserDto.builder()
                 .userId("user1")
                 .userNm("User 1")
                 .esntlId("USR1")
-                .pswd("password")
                 .build();
-        
-        UserAuthority authority = UserAuthority.builder()
-                .scrtyDcsnTrgtId("USR1")
-                .authrtId("ROLE_USER")
-                .build();
-        
-        List<Object[]> list = new ArrayList<>();
-        list.add(new Object[]{user, authority});
-        
-        given(userRepository.findAllWithAuthorities()).willReturn(list);
-        given(authorizationSnapshots.loadAll(java.util.Set.of("USR1"))).willReturn(java.util.Map.of("USR1",new nuri.business.security.authorization.AuthorizationSnapshotService.Snapshot(List.of("ROLE_USER"),List.of(),"version")));
+        var pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        given(userRepository.getPagedUserList(null, UserListFilter.NONE, pageable))
+                .willReturn(new org.springframework.data.domain.PageImpl<>(List.of(user), pageable, 1));
+        given(authorizationSnapshots.loadAll(List.of("USR1"))).willReturn(java.util.Map.of("USR1",
+                new nuri.business.security.authorization.AuthorizationSnapshotService.Snapshot(
+                        List.of("ROLE_USER"), List.of("USER_READ"), "version")));
 
-        List<UserDto> result = userService.getUserList();
+        Page<UserDto> result = userService.getPagedUserList(null, UserListFilter.NONE, pageable);
 
-        assertNotNull(result);
-        verify(userRepository).findAllWithAuthorities();
+        assertThat(result.getContent()).extracting(UserDto::userId).containsExactly("user1");
+        assertThat(result.getContent().getFirst().groups()).containsExactly("ROLE_USER");
+        assertThat(result.getContent().getFirst().permissions()).containsExactly("USER_READ");
+        verify(authorizationSnapshots).loadAll(List.of("USR1"));
     }
 
     @Test
@@ -387,21 +381,11 @@ class UserServiceTest {
 
     @Test
     @DisplayName("사용자 목록 페이지 조회 (검색어 없음)")
-    void getUserPageTest() {
+    void getPagedUserListWithoutKeywordTest() {
         Page<UserDto> page = Page.empty();
         given(userRepository.getPagedUserList(isNull(), any(), any())).willReturn(page);
         
-        Page<UserDto> result = userService.getUserPage(org.springframework.data.domain.PageRequest.of(0, 10));
-        assertNotNull(result);
-    }
-
-    @Test
-    @DisplayName("사용자 목록 페이지 조회 (기본 페이징 적용)")
-    void searchUserPageTest() {
-        Page<UserDto> page = Page.empty();
-        given(userRepository.getPagedUserList(eq("search"), any(), any())).willReturn(page);
-        
-        Page<UserDto> result = userService.searchUserPage("search");
+        Page<UserDto> result = userService.getPagedUserList(null, UserListFilter.NONE, org.springframework.data.domain.PageRequest.of(0, 10));
         assertNotNull(result);
     }
 
@@ -417,10 +401,33 @@ class UserServiceTest {
             given(userRepository.findByUserId("user1")).willReturn(Optional.of(user));
 
             userService.deleteUser("user1");
+            verify(userRepository).findByUserId("user1");
+            verify(userRepository, never()).findById(anyString());
+            verify(userRepository, never()).existsById(anyString());
             // [V2_12] 종속 정리(권한매핑) 후 일괄 삭제로 전환됨
             verify(authorizationAdministration).removeDeletedUsers(List.of("USR_TEST_ESNTL_0001"));
             verify(userRepository).deleteAllInBatch(List.of(user));
         }
+    }
+
+    @Test
+    @DisplayName("사용자 삭제는 로그인 ID가 없으면 내부 ID를 한 번 조회한다")
+    void deleteUserFallsBackToEsntlIdOnce() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+        User user = User.builder().userId("user1").esntlId("USR1").userNm("User 1").pswd("encoded").build();
+        given(userRepository.findByUserId("USR1")).willReturn(Optional.empty());
+        given(userRepository.findById("USR1")).willReturn(Optional.of(user));
+
+        userService.deleteUser("USR1");
+
+        var lookups = inOrder(userRepository);
+        lookups.verify(userRepository).findByUserId("USR1");
+        lookups.verify(userRepository).findById("USR1");
+        verify(userRepository, never()).existsById(anyString());
+        verify(authorizationAdministration).removeDeletedUsers(List.of("USR1"));
+        verify(loginPolicyRepository).deleteAllByIdInBatch(List.of("user1"));
+        verify(userRepository).deleteAllInBatch(List.of(user));
     }
 
     @Test
@@ -431,6 +438,7 @@ class UserServiceTest {
                     nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));
             
             assertThrows(BusinessException.class, () -> userService.deleteUser("user1"));
+            verifyNoInteractions(userRepository, authorizationAdministration, eventPublisher);
         }
     }
 
@@ -441,9 +449,14 @@ class UserServiceTest {
             org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
                     nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             given(userRepository.findByUserId("user1")).willReturn(Optional.empty());
-            given(userRepository.existsById("user1")).willReturn(false);
-            
-            assertThrows(BusinessException.class, () -> userService.deleteUser("user1"));
+            given(userRepository.findById("user1")).willReturn(Optional.empty());
+
+            BusinessException error = assertThrows(BusinessException.class, () -> userService.deleteUser("user1"));
+            assertThat(error.getErrorCode()).isEqualTo(nuri.business.domain.user.exception.UserErrorCode.USER_NOT_FOUND);
+            verify(userRepository).findByUserId("user1");
+            verify(userRepository).findById("user1");
+            verify(userRepository, never()).existsById(anyString());
+            verifyNoInteractions(authorizationAdministration, eventPublisher);
         }
     }
 

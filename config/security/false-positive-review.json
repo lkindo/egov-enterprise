@@ -7,11 +7,11 @@
       "language": "java",
       "ruleId": "java/spring-disabled-csrf-protection",
       "file": "api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java",
-      "line": 139,
+      "line": 133,
       "fingerprint": "dec982be271ed34f:1",
-      "sourceSha256": "907be49f1f3d1327f0e1ecc20d176f3d6e7b923aeccea5c032ab755a987d1487",
+      "sourceSha256": "28ff03fa4633d1d09ad939e390985da2e8a4c1f28256d00821a9df2465ed1dcc",
       "expiresOn": "2026-12-08",
-      "reason": "Stateless Bearer API; Strict HttpOnly session cookies and Origin checks; cookie-authenticated SockJS transports separately require exact trusted Origin; legacy CSRF remains enabled. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-09-28: encoded token endpoint aliases now terminate with HTTP 400; existing Origin checks and Bearer forwarding are unchanged. Re-reviewed 2026-10-01: the proxy login redirect now carries only allowlisted structural query keys (bbsId, pstSn, tab, page) validated by pattern; Origin, Strict cookie and Bearer forwarding defenses are unchanged.",
+      "reason": "Stateless Bearer API; Strict HttpOnly session cookies and Origin checks; cookie-authenticated SockJS transports separately require exact trusted Origin; legacy CSRF remains enabled. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-09-28: encoded token endpoint aliases now terminate with HTTP 400; existing Origin checks and Bearer forwarding are unchanged. Re-reviewed 2026-10-01: the proxy login redirect now carries only allowlisted structural query keys (bbsId, pstSn, tab, page) validated by pattern; Origin, Strict cookie and Bearer forwarding defenses are unchanged. Re-reviewed 2026-10-06: extracted the identical BCrypt-only password factory and removed unused Environment constructor injection; fallback activation, filter chains, CSRF, Origin and Bearer defenses are unchanged.",
       "id": "SAST-FP-001",
       "supportingSources": [
         {
@@ -69,11 +69,11 @@
       "language": "java",
       "ruleId": "java/spring-disabled-csrf-protection",
       "file": "business-core/src/main/java/nuri/business/security/config/SecurityConfig.java",
-      "line": 60,
+      "line": 50,
       "fingerprint": "a46799a1753058c0:1",
-      "sourceSha256": "abb96530b1ebe5fe31581177fc9afed0201d91e3447f65090a9495c18a4d46ed",
+      "sourceSha256": "43b0d84bb652978d54b0d6daf3df7f26d1186877615ed5532ee6f99aac436c34",
       "expiresOn": "2026-12-08",
-      "reason": "Fallback core chain uses stateless Bearer authentication and Origin validation. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged.",
+      "reason": "Fallback core chain uses stateless Bearer authentication and Origin validation. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-10-06: extracted the identical BCrypt-only password factory and removed unused Environment constructor injection; fallback activation, filter chains, CSRF, Origin and Bearer defenses are unchanged.",
       "id": "SAST-FP-002",
       "supportingSources": [
         {
@@ -94,7 +94,7 @@
         },
         {
           "file": "api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java",
-          "sha256": "907be49f1f3d1327f0e1ecc20d176f3d6e7b923aeccea5c032ab755a987d1487"
+          "sha256": "28ff03fa4633d1d09ad939e390985da2e8a4c1f28256d00821a9df2465ed1dcc"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/constants/SecurityConstants.java",
@@ -175,7 +175,7 @@
       "fingerprint": "3bdaa522982a3650:1",
       "sourceSha256": "884972eb7ed63f7e0cb1eec832a0ec3a1aea7686d8d3b5b5412460a438ef7698",
       "expiresOn": "2026-12-08",
-      "reason": "Missing or invalid credentials clear the security context, return HTTP 401 and terminate before the transport chain. Only signature-validated JWTs with fresh enabled account details and a nonblank current authorization version reach the chain; conditional authentication-state inspection does not bypass access control. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-10-01: the user adapter only adds a passwordChangeRequired flag to the principal, which narrows access (PasswordChangeRequiredGuard); the SockJS Origin denial and token checks are unchanged.",
+      "reason": "Missing or invalid credentials clear the security context, return HTTP 401 and terminate before the transport chain. Only signature-validated JWTs with fresh enabled account details and a nonblank current authorization version reach the chain; conditional authentication-state inspection does not bypass access control. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-10-01: the user adapter only adds a passwordChangeRequired flag to the principal, which narrows access (PasswordChangeRequiredGuard); the SockJS Origin denial and token checks are unchanged. Re-reviewed 2026-10-06: extracted the identical BCrypt-only password factory and removed unused Environment constructor injection; fallback activation, filter chains, CSRF, Origin and Bearer defenses are unchanged.",
       "id": "SAST-FP-008",
       "supportingSources": [
         {
@@ -192,7 +192,7 @@
         },
         {
           "file": "api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java",
-          "sha256": "907be49f1f3d1327f0e1ecc20d176f3d6e7b923aeccea5c032ab755a987d1487"
+          "sha256": "28ff03fa4633d1d09ad939e390985da2e8a4c1f28256d00821a9df2465ed1dcc"
         },
         {
           "file": "business-core/src/main/java/nuri/business/security/authorization/OperationAuthorizationManager.java",

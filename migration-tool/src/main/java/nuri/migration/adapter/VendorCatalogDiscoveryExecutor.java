@@ -19,7 +19,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -164,7 +163,7 @@ final class VendorCatalogDiscoveryExecutor {
         if (!request.acceptsCatalog(catalog) || !request.acceptsSchema(schema)) {
             return null;
         }
-        if (!request.includeSystemObjects() && isSystemSchema(schema)) {
+        if (!request.includeSystemObjects() && SystemSchemas.isSystem(schema)) {
             return null;
         }
 
@@ -281,21 +280,6 @@ final class VendorCatalogDiscoveryExecutor {
                 adapterId + "-not-applicable",
                 "the vendor has no native object kind for " + kind.name(),
                 null);
-    }
-
-    private static boolean isSystemSchema(String schema) {
-        if (schema == null) {
-            return false;
-        }
-        String normalized = schema.toUpperCase(Locale.ROOT);
-        return normalized.equals("INFORMATION_SCHEMA")
-                || normalized.equals("PG_CATALOG")
-                || normalized.startsWith("PG_TOAST")
-                || normalized.startsWith("PG_TEMP")
-                || normalized.equals("SYS")
-                || normalized.equals("SYSTEM")
-                || normalized.equals("MYSQL")
-                || normalized.equals("PERFORMANCE_SCHEMA");
     }
 
     private record IdentityPart(String column, String value) {}

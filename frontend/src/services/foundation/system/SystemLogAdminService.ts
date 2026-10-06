@@ -71,10 +71,6 @@ function requireLogPage<T>(
  * 시스템 로그 관리 서비스 (Admin)
  */
 class SystemLogAdminService extends AdminService {
-  constructor() {
-    super('/logs');
-  }
-
   /**
    * 시스템 로그 목록 조회
    */

@@ -218,18 +218,6 @@ class UserServiceBusinessLogicExceptionTest {
         }
 
         @Test
-        @DisplayName("사용자 목록 조회 실패 - DB 연동 오류")
-        void getUserList_fail_withDatabaseConnectionError() {
-                // Given
-                when(userRepository.findAllWithAuthorities()).thenThrow(new RuntimeException("Database connection error"));
-
-                // When & Then
-                assertThatThrownBy(() -> userService.getUserList())
-                                .isInstanceOf(RuntimeException.class)
-                                .hasMessage("Database connection error");
-        }
-
-        @Test
         @DisplayName("페이지 사용자 목록 조회 실패 - DB 연동 오류")
         void getPagedUserList_fail_withDatabaseConnectionError() {
                 // Given
@@ -237,7 +225,7 @@ class UserServiceBusinessLogicExceptionTest {
                 when(userRepository.getPagedUserList(any(), any(), eq(pageable))).thenThrow(new RuntimeException("Database connection error"));
 
                 // When & Then
-                assertThatThrownBy(() -> userService.getUserPage(pageable))
+                assertThatThrownBy(() -> userService.getPagedUserList(null, nuri.business.domain.user.repository.UserListFilter.NONE, pageable))
                                 .isInstanceOf(RuntimeException.class)
                                 .hasMessage("Database connection error");
         }

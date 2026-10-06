@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 67,
-    "nativeFormFiles": 57,
+    "nativeFormOccurrences": 66,
+    "nativeFormFiles": 56,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 22,
     "secondaryActionBoundaries": 77,
-    "candidateCount": 167
+    "candidateCount": 166
   },
   "entries": [
     {
@@ -1310,20 +1310,6 @@
       "kind": "native-form",
       "file": "frontend/src/app/components/ui/standard-form.tsx",
       "owner": "StandardForm",
-      "classification": "primitive",
-      "status": "compliant",
-      "validationMode": "not-applicable",
-      "schemaSource": "not-applicable",
-      "errorNavigation": "not-applicable",
-      "serverErrors": "not-applicable",
-      "pendingGuard": "not-applicable",
-      "testEvidence": []
-    },
-    {
-      "key": "native-form:frontend/src/app/components/ui/standard-search-filter.tsx#SmartSearchPanel[1]",
-      "kind": "native-form",
-      "file": "frontend/src/app/components/ui/standard-search-filter.tsx",
-      "owner": "SmartSearchPanel",
       "classification": "primitive",
       "status": "compliant",
       "validationMode": "not-applicable",

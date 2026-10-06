@@ -133,7 +133,7 @@ vi.mock('@/services/foundation/system/UserAdminService', () => ({
   userAdminService: { getUserList: vi.fn(), getUser: vi.fn() },
 }));
 vi.mock('@/services/foundation/system/DeptAdminService', () => ({
-  deptAdminService: { getDeptList: vi.fn() },
+  deptAdminService: { getDeptTree: vi.fn() },
 }));
 vi.mock('@/services/foundation/system/UserAbsenceAdminService', async (importOriginal) => {
   // ABSENT/PRESENT 상수는 실제 모듈 값을 그대로 쓴다 — 테스트가 어휘를 따로 지어내면
@@ -150,7 +150,7 @@ import { deptAdminService } from '@/services/foundation/system/DeptAdminService'
 const LOCKED_PENDING = { userId: 'kim01', userNm: '김대기', esntlId: 'E-1', userSttsCd: 'A', ognzId: 'ORG_B', lckYn: 'Y' };
 const ACTIVE_NO_DEPT = { userId: 'lee02', userNm: '이정상', esntlId: 'E-2', userSttsCd: 'P', lckYn: 'N' };
 const listPage = { list: [LOCKED_PENDING, ACTIVE_NO_DEPT], total: 2, page: 1, size: 10, totalPage: 1 };
-const DEPTS = { list: [{ ognzId: 'ORG_B', ognzNm: '기획팀', upOgnzId: null }], total: 1 };
+const DEPTS = [{ ognzId: 'ORG_B', ognzNm: '기획팀' }];
 
 function resolvedThenable<T>(value: T): Promise<T> {
   const thenable = Promise.resolve(value) as Promise<T> & { status?: string; value?: T };
@@ -183,7 +183,7 @@ describe('UserOrgHubClient — 사용자 목록 조건·열·부서 소속 인�
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(userAdminService.getUserList).mockResolvedValue(listPage as any);
-    vi.mocked(deptAdminService.getDeptList).mockResolvedValue(DEPTS as any);
+    vi.mocked(deptAdminService.getDeptTree).mockResolvedValue(DEPTS);
     vi.mocked(userAbsenceAdminService.getAbsences).mockResolvedValue([] as any);
   });
 
