@@ -79,16 +79,16 @@
       "description": "시스템 권한 그룹 관리 API (Admin)"
     },
     {
+      "name": "Survey",
+      "description": "설문 관리 API (관리는 SURVEY_*_ALL 권한, 열람은 SURVEY_READ 권한)"
+    },
+    {
       "name": "User",
       "description": "사용자 관리 API"
     },
     {
       "name": "LoginLog",
       "description": "로그인 로그 관리 API (Admin)"
-    },
-    {
-      "name": "Survey",
-      "description": "설문 관리 API (관리는 ADMIN/SYSTEM, 열람은 인증 사용자)"
     },
     {
       "name": "MenuAdmin",
@@ -34922,7 +34922,7 @@
           "PrivacyLog"
         ],
         "summary": "개인정보 조회 로그 목록",
-        "description": "조회 대상 정보 부분일치 검색과 페이징을 지원한다. ADMIN 롤 전용이다.",
+        "description": "조회 대상 정보 부분일치 검색과 페이징을 지원한다. 개인정보 로그 조회 권한(PRIVACY_READ)이 필요하며 시스템 운영 그룹(ROLE_SYSTEM)은 제외된다.",
         "operationId": "getPrivacyLogList",
         "parameters": [
           {
