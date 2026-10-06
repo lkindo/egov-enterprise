@@ -54,21 +54,10 @@ function isLegacyBoardDraftKey(key: string): boolean {
   return key.startsWith(LEGACY_BOARD_DRAFT_PREFIX) || key === LEGACY_BOARD_AUTOSAVE_KEY;
 }
 
-/** 호출자가 알고 있는 legacy key만 제거하되 게시글 초안 namespace 밖은 절대 지우지 않는다. */
-export function removeLegacyBoardDraftKeys(storage: Storage, keys: readonly string[]): void {
-  const allowlist = new Set(keys.filter(isLegacyBoardDraftKey));
-  removeMatching(storage, (key) => allowlist.has(key));
-}
-
-/** 공유 namespace였던 구 구현은 소유자를 판별할 수 없으므로 복원하지 않고 제거한다. */
-export function purgeLegacyBoardDraftStorage(storage: Storage): void {
-  removeMatching(
-    storage,
-    isLegacyBoardDraftKey,
-  );
-}
-
-/** 과거 영속 초안은 내용을 읽거나 복원하지 않고 제거한다. 다른 저장값은 보존한다. */
+/**
+ * 과거 영속 초안은 내용을 읽거나 복원하지 않고 제거한다. 다른 저장값은 보존한다.
+ * 공유 namespace였던 구 구현(legacy 키)은 소유자를 판별할 수 없으므로 함께 제거한다.
+ */
 export function purgePersistedBoardDraftStorage(storage?: Storage): void {
   try {
     if (!storage && typeof window === 'undefined') return;

@@ -7,9 +7,6 @@ import nuri.business.domain.code.InstitutionCodeRecptnLog.InstitutionCodeRecptnL
 
 public interface InstitutionCodeRecptnLogRepository
         extends JpaRepository<InstitutionCodeRecptnLog, InstitutionCodeRecptnLogId> {
-    Page<InstitutionCodeRecptnLog> findByAllInstNmContainingAndProcSe(String allInstNm, String procSe, Pageable pageable);
-    Page<InstitutionCodeRecptnLog> findByAllInstNmContaining(String allInstNm, Pageable pageable);
-
     /**
      * 기관명 또는 기관코드로 수신 이력을 찾는다.
      *

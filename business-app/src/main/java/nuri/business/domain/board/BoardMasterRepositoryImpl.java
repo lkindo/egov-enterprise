@@ -14,7 +14,6 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import static nuri.business.domain.board.QBoardMaster.boardMaster;
 import static nuri.business.domain.board.QBoardUse.boardUse;
 import com.querydsl.jpa.JPAExpressions;
@@ -94,46 +93,5 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
         long total = totalResult != null ? totalResult : 0L;
 
         return new PageImpl<>(Objects.requireNonNull(results), Objects.requireNonNull(pageable), total);
-    }
-
-    @Override
-    public Optional<BoardMasterDetailResult> findBoardMasterDetail(@NonNull String bbsId, String uniqId) {
-        QCommonCode commonCodeTy = new QCommonCode("commonCodeTy");
-        QCommonCode commonCodeAttr = new QCommonCode("commonCodeAttr");
-
-        BoardMasterDetailResult result = queryFactory.select(Projections.fields(BoardMasterDetailResult.class,
-                boardMaster.bbsId,
-                boardMaster.bbsTypeCd,
-                commonCodeTy.dtlCdNm.as("bbsTypeCdNm"),
-                boardMaster.bbsExpln,
-                boardMaster.bbsAtrbCd,
-                commonCodeAttr.dtlCdNm.as("bbsAtrbCdNm"),
-                boardMaster.bbsTtl,
-                boardMaster.tmpltId,
-                boardMaster.fileAtchPsbltyYn,
-                boardMaster.atchPsbltyFileQty,
-                boardMaster.atchPsbltyFileSz,
-                boardMaster.ansPsbltyYn,
-                boardMaster.frstRgtrId.as("frstRgtrId"),
-                boardMaster.useYn,
-                boardMaster.crtDt.as("crtDt")))
-                .from(boardMaster)
-                .leftJoin(commonCodeTy)
-                .on(boardMaster.bbsTypeCd.eq(commonCodeTy.dtlCd).and(commonCodeTy.cdId.eq("COM004")))
-                .leftJoin(commonCodeAttr)
-                .on(boardMaster.bbsAtrbCd.eq(commonCodeAttr.dtlCd).and(commonCodeAttr.cdId.eq("COM009")))
-                .where(boardMaster.bbsId.eq(bbsId))
-                .fetchOne();
-
-        if (result != null && StringUtils.hasText(uniqId)) {
-            String authFlag = queryFactory.select(boardUse.useYn)
-                    .from(boardUse)
-                    .where(boardUse.bbsId.eq(bbsId)
-                            .and(boardUse.trgtId.in(uniqId, "SYSTEM_DEFAULT_BOARD")))
-                    .fetchFirst();
-            result.setAuthFlag(authFlag != null ? authFlag : "N");
-        }
-
-        return Optional.ofNullable(result);
     }
 }

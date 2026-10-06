@@ -7,8 +7,8 @@
  * '완료' 로 굳혔다.
  *
  * 서버는 원장을 건드리지 않는다 — `InstitutionCodeService.updateInstitutionCodeRecptn` 은 수신
- * 로그 행의 `procSe` 만 완료로 바꾼다. 원장(`tb_inst_cd`)에 쓰는 `institutionCodeRepository.save`
- * 는 저장소 전체에서 관리자 수기 등록(`insertInstitutionCode`) 한 곳에서만 호출된다.
+ * 로그 행의 `procSe` 만 완료로 바꾼다. 원장(`tb_inst_cd`)에 쓰는 경로는 애플리케이션에 없다 —
+ * 원장 행은 DB 직접 적재로만 들어온다.
  *
  * 그래서 이 버튼은 **원장을 그대로 둔 채 대기 신호만 지웠다.** 종전(400 으로 큰 소리를 내며
  * 실패)보다 나쁜 형태다 — 조용히 성공하므로 아무도 눈치채지 못한다.

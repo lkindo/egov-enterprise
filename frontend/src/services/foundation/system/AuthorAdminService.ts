@@ -1,6 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 import type { components, operations } from '@/types/generated-api';
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
+import { requirePageResponse } from '@/services/core/page-response';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import {
   getAuthorMenusOperation,
@@ -14,9 +15,6 @@ import {
  * 계층 정보(upperMenuSn)는 projection 에는 있으나 DTO 로 옮겨지지 않아 응답에 없다.
  */
 export type AuthorMenuAssignment = components['schemas']['MenuCreateDto'];
-
-/** 롤 한 건 + 이 권한에 할당됐는지(regYn). 생성 계약을 그대로 쓴다. */
-export type AuthorRoleProjection = components['schemas']['AuthorRoleProjection'];
 
 export type AuthorInfo = components['schemas']['AuthorManageDto'];
 type AuthorListQuery = NonNullable<operations['getAuthors']['parameters']['query']>;
@@ -57,32 +55,17 @@ function toAuthorListQuery(params?: SearchParams): AuthorListQuery {
   return query;
 }
 
-function requireAuthorPage<T>(
-  response: { list?: T[]; total?: number; page?: number; size?: number; totalPage?: number },
-): PageResponse<T> {
-  if (
-    !Array.isArray(response.list)
-    || typeof response.total !== 'number'
-    || typeof response.page !== 'number'
-    || typeof response.size !== 'number'
-    || typeof response.totalPage !== 'number'
-  ) {
-    throw new Error('권한 페이지 응답이 필수 계약과 일치하지 않습니다.');
-  }
-  return response as PageResponse<T>;
-}
-
 /**
  * 권한 그룹 관리 서비스 (Admin)
  */
-class AuthorAdminService extends AdminService {
+class AuthorAdminService extends ApiService {
   /** 권한 그룹 목록 조회 */
   async getAuthorList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<AuthorInfo>> {
     const response = await this.executeGenerated(getAuthorsOperation, {
       query: toAuthorListQuery(params),
       config,
     });
-    return requireAuthorPage(response);
+    return requirePageResponse<AuthorInfo>(response, '권한');
   }
 
   /**

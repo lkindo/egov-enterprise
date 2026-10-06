@@ -98,11 +98,5 @@ class MenuServiceIntegrationTest {
         assertThat(menuService.getMenuHierarchy().get(0).getChildren()).isEmpty();
         jdbc.update("DELETE FROM tb_authrt_grnt_map WHERE authrt_cd=?", "ROLE_ADMIN");
         assertThat(menuService.getMenuHierarchy()).isEmpty();
-        
-        // 커버리지 확보를 위한 추가 메서드 호출 (searchMenus)
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
-        assertThat(menuRepository.searchMenus("ROOT", pageable)).isNotNull();
-        assertThat(menuRepository.searchMenus(null, pageable)).isNotNull();
-        assertThat(menuRepository.searchMenus("", pageable)).isNotNull();
     }
 }

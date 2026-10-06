@@ -37,9 +37,9 @@ public class AttachmentIntegrityApiController {
     /**
      * 전체 첨부 레코드와 저장소 실물을 대조한다.
      *
-     * <p>[인가 — H3] 저장 경로가 응답에 포함되므로 목록 조회와 같은 ADMIN/SYSTEM 축으로 제한한다.
-     * URL 게이트로도 덮이지만 그 목록 한 줄이 빠지면 함께 사라지는 단일 실패점이라
-     * {@code @AdminOrSystem} 을 메서드에 직접 붙인다.
+     * <p>[인가 — H3] 저장 경로가 응답에 포함되므로 첨부 무결성 점검 권한 {@code FILE_AUDIT}
+     * (기본 그룹 ROLE_ADMIN·ROLE_SYSTEM)으로 제한한다. HTTP·메서드 계층이 같은 operation binding 을
+     * 이중 집행한다.
      */
     @Operation(summary = "첨부 정합성 점검",
             description = "DB 첨부 레코드와 저장소 실물을 대조해 어긋난 건수와 조치 대상 예시를 반환한다. "

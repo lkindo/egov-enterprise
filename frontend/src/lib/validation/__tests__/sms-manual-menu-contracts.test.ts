@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { manualSchema, menuSchema, smsSchema } from '@/lib/validation/schemas';
+import { manualSchema, smsSchema } from '@/lib/validation/schemas';
 
-describe('SMS, manual, and menu write-boundary contracts', () => {
+describe('SMS and manual write-boundary contracts', () => {
   it('trims SMS values and enforces phone and screen message boundaries', () => {
     const valid = smsSchema.safeParse({
       sndngTelno: ' 02-1234-5678 ',
@@ -39,22 +39,10 @@ describe('SMS, manual, and menu write-boundary contracts', () => {
     expect(manualSchema.safeParse({ ...valid, onlnMnlExpln: '가'.repeat(4001) }).success).toBe(false);
   });
 
-  it('keeps generated menu string limits and Java Integer order boundaries', () => {
-    const valid = {
-      menuNm: '메뉴',
-      menuOrdr: 1,
-      modernRoute: '/admin/menu',
-      menuExpln: '설명',
-      useYn: 'Y' as const,
-    };
-    expect(menuSchema.safeParse(valid).success).toBe(true);
-    expect(menuSchema.safeParse({ ...valid, menuNm: '   ' }).success).toBe(false);
-    expect(menuSchema.safeParse({ ...valid, menuNm: '가'.repeat(101) }).success).toBe(false);
-    expect(menuSchema.safeParse({ ...valid, modernRoute: 'a'.repeat(501) }).success).toBe(false);
-    expect(menuSchema.safeParse({ ...valid, menuExpln: '가'.repeat(4001) }).success).toBe(false);
-    expect(menuSchema.safeParse({ ...valid, menuOrdr: 1.5 }).success).toBe(false);
-    expect(menuSchema.safeParse({ ...valid, menuOrdr: 2147483648 }).success).toBe(false);
-    expect(menuSchema.safeParse({ ...valid, menuOrdr: -2147483649 }).success).toBe(false);
-    expect(menuSchema.safeParse({ ...valid, useYn: 'X' }).success).toBe(false);
-  });
+  /*
+    [2026-10-07] 메뉴 케이스를 걷었다. 대상이던 menuSchema 는 어떤 화면도 쓰지 않았다. 메뉴 쓰기 화면(보드 + 인스펙터,
+    DEC-OPS-209)은 menuDraft.ts 의 validateMenuFields 로 이름 필수·100자, 경로 형식·500자, 설명 4000자를 막고,
+    그 상한은 생성 계약 MenuPropertiesRequestSchema 에서 읽는다 — menuDraft.test.ts 가 같은 경계를 검증한다.
+    정렬 순서는 사용자가 입력하지 않고 보드 위치에서 계산하며, 사용 여부는 Y/N 두 값만 낸다(menuUseValue).
+  */
 });

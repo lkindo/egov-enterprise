@@ -6,9 +6,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 /**
  * 🗂 워크허브 '업무함 관리' 진입 계약 (DEC-OPS-037, 감사 D10-01).
  *
- * 업무함 CRUD 는 서버가 @AdminOrSystem 이라 버튼은 관리자에게만 그린다(표시 판정 = 라우트 게이트와 같은
- * 역할 집합, DEC-OPS-023 ②). 비관리자에게 죽은 버튼을 보이지 않고, 업무 탭에서만 노출하며, 누르면 다이얼로그가
- * 열릴 때만 마운트된다.
+ * 버튼은 업무함 조회 권한(DEPT_BOX_READ) 보유자에게 그린다 — 기본 배정상 ROLE_USER 도 이 권한을 가진다.
+ * 다이얼로그 안의 쓰기 버튼은 DEPT_BOX_CREATE·UPDATE·DELETE 권한이 가린다(DeptJobBoxManageDialog). 조회 권한이
+ * 없으면 죽은 버튼을 보이지 않고, 업무 탭에서만 노출하며, 누르면 다이얼로그가 열릴 때만 마운트된다.
  */
 const mocks = vi.hoisted(() => ({
   role: 'ROLE_ADMIN' as string,
@@ -90,7 +90,7 @@ describe('WorkHubClient 업무함 관리 진입', () => {
     mocks.tab = 'job';
   });
 
-  it('관리자에게만 업무 탭에서 버튼을 그리고, 누르면 다이얼로그를 마운트한다', async () => {
+  it('업무함 조회 권한이 있으면 업무 탭에서 버튼을 그리고, 누르면 다이얼로그를 마운트한다', async () => {
     const user = userEvent.setup();
     render(<WorkHubClient defaultTab="job" initialYmd="20260906" />);
     // 열기 전에는 다이얼로그 자체를 마운트하지 않는다(조회 훅이 허브 렌더에 끼지 않는다).
@@ -108,7 +108,7 @@ describe('WorkHubClient 업무함 관리 진입', () => {
     expect(screen.getByRole('button', { name: '업무함 관리' })).toBeInTheDocument();
   });
 
-  it('비관리자에게는 버튼을 그리지 않는다(죽은 버튼 금지)', () => {
+  it('업무함 조회 권한이 없으면 버튼을 그리지 않는다(죽은 버튼 금지)', () => {
     mocks.role = 'ROLE_USER';
     mocks.permissions = [];
     render(<WorkHubClient defaultTab="job" initialYmd="20260906" />);

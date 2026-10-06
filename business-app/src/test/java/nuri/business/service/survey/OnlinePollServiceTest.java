@@ -52,20 +52,13 @@ class OnlinePollServiceTest {
                         principal, null, principal.getAuthorities()));
     }
 
-    private static void authenticatePollEditor() {
-        authenticatePermissions(List.of("POLL_READ", "POLL_READ_ALL", "POLL_CREATE", "POLL_UPDATE", "POLL_DELETE"));
-    }
-
     @Test
     void managementWritesRequireBothReadsAndTheirOwnOperationBeforeRepositoryAccess() {
         var operations = List.<Runnable>of(
                 () -> onlinePollService.insertPoll(OnlinePollManageDto.builder().build()),
                 () -> onlinePollService.updatePoll(OnlinePollManageDto.builder().build()),
-                () -> onlinePollService.deletePoll(1L),
-                () -> onlinePollService.insertPollItem(OnlinePollArticleDto.builder().build()),
-                () -> onlinePollService.updatePollItem(OnlinePollArticleDto.builder().build()),
-                () -> onlinePollService.deletePollItem(1L));
-        var operationPermissions = List.of("POLL_CREATE", "POLL_UPDATE", "POLL_DELETE", "POLL_UPDATE", "POLL_UPDATE", "POLL_DELETE");
+                () -> onlinePollService.deletePoll(1L));
+        var operationPermissions = List.of("POLL_CREATE", "POLL_UPDATE", "POLL_DELETE");
         for (int index = 0; index < operations.size(); index++) {
             String operation = operationPermissions.get(index);
             for (var permissions : List.of(List.<String>of(), List.of(operation),
@@ -106,7 +99,7 @@ class OnlinePollServiceTest {
         OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).pollNm("Poll 1").build();
         given(pollManageRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
-        Page<OnlinePollManageDto> result = onlinePollService.getPollList(null, pageable);
+        Page<OnlinePollManageDto> result = onlinePollService.getPollList(null, null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
     }
@@ -118,7 +111,7 @@ class OnlinePollServiceTest {
         OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).pollNm("Poll 1").build();
         given(pollManageRepository.findByPollNmContaining(eq("Keyword"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
-        Page<OnlinePollManageDto> result = onlinePollService.getPollList("Keyword", pageable);
+        Page<OnlinePollManageDto> result = onlinePollService.getPollList("Keyword", null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
         verify(pollManageRepository).findByPollNmContaining(eq("Keyword"), eq(pageable));
@@ -148,7 +141,7 @@ class OnlinePollServiceTest {
         OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).build();
         given(pollManageRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
-        Page<OnlinePollManageDto> result = onlinePollService.getPollList("", pageable);
+        Page<OnlinePollManageDto> result = onlinePollService.getPollList("", null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
     }
@@ -160,7 +153,7 @@ class OnlinePollServiceTest {
         OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).build(); // No pollArticles
         given(pollManageRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
-        Page<OnlinePollManageDto> result = onlinePollService.getPollList("", pageable);
+        Page<OnlinePollManageDto> result = onlinePollService.getPollList("", null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
     }
@@ -322,7 +315,7 @@ class OnlinePollServiceTest {
         given(pollResultRepository.findVotedPollSnsByLoginId(List.of(1L), "user1")).willReturn(List.of());
 
         try (var ignored = mockSecurity("user1", false)) {
-            Page<OnlinePollManageDto> result = onlinePollService.getPollList("", Pageable.unpaged());
+            Page<OnlinePollManageDto> result = onlinePollService.getPollList("", null, Pageable.unpaged());
 
             assertThat(result.getContent()).hasSize(1);
             OnlinePollManageDto pollDto = result.getContent().get(0);
@@ -343,7 +336,7 @@ class OnlinePollServiceTest {
         given(pollResultRepository.findVotedPollSnsByLoginId(List.of(1L), "admin1")).willReturn(List.of(1L));
 
         try (var ignored = mockSecurity("admin1", true)) {
-            OnlinePollManageDto pollDto = onlinePollService.getPollList("", Pageable.unpaged()).getContent().get(0);
+            OnlinePollManageDto pollDto = onlinePollService.getPollList("", null, Pageable.unpaged()).getContent().get(0);
 
             assertThat(pollDto.getHasVoted()).isTrue();
             assertThat(pollDto.getPollArticles().get(0).getPollIemCo()).isEqualTo(42L);
@@ -855,67 +848,6 @@ class OnlinePollServiceTest {
     }
     
     @Test
-    @DisplayName("insertPollItem - pollManage를 찾지 못할 때 예외")
-    void insertPollItem_Fail_NotFound() {
-        authenticatePollEditor();
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
-            
-            given(pollManageRepository.findById(99L)).willReturn(Optional.empty());
-            OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollSn(99L).pollArtclNm("A").build();
-            
-            assertThat(assertThrows(BusinessException.class, () -> onlinePollService.insertPollItem(dto)).getErrorCode())
-                    .isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND);
-        }
-    }
-
-    @Test
-    @DisplayName("updatePollItem - 내용이 빈 문자열일 때")
-    void updatePollItem_EmptyContent() {
-        authenticatePollEditor();
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
-
-            OnlinePollArticle entity = OnlinePollArticle.builder().pollArtclSn(11L).pollArtclNm("Old").build();
-            given(pollItemRepository.findById(11L)).willReturn(Optional.of(entity));
-
-            // update할 이름이 null 이거나 비어있을 때
-            OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollArtclSn(11L).pollArtclNm("  ").build();
-            onlinePollService.updatePollItem(dto);
-
-            // update()는 빈값 가드가 없어 blank 이름을 그대로 반영한다(기존 'Old' → '  ', 무시 아님).
-            assertThat(entity.getPollArtclNm()).isEqualTo("  ");
-        }
-    }
-
-    @Test
-    @DisplayName("설문 항목 수정 - 성공")
-    void updatePollItem_Success() {
-        authenticatePollEditor();
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("VeryLongUserIdExceeding20Chars"));
-
-            OnlinePollArticle entity = OnlinePollArticle.builder().pollArtclSn(11L).pollArtclNm("Old").build();
-            given(pollItemRepository.findById(11L)).willReturn(Optional.of(entity));
-
-            OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollArtclSn(11L).pollArtclNm("N".repeat(150)).build();
-            onlinePollService.updatePollItem(dto);
-
-            assertThat(entity.getPollArtclNm()).isEqualTo("N".repeat(100));
-        }
-    }
-
-    @Test
-    @DisplayName("설문 항목 수정 - 실패 (데이터 없음)")
-    void updatePollItem_Fail() {
-        authenticatePollEditor();
-        given(pollItemRepository.findById(99L)).willReturn(Optional.empty());
-        OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollArtclSn(99L).build();
-        assertThat(assertThrows(BusinessException.class, () -> onlinePollService.updatePollItem(dto)).getErrorCode())
-                .isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND);
-    }
-
-    @Test
     @DisplayName("설문 등록 - 시작일, 종료일 null 테스트")
     void insertPoll_DatesNull() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
@@ -990,27 +922,5 @@ class OnlinePollServiceTest {
 
         onlinePollService.vote(1L, 11L, "user1");
         verify(pollResultRepository, times(1)).saveAndFlush(any(OnlinePollResult.class));
-    }
-
-    @Test
-    @DisplayName("설문 항목 삭제")
-    void deletePollItem() {
-        authenticatePollEditor();
-        onlinePollService.deletePollItem(11L);
-        verify(pollItemRepository, times(1)).deleteById(11L);
-    }
-
-    /** [2026-09-14 DEC-OPS-095] 투표가 있는 항목을 지우면 그 투표가 사라져 결과가 바뀐다 — 409 로 막는다. */
-    @Test
-    @DisplayName("투표가 있는 항목은 삭제하지 않고 투표도 보존한다")
-    void deletePollItem_WithVotes_IsBlocked() {
-        authenticatePollEditor();
-        given(pollResultRepository.countByPollArtclSn(11L)).willReturn(2L);
-
-        assertThatThrownBy(() -> onlinePollService.deletePollItem(11L))
-                .isInstanceOf(BusinessException.class)
-                .extracting("errorCode").isEqualTo(CommonErrorCode.RESOURCE_IN_USE);
-        verify(pollResultRepository, org.mockito.Mockito.never()).deleteByPollArtclSn(org.mockito.ArgumentMatchers.anyLong());
-        verify(pollItemRepository, org.mockito.Mockito.never()).deleteById(org.mockito.ArgumentMatchers.anyLong());
     }
 }

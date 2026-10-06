@@ -3,7 +3,7 @@ import {
   BOARD_DRAFT_PREFIX,
   buildBoardDraftStorageKey,
   purgeBoardDraftStorage,
-  purgeLegacyBoardDraftStorage,
+  purgePersistedBoardDraftStorage,
   type BoardDraftScope,
 } from '../board-draft-storage';
 
@@ -36,12 +36,12 @@ describe('board draft storage namespace', () => {
     expect(() => buildBoardDraftStorageKey({ ...BASE_SCOPE, recordId: '' })).toThrow();
   });
 
-  it('legacy 정리는 알려진 게시글 키만 제거하고 무관한 저장값은 보존한다', () => {
+  it('영속 초안 정리는 알려진 legacy 게시글 키만 제거하고 무관한 저장값은 보존한다', () => {
     localStorage.setItem('egov-draft-board_insert_BBS-1', 'legacy');
     localStorage.setItem('autosave_bbs_write', 'legacy');
     localStorage.setItem('unrelated-preference', 'keep');
 
-    purgeLegacyBoardDraftStorage(localStorage);
+    purgePersistedBoardDraftStorage(localStorage);
 
     expect(localStorage.getItem('egov-draft-board_insert_BBS-1')).toBeNull();
     expect(localStorage.getItem('autosave_bbs_write')).toBeNull();

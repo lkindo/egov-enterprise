@@ -26,8 +26,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * 관리자 알림 발송 API 계약(2026-09-06 DEC-OPS-042).
- * 메서드 인가(@AdminOrSystem 존재 — WebMvcTest 슬라이스는 메서드 보안을 활성화하지 않으므로 애노테이션으로 고정하고,
- * 실제 거부는 NotificationServiceTest 의 assertAdmin 계약이 담당)·본문 검증(400)·존재하지 않는 수신자(404)·성공 시 건수 응답을 고정한다.
+ * 메서드 인가(NOTI_DISPATCH operation binding — WebMvcTest 슬라이스는 메서드 보안을 활성화하지 않으므로
+ * MethodPermissionContract 로 binding 을 고정하고, 실제 거부는 NotificationServiceTest 의
+ * assertPermission("NOTI_DISPATCH") 계약이 담당)·본문 검증(400)·존재하지 않는 수신자(404)·성공 시 건수 응답을 고정한다.
  */
 @WebMvcTest(NotificationAdminApiController.class)
 @DisplayName("NotificationAdminApiController 테스트")

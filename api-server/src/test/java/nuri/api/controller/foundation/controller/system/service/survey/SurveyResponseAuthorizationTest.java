@@ -24,7 +24,7 @@ class SurveyResponseAuthorizationTest {
 
     @Test
     @DisplayName("기본 사용자 참여 권한과 조회 권한은 각각 명시적이다")
-    void submissionApiIsAuthenticated() {
+    void submissionAndStatsUseParticipationPermissions() {
         nuri.security.support.MethodPermissionContract.assertOperation(handler(SurveySubmissionApiController.class, "getStats"), "SURVEY_READ", false);
         nuri.security.support.MethodPermissionContract.assertOperation(handler(SurveySubmissionApiController.class, "submit"), "SURVEY_SUBMIT", false);
         // [2026-09-26 DIP B5 F6] 결과 xlsx 반출은 화면 통계와 같은 행을 내보내므로 통계 조회와 같은 권한이다(응답 열람 권한이 아니다 —
@@ -34,14 +34,14 @@ class SurveyResponseAuthorizationTest {
 
     @Test
     @DisplayName("응답 열람은 일반 참여 권한과 구분한다")
-    void adminReadIsAdminOrSystem() {
+    void responseReadRequiresSurveyResponseRead() {
         nuri.security.support.MethodPermissionContract.assertOperation(handler(SurveyResponseAdminApiController.class, "getResponses"), "SURVEY_RSP_READ", false);
         nuri.security.support.MethodPermissionContract.assertOperation(handler(SurveyResponseAdminApiController.class, "getResponse"), "SURVEY_RSP_READ", false);
     }
 
     @Test
     @DisplayName("응답 열람 권한만으로는 응답을 삭제할 수 없다")
-    void adminDeleteIsAdminOnly() {
+    void responseDeleteRequiresSeparatePermission() {
         var method = handler(SurveyResponseAdminApiController.class, "deleteResponse");
         nuri.security.support.MethodPermissionContract.assertOperation(method, "SURVEY_RSP_DELETE", false);
         var reader = nuri.security.support.MethodPermissionContract.authentication(List.of("OPERATIONS_TEAM"), "SURVEY_RSP_READ");
@@ -57,7 +57,7 @@ class SurveyResponseAuthorizationTest {
     @Test
     @DisplayName("핸들러 개수 고정 — 신규 엔드포인트 추가 시 인가 검토를 강제한다")
     void handlerCountIsPinned() {
-        // [2026-09-26 DIP B5 F6] 2 → 3: 결과 xlsx 반출(exportStats, SURVEY_READ). 인가는 위 submissionApiIsAuthenticated 가 고정한다.
+        // [2026-09-26 DIP B5 F6] 2 → 3: 결과 xlsx 반출(exportStats, SURVEY_READ). 인가는 위 submissionAndStatsUseParticipationPermissions 가 고정한다.
         assertThat(mappedHandlers(SurveySubmissionApiController.class)).hasSize(3);
         assertThat(mappedHandlers(SurveyResponseAdminApiController.class)).hasSize(4);
     }

@@ -78,9 +78,8 @@ public class LoginLogApiController {
      * 화면에서 보던 필터(검색어·기간)와 정확히 같은 모집단이 내려간다. 페이지 파라미터만
      * 전체 결과로 덮어써 페이지와 무관하게 조건 일치 전량을 내보낸다.
      *
-     * <p>[인가 — H3] 기존 목록 API 와 동일한 ADMIN/SYSTEM 축이다. 이 경로는
-     * {@code /api/v1/admin/**} secure-paths URL 게이트로도 덮이지만, 그 목록 한 줄이 빠지면
-     * 함께 사라지는 단일 실패점이므로 {@code @AdminOrSystem} 을 메서드에 직접 붙인다
+     * <p>[인가 — H3] 반출 전용 권한 {@code LOGIN_LOG_EXPORT} 다(목록은 {@code LOGIN_LOG_READ}, 기본 그룹은 둘 다
+     * ROLE_ADMIN·ROLE_SYSTEM). HTTP·메서드 계층이 같은 operation binding 을 이중 집행한다
      * (헌법 제8조 이중 검증 — {@code WebLogApiController} 와 같은 패턴).
      *
      * <p>[헌법 제6조 3항 binary/stream 예외] 공통 래퍼 밖 반환은

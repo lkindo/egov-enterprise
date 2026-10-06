@@ -63,7 +63,7 @@ final class ExternalDriverDataSource implements DataSource {
             properties.setProperty("password", secret);
         }
         try {
-            Connection connection = withContextLoader(() -> driver.connect(url, properties));
+            Connection connection = ContextClassLoaders.call(loader, () -> driver.connect(url, properties));
             if (connection == null) {
                 throw SourceDriverException.connection();
             }
@@ -95,17 +95,6 @@ final class ExternalDriverDataSource implements DataSource {
             connections.clear();
         }
         return clean;
-    }
-
-    private <T> T withContextLoader(SqlSupplier<T> action) throws Exception {
-        Thread thread = Thread.currentThread();
-        ClassLoader previous = thread.getContextClassLoader();
-        try {
-            thread.setContextClassLoader(loader);
-            return action.get();
-        } finally {
-            thread.setContextClassLoader(previous);
-        }
     }
 
     private static boolean closeQuietly(Connection connection) {
@@ -164,10 +153,5 @@ final class ExternalDriverDataSource implements DataSource {
     @Override
     public String toString() {
         return "ExternalDriverDataSource[values=<redacted>]";
-    }
-
-    @FunctionalInterface
-    private interface SqlSupplier<T> {
-        T get() throws Exception;
     }
 }

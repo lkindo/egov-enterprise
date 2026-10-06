@@ -1,4 +1,5 @@
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
+import { requirePageResponse } from '@/services/core/page-response';
 import type {
   LoginLog,
   PageResponse,
@@ -52,25 +53,10 @@ function normalizeLogSearchParams(params: SearchParams): LogSearchQuery {
   return query;
 }
 
-function requireLogPage<T>(
-  response: { list?: T[]; total?: number; page?: number; size?: number; totalPage?: number },
-): PageResponse<T> {
-  if (
-    !Array.isArray(response.list)
-    || typeof response.total !== 'number'
-    || typeof response.page !== 'number'
-    || typeof response.size !== 'number'
-    || typeof response.totalPage !== 'number'
-  ) {
-    throw new Error('로그 페이지 응답이 필수 계약과 일치하지 않습니다.');
-  }
-  return response as PageResponse<T>;
-}
-
 /**
  * 시스템 로그 관리 서비스 (Admin)
  */
-class SystemLogAdminService extends AdminService {
+class SystemLogAdminService extends ApiService {
   /**
    * 시스템 로그 목록 조회
    */
@@ -79,7 +65,7 @@ class SystemLogAdminService extends AdminService {
       query: normalizeLogSearchParams(params),
       config,
     });
-    return requireLogPage(response);
+    return requirePageResponse<SysLog>(response, '로그');
   }
 
   /**
@@ -97,7 +83,7 @@ class SystemLogAdminService extends AdminService {
       query: normalizeLogSearchParams(params),
       config,
     });
-    return requireLogPage(response);
+    return requirePageResponse<LoginLog>(response, '로그');
   }
 
   /**
@@ -115,7 +101,7 @@ class SystemLogAdminService extends AdminService {
       query: normalizeLogSearchParams(params),
       config,
     });
-    return requireLogPage(response);
+    return requirePageResponse<PrivacyLog>(response, '로그');
   }
 
   /**
@@ -126,7 +112,7 @@ class SystemLogAdminService extends AdminService {
       query: normalizeLogSearchParams(params),
       config,
     });
-    return requireLogPage(response);
+    return requirePageResponse<UserLog>(response, '로그');
   }
 
   /**
@@ -137,7 +123,7 @@ class SystemLogAdminService extends AdminService {
       query: normalizeLogSearchParams(params),
       config,
     });
-    return requireLogPage(response);
+    return requirePageResponse<WebLog>(response, '로그');
   }
 
   /*

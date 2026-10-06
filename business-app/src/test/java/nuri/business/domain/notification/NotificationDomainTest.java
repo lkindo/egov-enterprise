@@ -37,8 +37,8 @@ class NotificationDomainTest {
     }
 
     @Test
-    @DisplayName("Notification Status Update and Read Processing Test")
-    void notification_update_test() {
+    @DisplayName("Notification Read Processing Test")
+    void notification_mark_as_read_test() {
         // Given
         Notification ntfc = Notification.builder()
                 .notiSn(1L)
@@ -47,10 +47,5 @@ class NotificationDomainTest {
         // When - mark as read
         ntfc.markAsRead();
         assertEquals("Y", ntfc.getReadYn());
-        
-        // When - update content
-        ntfc.update("New Sj", "New Cn", null, null);
-        assertEquals("New Sj", ntfc.getNotiTtlNm());
-        assertEquals("New Cn", ntfc.getNotiCn());
     }
 }

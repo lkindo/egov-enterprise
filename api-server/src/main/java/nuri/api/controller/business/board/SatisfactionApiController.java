@@ -24,15 +24,17 @@ import java.util.List;
  * 만족도는 게시글에 종속된 자원이고, 경로가 조회 범위를 강제하면 서비스가 범위를 놓쳐도
  * 다른 게시글의 값이 섞이지 않는다(D-4 응답자 목록이 설문 범위를 잃었던 사례의 예방).
  *
- * <p><b>인가</b>: 조회·등록·수정·삭제는 {@code @Authenticated}, 관리자 대리 삭제만 {@code @AdminOnly} 다.
- * 실질 소유권 판정은 서비스가 다시 한다(백엔드 헌법 제8조 — 계층 이중 검증).
+ * <p><b>인가</b>: 조회·등록·수정·삭제는 {@code SATISFY_READ}·{@code SATISFY_CREATE}·{@code SATISFY_UPDATE}·
+ * {@code SATISFY_DELETE}, 관리자 대리 삭제만 별도 권한 {@code SATISFY_MODERATE} 다. 각 핸들러의 operation
+ * binding 을 HTTP 계층({@code OperationAuthorizationManager})과 메서드 계층
+ * ({@code @PreAuthorize("@permissionPolicy.allowed(...)")})이 이중 집행하고, 실질 소유권 판정은 서비스가
+ * 다시 한다({@code SecurityUtil.assertOwnerOrPermission} — 백엔드 헌법 제8조 계층 이중 검증).
  *
- * <p><b>왜 애노테이션을 명시했는가</b>: 처음에는 전역 {@code anyRequest().authenticated()} 에
+ * <p><b>왜 메서드 인가를 명시하는가</b>: 처음에는 전역 {@code anyRequest().authenticated()} 에
  * 기대고 애노테이션을 생략했는데, {@code SecurityAuthAnnotationLinterTest} 가 이를 잡아냈다 —
- * "비-admin 경로 쓰기는 전역 규칙만 걸려 일반 사용자도 도달한다" 는 것이다. 컨트롤러에
- * 인증 경계를 명시하고 서비스에서 소유권을 재검증했다. 종전 클래스 단위 면제 방식은 2026-08-15
- * 폐지했으며, {@code @Authenticated} 는
- * {@code @PreAuthorize("isAuthenticated()")} 메타 애노테이션이라 <b>실제 가드가 하나 늘어난다.</b>
+ * "비-admin 경로 쓰기는 전역 규칙만 걸려 일반 사용자도 도달한다" 는 것이다. 종전 클래스 단위 면제
+ * 방식은 2026-08-15 폐지했고, 지금은 그 린터가 모든 핸들러의 {@code @PreAuthorize} 가 자기 operation
+ * binding 을 가리키는지 확인한다.
  */
 @Tag(name = "Satisfaction", description = "게시글 만족도 API")
 @RestController

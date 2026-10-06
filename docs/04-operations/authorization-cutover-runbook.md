@@ -71,7 +71,7 @@ SELECT menu.menu_sn, menu.menu_nm, menu.prgrm_file_nm, program.url
 
 **가드가 멈췄을 때.** 오류 `Leaf menus without modern_route got their route only from a retired program URL: <menu_sn>:<prgrm_file_nm>, …`가 나면 V2_124 전체가 롤백되어 아무것도 바뀌지 않는다. 적힌 메뉴는 종전 앱이 기동할 때 원장 URL의 레거시 접두로 화면 경로를 채우던 사용 중 말단 메뉴다. 새 앱은 원장을 읽지 않으므로 그 경로를 채울 수 없다. 메뉴마다 화면 관리의 화면 목록에 있는 경로를 정해 `modern_route`에 넣고 다시 배포한다. 구 앱이 떠 있으면 메뉴 관리 화면에서, 아니면 승인된 SQL로 넣는다. 가드를 우회하거나 V2_124를 고치지 않는다.
 
-**이관 도구로 메뉴를 넣을 때.** `modern_route`를 채우고 `prgrm_file_nm`은 비운다. 이관 대상 카탈로그(`db_columns.json`)에는 `tb_prgrm_lst`가 아직 남아 있다. 그러나 앱은 그 원장을 읽지 않고, 위 가드는 V2_124를 적용할 때 한 번만 돈다.
+**이관 도구로 메뉴를 넣을 때.** `modern_route`를 채운다. `prgrm_file_nm` 컬럼과 `tb_prgrm_lst` 는 V2_127 이 지웠고, 이관 대상 카탈로그(`db_columns.json`)도 2026-10-07 재생성으로 둘을 더 담지 않는다. 위 가드는 V2_124를 적용할 때 한 번만 돈다.
 
 **롤백 뒤 다시 배포할 때.** 구 버전 앱으로 되돌리면 그 앱은 화면 관리 진입에 `PROGRAM_READ`를 요구한다. 그동안 권한 관리 화면에서 `PROGRAM_*`가 다시 배정될 수 있다. V2_124는 이미 적용되어 새 버전을 다시 배포해도 다시 돌지 않는다. 재배포 전에 위 첫 질의로 확인하고, 행이 있으면 아래를 실행한다. `<CATALOG_VERSION>`은 새 앱의 `PermissionCodes.CATALOG_VERSION`이다.
 
@@ -186,7 +186,7 @@ SELECT to_regclass('public.tb_prgrm_lst') AS programs, to_regclass('public.tb_in
 
 **되돌릴 때.** 지운 구조와 행의 원본은 적용 직전 백업이다. V2_126 이 채운 경로만 되돌리려면 적용 전 출력의 `menu_sn` 에 대해 `modern_route` 를 NULL 로 되돌린다. 구 버전 앱은 지운 컬럼을 매핑하므로 V2_127 뒤에는 그 앱으로 롤백할 수 없다. 백업 복원이 함께 필요하다.
 
-**남긴 것.** 이관 대상 카탈로그 `db_columns.json` 은 이미 지운 다른 테이블도 담고 있는 코드젠 스냅샷이라 이번에 고치지 않았다.
+**남긴 것.** 이관 대상 카탈로그 `db_columns.json` 은 당시 이미 지운 다른 테이블도 담고 있어 이번에 고치지 않았다. 2026-10-07 부터는 `SchemaValidationIntegrationTest` 가 Flyway 적용 스키마와 대조하고, `-Dnuri.dbColumns.write=true` 로 실행할 때만 같은 질의로 다시 쓴다.
 
 ## 2026-09-11 OCI 메뉴 재편 적용 결과
 

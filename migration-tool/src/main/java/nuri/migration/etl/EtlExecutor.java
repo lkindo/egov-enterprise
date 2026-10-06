@@ -21,13 +21,13 @@ import nuri.migration.model.MappingSpec.RunContext;
 import nuri.migration.model.MappingSpec.TableMapping;
 import nuri.migration.schema.MigrationSchemaManager;
 import nuri.migration.source.SourceIntrospector;
+import nuri.migration.state.KeyDiagnostics;
 import nuri.migration.state.MigrationStateStore;
 import nuri.migration.state.MigrationStateStore.CheckpointEntry;
 import nuri.migration.state.RowChecksum;
 import nuri.migration.transform.CodeMapper;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.transform.TypeConverter;
-import nuri.migration.verify.KeyDiagnostics;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 

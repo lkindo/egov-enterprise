@@ -166,24 +166,6 @@ class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("알림 수정 - 성공 및 실패(404)")
-    void updateNotification_test() {
-        Notification entity = createMockEntity(1L);
-        when(notificationRepository.findByNotiSnAndRcvrId(1L, "user123")).thenReturn(Optional.of(entity));
-        when(notificationRepository.findByNotiSnAndRcvrId(99L, "user")).thenReturn(Optional.empty());
-
-        NotificationDto dto = NotificationDto.builder()
-                .notiTtlNm("New Subject")
-                .build();
-
-        // Success
-        notificationService.updateNotification(1L, "user123", dto);
-
-        // Not Found
-        assertThrows(BusinessException.class, () -> notificationService.updateNotification(99L, "user", dto));
-    }
-
-    @Test
     @DisplayName("알림 삭제 - 성공")
     void deleteNotification_success() {
         Notification entity = createMockEntity(1L);

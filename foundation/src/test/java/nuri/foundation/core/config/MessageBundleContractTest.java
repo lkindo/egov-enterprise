@@ -84,17 +84,7 @@ class MessageBundleContractTest {
         Map<String, String> ko = bundle("messages_ko.properties");
         Map<String, String> en = bundle("messages_en.properties");
 
-        List<Path> sources = sourcesMatching(path -> path.getFileName().toString().endsWith("ErrorCode.java"));
-        assertTrue(sources.size() >= MIN_ERROR_CODE_SOURCES,
-                "ErrorCode 소스 스캔이 붕괴했다. 발견=" + sources.size() + ", 하한=" + MIN_ERROR_CODE_SOURCES);
-
-        Set<String> codes = new TreeSet<>();
-        for (Path source : sources) {
-            Matcher matcher = ERROR_CODE.matcher(read(source));
-            while (matcher.find()) {
-                codes.add(matcher.group(1));
-            }
-        }
+        Set<String> codes = errorCodes();
         assertTrue(codes.size() >= MIN_ERROR_CODES,
                 "ErrorCode 코드 census 가 붕괴했다. 발견=" + codes.size() + ", 하한=" + MIN_ERROR_CODES);
 
@@ -117,14 +107,7 @@ class MessageBundleContractTest {
         Map<String, String> ko = bundle("messages_ko.properties");
         Map<String, String> en = bundle("messages_en.properties");
 
-        String handler = read(repoRoot()
-                .resolve("foundation/src/main/java/nuri/foundation/core/exception/GlobalExceptionHandler.java"));
-
-        Set<String> keys = new TreeSet<>();
-        Matcher matcher = HANDLER_KEY.matcher(handler);
-        while (matcher.find()) {
-            keys.add(matcher.group(1));
-        }
+        Set<String> keys = handlerKeys();
         assertTrue(keys.size() >= MIN_HANDLER_KEYS,
                 "handler 키 census 가 붕괴했다. 발견=" + keys.size() + ", 하한=" + MIN_HANDLER_KEYS);
 
@@ -148,18 +131,10 @@ class MessageBundleContractTest {
         bundles.put("ko", bundle("messages_ko.properties"));
         bundles.put("en", bundle("messages_en.properties"));
 
-        List<Path> sources = sourcesMatching(path -> path.getFileName().toString().endsWith(".java"));
-        Set<String> keys = new TreeSet<>();
-        int references = 0;
-        for (Path source : sources) {
-            Matcher matcher = BEAN_VALIDATION_KEY.matcher(stripComments(read(source)));
-            while (matcher.find()) {
-                keys.add(matcher.group(1));
-                references++;
-            }
-        }
-        assertTrue(references >= MIN_BEAN_VALIDATION_REFS,
-                "Bean Validation 키 참조 census 가 붕괴했다. 발견=" + references
+        int[] references = {0};
+        Set<String> keys = beanValidationKeys(references);
+        assertTrue(references[0] >= MIN_BEAN_VALIDATION_REFS,
+                "Bean Validation 키 참조 census 가 붕괴했다. 발견=" + references[0]
                         + ", 하한=" + MIN_BEAN_VALIDATION_REFS);
 
         List<String> problems = new ArrayList<>();
@@ -178,6 +153,63 @@ class MessageBundleContractTest {
         assertTrue(problems.isEmpty(), String.join("\n", problems));
     }
 
+    /**
+     * [2026-10-07] 역방향 — 번들의 키는 세 해석 경로(ErrorCode 코드, GlobalExceptionHandler.resolve 키,
+     * Bean Validation {키}) 중 하나가 실제로 참조해야 한다. 종전에는 정방향만 검사해, 아무 경로도 읽지 않는
+     * 키 12쌍(common.*·user.*·board.*·validation.email)이 번역만 유지된 채 남아 있었다.
+     */
+    @Test
+    @DisplayName("번들의 모든 키는 ErrorCode·handler·Bean Validation 중 하나가 참조한다(고아 키 금지)")
+    void everyBundleKeyIsReferencedByAResolutionPath() {
+        Set<String> referenced = new TreeSet<>(errorCodes());
+        referenced.addAll(handlerKeys());
+        referenced.addAll(beanValidationKeys(new int[1]));
+
+        Set<String> orphans = new TreeSet<>(bundle("messages_ko.properties").keySet());
+        orphans.addAll(bundle("messages_en.properties").keySet());
+        orphans.removeAll(referenced);
+        assertTrue(orphans.isEmpty(),
+                "어떤 해석 경로도 읽지 않는 번들 키 — 지우거나 실제 참조를 연결하라: " + orphans);
+    }
+
+    private Set<String> errorCodes() {
+        List<Path> sources = sourcesMatching(path -> path.getFileName().toString().endsWith("ErrorCode.java"));
+        assertTrue(sources.size() >= MIN_ERROR_CODE_SOURCES,
+                "ErrorCode 소스 스캔이 붕괴했다. 발견=" + sources.size() + ", 하한=" + MIN_ERROR_CODE_SOURCES);
+        Set<String> codes = new TreeSet<>();
+        for (Path source : sources) {
+            Matcher matcher = ERROR_CODE.matcher(read(source));
+            while (matcher.find()) {
+                codes.add(matcher.group(1));
+            }
+        }
+        return codes;
+    }
+
+    private Set<String> handlerKeys() {
+        String handler = read(repoRoot()
+                .resolve("foundation/src/main/java/nuri/foundation/core/exception/GlobalExceptionHandler.java"));
+        Set<String> keys = new TreeSet<>();
+        Matcher matcher = HANDLER_KEY.matcher(handler);
+        while (matcher.find()) {
+            keys.add(matcher.group(1));
+        }
+        return keys;
+    }
+
+    private Set<String> beanValidationKeys(int[] references) {
+        List<Path> sources = sourcesMatching(path -> path.getFileName().toString().endsWith(".java"));
+        Set<String> keys = new TreeSet<>();
+        for (Path source : sources) {
+            Matcher matcher = BEAN_VALIDATION_KEY.matcher(stripComments(read(source)));
+            while (matcher.find()) {
+                keys.add(matcher.group(1));
+                references[0]++;
+            }
+        }
+        return keys;
+    }
+
     @Test
     @DisplayName("설정된 Validator 가 키를 요청 로케일로 완전히 보간한다")
     void configuredValidatorInterpolatesMessagesForTheRequestLocale() {
@@ -185,9 +217,9 @@ class MessageBundleContractTest {
         validator.afterPropertiesSet();
 
         LocaleContextHolder.setLocale(Locale.KOREAN);
-        Map<String, String> korean = validate(validator, new Sample("", "a"));
+        Map<String, String> korean = validate(validator, new Sample("", "abcdef"));
         LocaleContextHolder.setLocale(Locale.ENGLISH);
-        Map<String, String> english = validate(validator, new Sample("", "a"));
+        Map<String, String> english = validate(validator, new Sample("", "abcdef"));
 
         assertUninterpolatedPlaceholderAbsent(korean);
         assertUninterpolatedPlaceholderAbsent(english);
@@ -195,9 +227,9 @@ class MessageBundleContractTest {
         assertEquals(bundle("messages_ko.properties").get("validation.required"), korean.get("name"));
         assertEquals(bundle("messages_en.properties").get("validation.required"), english.get("name"));
 
-        // min/max 는 제약 애노테이션 속성에서 채워진다.
-        assertTrue(korean.get("code").contains("2") && korean.get("code").contains("5"),
-                "min/max 가 채워지지 않았다: " + korean.get("code"));
+        // {max} 는 제약 애노테이션 속성에서 채워진다(운영 DTO 가 쓰는 validation.size.max 로 검증한다).
+        assertTrue(korean.get("code").contains("5"),
+                "{max} 가 채워지지 않았다: " + korean.get("code"));
         assertNotEquals(korean.get("code"), english.get("code"),
                 "검증 메시지가 요청 로케일을 따르지 않는다 — ko/en 이 동일하다: " + korean.get("code"));
     }
@@ -212,11 +244,11 @@ class MessageBundleContractTest {
         LocalValidatorFactoryBean plain = new LocalValidatorFactoryBean();
         plain.afterPropertiesSet();
 
-        Map<String, String> messages = validate(plain, new Sample("", "a"));
+        Map<String, String> messages = validate(plain, new Sample("", "abcdef"));
 
         assertEquals("{validation.required}", messages.get("name"),
                 "ValidationMessages.properties 가 새로 생겼다면 번들 SSOT 가 둘로 갈린 것이다");
-        assertEquals("{validation.size}", messages.get("code"));
+        assertEquals("{validation.size.max}", messages.get("code"));
     }
 
     @Test
@@ -325,7 +357,7 @@ class MessageBundleContractTest {
     }
 
     private record Sample(@NotBlank(message = "{validation.required}") String name,
-                          @Size(min = 2, max = 5, message = "{validation.size}") String code) {
+                          @Size(max = 5, message = "{validation.size.max}") String code) {
     }
 
     private Map<String, String> validate(LocalValidatorFactoryBean validator, Sample sample) {

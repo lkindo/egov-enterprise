@@ -156,7 +156,9 @@ class AuthorManageServiceTest {
         assertEquals("2026-08-09", dtoOf("  20260809  ").getAuthrtCrtYmd());
     }
     private AuthorManageDto dtoOf(String createdDate) {
-        Authority entity = Authority.createRaw("ROLE_X", "이름", "설명", createdDate);
+        // 레거시 행(null·비정형 생성일)을 흉내 낸다 — 생성자는 null 을 오늘 날짜로 채우므로 필드를 직접 덮어쓴다.
+        Authority entity = Authority.create("ROLE_X", "이름", "설명", null);
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "authrtCrtYmd", createdDate);
         given(authorityRepository.findById("ROLE_X")).willReturn(Optional.of(entity));
         return authorManageService.selectAuthor("ROLE_X");
     }

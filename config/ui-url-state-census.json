@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "e5d308c9a653be212494cb9d1dcd43c0b5a302e13b34e51c1f32832526f749d3"
+    "inventoryHash": "53fbaa9643c614156b39373e1c7c6854f02078945f37f132445aa00313a7907e"
   },
   "summary": {
-    "sourceFileCount": 626,
-    "records": 387,
-    "syntaxOccurrences": 460,
-    "ambiguousRecords": 340,
-    "unverifiedRecords": 387,
+    "sourceFileCount": 625,
+    "records": 385,
+    "syntaxOccurrences": 457,
+    "ambiguousRecords": 338,
+    "unverifiedRecords": 385,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -44,8 +44,8 @@
     "byKind": {
       "config-redirect": 13,
       "dynamic-segment": 11,
-      "form-producer": 53,
-      "navigation-producer": 171,
+      "form-producer": 52,
+      "navigation-producer": 170,
       "page-redirect": 17,
       "query-builder": 22,
       "query-consumer": 53,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 377,
+      "navigation": 375,
       "request-telemetry": 10
     }
   },
@@ -5022,44 +5022,6 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/page.tsx",
         "detector": "page-redirect-parser",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-31B6B90D3296D4",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/components/InsightBanner.tsx",
-      "producerFile": "frontend/src/app/admin/components/InsightBanner.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin",
-      "targetCandidate": "/admin/system/audit",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/system/audit",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/components/InsightBanner.tsx",
-        "detector": "href-navigation",
         "occurrenceCount": 1
       }
     },
@@ -13026,46 +12988,6 @@
       }
     },
     {
-      "id": "URL-AD723EA559C381",
-      "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
-      "source": "frontend/src/app/components/ui/standard-form.tsx",
-      "producerFile": "frontend/src/app/components/ui/standard-form.tsx",
-      "consumerFile": null,
-      "routePattern": "unresolved",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/components/ui/standard-form.tsx",
-        "detector": "jsx-form",
-        "occurrenceCount": 1
-      }
-    },
-    {
       "id": "URL-2DE2A17937ED7E",
       "surface": "navigation",
       "kind": "form-producer",
@@ -16104,7 +16026,7 @@
       "evidence": {
         "source": "frontend/src/lib/api/client.ts",
         "detector": "http-client-get-request",
-        "occurrenceCount": 2
+        "occurrenceCount": 1
       }
     },
     {

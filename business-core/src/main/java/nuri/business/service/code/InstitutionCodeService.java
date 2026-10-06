@@ -49,55 +49,11 @@ public class InstitutionCodeService extends BaseAbstractService {
                 .map(this::toDto);
     }
 
-    // [2026-07-28 제거] `@CacheEvict(value = "institutionCodes", allEntries = true)` 를 삭제한다.
-    //   그 이름을 채우는 `@Cacheable` 이 저장소 어디에도 없었다 — 즉 **아무것도 무효화하지 않으면서**
-    //   "캐시를 관리하고 있다"는 거짓 안전감만 주는 死 애노테이션이었다. Caffeine 은 캐시명을 동적
-    //   생성하므로 예외 없이 조용히 통과한다.
-    //   ⚠ 위치도 틀려 있었다 — 이 메서드는 **수신 로그(Recptn) 등록**이고, 기관코드 자체의 CRUD 는
-    //     insertInstitutionCode/updateInstitutionCode/deleteInstitutionCode 다. 훗날 조회 캐싱을
-    //     도입한다면 무효화는 그 3곳에 붙어야 하며, 그때 CachingInvalidationMatrixLinterTest 가
-    //     짝을 강제한다(현재 이 서비스에 캐싱은 없다).
-    @Transactional
-    public void insertInstitutionCodeRecptn(InstitutionCodeRecptnDto dto) {
-        String occrrncDe = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
-        InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId id = InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId
-                .builder()
-                .ocrnYmd(occrrncDe)
-                .instCd(dto.getInstCd())
-                .jobSn(java.util.concurrent.ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE)) // Safe positive non-colliding Sn
-                .build();
-
-        InstitutionCodeRecptnLog entity = InstitutionCodeRecptnLog.builder()
-                .id(id)
-                .chgSeCd(dto.getChgSeCd())
-                .procSe("0")
-                .etcCd(dto.getEtcCd())
-                .allInstNm(dto.getAllInstNm())
-                .lwstInstNm(dto.getLwstInstNm())
-                .instAbbrNm(dto.getInstAbbrNm())
-                .odr(dto.getOdr())
-                .ord(dto.getOrd())
-                .instCycl(parseInstCycl(dto.getInstCycl()))
-                .topInstCd(dto.getTopInstCd())
-                .uprInstCd(dto.getUprInstCd())
-                .reprsInstCd(dto.getReprsInstCd())
-                .instTypeLclsf(dto.getInstTypeLclsf())
-                .instTypeMclsf(dto.getInstTypeMclsf())
-                .instTypeSclsf(dto.getInstTypeSclsf())
-                .telno(dto.getTelno())
-                .faxNo(dto.getFaxNo())
-                .crtYmd(dto.getCrtYmd())
-                .ablYmd(dto.getAblYmd())
-                .ablYn(dto.getAblYn())
-                .chgYmd(dto.getChgYmd())
-                .chgTm(dto.getChgTm())
-                .crtrYmd(dto.getCrtrYmd())
-                .sortOrdr(dto.getSortOrdr())
-                .frstRgtrId("SYSTEM")
-                .build();
-
-        institutionCodeRecptnLogRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
-    }
+    // [2026-10-07 제거] 원장 쓰기 3종(insertInstitutionCode·updateInstitutionCode·deleteInstitutionCode)과
+    //   수신 로그 등록(insertInstitutionCodeRecptn)을 걷었다. 어떤 컨트롤러도 부르지 않아 배선된 적이
+    //   없는 경로였다. 따라서 이 애플리케이션에는 기관코드 원장(tb_inst_cd)과 수신 로그에 행을 만드는
+    //   경로가 없다 — 두 테이블의 행은 DB 직접 적재로만 들어온다. 이 서비스가 쓰는 것은 수신 처리의
+    //   procSe 하나뿐이다(GAP-CODE-001).
 
     /**
      * 수신 이력을 기관코드 원장에 반영 완료로 표시한다.
@@ -114,9 +70,8 @@ public class InstitutionCodeService extends BaseAbstractService {
      * ⚠ 이 메서드는 <b>원장(tb_inst_cd)에 아무것도 쓰지 않는다.</b>
      *
      * <p>[2026-08-28] 이름과 화면 문구가 "원장 반영" 을 뜻하는 것처럼 읽혀 왔지만, 실제로 하는
-     * 일은 수신 로그 한 행의 {@code procSe} 를 완료로 바꾸는 것뿐이다. 원장에 쓰는
-     * {@code institutionCodeRepository.save} 는 저장소 전체에서
-     * {@link #insertInstitutionCode}(관리자 수기 등록) 한 곳에서만 호출된다.
+     * 일은 수신 로그 한 행의 {@code procSe} 를 완료로 바꾸는 것뿐이다. 이 애플리케이션에는
+     * 원장에 쓰는 경로가 없다 — 원장 행은 DB 직접 적재로만 들어온다.
      *
      * <p>수신 payload 를 원장에 적용하는 경로를 여기 만들지 않은 이유는 {@code chgSeCd}(변경구분)
      * 의 값 도메인이 저장소 어디에도 확정돼 있지 않기 때문이다 — 화면은 1/2/3 으로 해석하고
@@ -157,66 +112,11 @@ public class InstitutionCodeService extends BaseAbstractService {
                         CodeErrorCode.CODE_NOT_FOUND, "기관코드를 찾을 수 없습니다: " + dto.getInstCd()));
     }
 
-    @Transactional
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('INST_CODE_CREATE')")
-    public void insertInstitutionCode(InstitutionCodeDto dto) {
-        if (institutionCodeRepository.existsById(dto.getInstCd())) {
-            throw new BusinessException(CodeErrorCode.DUPLICATE_CODE);
-        }
-        InstitutionCode entity = InstitutionCode.builder()
-                .instCd(dto.getInstCd())
-                .allInstNm(dto.getAllInstNm())
-                .lwstInstNm(dto.getLwstInstNm())
-                .instAbbrNm(dto.getInstAbbrNm())
-                .odr(dto.getOdr())
-                .ord(dto.getOrd())
-                .instCycl(parseInstCycl(dto.getInstCycl()))
-                .topInstCd(dto.getTopInstCd())
-                .uprInstCd(dto.getUprInstCd())
-                .reprsInstCd(dto.getReprsInstCd())
-                .instTypeLclsf(dto.getInstTypeLclsf())
-                .instTypeMclsf(dto.getInstTypeMclsf())
-                .instTypeSclas(dto.getInstTypeSclsf())
-                .telno(dto.getTelno())
-                .faxNo(dto.getFaxNo())
-                .crtYmd(dto.getCrtYmd())
-                .ablYmd(dto.getAblYmd())
-                .ablYn(dto.getAblYn())
-                .chgYmd(dto.getChgYmd())
-                .chgTm(dto.getChgTm())
-                .crtrYmd(dto.getCrtrYmd())
-                .sortOrdr(dto.getSortOrdr())
-                .frstRgtrId("SYSTEM")
-                .build();
-        institutionCodeRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
-    }
-
-    @Transactional
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('INST_CODE_UPDATE')")
-    public void updateInstitutionCode(InstitutionCodeDto dto) {
-        institutionCodeRepository.findById(dto.getInstCd()).ifPresent(entity -> {
-            entity.update(dto.getAllInstNm(), dto.getLwstInstNm(), dto.getInstAbbrNm(), dto.getOdr(), dto.getOrd(),
-                    parseInstCycl(dto.getInstCycl()), dto.getTopInstCd(), dto.getUprInstCd(), dto.getReprsInstCd(),
-                    dto.getInstTypeLclsf(), dto.getInstTypeMclsf(), dto.getInstTypeSclsf(), dto.getTelno(),
-                    dto.getFaxNo(), dto.getCrtYmd(), dto.getAblYmd(), dto.getAblYn(), dto.getChgYmd(),
-                    dto.getChgTm(), dto.getCrtrYmd(), dto.getSortOrdr(), "SYSTEM");
-        });
-    }
-
-    @Transactional
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('INST_CODE_DELETE')")
-    public void deleteInstitutionCode(InstitutionCodeDto dto) {
-        institutionCodeRepository.deleteById(dto.getInstCd());
-    }
-
     /**
-     * 기관차수 API 계약(String) ↔ 물리 도메인 수N2(Integer, V2_19) 경계 변환.
+     * 기관차수 물리 도메인 수N2(Integer, V2_19) → API 계약(String) 경계 변환.
      * V2_16(sys_log prcs_tm)과 동일 패턴 — DTO 는 String 유지로 Breaking Change 차단.
+     * 원장 쓰기 경로가 없으므로 반대 방향(String → Integer) 변환은 두지 않는다.
      */
-    private static Integer parseInstCycl(String instCycl) {
-        return (instCycl == null || instCycl.isBlank()) ? null : Integer.valueOf(instCycl.trim());
-    }
-
     private static String formatInstCycl(Integer instCycl) {
         return instCycl == null ? null : String.valueOf(instCycl);
     }

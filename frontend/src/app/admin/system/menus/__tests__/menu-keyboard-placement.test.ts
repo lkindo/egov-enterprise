@@ -1,30 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { menuParentCandidates, type FlattenedItem } from '../treeUtils';
 import { treeDndAnnouncements, treeDndInstructions } from '@/lib/dnd/tree-dnd-accessibility';
 
 /**
- * [2026-10-01] 메뉴 상위 변경의 키보드 대안(수정 창의 상위 메뉴 선택)과 트리의 한국어 드래그 안내.
+ * [2026-10-01] 트리의 한국어 드래그 안내.
+ *
+ * [2026-10-07] 메뉴 상위 변경의 키보드 대안(menuParentCandidates) 계약을 걷었다. DEC-OPS-209 보드 재작성 뒤
+ * 그 선택지는 menuBoardModel 의 moveDestinations 와 menuDraft 의 placementProblem 이 같은 규칙(자기·하위 제외,
+ * 3단계 상한)으로 만들고, menuBoardModel.test.ts·menuDraft.test.ts 가 검증한다.
  */
-const menu = (menuNo: number, parentId: number | null, depth: number): FlattenedItem =>
-  ({ menuNo, menuNm: `메뉴${menuNo}`, parentId, depth, index: 0 }) as unknown as FlattenedItem;
-
-// 1 ─ 2 ─ 3
-// 4 ─ 5
-const items = [menu(1, null, 0), menu(2, 1, 1), menu(3, 2, 2), menu(4, null, 0), menu(5, 4, 1)];
-const ids = (list: FlattenedItem[]) => list.map((m) => m.menuNo);
-
-describe('menuParentCandidates', () => {
-  it('자기 자신과 하위 메뉴는 빼고, 옮긴 뒤 3단계를 넘는 자리도 뺀다', () => {
-    // 메뉴 2 는 하위(3)가 있어 높이 1 이다 — 깊이 0 인 메뉴 아래만 3단계 안에 든다.
-    expect(ids(menuParentCandidates(items, 2))).toEqual([1, 4]);
-    // 하위가 없는 메뉴 5 는 깊이 1 인 메뉴 아래까지 갈 수 있다(자기 자신은 뺀다).
-    expect(ids(menuParentCandidates(items, 5))).toEqual([1, 2, 4]);
-  });
-
-  it('새 메뉴는 하위가 없는 것으로 보고 3단계 제한만 적용한다', () => {
-    expect(ids(menuParentCandidates(items))).toEqual([1, 2, 4, 5]);
-  });
-});
 
 describe('트리 드래그 한국어 안내', () => {
   const nameOf = (id: string | number) => ({ 1: '인사', 2: '급여' } as Record<string, string>)[String(id)];

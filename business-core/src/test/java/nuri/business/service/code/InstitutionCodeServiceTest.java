@@ -133,7 +133,6 @@ class InstitutionCodeServiceTest {
         assertThat(name.getValue()).isEqualTo("서울");
         assertThat(code.getValue()).isEqualTo("서울");
         assertThat(pageable.getValue().getPageSize()).isEqualTo(10);
-        verify(institutionCodeRecptnLogRepository, never()).findByAllInstNmContaining(any(), any());
     }
 
     @Test
@@ -198,57 +197,6 @@ class InstitutionCodeServiceTest {
                 .isInstanceOf(BusinessException.class);
     }
 
-    @Test
-    @DisplayName("기관코드 수신 내역 등록")
-    void insertInstitutionCodeRecptn() {
-        InstitutionCodeRecptnDto dto = InstitutionCodeRecptnDto.builder()
-                .instCd("INST1")
-                .chgSeCd("I")
-                .build();
-        
-        institutionCodeService.insertInstitutionCodeRecptn(dto);
-        verify(institutionCodeRecptnLogRepository).save(any(InstitutionCodeRecptnLog.class));
-    }
-
-    @Test
-    @DisplayName("기관코드 등록 - 성공")
-    void insertInstitutionCode_Success() {
-        InstitutionCodeDto dto = InstitutionCodeDto.builder().instCd("INST2").build();
-        when(institutionCodeRepository.existsById("INST2")).thenReturn(false);
-        
-        institutionCodeService.insertInstitutionCode(dto);
-        verify(institutionCodeRepository).save(any(InstitutionCode.class));
-    }
-
-    @Test
-    @DisplayName("기관코드 등록 - 중복 예외 발생")
-    void insertInstitutionCode_Duplicate() {
-        InstitutionCodeDto dto = InstitutionCodeDto.builder().instCd("INST2").build();
-        when(institutionCodeRepository.existsById("INST2")).thenReturn(true);
-        
-        org.junit.jupiter.api.Assertions.assertThrows(nuri.foundation.core.exception.BusinessException.class, 
-            () -> institutionCodeService.insertInstitutionCode(dto));
-    }
-
-    @Test
-    @DisplayName("기관코드 수정")
-    void updateInstitutionCode() {
-        InstitutionCodeDto dto = InstitutionCodeDto.builder().instCd("INST2").allInstNm("Update").build();
-        InstitutionCode entity = mock(InstitutionCode.class);
-        when(institutionCodeRepository.findById("INST2")).thenReturn(Optional.of(entity));
-        
-        institutionCodeService.updateInstitutionCode(dto);
-        verify(entity).update(eq("Update"), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), anyString());
-    }
-
-    @Test
-    @DisplayName("기관코드 삭제")
-    void deleteInstitutionCode() {
-        InstitutionCodeDto dto = InstitutionCodeDto.builder().instCd("INST2").build();
-        institutionCodeService.deleteInstitutionCode(dto);
-        verify(institutionCodeRepository).deleteById("INST2");
-    }
-
     // Helper static class
     private static class InstitutionCodeRecptnLogId extends nuri.business.domain.code.InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId {
         public InstitutionCodeRecptnLogId(String ocrnYmd, String instCd, Long jobSn) {
@@ -259,7 +207,9 @@ class InstitutionCodeServiceTest {
     // ─────────────────────────────────────────────────────────────────────────
     // [2026-08-09 뮤테이션 보강] PIT 이 8개를 살려 보냈다 — 페이징 3 · 차수변환 4 · toLogDto 1.
     //   차수(instCycl)는 API 계약이 String, 물리 도메인이 Integer(V2_19)라 경계 변환이 있다.
-    //   그 변환은 왕복(round-trip)으로만 검증된다 — 한쪽만 보면 뮤턴트가 살아남는다.
+    // [2026-10-07] 원장 쓰기 경로(insertInstitutionCode 등)를 걷으면서 저장 방향(String → Integer)
+    //   변환도 사라졌다. 남은 것은 조회 방향(Integer → String)이며, 상세와 수신 이력 두 매핑을
+    //   아래 테스트가 값으로 고정한다.
     // ─────────────────────────────────────────────────────────────────────────
 
     private Pageable capturePageable(BaseSearchDto searchVO) {
@@ -291,37 +241,50 @@ class InstitutionCodeServiceTest {
     }
 
     @Test
-    @DisplayName("기관차수: String ↔ Integer 왕복 변환이 값을 보존한다")
-    void instCyclRoundTripPreservesValue() {
-        // 저장(String -> Integer) 후 조회(Integer -> String) 에서 같은 값이 나와야 한다.
-        InstitutionCodeDto input = InstitutionCodeDto.builder()
-                .instCd("INST1").allInstNm("기관1").instCycl("7").build();
+    @DisplayName("기관차수: 원장의 Integer 차수는 API 계약의 String 으로 내려간다")
+    void instCyclIsFormattedAsStringOnDetail() {
+        given(institutionCodeRepository.findById("INST1")).willReturn(Optional.of(
+                InstitutionCode.builder().instCd("INST1").allInstNm("기관1").instCycl(7).build()));
 
-        given(institutionCodeRepository.existsById("INST1")).willReturn(false);
-        given(institutionCodeRepository.save(any(InstitutionCode.class)))
-                .willAnswer(inv -> inv.getArgument(0));
+        InstitutionCodeDto result = institutionCodeService.selectInstitutionCodeDetail(
+                InstitutionCodeDto.builder().instCd("INST1").build());
 
-        institutionCodeService.insertInstitutionCode(input);
-
-        ArgumentCaptor<InstitutionCode> captor = ArgumentCaptor.forClass(InstitutionCode.class);
-        verify(institutionCodeRepository).save(captor.capture());
-        // parse 가 0 을 돌려주는 뮤턴트, null 을 돌려주는 뮤턴트가 여기서 죽는다.
-        assertEquals(Integer.valueOf(7), captor.getValue().getInstCycl(), "String \"7\" 은 Integer 7 로 저장돼야 한다");
+        // null·빈 문자열을 돌려주는 뮤턴트, 조건을 뒤집은 뮤턴트가 여기서 죽는다.
+        assertEquals("7", result.getInstCycl(), "Integer 7 은 String \"7\" 로 내려가야 한다");
     }
 
     @Test
-    @DisplayName("기관차수: 빈 문자열·null 은 null 로 저장된다 (0 이 아니다)")
-    void instCyclBlankBecomesNullNotZero() {
-        given(institutionCodeRepository.existsById(anyString())).willReturn(false);
-        given(institutionCodeRepository.save(any(InstitutionCode.class)))
-                .willAnswer(inv -> inv.getArgument(0));
+    @DisplayName("기관차수: 비어 있는 차수는 null 로 내려간다 (\"null\" 문자열이 아니다)")
+    void instCyclNullStaysNullOnDetail() {
+        given(institutionCodeRepository.findById("I2")).willReturn(Optional.of(
+                InstitutionCode.builder().instCd("I2").allInstNm("기관2").build()));
 
-        institutionCodeService.insertInstitutionCode(
-                InstitutionCodeDto.builder().instCd("I2").allInstNm("기관2").instCycl("   ").build());
+        InstitutionCodeDto result = institutionCodeService.selectInstitutionCodeDetail(
+                InstitutionCodeDto.builder().instCd("I2").build());
 
-        ArgumentCaptor<InstitutionCode> captor = ArgumentCaptor.forClass(InstitutionCode.class);
-        verify(institutionCodeRepository).save(captor.capture());
-        // 조건을 뒤집은 뮤턴트는 "   " 를 Integer.valueOf 에 넘겨 예외를 낸다 → 죽는다.
-        assertNull(captor.getValue().getInstCycl(), "공백 차수는 null 이어야 한다 — 0 은 유효한 차수와 구분되지 않는다");
+        // 조건을 뒤집은 뮤턴트는 String.valueOf(null) 로 "null" 을 내려보낸다 → 죽는다.
+        assertNull(result.getInstCycl(), "차수가 없으면 null 이어야 한다 — 0 이나 \"null\" 은 값처럼 보인다");
+    }
+
+    @Test
+    @DisplayName("수신 이력 매핑: 키와 차수가 응답에 그대로 실린다")
+    void receptionLogMappingCarriesKeyAndInstCycl() {
+        InstitutionCodeRecptnLog entity = InstitutionCodeRecptnLog.builder()
+                .id(new InstitutionCodeRecptnLogId("20240101", "I1", 3L))
+                .allInstNm("기관1")
+                .instCycl(7)
+                .build();
+        given(institutionCodeRecptnLogRepository
+                .findByAllInstNmContainingOrIdInstCdContainingIgnoreCase(any(), any(), any()))
+                .willReturn(new PageImpl<>(List.of(entity)));
+
+        InstitutionCodeRecptnDto result = institutionCodeService
+                .selectInstitutionCodeRecptnList(new BaseSearchDto()).getContent().get(0);
+
+        // 수신 처리는 이 세 키로 대상을 찾는다 — 매핑이 빠지면 처리 요청이 엉뚱한 행을 가리킨다.
+        assertThat(result.getOcrnYmd()).isEqualTo("20240101");
+        assertThat(result.getInstCd()).isEqualTo("I1");
+        assertThat(result.getJobSn()).isEqualTo(3L);
+        assertThat(result.getInstCycl()).isEqualTo("7");
     }
 }

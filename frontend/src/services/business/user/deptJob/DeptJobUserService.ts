@@ -1,4 +1,4 @@
-import { UserService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import {
   type DeptJobBoxInput,
@@ -25,7 +25,7 @@ import {
  * 부서업무 관리 서비스(User)
  * 백엔드 DeptJobApiController 연동 (/api/v1/dept-jobs)
  */
-class DeptJobUserService extends UserService {
+class DeptJobUserService extends ApiService {
   /**
    * 부서 업무함 목록 조회
    */

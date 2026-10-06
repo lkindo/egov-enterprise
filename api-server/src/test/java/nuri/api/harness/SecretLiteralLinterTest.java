@@ -100,9 +100,12 @@ class SecretLiteralLinterTest {
     /** 스캔 대상 경로 — 배포 스크립트, 에이전트 DB 도구와 운영 형상 파일 2종. */
     private static final String SCRIPTS_DIR = "scripts";
     private static final String AGENT_SCRIPTS_DIR = ".agent/scripts";
-    /** DB에 연결하는 실제 도구가 스캔에서 빠지면 무관한 JS 파일 수로 보충할 수 없다. */
-    private static final Set<String> REQUIRED_AGENT_DB_SCRIPTS = Set.of(
-            ".agent/scripts/db-bridge.js", ".agent/scripts/db-dump.js");
+    /**
+     * DB에 연결하는 실제 도구가 스캔에서 빠지면 무관한 JS 파일 수로 보충할 수 없다.
+     * [2026-10-07] db-dump.js 는 복원할 수 없는 평문 덤프(IDENTITY·bytea 손실)를 만드는 소비처 없는 도구라 퇴역했다 —
+     * 백업 정본은 pg_dump -Fc 다(backup-and-restore-runbook). DB 연결 도구는 db-bridge.js 하나다.
+     */
+    private static final Set<String> REQUIRED_AGENT_DB_SCRIPTS = Set.of(".agent/scripts/db-bridge.js");
     private static final String APP_PROD_YML = "api-server/src/main/resources/application-prod.yml";
     private static final String APP_E2E_YML = "api-server/src/main/resources/application-e2e.yml";
     private static final String APP_LOCAL_YML = "api-server/src/main/resources/application-local.yml";
@@ -190,10 +193,10 @@ class SecretLiteralLinterTest {
                     .filter(SecretLiteralLinterTest::isScript)
                     .sorted()
                     .forEach(scripts::add);
-        // vacuity 하한(실측 2026-08-01: .sh 3 + .ps1 8 = 11)
+        // vacuity 하한(실측 2026-10-07: .sh 2 + .ps1 6 = 8 — 일회성·개인 경로 스크립트 퇴역 뒤)
         if (scripts.size() < 8) {
             fail("게이트 무결성 파손: scripts/ 스캔 결과(" + scripts.size()
-                    + ")가 예상 하한(8) 미만 — 경로/확장자 필터 파손 의심 (실측 11).");
+                    + ")가 예상 하한(8) 미만 — 경로/확장자 필터 파손 의심 (실측 8).");
         }
         for (Path script : scripts) {
             auditScript(root, script, violations);
@@ -280,8 +283,7 @@ class SecretLiteralLinterTest {
     @Test
     @DisplayName("DB 도구 각각의 스캔 누락은 무관한 JS 8개나 같은 이름의 하위 파일로 보충해도 red다")
     void agentJavaScriptPopulationRequiresEachConnectionTool(@TempDir Path root) throws IOException {
-        List<Path> required = List.of(writeAgentJavaScript(root, "db-bridge.js", "// fixture\n"),
-                writeAgentJavaScript(root, "db-dump.js", "// fixture\n"));
+        List<Path> required = List.of(writeAgentJavaScript(root, "db-bridge.js", "// fixture\n"));
         List<Path> scripts = new ArrayList<>(required);
         for (int i = 0; i < 8; i++) scripts.add(writeAgentJavaScript(root, "unrelated-" + i + ".js", "// fixture\n"));
         List<String> violations = new ArrayList<>();
@@ -302,7 +304,6 @@ class SecretLiteralLinterTest {
     @DisplayName("필수 DB 도구와 추가 JS 모두 DB 환경변수 폴백·설정 리터럴을 탐지한다")
     void agentDbSecretDetectionCoversRequiredAndAdditionalJavaScripts(@TempDir Path root) throws IOException {
         List<Path> scripts = List.of(writeAgentJavaScript(root, "db-bridge.js", "// fixture\n"),
-                writeAgentJavaScript(root, "db-dump.js", "// fixture\n"),
                 writeAgentJavaScript(root, "additional-tool.js", "// fixture\n"));
         // 실제 접속정보를 쓰지 않는 합성 위반이다.
         StringBuilder invalid = new StringBuilder();
@@ -319,6 +320,27 @@ class SecretLiteralLinterTest {
             assertEquals(8, violations.size());
             assertTrue(violations.stream().allMatch(violation -> violation.startsWith("File [" + rel(root, script) + ":")));
             Files.writeString(script, "// fixture\n", StandardCharsets.UTF_8);
+        }
+    }
+
+    @Test
+    @DisplayName("UTF-16(BOM) 으로 저장된 스크립트도 디코딩한 뒤 시크릿 리터럴 대입을 탐지한다")
+    void utf16ScriptsAreDecodedBeforeScanning(@TempDir Path root) throws IOException {
+        // 실제 값이 아닌 합성 위반이다. 이름은 조립해 저장소 시크릿 스캐너의 문자열 규칙에 걸리지 않게 한다.
+        String body = "export " + "JWT_" + "SECRET" + "=fixture-literal\n";
+        for (boolean littleEndian : List.of(true, false)) {
+            Path script = root.resolve(SCRIPTS_DIR).resolve(littleEndian ? "utf16le.sh" : "utf16be.sh");
+            Files.createDirectories(script.getParent());
+            byte[] encoded = body.getBytes(littleEndian ? StandardCharsets.UTF_16LE : StandardCharsets.UTF_16BE);
+            byte[] withBom = new byte[encoded.length + 2];
+            withBom[0] = (byte) (littleEndian ? 0xFF : 0xFE);
+            withBom[1] = (byte) (littleEndian ? 0xFE : 0xFF);
+            System.arraycopy(encoded, 0, withBom, 2, encoded.length);
+            Files.write(script, withBom);
+
+            List<String> violations = new ArrayList<>();
+            auditScript(root, script, violations);
+            assertEquals(1, violations.size(), "UTF-16 디코딩이 빠지면 NUL 이 끼어 위반을 놓친다: " + violations);
         }
     }
 
@@ -624,8 +646,9 @@ class SecretLiteralLinterTest {
     /**
      * BOM 인지 디코딩. 두 가지 실측 이유가 있다.
      * <ul>
-     *   <li>{@code scripts/setup_remote.sh} 는 UTF-16LE 로 저장돼 있다 — UTF-8 로 읽으면 문자 사이에 NUL 이
-     *       끼어 어떤 패턴에도 매칭되지 않는, 즉 <b>인코딩만으로 게이트를 빠져나가는</b> 파일이 된다.</li>
+     *   <li>UTF-16 으로 저장된 스크립트를 UTF-8 로 읽으면 문자 사이에 NUL 이 끼어 어떤 패턴에도 매칭되지 않는,
+     *       즉 <b>인코딩만으로 게이트를 빠져나가는</b> 파일이 된다. 실제로 그렇게 저장돼 있던 scripts/setup_remote.sh 는
+     *       2026-10-07 퇴역했고, 이 분기는 합성 fixture 테스트({@code utf16ScriptsAreDecodedBeforeScanning})가 지킨다.</li>
      *   <li>{@code Files.readString} 은 MalformedInput 에 예외를 던져 게이트 자체를 죽인다. 대체문자
      *       디코딩({@code new String(byte[], Charset)})을 써서 스캔은 계속하되 조용히 넘어가지 않게 한다.</li>
      * </ul>

@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const client = vi.hoisted(() => ({ getRaw: vi.fn(), requestRaw: vi.fn() }));
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
-import { surveyAdminService } from '../SurveyAdminService';
+import { surveyParticipationService } from '../SurveyParticipationService';
 
 const row = (srvySn: number, responded?: boolean | null) => ({
   srvySn, srvyTtl: `${srvySn}번 설문`, srvyTmpltSn: 1, ...(responded === undefined ? {} : { responded }),
@@ -22,7 +22,7 @@ describe('설문 목록 매핑 — 응답 여부 보존', () => {
       data: { list: [row(1, true), row(2, false), row(3, null), row(4)], total: 4, page: 0, size: 10, totalPage: 1 },
     });
 
-    const page = await surveyAdminService.getSurveys({ page: 0, size: 10 });
+    const page = await surveyParticipationService.getSurveys({ page: 0, size: 10 });
 
     expect(page.list.map((s) => s.responded)).toEqual([true, false, undefined, undefined]);
   });

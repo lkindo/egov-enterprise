@@ -42,10 +42,11 @@ public class UserSignupRequest {
     @Size(max = 300)
     private String pswdCrans;
 
-    // [보안] role 필드를 두지 않는다. 이 DTO 는 미인증 공개 엔드포인트(POST /api/v1/users/signup)의
-    //   요청 본문이며, 여기에 권한을 받으면 요청 1건으로 ROLE_ADMIN 자가 발급이 가능해진다.
-    //   권한은 UserService.signup() 이 Role.USER 로 고정하고, 관리자 계정 생성은
-    //   SecurityUtil.assertAdmin() 이 걸린 registerUser(POST /api/v1/admin/system/users) 경로만 사용한다.
+    // [보안] role 필드를 두지 않는다. 이 DTO 는 POST /api/v1/users/signup 의 요청 본문이다. 이 경로는
+    //   DEC-OPS-135 이후 USER_CREATE 권한자만 부를 수 있지만, 여기에 권한을 받으면 계정 등록 권한만으로
+    //   요청 1건에 ROLE_ADMIN 을 발급하는 경로가 된다. 권한은 UserService.signup() 이 Role.USER 로 고정하고,
+    //   관리자 등록 registerUser(POST /api/v1/admin/system/users, SecurityUtil.assertPermission("USER_CREATE"))도
+    //   USER 로만 만든다. 추가 그룹은 버전 검증된 권한 배정 API(AUTHRT_ASSIGN)로만 부여한다.
     //   @JsonIgnore 나 주석 처리로 대체하지 말 것 — 필드가 존재하면 빌더·매핑 경로로 되살아난다.
     //   재발 방지 게이트: SignupContractLinterTest (api-server harness, pre-push 실행).
 }

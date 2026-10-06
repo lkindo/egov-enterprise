@@ -410,7 +410,7 @@ public class MenuService {
 
         if (!plan.deletions().isEmpty()) {
             // 지우기 직전에 새 문장으로 하위를 다시 센다. 삭제는 Menu.children 을 따라 하위까지 지우므로, 판정에서 빠진
-            // 하위가 있으면 조용히 사라진다 — 단건 일괄 삭제(deleteMenuManageList)와 같은 방어다.
+            // 하위가 있으면 조용히 사라진다. 삭제 집합 밖의 하위가 하나라도 남아 있으면 저장 전체를 거부한다.
             for (Long id : plan.deletions()) {
                 if (menuRepository.countByUpMenuSnAndMenuSnNotIn(id, plan.deletions()) > 0) {
                     throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
@@ -501,26 +501,6 @@ public class MenuService {
         menuRepository.deleteById(menuNo);
     }
 
-    @Transactional
-    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos" }, allEntries = true)
-    public void deleteMenuManageList(String checkedMenuNoForDel) {
-        SecurityUtil.assertPermission("MENU_DELETE");
-        List<Long> ids = parseMenuIds(checkedMenuNoForDel);
-        if (!ids.isEmpty()) {
-            lockExistingMenus(ids);
-            // [V2_13 결속] 삭제 집합 밖의 자식을 가진 메뉴가 있으면 차단 (서브트리 일괄 삭제는 허용 —
-            // fk_tb_menu_info_tb_menu_info_up 은 DEFERRABLE INITIALLY DEFERRED 라 커밋 시점에 일괄 검증됨)
-            for (Long id : ids) {
-                if (menuRepository.countByUpMenuSnAndMenuSnNotIn(id, ids) > 0) {
-                    throw new BusinessException("하위 메뉴가 있는 메뉴(" + id + ")는 삭제할 수 없습니다. 하위 메뉴를 함께 선택하거나 먼저 삭제하세요.",
-                            CommonErrorCode.INVALID_INPUT_VALUE);
-                }
-            }
-            authorizationAdministrationService.removeNavigationGrantsForMenus(ids);
-            menuRepository.deleteAllById(Objects.requireNonNull(ids));
-        }
-    }
-
     private void lockExistingMenus(List<Long> ids) {
         if (menuRepository.findForUpdateByMenuSnIn(ids).size() != ids.size()) {
             throw new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND, "삭제할 메뉴를 다시 조회해 주세요.");
@@ -551,7 +531,7 @@ public class MenuService {
     }
 
     private List<MenuDto> findSubTree(List<MenuDto> nodes, Long targetMenuNo) {
-        if (nodes == null) return java.util.Collections.emptyList();
+        if (nodes == null) return Collections.emptyList();
         for (MenuDto node : nodes) {
             if (node.getId().equals(targetMenuNo)) {
                 return node.getChildren();
@@ -563,7 +543,7 @@ public class MenuService {
                 }
             }
         }
-        return java.util.Collections.emptyList();
+        return Collections.emptyList();
     }
 
     public List<MenuDto> selectMenuManageList(@NonNull BaseSearchDto searchVO) {

@@ -60,7 +60,8 @@ const GENERATED_EXECUTOR_NAMES = new Set([
   ...GENERATED_EXECUTOR_EXPORTS,
 ]);
 const GENERATED_SERVICE_METHODS = new Set(['executeGenerated', 'executeGeneratedMultipart']);
-const GENERATED_SERVICE_BASES = new Set(['ApiService', 'AdminService', 'UserService']);
+// [2026-10-07] 빈 표지 기반 클래스 AdminService·UserService 를 걷어 모든 서비스가 ApiService 를 직접 상속한다.
+const GENERATED_SERVICE_BASES = new Set(['ApiService']);
 const CLASSIFICATIONS = ['generated', 'legacy', 'direct', 'unmapped', 'special'];
 const SPECIAL_CASES = ['auth-bff', 'auth-route-client', 'binary', 'multipart', 'actuator'];
 const COMPLETION_TARGET = Object.freeze({
@@ -580,11 +581,6 @@ function evaluateText(expression, symbols, substitutions = new Map(), seen = new
   return null;
 }
 
-function classExtendsName(classNode) {
-  const heritage = classNode.heritageClauses?.find(({ token }) => token === ts.SyntaxKind.ExtendsKeyword);
-  return heritage?.types[0] ? expressionName(heritage.types[0].expression) : null;
-}
-
 function classExtendsExpression(classNode) {
   const heritage = classNode.heritageClauses?.find(({ token }) => token === ts.SyntaxKind.ExtendsKeyword);
   return heritage?.types[0]?.expression ?? null;
@@ -608,11 +604,6 @@ function serviceBasePath(call, symbols) {
   const domain = evaluateText(superCall.arguments[0], symbols);
   if (domain === null) return null;
   const cleanedDomain = domain.replace(/^\/+|\/+$/g, '');
-  const parent = classExtendsName(classNode);
-  if (parent === 'AdminService') {
-    const category = evaluateText(superCall.arguments[1], symbols) ?? 'system';
-    return `/api/v1/admin/${category.replace(/^\/+|\/+$/g, '')}/${cleanedDomain}`;
-  }
   return `/api/v1/${cleanedDomain}`.replace(/\/+$/g, '');
 }
 

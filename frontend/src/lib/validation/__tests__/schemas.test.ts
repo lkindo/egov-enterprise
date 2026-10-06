@@ -1,52 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { pollSchema, smsSchema, smsRecipientNumberSchema, menuSchema } from '../schemas';
+import { smsSchema, smsRecipientNumberSchema } from '../schemas';
 
+/*
+  [2026-10-07] pollSchema·menuSchema describe 를 걷었다. 두 스키마는 테스트만 import 했고, 실제 쓰기 화면은
+  투표가 admin/survey/manage/poll-form-validation.ts(pollFormSchema·adminPollFormSchema, 그 옆 테스트가 검증),
+  메뉴가 admin/system/menus/menuDraft.ts 의 validateMenuFields(menuDraft.test.ts 가 검증)를 쓴다.
+*/
 describe('Standardized Validation Schemas', () => {
-  
-  describe('pollSchema (Survey)', () => {
-    it('should validate correct poll data', () => {
-      const validData = {
-        pollNm: '2024 하반기 설문',
-        pollBgngYmd: '20240101',
-        pollEndYmd: '20241231',
-        pollKndCd: '001',
-      };
-      const result = pollSchema.safeParse(validData);
-      expect(result.success).toBe(true);
-    });
-
-    it('should reject empty title', () => {
-      const invalidData = {
-        pollNm: '',
-        pollBgngYmd: '20240101',
-        pollEndYmd: '20241231',
-        pollKndCd: '001',
-      };
-      const result = pollSchema.safeParse(invalidData);
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        const issues = result.error.issues;
-        expect(issues.length).toBeGreaterThan(0);
-        expect(issues[0].code).toBe('too_small');
-      }
-    });
-
-    it('should reject if end date is before start date', () => {
-      const invalidData = {
-        pollNm: '날짜 오류 테스트',
-        pollBgngYmd: '20241231',
-        pollEndYmd: '20240101',
-        pollKndCd: '001',
-      };
-      const result = pollSchema.safeParse(invalidData);
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        const issues = result.error.issues;
-        expect(issues.length).toBeGreaterThan(0);
-        expect(issues[0].message).toBe('종료일은 시작일보다 빠를 수 없습니다.');
-      }
-    });
-  });
 
   describe('smsSchema (SMS)', () => {
     it('하이픈 입력을 선행 0이 보존된 11자리 수신번호로 정규화한다', () => {
@@ -84,37 +44,6 @@ describe('Standardized Validation Schemas', () => {
         const issues = result.error.issues;
         expect(issues.length).toBeGreaterThan(0);
         expect(issues[0].code).toBe('too_big');
-      }
-    });
-  });
-
-  describe('menuSchema (Menu Management)', () => {
-    it('should allow a missing menu number when the DB generates it', () => {
-      const result = menuSchema.safeParse({ menuNm: 'Generated Menu', menuOrdr: 1 });
-      expect(result.success).toBe(true);
-    });
-
-    it('should validate correct menu numbers and order', () => {
-      const validData = {
-        menuNo: '1001',
-        menuNm: 'Dashboard',
-        menuOrdr: 1,
-      };
-      const result = menuSchema.safeParse(validData);
-      expect(result.success).toBe(true);
-    });
-
-    it('should coerce string order to number', () => {
-      const dataWithStingOrder = {
-        menuNo: '1001',
-        menuNm: 'Dashboard',
-        menuOrdr: '10',
-      };
-      const result = menuSchema.safeParse(dataWithStingOrder);
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(typeof result.data.menuOrdr).toBe('number');
-        expect(result.data.menuOrdr).toBe(10);
       }
     });
   });

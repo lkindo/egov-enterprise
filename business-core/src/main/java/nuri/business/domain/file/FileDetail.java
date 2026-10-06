@@ -7,7 +7,6 @@ import lombok.AccessLevel;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
  * 파일 상세 엔티티 (NFILEDETAIL 테이블)
@@ -33,7 +32,6 @@ public class FileDetail extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ATCH_FILE_SN", nullable = false)
-    @Setter
     private FileMaster fileMaster;
 
         private Integer atchFileSeq;

@@ -1,6 +1,7 @@
 import type { CommunityVO, CommunitySearchParams } from '@/types/business/community';
 import type { PageResponse } from '@/types/foundation/system';
 import type { components, operations } from '@/types/generated-api';
+import { requirePageResponse } from '@/services/core/page-response';
 
 type CommunityListQuery = NonNullable<operations['getCommunities_1']['parameters']['query']>;
 
@@ -36,14 +37,5 @@ export function toCommunityListQuery(params: CommunitySearchParams): CommunityLi
 export function requireCommunityPage(
   response: components['schemas']['PageResponseCommunityDto'],
 ): PageResponse<CommunityVO> {
-  if (
-    !Array.isArray(response.list)
-    || typeof response.total !== 'number'
-    || typeof response.page !== 'number'
-    || typeof response.size !== 'number'
-    || typeof response.totalPage !== 'number'
-  ) {
-    throw new Error('커뮤니티 페이지 응답이 필수 계약과 일치하지 않습니다.');
-  }
-  return response as unknown as PageResponse<CommunityVO>;
+  return requirePageResponse(response as unknown as PageResponse<CommunityVO>, '커뮤니티');
 }

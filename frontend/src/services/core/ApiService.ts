@@ -35,13 +35,3 @@ export abstract class ApiService {
     return executeGeneratedMultipartOperation(descriptor, args);
   }
 }
-
-/**
- * 사용자용 서비스 클래스
- */
-export abstract class UserService extends ApiService {}
-
-/**
- * 관리자용 서비스 클래스
- */
-export abstract class AdminService extends ApiService {}

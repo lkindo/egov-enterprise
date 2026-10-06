@@ -1,5 +1,6 @@
 import type { AxiosRequestConfig } from 'axios';
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
+import { copyPageResponse } from '@/services/core/page-response';
 import type { PageResponse, SearchParams } from '@/types/foundation/system';
 import type { UserManage, UserSearchParams } from '@/types/foundation/user';
 import type { components, operations } from '@/types/generated-api';
@@ -129,42 +130,15 @@ function toUserProfileUpdate(data: UserProfileUpdate): UserProfileUpdate {
   return result;
 }
 
-function requireUserPage(
-  response: {
-    list?: UserResponse[];
-    total?: number;
-    page?: number;
-    size?: number;
-    totalPage?: number;
-  },
-): PageResponse<UserManage> {
-  if (
-    !Array.isArray(response.list)
-    || typeof response.total !== 'number'
-    || typeof response.page !== 'number'
-    || typeof response.size !== 'number'
-    || typeof response.totalPage !== 'number'
-  ) {
-    throw new Error('사용자 페이지 응답이 필수 계약과 일치하지 않습니다.');
-  }
-  return {
-    list: response.list.map(toUserManage),
-    total: response.total,
-    page: response.page,
-    size: response.size,
-    totalPage: response.totalPage,
-  };
-}
-
 /** 사용자 관리 서비스 (Admin) */
-class UserAdminService extends AdminService {
+class UserAdminService extends ApiService {
   /** 사용자 목록 조회 (페이징) */
   async getUserList(params?: UserSearchParams | SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<UserManage>> {
     const response = await this.executeGenerated(getUsersOperation, {
       query: toUserListQuery(params),
       config,
     });
-    return requireUserPage(response);
+    return copyPageResponse<UserResponse, UserManage>(response, '사용자', toUserManage);
   }
 
   /**

@@ -10,6 +10,7 @@ import { AbsenceBadge } from '@/app/components/ui/absence-badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { failureMessage } from '@/lib/safe-error-log';
+import { isConflictError } from '@/lib/query/list-query-defaults';
 import type { UserSearchResult } from '@/services/business/user/UserSearchService';
 import type { InformalSanctionDto } from '@/services/business/user/approval/ApprovalUserService';
 import { approvalKeys, approvalMutationOptions } from '@/queries/approval-query-options';
@@ -19,11 +20,6 @@ import { ApproverInlinePicker } from './ApproverInlinePicker';
 const REFERENCE_LIMIT = 20;
 /** 이름을 받지 못한 사람. 식별자를 이름 자리에 보이지 않는다(DEC-OPS-141·193). */
 const UNKNOWN_USER = '알 수 없는 사용자';
-
-function isConflict(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'response' in error
-    && (error as { response?: { status?: number } }).response?.status === 409;
-}
 
 interface ApprovalReferencePanelProps {
   /** 서버가 판정한 상세 — 참조자 목록과 결재자 추가 힌트(canAddReference)를 싣는다. */
@@ -123,7 +119,7 @@ export function ApprovalReferencePanel({ document, disabled }: ApprovalReference
         : '고른 사람은 이미 이 차수의 참조자라 새로 지정하지 않았습니다.', 'success');
     } catch (failure) {
       // 그사이 기안자가 참조자를 지정했거나 다른 결재자가 처리해 버전이 바뀌었을 수 있다 — 서버가 말한 사유를 보이고 다시 읽는다.
-      const conflict = isConflict(failure);
+      const conflict = isConflictError(failure);
       if (conflict) {
         void queryClient.invalidateQueries({ queryKey: approvalKeys.detail(ifmlAtrzSn) });
         void queryClient.invalidateQueries({ queryKey: approvalKeys.lists() });

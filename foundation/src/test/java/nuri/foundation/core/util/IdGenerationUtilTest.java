@@ -55,10 +55,6 @@ class IdGenerationUtilTest {
         assertThat(IdGenerationUtil.generateUserId())
                 .startsWith(Constants.User.USER_PREFIX)
                 .hasSize(Constants.User.USER_PREFIX.length() + Constants.User.UUID_LENGTH);
-
-        assertThat(IdGenerationUtil.generateMberId())
-                .startsWith(Constants.User.MBER_PREFIX)
-                .hasSize(Constants.User.MBER_PREFIX.length() + Constants.User.ESNTL_ID_UUID_LENGTH);
     }
 
     @Test

@@ -96,8 +96,8 @@ const PIC_SEARCH_MIN_KEYWORD = 2;
 export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, isPending = false, onEditStateChange }: DeptJobFormProps) {
     const isEdit = mode === 'edit';
 
-    // 업무함 목록. 조회는 관리자 전용이 아니므로 일반 사용자도 선택할 수 있다
-    // (등록·수정 등 쓰기만 @AdminOrSystem 이다).
+    // 업무함 목록. 조회 권한(DEPT_BOX_READ)은 기본 배정상 일반 사용자도 가지므로 일반 사용자도 선택할 수 있다
+    // (등록·수정·삭제만 DEPT_BOX_CREATE·UPDATE·DELETE 권한이 필요하다).
     const { data: boxData } = useQuery({
         queryKey: ['dept-job-boxes'],
         queryFn: () => deptJobUserService.getDeptJobBoxes({}),

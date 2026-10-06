@@ -53,3 +53,24 @@ test('both load entry points make check failures fail the run and consume the ac
     assert.doesNotMatch(source, /body\.result/);
   }
 });
+
+// [2026-10-07] 주간 부하 워크플로는 시크릿을 환경변수로 실은 채 k6 를 실행하고, k6 는 시스템 환경변수를 __ENV 로
+// 넘긴다. 그래서 원격 모듈은 내용이 바뀔 수 없는 주소로만 가져온다 — jslib 은 버전 경로, GitHub raw 는 40자리 커밋.
+// 종전에는 k6-reporter 를 `main` 브랜치에서 가져와, 그 저장소의 다음 커밋이 검토 없이 시크릿 옆에서 실행됐다.
+test('load-test sources import remote modules only from immutable, version-pinned URLs', () => {
+  const files = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const path = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) { if (entry.name !== 'results' && entry.name !== 'node_modules') walk(path); }
+      else if (/\.(m?js)$/.test(entry.name)) files.push(path);
+    }
+  };
+  walk('test/load-tests');
+  const remote = files.flatMap((file) => [...fs.readFileSync(file, 'utf8').matchAll(/\bfrom\s+['"](https?:\/\/[^'"]+)['"]/g)]
+    .map((match) => ({ file, url: match[1] })));
+  assert.ok(remote.length >= 2, 'remote imports disappeared — re-check this contract');
+  const pinned = (url) => /^https:\/\/jslib\.k6\.io\/[\w-]+\/\d+\.\d+\.\d+\//.test(url)
+    || /^https:\/\/raw\.githubusercontent\.com\/[\w.-]+\/[\w.-]+\/[0-9a-f]{40}\//.test(url);
+  for (const { file, url } of remote) assert.ok(pinned(url), `${file} imports a mutable remote module: ${url}`);
+});

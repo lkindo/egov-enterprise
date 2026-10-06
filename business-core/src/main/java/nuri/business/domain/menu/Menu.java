@@ -161,13 +161,6 @@ public class Menu extends BaseEntity {
     }
 
     /**
-     * 현대적 라우트 업데이트
-     */
-    public void updateModernRoute(String modernRoute) {
-        this.modernRoute = modernRoute;
-    }
-
-    /**
      * 메뉴 정보 수정 (modern_route 포함).
      * modernRoute 역시 {@link #update} 와 동일한 병합 규칙(null=유지, 빈 문자열=비움)을 따른다.
      */

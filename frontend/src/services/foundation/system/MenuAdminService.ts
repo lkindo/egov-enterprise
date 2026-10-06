@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
+import { requirePageResponse } from '@/services/core/page-response';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import type { AxiosRequestConfig } from 'axios';
 import type { components, operations } from '@/types/generated-api';
@@ -64,10 +65,6 @@ export type MenuStructure = z.infer<typeof menuStructureSchema>;
 export type MenuStructureItem = z.infer<typeof menuStructureItemSchema>;
 /** 저장 요청(PUT /menus/structure). 바뀐 부모의 형제 전체 1..n, 바뀐 기존 메뉴의 속성 네 칸 전체, 삭제, 그룹별 메뉴 표시 변경. */
 export type MenuStructureSave = GeneratedOperationRequest<'saveMenuStructure'>;
-export type MenuCreation = MenuStructureSave['creations'][number];
-export type MenuPlacement = MenuStructureSave['placements'][number];
-export type MenuProperties = MenuStructureSave['properties'][number];
-export type MenuGroupGrantChange = MenuStructureSave['grants'][number];
 
 const MENU_QUERY_KEYS = [
   'searchCondition',
@@ -108,21 +105,6 @@ function toMenuSearchQuery(params?: SearchParams): MenuSearchQuery {
   return query;
 }
 
-function requireMenuPage<T>(
-  response: { list?: T[]; total?: number; page?: number; size?: number; totalPage?: number },
-): PageResponse<T> {
-  if (
-    !Array.isArray(response.list)
-    || typeof response.total !== 'number'
-    || typeof response.page !== 'number'
-    || typeof response.size !== 'number'
-    || typeof response.totalPage !== 'number'
-  ) {
-    throw new Error('메뉴 페이지 응답이 필수 계약과 일치하지 않습니다.');
-  }
-  return response as PageResponse<T>;
-}
-
 function toMenuRequest(data: Partial<Menu>): MenuWire {
   const source = data as Partial<MenuWire> & Partial<Menu> & {
     children?: Partial<Menu>[];
@@ -149,14 +131,14 @@ function toMenuRequest(data: Partial<Menu>): MenuWire {
 /**
  * 메뉴 관리 서비스 (Admin)
  */
-class MenuAdminService extends AdminService {
+class MenuAdminService extends ApiService {
   /** 메뉴 목록 조회 */
   async getMenuList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Menu>> {
     const response = await this.executeGenerated(getMenuListOperation, {
       query: toMenuSearchQuery(params),
       config,
     });
-    return requireMenuPage(response) as PageResponse<Menu>;
+    return requirePageResponse(response as PageResponse<Menu>, '메뉴');
   }
 
   /** 메뉴 전체 트리 조회 */
@@ -215,7 +197,7 @@ class MenuAdminService extends AdminService {
       query: toMenuSearchQuery(params),
       config,
     });
-    return requireMenuPage(response) as PageResponse<MenuCreate>;
+    return requirePageResponse(response as PageResponse<MenuCreate>, '메뉴');
   }
 
   /** 권한별 메뉴 할당 저장 */

@@ -46,7 +46,7 @@ export async function createComment(prevState: unknown, formData: FormData): Pro
 
     // [2026-08-09 판정 정정] 종전에는 `if (response)` 로 성공을 판정했다.
     //   client 는 실패 시 **반드시 예외를 던진다** — axios 인터셉터가 HTTP 오류를 reject 하고,
-    //   extractData 가 success:false 를 throw 한다. 즉 이 줄에 도달했다면 이미 성공이다.
+    //   생성 API 경계가 success:false envelope 를 throw 한다. 즉 이 줄에 도달했다면 이미 성공이다.
     //   그런데 백엔드가 본문 없이 성공하면 response 가 null 이 되어 **성공을 실패로 보고**했다.
     //   사용자는 다시 누르고, 그러면 댓글이 두 개 달린다.
     //   (삭제만 `!== undefined` 로 판정해 이 문제가 없었다 — 셋의 판정이 비대칭이었다.)

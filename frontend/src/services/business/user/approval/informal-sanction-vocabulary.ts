@@ -32,8 +32,3 @@ export const SANCTION_STATUS = {
 } as const;
 
 export type SanctionStatusCode = (typeof SANCTION_STATUS)[keyof typeof SANCTION_STATUS];
-
-/** 결재 대기(미처리) 여부 — 초기 상태는 'A'(신청)이며, 미설정도 대기로 간주한다. */
-export function isSanctionPending(aprvYn?: string): boolean {
-  return !aprvYn || aprvYn === SANCTION_STATUS.REQUESTED;
-}

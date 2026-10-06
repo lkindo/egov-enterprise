@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { notifyAuthorizationChanged } from '@/lib/auth/authorization-state';
 import { failureMessage } from '@/lib/safe-error-log';
+import { isConflictError } from '@/lib/query/list-query-defaults';
 import { useDirtyCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import { authorizationAdminService } from '@/services/foundation/system/AuthorizationAdminService';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
@@ -18,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PagePagination } from '@/components/common/PagePagination';
-import { invalidateMembershipQueries, isConflict } from './group-member-queries';
+import { invalidateMembershipQueries } from './group-member-queries';
 
 const PAGE_SIZE = 20;
 
@@ -83,7 +84,7 @@ export function GroupMemberAddDialog({ code, name, onClose }: { code: string; na
       onClose();
     } catch (error) {
       toast(failureMessage(error, '구성원을 추가하지 못했습니다. 구성원 목록을 다시 확인해 주세요.'), 'error');
-      if (isConflict(error)) await invalidateMembershipQueries(queryClient);
+      if (isConflictError(error)) await invalidateMembershipQueries(queryClient);
     } finally {
       addRequestRef.current = false;
       setAddPending(false);

@@ -136,8 +136,8 @@ public class BoardMaster extends BaseEntity {
 
     /**
      * ansYn/stsfdgYn 값을 BoardMasterOption 과 정합하게 동기화한다.
-     * option 이 아직 없으면 registerOption 으로 생성하여 update() 와 부분 setter
-     * (updateAnsYn/updateStsfdgYn) 가 동일한 정합성 정책을 갖도록 보장한다.
+     * option 이 아직 없으면 registerOption 으로 생성하여 update() 가 registerOption 과
+     * 동일한 정합성 정책을 갖도록 보장한다.
      */
     private void syncOption() {
         // BoardMaster 컬럼(nullable=false) 방어 및 Option 과의 값 일치 보장
@@ -151,22 +151,7 @@ public class BoardMaster extends BaseEntity {
         }
     }
 
-    public void updateBbsTtl(String bbsTtl) { this.bbsTtl = bbsTtl; }
-    public void updateBbsExpln(String bbsExpln) { this.bbsExpln = bbsExpln; }
-    public void updateAnsPsbltyYn(String ansPsbltyYn) { this.ansPsbltyYn = ansPsbltyYn; }
-    public void updateFileAtchPsbltyYn(String fileAtchPsbltyYn) { this.fileAtchPsbltyYn = fileAtchPsbltyYn; }
-    public void updateAtchPsbltyFileQty(Integer atchPsbltyFileQty) { this.atchPsbltyFileQty = atchPsbltyFileQty; }
-    public void updateAtchPsbltyFileSz(Long atchPsbltyFileSz) { this.atchPsbltyFileSz = atchPsbltyFileSz; }
-    public void updateTmpltId(String tmpltId) { this.tmpltId = tmpltId; }
     public void updateUseYn(String useYn) { this.useYn = useYn; }
-    public void updateAnsYn(String ansYn) {
-        this.ansYn = ansYn;
-        syncOption();
-    }
-    public void updateStsfdgYn(String stsfdgYn) {
-        this.stsfdgYn = stsfdgYn;
-        syncOption();
-    }
 
     public void delete() {
         this.useYn = "N";

@@ -243,8 +243,7 @@
         "src/types/**",
         "**/*.d.ts",
         "src/mocks/**",
-        "src/**/__tests__/**",
-        "src/i18n/**"
+        "src/**/__tests__/**"
       ],
       "baselineInclude": [
         "src/app/**",
@@ -261,8 +260,7 @@
         "src/types/**",
         "**/*.d.ts",
         "src/mocks/**",
-        "src/**/__tests__/**",
-        "src/i18n/**"
+        "src/**/__tests__/**"
       ],
       "owner": "frontend-platform",
       "redProof": "Remove a production source root, add a new exclusion, or hide either array in a comment/string decoy; the population contract must fail."

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DomainCluster, GroupCode } from '@/types/foundation/code';
-import { flattenCodeTree, getCodeProjection } from '../treeUtils';
+import { flattenCodeTree } from '../treeUtils';
 
 const group = (cdId: string, cdIdNm: string): GroupCode => ({
   cdId,
@@ -33,21 +33,7 @@ describe('common-code treeUtils', () => {
     ]);
   });
 
-  it('그룹은 over 위치 위의 가장 가까운 분류로만 이동한다', () => {
-    const flattened = flattenCodeTree([
-      cluster('A', '분류 A', [group('A1', '그룹 A1')]),
-      cluster('B', '분류 B', [group('B1', '그룹 B1')]),
-    ]);
-
-    expect(getCodeProjection(flattened, 'A1', 'B1', 999, 1))
-      .toEqual({ depth: 1, parentId: 'B' });
-    expect(getCodeProjection(flattened, 'B', 'A1', -999, 1))
-      .toEqual({ depth: 0, parentId: null });
-  });
-
-  it('존재하지 않는 active 노드는 projection을 만들지 않는다', () => {
-    const flattened = flattenCodeTree([cluster('A', '분류 A')]);
-
-    expect(getCodeProjection(flattened, 'MISSING', 'A', 0, 24)).toBeNull();
-  });
+  // [2026-10-07] 운영이 쓰지 않던 getCodeProjection 과 그 계약을 걷었다. 끌기 판정은 CommonCodeClient 가
+  //   'cluster 면 그 id, 아니면 parentId' 로 직접 하며, 그 결과(다른 분류로 옮긴 그룹의 parentId)는
+  //   CommonCodeClient.test.tsx 가 검증한다.
 });

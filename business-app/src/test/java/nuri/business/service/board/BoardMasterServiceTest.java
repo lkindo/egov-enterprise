@@ -151,16 +151,6 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("만족도 및 댓글 사용 가능 여부 확인")
-    void canUseSatisfactionAndComment() {
-        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").stsfdgYn("Y").ansYn("N").build();
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
-
-        assertThat(boardMasterService.canUseSatisfaction("BBS_01")).isTrue();
-        assertThat(boardMasterService.canUseComment("BBS_01")).isFalse();
-    }
-
-    @Test
     @DisplayName("옵션 필드(댓글, 만족도)가 포함된 게시판 마스터 생성")
     void createBoardMaster_WithOptionalFields() throws Exception {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
@@ -177,15 +167,6 @@ class BoardMasterServiceTest {
                 "Y".equals(bm.getAnsYn()) && "Y".equals(bm.getStsfdgYn())
             ));
         }
-    }
-
-    @Test
-    @DisplayName("게시판을 찾을 수 없는 경우 만족도/댓글 사용 여부 false 반환")
-    void canUse_NotFound() {
-        given(boardMasterRepository.findById("INVALID")).willReturn(Optional.empty());
-
-        assertThat(boardMasterService.canUseSatisfaction("INVALID")).isFalse();
-        assertThat(boardMasterService.canUseComment("INVALID")).isFalse();
     }
 
     @Test

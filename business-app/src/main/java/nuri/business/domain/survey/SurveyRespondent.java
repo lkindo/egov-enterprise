@@ -8,8 +8,8 @@ import lombok.*;
  * 설문 응답자 엔티티
  * 매핑 테이블: NQESTNRRESPOND
  *
- * <p>[Phase 5.2 규범] 클래스 레벨 @SuperBuilder/@AllArgsConstructor 제거, 빌더는 정적 팩토리 {@link #create}에 @Builder 배치.
- * 감사 필드(frstRgtrId)는 표준 Auditing 파이프라인에 위임(호출부 빌더에서 제거).
+ * <p>응답자 API·화면은 DEC-OPS-070 으로 걷혔고 행을 만드는 코드 경로가 없다. 엔티티는 저장소의
+ * 존재 확인·FK 선정리(SurveyRespondentRepository)와 스키마 매핑을 위해서만 남긴다 — 생성 팩토리·변경자를 두지 않는다.
  */
 @Entity
 @Table(name = "tb_srvy_rspdnt")
@@ -50,36 +50,4 @@ public class SurveyRespondent extends BaseEntity {
 
     @Column(length = 4)
     private String endTelno;
-
-    private SurveyRespondent(String srvyRspdntId, Long srvySn, Long srvyTmpltSn, String gndrCd,
-            String crTypeCd, String rspdntNm, String brdt, String rgnTelno, String midTelno, String endTelno) {
-        this.srvyRspdntId = srvyRspdntId;
-        this.srvySn = srvySn;
-        this.srvyTmpltSn = srvyTmpltSn;
-        this.gndrCd = gndrCd;
-        this.crTypeCd = crTypeCd;
-        this.rspdntNm = rspdntNm;
-        this.brdt = brdt;
-        this.rgnTelno = rgnTelno;
-        this.midTelno = midTelno;
-        this.endTelno = endTelno;
-    }
-
-    @Builder
-    public static SurveyRespondent create(String srvyRspdntId, Long srvySn, Long srvyTmpltSn, String gndrCd,
-            String crTypeCd, String rspdntNm, String brdt, String rgnTelno, String midTelno, String endTelno) {
-        return new SurveyRespondent(srvyRspdntId, srvySn, srvyTmpltSn, gndrCd, crTypeCd, rspdntNm,
-                brdt, rgnTelno, midTelno, endTelno);
-    }
-
-    public void update(String gndrCd, String crTypeCd, String rspdntNm, String brdt,
-            String rgnTelno, String midTelno, String endTelno) {
-        this.gndrCd = gndrCd;
-        this.crTypeCd = crTypeCd;
-        this.rspdntNm = rspdntNm;
-        this.brdt = brdt;
-        this.rgnTelno = rgnTelno;
-        this.midTelno = midTelno;
-        this.endTelno = endTelno;
-    }
 }

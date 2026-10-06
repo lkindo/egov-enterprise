@@ -1,4 +1,5 @@
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
+import { requirePageResponse } from '@/services/core/page-response';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 import type { components, operations } from '@/types/generated-api';
@@ -34,25 +35,10 @@ function toAuditLogQuery(params: {
   return query;
 }
 
-function requireAuditPage(
-  response: components['schemas']['PageResponseSysLogDto'],
-): PageResponse<AuditLog> {
-  if (
-    !Array.isArray(response.list)
-    || typeof response.total !== 'number'
-    || typeof response.page !== 'number'
-    || typeof response.size !== 'number'
-    || typeof response.totalPage !== 'number'
-  ) {
-    throw new Error('감사 로그 페이지 응답이 필수 계약과 일치하지 않습니다.');
-  }
-  return response as PageResponse<AuditLog>;
-}
-
 /**
  * 감사 로그 관리 서비스 (Admin)
  */
-class AuditAdminService extends AdminService {
+class AuditAdminService extends ApiService {
   /**
    * 감사 로그 목록 조회.
    *
@@ -82,7 +68,7 @@ class AuditAdminService extends AdminService {
       query: toAuditLogQuery(params),
       config,
     });
-    return requireAuditPage(response);
+    return requirePageResponse<AuditLog>(response, '감사 로그');
   }
 }
 

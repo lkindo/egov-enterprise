@@ -4,14 +4,17 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import nuri.business.security.authorization.AuthorizationSnapshotService;
 import nuri.business.security.authorization.PermissionCodes;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.auth.dto.AuthorizationDto.*;
+import nuri.business.service.login.ProtectedAccountChangeGuard;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import org.springframework.core.io.ClassPathResource;
@@ -19,19 +22,31 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /** Audited authorization mutations. The reserved ADMIN row serializes last-manager checks across nodes. */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class AuthorizationAdministrationService implements nuri.business.service.login.ProtectedAccountChangeGuard {
+public class AuthorizationAdministrationService implements ProtectedAccountChangeGuard {
     private final JdbcTemplate jdbc;
     private static final Set<String> RESERVED = Set.of("ROLE_ADMIN", "ROLE_SYSTEM", "ROLE_USER", "ROLE_ANONYMOUS");
     private static final Set<String> PROTECTED_PERMISSIONS = Set.of("AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD");
     // Recovery authority needs the same trusted administration boundary without changing D02 account classification.
     private static final Set<String> SENSITIVE_ADMINISTRATION_PERMISSIONS = Set.of("AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD", "MFA_RECOVER");
+    /**
+     * [2026-10-02] 그룹 버전은 그룹 자신의 이력(GROUP·GROUP_GRANT)만 본다. 종전에는 그룹과 사용자를 같은 조건
+     * ({@code authrt_cd=? OR scrty_dcsn_trgt_id=?})으로 셌는데, 구성원 추가·회수(USER_GROUP 행)도 {@code authrt_cd} 에
+     * 그 그룹을 싣기 때문에 구성원 탭에서 저장하면 같은 그룹의 기능권한 초안이 409 가 됐다. 그룹 스냅샷은 구성원을 담지 않고
+     * 그룹 삭제는 잠금 아래에서 구성원 수를 다시 세므로 이 분리로 막던 것은 없다. 각 축 안의 ABA 방지(마지막 이력 번호)는 유지된다.
+     * 단건({@link #groupLastChange})과 일괄({@link #readGroups}) 조회가 이 조건 하나를 함께 쓴다.
+     */
+    private static final String GROUP_HISTORY = "chg_trgt_type_cd<>'USER_GROUP'";
 
     public List<GroupSummary> groups() {
         SecurityUtil.assertPermission("AUTHRT_READ");
@@ -50,8 +65,20 @@ public class AuthorizationAdministrationService implements nuri.business.service
         if (rows.isEmpty()) throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         var g = rows.getFirst();
         var grants = readGrants(code);
-        String state = Objects.toString(g.name(), "") + "\n" + Objects.toString(g.description(), "") + "\n" + grants;
-        return new GroupSnapshot(code,g.name(),g.description(),grants,groupVersion(code, state),true);
+        return groupSnapshot(code,g.name(),g.description(),grants,groupLastChange(code));
+    }
+
+    /** 버전이 필요 없는 경로의 그룹 존재 확인. 없으면 {@link #readGroup} 과 같은 404 다. */
+    private void requireGroup(String code) {
+        if (jdbc.queryForObject("SELECT count(*) FROM tb_authrt_info WHERE authrt_cd=?",Long.class,code) == 0) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
+    }
+
+    /** 단건({@link #readGroup})과 일괄({@link #readGroups})이 같은 state·버전을 만든다 — 저장 때 두 경로의 버전을 서로 비교한다. */
+    private static GroupSnapshot groupSnapshot(String code, String name, String description, List<Grant> grants, Long last) {
+        String state = Objects.toString(name, "") + "\n" + Objects.toString(description, "") + "\n" + grants;
+        return new GroupSnapshot(code,name,description,grants,versionDigest(code,state,last),true);
     }
 
     private List<Grant> readGrants(String code) {
@@ -70,16 +97,12 @@ public class AuthorizationAdministrationService implements nuri.business.service
                 (rs,n) -> Map.entry(rs.getString(1),new Grant(rs.getString(2),rs.getString(3))))
                 .forEach(row -> grantsByGroup.computeIfAbsent(row.getKey(), ignored -> new ArrayList<>()).add(row.getValue()));
         Map<String,Long> lastByGroup = new HashMap<>();
-        jdbc.query("SELECT authrt_cd,max(authrt_chg_hstry_sn) FROM tb_authrt_chg_hstry WHERE chg_trgt_type_cd<>'USER_GROUP' GROUP BY authrt_cd",
+        jdbc.query("SELECT authrt_cd,max(authrt_chg_hstry_sn) FROM tb_authrt_chg_hstry WHERE " + GROUP_HISTORY + " GROUP BY authrt_cd",
                 (rs,n) -> Map.entry(rs.getString(1),rs.getLong(2)))
                 .forEach(row -> lastByGroup.put(row.getKey(),row.getValue()));
 
-        return groups.stream().map(group -> {
-            var grants = grantsByGroup.getOrDefault(group.code(),List.of());
-            String state = Objects.toString(group.name(), "") + "\n" + Objects.toString(group.description(), "") + "\n" + grants;
-            return new GroupSnapshot(group.code(),group.name(),group.description(),grants,
-                    versionDigest(group.code(),state,lastByGroup.getOrDefault(group.code(),0L)),true);
-        }).toList();
+        return groups.stream().map(group -> groupSnapshot(group.code(),group.name(),group.description(),
+                grantsByGroup.getOrDefault(group.code(),List.of()),lastByGroup.getOrDefault(group.code(),0L))).toList();
     }
 
     public MembershipSnapshot memberships(String userId) {
@@ -88,11 +111,16 @@ public class AuthorizationAdministrationService implements nuri.business.service
     }
 
     private MembershipSnapshot readMemberships(String userId) {
+        var groups = memberGroups(userId);
+        return new MembershipSnapshot(userId,groups,membershipVersion(userId,groups,membershipLastChange(userId)),true);
+    }
+
+    /** 사용자의 배정 그룹(코드 순). 버전이 필요 없는 경로는 이력을 읽지 않는다. 없는 사용자는 404 다. */
+    private List<String> memberGroups(String userId) {
         if (jdbc.queryForObject("SELECT count(*) FROM tb_user_info WHERE esntl_id=?",Long.class,userId) == 0) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         }
-        var groups = jdbc.queryForList("SELECT authrt_cd FROM tb_authrt_user_map WHERE scrty_dcsn_trgt_id=? ORDER BY authrt_cd",String.class,userId);
-        return new MembershipSnapshot(userId,groups,membershipVersion(userId,groups.toString()),true);
+        return jdbc.queryForList("SELECT authrt_cd FROM tb_authrt_user_map WHERE scrty_dcsn_trgt_id=? ORDER BY authrt_cd",String.class,userId);
     }
 
     /**
@@ -102,9 +130,7 @@ public class AuthorizationAdministrationService implements nuri.business.service
      */
     public Page<UserChoice> groupMembers(String code, int page, int size) {
         SecurityUtil.assertPermission("AUTHRT_READ");
-        if (jdbc.queryForObject("SELECT count(*) FROM tb_authrt_info WHERE authrt_cd=?",Long.class,code) == 0) {
-            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
-        }
+        requireGroup(code);
         var pageable = pagination(page,size);
         var rows = jdbc.query("SELECT u.esntl_id,u.user_id,u.user_nm,u.ognz_id FROM tb_authrt_user_map m"
                 + " JOIN tb_user_info u ON u.esntl_id=m.scrty_dcsn_trgt_id WHERE m.authrt_cd=?"
@@ -122,7 +148,7 @@ public class AuthorizationAdministrationService implements nuri.business.service
                 (rs,n) -> new DepartmentChoice(rs.getString(1),rs.getString(2)));
     }
 
-    @Transactional(isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ, readOnly=true)
+    @Transactional(isolation=Isolation.REPEATABLE_READ, readOnly=true)
     public DepartmentSnapshot departmentMemberships(String departmentId) {
         SecurityUtil.assertPermission("AUTHRT_READ");
         return readDepartment(departmentId);
@@ -149,7 +175,7 @@ public class AuthorizationAdministrationService implements nuri.business.service
         }
         var members=users.stream().map(user -> {
             var groups = groupsByUser.getOrDefault(user.id(),List.of());
-            String version = versionDigest(user.id(),groups.toString(),lastByUser.getOrDefault(user.id(),0L));
+            String version = membershipVersion(user.id(),groups,lastByUser.getOrDefault(user.id(),0L));
             return new DepartmentMember(user.id(),user.userId(),user.userNm(),groups,version,true);
         }).toList();
         String digest=AuthorizationSnapshotService.digest(PermissionCodes.CATALOG_VERSION+"\n"+departmentId+"\n"+members);
@@ -164,7 +190,7 @@ public class AuthorizationAdministrationService implements nuri.business.service
                 || !Set.of("ADD","REMOVE").contains(Objects.toString(request.action(),""))) invalid("전체 부서 배정을 조회한 뒤 대상을 선택해 주세요.");
         lockAndAuthorize("AUTHRT_ASSIGN");
         var before=readDepartment(departmentId); requireVersion(before.version(),request.version());
-        readGroup(request.groupCode());
+        requireGroup(request.groupCode());
         if ("ADD".equals(request.action()) && "ROLE_ANONYMOUS".equals(request.groupCode())) invalid("공개 메뉴용 그룹은 로그인 사용자에게 배정할 수 없습니다.");
         var selected=new TreeSet<>(request.userIds());
         if (selected.size()!=request.userIds().size()) invalid("중복된 사용자입니다.");
@@ -180,21 +206,19 @@ public class AuthorizationAdministrationService implements nuri.business.service
         return readDepartment(departmentId);
     }
 
-    /**
-     * [2026-10-02] 그룹 버전은 그룹 자신의 이력(GROUP·GROUP_GRANT)만 본다. 종전에는 그룹과 사용자를 같은 조건
-     * ({@code authrt_cd=? OR scrty_dcsn_trgt_id=?})으로 셌는데, 구성원 추가·회수(USER_GROUP 행)도 {@code authrt_cd} 에
-     * 그 그룹을 싣기 때문에 구성원 탭에서 저장하면 같은 그룹의 기능권한 초안이 409 가 됐다. 그룹 스냅샷은 구성원을 담지 않고
-     * 그룹 삭제는 잠금 아래에서 구성원 수를 다시 세므로 이 분리로 막던 것은 없다. 각 축 안의 ABA 방지(마지막 이력 번호)는 유지된다.
-     */
-    private String groupVersion(String code, String state) {
-        Long last = jdbc.queryForObject("SELECT coalesce(max(authrt_chg_hstry_sn),0) FROM tb_authrt_chg_hstry WHERE authrt_cd=? AND chg_trgt_type_cd<>'USER_GROUP'",Long.class,code);
-        return versionDigest(code,state,last);
+    /** 그룹 자신의 마지막 이력 번호 — 조건은 {@link #GROUP_HISTORY} 다. */
+    private Long groupLastChange(String code) {
+        return jdbc.queryForObject("SELECT coalesce(max(authrt_chg_hstry_sn),0) FROM tb_authrt_chg_hstry WHERE authrt_cd=? AND " + GROUP_HISTORY,Long.class,code);
     }
 
-    /** 사용자의 그룹 배정 버전 — 그 사용자를 대상으로 한 이력(USER_GROUP 행)만 본다. */
-    private String membershipVersion(String userId, String state) {
-        Long last = jdbc.queryForObject("SELECT coalesce(max(authrt_chg_hstry_sn),0) FROM tb_authrt_chg_hstry WHERE scrty_dcsn_trgt_id=?",Long.class,userId);
-        return versionDigest(userId,state,last);
+    /** 사용자를 대상으로 한 마지막 이력 번호(USER_GROUP 행)만 본다. */
+    private Long membershipLastChange(String userId) {
+        return jdbc.queryForObject("SELECT coalesce(max(authrt_chg_hstry_sn),0) FROM tb_authrt_chg_hstry WHERE scrty_dcsn_trgt_id=?",Long.class,userId);
+    }
+
+    /** 사용자의 그룹 배정 버전. 단건({@link #readMemberships})과 부서 일괄({@link #readDepartment})이 같은 값을 만든다. */
+    private static String membershipVersion(String userId, List<String> groups, Long last) {
+        return versionDigest(userId,groups.toString(),last);
     }
 
     private static String versionDigest(String target, String state, Long last) {
@@ -321,11 +345,11 @@ public class AuthorizationAdministrationService implements nuri.business.service
         jdbc.query("SELECT menu_sn::text,menu_nm FROM tb_menu_info ORDER BY menu_sn",
                 (rs,n) -> names.put(rs.getString(1),rs.getString(2)));
         return codes.stream().limit(5).map(code -> "'" + names.getOrDefault(code,code) + "'")
-                .collect(java.util.stream.Collectors.joining(", ")) + (codes.size() > 5 ? " 외 " + (codes.size()-5) + "개" : "");
+                .collect(Collectors.joining(", ")) + (codes.size() > 5 ? " 외 " + (codes.size()-5) + "개" : "");
     }
 
     /** [2026-10-02] 전체 그룹의 권한을 한 스냅샷으로 읽는다(코드 순). */
-    @Transactional(isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ, readOnly=true)
+    @Transactional(isolation=Isolation.REPEATABLE_READ, readOnly=true)
     public GrantMatrix grantMatrix() {
         SecurityUtil.assertPermission("AUTHRT_READ");
         return new GrantMatrix(PermissionCodes.CATALOG_VERSION,readGroups());
@@ -459,7 +483,7 @@ public class AuthorizationAdministrationService implements nuri.business.service
         var desired = new TreeSet<>(request.groups());
         if (desired.contains("ROLE_ANONYMOUS")) invalid("공개 메뉴용 그룹은 로그인 사용자에게 배정할 수 없습니다.");
         if (desired.size()!=request.groups().size()) invalid("중복된 그룹입니다.");
-        for (String group: desired) readGroup(group);
+        for (String group: desired) requireGroup(group);
         long managers = managerCount();
         applyMemberships(UUID.randomUUID().toString(),userId,before.groups(),desired);
         protectLastManager(managers);
@@ -561,7 +585,7 @@ public class AuthorizationAdministrationService implements nuri.business.service
 
     private static String describeUsers(List<UserChoice> users) {
         return users.stream().limit(5).map(user -> Objects.toString(user.userNm(),user.id()) + "(" + Objects.toString(user.userId(),user.id()) + ")")
-                .collect(java.util.stream.Collectors.joining(", ")) + (users.size() > 5 ? " 외 " + (users.size()-5) + "명" : "");
+                .collect(Collectors.joining(", ")) + (users.size() > 5 ? " 외 " + (users.size()-5) + "명" : "");
     }
 
     private static String placeholders(int count) {
@@ -569,20 +593,19 @@ public class AuthorizationAdministrationService implements nuri.business.service
     }
 
     /** Signup's only default. This is called from the user-creation transaction after flush. */
-    @Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    @Transactional(propagation=Propagation.MANDATORY)
     public void assignNewUser(String userId) {
         lockAdministration();
-        var before = readMemberships(userId);
-        if (!before.groups().isEmpty()) invalid("이미 배정된 사용자의 가입 기본 그룹을 다시 설정할 수 없습니다.");
+        if (!memberGroups(userId).isEmpty()) invalid("이미 배정된 사용자의 가입 기본 그룹을 다시 설정할 수 없습니다.");
         applyMemberships(UUID.randomUUID().toString(),userId,List.of(),Set.of("ROLE_USER"));
     }
 
     /** User deletion already has USER_DELETE; it must still retain the last active authorization manager. */
-    @Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    @Transactional(propagation=Propagation.MANDATORY)
     public void removeDeletedUsers(List<String> userIds) {
         SecurityUtil.assertPermission("USER_DELETE");
         lockAndAuthorize("USER_DELETE"); long managers=managerCount(); String request=UUID.randomUUID().toString();
-        for (String userId: new TreeSet<>(userIds)) applyMemberships(request,userId,readMemberships(userId).groups(),Set.of());
+        for (String userId: new TreeSet<>(userIds)) applyMemberships(request,userId,memberGroups(userId),Set.of());
         protectLastManager(managers);
     }
 
@@ -597,7 +620,7 @@ public class AuthorizationAdministrationService implements nuri.business.service
         applyGrants(UUID.randomUUID().toString(),group,before.grants(),desired);
     }
 
-    @Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    @Transactional(propagation=Propagation.MANDATORY)
     public void grantNewMenuToCompatibilityAdmin(Long menuId) {
         SecurityUtil.assertPermission("MENU_CREATE");
         var parents=lockMenuParents(); lockAndAuthorize("MENU_CREATE");
@@ -624,7 +647,7 @@ public class AuthorizationAdministrationService implements nuri.business.service
         return true;
     }
 
-    @Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    @Transactional(propagation=Propagation.MANDATORY)
     public void removeNavigationGrantsForMenus(List<Long> ids) {
         SecurityUtil.assertPermission("MENU_DELETE");
         lockMenus(ids); lockAndAuthorize("MENU_DELETE"); String request=UUID.randomUUID().toString();
@@ -638,7 +661,7 @@ public class AuthorizationAdministrationService implements nuri.business.service
      * [2026-10-02 D2] 메뉴 구조 저장이 메뉴를 바꾸기 전에 함께 바꿀 그룹들의 버전을 확인한다. 메뉴 행 → ADMIN 잠금 순서는
      * 권한 저장과 같다. 하나라도 낡았으면 409 로 메뉴 변경까지 전부 되돌린다.
      */
-    @Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    @Transactional(propagation=Propagation.MANDATORY)
     public void assertGroupVersions(List<GroupVersion> groups) {
         SecurityUtil.assertPermission("AUTHRT_GRANT");
         lockMenuParents();
@@ -666,7 +689,7 @@ public class AuthorizationAdministrationService implements nuri.business.service
      * ({@link #grantNewMenuToCompatibilityAdmin} 과 같은 조건). 반영하지 않으면 새 폴더를 만들고 관리자 그룹이 보던 메뉴를
      * 그 아래로 옮기는 저장이 '관리자 그룹에서 숨겨진다' 는 거짓 사유로 거부된다.
      */
-    @Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    @Transactional(propagation=Propagation.MANDATORY)
     public List<NavigationConflict> navigationVisibilityConflicts(Map<Long,Long> movedParents,
             Map<String,Set<Long>> added, Map<String,Set<Long>> removed, Map<Long,List<Long>> compatibilityCandidates) {
         SecurityUtil.assertPermission("MENU_UPDATE");
@@ -702,7 +725,7 @@ public class AuthorizationAdministrationService implements nuri.business.service
      * 그 아래 새 메뉴를 명시로 준 요청이 '상위 메뉴를 함께 선택' 으로 거부되지 않게 한다. 상위 조건은
      * {@link #grantNewMenuToCompatibilityAdmin} 과 같다.
      */
-    @Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    @Transactional(propagation=Propagation.MANDATORY)
     public void applyMenuStructureGrants(List<ResolvedGrantChange> changes, List<Long> compatibilityCandidates) {
         SecurityUtil.assertPermission("AUTHRT_GRANT");
         var parents = lockMenuParents();
@@ -736,7 +759,7 @@ public class AuthorizationAdministrationService implements nuri.business.service
                                 LocalDate fromDate, LocalDate toDate) {
         SecurityUtil.assertPermission("AUTHRT_AUDIT"); var pageable=pagination(page,size);
         if (fromDate!=null && toDate!=null && fromDate.isAfter(toDate)) invalid("조회 시작일은 종료일보다 늦을 수 없습니다.");
-        var parameters=new org.springframework.jdbc.core.namedparam.MapSqlParameterSource();
+        var parameters=new MapSqlParameterSource();
         StringBuilder where=new StringBuilder(" WHERE 1=1");
         if (groupCode!=null && !groupCode.isBlank()) { where.append(" AND h.authrt_cd=:groupCode"); parameters.addValue("groupCode",groupCode); }
         // [2026-10-01] 대상도 처리자처럼 로그인 ID 로 찾는다 — 종전에는 내부 식별자(esntlId)만 비교해 화면에서 아는 값으로는
@@ -745,9 +768,9 @@ public class AuthorizationAdministrationService implements nuri.business.service
         // [2026-09-26 DIP V9] 변경자는 esntlId(chg_user_idntfr)와 로그인 ID(frst_rgtr_id)로 함께 기록된다. 화면은
         //   '변경자 로그인 ID' 를 받는데 종전 조건은 esntlId 만 비교해 로그인 ID 로는 한 건도 찾지 못했다.
         if (actorId!=null && !actorId.isBlank()) { where.append(" AND (h.frst_rgtr_id=:actorId OR h.chg_user_idntfr=:actorId)"); parameters.addValue("actorId",actorId); }
-        if (fromDate!=null) { where.append(" AND h.crt_dt>=:fromDate"); parameters.addValue("fromDate",java.sql.Timestamp.valueOf(fromDate.atStartOfDay())); }
-        if (toDate!=null) { where.append(" AND h.crt_dt<:untilDate"); parameters.addValue("untilDate",java.sql.Timestamp.valueOf(toDate.plusDays(1).atStartOfDay())); }
-        var query=new org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate(jdbc);
+        if (fromDate!=null) { where.append(" AND h.crt_dt>=:fromDate"); parameters.addValue("fromDate",Timestamp.valueOf(fromDate.atStartOfDay())); }
+        if (toDate!=null) { where.append(" AND h.crt_dt<:untilDate"); parameters.addValue("untilDate",Timestamp.valueOf(toDate.plusDays(1).atStartOfDay())); }
+        var query=new NamedParameterJdbcTemplate(jdbc);
         parameters.addValue("size",pageable.getPageSize()).addValue("offset",pageable.getOffset());
         // 처리자·대상 사용자 이름을 함께 싣는다 — 종전 화면은 내부 식별자(esntlId)만 보여 누가 바꿨는지 읽을 수 없었다.
         //   탈퇴 등으로 사용자가 없으면 이름은 null 이고 식별자가 남는다.
@@ -785,7 +808,7 @@ public class AuthorizationAdministrationService implements nuri.business.service
     }
 
     /** Recheck after serialization: a principal captured before a competing revocation is insufficient. */
-    @Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    @Transactional(propagation=Propagation.MANDATORY)
     public void lockAndAuthorize(String permission) {
         SecurityUtil.assertPermission(permission);
         lockAdministration();
@@ -807,11 +830,11 @@ public class AuthorizationAdministrationService implements nuri.business.service
      * trusted administration permissions, read from the DB after the shared serialization lock.
      * Inactive or locked targets retain protection: their grants, not ability to log in, classify them.
      */
-    @Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    @Transactional(propagation=Propagation.MANDATORY)
     @Override
     public void authorizeProtectedAccountChange(String esntlId) {
         lockAdministration();
-        boolean protectedAccount = readMemberships(esntlId).groups().stream()
+        boolean protectedAccount = memberGroups(esntlId).stream()
                 .anyMatch(group -> readGrants(group).stream().anyMatch(AuthorizationAdministrationService::isProtectedGrant));
         if (protectedAccount) authorizeProtectedAdministration();
     }

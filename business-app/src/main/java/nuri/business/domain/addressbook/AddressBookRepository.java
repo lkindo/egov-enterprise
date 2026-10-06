@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.Optional;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Lock;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -18,17 +16,6 @@ public interface AddressBookRepository extends JpaRepository<AddressBook, Long>,
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from AddressBook a where a.adbkSn = :adbkSn")
     Optional<AddressBook> findByIdForUpdate(@Param("adbkSn") Long adbkSn);
-
-    List<AddressBook> findByUseYn(String useYn);
-
-    // legacy
-    default List<AddressBook> findByUseAt(String useAt) {
-        return findByUseYn(useAt);
-    }
-
-    Page<AddressBook> findByWrterId(String wrterId, Pageable pageable);
-
-    Page<AddressBook> findByAdbkNmContaining(String adbkNm, Pageable pageable);
 
     // [V2_12 결속] 사용자 삭제 시 주소록 작성자를 시스템 계정으로 재귀속 — 콘텐츠 보존 정책
     // (fk_tb_adbk_manage_tb_user_info NO ACTION 하에서 작성자 행 삭제 전 필수)

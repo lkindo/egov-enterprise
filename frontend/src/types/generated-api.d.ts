@@ -5031,7 +5031,7 @@ export interface paths {
         };
         /**
          * 개인정보 조회 로그 목록
-         * @description 조회 대상 정보 부분일치 검색과 페이징을 지원한다. ADMIN 롤 전용이다.
+         * @description 조회 대상 정보 부분일치 검색과 페이징을 지원한다. 개인정보 로그 조회 권한(PRIVACY_READ)이 필요하며 시스템 운영 그룹(ROLE_SYSTEM)은 제외된다.
          */
         get: operations["getPrivacyLogList"];
         put?: never;

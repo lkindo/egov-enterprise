@@ -74,7 +74,6 @@ vi.mock('@/services/business/user/approval/ApprovalUserService', () => ({
     REJECTED: 'R',
     WITHDRAWN: 'W',
   },
-  isSanctionPending: (value?: string) => value === 'A',
   approvalUserService: {
     cancelDraft: mocks.cancelDraft,
     confirm: mocks.confirmMutation,

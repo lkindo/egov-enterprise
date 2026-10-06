@@ -12,7 +12,6 @@ const client = vi.hoisted(() => ({
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
-import { communityService } from '@/services/business/community/communityService';
 import { approvalUserService, SANCTION_STATUS } from '@/services/business/user/approval/ApprovalUserService';
 import { bannerService } from '@/services/business/user/BannerService';
 import { communityUserService } from '@/services/business/user/community/CommunityUserService';
@@ -91,12 +90,12 @@ describe('ordinary generated boundary wave5', () => {
     await expect(bannerService.getReflectedBanners()).resolves.toStrictEqual([banner]);
   });
 
-  it('both community services normalize legacy aliases into the generated Pageable query', async () => {
+  it('the community user service normalizes legacy aliases and exact keys into the generated Pageable query', async () => {
     client.getRaw
       .mockResolvedValueOnce(success(emptyPage))
       .mockResolvedValueOnce(success(emptyPage));
 
-    await communityService.getCommunityList({
+    await communityUserService.getCommunityList({
       pageIndex: 2,
       pageUnit: 25,
       searchCondition: '0',
@@ -119,7 +118,7 @@ describe('ordinary generated boundary wave5', () => {
       .mockResolvedValueOnce(success(community))
       .mockResolvedValueOnce(success(community));
 
-    await expect(communityService.getCommunity(7)).resolves.toStrictEqual(community);
+    await expect(communityUserService.getCommunity(7)).resolves.toStrictEqual(community);
     await expect(communityUserService.getCommunity(7)).resolves.toStrictEqual(community);
     await communityUserService.joinCommunity(7);
 

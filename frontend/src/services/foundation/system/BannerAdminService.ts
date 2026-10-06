@@ -1,4 +1,5 @@
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
+import { requirePageResponse } from '@/services/core/page-response';
 import { toAdminPageQuery } from '@/services/core/admin-page-query';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { Banner } from '@/types/foundation/banner';
@@ -24,35 +25,20 @@ function toBannerListQuery(params?: SearchParams): BannerListQuery {
  };
 }
 
-function requireBannerPage(
- response: { list?: Banner[]; total?: number; page?: number; size?: number; totalPage?: number },
-): PageResponse<Banner> {
- if (
- !Array.isArray(response.list)
- || typeof response.total !== 'number'
- || typeof response.page !== 'number'
- || typeof response.size !== 'number'
- || typeof response.totalPage !== 'number'
- ) {
- throw new Error('배너 페이지 응답이 필수 계약과 일치하지 않습니다.');
- }
- return response as PageResponse<Banner>;
-}
-
 /**
- * 배너 관리님쒕퉬님(Admin)
+ * 배너 관리 서비스 (Admin)
  */
-class BannerAdminService extends AdminService {
+class BannerAdminService extends ApiService {
  /** 배너 목록 조회 */
  async getBannerList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Banner>> {
  const response = await this.executeGenerated(getBannersOperation, {
  query: toBannerListQuery(params),
  config,
  });
- return requireBannerPage(response as PageResponse<Banner>);
+ return requirePageResponse(response as PageResponse<Banner>, '배너');
  }
 
- /** 배너 전체 트리님조회 */
+ /** 반영(게시)된 배너 목록 조회 */
  async getReflectedBanners(config?: AxiosRequestConfig): Promise<Banner[]> {
  return this.executeGenerated(getReflectedBanners_1Operation, { config }) as Promise<Banner[]>;
  }
@@ -79,7 +65,7 @@ class BannerAdminService extends AdminService {
  });
  }
 
- /** 배너 님젣 */
+ /** 배너 삭제 */
  async deleteBanner(bnrSn: number, config?: AxiosRequestConfig): Promise<void> {
  return this.executeGenerated(deleteBannerOperation, { path: { bnrSn }, config });
  }

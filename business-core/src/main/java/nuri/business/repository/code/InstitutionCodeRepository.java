@@ -8,8 +8,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface InstitutionCodeRepository extends JpaRepository<InstitutionCode, String> {
-    Page<InstitutionCode> findByAllInstNmContaining(String allInstNm, Pageable pageable);
-
     Page<InstitutionCode> findByAllInstNmContainingOrInstCdContainingIgnoreCase(
             String allInstNm, String instCd, Pageable pageable);
 

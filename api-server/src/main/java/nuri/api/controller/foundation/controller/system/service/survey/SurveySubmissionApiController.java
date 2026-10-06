@@ -23,8 +23,8 @@ import java.util.List;
  * 설문 삭제 시 연쇄 정리용으로만 주입), 프론트의 {@code /survey/stats}·{@code /survey/[id]} 는
  * 존재하지 않는 엔드포인트를 호출해 404 를 받고 있었다.
  *
- * <p><b>인가는 {@code @Authenticated}</b>. 설문 참여와 결과 열람은 관리 기능이 아니라 일반
- * 사용자의 행위다. 다만 익명 제출은 허용하지 않는다 — 이 테이블에는 응답자 사용자 ID 컬럼이
+ * <p><b>인가는 제출 {@code SURVEY_SUBMIT}, 결과 통계·반출 {@code SURVEY_READ} 권한이다</b>(기본 그룹에
+ * ROLE_USER 포함). 설문 참여와 결과 열람은 관리 기능이 아니라 일반 사용자의 행위다. 다만 익명 제출은 허용하지 않는다 — 이 테이블에는 응답자 사용자 ID 컬럼이
  * 없어 제출자 식별이 감사 컬럼({@code frst_rgtr_id}, {@code @CreatedBy})에만 의존하며,
  * 그 값이 없으면 중복 제출 차단도 성립하지 않는다.
  *

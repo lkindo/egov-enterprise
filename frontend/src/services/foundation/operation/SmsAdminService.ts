@@ -1,5 +1,6 @@
 import type { AxiosRequestConfig } from 'axios';
 import { ApiService } from '@/services/core/ApiService';
+import { copyPageResponse } from '@/services/core/page-response';
 import type { PageResponse } from '@/types/foundation/system';
 import type { components, operations } from '@/types/generated-api';
 import {
@@ -15,38 +16,11 @@ export type SmsDeliveryStatus = components['schemas']['SmsDeliveryStatusDto'];
 type SmsRecptnDto = components['schemas']['SmsRecptnDto'];
 type SmsSearchParams = NonNullable<operations['getSmsList']['parameters']['query']>;
 
-function requireSmsPage(
-  response: {
-    list?: SmsDto[];
-    total?: number;
-    page?: number;
-    size?: number;
-    totalPage?: number;
-  },
-): PageResponse<SmsDto> {
-  if (
-    !Array.isArray(response.list)
-    || typeof response.total !== 'number'
-    || typeof response.page !== 'number'
-    || typeof response.size !== 'number'
-    || typeof response.totalPage !== 'number'
-  ) {
-    throw new Error('SMS 페이지 응답이 필수 계약과 일치하지 않습니다.');
-  }
-  return {
-    list: response.list,
-    total: response.total,
-    page: response.page,
-    size: response.size,
-    totalPage: response.totalPage,
-  };
-}
-
 class SmsAdminService extends ApiService {
   /** SMS 발송 내역 조회 */
   async getSmsList(params: SmsSearchParams = {}, config?: AxiosRequestConfig): Promise<PageResponse<SmsDto>> {
     const response = await this.executeGenerated(getSmsListOperation, { query: params, config });
-    return requireSmsPage(response);
+    return copyPageResponse<SmsDto>(response, 'SMS');
   }
 
   /** SMS 상세 조회 */

@@ -209,7 +209,7 @@ class ScheduleServiceTest {
     }
 
     @Test
-    @DisplayName("일정 삭제 - 소유권 가드(SecurityUtil.assertOwnerOrAdmin) 위임 검증")
+    @DisplayName("일정 삭제 - 소유권 가드(SecurityUtil.assertOwnerOrPermission) 위임 검증")
     void deleteSchedule_delegatesOwnershipGuard() {
         // given — 소유자 loginId=frstRgtrId. 실제 소유권 거부/허용 판정은 SecurityUtilTest 가 검증하고,
         // 여기서는 서비스가 엔티티의 frstRgtrId 로 가드를 '호출'하는지(배선)를 확인한다.

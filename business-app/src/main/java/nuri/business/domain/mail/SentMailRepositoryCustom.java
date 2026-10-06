@@ -13,9 +13,4 @@ public interface SentMailRepositoryCustom {
      */
     Page<SentMail> searchSentMails(String senderLoginId, String searchCondition, String searchKeyword,
             String resultCode, Pageable pageable);
-
-    default Page<SentMail> searchSentMails(String senderLoginId, String searchCondition, String searchKeyword,
-            Pageable pageable) {
-        return searchSentMails(senderLoginId, searchCondition, searchKeyword, null, pageable);
-    }
 }

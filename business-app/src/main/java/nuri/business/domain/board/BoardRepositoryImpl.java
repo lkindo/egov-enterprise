@@ -293,14 +293,4 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                 return new PageImpl<>(content, pageable,
                                 totalResult != null ? totalResult : 0L);
         }
-
-        @Override
-        public Optional<Board> findByIdCustom(@NonNull Long pstSn) {
-                Board result = queryFactory
-                                .selectFrom(QBoard.board)
-                                .where(QBoard.board.pstSn.eq(pstSn))
-                                .fetchOne();
-
-                return Optional.ofNullable(result);
-        }
 }

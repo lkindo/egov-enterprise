@@ -1,5 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
+import { toSortList } from '@/services/core/admin-page-query';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { Popup } from '@/types/foundation/banner';
 import type { GeneratedOperationRequest } from '@/types/generated-operations';
@@ -12,16 +13,12 @@ import {
 } from '@/types/generated-operations';
 
 /**
- * 팝업李관리님쒕퉬님(Admin)
+ * 팝업창 관리 서비스 (Admin)
  */
-class PopupAdminService extends AdminService {
-  /** 팝업李목록 조회 */
+class PopupAdminService extends ApiService {
+  /** 팝업창 목록 조회 */
   async getPopupList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Popup>> {
-    const sort = Array.isArray(params?.sort)
-      ? params.sort.filter((value): value is string => typeof value === 'string')
-      : typeof params?.sort === 'string'
-        ? [params.sort]
-        : undefined;
+    const sort = toSortList(params?.sort);
     const generatedConfig = config ? { ...config } : undefined;
     if (generatedConfig) delete generatedConfig.params;
     return this.executeGenerated(getPopupsOperation, {
@@ -37,7 +34,7 @@ class PopupAdminService extends AdminService {
     }) as Promise<PageResponse<Popup>>;
   }
 
-  /** 팝업李님곸꽭 조회 */
+  /** 팝업창 상세 조회 */
   async getPopup(popupSn: number, config?: AxiosRequestConfig): Promise<Popup> {
     return this.executeGenerated(getPopupOperation, {
       path: { popupSn },
@@ -45,7 +42,7 @@ class PopupAdminService extends AdminService {
     }) as Promise<Popup>;
   }
 
-  /** 팝업李등록 */
+  /** 팝업창 등록 */
   async createPopup(data: Partial<Popup>, config?: AxiosRequestConfig): Promise<number> {
     return this.executeGenerated(createPopupOperation, {
       body: data as GeneratedOperationRequest<'createPopup'>,
@@ -53,7 +50,7 @@ class PopupAdminService extends AdminService {
     });
   }
 
-  /** 팝업李님섏젙 */
+  /** 팝업창 수정 */
   async updatePopup(popupSn: number, data: Partial<Popup>, config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(updatePopupOperation, {
       path: { popupSn },
@@ -62,7 +59,7 @@ class PopupAdminService extends AdminService {
     });
   }
 
-  /** 팝업李님삭제 */
+  /** 팝업창 삭제 */
   async deletePopup(popupSn: number, config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(deletePopupOperation, {
       path: { popupSn },

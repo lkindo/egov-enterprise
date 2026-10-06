@@ -44,8 +44,4 @@ public class OnlinePollArticle extends BaseEntity {
     public static OnlinePollArticle create(Long pollArtclSn, OnlinePollManage pollManage, String pollArtclNm) {
         return new OnlinePollArticle(pollArtclSn, pollManage, pollArtclNm);
     }
-
-    public void update(String pollArtclNm) {
-        this.pollArtclNm = pollArtclNm;
-    }
 }

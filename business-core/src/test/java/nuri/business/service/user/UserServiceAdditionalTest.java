@@ -284,7 +284,6 @@ class UserServiceAdditionalTest {
             verify(authorizationAdministration).removeDeletedUsers(java.util.List.of("ESNTL_" + userId));
             // [P2 키 규약] 단건 삭제도 esntlId IN bulk 계약을 사용하며 loginId/건별 삭제로 우회하지 않는다.
             verify(refreshTokenRepository).deleteAllByEsntlIdIn(java.util.List.of("ESNTL_" + userId));
-            verify(refreshTokenRepository, never()).deleteByUserId(anyString());
             // [log-privacy] 사용통계 로그도 사용자 삭제 前 정리(FK 잠복결함 해소)
             verify(userLogRepository).deleteByDmndUserIdIn(java.util.List.of("ESNTL_" + userId));
             // [V2_32 결속] 부서업무는 부서 자산이라 삭제하지 않고 담당자만 공석(NULL)으로 해제한다.

@@ -28,41 +28,9 @@ class BaseAbstractServiceTest {
         String value = "test";
         assertThat(testService.required(value)).isEqualTo(value);
         assertThat(testService.required(value, "error")).isEqualTo(value);
-        assertThat(testService.required(() -> value, "error")).isEqualTo(value);
 
         assertThatThrownBy(() -> testService.required(null))
                 .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    @DisplayName("조건 검증 테스트")
-    void conditionTest() {
-        testService.isTrue(true, "error");
-        testService.isFalse(false, "error");
-
-        assertThatThrownBy(() -> testService.isTrue(false, "error"))
-                .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> testService.isFalse(true, "error"))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    @DisplayName("DTO 변환 테스트")
-    void toDtoTest() {
-        String entity = "Entity";
-        String dto = testService.toDto(entity, e -> e + "Dto");
-        assertThat(dto).isEqualTo("EntityDto");
-    }
-
-    @Test
-    @DisplayName("리스트 변환 테스트")
-    void toDtoListTest() {
-        List<String> entities = Arrays.asList("E1", "E2");
-        List<String> dtos = testService.toDtoList(entities, e -> e + "D");
-        assertThat(dtos).containsExactly("E1D", "E2D");
-
-        assertThat(testService.toDtoList(null, e -> e)).isEmpty();
-        assertThat(testService.toDtoList(Collections.emptyList(), e -> e)).isEmpty();
     }
 
     @Test
@@ -77,29 +45,12 @@ class BaseAbstractServiceTest {
         List<String> list = Arrays.asList("E1", "E2");
         Page<String> pageFromList = testService.toPage(list, PageRequest.of(0, 10), 2, e -> e + "D");
         assertThat(pageFromList.getContent()).containsExactly("E1D", "E2D");
-    }
 
-    @Test
-    @DisplayName("기본값 반환 테스트")
-    void defaultTest() {
-        assertThat(testService.defaultIfNull("val", "def")).isEqualTo("val");
-        assertThat(testService.defaultIfNull(null, "def")).isEqualTo("def");
-
-        assertThat(testService.defaultIfBlank("val", "def")).isEqualTo("val");
-        assertThat(testService.defaultIfBlank(" ", "def")).isEqualTo("def");
-        assertThat(testService.defaultIfBlank(null, "def")).isEqualTo("def");
-    }
-
-    @Test
-    @DisplayName("예외 래핑 테스트")
-    void wrapExceptionTest() throws Exception {
-        assertThatThrownBy(() -> testService.wrapException(() -> {
-            throw new RuntimeException("error");
-        }, () -> new Exception("wrapped")))
-                .isInstanceOf(Exception.class)
-                .hasMessage("wrapped");
-
-        String result = testService.wrapException(() -> "success", () -> new Exception("wrapped"));
-        assertThat(result).isEqualTo("success");
+        // 빈 목록은 빈 페이지, null 목록·null 원소는 가드가 거부한다.
+        assertThat(testService.toPage(Collections.<String>emptyList(), PageRequest.of(0, 10), 0, e -> e).getContent()).isEmpty();
+        assertThatThrownBy(() -> testService.toPage((List<String>) null, PageRequest.of(0, 10), 0, e -> e))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> testService.toPage(Arrays.asList("E1", null), PageRequest.of(0, 10), 2, e -> e))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

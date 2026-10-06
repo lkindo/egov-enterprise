@@ -205,9 +205,9 @@ export default function SurveyManageDetailClient() {
 
                               여기서 고칠 수는 없다: updatePoll 은 항목을 clear-and-recreate 하는데
                               tb_onln_poll_rslt.poll_artcl_sn → tb_onln_poll_artcl 외래키가 NO ACTION 이라
-                              (V2_67) 투표가 한 건이라도 있으면 저장이 실패한다. 항목 단건 수정
-                              (OnlinePollService.updatePollItem)은 구현돼 있으나 어느 컨트롤러도 노출하지
-                              않는다. 그래서 편집 컨트롤을 두지 않고, 못 고친다는 사실을 그대로 적는다.
+                              (V2_67) 투표가 한 건이라도 있으면 저장이 실패한다. 항목 단건 수정 경로도 없다
+                              (어느 컨트롤러도 노출하지 않던 OnlinePollService.updatePollItem 은 2026-10-07 걷었다).
+                              그래서 편집 컨트롤을 두지 않고, 못 고친다는 사실을 그대로 적는다.
                             */}
                             <div className="space-y-3">
                                 <h2 className="text-sm font-bold text-muted-foreground ml-1">응답 선택지</h2>

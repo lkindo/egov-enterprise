@@ -83,3 +83,19 @@ test('empty populations have finite metrics without implying a successful qualit
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('test classification uses repository-relative paths, not the parent directories of the checkout', () => {
+  const base = mkdtempSync(join(tmpdir(), 'egov-code-census-'));
+  const root = join(base, 'test', 'mocks', 'repo');
+  try {
+    const path = join(root, 'frontend/src/page.tsx');
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, 'export default function Page() {}\n');
+    const current = census(root);
+    assert.equal(current.scale.frontend.files, 1);
+    assert.equal(current.scale.frontendTest.files, 0);
+  } finally {
+    assert.ok(base.startsWith(join(tmpdir(), 'egov-code-census-')));
+    rmSync(base, { recursive: true, force: true });
+  }
+});

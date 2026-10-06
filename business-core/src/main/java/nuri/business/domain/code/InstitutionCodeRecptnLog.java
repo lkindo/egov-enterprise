@@ -118,7 +118,6 @@ public class InstitutionCodeRecptnLog {
 
                 private Long jobSn;
 
-        @Builder
         public InstitutionCodeRecptnLogId(String ocrnYmd, String instCd, Long jobSn) {
             this.ocrnYmd = ocrnYmd;
             this.instCd = instCd;

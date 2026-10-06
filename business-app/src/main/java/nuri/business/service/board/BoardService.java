@@ -113,21 +113,7 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional(readOnly = true)
         public Page<BoardDto> getBoardPosts(@NonNull String bbsId, @NonNull Pageable pageable) {
-                return getBoardPosts(bbsId, "0", "", null, null, null, null, null, pageable);
-        }
-
-        @Transactional(readOnly = true)
-        public Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
-                        @NonNull Pageable pageable) {
-                return getBoardPosts(bbsId, searchCnd, searchWrd, null, null, null, null, null, pageable);
-        }
-
-        @Transactional(readOnly = true)
-        public Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
-                        String orderBy, String startDate, String endDate, String qnaStatus, String qnaCategory,
-                        @NonNull Pageable pageable) {
-                return getBoardPosts(bbsId, searchCnd, searchWrd, orderBy, startDate, endDate, qnaStatus,
-                                qnaCategory, null, pageable);
+                return getBoardPosts(bbsId, "0", "", null, null, null, null, null, null, pageable);
         }
 
         /**
@@ -186,7 +172,7 @@ public class BoardService extends BaseAbstractService {
                 if (esntlId.isEmpty() || page.isEmpty()) {
                         return page;
                 }
-                java.util.List<Long> pstSns = page.getContent().stream().map(BoardDto::pstSn)
+                List<Long> pstSns = page.getContent().stream().map(BoardDto::pstSn)
                                 .filter(java.util.Objects::nonNull).toList();
                 java.util.Set<Long> recommended = pstSns.isEmpty() ? java.util.Set.of()
                                 : new java.util.HashSet<>(recommendationRepository.findRecommendedPstSns(esntlId.get(), pstSns));
@@ -271,8 +257,7 @@ public class BoardService extends BaseAbstractService {
          */
         @Transactional(readOnly = true)
         public nuri.business.service.board.dto.BoardMetaDto getBoardMeta(@NonNull String bbsId) {
-                BoardMaster master = boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
-                                .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+                BoardMaster master = findBoardMaster(bbsId);
                 assertCommunityAccess(master);
                 return nuri.business.service.board.dto.BoardMetaDto.from(master, requiredEditPermissions(bbsId));
         }
@@ -317,7 +302,7 @@ public class BoardService extends BaseAbstractService {
                 if ("EVENT".equals(dateBasis)) {
                         return true;
                 }
-                throw new BusinessException(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE,
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                                 "dateBasis 는 CREATED 또는 EVENT 여야 합니다.");
         }
 
@@ -343,14 +328,14 @@ public class BoardService extends BaseAbstractService {
                 if (cmntySn == null) {
                         return;
                 }
-                // 관리자는 다른 열람 경로와 같은 이유로 통과한다(운영·감사). role hierarchy 로 SYSTEM 포함.
+                // 조회 대행 권한(BOARD_READ_ALL) 보유자는 다른 열람 경로와 같은 이유로 통과한다(운영·감사).
                 if (SecurityUtil.hasPermission("BOARD_READ_ALL")) {
                         return;
                 }
                 String esntlId = SecurityUtil.getCurrentEsntlId().orElse(null);
                 if (esntlId == null || communityBoardAccess == null
                                 || !communityBoardAccess.isApprovedMember(cmntySn, esntlId)) {
-                        throw new BusinessException(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED,
+                        throw new BusinessException(CommonErrorCode.ACCESS_DENIED,
                                         "커뮤니티 회원만 이용할 수 있는 게시판입니다.");
                 }
         }
@@ -424,24 +409,12 @@ public class BoardService extends BaseAbstractService {
                         }
 
                         // 사용자 정보 조회 (실패 시 익명 처리)
-                        UserDto author = null;
-                        try {
-                                author = userService.getUserById(required(userId, "userId 는 null 일 수 없습니다"));
-                        } catch (BusinessException e) {
-                                if (e.getErrorCode() == UserErrorCode.USER_NOT_FOUND) {
-                                        log.warn("게시글 작성자를 찾을 수 없어 익명 처리합니다.");
-                                } else {
-                                        log.error("게시글 작성자 조회 실패: {}", e.getClass().getSimpleName());
-                                }
-                        } catch (Exception e) {
-                                log.error("게시글 작성자 조회 실패: {}", e.getClass().getSimpleName());
-                        }
+                        String userNmToSet = resolveAuthorName(userId);
 
                         Long sortOrdr = boardRepository.findMaxSortOrdr(master.getBbsId()) + 1;
 
                         // 저자 식별은 인증 주체로 고정 — request.userId()/userNm() 로 저자 위조를 막는다(replyPost 와 동일).
                         String userIdToSet = userId;
-                        String userNmToSet = author != null ? author.userNm() : "익명";
 
                         Board board = Board.builder()
                                         .bbsId(master.getBbsId())
@@ -487,8 +460,7 @@ public class BoardService extends BaseAbstractService {
                 // [2026-09-25 DIP I2] 게시판·커뮤니티 검증을 업로드보다 먼저 한다. 종전에는 파일을 먼저 저장한 뒤
                 //   createPost 가 없는 게시판·비회원을 거부해, 거부된 요청마다 접근할 수 없는 파일이 디스크에 남았다.
                 //   (그 뒤 단계의 실패는 FileService 가 트랜잭션 롤백 때 이번 호출로 저장한 파일을 지운다.)
-                BoardMaster master = boardMasterRepository.findById(required(request.bbsId(), "bbsId 는 null 일 수 없습니다"))
-                                .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+                BoardMaster master = findBoardMaster(request.bbsId());
                 assertCommunityAccess(master);
                 Long atchFileSn = request.atchFileSn();
                 if (files != null && !files.isEmpty()) {
@@ -497,11 +469,7 @@ public class BoardService extends BaseAbstractService {
                         atchFileSn = fileService.uploadFiles(files);
                 }
 
-                BoardSaveRequest newRequest = new BoardSaveRequest(
-                                request.bbsId(), request.pstTtl(), request.pstCn(),
-                                request.pstBgngYmd(), request.pstEndYmd(), atchFileSn,
-                                request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(), 
-                                request.scrtYn(), request.useYn(), request.pswd());
+                BoardSaveRequest newRequest = withAtchFileSn(request, atchFileSn);
 
                 return createPost(userId, newRequest);
         }
@@ -521,23 +489,11 @@ public class BoardService extends BaseAbstractService {
                 }
 
                 // 사용자 정보 조회 (실패 시 익명 처리)
-                UserDto author = null;
-                try {
-                        author = userService.getUserById(required(userId, "userId 는 null 일 수 없습니다"));
-                } catch (BusinessException e) {
-                        if (e.getErrorCode() == UserErrorCode.USER_NOT_FOUND) {
-                                log.warn("답글 작성자를 찾을 수 없습니다 (ID: {}), 익명 처리합니다.", userId, e);
-                        } else {
-                                log.error("답글 작성자 조회 중 예외 발생 (ID: {})", userId, e);
-                        }
-                } catch (Exception e) {
-                        log.error("답글 작성자 조회 중 예외 발생 (ID: {})", userId, e);
-                }
+                String userNmToSet = resolveAuthorName(userId);
 
                 Long ansSn = boardRepository.findMaxAnsSn(master.getBbsId(), parent.getSortOrdr()) + 1;
 
                 String userIdToSet = userId;
-                String userNmToSet = author != null ? author.userNm() : "익명";
 
                 Board board = Board.builder()
                                 .bbsId(master.getBbsId())
@@ -582,19 +538,13 @@ public class BoardService extends BaseAbstractService {
                 Long atchFileSn = request.atchFileSn();
                 if (files != null && !files.isEmpty()) {
                         // [2026-09-27 DIP B5 F9] 답글도 게시판 첨부 설정을 저장 전에 본다(등록과 같은 순서).
-                        BoardMaster master = boardMasterRepository
-                                        .findById(required(request.bbsId(), "bbsId 는 null 일 수 없습니다"))
-                                        .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+                        BoardMaster master = findBoardMaster(request.bbsId());
                         assertCommunityAccess(master);
                         assertNewFilesAllowed(master, 0, files);
                         atchFileSn = fileService.uploadFiles(files);
                 }
 
-                BoardSaveRequest newRequest = new BoardSaveRequest(
-                                request.bbsId(), request.pstTtl(), request.pstCn(),
-                                request.pstBgngYmd(), request.pstEndYmd(), atchFileSn,
-                                request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(), 
-                                request.scrtYn(), request.useYn(), request.pswd());
+                BoardSaveRequest newRequest = withAtchFileSn(request, atchFileSn);
 
                 return replyPost(userId, parentSn, newRequest);
         }
@@ -626,9 +576,9 @@ public class BoardService extends BaseAbstractService {
                 // 확대 범위는 정확히 "관리자 × 논리 삭제 게시글" 하나이며 나머지 방어선은 그대로다:
                 //   · 아래 비밀글 소유권 가드는 삭제 여부와 무관하게 계속 적용된다.
                 //   · 비활성 게시판(BoardMaster.useYn='N')은 완화하지 않는다 — 별개 결정이다.
-                //   · hasRole("ADMIN") 은 role hierarchy 로 SYSTEM 을 포함한다(백엔드 헌법 제8조 2항).
+                //   · '관리자' 판정은 조회 대행 권한 BOARD_READ_ALL 보유 여부다(기본 그룹 ROLE_ADMIN·ROLE_SYSTEM).
                 BoardDetailResult detail = boardRepository.findActiveArticleDetail(bbsId, pstSn)
-                                .or(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")
+                                .or(() -> SecurityUtil.hasPermission("BOARD_READ_ALL")
                                                 ? boardRepository.findArticleDetailIncludingDeleted(bbsId, pstSn)
                                                 : java.util.Optional.empty())
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
@@ -637,7 +587,7 @@ public class BoardService extends BaseAbstractService {
                 // UserDetails.getUsername() (= esntlId)으로 고정되므로 같은 축의 owner-or-admin 가드를 쓴다.
                 // 비밀번호 검증 입력/계약이 없는 상세 API에서 저장 비밀번호를 임의로 재사용하지 않는다.
                 if ("Y".equalsIgnoreCase(detail.getScrtYn())) {
-                        nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL");
+                        SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL");
                 }
                 // [2026-10-01 결정 23] 게시 종료일이 지난 글은 작성자·전체 열람 권한자만 연다. 남에게는 없는 글과 같다(404) —
                 //   403 으로 답하면 번호만으로 글의 존재를 알 수 있다.
@@ -673,8 +623,7 @@ public class BoardService extends BaseAbstractService {
         @Transactional
         public void markQuestionSolved(@NonNull String bbsId, @NonNull Long pstSn) {
                 assertSpecialBoardEdit(bbsId);
-                BoardMaster master = boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
-                                .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+                BoardMaster master = findBoardMaster(bbsId);
                 assertCommunityAccess(master);
                 if (!QNA_TEMPLATE_ID.equals(master.getTmpltId())) {
                         throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
@@ -740,6 +689,40 @@ public class BoardService extends BaseAbstractService {
         private BoardMaster findBoardMaster(String bbsId) {
                 return boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+        }
+
+        /**
+         * 게시글·답글 작성자의 표시 이름. 사용자를 찾지 못하거나 조회가 실패하면 "익명" 으로 대체한다.
+         *
+         * <p>로그에는 예외 클래스의 단순명만 남긴다(등록 경로의 최소 로깅). 종전 답글 경로는 사용자 식별자와
+         * 스택까지 남겨, 같은 사건이 경로에 따라 다르게 기록됐다.
+         */
+        private String resolveAuthorName(String userId) {
+                UserDto author = null;
+                try {
+                        author = userService.getUserById(required(userId, "userId 는 null 일 수 없습니다"));
+                } catch (BusinessException e) {
+                        if (e.getErrorCode() == UserErrorCode.USER_NOT_FOUND) {
+                                log.warn("게시글 작성자를 찾을 수 없어 익명 처리합니다.");
+                        } else {
+                                log.error("게시글 작성자 조회 실패: {}", e.getClass().getSimpleName());
+                        }
+                } catch (Exception e) {
+                        log.error("게시글 작성자 조회 실패: {}", e.getClass().getSimpleName());
+                }
+                return author != null ? author.userNm() : "익명";
+        }
+
+        /**
+         * 첨부 번호만 바꾼 요청 사본. 나머지 필드는 그대로 옮긴다 — 요청 필드가 늘면 이 한 곳만 함께 고친다
+         * (종전에는 첨부 포함 등록·답글·수정이 같은 복사를 따로 써, 한 곳을 빠뜨리면 그 필드가 조용히 사라졌다).
+         */
+        private static BoardSaveRequest withAtchFileSn(BoardSaveRequest request, Long atchFileSn) {
+                return new BoardSaveRequest(
+                                request.bbsId(), request.pstTtl(), request.pstCn(),
+                                request.pstBgngYmd(), request.pstEndYmd(), atchFileSn,
+                                request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(),
+                                request.scrtYn(), request.useYn(), request.pswd());
         }
 
         /**
@@ -837,8 +820,8 @@ public class BoardService extends BaseAbstractService {
         private Board findOwnedPost(String bbsId, Long pstSn) {
                 Board board = findPostInBoard(bbsId, pstSn);
 
-                // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrAdminByEsntlId 기준 비교)
-                nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_UPDATE_ALL");
+                // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrPermissionByEsntlId 기준 비교)
+                SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_UPDATE_ALL");
                 return board;
         }
 
@@ -907,8 +890,7 @@ public class BoardService extends BaseAbstractService {
 
                 if (files != null && !files.isEmpty()) {
                         // [2026-09-27 DIP B5 F9] 이미 붙은 파일과 새 파일을 합쳐 게시판 첨부 설정을 본다.
-                        BoardMaster master = boardMasterRepository.findById(bbsId)
-                                        .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+                        BoardMaster master = findBoardMaster(bbsId);
                         assertNewFilesAllowed(master, fileService.getFileList(atchFileSn).size(), files);
                         if (atchFileSn == null) {
                                 // 게시글 소유권을 먼저 확인한 뒤 이 호출에서 새로 만든 첨부는
@@ -920,11 +902,7 @@ public class BoardService extends BaseAbstractService {
                         }
                 }
 
-                BoardSaveRequest newRequest = new BoardSaveRequest(
-                                request.bbsId(), request.pstTtl(), request.pstCn(),
-                                request.pstBgngYmd(), request.pstEndYmd(), atchFileSn,
-                                request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(), 
-                                request.scrtYn(), request.useYn(), request.pswd());
+                BoardSaveRequest newRequest = withAtchFileSn(request, atchFileSn);
 
                 updateOwnedPost(board, newRequest, attachmentAlreadyValidated);
         }
@@ -935,8 +913,8 @@ public class BoardService extends BaseAbstractService {
                 assertCommunityAccess(required(bbsId, "bbsId 는 null 일 수 없습니다")); // [2026-09-08 PD-CMTY-001]
                 Board board = findPostInBoard(bbsId, pstSn);
 
-                // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrAdminByEsntlId 기준 비교)
-                nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_DELETE_ALL");
+                // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrPermissionByEsntlId 기준 비교)
+                SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_DELETE_ALL");
 
                 board.delete();
         }
@@ -1000,7 +978,9 @@ public class BoardService extends BaseAbstractService {
                                 return java.time.LocalDate.parse(dateStr).atStartOfDay();
                         }
                         return java.time.LocalDateTime.parse(dateStr);
-                } catch (Exception e) {
+                } catch (java.time.format.DateTimeParseException e) {
+                        // null·빈 값은 위에서 걸렀으므로 parse 가 던지는 것은 이 예외뿐이다. 형식이 어긋난 행사 일자는
+                        // 종전대로 없는 값으로 둔다(형식 오류를 400 으로 거절할지는 별도 결정 — 목록 필터의 parseFilterDate 와 다르다).
                         return null;
                 }
         }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
   KeyboardSensor,
   PointerSensor,
@@ -43,7 +43,17 @@ export function useDeptTree({
     // 부서 탭뿐 아니라 '부서 이동' 모달·사용자 등록/수정 폼(소속 부서 선택)에서도 목록이 필요하다.
     // 종전에는 DEPTS 탭에서만 조회해 USERS 탭의 모달이 항상 빈 상자였다.
     enabled,
-    initialData: !deptKeyword ? (initialDepts ?? undefined) : undefined
+    initialData: !deptKeyword ? (initialDepts ?? undefined) : undefined,
+    /*
+      [2026-10-07] 응답이 배열이라 전역 목록 규칙(DEC-OPS-147 C1·C2, 페이지 모양 응답에만 적용)이 이 쿼리에
+      닿지 않는다. 그 규칙이 막던 두 일을 여기서 직접 막는다.
+      - C1: 검색어를 바꾸는 동안 이전 트리를 유지한다. 비우면 트리 영역이 깜빡인다.
+      - C2: 검색 조회의 5xx 는 부서 탭의 인라인 오류(다시 시도)로 보인다. 오류 경계로 올리면 허브 전체가
+        교체되고 저장하지 않은 드래그 편집도 함께 사라진다. 검색어가 없는 최초 로드의 승격은 전역 규칙에 맡긴다.
+      throwOnError 에 undefined 를 넘기면 전역 기본값을 덮으므로 조건부로만 지정한다.
+    */
+    placeholderData: keepPreviousData,
+    ...(deptKeyword ? { throwOnError: false } : {}),
   });
 
   // D&D States for Depts

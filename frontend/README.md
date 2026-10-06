@@ -31,6 +31,12 @@ pnpm type-check
 pnpm build
 ```
 
+### 4. UI 기본 컴포넌트 추가(shadcn CLI)
+`src/components/ui` 의 기본 컴포넌트는 shadcn CLI 로 가져온 소스를 저장소가 직접 소유한다. CLI 는 의존성으로 두지 않는다 — 상시 설치하면 쓰지 않는 하위 트리가 보안 override 를 늘린다(2026-10-07 제거). 컴포넌트를 추가할 때만 버전을 고정해 실행한다. 설정은 `components.json` 이다.
+```bash
+pnpm dlx shadcn@<고정버전> add <component>
+```
+
 ## 📂 주요 구조
 
 - `src/app`: App Router 기반 페이지 구성

@@ -1,5 +1,5 @@
 import type { AxiosRequestConfig } from 'axios';
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import {
   authzCatalogOperation, authzGroupsOperation, authzGroupOperation,
   authzCreateGroupOperation, authzUpdateGroupOperation, authzDeleteGroupOperation,
@@ -32,7 +32,7 @@ function requireGroupSnapshot(value: unknown, code: string, verb: string): Autho
   return snapshot;
 }
 
-class AuthorizationAdminService extends AdminService {
+class AuthorizationAdminService extends ApiService {
   async getCatalog(config?: AxiosRequestConfig) {
     return authorizationCatalogSchema.parse(await this.executeGenerated(authzCatalogOperation, { config }));
   }

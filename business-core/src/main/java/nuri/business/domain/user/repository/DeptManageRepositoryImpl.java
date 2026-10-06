@@ -14,7 +14,7 @@ import java.util.Objects;
 import static nuri.business.domain.user.entity.QDeptManage.deptManage;
 
 /**
- * ??????? Repository Custom ?????
+ * 부서 관리 Repository 사용자 정의 구현(QueryDSL 검색)
  */
 @RequiredArgsConstructor
 public class DeptManageRepositoryImpl implements DeptManageRepositoryCustom {

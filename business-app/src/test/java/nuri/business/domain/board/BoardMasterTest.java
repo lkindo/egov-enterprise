@@ -63,31 +63,13 @@ class BoardMasterTest {
     }
 
     @Test
-    @DisplayName("개별 필드 수정 메서드 테스트")
-    void individualUpdatesTest() {
+    @DisplayName("사용 여부 수정 메서드 테스트")
+    void updateUseYnTest() {
         BoardMaster master = BoardMaster.builder().build();
 
-        master.updateBbsTtl("Notice TTL");
-        master.updateBbsExpln("Notice Expln");
-        master.updateAnsPsbltyYn("Y");
-        master.updateFileAtchPsbltyYn("Y");
-        master.updateAtchPsbltyFileQty(10);
-        master.updateAtchPsbltyFileSz(2048L);
-        master.updateTmpltId("TMP_99");
         master.updateUseYn("N");
-        master.updateAnsYn("Y");
-        master.updateStsfdgYn("Y");
 
-        assertThat(master.getBbsTtl()).isEqualTo("Notice TTL");
-        assertThat(master.getBbsExpln()).isEqualTo("Notice Expln");
-        assertThat(master.getAnsPsbltyYn()).isEqualTo("Y");
-        assertThat(master.getFileAtchPsbltyYn()).isEqualTo("Y");
-        assertThat(master.getAtchPsbltyFileQty()).isEqualTo(10);
-        assertThat(master.getAtchPsbltyFileSz()).isEqualTo(2048L);
-        assertThat(master.getTmpltId()).isEqualTo("TMP_99");
         assertThat(master.getUseYn()).isEqualTo("N");
-        assertThat(master.getAnsYn()).isEqualTo("Y");
-        assertThat(master.getStsfdgYn()).isEqualTo("Y");
     }
 
     @Test
@@ -134,8 +116,8 @@ class BoardMasterTest {
     }
 
     @Test
-    @DisplayName("registerOption 미선행 상태에서 부분 setter 호출 시 Option 자동 생성·동기화 (동기화 균열 회귀 방지)")
-    void partialSetterSyncsOptionWhenAbsentTest() {
+    @DisplayName("registerOption 미선행 상태에서 update 호출 시 Option 자동 생성·동기화 (동기화 균열 회귀 방지)")
+    void updateSyncsOptionWhenAbsentTest() {
         BoardMaster master = BoardMaster.builder()
                 .bbsId("BBS_004")
                 .bbsTtl("Notice C")
@@ -144,16 +126,17 @@ class BoardMasterTest {
         // registerOption 미호출 → option 은 아직 null
         assertThat(master.getOption()).isNull();
 
-        master.updateAnsYn("N");
+        master.update("Notice C", null, "N", "N", 0, 0L, null, "Y", "N", null);
 
         // BoardMaster 컬럼과 Option 이 모두 동기화되어야 한다 (이전에는 option 이 생성되지 않아 값 누락)
         assertThat(master.getAnsYn()).isEqualTo("N");
         assertThat(master.getOption()).isNotNull();
         assertThat(master.getOption().getAnsYn()).isEqualTo("N");
         // 미지정 필드는 기본값으로 정규화한다. [2026-09-27 DIP B5 F9] 기본값은 지금까지의 실제 동작(받음)인 "Y" 다.
+        assertThat(master.getStsfdgYn()).isEqualTo("Y");
         assertThat(master.getOption().getStsfdgYn()).isEqualTo("Y");
 
-        master.updateStsfdgYn("N");
+        master.update("Notice C", null, "N", "N", 0, 0L, null, "Y", "N", "N");
         assertThat(master.getStsfdgYn()).isEqualTo("N");
         assertThat(master.getOption().getStsfdgYn()).isEqualTo("N");
     }

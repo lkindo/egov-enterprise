@@ -8,7 +8,7 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 
 /**
- * ??? 정보 DTO
+ * 첨부파일 정보 DTO
  */
 @Getter
 @Builder

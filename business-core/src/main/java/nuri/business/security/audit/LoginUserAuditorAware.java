@@ -20,7 +20,7 @@ import java.util.Optional;
  * 식별자 규약 상세: {@code docs/03-guides/identity-model-guide.md}</p>
  *
  * @see nuri.business.security.util.SecurityUtil#getCurrentLoginId()
- * @see nuri.business.security.util.SecurityUtil#assertOwnerOrAdmin(String)
+ * @see nuri.business.security.util.SecurityUtil#assertOwnerOrPermission(String, String)
  */
 @Component("loginUserAuditorAware")
 public class LoginUserAuditorAware implements AuditorAware<String> {

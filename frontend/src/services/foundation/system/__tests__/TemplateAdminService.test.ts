@@ -57,7 +57,6 @@ vi.mock('@/lib/api/client', async () => {
 
   return {
     default: {
-      ...apiClientTestDouble,
       getRaw: async (url: string, config?: unknown) => {
         const result = await apiClientTestDouble.get(url, config);
         return success(result ?? (url === 'admin/system/templates' ? [] : defaultTemplate));

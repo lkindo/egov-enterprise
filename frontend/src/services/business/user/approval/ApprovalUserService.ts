@@ -1,4 +1,5 @@
-import { UserService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
+import { requirePageResponse } from '@/services/core/page-response';
 import { PageResponse } from '@/types/foundation/system';
 import {
   ApprovalConfirmRequestSchema,
@@ -85,7 +86,6 @@ export type ResumedApprovalTemporaryDraft = ApprovalTemporaryDraft & ApprovalTem
 export type { InformalSanctionDto } from './informal-sanction-vocabulary';
 export {
   SANCTION_STATUS,
-  isSanctionPending,
   type SanctionStatusCode,
 } from './informal-sanction-vocabulary';
 
@@ -101,21 +101,6 @@ const ApprovalDecisionRequestSchema = ApprovalConfirmRequestSchema.superRefine((
     });
   }
 });
-
-function requireApprovalPage(
-  response: components['schemas']['PageResponseInformalSanctionDto'],
-): PageResponse<InformalSanctionDto> {
-  if (
-    !Array.isArray(response.list)
-    || typeof response.total !== 'number'
-    || typeof response.page !== 'number'
-    || typeof response.size !== 'number'
-    || typeof response.totalPage !== 'number'
-  ) {
-    throw new Error('결재 페이지 응답이 필수 계약과 일치하지 않습니다.');
-  }
-  return response as PageResponse<InformalSanctionDto>;
-}
 
 /**
  * 결재 목록 조회 조건(2026-09-26 DIP B5 F4). 비어 있으면 조건이 없다. 기간은 요청일 yyyyMMdd 포함 범위이고,
@@ -133,10 +118,10 @@ export interface ApprovalListQueryWithStatus extends ApprovalListQuery {
   status?: SanctionStatusCode;
 }
 
-class ApprovalUserService extends UserService {
+class ApprovalUserService extends ApiService {
   async getPending(params: ApprovalListQuery): Promise<PageResponse<InformalSanctionDto>> {
     const response = await this.executeGenerated(getPendingOperation, { query: params });
-    return requireApprovalPage(response);
+    return requirePageResponse<InformalSanctionDto>(response, '결재');
   }
 
   /**
@@ -145,13 +130,13 @@ class ApprovalUserService extends UserService {
    */
   async getMyHistory(params: ApprovalListQueryWithStatus): Promise<PageResponse<InformalSanctionDto>> {
     const response = await this.executeGenerated(getMyHistoryOperation, { query: params });
-    return requireApprovalPage(response);
+    return requirePageResponse<InformalSanctionDto>(response, '결재');
   }
 
   /** 결재자 본인이 이미 승인·반려한 결재. 대기 건은 섞이지 않는다. */
   async getProcessed(params: ApprovalListQueryWithStatus): Promise<PageResponse<InformalSanctionDto>> {
     const response = await this.executeGenerated(getProcessedOperation, { query: params });
-    return requireApprovalPage(response);
+    return requirePageResponse<InformalSanctionDto>(response, '결재');
   }
 
   /**
@@ -160,7 +145,7 @@ class ApprovalUserService extends UserService {
    */
   async getReferenced(params: ApprovalListQueryWithStatus): Promise<PageResponse<InformalSanctionDto>> {
     const response = await this.executeGenerated(getReferencedOperation, { query: params });
-    return requireApprovalPage(response);
+    return requirePageResponse<InformalSanctionDto>(response, '결재');
   }
 
   async getDetail(ifmlAtrzSn: number): Promise<InformalSanctionDto> {

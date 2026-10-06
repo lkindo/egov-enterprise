@@ -102,10 +102,12 @@ public class DeptJobApiController {
     // 매핑 없는 경로였고, 업무 워크플로우 화면의 '업무 등록'이 어느 경로로도 동작하지 않았다.
     //
     // 인가: 업무 워크플로우 메뉴는 ROLE_USER 에게도 열려 있으므로 쓰기를 관리자로 제한하지 않는다.
-    //   대신 수정·삭제는 서비스 계층에서 담당자(picId) 본인 또는 관리자만 가능하도록 검증한다(IDOR 방어).
-    //   아래 @PreAuthorize("isAuthenticated()") 는 "로그인 여부"까지만 보는 1차 관문이고,
-    //   실제 소유 판정은 DeptJobService.assertPicOrAdmin 이 한다(백엔드 헌법 제8조 이중 검증).
-    //   업무'함'(위 /boxes)이 @AdminOrSystem 인 것과 대비된다 — 함은 부서 단위 구조물이고
+    //   대신 수정·삭제는 서비스 계층에서 담당자(picId) 본인 또는 전체 수정·삭제 권한자만 가능하도록
+    //   검증한다(IDOR 방어). 아래 @PreAuthorize 는 DEPT_JOB_READ/CREATE/UPDATE/DELETE 기능 권한
+    //   (기본 그룹에 ROLE_USER 포함)까지만 보는 1차 관문이고, 실제 소유 판정은
+    //   DeptJobService.assertPicOrAdmin 이 DEPT_JOB_UPDATE_ALL/DELETE_ALL 을 대체 권한으로 삼아 한다
+    //   (백엔드 헌법 제8조 이중 검증). 업무'함'(위 /boxes)의 쓰기가 DEPT_BOX_CREATE/UPDATE/DELETE
+    //   (기본 그룹 ROLE_ADMIN·ROLE_SYSTEM)인 것과 대비된다 — 함은 부서 단위 구조물이고
     //   업무는 개인에게 배정되는 항목이라 인가 수준이 다르다.
     // ─────────────────────────────────────────────────────────────────────────
 

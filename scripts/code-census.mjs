@@ -144,8 +144,11 @@ export function census(root = ROOT) {
     ...walk(join(root, m, 'src', 'testFixtures'), isJava),
   ]);
   const feAll = walk(join(root, 'frontend', 'src'), isTsx);
-  const feTest = feAll.filter(isTest);
-  const feGenerated = feAll.filter((f) => !isTest(f) && isGenerated(f, readFileSync(f, 'utf8')));
+  // 분류는 저장소 기준 상대 경로로 한다 — 절대 경로로 보면 저장소 상위 디렉터리 이름(test·mocks 등)이 모든 파일을
+  // 테스트로 만든다.
+  const isTestFile = (f) => isTest(relative(root, f));
+  const feTest = feAll.filter(isTestFile);
+  const feGenerated = feAll.filter((f) => !isTestFile(f) && isGenerated(f, readFileSync(f, 'utf8')));
   const nonProduction = new Set([...feTest, ...feGenerated]);
   const feMain = feAll.filter((f) => !nonProduction.has(f));
   const feClient = feMain.filter((f) => hasUseClientDirective(readFileSync(f, 'utf8')));

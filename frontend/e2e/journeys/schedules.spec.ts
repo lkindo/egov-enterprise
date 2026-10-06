@@ -14,7 +14,7 @@ test.describe('부서 일정 진입', () => {
             console.log('\n>>> Starting Productivity: Smart Toolkit - Schedule');
             await page.goto('/smart-toolkit/schedule/dept');
             // 일정 관리 대시보드 확인
-            await expect(page.locator('.hub-title-main, h1, h2').filter({ hasText: /일정|Schedule/i }).first()).toBeVisible();
+            await expect(page.locator('h1, h2').filter({ hasText: /일정|Schedule/i }).first()).toBeVisible();
             console.log('>>> Verifying Schedule Table visibility');
             const table = page.locator('table');
             await expect(table.first()).toBeVisible();

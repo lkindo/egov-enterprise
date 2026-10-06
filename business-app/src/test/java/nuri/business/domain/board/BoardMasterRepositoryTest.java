@@ -211,38 +211,6 @@ class BoardMasterRepositoryTest {
     }
 
     @Test
-    @DisplayName("BoardMaster 상세 조회 테스트 (Custom)")
-    void findBoardMasterDetailTest() {
-        // Given
-        BoardMaster master = BoardMaster.builder()
-                .bbsId("BBS_DETAIL_001")
-                .bbsTtl("Detail Board")
-                .bbsTypeCd("T1")
-                .bbsAtrbCd("A1")
-                .useYn("Y")
-                .build();
-        boardMasterRepository.save(master);
-
-        BoardUse use = BoardUse.builder()
-                .bbsId("BBS_DETAIL_001")
-                .trgtId("USER_001")
-                .useYn("Y")
-                .build();
-        boardUseRepository.save(use);
-        
-        em.flush();
-        em.clear();
-
-        // When
-        Optional<BoardMasterDetailResult> result = boardMasterRepository.findBoardMasterDetail("BBS_DETAIL_001", "USER_001");
-
-        // Then
-        assertThat(result).isPresent();
-        assertThat(result.get().getBbsTtl()).isEqualTo("Detail Board");
-        assertThat(result.get().getAuthFlag()).isEqualTo("Y");
-    }
-
-    @Test
     @DisplayName("미사용 보드 검색 테스트 (notUsedOnly)")
     void searchNotUsedTest() {
         // Given

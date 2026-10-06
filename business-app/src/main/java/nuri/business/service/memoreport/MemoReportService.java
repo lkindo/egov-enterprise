@@ -51,8 +51,8 @@ public class MemoReportService {
      * 조직 전체 메모보고 목록 — <b>관리자 전용</b>.
      *
      * <p>종전에는 인가 없이 {@code findAll} 을 반환해, 로그인만 하면 누구나 조직 전체의 비정형 보고를
-     * 열람할 수 있었다. 컨트롤러의 {@code @PreAuthorize("hasRole('ADMIN')")} 와 짝을 이루는
-     * 서비스 레이어 2차 검증을 둔다. — 백엔드 헌법 제8조(이중 검증)</p>
+     * 열람할 수 있었다. 컨트롤러 operation binding({@code MEMO_RPT_READ_ALL})과 짝을 이루는
+     * 서비스 레이어 2차 검증({@code SecurityUtil.assertPermission})을 둔다. — 백엔드 헌법 제8조(이중 검증)</p>
      *
      * <p>일반 사용자는 {@code /my}(작성) · {@code /received}(수신) 경로를 쓴다.</p>
      */
@@ -168,7 +168,7 @@ public class MemoReportService {
     /**
      * 메모보고 열람 권한 검증. 작성자({@code userId}) 또는 수신자({@code rptrId}) 또는 관리자만 통과한다.
      *
-     * <p>표준 가드 {@code SecurityUtil.assertOwnerOrAdmin} 은 loginId(=frstRgtrId) 축이라 여기서는 쓸 수 없다.
+     * <p>표준 가드 {@code SecurityUtil.assertOwnerOrPermission} 은 loginId(=frstRgtrId) 축이라 여기서는 쓸 수 없다.
      * 메모보고의 참여자 필드는 {@code createMemoReport} 가 principal 의 {@code getUsername()} 을 저장하므로
      * <b>esntlId</b> 축이며, loginId 로 비교하면 수신자가 자기 앞으로 온 보고를 열지 못하는 오탐이 난다.</p>
      */

@@ -22,23 +22,10 @@ declare module 'axios' {
   }
 }
 
-/** 필드 단위 검증 오류 1건. [W1-14] */
+/** 필드 단위 검증 오류 1건. 백엔드 검증 실패 응답의 `errors` 항목이다. [W1-14] */
 export interface FieldErrorItem {
   field: string;
   message: string;
-}
-
-// 백엔드 공통 응답 포맷
-// [W1-14] 종전에는 백엔드 6필드 중 4개만 선언해 이미 드리프트 중이었다. 함께 정합시킨다.
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  status?: number;
-  code: string;
-  message: string;
-  data: T;
-  timestamp?: string;
-  /** 검증 실패 응답에만 존재한다(그 외에는 직렬화에서 아예 빠진다). */
-  errors?: FieldErrorItem[];
 }
 
 const getBaseURL = () => {
@@ -351,38 +338,6 @@ const client = {
     const res = await axiosInstance.request<unknown>(withGeneratedQuerySerializer(config));
     return res.data;
   },
-  get: cache(async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
-    const res = await axiosInstance.get<ApiResponse<T>>(url, config);
-    return extractData<T>(res.data);
-  }),
-  post: async <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => {
-    const res = await axiosInstance.post<ApiResponse<T>>(url, data, config);
-    return extractData<T>(res.data);
-  },
-  put: async <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => {
-    const res = await axiosInstance.put<ApiResponse<T>>(url, data, config);
-    return extractData<T>(res.data);
-  },
-  patch: async <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => {
-    const res = await axiosInstance.patch<ApiResponse<T>>(url, data, config);
-    return extractData<T>(res.data);
-  },
-  delete: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
-    const res = await axiosInstance.delete<ApiResponse<T>>(url, config);
-    return extractData<T>(res.data);
-  },
 };
-
-/** ApiResponse에서 data를 추출. success=false면 Error throw. */
-function extractData<T>(body: ApiResponse<T> | T): T {
-  if (body && typeof body === 'object' && 'success' in body) {
-    const apiBody = body as ApiResponse<T>;
-    if (!apiBody.success) {
-      throw new Error(apiBody.message || '요청 처리 중 오류가 발생했습니다.');
-    }
-    return apiBody.data;
-  }
-  return body as T;
-}
 
 export default client;

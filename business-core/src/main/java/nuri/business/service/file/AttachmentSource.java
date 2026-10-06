@@ -70,7 +70,7 @@ public enum AttachmentSource {
     /** 일정. 조직 공용 일정이라 인증 사용자에게 공유된다. */
     SCHEDULE("tb_schdl_info", Sensitivity.SHARED, "1 = 1", "frst_rgtr_id = ?", null),
 
-    /** 부서 업무함. 부서 공용 자원(소유 모델 없음 — {@code SecurityUtil.assertAdmin} 계열과 동일 판정). */
+    /** 부서 업무. 부서 공용 자원이라 개인 귀속이 아니며 관리자 우회를 허용한다. */
     DEPT_TASK("tb_dept_task_info", Sensitivity.SHARED, "1 = 1", "frst_rgtr_id = ?", null),
 
     /** 업무일지. 개인 귀속. */

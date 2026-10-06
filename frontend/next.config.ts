@@ -23,21 +23,12 @@ const nextConfig: NextConfig = {
   output: dockerStandalone ? 'standalone' : undefined,
   experimental: {
     // ppr: 'incremental', // Merged into cacheComponents
-    // [bundle-barrel-imports] 배럴 임포트 자동 최적화 - 200-800ms 빌드 속도 향상
+    // [bundle-barrel-imports] 배럴 임포트 자동 최적화.
+    // [2026-10-07] 직접 import 하지 않는 @radix-ui/* 개별 패키지(래퍼는 통합 패키지 radix-ui 를 쓴다)와
+    // Next 기본 목록에 이미 있는 lucide-react·recharts·date-fns 를 걷었다. 통합 패키지 radix-ui 를 넣을지는
+    // 빌드·번들 수치를 비교한 뒤 정한다(재수출 형태라 효과가 확실하지 않다).
     optimizePackageImports: [
-      'lucide-react',
-      '@radix-ui/react-dialog',
-      '@radix-ui/react-dropdown-menu',
-      '@radix-ui/react-select',
-      '@radix-ui/react-tabs',
-      '@radix-ui/react-tooltip',
-      '@radix-ui/react-popover',
-      '@radix-ui/react-checkbox',
-      '@radix-ui/react-label',
-      '@radix-ui/react-slot',
       'framer-motion',
-      'recharts',
-      'date-fns',
     ],
   },
   // Instrument transformed JavaScript after SWC, keeping next/font and RSC transforms intact.

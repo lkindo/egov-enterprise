@@ -136,6 +136,7 @@
 | [verification-blindspots.md](04-operations/verification-blindspots.md) | **검증 사각지대** — "빌드 성공"과 "실제 작동"의 차이 |
 | [source-simplification-audit-2026-10-06.md](04-operations/source-simplification-audit-2026-10-06.md) | 전체 소스 정적 조사 — 미사용·중복·레거시·비표준·복잡도 정비 후보 29개와 근거·검증·실행 순서 |
 | [source-simplification-results-2026-10-06.md](04-operations/source-simplification-results-2026-10-06.md) | 조사 후 순차 정비 — 변경 범위·입력 호환성·조회 수·검증 결과와 남은 경계 |
+| [source-simplification-recheck-2026-10-07.md](04-operations/source-simplification-recheck-2026-10-07.md) | PR #846 재검증과 추가 전수 정비 — 부서 트리 회귀 수정, 6단계 정비 범위·바뀐 동작·남긴 것과 검증 결과 |
 | [adversarial-reassessment-2026-09-27.md](04-operations/adversarial-reassessment-2026-09-27.md) | 0ef8af32f 기준 Claude 평가의 수용·반박, 11개 분야·33개 도메인 잠정 평가와 개선 배치 |
 | [evidence-first-improvement-verification-2026-09-27.md](04-operations/evidence-first-improvement-verification-2026-09-27.md) | R0–R9 로컬 검증 결과와 미완료 경계 — 실제 제목·설문 E2E, Lighthouse 비교, 승인·운영 증거 대기 |
 | [evidence-first-policy-decisions-2026-09-27.md](04-operations/evidence-first-policy-decisions-2026-09-27.md) | 개선 루프 R4 권한·공개 범위와 R6 삭제 단위의 당시 선택지 — ADR-0025가 결정해 기록으로 보존 |

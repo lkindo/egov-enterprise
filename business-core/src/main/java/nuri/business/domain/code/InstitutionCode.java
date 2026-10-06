@@ -115,40 +115,4 @@ public class InstitutionCode extends BaseEntity {
         this.sortOrdr = sortOrdr;
         this.frstRgtrId = frstRgtrId;
     }
- 
-    public void update(String allInstNm, String lwstInstNm, String instAbbrNm, String odr, String ord,
-            Integer instCycl, String topInstCd, String uprInstCd, String reprsInstCd,
-            String instTypeLclsf, String instTypeMclsf, String instTypeSclsf, String telno,
-            String faxNo, String crtYmd, String ablYmd, String ablYn, String chgYmd,
-            String chgTm, String crtrYmd, Long sortOrdr, String lastMdfrId) {
-        this.allInstNm = allInstNm;
-        this.lwstInstNm = lwstInstNm;
-        this.instAbbrNm = instAbbrNm;
-        this.odr = odr;
-        this.ord = ord;
-        this.instCycl = instCycl;
-        this.topInstCd = topInstCd;
-        this.uprInstCd = uprInstCd;
-        this.reprsInstCd = reprsInstCd;
-        this.instTypeLclsf = instTypeLclsf;
-        this.instTypeMclsf = instTypeMclsf;
-        this.instTypeSclsf = instTypeSclsf;
-        this.telno = telno;
-        this.faxNo = faxNo;
-        this.crtYmd = crtYmd;
-        this.ablYmd = ablYmd;
-        this.ablYn = ablYn;
-        this.chgYmd = chgYmd;
-        this.chgTm = chgTm;
-        this.crtrYmd = crtrYmd;
-        this.sortOrdr = sortOrdr;
-        this.lastMdfrId = lastMdfrId;
-    }
- 
-    public void softDelete(String ablYmd, String chgYmd, String chgTm) {
-        this.ablYn = "1";
-        this.ablYmd = ablYmd;
-        this.chgYmd = chgYmd;
-        this.chgTm = chgTm;
-    }
 }

@@ -12,6 +12,20 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -90,5 +104,103 @@ class SchemaValidationIntegrationTest {
                         : "JPA validate 전에 실제 Contract를 수행했어야 한다").isEqualTo(1);
             }
         }
+    }
+
+    /** db_columns.json 항목 하나 — 저장 형식은 {table_name, column_name} 배열이다(MappingValidator 계약). */
+    private static final Pattern CATALOG_ENTRY = Pattern.compile(
+            "\\{\\s*\"table_name\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"column_name\"\\s*:\\s*\"([^\"]+)\"\\s*\\}");
+    private static final String REGENERATE = "./gradlew :api-server:schemaValidationTest "
+            + "--tests '*SchemaValidationIntegrationTest' -Dnuri.dbColumns.write=true";
+
+    /**
+     * [2026-10-07] 이관 도구의 표준 스키마 카탈로그({@code db_columns.json})는 MappingValidator 가 매핑 타깃의
+     * 실재를 판정하는 기준이다. 종전에는 다시 만드는 생성기가 없어 2026-08-19 이후 양방향으로 낡았다 —
+     * 인가·결재 표 17개가 없어 그 표로의 매핑이 검증 단계에서 거부됐고, 지운 표는 남아 있었다.
+     * 이 테스트가 Flyway 전량 적용 스키마(public 기본 테이블 전체)와 대조하고, {@code -Dnuri.dbColumns.write=true}
+     * 일 때만 같은 질의 결과로 파일을 다시 쓴다(손으로 고치지 않는다).
+     *
+     * <p>재사용 base 투영본은 원본 카탈로그를 그대로 복사하고 스키마는 프로필에 따라 표가 빠지거나(축소)
+     * 늘어난다(custom). 그래서 투영본에서는 양쪽에 모두 있는 표의 컬럼 집합만 같아야 한다.
+     */
+    @Test
+    @DisplayName("이관 표준 스키마 카탈로그(db_columns.json)가 Flyway 적용 스키마와 일치한다")
+    void migrationColumnCatalogMatchesMigratedSchema() throws SQLException, IOException {
+        Map<String, Set<String>> actual = new TreeMap<>();
+        try (Connection conn = dataSource.getConnection();
+             Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery("SELECT c.table_name, c.column_name FROM information_schema.columns c "
+                     + "JOIN information_schema.tables t ON t.table_schema = c.table_schema AND t.table_name = c.table_name "
+                     + "WHERE c.table_schema = 'public' AND t.table_type = 'BASE TABLE' "
+                     + "ORDER BY c.table_name, c.ordinal_position")) {
+            while (rs.next()) {
+                actual.computeIfAbsent(rs.getString(1), table -> new LinkedHashSet<>()).add(rs.getString(2));
+            }
+        }
+        assertThat(actual).as("information_schema 질의가 비었다 — 대조가 vacuous 하다").isNotEmpty();
+
+        Path catalog = repoRoot().resolve("db_columns.json");
+        if (Boolean.getBoolean("nuri.dbColumns.write")) {
+            Files.writeString(catalog, render(actual), StandardCharsets.UTF_8);
+        }
+        Map<String, Set<String>> expected = new TreeMap<>();
+        Matcher entry = CATALOG_ENTRY.matcher(Files.readString(catalog, StandardCharsets.UTF_8));
+        while (entry.find()) {
+            expected.computeIfAbsent(entry.group(1), table -> new LinkedHashSet<>()).add(entry.group(2));
+        }
+        assertThat(expected).as("db_columns.json 에서 항목을 읽지 못했다: " + catalog).isNotEmpty();
+
+        boolean projected = nuri.api.harness.ReusableHarnessProfile.current().projected();
+        List<String> drift = new ArrayList<>();
+        Set<String> tables = new TreeSet<>(actual.keySet());
+        tables.addAll(expected.keySet());
+        for (String table : tables) {
+            Set<String> inSchema = actual.get(table);
+            Set<String> inCatalog = expected.get(table);
+            if (inSchema == null || inCatalog == null) {
+                if (!projected) {
+                    drift.add(table + (inSchema == null ? ": 스키마에 없는 표가 카탈로그에 있다" : ": 카탈로그에 없는 표다"));
+                }
+                continue;
+            }
+            Set<String> missing = new TreeSet<>(inSchema);
+            missing.removeAll(inCatalog);
+            Set<String> stale = new TreeSet<>(inCatalog);
+            stale.removeAll(inSchema);
+            if (!missing.isEmpty() || !stale.isEmpty()) {
+                drift.add(table + ": 카탈로그 누락 " + missing + ", 스키마에 없는 컬럼 " + stale);
+            }
+        }
+        assertThat(drift)
+                .as("db_columns.json 이 Flyway 적용 스키마와 다르다 — 손으로 고치지 말고 다시 만든다: " + REGENERATE)
+                .isEmpty();
+    }
+
+    private static String render(Map<String, Set<String>> columns) {
+        StringBuilder json = new StringBuilder("[\n");
+        boolean first = true;
+        for (Map.Entry<String, Set<String>> table : columns.entrySet()) {
+            for (String column : table.getValue()) {
+                if (!first) {
+                    json.append(",\n");
+                }
+                first = false;
+                json.append("  {\n    \"table_name\": \"").append(table.getKey())
+                        .append("\",\n    \"column_name\": \"").append(column).append("\"\n  }");
+            }
+        }
+        return json.append("\n]\n").toString();
+    }
+
+    private static Path repoRoot() {
+        Path current = Paths.get("").toAbsolutePath();
+        for (int depth = 0; depth < 6 && current != null; depth += 1) {
+            if (Files.isRegularFile(current.resolve("settings.gradle"))
+                    && Files.isRegularFile(current.resolve("db_columns.json"))) {
+                return current;
+            }
+            current = current.getParent();
+        }
+        throw new IllegalStateException("저장소 루트(db_columns.json)를 찾을 수 없다 — 조용한 skip 은 false-green 이다: "
+                + Paths.get("").toAbsolutePath());
     }
 }

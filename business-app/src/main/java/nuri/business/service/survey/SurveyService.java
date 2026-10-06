@@ -106,12 +106,12 @@ public class SurveyService {
      * [2026-10-01] 목록에서도 이미 응답한 설문을 알린다 — 종전에는 상세를 열어야 알 수 있었다(DIP V8 은 상세만).
      * 판정 축은 제출 중복 검사와 같은 로그인 ID 이고, 한 페이지를 한 번의 조회로 채운다. 모르면 null 이다.
      */
-    private void markResponded(java.util.List<SurveyInfoDto> surveys) {
+    private void markResponded(List<SurveyInfoDto> surveys) {
         java.util.Optional<String> loginId = nuri.business.security.util.SecurityUtil.getCurrentLoginId();
         if (loginId.isEmpty() || surveys.isEmpty()) {
             return;
         }
-        java.util.List<Long> srvySns = surveys.stream().map(SurveyInfoDto::getSrvySn).filter(Objects::nonNull).toList();
+        List<Long> srvySns = surveys.stream().map(SurveyInfoDto::getSrvySn).filter(Objects::nonNull).toList();
         java.util.Set<Long> responded = srvySns.isEmpty() ? java.util.Set.of()
                 : new java.util.HashSet<>(rsltRepository.findRespondedSurveySns(loginId.get(), srvySns));
         surveys.forEach(dto -> dto.setResponded(responded.contains(dto.getSrvySn())));

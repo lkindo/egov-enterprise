@@ -21,7 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
  * ({@code LogRetentionScheduler})이 담당한다 — 이 서비스는 그 경로를 침범하지 않는다.
  * 증적을 열람자가 지울 수 있으면 증적이 아니기 때문이다.
  *
- * <p>인가는 컨트롤러에서 {@code @AdminOnly} 로 좁힌다({@link nuri.business.service.log.dto.PrivacyLogDto} 참조).
+ * <p>인가는 컨트롤러 operation binding 이 좁힌다 — {@code PRIVACY_READ}·{@code PRIVACY_EXPORT} 권한이 필요하고
+ * {@code ROLE_SYSTEM} 은 강제 제외한다({@link nuri.business.service.log.dto.PrivacyLogDto} 참조).
  */
 @Service
 @Transactional(readOnly = true)

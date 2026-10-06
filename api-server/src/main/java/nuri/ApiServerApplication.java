@@ -44,9 +44,4 @@ public class ApiServerApplication extends SpringBootServletInitializer {
                 app.setAllowBeanDefinitionOverriding(true);
                 app.run(args);
         }
-
-        @org.springframework.context.annotation.Bean
-        public org.egovframe.rte.fdl.crypto.EgovEnvCryptoService egovEnvCryptoService() {
-                return new org.egovframe.rte.fdl.crypto.impl.EgovEnvCryptoServiceImpl();
-        }
 }

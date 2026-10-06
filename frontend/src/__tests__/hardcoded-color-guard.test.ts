@@ -68,7 +68,9 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 //   라이트에서 약 1.5:1 이었고, 본문 패널의 흰색 링이 다크에서 밝은 테두리로 남았다.
 // [하향 래칫 2026-09-25] 18 -> 10. DEC-OPS-129 로 네트워크 관리 화면·폼과 인프라 구성도 지도를 걷으며 8건이 함께 사라졌다.
 //   토큰 치환이 아니라 표면 제거이며 새 리터럴은 0건이다.
-const BASELINE = 10;
+// [하향 래칫 2026-10-07] 10 -> 9. 참조처 0건인 고아 컴포넌트(admin/components/InsightBanner.tsx)를 지우며 1건이 함께
+//   사라졌다. 표면 제거이며 새 리터럴은 0건이다.
+const BASELINE = 9;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];

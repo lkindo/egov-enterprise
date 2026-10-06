@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
-import { surveyAdminService } from '@/services/foundation/survey/SurveyAdminService';
+import { surveyParticipationService } from '@/services/foundation/survey/SurveyParticipationService';
 import type { Survey, SurveyQuestion, SurveyResponseSubmit } from '@/types/business/survey';
 import { todayStorageYmd } from '@/lib/format-date';
 import {
@@ -32,8 +32,9 @@ import { SurveyStatsPanel } from '../components/SurveyStatsPanel';
  * 하나도 없었다.</b> 즉 응답을 제출할 화면이 제품 어디에도 없었다.
  *
  * <p>필요한 것은 전부 이미 있었다 — 문항 조회 `GET /api/v1/surveys/{srvySn}/questions` 와
- * 제출 `POST /api/v1/surveys/{srvySn}/responses` 가 둘 다 {@code @Authenticated} 로 열려 있고
- * (DEC-OPS-010), 서버가 문항·항목 소속 검증과 중복 제출 차단까지 수행한다. 프런트 서비스의
+ * 제출 `POST /api/v1/surveys/{srvySn}/responses` 가 일반 사용자에게 열려 있고(DEC-OPS-010 — 지금은
+ * 기능 권한 SURVEY_READ·SURVEY_SUBMIT, 기본 배정상 ROLE_USER 포함), 서버가 문항·항목 소속 검증과
+ * 중복 제출 차단까지 수행한다. 프런트 서비스의
  * 제출 경로만 존재하지 않는 `/respond` 를 가리키고 있었고 호출부가 0건이라 아무도 몰랐다.
  *
  * <p>통계는 응답 아래에 그대로 남긴다 — 이미 응답한 사용자와 결과를 보러 온 사용자가 같은
@@ -73,7 +74,7 @@ export default function SurveyDetailClient({
     refetch,
   } = useQuery<SurveyQuestion[]>({
     queryKey: ['survey-questions', srvySn],
-    queryFn: () => surveyAdminService.getQuestions(srvySn),
+    queryFn: () => surveyParticipationService.getQuestions(srvySn),
     initialData: initialQuestions,
   });
 
@@ -88,7 +89,7 @@ export default function SurveyDetailClient({
     isError: isSurveyError,
   } = useQuery<Survey>({
     queryKey: ['survey', srvySn],
-    queryFn: () => surveyAdminService.getSurvey(srvySn),
+    queryFn: () => surveyParticipationService.getSurvey(srvySn),
     initialData: initialSurvey,
   });
   // 서버가 전달한 KST 기준일을 첫 렌더와 수화에 함께 사용하고 마운트 동안 고정한다.
@@ -162,7 +163,7 @@ export default function SurveyDetailClient({
         }),
       };
 
-      await surveyAdminService.submitAnswers(srvySn, payload);
+      await surveyParticipationService.submitAnswers(srvySn, payload);
       setIsSubmitted(true);
       // 제출한 응답이 바로 아래 통계에 반영되게 한다 — 종전에는 캐시된 통계가 제출 전 값으로 남았다.
       void queryClient.invalidateQueries({ queryKey: ['survey-stats', srvySn] });

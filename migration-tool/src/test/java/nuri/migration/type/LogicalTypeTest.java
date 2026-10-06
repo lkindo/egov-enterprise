@@ -63,13 +63,4 @@ class LogicalTypeTest {
         assertThatThrownBy(() -> new LogicalType.OpaqueType("oracle", " "))
                 .isInstanceOf(IllegalArgumentException.class);
     }
-
-    @Test
-    void conversionSafetyMakesAutomaticApprovalBoundariesExplicit() {
-        assertThat(ConversionSafety.LOSSLESS.permitsAutomaticConversion()).isTrue();
-        assertThat(ConversionSafety.VALIDATED.requiresValidation()).isTrue();
-        assertThat(ConversionSafety.LOSSY_REQUIRES_APPROVAL.requiresApproval()).isTrue();
-        assertThat(ConversionSafety.MANUAL.blocksAutomaticConversion()).isTrue();
-        assertThat(ConversionSafety.UNSUPPORTED.blocksAutomaticConversion()).isTrue();
-    }
 }

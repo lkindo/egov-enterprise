@@ -1,9 +1,6 @@
 package nuri.business.domain.user.repository;
 
 import nuri.business.domain.user.entity.User;
-import nuri.business.domain.user.entity.Role;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -31,27 +28,8 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     @Query("SELECT u FROM User u WHERE u.userId = :userId")
     Optional<User> findByUserIdForUpdate(@Param("userId") String userId);
 
-    Optional<User> findByCertDnVl(String certDnVl);
-
-    Optional<User> findByUserNmAndEmlAddr(String userNm, String emlAddr);
-
-    Optional<User> findByUserIdAndUserNmAndEmlAddr(String userId, String userNm, String emlAddr);
-
-    @Query("SELECT u FROM User u")
-    List<User> findAllWithRole();
-
     @NonNull
     Optional<User> findById(@NonNull @Param("esntlId") String esntlId);
-
-    Page<User> findByUserNmContainingIgnoreCase(String userNm, Pageable pageable);
-
-    Page<User> findByUserIdContainingIgnoreCaseOrUserNmContainingIgnoreCase(String userId, String userNm, Pageable pageable);
-
-    List<User> findByUserNmContaining(String userNm);
-
-    List<User> findByEmlAddrContaining(String emlAddr);
-
-    List<User> findByOgnzId(String ognzId);
 
     /** 해당 조직에 소속된 사용자 수. 부서 삭제 가드에서 사용한다. */
     long countByOgnzId(String ognzId);
@@ -77,12 +55,6 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
             ORDER BY u.esntlId
             """)
     List<String> findActiveEsntlIdsHoldingPermission(@org.springframework.data.repository.query.Param("permission") String permission);
-
-    List<User> findByRole(Role role);
-
-    List<User> findByOgnzIdAndRole(String ognzId, Role role);
-
-    List<User> findByUserNmContainingOrEmlAddrContaining(String userNm, String emlAddr);
 
     // [V2_13 결속] 권한그룹 삭제 시 사용자 참조 해제 (fk_tb_user_info_tb_authrt_group_info NO ACTION)
     @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)

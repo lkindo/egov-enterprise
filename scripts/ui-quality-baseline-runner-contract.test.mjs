@@ -919,7 +919,10 @@ test('filtered-zero fixture satisfies the actual log page parser and requested p
   const service = readFileSync(
     join(repoRoot, 'frontend/src/services/foundation/system/SystemLogAdminService.ts'), 'utf8',
   );
-  const parser = service.match(/function requireLogPage<T>\([\s\S]*?\n\}/)?.[0];
+  // [2026-10-07] 로그 서비스의 페이지 검사는 공용 requirePageResponse 로 옮겼다. 위임과 파서 본문을 함께 고정한다.
+  assert.match(service, /return requirePageResponse<\w+>\(response, '로그'\)/, 'the log service must delegate to the shared page parser');
+  const sharedParser = readFileSync(join(repoRoot, 'frontend/src/services/core/page-response.ts'), 'utf8');
+  const parser = sharedParser.match(/export function requirePageResponse<T>\([\s\S]*?\n\}/)?.[0];
   assert.ok(parser, 'the actual response parser must remain discoverable');
   const arrayFields = [...parser.matchAll(/!Array\.isArray\(response\.(\w+)\)/g)].map((match) => match[1]);
   const numericFields = [...parser.matchAll(/typeof response\.(\w+) !== 'number'/g)].map((match) => match[1]);

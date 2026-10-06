@@ -80,9 +80,10 @@ public class CommunityApiController {
     }
 
     // ─── 멤버십 (2026-09-06 DEC-OPS-043) ──────────────────────────────────────────────────────────
-    //   가입 신청(mbrSttsCd='A')을 읽고 승인·반려로 옮기는 첫 경로다(GAP-CMTY-001). 이 컨트롤러의 다른 핸들러는
-    //   URL 게이트(/api/v1/admin/**)만 믿지만, 멤버십 전이는 사람의 소속을 바꾸는 쓰기라 메서드 인가와
-    //   서비스 2차 가드(SecurityUtil.assertAdmin)까지 함께 둔다(백엔드 헌법 제8조).
+    //   가입 신청(mbrSttsCd='A')을 읽고 승인·반려로 옮기는 첫 경로다(GAP-CMTY-001). 이 컨트롤러의 다른 핸들러처럼
+    //   HTTP·메서드 계층이 같은 operation binding 을 집행하고, 멤버십 전이는 사람의 소속을 바꾸는 쓰기라
+    //   서비스 2차 가드(SecurityUtil.assertPermission — COMMUNITY_READ_ALL·COMMUNITY_APPROVE·COMMUNITY_REJECT,
+    //   탈퇴는 assertOwnerOrPermissionByEsntlId + COMMUNITY_UPDATE_ALL)까지 함께 둔다(백엔드 헌법 제8조).
 
     @Operation(summary = "커뮤니티 회원·가입 신청 목록",
             description = "커뮤니티의 회원과 가입 신청을 페이징 조회합니다. status 를 주면 그 상태만(REQUESTED=가입 신청, APPROVED=회원). 이름은 사용자 도메인에서 해석하며 연락처는 싣지 않습니다.")

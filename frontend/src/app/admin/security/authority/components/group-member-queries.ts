@@ -12,10 +12,3 @@ export function invalidateMembershipQueries(queryClient: QueryClient): Promise<v
     predicate: (query) => query.queryKey[0] === 'authorization' && MEMBERSHIP_QUERY_KINDS.has(String(query.queryKey[3])),
   });
 }
-
-/** 서버가 동시 변경(409)으로 거부했는가 — 다른 곳에서 구성원이 바뀌었으니 목록을 다시 읽어야 한다. */
-export function isConflict(error: unknown): boolean {
-  if (typeof error !== 'object' || error === null || !('response' in error)) return false;
-  const response = (error as { response?: unknown }).response;
-  return typeof response === 'object' && response !== null && (response as { status?: unknown }).status === 409;
-}

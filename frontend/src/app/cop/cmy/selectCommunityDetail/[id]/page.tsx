@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { SITE_IDENTITY } from '@/config/site-identity';
-import { communityService } from '@/services/business/community/communityService';
+import { communityUserService } from '@/services/business/user/community/CommunityUserService';
 import CommunityDetailHubClient from './CommunityDetailHubClient';
 import { notFound } from 'next/navigation';
 
@@ -25,7 +25,7 @@ export default async function CommunityDetailPage({
   let community;
   try {
     // Fetch initial data on server
-    community = await communityService.getCommunity(cmntySn);
+    community = await communityUserService.getCommunity(cmntySn);
   } catch (error) {
     console.error('Failed to fetch community detail', error);
     return notFound();

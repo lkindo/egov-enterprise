@@ -106,8 +106,6 @@ export const deptScheduleService = new DeptScheduleService();
 
 export const getDeptScheduleList = deptScheduleService.getDeptScheduleList.bind(deptScheduleService);
 export const getDeptScheduleMonthList = deptScheduleService.getDeptScheduleMonthList.bind(deptScheduleService);
-export const getDeptScheduleByRange = deptScheduleService.getDeptScheduleByRange.bind(deptScheduleService);
-export const getDeptSchedule = deptScheduleService.getDeptSchedule.bind(deptScheduleService);
 export const createDeptSchedule = deptScheduleService.createDeptSchedule.bind(deptScheduleService);
 export const updateDeptSchedule = deptScheduleService.updateDeptSchedule.bind(deptScheduleService);
 export const deleteDeptSchedule = deptScheduleService.deleteDeptSchedule.bind(deptScheduleService);

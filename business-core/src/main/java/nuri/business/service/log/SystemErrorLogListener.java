@@ -22,7 +22,7 @@ import java.time.format.DateTimeFormatter;
  * 그래서 이 로그는 <b>4xx 이상</b>만 담아 장애 조사용 좁은 뷰가 된다.
  *
  * <p><b>⚠ 종전에는 이 테이블에 쓰는 코드가 저장소에 하나도 없었다.</b>
- * {@code LogManageService.logInsertSysLog}는 호출자가 0이었고, 조회 API·관리 화면·보존
+ * {@code LogManageService.logInsertSysLog}는 호출자가 0이었고(2026-10-07 제거), 조회 API·관리 화면·보존
  * 스케줄러만 존재해 {@code /admin/system/logs/system}은 <b>영원히 빈 표</b>를 보여 줬다.
  * 이 리스너가 그 공백을 닫는다.
  *

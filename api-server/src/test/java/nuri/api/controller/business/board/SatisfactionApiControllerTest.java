@@ -61,7 +61,7 @@ class SatisfactionApiControllerTest {
     /** Owner CRUD and moderation have different exact permissions; service owner guards remain independent. */
     @Test
     @DisplayName("본인 평가 변경과 관리자 대리 삭제는 별도 기능 권한이다")
-    void onlyModerateIsAdminOnly() {
+    void moderateRequiresSeparatePermission() {
         var permissions = java.util.Map.of("getList", "SATISFY_READ", "getAverage", "SATISFY_READ",
                 "create", "SATISFY_CREATE", "update", "SATISFY_UPDATE", "delete", "SATISFY_DELETE", "moderate", "SATISFY_MODERATE");
         List<Method> mapped = Arrays.stream(SatisfactionApiController.class.getDeclaredMethods())

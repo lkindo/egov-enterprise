@@ -74,8 +74,3 @@ export function isPollActive(
     'active'
   );
 }
-
-/** 상태 라벨 문자열 헬퍼 */
-export function getPollStatusLabel(poll: PollPeriod, today?: string): string {
-  return POLL_STATUS_LABEL[getPollStatus(poll, today)];
-}

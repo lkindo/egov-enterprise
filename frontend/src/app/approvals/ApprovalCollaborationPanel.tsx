@@ -12,6 +12,7 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { failureMessage } from '@/lib/safe-error-log';
+import { isConflictError } from '@/lib/query/list-query-defaults';
 import { toDisplayDateTime } from '@/lib/format-date';
 import { ApprovalSupplementAnswerRequestSchema } from '@/types/generated-zod';
 import type { InformalSanctionDto } from '@/services/business/user/approval/ApprovalUserService';
@@ -31,11 +32,6 @@ const PROCESS_LABELS: Record<string, string> = {
   REVISE: '본문 수정',
   REMIND: '재알림',
 };
-
-function isConflict(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'response' in error
-    && (error as { response?: { status?: number } }).response?.status === 409;
-}
 
 interface ApprovalCollaborationPanelProps {
   document: InformalSanctionDto;
@@ -97,7 +93,7 @@ export function ApprovalCollaborationPanel({ document, canWrite, disabled }: App
   if (!supplement && !showRemind && !canReplace && history.length === 0) return null;
 
   const refreshOnConflict = (error: unknown) => {
-    if (isConflict(error)) void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
+    if (isConflictError(error)) void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
   };
 
   /**

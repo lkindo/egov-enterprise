@@ -9,8 +9,6 @@ import java.util.List;
  * 온라인설문 결과 Repository
  */
 public interface OnlinePollResultRepository extends JpaRepository<OnlinePollResult, Long> {
-    long countByPollArtclSn(Long pollArtclSn);
-
     /** 항목별 투표수 배치 집계 — N+1 제거용. 반환: [pollArtclSn, count]. */
     @Query("SELECT r.pollArtclSn, COUNT(r) FROM OnlinePollResult r WHERE r.pollArtclSn IN :artclSns GROUP BY r.pollArtclSn")
     List<Object[]> countByPollArtclSnIn(@Param("artclSns") java.util.Collection<Long> artclSns);
@@ -21,10 +19,5 @@ public interface OnlinePollResultRepository extends JpaRepository<OnlinePollResu
     @Query("SELECT DISTINCT r.pollSn FROM OnlinePollResult r WHERE r.pollSn IN :pollSns AND r.frstRgtrId = :frstRegisterId")
     List<Long> findVotedPollSnsByLoginId(@Param("pollSns") java.util.Collection<Long> pollSns, @Param("frstRegisterId") String frstRegisterId);
 
-    List<OnlinePollResult> findByPollSn(Long pollSn);
-
     void deleteByPollSn(Long pollSn);
-
-    // [V2_13 결속] 항목 삭제 시 해당 항목 투표결과 선정리
-    void deleteByPollArtclSn(Long pollArtclSn);
 }

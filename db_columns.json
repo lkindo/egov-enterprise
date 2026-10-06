@@ -1,1626 +1,194 @@
 [
   {
-    "table_name": "tb_hldy_info",
-    "column_name": "hldy_sn"
-  },
-  {
-    "table_name": "tb_extrl_hr_info",
-    "column_name": "area_no"
-  },
-  {
-    "table_name": "tb_ifml_atrz_info",
-    "column_name": "task_se_cd"
-  },
-  {
-    "table_name": "tb_sys_log",
-    "column_name": "dmnd_user_ip_addr"
-  },
-  {
-    "table_name": "tb_srvy_artcl",
-    "column_name": "srvy_id"
-  },
-  {
-    "table_name": "tb_plcy_manage",
-    "column_name": "plcy_cn"
-  },
-  {
-    "table_name": "tb_diary_info",
-    "column_name": "excptn_mttr"
-  },
-  {
-    "table_name": "tb_file_detail",
-    "column_name": "file_strg_path"
-  },
-  {
-    "table_name": "tb_srvy_rslt",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_sms_rcptn",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_dgstfn_info",
-    "column_name": "pswd"
-  },
-  {
-    "table_name": "tb_menu_info",
-    "column_name": "menu_expln"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "user_stts_cd"
-  },
-  {
-    "table_name": "ids",
-    "column_name": "frst_register_id"
-  },
-  {
-    "table_name": "tb_main_image",
-    "column_name": "img_file_nm"
-  },
-  {
-    "table_name": "tb_authrt_group_info",
-    "column_name": "group_nm"
-  },
-  {
-    "table_name": "tb_sys_log",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_user_absn",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_dgstfn_info",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_blog_user_map",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_stmp_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_note_sndng",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_sms_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_ifml_atrz_info",
-    "column_name": "rjct_rsn_cn"
-  },
-  {
-    "table_name": "tb_memo_todo_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_privacy_log",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_login_log",
-    "column_name": "log_id"
-  },
-  {
-    "table_name": "tb_club_user_map",
-    "column_name": "user_id"
-  },
-  {
-    "table_name": "tb_menu_info",
-    "column_name": "route_mdfcn_yn"
-  },
-  {
-    "table_name": "tb_bkmk_menu_mng_rslt",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_bbs_scrap",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_file_master",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_user_authrt_map",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_bbs_comment",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "sort_ordr"
-  },
-  {
-    "table_name": "tb_srvy_info",
-    "column_name": "srvy_ttl"
-  },
-  {
-    "table_name": "tb_onln_poll_manage",
-    "column_name": "poll_end_ymd"
-  },
-  {
-    "table_name": "tb_bbs_scrap",
-    "column_name": "scrap_url"
-  },
-  {
-    "table_name": "tb_srvy_rslt",
-    "column_name": "srvy_tmplt_id"
-  },
-  {
-    "table_name": "tb_menu_crt_dtl",
-    "column_name": "authrt_cd"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "proc_cn"
-  },
-  {
-    "table_name": "tb_club_user_map",
-    "column_name": "cmnty_id"
-  },
-  {
-    "table_name": "tb_bbs_stats",
-    "column_name": "top_user_id"
-  },
-  {
-    "table_name": "tb_event_info",
-    "column_name": "evnt_id"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "pswd_hint"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "bbs_atrb_cd"
-  },
-  {
-    "table_name": "tb_user_authrt_map",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_privacy_log",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_memo_todo_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_dgstfn_info",
-    "column_name": "user_nm"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "esntl_id"
-  },
-  {
-    "table_name": "tb_indv_pg_conts",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_com_clsf_cd",
-    "column_name": "clsf_cd_expln"
+    "table_name": "flyway_schema_history",
+    "column_name": "installed_rank"
   },
   {
     "table_name": "flyway_schema_history",
-    "column_name": "script"
+    "column_name": "version"
   },
   {
-    "table_name": "tb_extrl_hr_info",
-    "column_name": "cr_type_cd"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "cert_dn_vl"
-  },
-  {
-    "table_name": "tb_ognz_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_authrt_role_map",
-    "column_name": "role_cd"
-  },
-  {
-    "table_name": "tb_bbs_comment",
-    "column_name": "wrter_id"
-  },
-  {
-    "table_name": "tb_srvy_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_blog_info",
-    "column_name": "tmplt_id"
-  },
-  {
-    "table_name": "tb_diary_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_ifml_atrz_info",
-    "column_name": "aprvr_id"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "scrt_yn"
-  },
-  {
-    "table_name": "tb_bbs_comment",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_srvy_info",
-    "column_name": "srvy_prps"
-  },
-  {
-    "table_name": "tb_user_authrt_map",
-    "column_name": "mbr_type_cd"
-  },
-  {
-    "table_name": "tb_memo_todo_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_privacy_log",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_user_noti",
-    "column_name": "noti_sn"
-  },
-  {
-    "table_name": "tb_faq_info",
-    "column_name": "faq_id"
-  },
-  {
-    "table_name": "tb_sms_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "mdfcn_ymd"
-  },
-  {
-    "table_name": "tb_user_log",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_srvy_rspdnt",
-    "column_name": "end_telno"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "rprsv_nm"
-  },
-  {
-    "table_name": "tb_extrl_hr_info",
-    "column_name": "evnt_id"
-  },
-  {
-    "table_name": "tb_bbs_master_optn",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "mbl_telno"
-  },
-  {
-    "table_name": "tb_com_clsf_cd",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "meta_standard_terms",
-    "column_name": "term_name"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "atch_psblty_file_sz"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "dtl_addr"
-  },
-  {
-    "table_name": "tb_event_info",
-    "column_name": "evnt_nm"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "inst_id"
-  },
-  {
-    "table_name": "tb_note_rcptn",
-    "column_name": "rcvr_id"
-  },
-  {
-    "table_name": "tb_email_dsptch_manage",
-    "column_name": "msg_id"
-  },
-  {
-    "table_name": "tb_authrt_info",
-    "column_name": "authrt_nm"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_memo_rpt_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_srvy_rslt",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_onln_poll_manage",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "pst_end_ymd"
-  },
-  {
-    "table_name": "tb_bbs_stats",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_privacy_log",
-    "column_name": "inq_info"
-  },
-  {
-    "table_name": "tb_memo_todo_info",
-    "column_name": "todo_cn"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "induty_cd"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "odr"
-  },
-  {
-    "table_name": "tb_rpt_info",
-    "column_name": "rpt_ymd"
-  },
-  {
-    "table_name": "tb_extrl_hr_info",
-    "column_name": "md_telno"
-  },
-  {
-    "table_name": "tb_dta_use_stats",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_dscsn_manage",
-    "column_name": "wrt_ymd"
-  },
-  {
-    "table_name": "tb_dept_task_info",
-    "column_name": "dept_task_box_id"
-  },
-  {
-    "table_name": "tb_srvy_rslt",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "eml_addr"
-  },
-  {
-    "table_name": "tb_sms_rcptn",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_leader_stts",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_extrl_hr_info",
-    "column_name": "otsd_hr_nm"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "home_rgn_tel_no"
-  },
-  {
-    "table_name": "tb_onln_poll_rslt",
-    "column_name": "poll_rslt_id"
-  },
-  {
-    "table_name": "meta_standard_domains",
-    "column_name": "domain_group"
-  },
-  {
-    "table_name": "tb_bbs_comment",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_srvy_info",
-    "column_name": "srvy_id"
-  },
-  {
-    "table_name": "tb_dscsn_manage",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_sms_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "telno"
-  },
-  {
-    "table_name": "tb_faq_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_srvy_tmplt",
-    "column_name": "srvy_tmplt_path_nm"
-  },
-  {
-    "table_name": "tb_club_info",
-    "column_name": "club_id"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "admdst_cd"
-  },
-  {
-    "table_name": "tb_admdst_cd",
-    "column_name": "admdst_se_cd"
-  },
-  {
-    "table_name": "tb_srvy_artcl",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_plcy_manage",
-    "column_name": "plcy_ttl"
-  },
-  {
-    "table_name": "tb_onln_poll_artcl",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_leader_schdl",
-    "column_name": "rept_se_cd"
-  },
-  {
-    "table_name": "tb_srvy_qstn",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "zip"
-  },
-  {
-    "table_name": "tb_bnr_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_rward_manage",
-    "column_name": "aprv_dt"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "top_inst_cd"
-  },
-  {
-    "table_name": "tb_sms_rcptn",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "empl_no"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "rept_se_cd"
-  },
-  {
-    "table_name": "tb_authrt_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_popup_info",
-    "column_name": "ntce_yn"
-  },
-  {
-    "table_name": "tb_dept_task_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_dscsn_manage",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_adbk_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "meta_standard_terms",
+    "table_name": "flyway_schema_history",
     "column_name": "description"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "inst_cycl"
-  },
-  {
-    "table_name": "tb_dta_use_stats",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_cmnty_user_map",
-    "column_name": "mngr_yn"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "mng_ymd"
-  },
-  {
-    "table_name": "tb_rpt_info",
-    "column_name": "rpt_id"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "abl_ymd"
-  },
-  {
-    "table_name": "tb_rward_manage",
-    "column_name": "rwrd_nm"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "zip"
-  },
-  {
-    "table_name": "tb_bbs_stats",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_admdst_cd",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_cmnty_user_map",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "ctprvn_cd"
-  },
-  {
-    "table_name": "meta_standard_words",
-    "column_name": "eng_abbr"
-  },
-  {
-    "table_name": "tb_memo_rpt_info",
-    "column_name": "rptr_id"
-  },
-  {
-    "table_name": "tb_popup_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "office_telno"
-  },
-  {
-    "table_name": "ecopseq",
-    "column_name": "last_updusr_id"
-  },
-  {
-    "table_name": "tb_onln_poll_manage",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "schdl_se_cd"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "inq_cnt"
-  },
-  {
-    "table_name": "tb_email_dsptch_manage",
-    "column_name": "dsptch_rslt_cd"
-  },
-  {
-    "table_name": "tb_dscsn_manage",
-    "column_name": "dscsn_ttl"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "bbs_type_cd"
-  },
-  {
-    "table_name": "tb_bnr_info",
-    "column_name": "bnr_img_nm"
-  },
-  {
-    "table_name": "tb_adbk_info",
-    "column_name": "adbk_constnt_id"
-  },
-  {
-    "table_name": "tb_leader_schdl",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_onln_poll_artcl",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "proc_se"
-  },
-  {
-    "table_name": "tb_dscsn_manage",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_club_info",
-    "column_name": "club_intro_cn"
-  },
-  {
-    "table_name": "tb_hldy_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "meta_standard_domains",
-    "column_name": "data_length"
-  },
-  {
-    "table_name": "tb_srvy_tmplt",
-    "column_name": "srvy_tmplt_id"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "schdl_nm"
-  },
-  {
-    "table_name": "tb_intrn_svc",
-    "column_name": "itnt_svc_expln"
-  },
-  {
-    "table_name": "tb_leader_stts",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "inq_cnt"
-  },
-  {
-    "table_name": "tb_user_noti",
-    "column_name": "noti_dt"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "bbs_id"
-  },
-  {
-    "table_name": "tb_rward_manage",
-    "column_name": "confm_yn"
-  },
-  {
-    "table_name": "tb_srvy_qstn",
-    "column_name": "max_chc_cnt"
-  },
-  {
-    "table_name": "tb_user_noti",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "ttl_bold_yn"
-  },
-  {
-    "table_name": "tb_web_log",
-    "column_name": "prcs_tm"
-  },
-  {
-    "table_name": "tb_ifml_atrz_info",
-    "column_name": "atrz_dt"
-  },
-  {
-    "table_name": "tb_dgstfn_info",
-    "column_name": "dgstfn_cn"
-  },
-  {
-    "table_name": "tb_menu_info",
-    "column_name": "rel_img_path"
-  },
-  {
-    "table_name": "tb_main_image",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_rward_manage",
-    "column_name": "rtn_rsn_cn"
-  },
-  {
-    "table_name": "tb_club_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "empl_no"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_hldy_info",
-    "column_name": "hldy_expln"
-  },
-  {
-    "table_name": "ids",
-    "column_name": "next_id"
-  },
-  {
-    "table_name": "tb_com_clsf_cd",
-    "column_name": "clsf_cd_nm"
-  },
-  {
-    "table_name": "tb_bbs_master_optn",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "inst_type_lclsf"
-  },
-  {
-    "table_name": "tb_leader_schdl",
-    "column_name": "schdl_bgng_ymd"
-  },
-  {
-    "table_name": "tb_sys_log",
-    "column_name": "dmnd_user_id"
-  },
-  {
-    "table_name": "tb_stmp_info",
-    "column_name": "crtr_id"
-  },
-  {
-    "table_name": "tb_note_sndng",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "lck_last_pnttm"
-  },
-  {
-    "table_name": "tb_email_dsptch_manage",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_blog_user_map",
-    "column_name": "mngr_yn"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "pst_ttl"
-  },
-  {
-    "table_name": "tb_rward_manage",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "ent_se_cd"
-  },
-  {
-    "table_name": "tb_ifml_atrz_info",
-    "column_name": "version"
-  },
-  {
-    "table_name": "tb_event_info",
-    "column_name": "evnt_aprv_ymd"
-  },
-  {
-    "table_name": "tb_user_absn",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_bnr_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_sys_log",
-    "column_name": "prcs_se_cd"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "pst_cn"
-  },
-  {
-    "table_name": "tb_authrt_group_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_dgstfn_info",
-    "column_name": "pst_id"
-  },
-  {
-    "table_name": "tb_srvy_qstn",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_adbk_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_bbs_scrap",
-    "column_name": "bbs_id"
-  },
-  {
-    "table_name": "tb_onln_poll_artcl",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "reprs_inst_cd"
-  },
-  {
-    "table_name": "tb_bkmk_menu_mng_rslt",
-    "column_name": "user_id"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "opert_sn"
-  },
-  {
-    "table_name": "tb_admdst_cd",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_cmnty_user_map",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_intrn_svc",
-    "column_name": "itnt_svc_id"
-  },
-  {
-    "table_name": "tb_srvy_tmplt",
-    "column_name": "srvy_tmplt_expln"
-  },
-  {
-    "table_name": "tb_memo_rpt_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_menu_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_popup_info",
-    "column_name": "popup_id"
-  },
-  {
-    "table_name": "tb_rpt_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_club_user_map",
-    "column_name": "whdwl_ymd"
-  },
-  {
-    "table_name": "tb_popup_info",
-    "column_name": "file_url"
-  },
-  {
-    "table_name": "tb_menu_crt_dtl",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_menu_info",
-    "column_name": "rel_img_nm"
-  },
-  {
-    "table_name": "tb_leader_schdl_dtl",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_bnr_info",
-    "column_name": "rflt_yn"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "schdl_id"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "ord"
-  },
-  {
-    "table_name": "tb_role_info",
-    "column_name": "role_expln"
-  },
-  {
-    "table_name": "tb_dept_task_info",
-    "column_name": "dept_task_id"
-  },
-  {
-    "table_name": "tb_sys_log",
-    "column_name": "dmnd_id"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "user_stts_cd"
-  },
-  {
-    "table_name": "tb_intrn_svc",
-    "column_name": "rflt_yn"
-  },
-  {
-    "table_name": "tb_club_info",
-    "column_name": "club_nm"
-  },
-  {
-    "table_name": "tb_dta_use_stats",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_hldy_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "ocrn_ymd"
-  },
-  {
-    "table_name": "tb_admdst_cd",
-    "column_name": "admdst_cd"
-  },
-  {
-    "table_name": "tb_blog_user_map",
-    "column_name": "whdwl_ymd"
-  },
-  {
-    "table_name": "tb_adbk_info",
-    "column_name": "adbk_id"
-  },
-  {
-    "table_name": "tb_leader_schdl",
-    "column_name": "schdl_se_cd"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "user_id"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "crt_ymd"
-  },
-  {
-    "table_name": "tb_onln_poll_rslt",
-    "column_name": "poll_artcl_id"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "eml_addr"
-  },
-  {
-    "table_name": "flyway_schema_history",
-    "column_name": "version"
-  },
-  {
-    "table_name": "tb_srvy_qstn",
-    "column_name": "srvy_qstn_id"
-  },
-  {
-    "table_name": "tb_leader_schdl",
-    "column_name": "schdl_nm"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "bizr_no"
-  },
-  {
-    "table_name": "tb_cmnty_info",
-    "column_name": "cmnty_nm"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "otp_secret"
-  },
-  {
-    "table_name": "tb_rward_manage",
-    "column_name": "rwrd_cd"
-  },
-  {
-    "table_name": "tb_srvy_tmplt",
-    "column_name": "srvy_tmplt_img_info"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "schdl_knd_cd"
-  },
-  {
-    "table_name": "tb_login_policy",
-    "column_name": "end_tm"
-  },
-  {
-    "table_name": "tb_diary_info",
-    "column_name": "diary_id"
-  },
-  {
-    "table_name": "tb_adbk_manage",
-    "column_name": "adbk_nm"
-  },
-  {
-    "table_name": "tb_popup_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_srvy_artcl",
-    "column_name": "srvy_artcl_id"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "abl_yn"
-  },
-  {
-    "table_name": "tb_cmnty_user_map",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_ognz_info",
-    "column_name": "ognz_id"
-  },
-  {
-    "table_name": "tb_authrt_role_map",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_dscsn_manage",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_adbk_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "bbs_ttl"
-  },
-  {
-    "table_name": "tb_login_log",
-    "column_name": "cntn_mthd_cd"
-  },
-  {
-    "table_name": "tb_bkmk_menu_mng_rslt",
-    "column_name": "menu_id"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "pswd"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "lwst_inst_nm"
-  },
-  {
-    "table_name": "tb_auth_rfsh_tk",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_intrn_svc",
-    "column_name": "itnt_svc_nm"
-  },
-  {
-    "table_name": "tb_bnr_info",
-    "column_name": "bnr_expln"
-  },
-  {
-    "table_name": "tb_menu_info",
-    "column_name": "menu_ordr"
-  },
-  {
-    "table_name": "tb_leader_stts",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_stmp_info",
-    "column_name": "mpng_crt_id"
-  },
-  {
-    "table_name": "tb_note_sndng",
-    "column_name": "del_yn"
-  },
-  {
-    "table_name": "tb_blog_user_map",
-    "column_name": "mbr_stts_cd"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "emd_cd"
-  },
-  {
-    "table_name": "tb_admdst_cd",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_sys_log",
-    "column_name": "err_se_cd"
-  },
-  {
-    "table_name": "tb_user_absn",
-    "column_name": "user_absn_yn"
-  },
-  {
-    "table_name": "tb_extrl_hr_info",
-    "column_name": "eml_addr"
-  },
-  {
-    "table_name": "tb_main_image",
-    "column_name": "rflt_yn"
-  },
-  {
-    "table_name": "ids",
-    "column_name": "table_name"
-  },
-  {
-    "table_name": "meta_standard_words",
-    "column_name": "word_dc"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "gndr_cd"
-  },
-  {
-    "table_name": "tb_onln_mnl_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_faq_info",
-    "column_name": "qstn_cn"
-  },
-  {
-    "table_name": "tb_adbk_info",
-    "column_name": "eml_addr"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_dscsn_manage",
-    "column_name": "dscsn_cn"
-  },
-  {
-    "table_name": "tb_extrl_hr_info",
-    "column_name": "gndr_cd"
-  },
-  {
-    "table_name": "tb_prgrm_lst",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_file_detail",
-    "column_name": "last_mdfr_id"
   },
   {
     "table_name": "flyway_schema_history",
     "column_name": "type"
   },
   {
-    "table_name": "tb_indv_pg",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "version"
-  },
-  {
-    "table_name": "tb_bnr_info",
-    "column_name": "link_url"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_note_info",
-    "column_name": "note_cn"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "chg_se_cd"
-  },
-  {
-    "table_name": "tb_blog_info",
-    "column_name": "bbs_id"
-  },
-  {
-    "table_name": "tb_main_image",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "ids",
-    "column_name": "last_updt_pnttm"
+    "table_name": "flyway_schema_history",
+    "column_name": "script"
   },
   {
     "table_name": "flyway_schema_history",
-    "column_name": "installed_rank"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_srvy_rspdnt",
-    "column_name": "rgn_telno"
-  },
-  {
-    "table_name": "tb_user_log",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "li_cd"
-  },
-  {
-    "table_name": "tb_indv_pg_set",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "user_id"
-  },
-  {
-    "table_name": "tb_menu_info",
-    "column_name": "menu_sn"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_privacy_log",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_memo_todo_info",
-    "column_name": "todo_bgng_tm"
-  },
-  {
-    "table_name": "tb_faq_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_tmplt_info",
-    "column_name": "tmplt_nm"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "md_telno"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "admdst_zone_se_cd"
-  },
-  {
-    "table_name": "tb_admdst_cd",
-    "column_name": "up_admdst_cd"
-  },
-  {
-    "table_name": "tb_user_authrt_map",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_bkmk_menu_mng_rslt",
-    "column_name": "progrm_stre_path"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "esntl_id"
-  },
-  {
-    "table_name": "tb_indv_pg_conts",
-    "column_name": "cntnts_dc"
-  },
-  {
-    "table_name": "tb_note_rcptn",
-    "column_name": "note_rcptn_id"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "lwst_inst_nm"
-  },
-  {
-    "table_name": "tb_sys_log",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_bnr_info",
-    "column_name": "sort_ordr"
-  },
-  {
-    "table_name": "tb_onln_poll_manage",
-    "column_name": "poll_knd_cd"
-  },
-  {
-    "table_name": "tb_user_absn",
-    "column_name": "user_id"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "daddr"
-  },
-  {
-    "table_name": "tb_com_cd",
-    "column_name": "cd_id_nm"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "abl_ymd"
-  },
-  {
-    "table_name": "tb_bbs_stats",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_noti_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_dept_job_bx",
-    "column_name": "dept_task_box_nm"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "inst_abbr_nm"
-  },
-  {
-    "table_name": "tb_note_sndng",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_stmp_info",
-    "column_name": "mpng_file_path"
-  },
-  {
-    "table_name": "tb_blog_user_map",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_dscsn_manage",
-    "column_name": "mng_ymd"
-  },
-  {
-    "table_name": "tb_adbk_info",
-    "column_name": "ofc_telno"
-  },
-  {
-    "table_name": "tb_sys_log",
-    "column_name": "last_mdfr_id"
+    "column_name": "checksum"
   },
   {
     "table_name": "flyway_schema_history",
-    "column_name": "description"
+    "column_name": "installed_by"
   },
   {
-    "table_name": "tb_com_cd",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "chg_ymd"
-  },
-  {
-    "table_name": "tb_bbs_use_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "user_nm"
-  },
-  {
-    "table_name": "tb_dscsn_manage",
-    "column_name": "rls_yn"
-  },
-  {
-    "table_name": "tb_blog_user_map",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_com_dtl_cd",
-    "column_name": "dtl_cd"
-  },
-  {
-    "table_name": "tb_hlp_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_leader_schdl",
-    "column_name": "schdl_id"
-  },
-  {
-    "table_name": "tb_dept_job_bx",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_event_info",
-    "column_name": "evnt_end_ymd"
-  },
-  {
-    "table_name": "tb_tmplt_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "schdl_imprt_cd"
-  },
-  {
-    "table_name": "tb_menu_info",
-    "column_name": "menu_nm"
-  },
-  {
-    "table_name": "tb_popup_info",
-    "column_name": "stopvew_setup_yn"
-  },
-  {
-    "table_name": "tb_indv_pg_conts",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_note_rcptn",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "chg_ymd"
-  },
-  {
-    "table_name": "tb_cmnty_user_map",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "schdl_dept_id"
-  },
-  {
-    "table_name": "tb_srvy_rspdnt",
-    "column_name": "rspdnt_nm"
-  },
-  {
-    "table_name": "tb_user_log",
-    "column_name": "mdfcn_cnt"
-  },
-  {
-    "table_name": "tb_popup_info",
-    "column_name": "popup_wdth_pstn"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "up_pst_id"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "dscsn_ttl"
-  },
-  {
-    "table_name": "tb_leader_stts",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_srvy_qstn",
-    "column_name": "qstn_cn"
-  },
-  {
-    "table_name": "tb_indv_pg",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_faq_info",
-    "column_name": "inq_cnt"
-  },
-  {
-    "table_name": "tb_rward_manage",
-    "column_name": "rwrd_id"
-  },
-  {
-    "table_name": "tb_main_image",
-    "column_name": "img_nm"
-  },
-  {
-    "table_name": "tb_club_info",
-    "column_name": "cmnty_id"
-  },
-  {
-    "table_name": "tb_blog_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_hldy_info",
-    "column_name": "hldy_se_cd"
-  },
-  {
-    "table_name": "tb_web_log",
-    "column_name": "dmnd_user_id"
-  },
-  {
-    "table_name": "tb_leader_schdl",
-    "column_name": "schdl_imprt_cd"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "user_type_cd"
-  },
-  {
-    "table_name": "tb_note_sndng",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_leader_schdl",
-    "column_name": "schdl_end_ymd"
-  },
-  {
-    "table_name": "tb_stmp_info",
-    "column_name": "mpng_file_nm"
-  },
-  {
-    "table_name": "tb_blog_user_map",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_sms_info",
-    "column_name": "sms_id"
-  },
-  {
-    "table_name": "tb_rward_manage",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_club_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_user_absn",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_sys_log",
-    "column_name": "rspns_cd"
-  },
-  {
-    "table_name": "tb_file_detail",
-    "column_name": "orgnl_file_nm"
+    "table_name": "flyway_schema_history",
+    "column_name": "installed_on"
   },
   {
     "table_name": "flyway_schema_history",
     "column_name": "execution_time"
   },
   {
-    "table_name": "tb_srvy_qstn",
-    "column_name": "qstn_type_cd"
+    "table_name": "flyway_schema_history",
+    "column_name": "success"
   },
   {
-    "table_name": "tb_login_policy",
+    "table_name": "meta_standard_domains",
+    "column_name": "id"
+  },
+  {
+    "table_name": "meta_standard_domains",
+    "column_name": "domain_group"
+  },
+  {
+    "table_name": "meta_standard_domains",
+    "column_name": "domain_name"
+  },
+  {
+    "table_name": "meta_standard_domains",
+    "column_name": "data_type"
+  },
+  {
+    "table_name": "meta_standard_domains",
+    "column_name": "data_length"
+  },
+  {
+    "table_name": "meta_standard_terms",
+    "column_name": "id"
+  },
+  {
+    "table_name": "meta_standard_terms",
+    "column_name": "term_name"
+  },
+  {
+    "table_name": "meta_standard_terms",
+    "column_name": "eng_abbr"
+  },
+  {
+    "table_name": "meta_standard_terms",
+    "column_name": "description"
+  },
+  {
+    "table_name": "meta_standard_terms",
+    "column_name": "domain_name"
+  },
+  {
+    "table_name": "meta_standard_words",
+    "column_name": "word_name"
+  },
+  {
+    "table_name": "meta_standard_words",
+    "column_name": "eng_abbr"
+  },
+  {
+    "table_name": "meta_standard_words",
+    "column_name": "word_dc"
+  },
+  {
+    "table_name": "meta_standard_words",
+    "column_name": "rprs_yn"
+  },
+  {
+    "table_name": "revinfo",
+    "column_name": "rev"
+  },
+  {
+    "table_name": "revinfo",
+    "column_name": "revtstmp"
+  },
+  {
+    "table_name": "revinfo",
+    "column_name": "frst_reg_pnttm"
+  },
+  {
+    "table_name": "revinfo",
+    "column_name": "last_updt_pnttm"
+  },
+  {
+    "table_name": "revinfo",
+    "column_name": "frst_register_id"
+  },
+  {
+    "table_name": "revinfo",
+    "column_name": "last_updusr_id"
+  },
+  {
+    "table_name": "tb_adbk_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_adbk_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_adbk_info",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_adbk_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_adbk_info",
+    "column_name": "fax_no"
+  },
+  {
+    "table_name": "tb_adbk_info",
+    "column_name": "home_telno"
+  },
+  {
+    "table_name": "tb_adbk_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_adbk_info",
+    "column_name": "mbl_telno"
+  },
+  {
+    "table_name": "tb_adbk_info",
+    "column_name": "ofc_telno"
+  },
+  {
+    "table_name": "tb_adbk_info",
+    "column_name": "eml_addr"
+  },
+  {
+    "table_name": "tb_adbk_info",
+    "column_name": "nm"
+  },
+  {
+    "table_name": "tb_adbk_info",
+    "column_name": "adbk_mbr_sn"
+  },
+  {
+    "table_name": "tb_adbk_info",
+    "column_name": "adbk_sn"
+  },
+  {
+    "table_name": "tb_adbk_manage",
+    "column_name": "use_yn"
+  },
+  {
+    "table_name": "tb_adbk_manage",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_adbk_manage",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_adbk_manage",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_adbk_manage",
     "column_name": "last_mdfr_id"
   },
   {
@@ -1628,331 +196,1251 @@
     "column_name": "rls_scope_cd"
   },
   {
-    "table_name": "tb_bkmk_menu_mng_rslt",
-    "column_name": "menu_nm"
+    "table_name": "tb_adbk_manage",
+    "column_name": "trget_ognz_id"
   },
   {
-    "table_name": "tb_cmnty_info",
-    "column_name": "last_mdfr_id"
+    "table_name": "tb_adbk_manage",
+    "column_name": "wrter_id"
   },
   {
-    "table_name": "tb_onln_poll_artcl",
-    "column_name": "mdfcn_dt"
+    "table_name": "tb_adbk_manage",
+    "column_name": "adbk_nm"
   },
   {
-    "table_name": "tb_srvy_info",
-    "column_name": "srvy_trgt"
+    "table_name": "tb_adbk_manage",
+    "column_name": "adbk_sn"
   },
   {
-    "table_name": "tb_bbs_comment",
-    "column_name": "pst_id"
+    "table_name": "tb_admdst_cd",
+    "column_name": "admdst_cd"
   },
   {
-    "table_name": "tb_faq_info",
-    "column_name": "atch_file_id"
+    "table_name": "tb_admdst_cd",
+    "column_name": "up_admdst_cd"
   },
   {
-    "table_name": "tb_srvy_tmplt",
-    "column_name": "srvy_tmplt_type_cd"
+    "table_name": "tb_admdst_cd",
+    "column_name": "admdst_se_cd"
   },
   {
-    "table_name": "tb_menu_info",
-    "column_name": "mdfcn_dt"
+    "table_name": "tb_admdst_cd",
+    "column_name": "use_yn"
   },
   {
-    "table_name": "tb_leader_stts",
-    "column_name": "leader_stts_cd"
+    "table_name": "tb_admdst_cd",
+    "column_name": "crt_ymd"
   },
   {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "telno"
+    "table_name": "tb_admdst_cd",
+    "column_name": "abl_ymd"
   },
   {
-    "table_name": "tb_onln_mnl_info",
-    "column_name": "mdfcn_dt"
+    "table_name": "tb_admdst_cd",
+    "column_name": "admdst_zone_nm"
   },
   {
-    "table_name": "tb_cmnty_user_map",
-    "column_name": "whdwl_ymd"
-  },
-  {
-    "table_name": "tb_srvy_rslt",
-    "column_name": "srvy_id"
-  },
-  {
-    "table_name": "tb_dscsn_manage",
-    "column_name": "dscsn_id"
-  },
-  {
-    "table_name": "tb_popup_info",
-    "column_name": "popup_vrtc_sz"
-  },
-  {
-    "table_name": "tb_menu_info",
-    "column_name": "modern_route"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "schdl_pic_id"
-  },
-  {
-    "table_name": "tb_role_info",
-    "column_name": "role_id"
-  },
-  {
-    "table_name": "tb_main_image",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "ids",
-    "column_name": "frst_reg_pnttm"
-  },
-  {
-    "table_name": "tb_rward_manage",
-    "column_name": "rwrd_user_id"
-  },
-  {
-    "table_name": "meta_standard_words",
-    "column_name": "word_name"
-  },
-  {
-    "table_name": "tb_login_log",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "lck_yn"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_sys_log",
-    "column_name": "mthd_nm"
-  },
-  {
-    "table_name": "tb_rptp_stats",
+    "table_name": "tb_admdst_cd",
     "column_name": "crt_dt"
   },
   {
-    "table_name": "tb_inst_cd",
+    "table_name": "tb_admdst_cd",
     "column_name": "mdfcn_dt"
   },
   {
-    "table_name": "tb_rptp_stats",
+    "table_name": "tb_admdst_cd",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_admdst_cd",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_auth_cert_dmnd",
+    "column_name": "cert_dmnd_sn"
+  },
+  {
+    "table_name": "tb_auth_cert_dmnd",
+    "column_name": "otp_cert_sn"
+  },
+  {
+    "table_name": "tb_auth_cert_dmnd",
+    "column_name": "hash_vl"
+  },
+  {
+    "table_name": "tb_auth_cert_dmnd",
+    "column_name": "cert_type_cd"
+  },
+  {
+    "table_name": "tb_auth_cert_dmnd",
+    "column_name": "cert_ver_no"
+  },
+  {
+    "table_name": "tb_auth_cert_dmnd",
+    "column_name": "cert_bgng_dt"
+  },
+  {
+    "table_name": "tb_auth_cert_dmnd",
+    "column_name": "cert_end_dt"
+  },
+  {
+    "table_name": "tb_auth_cert_dmnd",
+    "column_name": "fail_nmtm"
+  },
+  {
+    "table_name": "tb_auth_cert_dmnd",
+    "column_name": "use_dt"
+  },
+  {
+    "table_name": "tb_auth_cert_dmnd",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_auth_cert_dmnd",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_auth_cert_dmnd",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_auth_cert_dmnd",
     "column_name": "mdfcn_dt"
   },
   {
-    "table_name": "tb_authrt_group_info",
-    "column_name": "group_crt_ymd"
+    "table_name": "tb_auth_otp_cert",
+    "column_name": "otp_cert_sn"
+  },
+  {
+    "table_name": "tb_auth_otp_cert",
+    "column_name": "user_insd_idntfr"
+  },
+  {
+    "table_name": "tb_auth_otp_cert",
+    "column_name": "otp_secret_encpt_cn"
+  },
+  {
+    "table_name": "tb_auth_otp_cert",
+    "column_name": "cert_stts_cd"
+  },
+  {
+    "table_name": "tb_auth_otp_cert",
+    "column_name": "cert_ver_no"
+  },
+  {
+    "table_name": "tb_auth_otp_cert",
+    "column_name": "otp_last_scs_sn"
+  },
+  {
+    "table_name": "tb_auth_otp_cert",
+    "column_name": "fail_nmtm"
+  },
+  {
+    "table_name": "tb_auth_otp_cert",
+    "column_name": "lck_dt"
+  },
+  {
+    "table_name": "tb_auth_otp_cert",
+    "column_name": "cert_dt"
+  },
+  {
+    "table_name": "tb_auth_otp_cert",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_auth_otp_cert",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_auth_otp_cert",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_auth_otp_cert",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_auth_rfsh_tk",
+    "column_name": "exprtn_dt"
+  },
+  {
+    "table_name": "tb_auth_rfsh_tk",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_auth_rfsh_tk",
+    "column_name": "rfsh_tkn"
+  },
+  {
+    "table_name": "tb_auth_rfsh_tk",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_auth_rfsh_tk",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_auth_rfsh_tk",
+    "column_name": "frst_rgtr_id"
   },
   {
     "table_name": "tb_auth_rfsh_tk",
     "column_name": "last_mdfr_id"
   },
   {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "crtr_ymd"
+    "table_name": "tb_auth_rstr_cd",
+    "column_name": "rstr_cd_sn"
   },
   {
-    "table_name": "tb_role_info",
-    "column_name": "role_nm"
+    "table_name": "tb_auth_rstr_cd",
+    "column_name": "otp_cert_sn"
   },
   {
-    "table_name": "tb_login_log",
-    "column_name": "user_id"
+    "table_name": "tb_auth_rstr_cd",
+    "column_name": "cert_ver_no"
   },
   {
-    "table_name": "tb_dgstfn_info",
+    "table_name": "tb_auth_rstr_cd",
+    "column_name": "hash_vl"
+  },
+  {
+    "table_name": "tb_auth_rstr_cd",
+    "column_name": "use_dt"
+  },
+  {
+    "table_name": "tb_auth_rstr_cd",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_auth_rstr_cd",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_auth_rstr_cd",
     "column_name": "last_mdfr_id"
   },
   {
-    "table_name": "meta_standard_terms",
-    "column_name": "id"
-  },
-  {
-    "table_name": "tb_srvy_rslt",
-    "column_name": "etc_ans_cn"
-  },
-  {
-    "table_name": "tb_bbs_scrap",
-    "column_name": "scrap_nm"
-  },
-  {
-    "table_name": "tb_authrt_role_map",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_ognz_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_cmnty_user_map",
-    "column_name": "join_ymd"
-  },
-  {
-    "table_name": "tb_leader_schdl",
-    "column_name": "schdl_cn"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_popup_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_diary_info",
+    "table_name": "tb_auth_rstr_cd",
     "column_name": "mdfcn_dt"
   },
   {
-    "table_name": "tb_inst_cd",
-    "column_name": "abl_ymd"
+    "table_name": "tb_authrt_chg_hstry",
+    "column_name": "authrt_chg_hstry_sn"
   },
   {
-    "table_name": "tb_authrt_info",
+    "table_name": "tb_authrt_chg_hstry",
+    "column_name": "dmnd_idntfr"
+  },
+  {
+    "table_name": "tb_authrt_chg_hstry",
+    "column_name": "plcy_ver_no"
+  },
+  {
+    "table_name": "tb_authrt_chg_hstry",
+    "column_name": "chg_trgt_type_cd"
+  },
+  {
+    "table_name": "tb_authrt_chg_hstry",
+    "column_name": "chg_type_cd"
+  },
+  {
+    "table_name": "tb_authrt_chg_hstry",
     "column_name": "authrt_cd"
   },
   {
-    "table_name": "tb_srvy_info",
-    "column_name": "last_mdfr_id"
+    "table_name": "tb_authrt_chg_hstry",
+    "column_name": "scrty_dcsn_trgt_id"
   },
   {
-    "table_name": "tb_bbs_comment",
-    "column_name": "pswd"
+    "table_name": "tb_authrt_chg_hstry",
+    "column_name": "authrt_type_cd"
   },
   {
-    "table_name": "tb_onln_mnl_info",
-    "column_name": "last_mdfr_id"
+    "table_name": "tb_authrt_chg_hstry",
+    "column_name": "authrt_grnt_cd"
   },
   {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "user_id"
+    "table_name": "tb_authrt_chg_hstry",
+    "column_name": "chg_artcl_nm"
   },
   {
-    "table_name": "tb_bbs_item",
-    "column_name": "qna_stts_cd"
+    "table_name": "tb_authrt_chg_hstry",
+    "column_name": "chg_bfr_cn"
   },
   {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "mdfcn_dt"
+    "table_name": "tb_authrt_chg_hstry",
+    "column_name": "chg_aftr_cn"
   },
   {
-    "table_name": "tb_menu_crt_dtl",
-    "column_name": "mapng_crt_id"
+    "table_name": "tb_authrt_chg_hstry",
+    "column_name": "chg_rsn"
   },
   {
-    "table_name": "tb_cmnty_info",
-    "column_name": "tmplt_id"
+    "table_name": "tb_authrt_chg_hstry",
+    "column_name": "chg_user_idntfr"
   },
   {
-    "table_name": "tb_ifml_atrz_info",
-    "column_name": "ifml_atrz_id"
+    "table_name": "tb_authrt_chg_hstry",
+    "column_name": "frst_rgtr_id"
   },
   {
-    "table_name": "tb_club_user_map",
-    "column_name": "mngr_yn"
-  },
-  {
-    "table_name": "meta_standard_domains",
-    "column_name": "data_type"
-  },
-  {
-    "table_name": "tb_hldy_info",
-    "column_name": "hldy_ymd"
-  },
-  {
-    "table_name": "tb_club_info",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_prgrm_lst",
+    "table_name": "tb_authrt_chg_hstry",
     "column_name": "crt_dt"
   },
   {
-    "table_name": "tb_file_detail",
-    "column_name": "file_estn"
+    "table_name": "tb_authrt_grnt_map",
+    "column_name": "authrt_cd"
   },
   {
-    "table_name": "tb_leader_schdl",
+    "table_name": "tb_authrt_grnt_map",
+    "column_name": "authrt_type_cd"
+  },
+  {
+    "table_name": "tb_authrt_grnt_map",
+    "column_name": "authrt_grnt_cd"
+  },
+  {
+    "table_name": "tb_authrt_grnt_map",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_authrt_grnt_map",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_authrt_grnt_map",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_authrt_grnt_map",
     "column_name": "mdfcn_dt"
   },
   {
-    "table_name": "tb_login_policy",
-    "column_name": "ip_addr"
+    "table_name": "tb_authrt_group_info",
+    "column_name": "group_id"
   },
   {
-    "table_name": "tb_adbk_manage",
-    "column_name": "trget_ognz_id"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "schdl_end_ymd"
-  },
-  {
-    "table_name": "tb_srvy_artcl",
-    "column_name": "srvy_tmplt_id"
-  },
-  {
-    "table_name": "tb_popup_info",
-    "column_name": "popup_wdth_sz"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "mdfcn_dt"
+    "table_name": "tb_authrt_group_info",
+    "column_name": "group_nm"
   },
   {
     "table_name": "tb_authrt_group_info",
     "column_name": "group_dc"
   },
   {
-    "table_name": "tb_blog_info",
-    "column_name": "blog_id"
+    "table_name": "tb_authrt_group_info",
+    "column_name": "crt_dt"
   },
   {
-    "table_name": "tb_srvy_qstn",
-    "column_name": "qstn_sn"
+    "table_name": "tb_authrt_group_info",
+    "column_name": "mdfcn_dt"
   },
   {
-    "table_name": "tb_note_info",
-    "column_name": "note_id"
+    "table_name": "tb_authrt_group_info",
+    "column_name": "frst_rgtr_id"
   },
   {
-    "table_name": "tb_web_log",
-    "column_name": "dmnd_user_ip_addr"
+    "table_name": "tb_authrt_group_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_authrt_group_info",
+    "column_name": "group_crt_dt"
+  },
+  {
+    "table_name": "tb_authrt_info",
+    "column_name": "authrt_cd"
+  },
+  {
+    "table_name": "tb_authrt_info",
+    "column_name": "authrt_nm"
+  },
+  {
+    "table_name": "tb_authrt_info",
+    "column_name": "authrt_expln"
+  },
+  {
+    "table_name": "tb_authrt_info",
+    "column_name": "authrt_crt_ymd"
+  },
+  {
+    "table_name": "tb_authrt_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_authrt_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_authrt_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_authrt_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_authrt_user_map",
+    "column_name": "scrty_dcsn_trgt_id"
+  },
+  {
+    "table_name": "tb_authrt_user_map",
+    "column_name": "authrt_cd"
+  },
+  {
+    "table_name": "tb_authrt_user_map",
+    "column_name": "mbr_type_cd"
+  },
+  {
+    "table_name": "tb_authrt_user_map",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_authrt_user_map",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_authrt_user_map",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_authrt_user_map",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_bbs_comment",
+    "column_name": "use_yn"
+  },
+  {
+    "table_name": "tb_bbs_comment",
+    "column_name": "ans_sn"
+  },
+  {
+    "table_name": "tb_bbs_comment",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_bbs_comment",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_bbs_comment",
+    "column_name": "bbs_id"
+  },
+  {
+    "table_name": "tb_bbs_comment",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_bbs_comment",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_bbs_comment",
+    "column_name": "wrter_id"
+  },
+  {
+    "table_name": "tb_bbs_comment",
+    "column_name": "wrter_nm"
+  },
+  {
+    "table_name": "tb_bbs_comment",
+    "column_name": "pswd"
+  },
+  {
+    "table_name": "tb_bbs_comment",
+    "column_name": "ans_cn"
+  },
+  {
+    "table_name": "tb_bbs_comment",
+    "column_name": "pst_sn"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "ans_yn"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "ans_lv"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "cmnt_cnt"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "file_cnt"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "ntc_yn"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "inq_cnt"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "scrt_yn"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "ttl_bold_yn"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "use_yn"
   },
   {
     "table_name": "tb_bbs_item",
     "column_name": "evnt_dt"
   },
   {
+    "table_name": "tb_bbs_item",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "ans_sn"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "sort_ordr"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "qna_stts_cd"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "pst_bgng_ymd"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "pst_end_ymd"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "user_nm"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "qna_cat_cd"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "pswd"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "pst_ttl"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "bbs_id"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "pst_cn"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "like_cnt"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "version"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "pst_sn"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "up_pst_sn"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "atch_file_sn"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "atch_psblty_file_qty"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "file_atch_psblty_yn"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "ans_psblty_yn"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "use_yn"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "bbs_atrb_cd"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "bbs_type_cd"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "atch_psblty_file_sz"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "bbs_id"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "tmplt_id"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "bbs_ttl"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "bbs_expln"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "ans_yn"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "stsfdg_yn"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "cmnty_sn"
+  },
+  {
+    "table_name": "tb_bbs_master_optn",
+    "column_name": "ans_yn"
+  },
+  {
+    "table_name": "tb_bbs_master_optn",
+    "column_name": "stsfdg_yn"
+  },
+  {
+    "table_name": "tb_bbs_master_optn",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_bbs_master_optn",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_bbs_master_optn",
+    "column_name": "bbs_id"
+  },
+  {
+    "table_name": "tb_bbs_master_optn",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_bbs_master_optn",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_bbs_rcmdtn_hstry",
+    "column_name": "pst_sn"
+  },
+  {
+    "table_name": "tb_bbs_rcmdtn_hstry",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_bbs_rcmdtn_hstry",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_bbs_rcmdtn_hstry",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_bbs_rcmdtn_hstry",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_bbs_rcmdtn_hstry",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_bbs_scrap",
+    "column_name": "use_yn"
+  },
+  {
+    "table_name": "tb_bbs_scrap",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_bbs_scrap",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_bbs_scrap",
+    "column_name": "bbs_id"
+  },
+  {
+    "table_name": "tb_bbs_scrap",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_bbs_scrap",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_bbs_scrap",
+    "column_name": "scrap_nm"
+  },
+  {
+    "table_name": "tb_bbs_scrap",
+    "column_name": "scrap_expln"
+  },
+  {
+    "table_name": "tb_bbs_scrap",
+    "column_name": "scrap_url"
+  },
+  {
+    "table_name": "tb_bbs_scrap",
+    "column_name": "scrap_sn"
+  },
+  {
+    "table_name": "tb_bbs_scrap",
+    "column_name": "pst_sn"
+  },
+  {
+    "table_name": "tb_bbs_use_info",
+    "column_name": "use_yn"
+  },
+  {
+    "table_name": "tb_bbs_use_info",
+    "column_name": "rgstr_se_cd"
+  },
+  {
+    "table_name": "tb_bbs_use_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_bbs_use_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_bbs_use_info",
+    "column_name": "bbs_id"
+  },
+  {
+    "table_name": "tb_bbs_use_info",
+    "column_name": "trgt_id"
+  },
+  {
+    "table_name": "tb_bbs_use_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_bbs_use_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_bkmk_menu_mng_rslt",
+    "column_name": "menu_id"
+  },
+  {
+    "table_name": "tb_bkmk_menu_mng_rslt",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_bkmk_menu_mng_rslt",
+    "column_name": "menu_nm"
+  },
+  {
+    "table_name": "tb_bkmk_menu_mng_rslt",
+    "column_name": "progrm_stre_path"
+  },
+  {
+    "table_name": "tb_bkmk_menu_mng_rslt",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_bkmk_menu_mng_rslt",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_bkmk_menu_mng_rslt",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_bkmk_menu_mng_rslt",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_bnr_info",
+    "column_name": "rflt_yn"
+  },
+  {
+    "table_name": "tb_bnr_info",
+    "column_name": "sort_ordr"
+  },
+  {
+    "table_name": "tb_bnr_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_bnr_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_bnr_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_bnr_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_bnr_info",
+    "column_name": "bnr_img_nm"
+  },
+  {
+    "table_name": "tb_bnr_info",
+    "column_name": "bnr_nm"
+  },
+  {
+    "table_name": "tb_bnr_info",
+    "column_name": "bnr_expln"
+  },
+  {
+    "table_name": "tb_bnr_info",
+    "column_name": "link_url"
+  },
+  {
+    "table_name": "tb_bnr_info",
+    "column_name": "bnr_sn"
+  },
+  {
+    "table_name": "tb_bnr_info",
+    "column_name": "atch_file_sn"
+  },
+  {
+    "table_name": "tb_cmnty_info",
+    "column_name": "use_yn"
+  },
+  {
+    "table_name": "tb_cmnty_info",
+    "column_name": "reg_se_cd"
+  },
+  {
+    "table_name": "tb_cmnty_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_cmnty_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_cmnty_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_cmnty_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_cmnty_info",
+    "column_name": "tmplt_id"
+  },
+  {
+    "table_name": "tb_cmnty_info",
+    "column_name": "cmnty_intro_cn"
+  },
+  {
+    "table_name": "tb_cmnty_info",
+    "column_name": "cmnty_nm"
+  },
+  {
+    "table_name": "tb_cmnty_info",
+    "column_name": "cmnty_sn"
+  },
+  {
+    "table_name": "tb_cmnty_user_map",
+    "column_name": "mngr_yn"
+  },
+  {
+    "table_name": "tb_cmnty_user_map",
+    "column_name": "use_yn"
+  },
+  {
+    "table_name": "tb_cmnty_user_map",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_cmnty_user_map",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_cmnty_user_map",
+    "column_name": "join_ymd"
+  },
+  {
+    "table_name": "tb_cmnty_user_map",
+    "column_name": "mbr_stts_cd"
+  },
+  {
+    "table_name": "tb_cmnty_user_map",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_cmnty_user_map",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_cmnty_user_map",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_cmnty_user_map",
+    "column_name": "whdwl_ymd"
+  },
+  {
+    "table_name": "tb_cmnty_user_map",
+    "column_name": "cmnty_sn"
+  },
+  {
+    "table_name": "tb_com_cd",
+    "column_name": "clsf_cd"
+  },
+  {
+    "table_name": "tb_com_cd",
+    "column_name": "use_yn"
+  },
+  {
+    "table_name": "tb_com_cd",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_com_cd",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_com_cd",
+    "column_name": "cd_id"
+  },
+  {
+    "table_name": "tb_com_cd",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_com_cd",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_com_cd",
+    "column_name": "cd_id_nm"
+  },
+  {
+    "table_name": "tb_com_cd",
+    "column_name": "cd_id_expln"
+  },
+  {
+    "table_name": "tb_com_cd_chg_hstry",
+    "column_name": "com_cd_chg_hstry_sn"
+  },
+  {
+    "table_name": "tb_com_cd_chg_hstry",
+    "column_name": "chg_trgt_type_cd"
+  },
+  {
+    "table_name": "tb_com_cd_chg_hstry",
+    "column_name": "chg_type_cd"
+  },
+  {
+    "table_name": "tb_com_cd_chg_hstry",
+    "column_name": "clsf_cd"
+  },
+  {
+    "table_name": "tb_com_cd_chg_hstry",
+    "column_name": "cd_id"
+  },
+  {
+    "table_name": "tb_com_cd_chg_hstry",
+    "column_name": "dtl_cd"
+  },
+  {
+    "table_name": "tb_com_cd_chg_hstry",
+    "column_name": "chg_artcl_nm"
+  },
+  {
+    "table_name": "tb_com_cd_chg_hstry",
+    "column_name": "chg_bfr_cn"
+  },
+  {
+    "table_name": "tb_com_cd_chg_hstry",
+    "column_name": "chg_aftr_cn"
+  },
+  {
+    "table_name": "tb_com_cd_chg_hstry",
+    "column_name": "chg_user_idntfr"
+  },
+  {
+    "table_name": "tb_com_cd_chg_hstry",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_com_cd_chg_hstry",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_com_clsf_cd",
+    "column_name": "clsf_cd"
+  },
+  {
+    "table_name": "tb_com_clsf_cd",
+    "column_name": "use_yn"
+  },
+  {
+    "table_name": "tb_com_clsf_cd",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_com_clsf_cd",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_com_clsf_cd",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_com_clsf_cd",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_com_clsf_cd",
+    "column_name": "clsf_cd_nm"
+  },
+  {
+    "table_name": "tb_com_clsf_cd",
+    "column_name": "clsf_cd_expln"
+  },
+  {
+    "table_name": "tb_com_dtl_cd",
+    "column_name": "use_yn"
+  },
+  {
+    "table_name": "tb_com_dtl_cd",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_com_dtl_cd",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_com_dtl_cd",
+    "column_name": "cd_id"
+  },
+  {
+    "table_name": "tb_com_dtl_cd",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_com_dtl_cd",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_com_dtl_cd",
+    "column_name": "dtl_cd"
+  },
+  {
+    "table_name": "tb_com_dtl_cd",
+    "column_name": "dtl_cd_nm"
+  },
+  {
+    "table_name": "tb_com_dtl_cd",
+    "column_name": "dtl_cd_expln"
+  },
+  {
+    "table_name": "tb_dept_job_bx",
+    "column_name": "sort_ordr"
+  },
+  {
+    "table_name": "tb_dept_job_bx",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_dept_job_bx",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_dept_job_bx",
+    "column_name": "dept_id"
+  },
+  {
+    "table_name": "tb_dept_job_bx",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_dept_job_bx",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_dept_job_bx",
+    "column_name": "dept_task_box_nm"
+  },
+  {
+    "table_name": "tb_dept_job_bx",
+    "column_name": "dept_task_box_sn"
+  },
+  {
+    "table_name": "tb_dept_task_info",
+    "column_name": "prrty_rnk"
+  },
+  {
+    "table_name": "tb_dept_task_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_dept_task_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_dept_task_info",
+    "column_name": "pic_id"
+  },
+  {
+    "table_name": "tb_dept_task_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_dept_task_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_dept_task_info",
+    "column_name": "dept_task_cn"
+  },
+  {
+    "table_name": "tb_dept_task_info",
+    "column_name": "dept_task_nm"
+  },
+  {
+    "table_name": "tb_dept_task_info",
+    "column_name": "dept_task_box_sn"
+  },
+  {
+    "table_name": "tb_dept_task_info",
+    "column_name": "dept_task_sn"
+  },
+  {
+    "table_name": "tb_dept_task_info",
+    "column_name": "atch_file_sn"
+  },
+  {
+    "table_name": "tb_dgstfn_info",
+    "column_name": "dgstfn_scr"
+  },
+  {
+    "table_name": "tb_dgstfn_info",
+    "column_name": "use_yn"
+  },
+  {
     "table_name": "tb_dgstfn_info",
     "column_name": "crt_dt"
   },
   {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "group_id"
-  },
-  {
-    "table_name": "tb_rward_manage",
-    "column_name": "atch_file_id"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "fax_no"
-  },
-  {
-    "table_name": "tb_sms_info",
+    "table_name": "tb_dgstfn_info",
     "column_name": "mdfcn_dt"
   },
   {
-    "table_name": "tb_srvy_tmplt",
+    "table_name": "tb_dgstfn_info",
+    "column_name": "dgstfn_sn"
+  },
+  {
+    "table_name": "tb_dgstfn_info",
+    "column_name": "bbs_id"
+  },
+  {
+    "table_name": "tb_dgstfn_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_dgstfn_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_dgstfn_info",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_dgstfn_info",
+    "column_name": "user_nm"
+  },
+  {
+    "table_name": "tb_dgstfn_info",
+    "column_name": "pswd"
+  },
+  {
+    "table_name": "tb_dgstfn_info",
+    "column_name": "dgstfn_cn"
+  },
+  {
+    "table_name": "tb_dgstfn_info",
+    "column_name": "pst_sn"
+  },
+  {
+    "table_name": "tb_diary_info",
+    "column_name": "diary_prgrs_rt"
+  },
+  {
+    "table_name": "tb_diary_info",
     "column_name": "crt_dt"
   },
   {
-    "table_name": "tb_indv_pg_set",
+    "table_name": "tb_diary_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_diary_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_diary_info",
     "column_name": "last_mdfr_id"
   },
   {
@@ -1960,1043 +1448,203 @@
     "column_name": "diary_nm"
   },
   {
-    "table_name": "tb_onln_poll_artcl",
-    "column_name": "poll_id"
-  },
-  {
-    "table_name": "tb_bbs_scrap",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_srvy_rslt",
-    "column_name": "rspdnt_ans_cn"
-  },
-  {
-    "table_name": "meta_standard_domains",
-    "column_name": "id"
-  },
-  {
-    "table_name": "tb_bbs_comment",
-    "column_name": "ans_sn"
-  },
-  {
-    "table_name": "tb_srvy_info",
-    "column_name": "srvy_tmplt_id"
-  },
-  {
-    "table_name": "tb_indv_pg_conts",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_club_user_map",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_ifml_atrz_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "mbl_md_telno"
-  },
-  {
-    "table_name": "tb_srvy_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_rward_manage",
-    "column_name": "atrzr_id"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "eml_addr"
-  },
-  {
-    "table_name": "tb_srvy_rslt",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_bbs_comment",
-    "column_name": "ans_cn"
-  },
-  {
-    "table_name": "tb_com_dtl_cd",
-    "column_name": "dtl_cd_nm"
-  },
-  {
-    "table_name": "tb_event_info",
-    "column_name": "evnt_cn"
-  },
-  {
-    "table_name": "tb_authrt_info",
-    "column_name": "authrt_crt_ymd"
-  },
-  {
-    "table_name": "tb_bbs_use_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_hlp_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_noti_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "meta_standard_terms",
-    "column_name": "eng_abbr"
-  },
-  {
-    "table_name": "tb_intrn_svc",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_dept_job_bx",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_extrl_hr_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_role_lyr",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_noti_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_hlp_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_com_dtl_cd",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_bbs_use_info",
-    "column_name": "trgt_id"
-  },
-  {
-    "table_name": "tb_adbk_info",
-    "column_name": "user_id"
-  },
-  {
-    "table_name": "tb_memo_rpt_info",
-    "column_name": "rpt_id"
-  },
-  {
-    "table_name": "tb_bbs_scrap",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "meta_standard_domains",
-    "column_name": "domain_name"
-  },
-  {
-    "table_name": "tb_com_cd",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_authrt_group_info",
-    "column_name": "group_id"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "rls_yn"
-  },
-  {
-    "table_name": "tb_note_rcptn",
-    "column_name": "note_id"
-  },
-  {
-    "table_name": "tb_email_dsptch_manage",
-    "column_name": "sndpty_nm"
-  },
-  {
-    "table_name": "tb_menu_crt_dtl",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_dgstfn_info",
-    "column_name": "dgstfn_scr"
-  },
-  {
-    "table_name": "tb_club_user_map",
-    "column_name": "join_ymd"
-  },
-  {
-    "table_name": "tb_tmplt_info",
-    "column_name": "tmplt_id"
-  },
-  {
-    "table_name": "tb_diary_info",
-    "column_name": "atch_file_id"
-  },
-  {
-    "table_name": "tb_authrt_role_map",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_ognz_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_adbk_info",
-    "column_name": "nm"
-  },
-  {
-    "table_name": "tb_user_log",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_srvy_rspdnt",
-    "column_name": "brdt"
-  },
-  {
-    "table_name": "tb_note_info",
-    "column_name": "note_ttl"
-  },
-  {
-    "table_name": "tb_extrl_hr_info",
-    "column_name": "end_telno"
-  },
-  {
-    "table_name": "tb_web_log",
-    "column_name": "dmnd_id"
-  },
-  {
-    "table_name": "tb_ifml_atrz_info",
-    "column_name": "aprv_yn"
-  },
-  {
-    "table_name": "tb_user_noti",
-    "column_name": "noti_ttl_nm"
-  },
-  {
-    "table_name": "revinfo",
-    "column_name": "last_updusr_id"
-  },
-  {
-    "table_name": "tb_indv_pg",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "home_base_addr"
-  },
-  {
-    "table_name": "meta_standard_terms",
-    "column_name": "eng_name"
-  },
-  {
-    "table_name": "tb_login_policy",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "crt_ymd"
-  },
-  {
-    "table_name": "tb_adbk_manage",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "inst_type_mclsf"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "user_nm"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "offm_telno"
-  },
-  {
-    "table_name": "tb_ognz_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_authrt_role_map",
-    "column_name": "authrt_cd"
-  },
-  {
-    "table_name": "tb_prgrm_lst",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "qna_cat_cd"
-  },
-  {
-    "table_name": "tb_diary_info",
-    "column_name": "diary_prgrs_rt"
-  },
-  {
-    "table_name": "tb_authrt_info",
-    "column_name": "authrt_expln"
-  },
-  {
-    "table_name": "tb_extrl_hr_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_cmnty_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_ifml_atrz_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "job_sn"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "change_se_cd"
-  },
-  {
-    "table_name": "tb_admdst_cd",
-    "column_name": "crt_ymd"
-  },
-  {
-    "table_name": "tb_dept_task_info",
-    "column_name": "dept_task_cn"
-  },
-  {
-    "table_name": "tb_user_authrt_map",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_bbs_scrap",
-    "column_name": "pst_id"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "all_inst_nm"
-  },
-  {
-    "table_name": "tb_privacy_log",
-    "column_name": "inq_dt"
-  },
-  {
-    "table_name": "tb_memo_todo_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_rptp_stats",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "ognz_id"
-  },
-  {
-    "table_name": "tb_rpt_info",
-    "column_name": "rpt_cn"
-  },
-  {
-    "table_name": "tb_menu_crt_dtl",
-    "column_name": "menu_sn"
-  },
-  {
-    "table_name": "tb_club_user_map",
-    "column_name": "club_id"
-  },
-  {
-    "table_name": "tb_dgstfn_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_bnr_info",
-    "column_name": "bnr_id"
-  },
-  {
-    "table_name": "tb_role_info",
-    "column_name": "role_crt_ymd"
-  },
-  {
-    "table_name": "tb_auth_rfsh_tk",
-    "column_name": "user_id"
-  },
-  {
-    "table_name": "tb_dta_use_stats",
-    "column_name": "atch_file_id"
-  },
-  {
-    "table_name": "tb_login_log",
-    "column_name": "err_ocrn_yn"
-  },
-  {
-    "table_name": "tb_adbk_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_com_dtl_cd",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_file_detail",
-    "column_name": "file_cn"
-  },
-  {
-    "table_name": "tb_dept_task_info",
-    "column_name": "atch_file_id"
-  },
-  {
-    "table_name": "tb_memo_rpt_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_bbs_scrap",
-    "column_name": "scrap_expln"
-  },
-  {
-    "table_name": "tb_bbs_use_info",
-    "column_name": "bbs_id"
-  },
-  {
-    "table_name": "tb_intrn_svc",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "rrno"
-  },
-  {
-    "table_name": "tb_role_lyr",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_hlp_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_email_dsptch_manage",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "cmnt_cnt"
-  },
-  {
-    "table_name": "tb_dgstfn_info",
-    "column_name": "user_id"
-  },
-  {
-    "table_name": "tb_rpt_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_leader_schdl_dtl",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "ans_sn"
-  },
-  {
-    "table_name": "tb_srvy_artcl",
-    "column_name": "srvy_qstn_id"
-  },
-  {
-    "table_name": "tb_bbs_master_optn",
-    "column_name": "ans_yn"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "wrt_pswd"
-  },
-  {
-    "table_name": "tb_srvy_tmplt",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "ecopseq",
-    "column_name": "frst_reg_pnttm"
-  },
-  {
-    "table_name": "tb_onln_mnl_info",
-    "column_name": "onln_mnl_se_cd"
-  },
-  {
-    "table_name": "tb_ifml_atrz_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_user_noti",
-    "column_name": "read_yn"
-  },
-  {
-    "table_name": "revinfo",
-    "column_name": "frst_register_id"
-  },
-  {
-    "table_name": "tb_rward_manage",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_blog_info",
-    "column_name": "blog_intro_cn"
-  },
-  {
-    "table_name": "tb_onln_poll_rslt",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_file_detail",
-    "column_name": "file_sz"
-  },
-  {
-    "table_name": "tb_srvy_qstn",
-    "column_name": "srvy_id"
-  },
-  {
-    "table_name": "tb_web_log",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_file_detail",
-    "column_name": "atch_file_id"
-  },
-  {
-    "table_name": "tb_sms_info",
-    "column_name": "sndng_cn"
-  },
-  {
-    "table_name": "tb_hldy_info",
-    "column_name": "hldy_nm"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "all_inst_nm"
-  },
-  {
-    "table_name": "tb_club_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_blog_info",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_leader_schdl",
-    "column_name": "leader_id"
-  },
-  {
-    "table_name": "tb_login_policy",
-    "column_name": "user_id"
-  },
-  {
-    "table_name": "tb_adbk_manage",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "inst_type_sclsf"
-  },
-  {
     "table_name": "tb_diary_info",
     "column_name": "drctn_mttr"
   },
   {
-    "table_name": "tb_bbs_master_optn",
-    "column_name": "mdfcn_dt"
+    "table_name": "tb_diary_info",
+    "column_name": "excptn_mttr"
   },
   {
-    "table_name": "tb_cmnty_info",
-    "column_name": "cmnty_id"
+    "table_name": "tb_diary_info",
+    "column_name": "diary_sn"
   },
   {
-    "table_name": "tb_bbs_comment",
-    "column_name": "frst_rgtr_id"
+    "table_name": "tb_diary_info",
+    "column_name": "schdl_sn"
   },
   {
-    "table_name": "tb_onln_poll_rslt",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_srvy_info",
-    "column_name": "srvy_bgng_ymd"
-  },
-  {
-    "table_name": "tb_indv_pg_set",
-    "column_name": "sort_mthd"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "home_addr"
-  },
-  {
-    "table_name": "tb_user_noti",
-    "column_name": "noti_ivl_val"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_popup_info",
-    "column_name": "ntce_endde"
-  },
-  {
-    "table_name": "tb_dept_task_info",
-    "column_name": "prrty_rnk"
-  },
-  {
-    "table_name": "tb_memo_rpt_info",
-    "column_name": "atch_file_id"
-  },
-  {
-    "table_name": "tb_srvy_rslt",
-    "column_name": "srvy_qstn_id"
-  },
-  {
-    "table_name": "tb_indv_pg_conts",
-    "column_name": "cntnts_nm"
-  },
-  {
-    "table_name": "tb_srvy_artcl",
-    "column_name": "artcl_sn"
+    "table_name": "tb_diary_info",
+    "column_name": "atch_file_sn"
   },
   {
     "table_name": "tb_dta_use_stats",
-    "column_name": "dta_use_stats_id"
+    "column_name": "bbs_id"
   },
   {
-    "table_name": "tb_cmnty_user_map",
-    "column_name": "user_id"
+    "table_name": "tb_dta_use_stats",
+    "column_name": "file_sn"
   },
   {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "proc_se_cd"
+    "table_name": "tb_dta_use_stats",
+    "column_name": "crt_dt"
   },
   {
-    "table_name": "tb_admdst_cd",
-    "column_name": "abl_ymd"
+    "table_name": "tb_dta_use_stats",
+    "column_name": "mdfcn_dt"
   },
   {
-    "table_name": "tb_leader_schdl_dtl",
-    "column_name": "schdl_id"
+    "table_name": "tb_dta_use_stats",
+    "column_name": "frst_rgtr_id"
   },
   {
-    "table_name": "tb_bnr_info",
-    "column_name": "atch_file_id"
-  },
-  {
-    "table_name": "tb_role_info",
+    "table_name": "tb_dta_use_stats",
     "column_name": "last_mdfr_id"
   },
   {
-    "table_name": "tb_rpt_info",
-    "column_name": "rpt_se_cd"
+    "table_name": "tb_dta_use_stats",
+    "column_name": "dta_use_stats_sn"
   },
   {
-    "table_name": "tb_blog_info",
-    "column_name": "blog_ttl"
+    "table_name": "tb_dta_use_stats",
+    "column_name": "pst_sn"
+  },
+  {
+    "table_name": "tb_dta_use_stats",
+    "column_name": "atch_file_sn"
+  },
+  {
+    "table_name": "tb_email_dsptch_manage",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_email_dsptch_manage",
+    "column_name": "mdfcn_dt"
   },
   {
     "table_name": "tb_email_dsptch_manage",
     "column_name": "dsptch_dt"
   },
   {
-    "table_name": "tb_sys_log",
-    "column_name": "srvc_nm"
-  },
-  {
-    "table_name": "tb_login_log",
-    "column_name": "lgn_ip_addr"
-  },
-  {
-    "table_name": "tb_club_user_map",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_rptp_stats",
+    "table_name": "tb_email_dsptch_manage",
     "column_name": "frst_rgtr_id"
   },
   {
-    "table_name": "tb_onln_poll_rslt",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_com_cd",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_bnr_info",
+    "table_name": "tb_email_dsptch_manage",
     "column_name": "last_mdfr_id"
   },
   {
-    "table_name": "tb_dept_job_bx",
-    "column_name": "crt_dt"
+    "table_name": "tb_email_dsptch_manage",
+    "column_name": "dsptch_rslt_cd"
   },
   {
     "table_name": "tb_email_dsptch_manage",
     "column_name": "rcvr_nm"
   },
   {
-    "table_name": "tb_bbs_item",
-    "column_name": "sort_ordr"
-  },
-  {
-    "table_name": "ecopseq",
-    "column_name": "last_updt_pnttm"
-  },
-  {
-    "table_name": "tb_popup_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_memo_rpt_info",
-    "column_name": "rptr_inq_dt"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_tmplt_info",
-    "column_name": "tmplt_se_cd"
-  },
-  {
-    "table_name": "tb_srvy_rspdnt",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "inst_abbr_nm"
-  },
-  {
-    "table_name": "tb_user_log",
-    "column_name": "dmnd_user_id"
-  },
-  {
-    "table_name": "tb_cmnty_user_map",
-    "column_name": "mbr_stts_cd"
-  },
-  {
-    "table_name": "tb_admdst_cd",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "lwst_admdst_zone_nm"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "etc_cd"
-  },
-  {
-    "table_name": "tb_note_rcptn",
-    "column_name": "rcptn_se_cd"
-  },
-  {
-    "table_name": "tb_leader_schdl_dtl",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_srvy_rspdnt",
-    "column_name": "srvy_id"
-  },
-  {
-    "table_name": "tb_user_log",
-    "column_name": "del_cnt"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "home_end_tel_no"
-  },
-  {
-    "table_name": "tb_rpt_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "file_cnt"
-  },
-  {
-    "table_name": "tb_user_noti",
-    "column_name": "rcvr_id"
-  },
-  {
-    "table_name": "tb_indv_pg",
-    "column_name": "page_ttl"
-  },
-  {
-    "table_name": "tb_dept_task_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_extrl_hr_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_leader_schdl",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "ord"
-  },
-  {
-    "table_name": "tb_srvy_artcl",
-    "column_name": "etc_ans_yn"
-  },
-  {
-    "table_name": "tb_hldy_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_dta_use_stats",
-    "column_name": "pst_id"
-  },
-  {
-    "table_name": "tb_club_info",
-    "column_name": "rgstr_se_cd"
-  },
-  {
-    "table_name": "tb_prgrm_lst",
-    "column_name": "prgrm_expln"
-  },
-  {
-    "table_name": "tb_rward_manage",
-    "column_name": "frst_rgtr_id"
+    "table_name": "tb_email_dsptch_manage",
+    "column_name": "sndpty_nm"
   },
   {
     "table_name": "tb_email_dsptch_manage",
-    "column_name": "atch_file_id"
+    "column_name": "eml_cn"
   },
   {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "home_mid_tel_no"
+    "table_name": "tb_email_dsptch_manage",
+    "column_name": "eml_ttl"
   },
   {
-    "table_name": "tb_bbs_item",
-    "column_name": "ans_yn"
+    "table_name": "tb_email_dsptch_manage",
+    "column_name": "eml_dsptch_sn"
   },
   {
-    "table_name": "tb_note_info",
-    "column_name": "last_mdfr_id"
+    "table_name": "tb_email_dsptch_manage",
+    "column_name": "atch_file_sn"
   },
   {
-    "table_name": "tb_srvy_qstn",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "atch_file_id"
-  },
-  {
-    "table_name": "tb_onln_poll_artcl",
-    "column_name": "poll_artcl_id"
-  },
-  {
-    "table_name": "tb_srvy_artcl",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_user_log",
-    "column_name": "ocrn_ymd"
-  },
-  {
-    "table_name": "tb_memo_rpt_info",
-    "column_name": "memo_rpt_ymd"
-  },
-  {
-    "table_name": "tb_srvy_rspdnt",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_srvy_tmplt",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "pst_bgng_ymd"
-  },
-  {
-    "table_name": "tb_memo_todo_info",
-    "column_name": "todo_id"
-  },
-  {
-    "table_name": "tb_privacy_log",
-    "column_name": "dmnd_user_id"
-  },
-  {
-    "table_name": "tb_user_noti",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "mbl_frst_telno"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "ofcps_nm"
-  },
-  {
-    "table_name": "tb_memo_rpt_info",
-    "column_name": "rpt_ttl"
-  },
-  {
-    "table_name": "tb_rpt_info",
-    "column_name": "user_id"
-  },
-  {
-    "table_name": "tb_user_authrt_map",
-    "column_name": "authrt_id"
-  },
-  {
-    "table_name": "tb_adbk_info",
-    "column_name": "home_telno"
-  },
-  {
-    "table_name": "tb_bbs_master_optn",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_dta_use_stats",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "middle_telno"
-  },
-  {
-    "table_name": "tb_intrn_svc",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_noti_info",
-    "column_name": "bfhd_noti_intrvl"
-  },
-  {
-    "table_name": "tb_dept_task_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "ecopseq",
-    "column_name": "table_name"
-  },
-  {
-    "table_name": "tb_dept_job_bx",
-    "column_name": "dept_task_box_id"
-  },
-  {
-    "table_name": "tb_intrn_svc",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_adbk_info",
-    "column_name": "fax_no"
-  },
-  {
-    "table_name": "tb_srvy_rspdnt",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_com_cd",
-    "column_name": "cd_id"
-  },
-  {
-    "table_name": "tb_user_log",
-    "column_name": "mthd_nm"
+    "table_name": "tb_email_dsptch_manage",
+    "column_name": "rcvr_id"
   },
   {
     "table_name": "tb_event_info",
     "column_name": "biz_yr"
   },
   {
-    "table_name": "tb_inst_cd",
-    "column_name": "inst_type_mclsf"
+    "table_name": "tb_event_info",
+    "column_name": "evnt_aprv_yn"
   },
   {
-    "table_name": "tb_user_mdfcn_dtls",
+    "table_name": "tb_event_info",
     "column_name": "crt_dt"
   },
   {
-    "table_name": "tb_note_rcptn",
+    "table_name": "tb_event_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_event_info",
+    "column_name": "evnt_use_cnt"
+  },
+  {
+    "table_name": "tb_event_info",
+    "column_name": "evnt_aprv_ymd"
+  },
+  {
+    "table_name": "tb_event_info",
+    "column_name": "evnt_bgng_ymd"
+  },
+  {
+    "table_name": "tb_event_info",
+    "column_name": "evnt_end_ymd"
+  },
+  {
+    "table_name": "tb_event_info",
+    "column_name": "evnt_type_cd"
+  },
+  {
+    "table_name": "tb_event_info",
     "column_name": "frst_rgtr_id"
   },
   {
-    "table_name": "tb_privacy_log",
-    "column_name": "dmnd_user_ip_addr"
+    "table_name": "tb_event_info",
+    "column_name": "last_mdfr_id"
   },
   {
-    "table_name": "tb_memo_todo_info",
-    "column_name": "user_id"
+    "table_name": "tb_event_info",
+    "column_name": "pic_nm"
   },
   {
-    "table_name": "tb_tmplt_info",
-    "column_name": "frst_rgtr_id"
+    "table_name": "tb_event_info",
+    "column_name": "evnt_cn"
   },
   {
-    "table_name": "tb_dscsn_list",
-    "column_name": "crt_dt"
+    "table_name": "tb_event_info",
+    "column_name": "prep_mttr"
   },
   {
-    "table_name": "tb_onln_poll_manage",
-    "column_name": "crt_dt"
+    "table_name": "tb_event_info",
+    "column_name": "evnt_nm"
   },
   {
-    "table_name": "tb_bbs_stats",
-    "column_name": "avg_inq_cnt"
+    "table_name": "tb_event_info",
+    "column_name": "evnt_sn"
   },
   {
-    "table_name": "tb_com_clsf_cd",
-    "column_name": "clsf_cd"
+    "table_name": "tb_extrl_hr_info",
+    "column_name": "area_no"
   },
   {
-    "table_name": "tb_srvy_rspdnt",
+    "table_name": "tb_extrl_hr_info",
+    "column_name": "end_telno"
+  },
+  {
+    "table_name": "tb_extrl_hr_info",
+    "column_name": "md_telno"
+  },
+  {
+    "table_name": "tb_extrl_hr_info",
     "column_name": "cr_type_cd"
   },
   {
-    "table_name": "tb_user_log",
-    "column_name": "inq_cnt"
+    "table_name": "tb_extrl_hr_info",
+    "column_name": "gndr_cd"
   },
   {
-    "table_name": "tb_bbs_master",
-    "column_name": "file_atch_psblty_yn"
-  },
-  {
-    "table_name": "tb_prgrm_lst",
-    "column_name": "prgrm_korn_nm"
-  },
-  {
-    "table_name": "tb_faq_info",
-    "column_name": "qstn_ttl"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "crtr_ymd"
-  },
-  {
-    "table_name": "tb_indv_pg",
+    "table_name": "tb_extrl_hr_info",
     "column_name": "crt_dt"
   },
   {
-    "table_name": "tb_note_info",
+    "table_name": "tb_extrl_hr_info",
     "column_name": "mdfcn_dt"
   },
   {
@@ -3004,1151 +1652,1019 @@
     "column_name": "brdt_ymd"
   },
   {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "odr"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "mbl_tel_no"
-  },
-  {
-    "table_name": "tb_com_clsf_cd",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_sms_info",
-    "column_name": "sndng_telno"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_event_info",
-    "column_name": "prep_mttr"
-  },
-  {
-    "table_name": "tb_srvy_info",
-    "column_name": "srvy_wrt_gd_cn"
-  },
-  {
-    "table_name": "tb_bbs_comment",
-    "column_name": "bbs_id"
-  },
-  {
-    "table_name": "tb_file_master",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "wrt_ymd"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "fax_no"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "eml_ans_yn"
-  },
-  {
-    "table_name": "tb_bbs_stats",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "admdst_zone_nm"
-  },
-  {
-    "table_name": "tb_admdst_cd",
-    "column_name": "admdst_zone_nm"
-  },
-  {
-    "table_name": "tb_plcy_manage",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_dscsn_manage",
-    "column_name": "qna_proc_stts_cd"
-  },
-  {
-    "table_name": "tb_srvy_rslt",
-    "column_name": "srvy_artcl_id"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "end_telno"
-  },
-  {
-    "table_name": "tb_onln_poll_manage",
-    "column_name": "poll_id"
-  },
-  {
-    "table_name": "tb_noti_info",
-    "column_name": "noti_ttl"
-  },
-  {
-    "table_name": "tb_sms_rcptn",
-    "column_name": "sms_id"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_event_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_bnr_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "abl_yn"
-  },
-  {
-    "table_name": "tb_bbs_use_info",
-    "column_name": "rgstr_se_cd"
-  },
-  {
-    "table_name": "tb_com_dtl_cd",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_role_lyr",
-    "column_name": "chld_role_id"
-  },
-  {
-    "table_name": "tb_hlp_info",
-    "column_name": "hlp_se_cd"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_role_info",
-    "column_name": "role_patrn"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "role"
-  },
-  {
-    "table_name": "tb_event_info",
-    "column_name": "evnt_bgng_ymd"
-  },
-  {
-    "table_name": "tb_auth_rfsh_tk",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "brth_ymd"
-  },
-  {
-    "table_name": "tb_menu_info",
-    "column_name": "prgrm_file_nm"
-  },
-  {
-    "table_name": "tb_file_master",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_login_log",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "ans_psblty_yn"
-  },
-  {
-    "table_name": "tb_blog_user_map",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_bbs_stats",
-    "column_name": "max_inq_cnt"
-  },
-  {
-    "table_name": "tb_cmnty_user_map",
-    "column_name": "cmnty_id"
-  },
-  {
-    "table_name": "tb_onln_poll_manage",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_sys_log",
-    "column_name": "ocrn_ymd"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "upr_inst_cd"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "atch_file_id"
-  },
-  {
-    "table_name": "tb_srvy_rslt",
-    "column_name": "srvy_rspns_id"
-  },
-  {
-    "table_name": "tb_popup_info",
-    "column_name": "ntce_bgnde"
-  },
-  {
-    "table_name": "tb_main_image",
-    "column_name": "main_img_expln"
-  },
-  {
-    "table_name": "tb_onln_mnl_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_sms_rcptn",
-    "column_name": "rslt_cd"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "tmplt_id"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "wrter_nm"
-  },
-  {
-    "table_name": "tb_srvy_info",
-    "column_name": "srvy_end_ymd"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "inst_type_lclsf"
-  },
-  {
-    "table_name": "tb_bbs_comment",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_file_detail",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_club_info",
-    "column_name": "tmplt_id"
-  },
-  {
-    "table_name": "tb_hldy_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_plcy_manage",
-    "column_name": "crt_dt"
+    "table_name": "tb_extrl_hr_info",
+    "column_name": "otsd_hr_id"
   },
   {
     "table_name": "tb_extrl_hr_info",
-    "column_name": "crt_dt"
+    "column_name": "frst_rgtr_id"
   },
   {
-    "table_name": "tb_leader_schdl",
+    "table_name": "tb_extrl_hr_info",
     "column_name": "last_mdfr_id"
   },
   {
-    "table_name": "tb_web_log",
-    "column_name": "mdfcn_dt"
+    "table_name": "tb_extrl_hr_info",
+    "column_name": "eml_addr"
   },
   {
-    "table_name": "tb_login_policy",
-    "column_name": "otp_use_yn"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "revinfo",
-    "column_name": "revtstmp"
-  },
-  {
-    "table_name": "tb_event_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_blog_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_adbk_manage",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_srvy_qstn",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_login_policy",
-    "column_name": "lmt_yn"
-  },
-  {
-    "table_name": "tb_sms_rcptn",
-    "column_name": "rslt_msg"
-  },
-  {
-    "table_name": "tb_rward_manage",
-    "column_name": "ifml_atrz_id"
-  },
-  {
-    "table_name": "flyway_schema_history",
-    "column_name": "success"
-  },
-  {
-    "table_name": "tb_indv_pg_set",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_srvy_tmplt",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_plcy_manage",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_onln_poll_artcl",
-    "column_name": "poll_artcl_nm"
-  },
-  {
-    "table_name": "tb_cmnty_info",
-    "column_name": "reg_se_cd"
-  },
-  {
-    "table_name": "tb_file_master",
-    "column_name": "atch_file_id"
-  },
-  {
-    "table_name": "tb_user_authrt_map",
-    "column_name": "scrty_dcsn_trgt_id"
-  },
-  {
-    "table_name": "tb_indv_pg_conts",
-    "column_name": "cntnts_link_url"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "atch_psblty_file_qty"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_privacy_log",
-    "column_name": "dmnd_id"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "lck_cnt"
-  },
-  {
-    "table_name": "tb_memo_todo_info",
-    "column_name": "todo_end_tm"
-  },
-  {
-    "table_name": "tb_onln_poll_manage",
-    "column_name": "poll_atmc_dsuse_yn"
-  },
-  {
-    "table_name": "tb_rptp_stats",
-    "column_name": "reprt_nm"
-  },
-  {
-    "table_name": "tb_event_info",
-    "column_name": "pic_nm"
-  },
-  {
-    "table_name": "tb_role_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_bbs_stats",
-    "column_name": "stats_id"
-  },
-  {
-    "table_name": "tb_com_clsf_cd",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "mbl_end_telno"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_ifml_atrz_info",
-    "column_name": "req_ymd"
-  },
-  {
-    "table_name": "tb_plcy_manage",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_cmnty_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_web_log",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_user_noti",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "cmpny_nm"
-  },
-  {
-    "table_name": "revinfo",
-    "column_name": "rev"
-  },
-  {
-    "table_name": "tb_faq_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_noti_info",
-    "column_name": "noti_cn"
-  },
-  {
-    "table_name": "tb_memo_rpt_info",
-    "column_name": "rpt_cn"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "area_no"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_sms_rcptn",
-    "column_name": "rcptn_telno"
-  },
-  {
-    "table_name": "tb_bbs_master_optn",
-    "column_name": "bbs_id"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "upr_inst_cd"
-  },
-  {
-    "table_name": "tb_login_policy",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_adbk_manage",
-    "column_name": "adbk_id"
-  },
-  {
-    "table_name": "tb_prgrm_lst",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_dgstfn_info",
-    "column_name": "dgstfn_sn"
-  },
-  {
-    "table_name": "tb_note_info",
-    "column_name": "atch_file_id"
-  },
-  {
-    "table_name": "tb_role_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_authrt_group_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_rptp_stats",
-    "column_name": "reprt_type"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "bbs_id"
-  },
-  {
-    "table_name": "tb_email_dsptch_manage",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_memo_rpt_info",
-    "column_name": "drctn_mttr_reg_dt"
-  },
-  {
-    "table_name": "tb_bbs_use_info",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_adbk_info",
-    "column_name": "mbl_telno"
-  },
-  {
-    "table_name": "tb_com_dtl_cd",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_role_lyr",
-    "column_name": "prnt_role_id"
-  },
-  {
-    "table_name": "tb_hlp_info",
-    "column_name": "hlp_id"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "blog_id"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "dscsn_id"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_onln_poll_manage",
-    "column_name": "poll_nm"
-  },
-  {
-    "table_name": "tb_file_master",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_bbs_scrap",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_onln_poll_manage",
-    "column_name": "poll_dsuse_yn"
-  },
-  {
-    "table_name": "tb_bnr_info",
-    "column_name": "bnr_nm"
-  },
-  {
-    "table_name": "tb_rptp_stats",
-    "column_name": "reprt_id"
-  },
-  {
-    "table_name": "tb_leader_schdl_dtl",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "qna_proc_stts_cd"
-  },
-  {
-    "table_name": "tb_bbs_stats",
-    "column_name": "pst_cnt"
-  },
-  {
-    "table_name": "tb_role_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_rpt_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_club_user_map",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_menu_crt_dtl",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "blog_yn"
-  },
-  {
-    "table_name": "tb_prgrm_lst",
-    "column_name": "prgrm_strg_path"
-  },
-  {
-    "table_name": "tb_dta_use_stats",
-    "column_name": "file_sn"
-  },
-  {
-    "table_name": "tb_hlp_info",
-    "column_name": "hlp_expln"
-  },
-  {
-    "table_name": "tb_role_lyr",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_noti_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "signgu_cd"
-  },
-  {
-    "table_name": "tb_admdst_cd",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_bbs_use_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_authrt_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_dscsn_manage",
-    "column_name": "user_nm"
-  },
-  {
-    "table_name": "tb_dept_task_info",
-    "column_name": "pic_id"
-  },
-  {
-    "table_name": "tb_com_dtl_cd",
-    "column_name": "cd_id"
+    "table_name": "tb_extrl_hr_info",
+    "column_name": "otsd_hr_nm"
   },
   {
     "table_name": "tb_extrl_hr_info",
     "column_name": "ogdp_inst_nm"
   },
   {
-    "table_name": "tb_bbs_master",
-    "column_name": "blog_id"
+    "table_name": "tb_extrl_hr_info",
+    "column_name": "evnt_sn"
   },
   {
-    "table_name": "revinfo",
-    "column_name": "last_updt_pnttm"
+    "table_name": "tb_file_detail",
+    "column_name": "atch_file_seq"
   },
   {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "fax_no"
+    "table_name": "tb_file_detail",
+    "column_name": "file_sz"
   },
   {
-    "table_name": "tb_web_log",
-    "column_name": "frst_rgtr_id"
+    "table_name": "tb_file_detail",
+    "column_name": "crt_dt"
   },
   {
-    "table_name": "tb_cmnty_info",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "bbs_expln"
-  },
-  {
-    "table_name": "tb_onln_poll_rslt",
-    "column_name": "poll_id"
-  },
-  {
-    "table_name": "tb_ognz_info",
-    "column_name": "ognz_nm"
-  },
-  {
-    "table_name": "tb_authrt_role_map",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_login_policy",
-    "column_name": "dpcn_prm_yn"
-  },
-  {
-    "table_name": "tb_adbk_manage",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "sort_ordr"
-  },
-  {
-    "table_name": "tb_diary_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_srvy_artcl",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_prgrm_lst",
-    "column_name": "prgrm_file_nm"
-  },
-  {
-    "table_name": "tb_club_info",
+    "table_name": "tb_file_detail",
     "column_name": "mdfcn_dt"
   },
   {
-    "table_name": "tb_leader_schdl",
-    "column_name": "schdl_pic_id"
-  },
-  {
-    "table_name": "tb_diary_info",
-    "column_name": "schdl_id"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "jurir_no"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "gndr_cd"
-  },
-  {
-    "table_name": "tb_event_info",
+    "table_name": "tb_file_detail",
     "column_name": "frst_rgtr_id"
   },
   {
-    "table_name": "tb_rptp_stats",
-    "column_name": "reprt_sttus"
-  },
-  {
-    "table_name": "tb_role_info",
-    "column_name": "role_sort"
-  },
-  {
-    "table_name": "tb_main_image",
+    "table_name": "tb_file_detail",
     "column_name": "last_mdfr_id"
   },
   {
-    "table_name": "tb_dscsn_list",
-    "column_name": "last_mdfr_id"
+    "table_name": "tb_file_detail",
+    "column_name": "file_estn"
   },
   {
-    "table_name": "tb_com_clsf_cd",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "stsfdg_yn"
-  },
-  {
-    "table_name": "tb_note_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_web_log",
-    "column_name": "url"
-  },
-  {
-    "table_name": "tb_sys_log",
-    "column_name": "err_cd"
-  },
-  {
-    "table_name": "tb_event_info",
-    "column_name": "evnt_aprv_yn"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "schdl_bgng_ymd"
-  },
-  {
-    "table_name": "tb_adbk_manage",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_login_policy",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_popup_info",
-    "column_name": "popup_vrtc_pstn"
-  },
-  {
-    "table_name": "tb_note_sndng",
-    "column_name": "note_sndng_id"
-  },
-  {
-    "table_name": "tb_authrt_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_stmp_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_com_dtl_cd",
-    "column_name": "dtl_cd_expln"
-  },
-  {
-    "table_name": "tb_blog_user_map",
-    "column_name": "blog_id"
-  },
-  {
-    "table_name": "tb_noti_info",
-    "column_name": "noti_dt"
-  },
-  {
-    "table_name": "tb_cmnty_user_map",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "top_inst_cd"
-  },
-  {
-    "table_name": "tb_menu_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_club_user_map",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_bkmk_menu_mng_rslt",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_cmnty_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "end_telno"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "schdl_plc_nm"
-  },
-  {
-    "table_name": "tb_noti_info",
-    "column_name": "noti_sn"
-  },
-  {
-    "table_name": "ecopseq",
-    "column_name": "frst_register_id"
-  },
-  {
-    "table_name": "tb_bbs_scrap",
-    "column_name": "scrap_id"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "dscsn_cn"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "inst_cycl"
-  },
-  {
-    "table_name": "tb_dscsn_list",
-    "column_name": "area_no"
-  },
-  {
-    "table_name": "tb_role_info",
-    "column_name": "role_type_cd"
-  },
-  {
-    "table_name": "tb_authrt_group_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_dgstfn_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_web_log",
-    "column_name": "occr_ymd"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "chg_pswd_last_dt"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "pst_id"
-  },
-  {
-    "table_name": "tb_event_info",
-    "column_name": "evnt_type_cd"
-  },
-  {
-    "table_name": "revinfo",
-    "column_name": "frst_reg_pnttm"
-  },
-  {
-    "table_name": "tb_bbs_use_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_com_dtl_cd",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_hlp_info",
-    "column_name": "hlp_dfn"
-  },
-  {
-    "table_name": "tb_role_lyr",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_prgrm_lst",
-    "column_name": "url"
-  },
-  {
-    "table_name": "flyway_schema_history",
-    "column_name": "installed_by"
-  },
-  {
-    "table_name": "tb_login_policy",
-    "column_name": "bgng_tm"
-  },
-  {
-    "table_name": "tb_adbk_manage",
-    "column_name": "wrter_id"
-  },
-  {
-    "table_name": "tb_ifml_atrz_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_note_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "chg_tm"
-  },
-  {
-    "table_name": "tb_cmnty_info",
-    "column_name": "cmnty_intro_cn"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "ocrn_ymd"
-  },
-  {
-    "table_name": "tb_rward_manage",
-    "column_name": "rwrd_ymd"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "inst_cd"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "ntc_yn"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_srvy_qstn",
-    "column_name": "srvy_tmplt_id"
-  },
-  {
-    "table_name": "tb_faq_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_indv_pg",
-    "column_name": "page_id"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "pstinst_cd"
-  },
-  {
-    "table_name": "tb_onln_mnl_info",
-    "column_name": "onln_mnl_nm"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_indv_pg_conts",
-    "column_name": "cntc_url"
-  },
-  {
-    "table_name": "tb_srvy_artcl",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_ifml_atrz_info",
-    "column_name": "aplcnt_id"
-  },
-  {
-    "table_name": "tb_event_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "group_id"
-  },
-  {
-    "table_name": "tb_com_clsf_cd",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "flyway_schema_history",
-    "column_name": "installed_on"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "ans_yn"
+    "table_name": "tb_file_detail",
+    "column_name": "orgnl_file_nm"
   },
   {
     "table_name": "tb_file_detail",
     "column_name": "strg_file_nm"
   },
   {
-    "table_name": "tb_srvy_rspdnt",
-    "column_name": "srvy_tmplt_id"
+    "table_name": "tb_file_detail",
+    "column_name": "file_strg_path"
   },
   {
-    "table_name": "tb_user_log",
-    "column_name": "crt_cnt"
+    "table_name": "tb_file_detail",
+    "column_name": "file_cn"
   },
   {
-    "table_name": "tb_rward_manage",
-    "column_name": "cntrb_cn"
+    "table_name": "tb_file_detail",
+    "column_name": "file_detail_id"
   },
   {
-    "table_name": "tb_tmplt_info",
+    "table_name": "tb_file_detail",
+    "column_name": "atch_file_sn"
+  },
+  {
+    "table_name": "tb_file_master",
     "column_name": "use_yn"
   },
   {
-    "table_name": "tb_authrt_group_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_event_info",
-    "column_name": "evnt_use_cnt"
-  },
-  {
-    "table_name": "tb_blog_info",
-    "column_name": "reg_se_cd"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "chg_pwd_cnt"
-  },
-  {
-    "table_name": "tb_login_log",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_note_rcptn",
-    "column_name": "open_yn"
-  },
-  {
-    "table_name": "tb_dgstfn_info",
-    "column_name": "bbs_id"
-  },
-  {
-    "table_name": "tb_bbs_scrap",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_com_cd",
-    "column_name": "clsf_cd"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "like_cnt"
-  },
-  {
-    "table_name": "tb_dept_job_bx",
-    "column_name": "sort_ordr"
-  },
-  {
-    "table_name": "tb_indv_pg_set",
-    "column_name": "sort_cnt"
-  },
-  {
-    "table_name": "tb_note_rcptn",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_indv_pg_conts",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_bkmk_menu_mng_rslt",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_menu_crt_dtl",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_schdl_info",
-    "column_name": "schdl_cn"
-  },
-  {
-    "table_name": "tb_club_user_map",
+    "table_name": "tb_file_master",
     "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_file_master",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_file_master",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_file_master",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_file_master",
+    "column_name": "atch_file_sn"
+  },
+  {
+    "table_name": "tb_hlp_info",
+    "column_name": "hlp_se_cd"
+  },
+  {
+    "table_name": "tb_hlp_info",
+    "column_name": "hlp_dfn"
+  },
+  {
+    "table_name": "tb_hlp_info",
+    "column_name": "hlp_expln"
+  },
+  {
+    "table_name": "tb_hlp_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_hlp_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_hlp_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_hlp_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_hlp_info",
+    "column_name": "hlp_sn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_dtl",
+    "column_name": "ifml_atrz_sn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_dtl",
+    "column_name": "atrz_cycl"
+  },
+  {
+    "table_name": "tb_ifml_atrz_dtl",
+    "column_name": "atrz_seq"
+  },
+  {
+    "table_name": "tb_ifml_atrz_dtl",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_dtl",
+    "column_name": "acrd_yn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_dtl",
+    "column_name": "aprv_yn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_dtl",
+    "column_name": "atrz_opnn_cn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_dtl",
+    "column_name": "atrz_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_dtl",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_dtl",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_dtl",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_dtl",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_hstry",
+    "column_name": "ifml_atrz_sn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_hstry",
+    "column_name": "atrz_cycl"
+  },
+  {
+    "table_name": "tb_ifml_atrz_hstry",
+    "column_name": "doc_ttl"
+  },
+  {
+    "table_name": "tb_ifml_atrz_hstry",
+    "column_name": "doc_cn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_hstry",
+    "column_name": "task_se_cd"
+  },
+  {
+    "table_name": "tb_ifml_atrz_hstry",
+    "column_name": "req_ymd"
+  },
+  {
+    "table_name": "tb_ifml_atrz_hstry",
+    "column_name": "aprv_yn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_hstry",
+    "column_name": "atrz_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_hstry",
+    "column_name": "rjct_rsn_cn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_hstry",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_hstry",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_hstry",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_hstry",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "aprv_yn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "task_se_cd"
+  },
+  {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "atrz_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "req_ymd"
+  },
+  {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "aplcnt_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "aprvr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "rjct_rsn_cn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "version"
+  },
+  {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "ifml_atrz_sn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "doc_ttl"
+  },
+  {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "doc_cn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "atrz_cycl"
+  },
+  {
+    "table_name": "tb_ifml_atrz_prcs_hstry",
+    "column_name": "ifml_atrz_prcs_hstry_sn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_prcs_hstry",
+    "column_name": "ifml_atrz_sn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_prcs_hstry",
+    "column_name": "atrz_cycl"
+  },
+  {
+    "table_name": "tb_ifml_atrz_prcs_hstry",
+    "column_name": "prcs_type_cd"
+  },
+  {
+    "table_name": "tb_ifml_atrz_prcs_hstry",
+    "column_name": "trgt_user_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_prcs_hstry",
+    "column_name": "bfr_user_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_prcs_hstry",
+    "column_name": "prcs_cn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_prcs_hstry",
+    "column_name": "chg_user_idntfr"
+  },
+  {
+    "table_name": "tb_ifml_atrz_prcs_hstry",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_prcs_hstry",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_rfpr",
+    "column_name": "ifml_atrz_sn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_rfpr",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_rfpr",
+    "column_name": "atrz_cycl"
+  },
+  {
+    "table_name": "tb_ifml_atrz_rfpr",
+    "column_name": "chg_user_idntfr"
+  },
+  {
+    "table_name": "tb_ifml_atrz_rfpr",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_rfpr",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg",
+    "column_name": "ifml_atrz_tmpr_strg_sn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg",
+    "column_name": "aplcnt_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg",
+    "column_name": "task_se_cd"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg",
+    "column_name": "doc_ttl"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg",
+    "column_name": "doc_cn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg",
+    "column_name": "version"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg_dtl",
+    "column_name": "ifml_atrz_tmpr_strg_sn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg_dtl",
+    "column_name": "atrz_seq"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg_dtl",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg_dtl",
+    "column_name": "acrd_yn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg_dtl",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg_dtl",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg_dtl",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg_dtl",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg_rfpr",
+    "column_name": "ifml_atrz_tmpr_strg_sn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg_rfpr",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg_rfpr",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg_rfpr",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg_rfpr",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg_rfpr",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "abl_yn"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "inst_cycl"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "inst_type_lclsf"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "inst_type_mclsf"
   },
   {
     "table_name": "tb_inst_cd",
     "column_name": "inst_type_sclsf"
   },
   {
-    "table_name": "tb_bbs_item",
+    "table_name": "tb_inst_cd",
+    "column_name": "odr"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "ord"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "sort_ordr"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_inst_cd",
     "column_name": "mdfcn_dt"
   },
   {
-    "table_name": "tb_popup_info",
-    "column_name": "popup_ttl_nm"
+    "table_name": "tb_inst_cd",
+    "column_name": "top_inst_cd"
   },
   {
-    "table_name": "tb_tmplt_info",
+    "table_name": "tb_inst_cd",
+    "column_name": "inst_cd"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "reprs_inst_cd"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "upr_inst_cd"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "abl_ymd"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "crtr_ymd"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "chg_ymd"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "chg_tm"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "crt_ymd"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "fax_no"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "telno"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "all_inst_nm"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "inst_abbr_nm"
+  },
+  {
+    "table_name": "tb_inst_cd",
+    "column_name": "lwst_inst_nm"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "abl_yn"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "chg_se_cd"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "inst_cycl"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "inst_type_lclsf"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "inst_type_mclsf"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "inst_type_sclsf"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "odr"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "ord"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "proc_se"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "sort_ordr"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
     "column_name": "mdfcn_dt"
   },
   {
-    "table_name": "tb_bbs_item",
-    "column_name": "atch_file_id"
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "job_sn"
   },
   {
-    "table_name": "tb_onln_mnl_info",
-    "column_name": "onln_mnl_dfn"
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "top_inst_cd"
   },
   {
-    "table_name": "ecopseq",
-    "column_name": "next_id"
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "inst_cd"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "reprs_inst_cd"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "upr_inst_cd"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "abl_ymd"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "crtr_ymd"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "chg_ymd"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "chg_tm"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "crt_ymd"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "fax_no"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "ocrn_ymd"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "telno"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "etc_cd"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "all_inst_nm"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "inst_abbr_nm"
+  },
+  {
+    "table_name": "tb_inst_cd_rcptn_log",
+    "column_name": "lwst_inst_nm"
+  },
+  {
+    "table_name": "tb_intrn_svc",
+    "column_name": "itnt_svc_nm"
+  },
+  {
+    "table_name": "tb_intrn_svc",
+    "column_name": "itnt_svc_expln"
+  },
+  {
+    "table_name": "tb_intrn_svc",
+    "column_name": "rflt_yn"
+  },
+  {
+    "table_name": "tb_intrn_svc",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_intrn_svc",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_intrn_svc",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_intrn_svc",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_intrn_svc",
+    "column_name": "itnt_srvc_sn"
+  },
+  {
+    "table_name": "tb_login_log",
+    "column_name": "err_cd"
+  },
+  {
+    "table_name": "tb_login_log",
+    "column_name": "err_ocrn_yn"
+  },
+  {
+    "table_name": "tb_login_log",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_login_log",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_login_log",
+    "column_name": "cntn_mthd_cd"
+  },
+  {
+    "table_name": "tb_login_log",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_login_log",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_login_log",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_login_log",
+    "column_name": "lgn_ip_addr"
+  },
+  {
+    "table_name": "tb_login_log",
+    "column_name": "lgn_sn"
+  },
+  {
+    "table_name": "tb_login_policy",
+    "column_name": "dpcn_prm_yn"
+  },
+  {
+    "table_name": "tb_login_policy",
+    "column_name": "lmt_yn"
+  },
+  {
+    "table_name": "tb_login_policy",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_login_policy",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_login_policy",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_login_policy",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_login_policy",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_login_policy",
+    "column_name": "ip_addr"
+  },
+  {
+    "table_name": "tb_login_policy",
+    "column_name": "bgng_tm"
+  },
+  {
+    "table_name": "tb_login_policy",
+    "column_name": "end_tm"
+  },
+  {
+    "table_name": "tb_login_policy",
+    "column_name": "otp_use_yn"
+  },
+  {
+    "table_name": "tb_memo_rpt_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_memo_rpt_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_memo_rpt_info",
+    "column_name": "memo_rpt_ymd"
+  },
+  {
+    "table_name": "tb_memo_rpt_info",
+    "column_name": "drctn_mttr_reg_dt"
+  },
+  {
+    "table_name": "tb_memo_rpt_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_memo_rpt_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_memo_rpt_info",
+    "column_name": "rptr_id"
+  },
+  {
+    "table_name": "tb_memo_rpt_info",
+    "column_name": "rptr_inq_dt"
+  },
+  {
+    "table_name": "tb_memo_rpt_info",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_memo_rpt_info",
+    "column_name": "drctn_mttr"
+  },
+  {
+    "table_name": "tb_memo_rpt_info",
+    "column_name": "rpt_cn"
+  },
+  {
+    "table_name": "tb_memo_rpt_info",
+    "column_name": "rpt_ttl"
+  },
+  {
+    "table_name": "tb_memo_rpt_info",
+    "column_name": "memo_rpt_sn"
+  },
+  {
+    "table_name": "tb_memo_rpt_info",
+    "column_name": "atch_file_sn"
+  },
+  {
+    "table_name": "tb_menu_info",
+    "column_name": "menu_ordr"
+  },
+  {
+    "table_name": "tb_menu_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_menu_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_menu_info",
+    "column_name": "menu_sn"
+  },
+  {
+    "table_name": "tb_menu_info",
+    "column_name": "route_mdfcn_yn"
+  },
+  {
+    "table_name": "tb_menu_info",
+    "column_name": "up_menu_sn"
+  },
+  {
+    "table_name": "tb_menu_info",
+    "column_name": "frst_rgtr_id"
   },
   {
     "table_name": "tb_menu_info",
     "column_name": "last_mdfr_id"
   },
   {
-    "table_name": "tb_blog_user_map",
-    "column_name": "user_id"
+    "table_name": "tb_menu_info",
+    "column_name": "menu_nm"
   },
   {
-    "table_name": "tb_dscsn_manage",
-    "column_name": "user_id"
+    "table_name": "tb_menu_info",
+    "column_name": "rel_img_nm"
   },
   {
-    "table_name": "tb_stmp_info",
+    "table_name": "tb_menu_info",
+    "column_name": "rel_img_path"
+  },
+  {
+    "table_name": "tb_menu_info",
+    "column_name": "menu_expln"
+  },
+  {
+    "table_name": "tb_menu_info",
+    "column_name": "modern_route"
+  },
+  {
+    "table_name": "tb_menu_info",
+    "column_name": "use_yn"
+  },
+  {
+    "table_name": "tb_menu_info",
+    "column_name": "del_yn"
+  },
+  {
+    "table_name": "tb_note_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_note_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_note_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_note_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_note_info",
+    "column_name": "note_cn"
+  },
+  {
+    "table_name": "tb_note_info",
+    "column_name": "note_ttl"
+  },
+  {
+    "table_name": "tb_note_info",
+    "column_name": "note_sn"
+  },
+  {
+    "table_name": "tb_note_info",
+    "column_name": "atch_file_sn"
+  },
+  {
+    "table_name": "tb_note_rcptn",
+    "column_name": "open_yn"
+  },
+  {
+    "table_name": "tb_note_rcptn",
+    "column_name": "rcptn_se_cd"
+  },
+  {
+    "table_name": "tb_note_rcptn",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_note_rcptn",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_note_rcptn",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_note_rcptn",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_note_rcptn",
+    "column_name": "rcvr_id"
+  },
+  {
+    "table_name": "tb_note_rcptn",
+    "column_name": "del_yn"
+  },
+  {
+    "table_name": "tb_note_rcptn",
+    "column_name": "note_rcptn_sn"
+  },
+  {
+    "table_name": "tb_note_rcptn",
+    "column_name": "note_sn"
+  },
+  {
+    "table_name": "tb_note_rcptn",
+    "column_name": "note_sndng_sn"
+  },
+  {
+    "table_name": "tb_note_sndng",
+    "column_name": "del_yn"
+  },
+  {
+    "table_name": "tb_note_sndng",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_note_sndng",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_note_sndng",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_note_sndng",
     "column_name": "last_mdfr_id"
   },
   {
@@ -4156,407 +2672,1435 @@
     "column_name": "sndr_id"
   },
   {
-    "table_name": "tb_dept_job_bx",
-    "column_name": "dept_id"
+    "table_name": "tb_note_sndng",
+    "column_name": "note_sndng_sn"
   },
   {
-    "table_name": "tb_com_cd",
+    "table_name": "tb_note_sndng",
+    "column_name": "note_sn"
+  },
+  {
+    "table_name": "tb_ognz_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_ognz_info",
     "column_name": "mdfcn_dt"
   },
   {
-    "table_name": "tb_user_mdfcn_dtls",
+    "table_name": "tb_ognz_info",
     "column_name": "frst_rgtr_id"
   },
   {
-    "table_name": "tb_file_detail",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_sys_log",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_srvy_rslt",
-    "column_name": "rspns_nm"
-  },
-  {
-    "table_name": "tb_auth_rfsh_tk",
-    "column_name": "rfsh_tkn"
-  },
-  {
-    "table_name": "tb_main_image",
-    "column_name": "main_img_file_path"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "fax_no"
-  },
-  {
-    "table_name": "tb_blog_info",
+    "table_name": "tb_ognz_info",
     "column_name": "last_mdfr_id"
   },
   {
-    "table_name": "tb_inst_cd",
-    "column_name": "reprs_inst_cd"
+    "table_name": "tb_ognz_info",
+    "column_name": "ognz_id"
   },
   {
-    "table_name": "tb_login_log",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_leader_stts",
-    "column_name": "leader_id"
-  },
-  {
-    "table_name": "tb_bbs_comment",
-    "column_name": "wrter_nm"
-  },
-  {
-    "table_name": "tb_srvy_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_leader_schdl",
-    "column_name": "schdl_plc_nm"
-  },
-  {
-    "table_name": "tb_indv_pg",
-    "column_name": "user_id"
-  },
-  {
-    "table_name": "tb_srvy_artcl",
-    "column_name": "artcl_cn"
-  },
-  {
-    "table_name": "tb_diary_info",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "ans_lv"
-  },
-  {
-    "table_name": "tb_user_log",
-    "column_name": "otpt_cnt"
-  },
-  {
-    "table_name": "tb_srvy_rspdnt",
-    "column_name": "gndr_cd"
+    "table_name": "tb_ognz_info",
+    "column_name": "ognz_nm"
   },
   {
     "table_name": "tb_ognz_info",
     "column_name": "ognz_expln"
   },
   {
-    "table_name": "tb_extrl_hr_info",
-    "column_name": "otsd_hr_id"
+    "table_name": "tb_ognz_info",
+    "column_name": "up_ognz_id"
   },
   {
-    "table_name": "tb_user_noti",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_indv_pg_set",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_memo_rpt_info",
-    "column_name": "drctn_mttr"
-  },
-  {
-    "table_name": "tb_file_detail",
-    "column_name": "atch_file_seq"
-  },
-  {
-    "table_name": "tb_inst_cd",
-    "column_name": "crt_ymd"
-  },
-  {
-    "table_name": "tb_srvy_rspdnt",
-    "column_name": "mid_telno"
-  },
-  {
-    "table_name": "tb_user_log",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_plcy_manage",
-    "column_name": "plcy_type_cd"
-  },
-  {
-    "table_name": "tb_bbs_master_optn",
-    "column_name": "stsfdg_yn"
-  },
-  {
-    "table_name": "ids",
-    "column_name": "last_updusr_id"
-  },
-  {
-    "table_name": "tb_email_dsptch_manage",
-    "column_name": "eml_ttl"
-  },
-  {
-    "table_name": "tb_main_image",
-    "column_name": "img_id"
-  },
-  {
-    "table_name": "tb_blog_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "inst_cd"
+    "table_name": "tb_ognz_info",
+    "column_name": "sort_ordr"
   },
   {
     "table_name": "tb_onln_mnl_info",
-    "column_name": "onln_mnl_id"
+    "column_name": "onln_mnl_se_cd"
   },
   {
-    "table_name": "tb_sms_rcptn",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_user_mdfcn_dtls",
-    "column_name": "brth_ymd"
-  },
-  {
-    "table_name": "tb_email_dsptch_manage",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_blog_user_map",
-    "column_name": "join_ymd"
-  },
-  {
-    "table_name": "tb_dscsn_manage",
-    "column_name": "proc_cn"
-  },
-  {
-    "table_name": "tb_stmp_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_authrt_info",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_note_sndng",
-    "column_name": "note_id"
-  },
-  {
-    "table_name": "tb_dept_task_info",
-    "column_name": "dept_task_nm"
-  },
-  {
-    "table_name": "tb_com_cd",
-    "column_name": "cd_id_expln"
-  },
-  {
-    "table_name": "tb_sys_log",
-    "column_name": "prcs_tm"
-  },
-  {
-    "table_name": "tb_user_absn",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_auth_rfsh_tk",
-    "column_name": "exprtn_dt"
-  },
-  {
-    "table_name": "tb_user_noti",
-    "column_name": "link_url"
-  },
-  {
-    "table_name": "tb_login_log",
-    "column_name": "err_cd"
-  },
-  {
-    "table_name": "tb_bkmk_menu_mng_rslt",
-    "column_name": "last_mdfr_id"
-  },
-  {
-    "table_name": "tb_note_rcptn",
-    "column_name": "note_sndng_id"
-  },
-  {
-    "table_name": "tb_indv_pg_conts",
-    "column_name": "cntnts_use_yn"
-  },
-  {
-    "table_name": "tb_file_master",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_rpt_info",
-    "column_name": "rpt_ttl"
-  },
-  {
-    "table_name": "tb_memo_rpt_info",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "frst_rgtr_id"
-  },
-  {
-    "table_name": "tb_menu_info",
-    "column_name": "up_menu_sn"
-  },
-  {
-    "table_name": "tb_admdst_cd_rcptn_log",
-    "column_name": "abl_yn"
-  },
-  {
-    "table_name": "tb_tmplt_info",
-    "column_name": "tmplt_path"
-  },
-  {
-    "table_name": "tb_leader_schdl_dtl",
-    "column_name": "schdl_ymd"
-  },
-  {
-    "table_name": "tb_bbs_stats",
-    "column_name": "min_inq_cnt"
-  },
-  {
-    "table_name": "tb_user_log",
-    "column_name": "err_cnt"
-  },
-  {
-    "table_name": "tb_memo_rpt_info",
-    "column_name": "user_id"
-  },
-  {
-    "table_name": "tb_srvy_rspdnt",
-    "column_name": "srvy_rspdnt_id"
-  },
-  {
-    "table_name": "tb_rpt_info",
-    "column_name": "rpt_stts_cd"
-  },
-  {
-    "table_name": "tb_inst_cd_rcptn_log",
-    "column_name": "chg_tm"
-  },
-  {
-    "table_name": "tb_onln_poll_manage",
-    "column_name": "poll_bgng_ymd"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "sbscrb_ymd"
-  },
-  {
-    "table_name": "tb_indv_pg",
-    "column_name": "page_expln"
-  },
-  {
-    "table_name": "tb_dept_task_info",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_memo_todo_info",
-    "column_name": "todo_ttl"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "pswd_crans"
-  },
-  {
-    "table_name": "tb_indv_pg_conts",
-    "column_name": "cntnts_id"
-  },
-  {
-    "table_name": "tb_privacy_log",
-    "column_name": "srvc_nm"
-  },
-  {
-    "table_name": "tb_bbs_master",
-    "column_name": "use_yn"
-  },
-  {
-    "table_name": "tb_email_dsptch_manage",
-    "column_name": "eml_cn"
-  },
-  {
-    "table_name": "tb_dta_use_stats",
-    "column_name": "bbs_id"
-  },
-  {
-    "table_name": "tb_auth_rfsh_tk",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "tb_user_info",
-    "column_name": "ognz_id"
-  },
-  {
-    "table_name": "tb_bbs_item",
-    "column_name": "pswd"
-  },
-  {
-    "table_name": "tb_com_cd",
-    "column_name": "crt_dt"
-  },
-  {
-    "table_name": "flyway_schema_history",
-    "column_name": "checksum"
-  },
-  {
-    "table_name": "tb_onln_poll_rslt",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_file_detail",
-    "column_name": "mdfcn_dt"
-  },
-  {
-    "table_name": "tb_indv_pg_set",
-    "column_name": "ttl_bar_colr"
-  },
-  {
-    "table_name": "tb_dept_job_bx",
-    "column_name": "mdfcn_dt"
+    "table_name": "tb_onln_mnl_info",
+    "column_name": "onln_mnl_dfn"
   },
   {
     "table_name": "tb_onln_mnl_info",
     "column_name": "onln_mnl_expln"
   },
   {
-    "table_name": "tb_user_log",
+    "table_name": "tb_onln_mnl_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_onln_mnl_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_onln_mnl_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_onln_mnl_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_onln_mnl_info",
+    "column_name": "onln_mnl_nm"
+  },
+  {
+    "table_name": "tb_onln_mnl_info",
+    "column_name": "onln_mnl_sn"
+  },
+  {
+    "table_name": "tb_onln_poll_artcl",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_onln_poll_artcl",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_onln_poll_artcl",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_onln_poll_artcl",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_onln_poll_artcl",
+    "column_name": "poll_artcl_nm"
+  },
+  {
+    "table_name": "tb_onln_poll_artcl",
+    "column_name": "poll_artcl_sn"
+  },
+  {
+    "table_name": "tb_onln_poll_artcl",
+    "column_name": "poll_sn"
+  },
+  {
+    "table_name": "tb_onln_poll_manage",
+    "column_name": "poll_atmc_dsuse_yn"
+  },
+  {
+    "table_name": "tb_onln_poll_manage",
+    "column_name": "poll_dsuse_yn"
+  },
+  {
+    "table_name": "tb_onln_poll_manage",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_onln_poll_manage",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_onln_poll_manage",
+    "column_name": "poll_bgng_ymd"
+  },
+  {
+    "table_name": "tb_onln_poll_manage",
+    "column_name": "poll_end_ymd"
+  },
+  {
+    "table_name": "tb_onln_poll_manage",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_onln_poll_manage",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_onln_poll_manage",
+    "column_name": "poll_knd_cd"
+  },
+  {
+    "table_name": "tb_onln_poll_manage",
+    "column_name": "poll_nm"
+  },
+  {
+    "table_name": "tb_onln_poll_manage",
+    "column_name": "poll_sn"
+  },
+  {
+    "table_name": "tb_onln_poll_rslt",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_onln_poll_rslt",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_onln_poll_rslt",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_onln_poll_rslt",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_onln_poll_rslt",
+    "column_name": "poll_rslt_sn"
+  },
+  {
+    "table_name": "tb_onln_poll_rslt",
+    "column_name": "poll_sn"
+  },
+  {
+    "table_name": "tb_onln_poll_rslt",
+    "column_name": "poll_artcl_sn"
+  },
+  {
+    "table_name": "tb_plcy_manage",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_plcy_manage",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_plcy_manage",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_plcy_manage",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_plcy_manage",
+    "column_name": "plcy_type_cd"
+  },
+  {
+    "table_name": "tb_plcy_manage",
+    "column_name": "plcy_cn"
+  },
+  {
+    "table_name": "tb_plcy_manage",
+    "column_name": "plcy_ttl"
+  },
+  {
+    "table_name": "tb_popup_info",
+    "column_name": "ntce_yn"
+  },
+  {
+    "table_name": "tb_popup_info",
+    "column_name": "stopvew_setup_yn"
+  },
+  {
+    "table_name": "tb_popup_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_popup_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_popup_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_popup_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_popup_info",
+    "column_name": "ntce_bgnde"
+  },
+  {
+    "table_name": "tb_popup_info",
+    "column_name": "ntce_endde"
+  },
+  {
+    "table_name": "tb_popup_info",
+    "column_name": "popup_vrtc_pstn"
+  },
+  {
+    "table_name": "tb_popup_info",
+    "column_name": "popup_vrtc_sz"
+  },
+  {
+    "table_name": "tb_popup_info",
+    "column_name": "popup_wdth_pstn"
+  },
+  {
+    "table_name": "tb_popup_info",
+    "column_name": "popup_wdth_sz"
+  },
+  {
+    "table_name": "tb_popup_info",
+    "column_name": "file_url"
+  },
+  {
+    "table_name": "tb_popup_info",
+    "column_name": "popup_ttl_nm"
+  },
+  {
+    "table_name": "tb_popup_info",
+    "column_name": "popup_sn"
+  },
+  {
+    "table_name": "tb_privacy_log",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_privacy_log",
+    "column_name": "inq_dt"
+  },
+  {
+    "table_name": "tb_privacy_log",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_privacy_log",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_privacy_log",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_privacy_log",
+    "column_name": "dmnd_id"
+  },
+  {
+    "table_name": "tb_privacy_log",
+    "column_name": "dmnd_user_id"
+  },
+  {
+    "table_name": "tb_privacy_log",
+    "column_name": "dmnd_user_ip_addr"
+  },
+  {
+    "table_name": "tb_privacy_log",
+    "column_name": "inq_info"
+  },
+  {
+    "table_name": "tb_privacy_log",
     "column_name": "srvc_nm"
+  },
+  {
+    "table_name": "tb_privacy_log",
+    "column_name": "prvc_log_sn"
+  },
+  {
+    "table_name": "tb_rpt_info",
+    "column_name": "rpt_se_cd"
+  },
+  {
+    "table_name": "tb_rpt_info",
+    "column_name": "rpt_stts_cd"
+  },
+  {
+    "table_name": "tb_rpt_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_rpt_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_rpt_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_rpt_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_rpt_info",
+    "column_name": "rpt_ymd"
+  },
+  {
+    "table_name": "tb_rpt_info",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_rpt_info",
+    "column_name": "rpt_cn"
+  },
+  {
+    "table_name": "tb_rpt_info",
+    "column_name": "rpt_ttl"
+  },
+  {
+    "table_name": "tb_rpt_info",
+    "column_name": "rptp_sn"
+  },
+  {
+    "table_name": "tb_rpt_info",
+    "column_name": "atch_file_sn"
+  },
+  {
+    "table_name": "tb_rptp_stats",
+    "column_name": "rptp_nm"
+  },
+  {
+    "table_name": "tb_rptp_stats",
+    "column_name": "reprt_sttus"
+  },
+  {
+    "table_name": "tb_rptp_stats",
+    "column_name": "reprt_type"
+  },
+  {
+    "table_name": "tb_rptp_stats",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_rptp_stats",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_rptp_stats",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_rptp_stats",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_rptp_stats",
+    "column_name": "rptp_sn"
+  },
+  {
+    "table_name": "tb_rward_manage",
+    "column_name": "confm_yn"
+  },
+  {
+    "table_name": "tb_rward_manage",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_rward_manage",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_rward_manage",
+    "column_name": "aprv_dt"
+  },
+  {
+    "table_name": "tb_rward_manage",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_rward_manage",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_rward_manage",
+    "column_name": "rwrd_cd"
+  },
+  {
+    "table_name": "tb_rward_manage",
+    "column_name": "rwrd_ymd"
+  },
+  {
+    "table_name": "tb_rward_manage",
+    "column_name": "rwrd_user_id"
+  },
+  {
+    "table_name": "tb_rward_manage",
+    "column_name": "atrzr_id"
+  },
+  {
+    "table_name": "tb_rward_manage",
+    "column_name": "rtn_rsn_cn"
+  },
+  {
+    "table_name": "tb_rward_manage",
+    "column_name": "cntrb_cn"
+  },
+  {
+    "table_name": "tb_rward_manage",
+    "column_name": "rwrd_nm"
+  },
+  {
+    "table_name": "tb_rward_manage",
+    "column_name": "rwrd_sn"
+  },
+  {
+    "table_name": "tb_rward_manage",
+    "column_name": "atch_file_sn"
+  },
+  {
+    "table_name": "tb_rward_manage",
+    "column_name": "ifml_atrz_sn"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "rept_se_cd"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "schdl_imprt_cd"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "schdl_knd_cd"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "schdl_se_cd"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "schdl_bgng_ymd"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "schdl_pic_id"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "schdl_dept_id"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "schdl_end_ymd"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "schdl_cn"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "schdl_nm"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "schdl_plc_nm"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "schdl_sn"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "atch_file_sn"
+  },
+  {
+    "table_name": "tb_sms_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_sms_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_sms_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_sms_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_sms_info",
+    "column_name": "sndng_telno"
+  },
+  {
+    "table_name": "tb_sms_info",
+    "column_name": "sndng_cn"
+  },
+  {
+    "table_name": "tb_sms_info",
+    "column_name": "sms_trsm_sn"
+  },
+  {
+    "table_name": "tb_sms_rcptn",
+    "column_name": "rslt_cd"
+  },
+  {
+    "table_name": "tb_sms_rcptn",
+    "column_name": "rcptn_telno"
+  },
+  {
+    "table_name": "tb_sms_rcptn",
+    "column_name": "rslt_msg"
+  },
+  {
+    "table_name": "tb_sms_rcptn",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_sms_rcptn",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_sms_rcptn",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_sms_rcptn",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_sms_rcptn",
+    "column_name": "sms_trsm_sn"
+  },
+  {
+    "table_name": "tb_srvy_artcl",
+    "column_name": "etc_ans_yn"
+  },
+  {
+    "table_name": "tb_srvy_artcl",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_srvy_artcl",
+    "column_name": "artcl_sn"
+  },
+  {
+    "table_name": "tb_srvy_artcl",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_srvy_artcl",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_srvy_artcl",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_srvy_artcl",
+    "column_name": "artcl_cn"
+  },
+  {
+    "table_name": "tb_srvy_artcl",
+    "column_name": "srvy_artcl_sn"
+  },
+  {
+    "table_name": "tb_srvy_artcl",
+    "column_name": "srvy_qstn_sn"
+  },
+  {
+    "table_name": "tb_srvy_artcl",
+    "column_name": "srvy_sn"
+  },
+  {
+    "table_name": "tb_srvy_artcl",
+    "column_name": "srvy_tmplt_sn"
+  },
+  {
+    "table_name": "tb_srvy_info",
+    "column_name": "srvy_ttl"
+  },
+  {
+    "table_name": "tb_srvy_info",
+    "column_name": "srvy_prps"
+  },
+  {
+    "table_name": "tb_srvy_info",
+    "column_name": "srvy_trgt"
+  },
+  {
+    "table_name": "tb_srvy_info",
+    "column_name": "srvy_wrt_gd_cn"
+  },
+  {
+    "table_name": "tb_srvy_info",
+    "column_name": "srvy_bgng_ymd"
+  },
+  {
+    "table_name": "tb_srvy_info",
+    "column_name": "srvy_end_ymd"
+  },
+  {
+    "table_name": "tb_srvy_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_srvy_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_srvy_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_srvy_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_srvy_info",
+    "column_name": "srvy_sn"
+  },
+  {
+    "table_name": "tb_srvy_info",
+    "column_name": "srvy_tmplt_sn"
+  },
+  {
+    "table_name": "tb_srvy_info",
+    "column_name": "rls_yn"
+  },
+  {
+    "table_name": "tb_srvy_qstn",
+    "column_name": "max_chc_cnt"
+  },
+  {
+    "table_name": "tb_srvy_qstn",
+    "column_name": "qstn_type_cd"
+  },
+  {
+    "table_name": "tb_srvy_qstn",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_srvy_qstn",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_srvy_qstn",
+    "column_name": "qstn_sn"
+  },
+  {
+    "table_name": "tb_srvy_qstn",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_srvy_qstn",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_srvy_qstn",
+    "column_name": "qstn_cn"
+  },
+  {
+    "table_name": "tb_srvy_qstn",
+    "column_name": "srvy_qstn_sn"
+  },
+  {
+    "table_name": "tb_srvy_qstn",
+    "column_name": "srvy_sn"
+  },
+  {
+    "table_name": "tb_srvy_qstn",
+    "column_name": "srvy_tmplt_sn"
+  },
+  {
+    "table_name": "tb_srvy_rslt",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_srvy_rslt",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_srvy_rslt",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_srvy_rslt",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_srvy_rslt",
+    "column_name": "rspns_nm"
+  },
+  {
+    "table_name": "tb_srvy_rslt",
+    "column_name": "etc_ans_cn"
+  },
+  {
+    "table_name": "tb_srvy_rslt",
+    "column_name": "rspdnt_ans_cn"
+  },
+  {
+    "table_name": "tb_srvy_rslt",
+    "column_name": "srvy_rspns_sn"
+  },
+  {
+    "table_name": "tb_srvy_rslt",
+    "column_name": "srvy_sn"
+  },
+  {
+    "table_name": "tb_srvy_rslt",
+    "column_name": "srvy_tmplt_sn"
+  },
+  {
+    "table_name": "tb_srvy_rslt",
+    "column_name": "srvy_qstn_sn"
+  },
+  {
+    "table_name": "tb_srvy_rslt",
+    "column_name": "srvy_artcl_sn"
+  },
+  {
+    "table_name": "tb_srvy_rspdnt",
+    "column_name": "srvy_rspdnt_id"
+  },
+  {
+    "table_name": "tb_srvy_rspdnt",
+    "column_name": "gndr_cd"
+  },
+  {
+    "table_name": "tb_srvy_rspdnt",
+    "column_name": "cr_type_cd"
+  },
+  {
+    "table_name": "tb_srvy_rspdnt",
+    "column_name": "rspdnt_nm"
+  },
+  {
+    "table_name": "tb_srvy_rspdnt",
+    "column_name": "brdt"
+  },
+  {
+    "table_name": "tb_srvy_rspdnt",
+    "column_name": "rgn_telno"
+  },
+  {
+    "table_name": "tb_srvy_rspdnt",
+    "column_name": "mid_telno"
+  },
+  {
+    "table_name": "tb_srvy_rspdnt",
+    "column_name": "end_telno"
+  },
+  {
+    "table_name": "tb_srvy_rspdnt",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_srvy_rspdnt",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_srvy_rspdnt",
+    "column_name": "mdfcn_dt"
   },
   {
     "table_name": "tb_srvy_rspdnt",
     "column_name": "last_mdfr_id"
   },
   {
-    "table_name": "tb_rpt_info",
-    "column_name": "atch_file_id"
+    "table_name": "tb_srvy_rspdnt",
+    "column_name": "srvy_tmplt_sn"
   },
   {
-    "table_name": "tb_faq_info",
-    "column_name": "ans_cn"
+    "table_name": "tb_srvy_rspdnt",
+    "column_name": "srvy_sn"
+  },
+  {
+    "table_name": "tb_srvy_tmplt",
+    "column_name": "srvy_tmplt_type_cd"
+  },
+  {
+    "table_name": "tb_srvy_tmplt",
+    "column_name": "srvy_tmplt_expln"
+  },
+  {
+    "table_name": "tb_srvy_tmplt",
+    "column_name": "srvy_tmplt_path_nm"
+  },
+  {
+    "table_name": "tb_srvy_tmplt",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_srvy_tmplt",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_srvy_tmplt",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_srvy_tmplt",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_srvy_tmplt",
+    "column_name": "srvy_tmplt_img_info"
+  },
+  {
+    "table_name": "tb_srvy_tmplt",
+    "column_name": "srvy_tmplt_sn"
+  },
+  {
+    "table_name": "tb_stmp_info",
+    "column_name": "crtr_id"
+  },
+  {
+    "table_name": "tb_stmp_info",
+    "column_name": "mpng_file_nm"
+  },
+  {
+    "table_name": "tb_stmp_info",
+    "column_name": "mpng_file_path"
+  },
+  {
+    "table_name": "tb_stmp_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_stmp_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_stmp_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_stmp_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_stmp_info",
+    "column_name": "stmp_sn"
+  },
+  {
+    "table_name": "tb_sys_adt_log",
+    "column_name": "log_sn"
+  },
+  {
+    "table_name": "tb_sys_adt_log",
+    "column_name": "dmnd_idntfr"
+  },
+  {
+    "table_name": "tb_sys_adt_log",
+    "column_name": "prcs_stts_nm"
+  },
+  {
+    "table_name": "tb_sys_adt_log",
+    "column_name": "job_nm"
+  },
+  {
+    "table_name": "tb_sys_adt_log",
+    "column_name": "adt_cn"
+  },
+  {
+    "table_name": "tb_sys_adt_log",
+    "column_name": "adt_dt"
+  },
+  {
+    "table_name": "tb_sys_adt_log",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_sys_adt_log",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_sys_job",
+    "column_name": "job_sn"
+  },
+  {
+    "table_name": "tb_sys_job",
+    "column_name": "job_mng_no"
+  },
+  {
+    "table_name": "tb_sys_job",
+    "column_name": "job_se_nm"
+  },
+  {
+    "table_name": "tb_sys_job",
+    "column_name": "job_cn"
+  },
+  {
+    "table_name": "tb_sys_job",
+    "column_name": "prcs_stts_nm"
+  },
+  {
+    "table_name": "tb_sys_job",
+    "column_name": "rtry_nmtm"
+  },
+  {
+    "table_name": "tb_sys_job",
+    "column_name": "job_no"
+  },
+  {
+    "table_name": "tb_sys_job",
+    "column_name": "job_prnmnt_dt"
+  },
+  {
+    "table_name": "tb_sys_job",
+    "column_name": "job_cmptn_dt"
+  },
+  {
+    "table_name": "tb_sys_job",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_sys_job",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_sys_job",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_sys_job",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_sys_log",
+    "column_name": "err_se_cd"
+  },
+  {
+    "table_name": "tb_sys_log",
+    "column_name": "prcs_se_cd"
+  },
+  {
+    "table_name": "tb_sys_log",
+    "column_name": "rspns_cd"
+  },
+  {
+    "table_name": "tb_sys_log",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_sys_log",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_sys_log",
+    "column_name": "prcs_tm"
+  },
+  {
+    "table_name": "tb_sys_log",
+    "column_name": "err_cd"
+  },
+  {
+    "table_name": "tb_sys_log",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_sys_log",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_sys_log",
+    "column_name": "ocrn_ymd"
+  },
+  {
+    "table_name": "tb_sys_log",
+    "column_name": "dmnd_id"
+  },
+  {
+    "table_name": "tb_sys_log",
+    "column_name": "dmnd_user_id"
+  },
+  {
+    "table_name": "tb_sys_log",
+    "column_name": "dmnd_user_ip_addr"
+  },
+  {
+    "table_name": "tb_sys_log",
+    "column_name": "mthd_nm"
+  },
+  {
+    "table_name": "tb_sys_log",
+    "column_name": "srvc_nm"
+  },
+  {
+    "table_name": "tb_sys_log",
+    "column_name": "sys_log_sn"
+  },
+  {
+    "table_name": "tb_tmplt_info",
+    "column_name": "use_yn"
+  },
+  {
+    "table_name": "tb_tmplt_info",
+    "column_name": "tmplt_se_cd"
   },
   {
     "table_name": "tb_tmplt_info",
     "column_name": "crt_dt"
   },
   {
-    "table_name": "tb_bbs_master",
-    "column_name": "cmnty_id"
+    "table_name": "tb_tmplt_info",
+    "column_name": "mdfcn_dt"
   },
   {
-    "table_name": "tb_blog_info",
-    "column_name": "blog_yn"
+    "table_name": "tb_tmplt_info",
+    "column_name": "frst_rgtr_id"
   },
   {
-    "table_name": "tb_note_rcptn",
+    "table_name": "tb_tmplt_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_tmplt_info",
+    "column_name": "tmplt_id"
+  },
+  {
+    "table_name": "tb_tmplt_info",
+    "column_name": "tmplt_nm"
+  },
+  {
+    "table_name": "tb_tmplt_info",
+    "column_name": "tmplt_path"
+  },
+  {
+    "table_name": "tb_user_absn",
+    "column_name": "user_absn_yn"
+  },
+  {
+    "table_name": "tb_user_absn",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_user_absn",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_user_absn",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_user_absn",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_user_absn",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "esntl_id"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "user_type_cd"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "pswd"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "pswd_hint"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "pswd_crans"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "chg_pswd_last_dt"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "chg_pwd_cnt"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "lck_yn"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "lck_cnt"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "lck_last_pnttm"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "otp_secret"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "cert_dn_vl"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "user_nm"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "gndr_cd"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "brth_ymd"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "eml_addr"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "mbl_telno"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "zip"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "home_addr"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "daddr"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "area_no"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "middle_telno"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "end_telno"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "fax_no"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "office_telno"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "group_id"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "ognz_id"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "pstinst_cd"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "empl_no"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "ofcps_nm"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "role"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "bizr_no"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "jurir_no"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "cmpny_nm"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "rprsv_nm"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "induty_cd"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "ent_se_cd"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "user_stts_cd"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "sbscrb_ymd"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "user_enrrno"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "tmpr_pswd_yn"
+  },
+  {
+    "table_name": "tb_user_log",
+    "column_name": "crt_cnt"
+  },
+  {
+    "table_name": "tb_user_log",
+    "column_name": "del_cnt"
+  },
+  {
+    "table_name": "tb_user_log",
+    "column_name": "err_cnt"
+  },
+  {
+    "table_name": "tb_user_log",
+    "column_name": "otpt_cnt"
+  },
+  {
+    "table_name": "tb_user_log",
+    "column_name": "inq_cnt"
+  },
+  {
+    "table_name": "tb_user_log",
+    "column_name": "mdfcn_cnt"
+  },
+  {
+    "table_name": "tb_user_log",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_user_log",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_user_log",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_user_log",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_user_log",
+    "column_name": "ocrn_ymd"
+  },
+  {
+    "table_name": "tb_user_log",
+    "column_name": "dmnd_user_id"
+  },
+  {
+    "table_name": "tb_user_log",
+    "column_name": "mthd_nm"
+  },
+  {
+    "table_name": "tb_user_log",
+    "column_name": "srvc_nm"
+  },
+  {
+    "table_name": "tb_user_noti",
+    "column_name": "read_yn"
+  },
+  {
+    "table_name": "tb_user_noti",
     "column_name": "crt_dt"
   },
   {
     "table_name": "tb_user_noti",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_user_noti",
+    "column_name": "noti_ivl_val"
+  },
+  {
+    "table_name": "tb_user_noti",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_user_noti",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_user_noti",
+    "column_name": "noti_dt"
+  },
+  {
+    "table_name": "tb_user_noti",
+    "column_name": "rcvr_id"
+  },
+  {
+    "table_name": "tb_user_noti",
+    "column_name": "noti_ttl_nm"
+  },
+  {
+    "table_name": "tb_user_noti",
     "column_name": "noti_cn"
+  },
+  {
+    "table_name": "tb_user_noti",
+    "column_name": "link_url"
+  },
+  {
+    "table_name": "tb_user_noti",
+    "column_name": "noti_sn"
+  },
+  {
+    "table_name": "tb_web_log",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_web_log",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_web_log",
+    "column_name": "occr_ymd"
+  },
+  {
+    "table_name": "tb_web_log",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_web_log",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_web_log",
+    "column_name": "dmnd_user_id"
+  },
+  {
+    "table_name": "tb_web_log",
+    "column_name": "dmnd_user_ip_addr"
+  },
+  {
+    "table_name": "tb_web_log",
+    "column_name": "url"
+  },
+  {
+    "table_name": "tb_web_log",
+    "column_name": "prcs_tm"
+  },
+  {
+    "table_name": "tb_web_log",
+    "column_name": "web_log_sn"
   }
 ]

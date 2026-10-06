@@ -14,9 +14,9 @@ import java.time.LocalDateTime;
  *
  * <p><b>⚠ 이 로그 자체가 개인정보다.</b> {@code inqInfo}(조회 대상 정보) · {@code dmndUserId}
  * (조회자) · {@code dmndUserIpAddr}(조회자 IP)가 모두 식별 가능한 값이라, 열람 권한을
- * {@code @AdminOnly}(ADMIN 전용)로 좁혔다 — 다른 로그 화면이 쓰는 {@code @AdminOrSystem} 보다
- * 한 단계 좁다(SYSTEM 롤 제외). "개인정보 접근 기록을 누가 볼 수 있는가" 는 그 자체로
- * 개인정보 이슈이기 때문이다(2026-08-05 사용자 결정).
+ * {@code PRIVACY_READ}(기본 그룹 {@code ROLE_ADMIN})로 두고 {@code ROLE_SYSTEM} 은 다른 그룹이 권한을
+ * 줘도 강제 제외한다({@code excludedGroups}) — 다른 로그 화면의 조회 권한보다 한 단계 좁다.
+ * "개인정보 접근 기록을 누가 볼 수 있는가" 는 그 자체로 개인정보 이슈이기 때문이다(2026-08-05 사용자 결정).
  */
 @Builder
 public record PrivacyLogDto(

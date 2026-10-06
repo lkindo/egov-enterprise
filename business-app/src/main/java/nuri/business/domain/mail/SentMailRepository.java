@@ -1,7 +1,5 @@
 package nuri.business.domain.mail;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,14 +9,6 @@ import org.springframework.data.repository.query.Param;
  * 발송메일 Repository
  */
 public interface SentMailRepository extends JpaRepository<SentMail, Long>, SentMailRepositoryCustom {
-
-    Page<SentMail> findByEmlTtlContaining(String emlTtl, Pageable pageable);
-
-    Page<SentMail> findBySndptyNm(String sndptyNm, Pageable pageable);
-
-    Page<SentMail> findByRcvrNm(String rcvrNm, Pageable pageable);
-
-    Page<SentMail> findByDsptchRsltCd(String dsptchRsltCd, Pageable pageable);
 
     /**
      * 재발송 차지(2026-09-26 DIP B5 F7). 발신자 본인의 메일이 실패('F')했거나 대기('P')에 {@code stuckBefore} 전부터
@@ -33,21 +23,4 @@ public interface SentMailRepository extends JpaRepository<SentMail, Long>, SentM
             + "and (m.dsptchRsltCd = 'F' or (m.dsptchRsltCd = 'P' and (m.dsptchDt is null or m.dsptchDt < :stuckBefore)))")
     int claimForResend(@Param("emlDsptchSn") Long emlDsptchSn, @Param("loginId") String loginId,
             @Param("now") java.time.LocalDateTime now, @Param("stuckBefore") java.time.LocalDateTime stuckBefore);
-
-    // ----- [Legacy Query Method Bridges] -----
-    default Page<SentMail> findBySjContaining(String sj, Pageable pageable) {
-        return findByEmlTtlContaining(sj, pageable);
-    }
-
-    default Page<SentMail> findByDsptchPerson(String dsptchPerson, Pageable pageable) {
-        return findBySndptyNm(dsptchPerson, pageable);
-    }
-
-    default Page<SentMail> findByRecptnPerson(String recptnPerson, Pageable pageable) {
-        return findByRcvrNm(recptnPerson, pageable);
-    }
-
-    default Page<SentMail> findBySndngResultCode(String sndngResultCode, Pageable pageable) {
-        return findByDsptchRsltCd(sndngResultCode, pageable);
-    }
 }

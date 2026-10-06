@@ -20,14 +20,15 @@ import java.util.List;
  * <p>[2026-08-27 인가 보강] 이 컨트롤러는 5개 엔드포인트 어디에도 메서드 인가가 없었고
  * URL 게이트({@code secure-paths} 의 {@code /api/v1/admin/**} → {@code ADMIN_ALL}) <b>한 겹</b>에만
  * 의존했다. 그 매핑 한 줄이 빠지면 접속 IP 제한·허용 시간대·2단계 인증(OTP) 설정이 함께 열린다.
- * 저장소의 다른 관리 API 가 이미 쓰는 규칙대로 메서드 인가를 클래스에 직접 붙여 방어선을 이중화한다.
  *
- * <p><b>동작은 바뀌지 않는다.</b> {@code ADMIN_ALL} 은 운영 시드(V2_11)에서 ROLE_ADMIN·ROLE_SYSTEM
- * 두 롤에 매핑돼 있고 {@code @AdminOrSystem} 이 정확히 같은 집합이다. 즉 지금 접근할 수 있는 사람이
- * 계속 접근하고, URL 게이트가 사라졌을 때만 차이가 난다.
+ * <p>지금은 핸들러마다 operation binding 이 있다 — 조회 {@code LOGIN_POL_READ}, 등록·수정·삭제
+ * {@code LOGIN_POL_CREATE}·{@code LOGIN_POL_UPDATE}·{@code LOGIN_POL_DELETE}(기본 그룹 ROLE_ADMIN·ROLE_SYSTEM).
+ * HTTP 계층({@code OperationAuthorizationManager})과 메서드 계층
+ * ({@code @PreAuthorize("@permissionPolicy.allowed(...)")})이 같은 binding 을 이중 집행하고,
+ * 보호 계정 대상 쓰기는 서비스가 한 번 더 막는다(DEC-OPS-213).
  *
- * <p>개인정보 증적처럼 열람 자체가 통제 대상인 자원이 아니므로
- * {@code @PrivacyAdminOnly}(SYSTEM 배제)는 쓰지 않는다 — 인가 의미를 넓히지도 좁히지도 않는다(H3).
+ * <p>개인정보 증적처럼 열람 자체가 통제 대상인 자원이 아니므로 {@code ROLE_SYSTEM} 강제 제외
+ * ({@code excludedGroups})는 두지 않는다 — 인가 의미를 넓히지도 좁히지도 않는다(H3).
  */
 @Slf4j
 @Tag(name = "LoginPolicy", description = "로그인 정책 관리 API (Admin)")

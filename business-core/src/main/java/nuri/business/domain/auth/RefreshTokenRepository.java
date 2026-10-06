@@ -15,7 +15,6 @@ import java.util.Optional;
  */
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, String> {
     Optional<RefreshToken> findByRfshTkn(String rfshTkn);
-    void deleteByUserId(String userId);
 
     /**
      * 사용자 삭제 시 PK 축인 esntlId 목록의 리프레시 토큰을 한 번의 bulk delete로 정리한다.

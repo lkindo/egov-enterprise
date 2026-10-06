@@ -6,8 +6,9 @@
  * 그 목적지는 **결과 통계만** 렌더해 입력 요소가 하나도 없었다. 즉 설문에 응답할 화면이
  * 제품 어디에도 없었고, 사용자는 '참여'를 누른 뒤 남의 응답 통계를 보게 됐다.
  *
- * 필요한 것은 전부 이미 있었다 — 문항 조회와 제출이 둘 다 `@Authenticated` 로 열려 있고
- * (DEC-OPS-010), 서버가 문항·항목 소속 검증과 중복 제출 차단까지 한다. **프런트 서비스의
+ * 필요한 것은 전부 이미 있었다 — 문항 조회와 제출이 둘 다 일반 사용자에게 열려 있고
+ * (DEC-OPS-010 — 지금은 기능 권한 SURVEY_READ·SURVEY_SUBMIT, 기본 배정상 ROLE_USER 포함),
+ * 서버가 문항·항목 소속 검증과 중복 제출 차단까지 한다. **프런트 서비스의
  * 제출 경로만 존재하지 않는 `/respond` 를 가리키고 있었고, 호출부가 0건이라 아무도 404 를
  * 보지 못했다.** 그래서 이 계약은 화면 동작과 **경로**를 함께 고정한다 — 화면만 만들고 경로가
  * 틀리면 사용자는 제출할 때마다 실패한다.
@@ -33,8 +34,8 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: mocks.push }), notFound: mocks.notFound }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
-vi.mock('@/services/foundation/survey/SurveyAdminService', () => ({
-  surveyAdminService: {
+vi.mock('@/services/foundation/survey/SurveyParticipationService', () => ({
+  surveyParticipationService: {
     getQuestions: mocks.getQuestions,
     getSurvey: mocks.getSurvey,
     submitAnswers: mocks.submitAnswers,

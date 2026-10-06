@@ -1,4 +1,5 @@
 import { ApiService } from '@/services/core/ApiService';
+import { copyPageResponse } from '@/services/core/page-response';
 import type { PageResponse } from '@/types/foundation/system';
 import type { AxiosRequestConfig } from 'axios';
 import type { z } from 'zod';
@@ -25,31 +26,6 @@ export type InternetSvcGuidanceInput = z.input<typeof InternetSvcGuidanceDtoRequ
 export type InternetSvcGuidanceSearchParams = NonNullable<operations['getIsgList']['parameters']['query']>;
 
 /**
- * 페이지 응답 필수 계약 검증. 형제 도메인(OperationAdminService)과 같은 규칙으로,
- * 서버가 계약을 어기면 빈 목록으로 흘려보내지 않고 즉시 드러낸다.
- */
-function requireGuidancePage(
-  response: { list?: InternetSvcGuidance[]; total?: number; page?: number; size?: number; totalPage?: number },
-): PageResponse<InternetSvcGuidance> {
-  if (
-    !Array.isArray(response.list)
-    || typeof response.total !== 'number'
-    || typeof response.page !== 'number'
-    || typeof response.size !== 'number'
-    || typeof response.totalPage !== 'number'
-  ) {
-    throw new Error('인터넷 서비스 안내 페이지 응답이 필수 계약과 일치하지 않습니다.');
-  }
-  return {
-    list: response.list,
-    total: response.total,
-    page: response.page,
-    size: response.size,
-    totalPage: response.totalPage,
-  };
-}
-
-/**
  * 인터넷 서비스 안내 관리자 서비스.
  *
  * <p>[2026-09-07] 백엔드 5본은 2026-08 이전부터 완비돼 있었지만 이 저장소 전체에 호출부가 0 이었다
@@ -62,7 +38,7 @@ class InternetSvcGuidanceAdminService extends ApiService {
     config?: AxiosRequestConfig,
   ): Promise<PageResponse<InternetSvcGuidance>> {
     const response = await this.executeGenerated(getIsgListOperation, { query: params, config });
-    return requireGuidancePage(response);
+    return copyPageResponse<InternetSvcGuidance>(response, '인터넷 서비스 안내');
   }
 
   async getGuidance(itntSrvcSn: number, config?: AxiosRequestConfig): Promise<InternetSvcGuidance> {

@@ -52,11 +52,6 @@ public class FileMaster extends BaseEntity {
         return new FileMaster(atchFileSn, useYn, fileDetails);
     }
 
-    public void addFileDetail(FileDetail detail) {
-        this.fileDetails.add(detail);
-        detail.setFileMaster(this);
-    }
-
     public void delete() {
         this.useYn = "N";
     }

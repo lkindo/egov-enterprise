@@ -31,8 +31,4 @@ public interface NoteTrnsmitDomainRepository extends JpaRepository<NoteTrnsmit, 
     Page<NoteTrnsmit> searchNoteTrnsmits(@Param("searchWrd") String searchWrd,
             @Param("dsptchUserId") String dsptchUserId, Pageable pageable);
 
-    @Query(value = "SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.sndrId = :sndrId AND t.delYn = 'N'",
-           countQuery = "SELECT count(t) FROM NoteTrnsmit t WHERE t.sndrId = :sndrId AND t.delYn = 'N'")
-    Page<NoteTrnsmit> findBySndrId(@Param("sndrId") String sndrId, Pageable pageable);
-
 }

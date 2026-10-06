@@ -34,9 +34,9 @@ import org.springframework.web.bind.annotation.RestController;
  * ({@code LogRetentionScheduler})이 담당한다. 감사 로그를 관리자가 임의로 수정·삭제할 수 있으면
  * 증적으로서의 가치가 사라지므로 쓰기 엔드포인트를 두지 않는다.
  *
- * <p>인가는 {@code @AdminOrSystem} 을 <b>메서드에 직접</b> 붙인다. 이 경로는
- * {@code /api/v1/admin/**} 이라 {@code secure-paths} URL 인가로도 덮이지만, 그것은 목록 한 줄이
- * 빠지면 함께 사라지는 단일 실패점이다(백엔드 헌법 제8조 이중 검증).
+ * <p>인가는 조회 {@code WEB_LOG_READ}, 반출 {@code WEB_LOG_EXPORT} 권한이다(기본 그룹 ROLE_ADMIN·ROLE_SYSTEM).
+ * 각 핸들러의 operation binding 을 HTTP 계층({@code OperationAuthorizationManager})과 메서드 계층
+ * ({@code @PreAuthorize("@permissionPolicy.allowed(...)")})이 이중 집행한다(백엔드 헌법 제8조 이중 검증).
  */
 @Slf4j
 @Tag(name = "WebLog", description = "웹 로그 조회 API (Admin)")
@@ -66,8 +66,8 @@ public class WebLogApiController {
      * <p>[상한 판정] 이 서비스는 {@code Page} 를 돌려주므로 1건만 조회해 총 건수를 먼저 읽고,
      * 상한을 넘지 않을 때만 전량을 다시 조회한다 — 상한 초과 요청이 힙에 전량을 올리지 않게 한다.
      *
-     * <p>[인가 — H3] 목록 API 와 동일한 ADMIN/SYSTEM 축이다. URL 게이트로도 덮이지만 그 목록 한 줄이
-     * 빠지면 함께 사라지는 단일 실패점이므로 {@code @AdminOrSystem} 을 메서드에 직접 붙인다.
+     * <p>[인가 — H3] 반출 전용 권한 {@code WEB_LOG_EXPORT} 다(목록은 {@code WEB_LOG_READ}, 기본 그룹은 둘 다
+     * ROLE_ADMIN·ROLE_SYSTEM). HTTP·메서드 계층이 같은 operation binding 을 이중 집행한다.
      *
      * <p>[헌법 제6조 3항] binary/stream 예외의 세 조건(attachment · 명시 produces · 허용 census)을 따른다.
      */

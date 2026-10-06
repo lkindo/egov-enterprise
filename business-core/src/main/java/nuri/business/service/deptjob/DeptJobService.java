@@ -336,13 +336,14 @@ public class DeptJobService extends BaseAbstractService {
     /**
      * 부서 업무 쓰기 인가 — <b>담당자 본인 또는 관리자</b>(백엔드 헌법 제8조: 서비스 레이어 재검증).
      *
-     * <p>컨트롤러의 {@code @PreAuthorize("isAuthenticated()")} 는 "로그인했는가"만 본다.
-     * 그것만으로는 로그인한 아무나 URL 의 id 를 바꿔 남의 업무를 고칠 수 있으므로(IDOR),
+     * <p>컨트롤러 operation binding({@code DEPT_JOB_UPDATE}·{@code DEPT_JOB_DELETE})은 "그 기능을 쓸 수 있는가"만
+     * 본다(기본 그룹에 ROLE_USER 포함). 그것만으로는 권한을 가진 아무나 URL 의 id 를 바꿔 남의 업무를 고칠 수
+     * 있으므로(IDOR),
      * 실제 소유 판정은 반드시 이 계층에서 한다.</p>
      *
      * <p><b>[담당자 축 = esntlId]</b> {@code pic_id} 에는 esntlId 가 저장되므로
      * {@code getCurrentEsntlId()} 와 비교한다. 감사 컬럼용
-     * {@link nuri.business.security.util.SecurityUtil#assertOwnerOrAdmin(String)}(loginId 기준)을
+     * {@link nuri.business.security.util.SecurityUtil#assertOwnerOrPermission(String, String)}(loginId 기준)을
      * 여기에 쓰면 축이 어긋나 담당자 본인이 상시 403 을 맞는다.</p>
      *
      * <p><b>[담당자 공석 폴백]</b> {@code pic_id} 는 nullable 이다. 담당자가 비어 있는 행에

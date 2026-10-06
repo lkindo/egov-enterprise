@@ -9,7 +9,6 @@ vi.mock('@/lib/api/client', () => ({ default: client }));
 
 import {
   approvalUserService,
-  isSanctionPending,
   SANCTION_STATUS,
 } from '../ApprovalUserService';
 
@@ -62,13 +61,8 @@ describe('ApprovalUserService generated contract', () => {
     );
   });
 
-  it('상태 코드 상수와 대기 판정은 서버 SanctionStatus와 1:1이다', () => {
+  it('상태 코드 상수는 서버 SanctionStatus와 1:1이다', () => {
     expect(SANCTION_STATUS).toEqual({ REQUESTED: 'A', APPROVED: 'C', REJECTED: 'R', WITHDRAWN: 'W' });
-    expect(isSanctionPending('A')).toBe(true);
-    expect(isSanctionPending(undefined)).toBe(true);
-    expect(isSanctionPending('R')).toBe(false);
-    expect(isSanctionPending('C')).toBe(false);
-    expect(isSanctionPending('W')).toBe(false);
   });
 
   it('현재 버전과 승인 의견을 generated confirm 본문으로 보낸다', async () => {

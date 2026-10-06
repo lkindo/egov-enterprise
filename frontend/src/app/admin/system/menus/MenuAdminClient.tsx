@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { failureMessage } from '@/lib/safe-error-log';
+import { isConflictError } from '@/lib/query/list-query-defaults';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { clearScreenHandoff, useScreenHandoff } from '@/lib/navigation/target-handoff';
@@ -94,11 +95,6 @@ interface Baseline {
 
 const toBaseline = (structure: MenuStructure): Baseline => ({ version: structure.version, items: structureItems(structure.menus) });
 const firstArea = (items: readonly FlattenedItem[]): number | null => items.find((item) => item.depth === 0)?.menuNo ?? null;
-
-function isConflictError(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'response' in error
-    && (error as { response?: { status?: number } }).response?.status === 409;
-}
 
 /** 형제 안 자리 문장 — '나의 업무 아래 5개 중 2번째', '최상위 4개 중 1번째'. */
 function placementText(items: readonly FlattenedItem[], menuNo: number): string {
@@ -757,7 +753,8 @@ export default function MenuAdminClient({
 
   const handleRevertAll = async () => {
     if (structureSavePendingRef.current || locked || !hasChanges || !baseline) return;
-    const total = summary.created.length + summary.deleted.length + summary.structure.length + summary.properties.length + summary.groups.length;
+    // 도구 막대의 '변경 n건' 과 같은 원천에서 센다(변경 목록 항목은 요약의 다섯 배열을 한 건씩 옮긴 것이다).
+    const total = changeEntries.length;
     const confirmed = await confirm({
       title: '변경 모두 되돌리기',
       message: `저장하지 않은 변경 ${total.toLocaleString()}건을 모두 되돌립니다. 바로 뒤라면 도구 막대의 '되돌리기'(Ctrl+Z)로 다시 살릴 수 있습니다.`,

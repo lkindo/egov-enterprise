@@ -2,7 +2,6 @@ package nuri.api.controller.foundation.controller.system.log;
 
 import nuri.api.support.XlsxExport;
 import jakarta.validation.Valid;
-import nuri.foundation.security.annotation.PrivacyAdminOnly;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,21 +30,25 @@ import org.springframework.web.bind.annotation.RestController;
  * {@code systemLogAdminService.getPrivacyLogs()} 를 호출하고 있었으나 대응 엔드포인트가 없었다.
  * <b>볼 수 없는 증적은 증적이 아니다</b>.
  *
- * <p><b>⚠ 인가를 다른 로그보다 좁혔다 — {@link PrivacyAdminOnly}
- * ({@code hasRole('ADMIN') and !hasRole('SYSTEM')}).</b>
- * 웹·시스템·로그인 로그가 쓰는 {@code @AdminOrSystem} 은 SYSTEM 롤도 통과시키지만 여기는 제외한다.
+ * <p><b>⚠ 인가를 다른 로그보다 좁혔다 — 목록은 {@code PRIVACY_READ}, 내보내기는
+ * {@code PRIVACY_EXPORT} 권한이 필요하고(기본 그룹 {@code ROLE_ADMIN}), 시스템 운영 그룹
+ * {@code ROLE_SYSTEM} 은 강제 제외한다(operation binding 의 {@code excludedGroups}).</b>
+ * 웹·시스템·로그인 로그의 조회 권한은 {@code ROLE_SYSTEM} 에도 기본 배정되지만 여기는 제외한다.
  * 이 로그의 내용 자체가 개인정보이기 때문이다 — {@code inqInfo}(조회 대상 정보) ·
  * {@code dmndUserId}(조회자) · {@code dmndUserIpAddr}(조회자 IP)가 모두 식별 가능한 값이라,
  * "개인정보 접근 기록을 누가 볼 수 있는가" 가 그 자체로 개인정보 이슈다.
  * (2026-08-05 사용자 결정: "개인정보 로그는 관리자 권한만 볼 수 있게".)
  *
- * <p><b>[2026-08-27 정정] 종전에는 이 서술이 사실이 아니었다.</b> 목록은 {@code @AdminOnly},
- * export 는 {@code @AdminOrSystem} 이었는데, 이 저장소는 DB 역할 계층
- * {@code ROLE_SYSTEM > ROLE_ADMIN} 을 <b>메서드 인가에도</b> 주입하므로
- * ({@code RoleHierarchyConfig#methodSecurityExpressionHandler}) {@code hasRole('ADMIN')} 이
- * SYSTEM 보유자도 통과시켰다. 즉 두 애노테이션은 SYSTEM 에 대해 결과가 같았고,
- * <b>개인정보 증적이 위 결정과 달리 SYSTEM 에게 열려 있었다.</b> 계층으로 넓어지지 않는
- * {@link PrivacyAdminOnly} 로 두 엔드포인트를 함께 옮겨 결정을 실제로 집행한다.
+ * <p><b>제외는 그룹 합집합으로 풀리지 않는다.</b> {@code ROLE_SYSTEM} 구성원이 다른 그룹에서
+ * {@code PRIVACY_READ} 를 받아도 {@code PermissionPolicy#allows} 가 권한 판정보다 먼저 거부한다.
+ * 판정 원본은 {@code config/governance/authorization-policies.json} 의 operation binding 이며,
+ * HTTP 계층({@code OperationAuthorizationManager})과 메서드 계층
+ * ({@code @PreAuthorize("@permissionPolicy.allowed(...)")})이 같은 binding 을 이중 집행한다.
+ * 제외 목록이 바뀌면 {@code SecurityAuthAnnotationLinterTest} 가 "개인정보 SYSTEM 배제 drift" 로 막는다.
+ *
+ * <p>[2026-08-27 정정 이력] 역할 계층({@code ROLE_SYSTEM > ROLE_ADMIN})을 메서드 인가에 주입하던
+ * 시절에는 {@code hasRole('ADMIN')} 이 SYSTEM 보유자도 통과시켜 위 결정이 집행되지 않았다.
+ * ADR-0016 이후 역할 계층은 없고, 제외는 위 {@code excludedGroups} 가 집행한다.
  *
  * <p><b>조회만 노출한다.</b> 적재는 개인정보 접근 지점이, 삭제는 보존기간 정책
  * ({@code LogRetentionScheduler})이 담당한다. 증적을 열람자가 수정·삭제할 수 있으면 증적이 아니다.
@@ -60,7 +63,8 @@ public class PrivacyLogApiController {
     private final PrivacyLogManageService privacyLogManageService;
 
     @Operation(summary = "개인정보 조회 로그 목록",
-            description = "조회 대상 정보 부분일치 검색과 페이징을 지원한다. ADMIN 롤 전용이다.")
+            description = "조회 대상 정보 부분일치 검색과 페이징을 지원한다. "
+                    + "개인정보 로그 조회 권한(PRIVACY_READ)이 필요하며 시스템 운영 그룹(ROLE_SYSTEM)은 제외된다.")
     @GetMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.PrivacyLogApiController#getPrivacyLogList')")
     public ResponseEntity<ApiResponse<PageResponse<PrivacyLogDto>>> getPrivacyLogList(
@@ -79,9 +83,9 @@ public class PrivacyLogApiController {
      * <p>[상한 판정] 이 서비스는 {@code Page} 를 돌려주므로 1건만 조회해 총 건수를 먼저 읽고,
      * 상한을 넘지 않을 때만 전량을 다시 조회한다 — 상한 초과 요청이 힙에 전량을 올리지 않게 한다.
      *
-     * <p>[인가 — H3] 목록 API 와 동일한 축이다 — 둘 다 {@link PrivacyAdminOnly}(ADMIN 전용, SYSTEM 배제).
-     * 반출은 조건 일치 <b>전량</b>을 파일로 내보내므로 목록보다 넓게 열려서는 안 된다.
-     * URL 게이트({@code ADMIN_ALL})는 SYSTEM 도 통과시키므로 여기서는 메서드 인가가 유일한 방어선이다.
+     * <p>[인가 — H3] 목록 API 와 같은 축이다 — 권한은 {@code PRIVACY_EXPORT}(목록은 {@code PRIVACY_READ})이고
+     * 둘 다 {@code ROLE_SYSTEM} 을 강제 제외한다({@code excludedGroups}). 반출은 조건 일치 <b>전량</b>을
+     * 파일로 내보내므로 목록보다 넓게 열려서는 안 된다. HTTP·메서드 계층이 같은 binding 을 이중 집행한다.
      *
      * <p>[헌법 제6조 3항] binary/stream 예외의 세 조건(attachment · 명시 produces · 허용 census)을 따른다.
      */

@@ -18,7 +18,7 @@ import {
 } from '@/services/foundation/operation/OperationAdminService';
 import { createExternalHrOperation } from '@/types/generated-operations';
 import { smsAdminService } from '@/services/foundation/operation/SmsAdminService';
-import { surveyAdminService } from '@/services/foundation/survey/SurveyAdminService';
+import { surveyParticipationService } from '@/services/foundation/survey/SurveyParticipationService';
 import { manualAdminService } from '@/services/foundation/user/ManualAdminService';
 import { policyAdminService } from '../PolicyAdminService';
 const success = <T,>(data: T) => ({
@@ -39,7 +39,7 @@ describe('foundation ordinary generated boundary wave4', () => {
     const response = { ...survey, srvyPrps: empty, srvyWrtGdCn: empty, srvyTrgt: empty,
       srvyBgngYmd: empty, srvyEndYmd: empty, frstRgtrId: empty, crtDt: empty };
     client.getRaw.mockResolvedValueOnce(success({ list: [response], total: 1, page: 0, size: 10, totalPage: 1 }));
-    const page = await surveyAdminService.getSurveys({ page: 0, size: 10 });
+    const page = await surveyParticipationService.getSurveys({ page: 0, size: 10 });
     expect(page).toMatchObject({
       list: [{ ...survey, srvyPrps: '', srvyWrtGdCn: '', srvyTrgt: '', srvyBgngYmd: '', srvyEndYmd: '', crtDt: '' }],
       total: 1,
@@ -53,7 +53,7 @@ describe('foundation ordinary generated boundary wave4', () => {
       { srvySn: 7, srvyTtl: 'bad text', srvyTmpltSn: 1, srvyPrps: 123 },
     ]) {
       client.getRaw.mockResolvedValueOnce(success({ list: [survey], total: 1, page: 0, size: 10, totalPage: 1 }));
-      await expect(surveyAdminService.getSurveys({ page: 0, size: 10 })).rejects.toThrow();
+      await expect(surveyParticipationService.getSurveys({ page: 0, size: 10 })).rejects.toThrow();
     }
   });
 
@@ -181,7 +181,7 @@ describe('foundation ordinary generated boundary wave4', () => {
       answers: [{ srvyQstnSn: 1, srvyArtclSn: 2, rspdntAnsCn: 'answer' }],
     };
 
-    await expect(surveyAdminService.submitAnswers(7, body)).resolves.toBe(55);
+    await expect(surveyParticipationService.submitAnswers(7, body)).resolves.toBe(55);
     expect(client.requestRaw).toHaveBeenCalledWith({
       url: 'surveys/7/responses',
       method: 'post',
@@ -223,33 +223,22 @@ describe('foundation ordinary generated boundary wave4', () => {
         crtDt: '2026-08-01T00:00:00Z',
       }],
     };
-    const stats = [{
-      srvyQstnSn: 10,
-      qstnCn: 'Satisfied?',
-      qstnTypeCd: '1',
-      srvyArtclSn: 20,
-      artclCn: 'Yes',
-      count: 3,
-      percentage: 100,
-    }];
+    // 결과 통계(surveys/{srvySn}/stats)는 lib/api/survey 의 getSurveyStats 가 소유하고 그 계약 테스트가 본다.
     const page = { list: [survey], total: 1, page: 0, size: 10, totalPage: 1 };
     client.getRaw
       .mockResolvedValueOnce(success(page))
       .mockResolvedValueOnce(success(survey))
-      .mockResolvedValueOnce(success([question]))
-      .mockResolvedValueOnce(success(stats));
+      .mockResolvedValueOnce(success([question]));
 
-    await expect(surveyAdminService.getSurveys({ page: 0, size: 10, keyword: 'service' }))
+    await expect(surveyParticipationService.getSurveys({ page: 0, size: 10, keyword: 'service' }))
       .resolves.toStrictEqual(page);
-    await expect(surveyAdminService.getSurvey(7)).resolves.toStrictEqual(survey);
-    await expect(surveyAdminService.getQuestions(7)).resolves.toStrictEqual([question]);
-    await expect(surveyAdminService.getStats(7)).resolves.toStrictEqual(stats);
+    await expect(surveyParticipationService.getSurvey(7)).resolves.toStrictEqual(survey);
+    await expect(surveyParticipationService.getQuestions(7)).resolves.toStrictEqual([question]);
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'surveys', {
       params: { page: 0, size: 10, keyword: 'service' },
     });
     expect(client.getRaw).toHaveBeenNthCalledWith(2, 'surveys/7', undefined);
     expect(client.getRaw).toHaveBeenNthCalledWith(3, 'surveys/7/questions', undefined);
-    expect(client.getRaw).toHaveBeenNthCalledWith(4, 'surveys/7/stats', undefined);
   });
 });

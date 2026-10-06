@@ -24,6 +24,9 @@ import { useTheme } from 'next-themes';
  *              앱의 모든 경계선과 동일한 톤(one-step-off-surface, hairline)을 유지해
  *              데이터 마크를 압도하지 않게 한다. 3:1 로 올리면 오히려 그리드가
  *              데이터보다 강해지는 안티패턴이 된다.
+ *  - `tooltip*` = 팝오버 표면 쌍(`--popover` / `--popover-foreground`)과 `--border`.
+ *              앱의 팝오버·메뉴와 같은 전경/배경 쌍이라 양 프로필의 대비 검증을 그대로 따른다.
+ *  - `muted` = `--muted`. 게이지의 빈 구간처럼 값을 전하지 않는 배경 트랙이다.
  */
 export interface ChartColors {
     /** 그리드 hairline — 장식적 보조선(`--border`) */
@@ -38,6 +41,14 @@ export interface ChartColors {
     accentSoft: string;
     /** 차트 표면색(`--card`) — 마커 중심/마크 간 2px 간극에 사용 */
     surface: string;
+    /** 값을 전하지 않는 배경 트랙(`--muted`) — 게이지의 빈 구간 */
+    muted: string;
+    /** 툴팁 배경(`--popover`) */
+    tooltipBg: string;
+    /** 툴팁 테두리(`--border`) */
+    tooltipBorder: string;
+    /** 툴팁 글자(`--popover-foreground`) */
+    tooltipText: string;
 }
 
 /** 축선/기준선이 라이트·다크 양쪽에서 3:1 을 넘도록 실측으로 고정한 알파값. */
@@ -60,6 +71,10 @@ const FALLBACK_COLORS: ChartColors = {
     accent: FALLBACK_COLOR,
     accentSoft: FALLBACK_COLOR,
     surface: FALLBACK_COLOR,
+    muted: FALLBACK_COLOR,
+    tooltipBg: FALLBACK_COLOR,
+    tooltipBorder: FALLBACK_COLOR,
+    tooltipText: FALLBACK_COLOR,
 };
 
 /**
@@ -85,6 +100,10 @@ function readChartColors(): ChartColors {
         accent: resolveToken(styles, '--primary'),
         accentSoft: resolveToken(styles, '--primary', ACCENT_SOFT_ALPHA),
         surface: resolveToken(styles, '--card'),
+        muted: resolveToken(styles, '--muted'),
+        tooltipBg: resolveToken(styles, '--popover'),
+        tooltipBorder: resolveToken(styles, '--border'),
+        tooltipText: resolveToken(styles, '--popover-foreground'),
     };
 }
 
@@ -108,5 +127,3 @@ export function useChartColors(): ChartColors {
 
     return colors;
 }
-
-export default useChartColors;

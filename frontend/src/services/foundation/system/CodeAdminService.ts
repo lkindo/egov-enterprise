@@ -1,4 +1,5 @@
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
+import { copyPageResponse } from '@/services/core/page-response';
 import { PageResponse, SearchParams, CmmnClCode, CmmnCode, CmmnDetailCode } from '@/types/foundation/system';
 import type { AxiosRequestConfig } from 'axios';
 import type { components, operations } from '@/types/generated-api';
@@ -105,27 +106,6 @@ function toCodeSearchQuery(params?: SearchParams): CodeSearchQuery {
         generatedQuery.searchKeyword = searchWrd;
     }
     return generatedQuery;
-}
-
-function requireCodePage<T>(
-    response: { list?: T[]; total?: number; page?: number; size?: number; totalPage?: number },
-): PageResponse<T> {
-    if (
-        !Array.isArray(response.list)
-        || typeof response.total !== 'number'
-        || typeof response.page !== 'number'
-        || typeof response.size !== 'number'
-        || typeof response.totalPage !== 'number'
-    ) {
-        throw new Error('코드 페이지 응답이 필수 계약과 일치하지 않습니다.');
-    }
-    return {
-        list: response.list,
-        total: response.total,
-        page: response.page,
-        size: response.size,
-        totalPage: response.totalPage,
-    };
 }
 
 function requireClCode(item: components['schemas']['CmmnClCodeDto']): CmmnClCode {
@@ -262,14 +242,14 @@ function toInstitutionReception(
 /**
  * 코드 관리 서비스(Admin)
  */
-class CodeAdminService extends AdminService {
+class CodeAdminService extends ApiService {
     // --- 분류코드 (Classification Code) ---
     async getClCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<CmmnClCode>> {
         const response = await this.executeGenerated(getClCodeListOperation, {
             query: toCodeSearchQuery(params),
             config,
         });
-        const page = requireCodePage(response);
+        const page = copyPageResponse(response, '코드');
         return { ...page, list: page.list.map(requireClCode) };
     }
 
@@ -299,7 +279,7 @@ class CodeAdminService extends AdminService {
             query: toCodeSearchQuery(params),
             config,
         });
-        const page = requireCodePage(response);
+        const page = copyPageResponse(response, '코드');
         return { ...page, list: page.list.map(requireCmmnCode) };
     }
 
@@ -314,7 +294,7 @@ class CodeAdminService extends AdminService {
             query: { ...scope, page, size },
             config,
         });
-        return requireCodePage(response);
+        return copyPageResponse(response, '코드');
     }
 
     async getCmmnCode(cdId: string, config?: AxiosRequestConfig): Promise<CmmnCode> {
@@ -355,7 +335,7 @@ class CodeAdminService extends AdminService {
             query: toCodeSearchQuery(params),
             config,
         });
-        const page = requireCodePage(response);
+        const page = copyPageResponse(response, '코드');
         return { ...page, list: page.list.map(requireDetailCode) };
     }
 
@@ -395,7 +375,7 @@ class CodeAdminService extends AdminService {
             query: toCodeSearchQuery(params),
             config,
         });
-        const page = requireCodePage(response);
+        const page = copyPageResponse(response, '코드');
         return { ...page, list: page.list.map(requireAdministCode) };
     }
 
@@ -435,7 +415,7 @@ class CodeAdminService extends AdminService {
             query: toCodeSearchQuery(params),
             config,
         });
-        const page = requireCodePage(response);
+        const page = copyPageResponse(response, '코드');
         return { ...page, list: page.list.map(toInstitutionCode) };
     }
 
@@ -445,7 +425,7 @@ class CodeAdminService extends AdminService {
             query: toCodeSearchQuery(params),
             config,
         });
-        const page = requireCodePage(response);
+        const page = copyPageResponse(response, '코드');
         return { ...page, list: page.list.map(toInstitutionReception) };
     }
 

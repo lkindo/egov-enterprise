@@ -17,7 +17,7 @@ public class SmsRepositoryImpl implements SmsRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<Sms> searchSmsUnits(String searchCondition, String searchKeyword, Pageable pageable) {
+    public Page<Sms> searchSms(String searchCondition, String searchKeyword, Pageable pageable) {
         List<Sms> content = queryFactory
                 .selectFrom(QSms.sms)
                 .leftJoin(QSmsRecptn.smsRecptn)
@@ -37,11 +37,6 @@ public class SmsRepositoryImpl implements SmsRepositoryCustom {
                 .fetchOne();
 
         return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
-    }
-
-    @Override
-    public Page<Sms> searchSms(String searchCondition, String searchKeyword, Pageable pageable) {
-        return searchSmsUnits(searchCondition, searchKeyword, pageable);
     }
 
     private BooleanExpression searchExpression(String searchCondition, String searchKeyword) {

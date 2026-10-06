@@ -1,6 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { toAdminPageQuery } from '@/services/core/admin-page-query';
+import { copyPageResponse } from '@/services/core/page-response';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import type { components, operations } from '@/types/generated-api';
 import {
@@ -68,26 +69,6 @@ function fromCommunityMember(value: CommunityMemberWire): CommunityMember {
   };
 }
 
-function requireMemberPage(
-  response: components['schemas']['PageResponseCommunityMemberDto'],
-): PageResponse<CommunityMember> {
-  if (
-    !Array.isArray(response.list)
-    || typeof response.total !== 'number'
-    || typeof response.page !== 'number'
-    || typeof response.size !== 'number'
-    || typeof response.totalPage !== 'number'
-  ) {
-    throw new Error('커뮤니티 회원 페이지 응답이 필수 계약과 일치하지 않습니다.');
-  }
-  return {
-    list: response.list.map(fromCommunityMember),
-    total: response.total,
-    page: response.page,
-    size: response.size,
-    totalPage: response.totalPage,
-  };
-}
 type CommunityListQuery = NonNullable<operations['getCommunities']['parameters']['query']>;
 
 function toCommunityListQuery(params?: SearchParams): CommunityListQuery {
@@ -135,38 +116,17 @@ function fromCommunity(value: CommunityWire): Community {
   };
 }
 
-function requireCommunityPage(
-  response: components['schemas']['PageResponseCommunityDto'],
-): PageResponse<Community> {
-  if (
-    !Array.isArray(response.list)
-    || typeof response.total !== 'number'
-    || typeof response.page !== 'number'
-    || typeof response.size !== 'number'
-    || typeof response.totalPage !== 'number'
-  ) {
-    throw new Error('커뮤니티 페이지 응답이 필수 계약과 일치하지 않습니다.');
-  }
-  return {
-    list: response.list.map(fromCommunity),
-    total: response.total,
-    page: response.page,
-    size: response.size,
-    totalPage: response.totalPage,
-  };
-}
-
 /**
  * 커뮤니티 관리 서비스 (Admin)
  */
-class CommunityAdminService extends AdminService {
+class CommunityAdminService extends ApiService {
   /** 커뮤니티 목록 조회 */
   async getCommunityList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Community>> {
     const response = await this.executeGenerated(getCommunitiesOperation, {
       query: toCommunityListQuery(params),
       config,
     });
-    return requireCommunityPage(response);
+    return copyPageResponse(response, '커뮤니티', fromCommunity);
   }
 
   /** 커뮤니티 상세 조회 */
@@ -212,7 +172,7 @@ class CommunityAdminService extends AdminService {
       ...(params.size === undefined ? {} : { size: params.size }),
     };
     const response = await this.executeGenerated(getMembersOperation, { path: { cmntySn }, query, config });
-    return requireMemberPage(response);
+    return copyPageResponse(response, '커뮤니티 회원', fromCommunityMember);
   }
 
   /** 가입 신청 승인 — 신청(REQUESTED) 행만 회원이 된다. */

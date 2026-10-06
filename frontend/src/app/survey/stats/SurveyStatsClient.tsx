@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { SurveyStatsPanel } from '../components/SurveyStatsPanel';
-import { surveyAdminService } from '@/services/foundation/survey/SurveyAdminService';
+import { surveyParticipationService } from '@/services/foundation/survey/SurveyParticipationService';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { PagePagination } from '@/components/common/PagePagination';
 
@@ -24,7 +24,7 @@ function StatsContent() {
   const page = selectionPage.search === search ? selectionPage.page : 1;
   const surveys = useQuery({
     queryKey: ['survey-stats-selection', search, page],
-    queryFn: ({ signal }) => surveyAdminService.getSurveys({ keyword: search, page: page - 1, size: 10 }, { signal }),
+    queryFn: ({ signal }) => surveyParticipationService.getSurveys({ keyword: search, page: page - 1, size: 10 }, { signal }),
     throwOnError: false,
   });
   const hasSelection = Number.isSafeInteger(initialSrvySn) && initialSrvySn > 0;

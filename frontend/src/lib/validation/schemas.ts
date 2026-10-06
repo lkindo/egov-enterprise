@@ -1,43 +1,14 @@
 import { z } from 'zod';
 import {
-  OnlinePollManageRequestSchema,
   SmsDtoSchema,
   SmsRecptnDtoSchema,
-  MenuDtoSchema,
-  BoardMasterDtoSchema,
-  BoardSaveRequestSchema,
   OnlineManualDtoSchema,
-  UserDtoSchema,
-  CmmnCodeDtoSchema,
-  CmmnDetailCodeDtoSchema,
-  PageResponseUserDtoSchema
 } from '@/types/generated-zod';
 
 /**
- * 전역 폼 유효성 검사 스키마 모음
+ * 여러 화면이 공유하는 폼 유효성 검사 스키마. 화면 하나만 쓰는 스키마는 그 화면 옆에 둔다
+ * (예: 투표 폼은 admin/survey/manage/poll-form-validation.ts, 메뉴 속성은 admin/system/menus/menuDraft.ts).
  */
-
-// --- 공통 유효성 검사 규칙 ---
-export const commonRules = {
-  yn: z.enum(['Y', 'N']),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD 형식이 아닙니다.'),
-};
-
-export const pollSchema = OnlinePollManageRequestSchema.extend({
-  pollNm: OnlinePollManageRequestSchema.shape.pollNm.trim().min(1),
-  pollDsuseYn: OnlinePollManageRequestSchema.shape.pollDsuseYn.default('N'),
-  pollBgngYmd: OnlinePollManageRequestSchema.shape.pollBgngYmd,
-  pollEndYmd: OnlinePollManageRequestSchema.shape.pollEndYmd,
-}).refine(data => {
-  if (data.pollBgngYmd && data.pollEndYmd) {
-    // API/DB 계약의 YYYYMMDD 저장 형식은 문자열 정렬과 날짜 정렬이 동일하다.
-    return data.pollEndYmd >= data.pollBgngYmd;
-  }
-  return true;
-}, {
-  message: '종료일은 시작일보다 빠를 수 없습니다.',
-  path: ['pollEndYmd']
-});
 
 // 화면은 수신 번호 하나를 입력받고 API 경계에서 recipients[] 로 승격한다. 서버 응답/검색 필드와
 // recipients 자체를 폼 상태에 섞지 않도록 생성 요청의 두 본문 필드만 선택한다.
@@ -65,50 +36,6 @@ export const smsSchema = SmsDtoSchema.pick({ sndngTelno: true, sndngCn: true }).
     .pipe(SmsDtoSchema.shape.sndngCn),
 });
 
-export const menuSchema = MenuDtoSchema.extend({
-  menuNo: z.coerce.number().pipe(MenuDtoSchema.shape.menuNo.unwrap().min(1)).optional(),
-  menuNm: z.string()
-    .trim()
-    .min(1, '메뉴 명칭을 입력해 주세요.')
-    .max(100, '메뉴 명칭은 최대 100자까지 입력할 수 있습니다.')
-    .pipe(MenuDtoSchema.shape.menuNm),
-  upperMenuId: z.coerce.number().pipe(MenuDtoSchema.shape.upperMenuId.unwrap()).optional().default(0),
-  menuOrdr: z.coerce.number({ error: '정렬 순서는 숫자로 입력해 주세요.' })
-    .finite('정렬 순서는 유한한 숫자로 입력해 주세요.')
-    .int('정렬 순서는 정수로 입력해 주세요.')
-    .min(-2147483648, '정렬 순서는 -2147483648 이상이어야 합니다.')
-    .max(2147483647, '정렬 순서는 2147483647 이하여야 합니다.')
-    .pipe(MenuDtoSchema.shape.menuOrdr),
-  menuExpln: z.string()
-    .trim()
-    .max(4000, '메뉴 설명은 최대 4000자까지 입력할 수 있습니다.')
-    .pipe(MenuDtoSchema.shape.menuExpln.unwrap())
-    .optional(),
-  modernRoute: z.string()
-    .trim()
-    .max(500, '연결 라우트는 최대 500자까지 입력할 수 있습니다.')
-    .pipe(MenuDtoSchema.shape.modernRoute.unwrap())
-    .optional(),
-  useYn: z.intersection(
-    z.enum(['Y', 'N']),
-    MenuDtoSchema.shape.useYn.unwrap(),
-  )
-    .default('Y'),
-});
-
-export const boardMasterSchema = BoardMasterDtoSchema.extend({
-  posblAtchFileNumber: z.coerce.number().min(0).max(10),
-});
-
-// [2026-08-27] noticeAt·secretAt 확장 제거. 이 두 줄이 zod strip 을 통과시켜 계약 밖 키를
-//   payload 에 남겼고, 서버는 fail-on-unknown-properties 라 게시물 등록이 **항상 400** 이었다.
-//   secretAt 은 계약의 scrtYn 으로 이름만 다른 같은 축이고, noticeAt(공지 여부)은 BoardSaveRequest
-//   에 대응 필드 자체가 없어 보낼 방법이 없다 — 화면의 공지 스위치도 함께 제거했다.
-export const boardSchema = BoardSaveRequestSchema.extend({
-  pstSn: z.number().optional(),
-  password: z.string().optional().or(z.string().max(200)),
-});
-
 export const manualSchema = OnlineManualDtoSchema.extend({
   onlnMnlNm: z.string()
     .trim()
@@ -130,18 +57,5 @@ export const manualSchema = OnlineManualDtoSchema.extend({
     .max(4000, '상세 설명은 최대 4000자까지 입력할 수 있습니다.')
     .pipe(OnlineManualDtoSchema.shape.onlnMnlExpln.unwrap())
     .optional(),
-});
-
-export const userManageSchema = UserDtoSchema.extend({
-  pswd: UserDtoSchema.shape.pswd.optional().or(z.literal('')),
-  mblTelno: UserDtoSchema.shape.mblTelno,
-});
-
-export const userListResponseSchema = PageResponseUserDtoSchema;
-
-export const codeSchema = CmmnCodeDtoSchema.extend({});
-
-export const codeDetailSchema = CmmnDetailCodeDtoSchema.extend({
-  ordr: z.coerce.number().optional().default(0),
 });
 

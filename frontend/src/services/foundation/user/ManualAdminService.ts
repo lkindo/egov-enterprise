@@ -1,5 +1,6 @@
 import { ApiService } from '@/services/core/ApiService';
-import type { PageResponse } from '@/types/modernization';
+import { copyPageResponse } from '@/services/core/page-response';
+import type { PageResponse } from '@/types/foundation/system';
 import type { AxiosRequestConfig } from 'axios';
 import type { components, operations } from '@/types/generated-api';
 import {
@@ -43,33 +44,6 @@ function requireManual(item: components['schemas']['OnlineManualDto']): ManualDt
   };
 }
 
-function requireManualPage(
-  response: {
-    list?: components['schemas']['OnlineManualDto'][];
-    total?: number;
-    page?: number;
-    size?: number;
-    totalPage?: number;
-  },
-): PageResponse<ManualDto> {
-  if (
-    !Array.isArray(response.list)
-    || typeof response.total !== 'number'
-    || typeof response.page !== 'number'
-    || typeof response.size !== 'number'
-    || typeof response.totalPage !== 'number'
-  ) {
-    throw new Error('온라인 매뉴얼 페이지 응답이 필수 계약과 일치하지 않습니다.');
-  }
-  return {
-    list: response.list.map(requireManual),
-    total: response.total,
-    page: response.page,
-    size: response.size,
-    totalPage: response.totalPage,
-  };
-}
-
 /** 백엔드 HelpApiController(`/api/v1/help/manuals`)와 연동하는 매뉴얼 관리 서비스. */
 class ManualAdminService extends ApiService {
   async getManualList(
@@ -77,7 +51,7 @@ class ManualAdminService extends ApiService {
     config?: AxiosRequestConfig,
   ): Promise<PageResponse<ManualDto>> {
     const response = await this.executeGenerated(getManualsOperation, { query: params, config });
-    return requireManualPage(response);
+    return copyPageResponse(response, '온라인 매뉴얼', requireManual);
   }
 
   async getManual(onlnMnlSn: number, config?: AxiosRequestConfig): Promise<ManualDto> {

@@ -2,16 +2,18 @@
 
 import { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Trash2,
- Plus,
- Loader2,
- Users,
- RefreshCcw,
- Zap,
- Fingerprint,
- Binary,
- Calendar,
- Settings } from "lucide-react";
+import {
+  Trash2,
+  Plus,
+  Loader2,
+  Users,
+  RefreshCcw,
+  Zap,
+  Fingerprint,
+  Binary,
+  Calendar,
+  Settings
+} from "lucide-react";
 import { groupAdminService } from '@/services/foundation/system/GroupAdminService';
 import { GroupManage } from '@/types/foundation/security';
 import { SearchParams } from '@/types/foundation/system';
@@ -39,418 +41,418 @@ import { canPermission } from '@/lib/auth/permissions';
 const GROUPS_QUERY_KEY = ['admin-groups'] as const;
 
 export const securityGroupFormSchema = GroupManageDtoSchema.extend({
- groupId: GroupManageDtoSchema.shape.groupId.unwrap().trim()
-  .min(1, '그룹 ID를 입력해 주세요.'),
- groupNm: GroupManageDtoSchema.shape.groupNm.unwrap().trim()
-  .min(1, '그룹 명칭을 입력해 주세요.'),
- groupDc: GroupManageDtoSchema.shape.groupDc.unwrap().trim(),
+  groupId: GroupManageDtoSchema.shape.groupId.unwrap().trim()
+    .min(1, '그룹 ID를 입력해 주세요.'),
+  groupNm: GroupManageDtoSchema.shape.groupNm.unwrap().trim()
+    .min(1, '그룹 명칭을 입력해 주세요.'),
+  groupDc: GroupManageDtoSchema.shape.groupDc.unwrap().trim(),
 });
 
 export default function SecurityGroupClient() {
- const queryClient = useQueryClient();
- const { toast } = useToast();
- const confirm = useConfirm();
- // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다. 이 화면은 조회 권한(CLASS_GRP_READ)만으로 들어올 수 있어,
- //   종전에는 등록·수정·삭제·일괄 삭제가 모두 보였고 폼을 다 채운 뒤에야 403 을 만났다.
- //   표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
- const { user } = useAuth();
- const canCreateGroup = canPermission(user, 'CLASS_GRP_CREATE');
- const canUpdateGroup = canPermission(user, 'CLASS_GRP_UPDATE');
- const canDeleteGroup = canPermission(user, 'CLASS_GRP_DELETE');
- const submitPendingRef = useRef(false);
- const deletePendingRef = useRef(false);
- const [page, setPage] = useState(1);
- /**
-  * [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했고,
-  * 그 전에는 한 글자마다 요청이 나갔다.
-  */
- const [searchKeyword, setSearchKeyword] = useState('');
- // PagePagination은 1-based, ApiService의 표준 page 입력은 0-based다.
- // pageNo는 변환 대상이 아니어서 서버의 pageIndex 요청 파라미터로 전달되지 않는다.
- /** 페이지당 건수(A1 필수). URL 에는 싣지 않는다. */
- const [pageSize, setPageSize] = useState(10);
- const params: SearchParams = { page: page - 1, size: pageSize, searchKeyword };
- const [isDialogOpen, setIsDialogOpen] = useState(false);
- const [editingGroup, setEditingGroup] = useState<GroupManage | null>(null);
- const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
- const [formData, setFormData] = useState<GroupManage>({
- groupId: '',
- groupNm: '',
- groupDc: '',
- });
- const validationLabels = { groupId: '그룹 ID', groupNm: '그룹 명칭', groupDc: '그룹 설명' };
- const validation = useManualFormValidation(securityGroupFormSchema, { labels: validationLabels });
-
- // 조회 실패를 '데이터 없음'으로 위장하지 않는다 — error/onRetry 를 테이블까지 내려보낸다.
- const { data, isLoading, error, refetch } = useQuery({
- queryKey: [...GROUPS_QUERY_KEY, page, searchKeyword, pageSize],
- queryFn: () => groupAdminService.getGroupList(params),
- });
-
- const groups: GroupManage[] = data?.list || [];
- const pagination = data ? {
- currentPageNo: data.page,
- recordCountPerPage: data.size,
- totalRecordCount: data.total,
- totalPageCount: data.totalPage
- } : null;
-
- const createMutation = useMutation({
- mutationFn: (data: GroupManage) => groupAdminService.createGroup(data),
- onSuccess: () => {
- queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
- setIsDialogOpen(false);
- toast('신규 보안 그룹 아키텍처가 설정되었습니다.', 'success');
- },
- onError: (error) => {
-  const fieldErrors = extractFieldErrors(error);
-  if (fieldErrors) validation.setFormErrors(fieldErrors);
-  else toast('그룹 생성 중 시스템 예외가 발생했습니다.', 'error');
- },
- onSettled: () => { submitPendingRef.current = false; },
- });
-
- const updateMutation = useMutation({
- mutationFn: (data: GroupManage) => groupAdminService.updateGroup(data.groupId, data),
- onSuccess: () => {
- queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
- setIsDialogOpen(false);
- toast('보안 그룹 명세가 성공적으로 수정되었습니다.', 'success');
- },
- onError: (error) => {
-  const fieldErrors = extractFieldErrors(error);
-  if (fieldErrors) validation.setFormErrors(fieldErrors);
-  else toast('정보 수정 중 시스템 예외가 발생했습니다.', 'error');
- },
- onSettled: () => { submitPendingRef.current = false; },
- });
-
- /*
-   [2026-09-08] 일괄 삭제 배선.
-
-   서버 deleteGroups 는 사용자의 그룹 지정을 먼저 해제한 뒤(clearGroupIdByGroupIdIn) 한
-   트랜잭션에서 지운다 — 단수 삭제 N번 반복과 다르다(중간 실패 시 일부 사용자만 그룹이
-   풀린 채 남지 않는다). API 는 있었는데 화면에 다중 선택이 없어 소비자가 0 이었다.
- */
- const bulkDeletePendingRef = useRef(false);
- const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-
- const handleBulkDelete = async (targets: GroupManage[]) => {
-   if (bulkDeletePendingRef.current || deletePendingRef.current || submitPendingRef.current) return;
-   if (targets.length === 0) return;
-   bulkDeletePendingRef.current = true;
-   setIsBulkDeleting(true);
-   try {
-     const ok = await confirm({
-       title: '보안 그룹 일괄 삭제',
-       message: `선택한 ${targets.length}개 그룹을 삭제합니다. 이 그룹들에 배정된 사용자의 그룹 지정이 해제되며 되돌릴 수 없습니다.`,
-       confirmText: '삭제',
-       variant: 'destructive',
-     });
-     if (!ok) return;
-
-     await groupAdminService.deleteGroups(targets.map((group) => group.groupId));
-     queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
-     toast(`${targets.length}개 그룹을 삭제했습니다.`, 'success');
-   } catch (bulkError: unknown) {
-     toast(extractErrorMessage(bulkError, '일괄 삭제 중 시스템 예외가 발생했습니다.'), 'error');
-   } finally {
-     bulkDeletePendingRef.current = false;
-     setIsBulkDeleting(false);
-   }
- };
-
- const deleteMutation = useMutation({
- mutationFn: (groupId: string) => groupAdminService.deleteGroup(groupId),
- onSuccess: () => {
- queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
- toast('보안 그룹 프로필이 영구적으로 파기되었습니다.', 'success');
- },
- onError: () => toast('삭제 처리 중 시스템 예외가 발생했습니다.', 'error'),
- onSettled: () => {
-  deletePendingRef.current = false;
-  setDeletingGroupId(null);
- },
- });
-
- const isSubmitPending = createMutation.isPending || updateMutation.isPending;
- const isDeletePending = deletingGroupId !== null;
-
- const handleCloseDialog = () => {
- if (submitPendingRef.current || deletePendingRef.current) return;
- setIsDialogOpen(false);
- };
-
- const handleCreate = () => {
- if (submitPendingRef.current || deletePendingRef.current) return;
- setEditingGroup(null);
- setFormData({ groupId: '', groupNm: '', groupDc: '' });
- validation.setFormErrors({}, false);
- setIsDialogOpen(true);
- };
-
- const handleEdit = (group: GroupManage) => {
- if (submitPendingRef.current || deletePendingRef.current) return;
- setEditingGroup(group);
- setFormData(group);
- validation.setFormErrors({}, false);
- setIsDialogOpen(true);
- };
-
- /** 파괴적 액션은 native confirm 대신 useConfirm — 본문에 대상 그룹 명칭을 노출한다. */
- const handleDelete = async (group: GroupManage) => {
- if (deletePendingRef.current || submitPendingRef.current) return;
- deletePendingRef.current = true;
- setDeletingGroupId(group.groupId);
- try {
-  const ok = await confirm({
-  title: '보안 그룹 삭제',
-  message: `'${group.groupNm || group.groupId}'(${group.groupId}) 그룹을 삭제하시겠습니까? 이 그룹에 배정된 사용자의 그룹 지정이 해제됩니다.`,
-  confirmText: '삭제',
-  variant: 'destructive',
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const confirm = useConfirm();
+  // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다. 이 화면은 조회 권한(CLASS_GRP_READ)만으로 들어올 수 있어,
+  //   종전에는 등록·수정·삭제·일괄 삭제가 모두 보였고 폼을 다 채운 뒤에야 403 을 만났다.
+  //   표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
+  const { user } = useAuth();
+  const canCreateGroup = canPermission(user, 'CLASS_GRP_CREATE');
+  const canUpdateGroup = canPermission(user, 'CLASS_GRP_UPDATE');
+  const canDeleteGroup = canPermission(user, 'CLASS_GRP_DELETE');
+  const submitPendingRef = useRef(false);
+  const deletePendingRef = useRef(false);
+  const [page, setPage] = useState(1);
+  /**
+   * [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했고,
+   * 그 전에는 한 글자마다 요청이 나갔다.
+   */
+  const [searchKeyword, setSearchKeyword] = useState('');
+  // PagePagination은 1-based, ApiService의 표준 page 입력은 0-based다.
+  // pageNo는 변환 대상이 아니어서 서버의 pageIndex 요청 파라미터로 전달되지 않는다.
+  /** 페이지당 건수(A1 필수). URL 에는 싣지 않는다. */
+  const [pageSize, setPageSize] = useState(10);
+  const params: SearchParams = { page: page - 1, size: pageSize, searchKeyword };
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<GroupManage | null>(null);
+  const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<GroupManage>({
+    groupId: '',
+    groupNm: '',
+    groupDc: '',
   });
-  if (!ok) {
-  deletePendingRef.current = false;
-  setDeletingGroupId(null);
-  return;
-  }
-  deleteMutation.mutate(group.groupId);
- } catch {
-  deletePendingRef.current = false;
-  setDeletingGroupId(null);
-  toast('삭제 확인을 시작하지 못했습니다.', 'error');
- }
- };
+  const validationLabels = { groupId: '그룹 ID', groupNm: '그룹 명칭', groupDc: '그룹 설명' };
+  const validation = useManualFormValidation(securityGroupFormSchema, { labels: validationLabels });
 
- const handleSubmit = () => {
- if (submitPendingRef.current || deletePendingRef.current) return;
- const validated = validation.validate(formData);
- if (!validated) return;
- submitPendingRef.current = true;
- if (editingGroup) {
- updateMutation.mutate(validated);
- } else {
- createMutation.mutate(validated);
- }
- };
+  // 조회 실패를 '데이터 없음'으로 위장하지 않는다 — error/onRetry 를 테이블까지 내려보낸다.
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: [...GROUPS_QUERY_KEY, page, searchKeyword, pageSize],
+    queryFn: () => groupAdminService.getGroupList(params),
+  });
 
- const columns: Column<GroupManage>[] = [
- {
- header: '도메인 그룹 ID',
- // 셀 밀도: td 가 이미 --cell-px/--cell-py 토큰을 소비하므로 accessor 내부의 추가 py 를 두지 않는다.
- accessor: (item: GroupManage) => (
- <div className="flex items-center gap-4">
- <div className="w-10 h-10 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-xl group-hover:rotate-12 transition-all duration-500">
- <Fingerprint size={18} className="text-primary" />
- </div>
- <div className="flex flex-col">
- <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none mb-1">그룹 ID</span>
- <span className="font-mono text-xs font-bold text-foreground tracking-widest uppercase">{item.groupId}</span>
- </div>
- </div>
- ),
- className: 'w-64'
- },
- {
- header: '그룹 아키텍처 명칭',
- accessor: (item: GroupManage) => (
- <div className="flex flex-col gap-0.5">
- <span className="font-bold text-foreground tracking-tight text-md uppercase leading-none mb-1">{item.groupNm}</span>
- <span className="text-xs font-bold text-muted-foreground truncate block max-w-[300px] leading-none">{item.groupDc || '설명 없음'}</span>
- </div>
- )
- },
- {
-  header: '등록일',
- accessor: (item: GroupManage) => (
- <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground font-mono tracking-tighter">
- <Calendar size={12} className="opacity-40" />
- {item.groupCrtDt || 'N/A'}
- </div>
- ),
- className: 'w-48'
- },
- // 수정·삭제 권한이 하나도 없으면 관리 열을 두지 않는다.
- ...(canUpdateGroup || canDeleteGroup ? [{
-  header: '관리',
- className: 'text-right w-32',
- accessor: (item: GroupManage) => (
- <div className="flex justify-end gap-2 pr-4">
- {canUpdateGroup && (
- <Button variant="ghost" size="icon" disabled={isDeletePending || isSubmitPending} onClick={() => handleEdit(item)} aria-label={`${item.groupNm || item.groupId} 그룹 수정`} className="bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold shadow-sm group">
- <Settings size={16} aria-hidden="true" className="group-hover:rotate-45 transition-transform" />
- </Button>
- )}
- {canDeleteGroup && (
- <Button
-  variant="ghost"
-  size="icon"
-  disabled={isDeletePending || isSubmitPending}
-  aria-busy={deletingGroupId === item.groupId || undefined}
-  onClick={() => { void handleDelete(item); }}
-  aria-label={`${item.groupNm || item.groupId} 그룹 ${deletingGroupId === item.groupId ? '삭제 중' : '삭제'}`}
-  className="text-destructive-emphasis bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground border border-destructive/20 rounded-lg transition-all shadow-sm"
- >
- {deletingGroupId === item.groupId
-  ? <Loader2 size={16} aria-hidden="true" className="animate-spin" />
-  : <Trash2 size={16} aria-hidden="true" />}
- </Button>
- )}
- </div>
- )
- }] : []),
- ];
+  const groups: GroupManage[] = data?.list || [];
+  const pagination = data ? {
+    currentPageNo: data.page,
+    recordCountPerPage: data.size,
+    totalRecordCount: data.total,
+    totalPageCount: data.totalPage
+  } : null;
 
- return (
- <WorkListPage
- title="사용자 분류 그룹"
- description="사용자를 분류하는 그룹을 조회·등록·수정·삭제합니다. 권한 그룹과 달리 기능권한이나 메뉴 접근을 부여하지 않습니다."
- breadcrumbItems={[{ label: '관리 센터' }, { label: '사용자 분류 그룹' }]}
- filterStateKey="security-group"
- totalCount={error ? undefined : pagination?.totalRecordCount}
- actions={
- <>
- <Button
- variant="outline"
- size="sm"
- onClick={() => refetch()}
- aria-label="사용자 분류 그룹 목록 새로고침"
- className="gap-2"
- >
- <RefreshCcw size={16} aria-hidden="true" />
- 새로고침
- </Button>
- {canCreateGroup && (
- <Button size="sm" onClick={handleCreate} disabled={isDeletePending || isSubmitPending} className="gap-2">
- <Plus size={16} aria-hidden="true" /> 분류 그룹 등록
- </Button>
- )}
- </>
- }
- filter={
- <KeywordFilter
- label="그룹ID · 그룹명"
- placeholder="그룹ID 또는 그룹명으로 검색"
- value={searchKeyword}
- onSearch={(next) => { setSearchKeyword(next); setPage(1); }}
- />
- }
- >
- <StandardDataTable
- accessibleLabel="사용자 분류 그룹 목록"
- // 일괄 삭제 권한이 없으면 일괄 작업도 선택 체크박스도 두지 않는다.
- enableSelection={canDeleteGroup}
- bulkActions={canDeleteGroup ? [{
-   label: '선택 그룹 삭제',
-   variant: 'destructive',
-   disabled: isBulkDeleting || isDeletePending || isSubmitPending,
-   ariaBusy: isBulkDeleting,
-   pendingLabel: '삭제 처리 중…',
-   onClick: (items) => { void handleBulkDelete(items); },
- }] : []}
- keyField="groupId"
- columns={columns}
- data={groups}
- loading={isLoading}
- error={error as Error | null}
- onRetry={() => refetch()}
- emptyMessage={emptyResultMessage(searchKeyword, '등록된 사용자 분류 그룹이 없습니다.')}
- pagination={{
- currentPage: page,
- totalPages: pagination?.totalPageCount ?? 1,
- onPageChange: (p) => setPage(p),
- pageSize: pagination?.recordCountPerPage ?? pageSize,
- onPageSizeChange: (size: number) => { setPageSize(size); setPage(1); },
- }}
- />
+  const createMutation = useMutation({
+    mutationFn: (data: GroupManage) => groupAdminService.createGroup(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
+      setIsDialogOpen(false);
+      toast('신규 보안 그룹 아키텍처가 설정되었습니다.', 'success');
+    },
+    onError: (error) => {
+      const fieldErrors = extractFieldErrors(error);
+      if (fieldErrors) validation.setFormErrors(fieldErrors);
+      else toast('그룹 생성 중 시스템 예외가 발생했습니다.', 'error');
+    },
+    onSettled: () => { submitPendingRef.current = false; },
+  });
 
- {/* Group Configuration Modal */}
- <StandardModal
- isOpen={isDialogOpen}
- onClose={handleCloseDialog}
- title={editingGroup ? '분류 그룹 수정' : '분류 그룹 등록'}
- maxWidth="xl"
- >
- <div className="p-4 space-y-12">
- <FormErrorSummary
- errors={validation.errors}
- labels={validationLabels}
- onNavigate={(name) => { validation.focusError(name); }}
- />
- <div className="grid grid-cols-2 gap-10">
- <FormField htmlFor="groupId" label="분류 그룹 ID" required error={validation.errors.groupId} description="다른 분류 그룹과 겹치지 않는 식별자입니다. 등록 뒤에는 바꿀 수 없습니다.">
- <div className="relative group/id">
- <Fingerprint size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
- <Input
- id="groupId"
- {...validation.fieldProps('groupId')}
- value={formData.groupId || ''}
- onChange={(e) => {
-  validation.clearError('groupId');
-  setFormData(prev => ({ ...prev, groupId: e.target.value }));
- }}
- disabled={!!editingGroup}
- required
- maxLength={20}
- className="pl-16 rounded-lg border-2 text-md font-bold tracking-widest uppercase shadow-inner"
- placeholder="그룹 식별자"
- />
- </div>
- </FormField>
- <FormField htmlFor="groupNm" label="분류 그룹 이름" required error={validation.errors.groupNm} description="목록과 사용자 등록 화면의 선택지에 보이는 이름입니다.">
- <div className="relative group/nm">
- <Users size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
- <Input
- id="groupNm"
- {...validation.fieldProps('groupNm')}
- value={formData.groupNm || ''}
- onChange={(e) => {
-  validation.clearError('groupNm');
-  setFormData(prev => ({ ...prev, groupNm: e.target.value }));
- }}
- required
- maxLength={100}
- className="pl-16 rounded-lg border-2 text-md font-bold tracking-tight shadow-inner"
- placeholder="그룹 명칭 입력"
- />
- </div>
- </FormField>
- </div>
+  const updateMutation = useMutation({
+    mutationFn: (data: GroupManage) => groupAdminService.updateGroup(data.groupId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
+      setIsDialogOpen(false);
+      toast('보안 그룹 명세가 성공적으로 수정되었습니다.', 'success');
+    },
+    onError: (error) => {
+      const fieldErrors = extractFieldErrors(error);
+      if (fieldErrors) validation.setFormErrors(fieldErrors);
+      else toast('정보 수정 중 시스템 예외가 발생했습니다.', 'error');
+    },
+    onSettled: () => { submitPendingRef.current = false; },
+  });
 
- <FormField htmlFor="groupDc" label="분류 기준 설명" error={validation.errors.groupDc} description="사용자를 분류하는 목적과 기준을 입력하세요. 접근권한은 별도로 설정합니다.">
- <div className="relative group/dc">
- <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
- <Textarea
- id="groupDc"
- {...validation.fieldProps('groupDc')}
- value={formData.groupDc || ''}
- onChange={(e) => {
-  validation.clearError('groupDc');
-  setFormData(prev => ({ ...prev, groupDc: e.target.value }));
- }}
- maxLength={4000}
- className="min-h-[160px] pl-16 p-8 rounded-lg border-2 bg-muted/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
- placeholder="상세 명세 입력..."
- />
- </div>
- </FormField>
+  /*
+    [2026-09-08] 일괄 삭제 배선.
 
- <div className="flex gap-6 pt-4">
-  <button
-    type="button"
-    onClick={handleCloseDialog}
-    disabled={isSubmitPending || isDeletePending}
-    className="flex-1 h-[var(--control-h)] rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
-  >
-    취소
-  </button>
- <Button onClick={handleSubmit} aria-busy={isSubmitPending || undefined} disabled={isSubmitPending || isDeletePending} className="flex-[2] rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
- {isSubmitPending ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
- <span className="ml-2">{editingGroup ? '그룹 수정' : '신규 그룹 배포'}</span>
- </Button>
- </div>
- </div>
- </StandardModal>
- </WorkListPage>
- );
+    서버 deleteGroups 는 사용자의 그룹 지정을 먼저 해제한 뒤(clearGroupIdByGroupIdIn) 한
+    트랜잭션에서 지운다 — 단수 삭제 N번 반복과 다르다(중간 실패 시 일부 사용자만 그룹이
+    풀린 채 남지 않는다). API 는 있었는데 화면에 다중 선택이 없어 소비자가 0 이었다.
+  */
+  const bulkDeletePendingRef = useRef(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  const handleBulkDelete = async (targets: GroupManage[]) => {
+    if (bulkDeletePendingRef.current || deletePendingRef.current || submitPendingRef.current) return;
+    if (targets.length === 0) return;
+    bulkDeletePendingRef.current = true;
+    setIsBulkDeleting(true);
+    try {
+      const ok = await confirm({
+        title: '보안 그룹 일괄 삭제',
+        message: `선택한 ${targets.length}개 그룹을 삭제합니다. 이 그룹들에 배정된 사용자의 그룹 지정이 해제되며 되돌릴 수 없습니다.`,
+        confirmText: '삭제',
+        variant: 'destructive',
+      });
+      if (!ok) return;
+
+      await groupAdminService.deleteGroups(targets.map((group) => group.groupId));
+      queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
+      toast(`${targets.length}개 그룹을 삭제했습니다.`, 'success');
+    } catch (bulkError: unknown) {
+      toast(extractErrorMessage(bulkError, '일괄 삭제 중 시스템 예외가 발생했습니다.'), 'error');
+    } finally {
+      bulkDeletePendingRef.current = false;
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const deleteMutation = useMutation({
+    mutationFn: (groupId: string) => groupAdminService.deleteGroup(groupId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
+      toast('보안 그룹 프로필이 영구적으로 파기되었습니다.', 'success');
+    },
+    onError: () => toast('삭제 처리 중 시스템 예외가 발생했습니다.', 'error'),
+    onSettled: () => {
+      deletePendingRef.current = false;
+      setDeletingGroupId(null);
+    },
+  });
+
+  const isSubmitPending = createMutation.isPending || updateMutation.isPending;
+  const isDeletePending = deletingGroupId !== null;
+
+  const handleCloseDialog = () => {
+    if (submitPendingRef.current || deletePendingRef.current) return;
+    setIsDialogOpen(false);
+  };
+
+  const handleCreate = () => {
+    if (submitPendingRef.current || deletePendingRef.current) return;
+    setEditingGroup(null);
+    setFormData({ groupId: '', groupNm: '', groupDc: '' });
+    validation.setFormErrors({}, false);
+    setIsDialogOpen(true);
+  };
+
+  const handleEdit = (group: GroupManage) => {
+    if (submitPendingRef.current || deletePendingRef.current) return;
+    setEditingGroup(group);
+    setFormData(group);
+    validation.setFormErrors({}, false);
+    setIsDialogOpen(true);
+  };
+
+  /** 파괴적 액션은 native confirm 대신 useConfirm — 본문에 대상 그룹 명칭을 노출한다. */
+  const handleDelete = async (group: GroupManage) => {
+    if (deletePendingRef.current || submitPendingRef.current) return;
+    deletePendingRef.current = true;
+    setDeletingGroupId(group.groupId);
+    try {
+      const ok = await confirm({
+        title: '보안 그룹 삭제',
+        message: `'${group.groupNm || group.groupId}'(${group.groupId}) 그룹을 삭제하시겠습니까? 이 그룹에 배정된 사용자의 그룹 지정이 해제됩니다.`,
+        confirmText: '삭제',
+        variant: 'destructive',
+      });
+      if (!ok) {
+        deletePendingRef.current = false;
+        setDeletingGroupId(null);
+        return;
+      }
+      deleteMutation.mutate(group.groupId);
+    } catch {
+      deletePendingRef.current = false;
+      setDeletingGroupId(null);
+      toast('삭제 확인을 시작하지 못했습니다.', 'error');
+    }
+  };
+
+  const handleSubmit = () => {
+    if (submitPendingRef.current || deletePendingRef.current) return;
+    const validated = validation.validate(formData);
+    if (!validated) return;
+    submitPendingRef.current = true;
+    if (editingGroup) {
+      updateMutation.mutate(validated);
+    } else {
+      createMutation.mutate(validated);
+    }
+  };
+
+  const columns: Column<GroupManage>[] = [
+    {
+      header: '도메인 그룹 ID',
+      // 셀 밀도: td 가 이미 --cell-px/--cell-py 토큰을 소비하므로 accessor 내부의 추가 py 를 두지 않는다.
+      accessor: (item: GroupManage) => (
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-xl group-hover:rotate-12 transition-all duration-500">
+            <Fingerprint size={18} className="text-primary" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none mb-1">그룹 ID</span>
+            <span className="font-mono text-xs font-bold text-foreground tracking-widest uppercase">{item.groupId}</span>
+          </div>
+        </div>
+      ),
+      className: 'w-64'
+    },
+    {
+      header: '그룹 아키텍처 명칭',
+      accessor: (item: GroupManage) => (
+        <div className="flex flex-col gap-0.5">
+          <span className="font-bold text-foreground tracking-tight text-md uppercase leading-none mb-1">{item.groupNm}</span>
+          <span className="text-xs font-bold text-muted-foreground truncate block max-w-[300px] leading-none">{item.groupDc || '설명 없음'}</span>
+        </div>
+      )
+    },
+    {
+      header: '등록일',
+      accessor: (item: GroupManage) => (
+        <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground font-mono tracking-tighter">
+          <Calendar size={12} className="opacity-40" />
+          {item.groupCrtDt || 'N/A'}
+        </div>
+      ),
+      className: 'w-48'
+    },
+    // 수정·삭제 권한이 하나도 없으면 관리 열을 두지 않는다.
+    ...(canUpdateGroup || canDeleteGroup ? [{
+      header: '관리',
+      className: 'text-right w-32',
+      accessor: (item: GroupManage) => (
+        <div className="flex justify-end gap-2 pr-4">
+          {canUpdateGroup && (
+            <Button variant="ghost" size="icon" disabled={isDeletePending || isSubmitPending} onClick={() => handleEdit(item)} aria-label={`${item.groupNm || item.groupId} 그룹 수정`} className="bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold shadow-sm group">
+              <Settings size={16} aria-hidden="true" className="group-hover:rotate-45 transition-transform" />
+            </Button>
+          )}
+          {canDeleteGroup && (
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={isDeletePending || isSubmitPending}
+              aria-busy={deletingGroupId === item.groupId || undefined}
+              onClick={() => { void handleDelete(item); }}
+              aria-label={`${item.groupNm || item.groupId} 그룹 ${deletingGroupId === item.groupId ? '삭제 중' : '삭제'}`}
+              className="text-destructive-emphasis bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground border border-destructive/20 rounded-lg transition-all shadow-sm"
+            >
+              {deletingGroupId === item.groupId
+                ? <Loader2 size={16} aria-hidden="true" className="animate-spin" />
+                : <Trash2 size={16} aria-hidden="true" />}
+            </Button>
+          )}
+        </div>
+      )
+    }] : []),
+  ];
+
+  return (
+    <WorkListPage
+      title="사용자 분류 그룹"
+      description="사용자를 분류하는 그룹을 조회·등록·수정·삭제합니다. 권한 그룹과 달리 기능권한이나 메뉴 접근을 부여하지 않습니다."
+      breadcrumbItems={[{ label: '관리 센터' }, { label: '사용자 분류 그룹' }]}
+      filterStateKey="security-group"
+      totalCount={error ? undefined : pagination?.totalRecordCount}
+      actions={
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            aria-label="사용자 분류 그룹 목록 새로고침"
+            className="gap-2"
+          >
+            <RefreshCcw size={16} aria-hidden="true" />
+            새로고침
+          </Button>
+          {canCreateGroup && (
+            <Button size="sm" onClick={handleCreate} disabled={isDeletePending || isSubmitPending} className="gap-2">
+              <Plus size={16} aria-hidden="true" /> 분류 그룹 등록
+            </Button>
+          )}
+        </>
+      }
+      filter={
+        <KeywordFilter
+          label="그룹ID · 그룹명"
+          placeholder="그룹ID 또는 그룹명으로 검색"
+          value={searchKeyword}
+          onSearch={(next) => { setSearchKeyword(next); setPage(1); }}
+        />
+      }
+    >
+      <StandardDataTable
+        accessibleLabel="사용자 분류 그룹 목록"
+        // 일괄 삭제 권한이 없으면 일괄 작업도 선택 체크박스도 두지 않는다.
+        enableSelection={canDeleteGroup}
+        bulkActions={canDeleteGroup ? [{
+          label: '선택 그룹 삭제',
+          variant: 'destructive',
+          disabled: isBulkDeleting || isDeletePending || isSubmitPending,
+          ariaBusy: isBulkDeleting,
+          pendingLabel: '삭제 처리 중…',
+          onClick: (items) => { void handleBulkDelete(items); },
+        }] : []}
+        keyField="groupId"
+        columns={columns}
+        data={groups}
+        loading={isLoading}
+        error={error as Error | null}
+        onRetry={() => refetch()}
+        emptyMessage={emptyResultMessage(searchKeyword, '등록된 사용자 분류 그룹이 없습니다.')}
+        pagination={{
+          currentPage: page,
+          totalPages: pagination?.totalPageCount ?? 1,
+          onPageChange: (p) => setPage(p),
+          pageSize: pagination?.recordCountPerPage ?? pageSize,
+          onPageSizeChange: (size: number) => { setPageSize(size); setPage(1); },
+        }}
+      />
+
+      {/* Group Configuration Modal */}
+      <StandardModal
+        isOpen={isDialogOpen}
+        onClose={handleCloseDialog}
+        title={editingGroup ? '분류 그룹 수정' : '분류 그룹 등록'}
+        maxWidth="xl"
+      >
+        <div className="p-4 space-y-12">
+          <FormErrorSummary
+            errors={validation.errors}
+            labels={validationLabels}
+            onNavigate={(name) => { validation.focusError(name); }}
+          />
+          <div className="grid grid-cols-2 gap-10">
+            <FormField htmlFor="groupId" label="분류 그룹 ID" required error={validation.errors.groupId} description="다른 분류 그룹과 겹치지 않는 식별자입니다. 등록 뒤에는 바꿀 수 없습니다.">
+              <div className="relative group/id">
+                <Fingerprint size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
+                <Input
+                  id="groupId"
+                  {...validation.fieldProps('groupId')}
+                  value={formData.groupId || ''}
+                  onChange={(e) => {
+                    validation.clearError('groupId');
+                    setFormData(prev => ({ ...prev, groupId: e.target.value }));
+                  }}
+                  disabled={!!editingGroup}
+                  required
+                  maxLength={20}
+                  className="pl-16 rounded-lg border-2 text-md font-bold tracking-widest uppercase shadow-inner"
+                  placeholder="그룹 식별자"
+                />
+              </div>
+            </FormField>
+            <FormField htmlFor="groupNm" label="분류 그룹 이름" required error={validation.errors.groupNm} description="목록과 사용자 등록 화면의 선택지에 보이는 이름입니다.">
+              <div className="relative group/nm">
+                <Users size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
+                <Input
+                  id="groupNm"
+                  {...validation.fieldProps('groupNm')}
+                  value={formData.groupNm || ''}
+                  onChange={(e) => {
+                    validation.clearError('groupNm');
+                    setFormData(prev => ({ ...prev, groupNm: e.target.value }));
+                  }}
+                  required
+                  maxLength={100}
+                  className="pl-16 rounded-lg border-2 text-md font-bold tracking-tight shadow-inner"
+                  placeholder="그룹 명칭 입력"
+                />
+              </div>
+            </FormField>
+          </div>
+
+          <FormField htmlFor="groupDc" label="분류 기준 설명" error={validation.errors.groupDc} description="사용자를 분류하는 목적과 기준을 입력하세요. 접근권한은 별도로 설정합니다.">
+            <div className="relative group/dc">
+              <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
+              <Textarea
+                id="groupDc"
+                {...validation.fieldProps('groupDc')}
+                value={formData.groupDc || ''}
+                onChange={(e) => {
+                  validation.clearError('groupDc');
+                  setFormData(prev => ({ ...prev, groupDc: e.target.value }));
+                }}
+                maxLength={4000}
+                className="min-h-[160px] pl-16 p-8 rounded-lg border-2 bg-muted/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
+                placeholder="상세 명세 입력..."
+              />
+            </div>
+          </FormField>
+
+          <div className="flex gap-6 pt-4">
+            <button
+              type="button"
+              onClick={handleCloseDialog}
+              disabled={isSubmitPending || isDeletePending}
+              className="flex-1 h-[var(--control-h)] rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
+            >
+              취소
+            </button>
+            <Button onClick={handleSubmit} aria-busy={isSubmitPending || undefined} disabled={isSubmitPending || isDeletePending} className="flex-[2] rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
+              {isSubmitPending ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
+              <span className="ml-2">{editingGroup ? '그룹 수정' : '신규 그룹 배포'}</span>
+            </Button>
+          </div>
+        </div>
+      </StandardModal>
+    </WorkListPage>
+  );
 }

@@ -1,5 +1,5 @@
 import type { AxiosRequestConfig } from 'axios';
-import { UserService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { BoardPost } from '@/types/business/board';
 import type { components } from '@/types/generated-api';
@@ -30,7 +30,7 @@ export interface BoardSearchResultItem {
   crtDt?: string;
 }
 
-class BoardUserService extends UserService {
+class BoardUserService extends ApiService {
   /**
    * 활성 게시판 전체에서 게시글 **제목**을 검색한다(통합 검색 전용).
    *

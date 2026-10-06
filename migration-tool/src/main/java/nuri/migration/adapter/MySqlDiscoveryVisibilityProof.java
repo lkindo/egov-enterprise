@@ -58,7 +58,7 @@ final class MySqlDiscoveryVisibilityProof {
             return DiscoveryVisibilityProof.unproven();
         }
         String schema = request.schemas().iterator().next();
-        String grantSchema = literalGrantSchema(schema);
+        String grantSchema = MySqlFamilyGrantSpelling.literalGrantSchema(schema);
         if (SYSTEM_SCHEMAS.contains(schema.toLowerCase(Locale.ROOT))) {
             return DiscoveryVisibilityProof.unproven();
         }
@@ -84,7 +84,8 @@ final class MySqlDiscoveryVisibilityProof {
                             || !"0".equals(rows.getString("partial_revokes_enabled"))
                             || !grantSchema.equals(rows.getString("grant_schema_name"))
                             || !"SELECT".equals(rows.getString("privilege_type"))
-                            || !matchesAccount(rows.getString("current_account"), rows.getString("grantee"))
+                            || !MySqlFamilyGrantSpelling.matchesAccount(
+                                    rows.getString("current_account"), rows.getString("grantee"))
                             || rows.next()) {
                         return DiscoveryVisibilityProof.unproven();
                     }
@@ -95,32 +96,5 @@ final class MySqlDiscoveryVisibilityProof {
             // Keep the baseline's fixed source-visibility-proof blocker, without raw vendor details.
             return DiscoveryVisibilityProof.unproven();
         }
-    }
-
-    private static String literalGrantSchema(String schema) {
-        StringBuilder pattern = new StringBuilder(schema.length());
-        for (int index = 0; index < schema.length(); index++) {
-            char character = schema.charAt(index);
-            if (character == '\\' || character == '_' || character == '%') {
-                pattern.append('\\');
-            }
-            pattern.append(character);
-        }
-        return pattern.toString();
-    }
-
-    private static boolean matchesAccount(String account, String grantee) {
-        if (account == null || grantee == null) {
-            return false;
-        }
-        int separator = account.indexOf('@');
-        if (separator <= 0 || separator != account.lastIndexOf('@')) {
-            return false;
-        }
-        String user = account.substring(0, separator);
-        String host = account.substring(separator + 1);
-        // Complex quoted identities are not qualified by this narrowly exercised account route.
-        return user.matches("[A-Za-z0-9_]+") && host.matches("[A-Za-z0-9_.:%-]+")
-                && grantee.equals("'" + user + "'@'" + host + "'");
     }
 }

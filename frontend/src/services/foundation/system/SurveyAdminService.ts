@@ -1,5 +1,5 @@
 import { AxiosRequestConfig } from 'axios';
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import {
   Survey as SurveyInfo,
@@ -75,7 +75,7 @@ function toSurveyPageQuery(params?: SearchParams): SurveyPageQuery {
 /**
  * 설문 관리 서비스 (Admin)
  */
-class SurveyAdminService extends AdminService {
+class SurveyAdminService extends ApiService {
   /** 설문 목록 조회 */
   async getSurveyList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SurveyInfo>> {
     const response = await this.executeGenerated(getSurveysOperation, {

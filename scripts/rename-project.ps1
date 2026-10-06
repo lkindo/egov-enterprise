@@ -60,14 +60,32 @@ function Test-ExcludedPath([string]$fullName) {
     return $false
 }
 
-# 2. 패키지 문자열 변환용 도트/슬래시 형태 정의 (검색은 literal escape 후 사용)
-$oldPkgDot = $OldPackage
+# 2. 패키지 문자열 변환 규칙 — 대소문자를 구분하고([regex]::Replace), 앞뒤 문자로 형태를 가른다.
+#    [2026-10-07] 종전에는 대소문자를 무시하는 -replace 로 구명칭을 어디서든 바꿨다. 그래서
+#      · NURI_SMS_PROVIDER 같은 환경변수 이름이 'com.mycompany_SMS_PROVIDER' 가 되어 compose 가 깨졌고
+#      · 'nuri/api' 경로가 'com.mycompany/api' 가 되어 경로 문자열이 실제 패키지 디렉터리와 어긋났으며
+#      · Java 미터 이름(nuri.durable.work)은 바뀌는데 경보 규칙의 Prometheus 이름(nuri_durable_work)은
+#        'com.mycompany_durable_work' 가 되어 둘이 갈라졌다.
+#    지금은 앞이 식별자 문자가 아닌 소문자 구명칭만 바꾸고, 뒤에 오는 문자로 형태를 고른다.
+#      'nuri/'  → 'com/mycompany/'   (경로)
+#      'nuri_'  → 'com_mycompany_'   (Prometheus 지표 이름)
+#      그 밖    → 'com.mycompany'    (패키지·설정 키·로거·YAML 최상위 키 'nuri:')
+#    대문자 NURI_* 환경변수 이름과 nuriFrames 같은 더 긴 식별자는 건드리지 않는다.
 $newPkgDot = $NewPackage
 $oldPkgSlash = $OldPackage.Replace(".", "/")
 $newPkgSlash = $NewPackage.Replace(".", "/")
-$oldPkgDotPattern = [regex]::Escape($oldPkgDot)
-$oldPkgSlashPattern = [regex]::Escape($oldPkgSlash)
+$newPkgSnake = $NewPackage.Replace(".", "_")
+$pkgSlashToken = '(?<![A-Za-z0-9_$])' + [regex]::Escape($oldPkgSlash) + '(?=/)'
+$pkgSnakeToken = '(?<![A-Za-z0-9_$])' + [regex]::Escape($OldPackage) + '(?=_)'
+$pkgDotToken = '(?<![A-Za-z0-9_$])' + [regex]::Escape($OldPackage) + '(?![A-Za-z0-9_$/])'
 $oldProjectNamePattern = [regex]::Escape($OldProjectName)
+
+function Convert-RenamedContent([string]$text) {
+    $text = [regex]::Replace($text, $pkgSlashToken, $newPkgSlash)
+    $text = [regex]::Replace($text, $pkgSnakeToken, $newPkgSnake)
+    $text = [regex]::Replace($text, $pkgDotToken, $newPkgDot)
+    return [regex]::Replace($text, $oldProjectNamePattern, $NewProjectName)
+}
 
 Write-Host "Analyzing files for text replacement..." -ForegroundColor Yellow
 
@@ -77,25 +95,10 @@ $files = Get-ChildItem -Path $RepoRoot -Include $includePatterns -Recurse -File 
 $replacedCount = 0
 
 foreach ($file in $files) {
-    $content = [System.IO.File]::ReadAllText($file.FullName)
-    $modified = $false
+    $original = [System.IO.File]::ReadAllText($file.FullName)
+    $content = Convert-RenamedContent $original
 
-    # 패키지 매핑 치환
-    if ($content -match $oldPkgDotPattern) {
-        $content = $content -replace $oldPkgDotPattern, $newPkgDot
-        $modified = $true
-    }
-    if ($content -match $oldPkgSlashPattern) {
-        $content = $content -replace $oldPkgSlashPattern, $newPkgSlash
-        $modified = $true
-    }
-    # 프로젝트명 매핑 치환
-    if ($content -match $oldProjectNamePattern) {
-        $content = $content -replace $oldProjectNamePattern, $NewProjectName
-        $modified = $true
-    }
-
-    if ($modified) {
+    if ($content -cne $original) {
         $replacedCount++
         if ($DryRun) {
             Write-Host "  [DRYRUN] Would update content in: $($file.FullName)" -ForegroundColor DarkGray

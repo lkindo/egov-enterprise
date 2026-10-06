@@ -344,49 +344,6 @@ class FileServiceTest {
     }
 
     @Test
-    @DisplayName("파일 전체 삭제")
-    void deleteFiles() throws IOException {
-        // given
-        Long atchFileSn = 123L;
-        FileMaster master = new FileMaster(atchFileSn);
-        FileDetail detail = FileDetail.builder()
-                .strgFileNm("stored.jpg")
-                .fileStrgPath("path")
-                .build();
-
-        given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
-        given(fileDetailRepository.findByFileMaster(master)).willReturn(Collections.singletonList(detail));
-        ReflectionTestUtils.setField(detail, "id", java.util.UUID.randomUUID());
-        given(storageService.captureDeletionIdentity("stored.jpg", "path")).willReturn("a".repeat(64));
-
-        // when
-        fileService.deleteFiles(atchFileSn);
-
-        // then
-        verify(storageService, never()).delete(anyString(), anyString());
-        verify(durableWork).enqueue(argThat(work -> work.key().equals(detail.getId())
-                && work.type().equals("FILE_DELETE") && work.payload().contains("stored.jpg")));
-        verify(fileMasterRepository, times(1)).delete(master);
-        verify(accessPolicy).assertDeletable(master);
-    }
-
-    @Test
-    @DisplayName("전체 삭제도 삭제 권한이 없으면 상세 조회와 저장소 변경을 하지 않는다")
-    void deleteFilesDeniedBeforeLoadingDetails() {
-        FileMaster master = new FileMaster(123L);
-        given(fileMasterRepository.findById(123L)).willReturn(Optional.of(master));
-        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(accessPolicy).assertDeletable(master);
-
-        assertThatThrownBy(() -> fileService.deleteFiles(123L))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
-
-        verifyNoInteractions(fileDetailRepository, storageService);
-        verify(fileMasterRepository, never()).delete(any());
-    }
-
-    @Test
     @DisplayName("파일 단건 삭제 — 삭제 판정을 통과한 뒤 행 삭제와 내구 의도를 함께 요청한다")
     void deleteFile() throws IOException {
         // given

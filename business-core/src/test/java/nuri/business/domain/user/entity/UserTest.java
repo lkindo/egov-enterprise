@@ -126,18 +126,11 @@ class UserTest {
     }
 
     @Test
-    @DisplayName("권한 코드 설정/조회 확인")
+    @DisplayName("권한 코드 해석 확인")
     void testAuthorCode() {
-        User user = User.builder().userId("u").userNm("n").pswd("p").esntlId("e").build();
-        
-        user.changeRole(Role.fromAuthorCode("ROLE_ADMIN"));
-        assertEquals(Role.ADMIN, user.getRole());
-        
-        user.changeRole(Role.fromAuthorCode("INVALID_ROLE"));
-        assertEquals(Role.USER, user.getRole());
-
-        user.changeRole(Role.fromAuthorCode(null));
-        assertEquals(Role.USER, user.getRole());
+        assertEquals(Role.ADMIN, Role.fromAuthorCode("ROLE_ADMIN"));
+        assertEquals(Role.USER, Role.fromAuthorCode("INVALID_ROLE"));
+        assertEquals(Role.USER, Role.fromAuthorCode(null));
     }
 
     @Test

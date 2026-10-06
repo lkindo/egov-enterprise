@@ -21,9 +21,6 @@ vi.mock('next/cache', () => ({
 
 vi.mock('@/lib/api/client', () => ({
   default: {
-    post: vi.fn(),
-    put: vi.fn(),
-    delete: vi.fn(),
     getRaw: vi.fn(),
     requestRaw: vi.fn(),
   },
@@ -90,7 +87,6 @@ describe('boardActions', () => {
         }),
         headers: { Authorization: 'Bearer token' },
       });
-      expect(client.post).not.toHaveBeenCalled();
       expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards/select-board-list');
       expect(result.success).toBe(true);
       expect(result.message).toBe('게시글이 성공적으로 등록되었습니다.');
@@ -121,7 +117,6 @@ describe('boardActions', () => {
         }),
         headers: { Authorization: 'Bearer token' },
       });
-      expect(client.put).not.toHaveBeenCalled();
       expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards/select-board-list');
       expect(result.success).toBe(true);
       expect(result.message).toBe('게시글이 성공적으로 수정되었습니다.');
@@ -212,7 +207,6 @@ describe('boardActions', () => {
       expect(request.data.get('board')).toBeInstanceOf(Blob);
       expect(request.data.getAll('file')).toHaveLength(1);
       expect(request.headers).toEqual({ 'Content-Type': undefined });
-      expect(client.post).not.toHaveBeenCalled();
       expect(result.redirect).toContain('pstSn=100');
     });
 
@@ -280,7 +274,6 @@ describe('boardActions', () => {
       expect(request.data.get('board')).toBeInstanceOf(Blob);
       expect(request.data.getAll('file')).toHaveLength(1);
       expect(request.headers).toEqual({ 'Content-Type': undefined });
-      expect(client.put).not.toHaveBeenCalled();
       expect(result.success).toBe(true);
     });
   });
@@ -299,7 +292,6 @@ describe('boardActions', () => {
         method: 'delete',
         headers: { Authorization: 'Bearer token' },
       });
-      expect(client.delete).not.toHaveBeenCalled();
       expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards/select-board-list');
       expect(result.success).toBe(true);
     });

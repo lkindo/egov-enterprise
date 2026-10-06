@@ -1,4 +1,5 @@
 import { ApiService } from '@/services/core/ApiService';
+import { toSortList } from '@/services/core/admin-page-query';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 import type { GeneratedOperationRequest } from '@/types/generated-operations';
@@ -21,11 +22,7 @@ export interface Hpcm {
 class HpcmAdminService extends ApiService {
   /** 도움말 목록 조회 */
   async getHpcmList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Hpcm>> {
-    const sort = Array.isArray(params?.sort)
-      ? params.sort.filter((value): value is string => typeof value === 'string')
-      : typeof params?.sort === 'string'
-        ? [params.sort]
-        : undefined;
+    const sort = toSortList(params?.sort);
     const generatedConfig = config ? { ...config } : undefined;
     if (generatedConfig) delete generatedConfig.params;
     return this.executeGenerated(getHpcmListOperation, {

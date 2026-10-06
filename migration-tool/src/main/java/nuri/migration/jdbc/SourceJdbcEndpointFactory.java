@@ -85,7 +85,7 @@ public final class SourceJdbcEndpointFactory {
             URL[] urls = staged.jars().stream().map(SourceJdbcEndpointFactory::url).toArray(URL[]::new);
             loader = new URLClassLoader(urls, ClassLoader.getPlatformClassLoader());
             Driver driver = instantiate(driverClass, loader);
-            if (!withContextLoader(loader, () -> driver.acceptsURL(config.url()))) {
+            if (!ContextClassLoaders.call(loader, () -> driver.acceptsURL(config.url()))) {
                 throw SourceDriverException.loading();
             }
             ExternalDriverDataSource dataSource = new ExternalDriverDataSource(
@@ -103,7 +103,7 @@ public final class SourceJdbcEndpointFactory {
     }
 
     private static Driver instantiate(String className, URLClassLoader loader) throws Exception {
-        Object instance = withContextLoader(loader, () -> Class.forName(className, true, loader)
+        Object instance = ContextClassLoaders.call(loader, () -> Class.forName(className, true, loader)
                 .getDeclaredConstructor().newInstance());
         if (!(instance instanceof Driver driver)) {
             throw SourceDriverException.loading();
@@ -116,18 +116,6 @@ public final class SourceJdbcEndpointFactory {
             return path.toUri().toURL();
         } catch (Exception failure) {
             throw SourceDriverException.loading();
-        }
-    }
-
-    private static <T> T withContextLoader(ClassLoader loader, CheckedSupplier<T> action)
-            throws Exception {
-        Thread thread = Thread.currentThread();
-        ClassLoader previous = thread.getContextClassLoader();
-        try {
-            thread.setContextClassLoader(loader);
-            return action.get();
-        } finally {
-            thread.setContextClassLoader(previous);
         }
     }
 
@@ -154,10 +142,5 @@ public final class SourceJdbcEndpointFactory {
         if (fatal != null) {
             JvmFailureBoundary.rethrowIfFatal(fatal);
         }
-    }
-
-    @FunctionalInterface
-    private interface CheckedSupplier<T> {
-        T get() throws Exception;
     }
 }

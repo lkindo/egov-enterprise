@@ -4,12 +4,8 @@ import { administCodeSchema } from '@/app/admin/system/codes/administ/AdministCo
 import { bannerSchema, popupSchema } from '@/app/admin/system/banner/BannerAdminClient';
 import { authorizationGroupFormSchema } from '@/lib/auth/authorization-management-contract';
 import { createUserSchema, userSchema } from '@/components/admin/user/UserManageForm';
-import {
-  manualSchema,
-  menuSchema,
-  pollSchema,
-  userManageSchema,
-} from '@/lib/validation/schemas';
+import { manualSchema } from '@/lib/validation/schemas';
+import { pollFormSchema } from '@/app/admin/survey/manage/poll-form-validation';
 
 describe('generated DTO constraints stay attached to form schemas', () => {
   it('keeps canonical group physical lengths while adding required rules', () => {
@@ -40,17 +36,15 @@ describe('generated DTO constraints stay attached to form schemas', () => {
     expect(createUserSchema.safeParse({ ...validUser, pswd: 'Password1!' }).success).toBe(true);
   });
 
-  it('keeps shared poll, menu, manual, and user constraints', () => {
-    expect(pollSchema.safeParse({ pollNm: '가'.repeat(101) }).success).toBe(false);
-    expect(pollSchema.safeParse({ pollNm: '설문', pollBgngYmd: '202601011' }).success).toBe(false);
-    expect(menuSchema.safeParse({ menuNm: '', menuOrdr: 1 }).success).toBe(false);
+  // [2026-10-07] 화면이 쓰지 않던 menuSchema·userManageSchema 사례를 걷었다. 메뉴 속성의 생성 상한은 menuDraft.test.ts 가,
+  //   사용자 비밀번호 규칙은 위 userSchema 사례가 같은 축을 본다. 투표는 실제 쓰기 폼(pollFormSchema)으로 옮겼다.
+  it('keeps shared poll and manual constraints', () => {
+    const validPoll = { pollNm: '설문', pollKndCd: '001', pollDsuseYn: 'N', pollBgngYmd: '20260101', pollEndYmd: '20260102' };
+    expect(pollFormSchema.safeParse(validPoll).success).toBe(true);
+    expect(pollFormSchema.safeParse({ ...validPoll, pollNm: '가'.repeat(101) }).success).toBe(false);
+    expect(pollFormSchema.safeParse({ ...validPoll, pollBgngYmd: '202601011' }).success).toBe(false);
     expect(manualSchema.safeParse({ onlnMnlNm: '', onlnMnlSeCd: 'GUIDE' }).success).toBe(false);
     expect(manualSchema.safeParse({ onlnMnlNm: '매뉴얼', onlnMnlSeCd: '' }).success).toBe(false);
-    expect(userManageSchema.safeParse({
-      userId: 'user_1',
-      userNm: '홍길동',
-      pswd: 'abcdefgh',
-    }).success).toBe(false);
   });
 
   it('keeps administrative-code max lengths', () => {

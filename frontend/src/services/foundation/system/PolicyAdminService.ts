@@ -1,4 +1,4 @@
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import type { AxiosRequestConfig } from 'axios';
 import type { components } from '@/types/generated-api';
 import {
@@ -12,7 +12,7 @@ export type SystemPolicy = components['schemas']['Policy'];
 export type PolicyUpdateRequest = components['schemas']['PolicyUpdateRequest'];
 
 /** 시스템정책 관리 서비스(Admin). */
-class PolicyAdminService extends AdminService {
+class PolicyAdminService extends ApiService {
   async getPolicies(config?: AxiosRequestConfig): Promise<SystemPolicy[]> {
     return this.executeGenerated(getPoliciesOperation, { config });
   }

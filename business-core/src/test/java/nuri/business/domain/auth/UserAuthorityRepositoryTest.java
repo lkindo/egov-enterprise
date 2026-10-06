@@ -13,8 +13,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
 import jakarta.persistence.EntityManager;
-import java.util.Collections;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,14 +50,6 @@ class UserAuthorityRepositoryTest extends PersistenceTestSupport {
                 .build();
         userAuthorityRepository.save(testAuthority);
         em.flush();
-    }
-
-    @Test
-    @DisplayName("고유 ID 목록으로 권한 목록 조회")
-    void findByUniqIdIn() {
-        List<UserAuthority> result = userAuthorityRepository.findByScrtyDcsnTrgtIdIn(Collections.singletonList("USR_AUTH_001"));
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getAuthrtId()).isEqualTo("ROLE_ADMIN");
     }
 
     @Test
@@ -191,6 +181,8 @@ class UserAuthorityRepositoryTest extends PersistenceTestSupport {
         var department=userAuthorityRepository.searchDeptAuthors("MULTI_DEPT",PageRequest.of(0,1));
         assertThat(department.getTotalElements()).isEqualTo(1);
         assertThat(department.getContent()).hasSize(1);
-        assertThat(userAuthorityRepository.findByScrtyDcsnTrgtIdOrderByAuthrtId(testUser.getEsntlId())).hasSize(2);
+        assertThat(em.createQuery(
+                "SELECT COUNT(ua) FROM UserAuthority ua WHERE ua.scrtyDcsnTrgtId = :esntlId", Long.class)
+                .setParameter("esntlId", testUser.getEsntlId()).getSingleResult()).isEqualTo(2L);
     }
 }

@@ -196,38 +196,4 @@ public class Board extends BaseEntity implements Serializable {
     public void delete() {
         this.useYn = "N";
     }
-
-    public void increaseInqCnt() {
-        if (this.inqCnt == null) {
-            this.inqCnt = 0;
-        }
-        this.inqCnt++;
-    }
-
-    public void updateReplyOrder(Long ansSn) {
-        this.ansSn = ansSn;
-    }
-
-    public void increaseLikeCnt() {
-        if (this.likeCnt == null) {
-            this.likeCnt = 0;
-        }
-        this.likeCnt++;
-    }
-
-    public void changePstSn(Long pstSn) {
-        this.pstSn = pstSn;
-    }
-
-    public void changeInqCnt(Integer inqCnt) {
-        this.inqCnt = inqCnt;
-    }
-
-    public void changeCmntCnt(Integer cmntCnt) {
-        this.cmntCnt = cmntCnt;
-    }
-
-    public void changeFileCnt(Integer fileCnt) {
-        this.fileCnt = fileCnt;
-    }
 }

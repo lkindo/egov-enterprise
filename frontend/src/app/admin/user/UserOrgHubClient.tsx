@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, use, useRef } from 'react';
+import { useState, useMemo, use, useRef, useTransition, useCallback, useId } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,7 +30,6 @@ import {
   userAbsenceAdminService,
 } from '@/services/foundation/system/UserAbsenceAdminService';
 import { useToast } from '@/app/components/ui/toast';
-import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
@@ -189,7 +188,7 @@ export default function UserOrgHubClient({
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const confirm = useConfirm();
-  const [isPending, startTransition] = React.useTransition();
+  const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState<UserOrgTab>(defaultTab);
   const router = useRouter();
   // 권한 그룹 화면은 이 허브와 권한이 다르다 — 라우트 게이트와 같은 판정으로만 길을 보인다(DIP B4 P1).
@@ -246,7 +245,7 @@ export default function UserOrgHubClient({
     setActiveTab(defaultTab);
   }
 
-  const goToPage = React.useCallback((page: number) => {
+  const goToPage = useCallback((page: number) => {
     setUserPage(page);
     const next = pickAllowedParams(searchParams, LIST_PARAM_KEYS);
     if (page <= 1) next.delete('page');
@@ -256,7 +255,7 @@ export default function UserOrgHubClient({
   }, [pathname, router, searchParams]);
 
   /** 탭 = 라우트. 현재 라우트가 가리키는 탭이면 이동하지 않는다(로그인정책/개인정보정책 공용 탭). */
-  const handleTabChange = React.useCallback((tab: UserOrgTab) => {
+  const handleTabChange = useCallback((tab: UserOrgTab) => {
     startTransition(() => {
       setActiveTab(tab);
       setSelectedItemId(null);
@@ -371,7 +370,7 @@ export default function UserOrgHubClient({
   const [userFilters, setUserFilters] = useState<UserListFilters>(EMPTY_USER_FILTERS);
   const appliedUserFilters = activeTab === 'USERS' ? userFilters : EMPTY_USER_FILTERS;
   const hasUserFilter = Boolean(appliedUserFilters.userSttsCd || appliedUserFilters.ognzId || appliedUserFilters.lckYn);
-  const userFilterId = React.useId();
+  const userFilterId = useId();
   // 조건이 바뀌면 1페이지로 돌아간다 — 검색어와 같은 규칙(감사 P1-8).
   const applyUserFilter = (patch: Partial<UserListFilters>) => {
     setUserFilters((prev) => ({ ...prev, ...patch }));
@@ -399,7 +398,7 @@ export default function UserOrgHubClient({
   }, [usersData]);
 
   /** 페이지당 건수를 바꾸면 현재 페이지 번호가 의미를 잃으므로 1페이지로 되돌린다. */
-  const handlePageSizeChange = React.useCallback((size: number) => {
+  const handlePageSizeChange = useCallback((size: number) => {
     setUserPageSize(size);
     goToPage(1);
   }, [goToPage]);
@@ -464,7 +463,7 @@ export default function UserOrgHubClient({
       );
       queryClient.invalidateQueries({ queryKey: ['admin-user-absences'] });
     } catch (error) {
-      toast(extractErrorMessage(error, '부재 상태를 변경하지 못했습니다.'), 'error');
+      toast(failureMessage(error, '부재 상태를 변경하지 못했습니다.'), 'error');
     } finally {
       absencePendingRef.current = false;
       setAbsencePendingId(null);
@@ -857,7 +856,8 @@ export default function UserOrgHubClient({
         accessor: (user: UserManage) => {
           const state = absenceOf(user);
           if (state === null) return null;
-          const isPending = absencePendingId !== null && absencePendingId === user.esntlId;
+          // 바깥 useTransition 의 isPending(탭 전환 흐림)과 다른 값이다 — 이 행의 부재 처리가 진행 중인지만 뜻한다.
+          const isRowPending = absencePendingId !== null && absencePendingId === user.esntlId;
           const label = state === ABSENT
             ? `${user.userNm ?? user.userId} 복귀 처리`
             : `${user.userNm ?? user.userId} 부재 처리`;
@@ -867,12 +867,12 @@ export default function UserOrgHubClient({
                 variant="outline"
                 size="sm"
                 disabled={absencePendingId !== null}
-                aria-busy={isPending}
-                aria-label={isPending ? `${label} 중` : label}
+                aria-busy={isRowPending}
+                aria-label={isRowPending ? `${label} 중` : label}
                 onClick={(event) => { event.stopPropagation(); void handleToggleAbsence(user); }}
                 className="gap-1.5"
               >
-                {isPending
+                {isRowPending
                   ? <Loader2 size={14} className="animate-spin" aria-hidden="true" />
                   : (state === ABSENT
                       ? <UserCheck size={14} aria-hidden="true" />
@@ -1046,6 +1046,11 @@ export default function UserOrgHubClient({
       )}
     </>
   );
+
+  /** 사용자 상세가 권한 배정·권한 변경 이력·로그인 이력·인증앱 복구 화면으로 넘기는 대상(탭 세션 인계). */
+  const handOffUser = displayedUser?.esntlId
+    ? { id: displayedUser.esntlId, loginId: displayedUser.userId ?? '', name: displayedUser.userNm ?? displayedUser.userId ?? '' }
+    : null;
 
   return (
     <WorkListPage
@@ -1445,17 +1450,14 @@ export default function UserOrgHubClient({
                     </DetailFieldList>
                   )}
 
-                  {!isDeptTab && displayedUser?.esntlId && (canAssignAuthority || canAuditAuthority || canOpenLoginLog || (canRecoverMfa && displayedUser.mfaEnabled)) && (() => {
-                    const target = { id: displayedUser.esntlId, loginId: displayedUser.userId ?? '', name: displayedUser.userNm ?? displayedUser.userId ?? '' };
-                    return (
-                      <AccessControlLink
-                        onOpen={canAssignAuthority ? () => { handOffTarget('authority-user', target); router.push('/admin/security/authority'); } : undefined}
-                        onOpenHistory={canAuditAuthority && target.loginId ? () => { handOffTarget('authority-history-user', target); router.push('/admin/security/authority'); } : undefined}
-                        onOpenLoginLog={canOpenLoginLog && target.loginId ? () => { handOffTarget('login-log-user', target); router.push('/admin/system/logs/login'); } : undefined}
-                        onRecoverMfa={canRecoverMfa && displayedUser.mfaEnabled ? () => { handOffTarget('mfa-recover-user', target); requestAccountMfa(); } : undefined}
-                      />
-                    );
-                  })()}
+                  {!isDeptTab && handOffUser && (canAssignAuthority || canAuditAuthority || canOpenLoginLog || (canRecoverMfa && displayedUser?.mfaEnabled)) && (
+                    <AccessControlLink
+                      onOpen={canAssignAuthority ? () => { handOffTarget('authority-user', handOffUser); router.push('/admin/security/authority'); } : undefined}
+                      onOpenHistory={canAuditAuthority && handOffUser.loginId ? () => { handOffTarget('authority-history-user', handOffUser); router.push('/admin/security/authority'); } : undefined}
+                      onOpenLoginLog={canOpenLoginLog && handOffUser.loginId ? () => { handOffTarget('login-log-user', handOffUser); router.push('/admin/system/logs/login'); } : undefined}
+                      onRecoverMfa={canRecoverMfa && displayedUser?.mfaEnabled ? () => { handOffTarget('mfa-recover-user', handOffUser); requestAccountMfa(); } : undefined}
+                    />
+                  )}
                 </DetailScrollArea>
               </section>
             ) : isDeptTab ? (

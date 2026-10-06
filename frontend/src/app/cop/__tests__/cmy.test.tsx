@@ -19,8 +19,8 @@ const { getCommunityListMock } = vi.hoisted(() => ({
   getCommunityListMock: vi.fn(),
 }));
 
-vi.mock('@/services/business/community/communityService', () => ({
-  communityService: {
+vi.mock('@/services/business/user/community/CommunityUserService', () => ({
+  communityUserService: {
     getCommunityList: getCommunityListMock,
   },
 }));

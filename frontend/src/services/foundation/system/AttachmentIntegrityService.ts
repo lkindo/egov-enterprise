@@ -1,4 +1,4 @@
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import type { components } from '@/types/generated-api';
 import { scanOperation } from '@/types/generated-operations';
 
@@ -18,7 +18,7 @@ export type AttachmentIntegrityReport = components['schemas']['AttachmentIntegri
  * ⚠ 이 점검은 첨부 레코드를 <b>전량</b> 훑는다. 주기 조회로 걸지 않고 관리자가 누를 때만 돈다 —
  * 배경에서 30초마다 저장소를 두드리면 진단이 부하가 된다.
  */
-class AttachmentIntegrityAdminService extends AdminService {
+class AttachmentIntegrityAdminService extends ApiService {
   async scan(): Promise<AttachmentIntegrityReport> {
     return this.executeGenerated(scanOperation, {});
   }

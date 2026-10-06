@@ -1,4 +1,4 @@
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 import type { components, operations } from '@/types/generated-api';
@@ -39,7 +39,7 @@ const BoardMasterBatchDeleteBoundarySchema = BoardMasterBatchDeleteRequestSchema
  * 게시판 마스터 관리 서비스 (Admin)
  */
 
-class BoardAdminService extends AdminService {
+class BoardAdminService extends ApiService {
     /** 게시판 목록 조회 */
     async getBoardMasterList(params: BoardMasterListParams = {}, config?: AxiosRequestConfig): Promise<PageResponse<BoardMasterSummary>> {
         const response = await this.executeGenerated(getBoardMasterListOperation, {
