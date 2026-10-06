@@ -25,7 +25,17 @@
 | TL-05~08 | 시스템 schema 판정, lexer 기초 함수 4개, typed tuple 생성, 진단용 key digest를 각각 동일 의미 범위에서 공유 |
 | TL-09 | ETL 위치 기반 long 배열을 이름 있는 read/transformed/written 카운터로 변경. commit/rollback·keymap/checkpoint 경계 유지 |
 
-`winston`·`@types/winston`·`cmdk`는 삭제된 logger/command UI 외 소비자가 없어 package/lock에서 함께 제거했다. 소비자가 사라진 Compose의 `LOG_LEVEL` 전달도 제거했다. 다른 의존성 버전은 바꾸지 않았다. 대형 서비스·거버넌스 도구의 전면 분해, blanket Stream/catch/import 치환, 과거 Flyway 삭제는 조사 보고서의 제외 판단을 유지한다.
+`winston`·`@types/winston`·`cmdk`는 삭제된 logger/command UI 외 소비자가 없어 package/lock에서 함께 제거했다. 소비자가 사라진 Compose의 `LOG_LEVEL` 전달도 제거했다. 아래 보안 패치 3종 외의 의존성 버전은 바꾸지 않았다. 대형 서비스·거버넌스 도구의 전면 분해, blanket Stream/catch/import 치환, 과거 Flyway 삭제는 조사 보고서의 제외 판단을 유지한다.
+
+원격 CI의 의존성 감사가 차단한 권고 4건은 취약 버전 범위를 한정한 기존 override 방식으로 수정했다. 정책·예외를 바꾸지 않았으며 lockfile의 패키지 버전 차이는 다음 3종뿐이다.
+
+| 전이 의존성 | 변경 | 근거 |
+|---|---|---|
+| seroval | 1.5.6 → 1.6.3 | [Promise 역직렬화 권고](https://github.com/lxsmnsyc/seroval/security/advisories/GHSA-p6vx-979v-rg4c), [TypedArray 메모리 권고](https://github.com/lxsmnsyc/seroval/security/advisories/GHSA-jp82-f5mq-hwhp) |
+| source-map-js | 1.2.1 → 1.2.2 | [수정 릴리스](https://github.com/7rulnik/source-map-js/releases/tag/v1.2.2) |
+| proxy-addr | 2.0.7 → 2.0.8 | [IP 신뢰 판정 권고](https://github.com/jshttp/proxy-addr/security/advisories/GHSA-jqcg-44mw-7w3h) |
+
+Seroval은 Solid의 기존 `~1.5.4` 범위를 넘어가므로 실제 소비 경로의 공개 진입점으로 Solid SSR과 JSON 왕복을 실행해 호환성을 확인했다. 감사 정책은 차단 0건으로 통과했고, 비차단 권고 3건(개발 전용 high 1·moderate 2)은 남아 있다.
 
 ## 날짜 입력 호환성
 
@@ -52,14 +62,14 @@
 
 ## 실행 검증
 
-단계별 영향 검증과 최종 통합 검증의 실제 실행 결과다. 격리 브라우저 검증에는 현재 운영 소스와 일치하는 별도 작업 사본을 사용했다.
+단계별 영향 검증과 통합 검증의 실제 실행 결과다. 격리 브라우저 검증에는 해당 실행 시점의 운영 소스와 일치하는 별도 작업 사본을 사용했다. 후속 미사용 부서 래퍼 정리와 보안 패치의 검증은 별도 행으로 기록한다.
 
 | 범위 | 결과 |
 |---|---|
 | 첫 정비 Java compileJava/compileTestJava | 성공 |
 | BE 미사용/조회 정리 영향 | core 114·app 86·API LoadTest 2·첨부 harness 5, 실패/skip 0 |
 | FE 첫 정비 | 10파일 93테스트 통과 |
-| FE 전체 테스트·커버리지 | **450파일 4,277테스트 통과**, 실패/skip/todo 0. 문장 83.64%·분기 78.31%·함수 79.84%·행 85.80%; 기존 71/63/64/73 하한 유지. 후속 미사용 부서 래퍼 정리 전의 전수 결과 |
+| 최종 FE 전체 테스트·커버리지 | 미사용 부서 래퍼 정리와 보안 패치 후 **450파일 4,266테스트 통과**, 실패/skip/todo 0. 문장 83.65%·분기 78.31%·함수 79.84%·행 85.80%; 기존 71/63/64/73 하한 유지 |
 | 조직도·SSR·사용자 허브 | 7파일 59테스트 통과; 최종 footer는 아래 실제 브라우저 CRUD·계약 검사로 추가 검증 |
 | FE 타입·lint | 앱/E2E tsc 통과, lint 0 error/기존 20 warning. 추가 접근성 계약 파일 lint 0 warning |
 | 이관 discovery·typed identity·resume·verification·artifact | 영향 Gradle 테스트 성공 |
@@ -68,6 +78,7 @@
 | 최종 Java compile·영향 테스트 | compileJava/compileTestJava 성공; core 156·app 298·API 25, 실패/skip 0 |
 | 푸시 전 모듈 check | foundation·business-core·business-app `check` 성공. 전수 3,029개 중 3,028개 통과, 실패 0, 기존 비활성 `SchemaDumper.dumpCleanSchema` 1개 skip. foundation 클래스별 커버리지 검증 및 세 모듈 JaCoCo 보고서 생성 성공 |
 | 푸시 전 잔여 소비자 정리 | Compose 환경변수 계약 18개, API 소비·생성 경계 계약 58개, 부서·배너·생성 경계·1,000건 초과 트리 영향 Vitest 4파일 64개 통과. 미사용 부서 래퍼의 공통 pagination·요청 설정 검증을 실제 소비 경로로 이관 |
+| 보안 패치 후 빌드·감사 | 최종 소스를 격리 worktree에 동기화하고 frozen lockfile 설치·Next production build·bundle 검사 성공. JS gzip 2,045,506B / 2,250,000B(여유 9.1% 경고), CSS 30,887B / 40,000B. 의존성 감사 정책 및 실제 소비 경로의 Solid SSR·Seroval JSON 왕복 통과 |
 | 실제 PostgreSQL 인가·스키마 | 통합 테스트 2개 통과. 고정 쿼리 수·응답 동등성·ABA·schema validation 확인 |
 | 백엔드 전체 거버넌스 harness | 38클래스 137테스트 통과, 실패/skip 0. 시크릿 검사에는 도구 누락·합성 리터럴 red fixture 포함 |
 | 생성 API·Zod·operation 계약 | 재생성 후 Git diff 없음 |
@@ -83,7 +94,7 @@
 
 전체 FE 검사 중 발견된 두 불일치는 검사 범위를 유지하며 해소했다. 공유 컴포넌트로 이동한 fallback 제목은 5개 route의 정확한 제목 전달과 공통 h1을 함께 검사하도록 고쳤다. 결과 문서 갱신에 따른 Atlas 해시 차이는 생성기로 재생성했다. 이후 고정된 소스에서 전체 테스트와 커버리지가 통과했다.
 
-로컬 증거는 `build/reports/source-simplification-vitest-final.json`, `build/reports/source-simplification-red-proof/20261006-182115/`, 각 모듈의 Gradle 테스트 보고서에 있다. 빌드 산출물은 저장소 정본에 추가하지 않았다.
+로컬 증거는 `build/reports/source-simplification-vitest-security.json`(최종 전수), `build/reports/source-simplification-vitest-final.json`(첫 전수), `build/reports/source-simplification-red-proof/20261006-182115/`, 각 모듈의 Gradle 테스트 보고서에 있다. 빌드 산출물은 저장소 정본에 추가하지 않았다.
 
 ## 측정·검증의 경계
 
@@ -102,6 +113,6 @@
 
 재측정은 `node scripts/code-census.mjs --baseline <새-json-경로>`와 `--diff <동일-정의-json>`으로 한다. 기존 파일 덮어쓰기와 정의가 다른 snapshot 비교는 거부한다.
 
-브라우저는 현재 변경을 별도 검증 worktree `D:/project/egov-enterprise-audit-verify-20261006`로 복사하고 임시 PostgreSQL·새 보안 키로 구동한 결과다. 실행 증거는 해당 worktree의 `build/isolated-e2e/a0993f42d4a6cf004f637ca5`에 있다. 임시 DB와 테스트 서비스는 정상 정리됐고, 기존 환경 파일과 실행 중인 서비스는 변경하지 않았다.
+로컬 브라우저는 후속 미사용 래퍼 정리·보안 패치 전의 소스를 별도 검증 worktree `D:/project/egov-enterprise-audit-verify-20261006`로 복사하고 임시 PostgreSQL·새 보안 키로 구동한 결과다. 실행 증거는 해당 worktree의 `build/isolated-e2e/a0993f42d4a6cf004f637ca5`에 있다. 임시 DB와 테스트 서비스는 정상 정리됐고, 기존 환경 파일과 실행 중인 서비스는 변경하지 않았다. 후속 보안 패치의 빌드에는 같은 worktree에 갱신한 소스·잠금 파일을 사용했다.
 
 새 버전의 이관 도구는 실행 fingerprint가 달라지므로 기존 plan 승인을 재사용하지 않고 정상 plan/validate 승인 절차를 다시 거쳐야 한다. 운영 부하·지연 시간·원격 required CI는 이 로컬 작업에서 완료했다고 간주하지 않는다.
