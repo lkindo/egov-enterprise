@@ -52,7 +52,9 @@ class SecurePathsDeclarationSyncLinterTest {
         if (catalog.path("permissions").size() < 200) problems.add("permission catalog 하한 미달");
         String config = HarnessSourceIndex.stripCommentsPreservingStrings(
                 HarnessSourceIndex.read(root.resolve(API_CONFIG))).replaceAll("\\s+", "");
-        for (String token : List.of(".anyRequest().access(newnuri.business.security.authorization.OperationAuthorizationManager(",
+        // 공백을 지운 설정에서 찾으므로 'new' 와 패키지가 붙는다. 패키지를 따로 된 문자열로 두어야 rename-project.ps1 이
+        // 패키지를 바꾼다(식별자 문자 바로 뒤의 구명칭은 바꾸지 않는다).
+        for (String token : List.of(".anyRequest().access(new" + "nuri.business.security.authorization.OperationAuthorizationManager(",
                 "WebSocketCookieAuthenticationFilter(", "JwtAuthenticationFilter.class")) {
             if (!config.contains(token)) problems.add("실제 HTTP 인증/인가 배선 소실: " + token);
         }

@@ -186,7 +186,7 @@ SELECT to_regclass('public.tb_prgrm_lst') AS programs, to_regclass('public.tb_in
 
 **되돌릴 때.** 지운 구조와 행의 원본은 적용 직전 백업이다. V2_126 이 채운 경로만 되돌리려면 적용 전 출력의 `menu_sn` 에 대해 `modern_route` 를 NULL 로 되돌린다. 구 버전 앱은 지운 컬럼을 매핑하므로 V2_127 뒤에는 그 앱으로 롤백할 수 없다. 백업 복원이 함께 필요하다.
 
-**남긴 것.** 이관 대상 카탈로그 `db_columns.json` 은 당시 이미 지운 다른 테이블도 담고 있어 이번에 고치지 않았다. 2026-10-07 부터는 `SchemaValidationIntegrationTest` 가 Flyway 적용 스키마와 대조하고, `-Dnuri.dbColumns.write=true` 로 실행할 때만 같은 질의로 다시 쓴다.
+**남긴 것.** 이관 대상 카탈로그 `db_columns.json` 은 당시 이미 지운 다른 테이블도 담고 있어 이번에 고치지 않았다. 2026-10-07 부터는 `SchemaValidationIntegrationTest` 가 Flyway 적용 스키마와 대조하고, `-DdbColumns.write=true` 로 실행할 때만 같은 질의로 다시 쓴다.
 
 ## 2026-09-11 OCI 메뉴 재편 적용 결과
 

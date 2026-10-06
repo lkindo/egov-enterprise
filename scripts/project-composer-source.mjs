@@ -219,7 +219,7 @@ export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition
       if (entry.isDirectory()) { assertControllers(path); continue; }
       if (!entry.name.endsWith('.java')) continue;
       const source = readFileSync(path, 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g, '');
-      const domains = [...source.matchAll(/\bnuri\.business\.(?:domain|service)\.([a-z][a-z0-9_]*)\./g)]
+      const domains = [...source.matchAll(/(?<![\w$])nuri\.business\.(?:domain|service)\.([a-z][a-z0-9_]*)\./g)]
         .map(match => match[1]).filter(domain => existsSync(join(sourceRoot, 'business-app/src/main/java/nuri/business/domain', domain))
           || existsSync(join(sourceRoot, 'business-app/src/main/java/nuri/business/service', domain)));
       if (domains.length && domains.every(domain => selected.has(domain))) requireFile(relative(sourceRoot, path));

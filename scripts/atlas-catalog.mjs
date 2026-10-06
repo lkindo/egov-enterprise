@@ -137,7 +137,7 @@ function javaDeclarations(text) {
   // Only declaration references are used. Comments and literals are not evidence of a dependency.
   const code = text.replace(/"""[\s\S]*?"""|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, ' ');
   return { code, packageName: code.match(/^\s*package\s+([\w.]+)\s*;/m)?.[1],
-    references: [...new Set(code.match(/\bnuri\.business\.(?:domain|service)\.[\w.]+/g) ?? [])] };
+    references: [...new Set(code.match(/(?<![\w$])nuri\.business\.(?:domain|service)\.[\w.]+/g) ?? [])] };
 }
 
 function lookupReference(index, reference) {

@@ -191,7 +191,7 @@ export function loadProjectComposerCatalog(root = ROOT) {
     for (const match of source.matchAll(/@Table\s*\(\s*name\s*=\s*"([^"]+)"/g)) owner.tables.push(match[1]);
     for (const match of source.matchAll(/sequenceName\s*=\s*"([^"]+)"/g)) owner.sequences.push(match[1]);
     // Includes fully qualified field types (RewardManage), static and wildcard imports.
-    for (const match of javaCode(source).matchAll(/\bnuri\.business\.(?:domain|service)\.([a-z][a-z0-9_]*)\./g)) {
+    for (const match of javaCode(source).matchAll(/(?<![\w$])nuri\.business\.(?:domain|service)\.([a-z][a-z0-9_]*)\./g)) {
       if (match[1] !== domain && inventory.has(match[1])) owner.edges.push({ domain: match[1], evidence: path });
     }
   }
