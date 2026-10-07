@@ -1,4 +1,5 @@
 import { canonicalJson, compositionDigest } from './project-composer-catalog.mjs';
+import { verifyResolvedDbComposition } from './project-composer-db.mjs';
 import { normalizeBackendLayout } from './reusable-layout.mjs';
 
 export const COMPOSER_SELECTION_PATH = 'config/governance/upstream-review/project-composer-selection.json';
@@ -111,6 +112,24 @@ export function resolveProjectRecipe(input, catalog) {
     catalogHash, recipeHash: compositionDigest(normalizedRecipe),
   };
   return { ...composition, compositionHash: compositionDigest(composition) };
+}
+
+/**
+ * DB·소스 생성기의 단일 진입 판정. `--profile X` 는 프리셋 레시피를 만들어 화면 생성기와 같은 해석기를 타고,
+ * `--composition` 은 같은 검증을 거친다. 그래서 프리셋 산출물도 메뉴·그룹 배정·스키마 보존·외래 키 심사를
+ * 같은 규칙으로 받는다. 프리셋 레시피의 이름은 프로필, 원본 참조는 현재 커밋이다 — 두 생성기가 같은 커밋에서
+ * 같은 해시를 얻는다. 출력 레이아웃은 구성 해시에 들어가므로 DB 번들도 레이아웃마다 만든다.
+ */
+export function resolveGeneratorComposition({ catalog, profile, supplied, backendLayout, layoutExplicit = false, sourceCommit, resolveSourceReference }) {
+  if ((profile === undefined) === (supplied === undefined)) fail('generator', 'Exactly one of a preset profile or a resolved composition is required');
+  const input = supplied ?? { ...resolveProjectRecipe({ schemaVersion: 1, project: { name: profile }, sourceRef: sourceCommit,
+    selection: { preset: profile }, database: { vendor: 'postgresql' }, backendLayout: backendLayout ?? 'multi-module' }, catalog), sourceCommit };
+  const composition = verifyResolvedDbComposition(input, verifyProjectComposition(input, catalog), sourceCommit, resolveSourceReference);
+  if (layoutExplicit && backendLayout !== composition.backendLayout) fail('backendLayout', 'The requested layout differs from the composition layout', 'LAYOUT_MISMATCH');
+  if (composition.foreignKeyViolations.length) {
+    fail('selection', `Required foreign keys lack their parent capability: ${composition.foreignKeyViolations.map(row => row.name).join(', ')}`, 'FK_CLOSURE');
+  }
+  return composition;
 }
 
 /** Recompute a supplied plan; callers must consume the returned trusted plan. */

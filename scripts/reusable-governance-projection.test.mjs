@@ -220,9 +220,12 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
     const output = mkdtempSync(join(tmpdir(), 'egov-governance-projection-'));
     try {
       copyInputs(output);
-      const composition = profileName === 'custom' ? resolveProjectRecipe({ schemaVersion: 1, project: { name: 'governance-probe' },
-        sourceRef: 'v1.0.0', selection: { domains: [] } }, loadProjectComposerCatalog(ROOT)) : undefined;
-      const profile = composition ? { ...profiles.profiles.core, resolvedDomains: composition.resolvedDomains, frontendRemovePaths: composition.frontend.removePaths } : profiles.profiles[profileName];
+      // 프리셋도 구성 경로로 생성한다(DEC-OPS-239) — 모든 프로필이 해석된 구성을 갖는다.
+      const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'governance-probe' }, sourceRef: 'v1.0.0',
+        selection: profileName === 'custom' ? { domains: [] } : { preset: profileName } }, loadProjectComposerCatalog(ROOT));
+      const profile = profileName === 'custom'
+        ? { ...profiles.profiles.core, resolvedDomains: composition.resolvedDomains, frontendRemovePaths: composition.frontend.removePaths }
+        : profiles.profiles[profileName];
       pruneJava(output, profiles, profile);
       const support = profiles.packs.demo.backend.domainSupportFiles.memoreport;
       for (const file of support) assert.equal(existsSync(join(output, file)), profileName === 'demo', `${profileName}: domain support ${file}`);
@@ -242,8 +245,18 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
         }).source,
       });
       const lock = { schemaVersion: 1, profile: profileName, packs: profile.packs, sourceCommit,
-        ...(composition ? { composition: { ...composition, sourceCommit } } : {}),
+        composition: { ...composition, sourceCommit },
         governance: { path: 'config/governance/reusable-governance-projection.json', projectionSha256: canonicalJsonSha256(result) } };
+      writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
+      assert.deepEqual(inspectReusableGovernance(output).errors, []);
+      // 구성 스냅숏 연결을 지우고 lock 해시를 다시 맞춰도, 출처를 증명할 수 없는 투영은 어느 프로필에서도 통과하지 않는다.
+      const { composition: boundComposition, ...unbound } = result;
+      assert.ok(boundComposition, `${profileName}: the projection binds its composition`);
+      writeFileSync(join(output, lock.governance.path), `${JSON.stringify(unbound, null, 2)}\n`);
+      writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify({ ...lock,
+        governance: { ...lock.governance, projectionSha256: canonicalJsonSha256(unbound) } }, null, 2)}\n`);
+      assert.ok(inspectReusableGovernance(output).errors.includes('Generated projection requires a resolved composition snapshot'), profileName);
+      writeFileSync(join(output, lock.governance.path), `${JSON.stringify(result, null, 2)}\n`);
       writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
       assert.deepEqual(inspectReusableGovernance(output).errors, []);
       assert.deepEqual(analyzeRouteCapabilities(output, join(output, 'config/ui-route-capabilities.json')).result.errors, []);

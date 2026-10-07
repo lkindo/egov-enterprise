@@ -31,6 +31,21 @@ export function domainSupportFiles(root, manifest) {
   return result;
 }
 
+/**
+ * 소스 생성기가 받는 DB 번들은 같은 구성으로 만들어 빈 DB 재적용 검증까지 통과한 번들이어야 한다.
+ * 프리셋도 같은 규칙이다(2026-10-07 Phase 0b). 원인이 다르면 고칠 행동도 다르므로 메시지를 나눈다.
+ */
+export function assertCompositionDatabaseLock(lock, composition) {
+  if (!lock?.composition || lock.validated !== true) {
+    throw new Error('DB 번들이 검증된 구성 번들이 아니다(구성 경로 이전 형식이거나 검증 전에 멈춘 번들). DB 생성기로 다시 만들어라.');
+  }
+  if (lock.profile !== composition.profile) throw new Error(`DB bundle profile ${lock.profile} != source profile ${composition.profile}`);
+  if (lock.layout !== composition.backendLayout) {
+    throw new Error(`DB 번들 레이아웃 ${lock.layout} 과 소스 레이아웃 ${composition.backendLayout} 이 다르다. DB 생성기를 --layout ${composition.backendLayout} 로 다시 실행하라.`);
+  }
+  if (lock.compositionHash !== composition.compositionHash) throw new Error('DB/source composition hash mismatch');
+}
+
 export function verifyCompositionDatabaseFiles(migrationDirectory, lock) {
   if (lock.validated !== true || !lock.migrationFiles || typeof lock.migrationFiles !== 'object') throw new Error('A validated composition DB bundle is required');
   const actual = readdirSync(migrationDirectory).filter(file => file.endsWith('.sql')).sort();

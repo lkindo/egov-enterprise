@@ -31,15 +31,20 @@ test('composition DB requires exact default group/code grants and keeps availabl
   }), /Unknown default permission group/);
 });
 
-test('DB CLI keeps legacy profile defaults and rejects ambiguous or missing composition input', () => {
+test('DB CLI resolves a preset or a composition per layout and keeps the menu snapshot refresh standalone', () => {
   assert.deepEqual(parseDbGenerationArgs(['--profile', 'core']), {
-    profile: 'core', composition: undefined, container: 'egov-e2e-postgres', output: undefined,
+    profile: 'core', composition: undefined, layout: undefined, container: 'egov-e2e-postgres', output: undefined,
     allowDirty: false, allowNonReleaseRef: false, writeMenuSnapshot: false,
   });
+  assert.equal(parseDbGenerationArgs(['--profile', 'core', '--layout', 'single-module']).layout, 'single-module');
   assert.equal(parseDbGenerationArgs(['--composition', 'build/request.json']).composition, 'build/request.json');
+  assert.equal(parseDbGenerationArgs(['--write-menu-snapshot', '--container', 'owned']).writeMenuSnapshot, true);
   for (const args of [[], ['--composition'], ['--composition', '--allow-dirty'],
-    ['--profile', 'core', '--composition', 'request.json'], ['--composition', 'a.json', '--composition', 'b.json'], ['--database', 'oracle']]) {
-    assert.throws(() => parseDbGenerationArgs(args));
+    ['--profile', 'core', '--composition', 'request.json'], ['--composition', 'a.json', '--composition', 'b.json'], ['--database', 'oracle'],
+    ['--profile', 'core', '--layout', 'single'], ['--profile', 'core', '--layout'], ['--profile', 'core', '--layout', 'multi-module', '--layout', 'single-module'],
+    ['--write-menu-snapshot', '--profile', 'demo'], ['--write-menu-snapshot', '--output', 'build/reusable-base/x'],
+    ['--write-menu-snapshot', '--layout', 'multi-module'], ['--write-menu-snapshot', '--composition', 'request.json']]) {
+    assert.throws(() => parseDbGenerationArgs(args), undefined, JSON.stringify(args));
   }
 });
 

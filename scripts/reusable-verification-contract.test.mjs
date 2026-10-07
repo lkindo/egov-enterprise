@@ -136,7 +136,8 @@ test('producer generates all stages into a fresh artifact and only removes its o
       assert.equal(artifact, output); return { profile, layout, scope: 'full', result: 'passed' };
     } });
     const dbArgs = calls.find(([cmd, args]) => cmd === 'node' && args[0].endsWith('db.mjs'))[1];
-    assert.ok(!dbArgs.includes('--layout'), 'the database bundle is independent of the Gradle layout');
+    // 구성 해시에 출력 레이아웃이 들어가므로 DB 번들도 같은 레이아웃으로 만든다(DEC-OPS-239).
+    assert.equal(dbArgs[dbArgs.indexOf('--layout') + 1], layout, 'the database bundle is generated for the same layout');
     const sourceArgs = calls.find(([cmd, args]) => cmd === 'node' && args[0].endsWith('source.mjs'))[1];
     assert.equal(sourceArgs[sourceArgs.indexOf('--layout') + 1], layout);
     const reportName = layout === 'multi-module' ? profile : `${profile}-${layout}`;

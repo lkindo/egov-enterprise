@@ -79,7 +79,7 @@ npm run project:create -- --recipe agency-service.recipe.json
 
 생성기는 포트를 공개하거나 공유 볼륨을 연결하지 않는 전용 PostgreSQL 컨테이너를 만들고, 체크인된 migration으로 구성한 스키마를 선택한다. 다른 빈 DB의 하나의 연결에서 DDL과 시드를 순서대로 재적용하여 세션 설정의 영향과 테이블·sequence·컬럼·FK·인덱스·trigger·메뉴·권한을 확인한다. 완료·실패 모두 자신의 소유권 표식이 일치하는 컨테이너만 정리한다. 업무 서버의 DB 연결정보를 입력받거나 그 DB를 축소하지 않는다.
 
-초기 OPERATION 권한은 선택된 기능의 [권한 카탈로그](../../config/governance/permission-catalog.json) `defaultGroups`에 선언된 그룹에만 배정한다. 재적용 검증은 실제 그룹·권한 쌍의 정확한 집합을 비교하여 누락, 다른 그룹의 배정, 선택하지 않은 권한의 배정을 거부한다. `defaultGroups: []`인 권한은 기능을 선택해도 초기 배정하지 않으며, 해당 운영 역할은 도입 후 별도로 결정한다. 메뉴 표시(NAVIGATION)는 [메뉴 스냅숏](../../config/project-composer-menus.json)에 담긴 원본 마이그레이션의 그룹별 배정을 선택 메뉴만큼 투영한다. 그래서 일반 사용자 사이드바도 원본과 같은 구성으로 시작한다. 그 그룹이 표시하는 하위가 남지 않은 분류는 빼고, 그룹마다 표시하는 메뉴는 그 그룹의 기능 권한으로 들어갈 수 있어야 한다(라우트 게이트와 같은 판정). 어기면 계획 단계 투영과 재적용 DB 검증이 생성을 멈춘다. 이 투영은 생성기 시드에만 적용하며 원본 `R__zz_seed_base_admin.sql`은 관리자 메뉴만 만든다.
+초기 OPERATION 권한은 선택된 기능의 [권한 카탈로그](../../config/governance/permission-catalog.json) `defaultGroups`에 선언된 그룹에만 배정한다. 재적용 검증은 실제 그룹·권한 쌍의 정확한 집합을 비교하여 누락, 다른 그룹의 배정, 선택하지 않은 권한의 배정을 거부한다. `defaultGroups: []`인 권한은 기능을 선택해도 초기 배정하지 않으며, 해당 운영 역할은 도입 후 별도로 결정한다. 메뉴 표시(NAVIGATION)는 [메뉴 스냅숏](../../config/project-composer-menus.json)에 담긴 원본 마이그레이션의 그룹별 배정을 선택 메뉴만큼 투영한다. 그래서 일반 사용자 사이드바도 원본과 같은 구성으로 시작한다. 그 그룹이 표시하는 하위가 남지 않은 분류는 빼고, 그룹마다 표시하는 메뉴는 그 그룹의 기능 권한으로 들어갈 수 있어야 한다(라우트 게이트와 같은 판정). 어기면 계획 단계 투영과 재적용 DB 검증이 생성을 멈춘다. 이 투영은 생성기 시드에만 적용하며 원본 `R__zz_seed_base_admin.sql`은 관리자 메뉴만 만든다. `base:generate-db --profile`과 `base:verify`의 프리셋 생성도 같은 해석기와 같은 투영을 쓴다(DEC-OPS-239).
 
 소스 생성 후에는 선택한 코드·화면 존속, 원장 정합성, Java 컴파일·하네스·스키마 검사, 프런트엔드 타입·lint·build를 실행한다. 실패한 폴더와 보고서는 보존하되 완료 결과로 제공하지 않는다. 모든 부분집합을 사전에 인증했다는 의미는 아니며 **각 생성 작업 자체가 검증을 통과해야** 완료된다.
 
@@ -102,13 +102,13 @@ node scripts/verify-project-composer.mjs --layout single-module
 
 메뉴 행은 목적지 경로(pathname)를 소유한 기능이 남아 있으면 선택된다. 쿼리 문자열은 정확히 비교하지 않는다. `tab` 메뉴 중 다른 기능이 셸에 기여한 탭은 [카탈로그](../../scripts/project-composer-catalog.mjs)의 `menuTabs`로 선언하고, 그 기능이 빠지면 셸이 남아도 숨긴다(예: 지식 허브의 위키·FAQ·Q&A는 게시판, 커뮤니티 탭은 커뮤니티). `menuTabs` 선언이 스냅숏의 활성 메뉴 행이나 실제 화면과 맞지 않으면 카탈로그 로드가 실패한다. 전체 구성은 활성 메뉴를 모두 고르고, core 화면 메뉴는 core 구성에서 고르며, 고른 목적지가 생성물에 없는 화면을 가리키지 않는다는 것을 [해석기 계약](../../scripts/project-composer-recipe.test.mjs)이 해석기가 남긴 경로로 계산해 확인한다.
 
-원본 SQL에 정당한 메뉴 변경을 적용한 뒤에는 **이번 갱신 작업만을 위해 새로 만든 일회용 PostgreSQL 17 컨테이너**에서 아래 명령을 실행한다. 포트 공개·공유 볼륨 없이 고유 이름과 소유권 표식을 붙이고, 자격증명은 명령 인자나 파일에 쓰지 않고 임시 환경으로 전달한다. 준비 상태를 확인한 후 PowerShell 변수 `$composerContainerName`에는 해당 컨테이너 이름, `$composerRunId`에는 이번 작업의 새 식별자를 사용한다. 운영·공유·기존 업무 DB 컨테이너는 지정하지 않는다.
+원본 SQL에 정당한 메뉴 변경을 적용한 뒤에는 **이번 갱신 작업만을 위해 새로 만든 일회용 PostgreSQL 17 컨테이너**에서 아래 명령을 실행한다. 포트 공개·공유 볼륨 없이 고유 이름과 소유권 표식을 붙이고, 자격증명은 명령 인자나 파일에 쓰지 않고 임시 환경으로 전달한다. 준비 상태를 확인한 후 PowerShell 변수 `$composerContainerName`에는 해당 컨테이너 이름을 사용한다. 운영·공유·기존 업무 DB 컨테이너는 지정하지 않는다.
 
 ```powershell
-node scripts/generate-reusable-base-db.mjs --profile demo --write-menu-snapshot --container $composerContainerName --output "build/reusable-base/menu-snapshot-$composerRunId" --allow-dirty --allow-non-release-ref
+node scripts/generate-reusable-base-db.mjs --write-menu-snapshot --container $composerContainerName --allow-dirty --allow-non-release-ref
 ```
 
-명령은 컨테이너 안의 새 임시 DB에 전체 migration을 적용하고, 생성 SQL을 또 다른 빈 DB에 재적용하여 검증한 뒤에만 `config/project-composer-menus.json`을 갱신한다. 두 임시 DB는 생성기가 정리한다. 전용 컨테이너는 생성 시 확보한 정확한 ID와 소유권 표식이 일치하는지 확인한 뒤 이 작업의 소유자가 정리한다. 위 두 허용 옵션은 체크아웃 수정분·비릴리스 상태에서 로컬 자료를 갱신하기 위한 것이며 결과를 공식 릴리스로 바꾸지 않는다.
+명령은 컨테이너 안의 새 임시 DB에 전체 migration을 적용하고, 원본 테이블·시퀀스 집합을 확인한 뒤 메뉴와 그룹별 NAVIGATION 배정을 읽어 `config/project-composer-menus.json`을 갱신한다. 번들은 만들지 않으므로 `--profile`·`--composition`·`--output`·`--layout`과 함께 쓰지 않는다 — 카탈로그가 이 스냅숏으로 탭 메뉴 선언을 검증하므로, 새 메뉴 행과 그 선언을 함께 넣는 변경에서도 갱신이 막히지 않게 하기 위해서다. 임시 DB는 생성기가 정리한다. 전용 컨테이너는 생성 시 확보한 정확한 ID와 소유권 표식이 일치하는지 확인한 뒤 이 작업의 소유자가 정리한다. 위 두 허용 옵션은 체크아웃 수정분·비릴리스 상태에서 로컬 자료를 갱신하기 위한 것이며 결과를 공식 릴리스로 바꾸지 않는다.
 
 갱신한 SQL·snapshot diff를 함께 검토하고 다음 계약 검사를 실행한다. fixture 테스트는 SQL 변경 뒤의 오래된 snapshot과 잘못된 메뉴 관계와 퇴역한 형식 1 snapshot 이 거부되는지도 확인한다.
 

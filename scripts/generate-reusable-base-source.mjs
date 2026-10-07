@@ -29,9 +29,9 @@ import { normalizeBackendLayout } from './reusable-layout.mjs';
 import { applySingleModuleLayout } from './reusable-single-module.mjs';
 import { installMultiModuleMigrationRuntime, installSingleModuleRuntime } from './reusable-layout-runtime.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
-import { verifyProjectComposition } from './project-composer-recipe.mjs';
-import { verifyResolvedDbComposition } from './project-composer-db.mjs';
-import { composerProfile, domainSupportFiles, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
+import { resolveGeneratorComposition } from './project-composer-recipe.mjs';
+import { assertCompositionDatabaseLock, composerProfile, domainSupportFiles, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives,
+  verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = resolve(dirname(SCRIPT_PATH), '..');
@@ -1348,16 +1348,14 @@ export function writeProjectedManifest(output, manifest, profileName, profile, d
 function main() {
   const args = parseSourceArgs(process.argv.slice(2));
   const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
-  let composition;
-  if (args.composition) {
-    const supplied = JSON.parse(readFileSync(resolve(args.composition), 'utf8'));
-    composition = verifyResolvedDbComposition(supplied, verifyProjectComposition(supplied, loadProjectComposerCatalog(ROOT)),
-      git(['rev-parse', 'HEAD']), ref => git(['rev-parse', '--verify', `${ref}^{commit}`]));
-    args.profile = composition.profile;
-    if (process.argv.includes('--layout') && args.layout !== composition.backendLayout) fail('composition과 --layout이 다르다.');
-    args.layout = composition.backendLayout;
-    manifest.profiles[args.profile] = composerProfile(manifest, composition);
-  }
+  // DB 생성기와 같은 판정기로 구성을 얻는다. 프리셋도 구성 경로를 타며, 같은 커밋·레이아웃이면 같은 해시가 나온다.
+  const composition = resolveGeneratorComposition({ catalog: loadProjectComposerCatalog(ROOT), profile: args.composition ? undefined : args.profile,
+    supplied: args.composition ? JSON.parse(readFileSync(resolve(args.composition), 'utf8')) : undefined,
+    backendLayout: args.layout, layoutExplicit: process.argv.includes('--layout'), sourceCommit: git(['rev-parse', 'HEAD']),
+    resolveSourceReference: ref => git(['rev-parse', '--verify', `${ref}^{commit}`]) });
+  args.profile = composition.profile;
+  args.layout = composition.backendLayout;
+  manifest.profiles[args.profile] = composerProfile(manifest, composition);
   const profile = manifest.profiles?.[args.profile];
   if (!profile) fail(`지원하지 않는 profile: ${args.profile}`);
 
@@ -1370,10 +1368,9 @@ function main() {
   const dbLockPath = join(dbBundle, 'profile-lock.json');
   if (!existsSync(dbLockPath)) fail(`DB bundle lock이 없다: ${dbLockPath}`);
   const dbLock = JSON.parse(readFileSync(dbLockPath, 'utf8'));
-  if (dbLock.profile !== args.profile) fail(`DB bundle profile ${dbLock.profile} != source profile ${args.profile}`);
   if (dbLock.sourceCommit !== sourceCommit) fail(`DB bundle commit ${dbLock.sourceCommit} != source commit ${sourceCommit}`);
-  if (composition && dbLock.compositionHash !== composition.compositionHash) fail('DB/source composition hash mismatch');
-  if (composition) verifyCompositionDatabaseFiles(join(dbBundle, 'db/migration'), dbLock);
+  assertCompositionDatabaseLock(dbLock, composition);
+  verifyCompositionDatabaseFiles(join(dbBundle, 'db/migration'), dbLock);
 
   const output = safeOutputPath(args.output, args.profile, sourceCommit.slice(0, 12), args.layout);
   mkdirSync(output, { recursive: true });
@@ -1387,7 +1384,7 @@ function main() {
   }
   const packBlocks = stripExcludedFrontendPackBlocks(output, manifest, profile);
   const frontend = { ...pruneFrontend(output, manifest, profile), packBlocks };
-  if (composition) assertComposerSourceSurvives(ROOT, output, composition, manifest);
+  assertComposerSourceSurvives(ROOT, output, composition, manifest);
   // ⚠ 규칙 기반 제거는 **승인 검사보다 먼저** 해야 한다 — 뒤에 두면 census 가 "0건" 이라고 말한 뒤
   //   게이트 42개가 사라진다(2026-09-12 실측으로 드러난 이 census 자신의 구멍).
   const removedHistoricalMigrationTests = pruneHistoricalMigrationTests(output);
@@ -1405,13 +1402,13 @@ function main() {
   else installMultiModuleMigrationRuntime(output);
   const governance = projectReusableGovernance({
     sourceRoot: ROOT, outputRoot: output, profile: args.profile, sourceCommit, composition,
-    projectSource: (file, source) => projectFrontendPackMarkers(composition ? projectComposerFrontend(file, source, composition) : source, {
+    projectSource: (file, source) => projectFrontendPackMarkers(projectComposerFrontend(file, source, composition), {
       knownPacks: new Set(Object.keys(manifest.packs)),
       excludedPacks: new Set(Object.keys(manifest.packs).filter(pack => !profile.packs.includes(pack))),
       label: file,
     }).source,
   });
-  if (composition) verifyCompositionDatabaseFiles(join(output, 'api-server/src/main/resources/db/migration'), dbLock);
+  verifyCompositionDatabaseFiles(join(output, 'api-server/src/main/resources/db/migration'), dbLock);
   adaptGeneratedHarness(output);
   writeHarnessBaseline(output, manifest);
 
@@ -1421,7 +1418,7 @@ function main() {
     layout: args.layout,
     layoutProjection,
     packs: profile.packs,
-    ...(composition ? { composition } : {}),
+    composition,
     sourceCommit,
     sourceReleaseTag: releaseTag ?? null,
     localDevelopmentBuild: !releaseTag || Boolean(dirty),

@@ -51,7 +51,8 @@ export async function verifyReusableBase({ root, profile, layout = 'multi-module
     if (!ready) throw new Error('isolated PostgreSQL readiness failed');
     const generate = (script, args) => run('node', [`scripts/${script}`, '--profile', profile, ...args,
       '--allow-dirty', '--allow-non-release-ref'], { root });
-    generate('generate-reusable-base-db.mjs', ['--container', name, '--output', database]);
+    // 구성 해시에 출력 레이아웃이 들어가므로 DB 번들도 같은 레이아웃으로 만든다(DEC-OPS-239).
+    generate('generate-reusable-base-db.mjs', ['--container', name, '--output', database, '--layout', layout]);
     generate('generate-reusable-base-source.mjs', ['--db-bundle', database, '--output', output, '--layout', layout]);
     const lock = JSON.parse(readFileSync(resolve(output, 'reusable-base-lock.json'), 'utf8'));
     if (lock.profile !== profile) throw new Error('producer returned a different profile');

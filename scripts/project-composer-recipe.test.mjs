@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
-import { ProjectRecipeError, resolveProjectRecipe, verifyProjectComposition } from './project-composer-recipe.mjs';
+import { ProjectRecipeError, resolveGeneratorComposition, resolveProjectRecipe, verifyProjectComposition } from './project-composer-recipe.mjs';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { menuRouteKey, projectCompositionMenus, projectCompositionNavigation } from './project-composer-db.mjs';
@@ -172,5 +172,45 @@ test('every composition starts group sidebars from the original grants and shows
     // 관리자는 선택 메뉴를 모두 보고, 일반 사용자도 메뉴를 받는다(원본 사이드바와 같은 출발점).
     assert.deepEqual(navigation.filter(row => row.authrt_cd === 'ROLE_ADMIN').map(row => row.menu_sn), menus.map(row => row.menu_sn), label);
     assert.ok(navigation.some(row => row.authrt_cd === 'ROLE_USER'), `${label}: ROLE_USER has no menu`);
+  }
+});
+
+test('both generators resolve a preset profile through the same resolver the composer uses', () => {
+  const sourceCommit = 'a'.repeat(40);
+  const resolveSourceReference = reference => (reference === sourceCommit ? sourceCommit : 'b'.repeat(40));
+  const generator = options => resolveGeneratorComposition({ catalog, sourceCommit, resolveSourceReference, ...options });
+  for (const preset of catalog.presets.map(item => item.id)) {
+    const hashes = new Set();
+    for (const layout of ['multi-module', 'single-module']) {
+      // DB 생성기는 --layout 을 명시하고 소스 생성기는 기본값으로 받는다. 같은 커밋·레이아웃이면 같은 구성이다.
+      const database = generator({ profile: preset, backendLayout: layout, layoutExplicit: true });
+      assert.deepEqual(generator({ profile: preset, backendLayout: layout }), database, `${preset}/${layout}`);
+      assert.equal(database.profile, preset);
+      assert.equal(database.backendLayout, layout);
+      assert.equal(database.sourceCommit, sourceCommit);
+      assert.deepEqual(database.resolvedDomains, [...catalog.presets.find(item => item.id === preset).domains].sort());
+      // 화면 생성기가 넘기는 해석된 구성도 같은 판정을 지난다.
+      assert.deepEqual(generator({ supplied: database, backendLayout: 'multi-module' }), database);
+      hashes.add(database.compositionHash);
+    }
+    assert.equal(hashes.size, 2, `${preset}: the layout is part of the composition identity`);
+  }
+  const single = generator({ profile: 'core', backendLayout: 'single-module' });
+  assert.throws(() => generator({ supplied: single, backendLayout: 'multi-module', layoutExplicit: true }), /layout differs/);
+  const supplied = { ...resolveProjectRecipe({ ...recipe({ domains: ['survey'] }), sourceRef: sourceCommit }, catalog), sourceCommit };
+  assert.throws(() => generator({ supplied }), error => error.code === 'FK_CLOSURE' && /fk_tb_dta_use_stats_tb_bbs_item/.test(error.message));
+  assert.throws(() => generator({ profile: 'custom' }), /Unknown project preset/);
+  assert.throws(() => generator({}), /Exactly one/);
+  assert.throws(() => generator({ profile: 'core', supplied: single }), /Exactly one/);
+  assert.throws(() => resolveGeneratorComposition({ catalog, profile: 'core', sourceCommit, resolveSourceReference: () => 'c'.repeat(40) }), /sourceRef/);
+});
+
+test('both generators take their composition only from the shared resolver', () => {
+  for (const file of ['generate-reusable-base-db.mjs', 'generate-reusable-base-source.mjs']) {
+    const code = readFileSync(join(import.meta.dirname, file), 'utf8');
+    assert.equal(code.match(/resolveGeneratorComposition\(/g)?.length, 1, `${file}: one resolver call`);
+    assert.doesNotMatch(code, /verifyResolvedDbComposition\(|resolveProjectRecipe\(|verifyProjectComposition\(/, `${file}: no second resolver`);
+    // 프리셋 전용 분기가 돌아오면 같은 선택이 진입 경로에 따라 다른 결과를 낸다(DEC-OPS-239).
+    assert.doesNotMatch(code, /if \(!?composition\)|(?<![.\w])composition \? |(?<![.\w])!composition\b/, `${file}: no profile-only branch`);
   }
 });

@@ -7,7 +7,7 @@ import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
-import { composerProfile, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
+import { assertCompositionDatabaseLock, composerProfile, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
 import { copySourceTree, frontendImportSpecifiers, planJavaRemoval, resolveFrontendImport, trackedAndUntrackedFiles, projectFrontendPackMarkers, writeProjectedManifest } from './generate-reusable-base-source.mjs';
 
 const root = resolve(import.meta.dirname, '..');
@@ -478,4 +478,17 @@ test('validated DB bundle requires the exact locked SQL population and unchanged
   assert.throws(() => verifyCompositionDatabaseFiles(fixture, lock), /population/);
   rmSync(join(fixture, 'V9__unexpected.sql'));
   assert.doesNotThrow(() => verifyCompositionDatabaseFiles(fixture, lock));
+});
+
+test('the source generator accepts only a validated DB bundle of the same composition and says why otherwise', () => {
+  const catalog = loadProjectComposerCatalog(root);
+  const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'core' }, sourceRef: 'v1.0.0', selection: { preset: 'core' } }, catalog);
+  const lock = { profile: 'core', layout: composition.backendLayout, composition, compositionHash: composition.compositionHash, validated: true };
+  assert.doesNotThrow(() => assertCompositionDatabaseLock(lock, composition));
+  const { composition: _legacy, ...legacy } = lock;
+  assert.throws(() => assertCompositionDatabaseLock(legacy, composition), /검증된 구성 번들이 아니다/, 'a pre-unification profile bundle is refused');
+  assert.throws(() => assertCompositionDatabaseLock({ ...lock, validated: undefined }, composition), /검증된 구성 번들이 아니다/);
+  assert.throws(() => assertCompositionDatabaseLock({ ...lock, profile: 'demo' }, composition), /DB bundle profile demo != source profile core/);
+  assert.throws(() => assertCompositionDatabaseLock({ ...lock, layout: 'single-module' }, composition), /--layout multi-module/);
+  assert.throws(() => assertCompositionDatabaseLock({ ...lock, compositionHash: 'f'.repeat(64) }, composition), /composition hash mismatch/);
 });

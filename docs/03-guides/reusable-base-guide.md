@@ -55,8 +55,9 @@ clean v* release tag
 클래스패스를 분리하여 core/app 경계와 동일 이름의 테스트·설정 자원을 지킨다. 프론트엔드는 두 형태
 모두 별도 `frontend` 애플리케이션이다.
 
-이 가이드의 명령은 위 세 누적 프로필과 PostgreSQL을 대상으로 한다. 레이아웃을 바꿔도 같은
-프로필의 DB 번들을 사용한다. 개별 도메인·메뉴 seed와 별도 로컬 UI는
+이 가이드의 명령은 위 세 누적 프로필과 PostgreSQL을 대상으로 한다. 프로필도 도메인 선택형 생성기와
+같은 해석기로 구성을 만든다(DEC-OPS-239). 구성 식별자에 출력 레이아웃이 들어가므로 DB 번들은 레이아웃마다
+만든다. 레이아웃이 달라도 테이블·메뉴·권한 내용은 같다. 개별 도메인 선택과 별도 로컬 UI는
 [도메인 선택형 생성기 가이드](project-composer-guide.md)를 따른다. 추가 DB는
 [프로젝트 생성기 상세 설계](../02-architecture/project-composer-design.md)의 후속 범위다.
 
@@ -75,19 +76,24 @@ clean v* release tag
 ```bash
 npm run base:census
 npm run base:generate-db -- --profile collaboration
+npm run base:generate-db -- --profile collaboration --layout single-module
 ```
 
-생성기는 현재 versioned migration 전체를 빈 DB에 적용하고 프로필 밖의 객체를 그 일회용 DB에서만
-제거한다. 이후 다음 파일을 만든다.
+`--profile`은 프리셋 레시피를 만들어 [구성 해석기](../../scripts/project-composer-recipe.mjs)를 거친다
+(`--layout` 기본값은 `multi-module`). 생성기는 현재 versioned migration 전체를 빈 DB에 적용하고, 구성 밖의
+객체를 그 일회용 DB에서만 제거하며, 남는 테이블의 물리 스키마가 보존됐는지와 기능 간 외래 키 선언을
+대조한다. 이후 다음 파일을 만든다.
 
 - `db/migration/V1_0__baseline.sql`
 - `db/migration/V1_1__seed_meta_standard.sql`
 - `db/migration/R__seed_framework.sql`
 - `db/migration/R__zz_seed_base_admin.sql`
-- `profile-lock.json`, `README.md`
+- `schema-contract.json`, `schema-reapplied.json`, `README.md`
+- `profile-lock.json` — 재적용 검증을 모두 통과한 뒤에만 `validated: true`와 파일 해시를 담아 기록한다
 
-완성된 V1 체인은 두 번째 빈 DB에 다시 적용된다. 테이블·시퀀스 집합, 현재 표준 메타 행 수, 그리고
-day-1 관리자 부트스트랩(§3.3)의 SQL 단언이 모두 성립해야만 PASS한다.
+완성된 V1 체인은 두 번째 빈 DB에 다시 적용된다. 테이블·시퀀스 집합, 물리 스키마, 현재 표준 메타 행 수,
+그룹별 메뉴·권한 배정과 day-1 관리자 부트스트랩(§3.3)의 SQL 단언이 모두 성립해야만 PASS한다.
+소스 생성기는 검증된 같은 구성의 번들만 받는다.
 `R__seed_demo.sql`은 collaboration 소유 테이블을 참조하므로 번들에 복사하지 않는다 —
 데모 시드는 데모 프로필 소스 체인의 정의로만 남는다.
 
@@ -100,9 +106,11 @@ V1 baseline은 `pg_dump --schema-only`이므로 versioned 체인이 기록한 �
 
 `R__zz_seed_base_admin.sql`은 신규 base의 빈 권한·메뉴 상태와 변경 이력을 확인하여 초기화한다.
 기존 제품 DB에서 회수된 기능·메뉴·사용자 배정을 재부여하지 않으며 예약 그룹의 수정된 이름도 덮어쓰지 않는다.
+원본 파일은 바꾸지 않고, 번들에는 구성으로 투영한 같은 시드를 싣는다.
 
-- 코드의 [기능 카탈로그](../../config/governance/permission-catalog.json) `defaultGroups`와 같은 명시 OPERATION 부여
-- core 잔존 라우트의 최소 관리자 메뉴와 명시 NAVIGATION 부여, 메뉴 시퀀스 전진
+- 선택한 기능의 [기능 카탈로그](../../config/governance/permission-catalog.json) `defaultGroups`와 같은 명시 OPERATION 부여
+- [메뉴 스냅숏](../../config/project-composer-menus.json)에서 구성이 고른 메뉴와, 원본의 그룹별 NAVIGATION 배정을
+  그 메뉴만큼 투영한 부여(그룹마다 표시하는 메뉴에 들어갈 수 있어야 한다), 메뉴 시퀀스 전진
 - 예약 그룹과 최초 초기화 감사의 보존. 구 테이블 분기는 과거 Flyway target 검증용이며 현재 앱의 인가 모델이 아니다.
 
 회귀 게이트는 두 겹이다: DB 생성기의 verify 단계가 재적용 DB에서 부트스트랩 행 존재를 SQL로
@@ -124,7 +132,8 @@ core 잔존 라우트 계약을 검증한다.
 
 ### 3.5 소스 projection
 
-DB 생성기가 출력한 실제 디렉터리를 `--db-bundle`에 전달한다.
+DB 생성기가 출력한 실제 디렉터리를 `--db-bundle`에 전달한다. 번들은 같은 레이아웃으로 만든 것이어야 한다 —
+레이아웃이 다르면 소스 생성기가 다시 만들 명령을 알려 주고 멈춘다.
 
 ```bash
 npm run base:generate-source -- \
@@ -134,11 +143,14 @@ npm run base:generate-source -- \
 
 npm run base:generate-source -- \
   --profile collaboration \
-  --db-bundle build/reusable-base/collaboration-<sha>-<timestamp> \
+  --db-bundle <--layout single-module DB 실행이 출력한 경로> \
   --layout single-module
 ```
 
-소스 생성기는 DB lock의 프로필·커밋을 현재 릴리스와 대조한 뒤 선택하지 않은 Java 도메인,
+DB 번들의 기본 경로(`build/reusable-base/<profile>-<sha>-<timestamp>`)에는 레이아웃이 붙지 않는다. 생성 완료
+메시지의 경로를 쓰고, 레이아웃은 번들의 `profile-lock.json`에서 확인한다.
+
+소스 생성기는 DB lock의 프로필·커밋·레이아웃·구성 해시를 현재 릴리스와 대조한 뒤 선택하지 않은 Java 도메인,
 그 도메인에 의존하는 소비자, 프런트 라우트와 전이 importer를 제거한다. 원본 마이그레이션 체인은
 검증된 V1 번들로 교체하고 `REUSABLE_BASE.md`와 `reusable-base-lock.json`을 기록한다.
 
@@ -150,7 +162,8 @@ npm run base:generate-source -- \
 개발용 `--allow-dirty` 생성은 그 밖의 추적 파일과 gitignore에 걸리지 않는 새 로컬 파일을 계속 포함한다.
 공식 산출물은 기존의 clean working tree·릴리스 태그 요건을 그대로 따른다.
 
-`--layout`은 소스 생성기의 인자이며 DB 생성기에 전달하지 않는다. 기본 소스 출력 경로는
+`--layout`은 DB 생성기와 소스 생성기에 같은 값을 준다(기본 `multi-module`). 레이아웃이 다른 DB 번들은 소스 생성기가
+거부하므로 레이아웃마다 DB 번들을 따로 만든다. 기본 소스 출력 경로는
 `build/reusable-base/source/<profile>-<sha>`이고 단일모듈에는 `-single-module` 접미사가 붙는다.
 명시 `--output`도 기존 디렉터리를 덮어쓸 수 없다. 소스 lock의 `layout`이 선택 결과를 기록하며,
 검증기는 필드가 없는 이전 lock만 `multi-module`로 해석한다. 미지원 값과 요청·생성물 불일치는 실패한다.
@@ -299,7 +312,7 @@ npm run base:verify -- --profile demo --layout single-module
 ```
 
 앞의 세 명령은 기본 `multi-module` 검증이며 `--layout multi-module`을 명시해도 같다.
-DB 생성은 레이아웃과 독립이고, 검증 driver는 소스 생성기에 선택한 레이아웃을 전달한 뒤 lock과 대조한다.
+검증 driver는 DB·소스 생성기에 같은 레이아웃을 전달한 뒤 lock과 대조한다.
 
 실행 정본은 [생성·검증 driver](../../scripts/verify-reusable-base.mjs)와
 [산출물 runner](../../scripts/verify-reusable-artifact.mjs)다. 범위는 거버넌스 무결성·활성 원장·부정 계약,
@@ -420,11 +433,11 @@ red 수는 그대로다(남은 red 는 위 세 부류). `demo` 는 90건 전부 
 
 ```bash
 npm run base:generate-db -- \
-  --profile collaboration --allow-dirty --allow-non-release-ref
+  --profile collaboration --layout single-module --allow-dirty --allow-non-release-ref
 
 npm run base:generate-source -- \
   --profile collaboration \
-  --db-bundle build/reusable-base/collaboration-<sha>-<timestamp> \
+  --db-bundle <위 DB 실행이 출력한 경로> \
   --layout single-module \
   --allow-dirty --allow-non-release-ref
 ```
@@ -440,7 +453,7 @@ npm run base:generate-source -- \
 1. 현재 migration과 엔티티의 최종 물리 상태를 확인한다.
 2. `config/reusable-base-profiles.json`의 pack 소유권과 클러스터를 갱신한다.
 3. `npm run test:base-profile`에서 누락·중복·상향 의존이 없는지 확인한다.
-4. core, collaboration, demo DB 번들을 각각 생성해 빈 DB 재적용을 통과시킨다.
+4. core, collaboration, demo DB 번들을 레이아웃별로 생성해 빈 DB 재적용을 통과시킨다.
 5. 영향을 받는 소스 projection을 두 레이아웃으로 생성해 §4 게이트를 통과시킨다.
 6. 제거되는 거버넌스 게이트가 달라졌으면 `profiles.<name>.acknowledgedRemovedGates`를 사유와 함께
    갱신한다(§3.6). 승인 없이 게이트가 빠지면 생성이 FAIL한다.

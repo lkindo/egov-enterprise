@@ -23,8 +23,9 @@ import {
 } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { normalizeBackendLayout } from './reusable-layout.mjs';
 import { assertSchemaPreserved, buildCompositionAdminSeed, projectCompositionMenus, schemaSnapshotHash,
-  schemaSnapshotSql, selectSchemaSnapshot, verifyResolvedDbComposition, assertDeclaredCrossDomainForeignKeys,
+  schemaSnapshotSql, selectSchemaSnapshot, assertDeclaredCrossDomainForeignKeys,
   assertNavigationEnterable, projectCompositionNavigation } from './project-composer-db.mjs';
 import { assertProjectComposerMenusMatch, writeProjectComposerMenuSnapshot } from './project-composer-menu-preview.mjs';
 
@@ -43,6 +44,7 @@ export function parseDbGenerationArgs(argv) {
   const args = {
     profile: undefined,
     composition: undefined,
+    layout: undefined,
     container: 'egov-e2e-postgres',
     output: undefined,
     allowDirty: false,
@@ -57,12 +59,26 @@ export function parseDbGenerationArgs(argv) {
       args.composition = argv[++index];
       if (!args.composition || args.composition.startsWith('--')) fail('--composition requires a resolved JSON path.');
     }
+    else if (arg === '--layout') {
+      if (args.layout !== undefined) fail('--layout may only be supplied once.');
+      const value = argv[++index];
+      if (!value || value.startsWith('--')) fail('--layout requires multi-module or single-module.');
+      args.layout = normalizeBackendLayout(value);
+    }
     else if (arg === '--container') args.container = argv[++index];
     else if (arg === '--output') args.output = argv[++index];
     else if (arg === '--allow-dirty') args.allowDirty = true;
     else if (arg === '--allow-non-release-ref') args.allowNonReleaseRef = true;
     else if (arg === '--write-menu-snapshot') args.writeMenuSnapshot = true;
     else fail(`알 수 없는 인자: ${arg}`);
+  }
+  if (args.writeMenuSnapshot) {
+    // 스냅숏 갱신은 원본 마이그레이션을 적용해 메뉴·그룹 배정만 읽는다. 카탈로그는 이 스냅숏으로 탭 메뉴를
+    // 검증하므로, 번들 생성과 묶으면 새 메뉴 행과 그 선언을 함께 넣는 변경에서 갱신 명령이 스스로 막힌다.
+    if (args.profile || args.composition || args.output || args.layout) {
+      fail('--write-menu-snapshot은 단독으로 쓴다(--profile·--composition·--output·--layout 없이).');
+    }
+    return args;
   }
   if (args.profile && args.composition) fail('--profile and --composition are mutually exclusive.');
   if (!args.profile && !args.composition) fail('--profile core|collaboration|demo 또는 --composition PATH가 필요하다.');
@@ -404,8 +420,6 @@ COMMIT;`;
 async function main() {
   const args = parseDbGenerationArgs(process.argv.slice(2));
   const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
-  let profile = manifest.profiles?.[args.profile];
-  if (!args.composition && !profile) fail(`지원하지 않는 profile: ${args.profile}`);
   assertContainerName(args.container);
 
   const dirty = git(['status', '--porcelain']);
@@ -413,38 +427,37 @@ async function main() {
   const releaseTag = git(['tag', '--points-at', 'HEAD']).split(/\r?\n/).find((tag) => /^v\d/.test(tag));
   if (!releaseTag && !args.allowNonReleaseRef) fail('공식 산출물은 v* 릴리스 태그에서만 생성한다.');
   const sourceCommit = git(['rev-parse', 'HEAD']);
-  let composition, composerCatalog;
-  if (args.composition) {
+  // 프리셋(--profile)과 화면 생성기(--composition)가 같은 해석기를 탄다. 스냅숏 갱신 모드만 해석하지 않는다.
+  let composition, composerCatalog, profile;
+  if (!args.writeMenuSnapshot) {
     const { loadProjectComposerCatalog } = await import('./project-composer-catalog.mjs');
-    const { verifyProjectComposition } = await import('./project-composer-recipe.mjs');
-    const input = JSON.parse(readFileSync(resolve(ROOT, args.composition), 'utf8'));
+    const { resolveGeneratorComposition } = await import('./project-composer-recipe.mjs');
     composerCatalog = loadProjectComposerCatalog(ROOT);
-    const resolved = verifyProjectComposition(input, composerCatalog);
-    composition = verifyResolvedDbComposition(input, resolved, sourceCommit,
-      reference => git(['rev-parse', '--verify', `${reference}^{commit}`]));
+    composition = resolveGeneratorComposition({ catalog: composerCatalog, profile: args.profile,
+      supplied: args.composition ? JSON.parse(readFileSync(resolve(ROOT, args.composition), 'utf8')) : undefined,
+      backendLayout: args.layout, layoutExplicit: args.layout !== undefined, sourceCommit,
+      resolveSourceReference: reference => git(['rev-parse', '--verify', `${reference}^{commit}`]) });
     args.profile = composition.profile;
     profile = { packs: composition.packs };
   }
   const shortSha = sourceCommit.slice(0, 12);
-  const output = safeDbOutputPath(args.output, args.profile, shortSha);
+  const output = args.writeMenuSnapshot ? undefined : safeDbOutputPath(args.output, args.profile, shortSha);
 
   const containerInfo = inspectContainer(args.container);
   const user = containerInfo.user;
-  const suffix = `${args.profile}_${process.pid}_${Date.now().toString(36)}`.toLowerCase();
+  const suffix = `${args.profile ?? 'menus'}_${process.pid}_${Date.now().toString(36)}`.toLowerCase();
   const workingDb = assertIdentifier(`${TEMP_DB_PREFIX}${suffix}`, 'working DB');
   const verifyDb = assertIdentifier(`${workingDb}_verify`, 'verify DB');
 
-  const desiredTables = composition ? [...composition.tables].sort()
-    : profile.packs.flatMap((packName) => manifest.packs[packName].database.tables).sort();
-  const explicitDesiredSequences = composition ? [...composition.explicitSequences].sort()
-    : profile.packs.flatMap((packName) => manifest.packs[packName].database.sequences).sort();
+  const desiredTables = [...(composition?.tables ?? [])].sort();
+  const explicitDesiredSequences = [...(composition?.explicitSequences ?? [])].sort();
   const sourceExpectedTables = Object.values(manifest.packs).flatMap((pack) => pack.database.tables).sort();
   const sourceExplicitSequences = Object.values(manifest.packs).flatMap((pack) => pack.database.sequences).sort();
 
   let workingCreated = false;
   let verifyCreated = false;
   try {
-    console.log(`[base-db] ${args.profile}: 현재 versioned migration을 빈 임시 DB에 적용한다.`);
+    console.log(`[base-db] ${args.profile ?? 'menu-snapshot'}: 현재 versioned migration을 빈 임시 DB에 적용한다.`);
     createDatabase(args.container, user, workingDb);
     workingCreated = true;
     const migrations = versionedMigrations();
@@ -484,41 +497,41 @@ async function main() {
       .map((sequence) => sequence.name)
       .sort();
 
-    let migratedMenus, migratedNavigation;
-    if (composition || args.writeMenuSnapshot) {
-      // [2026-10-05] 레거시 연결 프로그램 컬럼·원장은 읽지 않는다(GAP-PROGRAM-001).
-      migratedMenus = JSON.parse(psql(args.container, user, workingDb, `SELECT COALESCE(json_agg(row_to_json(m) ORDER BY m.menu_sn),'[]'::json)::text
-        FROM (SELECT menu_sn,up_menu_sn,menu_ordr,menu_nm,menu_expln,modern_route,use_yn,del_yn FROM public.tb_menu_info) m`));
-      // 원본 마이그레이션이 남긴 그룹별 메뉴 표시 배정. 생성 시드가 선택 메뉴만큼 투영한다.
-      migratedNavigation = JSON.parse(psql(args.container, user, workingDb, `SELECT COALESCE(json_agg(json_build_object('authrt_cd',authrt_cd,'menu_sn',authrt_grnt_cd::bigint)
-        ORDER BY authrt_cd, authrt_grnt_cd::bigint),'[]'::json)::text FROM public.tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION'`));
-      if (composition && !args.writeMenuSnapshot) assertProjectComposerMenusMatch(ROOT, { menus: migratedMenus, navigation: migratedNavigation });
+    // [2026-10-05] 레거시 연결 프로그램 컬럼·원장은 읽지 않는다(GAP-PROGRAM-001).
+    const migratedMenus = JSON.parse(psql(args.container, user, workingDb, `SELECT COALESCE(json_agg(row_to_json(m) ORDER BY m.menu_sn),'[]'::json)::text
+      FROM (SELECT menu_sn,up_menu_sn,menu_ordr,menu_nm,menu_expln,modern_route,use_yn,del_yn FROM public.tb_menu_info) m`));
+    // 원본 마이그레이션이 남긴 그룹별 메뉴 표시 배정. 생성 시드가 선택 메뉴만큼 투영한다.
+    const migratedNavigation = JSON.parse(psql(args.container, user, workingDb, `SELECT COALESCE(json_agg(json_build_object('authrt_cd',authrt_cd,'menu_sn',authrt_grnt_cd::bigint)
+      ORDER BY authrt_cd, authrt_grnt_cd::bigint),'[]'::json)::text FROM public.tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION'`));
+    if (args.writeMenuSnapshot) {
+      writeProjectComposerMenuSnapshot(ROOT, { menus: migratedMenus, navigation: migratedNavigation });
+      console.log('[base-db] PASS: config/project-composer-menus.json 을 원본 마이그레이션 적용 결과로 갱신했다.');
+      return;
     }
+    assertProjectComposerMenusMatch(ROOT, { menus: migratedMenus, navigation: migratedNavigation });
     let selectedSchema, menuProjection, navigationProjection, compositionAdminSeed, pageAccess, compositionOperationGrants;
-    if (composition) {
-      // Read live metadata from this owned, just-migrated DB before projecting its schema.
-      // No producer/shared DB data is a seed source.
-      const sourceSnapshot = JSON.parse(psql(args.container, user, workingDb, schemaSnapshotSql()));
-      assertDeclaredCrossDomainForeignKeys(sourceSnapshot, composerCatalog);
-      selectedSchema = selectSchemaSnapshot(sourceSnapshot, desiredTables, desiredSequences, composition.optionalForeignKeys);
-      for (const [table, expected] of Object.entries(manifest.databaseSnapshot.metaRows)) {
-        if (Number(psql(args.container, user, workingDb, `SELECT count(*) FROM public.${quoteSqlIdentifier(table)}`)) !== expected) {
-          fail(`Composition source metadata differs from the checked-in snapshot: ${table}`);
-        }
+    // Read live metadata from this owned, just-migrated DB before projecting its schema.
+    // No producer/shared DB data is a seed source.
+    const sourceSnapshot = JSON.parse(psql(args.container, user, workingDb, schemaSnapshotSql()));
+    assertDeclaredCrossDomainForeignKeys(sourceSnapshot, composerCatalog);
+    selectedSchema = selectSchemaSnapshot(sourceSnapshot, desiredTables, desiredSequences, composition.optionalForeignKeys);
+    for (const [table, expected] of Object.entries(manifest.databaseSnapshot.metaRows)) {
+      if (Number(psql(args.container, user, workingDb, `SELECT count(*) FROM public.${quoteSqlIdentifier(table)}`)) !== expected) {
+        fail(`Composition source metadata differs from the checked-in snapshot: ${table}`);
       }
-      menuProjection = projectCompositionMenus({ menus: migratedMenus, menuRoutes: composition.menuRoutes, excludedMenuTabs: composition.excludedMenuTabs });
-      const permissionCatalog = JSON.parse(readFileSync(join(ROOT, 'config/governance/permission-catalog.json'), 'utf8'));
-      pageAccess = { pagePermissions: permissionCatalog.pagePermissions, pagePermissionModes: permissionCatalog.pagePermissionModes };
-      const selectedCodes = new Set(composition.permissionCodes);
-      compositionOperationGrants = permissionCatalog.permissions.filter(permission => selectedCodes.has(permission.code))
-        .flatMap(permission => permission.defaultGroups.map(group => [group, permission.code]));
-      navigationProjection = projectCompositionNavigation({ menus: menuProjection.menus, navigation: migratedNavigation,
-        operationGrants: compositionOperationGrants, pageAccess });
-      compositionAdminSeed = buildCompositionAdminSeed({
-        bootstrapSql: readFileSync(join(ROOT, 'api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql'), 'utf8'),
-        projection: menuProjection, permissionCodes: composition.permissionCodes, permissionCatalog, navigation: navigationProjection,
-      });
     }
+    menuProjection = projectCompositionMenus({ menus: migratedMenus, menuRoutes: composition.menuRoutes, excludedMenuTabs: composition.excludedMenuTabs });
+    const permissionCatalog = JSON.parse(readFileSync(join(ROOT, 'config/governance/permission-catalog.json'), 'utf8'));
+    pageAccess = { pagePermissions: permissionCatalog.pagePermissions, pagePermissionModes: permissionCatalog.pagePermissionModes };
+    const selectedCodes = new Set(composition.permissionCodes);
+    compositionOperationGrants = permissionCatalog.permissions.filter(permission => selectedCodes.has(permission.code))
+      .flatMap(permission => permission.defaultGroups.map(group => [group, permission.code]));
+    navigationProjection = projectCompositionNavigation({ menus: menuProjection.menus, navigation: migratedNavigation,
+      operationGrants: compositionOperationGrants, pageAccess });
+    compositionAdminSeed = buildCompositionAdminSeed({
+      bootstrapSql: readFileSync(join(ROOT, 'api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql'), 'utf8'),
+      projection: menuProjection, permissionCodes: composition.permissionCodes, permissionCatalog, navigation: navigationProjection,
+    });
 
     const tablesToDrop = sourceTables.filter((table) => !desiredTables.includes(table));
     if (tablesToDrop.length) {
@@ -533,7 +546,7 @@ async function main() {
     }
     assertSameSet(listObjects(args.container, user, workingDb, 'table'), desiredTables, '축소 DB table');
     assertSameSet(listObjects(args.container, user, workingDb, 'sequence'), desiredSequences, '축소 DB sequence');
-    if (composition) assertSchemaPreserved(selectedSchema.snapshot,
+    assertSchemaPreserved(selectedSchema.snapshot,
       JSON.parse(psql(args.container, user, workingDb, schemaSnapshotSql())), '축소 DB physical schema');
 
     const baseline = sanitizePgDump(
@@ -553,13 +566,14 @@ async function main() {
     mkdirSync(join(output, 'db', 'migration'), { recursive: true });
     writeFileSync(join(output, 'db', 'migration', 'V1_0__baseline.sql'), baseline, 'utf8');
     writeFileSync(join(output, 'db', 'migration', 'V1_1__seed_meta_standard.sql'), metaSeed, 'utf8');
-    if (composition) writeFileSync(join(output, 'schema-contract.json'), `${JSON.stringify(selectedSchema, null, 2)}\n`, 'utf8');
+    writeFileSync(join(output, 'schema-contract.json'), `${JSON.stringify(selectedSchema, null, 2)}\n`, 'utf8');
     // 프로필-안전 repeatable 만 번들에 태운다. R__seed_demo.sql 은 collaboration 테이블을
     // 참조하므로 core 프로필에서 깨진다 — 데모 프로필의 정의로 남겨두고 복사하지 않는다.
     // R__zz_seed_base_admin.sql 이 빠지면 verify 단계의 admin bootstrap 단언이 red 다.
     const REPEATABLE_SEEDS = ['R__seed_framework.sql', 'R__zz_seed_base_admin.sql'];
     for (const seed of REPEATABLE_SEEDS) {
-      if (composition && seed === 'R__zz_seed_base_admin.sql') {
+      // 원본 관리자 시드는 바꾸지 않는다. 번들에는 선택 구성으로 투영한 시드를 쓴다.
+      if (seed === 'R__zz_seed_base_admin.sql') {
         writeFileSync(join(output, 'db', 'migration', seed), compositionAdminSeed, 'utf8');
       } else copyFileSync(
         join(ROOT, 'api-server', 'src', 'main', 'resources', 'db', 'migration', seed),
@@ -580,15 +594,13 @@ async function main() {
       tables: desiredTables,
       sequences: desiredSequences,
       metaRows: manifest.databaseSnapshot.metaRows,
-      ...(composition ? { composition, compositionHash: composition.compositionHash, recipeHash: composition.recipeHash,
-        catalogHash: composition.catalogHash, layout: composition.backendLayout, resolvedDomains: composition.resolvedDomains,
-        schemaSnapshotHash: schemaSnapshotHash(selectedSchema.snapshot), omittedForeignKeys: selectedSchema.omittedForeignKeys,
-        menus: menuProjection.menus.map(menu => ({ id: menu.menu_sn, parent: menu.up_menu_sn, route: menu.modern_route })),
-        permissionCodes: composition.permissionCodes } : {}),
+      composition, compositionHash: composition.compositionHash, recipeHash: composition.recipeHash,
+      catalogHash: composition.catalogHash, layout: composition.backendLayout, resolvedDomains: composition.resolvedDomains,
+      schemaSnapshotHash: schemaSnapshotHash(selectedSchema.snapshot), omittedForeignKeys: selectedSchema.omittedForeignKeys,
+      menus: menuProjection.menus.map(menu => ({ id: menu.menu_sn, parent: menu.up_menu_sn, route: menu.modern_route })),
+      permissionCodes: composition.permissionCodes,
     };
-    // Legacy profiles keep their existing contract. A new composition cannot be
-    // consumed as a successful DB bundle until every empty-DB assertion passes.
-    if (!composition) writeFileSync(join(output, 'profile-lock.json'), `${JSON.stringify(lock, null, 2)}\n`, 'utf8');
+    // 번들은 빈 DB 재적용 단언을 모두 통과한 뒤에만 lock 을 갖는다. 그 전에 실패하면 소비될 수 없다.
 
     console.log(`[base-db] ${args.profile}: 생성 SQL을 두 번째 빈 임시 DB에서 재적용한다.`);
     createDatabase(args.container, user, verifyDb);
@@ -602,24 +614,22 @@ async function main() {
     }));
     assertSameSet(listObjects(args.container, user, verifyDb, 'table'), desiredTables, '재적용 DB table');
     assertSameSet(listObjects(args.container, user, verifyDb, 'sequence'), desiredSequences, '재적용 DB sequence');
-    if (composition) {
-      const reappliedSchema = JSON.parse(psql(args.container, user, verifyDb, schemaSnapshotSql()));
-      writeFileSync(join(output, 'schema-reapplied.json'), `${JSON.stringify(reappliedSchema, null, 2)}\n`, 'utf8');
-      assertSchemaPreserved(selectedSchema.snapshot, reappliedSchema, '재적용 DB physical schema');
-      assertSameSet(psql(args.container, user, verifyDb, 'SELECT menu_sn FROM public.tb_menu_info ORDER BY menu_sn').split(/\r?\n/),
-        menuProjection.menus.map(menu => String(menu.menu_sn)), '재적용 DB selected menus');
-      assertCompositionOperationGrants(JSON.parse(psql(args.container, user, verifyDb,
-        "SELECT COALESCE(json_agg(json_build_array(authrt_cd, authrt_grnt_cd) ORDER BY authrt_cd, authrt_grnt_cd),'[]'::json)::text FROM public.tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'")),
-      composition.permissionCodes, JSON.parse(readFileSync(join(ROOT, 'config/governance/permission-catalog.json'), 'utf8')));
-      // 그룹별 메뉴 표시는 원본 배정의 투영과 정확히 같고, 그룹마다 표시하는 메뉴에 실제로 들어갈 수 있어야 한다.
-      const reappliedNavigation = JSON.parse(psql(args.container, user, verifyDb, `SELECT COALESCE(json_agg(json_build_object('authrt_cd',authrt_cd,'menu_sn',authrt_grnt_cd::bigint)
-        ORDER BY authrt_cd, authrt_grnt_cd::bigint),'[]'::json)::text FROM public.tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION'`));
-      assertSameSet(reappliedNavigation.map(row => `${row.authrt_cd}:${row.menu_sn}`),
-        navigationProjection.map(row => `${row.authrt_cd}:${row.menu_sn}`), '재적용 DB group NAVIGATION grants');
-      assertNavigationEnterable({ menus: menuProjection.menus, navigation: reappliedNavigation, pageAccess,
-        operationGrants: JSON.parse(psql(args.container, user, verifyDb,
-          "SELECT COALESCE(json_agg(json_build_array(authrt_cd, authrt_grnt_cd)),'[]'::json)::text FROM public.tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'")) });
-    }
+    const reappliedSchema = JSON.parse(psql(args.container, user, verifyDb, schemaSnapshotSql()));
+    writeFileSync(join(output, 'schema-reapplied.json'), `${JSON.stringify(reappliedSchema, null, 2)}\n`, 'utf8');
+    assertSchemaPreserved(selectedSchema.snapshot, reappliedSchema, '재적용 DB physical schema');
+    assertSameSet(psql(args.container, user, verifyDb, 'SELECT menu_sn FROM public.tb_menu_info ORDER BY menu_sn').split(/\r?\n/),
+      menuProjection.menus.map(menu => String(menu.menu_sn)), '재적용 DB selected menus');
+    assertCompositionOperationGrants(JSON.parse(psql(args.container, user, verifyDb,
+      "SELECT COALESCE(json_agg(json_build_array(authrt_cd, authrt_grnt_cd) ORDER BY authrt_cd, authrt_grnt_cd),'[]'::json)::text FROM public.tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'")),
+    composition.permissionCodes, JSON.parse(readFileSync(join(ROOT, 'config/governance/permission-catalog.json'), 'utf8')));
+    // 그룹별 메뉴 표시는 원본 배정의 투영과 정확히 같고, 그룹마다 표시하는 메뉴에 실제로 들어갈 수 있어야 한다.
+    const reappliedNavigation = JSON.parse(psql(args.container, user, verifyDb, `SELECT COALESCE(json_agg(json_build_object('authrt_cd',authrt_cd,'menu_sn',authrt_grnt_cd::bigint)
+      ORDER BY authrt_cd, authrt_grnt_cd::bigint),'[]'::json)::text FROM public.tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION'`));
+    assertSameSet(reappliedNavigation.map(row => `${row.authrt_cd}:${row.menu_sn}`),
+      navigationProjection.map(row => `${row.authrt_cd}:${row.menu_sn}`), '재적용 DB group NAVIGATION grants');
+    assertNavigationEnterable({ menus: menuProjection.menus, navigation: reappliedNavigation, pageAccess,
+      operationGrants: JSON.parse(psql(args.container, user, verifyDb,
+        "SELECT COALESCE(json_agg(json_build_array(authrt_cd, authrt_grnt_cd)),'[]'::json)::text FROM public.tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'")) });
     const metaMismatches = [];
     for (const [table, expected] of Object.entries(manifest.databaseSnapshot.metaRows)) {
       const actual = Number(psql(args.container, user, verifyDb, `SELECT count(*) FROM public.${quoteSqlIdentifier(table)}`));
@@ -656,14 +666,11 @@ async function main() {
         `운영 DB 축소용 마이그레이션이 아니다. 신규 프로젝트의 빈 DB에서만 사용한다.\n`,
       'utf8',
     );
-    if (composition) {
-      lock.validated = true;
-      lock.migrationFiles = Object.fromEntries(readdirSync(join(output, 'db', 'migration')).sort().map(name => [
-        `db/migration/${name}`, createHash('sha256').update(readFileSync(join(output, 'db', 'migration', name))).digest('hex'),
-      ]));
-      writeFileSync(join(output, 'profile-lock.json'), `${JSON.stringify(lock, null, 2)}\n`, 'utf8');
-    }
-    if (args.writeMenuSnapshot) writeProjectComposerMenuSnapshot(ROOT, { menus: migratedMenus, navigation: migratedNavigation });
+    lock.validated = true;
+    lock.migrationFiles = Object.fromEntries(readdirSync(join(output, 'db', 'migration')).sort().map(name => [
+      `db/migration/${name}`, createHash('sha256').update(readFileSync(join(output, 'db', 'migration', name))).digest('hex'),
+    ]));
+    writeFileSync(join(output, 'profile-lock.json'), `${JSON.stringify(lock, null, 2)}\n`, 'utf8');
     console.log(`[base-db] PASS: ${relative(ROOT, output).split(sep).join('/')}`);
   } finally {
     if (verifyCreated) dropTemporaryDatabase(args.container, user, verifyDb);

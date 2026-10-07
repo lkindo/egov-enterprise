@@ -194,27 +194,25 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
   if (!['core', 'collaboration', 'demo', 'custom'].includes(profile) || !/^[a-f0-9]{40}$/u.test(sourceCommit)) {
     throw new Error('Governance projection requires a known profile and exact upstream commit');
   }
-  if (profile === 'custom' && !composition) throw new Error('Custom governance projection requires a resolved composition');
-  let compositionProvenance;
-  if (composition) {
-    const catalog = loadProjectComposerCatalog(sourceRoot);
-    const verified = verifyProjectComposition(composition, catalog);
-    if (verified.profile !== profile || (composition.sourceCommit && composition.sourceCommit !== sourceCommit)) {
-      throw new Error('Governance composition profile or source commit mismatch');
-    }
-    composition = verified;
-    // The generated artifact no longer contains all upstream migrations, so bind the
-    // validated producer inventory before projecting its selected bootstrap rows.
-    loadProjectComposerMenus(sourceRoot);
-    const menuSnapshotSha256 = artifactTextSha256(sourceRoot, COMPOSER_MENU_SNAPSHOT_PATH);
-    if (artifactTextSha256(outputRoot, COMPOSER_MENU_SNAPSHOT_PATH) !== menuSnapshotSha256) {
-      throw new Error('Composer menu snapshot differs from the validated upstream inventory');
-    }
-    writeJson(outputRoot, COMPOSER_SELECTION_PATH, { catalog, composition });
-    compositionProvenance = { path: COMPOSER_SELECTION_PATH, sha256: artifactTextSha256(outputRoot, COMPOSER_SELECTION_PATH),
-      catalogHash: composition.catalogHash, recipeHash: composition.recipeHash, compositionHash: composition.compositionHash,
-      menuSnapshotSha256 };
+  // 프리셋도 구성 경로로 생성한다(DEC-OPS-239). 구성 스냅숏 없는 투영은 어느 프로필에서도 만들지 않는다.
+  if (!composition) throw new Error('Governance projection requires a resolved composition');
+  const catalog = loadProjectComposerCatalog(sourceRoot);
+  const verified = verifyProjectComposition(composition, catalog);
+  if (verified.profile !== profile || (composition.sourceCommit && composition.sourceCommit !== sourceCommit)) {
+    throw new Error('Governance composition profile or source commit mismatch');
   }
+  composition = verified;
+  // The generated artifact no longer contains all upstream migrations, so bind the
+  // validated producer inventory before projecting its selected bootstrap rows.
+  loadProjectComposerMenus(sourceRoot);
+  const menuSnapshotSha256 = artifactTextSha256(sourceRoot, COMPOSER_MENU_SNAPSHOT_PATH);
+  if (artifactTextSha256(outputRoot, COMPOSER_MENU_SNAPSHOT_PATH) !== menuSnapshotSha256) {
+    throw new Error('Composer menu snapshot differs from the validated upstream inventory');
+  }
+  writeJson(outputRoot, COMPOSER_SELECTION_PATH, { catalog, composition });
+  const compositionProvenance = { path: COMPOSER_SELECTION_PATH, sha256: artifactTextSha256(outputRoot, COMPOSER_SELECTION_PATH),
+    catalogHash: composition.catalogHash, recipeHash: composition.recipeHash, compositionHash: composition.compositionHash,
+    menuSnapshotSha256 };
   const snapshots = UPSTREAM_SOURCES.map(path => {
     const content = normalizedText(sourceRoot, path);
     const snapshotPath = snapshotPathFor(path);
@@ -310,7 +308,7 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
     schemaVersion: 1,
     authority: 'generated-reusable-governance-projection-not-environment-approval',
     profile, packs: composition?.packs ?? originalProfiles.profiles[profile].packs, sourceCommit, upstreamSnapshots: snapshots,
-    ...(compositionProvenance ? { composition: compositionProvenance } : {}),
+    composition: compositionProvenance,
     routes: routes.routes.map(({ route, source }) => ({ route, source })),
     urlRecordIds: census.records.map(record => record.id).sort(),
     inheritedUrlRecordIds: inheritedRecordIds,
