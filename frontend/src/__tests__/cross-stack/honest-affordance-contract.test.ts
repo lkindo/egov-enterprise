@@ -151,6 +151,8 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
     expect(body, '게시물 통계가 다시 자료이용현황 표를 읽는다').toContain('postStatistics');
     expect(body).toContain('countPostsByDate');
     expect(body).not.toContain('dtaUseStatsRepository');
+    // [Phase 0c] 자료 이용 집계도 포트로 옮겼다. 옛 필드 이름만 보면 그 포트를 불러도 통과한다.
+    expect(body).not.toContain('dataUsageStatistics');
 
     const contributor = readRepo(
       'business-app/src/main/java/nuri/business/service/board/stats/BoardPostStatisticsContributor.java',
@@ -158,6 +160,32 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
     expect(contributor, '게시글 집계 포트 구현이 게시판을 세지 않는다')
       .toContain('boardRepository.countPostsByDate');
     expect(contributor).not.toContain('dtaUseStatsRepository');
+  });
+
+  /**
+   * DATA_USAGE 가 미수집인 근거를 **서버 배선에 결속**한다 — 위 CONTENT_STATS 케이스의 반대 방향이다.
+   *
+   * 자료 이용 탭은 `tb_dta_use_stats` 를 읽고 그 표에는 쓰는 코드가 없어 미수집이다. [Phase 0c] 그 질의를
+   * 게시판 도메인의 포트 구현으로 옮겼다. 구현이 게시글을 세도록 바뀌면 숫자가 생기는데 화면은 계속
+   * "수집되지 않는다" 고 말하게 된다. 그래서 포트를 부르는지와 그 구현이 무엇을 읽는지를 함께 본다.
+   */
+  it('DATA_USAGE 는 자료 이용 기록을 읽는다 — 게시글 집계로 갈아 끼우지 않는다', () => {
+    const service = readRepo(
+      'business-app/src/main/java/nuri/business/service/stats/ReportStatsService.java',
+    );
+    const method = service.slice(service.indexOf('public List<Object[]> getDtaUseStatsByDate'));
+    const body = method.slice(0, method.indexOf('}'));
+    expect(body, '자료 이용 통계가 자료 이용 포트를 부르지 않는다').toContain('dataUsageStatistics');
+    expect(body).toContain('countDataUsageByDate');
+    expect(body).not.toContain('postStatistics');
+
+    const contributor = stripComments(readRepo(
+      'business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java',
+    ));
+    expect(contributor, '자료 이용 포트 구현이 컴포넌트로 등록되지 않는다').toContain('@Component');
+    expect(contributor, '자료 이용 포트 구현이 자료 이용 기록을 읽지 않는다')
+      .toContain('dtaUseStatsRepository.countByDate');
+    expect(contributor).not.toContain('boardRepository');
   });
 
   /**

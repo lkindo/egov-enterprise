@@ -166,17 +166,18 @@ export function composerOutputPaths(root, name, token) {
  * 실제 생성기 스크립트는 저장소 build/ 밖 출력을 거부하므로, 운영 경로에서 다른 값을 넘기면
  * 생성이 실패할 뿐 출력이 새지 않는다.
  */
-export function createComposerEngine({ root = ROOT, outputRoot, run = runComposerCommand, fingerprint = composerSourceFingerprint } = {}) {
+export function createComposerEngine({ root = ROOT, outputRoot, run = runComposerCommand, fingerprint = composerSourceFingerprint,
+  loadCatalog = loadProjectComposerCatalog } = {}) {
   root = realpathSync(root);
   outputRoot = outputRoot === undefined ? root : realpathSync(outputRoot);
   let running = false;
   const catalog = () => {
-    const value = loadProjectComposerCatalog(root);
+    const value = loadCatalog(root);
     const sourceCommit = git(root, ['rev-parse', 'HEAD']);
     return { ...value, sourceRef: sourceCommit, sourceCommit };
   };
   const plan = recipe => {
-    const current = loadProjectComposerCatalog(root);
+    const current = loadCatalog(root);
     const composition = resolveProjectRecipe(recipe, current);
     // The local generator exports the inspected checkout. It never silently checks out another revision.
     const sourceCommit = git(root, ['rev-parse', '--verify', `${recipe.sourceRef}^{commit}`]);
@@ -219,7 +220,7 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
       const resolvedPlan = plan(recipe);
       // 생성 불가 구성은 출력 폴더·DB 컨테이너를 만들기 전에 사유와 함께 거부한다.
       if (resolvedPlan.blockers.length) throw Object.assign(new Error(resolvedPlan.blockers.join(' ')), { code: 'FK_CLOSURE' });
-      const composition = { ...resolveProjectRecipe(recipe, loadProjectComposerCatalog(root)), sourceCommit: resolvedPlan.sourceCommit };
+      const composition = { ...resolveProjectRecipe(recipe, loadCatalog(root)), sourceCommit: resolvedPlan.sourceCommit };
       const sourceFingerprint = fingerprint(root);
       token = randomBytes(8).toString('hex');
       paths = composerOutputPaths(outputRoot, composition.project.name, token);

@@ -8,18 +8,33 @@ import { menuRouteKey, projectCompositionMenus, projectCompositionNavigation } f
 import { loadProjectComposerMenus, projectComposerMenuPreview } from './project-composer-menu-preview.mjs';
 
 const catalog = loadProjectComposerCatalog();
+/*
+ * 외래 키 닫힘을 강제하는 요구 관계 하나를 지운 합성 카탈로그. 실제 카탈로그에서는 모든 단일 선택이
+ * 위반 없이 해석되므로(Phase 0c), 위반 경로는 이 카탈로그로 고정한다. 해시를 다시 계산하지 않으면
+ * 해석기가 카탈로그 위조로 거부한다.
+ */
+function catalogWithoutRequires(source, id) {
+  const { catalogHash, ...body } = structuredClone(source);
+  body.capabilities.find(capability => capability.id === id).requires = [];
+  return { ...body, catalogHash: compositionDigest(body) };
+}
+const loose = catalogWithoutRequires(catalog, 'operation');
+
 const recipe = selection => ({ schemaVersion: 1, project: { name: 'agency-project' }, sourceRef: 'v1.0.0', selection,
   database: { vendor: 'postgresql' }, backendLayout: 'multi-module' });
 
 test('required cross-domain foreign keys are reported without auto-inclusion when their parent is excluded', () => {
-  const violated = new Map(catalog.capabilities.map(capability => [capability.id,
-    resolveProjectRecipe(recipe({ domains: [capability.id] }), catalog).foreignKeyViolations.map(row => row.name)]));
-  for (const [id, names] of violated) {
-    assert.deepEqual(names, ['survey', 'stats'].includes(id) ? ['fk_tb_dta_use_stats_tb_bbs_item'] : [], id);
+  // Phase 0c: 자료 이용 기록이 게시판 소유가 된 뒤로 실제 카탈로그의 단일 선택은 모두 생성할 수 있다.
+  for (const capability of catalog.capabilities) {
+    assert.deepEqual(resolveProjectRecipe(recipe({ domains: [capability.id] }), catalog).foreignKeyViolations, [], capability.id);
   }
   const survey = resolveProjectRecipe(recipe({ domains: ['survey'] }), catalog);
-  assert.ok(!survey.resolvedDomains.includes('board'), 'a violation must not silently pull the parent domain');
-  assert.deepEqual(resolveProjectRecipe(recipe({ domains: ['board', 'survey'] }), catalog).foreignKeyViolations, []);
+  assert.ok(!survey.resolvedDomains.includes('board'), 'survey alone must not pull the board domain');
+  // 요구 관계가 빠지면 해석기는 부모를 자동으로 넣지 않고 위반으로 보고한다.
+  const operation = resolveProjectRecipe(recipe({ domains: ['operation'] }), loose);
+  assert.deepEqual(operation.foreignKeyViolations.map(row => row.name), ['fk_tb_rward_manage_tb_ifml_atrz_info']);
+  assert.ok(!operation.resolvedDomains.includes('informalsanction'), 'a violation must not silently pull the parent domain');
+  assert.deepEqual(resolveProjectRecipe(recipe({ domains: ['operation', 'informalsanction'] }), loose).foreignKeyViolations, []);
   for (const preset of catalog.presets) assert.deepEqual(resolveProjectRecipe(recipe({ preset: preset.id }), catalog).foreignKeyViolations, [], preset.id);
 });
 
@@ -197,8 +212,9 @@ test('both generators resolve a preset profile through the same resolver the com
   }
   const single = generator({ profile: 'core', backendLayout: 'single-module' });
   assert.throws(() => generator({ supplied: single, backendLayout: 'multi-module', layoutExplicit: true }), /layout differs/);
-  const supplied = { ...resolveProjectRecipe({ ...recipe({ domains: ['survey'] }), sourceRef: sourceCommit }, catalog), sourceCommit };
-  assert.throws(() => generator({ supplied }), error => error.code === 'FK_CLOSURE' && /fk_tb_dta_use_stats_tb_bbs_item/.test(error.message));
+  const supplied = { ...resolveProjectRecipe({ ...recipe({ domains: ['operation'] }), sourceRef: sourceCommit }, loose), sourceCommit };
+  assert.throws(() => resolveGeneratorComposition({ catalog: loose, sourceCommit, resolveSourceReference, supplied }),
+    error => error.code === 'FK_CLOSURE' && /fk_tb_rward_manage_tb_ifml_atrz_info/.test(error.message));
   assert.throws(() => generator({ profile: 'custom' }), /Unknown project preset/);
   assert.throws(() => generator({}), /Exactly one/);
   assert.throws(() => generator({ profile: 'core', supplied: single }), /Exactly one/);

@@ -146,7 +146,9 @@ const OPTIONAL_FOREIGN_KEYS = [{
  * 기능 사이의 필수 물리 외래 키. 자식 테이블을 고르면 부모 테이블도 있어야 DB 투영이 성공한다.
  * 해석기는 이 목록으로 위반을 계획 단계에서 찾고(자동 포함하지 않음), DB 생성기는 실제로 적용한
  * 스키마의 기능 사이 외래 키가 이 목록과 OPTIONAL_FOREIGN_KEYS 의 합과 정확히 같은지 대조한다.
- * 2026-10-07 전체 마이그레이션 적용 결과에서 기능 사이 외래 키는 이 5개와 선택 1개뿐이었다.
+ * 2026-10-07 전체 마이그레이션 적용 결과에서 기능 사이 외래 키는 5개와 선택 1개뿐이었다.
+ * Phase 0c 에서 자료 이용 기록(tb_dta_use_stats)이 게시판 소유가 되어 그 외래 키가 기능 안으로 들어왔고,
+ * 이제 이 4개와 선택 1개다. 설문만 골라도 게시판이 필요 없는 이유다.
  */
 const REQUIRED_FOREIGN_KEYS = [
   { name: 'fk_tb_bbs_comment_tb_bbs_item', childTable: 'tb_bbs_comment', parentTable: 'tb_bbs_item', sourceDomain: 'comment', targetDomain: 'board',
@@ -155,8 +157,6 @@ const REQUIRED_FOREIGN_KEYS = [
     reason: '댓글은 게시판에 속한다.', evidence: 'api-server/src/main/resources/db/migration/V2_14__add_referential_fks_batch2.sql' },
   { name: 'fk_tb_bbs_scrap_tb_bbs_item', childTable: 'tb_bbs_scrap', parentTable: 'tb_bbs_item', sourceDomain: 'scrap', targetDomain: 'board',
     reason: '스크랩은 게시글을 가리킨다.', evidence: 'api-server/src/main/resources/db/migration/V2_69__board_post_bigint_identity.sql' },
-  { name: 'fk_tb_dta_use_stats_tb_bbs_item', childTable: 'tb_dta_use_stats', parentTable: 'tb_bbs_item', sourceDomain: 'stats', targetDomain: 'board',
-    reason: '자료 이용 통계 테이블이 게시글을 참조한다.', evidence: 'api-server/src/main/resources/db/migration/V2_69__board_post_bigint_identity.sql' },
   { name: 'fk_tb_rward_manage_tb_ifml_atrz_info', childTable: 'tb_rward_manage', parentTable: 'tb_ifml_atrz_info', sourceDomain: 'operation', targetDomain: 'informalsanction',
     reason: '포상은 결재 문서를 참조한다.', evidence: 'api-server/src/main/resources/db/migration/V2_78__informal_sanction_bigint_identity.sql' },
 ];

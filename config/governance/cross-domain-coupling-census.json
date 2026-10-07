@@ -337,17 +337,6 @@
       "pack": "collaboration"
     },
     {
-      "file": "stats/attachment/StatsAttachmentSourceContributor.java",
-      "owner": "stats",
-      "target": "file",
-      "module": "business-core",
-      "types": [
-        "nuri.business.service.file.AttachmentSource",
-        "nuri.business.service.file.AttachmentSourceContributor"
-      ],
-      "pack": "demo"
-    },
-    {
       "file": "stats/ReportStatsService.java",
       "owner": "stats",
       "target": "log",

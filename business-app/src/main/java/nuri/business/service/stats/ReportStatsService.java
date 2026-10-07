@@ -1,11 +1,11 @@
 package nuri.business.service.stats;
 
-import nuri.business.domain.stats.DtaUseStatsRepository;
 import nuri.business.domain.stats.ReprtStats;
 import nuri.business.domain.stats.ReprtStatsRepository;
 import lombok.RequiredArgsConstructor;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.core.stats.DataUsageStatisticsContributor;
 import nuri.foundation.core.stats.PostStatisticsContributor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
@@ -30,7 +30,6 @@ import java.util.List;
 public class ReportStatsService {
 
     private final ReprtStatsRepository reprtStatsRepository;
-    private final DtaUseStatsRepository dtaUseStatsRepository;
     private final nuri.business.domain.log.UserLogRepository userLogRepository;
     private final nuri.business.domain.log.LoginLogRepository loginLogRepository;
     private final nuri.business.domain.user.repository.UserRepository userRepository;
@@ -43,6 +42,14 @@ public class ReportStatsService {
      * 빠진 프로필에서도 통계가 뜨게 하기 위해서다 — 그때의 0 은 셀 게시글이 없다는 사실이다.
      */
     private final ObjectProvider<PostStatisticsContributor> postStatistics;
+
+    /**
+     * 자료 이용 집계를 세는 포트. 게시판 도메인이 구현한다({@code tb_dta_use_stats} 는 게시판 데이터다).
+     *
+     * <p>종전에는 그 Repository 를 직접 주입해, 게시판이 빠진 구성에서 통계까지 함께 빠졌다. 게시글 포트와 같은 이유로
+     * {@code ObjectProvider} 로 받으며, 구현이 없을 때의 빈 목록은 셀 기록이 없다는 사실이다.
+     */
+    private final ObjectProvider<DataUsageStatisticsContributor> dataUsageStatistics;
 
     // ========== 사용자 통계 ==========
 
@@ -114,13 +121,14 @@ public class ReportStatsService {
      */
     public List<Object[]> getDtaUseStatsByDate(String fromDate, String toDate) {
         DateRange range = range(fromDate, toDate);
-        return dtaUseStatsRepository.countByDate(range.fromTimestamp(), range.toExclusiveTimestamp());
+        DataUsageStatisticsContributor usage = dataUsageStatistics.getIfAvailable();
+        return usage == null ? List.of() : usage.countDataUsageByDate(range.fromTimestamp(), range.toExclusiveTimestamp());
     }
 
     /**
      * 날짜별 게시판 활동 통계.
      *
-     * <p>[2026-08-28] 종전에는 {@code dtaUseStatsRepository.countByDate} 를 불렀다 —
+     * <p>[2026-08-28] 종전에는 자료 이용 Repository 의 {@code countByDate} 를 불렀다 —
      * 바로 위 {@link #getDtaUseStatsByDate} 와 <b>완전히 같은 질의</b>다. 즉 게시물 통계 화면은
      * 게시글을 하나도 세지 않고 자료이용현황과 같은 숫자를 보여 주고 있었고,
      * {@code tb_dta_use_stats} 에는 쓰는 코드가 없어(writer 0건) 실제로는 늘 비어 있었다.

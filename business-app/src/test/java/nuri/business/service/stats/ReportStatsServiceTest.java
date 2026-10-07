@@ -1,13 +1,13 @@
 package nuri.business.service.stats;
 
 import nuri.business.domain.stats.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -19,19 +19,28 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ReportStatsService 단위 테스트")
 class ReportStatsServiceTest {
 
-    @InjectMocks
+    /**
+     * 명시 생성자로 만든다 — 같은 원시 타입 {@code ObjectProvider} 두 개를 {@code @InjectMocks} 는 구분하지 못한다.
+     */
     private ReportStatsService reportStatsService;
 
     @Mock
     private ReprtStatsRepository reprtStatsRepository;
 
+    /**
+     * 자료 이용 집계도 게시판 도메인이 구현하는 포트로 받는다({@code tb_dta_use_stats} 는 게시판 데이터다).
+     */
     @Mock
-    private DtaUseStatsRepository dtaUseStatsRepository;
+    private org.springframework.beans.factory.ObjectProvider<nuri.foundation.core.stats.DataUsageStatisticsContributor> dataUsageStatistics;
+
+    @Mock
+    private nuri.foundation.core.stats.DataUsageStatisticsContributor dataUsageContributor;
 
     /**
      * 게시글 집계는 게시판 도메인이 구현하는 포트로 받는다(GAP-ARCH-001 의 stats→board 역전).
@@ -46,6 +55,12 @@ class ReportStatsServiceTest {
     @Mock private nuri.business.domain.user.repository.UserRepository userRepository;
     @Mock private nuri.business.domain.log.LoginLogRepository loginLogRepository;
     @Mock private nuri.business.domain.log.UserLogRepository userLogRepository;
+
+    @BeforeEach
+    void setUp() {
+        reportStatsService = new ReportStatsService(reprtStatsRepository, userLogRepository, loginLogRepository,
+                userRepository, postStatistics, dataUsageStatistics);
+    }
 
     @Test
     void summarySumsNumericCountsAndSkipsIncompleteRows() {
@@ -100,11 +115,26 @@ class ReportStatsServiceTest {
     }
     
     @Test
-    @DisplayName("일자별 데이터 이용 현황 조회")
-    void getDtaUseStatsByDate() {
-        given(dtaUseStatsRepository.countByDate(anyString(), anyString())).willReturn(new ArrayList<>());
-        reportStatsService.getDtaUseStatsByDate("2024-01-01", "2024-01-31");
-        verify(dtaUseStatsRepository).countByDate(anyString(), anyString());
+    @DisplayName("일자별 자료 이용 현황은 자료 이용 포트의 결과를 그대로 돌려준다")
+    void getDtaUseStatsByDateDelegatesToDataUsagePort() {
+        List<Object[]> rows = List.<Object[]>of(new Object[] { "2024-01-31", 2L });
+        given(dataUsageStatistics.getIfAvailable()).willReturn(dataUsageContributor);
+        given(dataUsageContributor.countDataUsageByDate("2024-01-01 00:00:00", "2024-02-01 00:00:00")).willReturn(rows);
+
+        assertThat(reportStatsService.getDtaUseStatsByDate("2024-01-01", "2024-01-31")).isSameAs(rows);
+        verifyNoInteractions(postStatistics);
+    }
+
+    /**
+     * 게시판 도메인이 빠진 구성에서는 자료 이용 포트 구현도 없다. 그때의 빈 목록은 "셀 기록이 없다" 는 사실이며,
+     * 통계 화면이 죽어서는 안 된다.
+     */
+    @Test
+    @DisplayName("자료 이용 집계 구현이 없으면 빈 목록이다")
+    void dataUsageStatisticsAreEmptyWhenNoContributorIsPresent() {
+        given(dataUsageStatistics.getIfAvailable()).willReturn(null);
+
+        assertThat(reportStatsService.getDtaUseStatsByDate("2024-01-01", "2024-01-31")).isEmpty();
     }
 
     /**
@@ -115,8 +145,9 @@ class ReportStatsServiceTest {
      * 통계 화면은 게시글을 하나도 세지 않고 자료이용현황과 같은 숫자를 받고 있었고,
      * {@code tb_dta_use_stats} 에는 쓰는 코드가 없어(writer 0건) 실제로는 늘 비어 있었다.
      *
-     * <p>두 축을 함께 고정한다 — 게시판 저장소를 부르는가, 그리고 <b>통계 표를 더 이상 부르지
-     * 않는가</b>. 앞의 것만 검사하면 둘 다 부르는 어중간한 상태가 통과한다.
+     * <p>두 축을 함께 고정한다 — 게시판 저장소를 부르는가, 그리고 <b>자료 이용 집계를 더 이상 부르지
+     * 않는가</b>. 앞의 것만 검사하면 둘 다 부르는 어중간한 상태가 통과한다. [Phase 0c] 자료 이용 집계는
+     * 포트로 옮겼으므로 그 포트와의 상호작용 자체가 없어야 한다.
      */
     @Test
     @DisplayName("일자별 게시물 통계는 게시글을 센다 — 자료이용현황 표를 읽지 않는다")
@@ -127,7 +158,7 @@ class ReportStatsServiceTest {
         reportStatsService.getBbsStatsByDate("2024-01-01", "2024-01-31");
 
         verify(postStatisticsContributor).countPostsByDate("2024-01-01 00:00:00", "2024-02-01 00:00:00");
-        verify(dtaUseStatsRepository, never()).countByDate(anyString(), anyString());
+        verifyNoInteractions(dataUsageStatistics);
     }
 
     /**
@@ -164,7 +195,7 @@ class ReportStatsServiceTest {
             assertThat(error.getErrorCode()).isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
         }
         verify(reprtStatsRepository, never()).countByDate(anyString(), anyString());
-        verify(dtaUseStatsRepository, never()).countByDate(anyString(), anyString());
+        verifyNoInteractions(dataUsageStatistics);
         verify(userLogRepository, never()).countByDate(anyString(), anyString());
         verify(loginLogRepository, never()).countLoginsByDate(anyString(), anyString());
     }
@@ -193,13 +224,14 @@ class ReportStatsServiceTest {
         String start = normalizedDay + " 00:00:00";
         String endExclusive = nextDay + " 00:00:00";
         given(postStatistics.getIfAvailable()).willReturn(postStatisticsContributor);
+        given(dataUsageStatistics.getIfAvailable()).willReturn(dataUsageContributor);
 
         reportStatsService.getReprtStatsByDate(day, day);
         reportStatsService.getDtaUseStatsByDate(day, day);
         reportStatsService.getBbsStatsByDate(day, day);
 
         verify(reprtStatsRepository).countByDate(start, endExclusive);
-        verify(dtaUseStatsRepository).countByDate(start, endExclusive);
+        verify(dataUsageContributor).countDataUsageByDate(start, endExclusive);
         verify(postStatisticsContributor).countPostsByDate(start, endExclusive);
     }
 }

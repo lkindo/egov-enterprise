@@ -38,16 +38,29 @@ function fixture(t) {
 }
 
 test('declared cross-domain foreign keys are bound to their migration evidence and owning domains', t => {
-  assert.equal(catalog.requiredForeignKeys.length, 5);
+  // Phase 0c: 자료 이용 기록이 게시판 소유가 되어 그 외래 키는 기능 안으로 들어갔다(5 → 4).
+  assert.equal(catalog.requiredForeignKeys.length, 4);
+  assert.ok(!catalog.requiredForeignKeys.some(contract => contract.childTable === 'tb_dta_use_stats'));
   for (const contract of catalog.requiredForeignKeys) {
     const child = catalog.capabilities.find(capability => capability.id === contract.sourceDomain);
     const parent = catalog.capabilities.find(capability => capability.id === contract.targetDomain);
     assert.ok(child.database.tables.includes(contract.childTable) && parent.database.tables.includes(contract.parentTable), contract.name);
   }
   const root = fixture(t);
-  const evidence = catalog.requiredForeignKeys.find(contract => contract.name === 'fk_tb_dta_use_stats_tb_bbs_item').evidence;
-  writeFileSync(join(root, evidence), readFileSync(join(root, evidence), 'utf8').replaceAll('ADD CONSTRAINT fk_tb_dta_use_stats_tb_bbs_item', 'ADD CONSTRAINT fk_renamed'));
-  assert.throws(() => loadProjectComposerCatalog(root), /declared foreign key drifted: fk_tb_dta_use_stats_tb_bbs_item/);
+  const evidence = catalog.requiredForeignKeys.find(contract => contract.name === 'fk_tb_bbs_scrap_tb_bbs_item').evidence;
+  writeFileSync(join(root, evidence), readFileSync(join(root, evidence), 'utf8').replaceAll('ADD CONSTRAINT fk_tb_bbs_scrap_tb_bbs_item', 'ADD CONSTRAINT fk_renamed'));
+  assert.throws(() => loadProjectComposerCatalog(root), /declared foreign key drifted: fk_tb_bbs_scrap_tb_bbs_item/);
+});
+
+test('a declared foreign key whose child table moved into its parent domain is refused', t => {
+  // Phase 0c 에서 자료 이용 기록이 게시판 소유가 되며 그 외래 키 선언을 지웠다. 엔티티만 옮기고 선언을 남기면
+  // 소유 판정이 어긋나 거부돼야 한다. 같은 상황을 스크랩 엔티티로 재현한다.
+  const root = fixture(t);
+  const from = join(root, 'business-app/src/main/java/nuri/business/domain/scrap/Scrap.java');
+  const to = join(root, 'business-app/src/main/java/nuri/business/domain/board/Scrap.java');
+  writeFileSync(to, readFileSync(from, 'utf8').replace('package nuri.business.domain.scrap;', 'package nuri.business.domain.board;'));
+  rmSync(from);
+  assert.throws(() => loadProjectComposerCatalog(root), /declared foreign key ownership drifted: fk_tb_bbs_scrap_tb_bbs_item/);
 });
 
 test('a declared tab menu must match an active menu row of an existing screen', t => {

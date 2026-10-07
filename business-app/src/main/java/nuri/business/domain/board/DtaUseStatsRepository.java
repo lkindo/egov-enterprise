@@ -1,4 +1,4 @@
-package nuri.business.domain.stats;
+package nuri.business.domain.board;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

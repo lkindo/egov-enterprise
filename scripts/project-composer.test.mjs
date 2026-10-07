@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpath
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createComposerEngine, composerOutputPaths, parseComposerArgs, runComposerCommand } from './project-composer.mjs';
+import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 // 계약 테스트의 생성 출력은 임시 루트에만 둔다. 저장소 build/ 에 engine-contract-* 잔재를 남기지 않는다.
@@ -100,13 +101,21 @@ test('failed validation retains explicit failure evidence and never publishes a 
 });
 
 test('a selection that violates a required foreign key is explained in the plan and refused before any output or Docker', async () => {
-  const blocked = { ...recipe(), project: { name: 'engine-contract-blocked' }, selection: { domains: ['survey'] } };
-  const plan = createComposerEngine().plan(blocked);
+  // 실제 카탈로그의 단일 선택은 모두 생성할 수 있다(Phase 0c). 위반 경로는 요구 관계 하나를 지운 합성 카탈로그로 고정한다.
+  const loadCatalog = path => {
+    const { catalogHash, ...body } = loadProjectComposerCatalog(path);
+    body.capabilities.find(capability => capability.id === 'operation').requires = [];
+    return { ...body, catalogHash: compositionDigest(body) };
+  };
+  const blocked = { ...recipe(), project: { name: 'engine-contract-blocked' }, selection: { domains: ['operation'] } };
+  const plan = createComposerEngine({ loadCatalog }).plan(blocked);
   assert.equal(plan.blockers.length, 1);
-  assert.match(plan.blockers[0], /업무 통계의 tb_dta_use_stats 테이블이 게시판·지식의 tb_bbs_item 테이블을 외래 키로 참조합니다\. 게시판·지식을 함께 선택해야/);
-  assert.deepEqual(createComposerEngine().plan(recipe()).blockers, []);
+  assert.match(plan.blockers[0], /tb_rward_manage 테이블이 .+의 tb_ifml_atrz_info 테이블을 외래 키로 참조합니다\. .+ 함께 선택해야/);
+  assert.deepEqual(createComposerEngine().plan({ ...blocked, selection: { domains: ['survey'] } }).blockers, [],
+    'survey alone needs no other domain');
+  assert.deepEqual(createComposerEngine({ loadCatalog }).plan(recipe()).blockers, []);
   const mock = runner();
-  const engine = createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64) });
+  const engine = createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64), loadCatalog });
   await assert.rejects(() => engine.generate(blocked), error => error.code === 'FK_CLOSURE');
   assert.deepEqual(mock.calls, []);
   assert.equal(existsSync(join(outputRoot, 'build/project-composer/jobs')) && readdirSync(join(outputRoot, 'build/project-composer/jobs'))

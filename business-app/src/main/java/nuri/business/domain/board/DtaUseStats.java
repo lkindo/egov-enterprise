@@ -1,4 +1,4 @@
-package nuri.business.domain.stats;
+package nuri.business.domain.board;
 import nuri.foundation.domain.common.BaseEntity;
 
 import jakarta.persistence.Column;
