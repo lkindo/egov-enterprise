@@ -69,6 +69,18 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    ignore:
+      # [2026-10-07] Gradle wrapper 9.8.0 이상은 제안하지 않는다(DEC-OPS-237). PIT 플러그인
+      #   info.solidsoft.pitest 1.19.0(배포된 최신판)이 9.8.0 에서 deprecated 된 Configuration.setVisible 을
+      #   호출해 CI 의 --warning-mode fail 이 모든 Gradle 잡을 막는다(build.gradle:129). 아래 gradle-wrapper
+      #   그룹으로 떼어 두었는데도 wrapper 가 catch-all 묶음에 다시 섞여(#802·#829·#849) 라이브러리 패치를
+      #   붙잡았고, 적용할 수 없는 PR 이 매주 붉은 채 남았다.
+      #   재개 조건: PIT 플러그인 수정판(szpak/gradle-pitest-plugin PR #398) 배포. 그 판이 other-minor-and-patch
+      #   묶음으로 올라오면 적용한 뒤 이 규칙을 같은 변경에서 걷는다. 게이트(--warning-mode fail)는 끄지 않는다.
+      # ⚠ 트레이드오프: ignore 는 security update 에도 적용된다. 그동안 wrapper 보안 권고는 Dependabot 이
+      #   PR 로 알려 주지 않으므로 Gradle 보안 공지를 따로 확인한다.
+      - dependency-name: "gradle-wrapper"
+        versions: [">=9.8.0"]
     groups:
       # 카탈로그 한 줄이 다중 모듈을 동시에 깨뜨릴 수 있으므로, 관련 업데이트를 묶어
       # CI 가 한 번에 판정하게 한다.
@@ -82,8 +94,9 @@ updates:
           - "org.testcontainers*"
       # [2026-09-30] Gradle wrapper 는 라이브러리와 따로 올린다. 9.8.0 에서 PIT 플러그인 1.19.0 이
       #   deprecated Configuration.setVisible 을 호출해 CI 의 --warning-mode fail 이 모든 Gradle 잡을 막았고,
-      #   그 wrapper 가 같은 묶음의 라이브러리 패치까지 붙잡았다(#802). wrapper PR 은 붉은 채로 따로 보인다.
-      #   묶음은 먼저 정의된 그룹이 가져가므로 이 그룹은 catch-all 보다 앞에 둔다.
+      #   그 wrapper 가 같은 묶음의 라이브러리 패치까지 붙잡았다(#802). 이 그룹은 catch-all 보다 앞에 두었지만
+      #   wrapper 가 다시 catch-all 에 섞여(#829·#849) 분리가 동작하지 않았다. 2026-10-07 부터 9.8.0 이상은 위
+      #   ignore 로 제안하지 않으며, ignore 를 걷은 뒤 이 그룹이 실제로 분리하는지 다시 확인한다.
       gradle-wrapper:
         patterns:
           - "gradle-wrapper"
