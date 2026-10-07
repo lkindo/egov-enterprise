@@ -328,9 +328,9 @@ export function validatePinnedWorkflowUses(workflowFiles) {
         errors.push(`${filePath}:${index + 1} third-party action '${action}' must use a 40-character commit SHA`);
       }
       if (action.startsWith('gradle/actions/setup-gradle@')) {
-        // v6.3.0 uses the current cache client. Select the MIT basic provider explicitly;
+        // v6.4.0 uses the current cache client. Select the MIT basic provider explicitly;
         // the v6 default is the separately licensed enhanced provider.
-        if (action !== 'gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb') {
+        if (action !== 'gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6') {
           errors.push(`${filePath}:${index + 1} Gradle setup must use the reviewed cache-compatible action pin`);
         }
         const usesIndent = lines[index].match(/^\s*/)[0].length;

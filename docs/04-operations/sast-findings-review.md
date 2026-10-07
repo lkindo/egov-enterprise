@@ -1,5 +1,17 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-10-07 lombok 플러그인·bucket4j 상향에 따른 H2 테스트 경계 재검토
+
+SAST-FP-007의 보완 소스 두 개가 Dependabot 배치(#761·#849)로 바뀌었다. 루트 `build.gradle`은
+`io.freefair.lombok` 플러그인 버전(8.12.2→9.8.0) 한 줄, `foundation/build.gradle`은 `bucket4j_jdk17-core`
+버전(8.20.0→8.21.0) 한 줄만 바뀌었다. 같은 배치의 commons-lang3·guava 상향은 보완 소스가 아닌
+`gradle/libs.versions.toml`에서 바뀌어 재결속 사유가 아니다. H2는 모든 모듈에서 여전히 테스트 구성
+(`testImplementation`·`testRuntimeOnly`·`testFixturesApi`)에만 있다. 탐지 원문 `application-test.yml`과
+나머지 보완 소스 4개의 해시는 기존 승인값과 일치한다.
+
+두 보완 소스와 registry 해시만 재결속한다. 예외 6건의 범위·규칙·행·fingerprint·승인일·만료일과 보안 임계값은
+유지한다. 근거는 의존성 선언의 재검토이며 CodeQL 실행의 증거가 아니다.
+
 ## 2026-10-06 코드 간결화 재검토
 
 API·core fallback 설정에서 동일한 BCrypt 전용 생성만 `PasswordEncoders.create()`로 옮기고 core 생성자의 미사용 `Environment`를 제거했다. encoding id `bcrypt`, 기본 cost 10, legacy SHA-256을 인증 provider에서 검증 후 재해싱하는 경로는 동일하다. 두 설정의 filter chain 본문과 활성화 annotation을 기준 커밋 `e0066946cb55c2135d9df3a66baa739f6ba8211b`와 직접 비교해 변경 없음을 확인했다.

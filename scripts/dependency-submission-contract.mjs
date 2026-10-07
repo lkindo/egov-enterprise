@@ -1,7 +1,7 @@
 import { parseWorkflowJobs } from './required-checks-contract.mjs';
 
 export const GRADLE_DEPENDENCY_ACTION =
-  'gradle/actions/dependency-submission@9c971963bec38e04b3d30dcc455b5382be2fdbfb';
+  'gradle/actions/dependency-submission@3f5f9adaf7d9fecd50b5935e54106014257a94e6';
 export const DEPENDENCY_SCOPE_CONDITION =
   "github.event_name == 'pull_request' && (needs.change-scope.outputs.backend == 'true' || needs.change-scope.outputs.migration == 'true' || needs.change-scope.outputs.frontend == 'true')";
 
