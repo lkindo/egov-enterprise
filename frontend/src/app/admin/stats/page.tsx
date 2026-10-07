@@ -6,7 +6,7 @@ import { SummaryStats, ConnectPoint } from '@/types/foundation/stats';
 
 export const metadata = {
   title: '관리자 통계 | 전자정부 프레임워크',
-  description: '최근 1개월 접속 집계와 누적 사용자·게시물 현황을 확인합니다',
+  description: '최근 1개월 접속 집계와 누적 현황을 확인합니다',
 };
 
 /**

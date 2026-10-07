@@ -131,8 +131,6 @@ const UI_DEPENDENCIES = [
     evidence: 'frontend/src/components/business/community/CommunityManageDialog.tsx', symbol: 'TemplateAdminService' },
   { from: 'survey', domain: 'stats', reason: '설문 허브가 응답 통계를 위해 통계 서비스를 직접 참조한다.',
     evidence: 'frontend/src/app/admin/survey/hub/SurveyHubClient.tsx', symbol: 'StatsAdminService' },
-  { from: 'stats', domain: 'survey', reason: '통계 허브가 설문 현황을 위해 설문 관리 서비스를 직접 참조한다.',
-    evidence: 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx', symbol: 'SurveyAdminService' },
 ];
 
 const OPTIONAL_FOREIGN_KEYS = [{

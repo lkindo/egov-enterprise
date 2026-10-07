@@ -323,7 +323,8 @@ test('every selectable capability preserves its declared frontend and mandatory 
 });
 
 test('removing a shared UI dependency exposes the selected page loss instead of silently passing', () => {
-  for (const [from, dependency] of [['system', 'template'], ['survey', 'stats'], ['stats', 'survey']]) {
+  // Phase 0c: 통계 셸은 설문 탭을 설문이 넘기는 패널로 받아 더 이상 설문을 끌고 오지 않는다(stats -> survey 삭제).
+  for (const [from, dependency] of [['system', 'template'], ['survey', 'stats']]) {
     const changed = structuredClone(catalog);
     const feature = changed.capabilities.find(row => row.id === from);
     assert.ok(feature.requires.some(edge => edge.domain === dependency), `${from} -> ${dependency} must exist`);
@@ -409,6 +410,35 @@ test('the unread-notes card on the work home needs both the dashboard and the no
   const forcedWithoutNote = projectComposerFrontend(file, source, { profile: 'custom', resolvedDomains: ['dashboard', 'board'] });
   assert.doesNotMatch(forcedWithoutNote, /UnreadNotesCard/);
   assert.match(forcedWithoutNote, /업무게시판 글/);
+});
+
+test('the statistics shell keeps board and survey tabs only with their owning domains (Phase 0c)', () => {
+  const file = 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx';
+  const source = readFileSync(join(root, file), 'utf8');
+  const project = domains => projectComposerFrontend(file, source, { profile: 'custom', resolvedDomains: domains });
+  // 설문 탭은 설문이 넘기는 패널이다. 설문이 없으면 import·탭·등록이 함께 빠지고, 셸은 설문 서비스를 모른다.
+  const statsOnly = project(['stats']);
+  assert.doesNotMatch(statsOnly, /StatsHubSurveyTab|'SURVEYS',|SURVEYS: surveyTab/);
+  assert.doesNotMatch(statsOnly, /getBbsStats|getDataUsageStats|label="자료 이용 건수"/);
+  assert.doesNotMatch(source, /SurveyAdminService/, 'the shell must not import the survey service directly');
+  const withSurvey = project(['stats', 'survey']);
+  assert.match(withSurvey, /import \{ useStatsHubSurveyTab \}/);
+  assert.match(withSurvey, /SURVEYS: surveyTab/);
+  assert.doesNotMatch(withSurvey, /getBbsStats/);
+  const withBoard = project(['stats', 'board']);
+  assert.match(withBoard, /getBbsStats/);
+  assert.match(withBoard, /getDataUsageStats/);
+  assert.doesNotMatch(withBoard, /StatsHubSurveyTab/);
+  // 분류가 없는 pack 의 블록은 조용히 남거나 빠지지 않고 실패한다.
+  assert.throws(() => projectComposerFrontend(file, `${source}\n/* reusable-base:demo:start */\nx\n/* reusable-base:demo:end */\n`,
+    { profile: 'custom', resolvedDomains: ['stats'] }), /Unclassified composer UI block/);
+  assert.throws(() => projectComposerFrontend('frontend/src/app/admin/stats/AdminStatsClient.tsx',
+    '/* reusable-base:survey:start */\nx\n/* reusable-base:survey:end */\n', { profile: 'custom', resolvedDomains: ['stats'] }), /Unclassified composer UI block/);
+  const admin = 'frontend/src/app/admin/stats/AdminStatsClient.tsx';
+  const adminSource = readFileSync(join(root, admin), 'utf8');
+  assert.doesNotMatch(projectComposerFrontend(admin, adminSource, { profile: 'custom', resolvedDomains: ['stats'] }), /title="누적 게시물"/);
+  assert.match(projectComposerFrontend(admin, adminSource, { profile: 'custom', resolvedDomains: ['stats', 'board'] }), /title="누적 게시물"/);
+  assert.deepEqual(inspectFrontendSurvival(['stats']).missing, []);
 });
 
 test('custom RBAC projection preserves selected assertions and removes only absent surfaces', () => {

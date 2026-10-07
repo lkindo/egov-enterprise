@@ -93,7 +93,7 @@ export default function AdminStatsClient({
   return (
     <ReportPage
       title="관리자 통계"
-      description="사용자·게시물 누적 현황과 일자별 성공 로그인 집계를 확인합니다."
+      description="누적 현황과 일자별 성공 로그인 집계를 확인합니다."
       breadcrumbItems={[{ label: '시스템관리' }, { label: '분석 대시보드' }]}
       // A7 필수 — 무엇을·언제까지·어디서 센 값인지 없으면 지표는 검증할 수 없는 주장이 된다.
       basis={`집계 기준: 최근 1개월 성공 로그인만 집계 · 수집된 일수 ${loadError ? '조회 실패' : `${connectData.length}일`} · 실패·결과 미상 시도 제외 · 출처: 시스템 접속 통계 API`}
@@ -130,10 +130,13 @@ export default function AdminStatsClient({
         </>
       }
       summary={
-        <div className="grid gap-2 sm:grid-cols-3">
+        // 열 수는 칸 수로 정한다 — 게시판이 빠진 구성에는 '누적 게시물' 칸이 없어 빈 열을 남기지 않는다.
+        <div className="grid gap-2 sm:grid-flow-col sm:auto-cols-fr">
           <SummaryStat title="누적 사용자" value={summaryText(initialSummary?.totalUsers, loadError)} />
           <SummaryStat title="금일 성공 로그인" value={summaryText(initialSummary?.todayConnects, loadError)} />
+          {/* reusable-base:collaboration:start */}
           <SummaryStat title="누적 게시물" value={summaryText(initialSummary?.totalPosts, loadError)} />
+          {/* reusable-base:collaboration:end */}
         </div>
       }
       chartTitle="일자별 성공 로그인 추이"
