@@ -189,6 +189,22 @@ test('engine validation and generation errors preserve input without exposing ex
   assert.deepEqual(job.recipe, recipe());
   assert.doesNotMatch(JSON.stringify(job), /private-/);
   assert.equal(job.error.code, 'GENERATION_FAILED');
+  assert.equal(job.failure, undefined, 'an error without a structured failure shows only the generic message');
   const retry = await failure.post('/api/jobs', { recipe: recipe(), requestId: randomUUID() });
   assert.equal(retry.status, 202);
+});
+
+test('a structured generation failure exposes only stage, command identity, exit code and log location', async t => {
+  const log = 'D:/work/build/project-composer/jobs/demo-0123456789abcdef/logs/verify.log';
+  const detailed = await fixture(t, { generate: () => { throw Object.assign(new Error('postgresql://u:private-password@h/db'), {
+    failure: { stage: 'verify', code: 'COMMAND_FAILED', commandId: 'scripts/verify-reusable-artifact.mjs', exitCode: 1, durationMs: 9,
+      log, message: 'private-password', output: 'private-password' } }); } });
+  const created = await detailed.post('/api/jobs', { recipe: recipe(), requestId: randomUUID() });
+  const job = await finished(detailed.origin, created.body.job.id);
+  assert.deepEqual(job.failure, { stage: 'verify', stageLabel: '생성 프로젝트 검증', commandId: 'scripts/verify-reusable-artifact.mjs', exitCode: 1, log });
+  assert.doesNotMatch(JSON.stringify(job), /private-/);
+  const unsafe = await fixture(t, { generate: () => { throw Object.assign(new Error('x'), {
+    failure: { stage: 'complete', commandId: 'node -e "steal()"', exitCode: 'one', log: 'a\nb' } }); } });
+  const rejected = await unsafe.post('/api/jobs', { recipe: recipe(), requestId: randomUUID() });
+  assert.equal((await finished(unsafe.origin, rejected.body.job.id)).failure, undefined, 'unsafe failure fields are dropped');
 });

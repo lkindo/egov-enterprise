@@ -101,6 +101,17 @@ test('explicit and legacy generated multi-module locks use the product migration
   }
 });
 
+test('domain-selected (custom) generated locks use the same layout migration verifier as presets', t => {
+  for (const layout of ['multi-module', 'single-module']) {
+    const { root, path, write, approve } = fixture(t, layout);
+    write('reusable-base-lock.json', JSON.stringify({ profile: 'custom', layout }));
+    approve();
+    const calls = [];
+    executeAdoption({ root, path, environmentId: 'fixture-env', run: (command, args) => calls.push([command, args]) });
+    assert.deepEqual(calls[0], ['node', ['scripts/reusable-layout-runtime.mjs', '--verify-migration']]);
+  }
+});
+
 test('unknown generated layout or profile cannot fall back to a different verifier', t => {
   for (const lock of [{ profile: 'core', layout: 'unknown' }, { profile: 'unknown', layout: 'multi-module' }]) {
     const { root, path, write, approve } = fixture(t, 'multi-module');

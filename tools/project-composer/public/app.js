@@ -76,10 +76,11 @@ function renderPlan() {
   $('table-count').textContent = String(plan.tables?.length ?? 0);
   $('menu-count').textContent = String(plan.menus?.length ?? 0);
   $('summary-heading').textContent = recipe().project.name;
-  $('plan-status').textContent = '포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.';
+  const blockers = plan.blockers ?? [];
+  $('plan-status').textContent = blockers.length ? '이 구성은 생성할 수 없습니다. 아래 사유를 확인해 주세요.' : '포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.';
   $('output-hint').textContent = plan.outputDirectory ? `생성 위치 · ${plan.outputDirectory}` : '생성 위치 · 원본 프로젝트의 build/project-composer 아래 새 폴더';
   $('auto-included').replaceChildren(...(plan.autoIncluded ?? []).map(item => text('p', `${label(item.domain)} · ${item.reason}`)));
-  $('plan-warnings').replaceChildren(...(plan.warnings ?? []).map(warning => text('p', warning)));
+  $('plan-warnings').replaceChildren(...blockers.map(blocker => text('p', blocker, 'font-semibold text-danger')), ...(plan.warnings ?? []).map(warning => text('p', warning)));
   $('menu-preview').replaceChildren(...(plan.menus ?? []).map(menu => {
     const row = document.createElement('li');
     row.append(text('span', menu.label ?? menu.name ?? menu.id, 'block font-medium'));
@@ -87,7 +88,7 @@ function renderPlan() {
     return row;
   }));
   if (!plan.menus?.length) $('menu-preview').append(text('li', '포함된 메뉴가 없습니다.'));
-  $('generate').disabled = state.busy; $('download-recipe').disabled = false;
+  $('generate').disabled = state.busy || blockers.length > 0; $('download-recipe').disabled = false;
   renderFeatures();
 }
 async function preview(focus) {
@@ -129,7 +130,17 @@ function renderJob(job) {
   if (job.status === 'failed') {
     state.requestId = null;
     $('job-heading').textContent = '생성을 완료하지 못했습니다';
-    $('job-error').textContent = job.error?.message ?? '입력은 유지됩니다. 상태를 확인한 뒤 다시 생성해 주세요.';
+    $('job-error').replaceChildren(text('p', job.error?.message ?? '입력은 유지됩니다. 상태를 확인한 뒤 다시 생성해 주세요.'));
+    const failure = job.failure;
+    if (failure?.stageLabel) $('job-error').append(text('p', `실패 단계: ${failure.stageLabel}`, 'mt-2'));
+    if (failure?.commandId) {
+      $('job-error').append(text('p', `실패 명령: ${failure.commandId} (${Number.isInteger(failure.exitCode) ? `종료 코드 ${failure.exitCode}` : '실행하지 못함'})`, 'mt-1'));
+    }
+    if (failure?.log) {
+      const log = text('p', '실행 로그(비밀값은 가림)', 'mt-2 font-semibold');
+      log.append(text('code', failure.log, 'mt-1 block break-all font-mono text-xs font-normal'));
+      $('job-error').append(log);
+    }
     $('job-error').hidden = false;
   } else if (job.status === 'succeeded') {
     $('job-heading').textContent = '프로젝트가 준비되었습니다';

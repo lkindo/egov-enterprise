@@ -195,7 +195,9 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 
 현재 core·collaboration 프로필은 각각 파일 게이트 6건(`acknowledgedRemovedGates`)과 역사 검증 규칙
 45건을 제외한다. 역사 규칙은 V2 migration 파일 검증 42건과 구 인가 전환 검증 3건이며, 새 V1 baseline의 현재
-PostgreSQL 스키마 검증은 계속 실행한다. 여섯(`SurveySubmissionConcurrencyIntegrationTest`·`RbacDemoSurfaceAuthorizationMatrixTest`·`ApprovalWorkflowIntegrationTest`·`CommunityDecisionConcurrencyIntegrationTest`·`TemplateCreationIntegrityIntegrationTest`·`ReferenceIntegrityCommunityFkIntegrationTest`)은 빠진
+PostgreSQL 스키마 검증은 계속 실행한다. 모든 프로필은 원본 Atlas 규칙(`upstream-atlas`)으로 Atlas HTML·생성기와
+그 계약 3건(`governance-atlas-contract`·`atlas-catalog`·`atlas-generation`)도 걷는다 — Atlas 는 원본의 운영 사실을 담고
+로그인 전에 응답되며, 생성기가 원본 공용 메모리를 읽어 생성물 안에서 다시 만들 수 없다. 여섯(`SurveySubmissionConcurrencyIntegrationTest`·`RbacDemoSurfaceAuthorizationMatrixTest`·`ApprovalWorkflowIntegrationTest`·`CommunityDecisionConcurrencyIntegrationTest`·`TemplateCreationIntegrityIntegrationTest`·`ReferenceIntegrityCommunityFkIntegrationTest`)은 빠진
 pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **남는 코드도 검사하던 횡단 게이트는 모두 되살렸다** —
 `QueryCountGuardrailIntegrationTest`(DEC-OPS-084)와 `RbacAuthorizationMatrixTest`(DEC-OPS-085)는 pack 경계로 옮겼고,
 `PrivacyAccessCensusLinterTest`(DEC-OPS-089)·`InputContractMirrorLinterTest`·`CrossDomainCouplingLinterTest`(DEC-OPS-090)는
@@ -378,6 +380,8 @@ retained/removed Java 소스·FQCN 집합을 실제 산출물과 정확히 대�
 | `core` | 91/91 | 11/11 |
 | `collaboration` | 91/91 | 11/11 |
 | `demo` | 91/91 | 13/13 |
+
+2026-10-07부터 인가 매트릭스 두 개(`RbacAuthorizationMatrixTest`·`RbacDemoSurfaceAuthorizationMatrixTest`)도 `governance-harness` 태그로 `harnessTest`에서 돈다. 종전에는 태그가 없어 생성물에서 컴파일만 되고 실행되지 않았다. 위 표의 건수는 그 전 실측이다. 쿼리 수 가드(`QueryCountGuardrailIntegrationTest`)는 business-app 모듈에 있어 이 태스크 밖이며 실행 경로는 따로 정한다.
 
 소스 모집단·필수 실행 단계의 누락, 잘못된 프로필과 보안 부정 테스트 변조가 red가 되는 것도
 확인했다. 이 로컬 기술 검증과 현재 커밋의 required CI는 별개이며, 병합에는

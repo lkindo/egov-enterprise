@@ -13,7 +13,7 @@ const catalog = loadProjectComposerCatalog(ROOT);
 function fixture(t) {
   const base = resolve(tmpdir());
   const root = mkdtempSync(join(base, 'egov-composer-catalog-'));
-  for (const path of ['config/reusable-base-profiles.json', 'config/governance/permission-catalog.json']) {
+  for (const path of ['config/reusable-base-profiles.json', 'config/governance/permission-catalog.json', 'config/project-composer-menus.json']) {
     mkdirSync(dirname(join(root, path)), { recursive: true }); copyFileSync(join(ROOT, path), join(root, path));
   }
   cpSync(join(ROOT, 'business-app/src/main/java'), join(root, 'business-app/src/main/java'), { recursive: true });
@@ -25,7 +25,8 @@ function fixture(t) {
     mkdirSync(dirname(join(root, 'frontend', path)), { recursive: true });
     cpSync(join(ROOT, 'frontend', path), join(root, 'frontend', path), { recursive: true });
   }
-  for (const file of new Set(catalog.capabilities.flatMap(capability => capability.requires.filter(edge => edge.kind === 'ui-import').map(edge => edge.evidence)))) {
+  for (const file of new Set([...catalog.capabilities.flatMap(capability => capability.requires.filter(edge => edge.kind === 'ui-import').map(edge => edge.evidence)),
+    ...[...catalog.requiredForeignKeys, ...catalog.optionalForeignKeys].map(contract => contract.evidence)])) {
     mkdirSync(dirname(join(root, file)), { recursive: true }); copyFileSync(join(ROOT, file), join(root, file));
   }
   t.after(() => {
@@ -35,6 +36,33 @@ function fixture(t) {
   });
   return root;
 }
+
+test('declared cross-domain foreign keys are bound to their migration evidence and owning domains', t => {
+  assert.equal(catalog.requiredForeignKeys.length, 5);
+  for (const contract of catalog.requiredForeignKeys) {
+    const child = catalog.capabilities.find(capability => capability.id === contract.sourceDomain);
+    const parent = catalog.capabilities.find(capability => capability.id === contract.targetDomain);
+    assert.ok(child.database.tables.includes(contract.childTable) && parent.database.tables.includes(contract.parentTable), contract.name);
+  }
+  const root = fixture(t);
+  const evidence = catalog.requiredForeignKeys.find(contract => contract.name === 'fk_tb_dta_use_stats_tb_bbs_item').evidence;
+  writeFileSync(join(root, evidence), readFileSync(join(root, evidence), 'utf8').replaceAll('ADD CONSTRAINT fk_tb_dta_use_stats_tb_bbs_item', 'ADD CONSTRAINT fk_renamed'));
+  assert.throws(() => loadProjectComposerCatalog(root), /declared foreign key drifted: fk_tb_dta_use_stats_tb_bbs_item/);
+});
+
+test('a declared tab menu must match an active menu row of an existing screen', t => {
+  assert.deepEqual(catalog.capabilities.filter(capability => capability.menuTabs.length).map(capability => [capability.id, capability.menuTabs]), [
+    ['board', ['/admin/help/faq?tab=FAQ', '/admin/help/faq?tab=QNA', '/admin/help/faq?tab=WIKI']],
+    ['system', ['/admin/help?tab=COMMUNITY']],
+  ]);
+  for (const capability of catalog.capabilities) assert.ok(!capability.menuRoutes.some(route => route.includes('?')), capability.id);
+  const root = fixture(t);
+  const path = join(root, 'config/project-composer-menus.json');
+  const snapshot = JSON.parse(readFileSync(path, 'utf8'));
+  snapshot.menus.find(row => row.modern_route === '/admin/help?tab=COMMUNITY').modern_route = '/admin/help?tab=COMMUNITIES';
+  writeFileSync(path, JSON.stringify(snapshot));
+  assert.throws(() => loadProjectComposerCatalog(root), /menu tab has no active menu row: \/admin\/help\?tab=COMMUNITY/);
+});
 
 test('all producer domains and tables have one verified ownership or an explicit shared contract', () => {
   const expectedDomains = Object.values(manifest.packs).flatMap(pack => pack.backend?.appDomains ?? []).sort();

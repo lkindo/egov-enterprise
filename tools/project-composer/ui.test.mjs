@@ -33,7 +33,8 @@ test('keyboard selection, dependent features, preview, failure recovery and gene
     generations += 1; submitted = recipe;
     onProgress({ stage: 'database', progress: 20 });
     await new Promise(resolve => setTimeout(resolve, 350));
-    if (generations === 1) throw new Error('private-password-must-not-appear');
+    if (generations === 1) throw Object.assign(new Error('private-password-must-not-appear'), { failure: { stage: 'verify',
+      commandId: 'scripts/verify-reusable-artifact.mjs', exitCode: 1, log: 'build/project-composer/jobs/agency-service-0123456789abcdef/logs/verify.log' } });
     return { projectDirectory: `build/project-composer/${recipe.project.name}`, databaseDirectory: 'build/db',
       reportPath: 'build/report.json', verified: true };
   } } });
@@ -78,6 +79,9 @@ test('keyboard selection, dependent features, preview, failure recovery and gene
   await expect(page.getByLabel('프로젝트 이름')).toHaveValue('agency-service');
   await expect(page.locator('#capability-board')).toBeChecked();
   await expect(page.locator('#job-error')).not.toContainText('private-password');
+  await expect(page.locator('#job-error')).toContainText('실패 단계: 생성 프로젝트 검증');
+  await expect(page.locator('#job-error')).toContainText('scripts/verify-reusable-artifact.mjs (종료 코드 1)');
+  await expect(page.locator('#job-error')).toContainText('logs/verify.log');
   assert.equal(generations, 1);
   assert.deepEqual(submitted, { schemaVersion: 1, project: { name: 'agency-service' }, sourceRef: 'HEAD',
     selection: { domains: ['board'] }, database: { vendor: 'postgresql' }, backendLayout: 'single-module' });

@@ -24,7 +24,8 @@ import {
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertSchemaPreserved, buildCompositionAdminSeed, projectCompositionMenus, schemaSnapshotHash,
-  schemaSnapshotSql, selectSchemaSnapshot, verifyResolvedDbComposition } from './project-composer-db.mjs';
+  schemaSnapshotSql, selectSchemaSnapshot, verifyResolvedDbComposition, assertDeclaredCrossDomainForeignKeys,
+  assertNavigationEnterable, projectCompositionNavigation } from './project-composer-db.mjs';
 import { assertProjectComposerMenusMatch, writeProjectComposerMenuSnapshot } from './project-composer-menu-preview.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
@@ -412,12 +413,13 @@ async function main() {
   const releaseTag = git(['tag', '--points-at', 'HEAD']).split(/\r?\n/).find((tag) => /^v\d/.test(tag));
   if (!releaseTag && !args.allowNonReleaseRef) fail('공식 산출물은 v* 릴리스 태그에서만 생성한다.');
   const sourceCommit = git(['rev-parse', 'HEAD']);
-  let composition;
+  let composition, composerCatalog;
   if (args.composition) {
     const { loadProjectComposerCatalog } = await import('./project-composer-catalog.mjs');
     const { verifyProjectComposition } = await import('./project-composer-recipe.mjs');
     const input = JSON.parse(readFileSync(resolve(ROOT, args.composition), 'utf8'));
-    const resolved = verifyProjectComposition(input, loadProjectComposerCatalog(ROOT));
+    composerCatalog = loadProjectComposerCatalog(ROOT);
+    const resolved = verifyProjectComposition(input, composerCatalog);
     composition = verifyResolvedDbComposition(input, resolved, sourceCommit,
       reference => git(['rev-parse', '--verify', `${reference}^{commit}`]));
     args.profile = composition.profile;
@@ -482,29 +484,39 @@ async function main() {
       .map((sequence) => sequence.name)
       .sort();
 
-    let migratedMenus;
+    let migratedMenus, migratedNavigation;
     if (composition || args.writeMenuSnapshot) {
       // [2026-10-05] 레거시 연결 프로그램 컬럼·원장은 읽지 않는다(GAP-PROGRAM-001).
       migratedMenus = JSON.parse(psql(args.container, user, workingDb, `SELECT COALESCE(json_agg(row_to_json(m) ORDER BY m.menu_sn),'[]'::json)::text
         FROM (SELECT menu_sn,up_menu_sn,menu_ordr,menu_nm,menu_expln,modern_route,use_yn,del_yn FROM public.tb_menu_info) m`));
-      if (composition && !args.writeMenuSnapshot) assertProjectComposerMenusMatch(ROOT, { menus: migratedMenus });
+      // 원본 마이그레이션이 남긴 그룹별 메뉴 표시 배정. 생성 시드가 선택 메뉴만큼 투영한다.
+      migratedNavigation = JSON.parse(psql(args.container, user, workingDb, `SELECT COALESCE(json_agg(json_build_object('authrt_cd',authrt_cd,'menu_sn',authrt_grnt_cd::bigint)
+        ORDER BY authrt_cd, authrt_grnt_cd::bigint),'[]'::json)::text FROM public.tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION'`));
+      if (composition && !args.writeMenuSnapshot) assertProjectComposerMenusMatch(ROOT, { menus: migratedMenus, navigation: migratedNavigation });
     }
-    let selectedSchema, menuProjection, compositionAdminSeed;
+    let selectedSchema, menuProjection, navigationProjection, compositionAdminSeed, pageAccess, compositionOperationGrants;
     if (composition) {
       // Read live metadata from this owned, just-migrated DB before projecting its schema.
       // No producer/shared DB data is a seed source.
       const sourceSnapshot = JSON.parse(psql(args.container, user, workingDb, schemaSnapshotSql()));
+      assertDeclaredCrossDomainForeignKeys(sourceSnapshot, composerCatalog);
       selectedSchema = selectSchemaSnapshot(sourceSnapshot, desiredTables, desiredSequences, composition.optionalForeignKeys);
       for (const [table, expected] of Object.entries(manifest.databaseSnapshot.metaRows)) {
         if (Number(psql(args.container, user, workingDb, `SELECT count(*) FROM public.${quoteSqlIdentifier(table)}`)) !== expected) {
           fail(`Composition source metadata differs from the checked-in snapshot: ${table}`);
         }
       }
-      menuProjection = projectCompositionMenus({ menus: migratedMenus, menuRoutes: composition.menuRoutes });
+      menuProjection = projectCompositionMenus({ menus: migratedMenus, menuRoutes: composition.menuRoutes, excludedMenuTabs: composition.excludedMenuTabs });
+      const permissionCatalog = JSON.parse(readFileSync(join(ROOT, 'config/governance/permission-catalog.json'), 'utf8'));
+      pageAccess = { pagePermissions: permissionCatalog.pagePermissions, pagePermissionModes: permissionCatalog.pagePermissionModes };
+      const selectedCodes = new Set(composition.permissionCodes);
+      compositionOperationGrants = permissionCatalog.permissions.filter(permission => selectedCodes.has(permission.code))
+        .flatMap(permission => permission.defaultGroups.map(group => [group, permission.code]));
+      navigationProjection = projectCompositionNavigation({ menus: menuProjection.menus, navigation: migratedNavigation,
+        operationGrants: compositionOperationGrants, pageAccess });
       compositionAdminSeed = buildCompositionAdminSeed({
         bootstrapSql: readFileSync(join(ROOT, 'api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql'), 'utf8'),
-        projection: menuProjection, permissionCodes: composition.permissionCodes,
-        permissionCatalog: JSON.parse(readFileSync(join(ROOT, 'config/governance/permission-catalog.json'), 'utf8')),
+        projection: menuProjection, permissionCodes: composition.permissionCodes, permissionCatalog, navigation: navigationProjection,
       });
     }
 
@@ -599,8 +611,14 @@ async function main() {
       assertCompositionOperationGrants(JSON.parse(psql(args.container, user, verifyDb,
         "SELECT COALESCE(json_agg(json_build_array(authrt_cd, authrt_grnt_cd) ORDER BY authrt_cd, authrt_grnt_cd),'[]'::json)::text FROM public.tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'")),
       composition.permissionCodes, JSON.parse(readFileSync(join(ROOT, 'config/governance/permission-catalog.json'), 'utf8')));
-      assertSameSet(psql(args.container, user, verifyDb, "SELECT authrt_grnt_cd FROM public.tb_authrt_grnt_map WHERE authrt_cd='ROLE_ADMIN' AND authrt_type_cd='NAVIGATION' ORDER BY authrt_grnt_cd").split(/\r?\n/),
-        menuProjection.menus.map(menu => String(menu.menu_sn)), '재적용 DB selected NAVIGATION codes');
+      // 그룹별 메뉴 표시는 원본 배정의 투영과 정확히 같고, 그룹마다 표시하는 메뉴에 실제로 들어갈 수 있어야 한다.
+      const reappliedNavigation = JSON.parse(psql(args.container, user, verifyDb, `SELECT COALESCE(json_agg(json_build_object('authrt_cd',authrt_cd,'menu_sn',authrt_grnt_cd::bigint)
+        ORDER BY authrt_cd, authrt_grnt_cd::bigint),'[]'::json)::text FROM public.tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION'`));
+      assertSameSet(reappliedNavigation.map(row => `${row.authrt_cd}:${row.menu_sn}`),
+        navigationProjection.map(row => `${row.authrt_cd}:${row.menu_sn}`), '재적용 DB group NAVIGATION grants');
+      assertNavigationEnterable({ menus: menuProjection.menus, navigation: reappliedNavigation, pageAccess,
+        operationGrants: JSON.parse(psql(args.container, user, verifyDb,
+          "SELECT COALESCE(json_agg(json_build_array(authrt_cd, authrt_grnt_cd)),'[]'::json)::text FROM public.tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'")) });
     }
     const metaMismatches = [];
     for (const [table, expected] of Object.entries(manifest.databaseSnapshot.metaRows)) {
@@ -645,7 +663,7 @@ async function main() {
       ]));
       writeFileSync(join(output, 'profile-lock.json'), `${JSON.stringify(lock, null, 2)}\n`, 'utf8');
     }
-    if (args.writeMenuSnapshot) writeProjectComposerMenuSnapshot(ROOT, { menus: migratedMenus });
+    if (args.writeMenuSnapshot) writeProjectComposerMenuSnapshot(ROOT, { menus: migratedMenus, navigation: migratedNavigation });
     console.log(`[base-db] PASS: ${relative(ROOT, output).split(sep).join('/')}`);
   } finally {
     if (verifyCreated) dropTemporaryDatabase(args.container, user, verifyDb);

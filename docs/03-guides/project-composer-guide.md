@@ -69,7 +69,7 @@ npm run project:create -- --recipe agency-service.recipe.json
 | `reusable-base-lock.json` | 원본 commit, 배치, 구성·DB 식별, 제외 및 검증 범위 |
 | `project-generation-report.json` | 원본 파일 지문, 실행한 기술 검증, 결과 |
 
-생성기는 새 디렉터리만 사용한다. 소스 구성은 `.pending-` 디렉터리에서 진행하고, **의존성 설치 전에 최종 위치를 고정**한다. Windows pnpm의 절대 경로 junction이 끊어지지 않도록 설치·검증 후 폴더를 rename하는 승격은 하지 않는다. 최종 위치의 보고서는 `verifying`이며 모든 검증을 통과한 뒤에만 `passed`와 완료 화면을 제공한다. 폴더가 만들어졌다는 사실만으로 인수 완료로 판단하지 않는다. 실패한 작업은 `failed`로 표시하고 결과·실패 단계·명령 식별자를 `build/project-composer/jobs/`와 이미 생성된 프로젝트에 보존한다.
+생성기는 새 디렉터리만 사용한다. 소스 구성은 `.pending-` 디렉터리에서 진행하고, **의존성 설치 전에 최종 위치를 고정**한다. Windows pnpm의 절대 경로 junction이 끊어지지 않도록 설치·검증 후 폴더를 rename하는 승격은 하지 않는다. 최종 위치의 보고서는 `verifying`이며 모든 검증을 통과한 뒤에만 `passed`와 완료 화면을 제공한다. 폴더가 만들어졌다는 사실만으로 인수 완료로 판단하지 않는다. 실패한 작업은 `failed`로 표시하고 결과·실패 단계·명령 식별자를 `build/project-composer/jobs/`와 이미 생성된 프로젝트에 보존한다. 단계별 자식 출력은 비밀값(환경의 비밀 변수 값, `password=`·`token=` 같은 키의 값, URL 자격, Bearer·JWT·개인키 등)을 줄 단위로 가린 뒤 `jobs/<작업>/logs/<단계>.log`에 남긴다. 로그 하나는 1MiB를 넘으면 앞부분을 버리고 끝부분을 보존한다. 화면에는 실패 단계·명령 식별자·종료 코드·로그 위치만 보이고 출력 원문은 보내지 않는다. 생성 프로젝트의 `full.json`은 검증 단계마다 명령·결과·소요 시간을, 실패하면 그 명령과 종료 코드를 `failure`에 기록한다.
 
 생성한 프로젝트를 원하는 위치로 복사해 자체 저장소로 관리한다. 경로를 옮기면 `node_modules`를 가져오지 않고 새 위치에서 `npm ci`와 `pnpm -C frontend install --frozen-lockfile`을 실행한다. 초기 `.git`은 부모 저장소의 ignore 규칙을 차단하는 독립 경계이며 자동 커밋·push·원격 연결은 없다. 생성 프로젝트의 `REUSABLE_BASE.md`, `REUSABLE_VERIFICATION.md`에 해당 배치의 실행·검증 명령이 있다. 생성 후 실행에는 원본 저장소나 생성기 서버가 필요하지 않다.
 
@@ -79,7 +79,7 @@ npm run project:create -- --recipe agency-service.recipe.json
 
 생성기는 포트를 공개하거나 공유 볼륨을 연결하지 않는 전용 PostgreSQL 컨테이너를 만들고, 체크인된 migration으로 구성한 스키마를 선택한다. 다른 빈 DB의 하나의 연결에서 DDL과 시드를 순서대로 재적용하여 세션 설정의 영향과 테이블·sequence·컬럼·FK·인덱스·trigger·메뉴·권한을 확인한다. 완료·실패 모두 자신의 소유권 표식이 일치하는 컨테이너만 정리한다. 업무 서버의 DB 연결정보를 입력받거나 그 DB를 축소하지 않는다.
 
-초기 OPERATION 권한은 선택된 기능의 [권한 카탈로그](../../config/governance/permission-catalog.json) `defaultGroups`에 선언된 그룹에만 배정한다. 재적용 검증은 실제 그룹·권한 쌍의 정확한 집합을 비교하여 누락, 다른 그룹의 배정, 선택하지 않은 권한의 배정을 거부한다. `defaultGroups: []`인 권한은 기능을 선택해도 초기 배정하지 않으며, 해당 운영 역할은 도입 후 별도로 결정한다.
+초기 OPERATION 권한은 선택된 기능의 [권한 카탈로그](../../config/governance/permission-catalog.json) `defaultGroups`에 선언된 그룹에만 배정한다. 재적용 검증은 실제 그룹·권한 쌍의 정확한 집합을 비교하여 누락, 다른 그룹의 배정, 선택하지 않은 권한의 배정을 거부한다. `defaultGroups: []`인 권한은 기능을 선택해도 초기 배정하지 않으며, 해당 운영 역할은 도입 후 별도로 결정한다. 메뉴 표시(NAVIGATION)는 [메뉴 스냅숏](../../config/project-composer-menus.json)에 담긴 원본 마이그레이션의 그룹별 배정을 선택 메뉴만큼 투영한다. 그래서 일반 사용자 사이드바도 원본과 같은 구성으로 시작한다. 그 그룹이 표시하는 하위가 남지 않은 분류는 빼고, 그룹마다 표시하는 메뉴는 그 그룹의 기능 권한으로 들어갈 수 있어야 한다(라우트 게이트와 같은 판정). 어기면 계획 단계 투영과 재적용 DB 검증이 생성을 멈춘다. 이 투영은 생성기 시드에만 적용하며 원본 `R__zz_seed_base_admin.sql`은 관리자 메뉴만 만든다.
 
 소스 생성 후에는 선택한 코드·화면 존속, 원장 정합성, Java 컴파일·하네스·스키마 검사, 프런트엔드 타입·lint·build를 실행한다. 실패한 폴더와 보고서는 보존하되 완료 결과로 제공하지 않는다. 모든 부분집합을 사전에 인증했다는 의미는 아니며 **각 생성 작업 자체가 검증을 통과해야** 완료된다.
 
@@ -99,6 +99,8 @@ node scripts/verify-project-composer.mjs --layout single-module
 ## 메뉴 미리보기 자료 갱신
 
 [메뉴 snapshot](../../config/project-composer-menus.json)은 SQL을 실행하지 않고 계획 화면에 실제 메뉴 이름·부모·목적지를 표시하기 위한 파생 자료다. 정본은 체크인된 migration·seed·authorization Contract SQL이며, snapshot을 손으로 고쳐 메뉴를 변경하지 않는다. [검증기](../../scripts/project-composer-menu-preview.mjs)는 입력 SQL의 파일명·내용 해시를 확인하고 달라졌으면 계획을 거부한다. DB 생성 시에도 원본 migration으로 만든 실제 메뉴와 snapshot 전체를 다시 대조한다. 레거시 연결 프로그램(prgrm_file_nm)과 프로그램 원장은 앱이 읽지 않아 snapshot 에 싣지 않는다(형식 2). 프런트엔드 화면 route 수와 메뉴 수는 다를 수 있다.
+
+메뉴 행은 목적지 경로(pathname)를 소유한 기능이 남아 있으면 선택된다. 쿼리 문자열은 정확히 비교하지 않는다. `tab` 메뉴 중 다른 기능이 셸에 기여한 탭은 [카탈로그](../../scripts/project-composer-catalog.mjs)의 `menuTabs`로 선언하고, 그 기능이 빠지면 셸이 남아도 숨긴다(예: 지식 허브의 위키·FAQ·Q&A는 게시판, 커뮤니티 탭은 커뮤니티). `menuTabs` 선언이 스냅숏의 활성 메뉴 행이나 실제 화면과 맞지 않으면 카탈로그 로드가 실패한다. 전체 구성은 활성 메뉴를 모두 고르고, core 화면 메뉴는 core 구성에서 고르며, 고른 목적지가 생성물에 없는 화면을 가리키지 않는다는 것을 [해석기 계약](../../scripts/project-composer-recipe.test.mjs)이 해석기가 남긴 경로로 계산해 확인한다.
 
 원본 SQL에 정당한 메뉴 변경을 적용한 뒤에는 **이번 갱신 작업만을 위해 새로 만든 일회용 PostgreSQL 17 컨테이너**에서 아래 명령을 실행한다. 포트 공개·공유 볼륨 없이 고유 이름과 소유권 표식을 붙이고, 자격증명은 명령 인자나 파일에 쓰지 않고 임시 환경으로 전달한다. 준비 상태를 확인한 후 PowerShell 변수 `$composerContainerName`에는 해당 컨테이너 이름, `$composerRunId`에는 이번 작업의 새 식별자를 사용한다. 운영·공유·기존 업무 DB 컨테이너는 지정하지 않는다.
 

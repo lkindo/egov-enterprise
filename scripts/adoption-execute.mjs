@@ -3,7 +3,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { adoptionScope, containedFile, sha256, validateAdoptionReview } from './adoption-review.mjs';
+import { GENERATED_PROFILES, adoptionScope, containedFile, sha256, validateAdoptionReview } from './adoption-review.mjs';
 import { runCommand } from './verify-reusable-artifact.mjs';
 import { validateReleaseManifest } from './release-images.mjs';
 
@@ -93,7 +93,7 @@ function migrationVerification(root) {
   if (!existsSync(resolve(root, 'reusable-base-lock.json'))) return ['scripts/verify.mjs', 'migration'];
   const lock = read(root, 'reusable-base-lock.json');
   const layout = lock.layout ?? 'multi-module';
-  if (!['core', 'collaboration', 'demo'].includes(lock.profile)
+  if (!GENERATED_PROFILES.includes(lock.profile)
       || !['multi-module', 'single-module'].includes(layout)) throw new Error('invalid generated migration verification layout');
   containedFile(root, 'scripts/reusable-layout-runtime.mjs');
   return ['scripts/reusable-layout-runtime.mjs', '--verify-migration'];

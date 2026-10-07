@@ -102,7 +102,12 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
             assertThat(singleLong(statement,"SELECT count(*) FROM tb_menu_info menu WHERE NOT EXISTS "
                     + "(SELECT 1 FROM tb_authrt_grnt_map grant_row WHERE grant_row.authrt_cd='ROLE_ADMIN' "
                     + "AND grant_row.authrt_type_cd='NAVIGATION' AND grant_row.authrt_grnt_cd=menu.menu_sn::text)")).isZero();
-            assertThat(singleLong(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_cd <> 'ROLE_ADMIN'")).isZero();
+            if (compositionExpectation == null) {
+                // 원본 부트스트랩 시드는 관리자 메뉴만 만든다. 생성기 시드는 원본 그룹별 배정을 투영한다(assertCompositionSeed).
+                assertThat(singleLong(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_cd <> 'ROLE_ADMIN'")).isZero();
+            } else {
+                assertNavigationEnterable(statement);
+            }
 
             long maxSeeded = singleLong(statement,"SELECT max(menu_sn) FROM tb_menu_info");
             assertThat(singleLong(statement,"INSERT INTO tb_menu_info(menu_nm,menu_ordr,modern_route) "
@@ -185,7 +190,7 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
                 import { validateReusableGovernance } from './scripts/reusable-governance-integrity.mjs';
                 import { verifyProjectComposition } from './scripts/project-composer-recipe.mjs';
                 import { compositionDigest } from './scripts/project-composer-catalog.mjs';
-                import { projectCompositionMenus } from './scripts/project-composer-db.mjs';
+                import { projectCompositionMenus, projectCompositionNavigation } from './scripts/project-composer-db.mjs';
                 import { validateProjectComposerMenus } from './scripts/project-composer-menu-preview.mjs';
                 const read = path => JSON.parse(readFileSync(path, 'utf8'));
                 if (validateReusableGovernance(process.cwd()).length) throw new Error('Composer provenance is invalid');
@@ -193,15 +198,19 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
                 const composition = verifyProjectComposition(selection.composition, selection.catalog);
                 const raw = read('config/project-composer-menus.json');
                 const snapshot = validateProjectComposerMenus(raw, raw.sourceMigrationHash);
-                const projection = projectCompositionMenus({ ...snapshot, menuRoutes: composition.menuRoutes });
+                const projection = projectCompositionMenus({ menus: snapshot.menus, menuRoutes: composition.menuRoutes,
+                  excludedMenuTabs: composition.excludedMenuTabs });
                 const permissions = read('config/governance/upstream-review/permission-catalog.json');
                 if (compositionDigest(permissions) !== selection.catalog.provenance.permissionsHash)
                   throw new Error('Original permission catalog differs from the verified composition');
                 const selected = new Set(composition.permissionCodes);
                 const operationGrants = permissions.permissions.filter(row => selected.has(row.code))
                   .flatMap(row => row.defaultGroups.map(group => ({ authrt_cd: group, authrt_grnt_cd: row.code })));
+                const navigation = projectCompositionNavigation({ menus: projection.menus, navigation: snapshot.navigation,
+                  operationGrants: operationGrants.map(row => [row.authrt_cd, row.authrt_grnt_cd]),
+                  pageAccess: { pagePermissions: permissions.pagePermissions, pagePermissionModes: permissions.pagePermissionModes } });
                 process.stdout.write(JSON.stringify({ ...projection, operationGrants,
-                  navigationGrants: projection.menus.map(row => ({ authrt_cd: 'ROLE_ADMIN', authrt_grnt_cd: String(row.menu_sn) })),
+                  navigationGrants: navigation.map(row => ({ authrt_cd: row.authrt_cd, authrt_grnt_cd: String(row.menu_sn) })),
                   removePaths: composition.frontend.removePaths }));
                 """;
         Path output = Files.createTempFile("composer-bootstrap-contract-", ".json");
@@ -258,6 +267,78 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
         assertJsonRows(statement, "SELECT authrt_cd,authrt_grnt_cd FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION'",
                 expected.path("navigationGrants"), "exact selected NAVIGATION grants");
         assertOperationGrants(statement, expected.path("operationGrants"));
+    }
+
+    /**
+     * 그룹마다 표시하는 메뉴는 그 그룹의 기능 권한으로 들어갈 수 있어야 한다(DEC-OPS-186·215).
+     * 판정은 라우트 게이트(proxy.ts → page-authorization.ts)와 같다: {@code /admin} 밖은 열려 있고,
+     * 등록되지 않은 {@code /admin} 경로는 닫혀 있으며, ALL 모드는 모든 권한을 요구한다.
+     */
+    private void assertNavigationEnterable(Statement statement) throws Exception {
+        JsonNode catalog;
+        try (InputStream stream = getClass().getResourceAsStream("/authorization/permission-catalog.json")) {
+            assertThat(stream).as("classpath permission catalog must exist").isNotNull();
+            catalog = JsonMapper.builder().configureForJackson2().build().readTree(stream);
+        }
+        Map<String, Set<String>> granted = new LinkedHashMap<>();
+        try (ResultSet rows = statement.executeQuery("SELECT authrt_cd,authrt_grnt_cd FROM tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'")) {
+            while (rows.next()) {
+                granted.computeIfAbsent(rows.getString(1), group -> new TreeSet<>()).add(rows.getString(2));
+            }
+        }
+        List<String> blocked = new ArrayList<>();
+        int routed = 0;
+        try (ResultSet rows = statement.executeQuery("SELECT grant_row.authrt_cd, menu.modern_route FROM tb_authrt_grnt_map grant_row "
+                + "JOIN tb_menu_info menu ON menu.menu_sn::text = grant_row.authrt_grnt_cd "
+                + "WHERE grant_row.authrt_type_cd='NAVIGATION' AND menu.modern_route IS NOT NULL")) {
+            while (rows.next()) {
+                routed++;
+                String group = rows.getString(1);
+                String route = rows.getString(2);
+                if (!canEnterRoute(route, granted.getOrDefault(group, Set.of()), catalog)) {
+                    blocked.add(group + ":" + route);
+                }
+            }
+        }
+        assertThat(routed).as("routed NAVIGATION grants").isPositive();
+        assertThat(blocked).as("groups must be able to enter every menu they see").isEmpty();
+    }
+
+    private static boolean canEnterRoute(String route, Set<String> granted, JsonNode catalog) {
+        String path = route.split("[?#]", 2)[0].replaceAll("/$", "");
+        if (path.isEmpty()) {
+            path = "/";
+        }
+        String lower = path.toLowerCase(java.util.Locale.ROOT);
+        if (!lower.equals("/admin") && !lower.startsWith("/admin/")) {
+            return true;
+        }
+        JsonNode pages = catalog.path("pagePermissions");
+        String[] segments = path.split("/", -1);
+        Map.Entry<String, JsonNode> entry = pages.has(path) ? Map.entry(path, pages.get(path)) : null;
+        if (entry == null) {
+            for (Map.Entry<String, JsonNode> candidate : pages.properties()) {
+                String[] parts = candidate.getKey().replaceAll("/$", "").split("/", -1);
+                boolean same = parts.length == segments.length;
+                for (int index = 0; same && index < parts.length; index++) {
+                    same = parts[index].matches("\\[[^.\\[\\]]+\\]") ? !segments[index].isEmpty() : parts[index].equals(segments[index]);
+                }
+                if (same) {
+                    entry = candidate;
+                    break;
+                }
+            }
+        }
+        if (entry == null) {
+            return false;
+        }
+        List<String> required = new ArrayList<>();
+        entry.getValue().forEach(code -> required.add(code.asString()));
+        JsonNode mode = catalog.path("pagePermissionModes").path(entry.getKey());
+        if (mode.isString() && "ALL".equals(mode.asString())) {
+            return !required.isEmpty() && granted.containsAll(required);
+        }
+        return required.isEmpty() || required.stream().anyMatch(granted::contains);
     }
 
     /** No group receives a permission merely because the code exists in PermissionCodes.ALL. */
@@ -321,6 +402,7 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
         for (String mutation : List.of(
                 "UPDATE tb_menu_info SET menu_nm=menu_nm || '__unexpected__' WHERE menu_sn=(SELECT min(menu_sn) FROM tb_menu_info)",
                 "DELETE FROM tb_authrt_grnt_map WHERE authrt_cd='ROLE_ADMIN' AND authrt_type_cd='NAVIGATION'",
+                "DELETE FROM tb_authrt_grnt_map WHERE authrt_cd='ROLE_USER' AND authrt_type_cd='NAVIGATION'",
                 "DELETE FROM tb_authrt_grnt_map WHERE authrt_cd='ROLE_ADMIN' AND authrt_type_cd='OPERATION' AND authrt_grnt_cd='MENU_CREATE'")) {
             connection.setAutoCommit(false);
             try {

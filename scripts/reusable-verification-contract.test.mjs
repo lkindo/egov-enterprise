@@ -52,6 +52,27 @@ test('artifact full verification executes every actual stage and stops on any fa
   assert.equal(readFileSync(sentinel, 'utf8'), 'unchanged');
 });
 
+test('the verification report records each step and names the failed command with its exit code', (t) => {
+  const root = fixture(t);
+  const commands = verificationCommands();
+  const report = () => JSON.parse(readFileSync(join(root, 'build/reports/reusable-base/full.json'), 'utf8'));
+  let called = 0;
+  assert.throws(() => verifyReusableArtifact({ root, run: () => {
+    if (called++ === 4) throw Object.assign(new Error('tsc failed'), { exitCode: 3 });
+  } }), /tsc failed/);
+  const failed = report();
+  assert.equal(failed.result, 'failed');
+  assert.deepEqual(failed.failure, { command: commands[4].flat().join(' '), exitCode: 3, durationMs: failed.failure.durationMs });
+  assert.ok(Number.isInteger(failed.failure.durationMs) && failed.failure.durationMs >= 0);
+  assert.deepEqual(failed.steps.map(step => [step.command, step.result]),
+    [...commands.slice(0, 4).map(command => [command.flat().join(' '), 'passed']), [commands[4].flat().join(' '), 'failed']]);
+  verifyReusableArtifact({ root, run: () => {} });
+  const passed = report();
+  assert.equal(passed.result, 'passed');
+  assert.equal(passed.failure, undefined, 'a passing run does not inherit an earlier failure');
+  assert.equal(passed.steps.length, commands.length);
+});
+
 test('single-module artifacts execute root gates and reject unsupported layouts before any commands', (t) => {
   const root = fixture(t);
   const lock = { profile: 'core', layout: 'single-module', sourceCommit: '1'.repeat(40) };

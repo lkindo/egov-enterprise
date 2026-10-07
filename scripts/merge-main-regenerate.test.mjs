@@ -189,6 +189,23 @@ test('a real merge resolves memory rows and generated conflicts, regenerates, st
   assert.equal(r.git('rev-list', '--count', 'HEAD').trim(), '2');
 });
 
+test('a generator whose tool is absent from the repository is skipped with a message, not run', () => {
+  const r = divergedRepo({ decisionsOurs: row('DEC-OPS-3'), decisionsTheirs: row('DEC-OPS-2') });
+  const absent = { id: 'absent-tool', requires: 'tools/absent.mjs', inputs: () => true, outputs: ['absent.txt'],
+    command: ['node', ['-e', 'process.exit(1)']] };
+  const present = { id: 'present-tool', requires: 'src/a.ts', inputs: () => true, outputs: ['present.txt'],
+    command: ['node', ['-e', "require('fs').writeFileSync('present.txt', 'x')"]] };
+  const messages = [];
+  const result = mergeMainAndRegenerate({ cwd: r.dir, base: 'main', fetch: false, generators: [fakeGenerator, absent, present],
+    log: m => messages.push(m) });
+  assert.equal(result.status, 'ready', messages.join('\n'));
+  assert.deepEqual(result.plan, ['fake-census', 'present-tool'], 'only the generator whose tool is missing is skipped');
+  assert.ok(messages.some(m => m.includes('건너뜀: absent-tool')), messages.join('\n'));
+  // 원본 저장소는 Atlas 생성기를 갖고 있어 Atlas 재생성을 건너뛰지 않는다.
+  const atlas = GENERATORS.find(generator => generator.id === 'atlas');
+  assert.ok(fs.existsSync(new URL(`../${atlas.requires}`, import.meta.url)), atlas.requires);
+});
+
 test('a conflict the tool must not decide stops before regeneration and resumes with --continue', () => {
   const r = divergedRepo({
     decisionsOurs: row('DEC-OPS-2', 'ours'), decisionsTheirs: row('DEC-OPS-2', 'theirs'),

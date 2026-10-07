@@ -7,6 +7,7 @@ import nuri.business.domain.user.repository.UserRepository;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.foundation.security.iam.CustomUserDetailsService;
 import nuri.foundation.security.service.CustomUserDetails;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -44,7 +45,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * ⚠ H2 DB 이름을 분리 클래스와 다르게 둔다({@code rbac_core_testdb}). 같은 이름을 공유하면
  *   {@code create-drop} + {@code @DirtiesContext} 조합에서 컨텍스트 축출 순서에 따라 앞선
  *   클래스가 스키마를 지운 뒤 다른 클래스가 그 DB 를 만나 42S02 로 죽는다(저장소 실측 이력).
+ *
+ * <p>[2026-10-07] {@code governance-harness} 로 태그해 {@code harnessTest} 에서 돈다. 생성 프로젝트의 검증은
+ *   하네스·스키마 검사만 실행하므로, 태그가 없으면 생성물에서 인가 매트릭스가 컴파일만 되고 실행되지 않았다.
  */
+@Tag("governance-harness")
 @SpringBootTest(classes = nuri.ApiServerApplication.class, properties = {
         "spring.datasource.url=jdbc:h2:mem:rbac_core_testdb;DB_CLOSE_DELAY=-1;IGNORECASE=TRUE;NON_KEYWORDS=KEY,VALUE",
         "spring.jpa.hibernate.ddl-auto=create-drop"})

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { installReusableVerification } from './generate-reusable-base-source.mjs';
+import { UPSTREAM_ATLAS, installReusableVerification, pruneUpstreamAtlas } from './generate-reusable-base-source.mjs';
 import { applySingleModuleLayout } from './reusable-single-module.mjs';
 import { installMultiModuleMigrationRuntime, installSingleModuleRuntime } from './reusable-layout-runtime.mjs';
 import { parseWorkflowJobs } from './required-checks-contract.mjs';
@@ -189,4 +189,33 @@ test('missing upstream inputs fail before the product is represented as a valid 
   const original = read(root, `${VERIFICATION_HISTORY}/index.json`);
   assert.throws(() => installReusableVerification(root), /already projected/);
   assert.equal(read(root, `${VERIFICATION_HISTORY}/index.json`), original);
+});
+
+test('the upstream Atlas, its generator, contracts and aliases are absent from generated products', t => {
+  const removed = [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates];
+  if (isArtifact) {
+    // 생성물 안에서는 이 계약이 T1 으로 돈다. 원본 운영 사실을 담은 Atlas 가 되살아나면 여기서 붉다.
+    for (const path of removed) assert.equal(existsSync(join(ROOT, path)), false, path);
+    for (const alias of UPSTREAM_ATLAS.aliases) assert.equal(Object.hasOwn(json(ROOT, 'package.json').scripts, alias), false, alias);
+    return;
+  }
+  // 원본에서는 규칙이 지목하는 대상이 모두 실재해야 한다. 하나라도 개명되면 규칙을 다시 검토한다.
+  for (const path of removed) assert.ok(existsSync(join(ROOT, path)), path);
+  for (const alias of UPSTREAM_ATLAS.aliases) assert.ok(Object.hasOwn(json(ROOT, 'package.json').scripts, alias), alias);
+
+  const base = resolve(tmpdir());
+  const root = mkdtempSync(join(base, 'egov-atlas-prune-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  for (const path of removed) write(root, path === 'frontend/atlas' ? `${path}/atlas.css` : path, 'x\n');
+  write(root, 'frontend/public/other.svg', '<svg/>\n');
+  write(root, 'package.json', JSON.stringify({ scripts: { 'atlas:build': 'a', 'atlas:check': 'b', verify: 'c' } }));
+  assert.deepEqual(pruneUpstreamAtlas(root).files, [...UPSTREAM_ATLAS.gates].sort((a, b) => a.localeCompare(b)));
+  for (const path of removed) assert.equal(existsSync(join(root, path)), false, path);
+  assert.ok(existsSync(join(root, 'frontend/public/other.svg')), 'only the Atlas assets are removed');
+  assert.deepEqual(json(root, 'package.json').scripts, { verify: 'c' });
+
+  // 대상이 하나라도 없으면 조용히 넘어가지 않는다 — 규칙이 낡은 채 "0건 제거" 로 통과하지 않게 한다.
+  write(root, 'package.json', JSON.stringify({ scripts: { 'atlas:build': 'a', 'atlas:check': 'b' } }));
+  for (const path of removed.slice(1)) write(root, path === 'frontend/atlas' ? `${path}/atlas.css` : path, 'x\n');
+  assert.throws(() => pruneUpstreamAtlas(root), /Upstream Atlas asset is missing.*governance_harness_atlas\.html/);
 });

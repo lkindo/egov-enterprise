@@ -92,6 +92,8 @@ export const GENERATORS = [
   },
   {
     id: 'atlas',
+    // 재사용 생성물은 원본 Atlas 와 그 생성기를 걷는다. 생성기가 없는 저장소에서는 이 단계를 건너뛴다.
+    requires: 'scripts/build-atlas.mjs',
     inputs: anyPath,
     outputs: ['frontend/public/governance_harness_atlas.html'],
     command: ['npm', ['run', 'atlas:build']],
@@ -302,7 +304,11 @@ export function mergeMainAndRegenerate({
   const mergeBase = git(cwd, 'merge-base', 'HEAD', theirsRef).trim();
   const ours = lines(git(cwd, 'diff', '--name-only', mergeBase, 'HEAD'));
   const theirs = lines(git(cwd, 'diff', '--name-only', mergeBase, theirsRef));
-  const plan = planRegeneration({ ours, theirs }, generators);
+  const available = generators.filter(generator => !generator.requires || fs.existsSync(path.join(cwd, generator.requires)));
+  for (const generator of generators.filter(generator => !available.includes(generator))) {
+    log(`건너뜀: ${generator.id} — ${generator.requires} 이 이 저장소에 없다.`);
+  }
+  const plan = planRegeneration({ ours, theirs }, available);
   const regenerated = new Set(plan.flatMap(generator => generator.outputs));
 
   const resolved = [];

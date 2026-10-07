@@ -19,6 +19,8 @@
 /api-server/src/test/java/nuri/api/harness/       @lkindo
 /api-server/src/test/java/nuri/api/schema/        @lkindo
 /api-server/src/test/java/nuri/ArchitectureTest.java @lkindo
+/api-server/src/test/java/nuri/security/RbacAuthorizationMatrixTest.java @lkindo
+/api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java @lkindo
 /api-server/src/test/resources/harness/           @lkindo
 /business-app/src/test/java/nuri/business/ArchitectureTest.java @lkindo
 /business-app/src/test/java/nuri/business/DomainIsolationTest.java @lkindo

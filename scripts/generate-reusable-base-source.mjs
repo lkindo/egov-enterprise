@@ -590,6 +590,8 @@ export function pruneFrontend(output, manifest, profile) {
 const GATE_REMOVAL_RULES = {
   'historical-migration-tests':
     '투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 대체해 역사적 migration 검증이 검사 대상을 잃는다',
+  'upstream-atlas':
+    '원본 Atlas 는 원본 저장소의 운영 사실을 담은 채 로그인 전에 응답되고, 투영본만으로는 다시 만들 수 없어 생성물에서 걷는다',
 };
 
 function assertRemovedGatesAcknowledged(profileName, profile, java, frontend, ruleRemovals) {
@@ -767,6 +769,41 @@ function pruneHistoricalMigrationTests(output) {
     count: tests.length,
     files: tests.map((path) => normalize(relative(output, path))).sort((a, b) => a.localeCompare(b)),
   };
+}
+
+/*
+ * 원본 Governance & Harness Atlas 와 그 생성·검증 도구. Atlas HTML 은 원본의 결정·gap·운영 사실을
+ * 담고 프록시가 인증 전에 응답하는 정적 파일이다. 생성기는 원본 공용 메모리와 문서를 읽으므로
+ * 생성물 안에서 다시 만들어도 원본 사실이 되살아난다. 그래서 고치지 않고 통째로 걷는다.
+ */
+export const UPSTREAM_ATLAS = Object.freeze({
+  assets: Object.freeze([
+    'frontend/public/governance_harness_atlas.html',
+    'frontend/atlas',
+    'scripts/build-atlas.mjs',
+    'scripts/atlas-catalog.mjs',
+  ]),
+  gates: Object.freeze([
+    'frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts',
+    'scripts/atlas-catalog.test.mjs',
+    'scripts/atlas-generation.test.mjs',
+  ]),
+  aliases: Object.freeze(['atlas:build', 'atlas:check']),
+});
+
+export function pruneUpstreamAtlas(output) {
+  for (const file of [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates]) {
+    if (!existsSync(join(output, file))) fail(`Upstream Atlas asset is missing; review the Atlas removal rule: ${file}`);
+  }
+  for (const file of [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates]) rmSync(join(output, file), { recursive: true });
+  const path = join(output, 'package.json');
+  const pkg = JSON.parse(readFileSync(path, 'utf8'));
+  for (const alias of UPSTREAM_ATLAS.aliases) {
+    if (!Object.hasOwn(pkg.scripts ?? {}, alias)) fail(`Upstream Atlas alias is missing; review the Atlas removal rule: ${alias}`);
+    delete pkg.scripts[alias];
+  }
+  writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`);
+  return { files: [...UPSTREAM_ATLAS.gates].sort((a, b) => a.localeCompare(b)) };
 }
 
 function adaptOwnershipGuardBaseline(output) {
@@ -1354,8 +1391,10 @@ function main() {
   // ⚠ 규칙 기반 제거는 **승인 검사보다 먼저** 해야 한다 — 뒤에 두면 census 가 "0건" 이라고 말한 뒤
   //   게이트 42개가 사라진다(2026-09-12 실측으로 드러난 이 census 자신의 구멍).
   const removedHistoricalMigrationTests = pruneHistoricalMigrationTests(output);
+  const removedUpstreamAtlas = pruneUpstreamAtlas(output);
   const removedGates = assertRemovedGatesAcknowledged(args.profile, profile, java, frontend, {
     'historical-migration-tests': removedHistoricalMigrationTests.files,
+    'upstream-atlas': removedUpstreamAtlas.files,
   });
   installDatabaseBundle(output, dbBundle);
   const zdmWaivers = pruneZeroDowntimeWaivers(output);

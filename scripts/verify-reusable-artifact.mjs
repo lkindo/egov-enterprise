@@ -37,7 +37,10 @@ export function runCommand(command, args, { root, env = process.env, capture = f
   const result = spawnSync(executable, args, { cwd: root, env, windowsHide: true,
     shell: windows && /\.(?:cmd|bat)$/.test(executable),
     stdio: capture ? 'pipe' : 'inherit', encoding: 'utf8', maxBuffer: 128 * 1024 * 1024 });
-  if (result.error || result.status !== 0) throw new Error(`${command} failed (${result.status ?? 'spawn'}): ${result.error?.message ?? result.stderr ?? ''}`);
+  if (result.error || result.status !== 0) {
+    const error = new Error(`${command} failed (${result.status ?? 'spawn'}): ${result.error?.message ?? result.stderr ?? ''}`);
+    throw Object.assign(error, { exitCode: result.status ?? null });
+  }
   return result.stdout;
 }
 
@@ -50,18 +53,29 @@ export function verifyReusableArtifact({ root, scope = 'full', run = runCommand 
   const env = { ...process.env, TZ: 'Asia/Seoul', JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex') };
   const report = { schemaVersion: 1, authority: 'local-product-technical-verification', profile: lock.profile,
     scope, layout, sourceCommit: lock.sourceCommit, checkedAt: new Date().toISOString(),
-    result: 'started', environmentApproved: false, runtimeScenariosExecuted: false };
+    result: 'started', environmentApproved: false, runtimeScenariosExecuted: false, steps: [] };
   const reports = resolve(root, 'build/reports/reusable-base');
   mkdirSync(reports, { recursive: true });
   const save = () => writeFileSync(resolve(reports, `${scope}.json`), `${JSON.stringify(report, null, 2)}\n`);
   save();
+  // 단계마다 명령·결과·소요 시간을 남긴다. 실패하면 그 명령과 종료 코드가 보고서의 failure 다.
+  let step;
   try {
     for (const [command, args] of commands) {
       process.stdout.write(`[reusable-verify] ${lock.profile}/${layout}: ${command} ${args.join(' ')}\n`);
+      step = { command: [command, ...args].join(' '), startedAt: Date.now() };
       run(command, args, { root, env });
+      report.steps.push({ command: step.command, result: 'passed', durationMs: Date.now() - step.startedAt });
+      step = undefined;
     }
     report.result = 'passed';
-  } catch (error) { report.result = 'failed'; throw error; }
+  } catch (error) {
+    if (step) {
+      report.failure = { command: step.command, exitCode: error.exitCode ?? null, durationMs: Date.now() - step.startedAt };
+      report.steps.push({ ...report.failure, result: 'failed' });
+    }
+    report.result = 'failed'; throw error;
+  }
   finally { save(); }
   return report;
 }

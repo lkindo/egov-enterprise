@@ -91,6 +91,8 @@ export function resolveProjectRecipe(input, catalog) {
   const menuRoutes = sorted([...catalog.core.menuRoutes, ...retained.flatMap(feature => feature.menuRoutes),
     ...catalog.sharedUi.filter(group => group.domains.every(domain => included.has(domain))).flatMap(group => group.routes)])
     .filter(route => !removedRoute(route));
+  // 빠진 기능이 다른 기능의 셸에 기여한 탭 메뉴. 셸이 남아도 이 탭 메뉴는 숨긴다.
+  const excludedMenuTabs = sorted(catalog.capabilities.filter(feature => !included.has(feature.id)).flatMap(feature => feature.menuTabs));
   const permissionCodes = sorted([...catalog.core.permissionCodes, ...retained.flatMap(feature => feature.permissionCodes)]);
   const normalizedRecipe = { schemaVersion: 1, project: { name: input.project.name }, sourceRef: input.sourceRef,
     selection: preset ? { preset: preset.id } : { domains: selectedDomains }, database: { vendor: 'postgresql' }, backendLayout };
@@ -99,9 +101,12 @@ export function resolveProjectRecipe(input, catalog) {
     profile: preset?.id ?? 'custom', mandatory: [...catalog.mandatory], selectedDomains, resolvedDomains,
     autoIncluded: [...reasons].map(([domain, why]) => ({ domain, reason: [...why].sort().join(' ') })).sort((a, b) => a.domain.localeCompare(b.domain)),
     packs: preset ? [...preset.packs] : sorted(['core', ...retained.map(feature => feature.pack)]),
-    database: normalizedRecipe.database, backendLayout, tables, explicitSequences, permissionCodes, menuRoutes,
-    frontend: { includedPaths, removePaths, retainedRoutes: menuRoutes.filter(route => !route.includes('?')) },
+    database: normalizedRecipe.database, backendLayout, tables, explicitSequences, permissionCodes, menuRoutes, excludedMenuTabs,
+    frontend: { includedPaths, removePaths, retainedRoutes: menuRoutes },
     optionalForeignKeys: catalog.optionalForeignKeys.filter(fk => tables.includes(fk.childTable) && !tables.includes(fk.parentTable)),
+    // 필수 외래 키의 부모가 빠진 선택. 자동 포함하지 않고 계획이 생성 불가 사유로 보인다.
+    foreignKeyViolations: catalog.requiredForeignKeys.filter(fk => tables.includes(fk.childTable) && !tables.includes(fk.parentTable))
+      .map(({ name, childTable, parentTable, sourceDomain, targetDomain }) => ({ name, childTable, parentTable, sourceDomain, targetDomain })),
     requirements: sorted(retained.flatMap(feature => feature.requirements)),
     catalogHash, recipeHash: compositionDigest(normalizedRecipe),
   };

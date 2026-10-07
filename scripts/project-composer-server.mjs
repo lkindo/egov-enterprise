@@ -14,6 +14,10 @@ const STAGES = Object.freeze({
   source: '선택한 기능의 소스 구성 중', install: '프로젝트 의존성 준비 중',
   verify: '생성 프로젝트 검증 중', complete: '생성과 검증 완료',
 });
+const FAILED_STAGES = Object.freeze({
+  resolve: '구성 확인', database: 'PostgreSQL 스키마와 초기 데이터 생성', source: '소스 구성',
+  install: '의존성 준비', verify: '생성 프로젝트 검증',
+});
 const MESSAGES = Object.freeze({
   BAD_REQUEST: '요청 형식을 확인해 주세요.', FORBIDDEN: '이 생성기 화면에서 다시 시도해 주세요.',
   NOT_FOUND: '요청한 항목을 찾을 수 없습니다.', METHOD_NOT_ALLOWED: '지원하지 않는 요청 방식입니다.',
@@ -85,6 +89,19 @@ function safeResult(value, recipe) {
     if (typeof value?.[key] === 'string' && value[key].length <= 2048 && !/[\r\n\0]/.test(value[key])) result[key] = value[key];
   }
   return result;
+}
+
+/** 실패한 단계·명령 식별자·종료 코드·가린 로그 위치만 넘긴다. 오류 메시지와 자식 출력은 보내지 않는다. */
+function safeFailure(failure) {
+  if (!plain(failure)) return undefined;
+  const result = {};
+  if (Object.hasOwn(FAILED_STAGES, failure.stage)) { result.stage = failure.stage; result.stageLabel = FAILED_STAGES[failure.stage]; }
+  if (typeof failure.commandId === 'string' && /^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$/.test(failure.commandId)) {
+    result.commandId = failure.commandId;
+    result.exitCode = Number.isSafeInteger(failure.exitCode) ? failure.exitCode : null;
+  }
+  if (typeof failure.log === 'string' && failure.log.length <= 2048 && !/[\r\n\0]/.test(failure.log)) result.log = failure.log;
+  return Object.keys(result).length ? result : undefined;
 }
 
 export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) {
@@ -161,9 +178,11 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
           } })).then(result => {
             job.status = 'succeeded'; job.stage = 'complete'; job.message = STAGES.complete; job.progress = 100;
             job.result = safeResult(result, recipe);
-          }, () => {
+          }, error => {
             job.status = 'failed'; job.error = { code: 'GENERATION_FAILED', message: MESSAGES.GENERATION_FAILED };
             job.message = MESSAGES.GENERATION_FAILED;
+            const failure = safeFailure(error?.failure);
+            if (failure) job.failure = failure;
           }).finally(() => { if (active === id) active = undefined; });
         }
       } else if (/^\/api\/jobs\/[0-9a-f-]{36}$/.test(path)) {
