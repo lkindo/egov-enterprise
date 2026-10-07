@@ -138,7 +138,6 @@ test('child output is kept only as a masked, bounded stage log and the failure n
     'ghp_' + 'a'.repeat(36), 'MIIEvQIBADANBgkqhkiG9w0BAQEFAASC', 'split-secret-value'];
   writeFileSync(script, [
     "const out = line => process.stdout.write(line + '\\n');",
-    "for (let index = 0; index < 20000; index += 1) out('noise ' + index + ' ' + 'x'.repeat(60));",
     `out('connecting with ${secrets[0]} to the database');`,
     `out('DB_PASSWORD=${secrets[1]}');`,
     `out('jdbc url postgresql://admin:${secrets[2]}@localhost:5432/db');`,
@@ -149,7 +148,8 @@ test('child output is kept only as a masked, bounded stage log and the failure n
     `out('${pemMarker('END')}');`,
     "out('long ' + 'y'.repeat(20000));",
     "process.stderr.write('app.secret=');",
-    `setTimeout(() => { process.stderr.write('${secrets[6]} tail\\n'); out('BUILD FAILED in 3s'); process.exit(7); }, 50);`,
+    // process.exit() 는 아직 파이프로 나가지 않은 출력을 버린다(Linux 파이프는 비동기 쓰기). 종료 코드만 정하고 흘려보낸다.
+    `setTimeout(() => { process.stderr.write('${secrets[6]} tail\\n'); out('BUILD FAILED in 3s'); process.exitCode = 7; }, 50);`,
   ].join('\n'));
   const log = join(directory, 'logs', 'verify.log');
   await assert.rejects(() => runComposerCommand('node', [script], { root: directory, env, log }), error => {
@@ -168,13 +168,30 @@ test('child output is kept only as a masked, bounded stage log and the failure n
   assert.match(text, /app\.secret=\*\*\* tail/, 'a secret split across writes is masked as one line');
   assert.match(text, /BUILD FAILED in 3s/);
   assert.match(text, /…\(줄 잘림\)/);
-  assert.match(text, /^…앞 \d+줄 생략/m, 'the head is dropped and the tail is kept');
-  assert.doesNotMatch(text, /^noise 0 /m);
+  assert.doesNotMatch(text, /줄 생략/, 'a short log keeps every line');
   assert.match(text, /\[종료 코드 7 · \d+ms · 가림 \d+건\]/);
-  assert.ok(Buffer.byteLength(text) < 1024 * 1024 + 64 * 1024, 'the stage log stays bounded');
   // 같은 단계의 다음 명령은 같은 로그 뒤에 붙는다.
   await runComposerCommand('node', ['-e', "console.log('second command')"], { root: directory, env, log });
   assert.match(readFileSync(log, 'utf8'), /second command\n\[종료 코드 0/);
+});
+
+test('a flooding command keeps only a bounded tail of its stage log', async () => {
+  // 가림 검사와 나눈다. 두 파이프(stdout·stderr)는 도착 순서가 보장되지 않아, 한 실행에서 섞으면
+  // 끝부분 보존 규칙이 어느 줄을 남길지 운영체제마다 달라진다(Linux CI 실측).
+  const directory = mkdtempSync(join(outputRoot, 'bounded-log-'));
+  const script = join(directory, 'flood.mjs');
+  writeFileSync(script, [
+    "const out = line => process.stdout.write(line + '\\n');",
+    "for (let index = 0; index < 20000; index += 1) out('noise ' + index + ' ' + 'x'.repeat(60));",
+    "out('last line');",
+  ].join('\n'));
+  const log = join(directory, 'logs', 'install.log');
+  await runComposerCommand('node', [script], { root: directory, log });
+  const text = readFileSync(log, 'utf8');
+  assert.match(text, /^…앞 \d+줄 생략/m, 'the head is dropped and the tail is kept');
+  assert.doesNotMatch(text, /^noise 0 /m);
+  assert.match(text, /^last line\n\[종료 코드 0 /m);
+  assert.ok(Buffer.byteLength(text) < 1024 * 1024 + 64 * 1024, 'the stage log stays bounded');
 });
 
 test('a failed command records its stage, command, exit code and stage log without claiming a missing verification report', async () => {
