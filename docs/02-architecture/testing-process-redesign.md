@@ -162,7 +162,7 @@ Windows/macOS에서는 Linux 기준선을 비교하는 `quality/visual-baselines
 
 [변경 분류기](../../scripts/ci-change-scope.mjs)는 Gradle/toolchain, `src/testFixtures`, main/test 리소스 등 PIT 입력을 포함한다. [ADR-0022](decisions/ADR-0022-ci-independent-module-impact-and-cache.md)에 따라 온라인 4모듈은 결합된 범위를 유지하고 독립 `migration-tool`의 build/PIT만 분리한다. 공통 Gradle·ID 생성 의미 계약은 양쪽 실행, 미지·빈 비교는 전수 fallback이며 14개 PIT scope의 75% strict 기준은 같다. 온라인·이관 커버리지는 각 LINE 85%·BRANCH 70%를 강제하고 기존 로컬 전수 커버리지도 유지한다. 개별 변경 파일만 골라 변이를 생략하는 선택은 도입하지 않았다.
 
-Gradle action은 v6.3.0의 검증 대상 commit에 고정하고 `cache-provider: basic`을 명시했다. upstream writer는 backend 하나이며 backend가 명시적으로 false인 이관 전용 실행에서는 migration이 맡는다. 나머지 작업은 읽기 전용이고 독립 export 제품은 자체 writer를 유지한다. 캐시 복원 성공이나 구성 변경만으로 필수 검사를 통과시키지 않으며, 실제 hit·전송 비용·전체 경과시간은 같은 검증 범위의 원격 실행으로 평가한다.
+Gradle action은 v6.4.0의 검증 대상 commit에 고정하고(2026-10-07 v6.3.0에서 상향, DEC-OPS-237) `cache-provider: basic`을 명시했다. upstream writer는 backend 하나이며 backend가 명시적으로 false인 이관 전용 실행에서는 migration이 맡는다. 나머지 작업은 읽기 전용이고 독립 export 제품은 자체 writer를 유지한다. 캐시 복원 성공이나 구성 변경만으로 필수 검사를 통과시키지 않으며, 실제 hit·전송 비용·전체 경과시간은 같은 검증 범위의 원격 실행으로 평가한다.
 
 실행 job `e2e-tests`·`mutation-scope`·`mutation-scope-migration`의 상태 조건은 `!cancelled()`로 두어 기존 선택 범위를 보존하면서 취소에 반응하게 하고, 결과 집계와 cleanup의 `always()`는 유지한다. GitHub는 취소할 때 job 조건을 재평가하므로 실행 job의 `always()`는 취소 후에도 참이 될 수 있다([공식 취소 동작](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-cancellation)).
 

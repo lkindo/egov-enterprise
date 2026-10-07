@@ -1157,12 +1157,14 @@ test('every Gradle setup rejects unreviewed cache clients, providers and writer 
   assert.deepEqual(validatePinnedWorkflowUses(workflows), []);
   let checked = 0;
   for (const workflow of workflows) {
-    for (const match of workflow.content.matchAll(/gradle\/actions\/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb/g)) {
+    for (const match of workflow.content.matchAll(/gradle\/actions\/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6/g)) {
       const prefix = workflow.content.slice(0, match.index);
       const suffix = workflow.content.slice(match.index);
       for (const [changed, expected] of [
-        [suffix.replace('9c971963bec38e04b3d30dcc455b5382be2fdbfb', 'd9c87d481d55275bb5441eef3fe0e46805f9ef70'), 'cache-compatible action pin'],
+        [suffix.replace('3f5f9adaf7d9fecd50b5935e54106014257a94e6', 'd9c87d481d55275bb5441eef3fe0e46805f9ef70'), 'cache-compatible action pin'],
         [suffix.replace('cache-provider: basic', 'cache-provider: enhanced'), 'cache-provider: basic'],
+        // v6.4.0 added 'external', which silently turns off the Gradle User Home cache.
+        [suffix.replace('cache-provider: basic', 'cache-provider: external'), 'cache-provider: basic'],
         [suffix.replace(/ *cache-provider: basic\r?\n/, ''), 'cache-provider: basic'],
         [suffix.replace(/ *cache-read-only:[^\r\n]*\r?\n/, ''), 'cache-read-only'],
         [suffix.replace(/cache-read-only:[^\r\n]*/, 'cache-read-only: invalid'), 'cache-read-only'],
@@ -1214,7 +1216,7 @@ test('cache writer election remains tied to selected backend and migration jobs'
     assert.notEqual(changed, normalizedCi);
     assert.ok(validatePinnedWorkflowUses([{ ...workflow, content: changed }]).length > 0);
   }
-  const duplicated = `${normalizedCi}\n  unexpected-cache-writer:\n    steps:\n      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb\n        with:\n          cache-provider: basic\n          cache-read-only: false\n`;
+  const duplicated = `${normalizedCi}\n  unexpected-cache-writer:\n    steps:\n      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6\n        with:\n          cache-provider: basic\n          cache-read-only: false\n`;
   assert.match(validatePinnedWorkflowUses([{ ...workflow, content: duplicated }]).join('\n'), /no reviewed writer policy/);
 });
 

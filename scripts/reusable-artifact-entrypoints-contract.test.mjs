@@ -62,7 +62,7 @@ test('producer fixtures and the actual generated product preserve a distinct non
     assert.match(job, /gitleaks detect --source \. --no-banner/);
     assert.match(job, /github\.event\.pull_request\.base\.sha/);
     assert.match(job, /github\.event\.before/);
-    assert.match(job, /uses: gradle\/actions\/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb\n        with:\n          cache-provider: basic\n          cache-read-only: false/);
+    assert.match(job, /uses: gradle\/actions\/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6\n        with:\n          cache-provider: basic\n          cache-read-only: false/);
     assert.equal(json(root, '.github/required-checks.json').profile, profile);
     assert.equal(json(root, '.github/required-checks.json').remoteApplied, false);
     assert.ok(json(root, `${VERIFICATION_HISTORY}/index.json`).files.some(entry => entry.source === '.github/workflows/release.yml'));
@@ -126,7 +126,7 @@ test('product CI rejects disabled execution, altered scope, recursive generation
     value => value.replace('  pull_request:', "  pull_request:\n    paths: ['docs/**']"),
     value => value.replace('  workflow_dispatch:', "  schedule:\n    - cron: '* * * * *'\n  workflow_dispatch:"),
     value => value.replace('if-no-files-found: error', 'if-no-files-found: warn'),
-    value => value.replace('setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb', 'setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70'),
+    value => value.replace('setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6', 'setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70'),
     value => value.replace('          cache-provider: basic\n', ''),
     value => value.replace('cache-provider: basic', 'cache-provider: enhanced'),
     value => value.replace('          cache-read-only: false\n', ''),

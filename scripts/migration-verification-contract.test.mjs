@@ -253,7 +253,7 @@ function validateWorkflow(source) {
   const gradleSetup = steps.find(step => step.includes('uses: gradle/actions/setup-gradle@')) ?? '';
   const cacheInputs = [...gradleSetup.matchAll(/^ {10}([a-z-]+): ([^\n]+)$/gm)]
     .map(([, key, value]) => [key, value.trim()]);
-  if (!gradleSetup.includes('uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb')
+  if (!gradleSetup.includes('uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6')
       || JSON.stringify(cacheInputs) !== JSON.stringify([
         ['cache-provider', 'basic'], ['cache-read-only', standaloneProduct ? 'false' : 'true'],
       ]) || /^\s*(?:-\s*)?(?:if|continue-on-error):/m.test(gradleSetup)) {
