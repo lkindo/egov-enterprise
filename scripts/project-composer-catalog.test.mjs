@@ -5,6 +5,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { REQUIRES_USER_REASONS, attachUserReasons, userReasonProblem } from './project-composer-reasons.mjs';
 import { INTEGRATES, degradationPredicate, eventConstructionsIn, eventListenersIn, requiresClosure, resolveIntegrations, sourceOwner, stripComments } from './project-composer-integrations.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -362,4 +363,47 @@ test('integration declarations reject unknown kinds, duplicates, double classifi
     /optional foreign key lacks its integration: fk_x/);
   assert.throws(() => resolveIntegrations({ ...base, declared: [{ ...edge, anchors: [{ path: 'x', anchor: 'y' }] }] }),
     /event integration evidence is derived, not declared/);
+});
+
+/*
+ * 자동 포함 사유(설계서 9.1 R5·E2). 화면은 간선의 개발자 원문 대신 기능 쌍마다 하나인 사용자 문장을 보인다.
+ * 문장 선언은 실제 간선과 양방향으로 대조되어, 간선이 생기거나 사라지면 카탈로그가 만들어지지 않는다.
+ */
+test('every dependency edge carries one Korean sentence per feature pair and the declarations match the edges exactly', () => {
+  const pairs = new Map();
+  for (const capability of catalog.capabilities) for (const edge of capability.requires) {
+    const key = `${capability.id}>${edge.domain}`;
+    assert.equal(userReasonProblem(edge.userReason), null, key);
+    assert.equal(edge.userReason, REQUIRES_USER_REASONS[key], key);
+    if (pairs.has(key)) assert.equal(pairs.get(key), edge.userReason, `one sentence per pair: ${key}`);
+    pairs.set(key, edge.userReason);
+    for (const id of catalog.capabilities.map(item => item.id)) assert.ok(!edge.userReason.includes(id), `${key} names ${id}`);
+  }
+  assert.deepEqual([...pairs.keys()].sort(), Object.keys(REQUIRES_USER_REASONS).sort());
+  // 같은 쌍의 코드 참조와 묶음 선언이 한 문장으로 모인다 — 종전 화면은 같은 원인을 두 번 보였다.
+  const scrap = catalog.capabilities.find(capability => capability.id === 'scrap').requires.filter(edge => edge.domain === 'board');
+  assert.deepEqual(scrap.map(edge => edge.kind).sort(), ['java', 'manifest']);
+  assert.equal(new Set(scrap.map(edge => edge.userReason)).size, 1);
+});
+
+test('a new dependency without a sentence, a sentence without its dependency and developer text in a sentence are refused', t => {
+  const root = fixture(t);
+  const bridge = join(root, 'business-app/src/main/java/nuri/business/service/note/NoteMailBridge.java');
+  writeFileSync(bridge, 'package nuri.business.service.note;\nclass NoteMailBridge { nuri.business.service.mail.MailService mail; }\n');
+  assert.throws(() => loadProjectComposerCatalog(root), /requires edge lacks a user reason: note>mail/);
+  rmSync(bridge);
+  const manifestPath = join(root, 'config/reusable-base-profiles.json');
+  const edited = structuredClone(manifest);
+  edited.clusters = edited.clusters.filter(cluster => cluster.id !== 'realtime-stats');
+  writeFileSync(manifestPath, `${JSON.stringify(edited, null, 2)}\n`);
+  assert.throws(() => loadProjectComposerCatalog(root), /user reason has no requires edge: dashboard>board, dashboard>notification/);
+  const capabilities = [{ id: 'a', requires: [{ domain: 'b', kind: 'java' }] }];
+  assert.deepEqual(attachUserReasons(capabilities, { 'a>b': '가는 나를 씁니다.' })[0].requires[0].userReason, '가는 나를 씁니다.');
+  assert.throws(() => attachUserReasons(capabilities, { 'a>b': 'BoardErrorCode 를 참조합니다.' }), /contains Latin text/);
+  assert.throws(() => attachUserReasons(capabilities, { 'a>b': '가는 나를 씁니다(예전 근거는 역전됐다).' }), /contains parentheses/);
+  assert.throws(() => attachUserReasons(capabilities, { 'a>b': '마침표가 없습니다' }), /must end with a period/);
+  assert.throws(() => attachUserReasons(capabilities, { 'a>b': `${'길'.repeat(60)}.` }), /longer than 60 characters/);
+  assert.throws(() => attachUserReasons(capabilities, { 'a>b': ' ' }), /is empty/);
+  assert.throws(() => attachUserReasons(capabilities, {}), /requires edge lacks a user reason: a>b/);
+  assert.throws(() => attachUserReasons(capabilities, { 'a>b': '가는 나를 씁니다.', 'b>a': '나는 가를 씁니다.' }), /user reason has no requires edge: b>a/);
 });
