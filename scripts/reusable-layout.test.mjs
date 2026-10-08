@@ -5,7 +5,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync,
 import { tmpdir } from 'node:os';
 import { join, relative, resolve, sep } from 'node:path';
 import { BACKEND_LAYOUTS, normalizeBackendLayout } from './reusable-layout.mjs';
-import { initializeGeneratedRepository, parseSourceArgs } from './generate-reusable-base-source.mjs';
+import { parseSourceArgs } from './generate-reusable-base-source.mjs';
+import { initializeGeneratedRepository } from './reusable-source-tree.mjs';
 
 test('backend layout defaults preserve existing generation and are independent of profile', () => {
   assert.equal(normalizeBackendLayout(), 'multi-module');

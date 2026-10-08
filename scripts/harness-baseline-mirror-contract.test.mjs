@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { computeHarnessBaselineEntries } from './generate-reusable-base-source.mjs';
+import { computeHarnessBaselineEntries } from './reusable-source-harness.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST = join(ROOT, 'api-server/src/test/resources/harness/baseline-manifest.properties');
@@ -78,7 +78,7 @@ test('generator harness baseline mirrors the meta gate exactly for this reposito
     '',
     '\n생성기의 harness baseline 계산이 메타 게이트와 어긋났다.\n'
       + difference
-      + '\n\n조치: 메타 게이트를 바꿨다면 scripts/generate-reusable-base-source.mjs 의 미러를 같은 변경에서 맞추고,\n'
+      + '\n\n조치: 메타 게이트를 바꿨다면 scripts/reusable-source-harness.mjs 의 미러를 같은 변경에서 맞추고,\n'
       + '소스만 바꿨다면 ./gradlew :api-server:harnessTest 의 api-server/build/harness/baseline-manifest.actual.properties 를\n'
       + 'api-server/src/test/resources/harness/baseline-manifest.properties 로 복사하십시오.\n',
   );

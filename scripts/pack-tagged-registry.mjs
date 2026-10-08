@@ -14,7 +14,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { planJavaRemoval, trackedAndUntrackedFiles } from './generate-reusable-base-source.mjs';
+import { planJavaRemoval } from './reusable-source-java.mjs';
+import { trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const PACK_MANIFEST = 'config/reusable-base-profiles.json';

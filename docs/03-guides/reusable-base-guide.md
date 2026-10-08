@@ -22,6 +22,8 @@ clean v* release tag
 - 단일 정본: 현재 릴리스 소스
 - 프로필 SSOT: `config/reusable-base-profiles.json`
 - 생성기: `scripts/generate-reusable-base-db.mjs`, `scripts/generate-reusable-base-source.mjs`
+  - 소스 투영 단계: `reusable-source-tree`(복사·Git), `-java`(Java 제거 계획·투영), `-frontend`(pack 마커·연쇄 제거), `-gates`(게이트 제거 승인·하네스 조정), `-harness`(하네스 기준선 거울) `.mjs`
+  - DB 번들 단계: `reusable-db-postgres`(컨테이너·psql·pg_dump), `reusable-db-migrations`(버전 순서·권한 Contract 리허설) `.mjs`
 - 출력: `build/reusable-base/` 아래의 무시되는 릴리스 준비 산출물
 - 금지: 장기 template 브랜치 수동 동기화, 운영·공유 DB에서 테이블 삭제, 생성 SQL 수동 편집
 

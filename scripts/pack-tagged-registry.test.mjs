@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 
-import { stripJavaCommentsAndStringLiterals } from './generate-reusable-base-source.mjs';
+import { stripJavaCommentsAndStringLiterals } from './reusable-source-java.mjs';
 import {
   JAVA_POPULATION_FLOOR,
   acknowledgedJavaGateMismatches,

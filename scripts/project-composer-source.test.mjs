@@ -8,7 +8,10 @@ import { tmpdir } from 'node:os';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { assertCompositionDatabaseLock, composerProfile, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
-import { copySourceTree, frontendImportSpecifiers, planJavaRemoval, resolveFrontendImport, trackedAndUntrackedFiles, projectFrontendPackMarkers, writeProjectedManifest } from './generate-reusable-base-source.mjs';
+import { writeProjectedManifest } from './generate-reusable-base-source.mjs';
+import { frontendImportSpecifiers, projectFrontendPackMarkers, resolveFrontendImport } from './reusable-source-frontend.mjs';
+import { planJavaRemoval } from './reusable-source-java.mjs';
+import { copySourceTree, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const manifest = JSON.parse(readFileSync(join(root, 'config/reusable-base-profiles.json'), 'utf8'));

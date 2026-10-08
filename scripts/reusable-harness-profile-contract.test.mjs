@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
-import { adaptGeneratedHarness, isHistoricalAuthorizationRehearsal, projectedWriteHandlerCounts } from './generate-reusable-base-source.mjs';
+import { adaptGeneratedHarness, isHistoricalAuthorizationRehearsal } from './reusable-source-gates.mjs';
+import { projectedWriteHandlerCounts } from './reusable-source-harness.mjs';
 
 test('generated harness adaptation matches current source selectors and rejects census or display-name drift', (t) => {
   const generatedProfile = JSON.parse(readFileSync(new URL('../config/reusable-base-profiles.json', import.meta.url), 'utf8'))

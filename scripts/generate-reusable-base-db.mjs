@@ -10,17 +10,8 @@
  * 로컬 검증:
  *   node scripts/generate-reusable-base-db.mjs --profile core --allow-dirty --allow-non-release-ref
  */
-import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  realpathSync,
-  writeFileSync,
-} from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { normalizeBackendLayout } from './reusable-layout.mjs';
@@ -28,18 +19,18 @@ import { assertSchemaPreserved, buildCompositionAdminSeed, projectCompositionMen
   schemaSnapshotSql, selectSchemaSnapshot, assertDeclaredCrossDomainForeignKeys,
   assertNavigationEnterable, projectCompositionNavigation } from './project-composer-db.mjs';
 import { assertProjectComposerMenusMatch, writeProjectComposerMenuSnapshot } from './project-composer-menu-preview.mjs';
+import { TEMP_DB_PREFIX, assertContainerName, assertIdentifier, createDatabase, dropTemporaryDatabase, dump, git, inspectContainer, listObjects, listSequenceDetails, psql,
+  quoteSqlIdentifier, restore, sanitizePgDump } from './reusable-db-postgres.mjs';
+import { buildIsolatedContractSql, readReviewedAuthorizationCatalogVersion, runAuthorizationMigrationStages, versionedMigrations } from './reusable-db-migrations.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = resolve(dirname(SCRIPT_PATH), '..');
 const MANIFEST_PATH = join(ROOT, 'config', 'reusable-base-profiles.json');
 const OUTPUT_ROOT = join(ROOT, 'build', 'reusable-base');
-const TEMP_DB_PREFIX = 'test_reusable_base_';
-const MAX_BUFFER = 128 * 1024 * 1024;
 
 function fail(message) {
   throw new Error(message);
 }
-
 export function parseDbGenerationArgs(argv) {
   const args = {
     profile: undefined,
@@ -85,86 +76,6 @@ export function parseDbGenerationArgs(argv) {
   return args;
 }
 
-function run(command, args, { input, capture = false, quiet = false } = {}) {
-  const result = spawnSync(command, args, {
-    cwd: ROOT,
-    input,
-    encoding: null,
-    maxBuffer: MAX_BUFFER,
-    windowsHide: true,
-  });
-  if (result.error) throw result.error;
-  if (result.status !== 0) {
-    const stderr = result.stderr?.toString('utf8').trim();
-    fail(`${command} 실행 실패(exit ${result.status})${stderr ? `: ${stderr}` : ''}`);
-  }
-  if (!quiet && !capture && result.stderr?.length) process.stderr.write(result.stderr);
-  return result.stdout ?? Buffer.alloc(0);
-}
-
-function git(args) {
-  return run('git', args, { capture: true }).toString('utf8').trim();
-}
-
-function assertIdentifier(value, label) {
-  if (!value || !/^[a-zA-Z0-9_]+$/.test(value)) fail(`${label} 식별자가 안전하지 않다: ${value}`);
-  return value;
-}
-
-function assertContainerName(value) {
-  if (!value || !/^[a-zA-Z0-9_.-]+$/.test(value)) fail(`container 이름이 안전하지 않다: ${value}`);
-  return value;
-}
-
-function docker(args, options = {}) {
-  return run('docker', args, options);
-}
-
-function dockerExec(container, args, options = {}) {
-  return docker(['exec', '-i', container, ...args], options);
-}
-
-function psql(container, user, database, sql) {
-  return dockerExec(
-    container,
-    ['psql', '--username', user, '--dbname', database, '--no-psqlrc', '--tuples-only', '--no-align', '--set', 'ON_ERROR_STOP=1', '--command', sql],
-    { capture: true },
-  ).toString('utf8').trim();
-}
-
-function listObjects(container, user, database, kind) {
-  const query = kind === 'table'
-    ? "SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename"
-    : "SELECT sequencename FROM pg_sequences WHERE schemaname='public' ORDER BY sequencename";
-  const output = psql(container, user, database, query);
-  return output ? output.split(/\r?\n/).map((value) => value.trim()).filter(Boolean) : [];
-}
-
-function listSequenceDetails(container, user, database) {
-  const sql = `
-    SELECT seq.relname || E'\\t' || COALESCE((
-      SELECT owner.relname
-      FROM pg_depend dependency
-      JOIN pg_class owner ON owner.oid = dependency.refobjid
-      WHERE dependency.objid = seq.oid
-        AND dependency.refobjsubid > 0
-        AND dependency.deptype IN ('a', 'i')
-        AND owner.relkind IN ('r', 'p')
-      LIMIT 1
-    ), '')
-    FROM pg_class seq
-    JOIN pg_namespace namespace ON namespace.oid = seq.relnamespace
-    WHERE namespace.nspname = 'public' AND seq.relkind = 'S'
-    ORDER BY seq.relname`;
-  const output = psql(container, user, database, sql);
-  return output
-    ? output.split(/\r?\n/).filter(Boolean).map((line) => {
-        const [name, ownerTable] = line.split('\t');
-        return { name, ownerTable: ownerTable || null };
-      })
-    : [];
-}
-
 function difference(left, right) {
   const rightSet = new Set(right);
   return left.filter((value) => !rightSet.has(value));
@@ -194,23 +105,6 @@ export function assertCompositionOperationGrants(actual, permissionCodes, permis
   assertSameSet(rows, expected, '재적용 DB selected OPERATION group/code grants');
 }
 
-function quoteSqlIdentifier(value) {
-  return `"${value.replaceAll('"', '""')}"`;
-}
-
-export function sanitizePgDump(buffer, title) {
-  const body = buffer
-    .toString('utf8')
-    .split(/\r?\n/)
-    .filter((line) => !/^\\(?:restrict|unrestrict)\b/.test(line)
-      // Flyway reuses its connection for later unqualified repeatable seeds.
-      // pg_dump's own objects are qualified; keep the caller's configured schema.
-      && line !== "SELECT pg_catalog.set_config('search_path', '', false);")
-    .join('\n')
-    .trimEnd();
-  return `-- ${title}\n-- config/reusable-base-profiles.json에서 생성됨. 수동 편집 금지.\n\n${body}\n`;
-}
-
 export function generatedMigrationSessionSql({ baseline, metaSeed, frameworkSeed, adminSeed }) {
   return [baseline, metaSeed, frameworkSeed, adminSeed].map(sql => {
     if ((!Buffer.isBuffer(sql) && typeof sql !== 'string') || !sql.length) fail('Generated migration session requires every baseline and seed.');
@@ -233,188 +127,6 @@ export function safeDbOutputPath(requested, profile, shortSha) {
     fail('산출물 물리 경로가 workspace 밖이다.');
   }
   return output;
-}
-
-function inspectContainer(container) {
-  const raw = docker(['inspect', container], { capture: true }).toString('utf8');
-  const [inspection] = JSON.parse(raw);
-  if (!inspection?.State?.Running) fail(`PostgreSQL container가 실행 중이 아니다: ${container}`);
-  const env = Object.fromEntries(
-    (inspection.Config?.Env ?? []).map((entry) => {
-      const index = entry.indexOf('=');
-      return index < 0 ? [entry, ''] : [entry.slice(0, index), entry.slice(index + 1)];
-    }),
-  );
-  return {
-    user: assertIdentifier(env.POSTGRES_USER, 'POSTGRES_USER'),
-    database: assertIdentifier(env.POSTGRES_DB, 'POSTGRES_DB'),
-  };
-}
-
-function createDatabase(container, user, database) {
-  dockerExec(container, ['createdb', '--username', user, database]);
-}
-
-function dropTemporaryDatabase(container, user, database) {
-  if (!database.startsWith(TEMP_DB_PREFIX) || !/^[a-z0-9_]+$/.test(database)) {
-    fail(`임시 DB 삭제 안전조건 위반: ${database}`);
-  }
-  dockerExec(container, ['dropdb', '--username', user, '--if-exists', database], { quiet: true });
-}
-
-function dump(container, user, database, args) {
-  return dockerExec(
-    container,
-    ['pg_dump', '--username', user, '--dbname', database, '--no-owner', '--no-privileges', ...args],
-    { capture: true },
-  );
-}
-
-function versionedMigrations() {
-  const migrationRoot = join(ROOT, 'api-server', 'src', 'main', 'resources', 'db', 'migration');
-  const versionParts = (name) => name.match(/^V([0-9_]+)__/)[1].split('_').map(Number);
-  const compareVersion = (left, right) => {
-    const a = versionParts(left);
-    const b = versionParts(right);
-    for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
-      const difference = (a[index] ?? 0) - (b[index] ?? 0);
-      if (difference !== 0) return difference;
-    }
-    return left.localeCompare(right);
-  };
-  return readdirSync(migrationRoot)
-    .filter((name) => /^V[0-9_]+__.*\.sql$/.test(name))
-    .sort(compareVersion)
-    .map((name) => ({ name, sql: readFileSync(join(migrationRoot, name)) }));
-}
-
-/** Plan only: immutable expansion evidence must survive until the actual Contract is checked. */
-export function planAuthorizationMigrationStages(migrations) {
-  const expansion = 'V2_98__expand_authorization_grants_and_history.sql';
-  const operationSeed = 'V2_99__seed_explicit_operation_grants.sql';
-  const names = migrations.map(migration => migration.name);
-  if (new Set(names).size !== names.length) fail('Duplicate versioned migration in Contract rehearsal.');
-  const parts = name => {
-    const version = /^V([0-9]+(?:_[0-9]+)*)__.*\.sql$/.exec(name)?.[1];
-    if (!version) fail('Unknown versioned migration in Contract rehearsal.');
-    return version.split('_').map(Number);
-  };
-  const compare = (left, right) => {
-    const a = parts(left), b = parts(right);
-    for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
-      const order = (a[index] ?? 0) - (b[index] ?? 0);
-      if (order) return order;
-    }
-    return 0;
-  };
-  for (let index = 1; index < names.length; index += 1) {
-    if (compare(names[index - 1], names[index]) >= 0) fail('Migration order must be strictly increasing before planning Contract.');
-  }
-  const cutoverIndex = names.indexOf(operationSeed);
-  if (cutoverIndex < 0 || names.indexOf(expansion) < 0 || names.indexOf(expansion) >= cutoverIndex) {
-    fail('Contract rehearsal requires the exact V2_98 expansion and V2_99 seed.');
-  }
-  return { beforeContract: migrations.slice(0, cutoverIndex + 1), afterContract: migrations.slice(cutoverIndex + 1) };
-}
-
-/** Synchronous restore failures stop the sequence; later migrations cannot precede Contract. */
-export function runAuthorizationMigrationStages(migrations, actions) {
-  const stages = planAuthorizationMigrationStages(migrations);
-  for (const migration of stages.beforeContract) actions.migrate(migration);
-  actions.repeatables();
-  actions.contract();
-  for (const migration of stages.afterContract) actions.migrate(migration);
-  actions.repeatables();
-}
-
-function reviewedSqlWithoutComments(sql) {
-  const text = sql.replace(/\r\n/g, '\n');
-  let source = '', quoted = false, lineComment = false, blockDepth = 0;
-  for (let index = 0; index < text.length; index += 1) {
-    const char = text[index], next = text[index + 1];
-    if (lineComment) {
-      if (char === '\n') { lineComment = false; source += char; }
-    } else if (blockDepth > 0) {
-      if (char === '/' && next === '*') { blockDepth += 1; index += 1; }
-      else if (char === '*' && next === '/') { blockDepth -= 1; index += 1; }
-      else if (char === '\n') source += char;
-    } else if (quoted) {
-      source += char;
-      if (char === "'") {
-        if (next === "'") { source += next; index += 1; }
-        else quoted = false;
-      }
-    } else if (char === "'") {
-      quoted = true;
-      source += char;
-    } else if (char === '-' && next === '-') {
-      lineComment = true;
-      source += ' ';
-      index += 1;
-    } else if (char === '/' && next === '*') {
-      blockDepth = 1;
-      source += ' ';
-      index += 1;
-    } else source += char;
-  }
-  if (quoted || blockDepth > 0) fail('Reviewed V2_99 has an unterminated SQL literal or block comment.');
-  return source;
-}
-
-/** The historical Contract must use the immutable V2_99 review, independent of runtime bindings. */
-export function readReviewedAuthorizationCatalogVersion(sql) {
-  const source = reviewedSqlWithoutComments(sql);
-  const witnesses = new Set(['initial_operation_grant', 'legacy_policy:tb_role_info',
-    'legacy_policy:tb_authrt_role_map', 'legacy_policy:tb_role_prgrm_map',
-    'legacy_policy:tb_role_hierarchy', 'legacy_policy:program_url']);
-  const statements = [...source.matchAll(/^INSERT INTO tb_authrt_chg_hstry\b[\s\S]*?;/gm)];
-  const selects = [...source.matchAll(/^SELECT 'migration:2\.99','([^']*)',/gm)];
-  if (statements.length !== witnesses.size || selects.length !== witnesses.size) {
-    fail('Reviewed V2_99 requires exactly six historical audit INSERT/SELECT statements.');
-  }
-  let version;
-  for (const [statement] of statements) {
-    const audit = /^SELECT 'migration:2\.99','([a-f0-9]{64})','(GROUP(?:_GRANT)?)','MIGRATE',/m.exec(statement);
-    const labels = [...statement.matchAll(/'(initial_operation_grant|legacy_policy:[^']*)'/g)];
-    if (!audit || labels.length !== 1 || !witnesses.delete(labels[0][1])) {
-      fail('Reviewed V2_99 has an invalid catalog digest or missing, duplicate or unknown historical witness.');
-    }
-    const expectedType = labels[0][1] === 'initial_operation_grant' ? 'GROUP_GRANT' : 'GROUP';
-    if (audit[2] !== expectedType || (version !== undefined && version !== audit[1])) {
-      fail('Reviewed V2_99 historical audit types and catalog digests must agree.');
-    }
-    version = audit[1];
-  }
-  return version;
-}
-
-function restore(container, user, database, sql) {
-  dockerExec(
-    container,
-    ['psql', '--username', user, '--dbname', database, '--no-psqlrc', '--set', 'ON_ERROR_STOP=1'],
-    { input: Buffer.isBuffer(sql) ? sql : Buffer.from(sql, 'utf8'), quiet: true },
-  );
-}
-
-/** Raw SQL rehearsal ledger is disposable evidence only; it is removed before pg_dump. */
-export function buildIsolatedContractSql(database, catalogVersion, contractSql) {
-  if (!/^test_reusable_base_[a-z0-9_]+$/.test(database)) fail('Contract rehearsal requires a disposable generated DB name.');
-  if (!/^[a-f0-9]{64}$/.test(catalogVersion)) fail('Contract rehearsal requires the reviewed catalog digest.');
-  if (!contractSql.includes('DO $authorization_contract$')) fail('The actual authorization Contract SQL is required.');
-  const evidence = createHash('sha256').update(`DISPOSABLE_BASE_REHEARSAL:${database}`).digest('hex');
-  const backup = createHash('sha256').update('DISPOSABLE_BASE_NO_OPERATIONAL_BACKUP').digest('hex');
-  return `BEGIN;
-DO $$ BEGIN
-  IF current_database() <> '${database}' THEN RAISE EXCEPTION 'Disposable Contract target mismatch'; END IF;
-END $$;
-CREATE TABLE flyway_schema_history(version varchar(50),success boolean);
-INSERT INTO flyway_schema_history VALUES('2.98',true),('2.99',true);
-SELECT set_config('app.authorization_cutover_evidence','${evidence}',true);
-SELECT set_config('app.authorization_backup_sha256','${backup}',true);
-SELECT set_config('app.authorization_catalog_version','${catalogVersion}',true);
-${contractSql}
-DROP TABLE flyway_schema_history;
-COMMIT;`;
 }
 
 async function main() {

@@ -21,7 +21,7 @@ import {
   frontendImportSpecifiers,
   projectFrontendPackMarkers,
   resolveFrontendImport,
-} from './generate-reusable-base-source.mjs';
+} from './reusable-source-frontend.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const temporaryRoots = [];
