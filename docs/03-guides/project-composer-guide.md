@@ -2,7 +2,7 @@
 
 원본의 모듈러 모노리스 구조를 유지하면서 선택한 업무의 소스·PostgreSQL DDL·메뉴·초기 권한을 독립 프로젝트로 생성한다. Foundation과 Core는 항상 포함하며, 결과물의 백엔드는 기존 멀티모듈 또는 단일 Gradle 프로젝트 중 선택한다. 설계 근거와 지원 경계는 [상세 설계](../02-architecture/project-composer-design.md), 기존 릴리스 프로필 명령은 [재사용 가이드](reusable-base-guide.md)에 있다.
 
-공통 엔진·CLI·로컬 UI에서 20개 도메인을 선택한다. 생성 작업마다 전체 기술 검증을 실행하며, 생성 결과는 아래 보고서의 실제 실행 상태로 확인한다.
+공통 엔진·CLI·로컬 UI에서 19개 도메인을 선택한다. 생성 작업마다 전체 기술 검증을 실행하며, 생성 결과는 아래 보고서의 실제 실행 상태로 확인한다.
 
 ## 실행
 
@@ -20,13 +20,14 @@ npm run project:ui
 
 ## 선택과 의존성
 
-20개 업무 도메인의 소유권은 [카탈로그](../../scripts/project-composer-catalog.mjs)가 기존 프로필 manifest, Java 소스, 권한 카탈로그와 명시된 화면 소유권으로 확인한다. [순수 해석기](../../scripts/project-composer-recipe.mjs)가 필수 의존성을 함께 포함한다. UI와 CLI는 동일한 해석기와 생성 엔진을 사용한다.
+19개 업무 도메인의 소유권은 [카탈로그](../../scripts/project-composer-catalog.mjs)가 기존 프로필 manifest, Java 소스, 권한 카탈로그와 명시된 화면 소유권으로 확인한다. [순수 해석기](../../scripts/project-composer-recipe.mjs)가 필수 의존성을 함께 포함한다. UI와 CLI는 동일한 해석기와 생성 엔진을 사용한다.
 
 선택 업무만 사용하는 Foundation/Core/API 지원 파일은 manifest의 `backend.domainSupportFiles`에 소비 도메인별 정확한 파일 경로로 선언한다. `memoreport`의 사용자 표시명 조회 인터페이스·구현·테스트와 `sms`의 공급자 설정 속성이 이 선언을 사용한다. 해당 업무를 제외하면 지원 파일도 제거하고, 포함하면 소스 생존 검사와 카탈로그 지문에 함께 포함한다. 필수 모듈의 다른 코드가 제거 대상 타입을 참조하면 생성은 계속 실패한다.
 
 - 게시판·댓글·스크랩은 기존 필수 클러스터다.
 - 현재 공동 화면의 직접 참조로 쪽지·스크랩, 게시판·도움말·커뮤니티, 일정·업무 보고가 함께 포함된다.
-- 커뮤니티 관리 화면에는 템플릿, 설문과 통계의 공동 화면에는 설문·통계가 필요하다. 이 제약은 자동 포함 사유로 표시한다.
+- 커뮤니티 관리 화면에는 템플릿이 필요하다. 이 제약은 자동 포함 사유로 표시한다.
+- 통계는 Core에 속해 선택하지 않는다. 게시물·자료 이용 통계 화면과 메뉴는 게시판과 함께 들어오고, 설문조사 분석 탭은 설문을 고를 때만 보인다([DEC-OPS-240](../../.agent/memory/decisions.md)).
 - 주소록은 메일·문자 화면의 선택 연동이다. 주소록을 고르지 않으면 해당 연동만 제외한다.
 - 기존 `core`·`collaboration`·`demo` preset은 기존 포함 범위를 유지한다. 개별 도메인 선택은 선택 화면을 보존하기 위해 추가 의존성을 포함할 수 있으므로 같은 도메인 목록을 수동 선택한 결과가 기존 preset과 항상 같지는 않다.
 
@@ -55,7 +56,7 @@ npm run project:create -- --recipe agency-service.recipe.json
 
 `schemaVersion`은 `1`이다. `selection`은 `domains`와 `preset` 중 하나만 받으며, `{"preset":"collaboration"}`처럼 사용할 수 있다. `domains: []`는 Foundation/Core만 포함한다. 프로젝트명은 소문자로 시작하는 1~63자이며 영문 소문자·숫자·단어 사이 하이픈을 허용한다. Windows 예약 이름과 알 수 없는 필드는 거부한다. `backendLayout`은 `multi-module` 또는 `single-module`이며 생략하면 `multi-module`이다. DB는 `postgresql`만 지원한다. UI가 저장하는 recipe의 `sourceRef`는 해당 체크아웃의 정확한 commit이다.
 
-현재 선택 가능한 ID는 `addressbook`, `board`, `comment`, `dashboard`, `help`, `informalsanction`, `isg`, `mail`, `memoreport`, `note`, `notification`, `operation`, `report`, `schedule`, `scrap`, `sms`, `stats`, `survey`, `system`, `template`이다. 한국어 이름과 최신 의존성은 `npm run project:catalog`와 UI에서 확인한다.
+현재 선택 가능한 ID는 `addressbook`, `board`, `comment`, `dashboard`, `help`, `informalsanction`, `isg`, `mail`, `memoreport`, `note`, `notification`, `operation`, `report`, `schedule`, `scrap`, `sms`, `survey`, `system`, `template`이다. 한국어 이름과 최신 의존성은 `npm run project:catalog`와 UI에서 확인한다.
 
 ## 결과 인수
 
