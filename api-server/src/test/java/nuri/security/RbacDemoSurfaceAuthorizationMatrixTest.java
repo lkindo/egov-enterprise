@@ -35,7 +35,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 연쇄 제거**됐다 — core 에 RBAC 게이트가 하나도 남지 않았다(GAP-PACK-001 ④).
  *
  * <p>[Phase 0c] 통계는 business-core 로 옮겨 모든 프로필에 남는다. 통계 단언과 그 서비스 대역은
- *   core 매트릭스로 옮겼고, 이 클래스의 경계는 {@link #SURVEY_PACK_BOUNDARY} 가 잇는다.
+ *   core 매트릭스로 옮겼고, 이 클래스의 경계는 설문 표지 상수({@code SURVEY_PACK_BOUNDARY})가 잇는다.
+ *   설문을 고르지 않은 구성에서는 생성기가 그 상수와 설문 단언을 함께 걷으므로 링크로 가리키지 않는다.
  *
  * ⚠ 설문·투표 단언을 **이 클래스에 함께** 둔 것은 의도다. 그 단언들은 URL 문자열만 쓰므로 자체로는
  *   어떤 타입도 참조하지 않아, 따로 두면 **엔드포인트가 없는 프로필에도 살아남아 404 로 죽는다.**
