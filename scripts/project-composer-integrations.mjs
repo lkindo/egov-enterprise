@@ -207,7 +207,8 @@ export function eventListenersIn(code, path = '<source>') {
  * 넓게 세서 생기는 거짓 연결은 '선언되지 않은 연동'으로 드러나 사람이 판정한다.
  */
 export function eventConstructionsIn(code, type) {
-  const name = type.replace(/[$]/gu, '\\$');
+  if (!JAVA_IDENTIFIER.test(type)) throw new Error(`Event type is not a Java identifier: ${type}`);
+  const name = type.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
   const pattern = new RegExp(`(?:\\bnew\\s+(?:[\\w$]+\\.)*${name}\\s*(?:<[^<>]*>)?\\s*\\(`
     + `|(?<![\\w$])(?:[\\w$]+\\.)*${name}\\s*::\\s*new\\b`
     + `|(?<![\\w$.])(?:[\\w$]+\\.)*${name}\\s*\\.\\s*(?!class\\b)[A-Za-z_$][\\w$]*\\s*\\()`, 'gu');
@@ -298,8 +299,10 @@ export function degradationPredicate(capabilities, presets) {
 
 function anchorEvidence(root, { path, anchor }) {
   const absolute = join(root, path);
-  if (!/^(?:frontend\/src|[a-z-]+\/src\/main)\//u.test(path) || /(?:^|\/)__tests__\/|\.(?:test|spec)\.[cm]?[jt]sx?$/u.test(path)
-    || !existsSync(absolute)) throw new Error(`integration evidence is not a product source: ${path}`);
+  const testSource = path.includes('/__tests__/') || /\.(?:test|spec)\.[cm]?[jt]sx?$/u.test(path);
+  if (!/^(?:frontend\/src|[a-z-]+\/src\/main)\//u.test(path) || testSource || !existsSync(absolute)) {
+    throw new Error(`integration evidence is not a product source: ${path}`);
+  }
   const kind = path.endsWith('.sql') ? 'sql' : path.endsWith('.java') ? 'java' : 'ts';
   const code = stripComments(readFileSync(absolute, 'utf8').replace(/\r\n/gu, '\n'), { kind });
   const first = code.indexOf(anchor);
