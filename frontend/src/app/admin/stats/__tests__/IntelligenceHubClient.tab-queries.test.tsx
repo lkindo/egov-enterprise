@@ -14,7 +14,9 @@ const services = vi.hoisted(() => ({
   getConnectStats: vi.fn(),
   getDataUsageStats: vi.fn(),
   getReportStats: vi.fn(),
+  /* reusable-base:survey:start */
   getSurveyList: vi.fn(),
+  /* reusable-base:survey:end */
 }));
 const params = vi.hoisted(() => ({ value: new URLSearchParams() }));
 
@@ -32,9 +34,11 @@ vi.mock('@/services/foundation/system/StatsAdminService', () => ({
     getReportStats: services.getReportStats,
   },
 }));
+/* reusable-base:survey:start */
 vi.mock('@/services/foundation/system/SurveyAdminService', () => ({
   surveyAdminService: { getSurveyList: services.getSurveyList },
 }));
+/* reusable-base:survey:end */
 vi.mock('@/app/components/ui/observability-charts', () => ({
   SafeResponsiveContainer: () => <div data-testid="chart" />,
 }));
@@ -60,10 +64,12 @@ describe('통계 허브 탭별 조회', () => {
     expect(screen.getByText('최근 1개월 성공 로그인 합계')).toBeInTheDocument();
   });
 
+  /* reusable-base:collaboration:start */
   it('자료 이용 탭을 열면 자료 이용 통계를 부른다', async () => {
     renderHub('DATA_USAGE');
     await waitFor(() => expect(services.getDataUsageStats).toHaveBeenCalledTimes(1));
   });
+  /* reusable-base:collaboration:end */
 
   it('[DIP B5 F6] 기간을 고르지 않으면 서버 기본값으로 부르고 그 사실을 말한다 — 전체 프리셋은 없다', async () => {
     renderHub('SYSTEM_STATS');

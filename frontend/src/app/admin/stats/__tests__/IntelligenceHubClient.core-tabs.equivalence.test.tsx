@@ -10,6 +10,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  * 통계 서비스·DTO 를 business-core 로 옮기고 허브를 core 셸 + 게시판·설문 패널로 가르는 리팩터링이
  * 화면 동작을 바꾸지 않았음을 증명하려고 지금 동작을 그대로 고정한다. 모듈 배치와 무관하게 남도록
  * 라우트 page 모듈만 렌더하고, 요청은 서비스가 아니라 URL(client.getRaw) 수준에서 관측한다.
+ *
+ * 이 파일은 셸과 함께 모든 구성에 남는다. 게시판·설문이 빠진 구성에서도 맞도록 그 기능의 탭·조회·카드 기대값은
+ * 셸과 같은 pack 마커로 감싼다(MailSendHubClient 테스트 선례). 전체 제품에서는 마커가 주석이라 기대값이 그대로다.
  */
 const api = vi.hoisted(() => ({
   get: vi.fn(),
@@ -59,7 +62,40 @@ const URL = {
 } as const;
 
 const EMPTY_SURVEY_PAGE = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
-const NAV_LABELS = ['통계 개요', '사용자 통계', '콘텐츠 지표', '시스템 활성', '자료이용현황', '설문조사 분석', '운영 보고서'];
+const NAV_LABELS = [
+  '통계 개요',
+  '사용자 통계',
+  /* reusable-base:collaboration:start */
+  '콘텐츠 지표',
+  /* reusable-base:collaboration:end */
+  '시스템 활성',
+  /* reusable-base:collaboration:start */
+  '자료이용현황',
+  /* reusable-base:collaboration:end */
+  /* reusable-base:survey:start */
+  '설문조사 분석',
+  /* reusable-base:survey:end */
+  '운영 보고서',
+];
+/** 통계 개요 탭이 탭 전용으로 더 부르는 조회. 게시물 집계는 게시판이 있을 때만 있다. */
+const DASHBOARD_TAB_URLS: string[] = [
+  /* reusable-base:collaboration:start */
+  URL.bbs,
+  /* reusable-base:collaboration:end */
+];
+/** 통계 새로고침이 다시 부르는 조회 전부(꺼진 탭의 조회 포함). */
+const REFRESH_URLS: string[] = [
+  URL.user,
+  /* reusable-base:collaboration:start */
+  URL.bbs,
+  URL.dataUsage,
+  /* reusable-base:collaboration:end */
+  URL.connect,
+  URL.report,
+  /* reusable-base:survey:start */
+  URL.surveys,
+  /* reusable-base:survey:end */
+];
 const STATS_HEADERS = [
   { label: '집계 일자', key: 'statsDate' },
   { label: '집계 건수', key: 'statsCo' },
@@ -132,7 +168,7 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
       ['시스템 활성', ScreenStatsPage, '/admin/stats/screen', '', '시스템 활성 지표', '시스템 활성'],
       ['운영 보고서', ReportPage, '/admin/stats/report', '', '운영 보고서 아카이브', '운영 보고서'],
       ['통계 개요(?tab=DASHBOARD)', UserStatsPage, '/admin/stats/user', 'tab=DASHBOARD', '통계 개요', '통계 개요'],
-    ])('%s 화면은 h1 과 7개 내비게이션을 순서대로 보이고 현재 항목만 aria-current 다', async (_name, Page, pathname, query, title, activeLabel) => {
+    ])('%s 화면은 h1 과 내비게이션을 순서대로 보이고 현재 항목만 aria-current 다', async (_name, Page, pathname, query, title, activeLabel) => {
       renderRoute(Page, pathname, query);
 
       expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(title);
@@ -149,7 +185,7 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
       ['사용자', UserStatsPage, '/admin/stats/user', '', sorted(URL.user, URL.connect), PERIOD_EMPTY],
       ['시스템 활성', ScreenStatsPage, '/admin/stats/screen', '', sorted(URL.user, URL.connect), PERIOD_EMPTY],
       ['운영 보고서', ReportPage, '/admin/stats/report', '', sorted(URL.user, URL.connect, URL.report), UNINSTRUMENTED_EMPTY],
-      ['통계 개요(?tab=DASHBOARD)', UserStatsPage, '/admin/stats/user', 'tab=DASHBOARD', sorted(URL.user, URL.connect, URL.bbs), PERIOD_EMPTY],
+      ['통계 개요(?tab=DASHBOARD)', UserStatsPage, '/admin/stats/user', 'tab=DASHBOARD', sorted(URL.user, URL.connect, ...DASHBOARD_TAB_URLS), PERIOD_EMPTY],
     ])('%s 화면은 사용자·접속을 늘 부르고 탭 전용 조회만 더한다', async (_name, Page, pathname, query, expected, settled) => {
       renderRoute(Page, pathname, query);
 
@@ -175,7 +211,9 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
       const total = (1234).toLocaleString();
       expect(within(summaryCard('사용자 등록 요청 수')).getByText('7')).toBeInTheDocument();
       expect(within(summaryCard('성공 로그인 수')).getByText(total)).toBeInTheDocument();
+      /* reusable-base:collaboration:start */
       expect(within(summaryCard('자료 이용 건수')).getByText('미수집')).toBeInTheDocument();
+      /* reusable-base:collaboration:end */
       expect(within(sidebarCard()).getByText(total)).toBeInTheDocument();
       expect(within(sidebarCard()).getByText('최근 1개월 성공 로그인 합계')).toBeInTheDocument();
       expect(screen.queryByText(SUMMARY_ALERT)).not.toBeInTheDocument();
@@ -189,7 +227,9 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
       expect(await screen.findByText(SUMMARY_ALERT)).toBeInTheDocument();
       expect(within(summaryCard('사용자 등록 요청 수')).getByText('5')).toBeInTheDocument();
       expect(within(summaryCard('성공 로그인 수')).getByText('—')).toBeInTheDocument();
+      /* reusable-base:collaboration:start */
       expect(within(summaryCard('자료 이용 건수')).getByText('미수집')).toBeInTheDocument();
+      /* reusable-base:collaboration:end */
       expect(within(sidebarCard()).getByText('—')).toBeInTheDocument();
       expect(within(sidebarCard()).getByText('접속 통계를 불러오지 못했습니다')).toBeInTheDocument();
       // 시스템 활성 탭의 차트는 접속 집계를 그리므로 차트도 오류 상태다.
@@ -281,7 +321,7 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
   });
 
   describe('통계 새로고침', () => {
-    it('새로고침은 비활성 탭 조회까지 6개 URL 을 모두 다시 부른다', async () => {
+    it('새로고침은 비활성 탭 조회까지 모든 URL 을 다시 부른다', async () => {
       renderRoute(UserStatsPage, '/admin/stats/user');
       await screen.findByText(PERIOD_EMPTY);
       expect(requestedUrls()).toEqual(sorted(URL.user, URL.connect));
@@ -289,20 +329,18 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
       api.getRaw.mockClear();
       fireEvent.click(screen.getByRole('button', { name: /통계 새로고침$/ }));
 
-      await waitFor(() => expect(requestedUrls()).toEqual(
-        sorted(URL.user, URL.bbs, URL.connect, URL.dataUsage, URL.report, URL.surveys)));
+      await waitFor(() => expect(requestedUrls()).toEqual(sorted(...REFRESH_URLS)));
     });
 
-    it('통계 개요 탭에서도 같은 6개 URL 을 다시 부른다', async () => {
+    it('통계 개요 탭에서도 같은 URL 을 모두 다시 부른다', async () => {
       renderRoute(UserStatsPage, '/admin/stats/user', 'tab=DASHBOARD');
-      await waitFor(() => expect(requestedUrls()).toEqual(sorted(URL.user, URL.connect, URL.bbs)));
+      await waitFor(() => expect(requestedUrls()).toEqual(sorted(URL.user, URL.connect, ...DASHBOARD_TAB_URLS)));
       await screen.findByText(PERIOD_EMPTY);
 
       api.getRaw.mockClear();
       fireEvent.click(screen.getByRole('button', { name: /통계 새로고침$/ }));
 
-      await waitFor(() => expect(requestedUrls()).toEqual(
-        sorted(URL.user, URL.bbs, URL.connect, URL.dataUsage, URL.report, URL.surveys)));
+      await waitFor(() => expect(requestedUrls()).toEqual(sorted(...REFRESH_URLS)));
     });
   });
 });

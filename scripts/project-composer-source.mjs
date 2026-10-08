@@ -109,6 +109,16 @@ export function composerProfile(manifest, composition) {
 }
 
 const STATS_SHELL_BLOCK_OWNERS = { collaboration: ['board'], survey: ['survey'] };
+// 셸과 함께 모든 구성에 남는 통계 파일. 테스트도 화면과 같은 마커로 기대값을 맞춘다.
+const STATS_SHELL_FILES = new Set([
+  'src/app/admin/stats/IntelligenceHubClient.tsx',
+  'src/app/admin/stats/__tests__/IntelligenceHubClient.core-tabs.equivalence.test.tsx',
+  'src/app/admin/stats/__tests__/IntelligenceHubClient.tab-queries.test.tsx',
+]);
+const STATS_SUMMARY_FILES = new Set([
+  'src/app/admin/stats/AdminStatsClient.tsx',
+  'src/app/admin/stats/__tests__/AdminStatsClient.summary-values.test.tsx',
+]);
 
 /** Each existing optional block has an explicit owner. An unclassified new block fails closed. */
 export function projectComposerFrontend(file, source, composition) {
@@ -129,8 +139,8 @@ export function projectComposerFrontend(file, source, composition) {
     else if (normalized === 'src/app/admin/system/monitoring/MonitoringHubClient.tsx') owners = pack === 'demo' ? ['system'] : ['comment'];
     else if (normalized === 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx') owners = ['system'];
     // 통계 셸: 게시물·자료 이용 탭과 카드는 게시판, 설문 탭은 설문이 소유한다. 다른 pack 블록은 분류가 없으므로 실패한다.
-    else if (normalized === 'src/app/admin/stats/IntelligenceHubClient.tsx' && STATS_SHELL_BLOCK_OWNERS[pack]) owners = STATS_SHELL_BLOCK_OWNERS[pack];
-    else if (normalized === 'src/app/admin/stats/AdminStatsClient.tsx' && pack === 'collaboration') owners = ['board'];
+    else if (STATS_SHELL_FILES.has(normalized) && STATS_SHELL_BLOCK_OWNERS[pack]) owners = STATS_SHELL_BLOCK_OWNERS[pack];
+    else if (STATS_SUMMARY_FILES.has(normalized) && pack === 'collaboration') owners = ['board'];
     else if (normalized.startsWith('src/app/admin/collaboration/') || normalized.startsWith('src/app/admin/uss/ion/sms/')) owners = ['addressbook'];
     else throw new Error(`Unclassified composer UI block: ${normalized}/${pack}`);
     return owners.every(domain => selected.has(domain)) ? block : '';

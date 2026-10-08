@@ -4775,6 +4775,7 @@
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiController.java",
+            "business-app/src/main/java/nuri/business/service/board/stats/BoardPostStatisticsContributor.java",
             "frontend/src/app/admin/stats/AdminStatsClient.tsx",
             "frontend/src/app/admin/stats/__tests__/AdminStatsClient.summary-values.test.tsx",
             "frontend/src/app/admin/stats/page.tsx",
@@ -4903,6 +4904,7 @@
           "lastVerifiedAt": "2026-09-25",
           "owner": "product/UX + domain owner",
           "evidence": [
+            "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/board/page.tsx"
@@ -5050,6 +5052,7 @@
           "lastVerifiedAt": "2026-09-25",
           "owner": "product/UX + domain owner",
           "evidence": [
+            "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/data-usage/page.tsx"
@@ -5197,6 +5200,7 @@
           "lastVerifiedAt": "2026-09-25",
           "owner": "product/UX + domain owner",
           "evidence": [
+            "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/report/page.tsx"
@@ -5321,6 +5325,7 @@
           "lastVerifiedAt": "2026-09-25",
           "owner": "product/UX + domain owner",
           "evidence": [
+            "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
             "business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
@@ -5448,6 +5453,7 @@
           "lastVerifiedAt": "2026-09-25",
           "owner": "product/UX + domain owner",
           "evidence": [
+            "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/user/page.tsx"
