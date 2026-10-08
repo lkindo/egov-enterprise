@@ -15,6 +15,10 @@
         {
           "rule": "historical-migration-tests",
           "reason": "투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 교체하므로 역사적 migration 검증 42건은 검사할 대상이 없다. 파일 단위가 아니라 규칙 단위로 승인한다 — migration 검증이 하나 늘 때마다 세 프로필 매니페스트가 함께 흔들리면 소음만 남고 신호가 죽는다."
+        },
+        {
+          "rule": "upstream-atlas",
+          "reason": "원본 Atlas HTML 은 원본 저장소의 결정·gap·운영 사실을 담고 로그인 전에 응답된다. 그 생성기는 원본 공용 메모리와 문서를 읽어 생성물 안에서 다시 만들어도 원본 사실이 되살아나므로, Atlas 와 생성기·생성기 테스트·Atlas 계약을 함께 걷는다. 걷은 계약 3건이 지키던 대상(Atlas HTML)이 생성물에 없으므로 보호가 줄지 않는다."
         }
       ],
       "acknowledgedRemovedGates": [
@@ -48,7 +52,7 @@
         },
         {
           "file": "api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java",
-          "reason": "demo 소유 표면(통계·배너/팝업·약식결재·설문·투표)의 RBAC 매트릭스라 그 표면이 없는 프로필에서는 검사 대상이 없다. core 표면(사용자·로그인 정책·익명·미등록 라우트·그룹 의미)의 RbacAuthorizationMatrixTest 는 stats 참조를 걷어 모든 프로필에 남는다."
+          "reason": "demo 소유 표면(배너/팝업·약식결재·설문·투표)의 RBAC 매트릭스라 그 표면이 없는 프로필에서는 검사 대상이 없다(설문 표지 참조로 함께 제거된다). core 표면(사용자·로그인 정책·통계·익명·미등록 라우트·그룹 의미)의 RbacAuthorizationMatrixTest 는 모든 프로필에 남는다."
         },
         {
           "file": "api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java",
@@ -71,7 +75,7 @@
           "reason": "SMS 수신 행의 발송 claim·commit 콜백·확정 영수증·중복 발송 방지 검증이다. sms 도메인이 없는 core에서는 대상 서비스와 테이블이 없다."
         }
       ],
-      "description": "인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심의 최소 프레임워크"
+      "description": "인증·사용자·조직·권한·메뉴·코드·파일·로그·정책·통계 중심의 최소 프레임워크"
     },
     "collaboration": {
       "packs": [
@@ -82,6 +86,10 @@
         {
           "rule": "historical-migration-tests",
           "reason": "투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 교체하므로 역사적 migration 검증 42건은 검사할 대상이 없다. 파일 단위가 아니라 규칙 단위로 승인한다 — migration 검증이 하나 늘 때마다 세 프로필 매니페스트가 함께 흔들리면 소음만 남고 신호가 죽는다."
+        },
+        {
+          "rule": "upstream-atlas",
+          "reason": "원본 Atlas HTML 은 원본 저장소의 결정·gap·운영 사실을 담고 로그인 전에 응답된다. 그 생성기는 원본 공용 메모리와 문서를 읽어 생성물 안에서 다시 만들어도 원본 사실이 되살아나므로, Atlas 와 생성기·생성기 테스트·Atlas 계약을 함께 걷는다. 걷은 계약 3건이 지키던 대상(Atlas HTML)이 생성물에 없으므로 보호가 줄지 않는다."
         }
       ],
       "acknowledgedRemovedGates": [
@@ -111,7 +119,7 @@
         },
         {
           "file": "api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java",
-          "reason": "demo 소유 표면(통계·배너/팝업·약식결재·설문·투표)의 RBAC 매트릭스라 그 표면이 없는 프로필에서는 검사 대상이 없다. core 표면(사용자·로그인 정책·익명·미등록 라우트·그룹 의미)의 RbacAuthorizationMatrixTest 는 stats 참조를 걷어 모든 프로필에 남는다."
+          "reason": "demo 소유 표면(배너/팝업·약식결재·설문·투표)의 RBAC 매트릭스라 그 표면이 없는 프로필에서는 검사 대상이 없다(설문 표지 참조로 함께 제거된다). core 표면(사용자·로그인 정책·통계·익명·미등록 라우트·그룹 의미)의 RbacAuthorizationMatrixTest 는 모든 프로필에 남는다."
         },
         {
           "file": "api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java",
@@ -139,6 +147,10 @@
         {
           "rule": "historical-migration-tests",
           "reason": "투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 교체하므로 역사적 migration 검증 42건은 검사할 대상이 없다. 파일 단위가 아니라 규칙 단위로 승인한다 — migration 검증이 하나 늘 때마다 세 프로필 매니페스트가 함께 흔들리면 소음만 남고 신호가 죽는다."
+        },
+        {
+          "rule": "upstream-atlas",
+          "reason": "원본 Atlas HTML 은 원본 저장소의 결정·gap·운영 사실을 담고 로그인 전에 응답된다. 그 생성기는 원본 공용 메모리와 문서를 읽어 생성물 안에서 다시 만들어도 원본 사실이 되살아나므로, Atlas 와 생성기·생성기 테스트·Atlas 계약을 함께 걷는다. 걷은 계약 3건이 지키던 대상(Atlas HTML)이 생성물에 없으므로 보호가 줄지 않는다."
         }
       ],
       "description": "현재 제품의 전체 참조 기능"
@@ -194,6 +206,7 @@
           "tb_ognz_info",
           "tb_plcy_manage",
           "tb_privacy_log",
+          "tb_rptp_stats",
           "tb_stmp_info",
           "tb_sys_adt_log",
           "tb_sys_job",
@@ -236,6 +249,8 @@
           "src/app/actions/boardActions.ts",
           "src/services/business/user/board/BoardUserService.ts",
           "src/services/foundation/system/BoardAdminService.ts",
+          "src/app/admin/stats/board",
+          "src/app/admin/stats/data-usage",
           "src/services/business/board/SatisfactionService.ts",
           "src/services/business/knowledge/knowledgeService.ts",
           "src/app/actions/commentActions.ts",
@@ -261,6 +276,7 @@
           "tb_bbs_scrap",
           "tb_bbs_use_info",
           "tb_dgstfn_info",
+          "tb_dta_use_stats",
           "tb_email_dsptch_manage",
           "tb_note_info",
           "tb_note_rcptn",
@@ -318,7 +334,6 @@
           "operation",
           "report",
           "schedule",
-          "stats",
           "system",
           "template"
         ],
@@ -345,7 +360,6 @@
           "src/app/admin/operation",
           "src/app/admin/patterns",
           "src/app/admin/sanctn",
-          "src/app/admin/stats",
           "src/app/admin/system/banner",
           "src/app/admin/system/hpcm",
           "src/app/admin/system/isg",
@@ -380,14 +394,12 @@
           "src/services/foundation/system/HpcmAdminService.ts",
           "src/services/foundation/system/InternetSvcGuidanceAdminService.ts",
           "src/services/foundation/system/PopupAdminService.ts",
-          "src/services/foundation/system/StatsAdminService.ts",
           "src/services/foundation/system/TemplateAdminService.ts",
           "src/services/foundation/user",
           "src/types/business/addressbook.ts",
           "src/types/business/community.ts",
           "src/types/business/schedule.ts",
-          "src/types/foundation/banner.ts",
-          "src/types/foundation/stats.ts"
+          "src/types/foundation/banner.ts"
         ]
       },
       "database": {
@@ -399,7 +411,6 @@
           "tb_cmnty_info",
           "tb_cmnty_user_map",
           "tb_diary_info",
-          "tb_dta_use_stats",
           "tb_event_info",
           "tb_extrl_hr_info",
           "tb_hlp_info",
@@ -416,7 +427,6 @@
           "tb_onln_mnl_info",
           "tb_popup_info",
           "tb_rpt_info",
-          "tb_rptp_stats",
           "tb_rward_manage",
           "tb_schdl_info"
         ]

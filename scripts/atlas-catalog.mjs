@@ -334,7 +334,7 @@ export function buildAtlasCatalog(repoRoot) {
   const GENERATOR_AXES = {
     'base:generate-source': ['재사용 base 소스', `--profile · --layout(${layouts})`,
       '프로필이 pack 단위로 파일을 제거하고(연쇄 포함) 레이아웃은 Gradle 구성만 바꾼다. 파일을 루트로 합치지 않는다.'],
-    'base:generate-db': ['재사용 base DB 번들', '--profile', '프로필별 스키마·시드 번들. 레이아웃과 무관하게 같은 번들을 쓴다.'],
+    'base:generate-db': ['재사용 base DB 번들', `--profile · --layout(${layouts})`, '구성별 스키마·시드 번들. 레이아웃마다 만들며 내용은 같다.'],
     'base:verify': ['생성 + 기술 검증', `--profile · --layout(${layouts})`, 'CI가 세 프로필 × 두 레이아웃으로 실행하는 진입점이다.'],
     'project:catalog': ['선택 가능 도메인 조회', '(인자 없음)', '읽기 전용 조회다. 산출물을 만들지 않는다.'],
     'project:plan': ['생성 계획 산출', '선택 명세', '읽기 전용 계획이다. 산출물을 만들지 않는다.'],

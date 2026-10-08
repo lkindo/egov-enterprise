@@ -5,7 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BarChart3,
+import {
+  BarChart3,
   Activity,
   Users,
   Monitor,
@@ -13,16 +14,22 @@ import { BarChart3,
   FileText,
   RefreshCcw,
   Zap,
+  /* reusable-base:collaboration:start */
   Box,
-  LayoutDashboard,
-  AlertTriangle,
-  Inbox,
   HardDrive,
-  Vote } from 'lucide-react';
+  /* reusable-base:collaboration:end */
+  /* reusable-base:survey:start */
+  Vote,
+  /* reusable-base:survey:end */
+  LayoutDashboard,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { statsAdminService, type StatsDto } from '@/services/foundation/system/StatsAdminService';
-import { surveyAdminService } from '@/services/foundation/system/SurveyAdminService';
+/* reusable-base:survey:start */
+import { useStatsHubSurveyTab } from '@/app/admin/survey/components/StatsHubSurveyTab';
+/* reusable-base:survey:end */
+import { HubEmptyState, HubErrorState, type StatsExtraTab } from './StatsHubParts';
 import { XAxis,
   YAxis,
   CartesianGrid,
@@ -34,8 +41,6 @@ import { SafeResponsiveContainer } from '@/app/components/ui/observability-chart
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { useChartColors } from '@/lib/hooks/useChartColors';
 import { toDisplayYmd } from '@/lib/format-date';
-import { getPollStatus, POLL_STATUS_LABEL } from '@/lib/poll-status';
-import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { EMPTY_PERIOD, PeriodFilter, periodProblem, type PeriodValue } from '@/app/components/patterns/period-filter';
 
@@ -49,17 +54,27 @@ import { EMPTY_PERIOD, PeriodFilter, periodProblem, type PeriodValue } from '@/a
 const HUB_PARAM_KEYS = ['tab'] as const;
 
 // --- Types ---
-const STATS_TABS = [
+/*
+ * 탭 이름은 모든 구성에서 같은 유니언이다. 게시판(collaboration)·설문(survey)이 빠진 구성은 아래 목록에서
+ * 그 탭만 빠지므로, 제목 표·미수집 목록처럼 이름으로 고정된 곳은 마커 없이 그대로 컴파일된다.
+ */
+type StatsTab = 'DASHBOARD' | 'USER_STATS' | 'CONTENT_STATS' | 'SYSTEM_STATS' | 'DATA_USAGE' | 'SURVEYS' | 'REPORTS';
+
+const STATS_TABS: readonly StatsTab[] = [
   'DASHBOARD',
   'USER_STATS',
+  /* reusable-base:collaboration:start */
   'CONTENT_STATS',
+  /* reusable-base:collaboration:end */
   'SYSTEM_STATS',
+  /* reusable-base:collaboration:start */
   'DATA_USAGE',
+  /* reusable-base:collaboration:end */
+  /* reusable-base:survey:start */
   'SURVEYS',
+  /* reusable-base:survey:end */
   'REPORTS',
-] as const;
-
-type StatsTab = (typeof STATS_TABS)[number];
+];
 
 /**
  * 탭 ↔ 라우트 매핑 (감사 P1-7).
@@ -74,9 +89,13 @@ type StatsTab = (typeof STATS_TABS)[number];
 const TAB_ROUTE_MAP: Partial<Record<StatsTab, string>> = {
   DASHBOARD: '/admin/stats',
   USER_STATS: '/admin/stats/user',
+  /* reusable-base:collaboration:start */
   CONTENT_STATS: '/admin/stats/board',
+  /* reusable-base:collaboration:end */
   SYSTEM_STATS: '/admin/stats/screen',
+  /* reusable-base:collaboration:start */
   DATA_USAGE: '/admin/stats/data-usage',
+  /* reusable-base:collaboration:end */
   REPORTS: '/admin/stats/report',
 };
 
@@ -117,9 +136,6 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
   const tabParam = searchParams.get('tab');
   const activeTab: StatsTab = isStatsTab(tabParam) ? tabParam : defaultTab;
 
-  // 날짜 판정 기준일(yyyyMMdd). SSR 과 클라이언트의 타임존이 다를 수 있어 useTodayStorageYmd 로 안전하게 읽는다.
-  const today = useTodayStorageYmd();
-
   const handleSelectTab = (tab: StatsTab) => {
     if (tab === activeTab) return;
     const route = TAB_ROUTE_MAP[tab];
@@ -152,11 +168,13 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
     queryFn: () => statsAdminService.getUserStats(appliedRange)
   });
 
+  /* reusable-base:collaboration:start */
   const bbsQuery = useQuery({
     queryKey: ['admin-stats-bbs', appliedRange],
     queryFn: () => statsAdminService.getBbsStats(appliedRange),
     enabled: activeTab === 'CONTENT_STATS' || activeTab === 'DASHBOARD'
   });
+  /* reusable-base:collaboration:end */
 
   // 구 `getScreenStats()` 는 존재하지 않는 `/screen` 을 호출해 첫 진입마다 404 를 냈다.
   // `/connect` 는 성공 로그인 건수다. 화면 조회 요청이나 실패 시도는 이 집계에 포함되지 않는다.
@@ -167,11 +185,13 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
 
   // [2026-09-26 DIP B5 F10] 자료 이용은 요약 카드가 쓰지 않는 미수집 축이라 그 탭에서만 조회한다 —
   //   종전에는 어느 탭을 열어도 불렀다.
+  /* reusable-base:collaboration:start */
   const dataUsageQuery = useQuery({
     queryKey: ['admin-stats-data-usage', appliedRange],
     queryFn: () => statsAdminService.getDataUsageStats(appliedRange),
     enabled: activeTab === 'DATA_USAGE'
   });
+  /* reusable-base:collaboration:end */
 
   // REPORTS 탭 전용 쿼리 (없어서 다른 탭의 잔여 차트가 그려지던 문제 — 감사 P0-23)
   const reportQuery = useQuery({
@@ -180,25 +200,36 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
     enabled: activeTab === 'REPORTS'
   });
 
-  const surveyQuery = useQuery({
-    queryKey: ['admin-surveys'],
-    queryFn: () => surveyAdminService.getSurveyList({}),
-    enabled: activeTab === 'SURVEYS'
-  });
+  /*
+   * 다른 기능이 소유한 탭. 셸은 이 값으로 내보내기·본문·새로고침을 처리하고 그 기능의 서비스를 import 하지 않는다 —
+   * 기능이 빠진 구성에서 셸이 연쇄로 사라지지 않게 하기 위해서다(StatsHubParts).
+   */
+  /* reusable-base:survey:start */
+  const surveyTab = useStatsHubSurveyTab(activeTab === 'SURVEYS');
+  /* reusable-base:survey:end */
+  const extraTabs: Partial<Record<StatsTab, StatsExtraTab>> = {
+    /* reusable-base:survey:start */
+    SURVEYS: surveyTab,
+    /* reusable-base:survey:end */
+  };
+  const extraTab = extraTabs[activeTab];
 
   // 자료 이용은 미수집 축이라 요약 카드가 값을 쓰지 않는다 — 조회는 차트/표가 계속 소비한다.
   const userStats = userQuery.data;
   const connectStats = connectQuery.data;
 
-  const surveys = surveyQuery.data;
-
-  // 현재 탭이 실제로 그리는 시계열과 그 쿼리 상태 (로딩/에러 게이트의 단일 근거)
-  const chartQuery =
-    activeTab === 'USER_STATS' ? userQuery :
-      activeTab === 'CONTENT_STATS' ? bbsQuery :
-        activeTab === 'REPORTS' ? reportQuery :
-          activeTab === 'DATA_USAGE' ? dataUsageQuery :
-            connectQuery;
+  // 현재 탭이 실제로 그리는 시계열과 그 쿼리 상태 (로딩/에러 게이트의 단일 근거). 목록에 없는 탭은 성공 로그인이다.
+  const chartQueries: Partial<Record<StatsTab, typeof connectQuery>> = {
+    USER_STATS: userQuery,
+    /* reusable-base:collaboration:start */
+    CONTENT_STATS: bbsQuery,
+    /* reusable-base:collaboration:end */
+    REPORTS: reportQuery,
+    /* reusable-base:collaboration:start */
+    DATA_USAGE: dataUsageQuery,
+    /* reusable-base:collaboration:end */
+  };
+  const chartQuery = chartQueries[activeTab] ?? connectQuery;
   const chartData: StatsDto[] = chartQuery.data ?? [];
 
   /**
@@ -206,7 +237,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
    *
    * 저장소 실측(2026-08-28): 이 탭들이 읽는 저장소에 save 호출이 저장소 전체에 0건이고
    * Flyway 시드에도 INSERT 가 없다.
-   *   - DATA_USAGE   → dtaUseStatsRepository.countByDate  (writer 0)
+   *   - DATA_USAGE   → 게시판의 자료 이용 포트 → dtaUseStatsRepository.countByDate  (writer 0)
    *   - REPORTS      → reprtStatsRepository.countByDate   (writer 0)
    *
    * 값이 있는 탭은 셋이다.
@@ -235,47 +266,46 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
 
   // 요약 카드는 실제 집계 합계만 표시한다(배열 길이는 "일수"일 뿐 지표가 아니다 — 감사 P0-22).
   const sumStatsCo = (rows?: StatsDto[]) => (rows ?? []).reduce((acc, row) => acc + (row.statsCo ?? 0), 0);
-  const isSummaryLoading = userQuery.isLoading || connectQuery.isLoading || dataUsageQuery.isLoading;
-  const isSummaryError = userQuery.isError || connectQuery.isError || dataUsageQuery.isError;
+  const summaryQueries = [
+    userQuery,
+    connectQuery,
+    /* reusable-base:collaboration:start */
+    dataUsageQuery,
+    /* reusable-base:collaboration:end */
+  ];
+  const isSummaryLoading = summaryQueries.some((query) => query.isLoading);
+  const isSummaryError = summaryQueries.some((query) => query.isError);
   const totalConnect = sumStatsCo(connectStats);
 
   const handleForceRefresh = () => {
     void Promise.all([
       userQuery.refetch(),
+      /* reusable-base:collaboration:start */
       bbsQuery.refetch(),
+      /* reusable-base:collaboration:end */
       connectQuery.refetch(),
+      /* reusable-base:collaboration:start */
       dataUsageQuery.refetch(),
+      /* reusable-base:collaboration:end */
       reportQuery.refetch(),
-      surveyQuery.refetch(),
+      ...Object.values(extraTabs).map((tab) => tab.refetch()),
     ]);
   };
 
   // 내보내기는 "지금 화면에 보이는 데이터"만 반출한다(감사 P1-6 — 죽은 버튼을 기존 자산에 배선).
-  const exportRows: Record<string, unknown>[] =
-    activeTab === 'SURVEYS'
-      ? (surveys?.list ?? []).map((s) => ({
-        srvySn: s.srvySn,
-        srvyTtl: s.srvyTtl,
-        srvyBgngYmd: toDisplayYmd(s.srvyBgngYmd),
-        srvyEndYmd: toDisplayYmd(s.srvyEndYmd),
-      }))
-      : chartData.map((row) => ({
-        statsDate: toDisplayYmd(typeof row.statsDate === 'string' ? row.statsDate : ''),
-        statsCo: row.statsCo ?? 0,
-      }));
+  const exportRows: Record<string, unknown>[] = extraTab
+    ? extraTab.exportRows
+    : chartData.map((row) => ({
+      statsDate: toDisplayYmd(typeof row.statsDate === 'string' ? row.statsDate : ''),
+      statsCo: row.statsCo ?? 0,
+    }));
 
-  const exportHeaders =
-    activeTab === 'SURVEYS'
-      ? [
-        { label: '설문 일련번호', key: 'srvySn' },
-        { label: '설문 제목', key: 'srvyTtl' },
-        { label: '시작일', key: 'srvyBgngYmd' },
-        { label: '종료일', key: 'srvyEndYmd' },
-      ]
-      : [
-        { label: '집계 일자', key: 'statsDate' },
-        { label: '집계 건수', key: 'statsCo' },
-      ];
+  const exportHeaders = extraTab
+    ? extraTab.exportHeaders
+    : [
+      { label: '집계 일자', key: 'statsDate' },
+      { label: '집계 건수', key: 'statsCo' },
+    ];
 
   return (
     <div className="space-y-6 pb-8">
@@ -323,10 +353,16 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
             <Card className="flex flex-wrap gap-2 rounded-lg border bg-card p-2">
               <NavButton icon={<LayoutDashboard size={20} />} label="통계 개요" active={activeTab === 'DASHBOARD'} onClick={() => handleSelectTab('DASHBOARD')} />
               <NavButton icon={<Users size={20} />} label="사용자 통계" active={activeTab === 'USER_STATS'} onClick={() => handleSelectTab('USER_STATS')} />
+              {/* reusable-base:collaboration:start */}
               <NavButton icon={<Box size={20} />} label="콘텐츠 지표" active={activeTab === 'CONTENT_STATS'} onClick={() => handleSelectTab('CONTENT_STATS')} />
+              {/* reusable-base:collaboration:end */}
               <NavButton icon={<Database size={20} />} label="시스템 활성" active={activeTab === 'SYSTEM_STATS'} onClick={() => handleSelectTab('SYSTEM_STATS')} />
+              {/* reusable-base:collaboration:start */}
               <NavButton icon={<HardDrive size={20} />} label="자료이용현황" active={activeTab === 'DATA_USAGE'} onClick={() => handleSelectTab('DATA_USAGE')} />
+              {/* reusable-base:collaboration:end */}
+              {/* reusable-base:survey:start */}
               <NavButton icon={<Vote size={20} />} label="설문조사 분석" active={activeTab === 'SURVEYS'} onClick={() => handleSelectTab('SURVEYS')} />
+              {/* reusable-base:survey:end */}
               <NavButton icon={<FileText size={20} />} label="운영 보고서" active={activeTab === 'REPORTS'} onClick={() => handleSelectTab('REPORTS')} />
             </Card>
           </nav>
@@ -355,8 +391,10 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
           {isSummaryLoading ? (
             <HubMetricSkeleton />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid gap-8 md:grid-flow-col md:auto-cols-fr">
               {/*
+                열 수는 카드 수로 정한다 — 게시판이 빠진 구성에는 자료 이용 카드가 없어 빈 열을 남기지 않는다.
+
                 [2026-08-29] 미수집 축의 카드는 0을 측정값처럼 보여 주지 않는다.
 
                 같은 화면의 차트는 이 두 축을 이미 '미수집' 으로 고지하는데(UNINSTRUMENTED_TABS),
@@ -378,11 +416,13 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                 value={connectQuery.isError ? '—' : totalConnect.toLocaleString()}
                 color="primary"
               />
+              {/* reusable-base:collaboration:start */}
               <StatSummaryCard
                 icon={<Database size={24} />}
                 label="자료 이용 건수"
                 value="미수집"
               />
+              {/* reusable-base:collaboration:end */}
             </div>
           )}
           {isSummaryError && (
@@ -421,56 +461,8 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                   exit={{ opacity: 0, y: -20 }}
                   className="h-full"
                 >
-                  {activeTab === 'SURVEYS' ? (
-                    surveyQuery.isLoading ? (
-                      <HubListSkeleton />
-                    ) : surveyQuery.isError ? (
-                      <HubErrorState message="설문조사 목록을 불러오지 못했습니다." onRetry={() => surveyQuery.refetch()} />
-                    ) : !surveys?.list?.length ? (
-                      <HubEmptyState message="등록된 설문조사가 없습니다." />
-                    ) : (
-                      <div className="space-y-4">
-                        {/*
-                          과거 이 목록은 `qestnrId/qestnrSj/qestnrEndDe` 를 읽었으나 백엔드 계약은
-                          `SurveyInfoDto{srvySn, srvyTtl, srvyBgngYmd, srvyEndYmd}` 다 → 전 행 제목 공백 +
-                          상태 배지 전건 오판정이었다. 상태 판정은 공용 SSOT(`lib/poll-status`)로 통일한다.
-                        */}
-                        {surveys.list.map((s) => {
-                          const status = today
-                            ? getPollStatus({ pollBgngYmd: s.srvyBgngYmd, pollEndYmd: s.srvyEndYmd }, today)
-                            : null;
-                          return (
-                            <div
-                              key={s.srvySn}
-                              className="group p-6 md:p-8 rounded-xl bg-card border-2 border-border hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/5 transition-all flex items-center gap-6 relative overflow-hidden"
-                            >
-                              <div className="w-16 h-12 shrink-0 bg-muted group-hover:bg-primary/10 rounded-xl flex items-center justify-center shadow-inner transition-colors">
-                                <Vote className="text-muted-foreground group-hover:text-primary transition-colors" size={24} />
-                              </div>
-                              <div className="space-y-2 relative z-10">
-                                <div className="flex items-center gap-3">
-                                  <span className={cn(
-                                    "px-2 py-0.5 rounded-md text-[10px] font-black tracking-tighter",
-                                    status === 'active'
-                                      ? "bg-emerald-500/10 text-emerald-600"
-                                      : "bg-muted text-muted-foreground"
-                                  )}>
-                                    {status ? POLL_STATUS_LABEL[status] : '…'}
-                                  </span>
-                                  <span className="text-[10px] font-bold text-muted-foreground font-mono">
-                                    종료일: {toDisplayYmd(s.srvyEndYmd)}
-                                  </span>
-                                </div>
-                                <h4 className="text-lg font-bold text-foreground tracking-tighter group-hover:text-primary transition-colors">
-                                  {s.srvyTtl || '(제목 없음)'}
-                                </h4>
-                              </div>
-                              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )
+                  {extraTab ? (
+                    extraTab.body
                   ) : chartQuery.isLoading ? (
                     <HubListSkeleton />
                   ) : chartQuery.isError ? (
@@ -570,35 +562,6 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
       </div>
       <span className="text-xs font-bold tracking-tight">{label}</span>
     </button>
-  );
-}
-
-/** 조회 실패를 "데이터 없음"으로 위장하지 않기 위한 명시적 에러 상태 (감사 P1-1) */
-function HubErrorState({ message, onRetry }: { message: string, onRetry: () => void }) {
-  return (
-    <div role="alert" className="h-[400px] flex flex-col items-center justify-center gap-5 text-center">
-      <div className="w-14 h-14 rounded-lg bg-rose-500/10 flex items-center justify-center">
-        <AlertTriangle size={26} className="text-rose-600" />
-      </div>
-      <div className="space-y-2">
-        <p className="text-sm font-bold tracking-tight text-foreground">{message}</p>
-        <p className="text-xs font-bold tracking-tight text-muted-foreground">잠시 후 다시 시도하거나 관리자에게 문의해 주세요.</p>
-      </div>
-      <Button variant="outline" onClick={onRetry} className="px-6 rounded-lg border-2 text-xs font-bold tracking-tight gap-2">
-        <RefreshCcw size={16} /> 다시 시도
-      </Button>
-    </div>
-  );
-}
-
-function HubEmptyState({ message }: { message: string }) {
-  return (
-    <div className="h-[400px] flex flex-col items-center justify-center gap-4 text-center">
-      <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center">
-        <Inbox size={26} className="text-muted-foreground" />
-      </div>
-      <p className="text-sm font-bold tracking-tight text-muted-foreground">{message}</p>
-    </div>
   );
 }
 

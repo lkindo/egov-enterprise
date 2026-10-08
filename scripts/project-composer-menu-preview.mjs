@@ -7,7 +7,9 @@ export const COMPOSER_MENU_SNAPSHOT_PATH = 'config/project-composer-menus.json';
 const MIGRATION_ROOT = 'api-server/src/main/resources/db/migration';
 // [2026-10-05] 레거시 연결 프로그램(prgrm_file_nm)과 프로그램 원장(tb_prgrm_lst)은 앱이 읽지 않아 snapshot 에서 뺐다
 //   (GAP-PROGRAM-001). 형식이 바뀌었으므로 schemaVersion 은 2 다.
-const SNAPSHOT_SCHEMA_VERSION = 2;
+// [2026-10-07] 그룹별 메뉴 표시(NAVIGATION) 배정을 함께 싣는다. 생성기 시드가 선택 메뉴만큼 투영해 일반 사용자
+//   사이드바가 원본과 같은 구성으로 시작하게 한다. 형식이 바뀌었으므로 schemaVersion 은 3 이다.
+const SNAPSHOT_SCHEMA_VERSION = 3;
 const MENU_FIELDS = ['menu_sn', 'up_menu_sn', 'menu_ordr', 'menu_nm', 'menu_expln', 'modern_route', 'use_yn', 'del_yn'];
 const fail = message => { throw new Error(`Composer menu snapshot: ${message}`); };
 
@@ -22,7 +24,18 @@ export function projectMenuSourceHash(root) {
   return hash.digest('hex');
 }
 
-function normalizeInventory({ menus }) {
+function normalizeNavigation(navigation, menuIds) {
+  if (!Array.isArray(navigation)) fail('navigation grant inventory is missing');
+  const rows = navigation.map(row => {
+    if (!row || Object.keys(row).sort().join() !== 'authrt_cd,menu_sn' || typeof row.authrt_cd !== 'string'
+      || !/^[A-Z][A-Z0-9_]{0,49}$/.test(row.authrt_cd) || !menuIds.has(row.menu_sn)) fail('invalid navigation grant');
+    return { authrt_cd: row.authrt_cd, menu_sn: row.menu_sn };
+  }).sort((left, right) => left.authrt_cd.localeCompare(right.authrt_cd) || left.menu_sn - right.menu_sn);
+  if (new Set(rows.map(row => `${row.authrt_cd}:${row.menu_sn}`)).size !== rows.length) fail('duplicate navigation grant');
+  return rows;
+}
+
+function normalizeInventory({ menus, navigation }) {
   if (!Array.isArray(menus) || !menus.length) fail('menu inventory is missing');
   const normalizedMenus = menus.map(row => {
     if (!row || !MENU_FIELDS.every(field => Object.hasOwn(row, field)) || !Number.isSafeInteger(row.menu_sn) || row.menu_sn <= 0
@@ -39,7 +52,7 @@ function normalizeInventory({ menus }) {
   for (const menu of normalizedMenus) {
     if (menu.up_menu_sn && !menuIds.has(menu.up_menu_sn)) fail(`missing parent for menu ${menu.menu_sn}`);
   }
-  return { menus: normalizedMenus };
+  return { menus: normalizedMenus, navigation: normalizeNavigation(navigation, menuIds) };
 }
 
 export function validateProjectComposerMenus(snapshot, expectedSourceHash) {
@@ -56,7 +69,7 @@ export function loadProjectComposerMenus(root) {
 export function assertProjectComposerMenusMatch(root, inventory) {
   const snapshot = loadProjectComposerMenus(root);
   const actual = normalizeInventory(inventory);
-  if (JSON.stringify({ menus: snapshot.menus }) !== JSON.stringify(actual)) {
+  if (JSON.stringify({ menus: snapshot.menus, navigation: snapshot.navigation }) !== JSON.stringify(actual)) {
     fail('checked-in preview differs from the actual migrated menu inventory');
   }
   return snapshot;
@@ -71,7 +84,7 @@ export function writeProjectComposerMenuSnapshot(root, inventory) {
 
 export function projectComposerMenuPreview(root, composition) {
   const snapshot = loadProjectComposerMenus(root);
-  return projectCompositionMenus({ menus: snapshot.menus, menuRoutes: composition.menuRoutes }).menus.map(menu => ({
+  return projectCompositionMenus({ menus: snapshot.menus, menuRoutes: composition.menuRoutes, excludedMenuTabs: composition.excludedMenuTabs }).menus.map(menu => ({
     id: menu.menu_sn, label: menu.menu_nm, parent: menu.up_menu_sn || null, path: menu.modern_route,
   }));
 }

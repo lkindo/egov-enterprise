@@ -303,7 +303,10 @@ test('search and statistics surfaces do not present batch-backed data as neural 
     'frontend/src/app/admin/stats/page.tsx',
     'frontend/src/app/admin/stats/AdminStatsClient.tsx',
     'frontend/src/app/admin/stats/IntelligenceHubClient.tsx',
+    'frontend/src/app/admin/stats/StatsHubParts.tsx',
     'frontend/src/app/admin/stats/StatsHubFallback.tsx',
+    // Phase 0c: 설문 탭은 설문이 넘기는 패널로 옮겼다. 검사 범위를 줄이지 않도록 함께 본다.
+    'frontend/src/app/admin/survey/components/StatsHubSurveyTab.tsx',
   ].map((source) => fs.readFileSync(path.join(ROOT, source), 'utf8')).join('\n');
 
   assert.doesNotMatch(

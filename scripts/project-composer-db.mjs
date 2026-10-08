@@ -69,6 +69,31 @@ export function schemaSnapshotSql() {
   )::text;`;
 }
 
+/**
+ * 실제로 적용한 스키마에서 기능 사이 외래 키를 찾아 카탈로그 선언(필수+선택)과 양방향으로 대조한다.
+ * core 테이블을 가리키는 외래 키는 core 가 늘 포함되므로 대상이 아니다. 선언 없는 새 외래 키와
+ * 사라진 선언 모두 생성을 멈춘다(계획 단계 검사가 낡지 않게 하는 안전망).
+ */
+export function assertDeclaredCrossDomainForeignKeys(snapshot, catalog) {
+  const owners = new Map(catalog.core.tables.map(table => [table, new Set(['core'])]));
+  for (const capability of catalog.capabilities) for (const table of capability.database.tables) {
+    owners.set(table, new Set([...(owners.get(table) ?? []), capability.id]));
+  }
+  if (!Array.isArray(snapshot?.constraints)) fail('Physical schema snapshot is missing constraints.');
+  const actual = snapshot.constraints.filter(row => row.type === 'f').filter(row => {
+    const child = owners.get(row.table_name), parent = owners.get(row.referenced_table);
+    if (!child || !parent) fail(`Foreign key touches a table without catalog ownership: ${row.table_name}.${row.name}`);
+    return !parent.has('core') && ![...child].some(owner => parent.has(owner));
+  }).map(row => `${row.name} ${row.table_name}->${row.referenced_table}`).sort();
+  const declared = [...catalog.requiredForeignKeys, ...catalog.optionalForeignKeys]
+    .map(contract => `${contract.name} ${contract.childTable}->${contract.parentTable}`).sort();
+  const undeclared = actual.filter(key => !declared.includes(key));
+  const stale = declared.filter(key => !actual.includes(key));
+  if (undeclared.length || stale.length) fail(`Cross-domain foreign keys differ from the composer catalog `
+    + `(undeclared: ${undeclared.join(', ') || '-'}; stale: ${stale.join(', ') || '-'}).`);
+  return actual;
+}
+
 export function selectSchemaSnapshot(snapshot, tables, sequences, optionalForeignKeys = []) {
   const selected = new Set(tables), selectedSequences = new Set(sequences);
   const projected = {}, omittedForeignKeys = [];
@@ -109,24 +134,44 @@ export function schemaSnapshotHash(snapshot) {
   return createHash('sha256').update(JSON.stringify(canonical(snapshot))).digest('hex');
 }
 
-function canonicalRoute(route) {
+/**
+ * 메뉴 목적지를 소유 판정 단위로 줄인다. 경로(pathname)와 `tab` 값만 본다. 다른 쿼리는 소유와 무관하다.
+ * `key` 는 탭 기여를 가리키는 정규형(`/path?tab=X`)이다.
+ */
+export function menuRouteKey(route) {
   if (typeof route !== 'string' || !route.startsWith('/') || route.startsWith('//') || route.includes('#')) fail(`Invalid menu route: ${route}`);
   const parsed = new URL(route, 'http://composer.invalid');
-  parsed.searchParams.sort();
-  return `${parsed.pathname.replace(/\/$/, '') || '/'}${parsed.search}`;
+  const path = parsed.pathname.replace(/\/$/, '') || '/';
+  const tab = parsed.searchParams.get('tab') || null;
+  return { path, tab, key: tab ? `${path}?tab=${tab}` : path };
 }
 
-/** Menu/program rows originate exclusively from the checked-in migrations applied to an empty DB. */
-export function projectCompositionMenus({ menus, menuRoutes }) {
-  if (!Array.isArray(menus) || !Array.isArray(menuRoutes)) fail('Canonical menu route ownership is required.');
-  const allowed = new Set(menuRoutes.map(canonicalRoute));
+/**
+ * Menu rows originate exclusively from the checked-in migrations applied to an empty DB.
+ * 메뉴 행은 경로를 소유한 화면(셸)이 남아 있으면 보인다. `tab` 메뉴는 그 탭을 기여한 기능이 빠지면
+ * 숨긴다(`excludedMenuTabs`). 쿼리 문자열을 정확히 비교하지 않는다 — 비교하면 같은 셸의 탭 메뉴가
+ * 선언 표기만 달라도 모든 생성물에서 조용히 빠진다.
+ */
+export function projectCompositionMenus({ menus, menuRoutes, excludedMenuTabs = [] }) {
+  if (!Array.isArray(menus) || !Array.isArray(menuRoutes) || !Array.isArray(excludedMenuTabs)) fail('Canonical menu route ownership is required.');
+  const shells = new Set(menuRoutes.map(route => {
+    const owned = menuRouteKey(route);
+    if (owned.tab) fail(`Menu ownership is by path; a tab contribution is not a retained screen: ${route}`);
+    return owned.path;
+  }));
+  const excluded = new Set(excludedMenuTabs.map(route => {
+    const contribution = menuRouteKey(route);
+    if (!contribution.tab) fail(`An excluded menu tab must name its tab: ${route}`);
+    return contribution.key;
+  }));
+  const visible = route => { const target = menuRouteKey(route); return shells.has(target.path) && !excluded.has(target.key); };
   const byId = new Map();
   for (const menu of menus) {
     if (!Number.isSafeInteger(menu.menu_sn) || menu.menu_sn <= 0 || byId.has(menu.menu_sn)) fail('Menu seed IDs must be unique positive integers.');
     byId.set(menu.menu_sn, menu);
   }
   const selected = new Set(menus.filter(row => row.use_yn === 'Y' && row.del_yn !== 'Y'
-    && row.modern_route && allowed.has(canonicalRoute(row.modern_route))).map(row => row.menu_sn));
+    && row.modern_route && visible(row.modern_route)).map(row => row.menu_sn));
   for (const id of [...selected]) {
     let current = byId.get(id), visited = new Set([id]);
     while (current.up_menu_sn && current.up_menu_sn !== 0) {
@@ -139,19 +184,85 @@ export function projectCompositionMenus({ menus, menuRoutes }) {
   }
   const selectedMenus = menus.filter(row => selected.has(row.menu_sn)).map(row => ({ ...row,
     // A retained ancestor is structural; do not preserve its excluded clickable feature.
-    ...(!row.modern_route || allowed.has(canonicalRoute(row.modern_route)) ? {} : { modern_route: null }),
+    ...(!row.modern_route || visible(row.modern_route) ? {} : { modern_route: null }),
   })).sort((a, b) => a.menu_sn - b.menu_sn);
   if (!selectedMenus.length) fail('Selected composition has no usable menu seed.');
   // [2026-10-05] 레거시 연결 프로그램(prgrm_file_nm)·프로그램 원장은 앱이 읽지 않으므로 생성물 시드에 싣지 않는다(GAP-PROGRAM-001).
   return { menus: selectedMenus };
 }
 
+/**
+ * 라우트 게이트(proxy.ts → page-authorization.ts canEnterRegisteredPage)와 같은 진입 판정.
+ * `/admin` 밖은 페이지 게이트가 없다. 등록되지 않은 `/admin` 경로는 들어갈 수 없다.
+ */
+export function canEnterMenuRoute(route, granted, { pagePermissions, pagePermissionModes = {} }) {
+  const { path } = menuRouteKey(route);
+  const lower = path.toLowerCase();
+  if (lower !== '/admin' && !lower.startsWith('/admin/')) return true;
+  const segments = path.split('/');
+  const entry = Object.hasOwn(pagePermissions, path) ? [path, pagePermissions[path]] : Object.entries(pagePermissions).find(([candidate]) => {
+    const parts = candidate.replace(/\/$/, '').split('/');
+    return parts.length === segments.length && parts.every((part, index) => /^\[[^.[\]]+\]$/.test(part) ? segments[index].length > 0 : part === segments[index]);
+  });
+  if (!entry) return false;
+  const required = entry[1];
+  if (pagePermissionModes[entry[0]] === 'ALL') return required.length > 0 && required.every(code => granted.has(code));
+  return required.length === 0 || required.some(code => granted.has(code));
+}
+
+/** 그룹마다 표시하는 메뉴는 그 그룹의 기능 권한으로 들어갈 수 있어야 한다(DEC-OPS-186·215). */
+export function assertNavigationEnterable({ menus, navigation, operationGrants, pageAccess }) {
+  const byId = new Map(menus.map(menu => [menu.menu_sn, menu]));
+  const granted = new Map();
+  for (const [group, code] of operationGrants) {
+    if (!granted.has(group)) granted.set(group, new Set());
+    granted.get(group).add(code);
+  }
+  const blocked = navigation.filter(row => {
+    const menu = byId.get(row.menu_sn);
+    if (!menu) fail(`NAVIGATION grant targets an unselected menu: ${row.authrt_cd}:${row.menu_sn}`);
+    return menu.modern_route && !canEnterMenuRoute(menu.modern_route, granted.get(row.authrt_cd) ?? new Set(), pageAccess);
+  });
+  if (blocked.length) {
+    fail(`Groups would see menus they cannot enter: ${blocked.map(row => `${row.authrt_cd}:${row.menu_sn}(${byId.get(row.menu_sn).modern_route})`).join(', ')}`);
+  }
+}
+
+/**
+ * 원본 마이그레이션이 남긴 그룹별 메뉴 표시 배정을 선택 메뉴만큼 투영한다. 선택 메뉴는 조상을 함께 고르므로
+ * 계층 폐포가 유지된다. 그 그룹이 표시하는 하위가 하나도 남지 않은 분류 메뉴는 빼서 빈 분류를 만들지 않는다.
+ */
+export function projectCompositionNavigation({ menus, navigation, operationGrants, pageAccess }) {
+  if (!Array.isArray(navigation)) fail('Original NAVIGATION grants are required.');
+  const byId = new Map(menus.map(menu => [menu.menu_sn, menu]));
+  const rows = navigation.filter(row => byId.has(row.menu_sn));
+  const shown = new Set();
+  for (const row of rows) {
+    if (!byId.get(row.menu_sn).modern_route) continue;
+    for (let current = byId.get(row.menu_sn); current; current = byId.get(current.up_menu_sn)) shown.add(`${row.authrt_cd}:${current.menu_sn}`);
+  }
+  const projected = rows.filter(row => shown.has(`${row.authrt_cd}:${row.menu_sn}`))
+    .map(row => ({ authrt_cd: row.authrt_cd, menu_sn: row.menu_sn }))
+    .sort((left, right) => left.authrt_cd.localeCompare(right.authrt_cd) || left.menu_sn - right.menu_sn);
+  if (!projected.some(row => row.authrt_cd === 'ROLE_ADMIN')) fail('Projected NAVIGATION grants leave the administrator without menus.');
+  assertNavigationEnterable({ menus, navigation: projected, operationGrants, pageAccess });
+  return projected;
+}
+
 /** Retain the reviewed first-bootstrap/revocation guards, replacing only the three seed inventories. */
-export function buildCompositionAdminSeed({ bootstrapSql, projection, permissionCodes, permissionCatalog }) {
+const ADMIN_NAVIGATION_STATEMENT = `            INSERT INTO tb_authrt_grnt_map(authrt_cd,authrt_type_cd,authrt_grnt_cd,frst_rgtr_id,crt_dt,last_mdfr_id,mdfcn_dt)
+            SELECT 'ROLE_ADMIN','NAVIGATION',menu_sn::text,'SYSTEM',CURRENT_TIMESTAMP,'SYSTEM',CURRENT_TIMESTAMP
+              FROM tb_menu_info WHERE menu_sn BETWEEN 910 AND 920;`;
+
+export function buildCompositionAdminSeed({ bootstrapSql, projection, permissionCodes, permissionCatalog, navigation }) {
   // Match generate-permissions.mjs regeneration on every checkout platform.
   bootstrapSql = bootstrapSql.replace(/\r\n/g, '\n');
   const { menus } = projection;
-  if (!menus.length || !Array.isArray(permissionCodes) || !Array.isArray(permissionCatalog?.permissions)) fail('Invalid composition seed plan.');
+  if (!menus.length || !Array.isArray(permissionCodes) || !Array.isArray(permissionCatalog?.permissions) || !Array.isArray(navigation)) fail('Invalid composition seed plan.');
+  const menuIds = new Set(menus.map(row => row.menu_sn));
+  if (!navigation.length || navigation.some(row => !['ROLE_ADMIN', 'ROLE_SYSTEM', 'ROLE_USER'].includes(row.authrt_cd) || !menuIds.has(row.menu_sn))) {
+    fail('Composition NAVIGATION grants must name a known group and a selected menu.');
+  }
   const selectedPermissions = new Set(permissionCodes);
   const permissions = permissionCatalog.permissions.filter(row => selectedPermissions.has(row.code));
   if (permissions.length !== selectedPermissions.size) fail('Composition references an unknown OPERATION code.');
@@ -170,6 +281,14 @@ export function buildCompositionAdminSeed({ bootstrapSql, projection, permission
   sql = sql.replace(menuBlock, menusSql);
   const menuIdPredicate = `menu_sn IN (${menus.map(row => row.menu_sn).join(',')})`;
   if ((sql.match(/menu_sn BETWEEN 910 AND 920/g) ?? []).length !== 2) fail('Reviewed bootstrap NAVIGATION inventory predicates drifted.');
+  // 빈 base 의 메뉴 표시는 관리자 전용 문장 대신, 원본 배정을 선택 메뉴만큼 투영한 그룹별 행으로 쓴다.
+  if (sql.split(ADMIN_NAVIGATION_STATEMENT).length !== 2) fail('Reviewed bootstrap NAVIGATION grant statement drifted.');
+  sql = sql.replace(ADMIN_NAVIGATION_STATEMENT, `            INSERT INTO tb_authrt_grnt_map(authrt_cd,authrt_type_cd,authrt_grnt_cd,frst_rgtr_id,crt_dt,last_mdfr_id,mdfcn_dt)
+            SELECT seed.group_code,'NAVIGATION',seed.menu_sn,${audit}
+            FROM (VALUES
+${navigation.map(row => `                (${literal(row.authrt_cd)}, ${literal(String(row.menu_sn))})`).join(',\n')}
+            ) AS seed(group_code, menu_sn)
+            JOIN tb_menu_info menu ON menu.menu_sn::text = seed.menu_sn;`);
   sql = sql.replaceAll('menu_sn BETWEEN 910 AND 920', menuIdPredicate);
   // Modern menu IDs come from the final migration inventory, which has already retired the role alias.
   sql = sql.replace('DELETE FROM tb_menu_info WHERE menu_sn = 914;', '-- Historical role alias is absent from the projected menu inventory.');

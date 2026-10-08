@@ -13,7 +13,7 @@ const catalog = loadProjectComposerCatalog(ROOT);
 function fixture(t) {
   const base = resolve(tmpdir());
   const root = mkdtempSync(join(base, 'egov-composer-catalog-'));
-  for (const path of ['config/reusable-base-profiles.json', 'config/governance/permission-catalog.json']) {
+  for (const path of ['config/reusable-base-profiles.json', 'config/governance/permission-catalog.json', 'config/project-composer-menus.json']) {
     mkdirSync(dirname(join(root, path)), { recursive: true }); copyFileSync(join(ROOT, path), join(root, path));
   }
   cpSync(join(ROOT, 'business-app/src/main/java'), join(root, 'business-app/src/main/java'), { recursive: true });
@@ -25,7 +25,8 @@ function fixture(t) {
     mkdirSync(dirname(join(root, 'frontend', path)), { recursive: true });
     cpSync(join(ROOT, 'frontend', path), join(root, 'frontend', path), { recursive: true });
   }
-  for (const file of new Set(catalog.capabilities.flatMap(capability => capability.requires.filter(edge => edge.kind === 'ui-import').map(edge => edge.evidence)))) {
+  for (const file of new Set([...catalog.capabilities.flatMap(capability => capability.requires.filter(edge => edge.kind === 'ui-import').map(edge => edge.evidence)),
+    ...[...catalog.requiredForeignKeys, ...catalog.optionalForeignKeys].map(contract => contract.evidence)])) {
     mkdirSync(dirname(join(root, file)), { recursive: true }); copyFileSync(join(ROOT, file), join(root, file));
   }
   t.after(() => {
@@ -36,10 +37,59 @@ function fixture(t) {
   return root;
 }
 
+test('declared cross-domain foreign keys are bound to their migration evidence and owning domains', t => {
+  // Phase 0c: 자료 이용 기록이 게시판 소유가 되어 그 외래 키는 기능 안으로 들어갔다(5 → 4).
+  assert.equal(catalog.requiredForeignKeys.length, 4);
+  assert.ok(!catalog.requiredForeignKeys.some(contract => contract.childTable === 'tb_dta_use_stats'));
+  for (const contract of catalog.requiredForeignKeys) {
+    const child = catalog.capabilities.find(capability => capability.id === contract.sourceDomain);
+    const parent = catalog.capabilities.find(capability => capability.id === contract.targetDomain);
+    assert.ok(child.database.tables.includes(contract.childTable) && parent.database.tables.includes(contract.parentTable), contract.name);
+  }
+  const root = fixture(t);
+  const evidence = catalog.requiredForeignKeys.find(contract => contract.name === 'fk_tb_bbs_scrap_tb_bbs_item').evidence;
+  writeFileSync(join(root, evidence), readFileSync(join(root, evidence), 'utf8').replaceAll('ADD CONSTRAINT fk_tb_bbs_scrap_tb_bbs_item', 'ADD CONSTRAINT fk_renamed'));
+  assert.throws(() => loadProjectComposerCatalog(root), /declared foreign key drifted: fk_tb_bbs_scrap_tb_bbs_item/);
+});
+
+test('a declared foreign key whose child table moved into its parent domain is refused', t => {
+  // Phase 0c 에서 자료 이용 기록이 게시판 소유가 되며 그 외래 키 선언을 지웠다. 엔티티만 옮기고 선언을 남기면
+  // 소유 판정이 어긋나 거부돼야 한다. 같은 상황을 스크랩 엔티티로 재현한다.
+  const root = fixture(t);
+  const from = join(root, 'business-app/src/main/java/nuri/business/domain/scrap/Scrap.java');
+  const to = join(root, 'business-app/src/main/java/nuri/business/domain/board/Scrap.java');
+  writeFileSync(to, readFileSync(from, 'utf8').replace('package nuri.business.domain.scrap;', 'package nuri.business.domain.board;'));
+  rmSync(from);
+  assert.throws(() => loadProjectComposerCatalog(root), /declared foreign key ownership drifted: fk_tb_bbs_scrap_tb_bbs_item/);
+});
+
+test('a declared tab menu must match an active menu row of an existing screen', t => {
+  assert.deepEqual(catalog.capabilities.filter(capability => capability.menuTabs.length).map(capability => [capability.id, capability.menuTabs]), [
+    ['board', ['/admin/help/faq?tab=FAQ', '/admin/help/faq?tab=QNA', '/admin/help/faq?tab=WIKI']],
+    ['system', ['/admin/help?tab=COMMUNITY']],
+  ]);
+  for (const capability of catalog.capabilities) assert.ok(!capability.menuRoutes.some(route => route.includes('?')), capability.id);
+  const root = fixture(t);
+  const path = join(root, 'config/project-composer-menus.json');
+  const snapshot = JSON.parse(readFileSync(path, 'utf8'));
+  snapshot.menus.find(row => row.modern_route === '/admin/help?tab=COMMUNITY').modern_route = '/admin/help?tab=COMMUNITIES';
+  writeFileSync(path, JSON.stringify(snapshot));
+  assert.throws(() => loadProjectComposerCatalog(root), /menu tab has no active menu row: \/admin\/help\?tab=COMMUNITY/);
+});
+
 test('all producer domains and tables have one verified ownership or an explicit shared contract', () => {
   const expectedDomains = Object.values(manifest.packs).flatMap(pack => pack.backend?.appDomains ?? []).sort();
   assert.deepEqual(catalog.capabilities.map(capability => capability.id), expectedDomains);
-  assert.equal(catalog.capabilities.length, 20);
+  // Phase 0c: 통계는 고를 수 있는 기능이 아니라 core 다(20 -> 19). 게시물·자료 이용 화면은 게시판이 소유한다.
+  assert.equal(catalog.capabilities.length, 19);
+  assert.ok(!catalog.capabilities.some(capability => capability.id === 'stats'));
+  assert.ok(catalog.core.tables.includes('tb_rptp_stats'));
+  assert.ok(['STATS_ADMIN_READ', 'STATS_READ'].every(code => catalog.core.permissionCodes.includes(code)));
+  assert.deepEqual(catalog.core.menuRoutes.filter(route => route.startsWith('/admin/stats')),
+    ['/admin/stats', '/admin/stats/report', '/admin/stats/screen', '/admin/stats/user']);
+  const board = catalog.capabilities.find(capability => capability.id === 'board');
+  assert.deepEqual(board.menuRoutes.filter(route => route.startsWith('/admin/stats')), ['/admin/stats/board', '/admin/stats/data-usage']);
+  assert.ok(board.database.tables.includes('tb_dta_use_stats'));
   assert.deepEqual(catalog.mandatory, ['foundation', 'core']);
   const tables = [...new Set([...catalog.core.tables, ...catalog.capabilities.flatMap(capability => capability.database.tables)])].sort();
   assert.deepEqual(tables, Object.values(manifest.packs).flatMap(pack => pack.database.tables).sort());

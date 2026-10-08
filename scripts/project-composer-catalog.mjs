@@ -3,6 +3,8 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { domainSupportFiles } from './project-composer-source.mjs';
+import { menuRouteKey } from './project-composer-db.mjs';
+import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST = 'config/reusable-base-profiles.json';
@@ -33,18 +35,22 @@ function walk(directory) {
 
 // These declarations refine the existing pack ownership. Database ownership and
 // backend paths are discovered below, never copied into a second table manifest.
+// 메뉴는 경로를 소유한 기능에 속한다. `menuTabs` 는 다른 기능의 셸에 이 기능이 기여한 탭 메뉴이고,
+// 셸이 남아 있어도 이 기능이 빠지면 숨긴다. 선언은 메뉴 스냅숏의 실제 행과 맞아야 한다.
 const FEATURES = {
   addressbook: { label: '주소록', permissions: ['ADBK'], paths: [
     'src/app/admin/collaboration/address-book', 'src/services/business/user/addressbook', 'src/types/business/addressbook.ts'], routes: ['/admin/collaboration/address-book'] },
   board: { label: '게시판·지식', permissions: ['BOARD', 'BBS_MST', 'SATISFY', 'NOTICE', 'FAQ'], paths: [
     'src/app/actions/boardActions.ts', 'src/services/business/user/board/BoardUserService.ts',
     'src/services/foundation/system/BoardAdminService.ts', 'src/services/business/board/SatisfactionService.ts',
-    'src/services/business/knowledge/knowledgeService.ts', 'src/app/admin/community/boards'],
-  routes: ['/admin/community/boards'], menuRoutes: ['/admin/help?tab=WIKI', '/admin/help?tab=FAQ', '/admin/help?tab=QNA'] },
+    'src/services/business/knowledge/knowledgeService.ts', 'src/app/admin/community/boards',
+    // Phase 0c: 게시물·자료 이용 통계 화면은 게시판 데이터만 보여 준다. 통계 셸·나머지 통계 화면은 core 다.
+    'src/app/admin/stats/board', 'src/app/admin/stats/data-usage'],
+  routes: ['/admin/community/boards', '/admin/stats/board', '/admin/stats/data-usage'], menuTabs: ['/admin/help/faq?tab=WIKI', '/admin/help/faq?tab=FAQ', '/admin/help/faq?tab=QNA'] },
   comment: { label: '댓글', permissions: ['COMMENT'], paths: [
     'src/app/actions/commentActions.ts', 'src/services/business/comment/commentService.ts',
     'src/services/foundation/system/CommentAdminService.ts', 'src/app/admin/system/comments'],
-  routes: ['/admin/system/comments'], menuRoutes: ['/admin/system/monitoring?tab=COMMENTS'] },
+  routes: ['/admin/system/comments'] },
   dashboard: { label: '실시간 대시보드', permissions: [], paths: [
     'src/app/dashboard-data.ts', 'src/components/features/dashboard/RealTimeDashboard.tsx'], routes: [] },
   help: { label: '도움말·온라인 매뉴얼', permissions: ['HELP'], paths: [
@@ -62,7 +68,7 @@ const FEATURES = {
   memoreport: { label: '메모 보고', permissions: ['MEMO_RPT'], paths: [
     'src/services/business/memoreport', 'src/app/admin/operation/memo-reports'], routes: ['/admin/operation/memo-reports'] },
   note: { label: '쪽지', permissions: ['NOTE'], paths: ['src/services/business/user/NoteService.ts', 'src/app/note', 'src/app/components/dashboard/UnreadNotesCard.tsx'],
-    routes: ['/note'], menuRoutes: ['/admin/collaboration?tab=MESSAGES'] },
+    routes: ['/note'] },
   notification: { label: '알림', permissions: ['NOTI'], paths: [
     'src/app/components/layout/header-notifications.tsx', 'src/app/components/ui/app-notification-drawer.tsx',
     'src/lib/hooks/use-notifications.ts', 'src/services/foundation/system/NotificationAdminService.ts', 'src/app/admin/notifications'],
@@ -75,18 +81,16 @@ const FEATURES = {
   routes: ['/admin/operation/events', '/admin/operation/external-hr', '/admin/operation/rewards', '/admin/operation/rough-map'] },
   report: { label: '업무 보고', permissions: ['WORK_RPT'], paths: [
     'src/app/smart-toolkit/work-report', 'src/components/business/report', 'src/services/business/user/ReportService.ts'],
-  routes: ['/smart-toolkit/work-report'], menuRoutes: ['/admin/work-hub?tab=report'] },
+  routes: ['/smart-toolkit/work-report'] },
   schedule: { label: '일정·일지', permissions: ['SCHEDULE'], paths: [
     'src/app/smart-toolkit/schedule', 'src/components/business/schedule', 'src/services/business/schedule', 'src/types/business/schedule.ts'],
-  routes: ['/smart-toolkit/schedule'], menuRoutes: ['/admin/work-hub?tab=calendar'] },
+  routes: ['/smart-toolkit/schedule'] },
   scrap: { label: '스크랩', permissions: ['SCRAP'], paths: [
     'src/services/business/user/ScrapService.ts', 'src/app/admin/collaboration/scraps'],
-  routes: ['/admin/collaboration/scraps'], menuRoutes: ['/admin/collaboration?tab=SCRAPS'] },
+  routes: ['/admin/collaboration/scraps'] },
   sms: { label: '문자 발송', permissions: ['SMS'], paths: [
     'src/services/foundation/operation/SmsAdminService.ts', 'src/app/admin/uss/ion/sms', 'src/app/cop/sms'],
   routes: ['/admin/uss/ion/sms', '/cop/sms'], requirements: ['문자 발송 공급자 설정'] },
-  stats: { label: '업무 통계', permissions: ['STATS'], paths: [
-    'src/app/admin/stats', 'src/services/foundation/system/StatsAdminService.ts', 'src/types/foundation/stats.ts'], routes: ['/admin/stats'] },
   survey: { label: '설문·투표', permissions: ['SURVEY', 'SURVEY_RSP', 'POLL'], paths: [
     'src/app/admin/survey', 'src/app/survey', 'src/lib/api/survey.ts', 'src/services/business/user/poll',
     'src/services/foundation/survey', 'src/services/foundation/system/SurveyAdminService.ts', 'src/types/business/poll.ts', 'src/types/business/survey.ts'],
@@ -100,7 +104,7 @@ const FEATURES = {
     'src/services/foundation/system/BannerAdminService.ts', 'src/services/foundation/system/CommunityAdminService.ts',
     'src/services/foundation/system/PopupAdminService.ts', 'src/types/business/community.ts', 'src/types/foundation/banner.ts'],
   routes: ['/admin/community', '/admin/community/[id]', '/admin/community/board', '/admin/patterns', '/admin/system/banner', '/admin/system/layout', '/cop/cmy'],
-  exactRoutes: ['/admin/community'], menuRoutes: ['/admin/help?tab=COMMUNITY'] },
+  exactRoutes: ['/admin/community'], menuTabs: ['/admin/help?tab=COMMUNITY'] },
   template: { label: '템플릿', permissions: ['TEMPLATE'], paths: [
     'src/app/admin/community/templates', 'src/app/admin/sanctn/forms', 'src/services/foundation/system/TemplateAdminService.ts'],
   routes: ['/admin/community/templates', '/admin/sanctn/forms'] },
@@ -125,10 +129,6 @@ const SHARED_UI = [
 const UI_DEPENDENCIES = [
   { from: 'system', domain: 'template', reason: '커뮤니티 관리 폼이 템플릿 조회 서비스를 직접 참조한다.',
     evidence: 'frontend/src/components/business/community/CommunityManageDialog.tsx', symbol: 'TemplateAdminService' },
-  { from: 'survey', domain: 'stats', reason: '설문 허브가 응답 통계를 위해 통계 서비스를 직접 참조한다.',
-    evidence: 'frontend/src/app/admin/survey/hub/SurveyHubClient.tsx', symbol: 'StatsAdminService' },
-  { from: 'stats', domain: 'survey', reason: '통계 허브가 설문 현황을 위해 설문 관리 서비스를 직접 참조한다.',
-    evidence: 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx', symbol: 'SurveyAdminService' },
 ];
 
 const OPTIONAL_FOREIGN_KEYS = [{
@@ -137,6 +137,25 @@ const OPTIONAL_FOREIGN_KEYS = [{
   reason: '커뮤니티 귀속은 선택 연동이며 기존 collaboration 투영에서도 커뮤니티 없는 게시판을 제공한다.',
   evidence: 'api-server/src/main/resources/db/migration/V2_102__add_reference_integrity_fks.sql',
 }];
+
+/*
+ * 기능 사이의 필수 물리 외래 키. 자식 테이블을 고르면 부모 테이블도 있어야 DB 투영이 성공한다.
+ * 해석기는 이 목록으로 위반을 계획 단계에서 찾고(자동 포함하지 않음), DB 생성기는 실제로 적용한
+ * 스키마의 기능 사이 외래 키가 이 목록과 OPTIONAL_FOREIGN_KEYS 의 합과 정확히 같은지 대조한다.
+ * 2026-10-07 전체 마이그레이션 적용 결과에서 기능 사이 외래 키는 5개와 선택 1개뿐이었다.
+ * Phase 0c 에서 자료 이용 기록(tb_dta_use_stats)이 게시판 소유가 되어 그 외래 키가 기능 안으로 들어왔고,
+ * 이제 이 4개와 선택 1개다. 설문만 골라도 게시판이 필요 없는 이유다.
+ */
+const REQUIRED_FOREIGN_KEYS = [
+  { name: 'fk_tb_bbs_comment_tb_bbs_item', childTable: 'tb_bbs_comment', parentTable: 'tb_bbs_item', sourceDomain: 'comment', targetDomain: 'board',
+    reason: '댓글은 게시글에 속한다.', evidence: 'api-server/src/main/resources/db/migration/V2_69__board_post_bigint_identity.sql' },
+  { name: 'fk_tb_bbs_comment_tb_bbs_master', childTable: 'tb_bbs_comment', parentTable: 'tb_bbs_master', sourceDomain: 'comment', targetDomain: 'board',
+    reason: '댓글은 게시판에 속한다.', evidence: 'api-server/src/main/resources/db/migration/V2_14__add_referential_fks_batch2.sql' },
+  { name: 'fk_tb_bbs_scrap_tb_bbs_item', childTable: 'tb_bbs_scrap', parentTable: 'tb_bbs_item', sourceDomain: 'scrap', targetDomain: 'board',
+    reason: '스크랩은 게시글을 가리킨다.', evidence: 'api-server/src/main/resources/db/migration/V2_69__board_post_bigint_identity.sql' },
+  { name: 'fk_tb_rward_manage_tb_ifml_atrz_info', childTable: 'tb_rward_manage', parentTable: 'tb_ifml_atrz_info', sourceDomain: 'operation', targetDomain: 'informalsanction',
+    reason: '포상은 결재 문서를 참조한다.', evidence: 'api-server/src/main/resources/db/migration/V2_78__informal_sanction_bigint_identity.sql' },
+];
 
 function javaCode(source) {
   return source.replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*|"""[\s\S]*?"""|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g,
@@ -274,11 +293,29 @@ export function loadProjectComposerCatalog(root = ROOT) {
       backend: { sourcePaths: ['domain', 'service'].map(layer => `${APP_ROOT}/${layer}/${domain}`).filter(path => existsSync(join(root, path))), sourceFiles: data.files.sort() },
       database: { tables: sorted(data.tables), explicitSequences: sorted(data.sequences) },
       frontend: { paths: feature.paths, routes: allRoutes.filter(route => routeOwners.get(route)?.domain === domain) },
-      menuRoutes: sorted([...allRoutes.filter(route => routeOwners.get(route)?.domain === domain), ...(feature.menuRoutes ?? [])]),
+      menuRoutes: allRoutes.filter(route => routeOwners.get(route)?.domain === domain),
+      menuTabs: sorted(feature.menuTabs ?? []),
       permissionCodes: permissions.permissions.filter(permission => feature.permissions.includes(permission.domain)).map(permission => permission.code).sort(),
       requirements: feature.requirements ?? [],
     };
   });
+  // 탭 기여는 실제 메뉴 행과 셸 화면이 있어야 한다. 맞지 않는 선언은 아무 메뉴도 고르지 못한 채 조용히 남는다.
+  const menuRows = JSON.parse(readFileSync(join(root, COMPOSER_MENU_SNAPSHOT_PATH), 'utf8')).menus
+    .filter(row => row.use_yn === 'Y' && row.del_yn !== 'Y' && row.modern_route).map(row => menuRouteKey(row.modern_route).key);
+  const tabContributors = new Map();
+  for (const capability of capabilities) for (const route of capability.menuTabs) {
+    const contribution = menuRouteKey(route);
+    if (!contribution.tab || contribution.key !== route) fail(`menu tab must be a canonical path with one tab: ${route}`);
+    if (!allRoutes.includes(contribution.path)) fail(`menu tab shell has no canonical page: ${route}`);
+    if (!menuRows.includes(contribution.key)) fail(`menu tab has no active menu row: ${route}`);
+    if (tabContributors.has(route)) fail(`menu tab has two contributors: ${route}`);
+    tabContributors.set(route, capability.id);
+  }
+  for (const contract of [...REQUIRED_FOREIGN_KEYS, ...OPTIONAL_FOREIGN_KEYS]) {
+    if (!readFileSync(join(root, contract.evidence), 'utf8').includes(`ADD CONSTRAINT ${contract.name}`)) fail(`declared foreign key drifted: ${contract.name}`);
+    const owns = (domain, table) => capabilities.find(capability => capability.id === domain)?.database.tables.includes(table);
+    if (!owns(contract.sourceDomain, contract.childTable) || !owns(contract.targetDomain, contract.parentTable)) fail(`declared foreign key ownership drifted: ${contract.name}`);
+  }
   const catalog = {
     schemaVersion: 1, mandatory: ['foundation', 'core'], databaseVendors: ['postgresql'], backendLayouts: ['multi-module', 'single-module'],
     provenance: { manifest: MANIFEST, permissions: PERMISSIONS, manifestHash: compositionDigest(manifest), permissionsHash: compositionDigest(permissions), sourceInventoryHash: compositionDigest(sourceFingerprints) },
@@ -287,7 +324,7 @@ export function loadProjectComposerCatalog(root = ROOT) {
       frontendRemovePaths: sorted(Object.entries(manifest.packs).filter(([pack]) => !profile.packs.includes(pack)).flatMap(([, pack]) => pack.frontend?.removePaths ?? [])) })),
     capabilities, frontendRules: rules, sharedUi: SHARED_UI,
     core: { tables: sorted(manifest.packs.core.database.tables), explicitSequences: sorted(manifest.packs.core.database.sequences), permissionCodes: mandatoryPermissions, menuRoutes: mandatoryRoutes },
-    sharedTableContracts: sharedTables, optionalForeignKeys: OPTIONAL_FOREIGN_KEYS,
+    sharedTableContracts: sharedTables, optionalForeignKeys: OPTIONAL_FOREIGN_KEYS, requiredForeignKeys: REQUIRED_FOREIGN_KEYS,
   };
   return { ...catalog, catalogHash: compositionDigest(catalog) };
 }

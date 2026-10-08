@@ -296,6 +296,11 @@ describe('app shell accessibility source contract', () => {
 
     const preview = readAppSource('admin', 'community', 'boards', 'maker', 'components', 'BoardPreview.tsx');
     expect(preview).not.toMatch(/<h1\b/);
+
+    // 통계 허브에 다른 기능이 넘기는 탭 본문은 셸이 소유한 제목 아래에 그려진다 — 페이지 제목을 다시 만들지 않는다.
+    for (const pathParts of [['admin', 'survey', 'components', 'StatsHubSurveyTab.tsx'], ['admin', 'stats', 'StatsHubParts.tsx']]) {
+      expect(readAppSource(...pathParts), pathParts.join('/')).not.toMatch(/<h1\b/);
+    }
   });
 
   /*

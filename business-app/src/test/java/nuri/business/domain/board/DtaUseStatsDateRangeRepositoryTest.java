@@ -1,8 +1,6 @@
-package nuri.business.domain.stats;
+package nuri.business.domain.board;
 
 import jakarta.persistence.EntityManager;
-import nuri.business.domain.board.BoardMaster;
-import nuri.business.domain.board.BoardMasterRepository;
 import nuri.business.support.PersistenceTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

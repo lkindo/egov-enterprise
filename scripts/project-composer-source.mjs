@@ -31,6 +31,21 @@ export function domainSupportFiles(root, manifest) {
   return result;
 }
 
+/**
+ * 소스 생성기가 받는 DB 번들은 같은 구성으로 만들어 빈 DB 재적용 검증까지 통과한 번들이어야 한다.
+ * 프리셋도 같은 규칙이다(2026-10-07 Phase 0b). 원인이 다르면 고칠 행동도 다르므로 메시지를 나눈다.
+ */
+export function assertCompositionDatabaseLock(lock, composition) {
+  if (!lock?.composition || lock.validated !== true) {
+    throw new Error('DB 번들이 검증된 구성 번들이 아니다(구성 경로 이전 형식이거나 검증 전에 멈춘 번들). DB 생성기로 다시 만들어라.');
+  }
+  if (lock.profile !== composition.profile) throw new Error(`DB bundle profile ${lock.profile} != source profile ${composition.profile}`);
+  if (lock.layout !== composition.backendLayout) {
+    throw new Error(`DB 번들 레이아웃 ${lock.layout} 과 소스 레이아웃 ${composition.backendLayout} 이 다르다. DB 생성기를 --layout ${composition.backendLayout} 로 다시 실행하라.`);
+  }
+  if (lock.compositionHash !== composition.compositionHash) throw new Error('DB/source composition hash mismatch');
+}
+
 export function verifyCompositionDatabaseFiles(migrationDirectory, lock) {
   if (lock.validated !== true || !lock.migrationFiles || typeof lock.migrationFiles !== 'object') throw new Error('A validated composition DB bundle is required');
   const actual = readdirSync(migrationDirectory).filter(file => file.endsWith('.sql')).sort();
@@ -56,7 +71,10 @@ const MANAGEMENT_RBAC_SURFACES = new Map([
   ['/api/v1/admin/system/popups', 'system'],
   ['/api/v1/admin/system/templates', 'template'],
 ]);
-const RBAC_DOMAINS = ['survey', 'stats', 'system', 'informalsanction', 'operation', 'help', 'template'];
+// Phase 0c: 통계는 core 로 옮겨 core 매트릭스가 검사한다. 이 데모 매트릭스의 선택 가능한 표면에서 뺐다.
+const RBAC_DOMAINS = ['survey', 'system', 'informalsanction', 'operation', 'help', 'template'];
+// 데모 매트릭스를 설문과 함께 지우는 표지. 설문을 고르지 않은 구성은 남은 표면을 지키려고 이 줄을 지운다.
+const RBAC_SURVEY_BOUNDARY = /^ *private static final Class<\?> SURVEY_PACK_BOUNDARY = nuri\.business\.service\.survey\.SurveyService\.class;\r?\n/m;
 const GATE_OWNERS = {
   'api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java': ['note', 'notification'],
   'api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java': ['memoreport'],
@@ -90,6 +108,18 @@ export function composerProfile(manifest, composition) {
   };
 }
 
+const STATS_SHELL_BLOCK_OWNERS = { collaboration: ['board'], survey: ['survey'] };
+// 셸과 함께 모든 구성에 남는 통계 파일. 테스트도 화면과 같은 마커로 기대값을 맞춘다.
+const STATS_SHELL_FILES = new Set([
+  'src/app/admin/stats/IntelligenceHubClient.tsx',
+  'src/app/admin/stats/__tests__/IntelligenceHubClient.core-tabs.equivalence.test.tsx',
+  'src/app/admin/stats/__tests__/IntelligenceHubClient.tab-queries.test.tsx',
+]);
+const STATS_SUMMARY_FILES = new Set([
+  'src/app/admin/stats/AdminStatsClient.tsx',
+  'src/app/admin/stats/__tests__/AdminStatsClient.summary-values.test.tsx',
+]);
+
 /** Each existing optional block has an explicit owner. An unclassified new block fails closed. */
 export function projectComposerFrontend(file, source, composition) {
   if (composition.profile !== 'custom') return source;
@@ -108,6 +138,9 @@ export function projectComposerFrontend(file, source, composition) {
     // 댓글 탭은 collaboration 블록, 하네스 아틀라스 샘플 탭은 demo 블록이다 — 샘플 파일은 system 도메인 소유(패턴 갤러리와 같다).
     else if (normalized === 'src/app/admin/system/monitoring/MonitoringHubClient.tsx') owners = pack === 'demo' ? ['system'] : ['comment'];
     else if (normalized === 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx') owners = ['system'];
+    // 통계 셸: 게시물·자료 이용 탭과 카드는 게시판, 설문 탭은 설문이 소유한다. 다른 pack 블록은 분류가 없으므로 실패한다.
+    else if (STATS_SHELL_FILES.has(normalized) && STATS_SHELL_BLOCK_OWNERS[pack]) owners = STATS_SHELL_BLOCK_OWNERS[pack];
+    else if (STATS_SUMMARY_FILES.has(normalized) && pack === 'collaboration') owners = ['board'];
     else if (normalized.startsWith('src/app/admin/collaboration/') || normalized.startsWith('src/app/admin/uss/ion/sms/')) owners = ['addressbook'];
     else throw new Error(`Unclassified composer UI block: ${normalized}/${pack}`);
     return owners.every(domain => selected.has(domain)) ? block : '';
@@ -166,23 +199,22 @@ export function projectComposerJava(file, source, profile) {
     'anonymousDemoOwnedAdministrativeRequestsRequireAuthentication', 'explicitSurveyReadGrantWorksWithoutAnAdministrativeGroup',
     'ordinaryPollParticipantCannotCreateUpdateOrDeletePolls',
   ]) source = removeTest(source, method);
-  if (!selected.has('stats')) {
-    source = source.replace(/^.*@MockitoBean private nuri\.business\.service\.stats\.ReportStatsService reportStatsService;\r?\n/m, '');
-    source = removeTest(source, 'delegatedStatisticsPermissionAllowsAdministrativeReadsWithoutAnAdminGroup');
+  if (!selected.has('survey')) {
+    // 표지가 없으면 조용히 넘어가지 않는다 — 그대로 두면 설문이 없는 구성에서 이 매트릭스가 통째로 사라진다.
+    if (!RBAC_SURVEY_BOUNDARY.test(source)) throw new Error('RBAC survey boundary marker drifted');
+    source = source.replace(RBAC_SURVEY_BOUNDARY, '');
   }
-  const method = /    @Test void ordinaryStatisticsReaderCannotEnterAnyAdministrativeStatisticsEndpoint\(\) throws Exception \{[\s\S]*?\n    \}/.exec(source);
+  const method = /    @Test void ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints\(\) throws Exception \{[\s\S]*?\n    \}/.exec(source);
   if (!method) throw new Error('Mixed RBAC projection contract drifted');
   const blocks = method[0];
-  const stats = blocks.match(/        mockMvc\.perform\(get\("\/api\/v1\/statistics\/connect"\)[\s\S]*?\n        \}/)?.[0];
   const system = blocks.match(/        for \(String path : List\.of\("\/api\/v1\/admin\/system\/banners"[\s\S]*?\n        \}/)?.[0];
   const sanction = blocks.match(/        mockMvc\.perform\(patch\("\/api\/v1\/admin\/system\/ism\/1\/confirm"\)[\s\S]*?\.andExpect\(status\(\)\.isForbidden\(\)\);/)?.[0];
-  if (!stats || !system || !sanction) throw new Error('Mixed RBAC assertion inventory drifted');
+  if (!system || !sanction) throw new Error('Mixed RBAC assertion inventory drifted');
   let next = blocks;
-  if (!selected.has('stats')) next = next.replace(stats, '');
   if (!selected.has('system')) next = next.replace(system, '');
   if (!selected.has('informalsanction')) next = next.replace(sanction, '');
   source = source.replace(blocks, next);
-  if (!['stats', 'system', 'informalsanction'].some(domain => selected.has(domain))) source = removeTest(source, 'ordinaryStatisticsReaderCannotEnterAnyAdministrativeStatisticsEndpoint');
+  if (!['system', 'informalsanction'].some(domain => selected.has(domain))) source = removeTest(source, 'ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints');
   return source;
 }
 

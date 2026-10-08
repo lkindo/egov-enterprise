@@ -7,6 +7,15 @@ vi.mock('@/app/components/ui/standard-chart-wrapper', () => ({
 
 import AdminStatsClient from '../AdminStatsClient';
 
+/** 요약 칸 제목. '누적 게시물' 칸은 게시판이 있을 때만 있다(화면과 같은 pack 마커). */
+const SUMMARY_TITLES = [
+  '누적 사용자',
+  '금일 성공 로그인',
+  /* reusable-base:collaboration:start */
+  '누적 게시물',
+  /* reusable-base:collaboration:end */
+];
+
 /** 요약 칸은 제목 문단과 값 문단을 한 상자에 담는다. */
 function summaryCard(title: string): HTMLElement {
   return screen.getByText(title).parentElement as HTMLElement;
@@ -37,7 +46,7 @@ describe('AdminStatsClient 요약 수치', () => {
       />,
     );
 
-    for (const title of ['누적 사용자', '금일 성공 로그인', '누적 게시물']) {
+    for (const title of SUMMARY_TITLES) {
       expect(within(summaryCard(title)).getByText('조회 실패')).toBeInTheDocument();
       expect(within(summaryCard(title)).queryByText('0')).toBeNull();
     }
@@ -56,7 +65,9 @@ describe('AdminStatsClient 요약 수치', () => {
     expect(within(summaryCard('누적 사용자')).getByText('1,234')).toBeInTheDocument();
     expect(within(summaryCard('금일 성공 로그인')).getByText('-')).toBeInTheDocument();
     expect(screen.getByText(/성공 로그인만 집계/)).toBeInTheDocument();
+    /* reusable-base:collaboration:start */
     expect(within(summaryCard('누적 게시물')).getByText('0')).toBeInTheDocument();
+    /* reusable-base:collaboration:end */
     expect(screen.getByText(/수집된 일수 1일/)).toBeInTheDocument();
     // 양성 대조 — 합계 문구를 실제로 찾을 수 있어야 위 실패 단언이 의미가 있다.
     expect(renderedTotal(container)?.[1]).toBe('1');

@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, unlinkSync }
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
-import { assertSchemaPreserved, buildCompositionAdminSeed, canonicalConstraintDefinition, projectCompositionMenus,
+import { assertDeclaredCrossDomainForeignKeys, assertSchemaPreserved, buildCompositionAdminSeed, canEnterMenuRoute, projectCompositionNavigation, canonicalConstraintDefinition, projectCompositionMenus,
   schemaSnapshotHash, schemaSnapshotSql, selectSchemaSnapshot, verifyResolvedDbComposition } from './project-composer-db.mjs';
 import { assertCompositionOperationGrants, generatedMigrationSessionSql, parseDbGenerationArgs, safeDbOutputPath, sanitizePgDump } from './generate-reusable-base-db.mjs';
 
@@ -31,15 +31,20 @@ test('composition DB requires exact default group/code grants and keeps availabl
   }), /Unknown default permission group/);
 });
 
-test('DB CLI keeps legacy profile defaults and rejects ambiguous or missing composition input', () => {
+test('DB CLI resolves a preset or a composition per layout and keeps the menu snapshot refresh standalone', () => {
   assert.deepEqual(parseDbGenerationArgs(['--profile', 'core']), {
-    profile: 'core', composition: undefined, container: 'egov-e2e-postgres', output: undefined,
+    profile: 'core', composition: undefined, layout: undefined, container: 'egov-e2e-postgres', output: undefined,
     allowDirty: false, allowNonReleaseRef: false, writeMenuSnapshot: false,
   });
+  assert.equal(parseDbGenerationArgs(['--profile', 'core', '--layout', 'single-module']).layout, 'single-module');
   assert.equal(parseDbGenerationArgs(['--composition', 'build/request.json']).composition, 'build/request.json');
+  assert.equal(parseDbGenerationArgs(['--write-menu-snapshot', '--container', 'owned']).writeMenuSnapshot, true);
   for (const args of [[], ['--composition'], ['--composition', '--allow-dirty'],
-    ['--profile', 'core', '--composition', 'request.json'], ['--composition', 'a.json', '--composition', 'b.json'], ['--database', 'oracle']]) {
-    assert.throws(() => parseDbGenerationArgs(args));
+    ['--profile', 'core', '--composition', 'request.json'], ['--composition', 'a.json', '--composition', 'b.json'], ['--database', 'oracle'],
+    ['--profile', 'core', '--layout', 'single'], ['--profile', 'core', '--layout'], ['--profile', 'core', '--layout', 'multi-module', '--layout', 'single-module'],
+    ['--write-menu-snapshot', '--profile', 'demo'], ['--write-menu-snapshot', '--output', 'build/reusable-base/x'],
+    ['--write-menu-snapshot', '--layout', 'multi-module'], ['--write-menu-snapshot', '--composition', 'request.json']]) {
+    assert.throws(() => parseDbGenerationArgs(args), undefined, JSON.stringify(args));
   }
 });
 
@@ -106,6 +111,32 @@ test('composition consumers re-resolve every field and reject source/layout/tabl
   assert.throws(() => verifyResolvedDbComposition(input, resolved, input.sourceCommit), /sourceRef/);
 });
 
+test('migrated cross-domain foreign keys must equal the declared required and optional contracts', () => {
+  const catalog = {
+    core: { tables: ['tb_user_info'] },
+    capabilities: [
+      { id: 'board', database: { tables: ['tb_bbs_item', 'tb_tmplt_info'] } },
+      { id: 'comment', database: { tables: ['tb_bbs_comment'] } },
+      { id: 'template', database: { tables: ['tb_tmplt_info'] } },
+      { id: 'system', database: { tables: ['tb_cmnty_info'] } },
+    ],
+    requiredForeignKeys: [{ name: 'fk_comment_item', childTable: 'tb_bbs_comment', parentTable: 'tb_bbs_item' }],
+    optionalForeignKeys: [{ name: 'fk_item_cmnty', childTable: 'tb_bbs_item', parentTable: 'tb_cmnty_info' }],
+  };
+  const fk = (table_name, name, referenced_table) => ({ table_name, name, type: 'f', referenced_table });
+  const base = [fk('tb_bbs_comment', 'fk_comment_item', 'tb_bbs_item'), fk('tb_bbs_item', 'fk_item_cmnty', 'tb_cmnty_info'),
+    fk('tb_bbs_item', 'fk_item_user', 'tb_user_info'), fk('tb_bbs_item', 'fk_item_tmplt', 'tb_tmplt_info'),
+    { table_name: 'tb_bbs_item', name: 'pk_item', type: 'p', referenced_table: null }];
+  // Core targets and tables shared by both owners are not cross-domain edges.
+  assert.deepEqual(assertDeclaredCrossDomainForeignKeys({ constraints: base }, catalog),
+    ['fk_comment_item tb_bbs_comment->tb_bbs_item', 'fk_item_cmnty tb_bbs_item->tb_cmnty_info']);
+  assert.throws(() => assertDeclaredCrossDomainForeignKeys({ constraints: [...base, fk('tb_cmnty_info', 'fk_new', 'tb_bbs_comment')] }, catalog),
+    /undeclared: fk_new tb_cmnty_info->tb_bbs_comment/);
+  assert.throws(() => assertDeclaredCrossDomainForeignKeys({ constraints: base.slice(1) }, catalog), /stale: fk_comment_item/);
+  assert.throws(() => assertDeclaredCrossDomainForeignKeys({ constraints: [...base, fk('tb_unknown', 'fk_x', 'tb_bbs_item')] }, catalog),
+    /without catalog ownership/);
+});
+
 test('only the exact reviewed optional foreign key can disappear; shared/selected constraints survive', () => {
   const projection = selectSchemaSnapshot(snapshot, ['tb_bbs_master', 'tb_user_info'], ['sq_bbs'], reviewedForeignKeys);
   assert.deepEqual(projection.omittedForeignKeys, [{ table: 'tb_bbs_master', name: 'fk_tb_bbs_master_tb_cmnty_info', referencedTable: 'tb_cmnty_info' }]);
@@ -161,14 +192,23 @@ const menu = (menu_sn, up_menu_sn, modern_route, menu_nm = `Menu ${menu_sn}`) =>
   menu_expln: null, use_yn: 'Y', del_yn: 'N',
 });
 const menus = [menu(100, null, '/excluded-parent'), menu(101, 100, '/admin/user/manage', "Users' list"),
-  menu(102, 100, '/admin/help?tab=FAQ'), menu(103, 100, '/admin/help?tab=COMMUNITY'), menu(200, null, '/excluded-leaf')];
+  menu(102, 100, '/admin/help/faq?tab=FAQ'), menu(103, 100, '/admin/help?tab=COMMUNITY'), menu(104, 100, '/admin/help/?sort=new&tab=WIKI'),
+  menu(200, null, '/excluded-leaf')];
 
-test('menu projection includes ancestor-only folders and exact query scopes', () => {
-  const result = projectCompositionMenus({ menus, menuRoutes: ['/admin/user/manage', '/admin/help?tab=FAQ'] });
-  assert.deepEqual(result.menus.map(row => row.menu_sn), [100, 101, 102]);
-  assert.equal(result.menus[0].modern_route, null);
+test('menu projection follows the retained screen path and hides only tabs of excluded contributors', () => {
+  const projected = (menuRoutes, excludedMenuTabs) => projectCompositionMenus({ menus, menuRoutes, excludedMenuTabs }).menus;
+  const result = projected(['/admin/user/manage', '/admin/help'], ['/admin/help?tab=COMMUNITY']);
+  // 102 의 셸(/admin/help/faq)은 남지 않았고, 103 은 빠진 기능의 탭이다. 104 는 셸 소유 탭이라 다른 쿼리와 무관하게 남는다.
+  assert.deepEqual(result.map(row => row.menu_sn), [100, 101, 104]);
+  assert.equal(result[0].modern_route, null);
+  assert.equal(result.at(-1).modern_route, '/admin/help/?sort=new&tab=WIKI', 'the destination is kept exactly as seeded');
+  assert.deepEqual(projected(['/admin/user/manage', '/admin/help', '/admin/help/faq'], []).map(row => row.menu_sn), [100, 101, 102, 103, 104]);
+  assert.deepEqual(projected(['/admin/user/manage'], ['/admin/help?tab=COMMUNITY']).map(row => row.menu_sn), [100, 101],
+    'a tab contribution never retains a screen by itself');
+  assert.throws(() => projected(['/admin/help?tab=FAQ'], []), /ownership is by path/);
+  assert.throws(() => projected(['/admin/help'], ['/admin/help']), /must name its tab/);
   // [2026-10-05] 레거시 연결 프로그램은 앱이 읽지 않으므로 투영이 싣지 않는다(GAP-PROGRAM-001).
-  assert.deepEqual(Object.keys(result), ['menus']);
+  assert.deepEqual(Object.keys(projectCompositionMenus({ menus, menuRoutes: ['/admin/user/manage'] })), ['menus']);
   assert.throws(() => projectCompositionMenus({ menus: menus.filter(row => row.menu_sn !== 100), menuRoutes: ['/admin/user/manage'] }), /missing or disabled parent/);
   assert.throws(() => projectCompositionMenus({ menus: [menu(100, 101, null), menu(101, 100, '/selected')], menuRoutes: ['/selected'] }), /cycle/);
   assert.throws(() => projectCompositionMenus({ menus, menuRoutes: [] }), /no usable menu/);
@@ -180,6 +220,7 @@ test('selected seed keeps fresh-bootstrap and revocation guards while separating
   const permissionCatalog = JSON.parse(readFileSync(new URL('../config/governance/permission-catalog.json', import.meta.url), 'utf8'));
   const projection = projectCompositionMenus({ menus, menuRoutes: ['/admin/user/manage'] });
   const options = { bootstrapSql, projection, permissionCatalog,
+    navigation: [{ authrt_cd: 'ROLE_ADMIN', menu_sn: 100 }, { authrt_cd: 'ROLE_ADMIN', menu_sn: 101 }, { authrt_cd: 'ROLE_USER', menu_sn: 101 }],
     permissionCodes: ['AUTHRT_GRANT', 'AUTHRT_ASSIGN', 'USER_READ', 'DWORK_READ', 'DWORK_RETRY', 'MFA_RECOVER', 'NOTICE_EDIT', 'FAQ_EDIT'] };
   const sql = buildCompositionAdminSeed(options);
   assert.equal(buildCompositionAdminSeed({ ...options, bootstrapSql: bootstrapSql.replace(/\r?\n/g, '\r\n') }), sql);
@@ -188,7 +229,9 @@ test('selected seed keeps fresh-bootstrap and revocation guards while separating
   assert.match(sql, /dmnd_idntfr <> 'bootstrap:framework'/);
   assert.match(sql, /legacy_authorization_contract/);
   assert.match(sql, /WHERE menu_sn IN \(100,101\)/);
-  assert.match(sql, /'ROLE_ADMIN','NAVIGATION'/);
+  assert.match(sql, /seed\.group_code,'NAVIGATION',seed\.menu_sn/);
+  assert.match(sql, /\('ROLE_ADMIN', '100'\),\n\s+\('ROLE_ADMIN', '101'\),\n\s+\('ROLE_USER', '101'\)/);
+  assert.doesNotMatch(sql, /SELECT 'ROLE_ADMIN','NAVIGATION',menu_sn::text/, 'the administrator-only statement is replaced, not appended');
   assert.match(sql, /'OPERATION',seed\.permission_code/);
   assert.match(sql, /Users'' list/);
   // [2026-10-05] 생성물 메뉴 시드는 레거시 연결 프로그램 열·프로그램 원장 행을 싣지 않는다(GAP-PROGRAM-001).
@@ -202,4 +245,34 @@ test('selected seed keeps fresh-bootstrap and revocation guards while separating
   assert.throws(() => buildCompositionAdminSeed({ ...options, permissionCodes: ['USER_READ'] }), /preserve permission administration/);
   assert.throws(() => buildCompositionAdminSeed({ ...options, bootstrapSql: bootstrapSql.replace('-- BEGIN GENERATED BASE OPERATION GRANTS', '-- drift') }), /marker/);
   assert.throws(() => buildCompositionAdminSeed({ ...options, bootstrapSql: bootstrapSql.replaceAll('menu_sn BETWEEN 910 AND 920', 'true') }), /NAVIGATION inventory/);
+  assert.throws(() => buildCompositionAdminSeed({ ...options, bootstrapSql: bootstrapSql.replace("SELECT 'ROLE_ADMIN','NAVIGATION',menu_sn::text", "SELECT 'ROLE_ADMIN','NAVIGATION',menu_sn::varchar") }), /grant statement drifted/);
+  assert.throws(() => buildCompositionAdminSeed({ ...options, navigation: [] }), /must name a known group/);
+  assert.throws(() => buildCompositionAdminSeed({ ...options, navigation: [{ authrt_cd: 'ROLE_USER', menu_sn: 200 }] }), /selected menu/);
+});
+
+test('group navigation keeps original grants for selected menus, drops empty categories and must be enterable', () => {
+  const tree = [menu(1, null, null), menu(2, 1, '/admin/user/manage'), menu(3, 1, '/note'), menu(4, null, null), menu(5, 4, '/admin/help')];
+  const pageAccess = { pagePermissions: { '/admin/user/manage': ['USER_READ'], '/admin/help': [], '/admin/system/menus': ['MENU_READ', 'MENU_UPDATE'] },
+    pagePermissionModes: { '/admin/system/menus': 'ALL' } };
+  const original = [{ authrt_cd: 'ROLE_ADMIN', menu_sn: 1 }, { authrt_cd: 'ROLE_ADMIN', menu_sn: 2 }, { authrt_cd: 'ROLE_ADMIN', menu_sn: 3 },
+    { authrt_cd: 'ROLE_ADMIN', menu_sn: 4 }, { authrt_cd: 'ROLE_ADMIN', menu_sn: 5 }, { authrt_cd: 'ROLE_USER', menu_sn: 1 },
+    { authrt_cd: 'ROLE_USER', menu_sn: 3 }, { authrt_cd: 'ROLE_USER', menu_sn: 4 }, { authrt_cd: 'ROLE_USER', menu_sn: 99 }];
+  const operationGrants = [['ROLE_ADMIN', 'USER_READ']];
+  const projected = projectCompositionNavigation({ menus: tree, navigation: original, operationGrants, pageAccess });
+  // ROLE_USER 의 분류 4 는 그 그룹이 표시하는 하위가 없어 빠진다. 선택되지 않은 메뉴 99 의 배정도 빠진다.
+  assert.deepEqual(projected.map(row => `${row.authrt_cd}:${row.menu_sn}`),
+    ['ROLE_ADMIN:1', 'ROLE_ADMIN:2', 'ROLE_ADMIN:3', 'ROLE_ADMIN:4', 'ROLE_ADMIN:5', 'ROLE_USER:1', 'ROLE_USER:3']);
+  // 사용자 관리 화면에 들어갈 권한이 없는 그룹이 그 메뉴를 표시하면 생성을 멈춘다.
+  assert.throws(() => projectCompositionNavigation({ menus: tree, navigation: [...original, { authrt_cd: 'ROLE_USER', menu_sn: 2 }], operationGrants, pageAccess }),
+    /cannot enter: ROLE_USER:2\(\/admin\/user\/manage\)/);
+  assert.throws(() => projectCompositionNavigation({ menus: tree, navigation: original.filter(row => row.authrt_cd !== 'ROLE_ADMIN'), operationGrants, pageAccess }),
+    /administrator without menus/);
+  // 진입 판정은 라우트 게이트와 같다: /admin 밖은 열려 있고, 등록되지 않은 /admin 경로는 닫혀 있으며, ALL 은 모두를 요구한다.
+  const can = (route, codes) => canEnterMenuRoute(route, new Set(codes), pageAccess);
+  assert.equal(can('/note', []), true);
+  assert.equal(can('/admin/help?tab=FAQ', []), true);
+  assert.equal(can('/admin/unregistered', ['USER_READ']), false);
+  assert.equal(can('/admin/system/menus', ['MENU_READ']), false);
+  assert.equal(can('/admin/system/menus', ['MENU_READ', 'MENU_UPDATE']), true);
+  assert.equal(can('/Admin/user/manage', []), false, 'case does not bypass the gate');
 });

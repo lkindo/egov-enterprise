@@ -123,8 +123,8 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
         'Composition catalog differs from upstream permission snapshot');
       for (const key of ['catalogHash', 'recipeHash', 'compositionHash']) check(metadata.composition[key] === composition[key], `Composition ${key} mismatch`);
     } else {
-      check(metadata.profile !== 'custom', 'Custom projection requires a composition snapshot');
-      check(!existsSync(join(root, COMPOSER_SELECTION_PATH)), 'Unbound composition snapshot must not influence generated artifacts');
+      // 프리셋도 구성 경로로 생성한다(DEC-OPS-239). 구성 스냅숏이 없으면 어느 프로필이든 출처를 증명할 수 없다.
+      check(false, 'Generated projection requires a resolved composition snapshot');
     }
     const expectedPacks = composition?.packs ?? originalProfiles?.profiles?.[metadata.profile]?.packs;
     const profileManifest = readJson(root, 'config/reusable-base-profiles.json');

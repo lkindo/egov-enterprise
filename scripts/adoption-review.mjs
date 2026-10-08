@@ -20,7 +20,9 @@ export const ADOPTION_CONTROLS = Object.freeze({
     'backup-recovery', 'crypto-lifecycle', 'attachment-operations', 'operational-assurance', 'execution-artifacts'],
   'migration-tool': ['source-target-identity', 'mapping-schema-driver', 'recovery-cutover', 'execution-artifacts'],
 });
-const PROFILES = new Set(['core', 'collaboration', 'demo', 'custom']);
+/** 생성물 lock 이 가질 수 있는 프로필. 프리셋 3개와 도메인 직접 선택(custom). 실행 진입점도 이 목록을 쓴다. */
+export const GENERATED_PROFILES = Object.freeze(['core', 'collaboration', 'demo', 'custom']);
+const PROFILES = new Set(GENERATED_PROFILES);
 const SHA256 = /^[a-f0-9]{64}$/;
 const nonempty = (value) => typeof value === 'string' && value.trim().length > 0;
 export const sha256 = (value) => createHash('sha256').update(value).digest('hex');

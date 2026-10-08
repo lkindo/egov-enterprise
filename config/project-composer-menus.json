@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "sourceMigrationHash": "8281447890451168da795360edec5d1d4e54eb037c2940f3bbab7c7ffaace1ff",
   "menus": [
     {
@@ -761,6 +761,388 @@
       "modern_route": null,
       "use_yn": "Y",
       "del_yn": "N"
+    }
+  ],
+  "navigation": [
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 1000000
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 1000001
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 1020000
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 1020100
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 1020200
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 1020300
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 1020400
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 1030100
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 1050100
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 1060100
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 1060200
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 1060300
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2000000
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2010000
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2010210
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2010300
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2010400
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2010500
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2010600
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2010700
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2010800
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2010900
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2020100
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2030000
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2030200
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2030300
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2030400
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2030500
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2040000
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2050000
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2060000
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 2070000
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9000000
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9010000
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9010100
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9010210
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9010220
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9010230
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9010300
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9010400
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9010500
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9020000
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9020100
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9020120
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9020130
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9020210
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9020230
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9020310
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9020311
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9020312
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9030000
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9030110
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9030120
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9030130
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9030140
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9030200
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9030400
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9030600
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9030700
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040000
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040101
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040102
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040104
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040105
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040106
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040310
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040320
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040330
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040340
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040350
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040360
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040370
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040380
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040390
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040401
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040402
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 1000000
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 1000001
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 1020000
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 1020200
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 1020300
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 1020400
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 1030100
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 1050100
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 1060100
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 1060200
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 1060300
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 2000000
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 2010800
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 2010900
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 2020100
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 2040000
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 2060000
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 2070000
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 9040401
     }
   ]
 }

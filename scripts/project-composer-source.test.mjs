@@ -7,7 +7,7 @@ import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
-import { composerProfile, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
+import { assertCompositionDatabaseLock, composerProfile, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
 import { copySourceTree, frontendImportSpecifiers, planJavaRemoval, resolveFrontendImport, trackedAndUntrackedFiles, projectFrontendPackMarkers, writeProjectedManifest } from './generate-reusable-base-source.mjs';
 
 const root = resolve(import.meta.dirname, '..');
@@ -83,7 +83,7 @@ test('new management HTTP matrices project every selected surface and reject an 
   const paths = value => [...value.matchAll(/new ManagedSurface\("([^"]+)"/g)].map(match => match[1]);
   const sharedMethod = (value, name) => value.match(new RegExp(`^(?:    @[^\\r\\n]*\\r?\\n)*    (?:void|static Stream<Arguments>|private void) ${name}\\([\\s\\S]*?^    \\}`, 'm'))?.[0];
   assert.deepEqual(paths(source), [...owners.keys()], 'the management surface inventory is exact');
-  for (const selected of [['operation'], ['help'], ['system'], ['template'], ['survey'], ['stats'], ['informalsanction'], ['operation', 'help', 'system', 'template']]) {
+  for (const selected of [['operation'], ['help'], ['system'], ['template'], ['survey'], ['informalsanction'], ['operation', 'help', 'system', 'template']]) {
     const projected = projectComposerJava(file, source, { resolvedDomains: selected });
     assert.deepEqual(paths(projected), [...owners].filter(([, owner]) => selected.includes(owner)).map(([path]) => path), `${selected}: absent management APIs must not execute`);
     if (selected.some(domain => [...owners.values()].includes(domain))) {
@@ -314,7 +314,7 @@ ${tracked.stdout}`);
 });
 
 test('every selectable capability preserves its declared frontend and mandatory entrypoints through actual import projection', () => {
-  assert.equal(catalog.capabilities.length, 20, 'review the capability population when its declaration changes');
+  assert.equal(catalog.capabilities.length, 19, 'review the capability population when its declaration changes');
   for (const feature of catalog.capabilities) {
     const result = inspectFrontendSurvival([feature.id]);
     assert.ok(result.expectedCount > 3, `${feature.id} has no declared frontend population`);
@@ -323,7 +323,8 @@ test('every selectable capability preserves its declared frontend and mandatory 
 });
 
 test('removing a shared UI dependency exposes the selected page loss instead of silently passing', () => {
-  for (const [from, dependency] of [['system', 'template'], ['survey', 'stats'], ['stats', 'survey']]) {
+  // Phase 0c: 통계는 core 라 설문·게시판과 통계 사이의 화면 의존이 사라졌다(survey <-> stats 삭제).
+  for (const [from, dependency] of [['system', 'template']]) {
     const changed = structuredClone(catalog);
     const feature = changed.capabilities.find(row => row.id === from);
     assert.ok(feature.requires.some(edge => edge.domain === dependency), `${from} -> ${dependency} must exist`);
@@ -411,19 +412,57 @@ test('the unread-notes card on the work home needs both the dashboard and the no
   assert.match(forcedWithoutNote, /업무게시판 글/);
 });
 
+test('the statistics shell keeps board and survey tabs only with their owning domains (Phase 0c)', () => {
+  const file = 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx';
+  const source = readFileSync(join(root, file), 'utf8');
+  const project = domains => projectComposerFrontend(file, source, resolveProjectRecipe(recipe(domains), catalog));
+  // 통계 셸은 core 다. 설문 탭은 설문이 넘기는 패널이라 설문이 없으면 import·탭·등록이 함께 빠지고, 셸은 설문 서비스를 모른다.
+  const coreOnly = project([]);
+  assert.doesNotMatch(coreOnly, /StatsHubSurveyTab|'SURVEYS',|SURVEYS: surveyTab/);
+  assert.doesNotMatch(coreOnly, /getBbsStats|getDataUsageStats|label="자료 이용 건수"/);
+  assert.doesNotMatch(source, /SurveyAdminService/, 'the shell must not import the survey service directly');
+  const withSurvey = project(['survey']);
+  assert.match(withSurvey, /import \{ useStatsHubSurveyTab \}/);
+  assert.match(withSurvey, /SURVEYS: surveyTab/);
+  assert.doesNotMatch(withSurvey, /getBbsStats/);
+  const withBoard = project(['board']);
+  assert.match(withBoard, /getBbsStats/);
+  assert.match(withBoard, /getDataUsageStats/);
+  assert.doesNotMatch(withBoard, /StatsHubSurveyTab/);
+  // 분류가 없는 pack 의 블록은 조용히 남거나 빠지지 않고 실패한다.
+  const empty = resolveProjectRecipe(recipe([]), catalog);
+  assert.throws(() => projectComposerFrontend(file, `${source}\n/* reusable-base:demo:start */\nx\n/* reusable-base:demo:end */\n`,
+    empty), /Unclassified composer UI block/);
+  assert.throws(() => projectComposerFrontend('frontend/src/app/admin/stats/AdminStatsClient.tsx',
+    '/* reusable-base:survey:start */\nx\n/* reusable-base:survey:end */\n', empty), /Unclassified composer UI block/);
+  const admin = 'frontend/src/app/admin/stats/AdminStatsClient.tsx';
+  const adminSource = readFileSync(join(root, admin), 'utf8');
+  assert.doesNotMatch(projectComposerFrontend(admin, adminSource, empty), /title="누적 게시물"/);
+  assert.match(projectComposerFrontend(admin, adminSource, resolveProjectRecipe(recipe(['board']), catalog)), /title="누적 게시물"/);
+  // 셸이 core 로 남으므로 기능을 하나도 고르지 않아도, 설문만 골라도 셸·통계 화면이 import 로 사라지지 않는다.
+  for (const domains of [[], ['survey']]) assert.deepEqual(inspectFrontendSurvival(domains).missing, [], `${domains}`);
+});
+
 test('custom RBAC projection preserves selected assertions and removes only absent surfaces', () => {
   const file = 'api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java';
   const source = readFileSync(join(root, file), 'utf8');
+  // Phase 0c: 통계 단언은 core 매트릭스로 옮겼다. 이 클래스의 경계는 설문 표지가 잇는다.
+  assert.doesNotMatch(source, /nuri\.business\.service\.stats|\/api\/v1\/admin\/system\/statistics/);
   const survey = projectComposerJava(file, source, { resolvedDomains: ['survey'] });
+  assert.match(survey, /SURVEY_PACK_BOUNDARY = nuri\.business\.service\.survey\.SurveyService\.class/);
   assert.match(survey, /explicitSurveyReadGrantWorksWithoutAnAdministrativeGroup/);
   assert.match(survey, /ordinaryPollParticipantCannotCreateUpdateOrDeletePolls/);
-  assert.doesNotMatch(survey, /@MockitoBean private nuri\.business\.service\.stats/);
-  assert.doesNotMatch(survey, /@Test void ordinaryStatisticsReader/);
-  const stats = projectComposerJava(file, source, { resolvedDomains: ['stats'] });
-  assert.match(stats, /delegatedStatisticsPermissionAllowsAdministrativeReadsWithoutAnAdminGroup/);
-  assert.doesNotMatch(stats, /get\("\/api\/v1\/admin\/system\/banners"/);
-  assert.doesNotMatch(stats, /@Test void explicitSurvey/);
-  assert.throws(() => projectComposerJava(file, source.replace('explicitSurveyReadGrantWorksWithoutAnAdministrativeGroup', 'renamed'), { resolvedDomains: ['stats'] }), /contract drifted/);
+  assert.doesNotMatch(survey, /@Test void ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints/);
+  const system = projectComposerJava(file, source, { resolvedDomains: ['system'] });
+  // 설문이 없으면 표지를 지워 남은 표면(배너·팝업)의 단언이 연쇄 제거되지 않게 한다.
+  assert.doesNotMatch(system, /SurveyService/);
+  assert.match(system, /get\(path\)\.with\(user\(ordinary\)\)\)\.andExpect\(status\(\)\.isForbidden\(\)\)/);
+  assert.match(system, /List\.of\("\/api\/v1\/admin\/system\/banners"/);
+  assert.doesNotMatch(system, /\/api\/v1\/admin\/system\/ism\/1\/confirm/);
+  assert.doesNotMatch(system, /@Test void explicitSurvey/);
+  assert.throws(() => projectComposerJava(file, source.replace('explicitSurveyReadGrantWorksWithoutAnAdministrativeGroup', 'renamed'), { resolvedDomains: ['system'] }), /contract drifted/);
+  assert.throws(() => projectComposerJava(file, source.replace('Class<?> SURVEY_PACK_BOUNDARY', 'Class<?> RENAMED_BOUNDARY'), { resolvedDomains: ['system'] }), /survey boundary marker drifted/);
+  assert.throws(() => projectComposerJava(file, source.replace('ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints', 'renamed'), { resolvedDomains: ['system'] }), /Mixed RBAC projection contract drifted/);
 });
 
 test('selected-source survival rejects collateral deletion and allows explicitly excluded child features', t => {
@@ -478,4 +517,17 @@ test('validated DB bundle requires the exact locked SQL population and unchanged
   assert.throws(() => verifyCompositionDatabaseFiles(fixture, lock), /population/);
   rmSync(join(fixture, 'V9__unexpected.sql'));
   assert.doesNotThrow(() => verifyCompositionDatabaseFiles(fixture, lock));
+});
+
+test('the source generator accepts only a validated DB bundle of the same composition and says why otherwise', () => {
+  const catalog = loadProjectComposerCatalog(root);
+  const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'core' }, sourceRef: 'v1.0.0', selection: { preset: 'core' } }, catalog);
+  const lock = { profile: 'core', layout: composition.backendLayout, composition, compositionHash: composition.compositionHash, validated: true };
+  assert.doesNotThrow(() => assertCompositionDatabaseLock(lock, composition));
+  const { composition: _legacy, ...legacy } = lock;
+  assert.throws(() => assertCompositionDatabaseLock(legacy, composition), /검증된 구성 번들이 아니다/, 'a pre-unification profile bundle is refused');
+  assert.throws(() => assertCompositionDatabaseLock({ ...lock, validated: undefined }, composition), /검증된 구성 번들이 아니다/);
+  assert.throws(() => assertCompositionDatabaseLock({ ...lock, profile: 'demo' }, composition), /DB bundle profile demo != source profile core/);
+  assert.throws(() => assertCompositionDatabaseLock({ ...lock, layout: 'single-module' }, composition), /--layout multi-module/);
+  assert.throws(() => assertCompositionDatabaseLock({ ...lock, compositionHash: 'f'.repeat(64) }, composition), /composition hash mismatch/);
 });

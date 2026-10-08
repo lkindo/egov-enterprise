@@ -1,4 +1,5 @@
 import { canonicalJson, compositionDigest } from './project-composer-catalog.mjs';
+import { verifyResolvedDbComposition } from './project-composer-db.mjs';
 import { normalizeBackendLayout } from './reusable-layout.mjs';
 
 export const COMPOSER_SELECTION_PATH = 'config/governance/upstream-review/project-composer-selection.json';
@@ -91,6 +92,8 @@ export function resolveProjectRecipe(input, catalog) {
   const menuRoutes = sorted([...catalog.core.menuRoutes, ...retained.flatMap(feature => feature.menuRoutes),
     ...catalog.sharedUi.filter(group => group.domains.every(domain => included.has(domain))).flatMap(group => group.routes)])
     .filter(route => !removedRoute(route));
+  // 빠진 기능이 다른 기능의 셸에 기여한 탭 메뉴. 셸이 남아도 이 탭 메뉴는 숨긴다.
+  const excludedMenuTabs = sorted(catalog.capabilities.filter(feature => !included.has(feature.id)).flatMap(feature => feature.menuTabs));
   const permissionCodes = sorted([...catalog.core.permissionCodes, ...retained.flatMap(feature => feature.permissionCodes)]);
   const normalizedRecipe = { schemaVersion: 1, project: { name: input.project.name }, sourceRef: input.sourceRef,
     selection: preset ? { preset: preset.id } : { domains: selectedDomains }, database: { vendor: 'postgresql' }, backendLayout };
@@ -99,13 +102,34 @@ export function resolveProjectRecipe(input, catalog) {
     profile: preset?.id ?? 'custom', mandatory: [...catalog.mandatory], selectedDomains, resolvedDomains,
     autoIncluded: [...reasons].map(([domain, why]) => ({ domain, reason: [...why].sort().join(' ') })).sort((a, b) => a.domain.localeCompare(b.domain)),
     packs: preset ? [...preset.packs] : sorted(['core', ...retained.map(feature => feature.pack)]),
-    database: normalizedRecipe.database, backendLayout, tables, explicitSequences, permissionCodes, menuRoutes,
-    frontend: { includedPaths, removePaths, retainedRoutes: menuRoutes.filter(route => !route.includes('?')) },
+    database: normalizedRecipe.database, backendLayout, tables, explicitSequences, permissionCodes, menuRoutes, excludedMenuTabs,
+    frontend: { includedPaths, removePaths, retainedRoutes: menuRoutes },
     optionalForeignKeys: catalog.optionalForeignKeys.filter(fk => tables.includes(fk.childTable) && !tables.includes(fk.parentTable)),
+    // 필수 외래 키의 부모가 빠진 선택. 자동 포함하지 않고 계획이 생성 불가 사유로 보인다.
+    foreignKeyViolations: catalog.requiredForeignKeys.filter(fk => tables.includes(fk.childTable) && !tables.includes(fk.parentTable))
+      .map(({ name, childTable, parentTable, sourceDomain, targetDomain }) => ({ name, childTable, parentTable, sourceDomain, targetDomain })),
     requirements: sorted(retained.flatMap(feature => feature.requirements)),
     catalogHash, recipeHash: compositionDigest(normalizedRecipe),
   };
   return { ...composition, compositionHash: compositionDigest(composition) };
+}
+
+/**
+ * DB·소스 생성기의 단일 진입 판정. `--profile X` 는 프리셋 레시피를 만들어 화면 생성기와 같은 해석기를 타고,
+ * `--composition` 은 같은 검증을 거친다. 그래서 프리셋 산출물도 메뉴·그룹 배정·스키마 보존·외래 키 심사를
+ * 같은 규칙으로 받는다. 프리셋 레시피의 이름은 프로필, 원본 참조는 현재 커밋이다 — 두 생성기가 같은 커밋에서
+ * 같은 해시를 얻는다. 출력 레이아웃은 구성 해시에 들어가므로 DB 번들도 레이아웃마다 만든다.
+ */
+export function resolveGeneratorComposition({ catalog, profile, supplied, backendLayout, layoutExplicit = false, sourceCommit, resolveSourceReference }) {
+  if ((profile === undefined) === (supplied === undefined)) fail('generator', 'Exactly one of a preset profile or a resolved composition is required');
+  const input = supplied ?? { ...resolveProjectRecipe({ schemaVersion: 1, project: { name: profile }, sourceRef: sourceCommit,
+    selection: { preset: profile }, database: { vendor: 'postgresql' }, backendLayout: backendLayout ?? 'multi-module' }, catalog), sourceCommit };
+  const composition = verifyResolvedDbComposition(input, verifyProjectComposition(input, catalog), sourceCommit, resolveSourceReference);
+  if (layoutExplicit && backendLayout !== composition.backendLayout) fail('backendLayout', 'The requested layout differs from the composition layout', 'LAYOUT_MISMATCH');
+  if (composition.foreignKeyViolations.length) {
+    fail('selection', `Required foreign keys lack their parent capability: ${composition.foreignKeyViolations.map(row => row.name).join(', ')}`, 'FK_CLOSURE');
+  }
+  return composition;
 }
 
 /** Recompute a supplied plan; callers must consume the returned trusted plan. */

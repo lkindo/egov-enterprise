@@ -29,9 +29,9 @@ import { normalizeBackendLayout } from './reusable-layout.mjs';
 import { applySingleModuleLayout } from './reusable-single-module.mjs';
 import { installMultiModuleMigrationRuntime, installSingleModuleRuntime } from './reusable-layout-runtime.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
-import { verifyProjectComposition } from './project-composer-recipe.mjs';
-import { verifyResolvedDbComposition } from './project-composer-db.mjs';
-import { composerProfile, domainSupportFiles, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
+import { resolveGeneratorComposition } from './project-composer-recipe.mjs';
+import { assertCompositionDatabaseLock, composerProfile, domainSupportFiles, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives,
+  verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = resolve(dirname(SCRIPT_PATH), '..');
@@ -590,6 +590,8 @@ export function pruneFrontend(output, manifest, profile) {
 const GATE_REMOVAL_RULES = {
   'historical-migration-tests':
     '투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 대체해 역사적 migration 검증이 검사 대상을 잃는다',
+  'upstream-atlas':
+    '원본 Atlas 는 원본 저장소의 운영 사실을 담은 채 로그인 전에 응답되고, 투영본만으로는 다시 만들 수 없어 생성물에서 걷는다',
 };
 
 function assertRemovedGatesAcknowledged(profileName, profile, java, frontend, ruleRemovals) {
@@ -767,6 +769,41 @@ function pruneHistoricalMigrationTests(output) {
     count: tests.length,
     files: tests.map((path) => normalize(relative(output, path))).sort((a, b) => a.localeCompare(b)),
   };
+}
+
+/*
+ * 원본 Governance & Harness Atlas 와 그 생성·검증 도구. Atlas HTML 은 원본의 결정·gap·운영 사실을
+ * 담고 프록시가 인증 전에 응답하는 정적 파일이다. 생성기는 원본 공용 메모리와 문서를 읽으므로
+ * 생성물 안에서 다시 만들어도 원본 사실이 되살아난다. 그래서 고치지 않고 통째로 걷는다.
+ */
+export const UPSTREAM_ATLAS = Object.freeze({
+  assets: Object.freeze([
+    'frontend/public/governance_harness_atlas.html',
+    'frontend/atlas',
+    'scripts/build-atlas.mjs',
+    'scripts/atlas-catalog.mjs',
+  ]),
+  gates: Object.freeze([
+    'frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts',
+    'scripts/atlas-catalog.test.mjs',
+    'scripts/atlas-generation.test.mjs',
+  ]),
+  aliases: Object.freeze(['atlas:build', 'atlas:check']),
+});
+
+export function pruneUpstreamAtlas(output) {
+  for (const file of [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates]) {
+    if (!existsSync(join(output, file))) fail(`Upstream Atlas asset is missing; review the Atlas removal rule: ${file}`);
+  }
+  for (const file of [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates]) rmSync(join(output, file), { recursive: true });
+  const path = join(output, 'package.json');
+  const pkg = JSON.parse(readFileSync(path, 'utf8'));
+  for (const alias of UPSTREAM_ATLAS.aliases) {
+    if (!Object.hasOwn(pkg.scripts ?? {}, alias)) fail(`Upstream Atlas alias is missing; review the Atlas removal rule: ${alias}`);
+    delete pkg.scripts[alias];
+  }
+  writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`);
+  return { files: [...UPSTREAM_ATLAS.gates].sort((a, b) => a.localeCompare(b)) };
 }
 
 function adaptOwnershipGuardBaseline(output) {
@@ -1311,16 +1348,14 @@ export function writeProjectedManifest(output, manifest, profileName, profile, d
 function main() {
   const args = parseSourceArgs(process.argv.slice(2));
   const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
-  let composition;
-  if (args.composition) {
-    const supplied = JSON.parse(readFileSync(resolve(args.composition), 'utf8'));
-    composition = verifyResolvedDbComposition(supplied, verifyProjectComposition(supplied, loadProjectComposerCatalog(ROOT)),
-      git(['rev-parse', 'HEAD']), ref => git(['rev-parse', '--verify', `${ref}^{commit}`]));
-    args.profile = composition.profile;
-    if (process.argv.includes('--layout') && args.layout !== composition.backendLayout) fail('composition과 --layout이 다르다.');
-    args.layout = composition.backendLayout;
-    manifest.profiles[args.profile] = composerProfile(manifest, composition);
-  }
+  // DB 생성기와 같은 판정기로 구성을 얻는다. 프리셋도 구성 경로를 타며, 같은 커밋·레이아웃이면 같은 해시가 나온다.
+  const composition = resolveGeneratorComposition({ catalog: loadProjectComposerCatalog(ROOT), profile: args.composition ? undefined : args.profile,
+    supplied: args.composition ? JSON.parse(readFileSync(resolve(args.composition), 'utf8')) : undefined,
+    backendLayout: args.layout, layoutExplicit: process.argv.includes('--layout'), sourceCommit: git(['rev-parse', 'HEAD']),
+    resolveSourceReference: ref => git(['rev-parse', '--verify', `${ref}^{commit}`]) });
+  args.profile = composition.profile;
+  args.layout = composition.backendLayout;
+  manifest.profiles[args.profile] = composerProfile(manifest, composition);
   const profile = manifest.profiles?.[args.profile];
   if (!profile) fail(`지원하지 않는 profile: ${args.profile}`);
 
@@ -1333,10 +1368,9 @@ function main() {
   const dbLockPath = join(dbBundle, 'profile-lock.json');
   if (!existsSync(dbLockPath)) fail(`DB bundle lock이 없다: ${dbLockPath}`);
   const dbLock = JSON.parse(readFileSync(dbLockPath, 'utf8'));
-  if (dbLock.profile !== args.profile) fail(`DB bundle profile ${dbLock.profile} != source profile ${args.profile}`);
   if (dbLock.sourceCommit !== sourceCommit) fail(`DB bundle commit ${dbLock.sourceCommit} != source commit ${sourceCommit}`);
-  if (composition && dbLock.compositionHash !== composition.compositionHash) fail('DB/source composition hash mismatch');
-  if (composition) verifyCompositionDatabaseFiles(join(dbBundle, 'db/migration'), dbLock);
+  assertCompositionDatabaseLock(dbLock, composition);
+  verifyCompositionDatabaseFiles(join(dbBundle, 'db/migration'), dbLock);
 
   const output = safeOutputPath(args.output, args.profile, sourceCommit.slice(0, 12), args.layout);
   mkdirSync(output, { recursive: true });
@@ -1350,12 +1384,14 @@ function main() {
   }
   const packBlocks = stripExcludedFrontendPackBlocks(output, manifest, profile);
   const frontend = { ...pruneFrontend(output, manifest, profile), packBlocks };
-  if (composition) assertComposerSourceSurvives(ROOT, output, composition, manifest);
+  assertComposerSourceSurvives(ROOT, output, composition, manifest);
   // ⚠ 규칙 기반 제거는 **승인 검사보다 먼저** 해야 한다 — 뒤에 두면 census 가 "0건" 이라고 말한 뒤
   //   게이트 42개가 사라진다(2026-09-12 실측으로 드러난 이 census 자신의 구멍).
   const removedHistoricalMigrationTests = pruneHistoricalMigrationTests(output);
+  const removedUpstreamAtlas = pruneUpstreamAtlas(output);
   const removedGates = assertRemovedGatesAcknowledged(args.profile, profile, java, frontend, {
     'historical-migration-tests': removedHistoricalMigrationTests.files,
+    'upstream-atlas': removedUpstreamAtlas.files,
   });
   installDatabaseBundle(output, dbBundle);
   const zdmWaivers = pruneZeroDowntimeWaivers(output);
@@ -1366,13 +1402,13 @@ function main() {
   else installMultiModuleMigrationRuntime(output);
   const governance = projectReusableGovernance({
     sourceRoot: ROOT, outputRoot: output, profile: args.profile, sourceCommit, composition,
-    projectSource: (file, source) => projectFrontendPackMarkers(composition ? projectComposerFrontend(file, source, composition) : source, {
+    projectSource: (file, source) => projectFrontendPackMarkers(projectComposerFrontend(file, source, composition), {
       knownPacks: new Set(Object.keys(manifest.packs)),
       excludedPacks: new Set(Object.keys(manifest.packs).filter(pack => !profile.packs.includes(pack))),
       label: file,
     }).source,
   });
-  if (composition) verifyCompositionDatabaseFiles(join(output, 'api-server/src/main/resources/db/migration'), dbLock);
+  verifyCompositionDatabaseFiles(join(output, 'api-server/src/main/resources/db/migration'), dbLock);
   adaptGeneratedHarness(output);
   writeHarnessBaseline(output, manifest);
 
@@ -1382,7 +1418,7 @@ function main() {
     layout: args.layout,
     layoutProjection,
     packs: profile.packs,
-    ...(composition ? { composition } : {}),
+    composition,
     sourceCommit,
     sourceReleaseTag: releaseTag ?? null,
     localDevelopmentBuild: !releaseTag || Boolean(dirty),
