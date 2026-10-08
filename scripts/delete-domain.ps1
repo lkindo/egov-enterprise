@@ -6,7 +6,7 @@
 # 도메인·클러스터의 SSOT 는 config/reusable-base-profiles.json 이다.
 #  - 매니페스트에 없는 도메인명은 즉시 에러로 중단한다(경로 추측·침묵 SKIP 금지).
 #  - 매니페스트 clusters(및 requiresDomains)에 묶인 도메인은 자동으로 동반 삭제한다.
-#  - 백엔드 경로는 generate-reusable-base-source.mjs 의 canonical layout
+#  - 백엔드 경로는 생성기 Java 단계(reusable-source-java.mjs 의 resolveDomainRemovalDirectory)와 같은 canonical layout
 #    (business-app/src/{main,test}/java/nuri/business/{domain,service}/<d>)과
 #    api-server 의 controller/business/<d> 디렉터리를 사용한다.
 #  - frontend 경로는 매니페스트가 pack 단위(frontend.removePaths)로만 소유하므로,

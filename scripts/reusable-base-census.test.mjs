@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { analyzeRepository, validateReusableBase } from './reusable-base-census.mjs';
-import { buildIsolatedContractSql, planAuthorizationMigrationStages, readReviewedAuthorizationCatalogVersion, runAuthorizationMigrationStages } from './generate-reusable-base-db.mjs';
+import { buildIsolatedContractSql, planAuthorizationMigrationStages, readReviewedAuthorizationCatalogVersion, runAuthorizationMigrationStages } from './reusable-db-migrations.mjs';
 import { readFileSync, readdirSync } from 'node:fs';
 
 const baseline = analyzeRepository();

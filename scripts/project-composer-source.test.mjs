@@ -7,8 +7,11 @@ import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
-import { assertCompositionDatabaseLock, composerProfile, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
-import { copySourceTree, frontendImportSpecifiers, planJavaRemoval, resolveFrontendImport, trackedAndUntrackedFiles, projectFrontendPackMarkers, writeProjectedManifest } from './generate-reusable-base-source.mjs';
+import { assertCompositionDatabaseLock, composerProfile, domainSupportFiles, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
+import { writeProjectedManifest } from './generate-reusable-base-source.mjs';
+import { frontendImportSpecifiers, projectFrontendPackMarkers, resolveFrontendImport } from './reusable-source-frontend.mjs';
+import { planJavaRemoval } from './reusable-source-java.mjs';
+import { copySourceTree, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const manifest = JSON.parse(readFileSync(join(root, 'config/reusable-base-profiles.json'), 'utf8'));
@@ -33,6 +36,9 @@ const integrityGates = [
   ['api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java', 'template'],
   ['api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java', 'addressbook'],
   ['api-server/src/test/java/nuri/api/schema/SmsDeliveryStateIntegrationTest.java', 'sms'],
+  ['api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java', ['informalsanction', 'notification']],
+  ['api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java', ['board', 'system']],
+  ['api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java', 'survey'],
 ];
 const gateDomains = owner => Array.isArray(owner) ? owner : [owner];
 const gateSelected = (selected, owner) => gateDomains(owner).every(domain => selected.includes(domain));
@@ -66,6 +72,34 @@ test('SMS API support follows the optional domain in the real generator removal 
   const excluded = composerProfile(unowned, resolveProjectRecipe(recipe([]), catalog));
   assert.equal(planJavaRemoval(root, unowned, excluded, java).removed.has(join(root, smsApiSources[1])), false,
     'removing the exact support declaration reproduces the isolated Properties survivor');
+});
+
+const templatePolicySupport = [
+  'foundation/src/main/java/nuri/foundation/core/template/TemplateAssignmentPolicy.java',
+  'business-app/src/main/java/nuri/business/service/template/TemplateAssignmentPolicyService.java',
+  'business-app/src/test/java/nuri/business/service/template/TemplateAssignmentPolicyServiceTest.java',
+];
+
+test('template assignment policy follows its only consumer, community, in the real generator removal plan', () => {
+  assert.deepEqual(manifest.packs.demo.backend.domainSupportFiles?.system, templatePolicySupport);
+  for (const [selected, kept] of [[['template'], false], [['system'], true], [[], false]]) {
+    const composition = resolveProjectRecipe(recipe(selected), catalog);
+    const plan = planJavaRemoval(root, manifest, composerProfile(manifest, composition), java);
+    for (const file of templatePolicySupport) assert.equal(plan.removed.has(join(root, file)), !kept, `${selected}: ${file}`);
+  }
+  for (const [name, profile] of Object.entries(manifest.profiles)) {
+    const plan = planJavaRemoval(root, manifest, profile, java);
+    for (const file of templatePolicySupport) assert.equal(plan.removed.has(join(root, file)), name !== 'demo', `${name}: ${file}`);
+  }
+  // 커뮤니티가 구현을 요구한다는 사실을 카탈로그가 기록해야, 커뮤니티 선택이 템플릿 없이 해석되지 않는다.
+  assert.ok(catalog.capabilities.find(row => row.id === 'system').requires
+    .some(row => row.domain === 'template' && row.kind === 'java' && row.evidence === templatePolicySupport[1]), 'system requires the template implementation');
+  // 선언이 없으면 템플릿 단독 생성물에 소비자 없는 @Service 가 남는다 — 생성물 검증의 도달 불가 서비스 게이트가 실패한 경로다.
+  const unowned = structuredClone(manifest);
+  delete unowned.packs.demo.backend.domainSupportFiles.system;
+  const templateOnly = composerProfile(unowned, resolveProjectRecipe(recipe(['template']), catalog));
+  assert.equal(planJavaRemoval(root, unowned, templateOnly, java).removed.has(join(root, templatePolicySupport[1])), false,
+    'removing the support declaration reproduces the unreachable template-only provider');
 });
 
 test('new management HTTP matrices project every selected surface and reject an unowned addition', () => {
@@ -167,6 +201,22 @@ test('domain support rejects unsafe, missing, duplicate and unowned declarations
   assert.throws(() => planJavaRemoval(directory, changed, { packs: ['core'] }, java), /support/i);
   changed.packs.demo.backend.appDomains.push('unknown');
   assert.throws(() => planJavaRemoval(directory, changed, { packs: ['core'] }, java), /duplicate domain support/i);
+  // 업무 앱 파일은 다른 선택 도메인의 디렉터리에 있을 때만 지원 파일이다. 자기 디렉터리는 이미 자기 소유이고,
+  // 어느 pack 에도 없는 도메인 디렉터리는 선택으로 되살릴 수 없다. 파일이 실제로 있어도 형식에서 거부한다.
+  const own = 'business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java';
+  const foreign = 'business-app/src/main/java/nuri/business/service/orphan/OrphanPolicy.java';
+  mkdirSync(dirname(join(directory, foreign)), { recursive: true });
+  writeFileSync(join(directory, foreign), 'package nuri.business.service.orphan; class OrphanPolicy {}');
+  for (const file of [own, foreign]) {
+    const rejected = structuredClone(manifest);
+    rejected.packs.demo.backend.domainSupportFiles.memoreport = [file];
+    assert.throws(() => planJavaRemoval(directory, rejected, { packs: ['core'] }, java), /Invalid or duplicate domain support file/, file);
+  }
+  const accepted = structuredClone(manifest);
+  accepted.packs.core.backend.appDomains = ['orphan'];
+  accepted.packs.demo.backend.domainSupportFiles.memoreport = [foreign];
+  assert.ok(planJavaRemoval(directory, accepted, { packs: ['core'] }, [...java, join(directory, foreign)]).removed.has(join(directory, foreign)),
+    'a selected domain directory file owned by an excluded consumer is removed');
 });
 
 test('API support is removed or survives with its exact consumer and cannot silently disappear', t => {
@@ -188,6 +238,28 @@ test('API support is removed or survives with its exact consumer and cannot sile
   assert.doesNotThrow(() => assertComposerSourceSurvives(directory, output, composition, manifest));
   rmSync(join(output, file));
   assert.throws(() => assertComposerSourceSurvives(directory, output, composition, manifest), /Selected capability source was removed: api-server/);
+});
+
+test('a selected domain directory may lose only the support owned by an excluded consumer', t => {
+  const { directory, manifest } = supportFixture(t);
+  const foreign = 'business-app/src/main/java/nuri/business/service/orphan/OrphanPolicy.java';
+  const sibling = 'business-app/src/main/java/nuri/business/service/orphan/OrphanService.java';
+  for (const [file, source] of [[foreign, 'package nuri.business.service.orphan; class OrphanPolicy {}'], [sibling, 'package nuri.business.service.orphan; class OrphanService {}']]) {
+    mkdirSync(dirname(join(directory, file)), { recursive: true });
+    writeFileSync(join(directory, file), source);
+  }
+  manifest.packs.core.backend.appDomains = ['orphan'];
+  manifest.packs.demo.backend.domainSupportFiles.memoreport = [foreign];
+  const output = join(directory, 'output');
+  mkdirSync(dirname(join(output, sibling)), { recursive: true });
+  writeFileSync(join(output, sibling), readFileSync(join(directory, sibling)));
+  const composition = selected => ({ profile: 'custom', resolvedDomains: selected, frontend: { includedPaths: [], removePaths: [] } });
+  // 생성기가 템플릿 단독에서 커뮤니티 전용 구현을 지운 뒤 "선택된 소스가 지워졌다" 로 실패하던 경로다.
+  assert.doesNotThrow(() => assertComposerSourceSurvives(directory, output, composition(['orphan']), manifest));
+  assert.throws(() => assertComposerSourceSurvives(directory, output, composition(['orphan', 'memoreport']), manifest),
+    /Selected capability source was removed: business-app[\\/]src[\\/]main[\\/]java[\\/]nuri[\\/]business[\\/]service[\\/]orphan[\\/]OrphanPolicy\.java/);
+  rmSync(join(output, sibling));
+  assert.throws(() => assertComposerSourceSurvives(directory, output, composition(['orphan']), manifest), /OrphanService\.java/);
 });
 
 test('selected domain support cannot disappear from a custom artifact', t => {
@@ -217,6 +289,33 @@ test('custom manifest domain support follows exact selected domains', t => {
     });
     const projected = JSON.parse(readFileSync(join(directory, 'config/reusable-base-profiles.json'), 'utf8'));
     assert.deepEqual(projected.packs.demo.backend.domainSupportFiles, resolvedDomains.length ? { memoreport: displayNameSupport } : {});
+  }
+});
+
+test('custom projection keeps every selected table owned, including a shared table whose owner pack is not selected', t => {
+  // 템플릿만 고르면 tb_tmplt_info 의 소유 pack(collaboration)이 구성에 없다. 종전에는 투영 매니페스트의 어느 pack 도
+  //   그 테이블을 갖지 않아, 생성 마지막의 거버넌스 무결성 검사(테이블 목록 불일치)가 실패했다.
+  const base = realpathSync(tmpdir());
+  const directory = mkdtempSync(join(base, 'composer-shared-table-'));
+  t.after(() => {
+    const child = relative(base, realpathSync(directory));
+    assert.ok(child.startsWith('composer-shared-table-') && !child.includes(sep));
+    rmSync(directory, { recursive: true, force: true });
+  });
+  mkdirSync(join(directory, 'config'));
+  for (const [domains, owner] of [[['template'], 'demo'], [['board', 'template'], 'collaboration']]) {
+    const composition = resolveProjectRecipe(recipe(domains), catalog);
+    const profile = composerProfile(manifest, composition);
+    writeProjectedManifest(directory, structuredClone(manifest), 'custom', profile,
+      { generatedAt: '2026-10-08T00:00:00Z', tables: composition.tables, sequences: [] }, composition);
+    const projected = JSON.parse(readFileSync(join(directory, 'config/reusable-base-profiles.json'), 'utf8'));
+    const owned = Object.values(projected.packs).flatMap(pack => pack.database.tables);
+    assert.deepEqual([...owned].sort(), [...composition.tables].sort(), `${domains}: each selected table has exactly one pack owner`);
+    const contract = projected.sharedTableContracts.find(row => row.table === 'tb_tmplt_info');
+    assert.equal(contract?.ownerPack, owner, `${domains}: the shared table owner follows the selected packs`);
+    for (const row of projected.sharedTableContracts) {
+      assert.ok(projected.packs[row.ownerPack]?.database.tables.includes(row.table), `${domains}: ${row.table} owner pack holds the table`);
+    }
   }
 });
 
@@ -342,10 +441,18 @@ test('each selectable domain retains its Java production sources after actual de
     const plan = planJavaRemoval(root, manifest, profile, java);
     for (const file of displayNameSupport) assert.equal(plan.removed.has(join(root, file)), !composition.resolvedDomains.includes('memoreport'), `${domain}: ${file}`);
     assertIntegrityGateAcknowledgements(profile, composition.resolvedDomains);
+    // 생성기의 승인 대조와 같은 판정: 실제로 지워지는 Java 게이트와 승인 목록이 정확히 같아야 한다.
+    //   위 integrityGates 는 손으로 옮긴 사본이라 빠지면 결함을 못 본다(결재 단독 선택이 DB 단계 뒤에야 실패했다).
+    const removedGates = [...plan.removed].filter(path => plan.gateSources.has(path)).map(path => relative(root, path).split(sep).join('/')).sort();
+    assert.deepEqual(removedGates, profile.acknowledgedRemovedGates.map(row => row.file).sort(), `${domain}: removed Java gates must equal acknowledgements`);
     for (const [file, owner] of integrityGates) {
       assert.equal(plan.removed.has(join(root, file)), !gateSelected(composition.resolvedDomains, owner), `${domain}: ${file}`);
     }
+    // 선택 도메인 디렉터리에서 지워도 되는 것은 제외된 소비자가 소유한 지원 파일뿐이다(템플릿 단독의 커뮤니티 전용 구현).
+    const excludedSupport = new Set([...domainSupportFiles(root, manifest)].filter(([owner]) => !composition.resolvedDomains.includes(owner))
+      .flatMap(([, supportFiles]) => supportFiles.map(file => join(root, file))));
     for (const selected of composition.resolvedDomains) for (const file of plan.removed) {
+      if (excludedSupport.has(file)) continue;
       const path = file.replaceAll('\\', '/');
       assert.ok(!['domain', 'service'].some(layer => path.includes(`/business-app/src/main/java/nuri/business/${layer}/${selected}/`)), `${domain}: unexpectedly removed ${file}`);
     }

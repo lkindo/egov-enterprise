@@ -5,7 +5,8 @@ import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { assertDeclaredCrossDomainForeignKeys, assertSchemaPreserved, buildCompositionAdminSeed, canEnterMenuRoute, projectCompositionNavigation, canonicalConstraintDefinition, projectCompositionMenus,
   schemaSnapshotHash, schemaSnapshotSql, selectSchemaSnapshot, verifyResolvedDbComposition } from './project-composer-db.mjs';
-import { assertCompositionOperationGrants, generatedMigrationSessionSql, parseDbGenerationArgs, safeDbOutputPath, sanitizePgDump } from './generate-reusable-base-db.mjs';
+import { assertCompositionOperationGrants, generatedMigrationSessionSql, parseDbGenerationArgs, safeDbOutputPath } from './generate-reusable-base-db.mjs';
+import { sanitizePgDump } from './reusable-db-postgres.mjs';
 
 test('composition DB requires exact default group/code grants and keeps available unassigned capabilities ungranted', () => {
   const catalog = { permissions: [

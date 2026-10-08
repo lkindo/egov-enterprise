@@ -4,10 +4,20 @@ import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { createHash } from 'node:crypto';
 
 /** Exact support files follow their optional consumer while module dependencies stay unchanged. */
+/*
+ * 선택 업무만 쓰는 지원 파일. 업무 앱의 다른 도메인 디렉터리 파일도 선언할 수 있다 — 그 도메인이 제공하고
+ * 선언한 도메인만 쓰는 구현이다(커뮤니티가 쓰는 템플릿 검증 포트 구현). 그런 파일은 두 도메인이 모두 있을 때만
+ * 남고, 카탈로그는 선언 도메인이 디렉터리 도메인을 요구한다고 기록한다.
+ */
+export function supportFileDirectoryDomain(file) {
+  return /^business-app\/src\/(?:main|test)\/java\/nuri\/business\/(?:domain|service)\/([a-z][a-z0-9_]*)\/(?:[A-Za-z_$][\w$]*\/)*[A-Za-z_$][\w$]*\.java$/u.exec(file)?.[1] ?? null;
+}
+
 export function domainSupportFiles(root, manifest) {
   const result = new Map();
   const owners = new Set();
   const realRoot = realpathSync(root);
+  const appDomains = new Set(Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []));
   for (const [pack, value] of Object.entries(manifest.packs ?? {})) {
     const declarations = value.backend?.domainSupportFiles ?? {};
     if (!declarations || typeof declarations !== 'object' || Array.isArray(declarations)) throw new Error(`Invalid domain support declarations: ${pack}`);
@@ -15,8 +25,10 @@ export function domainSupportFiles(root, manifest) {
       if (!value.backend?.appDomains?.includes(domain) || result.has(domain)
         || !Array.isArray(files) || files.length === 0) throw new Error(`Invalid domain support owner: ${pack}/${domain}`);
       for (const file of files) {
+        const directoryDomain = typeof file === 'string' ? supportFileDirectoryDomain(file) : null;
         if (typeof file !== 'string'
-          || !/^(?:foundation|business-core|api-server)\/src\/(?:main|test)\/java\/(?:[A-Za-z_$][\w$]*\/)+[A-Za-z_$][\w$]*\.java$/u.test(file)
+          || !(/^(?:foundation|business-core|api-server)\/src\/(?:main|test)\/java\/(?:[A-Za-z_$][\w$]*\/)+[A-Za-z_$][\w$]*\.java$/u.test(file)
+            || (directoryDomain && directoryDomain !== domain && appDomains.has(directoryDomain)))
           || owners.has(file)) throw new Error(`Invalid or duplicate domain support file: ${file}`);
         const absolute = resolve(root, file);
         if (!existsSync(absolute) || !statSync(absolute).isFile()) throw new Error(`Missing domain support file: ${file}`);
@@ -78,7 +90,8 @@ const RBAC_SURVEY_BOUNDARY = /^ *private static final Class<\?> SURVEY_PACK_BOUN
 const GATE_OWNERS = {
   'api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java': ['note', 'notification'],
   'api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java': ['memoreport'],
-  'api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java': ['informalsanction'],
+  // 결재 흐름 검증은 알림 리스너(NotificationRequestListener)도 참조해, 알림이 빠지면 함께 지워진다.
+  'api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java': ['informalsanction', 'notification'],
   'api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java': ['system'],
   'api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java': ['system', 'template'],
   'api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java': ['operation'],
@@ -221,8 +234,13 @@ export function projectComposerJava(file, source, profile) {
 /** Selected source roots are an expected population, never inferred from what survived cascading removal. */
 export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition, manifest) {
   if (composition.profile !== 'custom') return;
+  const support = domainSupportFiles(sourceRoot, manifest ?? JSON.parse(readFileSync(join(sourceRoot, 'config/reusable-base-profiles.json'), 'utf8')));
+  // 선택 도메인 디렉터리에서도 제외된 소비자가 소유한 지원 파일은 지워지는 것이 맞다(템플릿 단독의 커뮤니티 전용 구현).
+  const excludedSupport = new Set([...support].filter(([owner]) => !composition.resolvedDomains.includes(owner))
+    .flatMap(([, files]) => files));
   const requireFile = path => {
     const normalized = path.replaceAll('\\', '/');
+    if (excludedSupport.has(normalized)) return;
     if (normalized.startsWith('frontend/') && composition.frontend.removePaths.some(removed =>
       normalized === `frontend/${removed}` || normalized.startsWith(`frontend/${removed}/`))) return;
     if (!existsSync(join(outputRoot, path))) throw new Error(`Selected capability source was removed: ${path}`);
@@ -239,7 +257,6 @@ export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition
   for (const domain of composition.resolvedDomains) for (const layer of ['domain', 'service']) {
     assertTree(join(sourceRoot, 'business-app/src/main/java/nuri/business', layer, domain));
   }
-  const support = domainSupportFiles(sourceRoot, manifest ?? JSON.parse(readFileSync(join(sourceRoot, 'config/reusable-base-profiles.json'), 'utf8')));
   for (const domain of composition.resolvedDomains) for (const file of support.get(domain) ?? []) requireFile(file);
   for (const path of composition.frontend.includedPaths) assertTree(join(sourceRoot, 'frontend', path));
   for (const path of composition.frontend.includedPaths) if (existsSync(join(sourceRoot, 'frontend', path)) && statSync(join(sourceRoot, 'frontend', path)).isFile()) requireFile(`frontend/${path}`);
