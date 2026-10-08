@@ -3,6 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { domainSupportFiles, supportFileDirectoryDomain } from './project-composer-source.mjs';
+import { degradationPredicate, deriveEventTriples, requiresClosure, resolveIntegrations, sourceOwner } from './project-composer-integrations.mjs';
 import { menuRouteKey } from './project-composer-db.mjs';
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
 
@@ -196,7 +197,8 @@ export function loadProjectComposerCatalog(root = ROOT) {
   const sourceFingerprints = UI_DEPENDENCIES.map(({ evidence }) => ({ path: evidence,
     sha256: compositionDigest(readFileSync(join(root, evidence), 'utf8').replace(/\r\n/g, '\n')) }));
   const supportRequirements = new Map();
-  for (const [domain, files] of domainSupportFiles(root, manifest)) for (const path of files) {
+  const supportFiles = domainSupportFiles(root, manifest);
+  for (const [domain, files] of supportFiles) for (const path of files) {
     inventory.get(domain).files.push(path);
     // 다른 도메인 디렉터리의 지원 파일은 그 도메인이 있어야 존재한다. 업무 앱 생산 소스의 지문은 아래 순회가 남긴다.
     const directoryDomain = supportFileDirectoryDomain(path);
@@ -327,13 +329,17 @@ export function loadProjectComposerCatalog(root = ROOT) {
     const owns = (domain, table) => capabilities.find(capability => capability.id === domain)?.database.tables.includes(table);
     if (!owns(contract.sourceDomain, contract.childTable) || !owns(contract.targetDomain, contract.parentTable)) fail(`declared foreign key ownership drifted: ${contract.name}`);
   }
+  const presets = Object.entries(manifest.profiles).map(([id, profile]) => ({ id, label: id, description: profile.description,
+    domains: sorted(profile.packs.flatMap(pack => manifest.packs[pack].backend?.appDomains ?? [])), packs: profile.packs,
+    frontendRemovePaths: sorted(Object.entries(manifest.packs).filter(([pack]) => !profile.packs.includes(pack)).flatMap(([, pack]) => pack.frontend?.removePaths ?? [])) }));
+  // 선택 연동: 발행·수신을 실제 소스에서 계산해 선언과 양방향으로 대조한다(설계서 9.1·B4).
+  const supportOwners = new Map([...supportFiles].flatMap(([domain, files]) => files.map(file => [file, domain])));
+  const integrates = resolveIntegrations({ root, triples: deriveEventTriples(root, sourceOwner(supportOwners, domains, requiresClosure(capabilities))),
+    canDegrade: degradationPredicate(capabilities, presets), domains, optionalForeignKeys: OPTIONAL_FOREIGN_KEYS });
   const catalog = {
     schemaVersion: 1, mandatory: ['foundation', 'core'], databaseVendors: ['postgresql'], backendLayouts: ['multi-module', 'single-module'],
     provenance: { manifest: MANIFEST, permissions: PERMISSIONS, manifestHash: compositionDigest(manifest), permissionsHash: compositionDigest(permissions), sourceInventoryHash: compositionDigest(sourceFingerprints) },
-    presets: Object.entries(manifest.profiles).map(([id, profile]) => ({ id, label: id, description: profile.description,
-      domains: sorted(profile.packs.flatMap(pack => manifest.packs[pack].backend?.appDomains ?? [])), packs: profile.packs,
-      frontendRemovePaths: sorted(Object.entries(manifest.packs).filter(([pack]) => !profile.packs.includes(pack)).flatMap(([, pack]) => pack.frontend?.removePaths ?? [])) })),
-    capabilities, frontendRules: rules, sharedUi: SHARED_UI,
+    presets, capabilities, frontendRules: rules, sharedUi: SHARED_UI, integrates,
     core: { tables: sorted(manifest.packs.core.database.tables), explicitSequences: sorted(manifest.packs.core.database.sequences), permissionCodes: mandatoryPermissions, menuRoutes: mandatoryRoutes },
     sharedTableContracts: sharedTables, optionalForeignKeys: OPTIONAL_FOREIGN_KEYS, requiredForeignKeys: REQUIRED_FOREIGN_KEYS,
   };

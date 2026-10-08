@@ -62,8 +62,14 @@ function renderFeatures() {
   }
   if (focusedId?.startsWith('capability-')) $(focusedId)?.focus({ preventScroll: true });
 }
+// 계획이 없는 동안(다시 확인 중·실패) 이전 구성의 기능 저하·미배정 권한을 보이지 않는다.
+function clearPlanNotes() {
+  $('plan-degraded').hidden = true; $('plan-degraded').replaceChildren();
+  $('plan-unassigned').hidden = true; $('plan-unassigned-list').replaceChildren();
+}
 function changed() {
   state.version += 1; state.plan = null; state.requestId = null;
+  clearPlanNotes();
   $('generate').disabled = true; $('download-recipe').disabled = true;
   $('plan-status').textContent = '변경한 구성을 확인하고 있습니다…';
   $('summary-heading').textContent = $('project-name').value.trim() || '구성을 확인하세요';
@@ -81,6 +87,19 @@ function renderPlan() {
   $('output-hint').textContent = plan.outputDirectory ? `생성 위치 · ${plan.outputDirectory}` : '생성 위치 · 원본 프로젝트의 build/project-composer 아래 새 폴더';
   $('auto-included').replaceChildren(...(plan.autoIncluded ?? []).map(item => text('p', `${label(item.domain)} · ${item.reason}`)));
   $('plan-warnings').replaceChildren(...blockers.map(blocker => text('p', blocker, 'font-semibold text-danger')), ...(plan.warnings ?? []).map(warning => text('p', warning)));
+  // 기능 저하와 미배정 권한은 생성을 막지 않는 안내다. 생성 버튼은 차단 사유로만 막힌다.
+  const notes = plan.degradationNotes ?? [];
+  $('plan-degraded').hidden = notes.length === 0;
+  $('plan-degraded').replaceChildren(...notes.flatMap(group => [text('p', group.heading, 'font-semibold'),
+    ...group.reasons.map(row => text('p', row.reason, 'text-muted'))]));
+  const unassigned = plan.unassignedPermissions ?? [];
+  $('plan-unassigned').hidden = unassigned.length === 0;
+  $('plan-unassigned-summary').textContent = `생성 뒤 직접 배정할 권한 ${unassigned.length}개`;
+  $('plan-unassigned-list').replaceChildren(...unassigned.map(row => {
+    const item = document.createElement('li');
+    item.append(text('span', row.name, 'block font-medium'), text('span', `${row.effect} ${row.howToAssign}`, 'block text-xs leading-6 text-muted'));
+    return item;
+  }));
   $('menu-preview').replaceChildren(...(plan.menus ?? []).map(menu => {
     const row = document.createElement('li');
     row.append(text('span', menu.label ?? menu.name ?? menu.id, 'block font-medium'));
@@ -102,7 +121,7 @@ async function preview(focus) {
     if (version !== state.version) return;
     state.plan = plan; renderPlan();
   } catch (error) {
-    if (version === state.version) { state.plan = null; $('plan-status').textContent = error.message; $('generate').disabled = true; }
+    if (version === state.version) { state.plan = null; clearPlanNotes(); $('plan-status').textContent = error.message; $('generate').disabled = true; }
   } finally { if (version === state.version) $('preview').disabled = false; }
 }
 function busy(value) {
