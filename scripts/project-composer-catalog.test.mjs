@@ -5,6 +5,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { INTEGRATES, degradationPredicate, eventConstructionsIn, eventListenersIn, requiresClosure, resolveIntegrations, sourceOwner, stripComments } from './project-composer-integrations.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(readFileSync(join(ROOT, 'config/reusable-base-profiles.json'), 'utf8'));
@@ -16,7 +17,13 @@ function fixture(t) {
   for (const path of ['config/reusable-base-profiles.json', 'config/governance/permission-catalog.json', 'config/project-composer-menus.json']) {
     mkdirSync(dirname(join(root, path)), { recursive: true }); copyFileSync(join(ROOT, path), join(root, path));
   }
-  cpSync(join(ROOT, 'business-app/src/main/java'), join(root, 'business-app/src/main/java'), { recursive: true });
+  // 선택 연동 판정은 네 모듈의 생산 Java 를 모두 읽는다(발행은 core·api-server 에도 있다).
+  for (const module of ['foundation', 'business-core', 'business-app', 'api-server']) {
+    cpSync(join(ROOT, module, 'src/main/java'), join(root, module, 'src/main/java'), { recursive: true });
+  }
+  for (const anchor of INTEGRATES.flatMap(edge => edge.anchors ?? [])) {
+    mkdirSync(dirname(join(root, anchor.path)), { recursive: true }); copyFileSync(join(ROOT, anchor.path), join(root, anchor.path));
+  }
   for (const file of Object.values(manifest.packs).flatMap(pack => Object.values(pack.backend?.domainSupportFiles ?? {}).flat())) {
     mkdirSync(dirname(join(root, file)), { recursive: true }); copyFileSync(join(ROOT, file), join(root, file));
   }
@@ -162,4 +169,197 @@ test('domain support is owned and fingerprinted with its consumer', t => {
   assert.notEqual(changed.catalogHash, catalog.catalogHash);
   rmSync(join(root, file));
   assert.throws(() => loadProjectComposerCatalog(root), /Missing domain support file/);
+});
+
+// ── 선택 연동(integrates, 설계서 9.1·B4) ──────────────────────────────────────────────
+
+const edgeKey = edge => `${edge.from} -> ${edge.to} via ${edge.via}`;
+const replaceIn = (root, path, from, to) => {
+  const source = readFileSync(join(root, path), 'utf8');
+  assert.ok(source.includes(from), `${path} fixture anchor`);
+  writeFileSync(join(root, path), source.replace(from, to));
+};
+
+test('selective integrations are declared exactly and every evidence line points at the code that proves them', () => {
+  assert.deepEqual(catalog.integrates.map(edgeKey), [
+    'board -> notification via event:NotificationRequestedEvent',
+    'board -> system via fk-optional:fk_tb_bbs_master_tb_cmnty_info',
+    'core -> notification via event:NotificationRequestedEvent',
+    'informalsanction -> mail via event:MailRequestedEvent',
+    'informalsanction -> notification via event:NotificationRequestedEvent',
+    'informalsanction -> sms via event:SmsRequestedEvent',
+    'mail -> addressbook via port:RecipientAddressBookSource',
+    'mail -> notification via event:NotificationRequestedEvent',
+    'memoreport -> notification via event:NotificationRequestedEvent',
+    'note -> notification via event:NotificationRequestedEvent',
+    'sms -> addressbook via port:RecipientAddressBookSource',
+    'sms -> notification via event:NotificationRequestedEvent',
+    'system -> notification via event:NotificationRequestedEvent',
+  ]);
+  for (const edge of catalog.integrates) {
+    const [kind, target] = edge.via.split(/:(.+)/);
+    assert.match(edge.reason, /^[^A-Za-z]+\.$/, `${edgeKey(edge)}: plain Korean sentence without internal names`);
+    for (const evidence of edge.evidence) {
+      const line = readFileSync(join(ROOT, evidence.path), 'utf8').split(/\r?\n/)[evidence.line - 1];
+      const expected = evidence.role === 'anchor'
+        ? INTEGRATES.find(row => edgeKey(row) === edgeKey(edge)).anchors.find(row => row.path === evidence.path).anchor : target;
+      assert.ok(line?.includes(expected), `${edgeKey(edge)}: ${evidence.path}:${evidence.line} must contain ${expected}`);
+    }
+    if (kind === 'event') {
+      assert.ok(edge.evidence.some(row => row.role === 'publisher') && edge.evidence.some(row => row.role === 'listener'), edgeKey(edge));
+    }
+  }
+  // api-server 의 알림 리스너는 알림 서비스를 import 해 알림과 함께 지워진다 — core 발행으로 세면 안 된다.
+  const core = catalog.integrates.find(edge => edge.from === 'core');
+  assert.deepEqual(core.evidence.filter(row => row.role === 'publisher').map(row => row.path),
+    ['business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java']);
+});
+
+test('a new cross-feature event publisher without a declaration is refused, and a removed one is stale', t => {
+  const root = fixture(t);
+  replaceIn(root, 'business-app/src/main/java/nuri/business/service/survey/SurveyService.java', 'public class SurveyService {',
+    'public class SurveyService {\n    private Object probe() { return new nuri.foundation.core.event.NotificationRequestedEvent("u", "t", "c", "/"); }');
+  assert.throws(() => loadProjectComposerCatalog(root), /undeclared integration: survey -> notification via event:NotificationRequestedEvent/);
+
+  const stale = fixture(t);
+  // 주석 속 생성은 발행이 아니다 — 남은 것이 주석뿐이면 선언이 낡았다.
+  const sms = 'business-app/src/main/java/nuri/business/service/sms/SmsAsyncProcessor.java';
+  const source = readFileSync(join(stale, sms), 'utf8');
+  writeFileSync(join(stale, sms), source.replace(/eventPublisher\.publishEvent\(new nuri\.foundation\.core\.event\.NotificationRequestedEvent\(/,
+    'notifyNothing(/* new nuri.foundation.core.event.NotificationRequestedEvent( */'));
+  assert.throws(() => loadProjectComposerCatalog(stale), /declared event integration has no publisher and listener: sms -> notification/);
+});
+
+test('registration-only cleanup listeners must still exist and an api-server source naming two features is ambiguous', t => {
+  const root = fixture(t);
+  replaceIn(root, 'business-app/src/main/java/nuri/business/service/addressbook/listener/AddressBookUserDeletionCleanupListener.java',
+    'public void onUserDeletion(UserDeletionEvent event)', 'public void onUserDeletion(RetiredCleanupEvent event)');
+  assert.throws(() => loadProjectComposerCatalog(root), /registration-only event has no publisher and listener: core -> addressbook via UserDeletionEvent/);
+
+  const ambiguous = fixture(t);
+  const probe = 'api-server/src/main/java/nuri/api/ProbePublisher.java';
+  writeFileSync(join(ambiguous, probe), 'package nuri.api;\nimport nuri.business.service.mail.MailService;\nimport nuri.business.service.note.NoteService;\n'
+    + 'class ProbePublisher { MailService mail; NoteService note; Object probe() { return new nuri.foundation.core.event.NotificationRequestedEvent("u", "t", "c", "/"); } }\n');
+  assert.throws(() => loadProjectComposerCatalog(ambiguous), /Event source ownership is ambiguous: api-server\/src\/main\/java\/nuri\/api\/ProbePublisher\.java/);
+});
+
+test('port and optional foreign key evidence must occur exactly once in code, never only in a comment', t => {
+  const mail = 'frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx';
+  const anchor = 'addressBook={recipientAddressBookSource}';
+  const drifted = fixture(t);
+  replaceIn(drifted, mail, anchor, 'addressBook={undefined}');
+  assert.throws(() => loadProjectComposerCatalog(drifted), /declared integration drifted: frontend\/src\/app\/admin\/collaboration\/mail-send\/MailSendHubClient\.tsx/);
+  const commented = fixture(t);
+  replaceIn(commented, mail, anchor, `{/* ${anchor} */}`);
+  assert.throws(() => loadProjectComposerCatalog(commented), /declared integration drifted/);
+  const duplicated = fixture(t);
+  replaceIn(duplicated, mail, anchor, `${anchor} data-copy={() => ${anchor.split('=')[1].slice(1, -1)}} ${anchor}`);
+  assert.throws(() => loadProjectComposerCatalog(duplicated), /integration evidence anchor is ambiguous/);
+});
+
+test('listener and publisher detection covers qualified, class-argument and functional forms and ignores comments and strings', () => {
+  const code = stripComments([
+    'class A {',
+    '  @org.springframework.context.event.EventListener',
+    '  public void a(final com.x.FirstEvent event) {}',
+    '  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, condition = "#e.ok()")',
+    '  @Async',
+    '  void b(@NonNull SecondEvent e) {}',
+    '  @EventListener({ThirdEvent.class, FourthEvent.class})',
+    '  void c() {}',
+    '  // @EventListener void hidden(HiddenEvent e) {}',
+    '  String s = "@EventListener void quoted(QuotedEvent e)";',
+    // 클래스를 적으면 그 클래스만 받는다 — 매개변수는 상위 타입일 수 있다(Spring 과 같다).
+    '  @EventListener(SixthEvent.class) public void d(Object any) {}',
+    // 수식어 뒤의 애노테이션 괄호를 매개변수로 읽지 않는다.
+    '  @EventListener public @Transactional(propagation = Propagation.MANDATORY) java.util.List<String> e(SeventhEvent e) { return null; }',
+    '}',
+    'class B implements ApplicationListener<com.y.FifthEvent> {}',
+  ].join('\n'), { strings: false });
+  assert.deepEqual(eventListenersIn(code).map(row => `${row.type}@${row.line}`),
+    ['FirstEvent@3', 'SecondEvent@6', 'ThirdEvent@8', 'FourthEvent@8', 'SixthEvent@11', 'SeventhEvent@12', 'FifthEvent@14']);
+  assert.throws(() => eventListenersIn(stripComments('class C { @EventListener\n void none() {} }', { strings: false })), /Event listener type could not be resolved/);
+  // 생성자·생성자 참조·빌더/팩토리 호출을 모두 발행으로 센다. .class 와 주석·문자열·텍스트 블록 안은 세지 않는다.
+  const publishers = stripComments([
+    'a(new x.y.Evt(1)); b(Evt::new); // new Evt(',
+    ' c("new Evt("); d(Evt.builder().build()); e(Evt.class);',
+    ' String t = """',
+    '   new Evt( \\""" still inside',
+    '   """; f(x.Evt.of(2));',
+  ].join('\n'), { strings: false });
+  assert.deepEqual(eventConstructionsIn(publishers, 'Evt'), [1, 1, 2, 5]);
+});
+
+test('a listener whose type is too broad, or an anchor in a test file, is refused', t => {
+  const root = fixture(t);
+  const probe = 'business-app/src/main/java/nuri/business/service/survey/listener/SurveyProbeListener.java';
+  mkdirSync(dirname(join(root, probe)), { recursive: true });
+  writeFileSync(join(root, probe), 'package nuri.business.service.survey.listener;\nclass SurveyProbeListener {\n  @org.springframework.context.event.EventListener\n  void on(Object event) {}\n}\n');
+  assert.throws(() => loadProjectComposerCatalog(root), /Event listener type is too broad to tell its events apart: .+SurveyProbeListener\.java:4 Object/);
+  const triple = { from: 'a', to: 'c', event: 'Evt', publishers: [], listeners: [] };
+  const testAnchor = { from: 'a', to: 'c', via: 'port:Thing', reason: '설명입니다.',
+    anchors: [{ path: 'frontend/src/app/components/ui/__tests__/recipient-picker.test.tsx', anchor: 'RecipientPicker' }] };
+  assert.throws(() => resolveIntegrations({ root: ROOT, declared: [testAnchor], registrationOnly: [], triples: [triple], canDegrade: () => true,
+    domains: ['a', 'c'], optionalForeignKeys: [] }), /integration evidence is not a product source/);
+});
+
+test('a TSX apostrophe before a commented-out anchor does not hide the comment', t => {
+  const root = fixture(t);
+  const mail = 'frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx';
+  replaceIn(root, mail, 'addressBook={recipientAddressBookSource}', "<span>don't</span> {/* addressBook={recipientAddressBookSource} */}");
+  assert.throws(() => loadProjectComposerCatalog(root), /declared integration drifted/);
+  // 코드 위치의 따옴표는 계속 문자열이다 — 문자열 속 '//' 를 주석으로 읽지 않는다.
+  assert.equal(stripComments("const a = 'http://x'; f(b);", { kind: 'ts' }), "const a = 'http://x'; f(b);");
+  assert.equal(stripComments("<p>it's // shown</p>", { kind: 'ts' }).includes('shown'), false);
+});
+
+test('event-source ownership follows support declarations, the module and the dominant referenced feature', () => {
+  const capabilities = [{ id: 'board', requires: [{ domain: 'comment' }] }, { id: 'comment', requires: [{ domain: 'board' }] },
+    { id: 'mail', requires: [] }, { id: 'note', requires: [] }, { id: 'system', requires: [{ domain: 'board' }] }];
+  const owner = sourceOwner(new Map([['business-core/src/main/java/x/Support.java', 'mail']]), capabilities.map(row => row.id), requiresClosure(capabilities));
+  assert.equal(owner('business-core/src/main/java/x/Support.java', ''), 'mail');
+  // business-core 의 nuri.business.service.system 패키지는 선택 기능 system 이 아니다.
+  assert.equal(owner('business-core/src/main/java/nuri/business/service/system/job/Job.java', 'package nuri.business.service.system.job;'), 'core');
+  assert.equal(owner('business-app/src/main/java/nuri/business/service/note/A.java', 'import nuri.business.service.mail.M;'), 'note');
+  assert.equal(owner('api-server/src/main/java/nuri/api/A.java', 'import nuri.business.service.mail.M;'), 'mail');
+  // 서로 끌어오는 두 기능, 또는 한쪽이 다른 쪽을 끌어오면 소유가 정해진다.
+  assert.equal(owner('api-server/src/main/java/nuri/api/B.java', 'import nuri.business.service.comment.C; import nuri.business.service.board.B;'), 'board');
+  assert.equal(owner('api-server/src/main/java/nuri/api/C.java', 'import nuri.business.service.system.S; import nuri.business.service.board.B;'), 'system');
+  assert.throws(() => owner('api-server/src/main/java/nuri/api/D.java', 'import nuri.business.service.mail.M; import nuri.business.service.note.N;'),
+    /Event source ownership is ambiguous/);
+});
+
+test('one predicate decides both whether an event needs a declaration and whether a declaration can ever degrade', () => {
+  const capabilities = [
+    { id: 'a', requires: [{ domain: 'b', customOnly: true }] }, { id: 'b', requires: [] }, { id: 'c', requires: [] },
+  ];
+  const presets = [{ id: 'p', domains: ['a', 'b'] }];
+  const canDegrade = degradationPredicate(capabilities, presets);
+  // a 는 직접 선택에서 b 를 끌어오고(화면 결합), a 를 담은 프리셋도 b 를 담는다 — a 가 b 없이 있을 수 없다.
+  assert.equal(canDegrade('a', 'b'), false);
+  assert.equal(canDegrade('a', 'c'), true);
+  assert.equal(canDegrade('core', 'a'), true);
+  assert.equal(degradationPredicate(capabilities, [...presets, { id: 'q', domains: ['a'] }])('a', 'b'), true, 'a preset without b makes the edge live');
+  const triple = { from: 'a', to: 'b', event: 'Evt', publishers: [{ path: 'x', line: 1 }], listeners: [{ path: 'y', line: 2 }] };
+  const base = { root: ROOT, registrationOnly: [], domains: ['a', 'b', 'c'], optionalForeignKeys: [], canDegrade };
+  // 늘 함께 있는 쌍의 발행은 선언 없이 통과하고, 선언하면 '저하될 수 없다' 로 거부된다. 두 판정 사이에 빈틈이 없다.
+  assert.deepEqual(resolveIntegrations({ ...base, declared: [], triples: [triple] }), []);
+  assert.throws(() => resolveIntegrations({ ...base, triples: [triple], declared: [{ from: 'a', to: 'b', via: 'event:Evt', reason: '설명입니다.' }] }),
+    /declared integration can never degrade: a -> b/);
+});
+
+test('integration declarations reject unknown kinds, duplicates, double classification and a missing optional key', () => {
+  const triple = { from: 'a', to: 'c', event: 'Evt', publishers: [{ path: 'x', line: 1 }], listeners: [{ path: 'y', line: 2 }] };
+  const base = { root: ROOT, registrationOnly: [], domains: ['a', 'b', 'c'], optionalForeignKeys: [], canDegrade: () => true, triples: [triple] };
+  const edge = { from: 'a', to: 'c', via: 'event:Evt', reason: '설명입니다.' };
+  assert.equal(resolveIntegrations({ ...base, declared: [edge] }).length, 1);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [{ ...edge, via: 'slot:home.cards' }] }), /unsupported integration kind: slot:home\.cards/);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [edge, edge] }), /duplicate integration/);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [{ ...edge, reason: 'english only' }] }), /integration needs a user sentence/);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [edge], registrationOnly: [{ from: 'a', to: 'c', event: 'Evt', reason: '정리합니다.' }] }),
+    /event classified twice: a -> c via Evt/);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [edge], optionalForeignKeys: [{ name: 'fk_x', sourceDomain: 'a', targetDomain: 'b' }] }),
+    /optional foreign key lacks its integration: fk_x/);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [{ ...edge, anchors: [{ path: 'x', anchor: 'y' }] }] }),
+    /event integration evidence is derived, not declared/);
 });

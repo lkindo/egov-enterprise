@@ -11,6 +11,7 @@ import { assertCompositionDatabaseLock, composerProfile, domainSupportFiles, pro
 import { writeProjectedManifest } from './generate-reusable-base-source.mjs';
 import { frontendImportSpecifiers, projectFrontendPackMarkers, resolveFrontendImport } from './reusable-source-frontend.mjs';
 import { planJavaRemoval } from './reusable-source-java.mjs';
+import { deriveEventSources, requiresClosure, sourceOwner } from './project-composer-integrations.mjs';
 import { copySourceTree, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
 const root = resolve(import.meta.dirname, '..');
@@ -435,10 +436,20 @@ test('removing a shared UI dependency exposes the selected page loss instead of 
 });
 
 test('each selectable domain retains its Java production sources after actual dependency pruning', () => {
+  // 선택 연동 판정이 정한 이벤트 소스(리스너·발행 위치)의 소유 기능은 생성기의 실제 연쇄 제거와 같아야 한다.
+  //   다르면 판정이 core 로 본 파일이 실제로는 기능과 함께 지워져 연동이 숨는다(같은 패키지 단순 이름 참조 등).
+  const supportOwners = new Map([...domainSupportFiles(root, manifest)].flatMap(([owner, files]) => files.map(file => [file, owner])));
+  const eventSources = deriveEventSources(root, sourceOwner(supportOwners, catalog.capabilities.map(row => row.id), requiresClosure(catalog.capabilities)));
+  const eventOwners = new Map([...eventSources.listeners, ...eventSources.constructions].map(row => [row.path, row.owner]));
+  assert.ok(eventOwners.size >= 15, 'the census reads real event sources');
   for (const domain of catalog.capabilities.map(row => row.id)) {
     const composition = resolveProjectRecipe(recipe([domain]), catalog);
     const profile = composerProfile(manifest, composition);
     const plan = planJavaRemoval(root, manifest, profile, java);
+    for (const [path, owner] of eventOwners) {
+      assert.equal(!plan.removed.has(join(root, path)), owner === 'core' || composition.resolvedDomains.includes(owner),
+        `${domain}: event source ${path} is owned by ${owner} in the census but the generator ${plan.removed.has(join(root, path)) ? 'removes' : 'keeps'} it`);
+    }
     for (const file of displayNameSupport) assert.equal(plan.removed.has(join(root, file)), !composition.resolvedDomains.includes('memoreport'), `${domain}: ${file}`);
     assertIntegrityGateAcknowledgements(profile, composition.resolvedDomains);
     // 생성기의 승인 대조와 같은 판정: 실제로 지워지는 Java 게이트와 승인 목록이 정확히 같아야 한다.

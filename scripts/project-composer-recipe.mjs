@@ -37,7 +37,7 @@ export function resolveProjectRecipe(input, catalog) {
   if (database.vendor !== 'postgresql') fail('database.vendor', 'Only PostgreSQL is currently supported', 'UNSUPPORTED_DATABASE');
   let backendLayout;
   try { backendLayout = normalizeBackendLayout(input.backendLayout); } catch { fail('backendLayout', 'Unsupported backend layout', 'UNSUPPORTED_LAYOUT'); }
-  if (!catalog || catalog.schemaVersion !== 1 || !Array.isArray(catalog.capabilities)) fail('catalog', 'A valid capability catalog is required');
+  if (!catalog || catalog.schemaVersion !== 1 || !Array.isArray(catalog.capabilities) || !Array.isArray(catalog.integrates)) fail('catalog', 'A valid capability catalog is required');
   const { catalogHash, ...catalogBody } = catalog;
   // Engine decorations such as sourceRef/sourceCommit are deliberately excluded
   // from this inventory contract and should be carried in its API envelope.
@@ -105,6 +105,9 @@ export function resolveProjectRecipe(input, catalog) {
     database: normalizedRecipe.database, backendLayout, tables, explicitSequences, permissionCodes, menuRoutes, excludedMenuTabs,
     frontend: { includedPaths, removePaths, retainedRoutes: menuRoutes },
     optionalForeignKeys: catalog.optionalForeignKeys.filter(fk => tables.includes(fk.childTable) && !tables.includes(fk.parentTable)),
+    // 선택 연동 가운데 상대 기능이 빠진 것. 자동 포함하지 않고 생성도 막지 않으며, 계획이 '기능 저하'로 알린다.
+    degraded: catalog.integrates.filter(edge => (edge.from === 'core' || included.has(edge.from)) && !included.has(edge.to))
+      .map(({ from, to, via, reason }) => ({ from, to, via, reason })),
     // 필수 외래 키의 부모가 빠진 선택. 자동 포함하지 않고 계획이 생성 불가 사유로 보인다.
     foreignKeyViolations: catalog.requiredForeignKeys.filter(fk => tables.includes(fk.childTable) && !tables.includes(fk.parentTable))
       .map(({ name, childTable, parentTable, sourceDomain, targetDomain }) => ({ name, childTable, parentTable, sourceDomain, targetDomain })),

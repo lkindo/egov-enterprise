@@ -13,6 +13,42 @@ test.after(() => rmSync(outputRoot, { recursive: true, force: true }));
 const recipe = () => ({ schemaVersion: 1, project: { name: 'engine-contract' }, sourceRef: 'HEAD',
   selection: { domains: ['mail', 'schedule'] }, database: { vendor: 'postgresql' }, backendLayout: 'single-module' });
 
+test('the plan explains degraded integrations by missing feature and lists permissions nobody receives after generation', () => {
+  const plan = createComposerEngine().plan(recipe());
+  // 메일·일정만 고르면 알림과 주소록이 빠진다. 제목의 조사는 서버가 맞춘다('을(를)' 을 화면에 보내지 않는다).
+  assert.deepEqual(plan.degradationNotes.map(group => group.heading), ['알림을 고르지 않아 줄어드는 동작', '주소록을 고르지 않아 줄어드는 동작']);
+  assert.deepEqual(plan.degradationNotes.flatMap(group => group.reasons.map(row => `${row.from}>${group.to}`)),
+    ['core>notification', 'mail>notification', 'mail>addressbook']);
+  assert.ok(plan.degradationNotes.every(group => !/을\(를\)/.test(group.heading)));
+  assert.deepEqual(plan.blockers, [], 'degradation never blocks generation');
+  assert.deepEqual(plan.unassignedPermissions.map(row => `${row.code}:${row.owner}`), ['ADT_LOG_READ:core', 'DWORK_READ:core', 'DWORK_RETRY:core', 'MFA_RECOVER:core']);
+  const recovery = plan.unassignedPermissions.find(row => row.code === 'MFA_RECOVER');
+  assert.equal(recovery.protected, true);
+  assert.match(recovery.howToAssign, /'계정 복구' 묶음.+보호 권한/);
+  assert.equal(plan.unassignedPermissions.find(row => row.code === 'DWORK_RETRY').bundle, null);
+  const withBoard = createComposerEngine().plan({ ...recipe(), selection: { domains: ['board'] } });
+  assert.deepEqual(withBoard.unassignedPermissions.filter(row => row.owner === 'board').map(row => row.code), ['FAQ_EDIT', 'NOTICE_EDIT']);
+});
+
+test('unassigned-permission guidance stays exact with the permission catalog, bundles and protected set', async () => {
+  const { PROTECTED_PERMISSIONS } = await import('./generate-screen-registry.mjs');
+  const { UNASSIGNED_PERMISSION_GUIDANCE, validateUnassignedGuidance } = await import('./project-composer-unassigned.mjs');
+  const permissions = JSON.parse(readFileSync(join(root, 'config/governance/permission-catalog.json'), 'utf8'));
+  const bundles = JSON.parse(readFileSync(join(root, 'config/governance/permission-bundles.json'), 'utf8'));
+  const rows = validateUnassignedGuidance({ permissions, bundles });
+  for (const row of rows) assert.equal(row.protected, PROTECTED_PERMISSIONS.includes(row.code), `${row.code}: protected flag follows the protected set`);
+  const withNew = structuredClone(permissions);
+  withNew.permissions.push({ code: 'NEW_READ', domain: 'NEW', action: 'READ', name: '새 권한', defaultGroups: [] });
+  assert.throws(() => validateUnassignedGuidance({ permissions: withNew, bundles }), /unassigned permission lacks guidance: NEW_READ/);
+  const assigned = structuredClone(permissions);
+  assigned.permissions.find(row => row.code === 'NOTICE_EDIT').defaultGroups = ['ROLE_ADMIN'];
+  assert.throws(() => validateUnassignedGuidance({ permissions: assigned, bundles }), /guidance names a permission with default groups or no catalog row: NOTICE_EDIT/);
+  const wrongBundle = { ...UNASSIGNED_PERMISSION_GUIDANCE, ADT_LOG_READ: { ...UNASSIGNED_PERMISSION_GUIDANCE.ADT_LOG_READ, bundle: 'account-recovery' } };
+  assert.throws(() => validateUnassignedGuidance({ guidance: wrongBundle, permissions, bundles }), /guidance bundle does not contain the permission: ADT_LOG_READ/);
+  const unbundled = { ...UNASSIGNED_PERMISSION_GUIDANCE, ADT_LOG_READ: { ...UNASSIGNED_PERMISSION_GUIDANCE.ADT_LOG_READ, bundle: null } };
+  assert.throws(() => validateUnassignedGuidance({ guidance: unbundled, permissions, bundles }), /guidance without a bundle must be an excluded permission: ADT_LOG_READ/);
+});
+
 test('UI and CLI use the same side-effect-free plan and reject unsupported or unsafe inputs', () => {
   const engine = createComposerEngine();
   const before = composerOutputPaths(root, 'planning-only', '0123456789abcdef');

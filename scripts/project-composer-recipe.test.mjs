@@ -131,6 +131,9 @@ test('canonical plans reject caller-injected tables, permission changes and stal
     value => { value.resolvedDomains = []; },
     value => { value.compositionHash = '0'.repeat(64); },
     value => { value.unrecognized = true; },
+    // 기능 저하를 지우거나 고친 계획도 다시 계산한 결과와 달라 거부된다.
+    value => { value.degraded = []; },
+    value => { value.degraded[0].reason = '알림은 그대로 갑니다.'; },
   ]) {
     const changed = structuredClone(plan); tamper(changed);
     assert.throws(() => verifyProjectComposition(changed, catalog), /does not match/);
@@ -142,6 +145,30 @@ test('canonical plans reject caller-injected tables, permission changes and stal
   const { catalogHash, ...body } = changedCatalog;
   changedCatalog.catalogHash = compositionDigest(body);
   assert.throws(() => resolveProjectRecipe(recipe({ domains: [changedCatalog.capabilities[0].id] }), changedCatalog), /not available/);
+});
+
+test('a plan reports each declared integration whose partner is absent, without including it or blocking generation', () => {
+  const degraded = selection => resolveProjectRecipe(recipe(selection), catalog).degraded.map(edge => `${edge.from}>${edge.to}`);
+  assert.deepEqual(degraded({ preset: 'core' }), ['core>notification']);
+  assert.deepEqual(degraded({ preset: 'collaboration' }), ['board>system', 'mail>addressbook', 'sms>addressbook']);
+  assert.deepEqual(degraded({ preset: 'demo' }), []);
+  assert.deepEqual(degraded({ domains: [] }), ['core>notification']);
+  assert.deepEqual(degraded({ domains: ['mail'] }), ['core>notification', 'mail>addressbook', 'mail>notification']);
+  assert.deepEqual(degraded({ domains: ['informalsanction'] }),
+    ['core>notification', 'informalsanction>mail', 'informalsanction>notification', 'informalsanction>sms']);
+  assert.deepEqual(degraded({ domains: catalog.capabilities.map(capability => capability.id) }), []);
+  for (const capability of catalog.capabilities) {
+    const plan = resolveProjectRecipe(recipe({ domains: [capability.id] }), catalog);
+    for (const edge of plan.degraded) {
+      assert.ok(!plan.resolvedDomains.includes(edge.to), `${capability.id}: a degraded partner is never included`);
+      assert.ok(edge.from === 'core' || plan.resolvedDomains.includes(edge.from), `${capability.id}: only included features degrade`);
+    }
+    assert.deepEqual(plan.foreignKeyViolations, [], `${capability.id}: degradation never becomes a blocker`);
+  }
+  const { integrates, catalogHash, ...rest } = catalog;
+  const withoutIntegrations = { ...rest, catalogHash: compositionDigest(rest) };
+  assert.throws(() => resolveProjectRecipe(recipe({ domains: [] }), withoutIntegrations),
+    error => error instanceof ProjectRecipeError && error.field === 'catalog');
 });
 
 test('layout remains independent of domain and DB semantics', () => {

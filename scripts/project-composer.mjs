@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { projectComposerMenuPreview } from './project-composer-menu-preview.mjs';
+import { loadUnassignedPermissionGuidance } from './project-composer-unassigned.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION = 1;
@@ -18,6 +19,16 @@ export function foreignKeyBlockers(composition, catalog) {
   return composition.foreignKeyViolations.map(violation => `${label(violation.sourceDomain)}의 ${violation.childTable} 테이블이 `
     + `${label(violation.targetDomain)}의 ${violation.parentTable} 테이블을 외래 키로 참조합니다. `
     + `${withObject(label(violation.targetDomain))} 함께 선택해야 생성할 수 있습니다.`);
+}
+/** 기능 저하를 빠진 기능별로 묶어 화면 문장을 만든다. 생성을 막지 않는 안내다. */
+export function degradationNotes(composition, catalog) {
+  const label = id => catalog.capabilities.find(capability => capability.id === id)?.label ?? id;
+  const groups = new Map();
+  for (const edge of composition.degraded) {
+    if (!groups.has(edge.to)) groups.set(edge.to, { to: edge.to, heading: `${withObject(label(edge.to))} 고르지 않아 줄어드는 동작`, reasons: [] });
+    groups.get(edge.to).reasons.push({ from: edge.from, reason: edge.reason });
+  }
+  return [...groups.values()];
 }
 function git(root, args) {
   const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true, maxBuffer: 32 * 1024 * 1024 });
@@ -182,7 +193,12 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
     // The local generator exports the inspected checkout. It never silently checks out another revision.
     const sourceCommit = git(root, ['rev-parse', '--verify', `${recipe.sourceRef}^{commit}`]);
     if (sourceCommit !== git(root, ['rev-parse', 'HEAD'])) throw new Error('Recipe sourceRef does not identify the current checkout');
+    const owner = code => current.capabilities.find(capability => capability.permissionCodes.includes(code))?.id ?? 'core';
     return { ...composition, sourceCommit, blockers: foreignKeyBlockers(composition, current),
+      degradationNotes: degradationNotes(composition, current),
+      // 기본 그룹이 없어 생성 직후 아무에게도 배정되지 않는 권한. 생성을 막지 않고, 완료 뒤 할 일로 보인다.
+      unassignedPermissions: loadUnassignedPermissionGuidance(root).filter(row => composition.permissionCodes.includes(row.code))
+        .map(row => ({ ...row, owner: owner(row.code) })),
       outputDirectory: `build/reusable-base/source/${composition.project.name}-<generation-id>`,
       menus: projectComposerMenuPreview(root, composition),
       warnings: [

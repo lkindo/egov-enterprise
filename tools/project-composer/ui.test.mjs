@@ -23,7 +23,16 @@ function plan(recipe) {
     autoIncluded: [...resolved].filter(id => !selected.includes(id)).map(domain => ({ domain, reason: '게시판 기능과 함께 필요합니다.' })),
     tables: ['tb_user_info', ...[...resolved].map(id => `tb_${id}`)],
     menus: [{ label: '사용자 관리', path: '/admin/users' }, ...[...resolved].map(id => ({ label: id, path: `/${id}` }))],
-    warnings: ['실행할 DB 연결은 생성 후 설정하세요.'], outputDirectory: `build/project-composer/${recipe.project.name}` };
+    warnings: ['실행할 DB 연결은 생성 후 설정하세요.'], outputDirectory: `build/project-composer/${recipe.project.name}`,
+    blockers: [],
+    degradationNotes: resolved.has('notification') ? [] : [{ to: 'notification', heading: '알림을 고르지 않아 줄어드는 동작',
+      reasons: [{ from: 'core', reason: '알림 기능이 없으면 부서 업무의 담당자를 지정하거나 바꿔도 새 담당자에게 업무 배정 알림이 가지 않습니다.' }] }],
+    unassignedPermissions: [
+      { code: 'ADT_LOG_READ', name: '민감 작업 감사 원장 · 조회', effect: '민감 작업 감사 원장에서 누가 언제 민감한 조회·변경을 했는지 봅니다.',
+        howToAssign: "권한 작업대에서 '로그·감사 열람' 묶음을 그룹에 더하면 함께 배정됩니다.", owner: 'core', protected: false },
+      { code: 'MFA_RECOVER', name: '다중요소 인증 · 계정 복구', effect: '추가 인증 수단을 잃은 사용자의 계정 복구를 승인합니다.',
+        howToAssign: "권한 작업대에서 '계정 복구' 묶음을 그룹에 더하면 함께 배정됩니다. 보호 권한이라 권한 부여와 배정 권한을 함께 가진 관리자만 저장할 수 있습니다.", owner: 'core', protected: true },
+    ] };
 }
 
 test('keyboard selection, dependent features, preview, failure recovery and generated recipe stay coherent', { timeout: 60_000 }, async t => {
@@ -70,6 +79,20 @@ test('keyboard selection, dependent features, preview, failure recovery and gene
   await expect(page.getByRole('button', { name: '프로젝트 생성', exact: true })).toBeEnabled();
   await page.getByText('포함되는 메뉴', { exact: true }).click();
   await expect(page.locator('#menu-preview')).toContainText('/board');
+  // 기능 저하와 미배정 권한은 안내일 뿐 생성 버튼을 막지 않는다.
+  await expect(page.getByRole('group', { name: '고르지 않은 연동 기능' })).toContainText('알림을 고르지 않아 줄어드는 동작');
+  await expect(page.locator('#plan-degraded')).toContainText('새 담당자에게 업무 배정 알림이 가지 않습니다.');
+  await expect(page.locator('#plan-unassigned-summary')).toHaveText('생성 뒤 직접 배정할 권한 2개');
+  await page.locator('#plan-unassigned-summary').click();
+  await expect(page.locator('#plan-unassigned-list')).toContainText('다중요소 인증 · 계정 복구');
+  await expect(page.locator('#plan-unassigned-list')).toContainText('보호 권한이라');
+  await expect(page.getByRole('button', { name: '프로젝트 생성', exact: true })).toBeEnabled();
+  // 알림을 고르면 저하 안내가 사라지고, 다시 빼면 돌아온다(이전 구성의 안내를 남기지 않는다).
+  await page.locator('#capability-notification').check();
+  await expect(page.locator('#plan-degraded')).toBeHidden();
+  await page.locator('#capability-notification').uncheck();
+  await expect(page.locator('#plan-degraded')).toContainText('알림을 고르지 않아 줄어드는 동작');
+  await expect(page.getByRole('button', { name: '프로젝트 생성', exact: true })).toBeEnabled();
   await page.setViewportSize({ width: 360, height: 800 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, 'narrow layout must not scroll horizontally');
   await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
