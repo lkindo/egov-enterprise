@@ -80,7 +80,16 @@ test('a declared tab menu must match an active menu row of an existing screen', 
 test('all producer domains and tables have one verified ownership or an explicit shared contract', () => {
   const expectedDomains = Object.values(manifest.packs).flatMap(pack => pack.backend?.appDomains ?? []).sort();
   assert.deepEqual(catalog.capabilities.map(capability => capability.id), expectedDomains);
-  assert.equal(catalog.capabilities.length, 20);
+  // Phase 0c: 통계는 고를 수 있는 기능이 아니라 core 다(20 -> 19). 게시물·자료 이용 화면은 게시판이 소유한다.
+  assert.equal(catalog.capabilities.length, 19);
+  assert.ok(!catalog.capabilities.some(capability => capability.id === 'stats'));
+  assert.ok(catalog.core.tables.includes('tb_rptp_stats'));
+  assert.ok(['STATS_ADMIN_READ', 'STATS_READ'].every(code => catalog.core.permissionCodes.includes(code)));
+  assert.deepEqual(catalog.core.menuRoutes.filter(route => route.startsWith('/admin/stats')),
+    ['/admin/stats', '/admin/stats/report', '/admin/stats/screen', '/admin/stats/user']);
+  const board = catalog.capabilities.find(capability => capability.id === 'board');
+  assert.deepEqual(board.menuRoutes.filter(route => route.startsWith('/admin/stats')), ['/admin/stats/board', '/admin/stats/data-usage']);
+  assert.ok(board.database.tables.includes('tb_dta_use_stats'));
   assert.deepEqual(catalog.mandatory, ['foundation', 'core']);
   const tables = [...new Set([...catalog.core.tables, ...catalog.capabilities.flatMap(capability => capability.database.tables)])].sort();
   assert.deepEqual(tables, Object.values(manifest.packs).flatMap(pack => pack.database.tables).sort());

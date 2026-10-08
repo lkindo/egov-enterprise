@@ -4713,6 +4713,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "collaboration",
+        "core",
         "demo"
       ],
       "journeys": [],
@@ -4819,6 +4821,7 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "collaboration",
         "demo"
       ],
       "journeys": [],
@@ -4926,6 +4929,7 @@
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyApiController.java",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/board/page.tsx",
+            "frontend/src/app/admin/survey/components/StatsHubSurveyTab.tsx",
             "frontend/src/services/foundation/system/SurveyAdminService.ts",
             "frontend/src/services/foundation/system/__tests__/SurveyAdminService.test.ts"
           ]
@@ -4969,6 +4973,7 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "collaboration",
         "demo"
       ],
       "journeys": [],
@@ -4998,7 +5003,8 @@
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiController.java",
-            "business-app/src/main/java/nuri/business/service/stats/ReportStatsService.java",
+            "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
+            "business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/data-usage/page.tsx"
@@ -5070,6 +5076,7 @@
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyApiController.java",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/data-usage/page.tsx",
+            "frontend/src/app/admin/survey/components/StatsHubSurveyTab.tsx",
             "frontend/src/services/foundation/system/SurveyAdminService.ts",
             "frontend/src/services/foundation/system/__tests__/SurveyAdminService.test.ts"
           ]
@@ -5113,6 +5120,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "collaboration",
+        "core",
         "demo"
       ],
       "journeys": [],
@@ -5142,7 +5151,7 @@
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiController.java",
-            "business-app/src/main/java/nuri/business/service/stats/ReportStatsService.java",
+            "business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/report/page.tsx"
@@ -5214,6 +5223,7 @@
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyApiController.java",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/report/page.tsx",
+            "frontend/src/app/admin/survey/components/StatsHubSurveyTab.tsx",
             "frontend/src/services/foundation/system/SurveyAdminService.ts",
             "frontend/src/services/foundation/system/__tests__/SurveyAdminService.test.ts"
           ]
@@ -5256,6 +5266,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "collaboration",
+        "core",
         "demo"
       ],
       "journeys": [],
@@ -5289,7 +5301,7 @@
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiController.java",
             "api-server/src/test/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiControllerTest.java",
-            "business-app/src/main/java/nuri/business/service/stats/ReportStatsService.java",
+            "business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/screen/page.tsx",
             "frontend/src/services/foundation/system/StatsAdminService.ts"
@@ -5309,7 +5321,7 @@
           "lastVerifiedAt": "2026-09-25",
           "owner": "product/UX + domain owner",
           "evidence": [
-            "business-app/src/main/java/nuri/business/service/stats/ReportStatsService.java",
+            "business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/screen/page.tsx"
@@ -5354,6 +5366,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "collaboration",
+        "core",
         "demo"
       ],
       "journeys": [],
@@ -5388,8 +5402,8 @@
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiController.java",
             "api-server/src/test/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiControllerTest.java",
             "api-server/src/test/java/nuri/api/schema/UserActivityUpsertIntegrationTest.java",
-            "business-app/src/main/java/nuri/business/service/stats/ReportStatsService.java",
             "business-core/src/main/java/nuri/business/service/log/UserActivityLogAggregator.java",
+            "business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/user/page.tsx",
             "frontend/src/services/foundation/system/StatsAdminService.ts"
@@ -5669,7 +5683,7 @@
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/test/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyApiControllerTest.java",
-            "business-app/src/test/java/nuri/business/service/stats/ReportStatsServiceTest.java",
+            "business-core/src/test/java/nuri/business/service/stats/ReportStatsServiceTest.java",
             "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
             "frontend/src/app/admin/survey/hub/page.tsx",
             "frontend/src/services/foundation/system/StatsAdminService.ts",

@@ -339,9 +339,19 @@ test('reusable-base matrix only retains profiles that contain a changed pack dom
   assert.deepEqual(collaborationAndDemo.reusableProfiles, ['collaboration', 'demo']);
 
   const frontendDemoOnly = classifyChangedFiles([
-    'frontend/src/app/admin/stats/page.tsx',
+    'frontend/src/app/admin/system/isg/page.tsx',
   ]);
   assert.deepEqual(frontendDemoOnly.reusableProfiles, ['demo']);
+
+  // Phase 0c: 통계 셸은 core 라 모든 프로필에 남고, 게시물 통계 화면은 게시판과 함께 collaboration 부터 남는다.
+  const statsShell = classifyChangedFiles([
+    'frontend/src/app/admin/stats/page.tsx',
+  ]);
+  assert.deepEqual(statsShell.reusableProfiles, ['core', 'collaboration', 'demo']);
+  const boardStats = classifyChangedFiles([
+    'frontend/src/app/admin/stats/board/page.tsx',
+  ]);
+  assert.deepEqual(boardStats.reusableProfiles, ['collaboration', 'demo']);
 
   const sharedInput = classifyChangedFiles([
     'foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java',

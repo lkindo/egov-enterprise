@@ -175,6 +175,18 @@ const CORE_SURVIVORS = [
   'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx',
   'frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx',
   'frontend/src/app/admin/observability/page.tsx',
+  // [Phase 0c] 통계 셸과 게시판 데이터를 쓰지 않는 통계 화면은 core 다. 셸은 게시판·설문 탭을 마커와 설문 패널로
+  //   받으므로, 그 import 가 마커 밖으로 새면 core 투영에서 통계 화면 전체가 연쇄로 사라진다.
+  'frontend/src/app/admin/stats/page.tsx',
+  'frontend/src/app/admin/stats/AdminStatsClient.tsx',
+  'frontend/src/app/admin/stats/IntelligenceHubClient.tsx',
+  'frontend/src/app/admin/stats/StatsHubParts.tsx',
+  'frontend/src/app/admin/stats/StatsHubFallback.tsx',
+  'frontend/src/app/admin/stats/user/page.tsx',
+  'frontend/src/app/admin/stats/screen/page.tsx',
+  'frontend/src/app/admin/stats/report/page.tsx',
+  'frontend/src/services/foundation/system/StatsAdminService.ts',
+  'frontend/src/types/foundation/stats.ts',
 ];
 
 test('core 프로필에서 살아남아야 하는 파일은 제외 pack 을 참조하지 않는다(주석·타입 전용 참조 포함)', () => {

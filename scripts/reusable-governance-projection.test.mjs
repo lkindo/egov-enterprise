@@ -153,7 +153,7 @@ test('custom review population follows domains and fails when selected evidence 
       routes: readJson(ROOT, 'config/ui-route-capabilities.json'), composition };
     const projected = deriveProjectedReviewManifests(options);
     assert.ok(projected.reviewScopes.visibleTerms.pilotIds.includes('content-survey-create'));
-    assert.ok(!projected.reviewScopes.visibleTerms.pilotIds.includes('content-schedule'), 'the stats/demo provenance pack does not select schedule');
+    assert.ok(!projected.reviewScopes.visibleTerms.pilotIds.includes('content-schedule'), 'the demo provenance pack does not select schedule');
     assert.ok(!projected.reviewScopes.uiQuality.scenarioIds.includes('board-article-composer'));
     assert.ok(projected.reviewScopes.uiQuality.excludedScenarios.every(row => row.reason === 'required-domain-not-in-composition'));
     assert.throws(() => deriveProjectedReviewManifests({ ...options, composition: undefined }), /requires a resolved composition/);

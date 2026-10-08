@@ -138,7 +138,7 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
     expect(client).not.toMatch(/UNINSTRUMENTED_TABS[\s\S]{0,200}CONTENT_STATS/);
 
     const service = readRepo(
-      'business-app/src/main/java/nuri/business/service/stats/ReportStatsService.java',
+      'business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java',
     );
     const method = service.slice(service.indexOf('public List<Object[]> getBbsStatsByDate'));
     const body = method.slice(0, method.indexOf('}'));
@@ -171,7 +171,7 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
    */
   it('DATA_USAGE 는 자료 이용 기록을 읽는다 — 게시글 집계로 갈아 끼우지 않는다', () => {
     const service = readRepo(
-      'business-app/src/main/java/nuri/business/service/stats/ReportStatsService.java',
+      'business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java',
     );
     const method = service.slice(service.indexOf('public List<Object[]> getDtaUseStatsByDate'));
     const body = method.slice(0, method.indexOf('}'));
@@ -206,7 +206,7 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
     expect(aggregator, '사용자 활동 writer 가 tb_user_log 에 적재하지 않는다')
       .toContain('userLogRepository.upsertActivityCounts');
 
-    const service = readRepo('business-app/src/main/java/nuri/business/service/stats/ReportStatsService.java');
+    const service = readRepo('business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java');
     const method = service.slice(service.indexOf('public List<Object[]> getUserStatsByDate'));
     expect(method.slice(0, method.indexOf('}'))).toContain('userLogRepository.countByDate');
 

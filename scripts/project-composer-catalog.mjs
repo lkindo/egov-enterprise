@@ -43,8 +43,10 @@ const FEATURES = {
   board: { label: '게시판·지식', permissions: ['BOARD', 'BBS_MST', 'SATISFY', 'NOTICE', 'FAQ'], paths: [
     'src/app/actions/boardActions.ts', 'src/services/business/user/board/BoardUserService.ts',
     'src/services/foundation/system/BoardAdminService.ts', 'src/services/business/board/SatisfactionService.ts',
-    'src/services/business/knowledge/knowledgeService.ts', 'src/app/admin/community/boards'],
-  routes: ['/admin/community/boards'], menuTabs: ['/admin/help/faq?tab=WIKI', '/admin/help/faq?tab=FAQ', '/admin/help/faq?tab=QNA'] },
+    'src/services/business/knowledge/knowledgeService.ts', 'src/app/admin/community/boards',
+    // Phase 0c: 게시물·자료 이용 통계 화면은 게시판 데이터만 보여 준다. 통계 셸·나머지 통계 화면은 core 다.
+    'src/app/admin/stats/board', 'src/app/admin/stats/data-usage'],
+  routes: ['/admin/community/boards', '/admin/stats/board', '/admin/stats/data-usage'], menuTabs: ['/admin/help/faq?tab=WIKI', '/admin/help/faq?tab=FAQ', '/admin/help/faq?tab=QNA'] },
   comment: { label: '댓글', permissions: ['COMMENT'], paths: [
     'src/app/actions/commentActions.ts', 'src/services/business/comment/commentService.ts',
     'src/services/foundation/system/CommentAdminService.ts', 'src/app/admin/system/comments'],
@@ -89,8 +91,6 @@ const FEATURES = {
   sms: { label: '문자 발송', permissions: ['SMS'], paths: [
     'src/services/foundation/operation/SmsAdminService.ts', 'src/app/admin/uss/ion/sms', 'src/app/cop/sms'],
   routes: ['/admin/uss/ion/sms', '/cop/sms'], requirements: ['문자 발송 공급자 설정'] },
-  stats: { label: '업무 통계', permissions: ['STATS'], paths: [
-    'src/app/admin/stats', 'src/services/foundation/system/StatsAdminService.ts', 'src/types/foundation/stats.ts'], routes: ['/admin/stats'] },
   survey: { label: '설문·투표', permissions: ['SURVEY', 'SURVEY_RSP', 'POLL'], paths: [
     'src/app/admin/survey', 'src/app/survey', 'src/lib/api/survey.ts', 'src/services/business/user/poll',
     'src/services/foundation/survey', 'src/services/foundation/system/SurveyAdminService.ts', 'src/types/business/poll.ts', 'src/types/business/survey.ts'],
@@ -129,8 +129,6 @@ const SHARED_UI = [
 const UI_DEPENDENCIES = [
   { from: 'system', domain: 'template', reason: '커뮤니티 관리 폼이 템플릿 조회 서비스를 직접 참조한다.',
     evidence: 'frontend/src/components/business/community/CommunityManageDialog.tsx', symbol: 'TemplateAdminService' },
-  { from: 'survey', domain: 'stats', reason: '설문 허브가 응답 통계를 위해 통계 서비스를 직접 참조한다.',
-    evidence: 'frontend/src/app/admin/survey/hub/SurveyHubClient.tsx', symbol: 'StatsAdminService' },
 ];
 
 const OPTIONAL_FOREIGN_KEYS = [{

@@ -337,27 +337,6 @@
       "pack": "collaboration"
     },
     {
-      "file": "stats/ReportStatsService.java",
-      "owner": "stats",
-      "target": "log",
-      "module": "business-core",
-      "types": [
-        "nuri.business.domain.log.LoginLogRepository",
-        "nuri.business.domain.log.UserLogRepository"
-      ],
-      "pack": "demo"
-    },
-    {
-      "file": "stats/ReportStatsService.java",
-      "owner": "stats",
-      "target": "user",
-      "module": "business-core",
-      "types": [
-        "nuri.business.domain.user.repository.UserRepository"
-      ],
-      "pack": "demo"
-    },
-    {
       "file": "survey/SurveyResultService.java",
       "owner": "survey",
       "target": "user",

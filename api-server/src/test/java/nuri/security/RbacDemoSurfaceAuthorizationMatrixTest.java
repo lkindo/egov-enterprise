@@ -29,16 +29,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * RBAC 매트릭스 — **demo 프로필에만 존재하는 표면**의 인가 판정 계약.
  *
  * ── 왜 분리했는가 ──────────────────────────────────────────────────────────
- * 통계·설문·투표·배너/팝업·약식결재는 재사용 base 의 core/collaboration 프로필에 없다.
+ * 설문·투표·배너/팝업·약식결재는 재사용 base 의 core/collaboration 프로필에 없다.
  * 종전에는 이 단언들이 {@link RbacAuthorizationMatrixTest} 안에 함께 있었고, 통계 단언이 필요로 하는
  * {@code ReportStatsService} {@code @MockitoBean} 한 줄 때문에 **매트릭스 전체가 축소 프로필에서
  * 연쇄 제거**됐다 — core 에 RBAC 게이트가 하나도 남지 않았다(GAP-PACK-001 ④).
  *
+ * <p>[Phase 0c] 통계는 business-core 로 옮겨 모든 프로필에 남는다. 통계 단언과 그 서비스 대역은
+ *   core 매트릭스로 옮겼고, 이 클래스의 경계는 {@link #SURVEY_PACK_BOUNDARY} 가 잇는다.
+ *
  * ⚠ 설문·투표 단언을 **이 클래스에 함께** 둔 것은 의도다. 그 단언들은 URL 문자열만 쓰므로 자체로는
  *   어떤 타입도 참조하지 않아, 따로 두면 **엔드포인트가 없는 프로필에도 살아남아 404 로 죽는다.**
- *   여기 두면 stats 참조를 통해 함께 제거된다. 프로필 구성상 설문 pack 은 demo 프로필에만 들어가므로
+ *   여기 두면 설문 표지 참조를 통해 함께 제거된다. 프로필 구성상 설문 pack 은 demo 프로필에만 들어가므로
  *   (core=[core], collaboration=[core,collaboration], demo=[core,collaboration,survey,demo])
- *   "demo 에서만 산다" 가 설문·투표에도 정확히 맞는다.
+ *   "demo 에서만 산다" 가 이 클래스의 모든 표면에 정확히 맞는다.
  *
  * ⚠ H2 DB 이름을 core 클래스와 다르게 둔다({@code rbac_demo_testdb}) — 같은 이름을 공유하면
  *   {@code create-drop} + {@code @DirtiesContext} 에서 컨텍스트 축출 순서에 따라 42S02 로 죽는다.
@@ -55,8 +58,12 @@ class RbacDemoSurfaceAuthorizationMatrixTest {
     @Autowired private ObjectMapper objectMapper;
     @MockitoBean private CustomUserDetailsService customUserDetailsService;
     @MockitoBean private JwtTokenProvider jwtTokenProvider;
-    /** 이 참조가 곧 pack 경계다 — stats 는 demo 소유이므로 축소 프로필에서 이 클래스가 함께 사라진다. */
-    @MockitoBean private nuri.business.service.stats.ReportStatsService reportStatsService;
+    /**
+     * 이 참조가 곧 pack 경계다 — 설문은 demo 프로필에만 들어가므로 축소 프로필에서 이 클래스가 함께 사라진다.
+     * 테스트는 이 상수를 쓰지 않는다. 종전 경계였던 통계 서비스 대역이 core 로 옮겨 가며 그 자리를 잇는 표지다.
+     * composer 투영은 설문을 고르지 않은 구성에서 이 줄을 지우고 남은 표면의 단언을 지킨다.
+     */
+    private static final Class<?> SURVEY_PACK_BOUNDARY = nuri.business.service.survey.SurveyService.class;
 
     private static final String SURVEYS = "/api/v1/admin/system/surveys";
 
@@ -76,27 +83,14 @@ class RbacDemoSurfaceAuthorizationMatrixTest {
         mockMvc.perform(get(SURVEYS).with(user(operator))).andExpect(status().isOk());
         mockMvc.perform(post(SURVEYS).with(user(operator))).andExpect(status().isForbidden());
     }
-    @Test void ordinaryStatisticsReaderCannotEnterAnyAdministrativeStatisticsEndpoint() throws Exception {
+    @Test void ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints() throws Exception {
         var ordinary = nuri.business.support.AuthorizationTestPrincipal.principal("user_test", "USR_001", "USER");
-        mockMvc.perform(get("/api/v1/statistics/connect").with(user(ordinary))).andExpect(status().isOk());
-        for (String suffix : List.of("bbs", "connect", "data-usage", "report", "summary", "user")) {
-            mockMvc.perform(get("/api/v1/admin/system/statistics/" + suffix).with(user(ordinary)))
-                    .andExpect(status().isForbidden());
-        }
         for (String path : List.of("/api/v1/admin/system/banners", "/api/v1/admin/system/banners/reflected",
                 "/api/v1/admin/system/banners/1", "/api/v1/admin/system/popups", "/api/v1/admin/system/popups/1")) {
             mockMvc.perform(get(path).with(user(ordinary))).andExpect(status().isForbidden());
         }
         mockMvc.perform(patch("/api/v1/admin/system/ism/1/confirm").with(user(ordinary)))
                 .andExpect(status().isForbidden());
-    }
-    @Test void delegatedStatisticsPermissionAllowsAdministrativeReadsWithoutAnAdminGroup() throws Exception {
-        var delegated = RbacAuthorizationMatrixTest.explicit(List.of("REPORT_AUDIT"), List.of("STATS_ADMIN_READ"));
-        for (String suffix : List.of("bbs", "connect", "data-usage", "report", "summary", "user")) {
-            mockMvc.perform(get("/api/v1/admin/system/statistics/" + suffix).with(user(delegated)))
-                    .andExpect(status().isOk());
-        }
-        mockMvc.perform(get("/api/v1/statistics/connect").with(user(delegated))).andExpect(status().isForbidden());
     }
     @Test void ordinaryPollParticipantCannotCreateUpdateOrDeletePolls() throws Exception {
         var ordinary = nuri.business.support.AuthorizationTestPrincipal.principal("user_test", "USR_001", "USER");

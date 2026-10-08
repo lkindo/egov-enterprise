@@ -38,11 +38,32 @@ test('required cross-domain foreign keys are reported without auto-inclusion whe
   for (const preset of catalog.presets) assert.deepEqual(resolveProjectRecipe(recipe({ preset: preset.id }), catalog).foreignKeyViolations, [], preset.id);
 });
 
+/*
+ * Phase 0c 의 종료 조건. 설문만 고르면 설문만 들어오고 게시판은 들어오지 않는다 — 종전에는 설문이 통계를,
+ * 통계가 자료 이용 기록의 게시글 외래 키를 끌어와 생성이 막혔다. 통계 화면 중 게시판 데이터만 보여 주는
+ * 게시물·자료 이용 화면은 게시판과 함께 빠지고, 나머지 통계 화면은 core 로 남는다.
+ */
+test('selecting only survey generates survey alone without the board or a foreign key violation (Phase 0c)', () => {
+  const plan = resolveProjectRecipe(recipe({ domains: ['survey'] }), catalog);
+  assert.deepEqual(plan.resolvedDomains, ['survey']);
+  assert.deepEqual(plan.packs, ['core', 'survey']);
+  assert.deepEqual(plan.foreignKeyViolations, []);
+  assert.deepEqual(plan.autoIncluded, []);
+  for (const table of ['tb_bbs_item', 'tb_bbs_master', 'tb_dta_use_stats']) assert.ok(!plan.tables.includes(table), table);
+  for (const table of ['tb_srvy_info', 'tb_rptp_stats']) assert.ok(plan.tables.includes(table), table);
+  const { menus: projected } = projectCompositionMenus({ menus: loadProjectComposerMenus(resolve(import.meta.dirname, '..')).menus, menuRoutes: plan.menuRoutes, excludedMenuTabs: plan.excludedMenuTabs });
+  const menus = new Set(projected.map(row => row.menu_sn));
+  for (const kept of [9040102, 9040104, 9040105]) assert.ok(menus.has(kept), `core statistics menu ${kept}`);
+  for (const dropped of [9040101, 9040106]) assert.ok(!menus.has(dropped), `board statistics menu ${dropped}`);
+  assert.ok(plan.frontend.removePaths.includes('src/app/admin/stats/board') && plan.frontend.removePaths.includes('src/app/admin/stats/data-usage'));
+  assert.ok(!plan.frontend.removePaths.some(path => path === 'src/app/admin/stats'), 'the statistics shell is core');
+});
+
 test('core plus board and survey includes required UI/domain closure without mail or unrelated packs', () => {
   const plan = resolveProjectRecipe(recipe({ domains: ['board', 'survey'] }), catalog);
   assert.equal(plan.profile, 'custom');
   assert.deepEqual(plan.selectedDomains, ['board', 'survey']);
-  assert.deepEqual(plan.resolvedDomains, ['board', 'comment', 'help', 'note', 'scrap', 'stats', 'survey', 'system', 'template']);
+  assert.deepEqual(plan.resolvedDomains, ['board', 'comment', 'help', 'note', 'scrap', 'survey', 'system', 'template']);
   for (const absent of ['mail', 'sms', 'schedule', 'report']) assert.ok(!plan.resolvedDomains.includes(absent));
   assert.ok(!plan.tables.includes('tb_email_dsptch_manage'));
   assert.ok(plan.tables.includes('tb_srvy_info') && plan.tables.includes('tb_tmplt_info'));
