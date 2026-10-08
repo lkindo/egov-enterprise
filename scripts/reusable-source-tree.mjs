@@ -41,13 +41,15 @@ export function normalize(path) {
 
 /** An exported project must not inherit the producer's ignored build/ boundary. */
 export function initializeGeneratedRepository(output) {
-  const target = realpathSync(resolve(output));
-  if (target === realpathSync(ROOT) || existsSync(join(target, '.git'))) {
+  // 경로는 실제 표기로 비교한다. realpathSync 는 Windows 드라이브 문자를 받은 그대로(d:\…) 두지만
+  //   Git 은 실제 표기(D:\…)를 돌려줘, 같은 디렉터리를 다른 경로로 판정했다.
+  const target = realpathSync.native(resolve(output));
+  if (target === realpathSync.native(ROOT) || existsSync(join(target, '.git'))) {
     fail('새 산출물만 독립 Git 저장소로 초기화할 수 있다.');
   }
   git(['-C', target, 'init', '--quiet']);
   const repository = git(['-C', target, 'rev-parse', '--show-toplevel']);
-  if (realpathSync(repository) !== target) fail('산출물의 독립 Git 경계를 확인하지 못했다.');
+  if (realpathSync.native(repository) !== target) fail('산출물의 독립 Git 경계를 확인하지 못했다.');
 }
 
 export function trackedAndUntrackedFiles() {

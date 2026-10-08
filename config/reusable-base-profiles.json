@@ -342,6 +342,11 @@
             "foundation/src/main/java/nuri/foundation/core/user/UserDisplayNameLookup.java",
             "business-core/src/main/java/nuri/business/service/user/UserDisplayNameLookupService.java",
             "business-core/src/test/java/nuri/business/service/user/UserDisplayNameLookupServiceTest.java"
+          ],
+          "system": [
+            "foundation/src/main/java/nuri/foundation/core/template/TemplateAssignmentPolicy.java",
+            "business-app/src/main/java/nuri/business/service/template/TemplateAssignmentPolicyService.java",
+            "business-app/src/test/java/nuri/business/service/template/TemplateAssignmentPolicyServiceTest.java"
           ]
         }
       },

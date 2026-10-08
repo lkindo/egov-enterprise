@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { domainSupportFiles } from './project-composer-source.mjs';
+import { domainSupportFiles, supportFileDirectoryDomain } from './project-composer-source.mjs';
 import { menuRouteKey } from './project-composer-db.mjs';
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
 
@@ -195,9 +195,17 @@ export function loadProjectComposerCatalog(root = ROOT) {
   const inventory = new Map(domains.map(domain => [domain, { files: [], tables: [], sequences: [], edges: [] }]));
   const sourceFingerprints = UI_DEPENDENCIES.map(({ evidence }) => ({ path: evidence,
     sha256: compositionDigest(readFileSync(join(root, evidence), 'utf8').replace(/\r\n/g, '\n')) }));
+  const supportRequirements = new Map();
   for (const [domain, files] of domainSupportFiles(root, manifest)) for (const path of files) {
     inventory.get(domain).files.push(path);
-    sourceFingerprints.push({ path, sha256: compositionDigest(readFileSync(join(root, path), 'utf8').replace(/\r\n/g, '\n')) });
+    // 다른 도메인 디렉터리의 지원 파일은 그 도메인이 있어야 존재한다. 업무 앱 생산 소스의 지문은 아래 순회가 남긴다.
+    const directoryDomain = supportFileDirectoryDomain(path);
+    if (directoryDomain) {
+      if (!inventory.has(directoryDomain)) fail(`support file directory domain is not selectable: ${path}`);
+      const known = supportRequirements.get(domain) ?? [];
+      if (!known.some(row => row.domain === directoryDomain)) supportRequirements.set(domain, [...known, { domain: directoryDomain, path }]);
+    }
+    if (!path.startsWith(`${APP_ROOT}/`)) sourceFingerprints.push({ path, sha256: compositionDigest(readFileSync(join(root, path), 'utf8').replace(/\r\n/g, '\n')) });
   }
   for (const absolute of walk(join(root, APP_ROOT)).filter(path => path.endsWith('.java'))) {
     const path = slash(relative(root, absolute));
@@ -275,6 +283,9 @@ export function loadProjectComposerCatalog(root = ROOT) {
     if (!data.files.length) fail(`capability has no source: ${domain}`);
     const requires = [];
     for (const edge of data.edges) requires.push({ domain: edge.domain, kind: 'java', reason: `${domain} 소스가 ${edge.domain} 타입을 참조한다.`, evidence: edge.evidence });
+    for (const support of supportRequirements.get(domain) ?? []) {
+      requires.push({ domain: support.domain, kind: 'java', reason: `${domain} 이 쓰는 지원 구현이 ${support.domain} 소스에 있다.`, evidence: support.path });
+    }
     for (const cluster of manifest.clusters ?? []) if (cluster.domains.includes(domain)) {
       for (const required of [...cluster.domains, ...(cluster.requiresDomains ?? [])].filter(item => item !== domain)) {
         requires.push({ domain: required, kind: 'manifest', reason: cluster.reason, evidence: `${MANIFEST}#clusters/${cluster.id}` });

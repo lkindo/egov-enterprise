@@ -132,6 +132,22 @@ export function writeProjectedManifest(output, manifest, profileName, profile, d
       } : pack]),
   );
   const ownedDomains = new Set(Object.values(packs).flatMap((pack) => pack.backend?.appDomains ?? []));
+  // 소유 pack 이 구성에 없는 공유 테이블은 선택된 소비자 가운데 가장 낮은 rank 의 pack 으로 넘긴다. 넘기지 않으면 생성물의
+  //   어느 pack 도 그 테이블을 소유하지 않는다(템플릿 단독 선택: collaboration 소유 tb_tmplt_info). 프리셋은 rank 누적이라
+  //   소유 pack 이 늘 포함되므로 바뀌지 않는다.
+  const transferredOwners = new Map();
+  if (composition?.profile === 'custom') {
+    const selectedTables = new Set(composition.tables);
+    for (const contract of manifest.sharedTableContracts ?? []) {
+      if (allowedPacks.has(contract.ownerPack) || !selectedTables.has(contract.table)) continue;
+      const target = (contract.consumers ?? []).filter((consumer) => ownedDomains.has(consumer))
+        .map((consumer) => Object.keys(packs).find((name) => packs[name].backend?.appDomains?.includes(consumer)))
+        .sort((left, right) => packs[left].rank - packs[right].rank)[0];
+      if (!target) fail(`공유 테이블 ${contract.table} 을 넘겨받을 선택 소비자 pack 이 없다.`);
+      packs[target].database.tables = [...packs[target].database.tables, contract.table];
+      transferredOwners.set(contract.table, target);
+    }
+  }
   const projected = {
     ...manifest,
     sourcePolicy: {
@@ -147,9 +163,10 @@ export function writeProjectedManifest(output, manifest, profileName, profile, d
         [...(cluster.domains ?? []), ...(cluster.requiresDomains ?? [])].every((domain) => ownedDomains.has(domain)),
     ),
     sharedTableContracts: (manifest.sharedTableContracts ?? [])
-      .filter((contract) => allowedPacks.has(contract.ownerPack))
+      .filter((contract) => allowedPacks.has(contract.ownerPack) || transferredOwners.has(contract.table))
       .map((contract) => ({
         ...contract,
+        ...(transferredOwners.has(contract.table) ? { ownerPack: transferredOwners.get(contract.table) } : {}),
         consumers: (contract.consumers ?? []).filter((consumer) => ownedDomains.has(consumer)),
       })),
     databaseSnapshot: {

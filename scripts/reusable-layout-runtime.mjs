@@ -80,8 +80,9 @@ function generatedLayout(root) {
 }
 
 export function installMultiModuleMigrationRuntime(outputRoot) {
-  const root = realpathSync(resolve(outputRoot));
-  if (root === realpathSync(resolve(dirname(SCRIPT_PATH), '..'))) fail('refusing to rewrite the source repository');
+  // 실제 표기로 비교한다 — realpathSync 는 Windows 드라이브 문자를 받은 그대로 둬 대소문자만 다른 원본을 놓쳤다.
+  const root = realpathSync.native(resolve(outputRoot));
+  if (root === realpathSync.native(resolve(dirname(SCRIPT_PATH), '..'))) fail('refusing to rewrite the source repository');
   const pkg = JSON.parse(read(root, 'package.json'));
   if (pkg.scripts?.['verify:migration'] !== 'node scripts/verify.mjs migration') fail('unexpected package verify:migration command');
   pkg.scripts['verify:migration'] = MIGRATION_ALIAS;
@@ -90,8 +91,9 @@ export function installMultiModuleMigrationRuntime(outputRoot) {
 }
 
 export function installSingleModuleRuntime(outputRoot) {
-  const root = realpathSync(resolve(outputRoot));
-  if (root === realpathSync(resolve(dirname(SCRIPT_PATH), '..'))) fail('refusing to rewrite the source repository');
+  // 실제 표기로 비교한다 — realpathSync 는 Windows 드라이브 문자를 받은 그대로 둬 대소문자만 다른 원본을 놓쳤다.
+  const root = realpathSync.native(resolve(outputRoot));
+  if (root === realpathSync.native(resolve(dirname(SCRIPT_PATH), '..'))) fail('refusing to rewrite the source repository');
   const pkg = JSON.parse(read(root, 'package.json'));
   if (pkg.scripts?.backend !== 'gradlew.bat :api-server:bootRun') fail('unexpected package backend command');
   if (pkg.scripts?.['verify:migration'] !== 'node scripts/verify.mjs migration') fail('unexpected package verify:migration command');

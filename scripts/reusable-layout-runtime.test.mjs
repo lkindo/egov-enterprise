@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -211,4 +211,26 @@ test('installer refuses the producer tree; importing is silent and unknown CLI o
   const rejected = spawnSync(process.execPath, [helper, '--load'], { encoding: 'utf8' });
   assert.equal(rejected.status, 1);
   assert.match(rejected.stderr, /usage: --verify-migration/);
+});
+
+test('installer refuses its own source tree even when the Windows drive letter case differs', async t => {
+  // realpathSync 는 드라이브 문자를 받은 그대로 둬, 대소문자만 다른 원본 경로를 다른 경로로 보고 덮어썼다.
+  //   실제 원본을 건드리지 않도록 임시 원본(모듈 사본 + package.json)에서 시험한다.
+  const base = realpathSync(tmpdir());
+  const source = mkdtempSync(join(base, 'egov-runtime-drive-'));
+  t.after(() => {
+    const back = relative(base, realpathSync(source));
+    assert.ok(back.startsWith('egov-runtime-drive-') && !back.includes(sep));
+    rmSync(source, { recursive: true, force: true });
+  });
+  mkdirSync(join(source, 'scripts'));
+  for (const file of ['reusable-layout-runtime.mjs', 'reusable-single-module.mjs']) copyFileSync(join(ROOT, 'scripts', file), join(source, 'scripts', file));
+  const pkg = `${JSON.stringify({ scripts: { 'verify:migration': 'node scripts/verify.mjs migration', backend: 'gradlew.bat :api-server:bootRun' } }, null, 2)}\n`;
+  writeFileSync(join(source, 'package.json'), pkg);
+  const copy = await import(pathToFileURL(join(source, 'scripts', 'reusable-layout-runtime.mjs')).href);
+  const flipped = source.replace(/^[A-Za-z](?=:)/, letter => (letter === letter.toUpperCase() ? letter.toLowerCase() : letter.toUpperCase()));
+  if (process.platform === 'win32') assert.notEqual(flipped, source, 'negative control: the drive letter case is flipped');
+  assert.throws(() => copy.installMultiModuleMigrationRuntime(flipped), /source repository/);
+  assert.throws(() => copy.installSingleModuleRuntime(flipped), /source repository/);
+  assert.equal(readFileSync(join(source, 'package.json'), 'utf8'), pkg, 'the source package must stay untouched');
 });
