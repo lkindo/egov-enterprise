@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { chromium, expect } from '../../frontend/node_modules/@playwright/test/index.mjs';
 import { createComposerServer } from '../../scripts/project-composer-server.mjs';
+import { loadProjectComposerCatalog } from '../../scripts/project-composer-catalog.mjs';
+import { resolveProjectRecipe } from '../../scripts/project-composer-recipe.mjs';
+import { degradationNotes, inclusionNotes } from '../../scripts/project-composer.mjs';
 
 const catalog = {
   sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40), mandatory: ['foundation', 'core'],
@@ -20,7 +23,9 @@ function plan(recipe) {
   const resolved = new Set(selected);
   if (['board', 'comment', 'scrap'].some(id => selected.includes(id))) ['board', 'comment', 'scrap'].forEach(id => resolved.add(id));
   return { recipe, selectedDomains: selected, resolvedDomains: [...resolved],
-    autoIncluded: [...resolved].filter(id => !selected.includes(id)).map(domain => ({ domain, reason: '게시판 기능과 함께 필요합니다.' })),
+    inclusionNotes: [...resolved].filter(id => !selected.includes(id)).map(domain => ({ domain, label: domain, roots: ['board'], path: `게시판 → ${domain}`,
+      steps: [{ from: 'board', to: domain, text: `게시판 → ${domain}: 게시판 기능과 함께 필요합니다.`, evidence: ['코드 참조'], files: ['Board.java'] }],
+      removal: '이 기능을 빼려면 게시판을 해제하세요.' })),
     tables: ['tb_user_info', ...[...resolved].map(id => `tb_${id}`)],
     menus: [{ label: '사용자 관리', path: '/admin/users' }, ...[...resolved].map(id => ({ label: id, path: `/${id}` }))],
     warnings: ['실행할 DB 연결은 생성 후 설정하세요.'], outputDirectory: `build/project-composer/${recipe.project.name}`,
@@ -219,4 +224,82 @@ test('lost generation response recovers only its accepted request without submit
     assert.equal(submissions, 1);
     assert.equal(generations, 1);
   });
+});
+
+/*
+ * 자동 포함 설명(E2)을 실제 카탈로그와 실제 해석기로 그린다. 쪽지만 고르면 협업 허브와 게시판 묶음을 따라 여섯 기능이
+ * 함께 들어온다. 화면은 경로 사슬과 사용자 문장을 보이고, 개발자 근거는 한 번 더 접으며, '해제하기'로 정확히 빠진다.
+ */
+test('automatic inclusions from the real catalog show a chain, a user sentence, folded evidence and an exact way out', { timeout: 45_000 }, async t => {
+  const real = loadProjectComposerCatalog();
+  const plan = recipe => {
+    const composition = resolveProjectRecipe(recipe, real);
+    return { ...composition, blockers: [], inclusionNotes: inclusionNotes(composition, real), degradationNotes: degradationNotes(composition, real),
+      unassignedPermissions: [], menus: [], warnings: [], outputDirectory: `build/project-composer/${recipe.project.name}` };
+  };
+  let release;
+  const released = new Promise(resolve => { release = resolve; });
+  const app = createComposerServer({ engine: { catalog: () => ({ ...real, sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40) }), plan,
+    generate: async () => { await released; throw new Error('not generated in this test'); } } });
+  const origin = await app.listen(0);
+  t.after(() => app.close());
+  const browser = await chromium.launch({ headless: true });
+  t.after(() => browser.close());
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+  await page.goto(origin);
+  await expect(page.getByRole('heading', { name: '새 프로젝트 만들기' })).toBeVisible();
+  await expect(page.locator('#domain-count')).toHaveText('0');
+  await page.locator('#capability-note').check();
+  await expect(page.locator('#domain-count')).toHaveText('7');
+  await expect(page.locator('#reason-board')).toHaveText('자동 포함 · 쪽지 → 스크랩 → 게시판·지식');
+  await expect(page.locator('#auto-included')).toContainText('함께 포함되는 기능 6개');
+  const board = page.locator('#auto-board');
+  await expect(board).toContainText('쪽지 → 스크랩 → 게시판·지식');
+  await board.getByText('왜 포함됐나').click();
+  await expect(board).toContainText('스크랩 → 게시판·지식: 스크랩은 게시글을 저장해 둡니다.');
+  await expect(board).toContainText('이 기능을 빼려면 쪽지를 해제하세요.');
+  // 개발자 근거(파일 경로)는 접혀 있고, 보이는 설명에는 클래스명·기능 id 같은 영문이 없다.
+  await expect(board.locator('code').first()).toBeHidden();
+  assert.doesNotMatch(await page.locator('#auto-included').innerText(), /[A-Za-z]/);
+  // 같은 구성을 다시 확인해도 펼친 설명과 키보드 포커스가 그 자리에 남는다.
+  const summary = board.locator('summary', { hasText: '왜 포함됐나' });
+  await summary.focus();
+  // 옛 요소에 표시를 남겨, 아래 단언이 다시 그린 새 요소에서만 통과하게 한다.
+  await page.evaluate(() => { document.getElementById('auto-board').dataset.stale = 'yes'; });
+  await page.evaluate(() => document.getElementById('composer-form').requestSubmit());
+  await expect(page.locator('#auto-board:not([data-stale])')).toHaveCount(1);
+  await expect(board.locator('details').first()).toHaveAttribute('open', '');
+  await expect(summary).toBeFocused();
+  await board.getByText('개발자 근거').click();
+  await expect(board.locator('code', { hasText: 'nuri/business/domain/scrap/Scrap.java' })).toBeVisible();
+  await expect(board).toContainText('코드 참조 · 생성 묶음 선언');
+  // 요약은 생성 중 잠기는 구성 영역 밖에 있다. 생성이 도는 동안 해제 버튼도 잠기고, 끝나면 다시 풀린다.
+  const drop = board.getByRole('button', { name: '쪽지 해제하기' });
+  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  await expect(page.getByRole('button', { name: '프로젝트 생성 중…' })).toBeDisabled();
+  await expect(drop).toBeDisabled();
+  await expect(drop).toHaveCSS('opacity', '0.5');
+  release();
+  await expect(page.getByRole('heading', { name: '생성을 완료하지 못했습니다' })).toBeVisible();
+  await expect(drop).toBeEnabled();
+  await drop.click();
+  await expect(page.locator('#capability-note')).toBeFocused();
+  await expect(page.locator('#capability-note')).not.toBeChecked();
+  await expect(page.locator('#capability-board')).not.toBeChecked();
+  await expect(page.locator('#domain-count')).toHaveText('0');
+  await expect(page.locator('#auto-included')).toBeEmpty();
+  await expect(page.locator('#preset')).toHaveValue('custom');
+  // 해제 대상이 둘이면 버튼이 둘을 함께 뺀다. 댓글과 스크랩이 모두 게시판을 끌어온다.
+  await page.locator('#capability-comment').check();
+  await page.locator('#capability-scrap').check();
+  const shared = page.locator('#auto-board');
+  await shared.getByText('왜 포함됐나').click();
+  await expect(shared).toContainText('이 기능을 빼려면 댓글, 스크랩을 모두 해제하세요.');
+  await shared.getByRole('button', { name: '댓글, 스크랩 해제하기' }).click();
+  await expect(page.locator('#capability-comment')).not.toBeChecked();
+  await expect(page.locator('#capability-scrap')).not.toBeChecked();
+  await expect(page.locator('#domain-count')).toHaveText('0');
+  assert.deepEqual(pageErrors, []);
 });

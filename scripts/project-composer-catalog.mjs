@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { domainSupportFiles, supportFileDirectoryDomain } from './project-composer-source.mjs';
 import { degradationPredicate, deriveEventTriples, requiresClosure, resolveIntegrations, sourceOwner } from './project-composer-integrations.mjs';
 import { menuRouteKey } from './project-composer-db.mjs';
+import { attachUserReasons } from './project-composer-reasons.mjs';
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -279,7 +280,8 @@ export function loadProjectComposerCatalog(root = ROOT) {
   const sharedRoutes = new Map(SHARED_UI.flatMap(group => group.routes.map(route => [route, group.domains])));
   const mandatoryPermissions = permissions.permissions.filter(permission => !declaredPermissionDomains.has(permission.domain)).map(permission => permission.code).sort();
   const mandatoryRoutes = allRoutes.filter(route => !routeOwners.has(route) && !sharedRoutes.has(route));
-  const capabilities = domains.map(domain => {
+  // 간선마다 사용자용 한 문장을 붙인다. 선언과 간선이 어긋나면 여기서 실패한다(설계서 9.1 R5).
+  const capabilities = attachUserReasons(domains.map(domain => {
     const feature = FEATURES[domain];
     const data = inventory.get(domain);
     if (!data.files.length) fail(`capability has no source: ${domain}`);
@@ -311,7 +313,7 @@ export function loadProjectComposerCatalog(root = ROOT) {
       permissionCodes: permissions.permissions.filter(permission => feature.permissions.includes(permission.domain)).map(permission => permission.code).sort(),
       requirements: feature.requirements ?? [],
     };
-  });
+  }));
   // 탭 기여는 실제 메뉴 행과 셸 화면이 있어야 한다. 맞지 않는 선언은 아무 메뉴도 고르지 못한 채 조용히 남는다.
   const menuRows = JSON.parse(readFileSync(join(root, COMPOSER_MENU_SNAPSHOT_PATH), 'utf8')).menus
     .filter(row => row.use_yn === 'Y' && row.del_yn !== 'Y' && row.modern_route).map(row => menuRouteKey(row.modern_route).key);

@@ -30,6 +30,26 @@ export function degradationNotes(composition, catalog) {
   }
   return [...groups.values()];
 }
+/** 자동 포함 근거의 종류. 화면에서 접힌 근거로만 보인다. */
+export const REQUIRES_KIND_LABELS = Object.freeze({ java: '코드 참조', manifest: '생성 묶음 선언', 'shared-ui': '공동 화면', 'ui-import': '화면 참조' });
+/**
+ * 자동 포함을 화면 문장으로 바꾼다(설계서 9.3·E2). 경로 사슬, 단계마다 사용자용 한 문장, 해제 방법을 싣고
+ * 개발자 근거(종류·파일)는 접어서 보일 수 있게 따로 둔다. 클래스명·기능 id 는 문장에 싣지 않는다.
+ */
+export function inclusionNotes(composition, catalog) {
+  const label = id => catalog.capabilities.find(capability => capability.id === id)?.label ?? id;
+  return composition.autoIncluded.map(item => {
+    const roots = item.roots.map(label);
+    const listed = [...roots.slice(0, -1), withObject(roots.at(-1))].join(', ');
+    return {
+      domain: item.domain, label: label(item.domain), roots: [...item.roots],
+      path: [item.chain[0].from, ...item.chain.map(hop => hop.to)].map(label).join(' → '),
+      steps: item.chain.map(hop => ({ from: hop.from, to: hop.to, text: `${label(hop.from)} → ${label(hop.to)}: ${hop.userReason}`,
+        evidence: hop.kinds.map(kind => REQUIRES_KIND_LABELS[kind] ?? kind), files: [...hop.evidence] })),
+      removal: `이 기능을 빼려면 ${listed} ${roots.length > 1 ? '모두 ' : ''}해제하세요.`,
+    };
+  });
+}
 function git(root, args) {
   const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true, maxBuffer: 32 * 1024 * 1024 });
   if (result.error || result.status !== 0) throw new Error('Source checkout identity could not be verified');
@@ -195,6 +215,7 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
     if (sourceCommit !== git(root, ['rev-parse', 'HEAD'])) throw new Error('Recipe sourceRef does not identify the current checkout');
     const owner = code => current.capabilities.find(capability => capability.permissionCodes.includes(code))?.id ?? 'core';
     return { ...composition, sourceCommit, blockers: foreignKeyBlockers(composition, current),
+      inclusionNotes: inclusionNotes(composition, current),
       degradationNotes: degradationNotes(composition, current),
       // 기본 그룹이 없어 생성 직후 아무에게도 배정되지 않는 권한. 생성을 막지 않고, 완료 뒤 할 일로 보인다.
       unassignedPermissions: loadUnassignedPermissionGuidance(root).filter(row => composition.permissionCodes.includes(row.code))

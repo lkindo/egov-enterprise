@@ -62,18 +62,39 @@ export function resolveProjectRecipe(input, catalog) {
   const reasons = new Map();
   const included = new Set(selectedDomains);
   const queue = [...selectedDomains];
+  // 프리셋은 화면 계열 간선(customOnly)을 따르지 않는다. 사슬과 해제 대상도 같은 간선으로 계산한다.
+  const traversed = domain => features.get(domain).requires.filter(edge => !(preset && edge.customOnly));
+  // 그 기능을 처음 끌어온 기능. 모든 선택에서 함께 퍼지는 너비 우선 탐색이라 선택에서 가장 짧은 경로가 남는다.
+  const discoveredFrom = new Map();
   for (let index = 0; index < queue.length; index += 1) {
     const domain = queue[index];
-    for (const edge of features.get(domain).requires) {
-      if (preset && edge.customOnly) continue;
+    for (const edge of traversed(domain)) {
       if (!features.has(edge.domain) || !features.get(edge.domain).available) fail('catalog', `Dependency is unavailable: ${domain} -> ${edge.domain}`);
       if (!selected.has(edge.domain)) {
         if (!reasons.has(edge.domain)) reasons.set(edge.domain, new Set());
         reasons.get(edge.domain).add(`${domain}: ${edge.reason}`);
       }
-      if (!included.has(edge.domain)) { included.add(edge.domain); queue.push(edge.domain); }
+      if (!included.has(edge.domain)) { included.add(edge.domain); discoveredFrom.set(edge.domain, domain); queue.push(edge.domain); }
     }
   }
+  // 한 기능 쌍의 간선(코드 참조·묶음 선언 등)을 한 단계로 묶는다. 사용자 문장은 쌍마다 하나다.
+  const hop = (from, to) => {
+    const edges = traversed(from).filter(edge => edge.domain === to);
+    if (typeof edges[0]?.userReason !== 'string') fail('catalog', `Dependency lacks a user reason: ${from} -> ${to}`);
+    return { from, to, userReason: edges[0].userReason, kinds: sorted(edges.map(edge => edge.kind)), evidence: sorted(edges.map(edge => edge.evidence)) };
+  };
+  const chainTo = domain => {
+    const hops = [];
+    for (let to = domain; discoveredFrom.has(to); to = discoveredFrom.get(to)) hops.unshift(hop(discoveredFrom.get(to), to));
+    return hops;
+  };
+  const reachableFrom = start => {
+    const seen = new Set([start]);
+    const pending = [start];
+    while (pending.length) for (const edge of traversed(pending.shift())) if (!seen.has(edge.domain)) { seen.add(edge.domain); pending.push(edge.domain); }
+    return seen;
+  };
+  const reach = new Map(selectedDomains.map(domain => [domain, reachableFrom(domain)]));
   const resolvedDomains = sorted(included);
   if (preset && canonicalJson(resolvedDomains) !== canonicalJson([...preset.domains].sort())) fail('catalog', `Preset dependency closure changed: ${preset.id}`);
   const retained = resolvedDomains.map(domain => features.get(domain));
@@ -100,7 +121,13 @@ export function resolveProjectRecipe(input, catalog) {
   const composition = {
     schemaVersion: 1, recipe: normalizedRecipe, project: normalizedRecipe.project, sourceRef: normalizedRecipe.sourceRef,
     profile: preset?.id ?? 'custom', mandatory: [...catalog.mandatory], selectedDomains, resolvedDomains,
-    autoIncluded: [...reasons].map(([domain, why]) => ({ domain, reason: [...why].sort().join(' ') })).sort((a, b) => a.domain.localeCompare(b.domain)),
+    // reason 은 종전 개발자 원문 그대로다(호환). 화면은 사슬(chain)·사용자 문장(userReason)·해제 대상(roots)을 쓴다.
+    // roots 는 이 기능에 닿는 선택 전부다 — 모두 해제해야 이 기능이 빠진다(설계서 9.3).
+    autoIncluded: [...reasons].map(([domain, why]) => {
+      const chain = chainTo(domain);
+      return { domain, reason: [...why].sort().join(' '), userReason: chain.at(-1).userReason, chain,
+        roots: selectedDomains.filter(root => reach.get(root).has(domain)) };
+    }).sort((a, b) => a.domain.localeCompare(b.domain)),
     packs: preset ? [...preset.packs] : sorted(['core', ...retained.map(feature => feature.pack)]),
     database: normalizedRecipe.database, backendLayout, tables, explicitSequences, permissionCodes, menuRoutes, excludedMenuTabs,
     frontend: { includedPaths, removePaths, retainedRoutes: menuRoutes },

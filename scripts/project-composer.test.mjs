@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { createComposerEngine, composerOutputPaths, parseComposerArgs, runComposerCommand } from './project-composer.mjs';
+import { REQUIRES_KIND_LABELS, createComposerEngine, composerOutputPaths, inclusionNotes, parseComposerArgs, runComposerCommand } from './project-composer.mjs';
+import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 
 const root = resolve(import.meta.dirname, '..');
@@ -28,6 +29,38 @@ test('the plan explains degraded integrations by missing feature and lists permi
   assert.equal(plan.unassignedPermissions.find(row => row.code === 'DWORK_RETRY').bundle, null);
   const withBoard = createComposerEngine().plan({ ...recipe(), selection: { domains: ['board'] } });
   assert.deepEqual(withBoard.unassignedPermissions.filter(row => row.owner === 'board').map(row => row.code), ['FAQ_EDIT', 'NOTICE_EDIT']);
+});
+
+/*
+ * 자동 포함 설명(E2). 경로 사슬·단계 문장·해제 방법은 사용자 말이고 클래스명·기능 id 가 없다. 개발자 근거(종류·파일)는
+ * 화면이 접어서 보이도록 따로 싣는다. 조사는 서버가 맞춘다.
+ */
+test('the plan explains each automatic inclusion with a chain, one sentence per step and how to deselect it', () => {
+  const catalog = loadProjectComposerCatalog(root);
+  const notesFor = domains => inclusionNotes(resolveProjectRecipe({ ...recipe(), selection: { domains } }, catalog), catalog);
+  const note = notesFor(['note']);
+  const board = note.find(item => item.domain === 'board');
+  assert.equal(board.path, '쪽지 → 스크랩 → 게시판·지식');
+  assert.deepEqual(board.steps.map(step => step.text), ['쪽지 → 스크랩: 쪽지와 스크랩이 쪽지·스크랩 화면 하나를 함께 씁니다.',
+    '스크랩 → 게시판·지식: 스크랩은 게시글을 저장해 둡니다.']);
+  assert.deepEqual(board.steps.map(step => step.evidence), [['공동 화면'], ['코드 참조', '생성 묶음 선언']]);
+  assert.ok(board.steps[1].files.includes('business-app/src/main/java/nuri/business/domain/scrap/Scrap.java'));
+  assert.equal(board.removal, '이 기능을 빼려면 쪽지를 해제하세요.');
+  assert.deepEqual(board.roots, ['note']);
+  assert.equal(notesFor(['comment', 'scrap']).find(item => item.domain === 'board').removal, '이 기능을 빼려면 댓글, 스크랩을 모두 해제하세요.');
+  assert.equal(notesFor(['informalsanction'])[0].removal, '이 기능을 빼려면 약식 전자결재를 해제하세요.');
+  assert.equal(notesFor(['operation'])[0].removal, '이 기능을 빼려면 행사·외부인사·포상을 해제하세요.');
+  // 대시보드 하나만 골라도 종전 사유는 1,600자를 넘었다. 화면 문장에는 영문(클래스명·id·경위 괄호)이 없다.
+  for (const item of notesFor(['dashboard'])) {
+    assert.doesNotMatch([item.path, item.removal, ...item.steps.map(step => step.text)].join(' '), /[A-Za-z()]/, item.domain);
+  }
+  for (const kind of new Set(catalog.capabilities.flatMap(capability => capability.requires.map(edge => edge.kind)))) {
+    assert.ok(Object.hasOwn(REQUIRES_KIND_LABELS, kind), `kind label: ${kind}`);
+  }
+  assert.deepEqual(notesFor(['survey']), []);
+  const plan = createComposerEngine().plan({ ...recipe(), selection: { domains: ['note'] } });
+  assert.deepEqual(plan.inclusionNotes, note);
+  assert.deepEqual(createComposerEngine().plan({ ...recipe(), selection: { preset: 'collaboration' } }).inclusionNotes, []);
 });
 
 test('unassigned-permission guidance stays exact with the permission catalog, bundles and protected set', async () => {

@@ -36,7 +36,7 @@ function validateName(focus = false) {
 function label(id) { return state.catalog.capabilities.find(item => item.id === id)?.label ?? id; }
 function renderFeatures() {
   const focusedId = document.activeElement?.id;
-  const automatic = new Map((state.plan?.autoIncluded ?? []).map(item => [item.domain, item.reason]));
+  const automatic = new Map((state.plan?.inclusionNotes ?? []).map(note => [note.domain, note.path]));
   const included = new Set(state.plan?.resolvedDomains ?? [...state.selected]);
   $('capabilities').replaceChildren();
   for (const item of state.catalog.capabilities) {
@@ -62,8 +62,9 @@ function renderFeatures() {
   }
   if (focusedId?.startsWith('capability-')) $(focusedId)?.focus({ preventScroll: true });
 }
-// 계획이 없는 동안(다시 확인 중·실패) 이전 구성의 기능 저하·미배정 권한을 보이지 않는다.
+// 계획이 없는 동안(다시 확인 중·실패) 이전 구성의 자동 포함·기능 저하·미배정 권한을 보이지 않는다.
 function clearPlanNotes() {
+  $('auto-included').replaceChildren();
   $('plan-degraded').hidden = true; $('plan-degraded').replaceChildren();
   $('plan-unassigned').hidden = true; $('plan-unassigned-list').replaceChildren();
 }
@@ -76,6 +77,57 @@ function changed() {
   clearTimeout(previewTimer);
   previewTimer = setTimeout(() => preview(false), 250);
 }
+// 자동 포함: 경로 사슬과 사용자 문장, 해제 방법을 보이고 개발자 근거(종류·파일)는 한 번 더 접는다(E2).
+function renderInclusions(notes) {
+  const host = $('auto-included');
+  // 같은 구성을 다시 확인해도 사용자가 펼친 설명과 키보드 포커스는 그 자리에 남긴다.
+  const opened = new Set([...host.querySelectorAll('details[open]')].map(node => node.dataset.key));
+  const focusKey = host.contains(document.activeElement) ? document.activeElement.dataset.key : undefined;
+  const keyed = (element, key) => { element.dataset.key = key; return element; };
+  host.replaceChildren();
+  if (!notes.length) return;
+  host.append(text('p', `함께 포함되는 기능 ${notes.length}개`, 'font-semibold'));
+  for (const note of notes) {
+    const item = text('div', '', 'rounded-xl border border-dashed border-line p-3');
+    item.id = `auto-${note.domain}`;
+    const title = text('p', note.label, 'font-medium');
+    title.append(text('span', '자동 포함', 'ml-2 text-xs font-normal text-muted'));
+    item.append(title, text('p', note.path, 'text-xs text-muted'));
+    const why = keyed(document.createElement('details'), `why-${note.domain}`);
+    why.className = 'mt-2';
+    why.open = opened.has(why.dataset.key);
+    why.append(keyed(text('summary', '왜 포함됐나', 'cursor-pointer text-xs font-semibold'), `why-summary-${note.domain}`));
+    const steps = text('ul', '', 'mt-2 space-y-1 text-xs');
+    steps.append(...note.steps.map(step => text('li', step.text)));
+    const removal = text('p', note.removal, 'mt-2 text-xs');
+    removal.id = `removal-${note.domain}`;
+    const drop = keyed(text('button', `${note.roots.map(label).join(', ')} 해제하기`,
+      'mt-2 rounded-lg border border-line px-3 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50'), `drop-${note.domain}`);
+    drop.type = 'button';
+    drop.setAttribute('aria-describedby', removal.id);
+    drop.addEventListener('click', () => {
+      state.preset = 'custom'; $('preset').value = 'custom';
+      for (const root of note.roots) state.selected.delete(root);
+      changed(); renderFeatures();
+      $(`capability-${note.roots[0]}`)?.focus();
+    });
+    const evidence = keyed(document.createElement('details'), `evidence-${note.domain}`);
+    evidence.className = 'mt-2';
+    evidence.open = opened.has(evidence.dataset.key);
+    evidence.append(keyed(text('summary', '개발자 근거', 'cursor-pointer text-xs text-muted'), `evidence-summary-${note.domain}`));
+    const files = text('ul', '', 'mt-1 space-y-1 text-xs text-muted');
+    files.append(...note.steps.map(step => {
+      const row = text('li', `${label(step.from)} → ${label(step.to)} · ${step.evidence.join(' · ')}`);
+      row.append(...step.files.map(file => text('code', file, 'block break-all font-mono')));
+      return row;
+    }));
+    evidence.append(files);
+    why.append(steps, removal, drop, evidence);
+    item.append(why);
+    host.append(item);
+  }
+  if (focusKey) host.querySelector(`[data-key="${focusKey}"]`)?.focus({ preventScroll: true });
+}
 function renderPlan() {
   const plan = state.plan;
   $('domain-count').textContent = String(plan.resolvedDomains?.length ?? 0);
@@ -85,7 +137,7 @@ function renderPlan() {
   const blockers = plan.blockers ?? [];
   $('plan-status').textContent = blockers.length ? '이 구성은 생성할 수 없습니다. 아래 사유를 확인해 주세요.' : '포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.';
   $('output-hint').textContent = plan.outputDirectory ? `생성 위치 · ${plan.outputDirectory}` : '생성 위치 · 원본 프로젝트의 build/project-composer 아래 새 폴더';
-  $('auto-included').replaceChildren(...(plan.autoIncluded ?? []).map(item => text('p', `${label(item.domain)} · ${item.reason}`)));
+  renderInclusions(plan.inclusionNotes ?? []);
   $('plan-warnings').replaceChildren(...blockers.map(blocker => text('p', blocker, 'font-semibold text-danger')), ...(plan.warnings ?? []).map(warning => text('p', warning)));
   // 기능 저하와 미배정 권한은 생성을 막지 않는 안내다. 생성 버튼은 차단 사유로만 막힌다.
   const notes = plan.degradationNotes ?? [];
@@ -127,6 +179,9 @@ async function preview(focus) {
 function busy(value) {
   state.busy = value;
   $('configuration').disabled = value; $('preview').disabled = value;
+  // 자동 포함 설명의 해제 버튼은 잠기는 구성 영역 밖에 있다. 생성 중에는 선택을 바꾸지 못하게 함께 잠근다.
+  // 생성 중에는 계획을 다시 그리지 않으므로(preview 가 바로 돌아간다) 이미 그려진 버튼만 잠그면 된다.
+  for (const button of $('auto-included').querySelectorAll('button')) button.disabled = value;
   $('generate').disabled = value || !state.plan;
   $('generate').textContent = value ? '프로젝트 생성 중…' : '프로젝트 생성';
   $('composer-form').setAttribute('aria-busy', String(value));

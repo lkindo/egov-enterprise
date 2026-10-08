@@ -278,3 +278,61 @@ test('both generators take their composition only from the shared resolver', () 
     assert.doesNotMatch(code, /if \(!?composition\)|(?<![.\w])composition \? |(?<![.\w])!composition\b/, `${file}: no profile-only branch`);
   }
 });
+
+/*
+ * 자동 포함 사슬과 해제 대상(설계서 9.3·E2). 사슬은 선택에서 가장 짧은 경로이고, 해제 대상(roots)은 그 기능에
+ * 닿는 선택 전부다. roots 를 모두 빼면 그 기능이 빠지고, 하나라도 남기면 남는다 — 화면의 '해제하기'가 이 성질에 기대므로
+ * 실제 카탈로그의 단독·두 기능 선택 전부에서 확인한다.
+ */
+test('auto-included features carry the shortest chain from a selection, one sentence per step and the exact roots to deselect', () => {
+  const sentence = new Map(catalog.capabilities.flatMap(capability => capability.requires.map(edge => [`${capability.id}>${edge.domain}`, edge.userReason])));
+  const out = new Map(catalog.capabilities.map(capability => [capability.id, [...new Set(capability.requires.map(edge => edge.domain))]]));
+  const distance = (sources, target) => {
+    const depth = new Map(sources.map(source => [source, 0]));
+    for (const queue = [...sources]; queue.length;) {
+      const from = queue.shift();
+      for (const to of out.get(from)) if (!depth.has(to)) { depth.set(to, depth.get(from) + 1); queue.push(to); }
+    }
+    return depth.get(target);
+  };
+  const ids = catalog.capabilities.map(capability => capability.id);
+  const selections = [...ids.map(id => [id]), ...ids.flatMap((a, index) => ids.slice(index + 1).map(b => [a, b]))];
+  let checked = 0;
+  for (const selection of selections) {
+    const plan = resolveProjectRecipe(recipe({ domains: selection }), catalog);
+    assert.deepEqual(plan.autoIncluded.map(item => item.domain), plan.resolvedDomains.filter(domain => !selection.includes(domain)), selection.join('+'));
+    for (const item of plan.autoIncluded) {
+      const label = `${selection.join('+')} -> ${item.domain}`;
+      assert.ok(selection.includes(item.chain[0].from), label);
+      assert.equal(item.chain.at(-1).to, item.domain, label);
+      item.chain.forEach((hop, index) => {
+        if (index) assert.equal(hop.from, item.chain[index - 1].to, label);
+        assert.equal(hop.userReason, sentence.get(`${hop.from}>${hop.to}`), label);
+        assert.ok(hop.kinds.length && hop.evidence.length, label);
+      });
+      assert.equal(item.userReason, item.chain.at(-1).userReason, label);
+      assert.equal(item.chain.length, distance(selection, item.domain), `${label}: shortest chain`);
+      assert.ok(item.roots.length && item.roots.every(root => selection.includes(root)), label);
+      const without = roots => resolveProjectRecipe(recipe({ domains: selection.filter(domain => !roots.includes(domain)) }), catalog).resolvedDomains;
+      assert.ok(!without(item.roots).includes(item.domain), `${label}: deselecting every root drops it`);
+      for (const kept of item.roots) assert.ok(without(item.roots.filter(root => root !== kept)).includes(item.domain), `${label}: ${kept} alone keeps it`);
+      checked += 1;
+    }
+  }
+  assert.ok(checked > 200, `checked ${checked} automatic inclusions`);
+  // 대표 사례: 쪽지만 고르면 게시판은 '쪽지 → 스크랩 → 게시판'으로 들어오고, 같은 쌍의 코드 참조와 묶음 선언은 한 단계다.
+  const note = resolveProjectRecipe(recipe({ domains: ['note'] }), catalog).autoIncluded.find(item => item.domain === 'board');
+  assert.deepEqual(note.chain.map(hop => [hop.from, hop.to, hop.kinds]), [['note', 'scrap', ['shared-ui']], ['scrap', 'board', ['java', 'manifest']]]);
+  assert.deepEqual(note.roots, ['note']);
+  // 개발자 원문 reason 은 종전 형식 그대로 남는다(호환). 그 기능으로 들어오는 모든 간선의 원문을 모은다.
+  assert.ok(note.reason.includes('scrap: scrap 소스가 board 타입을 참조한다.') && note.reason.includes('comment: '), note.reason);
+  const both = resolveProjectRecipe(recipe({ domains: ['comment', 'scrap'] }), catalog).autoIncluded.find(item => item.domain === 'board');
+  assert.deepEqual(both.roots, ['comment', 'scrap']);
+});
+
+test('a catalog edge without its user sentence is refused rather than shown as developer text', () => {
+  const { catalogHash, ...body } = structuredClone(catalog);
+  for (const edge of body.capabilities.find(capability => capability.id === 'scrap').requires) delete edge.userReason;
+  const tampered = { ...body, catalogHash: compositionDigest(body) };
+  assert.throws(() => resolveProjectRecipe(recipe({ domains: ['note'] }), tampered), /Dependency lacks a user reason: scrap -> board/);
+});
