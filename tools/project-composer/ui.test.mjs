@@ -354,6 +354,175 @@ test('automatic inclusions from the real catalog show a chain, a user sentence, 
  * 기능 카드를 업무 영역으로 묶고(E3), 이름·요약으로 찾으며(E9), 카탈로그가 소유한 수를 배지로 보인다.
  * 시작 구성은 한국어 이름과 기능 수로 고른다. 검색은 보이는 카드만 바꾸고 선택을 지우지 않는다.
  */
+/*
+ * 접근성(E7, 설계서 14.1). 자동 포함 카드는 점선으로 나누고 키보드로 닿으며(aria-disabled — native disabled 면 Tab 순서에서
+ * 빠진다), 누르면 체크를 바꾸지 않고 요약의 '왜 포함됐나'를 연다. 바꾼 것 때문에 자동 포함이 달라지면 상태 문장(알림 영역)이
+ * 한 번 말하고, 시작 구성이 '직접 선택'으로 바뀐 사실도 말한다. 같은 구성을 다시 확인하면 다시 말하지 않는다.
+ */
+const AUTO_FROM_NOTE = '게시판·지식, 댓글, 도움말·온라인 매뉴얼, 스크랩, 커뮤니티·배너·팝업, 템플릿';
+const PLAN_READY = '포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.';
+test('automatic cards stay reachable by keyboard, open their reason when pressed, and each change is announced once', { timeout: 60_000 }, async t => {
+  const { page, pageErrors } = await realCatalogPage(t);
+  await expect(page.locator('#domain-count')).toHaveText('0');
+  await expect(page.locator('#plan-status'), 'the first plan announces no change').toHaveText(PLAN_READY);
+  await page.locator('#capability-note').focus();
+  // 계획이 오면 카드를 다시 그리며 포커스를 같은 카드로 돌려놓는다. 화면 낭독기는 포커스 이동에 말하던 것을 끊으므로
+  // 바뀐 결과 문장은 그 뒤에 쓴다 — 포커스가 돌아오는 순간의 상태 문장에는 아직 결과가 없다.
+  await page.evaluate(() => {
+    window.statusAtFocus = [];
+    document.getElementById('capabilities').addEventListener('focusin', () => window.statusAtFocus.push(document.getElementById('plan-status').textContent), true);
+  });
+  await page.keyboard.press('Space');
+  await expect(page.locator('#plan-status')).toHaveText('쪽지 선택으로 함께 포함되는 기능이 6개 늘었습니다(' + AUTO_FROM_NOTE + '). 시작 구성이 ‘직접 선택’으로 바뀌었습니다. ' + PLAN_READY);
+  const statusAtFocus = await page.evaluate(() => window.statusAtFocus);
+  assert.ok(statusAtFocus.length > 0, 'the plan put focus back on the card');
+  assert.ok(statusAtFocus.every(status => !status.includes('늘었습니다')), statusAtFocus.join(' | '));
+  // 돌려놓은 포커스로 받은 미리보기는 줄에는 보이지만 알리지 않는다(바뀐 결과 문장을 덮지 않게).
+  await expect(page.locator('#preview-note')).toBeVisible();
+  await page.waitForTimeout(300);
+  await expect(page.locator('#capability-preview-status')).toHaveText('');
+  const board = page.locator('#capability-board');
+  await expect(board).toBeChecked();
+  await expect(board).toHaveAttribute('aria-disabled', 'true');
+  assert.equal(await board.evaluate(element => element.disabled), false, 'a native disabled checkbox leaves the tab order');
+  await expect(page.locator('label').filter({ has: board })).toHaveClass(/border-dashed/);
+  await expect(page.locator('label').filter({ has: page.locator('#capability-note') })).not.toHaveClass(/border-dashed/);
+  await expect(board).toHaveAttribute('aria-describedby', 'reason-board hint-board badges-board preview-board');
+  await expect(page.locator('#hint-board')).toHaveText('누르면 요약에서 포함 이유와 빼는 방법을 엽니다.');
+  // Tab 으로 닿는다: 바로 앞 카드에서 Tab 을 누르면 자동 포함 카드에 선다.
+  const cards = await page.locator('#capabilities input[type="checkbox"]').evaluateAll(inputs => inputs.map(input => input.id));
+  await page.locator('#' + cards[cards.indexOf('capability-board') - 1]).focus();
+  await page.keyboard.press('Tab');
+  await expect(board).toBeFocused();
+  // 누르면 체크는 그대로이고 요약의 '왜 포함됐나'가 열리며 포커스가 그리로 간다.
+  await page.keyboard.press('Space');
+  await expect(board).toBeChecked();
+  await expect(page.locator('#auto-board details').first()).toHaveAttribute('open', '');
+  await expect(page.locator('#auto-board summary').first()).toBeFocused();
+  await expect(page.locator('#domain-count')).toHaveText('7');
+  // 마우스로 카드를 눌러도 같다(체크를 바꾸지 않는다). Playwright 는 aria-disabled 를 품은 라벨을 누르지 않으므로 좌표로 누른다.
+  const scrapCard = await page.locator('label').filter({ has: page.locator('#capability-scrap') }).boundingBox();
+  await page.mouse.click(scrapCard.x + scrapCard.width / 2, scrapCard.y + 12);
+  await expect(page.locator('#capability-scrap')).toBeChecked();
+  await expect(page.locator('#auto-scrap details').first()).toHaveAttribute('open', '');
+  await expect(page.locator('#domain-count')).toHaveText('7');
+  // 같은 구성을 다시 확인하면 지난 변화를 다시 말하지 않는다.
+  await page.evaluate(() => document.getElementById('composer-form').requestSubmit());
+  await expect(page.locator('#plan-status')).toHaveText(PLAN_READY);
+  // 구성을 다시 확인하는 동안 자동 포함 카드를 누르면 아직 이유가 없다는 사실을 알린다.
+  const held = [];
+  await page.route('**/api/plan', route => { held.push(route); });
+  await page.locator('#capability-mail').focus();
+  await page.keyboard.press('Space');
+  await expect.poll(() => held.length).toBe(1);
+  await board.focus();
+  await page.keyboard.press('Space');
+  await expect(board).toBeChecked();
+  await expect(page.locator('#capability-preview-status')).toHaveText('구성을 확인하는 중입니다. 확인이 끝나면 포함 이유를 볼 수 있습니다.');
+  for (const route of held.splice(0)) await route.continue();
+  await page.unroute('**/api/plan');
+  await expect(page.locator('#plan-status')).toContainText(PLAN_READY);
+  // 해제 버튼으로 뺀 것도 말한다.
+  // 메일도 게시판에 닿으면 해제 대상이 둘이 된다. 해제 대상 전부가 이름으로 말해진다.
+  await page.locator('#auto-board summary').first().click();
+  await page.locator('#auto-board').getByRole('button', { name: /해제하기$/ }).click();
+  await expect(page.locator('#plan-status')).toContainText('해제로 함께 포함되던 기능');
+  await expect(page.locator('#plan-status')).toContainText('게시판·지식');
+  // 시작 구성을 고르면 그 구성 이름으로 말한다. 새 구성이 직접 포함하는 기능은 '빠졌다' 고 말하지 않는다.
+  await page.locator('#capability-note').focus();
+  await page.keyboard.press('Space');
+  await expect(page.locator('#plan-status')).toContainText('쪽지 선택으로');
+  await page.locator('#preset').selectOption('collaboration');
+  await expect(page.locator('#plan-status')).toHaveText('‘협업 기본’ 구성 선택으로 함께 포함되던 기능 3개가 빠졌습니다(도움말·온라인 매뉴얼, 커뮤니티·배너·팝업, 템플릿). ' + PLAN_READY);
+  assert.deepEqual(pageErrors, []);
+});
+
+test('unchecking a feature that another choice still needs says it stayed, not that something was added', { timeout: 60_000 }, async t => {
+  const { page, pageErrors } = await realCatalogPage(t);
+  await expect(page.locator('#plan-status')).toHaveText(PLAN_READY);
+  // 협업 기본은 게시판과 댓글을 직접 고른다. 댓글을 빼면 게시판이 댓글을 필요로 해 댓글은 자동 포함으로 남는다.
+  // 직접 선택으로 바뀌면서 게시판이 요구하는 세 기능도 함께 들어온다(시작 구성은 그 구성의 기능만 담는다).
+  // 그 세 기능은 댓글 해제 탓이 아니라 전환 탓이므로 나눠 말한다.
+  await page.locator('#preset').selectOption('collaboration');
+  // 시작 구성의 계획이 온 뒤에 바꾼다(그 전에 바꾸면 공통 기반과 비교한 순변화를 말한다).
+  await expect(page.locator('#domain-count')).toHaveText('8');
+  await expect(page.locator('#capability-comment')).toBeChecked();
+  await expect(page.locator('#capability-comment')).not.toHaveAttribute('aria-disabled', 'true');
+  await page.locator('#capability-comment').uncheck();
+  await expect(page.locator('#plan-status')).toHaveText('다른 선택이 필요로 해 함께 포함된 채 남은 기능: 댓글. '
+    + '시작 구성이 ‘직접 선택’으로 바뀌며 함께 포함되는 기능이 3개 늘었습니다(도움말·온라인 매뉴얼, 커뮤니티·배너·팝업, 템플릿). ' + PLAN_READY);
+  await expect(page.locator('#capability-comment')).toHaveAttribute('aria-disabled', 'true');
+  await expect(page.locator('#capability-comment')).toBeChecked();
+  assert.deepEqual(pageErrors, []);
+});
+
+/*
+ * 계획이 오기 전에 여러 번 바꾸면 마지막으로 알린 계획과 비교한 순변화를 한 번 말한다(마지막 행동 하나를 주어로 삼지 않는다).
+ * 서로 다른 방향으로 바꿨으면 '바꾼 구성으로' 라고만 말한다. 결과 문장을 쓰기 전에 구성이 또 바뀌면 옛 문장을 쓰지 않는다.
+ */
+test('several changes before the plan arrives are announced once as the net change', { timeout: 60_000 }, async t => {
+  const { page, pageErrors } = await realCatalogPage(t);
+  const labelOf = id => real.capabilities.find(item => item.id === id).label;
+  const autoOf = domains => inclusionNotes(resolveProjectRecipe({ schemaVersion: 1, project: { name: 'my-service' }, sourceRef: 'HEAD',
+    selection: { domains }, database: { vendor: 'postgresql' }, backendLayout: 'multi-module' }, real), real).map(note => note.domain);
+  await expect(page.locator('#plan-status')).toHaveText(PLAN_READY);
+  const held = [];
+  await page.route('**/api/plan', route => { held.push(route); });
+  const press = async id => { await page.locator(`#capability-${id}`).focus(); await page.keyboard.press('Space'); };
+  await press('note');
+  await press('schedule');
+  await expect.poll(() => held.length).toBeGreaterThan(0);
+  for (const route of held.splice(0)) await route.continue();
+  const both = autoOf(['note', 'schedule']);
+  await expect(page.locator('#plan-status')).toHaveText(`${labelOf('note')}, ${labelOf('schedule')} 선택으로 함께 포함되는 기능이 ${both.length}개 늘었습니다(${both.map(labelOf).join(', ')}). `
+    + '시작 구성이 ‘직접 선택’으로 바뀌었습니다. ' + PLAN_READY);
+  // 하나는 빼고 하나는 고르면 '바꾼 구성으로' 라고 말한다.
+  await press('note');
+  await press('survey');
+  await expect.poll(() => held.length).toBeGreaterThan(0);
+  for (const route of held.splice(0)) await route.continue();
+  const gone = both.filter(id => !autoOf(['schedule', 'survey']).includes(id));
+  await expect(page.locator('#plan-status')).toHaveText(`바꾼 구성으로 함께 포함되던 기능 ${gone.length}개가 빠졌습니다(${gone.map(labelOf).join(', ')}). ` + PLAN_READY);
+  // 결과 문장을 쓰기 전(포커스를 돌려놓는 동안)에 구성이 또 바뀌면 옛 계획의 문장을 쓰지 않는다.
+  await press('note');
+  await expect.poll(() => held.length).toBe(1);
+  await page.evaluate(() => {
+    const observer = new MutationObserver(() => { observer.disconnect(); document.getElementById('capability-survey').click(); });
+    observer.observe(document.getElementById('auto-included'), { childList: true });
+  });
+  await held.shift().continue();
+  await expect.poll(() => held.length).toBe(1);
+  await page.waitForTimeout(400);
+  await expect(page.locator('#plan-status')).toHaveText('변경한 구성을 확인하고 있습니다…');
+  for (const route of held.splice(0)) await route.continue();
+  await page.unroute('**/api/plan');
+  await expect(page.locator('#plan-status')).toContainText(PLAN_READY);
+  assert.deepEqual(pageErrors, []);
+});
+
+/*
+ * 확인이 멈춘 동안(이름 오류) 자동 포함 카드를 누르면 '확인하는 중' 이 아니라 확인하지 못했다고 말한다.
+ * 같은 카드를 다시 눌러도 다시 읽히도록 알림을 비운 뒤 쓴다.
+ */
+test('pressing an automatic card while the plan cannot be checked says why the reason is missing', { timeout: 45_000 }, async t => {
+  const { page, pageErrors } = await realCatalogPage(t);
+  await page.locator('#capability-note').check();
+  await expect(page.locator('#domain-count')).toHaveText('7');
+  await page.getByLabel('프로젝트 이름').fill('con');
+  await expect(page.locator('#plan-status')).toHaveText('프로젝트 이름을 확인해 주세요.');
+  const board = page.locator('#capability-board');
+  await expect(board).toHaveAttribute('aria-disabled', 'true');
+  await board.focus();
+  await page.keyboard.press('Space');
+  const missing = '구성을 확인하지 못해 포함 이유를 볼 수 없습니다. 요약의 상태 문장을 확인한 뒤 구성을 다시 확인해 주세요.';
+  await expect(page.locator('#capability-preview-status')).toHaveText(missing);
+  await expect(board).toBeChecked();
+  assert.equal(await board.evaluate(input => { input.click(); return document.getElementById('capability-preview-status').textContent; }), '',
+    'the region is emptied before the same sentence is written again');
+  await expect(page.locator('#capability-preview-status')).toHaveText(missing);
+  assert.deepEqual(pageErrors, []);
+});
+
 test('the real catalog renders feature areas, search, owned-count badges and Korean preset names', { timeout: 60_000 }, async t => {
   const { page, pageErrors } = await realCatalogPage(t);
   await expect(page.getByRole('heading', { name: '새 프로젝트 만들기' })).toBeVisible();
@@ -1015,6 +1184,23 @@ test('a changed source found by the final check closes the dialog and reloads wi
   assert.deepEqual(pageErrors, []);
 });
 
+test('a reload starts the change announcement over instead of blaming the dropped feature on the user', { timeout: 45_000 }, async t => {
+  let current = catalog;
+  const { page, origin, pageErrors } = await errorPage(t, { catalog: () => current });
+  await page.goto(origin);
+  await page.getByLabel('프로젝트 이름').fill('agency-service');
+  await page.locator('#capability-board').check();
+  await expect(page.locator('#plan-status')).toHaveText('게시판 선택으로 함께 포함되는 기능이 2개 늘었습니다(댓글, 스크랩). 시작 구성이 ‘직접 선택’으로 바뀌었습니다. 포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.');
+  current = { ...catalog, sourceCommit: 'e'.repeat(40), capabilities: catalog.capabilities.filter(item => item.id !== 'board'), presets: [{ id: 'core', domains: [] }],
+    presentation: { ...catalog.presentation, areas: [{ id: 'knowledge', label: '지식', domains: ['comment', 'scrap'] }, { id: 'communication', label: '소통', domains: ['notification'] }] } };
+  await page.route('**/api/plan', route => route.fulfill({ status: 409, contentType: 'application/json',
+    body: JSON.stringify({ error: { code: 'SOURCE_CHANGED', message: '원본이 바뀌었습니다.', action: 'reload-source' } }) }), { times: 1 });
+  await page.getByRole('button', { name: '구성 다시 확인' }).click();
+  await page.locator('#plan-actions').getByRole('button', { name: '새 원본으로 다시 불러오기' }).click();
+  await expect(page.locator('#plan-status')).toHaveText('포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다. 새 원본에 없는 기능을 선택에서 뺐습니다: 게시판.');
+  assert.deepEqual(pageErrors, []);
+});
+
 test('a reload that drops a selected feature or preset says so instead of dropping it silently', { timeout: 45_000 }, async t => {
   let current = catalog;
   let slowPlan = false;
@@ -1040,9 +1226,9 @@ test('a reload that drops a selected feature or preset says so instead of droppi
   await expect(page.locator('#plan-status')).toHaveText('포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다. 새 원본에 없는 기능을 선택에서 뺐습니다: 알림.');
   await expect(page.locator('#capability-notification')).toHaveCount(0);
   await expect(page.locator('#capability-board')).toBeChecked();
-  // 다음 구성 변경부터는 그 안내를 싣지 않는다.
+  // 다음 구성 변경부터는 그 안내를 싣지 않는다(바꾼 것 때문에 달라진 자동 포함만 말한다).
   await page.locator('#capability-board').uncheck();
-  await expect(page.locator('#plan-status')).toHaveText('포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.');
+  await expect(page.locator('#plan-status')).toHaveText('게시판 해제로 함께 포함되던 기능 2개가 빠졌습니다(댓글, 스크랩). 포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.');
   // 고른 시작 구성이 새 원본에서 사라져도 알린다.
   current = catalog;
   await page.reload();
