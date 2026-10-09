@@ -1,22 +1,29 @@
 /** Browser task test. Run after installing the frontend's Playwright Chromium. */
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { chromium, expect } from '../../frontend/node_modules/@playwright/test/index.mjs';
 import { createComposerServer } from '../../scripts/project-composer-server.mjs';
 import { loadProjectComposerCatalog } from '../../scripts/project-composer-catalog.mjs';
 import { resolveProjectRecipe } from '../../scripts/project-composer-recipe.mjs';
 import { degradationNotes, inclusionNotes } from '../../scripts/project-composer.mjs';
+import { composerPresentation, loadRouteKinds } from '../../scripts/project-composer-presentation.mjs';
 
 const catalog = {
   sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40), mandatory: ['foundation', 'core'],
-  presets: [{ id: 'core', label: '공통 기반', description: '기본 기능', domains: [] },
-    { id: 'collaboration', label: '협업', description: '게시판과 알림', domains: ['board', 'comment', 'scrap', 'notification'] }],
+  presets: [{ id: 'core', domains: [] }, { id: 'collaboration', domains: ['board', 'comment', 'scrap', 'notification'] }],
   capabilities: [
-    { id: 'board', label: '게시판', description: '게시글 관리', available: true },
-    { id: 'comment', label: '댓글', description: '게시글 의견', available: true },
-    { id: 'scrap', label: '스크랩', description: '게시글 보관', available: true },
-    { id: 'notification', label: '알림', description: '업무 알림', available: true },
+    { id: 'board', label: '게시판', available: true, database: { tables: ['tb_bbs_item', 'tb_bbs_master'] }, frontend: { routes: ['/board'] }, permissionCodes: ['BOARD_READ'], requirements: [] },
+    { id: 'comment', label: '댓글', available: true, database: { tables: ['tb_bbs_comment'] }, frontend: { routes: [] }, permissionCodes: [], requirements: [] },
+    { id: 'scrap', label: '스크랩', available: true, database: { tables: ['tb_bbs_scrap'] }, frontend: { routes: [] }, permissionCodes: [], requirements: [] },
+    { id: 'notification', label: '알림', available: true, database: { tables: ['tb_noti'] }, frontend: { routes: ['/notifications'] }, permissionCodes: [], requirements: [] },
   ],
+  presentation: {
+    areas: [{ id: 'knowledge', label: '지식', domains: ['board', 'comment', 'scrap'] }, { id: 'communication', label: '소통', domains: ['notification'] }],
+    summaries: { board: '게시글 관리', comment: '게시글 의견', scrap: '게시글 보관', notification: '업무 알림' },
+    presets: { core: { label: '공통 기반' }, collaboration: { label: '협업' } },
+    screens: { board: 1, comment: 0, scrap: 0, notification: 1 },
+  },
 };
 function plan(recipe) {
   const selected = recipe.selection.domains ?? catalog.presets.find(item => item.id === recipe.selection.preset).domains;
@@ -230,8 +237,13 @@ test('lost generation response recovers only its accepted request without submit
  * 자동 포함 설명(E2)을 실제 카탈로그와 실제 해석기로 그린다. 쪽지만 고르면 협업 허브와 게시판 묶음을 따라 여섯 기능이
  * 함께 들어온다. 화면은 경로 사슬과 사용자 문장을 보이고, 개발자 근거는 한 번 더 접으며, '해제하기'로 정확히 빠진다.
  */
-test('automatic inclusions from the real catalog show a chain, a user sentence, folded evidence and an exact way out', { timeout: 45_000 }, async t => {
-  const real = loadProjectComposerCatalog();
+/*
+ * 실제 카탈로그·실제 해석기·실제 화면 문구로 도는 서버(설계서 Phase 1 종료 조건: UI 테스트가 실제 카탈로그를 쓴다).
+ * 생성은 하지 않는다. generate 는 release() 를 부를 때까지 기다렸다가 실패한다.
+ */
+const root = fileURLToPath(new URL('../..', import.meta.url));
+const real = loadProjectComposerCatalog(root);
+async function realCatalogPage(t) {
   const plan = recipe => {
     const composition = resolveProjectRecipe(recipe, real);
     return { ...composition, blockers: [], inclusionNotes: inclusionNotes(composition, real), degradationNotes: degradationNotes(composition, real),
@@ -239,7 +251,7 @@ test('automatic inclusions from the real catalog show a chain, a user sentence, 
   };
   let release;
   const released = new Promise(resolve => { release = resolve; });
-  const app = createComposerServer({ engine: { catalog: () => ({ ...real, sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40) }), plan,
+  const app = createComposerServer({ engine: { catalog: () => ({ ...real, sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40), presentation: composerPresentation(real, { routeKinds: loadRouteKinds(root) }) }), plan,
     generate: async () => { await released; throw new Error('not generated in this test'); } } });
   const origin = await app.listen(0);
   t.after(() => app.close());
@@ -249,6 +261,11 @@ test('automatic inclusions from the real catalog show a chain, a user sentence, 
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   await page.goto(origin);
+  return { page, pageErrors, release };
+}
+
+test('automatic inclusions from the real catalog show a chain, a user sentence, folded evidence and an exact way out', { timeout: 45_000 }, async t => {
+  const { page, pageErrors, release } = await realCatalogPage(t);
   await expect(page.getByRole('heading', { name: '새 프로젝트 만들기' })).toBeVisible();
   await expect(page.locator('#domain-count')).toHaveText('0');
   await page.locator('#capability-note').check();
@@ -300,6 +317,108 @@ test('automatic inclusions from the real catalog show a chain, a user sentence, 
   await shared.getByRole('button', { name: '댓글, 스크랩 해제하기' }).click();
   await expect(page.locator('#capability-comment')).not.toBeChecked();
   await expect(page.locator('#capability-scrap')).not.toBeChecked();
+  await expect(page.locator('#domain-count')).toHaveText('0');
+  assert.deepEqual(pageErrors, []);
+});
+
+/*
+ * 기능 카드를 업무 영역으로 묶고(E3), 이름·요약으로 찾으며(E9), 카탈로그가 소유한 수를 배지로 보인다.
+ * 시작 구성은 한국어 이름과 기능 수로 고른다. 검색은 보이는 카드만 바꾸고 선택을 지우지 않는다.
+ */
+test('the real catalog renders feature areas, search, owned-count badges and Korean preset names', { timeout: 60_000 }, async t => {
+  const { page, pageErrors } = await realCatalogPage(t);
+  await expect(page.getByRole('heading', { name: '새 프로젝트 만들기' })).toBeVisible();
+  const presentation = composerPresentation(real, { routeKinds: loadRouteKinds(root) });
+  const options = await page.locator('#preset option').allTextContents();
+  assert.deepEqual(options, [...real.presets.map(preset => `${presentation.presets[preset.id].label} · ${preset.domains.length ? `업무 기능 ${preset.domains.length}개` : '업무 기능 없음'}`), '직접 선택']);
+  assert.ok(options.includes('공통 기반만 · 업무 기능 없음') && options.includes('협업 기본 · 업무 기능 8개'), options.join(' / '));
+  for (const area of presentation.areas) {
+    const group = page.getByRole('group', { name: new RegExp(`^${area.label}`) });
+    await expect(group).toBeVisible();
+    await expect(group.locator('input[type="checkbox"]')).toHaveCount(area.domains.length);
+  }
+  // 체크박스의 이름은 기능 이름만이다. 요약·배지는 설명으로 한 번만 읽힌다.
+  await expect(page.getByRole('checkbox', { name: '메일', exact: true })).toHaveAttribute('aria-describedby', 'reason-mail badges-mail');
+  await expect(page.locator('#reason-mail')).toHaveText('메일 작성·발송과 발송 이력');
+  await expect(page.locator('#badges-dashboard')).toHaveText('테이블 0 · 화면 0 · 권한 0');
+  // 화면 수는 실제 페이지만 센다. 설문·투표는 리다이렉트 별칭을 함께 소유하지만 그것은 화면이 아니다.
+  const survey = real.capabilities.find(capability => capability.id === 'survey');
+  assert.ok(presentation.screens.survey < survey.frontend.routes.length);
+  await expect(page.locator('#badges-survey')).toContainText(`화면 ${presentation.screens.survey} ·`);
+  const mail = real.capabilities.find(capability => capability.id === 'mail');
+  await expect(page.locator('#badges-mail')).toContainText(`테이블 ${mail.database.tables.length} · 화면 ${presentation.screens.mail} · 권한 ${mail.permissionCodes.length}`);
+  await expect(page.locator('#badges-mail')).toContainText('외부 설정: 메일 발송에 사용할 SMTP 설정');
+  // 메일을 고른 뒤 다른 기능을 찾아도 메일 선택은 남는다. 같은 영역 안에서도 맞지 않는 카드는 숨는다.
+  await page.locator('#capability-mail').check();
+  await expect(page.locator('#domain-count')).toHaveText('1');
+  await page.getByLabel('기능 찾기').fill('결재');
+  await expect(page.locator('#capability-search-status')).toHaveText('‘결재’ 검색 결과 기능 1개');
+  await expect(page.locator('#capability-informalsanction')).toBeVisible();
+  await expect(page.getByRole('group', { name: /^업무 지원/ })).toContainText('1개');
+  await expect(page.getByRole('group', { name: /^업무 지원/ }).locator('input:visible')).toHaveCount(1);
+  await expect(page.locator('#capability-operation')).toBeHidden();
+  await expect(page.locator('#area-communication')).toBeHidden();
+  await expect(page.locator('#area-communication')).toHaveCount(1);
+  await expect(page.locator('#capability-search')).toBeFocused();
+  // 계획을 다시 받아도 같은 검색 결과를 다시 알리지 않는다.
+  await page.evaluate(() => {
+    window.statusMutations = 0;
+    new MutationObserver(records => { window.statusMutations += records.length; }).observe(document.getElementById('capability-search-status'), { childList: true, characterData: true, subtree: true });
+  });
+  await page.evaluate(() => document.getElementById('composer-form').requestSubmit());
+  await expect(page.locator('#preview')).toBeEnabled();
+  assert.equal(await page.evaluate(() => window.statusMutations), 0);
+  // 검색칸의 Enter 는 구성 확인 폼을 제출하지 않는다. 이름이 틀려도 포커스가 이름 칸으로 옮겨 가지 않는다.
+  await page.getByLabel('프로젝트 이름').fill('Bad Name');
+  await page.getByLabel('기능 찾기').press('Enter');
+  await expect(page.locator('#capability-search')).toBeFocused();
+  await page.getByLabel('프로젝트 이름').fill('agency-project');
+  // 한글 조합 중(결ㅈ)에는 거르지 않는다. 조합이 끝나면 한 번 거른다.
+  await page.getByLabel('기능 찾기').fill('');
+  await page.getByLabel('기능 찾기').focus();
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Input.imeSetComposition', { text: '결ㅈ', selectionStart: 2, selectionEnd: 2 });
+  await expect(page.getByLabel('기능 찾기')).toHaveValue('결ㅈ');
+  await expect(page.locator('#capabilities')).not.toContainText('에 맞는 기능이 없습니다');
+  await expect(page.locator('#capability-search-status')).toHaveText('');
+  await cdp.send('Input.insertText', { text: '결재' });
+  await expect(page.locator('#capability-search-status')).toHaveText('‘결재’ 검색 결과 기능 1개');
+  // 요약으로도 찾는다. 게시판의 이름에는 없지만 요약에 있는 낱말이다.
+  await page.getByLabel('기능 찾기').fill('질의응답');
+  await expect(page.locator('#capability-board')).toBeVisible();
+  await page.getByLabel('기능 찾기').fill('없는 기능');
+  await expect(page.locator('#capabilities')).toContainText('‘없는 기능’에 맞는 기능이 없습니다.');
+  // 검색을 비우고 계획을 다시 받아도 선택은 그대로다(오래된 계획으로 그린 화면이 아니라 새 계획으로 확인한다).
+  await page.getByLabel('기능 찾기').fill('');
+  await expect(page.locator('#capability-search-status')).toHaveText('');
+  await page.evaluate(() => document.getElementById('composer-form').requestSubmit());
+  await expect(page.locator('#preview')).toBeEnabled();
+  await expect(page.locator('#domain-count')).toHaveText('1');
+  await expect(page.locator('#capability-mail')).toBeChecked();
+  // 좁은 화면에서 띄어쓰기 없는 긴 검색어도 가로 스크롤을 만들지 않는다.
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.getByLabel('기능 찾기').fill('x'.repeat(48));
+  await expect(page.locator('#capabilities')).toContainText('에 맞는 기능이 없습니다');
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, 'a long search term must not scroll horizontally');
+  assert.deepEqual(pageErrors, []);
+});
+
+/*
+ * 자동 포함 설명의 해제 버튼을 누를 때 해제한 기능이 검색으로 가려져 있으면, 검색을 비워 그 카드에 포커스를 둔다.
+ */
+test('deselecting a root hidden by search clears the search and focuses the root', { timeout: 45_000 }, async t => {
+  const { page, pageErrors } = await realCatalogPage(t);
+  await expect(page.locator('#domain-count')).toHaveText('0');
+  await page.locator('#capability-note').check();
+  await expect(page.locator('#domain-count')).toHaveText('7');
+  await page.getByLabel('기능 찾기').fill('알림');
+  await expect(page.locator('#capability-note')).toBeHidden();
+  const board = page.locator('#auto-board');
+  await board.getByText('왜 포함됐나').click();
+  await board.getByRole('button', { name: '쪽지 해제하기' }).click();
+  await expect(page.locator('#capability-note')).toBeFocused();
+  await expect(page.locator('#capability-note')).not.toBeChecked();
+  await expect(page.getByLabel('기능 찾기')).toHaveValue('');
   await expect(page.locator('#domain-count')).toHaveText('0');
   assert.deepEqual(pageErrors, []);
 });

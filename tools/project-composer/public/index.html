@@ -48,7 +48,10 @@
               <p class="text-sm font-semibold">Foundation + Core <span class="ml-2 text-xs font-normal text-muted">기본 포함</span></p>
               <p class="mt-2 text-sm leading-6 text-muted">인증·사용자·조직·권한·메뉴·공통코드·파일·로그</p>
             </div>
-            <div id="capabilities" class="grid gap-3 sm:grid-cols-2" aria-label="선택 가능한 업무 기능"></div>
+            <label for="capability-search" class="mb-2 block text-sm font-semibold">기능 찾기</label>
+            <input id="capability-search" type="search" class="mb-1 w-full rounded-lg border border-line bg-panel px-3 py-3" placeholder="예: 결재, 알림" autocomplete="off" spellcheck="false" aria-describedby="capability-search-status">
+            <p id="capability-search-status" class="mb-4 min-h-6 break-all text-xs leading-6 text-muted" role="status" aria-live="polite"></p>
+            <div id="capabilities" class="space-y-5"></div>
             <p class="mt-4 text-xs leading-6 text-muted">연결된 기능은 함께 포함됩니다. 요약의 ‘왜 포함됐나’에서 이유와 빼는 방법을 확인하세요.</p>
           </section>
           <section class="rounded-2xl border border-line bg-panel p-6 sm:p-7" aria-labelledby="layout-heading">

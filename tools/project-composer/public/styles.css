@@ -192,6 +192,9 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
 [hidden]:where(:not([hidden='until-found'])) {
   display: none !important;
 }
+.visible {
+  visibility: visible;
+}
 .sr-only {
   position: absolute;
   width: 1px;
@@ -227,11 +230,17 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
 .mr-3 {
   margin-right: calc(var(--spacing) * 3);
 }
+.mb-1 {
+  margin-bottom: var(--spacing);
+}
 .mb-2 {
   margin-bottom: calc(var(--spacing) * 2);
 }
 .mb-3 {
   margin-bottom: calc(var(--spacing) * 3);
+}
+.mb-4 {
+  margin-bottom: calc(var(--spacing) * 4);
 }
 .mb-5 {
   margin-bottom: calc(var(--spacing) * 5);
@@ -241,6 +250,9 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
 }
 .mb-8 {
   margin-bottom: calc(var(--spacing) * 8);
+}
+.ml-1 {
+  margin-left: var(--spacing);
 }
 .ml-2 {
   margin-left: calc(var(--spacing) * 2);
@@ -262,6 +274,9 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
 }
 .max-h-72 {
   max-height: calc(var(--spacing) * 72);
+}
+.min-h-6 {
+  min-height: calc(var(--spacing) * 6);
 }
 .w-full {
   width: 100%;
