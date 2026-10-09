@@ -11,6 +11,7 @@ import { loadProjectComposerMenus, projectComposerMenuPreview } from './project-
 import { compositionDiff } from './project-composer-diff.mjs';
 import { loadUnassignedPermissionGuidance } from './project-composer-unassigned.mjs';
 import { composerPresentation, loadRouteKinds } from './project-composer-presentation.mjs';
+import { composerPreflight } from './project-composer-preflight.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION = 1;
@@ -156,10 +157,11 @@ export function createLogMasker(secrets = []) {
 }
 
 const LOG_LIMIT = 1024 * 1024;
+const PREFLIGHT_TIMEOUT_MS = 10_000;
 const LINE_LIMIT = 16 * 1024;
 
 /** Windows shells are used only for fixed tool names and fixed argument lists. Recipe values never become shell code. */
-export function runComposerCommand(command, args, { root, env = process.env, capture = false, log } = {}) {
+export function runComposerCommand(command, args, { root, env = process.env, capture = false, log, timeoutMs } = {}) {
   return new Promise((accept, reject) => {
     const windows = process.platform === 'win32';
     const executable = command === 'node' ? process.execPath
@@ -167,7 +169,8 @@ export function runComposerCommand(command, args, { root, env = process.env, cap
     const shell = windows && ['npm.cmd', 'pnpm.cmd'].includes(executable);
     if (shell && args.some(value => !/^[A-Za-z0-9_./:= -]+$/.test(value))) return reject(new Error('Unsafe fixed-tool argument'));
     const startedAt = Date.now();
-    const child = spawn(executable, args, { cwd: root, env, windowsHide: true, shell, stdio: ['ignore', 'pipe', 'pipe'] });
+    // 시간 제한이 있으면 POSIX 에서는 새 프로세스 그룹으로 띄워 손자까지 한 번에 끝낼 수 있게 한다.
+    const child = spawn(executable, args, { cwd: root, env, windowsHide: true, shell, stdio: ['ignore', 'pipe', 'pipe'], detached: Boolean(timeoutMs) && !windows });
     let output = '';
     // Output can contain credentials from dependencies: it is kept only masked, bounded and on this computer.
     const masker = createLogMasker(Object.entries(env ?? {}).filter(([name]) => SECRET_NAME.test(name)).map(([, value]) => value));
@@ -204,7 +207,20 @@ export function runComposerCommand(command, args, { root, env = process.env, cap
       { code, commandId: command === 'node' ? args[0] : command, exitCode, durationMs: Date.now() - startedAt, ...(log ? { log } : {}) });
     // 실행 실패 뒤에도 close 가 올 수 있다. 로그와 결과는 한 번만 남긴다.
     let settled = false;
-    const settle = (exitCode, finish) => { if (settled) return; settled = true; written(exitCode); finish(); };
+    let timer;
+    const settle = (exitCode, finish) => { if (settled) return; settled = true; clearTimeout(timer); written(exitCode); finish(); };
+    if (timeoutMs) {
+      // 시간 제한을 넘기면 프로세스 트리를 끝내고 close 를 기다리지 않고 실패로 돌려준다(점검처럼 오래 기다릴 수 없는 호출만 건다).
+      // Windows 의 pnpm.cmd 는 손자 node 가 출력 파이프를 쥐고 남아, 자식만 끝내면 close 가 손자가 끝날 때까지 오지 않는다.
+      timer = setTimeout(() => {
+        if (child.pid) {
+          if (windows) spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' }).on('error', () => {});
+          else { try { process.kill(-child.pid, 'SIGKILL'); } catch { /* 이미 끝났다. */ } }
+        }
+        child.stdout.destroy(); child.stderr.destroy();
+        settle(null, () => reject(failed('TIMED_OUT', null)));
+      }, timeoutMs);
+    }
     child.on('error', () => settle(null, () => reject(failed('TOOL_UNAVAILABLE', null))));
     child.on('close', code => settle(code, () => code === 0 ? accept(output.trim()) : reject(failed('COMMAND_FAILED', code))));
   });
@@ -266,11 +282,8 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
         .map(row => ({ ...row, owner: owner(row.code) })),
       outputDirectory: `build/reusable-base/source/${composition.project.name}-<generation-id>`,
       menus: projectComposerMenuPreview(root, composition, snapshot),
-      warnings: [
-        '현재 체크아웃의 소스로 생성합니다. 커밋되지 않은 변경이 있으면 개발용 산출물로 표시됩니다.',
-        '생성 시 Docker·Java 21·Node.js 22 이상·pnpm이 필요하며, 의존성 설치와 검증에 시간이 걸릴 수 있습니다.',
-        ...composition.requirements.map(requirement => `추가 설정: ${requirement}`),
-      ],
+      // 도구·작업 트리처럼 이 컴퓨터의 상태는 생성 전 점검(preflight)이 실제로 확인해 말한다.
+      warnings: composition.requirements.map(requirement => `추가 설정: ${requirement}`),
     };
   };
   const diff = (recipe, domain) => {
@@ -378,7 +391,11 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
       try { await cleanupDatabase(); } finally { running = false; }
     }
   };
-  return { catalog, plan, diff, generate, outputRoot };
+  // 생성 전 점검: 명령 하나가 멈춰도 화면이 기다리지 않도록 명령마다 시간 제한을 둔다.
+  // sourceCommit 은 점검을 요청한 화면이 카탈로그를 받은 때의 커밋이다(탭마다 다를 수 있어 엔진에 두지 않는다).
+  const preflight = ({ sourceCommit } = {}) => composerPreflight({ outputRoot, sourceCommit,
+    probe: (command, args) => run(command, args, { root, capture: true, timeoutMs: PREFLIGHT_TIMEOUT_MS }) });
+  return { catalog, plan, diff, preflight, generate, outputRoot };
 }
 
 export function parseComposerArgs(args) {

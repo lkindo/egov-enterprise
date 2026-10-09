@@ -27,6 +27,15 @@ const catalog = {
     screens: { board: 1, comment: 0, scrap: 0, notification: 1 },
   },
 };
+// 생성 전 점검(설계서 19장)이 모두 통과하는 엔진 조각. 생성 흐름 테스트는 최종 확인을 거쳐 시작한다.
+const passingPreflight = () => ({ checks: [{ id: 'docker', status: 'pass', label: 'Docker 엔진이 응답합니다', detail: '29.1.3' }], blocked: false });
+async function confirmGenerate(page) {
+  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  await expect(dialog.getByRole('button', { name: '생성 시작' })).toBeEnabled();
+  await dialog.getByRole('button', { name: '생성 시작' }).click();
+  await expect(dialog).toBeHidden();
+}
 function plan(recipe) {
   const selected = recipe.selection.domains ?? catalog.presets.find(item => item.id === recipe.selection.preset).domains;
   const resolved = new Set(selected);
@@ -52,7 +61,7 @@ function plan(recipe) {
 test('keyboard selection, dependent features, preview, failure recovery and generated recipe stay coherent', { timeout: 60_000 }, async t => {
   let generations = 0;
   let submitted;
-  const app = createComposerServer({ engine: { catalog: () => catalog, plan, generate: async (recipe, { onProgress }) => {
+  const app = createComposerServer({ engine: { catalog: () => catalog, plan, preflight: passingPreflight, generate: async (recipe, { onProgress }) => {
     generations += 1; submitted = recipe;
     onProgress({ stage: 'database', progress: 20 });
     await new Promise(resolve => setTimeout(resolve, 350));
@@ -109,7 +118,7 @@ test('keyboard selection, dependent features, preview, failure recovery and gene
   await expect(page.getByRole('button', { name: '프로젝트 생성', exact: true })).toBeEnabled();
   await page.setViewportSize({ width: 360, height: 800 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, 'narrow layout must not scroll horizontally');
-  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  await confirmGenerate(page);
   await expect(page.getByLabel('프로젝트 이름')).toBeDisabled();
   await expect(page.getByRole('button', { name: '프로젝트 생성 중…' })).toBeDisabled();
   await expect(page.getByRole('heading', { name: '생성을 완료하지 못했습니다' })).toBeVisible();
@@ -122,7 +131,7 @@ test('keyboard selection, dependent features, preview, failure recovery and gene
   assert.equal(generations, 1);
   assert.deepEqual(submitted, { schemaVersion: 1, project: { name: 'agency-service' }, sourceRef: 'HEAD',
     selection: { domains: ['board'] }, database: { vendor: 'postgresql' }, backendLayout: 'single-module' });
-  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  await confirmGenerate(page);
   await expect(page.getByRole('heading', { name: '프로젝트가 준비되었습니다' })).toBeVisible();
   await expect(page.locator('#job-result')).toContainText('build/project-composer/agency-service');
   await expect(page.locator('#job-result')).toContainText('기술 검증을 통과');
@@ -147,7 +156,7 @@ test('polling disconnect retains the active job and recovery does not submit it 
   let release;
   let generations = 0;
   const pending = new Promise(resolve => { release = resolve; });
-  const app = createComposerServer({ engine: { catalog: () => catalog, plan, generate: () => { generations += 1; return pending; } } });
+  const app = createComposerServer({ engine: { catalog: () => catalog, plan, preflight: passingPreflight, generate: () => { generations += 1; return pending; } } });
   const origin = await app.listen(0);
   t.after(() => app.close());
   const browser = await chromium.launch({ headless: true });
@@ -156,7 +165,7 @@ test('polling disconnect retains the active job and recovery does not submit it 
   await page.goto(origin);
   await expect(page.getByRole('button', { name: '프로젝트 생성', exact: true })).toBeEnabled();
   await page.route('**/api/jobs/*', route => route.abort());
-  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  await confirmGenerate(page);
   await expect(page.getByRole('button', { name: '상태 다시 확인' })).toBeVisible();
   await expect(page.getByLabel('프로젝트 이름')).toBeDisabled();
   release({ projectDirectory: 'build/project-composer/my-service', verified: true });
@@ -170,7 +179,7 @@ test('another tab running a different recipe cannot overwrite the selection afte
   let release;
   let generations = 0;
   const pending = new Promise(resolve => { release = resolve; });
-  const app = createComposerServer({ engine: { catalog: () => catalog, plan, generate: () => { generations += 1; return pending; } } });
+  const app = createComposerServer({ engine: { catalog: () => catalog, plan, preflight: passingPreflight, generate: () => { generations += 1; return pending; } } });
   const origin = await app.listen(0);
   t.after(() => { release({ verified: true }); return app.close(); });
   const browser = await chromium.launch({ headless: true });
@@ -186,9 +195,9 @@ test('another tab running a different recipe cannot overwrite the selection afte
   await second.getByRole('radio', { name: /단일모듈/ }).check();
   await expect(first.locator('#generate')).toBeEnabled();
   await expect(second.locator('#generate')).toBeEnabled();
-  await first.locator('#generate').click();
+  await confirmGenerate(first);
   await expect(first.getByLabel('프로젝트 이름')).toBeDisabled();
-  await second.locator('#generate').click();
+  await confirmGenerate(second);
   await expect(second.locator('#job-error')).toContainText('다른 프로젝트를 생성하고 있습니다');
   await expect(second.getByLabel('프로젝트 이름')).toHaveValue('second-service');
   await expect(second.getByLabel('프로젝트 이름')).toBeEnabled();
@@ -206,7 +215,7 @@ test('lost generation response recovers only its accepted request without submit
     let submissions = 0;
     const result = { projectDirectory: 'build/project-composer/own-service', verified: true };
     const pending = completeBeforeRecovery ? Promise.resolve(result) : new Promise(resolve => { release = resolve; });
-    const app = createComposerServer({ engine: { catalog: () => catalog, plan, generate: () => { generations += 1; return pending; } } });
+    const app = createComposerServer({ engine: { catalog: () => catalog, plan, preflight: passingPreflight, generate: () => { generations += 1; return pending; } } });
     const origin = await app.listen(0);
     t.after(() => { release?.(result); return app.close(); });
     const browser = await chromium.launch({ headless: true });
@@ -221,7 +230,7 @@ test('lost generation response recovers only its accepted request without submit
       assert.equal(accepted.status(), 202);
       await route.abort('failed'); // The server accepted the job, but the browser never received its reply.
     });
-    await page.locator('#generate').click();
+    await confirmGenerate(page);
     if (!completeBeforeRecovery) {
       await expect(page.locator('#job-message')).toHaveText('선택한 구성 확인 중');
       await expect(page.getByLabel('프로젝트 이름')).toBeDisabled();
@@ -250,7 +259,7 @@ const realDiff = (recipe, domain) => {
   const result = compositionDiff({ catalog: real, menus: realMenus, recipe, domain });
   return { ...result, summary: diffSummary(result, real) };
 };
-async function realCatalogPage(t) {
+async function realCatalogPage(t, { preflight = passingPreflight } = {}) {
   const plan = recipe => {
     const composition = resolveProjectRecipe(recipe, real);
     return { ...composition, blockers: [], inclusionNotes: inclusionNotes(composition, real), degradationNotes: degradationNotes(composition, real),
@@ -258,7 +267,7 @@ async function realCatalogPage(t) {
   };
   let release;
   const released = new Promise(resolve => { release = resolve; });
-  const app = createComposerServer({ engine: { catalog: () => ({ ...real, sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40), presentation: composerPresentation(real, { routeKinds: loadRouteKinds(root) }) }), plan, diff: realDiff,
+  const app = createComposerServer({ engine: { catalog: () => ({ ...real, sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40), presentation: composerPresentation(real, { routeKinds: loadRouteKinds(root) }) }), plan, diff: realDiff, preflight,
     generate: async () => { await released; throw new Error('not generated in this test'); } } });
   const origin = await app.listen(0);
   t.after(() => app.close());
@@ -301,7 +310,7 @@ test('automatic inclusions from the real catalog show a chain, a user sentence, 
   await expect(board).toContainText('코드 참조 · 생성 묶음 선언');
   // 요약은 생성 중 잠기는 구성 영역 밖에 있다. 생성이 도는 동안 해제 버튼도 잠기고, 끝나면 다시 풀린다.
   const drop = board.getByRole('button', { name: '쪽지 해제하기' });
-  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  await confirmGenerate(page);
   await expect(page.getByRole('button', { name: '프로젝트 생성 중…' })).toBeDisabled();
   await expect(drop).toBeDisabled();
   await expect(drop).toHaveCSS('opacity', '0.5');
@@ -530,5 +539,125 @@ test('feature cards preview what choosing or removing them changes before the cl
   // 포커스가 없는 카드에 마우스만 올리면 미리보기는 보여도 화면 낭독기에는 알리지 않는다.
   await page.waitForTimeout(300);
   await expect(announced).toHaveText('');
+  assert.deepEqual(pageErrors, []);
+});
+
+/*
+ * 생성 전 최종 확인(설계서 19장, E5). 생성 버튼은 곧바로 생성하지 않고 이 컴퓨터의 생성 환경 점검과 구성 요약을 보인다.
+ * 차단 항목이 있거나 점검이 실패하면 생성 시작이 잠기고 이유가 버튼 설명으로 붙는다. 경고는 확인하고 진행할 수 있다.
+ */
+test('the final confirmation shows the environment check and the composition, and blocks generation until it passes', { timeout: 60_000 }, async t => {
+  const blocked = { checks: [
+    { id: 'docker', status: 'block', code: 'TOOL_UNAVAILABLE', label: 'Docker에 연결할 수 없습니다. Docker Desktop을 시작한 뒤 다시 점검하세요.' },
+    { id: 'worktree', status: 'warn', label: '커밋되지 않은 변경 2개가 그대로 생성물에 들어갑니다.' },
+  ], blocked: true };
+  const warned = { checks: [
+    { id: 'docker', status: 'pass', label: 'Docker 엔진이 응답합니다', detail: '29.1.3' },
+    { id: 'worktree', status: 'warn', label: '커밋되지 않은 변경 2개가 그대로 생성물에 들어갑니다.' },
+  ], blocked: false };
+  let next = blocked;
+  let runs = 0;
+  const { page, pageErrors, release } = await realCatalogPage(t, { preflight: () => {
+    runs += 1;
+    if (next instanceof Error) throw next;
+    return next;
+  } });
+  await page.locator('#capability-mail').check();
+  await expect(page.locator('#domain-count')).toHaveText('1');
+  const generateButton = page.getByRole('button', { name: '프로젝트 생성', exact: true });
+  await generateButton.click();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('button', { name: '돌아가기' })).toBeFocused();
+  const start = dialog.getByRole('button', { name: '생성 시작' });
+  // 차단 항목은 상태 글자와 함께 보이고, 생성 시작은 이유를 설명으로 단 채 잠긴다.
+  await expect(page.locator('#preflight-status')).toHaveText('차단 1건 · 확인 필요 1건');
+  await expect(page.locator('#preflight-list li').first()).toHaveText('차단Docker에 연결할 수 없습니다. Docker Desktop을 시작한 뒤 다시 점검하세요.');
+  await expect(start).toBeDisabled();
+  await expect(start).toHaveAccessibleDescription('차단 항목을 해결한 뒤 다시 점검하세요.');
+  // 구성 요약: 직접·자동 기능, 기능 저하, 외부 설정, 검증 순서.
+  const summary = page.locator('#confirm-summary');
+  await expect(summary).toContainText(`직접 1 · 자동 0 — ${real.capabilities.find(item => item.id === 'mail').label}`);
+  await expect(summary).toContainText('알림을 고르지 않아 줄어드는 동작');
+  await expect(summary).toContainText('메일 발송에 사용할 SMTP 설정');
+  await expect(summary).toContainText('DB 구성, 소스 구성, 의존성 설치, 전체 기술 검증');
+  await expect(summary).not.toContainText('수 분');
+  // 점검이 실패하면 통과로 보이지 않는다. '다시 점검'은 잠기지 않아 누른 뒤에도 포커스가 그 자리에 남는다.
+  next = new Error('probe crashed');
+  const retry = dialog.getByRole('button', { name: '다시 점검' });
+  await retry.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#preflight-status')).toHaveText('생성 환경을 점검하지 못했습니다. 잠시 후 다시 점검해 주세요.');
+  await expect(retry).toBeFocused();
+  await expect(start).toBeDisabled();
+  await expect(start).toHaveAccessibleDescription('점검을 마치지 못해 생성할 수 없습니다. 다시 점검하세요.');
+  // 생성기 서버에 닿지 못하면 브라우저 영문 오류 대신 한국어로 알린다.
+  await page.route('**/api/preflight', route => route.abort());
+  await retry.click();
+  await expect(page.locator('#preflight-status')).toHaveText('생성기 서버에 연결하지 못했습니다. 생성기가 실행 중인지 확인한 뒤 다시 시도해 주세요.');
+  await expect(start).toBeDisabled();
+  await page.unroute('**/api/preflight');
+  // 경고만 남으면 확인하고 진행할 수 있다.
+  next = warned;
+  await dialog.getByRole('button', { name: '다시 점검' }).click();
+  await expect(page.locator('#preflight-status')).toHaveText('확인 필요 1건이 있습니다. 내용을 확인한 뒤 생성할 수 있습니다.');
+  await expect(start).toBeEnabled();
+  await expect(start).toHaveAccessibleDescription('');
+  assert.equal(runs, 3, 'the aborted request never reached the server');
+  // 돌아가기(Esc)는 생성하지 않고 생성 버튼으로 돌아간다.
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(generateButton).toBeFocused();
+  await expect(page.locator('#job-panel')).toBeHidden();
+  // 다시 열면 새로 점검하고, 생성 시작을 눌러야 생성이 시작된다.
+  await generateButton.click();
+  await expect(start).toBeEnabled();
+  assert.equal(runs, 4);
+  await start.click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole('button', { name: '프로젝트 생성 중…' })).toBeDisabled();
+  release();
+  await expect(page.getByRole('heading', { name: '생성을 완료하지 못했습니다' })).toBeVisible();
+  // 좁은 화면에서도 대화상자가 가로로 넘치지 않는다.
+  await page.setViewportSize({ width: 360, height: 800 });
+  await generateButton.click();
+  await expect(dialog).toBeVisible();
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+  const box = await dialog.boundingBox();
+  assert.ok(box.x >= 0 && box.x + box.width <= 360, JSON.stringify(box));
+  assert.deepEqual(pageErrors, []);
+});
+
+/* 대화상자를 닫았다 다시 열면 새로 점검한다. 늦게 도착한 앞선 점검의 답은 새 점검 결과를 덮지 않는다. */
+test('a late answer from an earlier preflight never replaces the latest one', { timeout: 45_000 }, async t => {
+  const answers = [
+    { checks: [{ id: 'docker', status: 'block', code: 'TOOL_UNAVAILABLE', label: 'Docker에 연결할 수 없습니다. Docker Desktop을 시작한 뒤 다시 점검하세요.' }], blocked: true },
+    { checks: [{ id: 'docker', status: 'pass', label: 'Docker 엔진이 응답합니다', detail: '29.1.3' }], blocked: false },
+  ];
+  let calls = 0;
+  const { page, pageErrors } = await realCatalogPage(t, { preflight: () => answers[Math.min(calls++, answers.length - 1)] });
+  let releaseFirst;
+  const firstHeld = new Promise(resolve => { releaseFirst = resolve; });
+  let routed = 0;
+  await page.route('**/api/preflight', async route => {
+    routed += 1;
+    if (routed > 1) return route.continue();
+    const response = await route.fetch();
+    await firstHeld;
+    return route.fulfill({ response });
+  });
+  await expect(page.locator('#generate')).toBeEnabled();
+  await page.locator('#generate').click();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  await expect(page.locator('#preflight-status')).toHaveText('이 컴퓨터의 생성 환경을 점검하고 있습니다…');
+  await expect.poll(() => calls).toBe(1);
+  await page.keyboard.press('Escape');
+  await page.locator('#generate').click();
+  await expect(page.locator('#preflight-status')).toHaveText('모든 점검을 통과했습니다.');
+  releaseFirst();
+  await expect.poll(() => routed).toBe(2);
+  await page.waitForTimeout(500);
+  await expect(page.locator('#preflight-status')).toHaveText('모든 점검을 통과했습니다.');
+  await expect(dialog.getByRole('button', { name: '생성 시작' })).toBeEnabled();
   assert.deepEqual(pageErrors, []);
 });
