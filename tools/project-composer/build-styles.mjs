@@ -8,7 +8,7 @@ const directory = dirname(fileURLToPath(import.meta.url));
 const tailwind = resolve(directory, '../../frontend/node_modules/tailwindcss');
 const { compile } = await import(pathToFileURL(resolve(tailwind, 'dist/lib.mjs')).href);
 const input = await readFile(resolve(directory, 'styles.input.css'), 'utf8');
-const contents = await Promise.all(['index.html', 'app.js', 'confirm.js', 'job.js'].map(file => readFile(resolve(directory, 'public', file), 'utf8')));
+const contents = await Promise.all(['index.html', 'app.js', 'confirm.js', 'job.js', 'inclusions.js', 'menu-tree.js'].map(file => readFile(resolve(directory, 'public', file), 'utf8')));
 // Tailwind candidates are tokens, including quoted class lists assembled by the small local UI.
 const candidates = [...new Set(contents.flatMap(source => source.split(/[\s"'`<>;=]+/)).filter(Boolean))];
 const compiler = await compile(input, { loadStylesheet: async id => {

@@ -8,7 +8,7 @@ import { loadProjectComposerCatalog } from '../../scripts/project-composer-catal
 import { resolveProjectRecipe } from '../../scripts/project-composer-recipe.mjs';
 import { createComposerEngine, degradationNotes, diffSummary, inclusionNotes } from '../../scripts/project-composer.mjs';
 import { compositionDiff } from '../../scripts/project-composer-diff.mjs';
-import { loadProjectComposerMenus } from '../../scripts/project-composer-menu-preview.mjs';
+import { loadProjectComposerMenus, projectComposerMenuPreview } from '../../scripts/project-composer-menu-preview.mjs';
 import { composerPresentation, loadRouteKinds } from '../../scripts/project-composer-presentation.mjs';
 import { ComposerError, MENUS_REFRESH_COMMAND } from '../../scripts/project-composer-errors.mjs';
 import { NAME_RULE_MESSAGE } from '../../scripts/project-composer-name.mjs';
@@ -267,7 +267,11 @@ test('lost generation response recovers only its accepted request without submit
  */
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const real = loadProjectComposerCatalog(root);
-const realMenus = loadProjectComposerMenus(root).menus;
+const realSnapshot = loadProjectComposerMenus(root);
+const realMenus = realSnapshot.menus;
+// 엔진과 같이 공통 기반 구성과 비교해 메뉴 트리를 만든다(E8).
+const realMenuTree = recipe => projectComposerMenuPreview(root, resolveProjectRecipe(recipe, real), realSnapshot,
+  { base: resolveProjectRecipe({ ...recipe, selection: { preset: 'core' } }, real) });
 const realDiff = (recipe, domain) => {
   const result = compositionDiff({ catalog: real, menus: realMenus, recipe, domain });
   return { ...result, summary: diffSummary(result, real) };
@@ -276,7 +280,7 @@ async function realCatalogPage(t, { preflight = passingPreflight, deep = passing
   const plan = recipe => {
     const composition = resolveProjectRecipe(recipe, real);
     return { ...composition, blockers: [], inclusionNotes: inclusionNotes(composition, real), degradationNotes: degradationNotes(composition, real),
-      unassignedPermissions: [], menus: [], warnings: [], outputDirectory: `build/project-composer/${recipe.project.name}` };
+      unassignedPermissions: [], menus: realMenuTree(recipe), warnings: [], outputDirectory: `build/project-composer/${recipe.project.name}` };
   };
   let release;
   const released = new Promise(resolve => { release = resolve; });
@@ -520,6 +524,51 @@ test('pressing an automatic card while the plan cannot be checked says why the r
   assert.equal(await board.evaluate(input => { input.click(); return document.getElementById('capability-preview-status').textContent; }), '',
     'the region is emptied before the same sentence is written again');
   await expect(page.locator('#capability-preview-status')).toHaveText(missing);
+  assert.deepEqual(pageErrors, []);
+});
+
+/*
+ * 메뉴 트리 미리보기(E8, 설계서 시안 S2). 원본 메뉴 계층을 중첩 목록으로 그리고 같은 상위 안에서 순서대로 놓는다.
+ * 화면이 빠져 하위만 묶는 메뉴는 '목적지 없음', 원본에도 화면이 없는 메뉴는 '분류', 공통 기반에 없는 메뉴는 '추가' 로
+ * 글자 표시를 단다. 요약 줄이 화면·분류·목적지 없음·추가 수를 말한다.
+ */
+test('the menu preview is a nested tree in menu order with category, detached and added markers', { timeout: 45_000 }, async t => {
+  const { page, pageErrors } = await realCatalogPage(t);
+  await page.locator('#capability-note').check();
+  await expect(page.locator('#domain-count')).toHaveText('7');
+  const menus = realMenuTree({ schemaVersion: 1, project: { name: 'my-service' }, sourceRef: 'HEAD', selection: { domains: ['note'] },
+    database: { vendor: 'postgresql' }, backendLayout: 'multi-module' });
+  const count = kind => menus.filter(menu => menu.kind === kind).length;
+  const added = menus.filter(menu => menu.added);
+  assert.ok(count('detached') > 0 && added.length > 0, 'the fixture shows every marker');
+  await page.getByText('포함되는 메뉴').click();
+  await expect(page.locator('#menu-summary')).toHaveText(`화면 ${count('screen')}개 · 분류 ${count('category')}개 · 목적지 없음 ${count('detached')}개 · `
+    + `공통 기반 대비 추가 ${added.length}개. 목적지 없음은 원본에는 화면이 있지만 이 구성에서 그 화면이 빠져 하위 메뉴만 묶는 메뉴입니다.`);
+  await expect(page.locator('#menu-count')).toHaveText(String(menus.length));
+  // 맨 위 메뉴는 메뉴 순서대로 놓이고, 각 메뉴의 하위는 그 안의 목록에 들어간다.
+  const roots = menus.filter(menu => !menu.parent).sort((a, b) => a.order - b.order).map(menu => menu.label);
+  const rows = page.locator('#menu-preview > li');
+  await expect(rows).toHaveCount(roots.length);
+  assert.deepEqual(await rows.evaluateAll(items => items.map(item => item.querySelector('span').textContent)), roots);
+  for (const menu of menus) {
+    const children = menus.filter(child => child.parent === menu.id).sort((a, b) => a.order - b.order || a.id - b.id).map(child => child.label);
+    const nested = await page.locator('#menu-preview li').evaluateAll((items, id) => {
+      const item = items.find(node => node.dataset.menu === String(id));
+      return [...(item?.querySelector(':scope > ul')?.children ?? [])].map(child => child.querySelector('span').textContent);
+    }, menu.id);
+    assert.deepEqual(nested, children, menu.label);
+  }
+  // 표시는 글자다(낭독용 쉼표로 이름과 나뉜다).
+  const detached = menus.find(menu => menu.kind === 'detached');
+  const detachedRow = page.locator(`#menu-preview li[data-menu="${detached.id}"]`);
+  await expect(detachedRow.locator(':scope > div')).toHaveText(`${detached.label}, 목적지 없음${detached.added ? ', 추가' : ''}`);
+  const screen = added.find(menu => menu.kind === 'screen');
+  await expect(page.locator(`#menu-preview li[data-menu="${screen.id}"] > div`)).toHaveText(`${screen.label}, 추가`);
+  await expect(page.locator(`#menu-preview li[data-menu="${screen.id}"]`)).toContainText(screen.path);
+  const kept = menus.find(menu => menu.kind === 'screen' && !menu.added);
+  await expect(page.locator(`#menu-preview li[data-menu="${kept.id}"] > div`)).toHaveText(kept.label);
+  const category = menus.find(menu => menu.kind === 'category');
+  await expect(page.locator(`#menu-preview li[data-menu="${category.id}"] > div`)).toContainText(`${category.label}, 분류`);
   assert.deepEqual(pageErrors, []);
 });
 
@@ -1286,6 +1335,7 @@ test('a generation request rejected by the plan check withdraws the plan and a l
   await expect(page.locator('#preview-notification')).toHaveText('옛 원본 기준: notification');
   await expect(page.locator('#plan-degraded')).toBeVisible();
   await expect(page.locator('#domain-count')).toHaveText('3');
+  await expect(page.locator('#menu-summary')).not.toHaveText('');
   // 확인 창의 점검은 통과했는데 생성 요청의 계획 단계 검사가 낡은 메뉴 자료를 찾았다.
   rejectJob = new ComposerError('MENU_SNAPSHOT_STALE');
   await generateButton(page).click();
@@ -1304,6 +1354,7 @@ test('a generation request rejected by the plan check withdraws the plan and a l
   await expect(page.locator('#plan-unassigned')).toBeHidden();
   await expect(page.locator('#domain-count')).toHaveText('—');
   assert.equal(await page.locator('#menu-preview li').count(), 0);
+  await expect(page.locator('#menu-summary')).toHaveText('');
   assert.equal(generations, 0);
   // 다시 확인하면 행동이 걷히고, 이어지는 생성이 끝나도 옛 행동이 남지 않는다.
   await page.getByRole('button', { name: '구성 다시 확인' }).click();

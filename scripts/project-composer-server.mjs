@@ -296,7 +296,9 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
         json(response, 200, { job: jobView(job) });
       } else {
         const assets = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/confirm.js': ['confirm.js', 'text/javascript'],
-          '/job.js': ['job.js', 'text/javascript'], '/name-rule.js': ['name-rule.js', 'text/javascript'], '/styles.css': ['styles.css', 'text/css'] };
+          '/job.js': ['job.js', 'text/javascript'], '/name-rule.js': ['name-rule.js', 'text/javascript'],
+          '/inclusion-change.js': ['inclusion-change.js', 'text/javascript'], '/inclusions.js': ['inclusions.js', 'text/javascript'],
+          '/menu-tree.js': ['menu-tree.js', 'text/javascript'], '/styles.css': ['styles.css', 'text/css'] };
         if (!Object.hasOwn(assets, path)) throw new HttpError(404, 'NOT_FOUND');
         const [file, type] = assets[path];
         const content = await readFile(resolve(publicDirectory, file));

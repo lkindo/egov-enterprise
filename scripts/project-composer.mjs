@@ -194,7 +194,9 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
       unassignedPermissions: declared(() => loadUnassignedPermissionGuidance(root)).filter(row => composition.permissionCodes.includes(row.code))
         .map(row => ({ ...row, owner: owner(row.code) })),
       outputDirectory: `build/reusable-base/source/${composition.project.name}-<generation-id>`,
-      menus: declared(() => projectComposerMenuPreview(root, composition, snapshot)),
+      // 공통 기반 시작 구성과 비교해 이 구성이 더하는 메뉴를 표시한다(설계서 E8). 그 시작 구성이 없는 카탈로그는 표시하지 않는다.
+      menus: declared(() => projectComposerMenuPreview(root, composition, snapshot, {
+        base: current.presets.some(preset => preset.id === 'core') ? resolveRecipe({ ...recipe, selection: { preset: 'core' } }, current) : undefined })),
       // 도구·작업 트리처럼 이 컴퓨터의 상태는 생성 전 점검(preflight)이 실제로 확인해 말한다.
       warnings: composition.requirements.map(requirement => `추가 설정: ${requirement}`),
     };

@@ -89,8 +89,18 @@ export function writeProjectComposerMenuSnapshot(root, inventory) {
 }
 
 // 호출자가 이미 적재한 스냅숏을 넘길 수 있다(계획이 적재한 스냅숏을 미리보기가 다시 쓰도록).
-export function projectComposerMenuPreview(root, composition, snapshot = loadProjectComposerMenus(root)) {
-  return projectCompositionMenus({ menus: snapshot.menus, menuRoutes: composition.menuRoutes, excludedMenuTabs: composition.excludedMenuTabs }).menus.map(menu => ({
-    id: menu.menu_sn, label: menu.menu_nm, parent: menu.up_menu_sn || null, path: menu.modern_route,
+// 메뉴마다 같은 상위 안의 순서(order)와 종류(kind)를 싣는다(설계서 E8).
+// - screen: 이 구성에서 화면으로 가는 메뉴.
+// - category: 원본에도 화면 없이 하위 메뉴만 묶는 메뉴.
+// - detached(목적지 없음): 원본에는 화면이 있지만 이 구성에서 그 화면이 빠져, 남은 하위 메뉴를 묶기만 하는 메뉴.
+// base 구성을 주면 그 구성에 없는 메뉴를 added 로 표시한다(공통 기반 대비 추가).
+export function projectComposerMenuPreview(root, composition, snapshot = loadProjectComposerMenus(root), { base } = {}) {
+  const project = value => projectCompositionMenus({ menus: snapshot.menus, menuRoutes: value.menuRoutes, excludedMenuTabs: value.excludedMenuTabs }).menus;
+  const original = new Map(snapshot.menus.map(menu => [menu.menu_sn, menu]));
+  const baseIds = base ? new Set(project(base).map(menu => menu.menu_sn)) : null;
+  return project(composition).map(menu => ({
+    id: menu.menu_sn, label: menu.menu_nm, parent: menu.up_menu_sn || null, path: menu.modern_route, order: menu.menu_ordr,
+    kind: menu.modern_route ? 'screen' : original.get(menu.menu_sn).modern_route ? 'detached' : 'category',
+    ...(baseIds ? { added: !baseIds.has(menu.menu_sn) } : {}),
   }));
 }

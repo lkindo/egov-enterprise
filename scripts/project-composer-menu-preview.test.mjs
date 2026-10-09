@@ -42,8 +42,8 @@ test('preview is the exact projected menu hierarchy with labels, not the fronten
     writeProjectComposerMenuSnapshot(root, inventory);
     assert.deepEqual(projectComposerMenuPreview(root, { menuRoutes: ['/admin/help', '/screen-without-menu'],
       excludedMenuTabs: ['/admin/help?tab=COMMUNITY'] }), [
-      { id: 10, label: '관리 센터', parent: null, path: null },
-      { id: 11, label: '선택한 기능', parent: 10, path: '/admin/help?tab=FAQ' },
+      { id: 10, label: '관리 센터', parent: null, path: null, order: 1, kind: 'category' },
+      { id: 11, label: '선택한 기능', parent: 10, path: '/admin/help?tab=FAQ', order: 2, kind: 'screen' },
     ]);
     assert.equal(loadProjectComposerMenus(root).menus.length, 3);
     assert.doesNotThrow(() => assertProjectComposerMenusMatch(root, inventory));
@@ -55,6 +55,26 @@ test('preview is the exact projected menu hierarchy with labels, not the fronten
     assert.throws(() => assertProjectComposerMenusMatch(root, regranted), /differs from the actual/, 'a navigation grant drift is a snapshot drift');
     assert.deepEqual(loadProjectComposerMenus(root).navigation, [{ authrt_cd: 'ROLE_ADMIN', menu_sn: 10 }, { authrt_cd: 'ROLE_USER', menu_sn: 11 }]);
   } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+/*
+ * 메뉴 트리 미리보기(E8): 같은 상위 안의 순서와 종류를 싣는다. 원본에는 화면이 있지만 이 구성에서 그 화면이 빠져
+ * 하위 메뉴만 묶는 메뉴는 '목적지 없음'(detached)이고, 원본에도 화면이 없는 메뉴는 분류(category)다.
+ * 비교 구성(base)을 주면 그 구성에 없는 메뉴를 added 로 표시하고, 주지 않으면 added 를 싣지 않는다.
+ */
+test('the preview keeps menu order and kind and marks menus the base composition does not have', () => {
+  const row = (menu_sn, up_menu_sn, menu_ordr, menu_nm, modern_route) => ({ menu_sn, up_menu_sn, menu_ordr, menu_nm, menu_expln: null, modern_route, use_yn: 'Y', del_yn: 'N' });
+  const snapshot = { menus: [row(1, null, 2, '업무', '/work'), row(2, 1, 1, '일정', '/schedule'), row(3, null, 1, '관리', null), row(4, 3, 1, '사용자', '/admin/users')] };
+  const composition = routes => ({ menuRoutes: routes, excludedMenuTabs: [] });
+  assert.deepEqual(projectComposerMenuPreview(null, composition(['/schedule', '/admin/users']), snapshot, { base: composition(['/admin/users']) }), [
+    { id: 1, label: '업무', parent: null, path: null, order: 2, kind: 'detached', added: true },
+    { id: 2, label: '일정', parent: 1, path: '/schedule', order: 1, kind: 'screen', added: true },
+    { id: 3, label: '관리', parent: null, path: null, order: 1, kind: 'category', added: false },
+    { id: 4, label: '사용자', parent: 3, path: '/admin/users', order: 1, kind: 'screen', added: false },
+  ]);
+  // 전체 화면이 남으면 '업무' 도 화면이다.
+  assert.equal(projectComposerMenuPreview(null, composition(['/work', '/schedule']), snapshot)[0].kind, 'screen');
+  assert.ok(projectComposerMenuPreview(null, composition(['/admin/users']), snapshot).every(menu => !('added' in menu)), 'no base, no added flag');
 });
 
 test('stale snapshots fail for changed migrations, seeds, or Contract while CRLF is normalized', () => {
