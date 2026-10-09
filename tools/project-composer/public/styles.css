@@ -262,6 +262,9 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
 .ml-2 {
   margin-left: calc(var(--spacing) * 2);
 }
+.ml-3 {
+  margin-left: calc(var(--spacing) * 3);
+}
 .block {
   display: block;
 }
@@ -441,6 +444,9 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
 }
 .py-1 {
   padding-block: var(--spacing);
+}
+.py-1\.5 {
+  padding-block: calc(var(--spacing) * 1.5);
 }
 .py-2 {
   padding-block: calc(var(--spacing) * 2);

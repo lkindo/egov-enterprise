@@ -22,8 +22,9 @@
       <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">새 프로젝트 만들기</h1>
       <p class="mt-4 leading-7 text-muted">공통 기반에 업무 기능을 더하고, 프로젝트 구조를 선택하세요.<br class="hidden sm:block">선택한 소스와 PostgreSQL 스키마를 함께 준비합니다.</p>
     </div>
-    <div id="connection-error" class="mb-6 rounded-xl border border-danger bg-danger-soft p-5" role="alert" hidden>
-      <p id="connection-message"></p>
+    <div id="connection-error" class="mb-6 rounded-xl border border-danger bg-danger-soft p-5" hidden>
+      <p id="connection-message" role="alert"></p>
+      <div id="connection-actions" class="mt-3 space-y-2 text-sm" hidden></div>
       <button id="reconnect" class="mt-3 rounded-lg border border-danger px-4 py-2 font-semibold" type="button">다시 연결</button>
     </div>
     <p id="loading" class="py-8 text-muted" role="status">사용 가능한 기능을 불러오고 있습니다…</p>
@@ -78,8 +79,9 @@
       <aside class="space-y-5 lg:sticky lg:top-6" aria-labelledby="summary-heading">
         <section class="rounded-2xl border border-line bg-panel p-6">
           <p class="mb-2 text-xs font-semibold tracking-wide text-accent">생성할 프로젝트</p>
-          <h2 id="summary-heading" class="break-all text-xl font-semibold">구성을 확인하세요</h2>
+          <h2 id="summary-heading" class="break-all text-xl font-semibold" tabindex="-1">구성을 확인하세요</h2>
           <p id="plan-status" class="mt-3 text-sm leading-6 text-muted" role="status" aria-live="polite">기능 선택 후 포함 범위를 확인할 수 있습니다.</p>
+          <div id="plan-actions" class="mt-3 space-y-2 text-sm" hidden></div>
           <dl class="mt-6 grid grid-cols-3 gap-3 border-y border-line py-5 text-center">
             <div><dt class="text-xs text-muted">업무 기능</dt><dd id="domain-count" class="mt-2 text-2xl font-semibold">—</dd></div>
             <div><dt class="text-xs text-muted">테이블</dt><dd id="table-count" class="mt-2 text-2xl font-semibold">—</dd></div>
@@ -124,6 +126,7 @@
           <ul id="deep-list" class="mt-2 space-y-2 text-sm leading-6"></ul>
         </section>
         <dl id="confirm-summary" class="mt-5 space-y-3 border-t border-line pt-4 text-sm leading-6"></dl>
+        <div id="confirm-actions" class="mt-4 space-y-2 text-sm" hidden></div>
         <p id="confirm-blocked" class="mt-4 text-sm font-semibold text-danger" hidden></p>
         <div class="mt-6 flex flex-wrap justify-end gap-3">
           <button id="confirm-cancel" type="button" autofocus class="rounded-lg border border-line px-4 py-2 text-sm font-semibold">돌아가기</button>

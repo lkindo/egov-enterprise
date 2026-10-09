@@ -7,6 +7,7 @@ import test from 'node:test';
 import { assertProjectComposerMenusMatch, COMPOSER_MENU_SNAPSHOT_PATH, loadProjectComposerMenus,
   projectComposerMenuPreview, projectMenuSourceHash, validateProjectComposerMenus,
   writeProjectComposerMenuSnapshot } from './project-composer-menu-preview.mjs';
+import { ComposerError } from './project-composer-errors.mjs';
 
 const inventory = {
   menus: [
@@ -95,4 +96,28 @@ test('invalid menu identities, missing parents and the retired v1 shape cannot b
     mutate(snapshot);
     assert.throws(() => validateProjectComposerMenus(snapshot, hash));
   }
+});
+
+/*
+ * 스냅숏이 원본 마이그레이션을 따라가지 못한 경우(파일 없음·읽을 수 없음·해시·형식·실제 적용 결과와 다름)는 모두
+ * MENU_SNAPSHOT_STALE 이다 — 갱신 명령(npm run project:menus:refresh)으로 풀린다. 원본 SQL 파일을 읽지 못한 것은 갱신으로
+ * 풀리지 않으므로 이 코드가 아니다(내부 오류).
+ */
+test('every stale or unreadable snapshot is MENU_SNAPSHOT_STALE and an unreadable migration source is not', () => {
+  const { root, migrations } = fixture();
+  const stale = run => assert.throws(run, error => error instanceof ComposerError && error.code === 'MENU_SNAPSHOT_STALE');
+  try {
+    stale(() => loadProjectComposerMenus(root));
+    writeFileSync(join(root, COMPOSER_MENU_SNAPSHOT_PATH), '{ not json');
+    stale(() => loadProjectComposerMenus(root));
+    writeProjectComposerMenuSnapshot(root, inventory);
+    assert.doesNotThrow(() => loadProjectComposerMenus(root));
+    const written = JSON.parse(readFileSync(join(root, COMPOSER_MENU_SNAPSHOT_PATH), 'utf8'));
+    stale(() => validateProjectComposerMenus({ ...written, schemaVersion: 2 }, projectMenuSourceHash(root)));
+    stale(() => assertProjectComposerMenusMatch(root, { menus: inventory.menus.slice(0, 2), navigation: inventory.navigation }));
+    writeFileSync(join(migrations, 'V2_0__new_menu.sql'), 'SELECT 2;\n');
+    stale(() => loadProjectComposerMenus(root));
+    rmSync(migrations, { recursive: true });
+    assert.throws(() => loadProjectComposerMenus(root), error => !(error instanceof ComposerError) && error.code === 'ENOENT');
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });

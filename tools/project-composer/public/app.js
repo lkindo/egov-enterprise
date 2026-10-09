@@ -1,8 +1,12 @@
 import { createFinalConfirmation } from './confirm.js';
+import { NAME_RULE_MESSAGE, projectNameIsValid } from './name-rule.js';
 
 const $ = id => document.getElementById(id);
 const state = { catalog: null, csrf: '', preset: 'core', selected: new Set(), plan: null,
-  version: 0, job: null, polling: null, requestId: null, busy: false, previews: new Map() };
+  version: 0, job: null, polling: null, requestId: null, busy: false, previews: new Map(), notice: '' };
+// 계획 단계 검사가 붙이는 요청 오류 코드(서버 REQUEST_ERRORS 와 같다 — 시험이 대조한다). 생성 요청이 이 코드로 거부되면
+// 보이던 계획이 더는 맞지 않는다.
+const PLAN_REJECTION_CODES = new Set(['INVALID_NAME', 'INVALID_RECIPE', 'SOURCE_CHANGED', 'MENU_SNAPSHOT_STALE', 'CATALOG_DRIFT', 'TOOL_UNAVAILABLE']);
 let previewTimer;
 // 포커스와 마우스는 따로 기다린다. 마우스가 다른 카드를 지나가도 포커스된 카드의 요청을 지우지 않는다.
 const previewTimers = { focus: undefined, hover: undefined };
@@ -26,23 +30,131 @@ async function api(path, payload) {
     });
     data = await response.json();
   } catch { throw new Error(CONNECTION_FAILED); }
-  if (!response.ok) throw new Error(data.error?.message ?? '요청에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+  if (!response.ok) {
+    // 서버 오류는 코드·행동·입력 칸·세부 정보를 함께 준다(설계서 14.2). 연결 실패에는 status 가 없다.
+    const failure = data?.error ?? {};
+    throw Object.assign(new Error(failure.message ?? '요청에 실패했습니다. 잠시 후 다시 시도해 주세요.'),
+      { status: response.status, code: failure.code, action: failure.action, field: failure.field, details: failure.details });
+  }
   return data;
+}
+/*
+ * 오류의 행동(action)을 버튼으로 잇는다. 행동 영역은 상태 문장(live region) 밖에 두어, 문장은 한 번만 읽히고 버튼은 Tab 으로 닿는다.
+ * reload-source: 입력을 둔 채 기능 목록을 새 원본으로 다시 받는다. copy-command: 서버가 준 명령을 보이고 복사한다.
+ * show-violations: 접힌 개발자 정보에 첫 위반을 보인다. focus-name: 이름 칸에 문장을 달고(명시 동작일 때만) 포커스를 옮긴다.
+ */
+function renderFailureActions(container, error, { focus = false, onReload = reloadCatalog } = {}) {
+  container.replaceChildren();
+  container.hidden = true;
+  if (error?.action === 'focus-name') {
+    $('project-name').setAttribute('aria-invalid', 'true');
+    $('name-error').textContent = error.message; $('name-error').hidden = false;
+    if (focus) $('project-name').focus();
+    return;
+  }
+  if (error?.action === 'reload-source') {
+    const button = text('button', '새 원본으로 다시 불러오기', 'rounded-lg border border-line px-3 py-1.5 text-sm font-semibold');
+    button.type = 'button';
+    button.addEventListener('click', () => onReload({ focus: true }));
+    container.append(button);
+  } else if (error?.action === 'copy-command' && typeof error.details?.command === 'string') {
+    const command = text('code', error.details.command, 'block break-all rounded-lg border border-line px-3 py-2 font-mono text-xs');
+    const button = text('button', '명령 복사', 'mt-2 rounded-lg border border-line px-3 py-1.5 text-sm font-semibold');
+    button.type = 'button';
+    const status = text('span', '', 'ml-3 text-xs text-muted');
+    status.setAttribute('role', 'status');
+    button.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(error.details.command); status.textContent = '복사했습니다.'; }
+      catch { status.textContent = '복사하지 못했습니다. 명령을 직접 선택해 복사해 주세요.'; }
+    });
+    container.append(command, button, status);
+  } else if (error?.action === 'show-violations' && Array.isArray(error.details?.violations) && error.details.violations.length) {
+    const details = document.createElement('details');
+    details.append(text('summary', '개발자 정보', 'cursor-pointer text-sm font-semibold'),
+      text('p', '선언 검사는 첫 위반에서 멈춥니다. 이 위반을 고친 뒤에도 다른 위반이 나올 수 있습니다.', 'mt-2 text-xs text-muted'),
+      text('code', error.details.violations[0], 'mt-2 block break-all font-mono text-xs'));
+    container.append(details);
+  }
+  container.hidden = container.childElementCount === 0;
+}
+// 세션 응답을 화면에 적용한다. 원본 표시·프리셋 목록·CSRF 를 바꾸고, 새 목록에 없는 직접 선택은 뺀다.
+// 뺀 기능과 사라진 시작 구성은 조용히 버리지 않고 알릴 문장으로 돌려준다.
+function applySession(session) {
+  const previous = state.catalog;
+  const previousLabel = id => previous?.capabilities.find(item => item.id === id)?.label ?? id;
+  state.catalog = session.catalog; state.csrf = session.csrfToken;
+  $('preset').replaceChildren(...state.catalog.presets.map(item => {
+    const option = document.createElement('option'); option.value = item.id; option.textContent = presetLabel(item); return option;
+  }));
+  const custom = document.createElement('option'); custom.value = 'custom'; custom.textContent = '직접 선택'; $('preset').append(custom);
+  $('source-ref').textContent = state.catalog.sourceRef === state.catalog.sourceCommit
+    ? state.catalog.sourceCommit.slice(0, 12)
+    : state.catalog.sourceCommit ? `${state.catalog.sourceRef} · ${state.catalog.sourceCommit.slice(0, 12)}` : state.catalog.sourceRef;
+  const droppedPreset = state.preset !== 'custom' && !state.catalog.presets.some(item => item.id === state.preset) ? state.preset : null;
+  if (droppedPreset) state.preset = 'custom';
+  $('preset').value = state.preset;
+  const known = new Set(state.catalog.capabilities.map(item => item.id));
+  const dropped = [...state.selected].filter(id => !known.has(id));
+  state.selected = new Set([...state.selected].filter(id => known.has(id)));
+  const notes = [];
+  if (droppedPreset) notes.push(`새 원본에 없는 시작 구성(${previous?.presentation?.presets?.[droppedPreset]?.label ?? droppedPreset})을 직접 선택으로 바꿨습니다.`);
+  if (dropped.length) notes.push(`새 원본에 없는 기능을 선택에서 뺐습니다: ${dropped.map(previousLabel).join(', ')}.`);
+  return notes.join(' ');
+}
+// 계획을 거둔다(생성 요청 거부·다시 불러오기 실패). 진행 중 확인과 카드 미리보기도 버리고, 카드는 계획 없이 다시 그린다.
+// 진행 중 확인이 버려지면 그 확인이 '구성 다시 확인' 을 다시 열지 않으므로 여기서 연다.
+function withdrawPlan() {
+  state.version += 1; state.plan = null; state.previews.clear();
+  clearPlanNotes();
+  // 거둔 계획의 개수·메뉴·경고·생성 위치도 남기지 않는다(계산할 수 없다는 문장 옆에 계산된 값이 남지 않게).
+  for (const id of ['domain-count', 'table-count', 'menu-count']) $(id).textContent = '—';
+  $('plan-warnings').replaceChildren(); $('menu-preview').replaceChildren(); $('output-hint').textContent = '';
+  $('generate').disabled = true; $('download-recipe').disabled = true; $('preview').disabled = false;
+  renderFeatures();
+}
+// 다시 불러오기로 바뀐 선택을 알리는 문장은 다음 구성 변경 전까지 계획 상태 줄에 함께 싣는다.
+function withNotice(sentence) {
+  return state.notice ? `${sentence} ${state.notice}` : sentence;
+}
+// 원본이 바뀌었을 때: 이름·선택·구조는 그대로 두고 기능 목록과 원본 표시만 새로 받은 뒤 구성을 다시 확인한다.
+// (connect 는 진행 중 작업의 입력으로 화면을 덮으므로 쓰지 않는다.)
+async function reloadCatalog({ focus = false } = {}) {
+  if (state.busy) return;
+  // 누른 버튼이 곧 사라지므로 포커스를 요약 제목으로 옮긴다(키보드·화면 낭독기 사용자가 위치를 잃지 않게).
+  if (focus) $('summary-heading').focus();
+  $('plan-actions').replaceChildren(); $('plan-actions').hidden = true;
+  // 원본이 바뀐 것을 알았으므로 다시 받는 동안 옛 계획으로 생성하거나 저장하지 못하게 먼저 거둔다.
+  withdrawPlan();
+  $('plan-status').textContent = '기능 목록을 새 원본으로 다시 불러오고 있습니다…';
+  try {
+    const session = await api('/api/session');
+    const notice = applySession(session);
+    if (state.preset !== 'custom') state.selected = new Set(state.catalog.presets.find(item => item.id === state.preset)?.domains ?? []);
+    changed(); renderFeatures();
+    // 빠진 기능 안내는 다음 계획을 기다리지 않고 바로 알린다(그사이 구성을 바꿔도 사용자가 들었다).
+    state.notice = notice;
+    $('plan-status').textContent = withNotice('변경한 구성을 확인하고 있습니다…');
+  } catch (error) {
+    // 새 목록을 받지 못했으면 보이던 계획도 믿을 수 없다. 계획을 거두고 생성·저장을 잠근다.
+    withdrawPlan();
+    $('plan-status').textContent = error.message;
+    renderFailureActions($('plan-actions'), error);
+  }
 }
 function recipe() {
   return { schemaVersion: 1, project: { name: $('project-name').value.trim() }, sourceRef: state.catalog.sourceRef,
     selection: state.preset === 'custom' ? { domains: [...state.selected].sort() } : { preset: state.preset },
     database: { vendor: $('database').value }, backendLayout: document.querySelector('input[name="layout"]:checked').value };
 }
+// 서버·해석기와 같은 규칙(name-rule.js)이다. 예약 이름(con 등)은 요청을 보내기 전에 막는다.
 function nameIsValid() {
-  const name = $('project-name').value.trim();
-  return name.length <= 63 && /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name);
+  return projectNameIsValid($('project-name').value.trim());
 }
 function validateName(focus = false) {
   const valid = nameIsValid();
   $('project-name').setAttribute('aria-invalid', String(!valid));
   $('name-error').hidden = valid;
-  $('name-error').textContent = valid ? '' : '영문 소문자로 시작하는 이름을 입력해 주세요. 최대 63자이며 하이픈은 영문·숫자 사이에 사용할 수 있습니다.';
+  $('name-error').textContent = valid ? '' : NAME_RULE_MESSAGE;
   if (!valid && focus) $('project-name').focus();
   return valid;
 }
@@ -158,13 +270,14 @@ function requestPreview(id, source) {
   }, 120);
 }
 function changed() {
-  state.version += 1; state.plan = null; state.requestId = null; state.previews.clear();
+  state.version += 1; state.plan = null; state.requestId = null; state.previews.clear(); state.notice = '';
   // 이미 그려진 미리보기 줄도 비운다. 옛 구성 기준 문장이 새 구성 위에 남지 않게 한다.
   for (const line of $('capabilities').querySelectorAll('[id^="preview-"]')) { line.textContent = ''; line.hidden = true; }
   $('capability-preview-status').textContent = '';
   clearPlanNotes();
   $('generate').disabled = true; $('download-recipe').disabled = true;
   $('plan-status').textContent = '변경한 구성을 확인하고 있습니다…';
+  $('plan-actions').replaceChildren(); $('plan-actions').hidden = true;
   $('summary-heading').textContent = $('project-name').value.trim() || '구성을 확인하세요';
   clearTimeout(previewTimer);
   previewTimer = setTimeout(() => preview(false), 250);
@@ -229,7 +342,7 @@ function renderPlan() {
   $('menu-count').textContent = String(plan.menus?.length ?? 0);
   $('summary-heading').textContent = recipe().project.name;
   const blockers = plan.blockers ?? [];
-  $('plan-status').textContent = blockers.length ? '이 구성은 생성할 수 없습니다. 아래 사유를 확인해 주세요.' : '포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.';
+  $('plan-status').textContent = withNotice(blockers.length ? '이 구성은 생성할 수 없습니다. 아래 사유를 확인해 주세요.' : '포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.');
   $('output-hint').textContent = plan.outputDirectory ? `생성 위치 · ${plan.outputDirectory}` : '생성 위치 · 원본 프로젝트의 build/project-composer 아래 새 폴더';
   renderInclusions(plan.inclusionNotes ?? []);
   $('plan-warnings').replaceChildren(...blockers.map(blocker => text('p', blocker, 'font-semibold text-danger')), ...(plan.warnings ?? []).map(warning => text('p', warning)));
@@ -262,12 +375,18 @@ async function preview(focus) {
   if (!validateName(focus)) { $('plan-status').textContent = '프로젝트 이름을 확인해 주세요.'; return; }
   const version = state.version;
   $('preview').disabled = true;
+  $('plan-actions').replaceChildren(); $('plan-actions').hidden = true;
   try {
     const { plan } = await api('/api/plan', { recipe: recipe() });
     if (version !== state.version) return;
     state.plan = plan; renderPlan();
   } catch (error) {
-    if (version === state.version) { state.plan = null; clearPlanNotes(); $('plan-status').textContent = error.message; $('generate').disabled = true; }
+    if (version === state.version) {
+      state.plan = null; clearPlanNotes(); $('generate').disabled = true;
+      // 이름 오류는 상태 문장을 짧게 두고 문장 전체는 이름 칸에 단다(같은 문장이 두 번 읽히지 않게).
+      $('plan-status').textContent = withNotice(error.action === 'focus-name' ? '프로젝트 이름을 확인해 주세요.' : error.message);
+      renderFailureActions($('plan-actions'), error, { focus });
+    }
   } finally { if (version === state.version) $('preview').disabled = false; }
 }
 function busy(value) {
@@ -356,8 +475,21 @@ async function generate() {
         return;
       }
     } catch { /* The original form and request ID remain available for retry. */ }
-    busy(false); $('job-heading').textContent = '생성 요청을 확인해 주세요';
-    $('job-error').textContent = error.message; $('job-error').hidden = false;
+    busy(false);
+    // 계획 단계 검사가 거부했으면 보이던 계획이 더는 맞지 않는다. 계획을 거두고 문장은 계획 상태 줄에, 행동은 그 옆에 둔다.
+    // 작업은 시작되지 않았으므로 작업 영역은 닫는다(이전 작업의 결과·실패를 이번 요청의 결과처럼 다시 알리지 않게).
+    if (PLAN_REJECTION_CODES.has(error.code)) {
+      withdrawPlan();
+      $('job-panel').hidden = true;
+      $('plan-status').textContent = error.action === 'focus-name' ? '프로젝트 이름을 확인해 주세요.' : error.message;
+      // 확인 창의 생성 시작에서 돌아온 포커스(프로젝트 생성)가 잠기므로 요약 제목으로 옮긴다. 이름 오류는 이름 칸으로 간다.
+      if (error.action !== 'focus-name') $('summary-heading').focus();
+      renderFailureActions($('plan-actions'), error, { focus: true });
+      return;
+    }
+    $('job-heading').textContent = '생성 요청을 확인해 주세요';
+    $('job-error').textContent = error.action === 'focus-name' ? '프로젝트 이름을 확인해 주세요.' : error.message; $('job-error').hidden = false;
+    renderFailureActions($('plan-actions'), error, { focus: true });
   }
 }
 function downloadRecipe() {
@@ -368,23 +500,20 @@ function downloadRecipe() {
 }
 async function connect() {
   $('connection-error').hidden = true; $('loading').hidden = false;
+  $('connection-actions').replaceChildren(); $('connection-actions').hidden = true;
   try {
     const session = await api('/api/session');
-    state.catalog = session.catalog; state.csrf = session.csrfToken;
-    $('preset').replaceChildren(...state.catalog.presets.map(item => {
-      const option = document.createElement('option'); option.value = item.id; option.textContent = presetLabel(item); return option;
-    }));
-    const custom = document.createElement('option'); custom.value = 'custom'; custom.textContent = '직접 선택'; $('preset').append(custom);
-    $('source-ref').textContent = state.catalog.sourceRef === state.catalog.sourceCommit
-      ? state.catalog.sourceCommit.slice(0, 12)
-      : state.catalog.sourceCommit ? `${state.catalog.sourceRef} · ${state.catalog.sourceCommit.slice(0, 12)}` : state.catalog.sourceRef;
-    $('preset').value = state.preset;
+    applySession(session);
     state.selected = new Set(state.catalog.presets.find(item => item.id === state.preset)?.domains ?? state.selected);
     $('workspace').hidden = false; renderFeatures();
     if (session.job) { restoreRecipe(session.job.recipe); renderJob(session.job); if (session.job.status === 'running') await pollJob(); else await preview(false); }
     else await preview(false);
-  } catch {
-    $('connection-message').textContent = '로컬 생성기에 연결하지 못했습니다. 생성기 서버가 실행 중인지 확인해 주세요.';
+  } catch (error) {
+    // 서버가 답한 오류(선언 불일치·낡은 메뉴 자료·도구 없음 등)는 그 문장과 행동을 보인다. 연결 자체가 안 될 때만 서버 실행을 안내한다.
+    // 일반 실패 문장('입력은 유지됩니다')은 아직 입력 화면이 없는 첫 화면에 맞지 않아 따로 말한다.
+    $('connection-message').textContent = !error.status ? '로컬 생성기에 연결하지 못했습니다. 생성기 서버가 실행 중인지 확인해 주세요.'
+      : error.code === 'INTERNAL_ERROR' ? '기능 목록을 불러오지 못했습니다. 잠시 후 다시 연결해 주세요.' : error.message;
+    if (error.status) renderFailureActions($('connection-actions'), error, { onReload: connect });
     $('connection-error').hidden = false;
   } finally { $('loading').hidden = true; }
 }
@@ -402,7 +531,7 @@ $('preset').addEventListener('change', () => {
 });
 for (const input of document.querySelectorAll('input[name="layout"]')) input.addEventListener('change', changed);
 // 생성 버튼은 곧바로 생성하지 않고 최종 확인 창(환경 점검·소스 정밀 점검·구성 요약)을 연다.
-const confirmation = createFinalConfirmation({ $, text, api, recipe, label, state, validateName, generate });
+const confirmation = createFinalConfirmation({ $, text, api, recipe, label, state, validateName, generate, renderFailureActions, reloadCatalog });
 $('generate').addEventListener('click', () => confirmation.open());
 $('download-recipe').addEventListener('click', downloadRecipe);
 $('retry-status').addEventListener('click', pollJob);

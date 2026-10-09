@@ -10,6 +10,8 @@ import { createComposerEngine, degradationNotes, diffSummary, inclusionNotes } f
 import { compositionDiff } from '../../scripts/project-composer-diff.mjs';
 import { loadProjectComposerMenus } from '../../scripts/project-composer-menu-preview.mjs';
 import { composerPresentation, loadRouteKinds } from '../../scripts/project-composer-presentation.mjs';
+import { ComposerError, MENUS_REFRESH_COMMAND } from '../../scripts/project-composer-errors.mjs';
+import { NAME_RULE_MESSAGE } from '../../scripts/project-composer-name.mjs';
 
 const catalog = {
   sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40), mandatory: ['foundation', 'core'],
@@ -808,5 +810,388 @@ test('reopening the confirmation before the close event arrives still completes 
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
   }
+  assert.deepEqual(pageErrors, []);
+});
+
+/*
+ * 요청 오류(설계서 14.2, E4). 서버는 코드와 행동(action)을 주고, 화면은 문장을 상태 줄에, 행동은 그 밖의 버튼으로 잇는다.
+ * 이름 규칙은 서버·해석기와 같은 사본(name-rule.js)으로 요청 전에 막는다. 연결 자체가 안 될 때만 서버 실행을 안내한다.
+ */
+const SOURCE_CHANGED_MESSAGE = '화면을 연 뒤 원본 저장소가 바뀌었습니다. 기능 목록을 새 원본으로 다시 불러온 뒤 확인해 주세요.';
+async function errorPage(t, engine = {}, { permissions } = {}) {
+  const app = createComposerServer({ engine: { catalog: () => catalog, plan, preflight: passingPreflight, deep: passingDeep,
+    generate: async () => { throw new Error('generation is not part of this test'); }, ...engine } });
+  const origin = await app.listen(0);
+  t.after(() => app.close());
+  const browser = await chromium.launch({ headless: true });
+  t.after(() => browser.close());
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+  if (permissions) await context.grantPermissions(permissions, { origin });
+  const page = await context.newPage();
+  const pageErrors = [];
+  const calls = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+  page.on('request', request => { const { pathname } = new URL(request.url()); if (pathname.startsWith('/api/')) calls.push(pathname); });
+  return { page, origin, pageErrors, count: path => calls.filter(item => item === path).length };
+}
+const generateButton = page => page.getByRole('button', { name: '프로젝트 생성', exact: true });
+
+test('a reserved Windows name is refused before any request, and a server name refusal uses the same sentence', { timeout: 45_000 }, async t => {
+  let serverRefuses = false;
+  const { page, origin, pageErrors, count } = await errorPage(t, {
+    plan: recipe => { if (serverRefuses) throw new ComposerError('INVALID_NAME', { field: 'project.name' }); return plan(recipe); } });
+  await page.goto(origin);
+  await expect(generateButton(page)).toBeEnabled();
+  const plans = count('/api/plan');
+  await page.getByLabel('프로젝트 이름').fill('con');
+  await page.getByRole('button', { name: '구성 다시 확인' }).click();
+  await expect(page.getByLabel('프로젝트 이름')).toBeFocused();
+  await expect(page.getByLabel('프로젝트 이름')).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.locator('#name-error')).toHaveText(NAME_RULE_MESSAGE);
+  await expect(page.locator('#plan-status')).toHaveText('프로젝트 이름을 확인해 주세요.');
+  await expect(generateButton(page)).toBeDisabled();
+  // 입력 뒤의 자동 확인(250ms)도 요청을 보내지 않는다.
+  await page.waitForTimeout(600);
+  assert.equal(count('/api/plan'), plans, 'a reserved name never reaches the server');
+  // 서버가 이름을 거부하면(규칙이 어긋난 다른 화면 등) 같은 문장을 이름 칸에 달고 포커스를 옮긴다.
+  serverRefuses = true;
+  await page.getByLabel('프로젝트 이름').fill('agency-service');
+  await page.locator('#capability-board').focus();
+  await page.getByRole('button', { name: '구성 다시 확인' }).click();
+  await expect(page.locator('#plan-status')).toHaveText('프로젝트 이름을 확인해 주세요.');
+  await expect(page.locator('#name-error')).toHaveText(NAME_RULE_MESSAGE);
+  await expect(page.getByLabel('프로젝트 이름')).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByLabel('프로젝트 이름')).toBeFocused();
+  await expect(page.locator('#plan-actions')).toBeHidden();
+  assert.deepEqual(pageErrors, []);
+});
+
+test('a changed source offers a reload that keeps the name and selection and shows the new source', { timeout: 45_000 }, async t => {
+  let current = catalog;
+  let sourceChanged = false;
+  const { page, origin, pageErrors, count } = await errorPage(t, { catalog: () => current,
+    plan: recipe => { if (sourceChanged) throw new ComposerError('SOURCE_CHANGED', {}, 'Recipe sourceRef does not identify the current checkout'); return plan(recipe); } });
+  await page.goto(origin);
+  await expect(page.locator('#source-ref')).toHaveText('HEAD · aaaaaaaaaaaa');
+  await page.getByLabel('프로젝트 이름').fill('agency-service');
+  await page.locator('#capability-notification').check();
+  await expect(generateButton(page)).toBeEnabled();
+  sourceChanged = true;
+  current = { ...catalog, sourceCommit: 'b'.repeat(40) };
+  await page.getByRole('button', { name: '구성 다시 확인' }).click();
+  await expect(page.locator('#plan-status')).toHaveText(SOURCE_CHANGED_MESSAGE);
+  await expect(generateButton(page)).toBeDisabled();
+  await expect(page.locator('#plan-status')).not.toContainText('sourceRef');
+  // 행동은 상태 문장(live region) 밖에 있어 문장이 한 번만 읽히고 버튼은 Tab 으로 닿는다.
+  assert.equal(await page.locator('#plan-status button').count(), 0);
+  const reload = page.locator('#plan-actions').getByRole('button', { name: '새 원본으로 다시 불러오기' });
+  await expect(reload).toBeVisible();
+  sourceChanged = false;
+  const sessions = count('/api/session');
+  // 키보드로 누르면 버튼이 사라져도 포커스가 요약 제목으로 옮겨 가 위치를 잃지 않는다.
+  await reload.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#summary-heading')).toBeFocused();
+  await expect(page.locator('#source-ref')).toHaveText('HEAD · bbbbbbbbbbbb');
+  await expect(generateButton(page)).toBeEnabled();
+  await expect(page.locator('#plan-actions')).toBeHidden();
+  await expect(page.getByLabel('프로젝트 이름')).toHaveValue('agency-service');
+  await expect(page.locator('#preset')).toHaveValue('custom');
+  await expect(page.locator('#capability-notification')).toBeChecked();
+  await expect(page.locator('#capability-board')).not.toBeChecked();
+  assert.equal(count('/api/session'), sessions + 1, 'the reload asks for the catalog once');
+  assert.deepEqual(pageErrors, []);
+});
+
+test('a stale menu snapshot shows the real refresh command and copies it', { timeout: 45_000 }, async t => {
+  const { page, origin, pageErrors } = await errorPage(t, {
+    plan: () => { throw new ComposerError('MENU_SNAPSHOT_STALE', {}, 'Composer menu snapshot: source hash mismatch'); } },
+  { permissions: ['clipboard-read', 'clipboard-write'] });
+  await page.goto(origin);
+  await expect(page.locator('#plan-status')).toContainText('메뉴 미리보기 자료가 원본 DB 변경을 따라가지 못했습니다.');
+  await expect(page.locator('#plan-status')).not.toContainText('hash');
+  await expect(generateButton(page)).toBeDisabled();
+  await expect(page.locator('#plan-actions code')).toHaveText(MENUS_REFRESH_COMMAND);
+  await page.locator('#plan-actions').getByRole('button', { name: '명령 복사' }).click();
+  await expect(page.locator('#plan-actions').getByRole('status')).toHaveText('복사했습니다.');
+  assert.equal(await page.evaluate(() => navigator.clipboard.readText()), MENUS_REFRESH_COMMAND);
+  assert.deepEqual(pageErrors, []);
+});
+
+test('a session failure shows the server sentence with its developer details, and only a lost connection asks to start the server', { timeout: 45_000 }, async t => {
+  let failure = new ComposerError('CATALOG_DRIFT', { violations: ['project-composer catalog: declared UI dependency drifted: frontend/src/a.tsx'] });
+  const { page, origin, pageErrors } = await errorPage(t, { catalog: () => { throw failure; } });
+  await page.goto(origin);
+  await expect(page.locator('#connection-message')).toHaveText('기능 선언이 원본 코드와 맞지 않아 구성을 계산할 수 없습니다. 개발자 정보의 위반을 고친 뒤 다시 확인해 주세요.');
+  await expect(page.locator('#workspace')).toBeHidden();
+  const developer = page.locator('#connection-actions details');
+  await expect(developer.locator('summary')).toHaveText('개발자 정보');
+  await expect(developer.locator('code')).toBeHidden();
+  // 경고(role=alert)는 문장 하나만 담고, 개발자 정보와 버튼은 그 밖에 둔다.
+  await expect(page.locator('#connection-message')).toHaveAttribute('role', 'alert');
+  assert.equal(await page.locator('#connection-error [role=alert] :is(button, code, details)').count(), 0);
+  await developer.locator('summary').click();
+  await expect(developer.locator('code')).toHaveText('project-composer catalog: declared UI dependency drifted: frontend/src/a.tsx');
+  await expect(developer).toContainText('첫 위반에서 멈춥니다');
+  failure = new ComposerError('TOOL_UNAVAILABLE', { tool: 'git' });
+  await page.reload();
+  await expect(page.locator('#connection-message')).toHaveText('Git 을 실행하지 못했습니다. Git 을 설치하거나 PATH 를 확인한 뒤 생성기를 다시 시작해 주세요.');
+  await expect(page.locator('#connection-actions')).toBeHidden();
+  // 알 수 없는 코드는 일반 문장이며 원문을 싣지 않는다.
+  failure = new ComposerError('SOMETHING_NEW', {}, 'private-detail-must-not-appear');
+  await page.reload();
+  // 아직 입력 화면이 없으므로 '입력은 유지됩니다' 라고 말하지 않는다.
+  await expect(page.locator('#connection-message')).toHaveText('기능 목록을 불러오지 못했습니다. 잠시 후 다시 연결해 주세요.');
+  await expect(page.locator('#connection-actions')).toBeHidden();
+  await page.route('**/api/session', route => route.abort());
+  await page.reload();
+  await expect(page.locator('#connection-message')).toHaveText('로컬 생성기에 연결하지 못했습니다. 생성기 서버가 실행 중인지 확인해 주세요.');
+  await expect(page.locator('#connection-actions')).toBeHidden();
+  assert.deepEqual(pageErrors, []);
+});
+
+test('an unknown action or a malformed command from the server shows the sentence without a button', { timeout: 45_000 }, async t => {
+  const { page, origin, pageErrors } = await errorPage(t);
+  await page.goto(origin);
+  await expect(generateButton(page)).toBeEnabled();
+  const answer = error => page.route('**/api/plan', route => route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error }) }));
+  await answer({ code: 'FUTURE_CODE', message: '새 버전의 오류 문장입니다.', action: 'future-action', details: { command: 'rm -rf /' } });
+  await page.getByRole('button', { name: '구성 다시 확인' }).click();
+  await expect(page.locator('#plan-status')).toHaveText('새 버전의 오류 문장입니다.');
+  await expect(page.locator('#plan-actions')).toBeHidden();
+  await page.unroute('**/api/plan');
+  await answer({ code: 'MENU_SNAPSHOT_STALE', message: '명령이 없는 응답입니다.', action: 'copy-command', details: { command: 42 } });
+  await page.getByRole('button', { name: '구성 다시 확인' }).click();
+  await expect(page.locator('#plan-status')).toHaveText('명령이 없는 응답입니다.');
+  await expect(page.locator('#plan-actions')).toBeHidden();
+  assert.equal(await page.locator('#plan-actions button').count(), 0);
+  assert.deepEqual(pageErrors, []);
+});
+
+test('a changed source found by the final check closes the dialog and reloads without losing the input', { timeout: 45_000 }, async t => {
+  let current = catalog;
+  let moved = false;
+  let slow = false;
+  const { page, origin, pageErrors } = await errorPage(t, {
+    catalog: async () => { if (slow) await new Promise(accept => setTimeout(accept, 1500)); return current; },
+    preflight: () => moved
+      ? { checks: [{ id: 'source', status: 'block', code: 'SOURCE_CHANGED', label: '원본이 새 커밋으로 바뀌었습니다. 화면을 새로 고쳐 새 원본으로 다시 확인하세요.' }], blocked: true }
+      : passingPreflight() });
+  await page.goto(origin);
+  await page.getByLabel('프로젝트 이름').fill('agency-service');
+  await page.locator('#capability-notification').check();
+  await expect(generateButton(page)).toBeEnabled();
+  moved = true;
+  current = { ...catalog, sourceCommit: 'c'.repeat(40) };
+  await generateButton(page).click();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  await expect(dialog.locator('#preflight-status')).toHaveText('차단 1건 · 확인 필요 0건');
+  await expect(dialog.getByRole('button', { name: '생성 시작' })).toBeDisabled();
+  await expect(dialog.locator('#confirm-blocked')).toHaveText('원본이 바뀌어 생성할 수 없습니다. 새 원본으로 다시 불러온 뒤 확인하세요.');
+  const reload = dialog.locator('#confirm-actions').getByRole('button', { name: '새 원본으로 다시 불러오기' });
+  await expect(reload).toBeVisible();
+  moved = false; slow = true;
+  await reload.click();
+  await expect(dialog).toBeHidden();
+  // 새 기능 목록을 받는 동안 옛 계획으로 생성·저장하거나 확인 창을 다시 열지 못한다. 기다려서 보면 다시 받기가 끝난 뒤
+  // 새 계획을 확인하는 동안의 잠금과 구분되지 않으므로, 누른 직후의 상태를 바로 읽는다.
+  assert.deepEqual(await page.evaluate(() => [document.getElementById('generate').disabled, document.getElementById('download-recipe').disabled]),
+    [true, true]);
+  slow = false;
+  await expect(page.locator('#source-ref')).toHaveText('HEAD · cccccccccccc');
+  await expect(generateButton(page)).toBeEnabled();
+  await expect(page.getByLabel('프로젝트 이름')).toHaveValue('agency-service');
+  await expect(page.locator('#capability-notification')).toBeChecked();
+  await generateButton(page).click();
+  await expect(dialog.getByRole('button', { name: '생성 시작' })).toBeEnabled();
+  await expect(dialog.locator('#confirm-actions')).toBeHidden();
+  assert.deepEqual(pageErrors, []);
+});
+
+test('a reload that drops a selected feature or preset says so instead of dropping it silently', { timeout: 45_000 }, async t => {
+  let current = catalog;
+  let slowPlan = false;
+  const { page, origin, pageErrors } = await errorPage(t, { catalog: () => current,
+    plan: async recipe => { if (slowPlan) await new Promise(accept => setTimeout(accept, 1500)); return plan(recipe); } });
+  await page.goto(origin);
+  await page.getByLabel('프로젝트 이름').fill('agency-service');
+  await page.locator('#capability-board').check();
+  await page.locator('#capability-notification').check();
+  await expect(generateButton(page)).toBeEnabled();
+  // 새 원본에서 알림이 빠졌다.
+  current = { ...catalog, sourceCommit: 'd'.repeat(40), capabilities: catalog.capabilities.filter(item => item.id !== 'notification'),
+    presets: [{ id: 'core', domains: [] }],
+    presentation: { ...catalog.presentation, areas: catalog.presentation.areas.filter(area => area.id !== 'communication'),
+      summaries: { board: '게시글 관리', comment: '게시글 의견', scrap: '게시글 보관' }, screens: { board: 1, comment: 0, scrap: 0 } } };
+  await page.route('**/api/plan', route => route.fulfill({ status: 409, contentType: 'application/json',
+    body: JSON.stringify({ error: { code: 'SOURCE_CHANGED', message: '원본이 바뀌었습니다.', action: 'reload-source' } }) }), { times: 1 });
+  await page.getByRole('button', { name: '구성 다시 확인' }).click();
+  slowPlan = true;
+  await page.locator('#plan-actions').getByRole('button', { name: '새 원본으로 다시 불러오기' }).click();
+  await expect(page.locator('#plan-status')).toHaveText('변경한 구성을 확인하고 있습니다… 새 원본에 없는 기능을 선택에서 뺐습니다: 알림.');
+  slowPlan = false;
+  await expect(page.locator('#plan-status')).toHaveText('포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다. 새 원본에 없는 기능을 선택에서 뺐습니다: 알림.');
+  await expect(page.locator('#capability-notification')).toHaveCount(0);
+  await expect(page.locator('#capability-board')).toBeChecked();
+  // 다음 구성 변경부터는 그 안내를 싣지 않는다.
+  await page.locator('#capability-board').uncheck();
+  await expect(page.locator('#plan-status')).toHaveText('포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.');
+  // 고른 시작 구성이 새 원본에서 사라져도 알린다.
+  current = catalog;
+  await page.reload();
+  await page.locator('#preset').selectOption('collaboration');
+  await expect(generateButton(page)).toBeEnabled();
+  current = { ...catalog, sourceCommit: 'e'.repeat(40), presets: [{ id: 'core', domains: [] }] };
+  await page.route('**/api/plan', route => route.fulfill({ status: 409, contentType: 'application/json',
+    body: JSON.stringify({ error: { code: 'SOURCE_CHANGED', message: '원본이 바뀌었습니다.', action: 'reload-source' } }) }), { times: 1 });
+  await page.getByRole('button', { name: '구성 다시 확인' }).click();
+  await page.locator('#plan-actions').getByRole('button', { name: '새 원본으로 다시 불러오기' }).click();
+  await expect(page.locator('#plan-status')).toContainText('새 원본에 없는 시작 구성(협업)을 직접 선택으로 바꿨습니다.');
+  await expect(page.locator('#preset')).toHaveValue('custom');
+  assert.deepEqual(pageErrors, []);
+});
+
+test('a reload that fails leaves no plan to generate or save', { timeout: 45_000 }, async t => {
+  let sessionFails = false;
+  let moved = false;
+  const { page, origin, pageErrors } = await errorPage(t, {
+    catalog: () => { if (sessionFails) throw new ComposerError('CATALOG_DRIFT', { violations: ['project-composer catalog: drifted'] }); return catalog; },
+    preflight: () => moved
+      ? { checks: [{ id: 'source', status: 'block', code: 'SOURCE_CHANGED', label: '원본이 새 커밋으로 바뀌었습니다. 화면을 새로 고쳐 새 원본으로 다시 확인하세요.' }], blocked: true }
+      : passingPreflight() });
+  await page.goto(origin);
+  await page.locator('#capability-board').check();
+  await expect(generateButton(page)).toBeEnabled();
+  await expect(page.getByRole('button', { name: '선택 정보 저장' })).toBeEnabled();
+  // 최종 확인이 원본 변경을 찾았고, 새 원본의 기능 목록은 선언 불일치로 받지 못한다.
+  moved = true; sessionFails = true;
+  await generateButton(page).click();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  await dialog.locator('#confirm-actions').getByRole('button', { name: '새 원본으로 다시 불러오기' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('#plan-status')).toHaveText('기능 선언이 원본 코드와 맞지 않아 구성을 계산할 수 없습니다. 개발자 정보의 위반을 고친 뒤 다시 확인해 주세요.');
+  await expect(generateButton(page)).toBeDisabled();
+  await expect(page.getByRole('button', { name: '선택 정보 저장' })).toBeDisabled();
+  await expect(page.locator('#plan-actions details')).toBeAttached();
+  await expect(page.locator('#summary-heading')).toBeFocused();
+  assert.deepEqual(pageErrors, []);
+});
+
+test('a generation request rejected by the plan check withdraws the plan and a later job leaves no stale action', { timeout: 60_000 }, async t => {
+  let rejectJob = null;
+  let generations = 0;
+  const { page, origin, pageErrors } = await errorPage(t, {
+    plan: recipe => { if (rejectJob) { const error = rejectJob; rejectJob = null; throw error; } return plan(recipe); },
+    diff: (recipe, domain) => ({ domain, summary: `옛 원본 기준: ${domain}` }),
+    generate: async recipe => { generations += 1; return { projectDirectory: `build/project-composer/${recipe.project.name}`, verified: true }; } });
+  await page.goto(origin);
+  await page.getByLabel('프로젝트 이름').fill('agency-service');
+  await page.locator('#capability-board').check();
+  await expect(generateButton(page)).toBeEnabled();
+  // 카드 미리보기는 그 계획 기준이다.
+  await page.locator('#capability-notification').focus();
+  await expect(page.locator('#preview-notification')).toHaveText('옛 원본 기준: notification');
+  await expect(page.locator('#plan-degraded')).toBeVisible();
+  await expect(page.locator('#domain-count')).toHaveText('3');
+  // 확인 창의 점검은 통과했는데 생성 요청의 계획 단계 검사가 낡은 메뉴 자료를 찾았다.
+  rejectJob = new ComposerError('MENU_SNAPSHOT_STALE');
+  await generateButton(page).click();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  await dialog.getByRole('button', { name: '생성 시작' }).click();
+  await expect(page.locator('#plan-status')).toContainText('메뉴 미리보기 자료가 원본 DB 변경을 따라가지 못했습니다.');
+  await expect(page.locator('#plan-actions code')).toHaveText(MENUS_REFRESH_COMMAND);
+  await expect(generateButton(page)).toBeDisabled();
+  await expect(page.getByRole('button', { name: '선택 정보 저장' })).toBeDisabled();
+  await expect(page.locator('#job-panel')).toBeHidden();
+  await expect(page.locator('#summary-heading')).toBeFocused();
+  // 거둔 계획 기준의 카드 미리보기와 자동 포함 표시도 남지 않는다.
+  await expect(page.locator('#preview-notification')).toHaveText('');
+  await expect(page.locator('#capability-comment')).not.toBeChecked();
+  await expect(page.locator('#plan-degraded')).toBeHidden();
+  await expect(page.locator('#plan-unassigned')).toBeHidden();
+  await expect(page.locator('#domain-count')).toHaveText('—');
+  assert.equal(await page.locator('#menu-preview li').count(), 0);
+  assert.equal(generations, 0);
+  // 다시 확인하면 행동이 걷히고, 이어지는 생성이 끝나도 옛 행동이 남지 않는다.
+  await page.getByRole('button', { name: '구성 다시 확인' }).click();
+  await expect(generateButton(page)).toBeEnabled();
+  await expect(page.locator('#plan-actions')).toBeHidden();
+  await confirmGenerate(page);
+  await expect(page.getByRole('heading', { name: '프로젝트가 준비되었습니다' })).toBeVisible();
+  await expect(page.locator('#plan-actions')).toBeHidden();
+  assert.equal(generations, 1);
+  // 원본 변경으로 거부되면 다시 불러오기를 계획 옆에 두고, 앞선 작업의 결과는 그대로 보인다.
+  // (같은 구성의 같은 요청은 앞선 작업을 돌려받으므로 이름을 바꿔 새 요청을 만든다.)
+  await page.getByLabel('프로젝트 이름').fill('agency-service-two');
+  await expect(generateButton(page)).toBeEnabled();
+  rejectJob = new ComposerError('SOURCE_CHANGED');
+  await generateButton(page).click();
+  await dialog.getByRole('button', { name: '생성 시작' }).click();
+  await expect(page.locator('#plan-status')).toHaveText(SOURCE_CHANGED_MESSAGE);
+  await expect(page.locator('#plan-actions').getByRole('button', { name: '새 원본으로 다시 불러오기' })).toBeVisible();
+  // 작업은 시작되지 않았다. 앞선 작업의 결과를 이번 요청의 결과처럼 다시 보이지 않고, 그 작업의 선택 정보도 저장하지 않는다.
+  await expect(page.locator('#job-panel')).toBeHidden();
+  await expect(page.getByRole('button', { name: '선택 정보 저장' })).toBeDisabled();
+  await page.locator('#plan-actions').getByRole('button', { name: '새 원본으로 다시 불러오기' }).click();
+  await expect(generateButton(page)).toBeEnabled();
+  await expect(page.locator('#job-error')).toBeHidden();
+  assert.deepEqual(pageErrors, []);
+});
+
+test('a reload that fails while a check is in flight leaves the re-check button usable', { timeout: 45_000 }, async t => {
+  let sessionFails = false;
+  let slowPlan = false;
+  const { page, origin, pageErrors } = await errorPage(t, {
+    catalog: async () => {
+      if (!sessionFails) return catalog;
+      await new Promise(accept => setTimeout(accept, 700));
+      throw new ComposerError('CATALOG_DRIFT', { violations: ['project-composer catalog: drifted'] });
+    },
+    plan: async recipe => { if (slowPlan) await new Promise(accept => setTimeout(accept, 1800)); return plan(recipe); } });
+  await page.goto(origin);
+  await expect(generateButton(page)).toBeEnabled();
+  await page.route('**/api/plan', route => route.fulfill({ status: 409, contentType: 'application/json',
+    body: JSON.stringify({ error: { code: 'SOURCE_CHANGED', message: '원본이 바뀌었습니다.', action: 'reload-source' } }) }), { times: 1 });
+  await page.getByRole('button', { name: '구성 다시 확인' }).click();
+  sessionFails = true; slowPlan = true;
+  // 다시 불러오는 동안 구성을 바꿔 느린 확인이 걸린다. 다시 불러오기가 실패하면 그 확인은 버려진다.
+  await page.locator('#plan-actions').getByRole('button', { name: '새 원본으로 다시 불러오기' }).click();
+  await page.locator('#capability-notification').check();
+  await expect(page.locator('#plan-status')).toHaveText('기능 선언이 원본 코드와 맞지 않아 구성을 계산할 수 없습니다. 개발자 정보의 위반을 고친 뒤 다시 확인해 주세요.');
+  await page.waitForTimeout(2200);
+  await expect(page.locator('#plan-status')).toHaveText('기능 선언이 원본 코드와 맞지 않아 구성을 계산할 수 없습니다. 개발자 정보의 위반을 고친 뒤 다시 확인해 주세요.');
+  await expect(page.getByRole('button', { name: '구성 다시 확인' })).toBeEnabled();
+  slowPlan = false;
+  await page.getByRole('button', { name: '구성 다시 확인' }).click();
+  await expect(generateButton(page)).toBeEnabled();
+  assert.deepEqual(pageErrors, []);
+});
+
+test('a coded deep-check failure in the final confirmation shows its action in the dialog', { timeout: 45_000 }, async t => {
+  let deepFailure = new ComposerError('CATALOG_DRIFT', { violations: ['project-composer catalog: declared UI dependency drifted: frontend/src/a.tsx'] });
+  const { page, origin, pageErrors, count } = await errorPage(t, { deep: () => { if (deepFailure) throw deepFailure; return passingDeep(); } });
+  await page.goto(origin);
+  await page.locator('#capability-board').check();
+  await expect(generateButton(page)).toBeEnabled();
+  await generateButton(page).click();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  await expect(dialog.locator('#deep-status')).toHaveText('기능 선언이 원본 코드와 맞지 않아 구성을 계산할 수 없습니다. 개발자 정보의 위반을 고친 뒤 다시 확인해 주세요.');
+  await expect(dialog.getByRole('button', { name: '생성 시작' })).toBeDisabled();
+  await expect(dialog.locator('#confirm-blocked')).toHaveText('기능 선언이 원본 코드와 맞지 않아 생성할 수 없습니다. 개발자 정보의 위반을 고친 뒤 다시 점검하세요.');
+  await dialog.locator('#confirm-actions summary').click();
+  await expect(dialog.locator('#confirm-actions code')).toHaveText('project-composer catalog: declared UI dependency drifted: frontend/src/a.tsx');
+  // 구성을 만들 수 없다고 하면 다시 불러오기가 창을 닫고 새 기능 목록을 받는다.
+  deepFailure = new ComposerError('INVALID_RECIPE', { field: 'selection.domains', reason: 'UNAVAILABLE_DOMAIN' });
+  await dialog.getByRole('button', { name: '다시 점검' }).click();
+  const reload = dialog.locator('#confirm-actions').getByRole('button', { name: '새 원본으로 다시 불러오기' });
+  await expect(reload).toBeVisible();
+  await expect(dialog.locator('#confirm-blocked')).toHaveText('지금 원본으로는 이 구성을 생성할 수 없습니다. 새 원본으로 다시 불러온 뒤 확인하세요.');
+  deepFailure = null;
+  const sessions = count('/api/session');
+  await reload.click();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('#summary-heading')).toBeFocused();
+  await expect(generateButton(page)).toBeEnabled();
+  assert.equal(count('/api/session'), sessions + 1);
   assert.deepEqual(pageErrors, []);
 });

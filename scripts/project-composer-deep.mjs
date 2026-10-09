@@ -7,6 +7,7 @@ import { HISTORICAL_SCHEMA_TEST_DIR, UPSTREAM_ATLAS, missingUpstreamAtlasAliases
   removedGateAcknowledgement, selectHistoricalMigrationTests } from './reusable-source-gates.mjs';
 import { isCopyableSourceFile, normalize } from './reusable-source-tree.mjs';
 import { assertComposerSourceSurvives, composerProfile, domainSupportFiles, projectComposerFrontend } from './project-composer-source.mjs';
+import { withoutRoot } from './project-composer-errors.mjs';
 
 /*
  * 정밀 점검(설계서 10장 POST /api/plan/deep, C3). 생성기가 소스를 복사한 뒤에야 하던 투영과 게이트 승인 판정을
@@ -176,21 +177,8 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
   };
 }
 
-const escapeRegExp = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-/**
- * 투영 오류 문장을 저장소 기준 경로로 바꾼다. 이 컴퓨터의 절대 경로(사용자 폴더 이름)는 화면에 보내지 않는다.
- * 구분자(\ 와 /, JSON 이 두 겹으로 쓴 \\ 포함)와 대소문자가 달라도 같은 루트로 본다.
- */
-export function withoutRoot(root, text) {
-  return [...new Set([root, resolve(root)])].reduce((value, form) => {
-    const parts = form.split(/[\\/]+/).filter(Boolean).map(escapeRegExp);
-    if (!parts.length) return value;
-    // 경로 글자 바로 뒤에서 시작하는 일치는 저장소 안 경로의 일부다(루트가 /app 이면 frontend/src/app 의 /app). 바꾸지 않는다.
-    // 드라이브만인 루트(E:\)는 뒤에 구분자가 와야 경로다('file:' 같은 글자는 경로가 아니다).
-    const driveOnly = parts.length === 1 && /^[A-Za-z]:$/.test(parts[0]);
-    return value.replace(new RegExp(`(?<![\\w.\\-])${/^[\\/]/.test(form) ? '[\\\\/]+' : ''}${parts.join('[\\\\/]+')}${driveOnly ? '(?=[\\\\/])' : ''}`, 'gi'), '.');
-  }, text);
-}
+// 투영 오류 문장의 절대 경로 가리기는 오류 모듈과 같은 함수를 쓴다(오류 코드의 위반 문장도 같은 규칙으로 가린다).
+export { withoutRoot };
 
 /** 정밀 점검 결과를 확인 창에 보일 한 문장으로 바꾼다. 투영이 실패하면 셀 수 없는 개수를 말하지 않는다. */
 export function deepSummary(deep) {

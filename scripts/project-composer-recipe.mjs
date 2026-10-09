@@ -1,6 +1,8 @@
 import { canonicalJson, compositionDigest } from './project-composer-catalog.mjs';
 import { verifyResolvedDbComposition } from './project-composer-db.mjs';
 import { normalizeBackendLayout } from './reusable-layout.mjs';
+import { ComposerError } from './project-composer-errors.mjs';
+import { projectNameIsValid } from './project-composer-name.mjs';
 
 export const COMPOSER_SELECTION_PATH = 'config/governance/upstream-review/project-composer-selection.json';
 
@@ -10,6 +12,18 @@ export class ProjectRecipeError extends Error {
   constructor(code, field, message) { super(message); this.name = 'ProjectRecipeError'; this.code = code; this.field = field; }
 }
 function fail(field, message, code = 'INVALID_RECIPE') { throw new ProjectRecipeError(code, field, message); }
+/** 해석기 오류를 화면 코드로 바꾼다. field 를 code 보다 먼저 본다 — 카탈로그 결함은 사용자 입력 오류가 아니다. */
+export function classifyRecipeFailure(error) {
+  if (!(error instanceof ProjectRecipeError)) return error;
+  if (error.field === 'project.name') return new ComposerError('INVALID_NAME', { field: 'project.name' }, error.message);
+  if (error.field === 'catalog' || error.code === 'CATALOG_MISMATCH') return new ComposerError('CATALOG_DRIFT', { violations: [error.message] }, error.message);
+  return new ComposerError('INVALID_RECIPE', { field: error.field, reason: error.code }, error.message);
+}
+/** 셸·상위 경로·리비전 식 문법이 없는 원본 참조. git 에 넘기기 전에 이 형식부터 본다(옵션처럼 읽히는 값을 막는다). */
+export function sourceRefIsValid(value) {
+  return typeof value === 'string' && value.length <= 160 && /^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(value) && !value.includes('..')
+    && !value.includes('//') && !/[/.]$/.test(value) && !value.endsWith('.lock');
+}
 function object(value, field, allowed) {
   if (value === null || typeof value !== 'object' || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype) fail(field, `${field} must be an object`);
   const unknown = Object.keys(value).filter(key => !allowed.includes(key));
@@ -21,15 +35,10 @@ export function resolveProjectRecipe(input, catalog) {
   object(input, 'recipe', ['schemaVersion', 'project', 'sourceRef', 'selection', 'database', 'backendLayout']);
   if (input.schemaVersion !== 1) fail('schemaVersion', 'Only recipe schemaVersion 1 is supported');
   object(input.project, 'project', ['name']);
-  if (typeof input.project.name !== 'string' || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(input.project.name) || input.project.name.length > 63) {
-    fail('project.name', 'Project name must be a lowercase identifier of at most 63 characters');
+  if (!projectNameIsValid(input.project.name)) {
+    fail('project.name', 'Project name must be a lowercase identifier of at most 63 characters and not a reserved filesystem name');
   }
-  if (/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/.test(input.project.name)) fail('project.name', 'Reserved filesystem project name');
-  if (typeof input.sourceRef !== 'string' || input.sourceRef.length > 160
-    || !/^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(input.sourceRef) || input.sourceRef.includes('..')
-    || input.sourceRef.includes('//') || /[/.]$/.test(input.sourceRef) || input.sourceRef.endsWith('.lock')) {
-    fail('sourceRef', 'A source reference without shell, traversal or revision-expression syntax is required');
-  }
+  if (!sourceRefIsValid(input.sourceRef)) fail('sourceRef', 'A source reference without shell, traversal or revision-expression syntax is required');
   object(input.selection, 'selection', ['preset', 'domains']);
   if (Object.hasOwn(input.selection, 'preset') === Object.hasOwn(input.selection, 'domains')) fail('selection', 'Choose exactly one of preset or domains');
   const database = input.database ?? { vendor: 'postgresql' };

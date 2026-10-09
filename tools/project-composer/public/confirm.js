@@ -3,10 +3,18 @@
 const PREFLIGHT_STATUS_LABELS = Object.freeze({ pass: '통과', warn: '확인 필요', block: '차단' });
 const PREFLIGHT_STATUS_CLASSES = Object.freeze({ pass: 'text-muted', warn: 'text-ink', block: 'text-danger' });
 const DEEP_FILES_SHOWN = 5;
+// 코드가 붙은 정밀 점검 실패는 다시 점검해도 같다. 생성 시작을 잠근 이유에 실제로 할 일을 적는다.
+const DEEP_FAILURE_REASONS = Object.freeze({
+  'reload-source': '지금 원본으로는 이 구성을 생성할 수 없습니다. 새 원본으로 다시 불러온 뒤 확인하세요.',
+  'copy-command': '메뉴 미리보기 자료가 낡아 생성할 수 없습니다. 안내한 명령으로 갱신한 뒤 다시 점검하세요.',
+  'show-violations': '기능 선언이 원본 코드와 맞지 않아 생성할 수 없습니다. 개발자 정보의 위반을 고친 뒤 다시 점검하세요.',
+});
 
 /** 화면 모듈(app.js)의 도구를 받아 최종 확인 창을 연결하고 `open` 을 돌려준다. */
-export function createFinalConfirmation({ $, text, api, recipe, label, state, validateName, generate }) {
+export function createFinalConfirmation({ $, text, api, recipe, label, state, validateName, generate, renderFailureActions, reloadCatalog }) {
   let checkVersion = 0;
+  // 원본이 바뀌었으면(SOURCE_CHANGED) 창을 닫고 입력을 둔 채 기능 목록을 새 원본으로 다시 받는다.
+  const reloadFromDialog = options => { $('confirm-dialog').close(); reloadCatalog(options); };
   function confirmRow(term, value) {
     const row = text('div', '');
     row.append(text('dt', term, 'text-xs font-semibold text-muted'), text('dd', value, 'break-words'));
@@ -41,10 +49,13 @@ export function createFinalConfirmation({ $, text, api, recipe, label, state, va
           text('span', check.detail ? `${check.label} · ${check.detail}` : check.label, 'min-w-0 break-words'));
         return item;
       }));
+      const sourceChanged = preflight.checks.some(check => check.code === 'SOURCE_CHANGED');
+      if (sourceChanged) renderFailureActions($('confirm-actions'), { action: 'reload-source' }, { onReload: reloadFromDialog });
       const count = status => preflight.checks.filter(check => check.status === status).length;
       $('preflight-status').textContent = preflight.blocked ? `차단 ${count('block')}건 · 확인 필요 ${count('warn')}건`
         : count('warn') ? `확인 필요 ${count('warn')}건이 있습니다. 경고는 생성을 막지 않습니다.` : '생성 환경 점검을 모두 통과했습니다.';
-      return { reason: preflight.blocked ? '차단 항목을 해결한 뒤 다시 점검하세요.' : null, failed: false };
+      return { reason: !preflight.blocked ? null : sourceChanged ? '원본이 바뀌어 생성할 수 없습니다. 새 원본으로 다시 불러온 뒤 확인하세요.'
+        : '차단 항목을 해결한 뒤 다시 점검하세요.', failed: false };
     } catch (error) {
       if (stale()) return null;
       $('preflight-status').textContent = error.message;
@@ -80,7 +91,9 @@ export function createFinalConfirmation({ $, text, api, recipe, label, state, va
     } catch (error) {
       if (stale()) return null;
       $('deep-status').textContent = error.message;
-      return '정밀 점검을 마치지 못해 생성할 수 없습니다. 다시 점검하세요.';
+      // 코드가 붙은 오류(원본 변경·낡은 메뉴 자료·선언 불일치)는 그 행동을 함께 보인다.
+      renderFailureActions($('confirm-actions'), error, { onReload: reloadFromDialog });
+      return DEEP_FAILURE_REASONS[error.action] ?? '정밀 점검을 마치지 못해 생성할 수 없습니다. 다시 점검하세요.';
     }
   }
   // 생성 환경 점검 뒤 소스 정밀 점검을 이어서 한다. 정밀 점검은 생성기 서버의 계산을 수 초 붙잡으므로
@@ -91,6 +104,7 @@ export function createFinalConfirmation({ $, text, api, recipe, label, state, va
     // '다시 점검'은 잠그지 않는다. 포커스를 가진 버튼이 잠기면 모달 안 포커스가 사라진다. 진행 중 누름은 무시한다.
     $('confirm-start').disabled = true; $('preflight-retry').setAttribute('aria-disabled', 'true');
     $('confirm-blocked').hidden = true; $('confirm-blocked').textContent = '';
+    $('confirm-actions').replaceChildren(); $('confirm-actions').hidden = true;
     $('deep-list').replaceChildren(); $('deep-status').textContent = '생성 환경 점검을 마치면 이어서 점검합니다.';
     try {
       const environment = await runPreflight(stale);

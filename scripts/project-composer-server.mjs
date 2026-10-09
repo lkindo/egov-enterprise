@@ -5,6 +5,9 @@ import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ComposerError, MENUS_REFRESH_COMMAND } from './project-composer-errors.mjs';
+import { NAME_RULE_MESSAGE, projectNameIsValid } from './project-composer-name.mjs';
+import { classifyRecipeFailure } from './project-composer-recipe.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = resolve(ROOT, 'tools/project-composer/public');
@@ -22,7 +25,12 @@ const MESSAGES = Object.freeze({
   BAD_REQUEST: '요청 형식을 확인해 주세요.', FORBIDDEN: '이 생성기 화면에서 다시 시도해 주세요.',
   NOT_FOUND: '요청한 항목을 찾을 수 없습니다.', METHOD_NOT_ALLOWED: '지원하지 않는 요청 방식입니다.',
   BODY_TOO_LARGE: '선택 정보가 너무 큽니다. 기능 선택을 다시 확인해 주세요.',
-  INVALID_RECIPE: '프로젝트명과 기능 선택을 확인해 주세요. 지원하는 구성만 생성할 수 있습니다.',
+  INVALID_NAME: NAME_RULE_MESSAGE,
+  INVALID_RECIPE: '선택한 구성을 지금 원본에서 만들 수 없습니다. 원본이 바뀌었을 수 있으니 기능 목록을 다시 불러온 뒤 확인해 주세요.',
+  SOURCE_CHANGED: '화면을 연 뒤 원본 저장소가 바뀌었습니다. 기능 목록을 새 원본으로 다시 불러온 뒤 확인해 주세요.',
+  MENU_SNAPSHOT_STALE: '메뉴 미리보기 자료가 원본 DB 변경을 따라가지 못했습니다. 아래 명령으로 메뉴 자료를 갱신한 뒤 다시 확인해 주세요.',
+  CATALOG_DRIFT: '기능 선언이 원본 코드와 맞지 않아 구성을 계산할 수 없습니다. 개발자 정보의 위반을 고친 뒤 다시 확인해 주세요.',
+  TOOL_UNAVAILABLE: '생성에 필요한 도구를 실행하지 못했습니다. 설치와 PATH 를 확인한 뒤 생성기를 다시 시작해 주세요.',
   BUSY: '다른 프로젝트를 생성하고 있습니다. 완료 후 다시 시도해 주세요.',
   REQUEST_CONFLICT: '이미 사용한 요청입니다. 구성을 확인한 뒤 다시 시도해 주세요.',
   GENERATION_FAILED: '프로젝트 생성에 실패했습니다. Docker와 개발 도구 상태를 확인한 뒤 다시 시도해 주세요.',
@@ -31,8 +39,26 @@ const MESSAGES = Object.freeze({
   INTERNAL_ERROR: '요청을 처리하지 못했습니다. 입력은 유지됩니다. 잠시 후 다시 시도해 주세요.',
 });
 
+// 도구별 문장. 생성기는 시작할 때의 PATH 를 쓰므로 설치 뒤에는 생성기를 다시 시작해야 한다.
+const TOOL_MESSAGES = Object.freeze({
+  git: 'Git 을 실행하지 못했습니다. Git 을 설치하거나 PATH 를 확인한 뒤 생성기를 다시 시작해 주세요.',
+  docker: 'Docker 를 실행하지 못했습니다. Docker 엔진을 시작하거나 설치한 뒤 다시 점검해 주세요.',
+});
+/*
+ * 요청 오류 허용 목록(설계서 14.2, E4). 코드마다 HTTP 상태와 화면 행동, 화면이 표시할 입력 칸을 정한다. 문장은 MESSAGES 다.
+ * 엔진 오류는 이 목록의 코드가 붙은 ComposerError 일 때만 그 코드로 답하고, 그 밖의 오류는 일반 문장으로 답한다.
+ */
+const REQUEST_ERRORS = Object.freeze({
+  INVALID_NAME: { status: 400, action: 'focus-name', field: 'project.name' },
+  INVALID_RECIPE: { status: 400, action: 'reload-source' },
+  SOURCE_CHANGED: { status: 409, action: 'reload-source' },
+  MENU_SNAPSHOT_STALE: { status: 409, action: 'copy-command' },
+  CATALOG_DRIFT: { status: 500, action: 'show-violations' },
+  TOOL_UNAVAILABLE: { status: 503 },
+});
+
 class HttpError extends Error {
-  constructor(status, code) { super(code); this.status = status; this.code = code; }
+  constructor(status, code, details = {}) { super(code); this.status = status; this.code = code; this.details = details; }
 }
 const plain = value => value !== null && typeof value === 'object' && !Array.isArray(value)
   && [Object.prototype, null].includes(Object.getPrototypeOf(value));
@@ -43,11 +69,12 @@ const identifier = value => typeof value === 'string' && /^[a-z][a-z0-9-]{0,63}$
 export function validateComposerRequestRecipe(recipe) {
   if (!keys(recipe, ['schemaVersion', 'project', 'sourceRef', 'selection', 'database', 'backendLayout'])
     || recipe.schemaVersion !== 1 || !keys(recipe.project, ['name']) || typeof recipe.project.name !== 'string'
-    || recipe.project.name.length > 63 || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(recipe.project.name)
     || typeof recipe.sourceRef !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._/-]{0,159}$/.test(recipe.sourceRef)
     || recipe.sourceRef.includes('..') || !keys(recipe.database, ['vendor']) || recipe.database.vendor !== 'postgresql'
     || !['multi-module', 'single-module'].includes(recipe.backendLayout)
     || !keys(recipe.selection, ['preset', 'domains'])) throw new HttpError(400, 'INVALID_RECIPE');
+  // 이름은 화면이 칸을 짚어 알려 줄 수 있는 입력이다. 형식 오류와 구분한다(해석기·화면과 같은 규칙).
+  if (!projectNameIsValid(recipe.project.name)) throw new HttpError(400, 'INVALID_NAME');
   const selection = recipe.selection;
   const preset = Object.hasOwn(selection, 'preset');
   const capabilities = Object.hasOwn(selection, 'domains');
@@ -144,6 +171,36 @@ function safeDeep(value) {
   };
 }
 
+// 도구 이름은 문자열이고 알려진 것이어야 한다(문자열로 바뀌는 객체·배열이 그대로 실려 나가지 않게).
+const knownTool = tool => typeof tool === 'string' && Object.hasOwn(TOOL_MESSAGES, tool);
+/** 엔진 오류의 세부 정보는 코드마다 정해진 것만 다시 걸러 넘긴다. 엔진의 오류 문장은 보내지 않는다. */
+function safeDetails(error) {
+  const details = plain(error.details) ? error.details : {};
+  if (error.code === 'CATALOG_DRIFT') {
+    // 로더가 첫 위반에서 멈추므로 위반은 한 건이다. 한 줄·300자로 줄이고 이 컴퓨터의 절대 경로를 가린다.
+    const violation = Array.isArray(details.violations) ? details.violations[0] : undefined;
+    const shown = typeof violation === 'string' ? violation.replace(/[\r\n\0]+/g, ' ').replace(ABSOLUTE_PATH, '<로컬 경로>').trim().slice(0, 300) : '';
+    return shown ? { violations: [shown] } : {};
+  }
+  // 명령은 엔진 값이 아니라 서버 상수다. 생성기 서버는 이 명령을 실행하지 않는다.
+  if (error.code === 'MENU_SNAPSHOT_STALE') return { command: MENUS_REFRESH_COMMAND };
+  if (error.code === 'TOOL_UNAVAILABLE') return knownTool(details.tool) ? { tool: details.tool } : {};
+  return {};
+}
+/** 엔진 오류를 요청 응답으로 바꾼다. 허용 목록 코드가 붙은 ComposerError(해석기 오류는 분류해서)만 그 코드로, 나머지는 fallback 이다. */
+function requestFailure(error, fallback) {
+  if (error instanceof HttpError) return error;
+  const classified = classifyRecipeFailure(error);
+  if (!(classified instanceof ComposerError) || !Object.hasOwn(REQUEST_ERRORS, classified.code)) return fallback;
+  return new HttpError(REQUEST_ERRORS[classified.code].status, classified.code, safeDetails(classified));
+}
+function errorBody({ code, details = {} }) {
+  const rule = Object.hasOwn(REQUEST_ERRORS, code) ? REQUEST_ERRORS[code] : undefined;
+  const message = code === 'TOOL_UNAVAILABLE' && knownTool(details.tool) ? TOOL_MESSAGES[details.tool] : MESSAGES[code];
+  return { code, message, ...(rule?.action ? { action: rule.action } : {}), ...(rule?.field ? { field: rule.field } : {}),
+    ...(Object.keys(details).length ? { details } : {}) };
+}
+
 /** 실패한 단계·명령 식별자·종료 코드·가린 로그 위치만 넘긴다. 오류 메시지와 자식 출력은 보내지 않는다. */
 function safeFailure(failure) {
   if (!plain(failure)) return undefined;
@@ -193,7 +250,9 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
           || !timingSafeEqual(Buffer.from(supplied), Buffer.from(csrfToken))) throw new HttpError(403, 'FORBIDDEN');
       }
       if (path === '/api/session') {
-        json(response, 200, { csrfToken, catalog: await engine.catalog(), job: latest ? jobs.get(latest) : null });
+        let catalog;
+        try { catalog = await engine.catalog(); } catch (error) { throw requestFailure(error, new HttpError(500, 'INTERNAL_ERROR')); }
+        json(response, 200, { csrfToken, catalog, job: latest ? jobs.get(latest) : null });
       } else if (mutation) {
         // 계획 차이는 선택 기능이다. 엔진이 제공하지 않으면 없는 경로로 답한다.
         if (path === '/api/plan/diff' && typeof engine.diff !== 'function') throw new HttpError(404, 'NOT_FOUND');
@@ -220,19 +279,17 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
         const recipe = validateComposerRequestRecipe(input.recipe);
         if (path === '/api/plan/deep') {
           let deep;
-          // 해석기가 거부한 구성은 입력 오류로, 그 밖의 엔진 오류는 점검 실패로 답한다(내용은 숨긴다).
-          try { deep = await engine.deep(recipe); } catch (error) {
-            throw error?.code === 'INVALID_RECIPE' ? new HttpError(400, 'INVALID_RECIPE') : new HttpError(500, 'DEEP_FAILED');
-          }
+          // 코드가 붙은 오류(입력·원본 변경·선언 불일치 등)는 그 코드로, 그 밖의 엔진 오류는 점검 실패로 답한다(내용은 숨긴다).
+          try { deep = await engine.deep(recipe); } catch (error) { throw requestFailure(error, new HttpError(500, 'DEEP_FAILED')); }
           json(response, 200, { deep: safeDeep(deep) });
         } else if (path === '/api/plan/diff') {
           if (!identifier(input.domain)) throw new HttpError(400, 'BAD_REQUEST');
           let diff;
-          try { diff = await engine.diff(recipe, input.domain); } catch { throw new HttpError(400, 'INVALID_RECIPE'); }
+          try { diff = await engine.diff(recipe, input.domain); } catch (error) { throw requestFailure(error, new HttpError(500, 'INTERNAL_ERROR')); }
           json(response, 200, { diff });
         } else if (path === '/api/plan') {
           let plan;
-          try { plan = await engine.plan(recipe); } catch { throw new HttpError(400, 'INVALID_RECIPE'); }
+          try { plan = await engine.plan(recipe); } catch (error) { throw requestFailure(error, new HttpError(500, 'INTERNAL_ERROR')); }
           json(response, 200, { plan });
         } else {
           if (typeof input.requestId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.requestId)) throw new HttpError(400, 'BAD_REQUEST');
@@ -246,7 +303,7 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
           // Reserve before async planning, so simultaneous requests cannot both start.
           const id = randomUUID();
           active = id;
-          try { await engine.plan(recipe); } catch { active = undefined; throw new HttpError(400, 'INVALID_RECIPE'); }
+          try { await engine.plan(recipe); } catch (error) { active = undefined; throw requestFailure(error, new HttpError(500, 'INTERNAL_ERROR')); }
           const job = { id, requestId: input.requestId, status: 'running', recipe, stage: 'resolve', message: STAGES.resolve, progress: 0 };
           latest = id;
           jobs.set(id, job);
@@ -278,7 +335,8 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
         if (!job) throw new HttpError(404, 'NOT_FOUND');
         json(response, 200, { job });
       } else {
-        const assets = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/confirm.js': ['confirm.js', 'text/javascript'], '/styles.css': ['styles.css', 'text/css'] };
+        const assets = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/confirm.js': ['confirm.js', 'text/javascript'],
+          '/name-rule.js': ['name-rule.js', 'text/javascript'], '/styles.css': ['styles.css', 'text/css'] };
         if (!Object.hasOwn(assets, path)) throw new HttpError(404, 'NOT_FOUND');
         const [file, type] = assets[path];
         const content = await readFile(resolve(publicDirectory, file));
@@ -287,8 +345,8 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
       }
     } catch (error) {
       if (response.headersSent) { response.end(); return; }
-      const code = error instanceof HttpError ? error.code : 'INTERNAL_ERROR';
-      json(response, error instanceof HttpError ? error.status : 500, { error: { code, message: MESSAGES[code] } });
+      const failure = error instanceof HttpError ? error : new HttpError(500, 'INTERNAL_ERROR');
+      json(response, failure.status, { error: errorBody(failure) });
     }
   });
   server.requestTimeout = 15_000;

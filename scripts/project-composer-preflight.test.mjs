@@ -97,8 +97,8 @@ test('the source check compares the commit the requesting screen loaded, and an 
   const moved = await preflightWith({ 'git rev-parse': 'b'.repeat(40) });
   assert.equal(moved.blocked, true);
   assert.deepEqual(byId(moved, 'source'), { id: 'source', status: 'block', code: 'SOURCE_CHANGED',
-    label: '원본이 새 커밋으로 바뀌었습니다. 화면을 새로 고쳐 새 원본으로 다시 확인하세요.' });
-  const unknown = '원본 커밋을 확인하지 못했습니다. 화면을 새로 고친 뒤 다시 점검하세요.';
+    label: '원본이 새 커밋으로 바뀌었습니다. 기능 목록을 새 원본으로 다시 불러온 뒤 확인하세요.' });
+  const unknown = '원본 커밋을 확인하지 못했습니다. 기능 목록을 다시 불러온 뒤 다시 점검하세요.';
   assert.equal(byId(await preflightWith({}, { sourceCommit: undefined }), 'source').label, unknown);
   assert.equal(byId(await preflightWith({ 'git rev-parse': new Error('not a repository') }), 'source').label, unknown);
   assert.equal((await preflightWith({}, { sourceCommit: undefined })).blocked, true);
