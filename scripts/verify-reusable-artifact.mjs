@@ -7,25 +7,34 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { normalizeBackendLayout } from './reusable-layout.mjs';
 
-export function verificationCommands(scope = 'full', layout = 'multi-module') {
+// 검증 단계 id 의 정본. 생성기 엔진·서버가 이 목록을 가져가 실패한 단계를 이름으로 말한다.
+// 이 파일은 다른 생성기 모듈을 가져오지 않는다(이관 제품이 이 파일과 reusable-layout.mjs 만 복사한다).
+export const VERIFICATION_STEP_IDS = Object.freeze(['governance', 'ui-governance', 'entrypoints', 'backend', 'typecheck', 'lint', 'build']);
+
+/** 범위·배치에 맞는 검증 단계 표. 명령 목록(verificationCommands)도 이 표에서 만든다. */
+export function verificationSteps(scope = 'full', layout = 'multi-module') {
   if (!['contracts', 'backend', 'frontend', 'full'].includes(scope)) throw new Error('scope must be contracts, backend, frontend or full');
   normalizeBackendLayout(layout);
   const taskPrefix = layout === 'single-module' ? '' : ':api-server:';
-  const commands = [
-    ['node', ['scripts/verify-reusable-governance.mjs']],
-    ['node', ['--test', 'scripts/reusable-ui-governance-contract.test.mjs']],
-    ['node', ['--test', 'scripts/reusable-artifact-entrypoints-contract.test.mjs']],
+  const steps = [
+    { id: 'governance', command: 'node', args: ['scripts/verify-reusable-governance.mjs'] },
+    { id: 'ui-governance', command: 'node', args: ['--test', 'scripts/reusable-ui-governance-contract.test.mjs'] },
+    { id: 'entrypoints', command: 'node', args: ['--test', 'scripts/reusable-artifact-entrypoints-contract.test.mjs'] },
   ];
-  if (['backend', 'full'].includes(scope)) commands.push(
-    ['gradle', ['compileJava', 'compileTestJava', `${taskPrefix}harnessTest`, `${taskPrefix}schemaValidationTest`,
-      '--no-daemon', '--warning-mode', 'fail', '--console=plain', '-Dfile.encoding=UTF-8']],
+  if (['backend', 'full'].includes(scope)) steps.push(
+    { id: 'backend', command: 'gradle', args: ['compileJava', 'compileTestJava', `${taskPrefix}harnessTest`, `${taskPrefix}schemaValidationTest`,
+      '--no-daemon', '--warning-mode', 'fail', '--console=plain', '-Dfile.encoding=UTF-8'] },
   );
-  if (['frontend', 'full'].includes(scope)) commands.push(
-    ['pnpm', ['-C', 'frontend', 'exec', 'tsc', '--noEmit']],
-    ['pnpm', ['-C', 'frontend', 'run', 'lint']],
-    ['pnpm', ['-C', 'frontend', 'run', 'build']],
+  if (['frontend', 'full'].includes(scope)) steps.push(
+    { id: 'typecheck', command: 'pnpm', args: ['-C', 'frontend', 'exec', 'tsc', '--noEmit'] },
+    { id: 'lint', command: 'pnpm', args: ['-C', 'frontend', 'run', 'lint'] },
+    { id: 'build', command: 'pnpm', args: ['-C', 'frontend', 'run', 'build'] },
   );
-  return commands;
+  return steps;
+}
+
+export function verificationCommands(scope = 'full', layout = 'multi-module') {
+  return verificationSteps(scope, layout).map(({ command, args }) => [command, args]);
 }
 
 export function runCommand(command, args, { root, env = process.env, capture = false } = {}) {
@@ -49,7 +58,7 @@ export function verifyReusableArtifact({ root, scope = 'full', run = runCommand 
   const lock = JSON.parse(readFileSync(resolve(root, 'reusable-base-lock.json'), 'utf8'));
   if (!['core', 'collaboration', 'demo', 'custom'].includes(lock.profile)) throw new Error('generated product lock is required');
   const layout = normalizeBackendLayout(lock.layout);
-  const commands = verificationCommands(scope, layout);
+  const steps = verificationSteps(scope, layout);
   const env = { ...process.env, TZ: 'Asia/Seoul', JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex') };
   const report = { schemaVersion: 1, authority: 'local-product-technical-verification', profile: lock.profile,
     scope, layout, sourceCommit: lock.sourceCommit, checkedAt: new Date().toISOString(),
@@ -58,20 +67,20 @@ export function verifyReusableArtifact({ root, scope = 'full', run = runCommand 
   mkdirSync(reports, { recursive: true });
   const save = () => writeFileSync(resolve(reports, `${scope}.json`), `${JSON.stringify(report, null, 2)}\n`);
   save();
-  // 단계마다 명령·결과·소요 시간을 남긴다. 실패하면 그 명령과 종료 코드가 보고서의 failure 다.
+  // 단계마다 단계 id·명령·결과·소요 시간을 남긴다. 실패하면 그 단계와 명령·종료 코드가 보고서의 failure 다.
   let step;
   try {
-    for (const [command, args] of commands) {
+    for (const { id, command, args } of steps) {
       process.stdout.write(`[reusable-verify] ${lock.profile}/${layout}: ${command} ${args.join(' ')}\n`);
-      step = { command: [command, ...args].join(' '), startedAt: Date.now() };
+      step = { id, command: [command, ...args].join(' '), startedAt: Date.now() };
       run(command, args, { root, env });
-      report.steps.push({ command: step.command, result: 'passed', durationMs: Date.now() - step.startedAt });
+      report.steps.push({ step: step.id, command: step.command, result: 'passed', durationMs: Date.now() - step.startedAt });
       step = undefined;
     }
     report.result = 'passed';
   } catch (error) {
     if (step) {
-      report.failure = { command: step.command, exitCode: error.exitCode ?? null, durationMs: Date.now() - step.startedAt };
+      report.failure = { step: step.id, command: step.command, exitCode: error.exitCode ?? null, durationMs: Date.now() - step.startedAt };
       report.steps.push({ ...report.failure, result: 'failed' });
     }
     report.result = 'failed'; throw error;

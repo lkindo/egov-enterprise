@@ -130,10 +130,12 @@ test('keyboard selection, dependent features, preview, failure recovery and gene
   await expect(page.getByRole('heading', { name: '생성을 완료하지 못했습니다' })).toBeVisible();
   await expect(page.getByLabel('프로젝트 이름')).toHaveValue('agency-service');
   await expect(page.locator('#capability-board')).toBeChecked();
-  await expect(page.locator('#job-error')).not.toContainText('private-password');
-  await expect(page.locator('#job-error')).toContainText('실패 단계: 생성 프로젝트 검증');
-  await expect(page.locator('#job-error')).toContainText('scripts/verify-reusable-artifact.mjs (종료 코드 1)');
-  await expect(page.locator('#job-error')).toContainText('logs/verify.log');
+  await expect(page.locator('#job-panel')).not.toContainText('private-password');
+  // 실패 문장은 role=alert 안에 하나, 단계·명령·로그 위치는 그 밖의 세부 영역에 있다.
+  await expect(page.locator('#job-failure')).toContainText('실패 단계: 생성 프로젝트 검증');
+  await expect(page.locator('#job-failure')).toContainText('scripts/verify-reusable-artifact.mjs (종료 코드 1)');
+  await expect(page.locator('#job-failure')).toContainText('logs/verify.log');
+  await expect(page.locator('#job-error')).not.toContainText('실패 단계:');
   assert.equal(generations, 1);
   assert.deepEqual(submitted, { schemaVersion: 1, project: { name: 'agency-service' }, sourceRef: 'HEAD',
     selection: { domains: ['board'] }, database: { vendor: 'postgresql' }, backendLayout: 'single-module' });
@@ -205,6 +207,8 @@ test('another tab running a different recipe cannot overwrite the selection afte
   await expect(first.getByLabel('프로젝트 이름')).toBeDisabled();
   await confirmGenerate(second);
   await expect(second.locator('#job-error')).toContainText('다른 프로젝트를 생성하고 있습니다');
+  // 거부된 요청 뒤에 '요청하고 있습니다' 진행 문장이 경보 아래 남지 않는다.
+  await expect(second.locator('#job-message')).toHaveText('');
   await expect(second.getByLabel('프로젝트 이름')).toHaveValue('second-service');
   await expect(second.getByLabel('프로젝트 이름')).toBeEnabled();
   await expect(second.locator('#capability-notification')).toBeChecked();
@@ -1193,5 +1197,216 @@ test('a coded deep-check failure in the final confirmation shows its action in t
   await expect(page.locator('#summary-heading')).toBeFocused();
   await expect(generateButton(page)).toBeEnabled();
   assert.equal(count('/api/session'), sessions + 1);
+  assert.deepEqual(pageErrors, []);
+});
+
+/*
+ * 생성 작업 실패(설계서 14.2, E4b). 서버가 단계에 맞는 코드와 행동을 주면 화면은 문장을 role=alert 하나에, 단계·명령·로그 위치·
+ * 행동·접힌 로그 끝부분은 그 밖의 형제 영역에 둔다. 다시 생성·다시 점검은 최종 확인 창을 거친다.
+ */
+const JOB_LOG = 'build/project-composer/jobs/agency-service-0123456789abcdef/logs/verify.log';
+const JOB_REPORT = 'build/project-composer/jobs/agency-service-0123456789abcdef/report.json';
+const jobFailure = (code, details, failure) => Object.assign(new ComposerError(code, details, `private-detail ${code}`), { failure });
+const verifyFailure = (step, logTail) => jobFailure('VERIFY_FAILED', { step }, { stage: 'verify', commandId: 'scripts/verify-reusable-artifact.mjs',
+  exitCode: 1, log: JOB_LOG, report: JOB_REPORT, sourceCommit: 'a'.repeat(40), logTail });
+async function startFailingJob(page, origin) {
+  await page.goto(origin);
+  await page.getByLabel('프로젝트 이름').fill('agency-service');
+  await page.locator('#capability-board').check();
+  await expect(generateButton(page)).toBeEnabled();
+  await confirmGenerate(page);
+  await expect(page.getByRole('heading', { name: '생성을 완료하지 못했습니다' })).toBeVisible();
+}
+
+test('a verification step failure keeps one sentence in the alert, a closed log tail and copies only identifiers', { timeout: 45_000 }, async t => {
+  const tail = ['[reusable-verify] custom/single-module: pnpm -C frontend run lint', 'src/a.tsx 3:1 error no-unused-vars'];
+  const { page, origin, pageErrors } = await errorPage(t, { generate: async () => { throw verifyFailure('lint', tail); } },
+    { permissions: ['clipboard-read', 'clipboard-write'] });
+  await startFailingJob(page, origin);
+  await expect(page.locator('#job-error')).toHaveText(/「린트」 단계에서 실패했습니다/);
+  assert.equal(await page.locator('#job-error').locator('button, code, details, pre, p').count(), 0, 'the alert holds the sentence only');
+  await expect(page.locator('#job-message'), 'the failure sentence is announced once').toHaveText('');
+  await expect(page.locator('#job-failure')).toContainText('실패 단계: 생성 프로젝트 검증 · 린트');
+  await expect(page.locator('#job-failure')).toContainText(JOB_LOG);
+  const details = page.locator('#job-log-tail');
+  await expect(details).toBeVisible();
+  assert.equal(await details.evaluate(element => element.open), false, 'the log tail starts closed');
+  await details.locator('summary').click();
+  await expect(page.locator('#job-log-tail-lines')).toHaveText(tail.join('\n'));
+  // 결정적인 단계는 다시 생성을 권하지 않는다. 진단 정보는 식별자만 담는다(문장·로그 끝부분·선택 정보 없음).
+  await expect(page.locator('#job-actions').getByRole('button', { name: '다시 생성' })).toHaveCount(0);
+  await page.locator('#job-actions').getByRole('button', { name: '진단 정보 복사' }).click();
+  await expect(page.locator('#job-actions [role="status"]')).toHaveText('진단 정보를 복사했습니다.');
+  // Windows 클립보드는 줄 끝을 CRLF 로 돌려준다.
+  assert.equal((await page.evaluate(() => navigator.clipboard.readText())).replace(/\r\n/g, '\n'),
+    ['코드: VERIFY_FAILED:lint', '단계: verify', `원본 커밋: ${'a'.repeat(40)}`, `작업 보고서: ${JOB_REPORT}`].join('\n'));
+  await expect(page.locator('#job-panel')).not.toContainText('private-detail');
+  assert.deepEqual(pageErrors, []);
+});
+
+test('regenerating from a failed job goes through the final check and keeps focus on the job heading', { timeout: 60_000 }, async t => {
+  let generations = 0;
+  const { page, origin, pageErrors } = await errorPage(t, { generate: async recipe => {
+    generations += 1;
+    if (generations === 1) throw verifyFailure('build', ['next build failed: out of memory']);
+    return { projectDirectory: `build/project-composer/${recipe.project.name}`, verified: true };
+  } });
+  await startFailingJob(page, origin);
+  await expect(page.locator('#job-error')).toHaveText(/「프런트 빌드」 단계에서 실패했습니다.+환경 문제였다면 다시 생성해 주세요/);
+  await page.locator('#job-actions').getByRole('button', { name: '다시 생성' }).click();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  await expect(dialog.getByRole('button', { name: '생성 시작' })).toBeEnabled();
+  await dialog.getByRole('button', { name: '생성 시작' }).click();
+  await expect(page.getByRole('heading', { name: '프로젝트가 준비되었습니다' })).toBeVisible();
+  // 누른 버튼은 사라졌다. 포커스는 작업 제목에 있고 지난 실패의 세부·행동·로그는 남지 않는다.
+  await expect(page.locator('#job-heading')).toBeFocused();
+  for (const id of ['#job-error', '#job-failure', '#job-actions', '#job-log-tail']) await expect(page.locator(id)).toBeHidden();
+  assert.equal(generations, 2);
+  assert.deepEqual(pageErrors, []);
+});
+
+test('Docker, database, git and source failures each offer only their own action', { timeout: 90_000 }, async t => {
+  const failures = [
+    jobFailure('TOOL_UNAVAILABLE', { tool: 'docker' }, { stage: 'database', commandId: 'docker', exitCode: 1 }),
+    jobFailure('DB_NOT_READY', {}, { stage: 'database', commandId: 'docker', exitCode: 1 }),
+    jobFailure('TOOL_UNAVAILABLE', { tool: 'git' }, { stage: 'resolve' }),
+    jobFailure('SOURCE_CHANGED', {}, { stage: 'source' }),
+  ];
+  let next = 0;
+  const { page, origin, pageErrors, count } = await errorPage(t, { generate: async () => { throw failures[next++]; } });
+  await startFailingJob(page, origin);
+  const actions = page.locator('#job-actions');
+  // Docker: 생성 환경 다시 점검은 최종 확인 창(환경 점검 포함)을 연다.
+  await expect(page.locator('#job-error')).toContainText('Linux 컨테이너 모드');
+  await actions.getByRole('button', { name: '생성 환경 다시 점검' }).click();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: '돌아가기' }).click();
+  await expect(dialog).toBeHidden();
+  // DB 준비 실패: 다시 생성.
+  await confirmGenerate(page);
+  await expect(page.locator('#job-error')).toContainText('임시 PostgreSQL 이 준비되지 않았거나 도중에 멈췄습니다');
+  await expect(actions.getByRole('button', { name: '다시 생성' })).toBeVisible();
+  // git: 생성기를 다시 시작해야 하므로 버튼이 없다.
+  await confirmGenerate(page);
+  await expect(page.locator('#job-error')).toContainText('Git 을 실행하지 못했습니다');
+  await expect(actions).toBeHidden();
+  // 원본 변경: 새 원본으로 다시 불러오기는 기능 목록만 다시 받는다.
+  await confirmGenerate(page);
+  await expect(page.locator('#job-error')).toContainText('생성하는 동안 원본 저장소가 바뀌어');
+  const sessions = count('/api/session');
+  await actions.getByRole('button', { name: '새 원본으로 다시 불러오기' }).click();
+  await expect(page.locator('#summary-heading')).toBeFocused();
+  await expect(generateButton(page)).toBeEnabled();
+  assert.equal(count('/api/session'), sessions + 1);
+  assert.deepEqual(pageErrors, []);
+});
+
+test('a removed source file is copied as a diagnosis, with a manual copy when the clipboard refuses', { timeout: 45_000 }, async t => {
+  const { page, origin, pageErrors } = await errorPage(t, { generate: async () => {
+    throw jobFailure('SOURCE_SURVIVAL', { files: ['frontend/src/app/mail/page.tsx'] }, { stage: 'source', report: JOB_REPORT, sourceCommit: 'a'.repeat(40) });
+  } });
+  await page.addInitScript(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('denied')); });
+  await startFailingJob(page, origin);
+  await expect(page.locator('#job-error')).toContainText('생성기 결함이므로 진단 정보를 복사해 보고해 주세요');
+  await page.locator('#job-actions').getByRole('button', { name: '진단 정보 복사' }).click();
+  await expect(page.locator('#job-actions [role="status"]')).toHaveText('복사하지 못했습니다. 아래 진단 정보를 직접 선택해 복사해 주세요.');
+  await expect(page.locator('#job-failure')).toContainText(`작업 보고서(원본 저장소 기준)${JOB_REPORT}`);
+  await expect(page.locator('#job-actions code')).toHaveText(['코드: SOURCE_SURVIVAL', '단계: source', `원본 커밋: ${'a'.repeat(40)}`,
+    `작업 보고서: ${JOB_REPORT}`, '파일: frontend/src/app/mail/page.tsx'].join('\n'));
+  assert.deepEqual(pageErrors, []);
+});
+
+test('an unknown job action draws no button, and regenerating before the plan is confirmed explains why instead of opening nothing', { timeout: 60_000 }, async t => {
+  let slowPlan = false;
+  const { page, origin, pageErrors } = await errorPage(t, {
+    plan: async recipe => { if (slowPlan) await new Promise(resolve => setTimeout(resolve, 2500)); return plan(recipe); },
+    generate: async () => { throw jobFailure('DB_NOT_READY', {}, { stage: 'database', commandId: 'docker', exitCode: 1 }); } });
+  await startFailingJob(page, origin);
+  await expect(page.locator('#job-actions').getByRole('button', { name: '다시 생성' })).toBeVisible();
+  // 새로고침 직후에는 작업이 계획보다 먼저 그려진다. 확인 창은 구성 확인이 끝나야 열린다.
+  slowPlan = true;
+  await page.reload();
+  const regenerate = page.locator('#job-actions').getByRole('button', { name: '다시 생성' });
+  await expect(regenerate).toBeVisible();
+  await regenerate.click();
+  await expect(page.locator('#job-actions [role="status"]')).toHaveText('구성 확인이 끝나면 다시 생성할 수 있습니다.');
+  await expect(page.getByRole('dialog', { name: '이 구성으로 생성할까요?' })).toBeHidden();
+  slowPlan = false;
+  await expect(generateButton(page)).toBeEnabled();
+  await regenerate.click();
+  await expect(page.getByRole('dialog', { name: '이 구성으로 생성할까요?' })).toBeVisible();
+  await page.getByRole('button', { name: '돌아가기' }).click();
+  // 서버가 모르는 행동을 보내도 화면은 버튼을 만들지 않는다.
+  await page.route('**/api/jobs/*', async route => {
+    const response = await route.fetch();
+    const body = await response.json();
+    body.job.error = { code: 'GENERATION_FAILED', message: '프로젝트 생성을 마치지 못했습니다.', action: 'delete-everything' };
+    await route.fulfill({ response, json: body });
+  });
+  await confirmGenerate(page);
+  await expect(page.locator('#job-error')).toHaveText('프로젝트 생성을 마치지 못했습니다.');
+  await expect(page.locator('#job-actions')).toBeHidden();
+  await expect(page.locator('#job-failure')).toBeVisible();
+  // 다음 요청이 시작조차 거부되면 지난 작업의 실패 세부를 새 거부 문장 아래에 남기지 않는다.
+  await page.route('**/api/jobs', route => route.fulfill({ status: 409, json: { error: { code: 'BUSY', message: '다른 프로젝트를 생성하고 있습니다. 완료 후 다시 시도해 주세요.' } } }));
+  await confirmGenerate(page);
+  await expect(page.locator('#job-error')).toHaveText('다른 프로젝트를 생성하고 있습니다. 완료 후 다시 시도해 주세요.');
+  await expect(page.locator('#job-failure')).toBeHidden();
+  assert.deepEqual(pageErrors, []);
+});
+
+test('regenerating says why the final check cannot open, and the reason clears once the plan is ready again', { timeout: 60_000 }, async t => {
+  let blocked = false;
+  const { page, origin, pageErrors } = await errorPage(t, {
+    plan: recipe => ({ ...plan(recipe), blockers: blocked ? ['게시판의 tb_bbs_item 테이블이 다른 기능을 참조합니다.'] : [] }),
+    generate: async () => { throw jobFailure('DB_NOT_READY', {}, { stage: 'database', commandId: 'docker', exitCode: 1 }); } });
+  await startFailingJob(page, origin);
+  const regenerate = page.locator('#job-actions').getByRole('button', { name: '다시 생성' });
+  const status = page.locator('#job-actions [role="status"]');
+  // 이름이 틀렸으면 이름 칸으로 간다.
+  await page.getByLabel('프로젝트 이름').fill('../bad');
+  await regenerate.click();
+  await expect(status).toHaveText('프로젝트 이름을 확인해 주세요.');
+  await expect(page.getByLabel('프로젝트 이름')).toBeFocused();
+  // 생성할 수 없는 구성이면 구성 요약을 가리킨다.
+  blocked = true;
+  await page.getByLabel('프로젝트 이름').fill('agency-service');
+  await expect(page.locator('#plan-status')).toContainText('생성할 수 없습니다');
+  await regenerate.click();
+  await expect(status).toHaveText('이 구성은 생성할 수 없습니다. 구성 요약의 사유를 확인해 주세요.');
+  // 구성이 다시 확인되면 앞서 말한 사유는 지운다.
+  blocked = false;
+  await page.getByLabel('프로젝트 이름').fill('agency-service-two');
+  await expect(generateButton(page)).toBeEnabled();
+  await expect(status).toHaveText('');
+  assert.deepEqual(pageErrors, []);
+});
+
+test('a command that ended without an exit code is not called "could not run", and a lost status check keeps focus', { timeout: 60_000 }, async t => {
+  let release;
+  const { page, origin, pageErrors } = await errorPage(t, { generate: () => new Promise((_, reject) => {
+    release = () => reject(Object.assign(new Error('x'), { failure: { stage: 'install', causeCode: 'COMMAND_FAILED', commandId: 'pnpm', exitCode: null } }));
+  }) });
+  await page.goto(origin);
+  await page.getByLabel('프로젝트 이름').fill('agency-service');
+  await page.locator('#capability-board').check();
+  await expect(generateButton(page)).toBeEnabled();
+  // 진행 상태 조회가 한 번 끊기면 '상태 다시 확인' 이 나온다. 그 버튼을 누른 뒤 숨겨져도 포커스는 작업 제목에 남는다.
+  let dropped = false;
+  await page.route('**/api/jobs/*', async route => {
+    if (!dropped) { dropped = true; await route.abort(); return; }
+    await route.continue();
+  });
+  await confirmGenerate(page);
+  const retry = page.getByRole('button', { name: '상태 다시 확인' });
+  await expect(retry).toBeVisible();
+  release();
+  await retry.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: '생성을 완료하지 못했습니다' })).toBeVisible();
+  await expect(retry).toBeHidden();
+  await expect(page.locator('#job-heading')).toBeFocused();
+  await expect(page.locator('#job-failure')).toContainText('실패 명령: pnpm (종료 코드 없이 끝남)');
   assert.deepEqual(pageErrors, []);
 });

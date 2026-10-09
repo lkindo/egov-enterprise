@@ -9,7 +9,7 @@
 import { randomBytes } from 'node:crypto';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runComposerCommand } from './project-composer.mjs';
+import { runComposerCommand } from './project-composer-command.mjs';
 import { createOwnedPostgres, ownedContainerId, removeOwnedPostgres, removeOwnedPostgresByToken, waitForOwnedPostgres } from './project-composer-postgres.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');

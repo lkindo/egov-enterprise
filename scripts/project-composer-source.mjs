@@ -2,6 +2,7 @@
 import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { createHash } from 'node:crypto';
+import { ComposerError } from './project-composer-errors.mjs';
 
 /** Exact support files follow their optional consumer while module dependencies stay unchanged. */
 /*
@@ -244,7 +245,7 @@ export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition
     if (excludedSupport.has(normalized)) return;
     if (normalized.startsWith('frontend/') && composition.frontend.removePaths.some(removed =>
       normalized === `frontend/${removed}` || normalized.startsWith(`frontend/${removed}/`))) return;
-    if (!present(path)) throw new Error(`Selected capability source was removed: ${path}`);
+    if (!present(path)) throw new ComposerError('SOURCE_SURVIVAL', { files: [normalized] }, `Selected capability source was removed: ${path}`);
   };
   function assertTree(directory) {
     if (!existsSync(directory)) return;

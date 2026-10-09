@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /** Shared local composition engine: CLI and web transport execute the same recipe. */
-import { spawn, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
@@ -15,6 +15,11 @@ import { composerPreflight } from './project-composer-preflight.mjs';
 import { compositionDeepPlan, deepSummary } from './project-composer-deep.mjs';
 import { ComposerError, classifyDeclarationFailure } from './project-composer-errors.mjs';
 import { createOwnedPostgres, ownedContainerId, removeOwnedPostgres, removeOwnedPostgresByToken, waitForOwnedPostgres } from './project-composer-postgres.mjs';
+import { createLogMasker, runComposerCommand } from './project-composer-command.mjs';
+import { classifyChildFailure, classifyDatabaseNotReady, classifyDockerStart, classifyVerificationFailure, jobFailure, toRepositoryPath }
+  from './project-composer-job-failure.mjs';
+
+export { createLogMasker, runComposerCommand };
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION = 1;
@@ -124,112 +129,7 @@ export function composerSourceFingerprint(root) {
   return hash.digest('hex');
 }
 
-const SECRET_NAME = /PASS|SECRET|TOKEN|KEY|CREDENTIAL/i;
-const PRIVATE_KEY_BEGIN = /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/;
-const PRIVATE_KEY_END = /-----END [A-Z0-9 ]*PRIVATE KEY-----/;
-// 값만 가리고 키 이름과 형식은 남긴다. 무엇이 있었는지는 진단에 쓰되 값은 로그에 남기지 않는다.
-const SECRET_SHAPES = [
-  [/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g, () => '***'],
-  [/\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{8,}/gi, (_, scheme) => `${scheme} ***`],
-  [/\b([a-z][a-z0-9+.-]*:\/\/)[^\s/:@]+:[^\s/@]+@/gi, (_, scheme) => `${scheme}***:***@`],
-  [/\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|npm_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|xox[abprs]-[A-Za-z0-9-]{10,})\b/g, () => '***'],
-  [/\b([A-Za-z0-9_.-]*(?:password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|private[_-]?key|credential)[A-Za-z0-9_.-]*)(\s*[:=]\s*)(["']?)([^\s"',;]+)\3/gi,
-    (_, key, separator, quote) => `${key}${separator}${quote}***${quote}`],
-];
-
-/**
- * 자식 프로세스 출력 한 줄씩 비밀을 가린다. 줄 단위로 가리므로 꼬리만 남기려고 앞을 잘라도
- * 가리지 않은 비밀 조각이 남지 않는다. `secrets` 는 이 호출의 환경에서 온 값 그대로의 비밀이다.
- */
-export function createLogMasker(secrets = []) {
-  const literals = [...new Set(secrets.filter(value => typeof value === 'string' && value.length >= 8))].sort((a, b) => b.length - a.length);
-  let privateKey = false;
-  let count = 0;
-  return {
-    line(raw) {
-      if (privateKey || PRIVATE_KEY_BEGIN.test(raw)) {
-        privateKey = !PRIVATE_KEY_END.test(raw);
-        count += 1;
-        return '[가린 개인키]';
-      }
-      let line = raw;
-      for (const literal of literals) if (line.includes(literal)) { line = line.split(literal).join('***'); count += 1; }
-      for (const [pattern, replace] of SECRET_SHAPES) line = line.replace(pattern, (...match) => { count += 1; return replace(...match); });
-      return line;
-    },
-    get count() { return count; },
-  };
-}
-
-const LOG_LIMIT = 1024 * 1024;
 const PREFLIGHT_TIMEOUT_MS = 10_000;
-const LINE_LIMIT = 16 * 1024;
-
-/** Windows shells are used only for fixed tool names and fixed argument lists. Recipe values never become shell code. */
-export function runComposerCommand(command, args, { root, env = process.env, capture = false, log, timeoutMs } = {}) {
-  return new Promise((accept, reject) => {
-    const windows = process.platform === 'win32';
-    const executable = command === 'node' ? process.execPath
-      : windows && ['npm', 'pnpm'].includes(command) ? `${command}.cmd` : command;
-    const shell = windows && ['npm.cmd', 'pnpm.cmd'].includes(executable);
-    if (shell && args.some(value => !/^[A-Za-z0-9_./:= -]+$/.test(value))) return reject(new Error('Unsafe fixed-tool argument'));
-    const startedAt = Date.now();
-    // 시간 제한이 있으면 POSIX 에서는 새 프로세스 그룹으로 띄워 손자까지 한 번에 끝낼 수 있게 한다.
-    const child = spawn(executable, args, { cwd: root, env, windowsHide: true, shell, stdio: ['ignore', 'pipe', 'pipe'], detached: Boolean(timeoutMs) && !windows });
-    let output = '';
-    // Output can contain credentials from dependencies: it is kept only masked, bounded and on this computer.
-    const masker = createLogMasker(Object.entries(env ?? {}).filter(([name]) => SECRET_NAME.test(name)).map(([, value]) => value));
-    const lines = [];
-    let bytes = 0;
-    let dropped = 0;
-    const keep = raw => {
-      const line = masker.line(raw.length > LINE_LIMIT ? `${raw.slice(0, LINE_LIMIT)} …(줄 잘림)` : raw);
-      lines.push(line);
-      bytes += Buffer.byteLength(line) + 1;
-      while (bytes > LOG_LIMIT && lines.length > 1) { bytes -= Buffer.byteLength(lines.shift()) + 1; dropped += 1; }
-    };
-    const stream = source => {
-      let rest = '';
-      source.on('data', chunk => {
-        if (!log) return;
-        const parts = (rest + chunk.toString()).split(/\r?\n/);
-        rest = parts.pop();
-        for (const part of parts) keep(part);
-      });
-      return () => { if (log && rest) keep(rest); };
-    };
-    child.stdout.on('data', chunk => { if (capture && output.length < 4 * 1024 * 1024) output += chunk.toString(); });
-    const flush = [stream(child.stdout), stream(child.stderr)];
-    const written = exitCode => {
-      if (!log) return;
-      flush.forEach(finish => finish());
-      const header = masker.line(`$ ${[command, ...args].join(' ')}`);
-      const omitted = dropped ? [`…앞 ${dropped}줄 생략(로그 상한 ${LOG_LIMIT}바이트, 끝부분 보존)`] : [];
-      mkdirSync(dirname(log), { recursive: true });
-      appendFileSync(log, `${[header, ...omitted, ...lines, `[종료 코드 ${exitCode ?? '없음'} · ${Date.now() - startedAt}ms · 가림 ${masker.count}건]`, ''].join('\n')}\n`);
-    };
-    const failed = (code, exitCode) => Object.assign(new Error(`Command failed: ${command} (${code}${exitCode === null ? '' : ` ${exitCode}`})`),
-      { code, commandId: command === 'node' ? args[0] : command, exitCode, durationMs: Date.now() - startedAt, ...(log ? { log } : {}) });
-    // 실행 실패 뒤에도 close 가 올 수 있다. 로그와 결과는 한 번만 남긴다.
-    let settled = false;
-    let timer;
-    const settle = (exitCode, finish) => { if (settled) return; settled = true; clearTimeout(timer); written(exitCode); finish(); };
-    if (timeoutMs) {
-      // 시간 제한을 넘기면 프로세스 트리를 끝내고 close 를 기다리지 않고 실패로 돌려준다(점검처럼 오래 기다릴 수 없는 호출만 건다).
-      // Windows 의 pnpm.cmd 는 손자 node 가 출력 파이프를 쥐고 남아, 자식만 끝내면 close 가 손자가 끝날 때까지 오지 않는다.
-      timer = setTimeout(() => {
-        if (child.pid) {
-          if (windows) spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' }).on('error', () => {});
-          else { try { process.kill(-child.pid, 'SIGKILL'); } catch { /* 이미 끝났다. */ } }
-        }
-        child.stdout.destroy(); child.stderr.destroy();
-        settle(null, () => reject(failed('TIMED_OUT', null)));
-      }, timeoutMs);
-    }
-    child.on('error', () => settle(null, () => reject(failed('TOOL_UNAVAILABLE', null))));
-    child.on('close', code => settle(code, () => code === 0 ? accept(output.trim()) : reject(failed('COMMAND_FAILED', code))));
-  });
-}
 
 export function composerOutputPaths(root, name, token) {
   if (!/^[a-z][a-z0-9-]{0,63}$/.test(name) || !/^[a-f0-9]{16}$/.test(token)) throw new Error('Invalid output identity');
@@ -242,7 +142,8 @@ export function composerOutputPaths(root, name, token) {
   const base = resolve(root, 'build');
   for (const path of Object.values(paths)) {
     const rel = relative(base, path);
-    if (!rel || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel) || existsSync(path)) throw new Error('Output must be fresh and inside the build directory');
+    if (!rel || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error('Output must be fresh and inside the build directory');
+    if (existsSync(path)) throw new ComposerError('OUTPUT_CONFLICT', { path: relative(root, path).split(sep).join('/') }, 'Output already exists');
     let ancestor = dirname(path);
     while (!existsSync(ancestor)) ancestor = dirname(ancestor);
     const physical = relative(realpathSync(root), realpathSync(ancestor));
@@ -257,7 +158,7 @@ export function composerOutputPaths(root, name, token) {
  * 생성이 실패할 뿐 출력이 새지 않는다.
  */
 export function createComposerEngine({ root = ROOT, outputRoot, run = runComposerCommand, fingerprint = composerSourceFingerprint,
-  loadCatalog = loadProjectComposerCatalog, gitExecutable = 'git' } = {}) {
+  loadCatalog = loadProjectComposerCatalog, gitExecutable = 'git', readiness } = {}) {
   root = realpathSync(root);
   outputRoot = outputRoot === undefined ? root : realpathSync(outputRoot);
   let running = false;
@@ -345,6 +246,8 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
     let paths;
     let token;
     let stage = 'resolve';
+    let composition;
+    let sourceFingerprint;
     const progress = (next, percent) => { stage = next; onProgress({ stage, progress: percent }); };
     const save = () => {
       if (paths && report) writeFileSync(join(paths.jobDirectory, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
@@ -359,13 +262,29 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
       else await removeOwnedPostgresByToken(docker, token);
       container = undefined; databaseCreated = false;
     };
+    // 실패 분류용 Docker 탐침. 멈춘 엔진을 기다리지 않도록 시간 제한을 두고, 탐침도 DB 단계 로그에 남긴다.
+    const probeOptions = () => ({ timeoutMs: PREFLIGHT_TIMEOUT_MS, log: logOf('database') });
+    // 자식이 실패한 뒤 원본을 다시 본다. 판정하지 못하면(git 실패 등) 바뀌었다고 말하지 않는다.
+    const sourceMoved = () => {
+      try { return gitRun(['rev-parse', 'HEAD']) !== composition.sourceCommit || fingerprint(root) !== sourceFingerprint; }
+      catch { return false; }
+    };
+    // 자식 생성기는 실패 원인을 코드로 jobs/<id>/failures/<단계>.json 에 보고한다(코드가 붙은 실패만).
+    const childStage = async (name, args) => {
+      const reportPath = join(paths.jobDirectory, 'failures', `${name}.json`);
+      try { await run('node', [...args, '--failure-report', reportPath], { root, log: logOf(name) }); }
+      catch (error) {
+        throw await classifyChildFailure(error, { stage: name, reportPath, root, sourceMoved,
+          ...(name === 'database' ? { docker, container, probeOptions: probeOptions() } : {}) });
+      }
+    };
     try {
       progress('resolve', 2);
       const resolvedPlan = plan(recipe);
       // 생성 불가 구성은 출력 폴더·DB 컨테이너를 만들기 전에 사유와 함께 거부한다.
       if (resolvedPlan.blockers.length) throw Object.assign(new Error(resolvedPlan.blockers.join(' ')), { code: 'FK_CLOSURE' });
-      const composition = { ...resolveProjectRecipe(recipe, loadCatalog(root)), sourceCommit: resolvedPlan.sourceCommit };
-      const sourceFingerprint = fingerprint(root);
+      composition = { ...resolveRecipe(recipe, loadCatalogClassified()), sourceCommit: resolvedPlan.sourceCommit };
+      sourceFingerprint = fingerprint(root);
       token = randomBytes(8).toString('hex');
       paths = composerOutputPaths(outputRoot, composition.project.name, token);
       mkdirSync(paths.jobDirectory, { recursive: true });
@@ -378,19 +297,22 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
       save();
       progress('database', 8);
       databaseCreated = true;
-      container = await createOwnedPostgres(docker, { name: `egov-composer-${token}`, token, log: logOf('database') });
+      try { container = await createOwnedPostgres(docker, { name: `egov-composer-${token}`, token, log: logOf('database') }); }
+      catch (error) { throw await classifyDockerStart(error, docker, probeOptions()); }
       if (!ownedContainerId(container)) throw new Error('Invalid owned database container identity');
-      if (!await waitForOwnedPostgres(docker, container)) throw new Error('Owned PostgreSQL did not become ready');
+      if (!await waitForOwnedPostgres(docker, container, readiness)) throw await classifyDatabaseNotReady(docker, probeOptions());
       const common = ['--composition', compositionPath, '--allow-dirty', '--allow-non-release-ref'];
-      await run('node', ['scripts/generate-reusable-base-db.mjs', ...common, '--container', container, '--output', paths.databaseDirectory], { root, log: logOf('database') });
+      await childStage('database', ['scripts/generate-reusable-base-db.mjs', ...common, '--container', container, '--output', paths.databaseDirectory]);
       progress('source', 28);
-      await run('node', ['scripts/generate-reusable-base-source.mjs', ...common, '--db-bundle', paths.databaseDirectory, '--output', paths.stagingDirectory], { root, log: logOf('source') });
-      if (fingerprint(root) !== sourceFingerprint) throw new Error('Source checkout changed while the project was being composed');
+      await childStage('source', ['scripts/generate-reusable-base-source.mjs', ...common, '--db-bundle', paths.databaseDirectory, '--output', paths.stagingDirectory]);
+      if (fingerprint(root) !== sourceFingerprint) throw new ComposerError('SOURCE_CHANGED', {}, 'Source checkout changed while the project was being composed');
       writeFileSync(join(paths.stagingDirectory, 'project-recipe.json'), `${JSON.stringify(composition.recipe, null, 2)}\n`);
       writeFileSync(join(paths.stagingDirectory, 'project-composition.json'), `${JSON.stringify(composition, null, 2)}\n`);
       // pnpm uses absolute junctions on Windows. Set the permanent source location
       // before dependency installation, and publish readiness only through the final report.
-      if (existsSync(paths.projectDirectory)) throw new Error('Final output unexpectedly exists');
+      if (existsSync(paths.projectDirectory)) {
+        throw new ComposerError('OUTPUT_CONFLICT', { path: toRepositoryPath(outputRoot, paths.projectDirectory) }, 'Final output unexpectedly exists');
+      }
       renameSync(paths.stagingDirectory, paths.projectDirectory);
       report.result = 'verifying';
       writeFileSync(join(paths.projectDirectory, 'project-generation-report.json'), `${JSON.stringify(report, null, 2)}\n`);
@@ -398,7 +320,11 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
       await run('npm', ['ci', '--ignore-scripts'], { root: paths.projectDirectory, log: logOf('install') });
       await run('pnpm', ['-C', 'frontend', 'install', '--frozen-lockfile'], { root: paths.projectDirectory, log: logOf('install') });
       progress('verify', 60);
-      await run('node', ['scripts/verify-reusable-artifact.mjs'], { root: paths.projectDirectory, log: logOf('verify') });
+      try { await run('node', ['scripts/verify-reusable-artifact.mjs'], { root: paths.projectDirectory, log: logOf('verify') }); }
+      catch (error) {
+        throw classifyVerificationFailure(error, { projectDirectory: paths.projectDirectory, composition, startedAt: report.startedAt,
+          roots: [paths.projectDirectory, outputRoot, root] });
+      }
       const verification = JSON.parse(readFileSync(join(paths.projectDirectory, 'build/reports/reusable-base/full.json'), 'utf8'));
       if (verification.result !== 'passed' || verification.sourceCommit !== composition.sourceCommit
         || verification.layout !== composition.backendLayout || verification.profile !== composition.profile
@@ -413,16 +339,17 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
         reportPath: join(paths.projectDirectory, 'project-generation-report.json'), recipe: composition.recipe, verified: true };
     } catch (error) {
       failed = true;
-      // 화면으로는 단계·명령 식별자·종료 코드·로그 위치만 넘긴다. 자식 출력 원문은 로그 파일에만 있다.
-      const failure = { stage, code: error.code ?? 'COMPOSITION_FAILED',
-        ...(error.commandId ? { commandId: error.commandId, exitCode: error.exitCode ?? null, durationMs: error.durationMs } : {}),
-        ...(error.log ? { log: error.log } : {}) };
+      // 화면으로는 단계·코드·명령 식별자·종료 코드·저장소 기준 로그 위치만 넘긴다. 자식 출력 원문은 로그 파일에만 있고,
+      // 검증 실패만 가린 로그 끝부분을 던지는 실패에 붙인다(보고서에는 저장하지 않는다 — CI 아티팩트로 올라간다).
+      const failure = jobFailure(error, { stage, outputRoot, sourceCommit: composition?.sourceCommit });
       if (report) {
         report.result = 'failed'; report.stage = stage; report.finishedAt = new Date().toISOString();
         const verificationReport = join(paths.projectDirectory, 'build/reports/reusable-base/full.json');
-        report.failure = { ...failure, message: createLogMasker().line(String(error.message)).slice(0, 2000),
-          ...(existsSync(verificationReport) ? { verificationReport } : {}) };
+        const { logTail, ...saved } = failure;
+        report.failure = { ...saved, message: createLogMasker().line(String(error.message)).slice(0, 2000),
+          ...(existsSync(verificationReport) ? { verificationReport: toRepositoryPath(outputRoot, verificationReport) } : {}) };
         save();
+        failure.report = toRepositoryPath(outputRoot, join(paths.jobDirectory, 'report.json'));
         if (existsSync(paths.projectDirectory)) writeFileSync(join(paths.projectDirectory, 'project-generation-report.json'), `${JSON.stringify(report, null, 2)}\n`);
       }
       throw Object.assign(error, { failure });

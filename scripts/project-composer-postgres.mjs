@@ -26,6 +26,22 @@ export async function waitForOwnedPostgres(docker, container, { attempts = 120, 
   return false;
 }
 
+/**
+ * Docker 엔진이 Linux 컨테이너로 응답하는지 본다(E4b). 거부·시간 초과·다른 출력(Windows 컨테이너 모드)은 모두 응답 없음이다.
+ * 종료 코드는 CLI 버전마다 다르므로 실패의 원인을 종료 코드로 짐작하지 않고 이 탐침으로 판정한다.
+ */
+export async function dockerAnswers(docker, options = {}) {
+  try { return String(await docker(['version', '--format', '{{.Server.Os}}'], options)).trim() === 'linux'; }
+  catch { return false; }
+}
+
+/** 이 작업의 컨테이너가 아직 실행 중인지 본다. 확인하지 못하면(이미 지워졌거나 조회 실패) 실행 중이 아니다. */
+export async function ownedPostgresRunning(docker, container, options = {}) {
+  if (!ownedContainerId(container)) return false;
+  try { return String(await docker(['inspect', '--format', '{{.State.Running}}', container], options)).trim() === 'true'; }
+  catch { return false; }
+}
+
 export async function removeOwnedPostgres(docker, container, token) {
   const owner = await docker(['inspect', '--format', `{{ index .Config.Labels "${COMPOSER_OWNER_LABEL}" }}`, container]);
   if (owner !== token) throw Object.assign(new Error('Database container ownership changed; refusing cleanup'), { code: 'OWNERSHIP_CHANGED' });

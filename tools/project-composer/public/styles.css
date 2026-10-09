@@ -208,6 +208,24 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
   white-space: nowrap;
   border-width: 0;
 }
+.container {
+  width: 100%;
+  @media (width >= 40rem) {
+    max-width: 40rem;
+  }
+  @media (width >= 48rem) {
+    max-width: 48rem;
+  }
+  @media (width >= 64rem) {
+    max-width: 64rem;
+  }
+  @media (width >= 80rem) {
+    max-width: 80rem;
+  }
+  @media (width >= 96rem) {
+    max-width: 96rem;
+  }
+}
 .m-auto {
   margin: auto;
 }
@@ -541,6 +559,9 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
 }
 .break-all {
   word-break: break-all;
+}
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
 }
 .text-accent {
   color: var(--color-accent);

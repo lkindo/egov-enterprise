@@ -10,6 +10,7 @@ import { projectReusableGovernance } from './reusable-governance-projection.mjs'
 import { canonicalJsonSha256, validateReusableGovernance } from './reusable-governance-integrity.mjs';
 import { ARTIFACT_COMMAND, VERIFICATION_HISTORY, artifactAliases, projectReusableMakefile, reusableArtifactEntrypoints, verificationTextHash } from './reusable-artifact-entrypoints-contract.mjs';
 import { normalizeBackendLayout } from './reusable-layout.mjs';
+import { runReportingChild } from './project-composer-child-failure.mjs';
 import { applySingleModuleLayout } from './reusable-single-module.mjs';
 import { installMultiModuleMigrationRuntime, installSingleModuleRuntime } from './reusable-layout-runtime.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
@@ -25,6 +26,9 @@ import { MANIFEST_PATH, ROOT, copySourceTree, fail, git, initializeGeneratedRepo
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const OUTPUT_ROOT = join(ROOT, 'build', 'reusable-base', 'source');
 
+/** 생성기 엔진이 이 자식을 부르는 단계 이름. 실패 보고는 이 단계에 허용된 코드만 쓴다. */
+export const CHILD_STAGE = 'source';
+
 export function parseSourceArgs(argv) {
   const args = { profile: undefined, dbBundle: undefined, output: undefined, layout: 'multi-module', allowDirty: false, allowNonReleaseRef: false };
   const seen = new Set();
@@ -32,7 +36,8 @@ export function parseSourceArgs(argv) {
     const arg = argv[index];
     if (seen.has(arg)) fail(`중복 인자: ${arg}`);
     seen.add(arg);
-    const field = { '--profile': 'profile', '--composition': 'composition', '--db-bundle': 'dbBundle', '--output': 'output', '--layout': 'layout' }[arg];
+    const field = { '--profile': 'profile', '--composition': 'composition', '--db-bundle': 'dbBundle', '--output': 'output', '--layout': 'layout',
+      '--failure-report': 'failureReport' }[arg];
     if (field) {
       const value = argv[++index];
       if (!value || value.startsWith('--')) fail(`${arg} 값이 필요하다.`);
@@ -329,11 +334,4 @@ function main() {
 
 /* 계약 테스트가 이 모듈을 import 해도 생성이 시작되면 안 된다(부작용 있는 import 금지). */
 const isMain = process.argv[1] && resolve(process.argv[1]) === resolve(SCRIPT_PATH);
-if (isMain) {
-  try {
-    main();
-  } catch (error) {
-    console.error(`[base-source] FAIL: ${error.message}`);
-    process.exitCode = 1;
-  }
-}
+if (isMain) runReportingChild({ argv: process.argv.slice(2), root: ROOT, stage: CHILD_STAGE, label: 'base-source', main });

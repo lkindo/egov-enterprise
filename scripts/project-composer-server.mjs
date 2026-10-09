@@ -5,7 +5,9 @@ import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ComposerError, MENUS_REFRESH_COMMAND } from './project-composer-errors.mjs';
+import { ComposerError, JOB_ERROR_CODES, MENUS_REFRESH_COMMAND } from './project-composer-errors.mjs';
+import { createLogMasker } from './project-composer-command.mjs';
+import { VERIFICATION_STEP_IDS } from './verify-reusable-artifact.mjs';
 import { NAME_RULE_MESSAGE, projectNameIsValid } from './project-composer-name.mjs';
 import { classifyRecipeFailure } from './project-composer-recipe.mjs';
 
@@ -33,7 +35,8 @@ const MESSAGES = Object.freeze({
   TOOL_UNAVAILABLE: '생성에 필요한 도구를 실행하지 못했습니다. 설치와 PATH 를 확인한 뒤 생성기를 다시 시작해 주세요.',
   BUSY: '다른 프로젝트를 생성하고 있습니다. 완료 후 다시 시도해 주세요.',
   REQUEST_CONFLICT: '이미 사용한 요청입니다. 구성을 확인한 뒤 다시 시도해 주세요.',
-  GENERATION_FAILED: '프로젝트 생성에 실패했습니다. Docker와 개발 도구 상태를 확인한 뒤 다시 시도해 주세요.',
+  // 원인을 나누지 못한 생성 실패. Docker 를 단정하지 않는다(린트·소스 구성 같은 다른 단계 실패에도 이 문장이 나간다).
+  GENERATION_FAILED: '프로젝트 생성을 마치지 못했습니다. 입력은 유지됩니다. 실패 단계와 작업 보고서·실행 로그를 확인한 뒤 다시 시도해 주세요.',
   PREFLIGHT_FAILED: '생성 환경을 점검하지 못했습니다. 잠시 후 다시 점검해 주세요.',
   DEEP_FAILED: '소스 정밀 점검 결과를 확인하지 못했습니다. 다시 점검해 주세요.',
   INTERNAL_ERROR: '요청을 처리하지 못했습니다. 입력은 유지됩니다. 잠시 후 다시 시도해 주세요.',
@@ -42,7 +45,7 @@ const MESSAGES = Object.freeze({
 // 도구별 문장. 생성기는 시작할 때의 PATH 를 쓰므로 설치 뒤에는 생성기를 다시 시작해야 한다.
 const TOOL_MESSAGES = Object.freeze({
   git: 'Git 을 실행하지 못했습니다. Git 을 설치하거나 PATH 를 확인한 뒤 생성기를 다시 시작해 주세요.',
-  docker: 'Docker 를 실행하지 못했습니다. Docker 엔진을 시작하거나 설치한 뒤 다시 점검해 주세요.',
+  docker: 'Docker 를 실행하지 못했습니다. Docker 엔진을 시작하거나 설치하고, Linux 컨테이너 모드인지 확인한 뒤 다시 점검해 주세요.',
 });
 /*
  * 요청 오류 허용 목록(설계서 14.2, E4). 코드마다 HTTP 상태와 화면 행동, 화면이 표시할 입력 칸을 정한다. 문장은 MESSAGES 다.
@@ -56,6 +59,34 @@ const REQUEST_ERRORS = Object.freeze({
   CATALOG_DRIFT: { status: 500, action: 'show-violations' },
   TOOL_UNAVAILABLE: { status: 503 },
 });
+
+/*
+ * 생성 작업 오류 허용 목록(E4b). 코드마다 나올 수 있는 단계와 화면 행동을 정한다. 엔진이 잘못 코드를 달아도 화면이 엉뚱한
+ * 단계를 탓하지 않도록 단계가 맞지 않으면 일반 실패로 말한다. 검증 실패는 검증 명령의 실패이고 단계 id 가 단계 표에 있어야 한다.
+ */
+const JOB_MESSAGES = Object.freeze({
+  SOURCE_CHANGED: '생성하는 동안 원본 저장소가 바뀌어 생성을 멈췄습니다. 기능 목록을 새 원본으로 다시 불러온 뒤 다시 생성해 주세요.',
+  DB_NOT_READY: '임시 PostgreSQL 이 준비되지 않았거나 도중에 멈췄습니다. Docker 상태를 확인한 뒤 다시 생성해 주세요.',
+  OUTPUT_CONFLICT: '출력 폴더가 이미 있어 생성을 멈췄습니다. 다시 생성하면 새 폴더에 만듭니다.',
+  SOURCE_SURVIVAL: '선택한 기능의 소스가 생성 중에 지워졌습니다. 생성기 결함이므로 진단 정보를 복사해 보고해 주세요.',
+  MENU_SNAPSHOT_STALE: '메뉴 미리보기 자료가 원본 DB 변경을 따라가지 못해 생성을 멈췄습니다. 아래 명령으로 메뉴 자료를 갱신한 뒤 다시 생성해 주세요.',
+  CATALOG_DRIFT: '기능 선언이 원본 코드와 맞지 않아 생성을 멈췄습니다. 개발자 정보의 위반을 고친 뒤 다시 생성해 주세요.',
+});
+const JOB_ERRORS = Object.freeze({
+  SOURCE_CHANGED: { stages: ['resolve', 'database', 'source'], action: 'reload-source' },
+  TOOL_UNAVAILABLE: { stages: ['resolve', 'database'] },
+  DB_NOT_READY: { stages: ['database'], action: 'regenerate' },
+  OUTPUT_CONFLICT: { stages: ['resolve', 'source'], action: 'regenerate' },
+  SOURCE_SURVIVAL: { stages: ['source'], action: 'copy-diagnostics' },
+  VERIFY_FAILED: { stages: ['verify'], command: 'scripts/verify-reusable-artifact.mjs' },
+  MENU_SNAPSHOT_STALE: { stages: ['resolve', 'database'], action: 'copy-command' },
+  CATALOG_DRIFT: { stages: ['resolve', 'database'], action: 'show-violations' },
+});
+// 검증 단계 이름. 키는 검증기의 단계 id 와 같다(시험이 대조한다).
+export const VERIFY_STEP_LABELS = Object.freeze({ governance: '거버넌스 검증', 'ui-governance': '화면 거버넌스 계약', entrypoints: '진입점 계약',
+  backend: '백엔드 컴파일·테스트', typecheck: '타입 검사', lint: '린트', build: '프런트 빌드' });
+// 같은 원본·구성이면 대개 결과가 같은 단계는 다시 생성을 권하지 않는다. 백엔드·빌드는 메모리·네트워크 같은 환경 영향이 있다.
+const RETRYABLE_STEPS = Object.freeze(['backend', 'build']);
 
 class HttpError extends Error {
   constructor(status, code, details = {}) { super(code); this.status = status; this.code = code; this.details = details; }
@@ -201,7 +232,10 @@ function errorBody({ code, details = {} }) {
     ...(Object.keys(details).length ? { details } : {}) };
 }
 
-/** 실패한 단계·명령 식별자·종료 코드·가린 로그 위치만 넘긴다. 오류 메시지와 자식 출력은 보내지 않는다. */
+/**
+ * 실패한 단계·명령 식별자·종료 코드와 원본 저장소 기준 로그·작업 보고서 위치, 원본 커밋만 넘긴다. 오류 메시지와 자식 출력은
+ * 보내지 않는다. 절대 경로·상위 폴더·역슬래시 경로는 이 컴퓨터의 폴더 이름을 흘릴 수 있어 버린다.
+ */
 function safeFailure(failure) {
   if (!plain(failure)) return undefined;
   const result = {};
@@ -209,9 +243,57 @@ function safeFailure(failure) {
   if (typeof failure.commandId === 'string' && /^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$/.test(failure.commandId)) {
     result.commandId = failure.commandId;
     result.exitCode = Number.isSafeInteger(failure.exitCode) ? failure.exitCode : null;
+    // 종료 코드가 없을 때 실행조차 못 했는지(도구 없음) 말해 준다. 그 밖(신호·시간 초과)은 화면이 '종료 코드 없이 끝남' 으로 말한다.
+    if (result.exitCode === null && failure.causeCode === 'TOOL_UNAVAILABLE') result.notStarted = true;
   }
-  if (typeof failure.log === 'string' && failure.log.length <= 2048 && !/[\r\n\0]/.test(failure.log)) result.log = failure.log;
+  if (repositoryPath(failure.log)) result.log = failure.log;
+  if (repositoryPath(failure.report) && /^build\/project-composer\/jobs\/[a-z0-9-]+\/report\.json$/.test(failure.report)) result.report = failure.report;
+  if (typeof failure.sourceCommit === 'string' && /^[a-f0-9]{40}$/.test(failure.sourceCommit)) result.sourceCommit = failure.sourceCommit;
   return Object.keys(result).length ? result : undefined;
+}
+const TAIL_ANSI = /\u001b(?:\[[0-?]*[ -/]*[@-~]|\][^\u0007\u001b]*(?:\u0007|\u001b\\)|[@-Z\\-_])/g;
+// 로그 끝부분의 경로 가림. 드라이브 글자 앞에 영숫자가 있으면 경로가 아니다(https:// · file:/// 의 's:'·'e:' 를 지우지 않는다).
+const TAIL_PATH = /(?:(?<![A-Za-z0-9])[A-Za-z]:[\\/]|\\\\|(?<![A-Za-z0-9._~-])\/(?:Users|home|root|tmp|var|private|mnt|opt|srv|Volumes)\/)[^\s'"`]*/g;
+/**
+ * 검증 실패의 로그 끝부분(엔진이 이미 가린 40줄)을 한 번 더 거른다. 모양이 어긋나면 꼬리 전체를 버린다. 줄은 거부하지 않고 정리한다:
+ * 터미널 제어 문자 제거 → 같은 비밀 규칙으로 다시 가림 → 남은 절대 경로 가림 → 300자.
+ */
+function safeLogTail(value) {
+  if (!dense(value) || !value.length || value.length > 40 || !value.every(item => typeof item === 'string')) return undefined;
+  const masker = createLogMasker();
+  return value.map(item => masker.line(item.replace(TAIL_ANSI, '').replace(/\t/g, ' ').replace(/[\u0000-\u001f\u007f-\u009f]/g, ''))
+    .replace(TAIL_PATH, '<로컬 경로>').slice(0, 300));
+}
+/**
+ * 생성 작업 오류. 작업 허용 목록의 코드가 붙은 ComposerError 이고 그 코드가 나올 수 있는 단계에서 생겼을 때만 그 코드로 말한다.
+ * 그 밖(코드 없는 오류·요청 코드·단계 불일치)은 일반 실패다. 세부 정보는 코드마다 정해진 것만 다시 거른다.
+ */
+function jobError(error, failure) {
+  const fallback = { code: 'GENERATION_FAILED', message: MESSAGES.GENERATION_FAILED };
+  if (!(error instanceof ComposerError) || !JOB_ERROR_CODES.includes(error.code) || !Object.hasOwn(JOB_ERRORS, error.code)) return fallback;
+  const rule = JOB_ERRORS[error.code];
+  if (!rule.stages.includes(failure?.stage)) return fallback;
+  const details = plain(error.details) ? error.details : {};
+  const code = error.code;
+  if (code === 'VERIFY_FAILED') {
+    const step = typeof details.step === 'string' && Object.hasOwn(VERIFY_STEP_LABELS, details.step) ? details.step : undefined;
+    if (!step || failure.commandId !== rule.command) return fallback;
+    const retry = RETRYABLE_STEPS.includes(step);
+    const label = VERIFY_STEP_LABELS[step];
+    return { code, message: retry
+      ? `생성한 프로젝트 검증의 「${label}」 단계에서 실패했습니다. 아래 로그 끝부분을 확인하고, 메모리·네트워크 같은 환경 문제였다면 다시 생성해 주세요.`
+      : `생성한 프로젝트 검증의 「${label}」 단계에서 실패했습니다. 같은 구성으로 다시 생성해도 대개 결과가 같습니다. 아래 로그 끝부분을 확인하고 진단 정보를 복사해 보고해 주세요.`,
+    action: retry ? 'regenerate' : 'copy-diagnostics' };
+  }
+  if (code === 'TOOL_UNAVAILABLE') {
+    // Docker 는 DB 단계, git 은 구성 확인 단계에서만 쓴다. Docker 만 '다시 점검' 을 준다(git 은 생성기를 다시 시작해야 한다).
+    if (!knownTool(details.tool) || (details.tool === 'docker') !== (failure.stage === 'database')) return fallback;
+    return { code, message: TOOL_MESSAGES[details.tool], ...(details.tool === 'docker' ? { action: 'recheck' } : {}), details: { tool: details.tool } };
+  }
+  const shown = code === 'SOURCE_SURVIVAL'
+    ? (files(details.files) && details.files.length ? { files: details.files.slice(0, 20), fileCount: details.files.length } : {})
+    : safeDetails(error);
+  return { code, message: JOB_MESSAGES[code], ...(rule.action ? { action: rule.action } : {}), ...(Object.keys(shown).length ? { details: shown } : {}) };
 }
 
 export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) {
@@ -324,9 +406,15 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
             job.status = 'succeeded'; job.stage = 'complete'; job.message = STAGES.complete; job.progress = 100;
             job.result = safeResult(result, recipe);
           }, error => {
-            job.status = 'failed'; job.error = { code: 'GENERATION_FAILED', message: MESSAGES.GENERATION_FAILED };
-            job.message = MESSAGES.GENERATION_FAILED;
             const failure = safeFailure(error?.failure);
+            job.status = 'failed'; job.error = jobError(error, failure);
+            job.message = job.error.message;
+            // 검증 실패만 실패한 단계와 가린 로그 끝부분을 함께 보인다(DEC-OPS-249).
+            if (failure && job.error.code === 'VERIFY_FAILED') {
+              failure.step = error.details.step; failure.stepLabel = VERIFY_STEP_LABELS[failure.step];
+              const tail = safeLogTail(error.failure.logTail);
+              if (tail) failure.logTail = tail;
+            }
             if (failure) job.failure = failure;
           }).finally(() => { if (active === id) active = undefined; });
         }
@@ -336,7 +424,7 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
         json(response, 200, { job });
       } else {
         const assets = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/confirm.js': ['confirm.js', 'text/javascript'],
-          '/name-rule.js': ['name-rule.js', 'text/javascript'], '/styles.css': ['styles.css', 'text/css'] };
+          '/job.js': ['job.js', 'text/javascript'], '/name-rule.js': ['name-rule.js', 'text/javascript'], '/styles.css': ['styles.css', 'text/css'] };
         if (!Object.hasOwn(assets, path)) throw new HttpError(404, 'NOT_FOUND');
         const [file, type] = assets[path];
         const content = await readFile(resolve(publicDirectory, file));
