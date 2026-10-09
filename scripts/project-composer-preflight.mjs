@@ -92,9 +92,9 @@ export async function composerPreflight({ outputRoot, sourceCommit, probe, nodeV
 
   // 원본 비교는 점검을 요청한 화면의 커밋과 한다. 어느 쪽이든 알 수 없으면 생성도 원본을 결속하지 못하므로 막는다.
   const headCommit = head.ok && /^[a-f0-9]{40}$/.test(head.out.trim()) ? head.out.trim() : null;
-  if (!headCommit || !sourceCommit) check('source', 'block', '원본 커밋을 확인하지 못했습니다. 화면을 새로 고친 뒤 다시 점검하세요.', { code: 'SOURCE_CHANGED' });
+  if (!headCommit || !sourceCommit) check('source', 'block', '원본 커밋을 확인하지 못했습니다. 기능 목록을 다시 불러온 뒤 다시 점검하세요.', { code: 'SOURCE_CHANGED' });
   else if (headCommit === sourceCommit) check('source', 'pass', '원본 커밋이 화면을 연 시점과 같습니다', { detail: headCommit.slice(0, 12) });
-  else check('source', 'block', '원본이 새 커밋으로 바뀌었습니다. 화면을 새로 고쳐 새 원본으로 다시 확인하세요.', { code: 'SOURCE_CHANGED' });
+  else check('source', 'block', '원본이 새 커밋으로 바뀌었습니다. 기능 목록을 새 원본으로 다시 불러온 뒤 확인하세요.', { code: 'SOURCE_CHANGED' });
 
   // 출력 위치(저장소 build/)가 있는 드라이브만 잰다. Gradle·pnpm 캐시가 쓰는 사용자 홈은 따로다.
   let free = null;

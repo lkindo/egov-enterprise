@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { REQUIRES_KIND_LABELS, createComposerEngine, composerOutputPaths, inclusionNotes, parseComposerArgs, runComposerCommand } from './project-composer.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { ComposerError } from './project-composer-errors.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 // 계약 테스트의 생성 출력은 임시 루트에만 둔다. 저장소 build/ 에 engine-contract-* 잔재를 남기지 않는다.
@@ -102,7 +103,7 @@ test('UI and CLI use the same side-effect-free plan and reject unsupported or un
   assert.equal(engine.outputRoot, realpathSync(root));
 });
 
-function runner({ verificationResult = 'passed', wrongOwner = false } = {}) {
+function runner({ verificationResult = 'passed', wrongOwner = false, failStart = false, dockerDown = false } = {}) {
   const calls = [];
   let token;
   let staging;
@@ -113,7 +114,15 @@ function runner({ verificationResult = 'passed', wrongOwner = false } = {}) {
     run: async (command, args, options) => {
       calls.push({ command, args, root: options.root });
       if (command === 'docker') {
-        if (args[0] === 'run') { token = args[args.indexOf('--label') + 1].split('=')[1]; return 'a'.repeat(64); }
+        // Docker 엔진에 닿지 않는 경우: 모든 docker 호출이 실패한다.
+        if (dockerDown) throw Object.assign(new Error(`Command failed: docker ${args[0]}`), { code: 'COMMAND_FAILED', exitCode: 1 });
+        if (args[0] === 'run') {
+          token = args[args.indexOf('--label') + 1].split('=')[1];
+          // 만들기는 됐지만 시작이 실패한 경우: ID 를 돌려주지 않는다.
+          if (failStart) throw Object.assign(new Error('Command failed: docker (COMMAND_FAILED 125)'), { code: 'COMMAND_FAILED', exitCode: 125 });
+          return 'a'.repeat(64);
+        }
+        if (args[0] === 'ps') return failStart && args.includes(`label=egov.project-composer=${token}`) ? 'a'.repeat(64) : '';
         if (args[0] === 'inspect') return wrongOwner ? 'someone-else' : token;
         return '';
       }
@@ -192,10 +201,30 @@ test('a selection that violates a required foreign key is explained in the plan 
     .some(name => name.startsWith('engine-contract-blocked-')), false);
 });
 
-test('cleanup refuses a container whose ownership label differs', async () => {
+test('a database container that was created but never started is found by its own label and removed', async () => {
+  const mock = runner({ failStart: true });
+  await assert.rejects(() => createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64) }).generate(recipe()),
+    error => error.code === 'COMMAND_FAILED');
+  const docker = mock.calls.filter(call => call.command === 'docker').map(call => call.args);
+  assert.deepEqual(docker.slice(1).map(args => args[0]), ['ps', 'inspect', 'rm']);
+  assert.deepEqual(docker.at(-1), ['rm', '--force', '--volumes', 'a'.repeat(64)]);
+});
+
+test('cleanup refuses a container whose ownership label differs and does not hide the original failure', async () => {
   const mock = runner({ wrongOwner: true, verificationResult: 'failed' });
-  await assert.rejects(() => createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64) }).generate(recipe()), /ownership changed/);
+  await assert.rejects(() => createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64) }).generate(recipe()),
+    error => /verification report is incomplete/.test(error.message) && error.failure?.stage === 'verify');
   assert.ok(!mock.calls.some(call => call.command === 'docker' && call.args[0] === 'rm'));
+  const final = mock.staging.replace('.pending-', '');
+  const report = JSON.parse(readFileSync(resolve(outputRoot, 'build/project-composer/jobs', final.split(/[\\/]/).at(-1), 'report.json'), 'utf8'));
+  assert.match(report.cleanupFailure, /ownership changed/, 'the refused cleanup is kept in the job report');
+});
+
+test('when Docker cannot be reached the failed cleanup does not replace the original database-stage failure', async () => {
+  const mock = runner({ dockerDown: true });
+  await assert.rejects(() => createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64) }).generate(recipe()),
+    error => error.message === 'Command failed: docker run' && error.failure?.stage === 'database' && error.failure?.code === 'COMMAND_FAILED');
+  assert.deepEqual(mock.calls.filter(call => call.command === 'docker').map(call => call.args[0]), ['run', 'ps']);
 });
 
 test('a source mutation during generation stops before install, verification or publication', async () => {
@@ -428,4 +457,50 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
   const outputIgnoresCase = existsSync(join(caseOutput, 'pROBE.TXT'));
   const caseDeep = createComposerEngine({ root: repository, outputRoot: caseOutput, loadCatalog: () => real }).deep(core);
   assert.deepEqual(caseDeep.blockers.map(blocker => blocker.code), outputIgnoresCase ? [] : ['FRONTEND_ENTRY']);
+  // 원본 커밋을 가장 먼저 본다(설계서 14.2). 이 저장소에는 메뉴 스냅숏이 없어(낡은 자료) 원본이 같으면 그 코드가 나오지만,
+  // 원본이 바뀌었으면 SOURCE_CHANGED 가 먼저다 — 새 원본으로 다시 불러오면 함께 풀릴 수 있기 때문이다.
+  assert.throws(() => engine.plan({ ...core, sourceRef: first }), error => error instanceof ComposerError && error.code === 'SOURCE_CHANGED');
+  assert.throws(() => engine.plan(core), error => error instanceof ComposerError && error.code === 'MENU_SNAPSHOT_STALE');
+  // 카탈로그 적재가 실패해도 스냅숏이 낡았으면 선언 위반이 아니라 갱신하면 풀리는 MENU_SNAPSHOT_STALE 이다.
+  const stale = createComposerEngine({ root: repository, outputRoot, loadCatalog: () => { throw new Error('project-composer catalog: menu tab has no active menu row: /admin/help?tab=X'); } });
+  assert.throws(() => stale.catalog(), error => error instanceof ComposerError && error.code === 'MENU_SNAPSHOT_STALE');
+  // 계획과 정밀 점검 모두, 원본이 바뀌었으면 그 원본이 깨뜨린 선언·구성보다 SOURCE_CHANGED 를 먼저 말한다.
+  for (const run of [recipeValue => stale.plan(recipeValue), recipeValue => stale.deep(recipeValue),
+    recipeValue => engine.deep(recipeValue)]) {
+    assert.throws(() => run({ ...core, sourceRef: first }), error => error instanceof ComposerError && error.code === 'SOURCE_CHANGED');
+    assert.throws(() => run({ ...core, sourceRef: first, selection: { domains: ['nosuchdomain'] } }),
+      error => error instanceof ComposerError && error.code === 'SOURCE_CHANGED');
+  }
+});
+
+/*
+ * 계획·정밀 점검·카탈로그 오류는 처음 생긴 자리에서 코드를 단다(설계서 14.2, E4). 서버는 이 코드만 믿고 문장·행동을 정한다.
+ * 원본 커밋, 메뉴 스냅숏, 카탈로그, 해석기 순서로 보며, 런타임 결함은 코드를 달지 않아 일반 문장으로 남는다.
+ */
+test('plan, deep and catalog failures carry the code of their first cause', () => {
+  const code = run => {
+    try { run(); } catch (error) { return error instanceof ComposerError ? error.code : `untagged:${error.constructor.name}`; }
+    return 'none';
+  };
+  const engine = createComposerEngine();
+  const unknown = { ...recipe(), sourceRef: '0'.repeat(40) };
+  assert.equal(code(() => engine.plan(unknown)), 'SOURCE_CHANGED');
+  assert.equal(code(() => engine.deep(unknown)), 'SOURCE_CHANGED');
+  assert.equal(code(() => engine.plan({ ...recipe(), sourceRef: '-x' })), 'INVALID_RECIPE', 'an option-like reference never reaches git');
+  assert.equal(code(() => engine.plan({ ...recipe(), project: { name: 'con' } })), 'INVALID_NAME');
+  assert.equal(code(() => engine.deep({ ...recipe(), project: { name: 'com0' } })), 'INVALID_NAME');
+  assert.equal(code(() => engine.plan({ ...recipe(), selection: { domains: ['nosuchdomain'] } })), 'INVALID_RECIPE');
+  assert.equal(code(() => engine.diff(recipe(), 'nosuchdomain')), 'INVALID_RECIPE');
+  // 선언이 일부러 던진 실패는 CATALOG_DRIFT 이고, 위반 문장에는 이 컴퓨터의 경로가 없다.
+  const drift = createComposerEngine({ loadCatalog: () => { throw new Error(`project-composer catalog: missing ${join(root, 'frontend', 'x.tsx')}`); } });
+  assert.throws(() => drift.catalog(), error => error.code === 'CATALOG_DRIFT' && error.details.violations[0] === `project-composer catalog: missing ${['.', 'frontend', 'x.tsx'].join(sep)}`);
+  assert.equal(code(() => drift.plan(recipe())), 'CATALOG_DRIFT');
+  assert.equal(code(() => drift.deep(recipe())), 'CATALOG_DRIFT');
+  assert.equal(code(() => drift.diff(recipe(), 'mail')), 'CATALOG_DRIFT');
+  // 런타임 결함은 사용자가 고칠 선언 위반이 아니다.
+  assert.equal(code(() => createComposerEngine({ loadCatalog: () => { throw new TypeError('bug'); } }).catalog()), 'untagged:TypeError');
+  // git 이 없으면 원본을 확인할 수 없다(종료 코드 실패와 구분한다).
+  const noGit = createComposerEngine({ gitExecutable: 'zz-composer-missing-git' });
+  assert.equal(code(() => noGit.plan(recipe())), 'TOOL_UNAVAILABLE');
+  assert.throws(() => noGit.catalog(), error => error.code === 'TOOL_UNAVAILABLE' && error.details.tool === 'git');
 });

@@ -6,13 +6,15 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, realpathSync, rena
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
-import { resolveProjectRecipe } from './project-composer-recipe.mjs';
+import { classifyRecipeFailure, resolveProjectRecipe, sourceRefIsValid } from './project-composer-recipe.mjs';
 import { loadProjectComposerMenus, projectComposerMenuPreview } from './project-composer-menu-preview.mjs';
 import { compositionDiff } from './project-composer-diff.mjs';
 import { loadUnassignedPermissionGuidance } from './project-composer-unassigned.mjs';
 import { composerPresentation, loadRouteKinds } from './project-composer-presentation.mjs';
 import { composerPreflight } from './project-composer-preflight.mjs';
 import { compositionDeepPlan, deepSummary } from './project-composer-deep.mjs';
+import { ComposerError, classifyDeclarationFailure } from './project-composer-errors.mjs';
+import { createOwnedPostgres, ownedContainerId, removeOwnedPostgres, removeOwnedPostgresByToken, waitForOwnedPostgres } from './project-composer-postgres.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION = 1;
@@ -90,9 +92,11 @@ export function diffSummary(diff, catalog) {
   }
   return `${diff.action === 'add' ? '고르면' : '빼면'} ${parts.join(' · ')}`;
 }
-function git(root, args) {
-  const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true, maxBuffer: 32 * 1024 * 1024 });
-  if (result.error || result.status !== 0) throw new Error('Source checkout identity could not be verified');
+function git(root, args, executable = 'git') {
+  const result = spawnSync(executable, args, { cwd: root, encoding: 'utf8', windowsHide: true, maxBuffer: 32 * 1024 * 1024 });
+  // git 실행 파일이 없으면 원본을 확인할 수 없다. 화면은 설치·PATH 확인을 안내한다(종료 코드 실패와 구분한다).
+  if (result.error?.code === 'ENOENT') throw new ComposerError('TOOL_UNAVAILABLE', { tool: 'git' }, 'git executable is not available');
+  if (result.error || result.status !== 0) throw Object.assign(new Error('Source checkout identity could not be verified'), { gitStatus: result.status });
   return result.stdout.trim();
 }
 export function composerSourceFingerprint(root) {
@@ -253,50 +257,90 @@ export function composerOutputPaths(root, name, token) {
  * 생성이 실패할 뿐 출력이 새지 않는다.
  */
 export function createComposerEngine({ root = ROOT, outputRoot, run = runComposerCommand, fingerprint = composerSourceFingerprint,
-  loadCatalog = loadProjectComposerCatalog } = {}) {
+  loadCatalog = loadProjectComposerCatalog, gitExecutable = 'git' } = {}) {
   root = realpathSync(root);
   outputRoot = outputRoot === undefined ? root : realpathSync(outputRoot);
   let running = false;
+  const gitRun = args => git(root, args, gitExecutable);
+  /*
+   * 오류 분류(설계서 14.2, E4). 원본 커밋 → 메뉴 스냅숏 → 카탈로그 → 해석기 순서로 본다. 원본이 바뀌었으면 바뀐 선언이 낳은
+   * 다른 오류(모르는 기능, 낡은 스냅숏)보다 SOURCE_CHANGED 를 먼저 말한다 — 새 원본으로 다시 불러오면 함께 풀리기 때문이다.
+   */
+  const recipeCommit = recipe => {
+    const reference = recipe?.sourceRef;
+    // git 에 넘기기 전에 형식부터 본다. 옵션처럼 읽히는 값('-x')은 명령 인자가 되지 않는다.
+    if (!sourceRefIsValid(reference)) {
+      throw new ComposerError('INVALID_RECIPE', { field: 'sourceRef' }, 'A source reference without shell, traversal or revision-expression syntax is required');
+    }
+    const head = gitRun(['rev-parse', 'HEAD']);
+    let commit;
+    try { commit = gitRun(['rev-parse', '--verify', `${reference}^{commit}`]); }
+    catch (error) {
+      if (error instanceof ComposerError) throw error;
+      throw new ComposerError('SOURCE_CHANGED', {}, 'Recipe sourceRef is not available in this checkout');
+    }
+    // The local generator exports the inspected checkout. It never silently checks out another revision.
+    if (commit !== head) throw new ComposerError('SOURCE_CHANGED', {}, 'Recipe sourceRef does not identify the current checkout');
+    return commit;
+  };
+  // 카탈로그는 메뉴 스냅숏으로 탭 선언을 검증하지만 스냅숏 해시는 보지 않는다. 적재가 실패했을 때 스냅숏이 낡았으면
+  // 선언 위반이 아니라 갱신하면 풀리는 MENU_SNAPSHOT_STALE 로 말한다.
+  const loadCatalogClassified = () => {
+    try { return loadCatalog(root); }
+    catch (error) {
+      try { loadProjectComposerMenus(root); }
+      catch (menuError) { if (menuError instanceof ComposerError && menuError.code === 'MENU_SNAPSHOT_STALE') throw menuError; }
+      throw classifyDeclarationFailure(error, root);
+    }
+  };
+  // 화면 문구·미배정 권한 안내·메뉴 투영도 선언이다. 일부러 던진 실패만 CATALOG_DRIFT 로, 런타임 결함은 그대로 둔다.
+  const declared = read => { try { return read(); } catch (error) { throw classifyDeclarationFailure(error, root); } };
+  const resolveRecipe = (recipe, value) => { try { return resolveProjectRecipe(recipe, value); } catch (error) { throw classifyRecipeFailure(error); } };
   // 계획 차이는 마지막으로 적재한 카탈로그와 메뉴 스냅숏을 다시 쓴다(카탈로그 적재는 수 초가 걸린다).
   // 차이는 미리보기일 뿐이고, 계획과 생성은 늘 카탈로그를 새로 적재해 다시 판정한다.
   let latest;
   const remember = (value, menus) => { latest = { catalog: value, menus }; return value; };
   const catalog = () => {
-    const value = remember(loadCatalog(root));
-    const sourceCommit = git(root, ['rev-parse', 'HEAD']);
+    const value = remember(loadCatalogClassified());
+    const sourceCommit = gitRun(['rev-parse', 'HEAD']);
     // 화면 문구는 카탈로그 해시 밖에 덧붙인다. 문구를 고쳐도 구성 해시가 바뀌지 않는다.
-    return { ...value, sourceRef: sourceCommit, sourceCommit, presentation: composerPresentation(value, { routeKinds: loadRouteKinds(root) }) };
+    return { ...value, sourceRef: sourceCommit, sourceCommit, presentation: declared(() => composerPresentation(value, { routeKinds: loadRouteKinds(root) })) };
   };
   const plan = recipe => {
+    const sourceCommit = recipeCommit(recipe);
     const snapshot = loadProjectComposerMenus(root);
-    const current = remember(loadCatalog(root), snapshot.menus);
-    const composition = resolveProjectRecipe(recipe, current);
-    // The local generator exports the inspected checkout. It never silently checks out another revision.
-    const sourceCommit = git(root, ['rev-parse', '--verify', `${recipe.sourceRef}^{commit}`]);
-    if (sourceCommit !== git(root, ['rev-parse', 'HEAD'])) throw new Error('Recipe sourceRef does not identify the current checkout');
+    const current = remember(loadCatalogClassified(), snapshot.menus);
+    const composition = resolveRecipe(recipe, current);
     const owner = code => current.capabilities.find(capability => capability.permissionCodes.includes(code))?.id ?? 'core';
     return { ...composition, sourceCommit, blockers: foreignKeyBlockers(composition, current),
       inclusionNotes: inclusionNotes(composition, current),
       degradationNotes: degradationNotes(composition, current),
       // 기본 그룹이 없어 생성 직후 아무에게도 배정되지 않는 권한. 생성을 막지 않고, 완료 뒤 할 일로 보인다.
-      unassignedPermissions: loadUnassignedPermissionGuidance(root).filter(row => composition.permissionCodes.includes(row.code))
+      unassignedPermissions: declared(() => loadUnassignedPermissionGuidance(root)).filter(row => composition.permissionCodes.includes(row.code))
         .map(row => ({ ...row, owner: owner(row.code) })),
       outputDirectory: `build/reusable-base/source/${composition.project.name}-<generation-id>`,
-      menus: projectComposerMenuPreview(root, composition, snapshot),
+      menus: declared(() => projectComposerMenuPreview(root, composition, snapshot)),
       // 도구·작업 트리처럼 이 컴퓨터의 상태는 생성 전 점검(preflight)이 실제로 확인해 말한다.
       warnings: composition.requirements.map(requirement => `추가 설정: ${requirement}`),
     };
   };
   const diff = (recipe, domain) => {
-    latest ??= { catalog: loadCatalog(root) };
+    latest ??= { catalog: loadCatalogClassified() };
     latest.menus ??= loadProjectComposerMenus(root).menus;
-    const result = compositionDiff({ catalog: latest.catalog, menus: latest.menus, recipe, domain });
+    let result;
+    try { result = compositionDiff({ catalog: latest.catalog, menus: latest.menus, recipe, domain }); }
+    catch (error) {
+      const recipeFailure = classifyRecipeFailure(error);
+      throw recipeFailure === error ? classifyDeclarationFailure(error, root) : recipeFailure;
+    }
     return { ...result, summary: diffSummary(result, latest.catalog) };
   };
   const generate = async (recipe, { onProgress = () => {} } = {}) => {
     if (running) throw new Error('A composition job is already running');
     running = true;
     let container;
+    let databaseCreated = false;
+    let failed = false;
     let report;
     let paths;
     let token;
@@ -308,13 +352,12 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
     const docker = (args, options = {}) => run('docker', args, { root, capture: true, ...options });
     // 단계마다 자식 출력의 가린 사본을 jobs/<id>/logs/<단계>.log 에 남긴다. 이 컴퓨터 밖으로 보내지 않는다.
     const logOf = name => join(paths.jobDirectory, 'logs', `${name}.log`);
+    // 시작에 실패해 ID 를 받지 못한 컨테이너는 이 작업의 표식으로 찾아 지운다.
     const cleanupDatabase = async () => {
-      if (container && /^[a-f0-9]{64}$/.test(container)) {
-        const owner = await docker(['inspect', '--format', '{{ index .Config.Labels "egov.project-composer" }}', container]);
-        if (owner !== token) throw new Error('Database container ownership changed; refusing cleanup');
-        await docker(['rm', '--force', container]);
-        container = undefined;
-      }
+      if (!databaseCreated) return;
+      if (ownedContainerId(container)) await removeOwnedPostgres(docker, container, token);
+      else await removeOwnedPostgresByToken(docker, token);
+      container = undefined; databaseCreated = false;
     };
     try {
       progress('resolve', 2);
@@ -330,20 +373,14 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
       writeFileSync(compositionPath, `${JSON.stringify(composition, null, 2)}\n`);
       report = { schemaVersion: VERSION, generatorVersion: VERSION, result: 'started', stage,
         compositionHash: composition.compositionHash, sourceCommit: composition.sourceCommit, sourceFingerprint,
-        localDevelopmentBuild: Boolean(git(root, ['status', '--porcelain'])) || !git(root, ['tag', '--points-at', 'HEAD']).split(/\r?\n/).some(tag => /^v\d/.test(tag)),
+        localDevelopmentBuild: Boolean(gitRun(['status', '--porcelain'])) || !gitRun(['tag', '--points-at', 'HEAD']).split(/\r?\n/).some(tag => /^v\d/.test(tag)),
         startedAt: new Date().toISOString(), environmentApproved: false, ...paths };
       save();
       progress('database', 8);
-      container = await docker(['run', '--detach', '--name', `egov-composer-${token}`, '--label', `egov.project-composer=${token}`,
-        '--env', 'POSTGRES_USER=composer', '--env', 'POSTGRES_DB=composer', '--env', 'POSTGRES_PASSWORD', 'postgres:17-alpine'],
-      { env: { ...process.env, POSTGRES_PASSWORD: randomBytes(32).toString('hex') }, log: logOf('database') });
-      if (!/^[a-f0-9]{64}$/.test(container)) throw new Error('Invalid owned database container identity');
-      let ready = false;
-      for (let attempt = 0; attempt < 120; attempt++) {
-        try { await docker(['exec', container, 'pg_isready', '-h', '127.0.0.1', '-U', 'composer', '-d', 'composer']); ready = true; break; }
-        catch { await new Promise(accept => setTimeout(accept, 500)); }
-      }
-      if (!ready) throw new Error('Owned PostgreSQL did not become ready');
+      databaseCreated = true;
+      container = await createOwnedPostgres(docker, { name: `egov-composer-${token}`, token, log: logOf('database') });
+      if (!ownedContainerId(container)) throw new Error('Invalid owned database container identity');
+      if (!await waitForOwnedPostgres(docker, container)) throw new Error('Owned PostgreSQL did not become ready');
       const common = ['--composition', compositionPath, '--allow-dirty', '--allow-non-release-ref'];
       await run('node', ['scripts/generate-reusable-base-db.mjs', ...common, '--container', container, '--output', paths.databaseDirectory], { root, log: logOf('database') });
       progress('source', 28);
@@ -375,6 +412,7 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
       return { projectDirectory: paths.projectDirectory, databaseDirectory: paths.databaseDirectory,
         reportPath: join(paths.projectDirectory, 'project-generation-report.json'), recipe: composition.recipe, verified: true };
     } catch (error) {
+      failed = true;
       // 화면으로는 단계·명령 식별자·종료 코드·로그 위치만 넘긴다. 자식 출력 원문은 로그 파일에만 있다.
       const failure = { stage, code: error.code ?? 'COMPOSITION_FAILED',
         ...(error.commandId ? { commandId: error.commandId, exitCode: error.exitCode ?? null, durationMs: error.durationMs } : {}),
@@ -389,7 +427,12 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
       }
       throw Object.assign(error, { failure });
     } finally {
-      try { await cleanupDatabase(); } finally { running = false; }
+      // 정리 실패가 원래 실패(단계·명령·로그)를 가리지 않게 한다. 원래 실패가 있으면 정리 실패는 보고서에만 남긴다.
+      try { await cleanupDatabase(); }
+      catch (cleanupError) {
+        if (!failed) throw cleanupError;
+        if (report) { report.cleanupFailure = createLogMasker().line(String(cleanupError.message)).slice(0, 500); save(); }
+      } finally { running = false; }
     }
   };
   // 생성 전 점검: 명령 하나가 멈춰도 화면이 기다리지 않도록 명령마다 시간 제한을 둔다.
@@ -399,14 +442,11 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
   // 정밀 점검: 생성기의 투영 판정을 디스크를 바꾸지 않고 미리 한다(요청할 때만, 수 초가 걸린다).
   // 계획처럼 카탈로그를 새로 적재하고, 생성기가 복사할 파일 목록(추적·무시되지 않은 새 파일, build 제외)을 쓴다.
   const deep = recipe => {
-    const current = loadCatalog(root);
-    // 해석기가 거부한 구성은 입력 오류다(화면을 연 뒤 카탈로그가 바뀌었을 수도 있다). 그 밖의 실패는 점검 실패다.
-    let composition;
-    try { composition = resolveProjectRecipe(recipe, current); } catch (error) { throw Object.assign(new Error(error.message), { code: 'INVALID_RECIPE' }); }
-    const sourceCommit = git(root, ['rev-parse', '--verify', `${recipe.sourceRef}^{commit}`]);
-    if (sourceCommit !== git(root, ['rev-parse', 'HEAD'])) throw new Error('Recipe sourceRef does not identify the current checkout');
+    recipeCommit(recipe);
+    // 해석기가 거부한 구성은 코드가 붙은 입력 오류다(화면을 연 뒤 카탈로그가 바뀌었을 수도 있다). 그 밖의 실패는 점검 실패다.
+    const composition = resolveRecipe(recipe, loadCatalogClassified());
     const manifest = JSON.parse(readFileSync(join(root, 'config/reusable-base-profiles.json'), 'utf8'));
-    const files = git(root, ['ls-files', '--cached', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean)
+    const files = gitRun(['ls-files', '--cached', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean)
       .filter(file => !file.replaceAll('\\', '/').split('/').includes('build'));
     // 대소문자 구분은 생성물을 만들 폴더(composerOutputPaths 의 상위 폴더)에서 판정한다.
     const result = compositionDeepPlan({ root, manifest, composition, files, outputParent: resolve(outputRoot, 'build/reusable-base/source') });

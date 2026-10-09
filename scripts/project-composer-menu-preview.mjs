@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { projectCompositionMenus } from './project-composer-db.mjs';
+import { ComposerError } from './project-composer-errors.mjs';
 
 export const COMPOSER_MENU_SNAPSHOT_PATH = 'config/project-composer-menus.json';
 const MIGRATION_ROOT = 'api-server/src/main/resources/db/migration';
@@ -11,7 +12,8 @@ const MIGRATION_ROOT = 'api-server/src/main/resources/db/migration';
 //   사이드바가 원본과 같은 구성으로 시작하게 한다. 형식이 바뀌었으므로 schemaVersion 은 3 이다.
 const SNAPSHOT_SCHEMA_VERSION = 3;
 const MENU_FIELDS = ['menu_sn', 'up_menu_sn', 'menu_ordr', 'menu_nm', 'menu_expln', 'modern_route', 'use_yn', 'del_yn'];
-const fail = message => { throw new Error(`Composer menu snapshot: ${message}`); };
+// 스냅숏이 원본 마이그레이션을 따라가지 못한 경우(해시·형식·실제 적용 결과와 다름)는 모두 갱신으로 풀린다.
+const fail = message => { throw new ComposerError('MENU_SNAPSHOT_STALE', {}, `Composer menu snapshot: ${message}`); };
 
 /** Include every SQL input executed to construct the empty-DB menu inventory. */
 export function projectMenuSourceHash(root) {
@@ -63,7 +65,11 @@ export function validateProjectComposerMenus(snapshot, expectedSourceHash) {
 }
 
 export function loadProjectComposerMenus(root) {
-  return validateProjectComposerMenus(JSON.parse(readFileSync(join(root, COMPOSER_MENU_SNAPSHOT_PATH), 'utf8')), projectMenuSourceHash(root));
+  // 스냅숏 파일만 갱신으로 풀리는 자료다. 원본 SQL 파일을 읽지 못한 것(projectMenuSourceHash)은 내부 오류로 남긴다.
+  let snapshot;
+  try { snapshot = JSON.parse(readFileSync(join(root, COMPOSER_MENU_SNAPSHOT_PATH), 'utf8')); }
+  catch { fail('snapshot file is missing or unreadable'); }
+  return validateProjectComposerMenus(snapshot, projectMenuSourceHash(root));
 }
 
 export function assertProjectComposerMenusMatch(root, inventory) {
